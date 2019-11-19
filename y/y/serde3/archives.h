@@ -112,6 +112,14 @@ struct IsArray<std::array<T, N>> {
 	static constexpr bool value = true;
 };
 
+
+template<typename T, typename value_type = remove_cvref_t<typename T::value_type>>
+constexpr bool use_collection_fast_path =
+		(has_resize_v<T> || has_emplace_back_v<T>) &&
+		std::is_pointer_v<decltype(std::declval<T>().begin())> &&
+		std::is_trivially_copyable_v<value_type> &&
+		!has_serde3_v<value_type>;
+
 }
 
 template<typename T>
@@ -128,6 +136,7 @@ auto make_std_ptr() {
 	static_assert(is_std_ptr_v<T>);
 	return detail::StdPtr<T>::make();
 }
+
 
 
 
@@ -270,8 +279,17 @@ class WritableArchive final {
 			{
 				y_try(write_one(size_type(-1)));
 				y_try(write_one(size_type(object.object.size())));
-				for(const auto& item : object.object) {
-					y_try(serialize_one(NamedObject{item, detail::collection_version_string}));
+
+				if constexpr(detail::use_collection_fast_path<remove_cvref_t<T>>) {
+					if(object.object.size()) {
+						const auto header = detail::build_header(NamedObject{*object.object.begin(), detail::collection_version_string});
+						y_try(write_one(header));
+						y_try(write_array(object.object.begin(), object.object.size()));
+					}
+				} else {
+					for(const auto& item : object.object) {
+						y_try(serialize_one(NamedObject{item, detail::collection_version_string}));
+					}
 				}
 			}
 
@@ -397,6 +415,20 @@ class WritableArchive final {
 			return core::Ok(Success::Full);
 		}
 
+		template<typename T>
+		Result write_array(const T* t, usize size) {
+#ifdef Y_SERDE3_BUFFER
+			if(_buffer.size() + (sizeof(T) * size) > buffer_size) {
+				y_try(flush());
+			}
+			y_try_discard(_buffer.write_array(t, size));
+#else
+			_cached_file_size += sizeof(T) * size;
+			y_try_discard(_file.write_array(t, size));
+#endif
+			return core::Ok(Success::Full);
+		}
+
 		usize tell() const {
 #ifdef Y_SERDE3_BUFFER
 			return _cached_file_size + _buffer.tell();
@@ -479,6 +511,11 @@ class ReadableArchive final {
 			y_try_discard(read_header(header));
 			y_try_discard(_file.read_one(size));
 
+#ifdef Y_DEBUG
+			const usize end = tell() + size;
+			y_defer(y_debug_assert(tell() == end));
+#endif
+
 			if constexpr(has_serde3_poly_v<T>) {
 				return deserialize_poly(object, header, size);
 			} else if constexpr(has_serde3_v<T>) {
@@ -535,29 +572,55 @@ class ReadableArchive final {
 			y_try(read_one(collection_size));
 
 			try {
-				if constexpr(has_reserve_v<T>) {
-					object.object.reserve(collection_size);
-				}
-
-				if constexpr(has_emplace_back_v<T>) {
-					for(size_type i = 0; i != collection_size; ++i) {
-						object.object.emplace_back();
-						y_try(deserialize_one(NamedObject{object.object.last(), detail::collection_version_string}));
-					}
-				} else if constexpr(has_resize_v<T>) {
-					object.object.resize(collection_size);
-					for(size_type i = 0; i != collection_size; ++i) {
-						y_try(deserialize_one(NamedObject{object.object[usize(i)], detail::collection_version_string}));
-					}
-				} else {
-					using value_type = deconst_t<typename T::value_type>;
-					for(size_type i = 0; i != collection_size; ++i) {
-						if constexpr(is_array_v<T>) {
-							y_try(deserialize_one(NamedObject{object.object[i], detail::collection_version_string}));
+				if constexpr(detail::use_collection_fast_path<T>) {
+					if(collection_size) {
+						detail::FullHeader item_header;
+						y_try_discard(read_header(item_header));
+						if(item_header != detail::build_header(NamedObject{*object.object.begin(), detail::collection_version_string})) {
+							seek(end);
+							return core::Ok(Success::Partial);
+						}
+						if constexpr(has_resize_v<T>) {
+							object.object.resize(collection_size);
 						} else {
-							value_type value;
-							y_try(deserialize_one(NamedObject{value, detail::collection_version_string}));
-							object.object.insert(std::move(value));
+							if constexpr(has_reserve_v<T>) {
+								object.object.reserve(collection_size);
+							}
+							while(object.object.size() < collection_size) {
+								object.object.emplace_back();
+							}
+						}
+						y_try_discard(_file.read_array(object.object.begin(), collection_size));
+					}
+
+				} else {
+
+					if constexpr(has_reserve_v<T>) {
+						object.object.reserve(collection_size);
+					}
+
+					if constexpr(has_emplace_back_v<T>) {
+						for(size_type i = 0; i != collection_size; ++i) {
+							object.object.emplace_back();
+							y_try(deserialize_one(NamedObject{object.object.last(), detail::collection_version_string}));
+						}
+					} else if constexpr(has_resize_v<T>) {
+						object.object.resize(collection_size);
+						for(size_type i = 0; i != collection_size; ++i) {
+							y_try(deserialize_one(NamedObject{object.object[usize(i)], detail::collection_version_string}));
+						}
+					} else {
+						if constexpr(is_array_v<T>) {
+							for(size_type i = 0; i != collection_size; ++i) {
+								y_try(deserialize_one(NamedObject{object.object[i], detail::collection_version_string}));
+							}
+						} else {
+							using value_type = deconst_t<typename T::value_type>;
+							for(size_type i = 0; i != collection_size; ++i) {
+								value_type value;
+								y_try(deserialize_one(NamedObject{value, detail::collection_version_string}));
+								object.object.insert(std::move(value));
+							}
 						}
 					}
 				}

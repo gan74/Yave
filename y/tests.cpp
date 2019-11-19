@@ -34,6 +34,8 @@ SOFTWARE.
 #include <y/io2/File.h>
 #include <y/io2/Buffer.h>
 
+#include <y/math/Vec.h>
+
 using namespace y;
 using namespace serde3;
 
@@ -134,6 +136,15 @@ auto make_arc(T& t) {
 	return std::make_unique<T>(std::move(t));
 }
 
+template<typename T>
+auto static_asserts() {
+	using value_type = remove_cvref_t<typename T::value_type>;
+	static_assert(has_resize_v<T> || has_emplace_back_v<T>);
+	static_assert(std::is_pointer_v<decltype(std::declval<T>().begin())>);
+	static_assert(std::is_trivially_copyable_v<value_type>);
+	static_assert(!has_serde3_v<value_type>);
+}
+
 int main() {
 	{
 		WritableArchive arc(make_arc(io2::File::create("poly.txt").unwrap()));
@@ -149,6 +160,33 @@ int main() {
 				b->print();
 			} else {
 				log_msg("(null)");
+			}
+		}
+	}
+	static_asserts<core::Vector<math::Vec3>>();
+	static_assert(serde3::detail::use_collection_fast_path<core::Vector<math::Vec3>>);
+	static_assert(!serde3::detail::use_collection_fast_path<core::Vector<TestStruct>>);
+
+
+
+	{
+		io2::Buffer buffer;
+		{
+			core::Vector<math::Vec3ui> vec;
+			vec << math::Vec3ui{1, 2, 3};
+			vec << math::Vec3ui{4, 5, 6};
+			vec << math::Vec3ui{7, 8, 9};
+
+			WritableArchive arc(buffer);
+			arc.serialize(vec).unwrap();
+		}
+		buffer.reset();
+		{
+			core::Vector<math::Vec3ui> vec;
+			ReadableArchive arc(buffer);
+			arc.deserialize(vec).unwrap();
+			for(const auto& v : vec) {
+				log_msg(fmt("%", v));
 			}
 		}
 	}
