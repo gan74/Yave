@@ -58,7 +58,8 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 		: view(&world) {
 
 	DevicePtr dptr = ctx->device();
-	const float intensity = 0.35f;
+	const float intensity = 1.0f;
+	const bool background = false;
 
 	{
 		ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
@@ -85,7 +86,7 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 		light->radius() = 2.0f;
 	}
 
-	{
+	if(background) {
 		ecs::EntityId bg_id = world.create_entity(StaticMeshArchetype());
 		StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(bg_id);
 		*mesh_comp = StaticMeshComponent(dptr->device_resources()[DeviceResources::SweepMesh], dptr->device_resources()[DeviceResources::EmptyMaterial]);

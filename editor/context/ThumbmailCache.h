@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
+#include <y/core/Functor.h>
+
 #include <yave/assets/AssetPtr.h>
 #include <yave/graphics/images/ImageView.h>
 
