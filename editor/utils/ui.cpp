@@ -34,13 +34,32 @@ namespace editor {
 namespace imgui {
 
 bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text) {
-	const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
+	static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
 
-	const core::String no_asset = fmt("No %", asset_type_name(type));
-	core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or(no_asset);
-	const bool ret = ImGui::Button(fmt("%###%_%_%", ICON_FA_FOLDER_OPEN, id.id(), uenum(type), text.data()).data());
+	const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
+	core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or("");
+
+	ImGui::PushID(fmt("%_%_%", id.id(), uenum(type), text.data()).data());
+	ImGui::BeginGroup();
+
+	bool ret = false;
+	if(TextureView* image = ctx->thumbmail_cache().get_thumbmail(id).image) {
+		ret = ImGui::ImageButton(image, button_size);
+	} else {
+		ret = ImGui::Button(ICON_FA_FOLDER_OPEN, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
+	}
 	ImGui::SameLine();
-	ImGui::InputText(text.data(), name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+	{
+		ImGui::BeginGroup();
+		ImGui::Dummy(math::Vec2(0.0f, 8.0f));
+		ImGui::TextUnformatted(text.begin(), text.end());
+		ImGui::Dummy(math::Vec2(0.0f, 4.0f));
+		ImGui::InputTextWithHint("", "No asset specified", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+		ImGui::EndGroup();
+	}
+
+	ImGui::EndGroup();
+	ImGui::PopID();
 	return ret;
 }
 
