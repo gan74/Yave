@@ -22,14 +22,14 @@ SOFTWARE.
 
 #include "MainWindow.h"
 
-#include <csignal>
 
+#include <editor/utils/crashhandler.h>
 #include <editor/events/MainEventHandler.h>
 #include <editor/context/EditorContext.h>
 
 #include <yave/graphics/swapchain/Swapchain.h>
-
 #include <yave/assets/SQLiteAssetStore.h>
+
 #include <y/core/Chrono.h>
 
 using namespace editor;
@@ -51,17 +51,6 @@ static void hide_console() {
 #ifdef Y_OS_WIN
 	ShowWindow(GetConsoleWindow(), SW_HIDE);
 #endif
-}
-
-[[maybe_unused]]
-static void crash_handler(int) {
-	log_msg("SEGFAULT!");
-	Y_TODO(we might want to save whatever we can here)
-}
-
-static void setup_handlers() {
-	std::signal(SIGSEGV, crash_handler);
-	perf::set_output_file("perfdump.json");
 }
 
 static void parse_args(int argc, char** argv) {
@@ -110,12 +99,14 @@ static EditorContext create_context(const Device& device) {
 	return EditorContext(&device);
 }
 
-
-
 int main(int argc, char** argv) {
 	parse_args(argc, argv);
-	setup_handlers();
 	setup_logger();
+	perf::set_output_file("perfdump.json");
+
+	if(!crashhandler::setup_handler()) {
+		log_msg("Unable to setup crash handler.", Log::Warning);
+	}
 
 	Instance instance = create_instance();
 
