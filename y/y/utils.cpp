@@ -41,25 +41,6 @@ bool break_on_error = false;
 }
 #endif
 
-namespace detail {
-
-#ifdef __GNUG__
-	core::String demangle_type_name(const char* name) {
-		int status = 0;
-		char* d = ::abi::__cxa_demangle(name, nullptr, nullptr, &status);
-		if(status) {
-			return core::String(name);
-		}
-		y_defer(::free(d));
-		return core::String(d);
-	}
-#else
-	core::String demangle_type_name(const char* name) {
-		return core::String(name);
-	}
-#endif
-}
-
 
 void break_in_debugger() {
 #ifdef Y_OS_WIN

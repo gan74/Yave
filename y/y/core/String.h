@@ -256,25 +256,8 @@ inline core::String operator "" _s(const char* c_str, usize size) {
 	return core::String(c_str, size);
 }
 
-
-
-
-// because we do need string in here
-namespace detail {
-core::String demangle_type_name(const char* name);
 }
 
-template<typename T>
-auto type_name() {
-	return detail::demangle_type_name(typeid(T).name()) + (std::is_reference_v<T> ? "&" : "");
-}
-
-template<typename T>
-auto type_name(T&& t) {
-	return detail::demangle_type_name(typeid(y_fwd(t)).name());
-}
-
-}
 
 namespace std {
 template<>
