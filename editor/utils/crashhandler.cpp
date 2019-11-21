@@ -26,14 +26,16 @@ SOFTWARE.
 #include <cstdio>
 #include <csignal>
 
-#if defined(Y_OS_WIN) && defined(__argv) && !defined(EDITOR_NO_CRASH_HANDLER)
+#if defined(Y_OS_WIN) && defined(__argv) && __has_include(<dbghelp.h>)
+#if !defined(EDITOR_NO_CRASH_HANDLER)
 #define EDITOR_WIN_CRASH_HANLDER
+#endif
 #endif
 
 
 #ifdef EDITOR_WIN_CRASH_HANLDER
 #include <windows.h>
-#include <imagehlp.h>
+#include <dbghelp.h>
 #endif
 
 namespace editor {
@@ -79,14 +81,18 @@ static void print_stacktrace() {
 	sym_cleanup(process);
 }
 
-static void handler(int) {
+static void handler(int sig) {
 	// calling basically anything here is UB but we don't really care
-	std::printf("Program has crashed, dumping stack:\n");
+	if(sig == SIGABRT) {
+		std::printf("Program has aborted, dumping stack:\n");
+	} else {
+		std::printf("Program has crashed, dumping stack:\n");
+	}
 	print_stacktrace();
 }
 
 bool setup_handler() {
-	if(HMODULE img_help = ::LoadLibrary("imagehlp.dll")) {
+	if(HMODULE img_help = ::LoadLibrary("dbghelp.dll")) {
 		sym_init = reinterpret_cast<decltype(sym_init)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymInitialize")));
 		sym_cleanup = reinterpret_cast<decltype(sym_cleanup)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymCleanup")));
 		func_table = reinterpret_cast<decltype(func_table)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymFunctionTableAccess64")));
@@ -96,6 +102,7 @@ bool setup_handler() {
 	if(sym_init && sym_cleanup && func_table && module_base && stack_walk) {
 		std::signal(SIGSEGV, handler);
 		std::signal(SIGILL, handler);
+		std::signal(SIGABRT, handler);
 		return true;
 	}
 	return false;
