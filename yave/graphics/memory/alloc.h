@@ -82,10 +82,14 @@ inline u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties,
 
 inline vk::DeviceMemory alloc_memory(DevicePtr dptr, usize size, u32 type_bits, MemoryType type) {
 	y_profile();
-	return dptr->vk_device().allocateMemory(vk::MemoryAllocateInfo()
-				.setAllocationSize(size)
-				.setMemoryTypeIndex(get_memory_type(dptr->physical_device().vk_memory_properties(), type_bits, type))
-			);
+	try {
+		return dptr->vk_device().allocateMemory(vk::MemoryAllocateInfo()
+					.setAllocationSize(size)
+					.setMemoryTypeIndex(get_memory_type(dptr->physical_device().vk_memory_properties(), type_bits, type))
+				);
+	} catch(std::exception& e) {
+		y_fatal("Failed to allocate memory: %", e.what());
+	}
 }
 
 inline vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs, MemoryType type) {

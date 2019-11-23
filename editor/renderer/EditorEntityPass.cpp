@@ -78,7 +78,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 	const ecs::EntityWorld& world = scene_view.world();
 
 	{
-		auto mapping = pass->resources()->mapped_buffer(pass_buffer);
+		auto mapping = pass->resources().mapped_buffer(pass_buffer);
 		mapping->view_proj = scene_view.camera().viewproj_matrix();
 		mapping->viewport_size = pass->framebuffer().size();
 		mapping->size = 64.0f;
@@ -86,7 +86,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 	}
 
 	{
-		const auto vertices = pass->resources()->buffer<BufferUsage::AttributeBit>(vertex_buffer);
+		const auto vertices = pass->resources().buffer<BufferUsage::AttributeBit>(vertex_buffer);
 		recorder.bind_attrib_buffers(vertices);
 	}
 
@@ -101,7 +101,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 		const auto [uv, size] = compute_uv_size(ICON_FA_LIGHTBULB);
 
 		usize index = 0;
-		auto vertex_mapping = pass->resources()->mapped_buffer(vertex_buffer);
+		auto vertex_mapping = pass->resources().mapped_buffer(vertex_buffer);
 
 		auto push_entity = [&](ecs::EntityIndex entity_index) {
 				if(const TransformableComponent* tr = world.component<TransformableComponent>(world.id_from_index(entity_index))) {

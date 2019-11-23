@@ -89,9 +89,9 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 	builder.add_uniform_input(key_value, 0, PipelineStage::FragmentBit);
 	builder.map_update(key_value);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-		self->resources()->mapped_buffer(key_value)[0] = settings.key_value;
+		self->resources().mapped_buffer(key_value)[0] = settings.key_value;
 		if(!settings.auto_exposure) {
-			TypedMapping<uniform::ToneMappingParams> mapping = self->resources()->mapped_buffer(params);
+			TypedMapping<uniform::ToneMappingParams> mapping = self->resources().mapped_buffer(params);
 			mapping[0] = uniform::ToneMappingParams();
 		}
 

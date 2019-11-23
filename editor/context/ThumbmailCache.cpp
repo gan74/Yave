@@ -109,7 +109,8 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 
 ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
 		ContextLinked(ctx),
-		_size(size) {
+		_size(size),
+		_resource_pool(std::make_shared<FrameGraphResourcePool>(ctx->device())) {
 }
 
 void ThumbmailCache::clear() {
@@ -248,7 +249,7 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 	{
 		const auto region = recorder.region("Thumbmail cache render");
 
-		FrameGraph graph(context()->resource_pool());
+		FrameGraph graph(_resource_pool);
 		RendererSettings settings;
 		settings.tone_mapping.auto_exposure = false;
 		const DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), device()->device_resources().ibl_probe(), settings);

@@ -52,7 +52,7 @@ class FrameGraphPass final : NonMovable {
 		FrameGraphPass(std::string_view name, FrameGraph* parent, usize index);
 
 		const core::String& name() const;
-		const FrameGraphResourcePool* resources() const;
+		const FrameGraphFrameResources& resources() const;
 
 		const Framebuffer& framebuffer() const;
 		core::Span<DescriptorSet> descriptor_sets() const;
@@ -63,8 +63,8 @@ class FrameGraphPass final : NonMovable {
 		friend class FrameGraph;
 		friend class FrameGraphPassBuilder;
 
-		void init_framebuffer(FrameGraphResourcePool* pool);
-		void init_descriptor_sets(FrameGraphResourcePool* pool);
+		void init_framebuffer(const FrameGraphFrameResources& resources);
+		void init_descriptor_sets(const FrameGraphFrameResources& resources);
 
 		render_func _render = [](CmdBufferRecorder&, const FrameGraphPass*) {};
 		core::String _name;

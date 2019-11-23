@@ -73,7 +73,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 		ambient_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 				PushData push_data{camera_data, 0};
-				TypedMapping<uniform::DirectionalLight> mapping = self->resources()->mapped_buffer(directional_buffer);
+				TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
 				for(auto [l] : scene.world().view(DirectionalLightArchetype()).components()) {
 					static_assert(std::is_reference_v<decltype(l)>);
 					mapping[push_data.light_count++] = uniform::DirectionalLight{
@@ -102,7 +102,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 		point_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 				PushData push_data{camera_data, 0};
-				TypedMapping<uniform::PointLight> mapping = self->resources()->mapped_buffer(light_buffer);
+				TypedMapping<uniform::PointLight> mapping = self->resources().mapped_buffer(light_buffer);
 				for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
 					static_assert(std::is_reference_v<decltype(t)> && std::is_reference_v<decltype(l)>);
 					mapping[push_data.light_count++] = uniform::PointLight{

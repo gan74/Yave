@@ -35,84 +35,27 @@ namespace yave {
 
 class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 
-	Y_TODO(Split resource alloc and id mapping into two classes)
-
 	public:
 		FrameGraphResourcePool(DevicePtr dptr);
 		~FrameGraphResourcePool();
 
-		template<ImageUsage Usage>
-		ImageView<Usage> image(FrameGraphImageId res) const {
-			return TransientImageView<Usage>(find(res));
-		}
 
-		template<BufferUsage Usage>
-		SubBuffer<Usage> buffer(FrameGraphBufferId res) const {
-			return TransientSubBuffer<Usage>(find(res));
-		}
+		TransientImage<> create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+		TransientBuffer create_buffer(usize byte_size, BufferUsage usage, MemoryType memory);
 
-		template<BufferUsage Usage, typename T>
-		TypedSubBuffer<T, Usage> buffer(FrameGraphTypedBufferId<T> res) const {
-			return TypedSubBuffer<T, Usage>(TransientSubBuffer<Usage>(find(res)));
-		}
+		void release(TransientImage<> image);
+		void release(TransientBuffer buffer);
 
-		template<typename T>
-		TypedMapping<T> mapped_buffer(FrameGraphMutableTypedBufferId<T> res) const {
-			constexpr BufferUsage usage = BufferUsage::None;
-			constexpr MemoryType memory = MemoryType::CpuVisible;
-			const TypedSubBuffer<T, usage, memory> subbuffer(TransientSubBuffer<usage, memory>(find(res)));
-			return TypedMapping<T>(subbuffer);
-		}
-
-		void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
-		void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
-
-		void create_alias(FrameGraphImageId dst, FrameGraphImageId src);
-
-		void release(FrameGraphImageId res);
-		void release(FrameGraphBufferId res);
-
-		bool is_alive(FrameGraphImageId res) const;
-		bool is_alive(FrameGraphBufferId res) const;
-
-		ImageBarrier barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const;
-		BufferBarrier barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const;
-
-		const ImageBase& image_base(FrameGraphImageId res) const;
-		const BufferBase& buffer_base(FrameGraphBufferId res) const;
-
-		bool are_aliased(FrameGraphImageId a, FrameGraphImageId b) const;
-
-		usize allocated_resources() const;
-
-		u32 create_resource_id();
+		void garbage_collect();
 
 	private:
-		const TransientImage<>& find(FrameGraphImageId res) const;
-		const TransientBuffer& find(FrameGraphBufferId res) const;
-
-		struct ImageContainer {
-			template<typename... Args>
-			ImageContainer(Args&&... args) : image(y_fwd(args)...) {}
-
-			const TransientImage<> image;
-			usize aliases = 0;
-		};
-
-		ImageContainer* create_image_from_pool(ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+		bool create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
 		bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory);
 
-		using hash_t = std::hash<FrameGraphResourceId>;
-		std::unordered_map<FrameGraphImageId, ImageContainer*, hash_t> _images;
-		std::unordered_map<FrameGraphBufferId, TransientBuffer, hash_t> _buffers;
+		core::Vector<std::pair<TransientImage<>, u64>> _images;
+		core::Vector<std::pair<TransientBuffer, u64>> _buffers;
 
-		core::Vector<ImageContainer*> _released_images;
-		core::Vector<TransientBuffer> _released_buffers;
-
-		u32 _next_id = 0;
-
-
-		core::Vector<std::unique_ptr<ImageContainer>> _image_storage;
+		u64 _collection_id = 0;
 };
 
 }

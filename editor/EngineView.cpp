@@ -80,11 +80,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 		builder.add_uniform_input(buffer);
 		builder.map_update(buffer);
 		builder.set_render_func([=, index = u32(_view), &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-				auto out = std::make_unique<TextureView>(self->resources()->image<ImageUsage::TextureBit>(output_image));
+				auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
 				output = out.get();
 				recorder.keep_alive(std::move(out));
 
-				TypedMapping<u32> mapping = self->resources()->mapped_buffer(buffer);
+				TypedMapping<u32> mapping = self->resources().mapped_buffer(buffer);
 				mapping[0] = index;
 
 				auto render_pass = recorder.bind_framebuffer(self->framebuffer());

@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPH_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPH_H
 
-#include "FrameGraphResourcePool.h"
+#include "FrameGraphFrameResources.h"
 #include "FrameGraphPassBuilder.h"
 
 #include <yave/graphics/barriers/Barrier.h>
@@ -68,10 +68,10 @@ class FrameGraph : NonCopyable {
 	};
 
 	public:
-		FrameGraph(const std::shared_ptr<FrameGraphResourcePool>& pool);
+		FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool);
 
 		DevicePtr device() const;
-		const FrameGraphResourcePool* resources() const;
+		const FrameGraphFrameResources& resources() const;
 
 		void render(CmdBufferRecorder& recorder) &&;
 
@@ -104,9 +104,7 @@ class FrameGraph : NonCopyable {
 		void alloc_resources();
 		void alloc_image(FrameGraphImageId res, const ImageCreateInfo& info) const;
 
-		void release_resources(CmdBufferRecorder& recorder);
-
-		std::shared_ptr<FrameGraphResourcePool> _pool;
+		FrameGraphFrameResources _resources;
 
 		core::Vector<std::unique_ptr<FrameGraphPass>> _passes;
 

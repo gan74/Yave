@@ -48,14 +48,14 @@ static usize render_world(ContextPtr ctx,
 
 	const ecs::EntityWorld& world = scene_view.world();
 
-	auto camera_mapping = pass->resources()->mapped_buffer(camera_buffer);
+	auto camera_mapping = pass->resources().mapped_buffer(camera_buffer);
 	camera_mapping[0] = scene_view.camera().viewproj_matrix();
 
-	auto transform_mapping = pass->resources()->mapped_buffer(transform_buffer);
-	const auto transforms = pass->resources()->buffer<BufferUsage::AttributeBit>(transform_buffer);
+	auto transform_mapping = pass->resources().mapped_buffer(transform_buffer);
+	const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
 
-	auto id_mapping = pass->resources()->mapped_buffer(id_buffer);
-	const auto ids = pass->resources()->buffer<BufferUsage::AttributeBit>(id_buffer);
+	auto id_mapping = pass->resources().mapped_buffer(id_buffer);
+	const auto ids = pass->resources().buffer<BufferUsage::AttributeBit>(id_buffer);
 
 	recorder.bind_attrib_buffers({}, {transforms, ids});
 	recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});

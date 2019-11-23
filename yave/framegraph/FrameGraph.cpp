@@ -80,7 +80,7 @@ static auto&& check_exists(C& c, T t) {
 }
 
 template<typename C, typename B>
-static void build_barriers(const C& resources, B& barriers, std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
+static void build_barriers(const C& resources, B& barriers, std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphFrameResources& frame_res) {
 	for(auto&& [res, info] : resources) {
 		const auto it = to_barrier.find(res);
 		bool exists = it != to_barrier.end();
@@ -94,7 +94,7 @@ static void build_barriers(const C& resources, B& barriers, std::unordered_map<F
 		}
 
 		if(exists) {
-			barriers.emplace_back(pool->barrier(res, it->second, info.stage));
+			barriers.emplace_back(frame_res.barrier(res, it->second, info.stage));
 			it->second = info.stage;
 		} else {
 			to_barrier[res] = info.stage;
@@ -103,10 +103,10 @@ static void build_barriers(const C& resources, B& barriers, std::unordered_map<F
 }
 
 static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, FrameGraphMutableImageId dst,
-						std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
+						std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, const FrameGraphFrameResources& resources) {
 
 	Y_TODO(We might end up barriering twice here)
-	if(pool->are_aliased(src, dst)) {
+	if(resources.are_aliased(src, dst)) {
 		if(const auto it = to_barrier.find(src); it != to_barrier.end()) {
 			to_barrier[dst] = it->second;
 			to_barrier.erase(it);
@@ -114,29 +114,29 @@ static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, Frame
 	} else {
 		to_barrier.erase(src);
 		to_barrier.erase(dst);
-		recorder.barriered_copy(pool->image_base(src), pool->image_base(dst));
+		recorder.barriered_copy(resources.image_base(src), resources.image_base(dst));
 	}
 }
 
 [[maybe_unused]]
 static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> copies,
-						std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphResourcePool* pool) {
+						std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, const FrameGraphFrameResources& resources) {
 
 	for(auto [src, dst] : copies) {
-		copy_image(recorder, src, dst, to_barrier, pool);
+		copy_image(recorder, src, dst, to_barrier, resources);
 	}
 }
 
 
-FrameGraph::FrameGraph(const std::shared_ptr<FrameGraphResourcePool>& pool) : _pool(pool) {
+FrameGraph::FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool) : _resources(std::move(pool)) {
 }
 
 DevicePtr FrameGraph::device() const {
-	return _pool->device();
+	return _resources.device();
 }
 
-const FrameGraphResourcePool* FrameGraph::resources() const {
-	return _pool.get();
+const FrameGraphFrameResources& FrameGraph::resources() const {
+	return _resources;
 }
 
 void FrameGraph::render(CmdBufferRecorder& recorder) && {
@@ -162,23 +162,23 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 			y_profile_zone("prepare");
 			while(copy_index < _image_copies.size() && _image_copies[copy_index].pass_index == pass->_index) {
 				// copie_image will not do anything if the two are aliased
-				copy_image(recorder, _image_copies[copy_index].src, _image_copies[copy_index].dst, to_barrier, _pool.get());
+				copy_image(recorder, _image_copies[copy_index].src, _image_copies[copy_index].dst, to_barrier, _resources);
 				++copy_index;
 			}
 		}
 
 		{
 			y_profile_zone("init");
-			pass->init_framebuffer(_pool.get());
-			pass->init_descriptor_sets(_pool.get());
+			pass->init_framebuffer(_resources);
+			pass->init_descriptor_sets(_resources);
 		}
 
 		{
 			y_profile_zone("barriers");
 			buffer_barriers.make_empty();
 			image_barriers.make_empty();
-			build_barriers(pass->_buffers, buffer_barriers, to_barrier, _pool.get());
-			build_barriers(pass->_images, image_barriers, to_barrier, _pool.get());
+			build_barriers(pass->_buffers, buffer_barriers, to_barrier, _resources);
+			build_barriers(pass->_images, image_barriers, to_barrier, _resources);
 			recorder.barriers(buffer_barriers, image_barriers);
 		}
 
@@ -190,8 +190,6 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 
 
 	Y_TODO(put resource barriers at the end of the graph to prevent clash with whatever comes after)
-
-	release_resources(recorder);
 }
 
 void FrameGraph::alloc_resources() {
@@ -222,14 +220,14 @@ void FrameGraph::alloc_resources() {
 
 	for(auto&& [res, info] : images) {
 		if(info.alias.is_valid()) {
-			_pool->create_alias(res, info.alias);
+			_resources.create_alias(res, info.alias);
 		} else {
 			if(!info.has_usage()) {
 				log_msg(fmt("Image declared by % has no usage.", pass_name(info.first_use)), Log::Warning);
 				// All images should support texturing
 				info.usage = info.usage | ImageUsage::TextureBit;
 			}
-			_pool->create_image(res, info.format, info.size, info.usage);
+			_resources.create_image(res, info.format, info.size, info.usage);
 		}
 	}
 
@@ -237,39 +235,7 @@ void FrameGraph::alloc_resources() {
 		if(is_none(info.usage)) {
 			y_fatal("Unused frame graph buffer resource.");
 		}
-		_pool->create_buffer(res, info.byte_size, info.usage, info.memory_type);
-	}
-}
-
-void FrameGraph::release_resources(CmdBufferRecorder& recorder) {
-	y_profile();
-	struct BufferRelease : NonCopyable {
-		FrameGraphBufferId res;
-		FrameGraphResourcePool* pool = nullptr;
-
-		BufferRelease(FrameGraphBufferId r, FrameGraphResourcePool* p) : res(r), pool(p) {
-		}
-
-		BufferRelease(BufferRelease&& other) {
-			std::swap(other.res, res);
-			std::swap(other.pool, pool);
-		}
-
-		~BufferRelease() {
-			if(pool) {
-				pool->release(res);
-			}
-		}
-	};
-
-
-	auto buffers = core::vector_with_capacity<BufferRelease>(_buffers.size());
-	std::transform(_buffers.begin(), _buffers.end(), std::back_inserter(buffers), [=](const auto& buff) { return BufferRelease(buff.first, _pool.get()) ; });
-	recorder.keep_alive(std::pair{_pool, std::move(buffers)});
-
-	Y_TODO(Images might get reused by an other thread before the command buffer is finished)
-	for(auto&& i : _images) {
-		_pool->release(i.first);
+		_resources.create_buffer(res, info.byte_size, info.usage, info.memory_type);
 	}
 }
 
@@ -284,7 +250,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
 	FrameGraphMutableImageId res;
-	res._id = _pool->create_resource_id();
+	res._id = _resources.create_resource_id();
 	auto& r = _images[res];
 	r.size = size;
 	r.format = format;
@@ -293,7 +259,7 @@ FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const mat
 
 FrameGraphMutableBufferId FrameGraph::declare_buffer(usize byte_size) {
 	FrameGraphMutableBufferId res;
-	res._id = _pool->create_resource_id();
+	res._id = _resources.create_resource_id();
 	auto& r = _buffers[res];
 	r.byte_size = byte_size;
 	return res;

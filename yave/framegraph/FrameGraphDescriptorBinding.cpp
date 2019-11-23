@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "FrameGraphDescriptorBinding.h"
-#include "FrameGraphResourcePool.h"
+#include "FrameGraphFrameResources.h"
 
 namespace yave {
 
@@ -57,18 +57,18 @@ FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(
 	return _external;
 }*/
 
-Descriptor FrameGraphDescriptorBinding::create_descriptor(FrameGraphResourcePool* pool) const {
+Descriptor FrameGraphDescriptorBinding::create_descriptor(const FrameGraphFrameResources& resources) const {
 	switch(_type) {
 		case BindingType::External:
 			return _external;
 		case BindingType::InputImage:
-			return pool->image<ImageUsage::TextureBit>(_image);
+			return resources.image<ImageUsage::TextureBit>(_image);
 		case BindingType::StorageImage:
-			return pool->image<ImageUsage::StorageBit>(_image);
+			return resources.image<ImageUsage::StorageBit>(_image);
 		case BindingType::InputBuffer:
-			return pool->buffer<BufferUsage::UniformBit>(_buffer);
+			return resources.buffer<BufferUsage::UniformBit>(_buffer);
 		case BindingType::StorageBuffer:
-			return pool->buffer<BufferUsage::StorageBit>(_buffer);
+			return resources.buffer<BufferUsage::StorageBit>(_buffer);
 
 		default:
 		break;

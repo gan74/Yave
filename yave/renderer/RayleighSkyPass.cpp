@@ -62,7 +62,7 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 
 		params_builder.add_storage_output(sky_light_buffer);
 		params_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			TypedMapping<uniform::RayleighSky> mapping = self->resources()->mapped_buffer(buffer);
+			TypedMapping<uniform::RayleighSky> mapping = self->resources().mapped_buffer(buffer);
 			mapping[0] = sky_data;
 
 			const auto& program = recorder.device()->device_resources()[DeviceResources::SkyLightParamsProgram];

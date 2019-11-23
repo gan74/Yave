@@ -32,6 +32,8 @@ SOFTWARE.
 #include <yave/ecs/EntityWorld.h>
 #include <yave/scene/SceneView.h>
 
+#include <yave/framegraph/FrameGraphResourcePool.h>
+
 #include <future>
 
 namespace editor {
@@ -83,6 +85,8 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 
 		std::unordered_map<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
 		core::Vector<std::future<ThumbmailFunc>> _requests;
+
+		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
 };
 
 }

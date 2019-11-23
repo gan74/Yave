@@ -32,7 +32,7 @@ const core::String& FrameGraphPass::name() const {
 	return _name;
 }
 
-const FrameGraphResourcePool* FrameGraphPass::resources() const {
+const FrameGraphFrameResources& FrameGraphPass::resources() const {
 	return _parent->resources();
 }
 
@@ -51,7 +51,7 @@ void FrameGraphPass::render(CmdBufferRecorder& recorder) && {
 	_render(recorder, this);
 }
 
-void FrameGraphPass::init_framebuffer(FrameGraphResourcePool* pool) {
+void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources) {
 	y_profile();
 	if(_depth.image.is_valid() || _colors.size()) {
 		auto declared_here = [&](FrameGraphImageId id) {
@@ -61,22 +61,22 @@ void FrameGraphPass::init_framebuffer(FrameGraphResourcePool* pool) {
 
 		Framebuffer::DepthAttachment depth;
 		if(_depth.image.is_valid()) {
-			depth = Framebuffer::DepthAttachment(pool->image<ImageUsage::DepthBit>(_depth.image), declared_here(_depth.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
+			depth = Framebuffer::DepthAttachment(resources.image<ImageUsage::DepthBit>(_depth.image), declared_here(_depth.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
 		}
 		auto colors = core::vector_with_capacity<Framebuffer::ColorAttachment>(_colors.size());
 		for(auto&& color : _colors) {
-			colors << Framebuffer::ColorAttachment(pool->image<ImageUsage::ColorBit>(color.image), declared_here(color.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
+			colors << Framebuffer::ColorAttachment(resources.image<ImageUsage::ColorBit>(color.image), declared_here(color.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
 		}
-		_framebuffer = Framebuffer(pool->device(), depth, colors);
+		_framebuffer = Framebuffer(resources.device(), depth, colors);
 	}
 }
 
-void FrameGraphPass::init_descriptor_sets(FrameGraphResourcePool* pool) {
+void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resources) {
 	y_profile();
 	for(const auto& set : _bindings) {
 		auto bindings = core::vector_with_capacity<Descriptor>(set.size());
-		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [=](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(pool); });
-		_descriptor_sets << DescriptorSet(pool->device(), bindings);
+		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });
+		_descriptor_sets << DescriptorSet(resources.device(), bindings);
 	}
 }
 

@@ -35,84 +35,42 @@ FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) : DeviceLinked(dp
 }
 
 FrameGraphResourcePool::~FrameGraphResourcePool() {
-	if(!_images.empty() || !_buffers.empty()) {
-		y_fatal("Not all resources have been released.");
-	}
 }
 
-void FrameGraphResourcePool::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
-	res.check_valid();
+TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
 	check_usage(usage);
 
-	auto& image = _images[res];
-	if(image) {
-		y_fatal("Image already exists.");
+	TransientImage<> image;
+	if(!create_image_from_pool(image, format, size, usage)) {
+		image = TransientImage<>(device(), format, usage, size);
 	}
 
-	if(!(image = create_image_from_pool(format, size, usage))) {
-		_image_storage << std::make_unique<ImageContainer>(device(), format, usage, size);
-		image = _image_storage.last().get();
-	}
+	return image;
 }
 
-void FrameGraphResourcePool::create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory) {
-	res.check_valid();
+TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsage usage, MemoryType memory) {
 	check_usage(usage);
 
 	if(memory == MemoryType::DontCare) {
 		memory = prefered_memory_type(usage);
 	}
-	auto& buffer = _buffers[res];
-	if(!buffer.is_null()) {
-		y_fatal("Buffer already exists.");
-	}
+
+	TransientBuffer buffer;
 	if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {
 		buffer = TransientBuffer(device(), byte_size, usage, memory);
 	}
+
+	return buffer;
 }
 
+bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+	for(auto it = _images.begin(); it != _images.end(); ++it) {
+		auto& img = it->first;
 
-void FrameGraphResourcePool::create_alias(FrameGraphImageId dst, FrameGraphImageId src) {
-	dst.check_valid();
-	src.check_valid();
+		if(img.format() == format && img.size() == size && img.usage() == usage) {
 
-	const auto& orig = _images[src];
-	if(!orig) {
-		y_fatal("Source image doesn't exists.");
-	}
-
-	auto& image = _images[dst];
-	if(image) {
-		y_fatal("Destination image already exists.");
-	}
-
-	image = orig;
-}
-
-
-FrameGraphResourcePool::ImageContainer* FrameGraphResourcePool::create_image_from_pool(ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
-	for(auto it = _released_images.begin(); it != _released_images.end(); ++it) {
-		ImageContainer* img = *it;
-		if(img->image.format() == format && img->image.size() == size && img->image.usage() == usage) {
-			y_debug_assert(img->aliases == 0);
-			_released_images.erase_unordered(it);
-			return img;
-		}
-	}
-	return nullptr;
-}
-
-
-bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory) {
-	for(auto it = _released_buffers.begin(); it != _released_buffers.end(); ++it) {
-		auto& buffer = *it;
-
-		if(buffer.byte_size() == byte_size &&
-		   buffer.usage() == usage &&
-		   (buffer.memory_type() == memory || memory == MemoryType::DontCare)) {
-
-			res = std::move(buffer);
-			_released_buffers.erase_unordered(it);
+			res = std::move(img);
+			_images.erase_unordered(it);
 			return true;
 		}
 	}
@@ -120,95 +78,49 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 }
 
 
-void FrameGraphResourcePool::release(FrameGraphImageId res) {
-	res.check_valid();
-	if(const auto it = _images.find(res); it != _images.end()) {
-		if(it->second->aliases) {
-			--(it->second->aliases);
-		} else {
-			_released_images << it->second;
-			_images.erase(it);
-		}
-	} else {
-		y_fatal("Released image resource does not belong to pool.");
-	}
-}
+bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory) {
+	for(auto it = _buffers.begin(); it != _buffers.end(); ++it) {
+		auto& buffer = it->first;
 
-void FrameGraphResourcePool::release(FrameGraphBufferId res) {
-	res.check_valid();
-	if(const auto it = _buffers.find(res); it != _buffers.end()) {
-		_released_buffers << std::move(it->second);
-		_buffers.erase(it);
-	} else {
-		y_fatal("Released buffer resource does not belong to pool.");
-	}
-}
+		if(buffer.byte_size() == byte_size &&
+		   buffer.usage() == usage &&
+		   (buffer.memory_type() == memory || memory == MemoryType::DontCare)) {
 
-bool FrameGraphResourcePool::is_alive(FrameGraphImageId res) const {
-	return _images.find(res) != _images.end();
-}
-
-bool FrameGraphResourcePool::is_alive(FrameGraphBufferId res) const {
-	return _buffers.find(res) != _buffers.end();
-}
-
-bool FrameGraphResourcePool::are_aliased(FrameGraphImageId a, FrameGraphImageId b) const {
-	a.check_valid();
-	b.check_valid();
-	if(const auto a_it = _images.find(a); a_it != _images.end()) {
-		if(const auto b_it = _images.find(b); b_it != _images.end()) {
-			return a_it->second == b_it->second;
+			res = std::move(buffer);
+			_buffers.erase_unordered(it);
+			return true;
 		}
 	}
 	return false;
 }
 
-ImageBarrier FrameGraphResourcePool::barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const {
-	res.check_valid();
-	return ImageBarrier(_images.find(res)->second->image, src, dst);
+
+void FrameGraphResourcePool::release(TransientImage<> image) {
+	_images.emplace_back(std::move(image), _collection_id);
 }
 
-BufferBarrier FrameGraphResourcePool::barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const {
-	res.check_valid();
-	return BufferBarrier(_buffers.find(res)->second, src, dst);
+void FrameGraphResourcePool::release(TransientBuffer buffer) {
+	_buffers.emplace_back(std::move(buffer), _collection_id);
 }
 
-const ImageBase& FrameGraphResourcePool::image_base(FrameGraphImageId res) const {
-	return find(res);
-}
+void FrameGraphResourcePool::garbage_collect() {
+	const u64 max_col_count = 3;
 
-const BufferBase& FrameGraphResourcePool::buffer_base(FrameGraphBufferId res) const {
-	return find(res);
-}
-
-usize FrameGraphResourcePool::allocated_resources() const {
-	return _buffers.size() + _released_buffers.size() + _image_storage.size();
-}
-
-u32 FrameGraphResourcePool::create_resource_id() {
-	return _next_id++;
-}
-
-
-const TransientImage<>& FrameGraphResourcePool::find(FrameGraphImageId res) const {
-	if(!res.is_valid()) {
-		y_fatal("Invalid image resource.");
-	}
-	if(const auto it = _images.find(res); it != _images.end()) {
-		return it->second->image;
+	for(usize i = 0; i < _images.size(); ++i) {
+		if(_images[i].second + max_col_count < _collection_id) {
+			_images.erase_unordered(_images.begin() + i);
+			--i;
+		}
 	}
 
-	return y_fatal("Image resource doesn't exist.");
-}
+	for(usize i = 0; i < _buffers.size(); ++i) {
+		if(_buffers[i].second + max_col_count < _collection_id) {
+			_buffers.erase_unordered(_buffers.begin() + i);
+			--i;
+		}
+	}
 
-const TransientBuffer& FrameGraphResourcePool::find(FrameGraphBufferId res) const {
-	if(!res.is_valid()) {
-		y_fatal("Invalid buffer resource.");
-	}
-	if(const auto it = _buffers.find(res); it != _buffers.end()) {
-		return it->second;
-	}
-	return y_fatal("Buffer resource doesn't exist.");
+	++_collection_id;
 }
 
 }

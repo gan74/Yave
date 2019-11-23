@@ -36,6 +36,7 @@ class FrameGraph;
 class FrameGraphPass;
 class FrameGraphPassBuilder;
 class FrameGraphResourcePool;
+class FrameGraphFrameResources;
 
 
 /*template<bool Mutable = false>
