@@ -65,7 +65,6 @@ class EditorContext : NonMovable, public DeviceLinked {
 		const FileSystemModel* filesystem() const;
 		const std::shared_ptr<FrameGraphResourcePool>& resource_pool() const;
 
-
 		const EditorResources& resources() const;
 
 		EditorState& editor_state();

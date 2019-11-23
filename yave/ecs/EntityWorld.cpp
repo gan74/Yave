@@ -93,5 +93,11 @@ void EntityWorld::add_required_components(EntityId id) {
 	}
 }
 
+void EntityWorld::flush_reload(AssetLoader& loader) {
+	for(const auto& p : _component_containers) {
+		p.second->post_deserialize_poly(loader);
+	}
+}
+
 }
 }

@@ -202,6 +202,8 @@ class EntityWorld : NonCopyable {
 		std::string_view component_type_name(ComponentTypeIndex type) const;
 
 
+		void flush_reload(AssetLoader& loader);
+
 		y_serde3(_entities, _component_containers)
 
 	private:

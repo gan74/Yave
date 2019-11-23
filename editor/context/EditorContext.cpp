@@ -62,6 +62,7 @@ void EditorContext::flush_reload() {
 		_thumb_cache.clear();
 		_selection.flush_reload();
 		_ui.refresh_all();
+		_world.flush_reload(loader());
 	});
 }
 
