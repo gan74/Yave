@@ -136,7 +136,7 @@ if(_style == Style::Corporate || _style == Style::Corporate3D) {
 	colors[ImGuiCol_TabUnfocusedActive]     = dImVec4(0.33f, 0.33f, 0.33f, 1.00f);
 	colors[ImGuiCol_DockingPreview]         = dImVec4(0.85f, 0.85f, 0.85f, 0.28f);
 
-	style.PopupRounding = 3;
+	style.PopupRounding = 0;
 
 	style.WindowPadding = ImVec2(4, 4);
 	style.FramePadding  = ImVec2(6, 4);
@@ -151,14 +151,14 @@ if(_style == Style::Corporate || _style == Style::Corporate3D) {
 	style.PopupBorderSize  = 1;
 	style.FrameBorderSize  = is_3D;
 
-	style.WindowRounding    = 3;
-	style.ChildRounding     = 3;
-	style.FrameRounding     = 3;
+	style.WindowRounding    = 0;
+	style.ChildRounding     = 2;
+	style.FrameRounding     = 0;
 	style.ScrollbarRounding = 2;
-	style.GrabRounding      = 3;
+	style.GrabRounding      = 2;
 
 	style.TabBorderSize     = is_3D;
-	style.TabRounding       = 3;
+	style.TabRounding       = 0;
 
 	if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 		style.WindowRounding = 0.0f;

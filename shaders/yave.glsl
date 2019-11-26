@@ -119,7 +119,7 @@ vec2 hammersley(uint i, uint N) {
 }
 
 vec2 to_equirec(vec3 v) {
-	return vec2(atan(-v.y, v.x), asin(v.z)) * vec2(0.1591, 0.3183) + vec2(0.5);
+	return -vec2(atan(-v.y, v.x), asin(v.z)) * vec2(0.1591, 0.3183) + vec2(0.5);
 }
 
 vec3 cube_dir(vec2 texCoord, uint side) {

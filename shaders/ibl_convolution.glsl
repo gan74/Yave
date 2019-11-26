@@ -47,7 +47,7 @@ vec3 diffuse_convolution(sampler2D envmap, vec3 normal) {
 
 
 vec3 specular_convolution(samplerCube envmap, vec3 N, float roughness) {
-	vec3 V = N;
+	const vec3 V = N;
 	float total = 0.0;
 	vec3 acc = vec3(0.0);
 	const uint sample_count = 1024;
@@ -65,7 +65,7 @@ vec3 specular_convolution(samplerCube envmap, vec3 N, float roughness) {
 }
 
 vec3 specular_convolution(sampler2D envmap, vec3 N, float roughness) {
-	vec3 V = N;
+	const vec3 V = N;
 	float total = 0.0;
 	vec3 acc = vec3(0.0);
 	const uint sample_count = 1024;

@@ -37,10 +37,13 @@ class EditorComponent {
 		const core::String& name() const;
 		void set_name(core::String name);
 
+		math::Vec3& euler();
+
 		y_serde3(_name)
 
 	private:
 		core::String _name = "Unnamed entity";
+		math::Vec3 _euler;
 };
 
 }

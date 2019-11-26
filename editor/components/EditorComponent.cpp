@@ -35,4 +35,8 @@ void EditorComponent::set_name(core::String name) {
 	_name = std::move(name);
 }
 
+math::Vec3& EditorComponent::euler() {
+	return _euler;
+}
+
 }

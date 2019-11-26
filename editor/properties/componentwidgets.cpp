@@ -79,11 +79,13 @@ static void light_widget(T* light) {
 					  ImGuiColorEditFlags_InputRGB;
 
 	const math::Vec4 color(light->color(), 1.0f);
+
+
+	ImGui::Text("Light color");
+	ImGui::NextColumn();
 	if(ImGui::ColorButton("Color", color, color_flags)) {
 		ImGui::OpenPopup("Color");
 	}
-	ImGui::SameLine();
-	ImGui::Text("Light color");
 
 	if(ImGui::BeginPopup("Color")) {
 		ImGui::ColorPicker3("##lightpicker", light->color().begin(), color_flags);
@@ -96,7 +98,11 @@ static void light_widget(T* light) {
 		ImGui::EndPopup();
 	}
 
-	ImGui::DragFloat("Intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max());
+
+	ImGui::NextColumn();
+	ImGui::Text("Intensity");
+	ImGui::NextColumn();
+	ImGui::DragFloat("", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max());
 }
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
@@ -110,10 +116,21 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 	}
 
 
-	light_widget(light);
+	ImGui::Columns(2);
+	{
+		light_widget(light);
 
-	ImGui::DragFloat("Radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
-	ImGui::DragFloat("Falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
+		ImGui::NextColumn();
+		ImGui::Text("Radius");
+		ImGui::NextColumn();
+		ImGui::DragFloat("", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+
+		ImGui::NextColumn();
+		ImGui::Text("Falloff");
+		ImGui::NextColumn();
+		ImGui::DragFloat("", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
+	}
+	ImGui::Columns(1);
 }
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
@@ -126,9 +143,17 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		return;
 	}
 
-	light_widget(light);
 
-	ImGui::InputFloat3("Direction", light->direction().data(), "%.2f");
+	ImGui::Columns(2);
+	{
+		light_widget(light);
+
+		ImGui::NextColumn();
+		ImGui::Text("Direction");
+		ImGui::NextColumn();
+		ImGui::InputFloat3("", light->direction().data(), "%.2f");
+	}
+	ImGui::Columns(1);
 }
 
 
@@ -142,20 +167,30 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		return;
 	}
 
-	light_widget(&sky->sun());
+	ImGui::Columns(2);
+	{
+		light_widget(&sky->sun());
 
-	ImGui::InputFloat3("Direction", sky->sun().direction().data(), "%.2f");
+		ImGui::NextColumn();
+		ImGui::Text("Direction");
+		ImGui::NextColumn();
+		ImGui::InputFloat3("", sky->sun().direction().data(), "%.2f");
 
-	math::Vec3 beta = sky->beta_rayleight() * 1e6f;
-	if(ImGui::InputFloat3("Beta", beta.data(), "%.2f")) {
-		sky->beta_rayleight() = beta * 1e-6f;
+
+		ImGui::NextColumn();
+		ImGui::Text("Beta");
+		ImGui::NextColumn();
+		math::Vec3 beta = sky->beta_rayleight() * 1e6f;
+		if(ImGui::InputFloat3("", beta.data(), "%.2f")) {
+			sky->beta_rayleight() = beta * 1e-6f;
+		}
+
+		ImGui::SameLine();
+		if(ImGui::Button(ICON_FA_GLOBE_AFRICA)) {
+			sky->beta_rayleight() = SkyComponent::earth_beta;
+		}
 	}
-
-	ImGui::SameLine();
-
-	if(ImGui::Button(ICON_FA_GLOBE_AFRICA)) {
-		sky->beta_rayleight() = SkyComponent::earth_beta;
-	}
+	ImGui::Columns(1);
 }
 
 
@@ -171,12 +206,16 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		return;
 	}
 
-	const auto static_mesh = [ctx, id]() -> StaticMeshComponent* { return ctx->world().component<StaticMeshComponent>(id); };
+	ImGui::Columns(2);
 	{
-		// material
-		if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material, "Material")) {
-			ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
-				[=](AssetId asset) {
+		const auto static_mesh = [ctx, id]() -> StaticMeshComponent* { return ctx->world().component<StaticMeshComponent>(id); };
+
+		{
+			ImGui::Text("Material");
+			ImGui::NextColumn();
+			if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material, "Material")) {
+				ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
+							[=](AssetId asset) {
 					if(const auto material = ctx->loader().load<Material>(asset)) {
 						if(StaticMeshComponent* comp = static_mesh()) {
 							comp->material() = material.unwrap();
@@ -184,12 +223,16 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 					}
 					return true;
 				});
+			}
 		}
 
-		// mesh
-		if(imgui::asset_selector(ctx, static_mesh()->mesh().id(), AssetType::Mesh, "Mesh")) {
-			ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
-				[=](AssetId asset) {
+		{
+			ImGui::NextColumn();
+			ImGui::Text("Mesh");
+			ImGui::NextColumn();
+			if(imgui::asset_selector(ctx, static_mesh()->mesh().id(), AssetType::Mesh, "Mesh")) {
+				ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+							[=](AssetId asset) {
 					if(const auto mesh = ctx->loader().load<StaticMesh>(asset)) {
 						if(StaticMeshComponent* comp = static_mesh()) {
 							comp->mesh() = mesh.unwrap();
@@ -197,8 +240,10 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 					}
 					return true;
 				});
+			}
 		}
 	}
+	ImGui::Columns(1);
 }
 
 
@@ -217,43 +262,68 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		return;
 	}
 
+	ImGui::Columns(2);
 	{
 		auto [pos, rot, scale] = component->transform().decompose();
 
 		// position
 		{
-			ImGui::InputFloat3("Position", pos.data(), "%.2f");
+			ImGui::Text("Position");
+			ImGui::NextColumn();
+			ImGui::InputFloat("X", &pos.x());
+			ImGui::InputFloat("Y", &pos.y());
+			ImGui::InputFloat("Z", &pos.z());
 		}
+
+		ImGui::Separator();
 
 		// rotation
 		{
-			auto dedouble_quat = [](math::Quaternion<> q) {
+			ImGui::NextColumn();
+			ImGui::Text("Rotation");
+			ImGui::NextColumn();
+
+			/*auto dedouble_quat = [](math::Quaternion<> q) -> math::Quaternion<> {
 				return q.x() < 0.0f ? -q.as_vec() : q.as_vec();
-			};
+			};*/
 			auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
-				auto qa = math::Quaternion<>::from_euler(a * math::to_rad(1.0f));
-				auto qb = math::Quaternion<>::from_euler(b * math::to_rad(1.0f));
-				return (dedouble_quat(qa) - dedouble_quat(qb)).length2() < 0.0001f;
+				const auto qa = math::Quaternion<>::from_euler(a);
+				const auto qb = math::Quaternion<>::from_euler(b);
+				for(usize i = 0; i != 3; ++i) {
+					math::Vec3 v;
+					v[i] = 1.0f;
+					if((qa(v) - qb(v)).length2() > 0.001f) {
+						return false;
+					}
+				}
+				return true;
 			};
 
-			const math::Vec3 base_euler = rot.to_euler() * math::to_deg(1.0f);
-			math::Vec3 euler = base_euler;
-			/*if(is_same_angle(euler, prev_euler)) {
-				euler = prev_euler;
-			}*/
+
+			math::Vec3 actual_euler = rot.to_euler();
+			auto& euler = ctx->world().component<EditorComponent>(id)->euler();
+
+			if(!is_same_angle(actual_euler, euler)) {
+				euler = actual_euler;
+			}
 
 			const float speed = 1.0f;
-			ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
-			ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
-			ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
+			{
+				euler *= math::to_deg(1.0f);
+				ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
+				ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
+				ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
+				euler *= math::to_rad(1.0f);
+			}
 
-			if(!is_same_angle(euler, base_euler)) {
-				rot = math::Quaternion<>::from_euler(euler * math::to_rad(1.0f));
+			/*if(!is_same_angle(euler, actual_euler))*/ {
+				rot = math::Quaternion<>::from_euler(euler);
 			}
 		}
 
 		component->transform() = math::Transform<>(pos, rot, scale);
 	}
+	ImGui::Columns(1);
 }
 
 

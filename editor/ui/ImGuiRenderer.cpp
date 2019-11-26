@@ -34,8 +34,6 @@ SOFTWARE.
 
 namespace editor {
 
-static constexpr usize imgui_index_buffer_size = 64 * 1024;
-static constexpr usize imgui_vertex_buffer_size = 64 * 1024;
 
 static ImageData load_font() {
 	y_profile();
@@ -97,6 +95,9 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 		return;
 	}
 
+	const auto next_power_of_2 = [](usize size) { return 2 << log2ui(size); };
+	const usize imgui_index_buffer_size = next_power_of_2(ImGui::GetIO().MetricsRenderIndices);
+	const usize imgui_vertex_buffer_size = next_power_of_2(ImGui::GetIO().MetricsRenderVertices);
 	const TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> index_buffer(device(), imgui_index_buffer_size);
 	const TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(device(), imgui_vertex_buffer_size);
 	const TypedUniformBuffer<math::Vec2> uniform_buffer(device(), 1);

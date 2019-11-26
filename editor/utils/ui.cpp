@@ -36,9 +36,6 @@ namespace imgui {
 bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text) {
 	static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
 
-	const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
-	core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or("");
-
 	ImGui::PushID(fmt("%_%_%", id.id(), uenum(type), text.data()).data());
 	ImGui::BeginGroup();
 
@@ -48,8 +45,12 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
 	} else {
 		ret = ImGui::Button(ICON_FA_FOLDER_OPEN, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
 	}
+
 	ImGui::SameLine();
-	{
+	if(ImGui::GetContentRegionAvailWidth() > button_size.x() * 0.5f) {
+		const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
+		core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or("");
+
 		ImGui::BeginGroup();
 		ImGui::Dummy(math::Vec2(0.0f, 8.0f));
 		ImGui::TextUnformatted(text.begin(), text.end());
