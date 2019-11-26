@@ -283,9 +283,6 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 			ImGui::Text("Rotation");
 			ImGui::NextColumn();
 
-			/*auto dedouble_quat = [](math::Quaternion<> q) -> math::Quaternion<> {
-				return q.x() < 0.0f ? -q.as_vec() : q.as_vec();
-			};*/
 			auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
 				const auto qa = math::Quaternion<>::from_euler(a);
 				const auto qb = math::Quaternion<>::from_euler(b);
@@ -307,17 +304,15 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 				euler = actual_euler;
 			}
 
-			const float speed = 1.0f;
-			{
-				euler *= math::to_deg(1.0f);
-				ImGui::DragFloat("Yaw", &euler[math::Quaternion<>::YawIndex], speed, -180.0f, 180.0f, "%.2f");
-				ImGui::DragFloat("Pitch", &euler[math::Quaternion<>::PitchIndex], speed, -180.0f, 180.0f, "%.2f");
-				ImGui::DragFloat("Roll", &euler[math::Quaternion<>::RollIndex], speed, -180.0f, 180.0f, "%.2f");
-				euler *= math::to_rad(1.0f);
-			}
+			const std::array indexes = {math::Quaternion<>::YawIndex, math::Quaternion<>::PitchIndex, math::Quaternion<>::RollIndex};
+			const std::array names = {"Yaw", "Pitch", "Roll"};
 
-			/*if(!is_same_angle(euler, actual_euler))*/ {
-				rot = math::Quaternion<>::from_euler(euler);
+			for(usize i = 0; i != 3; ++i) {
+				float angle = math::to_deg(euler[indexes[i]]);
+				if(ImGui::DragFloat(names[i], &angle, 1.0, -180.0f, 180.0f, "%.2f")) {
+					euler[indexes[i]] = math::to_rad(angle);
+					rot = math::Quaternion<>::from_euler(euler);
+				}
 			}
 		}
 
