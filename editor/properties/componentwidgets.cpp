@@ -91,7 +91,7 @@ static void light_widget(T* light) {
 		ImGui::ColorPicker3("##lightpicker", light->color().begin(), color_flags);
 
 		float kelvin = std::clamp(rgb_to_k(light->color()), 1000.0f, 12000.0f);
-		if(ImGui::SliderFloat("", &kelvin, 1000.0f, 12000.0f, "%.0f°K")) {
+		if(ImGui::SliderFloat("###temperature", &kelvin, 1000.0f, 12000.0f, "%.0f°K")) {
 			light->color() = k_to_rbg(kelvin);
 		}
 
@@ -102,7 +102,7 @@ static void light_widget(T* light) {
 	ImGui::NextColumn();
 	ImGui::Text("Intensity");
 	ImGui::NextColumn();
-	ImGui::DragFloat("", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max());
+	ImGui::DragFloat("###intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max());
 }
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
@@ -123,12 +123,12 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 		ImGui::Text("Radius");
 		ImGui::NextColumn();
-		ImGui::DragFloat("", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+		ImGui::DragFloat("###radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
 
 		ImGui::NextColumn();
 		ImGui::Text("Falloff");
 		ImGui::NextColumn();
-		ImGui::DragFloat("", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
+		ImGui::DragFloat("###falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
 	}
 	ImGui::Columns(1);
 }
@@ -151,7 +151,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 		ImGui::Text("Direction");
 		ImGui::NextColumn();
-		ImGui::InputFloat3("", light->direction().data(), "%.2f");
+		ImGui::InputFloat3("###direction", light->direction().data(), "%.2f");
 	}
 	ImGui::Columns(1);
 }
@@ -174,14 +174,14 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 		ImGui::Text("Direction");
 		ImGui::NextColumn();
-		ImGui::InputFloat3("", sky->sun().direction().data(), "%.2f");
+		ImGui::InputFloat3("###direction", sky->sun().direction().data(), "%.2f");
 
 
 		ImGui::NextColumn();
 		ImGui::Text("Beta");
 		ImGui::NextColumn();
 		math::Vec3 beta = sky->beta_rayleight() * 1e6f;
-		if(ImGui::InputFloat3("", beta.data(), "%.2f")) {
+		if(ImGui::InputFloat3("###beta", beta.data(), "%.2f")) {
 			sky->beta_rayleight() = beta * 1e-6f;
 		}
 
