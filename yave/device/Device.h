@@ -66,6 +66,7 @@ class Device : NonMovable {
 
 		ThreadDevicePtr thread_device() const;
 		const DeviceResources& device_resources() const;
+		DeviceResources& device_resources();
 
 		LifetimeManager& lifetime_manager() const;
 

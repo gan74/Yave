@@ -108,7 +108,7 @@ class TypedMapping : public Mapping {
 		}
 
 		iterator begin() {
-			return reinterpret_cast<iterator>(this->data());
+			return static_cast<iterator>(Mapping::data());
 		}
 
 		iterator end() {
@@ -116,7 +116,7 @@ class TypedMapping : public Mapping {
 		}
 
 		const_iterator begin() const {
-			return reinterpret_cast<const_iterator>(this->data());
+			return static_cast<const_iterator>(Mapping::data());
 		}
 
 		const_iterator end() const {
@@ -144,6 +144,14 @@ class TypedMapping : public Mapping {
 		}
 
 		const value_type* operator->() const{
+			return begin();
+		}
+
+		value_type* data() {
+			return begin();
+		}
+
+		const value_type* data() const {
 			return begin();
 		}
 

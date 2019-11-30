@@ -64,9 +64,8 @@ class Queue : NonCopyable, public DeviceLinked {
 
 		void submit_base(CmdBufferBase& base) const;
 
-		vk::Queue _queue;
+		SwapMove<vk::Queue> _queue;
 		std::unique_ptr<std::mutex> _lock;
-
 };
 
 }

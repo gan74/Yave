@@ -45,7 +45,7 @@ vk::Queue Queue::vk_queue() const {
 
 void Queue::wait() const {
 	const std::unique_lock lock(*_lock);
-	_queue.waitIdle();
+	_queue.get().waitIdle();
 }
 
 Semaphore Queue::submit_sem(RecordedCmdBuffer&& cmd) const {
@@ -68,7 +68,7 @@ void Queue::submit_base(CmdBufferBase& base) const {
 	const Semaphore& signal = base._proxy->data()._signal;
 	vk::Semaphore sig_semaphore = signal.device() ? signal.vk_semaphore() : vk::Semaphore();
 
-	_queue.submit(vk::SubmitInfo()
+	_queue.get().submit(vk::SubmitInfo()
 			.setSignalSemaphoreCount(signal.device() ? 1 : 0)
 			.setPSignalSemaphores(signal.device() ? &sig_semaphore : nullptr)
 			.setWaitSemaphoreCount(wait_semaphores.size())

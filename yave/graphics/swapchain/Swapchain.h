@@ -38,7 +38,7 @@ class Window;
 static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | ImageUsage::ColorBit;
 using SwapchainImageView = ImageView<SwapchainImageUsage>;
 
-class Swapchain : NonCopyable, public DeviceLinked {
+class Swapchain : NonMovable, public DeviceLinked {
 
 	class SwapchainImage : public Image<SwapchainImageUsage> {
 		public:

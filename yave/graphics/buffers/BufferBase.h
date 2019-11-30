@@ -53,7 +53,7 @@ class BufferBase : NonCopyable {
 
 	private:
 		usize _size = 0;
-		vk::Buffer _buffer;
+		SwapMove<vk::Buffer> _buffer;
 		BufferUsage _usage = BufferUsage::None;
 		DeviceMemory _memory;
 };

@@ -81,14 +81,11 @@ class PushConstant : NonCopyable {
 		usize _size = 0;
 };
 
-struct CmdBufferRegion : NonCopyable, public DeviceLinked {
+struct CmdBufferRegion : NonMovable, public DeviceLinked {
 	public:
 		CmdBufferRegion() = default;
 
 		~CmdBufferRegion();
-
-		CmdBufferRegion(CmdBufferRegion&&) = delete;
-		CmdBufferRegion& operator=(CmdBufferRegion&&) = delete;
 
 	private:
 		friend class CmdBufferRecorder;
@@ -98,7 +95,7 @@ struct CmdBufferRegion : NonCopyable, public DeviceLinked {
 		vk::CommandBuffer _buffer;
 };
 
-class RenderPassRecorder : NonCopyable {
+class RenderPassRecorder : NonMovable {
 	public:
 		using DescriptorSetList = detail::DescriptorSetList;
 
@@ -150,7 +147,6 @@ class CmdBufferRecorder : public CmdBufferBase {
 		}
 
 		CmdBufferRecorder(CmdBufferRecorder&&) = default;
-		CmdBufferRecorder& operator=(CmdBufferRecorder&&) = default;
 
 		~CmdBufferRecorder();
 

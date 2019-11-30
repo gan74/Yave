@@ -59,8 +59,8 @@ MaterialTemplateData& MaterialTemplateData::set_blend_mode(BlendMode blend) {
 	return *this;
 }
 
-MaterialTemplateData& MaterialTemplateData::set_culled(bool culled) {
-	_cull = culled;
+MaterialTemplateData& MaterialTemplateData::set_cull_mode(CullMode cull) {
+	_cull_mode = cull;
 	return *this;
 }
 

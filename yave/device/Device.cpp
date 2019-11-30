@@ -74,6 +74,7 @@ static vk::Device create_device(
 	required.shaderSampledImageArrayDynamicIndexing = true;
 	required.shaderStorageBufferArrayDynamicIndexing = true;
 	required.shaderStorageImageArrayDynamicIndexing = true;
+	required.fragmentStoresAndAtomics = true;
 
 	if(debug.debug_features_enabled()) {
 		required.robustBufferAccess = true;
@@ -206,6 +207,10 @@ ThreadDevicePtr Device::thread_device() const {
 }
 
 const DeviceResources& Device::device_resources() const {
+	return _resources;
+}
+
+DeviceResources& Device::device_resources() {
 	return _resources;
 }
 

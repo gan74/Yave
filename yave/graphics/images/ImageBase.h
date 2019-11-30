@@ -69,8 +69,8 @@ class ImageBase : NonCopyable {
 
 		DeviceMemory _memory;
 
-		vk::Image _image;
-		vk::ImageView _view;
+		SwapMove<vk::Image> _image;
+		SwapMove<vk::ImageView> _view;
 };
 
 static_assert(is_safe_base<ImageBase>::value);

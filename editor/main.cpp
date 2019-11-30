@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
 	Instance instance = create_instance();
 
 
-	const Device device = create_device(instance);
+	Device device = create_device(instance);
 	EditorContext ctx = create_context(device);
 	context = &ctx;
 
@@ -139,6 +139,12 @@ int main(int argc, char** argv) {
 		}
 
 		ctx.flush_deferred();
+
+		if(ctx.device_resources_reload_requested()) {
+			device.device_resources().reload();
+			ctx.resources().reload();
+			ctx.set_device_resource_reloaded();
+		}
 	}
 
 

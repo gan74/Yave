@@ -72,7 +72,7 @@ class SpecializationData : NonCopyable {
 		usize _size = 0;
 };
 
-class ShaderModuleBase : NonCopyable, public DeviceLinked {
+class ShaderModuleBase : NonMovable, public DeviceLinked {
 
 	public:
 		enum class AttribType {

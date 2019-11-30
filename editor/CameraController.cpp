@@ -47,19 +47,21 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
 	math::Vec3 cam_fwd = camera.forward();
 	math::Vec3 cam_lft = camera.left();
 
-	if(ImGui::IsKeyDown(int(settings.center_on_obj))) {
-		auto id = context()->selection().selected_entity();
-		if(id.is_valid()) {
-			if(const auto pos = entity_position(context()->world(), id)) {
-				const float radius = entity_radius(context()->world(), id).unwrap_or(10.0f);
-				cam_pos = pos.unwrap() - cam_fwd * (radius * 1.5f);
+	if(ImGui::IsWindowFocused()) {
+		if(ImGui::IsKeyDown(int(settings.center_on_obj))) {
+			auto id = context()->selection().selected_entity();
+			if(id.is_valid()) {
+				if(const auto pos = entity_position(context()->world(), id)) {
+					const float radius = entity_radius(context()->world(), id).unwrap_or(10.0f);
+					cam_pos = pos.unwrap() - cam_fwd * (radius * 1.5f);
+				}
 			}
 		}
-	}
 
-	const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
-	if(fully_finite(view)) {
-		camera.set_view(view);
+		const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+		if(fully_finite(view)) {
+			camera.set_view(view);
+		}
 	}
 }
 

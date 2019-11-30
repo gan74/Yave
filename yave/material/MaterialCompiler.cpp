@@ -56,6 +56,19 @@ static vk::BlendFactor dst_blend_factor(BlendMode mode) {
 	}
 }
 
+static vk::CullModeFlags cull_mode(CullMode mode) {
+	switch(mode) {
+		case CullMode::None:
+			return vk::CullModeFlagBits::eNone;
+
+		case CullMode::Front:
+			return vk::CullModeFlagBits::eFront;
+
+		default:
+			return vk::CullModeFlagBits::eBack;
+	}
+}
+
 
 
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
@@ -105,7 +118,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 		;
 
 	const auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
-			.setCullMode(mat_data._cull ? vk::CullModeFlagBits::eBack : vk::CullModeFlagBits::eNone)
+			.setCullMode(cull_mode(mat_data._cull_mode))
 			//.setCullMode(vk::CullModeFlagBits::eNone)
 			.setPolygonMode(vk::PolygonMode::eFill)
 			.setLineWidth(1.0f)

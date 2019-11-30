@@ -224,7 +224,7 @@ void FrameGraph::alloc_resources() {
 		} else {
 			if(!info.has_usage()) {
 				log_msg(fmt("Image declared by % has no usage.", pass_name(info.first_use)), Log::Warning);
-				// All images should support texturing
+				// All images should support texturing, hopefully
 				info.usage = info.usage | ImageUsage::TextureBit;
 			}
 			_resources.create_image(res, info.format, info.size, info.usage);
@@ -233,7 +233,8 @@ void FrameGraph::alloc_resources() {
 
 	for(auto&& [res, info] : _buffers) {
 		if(is_none(info.usage)) {
-			y_fatal("Unused frame graph buffer resource.");
+			log_msg("Unused frame graph buffer resource.", Log::Warning);
+			info.usage = info.usage | BufferUsage::StorageBit;
 		}
 		_resources.create_buffer(res, info.byte_size, info.usage, info.memory_type);
 	}
@@ -245,7 +246,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
 			return pass->name();
 		}
 	}
-	return y_fatal("Pass index out of bounds.");
+	return y_fatal("Pass index out of bounds (%).", pass_index);
 }
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {

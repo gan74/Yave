@@ -80,7 +80,7 @@ class DescriptorSetLayout : NonCopyable, public DeviceLinked {
 		vk::DescriptorSetLayout vk_descriptor_set_layout() const;
 
 	private:
-		vk::DescriptorSetLayout _layout;
+		SwapMove<vk::DescriptorSetLayout> _layout;
 		math::Vec<max_descriptor_type, u32> _sizes;
 };
 

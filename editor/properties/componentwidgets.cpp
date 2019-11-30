@@ -215,14 +215,14 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 			ImGui::NextColumn();
 			if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material, "Material")) {
 				ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
-							[=](AssetId asset) {
-					if(const auto material = ctx->loader().load<Material>(asset)) {
-						if(StaticMeshComponent* comp = static_mesh()) {
-							comp->material() = material.unwrap();
+					[=](AssetId asset) {
+						if(const auto material = ctx->loader().load<Material>(asset)) {
+							if(StaticMeshComponent* comp = static_mesh()) {
+								comp->material() = material.unwrap();
+							}
 						}
-					}
-					return true;
-				});
+						return true;
+					});
 			}
 		}
 
@@ -232,14 +232,14 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 			ImGui::NextColumn();
 			if(imgui::asset_selector(ctx, static_mesh()->mesh().id(), AssetType::Mesh, "Mesh")) {
 				ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
-							[=](AssetId asset) {
-					if(const auto mesh = ctx->loader().load<StaticMesh>(asset)) {
-						if(StaticMeshComponent* comp = static_mesh()) {
-							comp->mesh() = mesh.unwrap();
+					[=](AssetId asset) {
+						if(const auto mesh = ctx->loader().load<StaticMesh>(asset)) {
+							if(StaticMeshComponent* comp = static_mesh()) {
+								comp->mesh() = mesh.unwrap();
+							}
 						}
-					}
-					return true;
-				});
+						return true;
+					});
 			}
 		}
 	}

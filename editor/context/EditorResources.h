@@ -74,10 +74,16 @@ class EditorResources final : NonMovable {
 		// can't default for inclusion reasons
 		~EditorResources();
 
+		DevicePtr device() const;
+
 		const ComputeProgram& operator[](ComputePrograms i) const;
 		const MaterialTemplate* operator[](MaterialTemplates i) const;
 
+		void reload();
+
 	private:
+		void load_resources(DevicePtr dptr);
+
 		std::unique_ptr<SpirVData[]> _spirv;
 		std::unique_ptr<ComputeProgram[]> _computes;
 		std::unique_ptr<MaterialTemplate[]> _material_templates;

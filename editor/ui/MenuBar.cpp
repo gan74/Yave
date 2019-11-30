@@ -101,6 +101,12 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
 
 			ImGui::EndMenu();
 		}
+
+		if(ImGui::BeginMenu("Tools")) {
+			if(ImGui::MenuItem("Reload resources")) context()->reload_device_resources();
+			ImGui::EndMenu();
+		}
+
 		ImGui::EndMenuBar();
 	}
 }

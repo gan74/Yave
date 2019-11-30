@@ -42,8 +42,8 @@ class ComputeProgram final : NonCopyable, public DeviceLinked {
 		vk::PipelineLayout vk_pipeline_layout() const;
 
 	private:
-		vk::PipelineLayout _layout;
-		vk::Pipeline _pipeline;
+		SwapMove<vk::PipelineLayout> _layout;
+		SwapMove<vk::Pipeline> _pipeline;
 		math::Vec3ui _local_size;
 };
 

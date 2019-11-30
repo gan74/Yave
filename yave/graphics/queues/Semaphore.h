@@ -31,7 +31,7 @@ template<typename T>
 class BoxSemaphore;
 
 class Semaphore {
-	class Shared : NonCopyable, public DeviceLinked {
+	class Shared : NonMovable, public DeviceLinked {
 		public:
 			Shared() = default;
 			Shared(DevicePtr dptr);

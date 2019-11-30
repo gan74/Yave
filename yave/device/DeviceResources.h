@@ -29,6 +29,10 @@ SOFTWARE.
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 
+#ifdef Y_DEBUG
+#include <mutex>
+#endif
+
 namespace yave {
 
 class SpirVData;
@@ -58,10 +62,12 @@ class DeviceResources final : NonMovable {
 			BasicFrag,
 			SkinnedFrag,
 			TexturedFrag,
+			ClusterBuilderFrag,
 
 			BasicVert,
 			SkinnedVert,
 			ScreenVert,
+			ClusterBuilderVert,
 
 			MaxSpirV
 		};
@@ -90,6 +96,8 @@ class DeviceResources final : NonMovable {
 
 			ToneMappingMaterialTemplate,
 			RayleighSkyMaterialTemplate,
+
+			ClusterBuilderMaterialTemplate,
 
 			MaxMaterialTemplates
 		};
@@ -125,6 +133,8 @@ class DeviceResources final : NonMovable {
 		// can't default for inclusion reasons
 		~DeviceResources();
 
+		DevicePtr device() const;
+
 		TextureView brdf_lut() const;
 		const std::shared_ptr<IBLProbe>& ibl_probe() const;
 		const std::shared_ptr<IBLProbe>& empty_probe() const;
@@ -137,7 +147,12 @@ class DeviceResources final : NonMovable {
 		const AssetPtr<Material>& operator[](Materials i) const;
 		const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
+
+		void reload();
+
 	private:
+		void load_resources(DevicePtr dptr);
+
 		std::unique_ptr<SpirVData[]> _spirv;
 		std::unique_ptr<ComputeProgram[]> _computes;
 		std::unique_ptr<MaterialTemplate[]> _material_templates;
@@ -149,6 +164,15 @@ class DeviceResources final : NonMovable {
 		std::shared_ptr<IBLProbe> _probe;
 		std::shared_ptr<IBLProbe> _empty_probe;
 		Texture _brdf_lut;
+
+
+#ifdef Y_DEBUG
+		mutable std::mutex _lock;
+		mutable std::unordered_map<core::String, std::unique_ptr<ComputeProgram>> _programs;
+
+	public:
+		const ComputeProgram& program_from_file(std::string_view file) const;
+#endif
 
 };
 }

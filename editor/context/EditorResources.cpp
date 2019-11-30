@@ -87,6 +87,13 @@ EditorResources::EditorResources(DevicePtr dptr) :
 		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
 		_material_templates(std::make_unique<MaterialTemplate[]>(template_count)) {
 
+	load_resources(dptr);
+}
+
+EditorResources::~EditorResources() {
+}
+
+void EditorResources::load_resources(DevicePtr dptr) {
 	for(usize i = 0; i != spirv_count; ++i) {
 		_spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
 	}
@@ -101,7 +108,7 @@ EditorResources::EditorResources(DevicePtr dptr) :
 				.set_frag_data(_spirv[data.frag])
 				.set_vert_data(_spirv[data.vert])
 				.set_depth_test(data.depth_tested ? DepthTestMode::Standard : DepthTestMode::None)
-				.set_culled(data.culled)
+				.set_cull_mode(data.culled ? CullMode::Back : CullMode::None)
 				.set_blend_mode(data.blended ? BlendMode::SrcAlpha : BlendMode::None)
 				.set_primitive_type(data.prim_type)
 			;
@@ -114,7 +121,8 @@ EditorResources::EditorResources(DevicePtr dptr) :
 	}
 }
 
-EditorResources::~EditorResources() {
+DevicePtr EditorResources::device() const {
+	return _computes[0].device();
 }
 
 const ComputeProgram& EditorResources::operator[](ComputePrograms i) const {
@@ -125,6 +133,13 @@ const ComputeProgram& EditorResources::operator[](ComputePrograms i) const {
 const MaterialTemplate* EditorResources::operator[](MaterialTemplates i) const {
 	y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
 	return &_material_templates[usize(i)];
+}
+
+void EditorResources::reload() {
+	y_profile();
+	DevicePtr dptr = device();
+	dptr->wait_all_queues();
+	load_resources(dptr);
 }
 
 }

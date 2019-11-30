@@ -51,6 +51,12 @@ enum class BlendMode {
 	SrcAlpha,
 };
 
+enum class CullMode {
+	None,
+	Back,
+	Front,
+};
+
 class MaterialTemplateData {
 	public:
 		MaterialTemplateData& set_frag_data(const SpirVData& data);
@@ -62,7 +68,7 @@ class MaterialTemplateData {
 		MaterialTemplateData& set_depth_test(DepthTestMode test);
 		MaterialTemplateData& set_blend_mode(BlendMode blend);
 
-		MaterialTemplateData& set_culled(bool culled);
+		MaterialTemplateData& set_cull_mode(CullMode cull);
 
 
 	private:
@@ -76,7 +82,7 @@ class MaterialTemplateData {
 
 		DepthTestMode _depth_tested = DepthTestMode::Standard;
 		BlendMode _blend_mode = BlendMode::None;
-		bool _cull = true;
+		CullMode _cull_mode = CullMode::Back;
 };
 
 }

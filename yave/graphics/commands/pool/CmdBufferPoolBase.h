@@ -34,7 +34,7 @@ namespace yave {
 
 class CmdBufferDataProxy;
 
-class CmdBufferPoolBase : NonCopyable, public DeviceLinked {
+class CmdBufferPoolBase : NonMovable, public DeviceLinked {
 
 	public:
 		~CmdBufferPoolBase();

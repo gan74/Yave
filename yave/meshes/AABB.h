@@ -31,7 +31,9 @@ class AABB {
 		AABB() = default;
 
 		AABB(const math::Vec3& min, const math::Vec3& max) : _min(min), _max(max) {
-			y_debug_assert(_max - _min == (_max - _min).abs());
+			for(usize i = 0; i != 3; ++i) {
+				y_debug_assert(_min[i] <= _max[i]);
+			}
 		}
 
 		math::Vec3 center() const {

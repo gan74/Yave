@@ -26,6 +26,69 @@ SOFTWARE.
 
 namespace yave {
 
+template<typename T>
+class SwapMove {
+	public:
+		SwapMove() = default;
+
+		SwapMove(const SwapMove& other) = default;
+		SwapMove& operator=(const SwapMove& other) = default;
+
+		SwapMove(SwapMove&& other) {
+			std::swap(_t, other._t);
+		}
+
+		SwapMove(T&& other) : _t(std::move(other)) {
+		}
+
+		SwapMove(const T& other) : _t(other) {
+		}
+
+
+
+		SwapMove& operator=(SwapMove&& other) {
+			std::swap(_t, other._t);
+			return *this;
+		}
+
+		SwapMove& operator=(T&& other) {
+			_t = std::move(other);
+			return *this;
+		}
+
+		SwapMove& operator=(const T& other) {
+			_t = other;
+			return *this;
+		}
+
+
+		void swap(SwapMove& other) {
+			std::swap(_t, other._t);
+		}
+
+
+		operator T&() {
+			return _t;
+		}
+
+		operator const T&() const {
+			return _t;
+		}
+
+
+
+		T& get() {
+			return _t;
+		}
+
+		const T& get() const {
+			return _t;
+		}
+
+	private:
+		T _t = {};
+};
+
 class DeviceLinked {
 	public:
 		DevicePtr device() const;

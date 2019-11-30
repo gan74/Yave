@@ -51,6 +51,7 @@ class UiElement : NonMovable {
 
 		template<typename T, typename... Args>
 		T* add_child(Args&&... args) {
+			Y_TODO(Adding several childs breaks stuff)
 			_children.emplace_back(std::make_unique<T>(y_fwd(args)...));
 			_children.last()->_is_child = true;
 			return dynamic_cast<T*>(_children.last().get());

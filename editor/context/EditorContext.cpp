@@ -56,6 +56,19 @@ EditorContext::EditorContext(DevicePtr dptr) :
 EditorContext::~EditorContext() {
 }
 
+void EditorContext::reload_device_resources() {
+	_reload_resources = true;
+}
+
+void EditorContext::set_device_resource_reloaded() {
+	y_debug_assert(_reload_resources);
+	_reload_resources = false;
+}
+
+bool EditorContext::device_resources_reload_requested() const {
+	return _reload_resources;
+}
+
 void EditorContext::flush_reload() {
 	defer([this]() {
 		y_profile_zone("flush reload");
@@ -128,6 +141,10 @@ const std::shared_ptr<FrameGraphResourcePool>& EditorContext::resource_pool() co
 }
 
 const EditorResources& EditorContext::resources() const {
+	return _resources;
+}
+
+EditorResources& EditorContext::resources() {
 	return _resources;
 }
 

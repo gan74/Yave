@@ -43,6 +43,10 @@ class EditorContext : NonMovable, public DeviceLinked {
 
 		void flush_reload();
 
+		void reload_device_resources();
+		void set_device_resource_reloaded();
+		bool device_resources_reload_requested() const;
+
 		void defer(core::Function<void()> func);
 		void flush_deferred();
 
@@ -61,11 +65,11 @@ class EditorContext : NonMovable, public DeviceLinked {
 
 		ecs::EntityWorld& world();
 
-
 		const FileSystemModel* filesystem() const;
 		const std::shared_ptr<FrameGraphResourcePool>& resource_pool() const;
 
 		const EditorResources& resources() const;
+		EditorResources& resources();
 
 		EditorState& editor_state();
 		Settings& settings();
@@ -76,6 +80,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		PickingManager& picking_manager();
 		AssetStore& asset_store();
 		Logs& logs();
+
 
 	private:
 		static ecs::EntityWorld create_editor_world();
@@ -106,6 +111,8 @@ class EditorContext : NonMovable, public DeviceLinked {
 		Logs _logs;
 
 		ecs::EntityWorld _world;
+
+		bool _reload_resources = false;
 };
 
 }

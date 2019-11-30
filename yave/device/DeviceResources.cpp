@@ -48,18 +48,18 @@ struct DeviceMaterialData {
 	const SpirV vert;
 	const DepthTestMode depth_test;
 	const BlendMode blend_mode;
-	const bool culled;
+	const CullMode cull_mode;
 
 	static constexpr DeviceMaterialData screen(SpirV frag, bool blended = false) {
-		return DeviceMaterialData{frag, SpirV::ScreenVert, DepthTestMode::None, blended ? BlendMode::Add : BlendMode::None, false};
+		return DeviceMaterialData{frag, SpirV::ScreenVert, DepthTestMode::None, blended ? BlendMode::Add : BlendMode::None, CullMode::None};
 	}
 
 	static constexpr DeviceMaterialData basic(SpirV frag) {
-		return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None, true};
+		return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None,  CullMode::Back};
 	}
 
 	static constexpr DeviceMaterialData skinned(SpirV frag) {
-		return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTestMode::Standard, BlendMode::None, true};
+		return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back};
 	}
 };
 
@@ -69,6 +69,7 @@ static constexpr DeviceMaterialData material_datas[] = {
 		DeviceMaterialData::basic(SpirV::TexturedFrag),
 		DeviceMaterialData::screen(SpirV::ToneMapFrag),
 		DeviceMaterialData::screen(SpirV::RayleighSkyFrag, true),
+		DeviceMaterialData{SpirV::ClusterBuilderFrag, SpirV::ClusterBuilderVert, DepthTestMode::None, BlendMode::Add, CullMode::Front},
 	};
 
 static constexpr const char* spirv_names[] = {
@@ -89,10 +90,12 @@ static constexpr const char* spirv_names[] = {
 		"basic.frag",
 		"skinned.frag",
 		"textured.frag",
+		"cluster_builder.frag",
 
 		"basic.vert",
 		"skinned.vert",
 		"screen.vert",
+		"cluster_builder.vert",
 	};
 
 // ABGR
@@ -143,8 +146,26 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 		_material_templates(std::make_unique<MaterialTemplate[]>(template_count)),
 		_textures(std::make_unique<AssetPtr<Texture>[]>(texture_count)) {
 
+	// Load textures here because they won't change and might get packed into descriptor sets that won't be reloaded (in the case of material defaults)
+	for(usize i = 0; i != texture_count; ++i) {
+		const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
+		_textures[i] = make_asset<Texture>(dptr, ImageData(math::Vec2ui(2), data, vk::Format::eR8G8B8A8Unorm));
+	}
+
+	load_resources(dptr);
+}
+
+DeviceResources::~DeviceResources() {
+}
+
+
+void DeviceResources::load_resources(DevicePtr dptr) {
 	for(usize i = 0; i != spirv_count; ++i) {
 		_spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
+	}
+
+	for(usize i = 0; i != compute_count; ++i) {
+		_computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[i]));
 	}
 
 	for(usize i = 0; i != compute_count; ++i) {
@@ -157,17 +178,11 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 				.set_frag_data(_spirv[data.frag])
 				.set_vert_data(_spirv[data.vert])
 				.set_depth_test(data.depth_test)
-				.set_culled(data.culled)
+				.set_cull_mode(data.cull_mode)
 				.set_blend_mode(data.blend_mode)
 			;
 		_material_templates[i] = MaterialTemplate(dptr, std::move(template_data));
 	}
-
-	for(usize i = 0; i != texture_count; ++i) {
-		const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
-		_textures[i] = make_asset<Texture>(dptr, ImageData(math::Vec2ui(2), data, vk::Format::eR8G8B8A8Unorm));
-	}
-
 
 	{
 		_materials = std::make_unique<AssetPtr<Material>[]>(1);
@@ -181,13 +196,14 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 		_meshes[2] = make_asset<StaticMesh>(dptr, sweep_mesh_data());
 	}
 
-
 	_brdf_lut = create_brdf_lut(dptr, operator[](BRDFIntegratorProgram));
 	_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](WhiteTexture)));
 	_empty_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
 }
 
-DeviceResources::~DeviceResources() {
+
+DevicePtr DeviceResources::device() const {
+	return _brdf_lut.device();
 }
 
 TextureView DeviceResources::brdf_lut() const {
@@ -232,5 +248,31 @@ const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
 	return _meshes[usize(i)];
 }
 
+
+#ifdef Y_DEBUG
+const ComputeProgram& DeviceResources::program_from_file(std::string_view file) const {
+	std::unique_lock lock(_lock);
+	auto& prog = _programs[file];
+	if(!prog) {
+		auto spirv = SpirVData::deserialized(io2::File::open(file).expected("Unable to open SPIR-V file."));
+		prog = std::make_unique<ComputeProgram>(ComputeShader(device(), spirv));
+	}
+	return *prog;
+}
+#endif
+
+void DeviceResources::reload() {
+	y_profile();
+	DevicePtr dptr = device();
+	dptr->wait_all_queues();
+
+#ifdef Y_DEBUG
+	std::unique_lock lock(_lock);
+	_programs.clear();
+#endif
+
+	load_resources(dptr);
+	log_msg("Resources reloaded.");
+}
 
 }
