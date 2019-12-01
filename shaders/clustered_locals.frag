@@ -58,7 +58,7 @@ void main() {
 			vec3 light_dir = light.position - world_pos;
 			const float distance = length(light_dir);
 			light_dir /= distance;
-			const float att = distance > light.radius ? 0.0 : 1.0; //attenuation(distance, light.radius, light.falloff);
+			const float att = distance > light.radius ? 0.5 : 1.0; //attenuation(distance, light.radius, light.falloff);
 
 			const vec3 radiance = light.color * att;
 			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
