@@ -70,6 +70,7 @@ static constexpr DeviceMaterialData material_datas[] = {
 		DeviceMaterialData::screen(SpirV::ToneMapFrag),
 		DeviceMaterialData::screen(SpirV::RayleighSkyFrag, true),
 		DeviceMaterialData{SpirV::ClusterBuilderFrag, SpirV::ClusterBuilderVert, DepthTestMode::None, BlendMode::Add, CullMode::Front},
+		DeviceMaterialData::screen(SpirV::ClusteredLocalFrag, true),
 	};
 
 static constexpr const char* spirv_names[] = {
@@ -91,6 +92,7 @@ static constexpr const char* spirv_names[] = {
 		"skinned.frag",
 		"textured.frag",
 		"cluster_builder.frag",
+		"clustered_locals.frag",
 
 		"basic.vert",
 		"skinned.vert",

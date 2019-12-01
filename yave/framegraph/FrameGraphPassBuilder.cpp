@@ -155,10 +155,10 @@ void FrameGraphPassBuilder::add_descriptor_binding(Descriptor bind, usize ds_ind
 }
 
 template<typename T>
-void set_stage(T& info, PipelineStage stage) {
+void set_stage(const FrameGraphPass* pass, T& info, PipelineStage stage) {
 	if(info.stage != PipelineStage::None) {
 		Y_TODO(This should be either one write or many reads)
-		y_fatal("Resource can only be used once per pass (previous stage was %).", usize(info.stage));
+		y_fatal("Resource can only be used once per pass (used twice by \"%\", previous stage was %).", pass->name(), usize(info.stage));
 	}
 	info.stage = stage;
 }
@@ -166,14 +166,14 @@ void set_stage(T& info, PipelineStage stage) {
 void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage, bool is_written, PipelineStage stage) {
 	res.check_valid();
 	auto& info = _pass->_images[res];
-	set_stage(info, stage);
+	set_stage(_pass, info, stage);
 	parent()->register_usage(res, usage, is_written, _pass);
 }
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usage, bool is_written, PipelineStage stage) {
 	res.check_valid();
 	auto& info = _pass->_buffers[res];
-	set_stage(info, stage);
+	set_stage(_pass, info, stage);
 	parent()->register_usage(res, usage, is_written, _pass);
 }
 

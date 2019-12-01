@@ -32,35 +32,47 @@ SOFTWARE.
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/entities/entities.h>
 
+#include <yave/meshes/StaticMesh.h>
+
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
 
 namespace yave {
 
-static constexpr usize max_directional_light_count = 16;
-static constexpr usize max_point_light_count = 1024;
+static constexpr usize max_directional_lights = 16;
+static constexpr usize max_point_lights = 1024;
+
+static constexpr usize tile_size = 32;
+static constexpr usize max_lights_per_cluster = 128;
+
+static constexpr math::Vec3ui compute_cluster_count(const math::Vec2ui& size) {
+	math::Vec2ui tiles;
+	for(usize i = 0; i != 2; ++i) {
+		tiles[i] = size[i] / tile_size;
+		if(tiles[i] * tile_size < size[i]) {
+			++tiles[i];
+		}
+	}
+	return math::Vec3ui(tiles, 1);
+}
+
 
 LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe) {
 	static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
 	const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
 	const SceneView& scene = gbuffer.scene_pass.scene_view;
-
-
-	FrameGraphPassBuilder ambient_builder = framegraph.add_pass("Ambient/Sun pass");
-	FrameGraphPassBuilder point_builder = framegraph.add_pass("Lighting pass");
-
-	const auto lit = ambient_builder.declare_image(lighting_format, size);
+	const Camera camera = scene.camera();
 
 	struct PushData {
 		uniform::LightingCamera camera;
 		u32 light_count = 0;
 	};
 
-	uniform::LightingCamera camera_data = scene.camera();
-
+	FrameGraphPassBuilder ambient_builder = framegraph.add_pass("Ambient/Sun pass");
+	const auto lit = ambient_builder.declare_image(lighting_format, size);
 	{
-		const auto directional_buffer = ambient_builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_light_count);
+		const auto directional_buffer = ambient_builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_lights);
 
 		ambient_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
 		ambient_builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
@@ -72,26 +84,125 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 		ambient_builder.map_update(directional_buffer);
 
 		ambient_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-				PushData push_data{camera_data, 0};
-				TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
-				for(auto [l] : scene.world().view(DirectionalLightArchetype()).components()) {
-					static_assert(std::is_reference_v<decltype(l)>);
-					mapping[push_data.light_count++] = uniform::DirectionalLight{
-							-l.direction().normalized(),
-							0,
-							l.color() * l.intensity(),
-							0
-						};
-				}
+			PushData push_data{camera, 0};
+			TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
+			for(auto [l] : scene.world().view(DirectionalLightArchetype()).components()) {
+				mapping[push_data.light_count++] = {
+						-l.direction().normalized(),
+						0,
+						l.color() * l.intensity(),
+						0
+					};
+			}
 
-				const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredAmbientProgram];
-				recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
-			});
+			const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredAmbientProgram];
+			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
+		});
 	}
 
 
+#if 0
 	{
-		const auto light_buffer = point_builder.declare_typed_buffer<uniform::PointLight>(max_point_light_count);
+		const math::Vec3ui cluster_count = compute_cluster_count(size);
+		const usize total_clusters = cluster_count.x() * cluster_count.y() * cluster_count.z();
+
+		struct ClusteringData {
+			uniform::LightingCamera camera;
+			math::Matrix4<> view_proj;
+			math::Vec2ui cluster_count;
+		};
+
+
+		FrameGraphPassBuilder clear_builder = framegraph.add_pass("Cluster clearing pass");
+
+		const auto tile_buffer = clear_builder.declare_image(vk::Format::eR32Uint, cluster_count.to<2>());
+
+		clear_builder.add_color_output(tile_buffer);
+		clear_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+			recorder.bind_framebuffer(self->framebuffer());
+		});
+
+
+		FrameGraphPassBuilder cluster_builder = framegraph.add_pass("Clustering pass");
+
+		const auto light_buffer = cluster_builder.declare_typed_buffer<uniform::PointLight>(max_point_lights);
+		const auto index_buffer = cluster_builder.declare_typed_buffer<u32>(max_lights_per_cluster * total_clusters);
+		const auto cluster_buffer = cluster_builder.declare_typed_buffer<ClusteringData>();
+		const auto tiles = cluster_builder.declare_image(vk::Format::eR8Unorm, cluster_count.to<2>());
+
+		cluster_builder.add_uniform_input(cluster_buffer);
+		cluster_builder.add_storage_input(light_buffer);
+		cluster_builder.add_storage_output(index_buffer);
+		cluster_builder.add_storage_output(tile_buffer);
+
+		cluster_builder.map_update(cluster_buffer);
+		cluster_builder.map_update(index_buffer);
+		cluster_builder.add_color_output(tiles);
+
+		cluster_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+			usize light_count = 0;
+			{
+				for(u32& i : self->resources().mapped_buffer(index_buffer)) {
+					i = 0;
+				}
+			}
+			{
+				auto mapping = self->resources().mapped_buffer(light_buffer);
+				for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
+					mapping[light_count++] = {
+							t.position(),
+							l.radius(),
+							l.color() * l.intensity(),
+							std::max(math::epsilon<float>, l.falloff())
+					};
+				}
+			}
+			{
+				auto mapping = self->resources().mapped_buffer(cluster_buffer);
+				mapping[0] = {
+					camera,
+					camera.viewproj_matrix(),
+					cluster_count.to<2>()
+				};
+			}
+
+			const DeviceResources& res = recorder.device()->device_resources();
+			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+			const StaticMesh& sphere = *res[DeviceResources::SphereMesh];
+			auto indirect = sphere.indirect_data();
+			indirect.setInstanceCount(light_count);
+
+			render_pass.bind_material(res[DeviceResources::ClusterBuilderMaterialTemplate], {self->descriptor_sets()[0]});
+			render_pass.bind_buffers(sphere.triangle_buffer(), sphere.vertex_buffer());
+			render_pass.draw(indirect);
+
+		});
+
+
+		FrameGraphPassBuilder local_builder = framegraph.add_pass("Lighting pass");
+
+		local_builder.add_uniform_input(gbuffer.depth);
+		local_builder.add_uniform_input(gbuffer.color);
+		local_builder.add_uniform_input(gbuffer.normal);
+		local_builder.add_uniform_input(tile_buffer);
+		local_builder.add_storage_input(light_buffer);
+		local_builder.add_storage_input(index_buffer);
+		local_builder.add_uniform_input(cluster_buffer);
+
+		local_builder.add_color_output(lit);
+		local_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+			const auto* material = recorder.device()->device_resources()[DeviceResources::ClusteredLocalsMaterialTemplate];
+			render_pass.bind_material(material, {self->descriptor_sets()[0]});
+			render_pass.draw(vk::DrawIndirectCommand(6, 1));
+		});
+	}
+
+#else
+	FrameGraphPassBuilder point_builder = framegraph.add_pass("Lighting pass");
+
+	{
+		const auto light_buffer = point_builder.declare_typed_buffer<uniform::PointLight>(max_point_lights);
 
 		point_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
 		point_builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
@@ -101,24 +212,24 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 		point_builder.map_update(light_buffer);
 
 		point_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-				PushData push_data{camera_data, 0};
-				TypedMapping<uniform::PointLight> mapping = self->resources().mapped_buffer(light_buffer);
-				for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
-					static_assert(std::is_reference_v<decltype(t)> && std::is_reference_v<decltype(l)>);
-					mapping[push_data.light_count++] = uniform::PointLight{
-							t.position(),
-							l.radius(),
-							l.color() * l.intensity(),
-							std::max(math::epsilon<float>, l.falloff())
-						};
-				}
+			PushData push_data{camera, 0};
+			TypedMapping<uniform::PointLight> mapping = self->resources().mapped_buffer(light_buffer);
+			for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
+				mapping[push_data.light_count++] = {
+						t.position(),
+						l.radius(),
+						l.color() * l.intensity(),
+						std::max(math::epsilon<float>, l.falloff())
+					};
+			}
 
-				if(push_data.light_count) {
-					const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredLocalsProgram];
-					recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
-				}
-			});
+			if(push_data.light_count) {
+				const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredLocalsProgram];
+				recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
+			}
+		});
 	}
+#endif
 
 	LightingPass pass;
 	pass.lit = lit;

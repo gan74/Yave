@@ -1,10 +1,9 @@
 #version 450
 
-#include "yave.glsl"
+#include "clustered.glsl"
 
 layout(set = 0, binding = 0) uniform Buffer {
-	mat4 view_proj;
-	uvec2 tile_count;
+	ClusteringData data;
 };
 
 layout(set = 0, binding = 1) readonly buffer Lights {
@@ -24,5 +23,5 @@ void main() {
 
 	const PointLight light = lights[gl_InstanceIndex];
 
-	gl_Position = view_proj * vec4(light.position + in_position * light.radius, 1.0);
+	gl_Position = data.view_proj * vec4(light.position + in_position * light.radius, 1.0);
 }

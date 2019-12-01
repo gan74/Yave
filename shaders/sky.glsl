@@ -1,5 +1,5 @@
-#ifndef ATMOSPHERE_GLSL
-#define ATMOSPHERE_GLSL
+#ifndef SKY_GLSL
+#define SKY_GLSL
 
 #include "yave.glsl"
 #include "sh.glsl"

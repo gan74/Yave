@@ -63,6 +63,7 @@ class DeviceResources final : NonMovable {
 			SkinnedFrag,
 			TexturedFrag,
 			ClusterBuilderFrag,
+			ClusteredLocalFrag,
 
 			BasicVert,
 			SkinnedVert,
@@ -98,6 +99,7 @@ class DeviceResources final : NonMovable {
 			RayleighSkyMaterialTemplate,
 
 			ClusterBuilderMaterialTemplate,
+			ClusteredLocalsMaterialTemplate,
 
 			MaxMaterialTemplates
 		};
