@@ -163,11 +163,12 @@ class CmdBufferRecorder : public CmdBufferBase {
 		void barriers(core::Span<BufferBarrier> buffers);
 		void barriers(core::Span<ImageBarrier> images);
 
+		Y_TODO(Const all this)
+		void barriered_copy(const ImageBase& src,  const ImageBase& dst);
 		void copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst);
 		void copy(const SrcCopyImage& src,  const DstCopyImage& dst);
 		void blit(const SrcCopyImage& src,  const DstCopyImage& dst);
 
-		void barriered_copy(const ImageBase& src,  const ImageBase& dst);
 
 		// never use directly, needed for internal work
 		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);

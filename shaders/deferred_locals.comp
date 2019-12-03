@@ -107,6 +107,7 @@ void cull_lights() {
 
 void main() {
 	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+	// This is not quite exact if the viewport is not a multiple of gl_WorkGroupSize
 	const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 
 	cull_lights();

@@ -53,11 +53,10 @@ static constexpr math::Vec3ui compute_cluster_count(const math::Vec2ui& size) {
 			++tiles[i];
 		}
 	}
-	return math::Vec3ui(tiles, 1);
+	return math::Vec3ui(tiles, 16);
 }
 
-
-LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe) {
+LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe, bool use_clustered_renderer) {
 	static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
 	const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
@@ -101,21 +100,21 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 	}
 
 
-#if 0
-	{
+
+	if(use_clustered_renderer) {
 		const math::Vec3ui cluster_count = compute_cluster_count(size);
 		const usize total_clusters = cluster_count.x() * cluster_count.y() * cluster_count.z();
 
 		struct ClusteringData {
 			uniform::LightingCamera camera;
 			math::Matrix4<> view_proj;
-			math::Vec2ui cluster_count;
+			math::Vec3ui cluster_count;
 		};
 
 
 		FrameGraphPassBuilder clear_builder = framegraph.add_pass("Cluster clearing pass");
 
-		const auto tile_buffer = clear_builder.declare_image(vk::Format::eR32Uint, cluster_count.to<2>());
+		const auto tile_buffer = clear_builder.declare_image(vk::Format::eR32Uint, cluster_count.to<2>() * math::Vec2ui(1, cluster_count.z()));
 
 		clear_builder.add_color_output(tile_buffer);
 		clear_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -136,16 +135,10 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 		cluster_builder.add_storage_output(tile_buffer);
 
 		cluster_builder.map_update(cluster_buffer);
-		cluster_builder.map_update(index_buffer);
 		cluster_builder.add_color_output(tiles);
 
 		cluster_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			usize light_count = 0;
-			{
-				for(u32& i : self->resources().mapped_buffer(index_buffer)) {
-					i = 0;
-				}
-			}
 			{
 				auto mapping = self->resources().mapped_buffer(light_buffer);
 				for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
@@ -162,7 +155,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 				mapping[0] = {
 					camera,
 					camera.viewproj_matrix(),
-					cluster_count.to<2>()
+					cluster_count
 				};
 			}
 
@@ -170,11 +163,19 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 			const StaticMesh& sphere = *res[DeviceResources::SphereMesh];
 			auto indirect = sphere.indirect_data();
-			indirect.setInstanceCount(light_count);
-
 			render_pass.bind_material(res[DeviceResources::ClusterBuilderMaterialTemplate], {self->descriptor_sets()[0]});
 			render_pass.bind_buffers(sphere.triangle_buffer(), sphere.vertex_buffer());
-			render_pass.draw(indirect);
+
+			const bool use_instancing = true;
+			if(use_instancing) {
+				indirect.setInstanceCount(light_count);
+				render_pass.draw(indirect);
+			} else {
+				for(usize i = 0; i != light_count; ++i) {
+					indirect.setFirstInstance(i);
+					render_pass.draw(indirect);
+				}
+			}
 
 		});
 
@@ -196,12 +197,11 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 			render_pass.bind_material(material, {self->descriptor_sets()[0]});
 			render_pass.draw(vk::DrawIndirectCommand(6, 1));
 		});
-	}
 
-#else
-	FrameGraphPassBuilder point_builder = framegraph.add_pass("Lighting pass");
+	} else {
 
-	{
+		FrameGraphPassBuilder point_builder = framegraph.add_pass("Lighting pass");
+
 		const auto light_buffer = point_builder.declare_typed_buffer<uniform::PointLight>(max_point_lights);
 
 		point_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
@@ -229,7 +229,6 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 			}
 		});
 	}
-#endif
 
 	LightingPass pass;
 	pass.lit = lit;

@@ -238,6 +238,9 @@ void EngineView::draw_menu_bar() {
 				ImGui::EndMenu();
 			}
 
+			ImGui::Separator();
+			ImGui::MenuItem("Clustered renderer", nullptr, &_settings.renderer_settings.use_clustered_renderer);
+
 			ImGui::EndMenu();
 		}
 

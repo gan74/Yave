@@ -303,6 +303,47 @@ void CmdBufferRecorder::barriers(core::Span<ImageBarrier> images) {
 	barriers({}, images);
 }
 
+void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
+
+	{
+		const std::array<ImageBarrier, 2> image_barriers = {
+				ImageBarrier::transition_to_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
+				ImageBarrier::transition_barrier(dst, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal),
+			};
+		barriers(image_barriers);
+	}
+
+	{
+		if(src.image_size() != dst.image_size()) {
+			y_fatal("Image size do not match.");
+		}
+
+		const auto src_resource = vk::ImageSubresourceLayers()
+			.setAspectMask(src.format().vk_aspect())
+			.setMipLevel(0)
+			.setBaseArrayLayer(0)
+			.setLayerCount(src.layers());
+		const auto dst_resource = vk::ImageSubresourceLayers()
+			.setAspectMask(dst.format().vk_aspect())
+			.setMipLevel(0)
+			.setBaseArrayLayer(0)
+			.setLayerCount(dst.layers());
+
+		const auto extent = vk::Extent3D(src.image_size().x(), src.image_size().y(), src.image_size().z());
+
+		vk_cmd_buffer().copyImage(src.vk_image(), vk::ImageLayout::eTransferSrcOptimal,
+								  dst.vk_image(), vk::ImageLayout::eTransferDstOptimal, vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
+	}
+
+	{
+		const std::array<ImageBarrier, 2> image_barriers = {
+				ImageBarrier::transition_from_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
+				ImageBarrier::transition_from_barrier(dst, vk::ImageLayout::eTransferDstOptimal)
+			};
+		barriers(image_barriers);
+	}
+}
+
 void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst) {
 	if(src.byte_size() != dst.byte_size()) {
 		y_fatal("Buffer size do not match.");
@@ -353,45 +394,5 @@ void CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, 
 	barriers({ImageBarrier::transition_barrier(image, src, dst)});
 }
 
-void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
-
-	{
-		const std::array<ImageBarrier, 2> image_barriers = {
-				ImageBarrier::transition_to_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
-				ImageBarrier::transition_barrier(dst, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal),
-			};
-		barriers(image_barriers);
-	}
-
-	{
-		if(src.image_size() != dst.image_size()) {
-			y_fatal("Image size do not match.");
-		}
-
-		const auto src_resource = vk::ImageSubresourceLayers()
-			.setAspectMask(src.format().vk_aspect())
-			.setMipLevel(0)
-			.setBaseArrayLayer(0)
-			.setLayerCount(src.layers());
-		const auto dst_resource = vk::ImageSubresourceLayers()
-			.setAspectMask(dst.format().vk_aspect())
-			.setMipLevel(0)
-			.setBaseArrayLayer(0)
-			.setLayerCount(dst.layers());
-
-		const auto extent = vk::Extent3D(src.image_size().x(), src.image_size().y(), src.image_size().z());
-
-		vk_cmd_buffer().copyImage(src.vk_image(), vk::ImageLayout::eTransferSrcOptimal,
-								  dst.vk_image(), vk::ImageLayout::eTransferDstOptimal, vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
-	}
-
-	{
-		const std::array<ImageBarrier, 2> image_barriers = {
-				ImageBarrier::transition_from_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
-				ImageBarrier::transition_from_barrier(dst, vk::ImageLayout::eTransferDstOptimal)
-			};
-		barriers(image_barriers);
-	}
-}
 
 }

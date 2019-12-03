@@ -31,12 +31,9 @@ layout(set = 0, binding = 6) uniform Buffer {
 void main() {
 	const ivec2 coord = ivec2(gl_FragCoord.xy);
 	const uvec2 tile_id = uvec2(coord) / tile_size;
-	const uint tile_index = tile_id.x + tile_id.y * data.tile_count.x;
-	const uint tile_start_index = tile_index * max_lights_per_cluster;
 
 	const float depth = texelFetch(in_depth, coord, 0).x;
 	vec3 irradiance = vec3(0.0);
-	bool failed = false;
 
 	if(!is_OOB(depth)) {
 		vec3 albedo;
@@ -47,25 +44,35 @@ void main() {
 		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
 		const vec3 world_pos = unproject(in_uv, depth, data.camera.inv_matrix);
-		const vec3 view_dir = normalize(data.camera.position - world_pos);
+		const vec3 view_vec = data.camera.position - world_pos;
+		const float view_z = -dot(data.camera.forward, view_vec);
+		const uint cluster_z = cluster_z_index(view_z, data);
+		const vec3 view_dir = normalize(view_vec);
 
-		const uint light_count = texelFetch(in_clusters, ivec2(tile_id), 0).x;
+		const uint cluster_index =
+		    tile_id.x +
+		    tile_id.y * data.cluster_count.x +
+		    cluster_z * data.cluster_count.x * data.cluster_count.y;
+
+		const uint cluster_start_index = cluster_index * max_lights_per_cluster;
+
+		const uint light_count = min(max_lights_per_cluster, texelFetch(in_clusters, cluster_coord(tile_id, cluster_z, data), 0).x);
 		for(uint i = 0; i != light_count; ++i) {
-			const uint light_index = light_indexes[tile_start_index + i];
+			const uint light_index = light_indexes[cluster_start_index + i];
 			const PointLight light = lights[light_index];
 
 			// light_dir dot view_dir > 0
 			vec3 light_dir = light.position - world_pos;
 			const float distance = length(light_dir);
 			light_dir /= distance;
-			const float att = distance > light.radius ? 0.5 : 1.0; //attenuation(distance, light.radius, light.falloff);
+			const float att = attenuation(distance, light.radius, light.falloff);
 
 			const vec3 radiance = light.color * att;
 			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
 		}
 	}
 
-	out_color = vec4(irradiance, 1.0);
+	out_color = vec4(irradiance, 1.0f);
 }
 
 

@@ -17,6 +17,7 @@ layout(location = 2) in vec3 in_tangent;
 layout(location = 3) in vec2 in_uv;
 
 layout(location = 0) out uint out_instance_id;
+layout(location = 1) out vec2 out_z_range;
 
 
 void main() {
@@ -32,8 +33,13 @@ void main() {
 	const float dist = distance(proj_pos.xy, proj_pos_norm.xy);
 
 	const float sqrt_2 = 1.41421356237;
-	const float target = length(1.0 / data.tile_count) / sqrt_2;
+	const float target = length(1.0 / data.cluster_count.xy) / sqrt_2;
 	const float norm_len = target / dist;
 
-	gl_Position = data.view_proj * vec4(light.position + in_position * light.radius + norm * norm_len, 1.0);
+	const vec3 out_position = light.position + in_position * light.radius + norm * norm_len;
+	gl_Position = data.view_proj * vec4(out_position, 1.0);
+
+	const float max_z = dot(out_position - data.camera.position, data.camera.forward);
+	const float min_z = max_z - 2.0 * light.radius;
+	out_z_range = vec2(min_z, max_z);
 }

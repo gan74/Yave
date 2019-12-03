@@ -69,7 +69,7 @@ static constexpr DeviceMaterialData material_datas[] = {
 		DeviceMaterialData::basic(SpirV::TexturedFrag),
 		DeviceMaterialData::screen(SpirV::ToneMapFrag),
 		DeviceMaterialData::screen(SpirV::RayleighSkyFrag, true),
-		DeviceMaterialData{SpirV::ClusterBuilderFrag, SpirV::ClusterBuilderVert, DepthTestMode::None, BlendMode::Add, CullMode::Front},
+		DeviceMaterialData{SpirV::ClusterBuilderFrag, SpirV::ClusterBuilderVert, DepthTestMode::None, BlendMode::None, CullMode::Front},
 		DeviceMaterialData::screen(SpirV::ClusteredLocalFrag, true),
 	};
 
