@@ -8,17 +8,15 @@ layout(set = 0, binding = 1) uniform usampler2D in_id;
 layout(set = 0, binding = 2) writeonly buffer Output {
 	float depth;
 	uint entity_id;
-} output_data;
+};
 
 layout(push_constant) uniform PushConstants {
 	vec2 uv;
-} constants;
+};
 
 void main() {
-	output_data.depth = texture(in_depth, constants.uv).r;
-
-	const ivec2 size = textureSize(in_id, 0);
-	output_data.entity_id = uint(texelFetch(in_id, ivec2(size * constants.uv), 0).r);
+	depth = texture(in_depth, uv).r;
+	entity_id = uint(texelFetch(in_id, ivec2(textureSize(in_id, 0) * uv), 0).r);
 }
 
 

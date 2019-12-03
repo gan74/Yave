@@ -88,7 +88,7 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 				auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 				const auto* material = recorder.device()->device_resources()[DeviceResources::RayleighSkyMaterialTemplate];
 				render_pass.bind_material(material, {self->descriptor_sets()[0]});
-				render_pass.draw(vk::DrawIndirectCommand(6, 1));
+				render_pass.draw(vk::DrawIndirectCommand(3, 1));
 			});
 	}
 

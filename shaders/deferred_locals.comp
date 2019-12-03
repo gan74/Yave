@@ -14,12 +14,12 @@ layout(rgba16f, set = 0, binding = 4) uniform image2D out_color;
 
 layout(set = 0, binding = 3) readonly buffer Lights {
 	PointLight lights[];
-} lights;
+};
 
 layout(push_constant) uniform PushConstants {
 	LightingCamera camera;
 	uint light_count;
-} constants;
+};
 
 
 // -------------------------------- SHARED --------------------------------
@@ -49,10 +49,20 @@ uvec2 dispatch_range(uint num) {
 
 // -------------------------------- CULLING --------------------------------
 
+bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
+	float dist_sum = 0.0;
+	for(uint i = 0; i != 4; ++i) {
+		const float dist = -dot(vec4(pos, 1.0), frustum.planes[i]);
+		dist_sum += sqr(max(0.0, dist));
+	}
+	return dist_sum < radius * radius;
+}
+
+
 Frustum4 build_group_frustum() {
-	const vec3 ndc_top_left = unproject_ndc(vec3(-1.0, 1.0, 1.0), constants.camera.inv_matrix);
-	const vec3 ndc_bot_left = unproject_ndc(vec3(-1.0, -1.0, 1.0), constants.camera.inv_matrix); // we can probably deduce than one
-	const vec3 ndc_bot_right = unproject_ndc(vec3(1.0, -1.0, 1.0), constants.camera.inv_matrix);
+	const vec3 ndc_top_left = unproject_ndc(vec3(-1.0, 1.0, 1.0), camera.inv_matrix);
+	const vec3 ndc_bot_left = unproject_ndc(vec3(-1.0, -1.0, 1.0), camera.inv_matrix); // we can probably deduce than one
+	const vec3 ndc_bot_right = unproject_ndc(vec3(1.0, -1.0, 1.0), camera.inv_matrix);
 
 	const vec3 x_step = (ndc_bot_right - ndc_bot_left) / gl_NumWorkGroups.x;
 	const vec3 y_step = (ndc_top_left - ndc_bot_left) / gl_NumWorkGroups.y;
@@ -62,7 +72,7 @@ Frustum4 build_group_frustum() {
 	const vec3 tile_top_left  = ndc_bot_left + x_step *  gl_WorkGroupID.x      + y_step * (gl_WorkGroupID.y + 1);
 	const vec3 tile_top_right = ndc_bot_left + x_step * (gl_WorkGroupID.x + 1) + y_step * (gl_WorkGroupID.y + 1);
 
-	const vec3 cam_pos = constants.camera.position;
+	const vec3 cam_pos = camera.position;
 
 	Frustum4 frustum;
 	frustum.planes[0] = plane(cam_pos, tile_top_left, tile_bot_left);
@@ -85,10 +95,10 @@ void cull_lights() {
 	barrier();
 
 	{
-		const uvec2 range = dispatch_range(constants.light_count);
+		const uvec2 range = dispatch_range(light_count);
 
 		for(uint i = range.x; i != range.y; ++i) {
-			if(is_inside(tile_frustum, lights.lights[i].position, lights.lights[i].radius)) {
+			if(is_inside(tile_frustum, lights[i].position, lights[i].radius)) {
 				uint light_index = atomicAdd(tile_light_count, 1);
 				if(light_index >= max_tile_lights) {
 					break;
@@ -107,8 +117,7 @@ void cull_lights() {
 
 void main() {
 	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	// This is not quite exact if the viewport is not a multiple of gl_WorkGroupSize
-	const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+	const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(imageSize(out_color).xy);
 
 	cull_lights();
 
@@ -123,12 +132,12 @@ void main() {
 		unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
 		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
-		const vec3 world_pos = unproject(uv, depth, constants.camera.inv_matrix);
-		const vec3 view_dir = normalize(constants.camera.position - world_pos);
+		const vec3 world_pos = unproject(uv, depth, camera.inv_matrix);
+		const vec3 view_dir = normalize(camera.position - world_pos);
 
 		const uint point_light_count = min(max_tile_lights, tile_light_count);
 		for(uint i = 0; i != point_light_count; ++i) {
-			const PointLight light = lights.lights[tile_lights[i]];
+			const PointLight light = lights[tile_lights[i]];
 
 			// light_dir dot view_dir > 0
 			vec3 light_dir = light.position - world_pos;

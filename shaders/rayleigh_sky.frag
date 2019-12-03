@@ -10,11 +10,11 @@ layout(set = 0, binding = 3) uniform sampler2D brdf_lut;
 
 layout(set = 0, binding = 4) uniform RayleighSkyData {
 	RayleighSky sky;
-} sky;
+};
 
 layout(set = 0, binding = 5) uniform SkyLightData {
 	SkyLight light;
-} light;
+};
 
 
 layout(location = 0) in vec2 in_uv;
@@ -24,9 +24,6 @@ layout(location = 0) out vec4 out_color;
 
 
 void main() {
-	const RayleighSky sky = sky.sky;
-	const SkyLight light = light.light;
-
 	const vec3 view_dir = normalize(unproject(in_uv, 1.0, sky.camera.inv_matrix) - sky.camera.position);
 	const ivec2 coord = ivec2(gl_FragCoord.xy);
 	const vec2 uv = in_uv;

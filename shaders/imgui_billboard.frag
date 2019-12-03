@@ -9,7 +9,7 @@ layout(location = 2) in vec4 in_color;
 layout(set = 0, binding = 0) uniform sampler2D font_texture;
 layout(set = 0, binding = 1) uniform Data {
 	vec2 viewport_size;
-} constants;
+};
 
 const float smoothing = 1.0 / 16.0;
 const float alpha_edge = 0.7;

@@ -11,18 +11,17 @@ layout(local_size_x = group_size, local_size_y = group_size) in;
 
 layout(set = 0, binding = 0) uniform RayleighSkyData {
 	RayleighSky sky;
-} sky;
+};
 
 layout(set = 0, binding = 1) writeonly buffer SkyLightData {
 	SkyLight light;
-} light;
+};
 
 shared SH sky_sh[thread_count];
 
 void main() {
 	const uint index = gl_LocalInvocationIndex;
 	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	const RayleighSky sky = sky.sky;
 
 	const vec3 direction = index == 0 ? sky.sun_direction : sample_dir(index);
 
@@ -45,9 +44,9 @@ void main() {
 	}
 
 	if(index == 0) {
-		light.light.sun_direction = sky.sun_direction;
-		light.light.sun_color = color;
-		light.light.sh = sky_sh[0];
+		light.sun_direction = sky.sun_direction;
+		light.sun_color = color;
+		light.sh = sky_sh[0];
 	}
 }
 

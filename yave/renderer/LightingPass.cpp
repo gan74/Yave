@@ -195,7 +195,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 			const auto* material = recorder.device()->device_resources()[DeviceResources::ClusteredLocalsMaterialTemplate];
 			render_pass.bind_material(material, {self->descriptor_sets()[0]});
-			render_pass.draw(vk::DrawIndirectCommand(6, 1));
+			render_pass.draw(vk::DrawIndirectCommand(3, 1));
 		});
 
 	} else {

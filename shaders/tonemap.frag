@@ -10,13 +10,14 @@
 // https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ToneMapping.hlsl
 
 layout(set = 0, binding = 0) uniform sampler2D in_color;
+
 layout(set = 0, binding = 1) uniform ToneMapping {
 	ToneMappingParams params;
-} params;
+};
 
 layout(set = 0, binding = 2) uniform KeyValue {
-	float value;
-} key;
+	float key_value;
+};
 
 
 layout(location = 0) in vec2 in_uv;
@@ -39,7 +40,7 @@ vec3 filmic_ALU(vec3 hdr) {
 }
 
 float compute_exposure(float avg_lum) {
-	return key.value / max(epsilon, avg_lum);
+	return key_value / max(epsilon, avg_lum);
 }
 
 
@@ -52,7 +53,7 @@ vec3 tone_map(vec3 hdr, float exposure) {
 
 	if(mode == 1) {
 		vec3 Yxy = RGB_to_Yxy(hdr);
-		Yxy.x /= params.params.max_lum;
+		Yxy.x /= params.max_lum;
 		const vec3 aces = ACES_fast(Yxy_to_RGB(Yxy));
 		return gamma_correction(aces);
 	}
@@ -72,7 +73,7 @@ vec3 tone_map(vec3 hdr, float exposure) {
 void main() {
 	const ivec2 coord = ivec2(gl_FragCoord.xy);
 	const vec3 hdr = texelFetch(in_color, coord, 0).rgb;
-	const float exposure = compute_exposure(params.params.avg_lum);
+	const float exposure = compute_exposure(params.avg_lum);
 
 	out_color = vec4(tone_map(hdr, exposure), 1.0);
 }

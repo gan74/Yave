@@ -4,11 +4,11 @@ layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
 layout(set = 0, binding = 0) uniform sampler2D font_texture;
-layout(set = 0, binding = 1) uniform PassData {
+layout(set = 0, binding = 1) uniform Buffer {
 	mat4 view_proj;
 	vec2 viewport_size;
-	float size;
-} pass;
+	float billboard_size;
+};
 
 vec2 uvs[] = vec2[](
 		vec2(0.0, 1.0),
@@ -27,8 +27,8 @@ layout(location = 1) out vec2 out_uv;
 layout(location = 2) out vec4 out_color;
 
 void main() {
-	const vec4 position = pass.view_proj * vec4(in_position[0], 1.0);
-	const vec2 size = (pass.size * position.w) / pass.viewport_size;
+	const vec4 position = view_proj * vec4(in_position[0], 1.0);
+	const vec2 size = (billboard_size * position.w) / viewport_size;
 
 	for(uint i = 0; i != 4; ++i) {
 		out_instance_id = in_instance_id[0];
