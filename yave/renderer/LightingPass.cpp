@@ -42,8 +42,8 @@ namespace yave {
 static constexpr usize max_directional_lights = 16;
 static constexpr usize max_point_lights = 1024;
 
-static constexpr usize tile_size = 32;
-static constexpr usize max_lights_per_cluster = 128;
+static constexpr usize tile_size = 64;
+static constexpr usize max_lights_per_cluster = 64;
 
 static constexpr math::Vec3ui compute_cluster_count(const math::Vec2ui& size) {
 	math::Vec2ui tiles;
@@ -161,7 +161,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
 			const DeviceResources& res = recorder.device()->device_resources();
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			const StaticMesh& sphere = *res[DeviceResources::SphereMesh];
+			const StaticMesh& sphere = *res[DeviceResources::SimpleSphereMesh];
 			auto indirect = sphere.indirect_data();
 			render_pass.bind_material(res[DeviceResources::ClusterBuilderMaterialTemplate], {self->descriptor_sets()[0]});
 			render_pass.bind_buffers(sphere.triangle_buffer(), sphere.vertex_buffer());

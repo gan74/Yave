@@ -121,6 +121,7 @@ static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_coun
 // implemented in DeviceResourcesData.cpp
 MeshData cube_mesh_data();
 MeshData sphere_mesh_data();
+MeshData simple_sphere_mesh_data();
 MeshData sweep_mesh_data();
 
 
@@ -187,15 +188,16 @@ void DeviceResources::load_resources(DevicePtr dptr) {
 	}
 
 	{
-		_materials = std::make_unique<AssetPtr<Material>[]>(1);
+		_materials = std::make_unique<AssetPtr<Material>[]>(usize(MaxMaterials));
 		_materials[0] = make_asset<Material>(&_material_templates[usize(BasicMaterialTemplate)]);
 	}
 
 	{
-		_meshes = std::make_unique<AssetPtr<StaticMesh>[]>(3);
+		_meshes = std::make_unique<AssetPtr<StaticMesh>[]>(usize(MaxMeshes));
 		_meshes[0] = make_asset<StaticMesh>(dptr, cube_mesh_data());
 		_meshes[1] = make_asset<StaticMesh>(dptr, sphere_mesh_data());
-		_meshes[2] = make_asset<StaticMesh>(dptr, sweep_mesh_data());
+		_meshes[2] = make_asset<StaticMesh>(dptr, simple_sphere_mesh_data());
+		_meshes[3] = make_asset<StaticMesh>(dptr, sweep_mesh_data());
 	}
 
 	_brdf_lut = create_brdf_lut(dptr, operator[](BRDFIntegratorProgram));

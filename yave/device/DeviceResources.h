@@ -124,6 +124,7 @@ class DeviceResources final : NonMovable {
 		enum Meshes {
 			CubeMesh,
 			SphereMesh,
+			SimpleSphereMesh,
 			SweepMesh,
 
 			MaxMeshes
