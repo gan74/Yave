@@ -28,6 +28,10 @@ namespace yave {
 FrameGraphPassBuilder::FrameGraphPassBuilder(FrameGraphPass* pass) : _pass(pass) {
 }
 
+DevicePtr FrameGraphPassBuilder::device() const {
+	return parent()->device();
+}
+
 void FrameGraphPassBuilder::set_render_func(FrameGraphPass::render_func&& func) {
 	_pass->_render = std::move(func);
 }
@@ -189,7 +193,7 @@ void FrameGraphPassBuilder::set_cpu_visible(FrameGraphMutableBufferId res) {
 	parent()->set_cpu_visible(res, _pass);
 }
 
-FrameGraph* FrameGraphPassBuilder::parent() {
+FrameGraph* FrameGraphPassBuilder::parent() const {
 	return _pass->_parent;
 }
 

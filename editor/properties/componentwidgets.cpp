@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <editor/components/EditorComponent.h>
 #include <yave/components/PointLightComponent.h>
+#include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyComponent.h>
 #include <yave/components/StaticMeshComponent.h>
@@ -102,7 +103,7 @@ static void light_widget(T* light) {
 	ImGui::NextColumn();
 	ImGui::Text("Intensity");
 	ImGui::NextColumn();
-	ImGui::DragFloat("###intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max());
+	ImGui::DragFloat("###intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
 }
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
@@ -129,6 +130,47 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::Text("Falloff");
 		ImGui::NextColumn();
 		ImGui::DragFloat("###falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
+	}
+	ImGui::Columns(1);
+}
+
+editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
+	SpotLightComponent* light = ctx->world().component<SpotLightComponent>(id);
+	if(!light) {
+		return;
+	}
+
+	if(!ImGui::CollapsingHeader("Spot light", ImGuiTreeNodeFlags_DefaultOpen)) {
+		return;
+	}
+
+
+	ImGui::Columns(2);
+	{
+		light_widget(light);
+
+		ImGui::NextColumn();
+		ImGui::Text("Radius");
+		ImGui::NextColumn();
+		ImGui::DragFloat("###radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+
+		ImGui::NextColumn();
+		ImGui::Text("Falloff");
+		ImGui::NextColumn();
+		ImGui::DragFloat("###falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
+
+		ImGui::NextColumn();
+		ImGui::Text("Angle");
+		ImGui::NextColumn();
+		float angle = math::to_deg(light->angle() * 2.0f);
+		if(ImGui::DragFloat("###angle", &angle, 0.1f, 0.0f, 360.0f, "%.2f")) {
+			light->angle() = math::to_rad(angle * 0.5f);
+		}
+
+		ImGui::NextColumn();
+		ImGui::Text("Exponent");
+		ImGui::NextColumn();
+		ImGui::DragFloat("###exponent", &light->angle_exponent(), 0.1f, 0.0f, 10.0f, "%.2f");
 	}
 	ImGui::Columns(1);
 }

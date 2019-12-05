@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/ecs/EntityWorld.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/PointLightComponent.h>
+#include <yave/components/SpotLightComponent.h>
 #include <yave/entities/entities.h>
 
 #include <editor/context/EditorContext.h>
@@ -98,7 +99,8 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 	}
 
 	{
-		const auto [uv, size] = compute_uv_size(ICON_FA_LIGHTBULB);
+		math::Vec2 uv;
+		math::Vec2 size;
 
 		usize index = 0;
 		auto vertex_mapping = pass->resources().mapped_buffer(vertex_buffer);
@@ -110,8 +112,18 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 				}
 			};
 
-		for(ecs::EntityIndex entity_index : world.indexes<PointLightComponent>()) {
-			push_entity(entity_index);
+		{
+			std::tie(uv, size) = compute_uv_size(ICON_FA_LIGHTBULB);
+			for(ecs::EntityIndex entity_index : world.indexes<PointLightComponent>()) {
+				push_entity(entity_index);
+			}
+		}
+
+		{
+			std::tie(uv, size) = compute_uv_size(ICON_FA_VIDEO);
+			for(ecs::EntityIndex entity_index : world.indexes<SpotLightComponent>()) {
+				push_entity(entity_index);
+			}
 		}
 
 		if(index) {

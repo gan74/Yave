@@ -145,9 +145,11 @@ void EngineView::update() {
 
 	if(hovered && is_clicked()) {
 		ImGui::SetWindowFocus();
-		focussed = true;
+		if(focussed) {
+			update_picking();
+		}
 
-		update_picking();
+		focussed = true;
 	}
 
 	if(focussed) {
@@ -237,9 +239,6 @@ void EngineView::draw_menu_bar() {
 				}
 				ImGui::EndMenu();
 			}
-
-			ImGui::Separator();
-			ImGui::MenuItem("Clustered renderer", nullptr, &_settings.renderer_settings.use_clustered_renderer);
 
 			ImGui::EndMenu();
 		}

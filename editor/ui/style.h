@@ -1,3 +1,6 @@
+// This is mostly all stolen from ImGui "Post your screenshots" issues
+
+
 
 if(_style == Style::Yave) {
 	// Custom style, not complete yet
@@ -67,6 +70,119 @@ if(_style == Style::Yave) {
 	colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
 	colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 	colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+}
+
+if(_style == Style::Yave2) {
+
+	auto& style = ImGui::GetStyle();
+	ImVec4* colors = style.Colors;
+
+	const auto rgb = [&](u8 r, u8 g, u8 b, u8 a = 255) { return math::Vec4(r, g, b, a) / 255.0f; };
+	const auto with_alpha = [&](const math::Vec4& rgba, u8 a = 255) { return math::Vec4(rgba.to<3>(), a / 255.0f); };
+
+	for(usize i = 0; i != ImGuiCol_COUNT; ++i) {
+		colors[i] = rgb(255, 0, 0);
+	}
+
+	const auto transparent					= rgb(  0,   0,   0,   0);
+	const auto highlight					= rgb( 67, 149, 251);
+	const auto highlight2					= rgb(255,   3,  85);
+	const auto highlight3					= rgb( 53, 194,  66);
+	const auto button						= rgb( 35,  35,  43);
+	const auto background					= rgb( 21,  22,  24);
+	const auto border						= rgb(  1,   1,   6);
+	const auto tab							= rgb( 11,  11,  11);
+
+	unused(highlight2, highlight3, tab);
+
+	colors[ImGuiCol_Text]					= rgb(255, 255, 255);
+	colors[ImGuiCol_TextDisabled]			= rgb(116, 116, 116);
+
+	colors[ImGuiCol_MenuBarBg]              = background;
+	colors[ImGuiCol_ChildBg]                = background;
+	colors[ImGuiCol_PopupBg]                = background;
+	colors[ImGuiCol_FrameBg]				= rgb( 25,  25,  31);
+	colors[ImGuiCol_WindowBg]               = rgb( 31,  32,  37);
+
+	colors[ImGuiCol_FrameBgHovered]         = colors[ImGuiCol_FrameBg];
+	colors[ImGuiCol_FrameBgActive]          = colors[ImGuiCol_FrameBg];
+
+	colors[ImGuiCol_TitleBg]                = colors[ImGuiCol_WindowBg];
+	colors[ImGuiCol_TitleBgActive]          = colors[ImGuiCol_WindowBg];
+	colors[ImGuiCol_TitleBgCollapsed]       = colors[ImGuiCol_WindowBg];
+
+	colors[ImGuiCol_Button]                 = button;
+	colors[ImGuiCol_ButtonHovered]          = highlight;
+	colors[ImGuiCol_ButtonActive]           = highlight;
+	colors[ImGuiCol_Header]                 = button;
+	colors[ImGuiCol_HeaderHovered]          = highlight;
+	colors[ImGuiCol_HeaderActive]           = highlight;
+	colors[ImGuiCol_ResizeGrip]             = button;
+	colors[ImGuiCol_ResizeGripHovered]      = highlight;
+	colors[ImGuiCol_ResizeGripActive]       = highlight;
+
+	colors[ImGuiCol_ScrollbarBg]            = rgb( 16,  16,  19);
+	colors[ImGuiCol_ScrollbarGrab]          = button;
+	colors[ImGuiCol_ScrollbarGrabHovered]   = highlight;
+	colors[ImGuiCol_ScrollbarGrabActive]    = highlight;
+	colors[ImGuiCol_CheckMark]              = highlight;
+	colors[ImGuiCol_SliderGrab]             = button;
+	colors[ImGuiCol_SliderGrabActive]       = highlight;
+
+	colors[ImGuiCol_Separator]				= colors[ImGuiCol_WindowBg];
+	colors[ImGuiCol_SeparatorHovered]       = highlight;
+	colors[ImGuiCol_SeparatorActive]        = highlight;
+
+	colors[ImGuiCol_Border]                 = border;
+	colors[ImGuiCol_BorderShadow]           = transparent;
+
+	colors[ImGuiCol_Tab]					= colors[ImGuiCol_WindowBg];
+	colors[ImGuiCol_TabActive]              = background;
+	colors[ImGuiCol_TabHovered]             = background;
+	colors[ImGuiCol_TabUnfocused]           = with_alpha(background, 64);
+	colors[ImGuiCol_TabUnfocusedActive]     = background;
+
+
+
+	style.PopupRounding = 0;
+
+	style.WindowPadding = ImVec2(4, 4);
+	style.FramePadding  = ImVec2(6, 4);
+	style.ItemSpacing   = ImVec2(6, 2);
+
+	style.ScrollbarSize = 18;
+
+	style.IndentSpacing = 12;
+
+	style.WindowBorderSize = 1;
+	style.ChildBorderSize  = 1;
+	style.PopupBorderSize  = 1;
+	style.FrameBorderSize  = 1;
+
+	style.WindowRounding    = 0;
+	style.ChildRounding     = 2;
+	style.FrameRounding     = 2;
+	style.ScrollbarRounding = 2;
+	style.GrabRounding      = 2;
+
+	style.TabBorderSize     = 1;
+	style.TabRounding       = 0;
+
+	if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		style.WindowRounding = 0.0f;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+	}
+
+	{
+		usize unset = 0;
+		for(usize i = 0; i != ImGuiCol_COUNT; ++i) {
+			unset += math::Vec4(colors[i]) == rgb(255, 0, 0);
+		}
+
+		if(unset) {
+			log_msg(fmt("% colors have not been specified.", unset), Log::Warning);
+		}
+	}
 }
 
 

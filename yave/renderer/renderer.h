@@ -29,7 +29,6 @@ namespace yave {
 
 struct RendererSettings {
 	ToneMappingSettings tone_mapping;
-	bool use_clustered_renderer = true;
 };
 
 struct DefaultRenderer {

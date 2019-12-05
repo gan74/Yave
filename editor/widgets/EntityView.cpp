@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
+#include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyComponent.h>
 
@@ -106,6 +107,7 @@ static core::Span<std::unique_ptr<ArchetypeBase>> entity_archtypes() {
 	if(archs.is_empty()) {
 		archs << MAKE_ARCHETYPE(StaticMesh, ICON_FA_CUBE);
 		archs << MAKE_ARCHETYPE(PointLight, ICON_FA_LIGHTBULB);
+		archs << MAKE_ARCHETYPE(SpotLight, ICON_FA_VIDEO);
 		archs << MAKE_ARCHETYPE(DirectionalLight, ICON_FA_SUN);
 		archs << MAKE_ARCHETYPE(Sky, ICON_FA_CLOUD_SUN);
 	}
@@ -152,6 +154,7 @@ void EntityView::paint_clustered_view() {
 
 	auto paint_group = [&](const ArchetypeBase& archetype) {
 		const char* icon = archetype.icon();
+		ImGui::PushID(archetype.name());
 
 		const auto paint_category_menu = [&] {
 			if(ImGui::IsItemClicked(1)) {
@@ -190,6 +193,8 @@ void EntityView::paint_clustered_view() {
 		} else {
 			paint_category_menu();
 		}
+
+		ImGui::PopID();
 	};
 
 	if(ImGui::BeginChild("###entities", ImVec2(), true)) {

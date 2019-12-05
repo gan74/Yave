@@ -19,22 +19,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_LIGHTINGPASS_H
-#define YAVE_RENDERER_LIGHTINGPASS_H
+#ifndef YAVE_COMPONENTS_SPOTLIGHTCOMPONENT_H
+#define YAVE_COMPONENTS_SPOTLIGHTCOMPONENT_H
 
-#include <yave/graphics/images/IBLProbe.h>
+#include <yave/ecs/ecs.h>
 
-#include "GBufferPass.h"
+#include "TransformableComponent.h"
 
 namespace yave {
 
-struct LightingPass {
-	FrameGraphImageId lit;
+class SpotLightComponent final : public ecs::RequiredComponents<TransformableComponent> {
+	public:
+		SpotLightComponent() = default;
 
-	static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe);
+		math::Vec3& color();
+		const math::Vec3& color() const;
+
+		float& intensity();
+		float intensity() const;
+
+		float& radius();
+		float radius() const;
+
+		float& falloff();
+		float falloff() const;
+
+		float& angle();
+		float angle() const;
+
+		float& angle_exponent();
+		float angle_exponent() const;
+
+
+	private:
+		math::Vec3 _color = math::Vec3{1.0f};
+		float _intensity = 1.0f;
+		float _radius = 1.0f;
+		float _falloff = 1.0f;
+		float _angle = math::to_rad(45.0f);
+		float _angle_exp = 2.0f;
 };
-
 
 }
 
-#endif // YAVE_RENDERER_LIGHTINGPASS_H
+#endif // YAVE_COMPONENTS_SPOTLIGHTCOMPONENT_H

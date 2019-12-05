@@ -28,12 +28,14 @@ namespace yave {
 
 class TransformableComponent;
 class PointLightComponent;
+class SpotLightComponent;
 class DirectionalLightComponent;
 class SkyComponent;
 
 class StaticMeshComponent;
 
 using PointLightArchetype = ecs::EntityArchetype<TransformableComponent, PointLightComponent>;
+using SpotLightArchetype = ecs::EntityArchetype<TransformableComponent, SpotLightComponent>;
 using StaticMeshArchetype = ecs::EntityArchetype<TransformableComponent, StaticMeshComponent>;
 using DirectionalLightArchetype = ecs::EntityArchetype<DirectionalLightComponent>;
 using SkyArchetype = ecs::EntityArchetype<SkyComponent>;

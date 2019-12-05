@@ -2,6 +2,11 @@
 
 #include "yave.glsl"
 
+// -------------------------------- DEFINES --------------------------------
+
+#define POINT_LIGHTS
+#define SPOT_LIGHTS
+
 // -------------------------------- I/O --------------------------------
 
 layout(local_size_x = 16, local_size_y = 16) in;
@@ -10,22 +15,28 @@ layout(set = 0, binding = 0) uniform sampler2D in_depth;
 layout(set = 0, binding = 1) uniform sampler2D in_color;
 layout(set = 0, binding = 2) uniform sampler2D in_normal;
 
-layout(rgba16f, set = 0, binding = 4) uniform image2D out_color;
-
-layout(set = 0, binding = 3) readonly buffer Lights {
-	PointLight lights[];
+layout(set = 0, binding = 3) readonly buffer PointLights {
+	PointLight point_lights[];
 };
+
+layout(set = 0, binding = 4) readonly buffer SpotLights {
+	SpotLight spot_lights[];
+};
+
+layout(rgba16f, set = 0, binding = 5) uniform image2D out_color;
 
 layout(push_constant) uniform PushConstants {
 	LightingCamera camera;
-	uint light_count;
+	uint point_count;
+	uint spot_count;
 };
 
 
 // -------------------------------- SHARED --------------------------------
 
-shared uint tile_lights[max_tile_lights];
-shared uint tile_light_count;
+shared uint light_indexes[max_tile_lights];
+shared uint tile_point_count;
+shared uint tile_spot_count;
 
 shared Frustum4 tile_frustum;
 
@@ -86,27 +97,52 @@ Frustum4 build_group_frustum() {
 }
 
 
+void cull_points() {
+#ifdef POINT_LIGHTS
+	const uvec2 range = dispatch_range(point_count);
+
+	for(uint i = range.x; i != range.y; ++i) {
+		if(is_inside(tile_frustum, point_lights[i].position, point_lights[i].radius)) {
+			uint light_index = atomicAdd(tile_point_count, 1);
+			if(light_index >= max_tile_lights) {
+				break;
+			}
+			light_indexes[light_index] = i;
+		}
+	}
+#endif
+}
+
+void cull_spots() {
+#ifdef SPOT_LIGHTS
+	const uvec2 range = dispatch_range(spot_count);
+
+	for(uint i = range.x; i != range.y; ++i) {
+		if(is_inside(tile_frustum, spot_lights[i].position, spot_lights[i].radius)) {
+			uint light_index = atomicAdd(tile_spot_count, 1) + tile_point_count;
+			if(light_index >= max_tile_lights) {
+				break;
+			}
+			light_indexes[light_index] = i;
+		}
+	}
+#endif
+}
+
 void cull_lights() {
 	if(gl_LocalInvocationIndex == 0) {
-		tile_light_count = 0;
+		tile_point_count = 0;
+		tile_spot_count = 0;
 		tile_frustum = build_group_frustum();
 	}
 
 	barrier();
 
-	{
-		const uvec2 range = dispatch_range(light_count);
+	cull_points();
 
-		for(uint i = range.x; i != range.y; ++i) {
-			if(is_inside(tile_frustum, lights[i].position, lights[i].radius)) {
-				uint light_index = atomicAdd(tile_light_count, 1);
-				if(light_index >= max_tile_lights) {
-					break;
-				}
-				tile_lights[light_index] = i;
-			}
-		}
-	}
+	barrier();
+
+	cull_spots();
 
 	barrier();
 }
@@ -122,7 +158,7 @@ void main() {
 	cull_lights();
 
 	const float depth = texelFetch(in_depth, coord, 0).x;
-	vec3 irradiance = vec3(0.0);
+	vec3 irradiance = imageLoad(out_color, coord).rgb;
 
 	if(!is_OOB(depth)) {
 		vec3 albedo;
@@ -135,11 +171,13 @@ void main() {
 		const vec3 world_pos = unproject(uv, depth, camera.inv_matrix);
 		const vec3 view_dir = normalize(camera.position - world_pos);
 
-		const uint point_light_count = min(max_tile_lights, tile_light_count);
-		for(uint i = 0; i != point_light_count; ++i) {
-			const PointLight light = lights[tile_lights[i]];
+#ifdef POINT_LIGHTS
+		// -------------------------------- POINTS --------------------------------
+		const uint point_begin = 0;
+		const uint point_end = min(max_tile_lights, tile_point_count);
+		for(uint i = point_begin; i != point_end; ++i) {
+			const PointLight light = point_lights[light_indexes[i]];
 
-			// light_dir dot view_dir > 0
 			vec3 light_dir = light.position - world_pos;
 			const float distance = length(light_dir);
 			light_dir /= distance;
@@ -148,10 +186,29 @@ void main() {
 			const vec3 radiance = light.color * att;
 			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
 		}
-	}
+#endif
 
-	const vec4 original_color = imageLoad(out_color, coord);
-	imageStore(out_color, coord, original_color + vec4(irradiance, 1.0));
+#ifdef SPOT_LIGHTS
+		// -------------------------------- SPOTS --------------------------------
+		const uint spot_begin = tile_point_count;
+		const uint spot_end = min(max_tile_lights, spot_begin + tile_spot_count);
+		for(uint i = spot_begin; i != spot_end; ++i) {
+			const SpotLight light = spot_lights[light_indexes[i]];
+
+			vec3 light_dir = light.position - world_pos;
+			const float distance = length(light_dir);
+			light_dir /= distance;
+
+			const float spot = max(0.0, pow((dot(light_dir, light.forward) - light.cos_angle) / (1.0 - light.cos_angle), light.angle_exp));
+			const float att = spot * attenuation(distance, light.radius, light.falloff);
+
+			const vec3 radiance = light.color * att;
+			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+		}
+	}
+#endif
+
+	imageStore(out_color, coord, vec4(irradiance, 1.0));
 }
 
 

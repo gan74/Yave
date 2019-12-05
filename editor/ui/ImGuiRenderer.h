@@ -42,6 +42,7 @@ class ImGuiRenderer : NonCopyable, public ContextLinked {
 	public:
 		enum class Style {
 			Yave,
+			Yave2,
 			Corporate,
 			Corporate3D
 		};

@@ -18,17 +18,16 @@ layout(set = 0, binding = 2) uniform sampler2D in_normal;
 layout(set = 0, binding = 3) uniform samplerCube in_envmap;
 layout(set = 0, binding = 4) uniform sampler2D brdf_lut;
 
-layout(rgba16f, set = 0, binding = 6) uniform writeonly image2D out_color;
-
-
 layout(set = 0, binding = 5) readonly buffer Lights {
 	DirectionalLight lights[];
-} lights;
+};
+
+layout(rgba16f, set = 0, binding = 6) uniform writeonly image2D out_color;
 
 layout(push_constant) uniform PushConstants {
 	LightingCamera camera;
 	uint light_count;
-} constants;
+};
 
 
 // -------------------------------- MAIN --------------------------------
@@ -48,12 +47,12 @@ void main() {
 		unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
 		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
-		const vec3 world_pos = unproject(uv, depth, constants.camera.inv_matrix);
-		const vec3 view_dir = normalize(constants.camera.position - world_pos);
+		const vec3 world_pos = unproject(uv, depth, camera.inv_matrix);
+		const vec3 view_dir = normalize(camera.position - world_pos);
 
 		// directional lights
-		for(uint i = 0; i != constants.light_count; ++i) {
-			const DirectionalLight light = lights.lights[i];
+		for(uint i = 0; i != light_count; ++i) {
+			const DirectionalLight light = lights[i];
 
 			const vec3 light_dir = light.direction; // assume normalized
 
@@ -65,7 +64,7 @@ void main() {
 		irradiance += ibl_irradiance(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo);
 	} else {
 #ifdef IBL_BACKGROUND
-		const vec3 forward = normalize(unproject(uv, 1.0, constants.camera.inv_matrix) - constants.camera.position);
+		const vec3 forward = normalize(unproject(uv, 1.0, camera.inv_matrix) - camera.position);
 		irradiance = texture(in_envmap, forward).rgb;
 #endif
 #endif

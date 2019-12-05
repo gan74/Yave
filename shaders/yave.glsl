@@ -22,6 +22,21 @@ struct PointLight {
 	float falloff;
 };
 
+struct SpotLight {
+	vec3 position;
+	float radius;
+
+	vec3 color;
+	float falloff;
+
+	vec3 forward;
+	float cos_angle;
+
+	uvec3 padding_0;
+	float angle_exp;
+};
+
+
 struct VirtualLight {
 	vec3 position;
 	float intensity;

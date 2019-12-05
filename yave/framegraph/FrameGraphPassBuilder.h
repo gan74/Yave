@@ -29,6 +29,8 @@ namespace yave {
 
 class FrameGraphPassBuilder {
 	public:
+		DevicePtr device() const;
+
 		FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
 		FrameGraphMutableBufferId declare_buffer(usize byte_size);
 
@@ -81,7 +83,7 @@ class FrameGraphPassBuilder {
 
 		void set_cpu_visible(FrameGraphMutableBufferId res); 
 
-		FrameGraph* parent();
+		FrameGraph* parent() const;
 
 
 		FrameGraphPass* _pass = nullptr;

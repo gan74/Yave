@@ -57,7 +57,8 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char
 
 // -------------------------------------------------- RenderPassRecorder --------------------------------------------------
 
-RenderPassRecorder::RenderPassRecorder(CmdBufferRecorder& cmd_buffer, const Viewport& viewport) : _cmd_buffer(cmd_buffer), _viewport(viewport) {
+RenderPassRecorder::RenderPassRecorder(CmdBufferRecorder& cmd_buffer, const Viewport& viewport) : _cmd_buffer(cmd_buffer) {
+	set_viewport(viewport);
 }
 
 RenderPassRecorder::~RenderPassRecorder() {
@@ -140,6 +141,14 @@ const Viewport& RenderPassRecorder::viewport() const {
 	return _viewport;
 }
 
+void RenderPassRecorder::set_viewport(const Viewport& vp) {
+	_viewport = vp;
+	vk::Viewport v{vp.offset.x(), vp.offset.y(),
+				   vp.extent.x(), vp.extent.y(),
+				   vp.depth.x(), vp.depth.y()};
+	vk_cmd_buffer().setViewport(0, v);
+}
+
 CmdBufferRegion RenderPassRecorder::region(const char* name, const math::Vec4& color) {
 	return _cmd_buffer.region(name, color);
 }
@@ -218,10 +227,8 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 	_render_pass = &framebuffer.render_pass();
 
 	// set viewport
-	auto size = framebuffer.size();
-	vk_cmd_buffer().setViewport(0, {vk::Viewport(0, 0, size.x(), size.y(), 0.0f, 1.0f)});
+	const auto size = framebuffer.size();
 	vk_cmd_buffer().setScissor(0, {vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(size.x(), size.y()))});
-
 	return RenderPassRecorder(*this, Viewport(size));
 }
 

@@ -19,22 +19,57 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_LIGHTINGPASS_H
-#define YAVE_RENDERER_LIGHTINGPASS_H
 
-#include <yave/graphics/images/IBLProbe.h>
-
-#include "GBufferPass.h"
+#include "SpotLightComponent.h"
 
 namespace yave {
 
-struct LightingPass {
-	FrameGraphImageId lit;
-
-	static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe);
-};
-
-
+math::Vec3& SpotLightComponent::color() {
+	return _color;
 }
 
-#endif // YAVE_RENDERER_LIGHTINGPASS_H
+const math::Vec3& SpotLightComponent::color() const {
+	return _color;
+}
+
+float& SpotLightComponent::intensity() {
+	return _intensity;
+}
+
+float SpotLightComponent::intensity() const {
+	return _intensity;
+}
+
+float& SpotLightComponent::radius() {
+	return _radius;
+}
+
+float SpotLightComponent::radius() const {
+	return _radius;
+}
+
+float& SpotLightComponent::falloff() {
+	return _falloff;
+}
+
+float SpotLightComponent::falloff() const {
+	return _falloff;
+}
+
+float& SpotLightComponent::angle() {
+	return _angle;
+}
+
+float SpotLightComponent::angle() const {
+	return _angle;
+}
+
+float& SpotLightComponent::angle_exponent() {
+	return _angle_exp;
+}
+
+float SpotLightComponent::angle_exponent() const {
+	return _angle_exp;
+}
+
+}

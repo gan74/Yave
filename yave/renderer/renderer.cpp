@@ -30,7 +30,7 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 	DefaultRenderer renderer;
 
 	renderer.gbuffer = GBufferPass::create(framegraph, view, size);
-	renderer.lighting = LightingPass::create(framegraph, renderer.gbuffer, ibl_probe, settings.use_clustered_renderer);
+	renderer.lighting = LightingPass::create(framegraph, renderer.gbuffer, ibl_probe);
 	renderer.sky = RayleighSkyPass::create(framegraph, view, renderer.lighting.lit, renderer.gbuffer.depth, renderer.gbuffer);
 	renderer.tone_mapping = ToneMappingPass::create(framegraph, renderer.sky.lit, settings.tone_mapping);
 

@@ -60,6 +60,23 @@ struct PointLight {
 static_assert(sizeof(PointLight) % 16 == 0);
 
 
+struct SpotLight {
+	math::Vec3 position;
+	float radius = 1.0f;
+
+	math::Vec3 color;
+	float falloff = 1.0f;
+
+	math::Vec3 forward;
+	float cos_angle = 0.5f;
+
+	math::Vec3ui padding_0;
+	float angle_exp;
+};
+
+static_assert(sizeof(SpotLight) % 16 == 0);
+
+
 struct LightingCamera {
 	math::Matrix4<> inv_matrix;
 

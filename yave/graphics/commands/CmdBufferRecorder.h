@@ -117,6 +117,7 @@ class RenderPassRecorder : NonMovable {
 		void bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 
 		const Viewport& viewport() const;
+		void set_viewport(const Viewport& vp);
 
 		// proxies from _cmd_buffer
 		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());

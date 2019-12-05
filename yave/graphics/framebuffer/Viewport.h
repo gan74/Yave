@@ -28,10 +28,9 @@ SOFTWARE.
 namespace yave {
 
 struct Viewport {
-	const math::Vec2 extent;
-	const math::Vec2 offset;
-	const math::Vec2 depth;
-
+	math::Vec2 extent;
+	math::Vec2 offset;
+	math::Vec2 depth;
 
 	Viewport(const math::Vec2& size = math::Vec2(), const math::Vec2& off = math::Vec2()) : extent(size), offset(off), depth(0.0f, 1.0f) {
 	}

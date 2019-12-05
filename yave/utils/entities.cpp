@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/SpotLightComponent.h>
 
 
 namespace yave {
@@ -36,6 +38,15 @@ core::Result<float> entity_radius(ecs::EntityWorld& world, ecs::EntityId id) {
 			return core::Ok(mesh->mesh()->radius());
 		}
 	}
+
+	if(const PointLightComponent* light = world.component<PointLightComponent>(id)) {
+		return core::Ok(light->radius());
+	}
+
+	if(const SpotLightComponent* light = world.component<SpotLightComponent>(id)) {
+		return core::Ok(light->radius());
+	}
+
 	return core::Err();
 }
 
@@ -43,6 +54,7 @@ core::Result<math::Vec3> entity_position(ecs::EntityWorld& world, ecs::EntityId 
 	if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
 		return core::Ok(tr->transform().position());
 	}
+
 	return core::Err();
 }
 
