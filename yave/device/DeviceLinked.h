@@ -91,6 +91,8 @@ class SwapMove {
 
 class DeviceLinked {
 	public:
+		~DeviceLinked() = default;
+		
 		DevicePtr device() const;
 		bool is_null() const;
 
@@ -111,6 +113,7 @@ class DeviceLinked {
 
 		DeviceLinked(DeviceLinked&& other);
 		DeviceLinked& operator=(DeviceLinked&& other);
+		
 
 		void swap(DeviceLinked& other);
 
@@ -120,6 +123,8 @@ class DeviceLinked {
 
 class ThreadDeviceLinked {
 	public:
+		~ThreadDeviceLinked() = default;
+		
 		ThreadDevicePtr thread_device() const;
 		DevicePtr device() const;
 

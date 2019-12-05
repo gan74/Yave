@@ -68,6 +68,8 @@ class String {
 		LongData(LongData&& _l);
 		LongData(const char* str, usize cap, usize len);
 		LongData(const char* str, usize len);
+		
+		~LongData() = default;
 
 		LongData& operator=(const LongData &) = delete;
 		LongData& operator=(LongData&& other) = default;

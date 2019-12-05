@@ -35,6 +35,7 @@ class RecordedCmdBuffer : public CmdBufferBase {
 
 	public:
 		RecordedCmdBuffer() = default;
+		
 		RecordedCmdBuffer(RecordedCmdBuffer&&) = default;
 		RecordedCmdBuffer& operator=(RecordedCmdBuffer&&) = default;
 

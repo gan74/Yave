@@ -57,15 +57,17 @@ def check_rval_getter(content, filename):
 	
 def check_default_moves(content, filename):
 	is_move = re.compile(r"(\w+)\(\1&&.+\)\w*[;{]")
-	is_default = re.compile(r"(\w+)\(\1&&\) = default;")
+	# is_default = re.compile(r"(\w+)\(\1&&\) = default;")
 	for line in content.split("\n"):
 		line = line.strip()
 		move = is_move.match(line)
-		if not move:
-			move = is_default.match(line)
+		# if not move:
+		# 	move = is_default.match(line)
 			
 		if move:
-			if "~" + move.group(1) + "()" not in content:
+			dtor = "~" + move.group(1) + "()" 
+			non_move = move.group(1) + " : NonMovable" 
+			if (dtor not in content) and (non_move not in content):
 				warn(filename, move.group(1) + " has an explicitly declared move ctor but no dtor")
 	
 	
