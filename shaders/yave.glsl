@@ -280,11 +280,6 @@ float attenuation(float distance, float radius, float falloff) {
 	return attenuation(distance * falloff, radius * falloff);
 }
 
-/*vec3 reflection(samplerCube envmap, vec3 normal, vec3 view) {
-	const vec3 r = reflect(view, normal);
-	return textureLod(envmap, r, 0).rgb;
-}*/
-
 float D_GGX(float NoH, float roughness) {
 	const float a2 = sqr(sqr(roughness));
 	const float denom = sqr(sqr(NoH) * (a2 - 1.0) + 1.0) * pi;
@@ -333,6 +328,7 @@ float brdf_lambert() {
 }
 
 vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+	// maybe investigate optimisations described here: http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
 	const vec3 half_vec = normalize(light_dir + view_dir);
 
 	const float NoH = max(0.0, dot(normal, half_vec));
@@ -346,6 +342,7 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 	const vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
 	const vec3 specular = kS * brdf_cook_torrance(NoH, NoV, NoL, roughness);
+	// Won't this account for the albedo twice?
 	const vec3 diffuse = kD * albedo * brdf_lambert();
 
 	return (diffuse + specular) * NoL;
