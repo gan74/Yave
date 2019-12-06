@@ -152,17 +152,17 @@ void Gizmo::draw() {
 	}
 
 	const math::Vec4 projected = (view_proj * math::Vec4(obj_pos, 1.0f));
-	float perspective = gizmo_size * projected.w();
+	const float perspective = gizmo_size * projected.w();
 
-	math::Vec2 viewport = ImGui::GetWindowSize();
-	math::Vec2 offset = ImGui::GetWindowPos();
+	const math::Vec2 viewport = ImGui::GetWindowSize();
+	const math::Vec2 offset = ImGui::GetWindowPos();
 
-	auto inv_matrix = _scene_view->camera().inverse_matrix();
+	const auto inv_matrix = _scene_view->camera().inverse_matrix();
 	const math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
 	const math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
-	math::Vec3 world = h_world.to<3>() / h_world.w();
-	math::Vec3 ray = (world - cam_pos).normalized();
-	float dist = (obj_pos - cam_pos).length();
+	const math::Vec3 world = h_world.to<3>() / h_world.w();
+	const math::Vec3 ray = (world - cam_pos).normalized();
+	const float dist = (obj_pos - cam_pos).length();
 	const math::Vec3 projected_mouse = cam_pos + ray * dist;
 
 	const auto center = to_window_pos(obj_pos);
@@ -317,8 +317,8 @@ void Gizmo::draw() {
 		}
 
 		auto compute_angle = [&](usize axis) {
-				const math::Vec3 proj = intersect(basis[axis], obj_pos, cam_pos, projected_mouse) - obj_pos;
-				math::Vec3 vec = (obj_pos - proj).normalized();
+				const math::Vec3 proj = intersect(basis[axis], obj_pos, cam_pos, projected_mouse);
+				const math::Vec3 vec = (proj - obj_pos).normalized();
 				return std::copysign(std::acos(vec[(axis + 1) % 3]), vec[(axis + 2) % 3]);
 			};
 
