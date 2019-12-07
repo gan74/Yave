@@ -65,7 +65,9 @@ class MaterialTemplateData {
 
 		MaterialTemplateData& set_primitive_type(PrimitiveType type);
 
-		MaterialTemplateData& set_depth_test(DepthTestMode test);
+		MaterialTemplateData& set_depth_mode(DepthTestMode test);
+		MaterialTemplateData& set_depth_write(bool write);
+
 		MaterialTemplateData& set_blend_mode(BlendMode blend);
 
 		MaterialTemplateData& set_cull_mode(CullMode cull);
@@ -80,9 +82,11 @@ class MaterialTemplateData {
 
 		PrimitiveType _primitive_type = PrimitiveType::Triangles;
 
-		DepthTestMode _depth_tested = DepthTestMode::Standard;
+		DepthTestMode _depth_mode = DepthTestMode::Standard;
 		BlendMode _blend_mode = BlendMode::None;
 		CullMode _cull_mode = CullMode::Back;
+
+		bool _depth_write = true;
 };
 
 }

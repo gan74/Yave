@@ -17,5 +17,10 @@ const float alpha_edge = 0.7;
 void main() {
 	const vec4 color = in_color * texture(font_texture, in_uv);
 	const float alpha_step = smoothstep(alpha_edge - smoothing, alpha_edge + smoothing, color.a);
+
+	if(alpha_step < 0.1) {
+		discard;
+	}
+
 	out_color = vec4(color.rgb, alpha_step);
 }

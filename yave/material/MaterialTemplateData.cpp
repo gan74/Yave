@@ -49,8 +49,13 @@ MaterialTemplateData& MaterialTemplateData::set_primitive_type(PrimitiveType typ
 	return *this;
 }
 
-MaterialTemplateData& MaterialTemplateData::set_depth_test(DepthTestMode test) {
-	_depth_tested = test;
+MaterialTemplateData& MaterialTemplateData::set_depth_mode(DepthTestMode test) {
+	_depth_mode = test;
+	return *this;
+}
+
+MaterialTemplateData& MaterialTemplateData::set_depth_write(bool write) {
+	_depth_write = write;
 	return *this;
 }
 

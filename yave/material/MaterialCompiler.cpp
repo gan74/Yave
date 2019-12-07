@@ -69,6 +69,18 @@ static vk::CullModeFlags cull_mode(CullMode mode) {
 	}
 }
 
+static vk::CompareOp depth_mode(DepthTestMode mode) {
+	switch(mode) {
+		case DepthTestMode::Standard:
+			return vk::CompareOp::eGreaterOrEqual;
+
+		case DepthTestMode::Reversed:
+			return vk::CompareOp::eLessOrEqual;
+
+		default: // None
+			return vk::CompareOp::eAlways;
+	}
+}
 
 
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
@@ -156,11 +168,9 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 		;
 
 	const auto depth_testing = vk::PipelineDepthStencilStateCreateInfo()
-			.setDepthTestEnable(mat_data._depth_tested != DepthTestMode::None)
-			.setDepthWriteEnable(true)
-			.setDepthCompareOp(mat_data._depth_tested == DepthTestMode::Reversed
-							   ? vk::CompareOp::eLessOrEqual
-							   : vk::CompareOp::eGreaterOrEqual) // reversed Z
+			.setDepthTestEnable(mat_data._depth_mode != DepthTestMode::None || mat_data._depth_write)
+			.setDepthWriteEnable(mat_data._depth_write)
+			.setDepthCompareOp(depth_mode(mat_data._depth_mode))
 		;
 
 	const auto pipeline_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()

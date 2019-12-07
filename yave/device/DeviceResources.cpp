@@ -180,7 +180,7 @@ void DeviceResources::load_resources(DevicePtr dptr) {
 		auto template_data = MaterialTemplateData()
 				.set_frag_data(_spirv[data.frag])
 				.set_vert_data(_spirv[data.vert])
-				.set_depth_test(data.depth_test)
+				.set_depth_mode(data.depth_test)
 				.set_cull_mode(data.cull_mode)
 				.set_blend_mode(data.blend_mode)
 			;
