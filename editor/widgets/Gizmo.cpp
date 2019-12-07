@@ -179,6 +179,12 @@ void Gizmo::draw() {
 		}
 	}
 
+	for(math::Vec3& a : basis) {
+		if(cam_fwd.dot(a) > 0.0f) {
+			a = -a;
+		}
+	}
+
 
 	if(_mode == Translate) {
 		struct Axis {
@@ -287,8 +293,6 @@ void Gizmo::draw() {
 			}
 		}
 	} else if(_mode == Rotate) {
-		Y_TODO(Rotation doesnt work when far from the origin)
-
 		const usize segment_count = 64;
 		const float seg_ang_size = (1.0f / segment_count) * 2.0f * math::pi<float>;
 		usize rotation_axis = _rotation_axis;
