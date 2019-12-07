@@ -173,15 +173,19 @@ void Gizmo::draw() {
 									   math::Vec3{0.0f, 0.0f, 1.0f}};
 
 
-	if(_space == Local) {
-		for(math::Vec3& a : basis) {
-			a = obj_rot(a);
+	{
+		if(_space == Local) {
+			for(math::Vec3& a : basis) {
+				a = obj_rot(a);
+			}
 		}
-	}
 
-	for(math::Vec3& a : basis) {
-		if(cam_fwd.dot(a) > 0.0f) {
-			a = -a;
+		if(_mode == Translate) {
+			for(math::Vec3& a : basis) {
+				if(cam_fwd.dot(a) > 0.0f) {
+					a = -a;
+				}
+			}
 		}
 	}
 
