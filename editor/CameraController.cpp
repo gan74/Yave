@@ -158,30 +158,14 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 	math::Vec3 cam_fwd = camera.forward();
 	math::Vec3 cam_lft = camera.left();
 
-	/*if(ImGui::IsWindowFocused()) {
-		const float cam_speed = 500.0f;
-		const float dt = cam_speed / ImGui::GetIO().Framerate;
-
-		if(ImGui::IsKeyDown(int(settings.move_forward))) {
-			cam_pos += cam_fwd * dt;
-		}
-		if(ImGui::IsKeyDown(int(settings.move_backward))) {
-			cam_pos -= cam_fwd * dt;
-		}
-		if(ImGui::IsKeyDown(int(settings.move_left))) {
-			cam_pos += cam_lft * dt;
-		}
-		if(ImGui::IsKeyDown(int(settings.move_right))) {
-			cam_pos -= cam_lft * dt;
-		}
-	}*/
-
 	for(int i = 0; i != 3; ++i) {
 		if(ImGui::IsMouseClicked(i)) {
 			_mouse_button = i;
 		}
 	}
-	if(_mouse_button >= 0 && !ImGui::IsMouseDown(_mouse_button)) {
+
+	const bool fps = ImGui::IsMouseDown(0) && ImGui::IsMouseDown(1);
+	if(fps || (_mouse_button >= 0 && !ImGui::IsMouseDown(_mouse_button))) {
 		_mouse_button = -1;
 	}
 
@@ -246,6 +230,28 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 		cam_pos = _orig_pos + (hp.to<3>() / hp.w()) - _picked_pos;
 	}
 
+
+	// FPS
+	if(cam_key_down && fps) {
+		delta *= settings.trackball_sensitivity;
+
+		{
+			const auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
+			cam_fwd = pitch(cam_fwd);
+		}
+		{
+			const auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_lft), -delta.x());
+			cam_fwd = yaw(cam_fwd);
+			cam_lft = yaw(cam_lft);
+		}
+
+		auto euler = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft)).to_euler();
+		const bool upside_down = cam_fwd.cross(cam_lft).z() < 0.0f;
+		euler[math::Quaternion<>::RollIndex] = upside_down ? -math::pi<float> : 0.0f;
+		const auto rotation = math::Quaternion<>::from_euler(euler);
+		cam_fwd = rotation({1.0f, 0.0f, 0.0f});
+		cam_lft = rotation({0.0f, 1.0f, 0.0f});
+	}
 
 	// kill any roll that might arise from imprecisions
 	{
