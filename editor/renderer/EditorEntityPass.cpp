@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "EditorEntityPass.h"
 
+#include <yave/graphics/buffers/buffers.h>
+
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPassBuilder.h>
 
@@ -66,6 +68,74 @@ static std::pair<math::Vec2, math::Vec2> compute_uv_size(const char* c) {
 		size = math::Vec2{glyph->U1, glyph->V1} - uv;
 	}
 	return {uv, size};
+}
+
+
+static void add_circle(core::Vector<math::Vec3>& points, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius = 1.0f, usize divs = 64) {
+	x *= radius;
+	y *= radius;
+	const float seg_ang_size = (1.0f / divs) * 2.0f * math::pi<float>;
+
+	math::Vec3 last = position + y;
+	for(usize i = 1; i != divs + 1; ++i) {
+		const math::Vec2 c(std::sin(i * seg_ang_size), std::cos(i * seg_ang_size));
+		points << last;
+		last = (position + (x * c.x()) + (y * c.y()));
+		points << last;
+	}
+}
+
+static void add_cone(core::Vector<math::Vec3>& points, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs = 8, usize circle_subdivs = 8) {
+	const math::Vec3 z = x.cross(y).normalized();
+
+	const usize beg = points.size();
+	add_circle(points, position + x * (std::cos(angle) * -len), y, z, std::sin(angle) * len, circle_subdivs * divs);
+
+	for(usize i = 0; i != divs; ++i) {
+		points << points[beg + (i * 2) * circle_subdivs];
+		points << position;
+	}
+}
+
+
+static void render_selection(ContextPtr ctx,
+							 RenderPassRecorder& recorder,
+							 const FrameGraphPass* pass,
+							 const SceneView& scene_view) {
+
+	const ecs::EntityWorld& world = scene_view.world();
+	const ecs::EntityId selected = ctx->selection().selected_entity();
+
+	const TransformableComponent* tr = world.component<TransformableComponent>(selected);
+	if(!tr) {
+		return;
+	}
+
+	core::Vector<math::Vec3> points;
+	{
+		const math::Vec3 z = tr->up();
+		const math::Vec3 y = tr->left();
+		const math::Vec3 x = tr->forward();
+		if(const auto* l = world.component<PointLightComponent>(selected)) {
+			add_circle(points, tr->position(), x, y, l->radius());
+			add_circle(points, tr->position(), y, z, l->radius());
+			add_circle(points, tr->position(), z, x, l->radius());
+		}
+		if(const auto* l = world.component<SpotLightComponent>(selected)) {
+			add_cone(points, tr->position(), x, y, l->radius(), l->angle());
+		}
+	}
+
+	if(!points.is_empty()) {
+		TypedAttribBuffer<math::Vec3, MemoryType::CpuVisible> vertices(recorder.device(), points.size());
+		TypedMapping<math::Vec3> mapping(vertices);
+		std::copy(points.begin(), points.end(), mapping.begin());
+
+		const auto* material = ctx->resources()[EditorResources::WireFrameMaterialTemplate];
+		recorder.bind_material(material, {pass->descriptor_sets()[0]});
+		recorder.bind_attrib_buffers(vertices);
+		recorder.draw(vk::DrawIndirectCommand(points.size(), 1));
+	}
 }
 
 static void render_editor_entities(ContextPtr ctx, bool picking,
@@ -129,6 +199,10 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 		if(index) {
 			recorder.draw(vk::DrawIndirectCommand(index, 1));
 		}
+	}
+
+	if(!picking && ctx->selection().has_selected_entity()) {
+		render_selection(ctx, recorder, pass, scene_view);
 	}
 }
 

@@ -199,7 +199,7 @@ void main() {
 			const float distance = length(light_dir);
 			light_dir /= distance;
 
-			const float spot = max(0.0, pow((dot(light_dir, light.forward) - light.cos_angle) / (1.0 - light.cos_angle), light.angle_exp));
+			const float spot = pow(max(0.0, (dot(light_dir, light.forward) - light.cos_angle) / (1.0 - light.cos_angle)), light.angle_exp);
 			const float att = spot * attenuation(distance, light.radius, light.falloff);
 
 			const vec3 radiance = light.color * att;

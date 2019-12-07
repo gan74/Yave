@@ -7,8 +7,10 @@ layout(location = 1) in vec2 in_uv;
 layout(location = 2) in vec4 in_color;
 
 layout(set = 0, binding = 0) uniform sampler2D font_texture;
-layout(set = 0, binding = 1) uniform Data {
+layout(set = 0, binding = 1) uniform Buffer {
+	mat4 view_proj;
 	vec2 viewport_size;
+	float billboard_size;
 };
 
 const float smoothing = 1.0 / 16.0;

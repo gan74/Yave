@@ -38,7 +38,7 @@ static constexpr u32 gizmo_alpha = 0xB0000000;
 
 // stuff for the 2 axes selection
 static constexpr float gizmo_size_mul_2 = 0.25f;
-static constexpr u32 gizmo_alpha_2 = 0x60000000;
+static constexpr u32 gizmo_alpha_2 = 0x70000000;
 
 
 static bool is_clicked(bool allow_drag) {
@@ -243,7 +243,7 @@ void Gizmo::draw() {
 			for(usize i = 0; i != 3; ++i) {
 				const usize a = (i + 1) % 3;
 				const usize b = (i + 2) % 3;
-				u32 mask = axes[a].mask() | axes[b].mask();
+				const u32 mask = axes[a].mask() | axes[b].mask();
 				const bool hovered = (hover_mask & mask) == mask;
 				const u32 color = hovered ? hover_color : axis_color(axes[i].index);
 
@@ -260,7 +260,7 @@ void Gizmo::draw() {
 			// axes
 			for(usize k = 0; k != 3; ++k) {
 				const usize i = 2 - k;
-				bool hovered = hover_mask & axes[i].mask();
+				const bool hovered = hover_mask & axes[i].mask();
 				const u32 color = hovered ? hover_color : axis_color(axes[i].index);
 				ImGui::GetWindowDrawList()->AddLine(center, axes[i].vec, gizmo_alpha | color, gizmo_width);
 			}
