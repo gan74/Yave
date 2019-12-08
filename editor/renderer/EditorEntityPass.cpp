@@ -89,7 +89,7 @@ static void add_cone(core::Vector<math::Vec3>& points, const math::Vec3& positio
 	const math::Vec3 z = x.cross(y).normalized();
 
 	const usize beg = points.size();
-	add_circle(points, position + x * (std::cos(angle) * -len), y, z, std::sin(angle) * len, circle_subdivs * divs);
+	add_circle(points, position + x * (std::cos(angle) * len), y, z, std::sin(angle) * len, circle_subdivs * divs);
 
 	for(usize i = 0; i != divs; ++i) {
 		points << points[beg + (i * 2) * circle_subdivs];
@@ -122,7 +122,7 @@ static void render_selection(ContextPtr ctx,
 			add_circle(points, tr->position(), z, x, l->radius());
 		}
 		if(const auto* l = world.component<SpotLightComponent>(selected)) {
-			add_cone(points, tr->position(), x, y, l->radius(), l->angle());
+			add_cone(points, tr->position(), x, y, l->radius(), l->half_angle());
 		}
 	}
 

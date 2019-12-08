@@ -23,11 +23,11 @@ SOFTWARE.
 #define YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
 
 #include <yave/ecs/ecs.h>
+#include <yave/utils/serde.h>
 
 #include "TransformableComponent.h"
 
 namespace yave {
-
 
 class PointLightComponent final : public ecs::RequiredComponents<TransformableComponent> {
 	public:
@@ -45,10 +45,12 @@ class PointLightComponent final : public ecs::RequiredComponents<TransformableCo
 		float& falloff();
 		float falloff() const;
 
+		y_serde3(_color, _intensity, _radius, _falloff)
+
 	private:
 		math::Vec3 _color = math::Vec3{1.0f};
 		float _intensity = 1.0f;
-		float _radius = 1.0f;
+		float _radius = 10.0f;
 		float _falloff = 1.0f;
 };
 

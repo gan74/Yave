@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_COMPONENTS_SPOTLIGHTCOMPONENT_H
 
 #include <yave/ecs/ecs.h>
+#include <yave/utils/serde.h>
 
 #include "TransformableComponent.h"
 
@@ -44,20 +45,30 @@ class SpotLightComponent final : public ecs::RequiredComponents<TransformableCom
 		float& falloff();
 		float falloff() const;
 
-		float& angle();
-		float angle() const;
+		float& half_angle();
+		float half_angle() const;
 
 		float& angle_exponent();
 		float angle_exponent() const;
 
+		bool& cast_shadow();
+		bool cast_shadow() const;
+
+		/*math::Vec2& depth_bias();
+		math::Vec2 depth_bias() const;*/
+
+		y_serde3(_color, _intensity, _radius, _falloff, _angle, _angle_exp, _cast_shadow)
 
 	private:
 		math::Vec3 _color = math::Vec3{1.0f};
 		float _intensity = 1.0f;
-		float _radius = 1.0f;
+		float _radius = 10.0f;
 		float _falloff = 1.0f;
 		float _angle = math::to_rad(45.0f);
 		float _angle_exp = 2.0f;
+
+		bool _cast_shadow = false;
+		//math::Vec2 _depth_bias;
 };
 
 }

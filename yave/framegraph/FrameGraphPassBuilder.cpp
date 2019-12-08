@@ -158,6 +158,13 @@ void FrameGraphPassBuilder::add_descriptor_binding(Descriptor bind, usize ds_ind
 	add_uniform(bind, ds_index);
 }
 
+
+usize FrameGraphPassBuilder::next_descriptor_set_index() {
+	auto& bindings = _pass->_bindings;
+	bindings.emplace_back();
+	return bindings.size() - 1;
+}
+
 template<typename T>
 void set_stage(const FrameGraphPass* pass, T& info, PipelineStage stage) {
 	if(info.stage != PipelineStage::None) {

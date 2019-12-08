@@ -137,18 +137,6 @@ void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::Attrib
 
 }
 
-const Viewport& RenderPassRecorder::viewport() const {
-	return _viewport;
-}
-
-void RenderPassRecorder::set_viewport(const Viewport& vp) {
-	_viewport = vp;
-	vk::Viewport v{vp.offset.x(), vp.offset.y(),
-				   vp.extent.x(), vp.extent.y(),
-				   vp.depth.x(), vp.depth.y()};
-	vk_cmd_buffer().setViewport(0, v);
-}
-
 CmdBufferRegion RenderPassRecorder::region(const char* name, const math::Vec4& color) {
 	return _cmd_buffer.region(name, color);
 }
@@ -163,6 +151,18 @@ bool RenderPassRecorder::is_null() const {
 
 vk::CommandBuffer RenderPassRecorder::vk_cmd_buffer() const {
 	return _cmd_buffer.vk_cmd_buffer();
+}
+
+const Viewport& RenderPassRecorder::viewport() const {
+	return _viewport;
+}
+
+void RenderPassRecorder::set_viewport(const Viewport& vp) {
+	_viewport = vp;
+	vk::Viewport v{vp.offset.x(), vp.offset.y(),
+				   vp.extent.x(), vp.extent.y(),
+				   vp.depth.x(), vp.depth.y()};
+	vk_cmd_buffer().setViewport(0, v);
 }
 
 

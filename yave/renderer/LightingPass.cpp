@@ -44,6 +44,7 @@ static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
 static constexpr usize max_directional_lights = 16;
 static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
+static constexpr usize max_shadow_lights = 128;
 
 static FrameGraphMutableImageId ambient_pass(FrameGraphPassBuilder& builder,
 											 const math::Vec2ui& size,
@@ -94,31 +95,37 @@ static void local_lights_pass(FrameGraphMutableImageId lit,
 							  FrameGraphPassBuilder& builder,
 							  const math::Vec2ui& size,
 							  const SceneView& scene,
-							  const GBufferPass& gbuffer) {
+							  const GBufferPass& gbuffer,
+							  const ShadowMapPass& shadow_pass) {
 
 	struct PushData {
 		uniform::LightingCamera camera;
 		u32 point_count = 0;
 		u32 spot_count = 0;
+		u32 shadow_count = 0;
 	};
 
 	const Camera camera = scene.camera();
 
 	const auto point_buffer = builder.declare_typed_buffer<uniform::PointLight>(max_point_lights);
 	const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
+	const auto shadow_buffer = builder.declare_typed_buffer<uniform::ShadowMapParams>(max_shadow_lights);
 
 	builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
 	builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
 	builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
+	builder.add_uniform_input(shadow_pass.shadow_map, 0, PipelineStage::ComputeBit);
 	builder.add_storage_input(point_buffer, 0, PipelineStage::ComputeBit);
 	builder.add_storage_input(spot_buffer, 0, PipelineStage::ComputeBit);
+	builder.add_storage_input(shadow_buffer, 0, PipelineStage::ComputeBit);
 	builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
 
 	builder.map_update(point_buffer);
 	builder.map_update(spot_buffer);
+	builder.map_update(shadow_buffer);
 
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-		PushData push_data{camera, 0, 0};
+		PushData push_data{camera, 0, 0, 0};
 
 		{
 			TypedMapping<uniform::PointLight> mapping = self->resources().mapped_buffer(point_buffer);
@@ -134,16 +141,27 @@ static void local_lights_pass(FrameGraphMutableImageId lit,
 
 		{
 			TypedMapping<uniform::SpotLight> mapping = self->resources().mapped_buffer(spot_buffer);
-			for(auto [t, l] : scene.world().view(SpotLightArchetype()).components()) {
+			TypedMapping<uniform::ShadowMapParams> shadow_mapping = self->resources().mapped_buffer(shadow_buffer);
+			for(auto spot : scene.world().view(SpotLightArchetype())) {
+				auto [t, l] = spot.components();
+
+				u32 shadow_index = u32(-1);
+				if(l.cast_shadow()) {
+					if(const auto it = shadow_pass.sub_passes->lights.find(spot.index()); it != shadow_pass.sub_passes->lights.end()) {
+						shadow_mapping[shadow_index = push_data.shadow_count++] = it->second;
+					}
+				}
+
 				mapping[push_data.spot_count++] = {
 					t.position(),
 					l.radius(),
 					l.color() * l.intensity(),
 					std::max(math::epsilon<float>, l.falloff()),
-					t.forward(),
-					std::cos(l.angle()),
-					{},
-					l.angle_exponent()
+					-t.forward(),
+					std::cos(l.half_angle()),
+					std::max(math::epsilon<float>, l.angle_exponent()),
+					shadow_index,
+					{}
 				};
 			}
 		}
@@ -157,18 +175,19 @@ static void local_lights_pass(FrameGraphMutableImageId lit,
 
 
 
-LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe) {
+LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe, const ShadowMapPassSettings& settings) {
 	const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 	const SceneView& scene = gbuffer.scene_pass.scene_view;
+
+	LightingPass pass;
+	pass.shadow_pass = ShadowMapPass::create(framegraph, scene, settings);
 
 	FrameGraphPassBuilder ambient_builder = framegraph.add_pass("Ambient/Sun pass");
 	const auto lit = ambient_pass(ambient_builder, size, scene, gbuffer, ibl_probe);
 
 	FrameGraphPassBuilder local_builder = framegraph.add_pass("Lighting pass");
-	local_lights_pass(lit, local_builder, size, scene, gbuffer);
+	local_lights_pass(lit, local_builder, size, scene, gbuffer, pass.shadow_pass);
 
-
-	LightingPass pass;
 	pass.lit = lit;
 	return pass;
 }

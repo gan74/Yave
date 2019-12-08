@@ -84,4 +84,15 @@ static_assert(std::is_convertible_v<EntityId, EntityIndex>);*/
 }
 }
 
+
+/*namespace std {
+template<>
+struct hash<yave::ecs::EntityId> : hash<y::u64> {
+	auto operator()(const yave::ecs::EntityId& i) const {
+		const y::u64 h = (y::u64(i.index()) << 32) | i.version();
+		return hash<y::u64>::operator()(h);
+	}
+};
+}*/
+
 #endif // YAVE_ECS_ENTITYID_H

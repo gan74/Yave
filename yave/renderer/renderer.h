@@ -22,6 +22,7 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_RENDERER_H
 #define YAVE_RENDERER_RENDERER_H
 
+#include "ShadowMapPass.h"
 #include "ToneMappingPass.h"
 #include "RayleighSkyPass.h"
 
@@ -29,6 +30,7 @@ namespace yave {
 
 struct RendererSettings {
 	ToneMappingSettings tone_mapping;
+	ShadowMapPassSettings shadow_map;
 };
 
 struct DefaultRenderer {

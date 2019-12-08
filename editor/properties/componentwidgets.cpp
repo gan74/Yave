@@ -162,15 +162,29 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 		ImGui::Text("Angle");
 		ImGui::NextColumn();
-		float angle = math::to_deg(light->angle() * 2.0f);
+		float angle = math::to_deg(light->half_angle() * 2.0f);
 		if(ImGui::DragFloat("###angle", &angle, 0.1f, 0.0f, 360.0f, "%.2f°")) {
-			light->angle() = math::to_rad(angle * 0.5f);
+			light->half_angle() = math::to_rad(angle * 0.5f);
 		}
 
 		ImGui::NextColumn();
 		ImGui::Text("Exponent");
 		ImGui::NextColumn();
 		ImGui::DragFloat("###exponent", &light->angle_exponent(), 0.1f, 0.0f, 10.0f, "%.2f");
+
+
+		ImGui::NextColumn();
+		ImGui::Text("Cast shadows");
+		ImGui::NextColumn();
+		ImGui::Checkbox("###shadows", &light->cast_shadow());
+
+		/*if(light->cast_shadow()) {
+			ImGui::NextColumn();
+			ImGui::Text("Shadow bias");
+			ImGui::NextColumn();
+			ImGui::InputFloat("C##bias", &light->depth_bias().x());
+			ImGui::InputFloat("S##bias", &light->depth_bias().y());
+		}*/
 	}
 	ImGui::Columns(1);
 }

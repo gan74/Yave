@@ -32,19 +32,17 @@ struct SpotLight {
 	vec3 forward;
 	float cos_angle;
 
-	uvec3 padding_0;
 	float angle_exp;
+	uint shadow_map_index;
+
+	uvec2 padding_0;
 };
 
-
-struct VirtualLight {
-	vec3 position;
-	float intensity;
-
-	vec3 normal;
-	uint padding_0;
+struct ShadowMapParams {
+	mat4 view_proj;
+	vec2 uv_offset;
+	vec2 uv_mul;
 };
-
 
 struct LightingCamera {
 	mat4 inv_matrix;

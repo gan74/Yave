@@ -36,6 +36,7 @@ struct SceneRenderSubPass {
 	static constexpr usize max_batch_size = 128 * 1024;
 
 	SceneView scene_view;
+	usize descriptor_set_index = 0;
 
 	FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer;
 	FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;

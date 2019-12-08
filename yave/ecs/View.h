@@ -40,7 +40,7 @@ struct tuple_index<T, std::tuple<T, Args...>> {
 
 template<typename T, typename U, typename... Args>
 struct tuple_index<T, std::tuple<U, Args...>> {
-	static constexpr usize value = tuple_index<T, std::tuple<Args...>>::value;
+	static constexpr usize value = tuple_index<T, std::tuple<Args...>>::value + 1;
 };
 }
 
@@ -95,7 +95,7 @@ class View {
 
 			template<typename T>
 			auto&& component() const {
-				using type = std::conditional_t<Const, const std::decay_t<T>&, std::decay_t<T>>;
+				using type = std::conditional_t<Const, const remove_cvref_t<T>&, remove_cvref_t<T>>;
 				constexpr usize index = detail::tuple_index<type, decltype(components())>::value;
 				static_assert(std::is_same_v<type, std::tuple_element_t<index, decltype(components())>>);
 				return std::get<index>(components());

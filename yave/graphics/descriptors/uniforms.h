@@ -70,11 +70,21 @@ struct SpotLight {
 	math::Vec3 forward;
 	float cos_angle = 0.5f;
 
-	math::Vec3ui padding_0;
 	float angle_exp;
+	u32 shadow_map_index = u32(-1);
+	math::Vec2ui padding_0;
 };
 
 static_assert(sizeof(SpotLight) % 16 == 0);
+
+
+struct ShadowMapParams {
+	math::Matrix4<> view_proj;
+	math::Vec2 uv_offset;
+	math::Vec2 uv_mul;
+};
+
+static_assert(sizeof(ShadowMapParams) % 16 == 0);
 
 
 struct LightingCamera {

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,25 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_LIGHTINGPASS_H
-#define YAVE_RENDERER_LIGHTINGPASS_H
+#ifndef YAVE_RENDERER_SHADOWMAPPASS_H
+#define YAVE_RENDERER_SHADOWMAPPASS_H
 
 #include <yave/graphics/images/IBLProbe.h>
 
 #include "GBufferPass.h"
-#include "ShadowMapPass.h"
 
 namespace yave {
 
-struct LightingPass {
-	FrameGraphImageId lit;
+struct ShadowMapPassSettings {
+	math::Vec2ui shadow_map_size = math::Vec2ui(1024, 1024 * 8);
+};
 
-	ShadowMapPass shadow_pass;
+struct ShadowMapPass {
+	using ShadowData = uniform::ShadowMapParams;
 
-	static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe, const ShadowMapPassSettings& settings = ShadowMapPassSettings());
+	struct SubPass {
+		SceneRenderSubPass scene_pass;
+	};
+
+	struct SubPassData {
+		core::Vector<SubPass> passes;
+		std::unordered_map<u32, ShadowData> lights;
+	};
+
+	FrameGraphImageId shadow_map;
+
+	std::shared_ptr<SubPassData> sub_passes;
+
+	static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapPassSettings& settings = ShadowMapPassSettings());
 };
 
 
 }
 
-#endif // YAVE_RENDERER_LIGHTINGPASS_H
+
+#endif // YAVE_RENDERER_SHADOWMAPPASS_H

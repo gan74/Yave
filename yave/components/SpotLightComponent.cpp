@@ -56,11 +56,11 @@ float SpotLightComponent::falloff() const {
 	return _falloff;
 }
 
-float& SpotLightComponent::angle() {
+float& SpotLightComponent::half_angle() {
 	return _angle;
 }
 
-float SpotLightComponent::angle() const {
+float SpotLightComponent::half_angle() const {
 	return _angle;
 }
 
@@ -71,5 +71,22 @@ float& SpotLightComponent::angle_exponent() {
 float SpotLightComponent::angle_exponent() const {
 	return _angle_exp;
 }
+
+
+bool& SpotLightComponent::cast_shadow() {
+	return _cast_shadow;
+}
+
+bool SpotLightComponent::cast_shadow() const {
+	return _cast_shadow;
+}
+
+/*math::Vec2& SpotLightComponent::depth_bias() {
+	return _depth_bias;
+}
+
+math::Vec2 SpotLightComponent::depth_bias() const {
+	return _depth_bias;
+}*/
 
 }
