@@ -128,15 +128,15 @@ static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameG
 }
 
 
-FrameGraph::FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool) : _resources(std::move(pool)) {
+FrameGraph::FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool) : _resources(std::make_unique<FrameGraphFrameResources>(std::move(pool))) {
 }
 
 DevicePtr FrameGraph::device() const {
-	return _resources.device();
+	return _resources->device();
 }
 
 const FrameGraphFrameResources& FrameGraph::resources() const {
-	return _resources;
+	return *_resources;
 }
 
 void FrameGraph::render(CmdBufferRecorder& recorder) && {
@@ -162,23 +162,23 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 			y_profile_zone("prepare");
 			while(copy_index < _image_copies.size() && _image_copies[copy_index].pass_index == pass->_index) {
 				// copie_image will not do anything if the two are aliased
-				copy_image(recorder, _image_copies[copy_index].src, _image_copies[copy_index].dst, to_barrier, _resources);
+				copy_image(recorder, _image_copies[copy_index].src, _image_copies[copy_index].dst, to_barrier, *_resources);
 				++copy_index;
 			}
 		}
 
 		{
 			y_profile_zone("init");
-			pass->init_framebuffer(_resources);
-			pass->init_descriptor_sets(_resources);
+			pass->init_framebuffer(*_resources);
+			pass->init_descriptor_sets(*_resources);
 		}
 
 		{
 			y_profile_zone("barriers");
 			buffer_barriers.make_empty();
 			image_barriers.make_empty();
-			build_barriers(pass->_buffers, buffer_barriers, to_barrier, _resources);
-			build_barriers(pass->_images, image_barriers, to_barrier, _resources);
+			build_barriers(pass->_buffers, buffer_barriers, to_barrier, *_resources);
+			build_barriers(pass->_images, image_barriers, to_barrier, *_resources);
 			recorder.barriers(buffer_barriers, image_barriers);
 		}
 
@@ -188,8 +188,10 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 		}
 	}
 
+	Y_TODO(Only keep alive cpu mapped buffers)
+	recorder.keep_alive(std::move(_resources));
 
-	Y_TODO(put resource barriers at the end of the graph to prevent clash with whatever comes after)
+	Y_TODO(Put resource barriers at the end of the graph to prevent clash with whatever comes after)
 }
 
 void FrameGraph::alloc_resources() {
@@ -220,14 +222,14 @@ void FrameGraph::alloc_resources() {
 
 	for(auto&& [res, info] : images) {
 		if(info.alias.is_valid()) {
-			_resources.create_alias(res, info.alias);
+			_resources->create_alias(res, info.alias);
 		} else {
 			if(!info.has_usage()) {
 				log_msg(fmt("Image declared by % has no usage.", pass_name(info.first_use)), Log::Warning);
 				// All images should support texturing, hopefully
 				info.usage = info.usage | ImageUsage::TextureBit;
 			}
-			_resources.create_image(res, info.format, info.size, info.usage);
+			_resources->create_image(res, info.format, info.size, info.usage);
 		}
 	}
 
@@ -236,7 +238,7 @@ void FrameGraph::alloc_resources() {
 			log_msg("Unused frame graph buffer resource.", Log::Warning);
 			info.usage = info.usage | BufferUsage::StorageBit;
 		}
-		_resources.create_buffer(res, info.byte_size, info.usage, info.memory_type);
+		_resources->create_buffer(res, info.byte_size, info.usage, info.memory_type);
 	}
 }
 
@@ -251,7 +253,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
 	FrameGraphMutableImageId res;
-	res._id = _resources.create_resource_id();
+	res._id = _resources->create_resource_id();
 	auto& r = _images[res];
 	r.size = size;
 	r.format = format;
@@ -260,7 +262,7 @@ FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const mat
 
 FrameGraphMutableBufferId FrameGraph::declare_buffer(usize byte_size) {
 	FrameGraphMutableBufferId res;
-	res._id = _resources.create_resource_id();
+	res._id = _resources->create_resource_id();
 	auto& r = _buffers[res];
 	r.byte_size = byte_size;
 	return res;

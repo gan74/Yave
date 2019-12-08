@@ -104,7 +104,7 @@ class FrameGraph : NonCopyable {
 		void alloc_resources();
 		void alloc_image(FrameGraphImageId res, const ImageCreateInfo& info) const;
 
-		FrameGraphFrameResources _resources;
+		std::unique_ptr<FrameGraphFrameResources> _resources;
 
 		core::Vector<std::unique_ptr<FrameGraphPass>> _passes;
 
