@@ -145,10 +145,7 @@ void EngineView::update() {
 
 	if(hovered && is_clicked()) {
 		ImGui::SetWindowFocus();
-		if(focussed) {
-			update_picking();
-		}
-
+		update_picking();
 		focussed = true;
 	}
 
@@ -161,8 +158,7 @@ void EngineView::update() {
 		auto& camera = _scene_view.camera();
 		_camera_controller->process_generic_shortcuts(camera);
 		if(focussed) {
-			auto size = content_size();
-			_camera_controller->update_camera(camera, size);
+			_camera_controller->update_camera(camera, content_size());
 		}
 	}
 }
