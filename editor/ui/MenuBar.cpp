@@ -97,7 +97,7 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
 
 			ImGui::Separator();
 
-			if(ImGui::MenuItem("Settings")) context()->ui().add<SettingsPanel>();
+			if(ImGui::MenuItem(ICON_FA_COG " Settings")) context()->ui().add<SettingsPanel>();
 
 			ImGui::EndMenu();
 		}
@@ -106,6 +106,16 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
 			if(ImGui::MenuItem("Reload resources")) context()->reload_device_resources();
 			ImGui::EndMenu();
 		}
+
+#ifdef Y_PERF_LOG_ENABLED
+		if(perf::is_capturing()) {
+			ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+			if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->end_perf_capture();
+			ImGui::PopStyleColor();
+		} else {
+			if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->start_perf_capture();
+		}
+#endif
 
 		ImGui::EndMenuBar();
 	}

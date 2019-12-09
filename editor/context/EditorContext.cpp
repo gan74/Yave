@@ -56,6 +56,16 @@ EditorContext::EditorContext(DevicePtr dptr) :
 EditorContext::~EditorContext() {
 }
 
+void EditorContext::start_perf_capture() {
+	_perf_capture_frames = settings().perf().capture_frames;
+}
+
+void EditorContext::end_perf_capture() {
+	if(_perf_capture_frames) {
+		_perf_capture_frames = 1;
+	}
+}
+
 void EditorContext::reload_device_resources() {
 	_reload_resources = true;
 }
@@ -100,6 +110,16 @@ void EditorContext::flush_deferred() {
 		_is_flushing_deferred = false;
 	}
 	_world.flush();
+
+	if(_perf_capture_frames) {
+		if(perf::is_capturing()) {
+			if(--_perf_capture_frames == 0) {
+				perf::end_capture();
+			}
+		} else {
+			perf::start_capture(settings().perf().capture_name);
+		}
+	}
 }
 
 void EditorContext::log_message(std::string_view msg, Log type) {

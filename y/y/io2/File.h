@@ -57,11 +57,11 @@ class File final : public Reader, public Writer {
 		void seek_end();
 		void reset();
 
-		ReadResult read(u8* data, usize bytes) override;
-		ReadUpToResult read_up_to(u8* data, usize max_bytes) override;
+		ReadResult read(void* data, usize bytes) override;
+		ReadUpToResult read_up_to(void* data, usize max_bytes) override;
 		ReadUpToResult read_all(core::Vector<u8>& data) override;
 
-		WriteResult write(const u8* data, usize bytes) override;
+		WriteResult write(const void* data, usize bytes) override;
 		FlushResult flush() override;
 
 	private:

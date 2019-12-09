@@ -64,4 +64,8 @@ UiSettings& Settings::ui() {
 	return _ui;
 }
 
+PerfSettings& Settings::perf() {
+	return _perf;
+}
+
 }

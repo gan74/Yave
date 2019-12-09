@@ -45,8 +45,8 @@ class Reader : NonCopyable {
 		virtual bool at_end() const = 0;
 		virtual usize remaining() const = 0;
 
-		virtual ReadResult read(u8* data, usize bytes) = 0;
-		virtual ReadUpToResult read_up_to(u8* data, usize max_bytes) = 0;
+		virtual ReadResult read(void* data, usize bytes) = 0;
+		virtual ReadUpToResult read_up_to(void* data, usize max_bytes) = 0;
 		virtual ReadUpToResult read_all(core::Vector<u8>& data) = 0;
 
 		virtual void seek(usize byte) = 0;
@@ -71,7 +71,7 @@ class Reader : NonCopyable {
 		template<typename T>
 		ReadResult read_array(T* data, usize count) {
 			static_assert(std::is_trivially_copyable_v<T>);
-			return read(reinterpret_cast<u8*>(data), sizeof(T) * count);
+			return read(static_cast<void*>(data), sizeof(T) * count);
 		}
 };
 
@@ -84,18 +84,18 @@ class Writer : NonCopyable {
 		virtual usize tell() const = 0;
 
 		virtual FlushResult flush() = 0;
-		virtual WriteResult write(const u8* data, usize bytes) = 0;
+		virtual WriteResult write(const void* data, usize bytes) = 0;
 
 		template<typename T>
 		WriteResult write_one(const T& t) {
 			static_assert(std::is_trivially_copyable_v<T>);
-			return write(reinterpret_cast<const u8*>(&t), sizeof(T));
+			return write(reinterpret_cast<const void*>(&t), sizeof(T));
 		}
 
 		template<typename T>
 		WriteResult write_array(const T* data, usize count) {
 			static_assert(std::is_trivially_copyable_v<T>);
-			return write(reinterpret_cast<const u8*>(data), sizeof(T) * count);
+			return write(static_cast<const void*>(data), sizeof(T) * count);
 		}
 };
 

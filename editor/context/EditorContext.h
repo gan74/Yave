@@ -43,9 +43,12 @@ class EditorContext : NonMovable, public DeviceLinked {
 
 		void flush_reload();
 
+		void start_perf_capture();
+		void end_perf_capture();
 		void reload_device_resources();
 		void set_device_resource_reloaded();
 		bool device_resources_reload_requested() const;
+
 
 		void defer(core::Function<void()> func);
 		void flush_deferred();
@@ -113,6 +116,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		ecs::EntityWorld _world;
 
 		bool _reload_resources = false;
+		usize _perf_capture_frames = 0;
 };
 
 }

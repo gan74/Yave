@@ -32,6 +32,8 @@ class SettingsPanel : public Widget, public ContextLinked {
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+
+		usize _category = 0;
 };
 
 }

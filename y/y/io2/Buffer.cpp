@@ -64,20 +64,20 @@ usize Buffer::tell() const {
 	return _cursor;
 }
 
-ReadResult Buffer::read(u8* data, usize bytes) {
+ReadResult Buffer::read(void* data, usize bytes) {
 	if(remaining() < bytes) {
 		return core::Err<usize>(0);
 	}
 	y_debug_assert(_cursor < _buffer.size());
-	std::copy_n(&_buffer[_cursor], bytes, data);
+	std::copy_n(&_buffer[_cursor], bytes, static_cast<u8*>(data));
 	_cursor += bytes;
 	return core::Ok();
 }
 
-ReadUpToResult Buffer::read_up_to(u8* data, usize max_bytes) {
+ReadUpToResult Buffer::read_up_to(void* data, usize max_bytes) {
 	const usize max = std::min(max_bytes, remaining());
 	y_debug_assert(_cursor < _buffer.size() || !max);
-	std::copy_n(&_buffer[_cursor], max, data);
+	std::copy_n(&_buffer[_cursor], max, static_cast<u8*>(data));
 	_cursor += max;
 	y_debug_assert(_cursor < _buffer.size());
 	return core::Ok(max);
@@ -92,17 +92,18 @@ ReadUpToResult Buffer::read_all(core::Vector<u8>& data) {
 	return core::Ok(r);
 }
 
-WriteResult Buffer::write(const u8* data, usize bytes) {
+WriteResult Buffer::write(const void* data, usize bytes) {
+	const u8* data_bytes = static_cast<const u8*>(data);
 	if(at_end()) {
-		_buffer.push_back(data, data + bytes);
+		_buffer.push_back(data_bytes, data_bytes + bytes);
 		_cursor += bytes;
 		y_debug_assert(_cursor <= _buffer.size());
 	} else {
 		const usize end = std::min(_buffer.size(), _cursor + bytes);
 		const usize overwrite = end - _cursor;
 		y_debug_assert(overwrite <= bytes);
-		std::copy_n(data, overwrite, &_buffer[_cursor]);
-		_buffer.push_back(data + overwrite, data + bytes);
+		std::copy_n(data_bytes, overwrite, &_buffer[_cursor]);
+		_buffer.push_back(data_bytes + overwrite, data_bytes + bytes);
 		_cursor += bytes - overwrite;
 		y_debug_assert(_cursor <= _buffer.size());
 	}

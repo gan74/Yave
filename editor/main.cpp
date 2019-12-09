@@ -102,7 +102,6 @@ static EditorContext create_context(const Device& device) {
 int main(int argc, char** argv) {
 	parse_args(argc, argv);
 	setup_logger();
-	perf::set_output_file("perfdump.json");
 
 	if(!crashhandler::setup_handler()) {
 		log_msg("Unable to setup crash handler.", Log::Warning);
@@ -148,7 +147,9 @@ int main(int argc, char** argv) {
 	}
 
 
-
+	if(perf::is_capturing()) {
+		perf::end_capture();
+	}
 
 	set_log_callback(nullptr);
 	context = nullptr;

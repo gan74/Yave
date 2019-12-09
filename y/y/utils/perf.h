@@ -30,7 +30,10 @@ namespace perf {
 
 // For use with chrome://tracing
 
-void set_output_file(const char* out);
+void start_capture(const char* out_filename);
+void end_capture();
+
+bool is_capturing();
 
 void enter(const char* cat, const char* func);
 void leave(const char* cat, const char* func);

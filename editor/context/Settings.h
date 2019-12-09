@@ -62,7 +62,12 @@ struct UiSettings {
 	y_serde3(change_gizmo_mode, change_gizmo_space, filter_assets)
 };
 
-static_assert(std::is_standard_layout_v<CameraSettings> && std::is_trivially_copyable_v<CameraSettings>);
+struct PerfSettings {
+	u32 capture_frames = 60;
+	core::String capture_name = "perfdump.json";
+
+	y_serde3(capture_frames, capture_name)
+};
 
 
 class Settings {
@@ -72,12 +77,14 @@ class Settings {
 
 		CameraSettings& camera();
 		UiSettings& ui();
+		PerfSettings& perf();
 
-		y_serde3(_camera, _ui)
+		y_serde3(_camera, _ui, _perf)
 
 	private:
 		CameraSettings _camera;
 		UiSettings _ui;
+		PerfSettings _perf;
 };
 
 }

@@ -35,207 +35,41 @@ SOFTWARE.
 #include <y/io2/Buffer.h>
 
 #include <y/math/Vec.h>
+#include <y/utils/perf.h>
+
+#include <thread>
 
 using namespace y;
-using namespace serde3;
 
 y_test_func("Test test") {
 	y_test_assert(true);
 }
 
-struct Base {
-	virtual ~Base() = default;
 
-	virtual void print() {
-		log_msg("Base");
-	}
-
-	y_serde3_poly_base(Base)
-};
-
-struct Derived : Base {
-	int x = 16;
-
-	void print() override {
-		log_msg("Derived");
-	}
-
-	y_serde3(x)
-	y_serde3_poly(Derived)
-};
-
-template<typename T>
-struct Template : Base {
-	T t = {};
-
-	void print() override {
-		log_msg(fmt("Template<%>", ct_type_name<T>()));
-	}
-
-	y_serde3(t)
-	y_serde3_poly(Template)
-
-};
-
-int foobar() {
-	Template<int> t;
-	return t.t;
+void sleep() {
+	y_profile();
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
-static_assert(has_serde3_poly_v<Derived*>);
-static_assert(has_serde3_poly_v<Base*>);
-static_assert(!has_serde3_poly_v<Base>);
-static_assert(has_serde3_poly_v<Template<float>*>);
-
-
-
-
-struct NestedStruct {
-	std::pair<int, double> p = {-17, 1.6461341};
-
-	y_serde3(p)
-};
-
-struct TestStruct {
-	int x = 9;
-	float y = 443;
-	NestedStruct z;
-
-	y_serde3(z, x, y)
-};
-
-
-auto poly_objects() {
-	/*core::Vector<std::unique_ptr<Base>> v;
-	v << std::make_unique<Derived>();
-	v << std::make_unique<Template<int>>();
-	v << std::make_unique<Derived>();
-	v << nullptr;
-	v << std::make_unique<Template<float>>();*/
-	core::FixedArray<std::unique_ptr<Base>> v(5);
-	v[0] = std::make_unique<Derived>();
-	v[1] = std::make_unique<Template<int>>();
-	v[2] = std::make_unique<Derived>();
-	v[3] = nullptr;
-	v[4] = std::make_unique<Template<float>>();
-	return v;
-}
-
-auto simple_objects() {
-	core::Vector<int> v;
-	v << 4;
-	v << 10;
-	v << -9;
-	v << 9999999;
-	v << 0;
-	return v;
-}
-
-template<typename T>
-auto make_arc(T& t) {
-	return std::make_unique<T>(std::move(t));
-}
-
-template<typename T>
-auto static_asserts() {
-	using value_type = remove_cvref_t<typename T::value_type>;
-	static_assert(has_resize_v<T> || has_emplace_back_v<T>);
-	static_assert(std::is_pointer_v<decltype(std::declval<T>().begin())>);
-	static_assert(std::is_trivially_copyable_v<value_type>);
-	static_assert(!has_serde3_v<value_type>);
-}
 
 int main() {
+	perf::start_capture("perfdump.json");
+
 	{
-		WritableArchive arc(make_arc(io2::File::create("poly.txt").unwrap()));
-		arc.serialize(poly_objects()).unwrap();
+		y_profile_zone("a");
+		sleep();
 	}
-	{
-		ReadableArchive arc(make_arc(io2::File::open("poly.txt").unwrap()));
-
-		decltype(poly_objects()) col;
-		arc.deserialize(col).unwrap();
-		for(const auto& b : col) {
-			if(b) {
-				b->print();
-			} else {
-				log_msg("(null)");
-			}
-		}
-	}
-	static_asserts<core::Vector<math::Vec3>>();
-	static_assert(serde3::detail::use_collection_fast_path<core::Vector<math::Vec3>>);
-	static_assert(!serde3::detail::use_collection_fast_path<core::Vector<TestStruct>>);
-
-
 
 	{
-		io2::Buffer buffer;
-		{
-			core::Vector<math::Vec3ui> vec;
-			vec << math::Vec3ui{1, 2, 3};
-			vec << math::Vec3ui{4, 5, 6};
-			vec << math::Vec3ui{7, 8, 9};
-
-			WritableArchive arc(buffer);
-			arc.serialize(vec).unwrap();
-		}
-		buffer.reset();
-		{
-			core::Vector<math::Vec3ui> vec;
-			ReadableArchive arc(buffer);
-			arc.deserialize(vec).unwrap();
-			for(const auto& v : vec) {
-				log_msg(fmt("%", v));
-			}
-		}
+		y_profile_zone("b");
+		sleep();
 	}
 
 
-	const usize count = 100000;
-	// vec
-	{
-		core::Vector<TestStruct> tests;
-		for(usize i = 0; i != count; ++i) {
-			tests << TestStruct{4, 5, {{32, 2.71727}}};
-		}
-
-		core::DebugTimer _("serialize vec");
-		WritableArchive arc(make_arc(io2::File::create("test.txt").unwrap()));
-		arc.serialize(tests).unwrap();
-	}
-	{
-		core::DebugTimer _("deserialize vec");
-		ReadableArchive arc(make_arc(io2::File::open("test.txt").unwrap()));
-		core::Vector<TestStruct> tests;
-		arc.deserialize(tests).unwrap();
-	}
-
-	// individual
-	{
-		core::DebugTimer _("serialize");
-		WritableArchive arc(make_arc(io2::File::create("test.txt").unwrap()));
-		TestStruct t{4, 5, {{32, 2.71727}}};
-		for(usize i = 0; i != count; ++i) {
-			arc.serialize(t).unwrap();
-		}
-	}
-	{
-		ReadableArchive arc(make_arc(io2::File::open("test.txt").unwrap()));
-		TestStruct t;
-
-		Success s = Success::Full;
-		{
-			core::DebugTimer _("deserialize");
-			for(usize i = 0; i != count; ++i) {
-				s = arc.deserialize(t).unwrap();
-			}
-		}
+	perf::end_capture();
 
 
-		log_msg(fmt("status = %", s == Success::Full ? "full" : "partial"), s == Success::Full ? Log::Info : Log::Error);
-		log_msg(fmt("{%, %, {%, %}}", t.x, t.y, t.z.p.first, t.z.p.second));
-	}
+	log_msg("Test OK");
 	return 0;
 }
 

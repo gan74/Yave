@@ -552,19 +552,19 @@ class SQLiteBuffer final : public io2::Reader {
 			return _cursor;
 		}
 
-		io2::ReadResult read(u8* data, usize bytes) override {
+		io2::ReadResult read(void* data, usize bytes) override {
 			if(remaining() < bytes) {
 				return core::Err<usize>(0);
 			}
-			std::copy_n(&_buffer[_cursor], bytes, data);
+			std::copy_n(&_buffer[_cursor], bytes, static_cast<u8*>(data));
 			_cursor += bytes;
 			return core::Ok();
 		}
 
-		io2::ReadUpToResult read_up_to(u8* data, usize max_bytes) override {
+		io2::ReadUpToResult read_up_to(void* data, usize max_bytes) override {
 			const usize max = std::min(max_bytes, remaining());
 			y_debug_assert(_cursor < _size || !max);
-			std::copy_n(&_buffer[_cursor], max, data);
+			std::copy_n(&_buffer[_cursor], max, static_cast<u8*>(data));
 			_cursor += max;
 			y_debug_assert(_cursor < _size);
 			return core::Ok(max);

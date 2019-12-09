@@ -162,7 +162,7 @@ usize File::tell() const {
 	return 0;
 }
 
-ReadResult File::read(u8* data, usize bytes) {
+ReadResult File::read(void* data, usize bytes) {
 	if(!_file) {
 		return core::Err<usize>(0);
 	}
@@ -173,7 +173,7 @@ ReadResult File::read(u8* data, usize bytes) {
 	return core::Ok();
 }
 
-ReadUpToResult File::read_up_to(u8* data, usize max_bytes) {
+ReadUpToResult File::read_up_to(void* data, usize max_bytes) {
 	if(!_file) {
 		return core::Err<usize>(0);
 	}
@@ -192,7 +192,7 @@ ReadUpToResult File::read_all(core::Vector<u8>& data) {
 	return read_up_to(data.begin() + size, left);
 }
 
-WriteResult File::write(const u8* data, usize bytes) {
+WriteResult File::write(const void* data, usize bytes) {
 	if(!_file) {
 		return core::Err<usize>(0);
 	}
