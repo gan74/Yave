@@ -80,6 +80,8 @@ class EngineView final : public Widget, public ContextLinked {
 
 		// subwidgets & stuff
 		Gizmo _gizmo;
+
+		bool _disable_render = false;
 };
 
 static_assert(!std::is_move_assignable_v<EngineView>);

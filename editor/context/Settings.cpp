@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace editor {
 
-static constexpr std::string_view settings_file = "settings.dat";
+static constexpr std::string_view settings_file = "../settings.dat";
 
 Settings::Settings(bool load) {
 	if(load) {

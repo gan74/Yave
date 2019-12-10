@@ -94,7 +94,9 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 			});
 	}
 
-	std::move(graph).render(recorder);
+	if(!_disable_render) {
+		std::move(graph).render(recorder);
+	}
 
 	if(output) {
 		//u32 color = ImGui::IsWindowFocused() ? 0xFFFFFFFF : 0xFF0000FF;
@@ -103,6 +105,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 			position() + math::Vec2(ImGui::GetWindowContentRegionMax())/*,
 			math::Vec2(0.0f), math::Vec2(1.0f), color*/);
 	}
+
 }
 
 void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
@@ -235,6 +238,9 @@ void EngineView::draw_menu_bar() {
 				}
 				ImGui::EndMenu();
 			}
+
+			ImGui::Separator();
+			ImGui::MenuItem("Disable render", nullptr, &_disable_render);
 
 			ImGui::EndMenu();
 		}

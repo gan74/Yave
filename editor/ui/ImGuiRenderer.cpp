@@ -126,7 +126,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 	const DescriptorSetBase default_set = create_descriptor_set(&_font_view);
 
 	const auto setup_state = [&](const void* tex) {
-		y_profile();
+		y_profile_zone("setup state");
 		const auto* material = context()->resources()[EditorResources::ImGuiMaterialTemplate];
 		recorder.bind_material(material, {tex ? create_descriptor_set(tex) : default_set});
 	};

@@ -127,10 +127,13 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 	std::visit(
 		[dptr = device()](auto& res) {
 			if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
+				y_profile_zone("free");
 				res.free();
 			} else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
+				y_profile_zone("recycle");
 				res.recycle();
 			} else {
+				y_profile_zone("destroy");
 				detail::destroy(dptr, res);
 			}
 		},
@@ -149,6 +152,7 @@ void LifetimeManager::clear_resources(u64 up_to) {
 		}
 	}
 
+	y_profile_zone("clear");
 	for(auto& res : to_del) {
 		destroy_resource(res);
 	}

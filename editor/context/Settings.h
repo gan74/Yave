@@ -67,7 +67,7 @@ struct UiSettings {
 
 struct PerfSettings {
 	u32 capture_frames = 60;
-	core::String capture_name = "perfdump.json";
+	core::String capture_name = "../perfdump.json";
 
 	y_serde3(capture_frames, capture_name)
 };

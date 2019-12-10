@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace editor {
 
-PerformanceMetrics::PerformanceMetrics(ContextPtr cptr) : Widget("Performance"), ContextLinked(cptr) {
+PerformanceMetrics::PerformanceMetrics(ContextPtr cptr) : Widget("Performance", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
 	std::fill(_frames.begin(), _frames.end(), 0.0f);
 	std::fill(_average.begin(), _average.end(), 0.0f);
 }

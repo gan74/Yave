@@ -127,29 +127,36 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 							 ImGuiWindowFlags_NoNavFocus;
 
 
-	ImGui::NewFrame();
+	{
+		y_profile_zone("begin frame");
 
-	ImGuiViewport* viewport = ImGui::GetMainViewport();
-	ImGui::SetNextWindowPos(viewport->Pos);
-	ImGui::SetNextWindowSize(viewport->Size);
-	ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::NewFrame();
 
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("Main Window", nullptr, ImGuiWindowFlags_MenuBar | flags);
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->Pos);
+		ImGui::SetNextWindowSize(viewport->Size);
+		ImGui::SetNextWindowViewport(viewport->ID);
 
-	ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::Begin("Main Window", nullptr, ImGuiWindowFlags_MenuBar | flags);
 
-	ImGui::PopStyleVar(3);
+		ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+
+		ImGui::PopStyleVar(3);
+	}
 
 	paint_ui(recorder, token);
 
-	ImGui::End();
-	ImGui::Render();
+	{
+		y_profile_zone("end frame");
+		ImGui::End();
+		ImGui::Render();
+	}
 
 	{
-		y_profile_zone("ui render");
+		y_profile_zone("render");
 		Framebuffer framebuffer(token.image_view.device(), {token.image_view});
 		RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
 		_renderer->render(pass, token);
@@ -181,7 +188,7 @@ void Ui::paint(UiElement* elem, CmdBufferRecorder& recorder, const FrameToken& t
 
 void Ui::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
-	// demo
+
 	ImGui::ShowDemoWindow();
 
 	for(auto& e : _elements) {
