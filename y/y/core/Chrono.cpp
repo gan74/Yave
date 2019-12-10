@@ -78,22 +78,19 @@ bool Duration::operator>=(const Duration& other) const {
 using Nano = std::chrono::nanoseconds;
 
 Chrono::Chrono() {
+#ifdef Y_OS_WIN
+	LARGE_INTEGER li;
+	QueryPerformanceFrequency(&li);
+	_freq = li.QuadPart;
+#endif
 	start();
 }
 
 void Chrono::start() {
 #ifdef Y_OS_WIN
-	{
-		LARGE_INTEGER li;
-		QueryPerformanceFrequency(&li);
-		_freq = li.QuadPart;
-	}
-	{
-
-		LARGE_INTEGER li;
-		QueryPerformanceCounter(&li);
-		_counter = li.QuadPart;
-	}
+	LARGE_INTEGER li;
+	QueryPerformanceCounter(&li);
+	_counter = li.QuadPart;
 #else
 	_time = std::chrono::high_resolution_clock::now();
 #endif
