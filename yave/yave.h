@@ -22,6 +22,8 @@ SOFTWARE.
 #ifndef YAVE_YAVE_H
 #define YAVE_YAVE_H
 
+#include <yave/utils/forward.h>
+
 #include <y/utils.h>
 #include <y/utils/perf.h>
 

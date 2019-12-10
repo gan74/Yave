@@ -24,25 +24,8 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <editor/utils/forward.h>
 #include <editor/utils/renderdochelper.h>
-
-namespace yave {
-class SpirVData;
-class ComputeProgram;
-class MaterialTemplate;
-class Swapchain;
-class FrameToken;
-class RenderPassRecorder;
-class CmdBufferRecorder;
-class FileSystemModel;
-class SceneView;
-class FrameGraph;
-class EventHandler;
-class Material;
-class StaticMesh;
-class IBLProbe;
-class Camera;
-}
 
 namespace editor {
 
