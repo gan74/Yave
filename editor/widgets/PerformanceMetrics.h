@@ -37,8 +37,14 @@ class PerformanceMetrics : public Widget, public ContextLinked {
 
 		core::Chrono _timer;
 
-		usize _current_index = 0;
 		std::array<float, 128> _frames;
+		usize _current_frame = 0;
+
+		usize _current_average = 0;
+		std::array<float, 128> _average;
+		
+		double _total = 0.0;
+		float _max = 16.0f;
 };
 
 }
