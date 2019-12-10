@@ -22,8 +22,12 @@ SOFTWARE.
 #ifndef Y_UTILS_HASH_H
 #define Y_UTILS_HASH_H
 
+#include <y/defines.h>
+
 #include "types.h"
 #include "name.h"
+
+#include <functional>
 
 namespace y {
 

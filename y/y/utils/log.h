@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_UTILS_LOG_H
 
 #include <y/utils.h>
+#include <string_view>
 
 namespace y {
 

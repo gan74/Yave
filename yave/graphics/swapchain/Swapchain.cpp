@@ -27,6 +27,8 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 

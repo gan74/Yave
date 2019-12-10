@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "PhysicalDevice.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 static bool is_device_ok(vk::PhysicalDevice device) {

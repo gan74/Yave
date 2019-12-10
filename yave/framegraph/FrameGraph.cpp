@@ -23,6 +23,8 @@ SOFTWARE.
 #include "FrameGraph.h"
 
 #include <yave/utils/color.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 

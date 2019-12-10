@@ -23,7 +23,10 @@ SOFTWARE.
 #define YAVE_GRAPHICS_SHADERS_SPIRVDATA_H
 
 #include <yave/yave.h>
+
 #include <yave/utils/serde.h>
+#include <y/core/Vector.h>
+#include <y/core/Span.h>
 
 namespace yave {
 

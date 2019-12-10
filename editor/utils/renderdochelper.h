@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef EDITOR_UTILS_RENDERDOCHELPER_H
 #define EDITOR_UTILS_RENDERDOCHELPER_H
 
-#include <editor/editor.h>
 #include <y/utils.h>
 
 namespace editor {

@@ -24,6 +24,8 @@ SOFTWARE.
 
 #ifndef EDITOR_NO_ASSIMP
 
+#include <y/utils/log.h>
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>

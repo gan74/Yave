@@ -25,6 +25,10 @@ SOFTWARE.
 #include "DeviceMemoryHeap.h"
 #include "DedicatedDeviceMemoryAllocator.h"
 
+#include <y/utils/hash.h>
+#include <y/core/Range.h>
+#include <y/core/Vector.h>
+
 #include <unordered_map>
 
 namespace yave {

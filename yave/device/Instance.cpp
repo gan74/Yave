@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "extentions/DebugUtils.h"
 
+#include <y/utils/log.h>
+
 namespace yave {
 
 Instance::Instance(DebugParams debug) : _debug_params(debug) {

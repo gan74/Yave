@@ -21,8 +21,9 @@ SOFTWARE.
 **********************************/
 #include "SpirVData.h"
 
-namespace yave {
+#include <y/io2/io.h>
 
+namespace yave {
 
 SpirVData::SpirVData(core::Span<u8> data) {
 	if(data.size() % 4) {

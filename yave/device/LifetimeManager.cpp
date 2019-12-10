@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include <yave/graphics/vk/destroy.h>
 
+#include <y/utils/format.h>
+
 namespace yave {
 
 LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {

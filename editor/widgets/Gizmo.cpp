@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <imgui/yave_imgui.h>
 
+#include <y/utils/sort.h>
+
 namespace editor {
 
 static constexpr float gizmo_hover_width = 7.5f;

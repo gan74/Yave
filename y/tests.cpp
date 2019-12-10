@@ -35,6 +35,7 @@ SOFTWARE.
 #include <y/io2/Buffer.h>
 
 #include <y/math/Vec.h>
+#include <y/utils/log.h>
 #include <y/utils/perf.h>
 
 #include <thread>

@@ -22,6 +22,10 @@ SOFTWARE.
 
 #include "import.h"
 
+#include <y/utils/sort.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 #include <unordered_map>
 
 #ifndef EDITOR_NO_ASSIMP

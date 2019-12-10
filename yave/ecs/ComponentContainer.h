@@ -22,15 +22,16 @@ SOFTWARE.
 #ifndef YAVE_ECS_COMPONENTCONTAINER_H
 #define YAVE_ECS_COMPONENTCONTAINER_H
 
-#include <yave/utils/serde.h>
-
 #include "ecs.h"
 #include "EntityId.h"
 
+#include <yave/utils/serde.h>
+#include <y/serde3/archives.h>
 #include <y/core/SparseVector.h>
+#include <y/core/Span.h>
+#include <y/core/Result.h>
 
 #include <unordered_map>
-
 
 namespace yave {
 namespace ecs {

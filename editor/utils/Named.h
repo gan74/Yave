@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2019 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,54 +19,57 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_UTILS_NAMED_H
+#define EDITOR_UTILS_NAMED_H
 
-#include "Settings.h"
+#include <editor/editor.h>
 
-#include <y/serde3/archives.h>
-#include <y/io2/File.h>
-#include <y/utils/log.h>
+#include <y/core/String.h>
 
 namespace editor {
 
-static constexpr std::string_view settings_file = "settings.dat";
-
-Settings::Settings(bool load) {
-	if(load) {
-		auto file = io2::File::open(settings_file);
-		if(!file) {
-			log_msg("Unable to open settings file.", Log::Error);
-			return;
+template<typename T>
+class Named {
+	public:
+		Named(std::string_view name, T&& obj) : _name(name), _obj(std::move(obj)) {
 		}
-		serde3::ReadableArchive arc(file.unwrap());
-		if(!arc.deserialize(*this)) {
-			log_msg("Unable to read settings file.", Log::Error);
-			*this = Settings(false);
+
+		explicit Named(T&& obj) : Named("unamed", std::move(obj)) {
 		}
-	}
+
+		const core::String& name() const {
+			return _name;
+		}
+
+		const T& obj() const {
+			return _obj;
+		}
+
+		T& obj() {
+			return _obj;
+		}
+
+		operator T&() {
+			return _obj;
+		}
+
+		operator const T&() const {
+			return _obj;
+		}
+
+		Named& operator=(T&& obj) {
+			_obj = std::move(obj);
+			return *this;
+		}
+
+	private:
+		core::String _name;
+		T _obj;
+};
+
+template<typename T>
+Named(std::string_view, T&&) -> Named<T>;
+
 }
 
-Settings::~Settings() {
-	auto file = io2::File::create(settings_file);
-	if(!file) {
-		log_msg("Unable to open settings file.", Log::Error);
-		return;
-	}
-	serde3::WritableArchive arc(file.unwrap());
-	if(!arc.serialize(*this)) {
-		log_msg("Unable to write settings file.", Log::Error);
-	}
-}
-
-CameraSettings& Settings::camera() {
-	return _camera;
-}
-
-UiSettings& Settings::ui() {
-	return _ui;
-}
-
-PerfSettings& Settings::perf() {
-	return _perf;
-}
-
-}
+#endif // EDITOR_UTILS_NAMED_H

@@ -28,6 +28,8 @@ SOFTWARE.
 #include "AssetPtr.h"
 #include "AssetStore.h"
 
+#include <y/serde3/archives.h>
+
 #include <unordered_map>
 #include <typeindex>
 #include <mutex>

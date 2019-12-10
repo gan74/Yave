@@ -25,6 +25,9 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferBase.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 #include <mutex>
 
 namespace yave {

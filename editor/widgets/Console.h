@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
+#include <y/utils/log.h>
+
 namespace editor {
 
 class Console : public Widget, public ContextLinked {

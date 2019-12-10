@@ -23,6 +23,8 @@ SOFTWARE.
 #define Y_CORE_FUNCTOR_H
 
 #include <y/utils.h>
+#include <y/utils/traits.h>
+
 #include <memory>
 
 namespace y {

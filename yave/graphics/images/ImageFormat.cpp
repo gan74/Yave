@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "ImageFormat.h"
 
+#include <y/core/String.h>
+
 namespace yave {
 
 ImageFormat::ImageFormat(vk::Format format) : _format(format) {

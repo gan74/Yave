@@ -25,6 +25,8 @@ SOFTWARE.
 #include "AssetPtr.h"
 #include "AssetType.h"
 
+#include <y/io2/io.h>
+
 namespace yave {
 
 class FileSystemModel;

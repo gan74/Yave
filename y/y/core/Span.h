@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <y/utils.h>
 
+#include <array>
+
 namespace y {
 namespace core {
 

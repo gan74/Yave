@@ -22,11 +22,13 @@ SOFTWARE.
 
 #include "SQLiteAssetStore.h"
 
-#include <thread>
+#include <y/utils/log.h>
 
 #ifndef YAVE_NO_SQLITE
 
 #include <sqlite/sqlite3.h>
+
+#include <thread>
 
 
 // https://stackoverflow.com/questions/1711631/improve-insert-per-second-performance-of-sqlite

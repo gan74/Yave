@@ -21,6 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include <y/utils.h>
+#include <y/utils/traits.h>
+
 #include <y/test/test.h>
 
 #include <y/core/Vector.h>

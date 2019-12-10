@@ -24,6 +24,9 @@ SOFTWARE.
 
 #include <yave/device/Device.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 #include <mutex>
 
 namespace yave {

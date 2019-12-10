@@ -21,7 +21,11 @@ SOFTWARE.
 **********************************/
 
 #include "test.h"
+
 #include <y/utils.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 #include <cstring>
 
 #include <iostream>

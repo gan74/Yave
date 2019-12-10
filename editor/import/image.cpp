@@ -53,7 +53,7 @@ Named<ImageData> import_image(const core::String& filename, ImageImportFlags fla
 	y_defer(stbi_image_free(data););
 
 	if(!data) {
-		y_throw(fmt("Unable to load image \"%\".", filename).data());
+		y_throw(fmt_c_str("Unable to load image \"%\".", filename));
 	}
 
 	ImageData img(math::Vec2ui(width, height), data, vk::Format::eR8G8B8A8Unorm);

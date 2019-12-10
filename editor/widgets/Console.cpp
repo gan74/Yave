@@ -114,7 +114,7 @@ void Console::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		_log_types[i] ^= ImGui::Button(log_icon(Log(i)));
 		ImGui::PopStyleColor();
 		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip(fmt("% / %", _log_counts[i], total).data());
+			ImGui::SetTooltip(fmt_c_str("% / %", _log_counts[i], total));
 		}
 	}
 
@@ -140,7 +140,7 @@ void Console::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			}
 			if(!_filter.front() || match(msg.msg.begin(), _filter.begin())) {
 				ImGui::PushStyleColor(ImGuiCol_Text, log_color(msg.type));
-				ImGui::Selectable(fmt("% %", log_icon(msg.type), msg.msg).data());
+				ImGui::Selectable(fmt_c_str("% %", log_icon(msg.type), msg.msg));
 				ImGui::PopStyleColor();
 			}
 		});

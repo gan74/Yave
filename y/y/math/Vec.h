@@ -23,6 +23,8 @@ SOFTWARE.
 #define Y_MATH_VEC_H
 
 #include <y/utils.h>
+
+#include <array>
 #include <cmath>
 
 namespace y {
@@ -80,22 +82,30 @@ class Vec
 		}
 
 		explicit constexpr Vec(T t) {
-			std::fill(begin(), end(), t);
+			for(usize i = 0; i != N; ++i) {
+				_vec[i] = t;
+			}
 		}
 
 		template<typename X>
 		constexpr Vec(const Vec<N, X>& v) {
-			std::copy(v.begin(), v.end(), begin());
+			for(usize i = 0; i != N; ++i) {
+				_vec[i] = T(v[i]);
+			}
 		}
 
 		constexpr Vec(const std::array<T, N>& v) {
-			std::copy(v.begin(), v.end(), begin());
+			for(usize i = 0; i != N; ++i) {
+				_vec[i] = v[i];
+			}
 		}
 
 		template<usize S>
 		constexpr Vec(const T(&v)[S]) {
 			static_assert(S == N || !S, "Wrong number of arguments");
-			std::copy(std::begin(v), std::end(v), begin());
+			for(usize i = 0; i != N; ++i) {
+				_vec[i] = v[i];
+			}
 		}
 
 		constexpr Vec(detail::identity_t&&) {
@@ -153,7 +163,7 @@ class Vec
 		constexpr Vec saturated() const {
 			Vec v;
 			for(usize i = 0; i != N; ++i) {
-				v[i] = std::clamp(_vec[i], T(0), T(1));
+				v[i] = std::min(std::max(_vec[i], T(0)), T(1));
 			}
 			return v;
 		}

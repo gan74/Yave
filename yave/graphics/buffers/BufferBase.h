@@ -22,9 +22,12 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
 #define YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
 
-#include "BufferUsage.h"
 #include <yave/device/DeviceLinked.h>
 #include <yave/graphics/memory/DeviceMemory.h>
+
+#include "BufferUsage.h"
+
+#include <yave/utils/traits.h>
 
 namespace yave {
 

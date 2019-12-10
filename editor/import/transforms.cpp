@@ -22,11 +22,13 @@ SOFTWARE.
 
 #include "transforms.h"
 
+#include <y/utils/log.h>
+
 namespace editor {
 namespace import {
 
 template<typename T>
-core::Vector<T> copy(core::Span<T> t) {
+static core::Vector<T> copy(core::Span<T> t) {
 	return core::Vector<T>(t);
 }
 

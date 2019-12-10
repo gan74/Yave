@@ -22,6 +22,11 @@ SOFTWARE.
 
 #include "Chrono.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
+#include <tuple>
+
 #ifdef Y_OS_WIN
 #include <windows.h>
 #endif

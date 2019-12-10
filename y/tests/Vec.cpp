@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include <y/math/Vec.h>
 #include <y/test/test.h>
+#include <y/utils/traits.h>
 
 namespace {
 using namespace y;

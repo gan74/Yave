@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include "AssetType.h"
 
+#include <y/core/Result.h>
+
 namespace yave {
 
 template<typename T>

@@ -24,6 +24,10 @@ SOFTWARE.
 
 #include "FileBrowser.h"
 
+#include <yave/graphics/images/ImageData.h>
+
+#include <editor/utils/Named.h>
+
 #include <future>
 
 namespace editor {

@@ -22,15 +22,14 @@ SOFTWARE.
 #ifndef YAVE_YAVE_H
 #define YAVE_YAVE_H
 
+#include <y/utils.h>
 #include <y/utils/perf.h>
 
-#include <y/math/math.h>
 #include <y/math/Transform.h>
 
-#include <y/core/Range.h>
-#include <y/core/Vector.h>
-#include <y/core/String.h>
-
+namespace y::core {
+class String;
+}
 
 namespace yave {
 
@@ -41,14 +40,6 @@ using DevicePtr = const Device*;
 
 class ThreadLocalDevice;
 using ThreadDevicePtr = const ThreadLocalDevice*;
-
-
-template<typename T>
-using is_safe_base = bool_type</*!std::is_default_constructible_v<T> &&*/
-							   !std::is_copy_constructible_v<T> &&
-							   !std::is_copy_assignable_v<T> &&
-							   !std::is_move_constructible_v<T> &&
-							   !std::is_move_assignable_v<T>>;
 
 
 }

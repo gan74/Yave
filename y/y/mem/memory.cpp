@@ -23,6 +23,9 @@ SOFTWARE.
 #include "memory.h"
 #include "allocators.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace y {
 namespace memory {
 

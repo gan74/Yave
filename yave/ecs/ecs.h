@@ -22,7 +22,11 @@ SOFTWARE.
 #ifndef YAVE_ECS_ECS_H
 #define YAVE_ECS_ECS_H
 
+#include <y/utils/hash.h>
+#include <y/utils/traits.h>
+
 #include <typeindex>
+
 #include "EntityId.h"
 
 namespace yave {

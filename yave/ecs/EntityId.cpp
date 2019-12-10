@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "EntityId.h"
 
+#include <tuple>
+
 namespace yave {
 namespace ecs {
 

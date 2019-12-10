@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 #include <y/math/Transform.h>
 #include <y/test/test.h>
+#include <tuple>
 
 namespace {
 using namespace y;

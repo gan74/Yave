@@ -23,7 +23,7 @@ SOFTWARE.
 #include "FileBrowser.h"
 
 #include <imgui/yave_imgui.h>
-
+#include <y/utils/sort.h>
 
 namespace editor {
 
@@ -151,7 +151,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 			for(usize i = 0; i != _entries.size(); ++i) {
 				const auto& name = _entries[i].first;
-				if(ImGui::Selectable(fmt("% %", icons[usize(_entries[i].second)], name).data())) {
+				if(ImGui::Selectable(fmt_c_str("% %", icons[usize(_entries[i].second)], name))) {
 					set_path(_filesystem->join(path(), name));
 					break;
 				}

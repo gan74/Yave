@@ -23,8 +23,9 @@ SOFTWARE.
 #define EDITOR_UI_UIELEMENT_H
 
 #include <editor/editor.h>
-
 #include <yave/graphics/swapchain/FrameToken.h>
+
+#include <y/core/String.h>
 
 namespace editor {
 

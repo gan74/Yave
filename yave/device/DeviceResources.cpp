@@ -25,16 +25,15 @@ SOFTWARE.
 #include <yave/graphics/shaders/SpirVData.h>
 #include <yave/graphics/shaders/ShaderModule.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
-
 #include <yave/material/Material.h>
-
 #include <yave/meshes/MeshData.h>
 #include <yave/meshes/StaticMesh.h>
-
 #include <yave/graphics/images/IBLProbe.h>
 
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 

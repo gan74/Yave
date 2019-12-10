@@ -27,6 +27,7 @@ SOFTWARE.
 #include <y/utils/detect.h>
 
 #include <tuple>
+#include <string_view>
 
 namespace y {
 namespace serde3 {

@@ -51,7 +51,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	usize total_used = 0;
 	usize total_allocated = 0;
 	for(auto&& [type, heaps] : device()->allocator().heaps()) {
-		ImGui::BulletText(fmt("Heap [%]", memory_type_name(type.second)).data());
+		ImGui::BulletText(fmt_c_str("Heap [%]", memory_type_name(type.second)));
 		ImGui::Indent();
 		for(const auto& heap : heaps) {
 			usize free = heap->available();
@@ -59,7 +59,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			total_used += used;
 			total_allocated += heap->size();
 
-			ImGui::ProgressBar(used / float(heap->size()), ImVec2(0, 0), fmt("%KB / %KB", to_kb(used), to_kb(heap->size())).data());
+			ImGui::ProgressBar(used / float(heap->size()), ImVec2(0, 0), fmt_c_str("%KB / %KB", to_kb(used), to_kb(heap->size())));
 			ImGui::Text("Free blocks: %u", unsigned(heap->free_blocks()));
 			ImGui::Spacing();
 		}
@@ -83,7 +83,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::Text("Dedicated allocations size: %.1fMB", to_mb(dedicated));
 		ImGui::Text("Total allocated: %.1fMB", to_mb(total_allocated));
 		ImGui::SetNextItemWidth(-1);
-		ImGui::ProgressBar(total_used / float(total_allocated), ImVec2(0, 0), fmt("%MB / %MB", usize(to_mb(total_used)), usize(to_mb(total_allocated))).data());
+		ImGui::ProgressBar(total_used / float(total_allocated), ImVec2(0, 0), fmt_c_str("%MB / %MB", usize(to_mb(total_used)), usize(to_mb(total_allocated))));
 
 		ImGui::Spacing();
 		ImGui::Separator();
@@ -112,7 +112,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::Text("Descriptor set layouts: %u", u32(alloc.layout_count()));
 		ImGui::Text("Descriptor set pools: %u", u32(pools));
 
-		ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt("% / % sets", used_sets, total_sets).data());
+		ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt_c_str("% / % sets", used_sets, total_sets));
 	}
 }
 

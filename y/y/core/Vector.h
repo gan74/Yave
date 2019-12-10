@@ -23,7 +23,9 @@ SOFTWARE.
 #define Y_CORE_VECTOR_H
 
 #include "Span.h"
+
 #include <cstring>
+#include <algorithm>
 
 namespace y {
 namespace core {

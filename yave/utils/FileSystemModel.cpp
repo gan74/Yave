@@ -21,8 +21,10 @@ SOFTWARE.
 **********************************/
 
 #include "FileSystemModel.h"
-
 #include "filesystem.h"
+
+#include <y/core/String.h>
+#include <y/core/Result.h>
 
 namespace yave {
 

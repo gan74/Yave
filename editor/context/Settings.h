@@ -24,7 +24,10 @@ SOFTWARE.
 
 #include <editor/editor.h>
 #include <yave/window/EventHandler.h>
+
 #include <yave/utils/serde.h>
+#include <y/core/String.h>
+
 
 namespace editor {
 

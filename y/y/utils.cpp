@@ -21,6 +21,9 @@ SOFTWARE.
 **********************************/
 
 #include "utils.h"
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 #include <y/core/String.h>
 
 #ifdef Y_OS_WIN

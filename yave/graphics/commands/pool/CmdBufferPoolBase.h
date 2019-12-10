@@ -30,6 +30,8 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferUsage.h>
 #include <yave/graphics/commands/data/CmdBufferData.h>
 
+#include <yave/utils/traits.h>
+
 namespace yave {
 
 class CmdBufferDataProxy;

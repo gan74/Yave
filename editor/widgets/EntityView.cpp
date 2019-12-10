@@ -135,7 +135,7 @@ void EntityView::paint_view() {
 			}
 
 			const bool selected = context()->selection().selected_entity() == id;
-			if(ImGui::Selectable(fmt(ICON_FA_CUBE " %##%", comp->name(), id.index()).data(), selected)) {
+			if(ImGui::Selectable(fmt_c_str(ICON_FA_CUBE " %##%", comp->name(), id.index()), selected)) {
 				 context()->selection().set_selected(id);
 			}
 			if(ImGui::IsItemHovered()) {
@@ -161,14 +161,14 @@ void EntityView::paint_clustered_view() {
 				ImGui::OpenPopup("Add entity");
 			}
 			if(ImGui::BeginPopup("Add entity")) {
-				if(ImGui::MenuItem(fmt("% %", icon, "Add entity").data())) {
+				if(ImGui::MenuItem(fmt_c_str("% %", icon, "Add entity"))) {
 					archetype.create(context()->world());
 				}
 				ImGui::EndPopup();
 			}
 		};
 
-		if(ImGui::TreeNodeEx(fmt("% %", icon, archetype.name()).data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+		if(ImGui::TreeNodeEx(fmt_c_str("% %", icon, archetype.name()), ImGuiTreeNodeFlags_DefaultOpen)) {
 			paint_category_menu();
 
 			archetype.for_each(context()->world(), [&](ecs::EntityId id) {
@@ -179,7 +179,7 @@ void EntityView::paint_clustered_view() {
 				if(context()->selection().selected_entity() == id) {
 					flags |= ImGuiTreeNodeFlags_Selected;
 				}
-				ImGui::TreeNodeEx(fmt("% %##%", icon, editor_comp->name(), id.index()).data(), flags);
+				ImGui::TreeNodeEx(fmt_c_str("% %##%", icon, editor_comp->name(), id.index()), flags);
 
 				if(ImGui::IsItemClicked()) {
 					context()->selection().set_selected(id);
@@ -264,7 +264,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 					if(t.name.empty() || world.has(_hovered, t.type)) {
 						continue;
 					}
-					if(ImGui::MenuItem(fmt(ICON_FA_PUZZLE_PIECE " %", clean_component_name(t.name)).data())) {
+					if(ImGui::MenuItem(fmt_ctr(ICON_FA_PUZZLE_PIECE " %", clean_component_name(t.name)))) {
 						if(!world.create_component(_hovered, t.type)) {
 							log_msg("Unable to create component.", Log::Error);
 						}

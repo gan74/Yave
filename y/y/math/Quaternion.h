@@ -176,7 +176,7 @@ class Quaternion {
 
 		T pitch() const {
 			const T a = T(-2.0f) * (x() * z() - w() * y());
-			return std::asin(std::clamp(a, T(-1.0f), T(1.0f)));
+			return std::asin(std::min(std::max(a, T(-1.0f)), T(1.0f)));
 		}
 
 		T yaw() const {

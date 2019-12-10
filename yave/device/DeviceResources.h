@@ -29,6 +29,11 @@ SOFTWARE.
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 
+#include <y/utils/hash.h>
+#include <y/core/String.h>
+
+#include <unordered_map>
+
 #ifdef Y_DEBUG
 #include <mutex>
 #endif

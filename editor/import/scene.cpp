@@ -26,12 +26,15 @@ SOFTWARE.
 
 #include <yave/utils/FileSystemModel.h>
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <unordered_map>
 #include <unordered_set>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 namespace editor {
 namespace import {

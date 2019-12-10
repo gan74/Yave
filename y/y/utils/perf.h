@@ -23,7 +23,6 @@ SOFTWARE.
 #define Y_UTILS_PERF_H
 
 #include <y/utils.h>
-#include <memory>
 
 namespace y {
 namespace perf {

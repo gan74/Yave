@@ -23,15 +23,24 @@ SOFTWARE.
 #define YAVE_WINDOW_WINDOW_H
 
 #include <yave/yave.h>
+
 #include "EventHandler.h"
 
 #include <y/core/String.h>
+
+#include <memory>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
 #endif
 
 namespace yave {
+
+#ifdef Y_OS_WIN
+using HINSTANCE_ = HINSTANCE;
+using HWND_ = HWND;
+using LRESULT_ = LRESULT;
+#endif
 
 class Window : NonMovable {
 	public:
@@ -50,8 +59,8 @@ class Window : NonMovable {
 		void show();
 
 		#ifdef Y_OS_WIN
-			HINSTANCE instance() const { return _hinstance; }
-			HWND handle() const { return _hwnd; }
+			HINSTANCE_ instance() const { return _hinstance; }
+			HWND_ handle() const { return _hwnd; }
 		#endif
 
 		const math::Vec2ui& size() const;
@@ -66,10 +75,10 @@ class Window : NonMovable {
 
 	private:
 		#ifdef Y_OS_WIN
-			static LRESULT CALLBACK windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+			static LRESULT_ CALLBACK windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 			static void mouse_event(Window* window, UINT uMsg, POINTS pt);
-			HINSTANCE _hinstance;
-			HWND _hwnd;
+			HINSTANCE_ _hinstance;
+			HWND_ _hwnd;
 			bool _run;
 		#endif
 

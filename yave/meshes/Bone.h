@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 #include <yave/utils/serde.h>
+#include <y/core/String.h>
 
 namespace yave {
 

@@ -24,18 +24,7 @@ SOFTWARE.
 
 #include "defines.h"
 
-#include <new>
-#include <typeinfo>
-#include <tuple>
-#include <array>
-
 #include <y/utils/types.h>
-
-#include <y/utils/format.h>
-#include <y/utils/except.h>
-#include <y/utils/sort.h>
-#include <y/utils/hash.h>
-#include <y/utils/log.h>
 
 #define y_defer(expr) auto y_create_name_with_prefix(defer) = y::ScopeExit([&]() { expr; })
 
@@ -80,17 +69,6 @@ constexpr usize log2ui(usize n) {
 template<typename... Args>
 constexpr void unused(Args&&...) {}
 
-
-
-template<typename T>
-void do_not_destroy(T&& t) {
-	union U {
-		U() {}
-		~U() {}
-		std::remove_reference_t<T> t;
-	} u;
-	::new(&u.t) std::remove_reference_t<T>(y_fwd(t));
-}
 
 
 constexpr bool is_64_bits() {

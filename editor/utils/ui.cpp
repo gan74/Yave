@@ -36,7 +36,7 @@ namespace imgui {
 bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text) {
 	static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
 
-	ImGui::PushID(fmt("%_%_%", id.id(), uenum(type), text.data()).data());
+	ImGui::PushID(fmt_c_str("%_%_%", id.id(), uenum(type), text));
 	ImGui::BeginGroup();
 
 	bool ret = false;

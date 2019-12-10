@@ -23,6 +23,8 @@ SOFTWARE.
 #include "ShaderProgram.h"
 #include <yave/device/Device.h>
 
+#include <y/utils/sort.h>
+
 #include <unordered_map>
 #include <numeric>
 

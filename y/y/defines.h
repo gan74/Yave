@@ -25,6 +25,7 @@ SOFTWARE.
 namespace y {
 
 struct Nothing;
+
 [[noreturn]] Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
 void break_in_debugger();
 }
@@ -42,7 +43,7 @@ void break_in_debugger();
 #endif
 
 // keep the namespacing ?
-#define y_fatal(...) y::fatal(y::fmt(__VA_ARGS__).data(), __FILE__, __LINE__)
+#define y_fatal(msg) y::fatal((msg), __FILE__, __LINE__)
 
 #ifdef Y_DEBUG
 #define y_debug_assert(cond) do { if(!(cond)) { y_fatal("Assert failed: " #cond); } } while(false)

@@ -20,7 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <y/utils.h>
+#include <editor/editor.h>
+#include <y/utils/log.h>
 
 #ifdef Y_OS_WIN
 #include <windows.h>

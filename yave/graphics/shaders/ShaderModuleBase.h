@@ -22,10 +22,12 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_SHADERS_SHADERMODULEBASE_H
 #define YAVE_GRAPHICS_SHADERS_SHADERMODULEBASE_H
 
-#include <yave/graphics/vk/vk.h>
-
-#include <yave/device/DeviceLinked.h>
 #include "SpirVData.h"
+
+#include <yave/graphics/vk/vk.h>
+#include <yave/device/DeviceLinked.h>
+
+#include <yave/utils/traits.h>
 
 #include <unordered_map>
 

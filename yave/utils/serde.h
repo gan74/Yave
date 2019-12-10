@@ -23,9 +23,12 @@ SOFTWARE.
 #define YAVE_UTILS_SERDE_H
 
 #include <yave/yave.h>
-
 #include <y/serde3/serde.h>
-#include <y/serde3/archives.h>
+
+namespace y::io2 {
+class Reader;
+class Writer;
+}
 
 namespace yave {
 class AssetLoader;

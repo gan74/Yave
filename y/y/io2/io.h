@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_IO2_IO_H
 
 #include <memory>
+
 #include <y/core/Vector.h>
 #include <y/core/Result.h>
 

@@ -25,6 +25,8 @@ SOFTWARE.
 #include <editor/editor.h>
 
 #include <y/core/Vector.h>
+#include <y/core/String.h>
+#include <y/utils/log.h>
 
 #include <mutex>
 

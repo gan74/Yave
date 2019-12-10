@@ -24,6 +24,9 @@ SOFTWARE.
 
 #include <yave/device/Device.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(

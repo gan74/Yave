@@ -29,6 +29,8 @@ SOFTWARE.
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 
+#include <y/core/Vector.h>
+
 namespace yave {
 
 class RenderPass : NonCopyable, public DeviceLinked {

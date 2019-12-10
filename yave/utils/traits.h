@@ -19,54 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_UTILS_TRAITS_H
+#define YAVE_UTILS_TRAITS_H
 
-#include "Settings.h"
+#include <yave/yave.h>
 
-#include <y/serde3/archives.h>
-#include <y/io2/File.h>
-#include <y/utils/log.h>
+#include <y/utils/traits.h>
 
-namespace editor {
+namespace yave {
 
-static constexpr std::string_view settings_file = "settings.dat";
-
-Settings::Settings(bool load) {
-	if(load) {
-		auto file = io2::File::open(settings_file);
-		if(!file) {
-			log_msg("Unable to open settings file.", Log::Error);
-			return;
-		}
-		serde3::ReadableArchive arc(file.unwrap());
-		if(!arc.deserialize(*this)) {
-			log_msg("Unable to read settings file.", Log::Error);
-			*this = Settings(false);
-		}
-	}
-}
-
-Settings::~Settings() {
-	auto file = io2::File::create(settings_file);
-	if(!file) {
-		log_msg("Unable to open settings file.", Log::Error);
-		return;
-	}
-	serde3::WritableArchive arc(file.unwrap());
-	if(!arc.serialize(*this)) {
-		log_msg("Unable to write settings file.", Log::Error);
-	}
-}
-
-CameraSettings& Settings::camera() {
-	return _camera;
-}
-
-UiSettings& Settings::ui() {
-	return _ui;
-}
-
-PerfSettings& Settings::perf() {
-	return _perf;
-}
+template<typename T>
+using is_safe_base = bool_type<!std::is_copy_constructible_v<T> &&
+							   !std::is_copy_assignable_v<T> &&
+							   !std::is_move_constructible_v<T> &&
+							   !std::is_move_assignable_v<T>>;
 
 }
+
+#endif // YAVE_UTILS_TRAITS_H

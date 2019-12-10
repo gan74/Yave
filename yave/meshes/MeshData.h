@@ -27,6 +27,8 @@ SOFTWARE.
 #include "Skeleton.h"
 #include "AABB.h"
 
+#include <memory>
+
 namespace yave {
 
 class MeshData {

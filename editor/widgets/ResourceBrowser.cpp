@@ -364,7 +364,7 @@ void ResourceBrowser::paint_preview(float width) {
 		}
 		ImGui::Text("ID: 0x%.8x", unsigned(file->id.id()));
 		for(const auto& [name, value] : thumb_data.properties) {
-			ImGui::Text(fmt("%: %", name, value).data());
+			ImGui::Text(fmt_c_str("%: %", name, value));
 		}
 
 		ImGui::EndGroup();

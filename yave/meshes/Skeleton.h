@@ -25,6 +25,9 @@ SOFTWARE.
 #include "Vertex.h"
 #include "Bone.h"
 
+#include <y/core/Span.h>
+#include <y/core/Vector.h>
+
 namespace yave {
 
 class Skeleton {

@@ -23,6 +23,10 @@ SOFTWARE.
 #define Y_MEM_ALLOCATORS_H
 
 #include "memory.h"
+
+#include <y/utils/format.h>
+
+#include <algorithm>
 #include <mutex>
 
 namespace y {

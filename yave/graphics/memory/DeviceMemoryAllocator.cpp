@@ -23,6 +23,9 @@ SOFTWARE.
 #include "DeviceMemoryAllocator.h"
 #include "alloc.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 Y_TODO(DeviceAllocator should track allocation count)

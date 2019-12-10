@@ -23,10 +23,15 @@ SOFTWARE.
 #define Y_FORMAT_H
 
 #include <y/defines.h>
-#include "types.h"
+
+#include "traits.h"
+
 #include <cstring>
 #include <string_view>
 #include <tuple>
+
+#undef y_fatal
+#define y_fatal(...) y::fatal(y::fmt_c_str(__VA_ARGS__), __FILE__, __LINE__)
 
 namespace y {
 
@@ -133,25 +138,30 @@ void fmt_rec(FmtBuffer& buffer, const char* fmt, T&& t, Args&&... args) {
 static constexpr usize fmt_max_size = 1023;
 
 template<typename... Args>
-std::string_view fmt(const char* fmt, Args&&... args) {
+std::string_view fmt(const char* fmt_str, Args&&... args) {
 	if constexpr(sizeof...(args)) {
 		detail::FmtBuffer buffer;
-		detail::fmt_rec(buffer, fmt, y_fwd(args)...);
+		detail::fmt_rec(buffer, fmt_str, y_fwd(args)...);
 		return std::move(buffer).done();
 	}
 
-	return fmt;
+	return fmt_str;
 }
 
 template<typename... Args>
-std::string_view fmt_into(core::String& out, const char* fmt, Args&&... args) {
+std::string_view fmt_into(core::String& out, const char* fmt_str, Args&&... args) {
 	detail::FmtBuffer buffer(out);
 	if constexpr(sizeof...(args)) {
-		detail::fmt_rec(buffer, fmt, y_fwd(args)...);
+		detail::fmt_rec(buffer, fmt_str, y_fwd(args)...);
 	} else {
-		buffer.fmt_one(fmt);
+		buffer.fmt_one(fmt_str);
 	}
 	return std::move(buffer).done();
+}
+
+template<typename... Args>
+const char* fmt_c_str(const char* fmt_str, Args&&... args) {
+	return fmt(fmt_str, y_fwd(args)...).data();
 }
 
 }

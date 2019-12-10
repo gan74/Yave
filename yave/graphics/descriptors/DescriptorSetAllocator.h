@@ -22,10 +22,14 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETALLOCATOR_H
 #define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETALLOCATOR_H
 
+
 #include <yave/graphics/vk/vk.h>
 #include <yave/device/DeviceLinked.h>
 
+#include <y/utils/hash.h>
+#include <y/core/Vector.h>
 #include <y/concurrent/SpinLock.h>
+
 #include <mutex>
 #include <bitset>
 

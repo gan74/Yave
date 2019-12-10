@@ -23,6 +23,8 @@ SOFTWARE.
 #define Y_CORE_RESULT_H
 
 #include <y/utils.h>
+#include <y/utils/traits.h>
+#include <y/utils/except.h>
 
 #define y_try(result)																			\
 	do {																						\
@@ -138,13 +140,13 @@ inline auto Err() {
 
 template<typename T>
 inline auto Ok(T&& t) {
-	return detail::Ok<std::remove_const_t<std::remove_reference_t<T>>>(y_fwd(t));
+	return detail::Ok<remove_cvref_t<T>>(y_fwd(t));
 }
 
 template<typename T>
 inline auto Err(T&& e) {
 	result::err_break();
-	return detail::Err<std::remove_const_t<std::remove_reference_t<T>>>(y_fwd(e));
+	return detail::Err<remove_cvref_t<T>>(y_fwd(e));
 }
 
 

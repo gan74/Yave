@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "Skeleton.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 [[maybe_unused]]

@@ -57,7 +57,7 @@ void draw_component_widgets(ContextPtr ctx, ecs::EntityId id) {
 	for(detail::ComponentWidgetData* data = detail::first_component; data; data = data->next) {
 		y_debug_assert(data->func);
 
-		ImGui::PushID(fmt("wid %", index++).data());
+		ImGui::PushID(fmt_c_str("wid %", index++));
 		data->func(ctx, id);
 		ImGui::PopID();
 	}

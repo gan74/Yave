@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "DeviceMemoryHeapBase.h"
 
+#include <y/core/Vector.h>
+
 #include <mutex>
 
 namespace yave {

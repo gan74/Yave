@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/ecs/ecs.h>
 
 #include <yave/utils/serde.h>
+#include <y/core/String.h>
 
 namespace editor {
 
