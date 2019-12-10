@@ -37,11 +37,16 @@ DevicePtr ContextLinked::device() const {
 	return _ctx ? _ctx->device() : nullptr;
 }
 
+
+
+static constexpr std::string_view world_file = "../world.yw3";
+static constexpr std::string_view store_file = "../store.sqlite3";
+
 EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_resources(dptr),
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
-		_asset_store(std::make_shared<SQLiteAssetStore>()),
+		_asset_store(std::make_shared<SQLiteAssetStore>(store_file)),
 		_loader(device(), _asset_store),
 		_scene_view(&_default_scene_view),
 		_ui(this),
@@ -203,8 +208,6 @@ AssetStore& EditorContext::asset_store() {
 Logs& EditorContext::logs() {
 	return _logs;
 }
-
-static constexpr std::string_view world_file = "world.yw3";
 
 void EditorContext::save_world() const {
 	auto file = io2::File::create(world_file);

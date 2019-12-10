@@ -23,32 +23,41 @@ SOFTWARE.
 #include "ImGuiRenderer.h"
 
 #include <editor/context/EditorContext.h>
-
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/framegraph/FrameGraph.h>
-#include <yave/utils/FileSystemModel.h>
-
-#include <y/core/Chrono.h>
 
 #include <imgui/yave_imgui.h>
 
-namespace editor {
+#include <y/core/Chrono.h>
+#include <y/io2/File.h>
 
+
+namespace editor {
 
 static ImageData load_font() {
 	y_profile();
 
 	// https://skia.googlesource.com/external/github.com/ocornut/imgui/+/v1.50/extra_fonts/README.txt
 	ImGuiIO& io = ImGui::GetIO();
-
 	io.Fonts->AddFontDefault();
-	if(FileSystemModel::local_filesystem()->exists("fonts/fa-solid-900.ttf").unwrap_or(false)) {
+
+	const char* icons = nullptr;
+	std::array icon_paths = {".", "..", "./fonts", "../fonts"};
+	for(const auto path : icon_paths) {
+		const char* file = fmt_c_str("%/fa-solid-900.ttf", path);
+		if(io2::File::open(file).is_ok()) {
+			icons = file;
+			break;
+		}
+	}
+
+	if(icons) {
 		ImFontConfig config;
 		config.MergeMode = true;
 		const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-		io.Fonts->AddFontFromFileTTF("fonts/fa-solid-900.ttf", 13.0f, &config, icon_ranges);
+		io.Fonts->AddFontFromFileTTF(icons, 13.0f, &config, icon_ranges);
 	} else {
-		log_msg("fonts/fa-solid-900.ttf not found.", Log::Error);
+		log_msg("fa-solid-900.ttf not found.", Log::Error);
 	}
 
 	u8* font_data = nullptr;

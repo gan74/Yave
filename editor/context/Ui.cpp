@@ -23,17 +23,17 @@ SOFTWARE.
 #include "Ui.h"
 
 #include <editor/context/EditorContext.h>
-
 #include <editor/widgets/EntityView.h>
 #include <editor/widgets/ResourceBrowser.h>
 #include <editor/widgets/Console.h>
-
 #include <editor/properties/PropertyPanel.h>
 #include <editor/EngineView.h>
 #include <editor/ui/MenuBar.h>
 
 #include <editor/ui/ImGuiRenderer.h>
 #include <imgui/yave_imgui.h>
+
+#include <y/io2/File.h>
 
 namespace editor {
 
@@ -44,6 +44,10 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
 	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	ImGui::GetIO().ConfigDockingWithShift = false;
 	//ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
+
+	if(io2::File::open("../editor.ini").is_ok()) {
+		ImGui::GetIO().IniFilename = "../editor.ini";
+	}
 
 	show<EngineView>();
 	show<EntityView>();
