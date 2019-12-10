@@ -68,22 +68,26 @@ file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
 		"external/imgui/*.cpp"
 		"external/imgui/*.h"
 	)
-
-# Shader files, they are here so the IDE can find them
+	
+# Shader files
 file(GLOB_RECURSE SHADER_FILES
 		"shaders/*.frag"
 		"shaders/*.vert"
 		"shaders/*.geom"
 		"shaders/*.comp"
+	)
+
+# Shader libs, they are here so the IDE can find them
+file(GLOB_RECURSE SHADER_LIBS
 		"shaders/*.glsl"
 	)
 
-
-
+	
 if(CMAKE_BUILD_TYPE STREQUAL Release OR YAVE_UNITY_BUILD)
 	enable_unity_build(yave YAVE_FILES)
 	enable_unity_build(editor EDITOR_FILES)
 endif()
+
 
 
 if(YAVE_BUILD_YAVE)
@@ -97,6 +101,9 @@ if(YAVE_BUILD_YAVE)
 
 	target_link_libraries(yave ${Vulkan_LIBRARY})
 	target_link_libraries(yave y spirv-cross-core stdc++fs sqlite3)
+	
+	add_custom_target(shaders COMMAND glslc -c ${SHADER_FILES})
+	add_dependencies(yave shaders)
 endif()
 
 if(YAVE_BUILD_EDITOR)
