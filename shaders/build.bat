@@ -1,4 +1,6 @@
-for %%f in (*.frag) do glslc %%f -o ../build/%%f.spv
-for %%f in (*.vert) do glslc %%f -o ../build/%%f.spv
-for %%f in (*.geom) do glslc %%f -o ../build/%%f.spv
-for %%f in (*.comp) do glslc %%f -o ../build/%%f.spv
+@echo off
+
+for %%f in (*.frag) do start /b glslc %%f -o ../build/%%f.spv
+for %%f in (*.vert) do start /b glslc %%f -o ../build/%%f.spv
+for %%f in (*.geom) do start /b glslc %%f -o ../build/%%f.spv
+for %%f in (*.comp) do start /b glslc %%f -o ../build/%%f.spv
