@@ -70,12 +70,13 @@ uvec2 dispatch_range(uint num) {
 // -------------------------------- CULLING --------------------------------
 
 bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
-	float dist_sum = 0.0;
+	// This is far from optimal, but it will do for now
 	for(uint i = 0; i != 4; ++i) {
-		const float dist = -dot(vec4(pos, 1.0), frustum.planes[i]);
-		dist_sum += sqr(max(0.0, dist));
+		if(dot(vec4(pos, 1.0), frustum.planes[i]) > radius) {
+			return false;
+		}
 	}
-	return dist_sum < radius * radius;
+	return true;
 }
 
 
