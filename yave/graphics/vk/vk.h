@@ -24,10 +24,11 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#ifdef YAVE_VK_PLATFORM_INCLUDES
 #ifdef Y_OS_WIN
-	#define VK_USE_PLATFORM_WIN32_KHR
+#define VK_USE_PLATFORM_WIN32_KHR
 #endif
-
+#endif
 
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -42,7 +43,6 @@ SOFTWARE.
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
-
 
 #define YAVE_VK
 

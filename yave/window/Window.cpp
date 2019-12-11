@@ -21,6 +21,10 @@ SOFTWARE.
 **********************************/
 #include "Window.h"
 
+#ifdef Y_OS_WIN
+#include <windows.h>
+#endif
+
 namespace yave {
 
 #ifdef Y_OS_WIN
@@ -80,7 +84,12 @@ static Key to_key(WPARAM w_param, LPARAM l_param) {
 	return Key::Unknown;
 }
 
-LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param) {
+void set_window_size(Window* win, const math::Vec2ui& size)  {
+	win->_size = size;
+	win->resized();
+}
+
+static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param) {
 	Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 	if(window) {
 		const math::Vec2ui lvec(usize(LOWORD(l_param)), usize(HIWORD(l_param)));
@@ -90,8 +99,7 @@ LRESULT CALLBACK Window::windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_p
 				return 0;
 
 			case WM_SIZE:
-				window->_size = lvec;
-				window->resized();
+				set_window_size(window, lvec);
 				return 0;
 
 			case WM_SYSKEYDOWN:

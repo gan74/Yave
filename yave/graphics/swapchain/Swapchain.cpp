@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#define YAVE_VK_PLATFORM_INCLUDES
 
 #include "Swapchain.h"
 
@@ -103,7 +104,7 @@ static bool has_wsi_support(DevicePtr dptr, vk::SurfaceKHR surface) {
 }
 
 #ifdef Y_OS_WIN
-static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE instance, HWND handle) {
+static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle) {
 	const auto surface = dptr->instance().vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
 			.setHinstance(instance)
 			.setHwnd(handle)
@@ -130,7 +131,7 @@ static vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
 
 
 #ifdef Y_OS_WIN
-Swapchain::Swapchain(DevicePtr dptr, HINSTANCE instance, HWND handle) : Swapchain(dptr, create_surface(dptr, instance, handle)) {
+Swapchain::Swapchain(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle) : Swapchain(dptr, create_surface(dptr, instance, handle)) {
 }
 #endif
 

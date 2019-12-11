@@ -30,16 +30,18 @@ SOFTWARE.
 
 #include <memory>
 
+
 #ifdef Y_OS_WIN
-#include <windows.h>
+struct HINSTANCE__;
+struct HWND__;
 #endif
 
 namespace yave {
 
 #ifdef Y_OS_WIN
-using HINSTANCE_ = HINSTANCE;
-using HWND_ = HWND;
-using LRESULT_ = LRESULT;
+using HINSTANCE_ = HINSTANCE__*;
+using HWND_ = HWND__*;
+using LRESULT_ = long long int;
 #endif
 
 class Window : NonMovable {
@@ -58,10 +60,10 @@ class Window : NonMovable {
 
 		void show();
 
-		#ifdef Y_OS_WIN
-			HINSTANCE_ instance() const { return _hinstance; }
-			HWND_ handle() const { return _hwnd; }
-		#endif
+#ifdef Y_OS_WIN
+		HINSTANCE_ instance() const { return _hinstance; }
+		HWND_ handle() const { return _hwnd; }
+#endif
 
 		const math::Vec2ui& size() const;
 		math::Vec2ui position() const;
@@ -74,13 +76,12 @@ class Window : NonMovable {
 		}
 
 	private:
-		#ifdef Y_OS_WIN
-			static LRESULT_ CALLBACK windows_event_handler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-			static void mouse_event(Window* window, UINT uMsg, POINTS pt);
-			HINSTANCE_ _hinstance;
-			HWND_ _hwnd;
-			bool _run;
-		#endif
+#ifdef Y_OS_WIN
+		friend void set_window_size(Window* win, const math::Vec2ui& size);
+		HINSTANCE_ _hinstance;
+		HWND_ _hwnd;
+		bool _run;
+#endif
 
 		math::Vec2ui _size;
 		core::String _name;

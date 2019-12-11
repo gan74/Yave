@@ -35,6 +35,10 @@ SOFTWARE.
 
 #include <y/io2/File.h>
 
+#ifdef Y_OS_WIN
+#include <windows.h>
+#endif
+
 namespace editor {
 
 Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {

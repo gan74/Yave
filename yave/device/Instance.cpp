@@ -19,9 +19,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#define YAVE_VK_PLATFORM_INCLUDES
 
 #include "Instance.h"
-
 #include "extentions/DebugUtils.h"
 
 #include <y/utils/log.h>

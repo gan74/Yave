@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "MainWindow.h"
 
-
 #include <editor/utils/crashhandler.h>
 #include <editor/events/MainEventHandler.h>
 #include <editor/context/EditorContext.h>
@@ -32,8 +31,12 @@ SOFTWARE.
 
 #include <y/core/Chrono.h>
 
-using namespace editor;
+#ifdef Y_OS_WIN
+#include <windows.h>
+#endif
 
+
+using namespace editor;
 
 static EditorContext* context = nullptr;
 

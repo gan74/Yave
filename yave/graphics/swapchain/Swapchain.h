@@ -24,16 +24,15 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <yave/graphics/framebuffer/framebuffer.h>
-#include "FrameToken.h"
-
 #include <yave/graphics/images/ImageFormat.h>
 #include <yave/graphics/images/Image.h>
 #include <yave/device/DeviceLinked.h>
+#include <yave/graphics/framebuffer/Framebuffer.h>
+#include <yave/window/Window.h>
+
+#include "FrameToken.h"
 
 namespace yave {
-
-class Window;
 
 static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | ImageUsage::ColorBit;
 using SwapchainImageView = ImageView<SwapchainImageUsage>;
@@ -58,7 +57,7 @@ class Swapchain : NonMovable, public DeviceLinked {
 
 	public:
 #ifdef Y_OS_WIN
-		Swapchain(DevicePtr dptr, HINSTANCE instance, HWND handle);
+		Swapchain(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle);
 #endif
 
 		Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface);
