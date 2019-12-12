@@ -76,6 +76,7 @@ class PolymorphicAllocatorContainer : NonCopyable {
 		}
 
 		PolymorphicAllocatorContainer(PolymorphicAllocatorContainer&&) = default;
+		PolymorphicAllocatorContainer& operator=(PolymorphicAllocatorContainer&&) = default;
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
 			return _inner->allocate(size);
