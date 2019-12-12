@@ -20,9 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
+#include <y/ecs/ecs.h>
+#include <y/ecs/Archetype.h>
 
 #include <y/core/FixedArray.h>
 #include <y/core/Vector.h>
+#include <y/core/String.h>
 
 #include <y/mem/allocators.h>
 #include <y/core/Range.h>
@@ -35,491 +38,10 @@ SOFTWARE.
 #include <atomic>
 #include <thread>
 
-namespace y {
-namespace detail {
-static std::atomic<u32> global_type_index = 0;
-}
+using namespace y;
+using namespace y::ecs;
 
-template<typename T>
-static u32 type_index() {
-	static u32 index = detail::global_type_index++;
-	return index;
-}
-
-
-
-
-class Archetype;
-class EntityWorld;
-class EntityBuilder;
-
-static constexpr usize entities_per_chunk = 1024;
-
-
-class EntityID {
-	public:
-		EntityID(u32 index = invalid_index, u32 version = 0) : _index(index), _version(version) {
-		}
-
-		u32 index() const {
-			return _index;
-		}
-
-		u32 version() const {
-			return _version;
-		}
-
-		bool is_valid() const {
-			return _index != invalid_index;
-		}
-
-		u64 as_u64() const {
-			return (u64(_index) << 32) | _version;
-		}
-
-	private:
-		static constexpr u32 invalid_index = u32(-1);
-
-		u32 _index = invalid_index;
-		u32 _version = 0;
-};
-
-
-
-
-struct EntityData {
-	EntityID id;
-	Archetype* archetype = nullptr;
-	usize archetype_index = 0;
-};
-
-
-
-
-template<typename... Args>
-struct ComponentIterator {
-	public:
-		static constexpr usize component_count = sizeof...(Args);
-
-		using difference_type = usize;
-		using iterator_category = std::random_access_iterator_tag;
-
-		using reference = std::tuple<Args&...>;
-
-		reference operator*() const {
-			return make_refence_tuple<0>();
-		}
-
-
-
-		bool operator==(const ComponentIterator& other) const {
-			return _index == other._index && _chunks == other._chunks;
-		}
-
-		bool operator!=(const ComponentIterator& other) const {
-			return !operator==(other);
-		}
-
-		ComponentIterator& operator++() {
-			++_index;
-			return *this;
-		}
-
-		ComponentIterator& operator--() {
-			--_index;
-			return *this;
-		}
-
-		ComponentIterator operator++(int) {
-			const auto it = *this;
-			++*this;
-			return it;
-		}
-
-		ComponentIterator operator--(int) {
-			const auto it = *this;
-			--*this;
-			return it;
-		}
-
-
-		difference_type operator-(const ComponentIterator& other) const {
-			return _index - other._index;
-		}
-
-		ComponentIterator& operator+=(usize n) {
-			_index += n;
-			return *this;
-		}
-
-		ComponentIterator& operator-=(usize n) {
-			_index -= n;
-			return *this;
-		}
-
-
-		ComponentIterator operator+(usize n) const {
-			auto it = *this;
-			it += n;
-			return it;
-		}
-
-		ComponentIterator operator-(usize n) const {
-			auto it = *this;
-			it -= n;
-			return it;
-		}
-
-
-	private:
-		friend class Archetype;
-
-		template<usize I = 0>
-		auto make_refence_tuple() const {
-			const usize chunk_index = _index / entities_per_chunk;
-			const usize item_index = _index % entities_per_chunk;
-			using type = std::remove_reference_t<std::tuple_element_t<I, reference>>;
-
-			void* offset_chunk = static_cast<u8*>(_chunks[chunk_index]) + _offsets[I];
-			type* chunk = static_cast<type*>(offset_chunk);
-			if constexpr(I + 1 == component_count) {
-				return std::tie(chunk[item_index]);
-			} else {
-				return std::tuple_cat(std::tie(chunk[item_index]),
-									  make_refence_tuple<I + 1>());
-			}
-		}
-
-		usize _index = 0;
-		void** _chunks = nullptr;
-		std::array<usize, component_count> _offsets;
-};
-
-
-
-
-struct ComponentRuntimeInfo {
-	usize chunk_offset = 0;
-	usize component_size = 0;
-
-	void (*create)(void* dst, usize count) = nullptr;
-	void (*destroy)(void* ptr, usize count) = nullptr;
-	void (*move)(void* dst, void* src, usize count) = nullptr;
-
-	u32 type_id = u32(-1);
-
-#ifdef Y_DEBUG
-	std::string_view type_name = "unknown";
-#endif
-
-	void* index_ptr(void* chunk, usize index) const {
-		return static_cast<u8*>(chunk) + chunk_offset + index * component_size;
-	}
-
-	void create_indexed(void* chunk, usize index, usize count) const {
-		create(index_ptr(chunk, index), count);
-	}
-
-	void destroy_indexed(void* chunk, usize index, usize count) const {
-		destroy(index_ptr(chunk, index), count);
-	}
-
-	void move_indexed(void* dst, void* chunk, usize index, usize count) const {
-		move(dst, index_ptr(chunk, index), count);
-	}
-
-	void move_indexed(void* dst_chunk, usize dst_index, void* src_chunk, usize src_index, usize count) const {
-		move(index_ptr(dst_chunk, dst_index), index_ptr(src_chunk, src_index), count);
-	}
-
-
-	template<typename T>
-	static ComponentRuntimeInfo from_type(usize offset = 0) {
-		return {
-			offset,
-			sizeof(T),
-			[](void* dst, usize count) {
-				log_msg(fmt("creating % %", count, ct_type_name<T>()));
-				T* it = static_cast<T*>(dst);
-				const T* end = it + count;
-				for(; it != end; ++it) {
-					::new(it) T();
-				}
-			},
-			[](void* ptr, usize count) {
-				log_msg(fmt("destroying % %", count, ct_type_name<T>()));
-				T* it = static_cast<T*>(ptr);
-				const T* end = it + count;
-				for(; it != end; ++it) {
-					it->~T();
-				}
-			},
-			[](void* dst, void* src, usize count) {
-				log_msg(fmt("moving % %", count, ct_type_name<T>()));
-				T* it = static_cast<T*>(src);
-				const T* end = it + count;
-				T* out = static_cast<T*>(dst);
-				while(it != end) {
-					*out++ = std::move(*it++);
-				}
-			},
-			type_index<T>(),
-
-#ifdef Y_DEBUG
-			ct_type_name<T>()
-#endif
-		};
-	}
-};
-
-class Archetype : NonCopyable {
-
-	public:
-		template<typename... Args>
-		static Archetype create() {
-			Archetype arc(sizeof...(Args));
-			arc.set_types<0, Args...>();
-			return arc;
-		}
-
-		Archetype(Archetype&&) = default;
-		Archetype& operator=(Archetype&&) = default;
-
-		~Archetype() {
-			if(_component_infos) {
-				for(usize i = 0; i != _component_count; ++i) {
-					_component_infos[i].destroy_indexed(_chunk_data.last(), 0, _last_chunk_size);
-				}
-				for(usize c = 0; c + 1 < _chunk_data.size(); ++c) {
-					for(usize i = 0; i != _component_count; ++i) {
-						_component_infos[i].destroy_indexed(_chunk_data[c], 0, entities_per_chunk);
-					}
-				}
-
-				for(void* c : _chunk_data) {
-					_allocator.deallocate(c, _chunk_byte_size);
-				}
-			}
-		}
-
-
-
-		template<typename... Args>
-		auto view() {
-			ComponentIterator<Args...> begin;
-			build_iterator<0>(begin);
-			const auto end = begin + size();
-			return core::Range(begin, end);
-		}
-
-		usize size() const {
-			if(_chunk_data.is_empty()) {
-				return 0;
-			}
-			return (_chunk_data.size() - 1) * entities_per_chunk + _last_chunk_size;
-		}
-
-		usize component_count() const {
-			return _component_count;
-		}
-
-		core::Span<ComponentRuntimeInfo> component_infos() const {
-			return core::Span<ComponentRuntimeInfo>(_component_infos.get(), _component_count);
-		}
-
-		void add_entity() {
-			add_entities(1);
-		}
-
-		void add_entities(usize count) {
-			if(_last_chunk_size == entities_per_chunk || _chunk_data.is_empty()) {
-				add_chunk();
-			}
-
-			const usize left_in_chunk = entities_per_chunk - _last_chunk_size;
-			const usize first = std::min(left_in_chunk, count);
-
-			void* chunk_data = _chunk_data.last();
-			for(usize i = 0; i != _component_count; ++i) {
-				_component_infos[i].create_indexed(chunk_data, _last_chunk_size, first);
-			}
-			_last_chunk_size += first;
-
-			if(first != count) {
-				add_entities(count - first);
-			}
-		}
-
-
-		void remove_entity(usize index) {
-			if(!_last_chunk_size) {
-				_allocator.deallocate(_chunk_data.last(), _chunk_byte_size);
-				_chunk_data.pop();
-				_last_chunk_size = entities_per_chunk;
-			}
-
-			Y_TODO(assert exists)
-
-			y_debug_assert(_last_chunk_size != 0);
-
-			const usize last_index = _last_chunk_size - 1;
-			if(index + 1 != size()) {
-				const usize chunk_index = index / entities_per_chunk;
-				const usize item_index = index % entities_per_chunk;
-				for(usize i = 0; i != _component_count; ++i) {
-					_component_infos[i].move_indexed(_chunk_data[chunk_index], item_index, _chunk_data.last(), last_index, 1);
-				}
-			}
-
-			for(usize i = 0; i != _component_count; ++i) {
-				_component_infos[i].destroy_indexed(_chunk_data.last(), last_index, 1);
-			}
-			--_last_chunk_size;
-		}
-
-	private:
-		friend class EntityWorld;
-
-		Archetype(usize component_count, memory::PolymorphicAllocatorBase* allocator = memory::global_allocator()) :
-				_component_count(component_count),
-				_component_infos(std::make_unique<ComponentRuntimeInfo[]>(component_count)),
-				_allocator(allocator) {
-		}
-
-		void sort_component_infos() {
-			const auto cmp = [](const ComponentRuntimeInfo& a, const ComponentRuntimeInfo& b) { return a.type_id < b.type_id; };
-			sort(_component_infos.get(), _component_infos.get() + _component_count, cmp);
-
-			y_debug_assert(_chunk_byte_size == 0);
-			for(usize i = 0; i != _component_count; ++i) {
-				_component_infos[i].chunk_offset = _chunk_byte_size;
-
-				const usize size = _component_infos[i].component_size;
-				_chunk_byte_size = memory::align_up_to(_chunk_byte_size, size);
-				_chunk_byte_size += size * entities_per_chunk;
-			}
-		}
-
-		template<usize I, typename... Args>
-		void set_types() {
-			if constexpr(I < sizeof...(Args)) {
-				using component_type = std::tuple_element_t<I, std::tuple<Args...>>;
-				_component_infos[I] = ComponentRuntimeInfo::from_type<component_type>();
-				set_types<I + 1, Args...>();
-			} else {
-				log_msg(fmt("arch => %", ct_type_name<std::tuple<Args...>>()));
-				sort_component_infos();
-			}
-		}
-
-
-		template<typename T>
-		const ComponentRuntimeInfo* info() const {
-			const u32 index = type_index<T>();
-			for(usize i = 0; i != _component_count; ++i) {
-				if(_component_infos[i].type_id == index) {
-					return &_component_infos[i];
-				}
-			}
-			return y_fatal("Unknown component type.");
-		}
-
-		template<usize I, typename... Args>
-		void build_iterator(ComponentIterator<Args...>& it) {
-			if constexpr(I < sizeof...(Args)) {
-				using reference = typename ComponentIterator<Args...>::reference;
-				using type = remove_cvref_t<std::tuple_element_t<I, reference>>;
-				it._offsets[I] = info<type>()->chunk_offset;
-				build_iterator<I + 1>(it);
-			} else {
-				it._chunks = _chunk_data.begin();
-			}
-		}
-
-		template<typename T>
-		Archetype archetype_with() {
-			Archetype arc(_component_count + 1);
-			std::copy_n(_component_infos.get(), _component_count, arc._component_infos.get());
-			arc._component_infos[_component_count] = ComponentRuntimeInfo::from_type<T>();
-			arc.sort_component_infos();
-			return arc;
-		}
-
-		void transfer_to(Archetype* arc, core::MutableSpan<EntityData> entities) {
-			Y_TODO(We create empty entities just to move into them)
-			//y_fatal("unimplemented");
-			const usize start = arc->size();
-			arc->add_entities(entities.size());
-
-			usize other_index = 0;
-			for(usize i = 0; i != _component_count; ++i) {
-				ComponentRuntimeInfo* other_info = nullptr;
-				for(; other_index != arc->_component_count; ++other_index) {
-					if(arc->_component_infos[other_index].type_id == _component_infos[i].type_id) {
-						other_info = &arc->_component_infos[other_index];
-						break;
-					}
-				}
-				if(other_info) {
-					for(usize e = 0; e != entities.size(); ++e) {
-						EntityData& data = entities[e];
-						const usize src_chunk_index = data.archetype_index / entities_per_chunk;
-						const usize src_item_index = data.archetype_index % entities_per_chunk;
-
-						const usize dst_index = start + e;
-						const usize dst_chunk_index = dst_index / entities_per_chunk;
-						const usize dst_item_index = dst_index % entities_per_chunk;
-						void* dst = other_info->index_ptr(arc->_chunk_data[dst_chunk_index], dst_item_index);
-						_component_infos[i].move_indexed(dst, _chunk_data[src_chunk_index], src_item_index, 1);
-					}
-				}
-			}
-
-			Y_TODO(We move entities one by one)
-			for(usize e = 0; e != entities.size(); ++e) {
-				EntityData& data = entities[e];
-				y_debug_assert(data.archetype == this);
-				remove_entity(data.archetype_index);
-
-				data.archetype = arc;
-				data.archetype_index = start + e;
-			}
-
-		}
-
-		bool matches_type_indexes(core::Span<u32> type_indexes) const {
-			y_debug_assert(std::is_sorted(type_indexes.begin(), type_indexes.end()));
-			if(type_indexes.size() != _component_count) {
-				return false;
-			}
-			for(usize i = 0; i != type_indexes.size(); ++i) {
-				if(type_indexes[i] != _component_infos[i].type_id) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-		void add_chunk() {
-			y_debug_assert(_last_chunk_size == entities_per_chunk || _chunk_data.is_empty());
-			_last_chunk_size = 0;
-			_chunk_data.emplace_back(_allocator.allocate(_chunk_byte_size));
-		}
-
-		usize _component_count = 0;
-		std::unique_ptr<ComponentRuntimeInfo[]> _component_infos;
-
-		core::Vector<void*> _chunk_data;
-		usize _last_chunk_size = 0;
-
-		memory::PolymorphicAllocatorContainer _allocator;
-		usize _chunk_byte_size = 0;
-};
-
-
-
-
-
+/*
 struct EntityBuilder : NonCopyable {
 	public:
 		EntityBuilder(EntityID id, EntityWorld& world) : _id(id), _world(world) {
@@ -528,7 +50,10 @@ struct EntityBuilder : NonCopyable {
 	private:
 		EntityID _id;
 		EntityWorld& _world;
-};
+};*/
+
+namespace y {
+namespace ecs {
 
 class EntityWorld : NonCopyable {
 	public:
@@ -601,10 +126,9 @@ class EntityWorld : NonCopyable {
 		core::Vector<EntityData> _entities;
 		core::Vector<Archetype> _archetypes;
 };
+
 }
-
-
-using namespace y;
+}
 
 
 struct Tester : NonCopyable {
@@ -636,15 +160,28 @@ struct Tester : NonCopyable {
 int main() {
 	EntityWorld world;
 
-	EntityID id = world.create_entity();
-	world.add_component<Tester>(id);
-	world.add_component<int>(id);
-	world.add_component<float>(id);
+	{
+		EntityID id = world.create_entity();
+		world.add_component<Tester>(id);
+		world.add_component<int>(id);
+		world.add_component<float>(id);
+	}
+	{
+		EntityID id = world.create_entity();
+		world.add_component<Tester>(id);
+		world.add_component<int>(id);
+	}
+	/*{
+		EntityID id = world.create_entity();
+		world.add_component<int>(id);
+	}*/
 
-	y_debug_assert(world.archetypes().size() == 3);
 	for(const Archetype& a : world.archetypes()) {
-		log_msg(fmt("[%] = %", a.component_count(), a.size()));
-		y_debug_assert(a.size() == (a.component_count() == 3 ? 1 : 0));
+		core::String comps;
+		for(const auto info : a.component_infos()) {
+			comps = comps + info.type_name + " ";
+		}
+		log_msg(fmt("[%]< %> = %", a.component_count(), comps, a.size()));
 	}
 
 	/*for(auto [i] : arc.view<const int>()) {
