@@ -212,21 +212,26 @@ struct ComponentRuntimeInfo {
 	std::string_view type_name = "unknown";
 #endif
 
-
-	void create_offset(void* chunk, usize index, usize count) const {
-		create(static_cast<u8*>(chunk) + chunk_offset + index * component_size, count);
-		log_msg(fmt("chunk = % + %[%]", chunk, chunk_offset, index));
+	void* index_ptr(void* chunk, usize index) const {
+		return static_cast<u8*>(chunk) + chunk_offset + index * component_size;
 	}
 
-	void destroy_offset(void* chunk, usize index, usize count) const {
-		destroy(static_cast<u8*>(chunk) + chunk_offset + index * component_size, count);
-		log_msg(fmt("chunk = % + %[%]", chunk, chunk_offset, index));
+	void create_indexed(void* chunk, usize index, usize count) const {
+		create(index_ptr(chunk, index), count);
 	}
 
-	void move_offset(void* dst, void* chunk, usize index, usize count) const {
-		move(dst, static_cast<u8*>(chunk) + chunk_offset + index * component_size, count);
-		log_msg(fmt("chunk = % + %[%]", chunk, chunk_offset, index));
+	void destroy_indexed(void* chunk, usize index, usize count) const {
+		destroy(index_ptr(chunk, index), count);
 	}
+
+	void move_indexed(void* dst, void* chunk, usize index, usize count) const {
+		move(dst, index_ptr(chunk, index), count);
+	}
+
+	void move_indexed(void* dst_chunk, usize dst_index, void* src_chunk, usize src_index, usize count) const {
+		move(index_ptr(dst_chunk, dst_index), index_ptr(src_chunk, src_index), count);
+	}
+
 
 	template<typename T>
 	static ComponentRuntimeInfo from_type(usize offset = 0) {
@@ -274,7 +279,6 @@ class Archetype : NonCopyable {
 		static Archetype create() {
 			Archetype arc(sizeof...(Args));
 			arc.set_types<0, Args...>();
-			arc.add_chunk();
 			return arc;
 		}
 
@@ -284,11 +288,11 @@ class Archetype : NonCopyable {
 		~Archetype() {
 			if(_component_infos) {
 				for(usize i = 0; i != _component_count; ++i) {
-					_component_infos[i].destroy_offset(_chunk_data.last(), 0, _last_chunk_size);
+					_component_infos[i].destroy_indexed(_chunk_data.last(), 0, _last_chunk_size);
 				}
 				for(usize c = 0; c + 1 < _chunk_data.size(); ++c) {
 					for(usize i = 0; i != _component_count; ++i) {
-						_component_infos[i].destroy_offset(_chunk_data[c], 0, entities_per_chunk);
+						_component_infos[i].destroy_indexed(_chunk_data[c], 0, entities_per_chunk);
 					}
 				}
 
@@ -309,7 +313,14 @@ class Archetype : NonCopyable {
 		}
 
 		usize size() const {
+			if(_chunk_data.is_empty()) {
+				return 0;
+			}
 			return (_chunk_data.size() - 1) * entities_per_chunk + _last_chunk_size;
+		}
+
+		usize component_count() const {
+			return _component_count;
 		}
 
 		core::Span<ComponentRuntimeInfo> component_infos() const {
@@ -321,7 +332,7 @@ class Archetype : NonCopyable {
 		}
 
 		void add_entities(usize count) {
-			if(_last_chunk_size == entities_per_chunk) {
+			if(_last_chunk_size == entities_per_chunk || _chunk_data.is_empty()) {
 				add_chunk();
 			}
 
@@ -330,7 +341,7 @@ class Archetype : NonCopyable {
 
 			void* chunk_data = _chunk_data.last();
 			for(usize i = 0; i != _component_count; ++i) {
-				_component_infos[i].create_offset(chunk_data, _last_chunk_size, first);
+				_component_infos[i].create_indexed(chunk_data, _last_chunk_size, first);
 			}
 			_last_chunk_size += first;
 
@@ -339,13 +350,54 @@ class Archetype : NonCopyable {
 			}
 		}
 
+
+		void remove_entity(usize index) {
+			if(!_last_chunk_size) {
+				_allocator.deallocate(_chunk_data.last(), _chunk_byte_size);
+				_chunk_data.pop();
+				_last_chunk_size = entities_per_chunk;
+			}
+
+			Y_TODO(assert exists)
+
+			y_debug_assert(_last_chunk_size != 0);
+
+			const usize last_index = _last_chunk_size - 1;
+			if(index + 1 != size()) {
+				const usize chunk_index = index / entities_per_chunk;
+				const usize item_index = index % entities_per_chunk;
+				for(usize i = 0; i != _component_count; ++i) {
+					_component_infos[i].move_indexed(_chunk_data[chunk_index], item_index, _chunk_data.last(), last_index, 1);
+				}
+			}
+
+			for(usize i = 0; i != _component_count; ++i) {
+				_component_infos[i].destroy_indexed(_chunk_data.last(), last_index, 1);
+			}
+			--_last_chunk_size;
+		}
+
 	private:
 		friend class EntityWorld;
 
-		Archetype(usize component_count) :
+		Archetype(usize component_count, memory::PolymorphicAllocatorBase* allocator = memory::global_allocator()) :
 				_component_count(component_count),
 				_component_infos(std::make_unique<ComponentRuntimeInfo[]>(component_count)),
-				_allocator(memory::global_allocator()) {
+				_allocator(allocator) {
+		}
+
+		void sort_component_infos() {
+			const auto cmp = [](const ComponentRuntimeInfo& a, const ComponentRuntimeInfo& b) { return a.type_id < b.type_id; };
+			sort(_component_infos.get(), _component_infos.get() + _component_count, cmp);
+
+			y_debug_assert(_chunk_byte_size == 0);
+			for(usize i = 0; i != _component_count; ++i) {
+				_component_infos[i].chunk_offset = _chunk_byte_size;
+
+				const usize size = _component_infos[i].component_size;
+				_chunk_byte_size = memory::align_up_to(_chunk_byte_size, size);
+				_chunk_byte_size += size * entities_per_chunk;
+			}
 		}
 
 		template<usize I, typename... Args>
@@ -356,17 +408,7 @@ class Archetype : NonCopyable {
 				set_types<I + 1, Args...>();
 			} else {
 				log_msg(fmt("arch => %", ct_type_name<std::tuple<Args...>>()));
-				const auto cmp = [](const ComponentRuntimeInfo& a, const ComponentRuntimeInfo& b) { return a.type_id < b.type_id; };
-				sort(_component_infos.get(), _component_infos.get() + _component_count, cmp);
-
-				y_debug_assert(_chunk_byte_size == 0);
-				for(usize i = 0; i != _component_count; ++i) {
-					_component_infos[i].chunk_offset = _chunk_byte_size;
-
-					const usize size = _component_infos[i].component_size;
-					_chunk_byte_size = memory::align_up_to(_chunk_byte_size, size);
-					_chunk_byte_size += size * entities_per_chunk;
-				}
+				sort_component_infos();
 			}
 		}
 
@@ -394,7 +436,17 @@ class Archetype : NonCopyable {
 			}
 		}
 
+		template<typename T>
+		Archetype archetype_with() {
+			Archetype arc(_component_count + 1);
+			std::copy_n(_component_infos.get(), _component_count, arc._component_infos.get());
+			arc._component_infos[_component_count] = ComponentRuntimeInfo::from_type<T>();
+			arc.sort_component_infos();
+			return arc;
+		}
+
 		void transfer_to(Archetype* arc, core::MutableSpan<EntityData> entities) {
+			Y_TODO(We create empty entities just to move into them)
 			//y_fatal("unimplemented");
 			const usize start = arc->size();
 			arc->add_entities(entities.size());
@@ -417,16 +469,18 @@ class Archetype : NonCopyable {
 						const usize dst_index = start + e;
 						const usize dst_chunk_index = dst_index / entities_per_chunk;
 						const usize dst_item_index = dst_index % entities_per_chunk;
-						const usize offset = other_info->chunk_offset + dst_item_index * other_info->component_size;
-						void* dst = static_cast<u8*>(arc->_chunk_data[dst_chunk_index]) + offset;
-
-						_component_infos[i].move_offset(dst, _chunk_data[src_chunk_index], src_item_index, 1);
+						void* dst = other_info->index_ptr(arc->_chunk_data[dst_chunk_index], dst_item_index);
+						_component_infos[i].move_indexed(dst, _chunk_data[src_chunk_index], src_item_index, 1);
 					}
 				}
 			}
 
+			Y_TODO(We move entities one by one)
 			for(usize e = 0; e != entities.size(); ++e) {
 				EntityData& data = entities[e];
+				y_debug_assert(data.archetype == this);
+				remove_entity(data.archetype_index);
+
 				data.archetype = arc;
 				data.archetype_index = start + e;
 			}
@@ -484,6 +538,11 @@ class EntityWorld : NonCopyable {
 			return ent.id = EntityID(_entities.size() - 1);
 		}
 
+
+		core::Span<Archetype> archetypes() const {
+			return _archetypes;
+		}
+
 		template<typename T>
 		void add_component(EntityID id) {
 			if(!exists(id)) {
@@ -514,7 +573,11 @@ class EntityWorld : NonCopyable {
 				}	
 
 				if(!new_arc) {
-					new_arc = &_archetypes.emplace_back(Archetype::create<T>()); // THIS IS FUCKED
+					if(old_arc) {
+						new_arc = &_archetypes.emplace_back(old_arc->archetype_with<T>());
+					} else {
+						new_arc = &_archetypes.emplace_back(Archetype::create<T>());
+					}
 				}
 			}
 
@@ -554,13 +617,16 @@ struct Tester : NonCopyable {
 		log_msg("moved");
 	}
 
-	Tester& operator=(Tester&&) {
-		y_fatal("!");
+	Tester& operator=(Tester&& other) {
+		y_debug_assert(x == 0x0F0F0F0F0F0F0F0F || x == 0xFDFEFDFE12345678);
+		x = other.x;
+		other.x = 0x0F0F0F0F0F0F0F0F;
 		return *this;
 	}
 
 	~Tester() {
 		y_debug_assert(x == 0x0F0F0F0F0F0F0F0F || x == 0xFDFEFDFE12345678);
+		x = 1;
 		log_msg("destroyed");
 	}
 
@@ -574,6 +640,12 @@ int main() {
 	world.add_component<Tester>(id);
 	world.add_component<int>(id);
 	world.add_component<float>(id);
+
+	y_debug_assert(world.archetypes().size() == 3);
+	for(const Archetype& a : world.archetypes()) {
+		log_msg(fmt("[%] = %", a.component_count(), a.size()));
+		y_debug_assert(a.size() == (a.component_count() == 3 ? 1 : 0));
+	}
 
 	/*for(auto [i] : arc.view<const int>()) {
 		log_msg(fmt("% %", ct_type_name<decltype(i)>(), i));
