@@ -24,14 +24,20 @@ SOFTWARE.
 #include <y/core/FixedArray.h>
 #include <y/core/Vector.h>
 
+#include <y/mem/allocators.h>
+#include <y/core/Range.h>
 #include <y/math/Vec.h>
 #include <y/utils/log.h>
 #include <y/utils/perf.h>
-#include <y/mem/allocators.h>
+#include <y/utils/name.h>
 
+#include <typeindex>
 #include <thread>
 
 using namespace y;
+
+
+
 
 struct ComponentRuntimeInfo {
 	usize component_size = 0;
@@ -67,10 +73,113 @@ struct ComponentRuntimeInfo {
 };
 
 
+class Archetype;
+
+static constexpr usize entities_per_chunk = 1024;
+
+
+
+template<typename... Args>
+struct ComponentIterator {
+	public:
+		static constexpr usize component_count = sizeof...(Args);
+
+		using difference_type = usize;
+		using iterator_category = std::random_access_iterator_tag;
+
+		using reference = std::tuple<Args&...>;
+
+		reference operator*() const {
+			return make_refence_tuple<0>();
+		}
+
+
+
+		bool operator==(const ComponentIterator& other) const {
+			return _index == other._index && _chunks == other._chunks;
+		}
+
+		bool operator!=(const ComponentIterator& other) const {
+			return !operator==(other);
+		}
+
+		ComponentIterator& operator++() {
+			++_index;
+			return *this;
+		}
+
+		ComponentIterator& operator--() {
+			--_index;
+			return *this;
+		}
+
+		ComponentIterator operator++(int) {
+			const auto it = *this;
+			++*this;
+			return it;
+		}
+
+		ComponentIterator operator--(int) {
+			const auto it = *this;
+			--*this;
+			return it;
+		}
+
+
+		difference_type operator-(const ComponentIterator& other) const {
+			return _index - other._index;
+		}
+
+		ComponentIterator& operator+=(usize n) {
+			_index += n;
+			return *this;
+		}
+
+		ComponentIterator& operator-=(usize n) {
+			_index -= n;
+			return *this;
+		}
+
+
+		ComponentIterator operator+(usize n) const {
+			auto it = *this;
+			it += n;
+			return it;
+		}
+
+		ComponentIterator operator-(usize n) const {
+			auto it = *this;
+			it -= n;
+			return it;
+		}
+
+
+	private:
+		friend class Archetype;
+
+		template<usize I = 0>
+		auto make_refence_tuple() const {
+			const usize chunk_index = _index / entities_per_chunk;
+			const usize item_index = _index % entities_per_chunk;
+			using type = std::remove_reference_t<std::tuple_element_t<I, reference>>;
+
+			void* offset_chunk = static_cast<u8*>(_chunks[chunk_index]) + _offsets[I];
+			type* chunk = static_cast<type*>(offset_chunk);
+			if constexpr(I + 1 == component_count) {
+				return std::tie(chunk[item_index]);
+			} else {
+				return std::tuple_cat(std::tie(chunk[item_index]),
+									  make_refence_tuple<I + 1>());
+			}
+		}
+
+		usize _index = 0;
+		void** _chunks = nullptr;
+		std::array<usize, component_count> _offsets;
+};
 
 
 class Archetype : NonCopyable {
-	static constexpr usize entities_per_chunk = 1024;
 
 	public:
 		template<typename... Args>
@@ -99,9 +208,24 @@ class Archetype : NonCopyable {
 			}
 		}
 
+
+
+
+
 		usize size() const {
 			return (_chunk_data.size() - 1) * entities_per_chunk + _last_chunk_size;
 		}
+
+		template<typename... Args>
+		auto view() {
+			ComponentIterator<Args...> begin;
+			build_iterator<0>(begin);
+			const auto end = begin + size();
+			return core::Range(begin, end);
+		}
+
+
+
 
 		void add_entity() {
 			if(_last_chunk_size == entities_per_chunk) {
@@ -126,15 +250,42 @@ class Archetype : NonCopyable {
 		template<usize I, typename... Args>
 		void set_types() {
 			if constexpr(I < sizeof...(Args)) {
+				using component_type = std::tuple_element_t<I, std::tuple<Args...>>;
 				_component_offsets[I] = _chunk_byte_size;
-				_component_infos[I] = ComponentRuntimeInfo::from_type<std::tuple_element_t<I, std::tuple<Args...>>>();
+				_component_infos[I] = ComponentRuntimeInfo::from_type<component_type>();
+				_component_types.emplace_back(typeid(remove_cvref_t<component_type>));
 
-				_chunk_byte_size = memory::align_up_to(_chunk_byte_size, _component_infos[I].component_size);
-				_chunk_byte_size += _component_infos[I].component_size * entities_per_chunk;
+				_chunk_byte_size = memory::align_up_to(_chunk_byte_size, sizeof(component_type));
+				_chunk_byte_size += sizeof(component_type) * entities_per_chunk;
 
 				set_types<I + 1, Args...>();
 			}
 		}
+
+		template<typename T>
+		usize type_index() const {
+			const std::type_index type = typeid(T);
+			for(usize i = 0; i != _component_count; ++i) {
+				if(_component_types[i] == type) {
+					return i;
+				}
+			}
+			return y_fatal("Unknown component type.");
+		}
+
+
+		template<usize I, typename... Args>
+		void build_iterator(ComponentIterator<Args...>& it) {
+			if constexpr(I < sizeof...(Args)) {
+				using reference = typename ComponentIterator<Args...>::reference;
+				using type = remove_cvref_t<std::tuple_element_t<I, reference>>;
+				it._offsets[I] = _component_offsets[type_index<type>()];
+				build_iterator<I + 1>(it);
+			} else {
+				it._chunks = _chunk_data.begin();
+			}
+		}
+
 
 		void add_chunk() {
 			y_debug_assert(_last_chunk_size == entities_per_chunk || _chunk_data.is_empty());
@@ -149,8 +300,9 @@ class Archetype : NonCopyable {
 		core::Vector<void*> _chunk_data;
 		usize _last_chunk_size = 0;
 
-		memory::PolymorphicAllocatorContainer _allocator;
+		core::Vector<std::type_index> _component_types;
 
+		memory::PolymorphicAllocatorContainer _allocator;
 		usize _chunk_byte_size = 0;
 };
 
@@ -165,10 +317,16 @@ int main() {
 	arc.add_entity();
 	arc.add_entity();
 
-	log_msg(fmt("% ", arc.size()));
-
 	y_debug_assert(arc.size() == 2);
 
+	int base = 0;
+	for(auto [i] : arc.view<int>()) {
+		i = ++base;
+	}
+
+	for(auto [i] : arc.view<const int>()) {
+		log_msg(fmt("% %", ct_type_name<decltype(i)>(), i));
+	}
 	return 0;
 }
 
