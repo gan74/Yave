@@ -82,7 +82,7 @@ class EntityID {
 struct EntityData {
 	EntityID id;
 	Archetype* archetype = nullptr;
-	usize archetype_index = 0;
+	usize archetype_index = usize(-1);
 
 	void invalidate() {
 		id.invalidate();

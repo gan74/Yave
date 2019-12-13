@@ -63,22 +63,37 @@ class EntityWorld : NonCopyable {
 			return ent.id = EntityID(_entities.size() - 1);
 		}
 
+		void remove_entity(EntityID id) {
+			check_exists(id);
+
+			EntityData& data = _entities[id.index()];
+			if(!data.archetype) {
+				data.invalidate();
+			} else {
+				data.archetype->remove_entity(data);
+			}
+		}
+
 
 		core::Span<std::unique_ptr<Archetype>> archetypes() const {
 			return _archetypes;
 		}
 
+
 		template<typename T>
 		void add_component(EntityID id) {
-			if(!exists(id)) {
-				y_fatal("Entity doesn't exists.");
-			}
+			add_components<T>(id);
+		}
+
+		template<typename... Args>
+		void add_components(EntityID id) {
+			check_exists(id);
 
 			EntityData& data = _entities[id.index()];
 			Archetype* old_arc = data.archetype;
 			Archetype* new_arc = nullptr;
 
-			core::Vector<u32> types;
+			core::Vector types = core::vector_with_capacity<u32>((old_arc ? old_arc->component_count() : 0) + sizeof...(Args));
 			{
 				{
 					if(old_arc) {
@@ -86,7 +101,7 @@ class EntityWorld : NonCopyable {
 							types << info.type_id;
 						}
 					}
-					types << type_index<T>();
+					add_type_indexes<0, Args...>(types);
 					sort(types.begin(), types.end());
 				}
 
@@ -95,24 +110,18 @@ class EntityWorld : NonCopyable {
 						new_arc = arc.get();
 						break;
 					}
-				}	
+				}
 
 				if(!new_arc) {
 					if(old_arc) {
-						new_arc = _archetypes.emplace_back(old_arc->archetype_with<T>()).get();
+						new_arc = _archetypes.emplace_back(old_arc->archetype_with<Args...>()).get();
 					} else {
-						new_arc = _archetypes.emplace_back(Archetype::create<T>()).get();
+						new_arc = _archetypes.emplace_back(Archetype::create<Args...>()).get();
 					}
 				}
 			}
-
 			y_debug_assert(new_arc->_component_count == types.size());
-			if(old_arc) {
-				old_arc->transfer_to(new_arc, data);
-			} else {
-				new_arc->add_entity();
-				data.archetype = new_arc;
-			}
+			transfer(data, new_arc);
 		}
 
 		bool exists(EntityID id) const {
@@ -123,6 +132,32 @@ class EntityWorld : NonCopyable {
 		}
 
 	private:
+		template<usize I, typename... Args>
+		static void add_type_indexes(core::Vector<u32>& types) {
+			static_assert(sizeof...(Args));
+			if constexpr(I < sizeof...(Args)) {
+				using type = std::tuple_element_t<I, std::tuple<Args...>>;
+				types << type_index<type>();
+				add_type_indexes<I + 1, Args...>(types);
+			}
+		}
+
+		void transfer(EntityData& data, Archetype* to) {
+			y_debug_assert(data.archetype != to);
+			if(data.archetype) {
+				data.archetype->transfer_to(to, data);
+			} else {
+				to->add_entity(data);
+			}
+			y_debug_assert(data.archetype == to);
+		}
+
+		void check_exists(EntityID id) const {
+			if(!exists(id)) {
+				y_fatal("Entity doesn't exists.");
+			}
+		}
+
 		core::Vector<EntityData> _entities;
 		core::Vector<std::unique_ptr<Archetype>> _archetypes;
 };
@@ -169,13 +204,12 @@ int main() {
 	{
 		EntityID id = world.create_entity();
 		world.add_component<int>(id);
-		world.add_component<float>(id);
 		world.add_component<Tester>(id);
+		world.add_component<float>(id);
 	}
 	{
 		EntityID id = world.create_entity();
-		world.add_component<Tester>(id);
-		world.add_component<int>(id);
+		world.add_components<Tester, int>(id);
 	}
 	{
 		EntityID id = world.create_entity();

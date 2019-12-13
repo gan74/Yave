@@ -69,15 +69,38 @@ core::Span<ComponentRuntimeInfo> Archetype::component_infos() const {
 	return core::Span<ComponentRuntimeInfo>(_component_infos.get(), _component_count);
 }
 
-void Archetype::add_entity() {
-	add_entities(1);
+void Archetype::add_entity(EntityData& data) {
+	add_chunk_if_needed();
+
+	data.archetype = this;
+	data.archetype_index = size();
+
+	void* chunk_data = _chunk_data.last();
+	for(usize i = 0; i != _component_count; ++i) {
+		_component_infos[i].create_indexed(chunk_data, _last_chunk_size, 1);
+	}
+	++_last_chunk_size;
 }
 
-void Archetype::add_entities(usize count) {
+void Archetype::add_entities(core::MutableSpan<EntityData> entities) {
+	add_entities(entities, true);
+}
+
+void Archetype::add_entities(core::MutableSpan<EntityData> entities, bool update_data) {
 	add_chunk_if_needed();
 
 	const usize left_in_chunk = entities_per_chunk - _last_chunk_size;
-	const usize first = std::min(left_in_chunk, count);
+	const usize first = std::min(left_in_chunk, entities.size());
+
+
+	if(update_data) {
+		const usize start = size();
+		for(usize i = 0; i != first; ++i) {
+			entities[i].archetype = this;
+			entities[i].archetype_index = start + i;
+		}
+
+	}
 
 	void* chunk_data = _chunk_data.last();
 	for(usize i = 0; i != _component_count; ++i) {
@@ -85,8 +108,8 @@ void Archetype::add_entities(usize count) {
 	}
 	_last_chunk_size += first;
 
-	if(first != count) {
-		add_entities(count - first);
+	if(first != entities.size()) {
+		add_entities(core::MutableSpan(entities.begin() + first, entities.size() - first));
 	}
 }
 
@@ -128,13 +151,17 @@ void Archetype::sort_component_infos() {
 		const usize size = _component_infos[i].component_size;
 		_chunk_byte_size = memory::align_up_to(_chunk_byte_size, size);
 		_chunk_byte_size += size * entities_per_chunk;
+
+		if(i && _component_infos[i - 1].type_id == _component_infos[i].type_id) {
+			y_fatal("Duplicated component type.");
+		}
 	}
 }
 
 void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> entities) {
 	Y_TODO(We create empty entities just to move into them)
 	const usize start = other->size();
-	other->add_entities(entities.size());
+	other->add_entities(entities, false);
 
 	usize other_index = 0;
 	for(usize i = 0; i != _component_count; ++i) {

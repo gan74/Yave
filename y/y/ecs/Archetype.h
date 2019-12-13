@@ -143,8 +143,8 @@ class Archetype : NonMovable {
 
 		core::Span<ComponentRuntimeInfo> component_infos() const;
 
-		void add_entity();
-		void add_entities(usize count);
+		void add_entity(EntityData& data);
+		void add_entities(core::MutableSpan<EntityData> entities);
 
 
 		template<typename... Args>
@@ -163,6 +163,8 @@ class Archetype : NonMovable {
 		friend class EntityWorld;
 
 
+		void add_entities(core::MutableSpan<EntityData> entities, bool update_data);
+
 		void sort_component_infos();
 		void transfer_to(Archetype* other, core::MutableSpan<EntityData> entities);
 		bool matches_type_indexes(core::Span<u32> type_indexes) const;
@@ -174,20 +176,25 @@ class Archetype : NonMovable {
 
 
 		template<usize I, typename... Args>
-		void set_types() {
+		static void add_infos(ComponentRuntimeInfo* infos) {
 			if constexpr(I < sizeof...(Args)) {
 				using component_type = std::tuple_element_t<I, std::tuple<Args...>>;
-				_component_infos[I] = ComponentRuntimeInfo::from_type<component_type>();
-				set_types<I + 1, Args...>();
-			} else {
-				sort_component_infos();
+				*infos = ComponentRuntimeInfo::from_type<component_type>();
+				add_infos<I + 1, Args...>(infos + 1);
 			}
+		}
+
+		template<usize I, typename... Args>
+		void set_types() {
+			add_infos<0, Args...>(_component_infos.get());
+			sort_component_infos();
 		}
 
 
 		template<typename T>
 		const ComponentRuntimeInfo* info() const {
 			const u32 index = type_index<T>();
+			Y_TODO(binary search?)
 			for(usize i = 0; i != _component_count; ++i) {
 				if(_component_infos[i].type_id == index) {
 					return &_component_infos[i];
@@ -198,6 +205,7 @@ class Archetype : NonMovable {
 
 		template<usize I, typename... Args>
 		void build_iterator(ComponentIterator<Args...>& it) {
+			static_assert(sizeof...(Args));
 			if constexpr(I < sizeof...(Args)) {
 				using reference = typename ComponentIterator<Args...>::reference;
 				using type = remove_cvref_t<std::tuple_element_t<I, reference>>;
@@ -208,11 +216,12 @@ class Archetype : NonMovable {
 			}
 		}
 
-		template<typename T>
+		template<typename... Args>
 		std::unique_ptr<Archetype> archetype_with() {
-			auto arc = std::make_unique<Archetype>(_component_count + 1);
+			static_assert(sizeof...(Args));
+			auto arc = std::make_unique<Archetype>(_component_count + sizeof...(Args));
 			std::copy_n(_component_infos.get(), _component_count, arc->_component_infos.get());
-			arc->_component_infos[_component_count] = ComponentRuntimeInfo::from_type<T>();
+			add_infos<0, Args...>(arc->_component_infos.get() + _component_count);
 			arc->sort_component_infos();
 			return arc;
 		}
