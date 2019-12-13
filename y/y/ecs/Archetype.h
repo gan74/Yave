@@ -101,6 +101,9 @@ struct ComponentRuntimeInfo {
 				for(; it != end; ++it) {
 					it->~T();
 				}
+#ifdef Y_DEBUG
+				std::memset(ptr, 0xFE, count * sizeof(T));
+#endif
 			},
 			[](void* dst, void* src, usize count) {
 				y_debug_assert(usize(dst) % sizeof(T) == 0);
@@ -110,9 +113,6 @@ struct ComponentRuntimeInfo {
 				while(it != end) {
 					*out++ = std::move(*it++);
 				}
-#ifdef Y_DEBUG
-				std::memset(dst, 0xFE, count * sizeof(T));
-#endif
 			},
 			type_index<T>(),
 
@@ -123,13 +123,13 @@ struct ComponentRuntimeInfo {
 	}
 };
 
-class Archetype : NonCopyable {
+class Archetype : NonMovable {
 
 	public:
 		template<typename... Args>
-		static Archetype create() {
-			Archetype arc(sizeof...(Args));
-			arc.set_types<0, Args...>();
+		static std::unique_ptr<Archetype> create() {
+			auto arc = std::make_unique<Archetype>(sizeof...(Args));
+			arc->set_types<0, Args...>();
 			return arc;
 		}
 
@@ -155,11 +155,13 @@ class Archetype : NonCopyable {
 			return core::Range(begin, end);
 		}
 
+	public:
+		// This can not be private because of make_unique
+		Archetype(usize component_count, memory::PolymorphicAllocatorBase* allocator = memory::global_allocator());
 
 	private:
 		friend class EntityWorld;
 
-		Archetype(usize component_count, memory::PolymorphicAllocatorBase* allocator = memory::global_allocator());
 
 		void sort_component_infos();
 		void transfer_to(Archetype* other, core::MutableSpan<EntityData> entities);
@@ -207,11 +209,11 @@ class Archetype : NonCopyable {
 		}
 
 		template<typename T>
-		Archetype archetype_with() {
-			Archetype arc(_component_count + 1);
-			std::copy_n(_component_infos.get(), _component_count, arc._component_infos.get());
-			arc._component_infos[_component_count] = ComponentRuntimeInfo::from_type<T>();
-			arc.sort_component_infos();
+		std::unique_ptr<Archetype> archetype_with() {
+			auto arc = std::make_unique<Archetype>(_component_count + 1);
+			std::copy_n(_component_infos.get(), _component_count, arc->_component_infos.get());
+			arc->_component_infos[_component_count] = ComponentRuntimeInfo::from_type<T>();
+			arc->sort_component_infos();
 			return arc;
 		}
 

@@ -64,7 +64,7 @@ class EntityWorld : NonCopyable {
 		}
 
 
-		core::Span<Archetype> archetypes() const {
+		core::Span<std::unique_ptr<Archetype>> archetypes() const {
 			return _archetypes;
 		}
 
@@ -90,18 +90,18 @@ class EntityWorld : NonCopyable {
 					sort(types.begin(), types.end());
 				}
 
-				for(Archetype& arc : _archetypes) {
-					if(arc.matches_type_indexes(types)) {
-						new_arc = &arc;
+				for(const auto& arc : _archetypes) {
+					if(arc->matches_type_indexes(types)) {
+						new_arc = arc.get();
 						break;
 					}
 				}	
 
 				if(!new_arc) {
 					if(old_arc) {
-						new_arc = &_archetypes.emplace_back(old_arc->archetype_with<T>());
+						new_arc = _archetypes.emplace_back(old_arc->archetype_with<T>()).get();
 					} else {
-						new_arc = &_archetypes.emplace_back(Archetype::create<T>());
+						new_arc = _archetypes.emplace_back(Archetype::create<T>()).get();
 					}
 				}
 			}
@@ -124,7 +124,7 @@ class EntityWorld : NonCopyable {
 
 	private:
 		core::Vector<EntityData> _entities;
-		core::Vector<Archetype> _archetypes;
+		core::Vector<std::unique_ptr<Archetype>> _archetypes;
 };
 
 }
@@ -133,25 +133,31 @@ class EntityWorld : NonCopyable {
 
 struct Tester : NonCopyable {
 	Tester() : x(0xFDFEFDFE12345678) {
+		validate();
 	}
 
 	Tester(Tester&& other) : x(other.x) {
-		y_debug_assert(x == 0x0F0F0F0F0F0F0F0F || x == 0xFDFEFDFE12345678);
+		other.validate();
+		validate();
 		other.x = 0x0F0F0F0F0F0F0F0F;
-		log_msg("moved");
 	}
 
 	Tester& operator=(Tester&& other) {
-		y_debug_assert(x == 0x0F0F0F0F0F0F0F0F || x == 0xFDFEFDFE12345678);
+		validate();
+		other.validate();
 		x = other.x;
 		other.x = 0x0F0F0F0F0F0F0F0F;
 		return *this;
 	}
 
 	~Tester() {
-		y_debug_assert(x == 0x0F0F0F0F0F0F0F0F || x == 0xFDFEFDFE12345678);
+		validate();
 		x = 1;
 		log_msg("destroyed");
+	}
+
+	void validate() const {
+		y_debug_assert(x == 0x0F0F0F0F0F0F0F0F || x == 0xFDFEFDFE12345678);
 	}
 
 	u64 x = 0;
@@ -162,26 +168,38 @@ int main() {
 
 	{
 		EntityID id = world.create_entity();
-		world.add_component<Tester>(id);
 		world.add_component<int>(id);
 		world.add_component<float>(id);
+		world.add_component<Tester>(id);
 	}
 	{
 		EntityID id = world.create_entity();
 		world.add_component<Tester>(id);
 		world.add_component<int>(id);
 	}
-	/*{
+	{
 		EntityID id = world.create_entity();
 		world.add_component<int>(id);
-	}*/
+	}
 
-	for(const Archetype& a : world.archetypes()) {
+	for(const auto& a : world.archetypes()) {
 		core::String comps;
-		for(const auto info : a.component_infos()) {
+		bool has_tester = false;
+		for(const auto& info : a->component_infos()) {
+			if(info.type_id == type_index<Tester>()) {
+				has_tester = true;
+			}
 			comps = comps + info.type_name + " ";
 		}
-		log_msg(fmt("[%]< %> = %", a.component_count(), comps, a.size()));
+		log_msg(fmt("[%]< %> = %", a->component_count(), comps, a->size()));
+
+		if(has_tester) {
+			for(auto [t] : a->view<const Tester>()) {
+				static_assert(std::is_same_v<decltype(t), const Tester&>);
+				t.validate();
+			}
+		}
+		log_msg("");
 	}
 
 	/*for(auto [i] : arc.view<const int>()) {

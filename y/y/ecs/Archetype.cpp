@@ -38,6 +38,7 @@ Archetype::Archetype(usize component_count, memory::PolymorphicAllocatorBase* al
 
 Archetype::~Archetype() {
 	if(_component_infos) {
+		log_msg(fmt("destroying arch with % components % entities", _component_count, size()));
 		for(usize i = 0; i != _component_count; ++i) {
 			_component_infos[i].destroy_indexed(_chunk_data.last(), 0, _last_chunk_size);
 		}
@@ -114,8 +115,6 @@ void Archetype::remove_entity(EntityData& data) {
 	}
 	--_last_chunk_size;
 	data.invalidate();
-
-	log_msg(fmt("#comp = %", size()));
 }
 
 void Archetype::sort_component_infos() {
@@ -133,12 +132,13 @@ void Archetype::sort_component_infos() {
 }
 
 void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> entities) {
+	Y_TODO(We create empty entities just to move into them)
 	const usize start = other->size();
+	other->add_entities(entities.size());
 
 	usize other_index = 0;
 	for(usize i = 0; i != _component_count; ++i) {
 		const ComponentRuntimeInfo& info = _component_infos[i];
-
 		ComponentRuntimeInfo* other_info = nullptr;
 		for(; other_index != other->_component_count; ++other_index) {
 			if(other->_component_infos[other_index].type_id == info.type_id) {
@@ -146,8 +146,8 @@ void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> enti
 				break;
 			}
 		}
-
 		if(other_info) {
+			y_debug_assert(other_info->type_id == info.type_id);
 			for(usize e = 0; e != entities.size(); ++e) {
 				EntityData& data = entities[e];
 				const usize src_chunk_index = data.archetype_index / entities_per_chunk;
@@ -157,15 +157,11 @@ void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> enti
 				const usize dst_chunk_index = dst_index / entities_per_chunk;
 				const usize dst_item_index = dst_index % entities_per_chunk;
 
-				other->add_chunk_if_needed();
-				other_info->create_from_indexed(other->_chunk_data[dst_chunk_index], dst_item_index, info.index_ptr(_chunk_data[src_chunk_index], src_item_index));
+				void* dst = other_info->index_ptr(other->_chunk_data[dst_chunk_index], dst_item_index);
+				info.move_indexed(dst, _chunk_data[src_chunk_index], src_item_index, 1);
 			}
-		} else {
-			y_fatal("Creating components on transfer is not supported.");
 		}
 	}
-
-	other->_last_chunk_size += entities.size();
 
 	Y_TODO(optimize this with create_from)
 	for(usize e = 0; e != entities.size(); ++e) {
@@ -175,7 +171,6 @@ void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> enti
 		data.archetype = other;
 		data.archetype_index = start + e;
 	}
-
 }
 
 bool Archetype::matches_type_indexes(core::Span<u32> type_indexes) const {
