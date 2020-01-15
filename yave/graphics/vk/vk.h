@@ -24,6 +24,11 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+// We need this in release to prevent unity builds including the file without the define
+#ifndef Y_DEBUG
+#define YAVE_VK_PLATFORM_INCLUDES
+#endif
+
 #ifdef YAVE_VK_PLATFORM_INCLUDES
 #ifdef Y_OS_WIN
 #define VK_USE_PLATFORM_WIN32_KHR
