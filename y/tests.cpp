@@ -223,7 +223,9 @@ int main() {
 			if(info.type_id == type_index<Tester>()) {
 				has_tester = true;
 			}
+#ifdef Y_DEBUG
 			comps = comps + info.type_name + " ";
+#endif
 		}
 		log_msg(fmt("[%]< %> = %", a->component_count(), comps, a->size()));
 

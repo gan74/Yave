@@ -70,16 +70,7 @@ core::Span<ComponentRuntimeInfo> Archetype::component_infos() const {
 }
 
 void Archetype::add_entity(EntityData& data) {
-	add_chunk_if_needed();
-
-	data.archetype = this;
-	data.archetype_index = size();
-
-	void* chunk_data = _chunk_data.last();
-	for(usize i = 0; i != _component_count; ++i) {
-		_component_infos[i].create_indexed(chunk_data, _last_chunk_size, 1);
-	}
-	++_last_chunk_size;
+	add_entities(core::MutableSpan<EntityData>(data));
 }
 
 void Archetype::add_entities(core::MutableSpan<EntityData> entities) {
@@ -99,7 +90,6 @@ void Archetype::add_entities(core::MutableSpan<EntityData> entities, bool update
 			entities[i].archetype = this;
 			entities[i].archetype_index = start + i;
 		}
-
 	}
 
 	void* chunk_data = _chunk_data.last();
