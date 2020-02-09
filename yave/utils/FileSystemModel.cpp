@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ const FileSystemModel* FileSystemModel::local_filesystem() {
 	static LocalFileSystemModel filesystem;
 	return &filesystem;
 #else
-	return y_fatal("FileSystemModel::local_filesystem() is not supported");
+	/*return*/ y_fatal("FileSystemModel::local_filesystem() is not supported");
 #endif
 }
 

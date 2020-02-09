@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -326,9 +326,9 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		{
 			ImGui::Text("Position");
 			ImGui::NextColumn();
-			ImGui::InputFloat("X", &pos.x());
-			ImGui::InputFloat("Y", &pos.y());
-			ImGui::InputFloat("Z", &pos.z());
+			ImGui::InputFloat("X", &pos.x(), 0.0f, 0.0f, "%.2f");
+			ImGui::InputFloat("Y", &pos.y(), 0.0f, 0.0f, "%.2f");
+			ImGui::InputFloat("Z", &pos.z(), 0.0f, 0.0f, "%.2f");
 		}
 
 		ImGui::Separator();
@@ -399,8 +399,8 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 	std::fill(name_buffer.begin(), name_buffer.end(), 0);
 	std::copy(name.begin(), name.end(), name_buffer.begin());
 
-	if(ImGui::InputText("Name", name_buffer.begin(), name_buffer.size())) {
-		component->set_name(name_buffer.begin());
+	if(ImGui::InputText("Name", name_buffer.data(), name_buffer.size())) {
+		component->set_name(name_buffer.data());
 	}
 }
 

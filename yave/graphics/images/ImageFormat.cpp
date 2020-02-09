@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -240,7 +240,7 @@ bool ImageFormat::is_float() const {
 			return true;
 
 		default:
-			return y_fatal("Unsupported image format.");
+			/*return*/ y_fatal("Unsupported image format.");
 	}
 }
 
@@ -414,7 +414,7 @@ usize ImageFormat::bit_per_pixel() const {
 			return 256;
 
 		default:
-			return y_fatal("Unsupported image format.");
+			/*return*/ y_fatal("Unsupported image format.");
 	}
 }
 
@@ -576,7 +576,7 @@ usize ImageFormat::components() const {
 			return 0;
 
 		default:
-			return y_fatal("Unsupported image format.");
+			/*return*/ y_fatal("Unsupported image format.");
 	}
 }
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -90,7 +90,7 @@ static vk::Device create_device(
 	y_profile_zone("physical device");
 	return physical.createDevice(vk::DeviceCreateInfo()
 			.setEnabledExtensionCount(u32(exts.size()))
-			.setPpEnabledExtensionNames(exts.begin())
+			.setPpEnabledExtensionNames(exts.data())
 			.setEnabledLayerCount(u32(debug.device_layers().size()))
 			.setPpEnabledLayerNames(debug.device_layers().begin())
 			.setQueueCreateInfoCount(u32(queue_create_infos.size()))
@@ -163,7 +163,7 @@ const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
 			return q;
 		}
 	}
-	return y_fatal("Unable to find queue.");
+	/*return*/ y_fatal("Unable to find queue.");
 }
 
 const Queue& Device::graphic_queue() const {

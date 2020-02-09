@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,11 @@ static usize f_tell(std::FILE* file) {
 #ifdef Y_NO_64_BITS_FILES
 	return std::ftell(file);
 #else
+#ifdef _MSC_VER
+	return usize(_ftelli64(file));
+#else
 	return ftello64(file);
+#endif
 #endif
 }
 
@@ -37,7 +41,11 @@ static void f_seek(std::FILE* file, usize offset, int w) {
 #ifdef Y_NO_64_BITS_FILES
 	fseek(file, offset, w);
 #else
+#ifdef _MSC_VER
+	_fseeki64(file, offset, w);
+#else
 	fseeko64(file, offset, w);
+#endif
 #endif
 }
 

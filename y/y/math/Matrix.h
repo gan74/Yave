@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -91,7 +91,7 @@ class Matrix {
 		Matrix& operator=(const Matrix&) = default;
 
 		template<typename U, typename... Args>
-		Matrix(U t, Args... args) {
+		explicit Matrix(U t, Args... args) {
 			build<0>(t, args...);
 		}
 

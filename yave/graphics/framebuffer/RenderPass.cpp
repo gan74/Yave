@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -132,7 +132,7 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData de
 	auto subpass = vk::SubpassDescription()
 			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
 			.setColorAttachmentCount(u32(color_refs.size()))
-			.setPColorAttachments(color_refs.begin())
+			.setPColorAttachments(color_refs.data())
 		;
 
 	vk::AttachmentReference depth_ref;
@@ -145,11 +145,11 @@ static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData de
 	auto dependencies = colors.is_empty() ? create_z_pass_dependencies() : create_dependencies();
 	return dptr->vk_device().createRenderPass(vk::RenderPassCreateInfo()
 			.setAttachmentCount(u32(attachments.size()))
-			.setPAttachments(attachments.begin())
+			.setPAttachments(attachments.data())
 			.setSubpassCount(1)
 			.setPSubpasses(&subpass)
 			.setDependencyCount(dependencies.size())
-			.setPDependencies(dependencies.begin())
+			.setPDependencies(dependencies.data())
 		)
 	;
 }

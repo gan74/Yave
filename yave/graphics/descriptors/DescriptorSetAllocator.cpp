@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -94,7 +94,7 @@ static vk::DescriptorPool create_descriptor_pool(const DescriptorSetLayout& layo
 
 	return layout.device()->vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
 			.setPoolSizeCount(sizes_count)
-			.setPPoolSizes(sizes.begin())
+			.setPPoolSizes(sizes.data())
 			.setMaxSets(set_count)
 		);
 }
@@ -109,10 +109,10 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
 	const auto create_info = vk::DescriptorSetAllocateInfo()
 			.setDescriptorPool(_pool)
 			.setDescriptorSetCount(pool_size)
-			.setPSetLayouts(layouts.begin())
+			.setPSetLayouts(layouts.data())
 		;
 
-	device()->vk_device().allocateDescriptorSets(&create_info, _sets.begin());
+	device()->vk_device().allocateDescriptorSets(&create_info, _sets.data());
 }
 
 DescriptorSetPool::~DescriptorSetPool() {

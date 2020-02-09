@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ SOFTWARE.
 #include "DeviceLinked.h"
 
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
+#include <yave/graphics/commands/data/CmdBufferData.h>
 #include <yave/graphics/memory/DeviceMemory.h>
 #include <yave/graphics/vk/vk.h>
 
@@ -37,47 +38,6 @@ SOFTWARE.
 namespace yave {
 
 class CmdBufferData;
-
-class ResourceFence {
-	public:
-		ResourceFence() = default;
-
-		bool operator==(const ResourceFence& other) const {
-			return _value == other._value;
-		}
-
-		bool operator!=(const ResourceFence& other) const {
-			return _value != other._value;
-		}
-
-
-		bool operator<(const ResourceFence& other) const {
-			return _value < other._value;
-		}
-
-		bool operator<=(const ResourceFence& other) const {
-			return _value <= other._value;
-		}
-
-
-		bool operator>(const ResourceFence& other) const {
-			return _value > other._value;
-		}
-
-		bool operator>=(const ResourceFence& other) const {
-			return _value >= other._value;
-		}
-
-
-	private:
-		friend class LifetimeManager;
-
-		ResourceFence(u64 v) : _value(v) {
-		}
-
-		u64 _value = 0;
-};
-
 
 using ManagedResource = std::variant<
 		DeviceMemory,

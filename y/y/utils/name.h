@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,8 +34,7 @@ constexpr std::string_view ct_type_name() {
 #elif defined(__GNUC__)
 	return std::string_view{__PRETTY_FUNCTION__ + 64, sizeof(__PRETTY_FUNCTION__) - 116};
 #elif defined(_MSC_VER)
-#warning ct_type_name is not properly supported on MSVC
-	return std::string_view{__FUNCSIG__};
+	return std::string_view{__FUNCSIG__ + 98, sizeof(__FUNCSIG__) - 106};
 #else
 static_assert(false, "ct_type_name is not supported");
 #endif
@@ -49,6 +48,8 @@ constexpr std::string_view ct_type_name() {
 
 static_assert(ct_type_name<int>() == "int");
 static_assert(ct_type_name<float>() == "float");
+
+Y_TODO(Make ct_type_name work for classes on MSVC)
 static_assert(ct_type_name<std::string_view>() == "std::basic_string_view<char, std::char_traits<char> >");
 
 }

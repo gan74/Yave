@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,54 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferUsage.h>
 #include <yave/graphics/queues/Semaphore.h>
-#include <yave/device/LifetimeManager.h>
+
+#include <y/core/Vector.h>
 
 namespace yave {
 
 class CmdBufferDataProxy;
+
+class ResourceFence {
+public:
+	ResourceFence() = default;
+
+	bool operator==(const ResourceFence& other) const {
+		return _value == other._value;
+	}
+
+	bool operator!=(const ResourceFence& other) const {
+		return _value != other._value;
+	}
+
+
+	bool operator<(const ResourceFence& other) const {
+		return _value < other._value;
+	}
+
+	bool operator<=(const ResourceFence& other) const {
+		return _value <= other._value;
+	}
+
+
+	bool operator>(const ResourceFence& other) const {
+		return _value > other._value;
+	}
+
+	bool operator>=(const ResourceFence& other) const {
+		return _value >= other._value;
+	}
+
+
+private:
+	friend class LifetimeManager;
+
+	ResourceFence(u64 v) : _value(v) {
+	}
+
+	u64 _value = 0;
+};
+
+
 
 class CmdBufferData final : NonCopyable {
 

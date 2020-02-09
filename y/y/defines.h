@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,7 @@ SOFTWARE.
 
 namespace y {
 
-struct Nothing;
-
-[[noreturn]] Nothing fatal(const char* msg, const char* file = nullptr, int line = 0);
+[[noreturn]] void fatal(const char* msg, const char* file = nullptr, int line = 0);
 void break_in_debugger();
 }
 
@@ -65,6 +63,11 @@ void break_in_debugger();
 #if defined(WIN32) || defined(__WIN32) || defined(__WIN32__) || defined(_WINDOWS)
 #define Y_OS_WIN
 #define WIN32_LEAN_AND_MEAN
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #endif
 
 #if defined(__linux__) || defined(__gnu_linux__)

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -76,7 +76,7 @@ struct FakeAllocator {
 
 	template<typename... Args>
 	T* allocate(Args&&...) {
-		return y_fatal("SmallVector allocated");
+		/*return*/ y_fatal("SmallVector allocated");
 	}
 
 	template<typename... Args>
@@ -92,7 +92,6 @@ using SmallVec = SmallVector<T, Size, DefaultVectorResizePolicy/*, FakeAllocator
 static_assert(std::is_same_v<std::common_type<MoreDerived, Derived>::type, Derived>, "std::common_type failure");
 static_assert(std::is_polymorphic_v<Polymorphic>, "std::is_polymorphic failure");
 static_assert(!std::is_polymorphic_v<Polymorphic*>, "std::is_polymorphic failure");
-static_assert(sizeof(Vector<int>) == 3 * sizeof(int*), "sizeof(Vector) is not 3 * sizeof(void*)");
 
 /*template<typename P = DefaultVectorResizePolicy>
 static void cout_vec_sizes(usize max, P p = P()) {

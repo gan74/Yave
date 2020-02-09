@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,8 @@ SOFTWARE.
 #define YAVE_GRAPHICS_IMAGES_IMAGEUSAGE_H
 
 #include "ImageFormat.h"
+
+#include <algorithm>
 
 namespace yave {
 
@@ -48,8 +50,8 @@ constexpr ImageUsage operator|(ImageUsage l, ImageUsage r) {
 	return ImageUsage(uenum(l) | uenum(r));
 }
 
-inline ImageUsage operator|(ImageUsage l, vk::ImageUsageFlags r) {
-	return l | ImageUsage(uenum(r));
+inline ImageUsage operator|(ImageUsage l, vk::ImageUsageFlagBits r) {
+	return ImageUsage(uenum(l) | uenum(r));
 }
 
 constexpr ImageUsage operator&(ImageUsage l, ImageUsage r)  {

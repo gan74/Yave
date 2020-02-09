@@ -58,7 +58,7 @@ static vk::AccessFlags vk_layout_access_flags(vk::ImageLayout layout) {
 			break;
 	}
 
-	return y_fatal("Unsupported layout transition.");
+	/*return*/ y_fatal("Unsupported layout transition.");
 }
 
 static vk::AccessFlags vk_dst_access_flags(PipelineStage dst) {
@@ -75,7 +75,7 @@ static vk::AccessFlags vk_dst_access_flags(PipelineStage dst) {
 		default:
 			break;
 	}
-	return y_fatal("Unsuported pipeline stage.");
+	/*return*/ y_fatal("Unsuported pipeline stage.");
 }
 
 static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
@@ -95,7 +95,7 @@ static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
 		default:
 			break;
 	}
-	return y_fatal("Unsuported pipeline stage.");
+	/*return*/ y_fatal("Unsuported pipeline stage.");
 }
 
 static vk::PipelineStageFlags vk_barrier_stage(vk::AccessFlags access) {
@@ -118,7 +118,7 @@ static vk::PipelineStageFlags vk_barrier_stage(vk::AccessFlags access) {
 			   vk::PipelineStageFlagBits::eComputeShader;
 	}
 
-	return y_fatal("Unknown access flags.");
+	/*return*/ y_fatal("Unknown access flags.");
 }
 
 
@@ -179,9 +179,9 @@ ImageBarrier::ImageBarrier(const ImageBase& image, PipelineStage src, PipelineSt
 ImageBarrier ImageBarrier::transition_barrier(const ImageBase& image, vk::ImageLayout src_layout, vk::ImageLayout dst_layout) {
 	ImageBarrier barrier;
 	barrier._barrier = create_barrier(image.vk_image(), image.format(), image.layers(), image.mipmaps(), src_layout, dst_layout);
-	barrier._src = PipelineStage(uenum(vk_barrier_stage(barrier._barrier.srcAccessMask)));
-	barrier._dst = PipelineStage(uenum(vk_barrier_stage(barrier._barrier.dstAccessMask)));
-
+	barrier._src = PipelineStage(VkFlags(vk_barrier_stage(barrier._barrier.srcAccessMask)));
+	barrier._dst = PipelineStage(VkFlags(vk_barrier_stage(barrier._barrier.dstAccessMask)));
+											
 	return barrier;
 }
 

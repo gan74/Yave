@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -340,7 +340,12 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 	private:
+#ifdef _MSC_VER
+		Y_TODO(Fix trivial data_type on MSVC)
+		static constexpr bool is_data_trivial = false;
+#else
 		static constexpr bool is_data_trivial = std::is_trivial_v<data_type>;
+#endif
 
 		bool contains_it(const_iterator it) const {
 			return it >= _data && it < _data_end;
@@ -382,8 +387,9 @@ class Vector : ResizePolicy, Allocator {
 				return;
 			}
 
-			usize current_size = size();
-			const usize num_to_move = std::min(new_cap, current_size);
+			const usize current_size = size();
+			//const usize num_to_move = std::min(new_cap, current_size);
+			const usize num_to_move = new_cap < current_size ? new_cap : current_size;
 
 			data_type* new_data = new_cap ? Allocator::allocate(new_cap) : nullptr;
 

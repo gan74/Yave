@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,11 +58,11 @@ void PerformanceMetrics::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	ImGui::Text("Average time: %.2fms", avg);
 	ImGui::SetNextItemWidth(-1);
-	ImGui::PlotLines("###averages", _average.begin(), _average.size(), _current_average, "", 0.0f, _max, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
+	ImGui::PlotLines("###averages", _average.data(), _average.size(), _current_average, "", 0.0f, _max, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 
 	ImGui::Text("Frame time: %.2fms", ms);
 	ImGui::SetNextItemWidth(-1);
-	ImGui::PlotLines("###frames", _frames.begin(), _frames.size(), _current_frame, "", 0.0f, _max, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
+	ImGui::PlotLines("###frames", _frames.data(), _frames.size(), _current_frame, "", 0.0f, _max, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 
 	ImGui::Text("%.3u resources waiting deletion", unsigned(device()->lifetime_manager().pending_deletions()));
 	ImGui::Text("%.3u active command buffers", unsigned(device()->lifetime_manager().active_cmd_buffers()));

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@ static vk::ImageLayout vk_layout(ImageUsage usage) {
 		return vk::ImageLayout::eShaderReadOnlyOptimal;
 	}
 
-	return y_fatal("Undefined image layout.");
+	/*return*/ y_fatal("Undefined image layout.");
 }
 
 vk::ImageLayout vk_image_layout(ImageUsage usage) {

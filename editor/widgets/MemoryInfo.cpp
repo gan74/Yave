@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -96,7 +96,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		}
 
 		ImGui::SetNextItemWidth(-1);
-		ImGui::PlotLines("###graph", _history.begin(), _history.size(), _current_index, "", 0.0f, to_mb(_max_usage) * 1.33f, ImVec2(0, 80));
+		ImGui::PlotLines("###graph", _history.data(), _history.size(), _current_index, "", 0.0f, to_mb(_max_usage) * 1.33f, ImVec2(0, 80));
 	}
 
 	{

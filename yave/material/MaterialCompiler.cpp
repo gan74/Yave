@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -82,6 +82,13 @@ static vk::CompareOp depth_mode(DepthTestMode mode) {
 	}
 }
 
+static GeometryShader create_geometry_shader(DevicePtr dptr, const SpirVData& geom) {
+	if(geom.is_empty()) {
+		return GeometryShader();
+	}
+	return GeometryShader(dptr, geom);
+}
+
 
 MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
 }
@@ -96,7 +103,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 
 	const FragmentShader frag = FragmentShader(dptr, mat_data._frag);
 	const VertexShader vert = VertexShader(dptr, mat_data._vert);
-	const GeometryShader geom = mat_data._geom.is_empty() ? GeometryShader() : GeometryShader(dptr, mat_data._geom);
+	const GeometryShader geom = create_geometry_shader(dptr, mat_data._geom);
 	const ShaderProgram program(frag, vert, geom);
 
 	core::Vector<vk::PipelineShaderStageCreateInfo> pipeline_shader_stages(program.vk_pipeline_stage_info());
@@ -109,9 +116,9 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 
 	const auto vertex_input = vk::PipelineVertexInputStateCreateInfo()
 			.setVertexAttributeDescriptionCount(attribute_descriptions.size())
-			.setPVertexAttributeDescriptions(attribute_descriptions.begin())
+			.setPVertexAttributeDescriptions(attribute_descriptions.data())
 			.setVertexBindingDescriptionCount(attribute_bindings.size())
-			.setPVertexBindingDescriptions(attribute_bindings.begin())
+			.setPVertexBindingDescriptions(attribute_bindings.data())
 		;
 
 	const auto input_assembly = vk::PipelineInputAssemblyStateCreateInfo()
@@ -163,7 +170,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 			.setLogicOpEnable(false)
 			.setLogicOp(vk::LogicOp::eCopy)
 			.setAttachmentCount(u32(att_blends.size()))
-			.setPAttachments(att_blends.begin())
+			.setPAttachments(att_blends.data())
 			.setBlendConstants({{0.0f, 0.0f, 0.0f, 0.0f}})
 		;
 
@@ -175,20 +182,20 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 
 	const auto pipeline_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(u32(program.descriptor_layouts().size()))
-			.setPSetLayouts(program.descriptor_layouts().begin())
+			.setPSetLayouts(program.descriptor_layouts().data())
 			.setPushConstantRangeCount(u32(program.push_constants().size()))
-			.setPPushConstantRanges(program.push_constants().begin())
+			.setPPushConstantRanges(program.push_constants().data())
 		);
 
 	const std::array<vk::DynamicState, 2> dynamics = {{vk::DynamicState::eViewport, vk::DynamicState::eScissor}};
 	const auto dynamic_states = vk::PipelineDynamicStateCreateInfo()
 			.setDynamicStateCount(dynamics.size())
-			.setPDynamicStates(dynamics.begin())
+			.setPDynamicStates(dynamics.data())
 		;
 
 	const auto pipeline = device()->vk_device().createGraphicsPipeline(vk::PipelineCache(), vk::GraphicsPipelineCreateInfo()
 			.setStageCount(u32(pipeline_shader_stages.size()))
-			.setPStages(pipeline_shader_stages.begin())
+			.setPStages(pipeline_shader_stages.data())
 			.setPDynamicState(&dynamic_states)
 			.setPVertexInputState(&vertex_input)
 			.setPInputAssemblyState(&input_assembly)

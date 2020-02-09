@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,10 +30,8 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 
 #include <y/utils/log.h>
-#include <y/utils/format.h>
 
 namespace yave {
-
 
 static vk::SurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, vk::SurfaceKHR surface) {
 	y_profile();

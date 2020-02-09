@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -72,8 +72,9 @@ void SkeletonInstance::update() {
 }
 
 void SkeletonInstance::flush_data() {
-	auto map = TypedMapping(_bone_transform_buffer);
-	std::copy(_bone_transforms->begin(), _bone_transforms->end(), map.begin());
+	y_fatal("Unimplemented (doesn't compile on MSVC for unknown reason)");
+	/*auto map = TypedMapping(_bone_transform_buffer);
+	std::copy(_bone_transforms->begin(), _bone_transforms->end(), map.begin());*/
 }
 
 }

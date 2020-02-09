@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,32 +29,6 @@ SOFTWARE.
 #define y_defer(expr) auto y_create_name_with_prefix(defer) = y::ScopeExit([&]() { expr; })
 
 namespace y {
-
-struct Nothing {
-	template<typename... Args>
-	Nothing(Args...) {
-	}
-
-	template<typename... Args>
-	Nothing operator()(Args...) const {
-		return *this;
-	}
-
-	template<typename... Args>
-	Nothing operator()(Args...) {
-		return *this;
-	}
-
-	template<typename T>
-	operator T() const {
-		return y_fatal("y::Nothing used");
-	}
-
-	template<typename T>
-	operator const T&() const {
-		return y_fatal("y::Nothing used");
-	}
-};
 
 struct Empty {};
 

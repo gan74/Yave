@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -250,7 +250,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
 			return pass->name();
 		}
 	}
-	return y_fatal("Pass index out of bounds (%).", pass_index);
+	/*return*/ y_fatal("Pass index out of bounds (%).", pass_index);
 }
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {

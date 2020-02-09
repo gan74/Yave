@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -200,7 +200,7 @@ class Archetype : NonMovable {
 					return &_component_infos[i];
 				}
 			}
-			return y_fatal("Unknown component type.");
+			/*return*/ y_fatal("Unknown component type.");
 		}
 
 		template<usize I, typename... Args>

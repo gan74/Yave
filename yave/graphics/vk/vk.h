@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_VK_VK_H
 #define YAVE_GRAPHICS_VK_VK_H
 
+#include <y/defines.h>
 #include <yave/yave.h>
 
 // We need this in release to prevent unity builds including the file without the define

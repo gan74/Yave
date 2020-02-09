@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,7 @@ static ShaderType module_type(const spirv_cross::Compiler& compiler) {
 		default:
 			break;
 	}
-	return y_fatal("Unknown shader execution model.");
+	/*return*/ y_fatal("Unknown shader execution model.");
 }
 
 static vk::DescriptorSetLayoutBinding create_binding(u32 index, ShaderType, vk::DescriptorType type) {
@@ -104,7 +104,7 @@ static u32 component_size(spirv_cross::SPIRType::BaseType type) {
 		default:
 			break;
 	}
-	return y_fatal("Unsupported attribute type.");
+	/*return*/ y_fatal("Unsupported attribute type.");
 }
 
 static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseType type) {
@@ -124,7 +124,7 @@ static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseTy
 		default:
 			break;
 	}
-	return y_fatal("Unsupported attribute type.");
+	/*return*/ y_fatal("Unsupported attribute type.");
 }
 
 template<typename R>

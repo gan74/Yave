@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,23 +35,25 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		struct FileInfo {
 			FileInfo(ContextPtr ctx, std::string_view file, std::string_view full);
 
-			const core::String name;
-			const core::String full_name;
-			const AssetId id;
-			const AssetType type;
+			 core::String name;
+			 core::String full_name;
+			 AssetId id;
+			 AssetType type;
 		};
 
 	private:
+		struct DirNode;
+
 		struct DirNode {
 			DirNode(std::string_view dir, std::string_view full, DirNode* par = nullptr);
 
-			const core::String name;
-			const core::String full_path;
+			core::String name;
+			core::String full_path;
 
 			core::Vector<FileInfo> files;
 			core::Vector<DirNode> children;
 
-			DirNode* parent;
+			DirNode* parent = nullptr;
 			bool up_to_date = false;
 		};
 

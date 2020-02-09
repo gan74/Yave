@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -57,8 +57,8 @@ using deconst_t = typename detail::Deconst<remove_cvref_t<T>>::type;
 namespace detail {
 
 struct TypeHeader {
-	const u32 name_hash = 0;
-	const u32 type_hash = 0;
+	u32 name_hash = 0;
+	u32 type_hash = 0;
 
 	constexpr bool has_serde() const {
 		return type_hash & 0x01;
@@ -74,8 +74,8 @@ struct TypeHeader {
 };
 
 struct MembersHeader {
-	const u32 member_hash = 0;
-	const u32 count = 0;
+	u32 member_hash = 0;
+	u32 count = 0;
 
 	constexpr bool operator==(const MembersHeader& other) const {
 		return member_hash == other.member_hash && count == other.count;

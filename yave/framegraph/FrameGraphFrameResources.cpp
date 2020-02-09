@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Gr�goire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -133,7 +133,7 @@ const TransientImage<>& FrameGraphFrameResources::find(FrameGraphImageId res) co
 		return *it->second;
 	}
 
-	return y_fatal("Image resource doesn't exist.");
+	/*return*/ y_fatal("Image resource doesn't exist.");
 }
 
 const TransientBuffer& FrameGraphFrameResources::find(FrameGraphBufferId res) const {
@@ -143,7 +143,7 @@ const TransientBuffer& FrameGraphFrameResources::find(FrameGraphBufferId res) co
 	if(const auto it = _buffers.find(res); it != _buffers.end()) {
 		return *it->second;
 	}
-	return y_fatal("Buffer resource doesn't exist.");
+	/*return*/ y_fatal("Buffer resource doesn't exist.");
 }
 
 

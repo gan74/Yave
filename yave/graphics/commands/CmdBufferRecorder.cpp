@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,13 @@ SOFTWARE.
 #include <yave/device/extentions/DebugUtils.h>
 
 namespace yave {
+
+#ifdef Y_DEBUG
+bool disable_render = false;
+#define YAVE_VK_CMD do { if(disable_render) { return; } } while(false)
+#else
+#define YAVE_VK_CMD do { } while(false)
+#endif
 
 static vk::CommandBufferUsageFlagBits cmd_usage(CmdBufferUsage u) {
 	return vk::CommandBufferUsageFlagBits(uenum(u) /*& ~uenum(CmdBufferUsage::Secondary)*/);
@@ -74,6 +81,8 @@ void RenderPassRecorder::bind_material(const MaterialTemplate* material, Descrip
 }
 
 void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets) {
+	YAVE_VK_CMD;
+
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.vk_pipeline());
 
 	if(!descriptor_sets.is_empty()) {
@@ -89,6 +98,8 @@ void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, Descript
 
 
 void RenderPassRecorder::draw(const vk::DrawIndexedIndirectCommand& indirect) {
+	YAVE_VK_CMD;
+
 	vk_cmd_buffer().drawIndexed(indirect.indexCount,
 								indirect.instanceCount,
 								indirect.firstIndex,
@@ -97,6 +108,8 @@ void RenderPassRecorder::draw(const vk::DrawIndexedIndirectCommand& indirect) {
 }
 
 void RenderPassRecorder::draw(const vk::DrawIndirectCommand& indirect) {
+	YAVE_VK_CMD;
+
 	vk_cmd_buffer().draw(indirect.vertexCount,
 						 indirect.instanceCount,
 						 indirect.firstVertex,
@@ -106,6 +119,8 @@ void RenderPassRecorder::draw(const vk::DrawIndirectCommand& indirect) {
 void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices,
 									  const SubBuffer<BufferUsage::AttributeBit>& per_vertex,
 									  core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
+	YAVE_VK_CMD;
+
 	bind_index_buffer(indices);
 	bind_attrib_buffers(per_vertex, per_instance);
 }
@@ -115,6 +130,8 @@ void RenderPassRecorder::bind_index_buffer(const SubBuffer<BufferUsage::IndexBit
 }
 
 void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
+	YAVE_VK_CMD;
+
 	if(per_instance.is_empty()) {
 		vk_cmd_buffer().bindVertexBuffers(u32(0), per_vertex.vk_buffer(), per_vertex.byte_offset());
 	} else {
@@ -158,6 +175,8 @@ const Viewport& RenderPassRecorder::viewport() const {
 }
 
 void RenderPassRecorder::set_viewport(const Viewport& vp) {
+	YAVE_VK_CMD;
+
 	_viewport = vp;
 	vk::Viewport v{vp.offset.x(), vp.offset.y(),
 				   vp.extent.x(), vp.extent.y(),
@@ -233,6 +252,8 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 }
 
 void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
+	YAVE_VK_CMD;
+
 	check_no_renderpass();
 
 	vk_cmd_buffer().bindPipeline(vk::PipelineBindPoint::eCompute, program.vk_pipeline());
@@ -267,6 +288,8 @@ void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math:
 }
 
 void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
+	YAVE_VK_CMD;
+
 	check_no_renderpass();
 
 	if(buffers.is_empty() && images.is_empty()) {
@@ -311,6 +334,7 @@ void CmdBufferRecorder::barriers(core::Span<ImageBarrier> images) {
 }
 
 void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
+	YAVE_VK_CMD;
 
 	{
 		const std::array<ImageBarrier, 2> image_barriers = {
@@ -352,6 +376,8 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
 }
 
 void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst) {
+	YAVE_VK_CMD;
+
 	if(src.byte_size() != dst.byte_size()) {
 		y_fatal("Buffer size do not match.");
 	}
@@ -359,6 +385,8 @@ void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst)
 }
 
 void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
+	YAVE_VK_CMD;
+
 	if(src.size() != dst.size()) {
 		y_fatal("Image size do not match.");
 	}
@@ -381,6 +409,8 @@ void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
 }
 
 void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
+	YAVE_VK_CMD;
+
 	const vk::ImageBlit blit = vk::ImageBlit()
 			.setSrcSubresource(
 				vk::ImageSubresourceLayers()

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2019 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -142,7 +142,7 @@ void String::set_min_capacity(usize cap) {
 }
 
 usize String::size() const {
-	return is_long() ? _l.length : _s.length;
+	return is_long() ? usize(_l.length) : usize(_s.length);
 }
 
 usize String::capacity() const {
