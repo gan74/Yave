@@ -72,9 +72,8 @@ void SkeletonInstance::update() {
 }
 
 void SkeletonInstance::flush_data() {
-	y_fatal("Unimplemented (doesn't compile on MSVC for unknown reason)");
-	/*auto map = TypedMapping(_bone_transform_buffer);
-	std::copy(_bone_transforms->begin(), _bone_transforms->end(), map.begin());*/
+	auto map = TypedMapping(_bone_transform_buffer);
+	std::copy(_bone_transforms->begin(), _bone_transforms->end(), map.begin());
 }
 
 }

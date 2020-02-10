@@ -61,7 +61,7 @@ static vk::Device create_device(
 	std::transform(queue_families.begin(), queue_families.end(), std::back_inserter(queue_create_infos), [&](const auto& q) {
 		return vk::DeviceQueueCreateInfo()
 				.setQueueFamilyIndex(q.index())
-				.setPQueuePriorities(priorities.begin())
+				.setPQueuePriorities(priorities.data())
 				.setQueueCount(q.count())
 			;
 		});
