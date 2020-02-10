@@ -31,7 +31,7 @@ class DebugParams {
 
 	public:
 		static DebugParams debug() {
-			return DebugParams({"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_assistant_layer", "VK_LAYER_LUNARG_monitor"}, true);
+			return DebugParams({"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"}, true);
 		}
 
 		static DebugParams none() {

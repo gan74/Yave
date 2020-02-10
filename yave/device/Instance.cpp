@@ -42,7 +42,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 	#endif
 
 	const auto app_info = vk::ApplicationInfo()
-			.setApiVersion(VK_MAKE_VERSION(1, 1, 0))
+			.setApiVersion(VK_MAKE_VERSION(1, 2, 0))
 			.setPApplicationName("Yave")
 			.setPEngineName("Yave")
 		;
