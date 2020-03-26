@@ -70,6 +70,10 @@ void break_in_debugger();
 
 #endif
 
+#ifdef _MSC_VER
+#define Y_MSVC
+#endif
+
 #if defined(__linux__) || defined(__gnu_linux__)
 #define Y_OS_LINUX
 #endif
@@ -93,7 +97,7 @@ void break_in_debugger();
 #define y_create_name y_create_name_with_prefix()
 
 
-#if defined(_MSC_VER)
+#ifdef Y_MSVC
 #define Y_FUNCTION_NAME __FUNCSIG__
 #else
 #define Y_FUNCTION_NAME __PRETTY_FUNCTION__

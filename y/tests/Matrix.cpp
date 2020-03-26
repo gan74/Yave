@@ -87,8 +87,8 @@ y_test_func("Matrix asymetrical multiply") {
 				   9, 10,
 				   11, 12);
 
-	y_test_assert(a * b == matrix(Vec(58, 64),
-								  Vec(139, 154)));
+	y_test_assert(a * b == matrix(Vec(58.0f, 64.0f),
+								  Vec(139.0f, 154.0f)));
 
 	y_test_assert((a * b).determinant() == 36);
 }

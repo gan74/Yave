@@ -340,7 +340,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 	private:
-#ifdef _MSC_VER
+#ifdef Y_MSVC
 		Y_TODO(Fix trivial data_type on MSVC)
 		static constexpr bool is_data_trivial = false;
 #else

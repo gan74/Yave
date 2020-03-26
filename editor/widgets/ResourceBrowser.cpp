@@ -62,7 +62,7 @@ ResourceBrowser::ResourceBrowser(ContextPtr ctx) : ResourceBrowser(ctx, ICON_FA_
 ResourceBrowser::ResourceBrowser(ContextPtr ctx, std::string_view title) :
 		Widget(title, ImGuiWindowFlags_AlwaysVerticalScrollbar),
 		ContextLinked(ctx),
-		_root("", filesystem()->current_path().unwrap_or("")) {
+		_root("", filesystem()->current_path().unwrap_or(core::String())) {
 
 	set_current(&_root);
 }

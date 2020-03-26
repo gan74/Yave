@@ -47,7 +47,7 @@ FileBrowser::FileBrowser(const FileSystemModel* filesystem) :
 
 void FileBrowser::set_filesystem(const FileSystemModel* model) {
 	_filesystem = model ? model : FileSystemModel::local_filesystem();
-	set_path(_filesystem->current_path().unwrap_or(""));
+	set_path(_filesystem->current_path().unwrap_or(core::String()));
 }
 
 void FileBrowser::set_path(std::string_view path) {
@@ -91,7 +91,7 @@ void FileBrowser::set_extension_filter(std::string_view exts) {
 		}
 	}
 	sort(_extensions.begin(), _extensions.end());
-	set_path(_path_buffer.begin());
+	set_path(_path_buffer.data());
 }
 
 void FileBrowser::done(const core::String& filename) {
@@ -103,12 +103,12 @@ void FileBrowser::cancel() {
 }
 
 core::String FileBrowser::full_path() const {
-	const std::string_view name(_name_buffer.begin(), std::strlen(_name_buffer.begin()));
+	const std::string_view name(_name_buffer.data(), std::strlen(_name_buffer.data()));
 	return _filesystem->join(path(), name);
 }
 
 std::string_view FileBrowser::path() const {
-	return std::string_view(_path_buffer.begin(), std::strlen(_path_buffer.begin()));
+	return std::string_view(_path_buffer.data(), std::strlen(_path_buffer.data()));
 }
 
 
@@ -117,7 +117,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	{
 		ImGui::SetNextItemWidth(-button_width);
-		if(ImGui::InputText("###path", _path_buffer.begin(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+		if(ImGui::InputText("###path", _path_buffer.data(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
 			set_path(full_path());
 		}
 		ImGui::SameLine();
@@ -128,7 +128,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	{
 		ImGui::SetNextItemWidth(-button_width);
-		if(ImGui::InputText("###filename", _name_buffer.begin(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+		if(ImGui::InputText("###filename", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
 			set_path(full_path());
 		}
 

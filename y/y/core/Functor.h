@@ -89,6 +89,8 @@ struct is_functor<Functor<Container, Ret(Args...)>> {
 template<template<typename...> typename Container, typename Ret, typename... Args>
 class Functor<Container, Ret(Args...)> {
 	public:
+		Functor() = default;
+
 		template<typename T, typename = std::enable_if_t<!is_functor<std::remove_reference_t<T>>::value>>
 		Functor(T&& func) : _function(std::make_unique<Function<T, Ret, Args...>>(y_fwd(func))) {
 		}
@@ -109,10 +111,12 @@ class Functor<Container, Ret(Args...)> {
 		}
 
 		Ret operator()(Args... args) {
+			y_debug_assert(_function);
 			return _function->apply(y_fwd(args)...);
 		}
 
 		Ret operator()(Args... args) const {
+			y_debug_assert(_function);
 			return _function->apply_const(y_fwd(args)...);
 		}
 

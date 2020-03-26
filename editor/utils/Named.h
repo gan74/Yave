@@ -31,6 +31,8 @@ namespace editor {
 template<typename T>
 class Named {
 	public:
+		Named() = default;
+
 		Named(std::string_view name, T&& obj) : _name(name), _obj(std::move(obj)) {
 		}
 

@@ -32,8 +32,7 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
-SpinLock::SpinLock() :
-	_spin(Unlocked) {
+SpinLock::SpinLock() : _spin(Unlocked) {
 }
 
 SpinLock::~SpinLock() {
@@ -46,7 +45,7 @@ SpinLock::~SpinLock() {
 
 void SpinLock::lock() {
 	for(usize failed = 0; !try_lock(); ++failed) {
-		Y_ASM_PAUSE();
+		wait_once();
 	}
 }
 
@@ -65,5 +64,11 @@ void SpinLock::unlock() {
 	_spin.store(Unlocked, std::memory_order_release);
 }
 
+void SpinLock::wait_once() {
+	Y_ASM_PAUSE();
+}
+
 }
 }
+
+#undef Y_ASM_PAUSE

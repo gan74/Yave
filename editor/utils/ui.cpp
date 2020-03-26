@@ -49,11 +49,11 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
 	ImGui::SameLine();
 	if(ImGui::GetContentRegionAvailWidth() > button_size.x() * 0.5f) {
 		const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
-		core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or("");
+		core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or(core::String());
 
 		ImGui::BeginGroup();
 		ImGui::Dummy(math::Vec2(0.0f, 8.0f));
-		ImGui::TextUnformatted(text.begin(), text.end());
+		ImGui::TextUnformatted(text.data(), text.data() + text.size());
 		ImGui::Dummy(math::Vec2(0.0f, 4.0f));
 		ImGui::InputTextWithHint("", "No asset specified", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
 		ImGui::EndGroup();

@@ -49,6 +49,8 @@ class SpinLock : NonCopyable {
 		void unlock();
 		bool try_lock();
 
+		static void wait_once();
+
 	private:
 		//std::atomic_flag _spin;
 		std::atomic<Type> _spin;

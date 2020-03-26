@@ -27,9 +27,9 @@ SOFTWARE.
 
 #include <editor/components/EditorComponent.h>
 
-#include <editor/components/EditorComponent.h>
-
 #include <y/io2/File.h>
+
+#include <thread>
 
 namespace editor {
 

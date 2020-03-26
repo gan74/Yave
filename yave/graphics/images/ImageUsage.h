@@ -39,7 +39,12 @@ enum class ImageUsage {
 	TransferSrcBit = uenum(vk::ImageUsageFlagBits::eTransferSrc),
 	TransferDstBit = uenum(vk::ImageUsageFlagBits::eTransferDst),
 
+#ifdef Y_MSVC
+	Y_TODO(MSVC fix)
+	SwapchainBit = 0x00000400,
+#else
 	SwapchainBit = std::max({None, DepthBit, ColorBit, TextureBit, StorageBit}) << 1,
+#endif
 
 	// Never use directly:
 	Attachment = ColorBit | DepthBit,

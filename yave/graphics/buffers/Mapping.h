@@ -34,7 +34,7 @@ class Mapping : NonCopyable {
 		Mapping() = default;
 
 		template<BufferUsage Usage>
-		Mapping(const Buffer<Usage, MemoryType::CpuVisible>& buffer) : Mapping(SubBuffer(buffer)) {
+		Mapping(const Buffer<Usage, MemoryType::CpuVisible>& buffer) : Mapping(SubBuffer<BufferUsage::None, MemoryType::CpuVisible>(buffer)) {
 		}
 
 		Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer);

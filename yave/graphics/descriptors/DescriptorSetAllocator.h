@@ -58,6 +58,10 @@ class DescriptorSetPool;
 
 class DescriptorSetLayout : NonCopyable, public DeviceLinked {
 	public:
+#ifdef Y_MSVC
+		Y_TODO(MSVC fix)
+		static constexpr usize max_descriptor_type = 16;
+#else
 		static constexpr usize max_descriptor_type = std::max({
 				usize(vk::DescriptorType::eSampler),
 				usize(vk::DescriptorType::eCombinedImageSampler),
@@ -70,7 +74,7 @@ class DescriptorSetLayout : NonCopyable, public DeviceLinked {
 				usize(vk::DescriptorType::eUniformBufferDynamic),
 				usize(vk::DescriptorType::eStorageBufferDynamic)
 			}) + 1;
-
+#endif
 
 		DescriptorSetLayout() = default;
 		DescriptorSetLayout(DevicePtr dptr, core::Span<vk::DescriptorSetLayoutBinding> bindings);

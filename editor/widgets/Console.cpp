@@ -100,14 +100,14 @@ void Console::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	y_profile();
 
 	ImGui::SetNextItemWidth(-260.0f);
-	ImGui::InputText("Filter", _filter.begin(), _filter.size());
+	ImGui::InputText("Filter", _filter.data(), _filter.size());
 
 	ImGui::SameLine();
 	if(ImGui::Button("Clear")) {
 		context()->logs().clear();
 	}
 
-	const usize total = std::accumulate(_log_counts.begin(), _log_counts.end(), 0);
+	const usize total = std::accumulate(_log_counts.begin(), _log_counts.end(), usize(0));
 	for(usize i = 0; i != log_type_count; ++i) {
 		ImGui::PushStyleColor(ImGuiCol_Text, _log_types[i] ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 		ImGui::SameLine();
@@ -138,7 +138,7 @@ void Console::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			if(!_log_types[usize(msg.type)]) {
 				return;
 			}
-			if(!_filter.front() || match(msg.msg.begin(), _filter.begin())) {
+			if(!_filter.front() || match(msg.msg.data(), _filter.data())) {
 				ImGui::PushStyleColor(ImGuiCol_Text, log_color(msg.type));
 				ImGui::Selectable(fmt_c_str("% %", log_icon(msg.type), msg.msg));
 				ImGui::PopStyleColor();

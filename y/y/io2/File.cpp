@@ -29,7 +29,7 @@ static usize f_tell(std::FILE* file) {
 #ifdef Y_NO_64_BITS_FILES
 	return std::ftell(file);
 #else
-#ifdef _MSC_VER
+#ifdef Y_MSVC
 	return usize(_ftelli64(file));
 #else
 	return ftello64(file);
@@ -41,7 +41,7 @@ static void f_seek(std::FILE* file, usize offset, int w) {
 #ifdef Y_NO_64_BITS_FILES
 	fseek(file, offset, w);
 #else
-#ifdef _MSC_VER
+#ifdef Y_MSVC
 	_fseeki64(file, offset, w);
 #else
 	fseeko64(file, offset, w);

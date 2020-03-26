@@ -100,7 +100,11 @@ if(YAVE_BUILD_YAVE)
 	endif()
 
 	target_link_libraries(yave ${Vulkan_LIBRARY})
-	target_link_libraries(yave y spirv-cross-core stdc++fs sqlite3)
+	target_link_libraries(yave y spirv-cross-core sqlite3)
+
+	if(NOT MSVC)
+		target_link_libraries(yave stdc++fs)
+	endif()
 	
 	add_custom_target(shaders COMMAND glslc -c ${SHADER_FILES})
 	add_dependencies(yave shaders)
@@ -114,7 +118,11 @@ if(YAVE_BUILD_EDITOR)
 
 	if(YAVE_EDITOR_ASSIMP)
 		find_package(assimp)
-		target_link_libraries(editor "${ASSIMP_LIBRARY_DIRS}/libassimp.dll.a")
+		if(MSVC)
+			target_link_libraries(editor "${ASSIMP_LIBRARY_DIRS}/assimp-vc142-mt.lib")
+		else()
+			target_link_libraries(editor "${ASSIMP_LIBRARY_DIRS}/libassimp.dll.a")
+		endif()
 		include_directories(SYSTEM ${ASSIMP_INCLUDE_DIRS}) # SYSTEM to kill random warnings
 	else()
 		add_definitions(-DEDITOR_NO_ASSIMP)
