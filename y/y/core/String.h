@@ -147,6 +147,7 @@ class String {
 		std::string_view sub_str(usize beg, usize len) const;
 
 		bool starts_with(std::string_view str) const;
+		bool ends_with(std::string_view str) const;
 
 		operator const char*() const;
 		operator char*();

@@ -23,6 +23,7 @@ SOFTWARE.
 #include "transforms.h"
 
 #include <y/utils/log.h>
+#include <y/utils/perf.h>
 
 namespace editor {
 namespace import {
@@ -61,6 +62,7 @@ static BoneTransform transform(const BoneTransform& bone, const math::Transform<
 
 
 MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
+	y_profile();
 	auto vertices = core::vector_with_capacity<Vertex>(mesh.vertices().size());
 	std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const auto& vert) { return transform(vert, tr); });
 
@@ -77,6 +79,7 @@ MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
 }
 
 MeshData compute_tangents(const MeshData& mesh) {
+	y_profile();
 	core::Vector<Vertex> vertices = copy(mesh.vertices());
 	core::Vector<IndexedTriangle> triangles = copy(mesh.triangles());
 
@@ -99,6 +102,7 @@ MeshData compute_tangents(const MeshData& mesh) {
 
 
 static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
+	y_profile();
 	auto keys = core::vector_with_capacity<AnimationChannel::BoneKey>(anim.keys().size());
 	std::transform(anim.keys().begin(), anim.keys().end(), std::back_inserter(keys), [=](const auto& key){
 			return AnimationChannel::BoneKey{key.time / speed, key.local_transform};
@@ -112,6 +116,7 @@ static ImageData copy(const ImageData& image) {
 }
 
 Animation set_speed(const Animation& anim, float speed) {
+	y_profile();
 	auto channels = core::vector_with_capacity<AnimationChannel>(anim.channels().size());
 	std::transform(anim.channels().begin(), anim.channels().end(), std::back_inserter(channels), [=](const auto& channel){ return set_speed(channel, speed); });
 
@@ -119,6 +124,7 @@ Animation set_speed(const Animation& anim, float speed) {
 }
 
 ImageData compute_mipmaps(const ImageData& image) {
+	y_profile();
 	if(image.layers() != 1 || image.size().z() != 1) {
 		log_msg("Only one layer is supported.", Log::Error);
 		return copy(image);

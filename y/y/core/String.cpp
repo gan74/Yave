@@ -239,6 +239,11 @@ bool String::starts_with(std::string_view str) const {
 	return str.size() <= size() && std::string_view(begin(), str.size()) == str;
 }
 
+bool String::ends_with(std::string_view str) const {
+	const usize s = size();
+	return str.size() <= s && std::string_view(begin() + s - str.size(), str.size()) == str;
+}
+
 String::operator const char*() const {
 	return data();
 }

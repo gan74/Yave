@@ -22,202 +22,231 @@ SOFTWARE.
 
 #include "import.h"
 
-#ifndef EDITOR_NO_ASSIMP
-
-#include <yave/utils/FileSystemModel.h>
+#include "transforms.h"
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+#include <y/utils/perf.h>
 
-#include <unordered_map>
-#include <unordered_set>
+#include "stb.h"
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#endif
+
+#define TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#define TINYGLTF_NO_INCLUDE_STB_IMAGE
+#define TINYGLTF_NOEXCEPTION
+#include <external/tinygltf/tiny_gltf.h>
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
 
 namespace editor {
 namespace import {
 
-struct SceneImportContext {
-	usize unamed_materials = 0;
-};
 
+template<typename T>
+static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, const tinygltf::BufferView& buffer, T* vertex_elems, int type, bool normalize) {
+	using value_type = typename T::value_type;
+	const usize size = T::size();
+	const usize components = type;
 
+	const usize min_size = std::min(size, components);
+	auto convert = [=](const u8* data) {
+		T vec;
+		for(usize i = 0; i != min_size; ++i) {
+			vec[i] = reinterpret_cast<const value_type*>(data)[i];
+		}
+		if(normalize) {
+			vec.normalize();
+		}
+		return vec;
+	};
 
-static core::String clean_material_name(SceneImportContext& ctx, aiMaterial* mat) {
-	aiString name;
-	if(mat->Get(AI_MATKEY_NAME, name) != AI_SUCCESS) {
-		return fmt("unamed_material_%", ctx.unamed_materials++);
-	}
-	return clean_asset_name(name.C_Str());
-}
-
-static std::pair<core::Vector<Named<ImageData>>, core::Vector<Named<MaterialData>>> import_materias_and_textures(SceneImportContext& ctx,
-																												 const core::Span<aiMaterial*> materials,
-																												 const core::String& filename) {
-	const FileSystemModel* fs = FileSystemModel::local_filesystem();
-
-	usize name_len = fs->filename(filename).size();
-	const core::String path(filename.data(), filename.size() - name_len);
-
-	auto texture_name = [](aiMaterial* mat, aiTextureType type) {
-			if(mat->GetTextureCount(type)) {
-				aiString name;
-				mat->GetTexture(type, 0, &name);
-				return core::String(name.C_Str());
-			}
-			return core::String();
-		};
-
-	std::unordered_map<core::String, Named<ImageData>> images;
-	core::Vector<Named<MaterialData>> mats;
-	for(aiMaterial* mat : materials) {
-		const auto process_tex = [&](aiTextureType type) -> std::string_view {
-				const core::String name = texture_name(mat, type);
-				if(name.is_empty()) {
-					return "";
-				}
-				auto it = images.find(name);
-				if(it == images.end()) {
-					it = images.insert(std::pair(name, import_image(fs->join(path, name), ImageImportFlags::GenerateMipmaps))).first;
-				}
-				return it->second.name();
-			};
-
-		MaterialData material_data;
-		material_data.textures[SimpleMaterialData::Diffuse] = process_tex(aiTextureType_DIFFUSE);
-		material_data.textures[SimpleMaterialData::Normal] = process_tex(aiTextureType_NORMALS);
-		material_data.textures[SimpleMaterialData::Roughness] = process_tex(aiTextureType_SHININESS);
-		material_data.textures[SimpleMaterialData::Metallic] = process_tex(aiTextureType_UNKNOWN);
-		mats.emplace_back(clean_material_name(ctx, mat), std::move(material_data));
-
-
-		{
-			aiTextureType loaded[] = {aiTextureType_DIFFUSE, aiTextureType_NORMALS, aiTextureType_SHININESS};
-			for(usize i = 0; i != AI_TEXTURE_TYPE_MAX + 1; ++i) {
-				aiTextureType type = aiTextureType(i);
-				if(mat->GetTextureCount(type)) {
-					if(std::find(std::begin(loaded), std::end(loaded), i) == std::end(loaded)) {
-						log_msg(fmt("Material \"%\" texture \"%\" has unknown type %.", clean_material_name(ctx, mat), texture_name(mat, type), i), Log::Warning);
-						// load texture anyway
-						process_tex(type);
-					}
-				}
-			}
+	{
+		const usize elem_size = components * sizeof(value_type);
+		u8* vertex_data = reinterpret_cast<u8*>(vertex_elems);
+		const u8* data = model.buffers[buffer.buffer].data.data() + buffer.byteOffset;
+		const usize stride = buffer.byteStride ? buffer.byteStride : elem_size;
+		for(usize i = 0; i < buffer.byteLength; i += stride) {
+			*reinterpret_cast<T*>(vertex_data) = convert(data + i);
+			vertex_data += sizeof(Vertex);
 		}
 	}
-
-	core::Vector<Named<ImageData>> imgs;
-	std::transform(images.begin(), images.end(), std::back_inserter(imgs), [](auto& i) { return std::move(i.second); });
-
-	return {std::move(imgs), std::move(mats)};
 }
 
+static void decode_attrib_buffer(const tinygltf::Model& model, const std::string& name, const tinygltf::Accessor& accessor, Vertex* vertices) {
+	const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
+
+	if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
+		y_throw(std::string(fmt("Unsupported component type (%) for \"%\".", accessor.componentType, std::string_view(name))));
+	}
+
+	math::Vec3* vec3_elems = nullptr;
+	math::Vec2* vec2_elems = nullptr;
+	if(name == "POSITION") {
+		vec3_elems = &vertices[0].position;
+	} else if(name == "NORMAL") {
+		vec3_elems = &vertices[0].normal;
+	} else if(name == "TANGENT") {
+		vec3_elems = &vertices[0].tangent;
+	} else if(name == "TEXCOORD_0") {
+		vec2_elems = &vertices[0].uv;
+	} else {
+		log_msg(fmt("Attribute \"%\" is not supported.", std::string_view(name)), Log::Warning);
+		return;
+	}
+
+	if(vec3_elems) {
+		decode_attrib_buffer_convert_internal(model, buffer, vec3_elems, accessor.type, accessor.normalized);
+	}
+
+	if(vec2_elems) {
+		decode_attrib_buffer_convert_internal(model, buffer, vec2_elems, accessor.type, accessor.normalized);
+	}
+}
+
+static core::Vector<Vertex> import_vertices(const tinygltf::Model& model, const tinygltf::Primitive& prim) {
+	core::Vector<Vertex> vertices;
+	for(auto [name, id] : prim.attributes) {
+		tinygltf::Accessor accessor = model.accessors[id];
+		if(!accessor.count) {
+			continue;
+		}
+
+		if(!vertices.size()) {
+			std::fill_n(std::back_inserter(vertices), accessor.count, Vertex());
+		} else if(vertices.size() != accessor.count) {
+			y_throw("Invalid attribute count.");
+		}
+
+		if(accessor.normalized) {
+			y_throw("Normalization not supported.");
+		}
+
+		decode_attrib_buffer(model, name, accessor, vertices.data());
+	}
+	return vertices;
+}
+
+
+template<typename F>
+static void decode_index_buffer(const tinygltf::Model& model, const tinygltf::BufferView& buffer, IndexedTriangle* triangles, usize elem_size, F convert_index) {
+	u32* indices = reinterpret_cast<u32*>(triangles);
+	const u8* data = model.buffers[buffer.buffer].data.data() + buffer.byteOffset;
+	const usize stride = buffer.byteStride ? buffer.byteStride : elem_size;
+	for(usize i = 0; i < buffer.byteLength; i += stride) {
+		*indices = convert_index(data + i);
+		++indices;
+	}
+}
+
+static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& model, const tinygltf::Primitive& prim) {
+	tinygltf::Accessor accessor = model.accessors[prim.indices];
+	if(!accessor.count) {
+		y_throw("Non indexed primitives are not supported");
+	}
+
+	core::Vector<IndexedTriangle> triangles;
+	std::fill_n(std::back_inserter(triangles), accessor.count, IndexedTriangle{});
+	const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
+	switch(accessor.componentType) {
+		case TINYGLTF_PARAMETER_TYPE_BYTE:
+		case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE:
+			decode_index_buffer(model, buffer, triangles.data(), 1, [](const u8* data) -> u32 { return *data; });
+		break;
+
+		case TINYGLTF_PARAMETER_TYPE_SHORT:
+		case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT:
+			decode_index_buffer(model, buffer, triangles.data(), 2, [](const u8* data) -> u32 { return *reinterpret_cast<const u16*>(data); });
+		break;
+
+		case TINYGLTF_PARAMETER_TYPE_INT:
+		case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT:
+			decode_index_buffer(model, buffer, triangles.data(), 4, [](const u8* data) -> u32 { return *reinterpret_cast<const u32*>(data); });
+		break;
+
+		default:
+			y_throw("Index component type not supported.");
+	}
+
+	return triangles;
+}
 
 SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	y_profile();
 
-	int import_flags =
-			aiProcess_Triangulate |
-			aiProcess_FindInvalidData |
-			aiProcess_GenSmoothNormals |
-			//aiProcess_CalcTangentSpace |
-			aiProcess_GenUVCoords |
-			aiProcess_ImproveCacheLocality |
-			aiProcess_OptimizeGraph |
-			aiProcess_OptimizeMeshes |
-			aiProcess_JoinIdenticalVertices |
-			aiProcess_ValidateDataStructure |
-			0;
+	tinygltf::Model model;
+	tinygltf::TinyGLTF ctx;
 
-	if((flags & SceneImportFlags::FlipUVs) == SceneImportFlags::FlipUVs) {
-		import_flags |= aiProcess_FlipUVs;
-	}
+	{
+		y_profile_zone("glTF import");
+		const bool is_ascii = filename.ends_with(".gltf");
+		const std::string file = filename.data();
 
-	Assimp::Importer importer;
-	const auto scene = importer.ReadFile(filename, import_flags);
+		std::string err;
+		std::string warn;
+		const bool ok = is_ascii
+				? ctx.LoadASCIIFromFile(&model, &err, &warn, file)
+				: ctx.LoadBinaryFromFile(&model, &err, &warn, file);
 
-	if(!scene) {
-		y_throw("Unable to load scene.");
-	}
-
-	if(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-		log_msg("Scene is incomplete!", Log::Warning);
-	}
-
-	SceneImportContext ctx;
-
-	const auto meshes = core::Span<aiMesh*>(scene->mMeshes, scene->mNumMeshes);
-	const auto animations = core::Span<aiAnimation*>(scene->mAnimations, scene->mNumAnimations);
-	const auto materials = core::Span<aiMaterial*>(scene->mMaterials, scene->mNumMaterials);
-
-	log_msg(fmt("% meshes, % animations, % materials found", meshes.size(), animations.size(), materials.size()));
-
-	SceneData data;
-
-	if((flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes) {
-		std::transform(meshes.begin(), meshes.end(), std::back_inserter(data.meshes), [=](aiMesh* mesh) {
-			return Named(clean_asset_name(mesh->mName.C_Str()), import_mesh(mesh, scene));
-		});
-	}
-
-	if((flags & SceneImportFlags::ImportAnims) == SceneImportFlags::ImportAnims) {
-		std::transform(animations.begin(), animations.end(), std::back_inserter(data.animations), [=](aiAnimation* anim) {
-			return Named(clean_asset_name(anim->mName.C_Str()), import_animation(anim));
-		});
-	}
-
-
-	if((flags & (SceneImportFlags::ImportImages | SceneImportFlags::ImportMaterials)) != SceneImportFlags::None) {
-		auto [imgs, mats] = import_materias_and_textures(ctx, materials, filename);
-		data.images = std::move(imgs);
-		if((flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials) {
-			data.materials = std::move(mats);
+		if(!warn.empty()) {
+			log_msg(warn, Log::Warning);
+		}
+		if(!ok) {
+			y_throw(err);
 		}
 	}
 
-	if((flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportObjects) {
-		for(usize i = 0; i != meshes.size(); ++i) {
-			if(meshes[i]->mMaterialIndex < materials.size()) {
-				const core::String mesh_name = clean_asset_name(meshes[i]->mName.C_Str());
-				data.objects.emplace_back(mesh_name, ObjectData{mesh_name, data.materials[meshes[i]->mMaterialIndex].name()});
+	SceneData scene;
+
+	if((flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes) {
+		y_profile_zone("Mesh import");
+		for(const tinygltf::Mesh& mesh : model.meshes) {
+			for(usize i = 0; i != mesh.primitives.size(); ++i) {
+				const tinygltf::Primitive& prim = mesh.primitives[i];
+
+				if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
+					log_msg("Primitive is not a triangle.", Log::Warning);
+					continue;
+				}
+
+				const core::String name = mesh.name.empty()
+					? fmt("unnamed_mesh_%", i)
+					: (i ? fmt("%_%", std::string_view(mesh.name), i) : std::string_view(mesh.name));
+
+				auto vertices = import_vertices(model, prim);
+
+				if((flags & SceneImportFlags::FlipUVs) == SceneImportFlags::FlipUVs) {
+					y_profile_zone("Flip UV");
+					for(Vertex& v : vertices) {
+						v.uv.y() = 1.0f - v.uv.y();
+					}
+				}
+
+				MeshData mesh(std::move(vertices), import_triangles(model, prim));
+				if(vertices.size() && vertices[0].tangent.is_zero()) {
+					mesh = compute_tangents(mesh);
+				}
+
+				scene.meshes.emplace_back(clean_asset_name(name), std::move(mesh));
 			}
 		}
 	}
 
-	return data;
+
+	return scene;
 }
 
 core::String supported_scene_extensions() {
-	std::string extensions;
-	Assimp::Importer importer;
-	importer.GetExtensionList(extensions);
-	return extensions;
+	return "*.gltf;*.glb";
 }
 
 }
 }
-
-
-#else
-
-namespace editor {
-namespace import {
-
-SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
-	unused(filename, flags);
-	y_throw("Scene loading not supported.");
-	SceneData data;
-	return data;
-}
-
-core::String supported_scene_extensions() {
-	return "";
-}
-
-}
-}
-
-#endif
 

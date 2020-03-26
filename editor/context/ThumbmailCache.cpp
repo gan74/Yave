@@ -160,7 +160,9 @@ void ThumbmailCache::process_requests() {
 			--i;
 		}
 	}
+
 	if(recorder) {
+		y_profile_zone("Thumbmail render");
 		device()->graphic_queue().submit<SyncSubmit>(std::move(*recorder));
 	}
 }

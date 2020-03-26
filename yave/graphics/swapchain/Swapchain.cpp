@@ -20,8 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#define YAVE_VK_PLATFORM_INCLUDES
-
 #include "Swapchain.h"
 
 #include <yave/device/Device.h>

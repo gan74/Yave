@@ -21,26 +21,11 @@ SOFTWARE.
 **********************************/
 
 #include "import.h"
+#include "transforms.h"
 
 #include <yave/utils/FileSystemModel.h>
 
-#include "transforms.h"
-
-extern "C" {
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#endif
-
-#define STB_IMAGE_IMPLEMENTATION
-//#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <external/stb/stb_image.h>
-//#include <external/stb/stb_image_write.h>
-
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-}
+#include "stb.h"
 
 namespace editor {
 namespace import {

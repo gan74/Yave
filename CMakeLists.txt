@@ -28,7 +28,6 @@ find_package(vulkan REQUIRED)
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
-option(YAVE_EDITOR_ASSIMP "Use Assimp in editor" ON)
 option(YAVE_BUILD_SHARED "Build as shared library" OFF)
 option(YAVE_UNITY_BUILD "Force unity build" OFF)
 
@@ -46,6 +45,7 @@ include_directories(external)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 17)
+
 
 # Yave's core file
 file(GLOB_RECURSE YAVE_FILES
@@ -65,8 +65,11 @@ file(GLOB_RECURSE EDITOR_FILES
 	)
 
 file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
-		"external/imgui/*.cpp"
+	    "external/imgui/*.cpp"
 		"external/imgui/*.h"
+
+		"external/tinygltf/*.hpp"
+		"external/tinygltf/*.h"
 	)
 	
 # Shader files
@@ -99,6 +102,9 @@ if(YAVE_BUILD_YAVE)
 		add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES})
 	endif()
 
+	# temp for vulkan header bug
+	target_compile_options(yave PRIVATE "-Wno-deprecated-copy")
+
 	target_link_libraries(yave ${Vulkan_LIBRARY})
 	target_link_libraries(yave y spirv-cross-core sqlite3)
 
@@ -115,18 +121,6 @@ if(YAVE_BUILD_EDITOR)
 
 	target_link_libraries(editor yave)
 	target_link_libraries(editor y)
-
-	if(YAVE_EDITOR_ASSIMP)
-		find_package(assimp)
-		if(MSVC)
-			target_link_libraries(editor "${ASSIMP_LIBRARY_DIRS}/assimp-vc142-mt.lib")
-		else()
-			target_link_libraries(editor "${ASSIMP_LIBRARY_DIRS}/libassimp.dll.a")
-		endif()
-		include_directories(SYSTEM ${ASSIMP_INCLUDE_DIRS}) # SYSTEM to kill random warnings
-	else()
-		add_definitions(-DEDITOR_NO_ASSIMP)
-	endif()
 endif()
 
 

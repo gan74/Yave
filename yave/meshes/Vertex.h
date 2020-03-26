@@ -35,6 +35,8 @@ struct Vertex {
 
 using IndexedTriangle = std::array<u32, 3>;
 
+static_assert(sizeof(IndexedTriangle) == 3 * sizeof(u32));
+
 struct SkinWeights {
 	static constexpr usize size = 4;
 

@@ -32,12 +32,6 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 #include <y/math/math.h>
 
-#ifndef EDITOR_NO_ASSIMP
-class aiAnimation;
-class aiMesh;
-class aiScene;
-class aiMaterial;
-#endif
 
 namespace editor {
 namespace import {
@@ -107,14 +101,6 @@ core::String supported_image_extensions();
 
 
 
-
-
-// ----------------------------- ASSIMPS -----------------------------
-#ifndef EDITOR_NO_ASSIMP
-Animation import_animation(aiAnimation* anim);
-MeshData import_mesh(aiMesh* mesh, const aiScene* scene);
-SkeletonData import_skeleton(aiMesh* mesh, const aiScene* scene);
-#endif
 
 
 
