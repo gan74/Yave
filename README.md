@@ -17,6 +17,7 @@ For now I am focussing on creating a decent Vulkan wrapper/interface and a small
 ![Current status](https://i.imgur.com/fLydq3W.png)
 ![Current status](https://i.imgur.com/TaJzCya.gif)
 ![Current status](https://i.imgur.com/NsngKS3.png)
+![Current status](https://i.imgur.com/fYBbB80.png)
 
 The editor is currently unusable but I am working on it.
 
@@ -35,9 +36,6 @@ You need:
  * CMake (3.7)
  * A C++17 compiler (such as GCC 9.2)
  * [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
- * For tools:
-   * [Assimp](http://assimp.sourceforge.net/)
-
 
 
 Implemented features:
@@ -75,10 +73,10 @@ MIT
 - [X] Log callbacks
 - [ ] Finish allocators
 - [ ] Rewrite SmallVector (with new allocators)
-- [ ] Rename ArrayView to Span and MutableSpan
+- [X] Rename ArrayView to Span and MutableSpan
 - [ ] DenseMap (Is SparseVector enough?)
 - [ ] Basic reflection
-- [ ] More robust serialization
+- [X] More robust serialization
 
 ### Framegraph
 - [X] Barriers
@@ -98,8 +96,8 @@ MIT
 - [ ] Proper material system
 - [ ] Shadows
 - [ ] GI
-- [ ] Spot lights
-- [ ] Actual tone mapping
+- [X] Spot lights
+- [X] Actual tone mapping
 
 ### Editor
 - [X] Integrate ECS
