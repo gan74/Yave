@@ -31,9 +31,11 @@ SOFTWARE.
 #include "FrameGraphResourceToken.h"
 #include "FrameGraphPass.h"
 
+#include <mutex>
+
 namespace yave {
 
-class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
+class FrameGraphResourcePool : NonMovable, public DeviceLinked {
 
 	public:
 		FrameGraphResourcePool(DevicePtr dptr);
@@ -56,6 +58,11 @@ class FrameGraphResourcePool : NonCopyable, public DeviceLinked {
 		core::Vector<std::pair<TransientBuffer, u64>> _buffers;
 
 		u64 _collection_id = 0;
+
+		void audit() const;
+
+		Y_TODO(Find a way to not lock on every method call)
+		std::recursive_mutex _lock;
 };
 
 }

@@ -35,9 +35,12 @@ FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) : DeviceLinked(dp
 }
 
 FrameGraphResourcePool::~FrameGraphResourcePool() {
+	const std::unique_lock lock(_lock);
 }
 
 TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+	const std::unique_lock lock(_lock);
+
 	check_usage(usage);
 
 	TransientImage<> image;
@@ -49,6 +52,7 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
 }
 
 TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsage usage, MemoryType memory) {
+	const std::unique_lock lock(_lock);
 	check_usage(usage);
 
 	if(memory == MemoryType::DontCare) {
@@ -71,6 +75,10 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, Image
 
 			res = std::move(img);
 			_images.erase_unordered(it);
+
+			audit();
+			y_debug_assert(res.device());
+
 			return true;
 		}
 	}
@@ -88,6 +96,10 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 
 			res = std::move(buffer);
 			_buffers.erase_unordered(it);
+
+			audit();
+			y_debug_assert(res.device());
+
 			return true;
 		}
 	}
@@ -96,14 +108,24 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 
 
 void FrameGraphResourcePool::release(TransientImage<> image) {
+	const std::unique_lock lock(_lock);
+
 	_images.emplace_back(std::move(image), _collection_id);
+	audit();
 }
 
 void FrameGraphResourcePool::release(TransientBuffer buffer) {
+	const std::unique_lock lock(_lock);
+
 	_buffers.emplace_back(std::move(buffer), _collection_id);
+	audit();
 }
 
 void FrameGraphResourcePool::garbage_collect() {
+	const std::unique_lock lock(_lock);
+
+	audit();
+
 	const u64 max_col_count = 3;
 
 	for(usize i = 0; i < _images.size(); ++i) {
@@ -121,6 +143,23 @@ void FrameGraphResourcePool::garbage_collect() {
 	}
 
 	++_collection_id;
+
+	audit();
+}
+
+void FrameGraphResourcePool::audit() const {
+#ifdef Y_DEBUG
+	for(const auto& [res, col] : _images) {
+		unused(res, col);
+		y_debug_assert(res.device());
+	}
+	for(const auto& [res, col] : _buffers) {
+		unused(res, col);
+		y_debug_assert(res.device());
+	}
+#endif
 }
 
 }
+
+#undef CHECK_NON_CONCURENT
