@@ -125,6 +125,8 @@ void EditorContext::flush_deferred() {
 			perf::start_capture(settings().perf().capture_name);
 		}
 	}
+
+	_logs.flush();
 }
 
 void EditorContext::log_message(std::string_view msg, Log type) {

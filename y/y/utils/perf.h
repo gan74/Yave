@@ -58,8 +58,8 @@ inline auto log_func(const char* func, const char* cat = "") {
 #define y_profile() auto y_create_name_with_prefix(prof) = y::perf::log_func(Y_FUNCTION_NAME)
 #define y_profile_zone(name) auto y_create_name_with_prefix(prof) = y::perf::log_func(name)
 #else
-#define y_profile_zone(cat) do {} while(false)
 #define y_profile() do {} while(false)
+#define y_profile_zone(name) do {} while(false)
 #endif
 
 }

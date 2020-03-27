@@ -25,7 +25,6 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/widgets/EntityView.h>
 #include <editor/widgets/ResourceBrowser.h>
-#include <editor/widgets/Console.h>
 #include <editor/properties/PropertyPanel.h>
 #include <editor/EngineView.h>
 #include <editor/ui/MenuBar.h>

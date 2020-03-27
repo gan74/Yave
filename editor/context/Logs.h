@@ -28,8 +28,6 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/utils/log.h>
 
-#include <mutex>
-
 namespace editor {
 
 class Logs {
@@ -39,35 +37,26 @@ class Logs {
 			const Log type;
 		};
 
-		void clear() {
-			const std::unique_lock lock(_lock);
-			_msgs.clear();
-		}
-
 		void log_msg(core::String msg, Log type = Log::Info) {
 			log_msg(Message{std::move(msg), type});
 		}
 
 		void log_msg(Message msg) {
-			const std::unique_lock lock(_lock);
-			_msgs.emplace_back(std::move(msg));
+			_this_frame.emplace_back(std::move(msg));
 		}
 
-		/*core::Span<Message> messages() const {
-			return _msgs;
-		}*/
+		void flush() {
+			_this_frame.swap(_last_frame);
+			_this_frame.clear();
+		}
 
-		template<typename F>
-		void for_each(F&& func) const {
-			const std::unique_lock lock(_lock);
-			for(const Message& m : _msgs) {
-				func(m);
-			}
+		core::Span<Message> new_messages() const {
+			return _last_frame;
 		}
 
 	private:
-		mutable std::mutex _lock;
-		core::Vector<Message> _msgs;
+		core::Vector<Message> _this_frame;
+		core::Vector<Message> _last_frame;
 };
 
 }
