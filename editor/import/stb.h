@@ -28,7 +28,6 @@ extern "C" {
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <external/stb/stb_image.h>
 
 #ifdef __GNUC__

@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <yave/utils/FileSystemModel.h>
 
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb.h"
 
 namespace editor {

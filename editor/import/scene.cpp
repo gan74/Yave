@@ -84,7 +84,7 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
 	const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
 
 	if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
-		y_throw(std::string(fmt("Unsupported component type (%) for \"%\".", accessor.componentType, std::string_view(name))));
+		y_throw(fmt_c_str("Unsupported component type (%) for \"%\".", accessor.componentType, std::string_view(name)));
 	}
 
 	math::Vec3* vec3_elems = nullptr;
