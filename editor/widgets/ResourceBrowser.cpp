@@ -352,6 +352,7 @@ void ResourceBrowser::paint_asset_list(float width) {
 	}
 
 	// files
+	_preview_id = AssetId::invalid_id();
 	const UiSettings& settings = context()->settings().ui();
 	for(const FileInfo& file : curr->files) {
 		if(!settings.filter_assets || display_asset(file)) {
@@ -365,6 +366,7 @@ void ResourceBrowser::paint_asset_list(float width) {
 			}
 
 			if(!menu_openned && ImGui::IsItemHovered()) {
+				_preview_id = file.id;
 				hovered = index;
 			}
 		}
@@ -402,10 +404,15 @@ void ResourceBrowser::paint_search_results(float width) {
 			}
 		}
 
+		_preview_id = AssetId::invalid_id();
 		for(const FileInfo& file : _search_node->files) {
 			if(ImGui::Selectable(fmt("% %", asset_type_icon(file.type), file.full_name).data())) {
 				set_path(file.full_name);
 				finish_search();
+			}
+
+			if(ImGui::IsItemHovered()) {
+				_preview_id = file.id;
 			}
 		}
 	}
@@ -416,16 +423,16 @@ void ResourceBrowser::paint_search_results(float width) {
 // ----------------------------------- Preview -----------------------------------
 
 void ResourceBrowser::paint_preview(float width) {
-	if(const FileInfo* file = hovered_file()) {
+	if(_preview_id != AssetId::invalid_id()) {
 		ImGui::BeginGroup();
 
-		const auto thumb_data = context()->thumbmail_cache().get_thumbmail(file->id);
+		const auto thumb_data = context()->thumbmail_cache().get_thumbmail(_preview_id);
 		if(TextureView* image = thumb_data.image) {
 			ImGui::Image(image, math::Vec2(width));
 		}
-		ImGui::Text("ID: 0x%.8x", unsigned(file->id.id()));
+		ImGui::Text("ID: 0x%.8x", unsigned(_preview_id.id()));
 		for(const auto& [name, value] : thumb_data.properties) {
-			ImGui::Text(fmt_c_str("%: %", name, value));
+			ImGui::TextUnformatted(fmt_c_str("%: %", name, value));
 		}
 
 		ImGui::EndGroup();

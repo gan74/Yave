@@ -96,7 +96,6 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 		void reset_hover();
 
-		const DirNode* node_to_display() const;
 		const FileInfo* hovered_file() const;
 		const DirNode* hovered_dir() const;
 
@@ -114,6 +113,8 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		std::unique_ptr<DirNode> _search_node;
 
 		core::Vector<core::Functor<void()>> _deferred;
+
+		AssetId _preview_id;
 };
 
 }
