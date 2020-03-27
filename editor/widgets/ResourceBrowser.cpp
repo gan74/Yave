@@ -424,18 +424,29 @@ void ResourceBrowser::paint_search_results(float width) {
 
 void ResourceBrowser::paint_preview(float width) {
 	if(_preview_id != AssetId::invalid_id()) {
-		ImGui::BeginGroup();
-
 		const auto thumb_data = context()->thumbmail_cache().get_thumbmail(_preview_id);
-		if(TextureView* image = thumb_data.image) {
-			ImGui::Image(image, math::Vec2(width));
-		}
-		ImGui::Text("ID: 0x%.8x", unsigned(_preview_id.id()));
-		for(const auto& [name, value] : thumb_data.properties) {
-			ImGui::TextUnformatted(fmt_c_str("%: %", name, value));
+		auto paint_properties = [&] {
+			ImGui::Text("ID: 0x%.8x", unsigned(_preview_id.id()));
+			for(const auto& [name, value] : thumb_data.properties) {
+				ImGui::TextUnformatted(fmt_c_str("%: %", name, value));
+			}
+		};
+
+		if(width > 0.0f) {
+			ImGui::SameLine();
+			ImGui::BeginGroup();
+			if(TextureView* image = thumb_data.image) {
+				ImGui::Image(image, math::Vec2(width));
+			}
+			paint_properties();
+			ImGui::EndGroup();
 		}
 
-		ImGui::EndGroup();
+		{
+			ImGui::BeginTooltip();
+			paint_properties();
+			ImGui::EndTooltip();
+		}
 	}
 }
 
@@ -524,10 +535,14 @@ void ResourceBrowser::paint_path_node(DirNode* node) {
 	}
 
 	if(ImGui::BeginPopup(popup_name.data())) {
-		for(DirNode& c : node->children) {
-			if(ImGui::Selectable(fmt_c_str(ICON_FA_FOLDER " %", c.name))) {
-				set_current(&c);
-				break;
+		if(node->children.is_empty()) {
+			ImGui::Selectable("no subdirectories", false, ImGuiSelectableFlags_Disabled);
+		} else {
+			for(DirNode& c : node->children) {
+				if(ImGui::Selectable(fmt_c_str(ICON_FA_FOLDER " %", c.name))) {
+					set_current(&c);
+					break;
+				}
 			}
 		}
 		ImGui::EndPopup();
@@ -564,11 +579,7 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 		paint_asset_list(list_width);
 	}
 
-
-	if(render_preview) {
-		ImGui::SameLine();
-		paint_preview(preview_width);
-	}
+	paint_preview(render_preview ? preview_width : 0.0f);
 
 	{
 		for(auto&& action : _deferred) {
