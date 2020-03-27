@@ -38,7 +38,7 @@ namespace yave {
 
 class SQLiteAssetStore final : public AssetStore {
 
-	class SQLiteFileSystemModel final : public FileSystemModel {
+	class SQLiteFileSystemModel final : public SearchableFileSystemModel {
 		public:
 			core::String filename(std::string_view path) const override;
 			core::String  join(std::string_view path, std::string_view name) const override;
@@ -54,6 +54,8 @@ class SQLiteAssetStore final : public AssetStore {
 			Result<> create_directory(std::string_view path) const override;
 			Result<> remove(std::string_view path) const override;
 			Result<> rename(std::string_view from, std::string_view to) const override;
+
+			Result<core::Vector<core::String>> search(std::string_view pattern) const override;
 
 			bool is_delimiter(char c) const;
 

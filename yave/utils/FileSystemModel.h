@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <y/core/Vector.h>
 #include <y/core/Functor.h>
 #include <y/core/Result.h>
 
@@ -61,6 +62,13 @@ class FileSystemModel : NonCopyable {
 		virtual Result<> remove(std::string_view path) const = 0;
 		virtual Result<> rename(std::string_view old_path, std::string_view new_path) const = 0;
 };
+
+
+class SearchableFileSystemModel : public FileSystemModel {
+	public:
+		virtual Result<core::Vector<core::String>> search(std::string_view pattern) const = 0;
+};
+
 
 
 #ifndef YAVE_NO_STDFS

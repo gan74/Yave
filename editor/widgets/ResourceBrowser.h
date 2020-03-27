@@ -60,7 +60,10 @@ class ResourceBrowser : public Widget, public ContextLinked {
 	public:
 		ResourceBrowser(ContextPtr ctx);
 
+		void set_path(std::string_view path);
+
 		void refresh() override;
+		void finish_search();
 
 	protected:
 		ResourceBrowser(ContextPtr ctx, std::string_view title);
@@ -73,14 +76,19 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 		void paint_tree_view(float width = 0.0f);
 		void paint_asset_list(float width = 0.0f);
+		void paint_search_results(float width = 0.0f);
 		void paint_preview(float width = 0.0f);
 		void paint_context_menu();
+		void paint_header();
+		void paint_path_node(DirNode* node);
+		void paint_search_bar();
 
 	private:
 		const FileSystemModel* filesystem() const;
 
 		void set_current(DirNode* current);
 		void update_node(DirNode* node);
+		void update_search();
 		void draw_node(DirNode* node, const core::String& name);
 		void make_drop_target(const DirNode* node);
 
@@ -88,6 +96,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 
 		void reset_hover();
 
+		const DirNode* node_to_display() const;
 		const FileInfo* hovered_file() const;
 		const DirNode* hovered_dir() const;
 
@@ -100,6 +109,11 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		DirNode _root;
 		NotOwner<DirNode*> _current = nullptr;
 		usize _current_hovered_index = usize(-1);
+
+		core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
+		std::unique_ptr<DirNode> _search_node;
+
+		core::Vector<core::Functor<void()>> _deferred;
 };
 
 }

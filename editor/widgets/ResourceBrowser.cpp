@@ -85,7 +85,23 @@ void ResourceBrowser::asset_selected(const FileInfo& file) {
 bool ResourceBrowser::display_asset(const FileInfo& file) const {
 	unused(file);
 	return true;
-	//return file.type != AssetType::Unknown;
+}
+
+void ResourceBrowser::set_path(std::string_view path) {
+	if(!filesystem()->is_parent(_current->full_path, path).unwrap_or(true)) {
+		set_current(nullptr);
+	}
+	bool it = true;
+	while(it) {
+		it = false;
+		for(DirNode& node : _current->children) {
+			if(node.full_path.view() == path || filesystem()->is_parent(node.full_path, path).unwrap_or(false)) {
+				set_current(&node);
+				it = true;
+				break;
+			}
+		}
+	}
 }
 
 void ResourceBrowser::set_current(DirNode* current) {
@@ -100,8 +116,8 @@ void ResourceBrowser::set_current(DirNode* current) {
 
 void ResourceBrowser::update_node(DirNode* node) {
 	y_profile();
-
 	reset_hover();
+
 	node->children.clear();
 	node->files.clear();
 
@@ -120,7 +136,31 @@ void ResourceBrowser::update_node(DirNode* node) {
 	}
 
 	node->up_to_date = true;
-	_refresh = false;
+}
+
+void ResourceBrowser::update_search() {
+	_search_node = nullptr;
+	if(const auto* searchable = dynamic_cast<const SearchableFileSystemModel*>(filesystem())) {
+		std::string_view pattern = std::string_view(_search_pattern.data());
+		std::string_view full_pattern = fmt("%%%%", _current->full_path, "%", pattern, "%");
+
+		if(auto result = searchable->search(full_pattern)) {
+			_search_node = std::make_unique<DirNode>(pattern, full_pattern);
+
+			for(const core::String& full_name : result.unwrap()) {
+				const core::String name = searchable->filename(full_name);
+				if(searchable->is_directory(full_name).unwrap_or(false)) {
+					_search_node->children.emplace_back(name, full_name, _search_node.get());
+				} else {
+					_search_node->files.emplace_back(context(), name, full_name);
+				}
+			}
+		}
+	}
+}
+
+void ResourceBrowser::finish_search() {
+	_deferred << [=] { _search_node = nullptr; };
 }
 
 void ResourceBrowser::refresh() {
@@ -144,7 +184,6 @@ const ResourceBrowser::FileInfo* ResourceBrowser::hovered_file() const {
 		}
 	}
 	return nullptr;
-
 }
 
 const ResourceBrowser::DirNode* ResourceBrowser::hovered_dir() const {
@@ -346,8 +385,30 @@ void ResourceBrowser::paint_asset_list(float width) {
 	if(need_refresh() || (menu_openned && _update_chrono.elapsed() > update_duration)) {
 		_update_chrono.reset();
 		update_node(_current);
+		_refresh = false;
 	}
 
+	ImGui::EndChild();
+}
+
+void ResourceBrowser::paint_search_results(float width) {
+	Y_TODO(Replace by table when available)
+	ImGui::BeginChild("###searchresults", ImVec2(width, 0), true);
+	{
+		for(const DirNode& dir : _search_node->children) {
+			if(ImGui::Selectable(fmt(ICON_FA_FOLDER " %", dir.full_path).data())) {
+				set_path(dir.full_path);
+				finish_search();
+			}
+		}
+
+		for(const FileInfo& file : _search_node->files) {
+			if(ImGui::Selectable(fmt("% %", asset_type_icon(file.type), file.full_name).data())) {
+				set_path(file.full_name);
+				finish_search();
+			}
+		}
+	}
 	ImGui::EndChild();
 }
 
@@ -372,6 +433,103 @@ void ResourceBrowser::paint_preview(float width) {
 }
 
 
+// ----------------------------------- Header -----------------------------------
+
+void ResourceBrowser::paint_header() {
+	ImGui::PushID("###paintpath");
+
+	if(ImGui::Button(ICON_FA_PLUS " Import")) {
+		ImGui::OpenPopup("###importmenu");
+	}
+
+	if(ImGui::BeginPopup("###importmenu")) {
+		if(ImGui::Selectable("Import objects")) {
+			context()->ui().add<SceneImporter>(_current->full_path);
+		}
+		if(ImGui::Selectable("Import image")) {
+			context()->ui().add<ImageImporter>(_current->full_path);
+		}
+		ImGui::EndPopup();
+	}
+
+	ImGui::SameLine();
+
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, 0);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0);
+
+		paint_path_node(_current);
+
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor();
+	}
+
+	paint_search_bar();
+
+	ImGui::PopID();
+}
+
+void ResourceBrowser::paint_search_bar() {
+	bool has_seach_bar = false;
+	if(dynamic_cast<const SearchableFileSystemModel*>(filesystem())) {
+		const usize search_bar_size = 200;
+		if(search_bar_size < size().x()) {
+			has_seach_bar = true;
+			ImGui::SameLine(size().x() - search_bar_size);
+			if(ImGui::InputTextWithHint("###searchbar", " " ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
+				update_search();
+			}
+			if(!_search_node && ImGui::IsItemClicked()) {
+				update_search();
+			}
+		}
+	}
+
+
+	if(!has_seach_bar || !_search_pattern[0]) {
+		finish_search();
+	}
+}
+
+void ResourceBrowser::paint_path_node(DirNode* node) {
+	if(!node) {
+		return;
+	}
+
+	if(node->parent) {
+		paint_path_node(node->parent);
+		ImGui::SameLine();
+	}
+
+	ImGui::PushID(fmt_c_str("%", node));
+
+	const char* name = node->name.is_empty() ? "/" : node->name.data();
+	if(ImGui::Button(name)) {
+		_deferred << [=] { set_current(node); };
+	}
+
+	ImGui::SameLine();
+
+	std::string_view popup_name = "dirmenu";
+	if(ImGui::Button(ICON_FA_ANGLE_RIGHT)) {
+		Y_TODO(update node without blowing up _current)
+		ImGui::OpenPopup(popup_name.data());
+	}
+
+	if(ImGui::BeginPopup(popup_name.data())) {
+		for(DirNode& c : node->children) {
+			if(ImGui::Selectable(fmt_c_str(ICON_FA_FOLDER " %", c.name))) {
+				set_current(&c);
+				break;
+			}
+		}
+		ImGui::EndPopup();
+	}
+
+	ImGui::PopID();
+}
+
+
 // ----------------------------------- Main UI -----------------------------------
 
 void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
@@ -386,16 +544,30 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 	const float list_width = render_preview ? width - tree_width - 200.0f : 0.0f;
 	const float preview_width = width - tree_width - list_width;
 
+	paint_header();
+
 	if(show_tree) {
 		paint_tree_view(tree_width);
 		ImGui::SameLine();
 	}
-	paint_asset_list(list_width);
+
+	if(_search_node) {
+		paint_search_results(list_width);
+	} else {
+		paint_asset_list(list_width);
+	}
 
 
 	if(render_preview) {
 		ImGui::SameLine();
 		paint_preview(preview_width);
+	}
+
+	{
+		for(auto&& action : _deferred) {
+			action();
+		}
+		_deferred.clear();
 	}
 }
 

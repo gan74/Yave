@@ -299,6 +299,25 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
 	return core::Ok();
 }
 
+FileSystemModel::Result<core::Vector<core::String>> SQLiteAssetStore::SQLiteFileSystemModel::search(std::string_view pattern) const {
+	y_profile();
+
+	core::Vector<core::String> results;
+
+	sqlite3_stmt* stmt = nullptr;
+	check(sqlite3_prepare_v2(_database, "SELECT name FROM (SELECT name FROM Folders WHERE UPPER(name) LIKE UPPER(?) UNION SELECT name FROM Assets WHERE name LIKE ? COLLATE NOCASE)", -1, &stmt, nullptr));
+	check(sqlite3_bind_text(stmt, 1, pattern.data(), pattern.size(), nullptr));
+	check(sqlite3_bind_text(stmt, 2, pattern.data(), pattern.size(), nullptr));
+	y_defer(sqlite3_finalize(stmt));
+
+	for(auto row : rows(stmt)) {
+		std::string_view name = reinterpret_cast<const char*>(row);
+		results << name;
+	}
+
+	return core::Ok(std::move(results));
+}
+
 FileSystemModel::Result<i64> SQLiteAssetStore::SQLiteFileSystemModel::folder_id(std::string_view path) const {
 	y_profile();
 
@@ -660,6 +679,7 @@ AssetStore::Result<AssetType> SQLiteAssetStore::asset_type(AssetId id) const {
 
 	return core::Ok(AssetType(sqlite3_column_int(stmt, 0)));
 }
+
 
 AssetId SQLiteAssetStore::next_id() {
 	y_profile();
