@@ -19,81 +19,57 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_ECS_H
-#define Y_ECS_ECS_H
 
-#include <y/utils.h>
+#include "EntityWorld.h"
+
 
 namespace y {
 namespace ecs {
 
-class EntityWorld;
-class Archetype;
-
-static constexpr usize entities_per_chunk = 1024;
-
-namespace detail {
-u32 next_type_index();
-}
-
-template<typename T>
-static u32 type_index() {
-	static u32 index = detail::next_type_index();
-	return index;
-}
-
-
-
-class EntityID {
-	public:
-		EntityID(u32 index = invalid_index, u32 version = 0) : _index(index), _version(version) {
-		}
-
-		void invalidate() {
-			_index = invalid_index;
-		}
-
-		u32 index() const {
-			return _index;
-		}
-
-		u32 version() const {
-			return _version;
-		}
-
-		bool is_valid() const {
-			return _index != invalid_index;
-		}
-
-		u64 as_u64() const {
-			return (u64(_index) << 32) | _version;
-		}
-
-	private:
-		static constexpr u32 invalid_index = u32(-1);
-
-		u32 _index = invalid_index;
-		u32 _version = 0;
-};
-
-
-
-
-struct EntityData {
-	EntityID id;
-	Archetype* archetype = nullptr;
-	usize archetype_index = usize(-1);
-
-	void invalidate() {
-		*this = EntityData();
+bool EntityWorld::exists(EntityID id) const {
+	if(id.index() >= _entities.size()) {
+		return false;
 	}
-};
+	return _entities[id.index()].id.version() == id.version();
+}
+
+EntityID EntityWorld::create_entity() {
+	_entities.emplace_back();
+	EntityData& ent = _entities.last();
+	return ent.id = EntityID(_entities.size() - 1);
+}
+
+void EntityWorld::remove_entity(EntityID id) {
+	check_exists(id);
+
+	EntityData& data = _entities[id.index()];
+	if(!data.archetype) {
+		data.invalidate();
+	} else {
+		data.archetype->remove_entity(data);
+	}
+}
 
 
+core::Span<std::unique_ptr<Archetype>> EntityWorld::archetypes() const {
+	return _archetypes;
+}
 
+void EntityWorld::transfer(EntityData& data, Archetype* to) {
+	y_debug_assert(data.archetype != to);
+	if(data.archetype) {
+		data.archetype->transfer_to(to, data);
+	} else {
+		to->add_entity(data);
+	}
+	y_debug_assert(data.archetype == to);
+}
 
+void EntityWorld::check_exists(EntityID id) const {
+	if(!exists(id)) {
+		y_fatal("Entity doesn't exists.");
+	}
+}
 
 }
 }
-
-#endif // Y_ECS_ECS_H

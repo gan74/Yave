@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <y/utils.h>
 
+#include <iterator>
+
 namespace y {
 namespace core {
 
@@ -54,17 +56,14 @@ class Range {
 			return _end;
 		}
 
+		bool is_empty() const {
+			return  _beg == _end;
+		}
+
 		usize size() const {
-			if constexpr(std::is_same_v<Iter, EndIter>) {
-				return std::distance(_beg, _end);
-			} else {
-				usize s = 0;
-				for(auto&& k : *this) {
-					unused(k);
-					++s;
-				}
-				return s;
-			}
+			static_assert(std::is_same_v<Iter, EndIter>);
+			static_assert(std::is_same_v<std::iterator_traits<Iter>::iterator_category, std::random_access_iterator_tag>);
+			return std::distance(_beg, _end);
 		}
 
 	private:

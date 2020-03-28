@@ -135,7 +135,7 @@ void FmtBuffer::copy(const char* str, usize len) {
 		return;
 	}
 
-	do {
+	while(true) {
 		if(_buffer_size < len) {
 			if(!try_expand()) {
 				std::memcpy(_buffer, str, _buffer_size);
@@ -147,7 +147,7 @@ void FmtBuffer::copy(const char* str, usize len) {
 			advance(len);
 			break;
 		}
-	} while(true);
+	}
 }
 
 void FmtBuffer::fmt_one(const char* str) {

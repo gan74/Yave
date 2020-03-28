@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include <y/ecs/ecs.h>
 #include <y/ecs/Archetype.h>
+#include <y/ecs/EntityWorld.h>
+#include <y/ecs/EntityView.h>
 
 #include <y/core/FixedArray.h>
 #include <y/core/Vector.h>
@@ -51,119 +53,6 @@ struct EntityBuilder : NonCopyable {
 		EntityID _id;
 		EntityWorld& _world;
 };*/
-
-namespace y {
-namespace ecs {
-
-class EntityWorld : NonCopyable {
-	public:
-		EntityID create_entity() {
-			_entities.emplace_back();
-			EntityData& ent = _entities.last();
-			return ent.id = EntityID(_entities.size() - 1);
-		}
-
-		void remove_entity(EntityID id) {
-			check_exists(id);
-
-			EntityData& data = _entities[id.index()];
-			if(!data.archetype) {
-				data.invalidate();
-			} else {
-				data.archetype->remove_entity(data);
-			}
-		}
-
-
-		core::Span<std::unique_ptr<Archetype>> archetypes() const {
-			return _archetypes;
-		}
-
-
-		template<typename T>
-		void add_component(EntityID id) {
-			add_components<T>(id);
-		}
-
-		template<typename... Args>
-		void add_components(EntityID id) {
-			check_exists(id);
-
-			EntityData& data = _entities[id.index()];
-			Archetype* old_arc = data.archetype;
-			Archetype* new_arc = nullptr;
-
-			core::Vector types = core::vector_with_capacity<u32>((old_arc ? old_arc->component_count() : 0) + sizeof...(Args));
-			{
-				{
-					if(old_arc) {
-						for(const ComponentRuntimeInfo& info : old_arc->component_infos()) {
-							types << info.type_id;
-						}
-					}
-					add_type_indexes<0, Args...>(types);
-					sort(types.begin(), types.end());
-				}
-
-				for(const auto& arc : _archetypes) {
-					if(arc->matches_type_indexes(types)) {
-						new_arc = arc.get();
-						break;
-					}
-				}
-
-				if(!new_arc) {
-					if(old_arc) {
-						new_arc = _archetypes.emplace_back(old_arc->archetype_with<Args...>()).get();
-					} else {
-						new_arc = _archetypes.emplace_back(Archetype::create<Args...>()).get();
-					}
-				}
-			}
-			y_debug_assert(new_arc->_component_count == types.size());
-			transfer(data, new_arc);
-		}
-
-		bool exists(EntityID id) const {
-			if(id.index() >= _entities.size()) {
-				return false;
-			}
-			return _entities[id.index()].id.version() == id.version();
-		}
-
-	private:
-		template<usize I, typename... Args>
-		static void add_type_indexes(core::Vector<u32>& types) {
-			static_assert(sizeof...(Args));
-			if constexpr(I < sizeof...(Args)) {
-				using type = std::tuple_element_t<I, std::tuple<Args...>>;
-				types << type_index<type>();
-				add_type_indexes<I + 1, Args...>(types);
-			}
-		}
-
-		void transfer(EntityData& data, Archetype* to) {
-			y_debug_assert(data.archetype != to);
-			if(data.archetype) {
-				data.archetype->transfer_to(to, data);
-			} else {
-				to->add_entity(data);
-			}
-			y_debug_assert(data.archetype == to);
-		}
-
-		void check_exists(EntityID id) const {
-			if(!exists(id)) {
-				y_fatal("Entity doesn't exists.");
-			}
-		}
-
-		core::Vector<EntityData> _entities;
-		core::Vector<std::unique_ptr<Archetype>> _archetypes;
-};
-
-}
-}
 
 
 struct Tester : NonCopyable {
@@ -198,10 +87,13 @@ struct Tester : NonCopyable {
 	u64 x = 0;
 };
 
+struct NotComp {
+};
+
 int main() {
 	log_msg(ct_type_name<int>());
 	log_msg(ct_type_name<float>());
-	return 0;
+	//return 0;
 
 
 	EntityWorld world;
@@ -221,7 +113,7 @@ int main() {
 		world.add_component<int>(id);
 	}
 
-	for(const auto& a : world.archetypes()) {
+	/*for(const auto& a : world.archetypes()) {
 		core::String comps;
 		bool has_tester = false;
 		for(const auto& info : a->component_infos()) {
@@ -241,6 +133,12 @@ int main() {
 			}
 		}
 		log_msg("");
+	}*/
+
+
+	for(auto&& [e, n] : world.view<Tester, NotComp>()) {
+		e.validate();
+		log_msg("!");
 	}
 
 	/*for(auto [i] : arc.view<const int>()) {

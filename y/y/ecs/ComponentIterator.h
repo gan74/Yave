@@ -30,8 +30,30 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
+class Archetype;
+
 template<typename... Args>
-struct ComponentIterator {
+class ComponentIterator;
+
+
+struct ComponentEndIterator {
+	public:
+		ComponentEndIterator() = default;
+
+	private:
+		friend class Archetype;
+
+		template<typename... Args>
+		friend class ComponentIterator;
+
+		ComponentEndIterator(usize size) : _index(size) {
+		}
+
+		usize _index = 0;
+};
+
+template<typename... Args>
+class ComponentIterator {
 	public:
 		static constexpr usize component_count = sizeof...(Args);
 
@@ -39,12 +61,21 @@ struct ComponentIterator {
 		using iterator_category = std::random_access_iterator_tag;
 
 		using reference = std::tuple<Args&...>;
+		using value_type = reference;
+		using pointer = value_type*;
 
 		reference operator*() const {
 			return make_refence_tuple<0>();
 		}
 
 
+		bool operator==(const ComponentEndIterator& other) const {
+			return _index == other._index;
+		}
+
+		bool operator!=(const ComponentEndIterator& other) const {
+			return !operator==(other);
+		}
 
 		bool operator==(const ComponentIterator& other) const {
 			return _index == other._index && _chunks == other._chunks;
@@ -76,7 +107,6 @@ struct ComponentIterator {
 			return it;
 		}
 
-
 		difference_type operator-(const ComponentIterator& other) const {
 			return _index - other._index;
 		}
@@ -103,7 +133,6 @@ struct ComponentIterator {
 			it -= n;
 			return it;
 		}
-
 
 	private:
 		friend class Archetype;

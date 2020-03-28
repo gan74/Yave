@@ -149,10 +149,14 @@ class Archetype : NonMovable {
 
 		template<typename... Args>
 		auto view() {
-			ComponentIterator<Args...> begin;
-			build_iterator<0>(begin);
-			const auto end = begin + size();
-			return core::Range(begin, end);
+			using begin_iterator = ComponentIterator<Args...>;
+			using end_iterator = ComponentEndIterator;
+
+			begin_iterator begin;
+			if(!build_iterator<0>(begin)) {
+				return core::Range(begin_iterator(), end_iterator());
+			}
+			return core::Range(begin, end_iterator(size()));
 		}
 
 	public:
@@ -175,6 +179,7 @@ class Archetype : NonMovable {
 
 
 
+
 		template<usize I, typename... Args>
 		static void add_infos(ComponentRuntimeInfo* infos) {
 			if constexpr(I < sizeof...(Args)) {
@@ -190,9 +195,8 @@ class Archetype : NonMovable {
 			sort_component_infos();
 		}
 
-
 		template<typename T>
-		const ComponentRuntimeInfo* info() const {
+		const ComponentRuntimeInfo* info_or_null() const {
 			const u32 index = type_index<T>();
 			Y_TODO(binary search?)
 			for(usize i = 0; i != _component_count; ++i) {
@@ -200,20 +204,33 @@ class Archetype : NonMovable {
 					return &_component_infos[i];
 				}
 			}
-			/*return*/ y_fatal("Unknown component type.");
+			return nullptr;
+		}
+
+		template<typename T>
+		const ComponentRuntimeInfo* info() {
+			if(const ComponentRuntimeInfo* i = info_or_null<T>()) {
+				return i;
+			}
+			y_fatal("Unknown component type.");
 		}
 
 		template<usize I, typename... Args>
-		void build_iterator(ComponentIterator<Args...>& it) {
+		[[nodiscard]] bool build_iterator(ComponentIterator<Args...>& it) {
 			static_assert(sizeof...(Args));
 			if constexpr(I < sizeof...(Args)) {
 				using reference = typename ComponentIterator<Args...>::reference;
 				using type = remove_cvref_t<std::tuple_element_t<I, reference>>;
-				it._offsets[I] = info<type>()->chunk_offset;
-				build_iterator<I + 1>(it);
+				const ComponentRuntimeInfo* type_info =  info_or_null<type>();
+				if(!type_info) {
+					return false;
+				}
+				it._offsets[I] = type_info->chunk_offset;
+				return build_iterator<I + 1>(it);
 			} else {
 				it._chunks = _chunk_data.begin();
 			}
+			return true;
 		}
 
 		template<typename... Args>
