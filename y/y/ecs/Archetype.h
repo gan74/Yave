@@ -22,106 +22,19 @@ SOFTWARE.
 #ifndef Y_ECS_ARCHETYPE_H
 #define Y_ECS_ARCHETYPE_H
 
-#include "ComponentIterator.h"
+#include "ComponentView.h"
+#include "ComponentRuntimeInfo.h"
 
 #include <y/core/Range.h>
 #include <y/core/Vector.h>
 #include <y/mem/allocators.h>
 
-#include <memory>
-
-#ifdef Y_DEBUG
-#include <y/utils/name.h>
-#endif
+#include <y/serde3/serde.h>
 
 namespace y {
 namespace ecs {
 
-struct ComponentRuntimeInfo {
-	usize chunk_offset = 0;
-	usize component_size = 0;
-
-	void (*create)(void* dst, usize count) = nullptr;
-	void (*create_from)(void* dst, void* from) = nullptr;
-	void (*destroy)(void* ptr, usize count) = nullptr;
-	void (*move)(void* dst, void* src, usize count) = nullptr;
-
-	u32 type_id = u32(-1);
-
-#ifdef Y_DEBUG
-	std::string_view type_name = "unknown";
-#endif
-
-	void* index_ptr(void* chunk, usize index) const {
-		return static_cast<u8*>(chunk) + chunk_offset + index * component_size;
-	}
-
-	void create_indexed(void* chunk, usize index, usize count) const {
-		create(index_ptr(chunk, index), count);
-	}
-
-	void create_from_indexed(void* chunk, usize index, void* from) const {
-		create_from(index_ptr(chunk, index), from);
-	}
-
-	void destroy_indexed(void* chunk, usize index, usize count) const {
-		destroy(index_ptr(chunk, index), count);
-	}
-
-	void move_indexed(void* dst, void* chunk, usize index, usize count) const {
-		move(dst, index_ptr(chunk, index), count);
-	}
-
-	void move_indexed(void* dst_chunk, usize dst_index, void* src_chunk, usize src_index, usize count) const {
-		move(index_ptr(dst_chunk, dst_index), index_ptr(src_chunk, src_index), count);
-	}
-
-
-	template<typename T>
-	static ComponentRuntimeInfo from_type(usize offset = 0) {
-		return {
-			offset,
-			sizeof(T),
-			[](void* dst, usize count) {
-				y_debug_assert(usize(dst) % sizeof(T) == 0);
-				T* it = static_cast<T*>(dst);
-				const T* end = it + count;
-				for(; it != end; ++it) {
-					::new(it) T();
-				}
-			},
-			[](void* dst, void* from) {
-				y_debug_assert(usize(dst) % sizeof(T) == 0);
-				::new(dst) T(std::move(*static_cast<T*>(from)));
-			},
-			[](void* ptr, usize count) {
-				y_debug_assert(usize(ptr) % sizeof(T) == 0);
-				T* it = static_cast<T*>(ptr);
-				const T* end = it + count;
-				for(; it != end; ++it) {
-					it->~T();
-				}
-#ifdef Y_DEBUG
-				std::memset(ptr, 0xFE, count * sizeof(T));
-#endif
-			},
-			[](void* dst, void* src, usize count) {
-				y_debug_assert(usize(dst) % sizeof(T) == 0);
-				T* it = static_cast<T*>(src);
-				const T* end = it + count;
-				T* out = static_cast<T*>(dst);
-				while(it != end) {
-					*out++ = std::move(*it++);
-				}
-			},
-			type_index<T>(),
-
-#ifdef Y_DEBUG
-			ct_type_name<T>()
-#endif
-		};
-	}
-};
+class ArchetypeSerializer;
 
 class Archetype : NonMovable {
 
@@ -148,15 +61,32 @@ class Archetype : NonMovable {
 
 
 		template<typename... Args>
-		auto view() {
-			using begin_iterator = ComponentIterator<Args...>;
-			using end_iterator = ComponentEndIterator;
-
-			begin_iterator begin;
+		ComponentView<Args...> view() {
+			ComponentIterator<Args...> begin;
 			if(!build_iterator<0>(begin)) {
-				return core::Range(begin_iterator(), end_iterator());
+				return ComponentView<Args...>();
 			}
-			return core::Range(begin, end_iterator(size()));
+			return ComponentView<Args...>(begin, size());
+		}
+
+		template<typename T>
+		const ComponentRuntimeInfo* info_or_null() const {
+			const u32 index = type_index<T>();
+			Y_TODO(binary search?)
+			for(usize i = 0; i != _component_count; ++i) {
+				if(_component_infos[i].type_id == index) {
+					return &_component_infos[i];
+				}
+			}
+			return nullptr;
+		}
+
+		template<typename T>
+		const ComponentRuntimeInfo* info() {
+			if(const ComponentRuntimeInfo* i = info_or_null<T>()) {
+				return i;
+			}
+			y_fatal("Unknown component type.");
 		}
 
 	public:
@@ -165,6 +95,7 @@ class Archetype : NonMovable {
 
 	private:
 		friend class EntityWorld;
+		friend class ArchetypeSerializer;
 
 
 		void add_entities(core::MutableSpan<EntityData> entities, bool update_data);
@@ -195,26 +126,6 @@ class Archetype : NonMovable {
 			sort_component_infos();
 		}
 
-		template<typename T>
-		const ComponentRuntimeInfo* info_or_null() const {
-			const u32 index = type_index<T>();
-			Y_TODO(binary search?)
-			for(usize i = 0; i != _component_count; ++i) {
-				if(_component_infos[i].type_id == index) {
-					return &_component_infos[i];
-				}
-			}
-			return nullptr;
-		}
-
-		template<typename T>
-		const ComponentRuntimeInfo* info() {
-			if(const ComponentRuntimeInfo* i = info_or_null<T>()) {
-				return i;
-			}
-			y_fatal("Unknown component type.");
-		}
-
 		template<usize I, typename... Args>
 		[[nodiscard]] bool build_iterator(ComponentIterator<Args...>& it) {
 			static_assert(sizeof...(Args));
@@ -243,7 +154,9 @@ class Archetype : NonMovable {
 			return arc;
 		}
 
-		// Use FixedArray instead?
+
+
+
 		usize _component_count = 0;
 		std::unique_ptr<ComponentRuntimeInfo[]> _component_infos;
 
@@ -252,6 +165,13 @@ class Archetype : NonMovable {
 
 		memory::PolymorphicAllocatorContainer _allocator;
 		usize _chunk_byte_size = 0;
+
+		/*ArchetypeSerializer& serializer() const;
+
+	public:
+		y_serde3(_chunk_byte_size, serializer())
+
+		void post_deserialize();*/
 };
 
 

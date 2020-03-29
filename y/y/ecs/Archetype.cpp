@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "Archetype.h"
+//#include "ArchetypeSerializer.h"
 
 #include <y/utils/sort.h>
 
@@ -33,23 +34,28 @@ namespace ecs {
 Archetype::Archetype(usize component_count, memory::PolymorphicAllocatorBase* allocator) :
         _component_count(component_count),
         _component_infos(std::make_unique<ComponentRuntimeInfo[]>(component_count)),
-        _allocator(allocator) {
+		_allocator(allocator) {
 }
 
 Archetype::~Archetype() {
 	if(_component_infos) {
 		log_msg(fmt("destroying arch with % components % entities", _component_count, size()));
-		for(usize i = 0; i != _component_count; ++i) {
-			_component_infos[i].destroy_indexed(_chunk_data.last(), 0, _last_chunk_size);
-		}
-		for(usize c = 0; c + 1 < _chunk_data.size(); ++c) {
+		y_debug_assert(_chunk_data.is_empty() == !_last_chunk_size);
+		if(!_chunk_data.is_empty()) {
 			for(usize i = 0; i != _component_count; ++i) {
-				_component_infos[i].destroy_indexed(_chunk_data[c], 0, entities_per_chunk);
+				_component_infos[i].destroy_indexed(_chunk_data.last(), 0, _last_chunk_size);
+			}
+			for(usize c = 0; c + 1 < _chunk_data.size(); ++c) {
+				for(usize i = 0; i != _component_count; ++i) {
+					_component_infos[i].destroy_indexed(_chunk_data[c], 0, entities_per_chunk);
+				}
 			}
 		}
 
 		for(void* c : _chunk_data) {
-			_allocator.deallocate(c, _chunk_byte_size);
+			if(c) {
+				_allocator.deallocate(c, _chunk_byte_size);
+			}
 		}
 	}
 }
@@ -107,7 +113,9 @@ void Archetype::remove_entity(EntityData& data) {
 	y_debug_assert(data.archetype == this);
 
 	if(!_last_chunk_size) {
-		_allocator.deallocate(_chunk_data.last(), _chunk_byte_size);
+		if(_chunk_data.last()) {
+			_allocator.deallocate(_chunk_data.last(), _chunk_byte_size);
+		}
 		_chunk_data.pop();
 		_last_chunk_size = entities_per_chunk;
 	}
@@ -212,12 +220,22 @@ void Archetype::add_chunk_if_needed() {
 void Archetype::add_chunk() {
 	y_debug_assert(_last_chunk_size == entities_per_chunk || _chunk_data.is_empty());
 	_last_chunk_size = 0;
-	_chunk_data.emplace_back(_allocator.allocate(_chunk_byte_size));
+	_chunk_data.emplace_back(_chunk_byte_size ? _allocator.allocate(_chunk_byte_size) : nullptr);
 
 #ifdef Y_DEBUG
 	std::memset(_chunk_data.last(), 0xBA, _chunk_byte_size);
 #endif
 }
+
+/*
+ArchetypeSerializer& Archetype::serializer() const {
+	return detail::create_archetype_serializer(const_cast<Archetype*>(this));
+}
+
+
+void Archetype::post_deserialize() {
+}
+*/
 
 }
 }

@@ -86,8 +86,8 @@ class EntityWorld : NonCopyable {
 
 
 		template<typename... Args>
-		auto view() {
-			return core::Range(EntityIterator<Args...>(_archetypes), EntityEndIterator());
+		EntityView<Args...> view() {
+			return EntityView<Args...>(_archetypes);
 		}
 
 	private:

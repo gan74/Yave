@@ -19,10 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_COMPONENTITERATOR_H
-#define Y_ECS_COMPONENTITERATOR_H
+#ifndef Y_ECS_COMPONENTVIEW_H
+#define Y_ECS_COMPONENTVIEW_H
 
 #include "ecs.h"
+
+#include <y/core/Range.h>
 
 #include <tuple>
 #include <type_traits>
@@ -30,30 +32,48 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
-class Archetype;
-
 template<typename... Args>
 class ComponentIterator;
 
-
-struct ComponentEndIterator {
+class ComponentEndIterator {
 	public:
-		ComponentEndIterator() = default;
+		using difference_type = usize;
 
-	private:
-		friend class Archetype;
+		ComponentEndIterator(usize size = 0) : _index(size) {
+		}
 
 		template<typename... Args>
-		friend class ComponentIterator;
+		difference_type operator-(const ComponentIterator<Args...>& other) const;
 
-		ComponentEndIterator(usize size) : _index(size) {
-		}
+		template<typename... Args>
+		bool operator==(const ComponentIterator<Args...>& other) const;
+
+		template<typename... Args>
+		bool operator!=(const ComponentIterator<Args...>& other) const;
+
+	private:
+		template<typename... Args>
+		friend class ComponentIterator;
 
 		usize _index = 0;
 };
 
 template<typename... Args>
 class ComponentIterator {
+
+	template<usize I, typename... A>
+	static constexpr bool is_compatible() {
+		if constexpr(I < sizeof...(A)) {
+			using this_t = std::tuple_element_t<I, std::tuple<Args...>>;
+			using other_t = std::tuple_element_t<I, std::tuple<A...>>;
+			if constexpr(!std::is_same_v<this_t, other_t> && !std::is_same_v<this_t, const other_t>) {
+				return false;
+			}
+			return is_compatible<I + 1, A...>();
+		}
+		return true;
+	}
+
 	public:
 		static constexpr usize component_count = sizeof...(Args);
 
@@ -64,10 +84,17 @@ class ComponentIterator {
 		using value_type = reference;
 		using pointer = value_type*;
 
+
+		ComponentIterator() = default;
+		ComponentIterator(const ComponentIterator&) = default;
+
+		template<typename... A, typename = std::enable_if_t<is_compatible<0, A...>()>>
+		ComponentIterator(const ComponentIterator<A...>& other) : _index(other._index), _chunks(other._chunks), _offsets(other._offsets) {
+		}
+
 		reference operator*() const {
 			return make_refence_tuple<0>();
 		}
-
 
 		bool operator==(const ComponentEndIterator& other) const {
 			return _index == other._index;
@@ -136,9 +163,14 @@ class ComponentIterator {
 
 	private:
 		friend class Archetype;
+		friend class ComponentEndIterator;
+
+		template<typename... A>
+		friend class ComponentIterator;
 
 		template<usize I = 0>
 		auto make_refence_tuple() const {
+			y_debug_assert(_chunks || !sizeof...(Args));
 			const usize chunk_index = _index / entities_per_chunk;
 			const usize item_index = _index % entities_per_chunk;
 			using type = std::remove_reference_t<std::tuple_element_t<I, reference>>;
@@ -158,8 +190,39 @@ class ComponentIterator {
 		std::array<usize, component_count> _offsets;
 };
 
+static_assert(std::is_constructible_v<ComponentIterator<const int>, ComponentIterator<int>>);
+static_assert(!std::is_constructible_v<ComponentIterator<int>, ComponentIterator<const int>>);
+
+
+template<typename... Args>
+ComponentEndIterator::difference_type ComponentEndIterator::operator-(const ComponentIterator<Args...>& other) const {
+	return _index - other._index;
+}
+
+template<typename... Args>
+bool ComponentEndIterator::operator==(const ComponentIterator<Args...>& other) const {
+	return other == *this;
+}
+
+template<typename... Args>
+bool ComponentEndIterator::operator!=(const ComponentIterator<Args...>& other) const {
+	return other != *this;
+}
+
+
+template<typename... Args>
+using ComponentViewRange = core::Range<ComponentIterator<Args...>, ComponentEndIterator>;
+
+template<typename... Args>
+struct ComponentView : ComponentViewRange<Args...> {
+	ComponentView() : ComponentView(ComponentIterator<Args...>({}), 0) {
+	}
+
+	ComponentView(ComponentIterator<Args...> beg, usize size) : ComponentViewRange<Args...>(std::move(beg), ComponentEndIterator(size)) {
+	}
+};
 
 }
 }
 
-#endif // Y_ECS_COMPONENTITERATOR_H
+#endif // Y_ECS_COMPONENTVIEW_H
