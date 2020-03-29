@@ -37,6 +37,8 @@ class Range {
 		using iterator = Iter;
 		using const_iterator = Iter;
 
+		using value_type = typename iterator_traits::value_type;
+
 		Range(Iter b, EndIter e) : _beg(b), _end(e) {
 		}
 
@@ -61,9 +63,9 @@ class Range {
 		}
 
 		usize size() const {
-			static_assert(std::is_same_v<Iter, EndIter>);
-			static_assert(std::is_same_v<std::iterator_traits<Iter>::iterator_category, std::random_access_iterator_tag>);
-			return std::distance(_beg, _end);
+			static_assert(std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::random_access_iterator_tag>);
+			return _end - _beg;
+			//return std::distance(_beg, _end);
 		}
 
 	private:

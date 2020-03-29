@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "serde.h"
 #include "result.h"
+
 #include <y/utils/name.h>
 
 #include <memory>
@@ -84,7 +85,10 @@ struct PolyType {
 		static Type type{
 			poly_type_id<Derived>(),
 			first,
-			[]() -> std::unique_ptr<Base> { return std::make_unique<Derived>(); },
+			[]() -> std::unique_ptr<Base> {
+				static_assert(std::is_default_constructible_v<Derived>);
+				return std::make_unique<Derived>();
+			},
 			ct_type_name<Derived>()
 		};
 		first = &type;

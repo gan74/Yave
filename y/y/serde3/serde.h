@@ -86,9 +86,9 @@ struct NamedObject {
 
 
 
-#define y_serde3_create_item(object) y::serde3::NamedObject{object, #object},
+#define y_serde3_create_item(object) y::serde3::NamedObject(object, #object),
 
-#define y_serde3_refl_qual(qual, ...) constexpr auto _y_serde3_refl() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_serde3_create_item, __VA_ARGS__))}; }
+#define y_serde3_refl_qual(qual, ...) /*constexpr*/ auto _y_serde3_refl() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_serde3_create_item, __VA_ARGS__))}; }
 
 
 #define y_serde3(...)								\

@@ -64,12 +64,41 @@ class TupleMemberIterator {
 			return _it != other._it;
 		}
 
+		template<typename T>
+		bool operator==(const T& other) const {
+			return _it == other;
+		}
+
+		template<typename T>
+		bool operator!=(const T& other) const {
+			return _it != other;
+		}
+
 		auto&& operator*() const {
 			return std::get<I>(*_it);
 		}
 
 		auto* operator->() const {
 			return &std::get<I>(*_it);
+		}
+
+
+		TupleMemberIterator operator+(usize i) const {
+			return TupleMemberIterator(_it + i);
+		}
+
+		TupleMemberIterator operator-(usize i) const {
+			return TupleMemberIterator(_it - i);
+		}
+
+		TupleMemberIterator& operator+=(usize i) const {
+			_it += i;
+			return *this;
+		}
+
+		TupleMemberIterator& operator-=(usize i) const {
+			_it -= i;
+			return *this;
 		}
 
 	private:
