@@ -24,45 +24,84 @@ SOFTWARE.
 
 #include "types.h"
 
+#include <iterator>
+
 namespace y {
 
-template<usize I, typename It>
-class TupleMemberIterator {
+template<typename It, typename Transform>
+class TransformIterator : private Transform {
 	using iterator_type = It;
 
 	public:
-		TupleMemberIterator(iterator_type it) : _it(it) {
+		using value_type = std::remove_reference_t<decltype(std::declval<Transform>()(*std::declval<It>()))>;
+
+		using difference_type = typename It::difference_type;
+		using iterator_category = typename It::iterator_category;
+
+		using reference = value_type&;
+		using pointer = value_type*;
+
+		TransformIterator(iterator_type it) : _it(it) {
 		}
 
-		TupleMemberIterator& operator++() {
+		TransformIterator& operator++() {
 			++_it;
 			return *this;
 		}
 
-		TupleMemberIterator operator++(int) {
+		TransformIterator operator++(int) {
 			const iterator_type it = _it;
 			++_it;
-			return TupleMemberIterator(it);
+			return TransformIterator(it);
 		}
 
-		TupleMemberIterator& operator--() {
+		TransformIterator& operator--() {
 			--_it;
 			return *this;
 		}
 
-		TupleMemberIterator operator--(int) {
+		TransformIterator operator--(int) {
 			const iterator_type it = _it;
 			--_it;
 			return TupleMemberIterator(it);
 		}
 
-		bool operator==(const TupleMemberIterator& other) const {
+		bool operator==(const TransformIterator& other) const {
 			return _it == other._it;
 		}
 
-		bool operator!=(const TupleMemberIterator& other) const {
+		bool operator!=(const TransformIterator& other) const {
 			return _it != other._it;
 		}
+
+		auto&& operator*() const {
+			return Transform::operator()(*_it);
+		}
+
+		auto* operator->() const {
+			return Transform::operator()(*_it);
+		}
+
+
+		TransformIterator operator+(usize i) const {
+			return TupleMemberIterator(_it + i);
+		}
+
+		TransformIterator operator-(usize i) const {
+			return TupleMemberIterator(_it - i);
+		}
+
+		TransformIterator& operator+=(usize i) const {
+			_it += i;
+			return *this;
+		}
+
+		TransformIterator& operator-=(usize i) const {
+			_it -= i;
+			return *this;
+		}
+
+
 
 		template<typename T>
 		bool operator==(const T& other) const {
@@ -74,36 +113,23 @@ class TupleMemberIterator {
 			return _it != other;
 		}
 
-		auto&& operator*() const {
-			return std::get<I>(*_it);
-		}
-
-		auto* operator->() const {
-			return &std::get<I>(*_it);
-		}
-
-
-		TupleMemberIterator operator+(usize i) const {
-			return TupleMemberIterator(_it + i);
-		}
-
-		TupleMemberIterator operator-(usize i) const {
-			return TupleMemberIterator(_it - i);
-		}
-
-		TupleMemberIterator& operator+=(usize i) const {
-			_it += i;
-			return *this;
-		}
-
-		TupleMemberIterator& operator-=(usize i) const {
-			_it -= i;
-			return *this;
-		}
 
 	private:
 		iterator_type _it;
 };
+
+namespace detail {
+template<usize I>
+struct TupleUnpacker {
+	template<typename T>
+	auto&& operator()(T&& t) const {
+		return std::get<I>(y_fwd(t));
+	}
+};
+}
+
+template<usize I, typename It>
+using TupleMemberIterator = TransformIterator<It, detail::TupleUnpacker<I>>;
 
 
 }
