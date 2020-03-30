@@ -30,6 +30,7 @@ namespace y {
 namespace detail {
 
 static constexpr usize fmt_total_buffer_size = (fmt_max_size + 1) * 4;
+Y_TODO(this is allocated via new and never deleted)
 static thread_local char* fmt_buffer = nullptr;
 static thread_local char* fmt_buffer_end = nullptr;
 

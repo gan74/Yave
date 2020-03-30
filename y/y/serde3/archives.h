@@ -126,6 +126,9 @@ template<typename T>
 static constexpr bool is_tuple_v = detail::IsTuple<remove_cvref_t<T>>::value;
 
 template<typename T>
+static constexpr bool is_pod_v = std::is_trivially_copyable_v<remove_cvref_t<T>> && std::is_default_constructible_v<remove_cvref_t<T>>;
+
+template<typename T>
 static constexpr bool is_std_ptr_v = detail::StdPtr<remove_cvref_t<T>>::is_std_ptr;
 
 template<typename T>
@@ -228,7 +231,8 @@ class WritableArchive final {
 		}
 
 		template<typename T>
-		Result serialize_one(NamedObject<T> object) {
+		Result serialize_one(NamedObject<T> non_const_object) {
+			const auto object = non_const_object.make_const();
 			const auto header = detail::build_header(object);
 			y_try(write_one(header));
 
@@ -238,7 +242,7 @@ class WritableArchive final {
 				return serialize_object(object);
 			} else if constexpr(is_tuple_v<T>) {
 				return serialize_tuple(object);
-			} else if constexpr(std::is_trivially_copyable_v<T>) {
+			} else if constexpr(is_pod_v<T>) {
 				return serialize_pod(object);
 			} else if constexpr(is_std_ptr_v<T>) {
 				return serialize_ptr(object);
@@ -251,6 +255,8 @@ class WritableArchive final {
 		// ------------------------------- PTR -------------------------------
 		template<typename T>
 		Result serialize_ptr(NamedObject<T> object) {
+			static_assert(std::is_const_v<T>);
+
 			if(object.object == nullptr) {
 				return write_one(size_type(0));
 			}
@@ -272,24 +278,31 @@ class WritableArchive final {
 		// ------------------------------- COLLECTION -------------------------------
 		template<typename T>
 		Result serialize_collection(NamedObject<T> object) {
+			static_assert(std::is_const_v<T>);
 			static_assert(is_iterable_v<T>);
 
 			SizePatch patch{tell(), 0};
 
 			{
 				y_try(write_one(size_type(-1)));
-				y_try(write_one(size_type(object.object.size())));
 
 				if constexpr(detail::use_collection_fast_path<remove_cvref_t<T>>) {
+					y_try(write_one(size_type(object.object.size())));
 					if(object.object.size()) {
 						const auto header = detail::build_header(NamedObject{*object.object.begin(), detail::collection_version_string});
 						y_try(write_one(header));
 						y_try(write_array(object.object.begin(), object.object.size()));
 					}
 				} else {
+					// Size is patched so we don't have to call .size() on funky objects (like ranges)
+					SizePatch size_patch{tell(), 0};
+					y_try(write_one(size_type(0)));
 					for(const auto& item : object.object) {
 						y_try(serialize_one(NamedObject{item, detail::collection_version_string}));
+						++size_patch.size;
 					}
+					log_msg(fmt("% has % elems", ct_type_name<T>(), size_patch.size));
+					push_patch(size_patch);
 				}
 			}
 
@@ -303,6 +316,7 @@ class WritableArchive final {
 		// ------------------------------- POLY -------------------------------
 		template<typename T>
 		Result serialize_poly(NamedObject<T> object) {
+			static_assert(std::is_const_v<T>);
 			static_assert(!has_serde3_v<T>);
 
 			if(object.object == nullptr) {
@@ -331,7 +345,8 @@ class WritableArchive final {
 		// ------------------------------- POD -------------------------------
 		template<typename T>
 		Result serialize_pod(NamedObject<T> object) {
-			static_assert(std::is_trivially_copyable_v<T>);
+			static_assert(std::is_const_v<T>);
+			static_assert(is_pod_v<T>);
 			static_assert(!std::is_pointer_v<T>);
 
 			y_try(write_one(size_type(sizeof(T))));
@@ -342,6 +357,7 @@ class WritableArchive final {
 		// ------------------------------- OBJECT -------------------------------
 		template<typename T>
 		Result serialize_object(NamedObject<T> object) {
+			static_assert(std::is_const_v<T>);
 			static_assert(!has_serde3_poly_v<T>);
 
 			SizePatch patch{tell(), 0};
@@ -376,6 +392,8 @@ class WritableArchive final {
 		// ------------------------------- TUPLE -------------------------------
 		template<typename T>
 		Result serialize_tuple(NamedObject<T> object) {
+			static_assert(std::is_const_v<T>);
+
 			SizePatch patch{tell(), 0};
 
 			{
@@ -525,7 +543,7 @@ class ReadableArchive final {
 				return deserialize_object(object, header, size);
 			} else if constexpr(is_tuple_v<T>) {
 				return deserialize_tuple(object, header, size);
-			} else if constexpr(std::is_trivially_copyable_v<T>) {
+			} else if constexpr(is_pod_v<T>) {
 				return deserialize_pod(object, header, size);
 			} else if constexpr(is_std_ptr_v<T>) {
 				return deserialize_ptr(object, header, size);
@@ -597,7 +615,6 @@ class ReadableArchive final {
 					}
 
 				} else {
-
 					if constexpr(has_reserve_v<T>) {
 						object.object.reserve(collection_size);
 					}
@@ -627,8 +644,10 @@ class ReadableArchive final {
 						}
 					}
 				}
-				if(object.object.size() != collection_size) {
-					return core::Err();
+				if constexpr(has_size_v<T>) {
+					if(object.object.size() != collection_size) {
+						return core::Err();
+					}
 				}
 				return core::Ok(Success::Full);
 			} catch(std::bad_alloc&) {

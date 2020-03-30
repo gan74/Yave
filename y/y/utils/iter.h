@@ -30,6 +30,7 @@ namespace y {
 
 struct EndIterator {};
 
+// this might cause ambiguities
 template<typename T>
 bool operator==(EndIterator, const T& other) {
 	return other.at_end();
@@ -66,6 +67,8 @@ class TransformIterator : private Transform {
 
 		using reference = value_type&;
 		using pointer = value_type*;
+
+		TransformIterator() = default;
 
 		TransformIterator(iterator_type it, const Transform& tr = Transform()) : Transform(tr), _it(it) {
 		}
@@ -164,6 +167,8 @@ class FilterIterator : private Filter {
 
 		using reference = value_type&;
 		using pointer = value_type*;
+
+		FilterIterator() = default;
 
 		FilterIterator(iterator_type it, end_iterator_type end, const Filter& ft = Filter()) : Filter(ft), _it(it), _end(end) {
 			find_next_valid();

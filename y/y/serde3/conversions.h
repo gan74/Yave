@@ -25,12 +25,18 @@ SOFTWARE.
 #include "headers.h"
 #include "result.h"
 
+Y_TODO(Remove this (is this a GCC bug?))
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#endif
+
 #define y_serde3_try_convert(prim)														\
 	do {																				\
 	    if constexpr(std::is_convertible_v<prim, T>) {									\
 	        static constexpr auto type_hash = detail::header_type_hash<prim>();			\
 	        if(type_hash == type.type_hash) {											\
-	            t = T(*static_cast<const prim*>(data));									\
+				t = static_cast<T>(*static_cast<const prim*>(data));					\
 	            return core::Ok(Success::Full);											\
 	        }																			\
 	    }																				\
@@ -63,5 +69,9 @@ Result try_convert(T& t, detail::TypeHeader type, const void* data) {
 }
 
 #undef y_serde3_try_convert
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 #endif // Y_SERDE3_CONVERSIONS_H

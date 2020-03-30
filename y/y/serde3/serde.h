@@ -82,6 +82,10 @@ struct NamedObject {
 
 	constexpr NamedObject(T& t, std::string_view n) : object(t), name(n) {
 	}
+
+	constexpr NamedObject<const T> make_const() const {
+		return NamedObject<const T>(object, name);
+	}
 };
 
 
