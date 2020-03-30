@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "Archetype.h"
-//#include "ArchetypeSerializer.h"
 
 #include <y/utils/sort.h>
 
@@ -191,8 +190,10 @@ void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> enti
 	Y_TODO(optimize this with create_from)
 	for(usize e = 0; e != entities.size(); ++e) {
 		EntityData& data = entities[e];
+		const EntityID id = data.id;
 		remove_entity(data);
 
+		data.id = id;
 		data.archetype = other;
 		data.archetype_index = start + e;
 	}
@@ -226,16 +227,6 @@ void Archetype::add_chunk() {
 	std::memset(_chunk_data.last(), 0xBA, _chunk_byte_size);
 #endif
 }
-
-/*
-ArchetypeSerializer& Archetype::serializer() const {
-	return detail::create_archetype_serializer(const_cast<Archetype*>(this));
-}
-
-
-void Archetype::post_deserialize() {
-}
-*/
 
 }
 }

@@ -31,9 +31,6 @@ SOFTWARE.
 
 namespace y {
 namespace ecs {
-
-class ComponentSerializerBase;
-
 namespace detail {
 
 template<typename T>
@@ -76,10 +73,6 @@ void move_component(void* dst, void* src, usize count) {
 	}
 }
 
-/*
-template<typename T>
-std::unique_ptr<ComponentSerializerBase> create_serializer();
-*/
 }
 
 
@@ -91,8 +84,6 @@ struct ComponentRuntimeInfo {
 	void (*create_from)(void* dst, void* from) = nullptr;
 	void (*destroy)(void* ptr, usize count) = nullptr;
 	void (*move)(void* dst, void* src, usize count) = nullptr;
-
-	//std::unique_ptr<ComponentSerializerBase> (*create_serializer)() = nullptr;
 
 	u32 type_id = u32(-1);
 
@@ -139,7 +130,6 @@ struct ComponentRuntimeInfo {
 	void move_indexed(void* dst_chunk, usize dst_index, void* src_chunk, usize src_index, usize count) const {
 		move(index_ptr(dst_chunk, dst_index), index_ptr(src_chunk, src_index), count);
 	}
-
 };
 
 }

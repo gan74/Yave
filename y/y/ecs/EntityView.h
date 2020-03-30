@@ -24,10 +24,10 @@ SOFTWARE.
 
 #include "Archetype.h"
 
+#include <y/utils/iter.h>
+
 namespace y {
 namespace ecs {
-
-class EntityEndIterator {};
 
 template<typename... Args>
 class EntityIterator {
@@ -101,15 +101,6 @@ class EntityIterator {
 			return !operator==(other);
 		}
 
-		bool operator==(const EntityEndIterator&) const {
-			return at_end();
-		}
-
-		bool operator!=(const EntityEndIterator&) const {
-			return !at_end();
-		}
-
-
 	private:
 		void advance_archetype() {
 			do {
@@ -136,14 +127,14 @@ class EntityIterator {
 };
 
 template<typename... Args>
-using EntityViewRange = core::Range<EntityIterator<Args...>, EntityEndIterator>;
+using EntityViewRange = core::Range<EntityIterator<Args...>, EndIterator>;
 
 template<typename... Args>
 struct EntityView : EntityViewRange<Args...> {
 	EntityView() : EntityView(EntityIterator<Args...>({})) {
 	}
 
-	EntityView(EntityIterator<Args...> beg) : EntityViewRange<Args...>(std::move(beg), EntityEndIterator()) {
+	EntityView(EntityIterator<Args...> beg) : EntityViewRange<Args...>(std::move(beg), EndIterator()) {
 	}
 };
 

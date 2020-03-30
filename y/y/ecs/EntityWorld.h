@@ -25,13 +25,13 @@ SOFTWARE.
 #include "EntityView.h"
 
 #include <y/utils/sort.h>
+#include <y/utils/iter.h>
 
 namespace y {
 namespace ecs {
 
 class EntityWorld : NonCopyable {
 	public:
-
 		bool exists(EntityID id) const;
 
 		EntityID create_entity();
@@ -84,10 +84,32 @@ class EntityWorld : NonCopyable {
 			transfer(data, new_arc);
 		}
 
-
 		template<typename... Args>
 		EntityView<Args...> view() {
 			return EntityView<Args...>(_archetypes);
+		}
+
+
+	public:
+		core::Span<EntityData> all_entities() const {
+			return _entities;
+		}
+
+		auto entities() const {
+			auto is_valid = [](const EntityData& data) { return data.is_valid(); };
+			return core::Range(FilterIterator(_entities.begin(), _entities.end(), is_valid), EndIterator());
+		}
+
+		template<typename T>
+		T* component(const EntityData& data) const {
+			if(!data.archetype) {
+				return nullptr;
+			}
+			const auto& view = data.archetype->view<T>();
+			if(view.is_empty()) {
+				return nullptr;
+			}
+			return &std::get<0>(view[data.archetype_index]);
 		}
 
 	private:

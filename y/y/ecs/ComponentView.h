@@ -220,6 +220,11 @@ struct ComponentView : ComponentViewRange<Args...> {
 
 	ComponentView(ComponentIterator<Args...> beg, usize size) : ComponentViewRange<Args...>(std::move(beg), ComponentEndIterator(size)) {
 	}
+
+	decltype(auto) operator[](usize index) const {
+		y_debug_assert(index < this->size());
+		return *(this->begin() + index);
+	}
 };
 
 }

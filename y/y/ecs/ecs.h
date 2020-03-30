@@ -85,7 +85,11 @@ struct EntityData {
 	usize archetype_index = usize(-1);
 
 	void invalidate() {
-		*this = EntityData();
+		archetype = nullptr;
+	}
+
+	bool is_valid() const {
+		return id.is_valid();
 	}
 };
 

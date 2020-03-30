@@ -34,8 +34,6 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
-class ArchetypeSerializer;
-
 class Archetype : NonMovable {
 
 	public:
@@ -45,9 +43,6 @@ class Archetype : NonMovable {
 			arc->set_types<0, Args...>();
 			return arc;
 		}
-
-		Archetype(Archetype&&) = default;
-		Archetype& operator=(Archetype&&) = default;
 
 		~Archetype();
 
@@ -67,26 +62,6 @@ class Archetype : NonMovable {
 				return ComponentView<Args...>();
 			}
 			return ComponentView<Args...>(begin, size());
-		}
-
-		template<typename T>
-		const ComponentRuntimeInfo* info_or_null() const {
-			const u32 index = type_index<T>();
-			Y_TODO(binary search?)
-			for(usize i = 0; i != _component_count; ++i) {
-				if(_component_infos[i].type_id == index) {
-					return &_component_infos[i];
-				}
-			}
-			return nullptr;
-		}
-
-		template<typename T>
-		const ComponentRuntimeInfo* info() {
-			if(const ComponentRuntimeInfo* i = info_or_null<T>()) {
-				return i;
-			}
-			y_fatal("Unknown component type.");
 		}
 
 	public:
@@ -124,6 +99,26 @@ class Archetype : NonMovable {
 		void set_types() {
 			add_infos<0, Args...>(_component_infos.get());
 			sort_component_infos();
+		}
+
+		template<typename T>
+		const ComponentRuntimeInfo* info_or_null() const {
+			const u32 index = type_index<T>();
+			Y_TODO(binary search?)
+			for(usize i = 0; i != _component_count; ++i) {
+				if(_component_infos[i].type_id == index) {
+					return &_component_infos[i];
+				}
+			}
+			return nullptr;
+		}
+
+		template<typename T>
+		const ComponentRuntimeInfo* info() {
+			if(const ComponentRuntimeInfo* i = info_or_null<T>()) {
+				return i;
+			}
+			y_fatal("Unknown component type.");
 		}
 
 		template<usize I, typename... Args>
@@ -165,13 +160,6 @@ class Archetype : NonMovable {
 
 		memory::PolymorphicAllocatorContainer _allocator;
 		usize _chunk_byte_size = 0;
-
-		/*ArchetypeSerializer& serializer() const;
-
-	public:
-		y_serde3(_chunk_byte_size, serializer())
-
-		void post_deserialize();*/
 };
 
 

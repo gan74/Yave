@@ -48,6 +48,8 @@ void EntityWorld::remove_entity(EntityID id) {
 	} else {
 		data.archetype->remove_entity(data);
 	}
+	y_debug_assert(!data.archetype);
+	y_debug_assert(!data.is_valid());
 }
 
 
@@ -56,13 +58,17 @@ core::Span<std::unique_ptr<Archetype>> EntityWorld::archetypes() const {
 }
 
 void EntityWorld::transfer(EntityData& data, Archetype* to) {
+	y_debug_assert(exists(data.id));
 	y_debug_assert(data.archetype != to);
+
 	if(data.archetype) {
 		data.archetype->transfer_to(to, data);
 	} else {
 		to->add_entity(data);
 	}
+
 	y_debug_assert(data.archetype == to);
+	y_debug_assert(exists(data.id));
 }
 
 void EntityWorld::check_exists(EntityID id) const {
