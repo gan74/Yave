@@ -230,9 +230,9 @@ class WritableArchive final {
 			return core::Ok(Success::Full);
 		}
 
-		template<typename T>
-		Result serialize_one(NamedObject<T> non_const_object) {
-			const auto object = non_const_object.make_const();
+		template<typename T, bool R>
+		Result serialize_one(NamedObject<T, R> non_const_object) {
+			const auto object = non_const_object.make_const_ref();
 			const auto header = detail::build_header(object);
 			y_try(write_one(header));
 
@@ -276,8 +276,8 @@ class WritableArchive final {
 
 
 		// ------------------------------- COLLECTION -------------------------------
-		template<typename T>
-		Result serialize_collection(NamedObject<T> object) {
+		template<typename T, bool R>
+		Result serialize_collection(NamedObject<T, R> object) {
 			static_assert(std::is_const_v<T>);
 			static_assert(is_iterable_v<T>);
 
@@ -372,8 +372,8 @@ class WritableArchive final {
 			return core::Ok(Success::Full);
 		}
 
-		template<usize I, typename... Args>
-		Result serialize_members_internal(std::tuple<NamedObject<Args>...> objects) {
+		template<usize I, typename... Args, bool... Refs>
+		Result serialize_members_internal(std::tuple<NamedObject<Args, Refs>...> objects) {
 			unused(objects);
 			if constexpr(I < sizeof...(Args)) {
 				y_try(serialize_one(std::get<I>(objects)));
@@ -522,8 +522,9 @@ class ReadableArchive final {
 
 
 	private:
-		template<typename T>
-		Result deserialize_one(NamedObject<T> object) {
+		template<typename T, bool R>
+		Result deserialize_one(NamedObject<T, R> non_ref) {
+			NamedObject<T> object = non_ref.make_ref();
 			detail::FullHeader header;
 			size_type size = size_type(-1);
 
@@ -714,8 +715,8 @@ class ReadableArchive final {
 			}
 		}
 
-		template<bool Safe, usize I, typename... Args>
-		Result deserialize_members_internal(std::tuple<NamedObject<Args>...> members,
+		template<bool Safe, usize I, typename... Args, bool... Refs>
+		Result deserialize_members_internal(std::tuple<NamedObject<Args, Refs>...> members,
 											const ObjectData& object_data) {
 			unused(members, object_data);
 
