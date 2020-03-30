@@ -26,6 +26,7 @@ SOFTWARE.
 #include "result.h"
 
 #include <y/utils/name.h>
+#include <y/utils/hash.h>
 
 #include <memory>
 
