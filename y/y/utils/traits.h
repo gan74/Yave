@@ -126,6 +126,8 @@ using remove_cvref_t = typename remove_cvref<T>::type;
 
 namespace detail {
 template<typename T>
+using has_at_end_t = decltype(std::declval<T&>().at_end());
+template<typename T>
 using has_size_t = decltype(std::declval<T&>().size());
 template<typename T>
 using has_reserve_t = decltype(std::declval<T&>().reserve(std::declval<usize>()));
@@ -135,6 +137,8 @@ template<typename T>
 using has_emplace_back_t = decltype(std::declval<T&>().emplace_back());
 }
 
+template<typename T>
+static constexpr bool has_at_end_v = is_detected_v<detail::has_at_end_t, T>;
 template<typename T>
 static constexpr bool has_size_v = is_detected_v<detail::has_size_t, T>;
 template<typename T>

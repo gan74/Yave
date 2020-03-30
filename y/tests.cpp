@@ -35,25 +35,18 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/perf.h>
 #include <y/utils/name.h>
-#include <y/utils/sort.h>
+#include <y/utils/iter.h>
+
+#include <y/serde3/poly.h>
+#include <y/serde3/serde.h>
+#include <y/serde3/archives.h>
+#include <y/io2/Buffer.h>
 
 #include <atomic>
 #include <thread>
 
 using namespace y;
 using namespace y::ecs;
-
-/*
-struct EntityBuilder : NonCopyable {
-	public:
-		EntityBuilder(EntityID id, EntityWorld& world) : _id(id), _world(world) {
-		}
-
-	private:
-		EntityID _id;
-		EntityWorld& _world;
-};*/
-
 
 struct Tester : NonCopyable {
 	Tester() : x(0xFDFEFDFE12345678) {
@@ -90,16 +83,91 @@ struct Tester : NonCopyable {
 struct NotComp {
 };
 
-int main() {
-	log_msg(ct_type_name<int>());
-	log_msg(ct_type_name<float>());
-	//return 0;
+struct Test {
+	int i = 4;
 
+	const int& ser() const {
+		return i;
+	}
+
+	int& ser() {
+		return i;
+	}
+
+	y_serde3(ser())
+};
+
+
+
+
+
+struct ComponentSerializerBase : NonMovable {
+	virtual ~ComponentSerializerBase() {
+	}
+
+	y_serde3_poly_base(ComponentSerializerBase)
+};
+
+template<typename T>
+class ComponentSerializerIterator {
+	public:
+
+	private:
+};
+
+template<typename T>
+struct ComponentSerializer final : ComponentSerializerBase {
+
+
+
+
+	y_serde3_poly(ComponentSerializer)
+};
+
+
+
+
+template<typename T>
+struct ComponentTransform {
+	ComponentTransform(const EntityWorld& world) : _world(world) {
+	}
+
+	std::pair<EntityID, T*> operator()(const EntityData& data) const {
+		y_debug_assert(data.id.is_valid());
+		return {data.id, _world.component<T>(data)};
+	}
+
+	const EntityWorld& _world;
+};
+
+
+struct NonNullComponentFilter {
+	template<typename T>
+	bool operator()(const std::pair<EntityID, T*>& entity) const {
+		return entity.second;
+	}
+};
+
+
+
+template<typename T>
+auto all_components(const EntityWorld& world) {
+	auto entities = world.entities();
+	auto component_beg = TransformIterator(entities.begin(), ComponentTransform<T>(world));
+	auto non_null_beg = FilterIterator(component_beg, entities.end(), NonNullComponentFilter());
+	auto deref = [](const std::pair<EntityID, T*>& p) -> std::pair<EntityID, T&> { return {p.first, *p.second}; };
+	return core::Range(TransformIterator(non_null_beg, deref), entities.end());
+}
+
+
+int main() {
+	auto file = io2::Buffer();
 
 	EntityWorld world;
 
 	{
 		EntityID id = world.create_entity();
+		log_msg(fmt("a: %", id.index()));
 		world.add_component<int>(id);
 		world.add_component<Tester>(id);
 		world.add_component<float>(id);
@@ -113,37 +181,21 @@ int main() {
 		world.add_component<int>(id);
 	}
 
-	/*for(const auto& a : world.archetypes()) {
-		core::String comps;
-		bool has_tester = false;
-		for(const auto& info : a->component_infos()) {
-			if(info.type_id == type_index<Tester>()) {
-				has_tester = true;
-			}
-#ifdef Y_DEBUG
-			comps = comps + info.type_name + " ";
-#endif
-		}
-		log_msg(fmt("[%]< %> = %", a->component_count(), comps, a->size()));
-
-		if(has_tester) {
-			for(auto [t] : a->view<const Tester>()) {
-				static_assert(std::is_same_v<decltype(t), const Tester&>);
-				t.validate();
-			}
-		}
-		log_msg("");
-	}*/
-
-
-	for(auto&& [e, n] : world.view<Tester, NotComp>()) {
-		e.validate();
-		log_msg("!");
+	log_msg("Testers:");
+	for(auto&& [id, tester] : all_components<Tester>(world)) {
+		y_debug_assert(id.is_valid());
+		log_msg(fmt("id: [%, %]", id.index(), id.version()));
+		tester.validate();
 	}
 
-	/*for(auto [i] : arc.view<const int>()) {
-		log_msg(fmt("% %", ct_type_name<decltype(i)>(), i));
-	}*/
+	log_msg("int:");
+	for(auto&& [id, i] : all_components<int>(world)) {
+		y_debug_assert(id.is_valid());
+		log_msg(fmt("id: [%, %]", id.index(), id.version()));
+		log_msg(fmt("int: %", i));
+	}
+
+
 
 	log_msg("Ok");
 	return 0;
