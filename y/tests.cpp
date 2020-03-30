@@ -98,46 +98,17 @@ struct Test {
 };
 
 
-
-
-
-struct ComponentSerializerBase : NonMovable {
-	virtual ~ComponentSerializerBase() {
-	}
-
-	y_serde3_poly_base(ComponentSerializerBase)
-};
-
-template<typename T>
-class ComponentSerializerIterator {
-	public:
-
-	private:
-};
-
-template<typename T>
-struct ComponentSerializer final : ComponentSerializerBase {
-
-
-
-
-	y_serde3_poly(ComponentSerializer)
-};
-
-
-
-
-template<typename T>
+/*template<typename T>
 struct ComponentTransform {
-	ComponentTransform(const EntityWorld& world) : _world(world) {
+	ComponentTransform(EntityWorld& world) : _world(world) {
 	}
 
-	std::pair<EntityID, T*> operator()(const EntityData& data) const {
-		y_debug_assert(data.id.is_valid());
-		return {data.id, _world.component<T>(data)};
+	std::pair<EntityID, T*> operator()(EntityID id) const {
+		y_debug_assert(id.is_valid());
+		return {id, _world.component<T>(id)};
 	}
 
-	const EntityWorld& _world;
+	EntityWorld& _world;
 };
 
 
@@ -151,14 +122,77 @@ struct NonNullComponentFilter {
 
 
 template<typename T>
-auto all_components(const EntityWorld& world) {
-	auto entities = world.entities();
-	auto component_beg = TransformIterator(entities.begin(), ComponentTransform<T>(world));
-	auto non_null_beg = FilterIterator(component_beg, entities.end(), NonNullComponentFilter());
+auto all_components(EntityWorld& world) {
+	auto ids = world.entity_ids();
+	auto component_beg = TransformIterator(ids.begin(), ComponentTransform<T>(world));
+	auto non_null_beg = FilterIterator(component_beg, ids.end(), NonNullComponentFilter());
 	auto deref = [](const std::pair<EntityID, T*>& p) -> std::pair<EntityID, T&> { return {p.first, *p.second}; };
-	return core::Range(TransformIterator(non_null_beg, deref), entities.end());
+	return core::Range(TransformIterator(non_null_beg, deref), EndIterator());
+}*/
+
+
+
+namespace y {
+namespace ecs {
+
+class ComponentSerializerBase : NonMovable {
+	public:
+		virtual ~ComponentSerializerBase() {
+		}
+
+		y_serde3_poly_base(ComponentSerializerBase)
+
+	protected:
+		template<typename T>
+		static auto id_components(const EntityWorld& world) {
+			auto extract_component = [&world](const EntityData& data) -> std::pair<EntityID, T*> {
+				y_debug_assert(data.id.is_valid());
+				return {data.id, world.find_component<T>(data)};
+			};
+			auto non_null = [](const std::pair<EntityID, T*>& p) -> bool {
+				return p.second;
+			};
+			auto deref = [](const std::pair<EntityID, T*>& p) -> std::pair<EntityID, T&> {
+				return {p.first, *p.second};
+			};
+
+			const auto& entities = world._entities;
+			auto components = TransformIterator(entities.begin(), extract_component);
+			auto non_nulls = FilterIterator(components, entities.end(), non_null);
+			return core::Range(TransformIterator(non_nulls, deref), EndIterator());
+		}
+};
+
+template<typename T>
+class ComponentSerializer final : public ComponentSerializerBase {
+	int dummy = 0;
+
+	y_serde3_poly(ComponentSerializer)
+	y_serde3(dummy)
+};
+
+}
 }
 
+
+template<typename T>
+static auto all_components(EntityWorld& world) {
+	auto extract_component = [&world](EntityID id) -> std::pair<EntityID, T*> {
+		y_debug_assert(id.is_valid());
+		return {id, world.component<T>(id)};
+	};
+	auto non_null = [](const std::pair<EntityID, T*>& p) -> bool {
+		return p.second;
+	};
+	auto deref = [](const std::pair<EntityID, T*>& p) -> std::pair<EntityID, T&> {
+		return {p.first, *p.second};
+	};
+
+	auto ids = world.entity_ids();
+	auto components = TransformIterator(ids.begin(), extract_component);
+	auto non_nulls = FilterIterator(components, ids.end(), non_null);
+	return core::Range(TransformIterator(non_nulls, deref), EndIterator());
+}
 
 int main() {
 	auto file = io2::Buffer();
@@ -167,7 +201,6 @@ int main() {
 
 	{
 		EntityID id = world.create_entity();
-		log_msg(fmt("a: %", id.index()));
 		world.add_component<int>(id);
 		world.add_component<Tester>(id);
 		world.add_component<float>(id);
@@ -175,6 +208,9 @@ int main() {
 	{
 		EntityID id = world.create_entity();
 		world.add_components<Tester, int>(id);
+		world.add_components<Tester, int>(world.create_entity());
+		world.add_components<Tester, int>(world.create_entity());
+		world.add_components<Tester, int>(world.create_entity());
 	}
 	{
 		EntityID id = world.create_entity();
@@ -191,8 +227,8 @@ int main() {
 	log_msg("int:");
 	for(auto&& [id, i] : all_components<int>(world)) {
 		y_debug_assert(id.is_valid());
+		y_debug_assert(i == 0);
 		log_msg(fmt("id: [%, %]", id.index(), id.version()));
-		log_msg(fmt("int: %", i));
 	}
 
 

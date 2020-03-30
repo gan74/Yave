@@ -30,6 +30,9 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
+class ComponentSerializerBase;
+class EntityWorldSerializer;
+
 class EntityWorld : NonCopyable {
 	public:
 		bool exists(EntityID id) const;
@@ -38,6 +41,31 @@ class EntityWorld : NonCopyable {
 		void remove_entity(EntityID id);
 
 		core::Span<std::unique_ptr<Archetype>> archetypes() const;
+
+
+
+		template<typename... Args>
+		EntityView<Args...> view() {
+			return EntityView<Args...>(_archetypes);
+		}
+
+		auto entity_ids() const {
+			auto ids = TransformIterator(_entities.begin(), [](const EntityData& data) { return data.id; });
+			return core::Range(FilterIterator(ids, _entities.end(), [](EntityID id) { return id.is_valid(); }), EndIterator());
+		}
+
+
+
+		template<typename T>
+		T* component(EntityID id) {
+			return find_component<T>(id);
+		}
+
+		template<typename T>
+		const T* component(EntityID id) const {
+			return find_component<T>(id);
+		}
+
 
 
 		template<typename T>
@@ -84,38 +112,14 @@ class EntityWorld : NonCopyable {
 			transfer(data, new_arc);
 		}
 
-		template<typename... Args>
-		EntityView<Args...> view() {
-			return EntityView<Args...>(_archetypes);
-		}
-
-
-	public:
-		core::Span<EntityData> all_entities() const {
-			return _entities;
-		}
-
-		auto entities() const {
-			auto is_valid = [](const EntityData& data) { return data.is_valid(); };
-			return core::Range(FilterIterator(_entities.begin(), _entities.end(), is_valid), EndIterator());
-		}
-
-		template<typename T>
-		T* component(const EntityData& data) const {
-			if(!data.archetype) {
-				return nullptr;
-			}
-			const auto& view = data.archetype->view<T>();
-			if(view.is_empty()) {
-				return nullptr;
-			}
-			return &std::get<0>(view[data.archetype_index]);
-		}
 
 	private:
-		void transfer(EntityData& data, Archetype* to);
+		friend class ComponentSerializerBase;
+		friend class EntityWorldSerializer;
 
 		void check_exists(EntityID id) const;
+
+		void transfer(EntityData& data, Archetype* to);
 
 
 		template<usize I, typename... Args>
@@ -127,6 +131,26 @@ class EntityWorld : NonCopyable {
 				add_type_indexes<I + 1, Args...>(types);
 			}
 		}
+
+		// Not const correct, do not expose publicly
+		template<typename T>
+		T* find_component(EntityID id) const {
+			if(!exists(id)) {
+				return nullptr;
+			}
+			const EntityData& data =_entities[id.index()];
+			y_debug_assert(data.id == id);
+			if(!data.archetype) {
+				return nullptr;
+			}
+			const auto& view = data.archetype->view<T>();
+			if(view.is_empty()) {
+				return nullptr;
+			}
+			return &std::get<0>(view[data.archetype_index]);
+		}
+
+
 
 		core::Vector<EntityData> _entities;
 		core::Vector<std::unique_ptr<Archetype>> _archetypes;

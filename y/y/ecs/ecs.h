@@ -69,6 +69,14 @@ class EntityID {
 			return (u64(_index) << 32) | _version;
 		}
 
+		bool operator==(const EntityID& other) const {
+			return _index == other._index && _version == other._version;
+		}
+
+		bool operator!=(const EntityID& other) const {
+			return !operator==(other);
+		}
+
 	private:
 		static constexpr u32 invalid_index = u32(-1);
 
