@@ -301,7 +301,6 @@ class WritableArchive final {
 						y_try(serialize_one(NamedObject{item, detail::collection_version_string}));
 						++size_patch.size;
 					}
-					log_msg(fmt("% has % elems", ct_type_name<T>(), size_patch.size));
 					push_patch(size_patch);
 				}
 			}
