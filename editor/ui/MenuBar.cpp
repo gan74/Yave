@@ -114,6 +114,20 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
 		}
 #endif
 
+		{
+			const usize progress_bar_size = 300;
+			//ImGui::SameLine(ImGui::GetWindowSize().x - progress_bar_size);
+			auto progress_items = context()->notifications().progress_items();
+			for(const auto& item : progress_items) {
+				if(ImGui::GetContentRegionAvailWidth() < progress_bar_size) {
+					break;
+				}
+				if(!item.is_over()) {
+					ImGui::ProgressBar(item.fraction(), ImVec2(progress_bar_size, 0.0f), fmt_c_str("%: %/%", item.msg, item.it, item.size));
+				}
+			}
+		}
+
 		ImGui::EndMenuBar();
 	}
 }

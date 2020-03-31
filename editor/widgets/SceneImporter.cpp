@@ -113,7 +113,7 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 		if(ImGui::Button("Ok")) {
 			_state = State::Importing;
 			_import_future = std::async(std::launch::async, [=] {
-				return import::import_scene(_filename, _flags);
+				import(import::import_scene(_filename, _flags));
 			});
 		}
 		ImGui::SameLine();
@@ -122,8 +122,9 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 		}
 	} else {
 		if(done_loading()) {
+			_state = State::Done;
 			try {
-				import(_import_future.get());
+				_import_future.get();
 			} catch(std::exception& e) {
 				log_msg(fmt("Unable to import scene: %" , e.what()), Log::Error);
 				_browser.show();
@@ -137,6 +138,10 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 
 bool SceneImporter::done_loading() const {
 	return _import_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+}
+
+bool SceneImporter::can_destroy() const {
+	return _state != State::Importing;
 }
 
 void SceneImporter::import(import::SceneData scene) {
@@ -167,7 +172,7 @@ void SceneImporter::import(import::SceneData scene) {
 		};
 
 	auto import_assets = [&](const auto& assets, std::string_view import_path, AssetType type) {
-			for(const auto& a : assets) {
+			for(const auto& a : context()->tqdm(assets, fmt("Importing %", asset_type_name(type, true, true)))) {
 				const core::String name = make_full_name(import_path, a.name());
 				import_asset(a.obj(), name, type);
 			}

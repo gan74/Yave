@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,53 +19,53 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_SCENEIMPORTER_H
-#define EDITOR_WIDGETS_SCENEIMPORTER_H
 
-#include "FileBrowser.h"
+#include "Notifications.h"
 
-#include <editor/import/import.h>
-
-#include <future>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace editor {
 
-class SceneImporter final : public Widget, public ContextLinked {
+void Notifications::Tqdm::update(u32 id, usize value) {
+	std::unique_lock lock(_lock);
 
-	enum class State {
-		Browsing,
-		Settings,
-		Importing,
-		Done,
-	};
+	if(id < _first_id || id - _first_id >= _progress.size()) {
+		return;
+	}
+	Data& data = _progress[id - _first_id];
+	data.it = value;
 
-	public:
-		SceneImporter(ContextPtr ctx, const core::String& import_path = ".");
-
-	private:
-		bool can_destroy() const override;
-		bool done_loading() const;
-
-		void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
-
-		void import(import::SceneData scene);
-
-
-		State _state = State::Browsing;
-
-		FileBrowser _browser;
-
-		core::String _import_path;
-		core::String _filename;
-
-		import::SceneImportFlags _flags = import::SceneImportFlags::ImportAll;
-
-		usize _forward_axis = 0;
-		usize _up_axis = 4;
-
-		std::future<void> _import_future;
-};
-
+	if(id == _first_id) {
+		usize remove = 0;
+		while(remove < _progress.size() && _progress[remove].is_over()) {
+			++remove;
+		}
+		if(remove) {
+			_progress.assign(_progress.begin() + remove, _progress.end());
+		}
+		_first_id += remove;
+	}
 }
 
-#endif // EDITOR_WIDGETS_SCENEIMPORTER_H
+u32 Notifications::Tqdm::create(usize size, core::String msg) {
+	if(!size) {
+		return u32(-1);
+	}
+
+	std::unique_lock lock(_lock);
+	const u32 id = _progress.size();
+	_progress.emplace_back(Data{0, size, std::move(msg)});
+	return id;
+}
+
+core::Vector<Notifications::Tqdm::Data> Notifications::Tqdm::progress_items() const {
+	std::unique_lock lock(_lock);
+	return _progress;
+}
+
+Notifications::Notifications(ContextPtr ctx) : ContextLinked(ctx), _tqdm(std::make_shared<Tqdm>()) {
+}
+
+
+}

@@ -220,6 +220,7 @@ struct W {
 };
 
 int main() {
+#if 1
 	EntityWorld world;
 
 	{
@@ -274,7 +275,7 @@ int main() {
 		log_msg(fmt("id: [%, %]", id.index(), id.version()));
 	}
 
-
+#endif
 
 	log_msg("Ok");
 	return 0;

@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 
 #include <y/core/Chrono.h>
+#include <y/utils/iter.h>
 
 #include <unordered_map>
 #include <typeindex>
@@ -33,7 +34,7 @@ namespace editor {
 
 class ImGuiRenderer;
 
-class Ui : NonCopyable, public ContextLinked {
+class Ui : NonMovable, public ContextLinked {
 
 	struct Ids {
 		core::Vector<u64> released;

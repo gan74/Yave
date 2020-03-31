@@ -25,6 +25,8 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 #include <yave/utils/FileSystemModel.h>
 
+#include <y/core/Chrono.h>
+
 namespace editor {
 
 class FileBrowser final : public Widget {
@@ -46,6 +48,8 @@ class FileBrowser final : public Widget {
 		void set_canceled_callback(F&& func) {
 			_callbacks.canceled = std::move(func);
 		}
+
+		void update();
 
 		void set_filesystem(const FileSystemModel* model);
 		void set_path(std::string_view path);
@@ -75,6 +79,11 @@ class FileBrowser final : public Widget {
 			core::Function<bool(const core::String&)> selected = [](const auto&) { return false; };
 			core::Function<bool()> canceled = [] { return true; };
 		} _callbacks;
+
+
+		static constexpr auto update_duration = core::Duration::seconds(1.0);
+
+		core::Chrono _update_chrono;
 };
 
 }

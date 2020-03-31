@@ -44,6 +44,10 @@ void UiElement::set_title(std::string_view title) {
 	_title = std::string_view(_title_with_id.begin(), title.size());
 }
 
+bool UiElement::can_destroy() const {
+	return true;
+}
+
 bool UiElement::has_visible_children() const {
 	return is_visible() || std::any_of(_children.begin(), _children.end(), [](const auto& child) { return child->has_visible_children(); });
 }

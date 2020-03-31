@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "traits.h"
 
-#include <iterator>
+#include <y/core/Range.h>
 
 namespace y {
 
@@ -235,6 +235,154 @@ class FilterIterator : private Filter {
 		iterator_type _it;
 		end_iterator_type _end;
 };
+
+template<typename T>
+class ScalarIterator;
+template<typename T>
+class ScalarEndIterator {
+	public:
+		using value_type = T;
+		static_assert(std::is_scalar_v<value_type>);
+
+		ScalarEndIterator(T t = T(0)) : _end(t) {
+		}
+
+		bool operator==(const ScalarEndIterator& other) const {
+			return _end == other._end;
+		}
+
+		bool operator!=(const ScalarEndIterator& other) const {
+			return _end != other._end;
+		}
+
+		value_type operator*() const {
+			return _end;
+		}
+
+	private:
+		friend class ScalarIterator<T>;
+
+		T _end;
+};
+
+template<typename T>
+class ScalarIterator {
+	public:
+		using value_type = T;
+		using difference_type = usize;
+		using iterator_category = std::random_access_iterator_tag;
+		using reference = value_type&;
+		using pointer = value_type*;
+
+		static_assert(std::is_scalar_v<value_type>);
+
+		ScalarIterator(T t = T(0), T step = T(1)) : _it(t), _step(step) {
+			y_debug_assert(_step != T(0));
+		}
+
+		ScalarIterator& operator++() {
+			_it += _step;
+			return *this;
+		}
+
+		ScalarIterator operator++(int) {
+			const ScalarIterator it = *this;
+			_it += _step;
+			return it;
+		}
+
+		ScalarIterator& operator--() {
+			_it -= _step;
+			return *this;
+		}
+
+		ScalarIterator operator--(int) {
+			const ScalarIterator it = *this;
+			_it -= _step;
+			return it;
+		}
+
+		bool operator==(const ScalarIterator& other) const {
+			return _it == other._it;
+		}
+
+		bool operator!=(const ScalarIterator& other) const {
+			return _it != other._it;
+		}
+
+		bool operator==(const ScalarEndIterator<T>& other) const {
+			return (_it > other._end) != (_it - _step > other._end);
+		}
+
+		bool operator!=(const ScalarEndIterator<T>& other) const {
+			return !operator==(other);
+		}
+
+		value_type operator*() const {
+			return _it;
+		}
+
+		const pointer* operator->() const {
+			return &_it;
+		}
+
+		ScalarIterator operator+(usize i) const {
+			return ScalarIterator(_it + (i * _step));
+		}
+
+		ScalarIterator operator-(usize i) const {
+			return ScalarIterator(_it - (i * _step));
+		}
+
+		ScalarIterator& operator+=(usize i) const {
+			_it += (i * _step);
+			return *this;
+		}
+
+		ScalarIterator& operator-=(usize i) const {
+			_it -= (i * _step);
+			return *this;
+		}
+
+		T step() const {
+			return _step;
+		}
+
+	private:
+		T _it;
+		T _step;
+};
+
+template<typename T>
+bool operator==(const ScalarEndIterator<T>& end, const ScalarIterator<T>& other) {
+	return other == end;
+}
+
+template<typename T>
+bool operator!=(const ScalarEndIterator<T>& end, const ScalarIterator<T>& other) {
+	return other != end;
+}
+
+template<typename T>
+usize operator-(const ScalarEndIterator<T>& end, const ScalarIterator<T>& it) {
+	return static_cast<usize>((*end - *it) / it.step());
+}
+
+
+
+template<typename T>
+auto srange(T start, T end, T step) {
+	return core::Range(ScalarIterator<T>(start, step), ScalarEndIterator<T>(end));
+}
+
+template<typename T>
+auto srange(T start, T end) {
+	const T step = start < end ? T(1) : T(-1);
+	return core::Range(ScalarIterator<T>(start, step), ScalarEndIterator<T>(end));
+}
+
+
+
 
 
 

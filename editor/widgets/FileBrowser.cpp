@@ -50,15 +50,15 @@ void FileBrowser::set_filesystem(const FileSystemModel* model) {
 	set_path(_filesystem->current_path().unwrap_or(core::String()));
 }
 
-void FileBrowser::set_path(std::string_view path) {
-	if(!_filesystem->exists(path).unwrap_or(false)) {
-		set_path(_last_path);
-		return;
-	}
+void FileBrowser::update() {
+	y_profile();
 
+	_update_chrono.reset();
 	_entries.clear();
 
-	if(_filesystem->is_directory(path).unwrap_or(false)) {
+	const std::string_view path = _path_buffer.data();
+
+	if(_filesystem->exists(path).unwrap_or(false)) {
 		_filesystem->for_each(path, [this, path](const auto& name) {
 				EntryType type = EntryType::Directory;
 				if(!_filesystem->is_directory(_filesystem->join(path, name)).unwrap_or(false)) {
@@ -70,15 +70,28 @@ void FileBrowser::set_path(std::string_view path) {
 			}).ignore();
 
 		y::sort(_entries.begin(), _entries.end(), [](const auto& a, const auto& b) { return a.second < b.second; });
-
-		to_buffer(_path_buffer, path);
-		_last_path = path;
 	} else {
-		done(path);
 		if(const auto p =_filesystem->parent_path(path)) {
 			set_path(p.unwrap());
 		}
 	}
+}
+
+void FileBrowser::set_path(std::string_view path) {
+	y_profile();
+
+	if(!_filesystem->exists(path).unwrap_or(false)) {
+		set_path(_last_path);
+		return;
+	}
+
+	if(_filesystem->is_directory(path).unwrap_or(false)) {
+		to_buffer(_path_buffer, path);
+		_last_path = path;
+	} else {
+		done(path);
+	}
+	update();
 }
 
 void FileBrowser::set_extension_filter(std::string_view exts) {
@@ -114,6 +127,10 @@ std::string_view FileBrowser::path() const {
 
 void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	static constexpr isize button_width = 75;
+
+	if(_update_chrono.elapsed() > update_duration) {
+		update();
+	}
 
 	{
 		ImGui::SetNextItemWidth(-button_width);

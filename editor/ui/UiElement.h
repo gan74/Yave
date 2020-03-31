@@ -58,9 +58,12 @@ class UiElement : NonMovable {
 			return dynamic_cast<T*>(_children.last().get());
 		}
 
-	private:
+	protected:
 		friend class Ui;
 
+		virtual bool can_destroy() const;
+
+	private:
 		void set_id(u64 id);
 		void set_title(std::string_view title);
 

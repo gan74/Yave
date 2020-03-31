@@ -122,23 +122,13 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		Vector& operator=(Span<value_type> l) {
-			if(contains_it(l.begin())) {
-				const Vector other(l);
-				swap(other);
-			} else {
-				assign(l.begin(), l.end());
-			}
+			assign(l.begin(), l.end());
 			return *this;
 		}
 
 		template<typename... Args>
 		Vector& operator=(const Vector<Elem, Args...>& l) {
-			if(contains_it(l.begin())) {
-				const Vector other(l);
-				swap(other);
-			} else {
-				assign(l.begin(), l.end());
-			}
+			assign(l.begin(), l.end());
 			return *this;
 		}
 
@@ -163,9 +153,14 @@ class Vector : ResizePolicy, Allocator {
 
 		template<typename It>
 		void assign(It beg_it, It end_it) {
-			make_empty();
-			set_min_capacity(std::distance(beg_it, end_it));
-			push_back(beg_it, end_it);
+			if(contains_it(beg_it)) {
+				Vector other(beg_it, end_it);
+				swap(other);
+			} else {
+				make_empty();
+				set_min_capacity(std::distance(beg_it, end_it));
+				push_back(beg_it, end_it);
+			}
 		}
 
 		void swap(Vector& v) {

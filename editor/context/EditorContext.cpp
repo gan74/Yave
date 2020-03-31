@@ -50,6 +50,7 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		_loader(device(), _asset_store),
 		_scene_view(&_default_scene_view),
 		_ui(this),
+		_notifs(this),
 		_thumb_cache(this),
 		_picking_manager(this),
 		_world(create_editor_world()) {
@@ -209,6 +210,10 @@ AssetStore& EditorContext::asset_store() {
 
 Logs& EditorContext::logs() {
 	return _logs;
+}
+
+Notifications& EditorContext::notifications() {
+	return _notifs;
 }
 
 void EditorContext::save_world() const {

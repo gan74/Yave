@@ -32,6 +32,7 @@ SOFTWARE.
 #include "PickingManager.h"
 #include "EditorResources.h"
 #include "Logs.h"
+#include "Notifications.h"
 
 namespace editor {
 
@@ -83,7 +84,13 @@ class EditorContext : NonMovable, public DeviceLinked {
 		PickingManager& picking_manager();
 		AssetStore& asset_store();
 		Logs& logs();
+		Notifications& notifications();
 
+
+		template<typename C>
+		decltype(auto) tqdm(C&& c, core::String msg) {
+			return notifications().tqdm(y_fwd(c), std::move(msg));
+		}
 
 	private:
 		static ecs::EntityWorld create_editor_world();
@@ -109,9 +116,10 @@ class EditorContext : NonMovable, public DeviceLinked {
 		Settings _settings;
 		Selection _selection;
 		Ui _ui;
+		Logs _logs;
+		Notifications _notifs;
 		ThumbmailCache _thumb_cache;
 		PickingManager _picking_manager;
-		Logs _logs;
 
 		ecs::EntityWorld _world;
 

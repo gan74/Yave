@@ -112,8 +112,6 @@ void Ui::set_id(UiElement* elem) {
 }
 
 
-
-
 void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
 
@@ -168,7 +166,7 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 void Ui::cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child) {
 	for(usize i = 0; i < elements.size(); ++i) {
 		y_debug_assert(elements[i]->is_child() == is_child);
-		if(!elements[i]->has_visible_children()) {
+		if(!elements[i]->has_visible_children() && elements[i]->can_destroy()) {
 			if(!is_child) {
 				ids_for(elements[i].get()).released << elements[i]->_id;
 			}

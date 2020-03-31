@@ -22,38 +22,50 @@ SOFTWARE.
 
 #include "assets.h"
 
+#include <y/utils/format.h>
+
 #include <imgui/yave_imgui.h>
 
 namespace editor {
-
-std::string_view asset_type_name(AssetType type) {
+namespace detail {
+std::array<std::string_view, 2> asset_type_names(AssetType type) {
 	switch(type) {
 		case AssetType::Mesh:
-			return "Mesh";
+			return {"Mesh", "mesh"};
 
 		case AssetType::Image:
-			return "Image";
+			return {"Image", "image"};
 
 		case AssetType::Animation:
-			return "Animation";
+			return {"Animation", "animation"};
 
 		case AssetType::Font:
-			return "Font";
+			return {"Font", "font"};
 
 		case AssetType::Scene:
-			return "Scene";
+			return {"Scene", "scene"};
 
 		case AssetType::Material:
-			return "Material";
+			return {"Material", "material"};
 
 		case AssetType::World:
-			return "World";
+			return {"World", "world"};
 
 		default:
 			break;
 	}
-	return "Asset";
+	return {"Asset", "asset"};
 }
+}
+
+std::string_view asset_type_name(AssetType type, bool plural, bool lowercase) {
+	std::string_view name = detail::asset_type_names(type)[lowercase];
+	if(plural) {
+		return fmt("%%", name, name[name.size() - 1] == 'h' ? "es" : "s");
+	}
+	return name;
+}
+
 
 std::string_view asset_type_icon(AssetType type) {
 	switch(type) {
