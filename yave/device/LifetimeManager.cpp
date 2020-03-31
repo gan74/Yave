@@ -81,6 +81,9 @@ void LifetimeManager::collect() {
 	bool clear = false;
 
 	{
+		// To ensure that CmdBufferData keep alives are freed outside the lock
+		core::Vector<CmdBufferData> to_clean;
+
 		const std::unique_lock lock(_cmd_lock);
 		next = _done_counter;
 		while(!_in_flight.empty()) {
@@ -96,6 +99,7 @@ void LifetimeManager::collect() {
 				}
 
 				next = fence;
+				to_clean.emplace_back(std::move(_in_flight.front()));
 				_in_flight.pop_front();
 			} else {
 				break;
