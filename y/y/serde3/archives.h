@@ -120,13 +120,26 @@ constexpr bool use_collection_fast_path =
 		std::is_trivially_copyable_v<value_type> &&
 		!has_serde3_v<value_type>;
 
+template<typename T>
+static constexpr bool is_pod_base_v = std::is_trivially_copyable_v<remove_cvref_t<T>> && std::is_trivially_copy_constructible_v<remove_cvref_t<T>>;
+
+template<typename T>
+constexpr bool is_pod_iterable() {
+	if constexpr(is_iterable_v<T>) {
+		using value_type = decltype(*std::declval<T>().begin());
+		return is_pod_base_v<value_type>;
+	}
+	return true;
+}
+
 }
 
 template<typename T>
 static constexpr bool is_tuple_v = detail::IsTuple<remove_cvref_t<T>>::value;
 
+// Warning some types like Range and Span are can be POD
 template<typename T>
-static constexpr bool is_pod_v = std::is_trivially_copyable_v<remove_cvref_t<T>> && std::is_default_constructible_v<remove_cvref_t<T>>;
+static constexpr bool is_pod_v = detail::is_pod_base_v<T> && detail::is_pod_iterable<remove_cvref_t<T>>();
 
 template<typename T>
 static constexpr bool is_std_ptr_v = detail::StdPtr<remove_cvref_t<T>>::is_std_ptr;
@@ -231,7 +244,7 @@ class WritableArchive final {
 		}
 
 		template<typename T, bool R>
-		Result serialize_one(NamedObject<T, R> non_const_object) {
+		Result serialize_one(const NamedObject<T, R> non_const_object) {
 			const auto object = non_const_object.make_const_ref();
 			const auto header = detail::build_header(object);
 			y_try(write_one(header));
@@ -517,6 +530,7 @@ class ReadableArchive final {
 		Y_TODO(post_deserialize might be called several time in some cases (poly mostly))
 		template<typename T, typename... Args>
 		static void post_deserialize(T& t, Args&&... args) {
+			static_assert(!std::is_const_v<T>);
 			post_deserialize_one(t, y_fwd(args)...);
 		}
 
@@ -678,7 +692,7 @@ class ReadableArchive final {
 		// ------------------------------- POD -------------------------------
 		template<typename T>
 		Result deserialize_pod(NamedObject<T> object, const detail::FullHeader header, size_type size) {
-			static_assert(std::is_trivially_copyable_v<T>);
+			static_assert(is_pod_v<T>);
 			static_assert(!std::is_pointer_v<T>);
 
 			const auto check = detail::build_header(object);
@@ -820,7 +834,8 @@ class ReadableArchive final {
 
 
 			if constexpr(has_serde3_v<T>) {
-				post_deserialize_named_tuple<0>(t._y_serde3_refl(), args...);
+				auto elems = t._y_serde3_refl();
+				post_deserialize_named_tuple<0>(elems, args...);
 			} else if constexpr(is_tuple_v<T>) {
 				post_deserialize_tuple<0>(t, args...);
 			} else if constexpr(is_iterable_v<T>) {
@@ -844,7 +859,7 @@ class ReadableArchive final {
 		}
 
 		template<usize I, typename Tpl, typename... Args>
-		static void post_deserialize_named_tuple(const Tpl& objects, Args&&... args) {
+		static void post_deserialize_named_tuple(Tpl& objects, Args&&... args) {
 			if constexpr(I < std::tuple_size_v<Tpl>) {
 				post_deserialize_one(std::get<I>(objects).object, args...);
 				post_deserialize_named_tuple<I + 1>(objects, args...);

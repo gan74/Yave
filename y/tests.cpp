@@ -24,6 +24,7 @@ SOFTWARE.
 #include <y/ecs/Archetype.h>
 #include <y/ecs/EntityWorld.h>
 #include <y/ecs/EntityView.h>
+#include <y/ecs/EntityWorldSerializer.h>
 
 #include <y/core/FixedArray.h>
 #include <y/core/Vector.h>
@@ -70,7 +71,6 @@ struct Tester : NonCopyable {
 	~Tester() {
 		validate();
 		x = 1;
-		log_msg("destroyed");
 	}
 
 	void validate() const {
@@ -78,6 +78,20 @@ struct Tester : NonCopyable {
 	}
 
 	u64 x = 0;
+
+
+
+	y_serde3(serde_data())
+
+	const u64& serde_data() const {
+		log_msg("serialization");
+		return x;
+	}
+
+	u64& serde_data() {
+		log_msg("deserialization");
+		return x;
+	}
 };
 
 struct NotComp {
@@ -132,51 +146,9 @@ auto all_components(EntityWorld& world) {
 
 
 
-namespace y {
-namespace ecs {
-
-class ComponentSerializerBase : NonMovable {
-	public:
-		virtual ~ComponentSerializerBase() {
-		}
-
-		y_serde3_poly_base(ComponentSerializerBase)
-
-	protected:
-		template<typename T>
-		static auto id_components(const EntityWorld& world) {
-			auto extract_component = [&world](const EntityData& data) -> std::pair<EntityID, T*> {
-				y_debug_assert(data.id.is_valid());
-				return {data.id, world.find_component<T>(data)};
-			};
-			auto non_null = [](const std::pair<EntityID, T*>& p) -> bool {
-				return p.second;
-			};
-			auto deref = [](const std::pair<EntityID, T*>& p) -> std::pair<EntityID, T&> {
-				return {p.first, *p.second};
-			};
-
-			const auto& entities = world._entities;
-			auto components = TransformIterator(entities.begin(), extract_component);
-			auto non_nulls = FilterIterator(components, entities.end(), non_null);
-			return core::Range(TransformIterator(non_nulls, deref), EndIterator());
-		}
-};
 
 template<typename T>
-class ComponentSerializer final : public ComponentSerializerBase {
-	int dummy = 0;
-
-	y_serde3_poly(ComponentSerializer)
-	y_serde3(dummy)
-};
-
-}
-}
-
-
-template<typename T>
-static auto all_components(EntityWorld& world) {
+[[maybe_unused]] static auto all_components(EntityWorld& world) {
 	auto extract_component = [&world](EntityID id) -> std::pair<EntityID, T*> {
 		y_debug_assert(id.is_valid());
 		return {id, world.component<T>(id)};
@@ -194,9 +166,60 @@ static auto all_components(EntityWorld& world) {
 	return core::Range(TransformIterator(non_nulls, deref), EndIterator());
 }
 
-int main() {
-	auto file = io2::Buffer();
+struct TTT {
+	int x() const {
+		return 4;
+	}
 
+	//y_serde3(x())
+};
+
+constexpr int no_ref() {
+	return 4;
+}
+
+int& ref() {
+	y_fatal("pidha");
+}
+
+
+template<typename T>
+static constexpr std::true_type can_be_referenced(T*);
+template<typename T>
+static constexpr std::false_type can_be_referenced(...);
+
+/*template<typename T>
+static constexpr bool can_be_referenced_v = decltype(can_be_referenced(std::declval<T>()))::value;*/
+
+template<typename T>
+constexpr bool is_lvalue(T&&) {
+	return std::is_lvalue_reference<T>{};
+}
+
+
+template<typename T>
+constexpr bool is_lvalue2() {
+	return std::is_lvalue_reference<T>{};
+}
+
+template<class T>
+constexpr std::is_lvalue_reference<T&&>
+is_lvalue3(T&&){return {};}
+
+
+#define can_be_ref(object) decltype(is_lvalue3(object))::value
+
+struct W {
+	int w;
+
+	int test() const {
+		return 4;
+	}
+
+	y_serde3(test())
+};
+
+int main() {
 	EntityWorld world;
 
 	{
@@ -217,15 +240,35 @@ int main() {
 		world.add_component<int>(id);
 	}
 
+	W w;
+
+	EntityWorld new_world;
+	auto file = io2::Buffer();
+	{
+		EntityWorldSerializer ser(&world);
+		serde3::WritableArchive arc(file);
+		arc.serialize(w).unwrap();
+		arc.serialize(ser).unwrap();
+		log_msg("Serialization ok");
+	}
+	file.reset();
+	{
+		EntityWorldSerializer ser(&new_world);
+		serde3::ReadableArchive arc(file);
+		arc.deserialize(w).unwrap();
+		arc.deserialize(ser).unwrap();
+		log_msg("Deserialization ok");
+	}
+
 	log_msg("Testers:");
-	for(auto&& [id, tester] : all_components<Tester>(world)) {
+	for(auto&& [id, tester] : all_components<Tester>(new_world)) {
 		y_debug_assert(id.is_valid());
 		log_msg(fmt("id: [%, %]", id.index(), id.version()));
 		tester.validate();
 	}
 
 	log_msg("int:");
-	for(auto&& [id, i] : all_components<int>(world)) {
+	for(auto&& [id, i] : all_components<int>(new_world)) {
 		y_debug_assert(id.is_valid());
 		y_debug_assert(i == 0);
 		log_msg(fmt("id: [%, %]", id.index(), id.version()));

@@ -40,6 +40,9 @@ class Range {
 		//using value_type = typename iterator_traits::value_type;
 		using value_type = std::remove_reference_t<decltype(*std::declval<Iter>())>;
 
+		Range(const Range&) = default;
+		Range& operator=(const Range&) = default;
+
 		Range(Iter b, EndIter e) : _beg(b), _end(e) {
 		}
 

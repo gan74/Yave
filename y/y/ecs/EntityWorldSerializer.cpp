@@ -20,61 +20,47 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "EntityWorld.h"
-
+#include "EntityWorldSerializer.h"
 
 namespace y {
 namespace ecs {
+namespace detail {
+static thread_local EntityWorld* thread_world = nullptr;
 
-bool EntityWorld::exists(EntityID id) const {
-	if(id.index() >= _entities.size()) {
-		return false;
+void set_serializer_world(EntityWorld* world) {
+	y_debug_assert(!thread_world);
+	thread_world = world;
+}
+
+void reset_serializer_world() {
+	y_debug_assert(thread_world);
+	thread_world = nullptr;
+}
+
+EntityWorld* serializer_world() {
+	y_debug_assert(thread_world);
+	return thread_world;
+}
+}
+
+
+EntityIDSerializer::~EntityIDSerializer() {
+}
+
+void EntityIDSerializer::insert(u32 index) {
+	while(true) {
+		const EntityID id = detail::serializer_world()->create_entity();
+		y_debug_assert(!id.version());
+		if(id.index() == index) {
+			return;
+		}
+		y_debug_assert(id.index() < index);
 	}
-	return _entities[id.index()].id.version() == id.version();
-}
-
-EntityID EntityWorld::create_entity() {
-	_entities.emplace_back();
-	EntityData& data = _entities.last();
-	return data.id = EntityID(_entities.size() - 1);
-}
-
-void EntityWorld::remove_entity(EntityID id) {
-	check_exists(id);
-
-	EntityData& data = _entities[id.index()];
-	if(!data.archetype) {
-		data.invalidate();
-	} else {
-		data.archetype->remove_entity(data);
-	}
-	y_debug_assert(!data.archetype);
-	y_debug_assert(!data.is_valid());
 }
 
 
-core::Span<std::unique_ptr<Archetype>> EntityWorld::archetypes() const {
-	return _archetypes;
-}
 
-void EntityWorld::transfer(EntityData& data, Archetype* to) {
-	y_debug_assert(exists(data.id));
-	y_debug_assert(data.archetype != to);
-
-	if(data.archetype) {
-		data.archetype->transfer_to(to, data);
-	} else {
-		to->add_entity(data);
-	}
-
-	y_debug_assert(data.archetype == to);
-	y_debug_assert(exists(data.id));
-}
-
-void EntityWorld::check_exists(EntityID id) const {
-	if(!exists(id)) {
-		y_fatal("Entity doesn't exists.");
-	}
+ComponentSerializerBase::~ComponentSerializerBase() {
 }
 
 }

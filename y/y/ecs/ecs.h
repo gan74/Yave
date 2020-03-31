@@ -46,7 +46,7 @@ static u32 type_index() {
 
 class EntityID {
 	public:
-		EntityID(u32 index = invalid_index, u32 version = 0) : _index(index), _version(version) {
+		explicit EntityID(u32 index = invalid_index, u32 version = 0) : _index(index), _version(version) {
 		}
 
 		void invalidate() {
@@ -86,13 +86,14 @@ class EntityID {
 
 
 
-
 struct EntityData {
 	EntityID id;
 	Archetype* archetype = nullptr;
 	usize archetype_index = usize(-1);
 
 	void invalidate() {
+		// Keep the version
+		id.invalidate();
 		archetype = nullptr;
 	}
 
