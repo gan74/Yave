@@ -91,6 +91,8 @@ class Ui : NonMovable, public ContextLinked {
 
 	private:
 		static void paint(UiElement* elem, CmdBufferRecorder& recorder, const FrameToken& token);
+
+		void refresh_all(core::Span<std::unique_ptr<UiElement>> elements);
 		void cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child = false);
 		Ids& ids_for(UiElement* elem);
 		void set_id(UiElement* elem);

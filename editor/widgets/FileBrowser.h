@@ -22,68 +22,54 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_FILEBROWSER_H
 #define EDITOR_WIDGETS_FILEBROWSER_H
 
-#include <editor/ui/Widget.h>
-#include <yave/utils/FileSystemModel.h>
-
-#include <y/core/Chrono.h>
+#include "FilesystemView.h"
 
 namespace editor {
 
-class FileBrowser final : public Widget {
-	enum class EntryType {
-		Directory,
-		Supported,
-		Unsupported
-	};
-
+class FileBrowser final : public FileSystemView {
 	public:
 		FileBrowser(const FileSystemModel* filesystem = nullptr);
 
 		template<typename F>
 		void set_selected_callback(F&& func) {
-			_callbacks.selected = std::move(func);
+			_callbacks.selected = y_fwd(func);
 		}
 
 		template<typename F>
 		void set_canceled_callback(F&& func) {
-			_callbacks.canceled = std::move(func);
+			_callbacks.canceled = y_fwd(func);
 		}
 
-		void update();
+		void set_selection_filter(bool dirs, std::string_view exts = "");
 
-		void set_filesystem(const FileSystemModel* model);
-		void set_path(std::string_view path);
-		void set_extension_filter(std::string_view exts);
+	protected:
+		void path_changed() override;
+		core::Result<core::String> entry_icon(const core::String &name, EntryType type) const override;
+		void entry_clicked(const Entry& entry) override;
 
 	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
-		void done(const core::String& filename);
+		bool has_valid_extension(std::string_view filename) const;
+		bool done(const core::String& filename);
 		void cancel();
 
 		core::String full_path() const;
-		std::string_view path() const;
 
 		const FileSystemModel* _filesystem = nullptr;
 
+		bool _dirs = false;
+
 		core::Vector<core::String> _extensions;
-		core::Vector<std::pair<core::String, EntryType>> _entries;
 
 		static constexpr usize buffer_capacity = 1024;
-		std::array<char, buffer_capacity> _path_buffer;
-		std::array<char, buffer_capacity> _name_buffer;
-
-		core::String _last_path;
+		std::array<char, buffer_capacity> _path_buffer = {};
+		std::array<char, buffer_capacity> _name_buffer = {};
 
 		struct {
 			core::Function<bool(const core::String&)> selected = [](const auto&) { return false; };
 			core::Function<bool()> canceled = [] { return true; };
 		} _callbacks;
-
-
-		static constexpr auto update_duration = core::Duration::seconds(1.0);
-
-		core::Chrono _update_chrono;
 };
 
 }

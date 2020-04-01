@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 #include <editor/widgets/AssetSelector.h>
+#include <editor/widgets/FileBrowser.h>
 
 #include <yave/utils/FileSystemModel.h>
 
@@ -32,6 +33,10 @@ SOFTWARE.
 
 namespace editor {
 namespace imgui {
+
+bool should_open_context_menu() {
+	return ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1);
+}
 
 bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text) {
 	static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
@@ -64,5 +69,31 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
 	return ret;
 }
 
+bool path_selector(std::string_view text, const core::String& path) {
+	static constexpr usize buffer_capacity = 1024;
+
+	ImGui::PushID(text.data());
+	ImGui::BeginGroup();
+
+	ImGui::TextUnformatted(text.data());
+
+	std::array<char, buffer_capacity> buffer;
+	{
+		const bool end_with_slash = path.ends_with("/");
+		const usize len = std::min(buffer.size() - (end_with_slash ? 1 : 2), path.size());
+		std::copy_n(path.begin(), len, buffer.begin());
+		buffer[len] = '/';
+		buffer[len + !end_with_slash] = 0;
+	}
+
+	ImGui::InputText("", buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+	ImGui::SameLine();
+	const bool ret = ImGui::Button(ICON_FA_FOLDER_OPEN);
+
+	ImGui::EndGroup();
+	ImGui::PopID();
+	return ret;
 }
+}
+
 }

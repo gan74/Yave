@@ -22,93 +22,95 @@ SOFTWARE.
 
 #include "FileBrowser.h"
 
-#include <imgui/yave_imgui.h>
+#include <editor/context/EditorContext.h>
+#include <editor/utils/ui.h>
+
 #include <y/utils/sort.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
+#include <imgui/yave_imgui.h>
+
 
 namespace editor {
 
 template<usize N>
 static void to_buffer(std::array<char, N>& buffer, std::string_view str) {
 	const usize len = std::min(buffer.size() - 1, str.size());
-	std::copy_n(str.begin(), len, buffer.begin());
+	std::copy_n(str.begin(), len, buffer.data());
 	buffer[len] = 0;
 }
 
-FileBrowser::FileBrowser(const FileSystemModel* filesystem) :
-		Widget("File browser"),
-		_name_buffer({0}) {
-
-	to_buffer(_path_buffer, "");
-	to_buffer(_name_buffer, "");
-
-	set_filesystem(filesystem);
+FileBrowser::FileBrowser(const FileSystemModel* fs) : FileSystemView(fs) {
+	path_changed();
 }
 
-
-void FileBrowser::set_filesystem(const FileSystemModel* model) {
-	_filesystem = model ? model : FileSystemModel::local_filesystem();
-	set_path(_filesystem->current_path().unwrap_or(core::String()));
-}
-
-void FileBrowser::update() {
-	y_profile();
-
-	_update_chrono.reset();
-	_entries.clear();
-
-	const std::string_view path = _path_buffer.data();
-
-	if(_filesystem->exists(path).unwrap_or(false)) {
-		_filesystem->for_each(path, [this, path](const auto& name) {
-				EntryType type = EntryType::Directory;
-				if(!_filesystem->is_directory(_filesystem->join(path, name)).unwrap_or(false)) {
-					const auto ext = _filesystem->extention(name);
-					type = std::binary_search(_extensions.begin(), _extensions.end(), ext)
-						? EntryType::Supported : EntryType::Unsupported;
-				}
-				_entries.push_back(std::make_pair(name, type));
-			}).ignore();
-
-		y::sort(_entries.begin(), _entries.end(), [](const auto& a, const auto& b) { return a.second < b.second; });
-	} else {
-		if(const auto p =_filesystem->parent_path(path)) {
-			set_path(p.unwrap());
-		}
-	}
-}
-
-void FileBrowser::set_path(std::string_view path) {
-	y_profile();
-
-	if(!_filesystem->exists(path).unwrap_or(false)) {
-		set_path(_last_path);
-		return;
-	}
-
-	if(_filesystem->is_directory(path).unwrap_or(false)) {
-		to_buffer(_path_buffer, path);
-		_last_path = path;
-	} else {
-		done(path);
-	}
-	update();
-}
-
-void FileBrowser::set_extension_filter(std::string_view exts) {
-	_extensions = core::Vector<core::String>(1, core::String());
+void FileBrowser::set_selection_filter(bool dirs, std::string_view exts) {
+	_dirs = dirs;
 	for(char c : exts) {
-		if(c == ';') {
+		if(c == ';' || _extensions.is_empty()) {
 			_extensions.emplace_back();
 		} else if(c != '*') {
 			_extensions.last().push_back(c);
 		}
 	}
-	sort(_extensions.begin(), _extensions.end());
-	set_path(_path_buffer.data());
+	y::sort(_extensions.begin(), _extensions.end());
+	refresh();
 }
 
-void FileBrowser::done(const core::String& filename) {
-	_visible = !_callbacks.selected(filename);
+
+void FileBrowser::path_changed() {
+	log_msg(fmt("new path = %", path()));
+	to_buffer(_path_buffer, path());
+}
+
+core::Result<core::String> FileBrowser::entry_icon(const core::String& name, EntryType type) const {
+	if(type == EntryType::Directory) {
+		return core::Ok(core::String(ICON_FA_FOLDER));
+	}
+	if(_extensions.is_empty()) {
+		return core::Err();
+	}
+	if(has_valid_extension(name)) {
+		return core::Ok(core::String(ICON_FA_FILE_ALT));
+	}
+	return core::Err();
+}
+
+void FileBrowser::entry_clicked(const Entry& entry) {
+	if(!_dirs) {
+		if(entry.type == EntryType::File) {
+			const core::String fullname = filesystem()->join(path(), entry.name);
+			done(fullname);
+		}
+	}
+	FileSystemView::entry_clicked(entry);
+}
+
+bool FileBrowser::has_valid_extension(std::string_view filename) const {
+	if(_extensions.is_empty()) {
+		return false;
+	}
+	const auto ext = filesystem()->extention(filename);
+	return std::binary_search(_extensions.begin(), _extensions.end(), ext);
+}
+
+bool FileBrowser::done(const core::String& filename) {
+	y_profile();
+	const bool valid_dir = filesystem()->is_directory(filename).unwrap_or(false);
+	const bool valid_file = has_valid_extension(filename) && filesystem()->is_file(filename).unwrap_or(false);
+
+	bool changed = true;
+	if((valid_dir && _dirs) || valid_file) {
+		_visible = !_callbacks.selected(filename);
+	} else if(valid_dir) {
+		set_path(filename);
+	} else {
+		changed = false;
+	}
+
+	update();
+	return changed;
 }
 
 void FileBrowser::cancel() {
@@ -116,66 +118,41 @@ void FileBrowser::cancel() {
 }
 
 core::String FileBrowser::full_path() const {
-	const std::string_view name(_name_buffer.data(), std::strlen(_name_buffer.data()));
-	return _filesystem->join(path(), name);
+	return filesystem()->join(path(), _name_buffer.data());
 }
 
-std::string_view FileBrowser::path() const {
-	return std::string_view(_path_buffer.data(), std::strlen(_path_buffer.data()));
-}
-
-
-void FileBrowser::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+void FileBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	static constexpr isize button_width = 75;
 
-	if(_update_chrono.elapsed() > update_duration) {
-		update();
-	}
-
 	{
-		ImGui::SetNextItemWidth(-button_width);
+		const float button_inner_width = button_width - (ImGui::GetStyle().FramePadding.x * 2.0f);
+		const float buttons_size = _extensions.is_empty() ? (button_width * 2) : button_width;
+		ImGui::SetNextItemWidth(-buttons_size);
 		if(ImGui::InputText("###path", _path_buffer.data(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-			set_path(full_path());
+			set_path(_path_buffer.data());
 		}
+
 		ImGui::SameLine();
-		if(ImGui::Button("Ok")) {
+		if(ImGui::Button("Ok", ImVec2(button_inner_width, 0.0f))) {
 			done(full_path());
 		}
-	}
 
-	{
-		ImGui::SetNextItemWidth(-button_width);
-		if(ImGui::InputText("###filename", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-			set_path(full_path());
+		if(!_extensions.is_empty()) {
+			ImGui::SetNextItemWidth(-button_width);
+			if(ImGui::InputText("###filename", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+				if(done(full_path())) {
+					_name_buffer[0] = 0;
+				}
+			}
 		}
 
 		ImGui::SameLine();
-		if(ImGui::Button("Cancel")) {
+		if(ImGui::Button("Cancel", ImVec2(button_inner_width, 0.0f))) {
 			cancel();
 		}
 	}
 
-	{
-		ImGui::BeginChild("###fileentries", ImVec2(), true);
-		{
-			if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
-				if(const auto p = _filesystem->parent_path(path())) {
-					set_path(p.unwrap());
-				}
-			}
-
-			const char* icons[] = {ICON_FA_FOLDER, ICON_FA_FILE_ALT, ICON_FA_QUESTION};
-
-			for(usize i = 0; i != _entries.size(); ++i) {
-				const auto& name = _entries[i].first;
-				if(ImGui::Selectable(fmt_c_str("% %", icons[usize(_entries[i].second)], name))) {
-					set_path(_filesystem->join(path(), name));
-					break;
-				}
-			}
-		}
-		ImGui::EndChild();
-	}
+	FileSystemView::paint_ui(recorder, token);
 }
 
 }

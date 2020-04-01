@@ -23,8 +23,9 @@ SOFTWARE.
 #include "ResourceBrowser.h"
 #include "AssetRenamer.h"
 
-#include <editor/utils/assets.h>
 #include <editor/context/EditorContext.h>
+#include <editor/utils/assets.h>
+#include <editor/utils/ui.h>
 
 #include <y/io2/Buffer.h>
 
@@ -310,9 +311,9 @@ void ResourceBrowser::draw_node(DirNode* node, const core::String& name) {
 // ----------------------------------- Asset list -----------------------------------
 
 void ResourceBrowser::paint_asset_list(float width) {
-	const bool menu_openned = ImGui::IsPopupOpen("###contextmenu");
-
 	ImGui::BeginChild("###resources", ImVec2(width, 0), true);
+
+	const bool menu_openned = ImGui::IsPopupOpen("###contextmenu");
 
 	// back
 	{
@@ -373,22 +374,22 @@ void ResourceBrowser::paint_asset_list(float width) {
 		++index;
 	}
 
+	if(!menu_openned && (need_refresh() || _update_chrono.elapsed() > update_duration)) {
+		_update_chrono.reset();
+		update_node(_current);
+		_refresh = false;
+	}
+
 	if(!ImGui::IsPopupOpen("###contextmenu")) {
 		_current_hovered_index = hovered;
 	}
 
-	if(ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1)) {
+	if(imgui::should_open_context_menu()) {
 		ImGui::OpenPopup("###contextmenu");
 	}
 
 	// this needs to be here?
 	paint_context_menu();
-
-	if(need_refresh() || (menu_openned && _update_chrono.elapsed() > update_duration)) {
-		_update_chrono.reset();
-		update_node(_current);
-		_refresh = false;
-	}
 
 	ImGui::EndChild();
 }

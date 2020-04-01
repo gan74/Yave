@@ -41,6 +41,16 @@ core::String FileSystemModel::extention(std::string_view path) const {
 	return "";
 }
 
+FileSystemModel::Result<bool> FileSystemModel::is_file(std::string_view path) const {
+	const auto ex = exists(path);
+	if(ex.is_error()) {
+		return core::Err();
+	} else if(!ex.unwrap()) {
+		return core::Ok(false);
+	}
+	return is_directory(path).map([](bool dir) { return !dir; });
+}
+
 FileSystemModel::Result<bool> FileSystemModel::is_parent(std::string_view parent, std::string_view path) const {
 	const auto par = absolute(parent);
 	if(!par) {

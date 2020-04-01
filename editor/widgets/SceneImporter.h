@@ -47,9 +47,9 @@ class SceneImporter final : public Widget, public ContextLinked {
 		bool done_loading() const;
 
 		void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
+		void paint_import_settings();
 
 		void import(import::SceneData scene);
-
 
 		State _state = State::Browsing;
 

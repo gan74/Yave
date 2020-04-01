@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/import/transforms.h>
 #include <editor/utils/assets.h>
+#include <editor/utils/ui.h>
 
 #include <editor/components/EditorComponent.h>
 
@@ -44,10 +45,9 @@ SceneImporter::SceneImporter(ContextPtr ctx, const core::String& import_path) :
 		_import_path(import_path) {
 
 	_browser.set_draw_in_parent(true);
-	_browser.set_extension_filter(import::supported_scene_extensions());
+	_browser.set_selection_filter(false, import::supported_scene_extensions());
 	_browser.set_canceled_callback([this] { close(); return true; });
 	_browser.set_selected_callback([this](const auto& filename) {
-			//import_async(filename);
 			_filename = filename;
 			_state = State::Settings;
 			return true;
@@ -55,11 +55,45 @@ SceneImporter::SceneImporter(ContextPtr ctx, const core::String& import_path) :
 }
 
 void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)  {
-	using import::SceneImportFlags;
-
 	if(_state == State::Browsing) {
 		_browser.paint(recorder, token);
 	} else if(_state == State::Settings) {
+		paint_import_settings();
+	} else {
+		if(done_loading()) {
+			_state = State::Done;
+			try {
+				_import_future.get();
+			} catch(std::exception& e) {
+				log_msg(fmt("Unable to import scene: %" , e.what()), Log::Error);
+				_browser.show();
+			}
+			close();
+		} else {
+			ImGui::Text("Loading...");
+		}
+	}
+}
+
+
+void SceneImporter::paint_import_settings() {
+	{
+		if(imgui::path_selector("Import path:", _import_path)) {
+			FileBrowser* browser = add_child<FileBrowser>(context()->asset_store().filesystem());
+			browser->set_selection_filter(true);
+			browser->set_selected_callback([this](const auto& filename) {
+					if(context()->asset_store().filesystem()->is_directory(filename).unwrap_or(false)) {
+						_import_path = filename;
+						return true;
+					}
+					return false;
+				});
+		}
+		ImGui::Separator();
+	}
+
+	{
+		using import::SceneImportFlags;
 		bool import_meshes = (_flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes;
 		bool import_anims = (_flags & SceneImportFlags::ImportAnims) == SceneImportFlags::ImportAnims;
 		bool import_images = (_flags & SceneImportFlags::ImportImages) == SceneImportFlags::ImportImages;
@@ -97,42 +131,33 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 		}
 
 		ImGui::Checkbox("Flip UVs", &flip_uvs);
+		ImGui::Separator();
 
-		import_materials &= import_images;
-		_flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
-				 (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
-				 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None) |
-				 (import_materials ? SceneImportFlags::ImportMaterials : SceneImportFlags::None) |
-				 (flip_uvs ? SceneImportFlags::FlipUVs : SceneImportFlags::None)
-			;
+		// Update state
+		{
+			import_materials &= import_images;
+			_flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
+					 (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
+					 (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None) |
+					 (import_materials ? SceneImportFlags::ImportMaterials : SceneImportFlags::None) |
+					 (flip_uvs ? SceneImportFlags::FlipUVs : SceneImportFlags::None)
+				;
 
-		if(import_materials && import_images) {
-			_flags = _flags | SceneImportFlags::ImportMaterials;
-		}
-
-		if(ImGui::Button("Ok")) {
-			_state = State::Importing;
-			_import_future = std::async(std::launch::async, [=] {
-				import(import::import_scene(_filename, _flags));
-			});
-		}
-		ImGui::SameLine();
-		if(ImGui::Button("Cancel")) {
-			close();
-		}
-	} else {
-		if(done_loading()) {
-			_state = State::Done;
-			try {
-				_import_future.get();
-			} catch(std::exception& e) {
-				log_msg(fmt("Unable to import scene: %" , e.what()), Log::Error);
-				_browser.show();
+			if(import_materials && import_images) {
+				_flags = _flags | SceneImportFlags::ImportMaterials;
 			}
-			close();
-		} else {
-			ImGui::Text("Loading...");
 		}
+	}
+
+	if(ImGui::Button("Ok")) {
+		_state = State::Importing;
+		_import_future = std::async(std::launch::async, [=] {
+			import(import::import_scene(_filename, _flags));
+		});
+	}
+	ImGui::SameLine();
+	if(ImGui::Button("Cancel")) {
+		close();
 	}
 }
 

@@ -24,11 +24,14 @@ SOFTWARE.
 
 #include <yave/assets/AssetId.h>
 
+#include <y/core/Chrono.h>
+
 #include "SceneImporter.h"
 #include "ImageImporter.h"
 
 namespace editor {
 
+Y_TODO(Merge with FileBrowser)
 class ResourceBrowser : public Widget, public ContextLinked {
 
 	protected:
@@ -100,7 +103,7 @@ class ResourceBrowser : public Widget, public ContextLinked {
 		const DirNode* hovered_dir() const;
 
 
-		static constexpr auto update_duration = core::Duration::seconds(5.0);
+		static constexpr auto update_duration = core::Duration::seconds(1.0);
 
 		core::Chrono _update_chrono;
 		bool _refresh = false;

@@ -29,7 +29,10 @@ SOFTWARE.
 namespace editor {
 namespace imgui {
 
+bool should_open_context_menu();
+
 bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text);
+bool path_selector(std::string_view text, const core::String& path);
 
 }
 }

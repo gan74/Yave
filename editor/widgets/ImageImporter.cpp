@@ -37,7 +37,7 @@ ImageImporter::ImageImporter(ContextPtr ctx, const core::String& import_path) :
 		_import_path(import_path) {
 
 	_browser.set_draw_in_parent(true);
-	_browser.set_extension_filter(import::supported_image_extensions());
+	_browser.set_selection_filter(false, import::supported_image_extensions());
 	_browser.set_selected_callback([this](const auto& filename) { import_async(filename); return true; });
 	_browser.set_canceled_callback([this] { close(); return true; });
 }

@@ -138,13 +138,11 @@ class TransformIterator : private Transform {
 
 
 
-		template<typename T>
-		bool operator==(const T& other) const {
+		bool operator==(const iterator_type& other) const {
 			return _it == other;
 		}
 
-		template<typename T>
-		bool operator!=(const T& other) const {
+		bool operator!=(const iterator_type& other) const {
 			return _it != other;
 		}
 
@@ -212,13 +210,11 @@ class FilterIterator : private Filter {
 
 
 
-		template<typename T>
-		bool operator==(const T& other) const {
+		bool operator==(const iterator_type& other) const {
 			return _it == other;
 		}
 
-		template<typename T>
-		bool operator!=(const T& other) const {
+		bool operator!=(const iterator_type& other) const {
 			return _it != other;
 		}
 

@@ -93,9 +93,8 @@ void Ui::ok(const char* title, const char* message) {
 }
 
 void Ui::refresh_all() {
-	for(auto&& elem : _elements) {
-		elem->refresh();
-	}
+	y_profile();
+	refresh_all(_elements);
 }
 
 Ui::Ids& Ui::ids_for(UiElement* elem) {
@@ -163,7 +162,17 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 	}
 }
 
+
+void Ui::refresh_all(core::Span<std::unique_ptr<UiElement>> elements) {
+	for(const auto& elem : elements) {
+		y_profile_zone(elem->title().data());
+		elem->refresh();
+		refresh_all(elem->children());
+	}
+}
+
 void Ui::cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child) {
+	y_profile();
 	for(usize i = 0; i < elements.size(); ++i) {
 		y_debug_assert(elements[i]->is_child() == is_child);
 		if(!elements[i]->has_visible_children() && elements[i]->can_destroy()) {
