@@ -268,7 +268,7 @@ void SceneImporter::import(import::SceneData scene) {
 
 	}
 
-	context()->ui().refresh_all();
+	refresh_all();
 }
 
 }

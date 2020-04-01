@@ -125,7 +125,7 @@ void Gizmo::draw() {
 
 	y_defer(ImGui::EndChild());
 	ImGui::SetNextWindowBgAlpha(0.0f);
-	if(!ImGui::BeginChild("###gizmo", ImVec2(0, 0), false, gizmo_flags)) {
+	if(!ImGui::BeginChild("##gizmo", ImVec2(0, 0), false, gizmo_flags)) {
 		return;
 	}
 

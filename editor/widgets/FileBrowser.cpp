@@ -80,8 +80,7 @@ core::Result<core::String> FileBrowser::entry_icon(const core::String& name, Ent
 void FileBrowser::entry_clicked(const Entry& entry) {
 	if(!_dirs) {
 		if(entry.type == EntryType::File) {
-			const core::String fullname = filesystem()->join(path(), entry.name);
-			done(fullname);
+			done(entry_full_name(entry));
 		}
 	}
 	FileSystemView::entry_clicked(entry);
@@ -128,7 +127,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 		const float button_inner_width = button_width - (ImGui::GetStyle().FramePadding.x * 2.0f);
 		const float buttons_size = _extensions.is_empty() ? (button_width * 2) : button_width;
 		ImGui::SetNextItemWidth(-buttons_size);
-		if(ImGui::InputText("###path", _path_buffer.data(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+		if(ImGui::InputText("##path", _path_buffer.data(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
 			set_path(_path_buffer.data());
 		}
 
@@ -139,7 +138,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)
 
 		if(!_extensions.is_empty()) {
 			ImGui::SetNextItemWidth(-button_width);
-			if(ImGui::InputText("###filename", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+			if(ImGui::InputText("##filename", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
 				if(done(full_path())) {
 					_name_buffer[0] = 0;
 				}

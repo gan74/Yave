@@ -48,6 +48,10 @@ bool UiElement::can_destroy() const {
 	return true;
 }
 
+void UiElement::refresh_all() {
+	_refresh_all = true;
+}
+
 bool UiElement::has_visible_children() const {
 	return is_visible() || std::any_of(_children.begin(), _children.end(), [](const auto& child) { return child->has_visible_children(); });
 }

@@ -89,7 +89,7 @@ void ImageImporter::import(const Named<ImageData>& asset) {
 		// refresh anyway
 	}
 
-	context()->ui().refresh_all();
+	refresh_all();
 }
 
 }

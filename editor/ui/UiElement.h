@@ -62,6 +62,7 @@ class UiElement : NonMovable {
 		friend class Ui;
 
 		virtual bool can_destroy() const;
+		void refresh_all();
 
 	private:
 		void set_id(u64 id);
@@ -71,6 +72,7 @@ class UiElement : NonMovable {
 
 		u64 _id = 0;
 		bool _is_child = false;
+		bool _refresh_all = false;
 		core::Vector<std::unique_ptr<UiElement>> _children;
 
 	protected:

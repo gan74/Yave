@@ -63,7 +63,7 @@ EditorContext::~EditorContext() {
 }
 
 void EditorContext::start_perf_capture() {
-	_perf_capture_frames = settings().perf().capture_frames;
+	_perf_capture_frames = settings().perf().capture_forever ? u32(-1) : settings().perf().capture_frames;
 }
 
 void EditorContext::end_perf_capture() {

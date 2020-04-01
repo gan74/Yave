@@ -126,7 +126,7 @@ EntityView::EntityView(ContextPtr cptr) :
 void EntityView::paint_view() {
 	const ecs::EntityWorld& world = context()->world();
 	
-	if(ImGui::BeginChild("###entities", ImVec2(), true)) {
+	if(ImGui::BeginChild("##entities", ImVec2(), true)) {
 		for(ecs::EntityId id : world.entities()) {
 			const EditorComponent* comp = world.component<EditorComponent>(id);
 			if(!comp) {
@@ -197,7 +197,7 @@ void EntityView::paint_clustered_view() {
 		ImGui::PopID();
 	};
 
-	if(ImGui::BeginChild("###entities", ImVec2(), true)) {
+	if(ImGui::BeginChild("##entities", ImVec2(), true)) {
 		for(const auto& archetype : entity_archtypes()) {
 			paint_group(*archetype);
 		}
@@ -249,10 +249,10 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	if(_hovered.is_valid()) {
 		if(ImGui::IsMouseReleased(1)) {
-			ImGui::OpenPopup("###contextmenu");
+			ImGui::OpenPopup("##contextmenu");
 		}
 
-		if(ImGui::BeginPopup("###contextmenu")) {
+		if(ImGui::BeginPopup("##contextmenu")) {
 			if(ImGui::BeginMenu(ICON_FA_PLUS " Add component")) {
 
 				ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);

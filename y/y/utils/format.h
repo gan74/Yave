@@ -139,6 +139,9 @@ static constexpr usize fmt_max_size = 1023;
 
 template<typename... Args>
 std::string_view fmt(const char* fmt_str, Args&&... args) {
+#ifdef y_profile_zone
+	y_profile_zone("fmt");
+#endif
 	if constexpr(sizeof...(args)) {
 		detail::FmtBuffer buffer;
 		detail::fmt_rec(buffer, fmt_str, y_fwd(args)...);
@@ -150,6 +153,9 @@ std::string_view fmt(const char* fmt_str, Args&&... args) {
 
 template<typename... Args>
 std::string_view fmt_into(core::String& out, const char* fmt_str, Args&&... args) {
+#ifdef y_profile_zone
+	y_profile_zone("fmt_into");
+#endif
 	detail::FmtBuffer buffer(out);
 	if constexpr(sizeof...(args)) {
 		detail::fmt_rec(buffer, fmt_str, y_fwd(args)...);

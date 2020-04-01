@@ -130,6 +130,8 @@ int main(int argc, char** argv) {
 			}
 		}
 
+		core::DebugTimer frame_timer("frame", core::Duration::milliseconds(16.6));
+
 		Swapchain* swapchain = window.swapchain();
 		if(swapchain && swapchain->is_valid()) {
 			FrameToken frame = swapchain->next_frame();

@@ -32,12 +32,11 @@ class AssetSelector final : public ResourceBrowser {
 
 		template<typename F>
 		void set_selected_callback(F&& func) {
-			_selected = std::move(func);
+			_selected = y_fwd(func);
 		}
 
 	protected:
-		void asset_selected(const FileInfo& file) override;
-		bool display_asset(const FileInfo& file) const override;
+		void entry_clicked(const Entry& entry) override;
 
 	private:
 		AssetType _filter;

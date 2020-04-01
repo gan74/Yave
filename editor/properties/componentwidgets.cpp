@@ -92,7 +92,7 @@ static void light_widget(T* light) {
 		ImGui::ColorPicker3("##lightpicker", light->color().begin(), color_flags);
 
 		float kelvin = std::clamp(rgb_to_k(light->color()), 1000.0f, 12000.0f);
-		if(ImGui::SliderFloat("###temperature", &kelvin, 1000.0f, 12000.0f, "%.0f°K")) {
+		if(ImGui::SliderFloat("##temperature", &kelvin, 1000.0f, 12000.0f, "%.0f°K")) {
 			light->color() = k_to_rbg(kelvin);
 		}
 
@@ -103,7 +103,7 @@ static void light_widget(T* light) {
 	ImGui::NextColumn();
 	ImGui::Text("Intensity");
 	ImGui::NextColumn();
-	ImGui::DragFloat("###intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+	ImGui::DragFloat("##intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
 }
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
@@ -124,12 +124,12 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 		ImGui::Text("Radius");
 		ImGui::NextColumn();
-		ImGui::DragFloat("###radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+		ImGui::DragFloat("##radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
 
 		ImGui::NextColumn();
 		ImGui::Text("Falloff");
 		ImGui::NextColumn();
-		ImGui::DragFloat("###falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
+		ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
 	}
 	ImGui::Columns(1);
 }
@@ -152,31 +152,31 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 		ImGui::Text("Radius");
 		ImGui::NextColumn();
-		ImGui::DragFloat("###radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+		ImGui::DragFloat("##radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
 
 		ImGui::NextColumn();
 		ImGui::Text("Falloff");
 		ImGui::NextColumn();
-		ImGui::DragFloat("###falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
+		ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
 
 		ImGui::NextColumn();
 		ImGui::Text("Angle");
 		ImGui::NextColumn();
 		float angle = math::to_deg(light->half_angle() * 2.0f);
-		if(ImGui::DragFloat("###angle", &angle, 0.1f, 0.0f, 360.0f, "%.2f°")) {
+		if(ImGui::DragFloat("##angle", &angle, 0.1f, 0.0f, 360.0f, "%.2f°")) {
 			light->half_angle() = math::to_rad(angle * 0.5f);
 		}
 
 		ImGui::NextColumn();
 		ImGui::Text("Exponent");
 		ImGui::NextColumn();
-		ImGui::DragFloat("###exponent", &light->angle_exponent(), 0.1f, 0.0f, 10.0f, "%.2f");
+		ImGui::DragFloat("##exponent", &light->angle_exponent(), 0.1f, 0.0f, 10.0f, "%.2f");
 
 
 		ImGui::NextColumn();
 		ImGui::Text("Cast shadows");
 		ImGui::NextColumn();
-		ImGui::Checkbox("###shadows", &light->cast_shadow());
+		ImGui::Checkbox("##shadows", &light->cast_shadow());
 
 		/*if(light->cast_shadow()) {
 			ImGui::NextColumn();
@@ -207,7 +207,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 		ImGui::Text("Direction");
 		ImGui::NextColumn();
-		ImGui::InputFloat3("###direction", light->direction().data(), "%.2f");
+		ImGui::InputFloat3("##direction", light->direction().data(), "%.2f");
 	}
 	ImGui::Columns(1);
 }
@@ -230,14 +230,14 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 		ImGui::Text("Direction");
 		ImGui::NextColumn();
-		ImGui::InputFloat3("###direction", sky->sun().direction().data(), "%.2f");
+		ImGui::InputFloat3("##direction", sky->sun().direction().data(), "%.2f");
 
 
 		ImGui::NextColumn();
 		ImGui::Text("Beta");
 		ImGui::NextColumn();
 		math::Vec3 beta = sky->beta_rayleight() * 1e6f;
-		if(ImGui::InputFloat3("###beta", beta.data(), "%.2f")) {
+		if(ImGui::InputFloat3("##beta", beta.data(), "%.2f")) {
 			sky->beta_rayleight() = beta * 1e-6f;
 		}
 

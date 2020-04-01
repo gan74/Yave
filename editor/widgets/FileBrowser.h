@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_FILEBROWSER_H
 #define EDITOR_WIDGETS_FILEBROWSER_H
 
-#include "FilesystemView.h"
+#include "FileSystemView.h"
 
 namespace editor {
 

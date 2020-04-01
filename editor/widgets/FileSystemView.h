@@ -31,6 +31,14 @@ namespace editor {
 
 class FileSystemView : public Widget {
 	public:
+		void refresh() override;
+
+		const FileSystemModel* filesystem() const;
+
+		void set_path(std::string_view path);
+		const core::String& path() const;
+
+	protected:
 		enum class EntryType {
 			Directory,
 			File
@@ -40,41 +48,38 @@ class FileSystemView : public Widget {
 			core::String name;
 			EntryType type;
 			core::String icon;
+
+			bool operator<(const Entry& other) const {
+				return std::tie(type, name) < std::tie(other.type, other.name);
+			}
 		};
 
-		FileSystemView(const FileSystemModel* fs = nullptr);
-
-		void refresh() override;
-		void set_allow_modify_filesystem(bool allow);
-
-		void set_path(std::string_view path);
-		const core::String& path() const;
-
+		FileSystemView(const FileSystemModel* fs = nullptr, std::string_view name = "File browser");
 		void set_filesystem(const FileSystemModel* model);
-		const FileSystemModel* filesystem() const;
 
-
-	protected:
 		usize hoverred_index() const;
 		const Entry* entry(usize index) const;
+		core::String entry_full_name(const Entry& entry) const;
 
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
 		virtual void update();
-		virtual void draw_context_menu();
+		virtual void paint_context_menu();
 		virtual core::Result<core::String> entry_icon(const core::String&, EntryType type) const;
 
 		virtual void path_changed() {}
 		virtual void entry_hoverred(const Entry*) {}
 		virtual void entry_clicked(const Entry& entry);
+		virtual bool allow_modify() const;
 
 	private:
 		bool process_context_menu();
+		void make_drop_target(std::string_view drop_path);
 
 		const FileSystemModel* _filesystem = nullptr;
 
+		bool _at_root = true;
 		bool _refresh = false;
-		bool _allow_modify = true;
 
 		usize _hovered = usize(-1);
 		core::Vector<Entry> _entries;

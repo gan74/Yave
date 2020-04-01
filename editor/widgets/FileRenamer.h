@@ -19,24 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_ASSETRENAMER_H
-#define EDITOR_WIDGETS_ASSETRENAMER_H
+#ifndef EDITOR_WIDGETS_FILERENAMER_H
+#define EDITOR_WIDGETS_FILERENAMER_H
 
 #include <editor/ui/Widget.h>
 
 namespace editor {
 
-class AssetRenamer final : public Widget, public ContextLinked {
+class FileRenamer final : public Widget {
 	public:
-		AssetRenamer(ContextPtr ctx, std::string_view full_name);
+		FileRenamer(const FileSystemModel* fs, core::String filename);
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
 	private:
-		const FileSystemModel* filesystem() const;
+		const FileSystemModel* _filesystem = nullptr;
 
-		core::String _full_name;
+		core::String _filename;
 		core::String _name;
 		std::array<char, 1024> _new_name;
 
@@ -44,4 +44,4 @@ class AssetRenamer final : public Widget, public ContextLinked {
 
 }
 
-#endif // EDITOR_WIDGETS_ASSETRENAMER_H
+#endif // EDITOR_WIDGETS_FILERENAMER_H

@@ -96,7 +96,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		}
 
 		ImGui::SetNextItemWidth(-1);
-		ImGui::PlotLines("###graph", _history.data(), _history.size(), _current_index, "", 0.0f, to_mb(_max_usage) * 1.33f, ImVec2(0, 80));
+		ImGui::PlotLines("##graph", _history.data(), _history.size(), _current_index, "", 0.0f, to_mb(_max_usage) * 1.33f, ImVec2(0, 80));
 	}
 
 	{

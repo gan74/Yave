@@ -89,6 +89,8 @@ static void perf_settings(ContextPtr ctx) {
 
 	int capture_frames = perf.capture_frames;
 	ImGui::InputInt("Number of frames to capture", &capture_frames);
+	ImGui::Checkbox("Capture indefinitely", &perf.capture_forever);
+
 	if(capture_frames > 1) {
 		perf.capture_frames = capture_frames;
 	}
@@ -109,7 +111,7 @@ void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}};
 
 	{
-		ImGui::BeginChild("###categories", ImVec2(150, -24));
+		ImGui::BeginChild("##categories", ImVec2(150, -24));
 
 		for(usize i = 0; i != categories.size(); ++i) {
 			const bool selected = _category == i;
@@ -124,7 +126,7 @@ void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ImGui::SameLine();
 
 	{
-		ImGui::BeginChild("###settings", ImVec2(0, -24));
+		ImGui::BeginChild("##settings", ImVec2(0, -24));
 		categories[_category].func(context());
 		ImGui::EndChild();
 	}

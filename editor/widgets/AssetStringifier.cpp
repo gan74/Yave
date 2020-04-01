@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
+#include <yave/meshes/MeshData.h>
+
 #include <imgui/yave_imgui.h>
 
 namespace editor {
@@ -57,14 +59,14 @@ void AssetStringifier::paint_ui(CmdBufferRecorder& recorder, const FrameToken& t
 		ImGui::Text("Vertex data:");
 		ImGui::SameLine();
 		ImGui::Spacing();
-		if(ImGui::Button("Copy to clipboard###vertices")) {
+		if(ImGui::Button("Copy to clipboard##vertices")) {
 			ImGui::SetClipboardText(_vertices.data());
 		}
 
 		ImGui::Text("Triangle data:");
 		ImGui::SameLine();
 		ImGui::Spacing();
-		if(ImGui::Button("Copy to clipboard###triangles")) {
+		if(ImGui::Button("Copy to clipboard##triangles")) {
 			ImGui::SetClipboardText(_triangles.data());
 		}
 	}

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "AssetRenamer.h"
+#include "FileRenamer.h"
 #include "ResourceBrowser.h"
 
 #include <yave/utils/FileSystemModel.h>
@@ -38,27 +38,27 @@ namespace editor {
 }*/
 
 
-AssetRenamer::AssetRenamer(ContextPtr ctx, std::string_view full_name) :
+FileRenamer::FileRenamer(const FileSystemModel* fs, core::String filename) :
 		Widget("Rename", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
-		ContextLinked(ctx),
-		_full_name(full_name),
-		_name(filesystem()->filename(_full_name)) {
+		_filesystem(fs),
+		_filename(std::move(filename)),
+		_name(fs->filename(_filename)) {
 
 	const usize size = std::min(_new_name.size(), _name.size() + 1);
 	std::copy_n(_name.begin(), size, _new_name.begin());
 }
 
-void AssetRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+void FileRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	ImGui::Text("Rename: \"%s\"", _name.data());
 
 	if(ImGui::InputText("", _new_name.data(), _new_name.size(), ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::Button("Ok")) {
-		auto path = filesystem()->parent_path(_full_name);
-		const auto full_new_name = path.map([=](auto&& p) { return filesystem()->join(p, _new_name.data()); });
-		if(full_new_name && context()->asset_store().rename(_full_name, full_new_name.unwrap())) {
-			context()->ui().refresh_all();
+		const auto path = _filesystem->parent_path(_filename);
+		const auto full_new_name = path.map([this](auto&& p) { return _filesystem->join(p, _new_name.data()); });
+		if(full_new_name && _filesystem->rename(_filename, full_new_name.unwrap())) {
 			close();
+			refresh_all();
 		} else {
-			log_msg("Unable to rename asset.", Log::Error);
+			log_msg("Unable to rename file.", Log::Error);
 		}
 	}
 
@@ -67,10 +67,5 @@ void AssetRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		close();
 	}
 }
-
-const FileSystemModel* AssetRenamer::filesystem() const {
-	return context()->asset_store().filesystem();
-}
-
 
 }

@@ -187,12 +187,17 @@ void Ui::cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is
 	}
 }
 
-void Ui::paint(UiElement* elem, CmdBufferRecorder& recorder, const FrameToken& token) {
-	elem->paint(recorder, token);
+bool Ui::paint(core::Span<std::unique_ptr<UiElement>> elements, CmdBufferRecorder& recorder, const FrameToken& token) {
+	bool refresh = false;
 
-	for(const auto& child : elem->children()) {
-		child->paint(recorder, token);
+	for(const auto& elem : elements) {
+		elem->paint(recorder, token);
+		refresh |= paint(elem->children(), recorder, token);
+		refresh |= elem->_refresh_all;
+		elem->_refresh_all = false;
 	}
+
+	return refresh;
 }
 
 void Ui::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
@@ -200,8 +205,8 @@ void Ui::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 
 	ImGui::ShowDemoWindow();
 
-	for(auto& e : _elements) {
-		paint(e.get(), recorder, token);
+	if(paint(_elements, recorder, token)) {
+		refresh_all();
 	}
 
 	cull_closed(_elements);

@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "AssetSelector.h"
+
 #include <editor/utils/assets.h>
 
 namespace editor {
@@ -30,14 +31,19 @@ AssetSelector::AssetSelector(ContextPtr ctx, AssetType filter) :
 		_filter(filter) {
 }
 
-void AssetSelector::asset_selected(const FileInfo& file) {
-	if(_selected(file.id)) {
-		close();
+void AssetSelector::entry_clicked(const Entry& entry) {
+	const core::String full_name = filesystem()->join(path(), entry.name);
+	if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+		if(read_file_type(id) == _filter) {
+			if(_selected(id)) {
+				close();
+			}
+		}
 	}
 }
 
-bool AssetSelector::display_asset(const FileInfo& file) const {
+/*bool AssetSelector::display_asset(const FileInfo& file) const {
 	return file.type == _filter;
-}
+}*/
 
 }

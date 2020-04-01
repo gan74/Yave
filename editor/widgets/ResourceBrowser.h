@@ -24,99 +24,37 @@ SOFTWARE.
 
 #include <yave/assets/AssetId.h>
 
-#include <y/core/Chrono.h>
-
-#include "SceneImporter.h"
-#include "ImageImporter.h"
+#include "FileSystemView.h"
 
 namespace editor {
 
-Y_TODO(Merge with FileBrowser)
-class ResourceBrowser : public Widget, public ContextLinked {
-
-	protected:
-		struct FileInfo {
-			FileInfo(ContextPtr ctx, std::string_view file, std::string_view full);
-
-			 core::String name;
-			 core::String full_name;
-			 AssetId id;
-			 AssetType type;
-		};
-
-	private:
-		struct DirNode;
-
-		struct DirNode {
-			DirNode(std::string_view dir, std::string_view full, DirNode* par = nullptr);
-
-			core::String name;
-			core::String full_path;
-
-			core::Vector<FileInfo> files;
-			core::Vector<DirNode> children;
-
-			DirNode* parent = nullptr;
-			bool up_to_date = false;
-		};
-
+class ResourceBrowser : public FileSystemView, public ContextLinked {
 	public:
 		ResourceBrowser(ContextPtr ctx);
-
-		void set_path(std::string_view path);
-
-		void refresh() override;
-		void finish_search();
 
 	protected:
 		ResourceBrowser(ContextPtr ctx, std::string_view title);
 
-		virtual void asset_selected(const FileInfo& file);
-		virtual bool display_asset(const FileInfo&file) const;
+		AssetId asset_id(std::string_view name) const;
+		AssetType read_file_type(AssetId id) const;
 
-	private:
+	protected:
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+		void paint_context_menu() override;
+		void path_changed() override;
 
-		void paint_tree_view(float width = 0.0f);
-		void paint_asset_list(float width = 0.0f);
-		void paint_search_results(float width = 0.0f);
-		void paint_preview(float width = 0.0f);
-		void paint_context_menu();
-		void paint_header();
-		void paint_path_node(DirNode* node);
-		void paint_search_bar();
+		core::Result<core::String> entry_icon(const core::String& name, EntryType type) const override;
+		void entry_hoverred(const Entry* entry) override;
 
 	private:
-		const FileSystemModel* filesystem() const;
+		void paint_preview(float width = 0.0f);
+		void paint_path_bar();
+		void paint_import_menu();
 
-		void set_current(DirNode* current);
-		void update_node(DirNode* node);
-		void update_search();
-		void draw_node(DirNode* node, const core::String& name);
-		void make_drop_target(const DirNode* node);
+		core::Vector<core::String> _path_pieces;
+		core::Vector<core::String> _jump_menu;
 
-		bool need_refresh() const;
-
-		void reset_hover();
-
-		const FileInfo* hovered_file() const;
-		const DirNode* hovered_dir() const;
-
-
-		static constexpr auto update_duration = core::Duration::seconds(1.0);
-
-		core::Chrono _update_chrono;
-		bool _refresh = false;
-
-		DirNode _root;
-		NotOwner<DirNode*> _current = nullptr;
-		usize _current_hovered_index = usize(-1);
-
-		core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
-		std::unique_ptr<DirNode> _search_node;
-
-		core::Vector<core::Functor<void()>> _deferred;
-
+		core::String _set_path_deferred;
 		AssetId _preview_id;
 };
 
