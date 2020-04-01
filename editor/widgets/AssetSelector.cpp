@@ -37,9 +37,11 @@ void AssetSelector::entry_clicked(const Entry& entry) {
 		if(read_file_type(id) == _filter) {
 			if(_selected(id)) {
 				close();
+				return;
 			}
 		}
 	}
+	ResourceBrowser::entry_clicked(entry);
 }
 
 /*bool AssetSelector::display_asset(const FileInfo& file) const {
