@@ -36,7 +36,7 @@ class AssetSelector final : public ResourceBrowser {
 		}
 
 	protected:
-		void entry_clicked(const Entry& entry) override;
+		void asset_selected(AssetId id) override;
 
 	private:
 		AssetType _filter;

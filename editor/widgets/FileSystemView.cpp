@@ -54,7 +54,7 @@ void FileSystemView::refresh() {
 	_refresh = true;
 }
 
-void FileSystemView::set_path(std::string_view path) {
+void FileSystemView::set_path(const core::String& path) {
 	y_profile();
 
 	if(!filesystem()->exists(path).unwrap_or(false)) {
@@ -67,21 +67,18 @@ void FileSystemView::set_path(std::string_view path) {
 		return;
 	}
 
-	if(filesystem()->is_directory(path).unwrap_or(false)) {
-		if(auto abs = filesystem()->absolute(path)) {
-			_current_path = std::move(abs.unwrap());
-		} else {
-			log_msg("Unable to create absolute path.", Log::Warning);
-			_current_path = path;
-		}
+	core::String absolute = filesystem()->absolute(path).unwrap_or(path);
+	const auto parent = filesystem()->parent_path(absolute);
+	if(filesystem()->is_directory(absolute).unwrap_or(false)) {
+		_current_path = std::move(absolute);
 
-		const auto parent = filesystem()->parent_path(_current_path);
 		_at_root = parent.is_error() || (parent.unwrap() == _current_path);
 
 		update();
 		path_changed();
+	} else if(parent) {
+		set_path(parent.unwrap());
 	}
-
 }
 
 const core::String& FileSystemView::path() const {
@@ -121,9 +118,10 @@ void FileSystemView::update() {
 	const std::string_view path = _current_path;
 	if(filesystem()->exists(path).unwrap_or(false)) {
 		filesystem()->for_each(path, [this, path](const auto& name) {
-				const bool is_dir = filesystem()->is_directory(filesystem()->join(path, name)).unwrap_or(false);
+				const core::String full_name = filesystem()->join(path, name);
+				const bool is_dir = filesystem()->is_directory(full_name).unwrap_or(false);
 				const EntryType type = is_dir ? EntryType::Directory : EntryType::File;
-				if(auto icon = entry_icon(name, type)) {
+				if(auto icon = entry_icon(full_name, type)) {
 					_entries.emplace_back(Entry{name, type, std::move(icon.unwrap())});
 				}
 			}).ignore();

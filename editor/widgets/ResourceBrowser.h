@@ -38,21 +38,34 @@ class ResourceBrowser : public FileSystemView, public ContextLinked {
 		AssetId asset_id(std::string_view name) const;
 		AssetType read_file_type(AssetId id) const;
 
+		virtual void asset_selected(AssetId) {}
+
 	protected:
+		void update() override;
+
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
 		void paint_context_menu() override;
 		void path_changed() override;
 
 		core::Result<core::String> entry_icon(const core::String& name, EntryType type) const override;
 		void entry_hoverred(const Entry* entry) override;
+		void entry_clicked(const Entry& entry) override;
+
+		bool is_searching() const;
 
 	private:
+		void paint_search_results(float width = 0.0f);
 		void paint_preview(float width = 0.0f);
 		void paint_path_bar();
 		void paint_import_menu();
 
+		void update_search();
+
 		core::Vector<core::String> _path_pieces;
 		core::Vector<core::String> _jump_menu;
+
+		std::unique_ptr<core::Vector<Entry>> _search_results;
+		core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
 
 		core::String _set_path_deferred;
 		AssetId _preview_id;

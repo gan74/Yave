@@ -31,9 +31,8 @@ AssetSelector::AssetSelector(ContextPtr ctx, AssetType filter) :
 		_filter(filter) {
 }
 
-void AssetSelector::entry_clicked(const Entry& entry) {
-	const core::String full_name = filesystem()->join(path(), entry.name);
-	if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+void AssetSelector::asset_selected(AssetId id) {
+	if(id != AssetId::invalid_id()) {
 		if(read_file_type(id) == _filter) {
 			if(_selected(id)) {
 				close();
@@ -41,7 +40,6 @@ void AssetSelector::entry_clicked(const Entry& entry) {
 			}
 		}
 	}
-	ResourceBrowser::entry_clicked(entry);
 }
 
 /*bool AssetSelector::display_asset(const FileInfo& file) const {

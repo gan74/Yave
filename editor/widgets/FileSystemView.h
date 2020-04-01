@@ -35,7 +35,7 @@ class FileSystemView : public Widget {
 
 		const FileSystemModel* filesystem() const;
 
-		void set_path(std::string_view path);
+		void set_path(const core::String& path);
 		const core::String& path() const;
 
 	protected:

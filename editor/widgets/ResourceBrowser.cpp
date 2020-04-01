@@ -54,20 +54,10 @@ AssetType ResourceBrowser::read_file_type(AssetId id) const {
 	return context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 }
 
-/*void ResourceBrowser::asset_selected(const FileInfo& file) {
-	switch(file.type) {
-		case AssetType::Material:
-			if(const auto material = context()->loader().load<Material>(file.id)) {
-				context()->selection().set_selected(material.unwrap());
-			} else {
-				log_msg("Unable to open material.", Log::Error);
-			}
-		break;
+bool ResourceBrowser::is_searching() const {
+	return !!_search_results;
+}
 
-		default:
-		break;
-	}
-}*/
 
 
 void ResourceBrowser::paint_import_menu() {
@@ -105,7 +95,6 @@ void ResourceBrowser::paint_context_menu() {
 		refresh_all();
 	}
 }
-
 
 void ResourceBrowser::paint_preview(float width) {
 	if(_preview_id != AssetId::invalid_id()) {
@@ -199,8 +188,56 @@ void ResourceBrowser::paint_path_bar() {
 		ImGui::PopStyleColor();
 	}
 
+	{
+		bool has_seach_bar = false;
+		if(dynamic_cast<const SearchableFileSystemModel*>(filesystem())) {
+			const usize search_bar_size = 200;
+			if(search_bar_size < size().x()) {
+				has_seach_bar = true;
+				ImGui::SameLine(size().x() - search_bar_size);
+				if(ImGui::InputTextWithHint("##searchbar", " " ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
+					update_search();
+				}
+			}
+		}
+
+		if(!has_seach_bar || !_search_pattern[0]) {
+			_search_results = nullptr;
+		}
+	}
+
 	ImGui::PopID();
 }
+
+void ResourceBrowser::paint_search_results(float width) {
+	Y_TODO(Replace by table when available)
+
+	_preview_id = AssetId::invalid_id();
+	ImGui::BeginChild("##searchresults", ImVec2(width, 0), true);
+	{
+		for(const Entry& entry : *_search_results) {
+			if(ImGui::Selectable(fmt_c_str("% %", entry.icon, entry.name))) {
+				if(const AssetId id = asset_id(entry.name); id != AssetId::invalid_id()) {
+					asset_selected(id);
+				}
+				_set_path_deferred = entry.name;
+			}
+
+			if(ImGui::IsItemHovered()) {
+				if(const AssetId id = asset_id(entry.name); id != AssetId::invalid_id()) {
+					_preview_id = id;
+				}
+			}
+		}
+
+		if(_search_results->is_empty()) {
+			ImGui::Selectable("No results", false, ImGuiSelectableFlags_Disabled);
+		}
+	}
+	ImGui::EndChild();
+}
+
+
 
 void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	unused(recorder, token);
@@ -217,7 +254,9 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 		paint_path_bar();
 	}
 
-	{
+	if(is_searching()) {
+		paint_search_results(list_width);
+	} else {
 		ImGui::BeginChild("##assets", ImVec2(list_width, 0.0f));
 		FileSystemView::paint_ui(recorder, token);
 		ImGui::EndChild();
@@ -227,6 +266,7 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
 
 	if(_set_path_deferred != path()) {
 		set_path(_set_path_deferred);
+		_search_results = nullptr;
 	}
 }
 
@@ -254,17 +294,46 @@ void ResourceBrowser::path_changed() {
 	}
 
 	_path_pieces << ""; // Root
-
-	/*for(usize i = 0; i != _path_pieces.size() / 2; ++i) {
-		std::swap(_path_pieces[i], _path_pieces[_path_pieces.size() - 1 - i]);
-	}*/
 }
 
-core::Result<core::String> ResourceBrowser::entry_icon(const core::String& name, EntryType type) const {
-	if(type == EntryType::Directory) {
-		return FileSystemView::entry_icon(name, type);
+
+
+void ResourceBrowser::update() {
+	if(is_searching()) {
+		update_search();
 	}
-	if(const AssetId id = asset_id(filesystem()->join(path(), name)); id != AssetId::invalid_id()) {
+	FileSystemView::update();
+}
+
+void ResourceBrowser::update_search() {
+	_search_results = nullptr;
+
+	if(const auto* searchable = dynamic_cast<const SearchableFileSystemModel*>(filesystem())) {
+		std::string_view pattern = std::string_view(_search_pattern.data());
+		const core::String full_pattern = fmt("%%%%", path(), "%", pattern, "%");
+
+		if(auto result = searchable->search(full_pattern)) {
+			_search_results = std::make_unique<core::Vector<Entry>>();
+
+			for(const core::String& full_name : result.unwrap()) {
+				const core::String name = searchable->filename(full_name);
+				const bool is_dir = filesystem()->is_directory(full_name).unwrap_or(false);
+				const EntryType type = is_dir ? EntryType::Directory : EntryType::File;
+				if(auto icon = entry_icon(full_name, type)) {
+					_search_results->emplace_back(Entry{full_name, type, std::move(icon.unwrap())});
+				}
+			}
+		} else {
+			log_msg("Search failed.", Log::Warning);
+		}
+	}
+}
+
+core::Result<core::String> ResourceBrowser::entry_icon(const core::String& full_name, EntryType type) const {
+	if(type == EntryType::Directory) {
+		return FileSystemView::entry_icon(full_name, type);
+	}
+	if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
 		const AssetType asset = read_file_type(id);
 		return core::Ok(core::String(asset_type_icon(asset)));
 	}
@@ -278,6 +347,14 @@ void ResourceBrowser::entry_hoverred(const Entry* entry) {
 			_preview_id = id;
 		}
 	}
+}
+
+void ResourceBrowser::entry_clicked(const Entry& entry) {
+	const core::String full_name = entry_full_name(entry);
+	if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+		asset_selected(id);
+	}
+	FileSystemView::entry_clicked(entry);
 }
 
 }
