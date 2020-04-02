@@ -132,9 +132,14 @@ ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 
 	{
 		const auto lock = y_profile_unique_lock(_lock);
-		if(const auto& thumb = _thumbmails[asset]) {
-			return Thumbmail{&thumb->view, thumb->properties};
+		if(auto it = _thumbmails.find(asset); it != _thumbmails.end()) {
+			if(it->second) {
+				return Thumbmail{&it->second->view, it->second->properties};
+			} else {
+				return Thumbmail{};
+			}
 		}
+		_thumbmails[asset] = nullptr;
 	}
 
 	request_thumbmail(asset);
@@ -168,6 +173,12 @@ void ThumbmailCache::process_requests() {
 }
 
 void ThumbmailCache::request_thumbmail(AssetId id) {
+	y_debug_assert([&] {
+		std::unique_lock lock(_lock);
+		const auto it = _thumbmails.find(id);
+		return it != _thumbmails.end() && it->second == nullptr;
+	}());
+
 	const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 	switch(asset_type) {
 		case AssetType::Mesh:
