@@ -25,12 +25,12 @@ SOFTWARE.
 #include <y/utils.h>
 #include <y/core/Functor.h>
 #include <y/core/Vector.h>
-#include <y/core/Range.h>
 
 #include <thread>
-#include <list>
+#include <deque>
 #include <mutex>
 #include <atomic>
+#include <future>
 #include <condition_variable>
 
 namespace y {
@@ -41,57 +41,43 @@ class StaticThreadPool : NonMovable {
 		using Func = core::Functor<void()>;
 
 		struct SharedData {
-			std::mutex lock;
+			mutable std::mutex lock;
 			std::condition_variable condition;
 
-			std::list<Func> queue;
+			std::deque<Func> queue;
 
 			std::atomic<bool> run = true;
 		};
 
 	public:
 		StaticThreadPool(usize thread_count = std::max(4u, std::thread::hardware_concurrency()));
-
 		~StaticThreadPool();
 
 		usize concurency() const;
+		usize pending_tasks() const;
+		void process_until_empty();
 
 		void schedule(Func&& func);
 
-		void process_until_empty();
-
-		template<typename It, typename F>
-		void parallel_for_each(It begin, It end, F&& func) {
-			const usize size = std::distance(begin, end);
-			const usize split = concurency() * 8;
-			const usize step = size / split;
-			const std::unique_lock lock(_shared_data->lock);
-			if(concurency()) {
-				It next = begin + step;
-				for(usize i = 0; i != split - 1; ++i) {
-					_shared_data->queue.push_back([=] {
-						for(auto&& e : core::Range(begin, next)) {
-							func(e);
-						}
-					});
-					begin = next;
-					next = begin + step;
-				}
-			}
-			_shared_data->queue.push_back([=] {
-				for(auto&& e : core::Range(begin, end)) {
-					func(e);
-				}
-			});
-			_shared_data->condition.notify_all();
+		template<typename F, typename R = decltype(std::declval<F>()())>
+		std::future<R> schedule_with_future(F&& func) {
+			struct { mutable std::promise<R> promise; } box;
+			auto future = box.promise.get_future();
+			schedule([b = std::move(box), f = y_fwd(func)]() { b.promise.set_value(f()); });
+			return future;
 		}
 
 	private:
-		static void worker(std::shared_ptr<SharedData> data);
+		void worker();
 
-
-		std::shared_ptr<SharedData> _shared_data;
+		SharedData _shared_data;
 		core::Vector<std::thread> _threads;
+};
+
+class WorkerThread : public StaticThreadPool {
+	public:
+		WorkerThread() : StaticThreadPool(1) {
+		}
 };
 
 }

@@ -27,15 +27,15 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
-StaticThreadPool::StaticThreadPool(usize thread_count) : _shared_data(std::make_shared<SharedData>()) {
+StaticThreadPool::StaticThreadPool(usize thread_count) {
 	for(usize i = 0; i != thread_count; ++i) {
-		_threads.emplace_back(worker, _shared_data);
+		_threads.emplace_back([this] { worker(); });
 	}
 }
 
 StaticThreadPool::~StaticThreadPool() {
-	_shared_data->run = false;
-	_shared_data->condition.notify_all();
+	_shared_data.run = false;
+	_shared_data.condition.notify_all();
 	for(auto& thread : _threads) {
 		thread.join();
 	}
@@ -45,35 +45,41 @@ usize StaticThreadPool::concurency() const {
 	return _threads.size();
 }
 
-void StaticThreadPool::schedule(Func&& func) {
-	{
-		std::unique_lock lock(_shared_data->lock);
-		_shared_data->queue.emplace_back(std::move(func));
-	}
-	_shared_data->condition.notify_one();
+usize StaticThreadPool::pending_tasks() const {
+	const std::unique_lock lock(_shared_data.lock);
+	return _shared_data.queue.size();
 }
 
 void StaticThreadPool::process_until_empty() {
 	while(true) {
-		std::unique_lock lock(_shared_data->lock);
-		if(_shared_data->queue.empty()) {
+		std::unique_lock lock(_shared_data.lock);
+		if(_shared_data.queue.empty()) {
 			return;
 		}
-		const Func f = std::move(_shared_data->queue.front());
-		_shared_data->queue.pop_front();
+		const Func f = std::move(_shared_data.queue.front());
+		_shared_data.queue.pop_front();
 		lock.unlock();
 
 		f();
 	}
 }
 
-void StaticThreadPool::worker(std::shared_ptr<SharedData> data) {
-	while(data->run) {
-		std::unique_lock lock(data->lock);
-		data->condition.wait(lock, [&] { return !data->queue.empty() || !data->run; });
-		if(!data->queue.empty()) {
-			const Func f = std::move(data->queue.front());
-			data->queue.pop_front();
+void StaticThreadPool::schedule(Func&& func) {
+	{
+		const std::unique_lock lock(_shared_data.lock);
+		_shared_data.queue.emplace_back(std::move(func));
+	}
+	_shared_data.condition.notify_one();
+}
+
+
+void StaticThreadPool::worker() {
+	while(_shared_data.run) {
+		std::unique_lock lock(_shared_data.lock);
+		_shared_data.condition.wait(lock, [&] { return !_shared_data.queue.empty() || !_shared_data.run; });
+		if(!_shared_data.queue.empty()) {
+			const Func f = std::move(_shared_data.queue.front());
+			_shared_data.queue.pop_front();
 			lock.unlock();
 
 			f();
