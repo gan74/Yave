@@ -29,8 +29,6 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemory.h>
 #include <yave/graphics/vk/vk.h>
 
-#include <y/concurrent/SpinLock.h>
-
 #include <variant>
 #include <mutex>
 #include <deque>
@@ -98,8 +96,8 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 		std::deque<std::pair<u64, ManagedResource>> _to_destroy;
 		std::deque<CmdBufferData> _in_flight;
 
-		mutable concurrent::SpinLock _cmd_lock;
-		mutable concurrent::SpinLock _resource_lock;
+		mutable std::mutex _cmd_lock;
+		mutable std::mutex _resource_lock;
 
 		std::atomic<u64> _counter = 0;
 		u64 _done_counter = 0;

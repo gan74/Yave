@@ -80,10 +80,9 @@ void LifetimeManager::collect() {
 	u64 next = 0;
 	bool clear = false;
 
+	// To ensure that CmdBufferData keep alives are freed outside the lock
+	core::Vector<CmdBufferData> to_clean;
 	{
-		// To ensure that CmdBufferData keep alives are freed outside the lock
-		core::Vector<CmdBufferData> to_clean;
-
 		const std::unique_lock lock(_cmd_lock);
 		next = _done_counter;
 		while(!_in_flight.empty()) {
@@ -94,10 +93,6 @@ void LifetimeManager::collect() {
 			}
 
 			if(device()->vk_device().getFenceStatus(cmd.vk_fence()) == vk::Result::eSuccess) {
-				if(cmd.pool()) {
-					cmd.pool()->release(std::move(cmd));
-				}
-
 				next = fence;
 				to_clean.emplace_back(std::move(_in_flight.front()));
 				_in_flight.pop_front();
@@ -109,6 +104,12 @@ void LifetimeManager::collect() {
 		if(next != _done_counter) {
 			clear = true;
 			_done_counter = next;
+		}
+	}
+
+	for(auto& cmd : to_clean) {
+		if(cmd.pool()) {
+			cmd.pool()->release(std::move(cmd));
 		}
 	}
 
