@@ -24,9 +24,21 @@ SOFTWARE.
 
 #include <y/io2/File.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
+AssetLoader::LoaderBase::~LoaderBase() {
+}
+
 AssetLoader::AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : DeviceLinked(dptr), _store(store) {
+}
+
+AssetLoader::~AssetLoader() {
+	if(const usize pending = _thread.pending_tasks()) {
+		log_msg(fmt("% loading pending.", pending), Log::Warning);
+	}
 }
 
 AssetStore& AssetLoader::store() {

@@ -28,11 +28,13 @@ SOFTWARE.
 #include "AssetPtr.h"
 #include "AssetStore.h"
 
+#include <y/concurrent/StaticThreadPool.h>
 #include <y/serde3/archives.h>
 
 #include <unordered_map>
 #include <typeindex>
 #include <mutex>
+#include <future>
 
 namespace yave {
 
@@ -42,19 +44,19 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 			InvalidID,
 			UnknownID,
 			InvalidData,
+			UnknownType,
 			Unknown
 		};
 
 		template<typename T>
 		using Result = core::Result<AssetPtr<T>, ErrorType>;
 
-
 	private:
 		class LoaderBase : NonCopyable {
 			public:
-				virtual ~LoaderBase() {
-				}
+				virtual ~LoaderBase();
 
+				virtual AssetType type() const = 0;
 				virtual bool forget(AssetId id) = 0;
 		};
 
@@ -78,7 +80,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 					return core::Ok(asset_ptr);
 				}
 
-				const Result<T> load(AssetLoader& loader, AssetId id) noexcept {
+				Result<T> load(AssetLoader& loader, AssetId id) noexcept {
 					y_profile();
 					if(id == AssetId::invalid_id()) {
 						return core::Err(ErrorType::InvalidID);
@@ -105,6 +107,10 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 					return core::Err(ErrorType::Unknown);
 				}
 
+				AssetType type() const override {
+					return traits::type;
+				}
+
 				bool forget(AssetId id) override {
 					const std::unique_lock lock(_lock);
 					if(const auto it = _loaded.find(id); it != _loaded.end()) {
@@ -122,11 +128,18 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
    public:
 		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store);
+		~AssetLoader();
 
 		AssetStore& store();
 		const AssetStore& store() const;
 
 		bool forget(AssetId id);
+
+
+		template<typename T>
+		std::future<Result<T>> load_async(AssetId id) {
+			return _thread.schedule_with_future([this, id]() -> Result<T> { return load<T>(id); });
+		}
 
 		template<typename T>
 		Result<T> load(AssetId id) {
@@ -157,6 +170,19 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 			return core::Err(ErrorType::UnknownID);
 		}
 
+		LoaderBase* loader_for_id(AssetId id) {
+			if(const auto type = _store->asset_type(id)) {
+				const std::unique_lock lock(_lock);
+				for(const auto& [index, loader] : _loaders) {
+					unused(index);
+					if(loader->type() == type.unwrap()) {
+						return loader.get();
+					}
+				}
+			}
+			return nullptr;
+		}
+
 		template<typename T>
 		auto& loader_for_type() {
 			const std::unique_lock lock(_lock);
@@ -176,6 +202,8 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 		std::shared_ptr<AssetStore> _store;
 
 		std::mutex _lock;
+
+		concurrent::WorkerThread _thread;
 };
 
 template<typename T>
