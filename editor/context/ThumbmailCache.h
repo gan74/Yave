@@ -25,6 +25,8 @@ SOFTWARE.
 #include <editor/editor.h>
 
 #include <y/core/Functor.h>
+#include <y/concurrent/FutureCallback.h>
+#include <y/concurrent/StaticThreadPool.h>
 
 #include <yave/assets/AssetPtr.h>
 #include <yave/graphics/images/ImageView.h>
@@ -38,7 +40,7 @@ SOFTWARE.
 
 namespace editor {
 
-class ThumbmailCache : NonCopyable, public ContextLinked {
+class ThumbmailCache : NonMovable, public ContextLinked {
 
 		struct ThumbmailData {
 			ThumbmailData(DevicePtr dptr, usize size, AssetId asset);
@@ -57,7 +59,7 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 			SceneView view;
 		};
 
-		using ThumbmailFunc = core::Functor<std::unique_ptr<ThumbmailData>(CmdBufferRecorder&)>;
+		using RenderFunc = core::Functor<std::unique_ptr<ThumbmailData>(CmdBufferRecorder&)>;
 
 	public:
 		using ThumbmailView = std::reference_wrapper<const TextureView>;
@@ -83,10 +85,12 @@ class ThumbmailCache : NonCopyable, public ContextLinked {
 
 		usize _size;
 
-		std::unordered_map<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
-		core::Vector<std::future<ThumbmailFunc>> _requests;
-
 		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+		std::unordered_map<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
+
+		std::mutex _lock;
+		core::Vector<concurrent::FutureCallback<RenderFunc>> _loading_requests;
+		concurrent::WorkerThread _render_thread;
 };
 
 }

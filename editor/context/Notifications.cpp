@@ -28,7 +28,7 @@ SOFTWARE.
 namespace editor {
 
 void Notifications::Tqdm::update(u32 id, usize value) {
-	std::unique_lock lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 
 	if(id < _first_id || id - _first_id >= _progress.size()) {
 		return;
@@ -53,7 +53,7 @@ u32 Notifications::Tqdm::create(usize size, core::String msg) {
 		return u32(-1);
 	}
 
-	std::unique_lock lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	const u32 id = _progress.size();
 	_progress.emplace_back(Data{0, size, std::move(msg)});
 	return id;

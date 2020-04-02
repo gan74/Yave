@@ -72,7 +72,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 						return core::Err(ErrorType::InvalidID);
 					}
 
-					const std::unique_lock lock(_lock);
+					const auto lock = y_profile_unique_lock(_lock);
 					auto& weak_ptr = _loaded[id];
 					AssetPtr asset_ptr = weak_ptr.lock();
 					weak_ptr = (asset_ptr ? asset_ptr._ptr->reloaded : asset_ptr) = make_asset_with_id<T>(id, std::move(asset));
@@ -86,7 +86,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 						return core::Err(ErrorType::InvalidID);
 					}
 
-					const std::unique_lock lock(_lock);
+					const auto lock = y_profile_unique_lock(_lock);
 					auto& weak_ptr = _loaded[id];
 					AssetPtr asset_ptr = weak_ptr.lock();
 					if(asset_ptr) {
@@ -112,7 +112,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 				}
 
 				bool forget(AssetId id) override {
-					const std::unique_lock lock(_lock);
+					const auto lock = y_profile_unique_lock(_lock);
 					if(const auto it = _loaded.find(id); it != _loaded.end()) {
 						_loaded.erase(it);
 						return true;
@@ -172,7 +172,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
 		LoaderBase* loader_for_id(AssetId id) {
 			if(const auto type = _store->asset_type(id)) {
-				const std::unique_lock lock(_lock);
+				const auto lock = y_profile_unique_lock(_lock);
 				for(const auto& [index, loader] : _loaders) {
 					unused(index);
 					if(loader->type() == type.unwrap()) {
@@ -185,7 +185,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
 		template<typename T>
 		auto& loader_for_type() {
-			const std::unique_lock lock(_lock);
+			const auto lock = y_profile_unique_lock(_lock);
 			using Type = remove_cvref_t<T>;
 			auto& loader = _loaders[typeid(Type)];
 			if(!loader) {

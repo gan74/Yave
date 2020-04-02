@@ -254,7 +254,7 @@ const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
 
 #ifdef Y_DEBUG
 const ComputeProgram& DeviceResources::program_from_file(std::string_view file) const {
-	std::unique_lock lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	auto& prog = _programs[file];
 	if(!prog) {
 		auto spirv = SpirVData::deserialized(io2::File::open(file).expected("Unable to open SPIR-V file."));
@@ -270,7 +270,7 @@ void DeviceResources::reload() {
 	dptr->wait_all_queues();
 
 #ifdef Y_DEBUG
-	std::unique_lock lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	_programs.clear();
 #endif
 

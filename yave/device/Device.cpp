@@ -180,9 +180,7 @@ void Device::wait_all_queues() const {
 }
 
 static usize generate_thread_id() {
-	static concurrent::SpinLock lock;
-	static usize id = 0;
-	std::unique_lock _(lock);
+	static std::atomic<usize> id = 0;
 	return ++id;
 }
 
@@ -192,7 +190,7 @@ ThreadDevicePtr Device::thread_device() const {
 
 	/*auto& cache = thread_cache;
 	if(cache.first != this)*/ {
-		std::unique_lock _(_lock);
+		const auto lock = y_profile_unique_lock(_lock);
 		while(_thread_devices.size() <= thread_id) {
 			_thread_devices.emplace_back();
 		}

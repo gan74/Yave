@@ -44,7 +44,7 @@ vk::Queue Queue::vk_queue() const {
 }
 
 void Queue::wait() const {
-	const std::unique_lock lock(*_lock);
+	const auto lock = y_profile_unique_lock(*_lock);
 	_queue.get().waitIdle();
 }
 
@@ -56,7 +56,7 @@ Semaphore Queue::submit_sem(RecordedCmdBuffer&& cmd) const {
 }
 
 void Queue::submit_base(CmdBufferBase& base) const {
-	const std::unique_lock lock(*_lock);
+	const auto lock = y_profile_unique_lock(*_lock);
 
 	auto cmd = base.vk_cmd_buffer();
 

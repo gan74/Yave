@@ -141,70 +141,72 @@ ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 
 void ThumbmailCache::process_requests() {
 	y_profile();
-	std::unique_ptr<CmdBufferRecorder> recorder;
-
-	static constexpr usize max_parallel_requests = 8;
-	for(usize i = 0; i != std::min(max_parallel_requests, _requests.size()); ++i) {
+	for(usize i = 0; i != _loading_requests.size(); ++i) {
 		// For some reason wait_for(0s) can take up to 3ms on gcc 9.2 so we might end up losing a lot of time here...
-		if(_requests[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-			if(!recorder) {
-				recorder = std::make_unique<CmdBufferRecorder>(device()->create_disposable_cmd_buffer());
-			}
-
-			ThumbmailFunc func = _requests[i].get();
-			if(auto thumb = func(*recorder)) {
-				_thumbmails[thumb->id] = std::move(thumb);
-			}
-
-			_requests.erase_unordered(_requests.begin() + i);
+		if(_loading_requests[i].is_done()) {
+			RenderFunc func = _loading_requests[i].get();
+			_loading_requests.erase_unordered(_loading_requests.begin() + i);
 			--i;
-		}
-	}
 
-	if(recorder) {
-		y_profile_zone("Thumbmail render");
-		device()->graphic_queue().submit<SyncSubmit>(std::move(*recorder));
+			_render_thread.schedule([f = std::move(func), this] {
+				y_profile_zone("Thumbmail render");
+				CmdBufferRecorder recorder = device()->create_disposable_cmd_buffer();
+				auto thumbmail = f(recorder);
+				device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
+				if(thumbmail) {
+					const auto lock = y_profile_unique_lock(_lock);
+					y_debug_assert(_thumbmails[thumbmail->id] == nullptr);
+					_thumbmails[thumbmail->id] = std::move(thumbmail);
+				} else {
+					log_msg("Unable to render thumbmail.", Log::Warning);
+				}
+			});
+		}
 	}
 }
 
 void ThumbmailCache::request_thumbmail(AssetId id) {
 	y_profile();
-	_thumbmails[id] = nullptr;
-	_requests << std::async(std::launch::async, [=]() -> ThumbmailFunc {
-			y_profile();
 
-			const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
-			switch(asset_type) {
-				case AssetType::Mesh:
-					if(const auto mesh = context()->loader().load<StaticMesh>(id)) {
-						return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
-								return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
-							};
-					}
-				break;
+	// Check doesn't already exists and isn't queue
+	{
+		const auto lock = y_profile_unique_lock(_lock);
+		if(_thumbmails[id]) {
+			return;
+		}
+	}
 
-				case AssetType::Material:
-					if(const auto mat = context()->loader().load<Material>(id)) {
-						return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
-								return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
-							};
-					}
-				break;
+	// Add to queue
+	{
+		const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+		switch(asset_type) {
+			case AssetType::Mesh:
+				_loading_requests.emplace_back(context()->loader().load_async<StaticMesh>(id), [=](auto&& mesh) {
+					return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
+							return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
+						};
+				});
+			break;
 
-				case AssetType::Image:
-					if(const auto tex = context()->loader().load<Texture>(id)) {
-						return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
-					}
-				break;
+			case AssetType::Material:
+				_loading_requests.emplace_back(context()->loader().load_async<Material>(id), [=](auto&& mat) {
+					return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
+							return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
+						};
+				});
+			break;
 
-				default:
-				break;
-			}
-			log_msg(fmt("Unable to load %.", asset_type_name(asset_type)), Log::Error);
+			case AssetType::Image:
+				_loading_requests.emplace_back(context()->loader().load_async<Texture>(id), [=](auto&& tex) {
+					return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
+				});
+			break;
 
-
-			return [](CmdBufferRecorder&) { return nullptr; };
-		});
+			default:
+				log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
+			break;
+		}
+	}
 }
 
 static std::array<char, 32> rounded_string(float value) {

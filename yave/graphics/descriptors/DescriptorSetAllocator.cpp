@@ -122,7 +122,7 @@ DescriptorSetPool::~DescriptorSetPool() {
 
 DescriptorSetData DescriptorSetPool::alloc() {
 	y_profile();
-	const auto lock = std::unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	if(is_full() || _taken[_first_free]) {
 		y_fatal("DescriptorSetPoolPage is full.");
 	}
@@ -142,7 +142,7 @@ DescriptorSetData DescriptorSetPool::alloc() {
 
 void DescriptorSetPool::recycle(u32 id) {
 	y_profile();
-	const auto lock = std::unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	y_debug_assert(_taken[id]);
 	_taken.reset(id);
 	_first_free = std::min(_first_free, id);
@@ -166,7 +166,7 @@ usize DescriptorSetPool::free_sets() const {
 }
 
 usize DescriptorSetPool::used_sets() const {
-	const auto lock = std::unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	return _taken.count();
 }
 
@@ -177,7 +177,7 @@ DescriptorSetAllocator::DescriptorSetAllocator(DevicePtr dptr) : DeviceLinked(dp
 
 DescriptorSetData DescriptorSetAllocator::create_descritptor_set(const Key& bindings) {
 	y_profile();
-	const auto lock = std::unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	auto& pool = layout(bindings);
 
 	const auto reversed = core::Range(std::make_reverse_iterator(pool.pools.end()),
@@ -192,7 +192,7 @@ DescriptorSetData DescriptorSetAllocator::create_descritptor_set(const Key& bind
 }
 
 const DescriptorSetLayout& DescriptorSetAllocator::descriptor_set_layout(const Key& bindings) {
-	const auto lock = std::unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	return layout(bindings).layout;
 }
 
@@ -205,12 +205,12 @@ DescriptorSetAllocator::Pools& DescriptorSetAllocator::layout(const Key& binding
 }
 
 usize DescriptorSetAllocator::layout_count() const {
-	const auto lock = std::unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	return _layouts.size();
 }
 
 usize DescriptorSetAllocator::pool_count() const {
-	const auto lock = std::unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	usize count = 0;
 	for(const auto& l : _layouts) {
 		count += l.second.pools.size();
@@ -219,7 +219,7 @@ usize DescriptorSetAllocator::pool_count() const {
 }
 
 usize DescriptorSetAllocator::free_sets() const {
-	const auto lock = std::unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	usize count = 0;
 	for(const auto& l : _layouts) {
 		for(const auto& p : l.second.pools) {
@@ -230,7 +230,7 @@ usize DescriptorSetAllocator::free_sets() const {
 }
 
 usize DescriptorSetAllocator::used_sets() const {
-	const auto lock = std::unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	usize count = 0;
 	for(const auto& l : _layouts) {
 		for(const auto& p : l.second.pools) {

@@ -96,7 +96,7 @@ void EditorContext::flush_reload() {
 }
 
 void EditorContext::defer(core::Function<void()> func) {
-	std::unique_lock _(_deferred_lock);
+	const auto lock = y_profile_unique_lock(_deferred_lock);
 	if(_is_flushing_deferred) {
 		y_fatal("Defer called from already deferred function.");
 	}
@@ -105,7 +105,7 @@ void EditorContext::defer(core::Function<void()> func) {
 
 void EditorContext::flush_deferred() {
 	y_profile();
-	const std::unique_lock lock(_deferred_lock);
+	const auto lock = y_profile_unique_lock(_deferred_lock);
 	if(!_deferred.is_empty()) {
 		device()->wait_all_queues();
 		_is_flushing_deferred = true;

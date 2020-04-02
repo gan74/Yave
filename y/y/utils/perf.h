@@ -28,6 +28,7 @@ namespace y {
 namespace perf {
 
 // For use with chrome://tracing
+// Format described here: https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
 
 void start_capture(const char* out_filename);
 void end_capture();
@@ -55,11 +56,25 @@ inline auto log_func(const char* func, const char* cat = "") {
 }
 
 #ifdef Y_PERF_LOG_ENABLED
+
 #define y_profile() auto y_create_name_with_prefix(prof) = y::perf::log_func(Y_FUNCTION_NAME)
 #define y_profile_zone(name) auto y_create_name_with_prefix(prof) = y::perf::log_func(name)
+#define y_profile_unique_lock(inner) [&]() {							\
+		std::unique_lock l(inner, std::defer_lock);						\
+		if(l.try_lock()) {												\
+			return l;													\
+		}																\
+		y_profile_zone("waiting for lock: " #inner);					\
+		l.lock();														\
+		return l;														\
+	}()
+
 #else
+
 #define y_profile() do {} while(false)
 #define y_profile_zone(name) do {} while(false)
+#define y_profile_unique_lock(lock) std::unique_lock(lock)
+
 #endif
 
 }

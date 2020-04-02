@@ -50,7 +50,7 @@ const AssetStore& AssetLoader::store() const {
 }
 
 bool AssetLoader::forget(AssetId id) {
-	const std::unique_lock lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	for(auto& loader : _loaders) {
 		if(loader.second->forget(id)) {
 			return true;

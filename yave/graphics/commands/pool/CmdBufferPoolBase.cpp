@@ -83,13 +83,13 @@ void CmdBufferPoolBase::release(CmdBufferData&& data) {
 		y_fatal("CmdBufferData was not returned to its original pool.");
 	}
 	data.release_resources();
-	const std::unique_lock lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	_cmd_buffers.push_back(std::move(data));
 }
 
 std::unique_ptr<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
 	y_profile();
-	const std::unique_lock lock(_lock);
+	const auto lock = y_profile_unique_lock(_lock);
 	if(!_cmd_buffers.is_empty()) {
 		CmdBufferData data = _cmd_buffers.pop();
 		data.reset();
