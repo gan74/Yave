@@ -177,7 +177,7 @@ class GenericAssetPtr {
 		}
 
 	private:
-		std::shared_ptr<AssetId> _id;
+		std::shared_ptr<const AssetId> _id;
 };
 
 }
