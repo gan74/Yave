@@ -114,6 +114,7 @@ ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
 }
 
 void ThumbmailCache::clear() {
+	const auto lock = y_profile_unique_lock(_lock);
 	_thumbmails.clear();
 }
 
@@ -128,13 +129,14 @@ ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 	}
 
 	process_requests();
-	if(const auto it = _thumbmails.find(asset); it != _thumbmails.end()) {
-		if(it->second) {
-			return Thumbmail{&it->second->view, it->second->properties};
-		} else {
-			return Thumbmail{};
+
+	{
+		const auto lock = y_profile_unique_lock(_lock);
+		if(const auto& thumb = _thumbmails[asset]) {
+			return Thumbmail{&thumb->view, thumb->properties};
 		}
 	}
+
 	request_thumbmail(asset);
 	return Thumbmail{};
 }
@@ -166,46 +168,33 @@ void ThumbmailCache::process_requests() {
 }
 
 void ThumbmailCache::request_thumbmail(AssetId id) {
-	y_profile();
+	const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+	switch(asset_type) {
+		case AssetType::Mesh:
+			_loading_requests.emplace_back(context()->loader().load_async<StaticMesh>(id), [=](auto&& mesh) {
+				return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
+						return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
+					};
+			});
+		break;
 
-	// Check doesn't already exists and isn't queue
-	{
-		const auto lock = y_profile_unique_lock(_lock);
-		if(_thumbmails[id]) {
-			return;
-		}
-	}
+		case AssetType::Material:
+			_loading_requests.emplace_back(context()->loader().load_async<Material>(id), [=](auto&& mat) {
+				return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
+						return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
+					};
+			});
+		break;
 
-	// Add to queue
-	{
-		const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
-		switch(asset_type) {
-			case AssetType::Mesh:
-				_loading_requests.emplace_back(context()->loader().load_async<StaticMesh>(id), [=](auto&& mesh) {
-					return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
-							return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
-						};
-				});
-			break;
+		case AssetType::Image:
+			_loading_requests.emplace_back(context()->loader().load_async<Texture>(id), [=](auto&& tex) {
+				return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
+			});
+		break;
 
-			case AssetType::Material:
-				_loading_requests.emplace_back(context()->loader().load_async<Material>(id), [=](auto&& mat) {
-					return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
-							return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
-						};
-				});
-			break;
-
-			case AssetType::Image:
-				_loading_requests.emplace_back(context()->loader().load_async<Texture>(id), [=](auto&& tex) {
-					return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
-				});
-			break;
-
-			default:
-				log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
-			break;
-		}
+		default:
+			log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
+		break;
 	}
 }
 
