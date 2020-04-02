@@ -90,7 +90,7 @@ class ThumbmailCache : NonMovable, public ContextLinked {
 
 		std::mutex _lock;
 		core::Vector<concurrent::FutureCallback<RenderFunc>> _loading_requests;
-		concurrent::WorkerThread _render_thread;
+		concurrent::WorkerThread _render_thread = concurrent::WorkerThread("Thumbmail rendering thread");
 };
 
 }

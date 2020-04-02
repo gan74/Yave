@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/assets/SQLiteAssetStore.h>
 
 #include <y/core/Chrono.h>
+#include <y/concurrent/concurrent.h>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
@@ -103,6 +104,8 @@ static EditorContext create_context(const Device& device) {
 }
 
 int main(int argc, char** argv) {
+	concurrent::set_thread_name("Main thread");
+
 	parse_args(argc, argv);
 	setup_logger();
 

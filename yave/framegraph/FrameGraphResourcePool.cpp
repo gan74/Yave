@@ -39,6 +39,7 @@ FrameGraphResourcePool::~FrameGraphResourcePool() {
 }
 
 TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+	y_profile();
 	const auto lock = y_profile_unique_lock(_lock);
 
 	check_usage(usage);
@@ -52,6 +53,7 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
 }
 
 TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsage usage, MemoryType memory) {
+	y_profile();
 	const auto lock = y_profile_unique_lock(_lock);
 
 	check_usage(usage);
@@ -69,6 +71,7 @@ TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsa
 }
 
 bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+	y_profile();
 	for(auto it = _images.begin(); it != _images.end(); ++it) {
 		auto& img = it->first;
 
@@ -88,6 +91,7 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, Image
 
 
 bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory) {
+	y_profile();
 	for(auto it = _buffers.begin(); it != _buffers.end(); ++it) {
 		auto& buffer = it->first;
 
@@ -123,6 +127,7 @@ void FrameGraphResourcePool::release(TransientBuffer buffer) {
 }
 
 void FrameGraphResourcePool::garbage_collect() {
+	y_profile();
 	const auto lock = y_profile_unique_lock(_lock);
 
 	audit();

@@ -23,6 +23,8 @@ SOFTWARE.
 #include "Device.h"
 #include "PhysicalDevice.h"
 
+#include <y/concurrent/concurrent.h>
+
 #include <yave/graphics/commands/CmdBufferBase.h>
 
 #include <y/utils/log.h>
@@ -179,32 +181,27 @@ void Device::wait_all_queues() const {
 	vk_device().waitIdle();
 }
 
-static usize generate_thread_id() {
-	static std::atomic<usize> id = 0;
-	return ++id;
-}
-
 ThreadDevicePtr Device::thread_device() const {
-	static thread_local usize thread_id = generate_thread_id();
-	//static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
+	static thread_local usize thread_id = concurrent::thread_id();
+	static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
 
-	/*auto& cache = thread_cache;
-	if(cache.first != this)*/ {
+	auto& cache = thread_cache;
+	if(cache.first != this) {
 		const auto lock = y_profile_unique_lock(_lock);
 		while(_thread_devices.size() <= thread_id) {
 			_thread_devices.emplace_back();
 		}
-		if(_thread_devices.size() > 64) {
-			log_msg("64 ThreadLocalDevice have been created.", Log::Warning);
-		}
 		auto& data = _thread_devices[thread_id];
 		if(!data) {
 			data = std::make_unique<ThreadLocalDevice>(this);
+			if(_thread_devices.size() > 64) {
+				log_msg("64 ThreadLocalDevice have been created.", Log::Warning);
+			}
 		}
-		//cache = {this, data.get()};
+		cache = {this, data.get()};
 		return data.get();
 	}
-	//return cache.second;
+	return cache.second;
 }
 
 const DeviceResources& Device::device_resources() const {

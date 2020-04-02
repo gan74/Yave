@@ -21,15 +21,19 @@ SOFTWARE.
 **********************************/
 
 #include "StaticThreadPool.h"
+#include "concurrent.h"
 
 #include <y/core/Chrono.h>
 
 namespace y {
 namespace concurrent {
 
-StaticThreadPool::StaticThreadPool(usize thread_count) {
+StaticThreadPool::StaticThreadPool(usize thread_count, const char* thread_names) {
 	for(usize i = 0; i != thread_count; ++i) {
-		_threads.emplace_back([this] { worker(); });
+		_threads.emplace_back([thread_names, this] {
+			concurrent::set_thread_name(thread_names);
+			worker();
+		});
 	}
 }
 

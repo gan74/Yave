@@ -203,7 +203,7 @@ class AssetLoader : NonCopyable, public DeviceLinked {
 
 		std::mutex _lock;
 
-		concurrent::WorkerThread _thread;
+		concurrent::WorkerThread _thread = concurrent::WorkerThread("Asset loading thread");
 };
 
 template<typename T>
