@@ -124,7 +124,14 @@ void fmt_rec(FmtBuffer& buffer, const char* fmt, T&& t, Args&&... args) {
 	} else {
 		buffer.copy(fmt, c - fmt);
 		++c;
-		buffer.fmt_one(y_fwd(t));
+
+		using naked_type = std::remove_reference_t<T>;
+		if constexpr(std::is_enum_v<naked_type>) {
+			buffer.fmt_one(std::underlying_type_t<naked_type>(t));
+		} else {
+			buffer.fmt_one(y_fwd(t));
+		}
+
 		if constexpr(sizeof...(args)) {
 			fmt_rec(buffer, c, y_fwd(args)...);
 		} else {
