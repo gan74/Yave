@@ -25,17 +25,17 @@ SOFTWARE.
 namespace editor {
 
 void Selection::flush_reload() {
-	_material.flush_reload();
+	//_material.flush_reload();
 }
 
 
-void Selection::set_selected(const AssetPtr<Material>& sel) {
+/*void Selection::set_selected(const AssetPtr<Material>& sel) {
 	_material = sel;
 }
 
 const AssetPtr<Material>& Selection::material() const {
 	return _material;
-}
+}*/
 
 
 bool Selection::has_selected_entity() const {

@@ -29,9 +29,6 @@ SOFTWARE.
 
 namespace yave {
 
-AssetLoader::LoaderBase::~LoaderBase() {
-}
-
 AssetLoader::AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store) : DeviceLinked(dptr), _store(store) {
 }
 
@@ -47,16 +44,6 @@ AssetStore& AssetLoader::store() {
 
 const AssetStore& AssetLoader::store() const {
 	return *_store;
-}
-
-bool AssetLoader::forget(AssetId id) {
-	const auto lock = y_profile_unique_lock(_lock);
-	for(auto& loader : _loaders) {
-		if(loader.second->forget(id)) {
-			return true;
-		}
-	}
-	return false;
 }
 
 core::Result<AssetId> AssetLoader::load_or_import(std::string_view name, std::string_view import_from, AssetType type) {

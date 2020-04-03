@@ -23,7 +23,6 @@ SOFTWARE.
 #include "MaterialEditor.h"
 #include "AssetSelector.h"
 
-#include <yave/material/Material.h>
 #include <editor/context/EditorContext.h>
 
 #include <y/io2/Buffer.h>
@@ -39,7 +38,7 @@ MaterialEditor::MaterialEditor(ContextPtr cptr) :
 		ContextLinked(cptr) {
 }
 
-static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, usize index, AssetId id) {
+static void modify_and_save(ContextPtr ctx, AssetPtr<Material>& material, usize index, AssetId id) {
 	const auto tex = ctx->loader().load<Texture>(id);
 	if(!tex) {
 		log_msg("Unable to load texture.", Log::Error);
@@ -61,24 +60,28 @@ static void modify_and_save(ContextPtr ctx, const AssetPtr<Material>& material, 
 		return;
 	}
 
-	if(!ctx->loader().set(material.id(), Material(ctx->device(), std::move(data)))) {
-		log_msg("Unable to reload material.", Log::Error);
-		// force flush_reload anyway
-	}
-
+	material.reload();
 	ctx->flush_reload();
 }
 
 void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	if(!context()->selection().material()) {
-		ImGui::Text("No material selected.");
+	if(imgui::asset_selector(context(), _material.id(), AssetType::Material, "Material")) {
+		add_child<AssetSelector>(context(), AssetType::Material)->set_selected_callback(
+			[this](AssetId asset) {
+				if(const auto mat = context()->loader().load<Material>(asset)) {
+					_material = mat.unwrap();
+				}
+				return true;
+			});
+	}
+
+	if(!_material) {
 		return;
 	}
 
-	AssetPtr<Material> material = context()->selection().material();
-	const SimpleMaterialData& data = material->data();
+	const SimpleMaterialData& data = _material->data();
 
-	if(TextureView* view = context()->thumbmail_cache().get_thumbmail(material.id()).image) {
+	if(TextureView* view = context()->thumbmail_cache().get_thumbmail(_material.id()).image) {
 		const math::Vec2 size = content_size().x() < view->size().x()
 			? math::Vec2(content_size().x())
 			: math::Vec2(view->size());
@@ -92,7 +95,7 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		if(imgui::asset_selector(context(), data.textures()[i].id(), AssetType::Image, texture_names[i])) {
 			add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
 				[=, ctx = context()](AssetId id) {
-					modify_and_save(ctx, material, i, id);
+					modify_and_save(ctx, _material, i, id);
 					return true;
 				});
 		}

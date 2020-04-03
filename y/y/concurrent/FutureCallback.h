@@ -57,8 +57,14 @@ class FutureCallback {
 	};
 
 	public:
+		FutureCallback() = default;
+
 	    template<typename T, typename F>
 		FutureCallback(std::future<T>&& future, F&& func) : _future(std::make_unique<Future<T, F>>(std::move(future), y_fwd(func))) {
+		}
+
+		bool is_valid() const {
+			return _future;
 		}
 
 		R get() {

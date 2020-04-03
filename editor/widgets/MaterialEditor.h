@@ -24,6 +24,9 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
+#include <yave/assets/AssetPtr.h>
+#include <yave/material/Material.h>
+
 namespace editor {
 
 class MaterialEditor final : public Widget, public ContextLinked {
@@ -32,6 +35,8 @@ class MaterialEditor final : public Widget, public ContextLinked {
 
 	private:
 		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+
+		AssetPtr<Material> _material;
 };
 
 }

@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#ifndef YAVE_ASSETS_ASSET_H
-#define YAVE_ASSETS_ASSET_H
+#ifndef YAVE_ASSETS_ASSETID_H
+#define YAVE_ASSETS_ASSETID_H
 
 #include "AssetTraits.h"
 
@@ -81,7 +81,6 @@ struct AssetId {
 
 static_assert(sizeof(AssetId) == sizeof(i64));
 static_assert(AssetId() == AssetId::invalid_id());
-//static_assert(AssetId().type() == AssetType::Unknown);
 static_assert(std::is_trivially_copyable_v<AssetId>);
 
 class AssetIdFactory {
@@ -116,4 +115,4 @@ struct hash<yave::AssetId> : hash<yave::u64> {
 };
 }
 
-#endif // YAVE_ASSETS_ASSET_H
+#endif // YAVE_ASSETS_ASSETID_H

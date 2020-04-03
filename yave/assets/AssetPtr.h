@@ -22,13 +22,13 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_ASSETPTR_H
 #define YAVE_ASSETS_ASSETPTR_H
 
-#include "AssetId.h"
+#include "AssetLoaderBase.h"
 
 #include <memory>
+#include <atomic>
 
 namespace yave {
 
-class AssetLoader;
 class GenericAssetPtr;
 
 template<typename T>
@@ -47,13 +47,17 @@ AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args);
 
 template<typename T>
 class AssetPtr {
-	struct Pair : NonCopyable {
+	struct Data : NonCopyable {
 		const T asset;
 		const AssetId id;
-		AssetPtr<T> reloaded;
+
+		AssetLoaderBase* loader = nullptr;
+		std::shared_ptr<Data> reloaded;
+
+		Y_TODO(loader might be dangling)
 
 		template<typename... Args>
-		Pair(AssetId i, Args&&... args) : asset(y_fwd(args)...), id(i) {
+		Data(AssetId i, AssetLoaderBase* l, Args&&... args) : asset(y_fwd(args)...), id(i), loader(l) {
 		}
 	};
 
@@ -85,14 +89,20 @@ class AssetPtr {
 		}
 
 		bool flush_reload() {
-			if(_ptr) {
-				if(const auto ptr = _ptr->reloaded) {
-					y_debug_assert(ptr.id() == id());
-					_ptr = std::move(ptr._ptr);
-					return true;
-				}
+			if(is_reloaded()) {
+				_ptr = std::atomic_load(&_ptr->reloaded);
+				y_debug_assert(_ptr->id == _id);
+				flush_reload(); // in case the we reloaded several time
+				return true;
 			}
 			return false;
+		}
+
+		void reload() {
+			if(_ptr && _ptr->loader) {
+				_ptr->loader->reload(_ptr->id);
+				flush_reload();
+			}
 		}
 
 		bool operator==(const AssetPtr& other) const {
@@ -119,30 +129,32 @@ class AssetPtr {
 		friend class AssetLoader;
 
 		template<typename... Args>
-		explicit AssetPtr(AssetId id, Args&&... args) :
-				_ptr(std::make_shared<Pair>(id, y_fwd(args)...)),
+		explicit AssetPtr(AssetId id, AssetLoaderBase* loader, Args&&... args) :
+				_ptr(std::make_shared<Data>(id, loader, y_fwd(args)...)),
 				_id(id) {
 		}
 
-		AssetPtr(std::shared_ptr<Pair> ptr) : _ptr(std::move(ptr)) {
+		AssetPtr(std::shared_ptr<Data> ptr) : _ptr(std::move(ptr)) {
 			if(_ptr) {
 				_id = _ptr->id;
 			}
 		}
 
 	private:
-		std::shared_ptr<Pair> _ptr;
+		std::shared_ptr<Data> _ptr;
+
+		Y_TODO(Use id stored in _ptr?)
 		AssetId _id;
 };
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset(Args&&... args) {
-	return AssetPtr<T>(AssetId::invalid_id(), y_fwd(args)...);
+	return AssetPtr<T>(AssetId::invalid_id(), nullptr, y_fwd(args)...);
 }
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args) {
-	return AssetPtr<T>(id, y_fwd(args)...);
+	return AssetPtr<T>(id, nullptr, y_fwd(args)...);
 }
 
 
@@ -158,8 +170,12 @@ class WeakAssetPtr {
 			return _ptr.lock();
 		}
 
+		bool is_empty() const {
+			return _ptr.expired();
+		}
+
 	private:
-		std::weak_ptr<typename AssetPtr<T>::Pair> _ptr;
+		std::weak_ptr<typename AssetPtr<T>::Data> _ptr;
 };
 
 

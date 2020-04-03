@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,34 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_CONTEXT_SELECTION_H
-#define EDITOR_CONTEXT_SELECTION_H
+#ifndef YAVE_ASSETS_ASSETLOADERBASE_H
+#define YAVE_ASSETS_ASSETLOADERBASE_H
 
-#include <editor/editor.h>
+#include "AssetId.h"
 
-#include <yave/material/Material.h>
-#include <yave/assets/AssetPtr.h>
-#include <yave/ecs/EntityId.h>
+namespace yave {
 
-namespace editor {
+class AssetLoader;
 
-class Selection {
+template<typename T>
+class AssetPtr;
+
+class AssetLoaderBase : NonMovable {
 	public:
-		void flush_reload();
+		virtual ~AssetLoaderBase();
 
-		/*void set_selected(const AssetPtr<Material>& sel);
-		const AssetPtr<Material>& material() const;*/
+		AssetLoader* parent() const;
 
-		bool has_selected_entity() const;
+		virtual AssetType type() const = 0;
+		virtual void reload(AssetId id) = 0;
 
-		ecs::EntityId selected_entity() const;
-		void set_selected(ecs::EntityId id);
 
+	protected:
+		friend class AssetLoader;
+
+		AssetLoaderBase(AssetLoader* parent);
 	private:
-		//AssetPtr<Material> _material;
-		ecs::EntityId _id;
+
+		AssetLoader* _parent = nullptr;
 };
 
 }
 
-#endif // EDITOR_CONTEXT_SELECTION_H
+#endif // YAVE_ASSETS_ASSETLOADERBASE_H
