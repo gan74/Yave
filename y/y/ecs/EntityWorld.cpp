@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "EntityWorld.h"
 
-
 namespace y {
 namespace ecs {
 

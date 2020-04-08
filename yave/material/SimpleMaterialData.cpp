@@ -35,7 +35,7 @@ SimpleMaterialData& SimpleMaterialData::set_texture(Textures type, AssetPtr<Text
 }
 
 bool SimpleMaterialData::is_empty() const {
-	return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return !tex; });
+	return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return tex.is_empty(); });
 }
 
 const AssetPtr<Texture>& SimpleMaterialData::operator[](Textures tex) const {

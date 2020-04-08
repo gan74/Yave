@@ -38,7 +38,7 @@ namespace concurrent {
 
 class StaticThreadPool : NonMovable {
 	private:
-		using Func = core::Functor<void()>;
+		using Func = core::Function<void()>;
 
 		struct SharedData {
 			mutable std::mutex lock;
@@ -46,6 +46,7 @@ class StaticThreadPool : NonMovable {
 
 			std::deque<Func> queue;
 
+			std::atomic<u64> done = 0;
 			std::atomic<bool> run = true;
 		};
 
@@ -57,8 +58,9 @@ class StaticThreadPool : NonMovable {
 		usize concurency() const;
 		usize pending_tasks() const;
 		void process_until_empty();
+		void wait_all_finished();
 
-		void schedule(Func&& func);
+		void schedule(Func&& func, bool in_front = false);
 
 		template<typename F, typename R = decltype(std::declval<F>()())>
 		std::future<R> schedule_with_future(F&& func) {

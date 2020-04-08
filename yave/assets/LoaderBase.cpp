@@ -19,37 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ASSETS_ASSETLOADERBASE_H
-#define YAVE_ASSETS_ASSETLOADERBASE_H
 
-#include "AssetId.h"
+#include "LoaderBase.h"
+#include "AssetLoader.h"
 
 namespace yave {
 
-class AssetLoader;
-
-template<typename T>
-class AssetPtr;
-
-class AssetLoaderBase : NonMovable {
-	public:
-		virtual ~AssetLoaderBase();
-
-		AssetLoader* parent() const;
-
-		virtual AssetType type() const = 0;
-		virtual void reload(AssetId id) = 0;
-
-
-	protected:
-		friend class AssetLoader;
-
-		AssetLoaderBase(AssetLoader* parent);
-	private:
-
-		AssetLoader* _parent = nullptr;
-};
-
+LoaderBase::~LoaderBase() {
 }
 
-#endif // YAVE_ASSETS_ASSETLOADERBASE_H
+LoaderBase::LoaderBase(AssetLoader* parent) : _parent(parent) {
+}
+
+AssetLoader* LoaderBase::parent() const {
+	return _parent;
+}
+
+DevicePtr LoaderBase::device() const {
+	return parent()->device();
+}
+
+AssetStore& LoaderBase::store() {
+	return parent()->store();
+}
+
+const AssetStore& LoaderBase::store() const {
+	return parent()->store();
+}
+
+}

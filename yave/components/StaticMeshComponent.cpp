@@ -36,7 +36,7 @@ void StaticMeshComponent::flush_reload() {
 
 
 void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-	if(!_material || !_mesh) {
+	if(!_material.flushed() || !_mesh.flushed()) {
 		return;
 	}
 
@@ -50,7 +50,7 @@ void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& 
 }
 
 void StaticMeshComponent::render_mesh(RenderPassRecorder& recorder, u32 instance_index) const {
-	if(!_mesh) {
+	if(!_mesh.flushed()) {
 		return;
 	}
 	

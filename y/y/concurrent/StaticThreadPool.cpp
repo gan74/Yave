@@ -68,12 +68,32 @@ void StaticThreadPool::process_until_empty() {
 	}
 }
 
-void StaticThreadPool::schedule(Func&& func) {
+void StaticThreadPool::wait_all_finished() {
+
+	std::unique_lock lock(_shared_data.lock);
+	const u64 up_to = _shared_data.done + _shared_data.queue.size();
+	lock.unlock();
+
+	while(_shared_data.done != up_to) {
+		process_until_empty();
+	}
+}
+
+void StaticThreadPool::schedule(Func&& func, bool in_front) {
 	{
 		const std::unique_lock lock(_shared_data.lock);
-		_shared_data.queue.emplace_back(std::move(func));
+		if(in_front) {
+			_shared_data.queue.emplace_front(std::move(func));
+		} else {
+			_shared_data.queue.emplace_back(std::move(func));
+		}
 	}
-	_shared_data.condition.notify_one();
+
+	if(concurency()) {
+		_shared_data.condition.notify_one();
+	} else {
+		process_until_empty();
+	}
 }
 
 
@@ -86,7 +106,9 @@ void StaticThreadPool::worker() {
 			_shared_data.queue.pop_front();
 			lock.unlock();
 
+
 			f();
+			++_shared_data.done;
 		}
 	}
 }

@@ -130,6 +130,8 @@ ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 
 	process_requests();
 
+	Y_TODO(Handle reloading)
+
 	{
 		const auto lock = y_profile_unique_lock(_lock);
 		if(auto it = _thumbmails.find(asset); it != _thumbmails.end()) {
@@ -149,8 +151,8 @@ ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 void ThumbmailCache::process_requests() {
 	y_profile();
 	for(usize i = 0; i != _loading_requests.size(); ++i) {
-		// For some reason wait_for(0s) can take up to 3ms on gcc 9.2 so we might end up losing a lot of time here...
 		if(_loading_requests[i].is_done()) {
+			y_profile_zone("schedule render");
 			RenderFunc func = _loading_requests[i].get();
 			_loading_requests.erase_unordered(_loading_requests.begin() + i);
 			--i;
@@ -173,6 +175,8 @@ void ThumbmailCache::process_requests() {
 }
 
 void ThumbmailCache::request_thumbmail(AssetId id) {
+	y_profile();
+
 	y_debug_assert([&] {
 		std::unique_lock lock(_lock);
 		const auto it = _thumbmails.find(id);
@@ -182,7 +186,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 	const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 	switch(asset_type) {
 		case AssetType::Mesh:
-			_loading_requests.emplace_back(context()->loader().load_async<StaticMesh>(id), [=](auto&& mesh) {
+			_loading_requests.emplace_back(context()->loader().load_future<StaticMesh>(id), [=](auto&& mesh) {
 				return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
 						return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
 					};
@@ -190,7 +194,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		break;
 
 		case AssetType::Material:
-			_loading_requests.emplace_back(context()->loader().load_async<Material>(id), [=](auto&& mat) {
+			_loading_requests.emplace_back(context()->loader().load_future<Material>(id), [=](auto&& mat) {
 				return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
 						return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
 					};
@@ -198,7 +202,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		break;
 
 		case AssetType::Image:
-			_loading_requests.emplace_back(context()->loader().load_async<Texture>(id), [=](auto&& tex) {
+			_loading_requests.emplace_back(context()->loader().load_future<Texture>(id), [=](auto&& tex) {
 				return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
 			});
 		break;

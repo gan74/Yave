@@ -219,8 +219,42 @@ struct W {
 	y_serde3(test())
 };
 
+struct A {
+	int test = 7;
+	y_serde3(test)
+
+	void post_deserialize(int) {
+		log_msg("A OK");
+	}
+};
+
+
+struct B {
+	A a;
+	y_serde3(a)
+
+	void post_deserialize() {
+		log_msg("B OK");
+	}
+};
+
+
+struct C {
+	B b;
+	y_serde3(b)
+
+	void post_deserialize(int) {
+		log_msg("C OK");
+	}
+};
+
+
 int main() {
-#if 1
+	C c;
+	serde3::ReadableArchive::post_deserialize(c, 4);
+
+
+#if 0
 	EntityWorld world;
 
 	{

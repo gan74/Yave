@@ -217,6 +217,7 @@ Notifications& EditorContext::notifications() {
 }
 
 void EditorContext::save_world() const {
+	y_profile();
 	auto file = io2::File::create(world_file);
 	if(!file) {
 		log_msg("Unable to open file.", Log::Error);
@@ -229,6 +230,7 @@ void EditorContext::save_world() const {
 }
 
 void EditorContext::load_world() {
+	y_profile();
 	ecs::EntityWorld world = create_editor_world();
 
 	auto file = io2::File::open(world_file);
@@ -237,7 +239,8 @@ void EditorContext::load_world() {
 		return;
 	}
 	serde3::ReadableArchive arc(file.unwrap());
-	const auto status = arc.deserialize(world, loader());
+	AssetLoadingContext loading_ctx(loader());
+	const auto status = arc.deserialize(world, loading_ctx);
 	if(status.is_error()) {
 		log_msg("Unable to load world.", Log::Error);
 	} else if(status.unwrap() == serde3::Success::Partial) {
@@ -253,6 +256,7 @@ void EditorContext::new_world() {
 }
 
 ecs::EntityWorld EditorContext::create_editor_world() {
+	y_profile();
 	ecs::EntityWorld world;
 	world.add_required_component_type<EditorComponent>();
 	y_debug_assert(world.required_component_types().size() == 1);

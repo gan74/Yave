@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,50 +19,58 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_ASSETS_LOADER_H
+#define YAVE_ASSETS_LOADER_H
 
-#include "AssetLoader.h"
+#include "AssetPtr.h"
+#include "AssetStore.h"
 
-#include <y/io2/File.h>
+#include <y/core/Functor.h>
+#include <y/serde3/archives.h>
+
+#include <list>
+#include <unordered_map>
+#include <mutex>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
 namespace yave {
 
-AssetLoader::AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, usize concurency) :
-		DeviceLinked(dptr),
-		_store(store),
-		_threads(concurency, "Asset loading thread"){
-}
+template<typename T>
+class Loader final : public LoaderBase {
 
-AssetLoader::~AssetLoader() {
-	if(const usize pending = _threads.pending_tasks()) {
-		log_msg(fmt("% loading pending.", pending), Log::Warning);
-	}
-}
+	using traits = AssetTraits<T>;
+	static_assert(traits::is_asset, "Type is missing asset traits");
+	using load_from_t = typename traits::load_from;
 
-AssetStore& AssetLoader::store() {
-	return *_store;
-}
+	public:
+		using Result = core::Result<AssetPtr<T>, ErrorType>;
 
-const AssetStore& AssetLoader::store() const {
-	return *_store;
-}
+		Loader(AssetLoader* parent);
 
-void AssetLoader::finish_all_requests() {
-	_threads.wait_all_finished();
-}
+		Result load(AssetId id);
+		Result reload(const AssetPtr<T>& ptr);
 
-core::Result<AssetId> AssetLoader::load_or_import(std::string_view name, std::string_view import_from, AssetType type) {
-	if(auto id = _store->id(name)) {
-		return id;
-	}
+		AssetPtr<T> load_async(AssetId id);
+		AssetPtr<T> reload_async(const AssetPtr<T>& ptr);
 
-	if(auto file = io2::File::open(import_from)) {
-		return _store->import(file.unwrap(), name, type);
-	}
+		/*std::pair<AssetPtr<T>, bool> create_empty(AssetId id);
+		Result reload(AssetPtr<T> ptr);*/
 
-	return core::Err();
-}
+		AssetType type() const;
+
+	private:
+		//AssetPtr<T> load_internal(AssetId id, bool async, bool reload);
+		template<bool Reload>
+		void load_internal(AssetPtr<T>& ptr, bool async);
+
+		std::unordered_map<AssetId, WeakAssetPtr<T>> _loaded;
+		std::recursive_mutex _lock;
+};
 
 }
+
+#include "Loader.inl"
+
+#endif // YAVE_ASSETS_LOADER_H

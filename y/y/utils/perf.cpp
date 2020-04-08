@@ -58,7 +58,7 @@ struct ThreadData;
 static std::mutex mutex;
 static std::shared_ptr<io2::File> output_file;
 
-static constexpr usize buffer_size = 256 * 1024;
+static constexpr usize buffer_size = 1024 * 1024;
 static constexpr usize print_buffer_len = 512;
 
 static std::shared_ptr<ThreadData> head;
@@ -116,7 +116,7 @@ struct ThreadData final : public std::enable_shared_from_this<ThreadData>, NonMo
 		if(!next)
 		{
 			char b[print_buffer_len];
-			const usize len = std::snprintf(b, sizeof(b), R"({"name":"capture ended","cat":"perf","ph":"I","pid":0,"tid":%u,"ts":%f}]})", concurrent::thread_id(), micros());
+			const usize len = std::snprintf(b, sizeof(b), R"({"name":"capture ended","cat":"perf","ph":"I","pid":0,"tid":%u,"ts":%.1f}]})", concurrent::thread_id(), micros());
 			output_file->write(b, len).expected("Unable to write perf dump.");
 		}
 	}
@@ -195,7 +195,7 @@ void enter(const char* cat, const char* func) {
 		return;
 	}
 	char b[print_buffer_len];
-	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, concurrent::thread_id(), micros());
+	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%.1f},)", paren(func), func, cat, concurrent::thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}
@@ -207,7 +207,7 @@ void leave(const char* cat, const char* func) {
 		return;
 	}
 	char b[print_buffer_len];
-	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%f},)", paren(func), func, cat, concurrent::thread_id(), micros());
+	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%.1f},)", paren(func), func, cat, concurrent::thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}
@@ -219,7 +219,7 @@ void event(const char* cat, const char* name) {
 		return;
 	}
 	char b[print_buffer_len];
-	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"I","pid":0,"tid":%u,"ts":%f},)", name, cat, concurrent::thread_id(), micros());
+	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"I","pid":0,"tid":%u,"ts":%.1f},)", name, cat, concurrent::thread_id(), micros());
 	if(len >= sizeof(b)) {
 		y_fatal("Too long.");
 	}

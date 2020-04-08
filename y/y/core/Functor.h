@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <memory>
 
+#define Y_NON_CONST_FUNCTORS
+
 namespace y {
 namespace core {
 
@@ -40,7 +42,10 @@ struct FunctionBase : NonCopyable {
 	virtual ~FunctionBase() {
 	}
 
+#ifdef Y_NON_CONST_FUNCTORS
 	virtual Ret apply(Args...) = 0;
+#endif
+
 	virtual Ret apply_const(Args...) const = 0;
 
 };
@@ -48,9 +53,12 @@ struct FunctionBase : NonCopyable {
 template<typename T, typename Ret, typename... Args>
 struct Function : FunctionBase<Ret, Args...> {
 	public:
+		//static_assert(std::is_void_v<Ret> || std::is_constructible_v<Ret, R>);
+
 		Function(T&& t) : _func(y_fwd(t)) {
 		}
 
+#ifdef Y_NON_CONST_FUNCTORS
 		Ret apply(Args... args) override {
 			if constexpr(std::is_void_v<Ret>) {
 				_func(y_fwd(args)...);
@@ -58,6 +66,7 @@ struct Function : FunctionBase<Ret, Args...> {
 				return _func(y_fwd(args)...);
 			}
 		}
+#endif
 
 		Ret apply_const(Args... args) const override {
 			if constexpr(std::is_void_v<Ret>) {
@@ -91,7 +100,9 @@ class Functor<Container, Ret(Args...)> {
 	public:
 		Functor() = default;
 
-		template<typename T, typename = std::enable_if_t<!is_functor<std::remove_reference_t<T>>::value>>
+		template<typename T,
+				 typename = std::enable_if_t<!is_functor<std::remove_reference_t<T>>::value>/*,
+				 typename R = typename function_traits<std::remove_reference_t<T>>::return_type*/>
 		Functor(T&& func) : _function(std::make_unique<Function<T, Ret, Args...>>(y_fwd(func))) {
 		}
 
@@ -110,15 +121,26 @@ class Functor<Container, Ret(Args...)> {
 			return _function != other._function;
 		}
 
+#ifdef Y_NON_CONST_FUNCTORS
 		Ret operator()(Args... args) {
 			y_debug_assert(_function);
-			return _function->apply(y_fwd(args)...);
+			if constexpr(std::is_void_v<Ret>) {
+				_function->apply(y_fwd(args)...);
+			} else {
+				return _function->apply(y_fwd(args)...);
+			}
 		}
+#endif
 
 		Ret operator()(Args... args) const {
 			y_debug_assert(_function);
-			return _function->apply_const(y_fwd(args)...);
+			if constexpr(std::is_void_v<Ret>) {
+				_function->apply_const(y_fwd(args)...);
+			} else {
+				return _function->apply_const(y_fwd(args)...);
+			}
 		}
+
 
 	private:
 		Container<FunctionBase<Ret, Args...>> _function;

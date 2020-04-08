@@ -136,7 +136,8 @@ auto rotation(Vec<3, T> axis, T angle, const Matrix4<T>& base = identity()) {
 
 template<typename T, typename X>
 auto lerp(const T& a, const T& b, X x) {
-	return a * (X(1) - x) + b * x;
+	return a + x * (b - a);
+	//return a * (X(1) - x) + b * x;
 }
 
 }

@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_CONCURRENT_FUTURECALLBACK_H
 
 #include <y/utils.h>
+#include <y/utils/perf.h>
 
 #include <future>
 
@@ -48,6 +49,9 @@ class FutureCallback {
 			}
 
 			bool is_done() const override {
+				y_profile();
+				y_debug_assert(_future.valid());
+				// For some reason wait_for(0s) can take up to 10 ms on gcc 9.2 so we might end up losing a lot of time here...
 				return _future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 			}
 

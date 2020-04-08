@@ -37,11 +37,6 @@ SOFTWARE.
 #include <y/io2/Buffer.h>
 #endif
 
-
-namespace yave {
-class AssetLoader;
-}
-
 #define y_try_status(result)																	\
 	do {																						\
 		if(auto&& _y_try_result = (result); _y_try_result.is_error()) { 						\

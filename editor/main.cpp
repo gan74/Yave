@@ -133,7 +133,8 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		core::DebugTimer frame_timer("frame", core::Duration::milliseconds(16.6));
+		// 35 ms to not spam if we are capped at 30 FPS
+		core::DebugTimer frame_timer("frame", core::Duration::milliseconds(35.0));
 
 		Swapchain* swapchain = window.swapchain();
 		if(swapchain && swapchain->is_valid()) {

@@ -39,6 +39,7 @@ MaterialEditor::MaterialEditor(ContextPtr cptr) :
 }
 
 static void modify_and_save(ContextPtr ctx, AssetPtr<Material>& material, usize index, AssetId id) {
+	y_profile();
 	const auto tex = ctx->loader().load<Texture>(id);
 	if(!tex) {
 		log_msg("Unable to load texture.", Log::Error);
@@ -60,8 +61,11 @@ static void modify_and_save(ContextPtr ctx, AssetPtr<Material>& material, usize 
 		return;
 	}
 
-	material.reload();
-	ctx->flush_reload();
+	{
+		y_profile_zone("reload");
+		material.reload();
+		ctx->flush_reload();
+	}
 }
 
 void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
@@ -75,7 +79,7 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			});
 	}
 
-	if(!_material) {
+	if(!_material.flushed()) {
 		return;
 	}
 
