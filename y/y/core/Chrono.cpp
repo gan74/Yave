@@ -25,7 +25,8 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-#include <tuple>
+#include <thread>
+#include <chrono>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
@@ -72,6 +73,12 @@ bool Duration::operator>(const Duration& other) const {
 
 bool Duration::operator>=(const Duration& other) const {
 	return std::tie(_secs, _subsec_ns) >= std::tie(other._secs, other._subsec_ns);
+}
+
+
+void Duration::sleep(const Duration& dur) {
+	const u64 micros = dur.subsec_nanos() / 1000 + dur.seconds() * 1000000;
+	std::this_thread::sleep_for(std::chrono::microseconds(micros));
 }
 
 

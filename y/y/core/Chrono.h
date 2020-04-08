@@ -23,7 +23,10 @@ SOFTWARE.
 #define Y_CORE_CHRONO_H
 
 #include "String.h"
+
+#ifndef Y_OS_WIN
 #include <chrono>
+#endif
 
 namespace y {
 namespace core {
@@ -52,6 +55,7 @@ class Duration {
 		constexpr explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0) : _secs(seconds), _subsec_ns(subsec_nanos) {
 		}
 
+		static void sleep(const Duration& dur);
 
 		u64 to_nanos() const;
 		double to_micros() const;
