@@ -24,7 +24,21 @@ function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
 endfunction(enable_unity_build)
 
 
-find_package(vulkan REQUIRED)
+# Shitty hacks to use lld when using MinGW to avoid long link times
+if(MINGW)
+	file(TO_CMAKE_PATH $ENV{VULKAN_SDK} Vulkan_SDK_Dir)
+	set(Vulkan_INCLUDE_DIRS ${Vulkan_SDK_Dir}/Include)
+	set(Vulkan_LIBRARY ${Vulkan_SDK_Dir}/Lib/vulkan-1.lib)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=lld")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fuse-ld=lld")
+	message("Using LLD instead of MinGW linker")
+else()
+	find_library(Vulkan REQUIRED)
+endif()
+
+
+
+
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
@@ -88,7 +102,6 @@ file(GLOB_RECURSE SHADER_LIBS
 	
 if(CMAKE_BUILD_TYPE STREQUAL Release OR YAVE_UNITY_BUILD)
 	enable_unity_build(yave YAVE_FILES)
-	enable_unity_build(editor EDITOR_FILES)
 endif()
 
 
@@ -122,6 +135,7 @@ if(YAVE_BUILD_EDITOR)
 	target_link_libraries(editor yave)
 	target_link_libraries(editor y)
 endif()
+
 
 
 
