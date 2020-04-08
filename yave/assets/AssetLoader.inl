@@ -60,6 +60,7 @@ typename Loader<T>::Result Loader<T>::load(AssetId id) {
 	if(ptr.is_failed()) {
 		return core::Err(ptr.error());
 	}
+	Y_TODO(we might already be loading asynchronously, maybe do something to prevent that or to flush)
 	return core::Ok(std::move(ptr));
 }
 
@@ -113,9 +114,9 @@ void Loader<T>::load_internal(AssetPtr<T>& ptr, bool async) {
 		if(auto reader = store().data(id)) {
 			y_profile_zone("loading");
 
-			if(async) {
+			/*if(async) {
 				core::Duration::sleep(core::Duration::seconds(2));
-			}
+			}*/
 
 			load_from_t load_from;
 			AssetLoadingContext loading_ctx(*parent(), id);
