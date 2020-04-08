@@ -4,7 +4,7 @@ Yet another C++17 Vulkan engine.
 ## Disclaimer
 This is a pet/learning project, it's not meant to be a serious engine and should not be used for anything beside playing with vulkan.
 
-Currently only tested with GCC 8+, doesn't work with MSVC, not tested with Clang.
+Currently only supports Windows, and only tested with GCC 8+ (I use MSYS2, but any version should do), doesn't work with MSVC, not tested with Clang.
 
 
 ## Status
