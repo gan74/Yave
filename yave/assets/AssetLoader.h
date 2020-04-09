@@ -41,7 +41,7 @@ class AssetLoader : NonMovable, public DeviceLinked {
 		using ErrorType = AssetLoadingErrorType;
 
 		template<typename T>
-		using Result = typename Loader<T>::Result;
+		using Result = core::Result<AssetPtr<T>, ErrorType>;
 
 		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, usize concurency = 1);
 		~AssetLoader();
@@ -52,12 +52,14 @@ class AssetLoader : NonMovable, public DeviceLinked {
 		void finish_all_requests();
 
 		template<typename T>
-		Result<T> load(AssetId id);
+		Result<T> load_res(AssetId id);
 		template<typename T>
-		Result<T> load(std::string_view name);
+		Result<T> load_res(std::string_view name);
 
 		template<typename T>
-		AssetPtr<T> load_async(AssetId id);
+		AssetPtr<T> load(AssetId id);
+		template<typename T>
+		AsyncAssetPtr<T> load_async(AssetId id);
 		template<typename T>
 		std::future<Result<T>> load_future(AssetId id);
 
@@ -94,11 +96,12 @@ class AssetLoadingContext {
 		}
 
 		template<typename T>
-		AssetPtr<T> load_async(AssetId id) const {
-			if(_id != AssetId::invalid_id() || !allow_async_loading) {
-#warning Unsafe unwraping
-				return _parent.load<T>(id).unwrap();
-			}
+		AssetPtr<T> load(AssetId id) const {
+			return _parent.load<T>(id);
+		}
+
+		template<typename T>
+		AsyncAssetPtr<T> load_async(AssetId id) const {
 			return _parent.load_async<T>(id);
 		}
 

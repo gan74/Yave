@@ -35,15 +35,25 @@ namespace yave {
 
 template<typename T>
 void AssetPtr<T>::post_deserialize(const AssetLoadingContext& context)  {
-	if(_id == AssetId::invalid_id()) {
+	const AssetId id = this->_id;
+	if(id == AssetId::invalid_id()) {
 		return;
 	}
 
-	*this = context.load_async<T>(_id);
-	y_debug_assert(_data && _data->id == _id);
-	flush_reload();
+	*this = context.load<T>(id);
+	this->flush_reload();
 }
 
+template<typename T>
+void AsyncAssetPtr<T>::post_deserialize(const AssetLoadingContext& context)  {
+	const AssetId id = this->_id;
+	if(id == AssetId::invalid_id()) {
+		return;
+	}
+
+	*this = context.load_async<T>(id);
+	this->flush_reload();
+}
 
 
 // --------------------------- Loader ---------------------------
@@ -52,122 +62,143 @@ template<typename T>
 Loader<T>::Loader(AssetLoader* parent) : LoaderBase(parent) {
 }
 
+template<typename T>
+Loader<T>::~Loader() {
+	y_profile();
+	const auto lock = y_profile_unique_lock(_lock);
+	for(auto&& [id, ptr] : _loaded) {
+		if(!ptr.expired()) {
+			y_fatal("Asset is still live.");
+		}
+	}
+}
+
 
 template<typename T>
-typename Loader<T>::Result Loader<T>::load(AssetId id) {
+AssetPtr<T> Loader<T>::load(AssetId id) {
 	AssetPtr<T> ptr(id);
-	load_internal<false>(ptr, false);
-	if(ptr.is_failed()) {
-		return core::Err(ptr.error());
-	}
+	load_internal<false>(ptr);
 	Y_TODO(we might already be loading asynchronously, maybe do something to prevent that or to flush)
-	return core::Ok(std::move(ptr));
-}
-
-template<typename T>
-typename Loader<T>::Result Loader<T>::reload(const AssetPtr<T>& ptr) {
-	AssetPtr<T> reloaded(ptr.id(), this);
-	load_internal<true>(reloaded, false);
-	if(reloaded.is_failed()) {
-		return core::Err(reloaded.error());
-	}
-	return core::Ok(std::move(reloaded));
+	return ptr;
 }
 
 
 template<typename T>
-AssetPtr<T> Loader<T>::load_async(AssetId id) {
-	AssetPtr<T> ptr(id);
-	load_internal<false>(ptr, true);
+AsyncAssetPtr<T> Loader<T>::load_async(AssetId id) {
+	AsyncAssetPtr<T> ptr(id);
+	load_internal<true>(ptr);
+	ptr.flush();
 	return ptr;
 }
 
 template<typename T>
-AssetPtr<T> Loader<T>::reload_async(const AssetPtr<T>& ptr) {
-	AssetPtr<T> reloaded(ptr.id(), this);
-	load_internal<true>(reloaded, true);
-	return reloaded;
+AssetPtr<T> Loader<T>::reload(const AssetPtrBase<T>& ptr) {
+	const AssetId id = ptr.id();
+	if(id == AssetId::invalid_id()) {
+		return AssetPtr<T>();
+	}
+
+	auto data = std::make_shared<Data>(id, this);
+	load_func(data);
+
+	{
+		const auto lock = y_profile_unique_lock(_lock);
+		auto& weak = _loaded[id];
+		if(auto orig = weak.lock()) {
+			orig->set_reloaded(data);
+		}
+		weak = data;
+	}
+	return data;
 }
 
 template<typename T>
-template<bool Reload>
-void Loader<T>::load_internal(AssetPtr<T>& ptr, bool async) {
+void Loader<T>::load_func(const std::shared_ptr<Data>& data) {
+	y_debug_assert(data);
+	y_debug_assert(!data->is_loaded());
+	y_debug_assert(!data->is_failed());
+
+	const AssetId id = data->id;
+	y_debug_assert(id != AssetId::invalid_id());
+	if(auto reader = store().data(id)) {
+		y_profile_zone("loading");
+
+		/*if(async) {
+			core::Duration::sleep(core::Duration::seconds(2));
+		}*/
+
+		load_from_t load_from;
+		AssetLoadingContext loading_ctx(*parent(), id);
+		serde3::ReadableArchive arc(std::move(reader.unwrap()));
+		if(arc.deserialize(load_from, loading_ctx)) {
+			data->finalize_loading(T(device(), std::move(load_from)));
+		} else {
+			data->set_failed(ErrorType::InvalidData);
+		}
+	} else {
+		data->set_failed(ErrorType::InvalidID);
+	}
+}
+
+template<typename T>
+template<bool Async>
+void Loader<T>::load_internal(AssetPtrBase<T>& ptr) {
 	const AssetId id = ptr.id();
 	if(id == AssetId::invalid_id()) {
 		return;
 	}
 
-	if(!Reload) {
+	{
 		const auto lock = y_profile_unique_lock(_lock);
 		auto& weak = _loaded[id];
 		ptr = weak.lock();
-		if(ptr.is_empty()) {
-			ptr = AssetPtr<T>(id, this);
-			weak = ptr;
-		} else {
+		if(ptr._data) {
 			return;
 		}
+		weak = (ptr = std::make_shared<Data>(id, this))._data;
 	}
 
-	core::Function<void()> load = [ptr, async, id, this]() {
-		y_debug_assert(ptr.is_loading());
-		if(auto reader = store().data(id)) {
-			y_profile_zone("loading");
-
-			/*if(async) {
-				core::Duration::sleep(core::Duration::seconds(2));
-			}*/
-
-			load_from_t load_from;
-			AssetLoadingContext loading_ctx(*parent(), id);
-			serde3::ReadableArchive arc(std::move(reader.unwrap()));
-			if(arc.deserialize(load_from, loading_ctx)) {
-				ptr._data->finalize_loading(T(device(), std::move(load_from)));
-				ptr.flush();
-			} else {
-				ptr._data->set_failed(ErrorType::InvalidData);
-			}
-		} else {
-			ptr._data->set_failed(ErrorType::InvalidID);
-		}
-
-		if(Reload) {
-			const auto lock = y_profile_unique_lock(_lock);
-			auto& orig = _loaded[id];
-			if(auto data = orig.lock()._data) {
-				data->set_reloaded(ptr);
-				orig = std::move(ptr);
-			}
-		}
-	};
-
-	if(async) {
-		parent()->_threads.schedule(std::move(load));
+	if constexpr(Async) {
+		parent()->_threads.schedule([data = ptr._data, this] { load_func(data); });
 	} else {
-		load();
-		ptr.flush();
+		load_func(ptr._data);
 	}
 }
 
 
 
 template<typename T>
-AssetPtr<T> AssetLoader::load_async(AssetId id) {
+AssetPtr<T> AssetLoader::load(AssetId id) {
+	return loader_for_type<T>().load(id);
+}
+
+template<typename T>
+AsyncAssetPtr<T> AssetLoader::load_async(AssetId id) {
 	return loader_for_type<T>().load_async(id);
 }
 
 template<typename T>
 std::future<AssetLoader::Result<T>> AssetLoader::load_future(AssetId id) {
-	return _threads.schedule_with_future([this, id]() -> Result<T> { return load<T>(id); });
+	return _threads.schedule_with_future([this, id]() -> Result<T> {
+		auto ptr = load<T>(id);
+		if(ptr.is_failed()) {
+			return core::Err(ptr.error());
+		}
+		return core::Ok(std::move(ptr));
+	});
 }
 
 template<typename T>
-AssetLoader::Result<T> AssetLoader::load(AssetId id) {
-	return loader_for_type<T>().load(id);
+AssetLoader::Result<T> AssetLoader::load_res(AssetId id) {
+	auto ptr = load<T>(id);
+	if(ptr.is_failed()) {
+		return core::Err(ptr.error());
+	}
+	return core::Ok(std::move(ptr));
 }
 
 template<typename T>
-AssetLoader::Result<T> AssetLoader::load(std::string_view name) {
+AssetLoader::Result<T> AssetLoader::load_res(std::string_view name) {
 	return load<T>(store().id(name));
 }
 
@@ -179,7 +210,7 @@ AssetLoader::Result<T> AssetLoader::import(std::string_view name, std::string_vi
 template<typename T, typename E>
 AssetLoader::Result<T> AssetLoader::load(core::Result<AssetId, E> id) {
 	if(id) {
-		return load<T>(id.unwrap());
+		return load_res<T>(id.unwrap());
 	}
 	return core::Err(ErrorType::UnknownID);
 }

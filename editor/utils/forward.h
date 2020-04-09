@@ -25,14 +25,12 @@ SOFTWARE.
 // Auto generated: forward definitions for most non template classes
 // TODO: Classes nested in namespaces or other classes will not be declared correctly
 namespace editor {
-class AssetRenamer;
 class AssetSelector;
 class AssetStringifier;
 class CameraController;
 class CameraDebug;
 class CameraSettings;
 class ComponentWidgetData;
-class Console;
 class ContextLinked;
 class EditorComponent;
 class EditorContext;
@@ -45,6 +43,8 @@ class EngineView;
 class EntityView;
 class FPSCameraController;
 class FileBrowser;
+class FileRenamer;
+class FileSystemView;
 class Gizmo;
 class HoudiniCameraController;
 class ImGuiRenderer;
@@ -55,6 +55,7 @@ class MaterialData;
 class MaterialEditor;
 class MemoryInfo;
 class MenuBar;
+class Notifications;
 class ObjectData;
 class PerfSettings;
 class PerformanceMetrics;

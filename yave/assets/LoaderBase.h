@@ -26,16 +26,15 @@ SOFTWARE.
 
 namespace yave {
 
-class AssetStore;
-class AssetLoader;
-class GenericAssetPtr;
-
 template<typename T>
 class AssetPtr;
+template<typename T>
+class AsyncAssetPtr;
 template<typename T>
 class Loader;
 template<typename T>
 class WeakAssetPtr;
+
 
 enum class AssetLoadingErrorType : u32 {
 	InvalidID,

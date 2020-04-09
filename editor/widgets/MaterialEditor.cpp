@@ -40,7 +40,7 @@ MaterialEditor::MaterialEditor(ContextPtr cptr) :
 
 static void modify_and_save(ContextPtr ctx, AssetPtr<Material>& material, usize index, AssetId id) {
 	y_profile();
-	const auto tex = ctx->loader().load<Texture>(id);
+	const auto tex = ctx->loader().load_res<Texture>(id);
 	if(!tex) {
 		log_msg("Unable to load texture.", Log::Error);
 		return;
@@ -72,14 +72,14 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	if(imgui::asset_selector(context(), _material.id(), AssetType::Material, "Material")) {
 		add_child<AssetSelector>(context(), AssetType::Material)->set_selected_callback(
 			[this](AssetId asset) {
-				if(const auto mat = context()->loader().load<Material>(asset)) {
+				if(const auto mat = context()->loader().load_res<Material>(asset)) {
 					_material = mat.unwrap();
 				}
 				return true;
 			});
 	}
 
-	if(!_material.flushed()) {
+	if(!_material) {
 		return;
 	}
 

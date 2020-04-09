@@ -39,10 +39,9 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialD
 		};
 
 	for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
-		if(const auto* tex = data.textures()[i].flushed()) {
+		if(const auto* tex = data.textures()[i].get()) {
 			bindings[i] = *tex;
 		}
-		y_debug_assert(!data.textures()[i].is_loading());
 	}
 	return DescriptorSet(dptr, bindings);
 }

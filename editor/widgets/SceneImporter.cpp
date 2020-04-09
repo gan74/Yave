@@ -208,7 +208,7 @@ void SceneImporter::import(import::SceneData scene) {
 			for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
 				if(!data.textures[i].is_empty()) {
 					const core::String tex_full_name = make_full_name(texture_include_path, data.textures[i]);
-					if(const auto texture = context()->loader().load<Texture>(tex_full_name)) {
+					if(const auto texture = context()->loader().load_res<Texture>(tex_full_name)) {
 						material.set_texture(SimpleMaterialData::Textures(i), std::move(texture.unwrap()));
 					} else {
 						log_msg(fmt("Unable to load texture \"%\"", tex_full_name), Log::Error);

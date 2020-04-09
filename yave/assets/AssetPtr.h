@@ -43,35 +43,81 @@ AssetPtr<T> make_asset(Args&&... args);
 template<typename T, typename... Args>
 AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args);
 
+
+namespace detail {
 template<typename T>
-class AssetPtr {
+struct AssetPtrData : NonMovable {
+	T asset;
+	const AssetId id;
 
+	Y_TODO(Change to Loader<T>)
+	LoaderBase* loader = nullptr;
 
-	struct Data : NonMovable {
-		T asset;
-		const AssetId id;
+	std::shared_ptr<AssetPtrData<T>> reloaded;
+	std::atomic<AssetLoadingState> state = AssetLoadingState::NotLoaded;
 
-		LoaderBase* loader = nullptr;
+	AssetPtrData(AssetId i, LoaderBase* l);
+	AssetPtrData(AssetId i, LoaderBase* l, T t);
 
-		std::shared_ptr<Data> reloaded;
-		std::atomic<AssetLoadingState> state = AssetLoadingState::NotLoaded;
+	void finalize_loading(T t);
+	void set_reloaded(const std::shared_ptr<AssetPtrData<T>>& other);
 
-		Y_TODO(loader might be dangling)
+	void set_failed(AssetLoadingErrorType error);
+	AssetLoadingErrorType error() const;
 
-		Data(AssetId i, LoaderBase* l);
-		Data(AssetId i, LoaderBase* l, T t);
+	bool is_loaded() const;
+	bool is_failed() const;
+};
+}
 
-		void finalize_loading(T t);
-		void set_reloaded(const AssetPtr<T>& other);
+template<typename T>
+class AssetPtrBase {
+	protected:
 
-		void set_failed(AssetLoadingErrorType error);
-		AssetLoadingErrorType error() const;
-
-		bool is_loaded() const;
-		bool is_failed() const;
-	};
+	using Data = detail::AssetPtrData<T>;
 
 	public:
+		AssetPtrBase() = default;
+
+		AssetId id() const;
+
+		bool flush_reload();
+		void reload();
+
+		bool is_empty() const;
+
+		bool has_loader() const;
+		bool is_loading() const;
+		bool is_failed() const;
+		AssetLoadingErrorType error() const;
+
+		y_serde3(_id)
+
+	protected:
+		friend class detail::AssetPtrData<T>;
+		friend class LoaderBase;
+		friend class Loader<T>;
+		friend class AsyncAssetPtr<T>;
+
+		AssetPtrBase(AssetId id);
+		AssetPtrBase(std::shared_ptr<Data> ptr);
+
+	protected:
+		Y_TODO(Use intrusive smart ptr to save on space here)
+
+		std::shared_ptr<Data> _data;
+
+		AssetId _id;
+};
+
+template<typename T>
+class AssetPtr final : public AssetPtrBase<T> {
+
+	using Data = typename AssetPtrBase<T>::Data;
+
+	public:
+		static constexpr bool is_async = false;
+
 		AssetPtr() = default;
 
 		const T* get() const;
@@ -80,28 +126,9 @@ class AssetPtr {
 		const T* operator->() const;
 		explicit operator bool() const;
 
-		AssetId id() const;
-
-		const T* flushed() const;
-		void flush() const;
-		bool flush_reload();
-		void reload();
-		void reload_async();
-
-		bool is_empty() const;
-
-		bool should_flush() const;
-		bool has_loader() const;
-		bool is_loaded() const;
-		bool is_loading() const;
-		bool is_failed() const;
-		AssetLoadingErrorType error() const;
-
 		bool operator==(const AssetPtr& other) const;
 		bool operator!=(const AssetPtr& other) const;
 
-
-		y_serde3(_id)
 		void post_deserialize(const AssetLoadingContext& context);
 
 	private:
@@ -111,37 +138,69 @@ class AssetPtr {
 		template<typename U, typename... Args>
 		friend AssetPtr<U> make_asset_with_id(AssetId id, Args&&... args);
 
-		friend class WeakAssetPtr<T>;
-		friend class GenericAssetPtr;
-		friend class LoaderBase;
 		friend class Loader<T>;
 
 		AssetPtr(AssetId id);
-		AssetPtr(AssetId id, LoaderBase* loader);
 		AssetPtr(AssetId id, LoaderBase* loader, T asset);
 		AssetPtr(std::shared_ptr<Data> ptr);
-
-	private:
-		Y_TODO(Use intrusive smart ptr to save on space here)
-
-		mutable T* _ptr = nullptr;
-		std::shared_ptr<Data> _data;
-
-		AssetId _id;
 };
 
+
 template<typename T>
+class AsyncAssetPtr final : public AssetPtrBase<T> {
+
+	using Data = typename AssetPtrBase<T>::Data;
+
+	public:
+		static constexpr bool is_async = true;
+
+		AsyncAssetPtr() = default;
+		AsyncAssetPtr(const AssetPtr<T>& other);
+
+		const T* get() const;
+
+		const T& operator*() const;
+		const T* operator->() const;
+		explicit operator bool() const;
+
+		bool is_loaded() const;
+		bool should_flush() const;
+
+		const T* flushed() const;
+		void flush() const;
+
+		bool operator==(const AsyncAssetPtr& other) const;
+		bool operator!=(const AsyncAssetPtr& other) const;
+
+		void post_deserialize(const AssetLoadingContext& context);
+
+	private:
+		friend class Loader<T>;
+
+		AsyncAssetPtr(AssetId id);
+		AsyncAssetPtr(AssetId id, LoaderBase* loader);
+		AsyncAssetPtr(AssetId id, LoaderBase* loader, T asset);
+		AsyncAssetPtr(std::shared_ptr<Data> ptr);
+
+	private:
+		mutable T* _ptr = nullptr;
+};
+
+/*template<typename T>
 class WeakAssetPtr {
+
+	using Data = detail::AssetPtrData<T>;
+
 	public:
 		WeakAssetPtr() = default;
 		WeakAssetPtr(const AssetPtr<T>& ptr);
 
 		AssetPtr<T> lock() const;
-		bool is_empty() const;
+		bool is_expired() const;
 
 	private:
-		std::weak_ptr<typename AssetPtr<T>::Data> _ptr;
-};
+		std::weak_ptr<Data> _data;
+};*/
 
 }
 

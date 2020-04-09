@@ -32,36 +32,30 @@ SOFTWARE.
 namespace yave {
 
 template<typename T>
-void AssetPtr<T>::Data::set_reloaded(const AssetPtr<T>& other) {
-	if(!other._data || other._data->id != id) {
-		y_fatal("Invalid reload");
-	}
-	y_debug_assert(!other.is_loading());
-	std::atomic_store(&reloaded, other._data);
-}
-
-template<typename T>
-void AssetPtr<T>::reload() {
-	y_debug_assert(!_data || _data->id == _id);
-	if(_data && _data->loader) {
-		flush_reload();
-		dynamic_cast<Loader<T>*>(_data->loader)->reload(*this).ignore();
-		flush_reload();
-	}
-}
-
-template<typename T>
-void AssetPtr<T>::reload_async() {
-	y_debug_assert(!_data || _data->id == _id);
-	if(_data && _data->loader) {
-		flush_reload();
-		dynamic_cast<Loader<T>*>(_data->loader)->reload_async(*this);
-	}
-}
-
-template<typename T>
 AssetType Loader<T>::type() const {
 	return traits::type;
+}
+
+
+namespace detail {
+template<typename T>
+void AssetPtrData<T>::set_reloaded(const std::shared_ptr<AssetPtrData<T>>& other) {
+	if(!other || other->id != id) {
+		y_fatal("Invalid reload");
+	}
+	y_debug_assert(other->is_loaded() || other->is_failed());
+	std::atomic_store(&reloaded, other);
+}
+}
+
+template<typename T>
+void AssetPtrBase<T>::reload() {
+	y_debug_assert(!_data || _data->id == _id);
+	if(_data && _data->loader) {
+		flush_reload();
+		dynamic_cast<Loader<T>*>(_data->loader)->reload(*this);
+		flush_reload();
+	}
 }
 
 }

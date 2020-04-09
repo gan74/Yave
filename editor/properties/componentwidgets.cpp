@@ -272,7 +272,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 			if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material, "Material")) {
 				ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
 					[=](AssetId asset) {
-						if(const auto material = ctx->loader().load<Material>(asset)) {
+						if(const auto material = ctx->loader().load_res<Material>(asset)) {
 							if(StaticMeshComponent* comp = static_mesh()) {
 								comp->material() = material.unwrap();
 							}
@@ -289,7 +289,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 			if(imgui::asset_selector(ctx, static_mesh()->mesh().id(), AssetType::Mesh, "Mesh")) {
 				ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
 					[=](AssetId asset) {
-						if(const auto mesh = ctx->loader().load<StaticMesh>(asset)) {
+						if(const auto mesh = ctx->loader().load_res<StaticMesh>(asset)) {
 							if(StaticMeshComponent* comp = static_mesh()) {
 								comp->mesh() = mesh.unwrap();
 							}

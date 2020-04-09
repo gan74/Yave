@@ -227,7 +227,7 @@ void EngineView::draw_menu_bar() {
 				if(ImGui::MenuItem("Set IBL probe")) {
 					add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
 						[this](AssetId id) {
-							if(auto tex = context()->loader().load<Texture>(id)) {
+							if(auto tex = context()->loader().load_res<Texture>(id)) {
 								_ibl_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*tex.unwrap()));
 							}
 							return true;

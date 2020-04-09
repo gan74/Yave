@@ -44,121 +44,94 @@ AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args) {
 
 
 
+namespace detail {
 template<typename T>
-AssetPtr<T>::Data::Data(AssetId i, LoaderBase* l) : id(i), loader(l), state(AssetLoadingState::NotLoaded) {
+AssetPtrData<T>::AssetPtrData(AssetId i, LoaderBase* l) : id(i), loader(l), state(AssetLoadingState::NotLoaded) {
 }
 
 template<typename T>
-AssetPtr<T>::Data::Data(AssetId i, LoaderBase* l, T t) : asset(std::move(t)), id(i), loader(l), state(AssetLoadingState::Loaded) {
+AssetPtrData<T>::AssetPtrData(AssetId i, LoaderBase* l, T t) : asset(std::move(t)), id(i), loader(l), state(AssetLoadingState::Loaded) {
 }
 
 template<typename T>
-void AssetPtr<T>::Data::finalize_loading(T t) {
+void AssetPtrData<T>::finalize_loading(T t) {
 	y_debug_assert(state == AssetLoadingState::NotLoaded);
 	asset = std::move(t);
 	state = AssetLoadingState::Loaded;
 }
 
 template<typename T>
-void AssetPtr<T>::Data::set_failed(AssetLoadingErrorType error) {
+void AssetPtrData<T>::set_failed(AssetLoadingErrorType error) {
 	y_debug_assert(state == AssetLoadingState::NotLoaded);
 	state = AssetLoadingState(u32(AssetLoadingState::Failed) + u32(error));
 }
 
 template<typename T>
-AssetLoadingErrorType AssetPtr<T>::Data::error() const {
+AssetLoadingErrorType AssetPtrData<T>::error() const {
 	y_debug_assert(is_failed());
 	const u32 uint_state = u32(state.load());
 	return AssetLoadingErrorType(uint_state - u32(AssetLoadingState::Failed));
 }
 
 template<typename T>
-bool AssetPtr<T>::Data::is_loaded() const {
+bool AssetPtrData<T>::is_loaded() const {
 	return state == AssetLoadingState::Loaded;
 }
 
 template<typename T>
-bool AssetPtr<T>::Data::is_failed() const {
+bool AssetPtrData<T>::is_failed() const {
 	return state >= AssetLoadingState::Failed;
 }
+}
+
+
+
+
 
 template<typename T>
-AssetPtr<T>::AssetPtr(AssetId id) : _id(id) {
+AssetPtrBase<T>::AssetPtrBase(AssetId id) : _id(id) {
 }
 
 template<typename T>
-AssetPtr<T>::AssetPtr(AssetId id, LoaderBase* loader) : AssetPtr(std::make_shared<Data>(id, loader)) {
-}
-
-template<typename T>
-AssetPtr<T>::AssetPtr(AssetId id, LoaderBase* loader, T asset) : AssetPtr(std::make_shared<Data>(id, loader, std::move(asset))) {
-}
-
-template<typename T>
-AssetPtr<T>::AssetPtr(std::shared_ptr<Data> ptr) : _data(std::move(ptr)) {
+AssetPtrBase<T>::AssetPtrBase(std::shared_ptr<Data> ptr) : _data(std::move(ptr)) {
 	if(_data) {
 		_id = _data->id;
 		if(_data->is_loaded()) {
 			flush_reload();
 			y_debug_assert(_data->is_loaded());
-			_ptr = &_data->asset;
 		}
 	}
 }
 
-
 template<typename T>
-const T* AssetPtr<T>::flushed() const {
-	flush();
-	return _ptr;
-}
-
-template<typename T>
-void AssetPtr<T>::flush() const {
-	if(should_flush()) {
-		_ptr = &_data->asset;
-	}
-}
-
-template<typename T>
-bool AssetPtr<T>::is_empty() const {
+bool AssetPtrBase<T>::is_empty() const {
 	return !_data;
 }
 
 template<typename T>
-bool AssetPtr<T>::should_flush() const {
-	return !_ptr && _data && _data->is_loaded();
-}
-
-template<typename T>
-bool AssetPtr<T>::has_loader() const {
+bool AssetPtrBase<T>::has_loader() const {
 	y_debug_assert(!_data || _data->loader);
 	return !_data;
 }
 
 template<typename T>
-bool AssetPtr<T>::is_loaded() const {
-	return _ptr || (_data && _data->is_loaded());
-}
-
-template<typename T>
-bool AssetPtr<T>::is_loading() const {
+bool AssetPtrBase<T>::is_loading() const {
 	return _data && _data->state == AssetLoadingState::NotLoaded;
 }
 
 template<typename T>
-bool AssetPtr<T>::is_failed() const {
+bool AssetPtrBase<T>::is_failed() const {
 	return _data && _data->is_failed();
 }
 
 template<typename T>
-AssetLoadingErrorType AssetPtr<T>::error() const {
+AssetLoadingErrorType AssetPtrBase<T>::error() const {
 	y_debug_assert(_data && _data->is_failed());
 	return _data->error();
 }
 
 template<typename T>
-bool AssetPtr<T>::flush_reload() {
+bool AssetPtrBase<T>::flush_reload() {
 	if(_data) {
 		y_debug_assert(_data->id == _id);
 		if(auto reloaded = std::atomic_load(&_data->reloaded)) {
@@ -173,40 +146,57 @@ bool AssetPtr<T>::flush_reload() {
 }
 
 template<typename T>
-const T* AssetPtr<T>::get() const {
-	return _ptr;
-}
-
-template<typename T>
-const T& AssetPtr<T>::operator*() const {
-	return *_ptr;
-}
-
-template<typename T>
-const T* AssetPtr<T>::operator->() const {
-	return _ptr;
-}
-
-template<typename T>
-AssetPtr<T>::operator bool() const {
-	return bool(_ptr);
-}
-
-template<typename T>
-AssetId AssetPtr<T>::id() const {
+AssetId AssetPtrBase<T>::id() const {
 	y_debug_assert(!_data || _data->id == _id);
 	return _id; //_data ? _data->id : AssetId::invalid_id();
 }
 
+
+
+
+template<typename T>
+AssetPtr<T>::AssetPtr(AssetId id) : AssetPtrBase<T>(id) {
+}
+
+template<typename T>
+AssetPtr<T>::AssetPtr(AssetId id, LoaderBase* loader, T asset) : AssetPtr(std::make_shared<Data>(id, loader, std::move(asset))) {
+}
+
+template<typename T>
+AssetPtr<T>::AssetPtr(std::shared_ptr<Data> ptr) : AssetPtrBase<T>(std::move(ptr)) {
+	y_debug_assert(!this->is_loading());
+}
+
+template<typename T>
+const T* AssetPtr<T>::get() const {
+	return this->is_failed() ? nullptr : &this->_data->asset;
+}
+
+template<typename T>
+const T& AssetPtr<T>::operator*() const {
+	return *get();
+}
+
+template<typename T>
+const T* AssetPtr<T>::operator->() const {
+	return get();
+}
+
+template<typename T>
+AssetPtr<T>::operator bool() const {
+	return bool(this->_data);
+}
+
 template<typename T>
 bool AssetPtr<T>::operator==(const AssetPtr& other) const {
-	return _data == other._data;
+	return this->_data == other._data;
 }
 
 template<typename T>
 bool AssetPtr<T>::operator!=(const AssetPtr& other) const {
-	return _data != other._data;
+	return this->_data != other._data;
 }
+
 
 
 
@@ -214,19 +204,81 @@ bool AssetPtr<T>::operator!=(const AssetPtr& other) const {
 
 
 template<typename T>
-WeakAssetPtr<T>::WeakAssetPtr(const AssetPtr<T>& ptr) : _ptr(ptr._data) {
+AsyncAssetPtr<T>::AsyncAssetPtr(const AssetPtr<T>& other) : AsyncAssetPtr(other._data) {
 }
 
 template<typename T>
-AssetPtr<T> WeakAssetPtr<T>::lock() const {
-	return _ptr.lock();
+AsyncAssetPtr<T>::AsyncAssetPtr(AssetId id) : AssetPtrBase<T>(id) {
 }
 
 template<typename T>
-bool WeakAssetPtr<T>::is_empty() const {
-	return _ptr.expired();
+AsyncAssetPtr<T>::AsyncAssetPtr(AssetId id, LoaderBase* loader) : AsyncAssetPtr(std::make_shared<Data>(id, loader)) {
 }
 
+template<typename T>
+AsyncAssetPtr<T>::AsyncAssetPtr(AssetId id, LoaderBase* loader, T asset) : AsyncAssetPtr(std::make_shared<Data>(id, loader, std::move(asset))) {
+}
+
+template<typename T>
+AsyncAssetPtr<T>::AsyncAssetPtr(std::shared_ptr<Data> ptr) : AssetPtrBase<T>(std::move(ptr)) {
+	if(this->_data) {
+		_ptr = &this->_data->asset;
+	}
+}
+
+template<typename T>
+const T* AsyncAssetPtr<T>::flushed() const {
+	flush();
+	return _ptr;
+}
+
+template<typename T>
+void AsyncAssetPtr<T>::flush() const {
+	if(should_flush()) {
+		_ptr = &this->_data->asset;
+	}
+}
+
+template<typename T>
+bool AsyncAssetPtr<T>::is_loaded() const {
+	return _ptr || (this->_data && this->_data->is_loaded());
+}
+
+template<typename T>
+bool AsyncAssetPtr<T>::should_flush() const {
+	return !_ptr && this->_data && this->_data->is_loaded();
+}
+
+
+template<typename T>
+const T* AsyncAssetPtr<T>::get() const {
+	return _ptr;
+}
+
+template<typename T>
+const T& AsyncAssetPtr<T>::operator*() const {
+	return *_ptr;
+}
+
+template<typename T>
+const T* AsyncAssetPtr<T>::operator->() const {
+	return _ptr;
+}
+
+template<typename T>
+AsyncAssetPtr<T>::operator bool() const {
+	return bool(_ptr);
+}
+
+template<typename T>
+bool AsyncAssetPtr<T>::operator==(const AsyncAssetPtr& other) const {
+	return this->_data == other._data;
+}
+
+template<typename T>
+bool AsyncAssetPtr<T>::operator!=(const AsyncAssetPtr& other) const {
+	return this->_data != other._data;
+}
 
 }
 
