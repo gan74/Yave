@@ -41,8 +41,7 @@ class NullAllocator : NonCopyable {
 		}
 
 		void deallocate(void* ptr, usize) noexcept {
-			unused(ptr);
-			y_debug_assert(!ptr);
+			y_always_assert(!ptr, "nullptr expected");
 		}
 };
 

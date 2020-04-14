@@ -19,57 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ASSETS_LOADERBASE_H
-#define YAVE_ASSETS_LOADERBASE_H
+#ifndef YAVE_ASSETS_ASSETDEPENDENCIES_H
+#define YAVE_ASSETS_ASSETDEPENDENCIES_H
 
-#include "AssetId.h"
+#include "AssetPtr.h"
 
+#include <y/core/Vector.h>
 
 namespace yave {
 
-template<typename T>
-class AssetPtr;
-template<typename T>
-class AsyncAssetPtr;
-template<typename T>
-class Loader;
-template<typename T>
-class WeakAssetPtr;
-
-
-enum class AssetLoadingErrorType : u32 {
-	InvalidID,
-	UnknownID,
-	InvalidData,
-	UnknownType,
-	FailedDependedy,
-	Unknown
-};
-
-class LoaderBase : NonMovable {
+class AssetDependencies {
 	public:
-		using ErrorType = AssetLoadingErrorType;
+		void add_dependency(GenericAssetPtr asset);
 
-		virtual ~LoaderBase();
-
-		AssetLoader* parent() const;
-		DevicePtr device() const;
-
-		AssetStore& store();
-		const AssetStore& store() const;
-
-		virtual AssetType type() const = 0;
-
-	protected:
-		friend class AssetLoader;
-
-		LoaderBase(AssetLoader* parent);
+		bool is_done() const;
+		bool is_empty() const;
+		AssetLoadingState state() const;
+		AssetLoadingErrorType error() const;
 
 	private:
-
-		AssetLoader* _parent = nullptr;
+		core::Vector<GenericAssetPtr> _deps;
 };
+
 
 }
 
-#endif // YAVE_ASSETS_LOADERBASE_H
+#endif // YAVE_ASSETS_ASSETDEPENDENCIES_H

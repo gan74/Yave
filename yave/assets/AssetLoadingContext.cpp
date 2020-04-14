@@ -19,57 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ASSETS_LOADERBASE_H
-#define YAVE_ASSETS_LOADERBASE_H
 
-#include "AssetId.h"
-
+#include "AssetLoadingContext.h"
 
 namespace yave {
 
-template<typename T>
-class AssetPtr;
-template<typename T>
-class AsyncAssetPtr;
-template<typename T>
-class Loader;
-template<typename T>
-class WeakAssetPtr;
-
-
-enum class AssetLoadingErrorType : u32 {
-	InvalidID,
-	UnknownID,
-	InvalidData,
-	UnknownType,
-	FailedDependedy,
-	Unknown
-};
-
-class LoaderBase : NonMovable {
-	public:
-		using ErrorType = AssetLoadingErrorType;
-
-		virtual ~LoaderBase();
-
-		AssetLoader* parent() const;
-		DevicePtr device() const;
-
-		AssetStore& store();
-		const AssetStore& store() const;
-
-		virtual AssetType type() const = 0;
-
-	protected:
-		friend class AssetLoader;
-
-		LoaderBase(AssetLoader* parent);
-
-	private:
-
-		AssetLoader* _parent = nullptr;
-};
-
+AssetLoadingContext::AssetLoadingContext(AssetLoader* loader) : _parent(loader) {
+	y_always_assert(loader, "Invalid parent");
 }
 
-#endif // YAVE_ASSETS_LOADERBASE_H
+const AssetDependencies& AssetLoadingContext::dependencies() const {
+	return _dependencies;
+}
+
+AssetLoader* AssetLoadingContext::parent() const {
+	return _parent;
+}
+
+}

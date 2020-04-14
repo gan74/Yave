@@ -48,17 +48,17 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
 		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
 		void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
-		const AsyncAssetPtr<StaticMesh>& mesh() const;
-		const AsyncAssetPtr<Material>& material() const;
+		const AssetPtr<StaticMesh>& mesh() const;
+		const AssetPtr<Material>& material() const;
 
-		AsyncAssetPtr<StaticMesh>& mesh();
-		AsyncAssetPtr<Material>& material();
+		AssetPtr<StaticMesh>& mesh();
+		AssetPtr<Material>& material();
 
-		y_serde3(_async_mesh, _async_material)
+		y_serde3(_mesh, _material)
 
 	private:
-		AsyncAssetPtr<StaticMesh> _async_mesh;
-		AsyncAssetPtr<Material> _async_material;
+		AssetPtr<StaticMesh> _mesh;
+		AssetPtr<Material> _material;
 };
 
 }

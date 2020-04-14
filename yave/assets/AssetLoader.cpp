@@ -32,13 +32,10 @@ namespace yave {
 AssetLoader::AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, usize concurency) :
 		DeviceLinked(dptr),
 		_store(store),
-		_threads(concurency, "Asset loading thread"){
+		_thread_pool(this, concurency) {
 }
 
 AssetLoader::~AssetLoader() {
-	if(const usize pending = _threads.pending_tasks()) {
-		log_msg(fmt("% loading pending.", pending), Log::Warning);
-	}
 }
 
 AssetStore& AssetLoader::store() {
@@ -49,8 +46,9 @@ const AssetStore& AssetLoader::store() const {
 	return *_store;
 }
 
-void AssetLoader::finish_all_requests() {
-	_threads.wait_all_finished();
+void AssetLoader::wait_until_loaded(const GenericAssetPtr& ptr) {
+	_thread_pool.wait_until_loaded(ptr);
+	y_debug_assert(!ptr.is_loading());
 }
 
 core::Result<AssetId> AssetLoader::load_or_import(std::string_view name, std::string_view import_from, AssetType type) {

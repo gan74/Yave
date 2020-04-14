@@ -26,9 +26,12 @@ SOFTWARE.
 #include <y/ecs/EntityView.h>
 #include <y/ecs/EntityWorldSerializer.h>
 
+#include <y/concurrent/StaticThreadPool.h>
+
 #include <y/core/FixedArray.h>
 #include <y/core/Vector.h>
 #include <y/core/String.h>
+#include <y/core/Chrono.h>
 
 #include <y/mem/allocators.h>
 #include <y/core/Range.h>
@@ -249,9 +252,24 @@ struct C {
 };
 
 
+using namespace concurrent;
+
 int main() {
-	C c;
-	serde3::ReadableArchive::post_deserialize(c, 4);
+	StaticThreadPool threads(8);
+	DependencyGroup deps;
+	threads.schedule([] {
+		log_msg("start 1");
+		core::Duration::sleep(core::Duration::seconds(2));
+		log_msg("done 1");
+	}, &deps);
+	threads.schedule([] {
+		log_msg("start 2");
+		core::Duration::sleep(core::Duration::seconds(1));
+		log_msg("done 2");
+	}, &deps);
+	threads.schedule([] {
+		log_msg("start 3");
+	}, nullptr, deps);
 
 
 #if 0

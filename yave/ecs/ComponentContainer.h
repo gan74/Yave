@@ -125,7 +125,7 @@ class ComponentContainerBase : NonMovable {
 
 
 		y_serde3_poly_base(ComponentContainerBase)
-		virtual void post_deserialize_poly(const AssetLoadingContext&) = 0;
+		virtual void post_deserialize_poly(AssetLoadingContext&) = 0;
 
 	protected:
 		template<typename T>
@@ -206,7 +206,7 @@ class ComponentContainer final : public ComponentContainerBase {
 		y_serde3(_components)
 		y_serde3_poly(ComponentContainer)
 
-		void post_deserialize_poly(const AssetLoadingContext& context) override {
+		void post_deserialize_poly(AssetLoadingContext& context) override {
 			y_profile();
 			serde3::ReadableArchive::post_deserialize(*this, context);
 		}
@@ -215,7 +215,7 @@ class ComponentContainer final : public ComponentContainerBase {
 		ComponentVector<T> _components;
 };
 
-static_assert(serde3::has_serde3_post_deser_poly_v<ComponentContainerBase*, const AssetLoadingContext&>);
+static_assert(serde3::has_serde3_post_deser_poly_v<ComponentContainerBase*, AssetLoadingContext&>);
 
 }
 }

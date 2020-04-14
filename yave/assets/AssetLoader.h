@@ -24,16 +24,16 @@ SOFTWARE.
 
 #include <yave/device/DeviceLinked.h>
 
-#include "AssetPtr.h"
-#include "AssetStore.h"
 #include "Loader.h"
-
-#include <y/concurrent/StaticThreadPool.h>
+#include "AssetLoadingContext.h"
+#include "AssetLoadingThreadPool.h"
 
 #include <typeindex>
 #include <future>
 
 namespace yave {
+
+class AssetLoadingContext;
 
 class AssetLoader : NonMovable, public DeviceLinked {
 
@@ -49,76 +49,47 @@ class AssetLoader : NonMovable, public DeviceLinked {
 		AssetStore& store();
 		const AssetStore& store() const;
 
-		void finish_all_requests();
+		// This is dangerous: Do not call in loading threads!
+		void wait_until_loaded(const GenericAssetPtr& ptr);
+
 
 		template<typename T>
-		Result<T> load_res(AssetId id);
+		inline Result<T> load_res(AssetId id);
 		template<typename T>
-		Result<T> load_res(std::string_view name);
+		inline Result<T> load_res(std::string_view name);
 
 		template<typename T>
-		AssetPtr<T> load(AssetId id);
+		inline AssetPtr<T> load(AssetId id);
 		template<typename T>
-		AsyncAssetPtr<T> load_async(AssetId id);
-		template<typename T>
-		std::future<Result<T>> load_future(AssetId id);
+		inline AssetPtr<T> load_async(AssetId id);
+
 
 		template<typename T>
-		Result<T> import(std::string_view name, std::string_view import_from);
+		inline Result<T> import(std::string_view name, std::string_view import_from);
 
    private:
 		template<typename T>
 		friend class Loader;
 
-		template<typename T, typename E>
-		Result<T> load(core::Result<AssetId, E> id);
+		friend class AssetLoadingContext;
 
-		template<typename T, typename Raw = remove_cvref_t<T>>
-		Loader<Raw>& loader_for_type();
+		template<typename T, typename E>
+		inline Result<T> load(core::Result<AssetId, E> id);
+
+		template<typename T>
+		inline Loader<T>& loader_for_type();
 
 		core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from, AssetType type);
-
 
 		std::unordered_map<std::type_index, std::unique_ptr<LoaderBase>> _loaders;
 		std::shared_ptr<AssetStore> _store;
 
 		std::recursive_mutex _lock;
-		concurrent::StaticThreadPool _threads;
-};
-
-
-
-class AssetLoadingContext {
-	public:
-		static constexpr bool allow_async_loading = true;
-
-		AssetLoadingContext(AssetLoader& loader) : _parent(loader) {
-		}
-
-		template<typename T>
-		AssetPtr<T> load(AssetId id) const {
-			return _parent.load<T>(id);
-		}
-
-		template<typename T>
-		AsyncAssetPtr<T> load_async(AssetId id) const {
-			return _parent.load_async<T>(id);
-		}
-
-	private:
-		template<typename T>
-		friend class Loader;
-
-		friend class AssetLoader;
-
-		AssetLoadingContext(AssetLoader& parent, AssetId id) : _parent(parent), _id(id) {
-		}
-
-		AssetLoader& _parent;
-		AssetId _id;
+		AssetLoadingThreadPool _thread_pool;
 };
 
 }
+
 
 #include "AssetLoader.inl"
 

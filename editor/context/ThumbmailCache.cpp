@@ -183,7 +183,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		return it != _thumbmails.end() && it->second == nullptr;
 	}());
 
-	const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+	/*const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 	switch(asset_type) {
 		case AssetType::Mesh:
 			_loading_requests.emplace_back(context()->loader().load_future<StaticMesh>(id), [=](auto&& mesh) {
@@ -210,7 +210,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		default:
 			log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
 		break;
-	}
+	}*/
 }
 
 static std::array<char, 32> rounded_string(float value) {

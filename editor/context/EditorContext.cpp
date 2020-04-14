@@ -239,7 +239,7 @@ void EditorContext::load_world() {
 		return;
 	}
 	serde3::ReadableArchive arc(file.unwrap());
-	AssetLoadingContext loading_ctx(loader());
+	AssetLoadingContext loading_ctx(&loader());
 	const auto status = arc.deserialize(world, loading_ctx);
 	if(status.is_error()) {
 		log_msg("Unable to load world.", Log::Error);

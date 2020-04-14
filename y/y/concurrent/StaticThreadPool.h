@@ -22,12 +22,13 @@ SOFTWARE.
 #ifndef Y_CONCURRENT_STATICTHREADPOOL_H
 #define Y_CONCURRENT_STATICTHREADPOOL_H
 
-#include <y/utils.h>
 #include <y/core/Functor.h>
 #include <y/core/Vector.h>
 
+#include "concurrent.h"
+
+#include <list>
 #include <thread>
-#include <deque>
 #include <mutex>
 #include <atomic>
 #include <future>
@@ -36,41 +37,70 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
+class StaticThreadPool;
+
+class DependencyGroup {
+	public:
+		DependencyGroup() = default;
+
+		bool is_ready() const;
+		bool is_expired() const;
+		u32 dependency_count() const;
+
+	private:
+		friend class StaticThreadPool;
+
+		void add_dependency();
+		void solve_dependency();
+
+		std::shared_ptr<std::atomic<u32>> _counter;
+};
+
 class StaticThreadPool : NonMovable {
 	private:
 		using Func = core::Function<void()>;
+
+		struct FuncData {
+			FuncData(Func func, DependencyGroup wait, DependencyGroup done = DependencyGroup());
+
+			Func function;
+			DependencyGroup wait_for;
+			DependencyGroup on_done;
+		};
 
 		struct SharedData {
 			mutable std::mutex lock;
 			std::condition_variable condition;
 
-			std::deque<Func> queue;
+			std::list<FuncData> queue;
 
-			std::atomic<u64> done = 0;
 			std::atomic<bool> run = true;
 		};
 
 	public:
+
 		// Thread names must have static storage
 		StaticThreadPool(usize thread_count = std::max(4u, std::thread::hardware_concurrency()), const char* thread_names = nullptr);
 		~StaticThreadPool();
 
 		usize concurency() const;
 		usize pending_tasks() const;
-		void process_until_empty();
-		void wait_all_finished();
 
-		void schedule(Func&& func, bool in_front = false);
+		// Empty means all tasks are scheduled, not done!
+		void process_until_empty();
+
+		void schedule(Func&& func, DependencyGroup* on_done = nullptr, DependencyGroup wait_for = DependencyGroup());
 
 		template<typename F, typename R = decltype(std::declval<F>()())>
-		std::future<R> schedule_with_future(F&& func) {
+		std::future<R> schedule_with_future(F&& func, DependencyGroup* on_done = nullptr, DependencyGroup wait_for = DependencyGroup()) {
 			struct { mutable std::promise<R> promise; } box;
 			auto future = box.promise.get_future();
-			schedule([b = std::move(box), f = y_fwd(func)]() { b.promise.set_value(f()); });
+			schedule([b = std::move(box), f = y_fwd(func)]() { b.promise.set_value(f()); }, on_done, wait_for);
 			return future;
 		}
 
 	private:
+		bool process_one(std::unique_lock<std::mutex> lock);
 		void worker();
 
 		SharedData _shared_data;

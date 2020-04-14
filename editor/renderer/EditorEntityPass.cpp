@@ -153,7 +153,6 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 		mapping->view_proj = scene_view.camera().viewproj_matrix();
 		mapping->viewport_size = pass->framebuffer().size();
 		mapping->size = 64.0f;
-
 	}
 
 	{

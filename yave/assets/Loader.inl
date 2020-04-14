@@ -29,13 +29,9 @@ SOFTWARE.
 #include "Loader.h"
 #endif
 
+#include <y/core/String.h>
+
 namespace yave {
-
-template<typename T>
-AssetType Loader<T>::type() const {
-	return traits::type;
-}
-
 
 namespace detail {
 template<typename T>
@@ -43,20 +39,41 @@ void AssetPtrData<T>::set_reloaded(const std::shared_ptr<AssetPtrData<T>>& other
 	if(!other || other->id != id) {
 		y_fatal("Invalid reload");
 	}
+	Y_TODO(this might fail, do we care?)
 	y_debug_assert(other->is_loaded() || other->is_failed());
 	std::atomic_store(&reloaded, other);
 }
 }
 
 template<typename T>
-void AssetPtrBase<T>::reload() {
+void AssetPtr<T>::reload() {
 	y_debug_assert(!_data || _data->id == _id);
-	if(_data && _data->loader) {
+	if(has_loader()) {
 		flush_reload();
 		dynamic_cast<Loader<T>*>(_data->loader)->reload(*this);
 		flush_reload();
 	}
 }
+
+template<typename T>
+void AssetPtr<T>::wait_until_loaded() const {
+	if(has_loader() && !is_loaded()) {
+		_data->loader->parent()->wait_until_loaded(*this);
+		y_debug_assert(is_loaded());
+	}
+}
+
+template<typename T>
+core::Result<core::String> AssetPtr<T>::name() const {
+	if(has_loader()) {
+		AssetStore& store = _data->loader->parent()->store();
+		if(auto r = store.name(_id)) {
+			return core::Ok(std::move(r.unwrap()));
+		}
+	}
+	return core::Err();
+}
+
 
 }
 

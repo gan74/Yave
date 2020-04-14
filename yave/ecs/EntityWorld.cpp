@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "EntityWorld.h"
-#include <yave/assets/AssetLoader.h>
+#include <yave/assets/AssetLoadingContext.h>
 
 namespace yave {
 namespace ecs {
@@ -97,7 +97,7 @@ void EntityWorld::add_required_components(EntityId id) {
 void EntityWorld::flush_reload(AssetLoader& loader) {
 	y_profile();
 	for(const auto& p : _component_containers) {
-		AssetLoadingContext loading_ctx(loader);
+		AssetLoadingContext loading_ctx(&loader);
 		p.second->post_deserialize_poly(loading_ctx);
 	}
 }

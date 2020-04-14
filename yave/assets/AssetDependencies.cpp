@@ -19,57 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ASSETS_LOADERBASE_H
-#define YAVE_ASSETS_LOADERBASE_H
 
-#include "AssetId.h"
-
+#include "AssetDependencies.h"
 
 namespace yave {
 
-template<typename T>
-class AssetPtr;
-template<typename T>
-class AsyncAssetPtr;
-template<typename T>
-class Loader;
-template<typename T>
-class WeakAssetPtr;
-
-
-enum class AssetLoadingErrorType : u32 {
-	InvalidID,
-	UnknownID,
-	InvalidData,
-	UnknownType,
-	FailedDependedy,
-	Unknown
-};
-
-class LoaderBase : NonMovable {
-	public:
-		using ErrorType = AssetLoadingErrorType;
-
-		virtual ~LoaderBase();
-
-		AssetLoader* parent() const;
-		DevicePtr device() const;
-
-		AssetStore& store();
-		const AssetStore& store() const;
-
-		virtual AssetType type() const = 0;
-
-	protected:
-		friend class AssetLoader;
-
-		LoaderBase(AssetLoader* parent);
-
-	private:
-
-		AssetLoader* _parent = nullptr;
-};
-
+void AssetDependencies::add_dependency(GenericAssetPtr asset) {
+	if(asset.id() != AssetId::invalid_id()) {
+		_deps.emplace_back(std::move(asset));
+	}
 }
 
-#endif // YAVE_ASSETS_LOADERBASE_H
+
+bool AssetDependencies::is_done() const {
+	return state() != AssetLoadingState::NotLoaded;
+}
+
+bool AssetDependencies::is_empty() const {
+	return _deps.is_empty();
+}
+
+AssetLoadingState AssetDependencies::state() const {
+	for(const auto& d : _deps) {
+		if(!d.is_loaded()) {
+			return d.is_failed() ? AssetLoadingState::Failed : AssetLoadingState::NotLoaded;
+		}
+	}
+	return AssetLoadingState::Loaded;
+}
+
+AssetLoadingErrorType AssetDependencies::error() const {
+	for(const auto& d : _deps) {
+		if(!d.is_failed()) {
+			return d.error();
+		}
+	}
+	return AssetLoadingErrorType::Unknown;
+}
+
+}

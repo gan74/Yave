@@ -24,11 +24,12 @@ SOFTWARE.
 
 #include "AssetPtr.h"
 #include "AssetStore.h"
+#include "AssetDependencies.h"
 
 #include <y/core/Functor.h>
+#include <y/core/Result.h>
 #include <y/serde3/archives.h>
 
-#include <list>
 #include <unordered_map>
 #include <mutex>
 
@@ -36,30 +37,34 @@ namespace yave {
 
 template<typename T>
 class Loader final : public LoaderBase {
+	using Data = typename AssetPtr<T>::Data;
+	using WeakAssetPtr = std::weak_ptr<Data>;
 
 	using traits = AssetTraits<T>;
 	static_assert(traits::is_asset, "Type is missing asset traits");
-	using load_from_t = typename traits::load_from;
 
-	using WeakAssetPtr = std::weak_ptr<detail::AssetPtrData<T>>;
+	using LoadFrom = typename traits::load_from;
 
-	using Data = typename AssetPtrBase<T>::Data;
+	using CreateFunc = core::Function<void()>;
+	using ReadFunc = core::Function<CreateFunc(AssetLoadingContext&)>;
+
 
 	public:
 		Loader(AssetLoader* parent);
 		~Loader();
 
-		AssetPtr<T> load(AssetId id);
-		AsyncAssetPtr<T> load_async(AssetId id);
+		inline AssetPtr<T> load(AssetId id);
+		inline AssetPtr<T> load_async(AssetId id);
 
-		AssetPtr<T> reload(const AssetPtrBase<T>& ptr);
+		inline AssetPtr<T> reload(const AssetPtr<T>& ptr);
 
-		AssetType type() const;
+		AssetType type() const {
+			return traits::type;
+		}
 
 	private:
-		template<bool Async>
-		void load_internal(AssetPtrBase<T>& ptr);
-		void load_func(const std::shared_ptr<Data>& ptr);
+		[[nodiscard]] inline bool find_ptr(AssetPtr<T>& ptr);
+		inline ReadFunc read_func(const std::shared_ptr<Data>& data);
 
 		std::unordered_map<AssetId, WeakAssetPtr> _loaded;
 		std::recursive_mutex _lock;

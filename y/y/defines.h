@@ -43,8 +43,10 @@ void break_in_debugger();
 // keep the namespacing ?
 #define y_fatal(msg) y::fatal((msg), __FILE__, __LINE__)
 
+#define y_always_assert(cond, msg) do { if(!(cond)) { y_fatal(msg); } } while(false)
+
 #ifdef Y_DEBUG
-#define y_debug_assert(cond) do { if(!(cond)) { y_fatal("Assert failed: " #cond); } } while(false)
+#define y_debug_assert(cond) y_always_assert(cond, "Assert failed: " #cond)
 #else
 #define y_debug_assert(cond) do { /*(void)(cond);*/ } while(false)
 #endif
