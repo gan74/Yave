@@ -22,22 +22,38 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_ASSETPTR_H
 #define YAVE_ASSETS_ASSETPTR_H
 
-#include "LoaderBase.h"
+#include "AssetId.h"
 
 #include <memory>
 #include <atomic>
 
 namespace yave {
 
+template<typename T>
+class AssetPtr;
+class GenericAssetPtr;
+
+class AssetLoader;
 class AssetLoadingContext;
 class AssetLoadingThreadPool;
-class GenericAssetPtr;
+
 
 enum class AssetLoadingState : u32 {
 	NotLoaded = 0,
 	Loaded = 1,
 	Failed = 2
 };
+
+enum class AssetLoadingErrorType : u32 {
+	InvalidID,
+	UnknownID,
+	InvalidData,
+	UnknownType,
+	FailedDependedy,
+	Unknown
+};
+
+
 
 template<typename T, typename... Args>
 AssetPtr<T> make_asset(Args&&... args);
@@ -59,24 +75,23 @@ class AssetPtrDataBase : NonMovable {
 		inline bool is_failed() const;
 		inline bool is_loading() const;
 
+		inline AssetLoader* loader() const;
+
 	protected:
-		inline AssetPtrDataBase(AssetId i, AssetLoadingState s = AssetLoadingState::NotLoaded);
+		inline AssetPtrDataBase(AssetId i, AssetLoader* loader, AssetLoadingState s = AssetLoadingState::NotLoaded);
 
 		std::atomic<AssetLoadingState> _state = AssetLoadingState::NotLoaded;
+		AssetLoader* _loader = nullptr;
 };
 
 template<typename T>
 class AssetPtrData final : public AssetPtrDataBase {
 	public:
 		T asset;
-
-		Y_TODO(Change to Loader<T>)
-		LoaderBase* loader = nullptr;
-
 		std::shared_ptr<AssetPtrData<T>> reloaded;
 
-		inline AssetPtrData(AssetId i, LoaderBase* l);
-		inline AssetPtrData(AssetId i, LoaderBase* l, T t);
+		inline AssetPtrData(AssetId id, AssetLoader* loader);
+		inline AssetPtrData(AssetId id, AssetLoader* loader, T t);
 
 		inline void finalize_loading(T t);
 		inline void set_reloaded(const std::shared_ptr<AssetPtrData<T>>& other);
@@ -100,9 +115,9 @@ class AssetPtr {
 		inline bool flush_reload();
 		inline void reload();
 
-
 		inline bool is_empty() const;
 		inline bool has_loader() const;
+		inline AssetLoader* loader() const;
 
 		inline bool is_loaded() const;
 		inline bool is_loading() const;
@@ -125,12 +140,9 @@ class AssetPtr {
 		y_serde3(_id)
 
 	protected:
-		friend class AssetLoadingThreadPool;
 		friend class GenericAssetPtr;
-		friend class LoaderBase;
-		friend class detail::AssetPtrData<T>;
-		friend class Loader<T>;
-		friend class AsyncAssetPtr<T>;
+		friend class AssetLoader;
+		friend class AssetLoadingThreadPool;
 
 		template<typename U, typename... Args>
 		friend AssetPtr<U> make_asset(Args&&... args);
@@ -139,8 +151,8 @@ class AssetPtr {
 		friend AssetPtr<U> make_asset_with_id(AssetId id, Args&&... args);
 
 		inline AssetPtr(AssetId id);
-		inline AssetPtr(AssetId id, LoaderBase* loader);
-		inline AssetPtr(AssetId id, LoaderBase* loader, T asset);
+		inline AssetPtr(AssetId id, AssetLoader* loader);
+		inline AssetPtr(AssetId id, AssetLoader* loader, T asset);
 		inline AssetPtr(std::shared_ptr<Data> ptr);
 
 	protected:
@@ -185,8 +197,8 @@ class GenericAssetPtr {
 		}
 
 	private:
+		friend class AssetLoader;
 		friend class AssetLoadingThreadPool;
-		friend class LoaderBase;
 
 		std::shared_ptr<detail::AssetPtrDataBase> _data;
 

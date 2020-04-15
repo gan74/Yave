@@ -40,36 +40,57 @@ class AssetLoadingThreadPool : NonMovable {
 		using CreateFunc = core::Function<void()>;
 		using ReadFunc = core::Function<CreateFunc(AssetLoadingContext&)>;
 
-	private:
-		struct LoadingJob {
-			LoadingJob(GenericAssetPtr a, ReadFunc f);
+		class LoadingJob : NonMovable {
+			public:
+				virtual ~LoadingJob();
 
-			GenericAssetPtr asset;
-			ReadFunc func;
+				virtual void read() = 0;
+				virtual void finalize(DevicePtr dptr) = 0;
+				virtual void set_dependencies_failed() = 0;
+
+				const AssetDependencies& dependencies() const;
+				AssetLoader* parent() const;
+
+			protected:
+				LoadingJob(AssetLoader* loader);
+
+				AssetLoadingContext& loading_context();
+
+			private:
+				AssetLoadingContext _ctx;
 		};
 
-		struct CreateJob {
-			CreateJob(GenericAssetPtr a, AssetLoadingContext ctx, CreateFunc f);
+		class FunctorLoadingJob : public LoadingJob {
+			public:
+				FunctorLoadingJob(GenericAssetPtr asset, AssetLoader* loader, ReadFunc func);
 
-			GenericAssetPtr asset;
-			AssetLoadingContext loading_ctx;
-			CreateFunc func;
+				void read() override;
+				void finalize(DevicePtr dptr) override;
+				void set_dependencies_failed() override;
+
+			private:
+				ReadFunc _read;
+				CreateFunc _create;
+				GenericAssetPtr _asset;
 		};
 
-	public:
 		AssetLoadingThreadPool(AssetLoader* parent, usize concurency = 1);
 		~AssetLoadingThreadPool();
+
+		DevicePtr device() const;
+
 
 		void wait_until_loaded(const GenericAssetPtr& ptr);
 
 		void add_loading_job(GenericAssetPtr asset, ReadFunc func);
+		void add_loading_job(std::unique_ptr<LoadingJob> job);
 
 	private:
 		void process_one(std::unique_lock<std::mutex> lock);
 		void worker();
 
-		std::deque<LoadingJob> _loading_jobs;
-		std::list<CreateJob> _create_jobs;
+		std::deque<std::unique_ptr<LoadingJob>> _loading_jobs;
+		std::list<std::unique_ptr<LoadingJob>> _finalize_jobs;
 
 		std::mutex _lock;
 		std::condition_variable _condition;

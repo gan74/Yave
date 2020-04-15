@@ -29,6 +29,8 @@ SOFTWARE.
 #include "AssetLoader.h"
 #endif
 
+#include <y/serde3/archives.h>
+
 #include <y/core/Chrono.h>
 
 namespace yave {
@@ -44,6 +46,38 @@ void AssetPtr<T>::post_deserialize(AssetLoadingContext& context)  {
 	flush_reload();
 }
 
+template<typename T>
+void AssetPtr<T>::reload() {
+	y_debug_assert(!_data || _data->id == _id);
+	if(has_loader()) {
+		flush_reload();
+		loader()->reload(*this);
+		flush_reload();
+	}
+}
+
+template<typename T>
+void AssetPtr<T>::wait_until_loaded() const {
+	if(has_loader() && !is_loaded()) {
+		loader()->wait_until_loaded(*this);
+		y_debug_assert(is_loaded());
+	}
+}
+
+template<typename T>
+core::Result<core::String> AssetPtr<T>::name() const {
+	if(has_loader()) {
+		AssetStore& store = loader()->store();
+		if(auto r = store.name(_id)) {
+			return core::Ok(std::move(r.unwrap()));
+		}
+	}
+	return core::Err();
+}
+
+
+
+
 
 
 
@@ -51,12 +85,12 @@ void AssetPtr<T>::post_deserialize(AssetLoadingContext& context)  {
 // --------------------------- Loader ---------------------------
 
 template<typename T>
-Loader<T>::Loader(AssetLoader* parent) : LoaderBase(parent) {
+AssetLoader::Loader<T>::Loader(AssetLoader* parent) : LoaderBase(parent) {
 	y_always_assert(parent, "Parent should not be null.");
 }
 
 template<typename T>
-Loader<T>::~Loader() {
+AssetLoader::Loader<T>::~Loader() {
 	y_profile();
 	const auto lock = y_profile_unique_lock(_lock);
 	for(auto&& [id, ptr] : _loaded) {
@@ -67,7 +101,7 @@ Loader<T>::~Loader() {
 }
 
 template<typename T>
-bool Loader<T>::find_ptr(AssetPtr<T>& ptr) {
+bool AssetLoader::Loader<T>::find_ptr(AssetPtr<T>& ptr) {
 	const AssetId id = ptr.id();
 	if(id == AssetId::invalid_id()) {
 		return true;
@@ -79,13 +113,13 @@ bool Loader<T>::find_ptr(AssetPtr<T>& ptr) {
 	if(ptr._data) {
 		return true;
 	}
-	weak = (ptr = std::make_shared<Data>(id, this))._data;
+	weak = (ptr = std::make_shared<Data>(id, parent()))._data;
 	return false;
 }
 
 
 template<typename T>
-AssetPtr<T> Loader<T>::load(AssetId id) {
+AssetPtr<T> AssetLoader::Loader<T>::load(AssetId id) {
 	y_profile();
 	auto ptr = load_async(id);
 	parent()->wait_until_loaded(ptr);
@@ -95,17 +129,17 @@ AssetPtr<T> Loader<T>::load(AssetId id) {
 }
 
 template<typename T>
-AssetPtr<T> Loader<T>::load_async(AssetId id) {
+AssetPtr<T> AssetLoader::Loader<T>::load_async(AssetId id) {
 	y_profile();
 	AssetPtr<T> ptr(id);
 	if(!find_ptr(ptr)) {
-		parent()->_thread_pool.add_loading_job(ptr, read_func(ptr._data));
+		parent()->_thread_pool.add_loading_job(create_loading_job(ptr));
 	}
 	return ptr;
 }
 
 template<typename T>
-AssetPtr<T> Loader<T>::reload(const AssetPtr<T>& ptr) {
+AssetPtr<T> AssetLoader::Loader<T>::reload(const AssetPtr<T>& ptr) {
 	y_profile();
 
 	const AssetId id = ptr.id();
@@ -115,49 +149,66 @@ AssetPtr<T> Loader<T>::reload(const AssetPtr<T>& ptr) {
 
 	y_always_assert(!ptr.is_empty(), "Can not reload empty asset");
 
-	auto data = std::make_shared<Data>(id, this);
-	AssetLoadingContext loading_ctx(parent());
-	read_func(data)(loading_ctx)();
+	AssetPtr<T> reloaded(id, parent());
+	{
+		parent()->_thread_pool.add_loading_job(create_loading_job(reloaded));
+		parent()->wait_until_loaded(reloaded);
+		y_debug_assert(!reloaded.is_loading());
+	}
 
 	{
 		const auto lock = y_profile_unique_lock(_lock);
 		auto& weak = _loaded[id];
 		if(auto orig = weak.lock()) {
-			orig->set_reloaded(data);
+			orig->set_reloaded(reloaded._data);
 		}
-		weak = data;
+		weak = reloaded._data;
 	}
-	return data;
+	return reloaded;
 }
 
 template<typename T>
-typename Loader<T>::ReadFunc Loader<T>::read_func(const std::shared_ptr<Data>& data) {
-	return [data, this](AssetLoadingContext& loading_ctx) -> CreateFunc {
-		y_always_assert(data && data->is_loading(), "Asset is not in a loading state");
-		y_always_assert(parent() == loading_ctx.parent(), "Mismatched AssetLoaders");
-
-		const AssetId id = data->id;
-
-		y_always_assert(id != AssetId::invalid_id(), "Invalid asset ID");
-		if(auto reader = store().data(id)) {
-			y_profile_zone("loading");
-
-			LoadFrom load_from;
-			serde3::ReadableArchive arc(std::move(reader.unwrap()));
-			if(arc.deserialize(load_from, loading_ctx)) {
-				struct { mutable LoadFrom data; } box { std::move(load_from) };
-				return [from = std::move(box), data, this] {
-					data->finalize_loading(T(device(), std::move(from.data)));
-					y_debug_assert(!data->is_loading());
-				};
-			} else {
-				data->set_failed(ErrorType::InvalidData);
+std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_job(AssetPtr<T> ptr) {
+	class Job : public LoadingJob {
+		public:
+			Job(AssetLoader* loader, std::shared_ptr<Data> data) : LoadingJob(loader), _data(std::move(data)) {
+				y_always_assert(_data, "Invalid asset");
 			}
-		}
-		data->set_failed(ErrorType::InvalidID);
-		y_debug_assert(!data->is_loading());
-		return []() {};
+
+			void read() override {
+				const AssetId id = _data->id;
+
+				y_always_assert(_data->is_loading(), "Asset is not in a loading state");
+				y_always_assert(_data->loader() == parent(), "Mismatched AssetLoaders");
+				y_always_assert(id != AssetId::invalid_id(), "Invalid asset ID");
+
+				if(auto reader = parent()->store().data(id)) {
+					y_profile_zone("loading");
+					serde3::ReadableArchive arc(std::move(reader.unwrap()));
+					if(arc.deserialize(_load_from, loading_context())) {
+						return;
+					} else {
+						_data->set_failed(ErrorType::InvalidData);
+					}
+				}
+				_data->set_failed(ErrorType::InvalidID);
+				y_debug_assert(!_data->is_loading());
+			}
+
+			void finalize(DevicePtr dptr) {
+				y_debug_assert(_data->is_loading());
+				_data->finalize_loading(T(dptr, std::move(_load_from)));
+			}
+
+			void set_dependencies_failed() {
+				_data->set_failed(AssetLoadingErrorType::FailedDependedy);
+			}
+
+		private:
+			std::shared_ptr<Data> _data;
+			LoadFrom _load_from;
 	};
+	return std::make_unique<Job>(parent(), std::move(ptr._data));
 }
 
 
@@ -194,6 +245,12 @@ AssetPtr<T> AssetLoader::load_async(AssetId id) {
 	return loader_for_type<T>().load_async(id);
 }
 
+
+template<typename T>
+AssetPtr<T> AssetLoader::reload(const AssetPtr<T>& ptr) {
+	return loader_for_type<T>().reload(ptr);
+}
+
 template<typename T>
 AssetLoader::Result<T> AssetLoader::import(std::string_view name, std::string_view import_from) {
 	return load<T>(load_or_import(name, import_from, AssetTraits<T>::type));
@@ -208,7 +265,7 @@ AssetLoader::Result<T> AssetLoader::load(core::Result<AssetId, E> id) {
 }
 
 template<typename T>
-Loader<T>& AssetLoader::loader_for_type() {
+AssetLoader::Loader<T>& AssetLoader::loader_for_type() {
 	const auto lock = y_profile_unique_lock(_lock);
 	auto& loader = _loaders[typeid(T)];
 	if(!loader) {

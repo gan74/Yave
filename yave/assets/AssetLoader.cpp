@@ -29,6 +29,18 @@ SOFTWARE.
 
 namespace yave {
 
+
+AssetLoader::LoaderBase::~LoaderBase() {
+}
+
+AssetLoader::LoaderBase::LoaderBase(AssetLoader* parent) : _parent(parent) {
+}
+
+AssetLoader* AssetLoader::LoaderBase::parent() const {
+	return _parent;
+}
+
+
 AssetLoader::AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, usize concurency) :
 		DeviceLinked(dptr),
 		_store(store),

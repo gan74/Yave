@@ -24,10 +24,11 @@ SOFTWARE.
 
 #include <yave/device/DeviceLinked.h>
 
-#include "Loader.h"
+#include "AssetStore.h"
 #include "AssetLoadingContext.h"
 #include "AssetLoadingThreadPool.h"
 
+#include <unordered_map>
 #include <typeindex>
 #include <future>
 
@@ -36,13 +37,64 @@ namespace yave {
 class AssetLoadingContext;
 
 class AssetLoader : NonMovable, public DeviceLinked {
+	public:
+		 using ErrorType = AssetLoadingErrorType;
 
-   public:
-		using ErrorType = AssetLoadingErrorType;
+		 template<typename T>
+		 using Result = core::Result<AssetPtr<T>, ErrorType>;
+
+	private:
+		using LoadingJob = AssetLoadingThreadPool::LoadingJob;
+
+		class LoaderBase : NonMovable {
+			public:
+				virtual ~LoaderBase();
+
+				AssetLoader* parent() const;
+
+				virtual AssetType type() const = 0;
+
+			protected:
+				LoaderBase(AssetLoader* parent);
+
+			private:
+
+				AssetLoader* _parent = nullptr;
+		};
+
 
 		template<typename T>
-		using Result = core::Result<AssetPtr<T>, ErrorType>;
+		class Loader final : public LoaderBase {
+			using Data = typename AssetPtr<T>::Data;
+			using WeakAssetPtr = std::weak_ptr<Data>;
 
+			using traits = AssetTraits<T>;
+			static_assert(traits::is_asset, "Type is missing asset traits");
+
+			using LoadFrom = typename traits::load_from;
+
+			public:
+				Loader(AssetLoader* parent);
+				~Loader();
+
+				inline AssetPtr<T> load(AssetId id);
+				inline AssetPtr<T> load_async(AssetId id);
+
+				inline AssetPtr<T> reload(const AssetPtr<T>& ptr);
+
+				AssetType type() const {
+					return traits::type;
+				}
+
+			private:
+				[[nodiscard]] inline bool find_ptr(AssetPtr<T>& ptr);
+				inline std::unique_ptr<LoadingJob> create_loading_job(AssetPtr<T> ptr);
+
+				std::unordered_map<AssetId, WeakAssetPtr> _loaded;
+				std::recursive_mutex _lock;
+		};
+
+   public:
 		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, usize concurency = 1);
 		~AssetLoader();
 
@@ -63,6 +115,8 @@ class AssetLoader : NonMovable, public DeviceLinked {
 		template<typename T>
 		inline AssetPtr<T> load_async(AssetId id);
 
+		template<typename T>
+		inline AssetPtr<T> reload(const AssetPtr<T>& ptr);
 
 		template<typename T>
 		inline Result<T> import(std::string_view name, std::string_view import_from);
