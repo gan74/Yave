@@ -128,8 +128,6 @@ ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 		return Thumbmail{};
 	}
 
-	process_requests();
-
 	Y_TODO(Handle reloading)
 
 	{
@@ -148,70 +146,61 @@ ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
 	return Thumbmail{};
 }
 
-void ThumbmailCache::process_requests() {
-	y_profile();
-	for(usize i = 0; i != _loading_requests.size(); ++i) {
-		if(_loading_requests[i].is_done()) {
-			y_profile_zone("schedule render");
-			RenderFunc func = _loading_requests[i].get();
-			_loading_requests.erase_unordered(_loading_requests.begin() + i);
-			--i;
-
-			_render_thread.schedule([f = std::move(func), this] {
-				y_profile_zone("Thumbmail render");
-				CmdBufferRecorder recorder = device()->create_disposable_cmd_buffer();
-				auto thumbmail = f(recorder);
-				device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
-				if(thumbmail) {
-					const auto lock = y_profile_unique_lock(_lock);
-					y_debug_assert(_thumbmails[thumbmail->id] == nullptr);
-					_thumbmails[thumbmail->id] = std::move(thumbmail);
-				} else {
-					log_msg("Unable to render thumbmail.", Log::Warning);
-				}
-			});
-		}
-	}
-}
-
 void ThumbmailCache::request_thumbmail(AssetId id) {
 	y_profile();
 
 	y_debug_assert([&] {
-		std::unique_lock lock(_lock);
+		const std::unique_lock lock(_lock);
 		const auto it = _thumbmails.find(id);
 		return it != _thumbmails.end() && it->second == nullptr;
 	}());
 
-	/*const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+	const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 	switch(asset_type) {
 		case AssetType::Mesh:
-			_loading_requests.emplace_back(context()->loader().load_future<StaticMesh>(id), [=](auto&& mesh) {
-				return [=, m = std::move(mesh.unwrap())](CmdBufferRecorder& rec) {
-						return render_thumbmail(rec, id, m, device()->device_resources()[DeviceResources::EmptyMaterial]);
-					};
+			_render_thread.schedule([id, this] {
+				if(const auto& mesh = context()->loader().load<StaticMesh>(id); !mesh.is_failed()) {
+					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
+					submit_and_set(rec, render_thumbmail(rec, id, mesh, device()->device_resources()[DeviceResources::EmptyMaterial]));
+				}
 			});
 		break;
 
 		case AssetType::Material:
-			_loading_requests.emplace_back(context()->loader().load_future<Material>(id), [=](auto&& mat) {
-				return [=, m = std::move(mat.unwrap())](CmdBufferRecorder& rec) {
-						return render_thumbmail(rec, id, rec.device()->device_resources()[DeviceResources::SphereMesh], m);
-					};
+			_render_thread.schedule([id, this] {
+				if(const auto& material = context()->loader().load<Material>(id); !material.is_failed()) {
+					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
+					submit_and_set(rec, render_thumbmail(rec, id, device()->device_resources()[DeviceResources::SphereMesh], material));
+				}
 			});
 		break;
 
 		case AssetType::Image:
-			_loading_requests.emplace_back(context()->loader().load_future<Texture>(id), [=](auto&& tex) {
-				return [=, t = std::move(tex.unwrap())](CmdBufferRecorder& rec) { return render_thumbmail(rec, t); };
+			_render_thread.schedule([id, this] {
+				if(const auto& texture = context()->loader().load<Texture>(id); !texture.is_failed()) {
+					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
+					submit_and_set(rec, render_thumbmail(rec, texture));
+				}
 			});
 		break;
 
 		default:
 			log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
 		break;
-	}*/
+	}
 }
+
+void ThumbmailCache::submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr<ThumbmailData> thumb) {
+	y_profile();
+	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
+
+	const auto lock = y_profile_unique_lock(_lock);
+	auto& thumbmail = _thumbmails[thumb->id];
+	y_debug_assert(thumbmail == nullptr);
+	thumbmail = std::move(thumb);
+}
+
+
 
 static std::array<char, 32> rounded_string(float value) {
 	std::array<char, 32> buffer;

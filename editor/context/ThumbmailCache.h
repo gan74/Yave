@@ -25,7 +25,6 @@ SOFTWARE.
 #include <editor/editor.h>
 
 #include <y/core/Functor.h>
-#include <y/concurrent/FutureCallback.h>
 #include <y/concurrent/StaticThreadPool.h>
 
 #include <yave/assets/AssetPtr.h>
@@ -59,7 +58,12 @@ class ThumbmailCache : NonMovable, public ContextLinked {
 			SceneView view;
 		};
 
-		using RenderFunc = core::Functor<std::unique_ptr<ThumbmailData>(CmdBufferRecorder&)>;
+		using RenderFunc = core::Function<std::unique_ptr<ThumbmailData>(CmdBufferRecorder&)>;
+
+		struct LoadingRequest {
+			GenericAssetPtr asset;
+			RenderFunc func;
+		};
 
 	public:
 		using ThumbmailView = std::reference_wrapper<const TextureView>;
@@ -78,8 +82,9 @@ class ThumbmailCache : NonMovable, public ContextLinked {
 		void clear();
 
 	private:
-		void process_requests();
 		void request_thumbmail(AssetId id);
+
+		void submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr<ThumbmailData> thumb);
 		std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const;
 		std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const;
 
@@ -89,7 +94,6 @@ class ThumbmailCache : NonMovable, public ContextLinked {
 		std::unordered_map<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
 
 		std::mutex _lock;
-		core::Vector<concurrent::FutureCallback<RenderFunc>> _loading_requests;
 		concurrent::WorkerThread _render_thread = concurrent::WorkerThread("Thumbmail rendering thread");
 };
 
