@@ -87,11 +87,8 @@ bool Loader<T>::find_ptr(AssetPtr<T>& ptr) {
 template<typename T>
 AssetPtr<T> Loader<T>::load(AssetId id) {
 	y_profile();
-	AssetPtr<T> ptr(id);
-	if(!find_ptr(ptr)) {
-		AssetLoadingContext loading_ctx(parent());
-		read_func(ptr._data)(loading_ctx)();
-	}
+	auto ptr = load_async(id);
+	parent()->wait_until_loaded(ptr);
 	y_debug_assert(!ptr.is_loading());
 	return ptr;
 
@@ -116,9 +113,7 @@ AssetPtr<T> Loader<T>::reload(const AssetPtr<T>& ptr) {
 		return AssetPtr<T>();
 	}
 
-	if(ptr.is_empty()) {
-		return load(id);
-	}
+	y_always_assert(!ptr.is_empty(), "Can not reload empty asset");
 
 	auto data = std::make_shared<Data>(id, this);
 	AssetLoadingContext loading_ctx(parent());
