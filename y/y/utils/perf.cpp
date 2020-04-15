@@ -53,9 +53,9 @@ static struct Guard {
 }
 
 
-struct ThreadData;
+class ThreadData;
 
-static std::mutex mutex;
+static std::recursive_mutex mutex;
 static std::shared_ptr<io2::File> output_file;
 
 static constexpr usize buffer_size = 1024 * 1024;
@@ -84,59 +84,71 @@ bool is_capturing() {
 	return capturing;
 }
 
+class ThreadData final : public std::enable_shared_from_this<ThreadData>, NonMovable {
+	public:
+		ThreadData(std::shared_ptr<io2::File> output, std::shared_ptr<ThreadData> next_thread) :
+				_output_file(std::move(output)),
+				_next(std::move(next_thread)),
+				_original_thread_id(concurrent::thread_id()) {
 
-
-
-struct ThreadData final : public std::enable_shared_from_this<ThreadData>, NonMovable {
-	std::unique_ptr<u8[]> buffer;
-	usize buffer_offset = 0;
-
-	std::shared_ptr<io2::File> output_file;
-	std::shared_ptr<ThreadData> next;
-
-	ThreadData(std::shared_ptr<io2::File> output, std::shared_ptr<ThreadData> next_thread) :
-			buffer(std::make_unique<u8[]>(buffer_size)),
-			output_file(std::move(output)),
-			next(std::move(next_thread)) {
-
-		if(const char* name = concurrent::thread_name()) {
-			char b[print_buffer_len];
-			const usize len = std::snprintf(b, sizeof(b), R"({"name":"thread_name","ph":"M","pid":0,"tid":%u,"args":{"name":"%u: %s"}},)", concurrent::thread_id(), concurrent::thread_id(), name);
-			if(len >= sizeof(b)) {
-				y_fatal("Too long.");
+			if(_output_file) {
+				_buffer = std::make_unique<u8[]>(buffer_size);
+				if(const char* name = concurrent::thread_name()) {
+					char b[print_buffer_len];
+					const usize len = std::snprintf(b, sizeof(b), R"({"name":"thread_name","ph":"M","pid":0,"tid":%u,"args":{"name":"%u: %s"}},)", concurrent::thread_id(), concurrent::thread_id(), name);
+					if(len >= sizeof(b)) {
+						y_fatal("Too long.");
+					}
+					write(b, len);
+				}
 			}
-			write(b, len);
 		}
 
-	}
+		~ThreadData() {
+			y_debug_assert(!_buffer == !_output_file);
+			if(_buffer) {
+				flush();
+				// last thread to be deleted writes the end
+				if(!_next) {
+					char b[print_buffer_len];
+					const usize len = std::snprintf(b, sizeof(b), R"({"name":"capture ended","cat":"perf","ph":"I","pid":0,"tid":%u,"ts":%.1f}]})", concurrent::thread_id(), micros());
+					_output_file->write(b, len).expected("Unable to write perf dump.");
+				}
+			}
 
-	~ThreadData() {
-		flush();
-		// last thread to be deleted writes the end
-		if(!next)
-		{
-			char b[print_buffer_len];
-			const usize len = std::snprintf(b, sizeof(b), R"({"name":"capture ended","cat":"perf","ph":"I","pid":0,"tid":%u,"ts":%.1f}]})", concurrent::thread_id(), micros());
-			output_file->write(b, len).expected("Unable to write perf dump.");
 		}
-	}
 
-	void write(const char* str, usize len) {
-		const usize remaining = buffer_size - buffer_offset;
-		if(len >= remaining) {
+		void write(const char* str, usize len) {
+			if(_buffer) {
+				const usize remaining = buffer_size - _buffer_offset;
+				if(len >= remaining) {
+					flush();
+				}
+				std::memcpy(_buffer.get() + _buffer_offset, str, len);
+				_buffer_offset += len;
+			}
+		}
+
+		bool is_empty() const {
+			return !_buffer;
+		}
+
+	private:
+		void flush() {
 			const std::unique_lock lock(mutex);
-			flush();
+			y_debug_assert(output_file);
+			y_debug_assert(output_file->is_open());
+			_output_file->write(_buffer.get(), _buffer_offset).expected("Unable to write perf dump.");
+			_buffer_offset = 0;
 		}
-		std::memcpy(buffer.get() + buffer_offset, str, len);
-		buffer_offset += len;
-	}
 
-	void flush() {
-		y_debug_assert(!mutex.try_lock());
-		y_debug_assert(output_file && output_file->is_open());
-		output_file->write(buffer.get(), buffer_offset).expected("Unable to write perf dump.");
-		buffer_offset = 0;
-	}
+		std::unique_ptr<u8[]> _buffer;
+		usize _buffer_offset = 0;
+
+		std::shared_ptr<io2::File> _output_file;
+		std::shared_ptr<ThreadData> _next;
+		const u32 _original_thread_id;
+
 };
 
 void start_capture(const char* out_filename) {
@@ -173,14 +185,21 @@ void end_capture() {
 }
 
 static std::shared_ptr<ThreadData> thread_data() {
+	std::shared_ptr<ThreadData> data;
 	if(!is_thread_capturing()) {
 		std::unique_lock lock(mutex);
-		head = std::make_shared<ThreadData>(output_file, head);
-		thread_local_ptr = head.get();
+		auto file = output_file;
+		data = std::make_shared<ThreadData>(output_file, head);
+		if(!data->is_empty()) {
+			head = data;
+		}
+		thread_local_ptr = data.get();
 		thread_capture_id = capture_id;
+	} else {
+		y_debug_assert(thread_local_ptr);
+		data = thread_local_ptr->shared_from_this();
 	}
-	y_debug_assert(thread_local_ptr);
-	return thread_local_ptr->shared_from_this();
+	return data;
 }
 
 static int paren(const char* buff) {

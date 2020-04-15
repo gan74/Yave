@@ -21,11 +21,11 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferPoolBase.h"
+
 #include <yave/device/Device.h>
 
 #include <y/core/Chrono.h>
-
-#include <mutex>
+#include <y/concurrent/concurrent.h>
 
 namespace yave {
 
@@ -46,10 +46,14 @@ static vk::CommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
 		);
 }
 
+CmdBufferPoolBase::CmdBufferPoolBase() : _thread_id(concurrent::thread_id()) {
+}
+
 CmdBufferPoolBase::CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred) :
 		DeviceLinked(dptr),
 		_pool(create_pool(dptr, preferred)),
-		_usage(preferred) {
+		_usage(preferred),
+		_thread_id(concurrent::thread_id()) {
 }
 
 CmdBufferPoolBase::~CmdBufferPoolBase() {
@@ -79,6 +83,7 @@ void CmdBufferPoolBase::join_all() {
 
 void CmdBufferPoolBase::release(CmdBufferData&& data) {
 	y_profile();
+
 	if(data.pool() != this) {
 		y_fatal("CmdBufferData was not returned to its original pool.");
 	}
@@ -89,12 +94,19 @@ void CmdBufferPoolBase::release(CmdBufferData&& data) {
 
 std::unique_ptr<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
 	y_profile();
-	const auto lock = y_profile_unique_lock(_lock);
-	if(!_cmd_buffers.is_empty()) {
-		CmdBufferData data = _cmd_buffers.pop();
-		data.reset();
-		return std::make_unique<CmdBufferDataProxy>(std::move(data));
+
+	y_debug_assert(concurrent::thread_id() == _thread_id);
+	{
+		auto lock = y_profile_unique_lock(_lock);
+		if(!_cmd_buffers.is_empty()) {
+			CmdBufferData data = _cmd_buffers.pop();
+			lock.unlock();
+
+			data.reset();
+			return std::make_unique<CmdBufferDataProxy>(std::move(data));
+		}
 	}
+
 	return std::make_unique<CmdBufferDataProxy>(create_data());
 }
 

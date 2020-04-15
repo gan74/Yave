@@ -152,7 +152,7 @@ void FmtBuffer::copy(const char* str, usize len) {
 }
 
 void FmtBuffer::fmt_one(const char* str) {
-	copy(str, std::strlen(str));
+	copy(str, str ? std::strlen(str) : 0);
 }
 
 void FmtBuffer::fmt_one(const core::String& str) {

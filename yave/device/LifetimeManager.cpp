@@ -28,28 +28,56 @@ SOFTWARE.
 
 #include <yave/graphics/vk/destroy.h>
 
+#include <y/concurrent/concurrent.h>
+#include <y/core/Chrono.h>
+
+#include <y/utils/log.h>
 #include <y/utils/format.h>
 
 namespace yave {
 
-LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
+LifetimeManager::LifetimeManager(DevicePtr dptr, bool async_collection) : DeviceLinked(dptr) {
+	if(async_collection) {
+		_run_async = true;
+		_collect_thread = std::make_unique<std::thread>([this] {
+			concurrent::set_thread_name("Resource collection thread");
+			std::mutex mutex;
+			while(_run_async) {
+				auto lock = y_profile_unique_lock(mutex);
+				const u32 ms = _collection_interval;
+				if(ms) {
+					_collect_condition.wait_for(lock, std::chrono::milliseconds(ms));
+				} else {
+					_collect_condition.wait(lock);
+				}
+				collect();
+			}
+		});
+	}
 }
 
 LifetimeManager::~LifetimeManager() {
 	y_debug_assert(_counter == _done_counter);
-	for(auto& r : _to_destroy) {
-		/*std::visit([](auto& r) {
-			log_msg(type_name(r));
-			if constexpr(std::is_same_v<remove_cvref_t<decltype(r)>, DescriptorSetData>) {
-				y_breakpoint;
-			}
-		}, r.second);*/
 
+	stop_async_collection();
+	collect();
+
+	for(auto& r : _to_destroy) {
 		destroy_resource(r.second);
 	}
 
 	if(_in_flight.size()) {
 		y_fatal("% CmdBuffer still in flight.", _in_flight.size());
+	}
+}
+
+void LifetimeManager::stop_async_collection() {
+	if(is_async()) {
+		y_profile();
+		_run_async = false;
+		_collect_condition.notify_all();
+		_collect_thread->join();
+		_collect_thread = nullptr;
 	}
 }
 
@@ -70,6 +98,15 @@ void LifetimeManager::recycle(CmdBufferData&& cmd) {
 	}
 
 	if(run_collect) {
+		schedule_collection();
+	}
+}
+
+
+void LifetimeManager::schedule_collection() {
+	if(is_async()) {
+		_collect_condition.notify_all();
+	} else {
 		collect();
 	}
 }
@@ -83,6 +120,7 @@ void LifetimeManager::collect() {
 	// To ensure that CmdBufferData keep alives are freed outside the lock
 	core::Vector<CmdBufferData> to_clean;
 	{
+		y_profile_zone("fence polling");
 		const auto lock = y_profile_unique_lock(_cmd_lock);
 		next = _done_counter;
 		while(!_in_flight.empty()) {
@@ -107,9 +145,12 @@ void LifetimeManager::collect() {
 		}
 	}
 
-	for(auto& cmd : to_clean) {
-		if(cmd.pool()) {
-			cmd.pool()->release(std::move(cmd));
+	{
+		y_profile_zone("release");
+		for(auto& cmd : to_clean) {
+			if(cmd.pool()) {
+				cmd.pool()->release(std::move(cmd));
+			}
 		}
 	}
 
@@ -119,6 +160,7 @@ void LifetimeManager::collect() {
 }
 
 usize LifetimeManager::pending_deletions() const {
+
 	const std::unique_lock lock(_resource_lock);
 	return _to_destroy.size();
 }
@@ -126,6 +168,10 @@ usize LifetimeManager::pending_deletions() const {
 usize LifetimeManager::active_cmd_buffers() const {
 	const auto lock = y_profile_unique_lock(_cmd_lock);
 	return _in_flight.size();
+}
+
+bool LifetimeManager::is_async() const {
+	return _run_async;
 }
 
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
@@ -150,6 +196,7 @@ void LifetimeManager::clear_resources(u64 up_to) {
 	core::Vector<ManagedResource> to_del;
 
 	{
+		y_profile_zone("collection");
 		const auto lock = y_profile_unique_lock(_cmd_lock);
 		while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
 			to_del << std::move(_to_destroy.front().second);

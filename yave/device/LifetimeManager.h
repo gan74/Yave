@@ -29,8 +29,11 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemory.h>
 #include <yave/graphics/vk/vk.h>
 
+
 #include <variant>
+#include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <deque>
 
 namespace yave {
@@ -66,8 +69,11 @@ using ManagedResource = std::variant<
 class LifetimeManager : NonCopyable, public DeviceLinked {
 
 	public:
-		LifetimeManager(DevicePtr dptr);
+		LifetimeManager(DevicePtr dptr, bool async_collection = true);
 		~LifetimeManager();
+
+		// Not thread safe
+		void stop_async_collection();
 
 		ResourceFence create_fence();
 
@@ -77,6 +83,8 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 
 		usize pending_deletions() const;
 		usize active_cmd_buffers() const;
+
+		bool is_async() const;
 
 		template<typename T>
 		void destroy_immediate(T&& t) const {
@@ -93,6 +101,7 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 		void destroy_resource(ManagedResource& resource) const;
 		void clear_resources(u64 up_to);
 
+
 		std::deque<std::pair<u64, ManagedResource>> _to_destroy;
 		std::deque<CmdBufferData> _in_flight;
 
@@ -101,6 +110,15 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 
 		std::atomic<u64> _counter = 0;
 		u64 _done_counter = 0;
+
+		// Async collection
+		void schedule_collection();
+		void async_collect();
+
+		std::condition_variable _collect_condition;
+		std::unique_ptr<std::thread> _collect_thread;
+		std::atomic<bool> _run_async = false;
+		std::atomic<u32> _collection_interval = 0;
 };
 
 }

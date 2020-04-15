@@ -95,6 +95,7 @@ void CmdBufferData::reset() {
 }
 
 void CmdBufferData::release_resources() {
+	y_profile();
 	_keep_alive.clear();
 }
 

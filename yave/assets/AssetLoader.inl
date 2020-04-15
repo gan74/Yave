@@ -176,6 +176,8 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 			}
 
 			void read() override {
+				y_profile_zone("loading");
+
 				const AssetId id = _data->id;
 
 				y_always_assert(_data->is_loading(), "Asset is not in a loading state");
@@ -183,7 +185,6 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 				y_always_assert(id != AssetId::invalid_id(), "Invalid asset ID");
 
 				if(auto reader = parent()->store().data(id)) {
-					y_profile_zone("loading");
 					serde3::ReadableArchive arc(std::move(reader.unwrap()));
 					if(arc.deserialize(_load_from, loading_context())) {
 						return;
@@ -196,6 +197,8 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 			}
 
 			void finalize(DevicePtr dptr) {
+				y_profile_zone("finalizing");
+
 				y_debug_assert(_data->is_loading());
 				_data->finalize_loading(T(dptr, std::move(_load_from)));
 			}

@@ -131,8 +131,10 @@ Device::Device(Instance& instance) :
 }
 
 Device::~Device() {
-	Y_TODO(Why do we need this?)
+	_lifetime_manager.stop_async_collection();
+
 	{
+		Y_TODO(Why do we need this?)
 		CmdBufferPool<CmdBufferUsage::Disposable> pool(this);
 		CmdBufferRecorder rec = pool.create_buffer();
 		graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(rec)));

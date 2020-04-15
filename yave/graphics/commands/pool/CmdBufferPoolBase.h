@@ -22,15 +22,14 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
 #define YAVE_GRAPHICS_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
 
-#include <y/concurrent/SpinLock.h>
-
 #include <yave/yave.h>
 #include <yave/device/DeviceLinked.h>
-
 #include <yave/graphics/commands/CmdBufferUsage.h>
 #include <yave/graphics/commands/data/CmdBufferData.h>
 
 #include <yave/utils/traits.h>
+
+#include <mutex>
 
 namespace yave {
 
@@ -47,7 +46,7 @@ class CmdBufferPoolBase : NonMovable, public DeviceLinked {
 		friend class CmdBufferDataProxy;
 		friend class LifetimeManager;
 
-		CmdBufferPoolBase() = default;
+		CmdBufferPoolBase();
 		CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred);
 
 		void release(CmdBufferData&& data);
@@ -58,11 +57,13 @@ class CmdBufferPoolBase : NonMovable, public DeviceLinked {
 	private:
 		CmdBufferData create_data();
 
-		concurrent::SpinLock _lock;
+		std::mutex _lock;
 		vk::CommandPool _pool;
 		CmdBufferUsage _usage;
 		core::Vector<CmdBufferData> _cmd_buffers;
 		core::Vector<vk::Fence> _fences;
+
+		const u32 _thread_id;
 };
 
 static_assert(is_safe_base<CmdBufferPoolBase>::value);
