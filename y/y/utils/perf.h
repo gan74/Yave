@@ -57,6 +57,7 @@ inline auto log_func(const char* func, const char* cat = "") {
 
 #ifdef Y_PERF_LOG_ENABLED
 
+#define y_profile_event() y::perf::event("", Y_FUNCTION_NAME)
 #define y_profile() auto y_create_name_with_prefix(prof) = y::perf::log_func(Y_FUNCTION_NAME)
 #define y_profile_zone(name) auto y_create_name_with_prefix(prof) = y::perf::log_func(name)
 #define y_profile_unique_lock(inner) [&]() {							\

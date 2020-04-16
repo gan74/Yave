@@ -36,6 +36,8 @@ SOFTWARE.
 #include <condition_variable>
 #include <deque>
 
+//#define YAVE_ASYNC_RESOURCE_COLLECTION
+
 namespace yave {
 
 class CmdBufferData;
@@ -69,11 +71,11 @@ using ManagedResource = std::variant<
 class LifetimeManager : NonCopyable, public DeviceLinked {
 
 	public:
-		LifetimeManager(DevicePtr dptr, bool async_collection = true);
+		LifetimeManager(DevicePtr dptr);
 		~LifetimeManager();
 
-		// Not thread safe
-		void stop_async_collection();
+		void stop_async_collection(); // Not thread safe
+		bool is_async() const;
 
 		ResourceFence create_fence();
 
@@ -84,7 +86,6 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 		usize pending_deletions() const;
 		usize active_cmd_buffers() const;
 
-		bool is_async() const;
 
 		template<typename T>
 		void destroy_immediate(T&& t) const {
@@ -113,12 +114,13 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
 
 		// Async collection
 		void schedule_collection();
-		void async_collect();
 
+#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
 		std::condition_variable _collect_condition;
 		std::unique_ptr<std::thread> _collect_thread;
 		std::atomic<bool> _run_async = false;
 		std::atomic<u32> _collection_interval = 0;
+#endif
 };
 
 }

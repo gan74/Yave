@@ -36,24 +36,24 @@ SOFTWARE.
 
 namespace yave {
 
-LifetimeManager::LifetimeManager(DevicePtr dptr, bool async_collection) : DeviceLinked(dptr) {
-	if(async_collection) {
-		_run_async = true;
-		_collect_thread = std::make_unique<std::thread>([this] {
-			concurrent::set_thread_name("Resource collection thread");
-			std::mutex mutex;
-			while(_run_async) {
-				auto lock = y_profile_unique_lock(mutex);
-				const u32 ms = _collection_interval;
-				if(ms) {
-					_collect_condition.wait_for(lock, std::chrono::milliseconds(ms));
-				} else {
-					_collect_condition.wait(lock);
-				}
-				collect();
+LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
+#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
+	_run_async = true;
+	_collect_thread = std::make_unique<std::thread>([this] {
+		concurrent::set_thread_name("Resource collection thread");
+		std::mutex mutex;
+		while(_run_async) {
+			auto lock = y_profile_unique_lock(mutex);
+			const u32 ms = _collection_interval;
+			if(ms) {
+				_collect_condition.wait_for(lock, std::chrono::milliseconds(ms));
+			} else {
+				_collect_condition.wait(lock);
 			}
-		});
-	}
+			collect();
+		}
+	});
+#endif
 }
 
 LifetimeManager::~LifetimeManager() {
@@ -72,6 +72,7 @@ LifetimeManager::~LifetimeManager() {
 }
 
 void LifetimeManager::stop_async_collection() {
+#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
 	if(is_async()) {
 		y_profile();
 		_run_async = false;
@@ -79,7 +80,30 @@ void LifetimeManager::stop_async_collection() {
 		_collect_thread->join();
 		_collect_thread = nullptr;
 	}
+#endif
 }
+
+bool LifetimeManager::is_async() const {
+#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
+	return _run_async;
+#else
+	return false;
+#endif
+}
+
+void LifetimeManager::schedule_collection() {
+#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
+	if(is_async()) {
+		y_profile_event();
+		_collect_condition.notify_all();
+	} else {
+		collect();
+	}
+#else
+	collect();
+#endif
+}
+
 
 ResourceFence LifetimeManager::create_fence() {
 	return ++_counter;
@@ -99,15 +123,6 @@ void LifetimeManager::recycle(CmdBufferData&& cmd) {
 
 	if(run_collect) {
 		schedule_collection();
-	}
-}
-
-
-void LifetimeManager::schedule_collection() {
-	if(is_async()) {
-		_collect_condition.notify_all();
-	} else {
-		collect();
 	}
 }
 
@@ -170,10 +185,6 @@ usize LifetimeManager::active_cmd_buffers() const {
 	return _in_flight.size();
 }
 
-bool LifetimeManager::is_async() const {
-	return _run_async;
-}
-
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 	std::visit(
 		[dptr = device()](auto& res) {
@@ -209,6 +220,5 @@ void LifetimeManager::clear_resources(u64 up_to) {
 		destroy_resource(res);
 	}
 }
-
 
 }
