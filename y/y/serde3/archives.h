@@ -588,8 +588,13 @@ class ReadableArchive final {
 		Result deserialize_collection(NamedObject<T> object, const detail::FullHeader header, size_type size) {
 			static_assert(is_iterable_v<T>);
 
-			//object.object.clear();
-			object.object = T();
+			if constexpr(has_make_empty_v<T>) {
+				object.object.make_empty();
+			} else if constexpr(has_clear_v<T>) {
+				object.object.clear();
+			} else {
+				object.object = T();
+			}
 
 			const usize end = tell() + size;
 			const auto check = detail::build_header(object);
