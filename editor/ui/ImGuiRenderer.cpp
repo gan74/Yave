@@ -34,24 +34,31 @@ SOFTWARE.
 
 namespace editor {
 
+static const char* find_font(std::string_view name) {
+	const std::array font_paths = {".", "..", "./fonts", "../fonts"};
+	for(const auto path : font_paths) {
+		const char* file = fmt_c_str("%/%", path, name);
+		if(io2::File::open(file).is_ok()) {
+			return file;
+		}
+	}
+	return nullptr;
+}
+
 static ImageData load_font() {
 	y_profile();
 
-	// https://skia.googlesource.com/external/github.com/ocornut/imgui/+/v1.50/extra_fonts/README.txt
 	ImGuiIO& io = ImGui::GetIO();
-	io.Fonts->AddFontDefault();
 
-	const char* icons = nullptr;
-	std::array icon_paths = {".", "..", "./fonts", "../fonts"};
-	for(const auto path : icon_paths) {
-		const char* file = fmt_c_str("%/fa-solid-900.ttf", path);
-		if(io2::File::open(file).is_ok()) {
-			icons = file;
-			break;
-		}
+	// https://skia.googlesource.com/external/github.com/ocornut/imgui/+/v1.50/extra_fonts/README.txt
+	if(const char* font = find_font("Roboto-Regular.ttf")) {
+		io.Fonts->AddFontFromFileTTF(font, 14.0f);
+	} else {
+		io.Fonts->AddFontDefault();
+		log_msg("Roboto-Regular.ttf not found.", Log::Error);
 	}
 
-	if(icons) {
+	if(const char* icons = find_font("fa-solid-900.ttf")) {
 		ImFontConfig config;
 		config.MergeMode = true;
 		const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};

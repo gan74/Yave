@@ -44,7 +44,8 @@ class ImGuiRenderer : NonCopyable, public ContextLinked {
 			Yave,
 			Yave2,
 			Corporate,
-			Corporate3D
+			Corporate3D,
+			Blender
 		};
 
 		ImGuiRenderer(ContextPtr ctx);

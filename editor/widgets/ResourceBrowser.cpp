@@ -42,7 +42,7 @@ ResourceBrowser::ResourceBrowser(ContextPtr ctx, std::string_view title) :
 		FileSystemView(ctx->asset_store().filesystem(), title),
 		ContextLinked(ctx) {
 
-	set_flags(ImGuiWindowFlags_AlwaysVerticalScrollbar);
+	set_flags(ImGuiWindowFlags_NoScrollbar);
 	path_changed();
 }
 
@@ -195,6 +195,7 @@ void ResourceBrowser::paint_path_bar() {
 			if(search_bar_size < size().x()) {
 				has_seach_bar = true;
 				ImGui::SameLine(size().x() - search_bar_size);
+				ImGui::SetNextItemWidth(search_bar_size);
 				if(ImGui::InputTextWithHint("##searchbar", " " ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
 					update_search();
 				}
