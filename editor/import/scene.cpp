@@ -21,8 +21,10 @@ SOFTWARE.
 **********************************/
 
 #include "import.h"
-
 #include "transforms.h"
+
+#include <yave/utils/FileSystemModel.h>
+#include <yave/material/SimpleMaterialData.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -207,6 +209,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 
 	if((flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes) {
 		y_profile_zone("Mesh import");
+
 		for(const tinygltf::Mesh& mesh : model.meshes) {
 			for(usize i = 0; i != mesh.primitives.size(); ++i) {
 				const tinygltf::Primitive& prim = mesh.primitives[i];
@@ -235,6 +238,54 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 				}
 
 				scene.meshes.emplace_back(clean_asset_name(name), std::move(mesh));
+			}
+		}
+	}
+
+
+	if((flags & SceneImportFlags::ImportImages) == SceneImportFlags::ImportImages) {
+		y_profile_zone("Image import");
+
+		const FileSystemModel* fs = FileSystemModel::local_filesystem();
+		auto path = fs->parent_path(filename);
+
+		for(const tinygltf::Image& image : model.images) {
+			auto full_uri = path ? fs->join(path.unwrap(), image.uri) : core::String(image.uri);
+			scene.images.emplace_back(import_image(full_uri));
+
+			if(!image.name.empty()) {
+				auto& last = scene.images.last();
+				last  = Named<ImageData>(clean_asset_name(image.name), std::move(last.obj()));
+			}
+		}
+	}
+
+
+	if((flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials) {
+		y_profile_zone("Material import");
+
+		for(usize i = 0; i != model.materials.size(); ++i) {
+			const tinygltf::Material& material = model.materials[i];
+			const core::String name = material.name.empty() ? core::String(fmt("unnamed_material_%", i)) : clean_asset_name(material.name);
+
+			auto tex_name = [&](int index) {
+				if(index >= 0) {
+					const tinygltf::Texture& tex = model.textures[index];
+					if(tex.source >= 0 && usize(tex.source) < scene.images.size()) {
+						return scene.images[tex.source].name();
+					}
+				}
+				return core::String();
+			};
+
+
+			log_msg(std::string_view(name));
+
+			auto& last = scene.materials.emplace_back(name, MaterialData()).obj();
+			{
+				const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
+				last.textures[SimpleMaterialData::Diffuse] = tex_name(pbr.baseColorTexture.index);
+				last.textures[SimpleMaterialData::Normal] = tex_name(material.normalTexture.index);
 			}
 		}
 	}

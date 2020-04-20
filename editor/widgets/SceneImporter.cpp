@@ -133,6 +133,9 @@ void SceneImporter::paint_import_settings() {
 		ImGui::Checkbox("Flip UVs", &flip_uvs);
 		ImGui::Separator();
 
+		ImGui::DragFloat("Scale", &_scale);
+		ImGui::Separator();
+
 		// Update state
 		{
 			import_materials &= import_images;
@@ -220,7 +223,7 @@ void SceneImporter::import(import::SceneData scene) {
 
 
 	Y_TODO(try to auto detect handedness)
-	if(_forward_axis != 0 || _up_axis != 4) {
+	if(_forward_axis != 0 || _up_axis != 4 || _scale != 1.0f) {
 		const math::Vec3 axes[] = {
 				{1.0f, 0.0f, 0.0f}, {-1.0f,  0.0f,  0.0f},
 				{0.0f, 1.0f, 0.0f}, { 0.0f, -1.0f,  0.0f},
@@ -231,7 +234,7 @@ void SceneImporter::import(import::SceneData scene) {
 		const math::Vec3 up = axes[_up_axis];
 
 		math::Transform<> transform;
-		transform.set_basis(forward, -forward.cross(up), up);
+		transform.set_basis(forward * _scale, -forward.cross(up) * _scale, up * _scale);
 
 		for(auto& mesh : scene.meshes) {
 			mesh = import::transform(mesh.obj(), transform.transposed());

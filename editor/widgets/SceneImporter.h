@@ -63,6 +63,8 @@ class SceneImporter final : public Widget, public ContextLinked {
 		usize _forward_axis = 0;
 		usize _up_axis = 4;
 
+		float _scale = 1.0f;
+
 		std::future<void> _import_future;
 };
 

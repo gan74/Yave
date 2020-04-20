@@ -60,7 +60,6 @@ void FileBrowser::set_selection_filter(bool dirs, std::string_view exts) {
 
 
 void FileBrowser::path_changed() {
-	log_msg(fmt("new path = %", path()));
 	to_buffer(_path_buffer, path());
 }
 

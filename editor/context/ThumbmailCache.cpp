@@ -162,6 +162,8 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 				if(const auto& mesh = context()->loader().load<StaticMesh>(id); !mesh.is_failed()) {
 					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
 					submit_and_set(rec, render_thumbmail(rec, id, mesh, device()->device_resources()[DeviceResources::EmptyMaterial]));
+				} else {
+					log_msg(fmt("Asset % failed to load", id), Log::Error);
 				}
 			});
 		break;
@@ -171,6 +173,8 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 				if(const auto& material = context()->loader().load<Material>(id); !material.is_failed()) {
 					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
 					submit_and_set(rec, render_thumbmail(rec, id, device()->device_resources()[DeviceResources::SphereMesh], material));
+				} else {
+					log_msg(fmt("Asset % failed to load", id), Log::Error);
 				}
 			});
 		break;
@@ -180,6 +184,8 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 				if(const auto& texture = context()->loader().load<Texture>(id); !texture.is_failed()) {
 					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
 					submit_and_set(rec, render_thumbmail(rec, texture));
+				} else {
+					log_msg(fmt("Asset % failed to load", id), Log::Error);
 				}
 			});
 		break;

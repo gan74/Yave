@@ -45,8 +45,8 @@ static math::Vec3 transform(const math::Vec3& v, const math::Transform<>& tr) {
 static Vertex transform(const Vertex& v, const math::Transform<>& tr) {
 	return Vertex {
 			h_transform(v.position, tr),
-			transform(v.normal, tr),
-			transform(v.tangent, tr),
+			transform(v.normal, tr).normalized(),
+			transform(v.tangent, tr).normalized(),
 			v.uv
 		};
 }

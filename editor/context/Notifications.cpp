@@ -33,6 +33,7 @@ void Notifications::Tqdm::update(u32 id, usize value) {
 	if(id < _first_id || id - _first_id >= _progress.size()) {
 		return;
 	}
+
 	Data& data = _progress[id - _first_id];
 	data.it = value;
 
@@ -54,7 +55,7 @@ u32 Notifications::Tqdm::create(usize size, core::String msg) {
 	}
 
 	const auto lock = y_profile_unique_lock(_lock);
-	const u32 id = _progress.size();
+	const u32 id = _progress.size() + _first_id;
 	_progress.emplace_back(Data{0, size, std::move(msg)});
 	return id;
 }
