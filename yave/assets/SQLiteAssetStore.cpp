@@ -42,6 +42,10 @@ static bool is_done(int res) {
 	return res == SQLITE_DONE;
 }
 
+static bool is_ok(int res) {
+	return res == SQLITE_OK;
+}
+
 static int step_db(sqlite3_stmt* stmt) {
 	y_profile();
 	return sqlite3_step(stmt);
@@ -236,26 +240,29 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::remove(std::s
 
 	{
 		const bool has_delim = !path.empty() && is_delimiter(path.back());
+		const std::string_view no_delim(path.data(), path.size() - has_delim);
 
-		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "DELETE FROM Folders WHERE name = ?", -1, &stmt, nullptr));
-		check(sqlite3_bind_text(stmt, 1, path.data(), path.size() - has_delim, nullptr));
-		y_defer(sqlite3_finalize(stmt));
+		core::String transaction;
+		transaction.set_min_capacity(1024);
+		fmt_into(transaction, R"#(
+			  BEGIN TRANSACTION;
+				  DELETE FROM Folders WHERE name = "%";
+				  DELETE FROM Assets WHERE name = "%";
+				  DELETE FROM Folders WHERE name LIKE "%/%";
+				  DELETE FROM Assets WHERE name LIKE "%/%";
+			  COMMIT;
+			)#",
+			no_delim,
+			no_delim,
+			no_delim, '%',
+			no_delim, '%'
+		);
 
-		if(!is_done(step_db(stmt))) {
+		if(!is_ok(sqlite3_exec(_database, transaction.data(), nullptr, nullptr, nullptr))) {
 			return core::Err();
 		}
 	}
-	{
-		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "DELETE FROM Assets WHERE name = ?", -1, &stmt, nullptr));
-		check(sqlite3_bind_text(stmt, 1, path.data(), path.size(), nullptr));
-		y_defer(sqlite3_finalize(stmt));
 
-		if(!is_done(step_db(stmt))) {
-			return core::Err();
-		}
-	}
 	return core::Ok();
 }
 
@@ -270,20 +277,29 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
 
 	const bool to_has_delim = !to.empty() && is_delimiter(to.back());
 	const bool from_has_delim = !from.empty() && is_delimiter(from.back());
+	const bool is_folder = to_has_delim || from_has_delim || folder_id(from).is_ok();
 
-	{
-		sqlite3_stmt* stmt = nullptr;
-		check(sqlite3_prepare_v2(_database, "UPDATE Folders SET name = ?, parentid = ? WHERE name = ?", -1, &stmt, nullptr));
-		check(sqlite3_bind_text(stmt, 1, to.data(), to.size() - to_has_delim, nullptr));
-		check(sqlite3_bind_int64(stmt, 2, fid.unwrap()));
-		check(sqlite3_bind_text(stmt, 3, from.data(), from.size() - from_has_delim, nullptr));
-		y_defer(sqlite3_finalize(stmt));
+	if(is_folder) {
+		const core::String from_path_wildcard = core::String(from) + "/%";
 
-		if(!is_done(step_db(stmt))) {
+		core::String transaction;
+		transaction.set_min_capacity(1024);
+		fmt_into(transaction, R"#(
+			  BEGIN TRANSACTION;
+				  UPDATE Folders SET name = "%", parentid = % WHERE name = "%";
+				  UPDATE Folders SET name = "%" + SUBSTR(name, %) WHERE name LIKE "%";
+				  UPDATE Assets SET name = "%" + SUBSTR(name, %) WHERE name LIKE "%";
+			  COMMIT;
+			)#",
+			std::string_view(to.data(), to.size() - to_has_delim), fid.unwrap(), std::string_view(from.data(), from.size() - from_has_delim),
+			to, from.size() + 1, from_path_wildcard,
+			to, from.size() + 1, from_path_wildcard
+		);
+
+		if(!is_ok(sqlite3_exec(_database, transaction.data(), nullptr, nullptr, nullptr))) {
 			return core::Err();
 		}
-	}
-	{
+	} else {
 		sqlite3_stmt* stmt = nullptr;
 		check(sqlite3_prepare_v2(_database, "UPDATE Assets SET name = ?, folderid = ? WHERE name = ?", -1, &stmt, nullptr));
 		check(sqlite3_bind_text(stmt, 1, to.data(), to.size(), nullptr));
@@ -396,6 +412,9 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 		check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS Assets  (uid  INTEGER PRIMARY KEY, name TEXT UNIQUE, folderid INTEGER, type INTEGER, data BLOB,"
 											"FOREIGN KEY(folderid) REFERENCES Folders(folderid) ON DELETE CASCADE)", nullptr, nullptr, nullptr));
 
+		/*check(sqlite3_exec(_database, "CREATE TABLE IF NOT EXISTS NextID (nextid INTEGER)", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "INSERT INTO NextID(nextid) SELECT (SELECT MAX(uid) + 1 FROM Assets) WHERE NOT EXISTS (SELECT 1 FROM NextID)", nullptr, nullptr, nullptr));*/
+
 		check(sqlite3_exec(_database, "CREATE INDEX IF NOT EXISTS assetidindex ON Assets(uid)", nullptr, nullptr, nullptr));
 	}
 
@@ -422,11 +441,16 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 SQLiteAssetStore::~SQLiteAssetStore() {
 	y_profile();
 
-	u32 timeout = 8;
+	/*u32 timeout = 8;
 	while(sqlite3_next_stmt(_database, nullptr)) {
 		log_msg("Waiting for DB to finish.");
 		std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
 		timeout = std::min(timeout * 2, u32(1024));
+	}*/
+
+	while(sqlite3_stmt* stmt = sqlite3_next_stmt(_database, nullptr)) {
+		log_msg("Database has pending statements.", Log::Warning);
+		sqlite3_finalize(stmt);
 	}
 
 	check(sqlite3_close(_database));
@@ -683,6 +707,8 @@ AssetStore::Result<AssetType> SQLiteAssetStore::asset_type(AssetId id) const {
 
 AssetId SQLiteAssetStore::next_id() {
 	y_profile();
+
+	Y_TODO(This can recycle ids!)
 
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "SELECT MAX(uid) FROM Assets", -1, &stmt, nullptr));

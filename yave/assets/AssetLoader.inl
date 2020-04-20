@@ -197,8 +197,11 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 			}
 
 			void finalize(DevicePtr dptr) {
-				y_profile_zone("finalizing");
+				if(_data->is_failed()) {
+					return;
+				}
 
+				y_profile_zone("finalizing");
 				y_debug_assert(_data->is_loading());
 				_data->finalize_loading(T(dptr, std::move(_load_from)));
 			}
