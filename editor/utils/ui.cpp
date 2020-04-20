@@ -44,23 +44,32 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
 	ImGui::PushID(fmt_c_str("%_%_%", id.id(), uenum(type), text));
 	ImGui::BeginGroup();
 
+	const auto name = ctx->asset_store().name(id);
+	const bool is_valid = name.is_ok();
+
 	bool ret = false;
-	if(TextureView* image = ctx->thumbmail_cache().get_thumbmail(id).image) {
-		ret = ImGui::ImageButton(image, button_size);
-	} else {
+	bool button = false;
+	if(is_valid) {
+		if(TextureView* image = ctx->thumbmail_cache().get_thumbmail(id).image) {
+			button = true;
+			ret = ImGui::ImageButton(image, button_size);
+		}
+	}
+
+	if(!button) {
 		ret = ImGui::Button(ICON_FA_FOLDER_OPEN, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
 	}
 
 	ImGui::SameLine();
 	if(ImGui::GetContentRegionAvailWidth() > button_size.x() * 0.5f) {
 		const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
-		core::String name = ctx->asset_store().name(id).map(clean_name).unwrap_or(core::String());
+		core::String clean = name.map(clean_name).unwrap_or(core::String());
 
 		ImGui::BeginGroup();
 		ImGui::Dummy(math::Vec2(0.0f, 8.0f));
 		ImGui::TextUnformatted(text.data(), text.data() + text.size());
 		ImGui::Dummy(math::Vec2(0.0f, 4.0f));
-		ImGui::InputTextWithHint("", "No asset specified", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputTextWithHint("", "No asset specified", clean.data(), clean.size(), ImGuiInputTextFlags_ReadOnly);
 		ImGui::EndGroup();
 	}
 
