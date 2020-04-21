@@ -238,10 +238,10 @@ void FileSystemView::paint_context_menu() {
 		refresh_all();
 	}
 
-	ImGui::Separator();
-
 	const bool modify = allow_modify();
 	if(modify && _hovered < _entries.size()) {
+		ImGui::Separator();
+
 		const auto& entry = _entries[_hovered];
 		const core::String full_name = filesystem()->join(_current_path, entry.name);
 

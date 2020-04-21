@@ -278,9 +278,6 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 				return core::String();
 			};
 
-
-			log_msg(std::string_view(name));
-
 			auto& last = scene.materials.emplace_back(name, MaterialData()).obj();
 			{
 				const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;

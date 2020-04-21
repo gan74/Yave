@@ -220,7 +220,7 @@ class [[nodiscard]] Result : NonCopyable {
 		// this is necessary to avoid stuff like "if(result)" checking only the state of the result and not the contained value
 		// forcing an explicit unwrap seems like the best way to avoid sneaky mistakes
 		explicit operator bool() const {
-			static_assert(!std::is_same_v<std::decay_t<T>, bool>);
+			static_assert(!std::is_same_v<std::decay_t<T>, bool>, "Result<bool> is not convertible to bool, use unwrap_or");
 			return is_ok();
 		}
 

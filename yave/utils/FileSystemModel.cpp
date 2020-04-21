@@ -26,6 +26,12 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/core/Result.h>
 
+#include <y/utils/log.h>
+
+#ifdef Y_OS_WIN
+#include <winbase.h>
+#endif
+
 namespace yave {
 
 FileSystemModel::Result<core::String> FileSystemModel::parent_path(std::string_view path) const {
@@ -152,21 +158,33 @@ FileSystemModel::Result<> LocalFileSystemModel::create_directory(std::string_vie
 }
 
 FileSystemModel::Result<> LocalFileSystemModel::remove(std::string_view path) const {
+#ifdef Y_OS_WIN
+	if(::DeleteFile(core::String(path).data())) {
+		return core::Ok();
+	}
+#else
 	try {
 		fs::remove_all(fs::path(path));
 		return core::Ok();
 	} catch(...) {
 	}
+#endif
 	return core::Err();
 }
 
 FileSystemModel::Result<> LocalFileSystemModel::rename(std::string_view from, std::string_view to) const {
+#ifdef Y_OS_WIN
+	if(::MoveFileExA(core::String(from).data(), core::String(to).data(), MOVEFILE_REPLACE_EXISTING)) {
+		return core::Ok();
+	}
+#else
 	try {
 		fs::rename(fs::path(from), fs::path(to));
 		return core::Ok();
 	} catch(...) {
 	}
-	return core::Err();
+#endif
+	  return core::Err();
 }
 
 bool LocalFileSystemModel::is_delimiter(char c) const {

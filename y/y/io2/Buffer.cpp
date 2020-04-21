@@ -79,7 +79,7 @@ ReadUpToResult Buffer::read_up_to(void* data, usize max_bytes) {
 	y_debug_assert(_cursor < _buffer.size() || !max);
 	std::copy_n(&_buffer[_cursor], max, static_cast<u8*>(data));
 	_cursor += max;
-	y_debug_assert(_cursor < _buffer.size());
+	y_debug_assert(_cursor <= _buffer.size());
 	return core::Ok(max);
 }
 
