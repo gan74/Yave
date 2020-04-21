@@ -28,8 +28,6 @@ SOFTWARE.
 
 #include <y/core/String.h>
 
-#include <mutex>
-
 #ifndef YAVE_NO_SQLITE
 
 struct sqlite3;

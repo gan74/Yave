@@ -403,6 +403,7 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 		check(sqlite3_exec(_database, "PRAGMA temp_store = MEMORY", nullptr, nullptr, nullptr));
 		check(sqlite3_exec(_database, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr));
 		check(sqlite3_exec(_database, "PRAGMA case_sensitive_like = ON", nullptr, nullptr, nullptr));
+		check(sqlite3_exec(_database, "PRAGMA auto_vacuum = INCREMENTAL;", nullptr, nullptr, nullptr));
 	}
 
 	// Create tables & indexes
@@ -416,6 +417,7 @@ SQLiteAssetStore::SQLiteAssetStore(const core::String& path) {
 		check(sqlite3_exec(_database, "INSERT INTO NextID(nextid) SELECT (SELECT MAX(uid) + 1 FROM Assets) WHERE NOT EXISTS (SELECT 1 FROM NextID)", nullptr, nullptr, nullptr));*/
 
 		check(sqlite3_exec(_database, "CREATE INDEX IF NOT EXISTS assetidindex ON Assets(uid)", nullptr, nullptr, nullptr));
+
 	}
 
 	// Create triggers
