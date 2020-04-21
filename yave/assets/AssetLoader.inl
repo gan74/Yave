@@ -186,11 +186,10 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 
 				if(auto reader = parent()->store().data(id)) {
 					serde3::ReadableArchive arc(std::move(reader.unwrap()));
-					if(arc.deserialize(_load_from, loading_context())) {
-						return;
-					} else {
+					if(!arc.deserialize(_load_from, loading_context())) {
 						_data->set_failed(ErrorType::InvalidData);
 					}
+					return;
 				}
 				_data->set_failed(ErrorType::InvalidID);
 				y_debug_assert(!_data->is_loading());
