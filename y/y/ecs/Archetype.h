@@ -23,7 +23,7 @@ SOFTWARE.
 #define Y_ECS_ARCHETYPE_H
 
 #include "ComponentView.h"
-#include "ComponentRuntimeInfo.h"
+#include "ComponentSerializer.h"
 
 #include <y/core/Range.h>
 #include <y/core/Vector.h>
@@ -46,7 +46,7 @@ class Archetype : NonMovable {
 
 		~Archetype();
 
-		usize size() const;
+		usize entity_count() const;
 		usize component_count() const;
 
 		core::Span<ComponentRuntimeInfo> component_infos() const;
@@ -61,17 +61,19 @@ class Archetype : NonMovable {
 			if(!build_iterator<0>(begin)) {
 				return ComponentView<Args...>();
 			}
-			return ComponentView<Args...>(begin, size());
+			return ComponentView<Args...>(begin, entity_count());
 		}
 
 	public:
 		// This can not be private because of make_unique
-		Archetype(usize component_count, memory::PolymorphicAllocatorBase* allocator = memory::global_allocator());
+		Archetype(usize component_count = 0, memory::PolymorphicAllocatorBase* allocator = memory::global_allocator());
+
+		/*y_serde3(serde3::property(this, &Archetype::create_serializers, &Archetype::set_serializers),
+				 serde3::property(this, &Archetype::entity_count,		&Archetype::set_entity_count),
+				 create_component_serializer())*/
 
 	private:
 		friend class EntityWorld;
-		friend class ArchetypeSerializer;
-
 
 		void add_entities(core::MutableSpan<EntityData> entities, bool update_data);
 
@@ -81,8 +83,6 @@ class Archetype : NonMovable {
 		void add_chunk_if_needed();
 		void add_chunk();
 		void remove_entity(EntityData& data);
-
-
 
 
 
@@ -150,7 +150,39 @@ class Archetype : NonMovable {
 		}
 
 
+		core::Vector<std::unique_ptr<ComponentInfoSerializerBase>> create_serializers() const {
+			auto serializers =  core::vector_with_capacity<std::unique_ptr<ComponentInfoSerializerBase>>(_component_count);
+			for(usize i = 0; i != _component_count; ++i) {
+				serializers.emplace_back(_component_infos[i].create_info_serializer());
+			}
+			return serializers;
+		}
 
+		 void set_serializers(core::Vector<std::unique_ptr<ComponentInfoSerializerBase>> serializers) {
+			 _component_count = serializers.size();
+			 _component_infos = std::make_unique<ComponentRuntimeInfo[]>(_component_count);
+
+			 for(usize i = 0; i != _component_count; ++i) {
+				 _component_infos[i] = serializers[i]->create_runtime_info();
+			 }
+			 sort_component_infos();
+		 }
+
+
+		void set_entity_count(usize count) {
+			core::MutableSpan<EntityData> entities(nullptr, count);
+			add_entities(entities, false);
+			y_debug_assert(entity_count() == count);
+		}
+
+
+		ComponentListSerializer create_component_serializer() const {
+			ComponentListSerializer serializer;
+			for(usize i = 0; i != _component_count; ++i) {
+				serializer.add(_component_infos[i].create_component_serializer(const_cast<Archetype*>(this)));
+			}
+			return serializer;
+		}
 
 		usize _component_count = 0;
 		std::unique_ptr<ComponentRuntimeInfo[]> _component_infos;
@@ -161,7 +193,6 @@ class Archetype : NonMovable {
 		memory::PolymorphicAllocatorContainer _allocator;
 		usize _chunk_byte_size = 0;
 };
-
 
 
 }

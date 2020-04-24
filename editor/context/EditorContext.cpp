@@ -24,6 +24,7 @@ SOFTWARE.
 #include <yave/device/Device.h>
 
 #include <yave/assets/SQLiteAssetStore.h>
+#include <yave/assets/FolderAssetStore.h>
 
 #include <editor/components/EditorComponent.h>
 
@@ -38,15 +39,16 @@ DevicePtr ContextLinked::device() const {
 }
 
 
-
 static constexpr std::string_view world_file = "../world.yw3";
 static constexpr std::string_view store_file = "../store.sqlite3";
+static constexpr std::string_view store_dir = "../store";
 
 EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_resources(dptr),
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
 		_asset_store(std::make_shared<SQLiteAssetStore>(store_file)),
+		//_asset_store(std::make_shared<FolderAssetStore>(store_dir)),
 		_loader(device(), _asset_store),
 		_scene_view(&_default_scene_view),
 		_ui(this),

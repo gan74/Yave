@@ -45,6 +45,7 @@ template<typename T>
 using has_serde3_t = decltype(std::declval<T>()._y_serde3_refl());
 template<typename T>
 using has_serde3_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
+
 template<typename T, typename... Args>
 using has_serde3_post_deser_t = decltype(std::declval<T>().post_deserialize(std::declval<Args>()...));
 template<typename T, typename... Args>
@@ -93,14 +94,14 @@ struct NamedObject {
 		return NamedObject<const T>(object, name);
 	}
 
-	constexpr NamedObject<T> make_ref() {
+	constexpr NamedObject<T> make_ref() const {
 		return *this;
 	}
 };
 
 template<typename T>
 struct NamedObject<T, false> {
-	T object;
+	mutable T object;
 	const std::string_view name;
 
 	constexpr NamedObject(T t, std::string_view n) : object(std::move(t)), name(n) {
@@ -110,7 +111,7 @@ struct NamedObject<T, false> {
 		return NamedObject<const T>(object, name);
 	}
 
-	constexpr NamedObject<T> make_ref() {
+	constexpr NamedObject<T> make_ref() const {
 		return NamedObject<T>(object, name);
 	}
 };
@@ -119,6 +120,12 @@ template<bool Ref, typename T>
 constexpr auto create_named_object(T&& t, std::string_view name) {
 	return NamedObject<std::remove_reference_t<T>, Ref>(y_fwd(t), name);
 }
+
+template<bool Ref, typename T>
+constexpr auto create_named_object(const std::reference_wrapper<T>& t, std::string_view name) {
+	return NamedObject<std::remove_reference_t<decltype(t.get())>, true>(t.get(), name);
+}
+
 
 #define y_serde3_create_item(object) y::serde3::create_named_object<decltype(y::serde3::detail::is_lvalue(object))::value>(object, #object),
 

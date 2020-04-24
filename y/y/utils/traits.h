@@ -135,6 +135,10 @@ template<typename T>
 using has_resize_t = decltype(std::declval<T&>().resize(std::declval<usize>()));
 template<typename T>
 using has_emplace_back_t = decltype(std::declval<T&>().emplace_back());
+template<typename T>
+using has_clear_t = decltype(std::declval<T&>().clear());
+template<typename T>
+using has_make_empty_t = decltype(std::declval<T&>().make_empty());
 }
 
 template<typename T>
@@ -147,6 +151,10 @@ template<typename T>
 static constexpr bool has_resize_v = is_detected_v<detail::has_resize_t, T>;
 template<typename T>
 static constexpr bool has_emplace_back_v = is_detected_v<detail::has_emplace_back_t, T>;
+template<typename T>
+static constexpr bool has_clear_v = is_detected_v<detail::has_clear_t, T>;
+template<typename T>
+static constexpr bool has_make_empty_v = is_detected_v<detail::has_make_empty_t, T>;
 }
 
 

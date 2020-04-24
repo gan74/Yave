@@ -174,7 +174,7 @@ constexpr u32 header_type_hash() {
 }
 
 template<typename T, bool R>
-constexpr TypeHeader build_type_header(NamedObject<T, R> obj) {
+constexpr TypeHeader build_type_header(const NamedObject<T, R>& obj) {
 	return TypeHeader {
 		ct_str_hash(obj.name),
 		header_type_hash<T>()
@@ -182,7 +182,7 @@ constexpr TypeHeader build_type_header(NamedObject<T, R> obj) {
 }
 
 template<usize I, typename... Args, bool... Refs>
-constexpr void hash_members(u32& hash, std::tuple<NamedObject<Args, Refs>...> objects) {
+constexpr void hash_members(u32& hash, const std::tuple<NamedObject<Args, Refs>...>& objects) {
 	unused(hash, objects);
 	if constexpr(I < sizeof...(Args)) {
 		const TypeHeader tpe = build_type_header(std::get<I>(objects));
@@ -194,7 +194,7 @@ constexpr void hash_members(u32& hash, std::tuple<NamedObject<Args, Refs>...> ob
 }
 
 template<typename T, bool R>
-constexpr MembersHeader build_members_header(NamedObject<T, R> obj) {
+constexpr MembersHeader build_members_header(const NamedObject<T, R>& obj) {
 	u32 member_hash = 0xafbbc3d1;
 	hash_members<0>(member_hash, members(obj.object));
 	return MembersHeader {
@@ -204,7 +204,7 @@ constexpr MembersHeader build_members_header(NamedObject<T, R> obj) {
 }
 
 template<typename T, bool R>
-constexpr auto build_header(NamedObject<T, R> obj) {
+constexpr auto build_header(const NamedObject<T, R>& obj) {
 	if constexpr(has_serde3_poly_v<T>) {
 		return PolyHeader {
 			build_type_header(obj),

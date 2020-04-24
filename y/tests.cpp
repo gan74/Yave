@@ -24,7 +24,6 @@ SOFTWARE.
 #include <y/ecs/Archetype.h>
 #include <y/ecs/EntityWorld.h>
 #include <y/ecs/EntityView.h>
-#include <y/ecs/EntityWorldSerializer.h>
 
 #include <y/concurrent/StaticThreadPool.h>
 
@@ -44,6 +43,7 @@ SOFTWARE.
 #include <y/serde3/poly.h>
 #include <y/serde3/serde.h>
 #include <y/serde3/archives.h>
+#include <y/serde3/property.h>
 #include <y/io2/Buffer.h>
 
 #include <atomic>
@@ -115,41 +115,6 @@ struct Test {
 };
 
 
-/*template<typename T>
-struct ComponentTransform {
-	ComponentTransform(EntityWorld& world) : _world(world) {
-	}
-
-	std::pair<EntityID, T*> operator()(EntityID id) const {
-		y_debug_assert(id.is_valid());
-		return {id, _world.component<T>(id)};
-	}
-
-	EntityWorld& _world;
-};
-
-
-struct NonNullComponentFilter {
-	template<typename T>
-	bool operator()(const std::pair<EntityID, T*>& entity) const {
-		return entity.second;
-	}
-};
-
-
-
-template<typename T>
-auto all_components(EntityWorld& world) {
-	auto ids = world.entity_ids();
-	auto component_beg = TransformIterator(ids.begin(), ComponentTransform<T>(world));
-	auto non_null_beg = FilterIterator(component_beg, ids.end(), NonNullComponentFilter());
-	auto deref = [](const std::pair<EntityID, T*>& p) -> std::pair<EntityID, T&> { return {p.first, *p.second}; };
-	return core::Range(TransformIterator(non_null_beg, deref), EndIterator());
-}*/
-
-
-
-
 template<typename T>
 [[maybe_unused]] static auto all_components(EntityWorld& world) {
 	auto extract_component = [&world](EntityID id) -> std::pair<EntityID, T*> {
@@ -169,48 +134,7 @@ template<typename T>
 	return core::Range(TransformIterator(non_nulls, deref), EndIterator());
 }
 
-struct TTT {
-	int x() const {
-		return 4;
-	}
 
-	//y_serde3(x())
-};
-
-constexpr int no_ref() {
-	return 4;
-}
-
-int& ref() {
-	y_fatal("pidha");
-}
-
-
-template<typename T>
-static constexpr std::true_type can_be_referenced(T*);
-template<typename T>
-static constexpr std::false_type can_be_referenced(...);
-
-/*template<typename T>
-static constexpr bool can_be_referenced_v = decltype(can_be_referenced(std::declval<T>()))::value;*/
-
-template<typename T>
-constexpr bool is_lvalue(T&&) {
-	return std::is_lvalue_reference<T>{};
-}
-
-
-template<typename T>
-constexpr bool is_lvalue2() {
-	return std::is_lvalue_reference<T>{};
-}
-
-template<class T>
-constexpr std::is_lvalue_reference<T&&>
-is_lvalue3(T&&){return {};}
-
-
-#define can_be_ref(object) decltype(is_lvalue3(object))::value
 
 struct W {
 	int w;
@@ -222,57 +146,53 @@ struct W {
 	y_serde3(test())
 };
 
-struct A {
-	int test = 7;
-	y_serde3(test)
 
-	void post_deserialize(int) {
-		log_msg("A OK");
+
+struct M {
+	int i = 0;
+
+	void set_i(int x) {
+		log_msg(fmt("set_i << %", x));
+		i = x;
 	}
+
+	int get_i() const {
+		log_msg(fmt("get_i >> %", i));
+		return i;
+	}
+
+	y_serde3(serde3::property(this, &M::get_i, &M::set_i))
+
+	static decltype(auto) prop(M* s) {
+		return serde3::property(s, &M::get_i, &M::set_i);
+	}
+
 };
 
 
-struct B {
-	A a;
-	y_serde3(a)
-
-	void post_deserialize() {
-		log_msg("B OK");
-	}
-};
-
-
-struct C {
-	B b;
-	y_serde3(b)
-
-	void post_deserialize(int) {
-		log_msg("C OK");
-	}
-};
-
-
-using namespace concurrent;
+static_assert(serde3::is_property_v<decltype(M::prop(nullptr))>);
 
 int main() {
-	StaticThreadPool threads(8);
-	DependencyGroup deps;
-	threads.schedule([] {
-		log_msg("start 1");
-		core::Duration::sleep(core::Duration::seconds(2));
-		log_msg("done 1");
-	}, &deps);
-	threads.schedule([] {
-		log_msg("start 2");
-		core::Duration::sleep(core::Duration::seconds(1));
-		log_msg("done 2");
-	}, &deps);
-	threads.schedule([] {
-		log_msg("start 3");
-	}, nullptr, deps);
-
 
 #if 0
+	std::array ms = {M{1}, M{2}};
+	core::MutableSpan<M> m_span = ms;
+
+	auto file = io2::Buffer();
+	{
+		serde3::WritableArchive arc(file);
+		arc.serialize(m_span).unwrap();
+		log_msg("Serialization ok");
+	}
+	file.reset();
+	{
+		serde3::ReadableArchive arc(file);
+		arc.deserialize(m_span).unwrap();
+		log_msg("Deserialization ok");
+	}
+#endif
+
+#if 1
 	EntityWorld world;
 
 	{
@@ -295,37 +215,38 @@ int main() {
 
 	W w;
 
-	EntityWorld new_world;
-	auto file = io2::Buffer();
 	{
-		EntityWorldSerializer ser(&world);
-		serde3::WritableArchive arc(file);
-		arc.serialize(w).unwrap();
-		arc.serialize(ser).unwrap();
-		log_msg("Serialization ok");
-	}
-	file.reset();
-	{
-		EntityWorldSerializer ser(&new_world);
-		serde3::ReadableArchive arc(file);
-		arc.deserialize(w).unwrap();
-		arc.deserialize(ser).unwrap();
-		log_msg("Deserialization ok");
-	}
+		EntityWorld new_world;
+		auto file = io2::Buffer();
+		{
+			serde3::WritableArchive arc(file);
+			arc.serialize(w).unwrap();
+			arc.serialize(world).unwrap();
+			log_msg("Serialization ok");
+		}
+		file.reset();
+		{
+			serde3::ReadableArchive arc(file);
+			arc.deserialize(w).unwrap();
+			arc.deserialize(new_world).unwrap();
+			log_msg("Deserialization ok");
+		}
 
-	log_msg("Testers:");
-	for(auto&& [id, tester] : all_components<Tester>(new_world)) {
-		y_debug_assert(id.is_valid());
-		log_msg(fmt("id: [%, %]", id.index(), id.version()));
-		tester.validate();
-	}
+		log_msg("Testers:");
+		for(auto&& [id, tester] : all_components<Tester>(new_world)) {
+			y_debug_assert(id.is_valid());
+			log_msg(fmt("id: [%, %]", id.index(), id.version()));
+			tester.validate();
+		}
 
-	log_msg("int:");
-	for(auto&& [id, i] : all_components<int>(new_world)) {
-		y_debug_assert(id.is_valid());
-		y_debug_assert(i == 0);
-		log_msg(fmt("id: [%, %]", id.index(), id.version()));
+		log_msg("int:");
+		for(auto&& [id, i] : all_components<int>(new_world)) {
+			y_debug_assert(id.is_valid());
+			y_debug_assert(i == 0);
+			log_msg(fmt("id: [%, %]", id.index(), id.version()));
+		}
 	}
+	log_msg("-------------------------");
 
 #endif
 

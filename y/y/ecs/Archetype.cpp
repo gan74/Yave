@@ -38,7 +38,12 @@ Archetype::Archetype(usize component_count, memory::PolymorphicAllocatorBase* al
 
 Archetype::~Archetype() {
 	if(_component_infos) {
-		log_msg(fmt("destroying arch with % components % entities", _component_count, size()));
+		log_msg(fmt("destroying arch with % components % entities", _component_count, entity_count()));
+		/*for(usize i = 0; i != _component_count; ++i) {
+			log_msg(_component_infos[i].type_name);
+		}*/
+
+
 		y_debug_assert(_chunk_data.is_empty() == !_last_chunk_size);
 		if(!_chunk_data.is_empty()) {
 			for(usize i = 0; i != _component_count; ++i) {
@@ -59,7 +64,7 @@ Archetype::~Archetype() {
 	}
 }
 
-usize Archetype::size() const {
+usize Archetype::entity_count() const {
 	if(_chunk_data.is_empty()) {
 		return 0;
 	}
@@ -90,7 +95,7 @@ void Archetype::add_entities(core::MutableSpan<EntityData> entities, bool update
 
 
 	if(update_data) {
-		const usize start = size();
+		const usize start = entity_count();
 		for(usize i = 0; i != first; ++i) {
 			entities[i].archetype = this;
 			entities[i].archetype_index = start + i;
@@ -122,7 +127,7 @@ void Archetype::remove_entity(EntityData& data) {
 	y_debug_assert(_last_chunk_size != 0);
 	y_debug_assert(!_chunk_data.is_empty());
 	const usize last_index = _last_chunk_size - 1;
-	if(data.archetype_index + 1 != size()) {
+	if(data.archetype_index + 1 != entity_count()) {
 		const usize chunk_index = data.archetype_index / entities_per_chunk;
 		const usize item_index = data.archetype_index % entities_per_chunk;
 		for(usize i = 0; i != _component_count; ++i) {
@@ -157,7 +162,7 @@ void Archetype::sort_component_infos() {
 
 void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> entities) {
 	Y_TODO(We create empty entities just to move into them)
-	const usize start = other->size();
+	const usize start = other->entity_count();
 	other->add_entities(entities, false);
 
 	usize other_index = 0;
@@ -219,7 +224,9 @@ void Archetype::add_chunk_if_needed() {
 }
 
 void Archetype::add_chunk() {
+	y_debug_assert(_chunk_byte_size != 0);
 	y_debug_assert(_last_chunk_size == entities_per_chunk || _chunk_data.is_empty());
+
 	_last_chunk_size = 0;
 	_chunk_data.emplace_back(_chunk_byte_size ? _allocator.allocate(_chunk_byte_size) : nullptr);
 

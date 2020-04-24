@@ -30,6 +30,10 @@ namespace ecs {
 class EntityWorld;
 class Archetype;
 
+class ComponentInfoSerializerBase;
+class ComponentSerializerWrapper;
+
+
 static constexpr usize entities_per_chunk = 1024;
 
 namespace detail {

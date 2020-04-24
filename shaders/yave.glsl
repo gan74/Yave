@@ -67,6 +67,7 @@ struct ToneMappingParams {
 	ivec2 padding_0;
 };
 
+
 // -------------------------------- UTILS --------------------------------
 
 bool is_OOB(float z) {
@@ -151,6 +152,7 @@ vec3 cube_dir(vec2 texCoord, uint side) {
 float luminance(vec3 rgb) {
 	return dot(rgb, vec3(0.2126, 0.7152, 0.0722));
 }
+
 
 // -------------------------------- SPECTRUM --------------------------------
 
@@ -282,6 +284,7 @@ vec3 ACES_fast(vec3 hdr) {
 	return vec3(ACES_fast(hdr.r), ACES_fast(hdr.g), ACES_fast(hdr.b));
 }
 
+
 // -------------------------------- LIGHTING --------------------------------
 
 float attenuation(float distance, float radius) {
@@ -293,6 +296,7 @@ float attenuation(float distance, float radius, float falloff) {
 	return attenuation(distance * falloff, radius * falloff);
 }
 
+// https://google.github.io/filament/Filament.html
 float D_GGX(float NoH, float roughness) {
 	const float a2 = sqr(sqr(roughness));
 	const float denom = sqr(sqr(NoH) * (a2 - 1.0) + 1.0) * pi;

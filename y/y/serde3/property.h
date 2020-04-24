@@ -22,74 +22,31 @@ SOFTWARE.
 #ifndef Y_SERDE3_PROPERTY_H
 #define Y_SERDE3_PROPERTY_H
 
-#include <y/utils.h>
+#include <y/utils/traits.h>
 
 namespace y {
-namespace serde {
+namespace serde3 {
 
 namespace detail {
 template<typename T, typename G, typename S>
 class Property {
-	class EndIterator {
-	};
-
-	class Iterator {
-		public:
-			decltype(auto) operator*() const {
-				y_debug_assert(_self && _get);
-				return (_self->*_get)();
-			}
-
-			Iterator& operator++() {
-				y_debug_assert(_self);
-				_self = nullptr;
-				return *this;
-			}
-
-			Iterator operator++(int) {
-				Iterator it = *this;
-				++it;
-				return it;
-			}
-
-			bool operator==(const EndIterator&) const {
-				return !_self;
-			}
-
-			bool operator!=(const EndIterator&) const {
-				return _self;
-			}
-
-
-			const T* _self = nullptr;
-			G (T::*_get)() const = nullptr;
-	};
-
 	public:
-	    using value_type = remove_cvref_t<G>;
+		static constexpr bool return_ref = std::is_reference_v<G>;
+
+		using value_type = remove_cvref_t<G>;
 
 	    ~Property() {
 	    }
 
-
-	    Iterator begin() const {
-			return Iterator{_const_self, _get};
+		G get() const {
+			y_debug_assert(_const_self && _get);
+			return (_const_self->*_get)();
 		}
 
-		EndIterator end() const {
-			return EndIterator{};
-		}
-
-		usize size() const {
-			return 1;
-		}
-
-		void make_empty() {
-		}
-
-		void insert(S t) {
+		template<typename A>
+		void set(A&& t) {
 			y_debug_assert(_self && _set);
-			(_self->*_set)(y_fwd(t));
+			return (_self->*_set)(y_fwd(t));
 		}
 
 

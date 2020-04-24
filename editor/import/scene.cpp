@@ -184,9 +184,10 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	y_profile();
 
 	tinygltf::Model model;
-	tinygltf::TinyGLTF ctx;
 
 	{
+		tinygltf::TinyGLTF ctx;
+
 		y_profile_zone("glTF import");
 		const bool is_ascii = filename.ends_with(".gltf");
 		const std::string file = filename.data();
@@ -204,6 +205,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 			y_throw(err);
 		}
 	}
+
 
 	SceneData scene;
 
@@ -283,6 +285,29 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 				const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
 				last.textures[SimpleMaterialData::Diffuse] = tex_name(pbr.baseColorTexture.index);
 				last.textures[SimpleMaterialData::Normal] = tex_name(material.normalTexture.index);
+			}
+		}
+	}
+
+
+	if((flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportMaterials) {
+		y_profile_zone("Object import");
+
+		usize index = 0;
+		for(const tinygltf::Mesh& object : model.meshes) {
+			for(const tinygltf::Primitive& prim : object.primitives) {
+				++index;
+
+				if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
+					continue;
+				}
+
+				if(usize(prim.material) < scene.materials.size()) {
+					const core::String& mesh_name = scene.meshes[index].name();
+					const core::String& mat_name = scene.materials[prim.material].name();
+
+					scene.objects.emplace_back(mesh_name, ObjectData{mesh_name, mat_name});
+				}
 			}
 		}
 	}

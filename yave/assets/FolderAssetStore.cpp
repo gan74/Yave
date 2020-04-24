@@ -189,7 +189,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::for_each(std:
 		}
 	}
 
-	_parent->save().unwrap();
+	//_parent->save().unwrap();
 
 	return core::Ok();
 
@@ -630,20 +630,25 @@ FolderAssetStore::Result<> FolderAssetStore::save() {
 			y_debug_assert(std::string_view(folder) == strict_path(folder));
 			y_debug_assert(_filesystem.is_directory(strict_parent_path(folder)).unwrap_or(false));
 
-			fmt_into(data, "%\n", folder);
+			//fmt_into(data, "%\n", folder);
+			data += folder;
+			data += "\n";
 		}
 
-		fmt_into(data, "\n");
+		data += "\n";
 
 		for(const auto& asset : _assets) {
 			y_debug_assert(is_valid_path(asset.first));
 			y_debug_assert(std::string_view(asset.first) == strict_path(asset.first));
 			y_debug_assert(_filesystem.is_directory(strict_parent_path(asset.first)).unwrap_or(false));
 
-			fmt_into(data, "% % %\n", asset.second.id, usize(asset.second.type), asset.first);
+			//fmt_into(data, "% % %\n", asset.second.id, usize(asset.second.type), asset.first);
+			data += fmt("% % ", asset.second.id, usize(asset.second.type));
+			data += asset.first;
+			data += "\n";
 		}
 
-		fmt_into(data, "\n%\n", _next_id);
+		data += fmt("\n%\n", _next_id);
 	}
 
 	{

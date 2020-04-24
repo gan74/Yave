@@ -34,6 +34,12 @@ namespace ecs {
 namespace detail {
 
 template<typename T>
+std::unique_ptr<ComponentInfoSerializerBase> create_info_serializer();
+
+template<typename T>
+ComponentSerializerWrapper create_component_serializer(Archetype*);
+
+template<typename T>
 void create_component(void* dst, usize count) {
 	y_debug_assert(usize(dst) % sizeof(T) == 0);
 	T* it = static_cast<T*>(dst);
@@ -85,6 +91,9 @@ struct ComponentRuntimeInfo {
 	void (*destroy)(void* ptr, usize count) = nullptr;
 	void (*move)(void* dst, void* src, usize count) = nullptr;
 
+	std::unique_ptr<ComponentInfoSerializerBase> (*create_info_serializer)() = nullptr;
+	ComponentSerializerWrapper (*create_component_serializer)(Archetype*) = nullptr;
+
 	u32 type_id = u32(-1);
 
 	std::string_view type_name = "unknown";
@@ -99,7 +108,8 @@ struct ComponentRuntimeInfo {
 			detail::create_component_from<T>,
 			detail::destroy_component<T>,
 			detail::move_component<T>,
-			//detail::create_serializer<T>,
+			detail::create_info_serializer<T>,
+			detail::create_component_serializer<T>,
 			type_index<T>(),
 			ct_type_name<T>()
 		};

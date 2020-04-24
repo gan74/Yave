@@ -100,7 +100,7 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 		TransformableComponent* trans_comp = world.component<TransformableComponent>(mesh_id);
 		trans_comp->transform() = center_to_camera(mesh->aabb());
 
-		y_debug_assert(world.component<StaticMeshComponent>(mesh_id)->material()->mat_template());
+		//y_debug_assert(world.component<StaticMeshComponent>(mesh_id)->material()->mat_template());
 	}
 
 	view.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));

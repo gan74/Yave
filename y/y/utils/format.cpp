@@ -52,6 +52,7 @@ FmtBuffer::FmtBuffer(core::String& str) {
 	usize cap = str.capacity();
 	usize size = str.size();
 	_buffer_size = cap - size;
+	Y_TODO(this makes fmt_into really slow)
 	str.grow(cap, 0);
 	_start = _buffer = str.data() + size;
 }

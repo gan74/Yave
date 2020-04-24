@@ -30,9 +30,6 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
-class ComponentSerializerBase;
-class EntityWorldSerializer;
-
 class EntityWorld : NonCopyable {
 	public:
 		bool exists(EntityID id) const;
@@ -113,8 +110,10 @@ class EntityWorld : NonCopyable {
 		}
 
 
+		y_serde3(_archetypes)
+
 	private:
-		friend class ComponentSerializerBase;
+		friend class ComponentInfoSerializerBase;
 		friend class EntityWorldSerializer;
 
 		void check_exists(EntityID id) const;
