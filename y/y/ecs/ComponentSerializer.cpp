@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,12 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_UTILS_EXCEPT_H
-#define Y_UTILS_EXCEPT_H
 
-#define y_throw_msg(msg) throw std::runtime_error(msg)
+#include "ComponentSerializer.h"
 
 namespace y {
+namespace ecs {
+
+ComponentInfoSerializerBase::~ComponentInfoSerializerBase() {
 }
 
-#endif // Y_UTILS_EXCEPT_H
+ComponentSerializerBase::~ComponentSerializerBase() {
+}
+
+ComponentSerializerBase::ComponentSerializerBase(Archetype* arc) : _archetype(arc) {
+}
+
+ComponentSerializerWrapper::ComponentSerializerWrapper(std::unique_ptr<ComponentSerializerBase> ptr) : _storage(std::move(ptr)), _serializer(*_storage.get()) {
+}
+
+void ComponentListSerializer::add(ComponentSerializerWrapper wrapper) {
+	_wrappers.emplace_back(std::move(wrapper));
+}
+
+core::MutableSpan<ComponentSerializerWrapper> ComponentListSerializer::wrappers() {
+	return _wrappers;
+}
+
+core::Span<ComponentSerializerWrapper> ComponentListSerializer::wrappers() const {
+	return _wrappers;
+}
+
+
+}
+}

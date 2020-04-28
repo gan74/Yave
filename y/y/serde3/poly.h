@@ -87,8 +87,11 @@ struct PolyType {
 			poly_type_id<Derived>(),
 			first,
 			[]() -> std::unique_ptr<Base> {
-				static_assert(std::is_default_constructible_v<Derived>);
-				return std::make_unique<Derived>();
+				if constexpr(std::is_default_constructible_v<Derived>) {
+					return std::make_unique<Derived>();
+				}
+				y_breakpoint;
+				return nullptr;
 			},
 			ct_type_name<Derived>()
 		};

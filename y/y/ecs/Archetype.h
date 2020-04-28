@@ -55,9 +55,19 @@ class Archetype : NonMovable {
 		void add_entities(core::MutableSpan<EntityData> entities);
 
 
+
+		template<typename T>
+		SingleComponentView<T> components() {
+			ComponentIterator<true, T> begin;
+			if(!build_iterator<0>(begin)) {
+				return SingleComponentView<T>();
+			}
+			return SingleComponentView<T>(begin, entity_count());
+		}
+
 		template<typename... Args>
 		ComponentView<Args...> view() {
-			ComponentIterator<Args...> begin;
+			ComponentIterator<true, Args...> begin;
 			if(!build_iterator<0>(begin)) {
 				return ComponentView<Args...>();
 			}
@@ -68,9 +78,9 @@ class Archetype : NonMovable {
 		// This can not be private because of make_unique
 		Archetype(usize component_count = 0, memory::PolymorphicAllocatorBase* allocator = memory::global_allocator());
 
-		/*y_serde3(serde3::property(this, &Archetype::create_serializers, &Archetype::set_serializers),
+		y_serde3(serde3::property(this, &Archetype::create_serializers, &Archetype::set_serializers),
 				 serde3::property(this, &Archetype::entity_count,		&Archetype::set_entity_count),
-				 create_component_serializer())*/
+				 create_component_serializer())
 
 	private:
 		friend class EntityWorld;
@@ -122,10 +132,10 @@ class Archetype : NonMovable {
 		}
 
 		template<usize I, typename... Args>
-		[[nodiscard]] bool build_iterator(ComponentIterator<Args...>& it) {
+		[[nodiscard]] bool build_iterator(ComponentIterator<true, Args...>& it) {
 			static_assert(sizeof...(Args));
 			if constexpr(I < sizeof...(Args)) {
-				using reference = typename ComponentIterator<Args...>::reference;
+				using reference = typename ComponentIterator<true, Args...>::reference;
 				using type = remove_cvref_t<std::tuple_element_t<I, reference>>;
 				const ComponentRuntimeInfo* type_info =  info_or_null<type>();
 				if(!type_info) {
@@ -155,6 +165,7 @@ class Archetype : NonMovable {
 			for(usize i = 0; i != _component_count; ++i) {
 				serializers.emplace_back(_component_infos[i].create_info_serializer());
 			}
+			log_msg(fmt("size = %", serializers.size()));
 			return serializers;
 		}
 
@@ -194,6 +205,10 @@ class Archetype : NonMovable {
 		usize _chunk_byte_size = 0;
 };
 
+template<typename T>
+SingleComponentViewRange<T> ComponentSerializer<T>::components() const {
+	return _archetype->components<T>();
+}
 
 }
 }

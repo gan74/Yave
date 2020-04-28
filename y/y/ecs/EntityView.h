@@ -32,7 +32,7 @@ namespace ecs {
 template<typename... Args>
 class EntityIterator {
 
-	using inner_iterator = ComponentIterator<Args...>;
+	using inner_iterator = ComponentIterator<true, Args...>;
 
 	public:
 		static constexpr usize component_count = inner_iterator::component_count;

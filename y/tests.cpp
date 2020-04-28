@@ -174,6 +174,8 @@ static_assert(serde3::is_property_v<decltype(M::prop(nullptr))>);
 
 int main() {
 
+	core::result::break_on_error = true;
+
 #if 0
 	std::array ms = {M{1}, M{2}};
 	core::MutableSpan<M> m_span = ms;
@@ -192,7 +194,7 @@ int main() {
 	}
 #endif
 
-#if 0
+#if 1
 	EntityWorld world;
 
 	{
@@ -215,22 +217,25 @@ int main() {
 
 	W w;
 
-	{
+	try {
 		EntityWorld new_world;
 		auto file = io2::Buffer();
 		{
+			log_msg("Serialization...");
 			serde3::WritableArchive arc(file);
-			arc.serialize(w).unwrap();
-			arc.serialize(world).unwrap();
+			arc.serialize(w).or_throw();
+			arc.serialize(world).or_throw();
 			log_msg("Serialization ok");
 		}
 		file.reset();
 		{
+			log_msg("Deserialization...");
 			serde3::ReadableArchive arc(file);
-			arc.deserialize(w).unwrap();
-			arc.deserialize(new_world).unwrap();
+			arc.deserialize(w).or_throw();
+			arc.deserialize(new_world).or_throw();
 			log_msg("Deserialization ok");
 		}
+
 
 		log_msg("Testers:");
 		for(auto&& [id, tester] : all_components<Tester>(new_world)) {
@@ -245,12 +250,13 @@ int main() {
 			y_debug_assert(i == 0);
 			log_msg(fmt("id: [%, %]", id.index(), id.version()));
 		}
+	} catch(serde3::ErrorType err) {
+		log_msg(fmt("Serde error: %", serde3::error_msg(err)), Log::Error);
 	}
+
 	log_msg("-------------------------");
 
 #endif
-
-	log_msg("Ok");
 	return 0;
 }
 
