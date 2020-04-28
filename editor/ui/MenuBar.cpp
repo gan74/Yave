@@ -119,7 +119,7 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
 			//ImGui::SameLine(ImGui::GetWindowSize().x - progress_bar_size);
 			auto progress_items = context()->notifications().progress_items();
 			for(const auto& item : progress_items) {
-				if(ImGui::GetContentRegionAvailWidth() < progress_bar_size) {
+				if(ImGui::GetContentRegionAvail().x < progress_bar_size) {
 					break;
 				}
 				if(!item.is_over()) {

@@ -61,7 +61,7 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
 	}
 
 	ImGui::SameLine();
-	if(ImGui::GetContentRegionAvailWidth() > button_size.x() * 0.5f) {
+	if(ImGui::GetContentRegionAvail().x > button_size.x() * 0.5f) {
 		const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
 		core::String clean = name.map(clean_name).unwrap_or(core::String());
 

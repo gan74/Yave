@@ -154,7 +154,7 @@ void MaterialPreview::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
 
 	if(output) {
 		const math::Vec2 top_left = ImGui::GetCursorPos();
-		const float width = ImGui::GetContentRegionAvailWidth();
+		const float width = ImGui::GetContentRegionAvail().x;
 		ImGui::Image(output, ImVec2(width, width));
 		const math::Vec2 bottom = ImGui::GetCursorPos();
 

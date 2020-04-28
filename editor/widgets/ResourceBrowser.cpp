@@ -194,9 +194,12 @@ void ResourceBrowser::paint_path_bar() {
 			const usize search_bar_size = 200;
 			if(search_bar_size < size().x()) {
 				has_seach_bar = true;
-				ImGui::SameLine(size().x() - search_bar_size);
+				ImGui::SameLine(size().x() - (search_bar_size + 24));
 				ImGui::SetNextItemWidth(search_bar_size);
-				if(ImGui::InputTextWithHint("##searchbar", " " ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
+				/*if(ImGui::InputTextWithHint("##searchbar", " " ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
+					update_search();
+				}*/
+				if(ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
 					update_search();
 				}
 			}

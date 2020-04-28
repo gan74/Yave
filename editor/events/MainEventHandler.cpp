@@ -23,8 +23,9 @@ SOFTWARE.
 
 #include <imgui/yave_imgui.h>
 
-namespace editor {
+#include <y/utils/log.h>
 
+namespace editor {
 
 static void set_key_bindings() {
 	ImGuiIO& io = ImGui::GetIO();
