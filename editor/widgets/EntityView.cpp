@@ -34,6 +34,8 @@ SOFTWARE.
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyComponent.h>
 
+#include <editor/utils/ui.h>
+
 #include <imgui/yave_imgui.h>
 
 namespace editor {
@@ -127,6 +129,7 @@ void EntityView::paint_view() {
 	const ecs::EntityWorld& world = context()->world();
 	
 	if(ImGui::BeginChild("##entities", ImVec2(), true)) {
+		imgui::alternating_rows_background();
 		for(ecs::EntityId id : world.entities()) {
 			const EditorComponent* comp = world.component<EditorComponent>(id);
 			if(!comp) {
@@ -198,6 +201,7 @@ void EntityView::paint_clustered_view() {
 	};
 
 	if(ImGui::BeginChild("##entities", ImVec2(), true)) {
+		imgui::alternating_rows_background();
 		for(const auto& archetype : entity_archtypes()) {
 			paint_group(*archetype);
 		}

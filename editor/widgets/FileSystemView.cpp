@@ -171,6 +171,7 @@ void FileSystemView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	const bool modify = allow_modify();
 	ImGui::BeginChild("##fileentries", ImVec2(), true);
 	{
+		imgui::alternating_rows_background();
 		usize hovered = usize(-1);
 		{
 			const auto parent_path = filesystem()->parent_path(path());
