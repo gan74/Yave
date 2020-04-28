@@ -146,6 +146,8 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 	Y_TODO(Pass culling)
 	Y_TODO(Ensure that pass are always recorded in order)
 
+	const auto frame_region = recorder.region("Framegraph render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+
 	alloc_resources();
 
 	usize copy_index = 0;

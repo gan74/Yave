@@ -45,25 +45,25 @@ class Descriptor {
 		};
 
 		template<ImageType Type>
-		Descriptor(const ImageView<ImageUsage::TextureBit, Type>& view) :
+		Descriptor(const ImageView<ImageUsage::TextureBit, Type>& view, Sampler::Type sampler = Sampler::Repeat) :
 				 _type(vk::DescriptorType::eCombinedImageSampler),
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk_image_layout(view.usage()))
 					.setImageView(view.vk_view())
-					.setSampler(view.device()->vk_sampler())) {
+					.setSampler(view.device()->vk_sampler(sampler))) {
 		}
 
 		template<ImageType Type>
-		Descriptor(const ImageView<ImageUsage::StorageBit, Type>& view) :
+		Descriptor(const ImageView<ImageUsage::StorageBit, Type>& view, Sampler::Type sampler = Sampler::Repeat) :
 				 _type(vk::DescriptorType::eStorageImage),
 				 _info(vk::DescriptorImageInfo()
 					.setImageLayout(vk_image_layout(ImageUsage::StorageBit))
 					.setImageView(view.vk_view())
-					.setSampler(view.device()->vk_sampler())) {
+					.setSampler(view.device()->vk_sampler(sampler))) {
 		}
 
 		template<ImageUsage Usage, ImageType Type>
-		Descriptor(const Image<Usage, Type>& image) : Descriptor(ImageView<Usage, Type>(image)) {
+		Descriptor(const Image<Usage, Type>& image, Sampler::Type sampler = Sampler::Repeat) : Descriptor(ImageView<Usage, Type>(image), sampler) {
 		}
 
 

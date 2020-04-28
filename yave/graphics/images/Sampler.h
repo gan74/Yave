@@ -28,14 +28,19 @@ SOFTWARE.
 
 namespace yave {
 
+Y_TODO(move to device)
 class Sampler final : NonCopyable, public DeviceLinked {
-
 	public:
+		enum Type {
+			Repeat,
+			Clamp
+		};
+
 		Sampler() = default;
 		Sampler(Sampler&&) = default;
 		Sampler& operator=(Sampler&&) = default;
 
-		Sampler(DevicePtr dptr);
+		Sampler(DevicePtr dptr, Type type = Repeat);
 
 		~Sampler();
 

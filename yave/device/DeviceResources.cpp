@@ -100,12 +100,13 @@ static constexpr const char* spirv_names[] = {
 	};
 
 // ABGR
-static constexpr std::array<u32, 4> texture_colors[] = {
+static constexpr std::array<u32, 6> texture_colors[] = {
 		{0, 0, 0, 0},
 		{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF},
 		{0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F},
 		{0xFF0000FF, 0xFF0000FF, 0xFF0000FF, 0xFF0000FF},
-		{0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F}
+		{0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F},
+		{0xFFEBCE87, 0xFFEBCE87, 0xFF272E3A, 0xFF272E3A}
 	};
 
 static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
@@ -200,7 +201,7 @@ void DeviceResources::load_resources(DevicePtr dptr) {
 	}
 
 	_brdf_lut = create_brdf_lut(dptr, operator[](BRDFIntegratorProgram));
-	_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](WhiteTexture)));
+	_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
 	_empty_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
 }
 

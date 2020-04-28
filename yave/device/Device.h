@@ -73,7 +73,7 @@ class Device : NonMovable {
 		const vk::PhysicalDeviceLimits& vk_limits() const;
 
 		vk::Device vk_device() const;
-		vk::Sampler vk_sampler() const;
+		vk::Sampler vk_sampler(Sampler::Type type = Sampler::Repeat) const;
 
 		const DebugUtils* debug_utils() const;
 
@@ -111,7 +111,7 @@ class Device : NonMovable {
 
 		core::Vector<Queue> _queues;
 
-		Sampler _sampler;
+		std::array<Sampler, 2> _samplers;
 
 		mutable concurrent::SpinLock _lock;
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;

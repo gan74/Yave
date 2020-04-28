@@ -44,9 +44,29 @@ static void check_features(const vk::PhysicalDeviceFeatures& features, const vk:
 	}
 }
 
+static core::Vector<Queue> create_queues(DevicePtr dptr, core::Span<QueueFamily> families) {
+	core::Vector<Queue> queues;
+	for(const auto& family : families) {
+		for(auto& queue : family.queues(dptr)) {
+			queues.push_back(std::move(queue));
+		}
+	}
+	return queues;
+}
+
+
+static std::array<Sampler, 2> create_samplers(DevicePtr dptr) {
+	std::array<Sampler, 2> samplers;
+	for(usize i = 0; i != samplers.size(); ++i) {
+		samplers[i] = Sampler(dptr, Sampler::Type(i));
+	}
+	return samplers;
+}
+
 static std::array<const char*, 1> extensions() {
 	return {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 }
+
 
 static vk::Device create_device(
 		const vk::PhysicalDevice physical,
@@ -107,15 +127,7 @@ Device::ScopedDevice::~ScopedDevice() {
 }
 
 
-static core::Vector<Queue> create_queues(DevicePtr dptr, core::Vector<QueueFamily> families) {
-	core::Vector<Queue> queues;
-	for(const auto& family : families) {
-		for(auto& queue : family.queues(dptr)) {
-			queues.push_back(std::move(queue));
-		}
-	}
-	return queues;
-}
+
 
 Device::Device(Instance& instance) :
 		_instance(instance),
@@ -125,9 +137,10 @@ Device::Device(Instance& instance) :
 		_allocator(this),
 		_lifetime_manager(this),
 		_queues(create_queues(this, _queue_families)),
-		_sampler(this),
+		_samplers(create_samplers(this)),
 		_descriptor_set_allocator(this),
 		_resources(this) {
+
 }
 
 Device::~Device() {
@@ -226,8 +239,9 @@ vk::Device Device::vk_device() const {
 	return _device.device;
 }
 
-vk::Sampler Device::vk_sampler() const {
-	return _sampler.vk_sampler();
+vk::Sampler Device::vk_sampler(Sampler::Type type) const {
+	y_debug_assert(usize(type) < _samplers.size());
+	return _samplers[usize(type)].vk_sampler();
 }
 
 CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() const {

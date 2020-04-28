@@ -26,13 +26,28 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::Sampler create_sampler(DevicePtr dptr) {
+static vk::SamplerAddressMode vk_address_mode(Sampler::Type type) {
+	switch(type) {
+		case Sampler::Repeat:
+			return vk::SamplerAddressMode::eRepeat;
+
+		case Sampler::Clamp:
+			return vk::SamplerAddressMode::eClampToEdge;
+
+		default:
+			y_fatal("Unknown sampler type");
+	}
+}
+
+static vk::Sampler create_sampler(DevicePtr dptr, Sampler::Type type) {
+	const vk::SamplerAddressMode address_mode = vk_address_mode(type);
+
 	return dptr->vk_device().createSampler(vk::SamplerCreateInfo()
 			.setMagFilter(vk::Filter::eLinear)
 			.setMinFilter(vk::Filter::eLinear)
-			.setAddressModeU(vk::SamplerAddressMode::eRepeat)
-			.setAddressModeV(vk::SamplerAddressMode::eRepeat)
-			.setAddressModeW(vk::SamplerAddressMode::eRepeat)
+			.setAddressModeU(address_mode)
+			.setAddressModeV(address_mode)
+			.setAddressModeW(address_mode)
 			.setMipmapMode(vk::SamplerMipmapMode::eLinear)
 			.setMinLod(0.0f)
 			.setMaxLod(1000.0f)
@@ -41,7 +56,7 @@ static vk::Sampler create_sampler(DevicePtr dptr) {
 		);
 }
 
-Sampler::Sampler(DevicePtr dptr) : DeviceLinked(dptr), _sampler(create_sampler(dptr)) {
+Sampler::Sampler(DevicePtr dptr, Type type) : DeviceLinked(dptr), _sampler(create_sampler(dptr, type)) {
 }
 
 Sampler::~Sampler() {

@@ -109,6 +109,8 @@ class AssetPtr {
 	public:
 		AssetPtr() = default;
 
+		inline AssetPtr& operator=(std::nullptr_t);
+
 		inline AssetId id() const;
 
 		inline void wait_until_loaded() const;

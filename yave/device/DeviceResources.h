@@ -123,6 +123,8 @@ class DeviceResources final : NonMovable {
 
 			FlatNormalTexture,
 
+			SkyIBLTexture,
+
 			MaxTextures
 		};
 

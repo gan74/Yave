@@ -51,6 +51,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraphPassBuilder& builder,
 											 const SceneView& scene,
 											 const GBufferPass& gbuffer,
 											 const std::shared_ptr<IBLProbe>& ibl_probe) {
+	y_debug_assert(ibl_probe != nullptr);
 
 	struct PushData {
 		uniform::LightingCamera camera;

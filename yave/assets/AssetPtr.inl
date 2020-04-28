@@ -128,6 +128,12 @@ AssetPtr<T>::AssetPtr(std::shared_ptr<Data> ptr) : _data(std::move(ptr)) {
 }
 
 template<typename T>
+AssetPtr<T>& AssetPtr<T>::operator=(std::nullptr_t) {
+	*this = AssetPtr();
+	return *this;
+}
+
+template<typename T>
 bool AssetPtr<T>::is_empty() const {
 	return !_data;
 }
