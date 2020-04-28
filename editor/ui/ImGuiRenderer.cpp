@@ -51,12 +51,16 @@ static ImageData load_font() {
 	ImGuiIO& io = ImGui::GetIO();
 
 	// https://skia.googlesource.com/external/github.com/ocornut/imgui/+/v1.50/extra_fonts/README.txt
+#if 0
 	if(const char* font = find_font("Roboto-Regular.ttf")) {
 		io.Fonts->AddFontFromFileTTF(font, 14.0f);
 	} else {
 		io.Fonts->AddFontDefault();
 		log_msg("Roboto-Regular.ttf not found.", Log::Error);
 	}
+#else
+	io.Fonts->AddFontDefault();
+#endif
 
 	if(const char* icons = find_font("fa-solid-900.ttf")) {
 		ImFontConfig config;
@@ -103,7 +107,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 	static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
 	y_profile();
 
-	const auto region = recorder.region("ImGui render pass");
+	const auto region = recorder.region("ImGui render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
 
 	ImDrawData* draw_data = ImGui::GetDrawData();
 
@@ -127,7 +131,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 
 	const auto create_descriptor_set = [&](const void* data) {
 		const auto* tex = static_cast<const TextureView*>(data);
-		return DescriptorSet(device(), {Descriptor(*tex), Descriptor(uniform_buffer)});
+		return DescriptorSet(device(), {Descriptor(*tex, Sampler::Clamp), Descriptor(uniform_buffer)});
 	};
 
 	const DescriptorSetBase default_set = create_descriptor_set(&_font_view);

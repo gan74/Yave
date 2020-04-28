@@ -233,7 +233,7 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 	auto thumbmail = std::make_unique<ThumbmailData>(device(), _size, tex.id());
 
 	{
-		const DescriptorSet set(device(), {Descriptor(*tex), Descriptor(StorageView(thumbmail->image))});
+		const DescriptorSet set(device(), {Descriptor(*tex, Sampler::Clamp), Descriptor(StorageView(thumbmail->image))});
 		recorder.dispatch_size(device()->device_resources()[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
 	}
 

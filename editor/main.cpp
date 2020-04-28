@@ -68,6 +68,11 @@ static void parse_args(int argc, char** argv) {
 		if(arg == "--console") {
 			display_console = true;
 		}
+#ifdef Y_DEBUG
+		if(arg == "--errbreak") {
+			core::result::break_on_error = true;
+		}
+#endif
 	}
 
 	if(!display_console) {

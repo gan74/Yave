@@ -25,6 +25,14 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
+#include <yave/renderer/renderer.h>
+#include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/components/TransformableComponent.h>
+#include <yave/entities/entities.h>
+#include <yave/utils/color.h>
+
 #include <y/io2/Buffer.h>
 
 #include <editor/utils/ui.h>
@@ -32,11 +40,6 @@ SOFTWARE.
 #include <imgui/yave_imgui.h>
 
 namespace editor {
-
-MaterialEditor::MaterialEditor(ContextPtr cptr) :
-		Widget(ICON_FA_BRUSH " Material Editor"),
-		ContextLinked(cptr) {
-}
 
 static void modify_and_save(ContextPtr ctx, AssetPtr<Material>& material, usize index, AssetId id) {
 	y_profile();
@@ -68,12 +71,27 @@ static void modify_and_save(ContextPtr ctx, AssetPtr<Material>& material, usize 
 	}
 }
 
-void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+MaterialEditor::MaterialEditor(ContextPtr cptr) :
+		Widget(ICON_FA_BRUSH " Material Editor"),
+		ContextLinked(cptr),
+		_preview(cptr) {
+
+	_preview.set_parent(this);
+}
+
+void MaterialEditor::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+	y_profile();
+
+	if(_material) {
+		_preview.paint(recorder, token);
+	}
+
 	if(imgui::asset_selector(context(), _material.id(), AssetType::Material, "Material")) {
 		add_child<AssetSelector>(context(), AssetType::Material)->set_selected_callback(
 			[this](AssetId asset) {
 				if(const auto mat = context()->loader().load_res<Material>(asset)) {
 					_material = mat.unwrap();
+					_preview.set_material(_material);
 				}
 				return true;
 			});
@@ -84,13 +102,6 @@ void MaterialEditor::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	const SimpleMaterialData& data = _material->data();
-
-	if(TextureView* view = context()->thumbmail_cache().get_thumbmail(_material.id()).image) {
-		const math::Vec2 size = content_size().x() < view->size().x()
-			? math::Vec2(content_size().x())
-			: math::Vec2(view->size());
-		ImGui::Image(view, size);
-	}
 
 	const std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic"};
 	for(usize i = 0; i != data.textures().size(); ++i) {

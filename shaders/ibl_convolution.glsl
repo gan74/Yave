@@ -55,7 +55,7 @@ vec3 specular_convolution(samplerCube envmap, vec3 N, float roughness) {
 		vec2 Xi = hammersley(i, sample_count);
 		vec3 H  = importance_sample_GGX(Xi, N, roughness);
 		vec3 L  = normalize(2.0 * dot(V, H) * H - V);
-		float NoL = max(0.0, dot(N, L));
+		float NoL = dot(N, L);
 		if(NoL > 0.0) {
 			acc += texture(envmap, L).rgb * NoL;
 			total += NoL;
@@ -73,7 +73,7 @@ vec3 specular_convolution(sampler2D envmap, vec3 N, float roughness) {
 		vec2 Xi = hammersley(i, sample_count);
 		vec3 H  = importance_sample_GGX(Xi, N, roughness);
 		vec3 L  = normalize(2.0 * dot(V, H) * H - V);
-		float NoL = max(0.0, dot(N, L));
+		float NoL = dot(N, L);
 		if(NoL > 0.0) {
 			acc += texture(envmap, to_equirec(L)).rgb * NoL;
 			total += NoL;

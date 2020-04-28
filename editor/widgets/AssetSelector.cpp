@@ -42,8 +42,18 @@ void AssetSelector::asset_selected(AssetId id) {
 	}
 }
 
-/*bool AssetSelector::display_asset(const FileInfo& file) const {
-	return file.type == _filter;
-}*/
+core::Result<core::String> AssetSelector::entry_icon(const core::String& full_name, EntryType type) const {
+	if(type == EntryType::Directory) {
+		return FileSystemView::entry_icon(full_name, type);
+	}
+	if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+		const AssetType asset = read_file_type(id);
+		if(_filter == AssetType::Unknown || asset == _filter) {
+			return core::Ok(core::String(asset_type_icon(asset)));
+		}
+	}
+	return core::Err();
+}
+
 
 }

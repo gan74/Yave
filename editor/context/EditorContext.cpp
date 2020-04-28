@@ -46,7 +46,6 @@ static constexpr std::string_view store_dir = "../store";
 EditorContext::EditorContext(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_resources(dptr),
-		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
 		_asset_store(std::make_shared<SQLiteAssetStore>(store_file)),
 		//_asset_store(std::make_shared<FolderAssetStore>(store_dir)),
 		_loader(device(), _asset_store),
@@ -164,10 +163,6 @@ ecs::EntityWorld& EditorContext::world() {
 
 const FileSystemModel* EditorContext::filesystem() const {
 	return _filesystem.get() ? _filesystem.get() : FileSystemModel::local_filesystem();
-}
-
-const std::shared_ptr<FrameGraphResourcePool>& EditorContext::resource_pool() const {
-	return _resource_pool;
 }
 
 const EditorResources& EditorContext::resources() const {

@@ -30,6 +30,7 @@ class Widget : public UiElement {
 
 	public:
 		Widget(std::string_view title, u32 flags = 0);
+		~Widget() override;
 
 		void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
@@ -37,8 +38,7 @@ class Widget : public UiElement {
 		const math::Vec2& size() const;
 
 		bool is_focussed() const;
-
-		void set_draw_in_parent(bool has);
+		bool is_mouse_inside() const;
 
 	protected:
 		virtual void paint_ui(CmdBufferRecorder&, const FrameToken&) = 0;
@@ -61,9 +61,9 @@ class Widget : public UiElement {
 
 		u32 _flags;
 		bool _closable = true;
-		bool _draw_in_parent = false;
 		bool _docked = false;
 		bool _focussed = false;
+		bool _mouse_inside = false;
 };
 
 }

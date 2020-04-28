@@ -31,13 +31,17 @@ Widget::Widget(std::string_view title, u32 flags) :
 		_flags(flags) {
 }
 
+Widget::~Widget() {
+	y_always_assert(!has_children(), "Widget was closed while having children");
+}
+
 const math::Vec2& Widget::position() const {
-	y_debug_assert(!_draw_in_parent);
+	y_debug_assert(!has_parent());
 	return _position;
 }
 
 const math::Vec2& Widget::size() const {
-	y_debug_assert(!_draw_in_parent);
+	y_debug_assert(!has_parent());
 	return _size;
 }
 
@@ -45,8 +49,8 @@ bool Widget::is_focussed() const {
 	return _focussed;
 }
 
-void Widget::set_draw_in_parent(bool has) {
-	_draw_in_parent = has;
+bool Widget::is_mouse_inside() const {
+	return _mouse_inside;
 }
 
 void Widget::set_closable(bool closable) {
@@ -66,6 +70,10 @@ void Widget::update_attribs() {
 	_size = ImGui::GetWindowSize();
 	_docked = ImGui::IsWindowDocked();
 	_focussed = ImGui::IsWindowFocused();
+
+	const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos) - math::Vec2(ImGui::GetWindowPos());
+	const auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
+	_mouse_inside = less(mouse_pos, ImGui::GetWindowContentRegionMax()) && less(ImGui::GetWindowContentRegionMin(), mouse_pos);
 }
 
 static void fix_undocked_bg() {
@@ -83,15 +91,23 @@ void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 
 	before_paint();
 
-	if(_draw_in_parent) {
-		if(has_children()) {
-			y_fatal("Widgets drawn in parents can not have childrens");
-		}
+	if(has_parent()) {
+		y_always_assert(!has_children(), "Widgets drawn in parents can not have childrens");
 
-		if(ImGui::BeginChild(_title_with_id.begin(), ImVec2(0, 0), false, _flags)) {
+		/*if(ImGui::BeginChild(_title_with_id.begin(), ImVec2(0, 0), false, _flags)) {
 			paint_ui(recorder, token);
 		}
-		ImGui::EndChild();
+		ImGui::EndChild();*/
+
+		ImGui::BeginGroup();
+		ImGui::PushID(_title_with_id.begin());
+		{
+			update_attribs();
+			paint_ui(recorder, token);
+		}
+		ImGui::PopID();
+		ImGui::EndGroup();
+
 	} else {
 		ImGui::SetNextWindowSize(ImVec2(480, 480), ImGuiCond_FirstUseEver);
 

@@ -34,7 +34,8 @@ namespace editor {
 EngineView::EngineView(ContextPtr cptr) :
 		Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
 		ContextLinked(cptr),
-		_ibl_probe(context()->device()->device_resources().empty_probe()),
+		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
+		_ibl_probe(device()->device_resources().empty_probe()),
 		_scene_view(&context()->world()),
 		_camera_controller(std::make_unique<HoudiniCameraController>(context())),
 		_gizmo(context(), &_scene_view) {
@@ -58,7 +59,7 @@ void EngineView::after_paint() {
 
 void EngineView::draw(CmdBufferRecorder& recorder) {
 	TextureView* output = nullptr;
-	FrameGraph graph(context()->resource_pool());
+	FrameGraph graph(_resource_pool);
 
 	math::Vec2ui output_size = content_size();
 	const EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _ibl_probe, _settings);
@@ -137,15 +138,9 @@ void EngineView::update_proj() {
 void EngineView::update() {
 	_gizmo.set_allow_drag(true);
 
-	const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos) - math::Vec2(ImGui::GetWindowPos());
-	const auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
+	const bool hovered = ImGui::IsWindowHovered() && is_mouse_inside();
 
 	bool focussed = ImGui::IsWindowFocused();
-	const bool hovered =
-			ImGui::IsWindowHovered() &&
-			less(mouse_pos, ImGui::GetWindowContentRegionMax()) &&
-			less(ImGui::GetWindowContentRegionMin(), mouse_pos);
-
 	if(hovered && is_clicked()) {
 		ImGui::SetWindowFocus();
 		update_picking();
@@ -167,8 +162,8 @@ void EngineView::update() {
 }
 
 void EngineView::update_picking() {
-	math::Vec2ui viewport_size = content_size();
-	math::Vec2 offset = ImGui::GetWindowPos();
+	const math::Vec2ui viewport_size = content_size();
+	const math::Vec2 offset = ImGui::GetWindowPos();
 	const math::Vec2 mouse = ImGui::GetIO().MousePos;
 	const math::Vec2 uv = (mouse - offset - math::Vec2(ImGui::GetWindowContentRegionMin())) / math::Vec2(viewport_size);
 
@@ -233,8 +228,12 @@ void EngineView::draw_menu_bar() {
 							return true;
 						});
 				}
+				ImGui::Separator();
 				if(ImGui::MenuItem("Reset IBL probe")) {
 					_ibl_probe = context()->device()->device_resources().empty_probe();
+				}
+				if(ImGui::MenuItem("Set default IBL probe")) {
+					_ibl_probe = context()->device()->device_resources().ibl_probe();
 				}
 				ImGui::EndMenu();
 			}

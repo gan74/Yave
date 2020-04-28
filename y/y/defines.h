@@ -23,7 +23,6 @@ SOFTWARE.
 #define Y_DEFINES_H
 
 namespace y {
-
 [[noreturn]] void fatal(const char* msg, const char* file = nullptr, int line = 0);
 void break_in_debugger();
 }

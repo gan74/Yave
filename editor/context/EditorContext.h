@@ -70,7 +70,6 @@ class EditorContext : NonMovable, public DeviceLinked {
 		ecs::EntityWorld& world();
 
 		const FileSystemModel* filesystem() const;
-		const std::shared_ptr<FrameGraphResourcePool>& resource_pool() const;
 
 		const EditorResources& resources() const;
 		EditorResources& resources();

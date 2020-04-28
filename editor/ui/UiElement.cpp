@@ -59,6 +59,15 @@ bool UiElement::has_visible_children() const {
 void UiElement::refresh() {
 }
 
+void UiElement::set_parent(UiElement* parent) {
+	y_always_assert(!_parent || !parent, "UiElement already has a parent");
+	_parent = parent;
+}
+
+bool UiElement::has_parent() const {
+	return _parent;
+}
+
 bool UiElement::is_visible() const {
 	return _visible;
 }

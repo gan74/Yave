@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,57 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MATERIALEDITOR_H
-#define EDITOR_MATERIALEDITOR_H
+#ifndef EDITOR_MATERIALPREVIEW_H
+#define EDITOR_MATERIALPREVIEW_H
 
 #include <editor/ui/Widget.h>
 
-#include "MaterialPreview.h"
+#include <yave/framegraph/FrameGraphResourcePool.h>
+#include <yave/graphics/images/IBLProbe.h>
+#include <yave/assets/AssetPtr.h>
+#include <yave/material/Material.h>
+#include <yave/ecs/EntityWorld.h>
+#include <yave/scene/SceneView.h>
 
 namespace editor {
 
-class MaterialEditor final : public Widget, public ContextLinked {
-
-
+class MaterialPreview final : public Widget, public ContextLinked {
 	public:
-		MaterialEditor(ContextPtr cptr);
+		enum class PreviewObject {
+			Sphere,
+			Cube,
+		};
+
+		MaterialPreview(ContextPtr cptr);
+
+		void set_material(const AssetPtr<Material>& material);
+
+		void set_object(const AssetPtr<StaticMesh>& mesh);
+		void set_object(PreviewObject obj);
 
 	private:
-		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+		void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
+		void paint_mesh_menu();
+
+		void reset_world();
+
+		void update_camera();
 
 		AssetPtr<Material> _material;
+		AssetPtr<StaticMesh> _mesh;
 
-		MaterialPreview _preview;
+		ecs::EntityWorld _world;
+		SceneView _view;
+
+		std::shared_ptr<IBLProbe> _ibl_probe;
+		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+
+		float _cam_distance = 1.0f;
+		math::Vec2 _angle = math::Vec2(math::to_rad(45.0f));
+
 };
 
 }
 
-#endif // EDITOR_MATERIALEDITOR_H
+
+#endif // EDITOR_MATERIALPREVIEW_H

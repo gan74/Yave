@@ -38,6 +38,8 @@ class AssetSelector final : public ResourceBrowser {
 	protected:
 		void asset_selected(AssetId id) override;
 
+		core::Result<core::String> entry_icon(const core::String& full_name, EntryType type) const override;
+
 	private:
 		AssetType _filter;
 		core::Function<bool(AssetId)> _selected = [](const auto&) { return false; };

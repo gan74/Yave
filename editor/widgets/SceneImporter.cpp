@@ -44,7 +44,7 @@ SceneImporter::SceneImporter(ContextPtr ctx, const core::String& import_path) :
 		ContextLinked(ctx),
 		_import_path(import_path) {
 
-	_browser.set_draw_in_parent(true);
+	_browser.set_parent(this);
 	_browser.set_selection_filter(false, import::supported_scene_extensions());
 	_browser.set_canceled_callback([this] { close(); return true; });
 	_browser.set_selected_callback([this](const auto& filename) {

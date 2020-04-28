@@ -42,7 +42,7 @@ PickingManager::PickingManager(ContextPtr ctx) :
 PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_view, const math::Vec2& uv, const math::Vec2ui& size) {
 	y_profile();
 
-	FrameGraph framegraph(context()->resource_pool());
+	FrameGraph framegraph(std::make_shared<FrameGraphResourcePool>(device()));
 
 	Y_TODO(Take editor renderer settings into account for picking)
 	const ScenePickingPass scene_pass = ScenePickingPass::create(context(), framegraph, scene_view, size);
