@@ -29,6 +29,7 @@ SOFTWARE.
 #include <y/utils/log.h>
 
 #ifdef Y_OS_WIN
+#include <windows.h>
 #include <winbase.h>
 #endif
 
