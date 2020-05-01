@@ -9,11 +9,15 @@ const uint thread_count = group_size * group_size;
 
 layout(local_size_x = group_size, local_size_y = group_size) in;
 
-layout(set = 0, binding = 0) uniform RayleighSkyData {
+layout(set = 0, binding = 0) uniform CameraData {
+	Camera camera;
+};
+
+layout(set = 0, binding = 1) uniform RayleighSkyData {
 	RayleighSky sky;
 };
 
-layout(set = 0, binding = 1) writeonly buffer SkyLightData {
+layout(set = 0, binding = 2) writeonly buffer SkyLightData {
 	SkyLight light;
 };
 
@@ -25,7 +29,7 @@ void main() {
 
 	const vec3 direction = index == 0 ? sky.sun_direction : sample_dir(index);
 
-	const vec3 color = rayleigh(sky.camera.position.z + sky.base_height,
+	const vec3 color = rayleigh(camera.position.z + sky.base_height,
 								direction,
 								sky.atmo_height,
 								sky.planet_height,

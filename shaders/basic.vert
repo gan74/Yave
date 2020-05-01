@@ -1,7 +1,9 @@
 #version 450
 
-layout(set = 0, binding = 0) uniform ViewProj {
-	mat4 view_proj;
+#include "yave.glsl"
+
+layout(set = 0, binding = 0) uniform CameraData {
+	Camera camera;
 };
 
 layout(location = 0) in vec3 in_position;
@@ -24,5 +26,5 @@ void main() {
 	out_tangent = model * in_tangent;
 	out_bitangent = cross(out_tangent, out_normal);
 
-	gl_Position = view_proj * in_model * vec4(in_position, 1.0);
+	gl_Position = camera.view_proj * in_model * vec4(in_position, 1.0);
 }

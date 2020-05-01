@@ -63,18 +63,18 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Yave's core file
 file(GLOB_RECURSE YAVE_FILES
-		"yave/*.h"
+	    "yave/*.h"
 		"yave/*.cpp"
 	)
 
 file(GLOB_RECURSE SQLITE_FILES
-		"external/sqlite/*.h"
+	    "external/sqlite/*.h"
 		"external/sqlite/*.c"
 	)
 
 # Editor files
 file(GLOB_RECURSE EDITOR_FILES
-		"editor/*.cpp"
+	    "editor/*.cpp"
 		"editor/*.h"
 	)
 
@@ -85,21 +85,25 @@ file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
 		"external/tinygltf/*.hpp"
 		"external/tinygltf/*.h"
 	)
-	
+
 # Shader files
 file(GLOB_RECURSE SHADER_FILES
-		"shaders/*.frag"
+	    "shaders/*.frag"
 		"shaders/*.vert"
 		"shaders/*.geom"
 		"shaders/*.comp"
 	)
 
-# Shader libs, they are here so the IDE can find them
-file(GLOB_RECURSE SHADER_LIBS
-		"shaders/*.glsl"
+file(GLOB_RECURSE SHADER_LIB_FILES
+	    "shaders/*.glsl"
 	)
 
-	
+# Shader libs, they are here so the IDE can find them
+file(GLOB_RECURSE SHADER_LIBS
+	    "shaders/*.glsl"
+	)
+
+
 if(CMAKE_BUILD_TYPE STREQUAL Release OR YAVE_UNITY_BUILD)
 	enable_unity_build(yave YAVE_FILES)
 endif()
@@ -110,9 +114,9 @@ if(YAVE_BUILD_YAVE)
 	add_library(sqlite3 STATIC ${SQLITE_FILES})
 
 	if(YAVE_BUILD_SHARED)
-		add_library(yave SHARED ${YAVE_FILES} ${SHADER_FILES})
+		add_library(yave SHARED ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIB_FILES})
 	else()
-		add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES})
+		add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIB_FILES})
 	endif()
 
 	# temp for vulkan header bug
@@ -124,7 +128,7 @@ if(YAVE_BUILD_YAVE)
 	if(NOT MSVC)
 		target_link_libraries(yave stdc++fs)
 	endif()
-	
+
 	add_custom_target(shaders COMMAND glslc -c ${SHADER_FILES})
 	add_dependencies(yave shaders)
 endif()

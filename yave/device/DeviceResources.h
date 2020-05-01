@@ -67,13 +67,10 @@ class DeviceResources final : NonMovable {
 			BasicFrag,
 			SkinnedFrag,
 			TexturedFrag,
-			ClusterBuilderFrag,
-			ClusteredLocalFrag,
 
 			BasicVert,
 			SkinnedVert,
 			ScreenVert,
-			ClusterBuilderVert,
 
 			MaxSpirV
 		};
@@ -102,9 +99,6 @@ class DeviceResources final : NonMovable {
 
 			ToneMappingMaterialTemplate,
 			RayleighSkyMaterialTemplate,
-
-			ClusterBuilderMaterialTemplate,
-			ClusteredLocalsMaterialTemplate,
 
 			MaxMaterialTemplates
 		};

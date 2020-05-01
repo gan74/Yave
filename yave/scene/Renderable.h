@@ -38,7 +38,7 @@ class Renderable {
 			const u32 instance_index;
 		};
 
-		using CameraData = uniform::ViewProj;
+		using CameraData = uniform::Camera;
 
 		/*virtual ~Renderable() {
 		}

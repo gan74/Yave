@@ -32,18 +32,18 @@ SOFTWARE.
 
 namespace yave {
 
-RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_lit, FrameGraphImageId in_depth, const GBufferPass& gbuffer) {
+RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, FrameGraphImageId in_depth, const GBufferPass& gbuffer) {
 
 	RayleighSkyPass pass;
 	pass.lit = in_lit;
 
 	FrameGraphMutableImageId lit;
 
-	for(auto [sky] : scene_view.world().view<SkyComponent>().components()) {
+	const SceneView& scene = gbuffer.scene_pass.scene_view;
+	for(auto [sky] : scene.world().view<SkyComponent>().components()) {
 		const auto& sun = sky.sun();
 
 		uniform::RayleighSky sky_data {
-			scene_view.camera(),
 			-sun.direction().normalized(),
 			sky.planet_radius() + 100.0f,
 			sun.color() * sun.intensity(),
@@ -57,6 +57,7 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 		const auto buffer = params_builder.declare_typed_buffer<uniform::RayleighSky>(1);
 		const auto sky_light_buffer = params_builder.declare_typed_buffer<uniform::SkyLight>(1);
 
+		params_builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
 		params_builder.add_uniform_input(buffer);
 		params_builder.map_update(buffer);
 
@@ -80,6 +81,7 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, const SceneView&
 		builder.add_uniform_input(gbuffer.normal);
 		builder.add_uniform_input(framegraph.device()->device_resources().brdf_lut());
 
+		builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
 		builder.add_uniform_input(buffer);
 		builder.add_uniform_input(sky_light_buffer);
 

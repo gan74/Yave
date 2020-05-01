@@ -68,8 +68,6 @@ static constexpr DeviceMaterialData material_datas[] = {
 		DeviceMaterialData::basic(SpirV::TexturedFrag),
 		DeviceMaterialData::screen(SpirV::ToneMapFrag),
 		DeviceMaterialData::screen(SpirV::RayleighSkyFrag, true),
-		DeviceMaterialData{SpirV::ClusterBuilderFrag, SpirV::ClusterBuilderVert, DepthTestMode::None, BlendMode::None, CullMode::Front},
-		DeviceMaterialData::screen(SpirV::ClusteredLocalFrag, true),
 	};
 
 static constexpr const char* spirv_names[] = {
@@ -79,7 +77,7 @@ static constexpr const char* spirv_names[] = {
 		"deferred_ambient.comp",
 		"deferred_locals.comp",
 		"ssao.comp",
-        "copy.comp",
+		"copy.comp",
 		"histogram_clear.comp",
 		"histogram.comp",
 		"tonemap_params.comp",
@@ -90,13 +88,10 @@ static constexpr const char* spirv_names[] = {
 		"basic.frag",
 		"skinned.frag",
 		"textured.frag",
-		"cluster_builder.frag",
-		"clustered_locals.frag",
 
 		"basic.vert",
 		"skinned.vert",
 		"screen.vert",
-		"cluster_builder.vert",
 	};
 
 // ABGR

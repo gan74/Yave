@@ -49,7 +49,7 @@ static usize render_world(ContextPtr ctx,
 	const ecs::EntityWorld& world = scene_view.world();
 
 	auto camera_mapping = pass->resources().mapped_buffer(camera_buffer);
-	camera_mapping[0] = scene_view.camera().viewproj_matrix();
+	camera_mapping[0] = scene_view.camera();
 
 	auto transform_mapping = pass->resources().mapped_buffer(transform_buffer);
 	const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);

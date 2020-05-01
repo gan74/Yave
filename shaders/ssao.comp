@@ -12,7 +12,7 @@ layout(set = 0, binding = 1) uniform sampler2D in_normal;
 layout(rgba16f, set = 0, binding = 2) uniform writeonly image2D out_color;
 
 layout(push_constant) uniform PushConstants {
-	LightingCamera camera;
+	Camera camera;
 };
 
 
@@ -31,8 +31,8 @@ float ssao(ivec2 coord) {
 	float roughness = 0.0;
 	unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
-	const mat4 matrix = inverse(camera.inv_matrix);
-	const vec3 world_pos = unproject(uv, depth, camera.inv_matrix);
+	const mat4 matrix = inverse(camera.inv_view_proj);
+	const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
 
 	//return bent_normal(in_depth, depth, normal, uv, 5.0, world_pos, matrix, 64);
 	return ambient_occlusion(in_depth, depth, normal, uv, 15.0, world_pos, matrix, 64);

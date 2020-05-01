@@ -6,6 +6,24 @@
 
 // -------------------------------- TYPES --------------------------------
 
+struct Frustum {
+	vec4 planes[6];
+};
+
+struct Frustum4 {
+	vec4 planes[4];
+};
+
+struct Camera {
+	mat4 view_proj;
+	mat4 inv_view_proj;
+	// Frustum frustum;
+	vec3 position;
+	uint padding_0;
+	vec3 forward;
+	uint padding_1;
+};
+
 struct DirectionalLight {
 	vec3 direction;
 	uint padding_0;
@@ -42,22 +60,6 @@ struct ShadowMapParams {
 	mat4 view_proj;
 	vec2 uv_offset;
 	vec2 uv_mul;
-};
-
-struct LightingCamera {
-	mat4 inv_matrix;
-	vec3 position;
-	uint padding_0;
-	vec3 forward;
-	uint padding_1;
-};
-
-struct Frustum {
-	vec4 planes[6];
-};
-
-struct Frustum4 {
-	vec4 planes[4];
 };
 
 struct ToneMappingParams {
@@ -117,9 +119,9 @@ float log10(float x) {
 
 mat4 indentity() {
 	return mat4(1, 0, 0, 0,
-				0, 1, 0, 0,
-				0, 0, 1, 0,
-				0, 0, 0, 1);
+	            0, 1, 0, 0,
+	            0, 0, 1, 0,
+	            0, 0, 0, 1);
 }
 
 vec2 hammersley(uint i, uint N) {
@@ -178,8 +180,8 @@ vec3 load_spectrum(float x) {
 vec3 spectrum(uint x) {
 	x = (x % 6) + 1;
 	return vec3((x & 0x01) != 0 ? 1.0 : 0.0,
-				(x & 0x02) != 0 ? 1.0 : 0.0,
-				(x & 0x04) != 0 ? 1.0 : 0.0);
+	            (x & 0x02) != 0 ? 1.0 : 0.0,
+	            (x & 0x04) != 0 ? 1.0 : 0.0);
 }
 
 
