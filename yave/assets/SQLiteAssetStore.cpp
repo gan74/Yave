@@ -591,7 +591,7 @@ class SQLiteBuffer final : public io2::Reader {
 		}
 
 		void seek(usize byte) override {
-			y_debug_assert(byte < _size);
+			y_debug_assert(byte <= _size);
 			_cursor = byte;
 		}
 
