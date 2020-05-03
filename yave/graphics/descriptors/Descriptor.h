@@ -30,17 +30,59 @@ SOFTWARE.
 
 namespace yave {
 
+class InlineDescriptor {
+	public:
+		constexpr InlineDescriptor() = default;
+
+		template<typename T>
+		constexpr InlineDescriptor(const T& data) : _data(&data), _size(sizeof(T)) {
+			static_assert(sizeof(T) % 4 == 0, "InlineDescriptor's size must be a multiple of 4");
+			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
+		}
+
+		template<typename T>
+		constexpr InlineDescriptor(core::Span<T> arr) : _data(arr.data()), _size(arr.size() * sizeof(T)) {
+			static_assert(sizeof(T) % 4 == 0, "InlineDescriptor's size must be a multiple of 4");
+			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
+		}
+
+		const void* data() const {
+			return _data;
+		}
+
+		usize size() const {
+			return _size;
+		}
+
+		bool is_empty() const {
+			return !_size;
+		}
+
+	private:
+		const void* _data = nullptr;
+		usize _size = 0;
+};
+
 class Descriptor {
 
 	public:
+		struct InlineBlock {
+			const void* data;
+			usize size;
+		};
+
 		union DescriptorInfo {
 			vk::DescriptorImageInfo image;
 			vk::DescriptorBufferInfo buffer;
+			InlineBlock inline_block;
 
 			DescriptorInfo(vk::DescriptorImageInfo i) : image(i) {
 			}
 
 			DescriptorInfo(vk::DescriptorBufferInfo b) : buffer(b) {
+			}
+
+			DescriptorInfo(const void* data, usize size) : inline_block({data, size}) {
 			}
 		};
 
@@ -82,10 +124,20 @@ class Descriptor {
 				Descriptor(SubBuffer<(Usage & BufferUsage::StorageBit) != BufferUsage::None ? BufferUsage::StorageBit : BufferUsage::UniformBit>(buffer)) {
 		}
 
+		Descriptor(InlineDescriptor inline_block) : Descriptor(inline_block.data(), inline_block.size()) {
+		}
+
+		Descriptor(const void* data, usize size) :
+				_type(vk::DescriptorType::eInlineUniformBlockEXT),
+				_info(data, size) {
+		}
+
+
 		auto descriptor_set_layout_binding(usize index) const {
+			const usize size = is_inline_block() ? _info.inline_block.size : 1;
 			return vk::DescriptorSetLayoutBinding()
 					.setBinding(u32(index))
-					.setDescriptorCount(1)
+					.setDescriptorCount(size)
 					.setDescriptorType(_type)
 					.setStageFlags(vk::ShaderStageFlagBits::eAll)
 				;
@@ -120,6 +172,16 @@ class Descriptor {
 				case vk::DescriptorType::eCombinedImageSampler:
 				case vk::DescriptorType::eSampledImage:
 				case vk::DescriptorType::eStorageImage:
+					return true;
+				default:
+					break;
+			}
+			return false;
+		}
+
+		bool is_inline_block() const {
+			switch(_type) {
+				case vk::DescriptorType::eInlineUniformBlockEXT:
 					return true;
 				default:
 					break;

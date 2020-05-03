@@ -44,6 +44,26 @@ static void check_features(const vk::PhysicalDeviceFeatures& features, const vk:
 	}
 }
 
+static bool is_extension_supported(const char* name, const vk::PhysicalDevice physical) {
+	const std::string_view name_view = name;
+	const auto supported_extensions = physical.enumerateDeviceExtensionProperties();
+	for(vk::ExtensionProperties ext : supported_extensions) {
+		if(name_view == ext.extensionName) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool try_enable_extension(core::Vector<const char*>& exts, const char* name, const vk::PhysicalDevice physical) {
+	if(is_extension_supported(name, physical)) {
+		exts << name;
+		return true;
+	}
+	log_msg(fmt("% not supported", name), Log::Warning);
+	return false;
+}
+
 static core::Vector<Queue> create_queues(DevicePtr dptr, core::Span<QueueFamily> families) {
 	core::Vector<Queue> queues;
 	for(const auto& family : families) {
@@ -62,11 +82,6 @@ static std::array<Sampler, 2> create_samplers(DevicePtr dptr) {
 	}
 	return samplers;
 }
-
-static std::array<const char*, 1> extensions() {
-	return {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-}
-
 
 static vk::Device create_device(
 		const vk::PhysicalDevice physical,
@@ -88,6 +103,16 @@ static vk::Device create_device(
 			;
 		});
 
+
+	auto extensions = core::vector_with_capacity<const char*>(4);
+	extensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+	};
+
+	try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical);
+
+
 	auto required = vk::PhysicalDeviceFeatures();
 	required.multiDrawIndirect = true;
 	required.geometryShader = true;
@@ -101,24 +126,39 @@ static vk::Device create_device(
 	required.shaderStorageImageArrayDynamicIndexing = true;
 	required.fragmentStoresAndAtomics = true;
 
-	if(debug.debug_features_enabled()) {
-		required.robustBufferAccess = true;
-	}
-
 	check_features(physical.getFeatures(), required);
-
-	auto exts = extensions();
 
 	y_profile_zone("physical device");
 	return physical.createDevice(vk::DeviceCreateInfo()
-			.setEnabledExtensionCount(u32(exts.size()))
-			.setPpEnabledExtensionNames(exts.data())
+			.setEnabledExtensionCount(u32(extensions.size()))
+			.setPpEnabledExtensionNames(extensions.data())
 			.setEnabledLayerCount(u32(debug.device_layers().size()))
 			.setPpEnabledLayerNames(debug.device_layers().begin())
 			.setQueueCreateInfoCount(u32(queue_create_infos.size()))
 			.setPQueueCreateInfos(queue_create_infos.begin())
 			.setPEnabledFeatures(&required)
 		);
+}
+
+static DeviceProperties create_properties(const PhysicalDevice& device) {
+	const vk::PhysicalDeviceLimits& limits = device.vk_properties().limits;
+
+	DeviceProperties properties = {};
+
+	properties.non_coherent_atom_size = limits.nonCoherentAtomSize;
+	properties.max_uniform_buffer_size = limits.maxUniformBufferRange;
+	properties.uniform_buffer_alignment = limits.minUniformBufferOffsetAlignment;
+	properties.storage_buffer_alignment = limits.minStorageBufferOffsetAlignment;
+
+	properties.max_memory_allocations = limits.maxMemoryAllocationCount;
+
+	properties.max_inline_uniform_size = 0;
+	if(is_extension_supported(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, device.vk_physical_device())) {
+		properties.max_inline_uniform_size = device.vk_uniform_block_properties().maxInlineUniformBlockSize;
+		log_msg(fmt("max block size = %", properties.max_inline_uniform_size));
+	}
+
+	return properties;
 }
 
 
@@ -134,6 +174,7 @@ Device::Device(Instance& instance) :
 		_physical(instance),
 		_queue_families(QueueFamily::all(_physical)),
 		_device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
+		_properties(create_properties(_physical)),
 		_allocator(this),
 		_lifetime_manager(this),
 		_queues(create_queues(this, _queue_families)),
@@ -231,8 +272,8 @@ LifetimeManager& Device::lifetime_manager() const {
 	return _lifetime_manager;
 }
 
-const vk::PhysicalDeviceLimits& Device::vk_limits() const {
-	return _physical.vk_properties().limits;
+const DeviceProperties& Device::device_properties() const {
+	return _properties;
 }
 
 vk::Device Device::vk_device() const {

@@ -19,52 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MATERIAL_SIMPLEMATERIALDATA_H
-#define YAVE_MATERIAL_SIMPLEMATERIALDATA_H
+#ifndef YAVE_DEVICE_DEVICEPROPERTIES_H
+#define YAVE_DEVICE_DEVICEPROPERTIES_H
 
-#include <yave/graphics/descriptors/DescriptorSet.h>
-
-#include <yave/assets/AssetPtr.h>
-#include <yave/assets/AssetLoader.h>
+#include <yave/yave.h>
 
 namespace yave {
 
-class SimpleMaterialData {
+struct DeviceProperties {
+	u32 non_coherent_atom_size;
+	u32 max_uniform_buffer_size;
+	u32 uniform_buffer_alignment;
+	u32 storage_buffer_alignment;
 
-	public:
-		enum Textures {
-			Diffuse,
-			Normal,
-			Roughness,
-			Metallic,
-			Max
-		};
+	u32 max_memory_allocations;
 
-		Y_TODO(creating materials requires loading textures)
-
-		static constexpr usize texture_count = usize(Textures::Max);
-
-		SimpleMaterialData() = default;
-		SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
-
-		SimpleMaterialData& set_texture(Textures type, AssetPtr<Texture> tex);
-
-		bool is_empty() const;
-
-		const AssetPtr<Texture>& operator[](Textures tex) const;
-		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
-
-		const math::Vec4& constants() const { return _data; }
-
-		y_serde3(_textures, _data)
-
-	private:
-		std::array<AssetId, texture_count> texture_ids() const;
-
-		std::array<AssetPtr<Texture>, texture_count> _textures;
-		math::Vec4 _data;
+	u32 max_inline_uniform_size;
 };
 
 }
 
-#endif // YAVE_MATERIAL_BASICMATERIALDATA_H
+#endif // YAVE_DEVICE_DEVICEPROPERTIES_H

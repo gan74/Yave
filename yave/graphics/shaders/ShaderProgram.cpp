@@ -32,6 +32,9 @@ SOFTWARE.
 #include <spirv_cross/spirv_cross.hpp>
 #include <spirv_cross/spirv_glsl.hpp>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 using Attribs = core::Vector<vk::VertexInputAttributeDescription>;

@@ -47,13 +47,13 @@ bool SubBufferBase::is_null() const {
 }
 
 usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
-	const auto& limits = dptr->vk_limits();
-	usize align = limits.nonCoherentAtomSize;
+	const auto& props = dptr->device_properties();
+	u32 align = props.non_coherent_atom_size;
 	if ((usage & BufferUsage::UniformBit) != BufferUsage::None) {
-		align = std::max(limits.minUniformBufferOffsetAlignment, align);
+		align = std::max(props.uniform_buffer_alignment, align);
 	}
 	if ((usage & BufferUsage::StorageBit) != BufferUsage::None) {
-		align = std::max(limits.minStorageBufferOffsetAlignment, align);
+		align = std::max(props.storage_buffer_alignment, align);
 	}
 	return align;
 }

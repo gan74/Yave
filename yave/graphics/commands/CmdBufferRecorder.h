@@ -57,7 +57,7 @@ class PushConstant : NonCopyable {
 		}
 
 		template<typename T>
-		constexpr PushConstant(core::Span<T> arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+		constexpr PushConstant(core::Span<T> arr) : _data(arr.data()), _size(arr.size() * sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
 			static_assert(sizeof(T) <= 128, "PushConstant's size must be at most 128 bytes");
 			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");

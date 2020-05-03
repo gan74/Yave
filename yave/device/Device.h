@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include "DeviceProperties.h"
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
 #include "DeviceResources.h"
@@ -68,9 +69,10 @@ class Device : NonMovable {
 		const DeviceResources& device_resources() const;
 		DeviceResources& device_resources();
 
+		const DeviceProperties& device_properties() const;
+
 		LifetimeManager& lifetime_manager() const;
 
-		const vk::PhysicalDeviceLimits& vk_limits() const;
 
 		vk::Device vk_device() const;
 		vk::Sampler vk_sampler(Sampler::Type type = Sampler::Repeat) const;
@@ -100,11 +102,13 @@ class Device : NonMovable {
 
 	private:
 		Instance& _instance;
+		Y_TODO(move this to the heap or slim it)
 		PhysicalDevice _physical;
 
 		core::Vector<QueueFamily> _queue_families;
 
 		ScopedDevice _device;
+		DeviceProperties _properties;
 
 		mutable DeviceMemoryAllocator _allocator;
 		mutable LifetimeManager _lifetime_manager;

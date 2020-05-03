@@ -62,24 +62,43 @@ static ShaderType module_type(const spirv_cross::Compiler& compiler) {
 		default:
 			break;
 	}
-	/*return*/ y_fatal("Unknown shader execution model.");
+	y_fatal("Unknown shader execution model.");
 }
 
-static vk::DescriptorSetLayoutBinding create_binding(u32 index, ShaderType, vk::DescriptorType type) {
+
+static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res) {
+	if(compiler.get_type(res.type_id).storage != spv::StorageClass::StorageClassUniform) {
+		return false;
+	}
+	const std::string_view name = std::string_view(res.name);
+	if(name.size() > 7 && name.substr(name.size() - 7) == "_Inline") {
+		return true;
+	}
+	return false;
+}
+
+static vk::DescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res, vk::DescriptorType type) {
+	u32 size = 1;
+	if(is_inline(compiler, res)) {
+		type = vk::DescriptorType::eInlineUniformBlockEXT;
+		size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
+	}
 	return vk::DescriptorSetLayoutBinding()
-			.setBinding(index)
-			.setDescriptorCount(1)
+			.setBinding(compiler.get_decoration(res.id, spv::DecorationBinding))
+			.setDescriptorCount(size)
 			.setDescriptorType(type)
 			.setStageFlags(vk::ShaderStageFlagBits::eAll)
 		;
 }
 
+
+
 template<typename R>
-static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType shader_type, vk::DescriptorType type) {
+static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType, vk::DescriptorType type) {
 	auto bindings = std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>();
-	for(const auto& r : resources) {
-		const auto id = r.id;
-		bindings[compiler.get_decoration(id, spv::DecorationDescriptorSet)] << create_binding(compiler.get_decoration(id, spv::DecorationBinding), shader_type, type);
+	for(const auto& res : resources) {
+		const u32 set_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
+		bindings[set_index] << create_binding(compiler, res, type);
 	}
 	return bindings;
 }
@@ -104,7 +123,7 @@ static u32 component_size(spirv_cross::SPIRType::BaseType type) {
 		default:
 			break;
 	}
-	/*return*/ y_fatal("Unsupported attribute type.");
+	y_fatal("Unsupported attribute type.");
 }
 
 static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseType type) {
@@ -124,7 +143,7 @@ static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseTy
 		default:
 			break;
 	}
-	/*return*/ y_fatal("Unsupported attribute type.");
+	y_fatal("Unsupported attribute type.");
 }
 
 template<typename R>
@@ -177,6 +196,23 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	merge(_bindings, create_bindings(compiler, resources.storage_buffers, _type, vk::DescriptorType::eStorageBuffer));
 	merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, vk::DescriptorType::eCombinedImageSampler));
 	merge(_bindings, create_bindings(compiler, resources.storage_images, _type, vk::DescriptorType::eStorageImage));
+
+	/*auto print_resources = [&](auto resources) {
+		for(const auto& buffer : resources) {
+			const auto& type = compiler.get_type(buffer.base_type_id);
+			log_msg(fmt("%:", buffer.name.data()), Log::Warning);
+			log_msg(fmt("   storage: %", compiler.get_storage_class(buffer.id)), Log::Warning);
+			log_msg(fmt("   type base: %", type.basetype), Log::Warning);
+			log_msg(fmt("   type storage: %", type.storage), Log::Warning);
+			const auto& bitset = compiler.get_decoration_bitset(buffer.id);
+			bitset.for_each_bit([](u32 bit) {
+				log_msg(fmt("   decoration: %", bit), Log::Warning);
+			});
+		}
+	};
+
+	print_resources(resources.uniform_buffers);
+	print_resources(resources.storage_buffers);*/
 
 	_push_constants = create_push_constants(compiler, resources.push_constant_buffers, _type);
 

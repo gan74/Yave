@@ -23,25 +23,44 @@ SOFTWARE.
 #include "Instance.h"
 #include "extentions/DebugUtils.h"
 
+#include <y/core/Span.h>
+
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
+static bool try_enable_extension(core::Vector<const char*>& exts, const char* name) {
+	const std::string_view name_view = name;
+	const auto supported_extensions = vk::enumerateInstanceExtensionProperties();
+	for(vk::ExtensionProperties ext : supported_extensions) {
+		if(name_view == ext.extensionName) {
+			exts << name;
+			return true;
+		}
+	}
+	log_msg(fmt("% not supported", name_view), Log::Warning);
+	return false;
+}
+
 Instance::Instance(DebugParams debug) : _debug_params(debug) {
 	auto extention_names = core::vector_with_capacity<const char*>(4);
-	extention_names = {VK_KHR_SURFACE_EXTENSION_NAME};
+	extention_names = {
+		VK_KHR_SURFACE_EXTENSION_NAME,
+		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
+	};
+
+#ifdef Y_OS_WIN
+	extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+#endif
 
 	if(_debug_params.debug_features_enabled()) {
-		//extention_names << DebugCallback::name();
-		extention_names << DebugUtils::name();
+		_debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::name()));
 	}
 
-	#ifdef Y_OS_WIN
-		extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
-	#endif
 
 	const auto app_info = vk::ApplicationInfo()
-			.setApiVersion(VK_MAKE_VERSION(1, 2, 0))
+			.setApiVersion(VK_VERSION_1_1)
 			.setPApplicationName("Yave")
 			.setPEngineName("Yave")
 		;
@@ -56,7 +75,6 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 
 	if(_debug_params.debug_features_enabled()) {
 		log_msg("Vulkan debugging enabled.");
-		//_extensions.debug_callback = std::make_unique<DebugCallback>(_instance);
 		_extensions.debug_utils = std::make_unique<DebugUtils>(_instance);
 	}
 }

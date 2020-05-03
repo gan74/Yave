@@ -9,7 +9,7 @@ layout(local_size_x = group_size, local_size_y = group_size) in;
 
 layout(set = 0, binding = 0) writeonly buffer ToneMapping {
 	ToneMappingParams params;
-} params;
+};
 
 layout(set = 0, binding = 1) uniform usampler2D in_histogram;
 
@@ -46,8 +46,8 @@ void main() {
 		const float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
 		const float avg = exp2(log_avg);
 
-		params.params.avg_lum = avg;
-		params.params.max_lum = avg * 9.6;
+		params.avg_lum = avg;
+		params.max_lum = avg * 9.6;
 	}
 }
 

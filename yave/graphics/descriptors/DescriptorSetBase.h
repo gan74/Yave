@@ -41,7 +41,6 @@ class DescriptorSetBase /*: NonCopyable, public DeviceLinked*/ {
 
 	protected:
 		// helpers for parent classes
-		void create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
 		void update_set(DevicePtr dptr, core::Span<Descriptor> bindings);
 
 		vk::DescriptorSet _set;

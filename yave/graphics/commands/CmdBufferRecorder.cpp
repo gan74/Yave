@@ -73,7 +73,7 @@ RenderPassRecorder::~RenderPassRecorder() {
 }
 
 void RenderPassRecorder::bind_material(const Material& material) {
-	bind_material(material.mat_template(), {material.descriptor_set()});
+	bind_material(material.material_template(), {material.descriptor_set()});
 }
 
 void RenderPassRecorder::bind_material(const MaterialTemplate* material, DescriptorSetList descriptor_sets) {
@@ -126,6 +126,8 @@ void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& in
 }
 
 void RenderPassRecorder::bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices) {
+	YAVE_VK_CMD;
+
 	vk_cmd_buffer().bindIndexBuffer(indices.vk_buffer(), indices.byte_offset(), vk::IndexType::eUint32);
 }
 

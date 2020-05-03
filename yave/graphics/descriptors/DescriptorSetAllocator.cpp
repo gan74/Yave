@@ -25,9 +25,33 @@ SOFTWARE.
 
 namespace yave {
 
+static constexpr usize inline_block_index = usize(vk::DescriptorType::eInputAttachment) + 1;
+
+static usize descriptor_type_index(vk::DescriptorType type) {
+	if(type == vk::DescriptorType::eInlineUniformBlockEXT) {
+		y_debug_assert(inline_block_index < DescriptorSetLayout::descriptor_type_count);
+		return inline_block_index;
+	}
+
+	y_debug_assert(usize(type) < DescriptorSetLayout::descriptor_type_count);
+	return usize(type);
+}
+
+static vk::DescriptorType index_descriptor_type(usize index) {
+	y_debug_assert(index <  DescriptorSetLayout::descriptor_type_count);
+	if(index == inline_block_index) {
+		return vk::DescriptorType::eInlineUniformBlockEXT;
+	}
+	return vk::DescriptorType(index);
+}
+
+
+
+
 DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<vk::DescriptorSetLayoutBinding> bindings) : DeviceLinked(dptr) {
 	for(const auto& d : bindings) {
-		++_sizes[usize(d.descriptorType)];
+		_sizes[descriptor_type_index(d.descriptorType)] += d.descriptorCount;
+		y_always_assert(d.descriptorType != vk::DescriptorType::eInlineUniformBlockEXT || dptr->device_properties().max_inline_uniform_size != 0, "Inline descriptors are not supported");
 	}
 	_layout = dptr->vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
 			.setBindingCount(u32(bindings.size()))
@@ -39,7 +63,7 @@ DescriptorSetLayout::~DescriptorSetLayout() {
 	destroy(_layout);
 }
 
-const math::Vec<DescriptorSetLayout::max_descriptor_type, u32>& DescriptorSetLayout::desciptors_count() const {
+const std::array<u32, DescriptorSetLayout::descriptor_type_count>& DescriptorSetLayout::desciptors_count() const {
 	return _sizes;
 }
 
@@ -67,6 +91,10 @@ void DescriptorSetData::recycle() {
 	}
 }
 
+vk::DescriptorSetLayout DescriptorSetData::vk_descriptor_set_layout() const {
+	return _pool->vk_descriptor_set_layout();
+}
+
 vk::DescriptorSet DescriptorSetData::vk_descriptor_set() const {
 	return _pool->vk_descriptor_set(_index);
 }
@@ -76,13 +104,13 @@ static vk::DescriptorPool create_descriptor_pool(const DescriptorSetLayout& layo
 	y_profile();
 
 	usize sizes_count = 0;
-	std::array<vk::DescriptorPoolSize, DescriptorSetLayout::max_descriptor_type> sizes;
+	std::array<vk::DescriptorPoolSize, DescriptorSetLayout::descriptor_type_count> sizes;
 
-	for(usize i = 0; i != DescriptorSetLayout::max_descriptor_type; ++i) {
+	for(usize i = 0; i != DescriptorSetLayout::descriptor_type_count; ++i) {
 		const usize type_count = layout.desciptors_count()[i];
 		if(type_count) {
 			sizes[sizes_count++]
-					.setType(vk::DescriptorType(i))
+					.setType(index_descriptor_type(i))
 					.setDescriptorCount(type_count * set_count)
 				;
 		}
@@ -101,7 +129,8 @@ static vk::DescriptorPool create_descriptor_pool(const DescriptorSetLayout& layo
 
 DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
 	DeviceLinked(layout.device()),
-	_pool(create_descriptor_pool(layout, pool_size)) {
+	_pool(create_descriptor_pool(layout, pool_size)),
+	_layout(layout.vk_descriptor_set_layout()) {
 
 	std::array<vk::DescriptorSetLayout, pool_size> layouts;
 	std::fill_n(layouts.begin(), pool_size, layout.vk_descriptor_set_layout());
@@ -161,6 +190,10 @@ vk::DescriptorPool DescriptorSetPool::vk_pool() const {
 	return _pool;
 }
 
+vk::DescriptorSetLayout DescriptorSetPool::vk_descriptor_set_layout() const {
+	return _layout;
+}
+
 usize DescriptorSetPool::free_sets() const {
 	return pool_size - used_sets();
 }
@@ -181,12 +214,13 @@ DescriptorSetData DescriptorSetAllocator::create_descritptor_set(const Key& bind
 	auto& pool = layout(bindings);
 
 	const auto reversed = core::Range(std::make_reverse_iterator(pool.pools.end()),
-								std::make_reverse_iterator(pool.pools.begin()));
+									  std::make_reverse_iterator(pool.pools.begin()));
 	for(auto& page : reversed) {
 		if(!page->is_full()) {
 			return page->alloc();
 		}
 	}
+
 	pool.pools.emplace_back(std::make_unique<DescriptorSetPool>(pool.layout));
 	return pool.pools.last()->alloc();
 }
@@ -196,7 +230,7 @@ const DescriptorSetLayout& DescriptorSetAllocator::descriptor_set_layout(const K
 	return layout(bindings).layout;
 }
 
-DescriptorSetAllocator::Pools& DescriptorSetAllocator::layout(const Key& bindings) {
+DescriptorSetAllocator::LayoutPools& DescriptorSetAllocator::layout(const Key& bindings) {
 	auto& layout  = _layouts[bindings];
 	if(layout.layout.is_null()) {
 		layout.layout = DescriptorSetLayout(device(), bindings);

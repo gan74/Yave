@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_DEVICE_DEBUGPARAMS_H
 
 #include <yave/yave.h>
-#include <y/core/Vector.h>
+#include <y/core/Span.h>
 
 namespace yave {
 
@@ -31,11 +31,11 @@ class DebugParams {
 
 	public:
 		static DebugParams debug() {
-			return DebugParams({"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"}, true);
+			return DebugParams(true);
 		}
 
 		static DebugParams none() {
-			return DebugParams({}, false);
+			return DebugParams(false);
 		}
 
 		bool debug_features_enabled() const {
@@ -43,25 +43,31 @@ class DebugParams {
 		}
 
 		core::Span<const char*> instance_layers() const {
-			return _instance_layers;
+			if(_debug_enabled) {
+				return layers;
+			}
+			return {};
 		}
 
 		core::Span<const char*> device_layers() const {
-			return _device_layers;
+			if(_debug_enabled) {
+				return layers;
+			}
+			return {};
+		}
+
+		void set_enabled(bool enabled) {
+			_debug_enabled = enabled;
 		}
 
 	private:
-		DebugParams(core::Span<const char*> instance, core::Span<const char*> device, bool callbacks) :
-				_instance_layers(instance.begin(), instance.end()),
-				_device_layers(device.begin(), device.end()),
-				_debug_enabled(callbacks) {
+		static constexpr std::array<const char*, 2> layers = {"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"};
+
+		DebugParams(bool enabled) :
+			_debug_enabled(enabled) {
 		}
 
-		DebugParams(core::Span<const char*> layers, bool callbacks) : DebugParams(layers, layers, callbacks) {
-		}
 
-		const core::Vector<const char*> _instance_layers;
-		const core::Vector<const char*> _device_layers;
 		bool _debug_enabled;
 };
 

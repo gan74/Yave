@@ -32,12 +32,16 @@ static bool is_device_ok(vk::PhysicalDevice device) {
 }
 
 static vk::PhysicalDevice choose_device(vk::Instance instance) {
-	for(auto dev : instance.enumeratePhysicalDevices()) {
+	const auto devices = instance.enumeratePhysicalDevices();
+	if(devices.empty()) {
+		y_fatal("Unable to find a compatible device.");
+	}
+	for(auto dev : devices) {
 		if(is_device_ok(dev)) {
 			return dev;
 		}
 	}
-	/*return*/ y_fatal("Unable to find a compatible device.");
+	return devices[0];
 }
 
 
@@ -45,8 +49,18 @@ static vk::PhysicalDevice choose_device(vk::Instance instance) {
 PhysicalDevice::PhysicalDevice(Instance& instance) :
 		_instance(instance),
 		_device(choose_device(instance.vk_instance())),
-		_properties(_device.getProperties()),
 		_memory_properties(_device.getMemoryProperties()) {
+
+
+	{
+		_uniform_blocks_properties.maxDescriptorSetInlineUniformBlocks = 0;
+		vk::PhysicalDeviceProperties2 properties;
+		properties.pNext = &_uniform_blocks_properties;
+		_device.getProperties2(&properties);
+
+		_properties = properties.properties;
+	}
+
 
 	struct Version {
 		const u32 patch : 12;
@@ -69,6 +83,10 @@ vk::PhysicalDevice PhysicalDevice::vk_physical_device() const {
 
 const vk::PhysicalDeviceProperties& PhysicalDevice::vk_properties() const {
 	return _properties;
+}
+
+const vk::PhysicalDeviceInlineUniformBlockPropertiesEXT& PhysicalDevice::vk_uniform_block_properties() const {
+	return _uniform_blocks_properties;
 }
 
 const vk::PhysicalDeviceMemoryProperties& PhysicalDevice::vk_memory_properties() const {

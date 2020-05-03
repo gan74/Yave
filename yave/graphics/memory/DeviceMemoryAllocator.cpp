@@ -45,7 +45,7 @@ usize DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
 
 DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),
-		_max_allocs(dptr->vk_limits().maxMemoryAllocationCount) {
+		_max_allocs(dptr->device_properties().max_memory_allocations) {
 
 	log_msg(fmt("Max device memory allocation count: %", _max_allocs));
 }
@@ -86,7 +86,7 @@ DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryTyp
 
 	heaps.push_back(std::move(heap));
 
-    return /*std::move*/(alloc);
+	return /*std::move*/(alloc);
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(vk::Image image) {

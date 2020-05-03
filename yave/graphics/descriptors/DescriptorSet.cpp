@@ -66,9 +66,14 @@ bool DescriptorSet::is_null() const  {
 	return _data.is_null();
 }
 
+vk::DescriptorSetLayout DescriptorSet::vk_descriptor_set_layout() const {
+	return _data.vk_descriptor_set_layout();
+}
+
 void DescriptorSet::swap(DescriptorSet& other) {
 	std::swap(_data, other._data);
 	std::swap(_set, other._set);
 }
+
 
 }

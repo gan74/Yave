@@ -43,9 +43,9 @@ void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& 
 	y_debug_assert(_mesh->device());
 
 	if(_material->descriptor_set().is_null()) {
-		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set});
+		recorder.bind_material(_material->material_template(), {scene_data.descriptor_set});
 	} else {
-		recorder.bind_material(_material->mat_template(), {scene_data.descriptor_set, _material->descriptor_set()});
+		recorder.bind_material(_material->material_template(), {scene_data.descriptor_set, _material->descriptor_set()});
 	}
 
 	render_mesh(recorder, scene_data.instance_index);
@@ -55,7 +55,7 @@ void StaticMeshComponent::render_mesh(RenderPassRecorder& recorder, u32 instance
 	if(!_mesh) {
 		return;
 	}
-	
+
 	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), VertexSubBuffer(_mesh->vertex_buffer()));
 	auto indirect = _mesh->indirect_data();
 	indirect.setFirstInstance(instance_index);

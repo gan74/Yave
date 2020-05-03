@@ -35,7 +35,8 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialD
 			*dptr->device_resources()[DeviceResources::GreyTexture],
 			*dptr->device_resources()[DeviceResources::FlatNormalTexture],
 			*dptr->device_resources()[DeviceResources::RedTexture],
-			*dptr->device_resources()[DeviceResources::BlackTexture]
+			*dptr->device_resources()[DeviceResources::BlackTexture]/*,
+			InlineDescriptor(data.constants())*/
 		};
 
 	for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
@@ -68,11 +69,12 @@ const DescriptorSetBase& Material::descriptor_set() const {
 	return _set;
 }
 
-const MaterialTemplate* Material::mat_template() const {
+const MaterialTemplate* Material::material_template() const {
 	return _template;
 }
 
 DevicePtr Material::device() const {
+	Y_TODO(cache ?)
 	return _template->device();
 }
 

@@ -58,23 +58,7 @@ class DescriptorSetPool;
 
 class DescriptorSetLayout : NonCopyable, public DeviceLinked {
 	public:
-#ifdef Y_MSVC
-		Y_TODO(MSVC fix)
-		static constexpr usize max_descriptor_type = 16;
-#else
-		static constexpr usize max_descriptor_type = std::max({
-				usize(vk::DescriptorType::eSampler),
-				usize(vk::DescriptorType::eCombinedImageSampler),
-				usize(vk::DescriptorType::eSampledImage),
-				usize(vk::DescriptorType::eStorageImage),
-				usize(vk::DescriptorType::eUniformTexelBuffer),
-				usize(vk::DescriptorType::eStorageTexelBuffer),
-				usize(vk::DescriptorType::eUniformBuffer),
-				usize(vk::DescriptorType::eStorageBuffer),
-				usize(vk::DescriptorType::eUniformBufferDynamic),
-				usize(vk::DescriptorType::eStorageBufferDynamic)
-			}) + 1;
-#endif
+		static constexpr usize descriptor_type_count = 12;
 
 		DescriptorSetLayout() = default;
 		DescriptorSetLayout(DevicePtr dptr, core::Span<vk::DescriptorSetLayoutBinding> bindings);
@@ -84,13 +68,13 @@ class DescriptorSetLayout : NonCopyable, public DeviceLinked {
 
 		~DescriptorSetLayout();
 
-		const math::Vec<max_descriptor_type, u32>& desciptors_count() const;
+		const std::array<u32, descriptor_type_count>& desciptors_count() const;
 
 		vk::DescriptorSetLayout vk_descriptor_set_layout() const;
 
 	private:
 		SwapMove<vk::DescriptorSetLayout> _layout;
-		math::Vec<max_descriptor_type, u32> _sizes;
+		std::array<u32, descriptor_type_count> _sizes = {};
 };
 
 class DescriptorSetData {
@@ -100,6 +84,7 @@ class DescriptorSetData {
 		DevicePtr device() const;
 		bool is_null() const;
 
+		vk::DescriptorSetLayout vk_descriptor_set_layout() const;
 		vk::DescriptorSet vk_descriptor_set() const;
 
 	private:
@@ -130,6 +115,7 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 
 		vk::DescriptorSet vk_descriptor_set(u32 id) const;
 		vk::DescriptorPool vk_pool() const;
+		vk::DescriptorSetLayout vk_descriptor_set_layout() const;
 
 		// Slow: for debug only
 		usize free_sets() const;
@@ -143,13 +129,14 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 
 		std::array<vk::DescriptorSet, pool_size> _sets;
 		vk::DescriptorPool _pool;
+		vk::DescriptorSetLayout _layout;
 };
 
 class DescriptorSetAllocator : NonCopyable, public DeviceLinked  {
 
 	using Key = core::Vector<vk::DescriptorSetLayoutBinding>;
 
-	struct Pools : NonMovable {
+	struct LayoutPools : NonMovable {
 		DescriptorSetLayout layout;
 		core::Vector<std::unique_ptr<DescriptorSetPool>> pools;
 	};
@@ -167,9 +154,9 @@ class DescriptorSetAllocator : NonCopyable, public DeviceLinked  {
 		usize used_sets() const;
 
 	private:
-		Pools& layout(const Key& bindings);
+		LayoutPools& layout(const Key& bindings);
 
-		std::unordered_map<Key, Pools> _layouts;
+		std::unordered_map<Key, LayoutPools> _layouts;
 		mutable std::mutex _lock;
 };
 

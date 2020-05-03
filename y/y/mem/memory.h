@@ -31,6 +31,7 @@ namespace memory {
 constexpr usize max_alignment = std::alignment_of<std::max_align_t>::value;
 
 constexpr usize align_up_to(usize value, usize alignment) {
+	y_debug_assert(alignment);
 	if(const usize diff = value % alignment) {
 		y_debug_assert(diff <= value + alignment);
 		return value + alignment - diff;
@@ -40,6 +41,7 @@ constexpr usize align_up_to(usize value, usize alignment) {
 }
 
 constexpr usize align_down_to(usize value, usize alignment) {
+	y_debug_assert(alignment);
 	const usize diff = value % alignment;
 	return value - diff;
 }

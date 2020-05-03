@@ -25,33 +25,31 @@ SOFTWARE.
 
 namespace yave {
 
-void DescriptorSetBase::create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout) {
-	y_profile();
-
-	_set = dptr->vk_device().allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
-	        .setDescriptorPool(pool)
-			.setDescriptorSetCount(1)
-			.setPSetLayouts(&layout)
-	    ).front();
-}
-
 void DescriptorSetBase::update_set(DevicePtr dptr, core::Span<Descriptor> bindings) {
 	y_profile();
 
 	auto writes = core::vector_with_capacity<vk::WriteDescriptorSet>(bindings.size());
 	for(const auto& binding : bindings) {
+		const u32 descriptor_count = binding.descriptor_set_layout_binding(0).descriptorCount;
 		auto w = vk::WriteDescriptorSet()
-		        .setDstSet(_set)
-		        .setDstBinding(u32(writes.size()))
-		        .setDstArrayElement(0)
-		        .setDescriptorCount(1)
-		        .setDescriptorType(binding.vk_descriptor_type())
-		    ;
+				.setDstSet(_set)
+				.setDstBinding(u32(writes.size()))
+				.setDstArrayElement(0)
+				.setDescriptorCount(descriptor_count)
+				.setDescriptorType(binding.vk_descriptor_type())
+			;
 
+		vk::WriteDescriptorSetInlineUniformBlockEXT inline_block;
 		if(binding.is_buffer()) {
 			w.setPBufferInfo(&binding.descriptor_info().buffer);
 		} else if(binding.is_image()) {
 			w.setPImageInfo(&binding.descriptor_info().image);
+		} else if(binding.is_inline_block()) {
+			inline_block.setPData(binding.descriptor_info().inline_block.data);
+			inline_block.setDataSize(binding.descriptor_info().inline_block.size);
+			w.setPNext(&inline_block);
+			y_always_assert(inline_block.dataSize <= dptr->device_properties().max_inline_uniform_size, "Inline uniform block exceeds max supported size");
+			y_debug_assert(inline_block.dataSize % 4 == 0);
 		} else {
 			y_fatal("Unknown descriptor type.");
 		}
