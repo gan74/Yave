@@ -33,21 +33,27 @@ static void bind_image_memory(DevicePtr dptr, vk::Image image, const DeviceMemor
 	dptr->vk_device().bindImageMemory(image, memory.vk_memory(), memory.vk_offset());
 }
 
-static vk::Image create_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static VkImage create_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
 	y_debug_assert(usage != ImageUsage::TransferDstBit);
-	return dptr->vk_device().createImage(vk::ImageCreateInfo()
-			.setSharingMode(vk::SharingMode::eExclusive)
-			.setFlags(type == ImageType::Cube ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlags())
-			.setArrayLayers(layers)
-			.setExtent(vk::Extent3D(size.x(), size.y(), size.z()))
-			.setFormat(format.vk_format())
-			.setImageType(vk::ImageType::e2D)
-			.setTiling(vk::ImageTiling::eOptimal)
-			.setInitialLayout(vk::ImageLayout::eUndefined)
-			.setMipLevels(mips)
-			.setUsage(vk::ImageUsageFlagBits(usage))
-			.setSamples(vk::SampleCountFlagBits::e1)
-		);
+
+	VkImageCreateInfo create_info = vk_struct();
+	{
+		create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		create_info.flags = type == ImageType::Cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+		create_info.arrayLayers = layers;
+		create_info.extent = {size.x(), size.y(), size.z()};
+		create_info.format = format.vk_format();
+		create_info.imageType = VK_IMAGE_TYPE_2D;
+		create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+		create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		create_info.mipLevels = mips;
+		create_info.usage = VkImageUsageFlags(usage);
+		create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+	}
+
+	VkImage image = {};
+	vk_check(vkCreateImage(dptr->vk_device(), &create_info, nullptr, &image));
+	return image;
 }
 
 static auto get_copy_regions(const ImageData& data) {
@@ -56,15 +62,16 @@ static auto get_copy_regions(const ImageData& data) {
 	for(usize l = 0; l != data.layers(); ++l) {
 		for(usize m = 0; m != data.mipmaps(); ++m) {
 			const auto size = data.size(m);
-			regions << vk::BufferImageCopy()
-				.setBufferOffset(data.data_offset(l, m))
-				.setImageExtent(vk::Extent3D(size.x(), size.y(), size.z()))
-				.setImageSubresource(vk::ImageSubresourceLayers()
-						.setAspectMask(data.format().vk_aspect())
-						.setMipLevel(m)
-						.setBaseArrayLayer(l)
-						.setLayerCount(1)
-					);
+			VkBufferImageCopy copy = {};
+			{
+				copy.bufferOffset = data.data_offset(l, m);
+				copy.imageExtent = {size.x(), size.y(), size.z()};
+				copy.imageSubresource.aspectMask = data.format().vk_aspect();
+				copy.imageSubresource.mipLevel = m;
+				copy.imageSubresource.baseArrayLayer = l;
+				copy.imageSubresource.layerCount = 1;
+			}
+			regions << copy;
 		}
 	}
 
@@ -78,22 +85,23 @@ static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data
 	return staging_buffer;
 }
 
-static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize layers, usize mips, ImageType type) {
-	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
-			.setImage(image)
-			.setViewType(vk::ImageViewType(type))
-			.setFormat(format.vk_format())
-			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(format.vk_aspect())
-					.setBaseArrayLayer(0)
-					.setBaseMipLevel(0)
-					.setLayerCount(layers)
-					.setLevelCount(mips)
-				)
-		);
+static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format, usize layers, usize mips, ImageType type) {
+	VkImageViewCreateInfo create_info = vk_struct();
+	{
+		create_info.image = image;
+		create_info.viewType = VkImageViewType(type);
+		create_info.format = format.vk_format();
+		create_info.subresourceRange.aspectMask = format.vk_aspect();
+		create_info.subresourceRange.layerCount = layers;
+		create_info.subresourceRange.levelCount = mips;
+	}
+
+	VkImageView view = {};
+	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, nullptr, &view));
+	return view;
 }
 
-static std::tuple<vk::Image, DeviceMemory, vk::ImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
 	const auto image = create_image(dptr, size, layers, mips, format, usage, type);
 	auto memory = dptr->allocator().alloc(image);
 	bind_image_memory(dptr, image, memory);
@@ -112,9 +120,9 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 
 	{
 		const auto region = recorder.region("Image upload");
-		recorder.barriers({ImageBarrier::transition_barrier(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal)});
+		recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)});
 		recorder.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
-		recorder.barriers({ImageBarrier::transition_barrier(image, vk::ImageLayout::eTransferDstOptimal, vk_image_layout_2(image.usage()))});
+		recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_image_layout(image.usage()))});
 	}
 
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
@@ -125,7 +133,7 @@ static void transition_image(ImageBase& image) {
 	DevicePtr dptr = image.device();
 
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
-	recorder.barriers({ImageBarrier::transition_barrier(image, vk::ImageLayout::eUndefined, vk_image_layout_2(image.usage()))});
+	recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, vk_image_layout(image.usage()))});
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
@@ -209,11 +217,11 @@ ImageUsage ImageBase::usage() const {
 	return _usage;
 }
 
-vk::ImageView ImageBase::vk_view() const {
+VkImageView ImageBase::vk_view() const {
 	return _view;
 }
 
-vk::Image ImageBase::vk_image() const {
+VkImage ImageBase::vk_image() const {
 	return _image;
 }
 

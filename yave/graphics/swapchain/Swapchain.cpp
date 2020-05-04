@@ -178,7 +178,7 @@ void Swapchain::build_swapchain() {
 	}
 
 	_size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
-	_color_format = format.format;
+	_color_format = VkFormat(format.format);
 
 	if(!_size.x() || !_size.y()) {
 		return;
@@ -205,7 +205,7 @@ void Swapchain::build_swapchain() {
 
 	y_profile_zone("image setup");
 	for(auto image : device()->vk_device().getSwapchainImagesKHR(_swapchain)) {
-		const auto view = create_image_view(device(), image, _color_format.vk_format());
+		const auto view = create_image_view(device(), image, vk::Format(_color_format.vk_format()));
 
 		struct SwapchainImageMemory : DeviceMemory {
 			SwapchainImageMemory(DevicePtr dptr) : DeviceMemory(dptr, vk::DeviceMemory(), 0, 0) {
@@ -229,7 +229,7 @@ void Swapchain::build_swapchain() {
 
 	CmdBufferRecorder recorder(device()->create_disposable_cmd_buffer());
 	for(auto& i : _images) {
-		recorder.barriers({ImageBarrier::transition_barrier(i, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR)});
+		recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
 	}
 	device()->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }

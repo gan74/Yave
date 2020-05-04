@@ -41,7 +41,7 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		};
 
 		struct ImageData {
-			const ImageFormat format = vk::Format::eUndefined;
+			const ImageFormat format;
 			const ImageUsage usage = ImageUsage::None;
 			const LoadOp load_op = LoadOp::Clear;
 

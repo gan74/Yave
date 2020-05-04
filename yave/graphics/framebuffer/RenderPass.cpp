@@ -27,131 +27,127 @@ SOFTWARE.
 namespace yave {
 
 // image layout inside the render pass (like color attachment optimal)
-static vk::ImageLayout vk_initial_image_layout(ImageUsage usage) {
-	return vk_image_layout_2(usage & ImageUsage::Attachment);
+static VkImageLayout vk_initial_image_layout(ImageUsage usage) {
+	return vk_image_layout(usage & ImageUsage::Attachment);
 }
 
 // image layout outside the renderpass (like shader read optimal)
-static vk::ImageLayout vk_final_image_layout(ImageUsage usage) {
-	return vk_image_layout_2(usage);
+static VkImageLayout vk_final_image_layout(ImageUsage usage) {
+	return vk_image_layout(usage);
 }
 
-static std::array<vk::SubpassDependency, 2> create_dependencies() {
-	return {{vk::SubpassDependency()
-			.setSrcSubpass(VK_SUBPASS_EXTERNAL)
-			.setDstSubpass(0)
-			.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
-			.setSrcStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
-			.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
-			.setDstAccessMask(
-				vk::AccessFlagBits::eColorAttachmentRead |
-				vk::AccessFlagBits::eColorAttachmentWrite/* |
-				vk::AccessFlagBits::eDepthStencilAttachmentRead |
-				vk::AccessFlagBits::eDepthStencilAttachmentWrite*/
-		),
-		vk::SubpassDependency()
-			.setSrcSubpass(0)
-			.setDstSubpass(VK_SUBPASS_EXTERNAL)
-			.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
-			.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-			.setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
-			.setSrcAccessMask(
-					vk::AccessFlagBits::eColorAttachmentRead |
-					vk::AccessFlagBits::eColorAttachmentWrite/* |
-					vk::AccessFlagBits::eDepthStencilAttachmentRead |
-					vk::AccessFlagBits::eDepthStencilAttachmentWrite*/
-				)
-			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
-		}};
+static std::array<VkSubpassDependency, 2> create_dependencies() {
+	VkSubpassDependency top = {};
+	{
+		top.srcSubpass = VK_SUBPASS_EXTERNAL;
+		top.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		top.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		top.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		top.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		top.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+	}
+
+	VkSubpassDependency bot = {};
+	{
+		bot.dstSubpass = VK_SUBPASS_EXTERNAL;
+		bot.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		bot.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		bot.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		bot.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+		bot.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	}
+	return {top, bot};
 }
 
-static std::array<vk::SubpassDependency, 2> create_z_pass_dependencies() {
-	return {{vk::SubpassDependency()
-			.setSrcSubpass(VK_SUBPASS_EXTERNAL)
-			.setDstSubpass(0)
-			.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
-			.setSrcStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
-			.setDstStageMask(vk::PipelineStageFlagBits::eLateFragmentTests)
-			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
-			.setDstAccessMask(
-				vk::AccessFlagBits::eDepthStencilAttachmentRead |
-				vk::AccessFlagBits::eDepthStencilAttachmentWrite
-		),
-		vk::SubpassDependency()
-			.setSrcSubpass(0)
-			.setDstSubpass(VK_SUBPASS_EXTERNAL)
-			.setDependencyFlags(vk::DependencyFlagBits::eByRegion)
-			.setSrcStageMask(vk::PipelineStageFlagBits::eLateFragmentTests)
-			.setDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe)
-			.setSrcAccessMask(
-					vk::AccessFlagBits::eDepthStencilAttachmentRead |
-					vk::AccessFlagBits::eDepthStencilAttachmentWrite
-				)
-			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
-		}};
+
+static std::array<VkSubpassDependency, 2> create_depth_pass_dependencies() {
+	VkSubpassDependency top = {};
+	{
+		top.srcSubpass = VK_SUBPASS_EXTERNAL;
+		top.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		top.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		top.dstStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		top.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		top.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	}
+
+	VkSubpassDependency bot = {};
+	{
+		bot.dstSubpass = VK_SUBPASS_EXTERNAL;
+		bot.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		bot.srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		bot.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		bot.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+		bot.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	}
+	return {top, bot};
 }
 
-static vk::AttachmentLoadOp attachment_load_op(const RenderPass::ImageData& image) {
+static VkAttachmentLoadOp attachment_load_op(const RenderPass::ImageData& image) {
 	return image.load_op == RenderPass::LoadOp::Clear
-		? vk::AttachmentLoadOp::eClear
-		: vk::AttachmentLoadOp::eLoad;
+		? VK_ATTACHMENT_LOAD_OP_CLEAR
+		: VK_ATTACHMENT_LOAD_OP_LOAD;
 }
 
-static vk::AttachmentDescription create_attachment(RenderPass::ImageData image) {
-	const auto layout = vk_final_image_layout(image.usage);
-	return vk::AttachmentDescription()
-		.setFormat(image.format.vk_format())
-		.setSamples(vk::SampleCountFlagBits::e1)
-		.setLoadOp(attachment_load_op(image))
-		.setStoreOp(vk::AttachmentStoreOp::eStore)
-		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-		.setFinalLayout(layout)
-		.setInitialLayout(layout)
-	;
+static VkAttachmentDescription create_attachment(RenderPass::ImageData image) {
+	VkAttachmentDescription description = {};
+	{
+		const auto layout = vk_final_image_layout(image.usage);
+
+		description.format = image.format.vk_format();
+		description.samples = VK_SAMPLE_COUNT_1_BIT;
+		description.loadOp = attachment_load_op(image);
+		description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		description.finalLayout = layout;
+		description.initialLayout = layout;
+	}
+	return description;
 }
 
-static vk::AttachmentReference create_attachment_reference(ImageUsage usage, usize index) {
-	return vk::AttachmentReference()
-		.setAttachment(u32(index))
-		.setLayout(vk_initial_image_layout(usage))
-	;
+static VkAttachmentReference create_attachment_reference(ImageUsage usage, usize index) {
+	return VkAttachmentReference{u32(index), vk_initial_image_layout(usage)};
 }
 
-
-static vk::RenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, core::Span<RenderPass::ImageData> colors) {
-	auto attachments = core::vector_with_capacity<vk::AttachmentDescription>(colors.size() + 1);
+static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, core::Span<RenderPass::ImageData> colors) {
+	auto attachments = core::vector_with_capacity<VkAttachmentDescription>(colors.size() + 1);
 	std::transform(colors.begin(), colors.end(), std::back_inserter(attachments), [=](const auto& color) { return create_attachment(color); });
 
-	auto color_refs = core::vector_with_capacity<vk::AttachmentReference>(colors.size());
+	auto color_refs = core::vector_with_capacity<VkAttachmentReference>(colors.size());
 	for(usize i = 0; i != colors.size(); ++i) {
 		color_refs << create_attachment_reference(ImageUsage::ColorBit, i);
 	}
 
-	auto subpass = vk::SubpassDescription()
-			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-			.setColorAttachmentCount(u32(color_refs.size()))
-			.setPColorAttachments(color_refs.data())
-		;
+	VkSubpassDescription subpass = {};
+	{
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = color_refs.size();
+		subpass.pColorAttachments = color_refs.data();
+	}
 
-	vk::AttachmentReference depth_ref;
+	VkAttachmentReference depth_ref = {};
 	if(depth.usage != ImageUsage::None) {
 		attachments << create_attachment(depth);
 		depth_ref = create_attachment_reference(ImageUsage::DepthBit, color_refs.size());
-		subpass.setPDepthStencilAttachment(&depth_ref);
+		subpass.pDepthStencilAttachment = &depth_ref;
 	}
 
-	auto dependencies = colors.is_empty() ? create_z_pass_dependencies() : create_dependencies();
-	return dptr->vk_device().createRenderPass(vk::RenderPassCreateInfo()
-			.setAttachmentCount(u32(attachments.size()))
-			.setPAttachments(attachments.data())
-			.setSubpassCount(1)
-			.setPSubpasses(&subpass)
-			.setDependencyCount(dependencies.size())
-			.setPDependencies(dependencies.data())
-		)
-	;
+	const auto dependencies = colors.is_empty() ? create_depth_pass_dependencies() : create_dependencies();
+
+	VkRenderPassCreateInfo create_info = vk_struct();
+	{
+		create_info.attachmentCount = attachments.size();
+		create_info.pAttachments = attachments.data();
+		create_info.subpassCount = 1;
+		create_info.pSubpasses = &subpass;
+		create_info.dependencyCount = dependencies.size();
+		create_info.pDependencies = dependencies.data();
+	}
+
+	VkRenderPass renderpass = {};
+	vk_check(vkCreateRenderPass(dptr->vk_device(), &create_info, nullptr, &renderpass));
+	return renderpass;
 }
 
 RenderPass::Layout::Layout(ImageData depth, core::Span<ImageData> colors) : _depth(depth.format) {
@@ -206,6 +202,5 @@ const RenderPass::Layout& RenderPass::layout() const {
 usize RenderPass::attachment_count() const {
 	return _attachment_count;
 }
-
 
 }

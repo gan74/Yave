@@ -28,27 +28,27 @@ SOFTWARE.
 
 namespace yave {
 
-enum class ImageUsage {
+enum class ImageUsage : u32 {
 	None = 0,
 
-	TextureBit = uenum(vk::ImageUsageFlagBits::eSampled),
-	DepthBit = uenum(vk::ImageUsageFlagBits::eDepthStencilAttachment),
-	ColorBit = uenum(vk::ImageUsageFlagBits::eColorAttachment),
-	StorageBit = uenum(vk::ImageUsageFlagBits::eStorage),
+	TextureBit		= VK_IMAGE_USAGE_SAMPLED_BIT,
+	DepthBit		= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+	ColorBit		= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+	StorageBit		= VK_IMAGE_USAGE_STORAGE_BIT,
 
-	TransferSrcBit = uenum(vk::ImageUsageFlagBits::eTransferSrc),
-	TransferDstBit = uenum(vk::ImageUsageFlagBits::eTransferDst),
+	TransferSrcBit	= VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+	TransferDstBit	= VK_IMAGE_USAGE_TRANSFER_DST_BIT,
 
 #ifdef Y_MSVC
 	Y_TODO(MSVC fix)
 	SwapchainBit = 0x00000400,
 #else
-	SwapchainBit = std::max({None, DepthBit, ColorBit, TextureBit, StorageBit}) << 1,
+	SwapchainBit	= std::max({None, DepthBit, ColorBit, TextureBit, StorageBit}) << 1,
 #endif
 
 	// Never use directly:
-	Attachment = ColorBit | DepthBit,
-	DepthTexture = TextureBit | DepthBit
+	Attachment		= ColorBit | DepthBit,
+	DepthTexture	= TextureBit | DepthBit
 };
 
 constexpr ImageUsage operator|(ImageUsage l, ImageUsage r) {
@@ -84,14 +84,14 @@ constexpr bool is_texture_usage(ImageUsage usage) {
 }
 
 VkImageLayout vk_image_layout(ImageUsage usage);
-vk::ImageLayout vk_image_layout_2(ImageUsage usage);
 
 
-enum class ImageType {
-	TwoD = uenum(vk::ImageViewType::e2D),
-	Layered = uenum(vk::ImageViewType::e2DArray),
-	Cube = uenum(vk::ImageViewType::eCube),
-	ThreeD = uenum(vk::ImageViewType::e3D),
+
+enum class ImageType : u32 {
+	TwoD	= VK_IMAGE_VIEW_TYPE_2D,
+	Layered = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+	Cube	= VK_IMAGE_VIEW_TYPE_CUBE,
+	ThreeD	= VK_IMAGE_VIEW_TYPE_3D,
 };
 
 }

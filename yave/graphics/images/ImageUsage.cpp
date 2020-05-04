@@ -71,10 +71,5 @@ VkImageLayout vk_image_layout(ImageUsage usage) {
 	return vk_layout(usage);
 }
 
-vk::ImageLayout vk_image_layout_2(ImageUsage usage) {
-	const auto vk_layout = vk_image_layout(usage);
-	return reinterpret_cast<const vk::ImageLayout&>(vk_layout);
-}
-
 
 }

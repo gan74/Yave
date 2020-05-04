@@ -30,19 +30,21 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::ImageView create_view(DevicePtr dptr, vk::Image image, ImageFormat format, usize start_mip) {
-	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
-			.setImage(image)
-			.setViewType(vk::ImageViewType::eCube)
-			.setFormat(format.vk_format())
-			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(format.vk_aspect())
-					.setBaseArrayLayer(0)
-					.setLayerCount(6)
-					.setBaseMipLevel(start_mip)
-					.setLevelCount(1)
-				)
-		);
+static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format, usize start_mip) {
+	VkImageViewCreateInfo create_info = vk_struct();
+	{
+		create_info.image = image;
+		create_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+		create_info.format = format.vk_format();
+		create_info.subresourceRange.aspectMask = format.vk_aspect();
+		create_info.subresourceRange.layerCount = 6;
+		create_info.subresourceRange.baseMipLevel = start_mip;
+		create_info.subresourceRange.levelCount = 1;
+	}
+
+	VkImageView view = {};
+	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, nullptr, &view));
+	return view;
 }
 
 static constexpr usize min_face_size = 32;
@@ -62,7 +64,7 @@ static usize mipmap_count(usize size) {
 using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
 
 struct ProbeBase : ImageBase {
-	ProbeBase(DevicePtr dptr, usize size, ImageFormat format = vk::Format::eR8G8B8A8Unorm) :
+	ProbeBase(DevicePtr dptr, usize size, ImageFormat format = VK_FORMAT_R8G8B8A8_UNORM) :
 		ImageBase(dptr, format, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size, 1}, ImageType::Cube, 6, mipmap_count(size)) {
 	}
 };

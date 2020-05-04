@@ -199,27 +199,20 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage)
 
 CmdBufferRecorder::~CmdBufferRecorder() {
 	if(device()) {
-		if(_render_pass) {
-			y_fatal("CmdBufferRecorder destroyed before one of its RenderPassRecorder.");
-		}
-		if(vk_cmd_buffer()) {
-			y_fatal("CmdBufferRecorder destroyed before end() was called.");
-		}
+		y_always_assert(_render_pass, "CmdBufferRecorder destroyed before one of its RenderPassRecorder.");
+		y_always_assert(!vk_cmd_buffer(), "CmdBufferRecorder destroyed before end() was called.");
 	}
 }
 
 void CmdBufferRecorder::end_renderpass() {
-	if(!_render_pass) {
-		y_fatal("CmdBufferRecorder has no render pass");
-	}
+	y_always_assert(_render_pass, "CmdBufferRecorder has no render pass");
+
 	vk_cmd_buffer().endRenderPass();
 	_render_pass = nullptr;
 }
 
 void CmdBufferRecorder::check_no_renderpass() const {
-	if(_render_pass) {
-		y_fatal("This command can not be used while this command buffer has a RenderPassRecorder.");
-	}
+	y_always_assert(!_render_pass, "This command can not be used while this command buffer has a RenderPassRecorder.");
 }
 
 CmdBufferRegion CmdBufferRecorder::region(const char* name, const math::Vec4& color) {
@@ -340,8 +333,8 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
 
 	{
 		const std::array<ImageBarrier, 2> image_barriers = {
-				ImageBarrier::transition_to_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
-				ImageBarrier::transition_barrier(dst, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal),
+				ImageBarrier::transition_to_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
+				ImageBarrier::transition_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL),
 			};
 		barriers(image_barriers);
 	}
@@ -351,27 +344,25 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
 			y_fatal("Image size do not match.");
 		}
 
-		const auto src_resource = vk::ImageSubresourceLayers()
-			.setAspectMask(src.format().vk_aspect())
-			.setMipLevel(0)
-			.setBaseArrayLayer(0)
-			.setLayerCount(src.layers());
-		const auto dst_resource = vk::ImageSubresourceLayers()
-			.setAspectMask(dst.format().vk_aspect())
-			.setMipLevel(0)
-			.setBaseArrayLayer(0)
-			.setLayerCount(dst.layers());
+		VkImageCopy copy = {};
+		{
+			copy.extent = {src.image_size().x(), src.image_size().y(), src.image_size().z()};
+			copy.srcSubresource.aspectMask = src.format().vk_aspect();
+			copy.srcSubresource.layerCount = src.layers();
+			copy.dstSubresource.aspectMask = dst.format().vk_aspect();
+			copy.dstSubresource.layerCount = dst.layers();
+		}
 
-		const auto extent = vk::Extent3D(src.image_size().x(), src.image_size().y(), src.image_size().z());
-
-		vk_cmd_buffer().copyImage(src.vk_image(), vk::ImageLayout::eTransferSrcOptimal,
-								  dst.vk_image(), vk::ImageLayout::eTransferDstOptimal, vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
+		vkCmdCopyImage(vk_cmd_buffer(),
+					   src.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+					   dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+					   1, &copy);
 	}
 
 	{
 		const std::array<ImageBarrier, 2> image_barriers = {
-				ImageBarrier::transition_from_barrier(src, vk::ImageLayout::eTransferSrcOptimal),
-				ImageBarrier::transition_from_barrier(dst, vk::ImageLayout::eTransferDstOptimal)
+				ImageBarrier::transition_from_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
+				ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 			};
 		barriers(image_barriers);
 	}
@@ -380,56 +371,46 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
 void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst) {
 	YAVE_VK_CMD;
 
-	if(src.byte_size() != dst.byte_size()) {
-		y_fatal("Buffer size do not match.");
-	}
+	y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match.");
+
 	vk_cmd_buffer().copyBuffer(src.vk_buffer(), dst.vk_buffer(), vk::BufferCopy(src.byte_offset(), dst.byte_offset(), src.byte_size()));
 }
 
 void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
 	YAVE_VK_CMD;
 
-	if(src.size() != dst.size()) {
-		y_fatal("Image size do not match.");
+	y_always_assert(src.size() == dst.size(), "Image size do not match.");
+
+	VkImageCopy copy = {};
+	{
+		copy.extent = {src.size().x(), src.size().y(), 1};
+		copy.srcSubresource.aspectMask = src.format().vk_aspect();
+		copy.srcSubresource.layerCount = 1;
+		copy.dstSubresource.aspectMask = dst.format().vk_aspect();
+		copy.dstSubresource.layerCount = 1;
 	}
 
-	const auto src_resource = vk::ImageSubresourceLayers()
-		.setAspectMask(src.format().vk_aspect())
-		.setMipLevel(0)
-		.setBaseArrayLayer(0)
-		.setLayerCount(1);
-	const auto dst_resource = vk::ImageSubresourceLayers()
-		.setAspectMask(dst.format().vk_aspect())
-		.setMipLevel(0)
-		.setBaseArrayLayer(0)
-		.setLayerCount(1);
-
-	const auto extent = vk::Extent3D(src.size().x(), src.size().y(), 1);
-
-	vk_cmd_buffer().copyImage(src.vk_image(), vk_image_layout_2(src.usage()),
-							  dst.vk_image(), vk_image_layout_2(dst.usage()), vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
+	vkCmdCopyImage(vk_cmd_buffer(),
+				   src.vk_image(), vk_image_layout(src.usage()),
+				   dst.vk_image(), vk_image_layout(dst.usage()),
+				   1, &copy);
 }
 
 void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
 	YAVE_VK_CMD;
 
-	const vk::ImageBlit blit = vk::ImageBlit()
-			.setSrcSubresource(
-				vk::ImageSubresourceLayers()
-					.setAspectMask(src.format().vk_aspect())
-					.setLayerCount(1)
-				)
-			.setDstSubresource(
-				 vk::ImageSubresourceLayers()
-					 .setAspectMask(dst.format().vk_aspect())
-					 .setLayerCount(1)
-				)
-		;
+	VkImageBlit blit = {};
+	{
+		blit.srcSubresource.aspectMask = src.format().vk_aspect();
+		blit.srcSubresource.layerCount = 1;
+		blit.dstSubresource.aspectMask = dst.format().vk_aspect();
+		blit.dstSubresource.layerCount = 1;
+	}
 
-	vk_cmd_buffer().blitImage(src.vk_image(), vk_image_layout_2(src.usage()), dst.vk_image(), vk_image_layout_2(dst.usage()), blit, vk::Filter::eLinear);
+	vkCmdBlitImage(vk_cmd_buffer(), src.vk_image(), vk_image_layout(src.usage()), dst.vk_image(), vk_image_layout(dst.usage()), 1, &blit, VK_FILTER_LINEAR);
 }
 
-void CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {
+void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst) {
 	barriers({ImageBarrier::transition_barrier(image, src, dst)});
 }
 

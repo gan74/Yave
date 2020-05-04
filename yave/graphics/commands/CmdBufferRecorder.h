@@ -175,7 +175,7 @@ class CmdBufferRecorder : public CmdBufferBase {
 
 
 		// never use directly, needed for internal work
-		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
+		void transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst);
 
 	protected:
 		CmdBufferRecorder() = default;

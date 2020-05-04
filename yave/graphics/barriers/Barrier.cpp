@@ -24,150 +24,158 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::AccessFlags vk_layout_access_flags(vk::ImageLayout layout) {
+static VkAccessFlags vk_layout_access_flags(VkImageLayout layout) {
 	switch(layout) {
-		case vk::ImageLayout::eUndefined:
-			return vk::AccessFlags();
+		case VK_IMAGE_LAYOUT_UNDEFINED:
+			return 0;
 
-		case vk::ImageLayout::eColorAttachmentOptimal:
-			return vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
+		case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+			return VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-		case vk::ImageLayout::eDepthStencilAttachmentOptimal:
-			return vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+			return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-		case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
-			return vk::AccessFlagBits::eDepthStencilAttachmentRead;
+		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+			return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 
-		case vk::ImageLayout::eShaderReadOnlyOptimal:
-			return vk::AccessFlagBits::eShaderRead;
+		case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+			return VK_ACCESS_SHADER_READ_BIT;
 
-		case vk::ImageLayout::eTransferDstOptimal:
-			return vk::AccessFlagBits::eTransferWrite;
+		case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+			return VK_ACCESS_TRANSFER_READ_BIT;
 
-		case vk::ImageLayout::eTransferSrcOptimal:
-			return vk::AccessFlagBits::eTransferRead;
+		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+			return VK_ACCESS_TRANSFER_WRITE_BIT;
 
-		case vk::ImageLayout::ePresentSrcKHR:
-			return vk::AccessFlagBits::eMemoryRead;
+		case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+			return VK_ACCESS_MEMORY_READ_BIT;
 
-		case vk::ImageLayout::eGeneral: // assume storage image
-			return //vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite |
-				   vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite;
+		case VK_IMAGE_LAYOUT_GENERAL:
+			// assume storage image
+			return //VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT |
+				   VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 
 		default:
 			break;
 	}
 
-	/*return*/ y_fatal("Unsupported layout transition.");
+	y_fatal("Unsupported layout transition.");
 }
 
-static vk::AccessFlags vk_dst_access_flags(PipelineStage dst) {
+static VkAccessFlags vk_dst_access_flags(PipelineStage dst) {
 	if((dst & PipelineStage::AllShadersBit) != PipelineStage::None) {
-		return vk::AccessFlagBits::eShaderRead;
+		return VK_ACCESS_SHADER_READ_BIT;
 	}
 	switch(dst) {
 		case PipelineStage::TransferBit:
-			return vk::AccessFlagBits::eTransferRead;
+			return VK_ACCESS_TRANSFER_READ_BIT;
 
 		case PipelineStage::HostBit:
-			return vk::AccessFlagBits::eHostRead;
+			return VK_ACCESS_HOST_READ_BIT;
 
 		default:
 			break;
 	}
-	/*return*/ y_fatal("Unsuported pipeline stage.");
+
+	y_fatal("Unsuported pipeline stage.");
 }
 
-static vk::AccessFlags vk_src_access_flags(PipelineStage src) {
+static VkAccessFlags vk_src_access_flags(PipelineStage src) {
 	if((src & PipelineStage::AllShadersBit) != PipelineStage::None) {
-		return vk::AccessFlagBits::eShaderWrite;
+		return VK_ACCESS_SHADER_WRITE_BIT;
 	}
 	switch(src) {
 		case PipelineStage::TransferBit:
-			return vk::AccessFlagBits::eTransferWrite;
+			return VK_ACCESS_TRANSFER_WRITE_BIT;
 
 		case PipelineStage::HostBit:
-			return vk::AccessFlagBits::eHostWrite;
+			return VK_ACCESS_HOST_WRITE_BIT;
 
 		case PipelineStage::ColorAttachmentOutBit:
-			return vk::AccessFlagBits::eColorAttachmentWrite;
+			return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 		default:
 			break;
 	}
-	/*return*/ y_fatal("Unsuported pipeline stage.");
+
+	y_fatal("Unsuported pipeline stage.");
 }
 
-static vk::PipelineStageFlags vk_barrier_stage(vk::AccessFlags access) {
-	if(access == vk::AccessFlags() || access == vk::AccessFlagBits::eMemoryRead) {
-		return vk::PipelineStageFlagBits::eHost;
+static VkPipelineStageFlags vk_barrier_stage(VkAccessFlags access) {
+	if(access == 0 || access == VK_ACCESS_MEMORY_READ_BIT) {
+		return VK_PIPELINE_STAGE_HOST_BIT;
 	}
-	if(access & (vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentRead)) {
-		return vk::PipelineStageFlagBits::eEarlyFragmentTests |
-			   vk::PipelineStageFlagBits::eLateFragmentTests;
+	if(access & (VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)) {
+		return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+			   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 	}
-	if(access & (vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentRead)) {
-		return vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	if(access & (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)) {
+		return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	}
-	if(access & (vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite)) {
-		return vk::PipelineStageFlagBits::eTransfer;
+	if(access & (VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT)) {
+		return VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
-	if(access & (vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite)) {
-		return vk::PipelineStageFlagBits::eVertexShader |
-			   vk::PipelineStageFlagBits::eFragmentShader |
-			   vk::PipelineStageFlagBits::eComputeShader;
+	if(access & (VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT)) {
+		return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+			   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+			   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 	}
 
-	/*return*/ y_fatal("Unknown access flags.");
-}
-
-
-static vk::ImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, vk::ImageLayout old_layout, vk::ImageLayout new_layout) {
-	return vk::ImageMemoryBarrier()
-			.setOldLayout(old_layout)
-			.setNewLayout(new_layout)
-			.setSrcAccessMask(vk_layout_access_flags(old_layout))
-			.setDstAccessMask(vk_layout_access_flags(new_layout))
-			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setImage(image)
-			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(format.vk_aspect())
-					.setLayerCount(layers)
-					.setLevelCount(mips)
-				)
-		;
+	y_fatal("Unknown access flags.");
 }
 
 
-static vk::ImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, ImageUsage usage, PipelineStage src, PipelineStage dst) {
-	const auto layout = vk_image_layout_2(usage);
-	return vk::ImageMemoryBarrier()
-			.setOldLayout(layout)
-			.setNewLayout(layout)
-			.setSrcAccessMask(vk_src_access_flags(src))
-			.setDstAccessMask(vk_dst_access_flags(dst))
-			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setImage(image)
-			.setSubresourceRange(vk::ImageSubresourceRange()
-					.setAspectMask(format.vk_aspect())
-					.setLayerCount(layers)
-					.setLevelCount(mips)
-				)
-		;
+static VkImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, VkImageLayout old_layout, VkImageLayout new_layout) {
+	VkImageMemoryBarrier barrier = {};
+	{
+		barrier.oldLayout = old_layout;
+		barrier.newLayout = new_layout;
+		barrier.srcAccessMask = vk_layout_access_flags(old_layout);
+		barrier.dstAccessMask = vk_layout_access_flags(new_layout);
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = image;
+
+		barrier.subresourceRange.aspectMask = format.vk_aspect();
+		barrier.subresourceRange.layerCount = layers;
+		barrier.subresourceRange.levelCount = mips;
+	}
+	return barrier;
 }
 
-static vk::BufferMemoryBarrier create_barrier(vk::Buffer buffer, usize size, usize offset, PipelineStage src, PipelineStage dst) {
-	return vk::BufferMemoryBarrier()
-			.setSrcAccessMask(vk_src_access_flags(src))
-			.setDstAccessMask(vk_dst_access_flags(dst))
-			.setBuffer(buffer)
-			.setSize(size)
-			.setOffset(offset)
-			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-		;
+
+static VkImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, ImageUsage usage, PipelineStage src, PipelineStage dst) {
+	VkImageMemoryBarrier barrier = {};
+	{
+		const VkImageLayout layout = vk_image_layout(usage);
+
+		barrier.oldLayout = layout;
+		barrier.newLayout = layout;
+		barrier.srcAccessMask = vk_src_access_flags(src);
+		barrier.dstAccessMask = vk_dst_access_flags(dst);
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = image;
+
+		barrier.subresourceRange.aspectMask = format.vk_aspect();
+		barrier.subresourceRange.layerCount = layers;
+		barrier.subresourceRange.levelCount = mips;
+	}
+	return barrier;
+}
+
+static VkBufferMemoryBarrier create_barrier(vk::Buffer buffer, usize size, usize offset, PipelineStage src, PipelineStage dst) {
+	VkBufferMemoryBarrier barrier = {};
+	{
+		barrier.srcAccessMask = vk_src_access_flags(src);
+		barrier.dstAccessMask = vk_dst_access_flags(dst);
+		barrier.buffer = buffer;
+		barrier.size = size;
+		barrier.offset = offset;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	}
+	return barrier;
 }
 
 
@@ -176,24 +184,24 @@ ImageBarrier::ImageBarrier(const ImageBase& image, PipelineStage src, PipelineSt
 		_src(src), _dst(dst) {
 }
 
-ImageBarrier ImageBarrier::transition_barrier(const ImageBase& image, vk::ImageLayout src_layout, vk::ImageLayout dst_layout) {
+ImageBarrier ImageBarrier::transition_barrier(const ImageBase& image, VkImageLayout src_layout, VkImageLayout dst_layout) {
 	ImageBarrier barrier;
 	barrier._barrier = create_barrier(image.vk_image(), image.format(), image.layers(), image.mipmaps(), src_layout, dst_layout);
 	barrier._src = PipelineStage(VkFlags(vk_barrier_stage(barrier._barrier.srcAccessMask)));
 	barrier._dst = PipelineStage(VkFlags(vk_barrier_stage(barrier._barrier.dstAccessMask)));
-											
+
 	return barrier;
 }
 
-ImageBarrier ImageBarrier::transition_to_barrier(const ImageBase& image, vk::ImageLayout dst_layout) {
-	return transition_barrier(image, vk_image_layout_2(image.usage()), dst_layout);
+ImageBarrier ImageBarrier::transition_to_barrier(const ImageBase& image, VkImageLayout dst_layout) {
+	return transition_barrier(image, vk_image_layout(image.usage()), dst_layout);
 }
 
-ImageBarrier ImageBarrier::transition_from_barrier(const ImageBase& image, vk::ImageLayout src_layout) {
-	return transition_barrier(image, src_layout, vk_image_layout_2(image.usage()));
+ImageBarrier ImageBarrier::transition_from_barrier(const ImageBase& image, VkImageLayout src_layout) {
+	return transition_barrier(image, src_layout, vk_image_layout(image.usage()));
 }
 
-vk::ImageMemoryBarrier ImageBarrier::vk_barrier() const {
+VkImageMemoryBarrier ImageBarrier::vk_barrier() const {
 	return _barrier;
 }
 
@@ -217,7 +225,7 @@ BufferBarrier::BufferBarrier(const SubBufferBase& buffer, PipelineStage src, Pip
 		_src(src), _dst(dst) {
 }
 
-vk::BufferMemoryBarrier BufferBarrier::vk_barrier() const {
+VkBufferMemoryBarrier BufferBarrier::vk_barrier() const {
 	return _barrier;
 }
 

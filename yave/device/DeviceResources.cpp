@@ -124,7 +124,7 @@ static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integr
 	y_profile();
 	core::DebugTimer _("create_ibl_lut()");
 
-	StorageTexture image(dptr, ImageFormat(vk::Format::eR16G16Unorm), {size, size});
+	StorageTexture image(dptr, ImageFormat(VK_FORMAT_R16G16_UNORM), {size, size});
 
 	const DescriptorSet dset(dptr, {Descriptor(StorageView(image))});
 
@@ -147,7 +147,7 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 	// Load textures here because they won't change and might get packed into descriptor sets that won't be reloaded (in the case of material defaults)
 	for(usize i = 0; i != texture_count; ++i) {
 		const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
-		_textures[i] = make_asset<Texture>(dptr, ImageData(math::Vec2ui(2), data, vk::Format::eR8G8B8A8Unorm));
+		_textures[i] = make_asset<Texture>(dptr, ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
 	}
 
 	load_resources(dptr);

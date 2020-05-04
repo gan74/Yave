@@ -40,8 +40,8 @@ class ImageBase : NonCopyable {
 		DevicePtr device() const;
 		bool is_null() const;
 
-		vk::Image vk_image() const;
-		vk::ImageView vk_view() const;
+		VkImage vk_image() const;
+		VkImageView vk_view() const;
 
 		const DeviceMemory& device_memory() const;
 
@@ -71,8 +71,8 @@ class ImageBase : NonCopyable {
 
 		DeviceMemory _memory;
 
-		SwapMove<vk::Image> _image;
-		SwapMove<vk::ImageView> _view;
+		SwapMove<VkImage> _image;
+		SwapMove<VkImageView> _view;
 };
 
 static_assert(is_safe_base<ImageBase>::value);
