@@ -43,7 +43,7 @@ CmdBufferData::~CmdBufferData() {
 		if(_fence && device()->vk_device().getFenceStatus(_fence) != vk::Result::eSuccess) {
 			y_fatal("CmdBuffer is still in use.");
 		}
-		device()->vk_device().freeCommandBuffers(_pool->vk_pool(), _cmd_buffer);
+		vkFreeCommandBuffers(device()->vk_device(), _pool->vk_pool(), 1, &_cmd_buffer);
 		device()->destroy(_fence);
 	}
 }
@@ -60,11 +60,11 @@ CmdBufferPoolBase* CmdBufferData::pool() const {
 	return _pool;
 }
 
-vk::CommandBuffer CmdBufferData::vk_cmd_buffer() const {
+VkCommandBuffer CmdBufferData::vk_cmd_buffer() const {
 	return _cmd_buffer;
 }
 
-vk::Fence CmdBufferData::vk_fence() const {
+VkFence CmdBufferData::vk_fence() const {
 	return _fence;
 }
 
@@ -88,7 +88,7 @@ void CmdBufferData::reset() {
 		device()->vk_device().resetFences({_fence});
 	}
 
-	_cmd_buffer.reset(vk::CommandBufferResetFlags());
+	vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 	_waits.clear();
 	_signal = Semaphore();
 	_resource_fence = device()->lifetime_manager().create_fence();
@@ -113,7 +113,6 @@ CmdBufferDataProxy::CmdBufferDataProxy(CmdBufferData&& d) : _data(std::move(d)) 
 CmdBufferDataProxy::~CmdBufferDataProxy() {
 	if(!_data.is_null()) {
 		_data.device()->lifetime_manager().recycle(std::move(_data));
-		//_data.pool()->release(std::move(_data));
 	}
 }
 

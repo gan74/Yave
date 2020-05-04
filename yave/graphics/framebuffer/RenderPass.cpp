@@ -187,7 +187,7 @@ RenderPass::~RenderPass() {
 	destroy(_render_pass);
 }
 
-vk::RenderPass RenderPass::vk_render_pass() const {
+VkRenderPass RenderPass::vk_render_pass() const {
 	return _render_pass;
 }
 

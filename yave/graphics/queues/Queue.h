@@ -40,7 +40,7 @@ class Queue : NonCopyable, public DeviceLinked {
 
 		~Queue();
 
-		vk::Queue vk_queue() const;
+		VkQueue vk_queue() const;
 
 		void wait() const;
 
@@ -60,11 +60,11 @@ class Queue : NonCopyable, public DeviceLinked {
 	private:
 		friend class QueueFamily;
 
-		Queue(DevicePtr dptr, vk::Queue queue);
+		Queue(DevicePtr dptr, VkQueue queue);
 
 		void submit_base(CmdBufferBase& base) const;
 
-		SwapMove<vk::Queue> _queue;
+		SwapMove<VkQueue> _queue;
 		std::unique_ptr<std::mutex> _lock;
 };
 

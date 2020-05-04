@@ -24,6 +24,7 @@ SOFTWARE.
 #include "extentions/DebugUtils.h"
 
 #include <y/core/Span.h>
+#include <y/core/Vector.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>

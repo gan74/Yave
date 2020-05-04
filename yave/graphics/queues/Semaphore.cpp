@@ -54,7 +54,7 @@ bool Semaphore::is_null() const {
 	return !device();
 }
 
-vk::Semaphore Semaphore::vk_semaphore() const {
+VkSemaphore Semaphore::vk_semaphore() const {
 	return _semaphore->vk_semaphore();
 }
 

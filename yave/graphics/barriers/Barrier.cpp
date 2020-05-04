@@ -125,8 +125,8 @@ static VkPipelineStageFlags vk_barrier_stage(VkAccessFlags access) {
 }
 
 
-static VkImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, VkImageLayout old_layout, VkImageLayout new_layout) {
-	VkImageMemoryBarrier barrier = {};
+static VkImageMemoryBarrier create_barrier(VkImage image, ImageFormat format, usize layers, usize mips, VkImageLayout old_layout, VkImageLayout new_layout) {
+	VkImageMemoryBarrier barrier = vk_struct();
 	{
 		barrier.oldLayout = old_layout;
 		barrier.newLayout = new_layout;
@@ -144,8 +144,8 @@ static VkImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, 
 }
 
 
-static VkImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, ImageUsage usage, PipelineStage src, PipelineStage dst) {
-	VkImageMemoryBarrier barrier = {};
+static VkImageMemoryBarrier create_barrier(VkImage image, ImageFormat format, usize layers, usize mips, ImageUsage usage, PipelineStage src, PipelineStage dst) {
+	VkImageMemoryBarrier barrier = vk_struct();
 	{
 		const VkImageLayout layout = vk_image_layout(usage);
 
@@ -164,8 +164,8 @@ static VkImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, 
 	return barrier;
 }
 
-static VkBufferMemoryBarrier create_barrier(vk::Buffer buffer, usize size, usize offset, PipelineStage src, PipelineStage dst) {
-	VkBufferMemoryBarrier barrier = {};
+static VkBufferMemoryBarrier create_barrier(VkBuffer buffer, usize size, usize offset, PipelineStage src, PipelineStage dst) {
+	VkBufferMemoryBarrier barrier = vk_struct();
 	{
 		barrier.srcAccessMask = vk_src_access_flags(src);
 		barrier.dstAccessMask = vk_dst_access_flags(dst);

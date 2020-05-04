@@ -33,16 +33,21 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 
 	const u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
-	auto layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());
+	auto layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout());
 	for(const auto& binding : bindings) {
 		layouts[binding.first] = device()->descriptor_set_layout(binding.second).vk_descriptor_set_layout();
 	}
-	_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(u32(layouts.size()))
-			.setPSetLayouts(layouts.begin())
-			.setPushConstantRangeCount(u32(comp.vk_push_constants().size()))
-			.setPPushConstantRanges(reinterpret_cast<const vk::PushConstantRange*>(comp.vk_push_constants().data()))
-		);
+
+	VkPipelineLayoutCreateInfo layout_create_info = vk_struct();
+	{
+		layout_create_info.setLayoutCount = layouts.size();
+		layout_create_info.pSetLayouts = layouts.data();
+		layout_create_info.pushConstantRangeCount = comp.vk_push_constants().size();
+		layout_create_info.pPushConstantRanges = comp.vk_push_constants().data();
+	}
+
+	vk_check(vkCreatePipelineLayout(device()->vk_device(), &layout_create_info, nullptr, &_layout.get()));
+
 
 	if(data.size() && data.size() != comp.specialization_data_size()) {
 		y_fatal("Incompatible specialization data.");

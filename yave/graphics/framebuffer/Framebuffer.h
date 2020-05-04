@@ -64,7 +64,7 @@ class Framebuffer final : NonCopyable, public DeviceLinked {
 
 		const math::Vec2ui& size() const;
 
-		vk::Framebuffer vk_framebuffer() const;
+		VkFramebuffer vk_framebuffer() const;
 
 		const RenderPass& render_pass() const;
 
@@ -77,7 +77,7 @@ class Framebuffer final : NonCopyable, public DeviceLinked {
 		usize _attachment_count = 0;
 
 		std::unique_ptr<RenderPass> _render_pass;
-		vk::Framebuffer _framebuffer;
+		VkFramebuffer _framebuffer = {};
 };
 
 }

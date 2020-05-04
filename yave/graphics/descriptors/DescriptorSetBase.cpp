@@ -40,7 +40,7 @@ void DescriptorSetBase::update_set(DevicePtr dptr, core::Span<Descriptor> bindin
 			write.descriptorType = binding.vk_descriptor_type();
 		}
 
-		VkWriteDescriptorSetInlineUniformBlockEXT inline_block = {};
+		VkWriteDescriptorSetInlineUniformBlockEXT inline_block = vk_struct();
 
 		if(binding.is_buffer()) {
 			write.pBufferInfo = &binding.descriptor_info().buffer;

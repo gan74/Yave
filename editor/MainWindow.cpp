@@ -63,24 +63,28 @@ void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
 	{
 		const RecordedCmdBuffer cmd_buffer(std::move(recorder));
 
-		const vk::PipelineStageFlags pipe_stage_flags = vk::PipelineStageFlagBits::eBottomOfPipe;
+		const VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		Y_TODO(manual locking needs for queue presentation needs to go)
-		const auto& queue = device()->graphic_queue();
+		const Queue& queue = device()->graphic_queue();
 		const std::unique_lock lock(queue.lock());
-		auto graphic_queue = queue.vk_queue();
-		auto vk_buffer = cmd_buffer.vk_cmd_buffer();
+		const VkQueue graphic_queue = queue.vk_queue();
+		const VkCommandBuffer vk_buffer = cmd_buffer.vk_cmd_buffer();
 
 		{
 			y_profile_zone("queue submit");
-			graphic_queue.submit(vk::SubmitInfo()
-					.setWaitSemaphoreCount(1)
-					.setPWaitSemaphores(&token.image_aquired)
-					.setPWaitDstStageMask(&pipe_stage_flags)
-					.setCommandBufferCount(1)
-					.setPCommandBuffers(&vk_buffer)
-					.setSignalSemaphoreCount(1)
-					.setPSignalSemaphores(&token.render_finished),
-				cmd_buffer.vk_fence());
+
+			VkSubmitInfo submit_info = vk_struct();
+			{
+				submit_info.waitSemaphoreCount = 1;
+				submit_info.pWaitSemaphores = &token.image_aquired;
+				submit_info.pWaitDstStageMask = &pipe_stage_flags;
+				submit_info.commandBufferCount = 1;
+				submit_info.pCommandBuffers = &vk_buffer;
+				submit_info.signalSemaphoreCount = 1;
+				submit_info.pSignalSemaphores = &token.render_finished;
+			}
+
+			vk_check(vkQueueSubmit(graphic_queue, 1, &submit_info, cmd_buffer.vk_fence()));
 		}
 
 		_swapchain->present(token, graphic_queue);

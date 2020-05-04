@@ -51,7 +51,7 @@ class Semaphore {
 		DevicePtr device() const;
 		bool is_null() const;
 
-		vk::Semaphore vk_semaphore() const;
+		VkSemaphore vk_semaphore() const;
 
 		bool operator==(const Semaphore& other) const;
 

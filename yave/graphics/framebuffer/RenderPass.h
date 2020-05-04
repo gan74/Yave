@@ -87,11 +87,11 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		const Layout& layout() const;
 		usize attachment_count() const;
 
-		vk::RenderPass vk_render_pass() const;
+		VkRenderPass vk_render_pass() const;
 
 	private:
 		usize _attachment_count = 0;
-		SwapMove<vk::RenderPass> _render_pass;
+		SwapMove<VkRenderPass> _render_pass;
 
 		Layout _layout;
 };

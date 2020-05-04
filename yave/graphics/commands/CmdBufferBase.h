@@ -30,8 +30,8 @@ struct CmdBufferBase : NonCopyable {
 	public:
 		DevicePtr device() const;
 
-		vk::CommandBuffer vk_cmd_buffer() const;
-		vk::Fence vk_fence() const;
+		VkCommandBuffer vk_cmd_buffer() const;
+		VkFence vk_fence() const;
 		ResourceFence resource_fence() const;
 
 		void wait() const;

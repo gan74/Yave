@@ -52,11 +52,11 @@ void GraphicPipeline::swap(GraphicPipeline& other) {
 	std::swap(_layout, other._layout);
 }
 
-vk::Pipeline GraphicPipeline::vk_pipeline() const {
+VkPipeline GraphicPipeline::vk_pipeline() const {
 	return _pipeline;
 }
 
-vk::PipelineLayout GraphicPipeline::vk_pipeline_layout() const {
+VkPipelineLayout GraphicPipeline::vk_pipeline_layout() const {
 	return _layout;
 }
 

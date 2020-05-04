@@ -64,15 +64,20 @@ in order to get warning on missed returned results
 namespace yave {
 namespace detail {
 
-#define VK_STRUCT_INIT(Type, SType)				\
-inline void vk_init_struct_stype(Type& t) {		\
-	t.sType = SType;							\
+#define VK_STRUCT_INIT(Type, SType)							\
+constexpr inline void vk_init_struct_stype(Type& t) {		\
+	t.sType = SType;										\
 }
 
 // Extensions
-VK_STRUCT_INIT(VkDebugUtilsMessengerCreateInfoEXT,		VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT)
-VK_STRUCT_INIT(VkDebugUtilsLabelEXT,					VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT)
-VK_STRUCT_INIT(VkDebugUtilsObjectNameInfoEXT,			VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT)
+VK_STRUCT_INIT(VkPresentInfoKHR,									VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
+
+VK_STRUCT_INIT(VkWriteDescriptorSetInlineUniformBlockEXT,			VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT)
+
+VK_STRUCT_INIT(VkDebugUtilsMessengerCreateInfoEXT,					VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT)
+VK_STRUCT_INIT(VkDebugUtilsLabelEXT,								VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT)
+VK_STRUCT_INIT(VkDebugUtilsObjectNameInfoEXT,						VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT)
+
 
 // Core
 VK_STRUCT_INIT(VkApplicationInfo,									VK_STRUCTURE_TYPE_APPLICATION_INFO)
@@ -241,7 +246,7 @@ VK_STRUCT_INIT(VkDeviceMemoryOpaqueCaptureAddressInfo,				VK_STRUCTURE_TYPE_DEVI
 #undef VK_STRUCT_INIT
 
 template<typename T>
-inline T vk_init() {
+constexpr inline T vk_init() {
 	T t = {};
 	vk_init_struct_stype(t);
 	return t;
@@ -249,28 +254,28 @@ inline T vk_init() {
 
 struct VkStructInitializer {
 	template<typename T>
-	operator T() const {
+	constexpr operator T() const {
 		return vk_init<T>();
 	}
 };
 
 struct VkNull {
 	template<typename T>
-	operator T() const {
+	constexpr operator T() const {
 		return T{};
 	}
 };
 }
 
-inline auto vk_struct() {
+constexpr inline auto vk_struct() {
 	return detail::VkStructInitializer();
 }
 
-inline auto vk_null() {
+constexpr inline auto vk_null() {
 	return detail::VkNull();
 }
 
-inline bool is_error(VkResult result) {
+constexpr inline bool is_error(VkResult result) {
 	return result != VK_SUCCESS;
 }
 
@@ -285,12 +290,12 @@ inline void vk_check(VkResult result) {
 
 
 #define VK_STRUCT_NEQ(Type)																\
-inline bool operator!=(const Type& lhs, const Type& rhs) {								\
+constexpr inline bool operator!=(const Type& lhs, const Type& rhs) {					\
 	return !operator==(lhs, rhs);														\
 }
 
 #define VK_STRUCT_OP_1(Type)															\
-inline bool operator==(const Type& lhs, const Type& rhs) {								\
+constexpr inline bool operator==(const Type& lhs, const Type& rhs) {					\
 	const auto& [l0] = lhs;																\
 	const auto& [r0] = rhs;																\
 	return l0 == r0;																	\
@@ -298,7 +303,7 @@ inline bool operator==(const Type& lhs, const Type& rhs) {								\
 VK_STRUCT_NEQ(Type)
 
 #define VK_STRUCT_OP_4(Type)															\
-inline bool operator==(const Type& lhs, const Type& rhs) {								\
+constexpr inline bool operator==(const Type& lhs, const Type& rhs) {					\
 	const auto& [l0, l1, l2, l3, l4] = lhs;												\
 	const auto& [r0, r1, r2, r3, r4] = rhs;												\
 	return (l0 == r0) && (l1 == r1) && (l2 == r2) && (l3 == r3);						\
@@ -306,7 +311,7 @@ inline bool operator==(const Type& lhs, const Type& rhs) {								\
 VK_STRUCT_NEQ(Type)
 
 #define VK_STRUCT_OP_5(Type)															\
-inline bool operator==(const Type& lhs, const Type& rhs) {								\
+constexpr inline bool operator==(const Type& lhs, const Type& rhs) {					\
 	const auto& [l0, l1, l2, l3, l4] = lhs;												\
 	const auto& [r0, r1, r2, r3, r4] = rhs;												\
 	return (l0 == r0) && (l1 == r1) && (l2 == r2) && (l3 == r3) && (l4 == r4);			\

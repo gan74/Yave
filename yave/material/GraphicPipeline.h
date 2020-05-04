@@ -41,14 +41,14 @@ class GraphicPipeline : NonCopyable, public DeviceLinked {
 		GraphicPipeline(GraphicPipeline&& other);
 		GraphicPipeline& operator=(GraphicPipeline&& other);
 
-		vk::Pipeline vk_pipeline() const;
-		vk::PipelineLayout vk_pipeline_layout() const;
+		VkPipeline vk_pipeline() const;
+		VkPipelineLayout vk_pipeline_layout() const;
 
 	private:
 		void swap(GraphicPipeline& other);
 
-		vk::Pipeline _pipeline;
-		vk::PipelineLayout _layout;
+		VkPipeline _pipeline = {};
+		VkPipelineLayout _layout = {};
 };
 
 }

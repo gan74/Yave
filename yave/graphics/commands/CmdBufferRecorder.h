@@ -111,8 +111,8 @@ class RenderPassRecorder : NonMovable {
 		void bind_material(const MaterialTemplate* material, DescriptorSetList descriptor_sets = {});
 		void bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets);
 
-		void draw(const vk::DrawIndexedIndirectCommand& indirect);
-		void draw(const vk::DrawIndirectCommand& indirect);
+		void draw(const VkDrawIndexedIndirectCommand& indirect);
+		void draw(const VkDrawIndirectCommand& indirect);
 
 		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
@@ -120,11 +120,12 @@ class RenderPassRecorder : NonMovable {
 
 		// proxies from _cmd_buffer
 		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
-		vk::CommandBuffer vk_cmd_buffer() const;
+		VkCommandBuffer vk_cmd_buffer() const;
 
 		// Statefull stuff
 		const Viewport& viewport() const;
 		void set_viewport(const Viewport& vp);
+		void set_scissor(const math::Vec2i& offset, const math::Vec2ui& size);
 
 	private:
 		friend class CmdBufferRecorder;
@@ -186,7 +187,6 @@ class CmdBufferRecorder : public CmdBufferBase {
 
 		void end_renderpass();
 		void check_no_renderpass() const;
-		void bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass);
 
 		// this could be in RenderPassRecorder, but putting it here makes erroring easier
 		const RenderPass* _render_pass = nullptr;

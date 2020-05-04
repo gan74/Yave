@@ -194,11 +194,11 @@ VkDescriptorSet DescriptorSetPool::vk_descriptor_set(u32 id) const {
 	return _sets[id];
 }
 
-vk::DescriptorPool DescriptorSetPool::vk_pool() const {
+VkDescriptorPool DescriptorSetPool::vk_pool() const {
 	return _pool;
 }
 
-vk::DescriptorSetLayout DescriptorSetPool::vk_descriptor_set_layout() const {
+VkDescriptorSetLayout DescriptorSetPool::vk_descriptor_set_layout() const {
 	return _layout;
 }
 

@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-static void bind_image_memory(DevicePtr dptr, vk::Image image, const DeviceMemory& memory) {
+static void bind_image_memory(DevicePtr dptr, VkImage image, const DeviceMemory& memory) {
 	dptr->vk_device().bindImageMemory(image, memory.vk_memory(), memory.vk_offset());
 }
 
@@ -57,7 +57,7 @@ static VkImage create_image(DevicePtr dptr, const math::Vec3ui& size, usize laye
 }
 
 static auto get_copy_regions(const ImageData& data) {
-	auto regions = core::vector_with_capacity<vk::BufferImageCopy>(data.mipmaps() * data.layers());
+	auto regions = core::vector_with_capacity<VkBufferImageCopy>(data.mipmaps() * data.layers());
 
 	for(usize l = 0; l != data.layers(); ++l) {
 		for(usize m = 0; m != data.mipmaps(); ++m) {
@@ -121,7 +121,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	{
 		const auto region = recorder.region("Image upload");
 		recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)});
-		recorder.vk_cmd_buffer().copyBufferToImage(staging_buffer.vk_buffer(), image.vk_image(), vk::ImageLayout::eTransferDstOptimal, regions.size(), regions.data());
+		vkCmdCopyBufferToImage(recorder.vk_cmd_buffer(), staging_buffer.vk_buffer(), image.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
 		recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_image_layout(image.usage()))});
 	}
 

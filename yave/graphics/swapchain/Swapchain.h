@@ -94,10 +94,10 @@ class Swapchain : NonMovable, public DeviceLinked {
 		ImageFormat _color_format;
 
 		core::Vector<SwapchainImage> _images;
-		core::Vector<std::pair<vk::Semaphore, vk::Semaphore>> _semaphores;
+		core::Vector<std::pair<VkSemaphore, VkSemaphore>> _semaphores;
 
 		Owner<vk::SurfaceKHR> _surface;
-		vk::SwapchainKHR _swapchain;
+		vk::SwapchainKHR _swapchain = {};
 
 
 };

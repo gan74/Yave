@@ -61,21 +61,24 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Spa
 		_attachment_count(colors.size()),
 		_render_pass(create_render_pass(dptr, depth, colors)) {
 
-	auto views = core::vector_with_capacity<vk::ImageView>(colors.size() + 1);
+	auto views = core::vector_with_capacity<VkImageView>(colors.size() + 1);
 	std::transform(colors.begin(), colors.end(), std::back_inserter(views), [](const auto& v) { return v.view.vk_view(); });
 
 	if(!depth.view.is_null()) {
 		views << depth.view.vk_view();
 	}
 
-	_framebuffer = device()->vk_device().createFramebuffer(vk::FramebufferCreateInfo()
-		.setRenderPass(_render_pass->vk_render_pass())
-		.setAttachmentCount(u32(views.size()))
-		.setPAttachments(views.begin())
-		.setWidth(_size.x())
-		.setHeight(_size.y())
-		.setLayers(1)
-	);
+	VkFramebufferCreateInfo create_info = vk_struct();
+	{
+		create_info.renderPass = _render_pass->vk_render_pass();
+		create_info.attachmentCount = views.size();
+		create_info.pAttachments = views.data();
+		create_info.width = _size.x();
+		create_info.height = _size.y();
+		create_info.layers = 1;
+	}
+
+	vk_check(vkCreateFramebuffer(device()->vk_device(), &create_info, nullptr, &_framebuffer));
 }
 
 Framebuffer::Framebuffer(DevicePtr dptr, core::Span<ColorAttachmentView> colors, LoadOp load_op) :
@@ -94,7 +97,7 @@ const math::Vec2ui& Framebuffer::size() const {
 	return _size;
 }
 
-vk::Framebuffer Framebuffer::vk_framebuffer() const {
+VkFramebuffer Framebuffer::vk_framebuffer() const {
 	return _framebuffer;
 }
 

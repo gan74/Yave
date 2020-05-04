@@ -35,8 +35,8 @@ struct FrameToken {
 	const u32 image_count;
 
 	const ImageView<ImageUsage::ColorBit> image_view;
-	const vk::Semaphore image_aquired;
-	const vk::Semaphore render_finished;
+	const VkSemaphore image_aquired = {};
+	const VkSemaphore render_finished = {};
 
 
 	bool operator==(const FrameToken& other) const {
@@ -58,7 +58,7 @@ struct FrameToken {
 				0,
 				1,
 				out_view,
-				vk::Semaphore(), vk::Semaphore()
+				vk_null(), vk_null()
 			};
 	}
 

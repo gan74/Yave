@@ -236,8 +236,10 @@ void Swapchain::build_swapchain() {
 
 void Swapchain::build_semaphores() {
 	for(usize i = 0; i != _images.size(); ++i) {
-		_semaphores << std::pair(device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()),
-								 device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()));
+		auto& semaphores = _semaphores.emplace_back();
+		const VkSemaphoreCreateInfo create_info = vk_struct();
+		vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, nullptr, &semaphores.first));
+		vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, nullptr, &semaphores.second));
 	}
 }
 
@@ -273,13 +275,17 @@ void Swapchain::present(const FrameToken& token, vk::Queue queue) {
 
 	{
 		y_profile_zone("queue present");
-		queue.presentKHR(vk::PresentInfoKHR()
-						 .setSwapchainCount(1)
-						 .setPSwapchains(&_swapchain)
-						 .setPImageIndices(&token.image_index)
-						 .setWaitSemaphoreCount(1)
-						 .setPWaitSemaphores(&token.render_finished)
-						 );
+
+		VkPresentInfoKHR present_info = vk_struct();
+		{
+			present_info.swapchainCount = 1;
+			present_info.pSwapchains = reinterpret_cast<VkSwapchainKHR*>(&_swapchain);
+			present_info.pImageIndices = &token.image_index;
+			present_info.waitSemaphoreCount = 1;
+			present_info.pWaitSemaphores = &token.render_finished;
+		}
+
+		vk_check(vkQueuePresentKHR(queue, &present_info));
 	}
 }
 

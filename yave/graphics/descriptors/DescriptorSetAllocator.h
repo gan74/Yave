@@ -114,8 +114,8 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 		bool is_full() const;
 
 		VkDescriptorSet vk_descriptor_set(u32 id) const;
-		vk::DescriptorPool vk_pool() const;
-		vk::DescriptorSetLayout vk_descriptor_set_layout() const;
+		VkDescriptorPool vk_pool() const;
+		VkDescriptorSetLayout vk_descriptor_set_layout() const;
 
 		// Slow: for debug only
 		usize free_sets() const;
@@ -128,8 +128,8 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 		mutable concurrent::SpinLock _lock;
 
 		std::array<VkDescriptorSet, pool_size> _sets;
-		vk::DescriptorPool _pool;
-		vk::DescriptorSetLayout _layout;
+		VkDescriptorPool _pool = {};
+		VkDescriptorSetLayout _layout = {};
 };
 
 class DescriptorSetAllocator : NonCopyable, public DeviceLinked  {
