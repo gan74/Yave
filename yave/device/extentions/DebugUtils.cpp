@@ -96,8 +96,7 @@ DebugUtils::DebugUtils(vk::Instance instance) : _instance(instance) {
 
 	const auto create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(_instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
 
-	VkDebugUtilsMessengerCreateInfoEXT create_info = {};
-	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	VkDebugUtilsMessengerCreateInfoEXT create_info = vk_struct();
 	create_info.messageType =
 			VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 			VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
@@ -111,7 +110,7 @@ DebugUtils::DebugUtils(vk::Instance instance) : _instance(instance) {
 		;
 	create_info.pfnUserCallback = vulkan_message_callback;
 
-	create_messenger(_instance, &create_info, nullptr, &_messenger);
+	vk_check(create_messenger(_instance, &create_info, nullptr, &_messenger));
 }
 
 DebugUtils::~DebugUtils() {
@@ -120,8 +119,7 @@ DebugUtils::~DebugUtils() {
 }
 
 void DebugUtils::begin_region(vk::CommandBuffer buffer, const char* name, const math::Vec4& color) const {
-	VkDebugUtilsLabelEXT label = {};
-	label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	VkDebugUtilsLabelEXT label = vk_struct();
 	label.pLabelName = name;
 	for(usize i = 0; i != 4; ++i) {
 		label.color[i] = color[i];
@@ -135,13 +133,12 @@ void DebugUtils::end_region(vk::CommandBuffer buffer) const {
 }
 
 void DebugUtils::set_resource_name(DevicePtr dptr, u64 resource, const char *name) const {
-	VkDebugUtilsObjectNameInfoEXT name_info = {};
-	name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+	VkDebugUtilsObjectNameInfoEXT name_info = vk_struct();
 	name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
 	name_info.objectHandle = resource;
 	name_info.pObjectName = name;
 
-	_set_object_name(dptr->vk_device(), &name_info);
+	vk_check(_set_object_name(dptr->vk_device(), &name_info));
 }
 
 }

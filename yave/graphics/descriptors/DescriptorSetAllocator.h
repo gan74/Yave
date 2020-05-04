@@ -36,16 +36,16 @@ SOFTWARE.
 
 namespace std {
 template<>
-struct hash<vk::DescriptorSetLayoutBinding> {
-	auto operator()(const vk::DescriptorSetLayoutBinding& l) const {
+struct hash<VkDescriptorSetLayoutBinding> {
+	auto operator()(const VkDescriptorSetLayoutBinding& l) const {
 		const char* data = reinterpret_cast<const char*>(&l);
 		return y::hash_range(data, data + sizeof(l));
 	}
 };
 
 template<>
-struct hash<y::core::Vector<vk::DescriptorSetLayoutBinding>> {
-	auto operator()(const y::core::Vector<vk::DescriptorSetLayoutBinding>& k) const {
+struct hash<y::core::Vector<VkDescriptorSetLayoutBinding>> {
+	auto operator()(const y::core::Vector<VkDescriptorSetLayoutBinding>& k) const {
 		return y::hash_range(k);
 	}
 };
@@ -61,7 +61,7 @@ class DescriptorSetLayout : NonCopyable, public DeviceLinked {
 		static constexpr usize descriptor_type_count = 12;
 
 		DescriptorSetLayout() = default;
-		DescriptorSetLayout(DevicePtr dptr, core::Span<vk::DescriptorSetLayoutBinding> bindings);
+		DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings);
 
 		DescriptorSetLayout(DescriptorSetLayout&&) = default;
 		DescriptorSetLayout& operator=(DescriptorSetLayout&&) = default;
@@ -70,10 +70,10 @@ class DescriptorSetLayout : NonCopyable, public DeviceLinked {
 
 		const std::array<u32, descriptor_type_count>& desciptors_count() const;
 
-		vk::DescriptorSetLayout vk_descriptor_set_layout() const;
+		VkDescriptorSetLayout vk_descriptor_set_layout() const;
 
 	private:
-		SwapMove<vk::DescriptorSetLayout> _layout;
+		SwapMove<VkDescriptorSetLayout> _layout;
 		std::array<u32, descriptor_type_count> _sizes = {};
 };
 
@@ -84,8 +84,8 @@ class DescriptorSetData {
 		DevicePtr device() const;
 		bool is_null() const;
 
-		vk::DescriptorSetLayout vk_descriptor_set_layout() const;
-		vk::DescriptorSet vk_descriptor_set() const;
+		VkDescriptorSetLayout vk_descriptor_set_layout() const;
+		VkDescriptorSet vk_descriptor_set() const;
 
 	private:
 		friend class LifetimeManager;
@@ -113,7 +113,7 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 
 		bool is_full() const;
 
-		vk::DescriptorSet vk_descriptor_set(u32 id) const;
+		VkDescriptorSet vk_descriptor_set(u32 id) const;
 		vk::DescriptorPool vk_pool() const;
 		vk::DescriptorSetLayout vk_descriptor_set_layout() const;
 
@@ -127,14 +127,14 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 
 		mutable concurrent::SpinLock _lock;
 
-		std::array<vk::DescriptorSet, pool_size> _sets;
+		std::array<VkDescriptorSet, pool_size> _sets;
 		vk::DescriptorPool _pool;
 		vk::DescriptorSetLayout _layout;
 };
 
 class DescriptorSetAllocator : NonCopyable, public DeviceLinked  {
 
-	using Key = core::Vector<vk::DescriptorSetLayoutBinding>;
+	using Key = core::Vector<VkDescriptorSetLayoutBinding>;
 
 	struct LayoutPools : NonMovable {
 		DescriptorSetLayout layout;

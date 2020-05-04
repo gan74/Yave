@@ -24,45 +24,45 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::ImageLayout vk_layout(ImageUsage usage) {
+static VkImageLayout vk_layout(ImageUsage usage) {
 	if((usage & ImageUsage::SwapchainBit) != ImageUsage::None) {
-		return vk::ImageLayout::ePresentSrcKHR;
+		return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 	}
 	if((usage & ImageUsage::StorageBit) != ImageUsage::None) {
-		return vk::ImageLayout::eGeneral;
+		return VK_IMAGE_LAYOUT_GENERAL;
 	}
 
 	const bool texture = (usage & ImageUsage::TextureBit) != ImageUsage::None;
 	if((usage & ImageUsage::TransferSrcBit) != ImageUsage::None) {
-		return texture ? vk::ImageLayout::eGeneral : vk::ImageLayout::eTransferSrcOptimal;
+		return texture ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	}
 	if((usage & ImageUsage::TransferDstBit) != ImageUsage::None) {
-		return texture ? vk::ImageLayout::eGeneral : vk::ImageLayout::eTransferDstOptimal;
+		return texture ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	}
 
 	if(texture) {
-		return vk::ImageLayout::eShaderReadOnlyOptimal;
+		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 
-	/*return*/ y_fatal("Undefined image layout.");
+	y_fatal("Undefined image layout.");
 }
 
-vk::ImageLayout vk_image_layout(ImageUsage usage) {
+VkImageLayout vk_image_layout(ImageUsage usage) {
 	switch(usage) {
 		case ImageUsage::ColorBit:
-			return vk::ImageLayout::eColorAttachmentOptimal;
+			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		case ImageUsage::DepthBit:
-			return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		case ImageUsage::DepthTexture:
-			return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 		case ImageUsage::TextureBit:
-			return vk::ImageLayout::eShaderReadOnlyOptimal;
+			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		case ImageUsage::SwapchainBit:
-			return vk::ImageLayout::ePresentSrcKHR;
+			return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		default:
 			break;
@@ -70,5 +70,11 @@ vk::ImageLayout vk_image_layout(ImageUsage usage) {
 
 	return vk_layout(usage);
 }
+
+vk::ImageLayout vk_image_layout_2(ImageUsage usage) {
+	const auto vk_layout = vk_image_layout(usage);
+	return reinterpret_cast<const vk::ImageLayout&>(vk_layout);
+}
+
 
 }

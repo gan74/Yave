@@ -141,7 +141,7 @@ static vk::ImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format
 
 
 static vk::ImageMemoryBarrier create_barrier(vk::Image image, ImageFormat format, usize layers, usize mips, ImageUsage usage, PipelineStage src, PipelineStage dst) {
-	const auto layout = vk_image_layout(usage);
+	const auto layout = vk_image_layout_2(usage);
 	return vk::ImageMemoryBarrier()
 			.setOldLayout(layout)
 			.setNewLayout(layout)
@@ -186,11 +186,11 @@ ImageBarrier ImageBarrier::transition_barrier(const ImageBase& image, vk::ImageL
 }
 
 ImageBarrier ImageBarrier::transition_to_barrier(const ImageBase& image, vk::ImageLayout dst_layout) {
-	return transition_barrier(image, vk_image_layout(image.usage()), dst_layout);
+	return transition_barrier(image, vk_image_layout_2(image.usage()), dst_layout);
 }
 
 ImageBarrier ImageBarrier::transition_from_barrier(const ImageBase& image, vk::ImageLayout src_layout) {
-	return transition_barrier(image, src_layout, vk_image_layout(image.usage()));
+	return transition_barrier(image, src_layout, vk_image_layout_2(image.usage()));
 }
 
 vk::ImageMemoryBarrier ImageBarrier::vk_barrier() const {

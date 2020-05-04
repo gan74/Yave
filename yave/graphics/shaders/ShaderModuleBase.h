@@ -33,12 +33,12 @@ SOFTWARE.
 
 namespace yave {
 
-enum class ShaderType {
+enum class ShaderType : u32 {
 	None = 0,
-	Fragment = uenum(vk::ShaderStageFlagBits::eFragment),
-	Vertex = uenum(vk::ShaderStageFlagBits::eVertex),
-	Geomery = uenum(vk::ShaderStageFlagBits::eGeometry),
-	Compute = uenum(vk::ShaderStageFlagBits::eCompute)
+	Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
+	Vertex = VK_SHADER_STAGE_VERTEX_BIT,
+	Geomery = VK_SHADER_STAGE_GEOMETRY_BIT,
+	Compute = VK_SHADER_STAGE_COMPUTE_BIT
 };
 
 class SpecializationData : NonCopyable {
@@ -102,10 +102,6 @@ class ShaderModuleBase : NonMovable, public DeviceLinked {
 			return _attribs;
 		}
 
-		const auto& push_constants() const {
-			return _push_constants;
-		}
-
 		ShaderType type() const {
 			return _type;
 		}
@@ -114,8 +110,12 @@ class ShaderModuleBase : NonMovable, public DeviceLinked {
 			return _local_size;
 		}
 
-		vk::ShaderModule vk_shader_module() const {
+		VkShaderModule vk_shader_module() const {
 			return _module;
+		}
+
+		core::Span<VkPushConstantRange> vk_push_constants() const {
+			return _push_constants;
 		}
 
 		usize specialization_data_size() const {
@@ -134,11 +134,11 @@ class ShaderModuleBase : NonMovable, public DeviceLinked {
 		ShaderModuleBase(DevicePtr dptr, const SpirVData& data);
 
 	private:
-		vk::ShaderModule _module;
+		VkShaderModule _module;
 		ShaderType _type = ShaderType::None;
-		std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>> _bindings;
-		core::Vector<vk::SpecializationMapEntry> _spec_constants;
-		core::Vector<vk::PushConstantRange> _push_constants;
+		std::unordered_map<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
+		core::Vector<VkSpecializationMapEntry> _spec_constants;
+		core::Vector<VkPushConstantRange> _push_constants;
 		core::Vector<Attribute> _attribs;
 		math::Vec3ui _local_size;
 

@@ -25,10 +25,10 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr usize inline_block_index = usize(vk::DescriptorType::eInputAttachment) + 1;
+static constexpr usize inline_block_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1;
 
-static usize descriptor_type_index(vk::DescriptorType type) {
-	if(type == vk::DescriptorType::eInlineUniformBlockEXT) {
+static usize descriptor_type_index(VkDescriptorType type) {
+	if(type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
 		y_debug_assert(inline_block_index < DescriptorSetLayout::descriptor_type_count);
 		return inline_block_index;
 	}
@@ -37,26 +37,29 @@ static usize descriptor_type_index(vk::DescriptorType type) {
 	return usize(type);
 }
 
-static vk::DescriptorType index_descriptor_type(usize index) {
+static VkDescriptorType index_descriptor_type(usize index) {
 	y_debug_assert(index <  DescriptorSetLayout::descriptor_type_count);
 	if(index == inline_block_index) {
-		return vk::DescriptorType::eInlineUniformBlockEXT;
+		return VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
 	}
-	return vk::DescriptorType(index);
+	return VkDescriptorType(index);
 }
 
 
 
 
-DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<vk::DescriptorSetLayoutBinding> bindings) : DeviceLinked(dptr) {
+DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings) : DeviceLinked(dptr) {
 	for(const auto& d : bindings) {
 		_sizes[descriptor_type_index(d.descriptorType)] += d.descriptorCount;
-		y_always_assert(d.descriptorType != vk::DescriptorType::eInlineUniformBlockEXT || dptr->device_properties().max_inline_uniform_size != 0, "Inline descriptors are not supported");
+		y_always_assert(d.descriptorType != VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT || dptr->device_properties().max_inline_uniform_size != 0, "Inline descriptors are not supported");
 	}
-	_layout = dptr->vk_device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo()
-			.setBindingCount(u32(bindings.size()))
-			.setPBindings(bindings.begin())
-		);
+
+	VkDescriptorSetLayoutCreateInfo create_info = vk_struct();
+	{
+		create_info.bindingCount = bindings.size();
+		create_info.pBindings = bindings.data();
+	}
+	vk_check(vkCreateDescriptorSetLayout(dptr->vk_device(), &create_info, nullptr, &_layout.get()));
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
@@ -67,7 +70,7 @@ const std::array<u32, DescriptorSetLayout::descriptor_type_count>& DescriptorSet
 	return _sizes;
 }
 
-vk::DescriptorSetLayout DescriptorSetLayout::vk_descriptor_set_layout() const {
+VkDescriptorSetLayout DescriptorSetLayout::vk_descriptor_set_layout() const {
 	return _layout;
 }
 
@@ -91,28 +94,27 @@ void DescriptorSetData::recycle() {
 	}
 }
 
-vk::DescriptorSetLayout DescriptorSetData::vk_descriptor_set_layout() const {
+VkDescriptorSetLayout DescriptorSetData::vk_descriptor_set_layout() const {
 	return _pool->vk_descriptor_set_layout();
 }
 
-vk::DescriptorSet DescriptorSetData::vk_descriptor_set() const {
+VkDescriptorSet DescriptorSetData::vk_descriptor_set() const {
 	return _pool->vk_descriptor_set(_index);
 }
 
 
-static vk::DescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout, usize set_count) {
+static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout, usize set_count) {
 	y_profile();
 
 	usize sizes_count = 0;
-	std::array<vk::DescriptorPoolSize, DescriptorSetLayout::descriptor_type_count> sizes;
+	std::array<VkDescriptorPoolSize, DescriptorSetLayout::descriptor_type_count> sizes;
 
 	for(usize i = 0; i != DescriptorSetLayout::descriptor_type_count; ++i) {
 		const usize type_count = layout.desciptors_count()[i];
 		if(type_count) {
-			sizes[sizes_count++]
-					.setType(index_descriptor_type(i))
-					.setDescriptorCount(type_count * set_count)
-				;
+			VkDescriptorPoolSize& pool_size = sizes[sizes_count++];
+			pool_size.type = index_descriptor_type(i);
+			pool_size.descriptorCount = type_count * set_count;
 		}
 	}
 
@@ -120,11 +122,16 @@ static vk::DescriptorPool create_descriptor_pool(const DescriptorSetLayout& layo
 		return {};
 	}
 
-	return layout.device()->vk_device().createDescriptorPool(vk::DescriptorPoolCreateInfo()
-			.setPoolSizeCount(sizes_count)
-			.setPPoolSizes(sizes.data())
-			.setMaxSets(set_count)
-		);
+	VkDescriptorPoolCreateInfo create_info = vk_struct();
+	{
+		create_info.poolSizeCount = sizes_count;
+		create_info.pPoolSizes = sizes.data();
+		create_info.maxSets = set_count;
+	}
+
+	VkDescriptorPool pool = {};
+	vk_check(vkCreateDescriptorPool(layout.device()->vk_device(), &create_info, nullptr, &pool));
+	return pool;
 }
 
 DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
@@ -132,16 +139,17 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
 	_pool(create_descriptor_pool(layout, pool_size)),
 	_layout(layout.vk_descriptor_set_layout()) {
 
-	std::array<vk::DescriptorSetLayout, pool_size> layouts;
+	std::array<VkDescriptorSetLayout, pool_size> layouts;
 	std::fill_n(layouts.begin(), pool_size, layout.vk_descriptor_set_layout());
 
-	const auto create_info = vk::DescriptorSetAllocateInfo()
-			.setDescriptorPool(_pool)
-			.setDescriptorSetCount(pool_size)
-			.setPSetLayouts(layouts.data())
-		;
+	VkDescriptorSetAllocateInfo allocate_info = vk_struct();
+	{
+		allocate_info.descriptorPool = _pool;
+		allocate_info.descriptorSetCount = pool_size;
+		allocate_info.pSetLayouts = layouts.data();
+	}
 
-	device()->vk_device().allocateDescriptorSets(&create_info, _sets.data());
+	vk_check(vkAllocateDescriptorSets(device()->vk_device(), &allocate_info, _sets.data()));
 }
 
 DescriptorSetPool::~DescriptorSetPool() {
@@ -182,7 +190,7 @@ bool DescriptorSetPool::is_full() const {
 	return _first_free >= pool_size;
 }
 
-vk::DescriptorSet DescriptorSetPool::vk_descriptor_set(u32 id) const {
+VkDescriptorSet DescriptorSetPool::vk_descriptor_set(u32 id) const {
 	return _sets[id];
 }
 

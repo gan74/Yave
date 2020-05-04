@@ -41,7 +41,7 @@ class DescriptorSet : public DescriptorSetBase, NonCopyable {
 		DevicePtr device() const;
 		bool is_null() const;
 
-		vk::DescriptorSetLayout vk_descriptor_set_layout() const;
+		VkDescriptorSetLayout vk_descriptor_set_layout() const;
 
 	private:
 		void swap(DescriptorSet& other);

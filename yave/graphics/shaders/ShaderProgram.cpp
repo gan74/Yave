@@ -37,54 +37,56 @@ SOFTWARE.
 
 namespace yave {
 
-using Attribs = core::Vector<vk::VertexInputAttributeDescription>;
-using Bindings = core::Vector<vk::VertexInputBindingDescription>;
+using Attribs = core::Vector<VkVertexInputAttributeDescription>;
+using Bindings = core::Vector<VkVertexInputBindingDescription>;
 
-template<typename T>
-static void merge_bindings(T& into, const T& o) {
+template<typename T, typename S>
+static void merge_bindings(T& into, const S& o) {
 	into.insert(o.begin(), o.end());
 }
 
-template<typename T>
-static void merge_push_constants(T& into, const T& o) {
+template<typename T, typename S>
+static void merge_push_constants(T& into, const S& o) {
 	into.push_back(o.begin(), o.end());
 }
 
 
-static vk::Format vec_format(const ShaderModuleBase::Attribute& attr) {
-	static_assert(uenum(vk::Format::eR32G32B32A32Sfloat) == uenum(vk::Format::eR32G32B32A32Uint) + uenum(ShaderModuleBase::AttribType::Float));
+static VkFormat vec_format(const ShaderModuleBase::Attribute& attr) {
+	static_assert(VK_FORMAT_R32G32B32A32_SFLOAT == VK_FORMAT_R32G32B32A32_UINT + uenum(ShaderModuleBase::AttribType::Float));
 
 	const usize type = usize(attr.type);
 	switch(attr.vec_size) {
 		case 1:
-			return vk::Format(uenum(vk::Format::eR32Uint) + type);
+			return VkFormat(VK_FORMAT_R32_UINT + type);
 		case 2:
-			return vk::Format(uenum(vk::Format::eR32G32Uint) + type);
+			return VkFormat(VK_FORMAT_R32G32_UINT + type);
 		case 3:
-			return vk::Format(uenum(vk::Format::eR32G32B32Uint) + type);
+			return VkFormat(VK_FORMAT_R32G32B32_UINT + type);
 		case 4:
-			return vk::Format(uenum(vk::Format::eR32G32B32A32Uint) + type);
+			return VkFormat(VK_FORMAT_R32G32B32A32_UINT + type);
 
 		default:
 			break;
 	}
-	/*return*/ y_fatal("Unsupported vec format.");
+	y_fatal("Unsupported vec format.");
 }
 
-static auto create_stage_info(core::Vector<vk::PipelineShaderStageCreateInfo>& stages, const ShaderModuleBase& mod) {
+static auto create_stage_info(core::Vector<VkPipelineShaderStageCreateInfo>& stages, const ShaderModuleBase& mod) {
 	if(mod.vk_shader_module()) {
-		stages << vk::PipelineShaderStageCreateInfo()
-				.setModule(mod.vk_shader_module())
-				.setStage(vk::ShaderStageFlagBits(mod.type()))
-				.setPName("main")
-			;
+		VkPipelineShaderStageCreateInfo create_info = vk_struct();
+		{
+			create_info.module = mod.vk_shader_module();
+			create_info.stage = VkShaderStageFlagBits(mod.type());
+			create_info.pName = "main";
+		}
+		stages << create_info;
 	}
 }
 
 // returns the NEXT binding index
 static u32 create_vertex_attribs(u32 binding,
-								 const vk::VertexInputRate rate,
-								 const core::Span<ShaderModuleBase::Attribute> vertex_attribs,
+								 VkVertexInputRate rate,
+								 core::Span<ShaderModuleBase::Attribute> vertex_attribs,
 								 Bindings& bindings,
 								 Attribs& attribs) {
 
@@ -93,20 +95,11 @@ static u32 create_vertex_attribs(u32 binding,
 		for(const auto& attr : vertex_attribs) {
 			const auto format = vec_format(attr);
 			for(u32 i = 0; i != attr.columns; ++i) {
-				attribs << vk::VertexInputAttributeDescription()
-						.setBinding(binding)
-						.setLocation(attr.location + i)
-						.setFormat(format)
-						.setOffset(offset)
-					;
+				attribs << VkVertexInputAttributeDescription{attr.location + i, binding, format, offset};
 				offset += attr.vec_size * attr.component_size;
 			}
 		}
-		bindings << vk::VertexInputBindingDescription()
-				.setBinding(binding)
-				.setStride(offset)
-				.setInputRate(rate)
-			;
+		bindings << VkVertexInputBindingDescription{binding, offset, rate};
 		return binding + 1;
 	}
 	return binding;
@@ -126,10 +119,10 @@ static void create_vertex_attribs(core::Span<ShaderModuleBase::Attribute> vertex
 		(attr.location < ShaderProgram::per_instance_location ? v_attribs : i_attribs) << attr;
 	}
 
-	u32 inst = create_vertex_attribs(0, vk::VertexInputRate::eVertex, v_attribs, bindings, attribs);
+	u32 inst = create_vertex_attribs(0, VK_VERTEX_INPUT_RATE_VERTEX, v_attribs, bindings, attribs);
 
 	for(const auto& attrib : i_attribs) {
-		inst = create_vertex_attribs(inst, vk::VertexInputRate::eInstance, {attrib}, bindings, attribs);
+		inst = create_vertex_attribs(inst, VK_VERTEX_INPUT_RATE_INSTANCE, {attrib}, bindings, attribs);
 	}
 }
 
@@ -145,14 +138,14 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 		create_stage_info(_stages, vert);
 		create_stage_info(_stages, geom);
 
-		merge_push_constants(_push_constants, frag.push_constants());
-		merge_push_constants(_push_constants, vert.push_constants());
-		merge_push_constants(_push_constants, geom.push_constants());
+		merge_push_constants(_push_constants, frag.vk_push_constants());
+		merge_push_constants(_push_constants, vert.vk_push_constants());
+		merge_push_constants(_push_constants, geom.vk_push_constants());
 
 		const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
 		if(!_bindings.empty()) {
-			_layouts = core::Vector<vk::DescriptorSetLayout>(max_set + 1, vk::DescriptorSetLayout());
+			_layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
 			for(const auto& binding : _bindings) {
 				_layouts[binding.first] = device()->descriptor_set_layout(binding.second).vk_descriptor_set_layout();
 			}
@@ -165,12 +158,25 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 	}
 }
 
-core::Span<vk::PipelineShaderStageCreateInfo> ShaderProgram::vk_pipeline_stage_info() const {
+core::Span<VkPipelineShaderStageCreateInfo> ShaderProgram::vk_pipeline_stage_info() const {
 	return _stages;
 }
 
-core::Span<vk::DescriptorSetLayout> ShaderProgram::descriptor_layouts() const {
+core::Span<VkDescriptorSetLayout> ShaderProgram::vk_descriptor_layouts() const {
 	return _layouts;
 }
+
+core::Span<VkVertexInputBindingDescription> ShaderProgram::vk_attribute_bindings() const {
+	return _vertex.bindings;
+}
+
+core::Span<VkVertexInputAttributeDescription> ShaderProgram::vk_attributes_descriptions() const {
+	return _vertex.attribs;
+}
+
+core::Span<VkPushConstantRange> ShaderProgram::vk_push_constants() const {
+	return _push_constants;
+}
+
 
 }

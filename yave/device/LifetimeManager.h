@@ -63,8 +63,27 @@ using ManagedResource = std::variant<
 		vk::Semaphore,
 		vk::QueryPool,
 		vk::Event,
+		vk::SurfaceKHR,
 
-		vk::SurfaceKHR>;
+		VkBuffer,
+		VkImage,
+		VkImageView,
+		VkRenderPass,
+		VkFramebuffer,
+		VkPipeline,
+		VkPipelineLayout,
+		VkShaderModule,
+		VkSampler,
+		VkSwapchainKHR,
+		VkCommandPool,
+		VkFence,
+		VkDescriptorPool,
+		VkDescriptorSetLayout,
+		VkSemaphore,
+		VkQueryPool,
+		VkEvent,
+
+		VkSurfaceKHR>;
 
 
 

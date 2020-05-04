@@ -36,14 +36,20 @@ static void merge(M& into, const M& o) {
 	}
 }
 
-static vk::ShaderModule create_shader_module(DevicePtr dptr, const SpirVData& data) {
+static VkShaderModule create_shader_module(DevicePtr dptr, const SpirVData& data) {
+	VkShaderModule shader = vk_null();
 	if(data.is_empty()) {
-		return vk::ShaderModule();
+		return shader;
 	}
-	return dptr->vk_device().createShaderModule(vk::ShaderModuleCreateInfo()
-			.setCodeSize(data.size())
-			.setPCode(data.data())
-		);
+
+	VkShaderModuleCreateInfo create_info = vk_struct();
+	{
+		create_info.codeSize = data.size();
+		create_info.pCode = data.data();
+	}
+
+	vk_check(vkCreateShaderModule(dptr->vk_device(), &create_info, nullptr, &shader));
+	return shader;
 }
 
 static ShaderType module_type(const spirv_cross::Compiler& compiler) {
@@ -77,25 +83,27 @@ static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::
 	return false;
 }
 
-static vk::DescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res, vk::DescriptorType type) {
+static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res, VkDescriptorType type) {
 	u32 size = 1;
 	if(is_inline(compiler, res)) {
-		type = vk::DescriptorType::eInlineUniformBlockEXT;
+		type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
 		size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
 	}
-	return vk::DescriptorSetLayoutBinding()
-			.setBinding(compiler.get_decoration(res.id, spv::DecorationBinding))
-			.setDescriptorCount(size)
-			.setDescriptorType(type)
-			.setStageFlags(vk::ShaderStageFlagBits::eAll)
-		;
+	VkDescriptorSetLayoutBinding binding = {};
+	{
+		binding.binding = compiler.get_decoration(res.id, spv::DecorationBinding);
+		binding.descriptorCount = size;
+		binding.descriptorType = type;
+		binding.stageFlags = VK_SHADER_STAGE_ALL;
+	}
+	return binding;
 }
 
 
 
 template<typename R>
-static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType, vk::DescriptorType type) {
-	auto bindings = std::unordered_map<u32, core::Vector<vk::DescriptorSetLayoutBinding>>();
+static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType, VkDescriptorType type) {
+	auto bindings = std::unordered_map<u32, core::Vector<VkDescriptorSetLayoutBinding>>();
 	for(const auto& res : resources) {
 		const u32 set_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
 		bindings[set_index] << create_binding(compiler, res, type);
@@ -152,10 +160,10 @@ static auto create_push_constants(const spirv_cross::Compiler& compiler, const R
 		y_fatal("Too many push constants.");
 	}
 
-	core::Vector<vk::PushConstantRange> push_constants;
+	core::Vector<VkPushConstantRange> push_constants;
 	for(const auto& r : resources) {
 		const auto& type = compiler.get_type(r.type_id);
-		push_constants << vk::PushConstantRange(vk::ShaderStageFlagBits(shader_type), 0, compiler.get_declared_struct_size(type));
+		push_constants << VkPushConstantRange{VkShaderStageFlagBits(shader_type), 0, u32(compiler.get_declared_struct_size(type))};
 	}
 	return push_constants;
 }
@@ -192,10 +200,10 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	_type = module_type(compiler);
 
 	auto resources = compiler.get_shader_resources();
-	merge(_bindings, create_bindings(compiler, resources.uniform_buffers, _type, vk::DescriptorType::eUniformBuffer));
-	merge(_bindings, create_bindings(compiler, resources.storage_buffers, _type, vk::DescriptorType::eStorageBuffer));
-	merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, vk::DescriptorType::eCombinedImageSampler));
-	merge(_bindings, create_bindings(compiler, resources.storage_images, _type, vk::DescriptorType::eStorageImage));
+	merge(_bindings, create_bindings(compiler, resources.uniform_buffers, _type, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+	merge(_bindings, create_bindings(compiler, resources.storage_buffers, _type, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
+	merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
+	merge(_bindings, create_bindings(compiler, resources.storage_images, _type, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE));
 
 	/*auto print_resources = [&](auto resources) {
 		for(const auto& buffer : resources) {
@@ -227,7 +235,7 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
 	for(const auto& cst : compiler.get_specialization_constants()) {
 		const auto& type = compiler.get_type(compiler.get_constant(cst.id).constant_type);
 		const u32 size = type.width / 8;
-		_spec_constants << vk::SpecializationMapEntry(cst.constant_id, spec_offset, size);
+		_spec_constants << VkSpecializationMapEntry{cst.constant_id, spec_offset, size};
 		spec_offset += size;
 	}
 

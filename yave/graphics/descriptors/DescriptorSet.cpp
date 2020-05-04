@@ -25,8 +25,8 @@ SOFTWARE.
 
 namespace yave {
 
-static core::Vector<vk::DescriptorSetLayoutBinding> create_layout_bindings(core::Span<Descriptor> bindings) {
-	auto layout_bindings = core::vector_with_capacity<vk::DescriptorSetLayoutBinding>(bindings.size());
+static core::Vector<VkDescriptorSetLayoutBinding> create_layout_bindings(core::Span<Descriptor> bindings) {
+	auto layout_bindings = core::vector_with_capacity<VkDescriptorSetLayoutBinding>(bindings.size());
 	for(const Descriptor& b : bindings) {
 		layout_bindings << b.descriptor_set_layout_binding(layout_bindings.size());
 	}
@@ -66,7 +66,7 @@ bool DescriptorSet::is_null() const  {
 	return _data.is_null();
 }
 
-vk::DescriptorSetLayout DescriptorSet::vk_descriptor_set_layout() const {
+VkDescriptorSetLayout DescriptorSet::vk_descriptor_set_layout() const {
 	return _data.vk_descriptor_set_layout();
 }
 

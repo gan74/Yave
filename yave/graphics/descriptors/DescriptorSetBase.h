@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class DescriptorSetBase /*: NonCopyable, public DeviceLinked*/ {
+class DescriptorSetBase {
 
 	public:
 		DescriptorSetBase() = default;
@@ -35,7 +35,7 @@ class DescriptorSetBase /*: NonCopyable, public DeviceLinked*/ {
 			return !_set;
 		}
 
-		vk::DescriptorSet vk_descriptor_set() const {
+		VkDescriptorSet vk_descriptor_set() const {
 			return _set;
 		}
 
@@ -43,10 +43,10 @@ class DescriptorSetBase /*: NonCopyable, public DeviceLinked*/ {
 		// helpers for parent classes
 		void update_set(DevicePtr dptr, core::Span<Descriptor> bindings);
 
-		vk::DescriptorSet _set;
+		VkDescriptorSet _set = {};
 };
 
-static_assert(sizeof(DescriptorSetBase) == sizeof(vk::DescriptorSet));
+static_assert(sizeof(DescriptorSetBase) == sizeof(VkDescriptorSet));
 
 }
 

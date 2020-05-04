@@ -28,12 +28,12 @@ namespace yave {
 
 // image layout inside the render pass (like color attachment optimal)
 static vk::ImageLayout vk_initial_image_layout(ImageUsage usage) {
-	return vk_image_layout(usage & ImageUsage::Attachment);
+	return vk_image_layout_2(usage & ImageUsage::Attachment);
 }
 
 // image layout outside the renderpass (like shader read optimal)
 static vk::ImageLayout vk_final_image_layout(ImageUsage usage) {
-	return vk_image_layout(usage);
+	return vk_image_layout_2(usage);
 }
 
 static std::array<vk::SubpassDependency, 2> create_dependencies() {

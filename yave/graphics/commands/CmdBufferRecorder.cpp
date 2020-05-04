@@ -406,8 +406,8 @@ void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
 
 	const auto extent = vk::Extent3D(src.size().x(), src.size().y(), 1);
 
-	vk_cmd_buffer().copyImage(src.vk_image(), vk_image_layout(src.usage()),
-							  dst.vk_image(), vk_image_layout(dst.usage()), vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
+	vk_cmd_buffer().copyImage(src.vk_image(), vk_image_layout_2(src.usage()),
+							  dst.vk_image(), vk_image_layout_2(dst.usage()), vk::ImageCopy(src_resource, vk::Offset3D(), dst_resource, vk::Offset3D(), extent));
 }
 
 void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
@@ -426,7 +426,7 @@ void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
 				)
 		;
 
-	vk_cmd_buffer().blitImage(src.vk_image(), vk_image_layout(src.usage()), dst.vk_image(), vk_image_layout(dst.usage()), blit, vk::Filter::eLinear);
+	vk_cmd_buffer().blitImage(src.vk_image(), vk_image_layout_2(src.usage()), dst.vk_image(), vk_image_layout_2(dst.usage()), blit, vk::Filter::eLinear);
 }
 
 void CmdBufferRecorder::transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst) {

@@ -40,34 +40,38 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 	_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
 			.setSetLayoutCount(u32(layouts.size()))
 			.setPSetLayouts(layouts.begin())
-			.setPushConstantRangeCount(u32(comp.push_constants().size()))
-			.setPPushConstantRanges(comp.push_constants().begin())
+			.setPushConstantRangeCount(u32(comp.vk_push_constants().size()))
+			.setPPushConstantRanges(reinterpret_cast<const vk::PushConstantRange*>(comp.vk_push_constants().data()))
 		);
 
 	if(data.size() && data.size() != comp.specialization_data_size()) {
 		y_fatal("Incompatible specialization data.");
 	}
 
-	auto entries = data.size() ? comp.specialization_entries() : core::Span<vk::SpecializationMapEntry>();
-	const auto spec_info = vk::SpecializationInfo()
-			.setMapEntryCount(entries.size())
-			.setPMapEntries(entries.data())
-			.setDataSize(data.size())
-			.setPData(data.data())
+	auto entries = data.size() ? comp.specialization_entries() : core::Span<VkSpecializationMapEntry>();
+	VkSpecializationInfo spec_info = {};
+	{
+		spec_info.mapEntryCount = entries.size();
+		spec_info.pMapEntries = entries.data();
+		spec_info.dataSize = data.size();
+		spec_info.pData = data.data();
+	}
 
-		;
+	VkPipelineShaderStageCreateInfo stage = vk_struct();
+	{
+		stage.module = comp.vk_shader_module();
+		stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+		stage.pName = "main";
+		stage.pSpecializationInfo = &spec_info;
+	}
 
-	const auto stage = vk::PipelineShaderStageCreateInfo()
-			.setModule(comp.vk_shader_module())
-			.setStage(vk::ShaderStageFlagBits::eCompute)
-			.setPName("main")
-			.setPSpecializationInfo(&spec_info)
-		;
+	VkComputePipelineCreateInfo create_info = vk_struct();
+	{
+		create_info.layout = _layout;
+		create_info.stage = stage;
+	}
 
-	_pipeline = device()->vk_device().createComputePipeline(vk::PipelineCache(), vk::ComputePipelineCreateInfo()
-			.setLayout(_layout)
-			.setStage(stage)
-		);
+	vk_check(vkCreateComputePipelines(device()->vk_device(), vk_null(), 1, &create_info, nullptr, &_pipeline.get()));
 }
 
 ComputeProgram::~ComputeProgram() {
@@ -83,11 +87,11 @@ usize ComputeProgram::thread_count() const {
 	return _local_size.x() * _local_size.y() * _local_size.z();
 }
 
-vk::Pipeline ComputeProgram::vk_pipeline() const {
+VkPipeline ComputeProgram::vk_pipeline() const {
 	return _pipeline;
 }
 
-vk::PipelineLayout ComputeProgram::vk_pipeline_layout() const {
+VkPipelineLayout ComputeProgram::vk_pipeline_layout() const {
 	return _layout;
 }
 

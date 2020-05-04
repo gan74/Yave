@@ -83,7 +83,8 @@ constexpr bool is_texture_usage(ImageUsage usage) {
 	return (usage & ImageUsage::TextureBit) != ImageUsage::None;
 }
 
-vk::ImageLayout vk_image_layout(ImageUsage usage);
+VkImageLayout vk_image_layout(ImageUsage usage);
+vk::ImageLayout vk_image_layout_2(ImageUsage usage);
 
 
 enum class ImageType {

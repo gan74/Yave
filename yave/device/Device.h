@@ -81,7 +81,7 @@ class Device : NonMovable {
 
 
 		template<typename T>
-		auto&& descriptor_set_layout(T&& t) const {
+		decltype(auto) descriptor_set_layout(T&& t) const {
 			return descriptor_set_allocator().descriptor_set_layout(y_fwd(t));
 		}
 
