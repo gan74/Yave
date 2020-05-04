@@ -49,7 +49,7 @@ enum class AssetLoadingErrorType : u32 {
 	UnknownID,
 	InvalidData,
 	UnknownType,
-	FailedDependedy,
+	FailedDependency,
 	Unknown
 };
 

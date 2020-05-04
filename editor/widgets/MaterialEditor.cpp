@@ -97,6 +97,7 @@ void MaterialEditor::paint_ui(CmdBufferRecorder& recorder, const FrameToken& tok
 			});
 	}
 
+	Y_TODO(If the material fails to load we cant ever get it back)
 	if(!_material) {
 		return;
 	}

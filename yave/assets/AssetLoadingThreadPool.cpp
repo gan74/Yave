@@ -50,25 +50,6 @@ AssetLoadingContext& AssetLoadingThreadPool::LoadingJob::loading_context() {
 	return _ctx;
 }
 
-
-
-AssetLoadingThreadPool::FunctorLoadingJob::FunctorLoadingJob(GenericAssetPtr asset, AssetLoader* loader, ReadFunc func) : LoadingJob(loader), _read(std::move(func)), _asset(std::move(asset)) {
-}
-
-void AssetLoadingThreadPool::FunctorLoadingJob::read() {
-	_create = _read(loading_context());
-}
-
-void AssetLoadingThreadPool::FunctorLoadingJob::finalize(DevicePtr dptr) {
-	unused(dptr);
-	_create();
-}
-
-void AssetLoadingThreadPool::FunctorLoadingJob::set_dependencies_failed() {
-	_asset._data->set_failed(AssetLoadingErrorType::FailedDependedy);
-}
-
-
 AssetLoadingThreadPool::AssetLoadingThreadPool(AssetLoader* parent, usize concurency) : _parent(parent) {
 	_threads = core::vector_with_capacity<std::thread>(concurency);
 	for(usize i = 0; i != concurency; ++i) {
@@ -97,14 +78,9 @@ DevicePtr AssetLoadingThreadPool::device() const {
 }
 
 void AssetLoadingThreadPool::wait_until_loaded(const GenericAssetPtr& ptr) {
-	while(!ptr.is_loaded()) {
+	while(ptr.is_loading()) {
 		process_one(y_profile_unique_lock(_lock));
 	}
-}
-
-void AssetLoadingThreadPool::add_loading_job(GenericAssetPtr asset, ReadFunc func) {
-	auto job = std::make_unique<FunctorLoadingJob>(std::move(asset), _parent, std::move(func));
-	add_loading_job(std::move(job));
 }
 
 void AssetLoadingThreadPool::add_loading_job(std::unique_ptr<LoadingJob> job) {
@@ -142,8 +118,7 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
 		_loading_jobs.pop_front();
 		lock.unlock();
 
-		{
-			job->read();
+		if(job->read()) {
 			const AssetLoadingState state = job->dependencies().state();
 			if(state != AssetLoadingState::NotLoaded) {
 				if(state == AssetLoadingState::Loaded) {

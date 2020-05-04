@@ -33,13 +33,13 @@ Y_TODO(Remove this (is this a GCC bug?))
 
 #define y_serde3_try_convert(prim)														\
 	do {																				\
-	    if constexpr(std::is_convertible_v<prim, T>) {									\
-	        static constexpr auto type_hash = detail::header_type_hash<prim>();			\
-	        if(type_hash == type.type_hash) {											\
+		if constexpr(std::is_convertible_v<prim, T>) {									\
+			static constexpr auto type_hash = detail::header_type_hash<prim>();			\
+			if(type_hash == type.type_hash) {											\
 				t = static_cast<T>(*static_cast<const prim*>(data));					\
-	            return core::Ok(Success::Full);											\
-	        }																			\
-	    }																				\
+				return core::Ok(Success::Full);											\
+			}																			\
+		}																				\
 	} while(false)
 
 namespace y {

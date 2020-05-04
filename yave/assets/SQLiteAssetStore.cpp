@@ -451,7 +451,7 @@ SQLiteAssetStore::~SQLiteAssetStore() {
 	}*/
 
 	while(sqlite3_stmt* stmt = sqlite3_next_stmt(_database, nullptr)) {
-		log_msg("Database has pending statements.", Log::Warning);
+		log_msg(fmt("Database has pending statements (busy: %).", !!sqlite3_stmt_busy(stmt)), Log::Warning);
 		sqlite3_finalize(stmt);
 	}
 
