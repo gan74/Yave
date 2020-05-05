@@ -51,35 +51,35 @@ enum class ImageUsage : u32 {
 	DepthTexture	= TextureBit | DepthBit
 };
 
-constexpr ImageUsage operator|(ImageUsage l, ImageUsage r) {
+inline constexpr ImageUsage operator|(ImageUsage l, ImageUsage r) {
 	return ImageUsage(u32(l) | u32(r));
 }
 
-inline ImageUsage operator|(ImageUsage l, VkImageUsageFlagBits r) {
+inline constexpr ImageUsage operator|(ImageUsage l, VkImageUsageFlagBits r) {
 	return ImageUsage(u32(l) | u32(r));
 }
 
-constexpr ImageUsage operator&(ImageUsage l, ImageUsage r)  {
+inline constexpr ImageUsage operator&(ImageUsage l, ImageUsage r)  {
 	return ImageUsage(u32(l) & u32(r));
 }
 
-constexpr ImageUsage operator~(ImageUsage l) {
+inline constexpr ImageUsage operator~(ImageUsage l) {
 	return ImageUsage(~u32(l));
 }
 
-constexpr bool is_copy_usage(ImageUsage usage) {
+inline constexpr bool is_copy_usage(ImageUsage usage) {
 	return (usage & (ImageUsage::TransferDstBit | ImageUsage::TransferSrcBit)) != ImageUsage::None;
 }
 
-constexpr bool is_attachment_usage(ImageUsage usage) {
+inline constexpr bool is_attachment_usage(ImageUsage usage) {
 	return (usage & ImageUsage::Attachment) != ImageUsage::None;
 }
 
-constexpr bool is_storage_usage(ImageUsage usage) {
+inline constexpr bool is_storage_usage(ImageUsage usage) {
 	return (usage & ImageUsage::StorageBit) != ImageUsage::None;
 }
 
-constexpr bool is_texture_usage(ImageUsage usage) {
+inline constexpr bool is_texture_usage(ImageUsage usage) {
 	return (usage & ImageUsage::TextureBit) != ImageUsage::None;
 }
 

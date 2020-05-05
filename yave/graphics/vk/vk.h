@@ -54,7 +54,7 @@ namespace yave {
 namespace detail {
 
 #define VK_STRUCT_INIT(Type, SType)							\
-constexpr inline void vk_init_struct_stype(Type& t) {		\
+inline constexpr void vk_init_struct_stype(Type& t) {		\
 	t.sType = SType;										\
 }
 
@@ -238,7 +238,7 @@ VK_STRUCT_INIT(VkDeviceMemoryOpaqueCaptureAddressInfo,				VK_STRUCTURE_TYPE_DEVI
 #undef VK_STRUCT_INIT
 
 template<typename T>
-constexpr inline T vk_init() {
+inline constexpr T vk_init() {
 	T t = {};
 	vk_init_struct_stype(t);
 	return t;
@@ -259,18 +259,18 @@ struct VkNull {
 };
 }
 
-constexpr inline auto vk_struct() {
+inline constexpr auto vk_struct() {
 	return detail::VkStructInitializer();
 }
 
-constexpr inline auto vk_null() {
+inline constexpr auto vk_null() {
 	return detail::VkNull();
 }
 
-constexpr inline bool is_error(VkResult result) {
+inline constexpr bool is_error(VkResult result) {
 	return result != VK_SUCCESS;
 }
-constexpr inline bool is_incomplete(VkResult result) {
+inline constexpr bool is_incomplete(VkResult result) {
 	return result == VK_INCOMPLETE;
 }
 
@@ -290,12 +290,12 @@ const char* vk_result_str(VkResult result);
 
 
 #define VK_STRUCT_NEQ(Type)																\
-constexpr inline bool operator!=(const Type& lhs, const Type& rhs) {					\
+inline constexpr bool operator!=(const Type& lhs, const Type& rhs) {					\
 	return !operator==(lhs, rhs);														\
 }
 
 #define VK_STRUCT_OP_1(Type)															\
-constexpr inline bool operator==(const Type& lhs, const Type& rhs) {					\
+inline constexpr bool operator==(const Type& lhs, const Type& rhs) {					\
 	const auto& [l0] = lhs;																\
 	const auto& [r0] = rhs;																\
 	return l0 == r0;																	\
@@ -303,7 +303,7 @@ constexpr inline bool operator==(const Type& lhs, const Type& rhs) {					\
 VK_STRUCT_NEQ(Type)
 
 #define VK_STRUCT_OP_4(Type)															\
-constexpr inline bool operator==(const Type& lhs, const Type& rhs) {					\
+inline constexpr bool operator==(const Type& lhs, const Type& rhs) {					\
 	const auto& [l0, l1, l2, l3, l4] = lhs;												\
 	const auto& [r0, r1, r2, r3, r4] = rhs;												\
 	return (l0 == r0) && (l1 == r1) && (l2 == r2) && (l3 == r3);						\
@@ -311,7 +311,7 @@ constexpr inline bool operator==(const Type& lhs, const Type& rhs) {					\
 VK_STRUCT_NEQ(Type)
 
 #define VK_STRUCT_OP_5(Type)															\
-constexpr inline bool operator==(const Type& lhs, const Type& rhs) {					\
+inline constexpr bool operator==(const Type& lhs, const Type& rhs) {					\
 	const auto& [l0, l1, l2, l3, l4] = lhs;												\
 	const auto& [r0, r1, r2, r3, r4] = rhs;												\
 	return (l0 == r0) && (l1 == r1) && (l2 == r2) && (l3 == r3) && (l4 == r4);			\
