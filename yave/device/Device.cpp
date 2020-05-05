@@ -174,7 +174,9 @@ static DeviceProperties create_properties(const PhysicalDevice& device) {
 	properties.max_inline_uniform_size = 0;
 	if(is_extension_supported(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, device.vk_physical_device())) {
 		properties.max_inline_uniform_size = device.vk_uniform_block_properties().maxInlineUniformBlockSize;
+		log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size), Log::Debug);
 	}
+
 
 	return properties;
 }

@@ -65,6 +65,8 @@ PhysicalDevice::PhysicalDevice(Instance& instance) :
 	vkGetPhysicalDeviceMemoryProperties(_device, &_memory_properties);
 
 	{
+		_uniform_blocks_properties = vk_struct();
+
 		VkPhysicalDeviceProperties2 properties = vk_struct();
 		properties.pNext = &_uniform_blocks_properties;
 		vkGetPhysicalDeviceProperties2(_device, &properties);
