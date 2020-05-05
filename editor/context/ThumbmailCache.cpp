@@ -163,7 +163,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
 					submit_and_set(rec, render_thumbmail(rec, id, mesh, device()->device_resources()[DeviceResources::EmptyMaterial]));
 				} else {
-					log_msg(fmt("Asset % failed to load", id), Log::Error);
+					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
 				}
 			});
 		break;
@@ -174,7 +174,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
 					submit_and_set(rec, render_thumbmail(rec, id, device()->device_resources()[DeviceResources::SphereMesh], material));
 				} else {
-					log_msg(fmt("Asset % failed to load", id), Log::Error);
+					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
 				}
 			});
 		break;
@@ -185,7 +185,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
 					submit_and_set(rec, render_thumbmail(rec, texture));
 				} else {
-					log_msg(fmt("Asset % failed to load", id), Log::Error);
+					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
 				}
 			});
 		break;

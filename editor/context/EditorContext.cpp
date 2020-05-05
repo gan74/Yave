@@ -48,7 +48,7 @@ EditorContext::EditorContext(DevicePtr dptr) :
 		_resources(dptr),
 		_asset_store(std::make_shared<SQLiteAssetStore>(store_file)),
 		//_asset_store(std::make_shared<FolderAssetStore>(store_dir)),
-		_loader(device(), _asset_store),
+		_loader(device(), _asset_store, AssetLoadingFlags::SkipFailedDependenciesBit),
 		_scene_view(&_default_scene_view),
 		_ui(this),
 		_notifs(this),
