@@ -205,6 +205,7 @@ Device::Device(Instance& instance) :
 }
 
 Device::~Device() {
+	_resources = DeviceResources();
 	_lifetime_manager.stop_async_collection();
 
 	{
@@ -216,6 +217,8 @@ Device::~Device() {
 
 	wait_all_queues();
 	_thread_devices.clear();
+	wait_all_queues();
+
 	_lifetime_manager.collect();
 }
 

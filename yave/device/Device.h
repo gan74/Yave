@@ -119,13 +119,13 @@ class Device : NonMovable {
 
 		std::array<Sampler, 2> _samplers;
 
+		mutable DescriptorSetAllocator _descriptor_set_allocator;
+
 		mutable concurrent::SpinLock _lock;
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
-		mutable DescriptorSetAllocator _descriptor_set_allocator;
-
-		// this needs to be at the very bottom since it holds handles to resources and stuff
 		DeviceResources _resources;
+
 };
 
 

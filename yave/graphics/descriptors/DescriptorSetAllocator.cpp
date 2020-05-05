@@ -23,6 +23,9 @@ SOFTWARE.
 #include "DescriptorSetAllocator.h"
 #include "Descriptor.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 static constexpr usize inline_block_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1;
@@ -159,6 +162,7 @@ DescriptorSetPool::~DescriptorSetPool() {
 
 DescriptorSetData DescriptorSetPool::alloc() {
 	y_profile();
+
 	const auto lock = y_profile_unique_lock(_lock);
 	if(is_full() || _taken[_first_free]) {
 		y_fatal("DescriptorSetPoolPage is full.");
@@ -179,6 +183,7 @@ DescriptorSetData DescriptorSetPool::alloc() {
 
 void DescriptorSetPool::recycle(u32 id) {
 	y_profile();
+
 	const auto lock = y_profile_unique_lock(_lock);
 	y_debug_assert(_taken[id]);
 	_taken.reset(id);

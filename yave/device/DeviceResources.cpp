@@ -138,11 +138,17 @@ static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integr
 	return image;
 }
 
+
+
+DeviceResources::DeviceResources() {
+}
+
 DeviceResources::DeviceResources(DevicePtr dptr) :
 		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
 		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
 		_material_templates(std::make_unique<MaterialTemplate[]>(template_count)),
-		_textures(std::make_unique<AssetPtr<Texture>[]>(texture_count)) {
+		_textures(std::make_unique<AssetPtr<Texture>[]>(texture_count)),
+		_lock(std::make_unique<std::mutex>()) {
 
 	// Load textures here because they won't change and might get packed into descriptor sets that won't be reloaded (in the case of material defaults)
 	for(usize i = 0; i != texture_count; ++i) {
@@ -153,9 +159,34 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 	load_resources(dptr);
 }
 
+DeviceResources::DeviceResources(DeviceResources&& other) {
+	swap(other);
+}
+
+DeviceResources& DeviceResources::operator=(DeviceResources&& other) {
+	swap(other);
+	return *this;
+}
+
 DeviceResources::~DeviceResources() {
 }
 
+void DeviceResources::swap(DeviceResources& other) {
+#ifdef Y_DEBUG
+	const auto lock = y_profile_unique_lock(*_lock);
+	std::swap(other._lock, _lock);
+	std::swap(other._programs, _programs);
+#endif
+	std::swap(other._spirv, _spirv);
+	std::swap(other._computes, _computes);
+	std::swap(other._material_templates, _material_templates);
+	std::swap(other._textures, _textures);
+	std::swap(other._materials, _materials);
+	std::swap(other._meshes, _meshes);
+	std::swap(other._probe, _probe);
+	std::swap(other._empty_probe, _empty_probe);
+	std::swap(other._brdf_lut, _brdf_lut);
+}
 
 void DeviceResources::load_resources(DevicePtr dptr) {
 	for(usize i = 0; i != spirv_count; ++i) {
@@ -250,7 +281,7 @@ const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
 
 #ifdef Y_DEBUG
 const ComputeProgram& DeviceResources::program_from_file(std::string_view file) const {
-	const auto lock = y_profile_unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(*_lock);
 	auto& prog = _programs[file];
 	if(!prog) {
 		auto spirv = SpirVData::deserialized(io2::File::open(file).expected("Unable to open SPIR-V file."));
@@ -266,7 +297,7 @@ void DeviceResources::reload() {
 	dptr->wait_all_queues();
 
 #ifdef Y_DEBUG
-	const auto lock = y_profile_unique_lock(_lock);
+	const auto lock = y_profile_unique_lock(*_lock);
 	_programs.clear();
 #endif
 

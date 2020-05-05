@@ -47,7 +47,7 @@ class Material;
 class StaticMesh;
 class IBLProbe;
 
-class DeviceResources final : NonMovable {
+class DeviceResources final : NonCopyable {
 	public:
 		enum SpirV {
 			EquirecConvolutionComp,
@@ -132,7 +132,11 @@ class DeviceResources final : NonMovable {
 		};
 
 
+		DeviceResources();
 		DeviceResources(DevicePtr dptr);
+
+		DeviceResources(DeviceResources&& other);
+		DeviceResources& operator=(DeviceResources&& other);
 
 		// can't default for inclusion reasons
 		~DeviceResources();
@@ -151,10 +155,11 @@ class DeviceResources final : NonMovable {
 		const AssetPtr<Material>& operator[](Materials i) const;
 		const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
-
 		void reload();
 
 	private:
+		void swap(DeviceResources& other);
+
 		void load_resources(DevicePtr dptr);
 
 		std::unique_ptr<SpirVData[]> _spirv;
@@ -171,7 +176,7 @@ class DeviceResources final : NonMovable {
 
 
 #ifdef Y_DEBUG
-		mutable std::mutex _lock;
+		std::unique_ptr<std::mutex> _lock;
 		mutable std::unordered_map<core::String, std::unique_ptr<ComputeProgram>> _programs;
 
 	public:
