@@ -33,6 +33,7 @@ SOFTWARE.
 #include <mutex>
 #include <bitset>
 #include <algorithm>
+#include <memory>
 
 namespace std {
 template<>

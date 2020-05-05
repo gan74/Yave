@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.7)
 project(y)
 
 # -Wsign-conversion -Wshadow
-set(EXTRA_WARNINGS -Wzero-as-null-pointer-constant -Wsign-promo -Wfloat-conversion) 
-set(MORE_WARNINGS -Woverloaded-virtual -Wnon-virtual-dtor -Wodr -Wdisabled-optimization -Wlogical-op -Wredundant-decls -Wundef -Wtautological-compare)
-# -Wno-init-list-lifetime cause trouble with Span and vulkan.hpp
+set(EXTRA_WARNINGS -Wzero-as-null-pointer-constant -Wsign-promo -Wfloat-conversion)
+set(MORE_WARNINGS -Woverloaded-virtual -Wnon-virtual-dtor -Wodr -Wdisabled-optimization -Wlogical-op -Wredundant-decls -Wundef -Wtautological-compare -Wno-init-list-lifetime)
+
 
 if(MSVC)
 	# temporary hacks to get it to compile
@@ -21,12 +21,12 @@ set(CMAKE_CXX_STANDARD 17)
 
 
 file(GLOB_RECURSE SOURCE_FILES
-		"y/*.h"
+	    "y/*.h"
 		"y/*.cpp"
 	)
 
 file(GLOB_RECURSE TEST_FILES
-		"tests/*.cpp"
+	    "tests/*.cpp"
 	)
 
 

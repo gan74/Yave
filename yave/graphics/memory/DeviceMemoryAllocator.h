@@ -29,6 +29,7 @@ SOFTWARE.
 #include <y/core/Range.h>
 #include <y/core/Vector.h>
 
+#include <memory>
 #include <unordered_map>
 
 namespace yave {

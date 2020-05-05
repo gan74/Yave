@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/device/DeviceLinked.h>
 #include <yave/graphics/vk/vk.h>
 
+#include <memory>
+
 namespace yave {
 
 template<typename T>

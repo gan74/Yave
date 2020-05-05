@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include "DebugParams.h"
 
+#include <memory>
+
 namespace yave {
 
 class DebugUtils;

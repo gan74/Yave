@@ -36,17 +36,6 @@ SOFTWARE.
 #endif
 #endif
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
-#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma GCC diagnostic ignored "-Wredundant-decls"
-#pragma GCC diagnostic ignored "-Wdeprecated-copy"
-#pragma GCC diagnostic ignored "-Wcast-function-type"
-#endif
-
-
 /**********************************
 This can go into vulkan_core.h, so VkResult can be tagged with VK_NO_DISCARD
 in order to get warning on missed returned results
@@ -58,8 +47,8 @@ in order to get warning on missed returned results
 #endif
 
 **********************************/
-#include <vulkan/vulkan.hpp>
 
+#include <vulkan/vulkan.h>
 
 namespace yave {
 namespace detail {
@@ -339,10 +328,6 @@ VK_STRUCT_OP_5(VkDescriptorSetLayoutBinding)
 #undef VK_STRUCT_OP_5
 #undef VK_STRUCT_NEQ
 
-
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
 
 #define YAVE_VK
 

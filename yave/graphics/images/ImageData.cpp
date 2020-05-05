@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "ImageData.h"
 
+#include <cstring>
+
 namespace yave {
 
 usize ImageData::mip_count(const math::Vec3ui& size) {
