@@ -30,6 +30,8 @@ namespace yave {
 
 class AssetDependencies {
 	public:
+		AssetDependencies(AssetLoadingFlags flags = AssetLoadingFlags::None);
+
 		void add_dependency(GenericAssetPtr asset);
 
 		bool is_done() const;
@@ -39,8 +41,8 @@ class AssetDependencies {
 
 	private:
 		core::Vector<GenericAssetPtr> _deps;
+		AssetLoadingFlags _flags;
 };
-
 
 }
 

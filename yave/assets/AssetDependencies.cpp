@@ -24,6 +24,9 @@ SOFTWARE.
 
 namespace yave {
 
+AssetDependencies::AssetDependencies(AssetLoadingFlags flags) : _flags(flags) {
+}
+
 void AssetDependencies::add_dependency(GenericAssetPtr asset) {
 	if(asset.id() != AssetId::invalid_id()) {
 		_deps.emplace_back(std::move(asset));
@@ -42,7 +45,13 @@ bool AssetDependencies::is_empty() const {
 AssetLoadingState AssetDependencies::state() const {
 	for(const auto& d : _deps) {
 		if(!d.is_loaded()) {
-			return d.is_failed() ? AssetLoadingState::Failed : AssetLoadingState::NotLoaded;
+			if(!d.is_failed()) {
+				return AssetLoadingState::NotLoaded;
+			}
+			const bool fails_deps = (_flags & AssetLoadingFlags::SkipFailedDependenciesBit) == AssetLoadingFlags::SkipFailedDependenciesBit;
+			if(!fails_deps) {
+				return AssetLoadingState::Failed;
+			}
 		}
 	}
 	return AssetLoadingState::Loaded;

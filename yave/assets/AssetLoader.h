@@ -95,11 +95,14 @@ class AssetLoader : NonMovable, public DeviceLinked {
 		};
 
    public:
-		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, usize concurency = 1);
+		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags = AssetLoadingFlags::None, usize concurency = 1);
 		~AssetLoader();
 
 		AssetStore& store();
 		const AssetStore& store() const;
+
+		void set_loading_flags(AssetLoadingFlags flags);
+		AssetLoadingFlags loading_flags() const;
 
 		// This is dangerous: Do not call in loading threads!
 		void wait_until_loaded(const GenericAssetPtr& ptr);
@@ -140,6 +143,8 @@ class AssetLoader : NonMovable, public DeviceLinked {
 
 		std::recursive_mutex _lock;
 		AssetLoadingThreadPool _thread_pool;
+
+		std::atomic<AssetLoadingFlags> _loading_flags = AssetLoadingFlags::None;
 };
 
 }

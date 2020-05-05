@@ -53,6 +53,18 @@ enum class AssetLoadingErrorType : u32 {
 	Unknown
 };
 
+enum class AssetLoadingFlags : u32 {
+	None = 0,
+	SkipFailedDependenciesBit = 0x01
+};
+
+inline constexpr AssetLoadingFlags operator|(AssetLoadingFlags l, AssetLoadingFlags r) {
+	return AssetLoadingFlags(u32(l) | u32(r));
+}
+
+inline constexpr AssetLoadingFlags operator&(AssetLoadingFlags l, AssetLoadingFlags r)  {
+	return AssetLoadingFlags(u32(l) & u32(r));
+}
 
 
 template<typename T, typename... Args>
