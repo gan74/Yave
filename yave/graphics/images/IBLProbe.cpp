@@ -43,7 +43,7 @@ static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format
 	}
 
 	VkImageView view = {};
-	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, nullptr, &view));
+	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &view));
 	return view;
 }
 

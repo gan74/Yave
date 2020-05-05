@@ -44,7 +44,7 @@ class Device : NonMovable {
 
 	struct ScopedDevice {
 		~ScopedDevice();
-		const vk::Device device;
+		const VkDevice device;
 	};
 
 	public:
@@ -74,7 +74,8 @@ class Device : NonMovable {
 		LifetimeManager& lifetime_manager() const;
 
 
-		vk::Device vk_device() const;
+		VkDevice vk_device() const;
+		const VkAllocationCallbacks* vk_allocation_callbacks() const;
 		VkPhysicalDevice vk_physical_device() const;
 		VkSampler vk_sampler(Sampler::Type type = Sampler::Repeat) const;
 

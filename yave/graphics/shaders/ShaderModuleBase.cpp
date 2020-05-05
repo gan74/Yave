@@ -48,7 +48,7 @@ static VkShaderModule create_shader_module(DevicePtr dptr, const SpirVData& data
 		create_info.pCode = data.data();
 	}
 
-	vk_check(vkCreateShaderModule(dptr->vk_device(), &create_info, nullptr, &shader));
+	vk_check(vkCreateShaderModule(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &shader));
 	return shader;
 }
 

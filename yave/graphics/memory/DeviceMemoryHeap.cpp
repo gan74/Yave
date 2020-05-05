@@ -73,7 +73,7 @@ DeviceMemoryHeap::~DeviceMemoryHeap() {
 	if(_mapping) {
 		vkUnmapMemory(device()->vk_device(), _memory);
 	}
-	vkFreeMemory(device()->vk_device(), _memory, nullptr);
+	vkFreeMemory(device()->vk_device(), _memory, device()->vk_allocation_callbacks());
 }
 
 DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {

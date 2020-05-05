@@ -31,20 +31,20 @@ class PhysicalDevice : NonCopyable {
 		PhysicalDevice(Instance& instance);
 		~PhysicalDevice();
 
-		vk::PhysicalDevice vk_physical_device() const;
+		VkPhysicalDevice vk_physical_device() const;
 
-		const vk::PhysicalDeviceProperties& vk_properties() const;
-		const vk::PhysicalDeviceInlineUniformBlockPropertiesEXT& vk_uniform_block_properties() const;
+		const VkPhysicalDeviceProperties& vk_properties() const;
+		const VkPhysicalDeviceInlineUniformBlockPropertiesEXT& vk_uniform_block_properties() const;
 
-		const vk::PhysicalDeviceMemoryProperties& vk_memory_properties() const;
+		const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
 
 	private:
 		Instance& _instance;
-		vk::PhysicalDevice _device;
-		vk::PhysicalDeviceProperties _properties;
-		vk::PhysicalDeviceMemoryProperties _memory_properties;
+		VkPhysicalDevice _device = {};
+		VkPhysicalDeviceProperties _properties = {};
+		VkPhysicalDeviceMemoryProperties _memory_properties = {};
 
-		vk::PhysicalDeviceInlineUniformBlockPropertiesEXT _uniform_blocks_properties;
+		VkPhysicalDeviceInlineUniformBlockPropertiesEXT _uniform_blocks_properties = {};
 };
 
 }

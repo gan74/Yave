@@ -26,8 +26,19 @@ SOFTWARE.
 
 namespace yave {
 
+static core::Vector<VkQueueFamilyProperties> enumerate_family_properties(VkPhysicalDevice device) {
+	core::Vector<VkQueueFamilyProperties> families;
+	{
+		u32 count = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &count, nullptr);
+		families = core::Vector<VkQueueFamilyProperties>(count, VkQueueFamilyProperties{});
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &count, families.data());
+	}
+	return families;
+}
+
 core::Result<QueueFamily> QueueFamily::create(const PhysicalDevice& dev, u32 index) {
-	auto families = dev.vk_physical_device().getQueueFamilyProperties();
+	const auto& families = enumerate_family_properties(dev.vk_physical_device());
 	if(families.size() >= index) {
 		return core::Err();
 	}
@@ -36,8 +47,7 @@ core::Result<QueueFamily> QueueFamily::create(const PhysicalDevice& dev, u32 ind
 
 core::Vector<QueueFamily> QueueFamily::all(const PhysicalDevice& dev) {
 	core::Vector<QueueFamily> queue_families;
-
-	auto families = dev.vk_physical_device().getQueueFamilyProperties();
+	const auto families = enumerate_family_properties(dev.vk_physical_device());
 	for(u32 i = 0; i != families.size(); ++i) {
 		queue_families << QueueFamily(i, families[i]);
 	}

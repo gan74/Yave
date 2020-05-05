@@ -30,7 +30,7 @@ SOFTWARE.
 namespace yave {
 
 static void bind_image_memory(DevicePtr dptr, VkImage image, const DeviceMemory& memory) {
-	dptr->vk_device().bindImageMemory(image, memory.vk_memory(), memory.vk_offset());
+	vk_check(vkBindImageMemory(dptr->vk_device(), image, memory.vk_memory(), memory.vk_offset()));
 }
 
 static VkImage create_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
@@ -52,7 +52,7 @@ static VkImage create_image(DevicePtr dptr, const math::Vec3ui& size, usize laye
 	}
 
 	VkImage image = {};
-	vk_check(vkCreateImage(dptr->vk_device(), &create_info, nullptr, &image));
+	vk_check(vkCreateImage(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &image));
 	return image;
 }
 
@@ -97,7 +97,7 @@ static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format
 	}
 
 	VkImageView view = {};
-	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, nullptr, &view));
+	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &view));
 	return view;
 }
 

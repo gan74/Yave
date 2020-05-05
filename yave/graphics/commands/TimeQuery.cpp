@@ -34,7 +34,7 @@ static VkQueryPool create_pool(DevicePtr dptr) {
 	}
 
 	VkQueryPool pool = {};
-	vk_check(vkCreateQueryPool(dptr->vk_device(), &create_info, nullptr, &pool));
+	vk_check(vkCreateQueryPool(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &pool));
 	return pool;
 }
 

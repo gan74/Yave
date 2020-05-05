@@ -31,7 +31,8 @@ CmdBufferBase::CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& data) : _prox
 }
 
 void CmdBufferBase::wait() const {
-	device()->vk_device().waitForFences({vk_fence()}, true, u64(-1));
+	const VkFence fence = vk_fence();
+	vk_check(vkWaitForFences(device()->vk_device(), 1, &fence, true, u64(-1)));
 }
 
 void CmdBufferBase::wait_for(const Semaphore& sem) {

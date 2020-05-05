@@ -39,7 +39,7 @@ class Instance : NonMovable {
 
 		const DebugUtils* debug_utils() const;
 
-		vk::Instance vk_instance() const;
+		VkInstance vk_instance() const;
 
 	private:
 		struct {
@@ -47,7 +47,7 @@ class Instance : NonMovable {
 		} _extensions;
 
 		DebugParams _debug_params;
-		vk::Instance _instance;
+		VkInstance _instance = {};
 
 };
 

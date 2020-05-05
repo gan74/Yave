@@ -46,7 +46,7 @@ static VkBuffer create_buffer(DevicePtr dptr, usize byte_size, VkBufferUsageFlag
 	}
 
 	VkBuffer buffer = {};
-	vk_check(vkCreateBuffer(dptr->vk_device(), &create_info, nullptr, &buffer));
+	vk_check(vkCreateBuffer(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &buffer));
 	return buffer;
 }
 

@@ -193,7 +193,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 		create_info.pSetLayouts = program.vk_descriptor_layouts().data();
 		create_info.pushConstantRangeCount = u32(program.vk_push_constants().size());
 		create_info.pPushConstantRanges = program.vk_push_constants().data();
-		vk_check(vkCreatePipelineLayout(dptr->vk_device(), &create_info, nullptr, &pipeline_layout));
+		vk_check(vkCreatePipelineLayout(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &pipeline_layout));
 	}
 
 	const std::array<VkDynamicState, 2> dynamics = {{VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR}};
@@ -222,7 +222,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 	}
 
 	VkPipeline pipeline = {};
-	vk_check(vkCreateGraphicsPipelines(dptr->vk_device(), vk_null(), 1, &create_info, nullptr, &pipeline));
+	vk_check(vkCreateGraphicsPipelines(dptr->vk_device(), vk_null(), 1, &create_info, dptr->vk_allocation_callbacks(), &pipeline));
 	return GraphicPipeline(material, pipeline, pipeline_layout);
 }
 

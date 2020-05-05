@@ -59,7 +59,7 @@ DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptor
 		create_info.bindingCount = bindings.size();
 		create_info.pBindings = bindings.data();
 	}
-	vk_check(vkCreateDescriptorSetLayout(dptr->vk_device(), &create_info, nullptr, &_layout.get()));
+	vk_check(vkCreateDescriptorSetLayout(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &_layout.get()));
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
@@ -130,7 +130,7 @@ static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout
 	}
 
 	VkDescriptorPool pool = {};
-	vk_check(vkCreateDescriptorPool(layout.device()->vk_device(), &create_info, nullptr, &pool));
+	vk_check(vkCreateDescriptorPool(layout.device()->vk_device(), &create_info, layout.device()->vk_allocation_callbacks(), &pool));
 	return pool;
 }
 

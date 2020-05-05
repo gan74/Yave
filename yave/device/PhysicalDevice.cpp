@@ -22,18 +22,30 @@ SOFTWARE.
 
 #include "PhysicalDevice.h"
 
+#include <y/core/Vector.h>
+
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
 namespace yave {
 
-static bool is_device_ok(vk::PhysicalDevice device) {
-	return device.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu;
+static bool is_device_ok(VkPhysicalDevice device) {
+	VkPhysicalDeviceProperties properties = {};
+	vkGetPhysicalDeviceProperties(device, &properties);
+	return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 }
 
-static vk::PhysicalDevice choose_device(vk::Instance instance) {
-	const auto devices = instance.enumeratePhysicalDevices();
-	if(devices.empty()) {
+static VkPhysicalDevice choose_device(VkInstance instance) {
+
+	core::Vector<VkPhysicalDevice> devices;
+	{
+		u32 count = 0;
+		vk_check(vkEnumeratePhysicalDevices(instance, &count, nullptr));
+		devices = core::Vector<VkPhysicalDevice>(count, VkPhysicalDevice{});
+		vk_check(vkEnumeratePhysicalDevices(instance, &count, devices.data()));
+	}
+
+	if(devices.is_empty()) {
 		y_fatal("Unable to find a compatible device.");
 	}
 	for(auto dev : devices) {
@@ -48,16 +60,14 @@ static vk::PhysicalDevice choose_device(vk::Instance instance) {
 
 PhysicalDevice::PhysicalDevice(Instance& instance) :
 		_instance(instance),
-		_device(choose_device(instance.vk_instance())),
-		_memory_properties(_device.getMemoryProperties()) {
+		_device(choose_device(instance.vk_instance())) {
 
+	vkGetPhysicalDeviceMemoryProperties(_device, &_memory_properties);
 
 	{
-		_uniform_blocks_properties.maxDescriptorSetInlineUniformBlocks = 0;
-		vk::PhysicalDeviceProperties2 properties;
+		VkPhysicalDeviceProperties2 properties = vk_struct();
 		properties.pNext = &_uniform_blocks_properties;
-		_device.getProperties2(&properties);
-
+		vkGetPhysicalDeviceProperties2(_device, &properties);
 		_properties = properties.properties;
 	}
 
@@ -71,25 +81,25 @@ PhysicalDevice::PhysicalDevice(Instance& instance) :
 	const auto& v_ref = _properties.apiVersion;
 	const auto version = reinterpret_cast<const Version&>(v_ref);
 	log_msg(fmt("Running Vulkan (%.%.%) % bits on % (%)", u32(version.major), u32(version.minor), u32(version.patch),
-			is_64_bits() ? 64 : 32, _properties.deviceName, (_properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? "discrete" : "integrated")));
+			is_64_bits() ? 64 : 32, _properties.deviceName, (_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")));
 }
 
 PhysicalDevice::~PhysicalDevice() {
 }
 
-vk::PhysicalDevice PhysicalDevice::vk_physical_device() const {
+VkPhysicalDevice PhysicalDevice::vk_physical_device() const {
 	return _device;
 }
 
-const vk::PhysicalDeviceProperties& PhysicalDevice::vk_properties() const {
+const VkPhysicalDeviceProperties& PhysicalDevice::vk_properties() const {
 	return _properties;
 }
 
-const vk::PhysicalDeviceInlineUniformBlockPropertiesEXT& PhysicalDevice::vk_uniform_block_properties() const {
+const VkPhysicalDeviceInlineUniformBlockPropertiesEXT& PhysicalDevice::vk_uniform_block_properties() const {
 	return _uniform_blocks_properties;
 }
 
-const vk::PhysicalDeviceMemoryProperties& PhysicalDevice::vk_memory_properties() const {
+const VkPhysicalDeviceMemoryProperties& PhysicalDevice::vk_memory_properties() const {
 	return _memory_properties;
 }
 

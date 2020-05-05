@@ -56,7 +56,7 @@ static VkSampler create_sampler(DevicePtr dptr, Sampler::Type type) {
 	}
 
 	VkSampler sampler = {};
-	vk_check(vkCreateSampler(dptr->vk_device(), &create_info, nullptr, &sampler));
+	vk_check(vkCreateSampler(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &sampler));
 	return sampler;
 }
 

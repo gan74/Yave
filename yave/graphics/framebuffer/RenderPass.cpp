@@ -146,7 +146,7 @@ static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData dept
 	}
 
 	VkRenderPass renderpass = {};
-	vk_check(vkCreateRenderPass(dptr->vk_device(), &create_info, nullptr, &renderpass));
+	vk_check(vkCreateRenderPass(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &renderpass));
 	return renderpass;
 }
 

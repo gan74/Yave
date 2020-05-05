@@ -32,9 +32,6 @@ class ImageFormat {
 		constexpr ImageFormat(VkFormat format = VK_FORMAT_UNDEFINED) : _format(format) {
 		}
 
-		constexpr ImageFormat(vk::Format format) : ImageFormat(VkFormat(format)) {
-		}
-
 		VkFormat vk_format() const;
 		VkImageAspectFlags vk_aspect() const;
 

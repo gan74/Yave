@@ -49,7 +49,7 @@ static VkCommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
 	}
 
 	VkCommandPool pool = {};
-	vk_check(vkCreateCommandPool(dptr->vk_device(), &create_info, nullptr, &pool));
+	vk_check(vkCreateCommandPool(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &pool));
 	return pool;
 }
 
@@ -129,7 +129,7 @@ CmdBufferData CmdBufferPoolBase::create_data() {
 	VkCommandBuffer buffer = {};
 	VkFence fence = {};
 	vk_check(vkAllocateCommandBuffers(device()->vk_device(), &allocate_info, &buffer));
-	vk_check(vkCreateFence(device()->vk_device(), &fence_create_info, nullptr, &fence));
+	vk_check(vkCreateFence(device()->vk_device(), &fence_create_info, device()->vk_allocation_callbacks(), &fence));
 
 
 	_fences << fence;

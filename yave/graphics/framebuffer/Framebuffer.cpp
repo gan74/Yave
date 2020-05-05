@@ -78,7 +78,7 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Spa
 		create_info.layers = 1;
 	}
 
-	vk_check(vkCreateFramebuffer(device()->vk_device(), &create_info, nullptr, &_framebuffer));
+	vk_check(vkCreateFramebuffer(device()->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &_framebuffer));
 }
 
 Framebuffer::Framebuffer(DevicePtr dptr, core::Span<ColorAttachmentView> colors, LoadOp load_op) :

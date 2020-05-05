@@ -109,6 +109,7 @@ DebugUtils::DebugUtils(VkInstance instance) : _instance(instance) {
 		;
 	create_info.pfnUserCallback = vulkan_message_callback;
 
+	Y_TODO(Hook allocation callbacks)
 	vk_check(create_messenger(_instance, &create_info, nullptr, &_messenger));
 }
 

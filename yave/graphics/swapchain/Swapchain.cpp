@@ -96,7 +96,7 @@ static VkImageView create_image_view(DevicePtr dptr, VkImage image, VkFormat for
 	}
 
 	VkImageView view = {};
-	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, nullptr, &view));
+	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &view));
 	return view;
 }
 
@@ -116,7 +116,7 @@ static VkSurfaceKHR create_surface(DevicePtr dptr, HINSTANCE_ instance, HWND_ ha
 	}
 
 	VkSurfaceKHR surface = {};
-	vk_check(vkCreateWin32SurfaceKHR(dptr->instance().vk_instance(), &create_info, nullptr, &surface));
+	vk_check(vkCreateWin32SurfaceKHR(dptr->instance().vk_instance(), &create_info, dptr->vk_allocation_callbacks(), &surface));
 
 	if(!has_wsi_support(dptr, surface)) {
 		y_fatal("No WSI support.");
@@ -214,11 +214,20 @@ void Swapchain::build_swapchain() {
 			create_info.presentMode = present_mode(device(), _surface);
 			create_info.oldSwapchain = _swapchain;
 		}
-		vk_check(vkCreateSwapchainKHR(device()->vk_device(), &create_info, nullptr, &_swapchain));
+		vk_check(vkCreateSwapchainKHR(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &_swapchain));
 	}
 
 	y_profile_zone("image setup");
-	for(auto image : device()->vk_device().getSwapchainImagesKHR(_swapchain)) {
+
+	core::Vector<VkImage> images;
+	{
+		u32 count = 0;
+		vk_check(vkGetSwapchainImagesKHR(device()->vk_device(), _swapchain, &count, nullptr));
+		images = core::Vector<VkImage>(count, VkImage{});
+		vk_check(vkGetSwapchainImagesKHR(device()->vk_device(), _swapchain, &count, images.data()));
+	}
+
+	for(auto image : images) {
 		const VkImageView view = create_image_view(device(), image, _color_format.vk_format());
 
 		struct SwapchainImageMemory : DeviceMemory {
@@ -252,8 +261,8 @@ void Swapchain::build_semaphores() {
 	for(usize i = 0; i != _images.size(); ++i) {
 		auto& semaphores = _semaphores.emplace_back();
 		const VkSemaphoreCreateInfo create_info = vk_struct();
-		vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, nullptr, &semaphores.first));
-		vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, nullptr, &semaphores.second));
+		vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &semaphores.first));
+		vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &semaphores.second));
 	}
 }
 

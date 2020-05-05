@@ -46,7 +46,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 		layout_create_info.pPushConstantRanges = comp.vk_push_constants().data();
 	}
 
-	vk_check(vkCreatePipelineLayout(device()->vk_device(), &layout_create_info, nullptr, &_layout.get()));
+	vk_check(vkCreatePipelineLayout(device()->vk_device(), &layout_create_info, device()->vk_allocation_callbacks(), &_layout.get()));
 
 
 	if(data.size() && data.size() != comp.specialization_data_size()) {
@@ -76,7 +76,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 		create_info.stage = stage;
 	}
 
-	vk_check(vkCreateComputePipelines(device()->vk_device(), vk_null(), 1, &create_info, nullptr, &_pipeline.get()));
+	vk_check(vkCreateComputePipelines(device()->vk_device(), vk_null(), 1, &create_info, device()->vk_allocation_callbacks(), &_pipeline.get()));
 }
 
 ComputeProgram::~ComputeProgram() {
