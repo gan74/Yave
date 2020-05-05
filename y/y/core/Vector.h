@@ -27,6 +27,18 @@ SOFTWARE.
 #include <cstring>
 #include <algorithm>
 
+#ifdef Y_DEBUG
+#define Y_VECTOR_ELECTRIC
+#endif
+
+#ifdef Y_VECTOR_ELECTRIC
+#define Y_CLEAR_ELECTRIC(ptr, size) do { std::memset(static_cast<void*>(ptr), 0xFE, (size) * sizeof(data_type)); } while(false)
+#define Y_CHECK_ELECTRIC(ptr, size) do { for(usize i = 0; i != (size) * sizeof(data_type); ++i) { y_debug_assert(static_cast<const u8*>(static_cast<const void*>(ptr))[i] == 0xFE); } } while(false)
+#else
+#define Y_CLEAR_ELECTRIC(ptr, size)
+#define Y_CHECK_ELECTRIC(ptr, size)
+#endif
+
 namespace y {
 namespace core {
 
@@ -158,7 +170,6 @@ class Vector : ResizePolicy, Allocator {
 				swap(other);
 			} else {
 				make_empty();
-				set_min_capacity(std::distance(beg_it, end_it));
 				push_back(beg_it, end_it);
 			}
 		}
@@ -182,6 +193,9 @@ class Vector : ResizePolicy, Allocator {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
+
+			Y_CHECK_ELECTRIC(_data_end, 1);
+
 			::new(_data_end++) data_type(elem);
 		}
 
@@ -189,6 +203,9 @@ class Vector : ResizePolicy, Allocator {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
+
+			Y_CHECK_ELECTRIC(_data_end, 1);
+
 			::new(_data_end++) data_type(std::move(elem));
 		}
 
@@ -197,6 +214,9 @@ class Vector : ResizePolicy, Allocator {
 			if(_data_end == _alloc_end) {
 				expend();
 			}
+
+			Y_CHECK_ELECTRIC(_data_end, 1);
+
 			return *(::new(_data_end++) data_type(y_fwd(args)...));
 		}
 
@@ -217,6 +237,9 @@ class Vector : ResizePolicy, Allocator {
 			--_data_end;
 			data_type r = std::move(*_data_end);
 			_data_end->~data_type();
+
+			Y_CLEAR_ELECTRIC(_data_end, 1);
+
 			shrink();
 			return r;
 		}
@@ -347,6 +370,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		void move_range(data_type* dst, data_type* src, usize n) {
+			Y_CHECK_ELECTRIC(dst, n);
 			if constexpr(is_data_trivial) {
 				std::copy_n(src, n, dst);
 			} else {
@@ -358,10 +382,12 @@ class Vector : ResizePolicy, Allocator {
 
 		void clear(data_type* beg, data_type* en) {
 			if(!is_data_trivial) {
-				while(en != beg) {
-					(--en)->~data_type();
+				for(data_type* e = en; e != beg;) {
+					(--e)->~data_type();
 				}
 			}
+
+			Y_CLEAR_ELECTRIC(beg, en - beg);
 		}
 
 		void expend() {
@@ -383,10 +409,12 @@ class Vector : ResizePolicy, Allocator {
 			}
 
 			const usize current_size = size();
-			//const usize num_to_move = std::min(new_cap, current_size);
 			const usize num_to_move = new_cap < current_size ? new_cap : current_size;
 
 			data_type* new_data = new_cap ? Allocator::allocate(new_cap) : nullptr;
+
+			Y_CLEAR_ELECTRIC(new_data, new_cap);
+			Y_CHECK_ELECTRIC(new_data, new_cap);
 
 			if(new_data != _data) {
 				move_range(new_data, _data, num_to_move);
@@ -441,6 +469,7 @@ using SmallVector = Vector<T, Args...>; // for now...
 }
 }
 
-
+#undef Y_CLEAR_ELECTRIC
+#undef Y_CHECK_ELECTRIC
 
 #endif
