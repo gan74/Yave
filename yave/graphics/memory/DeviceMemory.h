@@ -34,15 +34,15 @@ class DeviceMemory : NonCopyable, public DeviceLinked {
 	public:
 		DeviceMemory() = default;
 
-		DeviceMemory(DeviceMemoryHeapBase* heap, vk::DeviceMemory memory, usize offset, usize size);
-		DeviceMemory(DevicePtr dptr, vk::DeviceMemory memory, usize offset, usize size);
+		DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, usize offset, usize size);
+		DeviceMemory(DevicePtr dptr, VkDeviceMemory memory, usize offset, usize size);
 
 		~DeviceMemory();
 
 		DeviceMemory(DeviceMemory&& other);
 		DeviceMemory& operator=(DeviceMemory&& other);
 
-		vk::DeviceMemory vk_memory() const;
+		VkDeviceMemory vk_memory() const;
 		usize vk_offset() const;
 		usize vk_size() const;
 
@@ -57,7 +57,7 @@ class DeviceMemory : NonCopyable, public DeviceLinked {
 		void free();
 
 		DeviceMemoryHeapBase* _heap = nullptr;
-		vk::DeviceMemory _memory;
+		VkDeviceMemory _memory = {};
 		usize _offset = 0;
 		usize _size = 0;
 };

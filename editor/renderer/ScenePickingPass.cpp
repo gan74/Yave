@@ -72,8 +72,8 @@ static usize render_world(ContextPtr ctx,
 }
 
 ScenePickingPass ScenePickingPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
-	static constexpr vk::Format depth_format = vk::Format::eD32Sfloat;
-	static constexpr vk::Format id_format = vk::Format::eR32Uint;
+	static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;
+	static constexpr ImageFormat id_format = VK_FORMAT_R32_UINT;
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
 

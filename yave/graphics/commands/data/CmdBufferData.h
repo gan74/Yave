@@ -80,7 +80,7 @@ class CmdBufferData final : NonCopyable {
 	};
 
 	public:
-		CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p);
+		CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPoolBase* p);
 
 		CmdBufferData() = default;
 

@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-CmdBufferData::CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p) :
+CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPoolBase* p) :
 		_cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(device()->lifetime_manager().create_fence()) {
 }
 
@@ -40,7 +40,7 @@ CmdBufferData& CmdBufferData::operator=(CmdBufferData&& other) {
 
 CmdBufferData::~CmdBufferData() {
 	if(_pool) {
-		if(_fence && device()->vk_device().getFenceStatus(_fence) != vk::Result::eSuccess) {
+		if(_fence && vkGetFenceStatus(device()->vk_device(), _fence) != VK_SUCCESS) {
 			y_fatal("CmdBuffer is still in use.");
 		}
 		vkFreeCommandBuffers(device()->vk_device(), _pool->vk_pool(), 1, &_cmd_buffer);

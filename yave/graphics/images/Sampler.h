@@ -44,10 +44,10 @@ class Sampler final : NonCopyable, public DeviceLinked {
 
 		~Sampler();
 
-		vk::Sampler vk_sampler() const;
+		VkSampler vk_sampler() const;
 
 	private:
-		SwapMove<vk::Sampler> _sampler;
+		SwapMove<VkSampler> _sampler;
 };
 
 }

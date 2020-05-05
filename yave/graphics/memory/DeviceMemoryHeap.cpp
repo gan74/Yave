@@ -51,10 +51,12 @@ DeviceMemoryHeap::DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType typ
 		_memory(alloc_memory(dptr, heap_size, type_bits, type)),
 		_heap_size(heap_size),
 		_blocks({FreeBlock{0, heap_size}}),
-		_mapping(is_cpu_visible(type)
-				? static_cast<u8*>(device()->vk_device().mapMemory(_memory, 0, heap_size))
-				: nullptr
-			) {
+		_mapping(nullptr) {
+
+	if(is_cpu_visible(type)) {
+		const VkMemoryMapFlags flags = {};
+		vk_check(vkMapMemory(device()->vk_device(), _memory, 0, heap_size, flags, &_mapping));
+	}
 
 	if(_heap_size % alignment) {
 		y_fatal("Heap size is not a multiple of alignment.");
@@ -69,9 +71,9 @@ DeviceMemoryHeap::~DeviceMemoryHeap() {
 		y_fatal("Not all memory has been freed.");
 	}
 	if(_mapping) {
-		device()->vk_device().unmapMemory(_memory);
+		vkUnmapMemory(device()->vk_device(), _memory);
 	}
-	device()->vk_device().freeMemory(_memory);
+	vkFreeMemory(device()->vk_device(), _memory, nullptr);
 }
 
 DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {
@@ -79,7 +81,7 @@ DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {
 	return DeviceMemory(this, _memory, offset, size);
 }
 
-core::Result<DeviceMemory> DeviceMemoryHeap::alloc(vk::MemoryRequirements reqs) {
+core::Result<DeviceMemory> DeviceMemoryHeap::alloc(VkMemoryRequirements reqs) {
 	y_profile();
 	const usize size = align_size(reqs.size, alignment);
 
@@ -153,7 +155,7 @@ void DeviceMemoryHeap::compact_block(FreeBlock block) {
 }
 
 void* DeviceMemoryHeap::map(const DeviceMemoryView& view) {
-	return static_cast<u8*>(_mapping + view.vk_offset());
+	return static_cast<u8*>(_mapping) + view.vk_offset();
 }
 
 void DeviceMemoryHeap::unmap(const DeviceMemoryView&) {

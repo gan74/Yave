@@ -66,7 +66,7 @@ usize SubBufferBase::byte_offset() const {
 	return _offset;
 }
 
-vk::Buffer SubBufferBase::vk_buffer() const {
+VkBuffer SubBufferBase::vk_buffer() const {
 	return _buffer;
 }
 
@@ -74,15 +74,17 @@ DeviceMemoryView SubBufferBase::device_memory() const {
 	return _memory;
 }
 
-vk::DescriptorBufferInfo SubBufferBase::descriptor_info() const {
-	return vk::DescriptorBufferInfo()
-			.setBuffer(_buffer)
-			.setOffset(_offset)
-			.setRange(_size)
-		;
+VkDescriptorBufferInfo SubBufferBase::descriptor_info() const {
+	VkDescriptorBufferInfo info = {};
+	{
+		info.buffer = _buffer;
+		info.offset = _offset;
+		info.range = _size;
+	}
+	return info;
 }
 
-vk::MappedMemoryRange SubBufferBase::memory_range() const {
+VkMappedMemoryRange SubBufferBase::vk_memory_range() const {
 	return _memory.vk_mapped_range(_size, _offset);
 }
 

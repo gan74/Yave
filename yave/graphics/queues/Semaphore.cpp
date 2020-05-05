@@ -27,15 +27,16 @@ SOFTWARE.
 namespace yave {
 
 Semaphore::Shared::Shared(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_semaphore(device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo())) {
+		DeviceLinked(dptr) {
+	const VkSemaphoreCreateInfo create_info = vk_struct();
+	vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, nullptr, &_semaphore));
 }
 
 Semaphore::Shared::~Shared() {
 	destroy(_semaphore);
 }
 
-vk::Semaphore Semaphore::Shared::vk_semaphore() const {
+VkSemaphore Semaphore::Shared::vk_semaphore() const {
 	return _semaphore;
 }
 

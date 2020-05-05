@@ -129,12 +129,12 @@ ImageData compute_mipmaps(const ImageData& image) {
 		log_msg("Only one layer is supported.", Log::Error);
 		return copy(image);
 	}
-	if(image.format() != ImageFormat(vk::Format::eR8G8B8A8Unorm)) {
+	if(image.format() != ImageFormat(VK_FORMAT_R8G8B8A8_UNORM)) {
 		log_msg("Only RGBA is supported.", Log::Error);
 		return copy(image);
 	}
 
-	const ImageFormat format(vk::Format::eR8G8B8A8Unorm);
+	const ImageFormat format(VK_FORMAT_R8G8B8A8_UNORM);
 	const usize components = 4;
 
 	const usize mip_count = ImageData::mip_count(image.size());

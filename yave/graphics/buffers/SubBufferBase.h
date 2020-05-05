@@ -42,12 +42,12 @@ class SubBufferBase {
 		usize byte_size() const;
 		usize byte_offset() const;
 
-		vk::Buffer vk_buffer() const;
+		VkBuffer vk_buffer() const;
 
 		DeviceMemoryView device_memory() const;
 
-		vk::DescriptorBufferInfo descriptor_info() const;
-		vk::MappedMemoryRange memory_range() const;
+		VkDescriptorBufferInfo descriptor_info() const;
+		VkMappedMemoryRange vk_memory_range() const;
 
 	protected:
 		static usize alignment_for_usage(DevicePtr dptr, BufferUsage usage);
@@ -55,7 +55,7 @@ class SubBufferBase {
 	private:
 		usize _size = 0;
 		usize _offset = 0;
-		NotOwner<vk::Buffer> _buffer;
+		NotOwner<VkBuffer> _buffer = {};
 		DeviceMemoryView _memory;
 };
 

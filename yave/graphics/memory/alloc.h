@@ -31,32 +31,32 @@ SOFTWARE.
 
 namespace yave {
 
-static const vk::MemoryPropertyFlags dont_care_flags[] = {
-	vk::MemoryPropertyFlags()
+static const VkMemoryPropertyFlags dont_care_flags[] = {
+	0
 };
 
-static const vk::MemoryPropertyFlags device_local_flags[] = {
-	vk::MemoryPropertyFlagBits::eDeviceLocal,
-	vk::MemoryPropertyFlags()
+static const VkMemoryPropertyFlags device_local_flags[] = {
+	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+	0
 };
 
-static const vk::MemoryPropertyFlags cpu_visible_flags[] = {
-	vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached,
-	vk::MemoryPropertyFlagBits::eHostVisible,
-	vk::MemoryPropertyFlags()
+static const VkMemoryPropertyFlags cpu_visible_flags[] = {
+	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+	0
 };
 
-static const vk::MemoryPropertyFlags staging_flags[] = {
-	vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eDeviceLocal,
-	vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal,
-	vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached,
-	vk::MemoryPropertyFlagBits::eHostVisible,
-	vk::MemoryPropertyFlags()
+static const VkMemoryPropertyFlags staging_flags[] = {
+	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+	0
 };
 
 
 
-static const vk::MemoryPropertyFlags* memory_type_flags[] = {
+static const VkMemoryPropertyFlags* memory_type_flags[] = {
 	dont_care_flags,    // DontCare
 	device_local_flags, // DeviceLocal
 	cpu_visible_flags,  // CpuVisible
@@ -64,9 +64,9 @@ static const vk::MemoryPropertyFlags* memory_type_flags[] = {
 };
 
 
-inline u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType type) {
-	for(const vk::MemoryPropertyFlags* type_flags = memory_type_flags[uenum(type)]; *type_flags; ++type_flags) {
-		const vk::MemoryPropertyFlags flags = *type_flags;
+inline u32 get_memory_type(const VkPhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType type) {
+	for(const VkMemoryPropertyFlags* type_flags = memory_type_flags[uenum(type)]; *type_flags; ++type_flags) {
+		const VkMemoryPropertyFlags flags = *type_flags;
 		for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
 			const auto memory_type = properties.memoryTypes[i];
 			if(type_filter & (1 << i) && (memory_type.propertyFlags & flags) == flags) {
@@ -75,24 +75,27 @@ inline u32 get_memory_type(const vk::PhysicalDeviceMemoryProperties& properties,
 		}
 	}
 
-	/*return*/ y_fatal("Unable to allocate device memory.");
+	 y_fatal("Unable to allocate device memory.");
 }
 
 
 
-inline vk::DeviceMemory alloc_memory(DevicePtr dptr, usize size, u32 type_bits, MemoryType type) {
+inline VkDeviceMemory alloc_memory(DevicePtr dptr, usize size, u32 type_bits, MemoryType type) {
 	y_profile();
-	try {
-		return dptr->vk_device().allocateMemory(vk::MemoryAllocateInfo()
-					.setAllocationSize(size)
-					.setMemoryTypeIndex(get_memory_type(dptr->physical_device().vk_memory_properties(), type_bits, type))
-				);
-	} catch(std::exception& e) {
-		y_fatal("Failed to allocate memory: %", e.what());
+	VkMemoryAllocateInfo allocate_info = vk_struct();
+	{
+		allocate_info.allocationSize = size;
+		allocate_info.memoryTypeIndex = get_memory_type(dptr->physical_device().vk_memory_properties(), type_bits, type);
 	}
+	VkDeviceMemory memory = {};
+	const VkResult result = vkAllocateMemory(dptr->vk_device(), &allocate_info, nullptr, &memory);
+	if(is_error(result)) {
+		y_fatal("Failed to allocate memory: %", vk_result_str(result));
+	}
+	return memory;
 }
 
-inline vk::DeviceMemory alloc_memory(DevicePtr dptr, vk::MemoryRequirements reqs, MemoryType type) {
+inline VkDeviceMemory alloc_memory(DevicePtr dptr, VkMemoryRequirements reqs, MemoryType type) {
 	return alloc_memory(dptr, reqs.size, reqs.memoryTypeBits, type);
 }
 

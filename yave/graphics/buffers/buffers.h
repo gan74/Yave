@@ -59,7 +59,7 @@ template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using SkinnedVertexBuffer = TypedBuffer<SkinnedVertex, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::IndirectBit)>
-using IndirectBuffer = TypedBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit | BufferUsage::TransferDstBit, Memory>;
+using IndirectBuffer = TypedBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit | BufferUsage::TransferDstBit, Memory>;
 
 
 template<typename T>
@@ -68,7 +68,7 @@ using AttribSubBuffer = TypedSubBuffer<T, BufferUsage::AttributeBit>;
 using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit>;
 using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit>;
 using SkinnedVertexSubBuffer = TypedSubBuffer<SkinnedVertex, BufferUsage::AttributeBit>;
-using IndirectSubBuffer = TypedSubBuffer<vk::DrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
+using IndirectSubBuffer = TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
 
 }
 

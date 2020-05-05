@@ -75,7 +75,7 @@ static ImageData load_font() {
 	int width = 0;
 	int height = 0;
 	io.Fonts->GetTexDataAsRGBA32(&font_data, &width, &height);
-	return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(vk::Format::eR8G8B8A8Unorm));
+	return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(VK_FORMAT_R8G8B8A8_UNORM));
 }
 
 ImGuiRenderer::ImGuiRenderer(ContextPtr ctx) :
@@ -179,12 +179,15 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 				if(current_tex != cmd.TextureId) {
 					setup_state(current_tex = cmd.TextureId);
 				}
-				recorder.draw(vk::DrawIndexedIndirectCommand()
-						.setFirstIndex(drawn_index_offset)
-						.setVertexOffset(vertex_offset)
-						.setIndexCount(cmd.ElemCount)
-						.setInstanceCount(1)
-					);
+
+				VkDrawIndexedIndirectCommand command = {};
+				{
+					command.firstIndex = drawn_index_offset;
+					command.vertexOffset = vertex_offset;
+					command.indexCount = cmd.ElemCount;
+					command.instanceCount = 1;
+				}
+				recorder.draw(command);
 
 				drawn_index_offset += cmd.ElemCount;
 			}

@@ -94,7 +94,7 @@ struct CmdBufferRegion : NonMovable, public DeviceLinked {
 
 		CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color);
 
-		vk::CommandBuffer _buffer;
+		VkCommandBuffer _buffer = {};
 };
 
 class RenderPassRecorder : NonMovable {

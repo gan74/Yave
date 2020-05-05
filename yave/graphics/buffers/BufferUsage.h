@@ -27,24 +27,25 @@ SOFTWARE.
 
 namespace yave {
 
-enum class BufferUsage {
+enum class BufferUsage : u32 {
 	None = 0,
-	AttributeBit = uenum(vk::BufferUsageFlagBits::eVertexBuffer),
-	IndexBit = uenum(vk::BufferUsageFlagBits::eIndexBuffer),
-	IndirectBit = uenum(vk::BufferUsageFlagBits::eIndirectBuffer),
-	UniformBit = uenum(vk::BufferUsageFlagBits::eUniformBuffer),
-	StorageBit = uenum(vk::BufferUsageFlagBits::eStorageBuffer),
 
-	TransferSrcBit = uenum(vk::BufferUsageFlagBits::eTransferSrc),
-	TransferDstBit = uenum(vk::BufferUsageFlagBits::eTransferDst)
+	AttributeBit	= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+	IndexBit		= VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+	IndirectBit		= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+	UniformBit		= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+	StorageBit		= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+
+	TransferSrcBit	= VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	TransferDstBit	= VK_BUFFER_USAGE_TRANSFER_DST_BIT
 };
 
 constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {
-	return BufferUsage(uenum(a) | uenum(b));
+	return BufferUsage(u32(a) | u32(b));
 }
 
 constexpr BufferUsage operator&(BufferUsage a, BufferUsage b) {
-	return BufferUsage(uenum(a) & uenum(b));
+	return BufferUsage(u32(a) & u32(b));
 }
 
 inline constexpr MemoryType prefered_memory_type(BufferUsage usage) {

@@ -80,6 +80,7 @@ class Buffer : public BufferBase {
 			return *this;
 		}
 };
+
 }
 
 #endif // YAVE_GRAPHICS_BUFFERS_BUFFER_H

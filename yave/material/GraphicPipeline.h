@@ -34,7 +34,7 @@ class GraphicPipeline : NonCopyable, public DeviceLinked {
 
 	public:
 		GraphicPipeline() = default;
-		GraphicPipeline(const MaterialTemplate* mat, vk::Pipeline pipeline, vk::PipelineLayout layout);
+		GraphicPipeline(const MaterialTemplate* mat, VkPipeline pipeline, VkPipelineLayout layout);
 
 		~GraphicPipeline();
 

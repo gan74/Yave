@@ -26,34 +26,38 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::SamplerAddressMode vk_address_mode(Sampler::Type type) {
+static VkSamplerAddressMode vk_address_mode(Sampler::Type type) {
 	switch(type) {
 		case Sampler::Repeat:
-			return vk::SamplerAddressMode::eRepeat;
+			return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
 		case Sampler::Clamp:
-			return vk::SamplerAddressMode::eClampToEdge;
+			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
 		default:
 			y_fatal("Unknown sampler type");
 	}
 }
 
-static vk::Sampler create_sampler(DevicePtr dptr, Sampler::Type type) {
-	const vk::SamplerAddressMode address_mode = vk_address_mode(type);
+static VkSampler create_sampler(DevicePtr dptr, Sampler::Type type) {
 
-	return dptr->vk_device().createSampler(vk::SamplerCreateInfo()
-			.setMagFilter(vk::Filter::eLinear)
-			.setMinFilter(vk::Filter::eLinear)
-			.setAddressModeU(address_mode)
-			.setAddressModeV(address_mode)
-			.setAddressModeW(address_mode)
-			.setMipmapMode(vk::SamplerMipmapMode::eLinear)
-			.setMinLod(0.0f)
-			.setMaxLod(1000.0f)
-			.setMaxAnisotropy(1.0f)
-			.setCompareEnable(false)
-		);
+	VkSamplerCreateInfo create_info = vk_struct();
+	{
+		const VkSamplerAddressMode address_mode = vk_address_mode(type);
+
+		create_info.addressModeU = address_mode;
+		create_info.addressModeV = address_mode;
+		create_info.addressModeW = address_mode;
+		create_info.magFilter = VK_FILTER_LINEAR;
+		create_info.minFilter = VK_FILTER_LINEAR;
+		create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		create_info.maxLod = 1000.0f;
+		create_info.maxAnisotropy = 1.0f;
+	}
+
+	VkSampler sampler = {};
+	vk_check(vkCreateSampler(dptr->vk_device(), &create_info, nullptr, &sampler));
+	return sampler;
 }
 
 Sampler::Sampler(DevicePtr dptr, Type type) : DeviceLinked(dptr), _sampler(create_sampler(dptr, type)) {
@@ -63,7 +67,7 @@ Sampler::~Sampler() {
 	destroy(_sampler);
 }
 
-vk::Sampler Sampler::vk_sampler() const {
+VkSampler Sampler::vk_sampler() const {
 	return _sampler;
 }
 

@@ -41,7 +41,7 @@ enum class ImageUsage : u32 {
 
 #ifdef Y_MSVC
 	Y_TODO(MSVC fix)
-	SwapchainBit = 0x00000400,
+	SwapchainBit	= 0x00000400,
 #else
 	SwapchainBit	= std::max({None, DepthBit, ColorBit, TextureBit, StorageBit}) << 1,
 #endif
@@ -52,19 +52,19 @@ enum class ImageUsage : u32 {
 };
 
 constexpr ImageUsage operator|(ImageUsage l, ImageUsage r) {
-	return ImageUsage(uenum(l) | uenum(r));
+	return ImageUsage(u32(l) | u32(r));
 }
 
-inline ImageUsage operator|(ImageUsage l, vk::ImageUsageFlagBits r) {
-	return ImageUsage(uenum(l) | uenum(r));
+inline ImageUsage operator|(ImageUsage l, VkImageUsageFlagBits r) {
+	return ImageUsage(u32(l) | u32(r));
 }
 
 constexpr ImageUsage operator&(ImageUsage l, ImageUsage r)  {
-	return ImageUsage(uenum(l) & uenum(r));
+	return ImageUsage(u32(l) & u32(r));
 }
 
 constexpr ImageUsage operator~(ImageUsage l) {
-	return ImageUsage(~uenum(l));
+	return ImageUsage(~u32(l));
 }
 
 constexpr bool is_copy_usage(ImageUsage usage) {

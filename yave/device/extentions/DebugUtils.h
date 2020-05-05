@@ -30,16 +30,16 @@ class DebugUtils : NonCopyable {
 	public:
 		static const char* name();
 
-		DebugUtils(vk::Instance instance);
+		DebugUtils(VkInstance instance);
 		~DebugUtils();
 
-		void begin_region(vk::CommandBuffer buffer, const char* name, const math::Vec4& color = math::Vec4()) const;
-		void end_region(vk::CommandBuffer buffer) const;
+		void begin_region(VkCommandBuffer buffer, const char* name, const math::Vec4& color = math::Vec4()) const;
+		void end_region(VkCommandBuffer buffer) const;
 
 		void set_resource_name(DevicePtr dptr, u64 resource, const char* name) const;
 
 	private:
-		vk::Instance _instance;
+		VkInstance _instance;
 		VkDebugUtilsMessengerEXT _messenger = {};
 
 		PFN_vkCmdBeginDebugUtilsLabelEXT _begin_label = nullptr;

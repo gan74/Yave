@@ -214,7 +214,7 @@ DescriptorSetAllocator& Device::descriptor_set_allocator() const {
 	return _descriptor_set_allocator;
 }
 
-const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
+const QueueFamily& Device::queue_family(VkQueueFlags flags) const {
 	for(const auto& q : _queue_families) {
 		if((q.flags() & flags) == flags) {
 			return q;
@@ -279,7 +279,11 @@ vk::Device Device::vk_device() const {
 	return _device.device;
 }
 
-vk::Sampler Device::vk_sampler(Sampler::Type type) const {
+VkPhysicalDevice Device::vk_physical_device() const {
+	return _physical.vk_physical_device();
+}
+
+VkSampler Device::vk_sampler(Sampler::Type type) const {
 	y_debug_assert(usize(type) < _samplers.size());
 	return _samplers[usize(type)].vk_sampler();
 }
@@ -291,7 +295,5 @@ CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() con
 const DebugUtils* Device::debug_utils() const {
 	return _instance.debug_utils();
 }
-
-
 
 }

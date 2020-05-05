@@ -25,12 +25,12 @@ SOFTWARE.
 
 namespace yave {
 
-DeviceMemory::DeviceMemory(DeviceMemoryHeapBase* heap, vk::DeviceMemory memory, usize offset, usize size) :
+DeviceMemory::DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, usize offset, usize size) :
 		DeviceMemory(heap->device(), memory, offset, size) {
 	_heap = heap;
 }
 
-DeviceMemory::DeviceMemory(DevicePtr dptr, vk::DeviceMemory memory, usize offset, usize size) :
+DeviceMemory::DeviceMemory(DevicePtr dptr, VkDeviceMemory memory, usize offset, usize size) :
 		DeviceLinked(dptr),
 		_memory(memory),
 		_offset(offset),
@@ -62,7 +62,7 @@ void DeviceMemory::free() {
 	DeviceLinked::swap(empty);
 }
 
-vk::DeviceMemory DeviceMemory::vk_memory() const {
+VkDeviceMemory DeviceMemory::vk_memory() const {
 	return _memory;
 }
 

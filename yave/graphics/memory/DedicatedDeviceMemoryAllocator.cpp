@@ -31,7 +31,7 @@ DedicatedDeviceMemoryAllocator::DedicatedDeviceMemoryAllocator(DevicePtr dptr, M
 DedicatedDeviceMemoryAllocator::~DedicatedDeviceMemoryAllocator() {
 }
 
-core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs) {
+core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(VkMemoryRequirements reqs) {
 	_size += reqs.size;
 	return core::Ok(DeviceMemory(this, alloc_memory(device(), reqs, _type), 0, reqs.size));
 }

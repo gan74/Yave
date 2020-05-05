@@ -31,8 +31,10 @@ namespace yave {
 StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
 		_triangle_buffer(dptr, mesh_data.triangles().size()),
 		_vertex_buffer(dptr, mesh_data.vertices().size()),
-		_indirect_data(mesh_data.triangles().size() * 3, 1),
 		_aabb(mesh_data.aabb()) {
+
+	_indirect_data.indexCount = mesh_data.triangles().size() * 3;
+	_indirect_data.instanceCount = 1;
 
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
 	Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
@@ -56,7 +58,7 @@ const VertexBuffer<>& StaticMesh::vertex_buffer() const {
 	return _vertex_buffer;
 }
 
-const vk::DrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
+const VkDrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
 	return _indirect_data;
 }
 

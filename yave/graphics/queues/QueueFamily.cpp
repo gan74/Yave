@@ -45,7 +45,7 @@ core::Vector<QueueFamily> QueueFamily::all(const PhysicalDevice& dev) {
 	return queue_families;
 }
 
-QueueFamily::QueueFamily(u32 index, const vk::QueueFamilyProperties& props) :
+QueueFamily::QueueFamily(u32 index, const VkQueueFamilyProperties& props) :
 		_index(index),
 		_queue_count(props.queueCount),
 		_flags(props.queueFlags) {
@@ -59,14 +59,16 @@ u32 QueueFamily::count() const {
 	return _queue_count;
 }
 
-vk::QueueFlags QueueFamily::flags() const {
+VkQueueFlags QueueFamily::flags() const {
 	return _flags;
 }
 
 core::Vector<Queue> QueueFamily::queues(DevicePtr dptr) const {
 	auto queues = core::vector_with_capacity<Queue>(_queue_count);
 	for(u32 i = 0; i != _queue_count; ++i) {
-		queues << Queue(dptr, dptr->vk_device().getQueue(_index, i));
+		VkQueue q = {};
+		vkGetDeviceQueue(dptr->vk_device(), _index, i, &q);
+		queues << Queue(dptr, q);
 	}
 	return queues;
 }

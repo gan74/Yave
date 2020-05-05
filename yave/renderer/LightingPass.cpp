@@ -40,7 +40,7 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr vk::Format lighting_format = vk::Format::eR16G16B16A16Sfloat;
+static constexpr ImageFormat lighting_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 static constexpr usize max_directional_lights = 16;
 static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;

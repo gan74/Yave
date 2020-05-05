@@ -39,12 +39,13 @@ static Camera spotlight_camera(const TransformableComponent& tr, const SpotLight
 }
 
 ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapPassSettings& settings) {
+	static constexpr ImageFormat shadow_format = VK_FORMAT_D32_SFLOAT;
 	const ecs::EntityWorld& world = scene.world();
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Shadow pass");
 
 	const math::Vec2ui shadow_map_size = settings.shadow_map_size;
-	const auto shadow_map = builder.declare_image(vk::Format::eD32Sfloat, shadow_map_size);
+	const auto shadow_map = builder.declare_image(shadow_format, shadow_map_size);
 
 	ShadowMapPass pass;
 	pass.shadow_map = shadow_map;

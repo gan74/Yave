@@ -38,10 +38,10 @@ class Semaphore {
 
 			~Shared();
 
-			vk::Semaphore vk_semaphore() const;
+			VkSemaphore vk_semaphore() const;
 
 		private:
-			vk::Semaphore _semaphore;
+			VkSemaphore _semaphore = {};
 	};
 
 

@@ -88,13 +88,12 @@ const char* DebugUtils::name() {
 	return VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 }
 
-DebugUtils::DebugUtils(vk::Instance instance) : _instance(instance) {
+DebugUtils::DebugUtils(VkInstance instance) : _instance(instance) {
 
-	_begin_label = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(_instance.getProcAddr("vkCmdBeginDebugUtilsLabelEXT"));
-	_end_label = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(_instance.getProcAddr("vkCmdEndDebugUtilsLabelEXT"));
+	_begin_label = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetInstanceProcAddr(_instance, "vkCmdBeginDebugUtilsLabelEXT"));
+	_end_label = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetInstanceProcAddr(_instance, "vkCmdEndDebugUtilsLabelEXT"));
 
-
-	const auto create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(_instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
+	const auto create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(_instance, "vkCreateDebugUtilsMessengerEXT"));
 
 	VkDebugUtilsMessengerCreateInfoEXT create_info = vk_struct();
 	create_info.messageType =
@@ -114,11 +113,11 @@ DebugUtils::DebugUtils(vk::Instance instance) : _instance(instance) {
 }
 
 DebugUtils::~DebugUtils() {
-	const auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(_instance.getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
+	const auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(_instance, "vkDestroyDebugUtilsMessengerEXT"));
 	destroy_messenger(_instance, _messenger, nullptr);
 }
 
-void DebugUtils::begin_region(vk::CommandBuffer buffer, const char* name, const math::Vec4& color) const {
+void DebugUtils::begin_region(VkCommandBuffer buffer, const char* name, const math::Vec4& color) const {
 	VkDebugUtilsLabelEXT label = vk_struct();
 	label.pLabelName = name;
 	for(usize i = 0; i != 4; ++i) {
@@ -128,7 +127,7 @@ void DebugUtils::begin_region(vk::CommandBuffer buffer, const char* name, const 
 	_begin_label(buffer, &label);
 }
 
-void DebugUtils::end_region(vk::CommandBuffer buffer) const {
+void DebugUtils::end_region(VkCommandBuffer buffer) const {
 	_end_label(buffer);
 }
 

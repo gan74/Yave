@@ -29,9 +29,10 @@ namespace yave {
 
 class ImageFormat {
 	public:
-		ImageFormat(VkFormat format = VK_FORMAT_UNDEFINED);
+		constexpr ImageFormat(VkFormat format = VK_FORMAT_UNDEFINED) : _format(format) {
+		}
 
-		ImageFormat(vk::Format format) : ImageFormat(VkFormat(format)) {
+		constexpr ImageFormat(vk::Format format) : ImageFormat(VkFormat(format)) {
 		}
 
 		VkFormat vk_format() const;

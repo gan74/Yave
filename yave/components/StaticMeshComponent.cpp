@@ -57,8 +57,8 @@ void StaticMeshComponent::render_mesh(RenderPassRecorder& recorder, u32 instance
 	}
 
 	recorder.bind_buffers(TriangleSubBuffer(_mesh->triangle_buffer()), VertexSubBuffer(_mesh->vertex_buffer()));
-	auto indirect = _mesh->indirect_data();
-	indirect.setFirstInstance(instance_index);
+	VkDrawIndexedIndirectCommand indirect = _mesh->indirect_data();
+	indirect.firstInstance = instance_index;
 	recorder.draw(indirect);
 }
 

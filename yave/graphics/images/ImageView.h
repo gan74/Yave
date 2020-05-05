@@ -51,11 +51,11 @@ class ImageView : public DeviceLinked {
 			static_assert(is_compatible(U));
 		}
 
-		vk::ImageView vk_view() const {
+		VkImageView vk_view() const {
 			return _view;
 		}
 
-		vk::Image vk_image() const {
+		VkImage vk_image() const {
 			return _image;
 		}
 
@@ -80,7 +80,7 @@ class ImageView : public DeviceLinked {
 		}
 
 	protected:
-		ImageView(DevicePtr dptr, const size_type& size, ImageUsage usage, ImageFormat format, vk::ImageView view, vk::Image image) :
+		ImageView(DevicePtr dptr, const size_type& size, ImageUsage usage, ImageFormat format, VkImageView view, VkImage image) :
 				DeviceLinked(dptr),
 				_size(size),
 				_usage(usage),
@@ -97,8 +97,8 @@ class ImageView : public DeviceLinked {
 		size_type _size;
 		ImageUsage _usage = ImageUsage::None;
 		ImageFormat _format;
-		vk::ImageView _view;
-		vk::Image _image;
+		VkImageView _view = {};
+		VkImage _image = {};
 };
 
 using TextureView = ImageView<ImageUsage::TextureBit>;

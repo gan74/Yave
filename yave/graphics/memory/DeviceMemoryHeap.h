@@ -49,7 +49,7 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 		DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type, usize heap_size);
 		~DeviceMemoryHeap() override;
 
-		core::Result<DeviceMemory> alloc(vk::MemoryRequirements reqs) override;
+		core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) override;
 		void free(const DeviceMemory& memory) override;
 
 		void* map(const DeviceMemoryView& view) override;
@@ -68,10 +68,10 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 		void free(const FreeBlock& block);
 		void compact_block(FreeBlock block);
 
-		vk::DeviceMemory _memory;
+		VkDeviceMemory _memory = {};
 		usize _heap_size = 0;
 		core::Vector<FreeBlock> _blocks;
-		u8* _mapping = nullptr;
+		void* _mapping = nullptr;
 
 		mutable std::mutex _lock;
 };

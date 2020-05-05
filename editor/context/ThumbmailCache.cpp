@@ -49,7 +49,7 @@ static math::Transform<> center_to_camera(const AABB& box) {
 }
 
 ThumbmailCache::ThumbmailData::ThumbmailData(DevicePtr dptr, usize size, AssetId asset) :
-		image(dptr, vk::Format::eR8G8B8A8Unorm, math::Vec2ui(size)),
+		image(dptr, VK_FORMAT_R8G8B8A8_UNORM, math::Vec2ui(size)),
 		view(image),
 		id(asset) {
 }

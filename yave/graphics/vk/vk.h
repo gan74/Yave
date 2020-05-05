@@ -72,6 +72,9 @@ constexpr inline void vk_init_struct_stype(Type& t) {		\
 // Extensions
 VK_STRUCT_INIT(VkPresentInfoKHR,									VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
 
+VK_STRUCT_INIT(VkSwapchainCreateInfoKHR,							VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
+VK_STRUCT_INIT(VkWin32SurfaceCreateInfoKHR,							VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR)
+
 VK_STRUCT_INIT(VkWriteDescriptorSetInlineUniformBlockEXT,			VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT)
 
 VK_STRUCT_INIT(VkDebugUtilsMessengerCreateInfoEXT,					VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT)
@@ -278,11 +281,19 @@ constexpr inline auto vk_null() {
 constexpr inline bool is_error(VkResult result) {
 	return result != VK_SUCCESS;
 }
+constexpr inline bool is_incomplete(VkResult result) {
+	return result == VK_INCOMPLETE;
+}
 
 inline void vk_check(VkResult result) {
 	y_always_assert(!is_error(result), "Vulkan error");
 }
 
+inline void vk_check_or_incomplete(VkResult result) {
+	y_always_assert(is_incomplete(result) || !is_error(result), "Vulkan error");
+}
+
+const char* vk_result_str(VkResult result);
 
 }
 

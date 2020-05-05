@@ -59,7 +59,7 @@ class Device : NonMovable {
 
 		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
 
-		const QueueFamily& queue_family(vk::QueueFlags flags) const;
+		const QueueFamily& queue_family(VkQueueFlags flags) const;
 		const Queue& graphic_queue() const;
 		Queue& graphic_queue();
 
@@ -75,7 +75,8 @@ class Device : NonMovable {
 
 
 		vk::Device vk_device() const;
-		vk::Sampler vk_sampler(Sampler::Type type = Sampler::Repeat) const;
+		VkPhysicalDevice vk_physical_device() const;
+		VkSampler vk_sampler(Sampler::Type type = Sampler::Repeat) const;
 
 		const DebugUtils* debug_utils() const;
 

@@ -41,7 +41,7 @@ class SkinnedMesh : NonCopyable {
 		const TriangleBuffer<>& triangle_buffer() const;
 		const SkinnedVertexBuffer<>& vertex_buffer() const;
 
-		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+		const VkDrawIndexedIndirectCommand& indirect_data() const;
 		const Skeleton& skeleton() const;
 
 		float radius() const;
@@ -49,7 +49,7 @@ class SkinnedMesh : NonCopyable {
 	private:
 		TriangleBuffer<> _triangle_buffer;
 		SkinnedVertexBuffer<> _vertex_buffer;
-		vk::DrawIndexedIndirectCommand _indirect_data;
+		VkDrawIndexedIndirectCommand _indirect_data = {};
 
 		Skeleton _skeleton;
 

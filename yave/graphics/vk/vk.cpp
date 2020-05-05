@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,41 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
-#define YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
 
-#include <yave/device/PhysicalDevice.h>
-#include <y/core/Result.h>
-
-#include "Queue.h"
+#include "vk.h"
 
 namespace yave {
 
-class QueueFamily {
+const char* vk_result_str(VkResult result) {
+#define VK_RESULT_CASE(fmt) case fmt: return #fmt;
+	switch(result) {
+		VK_RESULT_CASE(VK_SUCCESS)
+		VK_RESULT_CASE(VK_NOT_READY)
+		VK_RESULT_CASE(VK_TIMEOUT)
+		VK_RESULT_CASE(VK_EVENT_SET)
+		VK_RESULT_CASE(VK_EVENT_RESET)
+		VK_RESULT_CASE(VK_INCOMPLETE)
+		VK_RESULT_CASE(VK_ERROR_OUT_OF_HOST_MEMORY)
+		VK_RESULT_CASE(VK_ERROR_OUT_OF_DEVICE_MEMORY)
+		VK_RESULT_CASE(VK_ERROR_INITIALIZATION_FAILED)
+		VK_RESULT_CASE(VK_ERROR_DEVICE_LOST)
+		VK_RESULT_CASE(VK_ERROR_MEMORY_MAP_FAILED)
+		VK_RESULT_CASE(VK_ERROR_LAYER_NOT_PRESENT)
+		VK_RESULT_CASE(VK_ERROR_EXTENSION_NOT_PRESENT)
+		VK_RESULT_CASE(VK_ERROR_FEATURE_NOT_PRESENT)
+		VK_RESULT_CASE(VK_ERROR_INCOMPATIBLE_DRIVER)
+		VK_RESULT_CASE(VK_ERROR_TOO_MANY_OBJECTS)
+		VK_RESULT_CASE(VK_ERROR_FORMAT_NOT_SUPPORTED)
+		VK_RESULT_CASE(VK_ERROR_FRAGMENTED_POOL)
+		VK_RESULT_CASE(VK_ERROR_UNKNOWN)
 
-	public:
-		static constexpr auto Graphics = VK_QUEUE_GRAPHICS_BIT;
-
-		static core::Result<QueueFamily> create(const PhysicalDevice& dev, u32 index);
-		static core::Vector<QueueFamily> all(const PhysicalDevice& dev);
-
-		u32 index() const;
-		u32 count() const;
-
-		VkQueueFlags flags() const;
-
-		core::Vector<Queue> queues(DevicePtr dptr) const;
-
-	private:
-		QueueFamily(u32 index, const VkQueueFamilyProperties& props);
-
-		u32 _index;
-		u32 _queue_count;
-		VkQueueFlags _flags;
-
-
-};
-
+		default:
+			break;
+	}
+	return "Unknown error";
+#undef VK_RESULT_CASE
 }
 
-#endif // YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
+}
