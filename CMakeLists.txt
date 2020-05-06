@@ -24,11 +24,15 @@ function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
 endfunction(enable_unity_build)
 
 
-# Shitty hacks to use lld when using MinGW to avoid long link times
+option(YAVE_BUILD_YAVE "Build yave" ON)
+option(YAVE_BUILD_EDITOR "Build editor" ON)
+option(YAVE_BUILD_SHARED "Build as shared library" OFF)
+option(YAVE_UNITY_BUILD "Force unity build" OFF)
+
+
+
+# Shitty hack to use lld when using MinGW to avoid long link times
 if(MINGW)
-	file(TO_CMAKE_PATH $ENV{VULKAN_SDK} Vulkan_SDK_Dir)
-	set(Vulkan_INCLUDE_DIRS ${Vulkan_SDK_Dir}/Include)
-	set(Vulkan_LIBRARY ${Vulkan_SDK_Dir}/Lib/vulkan-1.lib)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=lld")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fuse-ld=lld")
 	message("Using LLD instead of MinGW linker")
@@ -37,13 +41,12 @@ else()
 endif()
 
 
-
-
-
-option(YAVE_BUILD_YAVE "Build yave" ON)
-option(YAVE_BUILD_EDITOR "Build editor" ON)
-option(YAVE_BUILD_SHARED "Build as shared library" OFF)
-option(YAVE_UNITY_BUILD "Force unity build" OFF)
+# Another shitty hack to locate vulkan SDK if CMake fails
+if(NOT "${Vulkan_INCLUDE_DIRS}")
+	file(TO_CMAKE_PATH $ENV{VULKAN_SDK} Vulkan_SDK_Dir)
+	set(Vulkan_INCLUDE_DIRS ${Vulkan_SDK_Dir}/Include)
+	set(Vulkan_LIBRARY ${Vulkan_SDK_Dir}/Lib/vulkan-1.lib)
+endif()
 
 
 # add y subtree
@@ -94,10 +97,6 @@ file(GLOB_RECURSE SHADER_FILES
 		"shaders/*.comp"
 	)
 
-file(GLOB_RECURSE SHADER_LIB_FILES
-	    "shaders/*.glsl"
-	)
-
 # Shader libs, they are here so the IDE can find them
 file(GLOB_RECURSE SHADER_LIBS
 	    "shaders/*.glsl"
@@ -119,9 +118,6 @@ if(YAVE_BUILD_YAVE)
 		add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIB_FILES})
 	endif()
 
-	# temp for vulkan header bug
-	target_compile_options(yave PRIVATE "-Wno-deprecated-copy")
-
 	target_link_libraries(yave ${Vulkan_LIBRARY})
 	target_link_libraries(yave y spirv-cross-core sqlite3)
 
@@ -137,7 +133,6 @@ if(YAVE_BUILD_EDITOR)
 	add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
 
 	target_link_libraries(editor yave)
-	target_link_libraries(editor y)
 endif()
 
 
