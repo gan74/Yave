@@ -10,9 +10,10 @@ layout(set = 1, binding = 1) uniform sampler2D in_normal_map;
 layout(set = 1, binding = 2) uniform sampler2D in_roughness;
 layout(set = 1, binding = 3) uniform sampler2D in_metallic;
 
-/*layout(set = 1, binding = 4) uniform Constants_Inline {
-	vec4 constants;
-};*/
+layout(set = 1, binding = 4) uniform Constants_Inline {
+	float roughness_mul;
+	float metallic_mul;
+};
 
 layout(location = 0) in vec3 in_normal;
 layout(location = 1) in vec3 in_tangent;
@@ -28,8 +29,8 @@ void main() {
 	const vec3 color = texture(in_color, in_uv).rgb;
 	const vec3 normal = unpack_normal_map(texture(in_normal_map, in_uv).xy);
 
-	const float roughness = texture(in_roughness, in_uv).x;
-	const float metallic = texture(in_metallic, in_uv).x;
+	const float roughness = texture(in_roughness, in_uv).x * roughness_mul;
+	const float metallic = texture(in_metallic, in_uv).x * metallic_mul;
 
 	const vec3 mapped_normal = normal.x * in_tangent +
 	                           normal.y * in_bitangent +

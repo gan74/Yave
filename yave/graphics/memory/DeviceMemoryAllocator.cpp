@@ -24,7 +24,6 @@ SOFTWARE.
 #include "alloc.h"
 
 #include <y/utils/log.h>
-#include <y/utils/format.h>
 
 namespace yave {
 
@@ -46,8 +45,6 @@ usize DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
 DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),
 		_max_allocs(dptr->device_properties().max_memory_allocations) {
-
-	log_msg(fmt("Max device memory allocation count: %", _max_allocs));
 }
 
 DeviceMemory DeviceMemoryAllocator::dedicated_alloc(VkMemoryRequirements reqs, MemoryType type) {

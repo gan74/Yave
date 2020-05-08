@@ -64,8 +64,6 @@ class DeviceResources final : NonCopyable {
 
 			ToneMapFrag,
 			RayleighSkyFrag,
-			BasicFrag,
-			SkinnedFrag,
 			TexturedFrag,
 
 			BasicVert,
@@ -92,10 +90,8 @@ class DeviceResources final : NonCopyable {
 		};
 
 		enum MaterialTemplates {
-			BasicMaterialTemplate,
-			BasicSkinnedMaterialTemplate,
-
 			TexturedMaterialTemplate,
+			TexturedSkinnedMaterialTemplate,
 
 			ToneMappingMaterialTemplate,
 			RayleighSkyMaterialTemplate,

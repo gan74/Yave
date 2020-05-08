@@ -59,6 +59,7 @@ static void hide_console() {
 
 static void parse_args(int argc, char** argv) {
 	for(std::string_view arg : core::Span<const char*>(argv, argc)) {
+		log_msg(arg);
 		if(arg == "--nodebug") {
 			debug_instance = false;
 		}
@@ -139,7 +140,7 @@ int main(int argc, char** argv) {
 		}
 
 		// 35 ms to not spam if we are capped at 30 FPS
-		core::DebugTimer frame_timer("frame", core::Duration::milliseconds(35-.0));
+		core::DebugTimer frame_timer("frame", core::Duration::milliseconds(35.0));
 
 		Swapchain* swapchain = window.swapchain();
 		if(swapchain && swapchain->is_valid()) {

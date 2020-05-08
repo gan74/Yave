@@ -174,12 +174,18 @@ static DeviceProperties create_properties(const PhysicalDevice& device) {
 	properties.max_inline_uniform_size = 0;
 	if(is_extension_supported(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, device.vk_physical_device())) {
 		properties.max_inline_uniform_size = device.vk_uniform_block_properties().maxInlineUniformBlockSize;
-		log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size), Log::Debug);
 	}
 
 
 	return properties;
 }
+
+static void print_properties(const DeviceProperties& properties) {
+	log_msg(fmt("max_memory_allocations = %", properties.max_memory_allocations), Log::Debug);
+	log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size), Log::Debug);
+	log_msg(fmt("max_uniform_buffer_size = %", properties.max_uniform_buffer_size), Log::Debug);
+}
+
 
 
 Device::ScopedDevice::~ScopedDevice() {
@@ -202,6 +208,7 @@ Device::Device(Instance& instance) :
 		_descriptor_set_allocator(this),
 		_resources(this) {
 
+	print_properties(_properties);
 }
 
 Device::~Device() {

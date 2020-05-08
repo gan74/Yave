@@ -63,9 +63,8 @@ struct DeviceMaterialData {
 };
 
 static constexpr DeviceMaterialData material_datas[] = {
-		DeviceMaterialData::basic(SpirV::BasicFrag),
-		DeviceMaterialData::skinned(SpirV::SkinnedFrag),
 		DeviceMaterialData::basic(SpirV::TexturedFrag),
+		DeviceMaterialData::skinned(SpirV::TexturedFrag),
 		DeviceMaterialData::screen(SpirV::ToneMapFrag),
 		DeviceMaterialData::screen(SpirV::RayleighSkyFrag, true),
 	};
@@ -85,8 +84,6 @@ static constexpr const char* spirv_names[] = {
 
 		"tonemap.frag",
 		"rayleigh_sky.frag",
-		"basic.frag",
-		"skinned.frag",
 		"textured.frag",
 
 		"basic.vert",
@@ -215,7 +212,7 @@ void DeviceResources::load_resources(DevicePtr dptr) {
 
 	{
 		_materials = std::make_unique<AssetPtr<Material>[]>(usize(MaxMaterials));
-		_materials[0] = make_asset<Material>(&_material_templates[usize(BasicMaterialTemplate)]);
+		_materials[0] = make_asset<Material>(&_material_templates[usize(TexturedMaterialTemplate)]);
 	}
 
 	{

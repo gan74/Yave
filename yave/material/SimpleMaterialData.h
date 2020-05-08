@@ -62,7 +62,7 @@ class SimpleMaterialData {
 		std::array<AssetId, texture_count> texture_ids() const;
 
 		std::array<AssetPtr<Texture>, texture_count> _textures;
-		math::Vec4 _data;
+		math::Vec4 _data = {0.2f, 0.0f, 0.0f, 0.0f};
 };
 
 }
