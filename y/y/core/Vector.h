@@ -196,7 +196,7 @@ class Vector : ResizePolicy, Allocator {
 
 			Y_CHECK_ELECTRIC(_data_end, 1);
 
-			::new(_data_end++) data_type(elem);
+			::new(_data_end++) data_type{elem};
 		}
 
 		void push_back(value_type&& elem) {
@@ -206,7 +206,7 @@ class Vector : ResizePolicy, Allocator {
 
 			Y_CHECK_ELECTRIC(_data_end, 1);
 
-			::new(_data_end++) data_type(std::move(elem));
+			::new(_data_end++) data_type{std::move(elem)};
 		}
 
 		template<typename... Args>
@@ -217,7 +217,7 @@ class Vector : ResizePolicy, Allocator {
 
 			Y_CHECK_ELECTRIC(_data_end, 1);
 
-			return *(::new(_data_end++) data_type(y_fwd(args)...));
+			return *(::new(_data_end++) data_type{y_fwd(args)...});
 		}
 
 		template<typename It>
@@ -375,7 +375,7 @@ class Vector : ResizePolicy, Allocator {
 				std::copy_n(src, n, dst);
 			} else {
 				for(; n; --n) {
-					::new(dst++) data_type(std::move(*(src++)));
+					::new(dst++) data_type{std::move(*(src++))};
 				}
 			}
 		}

@@ -69,6 +69,20 @@ class TransformIterator : private Transform {
 		using pointer = value_type*;
 
 		TransformIterator() = default;
+		TransformIterator(TransformIterator&&) = default;
+		TransformIterator(const TransformIterator&) = default;
+
+		TransformIterator& operator=(TransformIterator&& other) {
+			_it = std::move(other._it);
+			Transform::operator=(std::move(other));
+			return *this;
+		}
+
+		TransformIterator& operator=(const TransformIterator& other) {
+			_it = other._it;
+			Transform::operator=(other);
+			return *this;
+		}
 
 		TransformIterator(iterator_type it, const Transform& tr = Transform()) : Transform(tr), _it(it) {
 		}
@@ -147,6 +161,11 @@ class TransformIterator : private Transform {
 		}
 
 
+
+		const iterator_type& inner() const {
+			return _it;
+		}
+
 	private:
 		iterator_type _it;
 };
@@ -167,6 +186,22 @@ class FilterIterator : private Filter {
 		using pointer = value_type*;
 
 		FilterIterator() = default;
+		FilterIterator(FilterIterator&&) = default;
+		FilterIterator(const FilterIterator&) = default;
+
+		FilterIterator& operator=(FilterIterator&& other) {
+			_it = std::move(other._it);
+			_end = std::move(other._end);
+			Filter::operator=(std::move(other));
+			return *this;
+		}
+
+		FilterIterator& operator=(const FilterIterator& other) {
+			_it = other._it;
+			_end = other._end;
+			Filter::operator=(other);
+			return *this;
+		}
 
 		FilterIterator(iterator_type it, end_iterator_type end, const Filter& ft = Filter()) : Filter(ft), _it(it), _end(end) {
 			find_next_valid();
@@ -218,6 +253,12 @@ class FilterIterator : private Filter {
 			return _it != other;
 		}
 
+
+
+		const iterator_type& inner() const {
+			return _it;
+		}
+
 	private:
 		void find_next_valid() {
 			while(!at_end()) {
@@ -231,6 +272,7 @@ class FilterIterator : private Filter {
 		iterator_type _it;
 		end_iterator_type _end;
 };
+
 
 template<typename T>
 class ScalarIterator;

@@ -26,18 +26,25 @@ SOFTWARE.
 
 namespace y {
 namespace test {
-namespace detail {
 
+namespace detail {
 struct TestResult {
 	bool result;
 	const char* file;
 	int line;
 };
 
-const char* test_box_msg(const char* msg = nullptr);
-void test_assert(const char* msg, void (*func)(TestResult &));
+struct TestItem {
+	const char* name = "Unknown test";
+	void (*test_func)(TestResult&) = nullptr;
+	TestItem* next = nullptr;
+};
 
+void register_test(TestItem* test);
 }
+
+bool run_tests();
+
 }
 }
 
@@ -47,27 +54,28 @@ void test_assert(const char* msg, void (*func)(TestResult &));
 #define Y_TEST_RUNNER y_create_name_with_prefix(runner)
 #define Y_TEST_FAILED y::test::detail::TestResult { false, __FILE__, __LINE__ }
 
-#define y_test_assert(t) do { if(!(t)) { _test_result = Y_TEST_FAILED; return; } } while(false)
+#define y_test_assert(t) do { if(!(t)) { _y_test_result = Y_TEST_FAILED; return; } } while(false)
 
-#define y_test_func(msg)																				\
+#define y_test_func(name)																				\
 static void Y_TEST_FUNC(y::test::detail::TestResult&);													\
 namespace {																								\
 	class Y_TEST_RUNNER {																				\
-		Y_TEST_RUNNER() {																				\
-			y::test::detail::test_assert(y::test::detail::test_box_msg(msg), &Y_TEST_FUNC);				\
+		Y_TEST_RUNNER() : test_item({name, &Y_TEST_FUNC, nullptr}) {									\
+			y::test::detail::register_test(&test_item);													\
 		}																								\
+		y::test::detail::TestItem test_item;															\
 		static Y_TEST_RUNNER runner;																	\
 	};																									\
 	Y_TEST_RUNNER Y_TEST_RUNNER::runner = Y_TEST_RUNNER();												\
 }																										\
-void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)
+void Y_TEST_FUNC(y::test::detail::TestResult& _y_test_result)
 
 #else
 
 #define y_test_assert(t) do { y::unused(t) } while(false)
 
-#define y_test_func(msg)																				\
-static void Y_TEST_FUNC(y::test::detail::TestResult& _test_result)
+#define y_test_func(name)																				\
+static void Y_TEST_FUNC(y::test::detail::TestResult& _y_test_result)
 
 #endif
 
