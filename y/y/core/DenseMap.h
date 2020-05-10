@@ -35,9 +35,9 @@ namespace core {
 
 // http://research.cs.vt.edu/AVresearch/hashing/index.php
 
-namespace split {
+namespace external {
 template<typename Key, typename Value, typename Hasher = std::hash<Key>>
-class DenseMap : Hasher {
+class ExternalDenseMap : Hasher {
 
 	using key_type = remove_cvref_t<Key>;
 	using value_type = remove_cvref_t<Value>;
@@ -96,13 +96,13 @@ class DenseMap : Hasher {
 		void emplace(const Key& k, index_type i) {
 			y_debug_assert(!has_key());
 			value_index = i;
-			new(&key) Key{k};
+			new(&key) key_type{k};
 		}
 
 		void make_empty() {
 			if(has_key()) {
 				value_index = tombstone_index;
-				key.~Key();
+				key.~key_type();
 			}
 		}
 
@@ -258,8 +258,8 @@ class DenseMap : Hasher {
 		Vector<ValueBox> _values;
 
 	public:
-		using iterator			= typename decltype(std::declval<      DenseMap<Key, Value, Hasher>>().key_values())::iterator;
-		using const_iterator	= typename decltype(std::declval<const DenseMap<Key, Value, Hasher>>().key_values())::iterator;
+		using iterator			= typename decltype(std::declval<      ExternalDenseMap<Key, Value, Hasher>>().key_values())::iterator;
+		using const_iterator	= typename decltype(std::declval<const ExternalDenseMap<Key, Value, Hasher>>().key_values())::iterator;
 
 		static_assert(std::is_copy_assignable_v<const_iterator>);
 		static_assert(std::is_copy_constructible_v<const_iterator>);
@@ -371,8 +371,7 @@ class DenseMap : Hasher {
 }
 
 namespace stable {
-// This seems to be the better choice.
-// Improvements idea:
+// Improvements ideas:
 //		pool value allocations
 //		inline value if small (will break stability)
 template<typename Key, typename Value, typename Hasher = std::hash<Key>>
@@ -427,14 +426,14 @@ class StableDenseMap : Hasher {
 
 		void set(const Key& k, std::unique_ptr<value_type> ptr) {
 			y_debug_assert(!has_key());
-			new(&key) Key{k};
+			new(&key) key_type{k};
 			value = std::move(ptr);
 		}
 
 		void make_empty() {
 			if(has_key()) {
 				is_tombstone = true;
-				key.~Key();
+				key.~key_type();
 				value = nullptr;
 			}
 		}
@@ -705,8 +704,347 @@ class StableDenseMap : Hasher {
 };
 }
 
-using namespace split;
+namespace compact {
+template<typename Key, typename Value, typename Hasher = std::hash<Key>>
+class DenseMap : Hasher {
+
+	using key_type = remove_cvref_t<Key>;
+	using value_type = remove_cvref_t<Value>;
+
+	enum class EntryState : u8 {
+		Empty = 0,
+		Tombstone = 1,
+		Full = 2
+	};
+
+	struct Entry : NonCopyable {
+		union {
+			key_type key;
+		};
+
+		EntryState state = EntryState::Empty;
+
+		union {
+			value_type value;
+		};
+
+		Entry() = default;
+
+		~Entry() {
+			make_empty();
+		}
+
+		Entry(Entry&& other) {
+			operator=(std::move(other));
+		}
+
+		Entry& operator=(Entry&& other) {
+			make_empty();
+			if(other.has_key()) {
+				state = EntryState::Full;
+				key = std::move(other.key);
+				value = std::move(other.value);
+			}
+			return *this;
+		}
+
+		bool has_key() const {
+			return state == EntryState::Full;
+		}
+
+		bool is_empty_strict() const {
+			return state == EntryState::Empty;
+		}
+
+		bool is_tombstone() const {
+			return state == EntryState::Tombstone;
+		}
+
+		template<typename... Args>
+		void emplace(const Key& k, Args&&... args) {
+			y_debug_assert(!has_key());
+			state = EntryState::Full;
+			new(&key) key_type{k};
+			new(&value) value_type{y_fwd(args)...};
+		}
+
+		void make_empty() {
+			if(has_key()) {
+				state = EntryState::Tombstone;
+				key.~key_type();
+				value.~value_type();
+			}
+		}
+
+		bool operator==(const Key& k) const {
+			return has_key() && key == k;
+		}
+	};
+
+	public:
+		static constexpr double max_load_factor = 0.7;
+		static constexpr usize min_capacity = 16;
+
+		auto key_values() const {
+			return core::Range(
+				make_iterator(_entries.begin()),
+				EndIterator{}
+			);
+		}
+
+		auto key_values() {
+			return core::Range(
+				make_iterator(_entries.begin()),
+				EndIterator{}
+			);
+		}
+
+		auto values() const {
+			return core::Range(
+				TransformIterator(entry_iterator(_entries.begin()), [](const Entry& entry) -> const Value& {
+					return entry.value;
+				}),
+				EndIterator{}
+			);
+		}
+
+		auto values() {
+			return core::Range(
+				TransformIterator(entry_iterator(_entries.begin()), [](Entry& entry) -> Value& {
+					return entry.value;
+				}),
+				EndIterator{}
+			);
+		}
+
+		auto keys() const {
+			return core::Range(
+				TransformIterator(entry_iterator(_entries.begin()), [](const Entry& entry) -> const Key& {
+					return entry.key;
+				}),
+				EndIterator{}
+			);
+		}
+
+	private:
+		auto entry_iterator(const Entry* entry) const {
+			return FilterIterator(entry, _entries.end(), [](const Entry& entry) { return entry.has_key(); });
+		}
+
+		auto entry_iterator(Entry* entry) {
+			return FilterIterator(entry, _entries.end(), [](Entry& entry) { return entry.has_key(); });
+		}
+
+		auto make_iterator(const Entry* entry) const {
+			return TransformIterator(entry_iterator(entry), [](const Entry& entry) -> std::pair<const Key&, const Value&> {
+				return {entry.key, entry.value};
+			});
+		}
+
+		auto make_iterator(Entry* entry) {
+			return TransformIterator(entry_iterator(entry), [](Entry& entry) -> std::pair<const Key&, Value&> {
+				return {entry.key, entry.value};
+			});
+		}
+
+
+		bool should_expand() const {
+			return _entries.size() * max_load_factor <=  _size;
+		}
+
+		usize hash(const Key& key) const {
+			return Hasher::operator()(key);
+		}
+
+		// http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
+		static constexpr usize probing_offset(usize i) {
+			return (i * i + i) / 2;
+		}
+
+		usize find_bucket_index_for_insert(const Key& key) const {
+			const usize h = hash(key);
+			const usize entry_count = _entries.size();
+			for(usize i = 0; true; ++i) {
+				const usize index = (h + probing_offset(i)) % entry_count;
+				const Entry& entry = _entries[index];
+				if(!entry.has_key() || entry == key) {
+					return index;
+				}
+				y_debug_assert(i < entry_count);
+			}
+		}
+
+		const Entry* find_key(const Key& key) const {
+			const usize h = hash(key);
+			const usize entry_count = _entries.size();
+			for(usize i = 0; true; ++i) {
+				const usize index = (h + probing_offset(i)) % entry_count;
+				const Entry& entry = _entries[index];
+				if(entry == key) {
+					return &entry;
+				}
+				if(entry.is_empty_strict()) {
+					return nullptr;
+				}
+				y_debug_assert(i < entry_count);
+			}
+		}
+
+		static constexpr usize ceil_next_power_of_2(usize k) {
+			return 1 << log2ui(k + 1);
+		}
+
+		void expand(usize new_entry_count) {
+			const usize pow_2 = ceil_next_power_of_2(new_entry_count);
+			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
+
+			auto old_entries = std::exchange(_entries, FixedArray<Entry>(new_size));
+			for(Entry& k : old_entries) {
+				if(k.has_key()) {
+					const usize new_index = find_bucket_index_for_insert(k.key);
+					y_debug_assert(!_entries[new_index].has_key());
+					_entries[new_index].emplace(std::move(k.key), std::move(k.value));
+				}
+			}
+		}
+
+		void expand() {
+			expand(_entries.size() == 0 ? min_capacity : 2 * _entries.size());
+		}
+
+		void audit() const {
+#ifdef Y_DENSEMAP_AUDIT
+			y_debug_assert(_entries.size() >= _size + 1);
+			usize entry_count = 0;
+			for(usize i = 0; i != _entries.size(); ++i) {
+				const Entry& k = _entries[i];
+				if(!k.has_key()) {
+					continue;
+				}
+				++entry_count;
+			}
+			y_debug_assert(_size == entry_count);
+#endif
+		}
+
+		FixedArray<Entry> _entries;
+		usize _size = 0;
+
+	public:
+		using iterator			= typename decltype(std::declval<      DenseMap<Key, Value, Hasher>>().key_values())::iterator;
+		using const_iterator	= typename decltype(std::declval<const DenseMap<Key, Value, Hasher>>().key_values())::iterator;
+
+		static_assert(std::is_copy_assignable_v<const_iterator>);
+		static_assert(std::is_copy_constructible_v<const_iterator>);
+
+		DenseMap() = default;
+		DenseMap(DenseMap&& other) {
+			operator=(std::move(other));
+		}
+
+		DenseMap& operator=(DenseMap&& other) {
+			std::swap(_entries, other._entries);
+			std::swap(_size, other._size);
+			return *this;
+		}
+
+
+		iterator begin() {
+			return key_values().begin();
+		}
+
+		const_iterator begin() const {
+			return key_values().begin();
+		}
+
+		auto end() {
+			return EndIterator{};
+		}
+
+		auto end() const {
+			return EndIterator{};
+		}
+
+
+		usize size() const {
+			return _size;
+		}
+
+		double load_factor() const {
+			return double(_entries.size()) / double(_size);
+		}
+
+		bool contains(const Key& key) const {
+			return find_key(key);
+		}
+
+		iterator find(const Key& key) {
+			Entry* entry = const_cast<Entry*>(find_key(key));
+			return make_iterator(entry ? entry : _entries.end());
+		}
+
+		const_iterator find(const Key& key) const {
+			const Entry* entry = find_key(key);
+			return make_iterator(entry ? entry : _entries.end());
+		}
+
+		void rehash() {
+			expand(_entries.size());
+		}
+
+		void set_min_capacity(usize cap) {
+			const usize capacity = usize(cap / (max_load_factor * 0.8));
+			if(_entries.size() < capacity) {
+				expand(capacity);
+			}
+		}
+
+		void reserve(usize cap) {
+			set_min_capacity(cap);
+		}
+
+		template<typename... Args>
+		std::pair<iterator, bool> emplace(const Key& key, Args&&... args) {
+			y_defer(audit());
+
+			if(should_expand()) {
+				expand();
+			}
+
+			y_debug_assert(!should_expand());
+
+			const usize index = find_bucket_index_for_insert(key);
+			const bool exists = _entries[index].has_key();
+
+			if(!exists) {
+				_entries[index].emplace(key, y_fwd(args)...);
+				++_size;
+			}
+
+			return {make_iterator(&_entries[index]), !exists};
+		}
+
+		std::pair<iterator, bool> insert(std::pair<const Key, Value> p) {
+			return emplace(p.first, std::move(p.second));
+		}
+
+		void erase(const iterator& it) {
+			y_defer(audit());
+
+			Entry* entry_ptr = it.inner().inner();
+
+			y_debug_assert(entry_ptr >= _entries.data());
+			y_debug_assert(entry_ptr < _entries.data() + _entries.size());
+
+			--_size;
+			entry_ptr->make_empty();
+		}
+};
+}
+
+using namespace external;
 using namespace stable;
+using namespace compact;
 
 }
 }

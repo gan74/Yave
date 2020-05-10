@@ -114,6 +114,8 @@ static Map fuzz(usize count) {
 }
 
 
+Y_TODO(Test with complex objects)
+
 y_test_func("DenseMap basics") {
 	static constexpr int max_key = 1000;
 	DenseMap<int, int> map;
@@ -152,12 +154,15 @@ y_test_func("DenseMap bad hash") {
 
 y_test_func("DenseMap fuzz") {
 	const usize fuzz_count = 10000;
-	const auto m0 = fuzz<DenseMap<i32, i32>>(fuzz_count);
-	const auto m1 = fuzz<StableDenseMap<i32, i32>>(fuzz_count);
-	const auto m2 = fuzz<std::unordered_map<i32, i32>>(fuzz_count);
+	const auto m0 = fuzz<std::unordered_map<i32, i32>>(fuzz_count);
+
+	const auto m1 = fuzz<ExternalDenseMap<i32, i32>>(fuzz_count);
+	const auto m2 = fuzz<StableDenseMap<i32, i32>>(fuzz_count);
+	const auto m3 = fuzz<DenseMap<i32, i32>>(fuzz_count);
 
 	y_test_assert(to_vector(m0) == to_vector(m1));
 	y_test_assert(to_vector(m0) == to_vector(m2));
+	y_test_assert(to_vector(m0) == to_vector(m3));
 }
 
 
