@@ -359,7 +359,7 @@ class DenseMap : Hasher {
 			const index_type value_index = _values.size();
 			const index_type key_index = find_bucket_index_for_insert(key);
 			if(_keys[key_index].has_key()) {
-				return {make_iterator(&_values[value_index]), false};
+				return {make_iterator(&_values[_keys[key_index].value_index]), false};
 			}
 
 			_values.emplace_back(ValueBox{value_type{y_fwd(args)...}, key_index});

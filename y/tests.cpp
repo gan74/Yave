@@ -20,137 +20,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <y/core/Vector.h>
-#include <y/core/DenseMap.h>
-
-#include <y/core/Chrono.h>
-
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
-
 #include <y/test/test.h>
 
+#include <y/utils/log.h>
+
 using namespace y;
-using namespace y::core;
-
-struct AbysmalHash {
-	template<typename T>
-	usize operator()(const T&) const {
-		return 0;
-	}
-};
-
-template<usize B>
-struct BadHash {
-	template<typename T>
-	usize operator()(const T& k) const {
-		std::hash<T> hasher;
-		usize h = hasher(k);
-		return h % B;
-	}
-};
-
-template<typename Map>
-int bench() {
-#ifndef Y_DENSEMAP_AUDIT
-	static constexpr int max_key = 10000;
-#else
-	static constexpr int max_key = 1000;
-#endif
-
-	Map map;
-	for(int i = 0; i != max_key; ++i) {
-		map.insert({i, i * 2});
-	}
-
-	usize map_size = max_key;
-	unused(map_size);
-	for(int i = 0; i < max_key; i += 1 + (i / 8)) {
-		const auto it = map.find(i);
-		y_debug_assert(it != map.end());
-		map.erase(it);
-		--map_size;
-		y_debug_assert(map_size == map.size());
-	}
-
-	int sum = 0;
-	for(auto&& [k, v] : map) {
-		sum += k;
-		sum += v / 2;
-	}
-	return sum;
-}
-
 
 int main() {
-	test::run_tests();
+	const bool ok = test::run_tests();
 
-	using namespace y::core::split;
-
-	static constexpr int max_key = 10;
-	DenseMap<int, int> map;
-
-	for(int i = 0; i != max_key; ++i) {
-		map.emplace(i, i * 2);
+	if(ok) {
+		log_msg("All tests OK\n");
+	} else {
+		log_msg("Tests failed\n", Log::Error);
 	}
 
-	y_debug_assert(map.contains(4));
-	y_debug_assert(!map.contains(max_key + 1));
-	y_debug_assert(map.find(max_key + 1) == map.end());
-
-	log_msg("values:");
-	for(auto&& i : map.values()) {
-		log_msg(fmt("  %", i));
-	}
-
-	log_msg("keys:");
-	for(auto&& i : map.keys()) {
-		log_msg(fmt("  %", i));
-		y_debug_assert(map.contains(i));
-	}
-
-	log_msg("key-values:");
-	for(auto&& [k, v] : map.key_values()) {
-		log_msg(fmt("  % -> %", k, v));
-	}
-
-	log_msg("for-each:");
-	for(auto&& [k, v] : map) {
-		log_msg(fmt("  % -> %", k, v));
-	}
-
-
-	{
-		{
-			core::DebugTimer _("     DenseMap");
-			bench<DenseMap<int, int>>();
-		}
-
-		{
-			core::DebugTimer _("unordered_map");
-			bench<std::unordered_map<int, int>>();
-		}
-	}
-
-	{
-		static constexpr usize B = 8;
-		int dense = 0;
-		int std = 0;
-		log_msg("------------------ BAD HASH ------------------");
-		{
-			core::DebugTimer _("     DenseMap");
-			dense = bench<DenseMap<int, int, BadHash<B>>>();
-		}
-
-		{
-			core::DebugTimer _("unordered_map");
-			std = bench<std::unordered_map<int, int, BadHash<B>>>();
-		}
-		y_always_assert(dense == std, "result do not match");
-	}
-
-	log_msg("Ok");
 	return 0;
 }
 
