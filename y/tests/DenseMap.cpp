@@ -153,9 +153,11 @@ y_test_func("DenseMap bad hash") {
 y_test_func("DenseMap fuzz") {
 	const usize fuzz_count = 10000;
 	const auto m0 = fuzz<DenseMap<i32, i32>>(fuzz_count);
-	const auto m1 = fuzz<std::unordered_map<i32, i32>>(fuzz_count);
+	const auto m1 = fuzz<StableDenseMap<i32, i32>>(fuzz_count);
+	const auto m2 = fuzz<std::unordered_map<i32, i32>>(fuzz_count);
 
 	y_test_assert(to_vector(m0) == to_vector(m1));
+	y_test_assert(to_vector(m0) == to_vector(m2));
 }
 
 
@@ -172,6 +174,5 @@ y_test_func("DenseMap duplicates") {
 	y_test_assert(!map.emplace(7, 9999).second);
 	y_test_assert((*map.find(7)).second == 13);
 }
-
 
 }
