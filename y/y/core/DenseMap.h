@@ -26,27 +26,37 @@ SOFTWARE.
 #include "FixedArray.h"
 
 #include <y/utils/iter.h>
+#include <y/utils/traits.h>
+
+
+//#define Y_DENSEMAP_AUDIT
+//#define Y_NO_PROBING
 
 namespace y {
 namespace core {
 
 namespace split {
+// http://research.cs.vt.edu/AVresearch/hashing/index.php
 template<typename Key, typename Value, typename Hasher = std::hash<Key>>
 class DenseMap : Hasher {
 
+	using key_type = remove_cvref_t<Key>;
+	using value_type = remove_cvref_t<Value>;
+
 	using index_type = u32;
-	static constexpr index_type invalid_index = index_type(-1);
+	static constexpr index_type empty_index = index_type(-1);
+	static constexpr index_type tombstone_index = index_type(-2);
 
 	struct ValueBox {
-		Value value;
+		value_type value;
 		index_type key_index;
 	};
 
 	struct KeyBox : NonCopyable {
 		union {
-			Key key;
+			key_type key;
 		};
-		index_type value_index = invalid_index;
+		index_type value_index = empty_index;
 
 		KeyBox() = default;
 
@@ -60,42 +70,51 @@ class DenseMap : Hasher {
 
 		KeyBox& operator=(KeyBox&& other) {
 			make_empty();
-			if(!other.is_empty()) {
+			if(other.has_key()) {
 				value_index = other.value_index;
 				key = std::move(other.key);
 			}
 			return *this;
 		}
 
-		bool is_empty() const {
-			return value_index == invalid_index;
+		bool has_key() const {
+			return value_index < tombstone_index;
+		}
+
+		bool is_empty_strict() const {
+			return value_index == empty_index;
+		}
+
+		bool is_tombstone() const {
+			return value_index == tombstone_index;
 		}
 
 		const Key& get() const {
-			y_debug_assert(!is_empty());
+			y_debug_assert(has_key());
 			return key;
 		}
 
 		void emplace(const Key& k, index_type i) {
-			y_debug_assert(is_empty());
+			y_debug_assert(!has_key());
 			value_index = i;
 			new(&key) Key{k};
 		}
 
 		void make_empty() {
-			if(!is_empty()) {
-				value_index = invalid_index;
+			if(has_key()) {
+				value_index = tombstone_index;
 				key.~Key();
 			}
 		}
 
 		bool operator==(const Key& k) const {
-			return !is_empty() && key == k;
+			return has_key() && key == k;
 		}
 	};
 
 	public:
 		static constexpr double max_load_factor = 0.7;
+		static constexpr usize min_capacity = 16;
 
 		auto key_values() const {
 			return core::Range(make_iterator(_values.begin()), _values.end());
@@ -146,36 +165,89 @@ class DenseMap : Hasher {
 		}
 
 		auto key_begin_iterator() const {
-			return FilterIterator(_keys.begin(), _keys.end(), [](const KeyBox& box) { return !box.is_empty(); });
+			return FilterIterator(_keys.begin(), _keys.end(), [](const KeyBox& box) { return box.has_key(); });
 		}
 
 		bool should_expand() const {
 			return _keys.size() * max_load_factor <=  _values.size();
 		}
 
-		usize bucket_index(const Key& key, usize size) const {
-			const usize hash = Hasher::operator()(key);
-			return hash % size;
+		usize hash(const Key& key) const {
+			return Hasher::operator()(key);
 		}
 
-		usize bucket_index(const Key& key) const {
-			return bucket_index(key, _keys.size());
+#ifdef Y_NO_PROBING
+		index_type empty_bucket_index(const Key& key) const {
+			const index_type key_index = hash(key) % _keys.size();
+			y_always_assert(!_keys[key_index].has_key(), "Hash collision");
+			return key_index;
 		}
 
-		void expand() {
+		const KeyBox* find_key(const Key& key) const {
+			const index_type key_index = hash(key) % _keys.size();
+			const KeyBox& box = _keys[key_index];
+			if(box.has_key()) {
+				y_always_assert(box == key, "Hash collision");
+				return &box;
+			}
+			return nullptr;
+		}
+#else
+		// http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
+		static constexpr usize probing_offset(usize i) {
+			return (i * i + i) / 2;
+		}
+
+		index_type empty_bucket_index(const Key& key) const {
+			const usize h = hash(key);
 			const usize key_count = _keys.size();
-			const usize new_size = DefaultVectorResizePolicy::ideal_capacity(key_count + 1);
-			y_debug_assert(new_size != key_count);
+			for(usize i = 0; true; ++i) {
+				const index_type key_index = (h + probing_offset(i)) % key_count;
+				const KeyBox& box = _keys[key_index];
+				if(!box.has_key()) {
+					return key_index;
+				}
+				y_debug_assert(i < key_count);
+			}
+		}
 
-			auto new_keys = FixedArray<KeyBox>(new_size);
-			for(KeyBox& k : _keys) {
-				if(!k.is_empty()) {
-					const index_type new_index = bucket_index(k.get(), new_size);
-					new_keys[new_index].emplace(std::move(k.key), k.value_index);
+		const KeyBox* find_key(const Key& key) const {
+			const usize h = hash(key);
+			const usize key_count = _keys.size();
+			for(usize i = 0; true; ++i) {
+				const index_type key_index = (h + probing_offset(i)) % key_count;
+				const KeyBox& box = _keys[key_index];
+				if(box == key) {
+					return &box;
+				}
+				if(box.is_empty_strict()) {
+					return nullptr;
+				}
+				y_debug_assert(i < key_count);
+			}
+		}
+#endif
+
+		static constexpr usize ceil_next_power_of_2(usize k) {
+			return 1 << log2ui(k + 1);
+		}
+
+		void expand(usize new_key_count) {
+			const usize pow_2 = ceil_next_power_of_2(new_key_count);
+			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
+
+			auto old_keys = std::exchange(_keys, FixedArray<KeyBox>(new_size));
+			for(KeyBox& k : old_keys) {
+				if(k.has_key()) {
+					const index_type new_index = empty_bucket_index(k.key);
+					_keys[new_index].emplace(std::move(k.key), k.value_index);
 					_values[k.value_index].key_index = new_index;
 				}
 			}
-			_keys = std::move(new_keys);
+		}
+
+		void expand() {
+			expand(_keys.size() == 0 ? min_capacity : 2 * _keys.size());
 		}
 
 		template<typename It>
@@ -185,22 +257,22 @@ class DenseMap : Hasher {
 		}
 
 		void audit() const {
-#ifdef Y_DEBUG
+#ifdef Y_DENSEMAP_AUDIT
+			y_debug_assert(_keys.size() >= _values.size() + 1);
 			for(index_type i = 0; i != _values.size(); ++i) {
 				const KeyBox& k = _keys[_values[i].key_index];
-				y_debug_assert(!k.is_empty());
+				y_debug_assert(k.has_key());
 				y_debug_assert(k.value_index == i);
 			}
 			usize key_count = 0;
 			for(index_type i = 0; i != _keys.size(); ++i) {
 				const KeyBox& k = _keys[i];
-				if(k.is_empty()) {
+				if(!k.has_key()) {
 					continue;
 				}
 				++key_count;
 				const ValueBox& v = _values[k.value_index];
 				y_debug_assert(v.key_index == i);
-				y_debug_assert(bucket_index(k.key) == i);
 			}
 			y_debug_assert(_values.size() == key_count);
 #endif
@@ -210,8 +282,8 @@ class DenseMap : Hasher {
 		Vector<ValueBox> _values;
 
 	public:
-		using iterator			= typename decltype(std::declval<      DenseMap<Key, Value>>().key_values())::iterator;
-		using const_iterator	= typename decltype(std::declval<const DenseMap<Key, Value>>().key_values())::iterator;
+		using iterator			= typename decltype(std::declval<      DenseMap<Key, Value, Hasher>>().key_values())::iterator;
+		using const_iterator	= typename decltype(std::declval<const DenseMap<Key, Value, Hasher>>().key_values())::iterator;
 
 		static_assert(std::is_copy_assignable_v<const_iterator>);
 		static_assert(std::is_copy_constructible_v<const_iterator>);
@@ -237,36 +309,52 @@ class DenseMap : Hasher {
 			return _values.size();
 		}
 
+		double load_factor() const {
+			return double(_keys.size()) / double(_values.size());
+		}
+
 		bool contains(const Key& key) const {
-			const usize key_index = bucket_index(key);
-			return _keys[key_index] == key;
+			return find_key(key);
 		}
 
 		iterator find(const Key& key) {
-			const usize key_index = bucket_index(key);
-			const KeyBox& box = _keys[key_index];
-			return make_iterator(box == key ? &_values[box.value_index] : _values.end());
+			const KeyBox* box = find_key(key);
+			return make_iterator(box ? &_values[box->value_index] : _values.end());
 		}
 
 		const_iterator find(const Key& key) const {
-			const usize key_index = bucket_index(key);
-			const KeyBox& box = _keys[key_index];
-			return make_iterator(box == key ? &_values[box.value_index] : _values.end());
+			const KeyBox* box = find_key(key);
+			return make_iterator(box ? &_values[box->value_index] : _values.end());
+		}
+
+		void rehash() {
+			expand(_keys.size());
+		}
+
+		void set_min_capacity(usize cap) {
+			if(cap > _values.capacity()) {
+				_values.set_min_capacity(cap);
+			}
+			const usize key_capacity = cap / (max_load_factor * 0.8);
+			if(_keys.size() < key_capacity) {
+				expand(key_capacity);
+			}
 		}
 
 		template<typename... Args>
 		void emplace(const Key& key, Args&&... args) {
+			y_defer(audit());
+
 			if(should_expand()) {
 				expand();
 			}
 
 			y_debug_assert(!should_expand());
-			const index_type key_index = bucket_index(key);
-			const index_type value_index = _values.size();
-			_values.emplace_back(ValueBox{Value{y_fwd(args)...}, key_index});
-			_keys[key_index].emplace(key, value_index);
 
-			audit();
+			const index_type value_index = _values.size();
+			const index_type key_index = empty_bucket_index(key);
+			_values.emplace_back(ValueBox{value_type{y_fwd(args)...}, key_index});
+			_keys[key_index].emplace(key, value_index);
 		}
 
 		void insert(std::pair<const Key, Value> p) {
@@ -274,6 +362,7 @@ class DenseMap : Hasher {
 		}
 
 		void erase(const iterator& it) {
+			y_defer(audit());
 			y_debug_assert(belongs(it));
 
 			ValueBox* value_ptr = it.inner();
@@ -288,11 +377,11 @@ class DenseMap : Hasher {
 
 			_values.pop();
 			key_ptr->make_empty();
-
-			audit();
 		}
 };
 }
+
+using namespace split;
 
 }
 }

@@ -34,9 +34,30 @@ SOFTWARE.
 using namespace y;
 using namespace y::core;
 
+struct AbysmalHash {
+	template<typename T>
+	usize operator()(const T&) const {
+		return 0;
+	}
+};
+
+template<usize B>
+struct BadHash {
+	template<typename T>
+	usize operator()(const T& k) const {
+		std::hash<T> hasher;
+		usize h = hasher(k);
+		return h % B;
+	}
+};
+
 template<typename Map>
-void bench() {
-	static constexpr int max_key = 100000;
+int bench() {
+#ifndef Y_DENSEMAP_AUDIT
+	static constexpr int max_key = 10000;
+#else
+	static constexpr int max_key = 1000;
+#endif
 
 	Map map;
 	for(int i = 0; i != max_key; ++i) {
@@ -58,10 +79,7 @@ void bench() {
 		sum += k;
 		sum += v / 2;
 	}
-
-	volatile int s = 0;
-	s = sum;
-	unused(s);
+	return sum;
 }
 
 
@@ -113,6 +131,23 @@ int main() {
 			core::DebugTimer _("unordered_map");
 			bench<std::unordered_map<int, int>>();
 		}
+	}
+
+	{
+		static constexpr usize B = 8;
+		int dense = 0;
+		int std = 0;
+		log_msg("------------------ BAD HASH ------------------");
+		{
+			core::DebugTimer _("     DenseMap");
+			dense = bench<DenseMap<int, int, BadHash<B>>>();
+		}
+
+		{
+			core::DebugTimer _("unordered_map");
+			std = bench<std::unordered_map<int, int, BadHash<B>>>();
+		}
+		y_always_assert(dense == std, "result do not match");
 	}
 
 	log_msg("Ok");
