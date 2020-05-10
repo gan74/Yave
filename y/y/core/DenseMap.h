@@ -177,9 +177,9 @@ class DenseMap : Hasher {
 		}
 
 #ifdef Y_NO_PROBING
-		index_type empty_bucket_index(const Key& key) const {
+		index_type find_bucket_index_for_insert(const Key& key) const {
 			const index_type key_index = hash(key) % _keys.size();
-			y_always_assert(!_keys[key_index].has_key(), "Hash collision");
+			y_always_assert(!_keys[key_index].has_key() || _keys[key_index] == key, "Hash collision");
 			return key_index;
 		}
 
@@ -198,13 +198,13 @@ class DenseMap : Hasher {
 			return (i * i + i) / 2;
 		}
 
-		index_type empty_bucket_index(const Key& key) const {
+		index_type find_bucket_index_for_insert(const Key& key) const {
 			const usize h = hash(key);
 			const usize key_count = _keys.size();
 			for(usize i = 0; true; ++i) {
 				const index_type key_index = (h + probing_offset(i)) % key_count;
 				const KeyBox& box = _keys[key_index];
-				if(!box.has_key()) {
+				if(!box.has_key() || box == key) {
 					return key_index;
 				}
 				y_debug_assert(i < key_count);
@@ -239,7 +239,8 @@ class DenseMap : Hasher {
 			auto old_keys = std::exchange(_keys, FixedArray<KeyBox>(new_size));
 			for(KeyBox& k : old_keys) {
 				if(k.has_key()) {
-					const index_type new_index = empty_bucket_index(k.key);
+					const index_type new_index = find_bucket_index_for_insert(k.key);
+					y_debug_assert(!_keys[new_index].has_key());
 					_keys[new_index].emplace(std::move(k.key), k.value_index);
 					_values[k.value_index].key_index = new_index;
 				}
@@ -335,14 +336,18 @@ class DenseMap : Hasher {
 			if(cap > _values.capacity()) {
 				_values.set_min_capacity(cap);
 			}
-			const usize key_capacity = cap / (max_load_factor * 0.8);
+			const usize key_capacity = usize(cap / (max_load_factor * 0.8));
 			if(_keys.size() < key_capacity) {
 				expand(key_capacity);
 			}
 		}
 
+		void reserve(usize cap) {
+			set_min_capacity(cap);
+		}
+
 		template<typename... Args>
-		void emplace(const Key& key, Args&&... args) {
+		std::pair<iterator, bool> emplace(const Key& key, Args&&... args) {
 			y_defer(audit());
 
 			if(should_expand()) {
@@ -352,13 +357,19 @@ class DenseMap : Hasher {
 			y_debug_assert(!should_expand());
 
 			const index_type value_index = _values.size();
-			const index_type key_index = empty_bucket_index(key);
+			const index_type key_index = find_bucket_index_for_insert(key);
+			if(_keys[key_index].has_key()) {
+				return {make_iterator(&_values[value_index]), false};
+			}
+
 			_values.emplace_back(ValueBox{value_type{y_fwd(args)...}, key_index});
 			_keys[key_index].emplace(key, value_index);
+
+			return {make_iterator(&_values.last()), true};
 		}
 
-		void insert(std::pair<const Key, Value> p) {
-			emplace(p.first, std::move(p.second));
+		std::pair<iterator, bool> insert(std::pair<const Key, Value> p) {
+			return emplace(p.first, std::move(p.second));
 		}
 
 		void erase(const iterator& it) {

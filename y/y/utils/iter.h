@@ -59,8 +59,11 @@ class TransformIterator : private Transform {
 	using iterator_type = It;
 	using iterator_traits = std::iterator_traits<iterator_type>;
 
+
+	using raw_value_type = decltype(std::declval<Transform>()(*std::declval<It>()));
+
 	public:
-		using value_type = std::remove_reference_t<decltype(std::declval<Transform>()(*std::declval<It>()))>;
+		using value_type = std::remove_reference_t<raw_value_type>;
 
 		using difference_type = typename iterator_traits::difference_type;
 		using iterator_category = typename iterator_traits::iterator_category;
@@ -128,6 +131,7 @@ class TransformIterator : private Transform {
 		}
 
 		auto* operator->() const {
+			static_assert(std::is_reference_v<raw_value_type>);
 			return &Transform::operator()(*_it);
 		}
 
