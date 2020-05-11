@@ -60,7 +60,8 @@ class ExternalDenseMap : Hasher {
 		};
 		index_type value_index = empty_index;
 
-		KeyBox() = default;
+		KeyBox() {
+		}
 
 		~KeyBox() {
 			make_empty();
@@ -74,7 +75,7 @@ class ExternalDenseMap : Hasher {
 			make_empty();
 			if(other.has_key()) {
 				value_index = other.value_index;
-				key = std::move(other.key);
+				::new(&key) key_type{other.key};
 			}
 			return *this;
 		}
@@ -99,7 +100,7 @@ class ExternalDenseMap : Hasher {
 		void emplace(const Key& k, index_type i) {
 			y_debug_assert(!has_key());
 			value_index = i;
-			new(&key) key_type{k};
+			::new(&key) key_type{k};
 		}
 
 		void make_empty() {
@@ -386,6 +387,7 @@ class DenseMap : Hasher {
 
 	using key_type = remove_cvref_t<Key>;
 	using value_type = remove_cvref_t<Value>;
+	using key_value_type = std::pair<const key_type, value_type>;
 
 	enum class EntryState : u8 {
 		Empty = 0,
@@ -395,16 +397,14 @@ class DenseMap : Hasher {
 
 	struct Entry : NonCopyable {
 		union {
-			key_type key;
+			key_value_type key_value;
 		};
 
 		EntryState state = EntryState::Empty;
 
-		union {
-			value_type value;
-		};
 
-		Entry() = default;
+		Entry() {
+		}
 
 		~Entry() {
 			make_empty();
@@ -418,8 +418,9 @@ class DenseMap : Hasher {
 			make_empty();
 			if(other.has_key()) {
 				state = EntryState::Full;
-				key = std::move(other.key);
-				value = std::move(other.value);
+				::new(&key_value) key_value_type{std::move(other.key_value)};
+				/*::new(&key) key_type{std::move(other.key)};
+				::new(&value) value_type{std::move(other.value)};*/
 			}
 			return *this;
 		}
@@ -436,24 +437,28 @@ class DenseMap : Hasher {
 			return state == EntryState::Tombstone;
 		}
 
-		template<typename... Args>
-		void emplace(const Key& k, Args&&... args) {
+		void emplace(key_value_type&& kv) {
 			y_debug_assert(!has_key());
 			state = EntryState::Full;
-			new(&key) key_type{k};
-			new(&value) value_type{y_fwd(args)...};
+			::new(&key_value) key_value_type{std::move(kv)};
 		}
 
 		void make_empty() {
 			if(has_key()) {
 				state = EntryState::Tombstone;
-				key.~key_type();
-				value.~value_type();
+				key_value.~key_value_type();
+				/*key.~key_type();
+				value.~value_type();*/
 			}
 		}
 
+		const key_type& key() const {
+			y_debug_assert(has_key());
+			return key_value.first;
+		}
+
 		bool operator==(const Key& k) const {
-			return has_key() && key == k;
+			return has_key() && key() == k;
 		}
 	};
 
@@ -478,7 +483,7 @@ class DenseMap : Hasher {
 		auto values() const {
 			return core::Range(
 				TransformIterator(entry_iterator(_entries.begin()), [](const Entry& entry) -> const Value& {
-					return entry.value;
+					return entry.key_value.second;
 				}),
 				EndIterator{}
 			);
@@ -487,7 +492,7 @@ class DenseMap : Hasher {
 		auto values() {
 			return core::Range(
 				TransformIterator(entry_iterator(_entries.begin()), [](Entry& entry) -> Value& {
-					return entry.value;
+					return entry.key_value.second;
 				}),
 				EndIterator{}
 			);
@@ -496,7 +501,7 @@ class DenseMap : Hasher {
 		auto keys() const {
 			return core::Range(
 				TransformIterator(entry_iterator(_entries.begin()), [](const Entry& entry) -> const Key& {
-					return entry.key;
+					return entry.key_value.first;
 				}),
 				EndIterator{}
 			);
@@ -512,14 +517,14 @@ class DenseMap : Hasher {
 		}
 
 		auto make_iterator(const Entry* entry) const {
-			return TransformIterator(entry_iterator(entry), [](const Entry& entry) -> std::pair<const Key&, const Value&> {
-				return {entry.key, entry.value};
+			return TransformIterator(entry_iterator(entry), [](const Entry& entry) -> const std::pair<const Key, Value>& {
+				return entry.key_value;
 			});
 		}
 
 		auto make_iterator(Entry* entry) {
-			return TransformIterator(entry_iterator(entry), [](Entry& entry) -> std::pair<const Key&, Value&> {
-				return {entry.key, entry.value};
+			return TransformIterator(entry_iterator(entry), [](Entry& entry) -> std::pair<const Key, Value>& {
+				return entry.key_value;
 			});
 		}
 
@@ -583,9 +588,9 @@ class DenseMap : Hasher {
 			auto old_entries = std::exchange(_entries, FixedArray<Entry>(new_size));
 			for(Entry& k : old_entries) {
 				if(k.has_key()) {
-					const usize new_index = find_bucket_index_for_insert(k.key);
+					const usize new_index = find_bucket_index_for_insert(k.key());
 					y_debug_assert(!_entries[new_index].has_key());
-					_entries[new_index].emplace(std::move(k.key), std::move(k.value));
+					_entries[new_index].emplace(std::move(k.key_value));
 				}
 			}
 		}
@@ -688,6 +693,10 @@ class DenseMap : Hasher {
 
 		template<typename... Args>
 		std::pair<iterator, bool> emplace(const Key& key, Args&&... args) {
+			return insert(key_value_type{key, value_type{y_fwd(args)...}});
+		}
+
+		std::pair<iterator, bool> insert(key_value_type p) {
 			y_defer(audit());
 
 			if(should_expand()) {
@@ -696,19 +705,15 @@ class DenseMap : Hasher {
 
 			y_debug_assert(!should_expand());
 
-			const usize index = find_bucket_index_for_insert(key);
+			const usize index = find_bucket_index_for_insert(p.first);
 			const bool exists = _entries[index].has_key();
 
 			if(!exists) {
-				_entries[index].emplace(key, y_fwd(args)...);
+				_entries[index].emplace(std::move(p));
 				++_size;
 			}
 
 			return {make_iterator(&_entries[index]), !exists};
-		}
-
-		std::pair<iterator, bool> insert(std::pair<const Key, Value> p) {
-			return emplace(p.first, std::move(p.second));
 		}
 
 		void erase(const iterator& it) {
