@@ -734,8 +734,385 @@ class DenseMap : Hasher {
 };
 }
 
+namespace bits {
+template<typename Key, typename Value, typename Hasher = std::hash<Key>>
+class ExternalBitsDenseMap : Hasher {
+
+	using key_type = remove_cvref_t<Key>;
+	using value_type = remove_cvref_t<Value>;
+	using key_value_type = std::pair<const key_type, value_type>;
+
+	struct Bucket {
+		usize index;
+		usize hash;
+	};
+
+	struct HashBits {
+		static constexpr usize hash_bit = usize(1) << (8 * sizeof(usize) - 1);
+		static constexpr usize empty_bits = 0;
+		static constexpr usize tombstone_bits = 1;
+
+		usize bits = empty_bits;
+
+		void set_hash(usize hash) {
+			y_debug_assert(!is_hash());
+			bits = hash | hash_bit;
+		}
+
+		void make_empty() {
+			y_debug_assert(is_hash());
+			bits = tombstone_bits;
+		}
+
+		bool is_hash() const {
+			return bits & hash_bit;
+		}
+
+		bool is_hash(usize hash) const {
+			return bits == (hash | hash_bit);
+		}
+
+		bool is_empty_strict() const {
+			return bits == empty_bits;
+		}
+
+		bool is_tombstone() const {
+			return bits == tombstone_bits;
+		}
+
+		usize hash() {
+			y_debug_assert(is_hash());
+			return bits;
+		}
+	};
+
+	static_assert(sizeof(HashBits) == sizeof(usize));
+
+	struct Entry : NonMovable {
+		union {
+			key_value_type key_value;
+		};
+
+		Entry() {
+		}
+
+		~Entry() {
+		}
+
+		void set(key_value_type&& kv) {
+			y_debug_assert(!has_key());
+			::new(&key_value) key_value_type{std::move(kv)};
+		}
+
+		void clear() {
+			key_value.~key_value_type();
+		}
+
+		const key_type& key() const {
+			return key_value.first;
+		}
+
+		bool operator==(const Key& k) const {
+			return key() == k;
+		}
+	};
+
+	public:
+		static constexpr double max_load_factor = 0.7;
+		static constexpr usize min_capacity = 16;
+
+		auto key_values() const {
+			return core::Range(
+				make_iterator(_bits.begin()),
+				EndIterator{}
+			);
+		}
+
+		auto key_values() {
+			return core::Range(
+				make_iterator(_bits.begin()),
+				EndIterator{}
+			);
+		}
+
+		auto values() const {
+			return core::Range(
+				TransformIterator(make_iterator(_bits.begin()), [](const key_value_type& entry) -> const value_type& {
+					return entry.key_value.second;
+				}),
+				EndIterator{}
+			);
+		}
+
+		auto values() {
+			return core::Range(
+				TransformIterator(make_iterator(_bits.begin()), [](key_value_type& entry) -> value_type& {
+					return entry.key_value.second;
+				}),
+				EndIterator{}
+			);
+		}
+
+		auto keys() const {
+			return core::Range(
+				TransformIterator(make_iterator(_bits.begin()), [](const key_value_type& entry) -> const key_type& {
+					return entry.key_value.first;
+				}),
+				EndIterator{}
+			);
+		}
+
+	private:
+		auto bits_iterator(const HashBits* bits) const {
+			return FilterIterator(bits, _bits.end(), [](const HashBits& b) { return b.is_hash(); });
+		}
+
+		auto bits_iterator(HashBits* bits) {
+			return FilterIterator(bits, _bits.end(), [](const HashBits& b) { return b.is_hash(); });
+		}
+
+		auto make_iterator(const HashBits* bits) const {
+			const HashBits* bits_beg = _bits.data();
+			const Entry* entries = _entries.get();
+			return TransformIterator(bits_iterator(bits), [bits_beg, entries](const HashBits& b) -> const key_value_type& {
+				const usize index = &b - bits_beg;
+				return entries[index].key_value;
+			});
+		}
+
+		auto make_iterator(HashBits* bits) {
+			const HashBits* bits_beg = _bits.data();
+			Entry* entries = _entries.get();
+			return TransformIterator(bits_iterator(bits), [bits_beg, entries](const HashBits& b) -> key_value_type& {
+				const usize index = &b - bits_beg;
+				return entries[index].key_value;
+			});
+		}
+
+
+		bool should_expand() const {
+			return _bits.size() * max_load_factor <=  _size;
+		}
+
+		usize hash(const Key& key) const {
+			return Hasher::operator()(key);
+		}
+
+		// http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
+		static constexpr usize probing_offset(usize i) {
+			return (i * i + i) / 2;
+		}
+
+
+		Bucket find_bucket_for_insert(const Key& key) const {
+			const usize h = hash(key);
+			return find_bucket_for_insert(key, h);
+		}
+
+		Bucket find_bucket_for_insert(const Key& key, usize h) const {
+			const usize entry_count = _bits.size();
+			const usize hash_mask = entry_count - 1;
+			usize best_index = 0;
+			for(usize i = 0; i != entry_count; ++i) {
+				const usize index = (h + probing_offset(i)) & hash_mask;
+				const HashBits& bits = _bits[index];
+				if(!bits.is_hash()) {
+					best_index = index;
+					if(bits.is_empty_strict()) {
+						return {best_index, h};
+					}
+				} else if(bits.is_hash(h) && _entries[index].key() == key) {
+					return {index, h};
+				}
+			}
+			return {best_index, h};
+		}
+
+		const HashBits* find_key(const Key& key) const {
+			const usize h = hash(key);
+			const usize entry_count = _bits.size();
+			const usize hash_mask = entry_count - 1;
+			for(usize i = 0; i != entry_count; ++i) {
+				const usize index = (h + probing_offset(i)) & hash_mask;
+				const HashBits& bits = _bits[index];
+				if(bits.is_hash(h) && _entries[index].key() == key) {
+					return &bits;
+				}
+				if(bits.is_empty_strict()) {
+					return nullptr;
+				}
+			}
+			return nullptr;
+		}
+
+		static constexpr usize ceil_next_power_of_2(usize k) {
+			return 1 << log2ui(k + 1);
+		}
+
+		void expand(usize new_entry_count) {
+			const usize pow_2 = ceil_next_power_of_2(new_entry_count);
+			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
+
+			auto old_bits = std::exchange(_bits, FixedArray<HashBits>(new_size));
+			auto old_entries = std::exchange(_entries, std::make_unique<Entry[]>(new_size));
+
+			const usize current_entry_count = old_bits.size();
+			for(usize i = 0; i != current_entry_count; ++i) {
+				if(old_bits[i].is_hash()) {
+					const Bucket bucket = find_bucket_for_insert(old_entries[i].key(), old_bits[i].hash());
+					const usize new_index = bucket.index;
+
+					y_debug_assert(!_bits[new_index].is_hash());
+
+					_bits[new_index].set_hash(bucket.hash);
+					_entries[new_index].set(std::move(old_entries[i].key_value));
+				}
+			}
+		}
+
+		void expand() {
+			expand(_bits.size() == 0 ? min_capacity : 2 * _bits.size());
+		}
+
+		void audit() const {
+#ifdef Y_DENSEMAP_AUDIT
+			usize entry_count = 0;
+			for(const auto& b : _bits) {
+				if(!b.is_hash()) {
+					continue;
+				}
+				++entry_count;
+			}
+			y_debug_assert(entry_count == _size);
+#endif
+		}
+
+		FixedArray<HashBits> _bits;
+		std::unique_ptr<Entry[]> _entries;
+		usize _size = 0;
+
+	public:
+		using iterator			= typename decltype(std::declval<      ExternalBitsDenseMap<Key, Value, Hasher>>().key_values())::iterator;
+		using const_iterator	= typename decltype(std::declval<const ExternalBitsDenseMap<Key, Value, Hasher>>().key_values())::iterator;
+
+		static_assert(std::is_copy_assignable_v<const_iterator>);
+		static_assert(std::is_copy_constructible_v<const_iterator>);
+
+		ExternalBitsDenseMap() = default;
+		ExternalBitsDenseMap(ExternalBitsDenseMap&& other) {
+			operator=(std::move(other));
+		}
+
+		ExternalBitsDenseMap& operator=(ExternalBitsDenseMap&& other) {
+			std::swap(_bits, other._bits);
+			std::swap(_entries, other._entries);
+			std::swap(_size, other._size);
+			return *this;
+		}
+
+
+		iterator begin() {
+			return key_values().begin();
+		}
+
+		const_iterator begin() const {
+			return key_values().begin();
+		}
+
+		auto end() {
+			return EndIterator{};
+		}
+
+		auto end() const {
+			return EndIterator{};
+		}
+
+
+		usize size() const {
+			return _size;
+		}
+
+		double load_factor() const {
+			return double(_size) / double(_entries.size());
+		}
+
+		bool contains(const Key& key) const {
+			return find_key(key);
+		}
+
+		iterator find(const Key& key) {
+			HashBits* bits = const_cast<HashBits*>(find_key(key));
+			return make_iterator(bits ? bits : _bits.end());
+		}
+
+		const_iterator find(const Key& key) const {
+			const HashBits* bits = find_key(key);
+			return make_iterator(bits ? bits : _bits.end());
+		}
+
+		void rehash() {
+			expand(_bits.size());
+		}
+
+		void set_min_capacity(usize cap) {
+			const usize capacity = usize(cap / (max_load_factor * 0.8));
+			if(_bits.size() < capacity) {
+				expand(capacity);
+			}
+		}
+
+		void reserve(usize cap) {
+			set_min_capacity(cap);
+		}
+
+		template<typename... Args>
+		std::pair<iterator, bool> emplace(const Key& key, Args&&... args) {
+			return insert(key_value_type{key, value_type{y_fwd(args)...}});
+		}
+
+		std::pair<iterator, bool> insert(key_value_type p) {
+			y_defer(audit());
+
+			if(should_expand()) {
+				expand();
+			}
+
+			y_debug_assert(!should_expand());
+
+			const Bucket bucket = find_bucket_for_insert(p.first);
+			const usize index = bucket.index;
+			const bool exists = _bits[index].is_hash();
+
+			if(!exists) {
+				_entries[index].set(std::move(p));
+				_bits[index].set_hash(bucket.hash);
+				++_size;
+			}
+
+			return {make_iterator(&_bits[index]), !exists};
+		}
+
+		void erase(const iterator& it) {
+			y_defer(audit());
+
+			HashBits* bits_ptr = it.inner().inner();
+
+			y_debug_assert(bits_ptr >= _bits.data());
+			y_debug_assert(bits_ptr < _bits.data() + _bits.size());
+
+			const usize index = bits_ptr - _bits .data();
+			_entries[index].clear();
+			bits_ptr->make_empty();
+
+			--_size;
+		}
+};
+}
+
+
 using namespace external;
 using namespace compact;
+using namespace bits;
 
 }
 }

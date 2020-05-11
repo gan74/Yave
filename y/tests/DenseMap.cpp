@@ -153,13 +153,15 @@ y_test_func("DenseMap bad hash") {
 }
 
 y_test_func("DenseMap fuzz") {
-	const usize fuzz_count = 10000;
+	const usize fuzz_count = 50000;
 	const auto m0 = fuzz<std::unordered_map<i32, i32>>(fuzz_count);
 
 	const auto m1 = fuzz<ExternalDenseMap<i32, i32>>(fuzz_count);
+	const auto m2 = fuzz<ExternalBitsDenseMap<i32, i32>>(fuzz_count);
 	const auto m3 = fuzz<DenseMap<i32, i32>>(fuzz_count);
 
 	y_test_assert(to_vector(m0) == to_vector(m1));
+	y_test_assert(to_vector(m0) == to_vector(m2));
 	y_test_assert(to_vector(m0) == to_vector(m3));
 }
 

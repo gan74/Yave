@@ -98,11 +98,62 @@ static auto bench_fill_iter_50(usize count = 5000000) {
 	return map;
 }
 
+template<template<typename...> typename Map>
+static auto bench_fill_iter_50_medium() {
+	return bench_fill_iter_50<Map>(100000);
+}
+
 
 template<template<typename...> typename Map>
 static auto bench_fill_iter_50_tiny() {
 	return bench_fill_iter_50<Map>(100);
 }
+
+
+template<template<typename...> typename Map>
+static auto bench_fill_iter_empty_50(usize count = 1000000) {
+	Map<usize, usize> map;
+	map.reserve(count);
+	for(usize i = 0; i != count / 1000 + 10; ++i) {
+		map.insert({i * 1000, i});
+	}
+
+	usize a = 0;
+	for(usize i = 0; i != 50; ++i) {
+		for(const auto& [k, v] : map) {
+			a += k * i + v;
+		}
+	}
+	map.insert({a, a});
+
+	return map;
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_iter_erased_50(usize count = 1000000) {
+	Map<usize, usize> map;
+
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i, i});
+	}
+
+	for(usize i = 0; i != count; ++i) {
+		if(i % 1000 == 0) {
+			map.erase(map.find(i));
+		}
+	}
+
+	usize a = 0;
+	for(usize i = 0; i != 50; ++i) {
+		for(const auto& [k, v] : map) {
+			a += k * i + v;
+		}
+	}
+	map.insert({a, a});
+
+	return map;
+}
+
 
 template<template<typename...> typename Map>
 static auto bench_fill_erase_all(usize count = 1000000) {
@@ -153,6 +204,23 @@ static auto bench_fill_find_all_50_50(usize count = 1000000) {
 }
 
 
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_degen(usize count = 5000000) {
+	Map<usize, usize> map;
+
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i * 2, i});
+	}
+
+	usize sum = 0;
+	for(usize i = 0; i != count * 2; ++i) {
+		if(const auto& it = map.find(i); it != map.end()) {
+			sum += i;
+		}
+	}
+	map.insert({sum, sum});
+	return map;
+}
 
 template<template<typename...> typename Map>
 static auto bench_fill_find_all_50_50_huge(usize count = 10000000) {
@@ -203,9 +271,13 @@ result_type bench_implementation() {
 	BENCH_ONE(bench_fill);
 	BENCH_ONE(bench_reserve_fill);
 	BENCH_ONE(bench_fill_iter_50);
+	BENCH_ONE(bench_fill_iter_50_medium);
 	BENCH_ONE(bench_fill_iter_50_tiny);
+	BENCH_ONE(bench_fill_iter_empty_50);
+	BENCH_ONE(bench_fill_iter_erased_50);
 	BENCH_ONE(bench_fill_erase_all);
 	BENCH_ONE(bench_fill_erase_refill);
+	BENCH_ONE(bench_fill_find_all_50_50_degen);
 	BENCH_ONE(bench_fill_find_all_50_50_huge);
 	BENCH_ONE(bench_fill_find_all_50_50);
 	BENCH_ONE(bench_fill_find_all_50_50_medium);
@@ -235,6 +307,7 @@ int main() {
 	core::Vector<std::pair<const char*, result_type>> results;
 	log_msg("Benching...");
 	results.emplace_back("ExternalDenseMap", bench_implementation<core::ExternalDenseMap>());
+	results.emplace_back("ExternalBitsDenseMap", bench_implementation<core::ExternalBitsDenseMap>());
 	results.emplace_back("DenseMap", bench_implementation<core::DenseMap>());
 	results.emplace_back("std::unordered_map", bench_implementation<std::unordered_map>());
 	log_msg("Done\n");
@@ -263,7 +336,7 @@ int main() {
 			if(res_time <= times[1] && times[1] * 0.95 < times[0]) {
 				line += "~";
 			}
-			if(res_time > times[0] * 2.0) {
+			if(res_time == times.last() && res_time > times[0] * 2.0) {
 				line += "!";
 			}
 			if(times[0] == res_time) {
