@@ -187,9 +187,10 @@ class ExternalDenseMap : Hasher {
 		index_type find_bucket_index_for_insert(const Key& key) const {
 			const usize h = hash(key);
 			const usize key_count = _keys.size();
+			const usize hash_mask = key_count - 1;
 			index_type best_index = 0;
 			for(usize i = 0; i != key_count; ++i) {
-				const index_type key_index = (h + probing_offset(i)) % key_count;
+				const index_type key_index = (h + probing_offset(i)) & hash_mask;
 				const KeyBox& box = _keys[key_index];
 				if(!box.has_key()) {
 					best_index = key_index;
@@ -206,8 +207,9 @@ class ExternalDenseMap : Hasher {
 		const KeyBox* find_key(const Key& key) const {
 			const usize h = hash(key);
 			const usize key_count = _keys.size();
+			const usize hash_mask = key_count - 1;
 			for(usize i = 0; i != key_count; ++i) {
-				const index_type key_index = (h + probing_offset(i)) % key_count;
+				const index_type key_index = (h + probing_offset(i)) & hash_mask;
 				const KeyBox& box = _keys[key_index];
 				if(box == key) {
 					return &box;
@@ -545,9 +547,10 @@ class DenseMap : Hasher {
 		usize find_bucket_index_for_insert(const Key& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
+			const usize hash_mask = entry_count - 1;
 			usize best_index = 0;
 			for(usize i = 0; i != entry_count; ++i) {
-				const usize index = (h + probing_offset(i)) % entry_count;
+				const usize index = (h + probing_offset(i)) & hash_mask;
 				const Entry& entry = _entries[index];
 				if(!entry.has_key()) {
 					best_index = index;
@@ -564,8 +567,9 @@ class DenseMap : Hasher {
 		const Entry* find_key(const Key& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
+			const usize hash_mask = entry_count - 1;
 			for(usize i = 0; i != entry_count; ++i) {
-				const usize index = (h + probing_offset(i)) % entry_count;
+				const usize index = (h + probing_offset(i)) & hash_mask;
 				const Entry& entry = _entries[index];
 				if(entry == key) {
 					return &entry;
