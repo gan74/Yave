@@ -32,13 +32,27 @@ using namespace y;
 #include <y/core/Vector.h>
 #include <y/core/DenseMap.h>
 #include <y/utils/format.h>
+#include <y/utils/name.h>
+#include <y/math/random.h>
 
 #include <unordered_map>
-#include <numeric>
+#include <random>
 #include <cmath>
 
+template<usize B>
+struct BadHash {
+	template<typename T>
+	usize operator()(const T& k) const {
+		std::hash<T> hasher;
+		usize h = hasher(k);
+		return h % B;
+	}
+};
+
+
+
 template<template<typename...> typename Map>
-static auto bench_fill(usize count = 100000) {
+static auto bench_fill(usize count = 10000000) {
 	Map<usize, usize> map;
 	for(usize i = 0; i != count; ++i) {
 		map.insert({i, i * 2});
@@ -59,7 +73,7 @@ static auto bench_reserve_fill(usize count = 10000000) {
 
 
 template<template<typename...> typename Map>
-static auto bench_fill_iter_50(usize count = 100000) {
+static auto bench_fill_iter_50(usize count = 5000000) {
 	Map<usize, usize> map;
 	for(usize i = 0; i != count; ++i) {
 		map.insert({i, i * 2});
@@ -84,8 +98,14 @@ static auto bench_fill_iter_50(usize count = 100000) {
 	return map;
 }
 
+
 template<template<typename...> typename Map>
-static auto bench_fill_erase_all(usize count = 100000) {
+static auto bench_fill_iter_50_tiny() {
+	return bench_fill_iter_50<Map>(100);
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_erase_all(usize count = 1000000) {
 	Map<usize, usize> map;
 	for(usize i = 0; i != count; ++i) {
 		map.insert({i, i * 2});
@@ -97,7 +117,7 @@ static auto bench_fill_erase_all(usize count = 100000) {
 }
 
 template<template<typename...> typename Map>
-static auto bench_fill_erase_refill(usize count = 100000) {
+static auto bench_fill_erase_refill(usize count = 1000000) {
 	Map<usize, usize> map;
 	for(usize i = 0; i != count; ++i) {
 		map.insert({i, i * 2});
@@ -111,11 +131,15 @@ static auto bench_fill_erase_refill(usize count = 100000) {
 	return map;
 }
 
-template<template<typename...> typename Map>
-static auto bench_fill_find_all_50_50(usize count = 100000) {
-	Map<usize, usize> map;
+template<template<typename...> typename Map, typename Hasher = std::hash<usize>>
+static auto bench_fill_find_all_50_50(usize count = 1000000) {
+	Map<usize, usize, Hasher> map;
+
+	math::FastRandom rng;
+	std::uniform_int_distribution<usize> dist(0, count * 2);
+
 	for(usize i = 0; i != count; ++i) {
-		map.insert({i * 2, i});
+		map.insert({dist(rng), i});
 	}
 
 	usize sum = 0;
@@ -130,31 +154,63 @@ static auto bench_fill_find_all_50_50(usize count = 100000) {
 
 
 
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_huge(usize count = 10000000) {
+	return bench_fill_find_all_50_50<Map>(count);
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_medium(usize count = 10000) {
+	return bench_fill_find_all_50_50<Map>(count);
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_tiny(usize count = 100) {
+	return bench_fill_find_all_50_50<Map>(count);
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_badhash_8(usize count = 10000) {
+	return bench_fill_find_all_50_50<Map, BadHash<8>>(count);
+}
+
+
 using result_type = core::Vector<std::tuple<const char*, double, usize>>;
 
 template<template<typename...> typename Map>
 result_type bench_implementation() {
 	result_type results;
+	core::DebugTimer _(ct_type_name<Map<int, int>>());
 
-#define BENCH_ONE(func)															\
-	do {																		\
-		core::Chrono chrono;													\
-		for(usize count = 1; true; ++count) {									\
-			const usize res = func<Map>().size();								\
-			const auto elapsed = chrono.elapsed();								\
-			if(chrono.elapsed().to_secs() >= 1.0) {								\
-				results.emplace_back(#func, elapsed.to_secs() / count, res);	\
-				break;															\
-			}																	\
-		}																		\
+#define BENCH_ONE(func)																	\
+	do {																				\
+		try {																			\
+			core::Chrono chrono;														\
+			for(usize count = 1; true; ++count) {										\
+				const usize res = func<Map>().size();									\
+				const auto elapsed = chrono.elapsed();									\
+				if(elapsed.to_secs() >= 1.0) {											\
+					results.emplace_back(#func, elapsed.to_secs() / count, res);		\
+					break;																\
+				}																		\
+			}																			\
+		} catch(std::exception& e) {													\
+			y_fatal("Exception while running % for %:\n%",								\
+				#func, ct_type_name<Map<int, int>>(), e.what());						\
+		}																				\
 	} while(false)
 
 	BENCH_ONE(bench_fill);
 	BENCH_ONE(bench_reserve_fill);
 	BENCH_ONE(bench_fill_iter_50);
+	BENCH_ONE(bench_fill_iter_50_tiny);
 	BENCH_ONE(bench_fill_erase_all);
 	BENCH_ONE(bench_fill_erase_refill);
+	BENCH_ONE(bench_fill_find_all_50_50_huge);
 	BENCH_ONE(bench_fill_find_all_50_50);
+	BENCH_ONE(bench_fill_find_all_50_50_medium);
+	BENCH_ONE(bench_fill_find_all_50_50_tiny);
+	BENCH_ONE(bench_fill_find_all_50_50_badhash_8);
 
 #undef BENCH_ONE
 
@@ -190,10 +246,10 @@ int main() {
 			const auto res = impl.second[r];
 			core::String line = "    ";
 			line += std::get<0>(res);
-			while(line.size() != 32) {
+			while(line.size() < 48) {
 				line += " ";
 			}
-			fmt_into(line, "% ms", std::get<1>(res));
+			fmt_into(line, "% s ", std::get<1>(res));
 
 
 
@@ -204,6 +260,12 @@ int main() {
 			std::sort(times.begin(), times.end());
 
 			const double res_time = std::get<1>(res);
+			if(res_time <= times[1] && times[1] * 0.95 < times[0]) {
+				line += "~";
+			}
+			if(res_time > times[0] * 2.0) {
+				line += "!";
+			}
 			if(times[0] == res_time) {
 				line += "*";
 				if(times[1] * 0.5 > res_time) {
