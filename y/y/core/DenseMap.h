@@ -35,6 +35,9 @@ namespace core {
 
 // http://research.cs.vt.edu/AVresearch/hashing/index.php
 
+Y_TODO(Performance degrades very heavily when erasing)
+Y_TODO(We check the load factor before adding elements so we can end up slightly above after insertion)
+
 namespace external {
 template<typename Key, typename Value, typename Hasher = std::hash<Key>>
 class ExternalDenseMap : Hasher {
@@ -183,20 +186,26 @@ class ExternalDenseMap : Hasher {
 		index_type find_bucket_index_for_insert(const Key& key) const {
 			const usize h = hash(key);
 			const usize key_count = _keys.size();
-			for(usize i = 0; true; ++i) {
+			index_type best_index = 0;
+			for(usize i = 0; i != key_count; ++i) {
 				const index_type key_index = (h + probing_offset(i)) % key_count;
 				const KeyBox& box = _keys[key_index];
-				if(!box.has_key() || box == key) {
+				if(!box.has_key()) {
+					best_index = key_index;
+					if(box.is_empty_strict()) {
+						return best_index;
+					}
+				} else if(box == key) {
 					return key_index;
 				}
-				y_debug_assert(i < key_count);
 			}
+			return best_index;
 		}
 
 		const KeyBox* find_key(const Key& key) const {
 			const usize h = hash(key);
 			const usize key_count = _keys.size();
-			for(usize i = 0; true; ++i) {
+			for(usize i = 0; i != key_count; ++i) {
 				const index_type key_index = (h + probing_offset(i)) % key_count;
 				const KeyBox& box = _keys[key_index];
 				if(box == key) {
@@ -205,8 +214,8 @@ class ExternalDenseMap : Hasher {
 				if(box.is_empty_strict()) {
 					return nullptr;
 				}
-				y_debug_assert(i < key_count);
 			}
+			return nullptr;
 		}
 
 		static constexpr usize ceil_next_power_of_2(usize k) {
@@ -249,6 +258,7 @@ class ExternalDenseMap : Hasher {
 				++key_count;
 				const ValueBox& v = _values[k.value_index];
 				y_debug_assert(v.key_index == i);
+				y_debug_assert(find_key(k.key) == &k);
 			}
 			y_debug_assert(_values.size() == key_count);
 #endif
@@ -286,7 +296,7 @@ class ExternalDenseMap : Hasher {
 		}
 
 		double load_factor() const {
-			return double(_keys.size()) / double(_values.size());
+			return double(_values.size()) / double(_keys.size());
 		}
 
 		bool contains(const Key& key) const {
@@ -526,20 +536,26 @@ class StableDenseMap : Hasher {
 		usize find_bucket_index_for_insert(const Key& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
-			for(usize i = 0; true; ++i) {
+			usize best_index = 0;
+			for(usize i = 0; i != entry_count; ++i) {
 				const usize index = (h + probing_offset(i)) % entry_count;
 				const Entry& entry = _entries[index];
-				if(!entry.has_key() || entry == key) {
+				if(!entry.has_key()) {
+					best_index = index;
+					if(entry.is_empty_strict()) {
+						return best_index;
+					}
+				} else if(entry == key) {
 					return index;
 				}
-				y_debug_assert(i < entry_count);
 			}
+			return best_index;
 		}
 
 		const Entry* find_key(const Key& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
-			for(usize i = 0; true; ++i) {
+			for(usize i = 0; i != entry_count; ++i) {
 				const usize index = (h + probing_offset(i)) % entry_count;
 				const Entry& entry = _entries[index];
 				if(entry == key) {
@@ -548,8 +564,8 @@ class StableDenseMap : Hasher {
 				if(entry.is_empty_strict()) {
 					return nullptr;
 				}
-				y_debug_assert(i < entry_count);
 			}
+			return nullptr;
 		}
 
 		static constexpr usize ceil_next_power_of_2(usize k) {
@@ -584,6 +600,7 @@ class StableDenseMap : Hasher {
 					continue;
 				}
 				++entry_count;
+				y_debug_assert(find_key(k.key) == &k);
 			}
 			y_debug_assert(_size == entry_count);
 #endif
@@ -633,7 +650,7 @@ class StableDenseMap : Hasher {
 		}
 
 		double load_factor() const {
-			return double(_entries.size()) / double(_size);
+			return double(_size) / double(_entries.size());
 		}
 
 		bool contains(const Key& key) const {
@@ -864,20 +881,26 @@ class DenseMap : Hasher {
 		usize find_bucket_index_for_insert(const Key& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
-			for(usize i = 0; true; ++i) {
+			usize best_index = 0;
+			for(usize i = 0; i != entry_count; ++i) {
 				const usize index = (h + probing_offset(i)) % entry_count;
 				const Entry& entry = _entries[index];
-				if(!entry.has_key() || entry == key) {
+				if(!entry.has_key()) {
+					best_index = index;
+					if(entry.is_empty_strict()) {
+						return best_index;
+					}
+				} else if(entry == key) {
 					return index;
 				}
-				y_debug_assert(i < entry_count);
 			}
+			return best_index;
 		}
 
 		const Entry* find_key(const Key& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
-			for(usize i = 0; true; ++i) {
+			for(usize i = 0; i != entry_count; ++i) {
 				const usize index = (h + probing_offset(i)) % entry_count;
 				const Entry& entry = _entries[index];
 				if(entry == key) {
@@ -886,8 +909,8 @@ class DenseMap : Hasher {
 				if(entry.is_empty_strict()) {
 					return nullptr;
 				}
-				y_debug_assert(i < entry_count);
 			}
+			return nullptr;
 		}
 
 		static constexpr usize ceil_next_power_of_2(usize k) {
@@ -922,6 +945,7 @@ class DenseMap : Hasher {
 					continue;
 				}
 				++entry_count;
+				y_debug_assert(find_key(k.key) == &k);
 			}
 			y_debug_assert(_size == entry_count);
 #endif
@@ -971,7 +995,7 @@ class DenseMap : Hasher {
 		}
 
 		double load_factor() const {
-			return double(_entries.size()) / double(_size);
+			return double(_size) / double(_entries.size());
 		}
 
 		bool contains(const Key& key) const {
