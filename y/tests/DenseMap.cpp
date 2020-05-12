@@ -36,6 +36,9 @@ namespace {
 using namespace y;
 using namespace y::core;
 
+template<typename K, typename V, typename H = std::hash<K>>
+using DefaultImpl = ExternalBitsDenseMap<K, V, H>;
+
 struct RaiiCounter : NonCopyable {
 	RaiiCounter(usize* ptr) : counter(ptr) {
 	}
@@ -141,7 +144,7 @@ Y_TODO(Test with complex objects)
 
 y_test_func("DenseMap basics") {
 	static constexpr int max_key = 1000;
-	DenseMap<int, int> map;
+	DefaultImpl<int, int> map;
 
 	for(int i = 0; i != max_key; ++i) {
 		map.emplace(i, i * 2);
@@ -161,7 +164,7 @@ y_test_func("DenseMap basics") {
 
 y_test_func("DenseMap bad hash") {
 	static constexpr int max_key = 500;
-	DenseMap<int, int, AbysmalHash> map;
+	DefaultImpl<int, int, AbysmalHash> map;
 
 	for(int i = 0; i != max_key; ++i) {
 		map.emplace(i, i * 2);
@@ -208,7 +211,7 @@ y_test_func("DenseMap duplicates") {
 y_test_func("DenseMap strings") {
 	static constexpr int max_key = 1000;
 
-	DenseMap<core::String, int> map;
+	DefaultImpl<core::String, int> map;
 	for(int i = 0; i != max_key; ++i) {
 		core::String str;
 		fmt_into(str, "%", i);
@@ -230,7 +233,7 @@ y_test_func("DenseMap value dtors") {
 
 	usize counter = 0;
 	{
-		DenseMap<int, RaiiCounter> map;
+		DefaultImpl<int, RaiiCounter> map;
 		for(int i = 0; i != max_key; ++i) {
 			map.insert({i, RaiiCounter(&counter)});
 		}

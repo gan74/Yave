@@ -28,6 +28,7 @@ SOFTWARE.
 #include <y/utils/iter.h>
 #include <y/utils/traits.h>
 
+
 //#define Y_DENSEMAP_AUDIT
 
 namespace y {
@@ -40,29 +41,50 @@ Y_TODO(We check the load factor before adding elements so we can end up slightly
 
 namespace detail {
 template<typename K, typename V>
-const std::pair<const K, V>* map_entry_to_value_type_ptr(const std::pair<K, V>* p) {
+inline const std::pair<const K, V>* map_entry_to_value_type_ptr(const std::pair<K, V>* p) {
 	return reinterpret_cast<const std::pair<const K, V>*>(p);
 }
 
 template<typename K, typename V>
-std::pair<const K, V>* map_entry_to_value_type_ptr(std::pair<K, V>* p) {
+inline std::pair<const K, V>* map_entry_to_value_type_ptr(std::pair<K, V>* p) {
 	return reinterpret_cast<std::pair<const K, V>*>(p);
 }
 
 template<typename K, typename V>
-const std::pair<const K, V>& map_entry_to_value_type(const std::pair<K, V>& p) {
+inline const std::pair<const K, V>& map_entry_to_value_type(const std::pair<K, V>& p) {
 	return *map_entry_to_value_type_ptr(&p);
 }
 
 template<typename K, typename V>
-std::pair<const K, V>& map_entry_to_value_type(std::pair<K, V>& p) {
+inline std::pair<const K, V>& map_entry_to_value_type(std::pair<K, V>& p) {
 	return *map_entry_to_value_type_ptr(&p);
 }
 
-static constexpr usize ceil_next_power_of_2(usize k) {
+inline constexpr usize ceil_next_power_of_2(usize k) {
 	return 1 << log2ui(k + 1);
 }
+
+
+static constexpr double default_dense_map_max_load_factor = 2.0 / 3.0;
+
+enum class ProbingStrategy {
+	Linear,
+	Quadratic
+};
+
+static constexpr ProbingStrategy default_dense_map_probing_strategy = ProbingStrategy::Quadratic;
+
+// http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
+template<ProbingStrategy Strategy = default_dense_map_probing_strategy>
+inline constexpr usize probing_offset(usize i) {
+	if constexpr(Strategy == ProbingStrategy::Linear) {
+		return i;
+	} else {
+		return (i * i + i) / 2;
+	}
 }
+}
+
 
 namespace compact {
 template<typename Key, typename Value, typename Hasher = std::hash<Key>>
@@ -103,16 +125,14 @@ class DenseMap : Hasher {
 
 			Entry& operator=(Entry&& other) {
 				make_empty();
-				if(other.has_key()) {
+				if(other.is_full()) {
 					state = EntryState::Full;
 					::new(&key_value) pair_type{std::move(other.key_value)};
-					/*::new(&key) key_type{std::move(other.key)};
-					::new(&value) mapped_type{std::move(other.value)};*/
 				}
 				return *this;
 			}
 
-			bool has_key() const {
+			bool is_full() const {
 				return state == EntryState::Full;
 			}
 
@@ -125,32 +145,26 @@ class DenseMap : Hasher {
 			}
 
 			void emplace(pair_type&& kv) {
-				y_debug_assert(!has_key());
+				y_debug_assert(!is_full());
 				state = EntryState::Full;
 				::new(&key_value) pair_type{std::move(kv)};
 			}
 
 			void make_empty() {
-				if(has_key()) {
+				if(is_full()) {
 					state = EntryState::Tombstone;
 					key_value.~pair_type();
-					/*key.~key_type();
-					value.~mapped_type();*/
 				}
 			}
 
 			const key_type& key() const {
-				y_debug_assert(has_key());
+				y_debug_assert(is_full());
 				return key_value.first;
-			}
-
-			bool operator==(const key_type& k) const {
-				return has_key() && key() == k;
 			}
 		};
 
 	public:
-		static constexpr double max_load_factor = 0.7;
+		static constexpr double max_load_factor = detail::default_dense_map_max_load_factor;
 		static constexpr usize min_capacity = 16;
 
 		auto key_values() const {
@@ -196,11 +210,11 @@ class DenseMap : Hasher {
 
 	private:
 		auto entry_iterator(const Entry* entry) const {
-			return FilterIterator(entry, _entries.end(), [](const Entry& entry) { return entry.has_key(); });
+			return FilterIterator(entry, _entries.end(), [](const Entry& entry) { return entry.is_full(); });
 		}
 
 		auto entry_iterator(Entry* entry) {
-			return FilterIterator(entry, _entries.end(), [](Entry& entry) { return entry.has_key(); });
+			return FilterIterator(entry, _entries.end(), [](Entry& entry) { return entry.is_full(); });
 		}
 
 		auto make_iterator(const Entry* entry) const {
@@ -224,39 +238,51 @@ class DenseMap : Hasher {
 			return Hasher::operator()(key);
 		}
 
-		// http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
-		static constexpr usize probing_offset(usize i) {
-			return (i * i + i) / 2;
-		}
-
-		usize find_bucket_index_for_insert(const key_type& key) const {
+		usize find_bucket_index_for_insert(const key_type& key) {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
 			const usize hash_mask = entry_count - 1;
-			usize best_index = 0;
-			for(usize i = 0; i != entry_count; ++i) {
-				const usize index = (h + probing_offset(i)) & hash_mask;
-				const Entry& entry = _entries[index];
-				if(!entry.has_key()) {
-					best_index = index;
-					if(entry.is_empty_strict()) {
-						return best_index;
+			usize probes = 0;
+
+			{
+				usize best_index = usize(-1);
+				for(; probes <= _max_probe_len; ++probes) {
+					const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
+					const Entry& entry = _entries[index];
+					if(!entry.is_full()) {
+						best_index = index;
+						if(entry.is_empty_strict()) {
+							return best_index;
+						}
+					} else if(_entries[index].key() == key) {
+						return index;
 					}
-				} else if(entry == key) {
+				}
+
+				if(best_index != usize(-1)) {
+					return best_index;
+				}
+			}
+
+			for(; probes != entry_count; ++probes) {
+				const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
+				if(!_entries[index].is_full()) {
+					_max_probe_len = probes;
 					return index;
 				}
 			}
-			return best_index;
+
+			y_fatal("Internal error: unable to find empty bucket");
 		}
 
 		const Entry* find_entry(const key_type& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
 			const usize hash_mask = entry_count - 1;
-			for(usize i = 0; i != entry_count; ++i) {
-				const usize index = (h + probing_offset(i)) & hash_mask;
+			for(usize i = 0; i <= _max_probe_len; ++i) {
+				const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
 				const Entry& entry = _entries[index];
-				if(entry == key) {
+				if(entry.is_full() && entry.key() == key) {
 					return &entry;
 				}
 				if(entry.is_empty_strict()) {
@@ -270,11 +296,15 @@ class DenseMap : Hasher {
 			const usize pow_2 = detail::ceil_next_power_of_2(new_entry_count);
 			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
 
+			if(new_size <= _entries.size()) {
+				return;
+			}
+
 			auto old_entries = std::exchange(_entries, FixedArray<Entry>(new_size));
 			for(Entry& k : old_entries) {
-				if(k.has_key()) {
+				if(k.is_full()) {
 					const usize new_index = find_bucket_index_for_insert(k.key());
-					y_debug_assert(!_entries[new_index].has_key());
+					y_debug_assert(!_entries[new_index].is_full());
 					_entries[new_index].emplace(std::move(k.key_value));
 				}
 			}
@@ -284,13 +314,13 @@ class DenseMap : Hasher {
 			expand(_entries.size() == 0 ? min_capacity : 2 * _entries.size());
 		}
 
-		void audit() const {
+		void audit() {
 #ifdef Y_DENSEMAP_AUDIT
 			y_debug_assert(_entries.size() >= _size + 1);
 			usize entry_count = 0;
 			for(usize i = 0; i != _entries.size(); ++i) {
 				const Entry& k = _entries[i];
-				if(!k.has_key()) {
+				if(!k.is_full()) {
 					continue;
 				}
 				++entry_count;
@@ -302,6 +332,7 @@ class DenseMap : Hasher {
 
 		FixedArray<Entry> _entries;
 		usize _size = 0;
+		usize _max_probe_len = 0;
 
 	public:
 		using iterator			= typename decltype(std::declval<      DenseMap<Key, Value, Hasher>>().key_values())::iterator;
@@ -324,6 +355,7 @@ class DenseMap : Hasher {
 			if(&other != this) {
 				std::swap(_entries, other._entries);
 				std::swap(_size, other._size);
+				std::swap(_max_probe_len, other._max_probe_len);
 			}
 		}
 
@@ -396,7 +428,7 @@ class DenseMap : Hasher {
 			y_debug_assert(!should_expand());
 
 			const usize index = find_bucket_index_for_insert(p.first);
-			const bool exists = _entries[index].has_key();
+			const bool exists = _entries[index].is_full();
 
 			if(!exists) {
 				_entries[index].emplace(std::move(p));
@@ -444,16 +476,16 @@ class ExternalBitsDenseMap : Hasher {
 			usize bits = empty_bits;
 
 			void set_hash(usize hash) {
-				y_debug_assert(!is_hash());
+				y_debug_assert(!is_full());
 				bits = hash | hash_bit;
 			}
 
 			void make_empty() {
-				y_debug_assert(is_hash());
+				y_debug_assert(is_full());
 				bits = tombstone_bits;
 			}
 
-			bool is_hash() const {
+			bool is_full() const {
 				return bits & hash_bit;
 			}
 
@@ -470,7 +502,7 @@ class ExternalBitsDenseMap : Hasher {
 			}
 
 			usize hash() {
-				y_debug_assert(is_hash());
+				y_debug_assert(is_full());
 				return bits;
 			}
 		};
@@ -499,14 +531,10 @@ class ExternalBitsDenseMap : Hasher {
 			const key_type& key() const {
 				return key_value.first;
 			}
-
-			bool operator==(const key_type& k) const {
-				return key() == k;
-			}
 		};
 
 	public:
-		static constexpr double max_load_factor = 0.7;
+		static constexpr double max_load_factor = detail::default_dense_map_max_load_factor;
 		static constexpr usize min_capacity = 16;
 
 		auto key_values() const {
@@ -552,11 +580,11 @@ class ExternalBitsDenseMap : Hasher {
 
 	private:
 		auto bits_iterator(const HashBits* bits) const {
-			return FilterIterator(bits, _bits.end(), [](const HashBits& b) { return b.is_hash(); });
+			return FilterIterator(bits, _bits.end(), [](const HashBits& b) { return b.is_full(); });
 		}
 
 		auto bits_iterator(HashBits* bits) {
-			return FilterIterator(bits, _bits.end(), [](const HashBits& b) { return b.is_hash(); });
+			return FilterIterator(bits, _bits.end(), [](const HashBits& b) { return b.is_full(); });
 		}
 
 		auto make_iterator(const HashBits* bits) const {
@@ -586,34 +614,45 @@ class ExternalBitsDenseMap : Hasher {
 			return Hasher::operator()(key);
 		}
 
-		// http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
-		static constexpr usize probing_offset(usize i) {
-			return (i * i + i) / 2;
-		}
-
-
-		Bucket find_bucket_for_insert(const key_type& key) const {
+		Bucket find_bucket_for_insert(const key_type& key) {
 			const usize h = hash(key);
 			return find_bucket_for_insert(key, h);
 		}
 
-		Bucket find_bucket_for_insert(const key_type& key, usize h) const {
+		Bucket find_bucket_for_insert(const key_type& key, usize h) {
 			const usize entry_count = _bits.size();
 			const usize hash_mask = entry_count - 1;
-			usize best_index = 0;
-			for(usize i = 0; i != entry_count; ++i) {
-				const usize index = (h + probing_offset(i)) & hash_mask;
-				const HashBits& bits = _bits[index];
-				if(!bits.is_hash()) {
-					best_index = index;
-					if(bits.is_empty_strict()) {
-						return {best_index, h};
+			usize probes = 0;
+
+			{
+				usize best_index = usize(-1);
+				for(; probes <= _max_probe_len; ++probes) {
+					const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
+					const HashBits& bits = _bits[index];
+					if(!bits.is_full()) {
+						best_index = index;
+						if(bits.is_empty_strict()) {
+							return {best_index, h};
+						}
+					} else if(bits.is_hash(h) && _entries[index].key() == key) {
+						return {index, h};
 					}
-				} else if(bits.is_hash(h) && _entries[index].key() == key) {
+				}
+
+				if(best_index != usize(-1)) {
+					return {best_index, h};
+				}
+			}
+
+			for(; probes != entry_count; ++probes) {
+				const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
+				if(!_bits[index].is_full()) {
+					_max_probe_len = probes;
 					return {index, h};
 				}
 			}
-			return {best_index, h};
+
+			y_fatal("Internal error: unable to find empty bucket");
 		}
 
 		const HashBits* find_bits(const key_type& key) const {
@@ -621,7 +660,7 @@ class ExternalBitsDenseMap : Hasher {
 			const usize entry_count = _bits.size();
 			const usize hash_mask = entry_count - 1;
 			for(usize i = 0; i != entry_count; ++i) {
-				const usize index = (h + probing_offset(i)) & hash_mask;
+				const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
 				const HashBits& bits = _bits[index];
 				if(bits.is_hash(h) && _entries[index].key() == key) {
 					return &bits;
@@ -637,19 +676,26 @@ class ExternalBitsDenseMap : Hasher {
 			const usize pow_2 = detail::ceil_next_power_of_2(new_entry_count);
 			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
 
+			if(new_size <= _bits.size()) {
+				return;
+			}
+
 			auto old_bits = std::exchange(_bits, FixedArray<HashBits>(new_size));
 			auto old_entries = std::exchange(_entries, std::make_unique<Entry[]>(new_size));
+			_max_probe_len = 0;
 
-			const usize current_entry_count = old_bits.size();
-			for(usize i = 0; i != current_entry_count; ++i) {
-				if(old_bits[i].is_hash()) {
-					const Bucket bucket = find_bucket_for_insert(old_entries[i].key(), old_bits[i].hash());
-					const usize new_index = bucket.index;
+			if(_size) {
+				const usize current_entry_count = old_bits.size();
+				for(usize i = 0; i != current_entry_count; ++i) {
+					if(old_bits[i].is_full()) {
+						const Bucket bucket = find_bucket_for_insert(old_entries[i].key(), old_bits[i].hash());
+						const usize new_index = bucket.index;
 
-					y_debug_assert(!_bits[new_index].is_hash());
+						y_debug_assert(!_bits[new_index].is_full());
 
-					_bits[new_index].set_hash(bucket.hash);
-					_entries[new_index].set(std::move(old_entries[i].key_value));
+						_bits[new_index].set_hash(bucket.hash);
+						_entries[new_index].set(std::move(old_entries[i].key_value));
+					}
 				}
 			}
 		}
@@ -658,14 +704,17 @@ class ExternalBitsDenseMap : Hasher {
 			expand(_bits.size() == 0 ? min_capacity : 2 * _bits.size());
 		}
 
-		void audit() const {
+		void audit() {
 #ifdef Y_DENSEMAP_AUDIT
 			usize entry_count = 0;
-			for(const auto& b : _bits) {
-				if(!b.is_hash()) {
+			for(usize i = 0; i != _bits.size(); ++i) {
+				if(!_bits[i].is_full()) {
 					continue;
 				}
 				++entry_count;
+				const key_type& k = _entries[i].key();
+				const Bucket b = find_bucket_for_insert(k);
+				y_debug_assert(b.index == i);
 			}
 			y_debug_assert(entry_count == _size);
 #endif
@@ -674,6 +723,7 @@ class ExternalBitsDenseMap : Hasher {
 		FixedArray<HashBits> _bits;
 		std::unique_ptr<Entry[]> _entries;
 		usize _size = 0;
+		usize _max_probe_len = 0;
 
 	public:
 		using iterator			= typename decltype(std::declval<      ExternalBitsDenseMap<Key, Value, Hasher>>().key_values())::iterator;
@@ -697,6 +747,17 @@ class ExternalBitsDenseMap : Hasher {
 				std::swap(_bits, other._bits);
 				std::swap(_entries, other._entries);
 				std::swap(_size, other._size);
+				std::swap(_max_probe_len, other._max_probe_len);
+			}
+		}
+
+		~ExternalBitsDenseMap() {
+			const usize len = _bits.size();
+			for(usize i = 0; i != len && _size; ++i) {
+				if(_bits[i].is_full()) {
+					_entries[i].clear();
+					--_size;
+				}
 			}
 		}
 
@@ -770,7 +831,7 @@ class ExternalBitsDenseMap : Hasher {
 
 			const Bucket bucket = find_bucket_for_insert(p.first);
 			const usize index = bucket.index;
-			const bool exists = _bits[index].is_hash();
+			const bool exists = _bits[index].is_full();
 
 			if(!exists) {
 				_entries[index].set(std::move(p));
@@ -822,22 +883,22 @@ class ExternalDenseMap : Hasher {
 			usize value_index = empty_index;
 
 			void set_hash(usize hash, usize index) {
-				y_debug_assert(!is_hash());
+				y_debug_assert(!is_full());
 				bits = hash;
 				value_index = index;
 			}
 
 			void make_empty() {
-				y_debug_assert(is_hash());
+				y_debug_assert(is_full());
 				value_index = tombstone_index;
 			}
 
-			bool is_hash() const {
+			bool is_full() const {
 				return value_index < tombstone_index;
 			}
 
 			bool is_hash(usize hash) const {
-				return is_hash() && bits == hash;
+				return is_full() && bits == hash;
 			}
 
 			bool is_empty_strict() const {
@@ -849,13 +910,13 @@ class ExternalDenseMap : Hasher {
 			}
 
 			usize hash() const {
-				y_debug_assert(is_hash());
+				y_debug_assert(is_full());
 				return bits;
 			}
 		};
 
 	public:
-		static constexpr double max_load_factor = 0.7;
+		static constexpr double max_load_factor = detail::default_dense_map_max_load_factor;
 		static constexpr usize min_capacity = 16;
 
 		core::Span<value_type> key_values() const {
@@ -902,42 +963,53 @@ class ExternalDenseMap : Hasher {
 			return Hasher::operator()(key);
 		}
 
-		// http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
-		static constexpr usize probing_offset(usize i) {
-			return (i * i + i) / 2;
-		}
-
-
-		Bucket find_bucket_for_insert(const key_type& key) const {
+		Bucket find_bucket_for_insert(const key_type& key) {
 			const usize h = hash(key);
 			return find_bucket_for_insert(key, h);
 		}
 
-		Bucket find_bucket_for_insert(const key_type& key, usize h) const {
+		Bucket find_bucket_for_insert(const key_type& key, usize h) {
 			const usize entry_count = _bits.size();
 			const usize hash_mask = entry_count - 1;
-			usize best_index = 0;
-			for(usize i = 0; i != entry_count; ++i) {
-				const usize index = (h + probing_offset(i)) & hash_mask;
-				const HashBits& bits = _bits[index];
-				if(!bits.is_hash()) {
-					best_index = index;
-					if(bits.is_empty_strict()) {
-						return {best_index, h};
+			usize probes = 0;
+
+			{
+				usize best_index = usize(-1);
+				for(; probes <= _max_probe_len; ++probes) {
+					const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
+					const HashBits& bits = _bits[index];
+					if(!bits.is_full()) {
+						best_index = index;
+						if(bits.is_empty_strict()) {
+							return {best_index, h};
+						}
+					} else if(bits.is_hash(h) && _entries[bits.value_index].first == key) {
+						return {index, h};
 					}
-				} else if(bits.is_hash(h) && _entries[bits.value_index].first == key) {
+				}
+
+				if(best_index != usize(-1)) {
+					return {best_index, h};
+				}
+			}
+
+			for(; probes != entry_count; ++probes) {
+				const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
+				if(!_bits[index].is_full()) {
+					_max_probe_len = probes;
 					return {index, h};
 				}
 			}
-			return {best_index, h};
+
+			y_fatal("Internal error: unable to find empty bucket");
 		}
 
 		const HashBits* find_bits(const key_type& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _bits.size();
 			const usize hash_mask = entry_count - 1;
-			for(usize i = 0; i != entry_count; ++i) {
-				const usize index = (h + probing_offset(i)) & hash_mask;
+			for(usize i = 0; i <= _max_probe_len; ++i) {
+				const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
 				const HashBits& bits = _bits[index];
 				if(bits.is_hash(h) && _entries[bits.value_index].first == key) {
 					return &bits;
@@ -953,16 +1025,21 @@ class ExternalDenseMap : Hasher {
 			const usize pow_2 = detail::ceil_next_power_of_2(new_entry_count);
 			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
 
+			if(new_size <= _bits.size()) {
+				return;
+			}
+
 			auto old_bits = std::exchange(_bits, FixedArray<HashBits>(new_size));
+			_max_probe_len = 0;
 
 			const usize current_entry_count = old_bits.size();
 			for(usize i = 0; i != current_entry_count; ++i) {
 				const HashBits& bits = old_bits[i];
-				if(bits.is_hash()) {
+				if(bits.is_full()) {
 					const Bucket bucket = find_bucket_for_insert(_entries[bits.value_index].first, bits.hash());
 					const usize new_index = bucket.index;
 
-					y_debug_assert(!_bits[new_index].is_hash());
+					y_debug_assert(!_bits[new_index].is_full());
 
 					_bits[new_index].set_hash(bucket.hash, bits.value_index);
 				}
@@ -973,15 +1050,17 @@ class ExternalDenseMap : Hasher {
 			expand(_bits.size() == 0 ? min_capacity : 2 * _bits.size());
 		}
 
-		void audit() const {
+		void audit() {
 #ifdef Y_DENSEMAP_AUDIT
 			usize entry_count = 0;
-			for(const auto& b : _bits) {
-				if(!b.is_hash()) {
+			for(usize i = 0; i != _bits.size(); ++i) {
+				if(!_bits[i].is_full()) {
 					continue;
 				}
-				y_debug_assert(hash(_entries[b.value_index].first) == b.hash());
 				++entry_count;
+				const key_type& k = _entries[_bits[i].value_index].first;
+				const Bucket b = find_bucket_for_insert(k);
+				y_debug_assert(b.index == i);
 			}
 			y_debug_assert(entry_count == _entries.size());
 #endif
@@ -989,6 +1068,7 @@ class ExternalDenseMap : Hasher {
 
 		FixedArray<HashBits> _bits;
 		core::Vector<pair_type> _entries;
+		usize _max_probe_len = 0;
 
 	public:
 		using iterator			= typename decltype(std::declval<      ExternalDenseMap<Key, Value, Hasher>>().key_values())::iterator;
@@ -1011,6 +1091,7 @@ class ExternalDenseMap : Hasher {
 			if(&other != this) {
 				std::swap(_bits, other._bits);
 				std::swap(_entries, other._entries);
+				std::swap(_max_probe_len, other._max_probe_len);
 			}
 		}
 
@@ -1087,7 +1168,7 @@ class ExternalDenseMap : Hasher {
 
 			const Bucket bucket = find_bucket_for_insert(p.first);
 			const usize index = bucket.index;
-			const bool exists = _bits[index].is_hash();
+			const bool exists = _bits[index].is_full();
 
 			if(!exists) {
 				_bits[index].set_hash(bucket.hash, _entries.size());
@@ -1105,7 +1186,7 @@ class ExternalDenseMap : Hasher {
 
 			HashBits* bits = const_cast<HashBits*>(find_bits(entry_ptr->first));
 
-			y_debug_assert(bits && bits->is_hash());
+			y_debug_assert(bits && bits->is_full());
 			y_debug_assert(&_entries[bits->value_index] == entry_ptr);
 
 			if(entry_ptr != &_entries.last()) {
