@@ -26,8 +26,11 @@ SOFTWARE.
 
 using namespace y;
 
+#ifndef Y_DEBUG
+#define BENCH
+#endif
 
-#if 1
+#ifdef BENCH
 #include <y/core/Chrono.h>
 #include <y/core/Vector.h>
 #include <y/core/DenseMap.h>
@@ -205,7 +208,7 @@ static auto bench_fill_find_all_50_50(usize count = 1000000) {
 
 
 template<template<typename...> typename Map>
-static auto bench_fill_find_all_50_50_degen(usize count = 5000000) {
+static auto bench_fill_find_all_50_50_degen(usize count = 1000000) {
 	Map<usize, usize> map;
 
 	for(usize i = 0; i != count; ++i) {
@@ -241,6 +244,89 @@ template<template<typename...> typename Map>
 static auto bench_fill_find_all_50_50_badhash_8(usize count = 10000) {
 	return bench_fill_find_all_50_50<Map, BadHash<8>>(count);
 }
+
+template<template<typename...> typename Map>
+static auto bench_fill_long_string(usize count = 1000000, usize extra_len = 0) {
+	Map<core::String, usize> map;
+
+	core::String long_str;
+	while(!long_str.is_long()) {
+		long_str.push_back('a');
+	}
+
+	for(usize i = 0; i != extra_len; ++i) {
+		long_str.push_back('l');
+	}
+
+	core::String key;
+	for(usize i = 0; i != count; ++i) {
+		key.make_empty();
+		fmt_into(key, "%_%", i, long_str);
+		map.insert({key, i});
+	}
+
+	return map;
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_very_long_string(usize count = 200000) {
+	return bench_fill_long_string<Map>(count, 1000);
+}
+
+
+template<template<typename...> typename Map>
+static auto bench_fill_string_iter_50(usize count = 1000000) {
+	Map<core::String, usize> map = bench_fill_long_string<Map>(count, 10);
+
+	usize a = 0;
+	for(usize i = 0; i != 25; ++i) {
+		for(const auto& [k, v] : map) {
+			a += k.size() * i;
+		}
+	}
+	map.insert({fmt("%", a), a});
+
+	a = 0;
+	for(usize i = 0; i != 25; ++i) {
+		for(const auto& [k, v] : map) {
+			a += v * i;
+		}
+	}
+	map.insert({fmt("%", a), a});
+
+	return map;
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_string_find_all_50_50(usize count = 1000000) {
+	Map<core::String, usize> map;
+
+	core::String long_str;
+	while(long_str.size() < core::String::max_short_size + 10) {
+		long_str.push_back('a');
+	}
+
+	core::String key;
+	for(usize i = 0; i != count; ++i) {
+		key.make_empty();
+		fmt_into(key, "%_%", i, long_str);
+		map.insert({key, i});
+	}
+
+
+	usize sum = 0;
+	for(usize i = 0; i != count * 2; ++i) {
+		key.make_empty();
+		fmt_into(key, "%_%", i, long_str);
+		if(const auto& it = map.find(key); it != map.end()) {
+			sum += it->first.size() + it->second;
+		}
+	}
+	map.insert({fmt("%", sum), sum});
+
+	return map;
+}
+
 
 
 using result_type = core::Vector<std::tuple<const char*, double, usize>>;
@@ -283,6 +369,10 @@ result_type bench_implementation() {
 	BENCH_ONE(bench_fill_find_all_50_50_medium);
 	BENCH_ONE(bench_fill_find_all_50_50_tiny);
 	BENCH_ONE(bench_fill_find_all_50_50_badhash_8);
+	BENCH_ONE(bench_fill_long_string);
+	BENCH_ONE(bench_fill_very_long_string);
+	BENCH_ONE(bench_fill_string_iter_50);
+	BENCH_ONE(bench_fill_string_find_all_50_50);
 
 #undef BENCH_ONE
 
@@ -290,24 +380,11 @@ result_type bench_implementation() {
 }
 
 
-
-#endif
-
-
 int main() {
-	const bool ok = test::run_tests();
-
-	if(ok) {
-		log_msg("All tests OK\n");
-	} else {
-		log_msg("Tests failed\n", Log::Error);
-	}
-
-#if 1
 	core::Vector<std::pair<const char*, result_type>> results;
 	log_msg("Benching...");
-	results.emplace_back("ExternalDenseMap", bench_implementation<core::ExternalDenseMap>());
 	results.emplace_back("ExternalBitsDenseMap", bench_implementation<core::ExternalBitsDenseMap>());
+	results.emplace_back("ExternalDenseMap", bench_implementation<core::ExternalDenseMap>());
 	results.emplace_back("DenseMap", bench_implementation<core::DenseMap>());
 	results.emplace_back("std::unordered_map", bench_implementation<std::unordered_map>());
 	log_msg("Done\n");
@@ -349,11 +426,23 @@ int main() {
 		}
 	}
 
-
-#endif
-
 	return 0;
 }
 
+#else
+
+int main() {
+
+	const bool ok = test::run_tests();
+
+	if(ok) {
+		log_msg("All tests OK\n");
+	} else {
+		log_msg("Tests failed\n", Log::Error);
+	}
+	return 0;
+}
+
+#endif
 
 

@@ -24,12 +24,35 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 #include <y/core/DenseMap.h>
+#include <y/core/String.h>
+
+#include <y/utils/format.h>
 
 #include <y/math/random.h>
+
+#include <ctime>
 
 namespace {
 using namespace y;
 using namespace y::core;
+
+struct RaiiCounter : NonCopyable {
+	RaiiCounter(usize* ptr) : counter(ptr) {
+	}
+
+	RaiiCounter(RaiiCounter&& raii) {
+		std::swap(raii.counter, counter);
+	}
+
+	~RaiiCounter() {
+		if(counter) {
+			++(*counter);
+		}
+	}
+
+	usize* counter = nullptr;
+};
+
 
 struct PassthroughHash {
 	template<typename T>
@@ -66,11 +89,11 @@ static core::Vector<std::pair<int, int>> to_vector(const Map& map) {
 }
 
 template<typename Map>
-static Map fuzz(usize count) {
+static Map fuzz(usize count, u32 seed) {
 	Map map;
-	math::FastRandom actions;
+	math::FastRandom actions(seed);
 
-	math::FastRandom values;
+	math::FastRandom values(seed + 1);
 	std::uniform_int_distribution<i32> dist;
 
 	auto keys = vector_with_capacity<i32>(count);
@@ -137,7 +160,7 @@ y_test_func("DenseMap basics") {
 }
 
 y_test_func("DenseMap bad hash") {
-	static constexpr int max_key = 1000;
+	static constexpr int max_key = 500;
 	DenseMap<int, int, AbysmalHash> map;
 
 	for(int i = 0; i != max_key; ++i) {
@@ -153,16 +176,17 @@ y_test_func("DenseMap bad hash") {
 }
 
 y_test_func("DenseMap fuzz") {
-	const usize fuzz_count = 50000;
-	const auto m0 = fuzz<std::unordered_map<i32, i32>>(fuzz_count);
+	const u32 seed = std::time(nullptr);
+	const usize fuzz_count = 25000;
+	const auto m0 = fuzz<std::unordered_map<i32, i32>>(fuzz_count, seed);
 
-	const auto m1 = fuzz<ExternalDenseMap<i32, i32>>(fuzz_count);
-	const auto m2 = fuzz<ExternalBitsDenseMap<i32, i32>>(fuzz_count);
-	const auto m3 = fuzz<DenseMap<i32, i32>>(fuzz_count);
+	const auto m2 = fuzz<ExternalBitsDenseMap<i32, i32>>(fuzz_count, seed);
+	const auto m3 = fuzz<ExternalDenseMap<i32, i32>>(fuzz_count, seed);
+	const auto m4 = fuzz<DenseMap<i32, i32>>(fuzz_count, seed);
 
-	y_test_assert(to_vector(m0) == to_vector(m1));
 	y_test_assert(to_vector(m0) == to_vector(m2));
 	y_test_assert(to_vector(m0) == to_vector(m3));
+	y_test_assert(to_vector(m0) == to_vector(m4));
 }
 
 
@@ -179,5 +203,43 @@ y_test_func("DenseMap duplicates") {
 	y_test_assert(!map.emplace(7, 9999).second);
 	y_test_assert((*map.find(7)).second == 13);
 }
+
+
+y_test_func("DenseMap strings") {
+	static constexpr int max_key = 1000;
+
+	DenseMap<core::String, int> map;
+	for(int i = 0; i != max_key; ++i) {
+		core::String str;
+		fmt_into(str, "%", i);
+		map.insert({str, i});
+	}
+
+	map.erase(map.find("589"));
+
+	y_test_assert(!map.insert({"14", 0}).second);
+
+	y_test_assert(map.find("17")->second == 17);
+	y_test_assert(map.find("99")->second == 99);
+	y_test_assert(map.find("997")->second == 997);
+	y_test_assert(map.find("589") == map.end());
+}
+
+y_test_func("DenseMap value dtors") {
+	static constexpr int max_key = 1000;
+
+	usize counter = 0;
+	{
+		DenseMap<int, RaiiCounter> map;
+		for(int i = 0; i != max_key; ++i) {
+			map.insert({i, RaiiCounter(&counter)});
+		}
+
+		y_test_assert(counter == 0);
+	}
+
+	y_test_assert(counter == max_key);
+}
+
 
 }

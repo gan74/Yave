@@ -38,431 +38,116 @@ namespace core {
 Y_TODO(Performance degrades very heavily when erasing)
 Y_TODO(We check the load factor before adding elements so we can end up slightly above after insertion)
 
-namespace external {
-template<typename Key, typename Value, typename Hasher = std::hash<Key>>
-class ExternalDenseMap : Hasher {
+namespace detail {
+template<typename K, typename V>
+const std::pair<const K, V>* map_entry_to_value_type_ptr(const std::pair<K, V>* p) {
+	return reinterpret_cast<const std::pair<const K, V>*>(p);
+}
 
-	using key_type = remove_cvref_t<Key>;
-	using value_type = remove_cvref_t<Value>;
+template<typename K, typename V>
+std::pair<const K, V>* map_entry_to_value_type_ptr(std::pair<K, V>* p) {
+	return reinterpret_cast<std::pair<const K, V>*>(p);
+}
 
-	using index_type = u32;
-	static constexpr index_type empty_index = index_type(-1);
-	static constexpr index_type tombstone_index = index_type(-2);
+template<typename K, typename V>
+const std::pair<const K, V>& map_entry_to_value_type(const std::pair<K, V>& p) {
+	return *map_entry_to_value_type_ptr(&p);
+}
 
-	struct ValueBox {
-		value_type value;
-		index_type key_index;
-	};
+template<typename K, typename V>
+std::pair<const K, V>& map_entry_to_value_type(std::pair<K, V>& p) {
+	return *map_entry_to_value_type_ptr(&p);
+}
 
-	struct KeyBox : NonCopyable {
-		union {
-			key_type key;
-		};
-		index_type value_index = empty_index;
-
-		KeyBox() {
-		}
-
-		~KeyBox() {
-			make_empty();
-		}
-
-		KeyBox(KeyBox&& other) {
-			operator=(std::move(other));
-		}
-
-		KeyBox& operator=(KeyBox&& other) {
-			make_empty();
-			if(other.has_key()) {
-				value_index = other.value_index;
-				::new(&key) key_type{other.key};
-			}
-			return *this;
-		}
-
-		bool has_key() const {
-			return value_index < tombstone_index;
-		}
-
-		bool is_empty_strict() const {
-			return value_index == empty_index;
-		}
-
-		bool is_tombstone() const {
-			return value_index == tombstone_index;
-		}
-
-		const Key& get() const {
-			y_debug_assert(has_key());
-			return key;
-		}
-
-		void emplace(const Key& k, index_type i) {
-			y_debug_assert(!has_key());
-			value_index = i;
-			::new(&key) key_type{k};
-		}
-
-		void make_empty() {
-			if(has_key()) {
-				value_index = tombstone_index;
-				key.~key_type();
-			}
-		}
-
-		bool operator==(const Key& k) const {
-			return has_key() && key == k;
-		}
-	};
-
-	public:
-		static constexpr double max_load_factor = 0.7;
-		static constexpr usize min_capacity = 16;
-
-		auto key_values() const {
-			return core::Range(make_iterator(_values.begin()), _values.end());
-		}
-
-		auto key_values() {
-			return core::Range(make_iterator(_values.begin()), _values.end());
-		}
-
-		auto values() const {
-			auto tr = [this](const ValueBox& box) -> const Value& { return box.value; };
-			return core::Range(
-				TransformIterator(_values.begin(), tr),
-				_values.end()
-			);
-		}
-
-		auto values() {
-			auto tr = [this](ValueBox& box) -> Value& { return box.value; };
-			return core::Range(
-				TransformIterator(_values.begin(), tr),
-				_values.end()
-			);
-		}
-
-		auto keys() const {
-			return core::Range(
-				TransformIterator(key_begin_iterator(), [](const KeyBox& box) -> const Key& {
-					return box.get();
-				}),
-				EndIterator{}
-			);
-		}
-
-	private:
-		auto make_iterator(const ValueBox* inner) const {
-			auto tr = [this](const ValueBox& box) -> std::pair<const Key&, const Value&> {
-				return {_keys[box.key_index].get(), box.value};
-			};
-			return TransformIterator(inner, tr);
-		}
-
-		auto make_iterator(ValueBox* inner) {
-			auto tr = [this](ValueBox& box) -> std::pair<const Key&, Value&> {
-				return {_keys[box.key_index].get(), box.value};
-			};
-			return TransformIterator(inner, tr);
-		}
-
-		auto key_begin_iterator() const {
-			return FilterIterator(_keys.begin(), _keys.end(), [](const KeyBox& box) { return box.has_key(); });
-		}
-
-		bool should_expand() const {
-			return _keys.size() * max_load_factor <=  _values.size();
-		}
-
-		usize hash(const Key& key) const {
-			return Hasher::operator()(key);
-		}
-
-		// http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
-		static constexpr usize probing_offset(usize i) {
-			return (i * i + i) / 2;
-		}
-
-		index_type find_bucket_index_for_insert(const Key& key) const {
-			const usize h = hash(key);
-			const usize key_count = _keys.size();
-			const usize hash_mask = key_count - 1;
-			index_type best_index = 0;
-			for(usize i = 0; i != key_count; ++i) {
-				const index_type key_index = (h + probing_offset(i)) & hash_mask;
-				const KeyBox& box = _keys[key_index];
-				if(!box.has_key()) {
-					best_index = key_index;
-					if(box.is_empty_strict()) {
-						return best_index;
-					}
-				} else if(box == key) {
-					return key_index;
-				}
-			}
-			return best_index;
-		}
-
-		const KeyBox* find_key(const Key& key) const {
-			const usize h = hash(key);
-			const usize key_count = _keys.size();
-			const usize hash_mask = key_count - 1;
-			for(usize i = 0; i != key_count; ++i) {
-				const index_type key_index = (h + probing_offset(i)) & hash_mask;
-				const KeyBox& box = _keys[key_index];
-				if(box == key) {
-					return &box;
-				}
-				if(box.is_empty_strict()) {
-					return nullptr;
-				}
-			}
-			return nullptr;
-		}
-
-		static constexpr usize ceil_next_power_of_2(usize k) {
-			return 1 << log2ui(k + 1);
-		}
-
-		void expand(usize new_key_count) {
-			const usize pow_2 = ceil_next_power_of_2(new_key_count);
-			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
-
-			auto old_keys = std::exchange(_keys, FixedArray<KeyBox>(new_size));
-			for(KeyBox& k : old_keys) {
-				if(k.has_key()) {
-					const index_type new_index = find_bucket_index_for_insert(k.key);
-					y_debug_assert(!_keys[new_index].has_key());
-					_keys[new_index].emplace(std::move(k.key), k.value_index);
-					_values[k.value_index].key_index = new_index;
-				}
-			}
-		}
-
-		void expand() {
-			expand(_keys.size() == 0 ? min_capacity : 2 * _keys.size());
-		}
-
-		void audit() const {
-#ifdef Y_DENSEMAP_AUDIT
-			y_debug_assert(_keys.size() >= _values.size() + 1);
-			for(index_type i = 0; i != _values.size(); ++i) {
-				const KeyBox& k = _keys[_values[i].key_index];
-				y_debug_assert(k.has_key());
-				y_debug_assert(k.value_index == i);
-			}
-			usize key_count = 0;
-			for(index_type i = 0; i != _keys.size(); ++i) {
-				const KeyBox& k = _keys[i];
-				if(!k.has_key()) {
-					continue;
-				}
-				++key_count;
-				const ValueBox& v = _values[k.value_index];
-				y_debug_assert(v.key_index == i);
-				y_debug_assert(find_key(k.key) == &k);
-			}
-			y_debug_assert(_values.size() == key_count);
-#endif
-		}
-
-		FixedArray<KeyBox> _keys;
-		Vector<ValueBox> _values;
-
-	public:
-		using iterator			= typename decltype(std::declval<      ExternalDenseMap<Key, Value, Hasher>>().key_values())::iterator;
-		using const_iterator	= typename decltype(std::declval<const ExternalDenseMap<Key, Value, Hasher>>().key_values())::iterator;
-
-		static_assert(std::is_copy_assignable_v<const_iterator>);
-		static_assert(std::is_copy_constructible_v<const_iterator>);
-
-		iterator begin() {
-			return make_iterator(_values.begin());
-		}
-
-		const_iterator begin() const {
-			return make_iterator(_values.begin());
-		}
-
-		auto end() {
-			return make_iterator(_values.end());
-		}
-
-		auto end() const {
-			return make_iterator(_values.end());
-		}
-
-
-		usize size() const {
-			return _values.size();
-		}
-
-		double load_factor() const {
-			return double(_values.size()) / double(_keys.size());
-		}
-
-		bool contains(const Key& key) const {
-			return find_key(key);
-		}
-
-		iterator find(const Key& key) {
-			const KeyBox* box = find_key(key);
-			return make_iterator(box ? &_values[box->value_index] : _values.end());
-		}
-
-		const_iterator find(const Key& key) const {
-			const KeyBox* box = find_key(key);
-			return make_iterator(box ? &_values[box->value_index] : _values.end());
-		}
-
-		void rehash() {
-			expand(_keys.size());
-		}
-
-		void set_min_capacity(usize cap) {
-			if(cap > _values.capacity()) {
-				_values.set_min_capacity(cap);
-			}
-			const usize key_capacity = usize(cap / (max_load_factor * 0.8));
-			if(_keys.size() < key_capacity) {
-				expand(key_capacity);
-			}
-		}
-
-		void reserve(usize cap) {
-			set_min_capacity(cap);
-		}
-
-		template<typename... Args>
-		std::pair<iterator, bool> emplace(const Key& key, Args&&... args) {
-			y_defer(audit());
-
-			if(should_expand()) {
-				expand();
-			}
-
-			y_debug_assert(!should_expand());
-
-			const index_type value_index = _values.size();
-			const index_type key_index = find_bucket_index_for_insert(key);
-			if(_keys[key_index].has_key()) {
-				return {make_iterator(&_values[_keys[key_index].value_index]), false};
-			}
-
-			_values.emplace_back(ValueBox{value_type{y_fwd(args)...}, key_index});
-			_keys[key_index].emplace(key, value_index);
-
-			return {make_iterator(&_values.last()), true};
-		}
-
-		std::pair<iterator, bool> insert(std::pair<const Key, Value> p) {
-			return emplace(p.first, std::move(p.second));
-		}
-
-		void erase(const iterator& it) {
-			y_defer(audit());
-
-			ValueBox* value_ptr = it.inner();
-
-			y_debug_assert(value_ptr >= _values.data());
-			y_debug_assert(value_ptr < _values.data() + _values.size());
-
-			const index_type key_index = value_ptr->key_index;
-			KeyBox* key_ptr = &_keys[key_index];
-			const index_type value_index = key_ptr->value_index;
-
-			if(value_ptr != &_values.last()) {
-				std::swap(*value_ptr, _values.last());
-				_keys[_values[value_index].key_index].value_index = value_index;
-			}
-
-			_values.pop();
-			key_ptr->make_empty();
-		}
-};
+static constexpr usize ceil_next_power_of_2(usize k) {
+	return 1 << log2ui(k + 1);
+}
 }
 
 namespace compact {
 template<typename Key, typename Value, typename Hasher = std::hash<Key>>
 class DenseMap : Hasher {
+	public:
+		using key_type = remove_cvref_t<Key>;
+		using mapped_type = remove_cvref_t<Value>;
+		using value_type = std::pair<const key_type, mapped_type>;
 
-	using key_type = remove_cvref_t<Key>;
-	using value_type = remove_cvref_t<Value>;
-	using key_value_type = std::pair<const key_type, value_type>;
+	private:
+		using pair_type = std::pair<key_type, mapped_type>;
 
-	enum class EntryState : u8 {
-		Empty = 0,
-		Tombstone = 1,
-		Full = 2
-	};
 
-	struct Entry : NonCopyable {
-		union {
-			key_value_type key_value;
+		enum class EntryState : u8 {
+			Empty = 0,
+			Tombstone = 1,
+			Full = 2
 		};
 
-		EntryState state = EntryState::Empty;
+		struct Entry : NonCopyable {
+			union {
+				pair_type key_value;
+			};
+
+			EntryState state = EntryState::Empty;
 
 
-		Entry() {
-		}
+			Entry() {
+			}
 
-		~Entry() {
-			make_empty();
-		}
+			~Entry() {
+				make_empty();
+			}
 
-		Entry(Entry&& other) {
-			operator=(std::move(other));
-		}
+			Entry(Entry&& other) {
+				operator=(std::move(other));
+			}
 
-		Entry& operator=(Entry&& other) {
-			make_empty();
-			if(other.has_key()) {
+			Entry& operator=(Entry&& other) {
+				make_empty();
+				if(other.has_key()) {
+					state = EntryState::Full;
+					::new(&key_value) pair_type{std::move(other.key_value)};
+					/*::new(&key) key_type{std::move(other.key)};
+					::new(&value) mapped_type{std::move(other.value)};*/
+				}
+				return *this;
+			}
+
+			bool has_key() const {
+				return state == EntryState::Full;
+			}
+
+			bool is_empty_strict() const {
+				return state == EntryState::Empty;
+			}
+
+			bool is_tombstone() const {
+				return state == EntryState::Tombstone;
+			}
+
+			void emplace(pair_type&& kv) {
+				y_debug_assert(!has_key());
 				state = EntryState::Full;
-				::new(&key_value) key_value_type{std::move(other.key_value)};
-				/*::new(&key) key_type{std::move(other.key)};
-				::new(&value) value_type{std::move(other.value)};*/
+				::new(&key_value) pair_type{std::move(kv)};
 			}
-			return *this;
-		}
 
-		bool has_key() const {
-			return state == EntryState::Full;
-		}
-
-		bool is_empty_strict() const {
-			return state == EntryState::Empty;
-		}
-
-		bool is_tombstone() const {
-			return state == EntryState::Tombstone;
-		}
-
-		void emplace(key_value_type&& kv) {
-			y_debug_assert(!has_key());
-			state = EntryState::Full;
-			::new(&key_value) key_value_type{std::move(kv)};
-		}
-
-		void make_empty() {
-			if(has_key()) {
-				state = EntryState::Tombstone;
-				key_value.~key_value_type();
-				/*key.~key_type();
-				value.~value_type();*/
+			void make_empty() {
+				if(has_key()) {
+					state = EntryState::Tombstone;
+					key_value.~pair_type();
+					/*key.~key_type();
+					value.~mapped_type();*/
+				}
 			}
-		}
 
-		const key_type& key() const {
-			y_debug_assert(has_key());
-			return key_value.first;
-		}
+			const key_type& key() const {
+				y_debug_assert(has_key());
+				return key_value.first;
+			}
 
-		bool operator==(const Key& k) const {
-			return has_key() && key() == k;
-		}
-	};
+			bool operator==(const key_type& k) const {
+				return has_key() && key() == k;
+			}
+		};
 
 	public:
 		static constexpr double max_load_factor = 0.7;
@@ -484,7 +169,7 @@ class DenseMap : Hasher {
 
 		auto values() const {
 			return core::Range(
-				TransformIterator(entry_iterator(_entries.begin()), [](const Entry& entry) -> const Value& {
+				TransformIterator(entry_iterator(_entries.begin()), [](const Entry& entry) -> const mapped_type& {
 					return entry.key_value.second;
 				}),
 				EndIterator{}
@@ -493,7 +178,7 @@ class DenseMap : Hasher {
 
 		auto values() {
 			return core::Range(
-				TransformIterator(entry_iterator(_entries.begin()), [](Entry& entry) -> Value& {
+				TransformIterator(entry_iterator(_entries.begin()), [](Entry& entry) -> mapped_type& {
 					return entry.key_value.second;
 				}),
 				EndIterator{}
@@ -502,8 +187,8 @@ class DenseMap : Hasher {
 
 		auto keys() const {
 			return core::Range(
-				TransformIterator(entry_iterator(_entries.begin()), [](const Entry& entry) -> const Key& {
-					return entry.key_value.first;
+				TransformIterator(entry_iterator(_entries.begin()), [](const Entry& entry) -> const key_type& {
+					return entry.key();
 				}),
 				EndIterator{}
 			);
@@ -519,23 +204,23 @@ class DenseMap : Hasher {
 		}
 
 		auto make_iterator(const Entry* entry) const {
-			return TransformIterator(entry_iterator(entry), [](const Entry& entry) -> const std::pair<const Key, Value>& {
-				return entry.key_value;
+			return TransformIterator(entry_iterator(entry), [](const Entry& entry) -> const value_type& {
+				return detail::map_entry_to_value_type(entry.key_value);
 			});
 		}
 
 		auto make_iterator(Entry* entry) {
-			return TransformIterator(entry_iterator(entry), [](Entry& entry) -> std::pair<const Key, Value>& {
-				return entry.key_value;
+			return TransformIterator(entry_iterator(entry), [](Entry& entry) -> value_type& {
+				return detail::map_entry_to_value_type(entry.key_value);
 			});
 		}
 
 
 		bool should_expand() const {
-			return _entries.size() * max_load_factor <=  _size;
+			return _entries.size() * max_load_factor <= _size;
 		}
 
-		usize hash(const Key& key) const {
+		usize hash(const key_type& key) const {
 			return Hasher::operator()(key);
 		}
 
@@ -544,7 +229,7 @@ class DenseMap : Hasher {
 			return (i * i + i) / 2;
 		}
 
-		usize find_bucket_index_for_insert(const Key& key) const {
+		usize find_bucket_index_for_insert(const key_type& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
 			const usize hash_mask = entry_count - 1;
@@ -564,7 +249,7 @@ class DenseMap : Hasher {
 			return best_index;
 		}
 
-		const Entry* find_key(const Key& key) const {
+		const Entry* find_entry(const key_type& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _entries.size();
 			const usize hash_mask = entry_count - 1;
@@ -581,12 +266,8 @@ class DenseMap : Hasher {
 			return nullptr;
 		}
 
-		static constexpr usize ceil_next_power_of_2(usize k) {
-			return 1 << log2ui(k + 1);
-		}
-
 		void expand(usize new_entry_count) {
-			const usize pow_2 = ceil_next_power_of_2(new_entry_count);
+			const usize pow_2 = detail::ceil_next_power_of_2(new_entry_count);
 			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
 
 			auto old_entries = std::exchange(_entries, FixedArray<Entry>(new_size));
@@ -613,7 +294,7 @@ class DenseMap : Hasher {
 					continue;
 				}
 				++entry_count;
-				y_debug_assert(find_key(k.key) == &k);
+				y_debug_assert(find_entry(k.key()) == &k);
 			}
 			y_debug_assert(_size == entry_count);
 #endif
@@ -631,15 +312,20 @@ class DenseMap : Hasher {
 
 		DenseMap() = default;
 		DenseMap(DenseMap&& other) {
-			operator=(std::move(other));
+			swap(other);
 		}
 
 		DenseMap& operator=(DenseMap&& other) {
-			std::swap(_entries, other._entries);
-			std::swap(_size, other._size);
+			swap(other);
 			return *this;
 		}
 
+		void swap(DenseMap& other) {
+			if(&other != this) {
+				std::swap(_entries, other._entries);
+				std::swap(_size, other._size);
+			}
+		}
 
 		iterator begin() {
 			return key_values().begin();
@@ -666,17 +352,17 @@ class DenseMap : Hasher {
 			return double(_size) / double(_entries.size());
 		}
 
-		bool contains(const Key& key) const {
-			return find_key(key);
+		bool contains(const key_type& key) const {
+			return find_entry(key);
 		}
 
-		iterator find(const Key& key) {
-			Entry* entry = const_cast<Entry*>(find_key(key));
+		iterator find(const key_type& key) {
+			Entry* entry = const_cast<Entry*>(find_entry(key));
 			return make_iterator(entry ? entry : _entries.end());
 		}
 
-		const_iterator find(const Key& key) const {
-			const Entry* entry = find_key(key);
+		const_iterator find(const key_type& key) const {
+			const Entry* entry = find_entry(key);
 			return make_iterator(entry ? entry : _entries.end());
 		}
 
@@ -696,11 +382,11 @@ class DenseMap : Hasher {
 		}
 
 		template<typename... Args>
-		std::pair<iterator, bool> emplace(const Key& key, Args&&... args) {
-			return insert(key_value_type{key, value_type{y_fwd(args)...}});
+		std::pair<iterator, bool> emplace(const key_type& key, Args&&... args) {
+			return insert(pair_type{key, mapped_type{y_fwd(args)...}});
 		}
 
-		std::pair<iterator, bool> insert(key_value_type p) {
+		std::pair<iterator, bool> insert(pair_type p) {
 			y_defer(audit());
 
 			if(should_expand()) {
@@ -737,85 +423,87 @@ class DenseMap : Hasher {
 namespace bits {
 template<typename Key, typename Value, typename Hasher = std::hash<Key>>
 class ExternalBitsDenseMap : Hasher {
+	public:
+		using key_type = remove_cvref_t<Key>;
+		using mapped_type = remove_cvref_t<Value>;
+		using value_type = std::pair<const key_type, mapped_type>;
 
-	using key_type = remove_cvref_t<Key>;
-	using value_type = remove_cvref_t<Value>;
-	using key_value_type = std::pair<const key_type, value_type>;
+	private:
+		using pair_type = std::pair<key_type, mapped_type>;
 
-	struct Bucket {
-		usize index;
-		usize hash;
-	};
-
-	struct HashBits {
-		static constexpr usize hash_bit = usize(1) << (8 * sizeof(usize) - 1);
-		static constexpr usize empty_bits = 0;
-		static constexpr usize tombstone_bits = 1;
-
-		usize bits = empty_bits;
-
-		void set_hash(usize hash) {
-			y_debug_assert(!is_hash());
-			bits = hash | hash_bit;
-		}
-
-		void make_empty() {
-			y_debug_assert(is_hash());
-			bits = tombstone_bits;
-		}
-
-		bool is_hash() const {
-			return bits & hash_bit;
-		}
-
-		bool is_hash(usize hash) const {
-			return bits == (hash | hash_bit);
-		}
-
-		bool is_empty_strict() const {
-			return bits == empty_bits;
-		}
-
-		bool is_tombstone() const {
-			return bits == tombstone_bits;
-		}
-
-		usize hash() {
-			y_debug_assert(is_hash());
-			return bits;
-		}
-	};
-
-	static_assert(sizeof(HashBits) == sizeof(usize));
-
-	struct Entry : NonMovable {
-		union {
-			key_value_type key_value;
+		struct Bucket {
+			usize index;
+			usize hash;
 		};
 
-		Entry() {
-		}
+		struct HashBits {
+			static constexpr usize hash_bit = usize(1) << (8 * sizeof(usize) - 1);
+			static constexpr usize empty_bits = 0;
+			static constexpr usize tombstone_bits = 1;
 
-		~Entry() {
-		}
+			usize bits = empty_bits;
 
-		void set(key_value_type&& kv) {
-			y_debug_assert(!has_key());
-			::new(&key_value) key_value_type{std::move(kv)};
-		}
+			void set_hash(usize hash) {
+				y_debug_assert(!is_hash());
+				bits = hash | hash_bit;
+			}
 
-		void clear() {
-			key_value.~key_value_type();
-		}
+			void make_empty() {
+				y_debug_assert(is_hash());
+				bits = tombstone_bits;
+			}
 
-		const key_type& key() const {
-			return key_value.first;
-		}
+			bool is_hash() const {
+				return bits & hash_bit;
+			}
 
-		bool operator==(const Key& k) const {
-			return key() == k;
-		}
-	};
+			bool is_hash(usize hash) const {
+				return bits == (hash | hash_bit);
+			}
+
+			bool is_empty_strict() const {
+				return bits == empty_bits;
+			}
+
+			bool is_tombstone() const {
+				return bits == tombstone_bits;
+			}
+
+			usize hash() {
+				y_debug_assert(is_hash());
+				return bits;
+			}
+		};
+
+		static_assert(sizeof(HashBits) == sizeof(usize));
+
+		struct Entry : NonMovable {
+			union {
+				pair_type key_value;
+			};
+
+			Entry() {
+			}
+
+			~Entry() {
+			}
+
+			void set(pair_type&& kv) {
+				::new(&key_value) pair_type{std::move(kv)};
+			}
+
+			void clear() {
+				key_value.~pair_type();
+			}
+
+			const key_type& key() const {
+				return key_value.first;
+			}
+
+			bool operator==(const key_type& k) const {
+				return key() == k;
+			}
+		};
 
 	public:
 		static constexpr double max_load_factor = 0.7;
@@ -837,7 +525,7 @@ class ExternalBitsDenseMap : Hasher {
 
 		auto values() const {
 			return core::Range(
-				TransformIterator(make_iterator(_bits.begin()), [](const key_value_type& entry) -> const value_type& {
+				TransformIterator(make_iterator(_bits.begin()), [](const pair_type& entry) -> const mapped_type& {
 					return entry.key_value.second;
 				}),
 				EndIterator{}
@@ -846,7 +534,7 @@ class ExternalBitsDenseMap : Hasher {
 
 		auto values() {
 			return core::Range(
-				TransformIterator(make_iterator(_bits.begin()), [](key_value_type& entry) -> value_type& {
+				TransformIterator(make_iterator(_bits.begin()), [](pair_type& entry) -> mapped_type& {
 					return entry.key_value.second;
 				}),
 				EndIterator{}
@@ -855,8 +543,8 @@ class ExternalBitsDenseMap : Hasher {
 
 		auto keys() const {
 			return core::Range(
-				TransformIterator(make_iterator(_bits.begin()), [](const key_value_type& entry) -> const key_type& {
-					return entry.key_value.first;
+				TransformIterator(make_iterator(_bits.begin()), [](const pair_type& entry) -> const key_type& {
+					return entry.key();
 				}),
 				EndIterator{}
 			);
@@ -874,27 +562,27 @@ class ExternalBitsDenseMap : Hasher {
 		auto make_iterator(const HashBits* bits) const {
 			const HashBits* bits_beg = _bits.data();
 			const Entry* entries = _entries.get();
-			return TransformIterator(bits_iterator(bits), [bits_beg, entries](const HashBits& b) -> const key_value_type& {
+			return TransformIterator(bits_iterator(bits), [bits_beg, entries](const HashBits& b) -> const value_type& {
 				const usize index = &b - bits_beg;
-				return entries[index].key_value;
+				return detail::map_entry_to_value_type(entries[index].key_value);
 			});
 		}
 
 		auto make_iterator(HashBits* bits) {
 			const HashBits* bits_beg = _bits.data();
 			Entry* entries = _entries.get();
-			return TransformIterator(bits_iterator(bits), [bits_beg, entries](const HashBits& b) -> key_value_type& {
+			return TransformIterator(bits_iterator(bits), [bits_beg, entries](const HashBits& b) -> value_type& {
 				const usize index = &b - bits_beg;
-				return entries[index].key_value;
+				return detail::map_entry_to_value_type(entries[index].key_value);
 			});
 		}
 
 
 		bool should_expand() const {
-			return _bits.size() * max_load_factor <=  _size;
+			return _bits.size() * max_load_factor <= _size;
 		}
 
-		usize hash(const Key& key) const {
+		usize hash(const key_type& key) const {
 			return Hasher::operator()(key);
 		}
 
@@ -904,12 +592,12 @@ class ExternalBitsDenseMap : Hasher {
 		}
 
 
-		Bucket find_bucket_for_insert(const Key& key) const {
+		Bucket find_bucket_for_insert(const key_type& key) const {
 			const usize h = hash(key);
 			return find_bucket_for_insert(key, h);
 		}
 
-		Bucket find_bucket_for_insert(const Key& key, usize h) const {
+		Bucket find_bucket_for_insert(const key_type& key, usize h) const {
 			const usize entry_count = _bits.size();
 			const usize hash_mask = entry_count - 1;
 			usize best_index = 0;
@@ -928,7 +616,7 @@ class ExternalBitsDenseMap : Hasher {
 			return {best_index, h};
 		}
 
-		const HashBits* find_key(const Key& key) const {
+		const HashBits* find_bits(const key_type& key) const {
 			const usize h = hash(key);
 			const usize entry_count = _bits.size();
 			const usize hash_mask = entry_count - 1;
@@ -945,12 +633,8 @@ class ExternalBitsDenseMap : Hasher {
 			return nullptr;
 		}
 
-		static constexpr usize ceil_next_power_of_2(usize k) {
-			return 1 << log2ui(k + 1);
-		}
-
 		void expand(usize new_entry_count) {
-			const usize pow_2 = ceil_next_power_of_2(new_entry_count);
+			const usize pow_2 = detail::ceil_next_power_of_2(new_entry_count);
 			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
 
 			auto old_bits = std::exchange(_bits, FixedArray<HashBits>(new_size));
@@ -1000,16 +684,21 @@ class ExternalBitsDenseMap : Hasher {
 
 		ExternalBitsDenseMap() = default;
 		ExternalBitsDenseMap(ExternalBitsDenseMap&& other) {
-			operator=(std::move(other));
+			swap(other);
 		}
 
 		ExternalBitsDenseMap& operator=(ExternalBitsDenseMap&& other) {
-			std::swap(_bits, other._bits);
-			std::swap(_entries, other._entries);
-			std::swap(_size, other._size);
+			swap(other);
 			return *this;
 		}
 
+		void swap(ExternalBitsDenseMap& other) {
+			if(&other != this) {
+				std::swap(_bits, other._bits);
+				std::swap(_entries, other._entries);
+				std::swap(_size, other._size);
+			}
+		}
 
 		iterator begin() {
 			return key_values().begin();
@@ -1036,17 +725,17 @@ class ExternalBitsDenseMap : Hasher {
 			return double(_size) / double(_entries.size());
 		}
 
-		bool contains(const Key& key) const {
-			return find_key(key);
+		bool contains(const key_type& key) const {
+			return find_bits(key);
 		}
 
-		iterator find(const Key& key) {
-			HashBits* bits = const_cast<HashBits*>(find_key(key));
+		iterator find(const key_type& key) {
+			HashBits* bits = const_cast<HashBits*>(find_bits(key));
 			return make_iterator(bits ? bits : _bits.end());
 		}
 
-		const_iterator find(const Key& key) const {
-			const HashBits* bits = find_key(key);
+		const_iterator find(const key_type& key) const {
+			const HashBits* bits = find_bits(key);
 			return make_iterator(bits ? bits : _bits.end());
 		}
 
@@ -1066,11 +755,11 @@ class ExternalBitsDenseMap : Hasher {
 		}
 
 		template<typename... Args>
-		std::pair<iterator, bool> emplace(const Key& key, Args&&... args) {
-			return insert(key_value_type{key, value_type{y_fwd(args)...}});
+		std::pair<iterator, bool> emplace(const key_type& key, Args&&... args) {
+			return insert(pair_type{key, mapped_type{y_fwd(args)...}});
 		}
 
-		std::pair<iterator, bool> insert(key_value_type p) {
+		std::pair<iterator, bool> insert(pair_type p) {
 			y_defer(audit());
 
 			if(should_expand()) {
@@ -1109,10 +798,331 @@ class ExternalBitsDenseMap : Hasher {
 };
 }
 
+namespace vector {
+template<typename Key, typename Value, typename Hasher = std::hash<Key>>
+class ExternalDenseMap : Hasher {
+	public:
+		using key_type = remove_cvref_t<Key>;
+		using mapped_type = remove_cvref_t<Value>;
+		using value_type = std::pair<const key_type, mapped_type>;
 
-using namespace external;
+	private:
+		using pair_type = std::pair<key_type, mapped_type>;
+
+		struct Bucket {
+			usize index;
+			usize hash;
+		};
+
+		struct HashBits {
+			static constexpr usize empty_index = usize(-1);
+			static constexpr usize tombstone_index = usize(-2);
+
+			usize bits = 0;
+			usize value_index = empty_index;
+
+			void set_hash(usize hash, usize index) {
+				y_debug_assert(!is_hash());
+				bits = hash;
+				value_index = index;
+			}
+
+			void make_empty() {
+				y_debug_assert(is_hash());
+				value_index = tombstone_index;
+			}
+
+			bool is_hash() const {
+				return value_index < tombstone_index;
+			}
+
+			bool is_hash(usize hash) const {
+				return is_hash() && bits == hash;
+			}
+
+			bool is_empty_strict() const {
+				return value_index == empty_index;
+			}
+
+			bool is_tombstone() const {
+				return value_index = tombstone_index;
+			}
+
+			usize hash() const {
+				y_debug_assert(is_hash());
+				return bits;
+			}
+		};
+
+	public:
+		static constexpr double max_load_factor = 0.7;
+		static constexpr usize min_capacity = 16;
+
+		core::Span<value_type> key_values() const {
+			return {detail::map_entry_to_value_type_ptr(_entries.data()), _entries.size()};
+		}
+
+		core::MutableSpan<value_type> key_values() {
+			return {detail::map_entry_to_value_type_ptr(_entries.data()), _entries.size()};
+		}
+
+		auto values() const {
+			return core::Range(
+				TransformIterator(_entries.begin(), [](const pair_type& entry) -> const mapped_type& {
+					return entry.second;
+				}),
+				_entries.end()
+			);
+		}
+
+		auto values() {
+			return core::Range(
+				TransformIterator(_entries.begin(), [](pair_type& entry) -> mapped_type& {
+					return entry.second;
+				}),
+				_entries.end()
+			);
+		}
+
+		auto keys() const {
+			return core::Range(
+				TransformIterator(_entries.begin(), [](const pair_type& entry) -> const key_type& {
+					return entry.first;
+				}),
+				_entries.end()
+			);
+		}
+
+	private:
+		bool should_expand() const {
+			return _bits.size() * max_load_factor <= _entries.size();
+		}
+
+		usize hash(const key_type& key) const {
+			return Hasher::operator()(key);
+		}
+
+		// http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
+		static constexpr usize probing_offset(usize i) {
+			return (i * i + i) / 2;
+		}
+
+
+		Bucket find_bucket_for_insert(const key_type& key) const {
+			const usize h = hash(key);
+			return find_bucket_for_insert(key, h);
+		}
+
+		Bucket find_bucket_for_insert(const key_type& key, usize h) const {
+			const usize entry_count = _bits.size();
+			const usize hash_mask = entry_count - 1;
+			usize best_index = 0;
+			for(usize i = 0; i != entry_count; ++i) {
+				const usize index = (h + probing_offset(i)) & hash_mask;
+				const HashBits& bits = _bits[index];
+				if(!bits.is_hash()) {
+					best_index = index;
+					if(bits.is_empty_strict()) {
+						return {best_index, h};
+					}
+				} else if(bits.is_hash(h) && _entries[bits.value_index].first == key) {
+					return {index, h};
+				}
+			}
+			return {best_index, h};
+		}
+
+		const HashBits* find_bits(const key_type& key) const {
+			const usize h = hash(key);
+			const usize entry_count = _bits.size();
+			const usize hash_mask = entry_count - 1;
+			for(usize i = 0; i != entry_count; ++i) {
+				const usize index = (h + probing_offset(i)) & hash_mask;
+				const HashBits& bits = _bits[index];
+				if(bits.is_hash(h) && _entries[bits.value_index].first == key) {
+					return &bits;
+				}
+				if(bits.is_empty_strict()) {
+					return nullptr;
+				}
+			}
+			return nullptr;
+		}
+
+		void expand(usize new_entry_count) {
+			const usize pow_2 = detail::ceil_next_power_of_2(new_entry_count);
+			const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
+
+			auto old_bits = std::exchange(_bits, FixedArray<HashBits>(new_size));
+
+			const usize current_entry_count = old_bits.size();
+			for(usize i = 0; i != current_entry_count; ++i) {
+				const HashBits& bits = old_bits[i];
+				if(bits.is_hash()) {
+					const Bucket bucket = find_bucket_for_insert(_entries[bits.value_index].first, bits.hash());
+					const usize new_index = bucket.index;
+
+					y_debug_assert(!_bits[new_index].is_hash());
+
+					_bits[new_index].set_hash(bucket.hash, bits.value_index);
+				}
+			}
+		}
+
+		void expand() {
+			expand(_bits.size() == 0 ? min_capacity : 2 * _bits.size());
+		}
+
+		void audit() const {
+#ifdef Y_DENSEMAP_AUDIT
+			usize entry_count = 0;
+			for(const auto& b : _bits) {
+				if(!b.is_hash()) {
+					continue;
+				}
+				y_debug_assert(hash(_entries[b.value_index].first) == b.hash());
+				++entry_count;
+			}
+			y_debug_assert(entry_count == _entries.size());
+#endif
+		}
+
+		FixedArray<HashBits> _bits;
+		core::Vector<pair_type> _entries;
+
+	public:
+		using iterator			= typename decltype(std::declval<      ExternalDenseMap<Key, Value, Hasher>>().key_values())::iterator;
+		using const_iterator	= typename decltype(std::declval<const ExternalDenseMap<Key, Value, Hasher>>().key_values())::iterator;
+
+		static_assert(std::is_copy_assignable_v<const_iterator>);
+		static_assert(std::is_copy_constructible_v<const_iterator>);
+
+		ExternalDenseMap() = default;
+		ExternalDenseMap(ExternalDenseMap&& other) {
+			swap(other);
+		}
+
+		ExternalDenseMap& operator=(ExternalDenseMap&& other) {
+			swap(other);
+			return *this;
+		}
+
+		void swap(ExternalDenseMap& other) {
+			if(&other != this) {
+				std::swap(_bits, other._bits);
+				std::swap(_entries, other._entries);
+			}
+		}
+
+		iterator begin() {
+			return key_values().begin();
+		}
+
+		const_iterator begin() const {
+			return key_values().begin();
+		}
+
+		auto end() {
+			return key_values().end();
+		}
+
+		auto end() const {
+			return key_values().end();
+		}
+
+
+		usize size() const {
+			return _entries.size();
+		}
+
+		double load_factor() const {
+			return double(_entries.size()) / double(_entries.size());
+		}
+
+		bool contains(const key_type& key) const {
+			return find_bits(key);
+		}
+
+		iterator find(const key_type& key) {
+			const HashBits* bits = find_bits(key);
+			auto kv = key_values();
+			return bits ? &kv[bits->value_index] : kv.end();
+		}
+
+		const_iterator find(const key_type& key) const {
+			const HashBits* bits = find_bits(key);
+			const auto kv = key_values();
+			return bits ? &kv[bits->value_index] : kv.end();
+		}
+
+		void rehash() {
+			expand(_bits.size());
+		}
+
+		void set_min_capacity(usize cap) {
+			_entries.set_min_capacity(cap);
+			const usize capacity = usize(cap / (max_load_factor * 0.8));
+			if(_bits.size() < capacity) {
+				expand(capacity);
+			}
+		}
+
+		void reserve(usize cap) {
+			set_min_capacity(cap);
+		}
+
+		template<typename... Args>
+		std::pair<iterator, bool> emplace(const key_type& key, Args&&... args) {
+			return insert(pair_type{key, mapped_type{y_fwd(args)...}});
+		}
+
+		std::pair<iterator, bool> insert(pair_type p) {
+			y_defer(audit());
+
+			if(should_expand()) {
+				expand();
+			}
+
+			y_debug_assert(!should_expand());
+
+			const Bucket bucket = find_bucket_for_insert(p.first);
+			const usize index = bucket.index;
+			const bool exists = _bits[index].is_hash();
+
+			if(!exists) {
+				_bits[index].set_hash(bucket.hash, _entries.size());
+				_entries.emplace_back(std::move(p));
+			}
+
+			return {&key_values()[_bits[index].value_index], !exists};
+		}
+
+		void erase(const iterator& it) {
+			y_defer(audit());
+
+			const pair_type* entry_ptr = reinterpret_cast<const pair_type*>(it);
+			const usize index = entry_ptr - _entries.data();
+
+			HashBits* bits = const_cast<HashBits*>(find_bits(entry_ptr->first));
+
+			y_debug_assert(bits && bits->is_hash());
+			y_debug_assert(&_entries[bits->value_index] == entry_ptr);
+
+			if(entry_ptr != &_entries.last()) {
+				HashBits* last_bits = const_cast<HashBits*>(find_bits(_entries.last().first));
+				last_bits->value_index = index;
+				std::swap(_entries[index], _entries.last());
+			}
+
+			_entries.pop();
+			bits->make_empty();
+		}
+};
+}
+
 using namespace compact;
 using namespace bits;
+using namespace vector;
 
 }
 }
