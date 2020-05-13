@@ -490,6 +490,10 @@ class ExternalHashMap : Hasher {
 		}
 
 		~ExternalHashMap() {
+			make_empty();
+		}
+
+		void make_empty() {
 			const usize len = bucket_count();
 			for(usize i = 0; i != len && _size; ++i) {
 				if(_states[i].is_full()) {
@@ -497,6 +501,15 @@ class ExternalHashMap : Hasher {
 					--_size;
 				}
 			}
+			_max_probe_len = 0;
+
+			y_debug_assert(_size == 0);
+		}
+
+		void clear() {
+			make_empty();
+			_states = nullptr;
+			_entries = nullptr;
 		}
 
 		iterator begin() {
