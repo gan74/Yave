@@ -184,18 +184,18 @@ y_test_func("DenseMap fuzz") {
 	const auto m0 = fuzz<std::unordered_map<i32, i32>>(fuzz_count, seed);
 
 	const auto m2 = fuzz<ExternalBitsDenseMap<i32, i32>>(fuzz_count, seed);
-	const auto m3 = fuzz<ExternalDenseMap<i32, i32>>(fuzz_count, seed);
-	const auto m4 = fuzz<DenseMap<i32, i32>>(fuzz_count, seed);
+	/*const auto m3 = fuzz<ExternalDenseMap<i32, i32>>(fuzz_count, seed);
+	const auto m4 = fuzz<DenseMap<i32, i32>>(fuzz_count, seed);*/
 
 	y_test_assert(to_vector(m0) == to_vector(m2));
-	y_test_assert(to_vector(m0) == to_vector(m3));
-	y_test_assert(to_vector(m0) == to_vector(m4));
+	/*y_test_assert(to_vector(m0) == to_vector(m3));
+	y_test_assert(to_vector(m0) == to_vector(m4));*/
 }
 
 
 y_test_func("DenseMap duplicates") {
 	static constexpr int max_key = 1000;
-	DenseMap<int, int> map;
+	DefaultImpl<int, int> map;
 	for(int i = 0; i != max_key; ++i) {
 		map.emplace(i, i * 2);
 	}

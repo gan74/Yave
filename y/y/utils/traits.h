@@ -53,6 +53,22 @@ template<bool B>
 using bool_type = typename std::integral_constant<bool, B>;
 
 
+namespace detail {
+template<bool C, typename T>
+struct ConstType {
+	using type = T;
+};
+template<typename T>
+struct ConstType<true, T> {
+	using type = const T;
+};
+}
+
+template<bool C, typename T>
+using const_type = detail::ConstType<C, T>;
+template<bool C, typename T>
+using const_type_t = typename const_type<C, T>::type;
+
 
 // type traits
 template<typename T, typename... Args>
