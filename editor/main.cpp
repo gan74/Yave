@@ -59,7 +59,6 @@ static void hide_console() {
 
 static void parse_args(int argc, char** argv) {
 	for(std::string_view arg : core::Span<const char*>(argv, argc)) {
-		log_msg(arg);
 		if(arg == "--nodebug") {
 			debug_instance = false;
 		}
