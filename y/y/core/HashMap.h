@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_CORE_DENSEMAP_H
-#define Y_CORE_DENSEMAP_H
+#ifndef Y_CORE_HASHMAP_H
+#define Y_CORE_HASHMAP_H
 
 #include "Vector.h"
 #include "Range.h"
@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include <y/utils/traits.h>
 
-//#define Y_DENSEMAP_AUDIT
+//#define Y_HASHMAP_AUDIT
 
 namespace y {
 namespace core {
@@ -64,17 +64,17 @@ inline constexpr usize ceil_next_power_of_2(usize k) {
 }
 
 
-static constexpr double default_dense_map_max_load_factor = 2.0 / 3.0;
+static constexpr double default_hash_map_max_load_factor = 2.0 / 3.0;
 
 enum class ProbingStrategy {
 	Linear,
 	Quadratic
 };
 
-static constexpr ProbingStrategy default_dense_map_probing_strategy = ProbingStrategy::Quadratic;
+static constexpr ProbingStrategy default_hash_map_probing_strategy = ProbingStrategy::Quadratic;
 
 // http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
-template<ProbingStrategy Strategy = default_dense_map_probing_strategy>
+template<ProbingStrategy Strategy = default_hash_map_probing_strategy>
 inline constexpr usize probing_offset(usize i) {
 	if constexpr(Strategy == ProbingStrategy::Linear) {
 		return i;
@@ -85,15 +85,15 @@ inline constexpr usize probing_offset(usize i) {
 }
 
 
-namespace bits {
+namespace external {
 template<typename Key, typename Value, typename Hasher = std::hash<Key>, bool StoreHash = false>
-class ExternalBitsDenseMap : Hasher {
+class ExternalHashMap : Hasher {
 	public:
 		using key_type = remove_cvref_t<Key>;
 		using mapped_type = remove_cvref_t<Value>;
 		using value_type = std::pair<const key_type, mapped_type>;
 
-		static constexpr double max_load_factor = detail::default_dense_map_max_load_factor;
+		static constexpr double max_load_factor = detail::default_hash_map_max_load_factor;
 		static constexpr usize min_capacity = 16;
 
 	private:
@@ -252,7 +252,7 @@ class ExternalBitsDenseMap : Hasher {
 		template<bool Const, typename Transform>
 		class IteratorBase : Transform {
 
-			using parent_type = const_type_t<Const, ExternalBitsDenseMap>;
+			using parent_type = const_type_t<Const, ExternalHashMap>;
 
 			public:
 				IteratorBase() = default;
@@ -309,7 +309,7 @@ class ExternalBitsDenseMap : Hasher {
 				template<bool C, typename T>
 				friend class IteratorBase;
 
-				friend class ExternalBitsDenseMap;
+				friend class ExternalHashMap;
 
 				IteratorBase(parent_type* parent, usize index) : _index(index), _parent(parent) {
 					find_next();
@@ -441,7 +441,7 @@ class ExternalBitsDenseMap : Hasher {
 		}
 
 		void audit() {
-#ifdef Y_DENSEMAP_AUDIT
+#ifdef Y_HASHMAP_AUDIT
 			usize entry_count = 0;
 			for(usize i = 0; i != bucket_count(); ++i) {
 				if(!_states[i].is_full()) {
@@ -470,17 +470,17 @@ class ExternalBitsDenseMap : Hasher {
 		static_assert(std::is_constructible_v<const_iterator, iterator>);
 		static_assert(!std::is_constructible_v<iterator, const_iterator>);
 
-		ExternalBitsDenseMap() = default;
-		ExternalBitsDenseMap(ExternalBitsDenseMap&& other) {
+		ExternalHashMap() = default;
+		ExternalHashMap(ExternalHashMap&& other) {
 			swap(other);
 		}
 
-		ExternalBitsDenseMap& operator=(ExternalBitsDenseMap&& other) {
+		ExternalHashMap& operator=(ExternalHashMap&& other) {
 			swap(other);
 			return *this;
 		}
 
-		void swap(ExternalBitsDenseMap& other) {
+		void swap(ExternalHashMap& other) {
 			if(&other != this) {
 				std::swap(_states, other._states);
 				std::swap(_entries, other._entries);
@@ -489,7 +489,7 @@ class ExternalBitsDenseMap : Hasher {
 			}
 		}
 
-		~ExternalBitsDenseMap() {
+		~ExternalHashMap() {
 			const usize len = bucket_count();
 			for(usize i = 0; i != len && _size; ++i) {
 				if(_states[i].is_full()) {
@@ -639,9 +639,9 @@ class ExternalBitsDenseMap : Hasher {
 };
 }
 
-using namespace bits;
+using namespace external;
 
 }
 }
 
-#endif // Y_CORE_DENSEMAP_H
+#endif // Y_CORE_HASHMAP_H

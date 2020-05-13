@@ -23,7 +23,7 @@ SOFTWARE.
 #include <y/test/test.h>
 
 #include <y/core/Vector.h>
-#include <y/core/DenseMap.h>
+#include <y/core/HashMap.h>
 #include <y/core/String.h>
 
 #include <y/utils/format.h>
@@ -37,7 +37,7 @@ using namespace y;
 using namespace y::core;
 
 template<typename K, typename V, typename H = std::hash<K>>
-using DefaultImpl = ExternalBitsDenseMap<K, V, H>;
+using DefaultImpl = ExternalHashMap<K, V, H>;
 
 struct RaiiCounter : NonCopyable {
 	RaiiCounter(usize* ptr) : counter(ptr) {
@@ -142,7 +142,7 @@ static Map fuzz(usize count, u32 seed) {
 
 Y_TODO(Test with complex objects)
 
-y_test_func("DenseMap basics") {
+y_test_func("HashMap basics") {
 	static constexpr int max_key = 1000;
 	DefaultImpl<int, int> map;
 
@@ -162,7 +162,7 @@ y_test_func("DenseMap basics") {
 	}
 }
 
-y_test_func("DenseMap bad hash") {
+y_test_func("HashMap bad hash") {
 	static constexpr int max_key = 500;
 	DefaultImpl<int, int, AbysmalHash> map;
 
@@ -178,14 +178,14 @@ y_test_func("DenseMap bad hash") {
 	}
 }
 
-y_test_func("DenseMap fuzz") {
+y_test_func("HashMap fuzz") {
 	const u32 seed = std::time(nullptr);
 	const usize fuzz_count = 25000;
 	const auto m0 = fuzz<std::unordered_map<i32, i32>>(fuzz_count, seed);
 
-	const auto m2 = fuzz<ExternalBitsDenseMap<i32, i32>>(fuzz_count, seed);
-	/*const auto m3 = fuzz<ExternalDenseMap<i32, i32>>(fuzz_count, seed);
-	const auto m4 = fuzz<DenseMap<i32, i32>>(fuzz_count, seed);*/
+	const auto m2 = fuzz<ExternalHashMap<i32, i32>>(fuzz_count, seed);
+	/*const auto m3 = fuzz<ExternalHashMap<i32, i32>>(fuzz_count, seed);
+	const auto m4 = fuzz<HashMap<i32, i32>>(fuzz_count, seed);*/
 
 	y_test_assert(to_vector(m0) == to_vector(m2));
 	/*y_test_assert(to_vector(m0) == to_vector(m3));
@@ -193,7 +193,7 @@ y_test_func("DenseMap fuzz") {
 }
 
 
-y_test_func("DenseMap duplicates") {
+y_test_func("HashMap duplicates") {
 	static constexpr int max_key = 1000;
 	DefaultImpl<int, int> map;
 	for(int i = 0; i != max_key; ++i) {
@@ -208,7 +208,7 @@ y_test_func("DenseMap duplicates") {
 }
 
 
-y_test_func("DenseMap strings") {
+y_test_func("HashMap strings") {
 	static constexpr int max_key = 1000;
 
 	DefaultImpl<core::String, int> map;
@@ -228,7 +228,7 @@ y_test_func("DenseMap strings") {
 	y_test_assert(map.find("589") == map.end());
 }
 
-y_test_func("DenseMap value dtors") {
+y_test_func("HashMap value dtors") {
 	static constexpr int max_key = 1000;
 
 	usize counter = 0;

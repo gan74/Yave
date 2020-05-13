@@ -34,7 +34,7 @@ using namespace y;
 #ifdef BENCH
 #include <y/core/Chrono.h>
 #include <y/core/Vector.h>
-#include <y/core/DenseMap.h>
+#include <y/core/HashMap.h>
 #include <y/utils/format.h>
 #include <y/utils/name.h>
 #include <y/math/random.h>
@@ -423,17 +423,18 @@ result_type bench_implementation() {
 }
 
 template<typename K, typename V, typename H = std::hash<K>>
-struct ExternalBitsMapStore : core::ExternalBitsDenseMap<K, V, H, true> {};
+struct ExternalMapStore : core::ExternalHashMap<K, V, H, true> {};
 
 template<typename K, typename V, typename H = std::hash<K>>
-struct ExternalBitsMap : core::ExternalBitsDenseMap<K, V, H, false> {};
+struct ExternalMap : core::ExternalHashMap<K, V, H, false> {};
 
 int main() {
 	y::test::run_tests();
 
 	core::Vector<std::pair<const char*, result_type>> results;
 	log_msg("Benching...");
-	results.emplace_back("ExternalBitsMap", bench_implementation<ExternalBitsMap>());
+	results.emplace_back("ExternalMap", bench_implementation<ExternalMap>());
+	results.emplace_back("ExternalMapStore", bench_implementation<ExternalMapStore>());
 	results.emplace_back("std::unordered_map", bench_implementation<std::unordered_map>());
 	log_msg("Done\n");
 
