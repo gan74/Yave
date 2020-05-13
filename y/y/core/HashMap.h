@@ -204,6 +204,11 @@ class ExternalHashMap : Hasher {
 			~Entry() {
 			}
 
+
+			void set_empty(const key_type& k) {
+				::new(&key_value) pair_type{k, mapped_type{}};
+			}
+
 			void set(pair_type&& kv) {
 				::new(&key_value) pair_type{std::move(kv)};
 			}
@@ -355,6 +360,7 @@ class ExternalHashMap : Hasher {
 			const usize hash_mask = buckets - 1;
 			usize probes = 0;
 
+			y_debug_assert(buckets);
 			{
 				usize best_index = invalid_index;
 				for(; probes <= _max_probe_len; ++probes) {
@@ -508,7 +514,7 @@ class ExternalHashMap : Hasher {
 
 		void clear() {
 			make_empty();
-			_states = nullptr;
+			_states.clear();
 			_entries = nullptr;
 		}
 
@@ -609,6 +615,20 @@ class ExternalHashMap : Hasher {
 			set_min_capacity(cap);
 		}
 
+		void erase(const iterator& it) {
+			y_defer(audit());
+
+			const usize index = it._index;
+
+			y_debug_assert(index < bucket_count());
+			y_debug_assert(it._parent == this);
+
+			_entries[index].clear();
+			_states[index].make_empty();
+
+			--_size;
+		}
+
 		template<typename... Args>
 		std::pair<iterator, bool> emplace(const key_type& key, Args&&... args) {
 			return insert(pair_type{key, mapped_type{y_fwd(args)...}});
@@ -636,18 +656,30 @@ class ExternalHashMap : Hasher {
 			return {iterator(this, index), !exists};
 		}
 
-		void erase(const iterator& it) {
-			y_defer(audit());
+		template<typename It>
+		void insert(It beg, It en) {
+			Y_TODO(Reserve if possible)
+			for(; beg != en; ++beg) {
+				insert(*beg);
+			}
+		}
 
-			const usize index = it._index;
+		mapped_type& operator[](const key_type& key) {
+			if(should_expand()) {
+				expand();
+			}
 
-			y_debug_assert(index < bucket_count());
-			y_debug_assert(it._parent == this);
+			const Bucket bucket = find_bucket_for_insert(key);
+			const usize index = bucket.index;
+			const bool exists = _states[index].is_full();
 
-			_entries[index].clear();
-			_states[index].make_empty();
+			if(!exists) {
+				_entries[index].set_empty(key);
+				_states[index].set_hash(bucket.hash);
+				++_size;
+			}
 
-			--_size;
+			return _entries[index].key_value.second;
 		}
 };
 }
