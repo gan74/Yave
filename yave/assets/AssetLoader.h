@@ -22,13 +22,14 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_ASSETLOADER_H
 #define YAVE_ASSETS_ASSETLOADER_H
 
+#include <y/core/HashMap.h>
+
 #include <yave/device/DeviceLinked.h>
 
 #include "AssetStore.h"
 #include "AssetLoadingContext.h"
 #include "AssetLoadingThreadPool.h"
 
-#include <unordered_map>
 #include <typeindex>
 #include <future>
 
@@ -90,7 +91,7 @@ class AssetLoader : NonMovable, public DeviceLinked {
 				[[nodiscard]] inline bool find_ptr(AssetPtr<T>& ptr);
 				inline std::unique_ptr<LoadingJob> create_loading_job(AssetPtr<T> ptr);
 
-				std::unordered_map<AssetId, WeakAssetPtr> _loaded;
+				core::ExternalHashMap<AssetId, WeakAssetPtr> _loaded;
 				std::recursive_mutex _lock;
 		};
 
@@ -138,7 +139,7 @@ class AssetLoader : NonMovable, public DeviceLinked {
 
 		core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from, AssetType type);
 
-		std::unordered_map<std::type_index, std::unique_ptr<LoaderBase>> _loaders;
+		core::ExternalHashMap<std::type_index, std::unique_ptr<LoaderBase>> _loaders;
 		std::shared_ptr<AssetStore> _store;
 
 		std::recursive_mutex _lock;

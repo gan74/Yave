@@ -29,10 +29,11 @@ SOFTWARE.
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 
-#include <y/utils/hash.h>
 #include <y/core/String.h>
+#include <y/core/HashMap.h>
 
-#include <unordered_map>
+#include <y/utils/hash.h>
+
 
 #ifdef Y_DEBUG
 #include <mutex>
@@ -173,7 +174,7 @@ class DeviceResources final : NonCopyable {
 
 #ifdef Y_DEBUG
 		std::unique_ptr<std::mutex> _lock;
-		mutable std::unordered_map<core::String, std::unique_ptr<ComputeProgram>> _programs;
+		mutable core::ExternalHashMap<core::String, std::unique_ptr<ComputeProgram>> _programs;
 
 	public:
 		const ComputeProgram& program_from_file(std::string_view file) const;

@@ -28,9 +28,9 @@ SOFTWARE.
 #include <y/utils/hash.h>
 #include <y/core/Range.h>
 #include <y/core/Vector.h>
+#include <y/core/HashMap.h>
 
 #include <memory>
-#include <unordered_map>
 
 namespace yave {
 
@@ -62,8 +62,8 @@ class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
 		DeviceMemory alloc(VkMemoryRequirements reqs, MemoryType type);
 		DeviceMemory dedicated_alloc(VkMemoryRequirements reqs, MemoryType type);
 
-		std::unordered_map<HeapType, core::Vector<std::unique_ptr<DeviceMemoryHeap>>> _heaps;
-		std::unordered_map<MemoryType, std::unique_ptr<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
+		core::ExternalHashMap<HeapType, core::Vector<std::unique_ptr<DeviceMemoryHeap>>> _heaps;
+		core::ExternalHashMap<MemoryType, std::unique_ptr<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
 
 		usize _max_allocs = 0;
 		mutable std::mutex _lock;

@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/editor.h>
 
 #include <y/core/Functor.h>
+#include <y/core/HashMap.h>
 #include <y/concurrent/StaticThreadPool.h>
 
 #include <yave/assets/AssetPtr.h>
@@ -91,7 +92,7 @@ class ThumbmailCache : NonMovable, public ContextLinked {
 		usize _size;
 
 		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
-		std::unordered_map<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
+		core::ExternalHashMap<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
 
 		std::mutex _lock;
 		concurrent::WorkerThread _render_thread = concurrent::WorkerThread("Thumbmail rendering thread");

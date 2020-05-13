@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "ShaderModule.h"
 
-#include <y/core/AssocVector.h>
+#include <y/core/HashMap.h>
 
 namespace yave {
 
@@ -45,7 +45,7 @@ class ShaderProgram final : NonCopyable, public DeviceLinked {
 		core::Span<VkPushConstantRange> vk_push_constants() const;
 
 	private:
-		std::unordered_map<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
+		core::ExternalHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
 		core::Vector<VkPushConstantRange> _push_constants;
 		core::Vector<VkDescriptorSetLayout> _layouts;
 		core::Vector<VkPipelineShaderStageCreateInfo> _stages;

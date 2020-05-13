@@ -27,6 +27,7 @@ SOFTWARE.
 #include "AssetStore.h"
 
 #include <y/core/String.h>
+#include <y/core/HashMap.h>
 
 #include <mutex>
 #include <set>
@@ -106,7 +107,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
 		std::set<core::String> _folders;
 		std::map<core::String, AssetData> _assets;
 
-		mutable std::unique_ptr<std::unordered_map<AssetId, std::map<core::String, AssetData>::const_iterator>> _ids;
+		mutable std::unique_ptr<core::ExternalHashMap<AssetId, std::map<core::String, AssetData>::const_iterator>> _ids;
 
 		mutable std::recursive_mutex _lock;
 

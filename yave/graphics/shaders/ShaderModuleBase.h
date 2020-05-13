@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <yave/utils/traits.h>
 
-#include <unordered_map>
+#include <y/core/HashMap.h>
 
 namespace yave {
 
@@ -136,7 +136,7 @@ class ShaderModuleBase : NonMovable, public DeviceLinked {
 	private:
 		VkShaderModule _module;
 		ShaderType _type = ShaderType::None;
-		std::unordered_map<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
+		core::ExternalHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
 		core::Vector<VkSpecializationMapEntry> _spec_constants;
 		core::Vector<VkPushConstantRange> _push_constants;
 		core::Vector<Attribute> _attribs;

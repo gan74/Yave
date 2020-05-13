@@ -21,11 +21,11 @@ SOFTWARE.
 **********************************/
 
 #include "ShaderProgram.h"
+
 #include <yave/device/Device.h>
 
 #include <y/utils/sort.h>
 
-#include <unordered_map>
 #include <numeric>
 
 #include <spirv_cross/spirv.hpp>
@@ -144,7 +144,7 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 
 		const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
-		if(!_bindings.empty()) {
+		if(!_bindings.is_empty()) {
 			_layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
 			for(const auto& binding : _bindings) {
 				_layouts[binding.first] = device()->descriptor_set_layout(binding.second).vk_descriptor_set_layout();

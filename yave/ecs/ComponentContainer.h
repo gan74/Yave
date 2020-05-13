@@ -32,7 +32,6 @@ SOFTWARE.
 #include <y/core/Span.h>
 #include <y/core/Result.h>
 
-#include <unordered_map>
 
 namespace yave {
 namespace ecs {

@@ -74,7 +74,7 @@ MIT
 - [ ] Finish allocators
 - [ ] Rewrite SmallVector (with new allocators)
 - [X] Rename ArrayView to Span and MutableSpan
-- [ ] DenseMap (Is SparseVector enough?)
+- [X] HashMap
 - [ ] Basic reflection
 - [X] More robust serialization
 
