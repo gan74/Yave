@@ -27,12 +27,13 @@ SOFTWARE.
 namespace yave {
 
 static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialData& data) {
+
 	std::array<Descriptor, SimpleMaterialData::texture_count + 1> bindings = {
 			*dptr->device_resources()[DeviceResources::GreyTexture],
 			*dptr->device_resources()[DeviceResources::FlatNormalTexture],
 			*dptr->device_resources()[DeviceResources::RedTexture],
 			*dptr->device_resources()[DeviceResources::RedTexture],
-			InlineDescriptor(data.constants().to<2>())
+			InlineDescriptor(data.constants())
 		};
 
 	for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {

@@ -50,7 +50,9 @@ MaterialPreview::MaterialPreview(ContextPtr cptr) :
 	set_object(PreviewObject::Sphere);
 }
 
-
+void MaterialPreview::refresh() {
+	_world.flush_reload(context()->loader());
+}
 
 void MaterialPreview::set_material(const AssetPtr<Material>& material) {
 	_material = material;

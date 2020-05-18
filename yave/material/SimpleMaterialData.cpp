@@ -34,6 +34,23 @@ SimpleMaterialData& SimpleMaterialData::set_texture(Textures type, AssetPtr<Text
 	return *this;
 }
 
+SimpleMaterialData& SimpleMaterialData::set_texture_reset_constants(Textures type, AssetPtr<Texture> tex) {
+	switch(type) {
+		case Roughness:
+			_constants.roughness_mul = 1.0f;
+		break;
+
+		case Metallic:
+			_constants.metallic_mul = 1.0f;
+		break;
+
+		default:
+		break;
+	}
+
+	return set_texture(type, std::move(tex));
+}
+
 bool SimpleMaterialData::is_empty() const {
 	return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return tex.is_empty(); });
 }

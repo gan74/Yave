@@ -40,6 +40,11 @@ class SimpleMaterialData {
 			Max
 		};
 
+		struct Contants {
+			float roughness_mul = 1.0f;
+			float metallic_mul = 0.0f;
+		};
+
 		Y_TODO(creating materials requires loading textures)
 
 		static constexpr usize texture_count = usize(Textures::Max);
@@ -48,21 +53,23 @@ class SimpleMaterialData {
 		SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
 		SimpleMaterialData& set_texture(Textures type, AssetPtr<Texture> tex);
+		SimpleMaterialData& set_texture_reset_constants(Textures type, AssetPtr<Texture> tex);
 
 		bool is_empty() const;
 
 		const AssetPtr<Texture>& operator[](Textures tex) const;
 		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 
-		const math::Vec4& constants() const { return _data; }
+		const Contants& constants() const { return _constants; }
+		Contants& constants() { return _constants; }
 
-		y_serde3(_textures, _data)
+		y_serde3(_textures, _constants)
 
 	private:
 		std::array<AssetId, texture_count> texture_ids() const;
 
 		std::array<AssetPtr<Texture>, texture_count> _textures;
-		math::Vec4 _data = {0.2f, 0.0f, 0.0f, 0.0f};
+		Contants _constants;
 };
 
 }
