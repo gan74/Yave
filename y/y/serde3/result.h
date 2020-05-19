@@ -49,6 +49,16 @@ enum class ErrorType : u32 {
 	SizeError,
 };
 
+struct Error {
+	Error(ErrorType t, const char* m = nullptr) : type(t), member(m) {
+	}
+
+	const ErrorType type = ErrorType::UnknownError;
+	const char* const member = nullptr;
+};
+
+using Result = core::Result<Success, Error>;
+
 inline const char* error_msg(ErrorType tpe) {
 	static const char* msg[] = {
 		"Unknown error",
@@ -63,8 +73,9 @@ inline const char* error_msg(ErrorType tpe) {
 }
 
 
-
-using Result = core::Result<Success, ErrorType>;
+inline const char* error_msg(const Error &err) {
+	return error_msg(err.type);
+}
 
 }
 }

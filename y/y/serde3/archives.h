@@ -120,7 +120,7 @@ class WritableArchive final {
 			usize buffer_size = _buffer.tell();
 			if(buffer_size) {
 				if(!_file.write(_buffer.data(), buffer_size)) {
-					return core::Err(ErrorType::IOError);
+					return core::Err(Error(ErrorType::IOError));
 				}
 				_buffer.clear();
 			}
@@ -139,7 +139,7 @@ class WritableArchive final {
 				}
 				_buffer.seek(p.index - _cached_file_size);
 				if(!_buffer.write_one(p.size)) {
-					return core::Err(ErrorType::IOError);
+					return core::Err(Error(ErrorType::IOError));
 				}
 				_patches.pop();
 			}
@@ -154,7 +154,7 @@ class WritableArchive final {
 			for(const SizePatch& patch : _patches) {
 				_file.seek(patch.index);
 				if(!_file.write_one(patch.size)) {
-					return core::Err(ErrorType::IOError);
+					return core::Err(Error(ErrorType::IOError));
 				}
 			}
 			_patches.make_empty();
@@ -357,7 +357,7 @@ class WritableArchive final {
 				y_try(flush());
 			}
 			if(!_buffer.write_one(t)) {
-				return core::Err(ErrorType::IOError);
+				return core::Err(Error(ErrorType::IOError));
 			}
 #else
 			_cached_file_size += sizeof(T);
@@ -371,12 +371,12 @@ class WritableArchive final {
 #ifdef Y_SERDE3_BUFFER
 			if(_buffer.size() + (sizeof(T) * size) > buffer_size) {
 				if(!flush()) {
-					return core::Err(ErrorType::IOError);
+					return core::Err(Error(ErrorType::IOError));
 				}
 			}
 
 			if(!_buffer.write_array(t, size)) {
-				return core::Err(ErrorType::IOError);
+				return core::Err(Error(ErrorType::IOError));
 			}
 #else
 			_cached_file_size += sizeof(T) * size;
@@ -469,7 +469,7 @@ class ReadableArchive final {
 			y_try(read_one(magic));
 			y_try(read_one(version));
 			if(magic != detail::magic || version != detail::version_id) {
-				return core::Err(ErrorType::VersionError);
+				return core::Err(Error(ErrorType::VersionError));
 
 			}
 			return core::Ok(Success::Full);
@@ -558,7 +558,7 @@ class ReadableArchive final {
 
 			if constexpr(IsRange) {
 				if(collection_size != object.object.size()) {
-					return core::Err(ErrorType::SizeError);
+					return core::Err(Error(ErrorType::SizeError, object.name.data()));
 				}
 			}
 
@@ -579,7 +579,7 @@ class ReadableArchive final {
 							}
 						}
 						if(!_file.read_array(object.object.begin(), collection_size)) {
-							return core::Err(ErrorType::IOError);
+							return core::Err(Error(ErrorType::IOError, object.name.data()));
 						}
 					}
 
@@ -616,14 +616,14 @@ class ReadableArchive final {
 
 				if constexpr(has_size_v<T>) {
 					if(object.object.size() != collection_size) {
-						return core::Err(ErrorType::SizeError);
+						return core::Err(Error(ErrorType::SizeError, object.name.data()));
 					}
 				}
 
 				return core::Ok(Success::Full);
 
 			} catch(std::bad_alloc&) {
-				return core::Err(ErrorType::SizeError);
+				return core::Err(Error(ErrorType::SizeError, object.name.data()));
 			}
 		}
 
@@ -642,7 +642,7 @@ class ReadableArchive final {
 					using element_type = typename T::element_type;
 					object.object = element_type::_y_serde3_poly_base.create_from_id(type_id);
 					if(!object.object) {
-						return core::Err(ErrorType::UnknownPolyError);
+						return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
 					}
 
 					return object.object->_y_serde3_poly_deserialize(*this);
@@ -658,7 +658,7 @@ class ReadableArchive final {
 				y_try(read_one(type_id));
 
 				if(type_id != object.object._y_serde3_poly_type_id()) {
-					return core::Err(ErrorType::UnknownPolyError);
+					return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
 				}
 
 				return object.object._y_serde3_poly_deserialize(*this);
@@ -702,7 +702,7 @@ class ReadableArchive final {
 
 			if(header != check) {
 				if(header.type.type_hash != check.type.type_hash) {
-					return core::Err(ErrorType::SignatureError);
+					return core::Err(Error(ErrorType::SignatureError, object.name.data()));
 				}
 				return deserialize_members<true>(object.object);
 			} else {
@@ -720,11 +720,12 @@ class ReadableArchive final {
 		Result deserialize_members_internal(const std::tuple<NamedObject<Args, Refs>...>& members,
 											const ObjectData& object_data) {
 			unused(members, object_data);
-			if constexpr(Safe) {
-				return core::Err(ErrorType::SignatureError);
-			}
 
 			if constexpr(I < sizeof...(Args)) {
+				if constexpr(Safe) {
+					const auto& mem = std::get<I>(members);
+					return core::Err(Error(ErrorType::SignatureError, mem.name.data()));
+				}
 				/*if constexpr(Safe) {
 					bool found = false;
 					const auto header = detail::build_header(std::get<I>(members));
@@ -848,7 +849,7 @@ class ReadableArchive final {
 
 			const auto check = detail::build_header(object);
 			if(header != check) {
-				return core::Err(ErrorType::SignatureError);
+				return core::Err(Error(ErrorType::SignatureError, object.name.data()));
 			}
 			return core::Ok(Success::Full);
 		}
@@ -858,14 +859,15 @@ class ReadableArchive final {
 		Result read_one(T& t) {
 			static_assert(!std::is_same_v<std::remove_reference_t<T>, detail::ObjectHeader>);
 			if(!_file.read_one(t)) {
-				return core::Err(ErrorType::IOError);
+				return core::Err(Error(ErrorType::IOError));
 			}
 			return core::Ok(Success::Full);
 		}
 
 		Result read_header(detail::ObjectHeader& header) {
+			Y_TODO(set member name on error)
 			if(!_file.read_one(header.type)){
-				return core::Err(ErrorType::IOError);
+				return core::Err(Error(ErrorType::IOError));
 			}
 			bool read_members = true;
 #ifdef Y_SLIM_POD_HEADER
@@ -873,7 +875,7 @@ class ReadableArchive final {
 #endif
 			if(read_members) {
 				if(!_file.read_one(header.members)) {
-					return core::Err(ErrorType::IOError);
+					return core::Err(Error(ErrorType::IOError));
 				}
 			}
 			return core::Ok(Success::Full);

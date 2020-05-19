@@ -250,8 +250,8 @@ int main() {
 			y_debug_assert(i == 0);
 			log_msg(fmt("id: [%, %]", id.index(), id.version()));
 		}
-	} catch(serde3::ErrorType err) {
-		log_msg(fmt("Serde error: %", serde3::error_msg(err)), Log::Error);
+	} catch(serde3::Error err) {
+		log_msg(fmt("Serde error: % while processing: \"%\"", serde3::error_msg(err), err.member ? err.member : ""), Log::Error);
 	}
 
 	log_msg("-------------------------");
