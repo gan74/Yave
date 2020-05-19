@@ -42,7 +42,7 @@ Named<ImageData> import_image(const core::String& filename, ImageImportFlags fla
 		y_throw(fmt_c_str("Unable to load image \"%\".", filename));
 	}
 
-	ImageData img(math::Vec2ui(width, height), data, vk::Format::eR8G8B8A8Unorm);
+	ImageData img(math::Vec2ui(width, height), data, VK_FORMAT_R8G8B8A8_UNORM);
 	if((flags & ImageImportFlags::GenerateMipmaps) == ImageImportFlags::GenerateMipmaps) {
 		img = compute_mipmaps(img);
 	}

@@ -75,7 +75,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const {
 	// fill render data
 	auto camera_mapping = pass->resources().mapped_buffer(camera_buffer);
-	camera_mapping[0] = scene_view.camera().viewproj_matrix();
+	camera_mapping[0] = scene_view.camera();
 
 	usize index = 0;
 	if(scene_view.has_world()) {

@@ -31,27 +31,38 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::SurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, vk::SurfaceKHR surface) {
+static VkSurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, VkSurfaceKHR surface) {
 	y_profile();
-	return dptr->physical_device().vk_physical_device().getSurfaceCapabilitiesKHR(surface);
+	VkSurfaceCapabilitiesKHR capabilities = {};
+	vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dptr->vk_physical_device(), surface, &capabilities));
+	return capabilities;
 }
 
-static vk::SurfaceFormatKHR get_surface_format(DevicePtr dptr, vk::SurfaceKHR surface) {
+static VkSurfaceFormatKHR surface_format(DevicePtr dptr, VkSurfaceKHR surface) {
 	y_profile();
-	return dptr->physical_device().vk_physical_device().getSurfaceFormatsKHR(surface).front();
+
+	Y_TODO(Find best format instead of always returning first)
+	u32 format_count = 1;
+	VkSurfaceFormatKHR format = {};
+	vk_check_or_incomplete(vkGetPhysicalDeviceSurfaceFormatsKHR(dptr->vk_physical_device(), surface, &format_count, &format));
+	y_always_assert(format_count, "No swapchain format supported");
+	return format;
 }
 
-static vk::PresentModeKHR get_present_mode(DevicePtr dptr, vk::SurfaceKHR surface) {
-	const auto present_modes = dptr->physical_device().vk_physical_device().getSurfacePresentModesKHR(surface);
-	for(auto mode : present_modes) {
-		if(mode == vk::PresentModeKHR::eMailbox) {
-			return mode;
+static VkPresentModeKHR present_mode(DevicePtr dptr, VkSurfaceKHR surface) {
+	std::array<VkPresentModeKHR, 16> modes = {};
+	u32 mode_count = modes.size();
+	vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(dptr->vk_physical_device(), surface, &mode_count, modes.data()));
+	y_always_assert(mode_count, "No presentation mode supported");
+	for(u32 i = 0; i != mode_count; ++i) {
+		if(modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+			return modes[i];
 		}
 	}
-	return present_modes[0];
+	return modes[0];
 }
 
-static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
+static u32 compute_image_count(VkSurfaceCapabilitiesKHR capabilities) {
 	const u32 ideal = 3;
 	if(capabilities.maxImageCount < ideal) {
 		return capabilities.maxImageCount;
@@ -62,65 +73,66 @@ static u32 get_image_count(vk::SurfaceCapabilitiesKHR capabilities) {
 	return ideal;
 }
 
-/*static void assert_depth_supported(DevicePtr dptr) {
-	auto depth_props = dptr->physical_device().vk_physical_device().getFormatProperties(vk::Format::eD32Sfloat);
+static VkImageView create_image_view(DevicePtr dptr, VkImage image, VkFormat format) {
+	const VkComponentMapping mapping = {
+		VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+		VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY
+	};
 
-	if((depth_props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) != vk::FormatFeatureFlagBits::eDepthStencilAttachment) {
-		y_fatal("32 bit depth not supported.");
+	VkImageSubresourceRange subrange = {};
+	{
+		subrange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		subrange.layerCount = 1;
+		subrange.levelCount = 1;
 	}
-}*/
 
-static vk::ImageView create_image_view(DevicePtr dptr, vk::Image image, vk::Format format) {
-	const auto mapping = vk::ComponentMapping()
-			.setR(vk::ComponentSwizzle::eIdentity)
-			.setG(vk::ComponentSwizzle::eIdentity)
-			.setB(vk::ComponentSwizzle::eIdentity)
-			.setA(vk::ComponentSwizzle::eIdentity)
-		;
+	VkImageViewCreateInfo create_info = vk_struct();
+	{
+		create_info.image = image;
+		create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		create_info.format = format;
+		create_info.components = mapping;
+		create_info.subresourceRange = subrange;
+	}
 
-	const auto subrange = vk::ImageSubresourceRange()
-			.setAspectMask(vk::ImageAspectFlagBits::eColor)
-			.setBaseArrayLayer(0)
-			.setBaseMipLevel(0)
-			.setLayerCount(1)
-			.setLevelCount(1)
-		;
-
-	return dptr->vk_device().createImageView(vk::ImageViewCreateInfo()
-			.setImage(image)
-			.setViewType(vk::ImageViewType::e2D)
-			.setFormat(format)
-			.setComponents(mapping)
-			.setSubresourceRange(subrange)
-		);
+	VkImageView view = {};
+	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &view));
+	return view;
 }
 
-static bool has_wsi_support(DevicePtr dptr, vk::SurfaceKHR surface) {
-	auto index = dptr->queue_family(QueueFamily::Graphics).index();
-	return dptr->physical_device().vk_physical_device().getSurfaceSupportKHR(index, surface);
+static bool has_wsi_support(DevicePtr dptr, VkSurfaceKHR surface) {
+	const u32 index = dptr->queue_family(QueueFamily::Graphics).index();
+	VkBool32 supported = false;
+	vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(dptr->vk_physical_device(), index, surface, &supported));
+	return supported;
 }
 
 #ifdef Y_OS_WIN
-static vk::SurfaceKHR create_surface(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle) {
-	const auto surface = dptr->instance().vk_instance().createWin32SurfaceKHR(vk::Win32SurfaceCreateInfoKHR()
-			.setHinstance(instance)
-			.setHwnd(handle)
-		);
+static VkSurfaceKHR create_surface(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle) {
+	VkWin32SurfaceCreateInfoKHR create_info = vk_struct();
+	{
+		create_info.hinstance = instance;
+		create_info.hwnd = handle;
+	}
+
+	VkSurfaceKHR surface = {};
+	vk_check(vkCreateWin32SurfaceKHR(dptr->instance().vk_instance(), &create_info, dptr->vk_allocation_callbacks(), &surface));
 
 	if(!has_wsi_support(dptr, surface)) {
 		y_fatal("No WSI support.");
 	}
 	log_msg("Vulkan WSI supported!");
+
 	return surface;
 }
 #endif
 
-static vk::SurfaceKHR create_surface(DevicePtr dptr, Window* window) {
+static VkSurfaceKHR create_surface(DevicePtr dptr, Window* window) {
 	y_profile();
 	#ifdef Y_OS_WIN
 		return create_surface(dptr, window->instance(), window->handle());
 	#endif
-	return vk::SurfaceKHR();
+	return vk_null();
 }
 
 
@@ -135,7 +147,7 @@ Swapchain::Swapchain(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle) : Swapch
 Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_surface(dptr, window)) {
 }
 
-Swapchain::Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface) : DeviceLinked(dptr), _surface(surface) {
+Swapchain::Swapchain(DevicePtr dptr, VkSurfaceKHR surface) : DeviceLinked(dptr), _surface(surface) {
 	build_swapchain();
 	build_semaphores();
 	y_debug_assert(_images.size() == _semaphores.size());
@@ -169,16 +181,16 @@ Swapchain::~Swapchain() {
 }
 
 void Swapchain::build_swapchain() {
-	const auto capabilities = compute_capabilities(device(), _surface);
-	const auto format = get_surface_format(device(), _surface);
+	const VkSurfaceCapabilitiesKHR capabilities = compute_capabilities(device(), _surface);
+	const VkSurfaceFormatKHR format = surface_format(device(), _surface);
 
-	const auto image_usage_flags = vk::ImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
+	const VkImageUsageFlagBits image_usage_flags = VkImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
 	if((capabilities.supportedUsageFlags & image_usage_flags) != image_usage_flags) {
 		y_fatal("Swapchain does not support required usage flags.");
 	}
 
 	_size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
-	_color_format = format.format;
+	_color_format = VkFormat(format.format);
 
 	if(!_size.x() || !_size.y()) {
 		return;
@@ -186,29 +198,40 @@ void Swapchain::build_swapchain() {
 
 	{
 		y_profile_zone("create swapchain");
-		_swapchain = device()->vk_device().createSwapchainKHR(vk::SwapchainCreateInfoKHR()
-				.setImageUsage(image_usage_flags)
-				.setImageSharingMode(vk::SharingMode::eExclusive)
-				.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-				.setImageArrayLayers(1)
-				.setClipped(true)
-				.setSurface(_surface)
-				.setPreTransform(capabilities.currentTransform)
-				.setImageFormat(format.format)
-				.setImageColorSpace(format.colorSpace)
-				.setImageExtent(capabilities.currentExtent)
-				.setMinImageCount(get_image_count(capabilities))
-				.setPresentMode(get_present_mode(device(), _surface))
-				.setOldSwapchain(_swapchain)
-			);
+		VkSwapchainCreateInfoKHR create_info = vk_struct();
+		{
+			create_info.imageUsage = image_usage_flags;
+			create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+			create_info.imageArrayLayers = 1;
+			create_info.clipped = true;
+			create_info.surface = _surface;
+			create_info.preTransform = capabilities.currentTransform;
+			create_info.imageFormat = format.format;
+			create_info.imageColorSpace = format.colorSpace;
+			create_info.imageExtent = capabilities.currentExtent;
+			create_info.minImageCount = compute_image_count(capabilities);
+			create_info.presentMode = present_mode(device(), _surface);
+			create_info.oldSwapchain = _swapchain;
+		}
+		vk_check(vkCreateSwapchainKHR(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &_swapchain));
 	}
 
 	y_profile_zone("image setup");
-	for(auto image : device()->vk_device().getSwapchainImagesKHR(_swapchain)) {
-		const auto view = create_image_view(device(), image, _color_format.vk_format());
+
+	core::Vector<VkImage> images;
+	{
+		u32 count = 0;
+		vk_check(vkGetSwapchainImagesKHR(device()->vk_device(), _swapchain, &count, nullptr));
+		images = core::Vector<VkImage>(count, VkImage{});
+		vk_check(vkGetSwapchainImagesKHR(device()->vk_device(), _swapchain, &count, images.data()));
+	}
+
+	for(auto image : images) {
+		const VkImageView view = create_image_view(device(), image, _color_format.vk_format());
 
 		struct SwapchainImageMemory : DeviceMemory {
-			SwapchainImageMemory(DevicePtr dptr) : DeviceMemory(dptr, vk::DeviceMemory(), 0, 0) {
+			SwapchainImageMemory(DevicePtr dptr) : DeviceMemory(dptr, vk_null(), 0, 0) {
 			}
 		};
 
@@ -229,15 +252,17 @@ void Swapchain::build_swapchain() {
 
 	CmdBufferRecorder recorder(device()->create_disposable_cmd_buffer());
 	for(auto& i : _images) {
-		recorder.barriers({ImageBarrier::transition_barrier(i, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR)});
+		recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
 	}
 	device()->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 void Swapchain::build_semaphores() {
 	for(usize i = 0; i != _images.size(); ++i) {
-		_semaphores << std::pair(device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()),
-								 device()->vk_device().createSemaphore(vk::SemaphoreCreateInfo()));
+		auto& semaphores = _semaphores.emplace_back();
+		const VkSemaphoreCreateInfo create_info = vk_struct();
+		vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &semaphores.first));
+		vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &semaphores.second));
 	}
 }
 
@@ -254,7 +279,9 @@ FrameToken Swapchain::next_frame() {
 	y_debug_assert(is_valid());
 
 	auto [image_acquired, render_finished] = _semaphores.pop();
-	const u32 image_index = device()->vk_device().acquireNextImageKHR(_swapchain, u64(-1), image_acquired, vk::Fence()).value;
+
+	u32 image_index = 0;
+	vk_check(vkAcquireNextImageKHR(device()->vk_device(), _swapchain, u64(-1), image_acquired, vk_null(), &image_index));
 
 	return FrameToken {
 			++_frame_id,
@@ -266,24 +293,28 @@ FrameToken Swapchain::next_frame() {
 		};
 }
 
-void Swapchain::present(const FrameToken& token, vk::Queue queue) {
+void Swapchain::present(const FrameToken& token, VkQueue queue) {
 	y_profile();
 	_semaphores << std::pair(token.image_aquired, token.render_finished);
 	std::rotate(_semaphores.begin(), _semaphores.end() - 1, _semaphores.end());
 
 	{
 		y_profile_zone("queue present");
-		queue.presentKHR(vk::PresentInfoKHR()
-						 .setSwapchainCount(1)
-						 .setPSwapchains(&_swapchain)
-						 .setPImageIndices(&token.image_index)
-						 .setWaitSemaphoreCount(1)
-						 .setPWaitSemaphores(&token.render_finished)
-						 );
+
+		VkPresentInfoKHR present_info = vk_struct();
+		{
+			present_info.swapchainCount = 1;
+			present_info.pSwapchains = reinterpret_cast<VkSwapchainKHR*>(&_swapchain);
+			present_info.pImageIndices = &token.image_index;
+			present_info.waitSemaphoreCount = 1;
+			present_info.pWaitSemaphores = &token.render_finished;
+		}
+
+		vk_check(vkQueuePresentKHR(queue, &present_info));
 	}
 }
 
-vk::SwapchainKHR Swapchain::vk_swapchain() const {
+VkSwapchainKHR Swapchain::vk_swapchain() const {
 	return _swapchain;
 }
 

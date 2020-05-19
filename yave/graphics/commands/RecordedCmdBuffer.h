@@ -29,13 +29,13 @@ namespace yave {
 class RecordedCmdBuffer : public CmdBufferBase {
 
 	CmdBufferBase&& end_recorder(CmdBufferRecorder&& recorder) {
-		recorder.vk_cmd_buffer().end();
+		vk_check(vkEndCommandBuffer(recorder.vk_cmd_buffer()));
 		return std::move(recorder);
 	}
 
 	public:
 		RecordedCmdBuffer() = default;
-		
+
 		RecordedCmdBuffer(RecordedCmdBuffer&&) = default;
 		RecordedCmdBuffer& operator=(RecordedCmdBuffer&&) = default;
 

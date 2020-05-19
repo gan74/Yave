@@ -46,25 +46,25 @@ using ManagedResource = std::variant<
 		DeviceMemory,
 		DescriptorSetData,
 
-		vk::Buffer,
-		vk::Image,
-		vk::ImageView,
-		vk::RenderPass,
-		vk::Framebuffer,
-		vk::Pipeline,
-		vk::PipelineLayout,
-		vk::ShaderModule,
-		vk::Sampler,
-		vk::SwapchainKHR,
-		vk::CommandPool,
-		vk::Fence,
-		vk::DescriptorPool,
-		vk::DescriptorSetLayout,
-		vk::Semaphore,
-		vk::QueryPool,
-		vk::Event,
+		VkBuffer,
+		VkImage,
+		VkImageView,
+		VkRenderPass,
+		VkFramebuffer,
+		VkPipeline,
+		VkPipelineLayout,
+		VkShaderModule,
+		VkSampler,
+		VkSwapchainKHR,
+		VkCommandPool,
+		VkFence,
+		VkDescriptorPool,
+		VkDescriptorSetLayout,
+		VkSemaphore,
+		VkQueryPool,
+		VkEvent,
 
-		vk::SurfaceKHR>;
+		VkSurfaceKHR>;
 
 
 

@@ -22,13 +22,14 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_ASSETLOADER_H
 #define YAVE_ASSETS_ASSETLOADER_H
 
+#include <y/core/HashMap.h>
+
 #include <yave/device/DeviceLinked.h>
 
 #include "AssetStore.h"
 #include "AssetLoadingContext.h"
 #include "AssetLoadingThreadPool.h"
 
-#include <unordered_map>
 #include <typeindex>
 #include <future>
 
@@ -90,16 +91,19 @@ class AssetLoader : NonMovable, public DeviceLinked {
 				[[nodiscard]] inline bool find_ptr(AssetPtr<T>& ptr);
 				inline std::unique_ptr<LoadingJob> create_loading_job(AssetPtr<T> ptr);
 
-				std::unordered_map<AssetId, WeakAssetPtr> _loaded;
+				core::ExternalHashMap<AssetId, WeakAssetPtr> _loaded;
 				std::recursive_mutex _lock;
 		};
 
    public:
-		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, usize concurency = 1);
+		AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags = AssetLoadingFlags::None, usize concurency = 1);
 		~AssetLoader();
 
 		AssetStore& store();
 		const AssetStore& store() const;
+
+		void set_loading_flags(AssetLoadingFlags flags);
+		AssetLoadingFlags loading_flags() const;
 
 		// This is dangerous: Do not call in loading threads!
 		void wait_until_loaded(const GenericAssetPtr& ptr);
@@ -135,11 +139,13 @@ class AssetLoader : NonMovable, public DeviceLinked {
 
 		core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from, AssetType type);
 
-		std::unordered_map<std::type_index, std::unique_ptr<LoaderBase>> _loaders;
+		core::ExternalHashMap<std::type_index, std::unique_ptr<LoaderBase>> _loaders;
 		std::shared_ptr<AssetStore> _store;
 
 		std::recursive_mutex _lock;
 		AssetLoadingThreadPool _thread_pool;
+
+		std::atomic<AssetLoadingFlags> _loading_flags = AssetLoadingFlags::None;
 };
 
 }

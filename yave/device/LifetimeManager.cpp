@@ -145,7 +145,7 @@ void LifetimeManager::collect() {
 				break;
 			}
 
-			if(device()->vk_device().getFenceStatus(cmd.vk_fence()) == vk::Result::eSuccess) {
+			if(vkGetFenceStatus(device()->vk_device(), cmd.vk_fence()) == VK_SUCCESS) {
 				next = fence;
 				to_clean.emplace_back(std::move(_in_flight.front()));
 				_in_flight.pop_front();

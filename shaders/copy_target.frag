@@ -9,7 +9,7 @@ layout(set = 0, binding = 3) uniform sampler2D in_final;
 
 layout(set = 0, binding = 4) uniform Target {
 	uint target_index;
-} constants;
+};
 
 layout(location = 0) in vec2 in_uv;
 
@@ -30,15 +30,15 @@ void main() {
 
 	vec3 color = final;
 	
-	if(constants.target_index == 1) {
+	if(target_index == 1) {
 		color = albedo;
-	} else if(constants.target_index == 2) {
+	} else if(target_index == 2) {
 		color = normal * 0.5 + 0.5;
-	} else if(constants.target_index == 3) {
+	} else if(target_index == 3) {
 		color = vec3(metallic);
-	} else if(constants.target_index == 4) {
+	} else if(target_index == 4) {
 		color = vec3(roughness);
-	} else if(constants.target_index == 5) {
+	} else if(target_index == 5) {
 		color = vec3(pow(depth, 0.35));
 	}
 

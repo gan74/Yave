@@ -25,40 +25,41 @@ SOFTWARE.
 
 namespace yave {
 
-void DescriptorSetBase::create_descriptor_set(DevicePtr dptr, vk::DescriptorPool pool, vk::DescriptorSetLayout layout) {
-	y_profile();
-
-	_set = dptr->vk_device().allocateDescriptorSets(vk::DescriptorSetAllocateInfo()
-	        .setDescriptorPool(pool)
-			.setDescriptorSetCount(1)
-			.setPSetLayouts(&layout)
-	    ).front();
-}
-
 void DescriptorSetBase::update_set(DevicePtr dptr, core::Span<Descriptor> bindings) {
 	y_profile();
 
-	auto writes = core::vector_with_capacity<vk::WriteDescriptorSet>(bindings.size());
+	auto writes = core::vector_with_capacity<VkWriteDescriptorSet>(bindings.size());
 	for(const auto& binding : bindings) {
-		auto w = vk::WriteDescriptorSet()
-		        .setDstSet(_set)
-		        .setDstBinding(u32(writes.size()))
-		        .setDstArrayElement(0)
-		        .setDescriptorCount(1)
-		        .setDescriptorType(binding.vk_descriptor_type())
-		    ;
+		const u32 descriptor_count = binding.descriptor_set_layout_binding(0).descriptorCount;
+		VkWriteDescriptorSet write = vk_struct();
+		{
+			write.dstSet = _set;
+			write.dstBinding = writes.size();
+			write.dstArrayElement = 0;
+			write.descriptorCount = descriptor_count;
+			write.descriptorType = binding.vk_descriptor_type();
+		}
+
+		VkWriteDescriptorSetInlineUniformBlockEXT inline_block = vk_struct();
 
 		if(binding.is_buffer()) {
-			w.setPBufferInfo(&binding.descriptor_info().buffer);
+			write.pBufferInfo = &binding.descriptor_info().buffer;
 		} else if(binding.is_image()) {
-			w.setPImageInfo(&binding.descriptor_info().image);
+			write.pImageInfo = &binding.descriptor_info().image;
+		} else if(binding.is_inline_block()) {
+			inline_block.pData = binding.descriptor_info().inline_block.data;
+			inline_block.dataSize = binding.descriptor_info().inline_block.size;
+			write.pNext = &inline_block;
+			y_always_assert(inline_block.dataSize <= dptr->device_properties().max_inline_uniform_size, "Inline uniform block exceeds max supported size");
+			y_debug_assert(inline_block.dataSize % 4 == 0);
 		} else {
 			y_fatal("Unknown descriptor type.");
 		}
 
-		writes << w;
+		writes << write;
 	}
-	dptr->vk_device().updateDescriptorSets(u32(writes.size()), writes.begin(), 0, nullptr);
+
+	vkUpdateDescriptorSets(dptr->vk_device(), writes.size(), writes.data(), 0, nullptr);
 }
 
 }

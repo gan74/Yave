@@ -43,9 +43,9 @@ class BufferBase : NonCopyable {
 		usize byte_size() const;
 		const DeviceMemory& device_memory() const;
 
-		vk::DescriptorBufferInfo descriptor_info() const;
+		VkDescriptorBufferInfo descriptor_info() const;
 
-		vk::Buffer vk_buffer() const;
+		VkBuffer vk_buffer() const;
 
 	protected:
 		BufferBase() = default;
@@ -56,7 +56,7 @@ class BufferBase : NonCopyable {
 
 	private:
 		usize _size = 0;
-		SwapMove<vk::Buffer> _buffer;
+		SwapMove<VkBuffer> _buffer;
 		BufferUsage _usage = BufferUsage::None;
 		DeviceMemory _memory;
 };

@@ -29,10 +29,11 @@ namespace yave {
 
 class ImageFormat {
 	public:
-		ImageFormat(vk::Format format = vk::Format::eUndefined);
+		constexpr ImageFormat(VkFormat format = VK_FORMAT_UNDEFINED) : _format(format) {
+		}
 
-		vk::Format vk_format() const;
-		vk::ImageAspectFlags vk_aspect() const;
+		VkFormat vk_format() const;
+		VkImageAspectFlags vk_aspect() const;
 
 		usize bit_per_pixel() const;
 		usize components() const;
@@ -43,7 +44,7 @@ class ImageFormat {
 		bool is_block_format() const;
 		bool is_depth_format() const;
 
-		core::String name() const;
+		std::string_view name() const;
 
 		bool operator==(const ImageFormat& other) const;
 		bool operator!=(const ImageFormat& other) const;
@@ -51,7 +52,7 @@ class ImageFormat {
 		y_serde3(_format)
 
 	private:
-		vk::Format _format;
+		VkFormat _format;
 };
 
 }

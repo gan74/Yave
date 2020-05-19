@@ -25,26 +25,27 @@ SOFTWARE.
 #include <y/core/String.h>
 
 #include <algorithm>
+#include <memory>
 
 namespace y {
 namespace detail {
 
 static constexpr usize fmt_total_buffer_size = (fmt_max_size + 1) * 4;
-Y_TODO(this is allocated via new and never deleted)
-static thread_local char* fmt_buffer = nullptr;
+static thread_local std::unique_ptr<char[]> fmt_buffer = nullptr;
 static thread_local char* fmt_buffer_end = nullptr;
 
 FmtBuffer::FmtBuffer() {
 	if(!fmt_buffer) {
-		fmt_buffer_end = fmt_buffer = new char[fmt_total_buffer_size + 1];
+		fmt_buffer = std::make_unique<char[]>(fmt_total_buffer_size + 1);
+		fmt_buffer_end = fmt_buffer.get();
 		fmt_buffer[fmt_total_buffer_size] = 0;
 	}
 	_start = _buffer = fmt_buffer_end;
-	_buffer_size = std::min(usize(fmt_buffer + fmt_total_buffer_size - _start), fmt_max_size);
+	_buffer_size = std::min(usize(fmt_buffer.get() + fmt_total_buffer_size - _start), fmt_max_size);
 
-	y_debug_assert(_start >= fmt_buffer);
-	y_debug_assert(_start <= fmt_buffer + fmt_total_buffer_size);
-	y_debug_assert(_start + _buffer_size <= fmt_buffer + fmt_total_buffer_size);
+	y_debug_assert(_start >= fmt_buffer.get());
+	y_debug_assert(_start <= fmt_buffer.get() + fmt_total_buffer_size);
+	y_debug_assert(_start + _buffer_size <= fmt_buffer.get() + fmt_total_buffer_size);
 }
 
 FmtBuffer::FmtBuffer(core::String& str) {
@@ -63,8 +64,8 @@ std::string_view FmtBuffer::done() && {
 	if(_dynamic) {
 		_dynamic->shrink(_buffer - _dynamic->begin());
 	} else {
-		y_debug_assert(_buffer <= fmt_buffer + fmt_total_buffer_size);
-		fmt_buffer_end = (_buffer == fmt_buffer + fmt_total_buffer_size) ? fmt_buffer : _buffer + 1;
+		y_debug_assert(_buffer <= fmt_buffer.get() + fmt_total_buffer_size);
+		fmt_buffer_end = (_buffer == fmt_buffer.get() + fmt_total_buffer_size) ? fmt_buffer.get() : _buffer + 1;
 	}
 	return std::string_view(_start, _buffer - _start);
 }
@@ -92,20 +93,20 @@ bool FmtBuffer::try_expand() {
 	}
 
 
-	const char* end = fmt_buffer + fmt_total_buffer_size;
-	if(_start == fmt_buffer || usize(end - _start) >= fmt_max_size) {
+	const char* end = fmt_buffer.get() + fmt_total_buffer_size;
+	if(_start == fmt_buffer.get() || usize(end - _start) >= fmt_max_size) {
 		return false;
 	}
 
 	const usize size = _buffer - _start;
-	_buffer = fmt_buffer;
+	_buffer = fmt_buffer.get();
 	std::memmove(_buffer, _start, size);
 	_start = _buffer;
 	_buffer += size;
 	_buffer_size = fmt_max_size - size;
 
-	y_debug_assert(_buffer <= fmt_buffer + fmt_total_buffer_size);
-	y_debug_assert(_buffer + _buffer_size <= fmt_buffer + fmt_total_buffer_size);
+	y_debug_assert(_buffer <= fmt_buffer.get() + fmt_total_buffer_size);
+	y_debug_assert(_buffer + _buffer_size <= fmt_buffer.get() + fmt_total_buffer_size);
 
 	return true;
 }
@@ -114,8 +115,8 @@ void FmtBuffer::advance(usize r) {
 	const usize l = std::min(_buffer_size, r);
 	_buffer += l;
 	_buffer_size -= l;
-	y_debug_assert(_dynamic || _buffer <= fmt_buffer + fmt_total_buffer_size);
-	y_debug_assert(_dynamic || _buffer + _buffer_size <= fmt_buffer + fmt_total_buffer_size);
+	y_debug_assert(_dynamic || _buffer <= fmt_buffer.get() + fmt_total_buffer_size);
+	y_debug_assert(_dynamic || _buffer + _buffer_size <= fmt_buffer.get() + fmt_total_buffer_size);
 }
 
 #define y_buff_fmt_(str, t)															\

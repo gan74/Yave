@@ -40,7 +40,7 @@ class CmdBufferPoolBase : NonMovable, public DeviceLinked {
 	public:
 		~CmdBufferPoolBase();
 
-		vk::CommandPool vk_pool() const;
+		VkCommandPool vk_pool() const;
 
 	protected:
 		friend class CmdBufferDataProxy;
@@ -58,10 +58,10 @@ class CmdBufferPoolBase : NonMovable, public DeviceLinked {
 		CmdBufferData create_data();
 
 		std::mutex _lock;
-		vk::CommandPool _pool;
+		VkCommandPool _pool;
 		CmdBufferUsage _usage;
 		core::Vector<CmdBufferData> _cmd_buffers;
-		core::Vector<vk::Fence> _fences;
+		core::Vector<VkFence> _fences;
 
 		const u32 _thread_id;
 };

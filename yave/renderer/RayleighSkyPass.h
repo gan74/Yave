@@ -31,7 +31,7 @@ class GBufferPass;
 struct RayleighSkyPass {
 	FrameGraphImageId lit;
 
-	static RayleighSkyPass create(FrameGraph& framegraph, const SceneView& scene_view, FrameGraphImageId in_lit, FrameGraphImageId in_depth, const GBufferPass& gbuffer);
+	static RayleighSkyPass create(FrameGraph& framegraph, FrameGraphImageId in_lit, FrameGraphImageId in_depth, const GBufferPass& gbuffer);
 };
 
 }

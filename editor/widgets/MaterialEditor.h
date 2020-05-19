@@ -34,6 +34,10 @@ class MaterialEditor final : public Widget, public ContextLinked {
 	public:
 		MaterialEditor(ContextPtr cptr);
 
+		void refresh() override;
+
+		void set_material(const AssetPtr<Material>& mat);
+
 	private:
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
 

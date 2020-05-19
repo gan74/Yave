@@ -42,6 +42,8 @@ class MaterialPreview final : public Widget, public ContextLinked {
 
 		MaterialPreview(ContextPtr cptr);
 
+		void refresh() override;
+
 		void set_material(const AssetPtr<Material>& material);
 
 		void set_object(const AssetPtr<StaticMesh>& mesh);

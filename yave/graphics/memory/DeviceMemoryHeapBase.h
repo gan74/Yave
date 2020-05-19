@@ -37,7 +37,7 @@ class DeviceMemoryHeapBase : NonMovable, public DeviceLinked {
 		virtual ~DeviceMemoryHeapBase() {
 		}
 
-		virtual core::Result<DeviceMemory> alloc(vk::MemoryRequirements reqs) = 0;
+		virtual core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) = 0;
 		virtual void free(const DeviceMemory& memory) = 0;
 
 		virtual void* map(const DeviceMemoryView& view) = 0;

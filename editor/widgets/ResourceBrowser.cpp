@@ -219,6 +219,7 @@ void ResourceBrowser::paint_search_results(float width) {
 	_preview_id = AssetId::invalid_id();
 	ImGui::BeginChild("##searchresults", ImVec2(width, 0), true);
 	{
+		imgui::alternating_rows_background();
 		for(const Entry& entry : *_search_results) {
 			if(ImGui::Selectable(fmt_c_str("% %", entry.icon, entry.name))) {
 				if(const AssetId id = asset_id(entry.name); id != AssetId::invalid_id()) {

@@ -175,7 +175,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 				y_always_assert(_data, "Invalid asset");
 			}
 
-			void read() override {
+			core::Result<void> read() override {
 				y_profile_zone("loading");
 
 				const AssetId id = _data->id;
@@ -185,14 +185,18 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 				y_always_assert(id != AssetId::invalid_id(), "Invalid asset ID");
 
 				if(auto reader = parent()->store().data(id)) {
-					serde3::ReadableArchive arc(std::move(reader.unwrap()));
-					if(!arc.deserialize(_load_from, loading_context())) {
+					const serde3::Result res = serde3::ReadableArchive(*reader.unwrap()).deserialize(_load_from, loading_context());
+					if(res.is_error()/* || res.unwrap() == serde3::Success::Partial*/) {
 						_data->set_failed(ErrorType::InvalidData);
+						log_msg(fmt("Unable to load %: invalid data", asset_name()), Log::Error);
+						return core::Err();
 					}
-					return;
+					return core::Ok();
 				}
 				_data->set_failed(ErrorType::InvalidID);
 				y_debug_assert(!_data->is_loading());
+				log_msg(fmt("Unable to load asset: invalid ID"), Log::Error);
+				return core::Err();
 			}
 
 			void finalize(DevicePtr dptr) {
@@ -206,12 +210,21 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 			}
 
 			void set_dependencies_failed() {
-				_data->set_failed(AssetLoadingErrorType::FailedDependedy);
+				if(_data->is_failed()) {
+					return;
+				}
+
+				_data->set_failed(AssetLoadingErrorType::FailedDependency);
+				log_msg(fmt("Unable to load %: failed to load dependency", asset_name()), Log::Error);
 			}
 
 		private:
 			std::shared_ptr<Data> _data;
 			LoadFrom _load_from;
+
+			core::String asset_name() const {
+				return AssetPtr<T>(_data).name().unwrap_or("asset");
+			}
 	};
 	return std::make_unique<Job>(parent(), std::move(ptr._data));
 }

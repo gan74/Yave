@@ -5,8 +5,6 @@
 #include "sh.glsl"
 
 struct RayleighSky {
-	LightingCamera camera;
-
 	vec3 sun_direction;
 	float base_height;
 

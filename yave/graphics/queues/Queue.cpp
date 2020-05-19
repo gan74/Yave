@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-Queue::Queue(DevicePtr dptr, vk::Queue queue) :
+Queue::Queue(DevicePtr dptr, VkQueue queue) :
 		DeviceLinked(dptr),
 		_queue(queue),
 		_lock(std::make_unique<std::mutex>()){
@@ -39,13 +39,13 @@ Queue::~Queue() {
 }
 
 
-vk::Queue Queue::vk_queue() const {
+VkQueue Queue::vk_queue() const {
 	return _queue;
 }
 
 void Queue::wait() const {
 	const auto lock = y_profile_unique_lock(*_lock);
-	_queue.get().waitIdle();
+	vk_check(vkQueueWaitIdle(_queue));
 }
 
 Semaphore Queue::submit_sem(RecordedCmdBuffer&& cmd) const {
@@ -61,22 +61,25 @@ void Queue::submit_base(CmdBufferBase& base) const {
 	auto cmd = base.vk_cmd_buffer();
 
 	const auto& wait = base._proxy->data()._waits;
-	auto wait_semaphores = core::vector_with_capacity<vk::Semaphore>(wait.size());
+	auto wait_semaphores = core::vector_with_capacity<VkSemaphore>(wait.size());
 	std::transform(wait.begin(), wait.end(), std::back_inserter(wait_semaphores), [](const auto& s) { return s.vk_semaphore(); });
-	const core::Vector<vk::PipelineStageFlags> stages(wait.size(), vk::PipelineStageFlagBits::eAllCommands);
+	const core::Vector<VkPipelineStageFlags> stages(wait.size(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
 	const Semaphore& signal = base._proxy->data()._signal;
-	vk::Semaphore sig_semaphore = signal.device() ? signal.vk_semaphore() : vk::Semaphore();
+	const VkSemaphore sig_semaphore = signal.device() ? signal.vk_semaphore() : VkSemaphore{};
 
-	_queue.get().submit(vk::SubmitInfo()
-			.setSignalSemaphoreCount(signal.device() ? 1 : 0)
-			.setPSignalSemaphores(signal.device() ? &sig_semaphore : nullptr)
-			.setWaitSemaphoreCount(wait_semaphores.size())
-			.setPWaitSemaphores(wait_semaphores.data())
-			.setPWaitDstStageMask(stages.data())
-			.setCommandBufferCount(1)
-			.setPCommandBuffers(&cmd),
-		base.vk_fence());
+	VkSubmitInfo submit_info = vk_struct();
+	{
+		submit_info.signalSemaphoreCount = signal.device() ? 1 : 0;
+		submit_info.pSignalSemaphores = signal.device() ? &sig_semaphore : nullptr;
+		submit_info.waitSemaphoreCount = wait_semaphores.size();
+		submit_info.pWaitSemaphores = wait_semaphores.data();
+		submit_info.pWaitDstStageMask = stages.data();
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &cmd;
+	}
+
+	vk_check(vkQueueSubmit(_queue, 1, &submit_info, base.vk_fence()));
 }
 
 }

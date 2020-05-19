@@ -35,13 +35,13 @@ namespace yave {
 
 class RenderPass : NonCopyable, public DeviceLinked {
 	public:
-		enum class LoadOp {
+		enum class LoadOp : u32 {
 			Clear,
 			Load
 		};
 
 		struct ImageData {
-			const ImageFormat format = vk::Format::eUndefined;
+			const ImageFormat format;
 			const ImageUsage usage = ImageUsage::None;
 			const LoadOp load_op = LoadOp::Clear;
 
@@ -87,11 +87,11 @@ class RenderPass : NonCopyable, public DeviceLinked {
 		const Layout& layout() const;
 		usize attachment_count() const;
 
-		vk::RenderPass vk_render_pass() const;
+		VkRenderPass vk_render_pass() const;
 
 	private:
 		usize _attachment_count = 0;
-		SwapMove<vk::RenderPass> _render_pass;
+		SwapMove<VkRenderPass> _render_pass;
 
 		Layout _layout;
 };

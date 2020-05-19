@@ -68,7 +68,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 	{
 		FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 
-		const auto output_image = builder.declare_image(vk::Format::eR8G8B8A8Unorm, output_size);
+		const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, output_size);
 		const auto buffer = builder.declare_typed_buffer<u32>(1);
 
 		const auto gbuffer = renderer.renderer.gbuffer;
@@ -91,7 +91,13 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 				auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 				const auto* material = context()->resources()[EditorResources::CopyTargetMaterialTemplate];
 				render_pass.bind_material(material, {self->descriptor_sets()[0]});
-				render_pass.draw(vk::DrawIndirectCommand(6, 1));
+
+				VkDrawIndirectCommand command = {};
+				{
+					command.vertexCount = 6;
+					command.instanceCount = 1;
+				}
+				render_pass.draw(command);
 			});
 	}
 

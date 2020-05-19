@@ -22,9 +22,14 @@ SOFTWARE.
 
 #include "AssetLoadingContext.h"
 
+#include "AssetLoader.h"
+
 namespace yave {
 
-AssetLoadingContext::AssetLoadingContext(AssetLoader* loader) : _parent(loader) {
+AssetLoadingContext::AssetLoadingContext(AssetLoader* loader) : AssetLoadingContext(loader, loader->loading_flags()){
+}
+
+AssetLoadingContext::AssetLoadingContext(AssetLoader* loader, AssetLoadingFlags flags) : _parent(loader), _dependencies(flags) {
 	y_always_assert(loader, "Invalid parent");
 }
 

@@ -41,7 +41,7 @@ class TimeQuery : NonMovable, public DeviceLinked {
 		core::Duration get();
 
 	private:
-		vk::QueryPool _pool;
+		VkQueryPool _pool;
 };
 
 }

@@ -26,25 +26,31 @@ SOFTWARE.
 
 namespace yave {
 
-static void bind_buffer_memory(DevicePtr dptr, vk::Buffer buffer, const DeviceMemory& memory) {
-	dptr->vk_device().bindBufferMemory(buffer, memory.vk_memory(), memory.vk_offset());
+static void bind_buffer_memory(DevicePtr dptr, VkBuffer buffer, const DeviceMemory& memory) {
+	vk_check(vkBindBufferMemory(dptr->vk_device(), buffer, memory.vk_memory(), memory.vk_offset()));
 }
 
-static vk::Buffer create_buffer(DevicePtr dptr, usize byte_size, vk::BufferUsageFlags usage) {
+static VkBuffer create_buffer(DevicePtr dptr, usize byte_size, VkBufferUsageFlags usage) {
 	y_debug_assert(byte_size);
-	if(usage & vk::BufferUsageFlagBits::eUniformBuffer) {
-		if(byte_size > dptr->vk_limits().maxUniformBufferRange) {
-			y_fatal("Uniform buffer size exceeds maxUniformBufferRange (%).", dptr->vk_limits().maxUniformBufferRange);
+	if(usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
+		if(byte_size > dptr->device_properties().max_uniform_buffer_size) {
+			y_fatal("Uniform buffer size exceeds maxUniformBufferRange (%).", dptr->device_properties().max_uniform_buffer_size);
 		}
 	}
-	return dptr->vk_device().createBuffer(vk::BufferCreateInfo()
-			.setSize(byte_size)
-			.setUsage(usage)
-			.setSharingMode(vk::SharingMode::eExclusive)
-		);
+
+	VkBufferCreateInfo create_info = vk_struct();
+	{
+		create_info.size = byte_size;
+		create_info.usage = usage;
+		create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	}
+
+	VkBuffer buffer = {};
+	vk_check(vkCreateBuffer(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &buffer));
+	return buffer;
 }
 
-static std::tuple<vk::Buffer, DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, vk::BufferUsageFlags usage, MemoryType type) {
+static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, VkBufferUsageFlags usage, MemoryType type) {
 	y_debug_assert(buffer_size);
 
 	const auto buffer = create_buffer(dptr, buffer_size, usage);
@@ -57,7 +63,7 @@ static std::tuple<vk::Buffer, DeviceMemory> alloc_buffer(DevicePtr dptr, usize b
 
 
 BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type) : _size(byte_size), _usage(usage) {
-	std::tie(_buffer, _memory) = alloc_buffer(dptr, byte_size, vk::BufferUsageFlagBits(usage), type);
+	std::tie(_buffer, _memory) = alloc_buffer(dptr, byte_size, VkBufferUsageFlagBits(usage), type);
 }
 
 BufferBase::~BufferBase() {
@@ -83,7 +89,7 @@ usize BufferBase::byte_size() const {
 	return _size;
 }
 
-vk::Buffer BufferBase::vk_buffer() const {
+VkBuffer BufferBase::vk_buffer() const {
 	return _buffer;
 }
 
@@ -91,12 +97,15 @@ const DeviceMemory& BufferBase::device_memory() const {
 	return _memory;
 }
 
-vk::DescriptorBufferInfo BufferBase::descriptor_info() const {
-	return vk::DescriptorBufferInfo()
-			.setBuffer(_buffer)
-			.setOffset(0)
-			.setRange(byte_size())
-		;
+VkDescriptorBufferInfo BufferBase::descriptor_info() const {
+	VkDescriptorBufferInfo info = {};
+	{
+		info.buffer = _buffer;
+		info.offset = 0;
+		info.range = byte_size();
+	}
+	return info;
+
 }
 
 }

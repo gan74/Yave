@@ -33,7 +33,7 @@ class DedicatedDeviceMemoryAllocator : public DeviceMemoryHeapBase {
 
 		~DedicatedDeviceMemoryAllocator() override;
 
-		core::Result<DeviceMemory> alloc(vk::MemoryRequirements reqs) override;
+		core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) override;
 		void free(const DeviceMemory& memory) override;
 
 		void* map(const DeviceMemoryView& view) override;

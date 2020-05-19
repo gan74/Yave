@@ -38,7 +38,7 @@ bool should_open_context_menu() {
 	return ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1);
 }
 
-bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text) {
+bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text, bool* clear) {
 	static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
 
 	ImGui::PushID(fmt_c_str("%_%_%", id.id(), uenum(type), text));
@@ -46,6 +46,10 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
 
 	const auto name = ctx->asset_store().name(id);
 	const bool is_valid = name.is_ok();
+
+	if(clear) {
+		*clear = false;
+	}
 
 	bool ret = false;
 	bool button = false;
@@ -60,16 +64,45 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
 		ret = ImGui::Button(ICON_FA_FOLDER_OPEN, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
 	}
 
+
 	ImGui::SameLine();
 	if(ImGui::GetContentRegionAvail().x > button_size.x() * 0.5f) {
 		const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
-		core::String clean = name.map(clean_name).unwrap_or(core::String());
+		const core::String clean = name.map(clean_name).unwrap_or(core::String());
+
+		const bool is_empty = clean.is_empty();
+		const char* item_name = is_empty ? "empty" : clean.data();
 
 		ImGui::BeginGroup();
-		ImGui::Dummy(math::Vec2(0.0f, 8.0f));
-		ImGui::TextUnformatted(text.data(), text.data() + text.size());
-		ImGui::Dummy(math::Vec2(0.0f, 4.0f));
-		ImGui::InputTextWithHint("", "No asset specified", clean.data(), clean.size(), ImGuiInputTextFlags_ReadOnly);
+		ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
+
+		if(is_empty) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+		}
+
+		const bool combo = ImGui::BeginCombo("##combo", item_name);
+
+		if(is_empty) {
+			ImGui::PopStyleColor();
+		}
+
+		if(combo) {
+			ImGui::Selectable(item_name, false, ImGuiSelectableFlags_Disabled);
+
+			ImGui::Separator();
+			if(ImGui::Selectable(ICON_FA_FOLDER_OPEN " Browse")) {
+				ret = true;
+			}
+
+			if(!is_empty && clear) {
+				ImGui::Separator();
+				if(ImGui::Selectable(ICON_FA_TIMES " Clear")) {
+					*clear = true;
+				}
+			}
+
+			ImGui::EndCombo();
+		}
 		ImGui::EndGroup();
 	}
 

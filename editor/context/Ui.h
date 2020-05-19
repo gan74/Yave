@@ -25,9 +25,10 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 
 #include <y/core/Chrono.h>
+#include <y/core/HashMap.h>
+
 #include <y/utils/iter.h>
 
-#include <unordered_map>
 #include <typeindex>
 
 namespace editor {
@@ -100,7 +101,7 @@ class Ui : NonMovable, public ContextLinked {
 		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token);
 
 		core::Vector<std::unique_ptr<UiElement>> _elements;
-		std::unordered_map<std::type_index, Ids> _ids;
+		core::ExternalHashMap<std::type_index, Ids> _ids;
 
 		std::unique_ptr<ImGuiRenderer> _renderer;
 

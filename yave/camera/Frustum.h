@@ -32,6 +32,8 @@ class Frustum : public std::array<Plane, 6> {
 	using Base = std::array<Plane, 6>;
 
 	public:
+		Frustum() = default;
+
 		Frustum(const Base& fru) : Base(fru) {
 		}
 

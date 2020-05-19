@@ -28,14 +28,25 @@ SOFTWARE.
 namespace yave {
 namespace uniform {
 
-using ViewProj = math::Matrix4<>;
-
-static_assert(sizeof(ViewProj) % 16 == 0);
-
-
 using Frustum = yave::Frustum;
 
 static_assert(sizeof(Frustum) % 16 == 0);
+
+
+struct Camera {
+	math::Matrix4<> view_proj;
+	math::Matrix4<> inv_view_proj;
+
+	// Frustum frustum;
+
+	math::Vec3 position;
+	u32 padding_0 = 0;
+
+	math::Vec3 forward;
+	u32 padding_1 = 0;
+};
+
+static_assert(sizeof(Camera) % 16 == 0);
 
 
 struct DirectionalLight {
@@ -87,19 +98,6 @@ struct ShadowMapParams {
 static_assert(sizeof(ShadowMapParams) % 16 == 0);
 
 
-struct LightingCamera {
-	math::Matrix4<> inv_matrix;
-
-	math::Vec3 position;
-	u32 padding_0 = 0;
-
-	math::Vec3 forward;
-	u32 padding_1 = 0;
-};
-
-static_assert(sizeof(LightingCamera) % 16 == 0);
-
-
 struct ToneMappingParams {
 	float avg_luminance = 0.5f;
 	float max_lum = 1.0f;
@@ -111,7 +109,6 @@ static_assert(sizeof(ToneMappingParams) % 16 == 0);
 
 
 struct RayleighSky {
-	uniform::LightingCamera camera_data;
 	math::Vec3 sun_direction;
 	float origin_height;
 
@@ -143,6 +140,9 @@ struct SkyLight {
 };
 
 static_assert(sizeof(SkyLight) % 16 == 0);
+
+
+
 
 }
 }

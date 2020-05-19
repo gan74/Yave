@@ -27,8 +27,6 @@ SOFTWARE.
 #include <y/utils/iter.h>
 
 #include <mutex>
-#include <unordered_map>
-
 namespace editor {
 
 class Notifications : public ContextLinked {

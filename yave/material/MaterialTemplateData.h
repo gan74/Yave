@@ -34,9 +34,9 @@ namespace yave {
 class MaterialCompiler;
 
 enum class PrimitiveType {
-	Triangles = uenum(vk::PrimitiveTopology::eTriangleList),
-	Lines = uenum(vk::PrimitiveTopology::eLineList),
-	Points = uenum(vk::PrimitiveTopology::ePointList)
+	Triangles = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+	Lines = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+	Points = VK_PRIMITIVE_TOPOLOGY_POINT_LIST
 };
 
 enum class DepthTestMode {

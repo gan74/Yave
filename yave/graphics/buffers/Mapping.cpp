@@ -43,7 +43,9 @@ Mapping::~Mapping() {
 
 void Mapping::flush() {
 	if(_buffer.device() && _mapping) {
-		_buffer.device()->vk_device().flushMappedMemoryRanges(_buffer.memory_range());
+		const VkMappedMemoryRange range = _buffer.vk_memory_range();
+		Y_TODO(Maybe merge flush & unmap)
+		vk_check(vkFlushMappedMemoryRanges(_buffer.device()->vk_device(), 1, &range));
 		_buffer.device_memory().unmap();
 	}
 }

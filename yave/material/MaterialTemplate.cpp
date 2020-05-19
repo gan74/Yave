@@ -51,8 +51,7 @@ const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) 
 			_compiled.pop();
 		}
 
-		const MaterialCompiler compiler(device());
-		_compiled.insert(key, compiler.compile(this, render_pass));
+		_compiled.insert(key, MaterialCompiler::compile(this, render_pass));
 		return _compiled.last().second;
 	}
 	return it->second;

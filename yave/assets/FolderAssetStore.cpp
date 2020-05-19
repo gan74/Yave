@@ -347,7 +347,7 @@ void FolderAssetStore::rebuild_id_map() const {
 	const auto lock = y_profile_unique_lock(_lock);
 
 	if(!_ids) {
-		_ids = std::make_unique<std::unordered_map<AssetId, std::map<core::String, AssetData>::const_iterator>>();
+		_ids = std::make_unique<core::ExternalHashMap<AssetId, std::map<core::String, AssetData>::const_iterator>>();
 		_ids->reserve(_assets.size());
 
 		for(auto it = _assets.begin(); it != _assets.end(); ++it) {

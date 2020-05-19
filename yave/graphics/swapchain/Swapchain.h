@@ -45,8 +45,8 @@ class Swapchain : NonMovable, public DeviceLinked {
 			SwapchainImage& operator=(SwapchainImage&&) = default;
 
 			~SwapchainImage() {
-				// prevents images to delete their vk::Image, this is already done by the swapchain
-				_image = vk::Image();
+				// prevents images to delete their VkImage, this is already done by the swapchain
+				_image = {};
 			}
 
 		private:
@@ -60,13 +60,13 @@ class Swapchain : NonMovable, public DeviceLinked {
 		Swapchain(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle);
 #endif
 
-		Swapchain(DevicePtr dptr, vk::SurfaceKHR&& surface);
+		Swapchain(DevicePtr dptr, VkSurfaceKHR surface);
 		Swapchain(DevicePtr dptr, Window* window);
 		~Swapchain();
 
 		void reset();
 
-		vk::SwapchainKHR vk_swapchain() const;
+		VkSwapchainKHR vk_swapchain() const;
 
 		const math::Vec2ui& size() const;
 		usize image_count() const;
@@ -80,7 +80,7 @@ class Swapchain : NonMovable, public DeviceLinked {
 		bool is_valid() const;
 
 		FrameToken next_frame();
-		void present(const FrameToken& token, vk::Queue queue);
+		void present(const FrameToken& token, VkQueue queue);
 
 	private:
 		void build_swapchain();
@@ -94,10 +94,10 @@ class Swapchain : NonMovable, public DeviceLinked {
 		ImageFormat _color_format;
 
 		core::Vector<SwapchainImage> _images;
-		core::Vector<std::pair<vk::Semaphore, vk::Semaphore>> _semaphores;
+		core::Vector<std::pair<VkSemaphore, VkSemaphore>> _semaphores;
 
-		Owner<vk::SurfaceKHR> _surface;
-		vk::SwapchainKHR _swapchain;
+		Owner<VkSurfaceKHR> _surface;
+		VkSwapchainKHR _swapchain = {};
 
 
 };

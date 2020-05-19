@@ -24,7 +24,6 @@ SOFTWARE.
 #include "alloc.h"
 
 #include <y/utils/log.h>
-#include <y/utils/format.h>
 
 namespace yave {
 
@@ -45,12 +44,10 @@ usize DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
 
 DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),
-		_max_allocs(dptr->vk_limits().maxMemoryAllocationCount) {
-
-	log_msg(fmt("Max device memory allocation count: %", _max_allocs));
+		_max_allocs(dptr->device_properties().max_memory_allocations) {
 }
 
-DeviceMemory DeviceMemoryAllocator::dedicated_alloc(vk::MemoryRequirements reqs, MemoryType type) {
+DeviceMemory DeviceMemoryAllocator::dedicated_alloc(VkMemoryRequirements reqs, MemoryType type) {
 	y_profile();
 	auto& heap = _dedicated_heaps[type];
 	if(!heap) {
@@ -59,7 +56,7 @@ DeviceMemory DeviceMemoryAllocator::dedicated_alloc(vk::MemoryRequirements reqs,
 	return std::move(heap->alloc(reqs).unwrap());
 }
 
-DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryType type) {
+DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements reqs, MemoryType type) {
 	y_profile();
 
 	Y_TODO(We are double locking here, each heap will lock internally)
@@ -86,15 +83,19 @@ DeviceMemory DeviceMemoryAllocator::alloc(vk::MemoryRequirements reqs, MemoryTyp
 
 	heaps.push_back(std::move(heap));
 
-    return /*std::move*/(alloc);
+	return /*std::move*/(alloc);
 }
 
-DeviceMemory DeviceMemoryAllocator::alloc(vk::Image image) {
-	return alloc(device()->vk_device().getImageMemoryRequirements(image), MemoryType::DeviceLocal);
+DeviceMemory DeviceMemoryAllocator::alloc(VkImage image) {
+	VkMemoryRequirements reqs = {};
+	vkGetImageMemoryRequirements(device()->vk_device(), image, &reqs);
+	return alloc(reqs, MemoryType::DeviceLocal);
 }
 
-DeviceMemory DeviceMemoryAllocator::alloc(vk::Buffer buffer, MemoryType type) {
-	return alloc(device()->vk_device().getBufferMemoryRequirements(buffer), type);
+DeviceMemory DeviceMemoryAllocator::alloc(VkBuffer buffer, MemoryType type) {
+	VkMemoryRequirements reqs = {};
+	vkGetBufferMemoryRequirements(device()->vk_device(), buffer, &reqs);
+	return alloc(reqs, type);
 }
 
 }

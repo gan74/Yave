@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include "GBufferPass.h"
 
-#include <unordered_map>
+#include <y/core/HashMap.h>
 
 namespace yave {
 
@@ -43,7 +43,7 @@ struct ShadowMapPass {
 
 	struct SubPassData {
 		core::Vector<SubPass> passes;
-		std::unordered_map<u32, ShadowData> lights;
+		core::ExternalHashMap<u32, ShadowData> lights;
 	};
 
 	FrameGraphImageId shadow_map;

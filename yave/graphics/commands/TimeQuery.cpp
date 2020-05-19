@@ -26,11 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
-static vk::QueryPool create_pool(DevicePtr dptr) {
-	return dptr->vk_device().createQueryPool(vk::QueryPoolCreateInfo()
-			.setQueryCount(2)
-			.setQueryType(vk::QueryType::eTimestamp)
-		);
+static VkQueryPool create_pool(DevicePtr dptr) {
+	VkQueryPoolCreateInfo create_info = vk_struct();
+	{
+		create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+		create_info.queryCount = 2;
+	}
+
+	VkQueryPool pool = {};
+	vk_check(vkCreateQueryPool(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &pool));
+	return pool;
 }
 
 TimeQuery::TimeQuery(DevicePtr dptr)  : DeviceLinked(dptr), _pool(create_pool(dptr)) {
@@ -41,16 +46,16 @@ TimeQuery::~TimeQuery() {
 }
 
 void TimeQuery::start(CmdBufferRecorder& recorder) {
-	recorder.vk_cmd_buffer().writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, _pool, 0);
+	vkCmdWriteTimestamp(recorder.vk_cmd_buffer(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, _pool, 0);
 }
 
 void TimeQuery::stop(CmdBufferRecorder& recorder) {
-	recorder.vk_cmd_buffer().writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, _pool, 1);
+	vkCmdWriteTimestamp(recorder.vk_cmd_buffer(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, _pool, 1);
 }
 
 core::Duration TimeQuery::get() {
 	std::array<u64, 2> results;
-	device()->vk_device().getQueryPoolResults<u64>(_pool, 0, 2, results, 0, vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
+	vk_check(vkGetQueryPoolResults(device()->vk_device(), _pool, 0, 2, 2 * sizeof(u64), results.data(), 0, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
 	return core::Duration::nanoseconds(results[1] - results[0]);
 }
 

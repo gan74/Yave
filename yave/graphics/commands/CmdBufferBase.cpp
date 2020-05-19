@@ -31,7 +31,8 @@ CmdBufferBase::CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& data) : _prox
 }
 
 void CmdBufferBase::wait() const {
-	device()->vk_device().waitForFences({vk_fence()}, true, u64(-1));
+	const VkFence fence = vk_fence();
+	vk_check(vkWaitForFences(device()->vk_device(), 1, &fence, true, u64(-1)));
 }
 
 void CmdBufferBase::wait_for(const Semaphore& sem) {
@@ -43,12 +44,12 @@ DevicePtr CmdBufferBase::device() const {
 	return pool ? pool->device() : nullptr;
 }
 
-vk::CommandBuffer CmdBufferBase::vk_cmd_buffer() const {
+VkCommandBuffer CmdBufferBase::vk_cmd_buffer() const {
 	y_debug_assert(_proxy);
 	return _proxy->data().vk_cmd_buffer();
 }
 
-vk::Fence CmdBufferBase::vk_fence() const {
+VkFence CmdBufferBase::vk_fence() const {
 	y_debug_assert(_proxy);
 	return  _proxy->data().vk_fence();
 }

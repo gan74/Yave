@@ -2,8 +2,8 @@
 
 #include "yave.glsl"
 
-layout(set = 0, binding = 0) uniform ViewProj {
-	mat4 view_proj;
+layout(set = 0, binding = 0) uniform CameraData {
+	Camera camera;
 };
 
 layout(set = 1, binding = 0) uniform Bones {
@@ -27,13 +27,13 @@ layout(location = 3) out vec2 out_uv;
 
 void main() {
 	const mat4 bone_matrix = in_skin_weights.x * bone_transforms[in_skin_indexes.x] +
-							 in_skin_weights.y * bone_transforms[in_skin_indexes.y] +
-							 in_skin_weights.z * bone_transforms[in_skin_indexes.z] +
-							 in_skin_weights.w * bone_transforms[in_skin_indexes.w];
+	                         in_skin_weights.y * bone_transforms[in_skin_indexes.y] +
+	                         in_skin_weights.z * bone_transforms[in_skin_indexes.z] +
+	                         in_skin_weights.w * bone_transforms[in_skin_indexes.w];
 
 	out_uv = in_uv;
 	out_normal = mat3(in_model) * mat3(bone_matrix) * in_normal;
 	out_normal = mat3(in_model) * mat3(bone_matrix) * in_tangent;
 	out_bitangent = cross(out_tangent, out_normal);
-	gl_Position = view_proj * in_model * bone_matrix * vec4(in_position, 1.0);
+	gl_Position = camera.view_proj * in_model * bone_matrix * vec4(in_position, 1.0);
 }

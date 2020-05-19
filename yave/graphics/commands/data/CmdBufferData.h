@@ -80,7 +80,7 @@ class CmdBufferData final : NonCopyable {
 	};
 
 	public:
-		CmdBufferData(vk::CommandBuffer buf, vk::Fence fen, CmdBufferPoolBase* p);
+		CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPoolBase* p);
 
 		CmdBufferData() = default;
 
@@ -93,9 +93,10 @@ class CmdBufferData final : NonCopyable {
 		bool is_null() const;
 
 		CmdBufferPoolBase* pool() const;
-		vk::CommandBuffer vk_cmd_buffer() const;
-		vk::Fence vk_fence() const;
 		ResourceFence resource_fence() const;
+
+		VkCommandBuffer vk_cmd_buffer() const;
+		VkFence vk_fence() const;
 
 		void reset();
 		void release_resources();
@@ -117,8 +118,8 @@ class CmdBufferData final : NonCopyable {
 		friend class Queue;
 		void swap(CmdBufferData& other);
 
-		vk::CommandBuffer _cmd_buffer;
-		vk::Fence _fence;
+		VkCommandBuffer _cmd_buffer = {};
+		VkFence _fence = {};
 
 		core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
 		CmdBufferPoolBase* _pool = nullptr;

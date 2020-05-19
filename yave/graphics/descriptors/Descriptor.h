@@ -30,36 +30,72 @@ SOFTWARE.
 
 namespace yave {
 
+class InlineDescriptor {
+	public:
+		constexpr InlineDescriptor() = default;
+
+		template<typename T>
+		constexpr InlineDescriptor(const T& data) : _data(&data), _size(sizeof(T)) {
+			static_assert(sizeof(T) % 4 == 0, "InlineDescriptor's size must be a multiple of 4");
+			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
+		}
+
+		template<typename T>
+		constexpr InlineDescriptor(core::Span<T> arr) : _data(arr.data()), _size(arr.size() * sizeof(T)) {
+			static_assert(sizeof(T) % 4 == 0, "InlineDescriptor's size must be a multiple of 4");
+			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
+		}
+
+		const void* data() const {
+			return _data;
+		}
+
+		usize size() const {
+			return _size;
+		}
+
+		bool is_empty() const {
+			return !_size;
+		}
+
+	private:
+		const void* _data = nullptr;
+		usize _size = 0;
+};
+
 class Descriptor {
 
 	public:
-		union DescriptorInfo {
-			vk::DescriptorImageInfo image;
-			vk::DescriptorBufferInfo buffer;
+		struct InlineBlock {
+			const void* data;
+			usize size;
+		};
 
-			DescriptorInfo(vk::DescriptorImageInfo i) : image(i) {
+		union DescriptorInfo {
+			VkDescriptorImageInfo image;
+			VkDescriptorBufferInfo buffer;
+			InlineBlock inline_block;
+
+			DescriptorInfo(VkDescriptorImageInfo i) : image(i) {
 			}
 
-			DescriptorInfo(vk::DescriptorBufferInfo b) : buffer(b) {
+			DescriptorInfo(VkDescriptorBufferInfo b) : buffer(b) {
+			}
+
+			DescriptorInfo(const void* data, usize size) : inline_block({data, size}) {
 			}
 		};
 
 		template<ImageType Type>
 		Descriptor(const ImageView<ImageUsage::TextureBit, Type>& view, Sampler::Type sampler = Sampler::Repeat) :
-				 _type(vk::DescriptorType::eCombinedImageSampler),
-				 _info(vk::DescriptorImageInfo()
-					.setImageLayout(vk_image_layout(view.usage()))
-					.setImageView(view.vk_view())
-					.setSampler(view.device()->vk_sampler(sampler))) {
+				 _type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER),
+				 _info(VkDescriptorImageInfo{view.device()->vk_sampler(sampler), view.vk_view(), vk_image_layout(view.usage())}) {
 		}
 
 		template<ImageType Type>
 		Descriptor(const ImageView<ImageUsage::StorageBit, Type>& view, Sampler::Type sampler = Sampler::Repeat) :
-				 _type(vk::DescriptorType::eStorageImage),
-				 _info(vk::DescriptorImageInfo()
-					.setImageLayout(vk_image_layout(ImageUsage::StorageBit))
-					.setImageView(view.vk_view())
-					.setSampler(view.device()->vk_sampler(sampler))) {
+				 _type(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE),
+				 _info(VkDescriptorImageInfo{view.device()->vk_sampler(sampler), view.vk_view(), vk_image_layout(ImageUsage::StorageBit)}) {
 		}
 
 		template<ImageUsage Usage, ImageType Type>
@@ -68,12 +104,12 @@ class Descriptor {
 
 
 		Descriptor(const SubBuffer<BufferUsage::UniformBit>& buffer) :
-				_type(vk::DescriptorType::eUniformBuffer),
+				_type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER),
 				_info(buffer.descriptor_info()) {
 		}
 
 		Descriptor(const SubBuffer<BufferUsage::StorageBit>& buffer) :
-				_type(vk::DescriptorType::eStorageBuffer),
+				_type(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER),
 				_info(buffer.descriptor_info()) {
 		}
 
@@ -82,31 +118,43 @@ class Descriptor {
 				Descriptor(SubBuffer<(Usage & BufferUsage::StorageBit) != BufferUsage::None ? BufferUsage::StorageBit : BufferUsage::UniformBit>(buffer)) {
 		}
 
-		auto descriptor_set_layout_binding(usize index) const {
-			return vk::DescriptorSetLayoutBinding()
-					.setBinding(u32(index))
-					.setDescriptorCount(1)
-					.setDescriptorType(_type)
-					.setStageFlags(vk::ShaderStageFlagBits::eAll)
-				;
+		Descriptor(InlineDescriptor inline_block) : Descriptor(inline_block.data(), inline_block.size()) {
+		}
+
+		Descriptor(const void* data, usize size) :
+				_type(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT),
+				_info(data, size) {
+		}
+
+
+		VkDescriptorSetLayoutBinding descriptor_set_layout_binding(usize index) const {
+			const u32 size = is_inline_block() ? _info.inline_block.size : 1;
+			VkDescriptorSetLayoutBinding binding = {};
+			{
+				binding.binding = index;
+				binding.descriptorCount = size;
+				binding.descriptorType = _type;
+				binding.stageFlags = VK_SHADER_STAGE_ALL;
+			}
+			return binding;
 		}
 
 		const DescriptorInfo& descriptor_info() const {
 			return _info;
 		}
 
-		vk::DescriptorType vk_descriptor_type() const {
+		VkDescriptorType vk_descriptor_type() const {
 			return _type;
 		}
 
 		bool is_buffer() const {
 			switch(_type) {
-				case vk::DescriptorType::eUniformTexelBuffer:
-				case vk::DescriptorType::eStorageTexelBuffer:
-				case vk::DescriptorType::eUniformBuffer:
-				case vk::DescriptorType::eStorageBuffer:
-				case vk::DescriptorType::eUniformBufferDynamic:
-				case vk::DescriptorType::eStorageBufferDynamic:
+				case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+				case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+				case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+				case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+				case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+				case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
 					return true;
 				default:
 					break;
@@ -116,10 +164,20 @@ class Descriptor {
 
 		bool is_image() const {
 			switch(_type) {
-				case vk::DescriptorType::eSampler:
-				case vk::DescriptorType::eCombinedImageSampler:
-				case vk::DescriptorType::eSampledImage:
-				case vk::DescriptorType::eStorageImage:
+				case VK_DESCRIPTOR_TYPE_SAMPLER:
+				case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+				case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+				case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+					return true;
+				default:
+					break;
+			}
+			return false;
+		}
+
+		bool is_inline_block() const {
+			switch(_type) {
+				case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
 					return true;
 				default:
 					break;
@@ -128,7 +186,7 @@ class Descriptor {
 		}
 
 	private:
-		vk::DescriptorType _type;
+		VkDescriptorType _type;
 		DescriptorInfo _info;
 
 };

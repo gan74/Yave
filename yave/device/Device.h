@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include "DeviceProperties.h"
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
 #include "DeviceResources.h"
@@ -43,7 +44,7 @@ class Device : NonMovable {
 
 	struct ScopedDevice {
 		~ScopedDevice();
-		const vk::Device device;
+		const VkDevice device;
 	};
 
 	public:
@@ -58,7 +59,7 @@ class Device : NonMovable {
 
 		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
 
-		const QueueFamily& queue_family(vk::QueueFlags flags) const;
+		const QueueFamily& queue_family(VkQueueFlags flags) const;
 		const Queue& graphic_queue() const;
 		Queue& graphic_queue();
 
@@ -68,18 +69,21 @@ class Device : NonMovable {
 		const DeviceResources& device_resources() const;
 		DeviceResources& device_resources();
 
+		const DeviceProperties& device_properties() const;
+
 		LifetimeManager& lifetime_manager() const;
 
-		const vk::PhysicalDeviceLimits& vk_limits() const;
 
-		vk::Device vk_device() const;
-		vk::Sampler vk_sampler(Sampler::Type type = Sampler::Repeat) const;
+		VkDevice vk_device() const;
+		const VkAllocationCallbacks* vk_allocation_callbacks() const;
+		VkPhysicalDevice vk_physical_device() const;
+		VkSampler vk_sampler(Sampler::Type type = Sampler::Repeat) const;
 
 		const DebugUtils* debug_utils() const;
 
 
 		template<typename T>
-		auto&& descriptor_set_layout(T&& t) const {
+		decltype(auto) descriptor_set_layout(T&& t) const {
 			return descriptor_set_allocator().descriptor_set_layout(y_fwd(t));
 		}
 
@@ -100,11 +104,13 @@ class Device : NonMovable {
 
 	private:
 		Instance& _instance;
+		Y_TODO(move this to the heap or slim it)
 		PhysicalDevice _physical;
 
 		core::Vector<QueueFamily> _queue_families;
 
 		ScopedDevice _device;
+		DeviceProperties _properties;
 
 		mutable DeviceMemoryAllocator _allocator;
 		mutable LifetimeManager _lifetime_manager;
@@ -113,13 +119,13 @@ class Device : NonMovable {
 
 		std::array<Sampler, 2> _samplers;
 
+		mutable DescriptorSetAllocator _descriptor_set_allocator;
+
 		mutable concurrent::SpinLock _lock;
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
-		mutable DescriptorSetAllocator _descriptor_set_allocator;
-
-		// this needs to be at the very bottom since it holds handles to resources and stuff
 		DeviceResources _resources;
+
 };
 
 

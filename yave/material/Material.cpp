@@ -27,15 +27,13 @@ SOFTWARE.
 namespace yave {
 
 static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialData& data) {
-	if(!dptr || data.is_empty()) {
-		return DescriptorSet();
-	}
 
-	std::array<Descriptor, SimpleMaterialData::texture_count> bindings = {
+	std::array<Descriptor, SimpleMaterialData::texture_count + 1> bindings = {
 			*dptr->device_resources()[DeviceResources::GreyTexture],
 			*dptr->device_resources()[DeviceResources::FlatNormalTexture],
 			*dptr->device_resources()[DeviceResources::RedTexture],
-			*dptr->device_resources()[DeviceResources::BlackTexture]
+			*dptr->device_resources()[DeviceResources::RedTexture],
+			InlineDescriptor(data.constants())
 		};
 
 	for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
@@ -49,7 +47,7 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialD
 
 
 Material::Material(DevicePtr dptr, SimpleMaterialData&& data) :
-		_template(dptr->device_resources()[data.is_empty() ? DeviceResources::BasicMaterialTemplate : DeviceResources::TexturedMaterialTemplate]),
+		_template(dptr->device_resources()[DeviceResources::TexturedMaterialTemplate]),
 		_set(create_descriptor_set(device(), data)),
 		_data(std::move(data)) {
 }
@@ -68,11 +66,12 @@ const DescriptorSetBase& Material::descriptor_set() const {
 	return _set;
 }
 
-const MaterialTemplate* Material::mat_template() const {
+const MaterialTemplate* Material::material_template() const {
 	return _template;
 }
 
 DevicePtr Material::device() const {
+	Y_TODO(cache ?)
 	return _template->device();
 }
 

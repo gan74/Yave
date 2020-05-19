@@ -26,17 +26,15 @@ SOFTWARE.
 
 namespace yave {
 
-GraphicPipeline::GraphicPipeline(const MaterialTemplate* mat, vk::Pipeline pipeline, vk::PipelineLayout layout) :
-		_material(mat),
+GraphicPipeline::GraphicPipeline(const MaterialTemplate* mat, VkPipeline pipeline, VkPipelineLayout layout) :
+		DeviceLinked(mat->device()),
 		_pipeline(pipeline),
 		_layout(layout)  {
 }
 
 GraphicPipeline::~GraphicPipeline() {
-	if(_material) {
-		_material->destroy(_pipeline);
-		_material->destroy(_layout);
-	}
+	destroy(_pipeline);
+	destroy(_layout);
 }
 
 GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) {
@@ -49,16 +47,16 @@ GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) {
 }
 
 void GraphicPipeline::swap(GraphicPipeline& other) {
-	std::swap(_material, other._material);
+	DeviceLinked::swap(other);
 	std::swap(_pipeline, other._pipeline);
 	std::swap(_layout, other._layout);
 }
 
-vk::Pipeline GraphicPipeline::vk_pipeline() const {
+VkPipeline GraphicPipeline::vk_pipeline() const {
 	return _pipeline;
 }
 
-vk::PipelineLayout GraphicPipeline::vk_pipeline_layout() const {
+VkPipelineLayout GraphicPipeline::vk_pipeline_layout() const {
 	return _layout;
 }
 

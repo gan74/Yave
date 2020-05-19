@@ -88,16 +88,14 @@ const char* DebugUtils::name() {
 	return VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 }
 
-DebugUtils::DebugUtils(vk::Instance instance) : _instance(instance) {
+DebugUtils::DebugUtils(VkInstance instance) : _instance(instance) {
 
-	_begin_label = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(_instance.getProcAddr("vkCmdBeginDebugUtilsLabelEXT"));
-	_end_label = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(_instance.getProcAddr("vkCmdEndDebugUtilsLabelEXT"));
+	_begin_label = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetInstanceProcAddr(_instance, "vkCmdBeginDebugUtilsLabelEXT"));
+	_end_label = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetInstanceProcAddr(_instance, "vkCmdEndDebugUtilsLabelEXT"));
 
+	const auto create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(_instance, "vkCreateDebugUtilsMessengerEXT"));
 
-	const auto create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(_instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
-
-	VkDebugUtilsMessengerCreateInfoEXT create_info = {};
-	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	VkDebugUtilsMessengerCreateInfoEXT create_info = vk_struct();
 	create_info.messageType =
 			VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 			VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
@@ -111,17 +109,17 @@ DebugUtils::DebugUtils(vk::Instance instance) : _instance(instance) {
 		;
 	create_info.pfnUserCallback = vulkan_message_callback;
 
-	create_messenger(_instance, &create_info, nullptr, &_messenger);
+	Y_TODO(Hook allocation callbacks)
+	vk_check(create_messenger(_instance, &create_info, nullptr, &_messenger));
 }
 
 DebugUtils::~DebugUtils() {
-	const auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(_instance.getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
+	const auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(_instance, "vkDestroyDebugUtilsMessengerEXT"));
 	destroy_messenger(_instance, _messenger, nullptr);
 }
 
-void DebugUtils::begin_region(vk::CommandBuffer buffer, const char* name, const math::Vec4& color) const {
-	VkDebugUtilsLabelEXT label = {};
-	label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+void DebugUtils::begin_region(VkCommandBuffer buffer, const char* name, const math::Vec4& color) const {
+	VkDebugUtilsLabelEXT label = vk_struct();
 	label.pLabelName = name;
 	for(usize i = 0; i != 4; ++i) {
 		label.color[i] = color[i];
@@ -130,18 +128,17 @@ void DebugUtils::begin_region(vk::CommandBuffer buffer, const char* name, const 
 	_begin_label(buffer, &label);
 }
 
-void DebugUtils::end_region(vk::CommandBuffer buffer) const {
+void DebugUtils::end_region(VkCommandBuffer buffer) const {
 	_end_label(buffer);
 }
 
 void DebugUtils::set_resource_name(DevicePtr dptr, u64 resource, const char *name) const {
-	VkDebugUtilsObjectNameInfoEXT name_info = {};
-	name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+	VkDebugUtilsObjectNameInfoEXT name_info = vk_struct();
 	name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
 	name_info.objectHandle = resource;
 	name_info.pObjectName = name;
 
-	_set_object_name(dptr->vk_device(), &name_info);
+	vk_check(_set_object_name(dptr->vk_device(), &name_info));
 }
 
 }

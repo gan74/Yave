@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,53 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_SWAPCHAIN_FRAMETOKEN_H
-#define YAVE_GRAPHICS_SWAPCHAIN_FRAMETOKEN_H
 
-#include <yave/graphics/images/ImageView.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include "vk.h"
 
 namespace yave {
 
-struct FrameToken {
-	static constexpr u64 invalid_id = u64(-1);
+const char* vk_result_str(VkResult result) {
+#define VK_RESULT_CASE(fmt) case fmt: return #fmt;
+	switch(result) {
+		VK_RESULT_CASE(VK_SUCCESS)
+		VK_RESULT_CASE(VK_NOT_READY)
+		VK_RESULT_CASE(VK_TIMEOUT)
+		VK_RESULT_CASE(VK_EVENT_SET)
+		VK_RESULT_CASE(VK_EVENT_RESET)
+		VK_RESULT_CASE(VK_INCOMPLETE)
+		VK_RESULT_CASE(VK_ERROR_OUT_OF_HOST_MEMORY)
+		VK_RESULT_CASE(VK_ERROR_OUT_OF_DEVICE_MEMORY)
+		VK_RESULT_CASE(VK_ERROR_INITIALIZATION_FAILED)
+		VK_RESULT_CASE(VK_ERROR_DEVICE_LOST)
+		VK_RESULT_CASE(VK_ERROR_MEMORY_MAP_FAILED)
+		VK_RESULT_CASE(VK_ERROR_LAYER_NOT_PRESENT)
+		VK_RESULT_CASE(VK_ERROR_EXTENSION_NOT_PRESENT)
+		VK_RESULT_CASE(VK_ERROR_FEATURE_NOT_PRESENT)
+		VK_RESULT_CASE(VK_ERROR_INCOMPATIBLE_DRIVER)
+		VK_RESULT_CASE(VK_ERROR_TOO_MANY_OBJECTS)
+		VK_RESULT_CASE(VK_ERROR_FORMAT_NOT_SUPPORTED)
+		VK_RESULT_CASE(VK_ERROR_FRAGMENTED_POOL)
+		VK_RESULT_CASE(VK_ERROR_UNKNOWN)
 
-	const u64 id;
-	const u32 image_index;
-	const u32 image_count;
-
-	const ImageView<ImageUsage::ColorBit> image_view;
-	const VkSemaphore image_aquired = {};
-	const VkSemaphore render_finished = {};
-
-
-	bool operator==(const FrameToken& other) const {
-		return id == other.id &&
-			   image_view == other.image_view &&
-			   image_index == other.image_index &&
-			   image_count == other.image_count &&
-			   image_aquired == other.image_aquired &&
-			   render_finished == other.render_finished;
+		default:
+			break;
 	}
-
-	bool operator!=(const FrameToken& other) const {
-		return !operator==(other);
-	}
-
-	static FrameToken create_disposable(ImageView<ImageUsage::ColorBit> out_view) {
-		return FrameToken {
-				invalid_id,
-				0,
-				1,
-				out_view,
-				vk_null(), vk_null()
-			};
-	}
-
-};
-
-
-
+	return "Unknown error";
+#undef VK_RESULT_CASE
 }
 
-#endif // YAVE_GRAPHICS_SWAPCHAIN_FRAMETOKEN_H
+}

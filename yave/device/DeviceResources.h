@@ -29,10 +29,11 @@ SOFTWARE.
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 
-#include <y/utils/hash.h>
 #include <y/core/String.h>
+#include <y/core/HashMap.h>
 
-#include <unordered_map>
+#include <y/utils/hash.h>
+
 
 #ifdef Y_DEBUG
 #include <mutex>
@@ -47,7 +48,7 @@ class Material;
 class StaticMesh;
 class IBLProbe;
 
-class DeviceResources final : NonMovable {
+class DeviceResources final : NonCopyable {
 	public:
 		enum SpirV {
 			EquirecConvolutionComp,
@@ -64,16 +65,11 @@ class DeviceResources final : NonMovable {
 
 			ToneMapFrag,
 			RayleighSkyFrag,
-			BasicFrag,
-			SkinnedFrag,
 			TexturedFrag,
-			ClusterBuilderFrag,
-			ClusteredLocalFrag,
 
 			BasicVert,
 			SkinnedVert,
 			ScreenVert,
-			ClusterBuilderVert,
 
 			MaxSpirV
 		};
@@ -95,16 +91,11 @@ class DeviceResources final : NonMovable {
 		};
 
 		enum MaterialTemplates {
-			BasicMaterialTemplate,
-			BasicSkinnedMaterialTemplate,
-
 			TexturedMaterialTemplate,
+			TexturedSkinnedMaterialTemplate,
 
 			ToneMappingMaterialTemplate,
 			RayleighSkyMaterialTemplate,
-
-			ClusterBuilderMaterialTemplate,
-			ClusteredLocalsMaterialTemplate,
 
 			MaxMaterialTemplates
 		};
@@ -138,7 +129,11 @@ class DeviceResources final : NonMovable {
 		};
 
 
+		DeviceResources();
 		DeviceResources(DevicePtr dptr);
+
+		DeviceResources(DeviceResources&& other);
+		DeviceResources& operator=(DeviceResources&& other);
 
 		// can't default for inclusion reasons
 		~DeviceResources();
@@ -157,10 +152,11 @@ class DeviceResources final : NonMovable {
 		const AssetPtr<Material>& operator[](Materials i) const;
 		const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
-
 		void reload();
 
 	private:
+		void swap(DeviceResources& other);
+
 		void load_resources(DevicePtr dptr);
 
 		std::unique_ptr<SpirVData[]> _spirv;
@@ -177,8 +173,8 @@ class DeviceResources final : NonMovable {
 
 
 #ifdef Y_DEBUG
-		mutable std::mutex _lock;
-		mutable std::unordered_map<core::String, std::unique_ptr<ComputeProgram>> _programs;
+		std::unique_ptr<std::mutex> _lock;
+		mutable core::ExternalHashMap<core::String, std::unique_ptr<ComputeProgram>> _programs;
 
 	public:
 		const ComputeProgram& program_from_file(std::string_view file) const;

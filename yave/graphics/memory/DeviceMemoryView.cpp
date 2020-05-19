@@ -34,8 +34,8 @@ DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
 		_offset(mem.vk_offset()) {
 }
 
-vk::MappedMemoryRange DeviceMemoryView::vk_mapped_range(usize size, usize offset) const {
-	const usize atom_size = device()->vk_limits().nonCoherentAtomSize;
+VkMappedMemoryRange DeviceMemoryView::vk_mapped_range(usize size, usize offset) const {
+	const usize atom_size = device()->device_properties().non_coherent_atom_size;
 
 	const usize full_offset = _offset + offset;
 	const usize aligned_offset = memory::align_down_to(full_offset, atom_size);
@@ -45,10 +45,16 @@ vk::MappedMemoryRange DeviceMemoryView::vk_mapped_range(usize size, usize offset
 	const usize aligned_size = memory::align_up_to(end - aligned_offset, atom_size);
 	y_debug_assert(end > full_offset);
 
-	return vk::MappedMemoryRange(_memory, aligned_offset, aligned_size);
+	VkMappedMemoryRange range = vk_struct();
+	{
+		range.memory = _memory;
+		range.offset = aligned_offset;
+		range.size = aligned_size;
+	}
+	return range;
 }
 
-vk::DeviceMemory DeviceMemoryView::vk_memory() const {
+VkDeviceMemory DeviceMemoryView::vk_memory() const {
 	return _memory;
 }
 

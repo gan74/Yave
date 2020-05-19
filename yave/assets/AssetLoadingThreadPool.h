@@ -44,7 +44,7 @@ class AssetLoadingThreadPool : NonMovable {
 			public:
 				virtual ~LoadingJob();
 
-				virtual void read() = 0;
+				virtual core::Result<void> read() = 0;
 				virtual void finalize(DevicePtr dptr) = 0;
 				virtual void set_dependencies_failed() = 0;
 
@@ -60,19 +60,6 @@ class AssetLoadingThreadPool : NonMovable {
 				AssetLoadingContext _ctx;
 		};
 
-		class FunctorLoadingJob : public LoadingJob {
-			public:
-				FunctorLoadingJob(GenericAssetPtr asset, AssetLoader* loader, ReadFunc func);
-
-				void read() override;
-				void finalize(DevicePtr dptr) override;
-				void set_dependencies_failed() override;
-
-			private:
-				ReadFunc _read;
-				CreateFunc _create;
-				GenericAssetPtr _asset;
-		};
 
 		AssetLoadingThreadPool(AssetLoader* parent, usize concurency = 1);
 		~AssetLoadingThreadPool();
@@ -82,7 +69,6 @@ class AssetLoadingThreadPool : NonMovable {
 
 		void wait_until_loaded(const GenericAssetPtr& ptr);
 
-		void add_loading_job(GenericAssetPtr asset, ReadFunc func);
 		void add_loading_job(std::unique_ptr<LoadingJob> job);
 
 	private:

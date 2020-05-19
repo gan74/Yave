@@ -43,7 +43,7 @@ class StaticMesh : NonCopyable {
 
 		const TriangleBuffer<>& triangle_buffer() const;
 		const VertexBuffer<>& vertex_buffer() const;
-		const vk::DrawIndexedIndirectCommand& indirect_data() const;
+		const VkDrawIndexedIndirectCommand& indirect_data() const;
 
 		float radius() const;
 		const AABB& aabb() const;
@@ -51,7 +51,7 @@ class StaticMesh : NonCopyable {
 	private:
 		TriangleBuffer<> _triangle_buffer;
 		VertexBuffer<> _vertex_buffer;
-		vk::DrawIndexedIndirectCommand _indirect_data;
+		VkDrawIndexedIndirectCommand _indirect_data = {};
 
 		AABB _aabb;
 };

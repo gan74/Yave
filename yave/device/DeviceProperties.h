@@ -19,53 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_SWAPCHAIN_FRAMETOKEN_H
-#define YAVE_GRAPHICS_SWAPCHAIN_FRAMETOKEN_H
+#ifndef YAVE_DEVICE_DEVICEPROPERTIES_H
+#define YAVE_DEVICE_DEVICEPROPERTIES_H
 
-#include <yave/graphics/images/ImageView.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/yave.h>
 
 namespace yave {
 
-struct FrameToken {
-	static constexpr u64 invalid_id = u64(-1);
+struct DeviceProperties {
+	u32 non_coherent_atom_size;
+	u32 max_uniform_buffer_size;
+	u32 uniform_buffer_alignment;
+	u32 storage_buffer_alignment;
 
-	const u64 id;
-	const u32 image_index;
-	const u32 image_count;
+	u32 max_memory_allocations;
 
-	const ImageView<ImageUsage::ColorBit> image_view;
-	const VkSemaphore image_aquired = {};
-	const VkSemaphore render_finished = {};
-
-
-	bool operator==(const FrameToken& other) const {
-		return id == other.id &&
-			   image_view == other.image_view &&
-			   image_index == other.image_index &&
-			   image_count == other.image_count &&
-			   image_aquired == other.image_aquired &&
-			   render_finished == other.render_finished;
-	}
-
-	bool operator!=(const FrameToken& other) const {
-		return !operator==(other);
-	}
-
-	static FrameToken create_disposable(ImageView<ImageUsage::ColorBit> out_view) {
-		return FrameToken {
-				invalid_id,
-				0,
-				1,
-				out_view,
-				vk_null(), vk_null()
-			};
-	}
-
+	u32 max_inline_uniform_size;
 };
-
-
 
 }
 
-#endif // YAVE_GRAPHICS_SWAPCHAIN_FRAMETOKEN_H
+#endif // YAVE_DEVICE_DEVICEPROPERTIES_H

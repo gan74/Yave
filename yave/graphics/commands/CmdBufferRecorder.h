@@ -52,12 +52,14 @@ class PushConstant : NonCopyable {
 		template<typename T>
 		constexpr PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+			static_assert(sizeof(T) <= 128, "PushConstant's size must be at most 128 bytes");
 			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
 		}
 
 		template<typename T>
-		constexpr PushConstant(core::Span<T> arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
+		constexpr PushConstant(core::Span<T> arr) : _data(arr.data()), _size(arr.size() * sizeof(T)) {
 			static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
+			static_assert(sizeof(T) <= 128, "PushConstant's size must be at most 128 bytes");
 			static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
 		}
 
@@ -92,7 +94,7 @@ struct CmdBufferRegion : NonMovable, public DeviceLinked {
 
 		CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color);
 
-		vk::CommandBuffer _buffer;
+		VkCommandBuffer _buffer = {};
 };
 
 class RenderPassRecorder : NonMovable {
@@ -109,8 +111,8 @@ class RenderPassRecorder : NonMovable {
 		void bind_material(const MaterialTemplate* material, DescriptorSetList descriptor_sets = {});
 		void bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets);
 
-		void draw(const vk::DrawIndexedIndirectCommand& indirect);
-		void draw(const vk::DrawIndirectCommand& indirect);
+		void draw(const VkDrawIndexedIndirectCommand& indirect);
+		void draw(const VkDrawIndirectCommand& indirect);
 
 		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
@@ -118,11 +120,12 @@ class RenderPassRecorder : NonMovable {
 
 		// proxies from _cmd_buffer
 		CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
-		vk::CommandBuffer vk_cmd_buffer() const;
+		VkCommandBuffer vk_cmd_buffer() const;
 
 		// Statefull stuff
 		const Viewport& viewport() const;
 		void set_viewport(const Viewport& vp);
+		void set_scissor(const math::Vec2i& offset, const math::Vec2ui& size);
 
 	private:
 		friend class CmdBufferRecorder;
@@ -173,7 +176,7 @@ class CmdBufferRecorder : public CmdBufferBase {
 
 
 		// never use directly, needed for internal work
-		void transition_image(ImageBase& image, vk::ImageLayout src, vk::ImageLayout dst);
+		void transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst);
 
 	protected:
 		CmdBufferRecorder() = default;
@@ -184,7 +187,6 @@ class CmdBufferRecorder : public CmdBufferBase {
 
 		void end_renderpass();
 		void check_no_renderpass() const;
-		void bind_framebuffer(const Framebuffer& framebuffer, vk::SubpassContents subpass);
 
 		// this could be in RenderPassRecorder, but putting it here makes erroring easier
 		const RenderPass* _render_pass = nullptr;

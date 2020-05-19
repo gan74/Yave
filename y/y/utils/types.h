@@ -71,7 +71,6 @@ enum Enum { _ = u32(-1) };
 
 using uenum = std::underlying_type<detail::Enum>::type;
 
-
 }
 
 

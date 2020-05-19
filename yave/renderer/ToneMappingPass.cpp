@@ -31,7 +31,7 @@ SOFTWARE.
 namespace yave {
 
 ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings) {
-	static constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
+	static constexpr ImageFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 	static const math::Vec2ui histogram_size = math::Vec2ui(256, 1);
 
 	const math::Vec2ui size = framegraph.image_size(in_lit);
@@ -42,7 +42,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 	if(settings.auto_exposure) {
 		FrameGraphPassBuilder clear_builder = framegraph.add_pass("Histogram clear pass");
 
-		histogram = clear_builder.declare_image(vk::Format::eR32Uint, histogram_size);
+		histogram = clear_builder.declare_image(VK_FORMAT_R32_UINT, histogram_size);
 
 		clear_builder.add_storage_output(histogram, 0, PipelineStage::ComputeBit);
 		clear_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -99,7 +99,13 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 		auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 		const auto* material = recorder.device()->device_resources()[DeviceResources::ToneMappingMaterialTemplate];
 		render_pass.bind_material(material, {self->descriptor_sets()[0]});
-		render_pass.draw(vk::DrawIndirectCommand(3, 1));
+
+		VkDrawIndirectCommand command = {};
+		{
+			command.vertexCount = 3;
+			command.instanceCount = 1;
+		}
+		render_pass.draw(command);
 	});
 
 

@@ -28,7 +28,7 @@ namespace yave {
 
 class CmdBufferRecorder;
 
-class Mapping : NonCopyable {
+class Mapping : NonMovable {
 
 	public:
 		Mapping() = default;

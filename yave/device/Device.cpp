@@ -34,14 +34,41 @@ SOFTWARE.
 
 namespace yave {
 
-static void check_features(const vk::PhysicalDeviceFeatures& features, const vk::PhysicalDeviceFeatures& required) {
-	const auto feats = reinterpret_cast<const vk::Bool32*>(&features);
-	const auto req = reinterpret_cast<const vk::Bool32*>(&required);
-	for(usize i = 0; i != sizeof(features) / sizeof(vk::Bool32); ++i) {
+static void check_features(const VkPhysicalDeviceFeatures& features, const VkPhysicalDeviceFeatures& required) {
+	const auto feats = reinterpret_cast<const VkBool32*>(&features);
+	const auto req = reinterpret_cast<const VkBool32*>(&required);
+	for(usize i = 0; i != sizeof(features) / sizeof(VkBool32); ++i) {
 		if(req[i] && !feats[i]) {
 			y_fatal("Required Vulkan feature not supported");
 		}
 	}
+}
+
+static bool is_extension_supported(const char* name, VkPhysicalDevice device) {
+	core::Vector<VkExtensionProperties> supported_extensions;
+	{
+		u32 count = 0;
+		vk_check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr));
+		supported_extensions = core::Vector<VkExtensionProperties>(count, VkExtensionProperties{});
+		vk_check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, supported_extensions.data()));
+	}
+
+	const std::string_view name_view = name;
+	for(const VkExtensionProperties& ext : supported_extensions) {
+		if(name_view == ext.extensionName) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool try_enable_extension(core::Vector<const char*>& exts, const char* name, VkPhysicalDevice physical) {
+	if(is_extension_supported(name, physical)) {
+		exts << name;
+		return true;
+	}
+	log_msg(fmt("% not supported", name), Log::Warning);
+	return false;
 }
 
 static core::Vector<Queue> create_queues(DevicePtr dptr, core::Span<QueueFamily> families) {
@@ -63,67 +90,106 @@ static std::array<Sampler, 2> create_samplers(DevicePtr dptr) {
 	return samplers;
 }
 
-static std::array<const char*, 1> extensions() {
-	return {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-}
-
-
-static vk::Device create_device(
-		const vk::PhysicalDevice physical,
+static VkDevice create_device(
+		VkPhysicalDevice physical,
 		const core::Span<QueueFamily> queue_families,
 		const DebugParams& debug) {
 
 	y_profile();
 
-	auto queue_create_infos = core::vector_with_capacity<vk::DeviceQueueCreateInfo>(queue_families.size());
+	auto queue_create_infos = core::vector_with_capacity<VkDeviceQueueCreateInfo>(queue_families.size());
 
 	const auto prio_count = std::max_element(queue_families.begin(), queue_families.end(),
 			[](const auto& a, const auto& b) { return a.count() < b.count(); })->count();
 	const core::Vector<float> priorities(prio_count, 1.0f);
 	std::transform(queue_families.begin(), queue_families.end(), std::back_inserter(queue_create_infos), [&](const auto& q) {
-		return vk::DeviceQueueCreateInfo()
-				.setQueueFamilyIndex(q.index())
-				.setPQueuePriorities(priorities.data())
-				.setQueueCount(q.count())
-			;
-		});
+		VkDeviceQueueCreateInfo create_info = vk_struct();
+		{
+			create_info.queueFamilyIndex = q.index();
+			create_info.pQueuePriorities = priorities.data();
+			create_info.queueCount = q.count();
+		}
+		return create_info;
+	});
 
-	auto required = vk::PhysicalDeviceFeatures();
-	required.multiDrawIndirect = true;
-	required.geometryShader = true;
-	required.drawIndirectFirstInstance = true;
-	required.fullDrawIndexUint32 = true;
-	required.textureCompressionBC = true;
-	required.shaderStorageImageExtendedFormats = true;
-	required.shaderUniformBufferArrayDynamicIndexing = true;
-	required.shaderSampledImageArrayDynamicIndexing = true;
-	required.shaderStorageBufferArrayDynamicIndexing = true;
-	required.shaderStorageImageArrayDynamicIndexing = true;
-	required.fragmentStoresAndAtomics = true;
 
-	if(debug.debug_features_enabled()) {
-		required.robustBufferAccess = true;
+	auto extensions = core::vector_with_capacity<const char*>(4);
+	extensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+	};
+
+	try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical);
+
+
+	VkPhysicalDeviceFeatures required = {};
+	{
+		required.multiDrawIndirect = true;
+		required.geometryShader = true;
+		required.drawIndirectFirstInstance = true;
+		required.fullDrawIndexUint32 = true;
+		required.textureCompressionBC = true;
+		required.shaderStorageImageExtendedFormats = true;
+		required.shaderUniformBufferArrayDynamicIndexing = true;
+		required.shaderSampledImageArrayDynamicIndexing = true;
+		required.shaderStorageBufferArrayDynamicIndexing = true;
+		required.shaderStorageImageArrayDynamicIndexing = true;
+		required.fragmentStoresAndAtomics = true;
 	}
 
-	check_features(physical.getFeatures(), required);
+	{
+		VkPhysicalDeviceFeatures supported = {};
+		vkGetPhysicalDeviceFeatures(physical, &supported);
+		check_features(supported, required);
+	}
 
-	auto exts = extensions();
+	VkDeviceCreateInfo create_info = vk_struct();
+	{
+		create_info.enabledExtensionCount = extensions.size();
+		create_info.ppEnabledExtensionNames = extensions.data();
+		create_info.enabledLayerCount = debug.device_layers().size();
+		create_info.ppEnabledLayerNames = debug.device_layers().data();
+		create_info.queueCreateInfoCount = queue_create_infos.size();
+		create_info.pQueueCreateInfos = queue_create_infos.data();
+		create_info.pEnabledFeatures = &required;
+	}
 
-	y_profile_zone("physical device");
-	return physical.createDevice(vk::DeviceCreateInfo()
-			.setEnabledExtensionCount(u32(exts.size()))
-			.setPpEnabledExtensionNames(exts.data())
-			.setEnabledLayerCount(u32(debug.device_layers().size()))
-			.setPpEnabledLayerNames(debug.device_layers().begin())
-			.setQueueCreateInfoCount(u32(queue_create_infos.size()))
-			.setPQueueCreateInfos(queue_create_infos.begin())
-			.setPEnabledFeatures(&required)
-		);
+	VkDevice device = {};
+	vk_check(vkCreateDevice(physical, &create_info, nullptr, &device));
+	return device;
+}
+
+static DeviceProperties create_properties(const PhysicalDevice& device) {
+	const VkPhysicalDeviceLimits& limits = device.vk_properties().limits;
+
+	DeviceProperties properties = {};
+
+	properties.non_coherent_atom_size = limits.nonCoherentAtomSize;
+	properties.max_uniform_buffer_size = limits.maxUniformBufferRange;
+	properties.uniform_buffer_alignment = limits.minUniformBufferOffsetAlignment;
+	properties.storage_buffer_alignment = limits.minStorageBufferOffsetAlignment;
+
+	properties.max_memory_allocations = limits.maxMemoryAllocationCount;
+
+	properties.max_inline_uniform_size = 0;
+	if(is_extension_supported(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, device.vk_physical_device())) {
+		properties.max_inline_uniform_size = device.vk_uniform_block_properties().maxInlineUniformBlockSize;
+	}
+
+
+	return properties;
+}
+
+static void print_properties(const DeviceProperties& properties) {
+	log_msg(fmt("max_memory_allocations = %", properties.max_memory_allocations), Log::Debug);
+	log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size), Log::Debug);
+	log_msg(fmt("max_uniform_buffer_size = %", properties.max_uniform_buffer_size), Log::Debug);
 }
 
 
+
 Device::ScopedDevice::~ScopedDevice() {
-	device.destroy();
+	vkDestroyDevice(device, nullptr);
 }
 
 
@@ -134,6 +200,7 @@ Device::Device(Instance& instance) :
 		_physical(instance),
 		_queue_families(QueueFamily::all(_physical)),
 		_device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
+		_properties(create_properties(_physical)),
 		_allocator(this),
 		_lifetime_manager(this),
 		_queues(create_queues(this, _queue_families)),
@@ -141,9 +208,11 @@ Device::Device(Instance& instance) :
 		_descriptor_set_allocator(this),
 		_resources(this) {
 
+	print_properties(_properties);
 }
 
 Device::~Device() {
+	_resources = DeviceResources();
 	_lifetime_manager.stop_async_collection();
 
 	{
@@ -155,6 +224,8 @@ Device::~Device() {
 
 	wait_all_queues();
 	_thread_devices.clear();
+	wait_all_queues();
+
 	_lifetime_manager.collect();
 }
 
@@ -174,13 +245,13 @@ DescriptorSetAllocator& Device::descriptor_set_allocator() const {
 	return _descriptor_set_allocator;
 }
 
-const QueueFamily& Device::queue_family(vk::QueueFlags flags) const {
+const QueueFamily& Device::queue_family(VkQueueFlags flags) const {
 	for(const auto& q : _queue_families) {
 		if((q.flags() & flags) == flags) {
 			return q;
 		}
 	}
-	/*return*/ y_fatal("Unable to find queue.");
+	y_fatal("Unable to find queue.");
 }
 
 const Queue& Device::graphic_queue() const {
@@ -193,7 +264,7 @@ Queue& Device::graphic_queue() {
 
 void Device::wait_all_queues() const {
 	y_profile();
-	vk_device().waitIdle();
+	vk_check(vkDeviceWaitIdle(vk_device()));
 }
 
 ThreadDevicePtr Device::thread_device() const {
@@ -231,15 +302,23 @@ LifetimeManager& Device::lifetime_manager() const {
 	return _lifetime_manager;
 }
 
-const vk::PhysicalDeviceLimits& Device::vk_limits() const {
-	return _physical.vk_properties().limits;
+const DeviceProperties& Device::device_properties() const {
+	return _properties;
 }
 
-vk::Device Device::vk_device() const {
+VkDevice Device::vk_device() const {
 	return _device.device;
 }
 
-vk::Sampler Device::vk_sampler(Sampler::Type type) const {
+const VkAllocationCallbacks* Device::vk_allocation_callbacks() const {
+	return nullptr;
+}
+
+VkPhysicalDevice Device::vk_physical_device() const {
+	return _physical.vk_physical_device();
+}
+
+VkSampler Device::vk_sampler(Sampler::Type type) const {
 	y_debug_assert(usize(type) < _samplers.size());
 	return _samplers[usize(type)].vk_sampler();
 }
@@ -251,7 +330,5 @@ CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() con
 const DebugUtils* Device::debug_utils() const {
 	return _instance.debug_utils();
 }
-
-
 
 }

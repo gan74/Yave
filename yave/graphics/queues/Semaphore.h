@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/device/DeviceLinked.h>
 #include <yave/graphics/vk/vk.h>
 
+#include <memory>
+
 namespace yave {
 
 template<typename T>
@@ -38,10 +40,10 @@ class Semaphore {
 
 			~Shared();
 
-			vk::Semaphore vk_semaphore() const;
+			VkSemaphore vk_semaphore() const;
 
 		private:
-			vk::Semaphore _semaphore;
+			VkSemaphore _semaphore = {};
 	};
 
 
@@ -51,7 +53,7 @@ class Semaphore {
 		DevicePtr device() const;
 		bool is_null() const;
 
-		vk::Semaphore vk_semaphore() const;
+		VkSemaphore vk_semaphore() const;
 
 		bool operator==(const Semaphore& other) const;
 

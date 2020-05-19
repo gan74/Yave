@@ -34,38 +34,46 @@ namespace y {
 namespace test {
 namespace detail {
 
+static TestItem* first_test = nullptr;
 
-const char* test_box_msg(const char* msg) {
-	return msg ? msg : "unknown test function";
+void register_test(TestItem* test) {
+	test->next = first_test;
+	first_test = test;
 }
 
-void test_assert(const char* msg, void (*func)(TestResult &)) {
+static bool run_test(const detail::TestItem* test) {
 	const char* ok		= "\x1b[32m  [ OK ]   \x1b[0m";
 	const char* failure = "\x1b[31m[ FAILED ] \x1b[0m";
 
-	// Because of this function may be called during static initialization we must initialize cout
-	const std::ios_base::Init init;
 	y::detail::setup_console();
 
-
-	std::cout << msg << ":";
-	for(usize size = strlen(msg) + 1; size != 80 - 11; ++size) {
+	std::cout << test->name << ":";
+	for(usize size = std::strlen(test->name) + 1; size != 80 - 11; ++size) {
 		std::cout << " ";
 	}
 
 
 	TestResult res{true, nullptr, 0};
-	func(res);
+	(test->test_func)(res);
 
 	if(res.result) {
 		std::cout << ok << std::endl;
 	} else {
 		std::cout << failure << std::endl;
-		fatal("\ty_test_assert failed!", res.file, res.line);
+		std::cerr << "\ty_test_assert failed: in file: " << res.file << " at line: "<< res.line << std::endl;;
 	}
-	unused(msg, func);
+	return res.result;
 }
 
 }
+
+bool run_tests() {
+	bool all_ok = true;
+	for(detail::TestItem* test = detail::first_test; test; test = test->next) {
+		all_ok &= run_test(test);
+	}
+	return all_ok;
+}
+
 }
 }

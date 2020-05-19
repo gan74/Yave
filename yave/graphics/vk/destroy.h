@@ -21,25 +21,25 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 namespace detail {
 
-void destroy(DevicePtr dptr, vk::Buffer buffer);
-void destroy(DevicePtr dptr, vk::Image image);
-void destroy(DevicePtr dptr, vk::ImageView image_view);
-void destroy(DevicePtr dptr, vk::RenderPass render_pass);
-void destroy(DevicePtr dptr, vk::Framebuffer framebuffer);
-void destroy(DevicePtr dptr, vk::Pipeline pipeline);
-void destroy(DevicePtr dptr, vk::PipelineLayout pipeline_layout);
-void destroy(DevicePtr dptr, vk::ShaderModule module);
-void destroy(DevicePtr dptr, vk::Sampler sampler);
-void destroy(DevicePtr dptr, vk::SwapchainKHR swapchain);
-void destroy(DevicePtr dptr, vk::CommandPool pool);
-void destroy(DevicePtr dptr, vk::Fence fence);
-void destroy(DevicePtr dptr, vk::DescriptorPool pool);
-void destroy(DevicePtr dptr, vk::DescriptorSetLayout layout);
-void destroy(DevicePtr dptr, vk::Semaphore semaphore);
-void destroy(DevicePtr dptr, vk::QueryPool pool);
-void destroy(DevicePtr dptr, vk::Event event);
+void destroy(DevicePtr dptr, VkBuffer buffer);
+void destroy(DevicePtr dptr, VkImage image);
+void destroy(DevicePtr dptr, VkImageView image_view);
+void destroy(DevicePtr dptr, VkRenderPass render_pass);
+void destroy(DevicePtr dptr, VkFramebuffer framebuffer);
+void destroy(DevicePtr dptr, VkPipeline pipeline);
+void destroy(DevicePtr dptr, VkPipelineLayout pipeline_layout);
+void destroy(DevicePtr dptr, VkShaderModule module);
+void destroy(DevicePtr dptr, VkSampler sampler);
+void destroy(DevicePtr dptr, VkSwapchainKHR swapchain);
+void destroy(DevicePtr dptr, VkCommandPool pool);
+void destroy(DevicePtr dptr, VkFence fence);
+void destroy(DevicePtr dptr, VkDescriptorPool pool);
+void destroy(DevicePtr dptr, VkDescriptorSetLayout layout);
+void destroy(DevicePtr dptr, VkSemaphore semaphore);
+void destroy(DevicePtr dptr, VkQueryPool pool);
+void destroy(DevicePtr dptr, VkEvent event);
 
-void destroy(DevicePtr dptr, vk::SurfaceKHR surface);
+void destroy(DevicePtr dptr, VkSurfaceKHR surface);
 
 }
 }

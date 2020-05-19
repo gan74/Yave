@@ -29,56 +29,56 @@ SOFTWARE.
 
 namespace yave {
 
-static void depth_only_stages(core::Vector<vk::PipelineShaderStageCreateInfo>& stages) {
-	const auto is_frag_stage = [](const vk::PipelineShaderStageCreateInfo& s) { return s.stage == vk::ShaderStageFlagBits::eFragment; };
+static void depth_only_stages(core::Vector<VkPipelineShaderStageCreateInfo>& stages) {
+	const auto is_frag_stage = [](const VkPipelineShaderStageCreateInfo& s) { return s.stage == VK_SHADER_STAGE_FRAGMENT_BIT; };
 	if(const auto it = std::find_if(stages.begin(), stages.end(), is_frag_stage); it != stages.end()) {
 		stages.erase_unordered(it);
 	}
 }
 
-static vk::BlendFactor src_blend_factor(BlendMode mode) {
+static VkBlendFactor src_blend_factor(BlendMode mode) {
 	switch(mode) {
 		case BlendMode::SrcAlpha:
-			return vk::BlendFactor::eSrcAlpha;
+			return VK_BLEND_FACTOR_SRC_ALPHA;
 
 		default:
-			return vk::BlendFactor::eOne;
+			return VK_BLEND_FACTOR_ONE;
 	}
 }
 
-static vk::BlendFactor dst_blend_factor(BlendMode mode) {
+static VkBlendFactor dst_blend_factor(BlendMode mode) {
 	switch(mode) {
 		case BlendMode::SrcAlpha:
-			return vk::BlendFactor::eOneMinusSrcAlpha;
+			return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 
 		default:
-			return vk::BlendFactor::eOne;
+			return VK_BLEND_FACTOR_ONE;
 	}
 }
 
-static vk::CullModeFlags cull_mode(CullMode mode) {
+static VkCullModeFlags cull_mode(CullMode mode) {
 	switch(mode) {
 		case CullMode::None:
-			return vk::CullModeFlagBits::eNone;
+			return VK_CULL_MODE_NONE;
 
 		case CullMode::Front:
-			return vk::CullModeFlagBits::eFront;
+			return VK_CULL_MODE_FRONT_BIT;
 
 		default:
-			return vk::CullModeFlagBits::eBack;
+			return VK_CULL_MODE_BACK_BIT;
 	}
 }
 
-static vk::CompareOp depth_mode(DepthTestMode mode) {
+static VkCompareOp depth_mode(DepthTestMode mode) {
 	switch(mode) {
 		case DepthTestMode::Standard:
-			return vk::CompareOp::eGreaterOrEqual;
+			return VK_COMPARE_OP_GREATER_OR_EQUAL;
 
 		case DepthTestMode::Reversed:
-			return vk::CompareOp::eLessOrEqual;
+			return VK_COMPARE_OP_LESS_OR_EQUAL;
 
 		default: // None
-			return vk::CompareOp::eAlways;
+			return VK_COMPARE_OP_ALWAYS;
 	}
 }
 
@@ -90,10 +90,8 @@ static GeometryShader create_geometry_shader(DevicePtr dptr, const SpirVData& ge
 }
 
 
-MaterialCompiler::MaterialCompiler(DevicePtr dptr) : DeviceLinked(dptr) {
-}
 
-GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, const RenderPass& render_pass) const {
+GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, const RenderPass& render_pass) {
 	y_profile();
 	core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
 	Y_TODO(move program creation programs can be reused)
@@ -106,110 +104,125 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 	const GeometryShader geom = create_geometry_shader(dptr, mat_data._geom);
 	const ShaderProgram program(frag, vert, geom);
 
-	core::Vector<vk::PipelineShaderStageCreateInfo> pipeline_shader_stages(program.vk_pipeline_stage_info());
+	core::Vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages(program.vk_pipeline_stage_info());
 	if(render_pass.is_depth_only()) {
 		depth_only_stages(pipeline_shader_stages);
 	}
 
-	auto attribute_bindings = program.attribute_bindings();
-	auto attribute_descriptions = program.attributes_descriptions();
+	auto attribute_bindings = program.vk_attribute_bindings();
+	auto attribute_descriptions = program.vk_attributes_descriptions();
 
-	const auto vertex_input = vk::PipelineVertexInputStateCreateInfo()
-			.setVertexAttributeDescriptionCount(attribute_descriptions.size())
-			.setPVertexAttributeDescriptions(attribute_descriptions.data())
-			.setVertexBindingDescriptionCount(attribute_bindings.size())
-			.setPVertexBindingDescriptions(attribute_bindings.data())
-		;
+	VkPipelineVertexInputStateCreateInfo vertex_input = vk_struct();
+	{
+		vertex_input.vertexAttributeDescriptionCount = attribute_descriptions.size();
+		vertex_input.pVertexAttributeDescriptions = attribute_descriptions.data();
+		vertex_input.vertexBindingDescriptionCount = attribute_bindings.size();
+		vertex_input.pVertexBindingDescriptions = attribute_bindings.data();
+	}
 
-	const auto input_assembly = vk::PipelineInputAssemblyStateCreateInfo()
-			.setTopology(vk::PrimitiveTopology(mat_data._primitive_type))
-			.setPrimitiveRestartEnable(false)
-		;
+	VkPipelineInputAssemblyStateCreateInfo input_assembly = vk_struct();
+	{
+		input_assembly.topology = VkPrimitiveTopology(mat_data._primitive_type);
+		input_assembly.primitiveRestartEnable = false;
+	}
 
-	auto viewport = vk::Viewport();
-	auto scissor = vk::Rect2D();
+	const VkViewport viewport = {};
+	const VkRect2D scissor = {};
+	VkPipelineViewportStateCreateInfo viewport_state = vk_struct();
+	{
+		viewport_state.viewportCount = 1;
+		viewport_state.scissorCount = 1;
+		viewport_state.pViewports = &viewport;
+		viewport_state.pScissors = &scissor;
+	}
 
-	const auto viewport_state = vk::PipelineViewportStateCreateInfo()
-			.setViewportCount(1)
-			.setPViewports(&viewport)
-			.setScissorCount(1)
-			.setPScissors(&scissor)
-		;
+	VkPipelineRasterizationStateCreateInfo rasterizer = vk_struct();
+	{
+		rasterizer.cullMode = cull_mode(mat_data._cull_mode);
+		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizer.lineWidth = 1.0f;
+		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		rasterizer.depthBiasEnable = false;
+		rasterizer.depthClampEnable = false;
+	}
 
-	const auto rasterizer = vk::PipelineRasterizationStateCreateInfo()
-			.setCullMode(cull_mode(mat_data._cull_mode))
-			//.setCullMode(vk::CullModeFlagBits::eNone)
-			.setPolygonMode(vk::PolygonMode::eFill)
-			.setLineWidth(1.0f)
-			.setFrontFace(vk::FrontFace::eCounterClockwise)
-			.setDepthBiasEnable(false)
-			.setDepthClampEnable(false)
-		;
+	VkPipelineMultisampleStateCreateInfo multisampling = vk_struct();
+	{
+		multisampling.sampleShadingEnable = false;
+		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	}
 
-	const auto multisampling = vk::PipelineMultisampleStateCreateInfo()
-			.setSampleShadingEnable(false)
-			.setRasterizationSamples(vk::SampleCountFlagBits::e1)
-		;
+	VkPipelineColorBlendAttachmentState color_blend_attachment = {};
+	{
+		const VkBlendFactor src_blend = src_blend_factor(mat_data._blend_mode);
+		const VkBlendFactor dst_blend = dst_blend_factor(mat_data._blend_mode);
 
-	const auto src_blend = src_blend_factor(mat_data._blend_mode);
-	const auto dst_blend = dst_blend_factor(mat_data._blend_mode);
-	const auto color_blend_attachment = vk::PipelineColorBlendAttachmentState()
-			.setBlendEnable(mat_data._blend_mode != BlendMode::None)
-			.setColorBlendOp(vk::BlendOp::eAdd)
-			.setAlphaBlendOp(vk::BlendOp::eAdd)
-			.setDstColorBlendFactor(dst_blend)
-			.setDstAlphaBlendFactor(dst_blend)
-			.setSrcColorBlendFactor(src_blend)
-			.setSrcAlphaBlendFactor(src_blend)
-			.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eA)
-		;
+		color_blend_attachment.blendEnable = mat_data._blend_mode != BlendMode::None;
+		color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
+		color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
+		color_blend_attachment.dstColorBlendFactor = dst_blend;
+		color_blend_attachment.dstAlphaBlendFactor = dst_blend;
+		color_blend_attachment.srcColorBlendFactor = src_blend;
+		color_blend_attachment.srcAlphaBlendFactor = src_blend;
+		color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	}
 
-	const auto att_blends = core::Vector<vk::PipelineColorBlendAttachmentState>(render_pass.attachment_count(), color_blend_attachment);
+	const auto att_blends = core::Vector<VkPipelineColorBlendAttachmentState>(render_pass.attachment_count(), color_blend_attachment);
+	VkPipelineColorBlendStateCreateInfo color_blending = vk_struct();
+	{
+		color_blending.logicOpEnable = false;
+		color_blending.logicOp = VK_LOGIC_OP_COPY;
+		color_blending.attachmentCount = u32(att_blends.size());
+		color_blending.pAttachments = att_blends.data();
+		for(usize i = 0; i != 4; ++i) {
+			color_blending.blendConstants[i] = 0.0f;
+		}
+	}
 
-	const auto color_blending = vk::PipelineColorBlendStateCreateInfo()
-			.setLogicOpEnable(false)
-			.setLogicOp(vk::LogicOp::eCopy)
-			.setAttachmentCount(u32(att_blends.size()))
-			.setPAttachments(att_blends.data())
-			.setBlendConstants({{0.0f, 0.0f, 0.0f, 0.0f}})
-		;
+	VkPipelineDepthStencilStateCreateInfo depth_testing = vk_struct();
+	{
+		depth_testing.depthTestEnable = mat_data._depth_mode != DepthTestMode::None || mat_data._depth_write;
+		depth_testing.depthWriteEnable = mat_data._depth_write;
+		depth_testing.depthCompareOp = depth_mode(mat_data._depth_mode);
+	}
 
-	const auto depth_testing = vk::PipelineDepthStencilStateCreateInfo()
-			.setDepthTestEnable(mat_data._depth_mode != DepthTestMode::None || mat_data._depth_write)
-			.setDepthWriteEnable(mat_data._depth_write)
-			.setDepthCompareOp(depth_mode(mat_data._depth_mode))
-		;
+	VkPipelineLayout pipeline_layout = {};
+	{
+		VkPipelineLayoutCreateInfo create_info = vk_struct();
+		create_info.setLayoutCount = u32(program.vk_descriptor_layouts().size());
+		create_info.pSetLayouts = program.vk_descriptor_layouts().data();
+		create_info.pushConstantRangeCount = u32(program.vk_push_constants().size());
+		create_info.pPushConstantRanges = program.vk_push_constants().data();
+		vk_check(vkCreatePipelineLayout(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &pipeline_layout));
+	}
 
-	const auto pipeline_layout = device()->vk_device().createPipelineLayout(vk::PipelineLayoutCreateInfo()
-			.setSetLayoutCount(u32(program.descriptor_layouts().size()))
-			.setPSetLayouts(program.descriptor_layouts().data())
-			.setPushConstantRangeCount(u32(program.push_constants().size()))
-			.setPPushConstantRanges(program.push_constants().data())
-		);
+	const std::array<VkDynamicState, 2> dynamics = {{VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR}};
+	VkPipelineDynamicStateCreateInfo dynamic_states = vk_struct();
+	{
+		dynamic_states.dynamicStateCount = dynamics.size();
+		dynamic_states.pDynamicStates = dynamics.data();
+	}
 
-	const std::array<vk::DynamicState, 2> dynamics = {{vk::DynamicState::eViewport, vk::DynamicState::eScissor}};
-	const auto dynamic_states = vk::PipelineDynamicStateCreateInfo()
-			.setDynamicStateCount(dynamics.size())
-			.setPDynamicStates(dynamics.data())
-		;
+	VkGraphicsPipelineCreateInfo create_info = vk_struct();
+	{
+		create_info.stageCount = u32(pipeline_shader_stages.size());
+		create_info.pStages = pipeline_shader_stages.data();
+		create_info.pDynamicState = &dynamic_states;
+		create_info.pVertexInputState = &vertex_input;
+		create_info.pInputAssemblyState = &input_assembly;
+		create_info.pRasterizationState = &rasterizer;
+		create_info.pViewportState = &viewport_state;
+		create_info.pMultisampleState = &multisampling;
+		create_info.pColorBlendState = &color_blending;
+		create_info.pDepthStencilState = &depth_testing;
+		create_info.layout = pipeline_layout;
+		create_info.renderPass = render_pass.vk_render_pass();
+		create_info.subpass = 0;
+		create_info.basePipelineIndex = -1;
+	}
 
-	const auto pipeline = device()->vk_device().createGraphicsPipeline(vk::PipelineCache(), vk::GraphicsPipelineCreateInfo()
-			.setStageCount(u32(pipeline_shader_stages.size()))
-			.setPStages(pipeline_shader_stages.data())
-			.setPDynamicState(&dynamic_states)
-			.setPVertexInputState(&vertex_input)
-			.setPInputAssemblyState(&input_assembly)
-			.setPRasterizationState(&rasterizer)
-			.setPViewportState(&viewport_state)
-			.setPMultisampleState(&multisampling)
-			.setPColorBlendState(&color_blending)
-			.setPDepthStencilState(&depth_testing)
-			.setLayout(pipeline_layout)
-			.setRenderPass(render_pass.vk_render_pass())
-			.setSubpass(0)
-			.setBasePipelineIndex(-1)
-		);
-
+	VkPipeline pipeline = {};
+	vk_check(vkCreateGraphicsPipelines(dptr->vk_device(), vk_null(), 1, &create_info, dptr->vk_allocation_callbacks(), &pipeline));
 	return GraphicPipeline(material, pipeline, pipeline_layout);
 }
 
