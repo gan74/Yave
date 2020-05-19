@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "ComponentSerializer.h"
+#include "Archetype.h"
 
 namespace y {
 namespace ecs {
@@ -37,15 +38,16 @@ ComponentSerializerBase::ComponentSerializerBase(Archetype* arc) : _archetype(ar
 ComponentSerializerWrapper::ComponentSerializerWrapper(std::unique_ptr<ComponentSerializerBase> ptr) : _storage(std::move(ptr)), _serializer(*_storage.get()) {
 }
 
-void ComponentListSerializer::add(ComponentSerializerWrapper wrapper) {
-	_wrappers.emplace_back(std::move(wrapper));
+ComponentSerializerList::ComponentSerializerList(const Archetype* arc) : _archetype(arc) {
 }
 
-core::MutableSpan<ComponentSerializerWrapper> ComponentListSerializer::wrappers() {
+core::MutableSpan<ComponentSerializerWrapper> ComponentSerializerList::wrappers() {
+	_wrappers = _archetype->create_component_serializer_wrappers();
 	return _wrappers;
 }
 
-core::Span<ComponentSerializerWrapper> ComponentListSerializer::wrappers() const {
+core::Span<ComponentSerializerWrapper> ComponentSerializerList::wrappers() const {
+	_wrappers = _archetype->create_component_serializer_wrappers();
 	return _wrappers;
 }
 

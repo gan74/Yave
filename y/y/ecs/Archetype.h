@@ -80,10 +80,11 @@ class Archetype : NonMovable {
 
 		y_serde3(serde3::property(this, &Archetype::create_serializers, &Archetype::set_serializers),
 				 serde3::property(this, &Archetype::entity_count,		&Archetype::set_entity_count),
-				 create_component_serializer())
+				 create_serializer_list())
 
 	private:
 		friend class EntityWorld;
+		friend class ComponentSerializerList;
 
 		void add_entities(core::MutableSpan<EntityData> entities, bool update_data);
 
@@ -160,40 +161,16 @@ class Archetype : NonMovable {
 		}
 
 
-		core::Vector<std::unique_ptr<ComponentInfoSerializerBase>> create_serializers() const {
-			auto serializers =  core::vector_with_capacity<std::unique_ptr<ComponentInfoSerializerBase>>(_component_count);
-			for(usize i = 0; i != _component_count; ++i) {
-				serializers.emplace_back(_component_infos[i].create_info_serializer());
-			}
-			log_msg(fmt("size = %", serializers.size()));
-			return serializers;
-		}
+		// Serialization stuff
+		void set_entity_count(usize count);
 
-		 void set_serializers(core::Vector<std::unique_ptr<ComponentInfoSerializerBase>> serializers) {
-			 _component_count = serializers.size();
-			 _component_infos = std::make_unique<ComponentRuntimeInfo[]>(_component_count);
+		core::Vector<std::unique_ptr<ComponentInfoSerializerBase>> create_serializers() const;
+		void set_serializers(core::Vector<std::unique_ptr<ComponentInfoSerializerBase>> serializers);
 
-			 for(usize i = 0; i != _component_count; ++i) {
-				 _component_infos[i] = serializers[i]->create_runtime_info();
-			 }
-			 sort_component_infos();
-		 }
+		core::Vector<ComponentSerializerWrapper> create_component_serializer_wrappers() const;
+		ComponentSerializerList create_serializer_list() const;
 
 
-		void set_entity_count(usize count) {
-			core::MutableSpan<EntityData> entities(nullptr, count);
-			add_entities(entities, false);
-			y_debug_assert(entity_count() == count);
-		}
-
-
-		ComponentListSerializer create_component_serializer() const {
-			ComponentListSerializer serializer;
-			for(usize i = 0; i != _component_count; ++i) {
-				serializer.add(_component_infos[i].create_component_serializer(const_cast<Archetype*>(this)));
-			}
-			return serializer;
-		}
 
 		usize _component_count = 0;
 		std::unique_ptr<ComponentRuntimeInfo[]> _component_infos;

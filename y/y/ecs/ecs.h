@@ -40,9 +40,8 @@ namespace detail {
 u32 next_type_index();
 }
 
-#warning remove static ?
 template<typename T>
-static u32 type_index() {
+u32 type_index() {
 	static u32 index = detail::next_type_index();
 	return index;
 }

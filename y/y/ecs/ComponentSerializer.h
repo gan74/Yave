@@ -103,15 +103,13 @@ class ComponentSerializerWrapper {
 		ComponentSerializerWrapper(std::unique_ptr<ComponentSerializerBase> ptr);
 
 		std::unique_ptr<ComponentSerializerBase> _storage;
-		std::reference_wrapper<ComponentSerializerBase> _serializer;
+		ComponentSerializerBase& _serializer;
 };
 
 
-class ComponentListSerializer {
+class ComponentSerializerList {
 	public:
-		ComponentListSerializer() = default;
-
-		void add(ComponentSerializerWrapper wrapper);
+		ComponentSerializerList(const Archetype* arc);
 
 		y_serde3(wrappers())
 
@@ -119,7 +117,8 @@ class ComponentListSerializer {
 		core::MutableSpan<ComponentSerializerWrapper> wrappers();
 		core::Span<ComponentSerializerWrapper> wrappers() const;
 
-		core::Vector<ComponentSerializerWrapper> _wrappers;
+		const Archetype* _archetype = nullptr;
+		mutable core::Vector<ComponentSerializerWrapper> _wrappers;
 };
 
 

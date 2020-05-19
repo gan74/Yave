@@ -51,6 +51,10 @@ void EntityWorld::remove_entity(EntityID id) {
 	y_debug_assert(!data.is_valid());
 }
 
+const Archetype* EntityWorld::archetype(EntityID id) const {
+	check_exists(id);
+	return _entities[id.index()].archetype;
+}
 
 core::Span<std::unique_ptr<Archetype>> EntityWorld::archetypes() const {
 	return _archetypes;

@@ -87,12 +87,12 @@ struct Tester : NonCopyable {
 	y_serde3(serde_data())
 
 	const u64& serde_data() const {
-		log_msg("serialization");
+		//log_msg("serialization");
 		return x;
 	}
 
 	u64& serde_data() {
-		log_msg("deserialization");
+		//log_msg("deserialization");
 		return x;
 	}
 };
@@ -237,19 +237,42 @@ int main() {
 		}
 
 
-		log_msg("Testers:");
-		for(auto&& [id, tester] : all_components<Tester>(new_world)) {
-			y_debug_assert(id.is_valid());
-			log_msg(fmt("id: [%, %]", id.index(), id.version()));
-			tester.validate();
-		}
+		auto print_world = [](EntityWorld& world) {
+			usize ents = 0;
+			for(auto&& id : world.entity_ids()) {
+				unused(id);
+				++ents;
+			}
+			log_msg(fmt("World entity count: %", ents));
+			log_msg("  Archetypes:");
+			for(const auto& arc : world.archetypes()) {
+				log_msg(fmt("    entity count: %", arc->entity_count()));
+				log_msg(fmt("    component count: %", arc->component_count()));
+				for(const ComponentRuntimeInfo& info : arc->component_infos()) {
+					log_msg(fmt("      %", info.type_name));
+				}
+			}
+			log_msg("  Testers:");
+			for(auto&& [id, tester] : all_components<Tester>(world)) {
+				y_debug_assert(id.is_valid());
+				log_msg(fmt("    id: [%, %]", id.index(), id.version()));
+				tester.validate();
+			}
 
-		log_msg("int:");
-		for(auto&& [id, i] : all_components<int>(new_world)) {
-			y_debug_assert(id.is_valid());
-			y_debug_assert(i == 0);
-			log_msg(fmt("id: [%, %]", id.index(), id.version()));
-		}
+			log_msg("  int:");
+			for(auto&& [id, i] : all_components<int>(world)) {
+				y_debug_assert(id.is_valid());
+				y_debug_assert(i == 0);
+				log_msg(fmt("    id: [%, %]", id.index(), id.version()));
+			}
+		};
+
+		log_msg("Original world:");
+		print_world(world);
+
+		log_msg("Deser world:");
+		print_world(new_world);
+
 	} catch(serde3::Error err) {
 		log_msg(fmt("Serde error: % while processing: \"%\"", serde3::error_msg(err), err.member ? err.member : ""), Log::Error);
 	}

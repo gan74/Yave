@@ -37,6 +37,8 @@ class EntityWorld : NonCopyable {
 		EntityID create_entity();
 		void remove_entity(EntityID id);
 
+		const Archetype* archetype(EntityID id) const;
+
 		core::Span<std::unique_ptr<Archetype>> archetypes() const;
 
 
@@ -110,7 +112,7 @@ class EntityWorld : NonCopyable {
 		}
 
 
-		y_serde3(_archetypes)
+		y_serde3(_entities, _archetypes)
 
 	private:
 		friend class ComponentInfoSerializerBase;

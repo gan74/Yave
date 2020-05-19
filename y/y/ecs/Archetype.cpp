@@ -31,8 +31,8 @@ namespace y {
 namespace ecs {
 
 Archetype::Archetype(usize component_count, memory::PolymorphicAllocatorBase* allocator) :
-        _component_count(component_count),
-        _component_infos(std::make_unique<ComponentRuntimeInfo[]>(component_count)),
+		_component_count(component_count),
+		_component_infos(std::make_unique<ComponentRuntimeInfo[]>(component_count)),
 		_allocator(allocator) {
 }
 
@@ -233,6 +233,44 @@ void Archetype::add_chunk() {
 #ifdef Y_DEBUG
 	std::memset(_chunk_data.last(), 0xBA, _chunk_byte_size);
 #endif
+}
+
+
+core::Vector<std::unique_ptr<ComponentInfoSerializerBase>> Archetype::create_serializers() const {
+	auto serializers =  core::vector_with_capacity<std::unique_ptr<ComponentInfoSerializerBase>>(_component_count);
+	for(usize i = 0; i != _component_count; ++i) {
+		serializers.emplace_back(_component_infos[i].create_info_serializer());
+	}
+	return serializers;
+}
+
+ void Archetype::set_serializers(core::Vector<std::unique_ptr<ComponentInfoSerializerBase>> serializers) {
+	 _component_count = serializers.size();
+	 _component_infos = std::make_unique<ComponentRuntimeInfo[]>(_component_count);
+
+	 for(usize i = 0; i != _component_count; ++i) {
+		 _component_infos[i] = serializers[i]->create_runtime_info();
+	 }
+	 sort_component_infos();
+ }
+
+void Archetype::set_entity_count(usize count) {
+	core::MutableSpan<EntityData> entities(nullptr, count);
+	add_entities(entities, false);
+	y_debug_assert(entity_count() == count);
+}
+
+
+core::Vector<ComponentSerializerWrapper> Archetype::create_component_serializer_wrappers() const {
+	auto serializers = core::vector_with_capacity<ComponentSerializerWrapper>(_component_count);
+	for(usize i = 0; i != _component_count; ++i) {
+		serializers.emplace_back(_component_infos[i].create_component_serializer(const_cast<Archetype*>(this)));
+	}
+	return serializers;
+}
+
+ComponentSerializerList Archetype::create_serializer_list() const {
+	return ComponentSerializerList(this);
 }
 
 }
