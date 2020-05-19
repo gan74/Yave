@@ -57,8 +57,6 @@ class Mallocator : NonCopyable {
 		}
 };
 
-Y_TODO(Debug allocator with bit pattern like BAADF00D & FEFEFEFE)
-
 // -------------------------- polymorphic allocators --------------------------
 
 class PolymorphicAllocatorBase : NonCopyable {

@@ -10,7 +10,7 @@ if(MSVC)
 	# temporary hacks to get it to compile
 	set(Y_COMPILE_OPTIONS /permissive- /W0)
 else()
-	set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${EXTRA_WARNINGS} ${MORE_WARNINGS} -Wno-init-list-lifetime)
+	set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${EXTRA_WARNINGS} ${MORE_WARNINGS}) # -Wno-init-list-lifetime -fno-common
 endif()
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")

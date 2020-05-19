@@ -35,7 +35,7 @@ namespace yave {
 
 class RenderPass : NonCopyable, public DeviceLinked {
 	public:
-		enum class LoadOp {
+		enum class LoadOp : u32 {
 			Clear,
 			Load
 		};
