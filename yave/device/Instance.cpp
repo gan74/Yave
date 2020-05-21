@@ -55,7 +55,8 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 	auto extention_names = core::vector_with_capacity<const char*>(4);
 	extention_names = {
 		VK_KHR_SURFACE_EXTENSION_NAME,
-		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
+		// Vulkan 1.1
+		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 	};
 
 #ifdef Y_OS_WIN
@@ -63,7 +64,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 #endif
 
 	if(_debug_params.debug_features_enabled()) {
-		_debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::name()));
+		_debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::extension_name()));
 	}
 
 
@@ -86,7 +87,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 	vk_check(vkCreateInstance(&create_info, nullptr, &_instance));
 
 	if(_debug_params.debug_features_enabled()) {
-		log_msg("Vulkan debugging enabled.");
+		log_msg("Vulkan debugging enabled");
 		_extensions.debug_utils = std::make_unique<DebugUtils>(_instance);
 	}
 }

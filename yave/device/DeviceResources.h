@@ -128,15 +128,18 @@ class DeviceResources final : NonCopyable {
 			MaxMeshes
 		};
 
-
 		DeviceResources();
 		DeviceResources(DevicePtr dptr);
+
+		void init(DevicePtr dptr);
 
 		DeviceResources(DeviceResources&& other);
 		DeviceResources& operator=(DeviceResources&& other);
 
 		// can't default for inclusion reasons
 		~DeviceResources();
+
+		bool is_init() const;
 
 		DevicePtr device() const;
 
@@ -157,7 +160,9 @@ class DeviceResources final : NonCopyable {
 	private:
 		void swap(DeviceResources& other);
 
-		void load_resources(DevicePtr dptr);
+		void load_resources();
+
+		DevicePtr _device = nullptr;
 
 		std::unique_ptr<SpirVData[]> _spirv;
 		std::unique_ptr<ComputeProgram[]> _computes;
@@ -173,7 +178,7 @@ class DeviceResources final : NonCopyable {
 
 
 #ifdef Y_DEBUG
-		std::unique_ptr<std::mutex> _lock;
+		std::unique_ptr<std::recursive_mutex> _lock;
 		mutable core::ExternalHashMap<core::String, std::unique_ptr<ComputeProgram>> _programs;
 
 	public:

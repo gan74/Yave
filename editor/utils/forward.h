@@ -53,6 +53,7 @@ class Logs;
 class MainWindow;
 class MaterialData;
 class MaterialEditor;
+class MaterialPreview;
 class MemoryInfo;
 class MenuBar;
 class Notifications;

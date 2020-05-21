@@ -23,6 +23,8 @@ SOFTWARE.
 #include "Device.h"
 #include "PhysicalDevice.h"
 
+#include <yave/device/extentions/RayTracing.h>
+
 #include <y/concurrent/concurrent.h>
 
 #include <yave/graphics/commands/CmdBufferBase.h>
@@ -116,10 +118,13 @@ static VkDevice create_device(
 	auto extensions = core::vector_with_capacity<const char*>(4);
 	extensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		// Vulkan 1.1
 		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
 	};
 
 	try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical);
+	try_enable_extension(extensions, RayTracing::extension_name(), physical);
 
 
 	VkPhysicalDeviceFeatures required = {};
@@ -193,8 +198,6 @@ Device::ScopedDevice::~ScopedDevice() {
 }
 
 
-
-
 Device::Device(Instance& instance) :
 		_instance(instance),
 		_physical(instance),
@@ -205,8 +208,13 @@ Device::Device(Instance& instance) :
 		_lifetime_manager(this),
 		_queues(create_queues(this, _queue_families)),
 		_samplers(create_samplers(this)),
-		_descriptor_set_allocator(this),
-		_resources(this) {
+		_descriptor_set_allocator(this) {
+
+	if(is_extension_supported(RayTracing::extension_name(), _physical.vk_physical_device())) {
+		_extensions.raytracing = std::make_unique<RayTracing>(this);
+	}
+
+	_resources.init(this);
 
 	print_properties(_properties);
 }
@@ -291,10 +299,12 @@ ThreadDevicePtr Device::thread_device() const {
 }
 
 const DeviceResources& Device::device_resources() const {
+	y_debug_assert(_resources.device() == this);
 	return _resources;
 }
 
 DeviceResources& Device::device_resources() {
+	y_debug_assert(_resources.device() == this);
 	return _resources;
 }
 
@@ -329,6 +339,10 @@ CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() con
 
 const DebugUtils* Device::debug_utils() const {
 	return _instance.debug_utils();
+}
+
+const RayTracing* Device::ray_tracing() const {
+	return _extensions.raytracing.get();
 }
 
 }

@@ -84,7 +84,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
 
 
 
-const char* DebugUtils::name() {
+const char* DebugUtils::extension_name() {
 	return VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 }
 

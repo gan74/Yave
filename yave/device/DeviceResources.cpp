@@ -140,12 +140,23 @@ static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integr
 DeviceResources::DeviceResources() {
 }
 
-DeviceResources::DeviceResources(DevicePtr dptr) :
-		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
-		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
-		_material_templates(std::make_unique<MaterialTemplate[]>(template_count)),
-		_textures(std::make_unique<AssetPtr<Texture>[]>(texture_count)),
-		_lock(std::make_unique<std::mutex>()) {
+DeviceResources::DeviceResources(DevicePtr dptr) {
+	init(dptr);
+}
+
+void DeviceResources::init(DevicePtr dptr) {
+	y_always_assert(!is_init(), "DeviceResources has already been initialized");
+
+	_device = dptr;
+
+#ifdef Y_DEBUG
+	_lock = std::make_unique<std::recursive_mutex>();
+#endif
+
+	_spirv = std::make_unique<SpirVData[]>(spirv_count);
+	_computes = std::make_unique<ComputeProgram[]>(compute_count);
+	_material_templates = std::make_unique<MaterialTemplate[]>(template_count);
+	_textures = std::make_unique<AssetPtr<Texture>[]>(texture_count);
 
 	// Load textures here because they won't change and might get packed into descriptor sets that won't be reloaded (in the case of material defaults)
 	for(usize i = 0; i != texture_count; ++i) {
@@ -153,7 +164,7 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 		_textures[i] = make_asset<Texture>(dptr, ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
 	}
 
-	load_resources(dptr);
+	load_resources();
 }
 
 DeviceResources::DeviceResources(DeviceResources&& other) {
@@ -168,12 +179,24 @@ DeviceResources& DeviceResources::operator=(DeviceResources&& other) {
 DeviceResources::~DeviceResources() {
 }
 
+bool DeviceResources::is_init() const {
+	return _device;
+}
+
 void DeviceResources::swap(DeviceResources& other) {
+	std::swap(_device, other._device);
+
 #ifdef Y_DEBUG
 	const auto lock = y_profile_unique_lock(*_lock);
+	std::unique_lock<std::recursive_mutex> other_lock;
+	if(other._lock) {
+		other_lock = y_profile_unique_lock(*other._lock);
+	}
+
 	std::swap(other._lock, _lock);
 	std::swap(other._programs, _programs);
 #endif
+
 	std::swap(other._spirv, _spirv);
 	std::swap(other._computes, _computes);
 	std::swap(other._material_templates, _material_templates);
@@ -185,17 +208,19 @@ void DeviceResources::swap(DeviceResources& other) {
 	std::swap(other._brdf_lut, _brdf_lut);
 }
 
-void DeviceResources::load_resources(DevicePtr dptr) {
+void DeviceResources::load_resources() {
+	y_always_assert(is_init(), "DeviceResources has not been initialized");
+
 	for(usize i = 0; i != spirv_count; ++i) {
 		_spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
 	}
 
 	for(usize i = 0; i != compute_count; ++i) {
-		_computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[i]));
+		_computes[i] = ComputeProgram(ComputeShader(device(), _spirv[i]));
 	}
 
 	for(usize i = 0; i != compute_count; ++i) {
-		_computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[i]));
+		_computes[i] = ComputeProgram(ComputeShader(device(), _spirv[i]));
 	}
 
 	for(usize i = 0; i != template_count; ++i) {
@@ -207,7 +232,7 @@ void DeviceResources::load_resources(DevicePtr dptr) {
 				.set_cull_mode(data.cull_mode)
 				.set_blend_mode(data.blend_mode)
 			;
-		_material_templates[i] = MaterialTemplate(dptr, std::move(template_data));
+		_material_templates[i] = MaterialTemplate(device(), std::move(template_data));
 	}
 
 	{
@@ -217,60 +242,70 @@ void DeviceResources::load_resources(DevicePtr dptr) {
 
 	{
 		_meshes = std::make_unique<AssetPtr<StaticMesh>[]>(usize(MaxMeshes));
-		_meshes[0] = make_asset<StaticMesh>(dptr, cube_mesh_data());
-		_meshes[1] = make_asset<StaticMesh>(dptr, sphere_mesh_data());
-		_meshes[2] = make_asset<StaticMesh>(dptr, simple_sphere_mesh_data());
-		_meshes[3] = make_asset<StaticMesh>(dptr, sweep_mesh_data());
+		_meshes[0] = make_asset<StaticMesh>(device(), cube_mesh_data());
+		_meshes[1] = make_asset<StaticMesh>(device(), sphere_mesh_data());
+		_meshes[2] = make_asset<StaticMesh>(device(), simple_sphere_mesh_data());
+		_meshes[3] = make_asset<StaticMesh>(device(), sweep_mesh_data());
 	}
 
-	_brdf_lut = create_brdf_lut(dptr, operator[](BRDFIntegratorProgram));
+	_brdf_lut = create_brdf_lut(device(), operator[](BRDFIntegratorProgram));
 	_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
 	_empty_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
 }
 
 
 DevicePtr DeviceResources::device() const {
-	return _brdf_lut.device();
+	y_debug_assert(is_init());
+	return _device;
 }
 
 TextureView DeviceResources::brdf_lut() const {
+	y_debug_assert(is_init());
 	return _brdf_lut;
 }
 
 const std::shared_ptr<IBLProbe>& DeviceResources::ibl_probe() const {
+	y_debug_assert(is_init());
 	return _probe;
 }
 
 const std::shared_ptr<IBLProbe>& DeviceResources::empty_probe() const {
+	y_debug_assert(is_init());
 	return _empty_probe;
 }
 
 const SpirVData& DeviceResources::operator[](SpirV i) const {
+	y_debug_assert(is_init());
 	y_debug_assert(usize(i) < usize(MaxSpirV));
 	return _spirv[usize(i)];
 }
 
 const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {
+	y_debug_assert(is_init());
 	y_debug_assert(usize(i) < usize(MaxComputePrograms));
 	return _computes[usize(i)];
 }
 
 const MaterialTemplate* DeviceResources::operator[](MaterialTemplates i) const {
+	y_debug_assert(is_init());
 	y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
 	return &_material_templates[usize(i)];
 }
 
 const AssetPtr<Texture>& DeviceResources::operator[](Textures i) const {
+	y_debug_assert(is_init());
 	y_debug_assert(usize(i) < usize(MaxTextures));
 	return _textures[usize(i)];
 }
 
 const AssetPtr<Material>& DeviceResources::operator[](Materials i) const {
+	y_debug_assert(is_init());
 	y_debug_assert(usize(i) < usize(MaxMaterials));
 	return _materials[usize(i)];
 }
 
 const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
+	y_debug_assert(is_init());
 	y_debug_assert(usize(i) < usize(MaxMeshes));
 	return _meshes[usize(i)];
 }
@@ -278,6 +313,7 @@ const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
 
 #ifdef Y_DEBUG
 const ComputeProgram& DeviceResources::program_from_file(std::string_view file) const {
+	y_debug_assert(is_init());
 	const auto lock = y_profile_unique_lock(*_lock);
 	auto& prog = _programs[file];
 	if(!prog) {
@@ -289,17 +325,17 @@ const ComputeProgram& DeviceResources::program_from_file(std::string_view file) 
 #endif
 
 void DeviceResources::reload() {
+	y_debug_assert(is_init());
 	y_profile();
-	DevicePtr dptr = device();
-	dptr->wait_all_queues();
+	device()->wait_all_queues();
 
 #ifdef Y_DEBUG
 	const auto lock = y_profile_unique_lock(*_lock);
 	_programs.clear();
 #endif
 
-	load_resources(dptr);
-	log_msg("Resources reloaded.");
+	load_resources();
+	log_msg("Resources reloaded");
 }
 
 }

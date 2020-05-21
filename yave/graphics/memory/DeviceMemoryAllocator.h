@@ -46,6 +46,7 @@ class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
 
 		DeviceMemory alloc(VkImage image);
 		DeviceMemory alloc(VkBuffer buffer, MemoryType type);
+		DeviceMemory alloc(VkMemoryRequirements reqs, MemoryType type);
 
 		auto heaps() const {
 			return core::Range(_heaps.begin(), _heaps.end());
@@ -59,7 +60,6 @@ class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
 		static usize heap_size_for_type(MemoryType type);
 		static usize dedicated_threshold_for_type(MemoryType type);
 
-		DeviceMemory alloc(VkMemoryRequirements reqs, MemoryType type);
 		DeviceMemory dedicated_alloc(VkMemoryRequirements reqs, MemoryType type);
 
 		core::ExternalHashMap<HeapType, core::Vector<std::unique_ptr<DeviceMemoryHeap>>> _heaps;
