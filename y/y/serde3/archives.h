@@ -704,14 +704,14 @@ class ReadableArchive final {
 				if(header.type.type_hash != check.type.type_hash) {
 					return core::Err(Error(ErrorType::SignatureError, object.name.data()));
 				}
-				return deserialize_members<true>(object.object);
+				return deserialize_members<true>(object.object, header);
 			} else {
-				return deserialize_members<force_safe>(object.object);
+				return deserialize_members<force_safe>(object.object, header);
 			}
 		}
 
 		template<bool Safe, typename T>
-		Result deserialize_members(T& object) {
+		Result deserialize_members(T& object, const detail::ObjectHeader& header) {
 			ObjectData data;
 			return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
 		}
@@ -723,8 +723,8 @@ class ReadableArchive final {
 
 			if constexpr(I < sizeof...(Args)) {
 				if constexpr(Safe) {
-					const auto& mem = std::get<I>(members);
-					return core::Err(Error(ErrorType::SignatureError, mem.name.data()));
+					const auto& member = std::get<I>(members);
+					return core::Err(Error(ErrorType::SignatureError, member.name.data()));
 				}
 				/*if constexpr(Safe) {
 					bool found = false;

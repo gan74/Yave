@@ -26,6 +26,11 @@ SOFTWARE.
 
 #include <array>
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winit-list-lifetime"
+#endif
+
 namespace y {
 namespace core {
 
@@ -128,5 +133,9 @@ using Span = MutableSpan<const T>;
 
 }
 }
+
+#ifdef  __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 #endif // Y_CORE_SPAN_H
