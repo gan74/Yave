@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef Y_CONCURRENT_STATICTHREADPOOL_H
 #define Y_CONCURRENT_STATICTHREADPOOL_H
 
-#include <y/core/Functor.h>
 #include <y/core/Vector.h>
 
 #include "concurrent.h"
@@ -58,7 +57,7 @@ class DependencyGroup {
 
 class StaticThreadPool : NonMovable {
 	private:
-		using Func = core::Function<void()>;
+		using Func = std::function<void()>;
 
 		struct FuncData {
 			FuncData(Func func, DependencyGroup wait, DependencyGroup done = DependencyGroup());

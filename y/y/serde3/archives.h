@@ -712,6 +712,8 @@ class ReadableArchive final {
 
 		template<bool Safe, typename T>
 		Result deserialize_members(T& object, const detail::ObjectHeader& header) {
+			unused(header);
+			Y_TODO(read and use header for safe deser)
 			ObjectData data;
 			return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
 		}

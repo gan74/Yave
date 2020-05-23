@@ -51,7 +51,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		bool device_resources_reload_requested() const;
 
 
-		void defer(core::Function<void()> func);
+		void defer(std::function<void()> func);
 		void flush_deferred();
 
 		void log_message(std::string_view msg, Log type);
@@ -97,7 +97,7 @@ class EditorContext : NonMovable, public DeviceLinked {
 		std::unique_ptr<FileSystemModel> _filesystem;
 
 		std::mutex _deferred_lock;
-		core::Vector<core::Function<void()>> _deferred;
+		core::Vector<std::function<void()>> _deferred;
 		bool _is_flushing_deferred = false;
 
 		EditorResources _resources;
