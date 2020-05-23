@@ -31,6 +31,12 @@ namespace y {
 namespace ecs {
 
 class EntityWorld : NonCopyable {
+
+	struct ComponentCallBacks {
+		core::Vector<std::function<void(const EntityWorld&, EntityID)>> on_create;
+		core::Vector<std::function<void(const EntityWorld&, EntityID)>> on_remove;
+	};
+
 	public:
 		bool exists(EntityID id) const;
 
@@ -91,7 +97,8 @@ class EntityWorld : NonCopyable {
 							types << info.type_id;
 						}
 					}
-					add_type_indexes<0, Args...>(types);
+
+					for_each_type_index<0, Args...>([&](u32 type_id) { types.emplace_back(type_id); });
 					sort(types.begin(), types.end());
 				}
 
@@ -110,8 +117,58 @@ class EntityWorld : NonCopyable {
 					}
 				}
 			}
+
 			y_debug_assert(new_arc->component_count() == types.size());
 			transfer(data, new_arc);
+
+			for_each_type_index<0, Args...>([&](u32 type_id) {
+				on_create(type_id, id);
+			});
+		}
+
+		template<typename T>
+		void remove_component(EntityID id) {
+			remove_components<T>(id);
+		}
+
+		template<typename... Args>
+		void remove_components(EntityID id) {
+			check_exists(id);
+
+			EntityData& data = _entities[id.index()];
+			Archetype* old_arc = data.archetype;
+			if(!old_arc) {
+				return;
+			}
+
+			Archetype* new_arc = nullptr;
+			core::Vector types = core::vector_with_capacity<u32>(old_arc->component_count());
+			{
+
+				for(const ComponentRuntimeInfo& info : old_arc->component_infos()) {
+					if(!has_type<0, Args...>(info.type_id)) {
+						types << info.type_id;
+					}
+				}
+
+				for(const auto& arc : _archetypes) {
+					if(arc->_info.matches_type_indexes(types)) {
+						new_arc = arc.get();
+						break;
+					}
+				}
+
+				if(!new_arc) {
+					new_arc = _archetypes.emplace_back(old_arc->archetype_with<Args...>()).get();
+				}
+			}
+
+			y_debug_assert(new_arc->component_count() == types.size());
+			transfer(data, new_arc);
+
+			for_each_type_index<0, Args...>([&](u32 type_id) {
+				on_remove(type_id, id);
+			});
 		}
 
 
@@ -126,15 +183,28 @@ class EntityWorld : NonCopyable {
 		Archetype* find_or_create_archetype(const ArchetypeRuntimeInfo& info);
 		void transfer(EntityData& data, Archetype* to);
 
+		ComponentCallBacks* component_callbacks(u32 type_id);
+		void on_create(u32 type_id, EntityID id);
+		void on_remove(u32 type_id, EntityID id);
 
-		template<usize I, typename... Args>
-		static void add_type_indexes(core::Vector<u32>& types) {
-			static_assert(sizeof...(Args));
+		template<usize I, typename... Args, typename F>
+		static void for_each_type_index(F&& func) {
 			if constexpr(I < sizeof...(Args)) {
 				using type = std::tuple_element_t<I, std::tuple<Args...>>;
-				types << type_index<type>();
-				add_type_indexes<I + 1, Args...>(types);
+				func(type_index<type>());
+				for_each_type_index<I + 1, Args...>(func);
 			}
+		}
+
+		template<usize I, typename... Args>
+		static bool has_type(u32 type_id) {
+			if constexpr(I < sizeof...(Args)) {
+				using type = std::tuple_element_t<I, std::tuple<Args...>>;
+				if(type_id == type_index<type>()) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		// Not const correct, do not expose publicly
@@ -159,6 +229,9 @@ class EntityWorld : NonCopyable {
 
 		core::Vector<EntityData> _entities;
 		core::Vector<std::unique_ptr<Archetype>> _archetypes;
+
+		Y_TODO(callbacks wont be called when world is destroyed)
+		core::Vector<ComponentCallBacks> _component_callbacks;
 };
 
 }

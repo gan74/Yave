@@ -97,7 +97,7 @@ bool ArchetypeRuntimeInfo::matches_type_indexes(core::Span<u32> type_indexes) co
 	if(type_indexes.size() != _component_count) {
 		return false;
 	}
-	for(usize i = 0; i != type_indexes.size(); ++i) {
+	for(usize i = 0; i != _component_count; ++i) {
 		if(type_indexes[i] != _component_infos[i].type_id) {
 			return false;
 		}

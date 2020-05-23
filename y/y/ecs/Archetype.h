@@ -127,7 +127,6 @@ class Archetype : NonMovable {
 		core::Vector<ComponentSerializerWrapper> create_component_serializer_wrappers() const;
 		ComponentSerializerList create_serializer_list() const;
 
-
 		ArchetypeRuntimeInfo _info;
 
 		core::Vector<void*> _chunk_data;

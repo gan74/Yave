@@ -41,6 +41,11 @@ EntityID EntityWorld::create_entity() {
 EntityID EntityWorld::create_entity(const ArchetypeRuntimeInfo& archetype) {
 	const EntityID id = create_entity();
 	transfer(_entities[id.index()], find_or_create_archetype(archetype));
+
+	for(const ComponentRuntimeInfo& info : archetype.component_infos()) {
+		on_create(info.type_id, id);
+	}
+
 	return id;
 }
 
@@ -51,8 +56,12 @@ void EntityWorld::remove_entity(EntityID id) {
 	if(!data.archetype) {
 		data.invalidate();
 	} else {
+		for(const ComponentRuntimeInfo& info : data.archetype->component_infos()) {
+			on_remove(info.type_id, id);
+		}
 		data.archetype->remove_entity(data);
 	}
+
 	y_debug_assert(!data.archetype);
 	y_debug_assert(!data.is_valid());
 }
@@ -87,6 +96,26 @@ void EntityWorld::transfer(EntityData& data, Archetype* to) {
 
 	y_debug_assert(data.archetype == to);
 	y_debug_assert(exists(data.id));
+}
+
+EntityWorld::ComponentCallBacks* EntityWorld::component_callbacks(u32 type_id) {
+	return type_id < _component_callbacks.size() ? &_component_callbacks[type_id] : nullptr;
+}
+
+void EntityWorld::on_create(u32 type_id, EntityID id) {
+	if(ComponentCallBacks* callbacks = component_callbacks(type_id)) {
+		for(const auto& on_create : callbacks->on_remove) {
+			on_create(*this, id);
+		}
+	}
+}
+
+void EntityWorld::on_remove(u32 type_id, EntityID id) {
+	if(ComponentCallBacks* callbacks = component_callbacks(type_id)) {
+		for(const auto& on_remove : callbacks->on_remove) {
+			on_remove(*this, id);
+		}
+	}
 }
 
 void EntityWorld::check_exists(EntityID id) const {
