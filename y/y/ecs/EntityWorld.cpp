@@ -98,20 +98,35 @@ void EntityWorld::transfer(EntityData& data, Archetype* to) {
 	y_debug_assert(exists(data.id));
 }
 
-EntityWorld::ComponentCallBacks* EntityWorld::component_callbacks(u32 type_id) {
+
+void  EntityWorld::add_on_create(u32 type_id, CallbackFunc func) {
+	while(_component_callbacks.size() <= type_id) {
+		_component_callbacks.emplace_back();
+	}
+	_component_callbacks[type_id].on_create.emplace_back(std::move(func));
+}
+
+void  EntityWorld::add_on_remove(u32 type_id, CallbackFunc func) {
+	while(_component_callbacks.size() <= type_id) {
+		_component_callbacks.emplace_back();
+	}
+	_component_callbacks[type_id].on_remove.emplace_back(std::move(func));
+}
+
+const EntityWorld::ComponentCallBacks* EntityWorld::component_callbacks(u32 type_id) const {
 	return type_id < _component_callbacks.size() ? &_component_callbacks[type_id] : nullptr;
 }
 
-void EntityWorld::on_create(u32 type_id, EntityID id) {
-	if(ComponentCallBacks* callbacks = component_callbacks(type_id)) {
-		for(const auto& on_create : callbacks->on_remove) {
+void EntityWorld::on_create(u32 type_id, EntityID id) const {
+	if(const ComponentCallBacks* callbacks = component_callbacks(type_id)) {
+		for(const auto& on_create : callbacks->on_create) {
 			on_create(*this, id);
 		}
 	}
 }
 
-void EntityWorld::on_remove(u32 type_id, EntityID id) {
-	if(ComponentCallBacks* callbacks = component_callbacks(type_id)) {
+void EntityWorld::on_remove(u32 type_id, EntityID id) const {
+	if(const ComponentCallBacks* callbacks = component_callbacks(type_id)) {
 		for(const auto& on_remove : callbacks->on_remove) {
 			on_remove(*this, id);
 		}
@@ -121,6 +136,21 @@ void EntityWorld::on_remove(u32 type_id, EntityID id) {
 void EntityWorld::check_exists(EntityID id) const {
 	if(!exists(id)) {
 		y_fatal("Entity doesn't exists.");
+	}
+}
+
+void EntityWorld::post_deserialize() const {
+	if(_component_callbacks.is_empty()) {
+		return;
+	}
+	Y_TODO(This seems very slow...)
+	for(const EntityID& id : entity_ids()) {
+		const EntityData& data = _entities[id.index()];
+		if(data.archetype) {
+			for(const ComponentRuntimeInfo& info : data.archetype->component_infos()) {
+				on_create(info.type_id, id);
+			}
+		}
 	}
 }
 

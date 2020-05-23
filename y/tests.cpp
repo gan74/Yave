@@ -122,6 +122,7 @@ template<typename T>
 		return {id, world.component<T>(id)};
 	};
 	auto non_null = [](const std::pair<EntityID, T*>& p) -> bool {
+		//log_msg(fmt("testing entity %, for component % (result = %)", p.first.index(), ct_type_name<T>(), p.second));
 		return p.second;
 	};
 	auto deref = [](const std::pair<EntityID, T*>& p) -> std::pair<EntityID, T&> {
@@ -173,8 +174,8 @@ struct M {
 static_assert(serde3::is_property_v<decltype(M::prop(nullptr))>);
 
 int main() {
-
 	core::result::break_on_error = true;
+	y_debug_assert([]() { log_msg("Debug asserts enabled", Log::Debug); return true; }());
 
 #if 0
 	std::array ms = {M{1}, M{2}};
@@ -203,6 +204,7 @@ int main() {
 		world.add_component<Tester>(id);
 		world.add_component<float>(id);
 	}
+	world.add_on_create<Tester>([](const EntityWorld&, EntityID id) { log_msg(fmt("Tester added to entity #%", id.index())); });
 	{
 		EntityID id = world.create_entity();
 		world.add_components<Tester, int>(id);
@@ -219,6 +221,7 @@ int main() {
 
 	try {
 		EntityWorld new_world;
+		new_world.add_on_create<Tester>([](const EntityWorld&, EntityID id) { log_msg(fmt("Tester added to new world's entity #%", id.index())); });
 		auto file = io2::Buffer();
 		{
 			log_msg("Serialization...");

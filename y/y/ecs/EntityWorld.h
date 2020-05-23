@@ -32,9 +32,11 @@ namespace ecs {
 
 class EntityWorld : NonCopyable {
 
+	using CallbackFunc = std::function<void(const EntityWorld&, EntityID)>;
+
 	struct ComponentCallBacks {
-		core::Vector<std::function<void(const EntityWorld&, EntityID)>> on_create;
-		core::Vector<std::function<void(const EntityWorld&, EntityID)>> on_remove;
+		core::Vector<CallbackFunc> on_create;
+		core::Vector<CallbackFunc> on_remove;
 	};
 
 	public:
@@ -48,7 +50,6 @@ class EntityWorld : NonCopyable {
 		const Archetype* archetype(EntityID id) const;
 
 		core::Span<std::unique_ptr<Archetype>> archetypes() const;
-
 
 
 		template<typename... Args>
@@ -171,8 +172,19 @@ class EntityWorld : NonCopyable {
 			});
 		}
 
+		template<typename T>
+		void add_on_create(CallbackFunc func) {
+			add_on_create(type_index<T>(), std::move(func));
+		}
+
+		template<typename T>
+		void add_on_remove(CallbackFunc func) {
+			add_on_remove(type_index<T>(), std::move(func));
+		}
+
 
 		y_serde3(_entities, _archetypes)
+		void post_deserialize() const;
 
 	private:
 		friend class ComponentInfoSerializerBase;
@@ -183,9 +195,12 @@ class EntityWorld : NonCopyable {
 		Archetype* find_or_create_archetype(const ArchetypeRuntimeInfo& info);
 		void transfer(EntityData& data, Archetype* to);
 
-		ComponentCallBacks* component_callbacks(u32 type_id);
-		void on_create(u32 type_id, EntityID id);
-		void on_remove(u32 type_id, EntityID id);
+		void add_on_create(u32 type_id, CallbackFunc func);
+		void add_on_remove(u32 type_id, CallbackFunc func);
+
+		const ComponentCallBacks* component_callbacks(u32 type_id) const;
+		void on_create(u32 type_id, EntityID id) const;
+		void on_remove(u32 type_id, EntityID id) const;
 
 		template<usize I, typename... Args, typename F>
 		static void for_each_type_index(F&& func) {
@@ -218,11 +233,11 @@ class EntityWorld : NonCopyable {
 			if(!data.archetype) {
 				return nullptr;
 			}
-			const auto& view = data.archetype->view<T>();
+			const auto view = data.archetype->components<T>();
 			if(view.is_empty()) {
 				return nullptr;
 			}
-			return &std::get<0>(view[data.archetype_index]);
+			return &view[data.archetype_index];
 		}
 
 

@@ -775,10 +775,11 @@ class ReadableArchive final {
 		static void post_deserialize_one(T& t, Args&&... args) {
 			unused(t);
 
+			constexpr bool has_args = sizeof...(Args) != 0;
 			if constexpr(has_serde3_post_deser_v<T>) {
 				t.post_deserialize();
 			}
-			if constexpr(has_serde3_post_deser_v<T, Args...>) {
+			if constexpr(has_args && has_serde3_post_deser_v<T, Args...>) {
 				t.post_deserialize(args...);
 			}
 
@@ -786,7 +787,7 @@ class ReadableArchive final {
 				if constexpr(has_serde3_post_deser_poly_v<T>) {
 					t.post_deserialize_poly();
 				}
-				if constexpr(has_serde3_post_deser_poly_v<T, Args...>) {
+				if constexpr(has_args && has_serde3_post_deser_poly_v<T, Args...>) {
 					t.post_deserialize_poly(args...);
 				}
 			}
