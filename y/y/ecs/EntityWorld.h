@@ -93,7 +93,7 @@ class EntityWorld : NonCopyable {
 				}
 
 				for(const auto& arc : _archetypes) {
-					if(arc->matches_type_indexes(types)) {
+					if(arc->_info.matches_type_indexes(types)) {
 						new_arc = arc.get();
 						break;
 					}
@@ -107,7 +107,7 @@ class EntityWorld : NonCopyable {
 					}
 				}
 			}
-			y_debug_assert(new_arc->_component_count == types.size());
+			y_debug_assert(new_arc->component_count() == types.size());
 			transfer(data, new_arc);
 		}
 
