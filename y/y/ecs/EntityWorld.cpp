@@ -38,6 +38,12 @@ EntityID EntityWorld::create_entity() {
 	return data.id = EntityID(_entities.size() - 1);
 }
 
+EntityID EntityWorld::create_entity(const ArchetypeRuntimeInfo& archetype) {
+	const EntityID id = create_entity();
+	transfer(_entities[id.index()], find_or_create_archetype(archetype));
+	return id;
+}
+
 void EntityWorld::remove_entity(EntityID id) {
 	check_exists(id);
 
@@ -58,6 +64,15 @@ const Archetype* EntityWorld::archetype(EntityID id) const {
 
 core::Span<std::unique_ptr<Archetype>> EntityWorld::archetypes() const {
 	return _archetypes;
+}
+
+Archetype* EntityWorld::find_or_create_archetype(const ArchetypeRuntimeInfo& info) {
+	for(auto&& arc : _archetypes) {
+		if(arc->runtime_info() == info) {
+			return arc.get();
+		}
+	}
+	return _archetypes.emplace_back(Archetype::create(ArchetypeRuntimeInfo(info))).get();
 }
 
 void EntityWorld::transfer(EntityData& data, Archetype* to) {

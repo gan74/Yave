@@ -33,6 +33,11 @@ ArchetypeRuntimeInfo::ArchetypeRuntimeInfo(usize component_count) :
 		_component_count(component_count) {
 }
 
+ArchetypeRuntimeInfo::ArchetypeRuntimeInfo(const ArchetypeRuntimeInfo& other) : ArchetypeRuntimeInfo(other._component_count) {
+	_chunk_byte_size = other._chunk_byte_size;
+	std::copy_n(other._component_infos.get(), _component_count, _component_infos.get());
+}
+
 usize ArchetypeRuntimeInfo::component_count() const {
 	return _component_count;
 }
@@ -45,10 +50,22 @@ core::Span<ComponentRuntimeInfo> ArchetypeRuntimeInfo::component_infos() const {
 	return core::Span<ComponentRuntimeInfo>(_component_infos.get(), _component_count);
 }
 
+const ComponentRuntimeInfo* ArchetypeRuntimeInfo::begin() const {
+	return _component_infos.get();
+}
+
+const ComponentRuntimeInfo* ArchetypeRuntimeInfo::end() const {
+	return _component_infos.get() + _component_count;
+}
+
+bool ArchetypeRuntimeInfo::operator<(const ArchetypeRuntimeInfo& other) const {
+	const auto less = [](const ComponentRuntimeInfo& a, const ComponentRuntimeInfo& b) { return a.type_id < b.type_id; };
+	return std::lexicographical_compare(begin(), end(), other.begin(), other.end(), less);
+}
+
 bool ArchetypeRuntimeInfo::operator==(const ArchetypeRuntimeInfo& other) const {
 	const auto eq = [](const ComponentRuntimeInfo& a, const ComponentRuntimeInfo& b) { return a.type_id == b.type_id; };
-	return _component_count == other._component_count &&
-			std::equal(_component_infos.get(), _component_infos.get() + _component_count, other._component_infos.get(), eq);
+	return _component_count == other._component_count && std::equal(begin(), end(), other.begin(), eq);
 }
 
 bool ArchetypeRuntimeInfo::operator!=(const ArchetypeRuntimeInfo& other) const {
@@ -58,8 +75,8 @@ bool ArchetypeRuntimeInfo::operator!=(const ArchetypeRuntimeInfo& other) const {
 
 
 void ArchetypeRuntimeInfo::sort_component_infos() {
-	const auto cmp = [](const ComponentRuntimeInfo& a, const ComponentRuntimeInfo& b) { return a.type_id < b.type_id; };
-	sort(_component_infos.get(), _component_infos.get() + _component_count, cmp);
+	const auto less = [](const ComponentRuntimeInfo& a, const ComponentRuntimeInfo& b) { return a.type_id < b.type_id; };
+	sort(_component_infos.get(), _component_infos.get() + _component_count, less);
 
 	y_debug_assert(_chunk_byte_size == 0);
 	for(usize i = 0; i != _component_count; ++i) {

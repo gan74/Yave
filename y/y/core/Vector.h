@@ -85,6 +85,7 @@ class Vector : ResizePolicy, Allocator {
 
 		Vector() = default;
 
+		Y_TODO(make explicit ?)
 		Vector(const Vector& other) : Vector(other.begin(), other.end()) {
 		}
 

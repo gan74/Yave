@@ -36,6 +36,10 @@ namespace ecs {
 class ArchetypeRuntimeInfo {
 	public:
 		ArchetypeRuntimeInfo() = default;
+		explicit ArchetypeRuntimeInfo(const ArchetypeRuntimeInfo& other);
+
+		ArchetypeRuntimeInfo(ArchetypeRuntimeInfo&&) = default;
+		ArchetypeRuntimeInfo& operator=(ArchetypeRuntimeInfo&&) = default;
 
 		template<typename... Args>
 		static ArchetypeRuntimeInfo create() {
@@ -56,12 +60,14 @@ class ArchetypeRuntimeInfo {
 
 		template<typename T>
 		const ComponentRuntimeInfo* info_or_null() const {
+			// The specs seems to imply that this is ok...
+			const auto cmp = [](const ComponentRuntimeInfo& info, u32 index) {
+				return info.type_id < index;
+			};
 			const u32 index = type_index<T>();
-			Y_TODO(binary search?)
-			for(usize i = 0; i != _component_count; ++i) {
-				if(_component_infos[i].type_id == index) {
-					return &_component_infos[i];
-				}
+			const ComponentRuntimeInfo* info = std::lower_bound(_component_infos.get(), _component_infos.get() + _component_count, index, cmp);
+			if(info->type_id == index) {
+				return info;
 			}
 			return nullptr;
 		}
@@ -74,12 +80,19 @@ class ArchetypeRuntimeInfo {
 			y_fatal("Unknown component type.");
 		}
 
+		template<typename T>
+		bool has_component() const {
+			return info_or_null<T>();
+		}
 
 		usize component_count() const;
 		usize chunk_byte_size() const;
 
 		core::Span<ComponentRuntimeInfo> component_infos() const;
+		const ComponentRuntimeInfo* begin() const;
+		const ComponentRuntimeInfo* end() const;
 
+		bool operator<(const ArchetypeRuntimeInfo& other) const;
 		bool operator==(const ArchetypeRuntimeInfo& other) const;
 		bool operator!=(const ArchetypeRuntimeInfo& other) const;
 

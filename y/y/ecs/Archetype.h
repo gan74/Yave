@@ -31,11 +31,18 @@ namespace y {
 namespace ecs {
 
 class Archetype : NonMovable {
+	static memory::PolymorphicAllocatorBase* default_allocator() {
+		return memory::global_allocator();
+	}
 
 	public:
 		template<typename... Args>
-		static std::unique_ptr<Archetype> create() {
-			return std::make_unique<Archetype>(ArchetypeRuntimeInfo::create<Args...>());
+		static std::unique_ptr<Archetype> create(memory::PolymorphicAllocatorBase* allocator = default_allocator()) {
+			return std::make_unique<Archetype>(ArchetypeRuntimeInfo::create<Args...>(), allocator);
+		}
+
+		static std::unique_ptr<Archetype> create(ArchetypeRuntimeInfo info, memory::PolymorphicAllocatorBase* allocator = default_allocator()) {
+			return std::make_unique<Archetype>(std::move(info), allocator);
 		}
 
 		template<typename... Args>
@@ -49,6 +56,7 @@ class Archetype : NonMovable {
 		usize entity_count() const;
 		usize component_count() const;
 
+		const ArchetypeRuntimeInfo& runtime_info() const;
 		core::Span<ComponentRuntimeInfo> component_infos() const;
 
 		void add_entity(EntityData& data);
@@ -76,11 +84,9 @@ class Archetype : NonMovable {
 
 	public:
 		// This can not be private because of make_unique
-		Archetype(ArchetypeRuntimeInfo info = ArchetypeRuntimeInfo(), memory::PolymorphicAllocatorBase* allocator = memory::global_allocator());
+		Archetype(ArchetypeRuntimeInfo info = ArchetypeRuntimeInfo(), memory::PolymorphicAllocatorBase* allocator = default_allocator());
 
-		y_serde3(_info,
-				 serde3::property(this, &Archetype::entity_count,		&Archetype::set_entity_count),
-				 create_serializer_list())
+		y_serde3(_info, serde3::property(this, &Archetype::entity_count, &Archetype::set_entity_count), create_serializer_list())
 
 	private:
 		friend class EntityWorld;
@@ -89,9 +95,10 @@ class Archetype : NonMovable {
 		void add_entities(core::MutableSpan<EntityData> entities, bool update_data);
 
 		void transfer_to(Archetype* other, core::MutableSpan<EntityData> entities);
+		void remove_entity(EntityData& data);
+
 		void add_chunk_if_needed();
 		void add_chunk();
-		void remove_entity(EntityData& data);
 
 		template<usize I, typename... Args>
 		[[nodiscard]] bool build_iterator(ComponentIterator<true, Args...>& it) {

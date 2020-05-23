@@ -75,6 +75,10 @@ usize Archetype::component_count() const {
 	return _info.component_count();
 }
 
+const ArchetypeRuntimeInfo& Archetype::runtime_info() const {
+	return _info;
+}
+
 core::Span<ComponentRuntimeInfo> Archetype::component_infos() const {
 	return _info.component_infos();
 }

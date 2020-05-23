@@ -35,6 +35,8 @@ class EntityWorld : NonCopyable {
 		bool exists(EntityID id) const;
 
 		EntityID create_entity();
+		EntityID create_entity(const ArchetypeRuntimeInfo& archetype);
+
 		void remove_entity(EntityID id);
 
 		const Archetype* archetype(EntityID id) const;
@@ -76,6 +78,7 @@ class EntityWorld : NonCopyable {
 		void add_components(EntityID id) {
 			check_exists(id);
 
+			Y_TODO(maybe replace with find_or_create_archetype, is it slower?)
 			EntityData& data = _entities[id.index()];
 			Archetype* old_arc = data.archetype;
 			Archetype* new_arc = nullptr;
@@ -120,6 +123,7 @@ class EntityWorld : NonCopyable {
 
 		void check_exists(EntityID id) const;
 
+		Archetype* find_or_create_archetype(const ArchetypeRuntimeInfo& info);
 		void transfer(EntityData& data, Archetype* to);
 
 
