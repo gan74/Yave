@@ -65,8 +65,8 @@ class ArchetypeRuntimeInfo {
 				return info.type_id < index;
 			};
 			const u32 index = type_index<T>();
-			const ComponentRuntimeInfo* info = std::lower_bound(_component_infos.get(), _component_infos.get() + _component_count, index, cmp);
-			if(info->type_id == index) {
+			const ComponentRuntimeInfo* info = std::lower_bound(begin(), end(), index, cmp);
+			if(info != end() && info->type_id == index) {
 				return info;
 			}
 			return nullptr;

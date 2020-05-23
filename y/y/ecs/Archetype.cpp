@@ -207,7 +207,7 @@ void Archetype::add_chunk() {
 	_chunk_data.emplace_back(chunk_byte_size ? _allocator.allocate(chunk_byte_size) : nullptr);
 
 #ifdef Y_DEBUG
-	std::memset(_chunk_data.last(), 0xBA, chunk_byte_size);
+	std::memset(_chunk_data.last(), 0x4C, chunk_byte_size);
 #endif
 }
 
