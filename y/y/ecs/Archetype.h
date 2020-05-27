@@ -104,7 +104,8 @@ class Archetype : NonMovable {
 		[[nodiscard]] bool build_iterator(ComponentIterator<true, Args...>& it) {
 			static_assert(sizeof...(Args));
 			if constexpr(I < sizeof...(Args)) {
-				using type = std::tuple_element_t<I, std::tuple<Args...>>;
+				using raw_type = std::tuple_element_t<I, std::tuple<Args...>>;
+				using type = remove_cvref_t<raw_type>;
 				const ComponentRuntimeInfo* type_info =  _info.info_or_null<type>();
 				if(!type_info) {
 					return false;
