@@ -86,7 +86,7 @@ class ComponentIterator {
 		using value_type = reference;
 		using pointer = std::remove_reference_t<value_type>*;
 
-		static_assert(!Tuple || component_count == 1);
+		static_assert(Tuple || component_count == 1);
 
 
 		ComponentIterator() = default;
@@ -189,7 +189,7 @@ class ComponentIterator {
 				return std::tie(chunk[item_index]);
 			} else {
 				return std::tuple_cat(std::tie(chunk[item_index]),
-				                      make_refence_tuple<I + 1>());
+									  make_refence_tuple<I + 1>());
 			}
 		}
 
@@ -230,7 +230,10 @@ struct SingleComponentView : SingleComponentViewRange<T> {
 	SingleComponentView() : SingleComponentView(ComponentIterator<false, T>({}), 0) {
 	}
 
-	SingleComponentView(ComponentIterator<false, T> beg, usize size) : SingleComponentViewRange<T>(std::move(beg), ComponentEndIterator(size)) {
+	SingleComponentView(ComponentIterator<false, T> beg, ComponentEndIterator end) : SingleComponentViewRange<T>(std::move(beg), end) {
+	}
+
+	SingleComponentView(ComponentIterator<false, T> beg, usize size) : SingleComponentView(std::move(beg), ComponentEndIterator(size)) {
 	}
 };
 
@@ -239,7 +242,10 @@ struct ComponentView : ComponentViewRange<Args...> {
 	ComponentView() : ComponentView(ComponentIterator<true, Args...>({}), 0) {
 	}
 
-	ComponentView(ComponentIterator<true, Args...> beg, usize size) : ComponentViewRange<Args...>(std::move(beg), ComponentEndIterator(size)) {
+	ComponentView(ComponentIterator<true, Args...> beg, ComponentEndIterator end) : ComponentViewRange<Args...>(std::move(beg), end) {
+	}
+
+	ComponentView(ComponentIterator<true, Args...> beg, usize size) : ComponentView(std::move(beg), ComponentEndIterator(size)) {
 	}
 };
 

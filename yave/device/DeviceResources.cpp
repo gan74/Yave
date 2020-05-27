@@ -144,8 +144,11 @@ DeviceResources::DeviceResources(DevicePtr dptr) :
 		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
 		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
 		_material_templates(std::make_unique<MaterialTemplate[]>(template_count)),
-		_textures(std::make_unique<AssetPtr<Texture>[]>(texture_count)),
-		_lock(std::make_unique<std::mutex>()) {
+		_textures(std::make_unique<AssetPtr<Texture>[]>(texture_count)) {
+
+#ifdef Y_DEBUG
+	_lock = std::make_unique<std::mutex>();
+#endif
 
 	// Load textures here because they won't change and might get packed into descriptor sets that won't be reloaded (in the case of material defaults)
 	for(usize i = 0; i != texture_count; ++i) {

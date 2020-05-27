@@ -54,7 +54,7 @@ class EntityWorld : NonCopyable {
 
 		template<typename... Args>
 		EntityView<Args...> view() {
-			return EntityView<Args...>(_archetypes);
+			return EntityView<Args...>(EntityIterator<Args...>(_archetypes));
 		}
 
 		auto entity_ids() const {

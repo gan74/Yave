@@ -174,7 +174,10 @@ struct M {
 static_assert(serde3::is_property_v<decltype(M::prop(nullptr))>);
 
 int main() {
+#ifdef Y_DEBUG
 	core::result::break_on_error = true;
+#endif
+
 	y_debug_assert([]() { log_msg("Debug asserts enabled", Log::Debug); return true; }());
 
 #if 0

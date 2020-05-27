@@ -55,7 +55,7 @@ class EntityIterator {
 
 		void advance() {
 			y_debug_assert(!_components.is_empty());
-			_components = core::Range(_components.begin() + 1, _components.end());
+			_components = decltype(_components)(_components.begin() + 1, _components.end());
 			if(_components.is_empty()) {
 				advance_archetype();
 			}
