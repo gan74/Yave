@@ -206,14 +206,16 @@ int main() {
 		world.add_component<int>(id);
 		world.add_component<Tester>(id);
 		world.add_component<float>(id);
+		*world.component<int>(id) = 19;
 	}
 	world.add_on_create<Tester>([](const EntityWorld&, EntityID id) { log_msg(fmt("Tester added to entity #%", id.index())); });
 	{
 		EntityID id = world.create_entity();
-		world.add_components<Tester, int>(id);
+		StaticArchetype<Tester, int> arc;
+		world.add_components(id, arc);
 		world.add_components<Tester, int>(world.create_entity());
-		world.add_components<Tester, int>(world.create_entity());
-		world.add_components<Tester, int>(world.create_entity());
+		world.add_components(world.create_entity(), arc);
+		world.add_components(world.create_entity(), arc);
 	}
 	{
 		EntityID id = world.create_entity();
@@ -268,8 +270,7 @@ int main() {
 			log_msg("  int:");
 			for(auto&& [id, i] : all_components<int>(world)) {
 				y_debug_assert(id.is_valid());
-				y_debug_assert(i == 0);
-				log_msg(fmt("    id: [%, %]", id.index(), id.version()));
+				log_msg(fmt("    id: [%, %] ==> %", id.index(), id.version(), i));
 			}
 		};
 

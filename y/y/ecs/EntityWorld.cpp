@@ -75,14 +75,43 @@ core::Span<std::unique_ptr<Archetype>> EntityWorld::archetypes() const {
 	return _archetypes;
 }
 
+#if 1
+static bool archetype_less(const std::unique_ptr<Archetype>& a, const std::unique_ptr<Archetype>& b) {
+	y_debug_assert(a && b);
+	return a->runtime_info() < b->runtime_info();
+}
+
 Archetype* EntityWorld::find_or_create_archetype(const ArchetypeRuntimeInfo& info) {
 	for(auto&& arc : _archetypes) {
 		if(arc->runtime_info() == info) {
 			return arc.get();
 		}
 	}
-	return _archetypes.emplace_back(Archetype::create(ArchetypeRuntimeInfo(info))).get();
+	return add_archetype(Archetype::create(ArchetypeRuntimeInfo(info)));
 }
+
+Archetype* EntityWorld::add_archetype(std::unique_ptr<Archetype> arc) {
+	y_debug_assert(std::is_sorted(_archetypes.begin(), _archetypes.end(), archetype_less));
+	y_defer(y_debug_assert(std::is_sorted(_archetypes.begin(), _archetypes.end(), archetype_less)));
+
+	Y_TODO(maybe cache type indexes to make this faster?)
+	const auto it = std::lower_bound(_archetypes.begin(), _archetypes.end(), arc, archetype_less);
+	return _archetypes.insert(it, std::move(arc))->get();
+}
+#else
+Archetype* EntityWorld::find_or_create_archetype(const ArchetypeRuntimeInfo& info) {
+	for(auto&& arc : _archetypes) {
+		if(arc->runtime_info() == info) {
+			return arc.get();
+		}
+	}
+	return add_archetype(Archetype::create(ArchetypeRuntimeInfo(info)));
+}
+
+Archetype* EntityWorld::add_archetype(std::unique_ptr<Archetype> arc) {
+	return _archetypes.emplace_back(std::move(arc)).get();
+}
+#endif
 
 void EntityWorld::transfer(EntityData& data, Archetype* to) {
 	y_debug_assert(exists(data.id));

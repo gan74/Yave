@@ -82,6 +82,11 @@ class Archetype : NonMovable {
 			return ComponentView<Args...>(begin, entity_count());
 		}
 
+		template<typename... Args>
+		ComponentView<Args...> view(StaticArchetype<Args...>) {
+			return view<Args...>();
+		}
+
 	public:
 		// This can not be private because of make_unique
 		Archetype(ArchetypeRuntimeInfo info = ArchetypeRuntimeInfo(), memory::PolymorphicAllocatorBase* allocator = default_allocator());

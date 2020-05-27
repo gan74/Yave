@@ -33,6 +33,11 @@ namespace ecs {
 Archetype::Archetype(ArchetypeRuntimeInfo info, memory::PolymorphicAllocatorBase* allocator) :
 		_info(std::move(info)),
 		_allocator(allocator) {
+
+	y_debug_assert([this] {
+		const auto le = [](const auto& a, const auto& b) { return a.type_id < b.type_id; };
+		return std::is_sorted(_info.component_infos().begin(), _info.component_infos().end(), le);
+	}());
 }
 
 Archetype::~Archetype() {

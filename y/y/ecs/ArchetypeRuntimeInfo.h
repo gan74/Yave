@@ -49,6 +49,11 @@ class ArchetypeRuntimeInfo {
 		}
 
 		template<typename... Args>
+		static ArchetypeRuntimeInfo create(StaticArchetype<Args...>) {
+			return create<Args...>();
+		}
+
+		template<typename... Args>
 		ArchetypeRuntimeInfo with() {
 			static_assert(sizeof...(Args));
 			ArchetypeRuntimeInfo info(_component_count + sizeof...(Args));
@@ -85,6 +90,18 @@ class ArchetypeRuntimeInfo {
 			return info_or_null<T>();
 		}
 
+		template<typename T, typename... Args>
+		bool has_components() {
+			if(!has_component<T>()) {
+				return false;
+			}
+			if constexpr(sizeof...(Args)) {
+				return has_components<Args...>();
+			}
+			return true;
+		}
+
+
 		usize component_count() const;
 		usize chunk_byte_size() const;
 
@@ -112,8 +129,9 @@ class ArchetypeRuntimeInfo {
 		template<usize I, typename... Args>
 		static void add_infos(ComponentRuntimeInfo* infos) {
 			if constexpr(I < sizeof...(Args)) {
-				using component_type = std::tuple_element_t<I, std::tuple<Args...>>;
-				*infos = ComponentRuntimeInfo::from_type<component_type>();
+				using raw_type = std::tuple_element_t<I, std::tuple<Args...>>;
+				using type = remove_cvref_t<raw_type>;
+				*infos = ComponentRuntimeInfo::from_type<type>();
 				add_infos<I + 1, Args...>(infos + 1);
 			}
 		}

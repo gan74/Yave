@@ -57,6 +57,11 @@ class EntityWorld : NonCopyable {
 			return EntityView<Args...>(EntityIterator<Args...>(_archetypes));
 		}
 
+		template<typename... Args>
+		EntityView<Args...> view(StaticArchetype<Args...>) {
+			return view<Args...>();
+		}
+
 		auto entity_ids() const {
 			auto ids = TransformIterator(_entities.begin(), [](const EntityData& data) { return data.id; });
 			return core::Range(FilterIterator(ids, _entities.end(), [](EntityID id) { return id.is_valid(); }), EndIterator());
@@ -127,6 +132,12 @@ class EntityWorld : NonCopyable {
 			});
 		}
 
+		template<typename... Args>
+		void add_components(EntityID id, StaticArchetype<Args...>) {
+			add_components<Args...>(id);
+		}
+
+
 		template<typename T>
 		void remove_component(EntityID id) {
 			remove_components<T>(id);
@@ -145,7 +156,6 @@ class EntityWorld : NonCopyable {
 			Archetype* new_arc = nullptr;
 			core::Vector types = core::vector_with_capacity<u32>(old_arc->component_count());
 			{
-
 				for(const ComponentRuntimeInfo& info : old_arc->component_infos()) {
 					if(!has_type<0, Args...>(info.type_id)) {
 						types << info.type_id;
@@ -160,7 +170,7 @@ class EntityWorld : NonCopyable {
 				}
 
 				if(!new_arc) {
-					new_arc = _archetypes.emplace_back(old_arc->archetype_with<Args...>()).get();
+					new_arc = add_archetype(old_arc->archetype_with<Args...>());
 				}
 			}
 
@@ -193,6 +203,7 @@ class EntityWorld : NonCopyable {
 		void check_exists(EntityID id) const;
 
 		Archetype* find_or_create_archetype(const ArchetypeRuntimeInfo& info);
+		Archetype* add_archetype(std::unique_ptr<Archetype> arc);
 		void transfer(EntityData& data, Archetype* to);
 
 		void add_on_create(u32 type_id, CallbackFunc func);
@@ -201,6 +212,7 @@ class EntityWorld : NonCopyable {
 		const ComponentCallBacks* component_callbacks(u32 type_id) const;
 		void on_create(u32 type_id, EntityID id) const;
 		void on_remove(u32 type_id, EntityID id) const;
+
 
 		template<usize I, typename... Args, typename F>
 		static void for_each_type_index(F&& func) {

@@ -108,6 +108,14 @@ struct EntityData {
 
 
 
+template<typename... Args>
+struct StaticArchetype {
+	static constexpr usize component_count = sizeof...(Args);
+
+	template<typename... E>
+	using with = StaticArchetype<Args..., E...>;
+};
+
 
 
 }
