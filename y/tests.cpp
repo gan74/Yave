@@ -171,6 +171,11 @@ struct M {
 };
 
 
+template<usize I>
+struct Dummy {
+	usize i = I;
+};
+
 static_assert(serde3::is_property_v<decltype(M::prop(nullptr))>);
 
 int main() {

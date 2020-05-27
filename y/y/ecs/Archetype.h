@@ -105,6 +105,8 @@ class Archetype : NonMovable {
 		void add_chunk_if_needed();
 		void add_chunk();
 
+		void pop_chunk();
+
 		template<usize I, typename... Args>
 		[[nodiscard]] bool build_iterator(ComponentIterator<true, Args...>& it) {
 			static_assert(sizeof...(Args));
@@ -136,6 +138,8 @@ class Archetype : NonMovable {
 
 		core::Vector<void*> _chunk_data;
 		usize _last_chunk_size = 0;
+
+		void* _chunk_cache = nullptr;
 
 		memory::PolymorphicAllocatorContainer _allocator;
 };

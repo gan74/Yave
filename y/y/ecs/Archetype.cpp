@@ -66,6 +66,10 @@ Archetype::~Archetype() {
 				_allocator.deallocate(c, _info.chunk_byte_size());
 			}
 		}
+
+		if(_chunk_cache) {
+			_allocator.deallocate(_chunk_cache, _info.chunk_byte_size());
+		}
 	}
 }
 
@@ -118,7 +122,7 @@ void Archetype::add_entities(core::MutableSpan<EntityData> entities, bool update
 	_last_chunk_size += first;
 
 	if(first != entities.size()) {
-		add_entities(core::MutableSpan(entities.begin() + first, entities.size() - first));
+		add_entities(core::MutableSpan(entities.begin() + first, entities.size() - first), update_data);
 	}
 }
 
@@ -126,11 +130,7 @@ void Archetype::remove_entity(EntityData& data) {
 	y_debug_assert(data.archetype == this);
 
 	if(!_last_chunk_size) {
-		if(_chunk_data.last()) {
-			_allocator.deallocate(_chunk_data.last(), _info.chunk_byte_size());
-		}
-		_chunk_data.pop();
-		_last_chunk_size = entities_per_chunk;
+		pop_chunk();
 	}
 
 	y_debug_assert(_last_chunk_size != 0);
@@ -216,6 +216,25 @@ void Archetype::add_chunk() {
 #endif
 }
 
+void Archetype::pop_chunk() {
+	y_debug_assert(!_last_chunk_size);
+	y_debug_assert(!_chunk_data.is_empty());
+	y_debug_assert(_chunk_data.last());
+
+	void* data = _chunk_data.pop();
+
+	if(!_chunk_data.is_empty()) {
+		_last_chunk_size = entities_per_chunk;
+	}
+
+	y_debug_assert(data);
+
+	if(_chunk_cache) {
+		_allocator.deallocate(data, _info.chunk_byte_size());
+	} else {
+		_chunk_cache = data;
+	}
+}
 
 void Archetype::set_entity_count(usize count) {
 	core::MutableSpan<EntityData> entities(nullptr, count);

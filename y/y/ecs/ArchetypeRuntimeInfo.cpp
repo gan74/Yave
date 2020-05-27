@@ -80,10 +80,9 @@ void ArchetypeRuntimeInfo::sort_component_infos() {
 
 	y_debug_assert(_chunk_byte_size == 0);
 	for(usize i = 0; i != _component_count; ++i) {
-		_component_infos[i].chunk_offset = _chunk_byte_size;
-
 		const usize size = _component_infos[i].component_size;
 		_chunk_byte_size = memory::align_up_to(_chunk_byte_size, size);
+		_component_infos[i].chunk_offset = _chunk_byte_size;
 		_chunk_byte_size += size * entities_per_chunk;
 
 		if(i && _component_infos[i - 1].type_id == _component_infos[i].type_id) {
