@@ -60,9 +60,8 @@ struct UiSettings {
 	Key change_gizmo_mode = Key::R;
 	Key change_gizmo_space = Key::Q;
 
-	bool filter_assets = true;
 
-	y_serde3(change_gizmo_mode, change_gizmo_space, filter_assets)
+	y_serde3(change_gizmo_mode, change_gizmo_space)
 };
 
 struct PerfSettings {

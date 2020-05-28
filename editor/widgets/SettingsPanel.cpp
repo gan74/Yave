@@ -33,7 +33,6 @@ SettingsPanel::SettingsPanel(ContextPtr cptr) : Widget(ICON_FA_COG " Settings"),
 
 
 
-
 static void keybox(const char* name, Key& key) {
 	char k[2] = {char(key), 0};
 
@@ -80,8 +79,6 @@ static void ui_settings(ContextPtr ctx) {
 	keybox("Change gizmo mode", ui.change_gizmo_mode);
 	ImGui::SameLine();
 	keybox("Change gizmo space", ui.change_gizmo_space);
-
-	ImGui::Checkbox("Filter assets in browsers", &ui.filter_assets);
 }
 
 static void perf_settings(ContextPtr ctx) {
