@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <yave/assets/AssetTraits.h>
 
+#include <yave/device/extentions/RayTracing.h>
+
 namespace yave {
 
 class StaticMesh : NonCopyable {
@@ -51,9 +53,13 @@ class StaticMesh : NonCopyable {
 	private:
 		TriangleBuffer<> _triangle_buffer;
 		VertexBuffer<> _vertex_buffer;
+
 		VkDrawIndexedIndirectCommand _indirect_data = {};
 
 		AABB _aabb;
+
+		Y_TODO(Move this somewhere else)
+		RayTracing::AccelerationStructure _ray_tracing_data;
 };
 
 YAVE_DECLARE_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);

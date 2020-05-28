@@ -35,8 +35,8 @@ class DescriptorSet : public DescriptorSetBase, NonCopyable {
 		DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings);
 		~DescriptorSet();
 
-		DescriptorSet(DescriptorSet&&);
-		DescriptorSet& operator=(DescriptorSet&&);
+		DescriptorSet(DescriptorSet&& other);
+		DescriptorSet& operator=(DescriptorSet&& other);
 
 		DevicePtr device() const;
 		bool is_null() const;

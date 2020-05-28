@@ -47,6 +47,7 @@ DeviceMemory& DeviceMemory::operator=(DeviceMemory&& other) {
 }
 
 DeviceMemory::~DeviceMemory() {
+	Y_TODO(right now we have to do device()->destroy to recycle memory properly, maybe we want to change that)
 	if(device()) {
 		y_fatal("DeviceMemory has not been freed.");
 	}

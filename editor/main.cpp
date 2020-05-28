@@ -36,8 +36,6 @@ SOFTWARE.
 #include <windows.h>
 #endif
 
-#if 0
-
 using namespace editor;
 
 static EditorContext* context = nullptr;
@@ -170,84 +168,6 @@ int main(int argc, char** argv) {
 	context = nullptr;
 
 	return 0;
-}
-
-#endif
-
-
-
-#include <y/ecs/EntityWorld.h>
-#include <yave/ecs/EntityWorld.h>
-
-#include <y/math/random.h>
-
-using namespace y;
-
-
-struct A {
-	int x = 7;
-
-	y_serde3(x)
-};
-
-struct B {
-	float str = 9.0f;
-
-	y_serde3(str)
-};
-
-const usize entity_count = 100000;
-
-template<typename W>
-void add_2(W& world) {
-	log_msg(ct_type_name<W>());
-	core::DebugTimer _("Create 2 components");
-	math::FastRandom rng;
-	for(usize i = 0; i != entity_count; ++i) {
-		const auto id = world.create_entity();
-		const usize r = rng() & 0x3;
-		switch(r) {
-			case 1:
-				world.template add_components<A>(id);
-			break;
-			case 2:
-				world.template add_components<B>(id);
-			break;
-			case 3:
-				world.template add_components<A, B>(id);
-			break;
-			default:
-			break;
-		}
-	}
-}
-
-template<typename V>
-float iter_2(V&& view) {
-	float sum = 0.0;
-	core::DebugTimer _("Iterate 2 components");
-	for(const auto& [a, b] : view) {
-		sum -= a.x;
-		sum += b.str;
-	}
-	return sum;
-}
-
-int main() {
-	{
-		y::ecs::EntityWorld world;
-		add_2(world);
-		const float res = iter_2(world.view<A, B>());
-		log_msg(fmt("result = %", res));
-	}
-
-	{
-		yave::ecs::EntityWorld world;
-		add_2(world);
-		const float res = iter_2(world.view<const A, const B>().components());
-		log_msg(fmt("result = %", res));
-	}
-
 }
 
 

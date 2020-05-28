@@ -73,13 +73,13 @@ class Device : NonMovable {
 
 		LifetimeManager& lifetime_manager() const;
 
-
 		VkDevice vk_device() const;
 		const VkAllocationCallbacks* vk_allocation_callbacks() const;
 		VkPhysicalDevice vk_physical_device() const;
 		VkSampler vk_sampler(Sampler::Type type = Sampler::Repeat) const;
 
 		const DebugUtils* debug_utils() const;
+		const RayTracing* ray_tracing() const;
 
 
 		template<typename T>
@@ -124,8 +124,11 @@ class Device : NonMovable {
 		mutable concurrent::SpinLock _lock;
 		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
-		DeviceResources _resources;
+		struct {
+			std::unique_ptr<RayTracing> raytracing;
+		} _extensions;
 
+		DeviceResources _resources;
 };
 
 

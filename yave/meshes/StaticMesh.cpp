@@ -40,6 +40,10 @@ StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
 	Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
 	Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
 	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+
+	if(dptr->ray_tracing()) {
+		_ray_tracing_data = RayTracing::AccelerationStructure(*this);
+	}
 }
 
 DevicePtr StaticMesh::device() const {
