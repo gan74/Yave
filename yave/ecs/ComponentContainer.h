@@ -214,7 +214,9 @@ class ComponentContainer final : public ComponentContainerBase {
 		ComponentVector<T> _components;
 };
 
-static_assert(serde3::has_serde3_post_deser_poly_v<ComponentContainerBase*, AssetLoadingContext&>);
+static_assert(serde3::has_serde3_poly_v<ComponentContainerBase>);
+static_assert(serde3::has_serde3_ptr_poly_v<ComponentContainerBase*>);
+static_assert(serde3::has_serde3_post_deser_poly_v<ComponentContainerBase, AssetLoadingContext&>);
 
 }
 }

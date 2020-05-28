@@ -27,7 +27,7 @@ SOFTWARE.
 namespace y {
 namespace serde3 {
 
-enum class Success {
+enum class Success : u32 {
 	Full,
 	Partial
 };
@@ -39,7 +39,43 @@ inline Success operator|(Success a, Success b) {
 }
 
 
-using Result = core::Result<Success, void>;
+
+enum class ErrorType : u32 {
+	UnknownError,
+	IOError,
+	VersionError,
+	SignatureError,
+	UnknownPolyError,
+	SizeError,
+};
+
+struct Error {
+	Error(ErrorType t, const char* m = nullptr) : type(t), member(m) {
+	}
+
+	const ErrorType type = ErrorType::UnknownError;
+	const char* const member = nullptr;
+};
+
+using Result = core::Result<Success, Error>;
+
+inline const char* error_msg(ErrorType tpe) {
+	static const char* msg[] = {
+		"Unknown error",
+		"IO error",
+		"Incompatible version error",
+		"Signature mismatch error",
+		"Polymorphic ID error",
+		"Range size mismatch error",
+	};
+	y_debug_assert(usize(tpe) < sizeof(msg) / sizeof(msg[0]));
+	return msg[usize(tpe)];
+}
+
+
+inline const char* error_msg(const Error &err) {
+	return error_msg(err.type);
+}
 
 }
 }

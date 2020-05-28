@@ -96,6 +96,12 @@ class EntityWorld : NonCopyable {
 		}
 
 
+		template<typename T, typename... Args>
+		void add_components(EntityId id) {
+			create_components<T, Args...>(id);
+		}
+
+
 		template<typename T>
 		T* component(EntityId id) {
 			return container<T>()->template component_ptr<T>(id);

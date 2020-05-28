@@ -67,8 +67,8 @@ class FileBrowser final : public FileSystemView {
 		std::array<char, buffer_capacity> _name_buffer = {};
 
 		struct {
-			core::Function<bool(const core::String&)> selected = [](const auto&) { return false; };
-			core::Function<bool()> canceled = [] { return true; };
+			std::function<bool(const core::String&)> selected = [](const auto&) { return false; };
+			std::function<bool()> canceled = [] { return true; };
 		} _callbacks;
 };
 

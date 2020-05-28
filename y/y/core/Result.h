@@ -275,16 +275,30 @@ class [[nodiscard]] Result : NonCopyable {
 			/* nothing */
 		}
 
-		const_value_type_ref or_throw(const char* err_msg = "Unwrap failed.") const {
+		const_value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed.") const {
 			if(is_error()) {
-				y_throw(err_msg);
+				y_throw_msg(err_msg);
 			}
 			return _value.get();
 		}
 
-		value_type_ref or_throw(const char* err_msg = "Unwrap failed.") {
+		value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed.") {
 			if(is_error()) {
-				y_throw(err_msg);
+				y_throw_msg(err_msg);
+			}
+			return _value.get();
+		}
+
+		const_value_type_ref or_throw() const {
+			if(is_error()) {
+				throw error();
+			}
+			return _value.get();
+		}
+
+		value_type_ref or_throw() {
+			if(is_error()) {
+				throw error();
 			}
 			return _value.get();
 		}

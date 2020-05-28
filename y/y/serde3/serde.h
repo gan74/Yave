@@ -41,28 +41,34 @@ namespace detail {
 template<typename T>
 constexpr std::is_lvalue_reference<T&&> is_lvalue(T&&);
 
+
 template<typename T>
 using has_serde3_t = decltype(std::declval<T>()._y_serde3_refl());
-template<typename T>
-using has_serde3_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
 
 template<typename T, typename... Args>
 using has_serde3_post_deser_t = decltype(std::declval<T>().post_deserialize(std::declval<Args>()...));
 template<typename T, typename... Args>
-using has_serde3_poly_post_deser_t = decltype(std::declval<T>()->post_deserialize_poly(std::declval<Args>()...));
+using has_serde3_post_deser_poly_t = decltype(std::declval<T>().post_deserialize_poly(std::declval<Args>()...));
+
+template<typename T>
+using has_serde3_poly_t = decltype(std::declval<T>()._y_serde3_poly_base);
+template<typename T>
+using has_serde3_ptr_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
 }
 
 template<typename T>
 static constexpr bool has_serde3_v = is_detected_v<detail::has_serde3_t, T>;
 
-template<typename T>
-static constexpr bool has_serde3_poly_v = is_detected_v<detail::has_serde3_poly_t, T>;
-
 template<typename T, typename... Args>
 static constexpr bool has_serde3_post_deser_v = is_detected_v<detail::has_serde3_post_deser_t, T, Args...>;
 
 template<typename T, typename... Args>
-static constexpr bool has_serde3_post_deser_poly_v = is_detected_v<detail::has_serde3_poly_post_deser_t, T, Args...>;
+static constexpr bool has_serde3_post_deser_poly_v = is_detected_v<detail::has_serde3_post_deser_poly_t, T, Args...>;
+template<typename T>
+static constexpr bool has_serde3_poly_v = is_detected_v<detail::has_serde3_poly_t, T>;
+
+template<typename T>
+static constexpr bool has_serde3_ptr_poly_v = is_detected_v<detail::has_serde3_ptr_poly_t, T>;
 
 
 

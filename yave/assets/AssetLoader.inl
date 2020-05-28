@@ -32,6 +32,7 @@ SOFTWARE.
 #include <y/serde3/archives.h>
 
 #include <y/core/Chrono.h>
+#include <y/utils/log.h>
 
 namespace yave {
 

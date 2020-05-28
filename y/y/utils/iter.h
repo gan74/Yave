@@ -212,6 +212,7 @@ class FilterIterator : private Filter {
 		}
 
 		void advance() {
+			y_debug_assert(!at_end());
 			++_it;
 			find_next_valid();
 		}
@@ -240,10 +241,12 @@ class FilterIterator : private Filter {
 		}
 
 		decltype(auto) operator*() const {
+			y_debug_assert(!at_end());
 			return *_it;
 		}
 
 		auto* operator->() const {
+			y_debug_assert(!at_end());
 			return *_it;
 		}
 
