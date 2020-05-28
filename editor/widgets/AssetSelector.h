@@ -42,7 +42,7 @@ class AssetSelector final : public ResourceBrowser {
 
 	private:
 		AssetType _filter;
-		std::function<bool(AssetId)> _selected = [](const auto&) { return false; };
+		core::Function<bool(AssetId)> _selected = [](const auto&) { return false; };
 };
 
 }

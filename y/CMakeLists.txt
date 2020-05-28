@@ -2,28 +2,16 @@ cmake_minimum_required(VERSION 3.7)
 project(y)
 
 # -Wsign-conversion -Wshadow
-set(Y_EXTRA_WARNINGS
-	    -Wzero-as-null-pointer-constant
-		-Wsign-promo
-		-Wfloat-conversion
-		-Woverloaded-virtual
-		-Wnon-virtual-dtor
-		-Wodr
-		-Wdisabled-optimization
-		-Wlogical-op
-		-Wredundant-decls
-		-Wundef
-		-Wtautological-compare
-	)
+set(EXTRA_WARNINGS -Wzero-as-null-pointer-constant -Wsign-promo -Wfloat-conversion)
+set(MORE_WARNINGS -Woverloaded-virtual -Wnon-virtual-dtor -Wodr -Wdisabled-optimization -Wlogical-op -Wredundant-decls -Wundef -Wtautological-compare -Wno-init-list-lifetime)
 
 
 if(MSVC)
 	# temporary hacks to get it to compile
 	set(Y_COMPILE_OPTIONS /permissive- /W0)
 else()
-	set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${Y_EXTRA_WARNINGS} -fno-common)
+	set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${EXTRA_WARNINGS} ${MORE_WARNINGS}) # -Wno-init-list-lifetime -fno-common
 endif()
-
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wodr")
@@ -43,7 +31,7 @@ file(GLOB_RECURSE TEST_FILES
 
 
 add_library(y STATIC ${SOURCE_FILES})
-# compile options are exported, this is generally bad, but it makes stuff simpler
+#target_link_libraries(y pthread)
 target_compile_options(y PUBLIC ${Y_COMPILE_OPTIONS})
 
 

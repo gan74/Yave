@@ -72,10 +72,10 @@ inline constexpr bool is_sorted(It b, It e, C comp = C()) {
 }
 
 namespace detail {
-template<typename T, usize N, typename C>
-static constexpr void ct_sort(std::array<T, N>& arr, usize left, usize right, C comp) {
+template<typename T, usize N>
+static constexpr void ct_sort(std::array<T, N>& arr, usize left, usize right) {
 	auto ct_swap = [](T& lhs, T& rhs) {
-		T tmp = std::move(lhs);
+		const T tmp = std::move(lhs);
 		lhs = std::move(rhs);
 		rhs = std::move(tmp);
 	};
@@ -84,7 +84,7 @@ static constexpr void ct_sort(std::array<T, N>& arr, usize left, usize right, C 
 		usize m = left;
 
 		for(usize i = left + 1; i != right; ++i) {
-			if(comp(arr[i], arr[left])) {
+			if(arr[i] < arr[left]) {
 				ct_swap(arr[++m], arr[i]);
 			}
 		}
@@ -97,10 +97,10 @@ static constexpr void ct_sort(std::array<T, N>& arr, usize left, usize right, C 
 }
 }
 
-template <typename T, usize N, typename C = std::less<>>
-constexpr std::array<T, N> ct_sort(std::array<T, N> arr, C comp = C()) {
+template <typename T, usize N>
+constexpr std::array<T, N> ct_sort(std::array<T, N> arr) {
 	const std::array<T, N> sorted = arr;
-	detail::ct_sort(sorted, 0, N, comp);
+	detail::ct_sort(sorted, 0, N);
 	return sorted;
 }
 

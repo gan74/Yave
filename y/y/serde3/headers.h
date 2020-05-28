@@ -25,9 +25,8 @@ SOFTWARE.
 #include <y/utils/name.h>
 #include <y/utils/hash.h>
 
-#include "traits.h"
+#include "serde.h"
 #include "poly.h"
-
 
 #define Y_SLIM_POD_HEADER
 
@@ -65,7 +64,7 @@ struct TypeHeader {
 		return type_hash & 0x01;
 	}
 
-	constexpr bool is_range() const {
+	constexpr bool is_polymorphic() const {
 		return type_hash & 0x02;
 	}
 
@@ -94,6 +93,20 @@ struct TrivialHeader {
 	}
 };
 
+struct PolyHeader {
+	TypeHeader type;
+	TypeId type_id;
+
+	constexpr bool operator==(const PolyHeader& other) const {
+		return type == other.type && type_id == other.type_id;
+	}
+
+	constexpr bool operator!=(const PolyHeader& other) const {
+		return !operator==(other);
+	}
+};
+
+
 struct ObjectHeader {
 	TypeHeader type;
 	MembersHeader members;
@@ -105,18 +118,34 @@ struct ObjectHeader {
 	constexpr bool operator!=(const ObjectHeader& other) const {
 		return !operator==(other);
 	}
+};
+
+struct FullHeader {
+	TypeHeader type;
+	MembersHeader members;
+	TypeId type_id;
 
 	constexpr bool operator==(const TrivialHeader& other) const {
 		return type == other.type;
 	}
 
-	constexpr bool operator!=(const TrivialHeader& other) const {
+	constexpr bool operator==(const PolyHeader& other) const {
+		return type == other.type && type_id == other.type_id;
+	}
+
+	constexpr bool operator==(const ObjectHeader& other) const {
+		return type == other.type && members == other.members;
+	}
+
+	template<typename T>
+	constexpr bool operator!=(const T& other) const {
 		return !operator==(other);
 	}
 };
 
 static_assert(sizeof(TypeHeader) == sizeof(u64));
 static_assert(sizeof(MembersHeader) == sizeof(u64));
+
 
 
 constexpr u32 ct_str_hash(std::string_view str) {
@@ -130,23 +159,18 @@ constexpr u32 ct_str_hash(std::string_view str) {
 template<typename T>
 constexpr u32 header_type_hash() {
 	using naked = deconst_t<T>;
-
-	if constexpr(is_range_v<T>) {
-		static_assert(!has_serde3_v<T>);
-		using value_type = typename T::value_type;
-		u32 hash = header_type_hash<value_type>();
-		hash_combine(hash, u32(0xd3189c20));
-		return hash | 0x02;
-	}
-
 	u32 hash = ct_str_hash(ct_type_name<naked>());
-
 	if constexpr(has_serde3_v<T>) {
 		hash |= 0x01;
 	} else {
 		hash &= ~0x01;
 	}
-	return hash & ~0x02;
+	if constexpr(has_serde3_poly_v<T>) {
+		hash |= 0x02;
+	} else {
+		hash &= ~0x02;
+	}
+	return hash;
 }
 
 template<typename T, bool R>
@@ -181,23 +205,32 @@ constexpr MembersHeader build_members_header(const NamedObject<T, R>& obj) {
 
 template<typename T, bool R>
 constexpr auto build_header(const NamedObject<T, R>& obj) {
+	if constexpr(has_serde3_poly_v<T>) {
+		return PolyHeader {
+			build_type_header(obj),
+			obj.object
+				? obj.object->_y_serde3_poly_type_id()
+				: 0
+		};
+	} else {
 #ifdef Y_SLIM_POD_HEADER
-	if constexpr(has_serde3_v<T>) {
+		if constexpr(has_serde3_v<T>) {
+			return ObjectHeader {
+				build_type_header(obj),
+				build_members_header(obj)
+			};
+		} else {
+			return TrivialHeader {
+				build_type_header(obj)
+			};
+		}
+#else
 		return ObjectHeader {
 			build_type_header(obj),
 			build_members_header(obj)
 		};
-	} else {
-		return TrivialHeader {
-			build_type_header(obj)
-		};
-	}
-#else
-	return ObjectHeader {
-		build_type_header(obj),
-		build_members_header(obj)
-	};
 #endif
+	}
 }
 
 }

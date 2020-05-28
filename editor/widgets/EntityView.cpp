@@ -71,7 +71,7 @@ class ArchetypeBase {
 		}
 
 		virtual ecs::EntityId create(ecs::EntityWorld& world) const = 0;
-		virtual void for_each(ecs::EntityWorld& world, const std::function<void(ecs::EntityId)>& func) const = 0;
+		virtual void for_each(ecs::EntityWorld& world, const core::Function<void(ecs::EntityId)>& func) const = 0;
 
 	protected:
 		ArchetypeBase(const char* name, const char* icon) : _name(clean_component_name(name)), _icon(icon) {
@@ -92,7 +92,7 @@ class DynArchtype : public ArchetypeBase {
 			return world.create_entity(T());
 		}
 
-		void for_each(ecs::EntityWorld& world, const std::function<void(ecs::EntityId)>& func) const override {
+		void for_each(ecs::EntityWorld& world, const core::Function<void(ecs::EntityId)>& func) const override {
 			for(auto entity : world.view(T())) {
 				ecs::EntityId id = world.id_from_index(entity.index());
 				func(id);

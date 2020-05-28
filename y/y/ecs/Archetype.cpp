@@ -30,45 +30,36 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
-Archetype::Archetype(ArchetypeRuntimeInfo info, memory::PolymorphicAllocatorBase* allocator) :
-		_info(std::move(info)),
+Archetype::Archetype(usize component_count, memory::PolymorphicAllocatorBase* allocator) :
+        _component_count(component_count),
+        _component_infos(std::make_unique<ComponentRuntimeInfo[]>(component_count)),
 		_allocator(allocator) {
-
-	y_debug_assert([this] {
-		const auto le = [](const auto& a, const auto& b) { return a.type_id < b.type_id; };
-		return std::is_sorted(_info.component_infos().begin(), _info.component_infos().end(), le);
-	}());
 }
 
 Archetype::~Archetype() {
-	const auto components = _info.component_infos();
-	if(components.size()) {
-		log_msg(fmt("destroying arch with % components % entities", components.size(), entity_count()));
-		/*for(const ComponentRuntimeInfo& info : components) {
-			log_msg(info.type_name);
+	if(_component_infos) {
+		log_msg(fmt("destroying arch with % components % entities", _component_count, entity_count()));
+		/*for(usize i = 0; i != _component_count; ++i) {
+			log_msg(_component_infos[i].type_name);
 		}*/
 
 
 		y_debug_assert(_chunk_data.is_empty() == !_last_chunk_size);
 		if(!_chunk_data.is_empty()) {
-			for(const ComponentRuntimeInfo& info : components) {
-				info.destroy_indexed(_chunk_data.last(), 0, _last_chunk_size);
+			for(usize i = 0; i != _component_count; ++i) {
+				_component_infos[i].destroy_indexed(_chunk_data.last(), 0, _last_chunk_size);
 			}
 			for(usize c = 0; c + 1 < _chunk_data.size(); ++c) {
-				for(const ComponentRuntimeInfo& info : components) {
-					info.destroy_indexed(_chunk_data[c], 0, entities_per_chunk);
+				for(usize i = 0; i != _component_count; ++i) {
+					_component_infos[i].destroy_indexed(_chunk_data[c], 0, entities_per_chunk);
 				}
 			}
 		}
 
 		for(void* c : _chunk_data) {
 			if(c) {
-				_allocator.deallocate(c, _info.chunk_byte_size());
+				_allocator.deallocate(c, _chunk_byte_size);
 			}
-		}
-
-		if(_chunk_cache) {
-			_allocator.deallocate(_chunk_cache, _info.chunk_byte_size());
 		}
 	}
 }
@@ -81,15 +72,11 @@ usize Archetype::entity_count() const {
 }
 
 usize Archetype::component_count() const {
-	return _info.component_count();
-}
-
-const ArchetypeRuntimeInfo& Archetype::runtime_info() const {
-	return _info;
+	return _component_count;
 }
 
 core::Span<ComponentRuntimeInfo> Archetype::component_infos() const {
-	return _info.component_infos();
+	return core::Span<ComponentRuntimeInfo>(_component_infos.get(), _component_count);
 }
 
 void Archetype::add_entity(EntityData& data) {
@@ -116,13 +103,13 @@ void Archetype::add_entities(core::MutableSpan<EntityData> entities, bool update
 	}
 
 	void* chunk_data = _chunk_data.last();
-	for(const ComponentRuntimeInfo& info : component_infos()) {
-		info.create_indexed(chunk_data, _last_chunk_size, first);
+	for(usize i = 0; i != _component_count; ++i) {
+		_component_infos[i].create_indexed(chunk_data, _last_chunk_size, first);
 	}
 	_last_chunk_size += first;
 
 	if(first != entities.size()) {
-		add_entities(core::MutableSpan(entities.begin() + first, entities.size() - first), update_data);
+		add_entities(core::MutableSpan(entities.begin() + first, entities.size() - first));
 	}
 }
 
@@ -130,7 +117,11 @@ void Archetype::remove_entity(EntityData& data) {
 	y_debug_assert(data.archetype == this);
 
 	if(!_last_chunk_size) {
-		pop_chunk();
+		if(_chunk_data.last()) {
+			_allocator.deallocate(_chunk_data.last(), _chunk_byte_size);
+		}
+		_chunk_data.pop();
+		_last_chunk_size = entities_per_chunk;
 	}
 
 	y_debug_assert(_last_chunk_size != 0);
@@ -139,16 +130,34 @@ void Archetype::remove_entity(EntityData& data) {
 	if(data.archetype_index + 1 != entity_count()) {
 		const usize chunk_index = data.archetype_index / entities_per_chunk;
 		const usize item_index = data.archetype_index % entities_per_chunk;
-		for(const ComponentRuntimeInfo& info : component_infos()) {
-			info.move_indexed(_chunk_data[chunk_index], item_index, _chunk_data.last(), last_index, 1);
+		for(usize i = 0; i != _component_count; ++i) {
+			_component_infos[i].move_indexed(_chunk_data[chunk_index], item_index, _chunk_data.last(), last_index, 1);
 		}
 	}
 
-	for(const ComponentRuntimeInfo& info : component_infos()) {
-		info.destroy_indexed(_chunk_data.last(), last_index, 1);
+	for(usize i = 0; i != _component_count; ++i) {
+		_component_infos[i].destroy_indexed(_chunk_data.last(), last_index, 1);
 	}
 	--_last_chunk_size;
 	data.invalidate();
+}
+
+void Archetype::sort_component_infos() {
+	const auto cmp = [](const ComponentRuntimeInfo& a, const ComponentRuntimeInfo& b) { return a.type_id < b.type_id; };
+	sort(_component_infos.get(), _component_infos.get() + _component_count, cmp);
+
+	y_debug_assert(_chunk_byte_size == 0);
+	for(usize i = 0; i != _component_count; ++i) {
+		_component_infos[i].chunk_offset = _chunk_byte_size;
+
+		const usize size = _component_infos[i].component_size;
+		_chunk_byte_size = memory::align_up_to(_chunk_byte_size, size);
+		_chunk_byte_size += size * entities_per_chunk;
+
+		if(i && _component_infos[i - 1].type_id == _component_infos[i].type_id) {
+			y_fatal("Duplicated component type: %.", _component_infos[i].type_name);
+		}
+	}
 }
 
 void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> entities) {
@@ -157,17 +166,15 @@ void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> enti
 	other->add_entities(entities, false);
 
 	usize other_index = 0;
-
-	const auto other_infos = other->component_infos();
-	for(const ComponentRuntimeInfo& info : component_infos()) {
-		const ComponentRuntimeInfo* other_info = nullptr;
-		for(; other_index != other_infos.size(); ++other_index) {
-			if(other_infos[other_index].type_id == info.type_id) {
-				other_info = &other_infos[other_index];
+	for(usize i = 0; i != _component_count; ++i) {
+		const ComponentRuntimeInfo& info = _component_infos[i];
+		ComponentRuntimeInfo* other_info = nullptr;
+		for(; other_index != other->_component_count; ++other_index) {
+			if(other->_component_infos[other_index].type_id == info.type_id) {
+				other_info = &other->_component_infos[other_index];
 				break;
 			}
 		}
-
 		if(other_info) {
 			y_debug_assert(other_info->type_id == info.type_id);
 			for(usize e = 0; e != entities.size(); ++e) {
@@ -196,6 +203,20 @@ void Archetype::transfer_to(Archetype* other, core::MutableSpan<EntityData> enti
 		data.archetype_index = start + e;
 	}
 }
+
+bool Archetype::matches_type_indexes(core::Span<u32> type_indexes) const {
+	y_debug_assert(std::is_sorted(type_indexes.begin(), type_indexes.end()));
+	if(type_indexes.size() != _component_count) {
+		return false;
+	}
+	for(usize i = 0; i != type_indexes.size(); ++i) {
+		if(type_indexes[i] != _component_infos[i].type_id) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void Archetype::add_chunk_if_needed() {
 	if(_last_chunk_size == entities_per_chunk || _chunk_data.is_empty()) {
 		add_chunk();
@@ -203,57 +224,15 @@ void Archetype::add_chunk_if_needed() {
 }
 
 void Archetype::add_chunk() {
-	const usize chunk_byte_size = _info.chunk_byte_size();
-
-	y_debug_assert(chunk_byte_size != 0);
+	y_debug_assert(_chunk_byte_size != 0);
 	y_debug_assert(_last_chunk_size == entities_per_chunk || _chunk_data.is_empty());
 
 	_last_chunk_size = 0;
-	_chunk_data.emplace_back(chunk_byte_size ? _allocator.allocate(chunk_byte_size) : nullptr);
+	_chunk_data.emplace_back(_chunk_byte_size ? _allocator.allocate(_chunk_byte_size) : nullptr);
 
 #ifdef Y_DEBUG
-	std::memset(_chunk_data.last(), 0x4C, chunk_byte_size);
+	std::memset(_chunk_data.last(), 0xBA, _chunk_byte_size);
 #endif
-}
-
-void Archetype::pop_chunk() {
-	y_debug_assert(!_last_chunk_size);
-	y_debug_assert(!_chunk_data.is_empty());
-	y_debug_assert(_chunk_data.last());
-
-	void* data = _chunk_data.pop();
-
-	if(!_chunk_data.is_empty()) {
-		_last_chunk_size = entities_per_chunk;
-	}
-
-	y_debug_assert(data);
-
-	if(_chunk_cache) {
-		_allocator.deallocate(data, _info.chunk_byte_size());
-	} else {
-		_chunk_cache = data;
-	}
-}
-
-void Archetype::set_entity_count(usize count) {
-	core::MutableSpan<EntityData> entities(nullptr, count);
-	add_entities(entities, false);
-	y_debug_assert(entity_count() == count);
-}
-
-
-core::Vector<ComponentSerializerWrapper> Archetype::create_component_serializer_wrappers() const {
-	const auto components = _info.component_infos();
-	auto serializers = core::vector_with_capacity<ComponentSerializerWrapper>(components.size());
-	for(const ComponentRuntimeInfo& info : components) {
-		serializers.emplace_back(info.create_component_serializer(const_cast<Archetype*>(this)));
-	}
-	return serializers;
-}
-
-ComponentSerializerList Archetype::create_serializer_list() const {
-	return ComponentSerializerList(this);
 }
 
 }

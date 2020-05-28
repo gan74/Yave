@@ -25,6 +25,7 @@ SOFTWARE.
 #include "AssetLoadingContext.h"
 
 #include <y/core/Vector.h>
+#include <y/core/Functor.h>
 
 #include <thread>
 #include <mutex>
@@ -36,8 +37,8 @@ namespace yave {
 
 class AssetLoadingThreadPool : NonMovable {
 	public:
-		using CreateFunc = std::function<void()>;
-		using ReadFunc = std::function<CreateFunc(AssetLoadingContext&)>;
+		using CreateFunc = core::Function<void()>;
+		using ReadFunc = core::Function<CreateFunc(AssetLoadingContext&)>;
 
 		class LoadingJob : NonMovable {
 			public:

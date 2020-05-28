@@ -39,8 +39,6 @@ std::unique_ptr<ComponentInfoSerializerBase> create_info_serializer();
 template<typename T>
 ComponentSerializerWrapper create_component_serializer(Archetype*);
 
-Y_TODO(y_debug_assert(usize(dst) % sizeof(T) == 0) doesnt make sense)
-
 template<typename T>
 void create_component(void* dst, usize count) {
 	y_debug_assert(usize(dst) % sizeof(T) == 0);

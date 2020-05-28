@@ -22,6 +22,7 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHPASS_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHPASS_H
 
+#include <y/core/Functor.h>
 
 #include <yave/graphics/descriptors/DescriptorSet.h>
 
@@ -46,7 +47,7 @@ class FrameGraphPass final : NonMovable {
 			PipelineStage stage = PipelineStage::None;
 		};
 
-		using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
+		using render_func = core::Function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
 		FrameGraphPass(std::string_view name, FrameGraph* parent, usize index);
 

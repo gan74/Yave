@@ -20,280 +20,489 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <y/ecs/ecs.h>
-#include <y/ecs/Archetype.h>
-#include <y/ecs/EntityWorld.h>
-#include <y/ecs/EntityView.h>
+#include <y/test/test.h>
 
-#include <y/concurrent/StaticThreadPool.h>
-
-#include <y/core/FixedArray.h>
-#include <y/core/Vector.h>
-#include <y/core/String.h>
-#include <y/core/Chrono.h>
-
-#include <y/mem/allocators.h>
-#include <y/core/Range.h>
-#include <y/math/Vec.h>
 #include <y/utils/log.h>
-#include <y/utils/perf.h>
-#include <y/utils/name.h>
-#include <y/utils/iter.h>
-
-#include <y/serde3/poly.h>
-#include <y/serde3/serde.h>
-#include <y/serde3/archives.h>
-#include <y/serde3/property.h>
-#include <y/io2/Buffer.h>
-
-#include <atomic>
-#include <thread>
 
 using namespace y;
-using namespace y::ecs;
 
-struct Tester : NonCopyable {
-	Tester() : x(0xFDFEFDFE12345678) {
-		validate();
-	}
+//#define BENCH
+#ifndef Y_DEBUG
+#define BENCH
+#endif
 
-	Tester(Tester&& other) : x(other.x) {
-		other.validate();
-		validate();
-		other.x = 0x0F0F0F0F0F0F0F0F;
-	}
+#ifdef BENCH
+#include <y/core/Chrono.h>
+#include <y/core/Vector.h>
+#include <y/core/HashMap.h>
+#include <y/utils/format.h>
+#include <y/utils/name.h>
+#include <y/math/random.h>
 
-	Tester& operator=(Tester&& other) {
-		validate();
-		other.validate();
-		x = other.x;
-		other.x = 0x0F0F0F0F0F0F0F0F;
-		return *this;
-	}
+#include <unordered_map>
+#include <random>
+#include <cmath>
 
-	~Tester() {
-		validate();
-		x = 1;
-	}
-
-	void validate() const {
-		y_debug_assert(x == 0x0F0F0F0F0F0F0F0F || x == 0xFDFEFDFE12345678);
-	}
-
-	u64 x = 0;
-
-
-
-	y_serde3(serde_data())
-
-	const u64& serde_data() const {
-		//log_msg("serialization");
-		return x;
-	}
-
-	u64& serde_data() {
-		//log_msg("deserialization");
-		return x;
+template<usize B>
+struct BadHash {
+	template<typename T>
+	usize operator()(const T& k) const {
+		std::hash<T> hasher;
+		usize h = hasher(k);
+		return h % B;
 	}
 };
 
-struct NotComp {
-};
+#ifndef Y_DEBUG
+static constexpr usize bench_count_mul = 1000; // default = 1000
+#else
+static constexpr usize bench_count_mul = 1; // for faster debug
+#endif
 
-struct Test {
-	int i = 4;
 
-	const int& ser() const {
-		return i;
+template<template<typename...> typename Map>
+static auto bench_reserve(usize count = 10000 * bench_count_mul) {
+	Map<usize, usize> map;
+	map.reserve(count);
+	map.insert({count / 2, 4});
+	return map;
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill(usize count = 10000 * bench_count_mul) {
+	Map<usize, usize> map;
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i, i * 2});
+	}
+	return map;
+}
+
+
+template<template<typename...> typename Map>
+static auto bench_reserve_fill(usize count = 10000 * bench_count_mul) {
+	Map<usize, usize> map;
+	map.reserve(count);
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i, i * 2});
+	}
+	return map;
+}
+
+
+template<template<typename...> typename Map>
+static auto bench_fill_iter_50(usize count = 5000 * bench_count_mul) {
+	Map<usize, usize> map;
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i, i * 2});
 	}
 
-	int& ser() {
-		return i;
+	usize a = 0;
+	for(usize i = 0; i != 25; ++i) {
+		for(const auto& [k, v] : map) {
+			a += k * i;
+		}
+	}
+	map.insert({a, a});
+
+	a = 0;
+	for(usize i = 0; i != 25; ++i) {
+		for(const auto& [k, v] : map) {
+			a += v * i;
+		}
+	}
+	map.insert({a, a});
+
+	return map;
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_iter_50_medium() {
+	return bench_fill_iter_50<Map>(100000);
+}
+
+
+template<template<typename...> typename Map>
+static auto bench_fill_iter_50_tiny() {
+	return bench_fill_iter_50<Map>(100);
+}
+
+
+template<template<typename...> typename Map>
+static auto bench_fill_iter_empty_50(usize count = 1000 * bench_count_mul) {
+	Map<usize, usize> map;
+	map.reserve(count);
+	for(usize i = 0; i != count / 1000 + 10; ++i) {
+		map.insert({i * 1000, i});
 	}
 
-	y_serde3(ser())
-};
+	usize a = 0;
+	for(usize i = 0; i != 50; ++i) {
+		for(const auto& [k, v] : map) {
+			a += k * i + v;
+		}
+	}
+	map.insert({a, a});
+
+	return map;
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_iter_erased_50(usize count = 1000 * bench_count_mul) {
+	Map<usize, usize> map;
+
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i, i});
+	}
+
+	for(usize i = 0; i != count; ++i) {
+		if(i % 1000 == 0) {
+			map.erase(map.find(i));
+		}
+	}
+
+	usize a = 0;
+	for(usize i = 0; i != 50; ++i) {
+		for(const auto& [k, v] : map) {
+			a += k * i + v;
+		}
+	}
+	map.insert({a, a});
+
+	return map;
+}
 
 
-template<typename T>
-[[maybe_unused]] static auto all_components(EntityWorld& world) {
-	auto extract_component = [&world](EntityID id) -> std::pair<EntityID, T*> {
-		y_debug_assert(id.is_valid());
-		return {id, world.component<T>(id)};
-	};
-	auto non_null = [](const std::pair<EntityID, T*>& p) -> bool {
-		//log_msg(fmt("testing entity %, for component % (result = %)", p.first.index(), ct_type_name<T>(), p.second));
-		return p.second;
-	};
-	auto deref = [](const std::pair<EntityID, T*>& p) -> std::pair<EntityID, T&> {
-		return {p.first, *p.second};
-	};
+template<template<typename...> typename Map>
+static auto bench_fill_erase_all(usize count = 1000 * bench_count_mul) {
+	Map<usize, usize> map;
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i, i * 2});
+	}
+	for(usize i = 0; i != count; ++i) {
+		map.erase(map.find(i));
+	}
+	return map;
+}
 
-	auto ids = world.entity_ids();
-	auto components = TransformIterator(ids.begin(), extract_component);
-	auto non_nulls = FilterIterator(components, ids.end(), non_null);
-	return core::Range(TransformIterator(non_nulls, deref), EndIterator());
+template<template<typename...> typename Map>
+static auto bench_fill_erase_refill(usize count = 1000 * bench_count_mul) {
+	Map<usize, usize> map;
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i, i * 2});
+	}
+	for(usize i = 0; i != count; ++i) {
+		map.erase(map.find(i));
+	}
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i * 2, i});
+	}
+	return map;
+}
+
+template<template<typename...> typename Map, typename Hasher = std::hash<usize>>
+static auto bench_fill_find_all_50_50(usize count = 1000 * bench_count_mul) {
+	Map<usize, usize, Hasher> map;
+
+	math::FastRandom rng;
+	std::uniform_int_distribution<usize> dist(0, count * 2);
+
+	for(usize i = 0; i != count; ++i) {
+		map.insert({dist(rng), i});
+	}
+
+	usize sum = 0;
+	for(usize i = 0; i != count * 2; ++i) {
+		if(const auto& it = map.find(i); it != map.end()) {
+			sum += i;
+		}
+	}
+	map.insert({sum, sum});
+	return map;
+}
+
+#if 0
+template<template<typename...> typename Map, typename Hasher = std::hash<usize>>
+static auto bench_fill_contains_50_50(usize count = 10000 * bench_count_mul) {
+	Map<usize, usize, Hasher> map;
+
+	math::FastRandom rng;
+	std::uniform_int_distribution<usize> dist(0, count * 2);
+
+	for(usize i = 0; i != count; ++i) {
+		map.insert({dist(rng), i});
+	}
+
+	usize sum = 0;
+	for(usize i = 0; i != count * 2; ++i) {
+		if(const auto& it = map.contains(i)) {
+			sum += i;
+		}
+	}
+
+	map.insert({sum, sum});
+	return map;
+}
+#endif
+
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_degen(usize count = 1000 * bench_count_mul) {
+	Map<usize, usize> map;
+
+	for(usize i = 0; i != count; ++i) {
+		map.insert({i * 2, i});
+	}
+
+	usize sum = 0;
+	for(usize i = 0; i != count * 2; ++i) {
+		if(const auto& it = map.find(i); it != map.end()) {
+			sum += i;
+		}
+	}
+	map.insert({sum, sum});
+	return map;
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_huge(usize count = 10000 * bench_count_mul) {
+	return bench_fill_find_all_50_50<Map>(count);
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_medium(usize count = 10 * bench_count_mul) {
+	return bench_fill_find_all_50_50<Map>(count);
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_tiny(usize count = 100) {
+	return bench_fill_find_all_50_50<Map>(count);
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_find_all_50_50_badhash_8(usize count = 10 * bench_count_mul) {
+	return bench_fill_find_all_50_50<Map, BadHash<8>>(count);
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_long_string(usize count = 1000 * bench_count_mul, usize extra_len = 0) {
+	Map<core::String, usize> map;
+
+	core::String long_str;
+	while(!long_str.is_long()) {
+		long_str.push_back('a');
+	}
+
+	for(usize i = 0; i != extra_len; ++i) {
+		long_str.push_back('l');
+	}
+
+	core::String key;
+	for(usize i = 0; i != count; ++i) {
+		key.make_empty();
+		fmt_into(key, "%_%", i, long_str);
+		map.insert({key, i});
+	}
+
+	return map;
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_very_long_string(usize count = 200 * bench_count_mul) {
+	return bench_fill_long_string<Map>(count, 1000);
+}
+
+
+template<template<typename...> typename Map>
+static auto bench_fill_string_iter_50(usize count = 1000 * bench_count_mul) {
+	Map<core::String, usize> map = bench_fill_long_string<Map>(count, 10);
+
+	usize a = 0;
+	for(usize i = 0; i != 25; ++i) {
+		for(const auto& [k, v] : map) {
+			a += k.size() * i;
+		}
+	}
+	map.insert({fmt("%", a), a});
+
+	a = 0;
+	for(usize i = 0; i != 25; ++i) {
+		for(const auto& [k, v] : map) {
+			a += v * i;
+		}
+	}
+	map.insert({fmt("%", a), a});
+
+	return map;
+}
+
+template<template<typename...> typename Map>
+static auto bench_fill_string_find_all_50_50(usize count = 1000 * bench_count_mul) {
+	Map<core::String, usize> map;
+
+	core::String long_str;
+	while(long_str.size() < core::String::max_short_size + 10) {
+		long_str.push_back('a');
+	}
+
+	core::String key;
+	for(usize i = 0; i != count; ++i) {
+		key.make_empty();
+		fmt_into(key, "%_%", i, long_str);
+		map.insert({key, i});
+	}
+
+
+	usize sum = 0;
+	for(usize i = 0; i != count * 2; ++i) {
+		key.make_empty();
+		fmt_into(key, "%_%", i, long_str);
+		if(const auto& it = map.find(key); it != map.end()) {
+			sum += it->first.size() + it->second;
+		}
+	}
+	map.insert({fmt("%", sum), sum});
+
+	return map;
 }
 
 
 
-struct W {
-	int w;
+using result_type = core::Vector<std::tuple<const char*, double, usize>>;
 
-	int test() const {
-		return 4;
-	}
+template<template<typename...> typename Map>
+result_type bench_implementation() {
+	result_type results;
+	core::DebugTimer _(ct_type_name<Map<int, int>>());
 
-	y_serde3(test())
-};
+	const double min_time = 1.0;
 
-
-
-struct M {
-	int i = 0;
-
-	void set_i(int x) {
-		log_msg(fmt("set_i << %", x));
-		i = x;
-	}
-
-	int get_i() const {
-		log_msg(fmt("get_i >> %", i));
-		return i;
-	}
-
-	y_serde3(serde3::property(this, &M::get_i, &M::set_i))
-
-	static decltype(auto) prop(M* s) {
-		return serde3::property(s, &M::get_i, &M::set_i);
-	}
-
-};
+#define BENCH_ONE(func)																	\
+	do {																				\
+		try {																			\
+			log_msg("Running " #func, Log::Perf);										\
+			core::Chrono chrono;														\
+			for(usize count = 1; true; ++count) {										\
+				const usize res = func<Map>().size();									\
+				const auto elapsed = chrono.elapsed();									\
+				if(elapsed.to_secs() >= min_time) {										\
+					results.emplace_back(#func, elapsed.to_secs() / count, res);		\
+					break;																\
+				}																		\
+			}																			\
+		} catch(std::exception& e) {													\
+			y_fatal("Exception while running % for %:\n%",								\
+				#func, ct_type_name<Map<int, int>>(), e.what());						\
+		}																				\
+	} while(false)
 
 
-template<usize I>
-struct Dummy {
-	usize i = I;
-};
+	BENCH_ONE(bench_fill);
+	BENCH_ONE(bench_reserve_fill);
+	BENCH_ONE(bench_fill_iter_50);
+	BENCH_ONE(bench_fill_iter_50_medium);
+	BENCH_ONE(bench_fill_iter_50_tiny);
+	BENCH_ONE(bench_fill_iter_empty_50);
+	BENCH_ONE(bench_fill_iter_erased_50);
+	BENCH_ONE(bench_fill_erase_all);
+	BENCH_ONE(bench_fill_erase_refill);
+	BENCH_ONE(bench_fill_find_all_50_50_degen);
+	BENCH_ONE(bench_fill_find_all_50_50_huge);
+	BENCH_ONE(bench_fill_find_all_50_50);
+	BENCH_ONE(bench_fill_find_all_50_50_medium);
+	BENCH_ONE(bench_fill_find_all_50_50_tiny);
+	BENCH_ONE(bench_fill_find_all_50_50_badhash_8);
+	BENCH_ONE(bench_fill_long_string);
+	BENCH_ONE(bench_fill_very_long_string);
+	BENCH_ONE(bench_fill_string_iter_50);
+	BENCH_ONE(bench_fill_string_find_all_50_50);
 
-static_assert(serde3::is_property_v<decltype(M::prop(nullptr))>);
+	//BENCH_ONE(bench_fill_contains_50_50);
+
+#undef BENCH_ONE
+
+	return results;
+}
+
+template<typename K, typename V, typename H = std::hash<K>>
+struct ExternalMapStore : core::ExternalHashMap<K, V, H, true> {};
+
+template<typename K, typename V, typename H = std::hash<K>>
+struct ExternalMap : core::ExternalHashMap<K, V, H, false> {};
 
 int main() {
-#ifdef Y_DEBUG
-	core::result::break_on_error = true;
-#endif
+	y::test::run_tests();
 
-	y_debug_assert([]() { log_msg("Debug asserts enabled", Log::Debug); return true; }());
+	core::Vector<std::pair<const char*, result_type>> results;
+	log_msg("Benching...");
+	results.emplace_back("ExternalMap", bench_implementation<ExternalMap>());
+	results.emplace_back("ExternalMapStore", bench_implementation<ExternalMapStore>());
+	results.emplace_back("std::unordered_map", bench_implementation<std::unordered_map>());
+	log_msg("Done\n");
 
-#if 0
-	std::array ms = {M{1}, M{2}};
-	core::MutableSpan<M> m_span = ms;
-
-	auto file = io2::Buffer();
-	{
-		serde3::WritableArchive arc(file);
-		arc.serialize(m_span).unwrap();
-		log_msg("Serialization ok");
-	}
-	file.reset();
-	{
-		serde3::ReadableArchive arc(file);
-		arc.deserialize(m_span).unwrap();
-		log_msg("Deserialization ok");
-	}
-#endif
-
-#if 1
-	EntityWorld world;
-
-	{
-		EntityID id = world.create_entity();
-		world.add_component<int>(id);
-		world.add_component<Tester>(id);
-		world.add_component<float>(id);
-		*world.component<int>(id) = 19;
-	}
-	world.add_on_create<Tester>([](const EntityWorld&, EntityID id) { log_msg(fmt("Tester added to entity #%", id.index())); });
-	{
-		EntityID id = world.create_entity();
-		StaticArchetype<Tester, int> arc;
-		world.add_components(id, arc);
-		world.add_components<Tester, int>(world.create_entity());
-		world.add_components(world.create_entity(), arc);
-		world.add_components(world.create_entity(), arc);
-	}
-	{
-		EntityID id = world.create_entity();
-		world.add_component<int>(id);
-	}
-
-	W w;
-
-	try {
-		EntityWorld new_world;
-		new_world.add_on_create<Tester>([](const EntityWorld&, EntityID id) { log_msg(fmt("Tester added to new world's entity #%", id.index())); });
-		auto file = io2::Buffer();
-		{
-			log_msg("Serialization...");
-			serde3::WritableArchive arc(file);
-			arc.serialize(w).or_throw();
-			arc.serialize(world).or_throw();
-			log_msg("Serialization ok");
-		}
-		file.reset();
-		{
-			log_msg("Deserialization...");
-			serde3::ReadableArchive arc(file);
-			arc.deserialize(w).or_throw();
-			arc.deserialize(new_world).or_throw();
-			log_msg("Deserialization ok");
-		}
-
-
-		auto print_world = [](EntityWorld& world) {
-			usize ents = 0;
-			for(auto&& id : world.entity_ids()) {
-				unused(id);
-				++ents;
+	for(const auto& impl : results) {
+		const usize result_count = impl.second.size();
+		log_msg(fmt("%:", impl.first), Log::Perf);
+		for(usize r = 0; r != result_count; ++r) {
+			const auto res = impl.second[r];
+			core::String line = "    ";
+			line += std::get<0>(res);
+			while(line.size() < 48) {
+				line += " ";
 			}
-			log_msg(fmt("World entity count: %", ents));
-			log_msg("  Archetypes:");
-			for(const auto& arc : world.archetypes()) {
-				log_msg(fmt("    entity count: %", arc->entity_count()));
-				log_msg(fmt("    component count: %", arc->component_count()));
-				for(const ComponentRuntimeInfo& info : arc->component_infos()) {
-					log_msg(fmt("      %", info.type_name));
+			fmt_into(line, "% s ", std::get<1>(res));
+
+			line = line.sub_str(0, 60);
+			while(line.size() < 60) {
+				line += " ";
+			}
+
+			core::Vector<double> times;
+			for(const auto& i : results) {
+				times << std::get<1>(i.second[r]);
+			}
+			std::sort(times.begin(), times.end());
+
+			const double res_time = std::get<1>(res);
+			if(res_time <= times[1] && times[1] * 0.95 < times[0]) {
+				line += "~";
+			}
+			if(res_time == times.last() && res_time > times[0] * 2.0) {
+				line += "!";
+			}
+
+			if(times[0] == res_time) {
+				line += "*";
+				if(times[1] * 0.5 > res_time) {
+					line += "*";
 				}
+			} else {
+				while(line.size() < 62) {
+					line += " ";
+				}
+				const double mul = res_time / times[0];
+				fmt_into(line, " %.%x", usize(mul), usize(mul * 10) % 10);
 			}
-			log_msg("  Testers:");
-			for(auto&& [id, tester] : all_components<Tester>(world)) {
-				y_debug_assert(id.is_valid());
-				log_msg(fmt("    id: [%, %]", id.index(), id.version()));
-				tester.validate();
-			}
-
-			log_msg("  int:");
-			for(auto&& [id, i] : all_components<int>(world)) {
-				y_debug_assert(id.is_valid());
-				log_msg(fmt("    id: [%, %] ==> %", id.index(), id.version(), i));
-			}
-		};
-
-		log_msg("Original world:");
-		print_world(world);
-
-		log_msg("Deser world:");
-		print_world(new_world);
-
-	} catch(serde3::Error err) {
-		log_msg(fmt("Serde error: % while processing: \"%\"", serde3::error_msg(err), err.member ? err.member : ""), Log::Error);
+			log_msg(line, Log::Perf);
+		}
 	}
 
-	log_msg("-------------------------");
-
-#endif
 	return 0;
 }
 
+#else
+
+int main() {
+
+	const bool ok = test::run_tests();
+
+	if(ok) {
+		log_msg("All tests OK\n");
+	} else {
+		log_msg("Tests failed\n", Log::Error);
+	}
+
+	return ok ? 0 : 1;
+}
+
+#endif
 
 

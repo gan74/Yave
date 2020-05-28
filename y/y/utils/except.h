@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef Y_UTILS_EXCEPT_H
 #define Y_UTILS_EXCEPT_H
 
-#define y_throw_msg(msg) throw std::runtime_error(msg)
+#define y_throw(msg) throw std::runtime_error(msg)
 
 namespace y {
 }

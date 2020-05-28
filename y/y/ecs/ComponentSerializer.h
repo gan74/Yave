@@ -23,41 +23,23 @@ SOFTWARE.
 #define Y_ECS_COMPONENTSERIALIZER_H
 
 #include "ComponentRuntimeInfo.h"
-#include "ComponentView.h"
 
 #include <y/serde3/serde.h>
 #include <y/serde3/archives.h>
 #include <y/serde3/poly.h>
-
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
 
 
 namespace y {
 namespace ecs {
 
 struct ComponentInfoSerializerBase : NonMovable {
-	virtual ~ComponentInfoSerializerBase();
+	virtual ~ComponentInfoSerializerBase() {
+	}
 
 	virtual ComponentRuntimeInfo create_runtime_info() const = 0;
 
-	y_serde3_poly_base(ComponentInfoSerializerBase)
+	//y_serde3_poly_base(ComponentInfoSerializerBase)
 };
-
-class ComponentSerializerBase : NonMovable {
-	public:
-		virtual ~ComponentSerializerBase();
-
-		y_serde3_poly_base(ComponentSerializerBase)
-
-	protected:
-		ComponentSerializerBase(Archetype* arc);
-
-		Archetype* _archetype = nullptr;
-};
-
-
 
 template<typename T>
 class ComponentInfoSerializer : public ComponentInfoSerializerBase {
@@ -69,10 +51,25 @@ class ComponentInfoSerializer : public ComponentInfoSerializerBase {
 			return ComponentRuntimeInfo::from_type<T>();
 		}
 
-		y_serde3_poly(ComponentInfoSerializer)
-		y_serde3(u32(0))
+		//y_serde3_poly(ComponentInfoSerializer)
+		//y_serde3(u32(17))
+
+	private:
 };
 
+class ComponentSerializerBase : NonMovable {
+	public:
+		virtual ~ComponentSerializerBase() {
+		}
+
+		//y_serde3_poly_base(ComponentSerializerBase)
+
+	protected:
+		ComponentSerializerBase(Archetype* arc) : _archetype(arc) {
+		}
+
+		Archetype* _archetype = nullptr;
+};
 
 template<typename T>
 class ComponentSerializer : public ComponentSerializerBase {
@@ -80,12 +77,14 @@ class ComponentSerializer : public ComponentSerializerBase {
 		ComponentSerializer(Archetype* arc) : ComponentSerializerBase(arc) {
 		}
 
-		y_serde3_poly(ComponentSerializer)
-		y_serde3(components())
+		/*y_serde3_poly(ComponentSerializer)
+		y_serde3(test())*/
 
 	private:
-		SingleComponentViewRange<T> components() const;
-
+		u32 test() {
+			log_msg("test");
+			return 17;
+		}
 };
 
 class ComponentSerializerWrapper {
@@ -100,25 +99,34 @@ class ComponentSerializerWrapper {
 		y_serde3(_serializer)
 
 	private:
-		ComponentSerializerWrapper(std::unique_ptr<ComponentSerializerBase> ptr);
+		ComponentSerializerWrapper(std::unique_ptr<ComponentSerializerBase> ptr) : _storage(std::move(ptr)), _serializer(*_storage.get()) {
+		}
 
 		std::unique_ptr<ComponentSerializerBase> _storage;
-		ComponentSerializerBase& _serializer;
+		std::reference_wrapper<ComponentSerializerBase> _serializer;
 };
 
 
-class ComponentSerializerList {
+class ComponentListSerializer {
 	public:
-		ComponentSerializerList(const Archetype* arc);
+		ComponentListSerializer() = default;
+
+		void add(ComponentSerializerWrapper wrapper) {
+			_wrappers.emplace_back(std::move(wrapper));
+		}
 
 		y_serde3(wrappers())
 
 	private:
-		core::MutableSpan<ComponentSerializerWrapper> wrappers();
-		core::Span<ComponentSerializerWrapper> wrappers() const;
+		core::Range<core::Vector<ComponentSerializerWrapper>::iterator> wrappers() {
+			return _wrappers;
+		}
 
-		const Archetype* _archetype = nullptr;
-		mutable core::Vector<ComponentSerializerWrapper> _wrappers;
+		core::Range<core::Vector<ComponentSerializerWrapper>::const_iterator> wrappers() const {
+			return _wrappers;
+		}
+
+		core::Vector<ComponentSerializerWrapper> _wrappers;
 };
 
 

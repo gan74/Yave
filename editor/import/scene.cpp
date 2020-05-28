@@ -86,7 +86,7 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
 	const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
 
 	if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
-		y_throw_msg(fmt_c_str("Unsupported component type (%) for \"%\".", accessor.componentType, std::string_view(name)));
+		y_throw(fmt_c_str("Unsupported component type (%) for \"%\".", accessor.componentType, std::string_view(name)));
 	}
 
 	math::Vec3* vec3_elems = nullptr;
@@ -124,11 +124,11 @@ static core::Vector<Vertex> import_vertices(const tinygltf::Model& model, const 
 		if(!vertices.size()) {
 			std::fill_n(std::back_inserter(vertices), accessor.count, Vertex());
 		} else if(vertices.size() != accessor.count) {
-			y_throw_msg("Invalid attribute count.");
+			y_throw("Invalid attribute count.");
 		}
 
 		if(accessor.normalized) {
-			y_throw_msg("Normalization not supported.");
+			y_throw("Normalization not supported.");
 		}
 
 		decode_attrib_buffer(model, name, accessor, vertices.data());
@@ -151,7 +151,7 @@ static void decode_index_buffer(const tinygltf::Model& model, const tinygltf::Bu
 static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& model, const tinygltf::Primitive& prim) {
 	tinygltf::Accessor accessor = model.accessors[prim.indices];
 	if(!accessor.count) {
-		y_throw_msg("Non indexed primitives are not supported");
+		y_throw("Non indexed primitives are not supported");
 	}
 
 	core::Vector<IndexedTriangle> triangles;
@@ -174,7 +174,7 @@ static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& mod
 		break;
 
 		default:
-			y_throw_msg("Index component type not supported.");
+			y_throw("Index component type not supported.");
 	}
 
 	return triangles;
@@ -202,7 +202,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 			log_msg(warn, Log::Warning);
 		}
 		if(!ok) {
-			y_throw_msg(err);
+			y_throw(err);
 		}
 	}
 
