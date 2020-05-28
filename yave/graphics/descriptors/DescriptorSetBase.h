@@ -40,9 +40,6 @@ class DescriptorSetBase {
 		}
 
 	protected:
-		// helpers for parent classes
-		void update_set(DevicePtr dptr, core::Span<Descriptor> bindings);
-
 		VkDescriptorSet _set = {};
 };
 

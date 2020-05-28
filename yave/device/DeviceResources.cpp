@@ -67,6 +67,7 @@ static constexpr DeviceMaterialData material_datas[] = {
 		DeviceMaterialData::skinned(SpirV::TexturedFrag),
 		DeviceMaterialData::screen(SpirV::ToneMapFrag),
 		DeviceMaterialData::screen(SpirV::RayleighSkyFrag, true),
+		DeviceMaterialData::screen(SpirV::DownsampleFrag),
 	};
 
 static constexpr const char* spirv_names[] = {
@@ -85,6 +86,7 @@ static constexpr const char* spirv_names[] = {
 		"tonemap.frag",
 		"rayleigh_sky.frag",
 		"textured.frag",
+		"downsample.frag",
 
 		"basic.vert",
 		"skinned.vert",
@@ -187,7 +189,8 @@ void DeviceResources::swap(DeviceResources& other) {
 
 void DeviceResources::load_resources(DevicePtr dptr) {
 	for(usize i = 0; i != spirv_count; ++i) {
-		_spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
+		const auto file_name = fmt("%.spv", spirv_names[i]);
+		_spirv[i] = SpirVData::deserialized(io2::File::open(file_name).expected(fmt_c_str("Unable to open SPIR-V file (%).", file_name)));
 	}
 
 	for(usize i = 0; i != compute_count; ++i) {

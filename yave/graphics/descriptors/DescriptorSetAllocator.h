@@ -22,8 +22,8 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETALLOCATOR_H
 #define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETALLOCATOR_H
 
-
 #include <yave/graphics/vk/vk.h>
+#include <yave/graphics/buffers/Buffer.h>
 #include <yave/device/DeviceLinked.h>
 
 #include <y/utils/hash.h>
@@ -32,6 +32,7 @@ SOFTWARE.
 
 #include <mutex>
 #include <bitset>
+#include <memory>
 #include <algorithm>
 #include <memory>
 
@@ -61,6 +62,11 @@ class DescriptorSetLayout : NonCopyable, public DeviceLinked {
 	public:
 		static constexpr usize descriptor_type_count = 12;
 
+		struct InlineBlock {
+			u32 binding;
+			u32 byte_size;
+		};
+
 		DescriptorSetLayout() = default;
 		DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings);
 
@@ -71,11 +77,17 @@ class DescriptorSetLayout : NonCopyable, public DeviceLinked {
 
 		const std::array<u32, descriptor_type_count>& desciptors_count() const;
 
+		core::Span<InlineBlock> inline_blocks_fallbacks() const;
+		usize inline_blocks() const;
+
 		VkDescriptorSetLayout vk_descriptor_set_layout() const;
 
 	private:
 		SwapMove<VkDescriptorSetLayout> _layout;
 		std::array<u32, descriptor_type_count> _sizes = {};
+
+		usize _inline_blocks = 0;
+		core::Vector<InlineBlock> _inline_blocks_fallbacks;
 };
 
 class DescriptorSetData {
@@ -109,7 +121,7 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 		DescriptorSetPool(const DescriptorSetLayout& layout);
 		~DescriptorSetPool();
 
-		DescriptorSetData alloc();
+		DescriptorSetData alloc(core::Span<Descriptor> descriptors);
 		void recycle(u32 id);
 
 		bool is_full() const;
@@ -123,6 +135,10 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 		usize used_sets() const;
 
 	private:
+		void update_set(u32 id, core::Span<Descriptor> descriptors);
+
+		usize inline_sub_buffer_alignment() const;
+
 		std::bitset<pool_size> _taken;
 		u32 _first_free = 0;
 
@@ -131,6 +147,10 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
 		std::array<VkDescriptorSet, pool_size> _sets;
 		VkDescriptorPool _pool = {};
 		VkDescriptorSetLayout _layout = {};
+
+		usize _inline_blocks = 0;
+		usize _descriptor_buffer_size = 0;
+		Buffer<BufferUsage::UniformBit> _inline_buffer;
 };
 
 class DescriptorSetAllocator : NonCopyable, public DeviceLinked  {
@@ -145,7 +165,7 @@ class DescriptorSetAllocator : NonCopyable, public DeviceLinked  {
 	public:
 		DescriptorSetAllocator(DevicePtr dptr);
 
-		DescriptorSetData create_descritptor_set(const Key& bindings);
+		DescriptorSetData create_descritptor_set(core::Span<Descriptor> descriptors);
 		const DescriptorSetLayout& descriptor_set_layout(const Key& bindings);
 
 		// Slow: for debug only

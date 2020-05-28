@@ -66,6 +66,7 @@ class DeviceResources final : NonCopyable {
 			ToneMapFrag,
 			RayleighSkyFrag,
 			TexturedFrag,
+			DownsampleFrag,
 
 			BasicVert,
 			SkinnedVert,
@@ -96,6 +97,8 @@ class DeviceResources final : NonCopyable {
 
 			ToneMappingMaterialTemplate,
 			RayleighSkyMaterialTemplate,
+
+			DownsampleMaterialTemplate,
 
 			MaxMaterialTemplates
 		};
