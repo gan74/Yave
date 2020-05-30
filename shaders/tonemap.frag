@@ -64,7 +64,8 @@ vec3 tone_map(vec3 hdr, float exposure) {
 	}
 
 	if(mode == 3) {
-		return gamma_correction(ACES_fast(hdr));
+		const vec3 aces = ACES_fast(hdr);
+		return gamma_correction(aces);
 	}
 
 	return hdr;

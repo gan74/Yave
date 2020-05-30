@@ -66,7 +66,10 @@ class DeviceResources final : NonCopyable {
 			ToneMapFrag,
 			RayleighSkyFrag,
 			TexturedFrag,
-			DownsampleFrag,
+			PassthroughFrag,
+			BloomFrag,
+			HBlurFrag,
+			VBlurFrag,
 
 			BasicVert,
 			SkinnedVert,
@@ -98,7 +101,13 @@ class DeviceResources final : NonCopyable {
 			ToneMappingMaterialTemplate,
 			RayleighSkyMaterialTemplate,
 
-			DownsampleMaterialTemplate,
+			ScreenPassthroughMaterialTemplate,
+			ScreenBlendPassthroughMaterialTemplate,
+
+			BloomMaterialTemplate,
+
+			HBlurMaterialTemplate,
+			VBlurMaterialTemplate,
 
 			MaxMaterialTemplates
 		};

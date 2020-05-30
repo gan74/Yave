@@ -134,13 +134,7 @@ static void render_selection(ContextPtr ctx,
 		const auto* material = ctx->resources()[EditorResources::WireFrameMaterialTemplate];
 		recorder.bind_material(material, {pass->descriptor_sets()[0]});
 		recorder.bind_attrib_buffers(vertices);
-
-		VkDrawIndirectCommand command = {};
-		{
-			command.vertexCount = points.size();
-			command.instanceCount = 1;
-		}
-		recorder.draw(command);
+		recorder.draw_array(points.size());
 	}
 }
 
@@ -202,12 +196,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 		}
 
 		if(index) {
-			VkDrawIndirectCommand command = {};
-			{
-				command.vertexCount = index;
-				command.instanceCount = 1;
-			}
-			recorder.draw(command);
+			recorder.draw_array(index);
 		}
 	}
 

@@ -67,7 +67,11 @@ static constexpr DeviceMaterialData material_datas[] = {
 		DeviceMaterialData::skinned(SpirV::TexturedFrag),
 		DeviceMaterialData::screen(SpirV::ToneMapFrag),
 		DeviceMaterialData::screen(SpirV::RayleighSkyFrag, true),
-		DeviceMaterialData::screen(SpirV::DownsampleFrag),
+		DeviceMaterialData::screen(SpirV::PassthroughFrag),
+		DeviceMaterialData::screen(SpirV::PassthroughFrag, true),
+		DeviceMaterialData::screen(SpirV::BloomFrag, true),
+		DeviceMaterialData::screen(SpirV::HBlurFrag, true),
+		DeviceMaterialData::screen(SpirV::VBlurFrag, true),
 	};
 
 static constexpr const char* spirv_names[] = {
@@ -86,7 +90,10 @@ static constexpr const char* spirv_names[] = {
 		"tonemap.frag",
 		"rayleigh_sky.frag",
 		"textured.frag",
-		"downsample.frag",
+		"passthrough.frag",
+		"bloom.frag",
+		"hblur.frag",
+		"vblur.frag",
 
 		"basic.vert",
 		"skinned.vert",

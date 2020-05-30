@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,28 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_RENDERER_BLURPASS_H
+#define YAVE_RENDERER_BLURPASS_H
 
-#include "EditorRenderer.h"
+#include <yave/framegraph/FrameGraphResourceId.h>
 
-#include <yave/renderer/BlurPass.h>
+#include <y/core/Vector.h>
 
-namespace editor {
+namespace yave {
 
-EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLProbe>& ibl_probe, const EditorRendererSettings& settings) {
-	y_profile();
+struct BlurPass {
+	FrameGraphImageId blurred;
 
-	EditorRenderer renderer;
-	renderer.renderer = DefaultRenderer::create(framegraph, view, size, ibl_probe, settings.renderer_settings);
-
-	renderer.color = renderer.renderer.color;
-	renderer.depth = renderer.renderer.depth;
-
-	if(settings.enable_editor_entities) {
-		renderer.entity_pass = EditorEntityPass::create(ctx, framegraph, view, renderer.depth, renderer.color);
-		renderer.color = renderer.entity_pass.color;
-	}
-
-	return renderer;
-}
+	static BlurPass create(FrameGraph& framegraph, FrameGraphImageId in_image);
+};
 
 }
+
+
+#endif // YAVE_RENDERER_BLURPASS_H

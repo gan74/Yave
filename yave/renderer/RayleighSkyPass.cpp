@@ -90,13 +90,7 @@ RayleighSkyPass RayleighSkyPass::create(FrameGraph& framegraph, FrameGraphImageI
 				auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 				const auto* material = recorder.device()->device_resources()[DeviceResources::RayleighSkyMaterialTemplate];
 				render_pass.bind_material(material, {self->descriptor_sets()[0]});
-
-				VkDrawIndirectCommand command = {};
-				{
-					command.vertexCount = 3;
-					command.instanceCount = 1;
-				}
-				render_pass.draw(command);
+				render_pass.draw_array(3);
 			});
 	}
 

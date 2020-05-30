@@ -20,42 +20,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "DownsamplePass.h"
+#include "BlurPass.h"
 
 #include <yave/framegraph/FrameGraphPassBuilder.h>
 #include <yave/framegraph/FrameGraph.h>
 
 namespace yave {
 
-DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId orig, usize max_downsampling) {
-	const math::Vec2ui orig_size = framegraph.image_size(orig);
-	const ImageFormat format = framegraph.image_format(orig);
+BlurPass BlurPass::create(FrameGraph& framegraph, FrameGraphImageId in_image) {
+	const math::Vec2ui size = framegraph.image_size(in_image);
+	const ImageFormat format = framegraph.image_format(in_image);
 
-	DownsamplePass pass;
+	auto blur_sub_pass = [&](FrameGraphPassBuilder builder, FrameGraphImageId in, DeviceResources::MaterialTemplates mat) -> FrameGraphMutableImageId {
+		const auto blurred = builder.declare_image(format, size);
 
-	FrameGraphImageId last = orig;
-	for(usize m = 1;; ++m) {
-		const math::Vec2ui mip_size = math::Vec2ui(orig_size.x() >> m, orig_size.y() >> m);
-		if(!mip_size.x() || !mip_size.y() || (1u << m) > max_downsampling) {
-			break;
-		}
-
-		FrameGraphPassBuilder builder = framegraph.add_pass(fmt("Downsample pass x%", 1 << m));
-
-		const auto mip = builder.declare_image(format, mip_size);
-
-		builder.add_color_output(mip);
-		builder.add_uniform_input(last);
+		builder.add_color_output(blurred);
+		builder.add_uniform_input(in);
 		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			const auto* material = recorder.device()->device_resources()[DeviceResources::ScreenPassthroughMaterialTemplate];
+			const auto* material = recorder.device()->device_resources()[mat];
 			render_pass.bind_material(material, {self->descriptor_sets()[0]});
 			render_pass.draw_array(3);
 		});
 
-		pass.mips << mip;
-		last = mip;
-	}
+		return blurred;
+	};
+
+	const FrameGraphMutableImageId h_blur = blur_sub_pass(framegraph.add_pass("Blur horizontal pass"), in_image, DeviceResources::HBlurMaterialTemplate);
+	const FrameGraphMutableImageId v_blur = blur_sub_pass(framegraph.add_pass("Blur vertical pass"), h_blur, DeviceResources::VBlurMaterialTemplate);
+
+	BlurPass pass;
+	pass.blurred = v_blur;
 
 	return pass;
 }

@@ -114,6 +114,9 @@ class RenderPassRecorder : NonMovable {
 		void draw(const VkDrawIndexedIndirectCommand& indirect);
 		void draw(const VkDrawIndirectCommand& indirect);
 
+		void draw_indexed(usize index_count);
+		void draw_array(usize vertex_count);
+
 		void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
 		void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
 		void bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});

@@ -122,6 +122,20 @@ void RenderPassRecorder::draw(const VkDrawIndirectCommand& indirect) {
 	);
 }
 
+void RenderPassRecorder::draw_indexed(usize index_count) {
+	VkDrawIndexedIndirectCommand command = {};
+	command.indexCount = index_count;
+	command.instanceCount = 1;
+	draw(command);
+}
+
+void RenderPassRecorder::draw_array(usize vertex_count) {
+	VkDrawIndirectCommand command = {};
+	command.vertexCount = vertex_count;
+	command.instanceCount = 1;
+	draw(command);
+}
+
 void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices,
 									  const SubBuffer<BufferUsage::AttributeBit>& per_vertex,
 									  core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
