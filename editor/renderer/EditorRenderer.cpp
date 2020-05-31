@@ -22,8 +22,6 @@ SOFTWARE.
 
 #include "EditorRenderer.h"
 
-#include <yave/renderer/BlurPass.h>
-
 namespace editor {
 
 EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const std::shared_ptr<IBLProbe>& ibl_probe, const EditorRendererSettings& settings) {
