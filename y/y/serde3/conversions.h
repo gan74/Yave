@@ -25,18 +25,22 @@ SOFTWARE.
 #include "headers.h"
 #include "result.h"
 
+#include <y/io2/io.h>
+
 Y_TODO(Remove this (is this a GCC bug?))
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-conversion"
 #endif
 
-#define y_serde3_try_convert(prim)														\
+#define y_serde3_try_convert(Type)														\
 	do {																				\
-		if constexpr(std::is_convertible_v<prim, T>) {									\
-			static constexpr auto type_hash = detail::header_type_hash<prim>();			\
+		if constexpr(std::is_convertible_v<Type, T>) {									\
+			static constexpr auto type_hash = detail::header_type_hash<Type>();			\
 			if(type_hash == type.type_hash) {											\
-				t = static_cast<T>(*static_cast<const prim*>(data));					\
+				Type tmp = {};															\
+				y_try(read_one(tmp));													\
+				t = static_cast<T>(tmp);												\
 				return core::Ok(Success::Full);											\
 			}																			\
 		}																				\
@@ -46,8 +50,15 @@ namespace y {
 namespace serde3 {
 
 template<typename T>
-Result try_convert(T& t, detail::TypeHeader type, const void* data) {
-	unused(t, type, data);
+Result try_convert(T& t, detail::TypeHeader type, io2::Reader& reader) {
+	unused(t, type, reader);
+
+	auto read_one = [&](auto& t) -> Result {
+		if(!reader.read_one(t)) {
+			return core::Err(Error(ErrorType::IOError));
+		}
+		return core::Ok(Success::Full);
+	};
 
 	y_serde3_try_convert(u8);
 	y_serde3_try_convert(u16);

@@ -37,6 +37,8 @@ SOFTWARE.
 #include <y/io2/Buffer.h>
 #endif
 
+
+
 #define y_try_status(result)																	\
 	do {																						\
 		if(auto&& _y_try_result = (result); _y_try_result.is_error()) { 						\
@@ -311,7 +313,18 @@ class WritableArchive final {
 		Result serialize_members_internal(const std::tuple<NamedObject<Args, Refs>...>& objects) {
 			unused(objects);
 			if constexpr(I < sizeof...(Args)) {
-				y_try(serialize_one(std::get<I>(objects)));
+				{
+					Y_TODO(RAII this?)
+					SizePatch patch{tell(), 0};
+					y_try(write_one(size_type(-1)));
+
+					y_try(serialize_one(std::get<I>(objects)));
+
+					patch.size = (size_type(tell()) - size_type(patch.index)) - sizeof(size_type);
+					push_patch(patch);
+				}
+
+				//y_try(serialize_one(std::get<I>(objects)));
 				y_try(serialize_members_internal<I + 1>(objects));
 			}
 			return core::Ok(Success::Full);
@@ -424,16 +437,13 @@ class ReadableArchive final {
 	using File = io2::Reader;
 	using size_type = detail::size_type;
 
-	static constexpr bool force_safe = false;
+	static constexpr bool force_safe = true;
 
-	struct HeaderOffset {
-		detail::ObjectHeader header;
-		usize offset = 0;
-	};
 
 	struct ObjectData {
-		core::Vector<HeaderOffset> members;
+		core::Vector<usize> members_offsets;
 		usize end_offset = 0;
+		Success success_state = Success::Full;
 	};
 
 	public:
@@ -673,20 +683,19 @@ class ReadableArchive final {
 			static_assert(is_pod_v<T>);
 			static_assert(!std::is_pointer_v<T>);
 
-			y_try(check_header(object));
-
-			/*if(header != check) {
-				static constexpr usize max_prim_size = 4 * sizeof(float);
-				if(header.type.name_hash == check.type.name_hash && size <= max_prim_size) {
-					std::array<u8, max_prim_size> buffer;
-					y_try_discard(_file.read(buffer.data(), size));
-					return try_convert<T>(object.object, header.type, buffer.data());
-				} else {
-					return core::Err();
+			detail::ObjectHeader header;
+			Result header_res = check_header(object, header);
+			if(!header_res) {
+				if(header_res.error().type == ErrorType::MemberTypeError) {
+					auto convert_res = try_convert(object.object, header.type, _file);
+					if(!convert_res) {
+						return core::Err(convert_res.error().with_name(object.name.data()));
+					}
 				}
-			} else*/ {
-				return read_one(object.object);
+				return header_res;
 			}
+
+			return read_one(object.object);
 		}
 
 
@@ -712,43 +721,75 @@ class ReadableArchive final {
 
 		template<bool Safe, typename T>
 		Result deserialize_members(T& object, const detail::ObjectHeader& header) {
-			unused(header);
-			Y_TODO(read and use header for safe deser)
 			ObjectData data;
+			if constexpr(Safe) {
+				usize offset = tell();
+				for(usize i = 0; i != header.members.count; ++i) {
+					data.members_offsets << offset;
+					if(i) {
+						seek(offset);
+					}
+
+					size_type size = size_type(-1);
+					y_try(read_one(size));
+					offset += size + sizeof(size_type);
+				}
+				data.end_offset = offset;
+			}
+			y_defer(seek(data.end_offset));
 			return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
 		}
 
 		template<bool Safe, usize I, typename... Args, bool... Refs>
 		Result deserialize_members_internal(const std::tuple<NamedObject<Args, Refs>...>& members,
-											const ObjectData& object_data) {
-			unused(members, object_data);
+											ObjectData& object_data) {
+			unused(object_data);
 
 			if constexpr(I < sizeof...(Args)) {
+				const auto& member = std::get<I>(members);
+
 				if constexpr(Safe) {
-					const auto& member = std::get<I>(members);
-					return core::Err(Error(ErrorType::SignatureError, member.name.data()));
-				}
-				/*if constexpr(Safe) {
+					auto& offsets = object_data.members_offsets;
+					if(offsets.is_empty()) {
+						return core::Ok(Success::Partial);
+					}
+
 					bool found = false;
-					const auto header = detail::build_header(std::get<I>(members));
-					for(const auto& m : object_data.members) {
-						if(m.header.type.name_hash == header.type.name_hash) {
-							seek(m.offset);
-							y_try_status(deserialize_one(std::get<I>(members)));
+					for(usize i = 0; i != offsets.size(); ++i) {
+						seek(offsets[i]);
+
+						size_type size = size_type(-1);
+						y_try(read_one(size));
+						const usize end = tell() + size;
+
+						if(deserialize_one(member)) {
+							if(tell() != end) {
+								return core::Err(Error(ErrorType::SignatureError, member.name.data()));
+							}
+							offsets.erase_unordered(offsets.begin() + i);
 							found = true;
 							break;
 						}
 					}
 					if(!found) {
-						status = Success::Partial;
+						object_data.success_state = Success::Partial;
 					}
-				}*/
+				} else {
+					size_type size = size_type(-1);
+					y_try(read_one(size));
+					const usize end = tell() + size;
 
-				y_try(deserialize_one(std::get<I>(members)));
+					y_try(deserialize_one(member));
+
+					if(tell() != end) {
+						return core::Err(Error(ErrorType::SignatureError, member.name.data()));
+					}
+				}
+
 				return deserialize_members_internal<Safe, I + 1>(members, object_data);
 			}
 
-			return core::Ok(Success::Full);
+			return core::Ok(object_data.success_state);
 		}
 
 
@@ -846,15 +887,23 @@ class ReadableArchive final {
 		// ------------------------------- READ -------------------------------
 
 		template<typename T, bool R>
-		Result check_header(const NamedObject<T, R>& object) {
-			detail::ObjectHeader header;
+		Result check_header(const NamedObject<T, R>& object, detail::ObjectHeader& header) {
 			y_try(read_header(header));
 
 			const auto check = detail::build_header(object);
 			if(header != check) {
-				return core::Err(Error(ErrorType::SignatureError, object.name.data()));
+				const ErrorType tpe = header.type.name_hash == check.type.name_hash
+					? ErrorType::MemberTypeError
+					: ErrorType::SignatureError;
+				return core::Err(Error(tpe, object.name.data()));
 			}
 			return core::Ok(Success::Full);
+		}
+
+		template<typename T, bool R>
+		Result check_header(const NamedObject<T, R>& object) {
+			detail::ObjectHeader header;
+			return check_header(object, header);
 		}
 
 

@@ -45,12 +45,17 @@ enum class ErrorType : u32 {
 	IOError,
 	VersionError,
 	SignatureError,
+	MemberTypeError,
 	UnknownPolyError,
 	SizeError,
 };
 
 struct Error {
 	Error(ErrorType t, const char* m = nullptr) : type(t), member(m) {
+	}
+
+	Error with_name(const char* name) const {
+		return Error(type, name);
 	}
 
 	const ErrorType type = ErrorType::UnknownError;
@@ -65,6 +70,7 @@ inline const char* error_msg(ErrorType tpe) {
 		"IO error",
 		"Incompatible version error",
 		"Signature mismatch error",
+		"Type mismatch error",
 		"Polymorphic ID error",
 		"Range size mismatch error",
 	};
