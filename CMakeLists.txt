@@ -42,7 +42,7 @@ endif()
 
 
 # Another shitty hack to locate vulkan SDK if CMake fails
-if(NOT "${Vulkan_INCLUDE_DIRS}")
+if(NOT "${Vulkan_INCLUDE_DIRS}" AND "$ENV{VULKAN_SDK}")
 	file(TO_CMAKE_PATH $ENV{VULKAN_SDK} Vulkan_SDK_Dir)
 	set(Vulkan_INCLUDE_DIRS ${Vulkan_SDK_Dir}/Include)
 	set(Vulkan_LIBRARY ${Vulkan_SDK_Dir}/Lib/vulkan-1.lib)
