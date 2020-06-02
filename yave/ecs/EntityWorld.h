@@ -104,12 +104,15 @@ class EntityWorld : NonCopyable {
 
 		template<typename T>
 		T* component(EntityId id) {
-			return container<T>()->template component_ptr<T>(id);
+			ComponentContainerBase* cont = container<T>();
+			return cont ? cont->template component_ptr<T>(id) : nullptr;
+			//return container<T>()->template component_ptr<T>(id);
 		}
 
 		template<typename T>
 		const T* component(EntityId id) const {
-			return container<T>()->template component_ptr<T>(id);
+			const ComponentContainerBase* cont = container<T>();
+			return cont ? cont->template component_ptr<T>(id) : nullptr;
 		}
 
 
@@ -134,7 +137,8 @@ class EntityWorld : NonCopyable {
 
 		template<typename T>
 		core::MutableSpan<T> components() {
-			return container<T>()->template components<T>();
+			ComponentContainerBase* cont = container<T>();
+			return cont ? cont->components<T>() : decltype(cont->components<T>())();
 		}
 
 		template<typename T>
@@ -257,7 +261,7 @@ class EntityWorld : NonCopyable {
 		EntityIdPool _entities;
 		core::Vector<EntityId> _deletions;
 
-		std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>,Hash> _component_containers;
+		std::unordered_map<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>, Hash> _component_containers;
 
 		Y_TODO(Do we have to serialize this?)
 		core::Vector<ComponentTypeIndex> _required_components;
