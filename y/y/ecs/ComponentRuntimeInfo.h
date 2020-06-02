@@ -33,11 +33,28 @@ namespace y {
 namespace ecs {
 namespace detail {
 
+
 template<typename T>
 std::unique_ptr<ComponentInfoSerializerBase> create_info_serializer();
 
 template<typename T>
 ComponentSerializerWrapper create_component_serializer(Archetype*);
+
+template<typename T>
+std::unique_ptr<ComponentContainerBase> create_component_container(const void*);
+
+using create_component_container_t = std::unique_ptr<ComponentContainerBase>(*)(const void*);
+
+template<typename T>
+create_component_container_t create_component_container_func() {
+	if constexpr(std::is_copy_constructible_v<T>) {
+		return create_component_container<T>;
+	}
+	return nullptr;
+}
+
+
+Y_TODO(y_debug_assert(usize(dst) % sizeof(T) == 0) doesnt make sense)
 
 template<typename T>
 void create_component(void* dst, usize count) {
@@ -93,6 +110,7 @@ struct ComponentRuntimeInfo {
 
 	std::unique_ptr<ComponentInfoSerializerBase> (*create_info_serializer)() = nullptr;
 	ComponentSerializerWrapper (*create_component_serializer)(Archetype*) = nullptr;
+	std::unique_ptr<ComponentContainerBase> (*create_component_container)(const void*) = nullptr;
 
 	u32 type_id = u32(-1);
 
@@ -101,6 +119,7 @@ struct ComponentRuntimeInfo {
 
 	template<typename T>
 	static ComponentRuntimeInfo from_type(usize offset = 0) {
+
 		return {
 			offset,
 			sizeof(T),
@@ -110,6 +129,7 @@ struct ComponentRuntimeInfo {
 			detail::move_component<T>,
 			detail::create_info_serializer<T>,
 			detail::create_component_serializer<T>,
+			detail::create_component_container_func<T>(),
 			type_index<T>(),
 			ct_type_name<T>()
 		};
@@ -119,6 +139,10 @@ struct ComponentRuntimeInfo {
 
 	void* index_ptr(void* chunk, usize index) const {
 		return static_cast<u8*>(chunk) + chunk_offset + index * component_size;
+	}
+
+	const void* index_ptr(const void* chunk, usize index) const {
+		return static_cast<const u8*>(chunk) + chunk_offset + index * component_size;
 	}
 
 	void create_indexed(void* chunk, usize index, usize count) const {

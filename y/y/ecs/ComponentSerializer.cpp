@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,38 +20,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "import.h"
-#include "transforms.h"
+#include "ComponentSerializer.h"
+#include "Archetype.h"
 
-#include <yave/utils/FileSystemModel.h>
+namespace y {
+namespace ecs {
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb.h"
-
-namespace editor {
-namespace import {
-
-Named<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {
-	y_profile();
-
-	int width, height, bpp;
-	u8* data = stbi_load(filename.data(), &width, &height, &bpp, 4);
-	y_defer(stbi_image_free(data););
-
-	if(!data) {
-		y_throw_msg(fmt_c_str("Unable to load image \"%\".", filename));
-	}
-
-	ImageData img(math::Vec2ui(width, height), data, VK_FORMAT_R8G8B8A8_UNORM);
-	if((flags & ImageImportFlags::GenerateMipmaps) == ImageImportFlags::GenerateMipmaps) {
-		img = compute_mipmaps(img);
-	}
-	return {clean_asset_name(filename), std::move(img)};
+ComponentInfoSerializerBase::~ComponentInfoSerializerBase() {
 }
 
-core::String supported_image_extensions() {
-	return "*.jpg;*.jpeg;*.png;*.bmp;*.psd;*.tga;*.gif;*.hdr;*.pic;*.ppm;*.pgm";
+ComponentSerializerBase::~ComponentSerializerBase() {
 }
+
+ComponentSerializerBase::ComponentSerializerBase(Archetype* arc) : _archetype(arc) {
+}
+
+ComponentSerializerWrapper::ComponentSerializerWrapper(std::unique_ptr<ComponentSerializerBase> ptr) : _storage(std::move(ptr)), _serializer(*_storage.get()) {
+}
+
+ComponentSerializerList::ComponentSerializerList(const Archetype* arc) : _archetype(arc) {
+}
+
+core::MutableSpan<ComponentSerializerWrapper> ComponentSerializerList::wrappers() {
+	_wrappers = _archetype->create_component_serializer_wrappers();
+	return _wrappers;
+}
+
+core::Span<ComponentSerializerWrapper> ComponentSerializerList::wrappers() const {
+	_wrappers = _archetype->create_component_serializer_wrappers();
+	return _wrappers;
+}
+
 
 }
 }

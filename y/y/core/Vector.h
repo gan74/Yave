@@ -85,7 +85,7 @@ class Vector : ResizePolicy, Allocator {
 
 		Vector() = default;
 
-		Vector(const Vector& other) : Vector(other.begin(), other.end()) {
+		explicit Vector(const Vector& other) : Vector(other.begin(), other.end()) {
 		}
 
 		Vector(usize size, const value_type& elem) {
@@ -190,7 +190,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		void push_back(const_reference elem) {
-			if(_data_end == _alloc_end) {
+			if(is_full()) {
 				expend();
 			}
 
@@ -200,7 +200,7 @@ class Vector : ResizePolicy, Allocator {
 		}
 
 		void push_back(value_type&& elem) {
-			if(_data_end == _alloc_end) {
+			if(is_full()) {
 				expend();
 			}
 
@@ -211,7 +211,7 @@ class Vector : ResizePolicy, Allocator {
 
 		template<typename... Args>
 		reference emplace_back(Args&&... args) {
-			if(_data_end == _alloc_end) {
+			if(is_full()) {
 				expend();
 			}
 
@@ -254,6 +254,21 @@ class Vector : ResizePolicy, Allocator {
 		void erase(iterator it) {
 			std::move(it + 1, end(), it);
 			pop();
+		}
+
+		// Slow insert
+		iterator insert(iterator dst, value_type&& elem) {
+			if(dst == end() || is_empty()) {
+				emplace_back(std::move(elem));
+				return &last();
+			} else {
+				y_debug_assert(contains_it(dst));
+				const usize index = dst - begin();
+				emplace_back(std::move(elem));
+				const iterator pivot = begin() + index;
+				std::rotate(std::make_reverse_iterator(pivot), std::make_reverse_iterator(pivot) + 1, std::make_reverse_iterator(end()));
+				return pivot;
+			}
 		}
 
 		usize size() const {
@@ -365,6 +380,10 @@ class Vector : ResizePolicy, Allocator {
 		static constexpr bool is_data_trivial = std::is_trivial_v<data_type>;
 #endif
 
+		bool is_full() const {
+			return _data_end == _alloc_end;
+		}
+
 		bool contains_it(const_iterator it) const {
 			return it >= _data && it < _data_end;
 		}
@@ -374,8 +393,8 @@ class Vector : ResizePolicy, Allocator {
 			if constexpr(is_data_trivial) {
 				std::copy_n(src, n, dst);
 			} else {
-				for(; n; --n) {
-					::new(dst++) data_type{std::move(*(src++))};
+				for(usize i = 0; i != n; ++i) {
+					::new(&dst[i]) data_type{std::move(src[i])};
 				}
 			}
 		}

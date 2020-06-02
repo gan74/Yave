@@ -32,6 +32,7 @@ class Archetype;
 
 class ComponentInfoSerializerBase;
 class ComponentSerializerWrapper;
+class ComponentContainerBase;
 
 
 static constexpr usize entities_per_chunk = 1024;
@@ -41,7 +42,7 @@ u32 next_type_index();
 }
 
 template<typename T>
-static u32 type_index() {
+u32 type_index() {
 	static u32 index = detail::next_type_index();
 	return index;
 }
@@ -107,6 +108,14 @@ struct EntityData {
 };
 
 
+
+template<typename... Args>
+struct StaticArchetype {
+	static constexpr usize component_count = sizeof...(Args);
+
+	template<typename... E>
+	using with = StaticArchetype<Args..., E...>;
+};
 
 
 

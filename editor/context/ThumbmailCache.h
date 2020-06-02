@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <y/core/Functor.h>
 #include <y/core/HashMap.h>
 #include <y/concurrent/StaticThreadPool.h>
 
@@ -59,7 +58,7 @@ class ThumbmailCache : NonMovable, public ContextLinked {
 			SceneView view;
 		};
 
-		using RenderFunc = core::Function<std::unique_ptr<ThumbmailData>(CmdBufferRecorder&)>;
+		using RenderFunc = std::function<std::unique_ptr<ThumbmailData>(CmdBufferRecorder&)>;
 
 		struct LoadingRequest {
 			GenericAssetPtr asset;

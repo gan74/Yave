@@ -25,14 +25,13 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <y/core/Vector.h>
-#include <y/core/Functor.h>
 #include <y/core/Result.h>
 
 namespace yave {
 
 class FileSystemModel : NonCopyable {
 	public:
-		using for_each_f = core::Function<void(std::string_view)>;
+		using for_each_f = std::function<void(std::string_view)>;
 
 		template<typename T = void>
 		using Result = core::Result<T>;

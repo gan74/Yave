@@ -29,6 +29,8 @@ SOFTWARE.
 #include <algorithm>
 #include <mutex>
 
+Y_TODO(Remove and use PMR)
+
 namespace y {
 namespace memory {
 
@@ -76,6 +78,10 @@ class PolymorphicAllocatorContainer : NonCopyable {
 
 		PolymorphicAllocatorContainer(PolymorphicAllocatorContainer&&) = default;
 		PolymorphicAllocatorContainer& operator=(PolymorphicAllocatorContainer&&) = default;
+
+		PolymorphicAllocatorBase* allocator() {
+			return _inner;
+		}
 
 		[[nodiscard]] void* allocate(usize size) noexcept {
 			return _inner->allocate(size);

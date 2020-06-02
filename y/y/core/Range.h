@@ -73,6 +73,7 @@ class Range {
 
 		decltype(auto) operator[](usize index) const {
 			static_assert(std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::random_access_iterator_tag>);
+			y_debug_assert(index < size());
 			return *(_beg + index);
 		}
 

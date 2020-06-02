@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,38 +20,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "import.h"
-#include "transforms.h"
 
-#include <yave/utils/FileSystemModel.h>
+#include "EntityPrefab.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb.h"
+#include "EntityWorld.h"
 
-namespace editor {
-namespace import {
+namespace y {
+namespace ecs {
 
-Named<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {
-	y_profile();
-
-	int width, height, bpp;
-	u8* data = stbi_load(filename.data(), &width, &height, &bpp, 4);
-	y_defer(stbi_image_free(data););
-
-	if(!data) {
-		y_throw_msg(fmt_c_str("Unable to load image \"%\".", filename));
+/*EntityID EntityPrefab::add_to_world(EntityWorld& world) const {
+	auto infos = core::vector_with_capacity<ComponentRuntimeInfo>(_components.size());
+	for(const auto& cont : _components) {
+		y_debug_assert(cont);
+		infos.emplace_back(cont->create_runtime_info());
 	}
 
-	ImageData img(math::Vec2ui(width, height), data, VK_FORMAT_R8G8B8A8_UNORM);
-	if((flags & ImageImportFlags::GenerateMipmaps) == ImageImportFlags::GenerateMipmaps) {
-		img = compute_mipmaps(img);
-	}
-	return {clean_asset_name(filename), std::move(img)};
-}
+	const ArchetypeRuntimeInfo arc = ArchetypeRuntimeInfo::create(infos);
 
-core::String supported_image_extensions() {
-	return "*.jpg;*.jpeg;*.png;*.bmp;*.psd;*.tga;*.gif;*.hdr;*.pic;*.ppm;*.pgm";
-}
+	const EntityID id = world.create_entity(arc);
+
+	y_fatal("...");
+
+	return id;
+
+}*/
 
 }
 }

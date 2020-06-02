@@ -19,65 +19,65 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_SERDE3_RESULT_H
-#define Y_SERDE3_RESULT_H
+#ifndef Y_ECS_COMPONENTCONTAINER_H
+#define Y_ECS_COMPONENTCONTAINER_H
 
-#include <y/core/Result.h>
+#include "ecs.h"
+
+#include "ComponentRuntimeInfo.h"
+
+#include <y/serde3/archives.h>
+
+#include <memory>
 
 namespace y {
-namespace serde3 {
+namespace ecs {
 
-enum class Success : u32 {
-	Full,
-	Partial
+class ComponentContainerBase {
+	public:
+		virtual ~ComponentContainerBase() {
+		}
+
+		virtual ComponentRuntimeInfo create_runtime_info() const;
+
+		virtual void* data() = 0;
+
+		y_serde3_poly_base(ComponentContainerBase)
 };
 
-inline Success operator|(Success a, Success b) {
-	return a == Success::Full && b == Success::Full
-		? Success::Full
-		: Success::Partial;
-}
+template<typename T>
+class ComponentContainer : public ComponentContainerBase {
+	public:
+		static_assert(std::is_copy_constructible_v<T>);
 
+		ComponentContainer() = default;
 
+		ComponentContainer(const void* orig) : _component(*static_cast<const T*>(orig)) {
+		}
 
-enum class ErrorType : u32 {
-	UnknownError,
-	IOError,
-	VersionError,
-	SignatureError,
-	UnknownPolyError,
-	SizeError,
+		ComponentRuntimeInfo create_runtime_info() const override {
+			return ComponentRuntimeInfo::from_type<T>();
+		}
+
+		void* data() override {
+			return &_component;
+		}
+
+		y_serde3_poly(ComponentContainer);
+		y_serde3(_component);
+
+	private:
+		T _component = {};
 };
 
-struct Error {
-	Error(ErrorType t, const char* m = nullptr) : type(t), member(m) {
-	}
-
-	const ErrorType type = ErrorType::UnknownError;
-	const char* const member = nullptr;
-};
-
-using Result = core::Result<Success, Error>;
-
-inline const char* error_msg(ErrorType tpe) {
-	static const char* msg[] = {
-		"Unknown error",
-		"IO error",
-		"Incompatible version error",
-		"Signature mismatch error",
-		"Polymorphic ID error",
-		"Range size mismatch error",
-	};
-	y_debug_assert(usize(tpe) < sizeof(msg) / sizeof(msg[0]));
-	return msg[usize(tpe)];
+namespace detail {
+template<typename T>
+std::unique_ptr<ComponentContainerBase> create_component_container(const void* orig) {
+	return std::make_unique<ComponentContainer<T>>(orig);
 }
-
-
-inline const char* error_msg(const Error &err) {
-	return error_msg(err.type);
 }
 
 }
 }
 
-#endif // Y_SERDE3_RESULT_H
+#endif // Y_ECS_COMPONENTCONTAINER_H
