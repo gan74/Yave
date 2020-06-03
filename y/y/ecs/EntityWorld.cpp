@@ -22,12 +22,14 @@ SOFTWARE.
 
 #include "EntityWorld.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
+
 namespace y {
 namespace ecs {
 
 EntityWorld::EntityWorld() {
-	/*struct NoComponent {};
-	_empty_container = std::make_unique<ComponentContainer<NoComponent>>(this);*/
 }
 
 usize EntityWorld::entity_count() const {
@@ -61,10 +63,27 @@ EntityID EntityWorld::create_entity(const EntityPrefab& prefab) {
 }
 
 void EntityWorld::remove_entity(EntityID id) {
+	check_exists(id);
 	for(auto& cont : _containers.values()) {
 		cont->remove(id);
 	}
 	_entities.recycle(id);
+}
+
+EntityPrefab EntityWorld::create_prefab(EntityID id) const {
+	check_exists(id);
+	EntityPrefab prefab;
+	for(auto& cont : _containers.values()) {
+		if(!cont->contains(id)) {
+			continue;
+		}
+		auto box = cont->create_box(id);
+		if(!box) {
+			log_msg(fmt("% is not copyable and was excluded from prefab", cont->component_type_name()), Log::Warning);
+		}
+		prefab.add(std::move(box));
+	}
+	return prefab;
 }
 
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {

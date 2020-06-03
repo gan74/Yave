@@ -102,6 +102,19 @@ struct StaticArchetype {
 	using with = StaticArchetype<Args..., E...>;
 };
 
+template<typename... Args>
+struct RequiredComponents {
+	static inline constexpr auto required_components_archetype() {
+		static_assert(std::is_default_constructible_v<std::tuple<Args...>>);
+		return StaticArchetype<Args...>{};
+	}
+
+	// EntityWorld.h
+	static inline void add_required_components(EntityWorld& world, EntityID id);
+
+};
+
+
 
 }
 }

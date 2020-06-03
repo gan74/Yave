@@ -31,6 +31,12 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
+namespace detail {
+template<typename T>
+using has_required_components_t = decltype(std::declval<T>().required_components_archetype());
+}
+
+
 
 class ComponentBoxBase : NonMovable {
 	public:
@@ -45,6 +51,8 @@ class ComponentBoxBase : NonMovable {
 template<typename T>
 class ComponentBox final : public ComponentBoxBase {
 	public:
+		static_assert(std::is_copy_constructible_v<T>);
+
 		ComponentBox(const T& t);
 
 		ComponentRuntimeInfo runtime_info() const override;
@@ -68,19 +76,23 @@ class ComponentContainerBase : NonMovable {
 		bool contains(EntityID id) const;
 		core::Span<EntityID> ids() const;
 
-
 		ComponentTypeIndex type_id() const;
 
 
 		virtual std::string_view component_type_name() const = 0;
+		virtual ComponentRuntimeInfo runtime_info() const = 0;
 
 		virtual void add(EntityID id) = 0;
 		virtual void remove(EntityID id) = 0;
+
+		virtual std::unique_ptr<ComponentBoxBase> create_box(EntityID id) const = 0;
+
 
 		template<typename T, typename... Args>
 		T& add(EntityID id, Args&&... args) {
 			auto& set = component_set_fast<T>();
 			if(!set.contains_index(id.index())) {
+				add_required_components<T>(id);
 				return set.insert(id, y_fwd(args)...);
 			}
 			return set[id];
@@ -142,6 +154,15 @@ class ComponentContainerBase : NonMovable {
 			y_debug_assert(world);
 		}
 
+
+		template<typename T>
+		void add_required_components(EntityID id) {
+			unused(id);
+			if constexpr(is_detected_v<detail::has_required_components_t, T>) {
+				T::add_required_components(*_world, id);
+			}
+		}
+
 	private:
 		// hacky but avoids a bunch of dynamic casts and virtual calls
 		void* _sparse = nullptr;
@@ -177,6 +198,10 @@ class ComponentContainer final : public ComponentContainerBase {
 			return ct_type_name<T>();
 		}
 
+		ComponentRuntimeInfo runtime_info() const override {
+			return ComponentRuntimeInfo::create<T>();
+		}
+
 		void add(EntityID id) override {
 			ComponentContainerBase::add<T>(id);
 		}
@@ -185,6 +210,14 @@ class ComponentContainer final : public ComponentContainerBase {
 			if(_components.contains(id)) {
 				_components.erase(id);
 			}
+		}
+
+		std::unique_ptr<ComponentBoxBase> create_box(EntityID id) const override {
+			unused(id);
+			if constexpr(std::is_copy_constructible_v<T>) {
+				return std::make_unique<ComponentBox<T>>(_components[id]);
+			}
+			return nullptr;
 		}
 
 		y_serde3(_components)

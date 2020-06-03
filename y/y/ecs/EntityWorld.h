@@ -46,6 +46,9 @@ class EntityWorld : NonMovable {
 		void remove_entity(EntityID id);
 
 
+		EntityPrefab create_prefab(EntityID id) const;
+
+
 		std::string_view component_type_name(ComponentTypeIndex type_id) const;
 
 
@@ -53,6 +56,15 @@ class EntityWorld : NonMovable {
 		void add_component(EntityID id, Args&&... args) {
 			check_exists(id);
 			find_or_create_container<T>()->template add<T>(id, y_fwd(args)...);
+		}
+
+		template<typename First, typename... Args>
+		void add_components(EntityID id) {
+			y_debug_assert(exists(id));
+			add_component<First>(id);
+			if constexpr(sizeof...(Args)) {
+				add_components<Args...>(id);
+			}
 		}
 
 
@@ -106,8 +118,13 @@ class EntityWorld : NonMovable {
 			return typed_component_sets<Args...>();
 		}
 
+		y_serde3(_entities, _containers)
 
 	private:
+		template<typename T>
+		friend class ComponentContainer;
+
+
 		template<typename T>
 		const ComponentContainerBase* find_container() const {
 			return find_container(type_index<T>());
@@ -143,7 +160,6 @@ class EntityWorld : NonMovable {
 		}
 
 
-
 		const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
 		ComponentContainerBase* find_container(ComponentTypeIndex type_id);
 		ComponentContainerBase* find_or_create_container(const ComponentRuntimeInfo& info);
@@ -153,8 +169,13 @@ class EntityWorld : NonMovable {
 
 		core::ExternalHashMap<u32, std::unique_ptr<ComponentContainerBase>> _containers;
 		EntityIDPool _entities;
-		//std::unique_ptr<ComponentContainerBase> _empty_container;
 };
+
+
+template<typename... Args>
+void RequiredComponents<Args...>::add_required_components(EntityWorld& world, EntityID id) {
+	world.add_components<Args...>(id);
+}
 
 }
 }

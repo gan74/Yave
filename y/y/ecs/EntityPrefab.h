@@ -34,6 +34,10 @@ class EntityPrefab {
 			_components << std::make_unique<ComponentBox<T>>(component);
 		}
 
+		void add(std::unique_ptr<ComponentBoxBase> box) {
+			_components << std::move(box);
+		}
+
 		const auto& components() const {
 			return _components;
 		}

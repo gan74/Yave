@@ -28,13 +28,25 @@ SOFTWARE.
 #define HAS_MAIN
 
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
-#include <y/ecs/SparseComponentSet.h>
+#include <y/ecs/EntityWorld.h>
+
+
+#include <y/io2/File.h>
+#include <y/serde3/archives.h>
+
 
 using namespace y;
 
 struct Component {
 	int x = 5;
+};
+
+struct NC : NonCopyable {
+	int y = 0;
+
+	y_serde3(y)
 };
 
 static const u32 id_version = 16431;
@@ -45,14 +57,25 @@ ecs::EntityID create_id() {
 }
 
 int main() {
-	ecs::SparseComponentSet<Component> comps;
-	comps.insert(create_id(), Component{});
-	comps.insert(create_id(), Component{13});
+	ecs::EntityPrefab pref;
+	pref.add(Component{17});
+	pref.add(7.0f);
 
-	y_debug_assert(comps.contains_index(1));
-	y_debug_assert(comps.contains_index(2));
-	y_debug_assert(comps.contains(ecs::EntityID(2, id_version)));
-	y_debug_assert(!comps.contains(ecs::EntityID(2)));
+	{
+		io2::File file = std::move(io2::File::create("test.bin").unwrap());
+		serde3::WritableArchive(file).serialize(pref).unwrap();
+	}
+
+	ecs::EntityWorld world;
+	const ecs::EntityID id = world.create_entity(pref);
+
+	y_debug_assert(world.component<float>(id));
+	y_debug_assert(world.component<Component>(id));
+	y_debug_assert(world.component<Component>(id)->x == 17);
+
+	world.add_component<NC>(id);
+
+	ecs::EntityPrefab prefab = world.create_prefab(id);
 
 	log_msg("Ok");
 }

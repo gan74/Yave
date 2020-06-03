@@ -27,6 +27,8 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/Range.h>
 
+#include <y/serde3/serde.h>
+
 #include <y/utils/iter.h>
 
 namespace y {
@@ -47,6 +49,8 @@ class EntityIDPool {
 				EndIterator()
 			);
 		}
+
+		y_serde3(_ids, _free)
 
 	private:
 		core::Vector<EntityID> _ids;
