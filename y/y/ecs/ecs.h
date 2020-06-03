@@ -27,6 +27,12 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
+class EntityWorld;
+class ComponentContainerBase;
+
+
+
+
 namespace detail {
 u32 next_type_index();
 }
@@ -38,6 +44,10 @@ u32 type_index() {
 }
 
 
+using ComponentTypeIndex = u32;
+
+
+
 class EntityID {
 	public:
 		explicit EntityID(u32 index = invalid_index, u32 version = 0) : _index(index), _version(version) {
@@ -45,6 +55,11 @@ class EntityID {
 
 		void invalidate() {
 			_index = invalid_index;
+		}
+
+		void make_valid(u32 index) {
+			_index = index;
+			++_version;
 		}
 
 		u32 index() const {

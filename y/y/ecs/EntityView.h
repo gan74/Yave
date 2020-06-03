@@ -65,8 +65,8 @@ class EntityView {
 		if constexpr(I + 1 == sizeof...(Args)) {
 			return std::tie(s[id]);
 		} else {
-			return std::tuple_cat(std::tie(s[*_it]),
-								  make_refence_tuple<I + 1>(id));
+			return std::tuple_cat(std::tie(s[id]),
+								  make_component_tuple<I + 1>(id));
 		}
 	}
 
@@ -128,7 +128,7 @@ class EntityView {
 		id_range _short;
 
 	public:
-		using const_iterator = decltype(std::declval<const EntityView<Const, Args...>().begin());
+		using const_iterator = decltype(std::declval<const EntityView<Const, Args...>>().begin());
 };
 
 }

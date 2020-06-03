@@ -34,22 +34,11 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
-template<typename Elem>
-class SparseComponentSet final {
-
+class SparseIDSet {
 	public:
-		using element_type = Elem;
 		using size_type = usize;
 
-		using value_type = std::pair<EntityID, element_type>;
-
-		using reference = element_type&;
-		using const_reference = const element_type&;
-
-		using pointer = element_type*;
-		using const_pointer = const element_type*;
-
-	private:
+	protected:
 		static constexpr usize page_size = 1024;
 
 		using page_index_type = u32;
@@ -69,6 +58,63 @@ class SparseComponentSet final {
 			return i < _sparse.size() && _sparse[i][o] != page_invalid_index;
 		}
 
+		usize size() const {
+			return _dense.size();
+		}
+
+		bool is_empty() const {
+			return _dense.is_empty();
+		}
+
+		core::Span<EntityID> ids() const {
+			return _dense;
+		}
+
+	protected:
+		static std::pair<usize, usize> page_index(EntityID id) {
+			return page_index(id.index());
+		}
+
+		static std::pair<usize, usize> page_index(u32 index) {
+			const usize i = usize(index) / page_size;
+			const usize o = usize(index) % page_size;
+			return {i, o};
+		}
+
+		page_type& create_page(usize new_page_index) {
+			Y_TODO(Fix this (alloc pages on the heap?))
+			while(new_page_index >= _sparse.size()) {
+				_sparse.emplace_back();
+				auto& page = _sparse.last();
+				std::fill(page.begin(), page.end(), page_invalid_index);
+			}
+			return _sparse[new_page_index];
+		}
+
+		core::Vector<EntityID> _dense;
+		core::Vector<page_type> _sparse;
+};
+
+
+template<typename Elem>
+class SparseComponentSetBase : public SparseIDSet {
+
+	public:
+		using element_type = Elem;
+		using size_type = usize;
+
+		using value_type = std::pair<EntityID, element_type>;
+
+		using reference = element_type&;
+		using const_reference = const element_type&;
+
+		using pointer = element_type*;
+		using const_pointer = const element_type*;
+
+	private:
+		core::Vector<element_type> _values;
+
+	public:
 		template<typename... Args>
 		reference insert(EntityID id, Args&&... args) {
 			y_debug_assert(!contains(id));
@@ -156,21 +202,13 @@ class SparseComponentSet final {
 		}
 
 
-		void swap(SparseComponentSet& v) {
+		void swap(SparseComponentSetBase& v) {
 			if(&v != this) {
 				_values.swap(v._values);
 				_dense.swap(v._dense);
 				_sparse.swap(v._sparse);
 			}
 			audit();
-		}
-
-		usize size() const {
-			return _dense.size();
-		}
-
-		bool is_empty() const {
-			return _dense.is_empty();
 		}
 
 		auto begin() const {
@@ -217,31 +255,7 @@ class SparseComponentSet final {
 			return _values;
 		}
 
-		core::Span<EntityID> ids() const {
-			return _dense;
-		}
-
 	private:
-		static std::pair<usize, usize> page_index(EntityID id) {
-			return page_index(id.index());
-		}
-
-		static std::pair<usize, usize> page_index(u32 index) {
-			const usize i = usize(index) / page_size;
-			const usize o = usize(index) % page_size;
-			return {i, o};
-		}
-
-		page_type& create_page(usize new_page_index) {
-			Y_TODO(Fix this (alloc pages on the heap?))
-			while(new_page_index >= _sparse.size()) {
-				_sparse.emplace_back();
-				auto& page = _sparse.last();
-				std::fill(page.begin(), page.end(), page_invalid_index);
-			}
-			return _sparse[new_page_index];
-		}
-
 		void audit() {
 #ifdef Y_ECS_COMPONENT_SET_AUDIT
 			y_debug_assert(_dense.size() == _values.size());
@@ -262,11 +276,12 @@ class SparseComponentSet final {
 #endif
 		}
 
-		core::Vector<element_type> _values;
-		core::Vector<EntityID> _dense;
-		core::Vector<page_type> _sparse;
 
+};
 
+// Why we need to do this to not have implete types?
+template<typename Elem>
+class SparseComponentSet : public SparseComponentSetBase<Elem> {
 	public:
 		using iterator		 = decltype(std::declval<      SparseComponentSet<Elem>>().begin());
 		using const_iterator = decltype(std::declval<const SparseComponentSet<Elem>>().begin());
