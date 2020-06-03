@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "ecs.h"
 
+#include <y/serde3/serde.h>
+
 #include <memory>
 
 namespace y {
@@ -43,6 +45,8 @@ struct ComponentRuntimeInfo {
 			create_container<T>
 		};
 	}
+
+	y_no_serde3()
 };
 
 }

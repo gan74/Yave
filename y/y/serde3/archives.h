@@ -169,6 +169,8 @@ class WritableArchive final {
 		Result serialize_one(const NamedObject<T, R>& non_const_object) {
 			const auto object = non_const_object.make_const_ref();
 
+			static_assert(!has_no_serde3_v<T>, "Type has serialization disabled");
+
 			if constexpr(is_property_v<T>) {
 				return serialize_property(object);
 			} else if constexpr(has_serde3_v<T>) {
@@ -489,6 +491,8 @@ class ReadableArchive final {
 		template<typename T, bool R>
 		Result deserialize_one(const NamedObject<T, R>& non_ref) {
 			NamedObject<T> object = non_ref.make_ref();
+
+			static_assert(!has_no_serde3_v<T>, "Type has serialization disabled");
 
 			if constexpr(is_property_v<T>) {
 				return deserialize_property(object);

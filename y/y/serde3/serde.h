@@ -45,6 +45,9 @@ constexpr std::is_lvalue_reference<T&&> is_lvalue(T&&);
 template<typename T>
 using has_serde3_t = decltype(std::declval<T>()._y_serde3_refl());
 
+template<typename T>
+using has_no_serde3_t = decltype(std::declval<T>()._y_serde3_no_serde);
+
 template<typename T, typename... Args>
 using has_serde3_post_deser_t = decltype(std::declval<T>().post_deserialize(std::declval<Args>()...));
 template<typename T, typename... Args>
@@ -58,6 +61,10 @@ using has_serde3_ptr_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
 
 template<typename T>
 static constexpr bool has_serde3_v = is_detected_v<detail::has_serde3_t, T>;
+
+template<typename T>
+static constexpr bool has_no_serde3_v = is_detected_v<detail::has_no_serde3_t, T>;
+
 
 template<typename T, typename... Args>
 static constexpr bool has_serde3_post_deser_v = is_detected_v<detail::has_serde3_post_deser_t, T, Args...>;
@@ -142,7 +149,7 @@ constexpr auto create_named_object(const std::reference_wrapper<T>& t, std::stri
 	y_serde3_refl_qual(/* */, __VA_ARGS__)			\
 	y_serde3_refl_qual(const, __VA_ARGS__)
 
-
+#define y_no_serde3() static constexpr int _y_serde3_no_serde = 0;
 
 }
 }
