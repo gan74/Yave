@@ -51,14 +51,14 @@ namespace serde3 {
 
 template<typename T>
 Result try_convert(T& t, detail::TypeHeader type, io2::Reader& reader) {
-	unused(t, type, reader);
-
 	auto read_one = [&](auto& t) -> Result {
 		if(!reader.read_one(t)) {
 			return core::Err(Error(ErrorType::IOError));
 		}
 		return core::Ok(Success::Full);
 	};
+
+	unused(t, type, reader, read_one);
 
 	y_serde3_try_convert(u8);
 	y_serde3_try_convert(u16);
