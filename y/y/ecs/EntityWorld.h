@@ -109,14 +109,26 @@ class EntityWorld : NonMovable {
 		template<typename... Args>
 		EntityView<false, Args...> view() {
 			static_assert(sizeof...(Args));
-			return typed_component_sets<Args...>();
+			return EntityView<false, Args...>(typed_component_sets<Args...>());
 		}
 
 		template<typename... Args>
 		EntityView<true, Args...> view() const {
 			static_assert(sizeof...(Args));
-			return typed_component_sets<Args...>();
+			return EntityView<true, Args...>(typed_component_sets<Args...>());
 		}
+
+		template<typename... Args>
+		auto view(StaticArchetype<Args...>) {
+			return view<Args...>();
+		}
+
+		template<typename... Args>
+		auto view(StaticArchetype<Args...>) const {
+			return view<Args...>();
+		}
+
+
 
 		y_serde3(_entities, _containers)
 

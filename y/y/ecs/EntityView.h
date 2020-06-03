@@ -59,7 +59,7 @@ class EntityView {
 	using id_range = core::Span<EntityID>;
 
 	template<usize I = 0>
-	auto make_component_tuple(EntityID id) {
+	auto make_component_tuple(EntityID id) const {
 		y_debug_assert(std::get<I>(_sets));
 		const auto& s = *std::get<I>(_sets);
 		if constexpr(I + 1 == sizeof...(Args)) {
@@ -95,22 +95,50 @@ class EntityView {
 	}
 
 	public:
+		class IDComponents {
+			public:
+				auto id() const {
+					return _id;
+				}
+
+				auto components() const {
+					return _components;
+				}
+
+				template<typename T>
+				auto&& component() const {
+					using type = std::conditional_t<Const, const remove_cvref_t<T>&, remove_cvref_t<T>>;
+					constexpr usize index = detail::tuple_index<type, decltype(components())>::value;
+					static_assert(std::is_same_v<type, std::tuple_element_t<index, decltype(components())>>);
+					return std::get<index>(components());
+				}
+
+				IDComponents(EntityID id, component_tuple components) : _id(id), _components(components) {
+				}
+
+			private:
+				EntityID _id;
+				component_tuple _components;
+
+		};
+
+
 		EntityView(const set_tuple& sets) : _sets(sets), _short(shortest_range()) {
 		}
 
 		auto id_components() const {
-			auto tr = [this](EntityID id) { return std::tuple_cat(std::make_tuple(id), make_component_tuple(id)); };
-			return core::Range(TransformIterator(ids().begin(), tr), EndIterator());
+			auto tr = [this](EntityID id){ return IDComponents(id, make_component_tuple(id)); };
+			return core::Range(TransformIterator(ids().begin(), tr), ids().end());
 		}
 
 		auto components() const {
 			auto tr = [this](EntityID id) { return make_component_tuple(id); };
-			return core::Range(TransformIterator(ids().begin(), tr), EndIterator());
+			return core::Range(TransformIterator(ids().begin(), tr), ids().end());
 		}
 
 		auto ids() const {
 			auto filter = [this](EntityID id) { return has_all<0>(id); };
-			return core::Range(FilterIterator(_short.begin(), _short.end(), filter()), EndIterator());
+			return core::Range(FilterIterator(_short.begin(), _short.end(), filter), EndIterator{});
 		}
 
 
