@@ -27,16 +27,6 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
-class EntityWorld;
-class Archetype;
-
-class ComponentInfoSerializerBase;
-class ComponentSerializerWrapper;
-class ComponentContainerBase;
-
-
-static constexpr usize entities_per_chunk = 1024;
-
 namespace detail {
 u32 next_type_index();
 }
@@ -46,7 +36,6 @@ u32 type_index() {
 	static u32 index = detail::next_type_index();
 	return index;
 }
-
 
 
 class EntityID {
@@ -90,25 +79,6 @@ class EntityID {
 };
 
 
-
-struct EntityData {
-	EntityID id;
-	Archetype* archetype = nullptr;
-	usize archetype_index = usize(-1);
-
-	void invalidate() {
-		// Keep the version
-		id.invalidate();
-		archetype = nullptr;
-	}
-
-	bool is_valid() const {
-		return id.is_valid();
-	}
-};
-
-
-
 template<typename... Args>
 struct StaticArchetype {
 	static constexpr usize component_count = sizeof...(Args);
@@ -116,7 +86,6 @@ struct StaticArchetype {
 	template<typename... E>
 	using with = StaticArchetype<Args..., E...>;
 };
-
 
 
 }

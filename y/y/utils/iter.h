@@ -281,6 +281,75 @@ class FilterIterator : private Filter {
 };
 
 
+class IndexIterator {
+	public:
+		using value_type = usize;
+		using difference_type = usize;
+		using iterator_category = std::random_access_iterator_tag;
+		using reference = value_type&;
+		using pointer = value_type*;
+
+		IndexIterator(value_type i = 0) : _it(i) {
+		}
+
+		IndexIterator& operator++() {
+			++_it;
+			return *this;
+		}
+
+		IndexIterator operator++(int) {
+			const IndexIterator it = *this;
+			++_it;
+			return it;
+		}
+
+		IndexIterator& operator--() {
+			--_it;
+			return *this;
+		}
+
+		IndexIterator operator--(int) {
+			const IndexIterator it = *this;
+			--_it;
+			return it;
+		}
+
+		bool operator==(const IndexIterator& other) const {
+			return _it == other._it;
+		}
+
+		bool operator!=(const IndexIterator& other) const {
+			return _it != other._it;
+		}
+
+		value_type operator*() const {
+			return _it;
+		}
+
+		IndexIterator operator+(usize i) const {
+			return IndexIterator(_it + i);
+		}
+
+		IndexIterator operator-(usize i) const {
+			return IndexIterator(_it - i);
+		}
+
+		IndexIterator& operator+=(usize i) {
+			_it += i;
+			return *this;
+		}
+
+		IndexIterator& operator-=(usize i) {
+			_it -= i;
+			return *this;
+		}
+
+	private:
+		value_type _it;
+};
+
+
+
 template<typename T>
 class ScalarIterator;
 template<typename T>
@@ -367,10 +436,6 @@ class ScalarIterator {
 			return _it;
 		}
 
-		const pointer* operator->() const {
-			return &_it;
-		}
-
 		ScalarIterator operator+(usize i) const {
 			return ScalarIterator(_it + (i * _step));
 		}
@@ -379,12 +444,12 @@ class ScalarIterator {
 			return ScalarIterator(_it - (i * _step));
 		}
 
-		ScalarIterator& operator+=(usize i) const {
+		ScalarIterator& operator+=(usize i) {
 			_it += (i * _step);
 			return *this;
 		}
 
-		ScalarIterator& operator-=(usize i) const {
+		ScalarIterator& operator-=(usize i) {
 			_it -= (i * _step);
 			return *this;
 		}

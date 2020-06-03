@@ -20,20 +20,57 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <y/test/test.h>
+
+
+#define TEST_ECS
+
+#ifdef TEST_ECS
+#define HAS_MAIN
 
 #include <y/utils/log.h>
 
+#include <y/ecs/SparseComponentSet.h>
+
 using namespace y;
 
+struct Component {
+	int x = 5;
+};
 
-#if 0
+static const u32 id_version = 16431;
+
+ecs::EntityID create_id() {
+	static u32 i = 0;
+	return ecs::EntityID(++i, id_version);
+}
+
+int main() {
+	ecs::SparseComponentSet<Component> comps;
+	comps.insert(create_id(), Component{});
+	comps.insert(create_id(), Component{13});
+
+	y_debug_assert(comps.contains_index(1));
+	y_debug_assert(comps.contains_index(2));
+	y_debug_assert(comps.contains(ecs::EntityID(2, id_version)));
+	y_debug_assert(!comps.contains(ecs::EntityID(2)));
+
+	log_msg("Ok");
+}
+
+#endif
+
+#ifdef TEST_ARCHIVES
+#define HAS_MAIN
+
+#include <y/utils/log.h>
 
 #include <y/serde3/archives.h>
 #include <y/io2/File.h>
 #include <y/utils/format.h>
 
 #include <y/core/Result.h>
+
+using namespace y;
 
 struct TestStruct {
 
@@ -75,7 +112,13 @@ int main() {
 	}
 }
 
-#else
+#endif
+
+#ifndef HAS_MAIN
+#include <y/test/test.h>
+#include <y/utils/log.h>
+
+using namespace y;
 
 int main() {
 
