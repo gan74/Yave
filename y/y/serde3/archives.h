@@ -437,7 +437,7 @@ class ReadableArchive final {
 	using File = io2::Reader;
 	using size_type = detail::size_type;
 
-	static constexpr bool force_safe = true;
+	static constexpr bool force_safe = false;
 
 
 	struct ObjectData {
