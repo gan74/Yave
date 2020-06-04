@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_SPARSECOMPONENTSET_H
-#define Y_ECS_SPARSECOMPONENTSET_H
+#ifndef YAVE_ECS_SPARSECOMPONENTSET_H
+#define YAVE_ECS_SPARSECOMPONENTSET_H
 
 #include "ecs.h"
 
@@ -29,9 +29,9 @@ SOFTWARE.
 
 #include <y/utils/iter.h>
 
-#define Y_ECS_COMPONENT_SET_AUDIT
+#define YAVE_ECS_COMPONENT_SET_AUDIT
 
-namespace y {
+namespace yave {
 namespace ecs {
 
 class SparseIDSet {
@@ -46,7 +46,7 @@ class SparseIDSet {
 		using page_type = std::array<page_index_type, page_size>;
 
 	public:
-		bool contains(EntityID id) const {
+		bool contains(EntityId id) const {
 			const auto [i, o] = page_index(id);
 			return i < _sparse.size() &&
 				   _sparse[i][o] != page_invalid_index &&
@@ -66,12 +66,12 @@ class SparseIDSet {
 			return _dense.is_empty();
 		}
 
-		core::Span<EntityID> ids() const {
+		core::Span<EntityId> ids() const {
 			return _dense;
 		}
 
 	protected:
-		static std::pair<usize, usize> page_index(EntityID id) {
+		static std::pair<usize, usize> page_index(EntityId id) {
 			return page_index(id.index());
 		}
 
@@ -91,7 +91,7 @@ class SparseIDSet {
 			return _sparse[new_page_index];
 		}
 
-		core::Vector<EntityID> _dense;
+		core::Vector<EntityId> _dense;
 		core::Vector<page_type> _sparse;
 };
 
@@ -103,7 +103,7 @@ class SparseComponentSetBase : public SparseIDSet {
 		using element_type = Elem;
 		using size_type = usize;
 
-		using value_type = std::pair<EntityID, element_type>;
+		using value_type = std::pair<EntityId, element_type>;
 
 		using reference = element_type&;
 		using const_reference = const element_type&;
@@ -116,7 +116,7 @@ class SparseComponentSetBase : public SparseIDSet {
 
 	public:
 		template<typename... Args>
-		reference insert(EntityID id, Args&&... args) {
+		reference insert(EntityId id, Args&&... args) {
 			y_debug_assert(!contains(id));
 
 			const auto [i, o] = page_index(id);
@@ -133,13 +133,13 @@ class SparseComponentSetBase : public SparseIDSet {
 			return insert(value.first, std::move(value.second));
 		}
 
-		void erase(EntityID id) {
+		void erase(EntityId id) {
 			y_debug_assert(contains(id));
 
 			const auto [i, o] = page_index(id);
 			const page_index_type dense_index = _sparse[i][o];
 			const page_index_type last_index = page_index_type(_dense.size() - 1);
-			const EntityID last_sparse = _dense[last_index];
+			const EntityId last_sparse = _dense[last_index];
 
 			y_debug_assert(_dense[dense_index] == id);
 
@@ -159,19 +159,19 @@ class SparseComponentSetBase : public SparseIDSet {
 		}
 
 
-		reference operator[](EntityID id) {
+		reference operator[](EntityId id) {
 			y_debug_assert(contains(id));
 			const auto [i, o] = page_index(id);
 			return _values[_sparse[i][o]];
 		}
 
-		const_reference operator[](EntityID id) const {
+		const_reference operator[](EntityId id) const {
 			y_debug_assert(contains(id));
 			const auto [i, o] = page_index(id);
 			return _values[_sparse[i][o]];
 		}
 
-		pointer try_get(EntityID id) {
+		pointer try_get(EntityId id) {
 			const auto [i, o] = page_index(id);
 			if(i >= _sparse.size()) {
 				return nullptr;
@@ -180,7 +180,7 @@ class SparseComponentSetBase : public SparseIDSet {
 			return pi < _values.size() ? &_values[pi] : nullptr;
 		}
 
-		const_pointer try_get(EntityID id) const {
+		const_pointer try_get(EntityId id) const {
 			const auto [i, o] = page_index(id);
 			if(i >= _sparse.size()) {
 				return nullptr;
@@ -257,7 +257,7 @@ class SparseComponentSetBase : public SparseIDSet {
 
 	private:
 		void audit() {
-#ifdef Y_ECS_COMPONENT_SET_AUDIT
+#ifdef YAVE_ECS_COMPONENT_SET_AUDIT
 			y_debug_assert(_dense.size() == _values.size());
 			usize total = 0;
 			for(usize i = 0; i != _sparse.size(); ++i) {
@@ -265,7 +265,7 @@ class SparseComponentSetBase : public SparseIDSet {
 					const page_index_type index = _sparse[i][o];
 					if(index != page_invalid_index) {
 						y_debug_assert(index < _dense.size());
-						const EntityID id = _dense[index];
+						const EntityId id = _dense[index];
 						y_debug_assert(id.is_valid());
 						y_debug_assert(page_index(id.index()) == std::pair(i, o));
 						++total;
@@ -290,4 +290,4 @@ class SparseComponentSet : public SparseComponentSetBase<Elem> {
 }
 }
 
-#endif // Y_ECS_SPARSECOMPONENTSET_H
+#endif // YAVE_ECS_SPARSECOMPONENTSET_H

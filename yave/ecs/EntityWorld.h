@@ -19,17 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_ENTITYWORLD_H
-#define Y_ECS_ENTITYWORLD_H
+#ifndef YAVE_ECS_ENTITYWORLD_H
+#define YAVE_ECS_ENTITYWORLD_H
 
-#include "EntityIDPool.h"
+#include "EntityIdPool.h"
 #include "EntityView.h"
 #include "Archetype.h"
 #include "EntityPrefab.h"
 
 #include "ComponentContainer.h"
 
-namespace y {
+namespace yave {
 namespace ecs {
 
 class EntityWorld {
@@ -37,17 +37,17 @@ class EntityWorld {
 		EntityWorld();
 
 		usize entity_count() const;
-		bool exists(EntityID id) const;
+		bool exists(EntityId id) const;
 
-		EntityID create_entity();
-		EntityID create_entity(const Archetype& archetype);
-		EntityID create_entity(const EntityPrefab& prefab);
+		EntityId create_entity();
+		EntityId create_entity(const Archetype& archetype);
+		EntityId create_entity(const EntityPrefab& prefab);
 
-		void remove_entity(EntityID id);
+		void remove_entity(EntityId id);
 
-		EntityID id_from_index(u32 index) const;
+		EntityId id_from_index(u32 index) const;
 
-		EntityPrefab create_prefab(EntityID id) const;
+		EntityPrefab create_prefab(EntityId id) const;
 
 		core::Span<const ComponentContainerBase*> required_components() const;
 
@@ -56,21 +56,21 @@ class EntityWorld {
 
 
 		template<typename... Args>
-		EntityID create_entity(StaticArchetype<Args...>) {
-			const EntityID id = create_entity();
+		EntityId create_entity(StaticArchetype<Args...>) {
+			const EntityId id = create_entity();
 			add_components<Args...>(id);
 			return id;
 		}
 
 
 		template<typename T, typename... Args>
-		void add_component(EntityID id, Args&&... args) {
+		void add_component(EntityId id, Args&&... args) {
 			check_exists(id);
 			find_or_create_container<T>()->template add<T>(*this, id, y_fwd(args)...);
 		}
 
 		template<typename First, typename... Args>
-		void add_components(EntityID id) {
+		void add_components(EntityId id) {
 			y_debug_assert(exists(id));
 			add_component<First>(id);
 			if constexpr(sizeof...(Args)) {
@@ -91,19 +91,19 @@ class EntityWorld {
 
 
 		template<typename T>
-		bool has(EntityID id) const {
+		bool has(EntityId id) const {
 			const ComponentContainerBase* cont = find_container<T>();
 			return cont ? cont->contains(id) : false;
 		}
 
 		template<typename T>
-		T* component(EntityID id) {
+		T* component(EntityId id) {
 			ComponentContainerBase* cont = find_container<T>();
 			return cont ? cont->template component_ptr<T>(id) : nullptr;
 		}
 
 		template<typename T>
-		const T* component(EntityID id) const {
+		const T* component(EntityId id) const {
 			const ComponentContainerBase* cont = find_container<T>();
 			return cont ? cont->template component_ptr<T>(id) : nullptr;
 		}
@@ -122,9 +122,9 @@ class EntityWorld {
 		}
 
 		template<typename T>
-		core::Span<EntityID> component_ids() const {
+		core::Span<EntityId> component_ids() const {
 			const ComponentContainerBase* cont = find_container<T>();
-			return cont ? cont->ids() : core::Span<EntityID>();
+			return cont ? cont->ids() : core::Span<EntityId>();
 		}
 
 
@@ -155,7 +155,7 @@ class EntityWorld {
 			static_assert(std::is_default_constructible_v<T>);
 			Y_TODO(check for duplicates)
 			_required_components << find_or_create_container<T>();
-			for(EntityID id : ids()) {
+			for(EntityId id : ids()) {
 				add_component<T>(id);
 			}
 		}
@@ -207,11 +207,11 @@ class EntityWorld {
 		ComponentContainerBase* find_container(ComponentTypeIndex type_id);
 		ComponentContainerBase* find_or_create_container(const ComponentRuntimeInfo& info);
 
-		void check_exists(EntityID id) const;
+		void check_exists(EntityId id) const;
 
 
 		core::ExternalHashMap<u32, std::unique_ptr<ComponentContainerBase>> _containers;
-		EntityIDPool _entities;
+		EntityIdPool _entities;
 
 		core::Vector<ComponentContainerBase*> _required_components;
 };
@@ -221,4 +221,4 @@ class EntityWorld {
 
 #include "EntityWorld.inl"
 
-#endif // Y_ECS_ENTITYWORLD_H
+#endif // YAVE_ECS_ENTITYWORLD_H

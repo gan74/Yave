@@ -19,48 +19,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_ECS_ENTITYIDPOOL_H
+#define YAVE_ECS_ENTITYIDPOOL_H
 
-#include "EntityIDPool.h"
+#include "ecs.h"
 
-namespace y {
+#include <y/core/Vector.h>
+#include <y/core/Range.h>
+
+#include <y/serde3/serde.h>
+
+#include <y/utils/iter.h>
+
+namespace yave {
 namespace ecs {
 
-usize EntityIDPool::size() const {
-	return _ids.size() - _free.size();
-}
+class EntityIdPool {
+	public:
+		usize size() const;
+		bool contains(EntityId id) const;
 
-bool EntityIDPool::contains(EntityID id) const {
-	return id.is_valid() &&
-		   id.index() < _ids.size() &&
-		   _ids[id.index()] == id;
-}
+		EntityId id_from_index(u32 index) const;
 
-EntityID EntityIDPool::id_from_index(u32 index) const {
-	if(index >= _ids.size() || !_ids[index].is_valid()) {
-		return EntityID();
-	}
-	return _ids[index];
-}
-
-EntityID EntityIDPool::create() {
-	if(_free.is_empty()) {
-		const usize index = _ids.size();
-		_ids.emplace_back(EntityID(index));
-		return _ids.last();
-	}
-
-	const u32 index = _free.pop();
-	_ids[index].make_valid(index);
-	return _ids[index];
-}
+		EntityId create();
+		void recycle(EntityId id);
 
 
-void EntityIDPool::recycle(EntityID id) {
-	y_debug_assert(contains(id));
-	_ids[id.index()].invalidate();
-	_free << id.index();
-}
+		auto ids() const {
+			return core::Range(
+				FilterIterator(_ids.begin(), _ids.end(), [](EntityId id) { return id.is_valid(); }),
+				EndIterator()
+			);
+		}
 
+		y_serde3(_ids, _free)
+
+	private:
+		core::Vector<EntityId> _ids;
+		core::Vector<u32> _free;
+};
 
 }
 }
+
+#endif // YAVE_ECS_ENTITYIDPOOL_H

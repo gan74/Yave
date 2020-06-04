@@ -19,20 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_ECS_ARCHETYPE_H
+#define YAVE_ECS_ARCHETYPE_H
 
 #include "ecs.h"
+#include "ComponentRuntimeInfo.h"
 
-#include <atomic>
+#include <y/core/HashMap.h>
 
-namespace y {
+namespace yave {
 namespace ecs {
-namespace detail {
 
-u32 next_type_index() {
-	static std::atomic<u32> global_type_index = 0;
-	return global_type_index++;
-}
+class Archetype {
+	public:
+		template<typename T>
+		void add_component_type() {
+			if(_infos.find(type_index<T>()) == _infos.end()) {
+				_infos[type_index<T>()] = ComponentRuntimeInfo::create<T>();
+			}
+		}
+
+		auto component_infos() const {
+			return _infos.values();
+		}
+
+	private:
+		core::ExternalHashMap<u32, ComponentRuntimeInfo> _infos;
+};
 
 }
 }
-}
+
+#endif // YAVE_ECS_ARCHETYPE_H

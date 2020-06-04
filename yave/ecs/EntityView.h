@@ -19,12 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_ENTITYVIEW_H
-#define Y_ECS_ENTITYVIEW_H
+#ifndef YAVE_ECS_ENTITYVIEW_H
+#define YAVE_ECS_ENTITYVIEW_H
 
 #include "SparseComponentSet.h"
 
-namespace y {
+namespace yave {
 namespace ecs {
 
 namespace detail {
@@ -56,10 +56,10 @@ class EntityView {
 				std::tuple<const Args&...>,
 				std::tuple<Args&...>>;
 
-	using id_range = core::Span<EntityID>;
+	using id_range = core::Span<EntityId>;
 
 	template<usize I = 0>
-	auto make_component_tuple(EntityID id) const {
+	auto make_component_tuple(EntityId id) const {
 		y_debug_assert(std::get<I>(_sets));
 		auto&& s = *std::get<I>(_sets);
 		if constexpr(I + 1 == sizeof...(Args)) {
@@ -86,7 +86,7 @@ class EntityView {
 	}
 
 	template<usize I = 0>
-	bool has_all(EntityID id) const {
+	bool has_all(EntityId id) const {
 		if constexpr(I < sizeof...(Args)) {
 			const auto* s = std::get<I>(_sets);
 			return s->contains_index(id.index()) && has_all<I + 1>(id);
@@ -113,11 +113,11 @@ class EntityView {
 					return std::get<index>(components());
 				}
 
-				IDComponents(EntityID id, component_tuple components) : _id(id), _components(components) {
+				IDComponents(EntityId id, component_tuple components) : _id(id), _components(components) {
 				}
 
 			private:
-				EntityID _id;
+				EntityId _id;
 				component_tuple _components;
 
 		};
@@ -127,17 +127,17 @@ class EntityView {
 		}
 
 		auto id_components() const {
-			auto tr = [this](EntityID id){ return IDComponents(id, make_component_tuple(id)); };
+			auto tr = [this](EntityId id){ return IDComponents(id, make_component_tuple(id)); };
 			return core::Range(TransformIterator(ids().begin(), tr), ids().end());
 		}
 
 		auto components() const {
-			auto tr = [this](EntityID id) { return make_component_tuple(id); };
+			auto tr = [this](EntityId id) { return make_component_tuple(id); };
 			return core::Range(TransformIterator(ids().begin(), tr), ids().end());
 		}
 
 		auto ids() const {
-			auto filter = [this](EntityID id) { return has_all<0>(id); };
+			auto filter = [this](EntityId id) { return has_all<0>(id); };
 			return core::Range(FilterIterator(_short.begin(), _short.end(), filter), EndIterator{});
 		}
 
@@ -162,4 +162,4 @@ class EntityView {
 }
 }
 
-#endif // Y_ECS_ENTITYVIEW_H
+#endif // YAVE_ECS_ENTITYVIEW_H

@@ -51,9 +51,9 @@ struct NC : NonCopyable {
 
 static const u32 id_version = 16431;
 
-ecs::EntityID create_id() {
+ecs::EntityId create_id() {
 	static u32 i = 0;
-	return ecs::EntityID(++i, id_version);
+	return ecs::EntityId(++i, id_version);
 }
 
 int main() {
@@ -67,7 +67,7 @@ int main() {
 	}
 
 	ecs::EntityWorld world;
-	const ecs::EntityID id = world.create_entity(pref);
+	const ecs::EntityId id = world.create_entity(pref);
 
 	y_debug_assert(world.component<float>(id));
 	y_debug_assert(world.component<Component>(id));

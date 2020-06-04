@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_COMPONENTCONTAINER_H
-#define Y_ECS_COMPONENTCONTAINER_H
+#ifndef YAVE_ECS_COMPONENTCONTAINER_H
+#define YAVE_ECS_COMPONENTCONTAINER_H
 
 #include "ecs.h"
 #include "SparseComponentSet.h"
@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include <y/serde3/archives.h>
 
-namespace y {
+namespace yave {
 namespace ecs {
 
 namespace detail {
@@ -43,7 +43,7 @@ class ComponentBoxBase : NonMovable {
 		virtual ~ComponentBoxBase();
 
 		virtual ComponentRuntimeInfo runtime_info() const = 0;
-		virtual void add_to(EntityWorld& world, EntityID id) const = 0;
+		virtual void add_to(EntityWorld& world, EntityId id) const = 0;
 
 		y_serde3_poly_base(ComponentBoxBase)
 };
@@ -56,7 +56,7 @@ class ComponentBox final : public ComponentBoxBase {
 		ComponentBox(const T& t);
 
 		ComponentRuntimeInfo runtime_info() const override;
-		void add_to(EntityWorld& world, EntityID id) const override;
+		void add_to(EntityWorld& world, EntityId id) const override;
 
 		y_serde3(_component)
 		y_serde3_poly(ComponentBox)
@@ -71,8 +71,8 @@ class ComponentContainerBase : NonMovable {
 	public:
 		virtual ~ComponentContainerBase();
 
-		bool contains(EntityID id) const;
-		core::Span<EntityID> ids() const;
+		bool contains(EntityId id) const;
+		core::Span<EntityId> ids() const;
 
 		ComponentTypeIndex type_id() const;
 
@@ -80,14 +80,14 @@ class ComponentContainerBase : NonMovable {
 		virtual std::string_view component_type_name() const = 0;
 		virtual ComponentRuntimeInfo runtime_info() const = 0;
 
-		virtual void add(EntityWorld& world, EntityID id) = 0;
-		virtual void remove(EntityID id) = 0;
+		virtual void add(EntityWorld& world, EntityId id) = 0;
+		virtual void remove(EntityId id) = 0;
 
-		virtual std::unique_ptr<ComponentBoxBase> create_box(EntityID id) const = 0;
+		virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
 
 
 		template<typename T, typename... Args>
-		T& add(EntityWorld& world, EntityID id, Args&&... args) {
+		T& add(EntityWorld& world, EntityId id, Args&&... args) {
 			auto& set = component_set_fast<T>();
 			if(!set.contains_index(id.index())) {
 				add_required_components<T>(world, id);
@@ -97,22 +97,22 @@ class ComponentContainerBase : NonMovable {
 		}
 
 		template<typename T>
-		T& component(EntityID id) {
+		T& component(EntityId id) {
 			return component_set_fast<T>()[id];
 		}
 
 		template<typename T>
-		const T& component(EntityID id) const {
+		const T& component(EntityId id) const {
 			return component_set_fast<T>()[id];
 		}
 
 		template<typename T>
-		T* component_ptr(EntityID id) {
+		T* component_ptr(EntityId id) {
 			return component_set_fast<T>().try_get(id);
 		}
 
 		template<typename T>
-		const T* component_ptr(EntityID id) const {
+		const T* component_ptr(EntityId id) const {
 			return component_set_fast<T>().try_get(id);
 		}
 
@@ -151,7 +151,7 @@ class ComponentContainerBase : NonMovable {
 
 
 		template<typename T>
-		void add_required_components(EntityWorld& world, EntityID id);
+		void add_required_components(EntityWorld& world, EntityId id);
 
 	private:
 		// hacky but avoids a bunch of dynamic casts and virtual calls
@@ -191,17 +191,17 @@ class ComponentContainer final : public ComponentContainerBase {
 			return ComponentRuntimeInfo::create<T>();
 		}
 
-		void add(EntityWorld& world, EntityID id) override {
+		void add(EntityWorld& world, EntityId id) override {
 			ComponentContainerBase::add<T>(world, id);
 		}
 
-		void remove(EntityID id) override {
+		void remove(EntityId id) override {
 			if(_components.contains(id)) {
 				_components.erase(id);
 			}
 		}
 
-		std::unique_ptr<ComponentBoxBase> create_box(EntityID id) const override {
+		std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const override {
 			unused(id);
 			if constexpr(std::is_copy_constructible_v<T>) {
 				return std::make_unique<ComponentBox<T>>(_components[id]);
@@ -219,4 +219,4 @@ class ComponentContainer final : public ComponentContainerBase {
 }
 }
 
-#endif // Y_ECS_COMPONENTCONTAINER_H
+#endif // YAVE_ECS_COMPONENTCONTAINER_H

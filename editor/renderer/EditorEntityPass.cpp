@@ -174,7 +174,7 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 		usize index = 0;
 		auto vertex_mapping = pass->resources().mapped_buffer(vertex_buffer);
 
-		auto push_entity = [&](ecs::EntityID id) {
+		auto push_entity = [&](ecs::EntityId id) {
 				if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
 					vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size, id.index()};
 					++index;

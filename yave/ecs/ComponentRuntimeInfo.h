@@ -19,36 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_ENTITYPREFAB_H
-#define Y_ECS_ENTITYPREFAB_H
+#ifndef YAVE_ECS_COMPONENTRUNTIMEINFO_H
+#define YAVE_ECS_COMPONENTRUNTIMEINFO_H
 
-#include "ComponentContainer.h"
+#include "ecs.h"
 
-namespace y {
+#include <y/serde3/serde.h>
+
+#include <memory>
+
+namespace yave {
 namespace ecs {
 
-class EntityPrefab {
-	public:
-		template<typename T>
-		void add(const T& component) {
-			_components << std::make_unique<ComponentBox<T>>(component);
-		}
+template<typename T>
+std::unique_ptr<ComponentContainerBase> create_container();
 
-		void add(std::unique_ptr<ComponentBoxBase> box) {
-			_components << std::move(box);
-		}
+struct ComponentRuntimeInfo {
+	ComponentTypeIndex type_id;
+	std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
 
-		const auto& components() const {
-			return _components;
-		}
+	template<typename T>
+	static ComponentRuntimeInfo create() {
+		return ComponentRuntimeInfo {
+			type_index<T>(),
+			create_container<T>
+		};
+	}
 
-		y_serde3(_components)
-
-	private:
-		core::Vector<std::unique_ptr<ComponentBoxBase>> _components;
+	y_no_serde3()
 };
 
 }
 }
 
-#endif // Y_ECS_ENTITYPREFAB_H
+#endif // YAVE_ECS_COMPONENTRUNTIMEINFO_H

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Gr�goire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,37 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_COMPONENTRUNTIMEINFO_H
-#define Y_ECS_COMPONENTRUNTIMEINFO_H
 
-#include "ecs.h"
+#include "ComponentContainer.h"
 
-#include <y/serde3/serde.h>
-
-#include <memory>
-
-namespace y {
+namespace yave {
 namespace ecs {
 
-template<typename T>
-std::unique_ptr<ComponentContainerBase> create_container();
+ComponentBoxBase::~ComponentBoxBase() {
+}
 
-struct ComponentRuntimeInfo {
-	ComponentTypeIndex type_id;
-	std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
 
-	template<typename T>
-	static ComponentRuntimeInfo create() {
-		return ComponentRuntimeInfo {
-			type_index<T>(),
-			create_container<T>
-		};
-	}
+ComponentContainerBase::~ComponentContainerBase() {
+}
 
-	y_no_serde3()
-};
+bool ComponentContainerBase::contains(EntityId id) const {
+	return _ids->contains(id);
+}
+
+core::Span<EntityId> ComponentContainerBase::ids() const {
+	return _ids->ids();
+}
+
+ComponentTypeIndex ComponentContainerBase::type_id() const {
+	return _type_id;
+}
 
 }
 }
-
-#endif // Y_ECS_COMPONENTRUNTIMEINFO_H

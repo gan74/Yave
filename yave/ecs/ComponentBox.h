@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2020 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,30 +19,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_ECS_COMPONENTBOX_H
+#define YAVE_ECS_COMPONENTBOX_H
 
-#include "ComponentContainer.h"
+#include "ComponentRuntimeInfo.h"
 
-namespace y {
+namespace yave {
 namespace ecs {
 
-ComponentBoxBase::~ComponentBoxBase() {
+}
 }
 
-
-ComponentContainerBase::~ComponentContainerBase() {
-}
-
-bool ComponentContainerBase::contains(EntityID id) const {
-	return _ids->contains(id);
-}
-
-core::Span<EntityID> ComponentContainerBase::ids() const {
-	return _ids->ids();
-}
-
-ComponentTypeIndex ComponentContainerBase::type_id() const {
-	return _type_id;
-}
-
-}
-}
+#endif // YAVE_ECS_COMPONENTBOX_H

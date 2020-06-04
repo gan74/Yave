@@ -19,15 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_COMPONENTBOX_H
-#define Y_ECS_COMPONENTBOX_H
 
-#include "ComponentRuntimeInfo.h"
+#include "ecs.h"
 
-namespace y {
+#include <atomic>
+
+namespace yave {
 namespace ecs {
+namespace detail {
+
+u32 next_type_index() {
+	static std::atomic<u32> global_type_index = 0;
+	return global_type_index++;
+}
 
 }
 }
-
-#endif // Y_ECS_COMPONENTBOX_H
+}

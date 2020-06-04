@@ -19,10 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_ENTITYWORLD_INL
-#define Y_ECS_ENTITYWORLD_INL
+#ifndef YAVE_ECS_ENTITYWORLD_INL
+#define YAVE_ECS_ENTITYWORLD_INL
 
-#ifndef Y_ECS_ENTITYWORLD_H
+#ifndef YAVE_ECS_ENTITYWORLD_H
 #error this file should not be included directly
 
 // Just to help the IDE
@@ -31,7 +31,7 @@ SOFTWARE.
 
 
 
-namespace y {
+namespace yave {
 namespace ecs {
 
 namespace detail {
@@ -49,7 +49,7 @@ std::unique_ptr<ComponentContainerBase> create_container() {
 
 
 template<typename... Args>
-void RequiredComponents<Args...>::add_required_components(EntityWorld& world, EntityID id) {
+void RequiredComponents<Args...>::add_required_components(EntityWorld& world, EntityId id) {
 	world.add_components<Args...>(id);
 }
 
@@ -57,7 +57,7 @@ void RequiredComponents<Args...>::add_required_components(EntityWorld& world, En
 
 
 template<typename T>
-void ComponentContainerBase::add_required_components(EntityWorld& world, EntityID id) {
+void ComponentContainerBase::add_required_components(EntityWorld& world, EntityId id) {
 	unused(id);
 	if constexpr(is_detected_v<detail::has_required_components_t, T>) {
 		T::add_required_components(world, id);
@@ -77,7 +77,7 @@ ComponentRuntimeInfo ComponentBox<T>::runtime_info() const {
 }
 
 template<typename T>
-void ComponentBox<T>::add_to(EntityWorld& world, EntityID id) const {
+void ComponentBox<T>::add_to(EntityWorld& world, EntityId id) const {
 	world.add_component<T>(id);
 }
 
@@ -85,4 +85,4 @@ void ComponentBox<T>::add_to(EntityWorld& world, EntityID id) const {
 }
 }
 
-#endif // Y_ECS_COMPONENTCONTAINER_H
+#endif // YAVE_ECS_COMPONENTCONTAINER_H

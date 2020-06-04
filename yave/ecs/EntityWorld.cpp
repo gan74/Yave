@@ -26,7 +26,7 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 
-namespace y {
+namespace yave {
 namespace ecs {
 
 EntityWorld::EntityWorld() {
@@ -36,20 +36,20 @@ usize EntityWorld::entity_count() const {
 	return _entities.size();
 }
 
-bool EntityWorld::exists(EntityID id) const {
+bool EntityWorld::exists(EntityId id) const {
 	return _entities.contains(id);
 }
 
-EntityID EntityWorld::create_entity() {
-	const EntityID id = _entities.create();
+EntityId EntityWorld::create_entity() {
+	const EntityId id = _entities.create();
 	for(ComponentContainerBase* cont : _required_components) {
 		cont->add(*this, id);
 	}
 	return id;
 }
 
-EntityID EntityWorld::create_entity(const Archetype& archetype) {
-	const EntityID id = create_entity();
+EntityId EntityWorld::create_entity(const Archetype& archetype) {
+	const EntityId id = create_entity();
 	for(const auto& info : archetype.component_infos()) {
 		ComponentContainerBase* cont = find_or_create_container(info);
 		cont->add(*this, id);
@@ -57,15 +57,15 @@ EntityID EntityWorld::create_entity(const Archetype& archetype) {
 	return id;
 }
 
-EntityID EntityWorld::create_entity(const EntityPrefab& prefab) {
-	const EntityID id = create_entity();
+EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
+	const EntityId id = create_entity();
 	for(const auto& comp : prefab.components()) {
 		comp->add_to(*this, id);
 	}
 	return id;
 }
 
-void EntityWorld::remove_entity(EntityID id) {
+void EntityWorld::remove_entity(EntityId id) {
 	check_exists(id);
 	for(auto& cont : _containers.values()) {
 		cont->remove(id);
@@ -73,11 +73,11 @@ void EntityWorld::remove_entity(EntityID id) {
 	_entities.recycle(id);
 }
 
-EntityID EntityWorld::id_from_index(u32 index) const {
+EntityId EntityWorld::id_from_index(u32 index) const {
 	return _entities.id_from_index(index);
 }
 
-EntityPrefab EntityWorld::create_prefab(EntityID id) const {
+EntityPrefab EntityWorld::create_prefab(EntityId id) const {
 	check_exists(id);
 	EntityPrefab prefab;
 	for(auto& cont : _containers.values()) {
@@ -124,7 +124,7 @@ ComponentContainerBase* EntityWorld::find_or_create_container(const ComponentRun
 	return cont.get();
 }
 
-void EntityWorld::check_exists(EntityID id) const {
+void EntityWorld::check_exists(EntityId id) const {
 	y_always_assert(exists(id), "Entity doesn't exists");
 }
 

@@ -19,35 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_ECS_ARCHETYPE_H
-#define Y_ECS_ARCHETYPE_H
+#ifndef YAVE_ECS_ENTITYPREFAB_H
+#define YAVE_ECS_ENTITYPREFAB_H
 
-#include "ecs.h"
-#include "ComponentRuntimeInfo.h"
+#include "ComponentContainer.h"
 
-#include <y/core/HashMap.h>
-
-namespace y {
+namespace yave {
 namespace ecs {
 
-class Archetype {
+class EntityPrefab {
 	public:
 		template<typename T>
-		void add_component_type() {
-			if(_infos.find(type_index<T>()) == _infos.end()) {
-				_infos[type_index<T>()] = ComponentRuntimeInfo::create<T>();
-			}
+		void add(const T& component) {
+			_components << std::make_unique<ComponentBox<T>>(component);
 		}
 
-		auto component_infos() const {
-			return _infos.values();
+		void add(std::unique_ptr<ComponentBoxBase> box) {
+			_components << std::move(box);
 		}
+
+		const auto& components() const {
+			return _components;
+		}
+
+		y_serde3(_components)
 
 	private:
-		core::ExternalHashMap<u32, ComponentRuntimeInfo> _infos;
+		core::Vector<std::unique_ptr<ComponentBoxBase>> _components;
 };
 
 }
 }
 
-#endif // Y_ECS_ARCHETYPE_H
+#endif // YAVE_ECS_ENTITYPREFAB_H
