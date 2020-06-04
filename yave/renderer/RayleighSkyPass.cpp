@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/framegraph/FrameGraph.h>
 
-#include <yave/ecs/ecs.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <yave/components/SkyComponent.h>
 

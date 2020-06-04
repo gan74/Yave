@@ -23,6 +23,8 @@ SOFTWARE.
 #include "ShadowMapPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
+
+#include <yave/ecs/EntityWorld.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/entities/entities.h>
 

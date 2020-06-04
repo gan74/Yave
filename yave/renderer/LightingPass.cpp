@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/device/Device.h>
 #include <yave/framegraph/FrameGraph.h>
 
-#include <yave/ecs/ecs.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>

@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/framegraph/FrameGraph.h>
 
+#include <yave/ecs/EntityWorld.h>
+
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/entities/entities.h>
