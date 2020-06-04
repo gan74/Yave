@@ -26,7 +26,8 @@ SOFTWARE.
 
 #include <yave/material/Material.h>
 #include <yave/assets/AssetPtr.h>
-#include <yave/ecs/EntityId.h>
+
+#include <yave/ecs/ecs.h>
 
 namespace editor {
 

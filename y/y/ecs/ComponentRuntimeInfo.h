@@ -32,11 +32,11 @@ namespace y {
 namespace ecs {
 
 template<typename T>
-std::unique_ptr<ComponentContainerBase> create_container(EntityWorld* world);
+std::unique_ptr<ComponentContainerBase> create_container();
 
 struct ComponentRuntimeInfo {
 	ComponentTypeIndex type_id;
-	std::unique_ptr<ComponentContainerBase> (*create_type_container)(EntityWorld*) = nullptr;
+	std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
 
 	template<typename T>
 	static ComponentRuntimeInfo create() {

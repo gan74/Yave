@@ -32,10 +32,6 @@ ComponentBoxBase::~ComponentBoxBase() {
 ComponentContainerBase::~ComponentContainerBase() {
 }
 
-EntityWorld& ComponentContainerBase::world() {
-	return *_world;
-}
-
 bool ComponentContainerBase::contains(EntityID id) const {
 	return _ids->contains(id);
 }

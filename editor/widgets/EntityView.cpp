@@ -24,7 +24,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/components/EditorComponent.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/ecs.h>
 #include <yave/entities/entities.h>
 
 #include <yave/components/TransformableComponent.h>
@@ -94,7 +94,7 @@ class DynArchtype : public ArchetypeBase {
 
 		void for_each(ecs::EntityWorld& world, const std::function<void(ecs::EntityId)>& func) const override {
 			for(auto entity : world.view(T())) {
-				ecs::EntityId id = world.id_from_index(entity.index());
+				ecs::EntityId id = entity.id();
 				func(id);
 			}
 		}
@@ -127,10 +127,10 @@ EntityView::EntityView(ContextPtr cptr) :
 
 void EntityView::paint_view() {
 	const ecs::EntityWorld& world = context()->world();
-	
+
 	if(ImGui::BeginChild("##entities", ImVec2(), true)) {
 		imgui::alternating_rows_background();
-		for(ecs::EntityId id : world.entities()) {
+		for(ecs::EntityId id : world.ids()) {
 			const EditorComponent* comp = world.component<EditorComponent>(id);
 			if(!comp) {
 				log_msg("Entity is missing EditorComponent.", Log::Warning);
@@ -231,9 +231,9 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				ent = archetype->create(world);
 			}
 		}
-		
+
 		y_debug_assert(!ent.is_valid() || world.has<EditorComponent>(ent));
-		y_debug_assert(world.required_component_types().size() > 0);
+		y_debug_assert(world.required_components().size() > 0);
 
 		ImGui::EndPopup();
 	}

@@ -43,7 +43,7 @@ struct ShadowMapPass {
 
 	struct SubPassData {
 		core::Vector<SubPass> passes;
-		core::ExternalHashMap<u32, ShadowData> lights;
+		core::ExternalHashMap<u64, ShadowData> lights;
 	};
 
 	FrameGraphImageId shadow_map;

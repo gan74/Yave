@@ -30,7 +30,7 @@ SOFTWARE.
 #include <yave/assets/AssetPtr.h>
 #include <yave/graphics/images/ImageView.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/ecs.h>
 #include <yave/scene/SceneView.h>
 
 #include <yave/framegraph/FrameGraphResourcePool.h>

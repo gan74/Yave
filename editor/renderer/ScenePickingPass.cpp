@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/framegraph/FrameGraph.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/ecs.h>
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
@@ -63,7 +63,7 @@ static usize render_world(ContextPtr ctx,
 	for(auto ent : world.view(StaticMeshArchetype())) {
 		const auto& [tr, mesh] = ent.components();
 		transform_mapping[index] = tr.transform();
-		id_mapping[index] = ent.index();
+		id_mapping[index] = ent.id().index();
 		mesh.render_mesh(recorder, u32(index));
 		++index;
 	}

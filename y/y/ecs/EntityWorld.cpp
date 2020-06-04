@@ -41,14 +41,18 @@ bool EntityWorld::exists(EntityID id) const {
 }
 
 EntityID EntityWorld::create_entity() {
-	return _entities.create();
+	const EntityID id = _entities.create();
+	for(ComponentContainerBase* cont : _required_components) {
+		cont->add(*this, id);
+	}
+	return id;
 }
 
 EntityID EntityWorld::create_entity(const Archetype& archetype) {
 	const EntityID id = create_entity();
 	for(const auto& info : archetype.component_infos()) {
 		ComponentContainerBase* cont = find_or_create_container(info);
-		cont->add(id);
+		cont->add(*this, id);
 	}
 	return id;
 }
@@ -56,8 +60,7 @@ EntityID EntityWorld::create_entity(const Archetype& archetype) {
 EntityID EntityWorld::create_entity(const EntityPrefab& prefab) {
 	const EntityID id = create_entity();
 	for(const auto& comp : prefab.components()) {
-		ComponentContainerBase* cont = find_or_create_container(comp->runtime_info());
-		comp->add_to(id, cont);
+		comp->add_to(*this, id);
 	}
 	return id;
 }
@@ -90,6 +93,10 @@ EntityPrefab EntityWorld::create_prefab(EntityID id) const {
 	return prefab;
 }
 
+core::Span<const ComponentContainerBase*> EntityWorld::required_components() const {
+	return _required_components;
+}
+
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
 	const ComponentContainerBase* cont = find_container(type_id);
 	return cont ? cont->component_type_name() : "";
@@ -112,7 +119,7 @@ ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) 
 ComponentContainerBase* EntityWorld::find_or_create_container(const ComponentRuntimeInfo& info) {
 	auto& cont = _containers[info.type_id];
 	if(!cont) {
-		cont = info.create_type_container(this);
+		cont = info.create_type_container();
 	}
 	return cont.get();
 }

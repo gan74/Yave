@@ -22,7 +22,7 @@ SOFTWARE.
 
 
 
-#define TEST_ECS
+#define TEST_ARCHIVES
 
 #ifdef TEST_ECS
 #define HAS_MAIN
@@ -95,17 +95,24 @@ int main() {
 
 using namespace y;
 
+struct Inner {
+	int x = 9;
+
+	y_serde3(x)
+};
+
 struct TestStruct {
 
 	int a = 7;
 	double b = 2.0;
 	core::String floop = "ihandozlabndo";
+	Inner inner;
 
 	void print() {
-		log_msg(fmt("% % %", a, b, floop));
+		log_msg(fmt("% % % %", a, b, floop, inner.x));
 	}
 
-	y_serde3(b, a);
+	y_serde3(b, a, inner)
 };
 
 
@@ -129,7 +136,7 @@ int main() {
 
 		log_msg("File doesn't exists, creating", Log::Error);
 
-		TestStruct s{ 19, 3.145f, "maap"};
+		TestStruct s{ 19, 3.145f, "maap", {-99}};
 		serde3::WritableArchive(file).serialize(s).unwrap();
 		s.print();
 	}

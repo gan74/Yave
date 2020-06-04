@@ -34,11 +34,11 @@ class SkyComponent;
 
 class StaticMeshComponent;
 
-using PointLightArchetype = ecs::EntityArchetype<TransformableComponent, PointLightComponent>;
-using SpotLightArchetype = ecs::EntityArchetype<TransformableComponent, SpotLightComponent>;
-using StaticMeshArchetype = ecs::EntityArchetype<TransformableComponent, StaticMeshComponent>;
-using DirectionalLightArchetype = ecs::EntityArchetype<DirectionalLightComponent>;
-using SkyArchetype = ecs::EntityArchetype<SkyComponent>;
+using PointLightArchetype = ecs::StaticArchetype<TransformableComponent, PointLightComponent>;
+using SpotLightArchetype = ecs::StaticArchetype<TransformableComponent, SpotLightComponent>;
+using StaticMeshArchetype = ecs::StaticArchetype<TransformableComponent, StaticMeshComponent>;
+using DirectionalLightArchetype = ecs::StaticArchetype<DirectionalLightComponent>;
+using SkyArchetype = ecs::StaticArchetype<SkyComponent>;
 
 }
 

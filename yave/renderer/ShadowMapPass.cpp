@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/entities/entities.h>
-#include <yave/ecs/EntityWorld.h>
 
 #include <y/utils/log.h>
 
@@ -71,7 +70,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 			pass.sub_passes->passes.push_back(SubPass{
 				SceneRenderSubPass::create(builder, spot_view)
 			});
-			pass.sub_passes->lights[spot.index()] = {
+			pass.sub_passes->lights[spot.id().as_u64()] = {
 				spot_view.camera().viewproj_matrix(),
 				math::Vec2(0.0f, y * uv_mul_y),
 				math::Vec2(1.0f, size * uv_mul_y)

@@ -92,7 +92,7 @@ void EditorContext::flush_reload() {
 		_thumb_cache.clear();
 		_selection.flush_reload();
 		_ui.refresh_all();
-		_world.flush_reload(loader());
+		//_world.flush_reload(loader());
 	});
 }
 
@@ -116,7 +116,7 @@ void EditorContext::flush_deferred() {
 		_deferred.clear();
 		_is_flushing_deferred = false;
 	}
-	_world.flush();
+	//_world.flush();
 
 	if(_perf_capture_frames) {
 		if(perf::is_capturing()) {
@@ -245,7 +245,7 @@ void EditorContext::load_world() {
 	}
 
 	_world = std::move(world);
-	y_debug_assert(_world.required_component_types().size() == 1);
+	y_debug_assert(_world.required_components().size() == 1);
 }
 
 void EditorContext::new_world() {
@@ -255,8 +255,8 @@ void EditorContext::new_world() {
 ecs::EntityWorld EditorContext::create_editor_world() {
 	y_profile();
 	ecs::EntityWorld world;
-	world.add_required_component_type<EditorComponent>();
-	y_debug_assert(world.required_component_types().size() == 1);
+	world.add_required_component<EditorComponent>();
+	y_debug_assert(world.required_components().size() == 1);
 	return world;
 }
 

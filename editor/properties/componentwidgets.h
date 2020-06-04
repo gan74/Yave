@@ -24,13 +24,6 @@ SOFTWARE.
 
 #include <editor/editor.h>
 #include <yave/ecs/ecs.h>
-#include <yave/ecs/EntityId.h>
-
-namespace yave {
-namespace ecs {
-class EntityWorld;
-}
-}
 
 namespace editor {
 namespace detail {
@@ -50,13 +43,13 @@ void register_component_widget(ComponentWidgetData* data);
 static void EDITOR_WIDGET_FUNC(ContextPtr ctx, ecs::EntityId id);										\
 namespace {																								\
 	class EDITOR_WIDGET_REG_RUNNER {																	\
-	    EDITOR_WIDGET_REG_RUNNER() {																	\
-	        comp_data.func = &EDITOR_WIDGET_FUNC;														\
-	        detail::register_component_widget(&comp_data);												\
-        }																								\
-	    static detail::ComponentWidgetData comp_data;													\
-	    static EDITOR_WIDGET_REG_RUNNER runner;															\
-    };																									\
+		EDITOR_WIDGET_REG_RUNNER() {																	\
+			comp_data.func = &EDITOR_WIDGET_FUNC;														\
+			detail::register_component_widget(&comp_data);												\
+		}																								\
+		static detail::ComponentWidgetData comp_data;													\
+		static EDITOR_WIDGET_REG_RUNNER runner;															\
+	};																									\
 	detail::ComponentWidgetData EDITOR_WIDGET_REG_RUNNER::comp_data = {};								\
 	EDITOR_WIDGET_REG_RUNNER EDITOR_WIDGET_REG_RUNNER::runner = {};										\
 }																										\

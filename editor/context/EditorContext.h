@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_CONTEXT_EDITORCONTEXT_H
 #define EDITOR_CONTEXT_EDITORCONTEXT_H
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/ecs.h>
 
 #include "EditorState.h"
 #include "Settings.h"

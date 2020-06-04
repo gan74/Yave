@@ -22,66 +22,14 @@ SOFTWARE.
 #ifndef YAVE_ECS_ECS_H
 #define YAVE_ECS_ECS_H
 
-#include <y/utils/hash.h>
-#include <y/utils/traits.h>
+#include <yave/yave.h>
 
-#include <typeindex>
-
-#include "EntityId.h"
+#include <y/ecs/ecs.h>
+#include <y/ecs/EntityWorld.h>
 
 namespace yave {
-namespace ecs {
-
-class EntityWorld;
-
-/*struct ComponentType {
-	const usize index;
-	bool operator==(const ComponentTypeIndex& other) const { return index == other.index; }
-	bool operator!=(const ComponentTypeIndex& other) const { return index != other.index; }
-};*/
-
-struct ComponentTypeIndex {
-	u64 type_hash = 0;
-
-	bool operator==(const ComponentTypeIndex& other) const { return type_hash == other.type_hash; }
-	bool operator!=(const ComponentTypeIndex& other) const { return type_hash != other.type_hash; }
-};
 
 
-template<typename T>
-ComponentTypeIndex index_for_type() {
-	static_assert(!std::is_reference_v<T>);
-	using naked = remove_cvref_t<T>;
-	return ComponentTypeIndex{type_hash_2<naked>()};
-}
-
-template<typename... Args>
-struct EntityArchetype final {
-
-	static constexpr usize component_count = sizeof...(Args);
-
-	template<typename T>
-	using with = EntityArchetype<T, Args...>;
-
-	static inline auto indexes() {
-		return std::array{index_for_type<Args>()...};
-	}
-};
-
-template<typename... Args>
-struct RequiredComponents {
-	static inline constexpr auto required_components_archetype() {
-		static_assert(std::is_default_constructible_v<std::tuple<Args...>>);
-		return EntityArchetype<Args...>{};
-	}
-
-	// EntityWorld.h
-	static inline void add_required_components(EntityWorld& world, EntityId id);
-
-};
-
-
-}
 }
 
 #endif // YAVE_ECS_ECS_H

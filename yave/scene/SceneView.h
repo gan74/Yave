@@ -24,11 +24,9 @@ SOFTWARE.
 
 #include <yave/camera/Camera.h>
 
-namespace yave {
+#include <yave/ecs/ecs.h>
 
-namespace ecs {
-class EntityWorld;
-}
+namespace yave {
 
 class SceneView {
 	public:

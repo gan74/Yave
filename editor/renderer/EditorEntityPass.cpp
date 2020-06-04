@@ -27,7 +27,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPassBuilder.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/ecs.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
@@ -174,24 +174,24 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
 		usize index = 0;
 		auto vertex_mapping = pass->resources().mapped_buffer(vertex_buffer);
 
-		auto push_entity = [&](ecs::EntityIndex entity_index) {
-				if(const TransformableComponent* tr = world.component<TransformableComponent>(world.id_from_index(entity_index))) {
-					vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size, entity_index};
+		auto push_entity = [&](ecs::EntityID id) {
+				if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
+					vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size, id.index()};
 					++index;
 				}
 			};
 
 		{
 			std::tie(uv, size) = compute_uv_size(ICON_FA_LIGHTBULB);
-			for(ecs::EntityIndex entity_index : world.indexes<PointLightComponent>()) {
-				push_entity(entity_index);
+			for(ecs::EntityId id : world.component_ids<PointLightComponent>()) {
+				push_entity(id);
 			}
 		}
 
 		{
 			std::tie(uv, size) = compute_uv_size(ICON_FA_VIDEO);
-			for(ecs::EntityIndex entity_index : world.indexes<SpotLightComponent>()) {
-				push_entity(entity_index);
+			for(ecs::EntityId id : world.component_ids<SpotLightComponent>()) {
+				push_entity(id);
 			}
 		}
 

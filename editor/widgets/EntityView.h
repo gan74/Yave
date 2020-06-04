@@ -23,7 +23,8 @@ SOFTWARE.
 #define EDITOR_WIDGETS_ENTITYVIEW_H
 
 #include <editor/ui/Widget.h>
-#include <yave/ecs/EntityId.h>
+
+#include <yave/ecs/ecs.h>
 
 namespace editor {
 

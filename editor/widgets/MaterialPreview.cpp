@@ -43,7 +43,6 @@ namespace editor {
 MaterialPreview::MaterialPreview(ContextPtr cptr) :
 		Widget(ICON_FA_BRUSH " Material Preview"),
 		ContextLinked(cptr),
-		_view(&_world),
 		_ibl_probe(device()->device_resources().ibl_probe()),
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())) {
 
@@ -51,7 +50,7 @@ MaterialPreview::MaterialPreview(ContextPtr cptr) :
 }
 
 void MaterialPreview::refresh() {
-	_world.flush_reload(context()->loader());
+	//_world.flush_reload(context()->loader());
 }
 
 void MaterialPreview::set_material(const AssetPtr<Material>& material) {
@@ -97,11 +96,12 @@ void MaterialPreview::update_camera() {
 
 
 void MaterialPreview::reset_world() {
-	_world = ecs::EntityWorld();
+	_world = std::make_unique<ecs::EntityWorld>();
+	_view = SceneView(_world.get());
 
 	if(!_mesh.is_empty() && !_material.is_empty()) {
-		const ecs::EntityId id = _world.create_entity(StaticMeshArchetype());
-		*_world.component<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
+		const ecs::EntityId id = _world->create_entity(StaticMeshArchetype());
+		*_world->component<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
 
 		const float radius = _mesh->radius();
 		_cam_distance = std::sqrt(3 * radius * radius) * 1.5f;

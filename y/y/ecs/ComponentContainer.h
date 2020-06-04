@@ -43,7 +43,7 @@ class ComponentBoxBase : NonMovable {
 		virtual ~ComponentBoxBase();
 
 		virtual ComponentRuntimeInfo runtime_info() const = 0;
-		virtual void add_to(EntityID id, ComponentContainerBase* container) const = 0;
+		virtual void add_to(EntityWorld& world, EntityID id) const = 0;
 
 		y_serde3_poly_base(ComponentBoxBase)
 };
@@ -56,7 +56,7 @@ class ComponentBox final : public ComponentBoxBase {
 		ComponentBox(const T& t);
 
 		ComponentRuntimeInfo runtime_info() const override;
-		void add_to(EntityID id, ComponentContainerBase* container) const override;
+		void add_to(EntityWorld& world, EntityID id) const override;
 
 		y_serde3(_component)
 		y_serde3_poly(ComponentBox)
@@ -71,8 +71,6 @@ class ComponentContainerBase : NonMovable {
 	public:
 		virtual ~ComponentContainerBase();
 
-		EntityWorld& world();
-
 		bool contains(EntityID id) const;
 		core::Span<EntityID> ids() const;
 
@@ -82,17 +80,17 @@ class ComponentContainerBase : NonMovable {
 		virtual std::string_view component_type_name() const = 0;
 		virtual ComponentRuntimeInfo runtime_info() const = 0;
 
-		virtual void add(EntityID id) = 0;
+		virtual void add(EntityWorld& world, EntityID id) = 0;
 		virtual void remove(EntityID id) = 0;
 
 		virtual std::unique_ptr<ComponentBoxBase> create_box(EntityID id) const = 0;
 
 
 		template<typename T, typename... Args>
-		T& add(EntityID id, Args&&... args) {
+		T& add(EntityWorld& world, EntityID id, Args&&... args) {
 			auto& set = component_set_fast<T>();
 			if(!set.contains_index(id.index())) {
-				add_required_components<T>(id);
+				add_required_components<T>(world, id);
 				return set.insert(id, y_fwd(args)...);
 			}
 			return set[id];
@@ -145,29 +143,20 @@ class ComponentContainerBase : NonMovable {
 
 	protected:
 		template<typename T>
-		ComponentContainerBase(SparseComponentSet<T>& sparse, EntityWorld* world) :
+		ComponentContainerBase(SparseComponentSet<T>& sparse) :
 				_sparse(&sparse),
 				_ids(&sparse),
-				_world(world),
 				_type_id(type_index<T>()) {
-
-			y_debug_assert(world);
 		}
 
 
 		template<typename T>
-		void add_required_components(EntityID id) {
-			unused(id);
-			if constexpr(is_detected_v<detail::has_required_components_t, T>) {
-				T::add_required_components(*_world, id);
-			}
-		}
+		void add_required_components(EntityWorld& world, EntityID id);
 
 	private:
 		// hacky but avoids a bunch of dynamic casts and virtual calls
 		void* _sparse = nullptr;
 		SparseIDSet* _ids = nullptr;
-		EntityWorld* _world = nullptr;
 
 		const ComponentTypeIndex _type_id;
 
@@ -191,7 +180,7 @@ class ComponentContainerBase : NonMovable {
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
 	public:
-		ComponentContainer(EntityWorld* world) : ComponentContainerBase(_components, world) {
+		ComponentContainer() : ComponentContainerBase(_components) {
 		}
 
 		std::string_view component_type_name() const override {
@@ -202,8 +191,8 @@ class ComponentContainer final : public ComponentContainerBase {
 			return ComponentRuntimeInfo::create<T>();
 		}
 
-		void add(EntityID id) override {
-			ComponentContainerBase::add<T>(id);
+		void add(EntityWorld& world, EntityID id) override {
+			ComponentContainerBase::add<T>(world, id);
 		}
 
 		void remove(EntityID id) override {
@@ -226,30 +215,6 @@ class ComponentContainer final : public ComponentContainerBase {
 	private:
 		SparseComponentSet<T> _components;
 };
-
-
-
-
-
-
-template<typename T>
-ComponentBox<T>::ComponentBox(const T& t) : _component(t) {
-}
-
-template<typename T>
-ComponentRuntimeInfo ComponentBox<T>::runtime_info() const {
-	return ComponentRuntimeInfo::create<T>();
-}
-
-template<typename T>
-void ComponentBox<T>::add_to(EntityID id, ComponentContainerBase* container) const {
-	container->add<T>(id, _component);
-}
-
-template<typename T>
-std::unique_ptr<ComponentContainerBase> create_container(EntityWorld* world) {
-	return std::make_unique<ComponentContainer<T>>(world);
-}
 
 }
 }

@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/device/Device.h>
 #include <yave/framegraph/FrameGraph.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/ecs.h>
 
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
@@ -147,7 +147,7 @@ static void local_lights_pass(FrameGraphMutableImageId lit,
 
 				u32 shadow_index = u32(-1);
 				if(l.cast_shadow()) {
-					if(const auto it = shadow_pass.sub_passes->lights.find(spot.index()); it != shadow_pass.sub_passes->lights.end()) {
+					if(const auto it = shadow_pass.sub_passes->lights.find(spot.id().as_u64()); it != shadow_pass.sub_passes->lights.end()) {
 						shadow_mapping[shadow_index = push_data.shadow_count++] = it->second;
 					}
 				}

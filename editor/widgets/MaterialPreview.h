@@ -28,7 +28,6 @@ SOFTWARE.
 #include <yave/graphics/images/IBLProbe.h>
 #include <yave/assets/AssetPtr.h>
 #include <yave/material/Material.h>
-#include <yave/ecs/EntityWorld.h>
 #include <yave/scene/SceneView.h>
 
 namespace editor {
@@ -60,7 +59,7 @@ class MaterialPreview final : public Widget, public ContextLinked {
 		AssetPtr<Material> _material;
 		AssetPtr<StaticMesh> _mesh;
 
-		ecs::EntityWorld _world;
+		std::unique_ptr<ecs::EntityWorld> _world;
 		SceneView _view;
 
 		std::shared_ptr<IBLProbe> _ibl_probe;

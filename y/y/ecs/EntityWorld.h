@@ -32,7 +32,7 @@ SOFTWARE.
 namespace y {
 namespace ecs {
 
-class EntityWorld : NonMovable {
+class EntityWorld {
 	public:
 		EntityWorld();
 
@@ -49,6 +49,7 @@ class EntityWorld : NonMovable {
 
 		EntityPrefab create_prefab(EntityID id) const;
 
+		core::Span<const ComponentContainerBase*> required_components() const;
 
 		std::string_view component_type_name(ComponentTypeIndex type_id) const;
 
@@ -65,7 +66,7 @@ class EntityWorld : NonMovable {
 		template<typename T, typename... Args>
 		void add_component(EntityID id, Args&&... args) {
 			check_exists(id);
-			find_or_create_container<T>()->template add<T>(id, y_fwd(args)...);
+			find_or_create_container<T>()->template add<T>(*this, id, y_fwd(args)...);
 		}
 
 		template<typename First, typename... Args>
@@ -91,7 +92,7 @@ class EntityWorld : NonMovable {
 
 		template<typename T>
 		bool has(EntityID id) const {
-			ComponentContainerBase* cont = find_container<T>();
+			const ComponentContainerBase* cont = find_container<T>();
 			return cont ? cont->contains(id) : false;
 		}
 
@@ -149,6 +150,15 @@ class EntityWorld : NonMovable {
 			return view<Args...>();
 		}
 
+		template<typename T>
+		void add_required_component() {
+			static_assert(std::is_default_constructible_v<T>);
+			Y_TODO(check for duplicates)
+			_required_components << find_or_create_container<T>();
+			for(EntityID id : ids()) {
+				add_component<T>(id);
+			}
+		}
 
 
 		y_serde3(_entities, _containers)
@@ -172,7 +182,7 @@ class EntityWorld : NonMovable {
 		ComponentContainerBase* find_or_create_container() {
 			auto& cont = _containers[type_index<T>()];
 			if(!cont) {
-				cont = std::make_unique<ComponentContainer<T>>(this);
+				cont = std::make_unique<ComponentContainer<T>>();
 			}
 			return cont.get();
 		}
@@ -202,15 +212,13 @@ class EntityWorld : NonMovable {
 
 		core::ExternalHashMap<u32, std::unique_ptr<ComponentContainerBase>> _containers;
 		EntityIDPool _entities;
+
+		core::Vector<ComponentContainerBase*> _required_components;
 };
 
-
-template<typename... Args>
-void RequiredComponents<Args...>::add_required_components(EntityWorld& world, EntityID id) {
-	world.add_components<Args...>(id);
+}
 }
 
-}
-}
+#include "EntityWorld.inl"
 
 #endif // Y_ECS_ENTITYWORLD_H

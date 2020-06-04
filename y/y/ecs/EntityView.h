@@ -61,7 +61,7 @@ class EntityView {
 	template<usize I = 0>
 	auto make_component_tuple(EntityID id) const {
 		y_debug_assert(std::get<I>(_sets));
-		const auto& s = *std::get<I>(_sets);
+		auto&& s = *std::get<I>(_sets);
 		if constexpr(I + 1 == sizeof...(Args)) {
 			return std::tie(s[id]);
 		} else {

@@ -27,7 +27,7 @@ SOFTWARE.
 #include <editor/widgets/Gizmo.h>
 #include <editor/renderer/EditorRenderer.h>
 
-#include <yave/ecs/EntityId.h>
+#include <yave/ecs/ecs.h>
 
 #include "CameraController.h"
 
