@@ -740,7 +740,8 @@ class ReadableArchive final {
 				}
 				data.end_offset = offset;
 			}
-			y_defer(seek(data.end_offset));
+
+			y_defer(if constexpr(Safe) { seek(data.end_offset); });
 			return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
 		}
 
