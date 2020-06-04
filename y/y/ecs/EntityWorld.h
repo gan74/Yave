@@ -45,11 +45,21 @@ class EntityWorld : NonMovable {
 
 		void remove_entity(EntityID id);
 
+		EntityID id_from_index(u32 index) const;
 
 		EntityPrefab create_prefab(EntityID id) const;
 
 
 		std::string_view component_type_name(ComponentTypeIndex type_id) const;
+
+
+
+		template<typename... Args>
+		EntityID create_entity(StaticArchetype<Args...>) {
+			const EntityID id = create_entity();
+			add_components<Args...>(id);
+			return id;
+		}
 
 
 		template<typename T, typename... Args>
@@ -80,6 +90,12 @@ class EntityWorld : NonMovable {
 
 
 		template<typename T>
+		bool has(EntityID id) const {
+			ComponentContainerBase* cont = find_container<T>();
+			return cont ? cont->contains(id) : false;
+		}
+
+		template<typename T>
 		T* component(EntityID id) {
 			ComponentContainerBase* cont = find_container<T>();
 			return cont ? cont->template component_ptr<T>(id) : nullptr;
@@ -104,6 +120,11 @@ class EntityWorld : NonMovable {
 			return cont ? cont->components<T>() : decltype(cont->components<T>())();
 		}
 
+		template<typename T>
+		core::Span<EntityID> component_ids() const {
+			const ComponentContainerBase* cont = find_container<T>();
+			return cont ? cont->ids() : core::Span<EntityID>();
+		}
 
 
 		template<typename... Args>

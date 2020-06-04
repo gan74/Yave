@@ -70,6 +70,10 @@ void EntityWorld::remove_entity(EntityID id) {
 	_entities.recycle(id);
 }
 
+EntityID EntityWorld::id_from_index(u32 index) const {
+	return _entities.id_from_index(index);
+}
+
 EntityPrefab EntityWorld::create_prefab(EntityID id) const {
 	check_exists(id);
 	EntityPrefab prefab;

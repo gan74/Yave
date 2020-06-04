@@ -39,6 +39,8 @@ class EntityIDPool {
 		usize size() const;
 		bool contains(EntityID id) const;
 
+		EntityID id_from_index(u32 index) const;
+
 		EntityID create();
 		void recycle(EntityID id);
 

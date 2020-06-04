@@ -94,6 +94,9 @@ class EntityID {
 };
 
 
+using EntityId = EntityID;
+
+
 template<typename... Args>
 struct StaticArchetype {
 	static constexpr usize component_count = sizeof...(Args);
