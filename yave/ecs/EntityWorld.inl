@@ -68,7 +68,7 @@ void ComponentContainerBase::add_required_components(EntityWorld& world, EntityI
 
 
 template<typename T>
-ComponentBox<T>::ComponentBox(const T& t) : _component(t) {
+ComponentBox<T>::ComponentBox(T t) : _component(std::move(t)) {
 }
 
 template<typename T>
@@ -78,9 +78,14 @@ ComponentRuntimeInfo ComponentBox<T>::runtime_info() const {
 
 template<typename T>
 void ComponentBox<T>::add_to(EntityWorld& world, EntityId id) const {
-	world.add_component<T>(id);
+	world.add_component<T>(id, _component);
 }
 
+template<typename T>
+void ComponentBox<T>::post_deserialize_poly(AssetLoadingContext& context) {
+	y_profile();
+	serde3::ReadableArchive::post_deserialize(*this, context);
+}
 
 }
 }

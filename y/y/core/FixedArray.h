@@ -84,6 +84,10 @@ class FixedArray {
 			_data = std::move(new_data);
 		}
 
+		bool is_empty() const {
+			return !_size;
+		}
+
 		usize size() const {
 			return _size;
 		}

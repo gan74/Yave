@@ -35,17 +35,23 @@ struct AssetTraits {
 	static constexpr bool is_asset = false;
 };
 
-#define YAVE_FILL_ASSET_TRAITS(Type, LoadFrom, TypeEnum)									\
-	static constexpr bool is_asset = true;													\
-	static constexpr AssetType type = TypeEnum;												\
-	using load_from = LoadFrom;																\
-	using Result = core::Result<Type>;
 
-
-#define YAVE_DECLARE_ASSET_TRAITS(Type, LoadFrom, TypeEnum)									\
+#define YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Type, LoadFrom, TypeEnum)							\
 	template<>																				\
 	struct AssetTraits<Type> {																\
-		YAVE_FILL_ASSET_TRAITS(Type, LoadFrom, TypeEnum)									\
+		static constexpr bool is_asset = true;												\
+		static constexpr bool is_graphic_asset = true;										\
+		static constexpr AssetType type = TypeEnum;											\
+		using load_from = LoadFrom;															\
+	}
+
+#define YAVE_DECLARE_GENERIC_ASSET_TRAITS(Type, TypeEnum)									\
+	template<>																				\
+	struct AssetTraits<Type> {																\
+		static constexpr bool is_asset = true;												\
+		static constexpr bool is_graphic_asset = false;										\
+		static constexpr AssetType type = TypeEnum;											\
+		using load_from = Type;																\
 	}
 
 

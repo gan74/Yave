@@ -24,63 +24,6 @@ SOFTWARE.
 
 #define TEST_ARCHIVES
 
-#ifdef TEST_ECS
-#define HAS_MAIN
-
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
-#include <y/ecs/EntityWorld.h>
-
-
-#include <y/io2/File.h>
-#include <y/serde3/archives.h>
-
-
-using namespace y;
-
-struct Component {
-	int x = 5;
-};
-
-struct NC : NonCopyable {
-	int y = 0;
-
-	y_serde3(y)
-};
-
-static const u32 id_version = 16431;
-
-ecs::EntityId create_id() {
-	static u32 i = 0;
-	return ecs::EntityId(++i, id_version);
-}
-
-int main() {
-	ecs::EntityPrefab pref;
-	pref.add(Component{17});
-	pref.add(7.0f);
-
-	{
-		io2::File file = std::move(io2::File::create("test.bin").unwrap());
-		serde3::WritableArchive(file).serialize(pref).unwrap();
-	}
-
-	ecs::EntityWorld world;
-	const ecs::EntityId id = world.create_entity(pref);
-
-	y_debug_assert(world.component<float>(id));
-	y_debug_assert(world.component<Component>(id));
-	y_debug_assert(world.component<Component>(id)->x == 17);
-
-	world.add_component<NC>(id);
-
-	ecs::EntityPrefab prefab = world.create_prefab(id);
-
-	log_msg("Ok");
-}
-
-#endif
 
 #ifdef TEST_ARCHIVES
 #define HAS_MAIN
@@ -101,18 +44,46 @@ struct Inner {
 	y_serde3(x)
 };
 
+struct Poly {
+	virtual ~Poly() {
+	}
+
+	virtual void print() {
+		log_msg("Poly");
+	}
+
+	y_serde3_poly_base(Poly)
+};
+
+struct Derived : Poly {
+	y_serde3_poly(Derived)
+	y_serde3(x)
+
+
+	void print() override {
+		log_msg(fmt("Derived{%}", x));
+	}
+
+	int x = 7;
+};
+
+
 struct TestStruct {
 
 	int a = 7;
 	double b = 2.0;
 	core::String floop = "ihandozlabndo";
 	Inner inner;
+	std::unique_ptr<Poly> poly;
 
 	void print() {
 		log_msg(fmt("% % % %", a, b, floop, inner.x));
+		if(poly) {
+			poly->print();
+		}
 	}
 
-	y_serde3(b, a, inner)
+	y_serde3(b, a, inner, poly)
 };
 
 
@@ -136,7 +107,7 @@ int main() {
 
 		log_msg("File doesn't exists, creating", Log::Error);
 
-		TestStruct s{ 19, 3.145f, "maap", {-99}};
+		TestStruct s{ 19, 3.145f, "maap", {-99}, std::make_unique<Derived>()};
 		serde3::WritableArchive(file).serialize(s).unwrap();
 		s.print();
 	}

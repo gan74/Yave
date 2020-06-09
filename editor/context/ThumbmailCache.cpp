@@ -32,7 +32,10 @@ SOFTWARE.
 #include <yave/entities/entities.h>
 #include <yave/utils/color.h>
 
+#include <yave/utils/entities.h>
+
 #include <editor/utils/assets.h>
+#include <editor/utils/renderdochelper.h>
 
 #include <thread>
 
@@ -48,18 +51,60 @@ static math::Transform<> center_to_camera(const AABB& box) {
 							 math::Vec3(scale));
 }
 
-ThumbmailCache::ThumbmailData::ThumbmailData(DevicePtr dptr, usize size, AssetId asset) :
-		image(dptr, VK_FORMAT_R8G8B8A8_UNORM, math::Vec2ui(size)),
-		view(image),
-		id(asset) {
+static std::array<char, 32> rounded_string(float value) {
+	std::array<char, 32> buffer;
+	std::snprintf(buffer.data(), buffer.size(), "%.2f", double(value));
+	return buffer;
 }
 
-ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat)
-		: view(&world) {
+static void add_size_property(core::Vector<std::pair<core::String, core::String>>& properties, ContextPtr ctx, AssetId id) {
+	const std::array suffixes = {"B", "KB", "MB", "GB"};
+	if(const auto data = ctx->asset_store().data(id)) {
+		float size = data.unwrap()->remaining();
+		usize i = 0;
+		for(; i != suffixes.size() - 1; ++i) {
+			if(size < 1024.0f) {
+				break;
+			}
+			size /= 1024.0f;
+		}
+		properties.emplace_back("Size on disk", fmt("% %", rounded_string(size).data(), suffixes[i]));
+	}
+}
 
-	DevicePtr dptr = ctx->device();
+
+ThumbmailCache::ThumbmailData::ThumbmailData(ContextPtr ctx, usize size, AssetId asset) :
+		image(ctx->device(), VK_FORMAT_R8G8B8A8_UNORM, math::Vec2ui(size)),
+		view(image),
+		id(asset) {
+
+	switch(ctx->asset_store().asset_type(id).unwrap_or(AssetType::Unknown)) {
+		case AssetType::Mesh:
+			if(const auto& mesh = ctx->loader().load<StaticMesh>(id); mesh) {
+				properties.emplace_back("Triangles", fmt("%", mesh->triangle_buffer().size()));
+				properties.emplace_back("Vertices", fmt("%", mesh->vertex_buffer().size()));
+				properties.emplace_back("Radius", fmt("%", rounded_string(mesh->radius()).data()));
+			}
+		break;
+
+		case AssetType::Image:
+			if(const auto& tex = ctx->loader().load<Texture>(id); tex) {
+				properties.emplace_back("Size", fmt("% x %", tex->size().x(), tex->size().y()));
+				properties.emplace_back("Mipmaps", fmt("%", tex->mipmaps()));
+				properties.emplace_back("Format", tex->format().name());
+			}
+		break;
+
+		default:
+		break;
+	}
+
+	add_size_property(properties, ctx, id);
+}
+
+ThumbmailCache::SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), view(&world) {
+
 	const float intensity = 1.0f;
-	const bool background = false;
 
 	{
 		ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
@@ -86,26 +131,35 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>&
 		light->radius() = 2.0f;
 	}
 
-	if(background) {
+	/*if(background) {
 		ecs::EntityId bg_id = world.create_entity(StaticMeshArchetype());
 		StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(bg_id);
 		*mesh_comp = StaticMeshComponent(dptr->device_resources()[DeviceResources::SweepMesh], dptr->device_resources()[DeviceResources::EmptyMaterial]);
-	}
-
-	{
-		ecs::EntityId mesh_id = world.create_entity(StaticMeshArchetype());
-		StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(mesh_id);
-		*mesh_comp = StaticMeshComponent(mesh, mat);
-
-		TransformableComponent* trans_comp = world.component<TransformableComponent>(mesh_id);
-		trans_comp->transform() = center_to_camera(mesh->aabb());
-
-		//y_debug_assert(world.component<StaticMeshComponent>(mesh_id)->material()->mat_template());
-	}
+	}*/
 
 	view.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
 }
 
+
+void ThumbmailCache::SceneData::add_mesh(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) {
+	ecs::EntityId entity = world.create_entity(StaticMeshArchetype());
+	StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity);
+	*mesh_comp = StaticMeshComponent(mesh, mat);
+
+	TransformableComponent* trans_comp = world.component<TransformableComponent>(entity);
+	trans_comp->transform() = center_to_camera(mesh->aabb());
+
+}
+
+void ThumbmailCache::SceneData::add_prefab(const ecs::EntityPrefab& prefab) {
+	ecs::EntityId entity = world.create_entity(prefab);
+
+	if(StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
+		if(TransformableComponent* trans_comp = world.component<TransformableComponent>(entity)) {
+			trans_comp->transform() = center_to_camera(mesh_comp->compute_aabb());
+		}
+	}
+}
 
 ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
 		ContextLinked(ctx),
@@ -161,7 +215,9 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 			_render_thread.schedule([id, this] {
 				if(const auto& mesh = context()->loader().load<StaticMesh>(id); !mesh.is_failed()) {
 					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
-					submit_and_set(rec, render_thumbmail(rec, id, mesh, device()->device_resources()[DeviceResources::EmptyMaterial]));
+					SceneData scene(context());
+					scene.add_mesh(mesh, device()->device_resources()[DeviceResources::EmptyMaterial]);
+					submit_and_set(rec, render_thumbmail(rec, id, scene));
 				} else {
 					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
 				}
@@ -172,7 +228,9 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 			_render_thread.schedule([id, this] {
 				if(const auto& material = context()->loader().load<Material>(id); !material.is_failed()) {
 					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
-					submit_and_set(rec, render_thumbmail(rec, id, device()->device_resources()[DeviceResources::SphereMesh], material));
+					SceneData scene(context());
+					scene.add_mesh(device()->device_resources()[DeviceResources::SphereMesh], material);
+					submit_and_set(rec, render_thumbmail(rec, id, scene));
 				} else {
 					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
 				}
@@ -190,6 +248,19 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 			});
 		break;
 
+		case AssetType::Prefab:
+			_render_thread.schedule([id, this] {
+				if(const auto& prefab = context()->loader().load<ecs::EntityPrefab>(id); !prefab.is_failed()) {
+					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
+					SceneData scene(context());
+					scene.add_prefab(*prefab);
+					submit_and_set(rec, render_thumbmail(rec, id, scene));
+				} else {
+					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
+				}
+			});
+		break;
+
 		default:
 			log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
 		break;
@@ -198,6 +269,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 
 void ThumbmailCache::submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr<ThumbmailData> thumb) {
 	y_profile();
+	auto capture = renderdoc::capture();
 	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 
 	const auto lock = y_profile_unique_lock(_lock);
@@ -206,48 +278,19 @@ void ThumbmailCache::submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr
 	thumbmail = std::move(thumb);
 }
 
-
-
-static std::array<char, 32> rounded_string(float value) {
-	std::array<char, 32> buffer;
-	std::snprintf(buffer.data(), buffer.size(), "%.2f", double(value));
-	return buffer;
-}
-
-static void add_size_property(core::Vector<std::pair<core::String, core::String>>& properties, ContextPtr ctx, AssetId id) {
-	const std::array suffixes = {"B", "KB", "MB", "GB"};
-	if(const auto data = ctx->asset_store().data(id)) {
-		float size = data.unwrap()->remaining();
-		usize i = 0;
-		for(; i != suffixes.size() - 1; ++i) {
-			if(size < 1024.0f) {
-				break;
-			}
-			size /= 1024.0f;
-		}
-		properties.emplace_back("Size on disk", fmt("% %", rounded_string(size).data(), suffixes[i]));
-	}
-}
-
 std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const {
-	auto thumbmail = std::make_unique<ThumbmailData>(device(), _size, tex.id());
+	auto thumbmail = std::make_unique<ThumbmailData>(context(), _size, tex.id());
 
 	{
 		const DescriptorSet set(device(), {Descriptor(*tex, Sampler::Clamp), Descriptor(StorageView(thumbmail->image))});
 		recorder.dispatch_size(device()->device_resources()[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
 	}
 
-	thumbmail->properties.emplace_back("Size", fmt("% x %", tex->size().x(), tex->size().y()));
-	thumbmail->properties.emplace_back("Mipmaps", fmt("%", tex->mipmaps()));
-	thumbmail->properties.emplace_back("Format", tex->format().name());
-	add_size_property(thumbmail->properties, context(), tex.id());
-
 	return thumbmail;
 }
 
-std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const {
-	auto thumbmail = std::make_unique<ThumbmailData>(device(), _size, id);
-	const SceneData scene(context(), mesh, mat);
+std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const SceneData& scene) const {
+	auto thumbmail = std::make_unique<ThumbmailData>(context(), _size, id);
 
 	{
 		const auto region = recorder.region("Thumbmail cache render");
@@ -271,15 +314,10 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 		std::move(graph).render(recorder);
 	}
 
-	if(id == mesh.id()) {
-		thumbmail->properties.emplace_back("Triangles", fmt("%", mesh->triangle_buffer().size()));
-		thumbmail->properties.emplace_back("Vertices", fmt("%", mesh->vertex_buffer().size()));
-		thumbmail->properties.emplace_back("Radius", fmt("%", rounded_string(mesh->radius()).data()));
-	}
-	add_size_property(thumbmail->properties, context(), id);
 
 	return thumbmail;
 }
+
 
 
 }

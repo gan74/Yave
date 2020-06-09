@@ -48,8 +48,8 @@ std::array<std::string_view, 2> asset_type_names(AssetType type) {
 		case AssetType::Material:
 			return {"Material", "material"};
 
-		case AssetType::World:
-			return {"World", "world"};
+		case AssetType::Prefab:
+			return {"Prefab", "prefab"};
 
 		default:
 			break;
@@ -78,7 +78,7 @@ std::string_view asset_type_icon(AssetType type) {
 		case AssetType::Material:
 			return ICON_FA_BRUSH;
 
-		case AssetType::World:
+		case AssetType::Prefab:
 			return ICON_FA_DATABASE;
 
 		default:

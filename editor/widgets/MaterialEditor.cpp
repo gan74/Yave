@@ -98,7 +98,7 @@ void MaterialEditor::set_material(const AssetPtr<Material>& mat) {
 void MaterialEditor::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
 	y_profile();
 
-	{
+	/*{
 		if(ImGui::Button(ICON_FA_EYE_DROPPER " current selected object material")) {
 			const ecs::EntityId id = context()->selection().selected_entity();
 			if(const StaticMeshComponent* mesh = context()->world().component<StaticMeshComponent>(id)) {
@@ -106,7 +106,7 @@ void MaterialEditor::paint_ui(CmdBufferRecorder& recorder, const FrameToken& tok
 				return;
 			}
 		}
-	}
+	}*/
 
 	if(_material) {
 		_preview.paint(recorder, token);

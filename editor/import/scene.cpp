@@ -290,23 +290,21 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 	}
 
 
-	if((flags & SceneImportFlags::ImportObjects) == SceneImportFlags::ImportMaterials) {
-		y_profile_zone("Object import");
+	if((flags & SceneImportFlags::ImportPrefabs) == SceneImportFlags::ImportPrefabs) {
+		y_profile_zone("Prefab import");
 
-		usize index = 0;
+		PrefabData& prefab = scene.prefabs.emplace_back(clean_asset_name(filename), PrefabData{});
 		for(const tinygltf::Mesh& object : model.meshes) {
 			for(const tinygltf::Primitive& prim : object.primitives) {
-				++index;
-
 				if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
 					continue;
 				}
 
 				if(usize(prim.material) < scene.materials.size()) {
-					const core::String& mesh_name = scene.meshes[index].name();
+					const core::String& mesh_name = scene.meshes[prefab.sub_meshes.size()].name();
 					const core::String& mat_name = scene.materials[prim.material].name();
 
-					scene.objects.emplace_back(mesh_name, ObjectData{mesh_name, mat_name});
+					prefab.sub_meshes.emplace_back(SubMeshData{mesh_name, mat_name});
 				}
 			}
 		}

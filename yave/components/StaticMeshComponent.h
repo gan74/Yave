@@ -36,29 +36,36 @@ namespace yave {
 class StaticMeshComponent final : public Renderable, public ecs::RequiredComponents<TransformableComponent> {
 
 	public:
+		struct SubMesh {
+			AssetPtr<StaticMesh> mesh;
+			AssetPtr<Material> material;
+
+			void flush_reload();
+
+			void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
+			void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
+
+			y_serde3(mesh, material)
+		};
+
 		StaticMeshComponent() = default;
 		StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
-
-		//StaticMeshComponent(StaticMeshComponent&&) = default;
-		//StaticMeshComponent& operator=(StaticMeshComponent&&) = default;
-		//~StaticMeshComponent();
+		StaticMeshComponent(core::Vector<SubMesh> sub_meshes);
 
 		void flush_reload();
 
 		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
 		void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
-		const AssetPtr<StaticMesh>& mesh() const;
-		const AssetPtr<Material>& material() const;
+		core::Span<SubMesh> sub_meshes() const;
+		core::MutableSpan<SubMesh> sub_meshes();
 
-		AssetPtr<StaticMesh>& mesh();
-		AssetPtr<Material>& material();
+		AABB compute_aabb() const;
 
-		y_serde3(_mesh, _material)
+		y_serde3(_sub_meshes)
 
 	private:
-		AssetPtr<StaticMesh> _mesh;
-		AssetPtr<Material> _material;
+		core::Vector<SubMesh> _sub_meshes;
 };
 
 }

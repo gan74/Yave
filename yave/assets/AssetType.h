@@ -33,7 +33,7 @@ enum class AssetType : u32 {
 	Font = 4,
 	Scene = 5,
 	Material = 6,
-	World = 7,
+	Prefab = 7,
 
 	Unknown = u32(-1)
 };

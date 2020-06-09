@@ -45,9 +45,13 @@ struct MaterialData {
 	std::array<core::String, SimpleMaterialData::texture_count> textures;
 };
 
-struct ObjectData {
-	const core::String mesh;
-	const core::String material;
+struct SubMeshData {
+	core::String mesh;
+	core::String material;
+};
+
+struct PrefabData {
+	core::Vector<SubMeshData> sub_meshes;
 };
 
 struct SceneData {
@@ -55,7 +59,7 @@ struct SceneData {
 	core::Vector<Named<Animation>> animations;
 	core::Vector<Named<ImageData>> images;
 	core::Vector<Named<MaterialData>> materials;
-	core::Vector<Named<ObjectData>> objects;
+	core::Vector<Named<PrefabData>> prefabs;
 };
 
 
@@ -74,11 +78,11 @@ enum class SceneImportFlags {
 	ImportAnims		= 0x02,
 	ImportImages	= 0x04,
 	ImportMaterials = 0x08 | ImportImages,
-	ImportObjects	= 0x10 | ImportMeshes | ImportMaterials,
+	ImportPrefabs	= 0x10 | ImportMeshes | ImportMaterials,
 
 	FlipUVs			= 0x20,
 
-	ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportObjects
+	ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportPrefabs
 
 };
 

@@ -27,6 +27,7 @@ SOFTWARE.
 namespace yave {
 
 class TransformableComponent;
+
 class PointLightComponent;
 class SpotLightComponent;
 class DirectionalLightComponent;

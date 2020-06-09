@@ -33,6 +33,9 @@ void AssetDependencies::add_dependency(GenericAssetPtr asset) {
 	}
 }
 
+usize AssetDependencies::dependency_count() const {
+	return _deps.size();
+}
 
 bool AssetDependencies::is_done() const {
 	return state() != AssetLoadingState::NotLoaded;

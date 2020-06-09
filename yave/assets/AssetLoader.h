@@ -74,6 +74,8 @@ class AssetLoader : NonMovable, public DeviceLinked {
 
 			using LoadFrom = typename traits::load_from;
 
+			static constexpr bool is_graphic_loader = traits::is_graphic_asset;
+
 			public:
 				Loader(AssetLoader* parent);
 				~Loader();

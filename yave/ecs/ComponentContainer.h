@@ -46,20 +46,22 @@ class ComponentBoxBase : NonMovable {
 		virtual void add_to(EntityWorld& world, EntityId id) const = 0;
 
 		y_serde3_poly_base(ComponentBoxBase)
+
+		virtual void post_deserialize_poly(AssetLoadingContext&) = 0;
 };
 
 template<typename T>
 class ComponentBox final : public ComponentBoxBase {
 	public:
-		static_assert(std::is_copy_constructible_v<T>);
-
-		ComponentBox(const T& t);
+		ComponentBox(T t = T{});
 
 		ComponentRuntimeInfo runtime_info() const override;
 		void add_to(EntityWorld& world, EntityId id) const override;
 
 		y_serde3(_component)
 		y_serde3_poly(ComponentBox)
+
+		void post_deserialize_poly(AssetLoadingContext& context) override;
 
 	private:
 		T _component;
@@ -84,6 +86,7 @@ class ComponentContainerBase : NonMovable {
 		virtual void remove(EntityId id) = 0;
 
 		virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
+
 
 
 		template<typename T, typename... Args>
@@ -140,6 +143,8 @@ class ComponentContainerBase : NonMovable {
 
 
 		y_serde3_poly_base(ComponentContainerBase)
+
+		virtual void post_deserialize_poly(AssetLoadingContext&) = 0;
 
 	protected:
 		template<typename T>
@@ -212,9 +217,17 @@ class ComponentContainer final : public ComponentContainerBase {
 		y_serde3(_components)
 		y_serde3_poly(ComponentContainer)
 
+		void post_deserialize_poly(AssetLoadingContext& context) override {
+			y_profile();
+			serde3::ReadableArchive::post_deserialize(*this, context);
+		}
+
 	private:
 		SparseComponentSet<T> _components;
 };
+
+
+static_assert(serde3::has_serde3_post_deser_poly_v<ComponentContainerBase, AssetLoadingContext&>);
 
 }
 }

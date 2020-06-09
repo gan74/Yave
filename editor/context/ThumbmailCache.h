@@ -42,7 +42,7 @@ namespace editor {
 class ThumbmailCache : NonMovable, public ContextLinked {
 
 		struct ThumbmailData {
-			ThumbmailData(DevicePtr dptr, usize size, AssetId asset);
+			ThumbmailData(ContextPtr ctx, usize size, AssetId asset);
 
 			StorageTexture image;
 			TextureView view;
@@ -51,8 +51,11 @@ class ThumbmailCache : NonMovable, public ContextLinked {
 			core::Vector<std::pair<core::String, core::String>> properties;
 		};
 
-		struct SceneData : NonMovable {
-			SceneData(ContextPtr ctx, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat);
+		struct SceneData : NonMovable, public ContextLinked {
+			SceneData(ContextPtr ctx);
+
+			void add_mesh(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat);
+			void add_prefab(const ecs::EntityPrefab& prefab);
 
 			ecs::EntityWorld world;
 			SceneView view;
@@ -85,8 +88,9 @@ class ThumbmailCache : NonMovable, public ContextLinked {
 		void request_thumbmail(AssetId id);
 
 		void submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr<ThumbmailData> thumb);
+
 		std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const;
-		std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) const;
+		std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const SceneData& scene) const;
 
 		usize _size;
 

@@ -29,8 +29,8 @@ SOFTWARE.
 
 namespace yave {
 
-core::Result<float> entity_radius(ecs::EntityWorld& world, ecs::EntityId id);
-core::Result<math::Vec3> entity_position(ecs::EntityWorld& world, ecs::EntityId id);
+core::Result<float> entity_radius(const ecs::EntityWorld& world, ecs::EntityId id);
+core::Result<math::Vec3> entity_position(const ecs::EntityWorld& world, ecs::EntityId id);
 
 }
 

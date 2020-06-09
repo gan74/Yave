@@ -86,7 +86,7 @@ using ColorTextureAttachment = Image<ImageUsage::ColorBit | ImageUsage::TextureB
 
 using Cubemap = Image<ImageUsage::TextureBit, ImageType::Cube>;
 
-YAVE_DECLARE_ASSET_TRAITS(Texture, ImageData, AssetType::Image);
+YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Texture, ImageData, AssetType::Image);
 
 }
 

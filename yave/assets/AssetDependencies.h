@@ -34,10 +34,13 @@ class AssetDependencies {
 
 		void add_dependency(GenericAssetPtr asset);
 
+		usize dependency_count() const;
+
 		bool is_done() const;
 		bool is_empty() const;
 		AssetLoadingState state() const;
 		AssetLoadingErrorType error() const;
+
 
 	private:
 		core::Vector<GenericAssetPtr> _deps;

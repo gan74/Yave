@@ -56,7 +56,7 @@ class SkinnedMesh : NonCopyable {
 		float _radius;
 };
 
-YAVE_DECLARE_ASSET_TRAITS(SkinnedMesh, MeshData, AssetType::Mesh);
+YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(SkinnedMesh, MeshData, AssetType::Mesh);
 
 }
 

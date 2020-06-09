@@ -62,7 +62,7 @@ class StaticMesh : NonCopyable {
 		RayTracing::AccelerationStructure _ray_tracing_data;
 };
 
-YAVE_DECLARE_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
+YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
 
 }
 

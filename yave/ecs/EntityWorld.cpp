@@ -26,6 +26,9 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 
+#include <yave/assets/AssetLoadingContext.h>
+
+
 namespace yave {
 namespace ecs {
 
@@ -126,6 +129,15 @@ ComponentContainerBase* EntityWorld::find_or_create_container(const ComponentRun
 
 void EntityWorld::check_exists(EntityId id) const {
 	y_always_assert(exists(id), "Entity doesn't exists");
+}
+
+
+void EntityWorld::flush_reload(AssetLoader& loader) {
+	y_profile();
+	for(const auto& cont : _containers) {
+		AssetLoadingContext loading_ctx(&loader);
+		cont.second->post_deserialize_poly(loading_ctx);
+	}
 }
 
 }

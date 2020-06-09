@@ -266,7 +266,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 	{
 		const auto static_mesh = [ctx, id]() -> StaticMeshComponent* { return ctx->world().component<StaticMeshComponent>(id); };
 
-		{
+		/*{
 			ImGui::Text("Material");
 			ImGui::NextColumn();
 			if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material, "Material")) {
@@ -280,9 +280,9 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 						return true;
 					});
 			}
-		}
+		}*/
 
-		{
+		/*{
 			ImGui::NextColumn();
 			ImGui::Text("Mesh");
 			ImGui::NextColumn();
@@ -297,7 +297,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 						return true;
 					});
 			}
-		}
+		}*/
 	}
 	ImGui::Columns(1);
 }

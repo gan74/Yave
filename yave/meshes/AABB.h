@@ -64,6 +64,10 @@ class AABB {
 			return _max;
 		}
 
+		AABB merged(const AABB& other) const {
+			return AABB(_min.min(other._min), _max.max(other._max));
+		}
+
 	private:
 		math::Vec3 _min;
 		math::Vec3 _max;

@@ -160,7 +160,9 @@ class EntityWorld {
 			}
 		}
 
+		void flush_reload(AssetLoader& loader);
 
+		Y_TODO(type indexes might not match after deser)
 		y_serde3(_entities, _containers)
 
 	private:

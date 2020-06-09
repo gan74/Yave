@@ -38,6 +38,9 @@ SOFTWARE.
 #endif
 
 
+Y_TODO(FixedArray is treated as a range rather than a collection)
+
+
 
 #define y_try_status(result)																	\
 	do {																						\

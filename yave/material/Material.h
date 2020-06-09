@@ -50,7 +50,7 @@ class Material final : NonCopyable {
 		SimpleMaterialData _data;
 };
 
-YAVE_DECLARE_ASSET_TRAITS(Material, SimpleMaterialData, AssetType::Material);
+YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Material, SimpleMaterialData, AssetType::Material);
 
 }
 

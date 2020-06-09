@@ -149,6 +149,11 @@ void SceneImporter::paint_import_settings() {
 			if(import_materials && import_images) {
 				_flags = _flags | SceneImportFlags::ImportMaterials;
 			}
+
+			if((_flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials &&
+			   (_flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes) {
+				_flags = _flags | SceneImportFlags::ImportPrefabs;
+			}
 		}
 	}
 
@@ -206,21 +211,6 @@ void SceneImporter::import(import::SceneData scene) {
 			}
 		};
 
-	auto compile_material = [&](const import::MaterialData& data, std::string_view texture_include_path) {
-			SimpleMaterialData material;
-			for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
-				if(!data.textures[i].is_empty()) {
-					const core::String tex_full_name = make_full_name(texture_include_path, data.textures[i]);
-					if(const auto texture = context()->loader().load_res<Texture>(tex_full_name)) {
-						material.set_texture(SimpleMaterialData::Textures(i), std::move(texture.unwrap()));
-					} else {
-						log_msg(fmt("Unable to load texture \"%\"", tex_full_name), Log::Error);
-					}
-				}
-			}
-			return material;
-		};
-
 
 	Y_TODO(try to auto detect handedness)
 	if(_forward_axis != 0 || _up_axis != 4 || _scale != 1.0f) {
@@ -248,12 +238,15 @@ void SceneImporter::import(import::SceneData scene) {
 
 
 	{
-		const bool separate_folders = !scene.meshes.is_empty() + !scene.animations.is_empty() + !scene.images.is_empty() > 1;
+		const bool separate_folders =
+			(scene.meshes.is_empty() ? 0 : 1) +
+			(scene.animations.is_empty() ? 0 : 1) +
+			(scene.images.is_empty() ? 0 : 1) > 1;
 		const core::String mesh_import_path = separate_folders ? "Meshes" : "";
 		const core::String animations_import_path = separate_folders ? "Animations" : "";
 		const core::String image_import_path = separate_folders ? "Textures" : "";
 		const core::String material_import_path = separate_folders ? "Materials" : "";
-		const core::String world_import_path = "";
+		const core::String prefab_import_path = separate_folders ? "Prefabs" : "";;
 
 		{
 			import_assets(scene.meshes, mesh_import_path, AssetType::Mesh);
@@ -261,12 +254,64 @@ void SceneImporter::import(import::SceneData scene) {
 			import_assets(scene.images, image_import_path, AssetType::Image);
 		}
 
+
 		{
 			auto materials = core::vector_with_capacity<Named<SimpleMaterialData>>(scene.materials.size());
-			std::transform(scene.materials.begin(), scene.materials.end(), std::back_inserter(materials),
-						   [&](const auto& m) { return Named(m.name(), compile_material(m.obj(), image_import_path)); });
+			for(const auto& mat : scene.materials) {
+				const auto& data = mat.obj();
+				SimpleMaterialData material;
+				for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
+					if(!data.textures[i].is_empty()) {
+						const core::String tex_full_name = make_full_name(image_import_path, data.textures[i]);
+						if(const auto texture = context()->loader().load_res<Texture>(tex_full_name)) {
+							material.set_texture(SimpleMaterialData::Textures(i), std::move(texture.unwrap()));
+						} else {
+							log_msg(fmt("Unable to load texture \"%\"", tex_full_name), Log::Error);
+						}
+					}
+				}
+				materials.emplace_back(mat.name(), std::move(material));
+			}
 
 			import_assets(materials, material_import_path, AssetType::Material);
+		}
+
+		{
+			auto prefabs = core::vector_with_capacity<Named<ecs::EntityPrefab>>(scene.prefabs.size());;
+			for(const auto& prefab : scene.prefabs) {
+				bool ok = true;
+
+				const auto& data = prefab.obj();
+				const usize sub_mesh_count = data.sub_meshes.size();
+				auto sub_meshes = core::vector_with_capacity<StaticMeshComponent::SubMesh>(sub_mesh_count);
+				for(usize i = 0; i != data.sub_meshes.size(); ++i) {
+					const auto& obj = data.sub_meshes[i];
+
+					const core::String mesh_full_name = make_full_name(mesh_import_path, obj.mesh);
+					const core::String mat_full_name = make_full_name(material_import_path, obj.material);
+					auto mesh = context()->loader().load_res<StaticMesh>(mesh_full_name);
+					auto mat = context()->loader().load_res<Material>(mat_full_name);
+					if(mesh && mat) {
+						sub_meshes.emplace_back(StaticMeshComponent::SubMesh{mesh.unwrap(), mat.unwrap()});
+					} else {
+						ok = false;
+						break;
+					}
+				}
+
+				if(ok) {
+					ecs::EntityPrefab p;
+					log_msg(fmt("Adding % submeshes", sub_meshes.size()));
+					p.add(TransformableComponent());
+					p.add(StaticMeshComponent(std::move(sub_meshes)));
+
+					prefabs.emplace_back(prefab.name(), std::move(p));
+				} else {
+					log_msg(fmt("Unable to create prefab for %", prefab.name()), Log::Error);
+				}
+			}
+
+			import_assets(prefabs, prefab_import_path, AssetType::Prefab);
 		}
 
 	}
