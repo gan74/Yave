@@ -78,8 +78,6 @@ class ComponentContainerBase : NonMovable {
 
 		ComponentTypeIndex type_id() const;
 
-
-		virtual std::string_view component_type_name() const = 0;
 		virtual ComponentRuntimeInfo runtime_info() const = 0;
 
 		virtual void add(EntityWorld& world, EntityId id) = 0;
@@ -186,10 +184,6 @@ template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
 	public:
 		ComponentContainer() : ComponentContainerBase(_components) {
-		}
-
-		std::string_view component_type_name() const override {
-			return ct_type_name<T>();
 		}
 
 		ComponentRuntimeInfo runtime_info() const override {

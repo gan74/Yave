@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <y/serde3/serde.h>
 
+#include <y/utils/name.h>
+
 #include <memory>
 
 namespace yave {
@@ -36,12 +38,14 @@ std::unique_ptr<ComponentContainerBase> create_container();
 
 struct ComponentRuntimeInfo {
 	ComponentTypeIndex type_id;
+	std::string_view type_name;
 	std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
 
 	template<typename T>
 	static ComponentRuntimeInfo create() {
 		return ComponentRuntimeInfo {
 			type_index<T>(),
+			ct_type_name<T>(),
 			create_container<T>
 		};
 	}

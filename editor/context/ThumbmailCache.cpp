@@ -35,7 +35,6 @@ SOFTWARE.
 #include <yave/utils/entities.h>
 
 #include <editor/utils/assets.h>
-#include <editor/utils/renderdochelper.h>
 
 #include <thread>
 
@@ -269,7 +268,6 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 
 void ThumbmailCache::submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr<ThumbmailData> thumb) {
 	y_profile();
-	auto capture = renderdoc::capture();
 	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
 
 	const auto lock = y_profile_unique_lock(_lock);

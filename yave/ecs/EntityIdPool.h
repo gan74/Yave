@@ -36,6 +36,10 @@ namespace ecs {
 
 class EntityIdPool {
 	public:
+		EntityIdPool() = default;
+		EntityIdPool(EntityIdPool&&) = default;
+		EntityIdPool& operator=(EntityIdPool&&) = default;
+
 		usize size() const;
 		bool contains(EntityId id) const;
 

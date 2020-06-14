@@ -99,7 +99,7 @@ void EditorContext::flush_reload() {
 void EditorContext::defer(std::function<void()> func) {
 	const auto lock = y_profile_unique_lock(_deferred_lock);
 	if(_is_flushing_deferred) {
-		y_fatal("Defer called from already deferred function.");
+		y_fatal("Defer called from already deferred function");
 	}
 	_deferred.emplace_back(std::move(func));
 }
@@ -217,12 +217,12 @@ void EditorContext::save_world() const {
 	y_profile();
 	auto file = io2::File::create(world_file);
 	if(!file) {
-		log_msg("Unable to open file.", Log::Error);
+		log_msg("Unable to open file", Log::Error);
 		return;
 	}
 	serde3::WritableArchive arc(file.unwrap());
-	if(!arc.serialize(_world)) {
-		log_msg("Unable to save world.", Log::Error);
+	if(auto r = arc.serialize(_world); !r) {
+		log_msg(fmt("Unable to save world: %", serde3::error_msg(r.error())), Log::Error);
 	}
 }
 
@@ -232,16 +232,16 @@ void EditorContext::load_world() {
 
 	auto file = io2::File::open(world_file);
 	if(!file) {
-		log_msg("Unable to open file.", Log::Error);
+		log_msg("Unable to open file", Log::Error);
 		return;
 	}
 	serde3::ReadableArchive arc(file.unwrap());
 	AssetLoadingContext loading_ctx(&loader());
 	const auto status = arc.deserialize(world, loading_ctx);
 	if(status.is_error()) {
-		log_msg("Unable to load world.", Log::Error);
+		log_msg(fmt("Unable to load world: %", serde3::error_msg(status.error())), Log::Error);
 	} else if(status.unwrap() == serde3::Success::Partial) {
-		log_msg("World was only partialy loaded.", Log::Warning);
+		log_msg("World was only partialy loaded", Log::Warning);
 	}
 
 	_world = std::move(world);

@@ -22,7 +22,7 @@ SOFTWARE.
 
 
 
-#define TEST_ARCHIVES
+//#define TEST_ARCHIVES
 
 
 #ifdef TEST_ARCHIVES
@@ -48,7 +48,7 @@ struct Poly {
 	virtual ~Poly() {
 	}
 
-	virtual void print() {
+	virtual void print() const {
 		log_msg("Poly");
 	}
 
@@ -60,7 +60,7 @@ struct Derived : Poly {
 	y_serde3(x)
 
 
-	void print() override {
+	void print() const override {
 		log_msg(fmt("Derived{%}", x));
 	}
 
@@ -75,15 +75,16 @@ struct TestStruct {
 	core::String floop = "ihandozlabndo";
 	Inner inner;
 	std::unique_ptr<Poly> poly;
+	std::tuple<int, float> tpl;
 
-	void print() {
-		log_msg(fmt("% % % %", a, b, floop, inner.x));
+	void print() const {
+		log_msg(fmt("% % % % <%>", a, b, floop, inner.x, tpl));
 		if(poly) {
 			poly->print();
 		}
 	}
 
-	y_serde3(b, a, inner, poly)
+	y_serde3(b, a, inner, tpl, poly)
 };
 
 
@@ -107,7 +108,7 @@ int main() {
 
 		log_msg("File doesn't exists, creating", Log::Error);
 
-		TestStruct s{ 19, 3.145f, "maap", {-99}, std::make_unique<Derived>()};
+		const TestStruct s{ 19, 3.145f, "maap", {-99}, std::make_unique<Derived>(), {33, -0.1f}};
 		serde3::WritableArchive(file).serialize(s).unwrap();
 		s.print();
 	}

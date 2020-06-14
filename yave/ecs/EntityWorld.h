@@ -35,6 +35,12 @@ namespace ecs {
 class EntityWorld {
 	public:
 		EntityWorld();
+		~EntityWorld();
+
+		EntityWorld(EntityWorld&& other);
+		EntityWorld& operator=(EntityWorld&& other);
+
+		void swap(EntityWorld& other);
 
 		usize entity_count() const;
 		bool exists(EntityId id) const;
@@ -49,7 +55,7 @@ class EntityWorld {
 
 		EntityPrefab create_prefab(EntityId id) const;
 
-		core::Span<const ComponentContainerBase*> required_components() const;
+		core::Span<ComponentTypeIndex> required_components() const;
 
 		std::string_view component_type_name(ComponentTypeIndex type_id) const;
 
@@ -154,15 +160,20 @@ class EntityWorld {
 		void add_required_component() {
 			static_assert(std::is_default_constructible_v<T>);
 			Y_TODO(check for duplicates)
-			_required_components << find_or_create_container<T>();
+			_required_components << find_or_create_container<T>()->type_id();
+			for(const ComponentTypeIndex c : _required_components) {
+				y_debug_assert(find_container(c)->type_id() == c);
+			}
 			for(EntityId id : ids()) {
 				add_component<T>(id);
 			}
 		}
 
+
 		void flush_reload(AssetLoader& loader);
 
-		Y_TODO(type indexes might not match after deser)
+		void post_deserialize();
+
 		y_serde3(_entities, _containers)
 
 	private:
@@ -212,10 +223,10 @@ class EntityWorld {
 		void check_exists(EntityId id) const;
 
 
-		core::ExternalHashMap<u32, std::unique_ptr<ComponentContainerBase>> _containers;
+		core::ExternalHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> _containers;
 		EntityIdPool _entities;
 
-		core::Vector<ComponentContainerBase*> _required_components;
+		core::Vector<ComponentTypeIndex> _required_components;
 };
 
 }
