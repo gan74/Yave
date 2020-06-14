@@ -40,6 +40,9 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
 			AssetPtr<StaticMesh> mesh;
 			AssetPtr<Material> material;
 
+			SubMesh() = default;
+			SubMesh(const AssetPtr<StaticMesh>& me, const AssetPtr<Material>& ma);
+
 			void flush_reload();
 
 			void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;

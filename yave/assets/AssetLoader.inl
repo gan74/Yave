@@ -44,6 +44,7 @@ void AssetPtr<T>::post_deserialize(AssetLoadingContext& context)  {
 	}
 
 	*this = context.load_async<T>(id);
+	y_debug_assert(loader());
 	flush_reload();
 }
 

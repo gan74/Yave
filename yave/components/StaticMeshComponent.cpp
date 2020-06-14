@@ -24,6 +24,9 @@ SOFTWARE.
 
 namespace yave {
 
+StaticMeshComponent::SubMesh::SubMesh(const AssetPtr<StaticMesh>& me, const AssetPtr<Material>& ma) : mesh(me), material(ma) {
+}
+
 void StaticMeshComponent::SubMesh::flush_reload() {
 	mesh.flush_reload();
 	material.flush_reload();
@@ -33,6 +36,7 @@ void StaticMeshComponent::SubMesh::render(RenderPassRecorder& recorder, const Sc
 	if(!material || !mesh) {
 		return;
 	}
+
 	y_debug_assert(material->device());
 	y_debug_assert(mesh->device());
 
@@ -66,7 +70,8 @@ bool StaticMeshComponent::SubMesh::operator!=(const SubMesh& other) const {
 }
 
 
-StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) : _sub_meshes(SubMesh{mesh, material}) {
+StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) {
+	_sub_meshes.emplace_back(mesh, material);
 }
 
 StaticMeshComponent::StaticMeshComponent(core::Vector<SubMesh> sub_meshes) : _sub_meshes(std::move(sub_meshes)) {
