@@ -27,6 +27,9 @@ SOFTWARE.
 #include "AssetStore.h"
 
 #include <y/core/String.h>
+#include <y/core/HashMap.h>
+
+#include <mutex>
 
 #ifndef YAVE_NO_SQLITE
 
@@ -39,7 +42,7 @@ class SQLiteAssetStore final : public AssetStore {
 	class SQLiteFileSystemModel final : public SearchableFileSystemModel {
 		public:
 			core::String filename(std::string_view path) const override;
-			core::String  join(std::string_view path, std::string_view name) const override;
+			core::String join(std::string_view path, std::string_view name) const override;
 
 			Result<core::String> current_path() const override;
 			Result<core::String> parent_path(std::string_view path) const override;
@@ -92,6 +95,7 @@ class SQLiteAssetStore final : public AssetStore {
 
 	private:
 		void check(int res) const;
+		void clear_cache();
 
 		Result<i64> find_folder(std::string_view name, bool or_create = true);
 
@@ -99,6 +103,10 @@ class SQLiteAssetStore final : public AssetStore {
 
 		sqlite3* _database = nullptr;
 		SQLiteFileSystemModel _filesystem;
+
+		// just to speed up name lookups
+		mutable core::ExternalHashMap<AssetId, core::String> _name_cache;
+		mutable std::mutex _cache_lock;
 
 };
 }

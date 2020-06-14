@@ -556,6 +556,13 @@ AssetStore::Result<AssetId> SQLiteAssetStore::id(std::string_view name) const {
 AssetStore::Result<core::String> SQLiteAssetStore::name(AssetId id) const {
 	y_profile();
 
+	{
+		auto lock = y_profile_unique_lock(_cache_lock);
+		if(auto it = _name_cache.find(id); it != _name_cache.end()) {
+			return core::Ok(it->second);
+		}
+	}
+
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "SELECT name FROM Assets WHERE uid = ?", -1, &stmt, nullptr));
 	check(sqlite3_bind_int64(stmt, 1, i64(id.id())));
@@ -566,7 +573,14 @@ AssetStore::Result<core::String> SQLiteAssetStore::name(AssetId id) const {
 	}
 
 	const char* name_data = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-	return core::Ok(core::String(name_data));
+	core::String name = name_data;
+
+	{
+		auto lock = y_profile_unique_lock(_cache_lock);
+		_name_cache[id] = name;
+	}
+
+	return core::Ok(std::move(name));
 }
 
 
@@ -650,6 +664,8 @@ AssetStore::Result<io2::ReaderPtr> SQLiteAssetStore::data(AssetId id) const {
 AssetStore::Result<> SQLiteAssetStore::remove(AssetId id) {
 	y_profile();
 
+	clear_cache();
+
 	sqlite3_stmt* stmt = nullptr;
 	check(sqlite3_prepare_v2(_database, "DELETE FROM Assets WHERE uid = ?", -1, &stmt, nullptr));
 	check(sqlite3_bind_int64(stmt, 1, i64(id.id())));
@@ -665,6 +681,8 @@ AssetStore::Result<> SQLiteAssetStore::remove(AssetId id) {
 AssetStore::Result<> SQLiteAssetStore::rename(AssetId id, std::string_view new_name) {
 	y_profile();
 
+	clear_cache();
+
 	auto na = name(id);
 	y_try(na);
 
@@ -673,6 +691,8 @@ AssetStore::Result<> SQLiteAssetStore::rename(AssetId id, std::string_view new_n
 
 AssetStore::Result<> SQLiteAssetStore::remove(std::string_view name) {
 	y_profile();
+
+	clear_cache();
 
 	if(!_filesystem.remove(name)) {
 		return core::Err(ErrorType::FilesytemError);
@@ -683,6 +703,8 @@ AssetStore::Result<> SQLiteAssetStore::remove(std::string_view name) {
 
 AssetStore::Result<> SQLiteAssetStore::rename(std::string_view from, std::string_view to) {
 	y_profile();
+
+	clear_cache();
 
 	if(!_filesystem.rename(from, to)) {
 		return core::Err(ErrorType::FilesytemError);
@@ -736,6 +758,13 @@ SQLiteAssetStore::Result<i64> SQLiteAssetStore::find_folder(std::string_view nam
 	}
 
 	return core::Err(ErrorType::FilesytemError);
+}
+
+void SQLiteAssetStore::clear_cache() {
+	y_profile();
+
+	auto lock = y_profile_unique_lock(_cache_lock);
+	_name_cache.make_empty();
 }
 
 }
