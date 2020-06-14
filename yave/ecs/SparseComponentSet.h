@@ -236,13 +236,13 @@ class SparseComponentSetBase : public SparseIDSet {
 		}
 
 		auto as_pairs() {
-			auto pair = [this](usize index) { return std::tie(_dense[index], _values[index]); };
+			auto pair = [this](usize index) { return std::make_pair(_dense[index], _values[index]); };
 			return core::Range(TransformIterator(IndexIterator(0), pair),
 							   IndexIterator(size()));
 		}
 
 		auto as_pairs() const {
-			auto pair = [this](usize index) { return std::tie(_dense[index], _values[index]); };
+			auto pair = [this](usize index) { return std::make_pair(_dense[index], _values[index]); };
 			return core::Range(TransformIterator(IndexIterator(0), pair),
 							   IndexIterator(size()));
 		}
