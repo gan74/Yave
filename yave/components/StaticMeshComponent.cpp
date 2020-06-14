@@ -57,6 +57,14 @@ void StaticMeshComponent::SubMesh::render_mesh(RenderPassRecorder& recorder, u32
 }
 
 
+bool StaticMeshComponent::SubMesh::operator==(const SubMesh& other) const {
+	return mesh == other.mesh && material == other.material;
+}
+
+bool StaticMeshComponent::SubMesh::operator!=(const SubMesh& other) const {
+	return !operator==(other);
+}
+
 
 StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) : _sub_meshes(SubMesh{mesh, material}) {
 }
@@ -82,11 +90,11 @@ void StaticMeshComponent::render_mesh(RenderPassRecorder& recorder, u32 instance
 	}
 }
 
-core::Span<StaticMeshComponent::SubMesh> StaticMeshComponent::sub_meshes() const {
+const core::Vector<StaticMeshComponent::SubMesh>& StaticMeshComponent::sub_meshes() const {
 	return _sub_meshes;
 }
 
-core::MutableSpan<StaticMeshComponent::SubMesh> StaticMeshComponent::sub_meshes() {
+core::Vector<StaticMeshComponent::SubMesh>& StaticMeshComponent::sub_meshes() {
 	return _sub_meshes;
 }
 

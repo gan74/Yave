@@ -255,7 +255,8 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 **************************************************************************/
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
-	if(!ctx->world().component<StaticMeshComponent>(id)) {
+	StaticMeshComponent* static_mesh = ctx->world().component<StaticMeshComponent>(id);
+	if(!static_mesh) {
 		return;
 	}
 	if(!ImGui::CollapsingHeader("Static mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -264,42 +265,63 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 
 	ImGui::Columns(2);
 	{
-		const auto static_mesh = [ctx, id]() -> StaticMeshComponent* { return ctx->world().component<StaticMeshComponent>(id); };
 
-		/*{
-			ImGui::Text("Material");
-			ImGui::NextColumn();
-			if(imgui::asset_selector(ctx, static_mesh()->material().id(), AssetType::Material, "Material")) {
-				ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
-					[=](AssetId asset) {
-						if(const auto material = ctx->loader().load_res<Material>(asset)) {
-							if(StaticMeshComponent* comp = static_mesh()) {
-								comp->material() = material.unwrap();
-							}
-						}
-						return true;
-					});
-			}
-		}*/
+		for(usize i = 0; i != static_mesh->sub_meshes().size(); ++i) {
+			const StaticMeshComponent::SubMesh& sub_mesh = static_mesh->sub_meshes()[i];
 
-		/*{
-			ImGui::NextColumn();
-			ImGui::Text("Mesh");
-			ImGui::NextColumn();
-			if(imgui::asset_selector(ctx, static_mesh()->mesh().id(), AssetType::Mesh, "Mesh")) {
-				ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
-					[=](AssetId asset) {
-						if(const auto mesh = ctx->loader().load_res<StaticMesh>(asset)) {
-							if(StaticMeshComponent* comp = static_mesh()) {
-								comp->mesh() = mesh.unwrap();
+			auto find_sub_mesh = [ctx, id, i, sub = sub_mesh]() -> StaticMeshComponent::SubMesh* {
+				static_assert(!std::is_reference_v<decltype(sub)>);
+				if(StaticMeshComponent* comp = ctx->world().component<StaticMeshComponent>(id)) {
+					if(comp->sub_meshes().size() > i && comp->sub_meshes()[i] == sub) {
+						return &comp->sub_meshes()[i];
+					}
+				}
+				return nullptr;
+			};
+
+			{
+				ImGui::Text("Material");
+				ImGui::NextColumn();
+				if(imgui::asset_selector(ctx, sub_mesh.material.id(), AssetType::Material, "Material")) {
+					ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
+						[=](AssetId asset) {
+							if(const auto material = ctx->loader().load_res<Material>(asset)) {
+								if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {
+									sub->material = material.unwrap();
+								}
 							}
-						}
-						return true;
-					});
+							return true;
+						});
+				}
 			}
-		}*/
+
+			{
+				ImGui::NextColumn();
+				ImGui::Text("Mesh");
+				ImGui::NextColumn();
+				if(imgui::asset_selector(ctx, sub_mesh.mesh.id(), AssetType::Mesh, "Mesh")) {
+					ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+						[=](AssetId asset) {
+							if(const auto mesh = ctx->loader().load_res<StaticMesh>(asset)) {
+								if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {
+									sub->mesh = mesh.unwrap();
+								}
+							}
+							return true;
+						});
+				}
+			}
+
+			ImGui::NextColumn();
+			ImGui::Separator();
+		}
+
+		ImGui::Columns(1);
+
+		if(ImGui::Button("Add sub mesh")) {
+			static_mesh->sub_meshes().emplace_back();
+		}
 	}
-	ImGui::Columns(1);
 }
 
 

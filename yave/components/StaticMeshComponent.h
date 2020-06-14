@@ -45,6 +45,9 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
 			void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
 			void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
+			bool operator==(const SubMesh& other) const;
+			bool operator!=(const SubMesh& other) const;
+
 			y_serde3(mesh, material)
 		};
 
@@ -57,8 +60,8 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
 		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
 		void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
-		core::Span<SubMesh> sub_meshes() const;
-		core::MutableSpan<SubMesh> sub_meshes();
+		const core::Vector<SubMesh>& sub_meshes() const;
+		core::Vector<SubMesh>& sub_meshes();
 
 		AABB compute_aabb() const;
 
