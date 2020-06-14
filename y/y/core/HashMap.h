@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include <y/utils/traits.h>
 
-//#define Y_HASHMAP_AUDIT
+// #define Y_HASHMAP_AUDIT
 
 namespace y {
 namespace core {
@@ -440,6 +440,8 @@ class ExternalHashMap : Hasher {
 					}
 				}
 			}
+
+			audit();
 		}
 
 		void expand() {
@@ -476,7 +478,10 @@ class ExternalHashMap : Hasher {
 		static_assert(std::is_constructible_v<const_iterator, iterator>);
 		static_assert(!std::is_constructible_v<iterator, const_iterator>);
 
-		ExternalHashMap() = default;
+		ExternalHashMap() {
+			audit();
+		}
+
 		ExternalHashMap(ExternalHashMap&& other) {
 			swap(other);
 		}
@@ -493,6 +498,7 @@ class ExternalHashMap : Hasher {
 				std::swap(_size, other._size);
 				std::swap(_max_probe_len, other._max_probe_len);
 			}
+			audit();
 		}
 
 		~ExternalHashMap() {
@@ -503,6 +509,7 @@ class ExternalHashMap : Hasher {
 			const usize len = bucket_count();
 			for(usize i = 0; i != len && _size; ++i) {
 				if(_states[i].is_full()) {
+					_states[i] = State();
 					_entries[i].clear();
 					--_size;
 				}
@@ -510,12 +517,14 @@ class ExternalHashMap : Hasher {
 			_max_probe_len = 0;
 
 			y_debug_assert(_size == 0);
+			audit();
 		}
 
 		void clear() {
 			make_empty();
 			_states.clear();
 			_entries = nullptr;
+			audit();
 		}
 
 		iterator begin() {
@@ -647,6 +656,7 @@ class ExternalHashMap : Hasher {
 			const usize index = bucket.index;
 			const bool exists = _states[index].is_full();
 
+			y_debug_assert(!exists || _size > 0);
 			if(!exists) {
 				_entries[index].set(std::move(p));
 				_states[index].set_hash(bucket.hash);
