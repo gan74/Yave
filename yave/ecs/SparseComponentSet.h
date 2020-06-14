@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <y/utils/iter.h>
 
-#define YAVE_ECS_COMPONENT_SET_AUDIT
+//#define YAVE_ECS_COMPONENT_SET_AUDIT
 
 namespace yave {
 namespace ecs {
