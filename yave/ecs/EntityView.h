@@ -59,14 +59,14 @@ class EntityView {
 	using id_range = core::Span<EntityId>;
 
 	template<usize I = 0>
-	auto make_component_tuple(EntityId id) const {
-		y_debug_assert(std::get<I>(_sets));
-		auto&& s = *std::get<I>(_sets);
+	static auto make_component_tuple(const set_tuple& sets, EntityId id) {
+		y_debug_assert(std::get<I>(sets));
+		auto&& s = *std::get<I>(sets);
 		if constexpr(I + 1 == sizeof...(Args)) {
 			return std::tie(s[id]);
 		} else {
 			return std::tuple_cat(std::tie(s[id]),
-								  make_component_tuple<I + 1>(id));
+								  make_component_tuple<I + 1>(sets, id));
 		}
 	}
 
@@ -86,10 +86,11 @@ class EntityView {
 	}
 
 	template<usize I = 0>
-	bool has_all(EntityId id) const {
+	static bool has_all(const set_tuple& sets, EntityId id) {
 		if constexpr(I < sizeof...(Args)) {
-			const auto* s = std::get<I>(_sets);
-			return s->contains_index(id.index()) && has_all<I + 1>(id);
+			const auto* s = std::get<I>(sets);
+			y_debug_assert(s);
+			return s->contains_index(id.index()) && has_all<I + 1>(sets, id);
 		}
 		return true;
 	}
@@ -127,17 +128,17 @@ class EntityView {
 		}
 
 		auto id_components() const {
-			auto tr = [this](EntityId id){ return IDComponents(id, make_component_tuple(id)); };
+			auto tr = [sets = _sets](EntityId id){ return IDComponents(id, make_component_tuple(sets, id)); };
 			return core::Range(TransformIterator(ids().begin(), tr), ids().end());
 		}
 
 		auto components() const {
-			auto tr = [this](EntityId id) { return make_component_tuple(id); };
+			auto tr = [sets = _sets](EntityId id) { return make_component_tuple(sets, id); };
 			return core::Range(TransformIterator(ids().begin(), tr), ids().end());
 		}
 
 		auto ids() const {
-			auto filter = [this](EntityId id) { return has_all<0>(id); };
+			auto filter = [sets = _sets](EntityId id) { return has_all<0>(sets, id); };
 			return core::Range(FilterIterator(_short.begin(), _short.end(), filter), EndIterator{});
 		}
 
