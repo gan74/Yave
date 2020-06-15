@@ -89,6 +89,8 @@ void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 		return;
 	}
 
+	y_profile_zone(_title_with_id.data());
+
 	before_paint();
 
 	if(has_parent()) {

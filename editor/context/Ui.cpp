@@ -190,6 +190,7 @@ void Ui::cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is
 }
 
 bool Ui::paint(core::Span<std::unique_ptr<UiElement>> elements, CmdBufferRecorder& recorder, const FrameToken& token) {
+	y_profile();
 	bool refresh = false;
 
 	for(const auto& elem : elements) {
