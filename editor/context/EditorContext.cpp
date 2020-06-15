@@ -228,20 +228,24 @@ void EditorContext::save_world() const {
 
 void EditorContext::load_world() {
 	y_profile();
-	ecs::EntityWorld world = create_editor_world();
 
 	auto file = io2::File::open(world_file);
 	if(!file) {
 		log_msg("Unable to open file", Log::Error);
 		return;
 	}
-	serde3::ReadableArchive arc(file.unwrap());
-	AssetLoadingContext loading_ctx(&loader());
-	const auto status = arc.deserialize(world, loading_ctx);
-	if(status.is_error()) {
-		log_msg(fmt("Unable to load world: %", serde3::error_msg(status.error())), Log::Error);
-	} else if(status.unwrap() == serde3::Success::Partial) {
-		log_msg("World was only partialy loaded", Log::Warning);
+
+	ecs::EntityWorld world = create_editor_world();
+	{
+		serde3::ReadableArchive arc(file.unwrap());
+		AssetLoadingContext loading_ctx(&loader());
+		const auto status = arc.deserialize(world, loading_ctx);
+		if(status.is_error()) {
+			log_msg(fmt("Unable to load world: % (for %)", serde3::error_msg(status.error()), status.error().member), Log::Error);
+			world = create_editor_world();
+		} else if(status.unwrap() == serde3::Success::Partial) {
+			log_msg("World was only partialy loaded", Log::Warning);
+		}
 	}
 
 	_world = std::move(world);

@@ -35,9 +35,6 @@ EntityWorld::EntityWorld() {
 }
 
 EntityWorld::~EntityWorld() {
-	for(const ComponentTypeIndex c : _required_components) {
-		y_debug_assert(find_container(c)->type_id() == c);
-	}
 }
 
 EntityWorld::EntityWorld(EntityWorld&& other) {
@@ -56,7 +53,7 @@ void EntityWorld::swap(EntityWorld& other) {
 		std::swap(_required_components, other._required_components);
 	}
 	for(const ComponentTypeIndex c : _required_components) {
-		y_debug_assert(find_container(c)->type_id() == c);
+		y_debug_assert(find_container(c));
 	}
 }
 
@@ -173,11 +170,13 @@ void EntityWorld::flush_reload(AssetLoader& loader) {
 void EntityWorld::post_deserialize() {
 	core::ExternalHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> patched;
 	for(auto& cont : _containers.values()) {
-		patched[cont->type_id()] = std::move(cont);
+		if(cont) {
+			patched[cont->type_id()] = std::move(cont);
+		}
 	}
 	_containers = std::move(patched);
 	for(const ComponentTypeIndex c : _required_components) {
-		y_debug_assert(find_container(c)->type_id() == c);
+		y_debug_assert(find_container(c));
 	}
 }
 
