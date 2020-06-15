@@ -154,8 +154,8 @@ class DeviceResources final : NonCopyable {
 		DevicePtr device() const;
 
 		TextureView brdf_lut() const;
-		const std::shared_ptr<IBLProbe>& ibl_probe() const;
-		const std::shared_ptr<IBLProbe>& empty_probe() const;
+		const AssetPtr<IBLProbe>& ibl_probe() const;
+		const AssetPtr<IBLProbe>& empty_probe() const;
 
 		const SpirVData& operator[](SpirV i) const;
 		const ComputeProgram& operator[](ComputePrograms i) const;
@@ -182,8 +182,8 @@ class DeviceResources final : NonCopyable {
 		std::unique_ptr<AssetPtr<Material>[]> _materials;
 		std::unique_ptr<AssetPtr<StaticMesh>[]> _meshes;
 
-		std::shared_ptr<IBLProbe> _probe;
-		std::shared_ptr<IBLProbe> _empty_probe;
+		AssetPtr<IBLProbe> _probe;
+		AssetPtr<IBLProbe> _empty_probe;
 		Texture _brdf_lut;
 
 

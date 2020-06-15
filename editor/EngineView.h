@@ -74,7 +74,6 @@ class EngineView final : public Widget, public ContextLinked {
 
 		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
 
-		std::shared_ptr<IBLProbe> _ibl_probe;
 		EditorRendererSettings _settings;
 
 		SceneView _scene_view;

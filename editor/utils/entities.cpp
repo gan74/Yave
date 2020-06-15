@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/SkyLightComponent.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -56,6 +57,10 @@ std::string_view entity_icon(const ecs::EntityWorld& world, ecs::EntityId id) {
 
 	if(world.has<DirectionalLightComponent>(id)) {
 		return ICON_FA_SUN;
+	}
+
+	if(world.has<SkyLightComponent>(id)) {
+		return ICON_FA_CLOUD;
 	}
 
 	return ICON_FA_DATABASE;

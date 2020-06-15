@@ -42,8 +42,10 @@ struct EditorRenderer {
 	FrameGraphImageId depth;
 
 	static EditorRenderer create(ContextPtr ctx,
-								 FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size,
-								 const std::shared_ptr<IBLProbe>& ibl_probe, const EditorRendererSettings& settings = EditorRendererSettings());
+								 FrameGraph& framegraph,
+								 const SceneView& view,
+								 const math::Vec2ui& size,
+								 const EditorRendererSettings& settings = EditorRendererSettings());
 };
 
 }

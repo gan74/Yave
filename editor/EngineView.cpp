@@ -35,7 +35,6 @@ EngineView::EngineView(ContextPtr cptr) :
 		Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
 		ContextLinked(cptr),
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())),
-		_ibl_probe(device()->device_resources().empty_probe()),
 		_scene_view(&context()->world()),
 		_camera_controller(std::make_unique<HoudiniCameraController>(context())),
 		_gizmo(context(), &_scene_view) {
@@ -62,7 +61,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 	FrameGraph graph(_resource_pool);
 
 	math::Vec2ui output_size = content_size();
-	const EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _ibl_probe, _settings);
+	const EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _settings);
 
 
 	{
@@ -221,27 +220,6 @@ void EngineView::draw_menu_bar() {
 						_view = RenderView(i);
 					}
 				}
-			}
-
-			ImGui::Separator();
-			if(ImGui::BeginMenu("IBL")) {
-				if(ImGui::MenuItem("Set IBL probe")) {
-					add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
-						[this](AssetId id) {
-							if(auto tex = context()->loader().load_res<Texture>(id)) {
-								_ibl_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*tex.unwrap()));
-							}
-							return true;
-						});
-				}
-				ImGui::Separator();
-				if(ImGui::MenuItem("Reset IBL probe")) {
-					_ibl_probe = context()->device()->device_resources().empty_probe();
-				}
-				if(ImGui::MenuItem("Set default IBL probe")) {
-					_ibl_probe = context()->device()->device_resources().ibl_probe();
-				}
-				ImGui::EndMenu();
 			}
 
 			ImGui::Separator();

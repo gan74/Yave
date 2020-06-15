@@ -34,7 +34,7 @@ struct LightingPass {
 
 	ShadowMapPass shadow_pass;
 
-	static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe, const ShadowMapPassSettings& settings = ShadowMapPassSettings());
+	static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const ShadowMapPassSettings& settings = ShadowMapPassSettings());
 };
 
 

@@ -257,8 +257,8 @@ void DeviceResources::load_resources() {
 	}
 
 	_brdf_lut = create_brdf_lut(device(), operator[](BRDFIntegratorProgram));
-	_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
-	_empty_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
+	_probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
+	_empty_probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
 }
 
 
@@ -272,12 +272,12 @@ TextureView DeviceResources::brdf_lut() const {
 	return _brdf_lut;
 }
 
-const std::shared_ptr<IBLProbe>& DeviceResources::ibl_probe() const {
+const AssetPtr<IBLProbe>& DeviceResources::ibl_probe() const {
 	y_debug_assert(is_init());
 	return _probe;
 }
 
-const std::shared_ptr<IBLProbe>& DeviceResources::empty_probe() const {
+const AssetPtr<IBLProbe>& DeviceResources::empty_probe() const {
 	y_debug_assert(is_init());
 	return _empty_probe;
 }

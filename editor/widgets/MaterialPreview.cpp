@@ -27,9 +27,9 @@ SOFTWARE.
 
 #include <yave/renderer/renderer.h>
 #include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/SkyLightComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
-#include <yave/components/TransformableComponent.h>
 #include <yave/entities/entities.h>
 #include <yave/utils/color.h>
 
@@ -43,7 +43,6 @@ namespace editor {
 MaterialPreview::MaterialPreview(ContextPtr cptr) :
 		Widget(ICON_FA_BRUSH " Material Preview"),
 		ContextLinked(cptr),
-		_ibl_probe(device()->device_resources().ibl_probe()),
 		_resource_pool(std::make_shared<FrameGraphResourcePool>(device())) {
 
 	set_object(PreviewObject::Sphere);
@@ -99,6 +98,11 @@ void MaterialPreview::reset_world() {
 	_world = std::make_unique<ecs::EntityWorld>();
 	_view = SceneView(_world.get());
 
+	{
+		const ecs::EntityId sky_id = _world->create_entity(ecs::StaticArchetype<SkyLightComponent>());
+		_world->component<SkyLightComponent>(sky_id)->probe() = device()->device_resources().ibl_probe();
+	}
+
 	if(!_mesh.is_empty() && !_material.is_empty()) {
 		const ecs::EntityId id = _world->create_entity(StaticMeshArchetype());
 		*_world->component<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
@@ -139,7 +143,7 @@ void MaterialPreview::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
 
 	{
 		FrameGraph graph(_resource_pool);
-		const DefaultRenderer renderer = DefaultRenderer::create(graph, _view, content_size(), _ibl_probe);
+		const DefaultRenderer renderer = DefaultRenderer::create(graph, _view, content_size());
 
 		FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 

@@ -31,6 +31,7 @@ SOFTWARE.
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/SkyLightComponent.h>
 #include <yave/entities/entities.h>
 
 #include <yave/meshes/StaticMesh.h>
@@ -46,17 +47,28 @@ static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
 static constexpr usize max_shadow_lights = 128;
 
+
+static const IBLProbe* find_probe(DevicePtr dptr, const ecs::EntityWorld& world) {
+	for(const SkyLightComponent& sky : world.components<SkyLightComponent>()) {
+		if(const IBLProbe* probe = sky.probe().get()) {
+			y_debug_assert(probe->device());
+			return probe;
+		}
+	}
+
+	return dptr->device_resources().empty_probe().get();
+}
+
 static FrameGraphMutableImageId ambient_pass(FrameGraphPassBuilder& builder,
 											 const math::Vec2ui& size,
-											 const GBufferPass& gbuffer,
-											 const std::shared_ptr<IBLProbe>& ibl_probe) {
-	y_debug_assert(ibl_probe != nullptr);
+											 const GBufferPass& gbuffer) {
+
+	const SceneView& scene = gbuffer.scene_pass.scene_view;
+	const IBLProbe* ibl_probe = find_probe(builder.device(), scene.world());
 
 	struct PushData {
 		u32 light_count;
 	};
-
-	const SceneView& scene = gbuffer.scene_pass.scene_view;
 
 	const auto lit = builder.declare_image(lighting_format, size);
 
@@ -175,7 +187,7 @@ static void local_lights_pass(FrameGraphMutableImageId lit,
 
 
 
-LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const std::shared_ptr<IBLProbe>& ibl_probe, const ShadowMapPassSettings& settings) {
+LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const ShadowMapPassSettings& settings) {
 	const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 	const SceneView& scene = gbuffer.scene_pass.scene_view;
 
@@ -183,7 +195,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 	pass.shadow_pass = ShadowMapPass::create(framegraph, scene, settings);
 
 	FrameGraphPassBuilder ambient_builder = framegraph.add_pass("Ambient/Sun pass");
-	const auto lit = ambient_pass(ambient_builder, size, gbuffer, ibl_probe);
+	const auto lit = ambient_pass(ambient_builder, size, gbuffer);
 
 	FrameGraphPassBuilder local_builder = framegraph.add_pass("Lighting pass");
 	local_lights_pass(lit, local_builder, size, gbuffer, pass.shadow_pass);

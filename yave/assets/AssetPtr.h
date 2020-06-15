@@ -149,7 +149,7 @@ class AssetPtr {
 		inline bool operator==(const AssetPtr& other) const;
 		inline bool operator!=(const AssetPtr& other) const;
 
-		inline void post_deserialize(AssetLoadingContext& context);
+		void post_deserialize(AssetLoadingContext& context);
 
 		y_serde3(_id)
 

@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/PointLightComponent.h>
+#include <yave/components/SkyLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 
@@ -107,13 +108,13 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), view(
 	const float intensity = 1.0f;
 
 	{
-		ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
+		const ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
 		DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
 		light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
 		light_comp->intensity() = 3.0f * intensity;
 	}
 	{
-		ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+		const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
 		world.component<TransformableComponent>(light_id)->position() = math::Vec3(0.75f, -0.5f, 0.5f);
 		PointLightComponent* light = world.component<PointLightComponent>(light_id);
 		light->color() = k_to_rbg(2500.0f);
@@ -122,13 +123,18 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), view(
 		light->radius() = 2.0f;
 	}
 	{
-		ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+		const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
 		world.component<TransformableComponent>(light_id)->position() = math::Vec3(-0.75f, -0.5f, 0.5f);
 		PointLightComponent* light = world.component<PointLightComponent>(light_id);
 		light->color() = k_to_rbg(10000.0f);
 		light->intensity() = 1.5f * intensity;
 		light->falloff() = 0.5f;
 		light->radius() = 2.0f;
+	}
+
+	{
+		const ecs::EntityId sky_id = world.create_entity(ecs::StaticArchetype<SkyLightComponent>());
+		world.component<SkyLightComponent>(sky_id)->probe() = device()->device_resources().ibl_probe();
 	}
 
 	/*if(background) {
@@ -297,7 +303,7 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 		FrameGraph graph(_resource_pool);
 		RendererSettings settings;
 		settings.tone_mapping.auto_exposure = false;
-		const DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), device()->device_resources().ibl_probe(), settings);
+		const DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), settings);
 
 		const FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
 		{
