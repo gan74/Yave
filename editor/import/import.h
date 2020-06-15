@@ -43,6 +43,8 @@ struct SkeletonData {
 
 struct MaterialData {
 	std::array<core::String, SimpleMaterialData::texture_count> textures;
+	float metallic = 0.0f;
+	float roughness = 1.0f;
 };
 
 struct SubMeshData {

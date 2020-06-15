@@ -253,7 +253,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 
 		for(const tinygltf::Image& image : model.images) {
 			auto full_uri = path ? fs->join(path.unwrap(), image.uri) : core::String(image.uri);
-			scene.images.emplace_back(import_image(full_uri));
+			scene.images.emplace_back(import_image(full_uri, ImageImportFlags::GenerateMipmaps));
 
 			if(!image.name.empty()) {
 				auto& last = scene.images.last();
@@ -283,8 +283,11 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 			auto& last = scene.materials.emplace_back(name, MaterialData()).obj();
 			{
 				const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
-				last.textures[SimpleMaterialData::Diffuse] = tex_name(pbr.baseColorTexture.index);
 				last.textures[SimpleMaterialData::Normal] = tex_name(material.normalTexture.index);
+				last.textures[SimpleMaterialData::Diffuse] = tex_name(pbr.baseColorTexture.index);
+				last.textures[SimpleMaterialData::Metallic] = last.textures[SimpleMaterialData::Roughness] = tex_name(pbr.metallicRoughnessTexture.index);
+				last.metallic = float(pbr.metallicFactor);
+				last.roughness = float(pbr.roughnessFactor);
 			}
 		}
 	}
