@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Gr�goire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,41 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_COMPONENTS_SKYLIGHTCOMPONENT_H
+#define YAVE_COMPONENTS_SKYLIGHTCOMPONENT_H
 
-#include "SkyComponent.h"
+#include <yave/assets/AssetPtr.h>
+
+#include <yave/graphics/images/IBLProbe.h>
 
 namespace yave {
 
-DirectionalLightComponent& SkyComponent::sun() {
-	return _sun;
+class SkyLightComponent final {
+	public:
+
+		AssetPtr<IBLProbe>& probe();
+		const AssetPtr<IBLProbe>& probe() const;
+
+		y_serde3(_probe)
+
+	private:
+		AssetPtr<IBLProbe> _probe;
+};
 }
 
-const DirectionalLightComponent& SkyComponent::sun() const {
-	return _sun;
-}
-
-float SkyComponent::planet_radius() const {
-	return _planet_radius;
-}
-
-float& SkyComponent::planet_radius() {
-	return _planet_radius;
-}
-
-float SkyComponent::atmosphere_radius() const {
-	return _atmos_radius;
-}
-
-float& SkyComponent::atmosphere_radius() {
-	return _atmos_radius;
-}
-
-const math::Vec3& SkyComponent::beta_rayleight() const {
-	return _beta_rayleight;
-}
-
-math::Vec3& SkyComponent::beta_rayleight() {
-	return _beta_rayleight;
-}
-
-}
+#endif // YAVE_COMPONENTS_SKYLIGHTCOMPONENT_H

@@ -26,14 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
-class IBLProbe : public Cubemap {
-
+class IBLProbe final : public Cubemap {
 	public:
+		IBLProbe() = default;
+		IBLProbe(DevicePtr dptr, const ImageData& data);
+
 		static IBLProbe from_cubemap(const Cubemap& cube);
 		static IBLProbe from_equirec(const Texture& equirec);
-
-		IBLProbe() = default;
 };
+
+YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(IBLProbe, ImageData, AssetType::Image);
 
 }
 

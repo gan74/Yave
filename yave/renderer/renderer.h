@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include "ShadowMapPass.h"
 #include "ToneMappingPass.h"
-#include "RayleighSkyPass.h"
 
 namespace yave {
 
@@ -36,7 +35,6 @@ struct RendererSettings {
 struct DefaultRenderer {
 	GBufferPass gbuffer;
 	LightingPass lighting;
-	RayleighSkyPass sky;
 	ToneMappingPass tone_mapping;
 
 	FrameGraphImageId color;

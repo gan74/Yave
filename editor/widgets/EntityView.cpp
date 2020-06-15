@@ -32,7 +32,6 @@ SOFTWARE.
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
-#include <yave/components/SkyComponent.h>
 
 #include <editor/utils/ui.h>
 #include <editor/utils/entities.h>

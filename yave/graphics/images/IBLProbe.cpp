@@ -153,6 +153,18 @@ static usize probe_size(const Texture& tex) {
 	return std::max(min_face_size * 2, usize(1) << usize(std::ceil(std::log2(std::sqrt(face)))));
 }
 
+
+
+
+
+
+IBLProbe::IBLProbe(DevicePtr dptr, const ImageData& data) {
+	*this = data.layers() == 6
+		? from_cubemap(Cubemap(dptr, data))
+		: from_equirec(Texture(dptr, data));
+}
+
+
 IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 	core::DebugTimer _("IBLProbe::from_cubemap()");
 
@@ -174,5 +186,6 @@ IBLProbe IBLProbe::from_equirec(const Texture& equirec) {
 	final.ImageBase::operator=(std::move(probe));
 	return final;
 }
+
 
 }

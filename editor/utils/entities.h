@@ -24,10 +24,18 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
+#include <editor/components/EditorComponent.h>
+
+#include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/components/TransformableComponent.h>
+
 #include <yave/ecs/ecs.h>
 
 namespace editor {
 
+std::string_view entity_name(const ecs::EntityWorld& world, ecs::EntityId id);
 std::string_view entity_icon(const ecs::EntityWorld& world, ecs::EntityId id);
 
 }

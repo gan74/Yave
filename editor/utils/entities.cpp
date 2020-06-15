@@ -24,9 +24,22 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
+#include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/SpotLightComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+
 #include <imgui/yave_imgui.h>
 
 namespace editor {
+
+std::string_view entity_name(const ecs::EntityWorld& world, ecs::EntityId id) {
+	if(const EditorComponent* component = world.component<EditorComponent>(id)) {
+		return component->name();
+	}
+
+	return "";
+}
 
 std::string_view entity_icon(const ecs::EntityWorld& world, ecs::EntityId id) {
 	if(world.has<StaticMeshComponent>(id)) {
@@ -39,6 +52,10 @@ std::string_view entity_icon(const ecs::EntityWorld& world, ecs::EntityId id) {
 
 	if(world.has<SpotLightComponent>(id)) {
 		return ICON_FA_VIDEO;
+	}
+
+	if(world.has<DirectionalLightComponent>(id)) {
+		return ICON_FA_SUN;
 	}
 
 	return ICON_FA_DATABASE;

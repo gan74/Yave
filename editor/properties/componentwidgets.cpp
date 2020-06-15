@@ -28,7 +28,7 @@ SOFTWARE.
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
-#include <yave/components/SkyComponent.h>
+#include <yave/components/SkyLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 
@@ -214,7 +214,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
-	SkyComponent* sky = ctx->world().component<SkyComponent>(id);
+	SkyLightComponent* sky = ctx->world().component<SkyLightComponent>(id);
 	if(!sky) {
 		return;
 	}
@@ -225,25 +225,19 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 
 	ImGui::Columns(2);
 	{
-		light_widget(&sky->sun());
-
 		ImGui::NextColumn();
-		ImGui::Text("Direction");
+		ImGui::Text("Cubemap");
 		ImGui::NextColumn();
-		ImGui::InputFloat3("##direction", sky->sun().direction().data(), "%.2f");
-
-
-		ImGui::NextColumn();
-		ImGui::Text("Beta");
-		ImGui::NextColumn();
-		math::Vec3 beta = sky->beta_rayleight() * 1e6f;
-		if(ImGui::InputFloat3("##beta", beta.data(), "%.2f")) {
-			sky->beta_rayleight() = beta * 1e-6f;
-		}
-
-		ImGui::SameLine();
-		if(ImGui::Button(ICON_FA_GLOBE_AFRICA)) {
-			sky->beta_rayleight() = SkyComponent::earth_beta;
+		if(imgui::asset_selector(ctx, sky->probe().id(), AssetType::Image, "Cubemap")) {
+			ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+				[=](AssetId asset) {
+					if(const auto probe = ctx->loader().load_res<IBLProbe>(asset)) {
+						if(SkyLightComponent* sky = ctx->world().component<SkyLightComponent>(id)) {
+							sky->probe() = probe.unwrap();
+						}
+					}
+					return true;
+				});
 		}
 	}
 	ImGui::Columns(1);

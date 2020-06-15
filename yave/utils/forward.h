@@ -128,7 +128,6 @@ class Queue;
 class QueueFamily;
 class RayTracing;
 class RayleighSky;
-class RayleighSkyPass;
 class RecordedCmdBuffer;
 class RenderPass;
 class RenderPassRecorder;

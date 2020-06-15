@@ -188,11 +188,15 @@ class EntityWorld {
 
 		template<typename T>
 		const ComponentContainerBase* find_container() const {
+			static const auto static_info = ComponentRuntimeInfo::create<T>();
+			unused(static_info);
 			return find_container(type_index<T>());
 		}
 
 		template<typename T>
 		ComponentContainerBase* find_container() {
+			static const auto static_info = ComponentRuntimeInfo::create<T>();
+			unused(static_info);
 			return find_container(type_index<T>());
 		}
 

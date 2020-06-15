@@ -64,7 +64,6 @@ class DeviceResources final : NonCopyable {
 			SkyLightParamsComp,
 
 			ToneMapFrag,
-			RayleighSkyFrag,
 			TexturedFrag,
 			PassthroughFrag,
 			BloomFrag,
@@ -99,7 +98,6 @@ class DeviceResources final : NonCopyable {
 			TexturedSkinnedMaterialTemplate,
 
 			ToneMappingMaterialTemplate,
-			RayleighSkyMaterialTemplate,
 
 			ScreenPassthroughMaterialTemplate,
 			ScreenBlendPassthroughMaterialTemplate,
