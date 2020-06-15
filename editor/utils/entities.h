@@ -19,27 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_ENTITYVIEW_H
-#define EDITOR_WIDGETS_ENTITYVIEW_H
+#ifndef EDITOR_UTILS_ENTITIES_H
+#define EDITOR_UTILS_ENTITIES_H
 
-#include <editor/ui/Widget.h>
+#include <editor/editor.h>
 
 #include <yave/ecs/ecs.h>
 
 namespace editor {
 
-class EntityView final : public Widget, public ContextLinked {
-	public:
-		EntityView(ContextPtr cptr);
-
-	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
-
-		void paint_view();
-
-		ecs::EntityId _hovered;
-};
+std::string_view entity_icon(const ecs::EntityWorld& world, ecs::EntityId id);
 
 }
 
-#endif // EDITOR_WIDGETS_ENTITYVIEW_H
+#endif // EDITOR_UTILS_ENTITIES_H

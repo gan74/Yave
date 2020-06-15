@@ -35,6 +35,7 @@ SOFTWARE.
 #include <yave/components/SkyComponent.h>
 
 #include <editor/utils/ui.h>
+#include <editor/utils/entities.h>
 #include <editor/widgets/AssetSelector.h>
 
 #include <imgui/yave_imgui.h>
@@ -72,12 +73,12 @@ void EntityView::paint_view() {
 		for(ecs::EntityId id : world.ids()) {
 			const EditorComponent* comp = world.component<EditorComponent>(id);
 			if(!comp) {
-				log_msg("Entity is missing EditorComponent.", Log::Warning);
+				log_msg(fmt("Entity with id % is missing EditorComponent", id.index()), Log::Warning);
 				continue;
 			}
 
 			const bool selected = context()->selection().selected_entity() == id;
-			if(ImGui::Selectable(fmt_c_str(ICON_FA_CUBE " %##%", comp->name(), id.index()), selected)) {
+			if(ImGui::Selectable(fmt_c_str("% %##%", entity_icon(world, id), comp->name(), id.index()), selected)) {
 				 context()->selection().set_selected(id);
 			}
 			if(ImGui::IsItemHovered()) {
@@ -98,7 +99,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	if(ImGui::BeginPopup("Add entity")) {
 		ecs::EntityId ent;
-		if(ImGui::MenuItem("Add empty entity")) {
+		if(ImGui::MenuItem(ICON_FA_PLUS " Add empty entity")) {
 			ent = world.create_entity();
 		}
 		ImGui::Separator();
@@ -118,6 +119,18 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 					return true;
 				});
 		}
+
+
+		ImGui::Separator();
+
+		if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add Point light")) {
+			ent = world.create_entity(PointLightArchetype());
+		}
+
+		if(ImGui::MenuItem(ICON_FA_VIDEO " Add Spot light")) {
+			ent = world.create_entity(SpotLightArchetype());
+		}
+
 
 		y_debug_assert(!ent.is_valid() || world.has<EditorComponent>(ent));
 		y_debug_assert(world.required_components().size() > 0);

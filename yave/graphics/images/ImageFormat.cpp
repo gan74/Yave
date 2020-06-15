@@ -593,7 +593,8 @@ VkImageAspectFlags ImageFormat::vk_aspect() const {
 
 
 std::string_view ImageFormat::name() const {
-#define VK_FORMAT_CASE(fmt) case fmt: return #fmt;
+	auto clean_name = [](std::string_view orig) { return orig.substr(10); };
+#define VK_FORMAT_CASE(fmt) case fmt: return clean_name(#fmt);
 	switch(_format) {
 		VK_FORMAT_CASE(VK_FORMAT_UNDEFINED)
 		VK_FORMAT_CASE(VK_FORMAT_R4G4_UNORM_PACK8)
