@@ -25,10 +25,12 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 
 #include <yave/ecs/ecs.h>
+#include <yave/ecs/ComponentRuntimeInfo.h>
 
 namespace editor {
 
 class EntityView final : public Widget, public ContextLinked {
+
 	public:
 		EntityView(ContextPtr cptr);
 
@@ -38,6 +40,8 @@ class EntityView final : public Widget, public ContextLinked {
 		void paint_view();
 
 		ecs::EntityId _hovered;
+
+		core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> _all_components;
 };
 
 }

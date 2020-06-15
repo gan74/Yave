@@ -36,17 +36,23 @@ namespace ecs {
 template<typename T>
 std::unique_ptr<ComponentContainerBase> create_container();
 
+template<typename T>
+void create_component(EntityWorld& world, EntityId id);
+
 struct ComponentRuntimeInfo {
 	ComponentTypeIndex type_id;
 	std::string_view type_name;
 	std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
+	void (*add_component)(EntityWorld&, EntityId) = nullptr;
+
 
 	template<typename T>
 	static ComponentRuntimeInfo create() {
 		return ComponentRuntimeInfo {
 			type_index<T>(),
 			ct_type_name<T>(),
-			create_container<T>
+			create_container<T>,
+			create_component<T>
 		};
 	}
 

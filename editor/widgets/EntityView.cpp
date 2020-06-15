@@ -38,31 +38,50 @@ SOFTWARE.
 #include <editor/utils/entities.h>
 #include <editor/widgets/AssetSelector.h>
 
+// #include <y/utils/log.h>
+
 #include <imgui/yave_imgui.h>
 
 namespace editor {
 
-[[maybe_unused]]
 static core::String clean_component_name(std::string_view name) {
-	if(name.empty()) {
-		return name;
-	}
 	core::String clean;
-	clean.push_back(name[0]);
-
-	for(char c : core::Range(name.begin() + 1, name.end())) {
-		if(std::isupper(c)) {
+	for(char c : name) {
+		if(c == ':') {
+			clean.make_empty();
+			continue;
+		}
+		if(std::isupper(c) && !clean.is_empty()) {
 			clean.push_back(' ');
 		}
 		clean.push_back(char(std::tolower(c)));
 	}
+
+	if(!clean.is_empty()) {
+		clean[0] = std::toupper(clean[0]);
+	}
+
 	return clean;
+}
+
+static auto all_components() {
+	core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> components;
+
+	for(const auto* poly_base = ecs::ComponentContainerBase::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
+		if(const auto container = poly_base->create()) {
+			const ecs::ComponentRuntimeInfo info = container->runtime_info();
+			components.emplace_back(clean_component_name(info.type_name), info);
+		}
+	}
+
+	return components;
 }
 
 
 EntityView::EntityView(ContextPtr cptr) :
 		Widget(ICON_FA_CUBES " Entities"),
-		ContextLinked(cptr) {
+		ContextLinked(cptr),
+		_all_components(all_components()) {
 }
 
 void EntityView::paint_view() {
@@ -104,17 +123,16 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		}
 		ImGui::Separator();
 
-		/*for(const auto& archetype : entity_archtypes()) {
-			if(ImGui::MenuItem(fmt("% Add %", archetype->icon(), archetype->name()).data())) {
-				ent = archetype->create(world);
-			}
-		}*/
-
 		if(ImGui::MenuItem("Add prefab")) {
 			context()->ui().add<AssetSelector>(AssetType::Prefab)->set_selected_callback(
 				[ctx = context()](AssetId asset) {
 					if(const auto prefab = ctx->loader().load_res<ecs::EntityPrefab>(asset)) {
-						ctx->world().create_entity(*prefab.unwrap());
+						const ecs::EntityId id = ctx->world().create_entity(*prefab.unwrap());
+
+						const auto name = ctx->asset_store().name(asset);
+						if(EditorComponent* comp = ctx->world().component<EditorComponent>(id); comp && name) {
+							comp->set_name(fmt("% (Prefab)", ctx->asset_store().filesystem()->filename(name.unwrap())));
+						}
 					}
 					return true;
 				});
@@ -140,7 +158,6 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 
 
-
 	ImGui::Spacing();
 	paint_view();
 
@@ -154,21 +171,12 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		if(ImGui::BeginPopup("##contextmenu")) {
 			if(ImGui::BeginMenu(ICON_FA_PLUS " Add component")) {
 
-				ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-				ImGui::MenuItem(ICON_FA_EXCLAMATION_TRIANGLE " Adding individual components is not supported");
-				ImGui::PopStyleColor();
-
-				/*core::Vector<ComponentTraits> traits = all_component_traits();
-				for(const ComponentTraits& t : traits) {
-					if(t.name.empty() || world.has(_hovered, t.type)) {
-						continue;
+				for(const auto& [name, info] : _all_components) {
+					const bool enabled = !name.is_empty() && !world.has(_hovered, info.type_id) && info.add_component;
+					if(ImGui::MenuItem(fmt_c_str(ICON_FA_PUZZLE_PIECE " %", name), nullptr, nullptr, enabled) && enabled) {
+						info.add_component(world, _hovered);
 					}
-					if(ImGui::MenuItem(fmt_ctr(ICON_FA_PUZZLE_PIECE " %", clean_component_name(t.name)))) {
-						if(!world.create_component(_hovered, t.type)) {
-							log_msg("Unable to create component.", Log::Error);
-						}
-					}
-				}*/
+				}
 				ImGui::EndMenu();
 			}
 

@@ -102,6 +102,11 @@ class EntityWorld {
 			return cont ? cont->contains(id) : false;
 		}
 
+		bool has(EntityId id, ComponentTypeIndex type_id) const {
+			const ComponentContainerBase* cont = find_container(type_id);
+			return cont ? cont->contains(id) : false;
+		}
+
 		template<typename T>
 		T* component(EntityId id) {
 			ComponentContainerBase* cont = find_container<T>();

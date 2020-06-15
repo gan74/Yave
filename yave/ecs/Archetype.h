@@ -43,8 +43,10 @@ class Archetype {
 			return _infos.values();
 		}
 
+		y_no_serde3()
+
 	private:
-		core::ExternalHashMap<u32, ComponentRuntimeInfo> _infos;
+		core::ExternalHashMap<ComponentTypeIndex, ComponentRuntimeInfo> _infos;
 };
 
 }

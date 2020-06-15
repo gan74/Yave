@@ -46,6 +46,10 @@ std::unique_ptr<ComponentContainerBase> create_container() {
 	return std::make_unique<ComponentContainer<T>>();
 }
 
+template<typename T>
+void create_component(EntityWorld& world, EntityId id) {
+	world.add_component<T>(id);
+}
 
 
 template<typename... Args>
