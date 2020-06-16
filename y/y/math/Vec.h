@@ -579,7 +579,8 @@ auto operator/(const Vec<N, T>& v, const R& r) {
 
 template<usize N, typename T, typename L>
 auto operator/(const L& l, const Vec<N, T>& v) {
-	return vec(l) / v;
+	typename detail::V<N, T, L>::type vec(l);
+	return vec / v;
 }
 
 template<usize N, typename T>
