@@ -37,6 +37,7 @@ SOFTWARE.
 #include <yave/utils/entities.h>
 
 #include <editor/utils/assets.h>
+#include <editor/utils/entities.h>
 
 #include <thread>
 
@@ -93,6 +94,17 @@ ThumbmailCache::ThumbmailData::ThumbmailData(ContextPtr ctx, usize size, AssetId
 				properties.emplace_back("Size", fmt("% x %", tex->size().x(), tex->size().y()));
 				properties.emplace_back("Mipmaps", fmt("%", tex->mipmaps()));
 				properties.emplace_back("Format", tex->format().name());
+			}
+		break;
+
+		case AssetType::Prefab:
+			if(const auto& prefab = ctx->loader().load<ecs::EntityPrefab>(id); prefab) {
+				properties.emplace_back("Components", fmt("%", prefab->components().size()));
+				for(usize i = 0; i != prefab->components().size(); ++i) {
+					if(const auto* component = prefab->components()[i].get()) {
+						properties.emplace_back(core::String(fmt("%", i)), clean_component_name(component->runtime_info().type_name));
+					}
+				}
 			}
 		break;
 

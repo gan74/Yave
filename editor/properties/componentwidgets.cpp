@@ -184,7 +184,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 
 		int lod = light->shadow_lod();
-		if(ImGui::DragInt("LoD", &lod, 1.0f, 0, 8)) {
+		if(ImGui::DragInt("LoD", &lod, 1.0f / 8.0f, 0, 8)) {
 			light->shadow_lod() = lod;
 		}
 

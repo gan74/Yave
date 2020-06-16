@@ -226,12 +226,6 @@ class Vector : ResizePolicy, Allocator {
 			std::copy(beg_it, end_it, std::back_inserter(*this));
 		}
 
-		template<typename It>
-		void emplace_back(It beg_it, It end_it) {
-			set_min_capacity(size() + std::distance(beg_it, end_it));
-			std::move(beg_it, end_it, std::back_inserter(*this));
-		}
-
 		value_type pop() {
 			y_debug_assert(!is_empty());
 			--_data_end;

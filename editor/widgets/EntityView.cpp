@@ -37,13 +37,11 @@ SOFTWARE.
 #include <editor/utils/entities.h>
 #include <editor/widgets/AssetSelector.h>
 
-// #include <y/utils/log.h>
-
 #include <imgui/yave_imgui.h>
 
 namespace editor {
 
-static core::String clean_component_name(std::string_view name) {
+/*static core::String clean_component_name(std::string_view name) {
 	core::String clean;
 	for(char c : name) {
 		if(c == ':') {
@@ -61,7 +59,7 @@ static core::String clean_component_name(std::string_view name) {
 	}
 
 	return clean;
-}
+}*/
 
 static auto all_components() {
 	core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> components;

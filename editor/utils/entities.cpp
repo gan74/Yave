@@ -34,6 +34,22 @@ SOFTWARE.
 
 namespace editor {
 
+std::string_view clean_component_name(std::string_view name) {
+	usize start = 0;
+	for(usize i = 0; i != name.size(); ++i) {
+		switch(name[i]) {
+			case ':':
+				start = i + 1;
+			break;
+
+			default:
+			break;
+		}
+	}
+
+	return name.substr(start);
+}
+
 std::string_view entity_name(const ecs::EntityWorld& world, ecs::EntityId id) {
 	if(const EditorComponent* component = world.component<EditorComponent>(id)) {
 		return component->name();

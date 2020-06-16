@@ -35,6 +35,8 @@ SOFTWARE.
 
 namespace editor {
 
+std::string_view clean_component_name(std::string_view name);
+
 std::string_view entity_name(const ecs::EntityWorld& world, ecs::EntityId id);
 std::string_view entity_icon(const ecs::EntityWorld& world, ecs::EntityId id);
 
