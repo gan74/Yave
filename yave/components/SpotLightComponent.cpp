@@ -81,6 +81,14 @@ bool SpotLightComponent::cast_shadow() const {
 	return _cast_shadow;
 }
 
+u32& SpotLightComponent::shadow_lod() {
+	return _shadow_lod;
+}
+
+u32 SpotLightComponent::shadow_lod() const {
+	return _shadow_lod;
+}
+
 /*math::Vec2& SpotLightComponent::depth_bias() {
 	return _depth_bias;
 }

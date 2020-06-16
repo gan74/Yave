@@ -32,6 +32,33 @@ SOFTWARE.
 
 namespace yave {
 
+struct SubAtlas {
+	math::Vec2ui pos;
+	u32 subs = 4;
+};
+
+static std::pair<math::Vec2ui, u32> alloc_sub_atlas(u32 level, usize& first_level_index, core::MutableSpan<SubAtlas> levels, usize first_level_size) {
+	y_always_assert(level < levels.size(), "Invalid atlas level");
+	const u32 size = first_level_size >> level;
+	const u32 index = levels[level].subs;
+	if(index != 4) {
+		++levels[level].subs;
+		return {math::Vec2ui(index >> 1, index & 1) * size + levels[level].pos, size};
+	}
+
+	if(level == 0) {
+		if(first_level_index < levels.size()) {
+			return {math::Vec2ui(0, first_level_index++) * first_level_size, first_level_size};
+		}
+		log_msg("Unable to allocate shadow altas: too many shadow casters", Log::Warning);
+		return {math::Vec2ui(), 0};
+	}
+
+	const math::Vec2ui pos = alloc_sub_atlas(level - 1, first_level_index, levels, first_level_size).first;
+	levels[level] = {pos, 0};
+	return alloc_sub_atlas(level, first_level_index, levels, first_level_size);
+}
+
 static Camera spotlight_camera(const TransformableComponent& tr, const SpotLightComponent& sp) {
 	Camera cam;
 	cam.set_proj(math::perspective(sp.half_angle() * 2.0f, 1.0f, 0.1f));
@@ -45,7 +72,19 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Shadow pass");
 
-	const math::Vec2ui shadow_map_size = settings.shadow_map_size;
+	const usize shadow_map_log_size = log2ui(settings.shadow_map_size);
+	const usize first_level_size = 1 << shadow_map_log_size;
+	if(first_level_size != settings.shadow_map_size) {
+		log_msg("Shadow map size is not a power of two", Log::Warning);
+	}
+
+
+	usize first_level_index = 0;
+	std::array<SubAtlas, 32> levels;
+	auto alloc = [&](u32 level) { return alloc_sub_atlas(level, first_level_index, core::MutableSpan(levels), first_level_size); };
+
+
+	const math::Vec2ui shadow_map_size = math::Vec2ui(1, settings.shadow_atlas_size) * first_level_size;
 	const auto shadow_map = builder.declare_image(shadow_format, shadow_map_size);
 
 	ShadowMapPass pass;
@@ -53,32 +92,26 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 	pass.sub_passes = std::make_shared<SubPassData>();
 
 	{
-		u32 y = 0;
-		const u32 size = shadow_map_size.x();
-		const float uv_mul_y = 1.0f / float(shadow_map_size.y());
-
+		const math::Vec2 uv_mul = 1.0f / math::Vec2(shadow_map_size);
 		for(auto spot : world.view(SpotLightArchetype())) {
 			auto [t, l] = spot.components();
 			if(!l.cast_shadow()) {
 				continue;
 			}
 
-			if(y >= shadow_map_size.y()) {
-				log_msg("Shadow atlas is too small.", Log::Warning);
-				break;
-			}
+			const u32 level = l.shadow_lod();
+			const auto [offset, size] = alloc(level);
 
 			const SceneView spot_view(&world, spotlight_camera(t, l));
 			pass.sub_passes->passes.push_back(SubPass{
-				SceneRenderSubPass::create(builder, spot_view)
+				SceneRenderSubPass::create(builder, spot_view),
+				offset, size
 			});
 			pass.sub_passes->lights[spot.id().as_u64()] = {
 				spot_view.camera().viewproj_matrix(),
-				math::Vec2(0.0f, y * uv_mul_y),
-				math::Vec2(1.0f, size * uv_mul_y)
+				math::Vec2(offset) * uv_mul,
+				math::Vec2(size) * uv_mul
 			};
-
-			y += size;
 		}
 	}
 
@@ -86,10 +119,8 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 		auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 
-		usize index = 0;
-		const u32 size = shadow_map_size.x();
 		for(const auto& sub_pass : pass.sub_passes->passes) {
-			render_pass.set_viewport(Viewport(math::Vec2(size, size), math::Vec2(0, index++ * size)));
+			render_pass.set_viewport(Viewport(math::Vec2(sub_pass.viewport_size), sub_pass.viewport_offset));
 			sub_pass.scene_pass.render(render_pass, self);
 		}
 	});

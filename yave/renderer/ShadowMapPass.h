@@ -31,7 +31,8 @@ SOFTWARE.
 namespace yave {
 
 struct ShadowMapPassSettings {
-	math::Vec2ui shadow_map_size = math::Vec2ui(1024, 1024 * 8);
+	usize shadow_map_size = 1024;
+	usize shadow_atlas_size = 8;
 };
 
 struct ShadowMapPass {
@@ -39,6 +40,8 @@ struct ShadowMapPass {
 
 	struct SubPass {
 		SceneRenderSubPass scene_pass;
+		math::Vec2ui viewport_offset;
+		u32 viewport_size;
 	};
 
 	struct SubPassData {

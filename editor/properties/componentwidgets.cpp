@@ -178,6 +178,16 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 		ImGui::NextColumn();
 		ImGui::Checkbox("##shadows", &light->cast_shadow());
 
+
+		ImGui::NextColumn();
+		ImGui::Text("Shadow LoD");
+		ImGui::NextColumn();
+
+		int lod = light->shadow_lod();
+		if(ImGui::DragInt("LoD", &lod, 1.0f, 0, 8)) {
+			light->shadow_lod() = lod;
+		}
+
 		/*if(light->cast_shadow()) {
 			ImGui::NextColumn();
 			ImGui::Text("Shadow bias");
