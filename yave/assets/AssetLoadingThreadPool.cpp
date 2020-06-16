@@ -78,6 +78,7 @@ DevicePtr AssetLoadingThreadPool::device() const {
 }
 
 void AssetLoadingThreadPool::wait_until_loaded(const GenericAssetPtr& ptr) {
+	y_profile();
 	while(ptr.is_loading()) {
 		process_one(y_profile_unique_lock(_lock));
 	}
@@ -92,6 +93,7 @@ void AssetLoadingThreadPool::add_loading_job(std::unique_ptr<LoadingJob> job) {
 }
 
 void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
+	y_profile();
 	y_debug_assert(lock.owns_lock());
 
 	for(auto it = _finalize_jobs.begin(); it != _finalize_jobs.end(); ++it) {

@@ -78,7 +78,8 @@ static auto get_copy_regions(const ImageData& data) {
 	return regions;
 }
 
-static auto get_staging_buffer(DevicePtr dptr, usize byte_size, const void* data) {
+static auto stage_data(DevicePtr dptr, usize byte_size, const void* data) {
+	y_profile();
 	y_debug_assert(data);
 	auto staging_buffer = StagingBuffer(dptr, byte_size);
 	std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
@@ -102,6 +103,7 @@ static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format
 }
 
 static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+	y_profile();
 	const auto image = create_image(dptr, size, layers, mips, format, usage, type);
 	auto memory = dptr->allocator().alloc(image);
 	bind_image_memory(dptr, image, memory);
@@ -113,7 +115,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	y_profile();
 	DevicePtr dptr = image.device();
 
-	const auto staging_buffer = get_staging_buffer(dptr, data.combined_byte_size(), data.data());
+	const auto staging_buffer = stage_data(dptr, data.combined_byte_size(), data.data());
 	const auto regions = get_copy_regions(data);
 
 	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
