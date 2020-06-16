@@ -227,7 +227,8 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 	{
 		ImGui::Text("Cubemap");
 		ImGui::NextColumn();
-		if(imgui::asset_selector(ctx, sky->probe().id(), AssetType::Image, "Cubemap")) {
+		bool clear = false;
+		if(imgui::asset_selector(ctx, sky->probe().id(), AssetType::Image, "Cubemap", &clear)) {
 			ctx->ui().add<AssetSelector>(AssetType::Image)->set_selected_callback(
 				[=](AssetId asset) {
 					if(const auto probe = ctx->loader().load_res<IBLProbe>(asset)) {
@@ -237,6 +238,8 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 					}
 					return true;
 				});
+		} else if(clear) {
+			sky->probe() = AssetPtr<IBLProbe>();
 		}
 	}
 	ImGui::Columns(1);
@@ -260,7 +263,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 	{
 
 		for(usize i = 0; i != static_mesh->sub_meshes().size(); ++i) {
-			const StaticMeshComponent::SubMesh& sub_mesh = static_mesh->sub_meshes()[i];
+			StaticMeshComponent::SubMesh& sub_mesh = static_mesh->sub_meshes()[i];
 
 			auto find_sub_mesh = [ctx, id, i, sub = sub_mesh]() -> StaticMeshComponent::SubMesh* {
 				static_assert(!std::is_reference_v<decltype(sub)>);
@@ -275,7 +278,9 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 			{
 				ImGui::Text("Material");
 				ImGui::NextColumn();
-				if(imgui::asset_selector(ctx, sub_mesh.material.id(), AssetType::Material, "Material")) {
+
+				bool clear = false;
+				if(imgui::asset_selector(ctx, sub_mesh.material.id(), AssetType::Material, "Material", &clear)) {
 					ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
 						[=](AssetId asset) {
 							if(const auto material = ctx->loader().load_res<Material>(asset)) {
@@ -285,6 +290,8 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 							}
 							return true;
 						});
+				} else if(clear) {
+					sub_mesh.material = AssetPtr<Material>();
 				}
 			}
 
@@ -292,7 +299,9 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 				ImGui::NextColumn();
 				ImGui::Text("Mesh");
 				ImGui::NextColumn();
-				if(imgui::asset_selector(ctx, sub_mesh.mesh.id(), AssetType::Mesh, "Mesh")) {
+
+				bool clear = false;
+				if(imgui::asset_selector(ctx, sub_mesh.mesh.id(), AssetType::Mesh, "Mesh", &clear)) {
 					ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
 						[=](AssetId asset) {
 							if(const auto mesh = ctx->loader().load_res<StaticMesh>(asset)) {
@@ -302,6 +311,8 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 							}
 							return true;
 						});
+				} else if(clear) {
+					sub_mesh.mesh = AssetPtr<StaticMesh>();
 				}
 			}
 
