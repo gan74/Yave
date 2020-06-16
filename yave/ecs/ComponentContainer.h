@@ -94,8 +94,9 @@ class ComponentContainerBase : NonMovable {
 			if(!set.contains_index(id.index())) {
 				add_required_components<T>(world, id);
 				return set.insert(id, y_fwd(args)...);
+			} else {
+				return set[id] = T{y_fwd(args)...};
 			}
-			return set[id];
 		}
 
 		template<typename T>

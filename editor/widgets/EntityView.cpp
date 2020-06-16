@@ -184,6 +184,15 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 				world.remove_entity(_hovered);
 				// we don't unselect the ID to make sure that we can handle case where the id is invalid
 			}
+
+			if(ImGui::Selectable("Copy")) {
+				const ecs::EntityPrefab prefab = world.create_prefab(_hovered);
+				const ecs::EntityId copy = world.create_entity(prefab);
+				if(EditorComponent* component = world.component<EditorComponent>(copy)) {
+					component->set_name(component->name() + " (Copy)");
+				}
+			}
+
 			ImGui::EndPopup();
 		} else {
 			_hovered = ecs::EntityId();
