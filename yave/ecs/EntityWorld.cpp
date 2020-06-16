@@ -87,7 +87,11 @@ EntityId EntityWorld::create_entity(const Archetype& archetype) {
 EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
 	const EntityId id = create_entity();
 	for(const auto& comp : prefab.components()) {
-		comp->add_to(*this, id);
+		if(!comp) {
+			log_msg("Unable to add null component", Log::Error);
+		} else {
+			comp->add_to(*this, id);
+		}
 	}
 	return id;
 }

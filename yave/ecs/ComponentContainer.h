@@ -53,7 +53,8 @@ class ComponentBoxBase : NonMovable {
 template<typename T>
 class ComponentBox final : public ComponentBoxBase {
 	public:
-		ComponentBox(T t = T{});
+		ComponentBox() = default;
+		ComponentBox(T t);
 
 		ComponentRuntimeInfo runtime_info() const override;
 		void add_to(EntityWorld& world, EntityId id) const override;

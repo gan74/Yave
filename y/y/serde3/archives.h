@@ -259,23 +259,31 @@ class WritableArchive final {
 		Result serialize_poly(NamedObject<T> object) {
 			static_assert(std::is_const_v<T>);
 
+			if(object.object == nullptr) {
+				return write_one(size_type(0));
+			}
+
+			SizePatch size_patch{tell(), 0};
+			y_try(write_one(size_type(0)));
+
 			if constexpr(is_std_ptr_v<T>) {
 				static_assert(has_serde3_ptr_poly_v<T>);
 
-				if(object.object == nullptr) {
-					return write_one(u8(0));
-				}
-				y_try(write_one(u8(1)));
-
 				y_try(write_one(object.object->_y_serde3_poly_type_id()));
-				return object.object->_y_serde3_poly_serialize(*this);
+				y_try(object.object->_y_serde3_poly_serialize(*this));
+
 			} else {
 				static_assert(has_serde3_poly_v<T>);
 				static_assert(!has_serde3_v<T>);
 
 				y_try(write_one(object.object._y_serde3_poly_type_id()));
-				return object.object._y_serde3_poly_serialize(*this);
+				y_try(object.object._y_serde3_poly_serialize(*this));
 			}
+
+			size_patch.size = tell() - size_patch.index;
+			push_patch(size_patch);
+
+			return core::Ok(Success::Full);
 		}
 
 
@@ -647,40 +655,52 @@ class ReadableArchive final {
 		// ------------------------------- POLY -------------------------------
 		template<typename T>
 		Result deserialize_poly(NamedObject<T> object) {
-			if constexpr(is_std_ptr_v<T>) {
-				static_assert(!has_serde3_v<T>);
+			size_type size = 0;
+			const usize begin = tell();
+			y_try(read_one(size));
 
-				u8 non_null = 0;
-				y_try(read_one(non_null));
-				if(non_null) {
-					TypeId type_id;
-					y_try(read_one(type_id));
-
-					using element_type = typename T::element_type;
-					object.object = element_type::_y_serde3_poly_base.create_from_id(type_id);
-					if(!object.object) {
-						return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
-					}
-
-					return object.object->_y_serde3_poly_deserialize(*this);
-				} else {
-					object.object = nullptr;
-					return core::Ok(Success::Full);
-				}
-			} else {
-				static_assert(has_serde3_poly_v<T>);
-				static_assert(!has_serde3_v<T>);
+			if(size) {
+				y_defer(seek(begin + size));
 
 				TypeId type_id;
 				y_try(read_one(type_id));
 
-				if(type_id != object.object._y_serde3_poly_type_id()) {
+				if constexpr(is_std_ptr_v<T>) {
+					static_assert(!has_serde3_v<T>);
+
+					using element_type = typename T::element_type;
+					const auto* poly_type = element_type::_y_serde3_poly_base.find_id(type_id);
+					if(!poly_type || !poly_type->create) {
+						return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
+					}
+
+					object.object = poly_type->create();
+					if(object.object) {
+						return object.object->_y_serde3_poly_deserialize(*this);
+					}
+					return core::Ok(Success::Partial);
+				} else {
+					static_assert(has_serde3_poly_v<T>);
+					static_assert(!has_serde3_v<T>);
+
+					if(type_id != object.object._y_serde3_poly_type_id()) {
+						return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
+					}
+
+					return object.object._y_serde3_poly_deserialize(*this);
+				}
+			} else {
+				if constexpr(is_std_ptr_v<T>) {
+					static_assert(!has_serde3_v<T>);
+					object.object = nullptr;
+				} else {
+					static_assert(has_serde3_poly_v<T>);
+					static_assert(!has_serde3_v<T>);
 					return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
 				}
 
-				return object.object._y_serde3_poly_deserialize(*this);
+				return core::Ok(Success::Full);
 			}
-
 		}
 
 

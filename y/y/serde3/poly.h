@@ -63,19 +63,20 @@ struct PolyType {
 
 	inline static Type* first = nullptr;
 
-	static std::unique_ptr<Base> create_from_id(TypeId id) {
+
+	static const Type* find_id(TypeId id) {
 		for(auto* t = first; t; t = t->next) {
 			if(t->type_id == id) {
-				return t->create();
+				return t;
 			}
 		}
 		return nullptr;
 	}
 
-	static std::unique_ptr<Base> create_from_name(std::string_view name) {
+	static const Type* find_name(std::string_view name) {
 		for(auto* t = first; t; t = t->next) {
 			if(t->name == name) {
-				return t->create();
+				return t;
 			}
 		}
 		return nullptr;
@@ -87,6 +88,8 @@ struct PolyType {
 			poly_type_id<Derived>(),
 			first,
 			[]() -> std::unique_ptr<Base> {
+				// checking for size to trigger error on imcomplete types
+				static_assert(sizeof(Derived) > 0);
 				if constexpr(std::is_default_constructible_v<Derived>) {
 					return std::make_unique<Derived>();
 				}
