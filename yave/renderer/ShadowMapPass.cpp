@@ -50,7 +50,6 @@ static std::pair<math::Vec2ui, u32> alloc_sub_atlas(u32 level, usize& first_leve
 		if(first_level_index < levels.size()) {
 			return {math::Vec2ui(0, first_level_index++) * first_level_size, first_level_size};
 		}
-		log_msg("Unable to allocate shadow altas: too many shadow casters", Log::Warning);
 		return {math::Vec2ui(), 0};
 	}
 
@@ -101,6 +100,11 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
 			const u32 level = l.shadow_lod();
 			const auto [offset, size] = alloc(level);
+
+			if(!size) {
+				log_msg("Unable to allocate shadow altas: too many shadow casters", Log::Warning);
+				continue;
+			}
 
 			const SceneView spot_view(&world, spotlight_camera(t, l));
 			pass.sub_passes->passes.push_back(SubPass{
