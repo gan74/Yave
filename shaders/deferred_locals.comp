@@ -6,6 +6,7 @@
 
 #define POINT_LIGHTS
 #define SPOT_LIGHTS
+// #define USE_GROUP_SHADOW
 
 // -------------------------------- I/O --------------------------------
 
@@ -51,6 +52,9 @@ shared uint tile_spot_count;
 
 shared Frustum4 tile_frustum;
 
+#ifdef USE_GROUP_SHADOW
+shared float shadow_depths[gl_WorkGroupSize.x *  gl_WorkGroupSize.y];
+#endif
 
 // -------------------------------- HELPERS --------------------------------
 
@@ -162,13 +166,65 @@ void cull_lights() {
 
 // -------------------------------- SHADOWS --------------------------------
 
+vec4 sort_depths(vec4 depths) {
+	const float min0 = min(depths.x, depths.y);
+	const float min1 = min(depths.z, depths.w);
+
+	const float max0 = max(depths.x, depths.y);
+	const float max1 = max(depths.z, depths.w);
+
+	const vec4 min_max = vec4(min(min0, min1), max(min0, min1), min(max0, max1), max(max0, max1));
+
+	return (min_max.y > min_max.z) ? min_max.xzyw : min_max.xyzw;
+}
+
 float compute_shadow(SpotLight light, vec3 world_pos) {
 	const ShadowMapParams params = shadow_params[light.shadow_map_index];
-	const vec3 proj = project(world_pos + light.forward * 0.05, params.view_proj);
+
+	const vec3 proj = project(world_pos, params.view_proj);
 	const vec2 uvs = params.uv_offset + proj.xy * params.uv_mul;
 
-	const float bias = 0; //epsilon;
-	return (texture(in_shadows, uvs).r - bias) > proj.z ? 0.0 : 1.0;
+#ifdef USE_GROUP_SHADOW
+	const float base_depth = texture(in_shadows, uvs).x;
+	shadow_depths[gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x] = base_depth;
+	barrier();
+
+	const uvec2 quad = gl_LocalInvocationID.xy & 0x01;
+	const uint base_index = (gl_LocalInvocationID.x - quad.x) + (gl_LocalInvocationID.y - quad.y) * gl_WorkGroupSize.x;
+	const vec4 depths = vec4(
+			shadow_depths[base_index],
+			shadow_depths[base_index + 1],
+			shadow_depths[base_index + gl_WorkGroupSize.x],
+			shadow_depths[base_index + gl_WorkGroupSize.x + 1]);
+
+
+	/*const vec4 min_max = sort_depths(depths);
+	const float bias0 = min_max.z - min_max.x;
+	const float bias1 = min_max.w - min_max.y;
+	const float bias = max(bias0, bias1);*/
+
+	/*const uint x_index = quad.x * 2;
+	const float dx = depths[x_index] - depths[x_index + 1];
+	const float dy = depths[quad.y] - depths[quad.y + 2];
+	const float bias = abs(dx) + abs(dy);*/
+
+	/*const vec2 dx = vec2(depths.x - depths.y, depths.z - depths.w);
+	const vec2 dy = vec2(depths.x - depths.z, depths.y - depths.w);
+	const float bias = abs(min(dx.x, dx.y)) + abs(min(dy.x, dy.y));*/
+
+	/*const float dx = depths.x - depths.y;
+	const float dy = depths.x - depths.z;
+	const float bias = abs(dx) + abs(dy);*/
+#else
+	const vec4 depths = textureGather(in_shadows, uvs);
+	const float min_depth = min(min(depths.x, depths.y), min(depths.z, depths.w));
+	const float max_depth = max(max(depths.x, depths.y), max(depths.z, depths.w));
+
+	const float base_depth = min_depth;
+	const float bias = (max_depth - min_depth);
+#endif
+
+	return base_depth > proj.z + bias ? 0.0 : 1.0;
 }
 
 
