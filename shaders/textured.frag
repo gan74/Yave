@@ -1,6 +1,7 @@
 #version 450
 
-#include "yave.glsl"
+#include "lib/utils.glsl"
+#include "lib/gbuffer.glsl"
 
 layout(location = 0) out vec4 out_color;
 layout(location = 1) out vec4 out_normal;

@@ -62,6 +62,7 @@ class DeviceResources final : NonCopyable {
 			HistogramComp,
 			ToneMapParamsComp,
 			SkyLightParamsComp,
+			DepthBoundComp,
 
 			ToneMapFrag,
 			TexturedFrag,
@@ -89,6 +90,7 @@ class DeviceResources final : NonCopyable {
 			HistogramProgram,
 			ToneMapParamsProgram,
 			SkyLightParamsProgram,
+			DepthBoundProgram,
 
 			MaxComputePrograms
 		};

@@ -85,6 +85,7 @@ static constexpr const char* spirv_names[] = {
 		"histogram.comp",
 		"tonemap_params.comp",
 		"skylight_params.comp",
+		"depth_bounds.comp",
 
 		"tonemap.frag",
 		"textured.frag",

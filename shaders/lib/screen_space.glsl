@@ -1,7 +1,7 @@
 #ifndef SCREEN_SPACE_GLSL
 #define SCREEN_SPACE_GLSL
 
-#include "yave.glsl"
+#include "utils.glsl"
 
 vec3 sample_dirs[] = {
 		vec3(0.2196607,0.9032637,0.2254677),

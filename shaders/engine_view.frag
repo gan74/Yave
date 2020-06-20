@@ -1,15 +1,18 @@
 #version 450
 
-#include "yave.glsl"
+#include "lib/utils.glsl"
+#include "lib/gbuffer.glsl"
 
-layout(set = 0, binding = 0) uniform sampler2D in_depth;
-layout(set = 0, binding = 1) uniform sampler2D in_color;
-layout(set = 0, binding = 2) uniform sampler2D in_normal;
-layout(set = 0, binding = 3) uniform sampler2D in_final;
 
-layout(set = 0, binding = 4) uniform Target {
+layout(set = 0, binding = 0) uniform Target {
 	uint target_index;
 };
+
+layout(set = 0, binding = 1) uniform sampler2D in_final;
+layout(set = 0, binding = 2) uniform sampler2D in_depth;
+layout(set = 0, binding = 3) uniform sampler2D in_color;
+layout(set = 0, binding = 4) uniform sampler2D in_normal;
+
 
 layout(location = 0) in vec2 in_uv;
 
@@ -24,12 +27,12 @@ void main() {
 	float roughness;
 	unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
 	unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
-	
-	const float depth = texelFetch(in_depth, coord, 0).r; 
+
+	const float depth = texelFetch(in_depth, coord, 0).r;
 	const vec3 final = texelFetch(in_final, coord, 0).rgb;
 
 	vec3 color = final;
-	
+
 	if(target_index == 1) {
 		color = albedo;
 	} else if(target_index == 2) {

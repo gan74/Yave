@@ -1,6 +1,7 @@
 #version 450
 
-#include "screen_space.glsl"
+#include "lib/screen_space.glsl"
+#include "lib/gbuffer.glsl"
 
 // -------------------------------- I/O --------------------------------
 

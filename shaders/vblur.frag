@@ -1,6 +1,6 @@
 #version 450
 
-#include "blur.glsl"
+#include "lib/blur.glsl"
 
 layout(location = 0) out vec4 out_color;
 

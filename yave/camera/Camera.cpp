@@ -126,11 +126,12 @@ Frustum Camera::frustum() const {
 }
 
 Camera::operator uniform::Camera() const {
-	uniform::Camera camera_data;
+	uniform::Camera camera_data = {};
 	camera_data.view_proj = viewproj_matrix();
 	camera_data.inv_view_proj = inverse_matrix();
 	camera_data.position = position();
 	camera_data.forward = forward();
+	camera_data.up = up();
 	return camera_data;
 }
 

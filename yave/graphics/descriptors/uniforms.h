@@ -44,6 +44,9 @@ struct Camera {
 
 	math::Vec3 forward;
 	u32 padding_1 = 0;
+
+	math::Vec3 up;
+	u32 padding_2 = 0;
 };
 
 static_assert(sizeof(Camera) % 16 == 0);

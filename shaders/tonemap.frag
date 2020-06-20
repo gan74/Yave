@@ -1,7 +1,6 @@
 #version 450
 
-#include "yave.glsl"
-
+#include "lib/hdr.glsl"
 
 // https://64.github.io/tonemapping/
 // https://mynameismjp.wordpress.com/2010/04/30/a-closer-look-at-tone-mapping/

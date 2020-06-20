@@ -1,7 +1,6 @@
 #ifndef BLUR_GLSL
 #define BLUR_GLSL
 
-
 vec2 vertical_blur_offset(sampler2D tex, float scale) {
 	return vec2(0.0, scale / textureSize(tex, 0).y);
 }

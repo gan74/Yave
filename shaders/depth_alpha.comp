@@ -1,6 +1,7 @@
 #version 450
 
-#include "yave.glsl"
+#include "lib/utils.glsl"
+#include "lib/gbuffer.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 

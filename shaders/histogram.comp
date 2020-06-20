@@ -1,6 +1,6 @@
 #version 450
 
-#include "yave.glsl"
+#include "lib/utils.glsl"
 
 const uint group_size = 16;
 const uint thread_count = group_size * group_size;

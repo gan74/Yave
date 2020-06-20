@@ -80,6 +80,17 @@ struct Transform : Matrix4<T> {
 		return this->column(3).template to<3>();
 	}
 
+	Transform scaled(T scale) const {
+		Transform tr = *this;
+		tr.scale(scale);
+		return tr;
+	}
+
+	void scale(T scale) {
+		this->column(0).template to<3>() *= scale;
+		this->column(1).template to<3>() *= scale;
+		this->column(2).template to<3>() *= scale;
+	}
 
 	void set_basis(const Vec<3, T>& forward, const Vec<3, T>& left, const Vec<3, T>& up) {
 		this->column(0).template to<3>() = forward;

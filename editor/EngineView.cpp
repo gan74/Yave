@@ -73,11 +73,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 		const auto gbuffer = renderer.renderer.gbuffer;
 		builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
 		builder.add_color_output(output_image);
+		builder.add_uniform_input(buffer);
+		builder.add_uniform_input(renderer.color, 0, PipelineStage::FragmentBit);
 		builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
 		builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
 		builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
-		builder.add_uniform_input(renderer.color, 0, PipelineStage::FragmentBit);
-		builder.add_uniform_input(buffer);
 		builder.map_update(buffer);
 		builder.set_render_func([=, index = u32(_view), &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 				auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
@@ -88,7 +88,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 				mapping[0] = index;
 
 				auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-				const auto* material = context()->resources()[EditorResources::CopyTargetMaterialTemplate];
+				const auto* material = context()->resources()[EditorResources::EngineViewMaterialTemplate];
 				render_pass.bind_material(material, {self->descriptor_sets()[0]});
 
 				VkDrawIndirectCommand command = {};

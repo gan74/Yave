@@ -76,7 +76,7 @@ template<typename T, typename C>
 static auto&& check_exists(C& c, T t) {
 	const auto it = c.find(t);
 	if(it == c.end()) {
-		y_fatal("Resource doesn't exist.");
+		y_fatal("Resource doesn't exist");
 	}
 	return it->second;
 }
@@ -229,7 +229,7 @@ void FrameGraph::alloc_resources() {
 			_resources->create_alias(res, info.alias);
 		} else {
 			if(!info.has_usage()) {
-				log_msg(fmt("Image declared by % has no usage.", pass_name(info.first_use)), Log::Warning);
+				log_msg(fmt("Image declared by % has no usage", pass_name(info.first_use)), Log::Warning);
 				// All images should support texturing, hopefully
 				info.usage = info.usage | ImageUsage::TextureBit;
 			}
@@ -239,7 +239,7 @@ void FrameGraph::alloc_resources() {
 
 	for(auto&& [res, info] : _buffers) {
 		if(is_none(info.usage)) {
-			log_msg("Unused frame graph buffer resource.", Log::Warning);
+			log_msg("Unused frame graph buffer resource", Log::Warning);
 			info.usage = info.usage | BufferUsage::StorageBit;
 		}
 		_resources->create_buffer(res, info.byte_size, info.usage, info.memory_type);
@@ -252,7 +252,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
 			return pass->name();
 		}
 	}
-	/*return*/ y_fatal("Pass index out of bounds (%).", pass_index);
+	/*return*/ y_fatal("Pass index out of bounds (%)", pass_index);
 }
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
@@ -344,7 +344,7 @@ void FrameGraph::register_usage(FrameGraphBufferId res, BufferUsage usage, bool 
 void FrameGraph::register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass) {
 	auto& info = check_exists(_images, dst);
 	if(info.copy_src.is_valid()) {
-		y_fatal("Resource is already a copy.");
+		y_fatal("Resource is already a copy");
 	}
 	info.copy_src = src;
 	_image_copies.push_back({pass->_index, dst, src});
