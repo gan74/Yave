@@ -52,8 +52,8 @@ shared uint light_indexes[max_tile_lights];
 shared uint tile_point_count;
 shared uint tile_spot_count;
 
-shared Frustum4 tile_frustum;
-
+shared vec3 tile_dir;
+shared float tile_sin_alpha;
 
 // -------------------------------- HELPERS --------------------------------
 
@@ -68,39 +68,35 @@ uvec2 dispatch_range(uint num) {
 
 // -------------------------------- CULLING --------------------------------
 
-Frustum4 build_group_frustum() {
-	const vec3 ndc_top_left = unproject_ndc(vec3(-1.0, 1.0, 1.0), camera.inv_view_proj);
-	const vec3 ndc_bot_left = unproject_ndc(vec3(-1.0, -1.0, 1.0), camera.inv_view_proj); // we can probably deduce than one
-	const vec3 ndc_bot_right = unproject_ndc(vec3(1.0, -1.0, 1.0), camera.inv_view_proj);
+void compute_tile_culling_info(vec2 image_size) {
+	const vec2 corner_uv = (gl_WorkGroupID.xy * gl_WorkGroupSize.xy) / image_size;
+	const vec3 corner_unproj = unproject_ndc(vec3(corner_uv * 2.0 - 1.0, 1.0), camera.inv_view_proj);
+	const vec3 corner_dir = normalize(corner_unproj - camera.position);
 
-	const vec3 x_step = (ndc_bot_right - ndc_bot_left) / gl_NumWorkGroups.x;
-	const vec3 y_step = (ndc_top_left - ndc_bot_left) / gl_NumWorkGroups.y;
 
-	const vec3 tile_bot_left  = ndc_bot_left + x_step *  gl_WorkGroupID.x      + y_step *  gl_WorkGroupID.y;
-	const vec3 tile_bot_right = ndc_bot_left + x_step * (gl_WorkGroupID.x + 1) + y_step *  gl_WorkGroupID.y;
-	const vec3 tile_top_left  = ndc_bot_left + x_step *  gl_WorkGroupID.x      + y_step * (gl_WorkGroupID.y + 1);
-	const vec3 tile_top_right = ndc_bot_left + x_step * (gl_WorkGroupID.x + 1) + y_step * (gl_WorkGroupID.y + 1);
+	const vec2 center_uv = ((gl_WorkGroupID.xy + 0.5) * gl_WorkGroupSize.xy) / image_size;
+	const vec3 unproj = unproject_ndc(vec3(center_uv * 2.0 - 1.0, 1.0), camera.inv_view_proj);
+	tile_dir = normalize(unproj - camera.position);
 
-	const vec3 cam_pos = camera.position;
-
-	Frustum4 frustum;
-	frustum.planes[0] = plane(cam_pos, tile_top_left, tile_bot_left);
-	frustum.planes[1] = plane(cam_pos, tile_bot_right, tile_top_right);
-	frustum.planes[2] = plane(cam_pos, tile_top_right, tile_top_left);
-	frustum.planes[3] = plane(cam_pos, tile_bot_left, tile_bot_right);
-
-	//frustum.planes[4] = plane(vec3(tile_top_left.xy, 0.0), vec3(tile_bot_left.xy, 0.0), vec3(tile_bot_right.xy, 0.0));
-
-	return frustum;
+	const float tile_cos_alpha = dot(tile_dir, corner_dir);
+	tile_sin_alpha = sqrt(1.0 - sqr(tile_cos_alpha));
 }
 
+bool is_inside(vec3 light_pos, float radius) {
+	// TODO precompute to_light?
+	const vec3 to_light = light_pos - camera.position;
+	const float cos_alpha = dot(to_light, tile_dir);
+	const vec3 closest = camera.position + tile_dir * cos_alpha;
+	const float tile_radius = cos_alpha * tile_sin_alpha;
+	const vec3 light_to_closest = closest - light_pos;
+	return dot(light_to_closest, light_to_closest) <= sqr(radius + tile_radius);
+}
 
 void cull_points() {
-#ifdef POINT_LIGHTS
 	const uvec2 range = dispatch_range(point_count);
 
 	for(uint i = range.x; i != range.y; ++i) {
-		if(is_inside(tile_frustum, point_lights[i].position, point_lights[i].radius)) {
+		if(is_inside(point_lights[i].position, point_lights[i].radius)) {
 			uint light_index = atomicAdd(tile_point_count, 1);
 			if(light_index >= max_tile_lights) {
 				break;
@@ -108,15 +104,13 @@ void cull_points() {
 			light_indexes[light_index] = i;
 		}
 	}
-#endif
 }
 
 void cull_spots() {
-#ifdef SPOT_LIGHTS
 	const uvec2 range = dispatch_range(spot_count);
 
 	for(uint i = range.x; i != range.y; ++i) {
-		if(is_inside(tile_frustum, spot_lights[i].position, spot_lights[i].radius)) {
+		if(is_inside(spot_lights[i].position, spot_lights[i].radius)) {
 			uint light_index = atomicAdd(tile_spot_count, 1) + tile_point_count;
 			if(light_index >= max_tile_lights) {
 				break;
@@ -124,25 +118,26 @@ void cull_spots() {
 			light_indexes[light_index] = i;
 		}
 	}
-#endif
 }
 
-void cull_lights() {
+void cull_lights(vec2 image_size) {
 	if(gl_LocalInvocationIndex == 0) {
+		compute_tile_culling_info(image_size);
 		tile_point_count = 0;
 		tile_spot_count = 0;
-		tile_frustum = build_group_frustum();
 	}
 
 	barrier();
 
+#ifdef POINT_LIGHTS
 	cull_points();
-
 	barrier();
+#endif
 
+#ifdef SPOT_LIGHTS
 	cull_spots();
-
 	barrier();
+#endif
 }
 
 
@@ -150,63 +145,66 @@ void cull_lights() {
 
 void main() {
 	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(imageSize(out_color).xy);
+	const vec2 image_size = vec2(imageSize(out_color).xy);
+	const vec2 uv = vec2(gl_GlobalInvocationID.xy) / image_size;
 
-	cull_lights();
+	cull_lights(image_size);
 
 	const float depth = texelFetch(in_depth, coord, 0).x;
+
+	if(is_OOB(depth)) {
+		return;
+	}
+
 	vec3 irradiance = imageLoad(out_color, coord).rgb;
+	vec3 albedo;
+	float metallic;
+	vec3 normal;
+	float roughness;
+	unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
+	unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
-	if(!is_OOB(depth)) {
-		vec3 albedo;
-		float metallic;
-		vec3 normal;
-		float roughness;
-		unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
-		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
-
-		const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
-		const vec3 view_dir = normalize(camera.position - world_pos);
+	const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
+	const vec3 view_dir = normalize(camera.position - world_pos);
 
 #ifdef POINT_LIGHTS
-		// -------------------------------- POINTS --------------------------------
-		const uint point_begin = 0;
-		const uint point_end = min(max_tile_lights, tile_point_count);
-		for(uint i = point_begin; i != point_end; ++i) {
-			const PointLight light = point_lights[light_indexes[i]];
+	// -------------------------------- POINTS --------------------------------
+	const uint point_begin = 0;
+	const uint point_end = min(max_tile_lights, tile_point_count);
+	for(uint i = point_begin; i != point_end; ++i) {
+		const PointLight light = point_lights[light_indexes[i]];
 
-			vec3 light_dir = light.position - world_pos;
-			const float distance = length(light_dir);
-			light_dir /= distance;
-			const float att = attenuation(distance, light.radius, light.falloff);
+		vec3 light_dir = light.position - world_pos;
+		const float distance = length(light_dir);
+		light_dir /= distance;
+		const float att = attenuation(distance, light.radius, light.falloff);
 
-			const vec3 radiance = light.color * att;
-			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
-		}
+		const vec3 radiance = light.color * att;
+		irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+	}
 #endif
 
 #ifdef SPOT_LIGHTS
-		// -------------------------------- SPOTS --------------------------------
-		const uint spot_begin = tile_point_count;
-		const uint spot_end = min(max_tile_lights, spot_begin + tile_spot_count);
-		for(uint i = spot_begin; i != spot_end; ++i) {
-			const SpotLight light = spot_lights[light_indexes[i]];
+	// -------------------------------- SPOTS --------------------------------
+	const uint spot_begin = tile_point_count;
+	const uint spot_end = min(max_tile_lights, spot_begin + tile_spot_count);
+	for(uint i = spot_begin; i != spot_end; ++i) {
+		const SpotLight light = spot_lights[light_indexes[i]];
 
-			vec3 light_dir = light.position - world_pos;
-			const float distance = length(light_dir);
-			light_dir /= distance;
+		vec3 light_dir = light.position - world_pos;
+		const float distance = length(light_dir);
+		light_dir /= distance;
 
-			const float spot = pow(max(0.0, (dot(light_dir, light.forward) - light.cos_angle) / (1.0 - light.cos_angle)), light.angle_exp);
-			float att = spot * attenuation(distance, light.radius, light.falloff);
+		const float spot = pow(max(0.0, (dot(light_dir, light.forward) - light.cos_angle) / (1.0 - light.cos_angle)), light.angle_exp);
+		float att = spot * attenuation(distance, light.radius, light.falloff);
 
-			if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
-				const ShadowMapParams params = shadow_params[light.shadow_map_index];
-				att *= compute_shadow(in_shadows, params, world_pos);
-			}
-
-			const vec3 radiance = light.color * att;
-			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+		if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
+			const ShadowMapParams params = shadow_params[light.shadow_map_index];
+			att *= compute_shadow(in_shadows, params, world_pos);
 		}
+
+		const vec3 radiance = light.color * att;
+		irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
 	}
 #endif
 

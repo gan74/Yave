@@ -45,7 +45,12 @@ void main() {
 	const float depth = texelFetch(in_depth, coord, 0).x;
 	vec3 irradiance = vec3(0.0);
 
-	if(!is_OOB(depth)) {
+	if(is_OOB(depth)) {
+#if defined(USE_IBL) && defined(IBL_BACKGROUND)
+		const vec3 forward = normalize(unproject(uv, 1.0, camera.inv_view_proj) - camera.position);
+		irradiance = texture(in_envmap, forward).rgb;
+#endif
+	} else {
 		vec3 albedo;
 		float metallic;
 		vec3 normal;
@@ -68,13 +73,9 @@ void main() {
 
 #ifdef USE_IBL
 		irradiance += ibl_irradiance(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo);
-	} else {
-#ifdef IBL_BACKGROUND
-		const vec3 forward = normalize(unproject(uv, 1.0, camera.inv_view_proj) - camera.position);
-		irradiance = texture(in_envmap, forward).rgb;
-#endif
 #endif
 	}
+
 	imageStore(out_color, coord, vec4(irradiance, 1.0));
 }
 

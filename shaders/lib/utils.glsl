@@ -159,20 +159,23 @@ float luminance(vec3 rgb) {
 	return dot(rgb, vec3(0.2126, 0.7152, 0.0722));
 }
 
-vec2 intersect_ray_sphere(vec3 origin, vec3 dir, float radius) {
+bool intersect_ray_sphere(vec3 origin, vec3 dir, float radius, out vec2 intersections) {
 	const float a = dot(dir, dir);
 	const float b = 2.0 * dot(dir, origin);
 	const float c = dot(origin, origin) - sqr(radius);
 	const float d = sqr(b) - 4.0 * a * c;
 
 	if (d < 0.0) {
-		return vec2(1e5, -1e5);
+		intersections = vec2(1e5, -1e5);
+		return false;
 	}
 
-	return vec2(
+	intersections = vec2(
 			(-b - sqrt(d)) / (2.0 * a),
 			(-b + sqrt(d)) / (2.0 * a)
 		);
+		
+	return true;
 }
 
 vec4 plane(vec3 p0, vec3 p1, vec3 p2) {
