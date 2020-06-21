@@ -167,7 +167,6 @@ void main() {
 	const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
 	const vec3 view_dir = normalize(camera.position - world_pos);
 
-	/*
 #ifdef POINT_LIGHTS
 	// -------------------------------- POINTS --------------------------------
 	const uint point_begin = 0;
@@ -184,7 +183,6 @@ void main() {
 		irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
 	}
 #endif
-*/
 
 #ifdef SPOT_LIGHTS
 	// -------------------------------- SPOTS --------------------------------
@@ -207,8 +205,7 @@ void main() {
 		}
 
 		const vec3 radiance = light.color * att;
-		//irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
-		irradiance += vec3(0, 1, 0);
+		irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
 	}
 #endif
 
