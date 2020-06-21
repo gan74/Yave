@@ -63,13 +63,17 @@ class SimpleMaterialData {
 		const Contants& constants() const { return _constants; }
 		Contants& constants() { return _constants; }
 
-		y_serde3(_textures, _constants)
+		bool alpha_tested() const { return _alpha_tested; }
+		bool& alpha_tested() { return _alpha_tested; }
+
+		y_serde3(_textures, _constants, _alpha_tested)
 
 	private:
 		std::array<AssetId, texture_count> texture_ids() const;
 
 		std::array<AssetPtr<Texture>, texture_count> _textures;
 		Contants _constants;
+		bool _alpha_tested = false;
 };
 
 }

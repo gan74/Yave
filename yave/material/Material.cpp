@@ -46,9 +46,15 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialD
 	return DescriptorSet(dptr, bindings);
 }
 
+static DeviceResources::MaterialTemplates material_template_for_data(const SimpleMaterialData& data) {
+	return data.alpha_tested()
+		? DeviceResources::TexturedAlphaMaterialTemplate
+		: DeviceResources::TexturedMaterialTemplate;
+}
+
 
 Material::Material(DevicePtr dptr, SimpleMaterialData&& data) :
-		_template(dptr->device_resources()[DeviceResources::TexturedMaterialTemplate]),
+		_template(dptr->device_resources()[material_template_for_data(data)]),
 		_set(create_descriptor_set(device(), data)),
 		_data(std::move(data)) {
 }

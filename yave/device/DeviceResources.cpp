@@ -64,6 +64,7 @@ struct DeviceMaterialData {
 
 static constexpr DeviceMaterialData material_datas[] = {
 		DeviceMaterialData::basic(SpirV::TexturedFrag),
+		DeviceMaterialData::basic(SpirV::TexturedAlphaFrag),
 		DeviceMaterialData::skinned(SpirV::TexturedFrag),
 		DeviceMaterialData::screen(SpirV::ToneMapFrag),
 		DeviceMaterialData::screen(SpirV::PassthroughFrag),
@@ -89,6 +90,7 @@ static constexpr const char* spirv_names[] = {
 
 		"tonemap.frag",
 		"textured.frag",
+		"textured_alpha.frag",
 		"passthrough.frag",
 		"bloom.frag",
 		"hblur.frag",

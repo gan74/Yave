@@ -129,50 +129,52 @@ void MaterialEditor::paint_ui(CmdBufferRecorder& recorder, const FrameToken& tok
 
 	SimpleMaterialData data = _material->data();
 
-	{
-		const std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic"};
-		auto texture_selector = [&](SimpleMaterialData::Textures tex) {
-			bool clear = false;
-			if(imgui::asset_selector(context(), data.textures()[tex].id(), AssetType::Image, texture_names[tex], &clear)) {
-				add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
-					[=, ctx = context()](AssetId id) {
-						set_tex_and_save(ctx, _material, tex, id);
-						return true;
-				});
-			}
-			if(clear) {
-				set_tex_and_save(context(), _material, tex, AssetId::invalid_id());
-			}
-		};
-
-		if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Diffuse])) {
-			texture_selector(SimpleMaterialData::Diffuse);
+	const std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic"};
+	auto texture_selector = [&](SimpleMaterialData::Textures tex) {
+		bool clear = false;
+		if(imgui::asset_selector(context(), data.textures()[tex].id(), AssetType::Image, texture_names[tex], &clear)) {
+			add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
+				[=, ctx = context()](AssetId id) {
+					set_tex_and_save(ctx, _material, tex, id);
+					return true;
+			});
 		}
-
-		if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Normal])) {
-			texture_selector(SimpleMaterialData::Normal);
+		if(clear) {
+			set_tex_and_save(context(), _material, tex, AssetId::invalid_id());
 		}
+	};
 
-		if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Roughness])) {
-			texture_selector(SimpleMaterialData::Roughness);
-			if(data.textures()[SimpleMaterialData::Roughness].is_empty()) {
-				float& roughness = data.constants().roughness_mul;
-				if(ImGui::SliderFloat("Roughness##slider", &roughness, 0.0f, 1.0f)) {
-					save(context(), data, _material);
-				}
+	if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Diffuse])) {
+		texture_selector(SimpleMaterialData::Diffuse);
+	}
+
+	if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Normal])) {
+		texture_selector(SimpleMaterialData::Normal);
+	}
+
+	if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Roughness])) {
+		texture_selector(SimpleMaterialData::Roughness);
+		if(data.textures()[SimpleMaterialData::Roughness].is_empty()) {
+			float& roughness = data.constants().roughness_mul;
+			if(ImGui::SliderFloat("Roughness##slider", &roughness, 0.0f, 1.0f)) {
+				save(context(), data, _material);
 			}
 		}
+	}
 
-		if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Metallic])) {
-			texture_selector(SimpleMaterialData::Metallic);
-			if(data.textures()[SimpleMaterialData::Metallic].is_empty()) {
-				bool metallic = data.constants().metallic_mul > 0.5f;
-				if(ImGui::Checkbox("Metallic##box", &metallic)) {
-					data.constants().metallic_mul = metallic ? 1.0f : 0.0f;
-					save(context(), data, _material);
-				}
+	if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Metallic])) {
+		texture_selector(SimpleMaterialData::Metallic);
+		if(data.textures()[SimpleMaterialData::Metallic].is_empty()) {
+			bool metallic = data.constants().metallic_mul > 0.5f;
+			if(ImGui::Checkbox("Metallic##box", &metallic)) {
+				data.constants().metallic_mul = metallic ? 1.0f : 0.0f;
+				save(context(), data, _material);
 			}
 		}
+	}
+
+	if(ImGui::Checkbox("Alpha tested", &data.alpha_tested())) {
+		save(context(), data, _material);
 	}
 }
 
