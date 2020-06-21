@@ -5,6 +5,7 @@
 #include "lighting.glsl"
 #include "sh.glsl"
 
+// https://github.com/google/filament/blob/main/shaders/src/light_indirect.fs
 
 vec3 importance_sample_GGX(vec2 Xi, vec3 normal, float roughness) {
 	const float a2 = sqr(sqr(roughness));
@@ -39,22 +40,27 @@ vec2 integrate_brdf(float NoV, float roughness) {
 		const float VoH = max(0.0, dot(V, H));
 
 		if(NoL > 0.0) {
-			const float k_ibl = sqr(roughness) * 0.5;
-			const float G = G_GGX(NoV, NoL, k_ibl);
-			const float G_Vis = (G * VoH) / (NoH * NoV);
-			const float Fc = pow(1.0 - VoH, 5.0);
+			const float D = distribution(roughness, NoH);
+			const float V = visibility(roughness, NoV, NoL);
+			const float F = F_Schlick(VoH);
 
-			integr += vec2((1.0 - Fc) * G_Vis, Fc * G_Vis);
+			integr += vec2((1.0 - F) * V, F * V);
 		}
 	}
 	return integr / SAMPLE_COUNT;
 }
 
-vec3 ibl_irradiance(samplerCube probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
-	const uint probe_mips = textureQueryLevels(probe);
-	const float NoV = max(0.0, dot(normal, view_dir));
 
-	const vec3 kS = F_Schlick(NoV, approx_F0(metallic, albedo), roughness);
+vec3 ibl_irradiance(samplerCube probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+	
+	const uint probe_mips = textureQueryLevels(probe);
+
+	const float NoV = max(0.0, dot(normal, view_dir));
+	const float VoH = 1.0;
+	
+	const vec3 f0 = approx_F0(metallic, albedo);
+	
+	const vec3 kS = fresnel(f0, VoH);
 	const vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
 	const vec3 irradiance = textureLod(probe, normal, probe_mips - 1).rgb;
@@ -69,8 +75,11 @@ vec3 ibl_irradiance(samplerCube probe, sampler2D brdf_lut, vec3 normal, vec3 vie
 
 vec3 sh_irradiance(SH probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
 	const float NoV = max(0.0, dot(normal, view_dir));
-
-	const vec3 kS = F_Schlick(NoV, approx_F0(metallic, albedo), roughness);
+	const float VoH = 1.0;
+	
+	const vec3 f0 = approx_F0(metallic, albedo);
+	
+	const vec3 kS = fresnel(f0, VoH);
 	const vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
 	const vec3 irradiance = eval_sh(probe, normal);
