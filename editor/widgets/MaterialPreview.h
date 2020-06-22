@@ -62,7 +62,7 @@ class MaterialPreview final : public Widget, public ContextLinked {
 		std::unique_ptr<ecs::EntityWorld> _world;
 		SceneView _view;
 
-		std::shared_ptr<IBLProbe> _ibl_probe;
+		AssetPtr<IBLProbe> _ibl_probe;
 		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
 
 		float _cam_distance = 1.0f;

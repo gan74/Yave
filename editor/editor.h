@@ -40,9 +40,13 @@ class ContextLinked {
 	public:
 		ContextLinked() = default;
 
-		ContextLinked(EditorContext* ctx) : _ctx(ctx) {}
+		ContextLinked(EditorContext* ctx) : _ctx(ctx) {
+			y_debug_assert(_ctx);
+		}
 
-		ContextPtr context() const { return _ctx; }
+		ContextPtr context() const {
+			return _ctx;
+		}
 
 		// see EditorContext.cpp
 		DevicePtr device() const;

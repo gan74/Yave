@@ -49,7 +49,7 @@ MaterialPreview::MaterialPreview(ContextPtr cptr) :
 }
 
 void MaterialPreview::refresh() {
-	//_world.flush_reload(context()->loader());
+	_world->flush_reload(context()->loader());
 }
 
 void MaterialPreview::set_material(const AssetPtr<Material>& material) {
@@ -100,7 +100,9 @@ void MaterialPreview::reset_world() {
 
 	{
 		const ecs::EntityId sky_id = _world->create_entity(ecs::StaticArchetype<SkyLightComponent>());
-		_world->component<SkyLightComponent>(sky_id)->probe() = device()->device_resources().ibl_probe();
+		_world->component<SkyLightComponent>(sky_id)->probe() = _ibl_probe
+			? _ibl_probe
+			: device()->device_resources().ibl_probe();
 	}
 
 	if(!_mesh.is_empty() && !_material.is_empty()) {
@@ -168,8 +170,9 @@ void MaterialPreview::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
 		if(ImGui::Button(ICON_FA_CIRCLE)) {
 			add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
 				[this](AssetId id) {
-					if(auto tex = context()->loader().load_res<Texture>(id)) {
-						_ibl_probe = std::make_shared<IBLProbe>(IBLProbe::from_equirec(*tex.unwrap()));
+					if(const auto tex = context()->loader().load_res<IBLProbe>(id)) {
+						_ibl_probe = tex.unwrap();
+						reset_world();
 					}
 					return true;
 				});
