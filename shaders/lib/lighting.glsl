@@ -19,6 +19,7 @@ vec3 approx_F0(float metallic, vec3 albedo) {
 }
 
 vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+	
 	const vec3 half_vec = normalize(light_dir + view_dir);
 
 	const float NoV = max(0.0, dot(normal, view_dir));
@@ -26,12 +27,19 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
 	const float NoH = max(0.0, dot(normal, half_vec));
 	const float VoH = max(0.0, dot(view_dir, half_vec));
 
-	const vec3 f0 = approx_F0(metallic, albedo);
-
-	const vec3 kS = brdf_cook_torrance(f0, roughness, NoH, NoV, NoL, VoH);
-	const vec3 kD = albedo * brdf_lambert();
-
-	return (kS + kD) * NoL;
+	const vec3 F0 = approx_F0(metallic, albedo);
+	
+	const float NDF = D_GGX(NoH, roughness);   
+	const float G = G_Smith(NoV, NoL, roughness);
+	const vec3 F = F_Schlick(VoH, F0);
+	
+	const vec3 kS = F;
+	const vec3 kD = (1.0 - kS) * (1.0 - metallic);
+	
+	const vec3 specular = F * (NDF * G / cook_torrance_denom(NoV, NoL));
+	const vec3 diffuse = kD * albedo * (1.0 / pi);
+	
+	return (diffuse + specular) * NoL;
 }
 
 #endif // LIGHTING_GLSL
