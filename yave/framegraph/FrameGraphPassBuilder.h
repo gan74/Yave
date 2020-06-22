@@ -25,6 +25,8 @@ SOFTWARE.
 #include "FrameGraphResourceToken.h"
 #include "FrameGraphPass.h"
 
+#include <yave/graphics/images/Sampler.h>
+
 namespace yave {
 
 class FrameGraphPassBuilder {
@@ -55,9 +57,7 @@ class FrameGraphPassBuilder {
 		void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 
-		void add_uniform_input(StorageView tex, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
-		void add_uniform_input(TextureView tex, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
-		void add_uniform_input(CubemapView tex, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
+		void add_uniform_input(Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 
 		void add_attrib_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
 		void add_index_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
@@ -82,7 +82,7 @@ class FrameGraphPassBuilder {
 
 		void add_uniform(FrameGraphDescriptorBinding binding, usize ds_index);
 
-		void set_cpu_visible(FrameGraphMutableBufferId res); 
+		void set_cpu_visible(FrameGraphMutableBufferId res);
 
 		FrameGraph* parent() const;
 

@@ -47,7 +47,7 @@ static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format
 	return view;
 }
 
-static constexpr usize min_face_size = 32;
+static constexpr usize min_face_size = 8;
 
 static usize mipmap_count(usize size) {
 	if(size % min_face_size) {

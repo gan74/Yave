@@ -2,6 +2,7 @@
 #define IBL_GLSL
  
 #include "lighting.glsl"
+#include "sh.glsl"
 
 // https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/6.pbr/2.2.1.ibl_specular
 // https://learnopengl.com/PBR/IBL/Specular-IBL
@@ -29,14 +30,34 @@ vec3 eval_ibl(samplerCube probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir,
 	const vec3 irradiance = textureLod(probe, normal, probe_mips - 1).rgb;
 	const vec3 diffuse = kD * irradiance * albedo;
 	
-	
-	const vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy; // TODO: make it so we don't wrap (which breaks roughness close to 0 or 1)
+	const vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy;
 	const vec3 prefiltered = textureLod(probe, reflected, roughness * (probe_mips - 2)).rgb;
 	const vec3 specular = prefiltered * (kS * brdf.x + brdf.y);
 	
 	return diffuse + specular;
 }
 
+vec3 eval_ibl(SH probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {	
+	
+	const float NoV = max(0.0, dot(normal, view_dir));
+	const vec3 reflected = reflect(-view_dir, normal); 
+	
+	const vec3 F0 = approx_F0(metallic, albedo);
+	
+	const vec3 F = F_Schlick(NoV, F0, roughness);
+	
+	const vec3 kS = F;
+	const vec3 kD = (1.0 - kS) * (1.0 - metallic);
+	
+	const vec3 irradiance = eval_sh(probe, normal);
+	const vec3 diffuse = kD * irradiance * albedo;
+	
+	const vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy;
+	const vec3 prefiltered = eval_sh(probe, reflected);
+	const vec3 specular = prefiltered * (kS * brdf.x + brdf.y);
+	
+	return diffuse + specular;
+}
 
 
 
