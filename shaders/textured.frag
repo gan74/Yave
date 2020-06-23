@@ -26,13 +26,16 @@ vec3 unpack_normal_map(vec2 normal) {
 	return vec3(normal, 1.0 - sqrt(dot(normal, normal)));
 }
 
+#define GLTF_ROUGHNESS_CHANNEL g
+#define GLTF_METALLIC_CHANNEL b
+
 void main() {
 	const vec3 color = texture(in_color, in_uv).rgb;
 	const vec3 normal = unpack_normal_map(texture(in_normal_map, in_uv).xy);
 
 	// We fetch Y so we can use either greyscale or RG metallic/roughness textures
-	const float roughness = texture(in_roughness, in_uv).y * roughness_mul;
-	const float metallic = texture(in_metallic, in_uv).x * metallic_mul;
+	const float roughness = texture(in_roughness, in_uv).GLTF_ROUGHNESS_CHANNEL * roughness_mul;
+	const float metallic = texture(in_metallic, in_uv).GLTF_METALLIC_CHANNEL * metallic_mul;
 
 	const vec3 mapped_normal = normal.x * in_tangent +
 	                           normal.y * in_bitangent +

@@ -42,20 +42,5 @@ float cook_torrance_denom(float NoV, float NoL) {
 
 
 
-// -------------------------------------------------------
-#if 0
-float brdf_lambert() {
-	return 1.0 / pi;
-}
-
-vec3 brdf_cook_torrance(vec3 F0, float roughness, float NoH, float NoV, float NoL, float VoH) {
-	float NDF = D_GGX(NoH, roughness);   
-	float G = G_Smith(NoV, NoL, roughness);
-	vec3 F = F_Schlick(VoH, F0);
-	
-	return F * (NDF * G / cook_torrance_denom(NoV, NoL));
-}
-#endif
-
 
 #endif // BRDF_GLSL

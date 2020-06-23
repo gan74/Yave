@@ -86,7 +86,7 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
 	const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
 
 	if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
-		y_throw_msg(fmt_c_str("Unsupported component type (%) for \"%\".", accessor.componentType, std::string_view(name)));
+		y_throw_msg(fmt_c_str("Unsupported component type (%) for \"%\"", accessor.componentType, std::string_view(name)));
 	}
 
 	math::Vec3* vec3_elems = nullptr;
@@ -100,7 +100,7 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
 	} else if(name == "TEXCOORD_0") {
 		vec2_elems = &vertices[0].uv;
 	} else {
-		log_msg(fmt("Attribute \"%\" is not supported.", std::string_view(name)), Log::Warning);
+		log_msg(fmt("Attribute \"%\" is not supported", std::string_view(name)), Log::Warning);
 		return;
 	}
 
@@ -124,11 +124,11 @@ static core::Vector<Vertex> import_vertices(const tinygltf::Model& model, const 
 		if(!vertices.size()) {
 			std::fill_n(std::back_inserter(vertices), accessor.count, Vertex());
 		} else if(vertices.size() != accessor.count) {
-			y_throw_msg("Invalid attribute count.");
+			y_throw_msg("Invalid attribute count");
 		}
 
 		if(accessor.normalized) {
-			y_throw_msg("Normalization not supported.");
+			y_throw_msg("Normalization not supported");
 		}
 
 		decode_attrib_buffer(model, name, accessor, vertices.data());
@@ -174,7 +174,7 @@ static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& mod
 		break;
 
 		default:
-			y_throw_msg("Index component type not supported.");
+			y_throw_msg("Index component type not supported");
 	}
 
 	return triangles;
@@ -217,7 +217,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 				const tinygltf::Primitive& prim = mesh.primitives[i];
 
 				if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
-					log_msg("Primitive is not a triangle.", Log::Warning);
+					log_msg("Primitive is not a triangle", Log::Warning);
 					continue;
 				}
 
@@ -310,6 +310,10 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 					prefab.sub_meshes.emplace_back(SubMeshData{mesh_name, mat_name});
 				}
 			}
+		}
+
+		if(prefab.sub_meshes.is_empty()) {
+			scene.prefabs.pop();
 		}
 	}
 

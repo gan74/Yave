@@ -103,16 +103,15 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
 	const ComputeProgram& conv_program = convolution_program(dptr, texture);
 	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
 
-	float roughness = 0.0f;
 	const float roughness_step = 1.0f / (views.size() - 1);
 
 	math::Vec2ui size = views[0].size();
 	{
 		const auto region = recorder.region("IBL probe generation");
 		for(usize i = 0; i != views.size(); ++i) {
+			const float roughness = (i * roughness_step);
 			recorder.dispatch_size(conv_program, size, {descriptor_sets[i]}, roughness);
 
-			roughness += roughness_step;
 			size /= 2;
 		}
 	}
