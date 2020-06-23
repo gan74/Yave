@@ -27,8 +27,16 @@ SOFTWARE.
 namespace yave {
 
 struct ToneMappingSettings {
+	enum class ToneMapper {
+		ACES,
+		Uncharted2,
+		Reinhard,
+		None
+	};
+
 	bool auto_exposure = true;
-	float key_value = 0.148f;
+	float exposure = 1.0f;
+	ToneMapper tone_mapper = ToneMapper::ACES;
 };
 
 struct ToneMappingPass {

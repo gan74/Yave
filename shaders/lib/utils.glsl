@@ -64,10 +64,11 @@ struct ShadowMapParams {
 };
 
 struct ToneMappingParams {
+	float exposure;
 	float avg_lum;
 	float max_lum;
 
-	ivec2 padding_0;
+	uint padding_0;
 };
 
 
@@ -171,10 +172,10 @@ bool intersect_ray_sphere(vec3 origin, vec3 dir, float radius, out vec2 intersec
 	}
 
 	intersections = vec2(
-			(-b - sqrt(d)) / (2.0 * a),
-			(-b + sqrt(d)) / (2.0 * a)
-		);
-		
+	        (-b - sqrt(d)) / (2.0 * a),
+	        (-b + sqrt(d)) / (2.0 * a)
+	    );
+
 	return true;
 }
 
@@ -217,8 +218,8 @@ vec3 load_spectrum(float x) {
 vec3 spectrum(uint x) {
 	x = (x % 6) + 1;
 	return vec3((x & 0x01) != 0 ? 1.0 : 0.0,
-				(x & 0x02) != 0 ? 1.0 : 0.0,
-				(x & 0x04) != 0 ? 1.0 : 0.0);
+	            (x & 0x02) != 0 ? 1.0 : 0.0,
+	            (x & 0x04) != 0 ? 1.0 : 0.0);
 }
 
 

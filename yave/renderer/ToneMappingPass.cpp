@@ -73,12 +73,20 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 		});
 	}
 
+
+
+	struct ShaderSettings {
+		float exposure;
+		u32 tone_mapper;
+	} shader_settings{settings.exposure, u32(settings.tone_mapper)};
+
+
 	FrameGraphPassBuilder builder = framegraph.add_pass("Tone mapping pass");
 
 	const auto tone_mapped = builder.declare_image(format, size);
 
 	Y_TODO(Add way to use inline uniform with framegraph)
-	const auto key_value = builder.declare_typed_buffer<float>();
+	const auto settings_buffer = builder.declare_typed_buffer<ShaderSettings>();
 
 	if(!settings.auto_exposure) {
 		params = builder.declare_typed_buffer<uniform::ToneMappingParams>();
@@ -88,15 +96,14 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 	builder.add_color_output(tone_mapped);
 	builder.add_uniform_input(in_lit, 0, PipelineStage::FragmentBit);
 	builder.add_uniform_input(params, 0, PipelineStage::FragmentBit);
-	builder.add_uniform_input(key_value, 0, PipelineStage::FragmentBit);
-	builder.map_update(key_value);
+	builder.add_uniform_input(settings_buffer, 0, PipelineStage::FragmentBit);
+	builder.map_update(settings_buffer);
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-		self->resources().mapped_buffer(key_value)[0] = settings.key_value;
+		self->resources().mapped_buffer(settings_buffer)[0] = shader_settings;
 		if(!settings.auto_exposure) {
 			TypedMapping<uniform::ToneMappingParams> mapping = self->resources().mapped_buffer(params);
-			mapping[0] = uniform::ToneMappingParams();
+			mapping[0] = uniform::ToneMappingParams{};
 		}
-
 
 		auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 		const auto* material = recorder.device()->device_resources()[DeviceResources::ToneMappingMaterialTemplate];

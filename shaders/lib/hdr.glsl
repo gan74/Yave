@@ -3,41 +3,64 @@
 
 #include "utils.glsl"
 
-float reinhard(float lum, float white) {
-	return lum * ((1.0 + lum) / sqr(white)) / (1.0 + lum);
+float avg_to_EV100(float avg) {
+	return log2(avg * 100.0 / 12.5);
 }
 
-vec3 reinhard(vec3 hdr, float white) {
-	const float lum = luminance(hdr);
-	const float scale = reinhard(lum, white) / lum;
-	return hdr * scale;
+// We divide by 1.2 to avoid crushing spec too much
+float EV100_to_exposure(float EV100) {
+	float max_lum = 1.2 * pow(2.0, EV100);
+	return 1.0 / max_lum;
 }
 
-float uncharted2(float hdr) {
-	const float A = 0.15;
-	const float B = 0.50;
-	const float C = 0.10;
-	const float D = 0.20;
-	const float E = 0.02;
-	const float F = 0.30;
-	return ((hdr * (A * hdr + C * B) + D * E) / (hdr * (A * hdr + B) + D * F)) - E / F;
+vec3 expose_RGB(vec3 hdr, float exposure) {
+	return hdr * exposure;
 }
 
-vec3 uncharted2(vec3 hdr) {
-	return vec3(uncharted2(hdr.r), uncharted2(hdr.g), uncharted2(hdr.b));
+vec3 expose_Yxy(vec3 hdr, float exposure) {
+	vec3 Yxy = RGB_to_Yxy(hdr);
+	Yxy.x *= exposure;
+	return Yxy_to_RGB(Yxy);
 }
 
-float ACES_fast(float hdr) {
-	const float A = 2.51;
-	const float B = 0.03;
-	const float C = 2.43;
-	const float D = 0.59;
-	const float E = 0.14;
-	return (hdr * (A * hdr + B)) / (hdr * (C * hdr + E) + E);
+float uncharted2(float x) {
+	float a = 0.22;
+	float b = 0.30;
+	float c = 0.10;
+	float d = 0.20;
+	float e = 0.01;
+	float f = 0.30;
+	return ((x * (a * x + c * b) + d * e) / (x * (a * x + b) + d * f)) - e / f;
 }
 
-vec3 ACES_fast(vec3 hdr) {
-	return vec3(ACES_fast(hdr.r), ACES_fast(hdr.g), ACES_fast(hdr.b));
+// https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+float ACES(float x) {
+	float a = 2.51;
+	float b = 0.03;
+	float c = 2.43;
+	float d = 0.59;
+	float e = 0.14;
+	return ((x * (a * x + b)) / (x * (c * x + d) + e));
+}
+
+
+float reinhard(float hdr) {
+	return hdr / (hdr + 1.0);
+}
+
+
+
+
+vec3 uncharted2(vec3 x) {
+	return vec3(uncharted2(x.x), uncharted2(x.y), uncharted2(x.z));
+}
+
+vec3 ACES(vec3 x) {
+	return vec3(ACES(x.x), ACES(x.y), ACES(x.z));
+}
+
+vec3 reinhard(vec3 x) {
+	return vec3(reinhard(x.x), reinhard(x.y), reinhard(x.z));
 }
 
 #endif // HDR_GLSL

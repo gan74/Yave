@@ -102,10 +102,11 @@ static_assert(sizeof(ShadowMapParams) % 16 == 0);
 
 
 struct ToneMappingParams {
+	float exposure = 1.0f;
 	float avg_luminance = 0.5f;
-	float max_lum = 1.0f;
+	float max_lum = 0.5f * 9.6f;
 
-	math::Vec2ui padding_0;
+	u32 padding_0;
 };
 
 static_assert(sizeof(ToneMappingParams) % 16 == 0);

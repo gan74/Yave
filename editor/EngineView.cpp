@@ -26,6 +26,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 
 #include <yave/renderer/renderer.h>
+#include <yave/utils/color.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -204,7 +205,29 @@ void EngineView::draw_menu_bar() {
 			if(ImGui::BeginMenu("Tone mapping")) {
 				ToneMappingSettings& settings = _settings.renderer_settings.tone_mapping;
 				ImGui::MenuItem("Auto exposure", nullptr, &settings.auto_exposure);
-				ImGui::SliderFloat("Key", &settings.key_value, 0.01f, 1.0f);
+
+				// https://docs.unrealengine.com/en-US/Engine/Rendering/PostProcessEffects/AutomaticExposure/index.html
+				float ev = exposure_to_EV100(settings.exposure);
+				if(ImGui::SliderFloat("EV100", &ev, -10.0f, 10.0f)) {
+					settings.exposure = EV100_to_exposure(ev);
+				}
+
+				if(ImGui::IsItemActive() || ImGui::IsItemHovered()) {
+					ImGui::SetTooltip("Exposure scale = %.3f", settings.exposure);
+				}
+
+				const char* tone_mappers[] = {"ACES", "Uncharted 2", "Reinhard", "None"};
+				if(ImGui::BeginCombo("Tone mapper", tone_mappers[usize(settings.tone_mapper)])) {
+					for(usize i = 0; i != sizeof(tone_mappers) / sizeof(tone_mappers[0]); ++i) {
+						const bool selected = usize(settings.tone_mapper) == i;
+						if(ImGui::Selectable(tone_mappers[i], selected)) {
+							settings.tone_mapper = ToneMappingSettings::ToneMapper(i);
+						}
+					}
+					ImGui::EndCombo();
+				}
+
+
 				ImGui::EndMenu();
 			}
 

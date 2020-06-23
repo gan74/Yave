@@ -26,6 +26,18 @@ SOFTWARE.
 
 namespace yave {
 
+// https://docs.unrealengine.com/en-US/Engine/Rendering/PostProcessEffects/AutomaticExposure/index.html
+inline float EV100_to_exposure(float ev) {
+	return 1.0f / std::pow(2.0f, ev);
+}
+
+inline float exposure_to_EV100(float exposure) {
+	return -std::log(std::max(math::epsilon<float>, exposure)) / std::log(2.0f);
+}
+
+
+
+
 // from imgui
 inline math::Vec3 hsv_to_rgb(float h, float s, float v) {
 	h = std::fmod(h, 1.0f) * 6.0f;

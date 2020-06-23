@@ -22,7 +22,7 @@ void main() {
 	const uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
 
 	histogram[index] = bin_size * index;
-	
+
 	if(index == 0) {
 		total = 0;
 	}
@@ -46,6 +46,10 @@ void main() {
 		const float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
 		const float avg = exp2(log_avg);
 
+
+		const float EV100 = avg_to_EV100(params.avg_lum);
+
+		params.exposure = EV100_to_exposure(EV100);
 		params.avg_lum = avg;
 		params.max_lum = avg * 9.6;
 	}
