@@ -85,7 +85,6 @@ static constexpr const char* spirv_names[] = {
 		"histogram_clear.comp",
 		"histogram.comp",
 		"tonemap_params.comp",
-		"skylight_params.comp",
 		"depth_bounds.comp",
 
 		"tonemap.frag",
@@ -328,7 +327,7 @@ const ComputeProgram& DeviceResources::program_from_file(std::string_view file) 
 	const auto lock = y_profile_unique_lock(*_lock);
 	auto& prog = _programs[file];
 	if(!prog) {
-		auto spirv = SpirVData::deserialized(io2::File::open(file).expected("Unable to open SPIR-V file."));
+		auto spirv = SpirVData::deserialized(io2::File::open(fmt("%.spv", file)).expected("Unable to open SPIR-V file"));
 		prog = std::make_unique<ComputeProgram>(ComputeShader(device(), spirv));
 	}
 	return *prog;
