@@ -96,7 +96,7 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
 
 			if(!is_empty && clear) {
 				ImGui::Separator();
-				if(ImGui::Selectable(ICON_FA_TIMES " Clear")) {
+				if(ImGui::Selectable(ICON_FA_TRASH " Clear")) {
 					*clear = true;
 				}
 			}

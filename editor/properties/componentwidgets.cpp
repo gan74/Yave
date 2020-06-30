@@ -235,10 +235,10 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 
 	ImGui::Columns(2);
 	{
-		ImGui::Text("Cubemap");
+		ImGui::Text("Envmap");
 		ImGui::NextColumn();
 		bool clear = false;
-		if(imgui::asset_selector(ctx, sky->probe().id(), AssetType::Image, "Cubemap", &clear)) {
+		if(imgui::asset_selector(ctx, sky->probe().id(), AssetType::Image, "Envmap", &clear)) {
 			ctx->ui().add<AssetSelector>(AssetType::Image)->set_selected_callback(
 				[=](AssetId asset) {
 					if(const auto probe = ctx->loader().load_res<IBLProbe>(asset)) {

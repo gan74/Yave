@@ -34,21 +34,14 @@ SOFTWARE.
 
 namespace editor {
 
-std::string_view clean_component_name(std::string_view name) {
-	usize start = 0;
-	for(usize i = 0; i != name.size(); ++i) {
-		switch(name[i]) {
-			case ':':
-				start = i + 1;
-			break;
-
-			default:
-			break;
-		}
+bool set_entity_name(ecs::EntityWorld& world, ecs::EntityId id, std::string_view name) {
+	if(EditorComponent* component = world.component<EditorComponent>(id)) {
+		component->set_name(name);
+		return true;
 	}
-
-	return name.substr(start);
+	return false;
 }
+
 
 std::string_view entity_name(const ecs::EntityWorld& world, ecs::EntityId id) {
 	if(const EditorComponent* component = world.component<EditorComponent>(id)) {
@@ -80,6 +73,25 @@ std::string_view entity_icon(const ecs::EntityWorld& world, ecs::EntityId id) {
 	}
 
 	return ICON_FA_DATABASE;
+}
+
+
+
+
+std::string_view clean_component_name(std::string_view name) {
+	usize start = 0;
+	for(usize i = 0; i != name.size(); ++i) {
+		switch(name[i]) {
+			case ':':
+				start = i + 1;
+			break;
+
+			default:
+			break;
+		}
+	}
+
+	return name.substr(start);
 }
 
 }

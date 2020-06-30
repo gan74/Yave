@@ -41,25 +41,6 @@ SOFTWARE.
 
 namespace editor {
 
-/*static core::String clean_component_name(std::string_view name) {
-	core::String clean;
-	for(char c : name) {
-		if(c == ':') {
-			clean.make_empty();
-			continue;
-		}
-		if(std::isupper(c) && !clean.is_empty()) {
-			clean.push_back(' ');
-		}
-		clean.push_back(char(std::tolower(c)));
-	}
-
-	if(!clean.is_empty()) {
-		clean[0] = std::toupper(clean[0]);
-	}
-
-	return clean;
-}*/
 
 static auto all_components() {
 	core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> components;
@@ -127,8 +108,8 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 						const ecs::EntityId id = ctx->world().create_entity(*prefab.unwrap());
 
 						const auto name = ctx->asset_store().name(asset);
-						if(EditorComponent* comp = ctx->world().component<EditorComponent>(id); comp && name) {
-							comp->set_name(fmt("% (Prefab)", ctx->asset_store().filesystem()->filename(name.unwrap())));
+						if(name) {
+							set_entity_name(ctx->world(), id, fmt("% (Prefab)", ctx->asset_store().filesystem()->filename(name.unwrap())));
 						}
 					}
 					return true;
@@ -140,10 +121,12 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 		if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add Point light")) {
 			ent = world.create_entity(PointLightArchetype());
+			set_entity_name(world, ent, "Point light");
 		}
 
 		if(ImGui::MenuItem(ICON_FA_VIDEO " Add Spot light")) {
 			ent = world.create_entity(SpotLightArchetype());
+			set_entity_name(world, ent, "Spot light");
 		}
 
 
@@ -178,12 +161,12 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 			}
 
 			ImGui::Separator();
-			if(ImGui::Selectable(ICON_FA_TIMES " Delete")) {
+			if(ImGui::Selectable(ICON_FA_TRASH " Delete")) {
 				world.remove_entity(_hovered);
 				// we don't unselect the ID to make sure that we can handle case where the id is invalid
 			}
 
-			if(ImGui::Selectable("Copy")) {
+			if(ImGui::Selectable("Duplicate")) {
 				const ecs::EntityPrefab prefab = world.create_prefab(_hovered);
 				const ecs::EntityId copy = world.create_entity(prefab);
 				if(EditorComponent* component = world.component<EditorComponent>(copy)) {
