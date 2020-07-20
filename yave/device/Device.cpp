@@ -34,6 +34,8 @@ SOFTWARE.
 
 #include <mutex>
 
+//#define YAVE_NV_RAY_TRACING
+
 namespace yave {
 
 static void check_features(const VkPhysicalDeviceFeatures& features, const VkPhysicalDeviceFeatures& required) {
@@ -125,7 +127,7 @@ static VkDevice create_device(
 
 	try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical);
 
-#if 0
+#ifdef YAVE_NV_RAY_TRACING
 	try_enable_extension(extensions, RayTracing::extension_name(), physical);
 #else
 	log_msg(fmt("% disabled", RayTracing::extension_name()), Log::Warning);
@@ -214,9 +216,11 @@ Device::Device(Instance& instance) :
 		_samplers(create_samplers(this)),
 		_descriptor_set_allocator(this) {
 
+#ifdef YAVE_NV_RAY_TRACING
 	if(is_extension_supported(RayTracing::extension_name(), _physical.vk_physical_device())) {
 		_extensions.raytracing = std::make_unique<RayTracing>(this);
 	}
+#endif
 
 	_resources.init(this);
 
