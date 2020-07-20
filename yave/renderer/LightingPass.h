@@ -22,8 +22,6 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_LIGHTINGPASS_H
 #define YAVE_RENDERER_LIGHTINGPASS_H
 
-#include <yave/graphics/images/IBLProbe.h>
-
 #include "GBufferPass.h"
 #include "ShadowMapPass.h"
 

@@ -322,7 +322,7 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 			FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
 			builder.add_uniform_input(output_image);
 			builder.add_uniform_input(renderer.gbuffer.depth);
-			builder.add_uniform_input(StorageView(thumbmail->image));
+			builder.add_external_input(StorageView(thumbmail->image));
 			builder.set_render_func([=](CmdBufferRecorder& rec, const FrameGraphPass* self) {
 					rec.dispatch_size(context()->resources()[EditorResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
 				});

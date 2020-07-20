@@ -35,6 +35,7 @@ SOFTWARE.
 #include <yave/entities/entities.h>
 
 #include <yave/meshes/StaticMesh.h>
+#include <yave/graphics/images/IBLProbe.h>
 
 
 namespace yave {
@@ -64,10 +65,6 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 	const SceneView& scene = gbuffer.scene_pass.scene_view;
 	const IBLProbe* ibl_probe = find_probe(framegraph.device(), scene.world());
 
-	struct PushData {
-		u32 light_count;
-	};
-
 	FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
 
 	const auto lit = builder.declare_image(lighting_format, size);
@@ -77,15 +74,17 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 	builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
 	builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
 	builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
-	builder.add_uniform_input(*ibl_probe, 0, PipelineStage::ComputeBit);
-	builder.add_uniform_input(Descriptor(builder.device()->device_resources().brdf_lut(), Sampler::Clamp), 0, PipelineStage::ComputeBit);
+	builder.add_external_input(*ibl_probe, 0, PipelineStage::ComputeBit);
+	builder.add_external_input(Descriptor(builder.device()->device_resources().brdf_lut(), Sampler::Clamp), 0, PipelineStage::ComputeBit);
 	builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
 	builder.add_storage_input(directional_buffer, 0, PipelineStage::ComputeBit);
 	builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
 	builder.map_update(directional_buffer);
 
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-		PushData push_data{0};
+		struct PushData {
+			u32 light_count;
+		} push_data {0};
 		TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
 		for(auto [l] : scene.world().view(DirectionalLightArchetype()).components()) {
 			mapping[push_data.light_count++] = {
@@ -110,12 +109,7 @@ static void local_lights_pass(FrameGraph& framegraph,
 							  const GBufferPass& gbuffer,
 							  const ShadowMapPass& shadow_pass) {
 
-	struct PushData {
-		u32 point_count = 0;
-		u32 spot_count = 0;
-		u32 shadow_count = 0;
-	};
-
+	const bool render_shadows = false;
 	const SceneView& scene = gbuffer.scene_pass.scene_view;
 
 	FrameGraphPassBuilder builder = framegraph.add_pass("Lighting pass");
@@ -139,7 +133,11 @@ static void local_lights_pass(FrameGraph& framegraph,
 	builder.map_update(shadow_buffer);
 
 	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-		PushData push_data{0, 0, 0};
+		struct PushData {
+			u32 point_count;
+			u32 spot_count;
+			u32 shadow_count;
+		} push_data {0, 0, 0};
 
 		{
 			TypedMapping<uniform::PointLight> mapping = self->resources().mapped_buffer(point_buffer);
@@ -160,7 +158,7 @@ static void local_lights_pass(FrameGraph& framegraph,
 				auto [t, l] = spot.components();
 
 				u32 shadow_index = u32(-1);
-				if(l.cast_shadow()) {
+				if(l.cast_shadow() && render_shadows) {
 					if(const auto it = shadow_pass.sub_passes->lights.find(spot.id().as_u64()); it != shadow_pass.sub_passes->lights.end()) {
 						shadow_mapping[shadow_index = push_data.shadow_count++] = it->second;
 					}
@@ -185,6 +183,25 @@ static void local_lights_pass(FrameGraph& framegraph,
 			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
 		}
 	});
+
+#if 0
+	{
+		FrameGraphPassBuilder sh_builder = framegraph.add_pass("SH pass");
+		sh_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
+		sh_builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
+		sh_builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
+		sh_builder.add_uniform_input(shadow_pass.shadow_map, 0, PipelineStage::ComputeBit);
+		sh_builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
+		sh_builder.add_storage_input(point_buffer, 0, PipelineStage::ComputeBit);
+		sh_builder.add_storage_input(spot_buffer, 0, PipelineStage::ComputeBit);
+		sh_builder.add_storage_input(shadow_buffer, 0, PipelineStage::ComputeBit);
+		sh_builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
+		sh_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+			const ComputeProgram& program = recorder.device()->device_resources().program_from_file("sh_light.comp");
+			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
+		});
+	}
+#endif
 }
 
 

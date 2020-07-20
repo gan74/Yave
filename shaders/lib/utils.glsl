@@ -71,8 +71,16 @@ struct ToneMappingParams {
 	uint padding_0;
 };
 
+struct Surfel {
+	vec3 position;
+	uint padding_0;
 
+	vec3 albedo;
+	uint padding_1;
 
+	vec3 normal;
+	uint padding_2;
+};
 
 
 // -------------------------------- UTILS --------------------------------

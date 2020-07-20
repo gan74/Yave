@@ -17,8 +17,9 @@ struct SHBasis {
 
 struct SH {
 	// vec4 for padding
-	vec4  L00, L11, L10, L1_1, L21, L2_1, L2_2, L20, L22;
+	vec4 L00, L11, L10, L1_1, L21, L2_1, L2_2, L20, L22;
 };
+
 
 
 SH empty_sh() {
@@ -56,7 +57,6 @@ SH compute_sh(vec3 col, vec3 dir) {
 	);
 }
 
-
 SH add_sh(SH a, SH b) {
 	return SH(
 	    b.L00 + a.L00,
@@ -68,6 +68,20 @@ SH add_sh(SH a, SH b) {
 	    b.L2_2 + a.L2_2,
 	    b.L20 + a.L20,
 	    b.L22 + a.L22
+	);
+}
+
+SH mul_sh(SH sh, float d) {
+	return SH(
+	    sh.L00 * d,
+	    sh.L11 * d,
+	    sh.L10 * d,
+	    sh.L1_1 * d,
+	    sh.L21 * d,
+	    sh.L2_1 * d,
+	    sh.L2_2 * d,
+	    sh.L20 * d,
+	    sh.L22 * d
 	);
 }
 

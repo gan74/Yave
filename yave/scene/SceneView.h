@@ -33,6 +33,12 @@ class SceneView {
 		SceneView() = default;
 		SceneView(const ecs::EntityWorld* wor, Camera cam = Camera());
 
+#ifdef Y_DEBUG
+		~SceneView() {
+			_world = nullptr;
+		}
+#endif
+
 		const ecs::EntityWorld& world() const;
 
 		bool has_scene() const;

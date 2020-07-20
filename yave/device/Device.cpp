@@ -124,8 +124,12 @@ static VkDevice create_device(
 	};
 
 	try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical);
-	try_enable_extension(extensions, RayTracing::extension_name(), physical);
 
+#if 0
+	try_enable_extension(extensions, RayTracing::extension_name(), physical);
+#else
+	log_msg(fmt("% disabled", RayTracing::extension_name()), Log::Warning);
+#endif
 
 	VkPhysicalDeviceFeatures required = {};
 	{

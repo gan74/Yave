@@ -128,7 +128,7 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_in
 // --------------------------------- External ---------------------------------
 
 Y_TODO(external framegraph resources are not synchronized)
-void FrameGraphPassBuilder::add_uniform_input(Descriptor desc, usize ds_index, PipelineStage) {
+void FrameGraphPassBuilder::add_external_input(Descriptor desc, usize ds_index, PipelineStage) {
 	add_uniform(desc, ds_index);
 }
 

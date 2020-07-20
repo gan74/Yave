@@ -133,18 +133,18 @@ struct SH {
 static_assert(sizeof(SH) % 16 == 0);
 
 
-struct SkyLight {
-	math::Vec3 sun_direction;
+struct Surfel {
+	math::Vec3 position;
 	u32 padding_0;
 
-	math::Vec3 sun_color;
+	math::Vec3 albedo;
 	u32 padding_1;
 
-	SH sh;
+	math::Vec3 normal;
+	u32 padding_2;
 };
 
-static_assert(sizeof(SkyLight) % 16 == 0);
-
+static_assert(sizeof(Surfel) % 16 == 0);
 
 
 

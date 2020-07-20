@@ -57,7 +57,7 @@ class FrameGraphPassBuilder {
 		void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 		void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 
-		void add_uniform_input(Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
+		void add_external_input(Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 
 		void add_attrib_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
 		void add_index_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
