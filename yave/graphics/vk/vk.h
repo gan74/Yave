@@ -297,6 +297,50 @@ inline void vk_check_or_incomplete(VkResult result) {
 
 const char* vk_result_str(VkResult result);
 
+
+template<typename T>
+class VkHandle {
+    public:
+        VkHandle() = default;
+
+        VkHandle(T t) : _t(t) {
+        }
+
+        VkHandle(VkHandle&& other) {
+            std::swap(_t, other._t);
+        }
+
+        VkHandle& operator=(VkHandle&& other) {
+            std::swap(_t, other._t);
+            return *this;
+        }
+
+        VkHandle& operator=(T other) {
+            _t = other;
+            return *this;
+        }
+
+        void swap(VkHandle& other) {
+            std::swap(_t, other._t);
+        }
+
+        operator T() const {
+            return _t;
+        }
+
+        T& get() {
+            return _t;
+        }
+
+        const T& get() const {
+            return _t;
+        }
+
+    private:
+        T _t = {};
+};
+
+
 }
 
 

@@ -161,7 +161,7 @@ void Swapchain::reset() {
     _images.clear();
     destroy_semaphores();
 
-    const auto old = _swapchain;
+    const VkSwapchainKHR old = _swapchain;
 
     build_swapchain();
     build_semaphores();
@@ -214,7 +214,7 @@ void Swapchain::build_swapchain() {
             create_info.presentMode = present_mode(device(), _surface);
             create_info.oldSwapchain = _swapchain;
         }
-        vk_check(vkCreateSwapchainKHR(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &_swapchain));
+        vk_check(vkCreateSwapchainKHR(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &_swapchain.get()));
     }
 
     y_profile_zone("image setup");

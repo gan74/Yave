@@ -22,76 +22,11 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_DEVICELINKED_H
 #define YAVE_DEVICE_DEVICELINKED_H
 
-#include <yave/yave.h>
-
-#include "Resource.h"
+#include <yave/graphics/utils.h>
 
 namespace yave {
 
-template<typename T>
-class SwapMove {
-    public:
-        SwapMove() = default;
-
-        SwapMove(const SwapMove& other) = default;
-        SwapMove& operator=(const SwapMove& other) = default;
-
-        SwapMove(SwapMove&& other) {
-            std::swap(_t, other._t);
-        }
-
-        SwapMove(T&& other) : _t(std::move(other)) {
-        }
-
-        SwapMove(const T& other) : _t(other) {
-        }
-
-
-
-        SwapMove& operator=(SwapMove&& other) {
-            std::swap(_t, other._t);
-            return *this;
-        }
-
-        SwapMove& operator=(T&& other) {
-            _t = std::move(other);
-            return *this;
-        }
-
-        SwapMove& operator=(const T& other) {
-            _t = other;
-            return *this;
-        }
-
-
-        void swap(SwapMove& other) {
-            std::swap(_t, other._t);
-        }
-
-
-        operator T&() {
-            return _t;
-        }
-
-        operator const T&() const {
-            return _t;
-        }
-
-
-
-        T& get() {
-            return _t;
-        }
-
-        const T& get() const {
-            return _t;
-        }
-
-    private:
-        T _t = {};
-};
-
-class DeviceLinked {
+class DeviceLinked : NonCopyable {
     public:
         ~DeviceLinked() = default;
 
@@ -99,17 +34,15 @@ class DeviceLinked {
         bool is_null() const;
 
         template<typename T>
-        void destroy(T&& t) const;
-
+        void destroy(T&& t) const {
+            device_destroy(_device, y_fwd(t));
+        }
 
     protected:
         // Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
         DeviceLinked();
         DeviceLinked(DevicePtr dev);
         DeviceLinked(ThreadDevicePtr dev);
-
-        DeviceLinked(const DeviceLinked&) = default;
-        DeviceLinked& operator=(const DeviceLinked&) = default;
 
         DeviceLinked(DeviceLinked&& other);
         DeviceLinked& operator=(DeviceLinked&& other);
@@ -121,7 +54,7 @@ class DeviceLinked {
         DevicePtr _device = nullptr;
 };
 
-class ThreadDeviceLinked {
+class ThreadDeviceLinked : NonCopyable {
     public:
         ~ThreadDeviceLinked() = default;
 
@@ -129,14 +62,13 @@ class ThreadDeviceLinked {
         DevicePtr device() const;
 
         template<typename T>
-        void destroy(T&& t) const;
+        void destroy(T&& t) const {
+            device_destroy(_device, y_fwd(t));
+        }
 
     protected:
         ThreadDeviceLinked();
         ThreadDeviceLinked(ThreadDevicePtr dev);
-
-        ThreadDeviceLinked(const ThreadDeviceLinked&) = default;
-        ThreadDeviceLinked& operator=(const ThreadDeviceLinked&) = default;
 
         ThreadDeviceLinked(ThreadDeviceLinked&& other);
         ThreadDeviceLinked& operator=(ThreadDeviceLinked&& other);
@@ -146,17 +78,6 @@ class ThreadDeviceLinked {
     private:
         ThreadDevicePtr _device = nullptr;
 };
-
-template<typename T>
-void DeviceLinked::destroy(T&& t) const {
-    device_destroy(device(), y_fwd(t));
-}
-
-template<typename T>
-void ThreadDeviceLinked::destroy(T&& t) const {
-    device_destroy(device(), y_fwd(t));
-}
-
 }
 
 #endif // YAVE_DEVICE_DEVICELINKED_H

@@ -46,7 +46,7 @@ CmdBufferData::~CmdBufferData() {
         if(_fence && vkGetFenceStatus(vk_device(device()), _fence) != VK_SUCCESS) {
             y_fatal("CmdBuffer is still in use.");
         }
-        vkFreeCommandBuffers(vk_device(device()), _pool->vk_pool(), 1, &_cmd_buffer);
+        vkFreeCommandBuffers(vk_device(device()), _pool->vk_pool(), 1, &_cmd_buffer.get());
         device_destroy(device(), _fence);
     }
 }
@@ -88,7 +88,7 @@ void CmdBufferData::swap(CmdBufferData& other) {
 void CmdBufferData::reset() {
     y_profile();
     if(_fence) {
-        vk_check(vkResetFences(vk_device(device()), 1, &_fence));
+        vk_check(vkResetFences(vk_device(device()), 1, &_fence.get()));
     }
 
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));

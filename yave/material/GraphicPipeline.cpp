@@ -37,21 +37,6 @@ GraphicPipeline::~GraphicPipeline() {
     destroy(_layout);
 }
 
-GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) {
-    swap(other);
-}
-
-GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) {
-    swap(other);
-    return *this;
-}
-
-void GraphicPipeline::swap(GraphicPipeline& other) {
-    DeviceLinked::swap(other);
-    std::swap(_pipeline, other._pipeline);
-    std::swap(_layout, other._layout);
-}
-
 VkPipeline GraphicPipeline::vk_pipeline() const {
     return _pipeline;
 }

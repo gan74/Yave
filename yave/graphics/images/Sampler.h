@@ -28,7 +28,7 @@ SOFTWARE.
 namespace yave {
 
 Y_TODO(move to device)
-class Sampler final : NonCopyable, public DeviceLinked {
+class Sampler final : public DeviceLinked {
     public:
 
         Sampler() = default;
@@ -42,7 +42,7 @@ class Sampler final : NonCopyable, public DeviceLinked {
         VkSampler vk_sampler() const;
 
     private:
-        SwapMove<VkSampler> _sampler;
+        VkHandle<VkSampler> _sampler;
 };
 
 }

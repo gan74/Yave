@@ -91,5 +91,16 @@ void wait_all_queues(DevicePtr dptr) {
     dptr->wait_all_queues();
 }
 
+
+#define YAVE_GENERATE_DESTROY_IMPL(T)                                   \
+    void device_destroy(DevicePtr dptr, T t) {                          \
+        if(dptr) {                                                      \
+            lifetime_manager(dptr).destroy_later(std::move(t));         \
+        }                                                               \
+    }
+
+YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
+#undef YAVE_GENERATE_DESTROY_IMPL
+
 }
 

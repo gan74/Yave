@@ -34,7 +34,7 @@ SOFTWARE.
 
 namespace yave {
 
-class DeviceMemoryAllocator : NonCopyable, public DeviceLinked {
+class DeviceMemoryAllocator : public DeviceLinked {
 
     using HeapType = std::pair<u32, MemoryType>;
 

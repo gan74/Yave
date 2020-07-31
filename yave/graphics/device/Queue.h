@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Queue : NonCopyable, public DeviceLinked {
+class Queue : public DeviceLinked {
 
     public:
         Queue() = default;
@@ -64,7 +64,7 @@ class Queue : NonCopyable, public DeviceLinked {
 
         void submit_base(CmdBuffer& base) const;
 
-        SwapMove<VkQueue> _queue;
+        VkQueue _queue;
         std::unique_ptr<std::mutex> _lock;
 };
 

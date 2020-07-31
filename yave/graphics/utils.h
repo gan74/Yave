@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <yave/graphics/vk/vk.h>
+#include <yave/graphics/device/ResourceType.h>
 #include <yave/graphics/images/SamplerType.h>
 
 namespace yave {
@@ -51,6 +52,10 @@ const DebugUtils* debug_utils(DevicePtr dptr);
 const RayTracing* ray_tracing(DevicePtr dptr);
 
 void wait_all_queues(DevicePtr dptr);
+
+#define YAVE_GENERATE_DESTROY(T) void device_destroy(DevicePtr dptr, T t);
+YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
+#undef YAVE_GENERATE_DESTROY
 
 }
 

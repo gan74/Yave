@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include <numeric>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationData& data) : DeviceLinked(comp.device()), _local_size(comp.local_size()) {
@@ -94,10 +97,12 @@ usize ComputeProgram::thread_count() const {
 }
 
 VkPipeline ComputeProgram::vk_pipeline() const {
+    y_debug_assert(device());
     return _pipeline;
 }
 
 VkPipelineLayout ComputeProgram::vk_pipeline_layout() const {
+    y_debug_assert(device());
     return _layout;
 }
 

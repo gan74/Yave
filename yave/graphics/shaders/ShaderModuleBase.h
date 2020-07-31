@@ -134,7 +134,7 @@ class ShaderModuleBase : NonMovable, public DeviceLinked {
         ShaderModuleBase(DevicePtr dptr, const SpirVData& data);
 
     private:
-        VkShaderModule _module;
+        VkHandle<VkShaderModule> _module;
         ShaderType _type = ShaderType::None;
         core::ExternalHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
         core::Vector<VkSpecializationMapEntry> _spec_constants;

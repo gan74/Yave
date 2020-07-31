@@ -58,7 +58,7 @@ namespace yave {
 class Descriptor;
 class DescriptorSetPool;
 
-class DescriptorSetLayout : NonCopyable, public DeviceLinked {
+class DescriptorSetLayout : public DeviceLinked {
     public:
         static constexpr usize descriptor_type_count = 12;
 
@@ -83,7 +83,7 @@ class DescriptorSetLayout : NonCopyable, public DeviceLinked {
         VkDescriptorSetLayout vk_descriptor_set_layout() const;
 
     private:
-        SwapMove<VkDescriptorSetLayout> _layout;
+        VkDescriptorSetLayout _layout = {};
         std::array<u32, descriptor_type_count> _sizes = {};
 
         usize _inline_blocks = 0;
@@ -153,7 +153,7 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
         Buffer<BufferUsage::UniformBit> _inline_buffer;
 };
 
-class DescriptorSetAllocator : NonCopyable, public DeviceLinked  {
+class DescriptorSetAllocator : public DeviceLinked  {
 
     using Key = core::Vector<VkDescriptorSetLayoutBinding>;
 

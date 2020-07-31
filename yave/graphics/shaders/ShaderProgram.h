@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-class ShaderProgram final : NonCopyable, public DeviceLinked {
+class ShaderProgram final : public DeviceLinked {
 
     public:
         static constexpr u32 per_instance_location = 8;

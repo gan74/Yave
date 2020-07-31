@@ -29,10 +29,14 @@ SOFTWARE.
 namespace yave {
 
 DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
-        DeviceLinked(mem.device()),
+        _device(mem.device()),
         _heap(mem.heap()),
         _memory(mem.vk_memory()),
         _offset(mem.vk_offset()) {
+}
+
+DevicePtr DeviceMemoryView::device() const {
+    return _device;
 }
 
 VkMappedMemoryRange DeviceMemoryView::vk_mapped_range(usize size, usize offset) const {

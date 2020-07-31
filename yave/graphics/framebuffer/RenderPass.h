@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-class RenderPass : NonCopyable, public DeviceLinked {
+class RenderPass : public DeviceLinked {
     public:
         enum class LoadOp : u32 {
             Clear,
@@ -91,7 +91,7 @@ class RenderPass : NonCopyable, public DeviceLinked {
 
     private:
         usize _attachment_count = 0;
-        SwapMove<VkRenderPass> _render_pass;
+        VkHandle<VkRenderPass> _render_pass;
 
         Layout _layout;
 };

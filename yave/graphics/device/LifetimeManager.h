@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_DEVICE_LIFETIMEMANAGER_H
 
 #include "DeviceLinked.h"
-#include "Resource.h"
+#include "ResourceType.h"
 
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/commands/CmdBufferData.h>
@@ -45,7 +45,7 @@ SOFTWARE.
 
 namespace yave {
 
-class LifetimeManager : NonCopyable, public DeviceLinked {
+class LifetimeManager : public DeviceLinked {
 
     struct EmptyResource {};
 

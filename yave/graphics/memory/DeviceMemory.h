@@ -29,7 +29,7 @@ namespace yave {
 
 class DeviceMemoryHeapBase;
 
-class DeviceMemory : NonCopyable, public DeviceLinked {
+class DeviceMemory : public DeviceLinked {
 
     public:
         DeviceMemory() = default;

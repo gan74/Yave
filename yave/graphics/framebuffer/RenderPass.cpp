@@ -190,6 +190,7 @@ RenderPass::~RenderPass() {
 }
 
 VkRenderPass RenderPass::vk_render_pass() const {
+    y_debug_assert(device());
     return _render_pass;
 }
 

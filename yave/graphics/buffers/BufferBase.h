@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
 #define YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
 
-#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/utils.h>
 #include <yave/graphics/memory/DeviceMemory.h>
 
 #include "BufferUsage.h"
@@ -56,8 +56,9 @@ class BufferBase : NonCopyable {
 
     private:
         usize _size = 0;
-        SwapMove<VkBuffer> _buffer;
         BufferUsage _usage = BufferUsage::None;
+
+        VkHandle<VkBuffer> _buffer;
         DeviceMemory _memory;
 };
 

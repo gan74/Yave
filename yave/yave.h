@@ -42,8 +42,6 @@ using DevicePtr = const Device*;
 
 class ThreadLocalDevice;
 using ThreadDevicePtr = const ThreadLocalDevice*;
-
-
 }
 
 #endif // YAVE_YAVE_H

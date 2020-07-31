@@ -117,8 +117,8 @@ class CmdBufferData final : NonCopyable {
         friend class Queue;
         void swap(CmdBufferData& other);
 
-        VkCommandBuffer _cmd_buffer = {};
-        VkFence _fence = {};
+        VkHandle<VkCommandBuffer> _cmd_buffer;
+        VkHandle<VkFence> _fence;
 
         core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
         CmdBufferPool* _pool = nullptr;

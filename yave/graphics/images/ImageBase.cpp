@@ -222,10 +222,12 @@ ImageUsage ImageBase::usage() const {
 }
 
 VkImageView ImageBase::vk_view() const {
+    y_debug_assert(device());
     return _view;
 }
 
 VkImage ImageBase::vk_image() const {
+    y_debug_assert(device());
     return _image;
 }
 

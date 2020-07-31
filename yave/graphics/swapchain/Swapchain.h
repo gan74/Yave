@@ -96,8 +96,8 @@ class Swapchain : NonMovable, public DeviceLinked {
         core::Vector<SwapchainImage> _images;
         core::Vector<std::pair<VkSemaphore, VkSemaphore>> _semaphores;
 
-        Owner<VkSurfaceKHR> _surface;
-        VkSwapchainKHR _swapchain = {};
+        VkHandle<VkSurfaceKHR> _surface;
+        VkHandle<VkSwapchainKHR> _swapchain;
 
 
 };

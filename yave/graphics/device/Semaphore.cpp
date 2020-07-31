@@ -29,7 +29,7 @@ namespace yave {
 Semaphore::Shared::Shared(DevicePtr dptr) :
         DeviceLinked(dptr) {
     const VkSemaphoreCreateInfo create_info = vk_struct();
-    vk_check(vkCreateSemaphore(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_semaphore));
+    vk_check(vkCreateSemaphore(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_semaphore.get()));
 }
 
 Semaphore::Shared::~Shared() {

@@ -30,7 +30,7 @@ namespace yave {
 
 class MaterialTemplate;
 
-class GraphicPipeline : NonCopyable, public DeviceLinked {
+class GraphicPipeline : public DeviceLinked {
 
     public:
         GraphicPipeline() = default;
@@ -38,17 +38,15 @@ class GraphicPipeline : NonCopyable, public DeviceLinked {
 
         ~GraphicPipeline();
 
-        GraphicPipeline(GraphicPipeline&& other);
-        GraphicPipeline& operator=(GraphicPipeline&& other);
+        GraphicPipeline(GraphicPipeline&&) = default;
+        GraphicPipeline& operator=(GraphicPipeline&&) = default;
 
         VkPipeline vk_pipeline() const;
         VkPipelineLayout vk_pipeline_layout() const;
 
     private:
-        void swap(GraphicPipeline& other);
-
-        VkPipeline _pipeline = {};
-        VkPipelineLayout _layout = {};
+        VkHandle<VkPipeline> _pipeline;
+        VkHandle<VkPipelineLayout> _layout;
 };
 
 }

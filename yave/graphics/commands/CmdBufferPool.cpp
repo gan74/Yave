@@ -30,11 +30,6 @@ SOFTWARE.
 
 namespace yave {
 
-
-static VkCommandPoolCreateFlagBits cmd_create_flags() {
-    return VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-}
-
 static VkCommandPool create_pool(DevicePtr dptr) {
     VkCommandPoolCreateInfo create_info = vk_struct();
     {
@@ -46,6 +41,8 @@ static VkCommandPool create_pool(DevicePtr dptr) {
     vk_check(vkCreateCommandPool(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &pool));
     return pool;
 }
+
+
 
 CmdBufferPool::CmdBufferPool() : _thread_id(concurrent::thread_id()) {
 }

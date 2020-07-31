@@ -27,7 +27,7 @@ namespace yave {
 
 static math::Vec2ui compute_size(const Framebuffer::DepthAttachment& depth, core::Span<Framebuffer::ColorAttachment> colors) {
     math::Vec2ui ref;
-    if(!depth.view.is_null()) {
+    if(depth.view.device()) {
         ref = depth.view.size();
     } else if(!colors.is_empty()) {
         ref = colors[0].view.size();
@@ -64,7 +64,7 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Spa
     auto views = core::vector_with_capacity<VkImageView>(colors.size() + 1);
     std::transform(colors.begin(), colors.end(), std::back_inserter(views), [](const auto& v) { return v.view.vk_view(); });
 
-    if(!depth.view.is_null()) {
+    if(depth.view.device()) {
         views << depth.view.vk_view();
     }
 
@@ -78,7 +78,7 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Spa
         create_info.layers = 1;
     }
 
-    vk_check(vkCreateFramebuffer(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_framebuffer));
+    vk_check(vkCreateFramebuffer(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_framebuffer.get()));
 }
 
 Framebuffer::Framebuffer(DevicePtr dptr, core::Span<ColorAttachmentView> colors, LoadOp load_op) :
@@ -98,6 +98,7 @@ const math::Vec2ui& Framebuffer::size() const {
 }
 
 VkFramebuffer Framebuffer::vk_framebuffer() const {
+    y_debug_assert(device());
     return _framebuffer;
 }
 

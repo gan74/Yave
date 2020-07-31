@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace yave {
 
-class MaterialCompiler : NonCopyable, public DeviceLinked {
+class MaterialCompiler : public DeviceLinked {
     public:
         static GraphicPipeline compile(const MaterialTemplate* material, const RenderPass& render_pass);
 };

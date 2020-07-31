@@ -94,6 +94,7 @@ usize BufferBase::byte_size() const {
 }
 
 VkBuffer BufferBase::vk_buffer() const {
+    y_debug_assert(device());
     return _buffer;
 }
 

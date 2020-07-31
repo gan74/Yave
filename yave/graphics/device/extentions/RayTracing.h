@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace yave {
 
-class RayTracing : public DeviceLinked, NonCopyable {
+class RayTracing : public DeviceLinked {
     public:
         class AccelerationStructure {
             public:
@@ -49,7 +49,7 @@ class RayTracing : public DeviceLinked, NonCopyable {
 
             private:
                 DeviceMemory _memory;
-                SwapMove<VkAccelerationStructureNV> _acceleration_structure;
+                VkHandle<VkAccelerationStructureNV> _acceleration_structure;
         };
 
 

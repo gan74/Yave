@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Framebuffer final : NonCopyable, public DeviceLinked {
+class Framebuffer final : public DeviceLinked {
 
     public:
         using LoadOp = RenderPass::LoadOp;
@@ -77,7 +77,7 @@ class Framebuffer final : NonCopyable, public DeviceLinked {
         usize _attachment_count = 0;
 
         std::unique_ptr<RenderPass> _render_pass;
-        VkFramebuffer _framebuffer = {};
+        VkHandle<VkFramebuffer> _framebuffer;
 };
 
 }

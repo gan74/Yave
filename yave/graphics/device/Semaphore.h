@@ -43,7 +43,7 @@ class Semaphore {
             VkSemaphore vk_semaphore() const;
 
         private:
-            VkSemaphore _semaphore = {};
+            VkHandle<VkSemaphore> _semaphore;
     };
 
 

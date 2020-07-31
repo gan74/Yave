@@ -43,7 +43,7 @@ class DebugUtils : NonCopyable {
 
     private:
         VkInstance _instance;
-        VkDebugUtilsMessengerEXT _messenger = {};
+        VkHandle<VkDebugUtilsMessengerEXT> _messenger;
 
         PFN_vkCmdBeginDebugUtilsLabelEXT _begin_label = nullptr;
         PFN_vkCmdEndDebugUtilsLabelEXT _end_label = nullptr;

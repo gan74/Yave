@@ -59,7 +59,7 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
         CmdBufferData create_data();
 
         std::mutex _lock;
-        VkCommandPool _pool;
+        VkHandle<VkCommandPool> _pool;
         core::Vector<CmdBufferData> _cmd_buffers;
         core::Vector<VkFence> _fences;
 

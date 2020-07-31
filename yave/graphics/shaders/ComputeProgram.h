@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class ComputeProgram final : NonCopyable, public DeviceLinked {
+class ComputeProgram final : public DeviceLinked {
     public:
         ComputeProgram() = default;
         ComputeProgram(ComputeProgram&&) = default;
@@ -42,8 +42,8 @@ class ComputeProgram final : NonCopyable, public DeviceLinked {
         VkPipelineLayout vk_pipeline_layout() const;
 
     private:
-        SwapMove<VkPipelineLayout> _layout;
-        SwapMove<VkPipeline> _pipeline;
+        VkHandle<VkPipelineLayout> _layout;
+        VkHandle<VkPipeline> _pipeline;
         math::Vec3ui _local_size;
 };
 

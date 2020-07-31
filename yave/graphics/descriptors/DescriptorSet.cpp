@@ -58,6 +58,7 @@ bool DescriptorSet::is_null() const  {
 }
 
 VkDescriptorSetLayout DescriptorSet::vk_descriptor_set_layout() const {
+    y_debug_assert(device());
     return _data.vk_descriptor_set_layout();
 }
 

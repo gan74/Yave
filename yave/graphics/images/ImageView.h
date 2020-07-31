@@ -29,7 +29,7 @@ SOFTWARE.
 namespace yave {
 
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
-class ImageView : public DeviceLinked {
+class ImageView {
 
     protected:
         static constexpr bool is_compatible(ImageUsage u) {
@@ -49,6 +49,10 @@ class ImageView : public DeviceLinked {
         template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
         ImageView(const ImageView<U, Type>& img) : ImageView(img.device(), img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
             static_assert(is_compatible(U));
+        }
+
+        DevicePtr device() const {
+            return _device;
         }
 
         VkImageView vk_view() const {
@@ -81,7 +85,7 @@ class ImageView : public DeviceLinked {
 
     protected:
         ImageView(DevicePtr dptr, const size_type& size, ImageUsage usage, ImageFormat format, VkImageView view, VkImage image) :
-                DeviceLinked(dptr),
+                _device(dptr),
                 _size(size),
                 _usage(usage),
                 _format(format),
@@ -94,6 +98,7 @@ class ImageView : public DeviceLinked {
         template<ImageUsage U, ImageType T>
         friend class ImageView;
 
+        DevicePtr _device = nullptr;
         size_type _size;
         ImageUsage _usage = ImageUsage::None;
         ImageFormat _format;

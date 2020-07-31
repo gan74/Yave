@@ -79,7 +79,7 @@ RayTracing::AccelerationStructure::AccelerationStructure(DevicePtr dptr, core::S
     {
         VkAccelerationStructureMemoryRequirementsInfoNV mem_reqs_info = vk_struct();
         mem_reqs_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-        mem_reqs_info.accelerationStructure = _acceleration_structure.get();
+        mem_reqs_info.accelerationStructure = _acceleration_structure;
 
         VkMemoryRequirements2 mem_reqs = vk_struct();
         rt->_acceleration_structure_memory_reqs(vk_device(dptr), &mem_reqs_info, &mem_reqs);
@@ -89,7 +89,7 @@ RayTracing::AccelerationStructure::AccelerationStructure(DevicePtr dptr, core::S
 
     {
         VkBindAccelerationStructureMemoryInfoNV bind_info = vk_struct();
-        bind_info.accelerationStructure = _acceleration_structure.get();
+        bind_info.accelerationStructure = _acceleration_structure;
         bind_info.memory = _memory.vk_memory();
         vk_check(rt->_bind_acceleration_structure_memory(vk_device(dptr), 1, &bind_info));
     }
@@ -100,7 +100,7 @@ RayTracing::AccelerationStructure::~AccelerationStructure() {
         const RayTracing* rt = ray_tracing(dptr);
         y_debug_assert(rt);
 
-        rt->_destroy_acceleration_structure(vk_device(dptr), _acceleration_structure.get(), vk_allocation_callbacks(dptr));
+        rt->_destroy_acceleration_structure(vk_device(dptr), _acceleration_structure, vk_allocation_callbacks(dptr));
 
         device_destroy(dptr, std::move(_memory));
     }

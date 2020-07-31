@@ -28,10 +28,12 @@ SOFTWARE.
 
 namespace yave {
 
-class DeviceMemoryView : public DeviceLinked {
+class DeviceMemoryView {
     public:
         DeviceMemoryView() = default;
         DeviceMemoryView(const DeviceMemory& mem);
+
+        DevicePtr device() const;
 
         VkMappedMemoryRange vk_mapped_range(usize size, usize offset = 0) const;
         VkDeviceMemory vk_memory() const;
@@ -41,6 +43,7 @@ class DeviceMemoryView : public DeviceLinked {
         void unmap();
 
     private:
+        DevicePtr _device = nullptr;
         NotOwner<DeviceMemoryHeapBase*> _heap = nullptr;
         VkDeviceMemory _memory = {};
         usize _offset;
