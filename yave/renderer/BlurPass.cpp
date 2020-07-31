@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/framegraph/FrameGraphPassBuilder.h>
 #include <yave/framegraph/FrameGraph.h>
+#include <yave/device/DeviceResources.h>
 
 namespace yave {
 
@@ -38,7 +39,7 @@ BlurPass BlurPass::create(FrameGraph& framegraph, FrameGraphImageId in_image) {
 		builder.add_uniform_input(in);
 		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			const auto* material = recorder.device()->device_resources()[mat];
+			const auto* material = device_resources(recorder.device())[mat];
 			render_pass.bind_material(material, {self->descriptor_sets()[0]});
 			render_pass.draw_array(3);
 		});

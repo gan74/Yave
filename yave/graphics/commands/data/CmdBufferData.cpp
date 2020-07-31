@@ -21,12 +21,15 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferData.h"
-#include <yave/device/Device.h>
+
+#include <yave/device/DeviceUtils.h>
+#include <yave/device/LifetimeManager.h>
+#include <yave/graphics/commands/pool/CmdBufferPoolBase.h>
 
 namespace yave {
 
 CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPoolBase* p) :
-		_cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(device()->lifetime_manager().create_fence()) {
+		_cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(lifetime_manager(device()).create_fence()) {
 }
 
 CmdBufferData::CmdBufferData(CmdBufferData&& other) {
@@ -40,11 +43,11 @@ CmdBufferData& CmdBufferData::operator=(CmdBufferData&& other) {
 
 CmdBufferData::~CmdBufferData() {
 	if(_pool) {
-		if(_fence && vkGetFenceStatus(device()->vk_device(), _fence) != VK_SUCCESS) {
+		if(_fence && vkGetFenceStatus(vk_device(device()), _fence) != VK_SUCCESS) {
 			y_fatal("CmdBuffer is still in use.");
 		}
-		vkFreeCommandBuffers(device()->vk_device(), _pool->vk_pool(), 1, &_cmd_buffer);
-		device()->destroy(_fence);
+		vkFreeCommandBuffers(vk_device(device()), _pool->vk_pool(), 1, &_cmd_buffer);
+		device_destroy(device(), _fence);
 	}
 }
 
@@ -85,13 +88,13 @@ void CmdBufferData::swap(CmdBufferData& other) {
 void CmdBufferData::reset() {
 	y_profile();
 	if(_fence) {
-		vk_check(vkResetFences(device()->vk_device(), 1, &_fence));
+		vk_check(vkResetFences(vk_device(device()), 1, &_fence));
 	}
 
 	vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 	_waits.clear();
 	_signal = Semaphore();
-	_resource_fence = device()->lifetime_manager().create_fence();
+	_resource_fence = lifetime_manager(device()).create_fence();
 }
 
 void CmdBufferData::release_resources() {
@@ -112,7 +115,7 @@ CmdBufferDataProxy::CmdBufferDataProxy(CmdBufferData&& d) : _data(std::move(d)) 
 
 CmdBufferDataProxy::~CmdBufferDataProxy() {
 	if(!_data.is_null()) {
-		_data.device()->lifetime_manager().recycle(std::move(_data));
+		lifetime_manager(_data.device()).recycle(std::move(_data));
 	}
 }
 

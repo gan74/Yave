@@ -22,7 +22,9 @@ SOFTWARE.
 #include "RenderPass.h"
 
 #include <yave/graphics/images/Image.h>
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+
+#include <y/utils/hash.h>
 
 namespace yave {
 
@@ -146,7 +148,7 @@ static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData dept
 	}
 
 	VkRenderPass renderpass = {};
-	vk_check(vkCreateRenderPass(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &renderpass));
+	vk_check(vkCreateRenderPass(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &renderpass));
 	return renderpass;
 }
 

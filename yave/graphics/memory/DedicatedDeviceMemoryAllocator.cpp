@@ -41,18 +41,18 @@ void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
 		y_fatal("Tried to free memory using non zero offset.");
 	}
 	_size -= memory.vk_size();
-	vkFreeMemory(device()->vk_device(), memory.vk_memory(), device()->vk_allocation_callbacks());
+	vkFreeMemory(vk_device(device()), memory.vk_memory(), vk_allocation_callbacks(device()));
 }
 
 void* DedicatedDeviceMemoryAllocator::map(const DeviceMemoryView& view) {
 	void* mapping = nullptr;
 	const VkMemoryMapFlags flags = {};
-	vk_check(vkMapMemory(device()->vk_device(), view.vk_memory(), view.vk_offset(), VK_WHOLE_SIZE, flags, &mapping));
+	vk_check(vkMapMemory(vk_device(device()), view.vk_memory(), view.vk_offset(), VK_WHOLE_SIZE, flags, &mapping));
 	return mapping;
 }
 
 void DedicatedDeviceMemoryAllocator::unmap(const DeviceMemoryView& view) {
-	vkUnmapMemory(device()->vk_device(), view.vk_memory());
+	vkUnmapMemory(vk_device(device()), view.vk_memory());
 }
 
 usize DedicatedDeviceMemoryAllocator::allocated_size() const {

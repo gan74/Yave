@@ -22,7 +22,8 @@ SOFTWARE.
 
 #include "CmdBufferPoolBase.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/queues/QueueFamily.h>
 
 #include <y/core/Chrono.h>
 #include <y/concurrent/concurrent.h>
@@ -44,12 +45,12 @@ static VkCommandPoolCreateFlagBits cmd_create_flags(CmdBufferUsage u) {
 static VkCommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
 	VkCommandPoolCreateInfo create_info = vk_struct();
 	{
-		create_info.queueFamilyIndex = dptr->queue_family(QueueFamily::Graphics).index();
+		create_info.queueFamilyIndex = queue_family(dptr, QueueFamily::Graphics).index();
 		create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | cmd_create_flags(usage);
 	}
 
 	VkCommandPool pool = {};
-	vk_check(vkCreateCommandPool(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &pool));
+	vk_check(vkCreateCommandPool(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &pool));
 	return pool;
 }
 
@@ -83,7 +84,7 @@ void CmdBufferPoolBase::join_all() {
 		return;
 	}
 
-	if(vkWaitForFences(device()->vk_device(), _fences.size(), _fences.data(), true, u64(-1)) != VK_SUCCESS) {
+	if(vkWaitForFences(vk_device(device()), _fences.size(), _fences.data(), true, u64(-1)) != VK_SUCCESS) {
 		y_fatal("Unable to join fences.");
 	}
 }
@@ -128,8 +129,8 @@ CmdBufferData CmdBufferPoolBase::create_data() {
 
 	VkCommandBuffer buffer = {};
 	VkFence fence = {};
-	vk_check(vkAllocateCommandBuffers(device()->vk_device(), &allocate_info, &buffer));
-	vk_check(vkCreateFence(device()->vk_device(), &fence_create_info, device()->vk_allocation_callbacks(), &fence));
+	vk_check(vkAllocateCommandBuffers(vk_device(device()), &allocate_info, &buffer));
+	vk_check(vkCreateFence(vk_device(device()), &fence_create_info, vk_allocation_callbacks(device()), &fence));
 
 
 	_fences << fence;

@@ -23,20 +23,21 @@ SOFTWARE.
 #include "DescriptorSet.h"
 #include "Descriptor.h"
 
+
+#include <y/core/Range.h>
+
 namespace yave {
 
 DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings) {
 	if(!bindings.is_empty()) {
-		_data = dptr->descriptor_set_allocator().create_descritptor_set(bindings);
+		_data = descriptor_set_allocator(dptr).create_descritptor_set(bindings);
 		_set = _data.vk_descriptor_set();
 
 	}
 }
 
 DescriptorSet::~DescriptorSet() {
-	if(const DevicePtr dptr = device()) {
-		dptr->destroy(std::move(_data));
-	}
+	device_destroy(device(), std::move(_data));
 }
 
 DescriptorSet::DescriptorSet(DescriptorSet&& other) {

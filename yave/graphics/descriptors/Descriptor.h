@@ -23,8 +23,9 @@ SOFTWARE.
 #define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTOR_H
 
 #include <yave/yave.h>
-#include <yave/device/Device.h>
 
+#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/graphics/buffers/TypedWrapper.h>
 
@@ -87,19 +88,19 @@ class Descriptor {
 		};
 
 		template<ImageType Type>
-		Descriptor(const ImageView<ImageUsage::TextureBit, Type>& view, Sampler::Type sampler = Sampler::Repeat) :
+		Descriptor(const ImageView<ImageUsage::TextureBit, Type>& view, SamplerType sampler = SamplerType::Repeat) :
 				 _type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER),
-				 _info(VkDescriptorImageInfo{view.device()->vk_sampler(sampler), view.vk_view(), vk_image_layout(view.usage())}) {
+				 _info(VkDescriptorImageInfo{vk_sampler(view.device(), sampler), view.vk_view(), vk_image_layout(view.usage())}) {
 		}
 
 		template<ImageType Type>
-		Descriptor(const ImageView<ImageUsage::StorageBit, Type>& view, Sampler::Type sampler = Sampler::Repeat) :
+		Descriptor(const ImageView<ImageUsage::StorageBit, Type>& view, SamplerType sampler = SamplerType::Repeat) :
 				 _type(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE),
-				 _info(VkDescriptorImageInfo{view.device()->vk_sampler(sampler), view.vk_view(), vk_image_layout(ImageUsage::StorageBit)}) {
+				 _info(VkDescriptorImageInfo{vk_sampler(view.device(), sampler), view.vk_view(), vk_image_layout(ImageUsage::StorageBit)}) {
 		}
 
 		template<ImageUsage Usage, ImageType Type>
-		Descriptor(const Image<Usage, Type>& image, Sampler::Type sampler = Sampler::Repeat) : Descriptor(ImageView<Usage, Type>(image), sampler) {
+		Descriptor(const Image<Usage, Type>& image, SamplerType sampler = SamplerType::Repeat) : Descriptor(ImageView<Usage, Type>(image), sampler) {
 		}
 
 

@@ -47,8 +47,8 @@ static VkCommandBufferUsageFlagBits cmd_usage_flags(CmdBufferUsage u) {
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
 CmdBufferRegion::~CmdBufferRegion() {
-	if(device() && device()->debug_utils()) {
-		device()->debug_utils()->end_region(_buffer);
+	if(const DebugUtils* debug = debug_utils(device())) {
+		debug->end_region(_buffer);
 	}
 }
 
@@ -56,8 +56,8 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char
 		DeviceLinked(cmd_buffer.device()),
 		_buffer(cmd_buffer.vk_cmd_buffer()) {
 
-	if(const auto marker = device()->debug_utils()) {
-		marker->begin_region(_buffer, name, color);
+	if(const DebugUtils* debug = debug_utils(device())) {
+		debug->begin_region(_buffer, name, color);
 	}
 }
 

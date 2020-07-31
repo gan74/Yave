@@ -586,10 +586,10 @@ AssetStore::Result<core::String> SQLiteAssetStore::name(AssetId id) const {
 
 class SQLiteBuffer final : public io2::Reader {
 	public:
-		SQLiteBuffer(sqlite3_stmt* stmt) :
-				_stmt(stmt),
-				_buffer(static_cast<const u8*>(sqlite3_column_blob(stmt, 0))),
-				_size(sqlite3_column_bytes(stmt, 0)) {
+		SQLiteBuffer(sqlite3_stmt* stmt) : _stmt(stmt) {
+			y_profile();
+			_buffer = static_cast<const u8*>(sqlite3_column_blob(stmt, 0));
+			_size = sqlite3_column_bytes(stmt, 0);
 		}
 
 		~SQLiteBuffer() override {

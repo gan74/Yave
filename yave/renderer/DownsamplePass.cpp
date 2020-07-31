@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/framegraph/FrameGraphPassBuilder.h>
 #include <yave/framegraph/FrameGraph.h>
+#include <yave/device/DeviceResources.h>
 
 namespace yave {
 
@@ -48,7 +49,7 @@ DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId 
 		builder.add_uniform_input(last);
 		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
 			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			const auto* material = recorder.device()->device_resources()[DeviceResources::ScreenPassthroughMaterialTemplate];
+			const auto* material = device_resources(recorder.device())[DeviceResources::ScreenPassthroughMaterialTemplate];
 			render_pass.bind_material(material, {self->descriptor_sets()[0]});
 			render_pass.draw_array(3);
 		});

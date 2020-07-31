@@ -23,7 +23,7 @@ SOFTWARE.
 #include "Mapping.h"
 #include "buffers.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 namespace yave {
@@ -45,7 +45,7 @@ void Mapping::flush() {
 	if(_buffer.device() && _mapping) {
 		const VkMappedMemoryRange range = _buffer.vk_memory_range();
 		Y_TODO(Maybe merge flush & unmap)
-		vk_check(vkFlushMappedMemoryRanges(_buffer.device()->vk_device(), 1, &range));
+		vk_check(vkFlushMappedMemoryRanges(vk_device(_buffer.device()), 1, &range));
 		_buffer.device_memory().unmap();
 	}
 }

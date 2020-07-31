@@ -22,7 +22,8 @@ SOFTWARE.
 
 #include "ComputeProgram.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
 #include <numeric>
 
@@ -35,7 +36,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 
 	auto layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout());
 	for(const auto& binding : bindings) {
-		layouts[binding.first] = device()->descriptor_set_layout(binding.second).vk_descriptor_set_layout();
+		layouts[binding.first] = descriptor_set_allocator(device()).descriptor_set_layout(binding.second).vk_descriptor_set_layout();
 	}
 
 	VkPipelineLayoutCreateInfo layout_create_info = vk_struct();
@@ -46,7 +47,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 		layout_create_info.pPushConstantRanges = comp.vk_push_constants().data();
 	}
 
-	vk_check(vkCreatePipelineLayout(device()->vk_device(), &layout_create_info, device()->vk_allocation_callbacks(), &_layout.get()));
+	vk_check(vkCreatePipelineLayout(vk_device(device()), &layout_create_info, vk_allocation_callbacks(device()), &_layout.get()));
 
 
 	if(data.size() && data.size() != comp.specialization_data_size()) {
@@ -76,7 +77,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 		create_info.stage = stage;
 	}
 
-	vk_check(vkCreateComputePipelines(device()->vk_device(), vk_null(), 1, &create_info, device()->vk_allocation_callbacks(), &_pipeline.get()));
+	vk_check(vkCreateComputePipelines(vk_device(device()), vk_null(), 1, &create_info, vk_allocation_callbacks(device()), &_pipeline.get()));
 }
 
 ComputeProgram::~ComputeProgram() {

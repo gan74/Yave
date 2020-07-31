@@ -23,7 +23,7 @@ SOFTWARE.
 #include "CmdBufferBase.h"
 
 #include <yave/graphics/commands/pool/CmdBufferPoolBase.h>
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
 
 namespace yave {
 
@@ -32,7 +32,7 @@ CmdBufferBase::CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& data) : _prox
 
 void CmdBufferBase::wait() const {
 	const VkFence fence = vk_fence();
-	vk_check(vkWaitForFences(device()->vk_device(), 1, &fence, true, u64(-1)));
+	vk_check(vkWaitForFences(vk_device(device()), 1, &fence, true, u64(-1)));
 }
 
 void CmdBufferBase::wait_for(const Semaphore& sem) {

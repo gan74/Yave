@@ -55,7 +55,7 @@ DeviceMemoryHeap::DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType typ
 
 	if(is_cpu_visible(type)) {
 		const VkMemoryMapFlags flags = {};
-		vk_check(vkMapMemory(device()->vk_device(), _memory, 0, heap_size, flags, &_mapping));
+		vk_check(vkMapMemory(vk_device(device()), _memory, 0, heap_size, flags, &_mapping));
 	}
 
 	if(_heap_size % alignment) {
@@ -71,9 +71,9 @@ DeviceMemoryHeap::~DeviceMemoryHeap() {
 		y_fatal("Not all memory has been freed.");
 	}
 	if(_mapping) {
-		vkUnmapMemory(device()->vk_device(), _memory);
+		vkUnmapMemory(vk_device(device()), _memory);
 	}
-	vkFreeMemory(device()->vk_device(), _memory, device()->vk_allocation_callbacks());
+	vkFreeMemory(vk_device(device()), _memory, vk_allocation_callbacks(device()));
 }
 
 DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {

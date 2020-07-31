@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 #include "Framebuffer.h"
 #include "RenderPass.h"
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
 
 namespace yave {
 
@@ -78,7 +78,7 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Spa
 		create_info.layers = 1;
 	}
 
-	vk_check(vkCreateFramebuffer(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &_framebuffer));
+	vk_check(vkCreateFramebuffer(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_framebuffer));
 }
 
 Framebuffer::Framebuffer(DevicePtr dptr, core::Span<ColorAttachmentView> colors, LoadOp load_op) :

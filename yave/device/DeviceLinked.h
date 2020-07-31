@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include "DeviceHandle.h"
+
 namespace yave {
 
 template<typename T>
@@ -92,15 +94,13 @@ class SwapMove {
 class DeviceLinked {
 	public:
 		~DeviceLinked() = default;
-		
+
 		DevicePtr device() const;
 		bool is_null() const;
 
 		template<typename T>
 		void destroy(T&& t) const;
 
-		template<typename T>
-		void destroy_immediate(T&& t) const;
 
 	protected:
 		// Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
@@ -113,7 +113,7 @@ class DeviceLinked {
 
 		DeviceLinked(DeviceLinked&& other);
 		DeviceLinked& operator=(DeviceLinked&& other);
-		
+
 
 		void swap(DeviceLinked& other);
 
@@ -124,15 +124,12 @@ class DeviceLinked {
 class ThreadDeviceLinked {
 	public:
 		~ThreadDeviceLinked() = default;
-		
+
 		ThreadDevicePtr thread_device() const;
 		DevicePtr device() const;
 
 		template<typename T>
 		void destroy(T&& t) const;
-
-		template<typename T>
-		void destroy_immediate(T&& t) const;
 
 	protected:
 		ThreadDeviceLinked();
@@ -149,6 +146,16 @@ class ThreadDeviceLinked {
 	private:
 		ThreadDevicePtr _device = nullptr;
 };
+
+template<typename T>
+void DeviceLinked::destroy(T&& t) const {
+	device_destroy(device(), y_fwd(t));
+}
+
+template<typename T>
+void ThreadDeviceLinked::destroy(T&& t) const {
+	device_destroy(device(), y_fwd(t));
+}
 
 }
 

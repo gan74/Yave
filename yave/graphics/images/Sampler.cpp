@@ -22,16 +22,16 @@ SOFTWARE.
 
 #include "Sampler.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
 
 namespace yave {
 
-static VkSamplerAddressMode vk_address_mode(Sampler::Type type) {
+static VkSamplerAddressMode vk_address_mode(SamplerType type) {
 	switch(type) {
-		case Sampler::Repeat:
+		case SamplerType::Repeat:
 			return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
-		case Sampler::Clamp:
+		case SamplerType::Clamp:
 			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
 		default:
@@ -39,7 +39,7 @@ static VkSamplerAddressMode vk_address_mode(Sampler::Type type) {
 	}
 }
 
-static VkSampler create_sampler(DevicePtr dptr, Sampler::Type type) {
+static VkSampler create_sampler(DevicePtr dptr, SamplerType type) {
 
 	VkSamplerCreateInfo create_info = vk_struct();
 	{
@@ -56,11 +56,11 @@ static VkSampler create_sampler(DevicePtr dptr, Sampler::Type type) {
 	}
 
 	VkSampler sampler = {};
-	vk_check(vkCreateSampler(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &sampler));
+	vk_check(vkCreateSampler(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &sampler));
 	return sampler;
 }
 
-Sampler::Sampler(DevicePtr dptr, Type type) : DeviceLinked(dptr), _sampler(create_sampler(dptr, type)) {
+Sampler::Sampler(DevicePtr dptr, SamplerType type) : DeviceLinked(dptr), _sampler(create_sampler(dptr, type)) {
 }
 
 Sampler::~Sampler() {

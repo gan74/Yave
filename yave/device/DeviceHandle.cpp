@@ -19,32 +19,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_IMAGES_SAMPLER_H
-#define YAVE_GRAPHICS_IMAGES_SAMPLER_H
 
-#include "SamplerType.h"
-#include "Image.h"
+#include "DeviceHandle.h"
+#include "Device.h"
 
 namespace yave {
 
-Y_TODO(move to device)
-class Sampler final : NonCopyable, public DeviceLinked {
-	public:
+#define YAVE_GENERATE_DESTROY_IMPL(T) 				\
+	void device_destroy(DevicePtr dptr, T t) { 		\
+		if(dptr) {									\
+			dptr->destroy_later(std::move(t)); 		\
+		}											\
+	}
 
-		Sampler() = default;
-		Sampler(Sampler&&) = default;
-		Sampler& operator=(Sampler&&) = default;
-
-		Sampler(DevicePtr dptr, SamplerType type = SamplerType::Repeat);
-
-		~Sampler();
-
-		VkSampler vk_sampler() const;
-
-	private:
-		SwapMove<VkSampler> _sampler;
-};
+YAVE_DEVICE_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
 
 }
-
-#endif // YAVE_GRAPHICS_IMAGES_SAMPLER_H

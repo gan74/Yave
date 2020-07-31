@@ -187,6 +187,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 				y_always_assert(id != AssetId::invalid_id(), "Invalid asset ID");
 
 				if(auto reader = parent()->store().data(id)) {
+					y_profile_zone("deserializing");
 					const serde3::Result res = serde3::ReadableArchive(*reader.unwrap()).deserialize(_load_from, loading_context());
 					if(res.is_error()/* || res.unwrap() == serde3::Success::Partial*/) {
 						_data->set_failed(ErrorType::InvalidData);

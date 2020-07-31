@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "ThreadLocalDevice.h"
-#include "Device.h"
 
 namespace yave {
 

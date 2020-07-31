@@ -22,8 +22,8 @@ SOFTWARE.
 
 #include "LightingPass.h"
 
-#include <yave/device/Device.h>
 #include <yave/framegraph/FrameGraph.h>
+#include <yave/device/DeviceResources.h>
 
 #include <yave/ecs/EntityWorld.h>
 
@@ -55,7 +55,7 @@ static const IBLProbe* find_probe(DevicePtr dptr, const ecs::EntityWorld& world)
 		}
 	}
 
-	return dptr->device_resources().empty_probe().get();
+	return device_resources(dptr).empty_probe().get();
 }
 
 static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
@@ -75,7 +75,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 	builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
 	builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
 	builder.add_external_input(*ibl_probe, 0, PipelineStage::ComputeBit);
-	builder.add_external_input(Descriptor(builder.device()->device_resources().brdf_lut(), Sampler::Clamp), 0, PipelineStage::ComputeBit);
+	builder.add_external_input(Descriptor(device_resources(builder.device()).brdf_lut(), SamplerType::Clamp), 0, PipelineStage::ComputeBit);
 	builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
 	builder.add_storage_input(directional_buffer, 0, PipelineStage::ComputeBit);
 	builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
@@ -95,7 +95,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 				};
 		}
 
-		const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredAmbientProgram];
+		const auto& program = device_resources(recorder.device())[DeviceResources::DeferredAmbientProgram];
 		recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
 	});
 
@@ -179,7 +179,7 @@ static void local_lights_pass(FrameGraph& framegraph,
 		}
 
 		if(push_data.point_count || push_data.spot_count) {
-			const auto& program = recorder.device()->device_resources()[DeviceResources::DeferredLocalsProgram];
+			const auto& program = device_resources(recorder.device())[DeviceResources::DeferredLocalsProgram];
 			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
 		}
 	});
@@ -197,7 +197,7 @@ static void local_lights_pass(FrameGraph& framegraph,
 		sh_builder.add_storage_input(shadow_buffer, 0, PipelineStage::ComputeBit);
 		sh_builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
 		sh_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			const ComputeProgram& program = recorder.device()->device_resources().program_from_file("sh_light.comp");
+			const ComputeProgram& program = device_resources(recorder.device()).program_from_file("sh_light.comp");
 			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
 		});
 	}

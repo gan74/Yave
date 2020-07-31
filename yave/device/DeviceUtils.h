@@ -19,32 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_IMAGES_SAMPLER_H
-#define YAVE_GRAPHICS_IMAGES_SAMPLER_H
+#ifndef YAVE_DEVICE_DEVICE_UTILS_H
+#define YAVE_DEVICE_DEVICE_UTILS_H
 
-#include "SamplerType.h"
-#include "Image.h"
+
+#include <yave/yave.h>
+
+#include <yave/graphics/commands/CmdBuffer.h>
+#include <yave/graphics/images/SamplerType.h>
 
 namespace yave {
 
-Y_TODO(move to device)
-class Sampler final : NonCopyable, public DeviceLinked {
-	public:
+VkDevice vk_device(DevicePtr dptr);
+VkInstance vk_device_instance(DevicePtr dptr);
 
-		Sampler() = default;
-		Sampler(Sampler&&) = default;
-		Sampler& operator=(Sampler&&) = default;
+CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer(DevicePtr dptr);
 
-		Sampler(DevicePtr dptr, SamplerType type = SamplerType::Repeat);
+const PhysicalDevice& physical_device(DevicePtr dptr);
+DeviceMemoryAllocator& device_allocator(DevicePtr dptr);
+DescriptorSetAllocator& descriptor_set_allocator(DevicePtr dptr);
+const Queue& graphic_queue(DevicePtr dptr);
+const DeviceResources& device_resources(DevicePtr dptr);
+const DeviceProperties& device_properties(DevicePtr dptr);
+LifetimeManager& lifetime_manager(DevicePtr dptr);
 
-		~Sampler();
+const VkAllocationCallbacks* vk_allocation_callbacks(DevicePtr dptr);
+VkSampler vk_sampler(DevicePtr dptr, SamplerType type);
+const QueueFamily& queue_family(DevicePtr dptr, VkQueueFlags flags);
 
-		VkSampler vk_sampler() const;
+const DebugUtils* debug_utils(DevicePtr dptr);
+const RayTracing* ray_tracing(DevicePtr dptr);
 
-	private:
-		SwapMove<VkSampler> _sampler;
-};
+void wait_all_queues(DevicePtr dptr);
 
 }
 
-#endif // YAVE_GRAPHICS_IMAGES_SAMPLER_H
+
+#endif // YAVE_DEVICE_DEVICE_UTILS_H

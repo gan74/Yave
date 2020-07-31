@@ -96,31 +96,36 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
 	y_profile();
 	y_debug_assert(lock.owns_lock());
 
-	for(auto it = _finalize_jobs.begin(); it != _finalize_jobs.end(); ++it) {
-		const AssetLoadingState state = (*it)->dependencies().state();
-		if(state != AssetLoadingState::NotLoaded) {
-			auto job = std::move(*it);
-			_finalize_jobs.erase(it);
-			lock.unlock();
+	{
+		y_profile_zone("finalizing loop");
+		for(auto it = _finalize_jobs.begin(); it != _finalize_jobs.end(); ++it) {
+			const AssetLoadingState state = (*it)->dependencies().state();
+			if(state != AssetLoadingState::NotLoaded) {
+				auto job = std::move(*it);
+				_finalize_jobs.erase(it);
+				lock.unlock();
 
-			if(state == AssetLoadingState::Loaded) {
-				job->finalize(device());
-			} else if(state == AssetLoadingState::Failed) {
-				job->set_dependencies_failed();
+				if(state == AssetLoadingState::Loaded) {
+					job->finalize(device());
+				} else if(state == AssetLoadingState::Failed) {
+					job->set_dependencies_failed();
+				}
+				_condition.notify_all();
+				return;
 			}
-			_condition.notify_all();
-			return;
 		}
 	}
 
 	y_debug_assert(lock.owns_lock());
 
 	if(!_loading_jobs.empty()) {
+		y_profile_zone("load one");
 		auto job = std::move(_loading_jobs.front());
 		_loading_jobs.pop_front();
 		lock.unlock();
 
 		if(job->read()) {
+			y_profile_zone("post read");
 			const AssetLoadingState state = job->dependencies().state();
 			if(state != AssetLoadingState::NotLoaded) {
 				if(state == AssetLoadingState::Loaded) {

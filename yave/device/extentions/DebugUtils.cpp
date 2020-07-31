@@ -22,8 +22,9 @@ SOFTWARE.
 
 #include "DebugUtils.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
 
+#include <y/core/String.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -138,7 +139,7 @@ void DebugUtils::set_resource_name(DevicePtr dptr, u64 resource, const char *nam
 	name_info.objectHandle = resource;
 	name_info.pObjectName = name;
 
-	vk_check(_set_object_name(dptr->vk_device(), &name_info));
+	vk_check(_set_object_name(vk_device(dptr), &name_info));
 }
 
 }

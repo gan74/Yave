@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "LifetimeManager.h"
-#include "Device.h"
+#include "DeviceUtils.h"
 
 #include <yave/graphics/commands/data/CmdBufferData.h>
 #include <yave/graphics/commands/pool/CmdBufferPoolBase.h>
@@ -145,7 +145,7 @@ void LifetimeManager::collect() {
 				break;
 			}
 
-			if(vkGetFenceStatus(device()->vk_device(), cmd.vk_fence()) == VK_SUCCESS) {
+			if(vkGetFenceStatus(vk_device(device()), cmd.vk_fence()) == VK_SUCCESS) {
 				next = fence;
 				to_clean.emplace_back(std::move(_in_flight.front()));
 				_in_flight.pop_front();
@@ -175,7 +175,6 @@ void LifetimeManager::collect() {
 }
 
 usize LifetimeManager::pending_deletions() const {
-
 	const std::unique_lock lock(_resource_lock);
 	return _to_destroy.size();
 }
@@ -196,7 +195,7 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 				res.recycle();
 			} else {
 				y_profile_zone("destroy");
-				detail::destroy(dptr, res);
+				detail::vk_destroy(dptr, res);
 			}
 		},
 		resource);

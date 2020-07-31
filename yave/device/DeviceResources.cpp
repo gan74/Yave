@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "DeviceResources.h"
+#include "Device.h"
 
 #include <yave/graphics/shaders/SpirVData.h>
 #include <yave/graphics/shaders/ShaderModule.h>
@@ -134,12 +135,12 @@ static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integr
 
 	const DescriptorSet dset(dptr, {Descriptor(StorageView(image))});
 
-	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
+	CmdBufferRecorder recorder = create_disposable_cmd_buffer(dptr);
 	{
 		const auto region = recorder.region("create_brdf_lut");
 		recorder.dispatch_size(brdf_integrator, image.size(), {dset});
 	}
-	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 
 	return image;
 }

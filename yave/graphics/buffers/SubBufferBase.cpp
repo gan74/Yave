@@ -22,7 +22,8 @@ SOFTWARE.
 
 #include "SubBufferBase.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+#include <yave/device/DeviceProperties.h>
 
 namespace yave {
 
@@ -47,7 +48,7 @@ bool SubBufferBase::is_null() const {
 }
 
 usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
-	const auto& props = dptr->device_properties();
+	const auto& props = device_properties(dptr);
 	u32 align = props.non_coherent_atom_size;
 	if ((usage & BufferUsage::UniformBit) != BufferUsage::None) {
 		align = std::max(props.uniform_buffer_alignment, align);

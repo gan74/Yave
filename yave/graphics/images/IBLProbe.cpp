@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/queues/Queue.h>
+#include <yave/device/DeviceResources.h>
 
 #include <y/core/Chrono.h>
 
@@ -43,7 +45,7 @@ static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format
 	}
 
 	VkImageView view = {};
-	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &view));
+	vk_check(vkCreateImageView(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &view));
 	return view;
 }
 
@@ -82,11 +84,11 @@ struct ProbeBaseView : ViewBase {
 };
 
 static const ComputeProgram& convolution_program(DevicePtr dptr, const Cubemap&) {
-	return dptr->device_resources()[DeviceResources::CubemapConvolutionProgram];
+	return device_resources(dptr)[DeviceResources::CubemapConvolutionProgram];
 }
 
 static const ComputeProgram& convolution_program(DevicePtr dptr, const Texture&) {
-	return dptr->device_resources()[DeviceResources::EquirecConvolutionProgram];
+	return device_resources(dptr)[DeviceResources::EquirecConvolutionProgram];
 }
 
 
@@ -96,12 +98,12 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
 
 	auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());
 	std::transform(views.begin(), views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
-			return DescriptorSet(dptr, {Descriptor(texture, Sampler::Clamp), Descriptor(view)});
+			return DescriptorSet(dptr, {Descriptor(texture, SamplerType::Clamp), Descriptor(view)});
 		});
 
 
 	const ComputeProgram& conv_program = convolution_program(dptr, texture);
-	CmdBufferRecorder recorder = dptr->create_disposable_cmd_buffer();
+	CmdBufferRecorder recorder = create_disposable_cmd_buffer(dptr);
 
 	const float roughness_step = 1.0f / (views.size() - 1);
 
@@ -117,7 +119,7 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
 	}
 
 	// use sync compute to avoid having to sync later
-	dptr->graphic_queue().submit<SyncSubmit>(std::move(recorder));
+	graphic_queue(dptr).submit<SyncSubmit>(std::move(recorder));
 }
 
 template<ImageType T>
@@ -137,7 +139,7 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
 	fill_probe(mip_views, texture);
 
 	for(const auto& v : mip_views) {
-		dptr->destroy(v.vk_view());
+		device_destroy(dptr, v.vk_view());
 	}
 }
 

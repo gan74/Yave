@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/material/Material.h>
 #include <yave/framegraph/FrameGraph.h>
+#include <yave/device/DeviceResources.h>
 
 #include <y/core/Chrono.h>
 
@@ -46,7 +47,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 
 		clear_builder.add_storage_output(histogram, 0, PipelineStage::ComputeBit);
 		clear_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			const auto& program = recorder.device()->device_resources()[DeviceResources::HistogramClearProgram];
+			const auto& program = device_resources(recorder.device())[DeviceResources::HistogramClearProgram];
 			recorder.dispatch_size(program, histogram_size, {self->descriptor_sets()[0]});
 		});
 
@@ -55,7 +56,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 		histogram_builder.add_storage_output(histogram, 0, PipelineStage::ComputeBit);
 		histogram_builder.add_uniform_input(in_lit, 0, PipelineStage::ComputeBit);
 		histogram_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			const auto& program = recorder.device()->device_resources()[DeviceResources::HistogramProgram];
+			const auto& program = device_resources(recorder.device())[DeviceResources::HistogramProgram];
 			recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
 			y_debug_assert(program.thread_count() == histogram_size.x());
 		});
@@ -67,7 +68,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 		params_builder.add_storage_output(params, 0, PipelineStage::ComputeBit);
 		params_builder.add_uniform_input(histogram, 0, PipelineStage::ComputeBit);
 		params_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			const auto& program = recorder.device()->device_resources()[DeviceResources::ToneMapParamsProgram];
+			const auto& program = device_resources(recorder.device())[DeviceResources::ToneMapParamsProgram];
 			recorder.dispatch(program, math::Vec3ui(1), {self->descriptor_sets()[0]});
 			y_debug_assert(program.thread_count() == histogram_size.x());
 		});
@@ -106,7 +107,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 		}
 
 		auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-		const auto* material = recorder.device()->device_resources()[DeviceResources::ToneMappingMaterialTemplate];
+		const auto* material = device_resources(recorder.device())[DeviceResources::ToneMappingMaterialTemplate];
 		render_pass.bind_material(material, {self->descriptor_sets()[0]});
 		render_pass.draw_array(3);
 	});

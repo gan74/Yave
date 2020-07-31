@@ -25,7 +25,8 @@ SOFTWARE.
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/commands/RecordedCmdBuffer.h>
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/queues/Queue.h>
 
 namespace yave {
 
@@ -38,10 +39,10 @@ SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
 	_indirect_data.indexCount = mesh_data.triangles().size() * 3;
 	_indirect_data.instanceCount = 1;
 
-	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+	CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
 	Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
 	Mapping::stage(_vertex_buffer, recorder, mesh_data.skinned_vertices().data());
-	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 const TriangleBuffer<>& SkinnedMesh::triangle_buffer() const {

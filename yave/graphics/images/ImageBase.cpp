@@ -25,12 +25,14 @@ SOFTWARE.
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/buffers/Mapping.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/device/Device.h>
+#include <yave/graphics/queues/Queue.h>
+#include <yave/graphics/memory/DeviceMemoryAllocator.h>
+#include <yave/device/DeviceUtils.h>
 
 namespace yave {
 
 static void bind_image_memory(DevicePtr dptr, VkImage image, const DeviceMemory& memory) {
-	vk_check(vkBindImageMemory(dptr->vk_device(), image, memory.vk_memory(), memory.vk_offset()));
+	vk_check(vkBindImageMemory(vk_device(dptr), image, memory.vk_memory(), memory.vk_offset()));
 }
 
 static VkImage create_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
@@ -52,7 +54,7 @@ static VkImage create_image(DevicePtr dptr, const math::Vec3ui& size, usize laye
 	}
 
 	VkImage image = {};
-	vk_check(vkCreateImage(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &image));
+	vk_check(vkCreateImage(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &image));
 	return image;
 }
 
@@ -98,14 +100,14 @@ static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format
 	}
 
 	VkImageView view = {};
-	vk_check(vkCreateImageView(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &view));
+	vk_check(vkCreateImageView(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &view));
 	return view;
 }
 
 static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
 	y_profile();
 	const auto image = create_image(dptr, size, layers, mips, format, usage, type);
-	auto memory = dptr->allocator().alloc(image);
+	auto memory = device_allocator(dptr).alloc(image);
 	bind_image_memory(dptr, image, memory);
 
 	return {image, std::move(memory), create_view(dptr, image, format, layers, mips, type)};
@@ -118,7 +120,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 	const auto staging_buffer = stage_data(dptr, data.combined_byte_size(), data.data());
 	const auto regions = get_copy_regions(data);
 
-	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+	CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
 
 	{
 		const auto region = recorder.region("Image upload");
@@ -127,16 +129,16 @@ static void upload_data(ImageBase& image, const ImageData& data) {
 		recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_image_layout(image.usage()))});
 	}
 
-	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 static void transition_image(ImageBase& image) {
 	y_profile();
 	DevicePtr dptr = image.device();
 
-	CmdBufferRecorder recorder(dptr->create_disposable_cmd_buffer());
+	CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
 	recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, vk_image_layout(image.usage()))});
-	dptr->graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+	graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {
@@ -184,10 +186,10 @@ ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const Ima
 }
 
 ImageBase::~ImageBase() {
-	if(device()) {
-		device()->destroy(_view);
-		device()->destroy(_image);
-		device()->destroy(std::move(_memory));
+	if(const DevicePtr dptr = device()) {
+		device_destroy(dptr, _view);
+		device_destroy(dptr, _image);
+		device_destroy(dptr, std::move(_memory));
 	}
 }
 

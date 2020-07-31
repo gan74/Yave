@@ -22,16 +22,16 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHPASS_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHPASS_H
 
-
 #include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <yave/graphics/images/Image.h>
-#include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include "FrameGraphResourceId.h"
 #include "FrameGraphDescriptorBinding.h"
+
+#include <y/core/String.h>
 
 namespace yave {
 

@@ -23,6 +23,10 @@ SOFTWARE.
 #include "DescriptorSetAllocator.h"
 #include "Descriptor.h"
 
+#include <yave/device/DeviceUtils.h>
+#include <yave/device/DeviceProperties.h>
+
+#include <y/core/Range.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -72,7 +76,7 @@ static VkDescriptorSetLayoutBinding create_inline_uniform_binding_fallback(const
 
 
 DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings) : DeviceLinked(dptr) {
-	const usize max_inline_uniform_size = dptr->device_properties().max_inline_uniform_size;
+	const usize max_inline_uniform_size = device_properties(dptr).max_inline_uniform_size;
 	const bool inline_uniform_supported = max_inline_uniform_size != 0;
 	const auto needs_fallback = [=](const VkDescriptorSetLayoutBinding& binding) {
 		return binding.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT && (!inline_uniform_supported || binding.descriptorCount > max_inline_uniform_size);
@@ -105,7 +109,7 @@ DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptor
 		create_info.bindingCount = bindings.size();
 		create_info.pBindings = bindings.data();
 	}
-	vk_check(vkCreateDescriptorSetLayout(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &_layout.get()));
+	vk_check(vkCreateDescriptorSetLayout(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &_layout.get()));
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
@@ -183,7 +187,7 @@ static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout
 	}
 
 	VkDescriptorPool pool = {};
-	vk_check(vkCreateDescriptorPool(layout.device()->vk_device(), &create_info, layout.device()->vk_allocation_callbacks(), &pool));
+	vk_check(vkCreateDescriptorPool(vk_device(layout.device()), &create_info, vk_allocation_callbacks(layout.device()), &pool));
 	return pool;
 }
 
@@ -203,7 +207,7 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
 		allocate_info.pSetLayouts = layouts.data();
 	}
 
-	vk_check(vkAllocateDescriptorSets(device()->vk_device(), &allocate_info, _sets.data()));
+	vk_check(vkAllocateDescriptorSets(vk_device(device()), &allocate_info, _sets.data()));
 
 	if(!layout.inline_blocks_fallbacks().is_empty()) {
 		const usize alignment = inline_sub_buffer_alignment();
@@ -250,7 +254,7 @@ DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
 void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
 	y_profile();
 
-	const usize max_inline_uniform_size = device()->device_properties().max_inline_uniform_size;
+	const usize max_inline_uniform_size = device_properties(device()).max_inline_uniform_size;
 	const bool inline_uniform_supported = max_inline_uniform_size != 0;
 	const usize block_buffer_alignment = inline_sub_buffer_alignment();
 
@@ -314,7 +318,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
 		writes << write;
 	}
 
-	vkUpdateDescriptorSets(device()->vk_device(), writes.size(), writes.data(), 0, nullptr);
+	vkUpdateDescriptorSets(vk_device(device()), writes.size(), writes.data(), 0, nullptr);
 }
 
 

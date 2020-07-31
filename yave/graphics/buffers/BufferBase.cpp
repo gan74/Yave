@@ -22,19 +22,23 @@ SOFTWARE.
 
 #include "BufferBase.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+#include <yave/device/DeviceProperties.h>
+#include <yave/graphics/memory/DeviceMemoryAllocator.h>
+
+#include <y/utils/format.h>
 
 namespace yave {
 
 static void bind_buffer_memory(DevicePtr dptr, VkBuffer buffer, const DeviceMemory& memory) {
-	vk_check(vkBindBufferMemory(dptr->vk_device(), buffer, memory.vk_memory(), memory.vk_offset()));
+	vk_check(vkBindBufferMemory(vk_device(dptr), buffer, memory.vk_memory(), memory.vk_offset()));
 }
 
 static VkBuffer create_buffer(DevicePtr dptr, usize byte_size, VkBufferUsageFlags usage) {
 	y_debug_assert(byte_size);
 	if(usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
-		if(byte_size > dptr->device_properties().max_uniform_buffer_size) {
-			y_fatal("Uniform buffer size exceeds maxUniformBufferRange (%).", dptr->device_properties().max_uniform_buffer_size);
+		if(byte_size > device_properties(dptr).max_uniform_buffer_size) {
+			y_fatal("Uniform buffer size exceeds maxUniformBufferRange (%).", device_properties(dptr).max_uniform_buffer_size);
 		}
 	}
 
@@ -46,7 +50,7 @@ static VkBuffer create_buffer(DevicePtr dptr, usize byte_size, VkBufferUsageFlag
 	}
 
 	VkBuffer buffer = {};
-	vk_check(vkCreateBuffer(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &buffer));
+	vk_check(vkCreateBuffer(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &buffer));
 	return buffer;
 }
 
@@ -54,7 +58,7 @@ static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(DevicePtr dptr, usize buf
 	y_debug_assert(buffer_size);
 
 	const auto buffer = create_buffer(dptr, buffer_size, usage);
-	auto memory = dptr->allocator().alloc(buffer, type);
+	auto memory = device_allocator(dptr).alloc(buffer, type);
 	bind_buffer_memory(dptr, buffer, memory);
 
 	return {buffer, std::move(memory)};
@@ -67,9 +71,9 @@ BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, Memor
 }
 
 BufferBase::~BufferBase() {
-	if(device()) {
-		device()->destroy(_buffer);
-		device()->destroy(std::move(_memory));
+	if(const DevicePtr dptr = device()) {
+		device_destroy(dptr, _buffer);
+		device_destroy(dptr, std::move(_memory));
 	}
 }
 

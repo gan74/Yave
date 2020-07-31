@@ -22,7 +22,7 @@ SOFTWARE.
 #include "Material.h"
 #include "MaterialCompiler.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>

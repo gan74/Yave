@@ -22,7 +22,8 @@ SOFTWARE.
 
 #include "ShaderProgram.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
 #include <y/utils/sort.h>
 
@@ -147,7 +148,7 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 		if(!_bindings.is_empty()) {
 			_layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
 			for(const auto& binding : _bindings) {
-				_layouts[binding.first] = device()->descriptor_set_layout(binding.second).vk_descriptor_set_layout();
+				_layouts[binding.first] = descriptor_set_allocator(device()).descriptor_set_layout(binding.second).vk_descriptor_set_layout();
 			}
 		}
 	}

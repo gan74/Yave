@@ -23,6 +23,8 @@ SOFTWARE.
 #include "DeviceMemoryAllocator.h"
 #include "alloc.h"
 
+#include <yave/device/DeviceProperties.h>
+
 #include <y/utils/log.h>
 
 namespace yave {
@@ -44,7 +46,7 @@ usize DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
 
 DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
 		DeviceLinked(dptr),
-		_max_allocs(dptr->device_properties().max_memory_allocations) {
+		_max_allocs(device_properties(dptr).max_memory_allocations) {
 }
 
 DeviceMemory DeviceMemoryAllocator::dedicated_alloc(VkMemoryRequirements reqs, MemoryType type) {
@@ -88,13 +90,13 @@ DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements reqs, MemoryType 
 
 DeviceMemory DeviceMemoryAllocator::alloc(VkImage image) {
 	VkMemoryRequirements reqs = {};
-	vkGetImageMemoryRequirements(device()->vk_device(), image, &reqs);
+	vkGetImageMemoryRequirements(vk_device(device()), image, &reqs);
 	return alloc(reqs, MemoryType::DeviceLocal);
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(VkBuffer buffer, MemoryType type) {
 	VkMemoryRequirements reqs = {};
-	vkGetBufferMemoryRequirements(device()->vk_device(), buffer, &reqs);
+	vkGetBufferMemoryRequirements(vk_device(device()), buffer, &reqs);
 	return alloc(reqs, type);
 }
 

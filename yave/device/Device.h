@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include "DeviceUtils.h"
 #include "DeviceProperties.h"
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
@@ -76,7 +77,7 @@ class Device : NonMovable {
 		VkDevice vk_device() const;
 		const VkAllocationCallbacks* vk_allocation_callbacks() const;
 		VkPhysicalDevice vk_physical_device() const;
-		VkSampler vk_sampler(Sampler::Type type = Sampler::Repeat) const;
+		VkSampler vk_sampler(SamplerType type = SamplerType::Repeat) const;
 
 		const DebugUtils* debug_utils() const;
 		const RayTracing* ray_tracing() const;
@@ -85,16 +86,6 @@ class Device : NonMovable {
 		template<typename T>
 		decltype(auto) descriptor_set_layout(T&& t) const {
 			return descriptor_set_allocator().descriptor_set_layout(y_fwd(t));
-		}
-
-		template<typename T>
-		void destroy(T&& t) const {
-			destroy_later(y_fwd(t));
-		}
-
-		template<typename T>
-		void destroy_immediate(T&& t) const {
-			_lifetime_manager.destroy_immediate(y_fwd(t));
 		}
 
 		template<typename T>
@@ -130,35 +121,6 @@ class Device : NonMovable {
 
 		DeviceResources _resources;
 };
-
-
-template<typename T>
-void DeviceLinked::destroy(T&& t) const {
-	if(device()) {
-		device()->destroy(y_fwd(t));
-	}
-}
-
-template<typename T>
-void DeviceLinked::destroy_immediate(T&& t) const {
-	if(device()) {
-		device()->destroy_immediate(y_fwd(t));
-	}
-}
-
-template<typename T>
-void ThreadDeviceLinked::destroy(T&& t) const {
-	if(device()) {
-		device()->destroy(y_fwd(t));
-	}
-}
-
-template<typename T>
-void ThreadDeviceLinked::destroy_immediate(T&& t) const {
-	if(device()) {
-		device()->destroy_immediate(y_fwd(t));
-	}
-}
 
 }
 

@@ -89,7 +89,7 @@ static core::Vector<Queue> create_queues(DevicePtr dptr, core::Span<QueueFamily>
 static std::array<Sampler, 2> create_samplers(DevicePtr dptr) {
 	std::array<Sampler, 2> samplers;
 	for(usize i = 0; i != samplers.size(); ++i) {
-		samplers[i] = Sampler(dptr, Sampler::Type(i));
+		samplers[i] = Sampler(dptr, SamplerType(i));
 	}
 	return samplers;
 }
@@ -336,7 +336,7 @@ VkPhysicalDevice Device::vk_physical_device() const {
 	return _physical.vk_physical_device();
 }
 
-VkSampler Device::vk_sampler(Sampler::Type type) const {
+VkSampler Device::vk_sampler(SamplerType type) const {
 	y_debug_assert(usize(type) < _samplers.size());
 	return _samplers[usize(type)].vk_sampler();
 }

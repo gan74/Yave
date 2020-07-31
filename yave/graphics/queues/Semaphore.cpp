@@ -22,14 +22,14 @@ SOFTWARE.
 
 #include "Semaphore.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
 
 namespace yave {
 
 Semaphore::Shared::Shared(DevicePtr dptr) :
 		DeviceLinked(dptr) {
 	const VkSemaphoreCreateInfo create_info = vk_struct();
-	vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &_semaphore));
+	vk_check(vkCreateSemaphore(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_semaphore));
 }
 
 Semaphore::Shared::~Shared() {

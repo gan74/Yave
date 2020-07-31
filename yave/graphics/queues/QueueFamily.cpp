@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "QueueFamily.h"
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
 
 
 namespace yave {
@@ -77,7 +77,7 @@ core::Vector<Queue> QueueFamily::queues(DevicePtr dptr) const {
 	auto queues = core::vector_with_capacity<Queue>(_queue_count);
 	for(u32 i = 0; i != _queue_count; ++i) {
 		VkQueue q = {};
-		vkGetDeviceQueue(dptr->vk_device(), _index, i, &q);
+		vkGetDeviceQueue(vk_device(dptr), _index, i, &q);
 		queues << Queue(dptr, q);
 	}
 	return queues;

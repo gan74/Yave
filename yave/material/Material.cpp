@@ -22,17 +22,18 @@ SOFTWARE.
 #include "Material.h"
 #include "SimpleMaterialData.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+#include <yave/device/DeviceResources.h>
 
 namespace yave {
 
 static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialData& data) {
 
 	std::array<Descriptor, SimpleMaterialData::texture_count + 1> bindings = {
-			*dptr->device_resources()[DeviceResources::GreyTexture],
-			*dptr->device_resources()[DeviceResources::FlatNormalTexture],
-			*dptr->device_resources()[DeviceResources::WhiteTexture],
-			*dptr->device_resources()[DeviceResources::WhiteTexture],
+			*device_resources(dptr)[DeviceResources::GreyTexture],
+			*device_resources(dptr)[DeviceResources::FlatNormalTexture],
+			*device_resources(dptr)[DeviceResources::WhiteTexture],
+			*device_resources(dptr)[DeviceResources::WhiteTexture],
 			InlineDescriptor(data.constants())
 		};
 
@@ -54,7 +55,7 @@ static DeviceResources::MaterialTemplates material_template_for_data(const Simpl
 
 
 Material::Material(DevicePtr dptr, SimpleMaterialData&& data) :
-		_template(dptr->device_resources()[material_template_for_data(data)]),
+		_template(device_resources(dptr)[material_template_for_data(data)]),
 		_set(create_descriptor_set(device(), data)),
 		_data(std::move(data)) {
 }

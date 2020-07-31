@@ -21,25 +21,25 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 namespace yave {
 namespace detail {
 
-void destroy(DevicePtr dptr, VkBuffer buffer);
-void destroy(DevicePtr dptr, VkImage image);
-void destroy(DevicePtr dptr, VkImageView image_view);
-void destroy(DevicePtr dptr, VkRenderPass render_pass);
-void destroy(DevicePtr dptr, VkFramebuffer framebuffer);
-void destroy(DevicePtr dptr, VkPipeline pipeline);
-void destroy(DevicePtr dptr, VkPipelineLayout pipeline_layout);
-void destroy(DevicePtr dptr, VkShaderModule module);
-void destroy(DevicePtr dptr, VkSampler sampler);
-void destroy(DevicePtr dptr, VkSwapchainKHR swapchain);
-void destroy(DevicePtr dptr, VkCommandPool pool);
-void destroy(DevicePtr dptr, VkFence fence);
-void destroy(DevicePtr dptr, VkDescriptorPool pool);
-void destroy(DevicePtr dptr, VkDescriptorSetLayout layout);
-void destroy(DevicePtr dptr, VkSemaphore semaphore);
-void destroy(DevicePtr dptr, VkQueryPool pool);
-void destroy(DevicePtr dptr, VkEvent event);
+void vk_destroy(DevicePtr dptr, VkBuffer buffer);
+void vk_destroy(DevicePtr dptr, VkImage image);
+void vk_destroy(DevicePtr dptr, VkImageView image_view);
+void vk_destroy(DevicePtr dptr, VkRenderPass render_pass);
+void vk_destroy(DevicePtr dptr, VkFramebuffer framebuffer);
+void vk_destroy(DevicePtr dptr, VkPipeline pipeline);
+void vk_destroy(DevicePtr dptr, VkPipelineLayout pipeline_layout);
+void vk_destroy(DevicePtr dptr, VkShaderModule module);
+void vk_destroy(DevicePtr dptr, VkSampler sampler);
+void vk_destroy(DevicePtr dptr, VkSwapchainKHR swapchain);
+void vk_destroy(DevicePtr dptr, VkCommandPool pool);
+void vk_destroy(DevicePtr dptr, VkFence fence);
+void vk_destroy(DevicePtr dptr, VkDescriptorPool pool);
+void vk_destroy(DevicePtr dptr, VkDescriptorSetLayout layout);
+void vk_destroy(DevicePtr dptr, VkSemaphore semaphore);
+void vk_destroy(DevicePtr dptr, VkQueryPool pool);
+void vk_destroy(DevicePtr dptr, VkEvent event);
 
-void destroy(DevicePtr dptr, VkSurfaceKHR surface);
+void vk_destroy(DevicePtr dptr, VkSurfaceKHR surface);
 
 }
 }

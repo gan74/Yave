@@ -23,7 +23,8 @@ SOFTWARE.
 #include "DeviceMemoryView.h"
 #include "DeviceMemoryHeap.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+#include <yave/device/DeviceProperties.h>
 
 namespace yave {
 
@@ -35,7 +36,7 @@ DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
 }
 
 VkMappedMemoryRange DeviceMemoryView::vk_mapped_range(usize size, usize offset) const {
-	const usize atom_size = device()->device_properties().non_coherent_atom_size;
+	const usize atom_size = device_properties(device()).non_coherent_atom_size;
 
 	const usize full_offset = _offset + offset;
 	const usize aligned_offset = memory::align_down_to(full_offset, atom_size);

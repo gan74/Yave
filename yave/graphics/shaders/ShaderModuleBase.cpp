@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "ShaderModuleBase.h"
 
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
 
 #include <spirv_cross/spirv.hpp>
 #include <spirv_cross/spirv_cross.hpp>
@@ -48,7 +48,7 @@ static VkShaderModule create_shader_module(DevicePtr dptr, const SpirVData& data
 		create_info.pCode = data.data();
 	}
 
-	vk_check(vkCreateShaderModule(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &shader));
+	vk_check(vkCreateShaderModule(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &shader));
 	return shader;
 }
 
