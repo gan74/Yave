@@ -87,4 +87,3 @@ y_test_func("Quaternion euler") {
 }
 }
 
-

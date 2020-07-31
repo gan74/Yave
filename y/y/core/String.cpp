@@ -403,5 +403,3 @@ Vector<u32> String::to_unicode() const {
 }
 }
 
-
-

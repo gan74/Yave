@@ -328,5 +328,3 @@ y_test_func("SmallVector move") {
 }
 }
 
-
-
