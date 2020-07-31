@@ -55,7 +55,7 @@ Semaphore Queue::submit_sem(RecordedCmdBuffer&& cmd) const {
     return sync;
 }
 
-void Queue::submit_base(CmdBufferBase& base) const {
+void Queue::submit_base(CmdBuffer& base) const {
     const auto lock = y_profile_unique_lock(*_lock);
 
     auto cmd = base.vk_cmd_buffer();

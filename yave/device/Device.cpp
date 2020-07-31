@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <y/concurrent/concurrent.h>
 
-#include <yave/graphics/commands/CmdBufferBase.h>
+#include <yave/graphics/commands/CmdBuffer.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -233,7 +233,7 @@ Device::~Device() {
 
     {
         Y_TODO(Why do we need this?)
-        CmdBufferPool<CmdBufferUsage::Disposable> pool(this);
+        CmdBufferPool pool(this);
         CmdBufferRecorder rec = pool.create_buffer();
         graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(rec)));
     }
@@ -341,7 +341,7 @@ VkSampler Device::vk_sampler(SamplerType type) const {
     return _samplers[usize(type)].vk_sampler();
 }
 
-CmdBuffer<CmdBufferUsage::Disposable> Device::create_disposable_cmd_buffer() const {
+CmdBuffer Device::create_disposable_cmd_buffer() const {
     return thread_device()->create_disposable_cmd_buffer();
 }
 

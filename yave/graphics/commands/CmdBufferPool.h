@@ -19,12 +19,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
-#define YAVE_GRAPHICS_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
+#ifndef YAVE_GRAPHICS_COMMANDS_CMDBUFFERPOOL_H
+#define YAVE_GRAPHICS_COMMANDS_CMDBUFFERPOOL_H
 
 #include <yave/yave.h>
 #include <yave/device/DeviceLinked.h>
-#include <yave/graphics/commands/CmdBufferUsage.h>
 #include <yave/graphics/commands/data/CmdBufferData.h>
 
 #include <yave/utils/traits.h>
@@ -35,19 +34,21 @@ namespace yave {
 
 class CmdBufferDataProxy;
 
-class CmdBufferPoolBase : NonMovable, public DeviceLinked {
+class CmdBufferPool : NonMovable, public DeviceLinked {
 
     public:
-        ~CmdBufferPoolBase();
+        CmdBufferPool();
+        CmdBufferPool(DevicePtr dptr);
+
+        ~CmdBufferPool();
 
         VkCommandPool vk_pool() const;
 
-    protected:
+        CmdBuffer create_buffer();
+
+    private:
         friend class CmdBufferDataProxy;
         friend class LifetimeManager;
-
-        CmdBufferPoolBase();
-        CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred);
 
         void release(CmdBufferData&& data);
         std::unique_ptr<CmdBufferDataProxy> alloc();
@@ -59,16 +60,15 @@ class CmdBufferPoolBase : NonMovable, public DeviceLinked {
 
         std::mutex _lock;
         VkCommandPool _pool;
-        CmdBufferUsage _usage;
         core::Vector<CmdBufferData> _cmd_buffers;
         core::Vector<VkFence> _fences;
 
         const u32 _thread_id;
 };
 
-static_assert(is_safe_base<CmdBufferPoolBase>::value);
+static_assert(is_safe_base<CmdBufferPool>::value);
 
 }
 
-#endif // YAVE_GRAPHICS_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
+#endif // YAVE_GRAPHICS_COMMANDS_CMDBUFFERPOOL_H
 

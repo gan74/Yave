@@ -26,9 +26,9 @@ SOFTWARE.
 
 namespace yave {
 
-class RecordedCmdBuffer : public CmdBufferBase {
+class RecordedCmdBuffer : public CmdBuffer {
 
-    CmdBufferBase&& end_recorder(CmdBufferRecorder&& recorder) {
+    CmdBuffer&& end_recorder(CmdBufferRecorder&& recorder) {
         vk_check(vkEndCommandBuffer(recorder.vk_cmd_buffer()));
         return std::move(recorder);
     }
@@ -45,7 +45,7 @@ class RecordedCmdBuffer : public CmdBufferBase {
     private:
         friend class CmdBufferRecorder;
 
-        RecordedCmdBuffer(CmdBufferBase&& other) : CmdBufferBase(std::move(other)) {
+        RecordedCmdBuffer(CmdBuffer&& other) : CmdBuffer(std::move(other)) {
         }
 };
 

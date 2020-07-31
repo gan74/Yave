@@ -139,7 +139,7 @@ class RenderPassRecorder : NonMovable {
         Viewport _viewport;
 };
 
-class CmdBufferRecorder : public CmdBufferBase {
+class CmdBufferRecorder : public CmdBuffer {
 
     using SrcCopyBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
     using DstCopyBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
@@ -150,10 +150,7 @@ class CmdBufferRecorder : public CmdBufferBase {
         using DescriptorSetList = detail::DescriptorSetList;
 
 
-        template<CmdBufferUsage Usage>
-        CmdBufferRecorder(CmdBuffer<Usage>&& buffer) : CmdBufferRecorder(std::move(buffer), Usage) {
-        }
-
+        CmdBufferRecorder(CmdBuffer&& base);
         CmdBufferRecorder(CmdBufferRecorder&&) = default;
 
         ~CmdBufferRecorder();
@@ -183,7 +180,6 @@ class CmdBufferRecorder : public CmdBufferBase {
 
     protected:
         CmdBufferRecorder() = default;
-        CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage);
 
     private:
         friend class RenderPassRecorder;

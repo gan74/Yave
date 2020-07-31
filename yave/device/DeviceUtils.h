@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <yave/graphics/commands/CmdBuffer.h>
+#include <yave/graphics/vk/vk.h>
 #include <yave/graphics/images/SamplerType.h>
 
 namespace yave {
@@ -33,7 +33,7 @@ namespace yave {
 VkDevice vk_device(DevicePtr dptr);
 VkInstance vk_device_instance(DevicePtr dptr);
 
-CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer(DevicePtr dptr);
+CmdBuffer create_disposable_cmd_buffer(DevicePtr dptr);
 
 const PhysicalDevice& physical_device(DevicePtr dptr);
 DeviceMemoryAllocator& device_allocator(DevicePtr dptr);

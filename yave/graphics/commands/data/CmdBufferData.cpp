@@ -24,11 +24,11 @@ SOFTWARE.
 
 #include <yave/device/DeviceUtils.h>
 #include <yave/device/LifetimeManager.h>
-#include <yave/graphics/commands/pool/CmdBufferPoolBase.h>
+#include <yave/graphics/commands/CmdBufferPool.h>
 
 namespace yave {
 
-CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPoolBase* p) :
+CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p) :
         _cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(lifetime_manager(device()).create_fence()) {
 }
 
@@ -59,7 +59,7 @@ bool CmdBufferData::is_null() const {
     return !device();
 }
 
-CmdBufferPoolBase* CmdBufferData::pool() const {
+CmdBufferPool* CmdBufferData::pool() const {
     return _pool;
 }
 

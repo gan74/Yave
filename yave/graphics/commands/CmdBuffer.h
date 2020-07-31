@@ -22,23 +22,45 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_CMDBUFFER_H
 #define YAVE_GRAPHICS_COMMANDS_CMDBUFFER_H
 
-#include "CmdBufferBase.h"
+#include <yave/graphics/commands/data/CmdBufferData.h>
 
 namespace yave {
 
-template<CmdBufferUsage Usage>
-class CmdBuffer : public CmdBufferBase {
-
+struct CmdBuffer : NonCopyable {
     public:
         CmdBuffer() = default;
 
-    private:
-        friend class CmdBufferPool<Usage>;
+        DevicePtr device() const;
 
-        using CmdBufferBase::CmdBufferBase;
+        VkCommandBuffer vk_cmd_buffer() const;
+        VkFence vk_fence() const;
+        ResourceFence resource_fence() const;
+
+        void wait() const;
+        void wait_for(const Semaphore& sem);
+
+        template<typename T>
+        T wait_for(BoxSemaphore<T>&& t) {
+            CmdBuffer::wait_for(static_cast<const Semaphore&>(t));
+            return std::move(t._boxed);
+        }
+
+        template<typename T>
+        void keep_alive(T&& t) {
+            _proxy->data().keep_alive(y_fwd(t));
+        }
+
+    protected:
+        friend class Queue;
+        friend class CmdBufferPool;
+
+        CmdBuffer(std::unique_ptr<CmdBufferDataProxy>&& proxy);
+
+    private:
+        std::unique_ptr<CmdBufferDataProxy> _proxy;
 };
 
 }
 
-#endif // YAVE_COMMANDS_CMDBUFFERSTATE_H
+#endif // YAVE_GRAPHICS_COMMANDS_CMDBUFFER_H
 

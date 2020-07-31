@@ -24,7 +24,7 @@ SOFTWARE.
 #include "DeviceUtils.h"
 
 #include <yave/graphics/commands/data/CmdBufferData.h>
-#include <yave/graphics/commands/pool/CmdBufferPoolBase.h>
+#include <yave/graphics/commands/CmdBufferPool.h>
 
 #include <yave/graphics/vk/destroy.h>
 

@@ -39,7 +39,7 @@ const PhysicalDevice& physical_device(DevicePtr dptr) {
     return dptr->physical_device();
 }
 
-CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer(DevicePtr dptr) {
+CmdBuffer create_disposable_cmd_buffer(DevicePtr dptr) {
     return dptr->create_disposable_cmd_buffer();
 }
 

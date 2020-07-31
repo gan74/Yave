@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 #define YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 
-#include <yave/graphics/commands/CmdBufferUsage.h>
 #include <yave/graphics/queues/Semaphore.h>
 
 #include <y/core/Vector.h>
@@ -80,7 +79,7 @@ class CmdBufferData final : NonCopyable {
     };
 
     public:
-        CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPoolBase* p);
+        CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p);
 
         CmdBufferData() = default;
 
@@ -92,7 +91,7 @@ class CmdBufferData final : NonCopyable {
         DevicePtr device() const;
         bool is_null() const;
 
-        CmdBufferPoolBase* pool() const;
+        CmdBufferPool* pool() const;
         ResourceFence resource_fence() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
@@ -122,7 +121,7 @@ class CmdBufferData final : NonCopyable {
         VkFence _fence = {};
 
         core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
-        CmdBufferPoolBase* _pool = nullptr;
+        CmdBufferPool* _pool = nullptr;
 
         Semaphore _signal;
         core::Vector<Semaphore> _waits;

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "CmdBufferPoolBase.h"
+#include "CmdBufferPool.h"
 
 #include <yave/device/DeviceUtils.h>
 #include <yave/graphics/queues/QueueFamily.h>
@@ -30,23 +30,16 @@ SOFTWARE.
 
 namespace yave {
 
-static VkCommandBufferLevel cmd_level(CmdBufferUsage u) {
-    unused(u);
-    y_debug_assert(u == CmdBufferUsage::Disposable);
-    return VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+static VkCommandPoolCreateFlagBits cmd_create_flags() {
+    return VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 }
 
-static VkCommandPoolCreateFlagBits cmd_create_flags(CmdBufferUsage u) {
-    return u == CmdBufferUsage::Disposable
-        ? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
-        : VkCommandPoolCreateFlagBits(0);
-}
-
-static VkCommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
+static VkCommandPool create_pool(DevicePtr dptr) {
     VkCommandPoolCreateInfo create_info = vk_struct();
     {
         create_info.queueFamilyIndex = queue_family(dptr, QueueFamily::Graphics).index();
-        create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | cmd_create_flags(usage);
+        create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     }
 
     VkCommandPool pool = {};
@@ -54,17 +47,16 @@ static VkCommandPool create_pool(DevicePtr dptr, CmdBufferUsage usage) {
     return pool;
 }
 
-CmdBufferPoolBase::CmdBufferPoolBase() : _thread_id(concurrent::thread_id()) {
+CmdBufferPool::CmdBufferPool() : _thread_id(concurrent::thread_id()) {
 }
 
-CmdBufferPoolBase::CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred) :
+CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
         DeviceLinked(dptr),
-        _pool(create_pool(dptr, preferred)),
-        _usage(preferred),
+        _pool(create_pool(dptr)),
         _thread_id(concurrent::thread_id()) {
 }
 
-CmdBufferPoolBase::~CmdBufferPoolBase() {
+CmdBufferPool::~CmdBufferPool() {
     if(device()) {
         if(_fences.size() != _cmd_buffers.size()) {
             y_fatal("CmdBuffers are still in use (% fences, % buffers).", _fences.size(), _cmd_buffers.size());
@@ -75,12 +67,12 @@ CmdBufferPoolBase::~CmdBufferPoolBase() {
     }
 }
 
-VkCommandPool CmdBufferPoolBase::vk_pool() const {
+VkCommandPool CmdBufferPool::vk_pool() const {
     return _pool;
 }
 
-void CmdBufferPoolBase::join_all() {
-    if(_fences.is_empty()/* || _usage == CmdBufferUsage::Secondary*/) {
+void CmdBufferPool::join_all() {
+    if(_fences.is_empty()) {
         return;
     }
 
@@ -89,7 +81,7 @@ void CmdBufferPoolBase::join_all() {
     }
 }
 
-void CmdBufferPoolBase::release(CmdBufferData&& data) {
+void CmdBufferPool::release(CmdBufferData&& data) {
     y_profile();
 
     if(data.pool() != this) {
@@ -100,7 +92,7 @@ void CmdBufferPoolBase::release(CmdBufferData&& data) {
     _cmd_buffers.push_back(std::move(data));
 }
 
-std::unique_ptr<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
+std::unique_ptr<CmdBufferDataProxy> CmdBufferPool::alloc() {
     y_profile();
 
     y_debug_assert(concurrent::thread_id() == _thread_id);
@@ -118,13 +110,13 @@ std::unique_ptr<CmdBufferDataProxy> CmdBufferPoolBase::alloc() {
     return std::make_unique<CmdBufferDataProxy>(create_data());
 }
 
-CmdBufferData CmdBufferPoolBase::create_data() {
+CmdBufferData CmdBufferPool::create_data() {
     const VkFenceCreateInfo fence_create_info = vk_struct();
     VkCommandBufferAllocateInfo allocate_info = vk_struct();
     {
         allocate_info.commandBufferCount = 1;
         allocate_info.commandPool = _pool;
-        allocate_info.level = cmd_level(_usage);
+        allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     }
 
     VkCommandBuffer buffer = {};
@@ -135,6 +127,11 @@ CmdBufferData CmdBufferPoolBase::create_data() {
 
     _fences << fence;
     return CmdBufferData(buffer, fence, this);
+}
+
+
+CmdBuffer CmdBufferPool::create_buffer() {
+    return CmdBuffer(alloc());
 }
 
 }

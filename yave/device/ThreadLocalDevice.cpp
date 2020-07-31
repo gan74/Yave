@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "ThreadLocalDevice.h"
 
+#include <yave/graphics/commands/CmdBufferPool.h>
+#include <yave/graphics/commands/CmdBuffer.h>
+
 namespace yave {
 
 ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) :
@@ -29,7 +32,7 @@ ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) :
         _disposable_cmd_pool(dptr) {
 }
 
-CmdBuffer<CmdBufferUsage::Disposable> ThreadLocalDevice::create_disposable_cmd_buffer() const {
+CmdBuffer ThreadLocalDevice::create_disposable_cmd_buffer() const {
     return _disposable_cmd_pool.create_buffer();
 }
 

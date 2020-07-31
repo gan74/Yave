@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_DEVICE_THREADLOCALDEVICE_H
 
 #include <yave/graphics/vk/vk.h>
-#include <yave/graphics/commands/pool/CmdBufferPool.h>
+#include <yave/graphics/commands/CmdBufferPool.h>
 
 #include "DeviceLinked.h"
 
@@ -33,10 +33,10 @@ class ThreadLocalDevice : NonMovable, public DeviceLinked {
     public:
         ThreadLocalDevice(DevicePtr dptr);
 
-        CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
+        CmdBuffer create_disposable_cmd_buffer() const;
 
     private:
-        mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
+        mutable CmdBufferPool _disposable_cmd_pool;
 };
 
 }

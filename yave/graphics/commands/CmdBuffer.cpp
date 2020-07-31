@@ -19,32 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_COMMANDS_CMDBUFFERUSAGE_H
-#define YAVE_GRAPHICS_COMMANDS_CMDBUFFERUSAGE_H
 
-#include <yave/graphics/vk/vk.h>
+#include "CmdBuffer.h"
 
-#include <yave/device/DeviceLinked.h>
+#include <yave/graphics/commands/CmdBufferPool.h>
+#include <yave/device/DeviceUtils.h>
 
 namespace yave {
 
-enum class CmdBufferUsage {
-    Disposable = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-};
-
-class CmdBufferBase;
-class CmdBufferPoolBase;
-
-template<CmdBufferUsage Usage>
-class CmdBufferPool;
-
-template<CmdBufferUsage Usage>
-class CmdBuffer;
-
-class RecordedCmdBuffer;
-class CmdBufferRecorder;
-
+CmdBuffer::CmdBuffer(std::unique_ptr<CmdBufferDataProxy>&& data) : _proxy(std::move(data)) {
 }
 
-#endif // YAVE_GRAPHICS_COMMANDS_CMDBUFFERUSAGE_H
+void CmdBuffer::wait() const {
+    const VkFence fence = vk_fence();
+    vk_check(vkWaitForFences(vk_device(device()), 1, &fence, true, u64(-1)));
+}
+
+void CmdBuffer::wait_for(const Semaphore& sem) {
+    _proxy->data().wait_for(sem);
+}
+
+DevicePtr CmdBuffer::device() const {
+    const auto pool = _proxy ? _proxy->data().pool() : nullptr;
+    return pool ? pool->device() : nullptr;
+}
+
+VkCommandBuffer CmdBuffer::vk_cmd_buffer() const {
+    y_debug_assert(_proxy);
+    return _proxy->data().vk_cmd_buffer();
+}
+
+VkFence CmdBuffer::vk_fence() const {
+    y_debug_assert(_proxy);
+    return  _proxy->data().vk_fence();
+}
+
+ResourceFence CmdBuffer::resource_fence() const {
+    y_debug_assert(_proxy);
+    return _proxy->data().resource_fence();
+}
+
+}
 

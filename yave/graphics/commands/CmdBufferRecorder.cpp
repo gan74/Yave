@@ -39,10 +39,6 @@ bool disable_render = false;
 #define YAVE_VK_CMD do { } while(false)
 #endif
 
-static VkCommandBufferUsageFlagBits cmd_usage_flags(CmdBufferUsage u) {
-    return VkCommandBufferUsageFlagBits(uenum(u) /*& ~uenum(CmdBufferUsage::Secondary)*/);
-}
-
 
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
@@ -220,12 +216,11 @@ void RenderPassRecorder::set_scissor(const math::Vec2i& offset, const math::Vec2
 
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
 
-CmdBufferRecorder::CmdBufferRecorder(CmdBufferBase&& base, CmdBufferUsage usage)  : CmdBufferBase(std::move(base)) {
-
+CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& base) : CmdBuffer(std::move(base)) {
 
     VkCommandBufferBeginInfo begin_info = vk_struct();
     {
-        begin_info.flags = cmd_usage_flags(usage);
+        begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     }
 
     vk_check(vkBeginCommandBuffer(vk_cmd_buffer(), &begin_info));
