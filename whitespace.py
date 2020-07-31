@@ -13,7 +13,7 @@ def process_file(fullname):
         content = f.read()
     
     new_content = ""
-    for line in content.replace("\n\r", "\n").split("\n"):
+    for line in content.replace("\n\r", "\n").replace("\r\n", "\n").split("\n"):
         new_line = ""
         for c in line:
             if c != '\t':
@@ -24,7 +24,7 @@ def process_file(fullname):
                 new_line += " "
         
         new_content += new_line + "\n"
-    
+    new_content = new_content.strip() + "\n\n"
     if new_content != content:
         with open(fullname, "w") as f:
             f.write(new_content)
