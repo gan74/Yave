@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageFormat.h>
 #include <yave/graphics/images/Image.h>
-#include <yave/device/DeviceLinked.h>
+#include <yave/graphics/device/DeviceLinked.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/window/Window.h>
 

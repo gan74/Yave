@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_MEMORY_DEVICEMEMORYHEAPBASE_H
 #define YAVE_GRAPHICS_MEMORY_DEVICEMEMORYHEAPBASE_H
 
-#include <yave/device/DeviceLinked.h>
+#include <yave/graphics/device/DeviceLinked.h>
 
 #include <y/core/Result.h>
 

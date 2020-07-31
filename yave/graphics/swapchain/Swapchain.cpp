@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "Swapchain.h"
 
-#include <yave/device/Device.h>
+#include <yave/graphics/device/Device.h>
 #include <yave/window/Window.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/memory/DeviceMemoryHeapBase.h>
@@ -96,7 +96,7 @@ static VkImageView create_image_view(DevicePtr dptr, VkImage image, VkFormat for
     }
 
     VkImageView view = {};
-    vk_check(vkCreateImageView(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &view));
+    vk_check(vkCreateImageView(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &view));
     return view;
 }
 
@@ -116,7 +116,7 @@ static VkSurfaceKHR create_surface(DevicePtr dptr, HINSTANCE_ instance, HWND_ ha
     }
 
     VkSurfaceKHR surface = {};
-    vk_check(vkCreateWin32SurfaceKHR(dptr->instance().vk_instance(), &create_info, vk_allocation_callbacks(dptr), &surface));
+    vk_check(vkCreateWin32SurfaceKHR(dptr->instance().vk_instance(), &create_info, dptr->vk_allocation_callbacks(), &surface));
 
     if(!has_wsi_support(dptr, surface)) {
         y_fatal("No WSI support.");

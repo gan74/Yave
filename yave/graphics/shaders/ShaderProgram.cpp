@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "ShaderProgram.h"
 
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
 #include <y/utils/sort.h>

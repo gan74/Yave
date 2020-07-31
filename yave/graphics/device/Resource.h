@@ -19,48 +19,72 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_COMMANDS_CMDBUFFER_H
-#define YAVE_GRAPHICS_COMMANDS_CMDBUFFER_H
+#ifndef YAVE_DEVICE_RESOURCE_H
+#define YAVE_DEVICE_RESOURCE_H
 
-#include <yave/graphics/commands/CmdBufferData.h>
+#include "ResourceType.h"
 
 namespace yave {
 
-struct CmdBuffer : NonCopyable {
+#define YAVE_GENERATE_DESTROY(T) void device_destroy(DevicePtr dptr, T t);
+YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
+#undef YAVE_GENERATE_DESTROY
+
+template<typename T>
+class Resource {
     public:
-        CmdBuffer() = default;
+        Resource() = default;
 
-        DevicePtr device() const;
-
-        VkCommandBuffer vk_cmd_buffer() const;
-        VkFence vk_fence() const;
-        ResourceFence resource_fence() const;
-
-        void wait() const;
-        void wait_for(const Semaphore& sem);
-
-        template<typename T>
-        T wait_for(BoxSemaphore<T>&& t) {
-            CmdBuffer::wait_for(static_cast<const Semaphore&>(t));
-            return std::move(t._boxed);
+        Resource(Resource&& other) {
+            std::swap(_t, other._t);
         }
 
-        template<typename T>
-        void keep_alive(T&& t) {
-            _proxy->data().keep_alive(y_fwd(t));
+        Resource(T&& other) : _t(std::move(other)) {
         }
 
-    protected:
-        friend class Queue;
-        friend class CmdBufferPool;
+        Resource(const T& other) : _t(other) {
+        }
 
-        CmdBuffer(std::unique_ptr<CmdBufferDataProxy>&& proxy);
+        inline void destroy(DevicePtr dptr) {
+            device_destroy(dptr, std::move(_t));
+        }
+
+        Resource& operator=(Resource&& other) {
+            std::swap(_t, other._t);
+            return *this;
+        }
+
+        Resource& operator=(T&& other) {
+            _t = std::move(other);
+            return *this;
+        }
+
+        void swap(Resource& other) {
+            std::swap(_t, other._t);
+        }
+
+
+        operator T&() {
+            return _t;
+        }
+
+        operator const T&() const {
+            return _t;
+        }
+
+        T& get() {
+            return _t;
+        }
+
+        const T& get() const {
+            return _t;
+        }
 
     private:
-        std::unique_ptr<CmdBufferDataProxy> _proxy;
+        T _t = {};
 };
 
 }
 
-#endif // YAVE_GRAPHICS_COMMANDS_CMDBUFFER_H
+#endif // YAVE_DEVICE_RESOURCE_H
 

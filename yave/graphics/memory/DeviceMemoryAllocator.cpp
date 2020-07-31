@@ -23,7 +23,7 @@ SOFTWARE.
 #include "DeviceMemoryAllocator.h"
 #include "alloc.h"
 
-#include <yave/device/DeviceProperties.h>
+#include <yave/graphics/device/DeviceProperties.h>
 
 #include <y/utils/log.h>
 

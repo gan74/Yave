@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetTraits.h>
 
-#include <yave/device/extentions/RayTracing.h>
+#include <yave/graphics/device/extentions/RayTracing.h>
 
 namespace yave {
 

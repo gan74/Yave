@@ -22,8 +22,8 @@ SOFTWARE.
 #include "Material.h"
 #include "SimpleMaterialData.h"
 
-#include <yave/device/DeviceUtils.h>
-#include <yave/device/DeviceResources.h>
+#include <yave/graphics/utils.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 namespace yave {
 

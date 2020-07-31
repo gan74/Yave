@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include "DeviceHandle.h"
+#include "Resource.h"
 
 namespace yave {
 

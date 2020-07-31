@@ -25,9 +25,9 @@ SOFTWARE.
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/buffers/Mapping.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/queues/Queue.h>
+#include <yave/graphics/device/Queue.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 
 namespace yave {
 

@@ -24,7 +24,7 @@ SOFTWARE.
 #include "EditorContext.h"
 
 #include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/graphics/queues/Queue.h>
+#include <yave/graphics/device/Queue.h>
 
 #include <editor/renderer/EditorEntityPass.h>
 #include <editor/renderer/ScenePickingPass.h>

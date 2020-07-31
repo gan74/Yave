@@ -19,17 +19,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_DEVICEHANDLE_H
-#define YAVE_DEVICE_DEVICEHANDLE_H
+#ifndef YAVE_DEVICE_RESOURCETYPE_H
+#define YAVE_DEVICE_RESOURCETYPE_H
 
 #include <yave/yave.h>
-#include <yave/graphics/vk/vk.h>
+#include <yave/graphics/utils.h>
 
 namespace yave {
 
-#define YAVE_DEVICE_RESOURCE_TYPES(X)       \
-    X(DeviceMemory)                         \
-    X(DescriptorSetData)                    \
+#define YAVE_VK_RESOURCE_TYPES(X)           \
     X(VkBuffer)                             \
     X(VkImage)                              \
     X(VkImageView)                          \
@@ -47,14 +45,15 @@ namespace yave {
     X(VkSemaphore)                          \
     X(VkQueryPool)                          \
     X(VkEvent)                              \
-    X(VkSurfaceKHR)                         
+    X(VkSurfaceKHR)
 
+#define YAVE_GRAPHIC_RESOURCE_TYPES(X)      \
+    X(DeviceMemory)                         \
+    X(DescriptorSetData)                    \
+    YAVE_VK_RESOURCE_TYPES(X)
 
-#define YAVE_GENERATE_DESTROY(T) void device_destroy(DevicePtr dptr, T t);              
-    
-YAVE_DEVICE_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 
 }
 
-#endif // YAVE_DEVICE_DEVICEHANDLE_H
+#endif // YAVE_DEVICE_RESOURCETYPE_H
 

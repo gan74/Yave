@@ -22,7 +22,7 @@ SOFTWARE.
 #include "MemoryInfo.h"
 
 #include <editor/context/EditorContext.h>
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 
 #include <imgui/yave_imgui.h>

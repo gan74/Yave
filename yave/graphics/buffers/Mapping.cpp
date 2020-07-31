@@ -23,7 +23,7 @@ SOFTWARE.
 #include "Mapping.h"
 #include "buffers.h"
 
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 namespace yave {

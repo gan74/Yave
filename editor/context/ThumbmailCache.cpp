@@ -24,8 +24,8 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 #include <yave/renderer/renderer.h>
-#include <yave/device/DeviceResources.h>
-#include <yave/graphics/queues/Queue.h>
+#include <yave/graphics/device/DeviceResources.h>
+#include <yave/graphics/device/Queue.h>
 
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/PointLightComponent.h>

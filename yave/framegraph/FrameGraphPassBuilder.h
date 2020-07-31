@@ -94,5 +94,3 @@ class FrameGraphPassBuilder {
 
 #endif // YAVE_FRAMEGRAPH_FRAMEGRAPHBUILDER_H
 
-
-

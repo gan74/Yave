@@ -23,7 +23,7 @@ SOFTWARE.
 #include "CmdBuffer.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 
 namespace yave {
 

@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/graphics/vk/vk.h>
 #include <yave/graphics/buffers/Buffer.h>
-#include <yave/device/DeviceLinked.h>
+#include <yave/graphics/device/DeviceLinked.h>
 
 #include <y/utils/hash.h>
 #include <y/core/Vector.h>

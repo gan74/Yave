@@ -22,8 +22,8 @@ SOFTWARE.
 
 #include "CmdBufferData.h"
 
-#include <yave/device/DeviceUtils.h>
-#include <yave/device/LifetimeManager.h>
+#include <yave/graphics/utils.h>
+#include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/commands/CmdBufferPool.h>
 
 namespace yave {

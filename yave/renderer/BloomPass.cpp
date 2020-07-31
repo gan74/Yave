@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/framegraph/FrameGraphPassBuilder.h>
 #include <yave/framegraph/FrameGraph.h>
-#include <yave/device/DeviceResources.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 
 namespace yave {

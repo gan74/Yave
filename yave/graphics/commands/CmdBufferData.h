@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 #define YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 
-#include <yave/graphics/queues/Semaphore.h>
+#include <yave/graphics/device/Semaphore.h>
 
 #include <y/core/Vector.h>
 

@@ -22,8 +22,8 @@ SOFTWARE.
 
 #include "BufferBase.h"
 
-#include <yave/device/DeviceUtils.h>
-#include <yave/device/DeviceProperties.h>
+#include <yave/graphics/utils.h>
+#include <yave/graphics/device/DeviceProperties.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 
 #include <y/utils/format.h>

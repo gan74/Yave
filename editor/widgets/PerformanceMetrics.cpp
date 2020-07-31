@@ -22,8 +22,8 @@ SOFTWARE.
 
 #include "PerformanceMetrics.h"
 
-#include <yave/device/DeviceUtils.h>
-#include <yave/device/LifetimeManager.h>
+#include <yave/graphics/utils.h>
+#include <yave/graphics/device/LifetimeManager.h>
 
 #include <imgui/yave_imgui.h>
 

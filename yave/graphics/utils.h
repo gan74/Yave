@@ -19,42 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
-#define YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
+#ifndef YAVE_GRAPHICS_UTILS_H
+#define YAVE_GRAPHICS_UTILS_H
 
-#include <yave/device/PhysicalDevice.h>
-#include <y/core/Result.h>
 
-#include "Queue.h"
+#include <yave/yave.h>
+
+#include <yave/graphics/vk/vk.h>
+#include <yave/graphics/images/SamplerType.h>
 
 namespace yave {
 
-class QueueFamily {
+VkDevice vk_device(DevicePtr dptr);
+VkInstance vk_device_instance(DevicePtr dptr);
 
-    public:
-        static constexpr auto Graphics = VK_QUEUE_GRAPHICS_BIT;
+CmdBuffer create_disposable_cmd_buffer(DevicePtr dptr);
 
-        static core::Result<QueueFamily> create(const PhysicalDevice& dev, u32 index);
-        static core::Vector<QueueFamily> all(const PhysicalDevice& dev);
+const PhysicalDevice& physical_device(DevicePtr dptr);
+DeviceMemoryAllocator& device_allocator(DevicePtr dptr);
+DescriptorSetAllocator& descriptor_set_allocator(DevicePtr dptr);
+const Queue& graphic_queue(DevicePtr dptr);
+const DeviceResources& device_resources(DevicePtr dptr);
+const DeviceProperties& device_properties(DevicePtr dptr);
+LifetimeManager& lifetime_manager(DevicePtr dptr);
 
-        u32 index() const;
-        u32 count() const;
+const VkAllocationCallbacks* vk_allocation_callbacks(DevicePtr dptr);
+VkSampler vk_sampler(DevicePtr dptr, SamplerType type);
+const QueueFamily& queue_family(DevicePtr dptr, VkQueueFlags flags);
 
-        VkQueueFlags flags() const;
+const DebugUtils* debug_utils(DevicePtr dptr);
+const RayTracing* ray_tracing(DevicePtr dptr);
 
-        core::Vector<Queue> queues(DevicePtr dptr) const;
-
-    private:
-        QueueFamily(u32 index, const VkQueueFamilyProperties& props);
-
-        u32 _index;
-        u32 _queue_count;
-        VkQueueFlags _flags;
-
-
-};
+void wait_all_queues(DevicePtr dptr);
 
 }
 
-#endif // YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
+
+#endif // YAVE_DEVICE_DEVICE_UTILS_H
 

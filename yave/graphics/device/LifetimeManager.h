@@ -23,52 +23,38 @@ SOFTWARE.
 #define YAVE_DEVICE_LIFETIMEMANAGER_H
 
 #include "DeviceLinked.h"
+#include "Resource.h"
 
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
-#include <yave/graphics/commands/data/CmdBufferData.h>
+#include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/memory/DeviceMemory.h>
 #include <yave/graphics/vk/vk.h>
 
-
 #include <variant>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <deque>
+#include <mutex>
+
 
 //#define YAVE_ASYNC_RESOURCE_COLLECTION
 
+#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
+#include <thread>
+#include <condition_variable>
+#endif
+
+
 namespace yave {
 
-class CmdBufferData;
-
-using ManagedResource = std::variant<
-        DeviceMemory,
-        DescriptorSetData,
-
-        VkBuffer,
-        VkImage,
-        VkImageView,
-        VkRenderPass,
-        VkFramebuffer,
-        VkPipeline,
-        VkPipelineLayout,
-        VkShaderModule,
-        VkSampler,
-        VkSwapchainKHR,
-        VkCommandPool,
-        VkFence,
-        VkDescriptorPool,
-        VkDescriptorSetLayout,
-        VkSemaphore,
-        VkQueryPool,
-        VkEvent,
-
-        VkSurfaceKHR>;
-
-
-
 class LifetimeManager : NonCopyable, public DeviceLinked {
+
+    struct EmptyResource {};
+
+    using ManagedResource = std::variant<
+#define YAVE_GENERATE_RT_VARIANT(T) T,
+YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
+#undef YAVE_GENERATE_RT_VARIANT
+        EmptyResource
+        >;
 
     public:
         LifetimeManager(DevicePtr dptr);
@@ -87,11 +73,18 @@ class LifetimeManager : NonCopyable, public DeviceLinked {
         usize active_cmd_buffers() const;
 
 
-        template<typename T>
-        void destroy_later(T&& t) {
-            const std::unique_lock lock(_resource_lock);
-            _to_destroy.emplace_back(_counter, ManagedResource(y_fwd(t)));
+
+
+
+#define YAVE_GENERATE_DESTROY(T)                                                \
+        void destroy_later(T&& t) {                                             \
+            const std::unique_lock lock(_resource_lock);                        \
+            _to_destroy.emplace_back(_counter, ManagedResource(y_fwd(t)));      \
         }
+YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
+#undef YAVE_GENERATE_DESTROY
+
+
 
     private:
         void destroy_resource(ManagedResource& resource) const;

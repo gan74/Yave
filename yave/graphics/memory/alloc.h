@@ -23,8 +23,8 @@ SOFTWARE.
 #define YAVE_GRAPHICS_MEMORY_ALLOC_H
 
 #include <yave/graphics/vk/vk.h>
-#include <yave/device/PhysicalDevice.h>
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/device/PhysicalDevice.h>
+#include <yave/graphics/utils.h>
 
 #include "MemoryType.h"
 

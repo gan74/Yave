@@ -20,19 +20,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "DeviceHandle.h"
-#include "Device.h"
+#include "Resource.h"
+#include "LifetimeManager.h"
+
+#include <yave/graphics/utils.h>
 
 namespace yave {
 
-#define YAVE_GENERATE_DESTROY_IMPL(T)               \
-    void device_destroy(DevicePtr dptr, T t) {      \
-        if(dptr) {                                  \
-            dptr->destroy_later(std::move(t));      \
-        }                                           \
+#define YAVE_GENERATE_DESTROY_IMPL(T)                                   \
+    void device_destroy(DevicePtr dptr, T t) {                          \
+        if(dptr) {                                                      \
+            lifetime_manager(dptr).destroy_later(std::move(t));         \
+        }                                                               \
     }
 
-YAVE_DEVICE_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
+YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
+#undef YAVE_GENERATE_DESTROY_IMPL
 
 }
 

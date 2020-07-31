@@ -25,7 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 
 #include <yave/graphics/swapchain/Swapchain.h>
-#include <yave/graphics/queues/Queue.h>
+#include <yave/graphics/device/Queue.h>
 
 #include <imgui/yave_imgui.h>
 

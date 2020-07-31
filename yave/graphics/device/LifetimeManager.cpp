@@ -21,12 +21,13 @@ SOFTWARE.
 **********************************/
 
 #include "LifetimeManager.h"
-#include "DeviceUtils.h"
+#include "destroy.h"
 
-#include <yave/graphics/commands/data/CmdBufferData.h>
+#include <yave/graphics/utils.h>
+
+#include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/commands/CmdBufferPool.h>
 
-#include <yave/graphics/vk/destroy.h>
 
 #include <y/concurrent/concurrent.h>
 #include <y/core/Chrono.h>
@@ -187,7 +188,9 @@ usize LifetimeManager::active_cmd_buffers() const {
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
     std::visit(
         [dptr = device()](auto& res) {
-            if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
+            if constexpr(std::is_same_v<decltype(res), EmptyResource&>) {
+                y_fatal("Empty resource");
+            } else if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
                 y_profile_zone("free");
                 res.free();
             } else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
@@ -195,7 +198,7 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
                 res.recycle();
             } else {
                 y_profile_zone("destroy");
-                detail::vk_destroy(dptr, res);
+                vk_destroy(dptr, res);
             }
         },
         resource);

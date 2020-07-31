@@ -23,7 +23,7 @@ SOFTWARE.
 
 #include <yave/graphics/shaders/ShaderProgram.h>
 #include <yave/meshes/Vertex.h>
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 
 #include <y/core/Chrono.h>
 

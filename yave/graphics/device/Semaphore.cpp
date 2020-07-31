@@ -19,41 +19,49 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_DEVICE_UTILS_H
-#define YAVE_DEVICE_DEVICE_UTILS_H
 
+#include "Semaphore.h"
 
-#include <yave/yave.h>
-
-#include <yave/graphics/vk/vk.h>
-#include <yave/graphics/images/SamplerType.h>
+#include <yave/graphics/utils.h>
 
 namespace yave {
 
-VkDevice vk_device(DevicePtr dptr);
-VkInstance vk_device_instance(DevicePtr dptr);
+Semaphore::Shared::Shared(DevicePtr dptr) :
+        DeviceLinked(dptr) {
+    const VkSemaphoreCreateInfo create_info = vk_struct();
+    vk_check(vkCreateSemaphore(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_semaphore));
+}
 
-CmdBuffer create_disposable_cmd_buffer(DevicePtr dptr);
+Semaphore::Shared::~Shared() {
+    destroy(_semaphore);
+}
 
-const PhysicalDevice& physical_device(DevicePtr dptr);
-DeviceMemoryAllocator& device_allocator(DevicePtr dptr);
-DescriptorSetAllocator& descriptor_set_allocator(DevicePtr dptr);
-const Queue& graphic_queue(DevicePtr dptr);
-const DeviceResources& device_resources(DevicePtr dptr);
-const DeviceProperties& device_properties(DevicePtr dptr);
-LifetimeManager& lifetime_manager(DevicePtr dptr);
-
-const VkAllocationCallbacks* vk_allocation_callbacks(DevicePtr dptr);
-VkSampler vk_sampler(DevicePtr dptr, SamplerType type);
-const QueueFamily& queue_family(DevicePtr dptr, VkQueueFlags flags);
-
-const DebugUtils* debug_utils(DevicePtr dptr);
-const RayTracing* ray_tracing(DevicePtr dptr);
-
-void wait_all_queues(DevicePtr dptr);
-
+VkSemaphore Semaphore::Shared::vk_semaphore() const {
+    return _semaphore;
 }
 
 
-#endif // YAVE_DEVICE_DEVICE_UTILS_H
+
+
+
+Semaphore::Semaphore(DevicePtr dptr) : _semaphore(std::make_shared<Shared>(dptr)) {
+}
+
+DevicePtr Semaphore::device() const {
+    return _semaphore ? _semaphore->device() : nullptr;
+}
+
+bool Semaphore::is_null() const {
+    return !device();
+}
+
+VkSemaphore Semaphore::vk_semaphore() const {
+    return _semaphore->vk_semaphore();
+}
+
+bool Semaphore::operator==(const Semaphore& other) const {
+    return other._semaphore == _semaphore;
+}
+
+}
 

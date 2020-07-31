@@ -19,49 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
+#define YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
 
-#include "Semaphore.h"
+#include <yave/graphics/device/PhysicalDevice.h>
+#include <y/core/Result.h>
 
-#include <yave/device/DeviceUtils.h>
+#include "Queue.h"
 
 namespace yave {
 
-Semaphore::Shared::Shared(DevicePtr dptr) :
-        DeviceLinked(dptr) {
-    const VkSemaphoreCreateInfo create_info = vk_struct();
-    vk_check(vkCreateSemaphore(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_semaphore));
-}
+class QueueFamily {
 
-Semaphore::Shared::~Shared() {
-    destroy(_semaphore);
-}
+    public:
+        static constexpr auto Graphics = VK_QUEUE_GRAPHICS_BIT;
 
-VkSemaphore Semaphore::Shared::vk_semaphore() const {
-    return _semaphore;
-}
+        static core::Result<QueueFamily> create(const PhysicalDevice& dev, u32 index);
+        static core::Vector<QueueFamily> all(const PhysicalDevice& dev);
+
+        u32 index() const;
+        u32 count() const;
+
+        VkQueueFlags flags() const;
+
+        core::Vector<Queue> queues(DevicePtr dptr) const;
+
+    private:
+        QueueFamily(u32 index, const VkQueueFamilyProperties& props);
+
+        u32 _index;
+        u32 _queue_count;
+        VkQueueFlags _flags;
 
 
-
-
-
-Semaphore::Semaphore(DevicePtr dptr) : _semaphore(std::make_shared<Shared>(dptr)) {
-}
-
-DevicePtr Semaphore::device() const {
-    return _semaphore ? _semaphore->device() : nullptr;
-}
-
-bool Semaphore::is_null() const {
-    return !device();
-}
-
-VkSemaphore Semaphore::vk_semaphore() const {
-    return _semaphore->vk_semaphore();
-}
-
-bool Semaphore::operator==(const Semaphore& other) const {
-    return other._semaphore == _semaphore;
-}
+};
 
 }
+
+#endif // YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
 

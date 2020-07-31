@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "TimeQuery.h"
 
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 
 namespace yave {
 

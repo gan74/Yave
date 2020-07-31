@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "EditorContext.h"
-#include <yave/device/Device.h>
+#include <yave/graphics/device/Device.h>
 
 #include <yave/assets/SQLiteAssetStore.h>
 #include <yave/assets/FolderAssetStore.h>

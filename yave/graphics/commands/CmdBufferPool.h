@@ -23,8 +23,8 @@ SOFTWARE.
 #define YAVE_GRAPHICS_COMMANDS_CMDBUFFERPOOL_H
 
 #include <yave/yave.h>
-#include <yave/device/DeviceLinked.h>
-#include <yave/graphics/commands/data/CmdBufferData.h>
+#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/commands/CmdBufferData.h>
 
 #include <yave/utils/traits.h>
 

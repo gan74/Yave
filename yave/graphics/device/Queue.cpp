@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 
 #include "Queue.h"
 
@@ -83,5 +83,4 @@ void Queue::submit_base(CmdBuffer& base) const {
 }
 
 }
-
 

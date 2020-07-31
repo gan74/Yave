@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
-#include <yave/device/DeviceResources.h>
+#include <yave/graphics/device/DeviceResources.h>
 #include <yave/renderer/renderer.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>

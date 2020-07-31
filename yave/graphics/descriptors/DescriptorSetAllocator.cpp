@@ -23,8 +23,8 @@ SOFTWARE.
 #include "DescriptorSetAllocator.h"
 #include "Descriptor.h"
 
-#include <yave/device/DeviceUtils.h>
-#include <yave/device/DeviceProperties.h>
+#include <yave/graphics/utils.h>
+#include <yave/graphics/device/DeviceProperties.h>
 
 #include <y/core/Range.h>
 #include <y/utils/log.h>

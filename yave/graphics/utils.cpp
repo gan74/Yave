@@ -20,9 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "DeviceUtils.h"
+#include "utils.h"
 
-#include "Device.h"
+#include <yave/graphics/device/Device.h>
 
 namespace yave {
 

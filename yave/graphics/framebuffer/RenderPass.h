@@ -24,8 +24,8 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <yave/device/DeviceLinked.h>
-#include <yave/device/DeviceLinked.h>
+#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/device/DeviceLinked.h>
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 

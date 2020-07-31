@@ -23,7 +23,7 @@ SOFTWARE.
 #include "LightingPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
-#include <yave/device/DeviceResources.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/ecs/EntityWorld.h>
 

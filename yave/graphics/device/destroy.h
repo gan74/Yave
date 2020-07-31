@@ -13,12 +13,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **********************************/
+#ifndef YAVE_GRAPHICS_DEVICE_DESTROY_H
+#define YAVE_GRAPHICS_DEVICE_DESTROY_H
 
-#include "destroy.h"
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 
 namespace yave {
-namespace detail {
 
 void vk_destroy(DevicePtr dptr, VkBuffer buffer) {
     /*if(dptr)*/ {
@@ -133,5 +133,5 @@ void vk_destroy(DevicePtr dptr, VkSurfaceKHR surface) {
 }
 
 }
-}
 
+#endif // YAVE_GRAPHICS_DEVICE_DESTROY_H

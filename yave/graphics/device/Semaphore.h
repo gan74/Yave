@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_QUEUES_SEMAPHORE_H
 #define YAVE_GRAPHICS_QUEUES_SEMAPHORE_H
 
-#include <yave/device/DeviceLinked.h>
+#include <yave/graphics/device/DeviceLinked.h>
 #include <yave/graphics/vk/vk.h>
 
 #include <memory>

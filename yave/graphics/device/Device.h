@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include "DeviceUtils.h"
 #include "DeviceProperties.h"
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
@@ -34,7 +33,7 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
 #include <yave/graphics/images/Sampler.h>
-#include <yave/graphics/queues/QueueFamily.h>
+#include <yave/graphics/device/QueueFamily.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 
 #include <thread>

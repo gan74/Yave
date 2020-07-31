@@ -25,8 +25,8 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/queues/Queue.h>
-#include <yave/device/DeviceResources.h>
+#include <yave/graphics/device/Queue.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 #include <y/core/Chrono.h>
 

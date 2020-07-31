@@ -26,9 +26,9 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/graphics/queues/Semaphore.h>
+#include <yave/graphics/device/Semaphore.h>
 
-#include <yave/device/extentions/DebugUtils.h>
+#include <yave/graphics/device/extentions/DebugUtils.h>
 
 namespace yave {
 

@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/utils.h>
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/graphics/buffers/TypedWrapper.h>

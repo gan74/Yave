@@ -23,7 +23,7 @@ SOFTWARE.
 #include "Device.h"
 #include "PhysicalDevice.h"
 
-#include <yave/device/extentions/RayTracing.h>
+#include <yave/graphics/device/extentions/RayTracing.h>
 
 #include <y/concurrent/concurrent.h>
 
