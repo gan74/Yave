@@ -24,6 +24,7 @@ SOFTWARE.
 #include "EditorContext.h"
 
 #include <yave/graphics/shaders/ComputeProgram.h>
+#include <yave/graphics/queues/Queue.h>
 
 #include <editor/renderer/EditorEntityPass.h>
 #include <editor/renderer/ScenePickingPass.h>
@@ -61,9 +62,9 @@ PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_vie
 		});
 	}
 
-	CmdBufferRecorder recorder = device()->create_disposable_cmd_buffer();
+	CmdBufferRecorder recorder = create_disposable_cmd_buffer(device());
 	std::move(framegraph).render(recorder);
-	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
+	graphic_queue(device()).submit<SyncSubmit>(std::move(recorder));
 
 	const ReadBackData read_back = TypedMapping(_buffer)[0];
 	const float depth = read_back.depth;

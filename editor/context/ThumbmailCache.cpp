@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 #include <yave/renderer/renderer.h>
+#include <yave/device/DeviceResources.h>
+#include <yave/graphics/queues/Queue.h>
 
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/PointLightComponent.h>
@@ -146,7 +148,7 @@ ThumbmailCache::SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), view(
 
 	{
 		const ecs::EntityId sky_id = world.create_entity(ecs::StaticArchetype<SkyLightComponent>());
-		world.component<SkyLightComponent>(sky_id)->probe() = device()->device_resources().ibl_probe();
+		world.component<SkyLightComponent>(sky_id)->probe() = device_resources(device()).ibl_probe();
 	}
 
 	/*if(background) {
@@ -232,9 +234,9 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		case AssetType::Mesh:
 			_render_thread.schedule([id, this] {
 				if(const auto& mesh = context()->loader().load<StaticMesh>(id); !mesh.is_failed()) {
-					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
+					CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
 					SceneData scene(context());
-					scene.add_mesh(mesh, device()->device_resources()[DeviceResources::EmptyMaterial]);
+					scene.add_mesh(mesh, device_resources(device())[DeviceResources::EmptyMaterial]);
 					submit_and_set(rec, render_thumbmail(rec, id, scene));
 				} else {
 					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
@@ -245,9 +247,9 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		case AssetType::Material:
 			_render_thread.schedule([id, this] {
 				if(const auto& material = context()->loader().load<Material>(id); !material.is_failed()) {
-					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
+					CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
 					SceneData scene(context());
-					scene.add_mesh(device()->device_resources()[DeviceResources::SphereMesh], material);
+					scene.add_mesh(device_resources(device())[DeviceResources::SphereMesh], material);
 					submit_and_set(rec, render_thumbmail(rec, id, scene));
 				} else {
 					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
@@ -258,7 +260,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		case AssetType::Image:
 			_render_thread.schedule([id, this] {
 				if(const auto& texture = context()->loader().load<Texture>(id); !texture.is_failed()) {
-					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
+					CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
 					submit_and_set(rec, render_thumbmail(rec, texture));
 				} else {
 					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
@@ -269,7 +271,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 		case AssetType::Prefab:
 			_render_thread.schedule([id, this] {
 				if(const auto& prefab = context()->loader().load<ecs::EntityPrefab>(id); !prefab.is_failed()) {
-					CmdBufferRecorder rec = device()->create_disposable_cmd_buffer();
+					CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
 					SceneData scene(context());
 					scene.add_prefab(*prefab);
 					submit_and_set(rec, render_thumbmail(rec, id, scene));
@@ -287,7 +289,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 
 void ThumbmailCache::submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr<ThumbmailData> thumb) {
 	y_profile();
-	device()->graphic_queue().submit<SyncSubmit>(std::move(recorder));
+	graphic_queue(device()).submit<SyncSubmit>(std::move(recorder));
 
 	const auto lock = y_profile_unique_lock(_lock);
 	auto& thumbmail = _thumbmails[thumb->id];
@@ -299,8 +301,8 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
 	auto thumbmail = std::make_unique<ThumbmailData>(context(), _size, tex.id());
 
 	{
-		const DescriptorSet set(device(), {Descriptor(*tex, Sampler::Clamp), Descriptor(StorageView(thumbmail->image))});
-		recorder.dispatch_size(device()->device_resources()[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
+		const DescriptorSet set(device(), {Descriptor(*tex, SamplerType::Clamp), Descriptor(StorageView(thumbmail->image))});
+		recorder.dispatch_size(device_resources(device())[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
 	}
 
 	return thumbmail;

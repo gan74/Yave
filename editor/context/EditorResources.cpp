@@ -140,8 +140,8 @@ const MaterialTemplate* EditorResources::operator[](MaterialTemplates i) const {
 
 void EditorResources::reload() {
 	y_profile();
-	DevicePtr dptr = device();
-	dptr->wait_all_queues();
+	const DevicePtr dptr = device();
+	wait_all_queues(dptr);
 	load_resources(dptr);
 }
 

@@ -80,9 +80,6 @@ static ImageData load_font() {
 
 ImGuiRenderer::ImGuiRenderer(ContextPtr ctx) :
 		ContextLinked(ctx),
-		/*_index_buffer(imgui_index_buffer_size),
-		_vertex_buffer(imgui_vertex_buffer_size),
-		_uniform_buffer(device(), 1),*/
 		_font(device(), load_font()),
 		_font_view(_font) {
 
@@ -131,7 +128,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
 
 	const auto create_descriptor_set = [&](const void* data) {
 		const auto* tex = static_cast<const TextureView*>(data);
-		return DescriptorSet(device(), {Descriptor(*tex, Sampler::Clamp), Descriptor(uniform_buffer)});
+		return DescriptorSet(device(), {Descriptor(*tex, SamplerType::Clamp), Descriptor(uniform_buffer)});
 	};
 
 	const DescriptorSetBase default_set = create_descriptor_set(&_font_view);

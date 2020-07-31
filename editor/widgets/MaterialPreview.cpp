@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
+#include <yave/device/DeviceResources.h>
 #include <yave/renderer/renderer.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
@@ -65,11 +66,11 @@ void MaterialPreview::set_object(const AssetPtr<StaticMesh>& mesh) {
 void MaterialPreview::set_object(PreviewObject obj) {
 	switch(obj) {
 		case PreviewObject::Cube:
-			_mesh = device()->device_resources()[DeviceResources::CubeMesh];
+			_mesh = device_resources(device())[DeviceResources::CubeMesh];
 		break;
 
 		default:
-			_mesh = device()->device_resources()[DeviceResources::SphereMesh];
+			_mesh = device_resources(device())[DeviceResources::SphereMesh];
 	}
 	reset_world();
 }
@@ -102,7 +103,7 @@ void MaterialPreview::reset_world() {
 		const ecs::EntityId sky_id = _world->create_entity(ecs::StaticArchetype<SkyLightComponent>());
 		_world->component<SkyLightComponent>(sky_id)->probe() = _ibl_probe
 			? _ibl_probe
-			: device()->device_resources().ibl_probe();
+			: device_resources(device()).ibl_probe();
 	}
 
 	if(!_mesh.is_empty() && !_material.is_empty()) {

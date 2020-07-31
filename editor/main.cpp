@@ -26,6 +26,7 @@ SOFTWARE.
 #include <editor/events/MainEventHandler.h>
 #include <editor/context/EditorContext.h>
 
+#include <yave/device/Device.h>
 #include <yave/graphics/swapchain/Swapchain.h>
 #include <yave/assets/SQLiteAssetStore.h>
 

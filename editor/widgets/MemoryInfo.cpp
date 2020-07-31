@@ -22,7 +22,8 @@ SOFTWARE.
 #include "MemoryInfo.h"
 
 #include <editor/context/EditorContext.h>
-#include <yave/device/Device.h>
+#include <yave/device/DeviceUtils.h>
+#include <yave/graphics/memory/DeviceMemoryAllocator.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -50,7 +51,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 
 	usize total_used = 0;
 	usize total_allocated = 0;
-	for(auto&& [type, heaps] : device()->allocator().heaps()) {
+	for(auto&& [type, heaps] : device_allocator(device()).heaps()) {
 		ImGui::BulletText(fmt_c_str("Heap [%]", memory_type_name(type.second)));
 		ImGui::Indent();
 		for(const auto& heap : heaps) {
@@ -67,7 +68,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 	}
 
 	usize dedicated = 0;
-	for(auto&& [type, heap] : device()->allocator().dedicated_heaps()) {
+	for(auto&& [type, heap] : device_allocator(device()).dedicated_heaps()) {
 		unused(type);
 		dedicated += heap->allocated_size();
 	}
@@ -103,7 +104,7 @@ void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 		ImGui::Spacing();
 		ImGui::Separator();
 
-		DescriptorSetAllocator& alloc = context()->device()->descriptor_set_allocator();
+		DescriptorSetAllocator& alloc = descriptor_set_allocator(context()->device());
 		usize pools = alloc.pool_count();
 		const usize total_sets = pools * DescriptorSetPool::pool_size;
 		usize free_sets = alloc.free_sets();

@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 
 #include <yave/graphics/swapchain/Swapchain.h>
+#include <yave/graphics/queues/Queue.h>
 
 #include <imgui/yave_imgui.h>
 
@@ -49,7 +50,7 @@ void MainWindow::resized() {
 void MainWindow::create_swapchain() {
 	y_profile();
 	// needed because the swapchain immediatly destroys it images
-	device()->wait_all_queues();
+	wait_all_queues(device());
 
 	if(_swapchain) {
 		_swapchain->reset();
@@ -65,7 +66,7 @@ void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
 
 		const VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		Y_TODO(manual locking needs for queue presentation needs to go)
-		const Queue& queue = device()->graphic_queue();
+		const Queue& queue = graphic_queue(device());
 		const std::unique_lock lock(queue.lock());
 		const VkQueue graphic_queue = queue.vk_queue();
 		const VkCommandBuffer vk_buffer = cmd_buffer.vk_cmd_buffer();
