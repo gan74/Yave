@@ -29,38 +29,39 @@ namespace yave {
 
 class Camera {
 
-	public:
-		Camera();
+    public:
+        Camera();
 
-		void set_view(const math::Matrix4<>& view);
-		void set_proj(const math::Matrix4<>& proj);
+        void set_view(const math::Matrix4<>& view);
+        void set_proj(const math::Matrix4<>& proj);
 
-		const math::Matrix4<>& view_matrix() const;
-		const math::Matrix4<>& proj_matrix() const;
+        const math::Matrix4<>& view_matrix() const;
+        const math::Matrix4<>& proj_matrix() const;
 
-		const math::Matrix4<>& viewproj_matrix() const;
+        const math::Matrix4<>& viewproj_matrix() const;
 
-		math::Matrix4<> inverse_matrix() const;
+        math::Matrix4<> inverse_matrix() const;
 
-		math::Vec3 position() const;
-		math::Vec3 forward() const;
-		math::Vec3 left() const;
-		math::Vec3 right() const;
-		math::Vec3 up() const;
-		Frustum frustum() const;
+        math::Vec3 position() const;
+        math::Vec3 forward() const;
+        math::Vec3 left() const;
+        math::Vec3 right() const;
+        math::Vec3 up() const;
+        Frustum frustum() const;
 
-		operator uniform::Camera() const;
+        operator uniform::Camera() const;
 
-	private:
-		void update_viewproj() const;
+    private:
+        void update_viewproj() const;
 
-		math::Matrix4<> _view;
-		math::Matrix4<> _proj;
+        math::Matrix4<> _view;
+        math::Matrix4<> _proj;
 
-		mutable math::Matrix4<> _viewproj;
-		mutable bool _up_to_date;
+        mutable math::Matrix4<> _viewproj;
+        mutable bool _up_to_date;
 };
 
 }
 
 #endif // YAVE_CAMERA_CAMERA_H
+

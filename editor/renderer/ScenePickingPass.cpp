@@ -38,71 +38,72 @@ Y_TODO(merge with scene sub pass?)
 namespace editor {
 
 static usize render_world(ContextPtr ctx,
-						  RenderPassRecorder& recorder, const FrameGraphPass* pass,
-						  const SceneView& scene_view,
-						  const FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer,
-						  const FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer,
-						  const FrameGraphMutableTypedBufferId<u32> id_buffer,
-						  usize index = 0) {
-	y_profile();
+                          RenderPassRecorder& recorder, const FrameGraphPass* pass,
+                          const SceneView& scene_view,
+                          const FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer,
+                          const FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer,
+                          const FrameGraphMutableTypedBufferId<u32> id_buffer,
+                          usize index = 0) {
+    y_profile();
 
-	const ecs::EntityWorld& world = scene_view.world();
+    const ecs::EntityWorld& world = scene_view.world();
 
-	auto camera_mapping = pass->resources().mapped_buffer(camera_buffer);
-	camera_mapping[0] = scene_view.camera();
+    auto camera_mapping = pass->resources().mapped_buffer(camera_buffer);
+    camera_mapping[0] = scene_view.camera();
 
-	auto transform_mapping = pass->resources().mapped_buffer(transform_buffer);
-	const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
+    auto transform_mapping = pass->resources().mapped_buffer(transform_buffer);
+    const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
 
-	auto id_mapping = pass->resources().mapped_buffer(id_buffer);
-	const auto ids = pass->resources().buffer<BufferUsage::AttributeBit>(id_buffer);
+    auto id_mapping = pass->resources().mapped_buffer(id_buffer);
+    const auto ids = pass->resources().buffer<BufferUsage::AttributeBit>(id_buffer);
 
-	recorder.bind_attrib_buffers({}, {transforms, ids});
-	recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});
+    recorder.bind_attrib_buffers({}, {transforms, ids});
+    recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});
 
-	for(auto ent : world.view(StaticMeshArchetype())) {
-		const auto& [tr, mesh] = ent.components();
-		transform_mapping[index] = tr.transform();
-		id_mapping[index] = ent.id().index();
-		mesh.render_mesh(recorder, u32(index));
-		++index;
-	}
+    for(auto ent : world.view(StaticMeshArchetype())) {
+        const auto& [tr, mesh] = ent.components();
+        transform_mapping[index] = tr.transform();
+        id_mapping[index] = ent.id().index();
+        mesh.render_mesh(recorder, u32(index));
+        ++index;
+    }
 
-	return index;
+    return index;
 }
 
 ScenePickingPass ScenePickingPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
-	static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;
-	static constexpr ImageFormat id_format = VK_FORMAT_R32_UINT;
+    static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;
+    static constexpr ImageFormat id_format = VK_FORMAT_R32_UINT;
 
-	FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
+    FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
 
-	auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
-	const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
-	const auto id_buffer = builder.declare_typed_buffer<u32>(max_batch_size);
+    auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
+    const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
+    const auto id_buffer = builder.declare_typed_buffer<u32>(max_batch_size);
 
-	const auto depth = builder.declare_image(depth_format, size);
-	const auto id = builder.declare_image(id_format, size);
+    const auto depth = builder.declare_image(depth_format, size);
+    const auto id = builder.declare_image(id_format, size);
 
-	ScenePickingPass pass;
-	pass.scene_view = view;
-	pass.depth = depth;
-	pass.id = id;
+    ScenePickingPass pass;
+    pass.scene_view = view;
+    pass.depth = depth;
+    pass.id = id;
 
-	builder.add_uniform_input(camera_buffer);
-	builder.add_attrib_input(transform_buffer);
-	builder.add_attrib_input(id_buffer);
-	builder.map_update(transform_buffer);
-	builder.map_update(id_buffer);
+    builder.add_uniform_input(camera_buffer);
+    builder.add_attrib_input(transform_buffer);
+    builder.add_attrib_input(id_buffer);
+    builder.map_update(transform_buffer);
+    builder.map_update(id_buffer);
 
-	builder.add_depth_output(depth);
-	builder.add_color_output(id);
-	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			render_world(ctx, render_pass, self, view, camera_buffer, transform_buffer, id_buffer);
-		});
+    builder.add_depth_output(depth);
+    builder.add_color_output(id);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+            render_world(ctx, render_pass, self, view, camera_buffer, transform_buffer, id_buffer);
+        });
 
-	return pass;
+    return pass;
 }
 
 }
+

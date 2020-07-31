@@ -25,13 +25,14 @@ SOFTWARE.
 
 namespace yave {
 
-#define YAVE_GENERATE_DESTROY_IMPL(T) 				\
-	void device_destroy(DevicePtr dptr, T t) { 		\
-		if(dptr) {									\
-			dptr->destroy_later(std::move(t)); 		\
-		}											\
-	}
+#define YAVE_GENERATE_DESTROY_IMPL(T)               \
+    void device_destroy(DevicePtr dptr, T t) {      \
+        if(dptr) {                                  \
+            dptr->destroy_later(std::move(t));      \
+        }                                           \
+    }
 
 YAVE_DEVICE_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
 
 }
+

@@ -33,49 +33,50 @@ namespace yave {
 // For DeviceAllocator, should not be used directly
 class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 
-	struct FreeBlock {
-		usize offset;
-		usize size;
+    struct FreeBlock {
+        usize offset;
+        usize size;
 
-		usize end_offset() const;
-		bool contiguous(const FreeBlock& blck) const;
-		void merge(const FreeBlock& block);
-	};
+        usize end_offset() const;
+        bool contiguous(const FreeBlock& blck) const;
+        void merge(const FreeBlock& block);
+    };
 
-	public:
-		static constexpr usize alignment = 256;
+    public:
+        static constexpr usize alignment = 256;
 
 
-		DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type, usize heap_size);
-		~DeviceMemoryHeap() override;
+        DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type, usize heap_size);
+        ~DeviceMemoryHeap() override;
 
-		core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) override;
-		void free(const DeviceMemory& memory) override;
+        core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) override;
+        void free(const DeviceMemory& memory) override;
 
-		void* map(const DeviceMemoryView& view) override;
-		void unmap(const DeviceMemoryView&) override;
+        void* map(const DeviceMemoryView& view) override;
+        void unmap(const DeviceMemoryView&) override;
 
-		usize size() const;
-		usize available() const; // slow!
-		usize free_blocks() const;
+        usize size() const;
+        usize available() const; // slow!
+        usize free_blocks() const;
 
-		bool mapped() const;
+        bool mapped() const;
 
-	private:
-		void swap(DeviceMemoryHeap& other);
+    private:
+        void swap(DeviceMemoryHeap& other);
 
-		DeviceMemory create(usize offset, usize size);
-		void free(const FreeBlock& block);
-		void compact_block(FreeBlock block);
+        DeviceMemory create(usize offset, usize size);
+        void free(const FreeBlock& block);
+        void compact_block(FreeBlock block);
 
-		VkDeviceMemory _memory = {};
-		usize _heap_size = 0;
-		core::Vector<FreeBlock> _blocks;
-		void* _mapping = nullptr;
+        VkDeviceMemory _memory = {};
+        usize _heap_size = 0;
+        core::Vector<FreeBlock> _blocks;
+        void* _mapping = nullptr;
 
-		mutable std::mutex _lock;
+        mutable std::mutex _lock;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_MEMORY_DEVICEMEMORYHEAP_H
+

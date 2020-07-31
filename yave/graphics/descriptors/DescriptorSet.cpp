@@ -29,42 +29,43 @@ SOFTWARE.
 namespace yave {
 
 DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings) {
-	if(!bindings.is_empty()) {
-		_data = descriptor_set_allocator(dptr).create_descritptor_set(bindings);
-		_set = _data.vk_descriptor_set();
+    if(!bindings.is_empty()) {
+        _data = descriptor_set_allocator(dptr).create_descritptor_set(bindings);
+        _set = _data.vk_descriptor_set();
 
-	}
+    }
 }
 
 DescriptorSet::~DescriptorSet() {
-	device_destroy(device(), std::move(_data));
+    device_destroy(device(), std::move(_data));
 }
 
 DescriptorSet::DescriptorSet(DescriptorSet&& other) {
-	swap(other);
+    swap(other);
 }
 
 DescriptorSet& DescriptorSet::operator=(DescriptorSet&& other) {
-	swap(other);
-	return *this;
+    swap(other);
+    return *this;
 }
 
 DevicePtr DescriptorSet::device() const {
-	return _data.device();
+    return _data.device();
 }
 
 bool DescriptorSet::is_null() const  {
-	return _data.is_null();
+    return _data.is_null();
 }
 
 VkDescriptorSetLayout DescriptorSet::vk_descriptor_set_layout() const {
-	return _data.vk_descriptor_set_layout();
+    return _data.vk_descriptor_set_layout();
 }
 
 void DescriptorSet::swap(DescriptorSet& other) {
-	std::swap(_data, other._data);
-	std::swap(_set, other._set);
+    std::swap(_data, other._data);
+    std::swap(_set, other._set);
 }
 
 
 }
+

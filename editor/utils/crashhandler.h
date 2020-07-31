@@ -35,3 +35,4 @@ bool setup_handler();
 
 
 #endif // EDITOR_UTILS_CRASHHANDLER_H
+

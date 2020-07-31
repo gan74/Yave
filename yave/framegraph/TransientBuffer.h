@@ -29,42 +29,43 @@ namespace yave {
 
 class TransientBuffer final : public BufferBase {
 
-	static constexpr MemoryType memory_type(MemoryType memory, BufferUsage usage) {
-		return memory == MemoryType::DontCare ? prefered_memory_type(usage) : memory;
-	}
+    static constexpr MemoryType memory_type(MemoryType memory, BufferUsage usage) {
+        return memory == MemoryType::DontCare ? prefered_memory_type(usage) : memory;
+    }
 
-	public:
-		TransientBuffer() = default;
+    public:
+        TransientBuffer() = default;
 
-		TransientBuffer(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type = MemoryType::DontCare) :
-				BufferBase(dptr, byte_size, usage, memory_type(type, usage)) {
-			_memory_type = type;
-		}
+        TransientBuffer(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type = MemoryType::DontCare) :
+                BufferBase(dptr, byte_size, usage, memory_type(type, usage)) {
+            _memory_type = type;
+        }
 
-		MemoryType memory_type() const {
-			return _memory_type;
-		}
+        MemoryType memory_type() const {
+            return _memory_type;
+        }
 
-	private:
-		MemoryType _memory_type = MemoryType::DeviceLocal;
+    private:
+        MemoryType _memory_type = MemoryType::DeviceLocal;
 };
 
 
 template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare>
 class TransientSubBuffer final : public SubBuffer<Usage, Memory> {
-	public:
-		TransientSubBuffer(const TransientBuffer& buffer) : SubBuffer<Usage, Memory>(buffer) {
-			y_debug_assert(this->byte_size() == buffer.byte_size() && this->byte_offset() == 0);
+    public:
+        TransientSubBuffer(const TransientBuffer& buffer) : SubBuffer<Usage, Memory>(buffer) {
+            y_debug_assert(this->byte_size() == buffer.byte_size() && this->byte_offset() == 0);
 
-			if(!this->has(buffer.usage(), Usage)) {
-				y_fatal("Invalid subbuffer usage.");
-			}
-			if(!is_memory_type_compatible(buffer.memory_type(), Memory)) {
-				y_fatal("Invalid subbuffer memory type.");
-			}
-		}
+            if(!this->has(buffer.usage(), Usage)) {
+                y_fatal("Invalid subbuffer usage.");
+            }
+            if(!is_memory_type_compatible(buffer.memory_type(), Memory)) {
+                y_fatal("Invalid subbuffer memory type.");
+            }
+        }
 };
 
 }
 
 #endif // YAVE_FRAMEGRAPH_TRANSIENTBUFFER_H
+

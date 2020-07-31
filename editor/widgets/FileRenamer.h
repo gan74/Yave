@@ -27,21 +27,22 @@ SOFTWARE.
 namespace editor {
 
 class FileRenamer final : public Widget {
-	public:
-		FileRenamer(const FileSystemModel* fs, core::String filename);
+    public:
+        FileRenamer(const FileSystemModel* fs, core::String filename);
 
-	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+    private:
+        void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
-	private:
-		const FileSystemModel* _filesystem = nullptr;
+    private:
+        const FileSystemModel* _filesystem = nullptr;
 
-		core::String _filename;
-		core::String _name;
-		std::array<char, 1024> _new_name;
+        core::String _filename;
+        core::String _name;
+        std::array<char, 1024> _new_name;
 
 };
 
 }
 
 #endif // EDITOR_WIDGETS_FILERENAMER_H
+

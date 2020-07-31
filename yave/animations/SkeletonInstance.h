@@ -35,36 +35,37 @@ namespace yave {
 
 class SkeletonInstance {
 
-	public:
-		SkeletonInstance() = default;
+    public:
+        SkeletonInstance() = default;
 
-		// this seems unsafe...
-		SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton);
+        // this seems unsafe...
+        SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton);
 
-		void flush_reload();
+        void flush_reload();
 
-		void animate(const AssetPtr<Animation>& anim);
+        void animate(const AssetPtr<Animation>& anim);
 
-		void update();
+        void update();
 
-		const auto& descriptor_set() const {
-			return _descriptor_set;
-		}
+        const auto& descriptor_set() const {
+            return _descriptor_set;
+        }
 
-	private:
-		void flush_data();
+    private:
+        void flush_data();
 
-		const Skeleton* _skeleton = nullptr;
-		std::unique_ptr<std::array<math::Transform<>, Skeleton::max_bones>> _bone_transforms;
+        const Skeleton* _skeleton = nullptr;
+        std::unique_ptr<std::array<math::Transform<>, Skeleton::max_bones>> _bone_transforms;
 
-		TypedUniformBuffer<math::Transform<>, MemoryType::CpuVisible> _bone_transform_buffer;
-		DescriptorSet _descriptor_set;
+        TypedUniformBuffer<math::Transform<>, MemoryType::CpuVisible> _bone_transform_buffer;
+        DescriptorSet _descriptor_set;
 
-		AssetPtr<Animation> _animation;
-		core::Chrono _anim_timer;
+        AssetPtr<Animation> _animation;
+        core::Chrono _anim_timer;
 
 };
 
 }
 
 #endif // YAVE_ANIMATIONS_SKELETONINSTANCE_H
+

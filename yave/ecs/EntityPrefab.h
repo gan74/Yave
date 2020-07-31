@@ -30,24 +30,24 @@ namespace yave {
 namespace ecs {
 
 class EntityPrefab {
-	public:
-		template<typename T>
-		void add(T component) {
-			_components << std::make_unique<ComponentBox<T>>(std::move(component));
-		}
+    public:
+        template<typename T>
+        void add(T component) {
+            _components << std::make_unique<ComponentBox<T>>(std::move(component));
+        }
 
-		void add(std::unique_ptr<ComponentBoxBase> box) {
-			_components << std::move(box);
-		}
+        void add(std::unique_ptr<ComponentBoxBase> box) {
+            _components << std::move(box);
+        }
 
-		const auto& components() const {
-			return _components;
-		}
+        const auto& components() const {
+            return _components;
+        }
 
-		y_serde3(_components)
+        y_serde3(_components)
 
-	private:
-		core::Vector<std::unique_ptr<ComponentBoxBase>> _components;
+    private:
+        core::Vector<std::unique_ptr<ComponentBoxBase>> _components;
 };
 
 }
@@ -57,3 +57,4 @@ YAVE_DECLARE_GENERIC_ASSET_TRAITS(ecs::EntityPrefab, AssetType::Prefab);
 }
 
 #endif // YAVE_ECS_ENTITYPREFAB_H
+

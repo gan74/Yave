@@ -30,15 +30,16 @@ AssetLoadingContext::AssetLoadingContext(AssetLoader* loader) : AssetLoadingCont
 }
 
 AssetLoadingContext::AssetLoadingContext(AssetLoader* loader, AssetLoadingFlags flags) : _parent(loader), _dependencies(flags) {
-	y_always_assert(loader, "Invalid parent");
+    y_always_assert(loader, "Invalid parent");
 }
 
 const AssetDependencies& AssetLoadingContext::dependencies() const {
-	return _dependencies;
+    return _dependencies;
 }
 
 AssetLoader* AssetLoadingContext::parent() const {
-	return _parent;
+    return _parent;
 }
 
 }
+

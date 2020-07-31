@@ -33,11 +33,12 @@ void end_capture();
 bool is_supported();
 
 inline auto capture() {
-	start_capture();
-	return y::ScopeExit([] { end_capture(); });
+    start_capture();
+    return y::ScopeExit([] { end_capture(); });
 }
 
 }
 }
 
 #endif // EDITOR_UTILS_RENDERDOCHELPER_H
+

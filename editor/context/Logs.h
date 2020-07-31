@@ -31,34 +31,35 @@ SOFTWARE.
 namespace editor {
 
 class Logs {
-	public:
-		struct Message {
-			const core::String msg;
-			const Log type;
-		};
+    public:
+        struct Message {
+            const core::String msg;
+            const Log type;
+        };
 
-		void log_msg(core::String msg, Log type = Log::Info) {
-			log_msg(Message{std::move(msg), type});
-		}
+        void log_msg(core::String msg, Log type = Log::Info) {
+            log_msg(Message{std::move(msg), type});
+        }
 
-		void log_msg(Message msg) {
-			_this_frame.emplace_back(std::move(msg));
-		}
+        void log_msg(Message msg) {
+            _this_frame.emplace_back(std::move(msg));
+        }
 
-		void flush() {
-			_this_frame.swap(_last_frame);
-			_this_frame.clear();
-		}
+        void flush() {
+            _this_frame.swap(_last_frame);
+            _this_frame.clear();
+        }
 
-		core::Span<Message> new_messages() const {
-			return _last_frame;
-		}
+        core::Span<Message> new_messages() const {
+            return _last_frame;
+        }
 
-	private:
-		core::Vector<Message> _this_frame;
-		core::Vector<Message> _last_frame;
+    private:
+        core::Vector<Message> _this_frame;
+        core::Vector<Message> _last_frame;
 };
 
 }
 
 #endif // EDITOR_CONTEXT_LOGS_H
+

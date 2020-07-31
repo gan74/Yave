@@ -33,82 +33,83 @@ SOFTWARE.
 namespace yave {
 
 class ImageBarrier {
-	public:
-		ImageBarrier(const ImageBase& image, PipelineStage src, PipelineStage dst);
+    public:
+        ImageBarrier(const ImageBase& image, PipelineStage src, PipelineStage dst);
 
-		// for internal use, don't call for giggles
-		static ImageBarrier transition_barrier(const ImageBase& image, VkImageLayout src_layout, VkImageLayout dst_layout);
-		static ImageBarrier transition_to_barrier(const ImageBase& image, VkImageLayout dst_layout);
-		static ImageBarrier transition_from_barrier(const ImageBase& image, VkImageLayout src_layout);
+        // for internal use, don't call for giggles
+        static ImageBarrier transition_barrier(const ImageBase& image, VkImageLayout src_layout, VkImageLayout dst_layout);
+        static ImageBarrier transition_to_barrier(const ImageBase& image, VkImageLayout dst_layout);
+        static ImageBarrier transition_from_barrier(const ImageBase& image, VkImageLayout src_layout);
 
 
-		VkImageMemoryBarrier vk_barrier() const;
+        VkImageMemoryBarrier vk_barrier() const;
 
-		PipelineStage dst_stage() const;
-		PipelineStage src_stage() const;
+        PipelineStage dst_stage() const;
+        PipelineStage src_stage() const;
 
-	private:
-		ImageBarrier() = default;
+    private:
+        ImageBarrier() = default;
 
-		VkImageMemoryBarrier _barrier;
-		PipelineStage _src;
-		PipelineStage _dst;
+        VkImageMemoryBarrier _barrier;
+        PipelineStage _src;
+        PipelineStage _dst;
 };
 
 class BufferBarrier {
-	public:
-		BufferBarrier(const BufferBase& buffer, PipelineStage src, PipelineStage dst);
-		BufferBarrier(const SubBufferBase& buffer, PipelineStage src, PipelineStage dst);
+    public:
+        BufferBarrier(const BufferBase& buffer, PipelineStage src, PipelineStage dst);
+        BufferBarrier(const SubBufferBase& buffer, PipelineStage src, PipelineStage dst);
 
 
-		VkBufferMemoryBarrier vk_barrier() const;
+        VkBufferMemoryBarrier vk_barrier() const;
 
-		PipelineStage dst_stage() const;
-		PipelineStage src_stage() const;
+        PipelineStage dst_stage() const;
+        PipelineStage src_stage() const;
 
-	private:
-		VkBufferMemoryBarrier _barrier;
-		PipelineStage _src;
-		PipelineStage _dst;
+    private:
+        VkBufferMemoryBarrier _barrier;
+        PipelineStage _src;
+        PipelineStage _dst;
 };
 
 
 /*class GenericBarrier {
 
-	template<typename T>
-	auto create_barrier(const T& t) {
-		if constexpr(std::is_constructible<ImageBarrier, T>::value) {
-			return ImageBarrier(t);
-		} else {
-			return BufferBarrier(t);
-		}
-	}
+    template<typename T>
+    auto create_barrier(const T& t) {
+        if constexpr(std::is_constructible<ImageBarrier, T>::value) {
+            return ImageBarrier(t);
+        } else {
+            return BufferBarrier(t);
+        }
+    }
 
-	public:
-		enum class Type {
-			Image,
-			Buffer
-		};
+    public:
+        enum class Type {
+            Image,
+            Buffer
+        };
 
-		GenericBarrier(const ImageBarrier& barrier);
-		GenericBarrier(const BufferBarrier& barrier);
+        GenericBarrier(const ImageBarrier& barrier);
+        GenericBarrier(const BufferBarrier& barrier);
 
-		template<typename T>
-		GenericBarrier(const T& t) : GenericBarrier(create_barrier(t)) {
-		}
+        template<typename T>
+        GenericBarrier(const T& t) : GenericBarrier(create_barrier(t)) {
+        }
 
-		core::Result<ImageBarrier, BufferBarrier> image_barrier() const;
-		core::Result<BufferBarrier, ImageBarrier> buffer_barrier() const;
+        core::Result<ImageBarrier, BufferBarrier> image_barrier() const;
+        core::Result<BufferBarrier, ImageBarrier> buffer_barrier() const;
 
-	private:
-		Type _type;
-		union {
-			ImageBarrier _image;
-			BufferBarrier _buffer;
-		};
+    private:
+        Type _type;
+        union {
+            ImageBarrier _image;
+            BufferBarrier _buffer;
+        };
 };*/
 
 }
 
 
 #endif // YAVE_GRAPHICS_BARRIERS_BARRIER_H
+

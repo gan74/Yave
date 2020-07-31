@@ -28,24 +28,25 @@ SOFTWARE.
 namespace yave {
 
 struct RendererSettings {
-	ToneMappingSettings tone_mapping;
-	ShadowMapPassSettings shadow_map;
+    ToneMappingSettings tone_mapping;
+    ShadowMapPassSettings shadow_map;
 };
 
 struct DefaultRenderer {
-	GBufferPass gbuffer;
-	LightingPass lighting;
-	ToneMappingPass tone_mapping;
+    GBufferPass gbuffer;
+    LightingPass lighting;
+    ToneMappingPass tone_mapping;
 
-	FrameGraphImageId color;
-	FrameGraphImageId depth;
+    FrameGraphImageId color;
+    FrameGraphImageId depth;
 
-	static DefaultRenderer create(FrameGraph& framegraph,
-								  const SceneView& view,
-								  const math::Vec2ui& size,
-								  const RendererSettings& settings = RendererSettings());
+    static DefaultRenderer create(FrameGraph& framegraph,
+                                  const SceneView& view,
+                                  const math::Vec2ui& size,
+                                  const RendererSettings& settings = RendererSettings());
 };
 
 }
 
 #endif // YAVE_RENDERER_RENDERER_H
+

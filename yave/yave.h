@@ -47,3 +47,4 @@ using ThreadDevicePtr = const ThreadLocalDevice*;
 }
 
 #endif // YAVE_YAVE_H
+

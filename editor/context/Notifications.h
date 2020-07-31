@@ -31,52 +31,53 @@ namespace editor {
 
 class Notifications : public ContextLinked {
 
-	class Tqdm {
-		struct Data {
-			usize it = 0;
-			usize size = 0;
-			core::String msg;
+    class Tqdm {
+        struct Data {
+            usize it = 0;
+            usize size = 0;
+            core::String msg;
 
-			bool is_over() const {
-				return it >= size;
-			}
+            bool is_over() const {
+                return it >= size;
+            }
 
-			float fraction() const {
-				return float(it) / float(size);
-			}
-		};
+            float fraction() const {
+                return float(it) / float(size);
+            }
+        };
 
-		public:
-			void update(u32 id, usize value);
-			u32 create(usize size, core::String msg);
+        public:
+            void update(u32 id, usize value);
+            u32 create(usize size, core::String msg);
 
-			core::Vector<Data> progress_items() const;
+            core::Vector<Data> progress_items() const;
 
-		private:
-			u32 _first_id = 0;
-			core::Vector<Data> _progress;
+        private:
+            u32 _first_id = 0;
+            core::Vector<Data> _progress;
 
-			mutable std::mutex _lock;
-	};
+            mutable std::mutex _lock;
+    };
 
-	public:
-		Notifications(ContextPtr ctx);
+    public:
+        Notifications(ContextPtr ctx);
 
-		auto progress_items() const {
-			return _tqdm->progress_items();
-		}
+        auto progress_items() const {
+            return _tqdm->progress_items();
+        }
 
-		template<typename C>
-		decltype(auto) tqdm(C&& c, core::String msg) {
-			const u32 id = _tqdm->create(c.size(), std::move(msg));
-			auto update = [id, i = usize(0), tqdm = _tqdm](auto&&) mutable { tqdm->update(id, ++i); return true; };
-			return core::Range(FilterIterator(c.begin(), c.end(), update), EndIterator());
-		}
+        template<typename C>
+        decltype(auto) tqdm(C&& c, core::String msg) {
+            const u32 id = _tqdm->create(c.size(), std::move(msg));
+            auto update = [id, i = usize(0), tqdm = _tqdm](auto&&) mutable { tqdm->update(id, ++i); return true; };
+            return core::Range(FilterIterator(c.begin(), c.end(), update), EndIterator());
+        }
 
-	private:
-		std::shared_ptr<Tqdm> _tqdm;
+    private:
+        std::shared_ptr<Tqdm> _tqdm;
 };
 
 }
 
 #endif // EDITOR_CONTEXT_NOTIFICATIONS_H
+

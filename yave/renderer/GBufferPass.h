@@ -27,16 +27,17 @@ SOFTWARE.
 namespace yave {
 
 struct GBufferPass {
-	SceneRenderSubPass scene_pass;
+    SceneRenderSubPass scene_pass;
 
-	FrameGraphImageId depth;
-	FrameGraphImageId color;
-	FrameGraphImageId normal;
+    FrameGraphImageId depth;
+    FrameGraphImageId color;
+    FrameGraphImageId normal;
 
-	static GBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
+    static GBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
 };
 
 }
 
 
 #endif // YAVE_RENDERER_GBUFFERPASS_H
+

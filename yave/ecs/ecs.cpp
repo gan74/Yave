@@ -29,10 +29,11 @@ namespace ecs {
 namespace detail {
 
 u32 next_type_index() {
-	static std::atomic<u32> global_type_index = 0;
-	return global_type_index++;
+    static std::atomic<u32> global_type_index = 0;
+    return global_type_index++;
 }
 
 }
 }
 }
+

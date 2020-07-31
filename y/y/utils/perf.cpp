@@ -41,14 +41,14 @@ namespace perf {
 
 namespace {
 static struct Guard {
-	~Guard() {
-		if(is_capturing()) {
-			y_fatal("Capture still in progress.");
-		}
-	}
+    ~Guard() {
+        if(is_capturing()) {
+            y_fatal("Capture still in progress.");
+        }
+    }
 
-	void use() {
-	}
+    void use() {
+    }
 } guard;
 }
 
@@ -73,176 +73,176 @@ static thread_local u32 thread_capture_id = 0;
 
 
 static double micros() {
-	return core::Chrono::program().to_micros();
+    return core::Chrono::program().to_micros();
 }
 
 static bool is_thread_capturing() {
-	return capturing && thread_capture_id == capture_id;
+    return capturing && thread_capture_id == capture_id;
 }
 
 bool is_capturing() {
-	return capturing;
+    return capturing;
 }
 
 class ThreadData final : public std::enable_shared_from_this<ThreadData>, NonMovable {
-	public:
-		ThreadData(std::shared_ptr<io2::File> output, std::shared_ptr<ThreadData> next_thread) :
-				_output_file(std::move(output)),
-				_next(std::move(next_thread)),
-				_original_thread_id(concurrent::thread_id()) {
+    public:
+        ThreadData(std::shared_ptr<io2::File> output, std::shared_ptr<ThreadData> next_thread) :
+                _output_file(std::move(output)),
+                _next(std::move(next_thread)),
+                _original_thread_id(concurrent::thread_id()) {
 
-			if(_output_file) {
-				_buffer = std::make_unique<u8[]>(buffer_size);
-				if(const char* name = concurrent::thread_name()) {
-					char b[print_buffer_len];
-					const usize len = std::snprintf(b, sizeof(b), R"({"name":"thread_name","ph":"M","pid":0,"tid":%u,"args":{"name":"%u: %s"}},)", concurrent::thread_id(), concurrent::thread_id(), name);
-					if(len >= sizeof(b)) {
-						y_fatal("Too long.");
-					}
-					write(b, len);
-				}
-			}
-		}
+            if(_output_file) {
+                _buffer = std::make_unique<u8[]>(buffer_size);
+                if(const char* name = concurrent::thread_name()) {
+                    char b[print_buffer_len];
+                    const usize len = std::snprintf(b, sizeof(b), R"({"name":"thread_name","ph":"M","pid":0,"tid":%u,"args":{"name":"%u: %s"}},)", concurrent::thread_id(), concurrent::thread_id(), name);
+                    if(len >= sizeof(b)) {
+                        y_fatal("Too long.");
+                    }
+                    write(b, len);
+                }
+            }
+        }
 
-		~ThreadData() {
-			y_debug_assert(!_buffer == !_output_file);
-			if(_buffer) {
-				flush();
-				// last thread to be deleted writes the end
-				if(!_next) {
-					char b[print_buffer_len];
-					const usize len = std::snprintf(b, sizeof(b), R"({"name":"capture ended","cat":"perf","ph":"I","pid":0,"tid":%u,"ts":%.1f}]})", concurrent::thread_id(), micros());
-					_output_file->write(b, len).expected("Unable to write perf dump.");
-				}
-			}
+        ~ThreadData() {
+            y_debug_assert(!_buffer == !_output_file);
+            if(_buffer) {
+                flush();
+                // last thread to be deleted writes the end
+                if(!_next) {
+                    char b[print_buffer_len];
+                    const usize len = std::snprintf(b, sizeof(b), R"({"name":"capture ended","cat":"perf","ph":"I","pid":0,"tid":%u,"ts":%.1f}]})", concurrent::thread_id(), micros());
+                    _output_file->write(b, len).expected("Unable to write perf dump.");
+                }
+            }
 
-		}
+        }
 
-		void write(const char* str, usize len) {
-			if(_buffer) {
-				const usize remaining = buffer_size - _buffer_offset;
-				if(len >= remaining) {
-					flush();
-				}
-				std::memcpy(_buffer.get() + _buffer_offset, str, len);
-				_buffer_offset += len;
-			}
-		}
+        void write(const char* str, usize len) {
+            if(_buffer) {
+                const usize remaining = buffer_size - _buffer_offset;
+                if(len >= remaining) {
+                    flush();
+                }
+                std::memcpy(_buffer.get() + _buffer_offset, str, len);
+                _buffer_offset += len;
+            }
+        }
 
-		bool is_empty() const {
-			return !_buffer;
-		}
+        bool is_empty() const {
+            return !_buffer;
+        }
 
-	private:
-		void flush() {
-			const std::unique_lock lock(mutex);
-			y_debug_assert(output_file);
-			y_debug_assert(output_file->is_open());
-			_output_file->write(_buffer.get(), _buffer_offset).expected("Unable to write perf dump.");
-			_buffer_offset = 0;
-		}
+    private:
+        void flush() {
+            const std::unique_lock lock(mutex);
+            y_debug_assert(output_file);
+            y_debug_assert(output_file->is_open());
+            _output_file->write(_buffer.get(), _buffer_offset).expected("Unable to write perf dump.");
+            _buffer_offset = 0;
+        }
 
-		std::unique_ptr<u8[]> _buffer;
-		usize _buffer_offset = 0;
+        std::unique_ptr<u8[]> _buffer;
+        usize _buffer_offset = 0;
 
-		std::shared_ptr<io2::File> _output_file;
-		std::shared_ptr<ThreadData> _next;
-		const u32 _original_thread_id;
+        std::shared_ptr<io2::File> _output_file;
+        std::shared_ptr<ThreadData> _next;
+        const u32 _original_thread_id;
 
 };
 
 void start_capture(const char* out_filename) {
-	auto file = std::make_shared<io2::File>(std::move(io2::File::create(out_filename).expected("Unable to open output file.")));
+    auto file = std::make_shared<io2::File>(std::move(io2::File::create(out_filename).expected("Unable to open output file.")));
 
-	{
-		const std::string_view start = R"({"traceEvents":[)";
-		file->write(start.data(), start.size()).expected("Unable to write perf dump.");
-	}
+    {
+        const std::string_view start = R"({"traceEvents":[)";
+        file->write(start.data(), start.size()).expected("Unable to write perf dump.");
+    }
 
-	const std::unique_lock lock(mutex);
+    const std::unique_lock lock(mutex);
 
-	if(is_capturing()) {
-		y_fatal("Capture already in progress.");
-	}
+    if(is_capturing()) {
+        y_fatal("Capture already in progress.");
+    }
 
-	output_file = std::move(file);
-	guard.use();
-	++capture_id;
-	capturing = true;
+    output_file = std::move(file);
+    guard.use();
+    ++capture_id;
+    capturing = true;
 }
 
 
 void end_capture() {
-	const std::unique_lock lock(mutex);
+    const std::unique_lock lock(mutex);
 
-	if(!is_capturing()) {
-		y_fatal("Not capturing.");
-	}
+    if(!is_capturing()) {
+        y_fatal("Not capturing.");
+    }
 
-	capturing = false;
-	head = nullptr;
-	output_file = nullptr;
+    capturing = false;
+    head = nullptr;
+    output_file = nullptr;
 }
 
 static std::shared_ptr<ThreadData> thread_data() {
-	std::shared_ptr<ThreadData> data;
-	if(!is_thread_capturing()) {
-		std::unique_lock lock(mutex);
-		auto file = output_file;
-		data = std::make_shared<ThreadData>(output_file, head);
-		if(!data->is_empty()) {
-			head = data;
-		}
-		thread_local_ptr = data.get();
-		thread_capture_id = capture_id;
-	} else {
-		y_debug_assert(thread_local_ptr);
-		data = thread_local_ptr->shared_from_this();
-	}
-	return data;
+    std::shared_ptr<ThreadData> data;
+    if(!is_thread_capturing()) {
+        std::unique_lock lock(mutex);
+        auto file = output_file;
+        data = std::make_shared<ThreadData>(output_file, head);
+        if(!data->is_empty()) {
+            head = data;
+        }
+        thread_local_ptr = data.get();
+        thread_capture_id = capture_id;
+    } else {
+        y_debug_assert(thread_local_ptr);
+        data = thread_local_ptr->shared_from_this();
+    }
+    return data;
 }
 
 static int paren(const char* buff) {
-	if(const char* p = std::strchr(buff, '('); p) {
-		return p - buff;
-	}
-	return print_buffer_len;
+    if(const char* p = std::strchr(buff, '('); p) {
+        return p - buff;
+    }
+    return print_buffer_len;
 }
 
 void enter(const char* cat, const char* func) {
-	if(!is_capturing()) {
-		return;
-	}
-	char b[print_buffer_len];
-	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%.1f},)", paren(func), func, cat, concurrent::thread_id(), micros());
-	if(len >= sizeof(b)) {
-		y_fatal("Too long.");
-	}
-	thread_data()->write(b, len);
+    if(!is_capturing()) {
+        return;
+    }
+    char b[print_buffer_len];
+    const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"B","pid":0,"tid":%u,"ts":%.1f},)", paren(func), func, cat, concurrent::thread_id(), micros());
+    if(len >= sizeof(b)) {
+        y_fatal("Too long.");
+    }
+    thread_data()->write(b, len);
 }
 
 void leave(const char* cat, const char* func) {
-	if(!is_capturing()) {
-		return;
-	}
-	char b[print_buffer_len];
-	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%.1f},)", paren(func), func, cat, concurrent::thread_id(), micros());
-	if(len >= sizeof(b)) {
-		y_fatal("Too long.");
-	}
-	thread_data()->write(b, len);
+    if(!is_capturing()) {
+        return;
+    }
+    char b[print_buffer_len];
+    const usize len = std::snprintf(b, sizeof(b), R"({"name":"%.*s","cat":"%s","ph":"E","pid":0,"tid":%u,"ts":%.1f},)", paren(func), func, cat, concurrent::thread_id(), micros());
+    if(len >= sizeof(b)) {
+        y_fatal("Too long.");
+    }
+    thread_data()->write(b, len);
 }
 
 void event(const char* cat, const char* name) {
-	if(!is_capturing()) {
-		return;
-	}
-	char b[print_buffer_len];
-	const usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"I","pid":0,"tid":%u,"ts":%.1f},)", name, cat, concurrent::thread_id(), micros());
-	if(len >= sizeof(b)) {
-		y_fatal("Too long.");
-	}
-	thread_data()->write(b, len);
+    if(!is_capturing()) {
+        return;
+    }
+    char b[print_buffer_len];
+    const usize len = std::snprintf(b, sizeof(b), R"({"name":"%s","cat":"%s","ph":"I","pid":0,"tid":%u,"ts":%.1f},)", name, cat, concurrent::thread_id(), micros());
+    if(len >= sizeof(b)) {
+        y_fatal("Too long.");
+    }
+    thread_data()->write(b, len);
 }
 
 
@@ -257,3 +257,4 @@ void event(const char*, const char*) {}
 
 }
 }
+

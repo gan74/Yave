@@ -30,32 +30,33 @@ namespace yave {
 
 class ShaderProgram final : NonCopyable, public DeviceLinked {
 
-	public:
-		static constexpr u32 per_instance_location = 8;
+    public:
+        static constexpr u32 per_instance_location = 8;
 
-		ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom);
+        ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom);
 
 
-		core::Span<VkPipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
-		core::Span<VkDescriptorSetLayout> vk_descriptor_layouts() const;
+        core::Span<VkPipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
+        core::Span<VkDescriptorSetLayout> vk_descriptor_layouts() const;
 
-		// should ALWAYS be sorted by location
-		core::Span<VkVertexInputBindingDescription> vk_attribute_bindings() const;
-		core::Span<VkVertexInputAttributeDescription> vk_attributes_descriptions() const;
-		core::Span<VkPushConstantRange> vk_push_constants() const;
+        // should ALWAYS be sorted by location
+        core::Span<VkVertexInputBindingDescription> vk_attribute_bindings() const;
+        core::Span<VkVertexInputAttributeDescription> vk_attributes_descriptions() const;
+        core::Span<VkPushConstantRange> vk_push_constants() const;
 
-	private:
-		core::ExternalHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
-		core::Vector<VkPushConstantRange> _push_constants;
-		core::Vector<VkDescriptorSetLayout> _layouts;
-		core::Vector<VkPipelineShaderStageCreateInfo> _stages;
+    private:
+        core::ExternalHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
+        core::Vector<VkPushConstantRange> _push_constants;
+        core::Vector<VkDescriptorSetLayout> _layouts;
+        core::Vector<VkPipelineShaderStageCreateInfo> _stages;
 
-		struct {
-			core::Vector<VkVertexInputAttributeDescription> attribs;
-			core::Vector<VkVertexInputBindingDescription> bindings;
-		} _vertex;
+        struct {
+            core::Vector<VkVertexInputAttributeDescription> attribs;
+            core::Vector<VkVertexInputBindingDescription> bindings;
+        } _vertex;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_SHADERS_SHADERPROGRAM_H
+

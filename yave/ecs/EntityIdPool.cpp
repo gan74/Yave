@@ -26,41 +26,42 @@ namespace yave {
 namespace ecs {
 
 usize EntityIdPool::size() const {
-	return _ids.size() - _free.size();
+    return _ids.size() - _free.size();
 }
 
 bool EntityIdPool::contains(EntityId id) const {
-	return id.is_valid() &&
-		   id.index() < _ids.size() &&
-		   _ids[id.index()] == id;
+    return id.is_valid() &&
+           id.index() < _ids.size() &&
+           _ids[id.index()] == id;
 }
 
 EntityId EntityIdPool::id_from_index(u32 index) const {
-	if(index >= _ids.size() || !_ids[index].is_valid()) {
-		return EntityId();
-	}
-	return _ids[index];
+    if(index >= _ids.size() || !_ids[index].is_valid()) {
+        return EntityId();
+    }
+    return _ids[index];
 }
 
 EntityId EntityIdPool::create() {
-	if(_free.is_empty()) {
-		const usize index = _ids.size();
-		_ids.emplace_back(EntityId(index));
-		return _ids.last();
-	}
+    if(_free.is_empty()) {
+        const usize index = _ids.size();
+        _ids.emplace_back(EntityId(index));
+        return _ids.last();
+    }
 
-	const u32 index = _free.pop();
-	_ids[index].make_valid(index);
-	return _ids[index];
+    const u32 index = _free.pop();
+    _ids[index].make_valid(index);
+    return _ids[index];
 }
 
 
 void EntityIdPool::recycle(EntityId id) {
-	y_debug_assert(contains(id));
-	_ids[id.index()].invalidate();
-	_free << id.index();
+    y_debug_assert(contains(id));
+    _ids[id.index()].invalidate();
+    _free << id.index();
 }
 
 
 }
 }
+

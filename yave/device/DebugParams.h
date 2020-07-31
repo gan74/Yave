@@ -29,48 +29,49 @@ namespace yave {
 
 class DebugParams {
 
-	public:
-		static DebugParams debug() {
-			return DebugParams(true);
-		}
+    public:
+        static DebugParams debug() {
+            return DebugParams(true);
+        }
 
-		static DebugParams none() {
-			return DebugParams(false);
-		}
+        static DebugParams none() {
+            return DebugParams(false);
+        }
 
-		bool debug_features_enabled() const {
-			return _debug_enabled;
-		}
+        bool debug_features_enabled() const {
+            return _debug_enabled;
+        }
 
-		core::Span<const char*> instance_layers() const {
-			if(_debug_enabled) {
-				return layers;
-			}
-			return {};
-		}
+        core::Span<const char*> instance_layers() const {
+            if(_debug_enabled) {
+                return layers;
+            }
+            return {};
+        }
 
-		core::Span<const char*> device_layers() const {
-			if(_debug_enabled) {
-				return layers;
-			}
-			return {};
-		}
+        core::Span<const char*> device_layers() const {
+            if(_debug_enabled) {
+                return layers;
+            }
+            return {};
+        }
 
-		void set_enabled(bool enabled) {
-			_debug_enabled = enabled;
-		}
+        void set_enabled(bool enabled) {
+            _debug_enabled = enabled;
+        }
 
-	private:
-		static constexpr std::array<const char*, 2> layers = {"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"};
+    private:
+        static constexpr std::array<const char*, 2> layers = {"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"};
 
-		DebugParams(bool enabled) :
-			_debug_enabled(enabled) {
-		}
+        DebugParams(bool enabled) :
+            _debug_enabled(enabled) {
+        }
 
 
-		bool _debug_enabled;
+        bool _debug_enabled;
 };
 
 }
 
 #endif // YAVE_DEVICE_DEBUGPARAMS_H
+

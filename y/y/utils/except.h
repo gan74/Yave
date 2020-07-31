@@ -28,3 +28,4 @@ namespace y {
 }
 
 #endif // Y_UTILS_EXCEPT_H
+

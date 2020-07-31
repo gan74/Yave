@@ -25,20 +25,21 @@ SOFTWARE.
 namespace editor {
 
 EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const EditorRendererSettings& settings) {
-	y_profile();
+    y_profile();
 
-	EditorRenderer renderer;
-	renderer.renderer = DefaultRenderer::create(framegraph, view, size, settings.renderer_settings);
+    EditorRenderer renderer;
+    renderer.renderer = DefaultRenderer::create(framegraph, view, size, settings.renderer_settings);
 
-	renderer.color = renderer.renderer.color;
-	renderer.depth = renderer.renderer.depth;
+    renderer.color = renderer.renderer.color;
+    renderer.depth = renderer.renderer.depth;
 
-	if(settings.enable_editor_entities) {
-		renderer.entity_pass = EditorEntityPass::create(ctx, framegraph, view, renderer.depth, renderer.color);
-		renderer.color = renderer.entity_pass.color;
-	}
+    if(settings.enable_editor_entities) {
+        renderer.entity_pass = EditorEntityPass::create(ctx, framegraph, view, renderer.depth, renderer.color);
+        renderer.color = renderer.entity_pass.color;
+    }
 
-	return renderer;
+    return renderer;
 }
 
 }
+

@@ -31,36 +31,37 @@ namespace editor {
 
 class ImGuiRenderer : NonCopyable, public ContextLinked {
 
-	struct Vertex {
-		const math::Vec2 pos;
-		const math::Vec2 uv;
-		const u32 col;
-	};
+    struct Vertex {
+        const math::Vec2 pos;
+        const math::Vec2 uv;
+        const u32 col;
+    };
 
-	Y_TODO(Merge ImGuiRenderer into Ui)
+    Y_TODO(Merge ImGuiRenderer into Ui)
 
-	public:
-		enum class Style {
-			Yave,
-			Yave2,
-			Corporate,
-			Corporate3D,
-			Blender
-		};
+    public:
+        enum class Style {
+            Yave,
+            Yave2,
+            Corporate,
+            Corporate3D,
+            Blender
+        };
 
-		ImGuiRenderer(ContextPtr ctx);
+        ImGuiRenderer(ContextPtr ctx);
 
-		void render(RenderPassRecorder& recorder, const FrameToken&);
+        void render(RenderPassRecorder& recorder, const FrameToken&);
 
-		void set_style(Style st);
+        void set_style(Style st);
 
-		const Texture& font_texture() const;
+        const Texture& font_texture() const;
 
-	private:
-		Texture _font;
-		TextureView _font_view;
+    private:
+        Texture _font;
+        TextureView _font_view;
 };
 
 }
 
 #endif // EDITOR_RENDERERS_IMGUIRENDERER_H
+

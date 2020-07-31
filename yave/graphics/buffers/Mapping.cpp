@@ -29,49 +29,50 @@ SOFTWARE.
 namespace yave {
 
 Mapping::Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer) :
-		_buffer(buffer),
-		_mapping(static_cast<u8*>(_buffer.device_memory().map()) + buffer.byte_offset()) {
+        _buffer(buffer),
+        _mapping(static_cast<u8*>(_buffer.device_memory().map()) + buffer.byte_offset()) {
 
-	y_debug_assert(_mapping);
+    y_debug_assert(_mapping);
 }
 
 Mapping::~Mapping() {
-	if(_buffer.device() && _mapping) {
-		flush();
-	}
+    if(_buffer.device() && _mapping) {
+        flush();
+    }
 }
 
 void Mapping::flush() {
-	if(_buffer.device() && _mapping) {
-		const VkMappedMemoryRange range = _buffer.vk_memory_range();
-		Y_TODO(Maybe merge flush & unmap)
-		vk_check(vkFlushMappedMemoryRanges(vk_device(_buffer.device()), 1, &range));
-		_buffer.device_memory().unmap();
-	}
+    if(_buffer.device() && _mapping) {
+        const VkMappedMemoryRange range = _buffer.vk_memory_range();
+        Y_TODO(Maybe merge flush & unmap)
+        vk_check(vkFlushMappedMemoryRanges(vk_device(_buffer.device()), 1, &range));
+        _buffer.device_memory().unmap();
+    }
 }
 
 usize Mapping::byte_size() const {
-	return _buffer.byte_size();
+    return _buffer.byte_size();
 }
 
 void Mapping::swap(Mapping& other) {
-	std::swap(_mapping, other._mapping);
-	std::swap(_buffer, other._buffer);
+    std::swap(_mapping, other._mapping);
+    std::swap(_buffer, other._buffer);
 }
 
 void* Mapping::data() {
-	return _mapping;
+    return _mapping;
 }
 
 const void* Mapping::data() const {
-	return _mapping;
+    return _mapping;
 }
 
 void Mapping::stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data) {
-	const StagingBuffer buffer(dst.device(), dst.byte_size());
-	Mapping map(buffer);
-	std::memcpy(map.data(), data, dst.byte_size());
-	recorder.copy(buffer, dst);
+    const StagingBuffer buffer(dst.device(), dst.byte_size());
+    Mapping map(buffer);
+    std::memcpy(map.data(), data, dst.byte_size());
+    recorder.copy(buffer, dst);
 }
 
 }
+

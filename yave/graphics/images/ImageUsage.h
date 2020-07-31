@@ -29,58 +29,58 @@ SOFTWARE.
 namespace yave {
 
 enum class ImageUsage : u32 {
-	None = 0,
+    None = 0,
 
-	TextureBit		= VK_IMAGE_USAGE_SAMPLED_BIT,
-	DepthBit		= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-	ColorBit		= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-	StorageBit		= VK_IMAGE_USAGE_STORAGE_BIT,
+    TextureBit      = VK_IMAGE_USAGE_SAMPLED_BIT,
+    DepthBit        = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+    ColorBit        = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    StorageBit      = VK_IMAGE_USAGE_STORAGE_BIT,
 
-	TransferSrcBit	= VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-	TransferDstBit	= VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+    TransferSrcBit  = VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+    TransferDstBit  = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
 
 #ifdef Y_MSVC
-	Y_TODO(MSVC fix)
-	SwapchainBit	= 0x00000400,
+    Y_TODO(MSVC fix)
+    SwapchainBit    = 0x00000400,
 #else
-	SwapchainBit	= std::max({None, DepthBit, ColorBit, TextureBit, StorageBit}) << 1,
+    SwapchainBit    = std::max({None, DepthBit, ColorBit, TextureBit, StorageBit}) << 1,
 #endif
 
-	// Never use directly:
-	Attachment		= ColorBit | DepthBit,
-	DepthTexture	= TextureBit | DepthBit
+    // Never use directly:
+    Attachment      = ColorBit | DepthBit,
+    DepthTexture    = TextureBit | DepthBit
 };
 
 inline constexpr ImageUsage operator|(ImageUsage l, ImageUsage r) {
-	return ImageUsage(u32(l) | u32(r));
+    return ImageUsage(u32(l) | u32(r));
 }
 
 inline constexpr ImageUsage operator|(ImageUsage l, VkImageUsageFlagBits r) {
-	return ImageUsage(u32(l) | u32(r));
+    return ImageUsage(u32(l) | u32(r));
 }
 
 inline constexpr ImageUsage operator&(ImageUsage l, ImageUsage r)  {
-	return ImageUsage(u32(l) & u32(r));
+    return ImageUsage(u32(l) & u32(r));
 }
 
 inline constexpr ImageUsage operator~(ImageUsage l) {
-	return ImageUsage(~u32(l));
+    return ImageUsage(~u32(l));
 }
 
 inline constexpr bool is_copy_usage(ImageUsage usage) {
-	return (usage & (ImageUsage::TransferDstBit | ImageUsage::TransferSrcBit)) != ImageUsage::None;
+    return (usage & (ImageUsage::TransferDstBit | ImageUsage::TransferSrcBit)) != ImageUsage::None;
 }
 
 inline constexpr bool is_attachment_usage(ImageUsage usage) {
-	return (usage & ImageUsage::Attachment) != ImageUsage::None;
+    return (usage & ImageUsage::Attachment) != ImageUsage::None;
 }
 
 inline constexpr bool is_storage_usage(ImageUsage usage) {
-	return (usage & ImageUsage::StorageBit) != ImageUsage::None;
+    return (usage & ImageUsage::StorageBit) != ImageUsage::None;
 }
 
 inline constexpr bool is_texture_usage(ImageUsage usage) {
-	return (usage & ImageUsage::TextureBit) != ImageUsage::None;
+    return (usage & ImageUsage::TextureBit) != ImageUsage::None;
 }
 
 VkImageLayout vk_image_layout(ImageUsage usage);
@@ -88,12 +88,13 @@ VkImageLayout vk_image_layout(ImageUsage usage);
 
 
 enum class ImageType : u32 {
-	TwoD	= VK_IMAGE_VIEW_TYPE_2D,
-	Layered = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-	Cube	= VK_IMAGE_VIEW_TYPE_CUBE,
-	ThreeD	= VK_IMAGE_VIEW_TYPE_3D,
+    TwoD    = VK_IMAGE_VIEW_TYPE_2D,
+    Layered = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+    Cube    = VK_IMAGE_VIEW_TYPE_CUBE,
+    ThreeD  = VK_IMAGE_VIEW_TYPE_3D,
 };
 
 }
 
 #endif // YAVE_GRAPHICS_IMAGES_IMAGEUSAGE_H
+

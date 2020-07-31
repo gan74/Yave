@@ -35,63 +35,64 @@ SOFTWARE.
 namespace editor {
 
 bool set_entity_name(ecs::EntityWorld& world, ecs::EntityId id, std::string_view name) {
-	if(EditorComponent* component = world.component<EditorComponent>(id)) {
-		component->set_name(name);
-		return true;
-	}
-	return false;
+    if(EditorComponent* component = world.component<EditorComponent>(id)) {
+        component->set_name(name);
+        return true;
+    }
+    return false;
 }
 
 
 std::string_view entity_name(const ecs::EntityWorld& world, ecs::EntityId id) {
-	if(const EditorComponent* component = world.component<EditorComponent>(id)) {
-		return component->name();
-	}
+    if(const EditorComponent* component = world.component<EditorComponent>(id)) {
+        return component->name();
+    }
 
-	return "";
+    return "";
 }
 
 std::string_view entity_icon(const ecs::EntityWorld& world, ecs::EntityId id) {
-	if(world.has<StaticMeshComponent>(id)) {
-		return ICON_FA_CUBE;
-	}
+    if(world.has<StaticMeshComponent>(id)) {
+        return ICON_FA_CUBE;
+    }
 
-	if(world.has<PointLightComponent>(id)) {
-		return ICON_FA_LIGHTBULB;
-	}
+    if(world.has<PointLightComponent>(id)) {
+        return ICON_FA_LIGHTBULB;
+    }
 
-	if(world.has<SpotLightComponent>(id)) {
-		return ICON_FA_VIDEO;
-	}
+    if(world.has<SpotLightComponent>(id)) {
+        return ICON_FA_VIDEO;
+    }
 
-	if(world.has<DirectionalLightComponent>(id)) {
-		return ICON_FA_SUN;
-	}
+    if(world.has<DirectionalLightComponent>(id)) {
+        return ICON_FA_SUN;
+    }
 
-	if(world.has<SkyLightComponent>(id)) {
-		return ICON_FA_CLOUD;
-	}
+    if(world.has<SkyLightComponent>(id)) {
+        return ICON_FA_CLOUD;
+    }
 
-	return ICON_FA_DATABASE;
+    return ICON_FA_DATABASE;
 }
 
 
 
 
 std::string_view clean_component_name(std::string_view name) {
-	usize start = 0;
-	for(usize i = 0; i != name.size(); ++i) {
-		switch(name[i]) {
-			case ':':
-				start = i + 1;
-			break;
+    usize start = 0;
+    for(usize i = 0; i != name.size(); ++i) {
+        switch(name[i]) {
+            case ':':
+                start = i + 1;
+            break;
 
-			default:
-			break;
-		}
-	}
+            default:
+            break;
+        }
+    }
 
-	return name.substr(start);
+    return name.substr(start);
 }
 
 }
+

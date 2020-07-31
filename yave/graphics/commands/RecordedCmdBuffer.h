@@ -28,27 +28,28 @@ namespace yave {
 
 class RecordedCmdBuffer : public CmdBufferBase {
 
-	CmdBufferBase&& end_recorder(CmdBufferRecorder&& recorder) {
-		vk_check(vkEndCommandBuffer(recorder.vk_cmd_buffer()));
-		return std::move(recorder);
-	}
+    CmdBufferBase&& end_recorder(CmdBufferRecorder&& recorder) {
+        vk_check(vkEndCommandBuffer(recorder.vk_cmd_buffer()));
+        return std::move(recorder);
+    }
 
-	public:
-		RecordedCmdBuffer() = default;
+    public:
+        RecordedCmdBuffer() = default;
 
-		RecordedCmdBuffer(RecordedCmdBuffer&&) = default;
-		RecordedCmdBuffer& operator=(RecordedCmdBuffer&&) = default;
+        RecordedCmdBuffer(RecordedCmdBuffer&&) = default;
+        RecordedCmdBuffer& operator=(RecordedCmdBuffer&&) = default;
 
-		RecordedCmdBuffer(CmdBufferRecorder&& recorder) : RecordedCmdBuffer(end_recorder(std::move(recorder))) {
-		}
+        RecordedCmdBuffer(CmdBufferRecorder&& recorder) : RecordedCmdBuffer(end_recorder(std::move(recorder))) {
+        }
 
-	private:
-		friend class CmdBufferRecorder;
+    private:
+        friend class CmdBufferRecorder;
 
-		RecordedCmdBuffer(CmdBufferBase&& other) : CmdBufferBase(std::move(other)) {
-		}
+        RecordedCmdBuffer(CmdBufferBase&& other) : CmdBufferBase(std::move(other)) {
+        }
 };
 
 }
 
 #endif // YAVE_GRAPHICS_COMMANDS_RECORDEDCMDBUFFER_H
+

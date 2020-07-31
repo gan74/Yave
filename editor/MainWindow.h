@@ -30,21 +30,22 @@ namespace editor {
 
 class MainWindow : public Window, public ContextLinked {
 
-	public:
-		MainWindow(ContextPtr cptr);
-		~MainWindow();
+    public:
+        MainWindow(ContextPtr cptr);
+        ~MainWindow();
 
-		Swapchain* swapchain();
+        Swapchain* swapchain();
 
-		void present(CmdBufferRecorder& recorder, const FrameToken& token);
+        void present(CmdBufferRecorder& recorder, const FrameToken& token);
 
-	private:
-		void resized() override;
-		void create_swapchain();
+    private:
+        void resized() override;
+        void create_swapchain();
 
-		std::unique_ptr<Swapchain> _swapchain;
+        std::unique_ptr<Swapchain> _swapchain;
 };
 
 }
 
 #endif // EDITOR_MAINWINDOW_H
+

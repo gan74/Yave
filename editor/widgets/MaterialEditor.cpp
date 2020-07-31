@@ -42,140 +42,141 @@ SOFTWARE.
 namespace editor {
 
 static void save(ContextPtr ctx, SimpleMaterialData data, AssetPtr<Material>& material) {
-	io2::Buffer buffer;
-	serde3::WritableArchive arc(buffer);
-	if(!arc.serialize(data)) {
-		log_msg("Unable to serialize material", Log::Error);
-		return;
-	}
+    io2::Buffer buffer;
+    serde3::WritableArchive arc(buffer);
+    if(!arc.serialize(data)) {
+        log_msg("Unable to serialize material", Log::Error);
+        return;
+    }
 
-	buffer.reset();
-	if(!ctx->asset_store().write(material.id(), buffer)) {
-		log_msg("Unable to write material", Log::Error);
-		return;
-	}
+    buffer.reset();
+    if(!ctx->asset_store().write(material.id(), buffer)) {
+        log_msg("Unable to write material", Log::Error);
+        return;
+    }
 
-	{
-		y_profile_zone("reload");
-		material.reload();
-		ctx->flush_reload();
-	}
+    {
+        y_profile_zone("reload");
+        material.reload();
+        ctx->flush_reload();
+    }
 }
 
 static void set_tex_and_save(ContextPtr ctx, AssetPtr<Material>& material, SimpleMaterialData::Textures index, AssetId id) {
-	y_profile();
-	const auto tex = ctx->loader().load_res<Texture>(id);
-	if(!tex || tex.unwrap().is_failed()) {
-		log_msg("Unable to load texture", Log::Error);
-		return;
-	}
+    y_profile();
+    const auto tex = ctx->loader().load_res<Texture>(id);
+    if(!tex || tex.unwrap().is_failed()) {
+        log_msg("Unable to load texture", Log::Error);
+        return;
+    }
 
-	SimpleMaterialData data = material->data();
-	data.set_texture_reset_constants(index, std::move(tex.unwrap()));
+    SimpleMaterialData data = material->data();
+    data.set_texture_reset_constants(index, std::move(tex.unwrap()));
 
-	save(ctx, std::move(data), material);
+    save(ctx, std::move(data), material);
 }
 
 
 
 MaterialEditor::MaterialEditor(ContextPtr cptr) :
-		Widget(ICON_FA_BRUSH " Material Editor"),
-		ContextLinked(cptr),
-		_preview(cptr) {
+        Widget(ICON_FA_BRUSH " Material Editor"),
+        ContextLinked(cptr),
+        _preview(cptr) {
 
-	_preview.set_parent(this);
+    _preview.set_parent(this);
 }
 
 void MaterialEditor::refresh() {
-	_preview.refresh();
+    _preview.refresh();
 }
 
 void MaterialEditor::set_material(const AssetPtr<Material>& mat) {
-	_material = mat;
-	_preview.set_material(_material);
+    _material = mat;
+    _preview.set_material(_material);
 }
 
 void MaterialEditor::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
-	y_profile();
+    y_profile();
 
-	/*{
-		if(ImGui::Button(ICON_FA_EYE_DROPPER " current selected object material")) {
-			const ecs::EntityId id = context()->selection().selected_entity();
-			if(const StaticMeshComponent* mesh = context()->world().component<StaticMeshComponent>(id)) {
-				set_material(mesh->material());
-				return;
-			}
-		}
-	}*/
+    /*{
+        if(ImGui::Button(ICON_FA_EYE_DROPPER " current selected object material")) {
+            const ecs::EntityId id = context()->selection().selected_entity();
+            if(const StaticMeshComponent* mesh = context()->world().component<StaticMeshComponent>(id)) {
+                set_material(mesh->material());
+                return;
+            }
+        }
+    }*/
 
-	if(_material) {
-		_preview.paint(recorder, token);
-	}
+    if(_material) {
+        _preview.paint(recorder, token);
+    }
 
-	if(imgui::asset_selector(context(), _material.id(), AssetType::Material, "Material")) {
-		add_child<AssetSelector>(context(), AssetType::Material)->set_selected_callback(
-			[this](AssetId asset) {
-				if(const auto mat = context()->loader().load_res<Material>(asset)) {
-					set_material(mat.unwrap());
-				}
-				return true;
-			});
-	}
+    if(imgui::asset_selector(context(), _material.id(), AssetType::Material, "Material")) {
+        add_child<AssetSelector>(context(), AssetType::Material)->set_selected_callback(
+            [this](AssetId asset) {
+                if(const auto mat = context()->loader().load_res<Material>(asset)) {
+                    set_material(mat.unwrap());
+                }
+                return true;
+            });
+    }
 
-	Y_TODO(If the material fails to load we cant ever get it back)
-	if(!_material) {
-		return;
-	}
+    Y_TODO(If the material fails to load we cant ever get it back)
+    if(!_material) {
+        return;
+    }
 
-	SimpleMaterialData data = _material->data();
+    SimpleMaterialData data = _material->data();
 
-	const std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic"};
-	auto texture_selector = [&](SimpleMaterialData::Textures tex) {
-		bool clear = false;
-		if(imgui::asset_selector(context(), data.textures()[tex].id(), AssetType::Image, texture_names[tex], &clear)) {
-			add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
-				[=, ctx = context()](AssetId id) {
-					set_tex_and_save(ctx, _material, tex, id);
-					return true;
-			});
-		}
-		if(clear) {
-			set_tex_and_save(context(), _material, tex, AssetId::invalid_id());
-		}
-	};
+    const std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic"};
+    auto texture_selector = [&](SimpleMaterialData::Textures tex) {
+        bool clear = false;
+        if(imgui::asset_selector(context(), data.textures()[tex].id(), AssetType::Image, texture_names[tex], &clear)) {
+            add_child<AssetSelector>(context(), AssetType::Image)->set_selected_callback(
+                [=, ctx = context()](AssetId id) {
+                    set_tex_and_save(ctx, _material, tex, id);
+                    return true;
+            });
+        }
+        if(clear) {
+            set_tex_and_save(context(), _material, tex, AssetId::invalid_id());
+        }
+    };
 
-	if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Diffuse])) {
-		texture_selector(SimpleMaterialData::Diffuse);
-	}
+    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Diffuse])) {
+        texture_selector(SimpleMaterialData::Diffuse);
+    }
 
-	if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Normal])) {
-		texture_selector(SimpleMaterialData::Normal);
-	}
+    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Normal])) {
+        texture_selector(SimpleMaterialData::Normal);
+    }
 
-	if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Roughness])) {
-		texture_selector(SimpleMaterialData::Roughness);
-		if(data.textures()[SimpleMaterialData::Roughness].is_empty()) {
-			float& roughness = data.constants().roughness_mul;
-			if(ImGui::SliderFloat("Roughness##slider", &roughness, 0.0f, 1.0f)) {
-				save(context(), data, _material);
-			}
-		}
-	}
+    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Roughness])) {
+        texture_selector(SimpleMaterialData::Roughness);
+        if(data.textures()[SimpleMaterialData::Roughness].is_empty()) {
+            float& roughness = data.constants().roughness_mul;
+            if(ImGui::SliderFloat("Roughness##slider", &roughness, 0.0f, 1.0f)) {
+                save(context(), data, _material);
+            }
+        }
+    }
 
-	if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Metallic])) {
-		texture_selector(SimpleMaterialData::Metallic);
-		if(data.textures()[SimpleMaterialData::Metallic].is_empty()) {
-			bool metallic = data.constants().metallic_mul > 0.5f;
-			if(ImGui::Checkbox("Metallic##box", &metallic)) {
-				data.constants().metallic_mul = metallic ? 1.0f : 0.0f;
-				save(context(), data, _material);
-			}
-		}
-	}
+    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Metallic])) {
+        texture_selector(SimpleMaterialData::Metallic);
+        if(data.textures()[SimpleMaterialData::Metallic].is_empty()) {
+            bool metallic = data.constants().metallic_mul > 0.5f;
+            if(ImGui::Checkbox("Metallic##box", &metallic)) {
+                data.constants().metallic_mul = metallic ? 1.0f : 0.0f;
+                save(context(), data, _material);
+            }
+        }
+    }
 
-	if(ImGui::Checkbox("Alpha tested", &data.alpha_tested())) {
-		save(context(), data, _material);
-	}
+    if(ImGui::Checkbox("Alpha tested", &data.alpha_tested())) {
+        save(context(), data, _material);
+    }
 }
 
 }
+

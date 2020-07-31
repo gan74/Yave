@@ -35,54 +35,54 @@ namespace editor {
 
 class EngineView final : public Widget, public ContextLinked {
 
-	public:
-		enum class RenderView {
-			Lit,
-			Albedo,
-			Normal,
-			Metallic,
-			Roughness,
+    public:
+        enum class RenderView {
+            Lit,
+            Albedo,
+            Normal,
+            Metallic,
+            Roughness,
 
-			Depth,
+            Depth,
 
-			MaxRenderViews
-		};
+            MaxRenderViews
+        };
 
-		EngineView(ContextPtr cptr);
-		~EngineView() override;
+        EngineView(ContextPtr cptr);
+        ~EngineView() override;
 
-	private:
-		void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
+    private:
+        void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
 
-		void before_paint() override;
-		void after_paint() override;
+        void before_paint() override;
+        void after_paint() override;
 
-	private:
-		static void draw_callback(RenderPassRecorder& recorder, void* user_data);
+    private:
+        static void draw_callback(RenderPassRecorder& recorder, void* user_data);
 
-		void draw(CmdBufferRecorder& recorder);
-		void draw_menu_bar();
-		void draw_gizmo_tool_bar();
+        void draw(CmdBufferRecorder& recorder);
+        void draw_menu_bar();
+        void draw_gizmo_tool_bar();
 
-		bool is_clicked() const;
+        bool is_clicked() const;
 
-		void update_proj();
-		void update();
-		void update_picking();
+        void update_proj();
+        void update();
+        void update_picking();
 
-		RenderView _view = RenderView::Lit;
+        RenderView _view = RenderView::Lit;
 
-		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+        std::shared_ptr<FrameGraphResourcePool> _resource_pool;
 
-		EditorRendererSettings _settings;
+        EditorRendererSettings _settings;
 
-		SceneView _scene_view;
-		std::unique_ptr<CameraController> _camera_controller;
+        SceneView _scene_view;
+        std::unique_ptr<CameraController> _camera_controller;
 
-		// subwidgets & stuff
-		Gizmo _gizmo;
+        // subwidgets & stuff
+        Gizmo _gizmo;
 
-		bool _disable_render = false;
+        bool _disable_render = false;
 };
 
 static_assert(!std::is_move_assignable_v<EngineView>);
@@ -90,3 +90,4 @@ static_assert(!std::is_move_assignable_v<EngineView>);
 }
 
 #endif // EDITOR_ENGINEVIEW_H
+

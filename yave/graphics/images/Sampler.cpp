@@ -27,49 +27,50 @@ SOFTWARE.
 namespace yave {
 
 static VkSamplerAddressMode vk_address_mode(SamplerType type) {
-	switch(type) {
-		case SamplerType::Repeat:
-			return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    switch(type) {
+        case SamplerType::Repeat:
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
-		case SamplerType::Clamp:
-			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case SamplerType::Clamp:
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
-		default:
-			y_fatal("Unknown sampler type");
-	}
+        default:
+            y_fatal("Unknown sampler type");
+    }
 }
 
 static VkSampler create_sampler(DevicePtr dptr, SamplerType type) {
 
-	VkSamplerCreateInfo create_info = vk_struct();
-	{
-		const VkSamplerAddressMode address_mode = vk_address_mode(type);
+    VkSamplerCreateInfo create_info = vk_struct();
+    {
+        const VkSamplerAddressMode address_mode = vk_address_mode(type);
 
-		create_info.addressModeU = address_mode;
-		create_info.addressModeV = address_mode;
-		create_info.addressModeW = address_mode;
-		create_info.magFilter = VK_FILTER_LINEAR;
-		create_info.minFilter = VK_FILTER_LINEAR;
-		create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		create_info.maxLod = 1000.0f;
-		create_info.maxAnisotropy = 1.0f;
-	}
+        create_info.addressModeU = address_mode;
+        create_info.addressModeV = address_mode;
+        create_info.addressModeW = address_mode;
+        create_info.magFilter = VK_FILTER_LINEAR;
+        create_info.minFilter = VK_FILTER_LINEAR;
+        create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        create_info.maxLod = 1000.0f;
+        create_info.maxAnisotropy = 1.0f;
+    }
 
-	VkSampler sampler = {};
-	vk_check(vkCreateSampler(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &sampler));
-	return sampler;
+    VkSampler sampler = {};
+    vk_check(vkCreateSampler(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &sampler));
+    return sampler;
 }
 
 Sampler::Sampler(DevicePtr dptr, SamplerType type) : DeviceLinked(dptr), _sampler(create_sampler(dptr, type)) {
 }
 
 Sampler::~Sampler() {
-	destroy(_sampler);
+    destroy(_sampler);
 }
 
 VkSampler Sampler::vk_sampler() const {
-	return _sampler;
+    return _sampler;
 }
 
 
 }
+

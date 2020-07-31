@@ -37,7 +37,7 @@ static_assert(is_iterable_v<const core::Vector<int>&>);
 static_assert(is_iterable_v<core::Vector<int>&>);
 
 struct Big {
-	u64 _big[256];
+    u64 _big[256];
 };
 
 struct Base {
@@ -48,41 +48,41 @@ struct MoreDerived : Derived {
 };
 
 struct Polymorphic {
-	virtual ~Polymorphic() {
-	}
+    virtual ~Polymorphic() {
+    }
 };
 
 struct RaiiCounter : NonCopyable {
-	RaiiCounter(usize* ptr) : counter(ptr) {
-	}
+    RaiiCounter(usize* ptr) : counter(ptr) {
+    }
 
-	RaiiCounter(RaiiCounter&& raii) : counter(nullptr) {
-		std::swap(raii.counter, counter);
-	}
+    RaiiCounter(RaiiCounter&& raii) : counter(nullptr) {
+        std::swap(raii.counter, counter);
+    }
 
-	~RaiiCounter() {
-		if(counter) {
-			++(*counter);
-		}
-	}
+    ~RaiiCounter() {
+        if(counter) {
+            ++(*counter);
+        }
+    }
 
-	usize* counter;
+    usize* counter;
 };
 
 template<typename T>
 struct FakeAllocator {
-	using value_type = T;
-	using propagate_on_container_move_assignment = std::false_type;
+    using value_type = T;
+    using propagate_on_container_move_assignment = std::false_type;
 
-	template<typename... Args>
-	T* allocate(Args&&...) {
-		/*return*/ y_fatal("SmallVector allocated");
-	}
+    template<typename... Args>
+    T* allocate(Args&&...) {
+        /*return*/ y_fatal("SmallVector allocated");
+    }
 
-	template<typename... Args>
-	void deallocate(Args&&...) {
-		y_fatal("SmallVector deallocated");
-	}
+    template<typename... Args>
+    void deallocate(Args&&...) {
+        y_fatal("SmallVector deallocated");
+    }
 };
 
 
@@ -95,237 +95,238 @@ static_assert(!std::is_polymorphic_v<Polymorphic*>, "std::is_polymorphic failure
 
 /*template<typename P = DefaultVectorResizePolicy>
 static void cout_vec_sizes(usize max, P p = P()) {
-	for(usize i = 0, last = 0; i != max; ++i) {
-		usize c = p.ideal_capacity(i);
-		if(c != last) {
-			std::cout << c << " ";
-			last = c;
-		}
-	}
-	std::cout << std::endl;
+    for(usize i = 0, last = 0; i != max; ++i) {
+        usize c = p.ideal_capacity(i);
+        if(c != last) {
+            std::cout << c << " ";
+            last = c;
+        }
+    }
+    std::cout << std::endl;
 }*/
 
 y_test_func("DefaultVectorResizePolicy") {
-	const DefaultVectorResizePolicy size;
+    const DefaultVectorResizePolicy size;
 
-	y_test_assert(size.ideal_capacity(0) == 0);
-	//y_test_assert(size.shrink(0, 1));
+    y_test_assert(size.ideal_capacity(0) == 0);
+    //y_test_assert(size.shrink(0, 1));
 
-	for(usize i = 0; i != 1 << 16; ++i) {
-		y_test_assert(size.ideal_capacity(i) >= i);
-	}
-	//cout_vec_sizes(1024 * 32);
+    for(usize i = 0; i != 1 << 16; ++i) {
+        y_test_assert(size.ideal_capacity(i) >= i);
+    }
+    //cout_vec_sizes(1024 * 32);
 }
 
 y_test_func("Vector creation") {
-	Vector<int> vec;
-	y_test_assert(vec.size() == 0);
-	y_test_assert(vec.capacity() == 0);
+    Vector<int> vec;
+    y_test_assert(vec.size() == 0);
+    y_test_assert(vec.capacity() == 0);
 }
 
 y_test_func("Vector operator=") {
-	Vector<int> vec = {1, 2, 3, 4};
-	y_test_assert(vec == Vector({1, 2, 3, 4}));
+    Vector<int> vec = {1, 2, 3, 4};
+    y_test_assert(vec == Vector({1, 2, 3, 4}));
 
-	vec = {};
-	y_test_assert(vec.size() == 0);
+    vec = {};
+    y_test_assert(vec.size() == 0);
 
-	vec = {1, 2, 3};
-	vec << 4 << 5;
-	y_test_assert(vec == Vector({1, 2, 3, 4, 5}));
+    vec = {1, 2, 3};
+    vec << 4 << 5;
+    y_test_assert(vec == Vector({1, 2, 3, 4, 5}));
 }
 
 y_test_func("Vector push_back") {
-	Vector<int> vec;
+    Vector<int> vec;
 
-	vec.set_capacity(19);
-	y_test_assert(vec.capacity() >= 19);
+    vec.set_capacity(19);
+    y_test_assert(vec.capacity() >= 19);
 
-	vec.push_back(0);
-	vec.push_back(1);
-	y_test_assert(vec.size() == 2);
+    vec.push_back(0);
+    vec.push_back(1);
+    y_test_assert(vec.size() == 2);
 
-	for(int i = 0; i != 18; ++i) {
-		vec.push_back(i);
-	}
-	vec.emplace_back() = 18;
+    for(int i = 0; i != 18; ++i) {
+        vec.push_back(i);
+    }
+    vec.emplace_back() = 18;
 
-	y_test_assert(vec.size() == 21);
-	y_test_assert(vec.capacity() >= 21);
+    y_test_assert(vec.size() == 21);
+    y_test_assert(vec.capacity() >= 21);
 }
 
 /*y_test_func("Vector erase") {
-	Vector<int> vec;
+    Vector<int> vec;
 
-	for(int i = 0; i != 10; ++i) {
-		vec.push_back(i);
-	}
-	y_test_assert(*vec.erase(vec.begin()) == 1);
-	y_test_assert(vec == vector({1, 2, 3, 4, 5, 6, 7, 8, 9}));
+    for(int i = 0; i != 10; ++i) {
+        vec.push_back(i);
+    }
+    y_test_assert(*vec.erase(vec.begin()) == 1);
+    y_test_assert(vec == vector({1, 2, 3, 4, 5, 6, 7, 8, 9}));
 
-	y_test_assert(*vec.erase(vec.begin() + 3) == 5);
-	y_test_assert(vec == vector({1, 2, 3, 5, 6, 7, 8, 9}));
+    y_test_assert(*vec.erase(vec.begin() + 3) == 5);
+    y_test_assert(vec == vector({1, 2, 3, 5, 6, 7, 8, 9}));
 
-	y_test_assert(vec.erase(vec.end() - 1) == vec.end());
-	y_test_assert(vec == vector({1, 2, 3, 5, 6, 7, 8}));
+    y_test_assert(vec.erase(vec.end() - 1) == vec.end());
+    y_test_assert(vec == vector({1, 2, 3, 5, 6, 7, 8}));
 }*/
 
 y_test_func("Vector erase_unordered") {
-	Vector<int> vec;
+    Vector<int> vec;
 
-	for(int i = 0; i != 10; ++i) {
-		vec.push_back(i);
-	}
-	vec.erase_unordered(vec.begin());
-	y_test_assert(vec == Vector({9, 1, 2, 3, 4, 5, 6, 7, 8}));
+    for(int i = 0; i != 10; ++i) {
+        vec.push_back(i);
+    }
+    vec.erase_unordered(vec.begin());
+    y_test_assert(vec == Vector({9, 1, 2, 3, 4, 5, 6, 7, 8}));
 
-	vec.erase_unordered(vec.begin() + 4);
-	y_test_assert(vec == Vector({9, 1, 2, 3, 8, 5, 6, 7}));
+    vec.erase_unordered(vec.begin() + 4);
+    y_test_assert(vec == Vector({9, 1, 2, 3, 8, 5, 6, 7}));
 
-	vec.erase_unordered(vec.end() - 1);
-	y_test_assert(vec == Vector({9, 1, 2, 3, 8, 5, 6}));
+    vec.erase_unordered(vec.end() - 1);
+    y_test_assert(vec == Vector({9, 1, 2, 3, 8, 5, 6}));
 }
 
 y_test_func("Vector shrink") {
-	const usize max = 256;
+    const usize max = 256;
 
-	Vector<int> vec;
+    Vector<int> vec;
 
-	while(vec.size() != max) {
-		vec.push_back(0);
-	}
+    while(vec.size() != max) {
+        vec.push_back(0);
+    }
 
-	y_test_assert(vec.size() == max);
-	y_test_assert(vec.capacity() >= max);
+    y_test_assert(vec.size() == max);
+    y_test_assert(vec.capacity() >= max);
 
-	vec.set_capacity(max / 2);
-	y_test_assert(vec.size() == vec.capacity());
-	y_test_assert(vec.capacity() == max / 2);
+    vec.set_capacity(max / 2);
+    y_test_assert(vec.size() == vec.capacity());
+    y_test_assert(vec.capacity() == max / 2);
 }
 
 y_test_func("Vector clear") {
-	const usize max = 256;
+    const usize max = 256;
 
-	Vector<int> vec;
+    Vector<int> vec;
 
-	while(vec.size() != max) {
-		vec.push_back(0);
-	}
-	vec.clear();
-	y_test_assert(vec.size() == 0);
-	y_test_assert(vec.capacity() == 0);
+    while(vec.size() != max) {
+        vec.push_back(0);
+    }
+    vec.clear();
+    y_test_assert(vec.size() == 0);
+    y_test_assert(vec.capacity() == 0);
 
-	while(vec.size() != max * 2) {
-		vec.push_back(0);
-	}
-	vec.clear();
-	y_test_assert(vec.size() == 0);
-	y_test_assert(vec.capacity() == 0);
+    while(vec.size() != max * 2) {
+        vec.push_back(0);
+    }
+    vec.clear();
+    y_test_assert(vec.size() == 0);
+    y_test_assert(vec.capacity() == 0);
 }
 
 y_test_func("Vector iteration") {
-	const int max = 256;
+    const int max = 256;
 
-	Vector<int> vec;
+    Vector<int> vec;
 
-	for(int i = 0; i != max; ++i) {
-		vec.push_back(i);
-	}
+    for(int i = 0; i != max; ++i) {
+        vec.push_back(i);
+    }
 
-	int counter = 0;
-	for(int i : vec) {
-		y_test_assert(i == counter++);
-	}
+    int counter = 0;
+    for(int i : vec) {
+        y_test_assert(i == counter++);
+    }
 }
 
 y_test_func("Vector vector(...)") {
-	const auto vec = Vector({1, 2, 3, 4, 5, 6, 7, 8});
-	y_test_assert(vec.capacity() >= 8);
-	y_test_assert(vec.size() == 8);
+    const auto vec = Vector({1, 2, 3, 4, 5, 6, 7, 8});
+    y_test_assert(vec.capacity() >= 8);
+    y_test_assert(vec.size() == 8);
 
-	int counter = 0;
-	for(int i : vec) {
-		y_test_assert(i == ++counter);
-	}
+    int counter = 0;
+    for(int i : vec) {
+        y_test_assert(i == ++counter);
+    }
 }
 
 y_test_func("Vector dtors") {
-	usize counter = 0;
-	auto vec = Vector<RaiiCounter>();
-	vec.push_back(std::move(RaiiCounter(&counter)));
+    usize counter = 0;
+    auto vec = Vector<RaiiCounter>();
+    vec.push_back(std::move(RaiiCounter(&counter)));
 
-	y_test_assert(counter == 0);
+    y_test_assert(counter == 0);
 
-	auto cap = vec.capacity();
-	do {
-		vec.push_back(RaiiCounter(&counter));
-	} while(cap == vec.capacity() || vec.capacity() < 32);
+    auto cap = vec.capacity();
+    do {
+        vec.push_back(RaiiCounter(&counter));
+    } while(cap == vec.capacity() || vec.capacity() < 32);
 
-	y_test_assert(counter == 0);
+    y_test_assert(counter == 0);
 
-	usize total = vec.size();
-	vec = Vector<RaiiCounter>();
+    usize total = vec.size();
+    vec = Vector<RaiiCounter>();
 
-	y_test_assert(counter == total);
+    y_test_assert(counter == total);
 }
 
 y_test_func("SmallVector allocation") {
-	SmallVec<int, 4> vec = Vector({1, 2, 3, 4});
-	//y_test_assert(vec.capacity() == 4);
-	y_test_assert(vec == Vector({1, 2, 3, 4}));
+    SmallVec<int, 4> vec = Vector({1, 2, 3, 4});
+    //y_test_assert(vec.capacity() == 4);
+    y_test_assert(vec == Vector({1, 2, 3, 4}));
 }
 
 y_test_func("SmallVector size") {
-	const SmallVector<Big> vec({Big{}});
-	y_test_assert(vec.size() == 1);
+    const SmallVector<Big> vec({Big{}});
+    y_test_assert(vec.size() == 1);
 }
 
 y_test_func("SmallVector copy") {
-	{
-		const SmallVector<int, 8> vec = {1, 2, 3, 4};
-		const SmallVector<int, 8> cpy = vec;
-		y_test_assert(cpy.size() == 4);
-		y_test_assert(cpy[0] == 1);
-		y_test_assert(cpy[1] == 2);
-		y_test_assert(cpy[2] == 3);
-		y_test_assert(cpy[3] == 4);
-	}
-	{
-		const std::shared_ptr<int> rc(new int(2));
-		y_test_assert(rc.use_count() == 1);
-		SmallVector<std::shared_ptr<int>, 8> vec;
-		vec.push_back(rc);
-		y_test_assert(rc.use_count() == 2);
-		{
-			const SmallVector<std::shared_ptr<int>, 8> cpy = vec;
-			y_test_assert(rc.use_count() == 3);
-		}
-		y_test_assert(rc.use_count() == 2);
-	}
+    {
+        const SmallVector<int, 8> vec = {1, 2, 3, 4};
+        const SmallVector<int, 8> cpy = vec;
+        y_test_assert(cpy.size() == 4);
+        y_test_assert(cpy[0] == 1);
+        y_test_assert(cpy[1] == 2);
+        y_test_assert(cpy[2] == 3);
+        y_test_assert(cpy[3] == 4);
+    }
+    {
+        const std::shared_ptr<int> rc(new int(2));
+        y_test_assert(rc.use_count() == 1);
+        SmallVector<std::shared_ptr<int>, 8> vec;
+        vec.push_back(rc);
+        y_test_assert(rc.use_count() == 2);
+        {
+            const SmallVector<std::shared_ptr<int>, 8> cpy = vec;
+            y_test_assert(rc.use_count() == 3);
+        }
+        y_test_assert(rc.use_count() == 2);
+    }
 }
 
 y_test_func("SmallVector move") {
-	{
-		const SmallVector<int, 8> vec = {1, 2, 3, 4};
-		const SmallVector<int, 8> cpy(std::move(vec));
-		y_test_assert(cpy.size() == 4);
-		y_test_assert(cpy[0] == 1);
-		y_test_assert(cpy[1] == 2);
-		y_test_assert(cpy[2] == 3);
-		y_test_assert(cpy[3] == 4);
-	}
-	{
-		const std::shared_ptr<int> rc(new int(7));
-		SmallVector<std::shared_ptr<int>, 8> vec;
-		vec.push_back(rc);
-		y_test_assert(rc.use_count() == 2);
-		{
-			y_test_assert(rc.use_count() == 2);
-			const SmallVector<std::shared_ptr<int>, 8> cpy = std::move(vec);
-		}
-		y_test_assert(rc.use_count() == 1);
-	}
+    {
+        const SmallVector<int, 8> vec = {1, 2, 3, 4};
+        const SmallVector<int, 8> cpy(std::move(vec));
+        y_test_assert(cpy.size() == 4);
+        y_test_assert(cpy[0] == 1);
+        y_test_assert(cpy[1] == 2);
+        y_test_assert(cpy[2] == 3);
+        y_test_assert(cpy[3] == 4);
+    }
+    {
+        const std::shared_ptr<int> rc(new int(7));
+        SmallVector<std::shared_ptr<int>, 8> vec;
+        vec.push_back(rc);
+        y_test_assert(rc.use_count() == 2);
+        {
+            y_test_assert(rc.use_count() == 2);
+            const SmallVector<std::shared_ptr<int>, 8> cpy = std::move(vec);
+        }
+        y_test_assert(rc.use_count() == 1);
+    }
 }
 }
+
 
 

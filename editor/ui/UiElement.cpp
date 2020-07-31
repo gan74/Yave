@@ -27,73 +27,74 @@ SOFTWARE.
 namespace editor {
 
 UiElement::UiElement(std::string_view title) {
-	set_title(title);
+    set_title(title);
 }
 
 UiElement::~UiElement() {
 }
 
 void UiElement::set_id(u64 id) {
-	_id = id;
-	set_title(_title);
+    _id = id;
+    set_title(_title);
 }
 
 void UiElement::set_title(std::string_view title) {
-	const core::String new_title = fmt("%##%", title, _id);
-	_title_with_id = std::move(new_title);
-	_title = std::string_view(_title_with_id.begin(), title.size());
+    const core::String new_title = fmt("%##%", title, _id);
+    _title_with_id = std::move(new_title);
+    _title = std::string_view(_title_with_id.begin(), title.size());
 }
 
 bool UiElement::can_destroy() const {
-	return true;
+    return true;
 }
 
 void UiElement::refresh_all() {
-	_refresh_all = true;
+    _refresh_all = true;
 }
 
 bool UiElement::has_visible_children() const {
-	return is_visible() || std::any_of(_children.begin(), _children.end(), [](const auto& child) { return child->has_visible_children(); });
+    return is_visible() || std::any_of(_children.begin(), _children.end(), [](const auto& child) { return child->has_visible_children(); });
 }
 
 void UiElement::refresh() {
 }
 
 void UiElement::set_parent(UiElement* parent) {
-	y_always_assert(!_parent || !parent, "UiElement already has a parent");
-	_parent = parent;
+    y_always_assert(!_parent || !parent, "UiElement already has a parent");
+    _parent = parent;
 }
 
 bool UiElement::has_parent() const {
-	return _parent;
+    return _parent;
 }
 
 bool UiElement::is_visible() const {
-	return _visible;
+    return _visible;
 }
 
 bool UiElement::is_child() const {
-	return _is_child;
+    return _is_child;
 }
 
 bool UiElement::has_children() const {
-	return _children.size();
+    return _children.size();
 }
 
 std::string_view UiElement::title() const {
-	return _title;
+    return _title;
 }
 
 void UiElement::show() {
-	_visible = true;
+    _visible = true;
 }
 
 void UiElement::close() {
-	_visible = false;
+    _visible = false;
 }
 
 core::Span<std::unique_ptr<UiElement>> UiElement::children() const {
-	return _children;
+    return _children;
 }
 
 }
+

@@ -30,54 +30,55 @@ namespace yave {
 template<ImageType Type = ImageType::TwoD>
 class TransientImage final : public ImageBase {
 
-	static constexpr bool is_3d = Type == ImageType::ThreeD;
+    static constexpr bool is_3d = Type == ImageType::ThreeD;
 
-	template<typename T>
-	math::Vec3ui to_3d_size(const T& size) {
-		math::Vec3ui s(1);
-		s.to<T::size()>() = size;
-		return s;
-	}
+    template<typename T>
+    math::Vec3ui to_3d_size(const T& size) {
+        math::Vec3ui s(1);
+        s.to<T::size()>() = size;
+        return s;
+    }
 
-	public:
-		using size_type = std::conditional_t<is_3d, math::Vec3ui, math::Vec2ui>;
+    public:
+        using size_type = std::conditional_t<is_3d, math::Vec3ui, math::Vec2ui>;
 
-		TransientImage() = default;
+        TransientImage() = default;
 
-		TransientImage(DevicePtr dptr, ImageFormat format, ImageUsage usage, const size_type& image_size) : ImageBase(dptr, format, usage, to_3d_size(image_size)) {
-		}
+        TransientImage(DevicePtr dptr, ImageFormat format, ImageUsage usage, const size_type& image_size) : ImageBase(dptr, format, usage, to_3d_size(image_size)) {
+        }
 
-		TransientImage(TransientImage&&) = default;
-		TransientImage& operator=(TransientImage&&) = default;
+        TransientImage(TransientImage&&) = default;
+        TransientImage& operator=(TransientImage&&) = default;
 
-		template<ImageUsage U>
-		TransientImage(Image<U, Type>&& other) {
-			ImageBase::operator=(other);
-		}
+        template<ImageUsage U>
+        TransientImage(Image<U, Type>&& other) {
+            ImageBase::operator=(other);
+        }
 
-		template<ImageUsage U>
-		TransientImage& operator=(Image<U, Type>&& other) {
-			ImageBase::operator=(other);
-			return *this;
-		}
+        template<ImageUsage U>
+        TransientImage& operator=(Image<U, Type>&& other) {
+            ImageBase::operator=(other);
+            return *this;
+        }
 
-		const size_type& size() const {
-			return image_size().to<size_type::size()>();
-		}
+        const size_type& size() const {
+            return image_size().to<size_type::size()>();
+        }
 };
 
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class TransientImageView final : public ImageView<Usage, Type> {
-	public:
-		TransientImageView(const TransientImage<Type>& image) :
-				ImageView<Usage, Type>(image.device(), image.size(), image.usage(), image.format(), image.vk_view(), image.vk_image()) {
+    public:
+        TransientImageView(const TransientImage<Type>& image) :
+                ImageView<Usage, Type>(image.device(), image.size(), image.usage(), image.format(), image.vk_view(), image.vk_image()) {
 
-			if(!ImageView<Usage, Type>::is_compatible(image.usage())) {
-				y_fatal("Invalid image view.");
-			}
-		}
+            if(!ImageView<Usage, Type>::is_compatible(image.usage())) {
+                y_fatal("Invalid image view.");
+            }
+        }
 };
 
 }
 
 #endif // YAVE_FRAMEGRAPH_TRANSIENTIMAGE_H
+

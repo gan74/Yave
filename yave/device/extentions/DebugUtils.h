@@ -27,30 +27,31 @@ SOFTWARE.
 namespace yave {
 
 class DebugUtils : NonCopyable {
-	public:
-		static const char* extension_name();
+    public:
+        static const char* extension_name();
 
-		DebugUtils(VkInstance instance);
-		~DebugUtils();
+        DebugUtils(VkInstance instance);
+        ~DebugUtils();
 
-		void set_resource_name(DevicePtr dptr, u64 resource, const char* name) const;
+        void set_resource_name(DevicePtr dptr, u64 resource, const char* name) const;
 
-	private:
-		friend class CmdBufferRegion;
+    private:
+        friend class CmdBufferRegion;
 
-		void begin_region(VkCommandBuffer buffer, const char* name, const math::Vec4& color = math::Vec4()) const;
-		void end_region(VkCommandBuffer buffer) const;
+        void begin_region(VkCommandBuffer buffer, const char* name, const math::Vec4& color = math::Vec4()) const;
+        void end_region(VkCommandBuffer buffer) const;
 
-	private:
-		VkInstance _instance;
-		VkDebugUtilsMessengerEXT _messenger = {};
+    private:
+        VkInstance _instance;
+        VkDebugUtilsMessengerEXT _messenger = {};
 
-		PFN_vkCmdBeginDebugUtilsLabelEXT _begin_label = nullptr;
-		PFN_vkCmdEndDebugUtilsLabelEXT _end_label = nullptr;
-		PFN_vkSetDebugUtilsObjectNameEXT _set_object_name = nullptr;
+        PFN_vkCmdBeginDebugUtilsLabelEXT _begin_label = nullptr;
+        PFN_vkCmdEndDebugUtilsLabelEXT _end_label = nullptr;
+        PFN_vkSetDebugUtilsObjectNameEXT _set_object_name = nullptr;
 
 };
 
 }
 
 #endif // YAVE_DEVICE_EXTENTIONS_DEBUGUTILS_H
+

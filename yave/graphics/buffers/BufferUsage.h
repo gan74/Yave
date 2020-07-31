@@ -28,34 +28,35 @@ SOFTWARE.
 namespace yave {
 
 enum class BufferUsage : u32 {
-	None = 0,
+    None = 0,
 
-	AttributeBit	= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-	IndexBit		= VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-	IndirectBit		= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-	UniformBit		= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-	StorageBit		= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    AttributeBit    = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+    IndexBit        = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+    IndirectBit     = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+    UniformBit      = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+    StorageBit      = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 
-	TransferSrcBit	= VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-	TransferDstBit	= VK_BUFFER_USAGE_TRANSFER_DST_BIT
+    TransferSrcBit  = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    TransferDstBit  = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 };
 
 constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {
-	return BufferUsage(u32(a) | u32(b));
+    return BufferUsage(u32(a) | u32(b));
 }
 
 constexpr BufferUsage operator&(BufferUsage a, BufferUsage b) {
-	return BufferUsage(u32(a) & u32(b));
+    return BufferUsage(u32(a) & u32(b));
 }
 
 inline constexpr MemoryType prefered_memory_type(BufferUsage usage) {
-	return ((usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryType::CpuVisible : MemoryType::DeviceLocal;
+    return ((usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryType::CpuVisible : MemoryType::DeviceLocal;
 }
 
 inline constexpr BufferUsage buffer_transfer_usage(MemoryType flags) {
-	return is_cpu_visible(flags) ? BufferUsage::None : BufferUsage::TransferDstBit;
+    return is_cpu_visible(flags) ? BufferUsage::None : BufferUsage::TransferDstBit;
 }
 
 }
 
 #endif // YAVE_GRAPHICS_BUFFERS_BUFFERUSAGE_H
+

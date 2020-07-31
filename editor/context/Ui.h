@@ -37,78 +37,79 @@ class ImGuiRenderer;
 
 class Ui : NonMovable, public ContextLinked {
 
-	struct Ids {
-		core::Vector<u64> released;
-		u64 next = 0;
-	};
+    struct Ids {
+        core::Vector<u64> released;
+        u64 next = 0;
+    };
 
-	public:
-		Ui(ContextPtr ctx);
-		~Ui();
+    public:
+        Ui(ContextPtr ctx);
+        ~Ui();
 
-		core::Span<std::unique_ptr<UiElement>> ui_elements() const;
+        core::Span<std::unique_ptr<UiElement>> ui_elements() const;
 
-		const ImGuiRenderer& renderer() const;
+        const ImGuiRenderer& renderer() const;
 
-		void refresh_all();
+        void refresh_all();
 
-		// don't spam these two: they are synchronous and modal (and now supported outside of win32 right now)
-		bool confirm(const char* message);
-		void ok(const char* title, const char* message);
+        // don't spam these two: they are synchronous and modal (and now supported outside of win32 right now)
+        bool confirm(const char* message);
+        void ok(const char* title, const char* message);
 
 
-		void paint(CmdBufferRecorder& recorder, const FrameToken& token);
+        void paint(CmdBufferRecorder& recorder, const FrameToken& token);
 
-		template<typename T>
-		T* find() {
-			for(auto&& e : _elements) {
-				if(T* w = dynamic_cast<T*>(e.get())) {
-					return w;
-				}
-			}
-			return nullptr;
-		}
+        template<typename T>
+        T* find() {
+            for(auto&& e : _elements) {
+                if(T* w = dynamic_cast<T*>(e.get())) {
+                    return w;
+                }
+            }
+            return nullptr;
+        }
 
-		template<typename T>
-		T* show() {
-			if(T* w = find<T>()) {
-				w->show();
-				return w;
-			}
-			return add<T>();
-		}
+        template<typename T>
+        T* show() {
+            if(T* w = find<T>()) {
+                w->show();
+                return w;
+            }
+            return add<T>();
+        }
 
-		template<typename T, typename... Args>
-		T* add(Args&&... args) {
-			if constexpr(std::is_constructible_v<T, ContextPtr, Args...>) {
-				_elements.emplace_back(std::make_unique<T>(context(), y_fwd(args)...));
-			} else {
-				_elements.emplace_back(std::make_unique<T>(y_fwd(args)...));
-			}
-			UiElement* ptr = _elements.last().get();
-			set_id(ptr);
-			return dynamic_cast<T*>(ptr);
-		}
+        template<typename T, typename... Args>
+        T* add(Args&&... args) {
+            if constexpr(std::is_constructible_v<T, ContextPtr, Args...>) {
+                _elements.emplace_back(std::make_unique<T>(context(), y_fwd(args)...));
+            } else {
+                _elements.emplace_back(std::make_unique<T>(y_fwd(args)...));
+            }
+            UiElement* ptr = _elements.last().get();
+            set_id(ptr);
+            return dynamic_cast<T*>(ptr);
+        }
 
-	private:
-		static bool paint(core::Span<std::unique_ptr<UiElement>> elements, CmdBufferRecorder& recorder, const FrameToken& token);
-		static void refresh_all(core::Span<std::unique_ptr<UiElement>> elements);
+    private:
+        static bool paint(core::Span<std::unique_ptr<UiElement>> elements, CmdBufferRecorder& recorder, const FrameToken& token);
+        static void refresh_all(core::Span<std::unique_ptr<UiElement>> elements);
 
-		void cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child = false);
-		Ids& ids_for(UiElement* elem);
-		void set_id(UiElement* elem);
+        void cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child = false);
+        Ids& ids_for(UiElement* elem);
+        void set_id(UiElement* elem);
 
-		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token);
+        void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token);
 
-		core::Vector<std::unique_ptr<UiElement>> _elements;
-		core::ExternalHashMap<std::type_index, Ids> _ids;
+        core::Vector<std::unique_ptr<UiElement>> _elements;
+        core::ExternalHashMap<std::type_index, Ids> _ids;
 
-		std::unique_ptr<ImGuiRenderer> _renderer;
+        std::unique_ptr<ImGuiRenderer> _renderer;
 
-		core::Chrono _frame_timer;
+        core::Chrono _frame_timer;
 
 };
 
 }
 
 #endif // EDITOR_CONTEXT_UI_H
+

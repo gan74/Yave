@@ -28,33 +28,34 @@ SOFTWARE.
 namespace yave {
 
 class ImageFormat {
-	public:
-		constexpr ImageFormat(VkFormat format = VK_FORMAT_UNDEFINED) : _format(format) {
-		}
+    public:
+        constexpr ImageFormat(VkFormat format = VK_FORMAT_UNDEFINED) : _format(format) {
+        }
 
-		VkFormat vk_format() const;
-		VkImageAspectFlags vk_aspect() const;
+        VkFormat vk_format() const;
+        VkImageAspectFlags vk_aspect() const;
 
-		usize bit_per_pixel() const;
-		usize components() const;
+        usize bit_per_pixel() const;
+        usize components() const;
 
-		bool is_valid() const;
-		bool is_float() const;
+        bool is_valid() const;
+        bool is_float() const;
 
-		bool is_block_format() const;
-		bool is_depth_format() const;
+        bool is_block_format() const;
+        bool is_depth_format() const;
 
-		std::string_view name() const;
+        std::string_view name() const;
 
-		bool operator==(const ImageFormat& other) const;
-		bool operator!=(const ImageFormat& other) const;
+        bool operator==(const ImageFormat& other) const;
+        bool operator!=(const ImageFormat& other) const;
 
-		y_serde3(_format)
+        y_serde3(_format)
 
-	private:
-		VkFormat _format;
+    private:
+        VkFormat _format;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_IMAGES_IMAGEFORMAT_H
+

@@ -32,64 +32,65 @@ SOFTWARE.
 namespace editor {
 
 struct CameraSettings {
-	float z_near = 1.0f;
-	float fov = 60.0f;
+    float z_near = 1.0f;
+    float fov = 60.0f;
 
-	// FPS
-	Key move_forward = Key::W;
-	Key move_backward = Key::S;
-	Key move_right = Key::D;
-	Key move_left = Key::A;
-	float fps_sensitivity = 4.0f;
+    // FPS
+    Key move_forward = Key::W;
+    Key move_backward = Key::S;
+    Key move_right = Key::D;
+    Key move_left = Key::A;
+    float fps_sensitivity = 4.0f;
 
-	// Houdini
-	float trackball_sensitivity = 6.0f;
-	float dolly_sensitivity = 2.5f;
+    // Houdini
+    float trackball_sensitivity = 6.0f;
+    float dolly_sensitivity = 2.5f;
 
-	// Other camera
-	Key center_on_obj = Key::H;
+    // Other camera
+    Key center_on_obj = Key::H;
 
-	y_serde3(z_near, fov,
-			 move_forward, move_backward, move_right, move_left,
-			 fps_sensitivity, trackball_sensitivity, dolly_sensitivity,
-			 center_on_obj)
+    y_serde3(z_near, fov,
+             move_forward, move_backward, move_right, move_left,
+             fps_sensitivity, trackball_sensitivity, dolly_sensitivity,
+             center_on_obj)
 
 };
 
 struct UiSettings {
-	Key change_gizmo_mode = Key::R;
-	Key change_gizmo_space = Key::Q;
+    Key change_gizmo_mode = Key::R;
+    Key change_gizmo_space = Key::Q;
 
 
-	y_serde3(change_gizmo_mode, change_gizmo_space)
+    y_serde3(change_gizmo_mode, change_gizmo_space)
 };
 
 struct PerfSettings {
-	bool capture_forever = false;
-	u32 capture_frames = 60;
-	core::String capture_name = "../perfdump.json";
+    bool capture_forever = false;
+    u32 capture_frames = 60;
+    core::String capture_name = "../perfdump.json";
 
-	y_serde3(capture_forever, capture_frames, capture_name)
+    y_serde3(capture_forever, capture_frames, capture_name)
 };
 
 
 class Settings {
-	public:
-		Settings(bool load = true);
-		~Settings();
+    public:
+        Settings(bool load = true);
+        ~Settings();
 
-		CameraSettings& camera();
-		UiSettings& ui();
-		PerfSettings& perf();
+        CameraSettings& camera();
+        UiSettings& ui();
+        PerfSettings& perf();
 
-		y_serde3(_camera, _ui, _perf)
+        y_serde3(_camera, _ui, _perf)
 
-	private:
-		CameraSettings _camera;
-		UiSettings _ui;
-		PerfSettings _perf;
+    private:
+        CameraSettings _camera;
+        UiSettings _ui;
+        PerfSettings _perf;
 };
 
 }
 
 #endif // EDITOR_CONTEXT_SETTINGS_H
+

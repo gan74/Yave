@@ -29,24 +29,25 @@ SOFTWARE.
 namespace editor {
 
 class PerformanceMetrics : public Widget, public ContextLinked {
-	public:
-		PerformanceMetrics(ContextPtr cptr);
+    public:
+        PerformanceMetrics(ContextPtr cptr);
 
-	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+    private:
+        void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
-		core::Chrono _timer;
+        core::Chrono _timer;
 
-		std::array<float, 128> _frames;
-		usize _current_frame = 0;
+        std::array<float, 128> _frames;
+        usize _current_frame = 0;
 
-		usize _current_average = 0;
-		std::array<float, 128> _average;
-		
-		double _total = 0.0;
-		float _max = 16.0f;
+        usize _current_average = 0;
+        std::array<float, 128> _average;
+        
+        double _total = 0.0;
+        float _max = 16.0f;
 };
 
 }
 
 #endif // EDITOR_WIDGETS_PERFORMANCEMETRICS_H
+

@@ -31,25 +31,25 @@ namespace yave {
 
 class QueueFamily {
 
-	public:
-		static constexpr auto Graphics = VK_QUEUE_GRAPHICS_BIT;
+    public:
+        static constexpr auto Graphics = VK_QUEUE_GRAPHICS_BIT;
 
-		static core::Result<QueueFamily> create(const PhysicalDevice& dev, u32 index);
-		static core::Vector<QueueFamily> all(const PhysicalDevice& dev);
+        static core::Result<QueueFamily> create(const PhysicalDevice& dev, u32 index);
+        static core::Vector<QueueFamily> all(const PhysicalDevice& dev);
 
-		u32 index() const;
-		u32 count() const;
+        u32 index() const;
+        u32 count() const;
 
-		VkQueueFlags flags() const;
+        VkQueueFlags flags() const;
 
-		core::Vector<Queue> queues(DevicePtr dptr) const;
+        core::Vector<Queue> queues(DevicePtr dptr) const;
 
-	private:
-		QueueFamily(u32 index, const VkQueueFamilyProperties& props);
+    private:
+        QueueFamily(u32 index, const VkQueueFamilyProperties& props);
 
-		u32 _index;
-		u32 _queue_count;
-		VkQueueFlags _flags;
+        u32 _index;
+        u32 _queue_count;
+        VkQueueFlags _flags;
 
 
 };
@@ -57,3 +57,4 @@ class QueueFamily {
 }
 
 #endif // YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
+

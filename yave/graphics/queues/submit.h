@@ -27,17 +27,18 @@ SOFTWARE.
 namespace yave {
 
 struct AsyncSubmit {
-	void operator()(const RecordedCmdBuffer&) const {
-	}
+    void operator()(const RecordedCmdBuffer&) const {
+    }
 };
 
 struct SyncSubmit {
-	void operator()(const RecordedCmdBuffer& b) const {
-		y_profile();
-		b.wait();
-	}
+    void operator()(const RecordedCmdBuffer& b) const {
+        y_profile();
+        b.wait();
+    }
 };
 
 }
 
 #endif // YAVE_GRAPHICS_QUEUES_SUBMIT_H
+

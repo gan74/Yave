@@ -29,31 +29,32 @@ SOFTWARE.
 namespace yave {
 
 BlurPass BlurPass::create(FrameGraph& framegraph, FrameGraphImageId in_image) {
-	const math::Vec2ui size = framegraph.image_size(in_image);
-	const ImageFormat format = framegraph.image_format(in_image);
+    const math::Vec2ui size = framegraph.image_size(in_image);
+    const ImageFormat format = framegraph.image_format(in_image);
 
-	auto blur_sub_pass = [&](FrameGraphPassBuilder builder, FrameGraphImageId in, DeviceResources::MaterialTemplates mat) -> FrameGraphMutableImageId {
-		const auto blurred = builder.declare_image(format, size);
+    auto blur_sub_pass = [&](FrameGraphPassBuilder builder, FrameGraphImageId in, DeviceResources::MaterialTemplates mat) -> FrameGraphMutableImageId {
+        const auto blurred = builder.declare_image(format, size);
 
-		builder.add_color_output(blurred);
-		builder.add_uniform_input(in);
-		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			const auto* material = device_resources(recorder.device())[mat];
-			render_pass.bind_material(material, {self->descriptor_sets()[0]});
-			render_pass.draw_array(3);
-		});
+        builder.add_color_output(blurred);
+        builder.add_uniform_input(in);
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+            const auto* material = device_resources(recorder.device())[mat];
+            render_pass.bind_material(material, {self->descriptor_sets()[0]});
+            render_pass.draw_array(3);
+        });
 
-		return blurred;
-	};
+        return blurred;
+    };
 
-	const FrameGraphMutableImageId h_blur = blur_sub_pass(framegraph.add_pass("Blur horizontal pass"), in_image, DeviceResources::HBlurMaterialTemplate);
-	const FrameGraphMutableImageId v_blur = blur_sub_pass(framegraph.add_pass("Blur vertical pass"), h_blur, DeviceResources::VBlurMaterialTemplate);
+    const FrameGraphMutableImageId h_blur = blur_sub_pass(framegraph.add_pass("Blur horizontal pass"), in_image, DeviceResources::HBlurMaterialTemplate);
+    const FrameGraphMutableImageId v_blur = blur_sub_pass(framegraph.add_pass("Blur vertical pass"), h_blur, DeviceResources::VBlurMaterialTemplate);
 
-	BlurPass pass;
-	pass.blurred = v_blur;
+    BlurPass pass;
+    pass.blurred = v_blur;
 
-	return pass;
+    return pass;
 }
 
 }
+

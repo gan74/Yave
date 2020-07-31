@@ -45,3 +45,4 @@ void vk_destroy(DevicePtr dptr, VkSurfaceKHR surface);
 }
 
 #endif // YAVE_GRAPHICS_VK_DESTROY_H
+

@@ -29,41 +29,42 @@ SOFTWARE.
 namespace yave {
 
 class FrameGraphDescriptorBinding {
-	enum class BindingType {
-		None,
+    enum class BindingType {
+        None,
 
-		InputImage,
-		StorageImage,
+        InputImage,
+        StorageImage,
 
-		InputBuffer,
-		StorageBuffer,
+        InputBuffer,
+        StorageBuffer,
 
-		External
-	};
+        External
+    };
 
-	public:
-		FrameGraphDescriptorBinding(const Descriptor& desc);
+    public:
+        FrameGraphDescriptorBinding(const Descriptor& desc);
 
-		static FrameGraphDescriptorBinding create_storage_binding(FrameGraphBufferId res);
-		static FrameGraphDescriptorBinding create_storage_binding(FrameGraphImageId res);
+        static FrameGraphDescriptorBinding create_storage_binding(FrameGraphBufferId res);
+        static FrameGraphDescriptorBinding create_storage_binding(FrameGraphImageId res);
 
-		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphBufferId res);
-		static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphImageId res);
+        static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphBufferId res);
+        static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphImageId res);
 
-		Descriptor create_descriptor(const FrameGraphFrameResources& resources) const;
+        Descriptor create_descriptor(const FrameGraphFrameResources& resources) const;
 
-	private:
-		FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type);
-		FrameGraphDescriptorBinding(FrameGraphImageId res, BindingType type);
+    private:
+        FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type);
+        FrameGraphDescriptorBinding(FrameGraphImageId res, BindingType type);
 
-		BindingType _type = BindingType::None;
-		union {
-			FrameGraphImageId _image;
-			FrameGraphBufferId _buffer;
-			Descriptor _external;
-		};
+        BindingType _type = BindingType::None;
+        union {
+            FrameGraphImageId _image;
+            FrameGraphBufferId _buffer;
+            Descriptor _external;
+        };
 };
 
 }
 
 #endif // YAVE_FRAMEGRAPH_FRAMEGRAPHDESCRIPTORBINDING_H
+

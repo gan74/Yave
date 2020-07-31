@@ -35,3 +35,4 @@ core::Result<math::Vec3> entity_position(const ecs::EntityWorld& world, ecs::Ent
 }
 
 #endif // YAVE_UTILS_ENTITIES_H
+

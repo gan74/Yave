@@ -53,122 +53,123 @@ static bool debug_instance = false;
 
 static void hide_console() {
 #ifdef Y_OS_WIN
-	ShowWindow(GetConsoleWindow(), SW_HIDE);
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
 #endif
 }
 
 static void parse_args(int argc, char** argv) {
-	for(std::string_view arg : core::Span<const char*>(argv, argc)) {
-		if(arg == "--nodebug") {
-			debug_instance = false;
-		}
-		if(arg == "--debug") {
-			debug_instance = true;
-		}
-		if(arg == "--console") {
-			display_console = true;
-		}
+    for(std::string_view arg : core::Span<const char*>(argv, argc)) {
+        if(arg == "--nodebug") {
+            debug_instance = false;
+        }
+        if(arg == "--debug") {
+            debug_instance = true;
+        }
+        if(arg == "--console") {
+            display_console = true;
+        }
 #ifdef Y_DEBUG
-		if(arg == "--errbreak") {
-			core::result::break_on_error = true;
-		}
+        if(arg == "--errbreak") {
+            core::result::break_on_error = true;
+        }
 #endif
-	}
+    }
 
-	if(!display_console) {
-		hide_console();
-	}
-	y_debug_assert([] { log_msg("Debug asserts enabled."); return true; }());
+    if(!display_console) {
+        hide_console();
+    }
+    y_debug_assert([] { log_msg("Debug asserts enabled."); return true; }());
 }
 
 static void setup_logger() {
-	set_log_callback([](std::string_view msg, Log type, void*) {
-			if(context) {
-				context->log_message(msg, type);
-			}
-			return !display_console;
-		});
+    set_log_callback([](std::string_view msg, Log type, void*) {
+            if(context) {
+                context->log_message(msg, type);
+            }
+            return !display_console;
+        });
 }
 
 static Instance create_instance() {
-	y_profile();
-	if(!debug_instance) {
-		log_msg("Vulkan debugging disabled.", Log::Warning);
-	}
-	return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
+    y_profile();
+    if(!debug_instance) {
+        log_msg("Vulkan debugging disabled.", Log::Warning);
+    }
+    return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
 }
 
 static Device create_device(Instance& instance) {
-	y_profile();
-	return Device(instance);
+    y_profile();
+    return Device(instance);
 }
 
 static EditorContext create_context(const Device& device) {
-	y_profile();
-	return EditorContext(&device);
+    y_profile();
+    return EditorContext(&device);
 }
 
 int main(int argc, char** argv) {
-	concurrent::set_thread_name("Main thread");
+    concurrent::set_thread_name("Main thread");
 
-	parse_args(argc, argv);
-	setup_logger();
+    parse_args(argc, argv);
+    setup_logger();
 
-	if(!crashhandler::setup_handler()) {
-		log_msg("Unable to setup crash handler.", Log::Warning);
-	}
+    if(!crashhandler::setup_handler()) {
+        log_msg("Unable to setup crash handler.", Log::Warning);
+    }
 
-	Instance instance = create_instance();
-
-
-	Device device = create_device(instance);
-	EditorContext ctx = create_context(device);
-	context = &ctx;
-
-	MainWindow window(&ctx);
-	window.set_event_handler(std::make_unique<MainEventHandler>());
-	window.show();
-
-	for(;;) {
-		if(!window.update()) {
-			if(ctx.ui().confirm("Quit ?")) {
-				break;
-			} else {
-				window.show();
-			}
-		}
-
-		// 35 ms to not spam if we are capped at 30 FPS
-		core::DebugTimer frame_timer("frame", core::Duration::milliseconds(35.0));
-
-		Swapchain* swapchain = window.swapchain();
-		if(swapchain && swapchain->is_valid()) {
-			FrameToken frame = swapchain->next_frame();
-			CmdBufferRecorder recorder(device.create_disposable_cmd_buffer());
-
-			ctx.ui().paint(recorder, frame);
-
-			window.present(recorder, frame);
-		}
-
-		ctx.flush_deferred();
-
-		if(ctx.device_resources_reload_requested()) {
-			device.device_resources().reload();
-			ctx.resources().reload();
-			ctx.set_device_resource_reloaded();
-		}
-	}
+    Instance instance = create_instance();
 
 
-	if(perf::is_capturing()) {
-		perf::end_capture();
-	}
+    Device device = create_device(instance);
+    EditorContext ctx = create_context(device);
+    context = &ctx;
 
-	set_log_callback(nullptr);
-	context = nullptr;
+    MainWindow window(&ctx);
+    window.set_event_handler(std::make_unique<MainEventHandler>());
+    window.show();
 
-	return 0;
+    for(;;) {
+        if(!window.update()) {
+            if(ctx.ui().confirm("Quit ?")) {
+                break;
+            } else {
+                window.show();
+            }
+        }
+
+        // 35 ms to not spam if we are capped at 30 FPS
+        core::DebugTimer frame_timer("frame", core::Duration::milliseconds(35.0));
+
+        Swapchain* swapchain = window.swapchain();
+        if(swapchain && swapchain->is_valid()) {
+            FrameToken frame = swapchain->next_frame();
+            CmdBufferRecorder recorder(device.create_disposable_cmd_buffer());
+
+            ctx.ui().paint(recorder, frame);
+
+            window.present(recorder, frame);
+        }
+
+        ctx.flush_deferred();
+
+        if(ctx.device_resources_reload_requested()) {
+            device.device_resources().reload();
+            ctx.resources().reload();
+            ctx.set_device_resource_reloaded();
+        }
+    }
+
+
+    if(perf::is_capturing()) {
+        perf::end_capture();
+    }
+
+    set_log_callback(nullptr);
+    context = nullptr;
+
+    return 0;
 }
+
 
 

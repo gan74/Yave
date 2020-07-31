@@ -29,57 +29,57 @@ namespace math {
 
 #if 0
 class FastRandom {
-	public:
-		FastRandom(u64 seed = 0xdeadbeef) {
-		}
+    public:
+        FastRandom(u64 seed = 0xdeadbeef) {
+        }
 
-		u32 operator()() {
-			return (_seed += _seed * _seed | 5) >> 32;
-		}
+        u32 operator()() {
+            return (_seed += _seed * _seed | 5) >> 32;
+        }
 
-	private:
-		u64 _seed;
+    private:
+        u64 _seed;
 };
 #endif
 
 
 #if 1
 class FastRandom {
-	public:
-		using result_type = u32;
+    public:
+        using result_type = u32;
 
-		constexpr FastRandom(u32 seed = 0xdeadbeef) : _a(0xf1ea5eed), _b(seed), _c(seed), _d(seed) {
-			for(usize i = 0; i != 20; ++i) {
-				(*this)();
-			}
-		}
+        constexpr FastRandom(u32 seed = 0xdeadbeef) : _a(0xf1ea5eed), _b(seed), _c(seed), _d(seed) {
+            for(usize i = 0; i != 20; ++i) {
+                (*this)();
+            }
+        }
 
-		constexpr u32 operator()() {
-			const u32 e = _a - rot(_b, 27);
-			_a = _b ^ rot(_c, 17);
-			_b = _c + _d;
-			_c = _d + e;
-			_d = e + _a;
-			return _d;
-		}
+        constexpr u32 operator()() {
+            const u32 e = _a - rot(_b, 27);
+            _a = _b ^ rot(_c, 17);
+            _b = _c + _d;
+            _c = _d + e;
+            _d = e + _a;
+            return _d;
+        }
 
-		static constexpr u32 max() {
-			return u32(-1);
-		}
+        static constexpr u32 max() {
+            return u32(-1);
+        }
 
-		static constexpr u32 min() {
-			return 0;
-		}
+        static constexpr u32 min() {
+            return 0;
+        }
 
-	private:
-		static constexpr u32 rot(u32 x, u32 k) {
-			return (((x) << (k)) | ((x) >> (32 - (k))));
-		}
+    private:
+        static constexpr u32 rot(u32 x, u32 k) {
+            return (((x) << (k)) | ((x) >> (32 - (k))));
+        }
 
-		u32 _a;
-		u32 _b;
-		u32 _c;
-		u32 _d;
+        u32 _a;
+        u32 _b;
+        u32 _c;
+        u32 _d;
 };
 #endif
 
@@ -87,3 +87,4 @@ class FastRandom {
 }
 
 #endif // Y_MATH_RANDOM_H
+

@@ -30,51 +30,52 @@ SOFTWARE.
 namespace yave {
 
 StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
-		_triangle_buffer(dptr, mesh_data.triangles().size()),
-		_vertex_buffer(dptr, mesh_data.vertices().size()),
-		_aabb(mesh_data.aabb()) {
+        _triangle_buffer(dptr, mesh_data.triangles().size()),
+        _vertex_buffer(dptr, mesh_data.vertices().size()),
+        _aabb(mesh_data.aabb()) {
 
-	_indirect_data.indexCount = mesh_data.triangles().size() * 3;
-	_indirect_data.instanceCount = 1;
+    _indirect_data.indexCount = mesh_data.triangles().size() * 3;
+    _indirect_data.instanceCount = 1;
 
-	CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
-	Y_TODO(change to implicit staging?)
-	Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
-	Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
-	graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+    CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
+    Y_TODO(change to implicit staging?)
+    Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
+    Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
+    graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 
-	if(ray_tracing(dptr)) {
-		_ray_tracing_data = RayTracing::AccelerationStructure(*this);
-	}
+    if(ray_tracing(dptr)) {
+        _ray_tracing_data = RayTracing::AccelerationStructure(*this);
+    }
 }
 
 DevicePtr StaticMesh::device() const {
-	return _triangle_buffer.device();
+    return _triangle_buffer.device();
 }
 
 bool StaticMesh::is_null() const {
-	return !device();
+    return !device();
 }
 
 const TriangleBuffer<>& StaticMesh::triangle_buffer() const {
-	return _triangle_buffer;
+    return _triangle_buffer;
 }
 
 const VertexBuffer<>& StaticMesh::vertex_buffer() const {
-	return _vertex_buffer;
+    return _vertex_buffer;
 }
 
 const VkDrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
-	return _indirect_data;
+    return _indirect_data;
 }
 
 float StaticMesh::radius() const {
-	return _aabb.origin_radius();
+    return _aabb.origin_radius();
 }
 
 const AABB& StaticMesh::aabb() const {
-	return _aabb;
+    return _aabb;
 }
 
 
 }
+

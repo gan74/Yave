@@ -33,71 +33,72 @@ Y_TODO(DeviceAllocator should track allocation count)
 
 
 usize DeviceMemoryAllocator::heap_size_for_type(MemoryType type) {
-	if(type == MemoryType::Staging) {
-		return default_heap_size / 8;
-	}
-	return default_heap_size;
+    if(type == MemoryType::Staging) {
+        return default_heap_size / 8;
+    }
+    return default_heap_size;
 }
 
 usize DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
-	return heap_size_for_type(type) / 2;
+    return heap_size_for_type(type) / 2;
 }
 
 
 DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_max_allocs(device_properties(dptr).max_memory_allocations) {
+        DeviceLinked(dptr),
+        _max_allocs(device_properties(dptr).max_memory_allocations) {
 }
 
 DeviceMemory DeviceMemoryAllocator::dedicated_alloc(VkMemoryRequirements reqs, MemoryType type) {
-	y_profile();
-	auto& heap = _dedicated_heaps[type];
-	if(!heap) {
-		heap = std::make_unique<DedicatedDeviceMemoryAllocator>(device(), type);
-	}
-	return std::move(heap->alloc(reqs).unwrap());
+    y_profile();
+    auto& heap = _dedicated_heaps[type];
+    if(!heap) {
+        heap = std::make_unique<DedicatedDeviceMemoryAllocator>(device(), type);
+    }
+    return std::move(heap->alloc(reqs).unwrap());
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements reqs, MemoryType type) {
-	y_profile();
+    y_profile();
 
-	Y_TODO(We are double locking here, each heap will lock internally)
-	const auto lock = y_profile_unique_lock(_lock);
+    Y_TODO(We are double locking here, each heap will lock internally)
+    const auto lock = y_profile_unique_lock(_lock);
 
-	if(reqs.size >= dedicated_threshold_for_type(type)) {
-		return dedicated_alloc(reqs, type);
-	}
+    if(reqs.size >= dedicated_threshold_for_type(type)) {
+        return dedicated_alloc(reqs, type);
+    }
 
-	if(reqs.alignment % DeviceMemoryHeap::alignment && DeviceMemoryHeap::alignment % reqs.alignment) {
-		log_msg("Failed to align memory: defaulting to dedicated allocation.", Log::Warning);
-		return dedicated_alloc(reqs, type);
-	}
+    if(reqs.alignment % DeviceMemoryHeap::alignment && DeviceMemoryHeap::alignment % reqs.alignment) {
+        log_msg("Failed to align memory: defaulting to dedicated allocation.", Log::Warning);
+        return dedicated_alloc(reqs, type);
+    }
 
-	auto& heaps =_heaps[HeapType{reqs.memoryTypeBits, type}];
-	for(auto& heap : heaps) {
-		if(auto r = heap->alloc(reqs)) {
-			return std::move(r.unwrap());
-		}
-	}
+    auto& heaps =_heaps[HeapType{reqs.memoryTypeBits, type}];
+    for(auto& heap : heaps) {
+        if(auto r = heap->alloc(reqs)) {
+            return std::move(r.unwrap());
+        }
+    }
 
-	auto heap = std::make_unique<DeviceMemoryHeap>(device(), reqs.memoryTypeBits, type, heap_size_for_type(type));
-	auto alloc = std::move(heap->alloc(reqs).unwrap());
+    auto heap = std::make_unique<DeviceMemoryHeap>(device(), reqs.memoryTypeBits, type, heap_size_for_type(type));
+    auto alloc = std::move(heap->alloc(reqs).unwrap());
 
-	heaps.push_back(std::move(heap));
+    heaps.push_back(std::move(heap));
 
-	return /*std::move*/(alloc);
+    return /*std::move*/(alloc);
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(VkImage image) {
-	VkMemoryRequirements reqs = {};
-	vkGetImageMemoryRequirements(vk_device(device()), image, &reqs);
-	return alloc(reqs, MemoryType::DeviceLocal);
+    VkMemoryRequirements reqs = {};
+    vkGetImageMemoryRequirements(vk_device(device()), image, &reqs);
+    return alloc(reqs, MemoryType::DeviceLocal);
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(VkBuffer buffer, MemoryType type) {
-	VkMemoryRequirements reqs = {};
-	vkGetBufferMemoryRequirements(vk_device(device()), buffer, &reqs);
-	return alloc(reqs, type);
+    VkMemoryRequirements reqs = {};
+    vkGetBufferMemoryRequirements(vk_device(device()), buffer, &reqs);
+    return alloc(reqs, type);
 }
 
 }
+

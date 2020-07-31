@@ -29,22 +29,23 @@ namespace yave {
 
 Y_TODO(move to device)
 class Sampler final : NonCopyable, public DeviceLinked {
-	public:
+    public:
 
-		Sampler() = default;
-		Sampler(Sampler&&) = default;
-		Sampler& operator=(Sampler&&) = default;
+        Sampler() = default;
+        Sampler(Sampler&&) = default;
+        Sampler& operator=(Sampler&&) = default;
 
-		Sampler(DevicePtr dptr, SamplerType type = SamplerType::Repeat);
+        Sampler(DevicePtr dptr, SamplerType type = SamplerType::Repeat);
 
-		~Sampler();
+        ~Sampler();
 
-		VkSampler vk_sampler() const;
+        VkSampler vk_sampler() const;
 
-	private:
-		SwapMove<VkSampler> _sampler;
+    private:
+        SwapMove<VkSampler> _sampler;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_IMAGES_SAMPLER_H
+

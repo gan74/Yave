@@ -33,26 +33,27 @@ namespace yave {
 class DebugUtils;
 
 class Instance : NonMovable {
-	public:
-		Instance(DebugParams debug);
-		~Instance();
+    public:
+        Instance(DebugParams debug);
+        ~Instance();
 
-		const DebugParams& debug_params() const;
+        const DebugParams& debug_params() const;
 
-		const DebugUtils* debug_utils() const;
+        const DebugUtils* debug_utils() const;
 
-		VkInstance vk_instance() const;
+        VkInstance vk_instance() const;
 
-	private:
-		struct {
-			std::unique_ptr<DebugUtils> debug_utils;
-		} _extensions;
+    private:
+        struct {
+            std::unique_ptr<DebugUtils> debug_utils;
+        } _extensions;
 
-		DebugParams _debug_params;
-		VkInstance _instance = {};
+        DebugParams _debug_params;
+        VkInstance _instance = {};
 
 };
 
 }
 
 #endif // YAVE_DEVICE_INSTANCE_H
+

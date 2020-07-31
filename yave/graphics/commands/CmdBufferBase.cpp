@@ -31,32 +31,33 @@ CmdBufferBase::CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& data) : _prox
 }
 
 void CmdBufferBase::wait() const {
-	const VkFence fence = vk_fence();
-	vk_check(vkWaitForFences(vk_device(device()), 1, &fence, true, u64(-1)));
+    const VkFence fence = vk_fence();
+    vk_check(vkWaitForFences(vk_device(device()), 1, &fence, true, u64(-1)));
 }
 
 void CmdBufferBase::wait_for(const Semaphore& sem) {
-	_proxy->data().wait_for(sem);
+    _proxy->data().wait_for(sem);
 }
 
 DevicePtr CmdBufferBase::device() const {
-	const auto pool = _proxy ? _proxy->data().pool() : nullptr;
-	return pool ? pool->device() : nullptr;
+    const auto pool = _proxy ? _proxy->data().pool() : nullptr;
+    return pool ? pool->device() : nullptr;
 }
 
 VkCommandBuffer CmdBufferBase::vk_cmd_buffer() const {
-	y_debug_assert(_proxy);
-	return _proxy->data().vk_cmd_buffer();
+    y_debug_assert(_proxy);
+    return _proxy->data().vk_cmd_buffer();
 }
 
 VkFence CmdBufferBase::vk_fence() const {
-	y_debug_assert(_proxy);
-	return  _proxy->data().vk_fence();
+    y_debug_assert(_proxy);
+    return  _proxy->data().vk_fence();
 }
 
 ResourceFence CmdBufferBase::resource_fence() const {
-	y_debug_assert(_proxy);
-	return _proxy->data().resource_fence();
+    y_debug_assert(_proxy);
+    return _proxy->data().resource_fence();
 }
 
 }
+

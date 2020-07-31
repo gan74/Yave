@@ -27,23 +27,24 @@ SOFTWARE.
 namespace editor {
 
 class AssetStringifier : public Widget, public ContextLinked {
-	public:
-		AssetStringifier(ContextPtr cptr);
+    public:
+        AssetStringifier(ContextPtr cptr);
 
-		void clear();
+        void clear();
 
-	private:
-		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+    private:
+        void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
-		void stringify(AssetId id);
+        void stringify(AssetId id);
 
-		AssetSelector _selector;
+        AssetSelector _selector;
 
-		AssetId _selected;
-		core::String _vertices;
-		core::String _triangles;
+        AssetId _selected;
+        core::String _vertices;
+        core::String _triangles;
 };
 
 }
 
 #endif // EDITOR_WIDGETS_ASSETSTRINGIFIER_H
+

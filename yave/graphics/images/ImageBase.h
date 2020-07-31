@@ -34,45 +34,45 @@ namespace yave {
 
 class ImageBase : NonCopyable {
 
-	public:
-		~ImageBase();
+    public:
+        ~ImageBase();
 
-		DevicePtr device() const;
-		bool is_null() const;
+        DevicePtr device() const;
+        bool is_null() const;
 
-		VkImage vk_image() const;
-		VkImageView vk_view() const;
+        VkImage vk_image() const;
+        VkImageView vk_view() const;
 
-		const DeviceMemory& device_memory() const;
+        const DeviceMemory& device_memory() const;
 
-		const math::Vec3ui& image_size() const;
-		usize mipmaps() const;
+        const math::Vec3ui& image_size() const;
+        usize mipmaps() const;
 
-		usize layers() const;
+        usize layers() const;
 
-		ImageFormat format() const;
-		ImageUsage usage() const;
+        ImageFormat format() const;
+        ImageUsage usage() const;
 
-	protected:
-		ImageBase() = default;
-		ImageBase(ImageBase&&) = default;
-		ImageBase& operator=(ImageBase&&) = default;
+    protected:
+        ImageBase() = default;
+        ImageBase(ImageBase&&) = default;
+        ImageBase& operator=(ImageBase&&) = default;
 
-		ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1);
-		ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data);
+        ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1);
+        ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data);
 
 
-		math::Vec3ui _size;
-		u32 _layers = 1;
-		u32 _mips = 1;
+        math::Vec3ui _size;
+        u32 _layers = 1;
+        u32 _mips = 1;
 
-		ImageFormat _format;
-		ImageUsage _usage = ImageUsage::None;
+        ImageFormat _format;
+        ImageUsage _usage = ImageUsage::None;
 
-		DeviceMemory _memory;
+        DeviceMemory _memory;
 
-		SwapMove<VkImage> _image;
-		SwapMove<VkImageView> _view;
+        SwapMove<VkImage> _image;
+        SwapMove<VkImageView> _view;
 };
 
 static_assert(is_safe_base<ImageBase>::value);
@@ -80,3 +80,4 @@ static_assert(is_safe_base<ImageBase>::value);
 }
 
 #endif // YAVE_GRAPHICS_IMAGES_IMAGEBASE_H
+

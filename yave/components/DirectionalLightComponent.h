@@ -28,25 +28,26 @@ SOFTWARE.
 namespace yave {
 
 class DirectionalLightComponent final {
-	public:
-		DirectionalLightComponent() = default;
+    public:
+        DirectionalLightComponent() = default;
 
-		math::Vec3& color();
-		const math::Vec3& color() const;
+        math::Vec3& color();
+        const math::Vec3& color() const;
 
-		math::Vec3& direction();
-		const math::Vec3& direction() const;
+        math::Vec3& direction();
+        const math::Vec3& direction() const;
 
-		float& intensity();
-		float intensity() const;
+        float& intensity();
+        float intensity() const;
 
-		y_serde3(_color, _direction, _intensity)
+        y_serde3(_color, _direction, _intensity)
 
-	private:
-		math::Vec3 _color = math::Vec3{1.0f};
-		math::Vec3 _direction = math::Vec3{0.0f, 0.0f, -1.0f};
-		float _intensity = 1.0f;
+    private:
+        math::Vec3 _color = math::Vec3{1.0f};
+        math::Vec3 _direction = math::Vec3{0.0f, 0.0f, -1.0f};
+        float _intensity = 1.0f;
 };
 }
 
 #endif // YAVE_COMPONENTS_DIRECTIONALLIGHTCOMPONENT_H
+

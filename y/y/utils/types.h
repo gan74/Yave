@@ -28,20 +28,20 @@ SOFTWARE.
 namespace y {
 
 struct NonCopyable {
-	constexpr NonCopyable() {}
-	NonCopyable(const NonCopyable&) = delete;
-	NonCopyable& operator=(const NonCopyable&) = delete;
+    constexpr NonCopyable() {}
+    NonCopyable(const NonCopyable&) = delete;
+    NonCopyable& operator=(const NonCopyable&) = delete;
 
-	NonCopyable(NonCopyable&&) = default;
-	NonCopyable& operator=(NonCopyable&&) = default;
+    NonCopyable(NonCopyable&&) = default;
+    NonCopyable& operator=(NonCopyable&&) = default;
 };
 
 struct NonMovable {
-	constexpr NonMovable() {}
-	NonMovable(const NonMovable&) = delete;
-	NonMovable& operator=(const NonMovable&) = delete;
+    constexpr NonMovable() {}
+    NonMovable(const NonMovable&) = delete;
+    NonMovable& operator=(const NonMovable&) = delete;
 
-	NonMovable(NonMovable&&) = delete;
+    NonMovable(NonMovable&&) = delete;
 };
 
 using u8 = uint8_t;
@@ -75,3 +75,4 @@ using uenum = std::underlying_type<detail::Enum>::type;
 
 
 #endif // Y_UTILS_TYPES_H
+

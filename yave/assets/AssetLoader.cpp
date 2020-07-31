@@ -37,51 +37,52 @@ AssetLoader::LoaderBase::LoaderBase(AssetLoader* parent) : _parent(parent) {
 }
 
 AssetLoader* AssetLoader::LoaderBase::parent() const {
-	return _parent;
+    return _parent;
 }
 
 
 AssetLoader::AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags, usize concurency) :
-		DeviceLinked(dptr),
-		_store(store),
-		_thread_pool(this, concurency),
-		_loading_flags(flags) {
+        DeviceLinked(dptr),
+        _store(store),
+        _thread_pool(this, concurency),
+        _loading_flags(flags) {
 }
 
 AssetLoader::~AssetLoader() {
 }
 
 AssetStore& AssetLoader::store() {
-	return *_store;
+    return *_store;
 }
 
 const AssetStore& AssetLoader::store() const {
-	return *_store;
+    return *_store;
 }
 
 void AssetLoader::set_loading_flags(AssetLoadingFlags flags) {
-	_loading_flags = flags;
+    _loading_flags = flags;
 }
 
 AssetLoadingFlags AssetLoader::loading_flags() const {
-	return _loading_flags;
+    return _loading_flags;
 }
 
 void AssetLoader::wait_until_loaded(const GenericAssetPtr& ptr) {
-	_thread_pool.wait_until_loaded(ptr);
-	y_debug_assert(!ptr.is_loading());
+    _thread_pool.wait_until_loaded(ptr);
+    y_debug_assert(!ptr.is_loading());
 }
 
 core::Result<AssetId> AssetLoader::load_or_import(std::string_view name, std::string_view import_from, AssetType type) {
-	if(auto id = _store->id(name)) {
-		return id;
-	}
+    if(auto id = _store->id(name)) {
+        return id;
+    }
 
-	if(auto file = io2::File::open(import_from)) {
-		return _store->import(file.unwrap(), name, type);
-	}
+    if(auto file = io2::File::open(import_from)) {
+        return _store->import(file.unwrap(), name, type);
+    }
 
-	return core::Err();
+    return core::Err();
 }
 
 }
+

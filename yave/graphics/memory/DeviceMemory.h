@@ -31,37 +31,38 @@ class DeviceMemoryHeapBase;
 
 class DeviceMemory : NonCopyable, public DeviceLinked {
 
-	public:
-		DeviceMemory() = default;
+    public:
+        DeviceMemory() = default;
 
-		DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, usize offset, usize size);
-		DeviceMemory(DevicePtr dptr, VkDeviceMemory memory, usize offset, usize size);
+        DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, usize offset, usize size);
+        DeviceMemory(DevicePtr dptr, VkDeviceMemory memory, usize offset, usize size);
 
-		~DeviceMemory();
+        ~DeviceMemory();
 
-		DeviceMemory(DeviceMemory&& other);
-		DeviceMemory& operator=(DeviceMemory&& other);
+        DeviceMemory(DeviceMemory&& other);
+        DeviceMemory& operator=(DeviceMemory&& other);
 
-		VkDeviceMemory vk_memory() const;
-		usize vk_offset() const;
-		usize vk_size() const;
+        VkDeviceMemory vk_memory() const;
+        usize vk_offset() const;
+        usize vk_size() const;
 
-		DeviceMemoryHeapBase* heap() const;
+        DeviceMemoryHeapBase* heap() const;
 
-	protected:
-		void swap(DeviceMemory& other);
+    protected:
+        void swap(DeviceMemory& other);
 
-	private:
-		friend class LifetimeManager;
+    private:
+        friend class LifetimeManager;
 
-		void free();
+        void free();
 
-		DeviceMemoryHeapBase* _heap = nullptr;
-		VkDeviceMemory _memory = {};
-		usize _offset = 0;
-		usize _size = 0;
+        DeviceMemoryHeapBase* _heap = nullptr;
+        VkDeviceMemory _memory = {};
+        usize _offset = 0;
+        usize _size = 0;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_MEMORY_DEVICEMEMORY_H
+

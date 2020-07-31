@@ -27,27 +27,28 @@ SOFTWARE.
 namespace yave {
 
 struct ToneMappingSettings {
-	enum class ToneMapper {
-		ACES,
-		Uncharted2,
-		Reinhard,
-		None
-	};
+    enum class ToneMapper {
+        ACES,
+        Uncharted2,
+        Reinhard,
+        None
+    };
 
-	bool auto_exposure = true;
-	float exposure = 1.0f;
-	ToneMapper tone_mapper = ToneMapper::ACES;
+    bool auto_exposure = true;
+    float exposure = 1.0f;
+    ToneMapper tone_mapper = ToneMapper::ACES;
 };
 
 struct ToneMappingPass {
-	FrameGraphImageId tone_mapped;
-	FrameGraphImageId histogram;
-	FrameGraphTypedBufferId<uniform::ToneMappingParams> params;
+    FrameGraphImageId tone_mapped;
+    FrameGraphImageId histogram;
+    FrameGraphTypedBufferId<uniform::ToneMappingParams> params;
 
-	static ToneMappingPass create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings = ToneMappingSettings());
+    static ToneMappingPass create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings = ToneMappingSettings());
 };
 
 
 }
 
 #endif // YAVE_RENDERER_TONEMAPPINGPASS_H
+

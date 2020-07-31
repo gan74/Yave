@@ -32,34 +32,35 @@ SOFTWARE.
 namespace yave {
 
 MaterialTemplate::MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data) :
-		DeviceLinked(dptr),
-		_data(std::move(data)) {
+        DeviceLinked(dptr),
+        _data(std::move(data)) {
 }
 
 const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) const {
-	Y_TODO(make material compilation thread safe?)
-	if(!render_pass.vk_render_pass()) {
-		y_fatal("Unable to compile material: null renderpass.");
-	}
+    Y_TODO(make material compilation thread safe?)
+    if(!render_pass.vk_render_pass()) {
+        y_fatal("Unable to compile material: null renderpass.");
+    }
 
-	const auto& key = render_pass.layout();
-	const auto it = _compiled.find(key);
-	if(it == _compiled.end()) {
-		if(_compiled.size() == max_compiled_pipelines) {
-			log_msg("Discarding graphic pipeline", Log::Warning);
-			std::move(_compiled.begin() + 1, _compiled.end(), _compiled.begin());
-			_compiled.pop();
-		}
+    const auto& key = render_pass.layout();
+    const auto it = _compiled.find(key);
+    if(it == _compiled.end()) {
+        if(_compiled.size() == max_compiled_pipelines) {
+            log_msg("Discarding graphic pipeline", Log::Warning);
+            std::move(_compiled.begin() + 1, _compiled.end(), _compiled.begin());
+            _compiled.pop();
+        }
 
-		_compiled.insert(key, MaterialCompiler::compile(this, render_pass));
-		return _compiled.last().second;
-	}
-	return it->second;
+        _compiled.insert(key, MaterialCompiler::compile(this, render_pass));
+        return _compiled.last().second;
+    }
+    return it->second;
 }
 
 
 const MaterialTemplateData& MaterialTemplate::data() const {
-	return _data;
+    return _data;
 }
 
 }
+

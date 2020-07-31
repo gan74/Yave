@@ -29,39 +29,39 @@ SOFTWARE.
 namespace yave {
 
 struct BoneTransform {
-	math::Vec3 position;
-	math::Vec3 scale = math::Vec3(1.0f);
-	math::Quaternion<> rotation;
+    math::Vec3 position;
+    math::Vec3 scale = math::Vec3(1.0f);
+    math::Quaternion<> rotation;
 
-	math::Transform<> to_transform() const {
-		return math::Transform<>(position, rotation, scale);
-	}
+    math::Transform<> to_transform() const {
+        return math::Transform<>(position, rotation, scale);
+    }
 
-	math::Transform<> lerp(const BoneTransform& end, float factor) const {
-		const float q = 1.0f - factor;
-		return math::Transform<>(position * q + end.position * factor,
-								 rotation.slerp(end.rotation, factor),
-								 scale * q + end.scale * factor);
-	}
+    math::Transform<> lerp(const BoneTransform& end, float factor) const {
+        const float q = 1.0f - factor;
+        return math::Transform<>(position * q + end.position * factor,
+                                 rotation.slerp(end.rotation, factor),
+                                 scale * q + end.scale * factor);
+    }
 };
 
 static_assert(std::is_trivially_copyable_v<BoneTransform>, "BoneTransform should be trivially copyable");
 
 struct Bone {
-	core::String name;
-	u32 parent;
+    core::String name;
+    u32 parent;
 
-	BoneTransform local_transform;
+    BoneTransform local_transform;
 
-	bool has_parent() const {
-		return parent != u32(-1);
-	}
+    bool has_parent() const {
+        return parent != u32(-1);
+    }
 
-	math::Transform<> transform() const {
-		return local_transform.to_transform();
-	}
+    math::Transform<> transform() const {
+        return local_transform.to_transform();
+    }
 
-	y_serde3(name, parent, local_transform)
+    y_serde3(name, parent, local_transform)
 };
 
 
@@ -69,3 +69,4 @@ struct Bone {
 
 
 #endif // YAVE_MESHES_BONE_H
+

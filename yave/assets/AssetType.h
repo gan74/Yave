@@ -27,17 +27,18 @@ SOFTWARE.
 namespace yave {
 
 enum class AssetType : u32 {
-	Mesh = 1,
-	Image = 2,
-	Animation = 3,
-	Font = 4,
-	Scene = 5,
-	Material = 6,
-	Prefab = 7,
+    Mesh = 1,
+    Image = 2,
+    Animation = 3,
+    Font = 4,
+    Scene = 5,
+    Material = 6,
+    Prefab = 7,
 
-	Unknown = u32(-1)
+    Unknown = u32(-1)
 };
 
 }
 
 #endif // YAVE_ASSETS_ASSETTYPE_H
+

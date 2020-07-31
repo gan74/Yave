@@ -31,93 +31,94 @@ namespace yave {
 
 class FrameGraph : NonCopyable {
 
-	struct ResourceCreateInfo {
-		usize last_read = 0;
-		usize last_write = 0;
-		usize first_use = 0;
+    struct ResourceCreateInfo {
+        usize last_read = 0;
+        usize last_write = 0;
+        usize first_use = 0;
 
-		bool can_alias_on_last = false;
+        bool can_alias_on_last = false;
 
-		usize last_use() const;
-		void register_use(usize index, bool is_written);
-	};
+        usize last_use() const;
+        void register_use(usize index, bool is_written);
+    };
 
-	struct ImageCreateInfo : ResourceCreateInfo {
-		math::Vec2ui size;
-		ImageFormat format;
-		ImageUsage usage = ImageUsage::None;
+    struct ImageCreateInfo : ResourceCreateInfo {
+        math::Vec2ui size;
+        ImageFormat format;
+        ImageUsage usage = ImageUsage::None;
 
-		FrameGraphImageId copy_src;
-		FrameGraphImageId alias;
+        FrameGraphImageId copy_src;
+        FrameGraphImageId alias;
 
-		void register_alias(const ImageCreateInfo& other);
-		bool is_aliased() const;
-		bool has_usage() const;
-	};
+        void register_alias(const ImageCreateInfo& other);
+        bool is_aliased() const;
+        bool has_usage() const;
+    };
 
-	struct BufferCreateInfo : ResourceCreateInfo {
-		usize byte_size;
-		BufferUsage usage = BufferUsage::None;
-		MemoryType memory_type = MemoryType::DontCare;
-	};
+    struct BufferCreateInfo : ResourceCreateInfo {
+        usize byte_size;
+        BufferUsage usage = BufferUsage::None;
+        MemoryType memory_type = MemoryType::DontCare;
+    };
 
-	struct ImageCopyInfo {
-		usize pass_index = 0;
-		FrameGraphMutableImageId dst;
-		FrameGraphImageId src;
-	};
+    struct ImageCopyInfo {
+        usize pass_index = 0;
+        FrameGraphMutableImageId dst;
+        FrameGraphImageId src;
+    };
 
-	public:
-		FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool);
+    public:
+        FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool);
 
-		DevicePtr device() const;
-		const FrameGraphFrameResources& resources() const;
+        DevicePtr device() const;
+        const FrameGraphFrameResources& resources() const;
 
-		void render(CmdBufferRecorder& recorder) &&;
+        void render(CmdBufferRecorder& recorder) &&;
 
-		FrameGraphPassBuilder add_pass(std::string_view name);
+        FrameGraphPassBuilder add_pass(std::string_view name);
 
-		math::Vec2ui image_size(FrameGraphImageId res) const;
-		ImageFormat image_format(FrameGraphImageId res) const;
+        math::Vec2ui image_size(FrameGraphImageId res) const;
+        ImageFormat image_format(FrameGraphImageId res) const;
 
-	private:
-		friend class FrameGraphPassBuilder;
-		friend class FrameGraphPass;
+    private:
+        friend class FrameGraphPassBuilder;
+        friend class FrameGraphPass;
 
-		FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
-		FrameGraphMutableBufferId declare_buffer(usize byte_size);
+        FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
+        FrameGraphMutableBufferId declare_buffer(usize byte_size);
 
-		const ImageCreateInfo& info(FrameGraphImageId res) const;
-		const BufferCreateInfo& info(FrameGraphBufferId res) const;
+        const ImageCreateInfo& info(FrameGraphImageId res) const;
+        const BufferCreateInfo& info(FrameGraphBufferId res) const;
 
-		void register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass);
-		void register_usage(FrameGraphBufferId res, BufferUsage usage, bool is_written, const FrameGraphPass* pass);
-		void register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass);
+        void register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass);
+        void register_usage(FrameGraphBufferId res, BufferUsage usage, bool is_written, const FrameGraphPass* pass);
+        void register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass);
 
-		void set_cpu_visible(FrameGraphMutableBufferId res, const FrameGraphPass* pass);
+        void set_cpu_visible(FrameGraphMutableBufferId res, const FrameGraphPass* pass);
 
-		bool is_attachment(FrameGraphImageId res) const;
+        bool is_attachment(FrameGraphImageId res) const;
 
-	private:
-		const core::String& pass_name(usize pass_index) const;
+    private:
+        const core::String& pass_name(usize pass_index) const;
 
-		void alloc_resources();
-		void alloc_image(FrameGraphImageId res, const ImageCreateInfo& info) const;
+        void alloc_resources();
+        void alloc_image(FrameGraphImageId res, const ImageCreateInfo& info) const;
 
-		std::unique_ptr<FrameGraphFrameResources> _resources;
+        std::unique_ptr<FrameGraphFrameResources> _resources;
 
-		core::Vector<std::unique_ptr<FrameGraphPass>> _passes;
+        core::Vector<std::unique_ptr<FrameGraphPass>> _passes;
 
-		using hash_t = std::hash<FrameGraphResourceId>;
-		std::unordered_map<FrameGraphImageId, ImageCreateInfo, hash_t> _images;
-		std::unordered_map<FrameGraphBufferId, BufferCreateInfo, hash_t> _buffers;
+        using hash_t = std::hash<FrameGraphResourceId>;
+        std::unordered_map<FrameGraphImageId, ImageCreateInfo, hash_t> _images;
+        std::unordered_map<FrameGraphBufferId, BufferCreateInfo, hash_t> _buffers;
 
-		core::Vector<ImageCopyInfo> _image_copies;
+        core::Vector<ImageCopyInfo> _image_copies;
 
-		usize _pass_index = 0;
+        usize _pass_index = 0;
 
 };
 
 }
 
 #endif // YAVE_FRAMEGRAPH_FRAMEGRAPH_H
+

@@ -29,25 +29,25 @@ namespace yave {
 
 class Material final : NonCopyable {
 
-	public:
-		Material() = default;
-		Material(DevicePtr dptr, SimpleMaterialData&& data);
-		Material(const MaterialTemplate* tmp, SimpleMaterialData&& data = SimpleMaterialData());
+    public:
+        Material() = default;
+        Material(DevicePtr dptr, SimpleMaterialData&& data);
+        Material(const MaterialTemplate* tmp, SimpleMaterialData&& data = SimpleMaterialData());
 
-		DevicePtr device() const;
-		bool is_null() const;
+        DevicePtr device() const;
+        bool is_null() const;
 
-		const MaterialTemplate* material_template() const;
+        const MaterialTemplate* material_template() const;
 
-		const SimpleMaterialData& data() const;
-		const DescriptorSetBase& descriptor_set() const;
+        const SimpleMaterialData& data() const;
+        const DescriptorSetBase& descriptor_set() const;
 
-	private:
-		const MaterialTemplate* _template = nullptr;
+    private:
+        const MaterialTemplate* _template = nullptr;
 
-		DescriptorSet _set;
+        DescriptorSet _set;
 
-		SimpleMaterialData _data;
+        SimpleMaterialData _data;
 };
 
 YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Material, SimpleMaterialData, AssetType::Material);
@@ -56,3 +56,4 @@ YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Material, SimpleMaterialData, AssetType::Mater
 
 
 #endif // YAVE_MATERIAL_MATERIAL_H
+

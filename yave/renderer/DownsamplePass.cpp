@@ -29,36 +29,37 @@ SOFTWARE.
 namespace yave {
 
 DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId orig, usize max_downsampling) {
-	const math::Vec2ui orig_size = framegraph.image_size(orig);
-	const ImageFormat format = framegraph.image_format(orig);
+    const math::Vec2ui orig_size = framegraph.image_size(orig);
+    const ImageFormat format = framegraph.image_format(orig);
 
-	DownsamplePass pass;
+    DownsamplePass pass;
 
-	FrameGraphImageId last = orig;
-	for(usize m = 1;; ++m) {
-		const math::Vec2ui mip_size = math::Vec2ui(orig_size.x() >> m, orig_size.y() >> m);
-		if(!mip_size.x() || !mip_size.y() || (1u << m) > max_downsampling) {
-			break;
-		}
+    FrameGraphImageId last = orig;
+    for(usize m = 1;; ++m) {
+        const math::Vec2ui mip_size = math::Vec2ui(orig_size.x() >> m, orig_size.y() >> m);
+        if(!mip_size.x() || !mip_size.y() || (1u << m) > max_downsampling) {
+            break;
+        }
 
-		FrameGraphPassBuilder builder = framegraph.add_pass(fmt("Downsample pass x%", 1 << m));
+        FrameGraphPassBuilder builder = framegraph.add_pass(fmt("Downsample pass x%", 1 << m));
 
-		const auto mip = builder.declare_image(format, mip_size);
+        const auto mip = builder.declare_image(format, mip_size);
 
-		builder.add_color_output(mip);
-		builder.add_uniform_input(last);
-		builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-			auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-			const auto* material = device_resources(recorder.device())[DeviceResources::ScreenPassthroughMaterialTemplate];
-			render_pass.bind_material(material, {self->descriptor_sets()[0]});
-			render_pass.draw_array(3);
-		});
+        builder.add_color_output(mip);
+        builder.add_uniform_input(last);
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+            const auto* material = device_resources(recorder.device())[DeviceResources::ScreenPassthroughMaterialTemplate];
+            render_pass.bind_material(material, {self->descriptor_sets()[0]});
+            render_pass.draw_array(3);
+        });
 
-		pass.mips << mip;
-		last = mip;
-	}
+        pass.mips << mip;
+        last = mip;
+    }
 
-	return pass;
+    return pass;
 }
 
 }
+

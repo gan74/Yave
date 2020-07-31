@@ -38,43 +38,43 @@ using MaterialTemplates = EditorResources::MaterialTemplates;
 
 
 static constexpr const char* spirv_names[] = {
-		"depth_alpha.comp",
-		"picking.comp",
+        "depth_alpha.comp",
+        "picking.comp",
 
-		"imgui.frag",
-		"imgui_billboard.frag",
-		"basic_picking.frag",
-		"engine_view.frag",
-		"wireframe.frag",
+        "imgui.frag",
+        "imgui_billboard.frag",
+        "basic_picking.frag",
+        "engine_view.frag",
+        "wireframe.frag",
 
-		"screen.vert",
-		"imgui.vert",
-		"imgui_billboard.vert",
-		"basic_picking.vert",
-		"wireframe.vert",
+        "screen.vert",
+        "imgui.vert",
+        "imgui_billboard.vert",
+        "basic_picking.vert",
+        "wireframe.vert",
 
-		"imgui_billboard.geom",
-	};
+        "imgui_billboard.geom",
+    };
 
 struct DeviceMaterialData {
-	const SpirV frag;
-	const SpirV vert;
-	const SpirV geom = SpirV::MaxSpirV;
-	const bool depth_tested;
-	const bool culled = true;
-	const bool blended = false;
-	const PrimitiveType prim_type = PrimitiveType::Triangles;
+    const SpirV frag;
+    const SpirV vert;
+    const SpirV geom = SpirV::MaxSpirV;
+    const bool depth_tested;
+    const bool culled = true;
+    const bool blended = false;
+    const PrimitiveType prim_type = PrimitiveType::Triangles;
 };
 
 
 static constexpr DeviceMaterialData material_datas[] = {
-		{SpirV::ImGuiFrag,			SpirV::ImGuiVert,			SpirV::MaxSpirV,			false,	false,	true,	PrimitiveType::Triangles},
-		{SpirV::ImGuiBillBoardFrag, SpirV::ImGuiBillBoardVert,	SpirV::ImGuiBillBoardGeom,	true,	false,	true,	PrimitiveType::Points},
-		{SpirV::PickingFrag,		SpirV::PickingVert,			SpirV::MaxSpirV,			true,	true,	true,	PrimitiveType::Triangles},
-		{SpirV::PickingFrag,		SpirV::ImGuiBillBoardVert,	SpirV::ImGuiBillBoardGeom,	true,	false,	true,	PrimitiveType::Points},
-		{SpirV::EngineViewFrag,		SpirV::ScreenVert,			SpirV::MaxSpirV,			false,	false,	true,	PrimitiveType::Triangles},
-		{SpirV::WireFrameFrag,		SpirV::WireFrameVert,		SpirV::MaxSpirV,			true,	false,	true,	PrimitiveType::Lines},
-	};
+        {SpirV::ImGuiFrag,          SpirV::ImGuiVert,           SpirV::MaxSpirV,            false,  false,  true,   PrimitiveType::Triangles},
+        {SpirV::ImGuiBillBoardFrag, SpirV::ImGuiBillBoardVert,  SpirV::ImGuiBillBoardGeom,  true,   false,  true,   PrimitiveType::Points},
+        {SpirV::PickingFrag,        SpirV::PickingVert,         SpirV::MaxSpirV,            true,   true,   true,   PrimitiveType::Triangles},
+        {SpirV::PickingFrag,        SpirV::ImGuiBillBoardVert,  SpirV::ImGuiBillBoardGeom,  true,   false,  true,   PrimitiveType::Points},
+        {SpirV::EngineViewFrag,     SpirV::ScreenVert,          SpirV::MaxSpirV,            false,  false,  true,   PrimitiveType::Triangles},
+        {SpirV::WireFrameFrag,      SpirV::WireFrameVert,       SpirV::MaxSpirV,            true,   false,  true,   PrimitiveType::Lines},
+    };
 
 
 static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
@@ -86,63 +86,64 @@ static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == template_cou
 
 
 EditorResources::EditorResources(DevicePtr dptr) :
-		_spirv(std::make_unique<SpirVData[]>(spirv_count)),
-		_computes(std::make_unique<ComputeProgram[]>(compute_count)),
-		_material_templates(std::make_unique<MaterialTemplate[]>(template_count)) {
+        _spirv(std::make_unique<SpirVData[]>(spirv_count)),
+        _computes(std::make_unique<ComputeProgram[]>(compute_count)),
+        _material_templates(std::make_unique<MaterialTemplate[]>(template_count)) {
 
-	load_resources(dptr);
+    load_resources(dptr);
 }
 
 EditorResources::~EditorResources() {
 }
 
 void EditorResources::load_resources(DevicePtr dptr) {
-	for(usize i = 0; i != spirv_count; ++i) {
-		_spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
-	}
+    for(usize i = 0; i != spirv_count; ++i) {
+        _spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
+    }
 
-	for(usize i = 0; i != compute_count; ++i) {
-		_computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[i]));
-	}
+    for(usize i = 0; i != compute_count; ++i) {
+        _computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[i]));
+    }
 
-	for(usize i = 0; i != template_count; ++i) {
-		const auto& data = material_datas[i];
-		auto template_data = MaterialTemplateData()
-				.set_frag_data(_spirv[data.frag])
-				.set_vert_data(_spirv[data.vert])
-				.set_depth_mode(data.depth_tested ? DepthTestMode::Standard : DepthTestMode::None)
-				.set_cull_mode(data.culled ? CullMode::Back : CullMode::None)
-				.set_blend_mode(data.blended ? BlendMode::SrcAlpha : BlendMode::None)
-				.set_primitive_type(data.prim_type)
-			;
+    for(usize i = 0; i != template_count; ++i) {
+        const auto& data = material_datas[i];
+        auto template_data = MaterialTemplateData()
+                .set_frag_data(_spirv[data.frag])
+                .set_vert_data(_spirv[data.vert])
+                .set_depth_mode(data.depth_tested ? DepthTestMode::Standard : DepthTestMode::None)
+                .set_cull_mode(data.culled ? CullMode::Back : CullMode::None)
+                .set_blend_mode(data.blended ? BlendMode::SrcAlpha : BlendMode::None)
+                .set_primitive_type(data.prim_type)
+            ;
 
-		if(data.geom != SpirV::MaxSpirV) {
-			template_data.set_geom_data(_spirv[data.geom]);
-		}
+        if(data.geom != SpirV::MaxSpirV) {
+            template_data.set_geom_data(_spirv[data.geom]);
+        }
 
-		_material_templates[i] = MaterialTemplate(dptr, std::move(template_data));
-	}
+        _material_templates[i] = MaterialTemplate(dptr, std::move(template_data));
+    }
 }
 
 DevicePtr EditorResources::device() const {
-	return _computes[0].device();
+    return _computes[0].device();
 }
 
 const ComputeProgram& EditorResources::operator[](ComputePrograms i) const {
-	y_debug_assert(usize(i) < usize(MaxComputePrograms));
-	return _computes[usize(i)];
+    y_debug_assert(usize(i) < usize(MaxComputePrograms));
+    return _computes[usize(i)];
 }
 
 const MaterialTemplate* EditorResources::operator[](MaterialTemplates i) const {
-	y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
-	return &_material_templates[usize(i)];
+    y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
+    return &_material_templates[usize(i)];
 }
 
 void EditorResources::reload() {
-	y_profile();
-	const DevicePtr dptr = device();
-	wait_all_queues(dptr);
-	load_resources(dptr);
+    y_profile();
+    const DevicePtr dptr = device();
+    wait_all_queues(dptr);
+    load_resources(dptr);
 }
 
 }
+

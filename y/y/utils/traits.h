@@ -39,12 +39,12 @@ static_assert(!std::is_move_constructible_v<NonMovable>);
 
 template<typename T>
 void do_not_destroy(T&& t) {
-	union U {
-		U() {}
-		~U() {}
-		std::remove_reference_t<T> t;
-	} u;
-	::new(&u.t) std::remove_reference_t<T>(y_fwd(t));
+    union U {
+        U() {}
+        ~U() {}
+        std::remove_reference_t<T> t;
+    } u;
+    ::new(&u.t) std::remove_reference_t<T>(y_fwd(t));
 }
 
 
@@ -56,11 +56,11 @@ using bool_type = typename std::integral_constant<bool, B>;
 namespace detail {
 template<bool C, typename T>
 struct ConstType {
-	using type = T;
+    using type = T;
 };
 template<typename T>
 struct ConstType<true, T> {
-	using type = const T;
+    using type = const T;
 };
 }
 
@@ -91,20 +91,20 @@ struct function_traits<Ret(Args...) const> : function_traits<Ret(Args...)> {};*/
 
 template<typename Ret, typename... Args>
 struct function_traits<Ret(Args...)> {
-	using return_type = Ret;
-	using func_type = Ret(Args...);
+    using return_type = Ret;
+    using func_type = Ret(Args...);
 
-	static constexpr usize n_args = sizeof...(Args);
+    static constexpr usize n_args = sizeof...(Args);
 
-	using argument_pack = std::tuple<std::remove_const_t<std::remove_reference_t<Args>>...>;
+    using argument_pack = std::tuple<std::remove_const_t<std::remove_reference_t<Args>>...>;
 
-	template<usize I>
-	struct args {
-		using type = typename std::tuple_element<I, std::tuple<Args...>>::type;
-	};
+    template<usize I>
+    struct args {
+        using type = typename std::tuple_element<I, std::tuple<Args...>>::type;
+    };
 
-	template<usize I>
-	using arg_type = typename args<I>::type;
+    template<usize I>
+    using arg_type = typename args<I>::type;
 
 };
 
@@ -123,16 +123,16 @@ static auto has_end(...) -> std::false_type;
 
 template<typename T>
 using is_iterable = bool_type<
-		decltype(detail::has_begin<std::remove_reference_t<T>>(nullptr))::value &&
-		decltype(detail::has_end<std::remove_reference_t<T>>(nullptr))::value
-	>;
+        decltype(detail::has_begin<std::remove_reference_t<T>>(nullptr))::value &&
+        decltype(detail::has_end<std::remove_reference_t<T>>(nullptr))::value
+    >;
 
 template<typename T>
 static constexpr bool is_iterable_v = is_iterable<T>::value;
 
 template<typename T>
 struct remove_cvref {
-	using type = std::remove_cv_t<std::remove_reference_t<T>>;
+    using type = std::remove_cv_t<std::remove_reference_t<T>>;
 };
 
 template<typename T>
@@ -175,3 +175,4 @@ static constexpr bool has_make_empty_v = is_detected_v<detail::has_make_empty_t,
 
 
 #endif // Y_UTILS_TRAITS_H
+

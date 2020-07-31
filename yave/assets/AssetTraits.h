@@ -32,29 +32,30 @@ namespace yave {
 
 template<typename T>
 struct AssetTraits {
-	static constexpr bool is_asset = false;
+    static constexpr bool is_asset = false;
 };
 
 
-#define YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Type, LoadFrom, TypeEnum)							\
-	template<>																				\
-	struct AssetTraits<Type> {																\
-		static constexpr bool is_asset = true;												\
-		static constexpr bool is_graphic_asset = true;										\
-		static constexpr AssetType type = TypeEnum;											\
-		using load_from = LoadFrom;															\
-	}
+#define YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Type, LoadFrom, TypeEnum)                         \
+    template<>                                                                              \
+    struct AssetTraits<Type> {                                                              \
+        static constexpr bool is_asset = true;                                              \
+        static constexpr bool is_graphic_asset = true;                                      \
+        static constexpr AssetType type = TypeEnum;                                         \
+        using load_from = LoadFrom;                                                         \
+    }
 
-#define YAVE_DECLARE_GENERIC_ASSET_TRAITS(Type, TypeEnum)									\
-	template<>																				\
-	struct AssetTraits<Type> {																\
-		static constexpr bool is_asset = true;												\
-		static constexpr bool is_graphic_asset = false;										\
-		static constexpr AssetType type = TypeEnum;											\
-		using load_from = Type;																\
-	}
+#define YAVE_DECLARE_GENERIC_ASSET_TRAITS(Type, TypeEnum)                                   \
+    template<>                                                                              \
+    struct AssetTraits<Type> {                                                              \
+        static constexpr bool is_asset = true;                                              \
+        static constexpr bool is_graphic_asset = false;                                     \
+        static constexpr AssetType type = TypeEnum;                                         \
+        using load_from = Type;                                                             \
+    }
 
 
 }
 
 #endif // YAVE_ASSETS_ASSETTRAITS_H
+

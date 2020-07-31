@@ -31,19 +31,20 @@ namespace yave {
 
 class TimeQuery : NonMovable, public DeviceLinked {
 
-	public:
-		TimeQuery(DevicePtr dptr);
-		~TimeQuery();
+    public:
+        TimeQuery(DevicePtr dptr);
+        ~TimeQuery();
 
-		void start(CmdBufferRecorder& recorder);
-		void stop(CmdBufferRecorder& recorder);
+        void start(CmdBufferRecorder& recorder);
+        void stop(CmdBufferRecorder& recorder);
 
-		core::Duration get();
+        core::Duration get();
 
-	private:
-		VkQueryPool _pool;
+    private:
+        VkQueryPool _pool;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_COMMANDS_TIMEQUERY_H
+

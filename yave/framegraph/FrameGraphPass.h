@@ -37,53 +37,54 @@ namespace yave {
 
 class FrameGraphPass final : NonMovable {
 
-	struct Attachment {
-		FrameGraphImageId image;
-	};
+    struct Attachment {
+        FrameGraphImageId image;
+    };
 
-	public:
-		struct ResourceUsageInfo {
-			PipelineStage stage = PipelineStage::None;
-		};
+    public:
+        struct ResourceUsageInfo {
+            PipelineStage stage = PipelineStage::None;
+        };
 
-		using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
+        using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
-		FrameGraphPass(std::string_view name, FrameGraph* parent, usize index);
+        FrameGraphPass(std::string_view name, FrameGraph* parent, usize index);
 
-		const core::String& name() const;
-		const FrameGraphFrameResources& resources() const;
+        const core::String& name() const;
+        const FrameGraphFrameResources& resources() const;
 
-		const Framebuffer& framebuffer() const;
-		core::Span<DescriptorSet> descriptor_sets() const;
+        const Framebuffer& framebuffer() const;
+        core::Span<DescriptorSet> descriptor_sets() const;
 
-		void render(CmdBufferRecorder& recorder) &&;
+        void render(CmdBufferRecorder& recorder) &&;
 
-	private:
-		friend class FrameGraph;
-		friend class FrameGraphPassBuilder;
+    private:
+        friend class FrameGraph;
+        friend class FrameGraphPassBuilder;
 
-		void init_framebuffer(const FrameGraphFrameResources& resources);
-		void init_descriptor_sets(const FrameGraphFrameResources& resources);
+        void init_framebuffer(const FrameGraphFrameResources& resources);
+        void init_descriptor_sets(const FrameGraphFrameResources& resources);
 
-		render_func _render = [](CmdBufferRecorder&, const FrameGraphPass*) {};
-		core::String _name;
+        render_func _render = [](CmdBufferRecorder&, const FrameGraphPass*) {};
+        core::String _name;
 
-		FrameGraph* _parent = nullptr;
-		const usize _index;
+        FrameGraph* _parent = nullptr;
+        const usize _index;
 
-		using hash_t = std::hash<FrameGraphResourceId>;
-		std::unordered_map<FrameGraphImageId, ResourceUsageInfo, hash_t> _images;
-		std::unordered_map<FrameGraphBufferId, ResourceUsageInfo, hash_t> _buffers;
+        using hash_t = std::hash<FrameGraphResourceId>;
+        std::unordered_map<FrameGraphImageId, ResourceUsageInfo, hash_t> _images;
+        std::unordered_map<FrameGraphBufferId, ResourceUsageInfo, hash_t> _buffers;
 
-		core::Vector<core::Vector<FrameGraphDescriptorBinding>> _bindings;
-		core::Vector<DescriptorSet> _descriptor_sets;
+        core::Vector<core::Vector<FrameGraphDescriptorBinding>> _bindings;
+        core::Vector<DescriptorSet> _descriptor_sets;
 
-		Attachment _depth;
-		core::Vector<Attachment> _colors;
+        Attachment _depth;
+        core::Vector<Attachment> _colors;
 
-		Framebuffer _framebuffer;
+        Framebuffer _framebuffer;
 };
 
 }
 
 #endif // YAVE_FRAMEGRAPH_FRAMEGRAPHPASS_H
+

@@ -39,79 +39,79 @@ SOFTWARE.
 using namespace y;
 
 struct Inner {
-	int x = 9;
+    int x = 9;
 
-	y_serde3(x)
+    y_serde3(x)
 };
 
 struct Poly {
-	virtual ~Poly() {
-	}
+    virtual ~Poly() {
+    }
 
-	virtual void print() const {
-		log_msg("Poly");
-	}
+    virtual void print() const {
+        log_msg("Poly");
+    }
 
-	y_serde3_poly_base(Poly)
+    y_serde3_poly_base(Poly)
 };
 
 struct Derived : Poly {
-	y_serde3_poly(Derived)
-	y_serde3(x)
+    y_serde3_poly(Derived)
+    y_serde3(x)
 
 
-	void print() const override {
-		log_msg(fmt("Derived{%}", x));
-	}
+    void print() const override {
+        log_msg(fmt("Derived{%}", x));
+    }
 
-	int x = 7;
+    int x = 7;
 };
 
 
 struct TestStruct {
 
-	int a = 7;
-	double b = 2.0;
-	core::String floop = "ihandozlabndo";
-	Inner inner;
-	std::unique_ptr<Poly> poly;
-	std::tuple<int, float> tpl;
+    int a = 7;
+    double b = 2.0;
+    core::String floop = "ihandozlabndo";
+    Inner inner;
+    std::unique_ptr<Poly> poly;
+    std::tuple<int, float> tpl;
 
-	void print() const {
-		log_msg(fmt("% % % % <%>", a, b, floop, inner.x, tpl));
-		if(poly) {
-			poly->print();
-		}
-	}
+    void print() const {
+        log_msg(fmt("% % % % <%>", a, b, floop, inner.x, tpl));
+        if(poly) {
+            poly->print();
+        }
+    }
 
-	y_serde3(b, a, inner, tpl, poly)
+    y_serde3(b, a, inner, tpl, poly)
 };
 
 
 int main() {
-	core::result::break_on_error = true;
+    core::result::break_on_error = true;
 
-	if(auto r0 = io2::File::open("test.bin")) {
-		io2::File& file = r0.unwrap();
+    if(auto r0 = io2::File::open("test.bin")) {
+        io2::File& file = r0.unwrap();
 
-		TestStruct s;
-		auto res = serde3::ReadableArchive(file).deserialize(s).unwrap();
-		if(res == serde3::Success::Partial) {
-			log_msg("Partial", Log::Warning);
-		} else {
-			log_msg("Ok");
-		}
-		s.print();
-	} else {
-		auto r1 =  io2::File::create("test.bin");
-		io2::File& file = r1.unwrap();
+        TestStruct s;
+        auto res = serde3::ReadableArchive(file).deserialize(s).unwrap();
+        if(res == serde3::Success::Partial) {
+            log_msg("Partial", Log::Warning);
+        } else {
+            log_msg("Ok");
+        }
+        s.print();
+    } else {
+        auto r1 =  io2::File::create("test.bin");
+        io2::File& file = r1.unwrap();
 
-		log_msg("File doesn't exists, creating", Log::Error);
+        log_msg("File doesn't exists, creating", Log::Error);
 
-		const TestStruct s{ 19, 3.145f, "maap", {-99}, std::make_unique<Derived>(), {33, -0.1f}};
-		serde3::WritableArchive(file).serialize(s).unwrap();
-		s.print();
-	}
+        const TestStruct s{ 19, 3.145f, "maap", {-99}, std::make_unique<Derived>(), {33, -0.1f}};
+        serde3::WritableArchive(file).serialize(s).unwrap();
+        s.print();
+    }
 }
 
 #endif
@@ -124,15 +124,16 @@ using namespace y;
 
 int main() {
 
-	const bool ok = test::run_tests();
+    const bool ok = test::run_tests();
 
-	if(ok) {
-		log_msg("All tests OK\n");
-	} else {
-		log_msg("Tests failed\n", Log::Error);
-	}
+    if(ok) {
+        log_msg("All tests OK\n");
+    } else {
+        log_msg("Tests failed\n", Log::Error);
+    }
 
-	return ok ? 0 : 1;
+    return ok ? 0 : 1;
 }
 
 #endif
+

@@ -35,57 +35,58 @@ SOFTWARE.
 namespace yave {
 
 class AssetLoadingThreadPool : NonMovable {
-	public:
-		using CreateFunc = std::function<void()>;
-		using ReadFunc = std::function<CreateFunc(AssetLoadingContext&)>;
+    public:
+        using CreateFunc = std::function<void()>;
+        using ReadFunc = std::function<CreateFunc(AssetLoadingContext&)>;
 
-		class LoadingJob : NonMovable {
-			public:
-				virtual ~LoadingJob();
+        class LoadingJob : NonMovable {
+            public:
+                virtual ~LoadingJob();
 
-				virtual core::Result<void> read() = 0;
-				virtual void finalize(DevicePtr dptr) = 0;
-				virtual void set_dependencies_failed() = 0;
+                virtual core::Result<void> read() = 0;
+                virtual void finalize(DevicePtr dptr) = 0;
+                virtual void set_dependencies_failed() = 0;
 
-				const AssetDependencies& dependencies() const;
-				AssetLoader* parent() const;
+                const AssetDependencies& dependencies() const;
+                AssetLoader* parent() const;
 
-			protected:
-				LoadingJob(AssetLoader* loader);
+            protected:
+                LoadingJob(AssetLoader* loader);
 
-				AssetLoadingContext& loading_context();
+                AssetLoadingContext& loading_context();
 
-			private:
-				AssetLoadingContext _ctx;
-		};
-
-
-		AssetLoadingThreadPool(AssetLoader* parent, usize concurency = 1);
-		~AssetLoadingThreadPool();
-
-		DevicePtr device() const;
+            private:
+                AssetLoadingContext _ctx;
+        };
 
 
-		void wait_until_loaded(const GenericAssetPtr& ptr);
+        AssetLoadingThreadPool(AssetLoader* parent, usize concurency = 1);
+        ~AssetLoadingThreadPool();
 
-		void add_loading_job(std::unique_ptr<LoadingJob> job);
+        DevicePtr device() const;
 
-	private:
-		void process_one(std::unique_lock<std::mutex> lock);
-		void worker();
 
-		std::deque<std::unique_ptr<LoadingJob>> _loading_jobs;
-		std::list<std::unique_ptr<LoadingJob>> _finalize_jobs;
+        void wait_until_loaded(const GenericAssetPtr& ptr);
 
-		std::mutex _lock;
-		std::condition_variable _condition;
+        void add_loading_job(std::unique_ptr<LoadingJob> job);
 
-		core::Vector<std::thread> _threads;
-		std::atomic<bool> _run = true;
+    private:
+        void process_one(std::unique_lock<std::mutex> lock);
+        void worker();
 
-		AssetLoader* _parent = nullptr;
+        std::deque<std::unique_ptr<LoadingJob>> _loading_jobs;
+        std::list<std::unique_ptr<LoadingJob>> _finalize_jobs;
+
+        std::mutex _lock;
+        std::condition_variable _condition;
+
+        core::Vector<std::thread> _threads;
+        std::atomic<bool> _run = true;
+
+        AssetLoader* _parent = nullptr;
 };
 
 }
 
 #endif // YAVE_ASSETS_ASSETLOADINGTHREADPOOL_H
+

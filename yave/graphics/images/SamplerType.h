@@ -27,10 +27,11 @@ SOFTWARE.
 namespace yave {
 
 enum class SamplerType {
-	Repeat,
-	Clamp
+    Repeat,
+    Clamp
 };
 
 }
 
 #endif // YAVE_GRAPHICS_IMAGES_SAMPLERTYPE_H
+

@@ -40,19 +40,19 @@ void leave(const char* cat, const char* func);
 void event(const char* cat, const char* name);
 
 inline auto log_func(const char* func, const char* cat = "") {
-	class Logger : NonCopyable {
-		const char* _cat;
-		const char* _func;
-		public:
-			Logger(const char* cat, const char* func) : _cat(cat), _func(func) {
-				enter(cat, func);
-			}
-			~Logger() {
-				leave(_cat, _func);
-			}
-	};
+    class Logger : NonCopyable {
+        const char* _cat;
+        const char* _func;
+        public:
+            Logger(const char* cat, const char* func) : _cat(cat), _func(func) {
+                enter(cat, func);
+            }
+            ~Logger() {
+                leave(_cat, _func);
+            }
+    };
 
-	return Logger(cat, func);
+    return Logger(cat, func);
 }
 
 #ifdef Y_PERF_LOG_ENABLED
@@ -60,15 +60,15 @@ inline auto log_func(const char* func, const char* cat = "") {
 #define y_profile_event() y::perf::event("", Y_FUNCTION_NAME)
 #define y_profile() auto y_create_name_with_prefix(prof) = y::perf::log_func(Y_FUNCTION_NAME)
 #define y_profile_zone(name) auto y_create_name_with_prefix(prof) = y::perf::log_func(name)
-#define y_profile_unique_lock(inner) [&]() {							\
-		std::unique_lock l(inner, std::defer_lock);						\
-		if(l.try_lock()) {												\
-			return l;													\
-		}																\
-		y_profile_zone("waiting for lock: " #inner);					\
-		l.lock();														\
-		return l;														\
-	}()
+#define y_profile_unique_lock(inner) [&]() {                            \
+        std::unique_lock l(inner, std::defer_lock);                     \
+        if(l.try_lock()) {                                              \
+            return l;                                                   \
+        }                                                               \
+        y_profile_zone("waiting for lock: " #inner);                    \
+        l.lock();                                                       \
+        return l;                                                       \
+    }()
 
 #else
 
@@ -82,3 +82,4 @@ inline auto log_func(const char* func, const char* cat = "") {
 }
 
 #endif // Y_UTILS_PERF_H
+

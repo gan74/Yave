@@ -38,94 +38,95 @@ namespace editor {
 
 class EditorContext : NonMovable, public DeviceLinked {
 
-	public:
-		EditorContext(DevicePtr dptr);
-		~EditorContext();
+    public:
+        EditorContext(DevicePtr dptr);
+        ~EditorContext();
 
-		void flush_reload();
+        void flush_reload();
 
-		void start_perf_capture();
-		void end_perf_capture();
-		void reload_device_resources();
-		void set_device_resource_reloaded();
-		bool device_resources_reload_requested() const;
-
-
-		void defer(std::function<void()> func);
-		void flush_deferred();
-
-		void log_message(std::string_view msg, Log type);
-
-		void save_world() const;
-		void load_world();
-		void new_world();
+        void start_perf_capture();
+        void end_perf_capture();
+        void reload_device_resources();
+        void set_device_resource_reloaded();
+        bool device_resources_reload_requested() const;
 
 
-		void set_scene_view(SceneView* scene);
-		void remove_scene_view(SceneView* scene);
+        void defer(std::function<void()> func);
+        void flush_deferred();
 
-		SceneView& scene_view();
-		SceneView& default_scene_view();
+        void log_message(std::string_view msg, Log type);
 
-		ecs::EntityWorld& world();
-
-		const FileSystemModel* filesystem() const;
-
-		const EditorResources& resources() const;
-		EditorResources& resources();
-
-		EditorState& editor_state();
-		Settings& settings();
-		Selection& selection();
-		AssetLoader& loader();
-		Ui& ui();
-		ThumbmailCache& thumbmail_cache();
-		PickingManager& picking_manager();
-		AssetStore& asset_store();
-		Logs& logs();
-		Notifications& notifications();
+        void save_world() const;
+        void load_world();
+        void new_world();
 
 
-		template<typename C>
-		decltype(auto) tqdm(C&& c, core::String msg) {
-			return notifications().tqdm(y_fwd(c), std::move(msg));
-		}
+        void set_scene_view(SceneView* scene);
+        void remove_scene_view(SceneView* scene);
 
-	private:
-		static ecs::EntityWorld create_editor_world();
+        SceneView& scene_view();
+        SceneView& default_scene_view();
 
-		std::unique_ptr<FileSystemModel> _filesystem;
+        ecs::EntityWorld& world();
 
-		std::mutex _deferred_lock;
-		core::Vector<std::function<void()>> _deferred;
-		bool _is_flushing_deferred = false;
+        const FileSystemModel* filesystem() const;
 
-		EditorResources _resources;
+        const EditorResources& resources() const;
+        EditorResources& resources();
 
-		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+        EditorState& editor_state();
+        Settings& settings();
+        Selection& selection();
+        AssetLoader& loader();
+        Ui& ui();
+        ThumbmailCache& thumbmail_cache();
+        PickingManager& picking_manager();
+        AssetStore& asset_store();
+        Logs& logs();
+        Notifications& notifications();
 
-		std::shared_ptr<AssetStore> _asset_store;
-		AssetLoader _loader;
 
-		SceneView _default_scene_view;
-		SceneView* _scene_view = nullptr;
+        template<typename C>
+        decltype(auto) tqdm(C&& c, core::String msg) {
+            return notifications().tqdm(y_fwd(c), std::move(msg));
+        }
+
+    private:
+        static ecs::EntityWorld create_editor_world();
+
+        std::unique_ptr<FileSystemModel> _filesystem;
+
+        std::mutex _deferred_lock;
+        core::Vector<std::function<void()>> _deferred;
+        bool _is_flushing_deferred = false;
+
+        EditorResources _resources;
+
+        std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+
+        std::shared_ptr<AssetStore> _asset_store;
+        AssetLoader _loader;
+
+        SceneView _default_scene_view;
+        SceneView* _scene_view = nullptr;
 
 
-		EditorState _editor_state;
-		Settings _settings;
-		Selection _selection;
-		Ui _ui;
-		Logs _logs;
-		Notifications _notifs;
-		ThumbmailCache _thumb_cache;
-		PickingManager _picking_manager;
+        EditorState _editor_state;
+        Settings _settings;
+        Selection _selection;
+        Ui _ui;
+        Logs _logs;
+        Notifications _notifs;
+        ThumbmailCache _thumb_cache;
+        PickingManager _picking_manager;
 
-		ecs::EntityWorld _world;
+        ecs::EntityWorld _world;
 
-		bool _reload_resources = false;
-		usize _perf_capture_frames = 0;
+        bool _reload_resources = false;
+        usize _perf_capture_frames = 0;
 };
 
 }
 
 #endif // EDITOR_CONTEXT_EDITORCONTEXT_H
+

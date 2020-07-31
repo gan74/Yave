@@ -30,43 +30,43 @@ namespace editor {
 
 template<typename T>
 class Named {
-	public:
-		Named() = default;
+    public:
+        Named() = default;
 
-		Named(std::string_view name, T&& obj) : _name(name), _obj(std::move(obj)) {
-		}
+        Named(std::string_view name, T&& obj) : _name(name), _obj(std::move(obj)) {
+        }
 
-		explicit Named(T&& obj) : Named("unamed", std::move(obj)) {
-		}
+        explicit Named(T&& obj) : Named("unamed", std::move(obj)) {
+        }
 
-		const core::String& name() const {
-			return _name;
-		}
+        const core::String& name() const {
+            return _name;
+        }
 
-		const T& obj() const {
-			return _obj;
-		}
+        const T& obj() const {
+            return _obj;
+        }
 
-		T& obj() {
-			return _obj;
-		}
+        T& obj() {
+            return _obj;
+        }
 
-		operator T&() {
-			return _obj;
-		}
+        operator T&() {
+            return _obj;
+        }
 
-		operator const T&() const {
-			return _obj;
-		}
+        operator const T&() const {
+            return _obj;
+        }
 
-		Named& operator=(T&& obj) {
-			_obj = std::move(obj);
-			return *this;
-		}
+        Named& operator=(T&& obj) {
+            _obj = std::move(obj);
+            return *this;
+        }
 
-	private:
-		core::String _name;
-		T _obj;
+    private:
+        core::String _name;
+        T _obj;
 };
 
 template<typename T>
@@ -75,3 +75,4 @@ Named(std::string_view, T&&) -> Named<T>;
 }
 
 #endif // EDITOR_UTILS_NAMED_H
+

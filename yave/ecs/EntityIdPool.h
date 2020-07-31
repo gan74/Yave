@@ -35,35 +35,36 @@ namespace yave {
 namespace ecs {
 
 class EntityIdPool {
-	public:
-		EntityIdPool() = default;
-		EntityIdPool(EntityIdPool&&) = default;
-		EntityIdPool& operator=(EntityIdPool&&) = default;
+    public:
+        EntityIdPool() = default;
+        EntityIdPool(EntityIdPool&&) = default;
+        EntityIdPool& operator=(EntityIdPool&&) = default;
 
-		usize size() const;
-		bool contains(EntityId id) const;
+        usize size() const;
+        bool contains(EntityId id) const;
 
-		EntityId id_from_index(u32 index) const;
+        EntityId id_from_index(u32 index) const;
 
-		EntityId create();
-		void recycle(EntityId id);
+        EntityId create();
+        void recycle(EntityId id);
 
 
-		auto ids() const {
-			return core::Range(
-				FilterIterator(_ids.begin(), _ids.end(), [](EntityId id) { return id.is_valid(); }),
-				EndIterator()
-			);
-		}
+        auto ids() const {
+            return core::Range(
+                FilterIterator(_ids.begin(), _ids.end(), [](EntityId id) { return id.is_valid(); }),
+                EndIterator()
+            );
+        }
 
-		y_serde3(_ids, _free)
+        y_serde3(_ids, _free)
 
-	private:
-		core::Vector<EntityId> _ids;
-		core::Vector<u32> _free;
+    private:
+        core::Vector<EntityId> _ids;
+        core::Vector<u32> _free;
 };
 
 }
 }
 
 #endif // YAVE_ECS_ENTITYIDPOOL_H
+

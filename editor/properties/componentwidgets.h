@@ -29,8 +29,8 @@ namespace editor {
 namespace detail {
 using component_widget_func_t = void (*)(ContextPtr ctx, ecs::EntityId id);
 struct ComponentWidgetData {
-	component_widget_func_t func = nullptr;
-	ComponentWidgetData* next = nullptr;
+    component_widget_func_t func = nullptr;
+    ComponentWidgetData* next = nullptr;
 };
 
 void register_component_widget(ComponentWidgetData* data);
@@ -39,20 +39,20 @@ void register_component_widget(ComponentWidgetData* data);
 #define EDITOR_WIDGET_REG_RUNNER y_create_name_with_prefix(runner)
 #define EDITOR_WIDGET_FUNC y_create_name_with_prefix(widget)
 
-#define editor_widget_draw_func(...)																	\
-static void EDITOR_WIDGET_FUNC(ContextPtr ctx, ecs::EntityId id);										\
-namespace {																								\
-	class EDITOR_WIDGET_REG_RUNNER {																	\
-		EDITOR_WIDGET_REG_RUNNER() {																	\
-			comp_data.func = &EDITOR_WIDGET_FUNC;														\
-			detail::register_component_widget(&comp_data);												\
-		}																								\
-		static detail::ComponentWidgetData comp_data;													\
-		static EDITOR_WIDGET_REG_RUNNER runner;															\
-	};																									\
-	detail::ComponentWidgetData EDITOR_WIDGET_REG_RUNNER::comp_data = {};								\
-	EDITOR_WIDGET_REG_RUNNER EDITOR_WIDGET_REG_RUNNER::runner = {};										\
-}																										\
+#define editor_widget_draw_func(...)                                                                    \
+static void EDITOR_WIDGET_FUNC(ContextPtr ctx, ecs::EntityId id);                                       \
+namespace {                                                                                             \
+    class EDITOR_WIDGET_REG_RUNNER {                                                                    \
+        EDITOR_WIDGET_REG_RUNNER() {                                                                    \
+            comp_data.func = &EDITOR_WIDGET_FUNC;                                                       \
+            detail::register_component_widget(&comp_data);                                              \
+        }                                                                                               \
+        static detail::ComponentWidgetData comp_data;                                                   \
+        static EDITOR_WIDGET_REG_RUNNER runner;                                                         \
+    };                                                                                                  \
+    detail::ComponentWidgetData EDITOR_WIDGET_REG_RUNNER::comp_data = {};                               \
+    EDITOR_WIDGET_REG_RUNNER EDITOR_WIDGET_REG_RUNNER::runner = {};                                     \
+}                                                                                                       \
 void EDITOR_WIDGET_FUNC(__VA_ARGS__)
 
 
@@ -62,3 +62,4 @@ void draw_component_widgets(ContextPtr ctx, ecs::EntityId id);
 
 
 #endif // EDITOR_PROPERTIES_COMPONENTWIDGETS_H
+

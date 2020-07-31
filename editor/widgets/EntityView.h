@@ -31,19 +31,20 @@ namespace editor {
 
 class EntityView final : public Widget, public ContextLinked {
 
-	public:
-		EntityView(ContextPtr cptr);
+    public:
+        EntityView(ContextPtr cptr);
 
-	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+    private:
+        void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
-		void paint_view();
+        void paint_view();
 
-		ecs::EntityId _hovered;
+        ecs::EntityId _hovered;
 
-		core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> _all_components;
+        core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> _all_components;
 };
 
 }
 
 #endif // EDITOR_WIDGETS_ENTITYVIEW_H
+

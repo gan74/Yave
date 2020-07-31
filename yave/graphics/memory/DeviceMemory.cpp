@@ -26,66 +26,67 @@ SOFTWARE.
 namespace yave {
 
 DeviceMemory::DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, usize offset, usize size) :
-		DeviceMemory(heap->device(), memory, offset, size) {
-	_heap = heap;
+        DeviceMemory(heap->device(), memory, offset, size) {
+    _heap = heap;
 }
 
 DeviceMemory::DeviceMemory(DevicePtr dptr, VkDeviceMemory memory, usize offset, usize size) :
-		DeviceLinked(dptr),
-		_memory(memory),
-		_offset(offset),
-		_size(size) {
+        DeviceLinked(dptr),
+        _memory(memory),
+        _offset(offset),
+        _size(size) {
 }
 
 DeviceMemory::DeviceMemory(DeviceMemory&& other) {
-	swap(other);
+    swap(other);
 }
 
 DeviceMemory& DeviceMemory::operator=(DeviceMemory&& other) {
-	swap(other);
-	return *this;
+    swap(other);
+    return *this;
 }
 
 DeviceMemory::~DeviceMemory() {
-	Y_TODO(right now we have to do device()->destroy to recycle memory properly, maybe we want to change that)
-	if(device()) {
-		y_fatal("DeviceMemory has not been freed.");
-	}
+    Y_TODO(right now we have to do device()->destroy to recycle memory properly, maybe we want to change that)
+    if(device()) {
+        y_fatal("DeviceMemory has not been freed.");
+    }
 }
 
 void DeviceMemory::free() {
-	y_profile();
-	if(_memory && _heap) {
-		_heap->free(*this);
-	}
-	// set device to nullptr
-	struct Empty : DeviceLinked {} empty;
-	DeviceLinked::swap(empty);
+    y_profile();
+    if(_memory && _heap) {
+        _heap->free(*this);
+    }
+    // set device to nullptr
+    struct Empty : DeviceLinked {} empty;
+    DeviceLinked::swap(empty);
 }
 
 VkDeviceMemory DeviceMemory::vk_memory() const {
-	return _memory;
+    return _memory;
 }
 
 usize DeviceMemory::vk_offset() const {
-	return _offset;
+    return _offset;
 }
 
 usize DeviceMemory::vk_size() const {
-	return _size;
+    return _size;
 }
 
 DeviceMemoryHeapBase* DeviceMemory::heap() const {
-	return _heap;
+    return _heap;
 }
 
 void DeviceMemory::swap(DeviceMemory& other) {
-	DeviceLinked::swap(other);
-	std::swap(_heap, other._heap);
-	std::swap(_memory, other._memory);
-	std::swap(_offset, other._offset);
-	std::swap(_size, other._size);
+    DeviceLinked::swap(other);
+    std::swap(_heap, other._heap);
+    std::swap(_memory, other._memory);
+    std::swap(_offset, other._offset);
+    std::swap(_size, other._size);
 }
 
 
 }
+

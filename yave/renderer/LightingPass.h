@@ -28,14 +28,15 @@ SOFTWARE.
 namespace yave {
 
 struct LightingPass {
-	FrameGraphImageId lit;
+    FrameGraphImageId lit;
 
-	ShadowMapPass shadow_pass;
+    ShadowMapPass shadow_pass;
 
-	static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const ShadowMapPassSettings& settings = ShadowMapPassSettings());
+    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const ShadowMapPassSettings& settings = ShadowMapPassSettings());
 };
 
 
 }
 
 #endif // YAVE_RENDERER_LIGHTINGPASS_H
+

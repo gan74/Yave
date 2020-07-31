@@ -30,62 +30,62 @@ SOFTWARE.
 namespace editor {
 
 class UiElement : NonMovable {
-	public:
-		UiElement(std::string_view title);
+    public:
+        UiElement(std::string_view title);
 
-		virtual ~UiElement();
+        virtual ~UiElement();
 
-		virtual void refresh();
+        virtual void refresh();
 
-		virtual void paint(CmdBufferRecorder&, const FrameToken&) = 0;
+        virtual void paint(CmdBufferRecorder&, const FrameToken&) = 0;
 
-		void set_parent(UiElement* parent);
-		bool has_parent() const;
+        void set_parent(UiElement* parent);
+        bool has_parent() const;
 
-		bool is_visible() const;
-		bool is_child() const;
-		bool has_children() const;
+        bool is_visible() const;
+        bool is_child() const;
+        bool has_children() const;
 
-		void show();
-		void close();
+        void show();
+        void close();
 
-		std::string_view title() const;
-		core::Span<std::unique_ptr<UiElement>> children() const;
+        std::string_view title() const;
+        core::Span<std::unique_ptr<UiElement>> children() const;
 
-		template<typename T, typename... Args>
-		T* add_child(Args&&... args) {
-			if(has_parent()) {
-				return _parent->add_child<T>(y_fwd(args)...);
-			} else {
-				Y_TODO(Adding several childs breaks stuff)
-				_children.emplace_back(std::make_unique<T>(y_fwd(args)...));
-				_children.last()->_is_child = true;
-				return dynamic_cast<T*>(_children.last().get());
-			}
-		}
+        template<typename T, typename... Args>
+        T* add_child(Args&&... args) {
+            if(has_parent()) {
+                return _parent->add_child<T>(y_fwd(args)...);
+            } else {
+                Y_TODO(Adding several childs breaks stuff)
+                _children.emplace_back(std::make_unique<T>(y_fwd(args)...));
+                _children.last()->_is_child = true;
+                return dynamic_cast<T*>(_children.last().get());
+            }
+        }
 
-	protected:
-		friend class Ui;
+    protected:
+        friend class Ui;
 
-		virtual bool can_destroy() const;
-		void refresh_all();
+        virtual bool can_destroy() const;
+        void refresh_all();
 
-	private:
-		void set_id(u64 id);
-		void set_title(std::string_view title);
+    private:
+        void set_id(u64 id);
+        void set_title(std::string_view title);
 
-		bool has_visible_children() const;
+        bool has_visible_children() const;
 
-		u64 _id = 0;
-		bool _is_child = false;
-		bool _refresh_all = false;
-		core::Vector<std::unique_ptr<UiElement>> _children;
-		UiElement* _parent = nullptr;
+        u64 _id = 0;
+        bool _is_child = false;
+        bool _refresh_all = false;
+        core::Vector<std::unique_ptr<UiElement>> _children;
+        UiElement* _parent = nullptr;
 
-	protected:
-		core::String _title_with_id;
-		std::string_view _title;
-		bool _visible = true;
+    protected:
+        core::String _title_with_id;
+        std::string_view _title;
+        bool _visible = true;
 
 
 };
@@ -93,3 +93,4 @@ class UiElement : NonMovable {
 }
 
 #endif // EDITOR_UI_UIELEMENT_H
+

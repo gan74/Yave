@@ -31,51 +31,52 @@ namespace yave {
 
 class SimpleMaterialData {
 
-	public:
-		enum Textures {
-			Diffuse,
-			Normal,
-			Roughness,
-			Metallic,
-			Max
-		};
+    public:
+        enum Textures {
+            Diffuse,
+            Normal,
+            Roughness,
+            Metallic,
+            Max
+        };
 
-		struct Contants {
-			float roughness_mul = 1.0f;
-			float metallic_mul = 0.0f;
-		};
+        struct Contants {
+            float roughness_mul = 1.0f;
+            float metallic_mul = 0.0f;
+        };
 
-		Y_TODO(creating materials requires loading textures)
+        Y_TODO(creating materials requires loading textures)
 
-		static constexpr usize texture_count = usize(Textures::Max);
+        static constexpr usize texture_count = usize(Textures::Max);
 
-		SimpleMaterialData() = default;
-		SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
+        SimpleMaterialData() = default;
+        SimpleMaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
-		SimpleMaterialData& set_texture(Textures type, AssetPtr<Texture> tex);
-		SimpleMaterialData& set_texture_reset_constants(Textures type, AssetPtr<Texture> tex);
+        SimpleMaterialData& set_texture(Textures type, AssetPtr<Texture> tex);
+        SimpleMaterialData& set_texture_reset_constants(Textures type, AssetPtr<Texture> tex);
 
-		bool is_empty() const;
+        bool is_empty() const;
 
-		const AssetPtr<Texture>& operator[](Textures tex) const;
-		const std::array<AssetPtr<Texture>, texture_count>& textures() const;
+        const AssetPtr<Texture>& operator[](Textures tex) const;
+        const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 
-		const Contants& constants() const { return _constants; }
-		Contants& constants() { return _constants; }
+        const Contants& constants() const { return _constants; }
+        Contants& constants() { return _constants; }
 
-		bool alpha_tested() const { return _alpha_tested; }
-		bool& alpha_tested() { return _alpha_tested; }
+        bool alpha_tested() const { return _alpha_tested; }
+        bool& alpha_tested() { return _alpha_tested; }
 
-		y_serde3(_textures, _constants, _alpha_tested)
+        y_serde3(_textures, _constants, _alpha_tested)
 
-	private:
-		std::array<AssetId, texture_count> texture_ids() const;
+    private:
+        std::array<AssetId, texture_count> texture_ids() const;
 
-		std::array<AssetPtr<Texture>, texture_count> _textures;
-		Contants _constants;
-		bool _alpha_tested = false;
+        std::array<AssetPtr<Texture>, texture_count> _textures;
+        Contants _constants;
+        bool _alpha_tested = false;
 };
 
 }
 
 #endif // YAVE_MATERIAL_BASICMATERIALDATA_H
+

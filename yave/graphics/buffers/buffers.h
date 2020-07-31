@@ -73,3 +73,4 @@ using IndirectSubBuffer = TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsa
 }
 
 #endif // YAVE_GRAPHICS_BUFFERS_BUFFERS_H
+

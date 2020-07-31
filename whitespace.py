@@ -13,7 +13,7 @@ def process_file(fullname):
         content = f.read()
     
     new_content = ""
-    for line in content.split("\n"):
+    for line in content.replace("\n\r", "\n").split("\n"):
         new_line = ""
         for c in line:
             if c != '\t':
@@ -24,16 +24,17 @@ def process_file(fullname):
                 new_line += " "
         
         new_content += new_line + "\n"
-        
-    with open(fullname, "w") as f:
-        f.write(new_content)
+    
+    if new_content != content:
+        with open(fullname, "w") as f:
+            f.write(new_content)
 
                 
 def process_files(folders):
     for proj in folders:
         for root, dirs, files in os.walk(proj):
             for file in files:
-                if extension(file) not in {"h", "cpp"}:
+                if extension(file) not in {"h", "cpp", "inl"}:
                     continue
                 fullname = root + "/" + file
                 

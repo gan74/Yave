@@ -30,43 +30,43 @@ SOFTWARE.
 namespace yave {
 
 class FileSystemModel : NonCopyable {
-	public:
-		using for_each_f = std::function<void(std::string_view)>;
+    public:
+        using for_each_f = std::function<void(std::string_view)>;
 
-		template<typename T = void>
-		using Result = core::Result<T>;
+        template<typename T = void>
+        using Result = core::Result<T>;
 
-		static const FileSystemModel* local_filesystem();
+        static const FileSystemModel* local_filesystem();
 
-		virtual ~FileSystemModel() {
-		}
+        virtual ~FileSystemModel() {
+        }
 
 
-		virtual Result<core::String> current_path() const = 0;
-		virtual Result<core::String> parent_path(std::string_view path) const;
-		virtual core::String filename(std::string_view path) const = 0;
+        virtual Result<core::String> current_path() const = 0;
+        virtual Result<core::String> parent_path(std::string_view path) const;
+        virtual core::String filename(std::string_view path) const = 0;
 
-		virtual Result<bool> exists(std::string_view path) const = 0;
-		virtual Result<bool> is_directory(std::string_view path) const = 0;
-		virtual Result<bool> is_file(std::string_view path) const;
-		virtual Result<bool> is_parent(std::string_view parent, std::string_view path) const;
+        virtual Result<bool> exists(std::string_view path) const = 0;
+        virtual Result<bool> is_directory(std::string_view path) const = 0;
+        virtual Result<bool> is_file(std::string_view path) const;
+        virtual Result<bool> is_parent(std::string_view parent, std::string_view path) const;
 
-		virtual core::String extention(std::string_view path) const;
+        virtual core::String extention(std::string_view path) const;
 
-		virtual core::String join(std::string_view path, std::string_view name) const = 0;
-		virtual Result<core::String> absolute(std::string_view path) const = 0;
+        virtual core::String join(std::string_view path, std::string_view name) const = 0;
+        virtual Result<core::String> absolute(std::string_view path) const = 0;
 
-		virtual Result<> for_each(std::string_view path, const for_each_f& func) const = 0;
+        virtual Result<> for_each(std::string_view path, const for_each_f& func) const = 0;
 
-		virtual Result<> create_directory(std::string_view path) const = 0;
-		virtual Result<> remove(std::string_view path) const = 0;
-		virtual Result<> rename(std::string_view old_path, std::string_view new_path) const = 0;
+        virtual Result<> create_directory(std::string_view path) const = 0;
+        virtual Result<> remove(std::string_view path) const = 0;
+        virtual Result<> rename(std::string_view old_path, std::string_view new_path) const = 0;
 };
 
 
 class SearchableFileSystemModel : public FileSystemModel {
-	public:
-		virtual Result<core::Vector<core::String>> search(std::string_view pattern) const = 0;
+    public:
+        virtual Result<core::Vector<core::String>> search(std::string_view pattern) const = 0;
 };
 
 
@@ -74,21 +74,21 @@ class SearchableFileSystemModel : public FileSystemModel {
 #ifndef YAVE_NO_STDFS
 
 class LocalFileSystemModel : public FileSystemModel {
-	public:
-		Result<core::String> current_path() const override;
-		core::String filename(std::string_view path) const override;
-		Result<bool> exists(std::string_view path) const override;
-		Result<bool> is_directory(std::string_view path) const override;
-		core::String join(std::string_view path, std::string_view name) const override;
-		Result<core::String> absolute(std::string_view path) const override;
-		Result<> for_each(std::string_view path, const for_each_f& func) const override;
-		Result<> create_directory(std::string_view path) const override;
-		Result<> remove(std::string_view path) const override;
-		Result<> rename(std::string_view from, std::string_view to) const override;
+    public:
+        Result<core::String> current_path() const override;
+        core::String filename(std::string_view path) const override;
+        Result<bool> exists(std::string_view path) const override;
+        Result<bool> is_directory(std::string_view path) const override;
+        core::String join(std::string_view path, std::string_view name) const override;
+        Result<core::String> absolute(std::string_view path) const override;
+        Result<> for_each(std::string_view path, const for_each_f& func) const override;
+        Result<> create_directory(std::string_view path) const override;
+        Result<> remove(std::string_view path) const override;
+        Result<> rename(std::string_view from, std::string_view to) const override;
 
-		bool is_delimiter(char c) const;
-		core::String canonicalize(std::string_view path) const;
-		bool is_canonical(std::string_view path) const;
+        bool is_delimiter(char c) const;
+        core::String canonicalize(std::string_view path) const;
+        bool is_canonical(std::string_view path) const;
 };
 
 #endif
@@ -97,3 +97,4 @@ class LocalFileSystemModel : public FileSystemModel {
 
 
 #endif // YAVE_UTILS_FILESYSTEMMODEL_H
+

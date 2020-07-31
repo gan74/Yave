@@ -29,55 +29,56 @@ FrameGraphPass::FrameGraphPass(std::string_view name, FrameGraph* parent, usize 
 }
 
 const core::String& FrameGraphPass::name() const {
-	return _name;
+    return _name;
 }
 
 const FrameGraphFrameResources& FrameGraphPass::resources() const {
-	return _parent->resources();
+    return _parent->resources();
 }
 
 const Framebuffer& FrameGraphPass::framebuffer() const {
-	if(_framebuffer.is_null()) {
-		y_fatal("Pass has no framebuffer.");
-	}
-	return _framebuffer;
+    if(_framebuffer.is_null()) {
+        y_fatal("Pass has no framebuffer.");
+    }
+    return _framebuffer;
 }
 
 core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
-	return _descriptor_sets;
+    return _descriptor_sets;
 }
 
 void FrameGraphPass::render(CmdBufferRecorder& recorder) && {
-	_render(recorder, this);
+    _render(recorder, this);
 }
 
 void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources) {
-	y_profile();
-	if(_depth.image.is_valid() || _colors.size()) {
-		auto declared_here = [&](FrameGraphImageId id) {
-			const auto& info = _parent->info(id);
-			return info.first_use == _index && !info.is_aliased();
-		};
+    y_profile();
+    if(_depth.image.is_valid() || _colors.size()) {
+        auto declared_here = [&](FrameGraphImageId id) {
+            const auto& info = _parent->info(id);
+            return info.first_use == _index && !info.is_aliased();
+        };
 
-		Framebuffer::DepthAttachment depth;
-		if(_depth.image.is_valid()) {
-			depth = Framebuffer::DepthAttachment(resources.image<ImageUsage::DepthBit>(_depth.image), declared_here(_depth.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
-		}
-		auto colors = core::vector_with_capacity<Framebuffer::ColorAttachment>(_colors.size());
-		for(auto&& color : _colors) {
-			colors << Framebuffer::ColorAttachment(resources.image<ImageUsage::ColorBit>(color.image), declared_here(color.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
-		}
-		_framebuffer = Framebuffer(resources.device(), depth, colors);
-	}
+        Framebuffer::DepthAttachment depth;
+        if(_depth.image.is_valid()) {
+            depth = Framebuffer::DepthAttachment(resources.image<ImageUsage::DepthBit>(_depth.image), declared_here(_depth.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
+        }
+        auto colors = core::vector_with_capacity<Framebuffer::ColorAttachment>(_colors.size());
+        for(auto&& color : _colors) {
+            colors << Framebuffer::ColorAttachment(resources.image<ImageUsage::ColorBit>(color.image), declared_here(color.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
+        }
+        _framebuffer = Framebuffer(resources.device(), depth, colors);
+    }
 }
 
 void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resources) {
-	y_profile();
-	for(const auto& set : _bindings) {
-		auto bindings = core::vector_with_capacity<Descriptor>(set.size());
-		std::transform(set.begin(), set.end(), std::back_inserter(bindings), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });
-		_descriptor_sets << DescriptorSet(resources.device(), bindings);
-	}
+    y_profile();
+    for(const auto& set : _bindings) {
+        auto bindings = core::vector_with_capacity<Descriptor>(set.size());
+        std::transform(set.begin(), set.end(), std::back_inserter(bindings), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });
+        _descriptor_sets << DescriptorSet(resources.device(), bindings);
+    }
 }
 
 }
+

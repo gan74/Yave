@@ -30,31 +30,31 @@ SOFTWARE.
 namespace yave {
 
 static VkGeometryNV create_mesh_geometry(const StaticMesh& mesh) {
-	VkGeometryNV geometry = vk_struct();
+    VkGeometryNV geometry = vk_struct();
 
-	geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
+    geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
+    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
 
-	{
-		geometry.geometry.triangles = vk_struct();
-		geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+    {
+        geometry.geometry.triangles = vk_struct();
+        geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
 
-		geometry.geometry.triangles.vertexData = mesh.vertex_buffer().vk_buffer();
-		geometry.geometry.triangles.vertexOffset = 0;
-		geometry.geometry.triangles.vertexCount = mesh.vertex_buffer().size();
-		geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-		geometry.geometry.triangles.vertexStride = sizeof(Vertex);
+        geometry.geometry.triangles.vertexData = mesh.vertex_buffer().vk_buffer();
+        geometry.geometry.triangles.vertexOffset = 0;
+        geometry.geometry.triangles.vertexCount = mesh.vertex_buffer().size();
+        geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+        geometry.geometry.triangles.vertexStride = sizeof(Vertex);
 
-		geometry.geometry.triangles.indexData = mesh.triangle_buffer().vk_buffer();
-		geometry.geometry.triangles.indexOffset = 0;
-		geometry.geometry.triangles.indexCount = mesh.triangle_buffer().size() * 3;
-		geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
-	}
-	{
-		geometry.geometry.aabbs = vk_struct();
-	}
+        geometry.geometry.triangles.indexData = mesh.triangle_buffer().vk_buffer();
+        geometry.geometry.triangles.indexOffset = 0;
+        geometry.geometry.triangles.indexCount = mesh.triangle_buffer().size() * 3;
+        geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+    }
+    {
+        geometry.geometry.aabbs = vk_struct();
+    }
 
-	return geometry;
+    return geometry;
 }
 
 
@@ -62,52 +62,52 @@ RayTracing::AccelerationStructure::AccelerationStructure(const StaticMesh& mesh)
 }
 
 RayTracing::AccelerationStructure::AccelerationStructure(DevicePtr dptr, core::Span<VkGeometryNV> geometries) {
-	const RayTracing* rt = ray_tracing(dptr);
-	y_debug_assert(rt);
+    const RayTracing* rt = ray_tracing(dptr);
+    y_debug_assert(rt);
 
-	{
-		VkAccelerationStructureInfoNV as_info = vk_struct();
-		as_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
-		as_info.geometryCount = geometries.size();
-		as_info.pGeometries = geometries.data();
+    {
+        VkAccelerationStructureInfoNV as_info = vk_struct();
+        as_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+        as_info.geometryCount = geometries.size();
+        as_info.pGeometries = geometries.data();
 
-		VkAccelerationStructureCreateInfoNV create_info = vk_struct();
-		create_info.info = as_info;
-		vk_check(rt->_create_acceleration_structure(vk_device(dptr), &create_info, vk_allocation_callbacks(device()), &_acceleration_structure.get()));
-	}
+        VkAccelerationStructureCreateInfoNV create_info = vk_struct();
+        create_info.info = as_info;
+        vk_check(rt->_create_acceleration_structure(vk_device(dptr), &create_info, vk_allocation_callbacks(device()), &_acceleration_structure.get()));
+    }
 
-	{
-		VkAccelerationStructureMemoryRequirementsInfoNV mem_reqs_info = vk_struct();
-		mem_reqs_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-		mem_reqs_info.accelerationStructure = _acceleration_structure.get();
+    {
+        VkAccelerationStructureMemoryRequirementsInfoNV mem_reqs_info = vk_struct();
+        mem_reqs_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
+        mem_reqs_info.accelerationStructure = _acceleration_structure.get();
 
-		VkMemoryRequirements2 mem_reqs = vk_struct();
-		rt->_acceleration_structure_memory_reqs(vk_device(dptr), &mem_reqs_info, &mem_reqs);
+        VkMemoryRequirements2 mem_reqs = vk_struct();
+        rt->_acceleration_structure_memory_reqs(vk_device(dptr), &mem_reqs_info, &mem_reqs);
 
-		_memory = device_allocator(dptr).alloc(mem_reqs.memoryRequirements, MemoryType::DeviceLocal);
-	}
+        _memory = device_allocator(dptr).alloc(mem_reqs.memoryRequirements, MemoryType::DeviceLocal);
+    }
 
-	{
-		VkBindAccelerationStructureMemoryInfoNV bind_info = vk_struct();
-		bind_info.accelerationStructure = _acceleration_structure.get();
-		bind_info.memory = _memory.vk_memory();
-		vk_check(rt->_bind_acceleration_structure_memory(vk_device(dptr), 1, &bind_info));
-	}
+    {
+        VkBindAccelerationStructureMemoryInfoNV bind_info = vk_struct();
+        bind_info.accelerationStructure = _acceleration_structure.get();
+        bind_info.memory = _memory.vk_memory();
+        vk_check(rt->_bind_acceleration_structure_memory(vk_device(dptr), 1, &bind_info));
+    }
 }
 
 RayTracing::AccelerationStructure::~AccelerationStructure() {
-	if(DevicePtr dptr = device()) {
-		const RayTracing* rt = ray_tracing(dptr);
-		y_debug_assert(rt);
+    if(DevicePtr dptr = device()) {
+        const RayTracing* rt = ray_tracing(dptr);
+        y_debug_assert(rt);
 
-		rt->_destroy_acceleration_structure(vk_device(dptr), _acceleration_structure.get(), vk_allocation_callbacks(dptr));
+        rt->_destroy_acceleration_structure(vk_device(dptr), _acceleration_structure.get(), vk_allocation_callbacks(dptr));
 
-		device_destroy(dptr, std::move(_memory));
-	}
+        device_destroy(dptr, std::move(_memory));
+    }
 }
 
 DevicePtr RayTracing::AccelerationStructure::device() const {
-	return _memory.device();
+    return _memory.device();
 }
 
 
@@ -115,23 +115,24 @@ DevicePtr RayTracing::AccelerationStructure::device() const {
 
 
 const char* RayTracing::extension_name() {
-	return VK_NV_RAY_TRACING_EXTENSION_NAME;
+    return VK_NV_RAY_TRACING_EXTENSION_NAME;
 }
 
 RayTracing::RayTracing(DevicePtr dptr) : DeviceLinked(dptr) {
 
 #define GET_PROC(name) reinterpret_cast<PFN_ ## name>(vkGetDeviceProcAddr(vk_device(dptr), #name));
 
-	_create_acceleration_structure = GET_PROC(vkCreateAccelerationStructureNV);
-	_destroy_acceleration_structure = GET_PROC(vkDestroyAccelerationStructureNV);
+    _create_acceleration_structure = GET_PROC(vkCreateAccelerationStructureNV);
+    _destroy_acceleration_structure = GET_PROC(vkDestroyAccelerationStructureNV);
 
-	_acceleration_structure_memory_reqs = GET_PROC(vkGetAccelerationStructureMemoryRequirementsNV);
-	_bind_acceleration_structure_memory = GET_PROC(vkBindAccelerationStructureMemoryNV);
+    _acceleration_structure_memory_reqs = GET_PROC(vkGetAccelerationStructureMemoryRequirementsNV);
+    _bind_acceleration_structure_memory = GET_PROC(vkBindAccelerationStructureMemoryNV);
 
-	_trace_rays = GET_PROC(vkCmdTraceRaysNV);
+    _trace_rays = GET_PROC(vkCmdTraceRaysNV);
 
 #undef GET_PROC
 
 }
 
 }
+

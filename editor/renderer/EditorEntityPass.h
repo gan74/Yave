@@ -29,15 +29,16 @@ SOFTWARE.
 namespace editor {
 
 struct EditorEntityPass {
-	static constexpr usize max_batch_size = 128 * 1024;
+    static constexpr usize max_batch_size = 128 * 1024;
 
-	FrameGraphImageId depth;
-	FrameGraphImageId color;
-	FrameGraphImageId id;
+    FrameGraphImageId depth;
+    FrameGraphImageId color;
+    FrameGraphImageId id;
 
-	static EditorEntityPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool picking = false);
+    static EditorEntityPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool picking = false);
 };
 
 }
 
 #endif // EDITOR_RENDERER_EDITORENTITYPASS_H
+

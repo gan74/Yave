@@ -25,12 +25,13 @@ SOFTWARE.
 namespace yave {
 
 bool Frustum::is_inside(const math::Vec3& pos, float radius) const {
-	for(const auto& plane : *this) {
-		if(plane.dot({pos, 1.0f}) + radius < 0.0f) {
-			return false;
-		}
-	}
-	return true;
+    for(const auto& plane : *this) {
+        if(plane.dot({pos, 1.0f}) + radius < 0.0f) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }
+

@@ -32,82 +32,83 @@ SOFTWARE.
 namespace yave {
 
 static bool try_enable_extension(core::Vector<const char*>& exts, const char* name) {
-	core::Vector<VkExtensionProperties> supported_extensions;
-	{
-		u32 count = 0;
-		vk_check(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
-		supported_extensions = core::Vector<VkExtensionProperties>(count, VkExtensionProperties{});
-		vk_check(vkEnumerateInstanceExtensionProperties(nullptr, &count, supported_extensions.data()));
-	}
+    core::Vector<VkExtensionProperties> supported_extensions;
+    {
+        u32 count = 0;
+        vk_check(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+        supported_extensions = core::Vector<VkExtensionProperties>(count, VkExtensionProperties{});
+        vk_check(vkEnumerateInstanceExtensionProperties(nullptr, &count, supported_extensions.data()));
+    }
 
-	const std::string_view name_view = name;
-	for(const VkExtensionProperties& ext : supported_extensions) {
-		if(name_view == ext.extensionName) {
-			exts << name;
-			return true;
-		}
-	}
-	log_msg(fmt("% not supported", name_view), Log::Warning);
-	return false;
+    const std::string_view name_view = name;
+    for(const VkExtensionProperties& ext : supported_extensions) {
+        if(name_view == ext.extensionName) {
+            exts << name;
+            return true;
+        }
+    }
+    log_msg(fmt("% not supported", name_view), Log::Warning);
+    return false;
 }
 
 Instance::Instance(DebugParams debug) : _debug_params(debug) {
-	auto extention_names = core::vector_with_capacity<const char*>(4);
-	extention_names = {
-		VK_KHR_SURFACE_EXTENSION_NAME,
-		// Vulkan 1.1
-		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-	};
+    auto extention_names = core::vector_with_capacity<const char*>(4);
+    extention_names = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+        // Vulkan 1.1
+        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+    };
 
 #ifdef Y_OS_WIN
-	extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+    extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 #endif
 
-	if(_debug_params.debug_features_enabled()) {
-		_debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::extension_name()));
-	}
+    if(_debug_params.debug_features_enabled()) {
+        _debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::extension_name()));
+    }
 
 
-	VkApplicationInfo app_info = vk_struct();
-	{
-		app_info.apiVersion = VK_VERSION_1_1;
-		app_info.pApplicationName = "Yave";
-		app_info.pEngineName = "Yave";
-	}
+    VkApplicationInfo app_info = vk_struct();
+    {
+        app_info.apiVersion = VK_VERSION_1_1;
+        app_info.pApplicationName = "Yave";
+        app_info.pEngineName = "Yave";
+    }
 
-	VkInstanceCreateInfo create_info = vk_struct();
-	{
-		create_info.enabledExtensionCount = extention_names.size();
-		create_info.ppEnabledExtensionNames = extention_names.data();
-		create_info.enabledLayerCount = _debug_params.instance_layers().size();
-		create_info.ppEnabledLayerNames = _debug_params.instance_layers().data();
-		create_info.pApplicationInfo = &app_info;
-	}
+    VkInstanceCreateInfo create_info = vk_struct();
+    {
+        create_info.enabledExtensionCount = extention_names.size();
+        create_info.ppEnabledExtensionNames = extention_names.data();
+        create_info.enabledLayerCount = _debug_params.instance_layers().size();
+        create_info.ppEnabledLayerNames = _debug_params.instance_layers().data();
+        create_info.pApplicationInfo = &app_info;
+    }
 
-	vk_check(vkCreateInstance(&create_info, nullptr, &_instance));
+    vk_check(vkCreateInstance(&create_info, nullptr, &_instance));
 
-	if(_debug_params.debug_features_enabled()) {
-		log_msg("Vulkan debugging enabled");
-		_extensions.debug_utils = std::make_unique<DebugUtils>(_instance);
-	}
+    if(_debug_params.debug_features_enabled()) {
+        log_msg("Vulkan debugging enabled");
+        _extensions.debug_utils = std::make_unique<DebugUtils>(_instance);
+    }
 }
 
 Instance::~Instance() {
-	// destroy extensions to free everything before the instance gets destroyed
-	_extensions = {};
-	vkDestroyInstance(_instance, nullptr);
+    // destroy extensions to free everything before the instance gets destroyed
+    _extensions = {};
+    vkDestroyInstance(_instance, nullptr);
 }
 
 const DebugParams& Instance::debug_params() const {
-	return _debug_params;
+    return _debug_params;
 }
 
 const DebugUtils* Instance::debug_utils() const {
-	return _extensions.debug_utils.get();
+    return _extensions.debug_utils.get();
 }
 
 VkInstance Instance::vk_instance() const {
-	return _instance;
+    return _instance;
 }
 
 }
+

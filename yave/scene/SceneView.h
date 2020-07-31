@@ -29,30 +29,31 @@ SOFTWARE.
 namespace yave {
 
 class SceneView {
-	public:
-		SceneView() = default;
-		SceneView(const ecs::EntityWorld* wor, Camera cam = Camera());
+    public:
+        SceneView() = default;
+        SceneView(const ecs::EntityWorld* wor, Camera cam = Camera());
 
 #ifdef Y_DEBUG
-		~SceneView() {
-			_world = nullptr;
-		}
+        ~SceneView() {
+            _world = nullptr;
+        }
 #endif
 
-		const ecs::EntityWorld& world() const;
+        const ecs::EntityWorld& world() const;
 
-		bool has_scene() const;
-		bool has_world() const;
+        bool has_scene() const;
+        bool has_world() const;
 
 
-		const Camera& camera() const;
-		Camera& camera();
+        const Camera& camera() const;
+        Camera& camera();
 
-	private:
-		const ecs::EntityWorld* _world = nullptr;
-		Camera _camera;
+    private:
+        const ecs::EntityWorld* _world = nullptr;
+        Camera _camera;
 };
 
 }
 
 #endif // YAVE_SCENE_SCENEVIEW_H
+

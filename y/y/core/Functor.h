@@ -36,48 +36,48 @@ namespace detail {
 
 template<typename Ret, typename... Args>
 struct FunctionBase : NonCopyable {
-	FunctionBase() {
-	}
+    FunctionBase() {
+    }
 
-	virtual ~FunctionBase() {
-	}
+    virtual ~FunctionBase() {
+    }
 
 #ifdef Y_NON_CONST_FUNCTORS
-	virtual Ret apply(Args...) = 0;
+    virtual Ret apply(Args...) = 0;
 #endif
 
-	virtual Ret apply_const(Args...) const = 0;
+    virtual Ret apply_const(Args...) const = 0;
 
 };
 
 template<typename T, typename Ret, typename... Args>
 struct Function : FunctionBase<Ret, Args...> {
-	public:
-		//static_assert(std::is_void_v<Ret> || std::is_constructible_v<Ret, R>);
+    public:
+        //static_assert(std::is_void_v<Ret> || std::is_constructible_v<Ret, R>);
 
-		Function(T&& t) : _func(y_fwd(t)) {
-		}
+        Function(T&& t) : _func(y_fwd(t)) {
+        }
 
 #ifdef Y_NON_CONST_FUNCTORS
-		Ret apply(Args... args) override {
-			if constexpr(std::is_void_v<Ret>) {
-				_func(y_fwd(args)...);
-			} else {
-				return _func(y_fwd(args)...);
-			}
-		}
+        Ret apply(Args... args) override {
+            if constexpr(std::is_void_v<Ret>) {
+                _func(y_fwd(args)...);
+            } else {
+                return _func(y_fwd(args)...);
+            }
+        }
 #endif
 
-		Ret apply_const(Args... args) const override {
-			if constexpr(std::is_void_v<Ret>) {
-				_func(y_fwd(args)...);
-			} else {
-				return _func(y_fwd(args)...);
-			}
-		}
+        Ret apply_const(Args... args) const override {
+            if constexpr(std::is_void_v<Ret>) {
+                _func(y_fwd(args)...);
+            } else {
+                return _func(y_fwd(args)...);
+            }
+        }
 
-	private:
-		T _func;
+    private:
+        T _func;
 };
 
 
@@ -86,64 +86,64 @@ class Functor {};
 
 template<typename T>
 struct is_functor {
-	static constexpr bool value = false;
+    static constexpr bool value = false;
 };
 
 template<template<typename...> typename Container, typename Ret, typename... Args>
 struct is_functor<Functor<Container, Ret(Args...)>> {
-	static constexpr bool value = true;
+    static constexpr bool value = true;
 };
 
 
 template<template<typename...> typename Container, typename Ret, typename... Args>
 class Functor<Container, Ret(Args...)> {
-	public:
-		Functor() = default;
+    public:
+        Functor() = default;
 
-		template<typename T,
-				 typename = std::enable_if_t<!is_functor<std::remove_reference_t<T>>::value>/*,
-				 typename R = typename function_traits<std::remove_reference_t<T>>::return_type*/>
-		Functor(T&& func) : _function(std::make_unique<Function<T, Ret, Args...>>(y_fwd(func))) {
-		}
+        template<typename T,
+                 typename = std::enable_if_t<!is_functor<std::remove_reference_t<T>>::value>/*,
+                 typename R = typename function_traits<std::remove_reference_t<T>>::return_type*/>
+        Functor(T&& func) : _function(std::make_unique<Function<T, Ret, Args...>>(y_fwd(func))) {
+        }
 
-		Functor(Functor&&) = default;
-		Functor& operator=(Functor&&) = default;
-		Functor& operator=(const Functor&) = default;
+        Functor(Functor&&) = default;
+        Functor& operator=(Functor&&) = default;
+        Functor& operator=(const Functor&) = default;
 
-		Functor(const Functor& other) : _function(other._function) {
-		}
+        Functor(const Functor& other) : _function(other._function) {
+        }
 
-		bool operator==(const Functor& other) const {
-			return _function == other._function;
-		}
+        bool operator==(const Functor& other) const {
+            return _function == other._function;
+        }
 
-		bool operator!=(const Functor& other) const {
-			return _function != other._function;
-		}
+        bool operator!=(const Functor& other) const {
+            return _function != other._function;
+        }
 
 #ifdef Y_NON_CONST_FUNCTORS
-		Ret operator()(Args... args) {
-			y_debug_assert(_function);
-			if constexpr(std::is_void_v<Ret>) {
-				_function->apply(y_fwd(args)...);
-			} else {
-				return _function->apply(y_fwd(args)...);
-			}
-		}
+        Ret operator()(Args... args) {
+            y_debug_assert(_function);
+            if constexpr(std::is_void_v<Ret>) {
+                _function->apply(y_fwd(args)...);
+            } else {
+                return _function->apply(y_fwd(args)...);
+            }
+        }
 #endif
 
-		Ret operator()(Args... args) const {
-			y_debug_assert(_function);
-			if constexpr(std::is_void_v<Ret>) {
-				_function->apply_const(y_fwd(args)...);
-			} else {
-				return _function->apply_const(y_fwd(args)...);
-			}
-		}
+        Ret operator()(Args... args) const {
+            y_debug_assert(_function);
+            if constexpr(std::is_void_v<Ret>) {
+                _function->apply_const(y_fwd(args)...);
+            } else {
+                return _function->apply_const(y_fwd(args)...);
+            }
+        }
 
 
-	private:
-		Container<FunctionBase<Ret, Args...>> _function;
+    private:
+        Container<FunctionBase<Ret, Args...>> _function;
 };
 
 }
@@ -161,3 +161,4 @@ using Functor = detail::Functor<std::shared_ptr, Ret, Args...>;
 }
 
 #endif // Y_CORE_FUNCTOR_H
+

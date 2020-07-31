@@ -29,46 +29,47 @@ SOFTWARE.
 namespace yave {
 
 DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
-		DeviceLinked(mem.device()),
-		_heap(mem.heap()),
-		_memory(mem.vk_memory()),
-		_offset(mem.vk_offset()) {
+        DeviceLinked(mem.device()),
+        _heap(mem.heap()),
+        _memory(mem.vk_memory()),
+        _offset(mem.vk_offset()) {
 }
 
 VkMappedMemoryRange DeviceMemoryView::vk_mapped_range(usize size, usize offset) const {
-	const usize atom_size = device_properties(device()).non_coherent_atom_size;
+    const usize atom_size = device_properties(device()).non_coherent_atom_size;
 
-	const usize full_offset = _offset + offset;
-	const usize aligned_offset = memory::align_down_to(full_offset, atom_size);
-	y_debug_assert(aligned_offset <= full_offset);
-	const usize end = full_offset + size;
-	y_debug_assert(end > aligned_offset);
-	const usize aligned_size = memory::align_up_to(end - aligned_offset, atom_size);
-	y_debug_assert(end > full_offset);
+    const usize full_offset = _offset + offset;
+    const usize aligned_offset = memory::align_down_to(full_offset, atom_size);
+    y_debug_assert(aligned_offset <= full_offset);
+    const usize end = full_offset + size;
+    y_debug_assert(end > aligned_offset);
+    const usize aligned_size = memory::align_up_to(end - aligned_offset, atom_size);
+    y_debug_assert(end > full_offset);
 
-	VkMappedMemoryRange range = vk_struct();
-	{
-		range.memory = _memory;
-		range.offset = aligned_offset;
-		range.size = aligned_size;
-	}
-	return range;
+    VkMappedMemoryRange range = vk_struct();
+    {
+        range.memory = _memory;
+        range.offset = aligned_offset;
+        range.size = aligned_size;
+    }
+    return range;
 }
 
 VkDeviceMemory DeviceMemoryView::vk_memory() const {
-	return _memory;
+    return _memory;
 }
 
 usize DeviceMemoryView::vk_offset() const {
-	return _offset;
+    return _offset;
 }
 
 void* DeviceMemoryView::map() {
-	return _heap->map(*this);
+    return _heap->map(*this);
 }
 
 void DeviceMemoryView::unmap() {
-	_heap->unmap(*this);
+    _heap->unmap(*this);
 }
 
 }
+

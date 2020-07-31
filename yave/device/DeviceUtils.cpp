@@ -27,68 +27,69 @@ SOFTWARE.
 namespace yave {
 
 VkDevice vk_device(DevicePtr dptr) {
-	return dptr->vk_device();
+    return dptr->vk_device();
 }
 
 VkInstance vk_device_instance(DevicePtr dptr) {
-	return dptr->instance().vk_instance();
+    return dptr->instance().vk_instance();
 }
 
 
 const PhysicalDevice& physical_device(DevicePtr dptr) {
-	return dptr->physical_device();
+    return dptr->physical_device();
 }
 
 CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer(DevicePtr dptr) {
-	return dptr->create_disposable_cmd_buffer();
+    return dptr->create_disposable_cmd_buffer();
 }
 
 DeviceMemoryAllocator& device_allocator(DevicePtr dptr) {
-	return dptr->allocator();
+    return dptr->allocator();
 }
 
 DescriptorSetAllocator& descriptor_set_allocator(DevicePtr dptr) {
-	return dptr->descriptor_set_allocator();
+    return dptr->descriptor_set_allocator();
 }
 
 const Queue& graphic_queue(DevicePtr dptr) {
-	return dptr->graphic_queue();
+    return dptr->graphic_queue();
 }
 
 const DeviceResources& device_resources(DevicePtr dptr) {
-	return dptr->device_resources();
+    return dptr->device_resources();
 }
 
 const DeviceProperties& device_properties(DevicePtr dptr) {
-	return dptr->device_properties();
+    return dptr->device_properties();
 }
 
 LifetimeManager& lifetime_manager(DevicePtr dptr) {
-	return dptr->lifetime_manager();
+    return dptr->lifetime_manager();
 }
 
 const VkAllocationCallbacks* vk_allocation_callbacks(DevicePtr dptr) {
-	return dptr->vk_allocation_callbacks();
+    return dptr->vk_allocation_callbacks();
 }
 
 VkSampler vk_sampler(DevicePtr dptr, SamplerType type) {
-	return dptr->vk_sampler(type);
+    return dptr->vk_sampler(type);
 }
 
 const QueueFamily& queue_family(DevicePtr dptr, VkQueueFlags flags) {
-	return dptr->queue_family(flags);
+    return dptr->queue_family(flags);
 }
 
 const DebugUtils* debug_utils(DevicePtr dptr) {
-	return dptr ? dptr->debug_utils() : nullptr;
+    return dptr ? dptr->debug_utils() : nullptr;
 }
 
 const RayTracing* ray_tracing(DevicePtr dptr) {
-	return dptr ? dptr->ray_tracing() : nullptr;
+    return dptr ? dptr->ray_tracing() : nullptr;
 }
 
 void wait_all_queues(DevicePtr dptr) {
-	dptr->wait_all_queues();
+    dptr->wait_all_queues();
 }
 
 }
+

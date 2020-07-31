@@ -69,12 +69,13 @@ SOFTWARE.
 #define Y_HAS_ARGS(...) Y_BOOL(Y_FIRST(Y_END_OF_ARGUMENTS __VA_ARGS__)())
 #define Y_END_OF_ARGUMENTS(...) __VA_ARGS__ 0
 
-#define Y_MACRO_MAP(m, first, ...)									\
-	m(first)														\
-	Y_IF_ELSE(Y_HAS_ARGS(__VA_ARGS__))								\
-		(Y_DEFER2(Y_MACRO_MAP_)()(m, __VA_ARGS__))					\
-		(/* Do nothing, just terminate */)
+#define Y_MACRO_MAP(m, first, ...)                                  \
+    m(first)                                                        \
+    Y_IF_ELSE(Y_HAS_ARGS(__VA_ARGS__))                              \
+        (Y_DEFER2(Y_MACRO_MAP_)()(m, __VA_ARGS__))                  \
+        (/* Do nothing, just terminate */)
 
 #define Y_MACRO_MAP_() Y_MACRO_MAP
 
 #endif // Y_UTILS_RECMACROS_H
+

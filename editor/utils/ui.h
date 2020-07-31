@@ -40,3 +40,4 @@ void alternating_rows_background(float line_height = -1.0f, const math::Vec4& co
 }
 
 #endif // EDITOR_UTILS_UI_H
+

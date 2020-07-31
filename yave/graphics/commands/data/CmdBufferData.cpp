@@ -29,83 +29,83 @@ SOFTWARE.
 namespace yave {
 
 CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPoolBase* p) :
-		_cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(lifetime_manager(device()).create_fence()) {
+        _cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(lifetime_manager(device()).create_fence()) {
 }
 
 CmdBufferData::CmdBufferData(CmdBufferData&& other) {
-	swap(other);
+    swap(other);
 }
 
 CmdBufferData& CmdBufferData::operator=(CmdBufferData&& other) {
-	swap(other);
-	return *this;
+    swap(other);
+    return *this;
 }
 
 CmdBufferData::~CmdBufferData() {
-	if(_pool) {
-		if(_fence && vkGetFenceStatus(vk_device(device()), _fence) != VK_SUCCESS) {
-			y_fatal("CmdBuffer is still in use.");
-		}
-		vkFreeCommandBuffers(vk_device(device()), _pool->vk_pool(), 1, &_cmd_buffer);
-		device_destroy(device(), _fence);
-	}
+    if(_pool) {
+        if(_fence && vkGetFenceStatus(vk_device(device()), _fence) != VK_SUCCESS) {
+            y_fatal("CmdBuffer is still in use.");
+        }
+        vkFreeCommandBuffers(vk_device(device()), _pool->vk_pool(), 1, &_cmd_buffer);
+        device_destroy(device(), _fence);
+    }
 }
 
 DevicePtr CmdBufferData::device() const {
-	return _pool ? _pool->device() : nullptr;
+    return _pool ? _pool->device() : nullptr;
 }
 
 bool CmdBufferData::is_null() const {
-	return !device();
+    return !device();
 }
 
 CmdBufferPoolBase* CmdBufferData::pool() const {
-	return _pool;
+    return _pool;
 }
 
 VkCommandBuffer CmdBufferData::vk_cmd_buffer() const {
-	return _cmd_buffer;
+    return _cmd_buffer;
 }
 
 VkFence CmdBufferData::vk_fence() const {
-	return _fence;
+    return _fence;
 }
 
 ResourceFence CmdBufferData::resource_fence() const {
-	return _resource_fence;
+    return _resource_fence;
 }
 
 void CmdBufferData::swap(CmdBufferData& other) {
-	std::swap(_cmd_buffer, other._cmd_buffer);
-	std::swap(_fence, other._fence);
-	std::swap(_keep_alive, other._keep_alive);
-	std::swap(_pool, other._pool);
-	std::swap(_signal, other._signal);
-	std::swap(_waits, other._waits);
-	std::swap(_resource_fence, other._resource_fence);
+    std::swap(_cmd_buffer, other._cmd_buffer);
+    std::swap(_fence, other._fence);
+    std::swap(_keep_alive, other._keep_alive);
+    std::swap(_pool, other._pool);
+    std::swap(_signal, other._signal);
+    std::swap(_waits, other._waits);
+    std::swap(_resource_fence, other._resource_fence);
 }
 
 void CmdBufferData::reset() {
-	y_profile();
-	if(_fence) {
-		vk_check(vkResetFences(vk_device(device()), 1, &_fence));
-	}
+    y_profile();
+    if(_fence) {
+        vk_check(vkResetFences(vk_device(device()), 1, &_fence));
+    }
 
-	vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
-	_waits.clear();
-	_signal = Semaphore();
-	_resource_fence = lifetime_manager(device()).create_fence();
+    vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
+    _waits.clear();
+    _signal = Semaphore();
+    _resource_fence = lifetime_manager(device()).create_fence();
 }
 
 void CmdBufferData::release_resources() {
-	y_profile();
-	_keep_alive.clear();
+    y_profile();
+    _keep_alive.clear();
 }
 
 void CmdBufferData::wait_for(const Semaphore& sem) {
-	if(sem.device() && std::find(_waits.begin(), _waits.end(), sem) == _waits.end()) {
-		_waits.emplace_back(sem);
-	}
+    if(sem.device() && std::find(_waits.begin(), _waits.end(), sem) == _waits.end()) {
+        _waits.emplace_back(sem);
+    }
 }
 
 
@@ -114,13 +114,14 @@ CmdBufferDataProxy::CmdBufferDataProxy(CmdBufferData&& d) : _data(std::move(d)) 
 }
 
 CmdBufferDataProxy::~CmdBufferDataProxy() {
-	if(!_data.is_null()) {
-		lifetime_manager(_data.device()).recycle(std::move(_data));
-	}
+    if(!_data.is_null()) {
+        lifetime_manager(_data.device()).recycle(std::move(_data));
+    }
 }
 
 CmdBufferData& CmdBufferDataProxy::data() {
-	return _data;
+    return _data;
 }
 
 }
+

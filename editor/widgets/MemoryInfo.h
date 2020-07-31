@@ -29,18 +29,18 @@ SOFTWARE.
 namespace editor {
 
 class MemoryInfo : public Widget, public ContextLinked {
-	public:
-		MemoryInfo(ContextPtr cptr);
+    public:
+        MemoryInfo(ContextPtr cptr);
 
-	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+    private:
+        void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
-		core::Chrono _timer;
+        core::Chrono _timer;
 
-		usize _max_usage = 0;
+        usize _max_usage = 0;
 
-		usize _current_index = 0;
-		std::array<float, 256> _history;
+        usize _current_index = 0;
+        std::array<float, 256> _history;
 };
 
 }
@@ -48,3 +48,4 @@ class MemoryInfo : public Widget, public ContextLinked {
 
 
 #endif // EDITOR_WIDGETS_MEMORYINFO_H
+

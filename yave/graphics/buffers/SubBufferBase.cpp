@@ -28,65 +28,66 @@ SOFTWARE.
 namespace yave {
 
 SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_len, usize byte_off) :
-		_size(byte_len),
-		_offset(byte_off),
-		_buffer(base.vk_buffer()),
-		_memory(base.device_memory()) {
+        _size(byte_len),
+        _offset(byte_off),
+        _buffer(base.vk_buffer()),
+        _memory(base.device_memory()) {
 
-	y_debug_assert(base.byte_size() >= _size + _offset);
+    y_debug_assert(base.byte_size() >= _size + _offset);
 }
 
 SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, base.byte_size(), 0) {
 }
 
 DevicePtr SubBufferBase::device() const {
-	return _memory.device();
+    return _memory.device();
 }
 
 bool SubBufferBase::is_null() const {
-	return !device();
+    return !device();
 }
 
 usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
-	const auto& props = device_properties(dptr);
-	u32 align = props.non_coherent_atom_size;
-	if ((usage & BufferUsage::UniformBit) != BufferUsage::None) {
-		align = std::max(props.uniform_buffer_alignment, align);
-	}
-	if ((usage & BufferUsage::StorageBit) != BufferUsage::None) {
-		align = std::max(props.storage_buffer_alignment, align);
-	}
-	return align;
+    const auto& props = device_properties(dptr);
+    u32 align = props.non_coherent_atom_size;
+    if ((usage & BufferUsage::UniformBit) != BufferUsage::None) {
+        align = std::max(props.uniform_buffer_alignment, align);
+    }
+    if ((usage & BufferUsage::StorageBit) != BufferUsage::None) {
+        align = std::max(props.storage_buffer_alignment, align);
+    }
+    return align;
 }
 
 usize SubBufferBase::byte_size() const {
-	return _size;
+    return _size;
 }
 
 usize SubBufferBase::byte_offset() const {
-	return _offset;
+    return _offset;
 }
 
 VkBuffer SubBufferBase::vk_buffer() const {
-	return _buffer;
+    return _buffer;
 }
 
 DeviceMemoryView SubBufferBase::device_memory() const {
-	return _memory;
+    return _memory;
 }
 
 VkDescriptorBufferInfo SubBufferBase::descriptor_info() const {
-	VkDescriptorBufferInfo info = {};
-	{
-		info.buffer = _buffer;
-		info.offset = _offset;
-		info.range = _size;
-	}
-	return info;
+    VkDescriptorBufferInfo info = {};
+    {
+        info.buffer = _buffer;
+        info.offset = _offset;
+        info.range = _size;
+    }
+    return info;
 }
 
 VkMappedMemoryRange SubBufferBase::vk_memory_range() const {
-	return _memory.vk_mapped_range(_size, _offset);
+    return _memory.vk_mapped_range(_size, _offset);
 }
 
 }
+

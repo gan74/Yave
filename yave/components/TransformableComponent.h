@@ -27,19 +27,20 @@ SOFTWARE.
 namespace yave {
 
 class TransformableComponent final : public math::Transform<> {
-	public:
-		using Transform::Transform;
+    public:
+        using Transform::Transform;
 
-		math::Transform<>& transform() {
-			return *this;
-		}
+        math::Transform<>& transform() {
+            return *this;
+        }
 
-		const math::Transform<>& transform() const {
-			return *this;
-		}
+        const math::Transform<>& transform() const {
+            return *this;
+        }
 
 };
 
 }
 
 #endif // YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
+

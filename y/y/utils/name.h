@@ -30,11 +30,11 @@ namespace detail {
 template<typename... T>
 constexpr std::string_view ct_type_name() {
 #if defined(__clang__)
-	return std::string_view{__PRETTY_FUNCTION__ + 49, sizeof(__PRETTY_FUNCTION__) - 52};
+    return std::string_view{__PRETTY_FUNCTION__ + 49, sizeof(__PRETTY_FUNCTION__) - 52};
 #elif defined(__GNUC__)
-	return std::string_view{__PRETTY_FUNCTION__ + 64, sizeof(__PRETTY_FUNCTION__) - 116};
+    return std::string_view{__PRETTY_FUNCTION__ + 64, sizeof(__PRETTY_FUNCTION__) - 116};
 #elif defined(Y_MSVC)
-	return std::string_view{__FUNCSIG__ + 98, sizeof(__FUNCSIG__) - 106};
+    return std::string_view{__FUNCSIG__ + 98, sizeof(__FUNCSIG__) - 106};
 #else
 static_assert(false, "ct_type_name is not supported");
 #endif
@@ -43,7 +43,7 @@ static_assert(false, "ct_type_name is not supported");
 
 template<typename T>
 constexpr std::string_view ct_type_name() {
-	return detail::ct_type_name<T>();
+    return detail::ct_type_name<T>();
 }
 
 static_assert(ct_type_name<int>() == "int");
@@ -58,3 +58,4 @@ static_assert(ct_type_name<std::string_view>() == "std::basic_string_view<char, 
 
 
 #endif // Y_UTILS_NAME_H
+

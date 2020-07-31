@@ -33,47 +33,47 @@ Y_TODO(Remove this (is this a GCC bug?))
 #pragma GCC diagnostic ignored "-Wfloat-conversion"
 #endif
 
-#define y_serde3_try_convert(Type)														\
-	do {																				\
-		if constexpr(std::is_convertible_v<Type, T>) {									\
-			static constexpr auto type_hash = detail::header_type_hash<Type>();			\
-			if(type_hash == type.type_hash) {											\
-				Type tmp = {};															\
-				y_try(read_one(tmp));													\
-				t = static_cast<T>(tmp);												\
-				return core::Ok(Success::Full);											\
-			}																			\
-		}																				\
-	} while(false)
+#define y_serde3_try_convert(Type)                                                      \
+    do {                                                                                \
+        if constexpr(std::is_convertible_v<Type, T>) {                                  \
+            static constexpr auto type_hash = detail::header_type_hash<Type>();         \
+            if(type_hash == type.type_hash) {                                           \
+                Type tmp = {};                                                          \
+                y_try(read_one(tmp));                                                   \
+                t = static_cast<T>(tmp);                                                \
+                return core::Ok(Success::Full);                                         \
+            }                                                                           \
+        }                                                                               \
+    } while(false)
 
 namespace y {
 namespace serde3 {
 
 template<typename T>
 Result try_convert(T& t, detail::TypeHeader type, io2::Reader& reader) {
-	auto read_one = [&](auto& t) -> Result {
-		if(!reader.read_one(t)) {
-			return core::Err(Error(ErrorType::IOError));
-		}
-		return core::Ok(Success::Full);
-	};
+    auto read_one = [&](auto& t) -> Result {
+        if(!reader.read_one(t)) {
+            return core::Err(Error(ErrorType::IOError));
+        }
+        return core::Ok(Success::Full);
+    };
 
-	unused(t, type, reader, read_one);
+    unused(t, type, reader, read_one);
 
-	y_serde3_try_convert(u8);
-	y_serde3_try_convert(u16);
-	y_serde3_try_convert(u32);
-	y_serde3_try_convert(u64);
+    y_serde3_try_convert(u8);
+    y_serde3_try_convert(u16);
+    y_serde3_try_convert(u32);
+    y_serde3_try_convert(u64);
 
-	y_serde3_try_convert(i8);
-	y_serde3_try_convert(i16);
-	y_serde3_try_convert(i32);
-	y_serde3_try_convert(i64);
+    y_serde3_try_convert(i8);
+    y_serde3_try_convert(i16);
+    y_serde3_try_convert(i32);
+    y_serde3_try_convert(i64);
 
-	y_serde3_try_convert(float);
-	y_serde3_try_convert(double);
+    y_serde3_try_convert(float);
+    y_serde3_try_convert(double);
 
-	return core::Ok(Success::Partial);
+    return core::Ok(Success::Partial);
 }
 
 }
@@ -86,3 +86,4 @@ Result try_convert(T& t, detail::TypeHeader type, io2::Reader& reader) {
 #endif
 
 #endif // Y_SERDE3_CONVERSIONS_H
+

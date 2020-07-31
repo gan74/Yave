@@ -56,3 +56,4 @@ void wait_all_queues(DevicePtr dptr);
 
 
 #endif // YAVE_DEVICE_DEVICE_UTILS_H
+

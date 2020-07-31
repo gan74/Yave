@@ -28,44 +28,45 @@ namespace editor {
 
 class Widget : public UiElement {
 
-	public:
-		Widget(std::string_view title, u32 flags = 0);
-		~Widget() override;
+    public:
+        Widget(std::string_view title, u32 flags = 0);
+        ~Widget() override;
 
-		void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
+        void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
-		const math::Vec2& position() const;
-		const math::Vec2& size() const;
+        const math::Vec2& position() const;
+        const math::Vec2& size() const;
 
-		bool is_focussed() const;
-		bool is_mouse_inside() const;
+        bool is_focussed() const;
+        bool is_mouse_inside() const;
 
-	protected:
-		virtual void paint_ui(CmdBufferRecorder&, const FrameToken&) = 0;
-		virtual void before_paint() {}
-		virtual void after_paint() {}
+    protected:
+        virtual void paint_ui(CmdBufferRecorder&, const FrameToken&) = 0;
+        virtual void before_paint() {}
+        virtual void after_paint() {}
 
-		void set_closable(bool closable);
+        void set_closable(bool closable);
 
-		void set_flags(u32 flags);
+        void set_flags(u32 flags);
 
-		math::Vec2ui content_size() const;
+        math::Vec2ui content_size() const;
 
-	private:
-		void update_attribs();
+    private:
+        void update_attribs();
 
-		math::Vec2 _position;
-		math::Vec2 _size;
+        math::Vec2 _position;
+        math::Vec2 _size;
 
-		math::Vec2 _min_size;
+        math::Vec2 _min_size;
 
-		u32 _flags;
-		bool _closable = true;
-		bool _docked = false;
-		bool _focussed = false;
-		bool _mouse_inside = false;
+        u32 _flags;
+        bool _closable = true;
+        bool _docked = false;
+        bool _focussed = false;
+        bool _mouse_inside = false;
 };
 
 }
 
 #endif // EDITOR_UI_WIDGET_H
+

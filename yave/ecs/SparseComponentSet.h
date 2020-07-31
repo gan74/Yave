@@ -35,246 +35,246 @@ namespace yave {
 namespace ecs {
 
 class SparseIDSet : NonCopyable {
-	public:
-		using size_type = usize;
+    public:
+        using size_type = usize;
 
-	protected:
-		static constexpr usize page_size = 1024;
+    protected:
+        static constexpr usize page_size = 1024;
 
-		using page_index_type = u32;
-		static constexpr page_index_type page_invalid_index = page_index_type(-1);
-		using page_type = std::array<page_index_type, page_size>;
+        using page_index_type = u32;
+        static constexpr page_index_type page_invalid_index = page_index_type(-1);
+        using page_type = std::array<page_index_type, page_size>;
 
-	public:
-		bool contains(EntityId id) const {
-			const auto [i, o] = page_index(id);
-			return i < _sparse.size() &&
-				   _sparse[i][o] != page_invalid_index &&
-				   _dense[_sparse[i][o]] == id;
-		}
+    public:
+        bool contains(EntityId id) const {
+            const auto [i, o] = page_index(id);
+            return i < _sparse.size() &&
+                   _sparse[i][o] != page_invalid_index &&
+                   _dense[_sparse[i][o]] == id;
+        }
 
-		bool contains_index(u32 index) const {
-			const auto [i, o] = page_index(index);
-			return i < _sparse.size() && _sparse[i][o] != page_invalid_index;
-		}
+        bool contains_index(u32 index) const {
+            const auto [i, o] = page_index(index);
+            return i < _sparse.size() && _sparse[i][o] != page_invalid_index;
+        }
 
-		usize size() const {
-			return _dense.size();
-		}
+        usize size() const {
+            return _dense.size();
+        }
 
-		bool is_empty() const {
-			return _dense.is_empty();
-		}
+        bool is_empty() const {
+            return _dense.is_empty();
+        }
 
-		core::Span<EntityId> ids() const {
-			return _dense;
-		}
+        core::Span<EntityId> ids() const {
+            return _dense;
+        }
 
-	protected:
-		static std::pair<usize, usize> page_index(EntityId id) {
-			return page_index(id.index());
-		}
+    protected:
+        static std::pair<usize, usize> page_index(EntityId id) {
+            return page_index(id.index());
+        }
 
-		static std::pair<usize, usize> page_index(u32 index) {
-			const usize i = usize(index) / page_size;
-			const usize o = usize(index) % page_size;
-			return {i, o};
-		}
+        static std::pair<usize, usize> page_index(u32 index) {
+            const usize i = usize(index) / page_size;
+            const usize o = usize(index) % page_size;
+            return {i, o};
+        }
 
-		page_type& create_page(usize new_page_index) {
-			Y_TODO(Fix this (alloc pages on the heap?))
-			while(new_page_index >= _sparse.size()) {
-				_sparse.emplace_back();
-				auto& page = _sparse.last();
-				std::fill(page.begin(), page.end(), page_invalid_index);
-			}
-			return _sparse[new_page_index];
-		}
+        page_type& create_page(usize new_page_index) {
+            Y_TODO(Fix this (alloc pages on the heap?))
+            while(new_page_index >= _sparse.size()) {
+                _sparse.emplace_back();
+                auto& page = _sparse.last();
+                std::fill(page.begin(), page.end(), page_invalid_index);
+            }
+            return _sparse[new_page_index];
+        }
 
-		core::Vector<EntityId> _dense;
-		core::Vector<page_type> _sparse;
+        core::Vector<EntityId> _dense;
+        core::Vector<page_type> _sparse;
 };
 
 
 template<typename Elem>
 class SparseComponentSetBase : public SparseIDSet {
 
-	public:
-		using element_type = Elem;
-		using size_type = usize;
+    public:
+        using element_type = Elem;
+        using size_type = usize;
 
-		using value_type = std::tuple<EntityId, element_type>;
+        using value_type = std::tuple<EntityId, element_type>;
 
-		using reference = element_type&;
-		using const_reference = const element_type&;
+        using reference = element_type&;
+        using const_reference = const element_type&;
 
-		using pointer = element_type*;
-		using const_pointer = const element_type*;
+        using pointer = element_type*;
+        using const_pointer = const element_type*;
 
-	private:
-		core::Vector<element_type> _values;
+    private:
+        core::Vector<element_type> _values;
 
-	public:
-		template<typename... Args>
-		reference insert(EntityId id, Args&&... args) {
-			y_debug_assert(!contains(id));
+    public:
+        template<typename... Args>
+        reference insert(EntityId id, Args&&... args) {
+            y_debug_assert(!contains(id));
 
-			const auto [i, o] = page_index(id);
-			create_page(i)[o] = page_index_type(_dense.size());
-			_dense.emplace_back(id);
-			_values.emplace_back(y_fwd(args)...);
+            const auto [i, o] = page_index(id);
+            create_page(i)[o] = page_index_type(_dense.size());
+            _dense.emplace_back(id);
+            _values.emplace_back(y_fwd(args)...);
 
-			audit();
+            audit();
 
-			return _values.last();
-		}
+            return _values.last();
+        }
 
-		reference insert(value_type&& value) {
-			return insert(std::get<0>(value), std::move(std::get<1>(value)));
-		}
+        reference insert(value_type&& value) {
+            return insert(std::get<0>(value), std::move(std::get<1>(value)));
+        }
 
-		void erase(EntityId id) {
-			y_debug_assert(contains(id));
+        void erase(EntityId id) {
+            y_debug_assert(contains(id));
 
-			const auto [i, o] = page_index(id);
-			const page_index_type dense_index = _sparse[i][o];
-			const page_index_type last_index = page_index_type(_dense.size() - 1);
-			const EntityId last_sparse = _dense[last_index];
+            const auto [i, o] = page_index(id);
+            const page_index_type dense_index = _sparse[i][o];
+            const page_index_type last_index = page_index_type(_dense.size() - 1);
+            const EntityId last_sparse = _dense[last_index];
 
-			y_debug_assert(_dense[dense_index] == id);
+            y_debug_assert(_dense[dense_index] == id);
 
-			std::swap(_dense[dense_index], _dense[last_index]);
-			std::swap(_values[dense_index], _values[last_index]);
+            std::swap(_dense[dense_index], _dense[last_index]);
+            std::swap(_values[dense_index], _values[last_index]);
 
-			_dense.pop();
-			_values.pop();
+            _dense.pop();
+            _values.pop();
 
-			const auto [li, lo] = page_index(last_sparse);
-			_sparse[li][lo] = dense_index;
-			_sparse[i][o] = page_invalid_index;
+            const auto [li, lo] = page_index(last_sparse);
+            _sparse[li][lo] = dense_index;
+            _sparse[i][o] = page_invalid_index;
 
-			audit();
+            audit();
 
-			y_debug_assert(!contains(id));
-		}
-
-
-		reference operator[](EntityId id) {
-			y_debug_assert(contains(id));
-			const auto [i, o] = page_index(id);
-			return _values[_sparse[i][o]];
-		}
-
-		const_reference operator[](EntityId id) const {
-			y_debug_assert(contains(id));
-			const auto [i, o] = page_index(id);
-			return _values[_sparse[i][o]];
-		}
-
-		pointer try_get(EntityId id) {
-			const auto [i, o] = page_index(id);
-			if(i >= _sparse.size()) {
-				return nullptr;
-			}
-			const usize pi = _sparse[i][o];
-			return pi < _values.size() ? &_values[pi] : nullptr;
-		}
-
-		const_pointer try_get(EntityId id) const {
-			const auto [i, o] = page_index(id);
-			if(i >= _sparse.size()) {
-				return nullptr;
-			}
-			const usize pi = _sparse[i][o];
-			return pi < _values.size() ? &_values[pi] : nullptr;
-		}
-
-		void set_min_capacity(usize cap) {
-			_values.set_min_capacity(cap);
-			_dense.set_min_capacity(cap);
-		}
-
-		void clear() {
-			_values.clear();
-			_dense.clear();
-			_sparse.clear();
-			audit();
-		}
+            y_debug_assert(!contains(id));
+        }
 
 
-		void swap(SparseComponentSetBase& v) {
-			if(&v != this) {
-				_values.swap(v._values);
-				_dense.swap(v._dense);
-				_sparse.swap(v._sparse);
-			}
-			audit();
-		}
+        reference operator[](EntityId id) {
+            y_debug_assert(contains(id));
+            const auto [i, o] = page_index(id);
+            return _values[_sparse[i][o]];
+        }
 
-		auto begin() const {
-			return as_pairs().begin();
-		}
+        const_reference operator[](EntityId id) const {
+            y_debug_assert(contains(id));
+            const auto [i, o] = page_index(id);
+            return _values[_sparse[i][o]];
+        }
 
-		auto end() const {
-			return as_pairs().end();
-		}
+        pointer try_get(EntityId id) {
+            const auto [i, o] = page_index(id);
+            if(i >= _sparse.size()) {
+                return nullptr;
+            }
+            const usize pi = _sparse[i][o];
+            return pi < _values.size() ? &_values[pi] : nullptr;
+        }
 
-		auto cbegin() const {
-			return as_pairs().begin();
-		}
+        const_pointer try_get(EntityId id) const {
+            const auto [i, o] = page_index(id);
+            if(i >= _sparse.size()) {
+                return nullptr;
+            }
+            const usize pi = _sparse[i][o];
+            return pi < _values.size() ? &_values[pi] : nullptr;
+        }
 
-		auto cend() const {
-			return as_pairs().end();
-		}
+        void set_min_capacity(usize cap) {
+            _values.set_min_capacity(cap);
+            _dense.set_min_capacity(cap);
+        }
 
-		auto begin() {
-			return as_pairs().begin();
-		}
+        void clear() {
+            _values.clear();
+            _dense.clear();
+            _sparse.clear();
+            audit();
+        }
 
-		auto end() {
-			return as_pairs().end();
-		}
 
-		auto as_pairs() {
-			auto pair = [this](usize index) { return std::tie(_dense[index], _values[index]); };
-			return core::Range(TransformIterator(IndexIterator(0), pair),
-							   IndexIterator(size()));
-		}
+        void swap(SparseComponentSetBase& v) {
+            if(&v != this) {
+                _values.swap(v._values);
+                _dense.swap(v._dense);
+                _sparse.swap(v._sparse);
+            }
+            audit();
+        }
 
-		auto as_pairs() const {
-			auto pair = [this](usize index) { return std::tie(_dense[index], _values[index]); };
-			return core::Range(TransformIterator(IndexIterator(0), pair),
-							   IndexIterator(size()));
-		}
+        auto begin() const {
+            return as_pairs().begin();
+        }
 
-		core::MutableSpan<element_type> values() {
-			return _values;
-		}
+        auto end() const {
+            return as_pairs().end();
+        }
 
-		core::Span<element_type> values() const {
-			return _values;
-		}
+        auto cbegin() const {
+            return as_pairs().begin();
+        }
 
-	private:
-		void audit() {
+        auto cend() const {
+            return as_pairs().end();
+        }
+
+        auto begin() {
+            return as_pairs().begin();
+        }
+
+        auto end() {
+            return as_pairs().end();
+        }
+
+        auto as_pairs() {
+            auto pair = [this](usize index) { return std::tie(_dense[index], _values[index]); };
+            return core::Range(TransformIterator(IndexIterator(0), pair),
+                               IndexIterator(size()));
+        }
+
+        auto as_pairs() const {
+            auto pair = [this](usize index) { return std::tie(_dense[index], _values[index]); };
+            return core::Range(TransformIterator(IndexIterator(0), pair),
+                               IndexIterator(size()));
+        }
+
+        core::MutableSpan<element_type> values() {
+            return _values;
+        }
+
+        core::Span<element_type> values() const {
+            return _values;
+        }
+
+    private:
+        void audit() {
 #ifdef YAVE_ECS_COMPONENT_SET_AUDIT
-			y_debug_assert(_dense.size() == _values.size());
-			usize total = 0;
-			for(usize i = 0; i != _sparse.size(); ++i) {
-				for(usize o = 0; o != page_size; ++o) {
-					const page_index_type index = _sparse[i][o];
-					if(index != page_invalid_index) {
-						y_debug_assert(index < _dense.size());
-						const EntityId id = _dense[index];
-						y_debug_assert(id.is_valid());
-						y_debug_assert(page_index(id.index()) == std::pair(i, o));
-						++total;
-					}
-				}
-			}
-			y_debug_assert(total == _dense.size());
+            y_debug_assert(_dense.size() == _values.size());
+            usize total = 0;
+            for(usize i = 0; i != _sparse.size(); ++i) {
+                for(usize o = 0; o != page_size; ++o) {
+                    const page_index_type index = _sparse[i][o];
+                    if(index != page_invalid_index) {
+                        y_debug_assert(index < _dense.size());
+                        const EntityId id = _dense[index];
+                        y_debug_assert(id.is_valid());
+                        y_debug_assert(page_index(id.index()) == std::pair(i, o));
+                        ++total;
+                    }
+                }
+            }
+            y_debug_assert(total == _dense.size());
 #endif
-		}
+        }
 
 
 };
@@ -282,12 +282,13 @@ class SparseComponentSetBase : public SparseIDSet {
 // Why we need to do this to not have implete types?
 template<typename Elem>
 class SparseComponentSet : public SparseComponentSetBase<Elem> {
-	public:
-		using iterator		 = decltype(std::declval<      SparseComponentSet<Elem>>().begin());
-		using const_iterator = decltype(std::declval<const SparseComponentSet<Elem>>().begin());
+    public:
+        using iterator       = decltype(std::declval<      SparseComponentSet<Elem>>().begin());
+        using const_iterator = decltype(std::declval<const SparseComponentSet<Elem>>().begin());
 };
 
 }
 }
 
 #endif // YAVE_ECS_SPARSECOMPONENTSET_H
+

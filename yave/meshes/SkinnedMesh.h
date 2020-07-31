@@ -33,27 +33,27 @@ namespace yave {
 
 class SkinnedMesh : NonCopyable {
 
-	public:
-		SkinnedMesh() = default;
+    public:
+        SkinnedMesh() = default;
 
-		SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data);
+        SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data);
 
-		const TriangleBuffer<>& triangle_buffer() const;
-		const SkinnedVertexBuffer<>& vertex_buffer() const;
+        const TriangleBuffer<>& triangle_buffer() const;
+        const SkinnedVertexBuffer<>& vertex_buffer() const;
 
-		const VkDrawIndexedIndirectCommand& indirect_data() const;
-		const Skeleton& skeleton() const;
+        const VkDrawIndexedIndirectCommand& indirect_data() const;
+        const Skeleton& skeleton() const;
 
-		float radius() const;
+        float radius() const;
 
-	private:
-		TriangleBuffer<> _triangle_buffer;
-		SkinnedVertexBuffer<> _vertex_buffer;
-		VkDrawIndexedIndirectCommand _indirect_data = {};
+    private:
+        TriangleBuffer<> _triangle_buffer;
+        SkinnedVertexBuffer<> _vertex_buffer;
+        VkDrawIndexedIndirectCommand _indirect_data = {};
 
-		Skeleton _skeleton;
+        Skeleton _skeleton;
 
-		float _radius;
+        float _radius;
 };
 
 YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(SkinnedMesh, MeshData, AssetType::Mesh);
@@ -61,3 +61,4 @@ YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(SkinnedMesh, MeshData, AssetType::Mesh);
 }
 
 #endif // YAVE_MESHES_SKINNEDMESH_H
+

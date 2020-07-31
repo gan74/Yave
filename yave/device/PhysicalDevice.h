@@ -27,26 +27,27 @@ SOFTWARE.
 namespace yave {
 
 class PhysicalDevice : NonCopyable {
-	public:
-		PhysicalDevice(Instance& instance);
-		~PhysicalDevice();
+    public:
+        PhysicalDevice(Instance& instance);
+        ~PhysicalDevice();
 
-		VkPhysicalDevice vk_physical_device() const;
+        VkPhysicalDevice vk_physical_device() const;
 
-		const VkPhysicalDeviceProperties& vk_properties() const;
-		const VkPhysicalDeviceInlineUniformBlockPropertiesEXT& vk_uniform_block_properties() const;
+        const VkPhysicalDeviceProperties& vk_properties() const;
+        const VkPhysicalDeviceInlineUniformBlockPropertiesEXT& vk_uniform_block_properties() const;
 
-		const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
+        const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
 
-	private:
-		Instance& _instance;
-		VkPhysicalDevice _device = {};
-		VkPhysicalDeviceProperties _properties = {};
-		VkPhysicalDeviceMemoryProperties _memory_properties = {};
+    private:
+        Instance& _instance;
+        VkPhysicalDevice _device = {};
+        VkPhysicalDeviceProperties _properties = {};
+        VkPhysicalDeviceMemoryProperties _memory_properties = {};
 
-		VkPhysicalDeviceInlineUniformBlockPropertiesEXT _uniform_blocks_properties = {};
+        VkPhysicalDeviceInlineUniformBlockPropertiesEXT _uniform_blocks_properties = {};
 };
 
 }
 
 #endif // YAVE_DEVICE_PHYSICALDEVICE_H
+

@@ -31,46 +31,47 @@ using namespace y::core;
 static_assert(std::is_same_v<usize, std::remove_reference<decltype(std::declval<AssocVector<usize, usize>>()[usize(1)])>::type>, "AssocVector::operator[] returns the wrong type");
 
 struct NonCopyableValue : NonCopyable {
-	NonCopyableValue() : value(-1) {
-	}
+    NonCopyableValue() : value(-1) {
+    }
 
-	NonCopyableValue(int v) : value(v) {
-	}
+    NonCopyableValue(int v) : value(v) {
+    }
 
-	NonCopyableValue(NonCopyableValue&& other) : value(other.value) {
-		other.value = -2;
-	}
+    NonCopyableValue(NonCopyableValue&& other) : value(other.value) {
+        other.value = -2;
+    }
 
-	~NonCopyableValue() {
-	}
+    ~NonCopyableValue() {
+    }
 
-	NonCopyableValue &operator=(NonCopyableValue&& other) {
-		value = std::exchange(other.value, -2);
-		return *this;
-	}
+    NonCopyableValue &operator=(NonCopyableValue&& other) {
+        value = std::exchange(other.value, -2);
+        return *this;
+    }
 
-	int value;
+    int value;
 };
 
 y_test_func("AssocVector creation") {
-	AssocVector<usize, usize> av;
-	for(usize i = 0; i != 16; ++i) {
-		y_test_assert(av[i] == 0);
-		av[i] = i + 1;
-	}
-	for(auto i : av) {
-		y_test_assert(i.first == i.second - 1);
-	}
+    AssocVector<usize, usize> av;
+    for(usize i = 0; i != 16; ++i) {
+        y_test_assert(av[i] == 0);
+        av[i] = i + 1;
+    }
+    for(auto i : av) {
+        y_test_assert(i.first == i.second - 1);
+    }
 }
 
 y_test_func("AssocVector movable values") {
-	AssocVector<usize, NonCopyableValue> av;
-	for(usize i = 0; i != 16; ++i) {
-		av[i] = NonCopyableValue(i);
-	}
-	for(usize i = 0; i != av.size(); ++i) {
-		const auto& value = av[i];
-		y_test_assert(value.value == int(i));
-	}
+    AssocVector<usize, NonCopyableValue> av;
+    for(usize i = 0; i != 16; ++i) {
+        av[i] = NonCopyableValue(i);
+    }
+    for(usize i = 0; i != av.size(); ++i) {
+        const auto& value = av[i];
+        y_test_assert(value.value == int(i));
+    }
 }
 }
+

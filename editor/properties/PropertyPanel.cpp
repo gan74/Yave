@@ -30,27 +30,28 @@ SOFTWARE.
 namespace editor {
 
 PropertyPanel::PropertyPanel(ContextPtr cptr) :
-		Widget(ICON_FA_WRENCH " Properties"),
-		ContextLinked(cptr) {
+        Widget(ICON_FA_WRENCH " Properties"),
+        ContextLinked(cptr) {
 
-	set_closable(false);
+    set_closable(false);
 }
 
 void PropertyPanel::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
-	Widget::paint(recorder, token);
+    Widget::paint(recorder, token);
 }
 
 void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	if(!context()->selection().has_selected_entity()) {
-		return;
-	}
+    if(!context()->selection().has_selected_entity()) {
+        return;
+    }
 
-	ecs::EntityId id = context()->selection().selected_entity();
-	if(id.is_valid()) {
-		ImGui::PushID("widgets");
-		draw_component_widgets(context(), id);
-		ImGui::PopID();
-	}
+    ecs::EntityId id = context()->selection().selected_entity();
+    if(id.is_valid()) {
+        ImGui::PushID("widgets");
+        draw_component_widgets(context(), id);
+        ImGui::PopID();
+    }
 }
 
 }
+

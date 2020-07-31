@@ -27,17 +27,17 @@ SOFTWARE.
 namespace yave {
 
 Semaphore::Shared::Shared(DevicePtr dptr) :
-		DeviceLinked(dptr) {
-	const VkSemaphoreCreateInfo create_info = vk_struct();
-	vk_check(vkCreateSemaphore(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_semaphore));
+        DeviceLinked(dptr) {
+    const VkSemaphoreCreateInfo create_info = vk_struct();
+    vk_check(vkCreateSemaphore(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_semaphore));
 }
 
 Semaphore::Shared::~Shared() {
-	destroy(_semaphore);
+    destroy(_semaphore);
 }
 
 VkSemaphore Semaphore::Shared::vk_semaphore() const {
-	return _semaphore;
+    return _semaphore;
 }
 
 
@@ -48,19 +48,20 @@ Semaphore::Semaphore(DevicePtr dptr) : _semaphore(std::make_shared<Shared>(dptr)
 }
 
 DevicePtr Semaphore::device() const {
-	return _semaphore ? _semaphore->device() : nullptr;
+    return _semaphore ? _semaphore->device() : nullptr;
 }
 
 bool Semaphore::is_null() const {
-	return !device();
+    return !device();
 }
 
 VkSemaphore Semaphore::vk_semaphore() const {
-	return _semaphore->vk_semaphore();
+    return _semaphore->vk_semaphore();
 }
 
 bool Semaphore::operator==(const Semaphore& other) const {
-	return other._semaphore == _semaphore;
+    return other._semaphore == _semaphore;
 }
 
 }
+

@@ -31,106 +31,107 @@ SOFTWARE.
 namespace editor {
 
 AssetStringifier::AssetStringifier(ContextPtr cptr) :
-		Widget("Asset stringifier"),
-		ContextLinked(cptr),
-		_selector(cptr, AssetType::Mesh) {
+        Widget("Asset stringifier"),
+        ContextLinked(cptr),
+        _selector(cptr, AssetType::Mesh) {
 
-	_selector.set_parent(this);
-	_selector.set_selected_callback([this](AssetId id) { stringify(id); return true; });
+    _selector.set_parent(this);
+    _selector.set_selected_callback([this](AssetId id) { stringify(id); return true; });
 }
 
 void AssetStringifier::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
-	{
-		if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
-			_selector.show();
-		}
-		ImGui::SameLine();
+    {
+        if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
+            _selector.show();
+        }
+        ImGui::SameLine();
 
-		const auto clean_name = [=](auto&& n) { return context()->asset_store().filesystem()->filename(n); };
-		core::String name = context()->asset_store().name(_selected).map(clean_name).unwrap_or(core::String("No mesh"));
+        const auto clean_name = [=](auto&& n) { return context()->asset_store().filesystem()->filename(n); };
+        core::String name = context()->asset_store().name(_selected).map(clean_name).unwrap_or(core::String("No mesh"));
 
-		ImGui::SetNextItemWidth(-1);
-		ImGui::InputText("", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
-	}
+        ImGui::SetNextItemWidth(-1);
+        ImGui::InputText("", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+    }
 
-	_selector.paint(recorder, token);
+    _selector.paint(recorder, token);
 
-	if(_selected != AssetId::invalid_id()) {
-		ImGui::Text("Vertex data:");
-		ImGui::SameLine();
-		ImGui::Spacing();
-		if(ImGui::Button("Copy to clipboard##vertices")) {
-			ImGui::SetClipboardText(_vertices.data());
-		}
+    if(_selected != AssetId::invalid_id()) {
+        ImGui::Text("Vertex data:");
+        ImGui::SameLine();
+        ImGui::Spacing();
+        if(ImGui::Button("Copy to clipboard##vertices")) {
+            ImGui::SetClipboardText(_vertices.data());
+        }
 
-		ImGui::Text("Triangle data:");
-		ImGui::SameLine();
-		ImGui::Spacing();
-		if(ImGui::Button("Copy to clipboard##triangles")) {
-			ImGui::SetClipboardText(_triangles.data());
-		}
-	}
+        ImGui::Text("Triangle data:");
+        ImGui::SameLine();
+        ImGui::Spacing();
+        if(ImGui::Button("Copy to clipboard##triangles")) {
+            ImGui::SetClipboardText(_triangles.data());
+        }
+    }
 }
 
 void AssetStringifier::stringify(AssetId id) {
-	const auto data = context()->asset_store().data(id);
-	if(!data) {
-		log_msg("Unable to find asset.", Log::Error);
-		clear();
-		return;
-	}
+    const auto data = context()->asset_store().data(id);
+    if(!data) {
+        log_msg("Unable to find asset.", Log::Error);
+        clear();
+        return;
+    }
 
-	const core::DebugTimer timer("Stringify mesh");
+    const core::DebugTimer timer("Stringify mesh");
 
-	MeshData mesh;
-	serde3::ReadableArchive arc(*data.unwrap());
-	if(!arc.deserialize(mesh)) {
-		log_msg("Unable to load asset.", Log::Error);
-		clear();
-		return;
-	}
+    MeshData mesh;
+    serde3::ReadableArchive arc(*data.unwrap());
+    if(!arc.deserialize(mesh)) {
+        log_msg("Unable to load asset.", Log::Error);
+        clear();
+        return;
+    }
 
-	_selected = id;
-	_vertices.make_empty();
-	_triangles.make_empty();
+    _selected = id;
+    _vertices.make_empty();
+    _triangles.make_empty();
 
-	const int prec = 3;
+    const int prec = 3;
 
-	auto vertices = core::vector_with_capacity<core::String>(mesh.vertices().size());
-	std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const Vertex& v) {
-			std::array<char, 1024> buffer;
-			std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff}}",
-						  prec, v.position.x(), prec, v.position.y(), prec, v.position.z(),
-						  prec, v.normal.x(), prec, v.normal.y(), prec, v.normal.z(),
-						  prec, v.tangent.x(), prec, v.tangent.y(), prec, v.tangent.z(),
-						  prec, v.uv.x(), prec, v.uv.y());
-			return buffer.data();
-		});
-	fmt_into(_vertices, "%", vertices);
-	fmt_into(_triangles, "%", mesh.triangles());
+    auto vertices = core::vector_with_capacity<core::String>(mesh.vertices().size());
+    std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const Vertex& v) {
+            std::array<char, 1024> buffer;
+            std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff}}",
+                          prec, v.position.x(), prec, v.position.y(), prec, v.position.z(),
+                          prec, v.normal.x(), prec, v.normal.y(), prec, v.normal.z(),
+                          prec, v.tangent.x(), prec, v.tangent.y(), prec, v.tangent.z(),
+                          prec, v.uv.x(), prec, v.uv.y());
+            return buffer.data();
+        });
+    fmt_into(_vertices, "%", vertices);
+    fmt_into(_triangles, "%", mesh.triangles());
 
-	auto fix_brackets = [](char& c) {
-			if(c == '[') {
-				c = '{';
-			}
-			if(c == ']') {
-				c = '}';
-			}
-		};
+    auto fix_brackets = [](char& c) {
+            if(c == '[') {
+                c = '{';
+            }
+            if(c == ']') {
+                c = '}';
+            }
+        };
 
-	for(char& c : _vertices) {
-		fix_brackets(c);
-	}
-	for(char& c : _triangles) {
-		fix_brackets(c);
-	}
+    for(char& c : _vertices) {
+        fix_brackets(c);
+    }
+    for(char& c : _triangles) {
+        fix_brackets(c);
+    }
 }
 
 
 void AssetStringifier::clear() {
-	_selected = AssetId();
-	_vertices.clear();
-	_triangles.clear();
+    _selected = AssetId();
+    _vertices.clear();
+    _triangles.clear();
 }
 
 }
+

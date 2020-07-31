@@ -30,133 +30,134 @@ namespace yave {
 
 template<typename T>
 class SwapMove {
-	public:
-		SwapMove() = default;
+    public:
+        SwapMove() = default;
 
-		SwapMove(const SwapMove& other) = default;
-		SwapMove& operator=(const SwapMove& other) = default;
+        SwapMove(const SwapMove& other) = default;
+        SwapMove& operator=(const SwapMove& other) = default;
 
-		SwapMove(SwapMove&& other) {
-			std::swap(_t, other._t);
-		}
+        SwapMove(SwapMove&& other) {
+            std::swap(_t, other._t);
+        }
 
-		SwapMove(T&& other) : _t(std::move(other)) {
-		}
+        SwapMove(T&& other) : _t(std::move(other)) {
+        }
 
-		SwapMove(const T& other) : _t(other) {
-		}
-
-
-
-		SwapMove& operator=(SwapMove&& other) {
-			std::swap(_t, other._t);
-			return *this;
-		}
-
-		SwapMove& operator=(T&& other) {
-			_t = std::move(other);
-			return *this;
-		}
-
-		SwapMove& operator=(const T& other) {
-			_t = other;
-			return *this;
-		}
-
-
-		void swap(SwapMove& other) {
-			std::swap(_t, other._t);
-		}
-
-
-		operator T&() {
-			return _t;
-		}
-
-		operator const T&() const {
-			return _t;
-		}
+        SwapMove(const T& other) : _t(other) {
+        }
 
 
 
-		T& get() {
-			return _t;
-		}
+        SwapMove& operator=(SwapMove&& other) {
+            std::swap(_t, other._t);
+            return *this;
+        }
 
-		const T& get() const {
-			return _t;
-		}
+        SwapMove& operator=(T&& other) {
+            _t = std::move(other);
+            return *this;
+        }
 
-	private:
-		T _t = {};
+        SwapMove& operator=(const T& other) {
+            _t = other;
+            return *this;
+        }
+
+
+        void swap(SwapMove& other) {
+            std::swap(_t, other._t);
+        }
+
+
+        operator T&() {
+            return _t;
+        }
+
+        operator const T&() const {
+            return _t;
+        }
+
+
+
+        T& get() {
+            return _t;
+        }
+
+        const T& get() const {
+            return _t;
+        }
+
+    private:
+        T _t = {};
 };
 
 class DeviceLinked {
-	public:
-		~DeviceLinked() = default;
+    public:
+        ~DeviceLinked() = default;
 
-		DevicePtr device() const;
-		bool is_null() const;
+        DevicePtr device() const;
+        bool is_null() const;
 
-		template<typename T>
-		void destroy(T&& t) const;
-
-
-	protected:
-		// Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
-		DeviceLinked();
-		DeviceLinked(DevicePtr dev);
-		DeviceLinked(ThreadDevicePtr dev);
-
-		DeviceLinked(const DeviceLinked&) = default;
-		DeviceLinked& operator=(const DeviceLinked&) = default;
-
-		DeviceLinked(DeviceLinked&& other);
-		DeviceLinked& operator=(DeviceLinked&& other);
+        template<typename T>
+        void destroy(T&& t) const;
 
 
-		void swap(DeviceLinked& other);
+    protected:
+        // Only default constructor should not link any device: explicitly passing nullptr to DeviceLinked is an error
+        DeviceLinked();
+        DeviceLinked(DevicePtr dev);
+        DeviceLinked(ThreadDevicePtr dev);
 
-	private:
-		DevicePtr _device = nullptr;
+        DeviceLinked(const DeviceLinked&) = default;
+        DeviceLinked& operator=(const DeviceLinked&) = default;
+
+        DeviceLinked(DeviceLinked&& other);
+        DeviceLinked& operator=(DeviceLinked&& other);
+
+
+        void swap(DeviceLinked& other);
+
+    private:
+        DevicePtr _device = nullptr;
 };
 
 class ThreadDeviceLinked {
-	public:
-		~ThreadDeviceLinked() = default;
+    public:
+        ~ThreadDeviceLinked() = default;
 
-		ThreadDevicePtr thread_device() const;
-		DevicePtr device() const;
+        ThreadDevicePtr thread_device() const;
+        DevicePtr device() const;
 
-		template<typename T>
-		void destroy(T&& t) const;
+        template<typename T>
+        void destroy(T&& t) const;
 
-	protected:
-		ThreadDeviceLinked();
-		ThreadDeviceLinked(ThreadDevicePtr dev);
+    protected:
+        ThreadDeviceLinked();
+        ThreadDeviceLinked(ThreadDevicePtr dev);
 
-		ThreadDeviceLinked(const ThreadDeviceLinked&) = default;
-		ThreadDeviceLinked& operator=(const ThreadDeviceLinked&) = default;
+        ThreadDeviceLinked(const ThreadDeviceLinked&) = default;
+        ThreadDeviceLinked& operator=(const ThreadDeviceLinked&) = default;
 
-		ThreadDeviceLinked(ThreadDeviceLinked&& other);
-		ThreadDeviceLinked& operator=(ThreadDeviceLinked&& other);
+        ThreadDeviceLinked(ThreadDeviceLinked&& other);
+        ThreadDeviceLinked& operator=(ThreadDeviceLinked&& other);
 
-		void swap(ThreadDeviceLinked& other);
+        void swap(ThreadDeviceLinked& other);
 
-	private:
-		ThreadDevicePtr _device = nullptr;
+    private:
+        ThreadDevicePtr _device = nullptr;
 };
 
 template<typename T>
 void DeviceLinked::destroy(T&& t) const {
-	device_destroy(device(), y_fwd(t));
+    device_destroy(device(), y_fwd(t));
 }
 
 template<typename T>
 void ThreadDeviceLinked::destroy(T&& t) const {
-	device_destroy(device(), y_fwd(t));
+    device_destroy(device(), y_fwd(t));
 }
 
 }
 
 #endif // YAVE_DEVICE_DEVICELINKED_H
+

@@ -33,46 +33,47 @@ namespace io2 {
 
 class File final : public Reader, public Writer {
 
-	public:
-		File() = default;
-		~File() override;
+    public:
+        File() = default;
+        ~File() override;
 
-		File(File&& other);
-		File& operator=(File&& other);
+        File(File&& other);
+        File& operator=(File&& other);
 
-		static core::Result<File> create(const core::String& name);
-		static core::Result<File> open(const core::String& name);
+        static core::Result<File> create(const core::String& name);
+        static core::Result<File> open(const core::String& name);
 
-		static  core::Result<void> copy(Reader& src, const core::String& dst);
+        static  core::Result<void> copy(Reader& src, const core::String& dst);
 
-		usize size() const;
-		usize remaining() const override;
+        usize size() const;
+        usize remaining() const override;
 
-		bool is_open() const;
-		bool at_end() const override;
+        bool is_open() const;
+        bool at_end() const override;
 
-		void seek(usize byte) override;
-		usize tell() const override;
+        void seek(usize byte) override;
+        usize tell() const override;
 
-		void seek_end();
-		void reset();
+        void seek_end();
+        void reset();
 
-		ReadResult read(void* data, usize bytes) override;
-		ReadUpToResult read_up_to(void* data, usize max_bytes) override;
-		ReadUpToResult read_all(core::Vector<u8>& data) override;
+        ReadResult read(void* data, usize bytes) override;
+        ReadUpToResult read_up_to(void* data, usize max_bytes) override;
+        ReadUpToResult read_all(core::Vector<u8>& data) override;
 
-		WriteResult write(const void* data, usize bytes) override;
-		FlushResult flush() override;
+        WriteResult write(const void* data, usize bytes) override;
+        FlushResult flush() override;
 
-	private:
-		File(std::FILE* f);
+    private:
+        File(std::FILE* f);
 
-		void swap(File& other);
+        void swap(File& other);
 
-		std::FILE* _file = nullptr;
+        std::FILE* _file = nullptr;
 };
 
 }
 }
 
 #endif // Y_IO2_FILE_H
+

@@ -34,45 +34,46 @@ using namespace y;
 using namespace y::core;
 
 static usize test_func_c(Span<char> a) {
-	return a.size();
+    return a.size();
 }
 
 static usize test_func(Span<int> a) {
-	return a.size();
+    return a.size();
 }
 
 static usize test_func_nc(Span<NonCopyable> a) {
-	return a.size();
+    return a.size();
 }
 
 
 y_test_func("Span creation") {
-	y_test_assert(test_func({1, 2, 3}) == 3);
+    y_test_assert(test_func({1, 2, 3}) == 3);
 
-	const auto vec = Vector({1, 2, 3, 4});
-	y_test_assert(test_func(vec) == 4);
+    const auto vec = Vector({1, 2, 3, 4});
+    y_test_assert(test_func(vec) == 4);
 
-	y_test_assert(test_func(SmallVector<int>({1, 2, 3, 4})) == 4);
+    y_test_assert(test_func(SmallVector<int>({1, 2, 3, 4})) == 4);
 
-	std::vector<int> std_vec(12);
-	std::iota(std_vec.begin(), std_vec.end(), 17);
-	y_test_assert(test_func(std_vec) == 12);
+    std::vector<int> std_vec(12);
+    std::iota(std_vec.begin(), std_vec.end(), 17);
+    y_test_assert(test_func(std_vec) == 12);
 
-	y_test_assert(test_func_c("12345") == 6);
-	y_test_assert(test_func_c("12345"_s) == 5);
+    y_test_assert(test_func_c("12345") == 6);
+    y_test_assert(test_func_c("12345"_s) == 5);
 
-	const int arr[] = {1, 7, 9};
-	y_test_assert(test_func(arr) == 3);
+    const int arr[] = {1, 7, 9};
+    y_test_assert(test_func(arr) == 3);
 
-	y_test_assert(test_func(nullptr) == 0);
-	y_test_assert(test_func(17) == 1);
+    y_test_assert(test_func(nullptr) == 0);
+    y_test_assert(test_func(17) == 1);
 }
 
 y_test_func("Span of non-copyables") {
-	y_test_assert(test_func_nc(NonCopyable()) == 1);
-	y_test_assert(test_func_nc({NonCopyable(), NonCopyable()}) == 2);
+    y_test_assert(test_func_nc(NonCopyable()) == 1);
+    y_test_assert(test_func_nc({NonCopyable(), NonCopyable()}) == 2);
 
-	/*NonCopyable nc;
-	y_test_assert(test_func_nc({nc, NonCopyable()}) == 2);*/
+    /*NonCopyable nc;
+    y_test_assert(test_func_nc({nc, NonCopyable()}) == 2);*/
 }
 }
+

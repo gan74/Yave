@@ -30,50 +30,51 @@ SOFTWARE.
 namespace yave {
 
 class SpotLightComponent final : public ecs::RequiredComponents<TransformableComponent> {
-	public:
-		SpotLightComponent() = default;
+    public:
+        SpotLightComponent() = default;
 
-		math::Vec3& color();
-		const math::Vec3& color() const;
+        math::Vec3& color();
+        const math::Vec3& color() const;
 
-		float& intensity();
-		float intensity() const;
+        float& intensity();
+        float intensity() const;
 
-		float& radius();
-		float radius() const;
+        float& radius();
+        float radius() const;
 
-		float& falloff();
-		float falloff() const;
+        float& falloff();
+        float falloff() const;
 
-		float& half_angle();
-		float half_angle() const;
+        float& half_angle();
+        float half_angle() const;
 
-		float& angle_exponent();
-		float angle_exponent() const;
+        float& angle_exponent();
+        float angle_exponent() const;
 
-		bool& cast_shadow();
-		bool cast_shadow() const;
+        bool& cast_shadow();
+        bool cast_shadow() const;
 
-		u32& shadow_lod();
-		u32 shadow_lod() const;
+        u32& shadow_lod();
+        u32 shadow_lod() const;
 
-		/*math::Vec2& depth_bias();
-		math::Vec2 depth_bias() const;*/
+        /*math::Vec2& depth_bias();
+        math::Vec2 depth_bias() const;*/
 
-		y_serde3(_color, _intensity, _radius, _falloff, _angle, _angle_exp, _cast_shadow, _shadow_lod)
+        y_serde3(_color, _intensity, _radius, _falloff, _angle, _angle_exp, _cast_shadow, _shadow_lod)
 
-	private:
-		math::Vec3 _color = math::Vec3{1.0f};
-		float _intensity = 1.0f;
-		float _radius = 10.0f;
-		float _falloff = 1.0f;
-		float _angle = math::to_rad(45.0f);
-		float _angle_exp = 2.0f;
+    private:
+        math::Vec3 _color = math::Vec3{1.0f};
+        float _intensity = 1.0f;
+        float _radius = 10.0f;
+        float _falloff = 1.0f;
+        float _angle = math::to_rad(45.0f);
+        float _angle_exp = 2.0f;
 
-		bool _cast_shadow = false;
-		u32 _shadow_lod = 0;
+        bool _cast_shadow = false;
+        u32 _shadow_lod = 0;
 };
 
 }
 
 #endif // YAVE_COMPONENTS_SPOTLIGHTCOMPONENT_H
+

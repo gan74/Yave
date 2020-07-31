@@ -31,42 +31,43 @@ namespace editor {
 static constexpr std::string_view settings_file = "../settings.dat";
 
 Settings::Settings(bool load) {
-	if(load) {
-		auto file = io2::File::open(settings_file);
-		if(!file) {
-			log_msg("Unable to open settings file.", Log::Error);
-			return;
-		}
-		serde3::ReadableArchive arc(file.unwrap());
-		if(!arc.deserialize(*this)) {
-			log_msg("Unable to read settings file.", Log::Error);
-			*this = Settings(false);
-		}
-	}
+    if(load) {
+        auto file = io2::File::open(settings_file);
+        if(!file) {
+            log_msg("Unable to open settings file.", Log::Error);
+            return;
+        }
+        serde3::ReadableArchive arc(file.unwrap());
+        if(!arc.deserialize(*this)) {
+            log_msg("Unable to read settings file.", Log::Error);
+            *this = Settings(false);
+        }
+    }
 }
 
 Settings::~Settings() {
-	auto file = io2::File::create(settings_file);
-	if(!file) {
-		log_msg("Unable to open settings file.", Log::Error);
-		return;
-	}
-	serde3::WritableArchive arc(file.unwrap());
-	if(!arc.serialize(*this)) {
-		log_msg("Unable to write settings file.", Log::Error);
-	}
+    auto file = io2::File::create(settings_file);
+    if(!file) {
+        log_msg("Unable to open settings file.", Log::Error);
+        return;
+    }
+    serde3::WritableArchive arc(file.unwrap());
+    if(!arc.serialize(*this)) {
+        log_msg("Unable to write settings file.", Log::Error);
+    }
 }
 
 CameraSettings& Settings::camera() {
-	return _camera;
+    return _camera;
 }
 
 UiSettings& Settings::ui() {
-	return _ui;
+    return _ui;
 }
 
 PerfSettings& Settings::perf() {
-	return _perf;
+    return _perf;
 }
 
 }
+

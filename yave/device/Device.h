@@ -43,86 +43,87 @@ namespace yave {
 
 class Device : NonMovable {
 
-	struct ScopedDevice {
-		~ScopedDevice();
-		const VkDevice device;
-	};
+    struct ScopedDevice {
+        ~ScopedDevice();
+        const VkDevice device;
+    };
 
-	public:
-		explicit Device(Instance& instance);
-		~Device();
+    public:
+        explicit Device(Instance& instance);
+        ~Device();
 
-		const PhysicalDevice& physical_device() const;
-		const Instance& instance() const;
+        const PhysicalDevice& physical_device() const;
+        const Instance& instance() const;
 
-		DeviceMemoryAllocator& allocator() const;
-		DescriptorSetAllocator& descriptor_set_allocator() const;
+        DeviceMemoryAllocator& allocator() const;
+        DescriptorSetAllocator& descriptor_set_allocator() const;
 
-		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
+        CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
 
-		const QueueFamily& queue_family(VkQueueFlags flags) const;
-		const Queue& graphic_queue() const;
-		Queue& graphic_queue();
+        const QueueFamily& queue_family(VkQueueFlags flags) const;
+        const Queue& graphic_queue() const;
+        Queue& graphic_queue();
 
-		void wait_all_queues() const;
+        void wait_all_queues() const;
 
-		ThreadDevicePtr thread_device() const;
-		const DeviceResources& device_resources() const;
-		DeviceResources& device_resources();
+        ThreadDevicePtr thread_device() const;
+        const DeviceResources& device_resources() const;
+        DeviceResources& device_resources();
 
-		const DeviceProperties& device_properties() const;
+        const DeviceProperties& device_properties() const;
 
-		LifetimeManager& lifetime_manager() const;
+        LifetimeManager& lifetime_manager() const;
 
-		VkDevice vk_device() const;
-		const VkAllocationCallbacks* vk_allocation_callbacks() const;
-		VkPhysicalDevice vk_physical_device() const;
-		VkSampler vk_sampler(SamplerType type = SamplerType::Repeat) const;
+        VkDevice vk_device() const;
+        const VkAllocationCallbacks* vk_allocation_callbacks() const;
+        VkPhysicalDevice vk_physical_device() const;
+        VkSampler vk_sampler(SamplerType type = SamplerType::Repeat) const;
 
-		const DebugUtils* debug_utils() const;
-		const RayTracing* ray_tracing() const;
+        const DebugUtils* debug_utils() const;
+        const RayTracing* ray_tracing() const;
 
 
-		template<typename T>
-		decltype(auto) descriptor_set_layout(T&& t) const {
-			return descriptor_set_allocator().descriptor_set_layout(y_fwd(t));
-		}
+        template<typename T>
+        decltype(auto) descriptor_set_layout(T&& t) const {
+            return descriptor_set_allocator().descriptor_set_layout(y_fwd(t));
+        }
 
-		template<typename T>
-		void destroy_later(T&& t) const {
-			_lifetime_manager.destroy_later(y_fwd(t));
-		}
+        template<typename T>
+        void destroy_later(T&& t) const {
+            _lifetime_manager.destroy_later(y_fwd(t));
+        }
 
-	private:
-		Instance& _instance;
-		Y_TODO(move this to the heap or slim it)
-		PhysicalDevice _physical;
+    private:
+        Instance& _instance;
+        Y_TODO(move this to the heap or slim it)
+        PhysicalDevice _physical;
 
-		core::Vector<QueueFamily> _queue_families;
+        core::Vector<QueueFamily> _queue_families;
 
-		ScopedDevice _device;
-		DeviceProperties _properties;
+        ScopedDevice _device;
+        DeviceProperties _properties;
 
-		mutable DeviceMemoryAllocator _allocator;
-		mutable LifetimeManager _lifetime_manager;
+        mutable DeviceMemoryAllocator _allocator;
+        mutable LifetimeManager _lifetime_manager;
 
-		core::Vector<Queue> _queues;
+        core::Vector<Queue> _queues;
 
-		std::array<Sampler, 2> _samplers;
+        std::array<Sampler, 2> _samplers;
 
-		mutable DescriptorSetAllocator _descriptor_set_allocator;
+        mutable DescriptorSetAllocator _descriptor_set_allocator;
 
-		mutable concurrent::SpinLock _lock;
-		mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
+        mutable concurrent::SpinLock _lock;
+        mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
-		struct {
-			std::unique_ptr<RayTracing> raytracing;
-		} _extensions;
+        struct {
+            std::unique_ptr<RayTracing> raytracing;
+        } _extensions;
 
-		DeviceResources _resources;
+        DeviceResources _resources;
 };
 
 }
 
 
 #endif // YAVE_DEVICE_DEVICE_H
+

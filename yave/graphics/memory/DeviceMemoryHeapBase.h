@@ -33,21 +33,22 @@ SOFTWARE.
 namespace yave {
 
 class DeviceMemoryHeapBase : NonMovable, public DeviceLinked {
-	public:
-		virtual ~DeviceMemoryHeapBase() {
-		}
+    public:
+        virtual ~DeviceMemoryHeapBase() {
+        }
 
-		virtual core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) = 0;
-		virtual void free(const DeviceMemory& memory) = 0;
+        virtual core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) = 0;
+        virtual void free(const DeviceMemory& memory) = 0;
 
-		virtual void* map(const DeviceMemoryView& view) = 0;
-		virtual void unmap(const DeviceMemoryView& view) = 0;
+        virtual void* map(const DeviceMemoryView& view) = 0;
+        virtual void unmap(const DeviceMemoryView& view) = 0;
 
-	protected:
-		DeviceMemoryHeapBase(DevicePtr dptr) : DeviceLinked(dptr) {
-		}
+    protected:
+        DeviceMemoryHeapBase(DevicePtr dptr) : DeviceLinked(dptr) {
+        }
 };
 
 }
 
 #endif // YAVE_GRAPHICS_MEMORY_DEVICEMEMORYHEAPBASE_H
+

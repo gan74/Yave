@@ -49,155 +49,156 @@ class StaticMesh;
 class IBLProbe;
 
 class DeviceResources final : NonCopyable {
-	public:
-		enum SpirV {
-			EquirecConvolutionComp,
-			CubemapConvolutionComp,
-			BRDFIntegratorComp,
-			DeferredAmbientComp,
-			DeferredLocalsComp,
-			SSAOComp,
-			CopyComp,
-			HistogramClearComp,
-			HistogramComp,
-			ToneMapParamsComp,
-			DepthBoundComp,
+    public:
+        enum SpirV {
+            EquirecConvolutionComp,
+            CubemapConvolutionComp,
+            BRDFIntegratorComp,
+            DeferredAmbientComp,
+            DeferredLocalsComp,
+            SSAOComp,
+            CopyComp,
+            HistogramClearComp,
+            HistogramComp,
+            ToneMapParamsComp,
+            DepthBoundComp,
 
-			ToneMapFrag,
-			TexturedFrag,
-			TexturedAlphaFrag,
-			PassthroughFrag,
-			BloomFrag,
-			HBlurFrag,
-			VBlurFrag,
+            ToneMapFrag,
+            TexturedFrag,
+            TexturedAlphaFrag,
+            PassthroughFrag,
+            BloomFrag,
+            HBlurFrag,
+            VBlurFrag,
 
-			BasicVert,
-			SkinnedVert,
-			ScreenVert,
+            BasicVert,
+            SkinnedVert,
+            ScreenVert,
 
-			MaxSpirV
-		};
+            MaxSpirV
+        };
 
-		enum ComputePrograms {
-			EquirecConvolutionProgram,
-			CubemapConvolutionProgram,
-			BRDFIntegratorProgram,
-			DeferredAmbientProgram,
-			DeferredLocalsProgram,
-			SSAOProgram,
-			CopyProgram,
-			HistogramClearProgram,
-			HistogramProgram,
-			ToneMapParamsProgram,
-			DepthBoundProgram,
+        enum ComputePrograms {
+            EquirecConvolutionProgram,
+            CubemapConvolutionProgram,
+            BRDFIntegratorProgram,
+            DeferredAmbientProgram,
+            DeferredLocalsProgram,
+            SSAOProgram,
+            CopyProgram,
+            HistogramClearProgram,
+            HistogramProgram,
+            ToneMapParamsProgram,
+            DepthBoundProgram,
 
-			MaxComputePrograms
-		};
+            MaxComputePrograms
+        };
 
-		enum MaterialTemplates {
-			TexturedMaterialTemplate,
-			TexturedAlphaMaterialTemplate,
-			TexturedSkinnedMaterialTemplate,
+        enum MaterialTemplates {
+            TexturedMaterialTemplate,
+            TexturedAlphaMaterialTemplate,
+            TexturedSkinnedMaterialTemplate,
 
-			ToneMappingMaterialTemplate,
+            ToneMappingMaterialTemplate,
 
-			ScreenPassthroughMaterialTemplate,
-			ScreenBlendPassthroughMaterialTemplate,
+            ScreenPassthroughMaterialTemplate,
+            ScreenBlendPassthroughMaterialTemplate,
 
-			BloomMaterialTemplate,
+            BloomMaterialTemplate,
 
-			HBlurMaterialTemplate,
-			VBlurMaterialTemplate,
+            HBlurMaterialTemplate,
+            VBlurMaterialTemplate,
 
-			MaxMaterialTemplates
-		};
+            MaxMaterialTemplates
+        };
 
-		enum Materials {
-			EmptyMaterial,
+        enum Materials {
+            EmptyMaterial,
 
-			MaxMaterials
-		};
+            MaxMaterials
+        };
 
-		enum Textures {
-			BlackTexture,
-			WhiteTexture,
-			GreyTexture,
-			RedTexture,
+        enum Textures {
+            BlackTexture,
+            WhiteTexture,
+            GreyTexture,
+            RedTexture,
 
-			FlatNormalTexture,
+            FlatNormalTexture,
 
-			SkyIBLTexture,
+            SkyIBLTexture,
 
-			MaxTextures
-		};
+            MaxTextures
+        };
 
-		enum Meshes {
-			CubeMesh,
-			SphereMesh,
-			SimpleSphereMesh,
-			SweepMesh,
+        enum Meshes {
+            CubeMesh,
+            SphereMesh,
+            SimpleSphereMesh,
+            SweepMesh,
 
-			MaxMeshes
-		};
+            MaxMeshes
+        };
 
-		DeviceResources();
-		DeviceResources(DevicePtr dptr);
+        DeviceResources();
+        DeviceResources(DevicePtr dptr);
 
-		void init(DevicePtr dptr);
+        void init(DevicePtr dptr);
 
-		DeviceResources(DeviceResources&& other);
-		DeviceResources& operator=(DeviceResources&& other);
+        DeviceResources(DeviceResources&& other);
+        DeviceResources& operator=(DeviceResources&& other);
 
-		// can't default for inclusion reasons
-		~DeviceResources();
+        // can't default for inclusion reasons
+        ~DeviceResources();
 
-		bool is_init() const;
+        bool is_init() const;
 
-		DevicePtr device() const;
+        DevicePtr device() const;
 
-		TextureView brdf_lut() const;
-		const AssetPtr<IBLProbe>& ibl_probe() const;
-		const AssetPtr<IBLProbe>& empty_probe() const;
+        TextureView brdf_lut() const;
+        const AssetPtr<IBLProbe>& ibl_probe() const;
+        const AssetPtr<IBLProbe>& empty_probe() const;
 
-		const SpirVData& operator[](SpirV i) const;
-		const ComputeProgram& operator[](ComputePrograms i) const;
-		const MaterialTemplate* operator[](MaterialTemplates i) const;
+        const SpirVData& operator[](SpirV i) const;
+        const ComputeProgram& operator[](ComputePrograms i) const;
+        const MaterialTemplate* operator[](MaterialTemplates i) const;
 
-		const AssetPtr<Texture>& operator[](Textures i) const;
-		const AssetPtr<Material>& operator[](Materials i) const;
-		const AssetPtr<StaticMesh>& operator[](Meshes i) const;
+        const AssetPtr<Texture>& operator[](Textures i) const;
+        const AssetPtr<Material>& operator[](Materials i) const;
+        const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
-		void reload();
+        void reload();
 
-	private:
-		void swap(DeviceResources& other);
+    private:
+        void swap(DeviceResources& other);
 
-		void load_resources();
+        void load_resources();
 
-		DevicePtr _device = nullptr;
+        DevicePtr _device = nullptr;
 
-		std::unique_ptr<SpirVData[]> _spirv;
-		std::unique_ptr<ComputeProgram[]> _computes;
-		std::unique_ptr<MaterialTemplate[]> _material_templates;
+        std::unique_ptr<SpirVData[]> _spirv;
+        std::unique_ptr<ComputeProgram[]> _computes;
+        std::unique_ptr<MaterialTemplate[]> _material_templates;
 
-		std::unique_ptr<AssetPtr<Texture>[]> _textures;
-		std::unique_ptr<AssetPtr<Material>[]> _materials;
-		std::unique_ptr<AssetPtr<StaticMesh>[]> _meshes;
+        std::unique_ptr<AssetPtr<Texture>[]> _textures;
+        std::unique_ptr<AssetPtr<Material>[]> _materials;
+        std::unique_ptr<AssetPtr<StaticMesh>[]> _meshes;
 
-		AssetPtr<IBLProbe> _probe;
-		AssetPtr<IBLProbe> _empty_probe;
-		Texture _brdf_lut;
+        AssetPtr<IBLProbe> _probe;
+        AssetPtr<IBLProbe> _empty_probe;
+        Texture _brdf_lut;
 
 
 #ifdef Y_DEBUG
-		std::unique_ptr<std::recursive_mutex> _lock;
-		mutable core::ExternalHashMap<core::String, std::unique_ptr<ComputeProgram>> _programs;
+        std::unique_ptr<std::recursive_mutex> _lock;
+        mutable core::ExternalHashMap<core::String, std::unique_ptr<ComputeProgram>> _programs;
 
-	public:
-		const ComputeProgram& program_from_file(std::string_view file) const;
+    public:
+        const ComputeProgram& program_from_file(std::string_view file) const;
 #endif
 
 };
 }
 
 #endif // YAVE_DEVICE_DEVICERESOURCES_H
+

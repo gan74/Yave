@@ -33,46 +33,47 @@ class FileSystemModel;
 
 class AssetStore : NonCopyable {
 
-	public:
-		enum class ErrorType {
-			UnknownID,
-			AlreadyExistingID,
+    public:
+        enum class ErrorType {
+            UnknownID,
+            AlreadyExistingID,
 
-			InvalidName,
+            InvalidName,
 
-			FilesytemError,
+            FilesytemError,
 
-			UnsupportedOperation,
-			Unknown,
-		};
+            UnsupportedOperation,
+            Unknown,
+        };
 
-		template<typename T = void>
-		using Result = core::Result<T, ErrorType>;
+        template<typename T = void>
+        using Result = core::Result<T, ErrorType>;
 
 
 
-		AssetStore();
-		virtual ~AssetStore();
+        AssetStore();
+        virtual ~AssetStore();
 
-		virtual const FileSystemModel* filesystem() const;
+        virtual const FileSystemModel* filesystem() const;
 
-		virtual Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) = 0;
-		virtual Result<> write(AssetId id, io2::Reader& data);
+        virtual Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) = 0;
+        virtual Result<> write(AssetId id, io2::Reader& data);
 
-		virtual Result<AssetId> id(std::string_view name) const = 0;
-		virtual Result<core::String> name(AssetId id) const = 0;
+        virtual Result<AssetId> id(std::string_view name) const = 0;
+        virtual Result<core::String> name(AssetId id) const = 0;
 
-		virtual Result<io2::ReaderPtr> data(AssetId id) const = 0;
+        virtual Result<io2::ReaderPtr> data(AssetId id) const = 0;
 
-		virtual Result<> remove(AssetId id);
-		virtual Result<> rename(AssetId id, std::string_view new_name);
+        virtual Result<> remove(AssetId id);
+        virtual Result<> rename(AssetId id, std::string_view new_name);
 
-		virtual Result<> remove(std::string_view name);
-		virtual Result<> rename(std::string_view from, std::string_view to);
+        virtual Result<> remove(std::string_view name);
+        virtual Result<> rename(std::string_view from, std::string_view to);
 
-		virtual Result<AssetType> asset_type(AssetId id) const;
+        virtual Result<AssetType> asset_type(AssetId id) const;
 };
 
 }
 
 #endif // YAVE_ASSETS_ASSETSTORE_H
+

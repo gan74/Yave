@@ -30,26 +30,27 @@ namespace editor {
 
 class MainEventHandler : public EventHandler
 {
-	public:
-		MainEventHandler();
+    public:
+        MainEventHandler();
 
-		virtual ~MainEventHandler();
+        virtual ~MainEventHandler();
 
-		void mouse_moved(const math::Vec2i& pos) override;
-		void mouse_pressed(const math::Vec2i& pos, MouseButton button) override;
-		void mouse_released(const math::Vec2i& pos, MouseButton button) override;
+        void mouse_moved(const math::Vec2i& pos) override;
+        void mouse_pressed(const math::Vec2i& pos, MouseButton button) override;
+        void mouse_released(const math::Vec2i& pos, MouseButton button) override;
 
-		void mouse_wheel(int delta) override;
+        void mouse_wheel(int delta) override;
 
-		void char_input(u32 character) override;
+        void char_input(u32 character) override;
 
-		void key_pressed(Key key) override;
-		void key_released(Key key) override;
+        void key_pressed(Key key) override;
+        void key_released(Key key) override;
 
-	private:
-		void key_event(Key key, bool pressed);
+    private:
+        void key_event(Key key, bool pressed);
 };
 
 }
 
 #endif // EDITOR_EVENTS_MAINEVENTHANDLER_H
+

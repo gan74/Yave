@@ -82,61 +82,61 @@ static constexpr bool has_serde3_ptr_poly_v = is_detected_v<detail::has_serde3_p
 
 template<typename T>
 constexpr auto members(T&& t) {
-	if constexpr(has_serde3_v<T>) {
-		return t._y_serde3_refl();
-	} else {
-		return std::tuple<>{};
-	}
+    if constexpr(has_serde3_v<T>) {
+        return t._y_serde3_refl();
+    } else {
+        return std::tuple<>{};
+    }
 }
 
 template<typename T>
 constexpr usize member_count() {
-	return std::tuple_size_v<decltype(members(std::declval<T&>()))>;
+    return std::tuple_size_v<decltype(members(std::declval<T&>()))>;
 }
 
 // Ref version
 template<typename T, bool Ref = true>
 struct NamedObject {
-	T& object;
-	const std::string_view name;
+    T& object;
+    const std::string_view name;
 
-	constexpr NamedObject(T& t, std::string_view n) : object(t), name(n) {
-	}
+    constexpr NamedObject(T& t, std::string_view n) : object(t), name(n) {
+    }
 
-	constexpr NamedObject<const T> make_const_ref() const {
-		return NamedObject<const T>(object, name);
-	}
+    constexpr NamedObject<const T> make_const_ref() const {
+        return NamedObject<const T>(object, name);
+    }
 
-	constexpr NamedObject<T> make_ref() const {
-		return *this;
-	}
+    constexpr NamedObject<T> make_ref() const {
+        return *this;
+    }
 };
 
 template<typename T>
 struct NamedObject<T, false> {
-	mutable T object;
-	const std::string_view name;
+    mutable T object;
+    const std::string_view name;
 
-	constexpr NamedObject(T t, std::string_view n) : object(std::move(t)), name(n) {
-	}
+    constexpr NamedObject(T t, std::string_view n) : object(std::move(t)), name(n) {
+    }
 
-	constexpr NamedObject<const T> make_const_ref() const {
-		return NamedObject<const T>(object, name);
-	}
+    constexpr NamedObject<const T> make_const_ref() const {
+        return NamedObject<const T>(object, name);
+    }
 
-	constexpr NamedObject<T> make_ref() const {
-		return NamedObject<T>(object, name);
-	}
+    constexpr NamedObject<T> make_ref() const {
+        return NamedObject<T>(object, name);
+    }
 };
 
 template<bool Ref, typename T>
 constexpr auto create_named_object(T&& t, std::string_view name) {
-	return NamedObject<std::remove_reference_t<T>, Ref>(y_fwd(t), name);
+    return NamedObject<std::remove_reference_t<T>, Ref>(y_fwd(t), name);
 }
 
 template<bool Ref, typename T>
 constexpr auto create_named_object(const std::reference_wrapper<T>& t, std::string_view name) {
-	return NamedObject<std::remove_reference_t<decltype(t.get())>, true>(t.get(), name);
+    return NamedObject<std::remove_reference_t<decltype(t.get())>, true>(t.get(), name);
 }
 
 
@@ -145,9 +145,9 @@ constexpr auto create_named_object(const std::reference_wrapper<T>& t, std::stri
 #define y_serde3_refl_qual(qual, ...) /*constexpr*/ auto _y_serde3_refl() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_serde3_create_item, __VA_ARGS__))}; }
 
 
-#define y_serde3(...)								\
-	y_serde3_refl_qual(/* */, __VA_ARGS__)			\
-	y_serde3_refl_qual(const, __VA_ARGS__)
+#define y_serde3(...)                               \
+    y_serde3_refl_qual(/* */, __VA_ARGS__)          \
+    y_serde3_refl_qual(const, __VA_ARGS__)
 
 #define y_no_serde3() static constexpr int _y_serde3_no_serde = 0;
 
@@ -155,3 +155,4 @@ constexpr auto create_named_object(const std::reference_wrapper<T>& t, std::stri
 }
 
 #endif // Y_SERDE3_SERDE_H
+

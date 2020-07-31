@@ -32,3 +32,4 @@ struct EditorState {
 }
 
 #endif // EDITOR_CONTEXT_EDITORSSTATE_H
+

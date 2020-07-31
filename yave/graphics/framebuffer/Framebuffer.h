@@ -32,54 +32,55 @@ namespace yave {
 
 class Framebuffer final : NonCopyable, public DeviceLinked {
 
-	public:
-		using LoadOp = RenderPass::LoadOp;
+    public:
+        using LoadOp = RenderPass::LoadOp;
 
-		template<ImageUsage Usage>
-		struct Attachment {
-			Attachment() = default;
+        template<ImageUsage Usage>
+        struct Attachment {
+            Attachment() = default;
 
-			Attachment(const ImageView<Usage>& v) : view(v) {
-			}
+            Attachment(const ImageView<Usage>& v) : view(v) {
+            }
 
-			Attachment(const ImageView<Usage>& v, LoadOp op) : view(v), load_op(op) {
-			}
+            Attachment(const ImageView<Usage>& v, LoadOp op) : view(v), load_op(op) {
+            }
 
-			ImageView<Usage> view;
-			LoadOp load_op = LoadOp::Clear;
-		};
+            ImageView<Usage> view;
+            LoadOp load_op = LoadOp::Clear;
+        };
 
-		using ColorAttachment = Attachment<ImageUsage::ColorBit>;
-		using DepthAttachment = Attachment<ImageUsage::DepthBit>;
+        using ColorAttachment = Attachment<ImageUsage::ColorBit>;
+        using DepthAttachment = Attachment<ImageUsage::DepthBit>;
 
-		Framebuffer() = default;
-		Framebuffer(Framebuffer&&) = default;
-		Framebuffer& operator=(Framebuffer&&) = default;
+        Framebuffer() = default;
+        Framebuffer(Framebuffer&&) = default;
+        Framebuffer& operator=(Framebuffer&&) = default;
 
-		Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Span<ColorAttachment> colors = {});
-		Framebuffer(DevicePtr dptr, core::Span<ColorAttachmentView> colors = {}, LoadOp load_op = LoadOp::Clear);
-		Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::Span<ColorAttachmentView> colors = {}, LoadOp load_op = LoadOp::Clear);
+        Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Span<ColorAttachment> colors = {});
+        Framebuffer(DevicePtr dptr, core::Span<ColorAttachmentView> colors = {}, LoadOp load_op = LoadOp::Clear);
+        Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::Span<ColorAttachmentView> colors = {}, LoadOp load_op = LoadOp::Clear);
 
-		~Framebuffer();
+        ~Framebuffer();
 
-		const math::Vec2ui& size() const;
+        const math::Vec2ui& size() const;
 
-		VkFramebuffer vk_framebuffer() const;
+        VkFramebuffer vk_framebuffer() const;
 
-		const RenderPass& render_pass() const;
+        const RenderPass& render_pass() const;
 
-		usize attachment_count() const {
-			return _attachment_count;
-		}
+        usize attachment_count() const {
+            return _attachment_count;
+        }
 
-	private:
-		math::Vec2ui _size;
-		usize _attachment_count = 0;
+    private:
+        math::Vec2ui _size;
+        usize _attachment_count = 0;
 
-		std::unique_ptr<RenderPass> _render_pass;
-		VkFramebuffer _framebuffer = {};
+        std::unique_ptr<RenderPass> _render_pass;
+        VkFramebuffer _framebuffer = {};
 };
 
 }
 
 #endif // YAVE_GRAPHICS_FRAMEBUFFER_FRAMEBUFFER_H
+

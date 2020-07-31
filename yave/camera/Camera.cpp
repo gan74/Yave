@@ -25,114 +25,115 @@ SOFTWARE.
 namespace yave {
 
 static math::Vec3 extract_position(const math::Matrix4<>& view) {
-	math::Vec3 pos;
-	for(usize i = 0; i != 3; ++i) {
-		const auto v = view.row(i);
-		pos -= v.to<3>() * v.w();
-	}
-	return pos;
+    math::Vec3 pos;
+    for(usize i = 0; i != 3; ++i) {
+        const auto v = view.row(i);
+        pos -= v.to<3>() * v.w();
+    }
+    return pos;
 }
 
 static math::Vec3 extract_forward(const math::Matrix4<>& view) {
-	return -view.row(2).to<3>().normalized();
+    return -view.row(2).to<3>().normalized();
 }
 
 static math::Vec3 extract_right(const math::Matrix4<>& view) {
-	return view.row(0).to<3>().normalized();
+    return view.row(0).to<3>().normalized();
 }
 
 static math::Vec3 extract_up(const math::Matrix4<>& view) {
-	return -view.row(1).to<3>().normalized();
+    return -view.row(1).to<3>().normalized();
 }
 
 
 static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj) {
-	const auto x = viewproj.row(0);
-	const auto y = viewproj.row(1);
-	const auto z = viewproj.row(2);
-	const auto w = viewproj.row(3);
-	return {{
-			(w + x).normalized(),
-			(w - x).normalized(),
-			(w + y).normalized(),
-			(w - y).normalized(),
-			(w + z).normalized(),
-			(w - z).normalized()
-		}};
+    const auto x = viewproj.row(0);
+    const auto y = viewproj.row(1);
+    const auto z = viewproj.row(2);
+    const auto w = viewproj.row(3);
+    return {{
+            (w + x).normalized(),
+            (w - x).normalized(),
+            (w + y).normalized(),
+            (w - y).normalized(),
+            (w + z).normalized(),
+            (w - z).normalized()
+        }};
 }
 
 Camera::Camera() {
-	const float ratio = 4.0f / 3.0f;
-	set_proj(math::perspective(math::to_rad(45.0f), ratio, 0.1f));
-	set_view(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3{}, math::Vec3{0.0f, 0.0f, 1.0f}));
+    const float ratio = 4.0f / 3.0f;
+    set_proj(math::perspective(math::to_rad(45.0f), ratio, 0.1f));
+    set_view(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3{}, math::Vec3{0.0f, 0.0f, 1.0f}));
 }
 
 void Camera::set_view(const math::Matrix4<>& view) {
-	_view = view;
-	_up_to_date = false;
+    _view = view;
+    _up_to_date = false;
 }
 
 void Camera::set_proj(const math::Matrix4<>& proj) {
-	_proj = proj;
-	_up_to_date = false;
+    _proj = proj;
+    _up_to_date = false;
 }
 
 void Camera::update_viewproj() const {
-	if(!_up_to_date) {
-		_viewproj = _proj * _view;
-		_up_to_date = true;
-	}
+    if(!_up_to_date) {
+        _viewproj = _proj * _view;
+        _up_to_date = true;
+    }
 }
 
 const math::Matrix4<>& Camera::view_matrix() const {
-	return _view;
+    return _view;
 }
 
 const math::Matrix4<>& Camera::proj_matrix() const {
-	return _proj;
+    return _proj;
 }
 
 const math::Matrix4<>& Camera::viewproj_matrix() const {
-	update_viewproj();
-	return _viewproj;
+    update_viewproj();
+    return _viewproj;
 }
 
 math::Matrix4<> Camera::inverse_matrix() const {
-	return (viewproj_matrix()).inverse();
+    return (viewproj_matrix()).inverse();
 }
 
 math::Vec3 Camera::position() const {
-	return extract_position(_view);
+    return extract_position(_view);
 }
 
 math::Vec3 Camera::forward() const {
-	return extract_forward(_view);
+    return extract_forward(_view);
 }
 
 math::Vec3 Camera::left() const {
-	return -right();
+    return -right();
 }
 
 math::Vec3 Camera::right() const {
-	return extract_right(_view);
+    return extract_right(_view);
 }
 
 math::Vec3 Camera::up() const {
-	return extract_up(_view);
+    return extract_up(_view);
 }
 
 Frustum Camera::frustum() const {
-	return extract_frustum(viewproj_matrix());
+    return extract_frustum(viewproj_matrix());
 }
 
 Camera::operator uniform::Camera() const {
-	uniform::Camera camera_data = {};
-	camera_data.view_proj = viewproj_matrix();
-	camera_data.inv_view_proj = inverse_matrix();
-	camera_data.position = position();
-	camera_data.forward = forward();
-	camera_data.up = up();
-	return camera_data;
+    uniform::Camera camera_data = {};
+    camera_data.view_proj = viewproj_matrix();
+    camera_data.inv_view_proj = inverse_matrix();
+    camera_data.position = position();
+    camera_data.forward = forward();
+    camera_data.up = up();
+    return camera_data;
 }
 
 }
+

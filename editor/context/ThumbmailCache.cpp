@@ -46,297 +46,298 @@ SOFTWARE.
 namespace editor {
 
 static math::Transform<> center_to_camera(const AABB& box) {
-	const float scale = 0.22f / std::max(math::epsilon<float>, box.radius());
-	const float angle = (box.extent().x() > box.extent().y() ? 90.0f : 0.0f) + 30.0f;
-	const auto rot = math::Quaternion<>::from_euler(0.0f, math::to_rad(angle), 0.0f);
-	const math::Vec3 tr = rot(box.center() * scale);
-	return math::Transform<>(math::Vec3(0.0f, -0.65f, 0.65f) - tr,
-							 rot,
-							 math::Vec3(scale));
+    const float scale = 0.22f / std::max(math::epsilon<float>, box.radius());
+    const float angle = (box.extent().x() > box.extent().y() ? 90.0f : 0.0f) + 30.0f;
+    const auto rot = math::Quaternion<>::from_euler(0.0f, math::to_rad(angle), 0.0f);
+    const math::Vec3 tr = rot(box.center() * scale);
+    return math::Transform<>(math::Vec3(0.0f, -0.65f, 0.65f) - tr,
+                             rot,
+                             math::Vec3(scale));
 }
 
 static std::array<char, 32> rounded_string(float value) {
-	std::array<char, 32> buffer;
-	std::snprintf(buffer.data(), buffer.size(), "%.2f", double(value));
-	return buffer;
+    std::array<char, 32> buffer;
+    std::snprintf(buffer.data(), buffer.size(), "%.2f", double(value));
+    return buffer;
 }
 
 static void add_size_property(core::Vector<std::pair<core::String, core::String>>& properties, ContextPtr ctx, AssetId id) {
-	const std::array suffixes = {"B", "KB", "MB", "GB"};
-	if(const auto data = ctx->asset_store().data(id)) {
-		float size = data.unwrap()->remaining();
-		usize i = 0;
-		for(; i != suffixes.size() - 1; ++i) {
-			if(size < 1024.0f) {
-				break;
-			}
-			size /= 1024.0f;
-		}
-		properties.emplace_back("Size on disk", fmt("% %", rounded_string(size).data(), suffixes[i]));
-	}
+    const std::array suffixes = {"B", "KB", "MB", "GB"};
+    if(const auto data = ctx->asset_store().data(id)) {
+        float size = data.unwrap()->remaining();
+        usize i = 0;
+        for(; i != suffixes.size() - 1; ++i) {
+            if(size < 1024.0f) {
+                break;
+            }
+            size /= 1024.0f;
+        }
+        properties.emplace_back("Size on disk", fmt("% %", rounded_string(size).data(), suffixes[i]));
+    }
 }
 
 
 ThumbmailCache::ThumbmailData::ThumbmailData(ContextPtr ctx, usize size, AssetId asset) :
-		image(ctx->device(), VK_FORMAT_R8G8B8A8_UNORM, math::Vec2ui(size)),
-		view(image),
-		id(asset) {
+        image(ctx->device(), VK_FORMAT_R8G8B8A8_UNORM, math::Vec2ui(size)),
+        view(image),
+        id(asset) {
 
-	switch(ctx->asset_store().asset_type(id).unwrap_or(AssetType::Unknown)) {
-		case AssetType::Mesh:
-			if(const auto& mesh = ctx->loader().load<StaticMesh>(id); mesh) {
-				properties.emplace_back("Triangles", fmt("%", mesh->triangle_buffer().size()));
-				properties.emplace_back("Vertices", fmt("%", mesh->vertex_buffer().size()));
-				properties.emplace_back("Radius", fmt("%", rounded_string(mesh->radius()).data()));
-			}
-		break;
+    switch(ctx->asset_store().asset_type(id).unwrap_or(AssetType::Unknown)) {
+        case AssetType::Mesh:
+            if(const auto& mesh = ctx->loader().load<StaticMesh>(id); mesh) {
+                properties.emplace_back("Triangles", fmt("%", mesh->triangle_buffer().size()));
+                properties.emplace_back("Vertices", fmt("%", mesh->vertex_buffer().size()));
+                properties.emplace_back("Radius", fmt("%", rounded_string(mesh->radius()).data()));
+            }
+        break;
 
-		case AssetType::Image:
-			if(const auto& tex = ctx->loader().load<Texture>(id); tex) {
-				properties.emplace_back("Size", fmt("% x %", tex->size().x(), tex->size().y()));
-				properties.emplace_back("Mipmaps", fmt("%", tex->mipmaps()));
-				properties.emplace_back("Format", tex->format().name());
-			}
-		break;
+        case AssetType::Image:
+            if(const auto& tex = ctx->loader().load<Texture>(id); tex) {
+                properties.emplace_back("Size", fmt("% x %", tex->size().x(), tex->size().y()));
+                properties.emplace_back("Mipmaps", fmt("%", tex->mipmaps()));
+                properties.emplace_back("Format", tex->format().name());
+            }
+        break;
 
-		case AssetType::Prefab:
-			if(const auto& prefab = ctx->loader().load<ecs::EntityPrefab>(id); prefab) {
-				properties.emplace_back("Components", fmt("%", prefab->components().size()));
-				for(usize i = 0; i != prefab->components().size(); ++i) {
-					if(const auto* component = prefab->components()[i].get()) {
-						properties.emplace_back(core::String(fmt("%", i)), clean_component_name(component->runtime_info().type_name));
-					}
-				}
-			}
-		break;
+        case AssetType::Prefab:
+            if(const auto& prefab = ctx->loader().load<ecs::EntityPrefab>(id); prefab) {
+                properties.emplace_back("Components", fmt("%", prefab->components().size()));
+                for(usize i = 0; i != prefab->components().size(); ++i) {
+                    if(const auto* component = prefab->components()[i].get()) {
+                        properties.emplace_back(core::String(fmt("%", i)), clean_component_name(component->runtime_info().type_name));
+                    }
+                }
+            }
+        break;
 
-		default:
-		break;
-	}
+        default:
+        break;
+    }
 
-	add_size_property(properties, ctx, id);
+    add_size_property(properties, ctx, id);
 }
 
 ThumbmailCache::SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), view(&world) {
 
-	const float intensity = 1.0f;
+    const float intensity = 1.0f;
 
-	{
-		const ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
-		DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
-		light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
-		light_comp->intensity() = 3.0f * intensity;
-	}
-	{
-		const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
-		world.component<TransformableComponent>(light_id)->position() = math::Vec3(0.75f, -0.5f, 0.5f);
-		PointLightComponent* light = world.component<PointLightComponent>(light_id);
-		light->color() = k_to_rbg(2500.0f);
-		light->intensity() = 1.5f * intensity;
-		light->falloff() = 0.5f;
-		light->radius() = 2.0f;
-	}
-	{
-		const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
-		world.component<TransformableComponent>(light_id)->position() = math::Vec3(-0.75f, -0.5f, 0.5f);
-		PointLightComponent* light = world.component<PointLightComponent>(light_id);
-		light->color() = k_to_rbg(10000.0f);
-		light->intensity() = 1.5f * intensity;
-		light->falloff() = 0.5f;
-		light->radius() = 2.0f;
-	}
+    {
+        const ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
+        DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
+        light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
+        light_comp->intensity() = 3.0f * intensity;
+    }
+    {
+        const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+        world.component<TransformableComponent>(light_id)->position() = math::Vec3(0.75f, -0.5f, 0.5f);
+        PointLightComponent* light = world.component<PointLightComponent>(light_id);
+        light->color() = k_to_rbg(2500.0f);
+        light->intensity() = 1.5f * intensity;
+        light->falloff() = 0.5f;
+        light->radius() = 2.0f;
+    }
+    {
+        const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+        world.component<TransformableComponent>(light_id)->position() = math::Vec3(-0.75f, -0.5f, 0.5f);
+        PointLightComponent* light = world.component<PointLightComponent>(light_id);
+        light->color() = k_to_rbg(10000.0f);
+        light->intensity() = 1.5f * intensity;
+        light->falloff() = 0.5f;
+        light->radius() = 2.0f;
+    }
 
-	{
-		const ecs::EntityId sky_id = world.create_entity(ecs::StaticArchetype<SkyLightComponent>());
-		world.component<SkyLightComponent>(sky_id)->probe() = device_resources(device()).ibl_probe();
-	}
+    {
+        const ecs::EntityId sky_id = world.create_entity(ecs::StaticArchetype<SkyLightComponent>());
+        world.component<SkyLightComponent>(sky_id)->probe() = device_resources(device()).ibl_probe();
+    }
 
-	/*if(background) {
-		ecs::EntityId bg_id = world.create_entity(StaticMeshArchetype());
-		StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(bg_id);
-		*mesh_comp = StaticMeshComponent(dptr->device_resources()[DeviceResources::SweepMesh], dptr->device_resources()[DeviceResources::EmptyMaterial]);
-	}*/
+    /*if(background) {
+        ecs::EntityId bg_id = world.create_entity(StaticMeshArchetype());
+        StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(bg_id);
+        *mesh_comp = StaticMeshComponent(dptr->device_resources()[DeviceResources::SweepMesh], dptr->device_resources()[DeviceResources::EmptyMaterial]);
+    }*/
 
-	view.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
+    view.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
 }
 
 
 void ThumbmailCache::SceneData::add_mesh(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) {
-	ecs::EntityId entity = world.create_entity(StaticMeshArchetype());
-	StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity);
-	*mesh_comp = StaticMeshComponent(mesh, mat);
+    ecs::EntityId entity = world.create_entity(StaticMeshArchetype());
+    StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity);
+    *mesh_comp = StaticMeshComponent(mesh, mat);
 
-	TransformableComponent* trans_comp = world.component<TransformableComponent>(entity);
-	trans_comp->transform() = center_to_camera(mesh->aabb());
+    TransformableComponent* trans_comp = world.component<TransformableComponent>(entity);
+    trans_comp->transform() = center_to_camera(mesh->aabb());
 
 }
 
 void ThumbmailCache::SceneData::add_prefab(const ecs::EntityPrefab& prefab) {
-	ecs::EntityId entity = world.create_entity(prefab);
+    ecs::EntityId entity = world.create_entity(prefab);
 
-	if(StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
-		if(TransformableComponent* trans_comp = world.component<TransformableComponent>(entity)) {
-			trans_comp->transform() = center_to_camera(mesh_comp->compute_aabb());
-		}
-	}
+    if(StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
+        if(TransformableComponent* trans_comp = world.component<TransformableComponent>(entity)) {
+            trans_comp->transform() = center_to_camera(mesh_comp->compute_aabb());
+        }
+    }
 }
 
 ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
-		ContextLinked(ctx),
-		_size(size),
-		_resource_pool(std::make_shared<FrameGraphResourcePool>(ctx->device())) {
+        ContextLinked(ctx),
+        _size(size),
+        _resource_pool(std::make_shared<FrameGraphResourcePool>(ctx->device())) {
 }
 
 void ThumbmailCache::clear() {
-	const auto lock = y_profile_unique_lock(_lock);
-	_thumbmails.clear();
+    const auto lock = y_profile_unique_lock(_lock);
+    _thumbmails.clear();
 }
 
 math::Vec2ui ThumbmailCache::thumbmail_size() const {
-	return math::Vec2ui(_size);
+    return math::Vec2ui(_size);
 }
 
 ThumbmailCache::Thumbmail ThumbmailCache::get_thumbmail(AssetId asset) {
-	y_profile();
-	if(asset == AssetId::invalid_id()) {
-		return Thumbmail{};
-	}
+    y_profile();
+    if(asset == AssetId::invalid_id()) {
+        return Thumbmail{};
+    }
 
-	Y_TODO(Handle reloading)
+    Y_TODO(Handle reloading)
 
-	{
-		const auto lock = y_profile_unique_lock(_lock);
-		if(auto it = _thumbmails.find(asset); it != _thumbmails.end()) {
-			if(it->second) {
-				return Thumbmail{&it->second->view, it->second->properties};
-			} else {
-				return Thumbmail{};
-			}
-		}
-		_thumbmails[asset] = nullptr;
-	}
+    {
+        const auto lock = y_profile_unique_lock(_lock);
+        if(auto it = _thumbmails.find(asset); it != _thumbmails.end()) {
+            if(it->second) {
+                return Thumbmail{&it->second->view, it->second->properties};
+            } else {
+                return Thumbmail{};
+            }
+        }
+        _thumbmails[asset] = nullptr;
+    }
 
-	request_thumbmail(asset);
-	return Thumbmail{};
+    request_thumbmail(asset);
+    return Thumbmail{};
 }
 
 void ThumbmailCache::request_thumbmail(AssetId id) {
-	y_profile();
+    y_profile();
 
-	y_debug_assert([&] {
-		const std::unique_lock lock(_lock);
-		const auto it = _thumbmails.find(id);
-		return it != _thumbmails.end() && it->second == nullptr;
-	}());
+    y_debug_assert([&] {
+        const std::unique_lock lock(_lock);
+        const auto it = _thumbmails.find(id);
+        return it != _thumbmails.end() && it->second == nullptr;
+    }());
 
-	const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
-	switch(asset_type) {
-		case AssetType::Mesh:
-			_render_thread.schedule([id, this] {
-				if(const auto& mesh = context()->loader().load<StaticMesh>(id); !mesh.is_failed()) {
-					CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
-					SceneData scene(context());
-					scene.add_mesh(mesh, device_resources(device())[DeviceResources::EmptyMaterial]);
-					submit_and_set(rec, render_thumbmail(rec, id, scene));
-				} else {
-					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
-				}
-			});
-		break;
+    const AssetType asset_type = context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+    switch(asset_type) {
+        case AssetType::Mesh:
+            _render_thread.schedule([id, this] {
+                if(const auto& mesh = context()->loader().load<StaticMesh>(id); !mesh.is_failed()) {
+                    CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
+                    SceneData scene(context());
+                    scene.add_mesh(mesh, device_resources(device())[DeviceResources::EmptyMaterial]);
+                    submit_and_set(rec, render_thumbmail(rec, id, scene));
+                } else {
+                    log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
+                }
+            });
+        break;
 
-		case AssetType::Material:
-			_render_thread.schedule([id, this] {
-				if(const auto& material = context()->loader().load<Material>(id); !material.is_failed()) {
-					CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
-					SceneData scene(context());
-					scene.add_mesh(device_resources(device())[DeviceResources::SphereMesh], material);
-					submit_and_set(rec, render_thumbmail(rec, id, scene));
-				} else {
-					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
-				}
-			});
-		break;
+        case AssetType::Material:
+            _render_thread.schedule([id, this] {
+                if(const auto& material = context()->loader().load<Material>(id); !material.is_failed()) {
+                    CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
+                    SceneData scene(context());
+                    scene.add_mesh(device_resources(device())[DeviceResources::SphereMesh], material);
+                    submit_and_set(rec, render_thumbmail(rec, id, scene));
+                } else {
+                    log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
+                }
+            });
+        break;
 
-		case AssetType::Image:
-			_render_thread.schedule([id, this] {
-				if(const auto& texture = context()->loader().load<Texture>(id); !texture.is_failed()) {
-					CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
-					submit_and_set(rec, render_thumbmail(rec, texture));
-				} else {
-					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
-				}
-			});
-		break;
+        case AssetType::Image:
+            _render_thread.schedule([id, this] {
+                if(const auto& texture = context()->loader().load<Texture>(id); !texture.is_failed()) {
+                    CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
+                    submit_and_set(rec, render_thumbmail(rec, texture));
+                } else {
+                    log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
+                }
+            });
+        break;
 
-		case AssetType::Prefab:
-			_render_thread.schedule([id, this] {
-				if(const auto& prefab = context()->loader().load<ecs::EntityPrefab>(id); !prefab.is_failed()) {
-					CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
-					SceneData scene(context());
-					scene.add_prefab(*prefab);
-					submit_and_set(rec, render_thumbmail(rec, id, scene));
-				} else {
-					log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
-				}
-			});
-		break;
+        case AssetType::Prefab:
+            _render_thread.schedule([id, this] {
+                if(const auto& prefab = context()->loader().load<ecs::EntityPrefab>(id); !prefab.is_failed()) {
+                    CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
+                    SceneData scene(context());
+                    scene.add_prefab(*prefab);
+                    submit_and_set(rec, render_thumbmail(rec, id, scene));
+                } else {
+                    log_msg(fmt("Failed to load asset with id: %", id), Log::Error);
+                }
+            });
+        break;
 
-		default:
-			log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
-		break;
-	}
+        default:
+            log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
+        break;
+    }
 }
 
 void ThumbmailCache::submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr<ThumbmailData> thumb) {
-	y_profile();
-	graphic_queue(device()).submit<SyncSubmit>(std::move(recorder));
+    y_profile();
+    graphic_queue(device()).submit<SyncSubmit>(std::move(recorder));
 
-	const auto lock = y_profile_unique_lock(_lock);
-	auto& thumbmail = _thumbmails[thumb->id];
-	y_debug_assert(thumbmail == nullptr);
-	thumbmail = std::move(thumb);
+    const auto lock = y_profile_unique_lock(_lock);
+    auto& thumbmail = _thumbmails[thumb->id];
+    y_debug_assert(thumbmail == nullptr);
+    thumbmail = std::move(thumb);
 }
 
 std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const {
-	auto thumbmail = std::make_unique<ThumbmailData>(context(), _size, tex.id());
+    auto thumbmail = std::make_unique<ThumbmailData>(context(), _size, tex.id());
 
-	{
-		const DescriptorSet set(device(), {Descriptor(*tex, SamplerType::Clamp), Descriptor(StorageView(thumbmail->image))});
-		recorder.dispatch_size(device_resources(device())[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
-	}
+    {
+        const DescriptorSet set(device(), {Descriptor(*tex, SamplerType::Clamp), Descriptor(StorageView(thumbmail->image))});
+        recorder.dispatch_size(device_resources(device())[DeviceResources::CopyProgram],  math::Vec2ui(_size), {set});
+    }
 
-	return thumbmail;
+    return thumbmail;
 }
 
 std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const SceneData& scene) const {
-	auto thumbmail = std::make_unique<ThumbmailData>(context(), _size, id);
+    auto thumbmail = std::make_unique<ThumbmailData>(context(), _size, id);
 
-	{
-		const auto region = recorder.region("Thumbmail cache render");
+    {
+        const auto region = recorder.region("Thumbmail cache render");
 
-		FrameGraph graph(_resource_pool);
-		RendererSettings settings;
-		settings.tone_mapping.auto_exposure = false;
-		const DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), settings);
+        FrameGraph graph(_resource_pool);
+        RendererSettings settings;
+        settings.tone_mapping.auto_exposure = false;
+        const DefaultRenderer renderer = DefaultRenderer::create(graph, scene.view, thumbmail->image.size(), settings);
 
-		const FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
-		{
-			FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
-			builder.add_uniform_input(output_image);
-			builder.add_uniform_input(renderer.gbuffer.depth);
-			builder.add_external_input(StorageView(thumbmail->image));
-			builder.set_render_func([=](CmdBufferRecorder& rec, const FrameGraphPass* self) {
-					rec.dispatch_size(context()->resources()[EditorResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
-				});
-		}
+        const FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
+        {
+            FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
+            builder.add_uniform_input(output_image);
+            builder.add_uniform_input(renderer.gbuffer.depth);
+            builder.add_external_input(StorageView(thumbmail->image));
+            builder.set_render_func([=](CmdBufferRecorder& rec, const FrameGraphPass* self) {
+                    rec.dispatch_size(context()->resources()[EditorResources::DepthAlphaProgram], math::Vec2ui(_size), {self->descriptor_sets()[0]});
+                });
+        }
 
-		std::move(graph).render(recorder);
-	}
+        std::move(graph).render(recorder);
+    }
 
 
-	return thumbmail;
+    return thumbmail;
 }
 
 
 
 }
+

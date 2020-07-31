@@ -27,26 +27,27 @@ SOFTWARE.
 namespace yave {
 
 class ComputeProgram final : NonCopyable, public DeviceLinked {
-	public:
-		ComputeProgram() = default;
-		ComputeProgram(ComputeProgram&&) = default;
-		ComputeProgram& operator=(ComputeProgram&&) = default;
+    public:
+        ComputeProgram() = default;
+        ComputeProgram(ComputeProgram&&) = default;
+        ComputeProgram& operator=(ComputeProgram&&) = default;
 
-		explicit ComputeProgram(const ComputeShader& comp, const SpecializationData& data = SpecializationData());
-		~ComputeProgram();
+        explicit ComputeProgram(const ComputeShader& comp, const SpecializationData& data = SpecializationData());
+        ~ComputeProgram();
 
-		const math::Vec3ui& local_size() const;
-		usize thread_count() const;
+        const math::Vec3ui& local_size() const;
+        usize thread_count() const;
 
-		VkPipeline vk_pipeline() const;
-		VkPipelineLayout vk_pipeline_layout() const;
+        VkPipeline vk_pipeline() const;
+        VkPipelineLayout vk_pipeline_layout() const;
 
-	private:
-		SwapMove<VkPipelineLayout> _layout;
-		SwapMove<VkPipeline> _pipeline;
-		math::Vec3ui _local_size;
+    private:
+        SwapMove<VkPipelineLayout> _layout;
+        SwapMove<VkPipeline> _pipeline;
+        math::Vec3ui _local_size;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_SHADERS_COMPUTEPROGRAM_H
+

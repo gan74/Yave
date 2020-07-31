@@ -29,15 +29,15 @@ namespace test {
 
 namespace detail {
 struct TestResult {
-	bool result;
-	const char* file;
-	int line;
+    bool result;
+    const char* file;
+    int line;
 };
 
 struct TestItem {
-	const char* name = "Unknown test";
-	void (*test_func)(TestResult&) = nullptr;
-	TestItem* next = nullptr;
+    const char* name = "Unknown test";
+    void (*test_func)(TestResult&) = nullptr;
+    TestItem* next = nullptr;
 };
 
 void register_test(TestItem* test);
@@ -56,27 +56,28 @@ bool run_tests();
 
 #define y_test_assert(t) do { if(!(t)) { _y_test_result = Y_TEST_FAILED; return; } } while(false)
 
-#define y_test_func(name)																				\
-static void Y_TEST_FUNC(y::test::detail::TestResult&);													\
-namespace {																								\
-	class Y_TEST_RUNNER {																				\
-		Y_TEST_RUNNER() : test_item({name, &Y_TEST_FUNC, nullptr}) {									\
-			y::test::detail::register_test(&test_item);													\
-		}																								\
-		y::test::detail::TestItem test_item;															\
-		static Y_TEST_RUNNER runner;																	\
-	};																									\
-	Y_TEST_RUNNER Y_TEST_RUNNER::runner = Y_TEST_RUNNER();												\
-}																										\
+#define y_test_func(name)                                                                               \
+static void Y_TEST_FUNC(y::test::detail::TestResult&);                                                  \
+namespace {                                                                                             \
+    class Y_TEST_RUNNER {                                                                               \
+        Y_TEST_RUNNER() : test_item({name, &Y_TEST_FUNC, nullptr}) {                                    \
+            y::test::detail::register_test(&test_item);                                                 \
+        }                                                                                               \
+        y::test::detail::TestItem test_item;                                                            \
+        static Y_TEST_RUNNER runner;                                                                    \
+    };                                                                                                  \
+    Y_TEST_RUNNER Y_TEST_RUNNER::runner = Y_TEST_RUNNER();                                              \
+}                                                                                                       \
 void Y_TEST_FUNC(y::test::detail::TestResult& _y_test_result)
 
 #else
 
 #define y_test_assert(t) do { y::unused(t) } while(false)
 
-#define y_test_func(name)																				\
+#define y_test_func(name)                                                                               \
 static void Y_TEST_FUNC(y::test::detail::TestResult& _y_test_result)
 
 #endif
 
 #endif // Y_TEST_TEST_H
+

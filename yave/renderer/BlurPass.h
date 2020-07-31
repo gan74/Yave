@@ -29,12 +29,13 @@ SOFTWARE.
 namespace yave {
 
 struct BlurPass {
-	FrameGraphImageId blurred;
+    FrameGraphImageId blurred;
 
-	static BlurPass create(FrameGraph& framegraph, FrameGraphImageId in_image);
+    static BlurPass create(FrameGraph& framegraph, FrameGraphImageId in_image);
 };
 
 }
 
 
 #endif // YAVE_RENDERER_BLURPASS_H
+

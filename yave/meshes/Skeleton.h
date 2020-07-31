@@ -31,23 +31,24 @@ SOFTWARE.
 namespace yave {
 
 class Skeleton {
-	public:
-		static constexpr usize max_bones = 256;
+    public:
+        static constexpr usize max_bones = 256;
 
-		Skeleton() = default;
+        Skeleton() = default;
 
-		Skeleton(core::Span<Bone> bones);
+        Skeleton(core::Span<Bone> bones);
 
-		core::Span<Bone> bones() const;
-		core::Span<math::Transform<>> bone_transforms() const;
-		core::Span<math::Transform<>> inverse_absolute_transforms() const;
+        core::Span<Bone> bones() const;
+        core::Span<math::Transform<>> bone_transforms() const;
+        core::Span<math::Transform<>> inverse_absolute_transforms() const;
 
-	private:
-		core::Vector<Bone> _bones;
-		core::Vector<math::Transform<>> _transforms;
-		core::Vector<math::Transform<>> _inverses;
+    private:
+        core::Vector<Bone> _bones;
+        core::Vector<math::Transform<>> _transforms;
+        core::Vector<math::Transform<>> _inverses;
 };
 
 }
 
 #endif // YAVE_MESHES_SKELETON_H
+

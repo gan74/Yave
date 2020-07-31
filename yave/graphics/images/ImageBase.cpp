@@ -32,205 +32,206 @@ SOFTWARE.
 namespace yave {
 
 static void bind_image_memory(DevicePtr dptr, VkImage image, const DeviceMemory& memory) {
-	vk_check(vkBindImageMemory(vk_device(dptr), image, memory.vk_memory(), memory.vk_offset()));
+    vk_check(vkBindImageMemory(vk_device(dptr), image, memory.vk_memory(), memory.vk_offset()));
 }
 
 static VkImage create_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
-	y_debug_assert(usage != ImageUsage::TransferDstBit);
+    y_debug_assert(usage != ImageUsage::TransferDstBit);
 
-	VkImageCreateInfo create_info = vk_struct();
-	{
-		create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		create_info.flags = type == ImageType::Cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-		create_info.arrayLayers = layers;
-		create_info.extent = {size.x(), size.y(), size.z()};
-		create_info.format = format.vk_format();
-		create_info.imageType = VK_IMAGE_TYPE_2D;
-		create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-		create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		create_info.mipLevels = mips;
-		create_info.usage = VkImageUsageFlags(usage);
-		create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-	}
+    VkImageCreateInfo create_info = vk_struct();
+    {
+        create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        create_info.flags = type == ImageType::Cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+        create_info.arrayLayers = layers;
+        create_info.extent = {size.x(), size.y(), size.z()};
+        create_info.format = format.vk_format();
+        create_info.imageType = VK_IMAGE_TYPE_2D;
+        create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        create_info.mipLevels = mips;
+        create_info.usage = VkImageUsageFlags(usage);
+        create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    }
 
-	VkImage image = {};
-	vk_check(vkCreateImage(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &image));
-	return image;
+    VkImage image = {};
+    vk_check(vkCreateImage(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &image));
+    return image;
 }
 
 static auto get_copy_regions(const ImageData& data) {
-	auto regions = core::vector_with_capacity<VkBufferImageCopy>(data.mipmaps() * data.layers());
+    auto regions = core::vector_with_capacity<VkBufferImageCopy>(data.mipmaps() * data.layers());
 
-	for(usize l = 0; l != data.layers(); ++l) {
-		for(usize m = 0; m != data.mipmaps(); ++m) {
-			const auto size = data.size(m);
-			VkBufferImageCopy copy = {};
-			{
-				copy.bufferOffset = data.data_offset(l, m);
-				copy.imageExtent = {size.x(), size.y(), size.z()};
-				copy.imageSubresource.aspectMask = data.format().vk_aspect();
-				copy.imageSubresource.mipLevel = m;
-				copy.imageSubresource.baseArrayLayer = l;
-				copy.imageSubresource.layerCount = 1;
-			}
-			regions << copy;
-		}
-	}
+    for(usize l = 0; l != data.layers(); ++l) {
+        for(usize m = 0; m != data.mipmaps(); ++m) {
+            const auto size = data.size(m);
+            VkBufferImageCopy copy = {};
+            {
+                copy.bufferOffset = data.data_offset(l, m);
+                copy.imageExtent = {size.x(), size.y(), size.z()};
+                copy.imageSubresource.aspectMask = data.format().vk_aspect();
+                copy.imageSubresource.mipLevel = m;
+                copy.imageSubresource.baseArrayLayer = l;
+                copy.imageSubresource.layerCount = 1;
+            }
+            regions << copy;
+        }
+    }
 
-	return regions;
+    return regions;
 }
 
 static auto stage_data(DevicePtr dptr, usize byte_size, const void* data) {
-	y_profile();
-	y_debug_assert(data);
-	auto staging_buffer = StagingBuffer(dptr, byte_size);
-	std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
-	return staging_buffer;
+    y_profile();
+    y_debug_assert(data);
+    auto staging_buffer = StagingBuffer(dptr, byte_size);
+    std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
+    return staging_buffer;
 }
 
 static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format, usize layers, usize mips, ImageType type) {
-	VkImageViewCreateInfo create_info = vk_struct();
-	{
-		create_info.image = image;
-		create_info.viewType = VkImageViewType(type);
-		create_info.format = format.vk_format();
-		create_info.subresourceRange.aspectMask = format.vk_aspect();
-		create_info.subresourceRange.layerCount = layers;
-		create_info.subresourceRange.levelCount = mips;
-	}
+    VkImageViewCreateInfo create_info = vk_struct();
+    {
+        create_info.image = image;
+        create_info.viewType = VkImageViewType(type);
+        create_info.format = format.vk_format();
+        create_info.subresourceRange.aspectMask = format.vk_aspect();
+        create_info.subresourceRange.layerCount = layers;
+        create_info.subresourceRange.levelCount = mips;
+    }
 
-	VkImageView view = {};
-	vk_check(vkCreateImageView(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &view));
-	return view;
+    VkImageView view = {};
+    vk_check(vkCreateImageView(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &view));
+    return view;
 }
 
 static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
-	y_profile();
-	const auto image = create_image(dptr, size, layers, mips, format, usage, type);
-	auto memory = device_allocator(dptr).alloc(image);
-	bind_image_memory(dptr, image, memory);
+    y_profile();
+    const auto image = create_image(dptr, size, layers, mips, format, usage, type);
+    auto memory = device_allocator(dptr).alloc(image);
+    bind_image_memory(dptr, image, memory);
 
-	return {image, std::move(memory), create_view(dptr, image, format, layers, mips, type)};
+    return {image, std::move(memory), create_view(dptr, image, format, layers, mips, type)};
 }
 
 static void upload_data(ImageBase& image, const ImageData& data) {
-	y_profile();
-	DevicePtr dptr = image.device();
+    y_profile();
+    DevicePtr dptr = image.device();
 
-	const auto staging_buffer = stage_data(dptr, data.combined_byte_size(), data.data());
-	const auto regions = get_copy_regions(data);
+    const auto staging_buffer = stage_data(dptr, data.combined_byte_size(), data.data());
+    const auto regions = get_copy_regions(data);
 
-	CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
+    CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
 
-	{
-		const auto region = recorder.region("Image upload");
-		recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)});
-		vkCmdCopyBufferToImage(recorder.vk_cmd_buffer(), staging_buffer.vk_buffer(), image.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
-		recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_image_layout(image.usage()))});
-	}
+    {
+        const auto region = recorder.region("Image upload");
+        recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)});
+        vkCmdCopyBufferToImage(recorder.vk_cmd_buffer(), staging_buffer.vk_buffer(), image.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
+        recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_image_layout(image.usage()))});
+    }
 
-	graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+    graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 static void transition_image(ImageBase& image) {
-	y_profile();
-	DevicePtr dptr = image.device();
+    y_profile();
+    DevicePtr dptr = image.device();
 
-	CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
-	recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, vk_image_layout(image.usage()))});
-	graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+    CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
+    recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, vk_image_layout(image.usage()))});
+    graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {
-	if(type == ImageType::TwoD && layers > 1) {
-		y_fatal("Invalid layer count.");
-	}
-	if(type == ImageType::Cube && layers != 6) {
-		y_fatal("Invalid layer count.");
-	}
-	if(size.z() == 0) {
-		y_fatal("Invalid size.");
-	}
-	if(size.z() != 1 && type != ImageType::ThreeD) {
-		y_fatal("Invalid size.");
-	}
+    if(type == ImageType::TwoD && layers > 1) {
+        y_fatal("Invalid layer count.");
+    }
+    if(type == ImageType::Cube && layers != 6) {
+        y_fatal("Invalid layer count.");
+    }
+    if(size.z() == 0) {
+        y_fatal("Invalid size.");
+    }
+    if(size.z() != 1 && type != ImageType::ThreeD) {
+        y_fatal("Invalid size.");
+    }
 }
 
 
 ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips) :
-		_size(size),
-		_layers(layers),
-		_mips(mips),
-		_format(format),
-		_usage(usage) {
+        _size(size),
+        _layers(layers),
+        _mips(mips),
+        _format(format),
+        _usage(usage) {
 
-	check_layer_count(type, _size, _layers);
+    check_layer_count(type, _size, _layers);
 
-	std::tie(_image, _memory, _view) = alloc_image(dptr, _size, _layers, _mips, _format, _usage, type);
+    std::tie(_image, _memory, _view) = alloc_image(dptr, _size, _layers, _mips, _format, _usage, type);
 
-	transition_image(*this);
+    transition_image(*this);
 }
 
 ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data) :
-		_size(data.size()),
-		_layers(data.layers()),
-		_mips(data.mipmaps()),
-		_format(data.format()),
-		_usage(usage | ImageUsage::TransferDstBit) {
+        _size(data.size()),
+        _layers(data.layers()),
+        _mips(data.mipmaps()),
+        _format(data.format()),
+        _usage(usage | ImageUsage::TransferDstBit) {
 
-	check_layer_count(type, _size, _layers);
+    check_layer_count(type, _size, _layers);
 
-	std::tie(_image, _memory, _view) = alloc_image(dptr, _size, _layers, _mips, _format, _usage, type);
+    std::tie(_image, _memory, _view) = alloc_image(dptr, _size, _layers, _mips, _format, _usage, type);
 
-	upload_data(*this, data);
+    upload_data(*this, data);
 }
 
 ImageBase::~ImageBase() {
-	if(const DevicePtr dptr = device()) {
-		device_destroy(dptr, _view);
-		device_destroy(dptr, _image);
-		device_destroy(dptr, std::move(_memory));
-	}
+    if(const DevicePtr dptr = device()) {
+        device_destroy(dptr, _view);
+        device_destroy(dptr, _image);
+        device_destroy(dptr, std::move(_memory));
+    }
 }
 
 DevicePtr ImageBase::device() const {
-	return _memory.device();
+    return _memory.device();
 }
 
 bool ImageBase::is_null() const {
-	return !device();
+    return !device();
 }
 
 const math::Vec3ui& ImageBase::image_size() const {
-	return _size;
+    return _size;
 }
 
 usize ImageBase::mipmaps() const {
-	return _mips;
+    return _mips;
 }
 
 usize ImageBase::layers() const {
-	return _layers;
+    return _layers;
 }
 
 ImageFormat ImageBase::format() const {
-	return _format;
+    return _format;
 }
 
 ImageUsage ImageBase::usage() const {
-	return _usage;
+    return _usage;
 }
 
 VkImageView ImageBase::vk_view() const {
-	return _view;
+    return _view;
 }
 
 VkImage ImageBase::vk_image() const {
-	return _image;
+    return _image;
 }
 
 const DeviceMemory& ImageBase::device_memory() const {
-	return _memory;
+    return _memory;
 }
 
 }
+

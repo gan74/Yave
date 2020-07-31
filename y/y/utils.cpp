@@ -47,24 +47,25 @@ bool break_on_error = false;
 
 void break_in_debugger() {
 #ifdef Y_OS_WIN
-	if(IsDebuggerPresent()) {
-		DebugBreak();
-	}
+    if(IsDebuggerPresent()) {
+        DebugBreak();
+    }
 #endif
 }
 
 
 void fatal(const char* msg, const char* file, int line) {
-	core::String msg_str(msg);
-	if(file) {
-		msg_str += fmt(" in file \"%\"", file);
-	}
-	if(line) {
-		msg_str += fmt(" at line %", line);
-	}
-	log_msg(msg_str, Log::Error);
-	y_breakpoint;
-	std::abort();
+    core::String msg_str(msg);
+    if(file) {
+        msg_str += fmt(" in file \"%\"", file);
+    }
+    if(line) {
+        msg_str += fmt(" at line %", line);
+    }
+    log_msg(msg_str, Log::Error);
+    y_breakpoint;
+    std::abort();
 }
 
 }
+

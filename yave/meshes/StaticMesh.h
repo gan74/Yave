@@ -35,31 +35,31 @@ namespace yave {
 
 class StaticMesh : NonCopyable {
 
-	public:
-		StaticMesh() = default;
+    public:
+        StaticMesh() = default;
 
-		StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
+        StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
 
-		DevicePtr device() const;
-		bool is_null() const;
+        DevicePtr device() const;
+        bool is_null() const;
 
-		const TriangleBuffer<>& triangle_buffer() const;
-		const VertexBuffer<>& vertex_buffer() const;
-		const VkDrawIndexedIndirectCommand& indirect_data() const;
+        const TriangleBuffer<>& triangle_buffer() const;
+        const VertexBuffer<>& vertex_buffer() const;
+        const VkDrawIndexedIndirectCommand& indirect_data() const;
 
-		float radius() const;
-		const AABB& aabb() const;
+        float radius() const;
+        const AABB& aabb() const;
 
-	private:
-		TriangleBuffer<> _triangle_buffer;
-		VertexBuffer<> _vertex_buffer;
+    private:
+        TriangleBuffer<> _triangle_buffer;
+        VertexBuffer<> _vertex_buffer;
 
-		VkDrawIndexedIndirectCommand _indirect_data = {};
+        VkDrawIndexedIndirectCommand _indirect_data = {};
 
-		AABB _aabb;
+        AABB _aabb;
 
-		Y_TODO(Move this somewhere else)
-		RayTracing::AccelerationStructure _ray_tracing_data;
+        Y_TODO(Move this somewhere else)
+        RayTracing::AccelerationStructure _ray_tracing_data;
 };
 
 YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
@@ -67,3 +67,4 @@ YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
 }
 
 #endif // YAVE_MESHES_STATICMESH_H
+

@@ -26,54 +26,55 @@ SOFTWARE.
 namespace yave {
 
 SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton) :
-		_skeleton(skeleton),
-		_bone_transforms(new std::array<math::Transform<>, Skeleton::max_bones>()),
-		_bone_transform_buffer(dptr, Skeleton::max_bones),
-		_descriptor_set(dptr, {Descriptor(_bone_transform_buffer)}) {
+        _skeleton(skeleton),
+        _bone_transforms(new std::array<math::Transform<>, Skeleton::max_bones>()),
+        _bone_transform_buffer(dptr, Skeleton::max_bones),
+        _descriptor_set(dptr, {Descriptor(_bone_transform_buffer)}) {
 
-	flush_data();
+    flush_data();
 }
 
 void SkeletonInstance::flush_reload() {
-	_animation.flush_reload();
+    _animation.flush_reload();
 }
 
 void SkeletonInstance::animate(const AssetPtr<Animation>& anim) {
-	_animation = anim;
-	_anim_timer.reset();
+    _animation = anim;
+    _anim_timer.reset();
 }
 
 void SkeletonInstance::update() {
-	if(!_animation) {
-		return;
-	}
+    if(!_animation) {
+        return;
+    }
 
-	const float time = std::fmod(float(_anim_timer.elapsed().to_secs()), _animation->duration());
+    const float time = std::fmod(float(_anim_timer.elapsed().to_secs()), _animation->duration());
 
-	const auto& anim = *_animation;
-	const auto& bones = _skeleton->bones();
-	const auto& bone_transforms = _skeleton->bone_transforms();
-	const auto& invs = _skeleton->inverse_absolute_transforms();
+    const auto& anim = *_animation;
+    const auto& bones = _skeleton->bones();
+    const auto& bone_transforms = _skeleton->bone_transforms();
+    const auto& invs = _skeleton->inverse_absolute_transforms();
 
-	auto& out_transforms = *_bone_transforms;
+    auto& out_transforms = *_bone_transforms;
 
 
-	for(usize i = 0; i != bones.size(); ++i) {
-		const auto& bone = bones[i];
-		auto bone_tr = anim.bone_transform(bone.name, time).value_or(bone_transforms[i]);
+    for(usize i = 0; i != bones.size(); ++i) {
+        const auto& bone = bones[i];
+        auto bone_tr = anim.bone_transform(bone.name, time).value_or(bone_transforms[i]);
 
-		out_transforms[i] = (bone.has_parent() ? out_transforms[bone.parent] * bone_tr : bone_tr);
-	}
-	for(usize i = 0; i != bones.size(); ++i) {
-		out_transforms[i] *= invs[i];
-	}
+        out_transforms[i] = (bone.has_parent() ? out_transforms[bone.parent] * bone_tr : bone_tr);
+    }
+    for(usize i = 0; i != bones.size(); ++i) {
+        out_transforms[i] *= invs[i];
+    }
 
-	flush_data();
+    flush_data();
 }
 
 void SkeletonInstance::flush_data() {
-	auto map = TypedMapping(_bone_transform_buffer);
-	std::copy(_bone_transforms->begin(), _bone_transforms->end(), map.begin());
+    auto map = TypedMapping(_bone_transform_buffer);
+    std::copy(_bone_transforms->begin(), _bone_transforms->end(), map.begin());
 }
 
 }
+

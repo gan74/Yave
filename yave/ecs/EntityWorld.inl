@@ -43,18 +43,18 @@ using has_required_components_t = decltype(std::declval<T>().required_components
 
 template<typename T>
 std::unique_ptr<ComponentContainerBase> create_container() {
-	return std::make_unique<ComponentContainer<T>>();
+    return std::make_unique<ComponentContainer<T>>();
 }
 
 template<typename T>
 void create_component(EntityWorld& world, EntityId id) {
-	world.add_component<T>(id);
+    world.add_component<T>(id);
 }
 
 
 template<typename... Args>
 void RequiredComponents<Args...>::add_required_components(EntityWorld& world, EntityId id) {
-	world.add_components<Args...>(id);
+    world.add_components<Args...>(id);
 }
 
 
@@ -62,10 +62,10 @@ void RequiredComponents<Args...>::add_required_components(EntityWorld& world, En
 
 template<typename T>
 void ComponentContainerBase::add_required_components(EntityWorld& world, EntityId id) {
-	unused(id);
-	if constexpr(is_detected_v<detail::has_required_components_t, T>) {
-		T::add_required_components(world, id);
-	}
+    unused(id);
+    if constexpr(is_detected_v<detail::has_required_components_t, T>) {
+        T::add_required_components(world, id);
+    }
 }
 
 
@@ -77,21 +77,22 @@ ComponentBox<T>::ComponentBox(T t) : _component(std::move(t)) {
 
 template<typename T>
 ComponentRuntimeInfo ComponentBox<T>::runtime_info() const {
-	return ComponentRuntimeInfo::create<T>();
+    return ComponentRuntimeInfo::create<T>();
 }
 
 template<typename T>
 void ComponentBox<T>::add_to(EntityWorld& world, EntityId id) const {
-	world.add_component<T>(id, _component);
+    world.add_component<T>(id, _component);
 }
 
 template<typename T>
 void ComponentBox<T>::post_deserialize_poly(AssetLoadingContext& context) {
-	y_profile();
-	serde3::ReadableArchive::post_deserialize(*this, context);
+    y_profile();
+    serde3::ReadableArchive::post_deserialize(*this, context);
 }
 
 }
 }
 
 #endif // YAVE_ECS_COMPONENTCONTAINER_H
+

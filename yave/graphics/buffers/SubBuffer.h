@@ -30,59 +30,59 @@ namespace yave {
 template<BufferUsage Usage = BufferUsage::None, MemoryType Memory = MemoryType::DontCare>
 class SubBuffer : public SubBufferBase {
 
-	protected:
-		template<typename T>
-		static constexpr bool has(T a, T b) {
-			return (uenum(a) & uenum(b)) == uenum(b);
-		}
+    protected:
+        template<typename T>
+        static constexpr bool has(T a, T b) {
+            return (uenum(a) & uenum(b)) == uenum(b);
+        }
 
-		static constexpr bool is_compatible(BufferUsage U, MemoryType M) {
-			return has(U, Usage) && is_memory_type_compatible(M, Memory);
-		}
+        static constexpr bool is_compatible(BufferUsage U, MemoryType M) {
+            return has(U, Usage) && is_memory_type_compatible(M, Memory);
+        }
 
-		static_assert(!has(BufferUsage::UniformBit, BufferUsage::UniformBit | BufferUsage::IndirectBit));
-		static_assert(has(BufferUsage::UniformBit | BufferUsage::IndirectBit, BufferUsage::UniformBit));
-
-
-		explicit SubBuffer(const BufferBase& buffer) : SubBufferBase(buffer) {
-		}
-
-	public:
-		static constexpr BufferUsage usage = Usage;
-		static constexpr MemoryType memory_type = Memory;
-
-		using sub_buffer_type = SubBuffer<Usage, memory_type>;
-		using base_buffer_type = Buffer<Usage, memory_type>;
+        static_assert(!has(BufferUsage::UniformBit, BufferUsage::UniformBit | BufferUsage::IndirectBit));
+        static_assert(has(BufferUsage::UniformBit | BufferUsage::IndirectBit, BufferUsage::UniformBit));
 
 
-		static usize alignment(DevicePtr dptr) {
-			return alignment_for_usage(dptr, Usage);
-		}
+        explicit SubBuffer(const BufferBase& buffer) : SubBufferBase(buffer) {
+        }
 
-		static usize total_byte_size(usize size) {
-			return size;
-		}
+    public:
+        static constexpr BufferUsage usage = Usage;
+        static constexpr MemoryType memory_type = Memory;
 
-		SubBuffer() = default;
+        using sub_buffer_type = SubBuffer<Usage, memory_type>;
+        using base_buffer_type = Buffer<Usage, memory_type>;
 
-		template<BufferUsage U, MemoryType M>
-		SubBuffer(const SubBuffer<U, M>& buffer) : SubBufferBase(buffer) {
-			static_assert(is_compatible(U, M));
-		}
 
-		template<BufferUsage U, MemoryType M>
-		SubBuffer(const Buffer<U, M>& buffer) : SubBufferBase(buffer, buffer.byte_size(), 0) {
-			static_assert(is_compatible(U, M));
-		}
+        static usize alignment(DevicePtr dptr) {
+            return alignment_for_usage(dptr, Usage);
+        }
 
-		// this is dangerous with typedwrapper as it's never clear what is in byte and what isn't.
-		// todo find some way to make this better
+        static usize total_byte_size(usize size) {
+            return size;
+        }
 
-		template<BufferUsage U, MemoryType M>
-		SubBuffer(const Buffer<U, M>& buffer, usize byte_len, usize byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
-			static_assert(is_compatible(U, M));
-			y_debug_assert(byte_offset() % alignment(device()) == 0);
-		}
+        SubBuffer() = default;
+
+        template<BufferUsage U, MemoryType M>
+        SubBuffer(const SubBuffer<U, M>& buffer) : SubBufferBase(buffer) {
+            static_assert(is_compatible(U, M));
+        }
+
+        template<BufferUsage U, MemoryType M>
+        SubBuffer(const Buffer<U, M>& buffer) : SubBufferBase(buffer, buffer.byte_size(), 0) {
+            static_assert(is_compatible(U, M));
+        }
+
+        // this is dangerous with typedwrapper as it's never clear what is in byte and what isn't.
+        // todo find some way to make this better
+
+        template<BufferUsage U, MemoryType M>
+        SubBuffer(const Buffer<U, M>& buffer, usize byte_len, usize byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
+            static_assert(is_compatible(U, M));
+            y_debug_assert(byte_offset() % alignment(device()) == 0);
+        }
 };
 
 
@@ -93,3 +93,4 @@ SubBuffer(const Buffer<U, M>&) -> SubBuffer<U, M>;
 }
 
 #endif // YAVE_GRAPHICS_BUFFERS_SUBBUFFER_H
+

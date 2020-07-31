@@ -30,30 +30,31 @@ SOFTWARE.
 namespace yave {
 
 class PointLightComponent final : public ecs::RequiredComponents<TransformableComponent> {
-	public:
-		PointLightComponent() = default;
+    public:
+        PointLightComponent() = default;
 
-		math::Vec3& color();
-		const math::Vec3& color() const;
+        math::Vec3& color();
+        const math::Vec3& color() const;
 
-		float& intensity();
-		float intensity() const;
+        float& intensity();
+        float intensity() const;
 
-		float& radius();
-		float radius() const;
+        float& radius();
+        float radius() const;
 
-		float& falloff();
-		float falloff() const;
+        float& falloff();
+        float falloff() const;
 
-		y_serde3(_color, _intensity, _radius, _falloff)
+        y_serde3(_color, _intensity, _radius, _falloff)
 
-	private:
-		math::Vec3 _color = math::Vec3{1.0f};
-		float _intensity = 1.0f;
-		float _radius = 10.0f;
-		float _falloff = 1.0f;
+    private:
+        math::Vec3 _color = math::Vec3{1.0f};
+        float _intensity = 1.0f;
+        float _radius = 10.0f;
+        float _falloff = 1.0f;
 };
 
 }
 
 #endif // YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
+

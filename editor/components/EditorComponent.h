@@ -31,22 +31,23 @@ SOFTWARE.
 namespace editor {
 
 class EditorComponent {
-	public:
-		EditorComponent() = default;
-		EditorComponent(std::string_view name);
+    public:
+        EditorComponent() = default;
+        EditorComponent(std::string_view name);
 
-		const core::String& name() const;
-		void set_name(core::String name);
+        const core::String& name() const;
+        void set_name(core::String name);
 
-		math::Vec3& euler();
+        math::Vec3& euler();
 
-		y_serde3(_name)
+        y_serde3(_name)
 
-	private:
-		core::String _name = "Unnamed entity";
-		math::Vec3 _euler;
+    private:
+        core::String _name = "Unnamed entity";
+        math::Vec3 _euler;
 };
 
 }
 
 #endif // EDITOR_COMPONENTS_EDITORCOMPONENT_H
+

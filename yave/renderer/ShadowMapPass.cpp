@@ -33,103 +33,104 @@ SOFTWARE.
 namespace yave {
 
 struct SubAtlas {
-	math::Vec2ui pos;
-	u32 subs = 4;
+    math::Vec2ui pos;
+    u32 subs = 4;
 };
 
 static std::pair<math::Vec2ui, u32> alloc_sub_atlas(u32 level, usize& first_level_index, core::MutableSpan<SubAtlas> levels, usize first_level_size) {
-	y_always_assert(level < levels.size(), "Invalid atlas level");
-	const u32 size = first_level_size >> level;
-	const u32 index = levels[level].subs;
-	if(index != 4) {
-		++levels[level].subs;
-		return {math::Vec2ui(index >> 1, index & 1) * size + levels[level].pos, size};
-	}
+    y_always_assert(level < levels.size(), "Invalid atlas level");
+    const u32 size = first_level_size >> level;
+    const u32 index = levels[level].subs;
+    if(index != 4) {
+        ++levels[level].subs;
+        return {math::Vec2ui(index >> 1, index & 1) * size + levels[level].pos, size};
+    }
 
-	if(level == 0) {
-		if(first_level_index < levels.size()) {
-			return {math::Vec2ui(0, first_level_index++) * first_level_size, first_level_size};
-		}
-		return {math::Vec2ui(), 0};
-	}
+    if(level == 0) {
+        if(first_level_index < levels.size()) {
+            return {math::Vec2ui(0, first_level_index++) * first_level_size, first_level_size};
+        }
+        return {math::Vec2ui(), 0};
+    }
 
-	const math::Vec2ui pos = alloc_sub_atlas(level - 1, first_level_index, levels, first_level_size).first;
-	levels[level] = {pos, 0};
-	return alloc_sub_atlas(level, first_level_index, levels, first_level_size);
+    const math::Vec2ui pos = alloc_sub_atlas(level - 1, first_level_index, levels, first_level_size).first;
+    levels[level] = {pos, 0};
+    return alloc_sub_atlas(level, first_level_index, levels, first_level_size);
 }
 
 static Camera spotlight_camera(const TransformableComponent& tr, const SpotLightComponent& sp) {
-	Camera cam;
-	cam.set_proj(math::perspective(sp.half_angle() * 2.0f, 1.0f, 0.1f));
-	cam.set_view(math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()));
-	return cam;
+    Camera cam;
+    cam.set_proj(math::perspective(sp.half_angle() * 2.0f, 1.0f, 0.1f));
+    cam.set_view(math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()));
+    return cam;
 }
 
 ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapPassSettings& settings) {
-	static constexpr ImageFormat shadow_format = VK_FORMAT_D32_SFLOAT;
-	const ecs::EntityWorld& world = scene.world();
+    static constexpr ImageFormat shadow_format = VK_FORMAT_D32_SFLOAT;
+    const ecs::EntityWorld& world = scene.world();
 
-	FrameGraphPassBuilder builder = framegraph.add_pass("Shadow pass");
+    FrameGraphPassBuilder builder = framegraph.add_pass("Shadow pass");
 
-	const usize shadow_map_log_size = log2ui(settings.shadow_map_size);
-	const usize first_level_size = 1 << shadow_map_log_size;
-	if(first_level_size != settings.shadow_map_size) {
-		log_msg("Shadow map size is not a power of two", Log::Warning);
-	}
-
-
-	usize first_level_index = 0;
-	std::array<SubAtlas, 32> levels;
-	auto alloc = [&](u32 level) { return alloc_sub_atlas(level, first_level_index, core::MutableSpan(levels), first_level_size); };
+    const usize shadow_map_log_size = log2ui(settings.shadow_map_size);
+    const usize first_level_size = 1 << shadow_map_log_size;
+    if(first_level_size != settings.shadow_map_size) {
+        log_msg("Shadow map size is not a power of two", Log::Warning);
+    }
 
 
-	const math::Vec2ui shadow_map_size = math::Vec2ui(1, settings.shadow_atlas_size) * first_level_size;
-	const auto shadow_map = builder.declare_image(shadow_format, shadow_map_size);
+    usize first_level_index = 0;
+    std::array<SubAtlas, 32> levels;
+    auto alloc = [&](u32 level) { return alloc_sub_atlas(level, first_level_index, core::MutableSpan(levels), first_level_size); };
 
-	ShadowMapPass pass;
-	pass.shadow_map = shadow_map;
-	pass.sub_passes = std::make_shared<SubPassData>();
 
-	{
-		const math::Vec2 uv_mul = 1.0f / math::Vec2(shadow_map_size);
-		for(auto spot : world.view(SpotLightArchetype())) {
-			auto [t, l] = spot.components();
-			if(!l.cast_shadow()) {
-				continue;
-			}
+    const math::Vec2ui shadow_map_size = math::Vec2ui(1, settings.shadow_atlas_size) * first_level_size;
+    const auto shadow_map = builder.declare_image(shadow_format, shadow_map_size);
 
-			const u32 level = l.shadow_lod();
-			const auto [offset, size] = alloc(level);
+    ShadowMapPass pass;
+    pass.shadow_map = shadow_map;
+    pass.sub_passes = std::make_shared<SubPassData>();
 
-			if(!size) {
-				log_msg("Unable to allocate shadow altas: too many shadow casters", Log::Warning);
-				continue;
-			}
+    {
+        const math::Vec2 uv_mul = 1.0f / math::Vec2(shadow_map_size);
+        for(auto spot : world.view(SpotLightArchetype())) {
+            auto [t, l] = spot.components();
+            if(!l.cast_shadow()) {
+                continue;
+            }
 
-			const SceneView spot_view(&world, spotlight_camera(t, l));
-			pass.sub_passes->passes.push_back(SubPass{
-				SceneRenderSubPass::create(builder, spot_view),
-				offset, size
-			});
-			pass.sub_passes->lights[spot.id().as_u64()] = {
-				spot_view.camera().viewproj_matrix(),
-				math::Vec2(offset) * uv_mul,
-				math::Vec2(size) * uv_mul
-			};
-		}
-	}
+            const u32 level = l.shadow_lod();
+            const auto [offset, size] = alloc(level);
 
-	builder.add_depth_output(shadow_map);
-	builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-		auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+            if(!size) {
+                log_msg("Unable to allocate shadow altas: too many shadow casters", Log::Warning);
+                continue;
+            }
 
-		for(const auto& sub_pass : pass.sub_passes->passes) {
-			render_pass.set_viewport(Viewport(math::Vec2(sub_pass.viewport_size), sub_pass.viewport_offset));
-			sub_pass.scene_pass.render(render_pass, self);
-		}
-	});
+            const SceneView spot_view(&world, spotlight_camera(t, l));
+            pass.sub_passes->passes.push_back(SubPass{
+                SceneRenderSubPass::create(builder, spot_view),
+                offset, size
+            });
+            pass.sub_passes->lights[spot.id().as_u64()] = {
+                spot_view.camera().viewproj_matrix(),
+                math::Vec2(offset) * uv_mul,
+                math::Vec2(size) * uv_mul
+            };
+        }
+    }
 
-	return pass;
+    builder.add_depth_output(shadow_map);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+
+        for(const auto& sub_pass : pass.sub_passes->passes) {
+            render_pass.set_viewport(Viewport(math::Vec2(sub_pass.viewport_size), sub_pass.viewport_offset));
+            sub_pass.scene_pass.render(render_pass, self);
+        }
+    });
+
+    return pass;
 }
 
 }
+

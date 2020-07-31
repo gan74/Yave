@@ -25,12 +25,13 @@ SOFTWARE.
 namespace yave {
 
 ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) :
-		DeviceLinked(dptr),
-		_disposable_cmd_pool(dptr) {
+        DeviceLinked(dptr),
+        _disposable_cmd_pool(dptr) {
 }
 
 CmdBuffer<CmdBufferUsage::Disposable> ThreadLocalDevice::create_disposable_cmd_buffer() const {
-	return _disposable_cmd_pool.create_buffer();
+    return _disposable_cmd_pool.create_buffer();
 }
 
 }
+

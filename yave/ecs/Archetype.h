@@ -31,25 +31,26 @@ namespace yave {
 namespace ecs {
 
 class Archetype {
-	public:
-		template<typename T>
-		void add_component_type() {
-			if(_infos.find(type_index<T>()) == _infos.end()) {
-				_infos[type_index<T>()] = ComponentRuntimeInfo::create<T>();
-			}
-		}
+    public:
+        template<typename T>
+        void add_component_type() {
+            if(_infos.find(type_index<T>()) == _infos.end()) {
+                _infos[type_index<T>()] = ComponentRuntimeInfo::create<T>();
+            }
+        }
 
-		auto component_infos() const {
-			return _infos.values();
-		}
+        auto component_infos() const {
+            return _infos.values();
+        }
 
-		y_no_serde3()
+        y_no_serde3()
 
-	private:
-		core::ExternalHashMap<ComponentTypeIndex, ComponentRuntimeInfo> _infos;
+    private:
+        core::ExternalHashMap<ComponentTypeIndex, ComponentRuntimeInfo> _infos;
 };
 
 }
 }
 
 #endif // YAVE_ECS_ARCHETYPE_H
+

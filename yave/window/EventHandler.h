@@ -28,56 +28,57 @@ SOFTWARE.
 namespace yave {
 
 enum class Key {
-	Unknown,
-	Tab,
-	Clear,
-	Backspace,
-	Enter,
-	Escape,
-	PageUp,
-	PageDown,
-	End,
-	Home,
-	Left,
-	Up,
-	Right,
-	Down,
-	Insert,
-	Delete,
-	Space = ' ',
-	A = 'A', B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
-	F1, F2, F3, F4, F5, F6, F7, F8, F9, F10_Reserved, F11, F12,
-	Alt, Ctrl,
+    Unknown,
+    Tab,
+    Clear,
+    Backspace,
+    Enter,
+    Escape,
+    PageUp,
+    PageDown,
+    End,
+    Home,
+    Left,
+    Up,
+    Right,
+    Down,
+    Insert,
+    Delete,
+    Space = ' ',
+    A = 'A', B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10_Reserved, F11, F12,
+    Alt, Ctrl,
 
-	Max
+    Max
 };
 
 static_assert(char(Key::Z) == 'Z');
 
 class EventHandler {
-	public:
-		enum MouseButton {
-			LeftButton,
-			RightButton,
-			MiddleButton
-		};
+    public:
+        enum MouseButton {
+            LeftButton,
+            RightButton,
+            MiddleButton
+        };
 
-		virtual ~EventHandler() {
-		}
+        virtual ~EventHandler() {
+        }
 
-		virtual void mouse_moved(const math::Vec2i&)						{}
-		virtual void mouse_pressed(const math::Vec2i&, MouseButton)			{}
-		virtual void mouse_released(const math::Vec2i&, MouseButton)		{}
+        virtual void mouse_moved(const math::Vec2i&)                        {}
+        virtual void mouse_pressed(const math::Vec2i&, MouseButton)         {}
+        virtual void mouse_released(const math::Vec2i&, MouseButton)        {}
 
-		virtual void mouse_wheel(i32)										{}
+        virtual void mouse_wheel(i32)                                       {}
 
-		virtual void char_input(u32 character)								{ unused(character); }
+        virtual void char_input(u32 character)                              { unused(character); }
 
-		virtual void key_pressed(Key)										{}
-		virtual void key_released(Key)										{}
+        virtual void key_pressed(Key)                                       {}
+        virtual void key_released(Key)                                      {}
 
 };
 
 }
 
 #endif // YAVE_WINDOW_EVENTHANDLER_H
+

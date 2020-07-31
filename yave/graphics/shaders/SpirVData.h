@@ -32,23 +32,24 @@ namespace yave {
 
 class SpirVData {
 
-	public:
-		SpirVData() = default;
+    public:
+        SpirVData() = default;
 
-		usize size() const;
-		bool is_empty() const;
+        usize size() const;
+        bool is_empty() const;
 
-		const u32* data() const;
+        const u32* data() const;
 
-		static SpirVData deserialized(io2::Reader& reader);
+        static SpirVData deserialized(io2::Reader& reader);
 
-	private:
-		SpirVData(core::Span<u32> data);
-		SpirVData(core::Span<u8> data);
+    private:
+        SpirVData(core::Span<u32> data);
+        SpirVData(core::Span<u8> data);
 
-		core::Vector<u32> _data;
+        core::Vector<u32> _data;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_SHADERS_SPIRVDATA_H
+

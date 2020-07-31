@@ -30,74 +30,75 @@ namespace math {
 template<typename T = float>
 class Volume : NonCopyable
 {
-	public:
-		virtual ~Volume() = default;
+    public:
+        virtual ~Volume() = default;
 
-		virtual bool intersects(const Vec<3, T> &, T) const = 0;
+        virtual bool intersects(const Vec<3, T> &, T) const = 0;
 };
 
 template<typename T = float>
 class Ray final : public Volume<T> {
-	public:
-		Ray(const Vec<3, T>& start, const Vec<3, T>& direction) : _start(start), _direction(direction.normalized()) {
-		}
+    public:
+        Ray(const Vec<3, T>& start, const Vec<3, T>& direction) : _start(start), _direction(direction.normalized()) {
+        }
 
-		bool intersects(const Vec<3, T>& v, T r) const override {
-			const Vec<3, T> p(v - _start);
-			const T dot = _direction.dot(p);
-			return dot > T(0) && p.length2() - dot * dot < (r * r);
-		}
+        bool intersects(const Vec<3, T>& v, T r) const override {
+            const Vec<3, T> p(v - _start);
+            const T dot = _direction.dot(p);
+            return dot > T(0) && p.length2() - dot * dot < (r * r);
+        }
 
-		T distance(const Vec<3, T>& v) const {
-			const Vec<3, T> p(v - _start);
-			const T dot = _direction.dot(p);
-			return std::sqrt(p.length2() - dot * dot);
-		}
+        T distance(const Vec<3, T>& v) const {
+            const Vec<3, T> p(v - _start);
+            const T dot = _direction.dot(p);
+            return std::sqrt(p.length2() - dot * dot);
+        }
 
-		const Vec<3, T>& direction() const {
-			return _direction;
-		}
+        const Vec<3, T>& direction() const {
+            return _direction;
+        }
 
-		const Vec<3, T>& start() const {
-			return _start;
-		}
+        const Vec<3, T>& start() const {
+            return _start;
+        }
 
-	private:
-		Vec<3, T> _start;
-		Vec<3, T> _direction;
+    private:
+        Vec<3, T> _start;
+        Vec<3, T> _direction;
 };
 
 template<typename T>
 class Sphere final : public Volume<T> {
 
-	public:
-		Sphere(const Vec<4, T>& v) : _position(v.template to<3>()), _radius(v.w()) {
-		}
+    public:
+        Sphere(const Vec<4, T>& v) : _position(v.template to<3>()), _radius(v.w()) {
+        }
 
-		Sphere(const Vec<3, T>& pos, T radius) : _position(pos), _radius(radius) {
-		}
+        Sphere(const Vec<3, T>& pos, T radius) : _position(pos), _radius(radius) {
+        }
 
-		Sphere(T radius) : _radius(radius) {
-		}
+        Sphere(T radius) : _radius(radius) {
+        }
 
-		bool intersects(const Vec<3, T>& v, T rad) const override {
-			return (_position - v).length2() < ((_radius + rad) * (_radius + rad));
-		}
+        bool intersects(const Vec<3, T>& v, T rad) const override {
+            return (_position - v).length2() < ((_radius + rad) * (_radius + rad));
+        }
 
-		const Vec<3, T>& position() const {
-			return _position;
-		}
+        const Vec<3, T>& position() const {
+            return _position;
+        }
 
-		T radius() {
-			return _radius;
-		}
+        T radius() {
+            return _radius;
+        }
 
-	private:
-		Vec<3, T> _position;
-		T _radius;
+    private:
+        Vec<3, T> _position;
+        T _radius;
 };
 
 }
 }
 
 #endif // Y_MATH_VOLUME_H
+

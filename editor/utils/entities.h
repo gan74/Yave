@@ -44,3 +44,4 @@ std::string_view clean_component_name(std::string_view name);
 }
 
 #endif // EDITOR_UTILS_ENTITIES_H
+

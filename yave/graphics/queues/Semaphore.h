@@ -33,69 +33,70 @@ template<typename T>
 class BoxSemaphore;
 
 class Semaphore {
-	class Shared : NonMovable, public DeviceLinked {
-		public:
-			Shared() = default;
-			Shared(DevicePtr dptr);
+    class Shared : NonMovable, public DeviceLinked {
+        public:
+            Shared() = default;
+            Shared(DevicePtr dptr);
 
-			~Shared();
+            ~Shared();
 
-			VkSemaphore vk_semaphore() const;
+            VkSemaphore vk_semaphore() const;
 
-		private:
-			VkSemaphore _semaphore = {};
-	};
+        private:
+            VkSemaphore _semaphore = {};
+    };
 
 
-	public:
-		Semaphore() = default;
+    public:
+        Semaphore() = default;
 
-		DevicePtr device() const;
-		bool is_null() const;
+        DevicePtr device() const;
+        bool is_null() const;
 
-		VkSemaphore vk_semaphore() const;
+        VkSemaphore vk_semaphore() const;
 
-		bool operator==(const Semaphore& other) const;
+        bool operator==(const Semaphore& other) const;
 
-		template<typename T>
-		BoxSemaphore<T> box(T&& t) const;
+        template<typename T>
+        BoxSemaphore<T> box(T&& t) const;
 
-	protected:
-		friend class Queue;
+    protected:
+        friend class Queue;
 
-		Semaphore(DevicePtr dptr);
+        Semaphore(DevicePtr dptr);
 
-	private:
-		std::shared_ptr<Shared> _semaphore;
+    private:
+        std::shared_ptr<Shared> _semaphore;
 };
 
 
 
 template<typename T>
 class BoxSemaphore : private Semaphore {
-	public:
-		BoxSemaphore(DevicePtr dptr, T&& obj) : Semaphore(dptr), _boxed(std::move(obj)) {
-		}
+    public:
+        BoxSemaphore(DevicePtr dptr, T&& obj) : Semaphore(dptr), _boxed(std::move(obj)) {
+        }
 
-		BoxSemaphore(const Semaphore& sem, T&& obj) : Semaphore(sem), _boxed(std::move(obj)) {
-		}
+        BoxSemaphore(const Semaphore& sem, T&& obj) : Semaphore(sem), _boxed(std::move(obj)) {
+        }
 
-		BoxSemaphore(T&& obj) : _boxed(std::move(obj)) {
-		}
+        BoxSemaphore(T&& obj) : _boxed(std::move(obj)) {
+        }
 
 
-	private:
-		friend class CmdBufferRecorder;
+    private:
+        friend class CmdBufferRecorder;
 
-		T _boxed;
+        T _boxed;
 };
 
 
 template<typename T>
 BoxSemaphore<T> Semaphore::box(T&& t) const {
-	return BoxSemaphore(*this, y_fwd(t));
+    return BoxSemaphore(*this, y_fwd(t));
 }
 
 }
 
 #endif // YAVE_GRAPHICS_QUEUES_SEMAPHORE_H
+

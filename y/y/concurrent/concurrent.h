@@ -42,3 +42,4 @@ const char* thread_name();
 }
 
 #endif // Y_CONCURRENT_CONCURRENT_H
+

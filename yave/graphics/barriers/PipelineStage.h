@@ -28,46 +28,47 @@ namespace yave {
 
 // https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkPipelineStageFlagBits.html
 enum class PipelineStage : u32{
-	None = 0,
+    None = 0,
 
-	BeginOfPipe		= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-	EndOfPipe		= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+    BeginOfPipe     = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+    EndOfPipe       = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 
-	TransferBit		= VK_PIPELINE_STAGE_TRANSFER_BIT,
-	HostBit			= VK_PIPELINE_STAGE_HOST_BIT,
-	VertexInputBit	= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-	VertexBit		= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-	FragmentBit		= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-	ComputeBit		= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    TransferBit     = VK_PIPELINE_STAGE_TRANSFER_BIT,
+    HostBit         = VK_PIPELINE_STAGE_HOST_BIT,
+    VertexInputBit  = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+    VertexBit       = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+    FragmentBit     = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+    ComputeBit      = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 
-	// early is load, late is store
-	DepthAttachmentOutBit	= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-	// counts for both loads and stores
-	ColorAttachmentOutBit	= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    // early is load, late is store
+    DepthAttachmentOutBit   = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+    // counts for both loads and stores
+    ColorAttachmentOutBit   = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 
-	AllAttachmentOutBit		= DepthAttachmentOutBit | ColorAttachmentOutBit,
-	AllShadersBit			= VertexBit | FragmentBit | ComputeBit,
+    AllAttachmentOutBit     = DepthAttachmentOutBit | ColorAttachmentOutBit,
+    AllShadersBit           = VertexBit | FragmentBit | ComputeBit,
 
-	All = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+    All = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
 
 };
 
 constexpr PipelineStage operator|(PipelineStage l, PipelineStage r) {
-	return PipelineStage(uenum(l) | uenum(r));
+    return PipelineStage(uenum(l) | uenum(r));
 }
 
 constexpr PipelineStage operator&(PipelineStage l, PipelineStage r)  {
-	return PipelineStage(uenum(l) & uenum(r));
+    return PipelineStage(uenum(l) & uenum(r));
 }
 
 constexpr PipelineStage operator~(PipelineStage l)  {
-	return PipelineStage(~uenum(l));
+    return PipelineStage(~uenum(l));
 }
 
 constexpr bool is_shader_stage(PipelineStage stage) {
-	return (stage & PipelineStage::AllShadersBit) != PipelineStage::None;
+    return (stage & PipelineStage::AllShadersBit) != PipelineStage::None;
 }
 
 }
 
 #endif // YAVE_GRAPHICS_BARRIERS_PIPELINESTAGE_H
+

@@ -45,91 +45,92 @@ MenuBar::MenuBar(ContextPtr ctx) : UiElement("Menu bar"), ContextLinked(ctx) {
 }
 
 void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
-	if(ImGui::BeginMenuBar()) {
-		if(ImGui::BeginMenu(ICON_FA_FILE " File")) {
+    if(ImGui::BeginMenuBar()) {
+        if(ImGui::BeginMenu(ICON_FA_FILE " File")) {
 
-			if(ImGui::MenuItem(ICON_FA_FILE " New")) {
-				context()->new_world();
-			}
+            if(ImGui::MenuItem(ICON_FA_FILE " New")) {
+                context()->new_world();
+            }
 
-			ImGui::Separator();
+            ImGui::Separator();
 
-			if(ImGui::MenuItem(ICON_FA_SAVE " Save")) {
-				context()->defer([ctx = context()] { ctx->save_world(); });
-			}
+            if(ImGui::MenuItem(ICON_FA_SAVE " Save")) {
+                context()->defer([ctx = context()] { ctx->save_world(); });
+            }
 
-			if(ImGui::MenuItem(ICON_FA_FOLDER " Load")) {
-				context()->load_world();
-			}
+            if(ImGui::MenuItem(ICON_FA_FOLDER " Load")) {
+                context()->load_world();
+            }
 
-			ImGui::EndMenu();
-		}
+            ImGui::EndMenu();
+        }
 
-		if(ImGui::BeginMenu("View")) {
-			if(ImGui::MenuItem("Engine view")) context()->ui().add<EngineView>();
-			if(ImGui::MenuItem("Entity view")) context()->ui().add<EntityView>();
-			if(ImGui::MenuItem("Resource browser")) context()->ui().add<ResourceBrowser>();
-			if(ImGui::MenuItem("Material editor")) context()->ui().add<MaterialEditor>();
+        if(ImGui::BeginMenu("View")) {
+            if(ImGui::MenuItem("Engine view")) context()->ui().add<EngineView>();
+            if(ImGui::MenuItem("Entity view")) context()->ui().add<EntityView>();
+            if(ImGui::MenuItem("Resource browser")) context()->ui().add<ResourceBrowser>();
+            if(ImGui::MenuItem("Material editor")) context()->ui().add<MaterialEditor>();
 
-			ImGui::Separator();
+            ImGui::Separator();
 
-			if(ImGui::BeginMenu("Debug")) {
-				if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
+            if(ImGui::BeginMenu("Debug")) {
+                if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
 
-				ImGui::Separator();
-				if(ImGui::MenuItem("Asset stringifier")) context()->ui().add<AssetStringifier>();
+                ImGui::Separator();
+                if(ImGui::MenuItem("Asset stringifier")) context()->ui().add<AssetStringifier>();
 
-				ImGui::Separator();
-				if(ImGui::MenuItem("Flush reload")) context()->flush_reload();
+                ImGui::Separator();
+                if(ImGui::MenuItem("Flush reload")) context()->flush_reload();
 
-				y_debug_assert(!(ImGui::Separator(), ImGui::MenuItem("Debug assert")));
+                y_debug_assert(!(ImGui::Separator(), ImGui::MenuItem("Debug assert")));
 
-				ImGui::EndMenu();
-			}
-			if(ImGui::BeginMenu("Statistics")) {
-				if(ImGui::MenuItem("Performances")) context()->ui().add<PerformanceMetrics>();
-				if(ImGui::MenuItem("Memory info")) context()->ui().add<MemoryInfo>();
-				ImGui::EndMenu();
-			}
+                ImGui::EndMenu();
+            }
+            if(ImGui::BeginMenu("Statistics")) {
+                if(ImGui::MenuItem("Performances")) context()->ui().add<PerformanceMetrics>();
+                if(ImGui::MenuItem("Memory info")) context()->ui().add<MemoryInfo>();
+                ImGui::EndMenu();
+            }
 
-			ImGui::Separator();
+            ImGui::Separator();
 
-			if(ImGui::MenuItem(ICON_FA_COG " Settings")) context()->ui().add<SettingsPanel>();
+            if(ImGui::MenuItem(ICON_FA_COG " Settings")) context()->ui().add<SettingsPanel>();
 
-			ImGui::EndMenu();
-		}
+            ImGui::EndMenu();
+        }
 
-		if(ImGui::BeginMenu("Tools")) {
-			if(ImGui::MenuItem("Reload resources")) context()->reload_device_resources();
-			ImGui::EndMenu();
-		}
+        if(ImGui::BeginMenu("Tools")) {
+            if(ImGui::MenuItem("Reload resources")) context()->reload_device_resources();
+            ImGui::EndMenu();
+        }
 
 #ifdef Y_PERF_LOG_ENABLED
-		if(perf::is_capturing()) {
-			ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-			if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->end_perf_capture();
-			ImGui::PopStyleColor();
-		} else {
-			if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->start_perf_capture();
-		}
+        if(perf::is_capturing()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+            if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->end_perf_capture();
+            ImGui::PopStyleColor();
+        } else {
+            if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->start_perf_capture();
+        }
 #endif
 
-		{
-			const usize progress_bar_size = 300;
-			//ImGui::SameLine(ImGui::GetWindowSize().x - progress_bar_size);
-			auto progress_items = context()->notifications().progress_items();
-			for(const auto& item : progress_items) {
-				if(ImGui::GetContentRegionAvail().x < progress_bar_size) {
-					break;
-				}
-				if(!item.is_over()) {
-					ImGui::ProgressBar(item.fraction(), ImVec2(progress_bar_size, 0.0f), fmt_c_str("%: %/%", item.msg, item.it, item.size));
-				}
-			}
-		}
+        {
+            const usize progress_bar_size = 300;
+            //ImGui::SameLine(ImGui::GetWindowSize().x - progress_bar_size);
+            auto progress_items = context()->notifications().progress_items();
+            for(const auto& item : progress_items) {
+                if(ImGui::GetContentRegionAvail().x < progress_bar_size) {
+                    break;
+                }
+                if(!item.is_over()) {
+                    ImGui::ProgressBar(item.fraction(), ImVec2(progress_bar_size, 0.0f), fmt_c_str("%: %/%", item.msg, item.it, item.size));
+                }
+            }
+        }
 
-		ImGui::EndMenuBar();
-	}
+        ImGui::EndMenuBar();
+    }
 }
 
 }
+

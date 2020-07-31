@@ -36,3 +36,4 @@ class AssetLoadingContext;
 }
 
 #endif // YAVE_UTILS_SERDE_H
+

@@ -27,15 +27,16 @@ SOFTWARE.
 namespace editor {
 
 class SettingsPanel : public Widget, public ContextLinked {
-	public:
-		SettingsPanel(ContextPtr cptr);
+    public:
+        SettingsPanel(ContextPtr cptr);
 
-	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+    private:
+        void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 
-		usize _category = 0;
+        usize _category = 0;
 };
 
 }
 
 #endif // EDITOR_WIDGETS_SETTINGSPANEL_H
+

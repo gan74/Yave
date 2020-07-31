@@ -28,53 +28,54 @@ SOFTWARE.
 namespace editor {
 
 class CameraController : public ContextLinked {
-	public:
-		CameraController(ContextPtr ctx);
+    public:
+        CameraController(ContextPtr ctx);
 
-		virtual ~CameraController() = default;
+        virtual ~CameraController() = default;
 
-		virtual bool viewport_clicked(const PickingManager::PickingData& point) {
-			unused(point);
-			return false;
-		}
+        virtual bool viewport_clicked(const PickingManager::PickingData& point) {
+            unused(point);
+            return false;
+        }
 
-		virtual void update_camera(Camera& camera, const math::Vec2ui& viewport_size) = 0;
-		virtual void process_generic_shortcuts(Camera& camera);
+        virtual void update_camera(Camera& camera, const math::Vec2ui& viewport_size) = 0;
+        virtual void process_generic_shortcuts(Camera& camera);
 
 };
 
 class FPSCameraController final : public CameraController {
-	public:
-		FPSCameraController(ContextPtr ctx);
+    public:
+        FPSCameraController(ContextPtr ctx);
 
-		void update_camera(Camera& camera, const math::Vec2ui& viewport_size) override;
+        void update_camera(Camera& camera, const math::Vec2ui& viewport_size) override;
 };
 
 class HoudiniCameraController final : public CameraController {
-	public:
-		HoudiniCameraController(ContextPtr ctx);
+    public:
+        HoudiniCameraController(ContextPtr ctx);
 
-		bool viewport_clicked(const PickingManager::PickingData& point) override;
+        bool viewport_clicked(const PickingManager::PickingData& point) override;
 
-		void update_camera(Camera& camera, const math::Vec2ui& viewport_size) override;
+        void update_camera(Camera& camera, const math::Vec2ui& viewport_size) override;
 
-	private:
-		int camera_key() const;
+    private:
+        int camera_key() const;
 
-		math::Vec3 _picked_pos;
-		math::Vec3 _target_offset;
-		math::Vec3 _orig_pos;
+        math::Vec3 _picked_pos;
+        math::Vec3 _target_offset;
+        math::Vec3 _orig_pos;
 
-		math::Vec2 _picking_uvs;
-		math::Vec2 _cumulated_delta;
+        math::Vec2 _picking_uvs;
+        math::Vec2 _cumulated_delta;
 
-		float _picking_depth;
+        float _picking_depth;
 
-		bool _init = false;
-		int _mouse_button = -1;
+        bool _init = false;
+        int _mouse_button = -1;
 };
 
 
 }
 
 #endif // EDITOR_CAMERACONTROLLER_H
+

@@ -29,15 +29,16 @@ namespace yave {
 template<CmdBufferUsage Usage>
 class CmdBuffer : public CmdBufferBase {
 
-	public:
-		CmdBuffer() = default;
+    public:
+        CmdBuffer() = default;
 
-	private:
-		friend class CmdBufferPool<Usage>;
+    private:
+        friend class CmdBufferPool<Usage>;
 
-		using CmdBufferBase::CmdBufferBase;
+        using CmdBufferBase::CmdBufferBase;
 };
 
 }
 
 #endif // YAVE_COMMANDS_CMDBUFFERSTATE_H
+

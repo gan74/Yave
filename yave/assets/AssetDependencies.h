@@ -29,24 +29,25 @@ SOFTWARE.
 namespace yave {
 
 class AssetDependencies {
-	public:
-		AssetDependencies(AssetLoadingFlags flags = AssetLoadingFlags::None);
+    public:
+        AssetDependencies(AssetLoadingFlags flags = AssetLoadingFlags::None);
 
-		void add_dependency(GenericAssetPtr asset);
+        void add_dependency(GenericAssetPtr asset);
 
-		usize dependency_count() const;
+        usize dependency_count() const;
 
-		bool is_done() const;
-		bool is_empty() const;
-		AssetLoadingState state() const;
-		AssetLoadingErrorType error() const;
+        bool is_done() const;
+        bool is_empty() const;
+        AssetLoadingState state() const;
+        AssetLoadingErrorType error() const;
 
 
-	private:
-		core::Vector<GenericAssetPtr> _deps;
-		AssetLoadingFlags _flags;
+    private:
+        core::Vector<GenericAssetPtr> _deps;
+        AssetLoadingFlags _flags;
 };
 
 }
 
 #endif // YAVE_ASSETS_ASSETDEPENDENCIES_H
+

@@ -34,68 +34,69 @@ SOFTWARE.
 namespace yave {
 
 class RenderPass : NonCopyable, public DeviceLinked {
-	public:
-		enum class LoadOp : u32 {
-			Clear,
-			Load
-		};
+    public:
+        enum class LoadOp : u32 {
+            Clear,
+            Load
+        };
 
-		struct ImageData {
-			const ImageFormat format;
-			const ImageUsage usage = ImageUsage::None;
-			const LoadOp load_op = LoadOp::Clear;
+        struct ImageData {
+            const ImageFormat format;
+            const ImageUsage usage = ImageUsage::None;
+            const LoadOp load_op = LoadOp::Clear;
 
-			ImageData() = default;
+            ImageData() = default;
 
-			ImageData(ImageFormat fmt, ImageUsage us, LoadOp op) : format(fmt), usage(us), load_op(op) {
-			}
+            ImageData(ImageFormat fmt, ImageUsage us, LoadOp op) : format(fmt), usage(us), load_op(op) {
+            }
 
-			ImageData(const ImageBase& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
-			}
+            ImageData(const ImageBase& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
+            }
 
-			template<ImageUsage Usage>
-			ImageData(const ImageView<Usage>& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
-			}
-		};
+            template<ImageUsage Usage>
+            ImageData(const ImageView<Usage>& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
+            }
+        };
 
-		class Layout {
-			public:
-				Layout() = default;
-				Layout(ImageData depth, core::Span<ImageData> colors);
+        class Layout {
+            public:
+                Layout() = default;
+                Layout(ImageData depth, core::Span<ImageData> colors);
 
-				u64 hash() const;
-				bool is_depth_only() const;
+                u64 hash() const;
+                bool is_depth_only() const;
 
-				bool operator==(const Layout& other) const;
+                bool operator==(const Layout& other) const;
 
-			private:
-				ImageFormat _depth;
-				core::SmallVector<ImageFormat, 7> _colors;
-		};
+            private:
+                ImageFormat _depth;
+                core::SmallVector<ImageFormat, 7> _colors;
+        };
 
-		RenderPass() = default;
-		RenderPass(RenderPass&&) = default;
-		RenderPass& operator=(RenderPass&&) = default;
+        RenderPass() = default;
+        RenderPass(RenderPass&&) = default;
+        RenderPass& operator=(RenderPass&&) = default;
 
-		RenderPass(DevicePtr dptr, ImageData depth, core::Span<ImageData> colors);
-		RenderPass(DevicePtr dptr, core::Span<ImageData> colors);
+        RenderPass(DevicePtr dptr, ImageData depth, core::Span<ImageData> colors);
+        RenderPass(DevicePtr dptr, core::Span<ImageData> colors);
 
-		~RenderPass();
+        ~RenderPass();
 
-		bool is_depth_only() const;
+        bool is_depth_only() const;
 
-		const Layout& layout() const;
-		usize attachment_count() const;
+        const Layout& layout() const;
+        usize attachment_count() const;
 
-		VkRenderPass vk_render_pass() const;
+        VkRenderPass vk_render_pass() const;
 
-	private:
-		usize _attachment_count = 0;
-		SwapMove<VkRenderPass> _render_pass;
+    private:
+        usize _attachment_count = 0;
+        SwapMove<VkRenderPass> _render_pass;
 
-		Layout _layout;
+        Layout _layout;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_FRAMEBUFFER_RENDERPASS_H
+

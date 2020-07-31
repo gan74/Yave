@@ -31,21 +31,22 @@ namespace editor {
 class MaterialEditor final : public Widget, public ContextLinked {
 
 
-	public:
-		MaterialEditor(ContextPtr cptr);
+    public:
+        MaterialEditor(ContextPtr cptr);
 
-		void refresh() override;
+        void refresh() override;
 
-		void set_material(const AssetPtr<Material>& mat);
+        void set_material(const AssetPtr<Material>& mat);
 
-	private:
-		void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+    private:
+        void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
 
-		AssetPtr<Material> _material;
+        AssetPtr<Material> _material;
 
-		MaterialPreview _preview;
+        MaterialPreview _preview;
 };
 
 }
 
 #endif // EDITOR_MATERIALEDITOR_H
+

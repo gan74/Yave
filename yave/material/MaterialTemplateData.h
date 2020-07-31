@@ -34,61 +34,62 @@ namespace yave {
 class MaterialCompiler;
 
 enum class PrimitiveType {
-	Triangles = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-	Lines = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-	Points = VK_PRIMITIVE_TOPOLOGY_POINT_LIST
+    Triangles = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    Lines = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+    Points = VK_PRIMITIVE_TOPOLOGY_POINT_LIST
 };
 
 enum class DepthTestMode {
-	Standard,
-	Reversed,
-	None
+    Standard,
+    Reversed,
+    None
 };
 
 enum class BlendMode {
-	None,
-	Add,
-	SrcAlpha,
+    None,
+    Add,
+    SrcAlpha,
 };
 
 enum class CullMode {
-	None,
-	Back,
-	Front,
+    None,
+    Back,
+    Front,
 };
 
 class MaterialTemplateData {
-	public:
-		MaterialTemplateData& set_frag_data(const SpirVData& data);
-		MaterialTemplateData& set_vert_data(const SpirVData& data);
-		MaterialTemplateData& set_geom_data(const SpirVData& data);
+    public:
+        MaterialTemplateData& set_frag_data(const SpirVData& data);
+        MaterialTemplateData& set_vert_data(const SpirVData& data);
+        MaterialTemplateData& set_geom_data(const SpirVData& data);
 
-		MaterialTemplateData& set_primitive_type(PrimitiveType type);
+        MaterialTemplateData& set_primitive_type(PrimitiveType type);
 
-		MaterialTemplateData& set_depth_mode(DepthTestMode test);
-		MaterialTemplateData& set_depth_write(bool write);
+        MaterialTemplateData& set_depth_mode(DepthTestMode test);
+        MaterialTemplateData& set_depth_write(bool write);
 
-		MaterialTemplateData& set_blend_mode(BlendMode blend);
+        MaterialTemplateData& set_blend_mode(BlendMode blend);
 
-		MaterialTemplateData& set_cull_mode(CullMode cull);
+        MaterialTemplateData& set_cull_mode(CullMode cull);
 
 
-	private:
-		friend class MaterialCompiler;
+    private:
+        friend class MaterialCompiler;
 
-		SpirVData _frag;
-		SpirVData _vert;
-		SpirVData _geom;
+        SpirVData _frag;
+        SpirVData _vert;
+        SpirVData _geom;
 
-		PrimitiveType _primitive_type = PrimitiveType::Triangles;
+        PrimitiveType _primitive_type = PrimitiveType::Triangles;
 
-		DepthTestMode _depth_mode = DepthTestMode::Standard;
-		BlendMode _blend_mode = BlendMode::None;
-		CullMode _cull_mode = CullMode::Back;
+        DepthTestMode _depth_mode = DepthTestMode::Standard;
+        BlendMode _blend_mode = BlendMode::None;
+        CullMode _cull_mode = CullMode::Back;
 
-		bool _depth_write = true;
+        bool _depth_write = true;
 };
 
 }
 
 #endif // YAVE_MATERIAL_MATERIALTEMPLATEDATA_H
+

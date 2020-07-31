@@ -659,3 +659,4 @@ typedef int(RENDERDOC_CC *pRENDERDOC_GetAPI)(RENDERDOC_Version version, void **o
 #ifdef __cplusplus
 }    // extern "C"
 #endif
+

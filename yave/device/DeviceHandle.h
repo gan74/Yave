@@ -27,33 +27,34 @@ SOFTWARE.
 
 namespace yave {
 
-#define YAVE_DEVICE_RESOURCE_TYPES(X)		\
-	X(DeviceMemory)                         \
-	X(DescriptorSetData)                    \
-	X(VkBuffer)                             \
-	X(VkImage)                              \
-	X(VkImageView)                          \
-	X(VkRenderPass)                         \
-	X(VkFramebuffer)                        \
-	X(VkPipeline)                           \
-	X(VkPipelineLayout)                     \
-	X(VkShaderModule)                       \
-	X(VkSampler)                            \
-	X(VkSwapchainKHR)                       \
-	X(VkCommandPool)                        \
-	X(VkFence)                              \
-	X(VkDescriptorPool)                     \
-	X(VkDescriptorSetLayout)                \
-	X(VkSemaphore)                          \
-	X(VkQueryPool)                          \
-	X(VkEvent)                              \
-	X(VkSurfaceKHR)                         
+#define YAVE_DEVICE_RESOURCE_TYPES(X)       \
+    X(DeviceMemory)                         \
+    X(DescriptorSetData)                    \
+    X(VkBuffer)                             \
+    X(VkImage)                              \
+    X(VkImageView)                          \
+    X(VkRenderPass)                         \
+    X(VkFramebuffer)                        \
+    X(VkPipeline)                           \
+    X(VkPipelineLayout)                     \
+    X(VkShaderModule)                       \
+    X(VkSampler)                            \
+    X(VkSwapchainKHR)                       \
+    X(VkCommandPool)                        \
+    X(VkFence)                              \
+    X(VkDescriptorPool)                     \
+    X(VkDescriptorSetLayout)                \
+    X(VkSemaphore)                          \
+    X(VkQueryPool)                          \
+    X(VkEvent)                              \
+    X(VkSurfaceKHR)                         
 
 
-#define YAVE_GENERATE_DESTROY(T) void device_destroy(DevicePtr dptr, T t);				
-	
+#define YAVE_GENERATE_DESTROY(T) void device_destroy(DevicePtr dptr, T t);              
+    
 YAVE_DEVICE_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 
 }
 
 #endif // YAVE_DEVICE_DEVICEHANDLE_H
+

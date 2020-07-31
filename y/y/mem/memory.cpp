@@ -31,45 +31,46 @@ namespace memory {
 
 template<typename Allocator>
 struct PrintingAllocator : private Allocator {
-	[[nodiscard]] void* allocate(usize size) noexcept {
-		log_msg(fmt("alloc(%)", size));
-		return Allocator::allocate(size);
-	}
+    [[nodiscard]] void* allocate(usize size) noexcept {
+        log_msg(fmt("alloc(%)", size));
+        return Allocator::allocate(size);
+    }
 
-	void deallocate(void* ptr, usize size) noexcept {
-		log_msg(fmt("free(%)", size));
-		Allocator::deallocate(ptr, size);
-	}
+    void deallocate(void* ptr, usize size) noexcept {
+        log_msg(fmt("free(%)", size));
+        Allocator::deallocate(ptr, size);
+    }
 };
 
 using GlobalAllocatorType = ThreadSafeAllocator<LeakDetectorAllocator<Mallocator>>;
 
 PolymorphicAllocatorBase* global_allocator() {
-	static PolymorphicAllocator<GlobalAllocatorType> allocator;
-	return &allocator;
+    static PolymorphicAllocator<GlobalAllocatorType> allocator;
+    return &allocator;
 }
 
 PolymorphicAllocatorBase* thread_local_allocator() {
-	static thread_local PolymorphicAllocator<GlobalAllocatorType> allocator;
-	return &allocator;
+    static thread_local PolymorphicAllocator<GlobalAllocatorType> allocator;
+    return &allocator;
 }
 
 
 [[nodiscard]] void* GlobalAllocator::allocate(usize size) noexcept {
-	return global_allocator()->allocate(size);
+    return global_allocator()->allocate(size);
 }
 
 void GlobalAllocator::deallocate(void* ptr, usize size) noexcept {
-	global_allocator()->deallocate(ptr, size);
+    global_allocator()->deallocate(ptr, size);
 }
 
 [[nodiscard]] void* ThreadLocalAllocator::allocate(usize size) noexcept {
-	return thread_local_allocator()->allocate(size);
+    return thread_local_allocator()->allocate(size);
 }
 
 void ThreadLocalAllocator::deallocate(void* ptr, usize size) noexcept {
-	thread_local_allocator()->deallocate(ptr, size);
+    thread_local_allocator()->deallocate(ptr, size);
 }
 
 }
 }
+

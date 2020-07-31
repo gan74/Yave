@@ -39,117 +39,118 @@ AssetLoadingThreadPool::LoadingJob::LoadingJob(AssetLoader* loader) : _ctx(loade
 }
 
 const AssetDependencies& AssetLoadingThreadPool::LoadingJob::dependencies() const {
-	return _ctx.dependencies();
+    return _ctx.dependencies();
 }
 
 AssetLoader* AssetLoadingThreadPool::LoadingJob::parent() const {
-	return _ctx.parent();
+    return _ctx.parent();
 }
 
 AssetLoadingContext& AssetLoadingThreadPool::LoadingJob::loading_context() {
-	return _ctx;
+    return _ctx;
 }
 
 AssetLoadingThreadPool::AssetLoadingThreadPool(AssetLoader* parent, usize concurency) : _parent(parent) {
-	_threads = core::vector_with_capacity<std::thread>(concurency);
-	for(usize i = 0; i != concurency; ++i) {
-		_threads.emplace_back([this] {
-			concurrent::set_thread_name("Asset loading thread");
-			worker();
-		});
-	}
+    _threads = core::vector_with_capacity<std::thread>(concurency);
+    for(usize i = 0; i != concurency; ++i) {
+        _threads.emplace_back([this] {
+            concurrent::set_thread_name("Asset loading thread");
+            worker();
+        });
+    }
 }
 
 AssetLoadingThreadPool::~AssetLoadingThreadPool() {
-	{
-		const auto lock = y_profile_unique_lock(_lock);
-		_run = false;
-	}
-	_condition.notify_all();
+    {
+        const auto lock = y_profile_unique_lock(_lock);
+        _run = false;
+    }
+    _condition.notify_all();
 
-	for(auto& thread : _threads) {
-		thread.join();
-	}
+    for(auto& thread : _threads) {
+        thread.join();
+    }
 }
 
 DevicePtr AssetLoadingThreadPool::device() const {
-	y_debug_assert(_parent);
-	return _parent->device();
+    y_debug_assert(_parent);
+    return _parent->device();
 }
 
 void AssetLoadingThreadPool::wait_until_loaded(const GenericAssetPtr& ptr) {
-	y_profile();
-	while(ptr.is_loading()) {
-		process_one(y_profile_unique_lock(_lock));
-	}
+    y_profile();
+    while(ptr.is_loading()) {
+        process_one(y_profile_unique_lock(_lock));
+    }
 }
 
 void AssetLoadingThreadPool::add_loading_job(std::unique_ptr<LoadingJob> job) {
-	{
-		const auto lock = y_profile_unique_lock(_lock);
-		_loading_jobs.emplace_back(std::move(job));
-	}
-	_condition.notify_one();
+    {
+        const auto lock = y_profile_unique_lock(_lock);
+        _loading_jobs.emplace_back(std::move(job));
+    }
+    _condition.notify_one();
 }
 
 void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
-	y_profile();
-	y_debug_assert(lock.owns_lock());
+    y_profile();
+    y_debug_assert(lock.owns_lock());
 
-	{
-		y_profile_zone("finalizing loop");
-		for(auto it = _finalize_jobs.begin(); it != _finalize_jobs.end(); ++it) {
-			const AssetLoadingState state = (*it)->dependencies().state();
-			if(state != AssetLoadingState::NotLoaded) {
-				auto job = std::move(*it);
-				_finalize_jobs.erase(it);
-				lock.unlock();
+    {
+        y_profile_zone("finalizing loop");
+        for(auto it = _finalize_jobs.begin(); it != _finalize_jobs.end(); ++it) {
+            const AssetLoadingState state = (*it)->dependencies().state();
+            if(state != AssetLoadingState::NotLoaded) {
+                auto job = std::move(*it);
+                _finalize_jobs.erase(it);
+                lock.unlock();
 
-				if(state == AssetLoadingState::Loaded) {
-					job->finalize(device());
-				} else if(state == AssetLoadingState::Failed) {
-					job->set_dependencies_failed();
-				}
-				_condition.notify_all();
-				return;
-			}
-		}
-	}
+                if(state == AssetLoadingState::Loaded) {
+                    job->finalize(device());
+                } else if(state == AssetLoadingState::Failed) {
+                    job->set_dependencies_failed();
+                }
+                _condition.notify_all();
+                return;
+            }
+        }
+    }
 
-	y_debug_assert(lock.owns_lock());
+    y_debug_assert(lock.owns_lock());
 
-	if(!_loading_jobs.empty()) {
-		y_profile_zone("load one");
-		auto job = std::move(_loading_jobs.front());
-		_loading_jobs.pop_front();
-		lock.unlock();
+    if(!_loading_jobs.empty()) {
+        y_profile_zone("load one");
+        auto job = std::move(_loading_jobs.front());
+        _loading_jobs.pop_front();
+        lock.unlock();
 
-		if(job->read()) {
-			y_profile_zone("post read");
-			const AssetLoadingState state = job->dependencies().state();
-			if(state != AssetLoadingState::NotLoaded) {
-				if(state == AssetLoadingState::Loaded) {
-					job->finalize(device());
-				} else if(state == AssetLoadingState::Failed) {
-					job->set_dependencies_failed();
-				}
-				_condition.notify_all();
-			} else {
-				auto inner_lock = y_profile_unique_lock(_lock);
-				_finalize_jobs.emplace_back(std::move(job));
-			}
-		}
-	}
+        if(job->read()) {
+            y_profile_zone("post read");
+            const AssetLoadingState state = job->dependencies().state();
+            if(state != AssetLoadingState::NotLoaded) {
+                if(state == AssetLoadingState::Loaded) {
+                    job->finalize(device());
+                } else if(state == AssetLoadingState::Failed) {
+                    job->set_dependencies_failed();
+                }
+                _condition.notify_all();
+            } else {
+                auto inner_lock = y_profile_unique_lock(_lock);
+                _finalize_jobs.emplace_back(std::move(job));
+            }
+        }
+    }
 }
 
 void AssetLoadingThreadPool::worker() {
-	while(_run) {
-		auto lock = y_profile_unique_lock(_lock);
-		_condition.wait(lock, [this] {
-			return !_loading_jobs.empty() || !_finalize_jobs.empty() ||  !_run;
-		});
-		process_one(std::move(lock));
-	}
+    while(_run) {
+        auto lock = y_profile_unique_lock(_lock);
+        _condition.wait(lock, [this] {
+            return !_loading_jobs.empty() || !_finalize_jobs.empty() ||  !_run;
+        });
+        process_one(std::move(lock));
+    }
 }
 
 }
+

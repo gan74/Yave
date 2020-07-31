@@ -36,25 +36,26 @@ namespace yave {
 
 class MaterialTemplate final : NonCopyable, public DeviceLinked {
 
-	public:
-		static constexpr usize max_compiled_pipelines = 8;
+    public:
+        static constexpr usize max_compiled_pipelines = 8;
 
-		MaterialTemplate() = default;
-		MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data);
+        MaterialTemplate() = default;
+        MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data);
 
-		const GraphicPipeline& compile(const RenderPass& render_pass) const;
+        const GraphicPipeline& compile(const RenderPass& render_pass) const;
 
-		const MaterialTemplateData& data() const;
+        const MaterialTemplateData& data() const;
 
-	private:
-		//void swap(Material& other);
+    private:
+        //void swap(Material& other);
 
-		mutable core::AssocVector<RenderPass::Layout, GraphicPipeline> _compiled;
+        mutable core::AssocVector<RenderPass::Layout, GraphicPipeline> _compiled;
 
-		MaterialTemplateData _data;
+        MaterialTemplateData _data;
 };
 
 }
 
 
 #endif // YAVE_MATERIAL_MATERIALTEMPLATE_H
+

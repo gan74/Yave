@@ -29,20 +29,21 @@ namespace yave {
 using Plane = math::Vec4;
 
 class Frustum : public std::array<Plane, 6> {
-	using Base = std::array<Plane, 6>;
+    using Base = std::array<Plane, 6>;
 
-	public:
-		Frustum() = default;
+    public:
+        Frustum() = default;
 
-		Frustum(const Base& fru) : Base(fru) {
-		}
+        Frustum(const Base& fru) : Base(fru) {
+        }
 
-		bool is_inside(const math::Vec3& pos, float radius) const;
+        bool is_inside(const math::Vec3& pos, float radius) const;
 
-	private:
+    private:
 
 };
 
 }
 
 #endif // YAVE_CAMERA_FRUSTUM_H
+

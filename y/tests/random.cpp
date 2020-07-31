@@ -30,18 +30,19 @@ namespace {
 using namespace y;
 
 y_test_func("FastRandom") {
-	std::unordered_set<u32> output;
-	const usize max = 50000;
-	math::FastRandom rnd;
-	for(usize i = 0; i != max; ++i) {
-		output.insert(rnd());
-	}
-	y_test_assert(output.size() == max);
+    std::unordered_set<u32> output;
+    const usize max = 50000;
+    math::FastRandom rnd;
+    for(usize i = 0; i != max; ++i) {
+        output.insert(rnd());
+    }
+    y_test_assert(output.size() == max);
 }
 
 y_test_func("FastRandom zero seed") {
-	math::FastRandom rnd(0);
-	y_test_assert(rnd() != 0);
+    math::FastRandom rnd(0);
+    y_test_assert(rnd() != 0);
 }
 
 }
+

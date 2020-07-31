@@ -27,14 +27,15 @@ SOFTWARE.
 namespace editor {
 
 class CameraDebug : public Widget, public ContextLinked {
-	public:
-		CameraDebug(ContextPtr cptr);
+    public:
+        CameraDebug(ContextPtr cptr);
 
-	private:
-		void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+    private:
+        void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
 };
 
 }
 
 
 #endif // EDITOR_WIDGETS_CAMERADEBUG_H
+

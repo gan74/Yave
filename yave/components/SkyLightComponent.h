@@ -29,16 +29,17 @@ SOFTWARE.
 namespace yave {
 
 class SkyLightComponent final {
-	public:
+    public:
 
-		AssetPtr<IBLProbe>& probe();
-		const AssetPtr<IBLProbe>& probe() const;
+        AssetPtr<IBLProbe>& probe();
+        const AssetPtr<IBLProbe>& probe() const;
 
-		y_serde3(_probe)
+        y_serde3(_probe)
 
-	private:
-		AssetPtr<IBLProbe> _probe;
+    private:
+        AssetPtr<IBLProbe> _probe;
 };
 }
 
 #endif // YAVE_COMPONENTS_SKYLIGHTCOMPONENT_H
+

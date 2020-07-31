@@ -34,25 +34,26 @@ namespace editor {
 
 class ImageImporter final : public Widget, public ContextLinked {
 
-	public:
-		ImageImporter(ContextPtr ctx, const core::String& import_path = ".");
+    public:
+        ImageImporter(ContextPtr ctx, const core::String& import_path = ".");
 
-	private:
-		void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
+    private:
+        void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
 
-		void import_async(const core::String& filename);
-		void import(const Named<ImageData>& asset);
+        void import_async(const core::String& filename);
+        void import(const Named<ImageData>& asset);
 
-		bool done_loading() const;
-		bool is_loading() const;
+        bool done_loading() const;
+        bool is_loading() const;
 
-		FileBrowser _browser;
+        FileBrowser _browser;
 
-		core::String _import_path;
+        core::String _import_path;
 
-		std::future<Named<ImageData>> _import_future;
+        std::future<Named<ImageData>> _import_future;
 };
 
 }
 
 #endif // EDITOR_WIDGETS_IMAGEIMPORTER_H
+

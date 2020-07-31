@@ -40,10 +40,10 @@ struct Detector<Default, std::void_t<Op<Args...>>, Op, Args...> {
 };
 
 struct NoneSuch {
-	NoneSuch() = delete;
-	~NoneSuch() = delete;
-	NoneSuch(NoneSuch const&) = delete;
-	void operator=(NoneSuch const&) = delete;
+    NoneSuch() = delete;
+    ~NoneSuch() = delete;
+    NoneSuch(NoneSuch const&) = delete;
+    void operator=(NoneSuch const&) = delete;
 };
 } // namespace detail
 
@@ -57,3 +57,4 @@ inline constexpr bool is_detected_v = is_detected<Op, Args...>::value;
 
 
 #endif // Y_UTILS_DETECT_H
+

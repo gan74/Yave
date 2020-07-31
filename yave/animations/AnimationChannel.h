@@ -29,28 +29,29 @@ SOFTWARE.
 namespace yave {
 
 class AnimationChannel {
-	public:
-		struct BoneKey {
-			float time;
-			BoneTransform local_transform;
-		};
+    public:
+        struct BoneKey {
+            float time;
+            BoneTransform local_transform;
+        };
 
-		AnimationChannel() = default;
-		AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys);
+        AnimationChannel() = default;
+        AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys);
 
-		math::Transform<> bone_transform(float time) const;
+        math::Transform<> bone_transform(float time) const;
 
-		const core::String& name() const;
-		core::Span<BoneKey> keys() const;
+        const core::String& name() const;
+        core::Span<BoneKey> keys() const;
 
 
-		y_serde3(_name, _keys)
+        y_serde3(_name, _keys)
 
-	private:
-		core::String _name;
-		core::Vector<BoneKey> _keys;
+    private:
+        core::String _name;
+        core::Vector<BoneKey> _keys;
 };
 
 }
 
 #endif // YAVE_ANIMATIONS_ANIMATIONCHANNEL_H
+

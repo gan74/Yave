@@ -26,146 +26,147 @@ namespace yave {
 
 template<typename U>
 static void check_usage(U u) {
-	if(u == U::None) {
-		y_fatal("Invalid resource usage.");
-	}
+    if(u == U::None) {
+        y_fatal("Invalid resource usage.");
+    }
 }
 
 FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 FrameGraphResourcePool::~FrameGraphResourcePool() {
-	const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = y_profile_unique_lock(_lock);
 }
 
 TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
-	y_profile();
-	const auto lock = y_profile_unique_lock(_lock);
+    y_profile();
+    const auto lock = y_profile_unique_lock(_lock);
 
-	check_usage(usage);
+    check_usage(usage);
 
-	TransientImage<> image;
-	if(!create_image_from_pool(image, format, size, usage)) {
-		image = TransientImage<>(device(), format, usage, size);
-	}
+    TransientImage<> image;
+    if(!create_image_from_pool(image, format, size, usage)) {
+        image = TransientImage<>(device(), format, usage, size);
+    }
 
-	return image;
+    return image;
 }
 
 TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsage usage, MemoryType memory) {
-	y_profile();
-	const auto lock = y_profile_unique_lock(_lock);
+    y_profile();
+    const auto lock = y_profile_unique_lock(_lock);
 
-	check_usage(usage);
+    check_usage(usage);
 
-	if(memory == MemoryType::DontCare) {
-		memory = prefered_memory_type(usage);
-	}
+    if(memory == MemoryType::DontCare) {
+        memory = prefered_memory_type(usage);
+    }
 
-	TransientBuffer buffer;
-	if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {
-		buffer = TransientBuffer(device(), byte_size, usage, memory);
-	}
+    TransientBuffer buffer;
+    if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {
+        buffer = TransientBuffer(device(), byte_size, usage, memory);
+    }
 
-	return buffer;
+    return buffer;
 }
 
 bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
-	y_profile();
-	for(auto it = _images.begin(); it != _images.end(); ++it) {
-		auto& img = it->first;
+    y_profile();
+    for(auto it = _images.begin(); it != _images.end(); ++it) {
+        auto& img = it->first;
 
-		if(img.format() == format && img.size() == size && img.usage() == usage) {
+        if(img.format() == format && img.size() == size && img.usage() == usage) {
 
-			res = std::move(img);
-			_images.erase_unordered(it);
+            res = std::move(img);
+            _images.erase_unordered(it);
 
-			audit();
-			y_debug_assert(res.device());
+            audit();
+            y_debug_assert(res.device());
 
-			return true;
-		}
-	}
-	return false;
+            return true;
+        }
+    }
+    return false;
 }
 
 
 bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory) {
-	y_profile();
-	for(auto it = _buffers.begin(); it != _buffers.end(); ++it) {
-		auto& buffer = it->first;
+    y_profile();
+    for(auto it = _buffers.begin(); it != _buffers.end(); ++it) {
+        auto& buffer = it->first;
 
-		if(buffer.byte_size() == byte_size &&
-		   buffer.usage() == usage &&
-		   (buffer.memory_type() == memory || memory == MemoryType::DontCare)) {
+        if(buffer.byte_size() == byte_size &&
+           buffer.usage() == usage &&
+           (buffer.memory_type() == memory || memory == MemoryType::DontCare)) {
 
-			res = std::move(buffer);
-			_buffers.erase_unordered(it);
+            res = std::move(buffer);
+            _buffers.erase_unordered(it);
 
-			audit();
-			y_debug_assert(res.device());
+            audit();
+            y_debug_assert(res.device());
 
-			return true;
-		}
-	}
-	return false;
+            return true;
+        }
+    }
+    return false;
 }
 
 
 void FrameGraphResourcePool::release(TransientImage<> image) {
-	const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = y_profile_unique_lock(_lock);
 
-	_images.emplace_back(std::move(image), _collection_id);
-	audit();
+    _images.emplace_back(std::move(image), _collection_id);
+    audit();
 }
 
 void FrameGraphResourcePool::release(TransientBuffer buffer) {
-	const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = y_profile_unique_lock(_lock);
 
-	_buffers.emplace_back(std::move(buffer), _collection_id);
-	audit();
+    _buffers.emplace_back(std::move(buffer), _collection_id);
+    audit();
 }
 
 void FrameGraphResourcePool::garbage_collect() {
-	y_profile();
-	const auto lock = y_profile_unique_lock(_lock);
+    y_profile();
+    const auto lock = y_profile_unique_lock(_lock);
 
-	audit();
+    audit();
 
-	const u64 max_col_count = 3;
+    const u64 max_col_count = 3;
 
-	for(usize i = 0; i < _images.size(); ++i) {
-		if(_images[i].second + max_col_count < _collection_id) {
-			_images.erase_unordered(_images.begin() + i);
-			--i;
-		}
-	}
+    for(usize i = 0; i < _images.size(); ++i) {
+        if(_images[i].second + max_col_count < _collection_id) {
+            _images.erase_unordered(_images.begin() + i);
+            --i;
+        }
+    }
 
-	for(usize i = 0; i < _buffers.size(); ++i) {
-		if(_buffers[i].second + max_col_count < _collection_id) {
-			_buffers.erase_unordered(_buffers.begin() + i);
-			--i;
-		}
-	}
+    for(usize i = 0; i < _buffers.size(); ++i) {
+        if(_buffers[i].second + max_col_count < _collection_id) {
+            _buffers.erase_unordered(_buffers.begin() + i);
+            --i;
+        }
+    }
 
-	++_collection_id;
+    ++_collection_id;
 
-	audit();
+    audit();
 }
 
 void FrameGraphResourcePool::audit() const {
 /*#ifdef Y_DEBUG
-	for(const auto& [res, col] : _images) {
-		unused(res, col);
-		y_debug_assert(res.device());
-	}
-	for(const auto& [res, col] : _buffers) {
-		unused(res, col);
-		y_debug_assert(res.device());
-	}
+    for(const auto& [res, col] : _images) {
+        unused(res, col);
+        y_debug_assert(res.device());
+    }
+    for(const auto& [res, col] : _buffers) {
+        unused(res, col);
+        y_debug_assert(res.device());
+    }
 #endif*/
 }
 
 }
 
 #undef CHECK_NON_CONCURENT
+

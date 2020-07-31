@@ -27,27 +27,28 @@ SOFTWARE.
 namespace editor {
 
 struct EditorRendererSettings {
-	RendererSettings renderer_settings;
+    RendererSettings renderer_settings;
 
-	bool enable_editor_entities = true;
-	float billboard_size = 64.0f;
+    bool enable_editor_entities = true;
+    float billboard_size = 64.0f;
 };
 
 
 struct EditorRenderer {
-	DefaultRenderer renderer;
-	EditorEntityPass entity_pass;
+    DefaultRenderer renderer;
+    EditorEntityPass entity_pass;
 
-	FrameGraphImageId color;
-	FrameGraphImageId depth;
+    FrameGraphImageId color;
+    FrameGraphImageId depth;
 
-	static EditorRenderer create(ContextPtr ctx,
-								 FrameGraph& framegraph,
-								 const SceneView& view,
-								 const math::Vec2ui& size,
-								 const EditorRendererSettings& settings = EditorRendererSettings());
+    static EditorRenderer create(ContextPtr ctx,
+                                 FrameGraph& framegraph,
+                                 const SceneView& view,
+                                 const math::Vec2ui& size,
+                                 const EditorRendererSettings& settings = EditorRendererSettings());
 };
 
 }
 
 #endif // EDITOR_RENDERER_EDITORRENDERER_H
+

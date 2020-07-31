@@ -27,16 +27,17 @@ SOFTWARE.
 namespace yave {
 
 struct DeviceProperties {
-	u32 non_coherent_atom_size;
-	u32 max_uniform_buffer_size;
-	u32 uniform_buffer_alignment;
-	u32 storage_buffer_alignment;
+    u32 non_coherent_atom_size;
+    u32 max_uniform_buffer_size;
+    u32 uniform_buffer_alignment;
+    u32 storage_buffer_alignment;
 
-	u32 max_memory_allocations;
+    u32 max_memory_allocations;
 
-	u32 max_inline_uniform_size;
+    u32 max_inline_uniform_size;
 };
 
 }
 
 #endif // YAVE_DEVICE_DEVICEPROPERTIES_H
+

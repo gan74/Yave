@@ -27,33 +27,34 @@ SOFTWARE.
 namespace editor {
 
 AssetSelector::AssetSelector(ContextPtr ctx, AssetType filter) :
-		ResourceBrowser(ctx, fmt("% Asset selector", asset_type_icon(filter))),
-		_filter(filter) {
+        ResourceBrowser(ctx, fmt("% Asset selector", asset_type_icon(filter))),
+        _filter(filter) {
 }
 
 void AssetSelector::asset_selected(AssetId id) {
-	if(id != AssetId::invalid_id()) {
-		if(read_file_type(id) == _filter) {
-			if(_selected(id)) {
-				close();
-				return;
-			}
-		}
-	}
+    if(id != AssetId::invalid_id()) {
+        if(read_file_type(id) == _filter) {
+            if(_selected(id)) {
+                close();
+                return;
+            }
+        }
+    }
 }
 
 core::Result<core::String> AssetSelector::entry_icon(const core::String& full_name, EntryType type) const {
-	if(type == EntryType::Directory) {
-		return FileSystemView::entry_icon(full_name, type);
-	}
-	if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
-		const AssetType asset = read_file_type(id);
-		if(_filter == AssetType::Unknown || asset == _filter) {
-			return core::Ok(core::String(asset_type_icon(asset)));
-		}
-	}
-	return core::Err();
+    if(type == EntryType::Directory) {
+        return FileSystemView::entry_icon(full_name, type);
+    }
+    if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+        const AssetType asset = read_file_type(id);
+        if(_filter == AssetType::Unknown || asset == _filter) {
+            return core::Ok(core::String(asset_type_icon(asset)));
+        }
+    }
+    return core::Err();
 }
 
 
 }
+

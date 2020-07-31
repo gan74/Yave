@@ -30,19 +30,20 @@ namespace yave {
 template<CmdBufferUsage Usage>
 class CmdBufferPool : public CmdBufferPoolBase {
 
-	public:
-		CmdBufferPool() = default;
+    public:
+        CmdBufferPool() = default;
 
-		CmdBufferPool(DevicePtr dptr) : CmdBufferPoolBase(dptr, Usage) {
-		}
+        CmdBufferPool(DevicePtr dptr) : CmdBufferPoolBase(dptr, Usage) {
+        }
 
-		CmdBuffer<Usage> create_buffer() {
-			return CmdBuffer<Usage>(alloc());
-		}
+        CmdBuffer<Usage> create_buffer() {
+            return CmdBuffer<Usage>(alloc());
+        }
 
-	private:
+    private:
 };
 
 }
 
 #endif // YAVE_COMMANDS_CMDBUFFERPOOL_H
+

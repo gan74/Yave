@@ -27,34 +27,35 @@ namespace import {
 
 
 core::String clean_asset_name(const core::String& name) {
-	if(name.is_empty()) {
-		return "unamed";
-	}
+    if(name.is_empty()) {
+        return "unamed";
+    }
 
-	usize begin = 0;
-	for(usize i = 0; i != name.size(); ++i) {
-		if(name[i] == '\\' || name[i] == '/') {
-			begin = i + 1;
-		}
-	}
+    usize begin = 0;
+    for(usize i = 0; i != name.size(); ++i) {
+        if(name[i] == '\\' || name[i] == '/') {
+            begin = i + 1;
+        }
+    }
 
-	usize len = 0;
-	for(usize i = begin; i != name.size(); ++i) {
-		if(name[i] == '.') {
-			break;
-		}
-		++len;
-	}
+    usize len = 0;
+    for(usize i = begin; i != name.size(); ++i) {
+        if(name[i] == '.') {
+            break;
+        }
+        ++len;
+    }
 
-	core::String n = name.sub_str(begin, len);
-	for(char& c : n) {
-		if(!std::isalnum(c)) {
-			c = '_';
-		}
-	}
+    core::String n = name.sub_str(begin, len);
+    for(char& c : n) {
+        if(!std::isalnum(c)) {
+            c = '_';
+        }
+    }
 
-	return n.is_empty() ? core::String("unamed") : n;
+    return n.is_empty() ? core::String("unamed") : n;
 }
 
 }
 }
+

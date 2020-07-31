@@ -29,62 +29,63 @@ namespace yave {
 
 static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialData& data) {
 
-	std::array<Descriptor, SimpleMaterialData::texture_count + 1> bindings = {
-			*device_resources(dptr)[DeviceResources::GreyTexture],
-			*device_resources(dptr)[DeviceResources::FlatNormalTexture],
-			*device_resources(dptr)[DeviceResources::WhiteTexture],
-			*device_resources(dptr)[DeviceResources::WhiteTexture],
-			InlineDescriptor(data.constants())
-		};
+    std::array<Descriptor, SimpleMaterialData::texture_count + 1> bindings = {
+            *device_resources(dptr)[DeviceResources::GreyTexture],
+            *device_resources(dptr)[DeviceResources::FlatNormalTexture],
+            *device_resources(dptr)[DeviceResources::WhiteTexture],
+            *device_resources(dptr)[DeviceResources::WhiteTexture],
+            InlineDescriptor(data.constants())
+        };
 
-	for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
-		y_debug_assert(!data.textures()[i].is_loading());
-		if(const auto* tex = data.textures()[i].get()) {
-			bindings[i] = *tex;
-		}
-	}
+    for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
+        y_debug_assert(!data.textures()[i].is_loading());
+        if(const auto* tex = data.textures()[i].get()) {
+            bindings[i] = *tex;
+        }
+    }
 
-	return DescriptorSet(dptr, bindings);
+    return DescriptorSet(dptr, bindings);
 }
 
 static DeviceResources::MaterialTemplates material_template_for_data(const SimpleMaterialData& data) {
-	return data.alpha_tested()
-		? DeviceResources::TexturedAlphaMaterialTemplate
-		: DeviceResources::TexturedMaterialTemplate;
+    return data.alpha_tested()
+        ? DeviceResources::TexturedAlphaMaterialTemplate
+        : DeviceResources::TexturedMaterialTemplate;
 }
 
 
 Material::Material(DevicePtr dptr, SimpleMaterialData&& data) :
-		_template(device_resources(dptr)[material_template_for_data(data)]),
-		_set(create_descriptor_set(device(), data)),
-		_data(std::move(data)) {
+        _template(device_resources(dptr)[material_template_for_data(data)]),
+        _set(create_descriptor_set(device(), data)),
+        _data(std::move(data)) {
 }
 
 Material::Material(const MaterialTemplate* tmp, SimpleMaterialData&& data) :
-		_template(tmp),
-		_set(create_descriptor_set(device(), data)),
-		_data(std::move(data)) {
+        _template(tmp),
+        _set(create_descriptor_set(device(), data)),
+        _data(std::move(data)) {
 }
 
 const SimpleMaterialData& Material::data() const {
-	return _data;
+    return _data;
 }
 
 const DescriptorSetBase& Material::descriptor_set() const {
-	return _set;
+    return _set;
 }
 
 const MaterialTemplate* Material::material_template() const {
-	return _template;
+    return _template;
 }
 
 DevicePtr Material::device() const {
-	Y_TODO(cache ?)
-	return _template->device();
+    Y_TODO(cache ?)
+    return _template->device();
 }
 
 bool Material::is_null() const {
-	return !_template;
+    return !_template;
 }
 
 }
+

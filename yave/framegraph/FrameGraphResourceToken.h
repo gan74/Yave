@@ -28,59 +28,59 @@ namespace yave {
 
 /*template<BufferUsage Usage>
 class FrameGraphBufferToken {
-	public:
-		static constexpr BufferUsage usage = Usage;
+    public:
+        static constexpr BufferUsage usage = Usage;
 
-		using sub_buffer_type = SubBuffer<usage>;
+        using sub_buffer_type = SubBuffer<usage>;
 
 
-		bool is_valid() const {
-			return _resource.is_valid();
-		}
+        bool is_valid() const {
+            return _resource.is_valid();
+        }
 
-		FrameGraphBufferId resource() const {
-			return _resource;
-		}
+        FrameGraphBufferId resource() const {
+            return _resource;
+        }
 
-		FrameGraphBufferToken() = default;
+        FrameGraphBufferToken() = default;
 
-	protected:
-		friend class FrameGraph;
-		friend class FrameGraphResourcePool;
-		friend class FrameGraphPassBuilder;
+    protected:
+        friend class FrameGraph;
+        friend class FrameGraphResourcePool;
+        friend class FrameGraphPassBuilder;
 
-		FrameGraphBufferToken(FrameGraphBufferId res) : _resource(res) {
-		}
+        FrameGraphBufferToken(FrameGraphBufferId res) : _resource(res) {
+        }
 
-	private:
-		FrameGraphBufferId _resource;
+    private:
+        FrameGraphBufferId _resource;
 };
 
 template<typename T, BufferUsage Usage>
 class FrameGraphTypedBufferToken : public FrameGraphBufferToken<Usage> {
-	public:
-		using value_type = T;
-		using sub_buffer_type = TypedSubBuffer<T, Usage>;
+    public:
+        using value_type = T;
+        using sub_buffer_type = TypedSubBuffer<T, Usage>;
 
-		FrameGraphTypedBufferToken() = default;
+        FrameGraphTypedBufferToken() = default;
 
-	protected:
-		FrameGraphTypedBufferToken(FrameGraphBufferId res) : FrameGraphBufferToken<Usage>(res) {
-		}
+    protected:
+        FrameGraphTypedBufferToken(FrameGraphBufferId res) : FrameGraphBufferToken<Usage>(res) {
+        }
 };
 
 template<typename T>
 class FrameGraphBufferCpuToken : public FrameGraphTypedBufferToken<T, BufferUsage::None> {
-	public:
-		FrameGraphBufferCpuToken() = default;
+    public:
+        FrameGraphBufferCpuToken() = default;
 
-	protected:
-		friend class FrameGraph;
-		friend class FrameGraphResourcePool;
-		friend class FrameGraphPassBuilder;
+    protected:
+        friend class FrameGraph;
+        friend class FrameGraphResourcePool;
+        friend class FrameGraphPassBuilder;
 
-		FrameGraphBufferCpuToken(FrameGraphBufferId res) : FrameGraphTypedBufferToken<T, BufferUsage::None>(res) {
-		}
+        FrameGraphBufferCpuToken(FrameGraphBufferId res) : FrameGraphTypedBufferToken<T, BufferUsage::None>(res) {
+        }
 };
 
 using FrameGraphUniformBufferToken = FrameGraphBufferToken<BufferUsage::UniformBit>;
@@ -98,3 +98,4 @@ static_assert(std::is_copy_constructible_v<FrameGraphAttribBufferToken>);*/
 }
 
 #endif // YAVE_FRAMEGRAPH_FRAMEGRAPHRESOURCETOKEN_H
+

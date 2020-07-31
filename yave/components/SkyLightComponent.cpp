@@ -25,11 +25,12 @@ SOFTWARE.
 namespace yave {
 
 AssetPtr<IBLProbe>& SkyLightComponent::probe() {
-	return _probe;
+    return _probe;
 }
 
 const AssetPtr<IBLProbe>& SkyLightComponent::probe() const {
-	return _probe;
+    return _probe;
 }
 
 }
+

@@ -37,43 +37,44 @@ namespace detail {
 static TestItem* first_test = nullptr;
 
 void register_test(TestItem* test) {
-	test->next = first_test;
-	first_test = test;
+    test->next = first_test;
+    first_test = test;
 }
 
 static bool run_test(const detail::TestItem* test) {
-	const char* ok		= "\x1b[32m  [ OK ]   \x1b[0m";
-	const char* failure = "\x1b[31m[ FAILED ] \x1b[0m";
+    const char* ok      = "\x1b[32m  [ OK ]   \x1b[0m";
+    const char* failure = "\x1b[31m[ FAILED ] \x1b[0m";
 
-	y::detail::setup_console();
+    y::detail::setup_console();
 
-	std::cout << test->name << ":";
-	for(usize size = std::strlen(test->name) + 1; size != 80 - 11; ++size) {
-		std::cout << " ";
-	}
+    std::cout << test->name << ":";
+    for(usize size = std::strlen(test->name) + 1; size != 80 - 11; ++size) {
+        std::cout << " ";
+    }
 
 
-	TestResult res{true, nullptr, 0};
-	(test->test_func)(res);
+    TestResult res{true, nullptr, 0};
+    (test->test_func)(res);
 
-	if(res.result) {
-		std::cout << ok << std::endl;
-	} else {
-		std::cout << failure << std::endl;
-		std::cerr << "\ty_test_assert failed: in file: " << res.file << " at line: "<< res.line << std::endl;;
-	}
-	return res.result;
+    if(res.result) {
+        std::cout << ok << std::endl;
+    } else {
+        std::cout << failure << std::endl;
+        std::cerr << "\ty_test_assert failed: in file: " << res.file << " at line: "<< res.line << std::endl;;
+    }
+    return res.result;
 }
 
 }
 
 bool run_tests() {
-	bool all_ok = true;
-	for(detail::TestItem* test = detail::first_test; test; test = test->next) {
-		all_ok &= run_test(test);
-	}
-	return all_ok;
+    bool all_ok = true;
+    for(detail::TestItem* test = detail::first_test; test; test = test->next) {
+        all_ok &= run_test(test);
+    }
+    return all_ok;
 }
 
 }
 }
+

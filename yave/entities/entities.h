@@ -44,3 +44,4 @@ using SkyArchetype = ecs::StaticArchetype<SkyComponent>;
 }
 
 #endif // YAVE_ENTITIES_ENTITIES_H
+

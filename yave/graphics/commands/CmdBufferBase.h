@@ -27,40 +27,41 @@ SOFTWARE.
 namespace yave {
 
 struct CmdBufferBase : NonCopyable {
-	public:
-		DevicePtr device() const;
+    public:
+        DevicePtr device() const;
 
-		VkCommandBuffer vk_cmd_buffer() const;
-		VkFence vk_fence() const;
-		ResourceFence resource_fence() const;
+        VkCommandBuffer vk_cmd_buffer() const;
+        VkFence vk_fence() const;
+        ResourceFence resource_fence() const;
 
-		void wait() const;
-		void wait_for(const Semaphore& sem);
+        void wait() const;
+        void wait_for(const Semaphore& sem);
 
-		template<typename T>
-		T wait_for(BoxSemaphore<T>&& t) {
-			CmdBufferBase::wait_for(static_cast<const Semaphore&>(t));
-			return std::move(t._boxed);
-		}
+        template<typename T>
+        T wait_for(BoxSemaphore<T>&& t) {
+            CmdBufferBase::wait_for(static_cast<const Semaphore&>(t));
+            return std::move(t._boxed);
+        }
 
-		template<typename T>
-		void keep_alive(T&& t) {
-			_proxy->data().keep_alive(y_fwd(t));
-		}
+        template<typename T>
+        void keep_alive(T&& t) {
+            _proxy->data().keep_alive(y_fwd(t));
+        }
 
-	protected:
-		CmdBufferBase() = default;
-		CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& proxy);
+    protected:
+        CmdBufferBase() = default;
+        CmdBufferBase(std::unique_ptr<CmdBufferDataProxy>&& proxy);
 
-		CmdBufferBase(CmdBufferBase&& other) = default;
-		CmdBufferBase& operator=(CmdBufferBase&&) = default;
+        CmdBufferBase(CmdBufferBase&& other) = default;
+        CmdBufferBase& operator=(CmdBufferBase&&) = default;
 
-	private:
-		friend class Queue;
+    private:
+        friend class Queue;
 
-		std::unique_ptr<CmdBufferDataProxy> _proxy;
+        std::unique_ptr<CmdBufferDataProxy> _proxy;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_COMMANDS_CMDBUFFERBASE_H
+

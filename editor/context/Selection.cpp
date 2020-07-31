@@ -25,29 +25,30 @@ SOFTWARE.
 namespace editor {
 
 void Selection::flush_reload() {
-	//_material.flush_reload();
+    //_material.flush_reload();
 }
 
 
 /*void Selection::set_selected(const AssetPtr<Material>& sel) {
-	_material = sel;
+    _material = sel;
 }
 
 const AssetPtr<Material>& Selection::material() const {
-	return _material;
+    return _material;
 }*/
 
 
 bool Selection::has_selected_entity() const {
-	return _id.is_valid();
+    return _id.is_valid();
 }
 
 ecs::EntityId Selection::selected_entity() const {
-	return _id;
+    return _id;
 }
 
 void Selection::set_selected(ecs::EntityId id) {
-	_id = id;
+    _id = id;
 }
 
 }
+

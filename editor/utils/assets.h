@@ -34,3 +34,4 @@ std::string_view asset_type_icon(AssetType type);
 }
 
 #endif // EDITOR_UTILS_ASSETS_H
+

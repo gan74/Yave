@@ -28,96 +28,97 @@ StaticMeshComponent::SubMesh::SubMesh(const AssetPtr<StaticMesh>& me, const Asse
 }
 
 void StaticMeshComponent::SubMesh::flush_reload() {
-	mesh.flush_reload();
-	material.flush_reload();
+    mesh.flush_reload();
+    material.flush_reload();
 }
 
 void StaticMeshComponent::SubMesh::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-	if(!material || !mesh) {
-		return;
-	}
+    if(!material || !mesh) {
+        return;
+    }
 
-	y_debug_assert(material->device());
-	y_debug_assert(mesh->device());
+    y_debug_assert(material->device());
+    y_debug_assert(mesh->device());
 
-	if(material->descriptor_set().is_null()) {
-		recorder.bind_material(material->material_template(), {scene_data.descriptor_set});
-	} else {
-		recorder.bind_material(material->material_template(), {scene_data.descriptor_set, material->descriptor_set()});
-	}
+    if(material->descriptor_set().is_null()) {
+        recorder.bind_material(material->material_template(), {scene_data.descriptor_set});
+    } else {
+        recorder.bind_material(material->material_template(), {scene_data.descriptor_set, material->descriptor_set()});
+    }
 
-	render_mesh(recorder, scene_data.instance_index);
+    render_mesh(recorder, scene_data.instance_index);
 }
 
 void StaticMeshComponent::SubMesh::render_mesh(RenderPassRecorder& recorder, u32 instance_index) const {
-	if(!mesh) {
-		return;
-	}
+    if(!mesh) {
+        return;
+    }
 
-	recorder.bind_buffers(TriangleSubBuffer(mesh->triangle_buffer()), VertexSubBuffer(mesh->vertex_buffer()));
-	VkDrawIndexedIndirectCommand indirect = mesh->indirect_data();
-	indirect.firstInstance = instance_index;
-	recorder.draw(indirect);
+    recorder.bind_buffers(TriangleSubBuffer(mesh->triangle_buffer()), VertexSubBuffer(mesh->vertex_buffer()));
+    VkDrawIndexedIndirectCommand indirect = mesh->indirect_data();
+    indirect.firstInstance = instance_index;
+    recorder.draw(indirect);
 }
 
 
 bool StaticMeshComponent::SubMesh::operator==(const SubMesh& other) const {
-	return mesh == other.mesh && material == other.material;
+    return mesh == other.mesh && material == other.material;
 }
 
 bool StaticMeshComponent::SubMesh::operator!=(const SubMesh& other) const {
-	return !operator==(other);
+    return !operator==(other);
 }
 
 
 StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) {
-	_sub_meshes.emplace_back(mesh, material);
+    _sub_meshes.emplace_back(mesh, material);
 }
 
 StaticMeshComponent::StaticMeshComponent(core::Vector<SubMesh> sub_meshes) : _sub_meshes(std::move(sub_meshes)) {
 }
 
 void StaticMeshComponent::flush_reload() {
-	for(SubMesh& sub : _sub_meshes) {
-		sub.flush_reload();
-	}
+    for(SubMesh& sub : _sub_meshes) {
+        sub.flush_reload();
+    }
 }
 
 void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-	for(const SubMesh& sub : _sub_meshes) {
-		sub.render(recorder, scene_data);
-	}
+    for(const SubMesh& sub : _sub_meshes) {
+        sub.render(recorder, scene_data);
+    }
 }
 
 void StaticMeshComponent::render_mesh(RenderPassRecorder& recorder, u32 instance_index) const {
-	for(const SubMesh& sub : _sub_meshes) {
-		sub.render_mesh(recorder, instance_index);
-	}
+    for(const SubMesh& sub : _sub_meshes) {
+        sub.render_mesh(recorder, instance_index);
+    }
 }
 
 const core::Vector<StaticMeshComponent::SubMesh>& StaticMeshComponent::sub_meshes() const {
-	return _sub_meshes;
+    return _sub_meshes;
 }
 
 core::Vector<StaticMeshComponent::SubMesh>& StaticMeshComponent::sub_meshes() {
-	return _sub_meshes;
+    return _sub_meshes;
 }
 
 AABB StaticMeshComponent::compute_aabb() const {
-	AABB aabb;
-	usize i = 0;
-	for(i = 0; i != _sub_meshes.size(); ++i) {
-		if(_sub_meshes[i].mesh) {
-			aabb = _sub_meshes[i].mesh->aabb();
-			break;
-		}
-	}
+    AABB aabb;
+    usize i = 0;
+    for(i = 0; i != _sub_meshes.size(); ++i) {
+        if(_sub_meshes[i].mesh) {
+            aabb = _sub_meshes[i].mesh->aabb();
+            break;
+        }
+    }
 
-	for(i += 1; i < _sub_meshes.size(); ++i) {
-		aabb = aabb.merged(_sub_meshes[i].mesh->aabb());
-	}
+    for(i += 1; i < _sub_meshes.size(); ++i) {
+        aabb = aabb.merged(_sub_meshes[i].mesh->aabb());
+    }
 
-	return aabb;
+    return aabb;
 }
 
 }
+

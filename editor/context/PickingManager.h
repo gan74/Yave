@@ -28,30 +28,31 @@ SOFTWARE.
 namespace editor {
 
 class PickingManager : public ContextLinked {
-	struct ReadBackData {
-		const float depth;
-		const u32 id;
-	};
+    struct ReadBackData {
+        const float depth;
+        const u32 id;
+    };
 
-	using ReadBackBuffer = TypedBuffer<ReadBackData, BufferUsage::StorageBit, MemoryType::CpuVisible>;
-	public:
-		struct PickingData {
-			const math::Vec3 world_pos;
-			const float depth;
-			const math::Vec2 uv;
-			const u32 entity_index;
+    using ReadBackBuffer = TypedBuffer<ReadBackData, BufferUsage::StorageBit, MemoryType::CpuVisible>;
+    public:
+        struct PickingData {
+            const math::Vec3 world_pos;
+            const float depth;
+            const math::Vec2 uv;
+            const u32 entity_index;
 
-			bool hit() const;
-		};
+            bool hit() const;
+        };
 
-		PickingManager(ContextPtr ctx);
+        PickingManager(ContextPtr ctx);
 
-		PickingData pick_sync(const SceneView& scene_view, const math::Vec2& uv, const math::Vec2ui& size = math::Vec2ui(512));
+        PickingData pick_sync(const SceneView& scene_view, const math::Vec2& uv, const math::Vec2ui& size = math::Vec2ui(512));
 
-	private:
-		ReadBackBuffer _buffer;
+    private:
+        ReadBackBuffer _buffer;
 };
 
 }
 
 #endif // EDITOR_CONTEXT_PICKINGMANAGER_H
+

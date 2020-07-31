@@ -26,37 +26,37 @@ SOFTWARE.
 namespace yave {
 
 DevicePtr DeviceLinked::device() const {
-	return _device;
+    return _device;
 }
 
 bool DeviceLinked::is_null() const {
-	return !_device;
+    return !_device;
 }
 
 DeviceLinked::DeviceLinked() : _device(nullptr) {
-	// for putting breakpoints
+    // for putting breakpoints
 }
 
 DeviceLinked::DeviceLinked(DevicePtr dev) : _device(dev) {
-	if(!dev) {
-		y_fatal("Null device.");
-	}
+    if(!dev) {
+        y_fatal("Null device.");
+    }
 }
 
 DeviceLinked::DeviceLinked(ThreadDevicePtr dev) : DeviceLinked(dev->device()) {
 }
 
 DeviceLinked::DeviceLinked(DeviceLinked&& other) {
-	swap(other);
+    swap(other);
 }
 
 DeviceLinked& DeviceLinked::operator=(DeviceLinked&& other) {
-	swap(other);
-	return *this;
+    swap(other);
+    return *this;
 }
 
 void DeviceLinked::swap(DeviceLinked& other) {
-	std::swap(_device, other._device);
+    std::swap(_device, other._device);
 }
 
 
@@ -64,35 +64,36 @@ void DeviceLinked::swap(DeviceLinked& other) {
 
 
 ThreadDevicePtr ThreadDeviceLinked::thread_device() const {
-	return _device;
+    return _device;
 }
 
 DevicePtr ThreadDeviceLinked::device() const {
-	return _device ? _device->device() : nullptr;
+    return _device ? _device->device() : nullptr;
 }
 
 ThreadDeviceLinked::ThreadDeviceLinked() : _device(nullptr) {
-	// for putting breakpoints
+    // for putting breakpoints
 }
 
 ThreadDeviceLinked::ThreadDeviceLinked(ThreadDevicePtr dev) : _device(dev) {
-	if(!dev) {
-		y_fatal("Null device.");
-	}
+    if(!dev) {
+        y_fatal("Null device.");
+    }
 }
 
 ThreadDeviceLinked::ThreadDeviceLinked(ThreadDeviceLinked&& other) {
-	swap(other);
+    swap(other);
 }
 
 ThreadDeviceLinked& ThreadDeviceLinked::operator=(ThreadDeviceLinked&& other) {
-	swap(other);
-	return *this;
+    swap(other);
+    return *this;
 }
 
 void ThreadDeviceLinked::swap(ThreadDeviceLinked& other) {
-	std::swap(_device, other._device);
+    std::swap(_device, other._device);
 }
 
 
 }
+

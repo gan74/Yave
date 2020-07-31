@@ -28,45 +28,46 @@ AssetDependencies::AssetDependencies(AssetLoadingFlags flags) : _flags(flags) {
 }
 
 void AssetDependencies::add_dependency(GenericAssetPtr asset) {
-	if(asset.id() != AssetId::invalid_id()) {
-		_deps.emplace_back(std::move(asset));
-	}
+    if(asset.id() != AssetId::invalid_id()) {
+        _deps.emplace_back(std::move(asset));
+    }
 }
 
 usize AssetDependencies::dependency_count() const {
-	return _deps.size();
+    return _deps.size();
 }
 
 bool AssetDependencies::is_done() const {
-	return state() != AssetLoadingState::NotLoaded;
+    return state() != AssetLoadingState::NotLoaded;
 }
 
 bool AssetDependencies::is_empty() const {
-	return _deps.is_empty();
+    return _deps.is_empty();
 }
 
 AssetLoadingState AssetDependencies::state() const {
-	for(const auto& d : _deps) {
-		if(!d.is_loaded()) {
-			if(!d.is_failed()) {
-				return AssetLoadingState::NotLoaded;
-			}
-			const bool fails_deps = (_flags & AssetLoadingFlags::SkipFailedDependenciesBit) == AssetLoadingFlags::SkipFailedDependenciesBit;
-			if(!fails_deps) {
-				return AssetLoadingState::Failed;
-			}
-		}
-	}
-	return AssetLoadingState::Loaded;
+    for(const auto& d : _deps) {
+        if(!d.is_loaded()) {
+            if(!d.is_failed()) {
+                return AssetLoadingState::NotLoaded;
+            }
+            const bool fails_deps = (_flags & AssetLoadingFlags::SkipFailedDependenciesBit) == AssetLoadingFlags::SkipFailedDependenciesBit;
+            if(!fails_deps) {
+                return AssetLoadingState::Failed;
+            }
+        }
+    }
+    return AssetLoadingState::Loaded;
 }
 
 AssetLoadingErrorType AssetDependencies::error() const {
-	for(const auto& d : _deps) {
-		if(!d.is_failed()) {
-			return d.error();
-		}
-	}
-	return AssetLoadingErrorType::Unknown;
+    for(const auto& d : _deps) {
+        if(!d.is_failed()) {
+            return d.error();
+        }
+    }
+    return AssetLoadingErrorType::Unknown;
 }
 
 }
+

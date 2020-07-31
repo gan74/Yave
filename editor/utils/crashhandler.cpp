@@ -50,70 +50,71 @@ static decltype(&::StackWalk64) stack_walk = nullptr;
 
 
 static int print_addr(const void* ptr) {
-	char buffer[512] = {};
-	std::sprintf(buffer, "addr2line -f -p -s -C -e %s %p", __argv[0], ptr);
-	return ::system(buffer);
+    char buffer[512] = {};
+    std::sprintf(buffer, "addr2line -f -p -s -C -e %s %p", __argv[0], ptr);
+    return ::system(buffer);
 }
 
 // https://gist.github.com/jvranish/4441299
 // http://theorangeduck.com/page/printing-stack-trace-mingw
 static void print_stacktrace() {
-	HANDLE process = ::GetCurrentProcess();
+    HANDLE process = ::GetCurrentProcess();
 
-	CONTEXT context = {};
-	context.ContextFlags = CONTEXT_FULL;
-	::RtlCaptureContext(&context);
+    CONTEXT context = {};
+    context.ContextFlags = CONTEXT_FULL;
+    ::RtlCaptureContext(&context);
 
-	sym_init(process, nullptr, true);
+    sym_init(process, nullptr, true);
 
-	STACKFRAME64 stackframe = {};
-	stackframe.AddrPC.Offset = context.Rip;
-	stackframe.AddrPC.Mode = AddrModeFlat;
-	stackframe.AddrFrame.Offset = context.Rsp;
-	stackframe.AddrFrame.Mode = AddrModeFlat;
-	stackframe.AddrStack.Offset = context.Rsp;
-	stackframe.AddrStack.Mode = AddrModeFlat;
+    STACKFRAME64 stackframe = {};
+    stackframe.AddrPC.Offset = context.Rip;
+    stackframe.AddrPC.Mode = AddrModeFlat;
+    stackframe.AddrFrame.Offset = context.Rsp;
+    stackframe.AddrFrame.Mode = AddrModeFlat;
+    stackframe.AddrStack.Offset = context.Rsp;
+    stackframe.AddrStack.Mode = AddrModeFlat;
 
-	while(stack_walk(IMAGE_FILE_MACHINE_AMD64, process, ::GetCurrentThread(), &stackframe, &context, nullptr, func_table, module_base, nullptr)) {
-		print_addr(reinterpret_cast<const void*>(stackframe.AddrPC.Offset));
-	}
+    while(stack_walk(IMAGE_FILE_MACHINE_AMD64, process, ::GetCurrentThread(), &stackframe, &context, nullptr, func_table, module_base, nullptr)) {
+        print_addr(reinterpret_cast<const void*>(stackframe.AddrPC.Offset));
+    }
 
-	sym_cleanup(process);
+    sym_cleanup(process);
 }
 
 static void handler(int sig) {
-	// calling basically anything here is UB but we don't really care
-	if(sig == SIGABRT) {
-		std::printf("Program has aborted, dumping stack:\n");
-	} else {
-		std::printf("Program has crashed, dumping stack:\n");
-	}
-	print_stacktrace();
+    // calling basically anything here is UB but we don't really care
+    if(sig == SIGABRT) {
+        std::printf("Program has aborted, dumping stack:\n");
+    } else {
+        std::printf("Program has crashed, dumping stack:\n");
+    }
+    print_stacktrace();
 }
 
 bool setup_handler() {
-	if(HMODULE img_help = ::LoadLibrary("dbghelp.dll")) {
-		sym_init = reinterpret_cast<decltype(sym_init)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymInitialize")));
-		sym_cleanup = reinterpret_cast<decltype(sym_cleanup)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymCleanup")));
-		func_table = reinterpret_cast<decltype(func_table)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymFunctionTableAccess64")));
-		module_base = reinterpret_cast<decltype(module_base)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymGetModuleBase64")));
-		stack_walk = reinterpret_cast<decltype(stack_walk)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "StackWalk64")));
-	}
-	if(sym_init && sym_cleanup && func_table && module_base && stack_walk) {
-		std::signal(SIGSEGV, handler);
-		std::signal(SIGILL, handler);
-		std::signal(SIGABRT, handler);
-		return true;
-	}
-	return false;
+    if(HMODULE img_help = ::LoadLibrary("dbghelp.dll")) {
+        sym_init = reinterpret_cast<decltype(sym_init)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymInitialize")));
+        sym_cleanup = reinterpret_cast<decltype(sym_cleanup)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymCleanup")));
+        func_table = reinterpret_cast<decltype(func_table)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymFunctionTableAccess64")));
+        module_base = reinterpret_cast<decltype(module_base)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymGetModuleBase64")));
+        stack_walk = reinterpret_cast<decltype(stack_walk)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "StackWalk64")));
+    }
+    if(sym_init && sym_cleanup && func_table && module_base && stack_walk) {
+        std::signal(SIGSEGV, handler);
+        std::signal(SIGILL, handler);
+        std::signal(SIGABRT, handler);
+        return true;
+    }
+    return false;
 }
 
 #else
 bool setup_handler() {
-	return false;
+    return false;
 }
 #endif
 
 
 }
 }
+

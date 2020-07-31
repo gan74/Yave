@@ -43,81 +43,82 @@ namespace yave {
 class CmdBufferData;
 
 using ManagedResource = std::variant<
-		DeviceMemory,
-		DescriptorSetData,
+        DeviceMemory,
+        DescriptorSetData,
 
-		VkBuffer,
-		VkImage,
-		VkImageView,
-		VkRenderPass,
-		VkFramebuffer,
-		VkPipeline,
-		VkPipelineLayout,
-		VkShaderModule,
-		VkSampler,
-		VkSwapchainKHR,
-		VkCommandPool,
-		VkFence,
-		VkDescriptorPool,
-		VkDescriptorSetLayout,
-		VkSemaphore,
-		VkQueryPool,
-		VkEvent,
+        VkBuffer,
+        VkImage,
+        VkImageView,
+        VkRenderPass,
+        VkFramebuffer,
+        VkPipeline,
+        VkPipelineLayout,
+        VkShaderModule,
+        VkSampler,
+        VkSwapchainKHR,
+        VkCommandPool,
+        VkFence,
+        VkDescriptorPool,
+        VkDescriptorSetLayout,
+        VkSemaphore,
+        VkQueryPool,
+        VkEvent,
 
-		VkSurfaceKHR>;
+        VkSurfaceKHR>;
 
 
 
 class LifetimeManager : NonCopyable, public DeviceLinked {
 
-	public:
-		LifetimeManager(DevicePtr dptr);
-		~LifetimeManager();
+    public:
+        LifetimeManager(DevicePtr dptr);
+        ~LifetimeManager();
 
-		void stop_async_collection(); // Not thread safe
-		bool is_async() const;
+        void stop_async_collection(); // Not thread safe
+        bool is_async() const;
 
-		ResourceFence create_fence();
+        ResourceFence create_fence();
 
-		void recycle(CmdBufferData&& cmd);
+        void recycle(CmdBufferData&& cmd);
 
-		void collect();
+        void collect();
 
-		usize pending_deletions() const;
-		usize active_cmd_buffers() const;
-
-
-		template<typename T>
-		void destroy_later(T&& t) {
-			const std::unique_lock lock(_resource_lock);
-			_to_destroy.emplace_back(_counter, ManagedResource(y_fwd(t)));
-		}
-
-	private:
-		void destroy_resource(ManagedResource& resource) const;
-		void clear_resources(u64 up_to);
+        usize pending_deletions() const;
+        usize active_cmd_buffers() const;
 
 
-		std::deque<std::pair<u64, ManagedResource>> _to_destroy;
-		std::deque<CmdBufferData> _in_flight;
+        template<typename T>
+        void destroy_later(T&& t) {
+            const std::unique_lock lock(_resource_lock);
+            _to_destroy.emplace_back(_counter, ManagedResource(y_fwd(t)));
+        }
 
-		mutable std::mutex _cmd_lock;
-		mutable std::mutex _resource_lock;
+    private:
+        void destroy_resource(ManagedResource& resource) const;
+        void clear_resources(u64 up_to);
 
-		std::atomic<u64> _counter = 0;
-		u64 _done_counter = 0;
 
-		// Async collection
-		void schedule_collection();
+        std::deque<std::pair<u64, ManagedResource>> _to_destroy;
+        std::deque<CmdBufferData> _in_flight;
+
+        mutable std::mutex _cmd_lock;
+        mutable std::mutex _resource_lock;
+
+        std::atomic<u64> _counter = 0;
+        u64 _done_counter = 0;
+
+        // Async collection
+        void schedule_collection();
 
 #ifdef YAVE_ASYNC_RESOURCE_COLLECTION
-		std::condition_variable _collect_condition;
-		std::unique_ptr<std::thread> _collect_thread;
-		std::atomic<bool> _run_async = false;
-		std::atomic<u32> _collection_interval = 0;
+        std::condition_variable _collect_condition;
+        std::unique_ptr<std::thread> _collect_thread;
+        std::atomic<bool> _run_async = false;
+        std::atomic<u32> _collection_interval = 0;
 #endif
 };
 
 }
 
 #endif // YAVE_DEVICE_RESOURCELIFETIMEMANAGER_H
+

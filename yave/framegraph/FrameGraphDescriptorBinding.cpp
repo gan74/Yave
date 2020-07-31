@@ -29,51 +29,52 @@ FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Descriptor& desc)
 }
 
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type) :
-		_type(type), _buffer(res) {
+        _type(type), _buffer(res) {
 }
 
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphImageId res, BindingType type) :
-		_type(type), _image(res) {
+        _type(type), _image(res) {
 }
 
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_storage_binding(FrameGraphBufferId res) {
-	return FrameGraphDescriptorBinding(res, BindingType::StorageBuffer);
+    return FrameGraphDescriptorBinding(res, BindingType::StorageBuffer);
 }
 
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_storage_binding(FrameGraphImageId res) {
-	return FrameGraphDescriptorBinding(res, BindingType::StorageImage);
+    return FrameGraphDescriptorBinding(res, BindingType::StorageImage);
 }
 
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(FrameGraphBufferId res) {
-	return FrameGraphDescriptorBinding(res, BindingType::InputBuffer);
+    return FrameGraphDescriptorBinding(res, BindingType::InputBuffer);
 }
 
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(FrameGraphImageId res) {
-	return FrameGraphDescriptorBinding(res, BindingType::InputImage);
+    return FrameGraphDescriptorBinding(res, BindingType::InputImage);
 }
 
 /*Descriptor FrameGraphDescriptorBinding::create_and_save_descriptor(FrameGraphResourcePool* pool) {
-	operator=(FrameGraphDescriptorBinding(create_descriptor(pool)));
-	return _external;
+    operator=(FrameGraphDescriptorBinding(create_descriptor(pool)));
+    return _external;
 }*/
 
 Descriptor FrameGraphDescriptorBinding::create_descriptor(const FrameGraphFrameResources& resources) const {
-	switch(_type) {
-		case BindingType::External:
-			return _external;
-		case BindingType::InputImage:
-			return resources.image<ImageUsage::TextureBit>(_image);
-		case BindingType::StorageImage:
-			return resources.image<ImageUsage::StorageBit>(_image);
-		case BindingType::InputBuffer:
-			return resources.buffer<BufferUsage::UniformBit>(_buffer);
-		case BindingType::StorageBuffer:
-			return resources.buffer<BufferUsage::StorageBit>(_buffer);
+    switch(_type) {
+        case BindingType::External:
+            return _external;
+        case BindingType::InputImage:
+            return resources.image<ImageUsage::TextureBit>(_image);
+        case BindingType::StorageImage:
+            return resources.image<ImageUsage::StorageBit>(_image);
+        case BindingType::InputBuffer:
+            return resources.buffer<BufferUsage::UniformBit>(_buffer);
+        case BindingType::StorageBuffer:
+            return resources.buffer<BufferUsage::StorageBit>(_buffer);
 
-		default:
-		break;
-	}
-	/*return*/ y_fatal("Invalid descriptor.");
+        default:
+        break;
+    }
+    /*return*/ y_fatal("Invalid descriptor.");
 }
 
 }
+

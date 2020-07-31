@@ -31,29 +31,29 @@ SOFTWARE.
 namespace yave {
 
 struct ShadowMapPassSettings {
-	usize shadow_map_size = 1024;
-	usize shadow_atlas_size = 8;
+    usize shadow_map_size = 1024;
+    usize shadow_atlas_size = 8;
 };
 
 struct ShadowMapPass {
-	using ShadowData = uniform::ShadowMapParams;
+    using ShadowData = uniform::ShadowMapParams;
 
-	struct SubPass {
-		SceneRenderSubPass scene_pass;
-		math::Vec2ui viewport_offset;
-		u32 viewport_size;
-	};
+    struct SubPass {
+        SceneRenderSubPass scene_pass;
+        math::Vec2ui viewport_offset;
+        u32 viewport_size;
+    };
 
-	struct SubPassData {
-		core::Vector<SubPass> passes;
-		core::ExternalHashMap<u64, ShadowData> lights;
-	};
+    struct SubPassData {
+        core::Vector<SubPass> passes;
+        core::ExternalHashMap<u64, ShadowData> lights;
+    };
 
-	FrameGraphImageId shadow_map;
+    FrameGraphImageId shadow_map;
 
-	std::shared_ptr<SubPassData> sub_passes;
+    std::shared_ptr<SubPassData> sub_passes;
 
-	static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapPassSettings& settings = ShadowMapPassSettings());
+    static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapPassSettings& settings = ShadowMapPassSettings());
 };
 
 
@@ -61,3 +61,4 @@ struct ShadowMapPass {
 
 
 #endif // YAVE_RENDERER_SHADOWMAPPASS_H
+

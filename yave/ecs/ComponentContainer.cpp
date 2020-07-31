@@ -33,16 +33,17 @@ ComponentContainerBase::~ComponentContainerBase() {
 }
 
 bool ComponentContainerBase::contains(EntityId id) const {
-	return _ids->contains(id);
+    return _ids->contains(id);
 }
 
 core::Span<EntityId> ComponentContainerBase::ids() const {
-	return _ids->ids();
+    return _ids->ids();
 }
 
 ComponentTypeIndex ComponentContainerBase::type_id() const {
-	return _type_id;
+    return _type_id;
 }
 
 }
 }
+

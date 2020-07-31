@@ -30,15 +30,16 @@ SOFTWARE.
 namespace yave {
 
 class ThreadLocalDevice : NonMovable, public DeviceLinked {
-	public:
-		ThreadLocalDevice(DevicePtr dptr);
+    public:
+        ThreadLocalDevice(DevicePtr dptr);
 
-		CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
+        CmdBuffer<CmdBufferUsage::Disposable> create_disposable_cmd_buffer() const;
 
-	private:
-		mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
+    private:
+        mutable CmdBufferPool<CmdBufferUsage::Disposable> _disposable_cmd_pool;
 };
 
 }
 
 #endif // YAVE_DEVICE_THREADLOCALDEVICE_H
+

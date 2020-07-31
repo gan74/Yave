@@ -27,13 +27,14 @@ SOFTWARE.
 namespace editor {
 
 class MenuBar : public UiElement, public ContextLinked {
-	public:
-		MenuBar(ContextPtr ctx);
+    public:
+        MenuBar(ContextPtr ctx);
 
-	protected:
-		void paint(CmdBufferRecorder&, const FrameToken&) override;
+    protected:
+        void paint(CmdBufferRecorder&, const FrameToken&) override;
 };
 
 }
 
 #endif // EDITOR_UI_MENUBAR_H
+

@@ -27,73 +27,74 @@ SOFTWARE.
 namespace yave {
 
 MeshData::MeshData(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin, core::Vector<Bone>&& bones) :
-		_vertices(std::move(vertices)),
-		_triangles(std::move(triangles)) {
+        _vertices(std::move(vertices)),
+        _triangles(std::move(triangles)) {
 
-	if(bones.is_empty() != skin.is_empty()) {
-		y_fatal("Invalid skeleton.");
-	}
-	if((!skin.is_empty() && skin.size() != _vertices.size())) {
-		y_fatal("Invalid skin data.");
-	}
+    if(bones.is_empty() != skin.is_empty()) {
+        y_fatal("Invalid skeleton.");
+    }
+    if((!skin.is_empty() && skin.size() != _vertices.size())) {
+        y_fatal("Invalid skin data.");
+    }
 
-	math::Vec3 max(-std::numeric_limits<float>::max());
-	math::Vec3 min(std::numeric_limits<float>::max());
-	std::for_each(_vertices.begin(), _vertices.end(), [&](const Vertex& v) {
-		max = max.max(v.position);
-		min = min.min(v.position);
-	});
-	_aabb = AABB(min, max);
+    math::Vec3 max(-std::numeric_limits<float>::max());
+    math::Vec3 min(std::numeric_limits<float>::max());
+    std::for_each(_vertices.begin(), _vertices.end(), [&](const Vertex& v) {
+        max = max.max(v.position);
+        min = min.min(v.position);
+    });
+    _aabb = AABB(min, max);
 
-	if(!skin.is_empty()) {
-		_skeleton = std::make_unique<SkeletonData>(SkeletonData{std::move(skin), std::move(bones)});
-	}
+    if(!skin.is_empty()) {
+        _skeleton = std::make_unique<SkeletonData>(SkeletonData{std::move(skin), std::move(bones)});
+    }
 }
 
 float MeshData::radius() const {
-	return _aabb.origin_radius();
+    return _aabb.origin_radius();
 }
 
 const AABB& MeshData::aabb() const {
-	return _aabb;
+    return _aabb;
 }
 
 core::Span<Vertex> MeshData::vertices() const {
-	return _vertices;
+    return _vertices;
 }
 
 core::Span<IndexedTriangle> MeshData::triangles() const {
-	return _triangles;
+    return _triangles;
 }
 
 core::Span<Bone> MeshData::bones() const {
-	if(!_skeleton) {
-		return {};
-	}
-	return _skeleton->bones;
+    if(!_skeleton) {
+        return {};
+    }
+    return _skeleton->bones;
 }
 
 core::Span<SkinWeights> MeshData::skin() const {
-	if(!_skeleton) {
-		return {};
-	}
-	return _skeleton->skin;
+    if(!_skeleton) {
+        return {};
+    }
+    return _skeleton->skin;
 }
 
 core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
-	if(!_skeleton) {
-		return {};
-	}
+    if(!_skeleton) {
+        return {};
+    }
 
-	auto verts = core::vector_with_capacity<SkinnedVertex>(_vertices.size());
-	for(usize i = 0; i != _vertices.size(); ++i) {
-		verts << SkinnedVertex{_vertices[i], _skeleton->skin[i]};
-	}
-	return verts;
+    auto verts = core::vector_with_capacity<SkinnedVertex>(_vertices.size());
+    for(usize i = 0; i != _vertices.size(); ++i) {
+        verts << SkinnedVertex{_vertices[i], _skeleton->skin[i]};
+    }
+    return verts;
 }
 
 bool MeshData::has_skeleton() const {
-	return bool(_skeleton);
+    return bool(_skeleton);
 }
 
 }
+

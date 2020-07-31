@@ -48,45 +48,45 @@ static RENDERDOC_API_1_1_2 *renderdoc_api = nullptr;
 
 static void init_renderdoc() {
 #ifdef Y_OS_WIN
-	if(renderdoc_api) {
-		return;
-	}
-	if(HMODULE module = GetModuleHandleA("renderdoc.dll")) {
-		void* addr = reinterpret_cast<void*>(GetProcAddress(module, "RENDERDOC_GetAPI"));
-		if(addr) {
-			pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(addr);
-			if(RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, reinterpret_cast<void**>(&renderdoc_api)) == 1) {
-				return;
-			}
-		}
-	}
+    if(renderdoc_api) {
+        return;
+    }
+    if(HMODULE module = GetModuleHandleA("renderdoc.dll")) {
+        void* addr = reinterpret_cast<void*>(GetProcAddress(module, "RENDERDOC_GetAPI"));
+        if(addr) {
+            pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(addr);
+            if(RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, reinterpret_cast<void**>(&renderdoc_api)) == 1) {
+                return;
+            }
+        }
+    }
 
-	static bool warned = false;
-	if(!renderdoc_api && !warned) {
-		log_msg("Unable to load RenderDoc API", Log::Warning);
-		warned = true;
-	}
+    static bool warned = false;
+    if(!renderdoc_api && !warned) {
+        log_msg("Unable to load RenderDoc API", Log::Warning);
+        warned = true;
+    }
 #else
 #warning RenderDoc helper not supported: unsupported OS
 #endif
 }
 
 void start_capture() {
-	init_renderdoc();
-	if(renderdoc_api) {
-		renderdoc_api->StartFrameCapture(nullptr, nullptr);
-	}
+    init_renderdoc();
+    if(renderdoc_api) {
+        renderdoc_api->StartFrameCapture(nullptr, nullptr);
+    }
 }
 
 void end_capture() {
-	if(renderdoc_api) {
-		renderdoc_api->EndFrameCapture(nullptr, nullptr);
-	}
+    if(renderdoc_api) {
+        renderdoc_api->EndFrameCapture(nullptr, nullptr);
+    }
 }
 
 bool is_supported() {
-	init_renderdoc();
-	return renderdoc_api;
+    init_renderdoc();
+    return renderdoc_api;
 }
 
 #else
@@ -98,10 +98,11 @@ void end_capture() {
 }
 
 bool is_supported() {
-	return false;
+    return false;
 }
 
 #endif
 
 }
 }
+

@@ -32,83 +32,83 @@ namespace y {
 namespace core {
 
 class Duration {
-	static constexpr Duration div(double s, double div) {
-		const double nano_div = 1000000000 / div;
-		const u64 secs = u64(s / div);
-		s -= secs * div;
-		return Duration(secs, u32(s * nano_div));
-	}
+    static constexpr Duration div(double s, double div) {
+        const double nano_div = 1000000000 / div;
+        const u64 secs = u64(s / div);
+        s -= secs * div;
+        return Duration(secs, u32(s * nano_div));
+    }
 
-	public:
-		static constexpr Duration seconds(double s) {
-			return div(s, 1.0);
-		}
+    public:
+        static constexpr Duration seconds(double s) {
+            return div(s, 1.0);
+        }
 
-		static constexpr Duration milliseconds(double ms) {
-			return div(ms, 1000.0);
-		}
+        static constexpr Duration milliseconds(double ms) {
+            return div(ms, 1000.0);
+        }
 
-		static constexpr Duration nanoseconds(u64 ns) {
-			return Duration(ns / 100000000, ns % 100000000);
-		}
+        static constexpr Duration nanoseconds(u64 ns) {
+            return Duration(ns / 100000000, ns % 100000000);
+        }
 
-		constexpr explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0) : _secs(seconds), _subsec_ns(subsec_nanos) {
-		}
+        constexpr explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0) : _secs(seconds), _subsec_ns(subsec_nanos) {
+        }
 
-		static void sleep(const Duration& dur);
+        static void sleep(const Duration& dur);
 
-		u64 to_nanos() const;
-		double to_micros() const;
-		double to_millis() const;
-		double to_secs() const;
+        u64 to_nanos() const;
+        double to_micros() const;
+        double to_millis() const;
+        double to_secs() const;
 
-		u64 seconds() const;
-		u32 subsec_nanos() const;
+        u64 seconds() const;
+        u32 subsec_nanos() const;
 
-		bool operator<(const Duration& other) const;
-		bool operator<=(const Duration& other) const;
-		bool operator>(const Duration& other) const;
-		bool operator>=(const Duration& other) const;
+        bool operator<(const Duration& other) const;
+        bool operator<=(const Duration& other) const;
+        bool operator>(const Duration& other) const;
+        bool operator>=(const Duration& other) const;
 
-	private:
-		u64 _secs;
-		u32 _subsec_ns;
+    private:
+        u64 _secs;
+        u32 _subsec_ns;
 };
 
 
 class Chrono {
 
-	public:
-		Chrono();
+    public:
+        Chrono();
 
-		void start();
-		Duration reset();
+        void start();
+        Duration reset();
 
-		Duration elapsed() const;
+        Duration elapsed() const;
 
-		static Duration program();
+        static Duration program();
 
-	private:
+    private:
 #ifdef Y_OS_WIN
-		u64 _counter;
-		u64 _freq = 1;
+        u64 _counter;
+        u64 _freq = 1;
 #else
-		std::chrono::time_point<std::chrono::high_resolution_clock> _time;
+        std::chrono::time_point<std::chrono::high_resolution_clock> _time;
 #endif
 };
 
 class DebugTimer : NonCopyable {
 
-	public:
-		DebugTimer(const String& msg, const Duration& minimum = Duration());
-		~DebugTimer();
+    public:
+        DebugTimer(const String& msg, const Duration& minimum = Duration());
+        ~DebugTimer();
 
-		Duration elapsed() const;
+        Duration elapsed() const;
 
-	private:
-		String _msg;
-		Chrono _chrono;
-		Duration _minimum;
+    private:
+        String _msg;
+        Chrono _chrono;
+        Duration _minimum;
 };
 
 
@@ -116,3 +116,4 @@ class DebugTimer : NonCopyable {
 }
 
 #endif //Y_CORE_CHRONO_H
+

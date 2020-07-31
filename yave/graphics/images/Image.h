@@ -32,49 +32,49 @@ namespace yave {
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class Image : public ImageBase {
 
-	static constexpr bool is_compatible(ImageUsage u) {
-		return (uenum(Usage) & uenum(u)) == uenum(Usage);
-	}
+    static constexpr bool is_compatible(ImageUsage u) {
+        return (uenum(Usage) & uenum(u)) == uenum(Usage);
+    }
 
-	static constexpr bool is_3d = Type == ImageType::ThreeD;
+    static constexpr bool is_3d = Type == ImageType::ThreeD;
 
-	template<typename T>
-	math::Vec3ui to_3d_size(const T& size) {
-		math::Vec3ui s(1);
-		s.to<T::size()>() = size;
-		return s;
-	}
+    template<typename T>
+    math::Vec3ui to_3d_size(const T& size) {
+        math::Vec3ui s(1);
+        s.to<T::size()>() = size;
+        return s;
+    }
 
-	public:
-		using size_type = std::conditional_t<is_3d, math::Vec3ui, math::Vec2ui>;
+    public:
+        using size_type = std::conditional_t<is_3d, math::Vec3ui, math::Vec2ui>;
 
-		Image() = default;
+        Image() = default;
 
-		Image(DevicePtr dptr, ImageFormat format, const size_type& image_size) : ImageBase(dptr, format, Usage, to_3d_size(image_size)) {
-			static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized.");
-			static_assert(Type == ImageType::TwoD || is_storage_usage(Usage), "Only 2D images can be created empty.");
-		}
+        Image(DevicePtr dptr, ImageFormat format, const size_type& image_size) : ImageBase(dptr, format, Usage, to_3d_size(image_size)) {
+            static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized.");
+            static_assert(Type == ImageType::TwoD || is_storage_usage(Usage), "Only 2D images can be created empty.");
+        }
 
-		Image(DevicePtr dptr, const ImageData& data) : ImageBase(dptr, Usage, Type, data) {
-			static_assert(is_texture_usage(Usage), "Only texture images can be initilized.");
-		}
+        Image(DevicePtr dptr, const ImageData& data) : ImageBase(dptr, Usage, Type, data) {
+            static_assert(is_texture_usage(Usage), "Only texture images can be initilized.");
+        }
 
-		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-		Image(Image<U, Type>&& other) {
-			static_assert(is_compatible(U));
-			ImageBase::operator=(std::move(other));
-		}
+        template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
+        Image(Image<U, Type>&& other) {
+            static_assert(is_compatible(U));
+            ImageBase::operator=(std::move(other));
+        }
 
-		template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-		Image& operator=(Image<U, Type>&& other) {
-			static_assert(is_compatible(U));
-			ImageBase::operator=(std::move(other));
-			return *this;
-		}
+        template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
+        Image& operator=(Image<U, Type>&& other) {
+            static_assert(is_compatible(U));
+            ImageBase::operator=(std::move(other));
+            return *this;
+        }
 
-		const size_type& size() const {
-			return image_size().to<size_type::size()>();
-		}
+        const size_type& size() const {
+            return image_size().to<size_type::size()>();
+        }
 };
 
 using Texture = Image<ImageUsage::TextureBit>;
@@ -91,3 +91,4 @@ YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Texture, ImageData, AssetType::Image);
 }
 
 #endif // YAVE_GRAPHICS_IMAGES_IMAGE_H
+

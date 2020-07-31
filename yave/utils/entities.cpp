@@ -33,27 +33,28 @@ SOFTWARE.
 namespace yave {
 
 core::Result<float> entity_radius(const ecs::EntityWorld& world, ecs::EntityId id) {
-	if(const StaticMeshComponent* mesh = world.component<StaticMeshComponent>(id)) {
-		return core::Ok(mesh->compute_aabb().origin_radius());
-	}
+    if(const StaticMeshComponent* mesh = world.component<StaticMeshComponent>(id)) {
+        return core::Ok(mesh->compute_aabb().origin_radius());
+    }
 
-	if(const PointLightComponent* light = world.component<PointLightComponent>(id)) {
-		return core::Ok(light->radius());
-	}
+    if(const PointLightComponent* light = world.component<PointLightComponent>(id)) {
+        return core::Ok(light->radius());
+    }
 
-	if(const SpotLightComponent* light = world.component<SpotLightComponent>(id)) {
-		return core::Ok(light->radius());
-	}
+    if(const SpotLightComponent* light = world.component<SpotLightComponent>(id)) {
+        return core::Ok(light->radius());
+    }
 
-	return core::Err();
+    return core::Err();
 }
 
 core::Result<math::Vec3> entity_position(const ecs::EntityWorld& world, ecs::EntityId id) {
-	if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
-		return core::Ok(tr->transform().position());
-	}
+    if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
+        return core::Ok(tr->transform().position());
+    }
 
-	return core::Err();
+    return core::Err();
 }
 
 }
+

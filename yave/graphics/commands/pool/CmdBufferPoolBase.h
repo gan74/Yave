@@ -37,33 +37,33 @@ class CmdBufferDataProxy;
 
 class CmdBufferPoolBase : NonMovable, public DeviceLinked {
 
-	public:
-		~CmdBufferPoolBase();
+    public:
+        ~CmdBufferPoolBase();
 
-		VkCommandPool vk_pool() const;
+        VkCommandPool vk_pool() const;
 
-	protected:
-		friend class CmdBufferDataProxy;
-		friend class LifetimeManager;
+    protected:
+        friend class CmdBufferDataProxy;
+        friend class LifetimeManager;
 
-		CmdBufferPoolBase();
-		CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred);
+        CmdBufferPoolBase();
+        CmdBufferPoolBase(DevicePtr dptr, CmdBufferUsage preferred);
 
-		void release(CmdBufferData&& data);
-		std::unique_ptr<CmdBufferDataProxy> alloc();
+        void release(CmdBufferData&& data);
+        std::unique_ptr<CmdBufferDataProxy> alloc();
 
-		void join_all();
+        void join_all();
 
-	private:
-		CmdBufferData create_data();
+    private:
+        CmdBufferData create_data();
 
-		std::mutex _lock;
-		VkCommandPool _pool;
-		CmdBufferUsage _usage;
-		core::Vector<CmdBufferData> _cmd_buffers;
-		core::Vector<VkFence> _fences;
+        std::mutex _lock;
+        VkCommandPool _pool;
+        CmdBufferUsage _usage;
+        core::Vector<CmdBufferData> _cmd_buffers;
+        core::Vector<VkFence> _fences;
 
-		const u32 _thread_id;
+        const u32 _thread_id;
 };
 
 static_assert(is_safe_base<CmdBufferPoolBase>::value);
@@ -71,3 +71,4 @@ static_assert(is_safe_base<CmdBufferPoolBase>::value);
 }
 
 #endif // YAVE_GRAPHICS_COMMANDS_POOL_CMDBUFFERPOOLBASE_H
+

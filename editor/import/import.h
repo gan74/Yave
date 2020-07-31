@@ -37,31 +37,31 @@ namespace editor {
 namespace import {
 
 struct SkeletonData {
-	core::Vector<SkinWeights> skin;
-	core::Vector<Bone> bones;
+    core::Vector<SkinWeights> skin;
+    core::Vector<Bone> bones;
 };
 
 struct MaterialData {
-	std::array<core::String, SimpleMaterialData::texture_count> textures;
-	float metallic = 0.0f;
-	float roughness = 1.0f;
+    std::array<core::String, SimpleMaterialData::texture_count> textures;
+    float metallic = 0.0f;
+    float roughness = 1.0f;
 };
 
 struct SubMeshData {
-	core::String mesh;
-	core::String material;
+    core::String mesh;
+    core::String material;
 };
 
 struct PrefabData {
-	core::Vector<SubMeshData> sub_meshes;
+    core::Vector<SubMeshData> sub_meshes;
 };
 
 struct SceneData {
-	core::Vector<Named<MeshData>> meshes;
-	core::Vector<Named<Animation>> animations;
-	core::Vector<Named<ImageData>> images;
-	core::Vector<Named<MaterialData>> materials;
-	core::Vector<Named<PrefabData>> prefabs;
+    core::Vector<Named<MeshData>> meshes;
+    core::Vector<Named<Animation>> animations;
+    core::Vector<Named<ImageData>> images;
+    core::Vector<Named<MaterialData>> materials;
+    core::Vector<Named<PrefabData>> prefabs;
 };
 
 
@@ -74,17 +74,17 @@ core::String clean_asset_name(const core::String& name);
 
 // ----------------------------- SCENE -----------------------------
 enum class SceneImportFlags {
-	None = 0x00,
+    None = 0x00,
 
-	ImportMeshes	= 0x01,
-	ImportAnims		= 0x02,
-	ImportImages	= 0x04,
-	ImportMaterials = 0x08 | ImportImages,
-	ImportPrefabs	= 0x10 | ImportMeshes | ImportMaterials,
+    ImportMeshes    = 0x01,
+    ImportAnims     = 0x02,
+    ImportImages    = 0x04,
+    ImportMaterials = 0x08 | ImportImages,
+    ImportPrefabs   = 0x10 | ImportMeshes | ImportMaterials,
 
-	FlipUVs			= 0x20,
+    FlipUVs         = 0x20,
 
-	ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportPrefabs
+    ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportPrefabs
 
 };
 
@@ -97,9 +97,9 @@ core::String supported_scene_extensions();
 
 // ----------------------------- IMAGES -----------------------------
 enum class ImageImportFlags {
-	None = 0x00,
+    None = 0x00,
 
-	GenerateMipmaps = 0x01,
+    GenerateMipmaps = 0x01,
 };
 
 Named<ImageData> import_image(const core::String& filename, ImageImportFlags flags = ImageImportFlags::None);
@@ -113,22 +113,23 @@ core::String supported_image_extensions();
 
 
 constexpr SceneImportFlags operator|(SceneImportFlags l, SceneImportFlags r) {
-	return SceneImportFlags(uenum(l) | uenum(r));
+    return SceneImportFlags(uenum(l) | uenum(r));
 }
 
 constexpr SceneImportFlags operator&(SceneImportFlags l, SceneImportFlags r)  {
-	return SceneImportFlags(uenum(l) & uenum(r));
+    return SceneImportFlags(uenum(l) & uenum(r));
 }
 
 constexpr ImageImportFlags operator|(ImageImportFlags l, ImageImportFlags r) {
-	return ImageImportFlags(uenum(l) | uenum(r));
+    return ImageImportFlags(uenum(l) | uenum(r));
 }
 
 constexpr ImageImportFlags operator&(ImageImportFlags l, ImageImportFlags r)  {
-	return ImageImportFlags(uenum(l) & uenum(r));
+    return ImageImportFlags(uenum(l) & uenum(r));
 }
 
 }
 }
 
 #endif // EDITOR_IMPORT_IMPORT_H
+

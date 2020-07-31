@@ -31,63 +31,63 @@ namespace memory {
 constexpr usize max_alignment = std::alignment_of<std::max_align_t>::value;
 
 constexpr usize align_up_to(usize value, usize alignment) {
-	y_debug_assert(alignment);
-	if(const usize diff = value % alignment) {
-		y_debug_assert(diff <= value + alignment);
-		return value + alignment - diff;
-	}
-	return value;
-	//return (value + alignment - 1) & ~(alignment - 1);
+    y_debug_assert(alignment);
+    if(const usize diff = value % alignment) {
+        y_debug_assert(diff <= value + alignment);
+        return value + alignment - diff;
+    }
+    return value;
+    //return (value + alignment - 1) & ~(alignment - 1);
 }
 
 constexpr usize align_down_to(usize value, usize alignment) {
-	y_debug_assert(alignment);
-	const usize diff = value % alignment;
-	return value - diff;
+    y_debug_assert(alignment);
+    const usize diff = value % alignment;
+    return value - diff;
 }
 
 constexpr usize align_up_to_max(usize size) {
-	return align_up_to(size, max_alignment);
+    return align_up_to(size, max_alignment);
 }
 
 
 // -------------------------- standard allocators --------------------------
 
 class GlobalAllocator : NonCopyable {
-	public:
-		[[nodiscard]] void* allocate(usize size) noexcept;
-		void deallocate(void* ptr, usize size) noexcept;
+    public:
+        [[nodiscard]] void* allocate(usize size) noexcept;
+        void deallocate(void* ptr, usize size) noexcept;
 };
 
 class ThreadLocalAllocator : NonCopyable {
-	public:
-		[[nodiscard]] void* allocate(usize size) noexcept;
-		void deallocate(void* ptr, usize size) noexcept;
+    public:
+        [[nodiscard]] void* allocate(usize size) noexcept;
+        void deallocate(void* ptr, usize size) noexcept;
 };
 
 // -------------------------- std adapters allocators --------------------------
 
 template<typename T, typename Allocator = GlobalAllocator>
 class StdAllocatorAdapter : NonCopyable {
-	public:
-		using value_type = T;
-		using size_type = usize;
+    public:
+        using value_type = T;
+        using size_type = usize;
 
-		StdAllocatorAdapter() = default;
+        StdAllocatorAdapter() = default;
 
-		StdAllocatorAdapter(Allocator&& a) : _allocator(std::move(a)) {
-		}
+        StdAllocatorAdapter(Allocator&& a) : _allocator(std::move(a)) {
+        }
 
-		[[nodiscard]] T* allocate(usize n) {
-			return static_cast<T*>(_allocator.allocate(sizeof(T) * n));
-		}
+        [[nodiscard]] T* allocate(usize n) {
+            return static_cast<T*>(_allocator.allocate(sizeof(T) * n));
+        }
 
-		void deallocate(T* p, usize n) {
-			_allocator.deallocate(p, sizeof(T) * n);
-		}
+        void deallocate(T* p, usize n) {
+            _allocator.deallocate(p, sizeof(T) * n);
+        }
 
-	private:
-		Allocator _allocator;
+    private:
+        Allocator _allocator;
 };
 
 
@@ -101,3 +101,4 @@ PolymorphicAllocatorBase* thread_local_allocator();
 }
 
 #endif // Y_MEM_MEMORY_H
+

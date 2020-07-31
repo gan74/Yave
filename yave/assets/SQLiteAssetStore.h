@@ -39,74 +39,74 @@ namespace yave {
 
 class SQLiteAssetStore final : public AssetStore {
 
-	class SQLiteFileSystemModel final : public SearchableFileSystemModel {
-		public:
-			core::String filename(std::string_view path) const override;
-			core::String join(std::string_view path, std::string_view name) const override;
+    class SQLiteFileSystemModel final : public SearchableFileSystemModel {
+        public:
+            core::String filename(std::string_view path) const override;
+            core::String join(std::string_view path, std::string_view name) const override;
 
-			Result<core::String> current_path() const override;
-			Result<core::String> parent_path(std::string_view path) const override;
+            Result<core::String> current_path() const override;
+            Result<core::String> parent_path(std::string_view path) const override;
 
-			Result<bool> exists(std::string_view path) const override;
-			Result<bool> is_directory(std::string_view path) const override;
+            Result<bool> exists(std::string_view path) const override;
+            Result<bool> is_directory(std::string_view path) const override;
 
-			Result<core::String> absolute(std::string_view path) const override;
-			Result<> for_each(std::string_view path, const for_each_f& func) const override;
-			Result<> create_directory(std::string_view path) const override;
-			Result<> remove(std::string_view path) const override;
-			Result<> rename(std::string_view from, std::string_view to) const override;
+            Result<core::String> absolute(std::string_view path) const override;
+            Result<> for_each(std::string_view path, const for_each_f& func) const override;
+            Result<> create_directory(std::string_view path) const override;
+            Result<> remove(std::string_view path) const override;
+            Result<> rename(std::string_view from, std::string_view to) const override;
 
-			Result<core::Vector<core::String>> search(std::string_view pattern) const override;
+            Result<core::Vector<core::String>> search(std::string_view pattern) const override;
 
-			bool is_delimiter(char c) const;
+            bool is_delimiter(char c) const;
 
-		private:
-			friend class SQLiteAssetStore;
+        private:
+            friend class SQLiteAssetStore;
 
-			SQLiteFileSystemModel() = default;
+            SQLiteFileSystemModel() = default;
 
-			void check(int res) const;
+            void check(int res) const;
 
-			Result<i64> folder_id(std::string_view path) const;
+            Result<i64> folder_id(std::string_view path) const;
 
-			sqlite3* _database = nullptr;
-	};
+            sqlite3* _database = nullptr;
+    };
 
-	public:
-		SQLiteAssetStore(const core::String& path = "./store.sqlite3");
-		~SQLiteAssetStore() override;
+    public:
+        SQLiteAssetStore(const core::String& path = "./store.sqlite3");
+        ~SQLiteAssetStore() override;
 
-		const FileSystemModel* filesystem() const override;
+        const FileSystemModel* filesystem() const override;
 
-		Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) override;
-		Result<> write(AssetId id, io2::Reader& data) override;
+        Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) override;
+        Result<> write(AssetId id, io2::Reader& data) override;
 
-		Result<AssetId> id(std::string_view name) const override;
-		Result<core::String> name(AssetId id) const override;
+        Result<AssetId> id(std::string_view name) const override;
+        Result<core::String> name(AssetId id) const override;
 
-		Result<io2::ReaderPtr> data(AssetId id) const override;
+        Result<io2::ReaderPtr> data(AssetId id) const override;
 
-		Result<> remove(AssetId id) override;
-		Result<> rename(AssetId id, std::string_view new_name) override;
-		Result<> remove(std::string_view name) override;
-		Result<> rename(std::string_view from, std::string_view to) override;
+        Result<> remove(AssetId id) override;
+        Result<> rename(AssetId id, std::string_view new_name) override;
+        Result<> remove(std::string_view name) override;
+        Result<> rename(std::string_view from, std::string_view to) override;
 
-		Result<AssetType> asset_type(AssetId id) const override;
+        Result<AssetType> asset_type(AssetId id) const override;
 
-	private:
-		void check(int res) const;
-		void clear_cache();
+    private:
+        void check(int res) const;
+        void clear_cache();
 
-		Result<i64> find_folder(std::string_view name, bool or_create = true);
+        Result<i64> find_folder(std::string_view name, bool or_create = true);
 
-		AssetId next_id();
+        AssetId next_id();
 
-		sqlite3* _database = nullptr;
-		SQLiteFileSystemModel _filesystem;
+        sqlite3* _database = nullptr;
+        SQLiteFileSystemModel _filesystem;
 
-		// just to speed up name lookups
-		mutable core::ExternalHashMap<AssetId, core::String> _name_cache;
-		mutable std::mutex _cache_lock;
+        // just to speed up name lookups
+        mutable core::ExternalHashMap<AssetId, core::String> _name_cache;
+        mutable std::mutex _cache_lock;
 
 };
 }
@@ -114,3 +114,4 @@ class SQLiteAssetStore final : public AssetStore {
 #endif // YAVE_NO_SQLITE
 
 #endif // YAVE_ASSETS_SQLITEASSETSTORE_H
+

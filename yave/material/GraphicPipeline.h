@@ -32,25 +32,26 @@ class MaterialTemplate;
 
 class GraphicPipeline : NonCopyable, public DeviceLinked {
 
-	public:
-		GraphicPipeline() = default;
-		GraphicPipeline(const MaterialTemplate* mat, VkPipeline pipeline, VkPipelineLayout layout);
+    public:
+        GraphicPipeline() = default;
+        GraphicPipeline(const MaterialTemplate* mat, VkPipeline pipeline, VkPipelineLayout layout);
 
-		~GraphicPipeline();
+        ~GraphicPipeline();
 
-		GraphicPipeline(GraphicPipeline&& other);
-		GraphicPipeline& operator=(GraphicPipeline&& other);
+        GraphicPipeline(GraphicPipeline&& other);
+        GraphicPipeline& operator=(GraphicPipeline&& other);
 
-		VkPipeline vk_pipeline() const;
-		VkPipelineLayout vk_pipeline_layout() const;
+        VkPipeline vk_pipeline() const;
+        VkPipelineLayout vk_pipeline_layout() const;
 
-	private:
-		void swap(GraphicPipeline& other);
+    private:
+        void swap(GraphicPipeline& other);
 
-		VkPipeline _pipeline = {};
-		VkPipelineLayout _layout = {};
+        VkPipeline _pipeline = {};
+        VkPipelineLayout _layout = {};
 };
 
 }
 
 #endif // YAVE_MATERIAL_GRAPHICPIPELINE_H
+

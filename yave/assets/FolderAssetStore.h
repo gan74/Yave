@@ -37,84 +37,85 @@ namespace yave {
 
 class FolderAssetStore final : NonMovable, public AssetStore {
 
-	class FolderFileSystemModel final : public FileSystemModel {
-		public:
+    class FolderFileSystemModel final : public FileSystemModel {
+        public:
 
-			core::String filename(std::string_view path) const override;
-			core::String  join(std::string_view path, std::string_view name) const override;
+            core::String filename(std::string_view path) const override;
+            core::String  join(std::string_view path, std::string_view name) const override;
 
-			Result<core::String> current_path() const override;
-			Result<core::String> parent_path(std::string_view path) const override;
+            Result<core::String> current_path() const override;
+            Result<core::String> parent_path(std::string_view path) const override;
 
-			Result<bool> exists(std::string_view path) const override;
-			Result<bool> is_directory(std::string_view path) const override;
+            Result<bool> exists(std::string_view path) const override;
+            Result<bool> is_directory(std::string_view path) const override;
 
-			Result<core::String> absolute(std::string_view path) const override;
-			Result<> for_each(std::string_view path, const for_each_f& func) const override;
-			Result<> create_directory(std::string_view path) const override;
-			Result<> remove(std::string_view path) const override;
-			Result<> rename(std::string_view from, std::string_view to) const override;
+            Result<core::String> absolute(std::string_view path) const override;
+            Result<> for_each(std::string_view path, const for_each_f& func) const override;
+            Result<> create_directory(std::string_view path) const override;
+            Result<> remove(std::string_view path) const override;
+            Result<> rename(std::string_view from, std::string_view to) const override;
 
-			//Result<core::Vector<core::String>> search(std::string_view pattern) const override;
+            //Result<core::Vector<core::String>> search(std::string_view pattern) const override;
 
-		private:
-			friend class FolderAssetStore;
+        private:
+            friend class FolderAssetStore;
 
-			FolderFileSystemModel(FolderAssetStore* parent);
+            FolderFileSystemModel(FolderAssetStore* parent);
 
-			FolderAssetStore* _parent = nullptr;
-	};
+            FolderAssetStore* _parent = nullptr;
+    };
 
-	struct AssetData {
-		AssetId id;
-		AssetType type;
-	};
+    struct AssetData {
+        AssetId id;
+        AssetType type;
+    };
 
-	public:
-		FolderAssetStore(const core::String& root = "./store");
-		~FolderAssetStore() override;
+    public:
+        FolderAssetStore(const core::String& root = "./store");
+        ~FolderAssetStore() override;
 
-		const FileSystemModel* filesystem() const override;
+        const FileSystemModel* filesystem() const override;
 
-		Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) override;
-		Result<> write(AssetId id, io2::Reader& data) override;
+        Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) override;
+        Result<> write(AssetId id, io2::Reader& data) override;
 
-		Result<AssetId> id(std::string_view name) const override;
-		Result<core::String> name(AssetId id) const override;
+        Result<AssetId> id(std::string_view name) const override;
+        Result<core::String> name(AssetId id) const override;
 
-		Result<io2::ReaderPtr> data(AssetId id) const override;
+        Result<io2::ReaderPtr> data(AssetId id) const override;
 
-		Result<> remove(AssetId id) override;
-		Result<> rename(AssetId id, std::string_view new_name) override;
-		Result<> remove(std::string_view name) override;
-		Result<> rename(std::string_view from, std::string_view to) override;
+        Result<> remove(AssetId id) override;
+        Result<> rename(AssetId id, std::string_view new_name) override;
+        Result<> remove(std::string_view name) override;
+        Result<> rename(std::string_view from, std::string_view to) override;
 
-		Result<AssetType> asset_type(AssetId id) const override;
+        Result<AssetType> asset_type(AssetId id) const override;
 
-	private:
-		core::String index_file_name() const;
-		core::String asset_file_name(AssetId id) const;
-		AssetId next_id();
-		void rebuild_id_map() const;
+    private:
+        core::String index_file_name() const;
+        core::String asset_file_name(AssetId id) const;
+        AssetId next_id();
+        void rebuild_id_map() const;
 
-		Result<> load();
-		Result<> save();
-		Result<> save_or_restore();
+        Result<> load();
+        Result<> save();
+        Result<> save_or_restore();
 
-		core::String _root;
+        core::String _root;
 
-		std::atomic<u64> _next_id = 0;
-		std::set<core::String> _folders;
-		std::map<core::String, AssetData> _assets;
+        std::atomic<u64> _next_id = 0;
+        std::set<core::String> _folders;
+        std::map<core::String, AssetData> _assets;
 
-		mutable std::unique_ptr<core::ExternalHashMap<AssetId, std::map<core::String, AssetData>::const_iterator>> _ids;
+        mutable std::unique_ptr<core::ExternalHashMap<AssetId, std::map<core::String, AssetData>::const_iterator>> _ids;
 
-		mutable std::recursive_mutex _lock;
+        mutable std::recursive_mutex _lock;
 
-		FolderFileSystemModel _filesystem;
+        FolderFileSystemModel _filesystem;
 
 };
 }
 
 
 #endif // YAVE_ASSETS_FOLDERASSETSTORE_H
+

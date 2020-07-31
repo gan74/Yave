@@ -33,32 +33,32 @@ namespace yave {
 
 class BufferBase : NonCopyable {
 
-	public:
-		~BufferBase();
+    public:
+        ~BufferBase();
 
-		DevicePtr device() const;
-		bool is_null() const;
+        DevicePtr device() const;
+        bool is_null() const;
 
-		BufferUsage usage() const;
-		usize byte_size() const;
-		const DeviceMemory& device_memory() const;
+        BufferUsage usage() const;
+        usize byte_size() const;
+        const DeviceMemory& device_memory() const;
 
-		VkDescriptorBufferInfo descriptor_info() const;
+        VkDescriptorBufferInfo descriptor_info() const;
 
-		VkBuffer vk_buffer() const;
+        VkBuffer vk_buffer() const;
 
-	protected:
-		BufferBase() = default;
-		BufferBase(BufferBase&&) = default;
-		BufferBase& operator=(BufferBase&&) = default;
+    protected:
+        BufferBase() = default;
+        BufferBase(BufferBase&&) = default;
+        BufferBase& operator=(BufferBase&&) = default;
 
-		BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type);
+        BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type);
 
-	private:
-		usize _size = 0;
-		SwapMove<VkBuffer> _buffer;
-		BufferUsage _usage = BufferUsage::None;
-		DeviceMemory _memory;
+    private:
+        usize _size = 0;
+        SwapMove<VkBuffer> _buffer;
+        BufferUsage _usage = BufferUsage::None;
+        DeviceMemory _memory;
 };
 
 static_assert(is_safe_base<BufferBase>::value);
@@ -67,3 +67,4 @@ static_assert(is_safe_base<BufferBase>::value);
 
 
 #endif // YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
+

@@ -27,50 +27,50 @@ SOFTWARE.
 namespace yave {
 
 class AABB {
-	public:
-		AABB() = default;
+    public:
+        AABB() = default;
 
-		AABB(const math::Vec3& min, const math::Vec3& max) : _min(min), _max(max) {
-			for(usize i = 0; i != 3; ++i) {
-				y_debug_assert(_min[i] <= _max[i]);
-			}
-		}
+        AABB(const math::Vec3& min, const math::Vec3& max) : _min(min), _max(max) {
+            for(usize i = 0; i != 3; ++i) {
+                y_debug_assert(_min[i] <= _max[i]);
+            }
+        }
 
-		math::Vec3 center() const {
-			return (_min + _max) * 0.5f;
-		}
+        math::Vec3 center() const {
+            return (_min + _max) * 0.5f;
+        }
 
-		math::Vec3 extent() const {
-			return _max - _min;
-		}
+        math::Vec3 extent() const {
+            return _max - _min;
+        }
 
-		math::Vec3 half_extent() const {
-			return extent() * 0.5f;
-		}
+        math::Vec3 half_extent() const {
+            return extent() * 0.5f;
+        }
 
-		float radius() const {
-			return extent().length() * 0.5f;
-		}
+        float radius() const {
+            return extent().length() * 0.5f;
+        }
 
-		float origin_radius() const {
-			return std::sqrt(std::max(_min.length2(), _max.length2()));
-		}
+        float origin_radius() const {
+            return std::sqrt(std::max(_min.length2(), _max.length2()));
+        }
 
-		const math::Vec3& min() const {
-			return _min;
-		}
+        const math::Vec3& min() const {
+            return _min;
+        }
 
-		const math::Vec3& max() const {
-			return _max;
-		}
+        const math::Vec3& max() const {
+            return _max;
+        }
 
-		AABB merged(const AABB& other) const {
-			return AABB(_min.min(other._min), _max.max(other._max));
-		}
+        AABB merged(const AABB& other) const {
+            return AABB(_min.min(other._min), _max.max(other._max));
+        }
 
-	private:
-		math::Vec3 _min;
-		math::Vec3 _max;
+    private:
+        math::Vec3 _min;
+        math::Vec3 _max;
 };
 
 static_assert(std::is_trivially_copyable_v<AABB>);
@@ -78,3 +78,4 @@ static_assert(std::is_trivially_copyable_v<AABB>);
 }
 
 #endif // YAVE_MESHES_AABB_H
+

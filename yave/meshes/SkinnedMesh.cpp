@@ -31,38 +31,39 @@ SOFTWARE.
 namespace yave {
 
 SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
-		_triangle_buffer(dptr, mesh_data.triangles().size()),
-		_vertex_buffer(dptr, mesh_data.skinned_vertices().size()),
-		_skeleton(mesh_data.bones()),
-		_radius(mesh_data.radius()) {
+        _triangle_buffer(dptr, mesh_data.triangles().size()),
+        _vertex_buffer(dptr, mesh_data.skinned_vertices().size()),
+        _skeleton(mesh_data.bones()),
+        _radius(mesh_data.radius()) {
 
-	_indirect_data.indexCount = mesh_data.triangles().size() * 3;
-	_indirect_data.instanceCount = 1;
+    _indirect_data.indexCount = mesh_data.triangles().size() * 3;
+    _indirect_data.instanceCount = 1;
 
-	CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
-	Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
-	Mapping::stage(_vertex_buffer, recorder, mesh_data.skinned_vertices().data());
-	graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+    CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
+    Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
+    Mapping::stage(_vertex_buffer, recorder, mesh_data.skinned_vertices().data());
+    graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
 }
 
 const TriangleBuffer<>& SkinnedMesh::triangle_buffer() const {
-	return _triangle_buffer;
+    return _triangle_buffer;
 }
 
 const SkinnedVertexBuffer<>& SkinnedMesh::vertex_buffer() const {
-	return _vertex_buffer;
+    return _vertex_buffer;
 }
 
 const VkDrawIndexedIndirectCommand& SkinnedMesh::indirect_data() const {
-	return _indirect_data;
+    return _indirect_data;
 }
 
 const Skeleton& SkinnedMesh::skeleton() const {
-	return _skeleton;
+    return _skeleton;
 }
 
 float SkinnedMesh::radius() const {
-	return _radius;
+    return _radius;
 }
 
 }
+

@@ -33,40 +33,40 @@ SOFTWARE.
 namespace editor {
 
 class MaterialPreview final : public Widget, public ContextLinked {
-	public:
-		enum class PreviewObject {
-			Sphere,
-			Cube,
-		};
+    public:
+        enum class PreviewObject {
+            Sphere,
+            Cube,
+        };
 
-		MaterialPreview(ContextPtr cptr);
+        MaterialPreview(ContextPtr cptr);
 
-		void refresh() override;
+        void refresh() override;
 
-		void set_material(const AssetPtr<Material>& material);
+        void set_material(const AssetPtr<Material>& material);
 
-		void set_object(const AssetPtr<StaticMesh>& mesh);
-		void set_object(PreviewObject obj);
+        void set_object(const AssetPtr<StaticMesh>& mesh);
+        void set_object(PreviewObject obj);
 
-	private:
-		void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
-		void paint_mesh_menu();
+    private:
+        void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
+        void paint_mesh_menu();
 
-		void reset_world();
+        void reset_world();
 
-		void update_camera();
+        void update_camera();
 
-		AssetPtr<Material> _material;
-		AssetPtr<StaticMesh> _mesh;
+        AssetPtr<Material> _material;
+        AssetPtr<StaticMesh> _mesh;
 
-		std::unique_ptr<ecs::EntityWorld> _world;
-		SceneView _view;
+        std::unique_ptr<ecs::EntityWorld> _world;
+        SceneView _view;
 
-		AssetPtr<IBLProbe> _ibl_probe;
-		std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+        AssetPtr<IBLProbe> _ibl_probe;
+        std::shared_ptr<FrameGraphResourcePool> _resource_pool;
 
-		float _cam_distance = 1.0f;
-		math::Vec2 _angle = math::Vec2(math::to_rad(45.0f));
+        float _cam_distance = 1.0f;
+        math::Vec2 _angle = math::Vec2(math::to_rad(45.0f));
 
 };
 
@@ -74,3 +74,4 @@ class MaterialPreview final : public Widget, public ContextLinked {
 
 
 #endif // EDITOR_MATERIALPREVIEW_H
+

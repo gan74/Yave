@@ -31,66 +31,67 @@ using namespace y;
 using namespace y::core;
 
 struct Polymorphic {
-	virtual ~Polymorphic() {
-	}
+    virtual ~Polymorphic() {
+    }
 };
 
 struct RaiiCounter : NonCopyable {
-	RaiiCounter(usize* ptr) : counter(ptr) {
-	}
+    RaiiCounter(usize* ptr) : counter(ptr) {
+    }
 
-	RaiiCounter(RaiiCounter&& raii) : counter(nullptr) {
-		std::swap(raii.counter, counter);
-	}
+    RaiiCounter(RaiiCounter&& raii) : counter(nullptr) {
+        std::swap(raii.counter, counter);
+    }
 
-	~RaiiCounter() {
-		if(counter) {
-			++(*counter);
-		}
-	}
+    ~RaiiCounter() {
+        if(counter) {
+            ++(*counter);
+        }
+    }
 
-	usize* counter;
+    usize* counter;
 };
 
 y_test_func("RingQueue creation") {
-	const usize cap = 256;
-	const RingQueue<int> q(cap);
-	y_test_assert(q.size() == 0);
-	y_test_assert(q.capacity() == cap);
+    const usize cap = 256;
+    const RingQueue<int> q(cap);
+    y_test_assert(q.size() == 0);
+    y_test_assert(q.capacity() == cap);
 }
 
 y_test_func("RingQueue push/pop") {
-	const usize cap = 256;
-	RingQueue<usize> q(cap);
+    const usize cap = 256;
+    RingQueue<usize> q(cap);
 
-	for(usize i = 0; i != cap / 2; ++i) {
-		q.push(i);
-		y_test_assert(q.last() == i);
-		y_test_assert(q.size() == i + 1);
-	}
-	for(usize i = 0; i != cap / 2; ++i) {
-		y_test_assert(q.pop() == i);
-	}
+    for(usize i = 0; i != cap / 2; ++i) {
+        q.push(i);
+        y_test_assert(q.last() == i);
+        y_test_assert(q.size() == i + 1);
+    }
+    for(usize i = 0; i != cap / 2; ++i) {
+        y_test_assert(q.pop() == i);
+    }
 }
 
 y_test_func("RingQueue full") {
-	const usize cap = 256;
-	RingQueue<usize> q(cap);
-	y_test_assert(q.is_empty());
+    const usize cap = 256;
+    RingQueue<usize> q(cap);
+    y_test_assert(q.is_empty());
 
-	for(usize i = 0; i != cap; ++i) {
-		q.push(i);
-	}
+    for(usize i = 0; i != cap; ++i) {
+        q.push(i);
+    }
 
-	y_test_assert(!q.is_empty());
-	y_test_assert(q.is_full());
-	y_test_assert(q.size() == cap);
+    y_test_assert(!q.is_empty());
+    y_test_assert(q.is_full());
+    y_test_assert(q.size() == cap);
 
-	for(usize i = 0; i != cap; ++i) {
-		y_test_assert(q.pop() == i);
-	}
+    for(usize i = 0; i != cap; ++i) {
+        y_test_assert(q.pop() == i);
+    }
 }
 
 }
+
 
 

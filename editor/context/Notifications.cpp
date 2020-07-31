@@ -28,41 +28,41 @@ SOFTWARE.
 namespace editor {
 
 void Notifications::Tqdm::update(u32 id, usize value) {
-	const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = y_profile_unique_lock(_lock);
 
-	if(id < _first_id || id - _first_id >= _progress.size()) {
-		return;
-	}
+    if(id < _first_id || id - _first_id >= _progress.size()) {
+        return;
+    }
 
-	Data& data = _progress[id - _first_id];
-	data.it = value;
+    Data& data = _progress[id - _first_id];
+    data.it = value;
 
-	if(id == _first_id) {
-		usize remove = 0;
-		while(remove < _progress.size() && _progress[remove].is_over()) {
-			++remove;
-		}
-		if(remove) {
-			_progress.assign(_progress.begin() + remove, _progress.end());
-		}
-		_first_id += remove;
-	}
+    if(id == _first_id) {
+        usize remove = 0;
+        while(remove < _progress.size() && _progress[remove].is_over()) {
+            ++remove;
+        }
+        if(remove) {
+            _progress.assign(_progress.begin() + remove, _progress.end());
+        }
+        _first_id += remove;
+    }
 }
 
 u32 Notifications::Tqdm::create(usize size, core::String msg) {
-	if(!size) {
-		return u32(-1);
-	}
+    if(!size) {
+        return u32(-1);
+    }
 
-	const auto lock = y_profile_unique_lock(_lock);
-	const u32 id = _progress.size() + _first_id;
-	_progress.emplace_back(Data{0, size, std::move(msg)});
-	return id;
+    const auto lock = y_profile_unique_lock(_lock);
+    const u32 id = _progress.size() + _first_id;
+    _progress.emplace_back(Data{0, size, std::move(msg)});
+    return id;
 }
 
 core::Vector<Notifications::Tqdm::Data> Notifications::Tqdm::progress_items() const {
-	std::unique_lock lock(_lock);
-	return _progress;
+    std::unique_lock lock(_lock);
+    return _progress;
 }
 
 Notifications::Notifications(ContextPtr ctx) : ContextLinked(ctx), _tqdm(std::make_shared<Tqdm>()) {
@@ -70,3 +70,4 @@ Notifications::Notifications(ContextPtr ctx) : ContextLinked(ctx), _tqdm(std::ma
 
 
 }
+

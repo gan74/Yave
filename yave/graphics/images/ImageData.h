@@ -32,44 +32,45 @@ namespace yave {
 
 class ImageData : NonCopyable {
 
-	public:
-		ImageData() = default;
-		ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
+    public:
+        ImageData() = default;
+        ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
 
 
-		static usize mip_count(const math::Vec3ui& size);
-		static math::Vec3ui mip_size(const math::Vec3ui& size, usize mip = 0);
-		static usize byte_size(const math::Vec3ui& size, ImageFormat format, usize mip = 0);
-		static usize layer_byte_size(const math::Vec3ui& size, ImageFormat format, usize mips = 1);
+        static usize mip_count(const math::Vec3ui& size);
+        static math::Vec3ui mip_size(const math::Vec3ui& size, usize mip = 0);
+        static usize byte_size(const math::Vec3ui& size, ImageFormat format, usize mip = 0);
+        static usize layer_byte_size(const math::Vec3ui& size, ImageFormat format, usize mips = 1);
 
-		usize byte_size(usize mip = 0) const;
-		usize layer_byte_size() const;
-		usize combined_byte_size() const;
+        usize byte_size(usize mip = 0) const;
+        usize layer_byte_size() const;
+        usize combined_byte_size() const;
 
-		const math::Vec3ui& size() const;
-		math::Vec3ui size(usize mip) const;
+        const math::Vec3ui& size() const;
+        math::Vec3ui size(usize mip) const;
 
-		const ImageFormat& format() const;
+        const ImageFormat& format() const;
 
-		usize layers() const;
-		usize mipmaps() const;
+        usize layers() const;
+        usize mipmaps() const;
 
-		usize data_offset(usize layer = 0, usize mip = 0) const;
-		const u8* data(usize layer = 0, usize mip = 0) const;
+        usize data_offset(usize layer = 0, usize mip = 0) const;
+        const u8* data(usize layer = 0, usize mip = 0) const;
 
 
-		y_serde3(_size, _format, _layers, _mips, _data)
+        y_serde3(_size, _format, _layers, _mips, _data)
 
-	private:
-		math::Vec3ui _size = math::Vec3ui(0, 0, 1);
-		ImageFormat _format;
+    private:
+        math::Vec3ui _size = math::Vec3ui(0, 0, 1);
+        ImageFormat _format;
 
-		u32 _layers = 1;
-		u32 _mips = 1;
+        u32 _layers = 1;
+        u32 _mips = 1;
 
-		core::FixedArray<u8> _data;
+        core::FixedArray<u8> _data;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_IMAGES_IMAGEDATA_H
+

@@ -35,45 +35,46 @@ namespace yave {
 
 class StaticMeshComponent final : public Renderable, public ecs::RequiredComponents<TransformableComponent> {
 
-	public:
-		struct SubMesh {
-			AssetPtr<StaticMesh> mesh;
-			AssetPtr<Material> material;
+    public:
+        struct SubMesh {
+            AssetPtr<StaticMesh> mesh;
+            AssetPtr<Material> material;
 
-			SubMesh() = default;
-			SubMesh(const AssetPtr<StaticMesh>& me, const AssetPtr<Material>& ma);
+            SubMesh() = default;
+            SubMesh(const AssetPtr<StaticMesh>& me, const AssetPtr<Material>& ma);
 
-			void flush_reload();
+            void flush_reload();
 
-			void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
-			void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
+            void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
+            void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
-			bool operator==(const SubMesh& other) const;
-			bool operator!=(const SubMesh& other) const;
+            bool operator==(const SubMesh& other) const;
+            bool operator!=(const SubMesh& other) const;
 
-			y_serde3(mesh, material)
-		};
+            y_serde3(mesh, material)
+        };
 
-		StaticMeshComponent() = default;
-		StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
-		StaticMeshComponent(core::Vector<SubMesh> sub_meshes);
+        StaticMeshComponent() = default;
+        StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
+        StaticMeshComponent(core::Vector<SubMesh> sub_meshes);
 
-		void flush_reload();
+        void flush_reload();
 
-		void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
-		void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
+        void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
+        void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
-		const core::Vector<SubMesh>& sub_meshes() const;
-		core::Vector<SubMesh>& sub_meshes();
+        const core::Vector<SubMesh>& sub_meshes() const;
+        core::Vector<SubMesh>& sub_meshes();
 
-		AABB compute_aabb() const;
+        AABB compute_aabb() const;
 
-		y_serde3(_sub_meshes)
+        y_serde3(_sub_meshes)
 
-	private:
-		core::Vector<SubMesh> _sub_meshes;
+    private:
+        core::Vector<SubMesh> _sub_meshes;
 };
 
 }
 
 #endif // YAVE_COMPONENTS_STATICMESHCOMPONENT_H
+

@@ -32,22 +32,23 @@ SOFTWARE.
 namespace editor {
 
 class Selection {
-	public:
-		void flush_reload();
+    public:
+        void flush_reload();
 
-		/*void set_selected(const AssetPtr<Material>& sel);
-		const AssetPtr<Material>& material() const;*/
+        /*void set_selected(const AssetPtr<Material>& sel);
+        const AssetPtr<Material>& material() const;*/
 
-		bool has_selected_entity() const;
+        bool has_selected_entity() const;
 
-		ecs::EntityId selected_entity() const;
-		void set_selected(ecs::EntityId id);
+        ecs::EntityId selected_entity() const;
+        void set_selected(ecs::EntityId id);
 
-	private:
-		//AssetPtr<Material> _material;
-		ecs::EntityId _id;
+    private:
+        //AssetPtr<Material> _material;
+        ecs::EntityId _id;
 };
 
 }
 
 #endif // EDITOR_CONTEXT_SELECTION_H
+

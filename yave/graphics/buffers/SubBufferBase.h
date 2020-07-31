@@ -30,33 +30,33 @@ namespace yave {
 
 class SubBufferBase {
 
-	public:
-		SubBufferBase() = default;
-		SubBufferBase(const BufferBase& base, usize byte_len, usize byte_off);
+    public:
+        SubBufferBase() = default;
+        SubBufferBase(const BufferBase& base, usize byte_len, usize byte_off);
 
-		explicit SubBufferBase(const BufferBase& base);
+        explicit SubBufferBase(const BufferBase& base);
 
-		DevicePtr device() const;
-		bool is_null() const;
+        DevicePtr device() const;
+        bool is_null() const;
 
-		usize byte_size() const;
-		usize byte_offset() const;
+        usize byte_size() const;
+        usize byte_offset() const;
 
-		VkBuffer vk_buffer() const;
+        VkBuffer vk_buffer() const;
 
-		DeviceMemoryView device_memory() const;
+        DeviceMemoryView device_memory() const;
 
-		VkDescriptorBufferInfo descriptor_info() const;
-		VkMappedMemoryRange vk_memory_range() const;
+        VkDescriptorBufferInfo descriptor_info() const;
+        VkMappedMemoryRange vk_memory_range() const;
 
-	protected:
-		static usize alignment_for_usage(DevicePtr dptr, BufferUsage usage);
+    protected:
+        static usize alignment_for_usage(DevicePtr dptr, BufferUsage usage);
 
-	private:
-		usize _size = 0;
-		usize _offset = 0;
-		NotOwner<VkBuffer> _buffer = {};
-		DeviceMemoryView _memory;
+    private:
+        usize _size = 0;
+        usize _offset = 0;
+        NotOwner<VkBuffer> _buffer = {};
+        DeviceMemoryView _memory;
 };
 
 // in this case it's ok
@@ -65,3 +65,4 @@ class SubBufferBase {
 }
 
 #endif // YAVE_GRAPHICS_BUFFERS_SUBBUFFERBASE_H
+

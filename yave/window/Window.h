@@ -45,50 +45,51 @@ using LRESULT_ = long long int;
 #endif
 
 class Window : NonMovable {
-	public:
-		enum Flags {
-			NoFlags = 0,
-			Resizable = 0x01
-		};
+    public:
+        enum Flags {
+            NoFlags = 0,
+            Resizable = 0x01
+        };
 
 
-		Window(const math::Vec2ui& size, const core::String& name, Flags flags = NoFlags);
-		virtual ~Window();
+        Window(const math::Vec2ui& size, const core::String& name, Flags flags = NoFlags);
+        virtual ~Window();
 
-		void close();
-		bool update();
+        void close();
+        bool update();
 
-		void show();
+        void show();
 
 #ifdef Y_OS_WIN
-		HINSTANCE_ instance() const { return _hinstance; }
-		HWND_ handle() const { return _hwnd; }
+        HINSTANCE_ instance() const { return _hinstance; }
+        HWND_ handle() const { return _hwnd; }
 #endif
 
-		const math::Vec2ui& size() const;
-		math::Vec2ui position() const;
+        const math::Vec2ui& size() const;
+        math::Vec2ui position() const;
 
-		void set_event_handler(std::unique_ptr<EventHandler> handler);
-		EventHandler* event_handler() const;
+        void set_event_handler(std::unique_ptr<EventHandler> handler);
+        EventHandler* event_handler() const;
 
-	protected:
-		virtual void resized() {
-		}
+    protected:
+        virtual void resized() {
+        }
 
-	private:
+    private:
 #ifdef Y_OS_WIN
-		friend void set_window_size(Window* win, const math::Vec2ui& size);
-		HINSTANCE_ _hinstance;
-		HWND_ _hwnd;
-		bool _run;
+        friend void set_window_size(Window* win, const math::Vec2ui& size);
+        HINSTANCE_ _hinstance;
+        HWND_ _hwnd;
+        bool _run;
 #endif
 
-		math::Vec2ui _size;
-		core::String _name;
+        math::Vec2ui _size;
+        core::String _name;
 
-		mutable std::unique_ptr<EventHandler> _event_handler;
+        mutable std::unique_ptr<EventHandler> _event_handler;
 };
 
 }
 
 #endif // YAVE_WINDOW_WINDOW_H
+

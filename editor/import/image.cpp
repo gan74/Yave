@@ -32,26 +32,27 @@ namespace editor {
 namespace import {
 
 Named<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {
-	y_profile();
+    y_profile();
 
-	int width, height, bpp;
-	u8* data = stbi_load(filename.data(), &width, &height, &bpp, 4);
-	y_defer(stbi_image_free(data););
+    int width, height, bpp;
+    u8* data = stbi_load(filename.data(), &width, &height, &bpp, 4);
+    y_defer(stbi_image_free(data););
 
-	if(!data) {
-		y_throw_msg(fmt_c_str("Unable to load image \"%\".", filename));
-	}
+    if(!data) {
+        y_throw_msg(fmt_c_str("Unable to load image \"%\".", filename));
+    }
 
-	ImageData img(math::Vec2ui(width, height), data, VK_FORMAT_R8G8B8A8_UNORM);
-	if((flags & ImageImportFlags::GenerateMipmaps) == ImageImportFlags::GenerateMipmaps) {
-		img = compute_mipmaps(img);
-	}
-	return {clean_asset_name(filename), std::move(img)};
+    ImageData img(math::Vec2ui(width, height), data, VK_FORMAT_R8G8B8A8_UNORM);
+    if((flags & ImageImportFlags::GenerateMipmaps) == ImageImportFlags::GenerateMipmaps) {
+        img = compute_mipmaps(img);
+    }
+    return {clean_asset_name(filename), std::move(img)};
 }
 
 core::String supported_image_extensions() {
-	return "*.jpg;*.jpeg;*.png;*.bmp;*.psd;*.tga;*.gif;*.hdr;*.pic;*.ppm;*.pgm";
+    return "*.jpg;*.jpeg;*.png;*.bmp;*.psd;*.tga;*.gif;*.hdr;*.pic;*.ppm;*.pgm";
 }
 
 }
 }
+

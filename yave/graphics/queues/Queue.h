@@ -33,41 +33,42 @@ namespace yave {
 
 class Queue : NonCopyable, public DeviceLinked {
 
-	public:
-		Queue() = default;
-		Queue(Queue&&) = default;
-		Queue& operator=(Queue&&) = default;
+    public:
+        Queue() = default;
+        Queue(Queue&&) = default;
+        Queue& operator=(Queue&&) = default;
 
-		~Queue();
+        ~Queue();
 
-		VkQueue vk_queue() const;
+        VkQueue vk_queue() const;
 
-		void wait() const;
+        void wait() const;
 
-		Semaphore submit_sem(RecordedCmdBuffer&& cmd) const;
+        Semaphore submit_sem(RecordedCmdBuffer&& cmd) const;
 
-		template<typename SyncPolicy>
-		void submit(RecordedCmdBuffer&& cmd, const SyncPolicy& policy = SyncPolicy()) const {
-			y_profile();
-			submit_base(cmd);
-			policy(cmd);
-		}
+        template<typename SyncPolicy>
+        void submit(RecordedCmdBuffer&& cmd, const SyncPolicy& policy = SyncPolicy()) const {
+            y_profile();
+            submit_base(cmd);
+            policy(cmd);
+        }
 
-		std::mutex& lock() const {
-			return *_lock;
-		}
+        std::mutex& lock() const {
+            return *_lock;
+        }
 
-	private:
-		friend class QueueFamily;
+    private:
+        friend class QueueFamily;
 
-		Queue(DevicePtr dptr, VkQueue queue);
+        Queue(DevicePtr dptr, VkQueue queue);
 
-		void submit_base(CmdBufferBase& base) const;
+        void submit_base(CmdBufferBase& base) const;
 
-		SwapMove<VkQueue> _queue;
-		std::unique_ptr<std::mutex> _lock;
+        SwapMove<VkQueue> _queue;
+        std::unique_ptr<std::mutex> _lock;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_QUEUES_QUEUE_H
+

@@ -27,24 +27,25 @@ SOFTWARE.
 namespace yave {
 
 enum class MemoryType {
-	DontCare = 0,
-	DeviceLocal = 1,
-	CpuVisible = 2,
-	Staging = 3
+    DontCare = 0,
+    DeviceLocal = 1,
+    CpuVisible = 2,
+    Staging = 3
 };
 
 inline constexpr bool is_cpu_visible(MemoryType type) {
-	return type == MemoryType::CpuVisible || type == MemoryType::Staging;
+    return type == MemoryType::CpuVisible || type == MemoryType::Staging;
 }
 
 inline constexpr bool require_staging(MemoryType type) {
-	return !is_cpu_visible(type);
+    return !is_cpu_visible(type);
 }
 
 inline constexpr bool is_memory_type_compatible(MemoryType from, MemoryType to) {
-	return to == MemoryType::DontCare || from == to || (is_cpu_visible(from) && is_cpu_visible(to));
+    return to == MemoryType::DontCare || from == to || (is_cpu_visible(from) && is_cpu_visible(to));
 }
 
 }
 
 #endif // YAVE_GRAPHICS_MEMORY_MEMORYTYPE_H
+

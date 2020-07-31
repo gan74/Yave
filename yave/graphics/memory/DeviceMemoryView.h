@@ -29,23 +29,24 @@ SOFTWARE.
 namespace yave {
 
 class DeviceMemoryView : public DeviceLinked {
-	public:
-		DeviceMemoryView() = default;
-		DeviceMemoryView(const DeviceMemory& mem);
+    public:
+        DeviceMemoryView() = default;
+        DeviceMemoryView(const DeviceMemory& mem);
 
-		VkMappedMemoryRange vk_mapped_range(usize size, usize offset = 0) const;
-		VkDeviceMemory vk_memory() const;
-		usize vk_offset() const;
+        VkMappedMemoryRange vk_mapped_range(usize size, usize offset = 0) const;
+        VkDeviceMemory vk_memory() const;
+        usize vk_offset() const;
 
-		void* map();
-		void unmap();
+        void* map();
+        void unmap();
 
-	private:
-		NotOwner<DeviceMemoryHeapBase*> _heap = nullptr;
-		VkDeviceMemory _memory = {};
-		usize _offset;
+    private:
+        NotOwner<DeviceMemoryHeapBase*> _heap = nullptr;
+        VkDeviceMemory _memory = {};
+        usize _offset;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_MEMORY_DEVICEMEMORYVIEW_H
+

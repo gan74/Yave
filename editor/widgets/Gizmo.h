@@ -27,48 +27,49 @@ SOFTWARE.
 namespace editor {
 
 class Gizmo final : public ContextLinked {
-	public:
-		enum Mode {
-			Translate,
-			Rotate,
-		};
+    public:
+        enum Mode {
+            Translate,
+            Rotate,
+        };
 
-		enum Space {
-			World,
-			Local,
-		};
+        enum Space {
+            World,
+            Local,
+        };
 
-		Gizmo(ContextPtr cptr, SceneView* view);
+        Gizmo(ContextPtr cptr, SceneView* view);
 
-		void draw();
+        void draw();
 
-		bool is_dragging() const;
-		void set_allow_drag(bool allow);
+        bool is_dragging() const;
+        void set_allow_drag(bool allow);
 
-		Mode mode() const;
-		void set_mode(Mode mode);
+        Mode mode() const;
+        void set_mode(Mode mode);
 
-		Space space() const;
-		void set_space(Space space);
+        Space space() const;
+        void set_space(Space space);
 
-	private:
+    private:
 
-		math::Vec3 to_screen_pos(const math::Vec3& world);
-		math::Vec2 to_window_pos(const math::Vec3& world);
+        math::Vec3 to_screen_pos(const math::Vec3& world);
+        math::Vec2 to_window_pos(const math::Vec3& world);
 
-		SceneView* _scene_view = nullptr;
+        SceneView* _scene_view = nullptr;
 
-		usize _rotation_axis = usize(-1);
-		float _rotation_offset;
+        usize _rotation_axis = usize(-1);
+        float _rotation_offset;
 
-		math::Vec3 _dragging_offset;
-		u32 _dragging_mask = 0;
+        math::Vec3 _dragging_offset;
+        u32 _dragging_mask = 0;
 
-		bool _allow_drag = true;
-		Mode _mode = Translate;
-		Space _space = World;
+        bool _allow_drag = true;
+        Mode _mode = Translate;
+        Space _space = World;
 };
 
 }
 
 #endif // EDITOR_WIDGETS_GIZMO_H
+

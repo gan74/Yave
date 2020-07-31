@@ -25,36 +25,37 @@ SOFTWARE.
 namespace yave {
 
 math::Vec3& PointLightComponent::color() {
-	return _color;
+    return _color;
 }
 
 const math::Vec3& PointLightComponent::color() const {
-	return _color;
+    return _color;
 }
 
 float& PointLightComponent::intensity() {
-	return _intensity;
+    return _intensity;
 }
 
 float PointLightComponent::intensity() const {
-	return _intensity;
+    return _intensity;
 }
 
 float& PointLightComponent::radius() {
-	return _radius;
+    return _radius;
 }
 
 float PointLightComponent::radius() const {
-	return _radius;
+    return _radius;
 }
 
 float& PointLightComponent::falloff() {
-	return _falloff;
+    return _falloff;
 }
 
 float PointLightComponent::falloff() const {
-	return _falloff;
+    return _falloff;
 }
 
 
 }
+

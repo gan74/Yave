@@ -30,43 +30,44 @@ SOFTWARE.
 namespace editor {
 
 PerformanceMetrics::PerformanceMetrics(ContextPtr cptr) : Widget("Performance", ImGuiWindowFlags_AlwaysAutoResize), ContextLinked(cptr) {
-	std::fill(_frames.begin(), _frames.end(), 0.0f);
-	std::fill(_average.begin(), _average.end(), 0.0f);
+    std::fill(_frames.begin(), _frames.end(), 0.0f);
+    std::fill(_average.begin(), _average.end(), 0.0f);
 }
 
 void PerformanceMetrics::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-	const float ms = float(_timer.reset().to_millis());
-	const float avg = float(_total / _frames.size());
+    const float ms = float(_timer.reset().to_millis());
+    const float avg = float(_total / _frames.size());
 
-	_total = _total - _frames[_current_frame] + ms;
-	_frames[_current_frame] = ms;
-	_current_frame = (_current_frame + 1) % _frames.size();
+    _total = _total - _frames[_current_frame] + ms;
+    _frames[_current_frame] = ms;
+    _current_frame = (_current_frame + 1) % _frames.size();
 
-	if(!_current_frame) {
-		_average[_current_average] = avg;
-		_current_average = (_current_average + 1) % _average.size();
+    if(!_current_frame) {
+        _average[_current_average] = avg;
+        _current_average = (_current_average + 1) % _average.size();
 
-		double sum = 0;
-		usize samples = 0;
-		for(float t : _average) {
-			if(t > 0.0f) {
-				sum += t;
-				++samples;
-			}
-		}
-		_max = (samples ? float(sum / samples) : 16.0f) * 2.0f;
-	}
+        double sum = 0;
+        usize samples = 0;
+        for(float t : _average) {
+            if(t > 0.0f) {
+                sum += t;
+                ++samples;
+            }
+        }
+        _max = (samples ? float(sum / samples) : 16.0f) * 2.0f;
+    }
 
-	ImGui::Text("Average time: %.2fms", avg);
-	ImGui::SetNextItemWidth(-1);
-	ImGui::PlotLines("##averages", _average.data(), _average.size(), _current_average, "", 0.0f, _max, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
+    ImGui::Text("Average time: %.2fms", avg);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::PlotLines("##averages", _average.data(), _average.size(), _current_average, "", 0.0f, _max, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 
-	ImGui::Text("Frame time: %.2fms", ms);
-	ImGui::SetNextItemWidth(-1);
-	ImGui::PlotLines("##frames", _frames.data(), _frames.size(), _current_frame, "", 0.0f, _max, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
+    ImGui::Text("Frame time: %.2fms", ms);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::PlotLines("##frames", _frames.data(), _frames.size(), _current_frame, "", 0.0f, _max, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 
-	ImGui::Text("%.3u resources waiting deletion", unsigned(lifetime_manager(device()).pending_deletions()));
-	ImGui::Text("%.3u active command buffers", unsigned(lifetime_manager(device()).active_cmd_buffers()));
+    ImGui::Text("%.3u resources waiting deletion", unsigned(lifetime_manager(device()).pending_deletions()));
+    ImGui::Text("%.3u active command buffers", unsigned(lifetime_manager(device()).active_cmd_buffers()));
 }
 
 }
+

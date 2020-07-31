@@ -27,24 +27,25 @@ SOFTWARE.
 namespace editor {
 
 class AssetSelector final : public ResourceBrowser {
-	public:
-		AssetSelector(ContextPtr ctx, AssetType filter);
+    public:
+        AssetSelector(ContextPtr ctx, AssetType filter);
 
-		template<typename F>
-		void set_selected_callback(F&& func) {
-			_selected = y_fwd(func);
-		}
+        template<typename F>
+        void set_selected_callback(F&& func) {
+            _selected = y_fwd(func);
+        }
 
-	protected:
-		void asset_selected(AssetId id) override;
+    protected:
+        void asset_selected(AssetId id) override;
 
-		core::Result<core::String> entry_icon(const core::String& full_name, EntryType type) const override;
+        core::Result<core::String> entry_icon(const core::String& full_name, EntryType type) const override;
 
-	private:
-		AssetType _filter;
-		std::function<bool(AssetId)> _selected = [](const auto&) { return false; };
+    private:
+        AssetType _filter;
+        std::function<bool(AssetId)> _selected = [](const auto&) { return false; };
 };
 
 }
 
 #endif // EDITOR_WIDGETS_ASSETSELECTOR_H
+

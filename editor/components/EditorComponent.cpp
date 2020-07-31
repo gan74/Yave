@@ -28,15 +28,16 @@ EditorComponent::EditorComponent(std::string_view name) : _name(name) {
 }
 
 const core::String& EditorComponent::name() const {
-	return _name;
+    return _name;
 }
 
 void EditorComponent::set_name(core::String name) {
-	_name = std::move(name);
+    _name = std::move(name);
 }
 
 math::Vec3& EditorComponent::euler() {
-	return _euler;
+    return _euler;
 }
 
 }
+

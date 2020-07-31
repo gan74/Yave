@@ -31,28 +31,29 @@ static thread_local const char* thread_name = nullptr;
 }
 
 StaticThreadPool& default_thread_pool() {
-	static StaticThreadPool _pool;
-	return _pool;
+    static StaticThreadPool _pool;
+    return _pool;
 }
 
 u32 thread_id() {
-	static std::atomic<u32> id = 0;
-	static thread_local u32 tid = ++id;
-	return tid;
+    static std::atomic<u32> id = 0;
+    static thread_local u32 tid = ++id;
+    return tid;
 }
 
 const char* set_thread_name(const char* thread_name) {
-	// Force to generate id
-	thread_id();
+    // Force to generate id
+    thread_id();
 
-	const char* prev = detail::thread_name;
-	detail::thread_name = thread_name;
-	return prev;
+    const char* prev = detail::thread_name;
+    detail::thread_name = thread_name;
+    return prev;
 }
 
 const char* thread_name() {
-	return detail::thread_name;
+    return detail::thread_name;
 }
 
 }
 }
+

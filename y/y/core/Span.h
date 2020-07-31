@@ -37,94 +37,94 @@ namespace core {
 template<typename T>
 class MutableSpan {
 
-	template<typename U>
-	static constexpr bool is_compat = std::is_constructible_v<T*, U>;
+    template<typename U>
+    static constexpr bool is_compat = std::is_constructible_v<T*, U>;
 
-	template<typename C>
-	using data_type = decltype(std::declval<C>().data());
+    template<typename C>
+    using data_type = decltype(std::declval<C>().data());
 
-	public:
-		using value_type = T;
-		using iterator = T*;
-		using const_iterator = const T*;
+    public:
+        using value_type = T;
+        using iterator = T*;
+        using const_iterator = const T*;
 
-		constexpr MutableSpan() = default;
+        constexpr MutableSpan() = default;
 
-		constexpr MutableSpan(const MutableSpan&) = default;
-		constexpr MutableSpan& operator=(const MutableSpan&) = default;
+        constexpr MutableSpan(const MutableSpan&) = default;
+        constexpr MutableSpan& operator=(const MutableSpan&) = default;
 
-		constexpr MutableSpan(std::nullptr_t) {
-		}
+        constexpr MutableSpan(std::nullptr_t) {
+        }
 
-		constexpr MutableSpan(T& t) : _data(&t), _size(1) {
-		}
+        constexpr MutableSpan(T& t) : _data(&t), _size(1) {
+        }
 
-		constexpr MutableSpan(T* data, usize size) : _data(data), _size(size) {
-		}
+        constexpr MutableSpan(T* data, usize size) : _data(data), _size(size) {
+        }
 
-		template<usize N>
-		constexpr MutableSpan(T (&arr)[N]) : _data(arr), _size(N) {
-		}
+        template<usize N>
+        constexpr MutableSpan(T (&arr)[N]) : _data(arr), _size(N) {
+        }
 
-		template<usize N>
-		constexpr MutableSpan(std::array<T, N>& arr) : _data(arr.data()), _size(N) {
-		}
+        template<usize N>
+        constexpr MutableSpan(std::array<T, N>& arr) : _data(arr.data()), _size(N) {
+        }
 
-		constexpr MutableSpan(std::initializer_list<T> l) : _data(l.begin()), _size(l.size()) {
-		}
+        constexpr MutableSpan(std::initializer_list<T> l) : _data(l.begin()), _size(l.size()) {
+        }
 
-		template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
-		constexpr MutableSpan(C&& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
-		}
+        template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
+        constexpr MutableSpan(C&& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
+        }
 
-		constexpr usize size() const {
-			return _size;
-		}
+        constexpr usize size() const {
+            return _size;
+        }
 
-		constexpr bool is_empty() const {
-			return !_size;
-		}
+        constexpr bool is_empty() const {
+            return !_size;
+        }
 
-		constexpr T* data() {
-			return _data;
-		}
+        constexpr T* data() {
+            return _data;
+        }
 
-		constexpr const T* data() const {
-			return _data;
-		}
+        constexpr const T* data() const {
+            return _data;
+        }
 
-		constexpr iterator begin() {
-			return _data;
-		}
+        constexpr iterator begin() {
+            return _data;
+        }
 
-		constexpr iterator end() {
-			return _data + _size;
-		}
+        constexpr iterator end() {
+            return _data + _size;
+        }
 
-		constexpr const_iterator begin() const {
-			return _data;
-		}
+        constexpr const_iterator begin() const {
+            return _data;
+        }
 
-		constexpr const_iterator end() const {
-			return _data + _size;
-		}
+        constexpr const_iterator end() const {
+            return _data + _size;
+        }
 
-		constexpr const_iterator cbegin() const {
-			return _data;
-		}
+        constexpr const_iterator cbegin() const {
+            return _data;
+        }
 
-		constexpr const_iterator cend() const {
-			return _data + _size;
-		}
+        constexpr const_iterator cend() const {
+            return _data + _size;
+        }
 
-		constexpr T& operator[](usize i) const {
-			y_debug_assert(i < size());
-			return _data[i];
-		}
+        constexpr T& operator[](usize i) const {
+            y_debug_assert(i < size());
+            return _data[i];
+        }
 
-	private:
-		NotOwner<T*> _data = nullptr;
-		usize _size = 0;
+    private:
+        NotOwner<T*> _data = nullptr;
+        usize _size = 0;
 
 };
 
@@ -139,3 +139,4 @@ using Span = MutableSpan<const T>;
 #endif
 
 #endif // Y_CORE_SPAN_H
+

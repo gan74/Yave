@@ -32,42 +32,43 @@ namespace editor {
 
 class SceneImporter final : public Widget, public ContextLinked {
 
-	enum class State {
-		Browsing,
-		Settings,
-		Importing,
-		Done,
-	};
+    enum class State {
+        Browsing,
+        Settings,
+        Importing,
+        Done,
+    };
 
-	public:
-		SceneImporter(ContextPtr ctx, const core::String& import_path = ".");
+    public:
+        SceneImporter(ContextPtr ctx, const core::String& import_path = ".");
 
-	private:
-		bool can_destroy() const override;
-		bool done_loading() const;
+    private:
+        bool can_destroy() const override;
+        bool done_loading() const;
 
-		void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
-		void paint_import_settings();
+        void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
+        void paint_import_settings();
 
-		void import(import::SceneData scene);
+        void import(import::SceneData scene);
 
-		State _state = State::Browsing;
+        State _state = State::Browsing;
 
-		FileBrowser _browser;
+        FileBrowser _browser;
 
-		core::String _import_path;
-		core::String _filename;
+        core::String _import_path;
+        core::String _filename;
 
-		import::SceneImportFlags _flags = import::SceneImportFlags::ImportAll;
+        import::SceneImportFlags _flags = import::SceneImportFlags::ImportAll;
 
-		usize _forward_axis = 0;
-		usize _up_axis = 4;
+        usize _forward_axis = 0;
+        usize _up_axis = 4;
 
-		float _scale = 1.0f;
+        float _scale = 1.0f;
 
-		std::future<void> _import_future;
+        std::future<void> _import_future;
 };
 
 }
 
 #endif // EDITOR_WIDGETS_SCENEIMPORTER_H
+

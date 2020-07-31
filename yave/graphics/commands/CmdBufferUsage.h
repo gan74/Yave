@@ -29,7 +29,7 @@ SOFTWARE.
 namespace yave {
 
 enum class CmdBufferUsage {
-	Disposable = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+    Disposable = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 };
 
 class CmdBufferBase;
@@ -47,3 +47,4 @@ class CmdBufferRecorder;
 }
 
 #endif // YAVE_GRAPHICS_COMMANDS_CMDBUFFERUSAGE_H
+

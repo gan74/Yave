@@ -33,116 +33,116 @@ class CmdBufferDataProxy;
 
 class ResourceFence {
 public:
-	ResourceFence() = default;
+    ResourceFence() = default;
 
-	bool operator==(const ResourceFence& other) const {
-		return _value == other._value;
-	}
+    bool operator==(const ResourceFence& other) const {
+        return _value == other._value;
+    }
 
-	bool operator!=(const ResourceFence& other) const {
-		return _value != other._value;
-	}
-
-
-	bool operator<(const ResourceFence& other) const {
-		return _value < other._value;
-	}
-
-	bool operator<=(const ResourceFence& other) const {
-		return _value <= other._value;
-	}
+    bool operator!=(const ResourceFence& other) const {
+        return _value != other._value;
+    }
 
 
-	bool operator>(const ResourceFence& other) const {
-		return _value > other._value;
-	}
+    bool operator<(const ResourceFence& other) const {
+        return _value < other._value;
+    }
 
-	bool operator>=(const ResourceFence& other) const {
-		return _value >= other._value;
-	}
+    bool operator<=(const ResourceFence& other) const {
+        return _value <= other._value;
+    }
+
+
+    bool operator>(const ResourceFence& other) const {
+        return _value > other._value;
+    }
+
+    bool operator>=(const ResourceFence& other) const {
+        return _value >= other._value;
+    }
 
 
 private:
-	friend class LifetimeManager;
+    friend class LifetimeManager;
 
-	ResourceFence(u64 v) : _value(v) {
-	}
+    ResourceFence(u64 v) : _value(v) {
+    }
 
-	u64 _value = 0;
+    u64 _value = 0;
 };
 
 
 
 class CmdBufferData final : NonCopyable {
 
-	struct KeepAlive : NonCopyable {
-		virtual ~KeepAlive() {}
-	};
+    struct KeepAlive : NonCopyable {
+        virtual ~KeepAlive() {}
+    };
 
-	public:
-		CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPoolBase* p);
+    public:
+        CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPoolBase* p);
 
-		CmdBufferData() = default;
+        CmdBufferData() = default;
 
-		CmdBufferData(CmdBufferData&& other);
-		CmdBufferData& operator=(CmdBufferData&& other);
+        CmdBufferData(CmdBufferData&& other);
+        CmdBufferData& operator=(CmdBufferData&& other);
 
-		~CmdBufferData();
+        ~CmdBufferData();
 
-		DevicePtr device() const;
-		bool is_null() const;
+        DevicePtr device() const;
+        bool is_null() const;
 
-		CmdBufferPoolBase* pool() const;
-		ResourceFence resource_fence() const;
+        CmdBufferPoolBase* pool() const;
+        ResourceFence resource_fence() const;
 
-		VkCommandBuffer vk_cmd_buffer() const;
-		VkFence vk_fence() const;
+        VkCommandBuffer vk_cmd_buffer() const;
+        VkFence vk_fence() const;
 
-		void reset();
-		void release_resources();
+        void reset();
+        void release_resources();
 
-		void wait_for(const Semaphore& sem);
+        void wait_for(const Semaphore& sem);
 
-		template<typename T>
-		void keep_alive(T&& t) {
-			struct Box : KeepAlive {
-				Box(T&& t) : _t(y_fwd(t)) {}
-				~Box() override {}
-				std::remove_reference_t<T> _t;
-			};
-			_keep_alive.emplace_back(std::make_unique<Box>(y_fwd(t)));
-		}
+        template<typename T>
+        void keep_alive(T&& t) {
+            struct Box : KeepAlive {
+                Box(T&& t) : _t(y_fwd(t)) {}
+                ~Box() override {}
+                std::remove_reference_t<T> _t;
+            };
+            _keep_alive.emplace_back(std::make_unique<Box>(y_fwd(t)));
+        }
 
 
-	private:
-		friend class Queue;
-		void swap(CmdBufferData& other);
+    private:
+        friend class Queue;
+        void swap(CmdBufferData& other);
 
-		VkCommandBuffer _cmd_buffer = {};
-		VkFence _fence = {};
+        VkCommandBuffer _cmd_buffer = {};
+        VkFence _fence = {};
 
-		core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
-		CmdBufferPoolBase* _pool = nullptr;
+        core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
+        CmdBufferPoolBase* _pool = nullptr;
 
-		Semaphore _signal;
-		core::Vector<Semaphore> _waits;
+        Semaphore _signal;
+        core::Vector<Semaphore> _waits;
 
-		ResourceFence _resource_fence;
+        ResourceFence _resource_fence;
 };
 
 
 class CmdBufferDataProxy : NonMovable {
 
-	public:
-		CmdBufferDataProxy() = default;
-		CmdBufferDataProxy(CmdBufferData&& d);
+    public:
+        CmdBufferDataProxy() = default;
+        CmdBufferDataProxy(CmdBufferData&& d);
 
-		~CmdBufferDataProxy();
+        ~CmdBufferDataProxy();
 
-		CmdBufferData& data();
+        CmdBufferData& data();
 
-	private:
-		CmdBufferData _data;
+    private:
+        CmdBufferData _data;
 
 };
 
@@ -150,3 +150,4 @@ class CmdBufferDataProxy : NonMovable {
 }
 
 #endif // YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
+

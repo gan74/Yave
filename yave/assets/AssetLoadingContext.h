@@ -27,29 +27,30 @@ SOFTWARE.
 namespace yave {
 
 class AssetLoadingContext {
-	public:
-		AssetLoadingContext(AssetLoader* loader);
-		AssetLoadingContext(AssetLoader* loader, AssetLoadingFlags flags/* = AssetLoadingFlags::None*/);
+    public:
+        AssetLoadingContext(AssetLoader* loader);
+        AssetLoadingContext(AssetLoader* loader, AssetLoadingFlags flags/* = AssetLoadingFlags::None*/);
 
-		template<typename T>
-		inline AssetPtr<T> load(AssetId id);
+        template<typename T>
+        inline AssetPtr<T> load(AssetId id);
 
-		template<typename T>
-		inline AssetPtr<T> load_async(AssetId id);
+        template<typename T>
+        inline AssetPtr<T> load_async(AssetId id);
 
-		const AssetDependencies& dependencies() const;
-		AssetLoader* parent() const;
+        const AssetDependencies& dependencies() const;
+        AssetLoader* parent() const;
 
-	private:
-		template<typename T>
-		friend class Loader;
+    private:
+        template<typename T>
+        friend class Loader;
 
-		friend class AssetLoader;
+        friend class AssetLoader;
 
-		AssetLoader* _parent;
-		AssetDependencies _dependencies;
+        AssetLoader* _parent;
+        AssetDependencies _dependencies;
 };
 
 }
 
 #endif // YAVE_ASSETS_ASSETLOADINGCONTEXT_H
+

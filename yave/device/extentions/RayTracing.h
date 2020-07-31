@@ -32,54 +32,55 @@ SOFTWARE.
 namespace yave {
 
 class RayTracing : public DeviceLinked, NonCopyable {
-	public:
-		class AccelerationStructure {
-			public:
-				AccelerationStructure() = default;
+    public:
+        class AccelerationStructure {
+            public:
+                AccelerationStructure() = default;
 
-				AccelerationStructure(AccelerationStructure&&) = default;
-				AccelerationStructure& operator=(AccelerationStructure&&) = default;
+                AccelerationStructure(AccelerationStructure&&) = default;
+                AccelerationStructure& operator=(AccelerationStructure&&) = default;
 
-				AccelerationStructure(const StaticMesh& mesh);
-				AccelerationStructure(DevicePtr dptr, core::Span<VkGeometryNV> geometries);
+                AccelerationStructure(const StaticMesh& mesh);
+                AccelerationStructure(DevicePtr dptr, core::Span<VkGeometryNV> geometries);
 
-				~AccelerationStructure();
+                ~AccelerationStructure();
 
-				DevicePtr device() const;
+                DevicePtr device() const;
 
-			private:
-				DeviceMemory _memory;
-				SwapMove<VkAccelerationStructureNV> _acceleration_structure;
-		};
+            private:
+                DeviceMemory _memory;
+                SwapMove<VkAccelerationStructureNV> _acceleration_structure;
+        };
 
 
-		static const char* extension_name();
+        static const char* extension_name();
 
-		RayTracing(DevicePtr dptr);
+        RayTracing(DevicePtr dptr);
 
-	private:
-		friend class AccelerationStructure;
+    private:
+        friend class AccelerationStructure;
 
-		PFN_vkCreateAccelerationStructureNV _create_acceleration_structure = nullptr;
-		PFN_vkDestroyAccelerationStructureNV _destroy_acceleration_structure = nullptr;
+        PFN_vkCreateAccelerationStructureNV _create_acceleration_structure = nullptr;
+        PFN_vkDestroyAccelerationStructureNV _destroy_acceleration_structure = nullptr;
 
-		PFN_vkGetAccelerationStructureMemoryRequirementsNV _acceleration_structure_memory_reqs = nullptr;
-		PFN_vkBindAccelerationStructureMemoryNV _bind_acceleration_structure_memory = nullptr;
+        PFN_vkGetAccelerationStructureMemoryRequirementsNV _acceleration_structure_memory_reqs = nullptr;
+        PFN_vkBindAccelerationStructureMemoryNV _bind_acceleration_structure_memory = nullptr;
 
-		PFN_vkCmdTraceRaysNV _trace_rays = nullptr;
+        PFN_vkCmdTraceRaysNV _trace_rays = nullptr;
 
-		/*PFN_vkGetAccelerationStructureMemoryRequirementsNV PFN_vkGetAccelerationStructureMemoryRequirementsNV = nullptr;
-		PFN_vkBindAccelerationStructureMemoryNV PFN_vkBindAccelerationStructureMemoryNV = nullptr;
-		PFN_vkCmdBuildAccelerationStructureNV PFN_vkCmdBuildAccelerationStructureNV = nullptr;
-		PFN_vkCmdCopyAccelerationStructureNV PFN_vkCmdCopyAccelerationStructureNV = nullptr;
-		PFN_vkCmdTraceRaysNV PFN_vkCmdTraceRaysNV = nullptr;
-		PFN_vkCreateRayTracingPipelinesNV PFN_vkCreateRayTracingPipelinesNV = nullptr;
-		PFN_vkGetRayTracingShaderGroupHandlesNV PFN_vkGetRayTracingShaderGroupHandlesNV = nullptr;
-		PFN_vkGetAccelerationStructureHandleNV PFN_vkGetAccelerationStructureHandleNV = nullptr;
-		PFN_vkCmdWriteAccelerationStructuresPropertiesNV PFN_vkCmdWriteAccelerationStructuresPropertiesNV = nullptr;
-		PFN_vkCompileDeferredNV PFN_vkCompileDeferredNV = nullptr;*/
+        /*PFN_vkGetAccelerationStructureMemoryRequirementsNV PFN_vkGetAccelerationStructureMemoryRequirementsNV = nullptr;
+        PFN_vkBindAccelerationStructureMemoryNV PFN_vkBindAccelerationStructureMemoryNV = nullptr;
+        PFN_vkCmdBuildAccelerationStructureNV PFN_vkCmdBuildAccelerationStructureNV = nullptr;
+        PFN_vkCmdCopyAccelerationStructureNV PFN_vkCmdCopyAccelerationStructureNV = nullptr;
+        PFN_vkCmdTraceRaysNV PFN_vkCmdTraceRaysNV = nullptr;
+        PFN_vkCreateRayTracingPipelinesNV PFN_vkCreateRayTracingPipelinesNV = nullptr;
+        PFN_vkGetRayTracingShaderGroupHandlesNV PFN_vkGetRayTracingShaderGroupHandlesNV = nullptr;
+        PFN_vkGetAccelerationStructureHandleNV PFN_vkGetAccelerationStructureHandleNV = nullptr;
+        PFN_vkCmdWriteAccelerationStructuresPropertiesNV PFN_vkCmdWriteAccelerationStructuresPropertiesNV = nullptr;
+        PFN_vkCompileDeferredNV PFN_vkCompileDeferredNV = nullptr;*/
 };
 
 }
 
 #endif // YAVE_DEVICE_EXTENTIONS_RAYTRACING_H
+

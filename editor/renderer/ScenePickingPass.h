@@ -29,16 +29,17 @@ SOFTWARE.
 namespace editor {
 
 struct ScenePickingPass {
-	static constexpr usize max_batch_size = 128 * 1024;
+    static constexpr usize max_batch_size = 128 * 1024;
 
-	SceneView scene_view;
+    SceneView scene_view;
 
-	FrameGraphImageId depth;
-	FrameGraphImageId id;
+    FrameGraphImageId depth;
+    FrameGraphImageId id;
 
-	static ScenePickingPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
+    static ScenePickingPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
 };
 
 }
 
 #endif // EDITOR_RENDERER_SCENEPICKINGPASS_H
+

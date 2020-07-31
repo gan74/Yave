@@ -29,71 +29,72 @@ SOFTWARE.
 namespace editor {
 
 class EditorResources final : NonMovable {
-	public:
-		enum SpirV {
-			DepthAlphaComp,
-			PickingComp,
+    public:
+        enum SpirV {
+            DepthAlphaComp,
+            PickingComp,
 
-			ImGuiFrag,
-			ImGuiBillBoardFrag,
-			PickingFrag,
-			EngineViewFrag,
-			WireFrameFrag,
+            ImGuiFrag,
+            ImGuiBillBoardFrag,
+            PickingFrag,
+            EngineViewFrag,
+            WireFrameFrag,
 
-			ScreenVert,
-			ImGuiVert,
-			ImGuiBillBoardVert,
-			PickingVert,
-			WireFrameVert,
+            ScreenVert,
+            ImGuiVert,
+            ImGuiBillBoardVert,
+            PickingVert,
+            WireFrameVert,
 
-			ImGuiBillBoardGeom,
+            ImGuiBillBoardGeom,
 
-			MaxSpirV
-		};
+            MaxSpirV
+        };
 
-		enum ComputePrograms {
-			DepthAlphaProgram,
-			PickingProgram,
+        enum ComputePrograms {
+            DepthAlphaProgram,
+            PickingProgram,
 
-			MaxComputePrograms
-		};
+            MaxComputePrograms
+        };
 
-		enum MaterialTemplates {
-			ImGuiMaterialTemplate,
-			ImGuiBillBoardMaterialTemplate,
+        enum MaterialTemplates {
+            ImGuiMaterialTemplate,
+            ImGuiBillBoardMaterialTemplate,
 
-			PickingMaterialTemplate,
-			ImGuiBillBoardPickingMaterialTemplate,
+            PickingMaterialTemplate,
+            ImGuiBillBoardPickingMaterialTemplate,
 
-			EngineViewMaterialTemplate,
+            EngineViewMaterialTemplate,
 
-			WireFrameMaterialTemplate,
+            WireFrameMaterialTemplate,
 
-			MaxMaterialTemplates
-		};
+            MaxMaterialTemplates
+        };
 
 
-		EditorResources(DevicePtr dptr);
+        EditorResources(DevicePtr dptr);
 
-		// can't default for inclusion reasons
-		~EditorResources();
+        // can't default for inclusion reasons
+        ~EditorResources();
 
-		DevicePtr device() const;
+        DevicePtr device() const;
 
-		const ComputeProgram& operator[](ComputePrograms i) const;
-		const MaterialTemplate* operator[](MaterialTemplates i) const;
+        const ComputeProgram& operator[](ComputePrograms i) const;
+        const MaterialTemplate* operator[](MaterialTemplates i) const;
 
-		void reload();
+        void reload();
 
-	private:
-		void load_resources(DevicePtr dptr);
+    private:
+        void load_resources(DevicePtr dptr);
 
-		std::unique_ptr<SpirVData[]> _spirv;
-		std::unique_ptr<ComputeProgram[]> _computes;
-		std::unique_ptr<MaterialTemplate[]> _material_templates;
+        std::unique_ptr<SpirVData[]> _spirv;
+        std::unique_ptr<ComputeProgram[]> _computes;
+        std::unique_ptr<MaterialTemplate[]> _material_templates;
 
 };
 
 }
 
 #endif // EDITOR_CONTEXT_EDITORRESOURCES_H
+

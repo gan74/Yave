@@ -40,76 +40,76 @@ class Property;
 
 template<typename T>
 struct IsProperty {
-	static constexpr bool value = false;
+    static constexpr bool value = false;
 };
 
 template<typename T, typename G, typename S>
 struct IsProperty<detail::Property<T, G, S>> {
-	static constexpr bool value = true;
+    static constexpr bool value = true;
 };
 
 template<typename T>
 struct IsRange {
-	static constexpr bool value = false;
+    static constexpr bool value = false;
 };
 
 template<typename T>
 struct IsRange<core::MutableSpan<T>> {
-	static constexpr bool value = true;
+    static constexpr bool value = true;
 };
 
 template<typename I, typename E>
 struct IsRange<core::Range<I, E>> {
-	static constexpr bool value = true;
+    static constexpr bool value = true;
 };
 
 
 template<typename T>
 struct IsTuple {
-	static constexpr bool value = false;
+    static constexpr bool value = false;
 };
 
 template<typename... Args>
 struct IsTuple<std::tuple<Args...>> {
-	static constexpr bool value = true;
+    static constexpr bool value = true;
 };
 
 template<typename A, typename B>
 struct IsTuple<std::pair<A, B>> {
-	static constexpr bool value = true;
+    static constexpr bool value = true;
 };
 
 
 template<typename T>
 struct StdPtr {
-	static constexpr bool is_std_ptr = false;
+    static constexpr bool is_std_ptr = false;
 };
 
 template<typename T>
 struct StdPtr<std::unique_ptr<T>> {
-	static constexpr bool is_std_ptr = true;
-	static auto make() {
-		return std::make_unique<T>();
-	}
+    static constexpr bool is_std_ptr = true;
+    static auto make() {
+        return std::make_unique<T>();
+    }
 };
 
 template<typename T>
 struct StdPtr<std::shared_ptr<T>> {
-	static constexpr bool is_std_ptr = true;
-	static auto make() {
-		return std::make_shared<T>();
-	}
+    static constexpr bool is_std_ptr = true;
+    static auto make() {
+        return std::make_shared<T>();
+    }
 };
 
 
 template<typename T>
 struct IsArray {
-	static constexpr bool value = false;
+    static constexpr bool value = false;
 };
 
 template<typename T, usize N>
 struct IsArray<std::array<T, N>> {
-	static constexpr bool value = true;
+    static constexpr bool value = true;
 };
 
 
@@ -126,11 +126,11 @@ static constexpr bool is_pod_base_v = std::is_trivially_copyable_v<remove_cvref_
 
 template<typename T>
 constexpr bool is_pod_iterable() {
-	if constexpr(is_iterable_v<T>) {
-		using value_type = decltype(*std::declval<T>().begin());
-		return is_pod_base_v<value_type>;
-	}
-	return true;
+    if constexpr(is_iterable_v<T>) {
+        using value_type = decltype(*std::declval<T>().begin());
+        return is_pod_base_v<value_type>;
+    }
+    return true;
 }
 
 }
@@ -156,11 +156,12 @@ static constexpr bool is_array_v = detail::IsArray<remove_cvref_t<T>>::value;
 
 template<typename T>
 auto make_std_ptr() {
-	static_assert(is_std_ptr_v<T>);
-	return detail::StdPtr<T>::make();
+    static_assert(is_std_ptr_v<T>);
+    return detail::StdPtr<T>::make();
 }
 
 }
 }
 
 #endif // Y_SERDE3_TRAITS_H
+

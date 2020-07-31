@@ -29,26 +29,27 @@ namespace yave {
 
 class DescriptorSet : public DescriptorSetBase, NonCopyable {
 
-	public:
-		DescriptorSet() = default;
+    public:
+        DescriptorSet() = default;
 
-		DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings);
-		~DescriptorSet();
+        DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings);
+        ~DescriptorSet();
 
-		DescriptorSet(DescriptorSet&& other);
-		DescriptorSet& operator=(DescriptorSet&& other);
+        DescriptorSet(DescriptorSet&& other);
+        DescriptorSet& operator=(DescriptorSet&& other);
 
-		DevicePtr device() const;
-		bool is_null() const;
+        DevicePtr device() const;
+        bool is_null() const;
 
-		VkDescriptorSetLayout vk_descriptor_set_layout() const;
+        VkDescriptorSetLayout vk_descriptor_set_layout() const;
 
-	private:
-		void swap(DescriptorSet& other);
+    private:
+        void swap(DescriptorSet& other);
 
-		DescriptorSetData _data;
+        DescriptorSetData _data;
 };
 
 }
 
 #endif // YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSET_H
+

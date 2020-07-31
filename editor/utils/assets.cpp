@@ -29,62 +29,63 @@ SOFTWARE.
 namespace editor {
 namespace detail {
 std::array<std::string_view, 2> asset_type_names(AssetType type) {
-	switch(type) {
-		case AssetType::Mesh:
-			return {"Mesh", "mesh"};
+    switch(type) {
+        case AssetType::Mesh:
+            return {"Mesh", "mesh"};
 
-		case AssetType::Image:
-			return {"Image", "image"};
+        case AssetType::Image:
+            return {"Image", "image"};
 
-		case AssetType::Animation:
-			return {"Animation", "animation"};
+        case AssetType::Animation:
+            return {"Animation", "animation"};
 
-		case AssetType::Font:
-			return {"Font", "font"};
+        case AssetType::Font:
+            return {"Font", "font"};
 
-		case AssetType::Scene:
-			return {"Scene", "scene"};
+        case AssetType::Scene:
+            return {"Scene", "scene"};
 
-		case AssetType::Material:
-			return {"Material", "material"};
+        case AssetType::Material:
+            return {"Material", "material"};
 
-		case AssetType::Prefab:
-			return {"Prefab", "prefab"};
+        case AssetType::Prefab:
+            return {"Prefab", "prefab"};
 
-		default:
-			break;
-	}
-	return {"Asset", "asset"};
+        default:
+            break;
+    }
+    return {"Asset", "asset"};
 }
 }
 
 std::string_view asset_type_name(AssetType type, bool plural, bool lowercase) {
-	std::string_view name = detail::asset_type_names(type)[lowercase];
-	if(plural) {
-		return fmt("%%", name, name[name.size() - 1] == 'h' ? "es" : "s");
-	}
-	return name;
+    std::string_view name = detail::asset_type_names(type)[lowercase];
+    if(plural) {
+        return fmt("%%", name, name[name.size() - 1] == 'h' ? "es" : "s");
+    }
+    return name;
 }
 
 
 std::string_view asset_type_icon(AssetType type) {
-	switch(type) {
-		case AssetType::Image:
-			return ICON_FA_IMAGE;
+    switch(type) {
+        case AssetType::Image:
+            return ICON_FA_IMAGE;
 
-		case AssetType::Mesh:
-			return ICON_FA_CUBE;
+        case AssetType::Mesh:
+            return ICON_FA_CUBE;
 
-		case AssetType::Material:
-			return ICON_FA_BRUSH;
+        case AssetType::Material:
+            return ICON_FA_BRUSH;
 
-		case AssetType::Prefab:
-			return ICON_FA_DATABASE;
+        case AssetType::Prefab:
+            return ICON_FA_DATABASE;
 
-		default:
-			return ICON_FA_QUESTION;
-	}
-	return ICON_FA_QUESTION;
+        default:
+            return ICON_FA_QUESTION;
+    }
+    return ICON_FA_QUESTION;
 }
 
 }
+

@@ -25,51 +25,52 @@ SOFTWARE.
 namespace yave {
 
 static VkImageLayout vk_layout(ImageUsage usage) {
-	if((usage & ImageUsage::SwapchainBit) != ImageUsage::None) {
-		return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	}
-	if((usage & ImageUsage::StorageBit) != ImageUsage::None) {
-		return VK_IMAGE_LAYOUT_GENERAL;
-	}
+    if((usage & ImageUsage::SwapchainBit) != ImageUsage::None) {
+        return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    }
+    if((usage & ImageUsage::StorageBit) != ImageUsage::None) {
+        return VK_IMAGE_LAYOUT_GENERAL;
+    }
 
-	const bool texture = (usage & ImageUsage::TextureBit) != ImageUsage::None;
-	if((usage & ImageUsage::TransferSrcBit) != ImageUsage::None) {
-		return texture ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-	}
-	if((usage & ImageUsage::TransferDstBit) != ImageUsage::None) {
-		return texture ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	}
+    const bool texture = (usage & ImageUsage::TextureBit) != ImageUsage::None;
+    if((usage & ImageUsage::TransferSrcBit) != ImageUsage::None) {
+        return texture ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    }
+    if((usage & ImageUsage::TransferDstBit) != ImageUsage::None) {
+        return texture ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    }
 
-	if(texture) {
-		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	}
+    if(texture) {
+        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
 
-	y_fatal("Undefined image layout.");
+    y_fatal("Undefined image layout.");
 }
 
 VkImageLayout vk_image_layout(ImageUsage usage) {
-	switch(usage) {
-		case ImageUsage::ColorBit:
-			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    switch(usage) {
+        case ImageUsage::ColorBit:
+            return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-		case ImageUsage::DepthBit:
-			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        case ImageUsage::DepthBit:
+            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-		case ImageUsage::DepthTexture:
-			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        case ImageUsage::DepthTexture:
+            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
-		case ImageUsage::TextureBit:
-			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        case ImageUsage::TextureBit:
+            return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-		case ImageUsage::SwapchainBit:
-			return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        case ImageUsage::SwapchainBit:
+            return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-		default:
-			break;
-	}
+        default:
+            break;
+    }
 
-	return vk_layout(usage);
+    return vk_layout(usage);
 }
 
 
 }
+

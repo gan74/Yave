@@ -29,99 +29,99 @@ FrameGraphPassBuilder::FrameGraphPassBuilder(FrameGraphPass* pass) : _pass(pass)
 }
 
 DevicePtr FrameGraphPassBuilder::device() const {
-	return parent()->device();
+    return parent()->device();
 }
 
 void FrameGraphPassBuilder::set_render_func(FrameGraphPass::render_func&& func) {
-	_pass->_render = std::move(func);
+    _pass->_render = std::move(func);
 }
 
 
 // --------------------------------- Declarations ---------------------------------
 
 FrameGraphMutableImageId FrameGraphPassBuilder::declare_image(ImageFormat format, const math::Vec2ui& size) {
-	return parent()->declare_image(format, size);
+    return parent()->declare_image(format, size);
 }
 
 FrameGraphMutableBufferId FrameGraphPassBuilder::declare_buffer(usize byte_size) {
-	return parent()->declare_buffer(byte_size);
+    return parent()->declare_buffer(byte_size);
 }
 
 FrameGraphMutableImageId FrameGraphPassBuilder::declare_copy(FrameGraphImageId src) {
-	const auto& src_info = parent()->info(src);
-	const auto res = declare_image(src_info.format, src_info.size);
+    const auto& src_info = parent()->info(src);
+    const auto res = declare_image(src_info.format, src_info.size);
 
-	// copies are done before the pass proper so we don't set the stage
-	add_to_pass(src, ImageUsage::TransferSrcBit, false, PipelineStage::None);
-	add_to_pass(res, ImageUsage::TransferDstBit, true, PipelineStage::None);
+    // copies are done before the pass proper so we don't set the stage
+    add_to_pass(src, ImageUsage::TransferSrcBit, false, PipelineStage::None);
+    add_to_pass(res, ImageUsage::TransferDstBit, true, PipelineStage::None);
 
-	parent()->register_image_copy(res, src, _pass);
+    parent()->register_image_copy(res, src, _pass);
 
-	return res;
+    return res;
 }
 
 
 // --------------------------------- Usage ---------------------------------
 
 void FrameGraphPassBuilder::add_image_input_usage(FrameGraphImageId res, ImageUsage usage) {
-	add_to_pass(res, usage, false, PipelineStage::None);
+    add_to_pass(res, usage, false, PipelineStage::None);
 }
 
 
 // --------------------------------- Framebuffer ---------------------------------
 
 void FrameGraphPassBuilder::add_depth_output(FrameGraphMutableImageId res) {
-	// transition is done by the renderpass
-	add_to_pass(res, ImageUsage::DepthBit, true, PipelineStage::DepthAttachmentOutBit);
-	if(_pass->_depth.image.is_valid()) {
-		y_fatal("Pass already has a depth output.");
-	}
-	_pass->_depth = FrameGraphPass::Attachment{res};
+    // transition is done by the renderpass
+    add_to_pass(res, ImageUsage::DepthBit, true, PipelineStage::DepthAttachmentOutBit);
+    if(_pass->_depth.image.is_valid()) {
+        y_fatal("Pass already has a depth output.");
+    }
+    _pass->_depth = FrameGraphPass::Attachment{res};
 }
 
 void FrameGraphPassBuilder::add_color_output(FrameGraphMutableImageId res) {
-	// transition is done by the renderpass
-	add_to_pass(res, ImageUsage::ColorBit, true, PipelineStage::ColorAttachmentOutBit);
-	_pass->_colors << FrameGraphPass::Attachment{res};
+    // transition is done by the renderpass
+    add_to_pass(res, ImageUsage::ColorBit, true, PipelineStage::ColorAttachmentOutBit);
+    _pass->_colors << FrameGraphPass::Attachment{res};
 }
 
 
 // --------------------------------- Storage output ---------------------------------
 
 void FrameGraphPassBuilder::add_storage_output(FrameGraphMutableImageId res, usize ds_index, PipelineStage stage) {
-	add_to_pass(res, ImageUsage::StorageBit, true, stage);
-	add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_to_pass(res, ImageUsage::StorageBit, true, stage);
+    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
 void FrameGraphPassBuilder::add_storage_output(FrameGraphMutableBufferId res, usize ds_index, PipelineStage stage) {
-	add_to_pass(res, BufferUsage::StorageBit, true, stage);
-	add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_to_pass(res, BufferUsage::StorageBit, true, stage);
+    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
 
 // --------------------------------- Storage intput ---------------------------------
 
 void FrameGraphPassBuilder::add_storage_input(FrameGraphBufferId res, usize ds_index, PipelineStage stage) {
-	add_to_pass(res, BufferUsage::StorageBit, false, stage);
-	add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_to_pass(res, BufferUsage::StorageBit, false, stage);
+    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
 void FrameGraphPassBuilder::add_storage_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
-	add_to_pass(res, ImageUsage::StorageBit, false, stage);
-	add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_to_pass(res, ImageUsage::StorageBit, false, stage);
+    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
 
 // --------------------------------- Uniform input ---------------------------------
 
 void FrameGraphPassBuilder::add_uniform_input(FrameGraphBufferId res, usize ds_index, PipelineStage stage) {
-	add_to_pass(res, BufferUsage::UniformBit, false, stage);
-	add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
+    add_to_pass(res, BufferUsage::UniformBit, false, stage);
+    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
 }
 
 void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
-	add_to_pass(res, ImageUsage::TextureBit, false, stage);
-	add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
+    add_to_pass(res, ImageUsage::TextureBit, false, stage);
+    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
 }
 
 
@@ -129,70 +129,71 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_in
 
 Y_TODO(external framegraph resources are not synchronized)
 void FrameGraphPassBuilder::add_external_input(Descriptor desc, usize ds_index, PipelineStage) {
-	add_uniform(desc, ds_index);
+    add_uniform(desc, ds_index);
 }
 
 // --------------------------------- Attribs ---------------------------------
 
 void FrameGraphPassBuilder::add_attrib_input(FrameGraphBufferId res, PipelineStage stage) {
-	add_to_pass(res, BufferUsage::AttributeBit, false, stage);
+    add_to_pass(res, BufferUsage::AttributeBit, false, stage);
 }
 
 void FrameGraphPassBuilder::add_index_input(FrameGraphBufferId res, PipelineStage stage) {
-	add_to_pass(res, BufferUsage::IndexBit, false, stage);
+    add_to_pass(res, BufferUsage::IndexBit, false, stage);
 }
 
 
 // --------------------------------- stuff ---------------------------------
 
 void FrameGraphPassBuilder::add_descriptor_binding(Descriptor bind, usize ds_index) {
-	add_uniform(bind, ds_index);
+    add_uniform(bind, ds_index);
 }
 
 
 usize FrameGraphPassBuilder::next_descriptor_set_index() {
-	auto& bindings = _pass->_bindings;
-	bindings.emplace_back();
-	return bindings.size() - 1;
+    auto& bindings = _pass->_bindings;
+    bindings.emplace_back();
+    return bindings.size() - 1;
 }
 
 template<typename T>
 void set_stage(const FrameGraphPass* pass, T& info, PipelineStage stage) {
-	if(info.stage != PipelineStage::None) {
-		Y_TODO(This should be either one write or many reads)
-		y_fatal("Resource can only be used once per pass (used twice by \"%\", previous stage was %).", pass->name(), usize(info.stage));
-	}
-	info.stage = stage;
+    if(info.stage != PipelineStage::None) {
+        Y_TODO(This should be either one write or many reads)
+        y_fatal("Resource can only be used once per pass (used twice by \"%\", previous stage was %).", pass->name(), usize(info.stage));
+    }
+    info.stage = stage;
 }
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage, bool is_written, PipelineStage stage) {
-	res.check_valid();
-	auto& info = _pass->_images[res];
-	set_stage(_pass, info, stage);
-	parent()->register_usage(res, usage, is_written, _pass);
+    res.check_valid();
+    auto& info = _pass->_images[res];
+    set_stage(_pass, info, stage);
+    parent()->register_usage(res, usage, is_written, _pass);
 }
 
 void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usage, bool is_written, PipelineStage stage) {
-	res.check_valid();
-	auto& info = _pass->_buffers[res];
-	set_stage(_pass, info, stage);
-	parent()->register_usage(res, usage, is_written, _pass);
+    res.check_valid();
+    auto& info = _pass->_buffers[res];
+    set_stage(_pass, info, stage);
+    parent()->register_usage(res, usage, is_written, _pass);
 }
 
 void FrameGraphPassBuilder::add_uniform(FrameGraphDescriptorBinding binding, usize ds_index) {
-	auto& bindings = _pass->_bindings;
-	while(bindings.size() <= ds_index) {
-		bindings.emplace_back();
-	}
-	bindings[ds_index].push_back(binding);
+    auto& bindings = _pass->_bindings;
+    while(bindings.size() <= ds_index) {
+        bindings.emplace_back();
+    }
+    bindings[ds_index].push_back(binding);
 }
 
 void FrameGraphPassBuilder::set_cpu_visible(FrameGraphMutableBufferId res) {
-	parent()->set_cpu_visible(res, _pass);
+    parent()->set_cpu_visible(res, _pass);
 }
 
 FrameGraph* FrameGraphPassBuilder::parent() const {
-	return _pass->_parent;
+    return _pass->_parent;
 }
 
 }
+

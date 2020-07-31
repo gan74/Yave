@@ -28,47 +28,48 @@ using namespace y;
 using namespace memory;
 
 /*y_test_func("StackBlockAllocator basic") {
-	static constexpr usize size = align_up_to_max(1024);
-	StackBlockAllocator<size, Mallocator> allocator;
-	y_test_assert(allocator.allocate(size + 1) == nullptr);
+    static constexpr usize size = align_up_to_max(1024);
+    StackBlockAllocator<size, Mallocator> allocator;
+    y_test_assert(allocator.allocate(size + 1) == nullptr);
 
-	{
-		void* p = allocator.allocate(size);
-		y_test_assert(p);
-		y_test_assert(allocator.allocate(4) == nullptr);
-		allocator.deallocate(p, size);
-	}
+    {
+        void* p = allocator.allocate(size);
+        y_test_assert(p);
+        y_test_assert(allocator.allocate(4) == nullptr);
+        allocator.deallocate(p, size);
+    }
 
-	{
-		void* a = allocator.allocate(size / 2 - 2);
-		void* b = allocator.allocate(size / 2);
-		y_test_assert(a);
-		y_test_assert(b);
-		y_test_assert(allocator.allocate(1) == nullptr);
-		allocator.deallocate(b, size / 2);
-		allocator.deallocate(a, size / 2 - 1);
-	}
+    {
+        void* a = allocator.allocate(size / 2 - 2);
+        void* b = allocator.allocate(size / 2);
+        y_test_assert(a);
+        y_test_assert(b);
+        y_test_assert(allocator.allocate(1) == nullptr);
+        allocator.deallocate(b, size / 2);
+        allocator.deallocate(a, size / 2 - 1);
+    }
 }
 
 y_test_func("FixedSizeFreeListAllocator basic") {
-	static constexpr usize size = align_up_to_max(std::max(usize(8), max_alignment));
-	static constexpr usize min_size = size - max_alignment + 1;
-	//static_assert(align_up_to_max(size) == size);
+    static constexpr usize size = align_up_to_max(std::max(usize(8), max_alignment));
+    static constexpr usize min_size = size - max_alignment + 1;
+    //static_assert(align_up_to_max(size) == size);
 
-	FixedSizeFreeListAllocator<size, Mallocator> allocator;
+    FixedSizeFreeListAllocator<size, Mallocator> allocator;
 
-	y_test_assert(allocator.allocate(size + 1) == nullptr);
-	void* p1 = allocator.allocate(size);
-	void* p2 = allocator.allocate(min_size);
-	y_test_assert(p1);
-	y_test_assert(p2);
-	y_test_assert(p1 != p2);
+    y_test_assert(allocator.allocate(size + 1) == nullptr);
+    void* p1 = allocator.allocate(size);
+    void* p2 = allocator.allocate(min_size);
+    y_test_assert(p1);
+    y_test_assert(p2);
+    y_test_assert(p1 != p2);
 
-	allocator.deallocate(p1, size);
-	void* p3 = allocator.allocate(size - 1);
-	y_test_assert(p3 == p1);
+    allocator.deallocate(p1, size);
+    void* p3 = allocator.allocate(size - 1);
+    y_test_assert(p3 == p1);
 
-	allocator.deallocate(p3, size - 1);
-	allocator.deallocate(p2, min_size);
+    allocator.deallocate(p3, size - 1);
+    allocator.deallocate(p2, min_size);
 }*/
 }
+
