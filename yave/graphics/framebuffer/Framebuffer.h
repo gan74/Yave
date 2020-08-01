@@ -22,11 +22,11 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_FRAMEBUFFER_FRAMEBUFFER_H
 #define YAVE_GRAPHICS_FRAMEBUFFER_FRAMEBUFFER_H
 
-#include <yave/yave.h>
-
 #include "RenderPass.h"
 
 #include <yave/graphics/images/ImageView.h>
+
+#include <memory>
 
 namespace yave {
 

@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "IBLProbe.h"
+#include "ImageData.h"
 
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>

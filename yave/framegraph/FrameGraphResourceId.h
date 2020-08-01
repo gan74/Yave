@@ -23,10 +23,8 @@ SOFTWARE.
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHRECOURCEID_H
 
 #include <yave/yave.h>
-#include <yave/graphics/barriers/PipelineStage.h>
 
-#include "TransientImage.h"
-#include "TransientBuffer.h"
+#include <y/utils/hash.h>
 
 #include <typeindex>
 

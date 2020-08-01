@@ -23,23 +23,28 @@ SOFTWARE.
 #include "ThumbmailCache.h"
 
 #include <editor/context/EditorContext.h>
+
+#include <editor/utils/assets.h>
+#include <editor/utils/entities.h>
+
 #include <yave/renderer/renderer.h>
+#include <yave/framegraph/FrameGraph.h>
+#include <yave/framegraph/FrameGraphPass.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/device/Queue.h>
+#include <yave/graphics/images/ImageData.h>
+#include <yave/meshes/MeshData.h>
 
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
-
 #include <yave/entities/entities.h>
-#include <yave/utils/color.h>
 
+#include <yave/utils/color.h>
 #include <yave/utils/entities.h>
 
-#include <editor/utils/assets.h>
-#include <editor/utils/entities.h>
 
 #include <thread>
 

@@ -83,7 +83,7 @@ class DescriptorSetLayout : public DeviceLinked {
         VkDescriptorSetLayout vk_descriptor_set_layout() const;
 
     private:
-        VkDescriptorSetLayout _layout = {};
+        VkHandle<VkDescriptorSetLayout> _layout;
         std::array<u32, descriptor_type_count> _sizes = {};
 
         usize _inline_blocks = 0;
@@ -145,8 +145,8 @@ class DescriptorSetPool : NonMovable, public DeviceLinked {
         mutable concurrent::SpinLock _lock;
 
         std::array<VkDescriptorSet, pool_size> _sets;
-        VkDescriptorPool _pool = {};
-        VkDescriptorSetLayout _layout = {};
+        VkHandle<VkDescriptorPool> _pool;
+        VkHandle<VkDescriptorSetLayout> _layout;
 
         usize _inline_blocks = 0;
         usize _descriptor_buffer_size = 0;

@@ -21,11 +21,11 @@ SOFTWARE.
 **********************************/
 
 #include "FrameGraphFrameResources.h"
+#include "FrameGraphResourcePool.h"
 
 namespace yave {
 
 FrameGraphFrameResources::FrameGraphFrameResources(std::shared_ptr<FrameGraphResourcePool> pool) : _pool(pool) {
-
 }
 
 FrameGraphFrameResources::~FrameGraphFrameResources() {

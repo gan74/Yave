@@ -23,7 +23,7 @@ SOFTWARE.
 #define EDITOR_CONTEXT_PICKINGMANAGER_H
 
 #include <editor/editor.h>
-#include <yave/framegraph/FrameGraph.h>
+#include <yave/graphics/buffers/TypedWrapper.h>
 
 namespace editor {
 
@@ -34,6 +34,7 @@ class PickingManager : public ContextLinked {
     };
 
     using ReadBackBuffer = TypedBuffer<ReadBackData, BufferUsage::StorageBit, MemoryType::CpuVisible>;
+
     public:
         struct PickingData {
             const math::Vec3 world_pos;

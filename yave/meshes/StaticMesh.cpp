@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include "StaticMesh.h"
+#include "MeshData.h"
 
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>

@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_IMAGES_IMAGE_H
 #define YAVE_GRAPHICS_IMAGES_IMAGE_H
 
-#include <yave/yave.h>
 #include <yave/assets/AssetTraits.h>
 
 #include "ImageBase.h"

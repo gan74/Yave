@@ -26,7 +26,9 @@ SOFTWARE.
 #include <yave/graphics/shaders/SpirVData.h>
 #include <yave/graphics/shaders/ShaderModule.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
+#include <yave/graphics/images/ImageData.h>
 #include <yave/material/Material.h>
+#include <yave/material/MaterialTemplate.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/graphics/images/IBLProbe.h>

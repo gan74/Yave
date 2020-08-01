@@ -25,7 +25,9 @@ SOFTWARE.
 #include <yave/graphics/buffers/buffers.h>
 
 #include <yave/framegraph/FrameGraph.h>
-#include <yave/framegraph/FrameGraphPassBuilder.h>
+#include <yave/framegraph/FrameGraphPass.h>
+#include <yave/framegraph/FrameGraphFrameResources.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/ecs/ecs.h>
 #include <yave/components/TransformableComponent.h>

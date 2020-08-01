@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include "Material.h"
-#include "SimpleMaterialData.h"
+#include "MaterialTemplate.h"
 
 #include <yave/graphics/utils.h>
 #include <yave/graphics/device/DeviceResources.h>

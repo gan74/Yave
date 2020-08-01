@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "FrameGraphPass.h"
+#include "FrameGraphFrameResources.h"
 #include "FrameGraph.h"
 
 namespace yave {

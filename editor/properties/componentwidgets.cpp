@@ -23,8 +23,8 @@ SOFTWARE.
 #include "componentwidgets.h"
 
 #include <editor/context/EditorContext.h>
-
 #include <editor/components/EditorComponent.h>
+
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
@@ -33,6 +33,9 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 
 #include <yave/utils/color.h>
+#include <yave/graphics/images/ImageData.h>
+#include <yave/meshes/MeshData.h>
+
 #include <editor/utils/ui.h>
 #include <editor/widgets/AssetSelector.h>
 

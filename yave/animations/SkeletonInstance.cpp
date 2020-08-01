@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "SkeletonInstance.h"
-#include <yave/graphics/buffers/TypedWrapper.h>
 
 namespace yave {
 

@@ -22,10 +22,11 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPH_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPH_H
 
-#include "FrameGraphFrameResources.h"
 #include "FrameGraphPassBuilder.h"
 
-#include <yave/graphics/barriers/Barrier.h>
+#include <y/core/Vector.h>
+
+#include <memory>
 
 namespace yave {
 
@@ -69,6 +70,7 @@ class FrameGraph : NonCopyable {
 
     public:
         FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool);
+        ~FrameGraph();
 
         DevicePtr device() const;
         const FrameGraphFrameResources& resources() const;

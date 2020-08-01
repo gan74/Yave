@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <yave/graphics/images/Image.h>
 
+#include <memory>
+
 namespace editor {
 
 class EditorResources final : NonMovable {

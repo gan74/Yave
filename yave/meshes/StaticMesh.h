@@ -22,14 +22,14 @@ SOFTWARE.
 #ifndef YAVE_MESHES_STATICMESH_H
 #define YAVE_MESHES_STATICMESH_H
 
-#include "MeshData.h"
+#include "AABB.h"
 
 #include <yave/graphics/buffers/buffers.h>
-#include <yave/graphics/buffers/TypedWrapper.h>
+#include <yave/graphics/device/extentions/RayTracing.h>
 
 #include <yave/assets/AssetTraits.h>
 
-#include <yave/graphics/device/extentions/RayTracing.h>
+Y_TODO(move into graphics?)
 
 namespace yave {
 

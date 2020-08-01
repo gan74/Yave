@@ -25,8 +25,15 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
-#include <yave/graphics/device/DeviceResources.h>
 #include <yave/renderer/renderer.h>
+#include <yave/framegraph/FrameGraph.h>
+#include <yave/framegraph/FrameGraphPass.h>
+#include <yave/framegraph/FrameGraphFrameResources.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+
+#include <yave/graphics/images/ImageData.h>
+#include <yave/meshes/MeshData.h>
+#include <yave/graphics/device/DeviceResources.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
 #include <yave/components/PointLightComponent.h>

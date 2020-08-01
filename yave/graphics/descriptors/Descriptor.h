@@ -29,6 +29,8 @@ SOFTWARE.
 #include <yave/graphics/images/ImageView.h>
 #include <yave/graphics/buffers/TypedWrapper.h>
 
+#include <y/core/Span.h>
+
 namespace yave {
 
 class InlineDescriptor {

@@ -23,7 +23,10 @@ SOFTWARE.
 #include "ImGuiRenderer.h"
 
 #include <editor/context/EditorContext.h>
+
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/buffers/TypedWrapper.h>
+#include <yave/graphics/images/ImageData.h>
 #include <yave/framegraph/FrameGraph.h>
 
 #include <imgui/yave_imgui.h>

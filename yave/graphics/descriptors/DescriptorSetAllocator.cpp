@@ -109,7 +109,7 @@ DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptor
         create_info.bindingCount = bindings.size();
         create_info.pBindings = bindings.data();
     }
-    vk_check(vkCreateDescriptorSetLayout(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &_layout));
+    vk_check(vkCreateDescriptorSetLayout(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &_layout.get()));
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {

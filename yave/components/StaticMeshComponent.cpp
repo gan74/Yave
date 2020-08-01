@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "StaticMeshComponent.h"
 
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+
 namespace yave {
 
 StaticMeshComponent::SubMesh::SubMesh(const AssetPtr<StaticMesh>& me, const AssetPtr<Material>& ma) : mesh(me), material(ma) {

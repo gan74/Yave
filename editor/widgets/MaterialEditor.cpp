@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
+#include <yave/graphics/images/ImageData.h>
 #include <yave/entities/entities.h>
 #include <yave/utils/color.h>
 

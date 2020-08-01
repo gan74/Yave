@@ -22,8 +22,9 @@ SOFTWARE.
 #ifndef YAVE_MATERIAL_MATERIAL_H
 #define YAVE_MATERIAL_MATERIAL_H
 
-#include "MaterialTemplate.h"
 #include "SimpleMaterialData.h"
+
+#include <yave/graphics/descriptors/DescriptorSet.h>
 
 namespace yave {
 

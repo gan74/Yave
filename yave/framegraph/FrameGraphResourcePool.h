@@ -22,14 +22,10 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHRESOURCEPOOL_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHRESOURCEPOOL_H
 
+#include "TransientBuffer.h"
+#include "TransientImage.h"
 
-#include <yave/graphics/buffers/Mapping.h>
-
-#include <yave/graphics/descriptors/DescriptorSet.h>
-#include <yave/graphics/framebuffer/Framebuffer.h>
-
-#include "FrameGraphResourceToken.h"
-#include "FrameGraphPass.h"
+#include <y/core/Vector.h>
 
 #include <mutex>
 

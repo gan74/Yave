@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_CMDBUFFERRECORDER_H
 #define YAVE_GRAPHICS_COMMANDS_CMDBUFFERRECORDER_H
 
-#include <yave/yave.h>
-#include <yave/graphics/barriers/Barrier.h>
 #include <yave/graphics/framebuffer/Viewport.h>
+#include <yave/graphics/images/ImageView.h>
+#include <yave/graphics/buffers/SubBuffer.h>
 
 #include "CmdBuffer.h"
 

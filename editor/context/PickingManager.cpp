@@ -23,6 +23,10 @@ SOFTWARE.
 #include "PickingManager.h"
 #include "EditorContext.h"
 
+#include <yave/framegraph/FrameGraph.h>
+#include <yave/framegraph/FrameGraphPass.h>
+#include <yave/framegraph/FrameGraphFrameResources.h>
+
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/device/Queue.h>
 

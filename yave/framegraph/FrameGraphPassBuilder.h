@@ -22,15 +22,19 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHPASSBUILDER_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHPASSBUILDER_H
 
-#include "FrameGraphResourceToken.h"
-#include "FrameGraphPass.h"
+#include "FrameGraphResourceId.h"
 
-#include <yave/graphics/images/Sampler.h>
+#include <yave/graphics/barriers/PipelineStage.h>
+#include <yave/graphics/images/SamplerType.h>
+#include <yave/graphics/images/ImageUsage.h>
+#include <yave/graphics/buffers/BufferUsage.h>
 
 namespace yave {
 
 class FrameGraphPassBuilder {
     public:
+        using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
+
         DevicePtr device() const;
 
         FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
@@ -67,7 +71,7 @@ class FrameGraphPassBuilder {
             set_cpu_visible(res);
         }
 
-        void set_render_func(FrameGraphPass::render_func&& func);
+        void set_render_func(render_func&& func);
 
         void add_descriptor_binding(Descriptor bind, usize ds_index = 0);
         usize next_descriptor_set_index();

@@ -33,6 +33,9 @@ SOFTWARE.
 #include <editor/ui/ImGuiRenderer.h>
 #include <imgui/yave_imgui.h>
 
+#include <yave/graphics/framebuffer/Framebuffer.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+
 #include <y/io2/File.h>
 
 #ifdef Y_OS_WIN

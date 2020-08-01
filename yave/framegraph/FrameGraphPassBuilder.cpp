@@ -21,7 +21,10 @@ SOFTWARE.
 **********************************/
 
 #include "FrameGraphPassBuilder.h"
+#include "FrameGraphPass.h"
 #include "FrameGraph.h"
+
+#include <y/utils/format.h>
 
 namespace yave {
 
@@ -32,7 +35,7 @@ DevicePtr FrameGraphPassBuilder::device() const {
     return parent()->device();
 }
 
-void FrameGraphPassBuilder::set_render_func(FrameGraphPass::render_func&& func) {
+void FrameGraphPassBuilder::set_render_func(render_func&& func) {
     _pass->_render = std::move(func);
 }
 

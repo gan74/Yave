@@ -23,6 +23,9 @@ SOFTWARE.
 #include "GBufferPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
+#include <yave/framegraph/FrameGraphPass.h>
+
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 namespace yave {
 

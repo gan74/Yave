@@ -22,9 +22,11 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_RESOURCEBROWSER_H
 #define EDITOR_WIDGETS_RESOURCEBROWSER_H
 
+#include "FileSystemView.h"
+
 #include <yave/assets/AssetId.h>
 
-#include "FileSystemView.h"
+#include <y/core/FixedArray.h>
 
 namespace editor {
 

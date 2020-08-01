@@ -77,7 +77,10 @@ def print_includes(file, includes, tabs, printed):
         
     return total + 1
 
-
+def to_sorted(incs):
+    l = [(i, c) for i, c in incs.items()]
+    l.sort(key = lambda p : p[1], reverse = True)
+    return l
 
 projects = {"yave"}
 classes = {}
@@ -90,9 +93,26 @@ for file in includes.keys():
     print()
     print()
 
-    
-include_count = [(i, c) for i, c in include_count.items()]
-include_count.sort(key = lambda p : p[1], reverse = True)
 
-for p in include_count:
+included = {}
+for f in includes.keys():
+    included[f] = 1
+for f in includes.values():
+    for i in f:
+        try:
+            included[i] += 1
+        except:
+            pass
+
+
+
+
+
+for p in to_sorted(include_count):
     print(p[0], "=>", p[1]) 
+    
+    
+print()
+print()
+for p in to_sorted(included):
+    print(p[0], "included", p[1], "total", p[1] * included[p[0]]) 

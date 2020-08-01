@@ -22,7 +22,16 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHFRAMERESOURCES_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHFRAMERESOURCES_H
 
-#include "FrameGraphResourcePool.h"
+#include "FrameGraphResourceId.h"
+#include "TransientImage.h"
+#include "TransientBuffer.h"
+
+#include <yave/graphics/barriers/Barrier.h>
+
+#include <y/core/Vector.h>
+
+#include <unordered_map>
+#include <memory>
 
 namespace yave {
 

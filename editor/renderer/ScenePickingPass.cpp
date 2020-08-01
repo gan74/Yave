@@ -22,15 +22,21 @@ SOFTWARE.
 
 #include "ScenePickingPass.h"
 
+#include <editor/context/EditorContext.h>
+
 #include <yave/framegraph/FrameGraph.h>
+#include <yave/framegraph/FrameGraphPass.h>
+#include <yave/framegraph/FrameGraphFrameResources.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/ecs/ecs.h>
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/graphics/images/ImageData.h>
+#include <yave/meshes/MeshData.h>
 #include <yave/entities/entities.h>
 
-#include <editor/context/EditorContext.h>
 
 Y_TODO(merge with scene sub pass?)
 

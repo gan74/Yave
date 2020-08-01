@@ -22,10 +22,8 @@ SOFTWARE.
 #ifndef YAVE_MATERIAL_SIMPLEMATERIALDATA_H
 #define YAVE_MATERIAL_SIMPLEMATERIALDATA_H
 
-#include <yave/graphics/descriptors/DescriptorSet.h>
-
 #include <yave/assets/AssetPtr.h>
-#include <yave/assets/AssetLoader.h>
+#include <yave/graphics/images/Image.h>
 
 namespace yave {
 

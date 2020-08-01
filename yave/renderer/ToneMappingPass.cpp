@@ -25,7 +25,10 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/material/Material.h>
 #include <yave/framegraph/FrameGraph.h>
+#include <yave/framegraph/FrameGraphPass.h>
+#include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/device/DeviceResources.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/core/Chrono.h>
 

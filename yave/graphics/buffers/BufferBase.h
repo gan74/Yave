@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
 #define YAVE_GRAPHICS_BUFFERS_BUFFERBASE_H
 
-#include <yave/graphics/utils.h>
 #include <yave/graphics/memory/DeviceMemory.h>
 
 #include "BufferUsage.h"

@@ -21,9 +21,11 @@ SOFTWARE.
 **********************************/
 
 #include "ImageBase.h"
+#include "ImageData.h"
 
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/buffers/Mapping.h>
+#include <yave/graphics/barriers/Barrier.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/Queue.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>

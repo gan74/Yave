@@ -19,10 +19,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "Material.h"
+#include "MaterialTemplate.h"
 #include "MaterialCompiler.h"
 
 #include <yave/graphics/utils.h>
+#include <yave/graphics/framebuffer/RenderPass.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>

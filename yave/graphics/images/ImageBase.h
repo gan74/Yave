@@ -22,11 +22,9 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_IMAGES_IMAGEBASE_H
 #define YAVE_GRAPHICS_IMAGES_IMAGEBASE_H
 
-#include <yave/graphics/device/DeviceLinked.h>
-#include <yave/graphics/memory/DeviceMemory.h>
-
 #include "ImageUsage.h"
-#include "ImageData.h"
+
+#include <yave/graphics/memory/DeviceMemory.h>
 
 #include <yave/utils/traits.h>
 

@@ -23,7 +23,6 @@ SOFTWARE.
 #define YAVE_GRAPHICS_SWAPCHAIN_FRAMETOKEN_H
 
 #include <yave/graphics/images/ImageView.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 namespace yave {
 

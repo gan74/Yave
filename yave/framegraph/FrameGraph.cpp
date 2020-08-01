@@ -21,6 +21,10 @@ SOFTWARE.
 **********************************/
 
 #include "FrameGraph.h"
+#include "FrameGraphPass.h"
+#include "FrameGraphFrameResources.h"
+
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/utils/color.h>
 #include <y/utils/log.h>
@@ -131,6 +135,9 @@ static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameG
 
 
 FrameGraph::FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool) : _resources(std::make_unique<FrameGraphFrameResources>(std::move(pool))) {
+}
+
+FrameGraph::~FrameGraph() {
 }
 
 DevicePtr FrameGraph::device() const {

@@ -23,6 +23,7 @@ SOFTWARE.
 #define EDITOR_CONTEXT_EDITORCONTEXT_H
 
 #include <yave/ecs/ecs.h>
+#include <yave/assets/AssetLoader.h>
 
 #include "EditorState.h"
 #include "Settings.h"
@@ -33,6 +34,7 @@ SOFTWARE.
 #include "EditorResources.h"
 #include "Logs.h"
 #include "Notifications.h"
+
 
 namespace editor {
 

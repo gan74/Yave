@@ -26,6 +26,10 @@ SOFTWARE.
 #include <yave/graphics/swapchain/FrameToken.h>
 
 #include <y/core/String.h>
+#include <y/core/Vector.h>
+#include <y/core/Span.h>
+
+#include <memory>
 
 namespace editor {
 
