@@ -22,6 +22,8 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETALLOCATOR_H
 #define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETALLOCATOR_H
 
+#include "DescriptorSetData.h"
+
 #include <yave/graphics/vk/vk.h>
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/device/DeviceLinked.h>
@@ -55,9 +57,6 @@ struct hash<y::core::Vector<VkDescriptorSetLayoutBinding>> {
 
 namespace yave {
 
-class Descriptor;
-class DescriptorSetPool;
-
 class DescriptorSetLayout : public DeviceLinked {
     public:
         static constexpr usize descriptor_type_count = 12;
@@ -88,30 +87,6 @@ class DescriptorSetLayout : public DeviceLinked {
 
         usize _inline_blocks = 0;
         core::Vector<InlineBlock> _inline_blocks_fallbacks;
-};
-
-class DescriptorSetData {
-    public:
-        DescriptorSetData() = default;
-
-        DevicePtr device() const;
-        bool is_null() const;
-
-        VkDescriptorSetLayout vk_descriptor_set_layout() const;
-        VkDescriptorSet vk_descriptor_set() const;
-
-    private:
-        friend class LifetimeManager;
-
-        void recycle();
-
-    private:
-        friend class DescriptorSetPool;
-
-        DescriptorSetData(DescriptorSetPool* pool, u32 id);
-
-        DescriptorSetPool* _pool = nullptr;
-        u32 _index = 0;
 };
 
 class DescriptorSetPool : NonMovable, public DeviceLinked {

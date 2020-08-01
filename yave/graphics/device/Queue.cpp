@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include <yave/graphics/utils.h>
 
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+
 #include "Queue.h"
 
 namespace yave {
@@ -48,38 +50,46 @@ void Queue::wait() const {
     vk_check(vkQueueWaitIdle(_queue));
 }
 
-Semaphore Queue::submit_sem(RecordedCmdBuffer&& cmd) const {
+Semaphore Queue::submit_sem(CmdBufferRecorder&& cmd) const {
     const Semaphore sync(device());
     cmd._proxy->data()._signal = sync;
-    submit_base(cmd);
+    submit_base(cmd, SyncPolicy::Async);
     return sync;
 }
 
-void Queue::submit_base(CmdBuffer& base) const {
-    const auto lock = y_profile_unique_lock(*_lock);
+void Queue::submit_base(CmdBufferRecorder& rec, SyncPolicy policy) const {
+    const CmdBuffer finished = std::move(rec).finish();
+    const VkCommandBuffer cmd = finished.vk_cmd_buffer();
 
-    auto cmd = base.vk_cmd_buffer();
-
-    const auto& wait = base._proxy->data()._waits;
-    auto wait_semaphores = core::vector_with_capacity<VkSemaphore>(wait.size());
-    std::transform(wait.begin(), wait.end(), std::back_inserter(wait_semaphores), [](const auto& s) { return s.vk_semaphore(); });
-    const core::Vector<VkPipelineStageFlags> stages(wait.size(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-    const Semaphore& signal = base._proxy->data()._signal;
-    const VkSemaphore sig_semaphore = signal.device() ? signal.vk_semaphore() : VkSemaphore{};
-
-    VkSubmitInfo submit_info = vk_struct();
     {
-        submit_info.signalSemaphoreCount = signal.device() ? 1 : 0;
-        submit_info.pSignalSemaphores = signal.device() ? &sig_semaphore : nullptr;
-        submit_info.waitSemaphoreCount = wait_semaphores.size();
-        submit_info.pWaitSemaphores = wait_semaphores.data();
-        submit_info.pWaitDstStageMask = stages.data();
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cmd;
+        const auto lock = y_profile_unique_lock(*_lock);
+
+        const auto& wait = finished._proxy->data()._waits;
+        auto wait_semaphores = core::vector_with_capacity<VkSemaphore>(wait.size());
+        std::transform(wait.begin(), wait.end(), std::back_inserter(wait_semaphores), [](const auto& s) { return s.vk_semaphore(); });
+        const core::Vector<VkPipelineStageFlags> stages(wait.size(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+        const Semaphore& signal = finished._proxy->data()._signal;
+        const VkSemaphore sig_semaphore = signal.device() ? signal.vk_semaphore() : VkSemaphore{};
+
+        VkSubmitInfo submit_info = vk_struct();
+        {
+            submit_info.signalSemaphoreCount = signal.device() ? 1 : 0;
+            submit_info.pSignalSemaphores = signal.device() ? &sig_semaphore : nullptr;
+            submit_info.waitSemaphoreCount = wait_semaphores.size();
+            submit_info.pWaitSemaphores = wait_semaphores.data();
+            submit_info.pWaitDstStageMask = stages.data();
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &cmd;
+        }
+
+        vk_check(vkQueueSubmit(_queue, 1, &submit_info, finished.vk_fence()));
     }
 
-    vk_check(vkQueueSubmit(_queue, 1, &submit_info, base.vk_fence()));
+    if(policy == SyncPolicy::Sync) {
+        y_profile_zone("sync submit");
+        finished.wait();
+    }
 }
 
 }

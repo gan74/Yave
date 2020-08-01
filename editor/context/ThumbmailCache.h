@@ -24,16 +24,13 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <y/core/HashMap.h>
-#include <y/concurrent/StaticThreadPool.h>
-
 #include <yave/assets/AssetPtr.h>
 #include <yave/graphics/images/ImageView.h>
-
 #include <yave/ecs/EntityWorld.h>
 #include <yave/scene/SceneView.h>
 
-#include <yave/framegraph/FrameGraphResourcePool.h>
+#include <y/concurrent/StaticThreadPool.h>
+#include <y/core/HashMap.h>
 
 #include <future>
 

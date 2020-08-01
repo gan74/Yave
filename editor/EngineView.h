@@ -29,8 +29,6 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
-#include "CameraController.h"
-
 namespace editor {
 
 class EngineView final : public Widget, public ContextLinked {

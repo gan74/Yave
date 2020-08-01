@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferPool.h"
+#include "CmdBuffer.h"
 
 #include <yave/graphics/utils.h>
 #include <yave/graphics/device/QueueFamily.h>

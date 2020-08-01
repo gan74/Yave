@@ -27,6 +27,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 
 #include <yave/graphics/device/Device.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/swapchain/Swapchain.h>
 #include <yave/assets/SQLiteAssetStore.h>
 

@@ -22,10 +22,8 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTOR_H
 #define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTOR_H
 
-#include <yave/yave.h>
-
 #include <yave/graphics/utils.h>
-#include <yave/graphics/images/Sampler.h>
+#include <yave/graphics/images/SamplerType.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/graphics/buffers/TypedWrapper.h>
 

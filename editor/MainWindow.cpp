@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 
 #include <yave/graphics/swapchain/Swapchain.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/Queue.h>
 
 #include <imgui/yave_imgui.h>
@@ -62,7 +63,7 @@ void MainWindow::create_swapchain() {
 void MainWindow::present(CmdBufferRecorder& recorder, const FrameToken& token) {
     y_profile();
     {
-        const RecordedCmdBuffer cmd_buffer(std::move(recorder));
+        const CmdBuffer cmd_buffer = std::move(recorder).finish();
 
         const VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         Y_TODO(manual locking needs for queue presentation needs to go)

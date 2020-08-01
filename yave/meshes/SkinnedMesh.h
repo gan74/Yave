@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef YAVE_MESHES_SKINNEDMESH_H
 #define YAVE_MESHES_SKINNEDMESH_H
 
-#include "MeshData.h"
 #include "Skeleton.h"
 
 #include <yave/graphics/buffers/buffers.h>

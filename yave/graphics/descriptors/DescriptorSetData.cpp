@@ -19,37 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_COMMANDS_RECORDEDCMDBUFFER_H
-#define YAVE_GRAPHICS_COMMANDS_RECORDEDCMDBUFFER_H
 
-#include "CmdBufferRecorder.h"
+#include "DescriptorSetAllocator.h"
 
 namespace yave {
 
-class RecordedCmdBuffer : public CmdBuffer {
-
-    CmdBuffer&& end_recorder(CmdBufferRecorder&& recorder) {
-        vk_check(vkEndCommandBuffer(recorder.vk_cmd_buffer()));
-        return std::move(recorder);
-    }
-
-    public:
-        RecordedCmdBuffer() = default;
-
-        RecordedCmdBuffer(RecordedCmdBuffer&&) = default;
-        RecordedCmdBuffer& operator=(RecordedCmdBuffer&&) = default;
-
-        RecordedCmdBuffer(CmdBufferRecorder&& recorder) : RecordedCmdBuffer(end_recorder(std::move(recorder))) {
-        }
-
-    private:
-        friend class CmdBufferRecorder;
-
-        RecordedCmdBuffer(CmdBuffer&& other) : CmdBuffer(std::move(other)) {
-        }
-};
-
+DescriptorSetData::DescriptorSetData(DescriptorSetPool* pool, u32 id) : _pool(pool), _index(id) {
 }
 
-#endif // YAVE_GRAPHICS_COMMANDS_RECORDEDCMDBUFFER_H
+DevicePtr DescriptorSetData::device() const {
+    return _pool ? _pool->device() : nullptr;
+}
+
+bool DescriptorSetData::is_null() const {
+    return !device();
+}
+
+void DescriptorSetData::recycle() {
+    if(_pool) {
+        _pool->recycle(_index);
+    }
+}
+
+VkDescriptorSetLayout DescriptorSetData::vk_descriptor_set_layout() const {
+    return _pool->vk_descriptor_set_layout();
+}
+
+VkDescriptorSet DescriptorSetData::vk_descriptor_set() const {
+    return _pool->vk_descriptor_set(_index);
+}
+
+}
 

@@ -22,10 +22,11 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
 #define YAVE_GRAPHICS_QUEUES_QUEUEFAMILY_H
 
-#include <yave/graphics/device/PhysicalDevice.h>
 #include <y/core/Result.h>
 
 #include "Queue.h"
+
+#include <y/core/Vector.h>
 
 namespace yave {
 

@@ -25,11 +25,15 @@ SOFTWARE.
 #include <yave/graphics/vk/vk.h>
 
 #include "Semaphore.h"
-#include "submit.h"
 
 #include <mutex>
 
 namespace yave {
+
+enum class SyncPolicy {
+    Async,
+    Sync
+};
 
 class Queue : public DeviceLinked {
 
@@ -44,13 +48,12 @@ class Queue : public DeviceLinked {
 
         void wait() const;
 
-        Semaphore submit_sem(RecordedCmdBuffer&& cmd) const;
+        Semaphore submit_sem(CmdBufferRecorder&& cmd) const;
 
-        template<typename SyncPolicy>
-        void submit(RecordedCmdBuffer&& cmd, const SyncPolicy& policy = SyncPolicy()) const {
+        template<SyncPolicy Policy>
+        void submit(CmdBufferRecorder&& cmd) const {
             y_profile();
-            submit_base(cmd);
-            policy(cmd);
+            submit_base(cmd, Policy);
         }
 
         std::mutex& lock() const {
@@ -62,7 +65,7 @@ class Queue : public DeviceLinked {
 
         Queue(DevicePtr dptr, VkQueue queue);
 
-        void submit_base(CmdBuffer& base) const;
+        void submit_base(CmdBufferRecorder& rec, SyncPolicy policy) const;
 
         VkQueue _queue;
         std::unique_ptr<std::mutex> _lock;

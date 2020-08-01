@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/graphics/shaders/SpirVData.h>
 #include <yave/graphics/shaders/ShaderModule.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/material/Material.h>
 #include <yave/material/MaterialTemplate.h>
@@ -142,7 +143,7 @@ static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integr
         const auto region = recorder.region("create_brdf_lut");
         recorder.dispatch_size(brdf_integrator, image.size(), {dset});
     }
-    graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+    graphic_queue(dptr).submit<SyncPolicy::Sync>(std::move(recorder));
 
     return image;
 }

@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <y/concurrent/concurrent.h>
 
-#include <yave/graphics/commands/CmdBuffer.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -235,7 +235,7 @@ Device::~Device() {
         Y_TODO(Why do we need this?)
         CmdBufferPool pool(this);
         CmdBufferRecorder rec = pool.create_buffer();
-        graphic_queue().submit<SyncSubmit>(RecordedCmdBuffer(std::move(rec)));
+        graphic_queue().submit<SyncPolicy::Sync>(std::move(rec));
     }
 
     wait_all_queues();

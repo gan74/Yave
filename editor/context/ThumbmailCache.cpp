@@ -30,7 +30,9 @@ SOFTWARE.
 #include <yave/renderer/renderer.h>
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
+#include <yave/framegraph/FrameGraphResourcePool.h>
 #include <yave/graphics/device/DeviceResources.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/Queue.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/meshes/MeshData.h>
@@ -294,7 +296,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
 
 void ThumbmailCache::submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr<ThumbmailData> thumb) {
     y_profile();
-    graphic_queue(device()).submit<SyncSubmit>(std::move(recorder));
+    graphic_queue(device()).submit<SyncPolicy::Sync>(std::move(recorder));
 
     const auto lock = y_profile_unique_lock(_lock);
     auto& thumbmail = _thumbmails[thumb->id];

@@ -31,6 +31,8 @@ SOFTWARE.
 
 #include "TransformableComponent.h"
 
+#include <y/core/Vector.h>
+
 namespace yave {
 
 class StaticMeshComponent final : public Renderable, public ecs::RequiredComponents<TransformableComponent> {

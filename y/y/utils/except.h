@@ -22,6 +22,8 @@ SOFTWARE.
 #ifndef Y_UTILS_EXCEPT_H
 #define Y_UTILS_EXCEPT_H
 
+#include <stdexcept>
+
 #define y_throw_msg(msg) throw std::runtime_error(msg)
 
 namespace y {

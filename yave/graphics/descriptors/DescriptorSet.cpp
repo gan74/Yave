@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "DescriptorSet.h"
 #include "Descriptor.h"
-
+#include "DescriptorSetAllocator.h"
 
 #include <y/core/Range.h>
 

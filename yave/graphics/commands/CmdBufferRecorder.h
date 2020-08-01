@@ -97,7 +97,7 @@ struct CmdBufferRegion : NonMovable, public DeviceLinked {
         VkCommandBuffer _buffer = {};
 };
 
-class RenderPassRecorder : NonMovable {
+class RenderPassRecorder final : NonMovable {
     public:
         using DescriptorSetList = detail::DescriptorSetList;
 
@@ -139,7 +139,7 @@ class RenderPassRecorder : NonMovable {
         Viewport _viewport;
 };
 
-class CmdBufferRecorder : public CmdBuffer {
+class CmdBufferRecorder final : public CmdBuffer {
 
     using SrcCopyBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
     using DstCopyBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
@@ -148,7 +148,6 @@ class CmdBufferRecorder : public CmdBuffer {
 
     public:
         using DescriptorSetList = detail::DescriptorSetList;
-
 
         CmdBufferRecorder(CmdBuffer&& base);
         CmdBufferRecorder(CmdBufferRecorder&&) = default;
@@ -177,6 +176,9 @@ class CmdBufferRecorder : public CmdBuffer {
 
         // never use directly, needed for internal work
         void transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst);
+
+        Y_TODO(abstract that)
+        CmdBuffer finish() &&;
 
     protected:
         CmdBufferRecorder() = default;

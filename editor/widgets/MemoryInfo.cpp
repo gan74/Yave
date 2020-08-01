@@ -24,6 +24,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <yave/graphics/utils.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
+#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
 #include <imgui/yave_imgui.h>
 

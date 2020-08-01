@@ -24,10 +24,7 @@ SOFTWARE.
 
 #include <editor/ui/Widget.h>
 
-#include <yave/framegraph/FrameGraphResourcePool.h>
-#include <yave/graphics/images/IBLProbe.h>
 #include <yave/assets/AssetPtr.h>
-#include <yave/material/Material.h>
 #include <yave/scene/SceneView.h>
 
 namespace editor {

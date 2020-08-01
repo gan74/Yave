@@ -22,16 +22,10 @@ SOFTWARE.
 #ifndef YAVE_MATERIAL_MATERIALTEMPLATEDATA_H
 #define YAVE_MATERIAL_MATERIALTEMPLATEDATA_H
 
-#include <yave/yave.h>
-
-#include <yave/assets/AssetPtr.h>
-
-#include <yave/graphics/descriptors/Descriptor.h>
+#include <yave/graphics/utils.h>
 #include <yave/graphics/shaders/SpirVData.h>
 
 namespace yave {
-
-class MaterialCompiler;
 
 enum class PrimitiveType {
     Triangles = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,

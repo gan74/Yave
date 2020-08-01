@@ -134,32 +134,6 @@ VkDescriptorSetLayout DescriptorSetLayout::vk_descriptor_set_layout() const {
 
 
 
-
-DescriptorSetData::DescriptorSetData(DescriptorSetPool* pool, u32 id) : _pool(pool), _index(id) {
-}
-
-DevicePtr DescriptorSetData::device() const {
-    return _pool ? _pool->device() : nullptr;
-}
-
-bool DescriptorSetData::is_null() const {
-    return !device();
-}
-
-void DescriptorSetData::recycle() {
-    if(_pool) {
-        _pool->recycle(_index);
-    }
-}
-
-VkDescriptorSetLayout DescriptorSetData::vk_descriptor_set_layout() const {
-    return _pool->vk_descriptor_set_layout();
-}
-
-VkDescriptorSet DescriptorSetData::vk_descriptor_set() const {
-    return _pool->vk_descriptor_set(_index);
-}
-
 static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout, usize set_count) {
     y_profile();
 

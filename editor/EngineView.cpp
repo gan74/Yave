@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "EngineView.h"
+#include "CameraController.h"
 
 #include <editor/widgets/AssetSelector.h>
 #include <editor/context/EditorContext.h>
@@ -28,6 +29,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
+#include <yave/framegraph/FrameGraphResourcePool.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/renderer/renderer.h>

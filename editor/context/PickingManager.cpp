@@ -26,6 +26,8 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
+#include <yave/framegraph/FrameGraphResourcePool.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/device/Queue.h>
@@ -68,7 +70,7 @@ PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_vie
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer(device());
     std::move(framegraph).render(recorder);
-    graphic_queue(device()).submit<SyncSubmit>(std::move(recorder));
+    graphic_queue(device()).submit<SyncPolicy::Sync>(std::move(recorder));
 
     const ReadBackData read_back = TypedMapping(_buffer)[0];
     const float depth = read_back.depth;

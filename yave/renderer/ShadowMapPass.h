@@ -22,8 +22,6 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_SHADOWMAPPASS_H
 #define YAVE_RENDERER_SHADOWMAPPASS_H
 
-#include <yave/graphics/images/IBLProbe.h>
-
 #include "GBufferPass.h"
 
 #include <y/core/HashMap.h>

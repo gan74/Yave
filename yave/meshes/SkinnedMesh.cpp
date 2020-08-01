@@ -21,10 +21,10 @@ SOFTWARE.
 **********************************/
 
 #include "SkinnedMesh.h"
+#include "MeshData.h"
 
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/commands/RecordedCmdBuffer.h>
 #include <yave/graphics/utils.h>
 #include <yave/graphics/device/Queue.h>
 
@@ -42,7 +42,7 @@ SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
     CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
     Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
     Mapping::stage(_vertex_buffer, recorder, mesh_data.skinned_vertices().data());
-    graphic_queue(dptr).submit<SyncSubmit>(RecordedCmdBuffer(std::move(recorder)));
+    graphic_queue(dptr).submit<SyncPolicy::Sync>(std::move(recorder));
 }
 
 const TriangleBuffer<>& SkinnedMesh::triangle_buffer() const {

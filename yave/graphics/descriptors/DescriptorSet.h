@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSET_H
 
 #include "DescriptorSetBase.h"
-#include "DescriptorSetAllocator.h"
+#include "DescriptorSetData.h"
 
 namespace yave {
 

@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "TimeQuery.h"
+#include "CmdBufferRecorder.h"
 
 #include <yave/graphics/utils.h>
 

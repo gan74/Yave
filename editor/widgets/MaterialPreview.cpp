@@ -33,6 +33,9 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageData.h>
 #include <yave/meshes/MeshData.h>
+#include <yave/material/Material.h>
+#include <yave/graphics/images/IBLProbe.h>
+#include <yave/framegraph/FrameGraphResourcePool.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>

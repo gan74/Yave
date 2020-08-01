@@ -19,26 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_QUEUES_SUBMIT_H
-#define YAVE_GRAPHICS_QUEUES_SUBMIT_H
+#ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETDATA_H
+#define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETDATA_H
 
-#include <yave/graphics/commands/RecordedCmdBuffer.h>
+#include <yave/yave.h>
+
+#include <yave/graphics/vk/vk.h>
 
 namespace yave {
+class DescriptorSetData {
+    public:
+        DescriptorSetData() = default;
 
-struct AsyncSubmit {
-    void operator()(const RecordedCmdBuffer&) const {
-    }
+        DevicePtr device() const;
+        bool is_null() const;
+
+        VkDescriptorSetLayout vk_descriptor_set_layout() const;
+        VkDescriptorSet vk_descriptor_set() const;
+
+    private:
+        friend class LifetimeManager;
+
+        void recycle();
+
+    private:
+        friend class DescriptorSetPool;
+
+        DescriptorSetData(DescriptorSetPool* pool, u32 id);
+
+        DescriptorSetPool* _pool = nullptr;
+        u32 _index = 0;
 };
-
-struct SyncSubmit {
-    void operator()(const RecordedCmdBuffer& b) const {
-        y_profile();
-        b.wait();
-    }
-};
-
 }
 
-#endif // YAVE_GRAPHICS_QUEUES_SUBMIT_H
+#endif // YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETDATA_H
 

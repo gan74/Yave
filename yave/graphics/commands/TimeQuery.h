@@ -22,10 +22,11 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_TIMEQUERY_H
 #define YAVE_GRAPHICS_COMMANDS_TIMEQUERY_H
 
-#include <y/core/Chrono.h>
-
 #include <yave/yave.h>
-#include "CmdBufferRecorder.h"
+#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/vk/vk.h>
+
+#include <y/core/Chrono.h>
 
 namespace yave {
 

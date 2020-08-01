@@ -23,6 +23,7 @@ SOFTWARE.
 #include "utils.h"
 
 #include <yave/graphics/device/Device.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 namespace yave {
 

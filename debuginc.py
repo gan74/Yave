@@ -51,7 +51,7 @@ def process_includes(folders):
     for proj in folders:
         for root, dirs, files in os.walk(proj):
             for file in files:
-                if extension(file) not in {"h"}:
+                if extension(file) not in {"h", "cpp"}:
                     continue
                 fullname = clean_name(root + "/" + file)
                 
@@ -82,6 +82,10 @@ def to_sorted(incs):
     l.sort(key = lambda p : p[1], reverse = True)
     return l
 
+
+
+
+
 projects = {"yave"}
 classes = {}
 includes = process_includes(projects)
@@ -109,10 +113,10 @@ for f in includes.values():
 
 
 for p in to_sorted(include_count):
-    print(p[0], "=>", p[1]) 
+    print(p[0] + " " * (60 - len(p[0])) + "=>", p[1]) 
     
     
 print()
 print()
 for p in to_sorted(included):
-    print(p[0], "included", p[1], "total", p[1] * included[p[0]]) 
+    print(p[0] + " " * (60 - len(p[0])) + "included", p[1], "total", p[1] * included[p[0]]) 

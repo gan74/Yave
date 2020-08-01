@@ -454,6 +454,11 @@ void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, Vk
     barriers({ImageBarrier::transition_barrier(image, src, dst)});
 }
 
+CmdBuffer CmdBufferRecorder::finish() && {
+    check_no_renderpass();
+    vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
+    return std::move(*this); // uuuh ?
+}
 
 }
 
