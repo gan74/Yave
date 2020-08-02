@@ -76,10 +76,6 @@ VkSampler vk_sampler(DevicePtr dptr, SamplerType type) {
     return dptr->vk_sampler(type);
 }
 
-const QueueFamily& queue_family(DevicePtr dptr, VkQueueFlags flags) {
-    return dptr->queue_family(flags);
-}
-
 const DebugUtils* debug_utils(DevicePtr dptr) {
     return dptr ? dptr->debug_utils() : nullptr;
 }

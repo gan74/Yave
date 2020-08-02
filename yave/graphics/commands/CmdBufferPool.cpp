@@ -24,7 +24,7 @@ SOFTWARE.
 #include "CmdBuffer.h"
 
 #include <yave/graphics/utils.h>
-#include <yave/graphics/device/QueueFamily.h>
+#include <yave/graphics/device/Queue.h>
 
 #include <y/core/Chrono.h>
 #include <y/concurrent/concurrent.h>
@@ -34,7 +34,7 @@ namespace yave {
 static VkCommandPool create_pool(DevicePtr dptr) {
     VkCommandPoolCreateInfo create_info = vk_struct();
     {
-        create_info.queueFamilyIndex = queue_family(dptr, QueueFamily::Graphics).index();
+        create_info.queueFamilyIndex = graphic_queue(dptr).family_index();
         create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     }
 

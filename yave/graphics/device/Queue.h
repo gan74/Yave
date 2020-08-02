@@ -45,6 +45,7 @@ class Queue : public DeviceLinked {
         ~Queue();
 
         VkQueue vk_queue() const;
+        u32 family_index() const;
 
         void wait() const;
 
@@ -61,13 +62,15 @@ class Queue : public DeviceLinked {
         }
 
     private:
+        friend class Device;
         friend class QueueFamily;
 
-        Queue(DevicePtr dptr, VkQueue queue);
+        Queue(DevicePtr dptr, u32 family_index, VkQueue queue);
 
         void submit_base(CmdBufferRecorder& rec, SyncPolicy policy) const;
 
         VkQueue _queue;
+        u32 _family_index;
         std::unique_ptr<std::mutex> _lock;
 };
 

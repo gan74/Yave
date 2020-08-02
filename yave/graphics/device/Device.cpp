@@ -38,15 +38,37 @@ SOFTWARE.
 
 namespace yave {
 
-static void check_features(const VkPhysicalDeviceFeatures& features, const VkPhysicalDeviceFeatures& required) {
-    const auto feats = reinterpret_cast<const VkBool32*>(&features);
-    const auto req = reinterpret_cast<const VkBool32*>(&required);
-    for(usize i = 0; i != sizeof(features) / sizeof(VkBool32); ++i) {
-        if(req[i] && !feats[i]) {
-            y_fatal("Required Vulkan feature not supported");
+static float device_score(const PhysicalDevice& device) {
+    if(!device.support_features(Device::required_device_features())) {
+        return -std::numeric_limits<float>::max();
+    }
+
+    const usize heap_size = device.total_device_memory() / (1024 * 1024);
+    const float heap_score = float(heap_size) / float(heap_size + 8 * 1024);
+    const float type_score = device.is_discrete() ? 1.0f : 0.0f;
+    return heap_score + type_score;
+}
+
+static const PhysicalDevice& find_best_device(core::Span<PhysicalDevice> devices) {
+    float best_score = -std::numeric_limits<float>::max();
+    usize device_index = usize(-1);
+
+    for(usize i = 0; i != devices.size(); ++i) {
+        const float dev_score = device_score(devices[i]);
+        if(dev_score > best_score) {
+            best_score = dev_score;
+            device_index = i;
         }
     }
+
+    y_always_assert(device_index != usize(-1), "No compatible device found");
+
+    return devices[device_index];
 }
+
+
+
+static const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
 
 static bool is_extension_supported(const char* name, VkPhysicalDevice device) {
     core::Vector<VkExtensionProperties> supported_extensions;
@@ -75,17 +97,6 @@ static bool try_enable_extension(core::Vector<const char*>& exts, const char* na
     return false;
 }
 
-static core::Vector<Queue> create_queues(DevicePtr dptr, core::Span<QueueFamily> families) {
-    core::Vector<Queue> queues;
-    for(const auto& family : families) {
-        for(auto& queue : family.queues(dptr)) {
-            queues.push_back(std::move(queue));
-        }
-    }
-    return queues;
-}
-
-
 static std::array<Sampler, 2> create_samplers(DevicePtr dptr) {
     std::array<Sampler, 2> samplers;
     for(usize i = 0; i != samplers.size(); ++i) {
@@ -94,46 +105,55 @@ static std::array<Sampler, 2> create_samplers(DevicePtr dptr) {
     return samplers;
 }
 
-static VkDevice create_device(
-        VkPhysicalDevice physical,
-        const core::Span<QueueFamily> queue_families,
-        const DebugParams& debug) {
+static core::Vector<VkQueueFamilyProperties> enumerate_family_properties(VkPhysicalDevice device) {
+    core::Vector<VkQueueFamilyProperties> families;
+    {
+        u32 count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &count, nullptr);
+        families = core::Vector<VkQueueFamilyProperties>(count, VkQueueFamilyProperties{});
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &count, families.data());
+    }
+    return families;
+}
 
-    y_profile();
-
-    auto queue_create_infos = core::vector_with_capacity<VkDeviceQueueCreateInfo>(queue_families.size());
-
-    const auto prio_count = std::max_element(queue_families.begin(), queue_families.end(),
-            [](const auto& a, const auto& b) { return a.count() < b.count(); })->count();
-    const core::Vector<float> priorities(prio_count, 1.0f);
-    std::transform(queue_families.begin(), queue_families.end(), std::back_inserter(queue_create_infos), [&](const auto& q) {
-        VkDeviceQueueCreateInfo create_info = vk_struct();
-        {
-            create_info.queueFamilyIndex = q.index();
-            create_info.pQueuePriorities = priorities.data();
-            create_info.queueCount = q.count();
+static u32 queue_family_index(core::Span<VkQueueFamilyProperties> families, VkQueueFlags flags) {
+    for(usize i = 0; i != families.size(); ++i) {
+        if(families[i].queueCount && (families[i].queueFlags & flags) == flags) {
+            return u32(i);
         }
-        return create_info;
-    });
+    }
+    y_fatal("No queue available for given flag set");
+}
 
+static u32 queue_family_index(VkPhysicalDevice device, VkQueueFlags flags) {
+    const core::Vector<VkQueueFamilyProperties> families = enumerate_family_properties(device);
+    return queue_family_index(families, flags);
+}
 
-    auto extensions = core::vector_with_capacity<const char*>(4);
-    extensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        // Vulkan 1.1
-        VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+static VkQueue create_queue(DevicePtr dptr, u32 index) {
+    VkQueue q = {};
+    vkGetDeviceQueue(vk_device(dptr), index, 0, &q);
+    return q;
+}
+
+static void print_physical_properties(const VkPhysicalDeviceProperties& properties) {
+    struct Version {
+        const u32 patch : 12;
+        const u32 minor : 10;
+        const u32 major : 10;
     };
 
-    try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical);
+    const auto& v_ref = properties.apiVersion;
+    const auto version = reinterpret_cast<const Version&>(v_ref);
+    log_msg(fmt("Running Vulkan (%.%.%) % bits on % (%)", u32(version.major), u32(version.minor), u32(version.patch),
+            is_64_bits() ? 64 : 32, properties.deviceName, (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")));
+    log_msg(fmt("sizeof(PhysicalDevice) = %", sizeof(PhysicalDevice)));
+}
 
-#ifdef YAVE_NV_RAY_TRACING
-    try_enable_extension(extensions, RayTracing::extension_name(), physical);
-#else
-    log_msg(fmt("% disabled", RayTracing::extension_name()), Log::Warning);
-#endif
 
+VkPhysicalDeviceFeatures Device::required_device_features() {
     VkPhysicalDeviceFeatures required = {};
+
     {
         required.multiDrawIndirect = true;
         required.geometryShader = true;
@@ -148,10 +168,43 @@ static VkDevice create_device(
         required.fragmentStoresAndAtomics = true;
     }
 
+    return required;
+}
+
+
+static VkDevice create_device(
+        const PhysicalDevice& physical,
+        u32 graphic_queue_index,
+        const DebugParams& debug) {
+
+    y_profile();
+
+    Y_TODO(Use Vulkan 1.1 ext stuff)
+    auto extensions = core::vector_with_capacity<const char*>(4);
+    extensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        // Vulkan 1.1
+        VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+    };
+
+    try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical.vk_physical_device());
+
+#ifdef YAVE_NV_RAY_TRACING
+    try_enable_extension(extensions, RayTracing::extension_name(), physical);
+#else
+    log_msg(fmt("% disabled", RayTracing::extension_name()), Log::Warning);
+#endif
+
+    const VkPhysicalDeviceFeatures required_features = Device::required_device_features();
+    y_always_assert(physical.support_features(required_features), "Device doesn't support required features");
+
+    const float queue_priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_create_info = vk_struct();
     {
-        VkPhysicalDeviceFeatures supported = {};
-        vkGetPhysicalDeviceFeatures(physical, &supported);
-        check_features(supported, required);
+        queue_create_info.queueFamilyIndex = graphic_queue_index;
+        queue_create_info.pQueuePriorities = &queue_priority;
+        queue_create_info.queueCount = 1;
     }
 
     VkDeviceCreateInfo create_info = vk_struct();
@@ -160,15 +213,18 @@ static VkDevice create_device(
         create_info.ppEnabledExtensionNames = extensions.data();
         create_info.enabledLayerCount = debug.device_layers().size();
         create_info.ppEnabledLayerNames = debug.device_layers().data();
-        create_info.queueCreateInfoCount = queue_create_infos.size();
-        create_info.pQueueCreateInfos = queue_create_infos.data();
-        create_info.pEnabledFeatures = &required;
+        create_info.queueCreateInfoCount = 1;
+        create_info.pQueueCreateInfos = &queue_create_info;
+        create_info.pEnabledFeatures = &required_features;
     }
 
+    print_physical_properties(physical.vk_properties());
+
     VkDevice device = {};
-    vk_check(vkCreateDevice(physical, &create_info, nullptr, &device));
+    vk_check(vkCreateDevice(physical.vk_physical_device(), &create_info, nullptr, &device));
     return device;
 }
+
 
 static DeviceProperties create_properties(const PhysicalDevice& device) {
     const VkPhysicalDeviceLimits& limits = device.vk_properties().limits;
@@ -199,20 +255,25 @@ static void print_properties(const DeviceProperties& properties) {
 
 
 
+
+
 Device::ScopedDevice::~ScopedDevice() {
     vkDestroyDevice(device, nullptr);
 }
 
 
-Device::Device(Instance& instance) :
+Device::Device(Instance& instance) : Device(instance, find_best_device(instance.physical_devices())) {
+}
+
+Device::Device(Instance& instance, PhysicalDevice device) :
         _instance(instance),
-        _physical(instance),
-        _queue_families(QueueFamily::all(_physical)),
-        _device{create_device(_physical.vk_physical_device(), _queue_families, _instance.debug_params())},
+        _physical(device),
+        _graphic_queue_index(queue_family_index(_physical.vk_physical_device(), graphic_queue_flags)),
+        _device{create_device(_physical, _graphic_queue_index, _instance.debug_params())},
         _properties(create_properties(_physical)),
         _allocator(this),
         _lifetime_manager(this),
-        _queues(create_queues(this, _queue_families)),
+        _graphic_queue(this, _graphic_queue_index, create_queue(this, _graphic_queue_index)),
         _samplers(create_samplers(this)),
         _descriptor_set_allocator(this) {
 
@@ -222,9 +283,10 @@ Device::Device(Instance& instance) :
     }
 #endif
 
+    print_properties(_properties);
+
     _resources.init(this);
 
-    print_properties(_properties);
 }
 
 Device::~Device() {
@@ -261,21 +323,12 @@ DescriptorSetAllocator& Device::descriptor_set_allocator() const {
     return _descriptor_set_allocator;
 }
 
-const QueueFamily& Device::queue_family(VkQueueFlags flags) const {
-    for(const auto& q : _queue_families) {
-        if((q.flags() & flags) == flags) {
-            return q;
-        }
-    }
-    y_fatal("Unable to find queue.");
-}
-
 const Queue& Device::graphic_queue() const {
-    return _queues.first();
+    return _graphic_queue;
 }
 
 Queue& Device::graphic_queue() {
-    return _queues.first();
+    return _graphic_queue;
 }
 
 void Device::wait_all_queues() const {

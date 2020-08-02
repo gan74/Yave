@@ -102,7 +102,7 @@ static VkImageView create_image_view(DevicePtr dptr, VkImage image, VkFormat for
 }
 
 static bool has_wsi_support(DevicePtr dptr, VkSurfaceKHR surface) {
-    const u32 index = dptr->queue_family(QueueFamily::Graphics).index();
+    const u32 index =  dptr->graphic_queue().family_index();
     VkBool32 supported = false;
     vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(dptr->vk_physical_device(), index, surface, &supported));
     return supported;

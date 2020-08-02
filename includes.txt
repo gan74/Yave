@@ -2332,7 +2332,6 @@ yave/graphics/utils.cpp
 		yave/graphics/images/Sampler.h
 		yave/graphics/device/QueueFamily.h
 			yave/graphics/device/Queue.h
-				yave/graphics/device/submit.h
 		yave/graphics/memory/DeviceMemoryAllocator.h
 			yave/graphics/memory/DeviceMemoryHeap.h
 				yave/graphics/memory/DeviceMemoryHeapBase.h
@@ -3015,7 +3014,6 @@ yave/graphics/commands/CmdBufferPool.cpp
 		y/core/Result.h
 			????
 		yave/graphics/device/Queue.h
-			yave/graphics/device/submit.h
 	y/core/Chrono.h
 		????
 	y/concurrent/concurrent.h
@@ -3803,7 +3801,6 @@ yave/graphics/device/Device.cpp
 		yave/graphics/images/Sampler.h
 		yave/graphics/device/QueueFamily.h
 			yave/graphics/device/Queue.h
-				yave/graphics/device/submit.h
 		yave/graphics/memory/DeviceMemoryAllocator.h
 			yave/graphics/memory/DeviceMemoryHeap.h
 				yave/graphics/memory/DeviceMemoryHeapBase.h
@@ -3898,7 +3895,6 @@ yave/graphics/device/Device.h
 	yave/graphics/images/Sampler.h
 	yave/graphics/device/QueueFamily.h
 		yave/graphics/device/Queue.h
-			yave/graphics/device/submit.h
 	yave/graphics/memory/DeviceMemoryAllocator.h
 		yave/graphics/memory/DeviceMemoryHeap.h
 			yave/graphics/memory/DeviceMemoryHeapBase.h
@@ -4039,7 +4035,6 @@ yave/graphics/device/DeviceResources.cpp
 		yave/graphics/images/Sampler.h
 		yave/graphics/device/QueueFamily.h
 			yave/graphics/device/Queue.h
-				yave/graphics/device/submit.h
 		yave/graphics/memory/DeviceMemoryAllocator.h
 			yave/graphics/memory/DeviceMemoryHeap.h
 				yave/graphics/memory/DeviceMemoryHeapBase.h
@@ -4401,7 +4396,6 @@ yave/graphics/device/Queue.cpp
 				y/core/Vector.h
 					????
 	yave/graphics/device/Queue.h
-		yave/graphics/device/submit.h
 
 
 yave/graphics/device/Queue.h
@@ -4423,7 +4417,6 @@ yave/graphics/device/Queue.h
 			yave/graphics/utils.h
 				yave/graphics/device/ResourceType.h
 				yave/graphics/images/SamplerType.h
-	yave/graphics/device/submit.h
 
 
 yave/graphics/device/QueueFamily.cpp
@@ -4449,7 +4442,6 @@ yave/graphics/device/QueueFamily.cpp
 					yave/graphics/utils.h
 						yave/graphics/device/ResourceType.h
 						yave/graphics/images/SamplerType.h
-			yave/graphics/device/submit.h
 		y/core/Vector.h
 			????
 	yave/graphics/device/PhysicalDevice.h
@@ -4481,7 +4473,6 @@ yave/graphics/device/QueueFamily.h
 				yave/graphics/utils.h
 					yave/graphics/device/ResourceType.h
 					yave/graphics/images/SamplerType.h
-		yave/graphics/device/submit.h
 	y/core/Vector.h
 		????
 
@@ -4543,73 +4534,6 @@ yave/graphics/device/Semaphore.h
 					????
 			yave/graphics/device/ResourceType.h
 			yave/graphics/images/SamplerType.h
-
-
-yave/graphics/device/submit.cpp
-	yave/graphics/device/submit.h
-		yave/yave.h
-			yave/utils/forward.h
-			y/utils.h
-				????
-			y/utils/perf.h
-				????
-			y/math/Transform.h
-				????
-	yave/graphics/commands/CmdBufferRecorder.h
-		yave/graphics/framebuffer/Viewport.h
-			y/math/Vec.h
-				????
-		yave/graphics/images/ImageView.h
-			yave/graphics/images/Image.h
-				yave/assets/AssetTraits.h
-					yave/utils/serde.h
-						y/serde3/serde.h
-							????
-					yave/assets/AssetType.h
-					y/core/Result.h
-						????
-				yave/graphics/images/ImageBase.h
-					yave/graphics/images/ImageUsage.h
-						yave/graphics/images/ImageFormat.h
-							yave/graphics/vk/vk.h
-								y/defines.h
-									????
-								vulkan/vulkan.h
-									????
-					yave/graphics/memory/DeviceMemory.h
-						yave/graphics/device/DeviceLinked.h
-							yave/graphics/utils.h
-								yave/graphics/device/ResourceType.h
-								yave/graphics/images/SamplerType.h
-					yave/utils/traits.h
-						y/utils/traits.h
-							????
-		yave/graphics/buffers/SubBuffer.h
-			yave/graphics/buffers/SubBufferBase.h
-				yave/graphics/memory/DeviceMemoryView.h
-					y/mem/memory.h
-						????
-				yave/graphics/buffers/Buffer.h
-					yave/graphics/buffers/BufferUsage.h
-						yave/graphics/memory/memoryType.h
-							????
-					yave/graphics/buffers/BufferBase.h
-		yave/graphics/commands/CmdBuffer.h
-			yave/graphics/commands/CmdBufferData.h
-				yave/graphics/device/Semaphore.h
-				y/core/Vector.h
-					????
-
-
-yave/graphics/device/submit.h
-	yave/yave.h
-		yave/utils/forward.h
-		y/utils.h
-			????
-		y/utils/perf.h
-			????
-		y/math/Transform.h
-			????
 
 
 yave/graphics/device/ThreadLocalDevice.cpp
@@ -5041,7 +4965,6 @@ yave/graphics/images/IBLProbe.cpp
 			yave/graphics/commands/CmdBufferData.h
 				yave/graphics/device/Semaphore.h
 	yave/graphics/device/Queue.h
-		yave/graphics/device/submit.h
 	yave/graphics/device/DeviceResources.h
 		yave/assets/AssetPtr.h
 			yave/assets/AssetId.h
@@ -5185,7 +5108,6 @@ yave/graphics/images/ImageBase.cpp
 				y/core/Vector.h
 					????
 	yave/graphics/device/Queue.h
-		yave/graphics/device/submit.h
 	yave/graphics/memory/DeviceMemoryAllocator.h
 		yave/graphics/memory/DeviceMemoryHeap.h
 			yave/graphics/memory/DeviceMemoryHeapBase.h
@@ -6293,7 +6215,6 @@ yave/graphics/swapchain/Swapchain.cpp
 		yave/graphics/images/Sampler.h
 		yave/graphics/device/QueueFamily.h
 			yave/graphics/device/Queue.h
-				yave/graphics/device/submit.h
 		yave/graphics/memory/DeviceMemoryAllocator.h
 			yave/graphics/memory/DeviceMemoryHeap.h
 				yave/graphics/memory/DeviceMemoryHeapBase.h
@@ -7160,7 +7081,6 @@ yave/meshes/SkinnedMesh.cpp
 			yave/graphics/commands/CmdBufferData.h
 				yave/graphics/device/Semaphore.h
 	yave/graphics/device/Queue.h
-		yave/graphics/device/submit.h
 
 
 yave/meshes/SkinnedMesh.h
@@ -7284,7 +7204,6 @@ yave/meshes/StaticMesh.cpp
 			yave/graphics/commands/CmdBufferData.h
 				yave/graphics/device/Semaphore.h
 	yave/graphics/device/Queue.h
-		yave/graphics/device/submit.h
 
 
 yave/meshes/StaticMesh.h
@@ -8696,32 +8615,32 @@ yave/window/Window.h
 
 
 yave/renderer/LightingPass.cpp                              => 101
-yave/graphics/device/DeviceResources.cpp                    => 100
+yave/graphics/device/DeviceResources.cpp                    => 99
 yave/renderer/SceneRenderSubPass.cpp                        => 95
 yave/renderer/ShadowMapPass.cpp                             => 85
 yave/renderer/ToneMappingPass.cpp                           => 85
 yave/renderer/BloomPass.cpp                                 => 81
-yave/graphics/swapchain/Swapchain.cpp                       => 76
-yave/graphics/device/Device.cpp                             => 73
+yave/graphics/swapchain/Swapchain.cpp                       => 75
 yave/utils/entities.cpp                                     => 73
-yave/graphics/utils.cpp                                     => 69
+yave/graphics/device/Device.cpp                             => 72
+yave/graphics/utils.cpp                                     => 68
 yave/renderer/GBufferPass.cpp                               => 67
 yave/framegraph/FrameGraph.cpp                              => 66
 yave/graphics/commands/CmdBufferRecorder.cpp                => 66
-yave/graphics/images/IBLProbe.cpp                           => 64
 yave/renderer/BlurPass.cpp                                  => 64
 yave/renderer/DownsamplePass.cpp                            => 64
 yave/components/StaticMeshComponent.cpp                     => 63
-yave/graphics/device/Device.h                               => 62
-yave/graphics/images/ImageBase.cpp                          => 59
+yave/graphics/images/IBLProbe.cpp                           => 63
+yave/graphics/device/Device.h                               => 61
+yave/graphics/images/ImageBase.cpp                          => 58
 yave/framegraph/FrameGraphPass.cpp                          => 57
 yave/components/StaticMeshComponent.h                       => 56
 yave/material/Material.cpp                                  => 56
 yave/material/MaterialCompiler.cpp                          => 55
-yave/meshes/StaticMesh.cpp                                  => 55
 yave/framegraph/FrameGraphPassBuilder.cpp                   => 54
-yave/meshes/SkinnedMesh.cpp                                 => 54
+yave/meshes/StaticMesh.cpp                                  => 54
 yave/animations/SkeletonInstance.cpp                        => 53
+yave/meshes/SkinnedMesh.cpp                                 => 53
 yave/animations/SkeletonInstance.h                          => 52
 yave/material/MaterialTemplate.cpp                          => 51
 yave/framegraph/FrameGraphPass.h                            => 50
@@ -8737,8 +8656,7 @@ yave/graphics/buffers/Mapping.cpp                           => 45
 yave/material/Material.h                                    => 44
 yave/framegraph/FrameGraphFrameResources.h                  => 43
 yave/graphics/commands/TimeQuery.cpp                        => 43
-yave/graphics/device/Queue.cpp                              => 43
-yave/graphics/device/submit.cpp                             => 42
+yave/graphics/device/Queue.cpp                              => 42
 yave/framegraph/FrameGraphDescriptorBinding.h               => 41
 yave/framegraph/FrameGraphResourcePool.cpp                  => 40
 yave/graphics/commands/CmdBufferRecorder.h                  => 40
@@ -8778,12 +8696,12 @@ yave/graphics/memory/DeviceMemoryHeap.cpp                   => 27
 yave/material/SimpleMaterialData.h                          => 27
 yave/framegraph/TransientBuffer.h                           => 26
 yave/framegraph/TransientImage.h                            => 26
-yave/graphics/commands/CmdBufferPool.cpp                    => 26
 yave/graphics/images/Sampler.cpp                            => 26
 yave/graphics/memory/DedicatedDeviceMemoryAllocator.cpp     => 26
 yave/graphics/swapchain/FrameToken.h                        => 26
 yave/ecs/EntityWorld.h                                      => 25
 yave/graphics/buffers/TypedWrapper.h                        => 25
+yave/graphics/commands/CmdBufferPool.cpp                    => 25
 yave/graphics/descriptors/DescriptorSetData.cpp             => 25
 yave/graphics/images/IBLProbe.h                             => 25
 yave/graphics/images/ImageView.h                            => 25
@@ -8796,11 +8714,11 @@ yave/graphics/images/Image.h                                => 24
 yave/material/MaterialTemplateData.cpp                      => 24
 yave/assets/FolderAssetStore.cpp                            => 23
 yave/graphics/buffers/SubBuffer.h                           => 23
-yave/graphics/device/QueueFamily.cpp                        => 23
 yave/graphics/shaders/ComputeProgram.h                      => 23
 yave/graphics/shaders/ShaderProgram.h                       => 23
 yave/assets/SQLiteAssetStore.cpp                            => 22
 yave/graphics/buffers/SubBufferBase.h                       => 22
+yave/graphics/device/QueueFamily.cpp                        => 22
 yave/graphics/memory/DeviceMemoryView.cpp                   => 22
 yave/graphics/shaders/ShaderModule.h                        => 22
 yave/graphics/shaders/ShaderModuleBase.cpp                  => 22
@@ -8824,10 +8742,10 @@ yave/graphics/memory/DeviceMemory.cpp                       => 19
 yave/renderer/ToneMappingPass.h                             => 19
 yave/graphics/buffers/BufferBase.h                          => 18
 yave/graphics/commands/CmdBufferPool.h                      => 18
-yave/graphics/device/QueueFamily.h                          => 18
 yave/graphics/memory/alloc.h                                => 18
 yave/graphics/memory/DeviceMemoryHeapBase.h                 => 18
 yave/renderer/LightingPass.h                                => 18
+yave/graphics/device/QueueFamily.h                          => 17
 yave/material/MaterialTemplateData.h                        => 17
 yave/meshes/MeshData.cpp                                    => 17
 yave/renderer/ShadowMapPass.h                               => 17
@@ -8844,7 +8762,6 @@ yave/assets/AssetLoadingContext.h                           => 15
 yave/assets/AssetStore.cpp                                  => 15
 yave/ecs/ComponentContainer.h                               => 15
 yave/graphics/commands/CmdBufferData.h                      => 15
-yave/graphics/device/Queue.h                                => 15
 yave/graphics/device/extentions/RayTracing.h                => 15
 yave/graphics/images/ImageData.cpp                          => 15
 yave/graphics/memory/DeviceMemoryView.h                     => 15
@@ -8854,6 +8771,7 @@ yave/utils/FileSystemModel.cpp                              => 15
 yave/assets/AssetDependencies.h                             => 14
 yave/assets/AssetStore.h                                    => 14
 yave/graphics/commands/TimeQuery.h                          => 14
+yave/graphics/device/Queue.h                                => 14
 yave/graphics/device/Semaphore.cpp                          => 14
 yave/graphics/images/ImageData.h                            => 14
 yave/material/MaterialCompiler.h                            => 14
@@ -8927,7 +8845,6 @@ yave/camera/Frustum.h                                       => 6
 yave/components/TransformableComponent.h                    => 6
 yave/ecs/ecs.h                                              => 6
 yave/graphics/device/DeviceProperties.h                     => 6
-yave/graphics/device/submit.h                               => 6
 yave/graphics/images/SamplerType.h                          => 6
 yave/graphics/memory/MemoryType.h                           => 6
 yave/meshes/AABB.h                                          => 6
@@ -8938,9 +8855,9 @@ yave/utils/filesystem.h                                     => 2
 yave/utils/forward.h                                        => 1
 
 
-yave/yave.h                                                 included 37 total 1369
+yave/yave.h                                                 included 36 total 1296
 yave/graphics/utils.h                                       included 36 total 1296
-yave/graphics/commands/CmdBufferRecorder.h                  included 25 total 625
+yave/graphics/commands/CmdBufferRecorder.h                  included 24 total 576
 yave/graphics/vk/vk.h                                       included 20 total 400
 yave/graphics/device/DeviceLinked.h                         included 16 total 256
 yave/ecs/ecs.h                                              included 13 total 169
@@ -9041,7 +8958,6 @@ yave/graphics/descriptors/DescriptorSetData.h               included 3 total 9
 yave/graphics/descriptors/uniforms.h                        included 3 total 9
 yave/graphics/device/Instance.h                             included 3 total 9
 yave/graphics/device/ResourceType.h                         included 3 total 9
-yave/graphics/device/submit.h                               included 3 total 9
 yave/graphics/images/ImageBase.h                            included 3 total 9
 yave/graphics/images/Sampler.h                              included 3 total 9
 yave/graphics/memory/DedicatedDeviceMemoryAllocator.h       included 3 total 9
@@ -9133,7 +9049,6 @@ yave/graphics/device/PhysicalDevice.cpp                     included 1 total 1
 yave/graphics/device/Queue.cpp                              included 1 total 1
 yave/graphics/device/QueueFamily.cpp                        included 1 total 1
 yave/graphics/device/Semaphore.cpp                          included 1 total 1
-yave/graphics/device/submit.cpp                             included 1 total 1
 yave/graphics/device/ThreadLocalDevice.cpp                  included 1 total 1
 yave/graphics/device/extentions/DebugUtils.cpp              included 1 total 1
 yave/graphics/device/extentions/RayTracing.cpp              included 1 total 1

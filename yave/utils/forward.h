@@ -37,7 +37,6 @@ class AssetLoadingContext;
 class AssetLoadingThreadPool;
 class AssetPtrDataBase;
 class AssetStore;
-class AsyncSubmit;
 class BloomPass;
 class BloomPassSettings;
 class BlurPass;
@@ -46,7 +45,6 @@ class BoneTransform;
 class BufferBarrier;
 class BufferBase;
 class Camera;
-class CmdBuffer;
 class CmdBuffer;
 class CmdBufferData;
 class CmdBufferDataProxy;
@@ -126,10 +124,8 @@ class PointLight;
 class PointLightComponent;
 class PushConstant;
 class Queue;
-class QueueFamily;
 class RayTracing;
 class RayleighSky;
-class RecordedCmdBuffer;
 class RenderPass;
 class RenderPassRecorder;
 class Renderable;
@@ -164,7 +160,6 @@ class StaticMeshComponent;
 class SubBufferBase;
 class Surfel;
 class Swapchain;
-class SyncSubmit;
 class ThreadDeviceLinked;
 class ThreadLocalDevice;
 class TimeQuery;
@@ -181,4 +176,3 @@ class Window;
 }
 
 #endif // YAVE_UTILS_FORWARD_H
-

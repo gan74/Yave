@@ -46,7 +46,6 @@ LifetimeManager& lifetime_manager(DevicePtr dptr);
 
 const VkAllocationCallbacks* vk_allocation_callbacks(DevicePtr dptr);
 VkSampler vk_sampler(DevicePtr dptr, SamplerType type);
-const QueueFamily& queue_family(DevicePtr dptr, VkQueueFlags flags);
 
 const DebugUtils* debug_utils(DevicePtr dptr);
 const RayTracing* ray_tracing(DevicePtr dptr);

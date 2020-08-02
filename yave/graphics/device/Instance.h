@@ -22,9 +22,10 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_INSTANCE_H
 #define YAVE_DEVICE_INSTANCE_H
 
-#include <yave/graphics/vk/vk.h>
-
+#include "PhysicalDevice.h"
 #include "DebugParams.h"
+
+#include <y/core/Vector.h>
 
 #include <memory>
 
@@ -42,6 +43,8 @@ class Instance : NonMovable {
         const DebugUtils* debug_utils() const;
 
         VkInstance vk_instance() const;
+
+        core::Vector<PhysicalDevice> physical_devices() const;
 
     private:
         struct {

@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class TimeQuery : NonMovable, public DeviceLinked {
+class TimeQuery : public DeviceLinked {
 
     public:
         TimeQuery(DevicePtr dptr);

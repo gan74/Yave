@@ -22,27 +22,35 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_PHYSICALDEVICE_H
 #define YAVE_DEVICE_PHYSICALDEVICE_H
 
-#include "Instance.h"
+#include <yave/yave.h>
+#include <yave/graphics/vk/vk.h>
 
 namespace yave {
 
-class PhysicalDevice : NonCopyable {
+class PhysicalDevice {
     public:
-        PhysicalDevice(Instance& instance);
-        ~PhysicalDevice();
-
         VkPhysicalDevice vk_physical_device() const;
 
         const VkPhysicalDeviceProperties& vk_properties() const;
         const VkPhysicalDeviceInlineUniformBlockPropertiesEXT& vk_uniform_block_properties() const;
 
         const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
+        const VkPhysicalDeviceFeatures& vk_supported_features() const;
+
+        bool is_discrete() const;
+        usize total_device_memory() const;
+
+        bool support_features(const VkPhysicalDeviceFeatures& features) const;
 
     private:
-        Instance& _instance;
+        friend class Instance;
+
+        PhysicalDevice(VkPhysicalDevice device);
+
         VkPhysicalDevice _device = {};
         VkPhysicalDeviceProperties _properties = {};
         VkPhysicalDeviceMemoryProperties _memory_properties = {};
+        VkPhysicalDeviceFeatures _supported_features = {};
 
         VkPhysicalDeviceInlineUniformBlockPropertiesEXT _uniform_blocks_properties = {};
 };

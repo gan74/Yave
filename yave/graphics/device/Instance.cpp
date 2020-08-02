@@ -110,5 +110,20 @@ VkInstance Instance::vk_instance() const {
     return _instance;
 }
 
+core::Vector<PhysicalDevice> Instance::physical_devices() const {
+
+    core::Vector<VkPhysicalDevice> vk_devices;
+    {
+        u32 count = 0;
+        vk_check(vkEnumeratePhysicalDevices(_instance, &count, nullptr));
+        vk_devices = core::Vector<VkPhysicalDevice>(count, VkPhysicalDevice{});
+        vk_check(vkEnumeratePhysicalDevices(_instance, &count, vk_devices.data()));
+    }
+
+    auto devices = core::vector_with_capacity<PhysicalDevice>(vk_devices.size());
+    std::transform(vk_devices.begin(), vk_devices.end(), std::back_inserter(devices), [](VkPhysicalDevice d) { return PhysicalDevice(d); });
+    return devices;
+}
+
 }
 

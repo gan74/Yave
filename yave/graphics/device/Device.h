@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include "Instance.h"
+#include "Queue.h"
 #include "DeviceProperties.h"
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
@@ -33,7 +35,6 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
 #include <yave/graphics/images/Sampler.h>
-#include <yave/graphics/device/QueueFamily.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 
 #include <thread>
@@ -49,6 +50,7 @@ class Device : NonMovable {
 
     public:
         explicit Device(Instance& instance);
+        Device(Instance& instance, PhysicalDevice device);
         ~Device();
 
         const PhysicalDevice& physical_device() const;
@@ -59,7 +61,6 @@ class Device : NonMovable {
 
         CmdBuffer create_disposable_cmd_buffer() const;
 
-        const QueueFamily& queue_family(VkQueueFlags flags) const;
         const Queue& graphic_queue() const;
         Queue& graphic_queue();
 
@@ -78,26 +79,18 @@ class Device : NonMovable {
         VkPhysicalDevice vk_physical_device() const;
         VkSampler vk_sampler(SamplerType type = SamplerType::Repeat) const;
 
+        static VkPhysicalDeviceFeatures required_device_features();
+
         const DebugUtils* debug_utils() const;
         const RayTracing* ray_tracing() const;
 
-
-        template<typename T>
-        decltype(auto) descriptor_set_layout(T&& t) const {
-            return descriptor_set_allocator().descriptor_set_layout(y_fwd(t));
-        }
-
-        template<typename T>
-        void destroy_later(T&& t) const {
-            _lifetime_manager.destroy_later(y_fwd(t));
-        }
-
     private:
         Instance& _instance;
+
         Y_TODO(move this to the heap or slim it)
         PhysicalDevice _physical;
 
-        core::Vector<QueueFamily> _queue_families;
+        u32 _graphic_queue_index = 0;
 
         ScopedDevice _device;
         DeviceProperties _properties;
@@ -105,7 +98,7 @@ class Device : NonMovable {
         mutable DeviceMemoryAllocator _allocator;
         mutable LifetimeManager _lifetime_manager;
 
-        core::Vector<Queue> _queues;
+        Queue _graphic_queue;
 
         std::array<Sampler, 2> _samplers;
 
