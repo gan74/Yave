@@ -25,14 +25,11 @@ SOFTWARE.
 #include <yave/ecs/ecs.h>
 #include <yave/assets/AssetLoader.h>
 
-#include "EditorState.h"
 #include "Settings.h"
 #include "Selection.h"
-#include "Ui.h"
+#include "UiManager.h"
 #include "ThumbmailCache.h"
-#include "PickingManager.h"
 #include "EditorResources.h"
-#include "Logs.h"
 #include "Notifications.h"
 
 
@@ -56,8 +53,7 @@ class EditorContext : NonMovable, public DeviceLinked {
         void defer(std::function<void()> func);
         void flush_deferred();
 
-        void log_message(std::string_view msg, Log type);
-
+        
         void save_world() const;
         void load_world();
         void new_world();
@@ -76,15 +72,12 @@ class EditorContext : NonMovable, public DeviceLinked {
         const EditorResources& resources() const;
         EditorResources& resources();
 
-        EditorState& editor_state();
+        UiManager& ui_manager();
         Settings& settings();
         Selection& selection();
         AssetLoader& loader();
-        Ui& ui();
         ThumbmailCache& thumbmail_cache();
-        PickingManager& picking_manager();
         AssetStore& asset_store();
-        Logs& logs();
         Notifications& notifications();
 
 
@@ -113,14 +106,11 @@ class EditorContext : NonMovable, public DeviceLinked {
         SceneView* _scene_view = nullptr;
 
 
-        EditorState _editor_state;
         Settings _settings;
         Selection _selection;
-        Ui _ui;
-        Logs _logs;
+        UiManager _ui_manager;
         Notifications _notifs;
         ThumbmailCache _thumb_cache;
-        PickingManager _picking_manager;
 
         ecs::EntityWorld _world;
 

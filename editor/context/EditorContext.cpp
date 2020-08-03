@@ -50,10 +50,9 @@ EditorContext::EditorContext(DevicePtr dptr) :
         //_asset_store(std::make_shared<FolderAssetStore>(store_dir)),
         _loader(device(), _asset_store, AssetLoadingFlags::SkipFailedDependenciesBit),
         _scene_view(&_default_scene_view),
-        _ui(this),
+        _ui_manager(this),
         _notifs(this),
         _thumb_cache(this),
-        _picking_manager(this),
         _world(create_editor_world()) {
 
 
@@ -91,7 +90,7 @@ void EditorContext::flush_reload() {
         y_profile_zone("flush reload");
         _thumb_cache.clear();
         _selection.flush_reload();
-        _ui.refresh_all();
+        _ui_manager.refresh_all();
         _world.flush_reload(loader());
     });
 }
@@ -127,12 +126,6 @@ void EditorContext::flush_deferred() {
             perf::start_capture(settings().perf().capture_name);
         }
     }
-
-    _logs.flush();
-}
-
-void EditorContext::log_message(std::string_view msg, Log type) {
-    _logs.log_msg(msg, type);
 }
 
 void EditorContext::set_scene_view(SceneView* scene) {
@@ -173,10 +166,6 @@ EditorResources& EditorContext::resources() {
     return _resources;
 }
 
-EditorState& EditorContext::editor_state() {
-    return _editor_state;
-}
-
 Settings& EditorContext::settings() {
     return _settings;
 }
@@ -189,24 +178,16 @@ AssetLoader& EditorContext::loader() {
     return _loader;
 }
 
-Ui& EditorContext::ui() {
-    return _ui;
+UiManager& EditorContext::ui_manager() {
+    return _ui_manager;
 }
 
 ThumbmailCache& EditorContext::thumbmail_cache() {
     return _thumb_cache;
 }
 
-PickingManager& EditorContext::picking_manager() {
-    return _picking_manager;
-}
-
 AssetStore& EditorContext::asset_store() {
     return *_asset_store;
-}
-
-Logs& EditorContext::logs() {
-    return _logs;
 }
 
 Notifications& EditorContext::notifications() {

@@ -36,7 +36,7 @@ using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
 class EditorContext;
 using ContextPtr = EditorContext*;
 
-class ContextLinked {
+class ContextLinked : NonCopyable {
     public:
         ContextLinked() = default;
 

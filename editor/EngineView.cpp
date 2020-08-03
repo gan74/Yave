@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <editor/widgets/AssetSelector.h>
 #include <editor/context/EditorContext.h>
+#include <editor/context/Picker.h>
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -186,7 +187,7 @@ void EngineView::update_picking() {
         return;
     }
 
-    const auto picking_data = context()->picking_manager().pick_sync(_scene_view, uv, viewport_size);
+    const PickingResult picking_data = Picker(context()).pick_sync(_scene_view, uv, viewport_size);
     if(_camera_controller && _camera_controller->viewport_clicked(picking_data)) {
         // event has been eaten by the camera controller, don't proceed further
         _gizmo.set_allow_drag(false);

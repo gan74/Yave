@@ -36,44 +36,25 @@ SOFTWARE.
 
 namespace editor {
 
+struct ThumbmailData;
+struct ThumbmailSceneData;
+
 class ThumbmailCache : NonMovable, public ContextLinked {
+    using RenderFunc = std::function<std::unique_ptr<ThumbmailData>(CmdBufferRecorder&)>;
 
-        struct ThumbmailData {
-            ThumbmailData(ContextPtr ctx, usize size, AssetId asset);
-
-            StorageTexture image;
-            TextureView view;
-            const AssetId id;
-
-            core::Vector<std::pair<core::String, core::String>> properties;
-        };
-
-        struct SceneData : NonMovable, public ContextLinked {
-            SceneData(ContextPtr ctx);
-
-            void add_mesh(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat);
-            void add_prefab(const ecs::EntityPrefab& prefab);
-
-            ecs::EntityWorld world;
-            SceneView view;
-        };
-
-        using RenderFunc = std::function<std::unique_ptr<ThumbmailData>(CmdBufferRecorder&)>;
-
-        struct LoadingRequest {
-            GenericAssetPtr asset;
-            RenderFunc func;
-        };
+    struct LoadingRequest {
+        GenericAssetPtr asset;
+        RenderFunc func;
+    };
 
     public:
-        using ThumbmailView = std::reference_wrapper<const TextureView>;
-
         struct Thumbmail {
             TextureView* image = nullptr;
             core::Span<std::pair<core::String, core::String>> properties;
         };
 
         ThumbmailCache(ContextPtr ctx, usize size = 256);
+        ~ThumbmailCache();
 
         math::Vec2ui thumbmail_size() const;
 
@@ -87,9 +68,9 @@ class ThumbmailCache : NonMovable, public ContextLinked {
         void submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr<ThumbmailData> thumb);
 
         std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const;
-        std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const SceneData& scene) const;
+        std::unique_ptr<ThumbmailData> render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const ThumbmailSceneData& scene) const;
 
-        usize _size;
+        usize _size = 0;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
         core::ExternalHashMap<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;

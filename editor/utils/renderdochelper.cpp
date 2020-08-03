@@ -29,15 +29,8 @@ SOFTWARE.
 
 #include "renderdochelper.h"
 
-#if __has_include("renderdoc_app.h")
-#include "renderdoc_app.h"
+#include <external/renderdoc_app.h>
 #define RENDERDOC_SUPPORTED
-#elif __has_include(<renderdoc_app.h>)
-#include <renderdoc_app.h>
-#define RENDERDOC_SUPPORTED
-#else
-#warning RenderDoc helper not supported: header missing
-#endif
 
 namespace editor {
 namespace renderdoc {

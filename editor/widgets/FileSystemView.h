@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 
 #include <y/core/Chrono.h>
+#include <y/core/Result.h>
 
 namespace editor {
 

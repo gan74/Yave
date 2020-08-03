@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "PickingManager.h"
+#include "Picker.h"
 #include "EditorContext.h"
 
 #include <yave/framegraph/FrameGraph.h>
@@ -37,17 +37,27 @@ SOFTWARE.
 
 namespace editor {
 
-bool PickingManager::PickingData::hit() const {
+
+bool PickingResult::hit() const {
     return depth > 0.0f;
 }
 
-PickingManager::PickingManager(ContextPtr ctx) :
-        ContextLinked(ctx),
-        _buffer(device(), 1) {
+Picker::Picker(ContextPtr ctx) :
+        ContextLinked(ctx) {
 }
 
-PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_view, const math::Vec2& uv, const math::Vec2ui& size) {
+PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& uv, const math::Vec2ui& size) {
     y_profile();
+
+    struct ReadBackData {
+        const float depth;
+        const u32 id;
+    };
+
+    using ReadBackBuffer = TypedBuffer<ReadBackData, BufferUsage::StorageBit, MemoryType::CpuVisible>;
+
+
+    ReadBackBuffer buffer(device(), 1);
 
     FrameGraph framegraph(std::make_shared<FrameGraphResourcePool>(device()));
 
@@ -60,7 +70,7 @@ PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_vie
 
         builder.add_uniform_input(entity_pass.depth);
         builder.add_uniform_input(entity_pass.id);
-        builder.add_descriptor_binding(Descriptor(_buffer));
+        builder.add_descriptor_binding(Descriptor(buffer));
 
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& program = context()->resources()[EditorResources::PickingProgram];
@@ -72,21 +82,21 @@ PickingManager::PickingData PickingManager::pick_sync(const SceneView& scene_vie
     std::move(framegraph).render(recorder);
     graphic_queue(device()).submit<SyncPolicy::Sync>(std::move(recorder));
 
-    const ReadBackData read_back = TypedMapping(_buffer)[0];
+    const ReadBackData read_back = TypedMapping(buffer)[0];
     const float depth = read_back.depth;
 
     auto inv_matrix = scene_view.camera().inverse_matrix();
     const math::Vec4 p = inv_matrix * math::Vec4(uv * 2.0f - 1.0f, depth, 1.0f);
 
-    const PickingData data{
+    const PickingResult result {
             p.to<3>() / p.w(),
             depth,
             uv,
             read_back.id
         };
 
-    //log_msg(fmt("picked: % (depth: %, id: %)", data.world_pos, data.depth, data.entity_index));
-    return data;
+    //log_msg(fmt("picked: % (depth: %, id: %)", result.world_pos, result.depth, result.entity_index));
+    return result;
 }
 
 }

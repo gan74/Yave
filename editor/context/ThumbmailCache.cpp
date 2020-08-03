@@ -87,114 +87,134 @@ static void add_size_property(core::Vector<std::pair<core::String, core::String>
 }
 
 
-ThumbmailCache::ThumbmailData::ThumbmailData(ContextPtr ctx, usize size, AssetId asset) :
-        image(ctx->device(), VK_FORMAT_R8G8B8A8_UNORM, math::Vec2ui(size)),
-        view(image),
-        id(asset) {
 
-    switch(ctx->asset_store().asset_type(id).unwrap_or(AssetType::Unknown)) {
-        case AssetType::Mesh:
-            if(const auto& mesh = ctx->loader().load<StaticMesh>(id); mesh) {
-                properties.emplace_back("Triangles", fmt("%", mesh->triangle_buffer().size()));
-                properties.emplace_back("Vertices", fmt("%", mesh->vertex_buffer().size()));
-                properties.emplace_back("Radius", fmt("%", rounded_string(mesh->radius()).data()));
-            }
-        break;
 
-        case AssetType::Image:
-            if(const auto& tex = ctx->loader().load<Texture>(id); tex) {
-                properties.emplace_back("Size", fmt("% x %", tex->size().x(), tex->size().y()));
-                properties.emplace_back("Mipmaps", fmt("%", tex->mipmaps()));
-                properties.emplace_back("Format", tex->format().name());
-            }
-        break;
 
-        case AssetType::Prefab:
-            if(const auto& prefab = ctx->loader().load<ecs::EntityPrefab>(id); prefab) {
-                properties.emplace_back("Components", fmt("%", prefab->components().size()));
-                for(usize i = 0; i != prefab->components().size(); ++i) {
-                    if(const auto* component = prefab->components()[i].get()) {
-                        properties.emplace_back(core::String(fmt("%", i)), clean_component_name(component->runtime_info().type_name));
+struct ThumbmailData {
+    ThumbmailData(ContextPtr ctx, usize size, AssetId asset) :
+            image(ctx->device(), VK_FORMAT_R8G8B8A8_UNORM, math::Vec2ui(size)),
+            view(image),
+            id(asset) {
+
+        switch(ctx->asset_store().asset_type(id).unwrap_or(AssetType::Unknown)) {
+            case AssetType::Mesh:
+                if(const auto& mesh = ctx->loader().load<StaticMesh>(id); mesh) {
+                    properties.emplace_back("Triangles", fmt("%", mesh->triangle_buffer().size()));
+                    properties.emplace_back("Vertices", fmt("%", mesh->vertex_buffer().size()));
+                    properties.emplace_back("Radius", fmt("%", rounded_string(mesh->radius()).data()));
+                }
+            break;
+
+            case AssetType::Image:
+                if(const auto& tex = ctx->loader().load<Texture>(id); tex) {
+                    properties.emplace_back("Size", fmt("% x %", tex->size().x(), tex->size().y()));
+                    properties.emplace_back("Mipmaps", fmt("%", tex->mipmaps()));
+                    properties.emplace_back("Format", tex->format().name());
+                }
+            break;
+
+            case AssetType::Prefab:
+                if(const auto& prefab = ctx->loader().load<ecs::EntityPrefab>(id); prefab) {
+                    properties.emplace_back("Components", fmt("%", prefab->components().size()));
+                    for(usize i = 0; i != prefab->components().size(); ++i) {
+                        if(const auto* component = prefab->components()[i].get()) {
+                            properties.emplace_back(core::String(fmt("%", i)), clean_component_name(component->runtime_info().type_name));
+                        }
                     }
                 }
+            break;
+
+            default:
+            break;
+        }
+
+        add_size_property(properties, ctx, id);
+    }
+
+    StorageTexture image;
+    TextureView view;
+    const AssetId id;
+
+    core::Vector<std::pair<core::String, core::String>> properties;
+};
+
+struct ThumbmailSceneData : NonMovable, public ContextLinked {
+    ThumbmailSceneData(ContextPtr ctx) : ContextLinked(ctx), view(&world) {
+        const float intensity = 1.0f;
+
+        {
+            const ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
+            DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
+            light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
+            light_comp->intensity() = 3.0f * intensity;
+        }
+        {
+            const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+            world.component<TransformableComponent>(light_id)->position() = math::Vec3(0.75f, -0.5f, 0.5f);
+            PointLightComponent* light = world.component<PointLightComponent>(light_id);
+            light->color() = k_to_rbg(2500.0f);
+            light->intensity() = 1.5f * intensity;
+            light->falloff() = 0.5f;
+            light->radius() = 2.0f;
+        }
+        {
+            const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+            world.component<TransformableComponent>(light_id)->position() = math::Vec3(-0.75f, -0.5f, 0.5f);
+            PointLightComponent* light = world.component<PointLightComponent>(light_id);
+            light->color() = k_to_rbg(10000.0f);
+            light->intensity() = 1.5f * intensity;
+            light->falloff() = 0.5f;
+            light->radius() = 2.0f;
+        }
+
+        {
+            const ecs::EntityId sky_id = world.create_entity(ecs::StaticArchetype<SkyLightComponent>());
+            world.component<SkyLightComponent>(sky_id)->probe() = device_resources(device()).ibl_probe();
+        }
+
+        /*if(background) {
+            ecs::EntityId bg_id = world.create_entity(StaticMeshArchetype());
+            StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(bg_id);
+            *mesh_comp = StaticMeshComponent(dptr->device_resources()[DeviceResources::SweepMesh], dptr->device_resources()[DeviceResources::EmptyMaterial]);
+        }*/
+
+        view.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
+    }
+
+    void add_mesh(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) {
+        ecs::EntityId entity = world.create_entity(StaticMeshArchetype());
+        StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity);
+        *mesh_comp = StaticMeshComponent(mesh, mat);
+
+        TransformableComponent* trans_comp = world.component<TransformableComponent>(entity);
+        trans_comp->transform() = center_to_camera(mesh->aabb());
+    }
+
+    void add_prefab(const ecs::EntityPrefab& prefab)  {
+        ecs::EntityId entity = world.create_entity(prefab);
+
+        if(StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
+            if(TransformableComponent* trans_comp = world.component<TransformableComponent>(entity)) {
+                trans_comp->transform() = center_to_camera(mesh_comp->compute_aabb());
             }
-        break;
-
-        default:
-        break;
-    }
-
-    add_size_property(properties, ctx, id);
-}
-
-ThumbmailCache::SceneData::SceneData(ContextPtr ctx) : ContextLinked(ctx), view(&world) {
-
-    const float intensity = 1.0f;
-
-    {
-        const ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
-        DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
-        light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
-        light_comp->intensity() = 3.0f * intensity;
-    }
-    {
-        const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
-        world.component<TransformableComponent>(light_id)->position() = math::Vec3(0.75f, -0.5f, 0.5f);
-        PointLightComponent* light = world.component<PointLightComponent>(light_id);
-        light->color() = k_to_rbg(2500.0f);
-        light->intensity() = 1.5f * intensity;
-        light->falloff() = 0.5f;
-        light->radius() = 2.0f;
-    }
-    {
-        const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
-        world.component<TransformableComponent>(light_id)->position() = math::Vec3(-0.75f, -0.5f, 0.5f);
-        PointLightComponent* light = world.component<PointLightComponent>(light_id);
-        light->color() = k_to_rbg(10000.0f);
-        light->intensity() = 1.5f * intensity;
-        light->falloff() = 0.5f;
-        light->radius() = 2.0f;
-    }
-
-    {
-        const ecs::EntityId sky_id = world.create_entity(ecs::StaticArchetype<SkyLightComponent>());
-        world.component<SkyLightComponent>(sky_id)->probe() = device_resources(device()).ibl_probe();
-    }
-
-    /*if(background) {
-        ecs::EntityId bg_id = world.create_entity(StaticMeshArchetype());
-        StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(bg_id);
-        *mesh_comp = StaticMeshComponent(dptr->device_resources()[DeviceResources::SweepMesh], dptr->device_resources()[DeviceResources::EmptyMaterial]);
-    }*/
-
-    view.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
-}
-
-
-void ThumbmailCache::SceneData::add_mesh(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) {
-    ecs::EntityId entity = world.create_entity(StaticMeshArchetype());
-    StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity);
-    *mesh_comp = StaticMeshComponent(mesh, mat);
-
-    TransformableComponent* trans_comp = world.component<TransformableComponent>(entity);
-    trans_comp->transform() = center_to_camera(mesh->aabb());
-
-}
-
-void ThumbmailCache::SceneData::add_prefab(const ecs::EntityPrefab& prefab) {
-    ecs::EntityId entity = world.create_entity(prefab);
-
-    if(StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
-        if(TransformableComponent* trans_comp = world.component<TransformableComponent>(entity)) {
-            trans_comp->transform() = center_to_camera(mesh_comp->compute_aabb());
         }
     }
-}
+
+    ecs::EntityWorld world;
+    SceneView view;
+};
+
+
+
 
 ThumbmailCache::ThumbmailCache(ContextPtr ctx, usize size) :
         ContextLinked(ctx),
         _size(size),
         _resource_pool(std::make_shared<FrameGraphResourcePool>(ctx->device())) {
+}
+
+ThumbmailCache::~ThumbmailCache() {
+
 }
 
 void ThumbmailCache::clear() {
@@ -245,7 +265,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
             _render_thread.schedule([id, this] {
                 if(const auto& mesh = context()->loader().load<StaticMesh>(id); !mesh.is_failed()) {
                     CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
-                    SceneData scene(context());
+                    ThumbmailSceneData scene(context());
                     scene.add_mesh(mesh, device_resources(device())[DeviceResources::EmptyMaterial]);
                     submit_and_set(rec, render_thumbmail(rec, id, scene));
                 } else {
@@ -258,7 +278,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
             _render_thread.schedule([id, this] {
                 if(const auto& material = context()->loader().load<Material>(id); !material.is_failed()) {
                     CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
-                    SceneData scene(context());
+                    ThumbmailSceneData scene(context());
                     scene.add_mesh(device_resources(device())[DeviceResources::SphereMesh], material);
                     submit_and_set(rec, render_thumbmail(rec, id, scene));
                 } else {
@@ -282,7 +302,7 @@ void ThumbmailCache::request_thumbmail(AssetId id) {
             _render_thread.schedule([id, this] {
                 if(const auto& prefab = context()->loader().load<ecs::EntityPrefab>(id); !prefab.is_failed()) {
                     CmdBufferRecorder rec = create_disposable_cmd_buffer(device());
-                    SceneData scene(context());
+                    ThumbmailSceneData scene(context());
                     scene.add_prefab(*prefab);
                     submit_and_set(rec, render_thumbmail(rec, id, scene));
                 } else {
@@ -307,7 +327,7 @@ void ThumbmailCache::submit_and_set(CmdBufferRecorder& recorder, std::unique_ptr
     thumbmail = std::move(thumb);
 }
 
-std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const {
+std::unique_ptr<ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, const AssetPtr<Texture>& tex) const {
     auto thumbmail = std::make_unique<ThumbmailData>(context(), _size, tex.id());
 
     {
@@ -318,7 +338,7 @@ std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(
     return thumbmail;
 }
 
-std::unique_ptr<ThumbmailCache::ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const SceneData& scene) const {
+std::unique_ptr<ThumbmailData> ThumbmailCache::render_thumbmail(CmdBufferRecorder& recorder, AssetId id, const ThumbmailSceneData& scene) const {
     auto thumbmail = std::make_unique<ThumbmailData>(context(), _size, id);
 
     {

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "componentwidgets.h"
+#include "widgets.h"
 
 #include <editor/context/EditorContext.h>
 #include <editor/components/EditorComponent.h>
@@ -244,7 +244,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
         ImGui::NextColumn();
         bool clear = false;
         if(imgui::asset_selector(ctx, sky->probe().id(), AssetType::Image, "Envmap", &clear)) {
-            ctx->ui().add<AssetSelector>(AssetType::Image)->set_selected_callback(
+            ctx->ui_manager().add<AssetSelector>(AssetType::Image)->set_selected_callback(
                 [=](AssetId asset) {
                     if(const auto probe = ctx->loader().load_res<IBLProbe>(asset)) {
                         if(SkyLightComponent* sky = ctx->world().component<SkyLightComponent>(id)) {
@@ -296,7 +296,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 
                 bool clear = false;
                 if(imgui::asset_selector(ctx, sub_mesh.material.id(), AssetType::Material, "Material", &clear)) {
-                    ctx->ui().add<AssetSelector>(AssetType::Material)->set_selected_callback(
+                    ctx->ui_manager().add<AssetSelector>(AssetType::Material)->set_selected_callback(
                         [=](AssetId asset) {
                             if(const auto material = ctx->loader().load_res<Material>(asset)) {
                                 if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {
@@ -317,7 +317,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
 
                 bool clear = false;
                 if(imgui::asset_selector(ctx, sub_mesh.mesh.id(), AssetType::Mesh, "Mesh", &clear)) {
-                    ctx->ui().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+                    ctx->ui_manager().add<AssetSelector>(AssetType::Mesh)->set_selected_callback(
                         [=](AssetId asset) {
                             if(const auto mesh = ctx->loader().load_res<StaticMesh>(asset)) {
                                 if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {

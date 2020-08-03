@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_CONTEXT_UI_H
-#define EDITOR_CONTEXT_UI_H
+#ifndef EDITOR_CONTEXT_UIMANAGER_H
+#define EDITOR_CONTEXT_UIMANAGER_H
 
 #include <editor/ui/Widget.h>
 
@@ -35,7 +35,7 @@ namespace editor {
 
 class ImGuiRenderer;
 
-class Ui : NonMovable, public ContextLinked {
+class UiManager : NonMovable, public ContextLinked {
 
     struct Ids {
         core::Vector<u64> released;
@@ -43,8 +43,8 @@ class Ui : NonMovable, public ContextLinked {
     };
 
     public:
-        Ui(ContextPtr ctx);
-        ~Ui();
+        UiManager(ContextPtr ctx);
+        ~UiManager();
 
         core::Span<std::unique_ptr<UiElement>> ui_elements() const;
 
@@ -111,5 +111,5 @@ class Ui : NonMovable, public ContextLinked {
 
 }
 
-#endif // EDITOR_CONTEXT_UI_H
+#endif // EDITOR_CONTEXT_UIMANAGER_H
 

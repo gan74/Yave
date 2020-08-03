@@ -26,14 +26,16 @@ SOFTWARE.
 #include <editor/import/transforms.h>
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
-
 #include <editor/components/EditorComponent.h>
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/meshes/StaticMesh.h>
-#include <yave/entities/entities.h>
+#include <yave/meshes/MeshData.h>
+#include <yave/animations/Animation.h>
+#include <yave/graphics/images/ImageData.h>
 #include <yave/utils/FilesystemModel.h>
+#include <yave/entities/entities.h>
 
 #include <y/io2/Buffer.h>
 

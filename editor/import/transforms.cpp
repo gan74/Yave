@@ -22,6 +22,10 @@ SOFTWARE.
 
 #include "transforms.h"
 
+#include <yave/meshes/MeshData.h>
+#include <yave/animations/Animation.h>
+#include <yave/graphics/images/ImageData.h>
+
 #include <y/utils/log.h>
 #include <y/utils/perf.h>
 

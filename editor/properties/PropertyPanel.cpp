@@ -21,9 +21,9 @@ SOFTWARE.
 **********************************/
 
 #include "PropertyPanel.h"
+#include "widgets.h"
 
 #include <editor/context/EditorContext.h>
-#include <editor/properties/componentwidgets.h>
 
 #include <imgui/yave_imgui.h>
 

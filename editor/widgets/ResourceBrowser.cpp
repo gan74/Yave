@@ -64,10 +64,10 @@ bool ResourceBrowser::is_searching() const {
 
 void ResourceBrowser::paint_import_menu() {
     if(ImGui::Selectable("Import objects")) {
-        context()->ui().add<SceneImporter>(context(), path());
+        context()->ui_manager().add<SceneImporter>(context(), path());
     }
     if(ImGui::Selectable("Import image")) {
-        context()->ui().add<ImageImporter>(context(), path());
+        context()->ui_manager().add<ImageImporter>(context(), path());
     }
 }
 

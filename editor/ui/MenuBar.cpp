@@ -66,18 +66,18 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
         }
 
         if(ImGui::BeginMenu("View")) {
-            if(ImGui::MenuItem("Engine view")) context()->ui().add<EngineView>();
-            if(ImGui::MenuItem("Entity view")) context()->ui().add<EntityView>();
-            if(ImGui::MenuItem("Resource browser")) context()->ui().add<ResourceBrowser>();
-            if(ImGui::MenuItem("Material editor")) context()->ui().add<MaterialEditor>();
+            if(ImGui::MenuItem("Engine view")) context()->ui_manager().add<EngineView>();
+            if(ImGui::MenuItem("Entity view")) context()->ui_manager().add<EntityView>();
+            if(ImGui::MenuItem("Resource browser")) context()->ui_manager().add<ResourceBrowser>();
+            if(ImGui::MenuItem("Material editor")) context()->ui_manager().add<MaterialEditor>();
 
             ImGui::Separator();
 
             if(ImGui::BeginMenu("Debug")) {
-                if(ImGui::MenuItem("Camera debug")) context()->ui().add<CameraDebug>();
+                if(ImGui::MenuItem("Camera debug")) context()->ui_manager().add<CameraDebug>();
 
                 ImGui::Separator();
-                if(ImGui::MenuItem("Asset stringifier")) context()->ui().add<AssetStringifier>();
+                if(ImGui::MenuItem("Asset stringifier")) context()->ui_manager().add<AssetStringifier>();
 
                 ImGui::Separator();
                 if(ImGui::MenuItem("Flush reload")) context()->flush_reload();
@@ -87,14 +87,14 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
                 ImGui::EndMenu();
             }
             if(ImGui::BeginMenu("Statistics")) {
-                if(ImGui::MenuItem("Performances")) context()->ui().add<PerformanceMetrics>();
-                if(ImGui::MenuItem("Memory info")) context()->ui().add<MemoryInfo>();
+                if(ImGui::MenuItem("Performances")) context()->ui_manager().add<PerformanceMetrics>();
+                if(ImGui::MenuItem("Memory info")) context()->ui_manager().add<MemoryInfo>();
                 ImGui::EndMenu();
             }
 
             ImGui::Separator();
 
-            if(ImGui::MenuItem(ICON_FA_COG " Settings")) context()->ui().add<SettingsPanel>();
+            if(ImGui::MenuItem(ICON_FA_COG " Settings")) context()->ui_manager().add<SettingsPanel>();
 
             ImGui::EndMenu();
         }

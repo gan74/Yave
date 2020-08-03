@@ -103,7 +103,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
         ImGui::Separator();
 
         if(ImGui::MenuItem("Add prefab")) {
-            context()->ui().add<AssetSelector>(AssetType::Prefab)->set_selected_callback(
+            context()->ui_manager().add<AssetSelector>(AssetType::Prefab)->set_selected_callback(
                 [ctx = context()](AssetId asset) {
                     if(const auto prefab = ctx->loader().load_res<ecs::EntityPrefab>(asset)) {
                         const ecs::EntityId id = ctx->world().create_entity(*prefab.unwrap());

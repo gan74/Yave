@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace editor {
 
-class ImGuiRenderer : NonCopyable, public ContextLinked {
+class ImGuiRenderer : public ContextLinked {
 
     struct Vertex {
         const math::Vec2 pos;

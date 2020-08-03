@@ -23,6 +23,7 @@ SOFTWARE.
 #include "CameraController.h"
 
 #include <editor/context/EditorContext.h>
+#include <editor/context/Picker.h>
 
 #include <yave/camera/Camera.h>
 #include <yave/utils/entities.h>
@@ -140,7 +141,7 @@ int HoudiniCameraController::camera_key() const {
     return int(Key::Alt);
 }
 
-bool HoudiniCameraController::viewport_clicked(const PickingManager::PickingData& point) {
+bool HoudiniCameraController::viewport_clicked(const PickingResult& point) {
     if(ImGui::IsKeyDown(camera_key())) {
         _picked_pos = point.world_pos;
         _picking_uvs = point.uv;

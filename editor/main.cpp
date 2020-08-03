@@ -82,15 +82,6 @@ static void parse_args(int argc, char** argv) {
     y_debug_assert([] { log_msg("Debug asserts enabled."); return true; }());
 }
 
-static void setup_logger() {
-    set_log_callback([](std::string_view msg, Log type, void*) {
-            if(context) {
-                context->log_message(msg, type);
-            }
-            return !display_console;
-        });
-}
-
 static Instance create_instance() {
     y_profile();
     if(!debug_instance) {
@@ -113,7 +104,6 @@ int main(int argc, char** argv) {
     concurrent::set_thread_name("Main thread");
 
     parse_args(argc, argv);
-    setup_logger();
 
     if(!crashhandler::setup_handler()) {
         log_msg("Unable to setup crash handler.", Log::Warning);
@@ -132,7 +122,7 @@ int main(int argc, char** argv) {
 
     for(;;) {
         if(!window.update()) {
-            if(ctx.ui().confirm("Quit ?")) {
+            if(ctx.ui_manager().confirm("Quit ?")) {
                 break;
             } else {
                 window.show();
@@ -147,7 +137,7 @@ int main(int argc, char** argv) {
             FrameToken frame = swapchain->next_frame();
             CmdBufferRecorder recorder(device.create_disposable_cmd_buffer());
 
-            ctx.ui().paint(recorder, frame);
+            ctx.ui_manager().paint(recorder, frame);
 
             window.present(recorder, frame);
         }

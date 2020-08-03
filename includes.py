@@ -86,7 +86,7 @@ def to_sorted(incs):
 
 
 
-projects = {"yave"}
+projects = {"yave", "editor"}
 classes = {}
 includes = process_includes(projects)
 

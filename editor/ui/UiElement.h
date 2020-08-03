@@ -23,7 +23,6 @@ SOFTWARE.
 #define EDITOR_UI_UIELEMENT_H
 
 #include <editor/editor.h>
-#include <yave/graphics/swapchain/FrameToken.h>
 
 #include <y/core/String.h>
 #include <y/core/Vector.h>
@@ -69,7 +68,7 @@ class UiElement : NonMovable {
         }
 
     protected:
-        friend class Ui;
+        friend class UiManager;
 
         virtual bool can_destroy() const;
         void refresh_all();

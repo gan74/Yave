@@ -220,7 +220,7 @@ EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph
     pass.depth = depth;
     (picking ? pass.id : pass.color) = color;
 
-    builder.add_external_input(ctx->ui().renderer().font_texture());
+    builder.add_external_input(ctx->ui_manager().renderer().font_texture());
     builder.add_uniform_input(pass_buffer);
 
     builder.add_attrib_input(vertex_buffer);

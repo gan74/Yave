@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Ui.h"
+#include "UiManager.h"
 
 #include <editor/context/EditorContext.h>
 #include <editor/widgets/EntityView.h>
@@ -35,6 +35,7 @@ SOFTWARE.
 
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/swapchain/FrameToken.h>
 
 #include <y/io2/File.h>
 
@@ -44,7 +45,7 @@ SOFTWARE.
 
 namespace editor {
 
-Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
+UiManager::UiManager(ContextPtr ctx) : ContextLinked(ctx) {
     ImGui::CreateContext();
     ImGui::GetIO().IniFilename = "editor.ini";
     ImGui::GetIO().LogFilename = "editor_logs.txt";
@@ -66,19 +67,19 @@ Ui::Ui(ContextPtr ctx) : ContextLinked(ctx) {
     _renderer = std::make_unique<ImGuiRenderer>(context());
 }
 
-Ui::~Ui() {
+UiManager::~UiManager() {
     ImGui::DestroyContext();
 }
 
-const ImGuiRenderer& Ui::renderer() const {
+const ImGuiRenderer& UiManager::renderer() const {
     return *_renderer;
 }
 
-core::Span<std::unique_ptr<UiElement>> Ui::ui_elements() const {
+core::Span<std::unique_ptr<UiElement>> UiManager::ui_elements() const {
     return _elements;
 }
 
-bool Ui::confirm(const char* message) {
+bool UiManager::confirm(const char* message) {
     y_profile();
 #ifdef Y_OS_WIN
     return MessageBox(GetActiveWindow(), message, "Confirm", MB_OKCANCEL) != IDCANCEL;
@@ -88,7 +89,7 @@ bool Ui::confirm(const char* message) {
 #endif
 }
 
-void Ui::ok(const char* title, const char* message) {
+void UiManager::ok(const char* title, const char* message) {
     y_profile();
 #ifdef Y_OS_WIN
     MessageBox(GetActiveWindow(), message, title, MB_OK);
@@ -97,16 +98,16 @@ void Ui::ok(const char* title, const char* message) {
 #endif
 }
 
-void Ui::refresh_all() {
+void UiManager::refresh_all() {
     y_profile();
     refresh_all(_elements);
 }
 
-Ui::Ids& Ui::ids_for(UiElement* elem) {
+UiManager::Ids& UiManager::ids_for(UiElement* elem) {
     return _ids[typeid(*elem)];
 }
 
-void Ui::set_id(UiElement* elem) {
+void UiManager::set_id(UiElement* elem) {
     auto& ids = ids_for(elem);
     if(!ids.released.is_empty()) {
         elem->set_id(ids.released.pop());
@@ -116,7 +117,7 @@ void Ui::set_id(UiElement* elem) {
 }
 
 
-void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
+void UiManager::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
     y_profile();
 
     ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
@@ -168,7 +169,7 @@ void Ui::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
 }
 
 
-void Ui::refresh_all(core::Span<std::unique_ptr<UiElement>> elements) {
+void UiManager::refresh_all(core::Span<std::unique_ptr<UiElement>> elements) {
     for(const auto& elem : elements) {
         y_profile_zone(elem->title().data());
         elem->refresh();
@@ -176,7 +177,7 @@ void Ui::refresh_all(core::Span<std::unique_ptr<UiElement>> elements) {
     }
 }
 
-void Ui::cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child) {
+void UiManager::cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child) {
     y_profile();
     for(usize i = 0; i < elements.size(); ++i) {
         y_debug_assert(elements[i]->is_child() == is_child);
@@ -192,7 +193,7 @@ void Ui::cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is
     }
 }
 
-bool Ui::paint(core::Span<std::unique_ptr<UiElement>> elements, CmdBufferRecorder& recorder, const FrameToken& token) {
+bool UiManager::paint(core::Span<std::unique_ptr<UiElement>> elements, CmdBufferRecorder& recorder, const FrameToken& token) {
     y_profile();
     bool refresh = false;
 
@@ -206,7 +207,7 @@ bool Ui::paint(core::Span<std::unique_ptr<UiElement>> elements, CmdBufferRecorde
     return refresh;
 }
 
-void Ui::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+void UiManager::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
     y_profile();
 
     ImGui::ShowDemoWindow();
