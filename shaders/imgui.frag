@@ -7,12 +7,13 @@ layout(location = 1) in vec4 v_color;
 
 layout(set = 0, binding = 0) uniform sampler2D font_texture;
 layout(set = 0, binding = 1) uniform Buffer {
-	vec2 viewport_size;
+    vec2 viewport_size;
 };
 
 //const float gamma = 2.2f;
 
 void main() {
-	const vec4 color = v_color * texture(font_texture, v_uv);
-	out_color = color;
+    const vec4 color = v_color * texture(font_texture, v_uv);
+    out_color = color;
 }
+

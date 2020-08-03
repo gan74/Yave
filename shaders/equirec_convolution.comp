@@ -8,26 +8,27 @@ layout(set = 0, binding = 0) uniform sampler2D in_envmap;
 layout(rgba8, set = 0, binding = 1) uniform writeonly imageCube out_image;
 
 layout(push_constant) uniform PushConstants {
-	float roughness;
+    float roughness;
 };
 
 
 void main() {
-	const vec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	const vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / vec2(imageSize(out_image).xy);
+    const vec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    const vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / vec2(imageSize(out_image).xy);
 
-	for(uint i = 0; i != 6; ++i) {
-		const vec3 local_dir = normalize(cube_dir(uv, i));
+    for(uint i = 0; i != 6; ++i) {
+        const vec3 local_dir = normalize(cube_dir(uv, i));
 
-		vec3 conv;
-		if(roughness <= 0.0) {
-			conv = texture(in_envmap, to_equirec(local_dir)).rgb;
-		} else if(roughness >= 1.0) {
-			conv = diffuse_convolution(in_envmap, local_dir);
-		} else {
-			conv = specular_convolution(in_envmap, local_dir, roughness);
-		}
+        vec3 conv;
+        if(roughness <= 0.0) {
+            conv = texture(in_envmap, to_equirec(local_dir)).rgb;
+        } else if(roughness >= 1.0) {
+            conv = diffuse_convolution(in_envmap, local_dir);
+        } else {
+            conv = specular_convolution(in_envmap, local_dir, roughness);
+        }
 
-		imageStore(out_image, ivec3(coord, i), vec4(conv, 0.0));
-	}
+        imageStore(out_image, ivec3(coord, i), vec4(conv, 0.0));
+    }
 }
+

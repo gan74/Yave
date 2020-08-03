@@ -14,32 +14,32 @@ shared uint histogram[thread_count];
 
 
 uint lum_to_bin(float lum) {
-	const float log_lum = log2(lum) + lum_histogram_offset;
-	if(log_lum <= 0.0) {
-		return 0;
-	}
-	return min(thread_count - 1, uint(log_lum * lum_histogram_mul));
+    const float log_lum = log2(lum) + lum_histogram_offset;
+    if(log_lum <= 0.0) {
+        return 0;
+    }
+    return min(thread_count - 1, uint(log_lum * lum_histogram_mul));
 }
 
 // https://bruop.github.io/exposure/
 void main() {
-	const uint index = gl_LocalInvocationIndex;
-	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	const ivec2 size = textureSize(in_color, 0);
+    const uint index = gl_LocalInvocationIndex;
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    const ivec2 size = textureSize(in_color, 0);
 
-	const float lum = luminance(texelFetch(in_color, coord, 0).rgb);
-	const uint bin = lum_to_bin(lum);
+    const float lum = luminance(texelFetch(in_color, coord, 0).rgb);
+    const uint bin = lum_to_bin(lum);
 
-	histogram[index] = 0;
+    histogram[index] = 0;
 
-	barrier();
+    barrier();
 
-	if(coord.x <= size.x && coord.y <= size.y) {
-		atomicAdd(histogram[bin], 1);
-	}
+    if(coord.x <= size.x && coord.y <= size.y) {
+        atomicAdd(histogram[bin], 1);
+    }
 
-	barrier();
+    barrier();
 
-	imageAtomicAdd(out_histogram, ivec2(index, 0), histogram[index]);
+    imageAtomicAdd(out_histogram, ivec2(index, 0), histogram[index]);
 }
 

@@ -22,61 +22,60 @@ layout(set = 0, binding = 3) uniform samplerCube in_envmap;
 layout(set = 0, binding = 4) uniform sampler2D brdf_lut;
 
 layout(set = 0, binding = 5) uniform CameraData {
-	Camera camera;
+    Camera camera;
 };
 
 layout(set = 0, binding = 6) readonly buffer Lights {
-	DirectionalLight lights[];
+    DirectionalLight lights[];
 };
 
 layout(rgba16f, set = 0, binding = 7) uniform writeonly image2D out_color;
 
 layout(push_constant) uniform PushConstants {
-	uint light_count;
+    uint light_count;
 };
 
 
 // -------------------------------- MAIN --------------------------------
 
 void main() {
-	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 
-	const float depth = texelFetch(in_depth, coord, 0).x;
-	vec3 irradiance = vec3(0.0);
+    const float depth = texelFetch(in_depth, coord, 0).x;
+    vec3 irradiance = vec3(0.0);
 
-	if(is_OOB(depth)) {
+    if(is_OOB(depth)) {
 #if defined(USE_IBL) && defined(IBL_BACKGROUND)
-		const vec3 forward = normalize(unproject(uv, 1.0, camera.inv_view_proj) - camera.position);
-		irradiance = texture(in_envmap, forward).rgb;
+        const vec3 forward = normalize(unproject(uv, 1.0, camera.inv_view_proj) - camera.position);
+        irradiance = texture(in_envmap, forward).rgb;
 #endif
-	} else {
-		vec3 albedo;
-		float metallic;
-		vec3 normal;
-		float roughness;
-		unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
-		unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
+    } else {
+        vec3 albedo;
+        float metallic;
+        vec3 normal;
+        float roughness;
+        unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
+        unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
-		const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
-		const vec3 view_dir = normalize(camera.position - world_pos);
+        const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
+        const vec3 view_dir = normalize(camera.position - world_pos);
 
-		// directional lights
-		for(uint i = 0; i != light_count; ++i) {
-			const DirectionalLight light = lights[i];
+        // directional lights
+        for(uint i = 0; i != light_count; ++i) {
+            const DirectionalLight light = lights[i];
 
-			const vec3 light_dir = light.direction; // assume normalized
+            const vec3 light_dir = light.direction; // assume normalized
 
-			const vec3 radiance = light.color;
-			irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
-		}
+            const vec3 radiance = light.color;
+            irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+        }
 
 #ifdef USE_IBL
-		irradiance += eval_ibl(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo);
+        irradiance += eval_ibl(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo);
 #endif
-	}
+    }
 
-	imageStore(out_color, coord, vec4(irradiance, 1.0));
+    imageStore(out_color, coord, vec4(irradiance, 1.0));
 }
-
 

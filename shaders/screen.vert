@@ -9,6 +9,7 @@ vec2 uvs[] = {
     };
 
 void main() {
-	out_uv = uvs[gl_VertexIndex];
-	gl_Position = vec4((uvs[gl_VertexIndex] * 2.0 - 1.0), 0.0, 1.0);
+    out_uv = uvs[gl_VertexIndex];
+    gl_Position = vec4((uvs[gl_VertexIndex] * 2.0 - 1.0), 0.0, 1.0);
 }
+

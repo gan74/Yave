@@ -10,29 +10,28 @@ shared uint shared_max;
 
 void main() {
     if(gl_LocalInvocationIndex == 0) {
-	    shared_min = 0xFFFFFFFF;
-		shared_max = 0x00000000;
-	}
+        shared_min = 0xFFFFFFFF;
+        shared_max = 0x00000000;
+    }
 
     barrier();
 
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	const ivec2 size = textureSize(in_depth, 0);
+    const ivec2 size = textureSize(in_depth, 0);
 
     const float depth = texelFetch(in_depth, coord, 0).x;
-	const uint udepth = floatBitsToUint(depth);
+    const uint udepth = floatBitsToUint(depth);
 
     if(coord.x < size.x && coord.y < size.y) {
-	    atomicMin(shared_min, udepth);
-		atomicMax(shared_max, udepth);
-	}
+        atomicMin(shared_min, udepth);
+        atomicMax(shared_max, udepth);
+    }
 
     barrier();
-	if(gl_LocalInvocationIndex == 0) {
-	    const vec2 min_max = vec2(uintBitsToFloat(shared_min), uintBitsToFloat(shared_max));
-		imageStore(out_minmax, ivec2(gl_WorkGroupID.xy), vec4(min_max, 0.0, 0.0));
-	}
+    if(gl_LocalInvocationIndex == 0) {
+        const vec2 min_max = vec2(uintBitsToFloat(shared_min), uintBitsToFloat(shared_max));
+        imageStore(out_minmax, ivec2(gl_WorkGroupID.xy), vec4(min_max, 0.0, 0.0));
+    }
 
 }
-
 

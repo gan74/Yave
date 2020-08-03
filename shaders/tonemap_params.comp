@@ -8,7 +8,7 @@ const uint thread_count = group_size * group_size;
 layout(local_size_x = group_size, local_size_y = group_size) in;
 
 layout(set = 0, binding = 0) writeonly buffer ToneMapping {
-	ToneMappingParams params;
+    ToneMappingParams params;
 };
 
 layout(set = 0, binding = 1) uniform usampler2D in_histogram;
@@ -18,44 +18,40 @@ shared uint total;
 
 // https://bruop.github.io/exposure/
 void main() {
-	const uint index = gl_LocalInvocationIndex;
-	const uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
+    const uint index = gl_LocalInvocationIndex;
+    const uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
 
-	histogram[index] = bin_size * index;
+    histogram[index] = bin_size * index;
 
-	if(index == 0) {
-		total = 0;
-	}
+    if(index == 0) {
+        total = 0;
+    }
 
-	barrier();
+    barrier();
 
-	atomicAdd(total, bin_size);
+    atomicAdd(total, bin_size);
 
-	for(uint i = 1; i < thread_count; i <<= 1) {
-		if(index + i < thread_count) {
-			histogram[index] += histogram[index + i];
-		}
-		barrier();
-	}
+    for(uint i = 1; i < thread_count; i <<= 1) {
+        if(index + i < thread_count) {
+            histogram[index] += histogram[index + i];
+        }
+        barrier();
+    }
 
-	if(index == 0) {
-		const uint weighted = histogram[0];
-		const uint black = bin_size;
-		const uint non_black = max(total, black + 1) - black;
+    if(index == 0) {
+        const uint weighted = histogram[0];
+        const uint black = bin_size;
+        const uint non_black = max(total, black + 1) - black;
 
-		const float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
-		const float avg = exp2(log_avg);
+        const float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
+        const float avg = exp2(log_avg);
 
 
-		const float EV100 = avg_to_EV100(params.avg_lum);
+        const float EV100 = avg_to_EV100(params.avg_lum);
 
-		params.exposure = EV100_to_exposure(EV100);
-		params.avg_lum = avg;
-		params.max_lum = avg * 9.6;
-	}
+        params.exposure = EV100_to_exposure(EV100);
+        params.avg_lum = avg;
+        params.max_lum = avg * 9.6;
+    }
 }
-
-
-
-
 

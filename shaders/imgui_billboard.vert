@@ -12,8 +12,9 @@ layout(location = 3) out vec2 out_size;
 
 
 void main() {
-	out_position = in_position;
-	out_uv = in_uv;
-	out_size = in_size;
-	out_instance_id = in_id;
+    out_position = in_position;
+    out_uv = in_uv;
+    out_size = in_size;
+    out_instance_id = in_id;
 }
+

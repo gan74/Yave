@@ -7,5 +7,6 @@ layout(location = 1) in vec2 in_uv;
 layout(location = 2) in vec4 in_color;
 
 void main() {
-	out_color = in_instance_id;
+    out_color = in_instance_id;
 }
+

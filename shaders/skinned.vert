@@ -3,11 +3,11 @@
 #include "lib/utils.glsl"
 
 layout(set = 0, binding = 0) uniform CameraData {
-	Camera camera;
+    Camera camera;
 };
 
 layout(set = 1, binding = 0) uniform Bones {
-	mat4 bone_transforms[max_bones];
+    mat4 bone_transforms[max_bones];
 };
 
 layout(location = 0) in vec3 in_position;
@@ -26,14 +26,15 @@ layout(location = 2) out vec3 out_bitangent;
 layout(location = 3) out vec2 out_uv;
 
 void main() {
-	const mat4 bone_matrix = in_skin_weights.x * bone_transforms[in_skin_indexes.x] +
-	                         in_skin_weights.y * bone_transforms[in_skin_indexes.y] +
-	                         in_skin_weights.z * bone_transforms[in_skin_indexes.z] +
-	                         in_skin_weights.w * bone_transforms[in_skin_indexes.w];
+    const mat4 bone_matrix = in_skin_weights.x * bone_transforms[in_skin_indexes.x] +
+                             in_skin_weights.y * bone_transforms[in_skin_indexes.y] +
+                             in_skin_weights.z * bone_transforms[in_skin_indexes.z] +
+                             in_skin_weights.w * bone_transforms[in_skin_indexes.w];
 
-	out_uv = in_uv;
-	out_normal = mat3(in_model) * mat3(bone_matrix) * in_normal;
-	out_normal = mat3(in_model) * mat3(bone_matrix) * in_tangent;
-	out_bitangent = cross(out_tangent, out_normal);
-	gl_Position = camera.view_proj * in_model * bone_matrix * vec4(in_position, 1.0);
+    out_uv = in_uv;
+    out_normal = mat3(in_model) * mat3(bone_matrix) * in_normal;
+    out_normal = mat3(in_model) * mat3(bone_matrix) * in_tangent;
+    out_bitangent = cross(out_tangent, out_normal);
+    gl_Position = camera.view_proj * in_model * bone_matrix * vec4(in_position, 1.0);
 }
+

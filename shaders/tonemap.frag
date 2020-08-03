@@ -11,12 +11,12 @@
 layout(set = 0, binding = 0) uniform sampler2D in_color;
 
 layout(set = 0, binding = 1) uniform ToneMapping {
-	ToneMappingParams params;
+    ToneMappingParams params;
 };
 
 layout(set = 0, binding = 2) uniform Settings {
-	float exposure;
-	uint tone_mapper;
+    float exposure;
+    uint tone_mapper;
 };
 
 
@@ -27,57 +27,56 @@ layout(location = 0) out vec4 out_color;
 
 /*
 enum class ToneMapper {
-	ACES,
-	Uncharted2
-	Reinhard,
-	None
+    ACES,
+    Uncharted2
+    Reinhard,
+    None
 };
 */
 vec3 tone_map(vec3 hdr, float exposure, uint mode) {
-	const float white = 10000.0;
+    const float white = 10000.0;
 
-	// Is it better to just tonemap the luminance or R, G and B separately?
+    // Is it better to just tonemap the luminance or R, G and B separately?
 #if 0
-	const float lum = luminance(hdr) * exposure;
-	float new_lum = lum;
+    const float lum = luminance(hdr) * exposure;
+    float new_lum = lum;
 
-	if(mode == 0) {
-		new_lum = ACES(lum) / ACES(white);
-	} else if(mode == 1) {
-		new_lum = uncharted2(lum) / uncharted2(white);
-	} else if(mode == 2) {
-		new_lum = reinhard(lum) / reinhard(white);
-	}
-	return hdr * (new_lum / lum);
+    if(mode == 0) {
+        new_lum = ACES(lum) / ACES(white);
+    } else if(mode == 1) {
+        new_lum = uncharted2(lum) / uncharted2(white);
+    } else if(mode == 2) {
+        new_lum = reinhard(lum) / reinhard(white);
+    }
+    return hdr * (new_lum / lum);
 #else
-	hdr = expose_RGB(hdr, exposure);
+    hdr = expose_RGB(hdr, exposure);
 
-	if(mode == 0) {
-		hdr = ACES(hdr) / ACES(white);
-	} else if(mode == 1) {
-		hdr = uncharted2(hdr) / uncharted2(white);
-	} else if(mode == 2) {
-		hdr = reinhard(hdr);
-	}
+    if(mode == 0) {
+        hdr = ACES(hdr) / ACES(white);
+    } else if(mode == 1) {
+        hdr = uncharted2(hdr) / uncharted2(white);
+    } else if(mode == 2) {
+        hdr = reinhard(hdr);
+    }
 
-	return hdr;
+    return hdr;
 #endif
 }
 
 
 vec3 gamma_correction(vec3 color) {
-	const float gamma = 2.0;
-	const float inv_gamma = 1.0 / gamma;
+    const float gamma = 2.0;
+    const float inv_gamma = 1.0 / gamma;
 
-	return pow(color, vec3(inv_gamma));
+    return pow(color, vec3(inv_gamma));
 }
 
 void main() {
-	const ivec2 coord = ivec2(gl_FragCoord.xy);
-	const vec3 hdr = texelFetch(in_color, coord, 0).rgb;
+    const ivec2 coord = ivec2(gl_FragCoord.xy);
+    const vec3 hdr = texelFetch(in_color, coord, 0).rgb;
 
-	const vec3 tone_mapped = tone_map(hdr, params.exposure * exposure, tone_mapper);
-	out_color = vec4(gamma_correction(tone_mapped), 1.0);
+    const vec3 tone_mapped = tone_map(hdr, params.exposure * exposure, tone_mapper);
+    out_color = vec4(gamma_correction(tone_mapped), 1.0);
 }
-
 

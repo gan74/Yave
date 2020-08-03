@@ -9,16 +9,17 @@ layout(location = 1) out vec4 out_color;
 
 layout(set = 0, binding = 0) uniform sampler2D font_texture;
 layout(set = 0, binding = 1) uniform Buffer {
-	vec2 viewport_size;
+    vec2 viewport_size;
 };
 
 void main() {
-	const mat4 proj = mat4(2.0 / viewport_size.x, 0.0, 0.0, 0.0,
-						   0.0, 2.0 / -viewport_size.y, 0.0, 0.0,
-						   0.0, 0.0, -1.0, 0.0,
-						   -1.0, 1.0, 0.0, 1.0);
-	out_uv = uv;
-	out_color = vec4((col >> 0) & 0xFF, (col >> 8) & 0xFF, (col >> 16) & 0xFF, (col >> 24) & 0xFF) / 255.0;
-	const vec4 pos = proj * vec4(position.x, viewport_size.y - position.y, 0.0, 1.0);
-	gl_Position = pos;
+    const mat4 proj = mat4(2.0 / viewport_size.x, 0.0, 0.0, 0.0,
+                           0.0, 2.0 / -viewport_size.y, 0.0, 0.0,
+                           0.0, 0.0, -1.0, 0.0,
+                           -1.0, 1.0, 0.0, 1.0);
+    out_uv = uv;
+    out_color = vec4((col >> 0) & 0xFF, (col >> 8) & 0xFF, (col >> 16) & 0xFF, (col >> 24) & 0xFF) / 255.0;
+    const vec4 pos = proj * vec4(position.x, viewport_size.y - position.y, 0.0, 1.0);
+    gl_Position = pos;
 }
+

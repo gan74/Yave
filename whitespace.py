@@ -34,7 +34,7 @@ def process_files(folders):
     for proj in folders:
         for root, dirs, files in os.walk(proj):
             for file in files:
-                if extension(file) not in {"h", "cpp", "inl"}:
+                if extension(file) not in {"h", "cpp", "inl", "glsl", "frag", "vert", "geom", "comp"}:
                     continue
                 fullname = root + "/" + file
                 
@@ -47,5 +47,5 @@ def process_files(folders):
                 
     
 
-projects = {"y", "yave", "editor"}
+projects = {"y", "yave", "editor", "shaders"}
 process_files(projects)

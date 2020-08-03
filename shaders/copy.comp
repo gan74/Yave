@@ -6,11 +6,10 @@ layout(set = 0, binding = 0) uniform sampler2D in_color;
 layout(rgba8, set = 0, binding = 1) uniform writeonly image2D out_color;
 
 void main() {
-	const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 
-	const vec4 color = texture(in_color, uv);
-	imageStore(out_color, coord, vec4(color.rgb, 1));
+    const vec4 color = texture(in_color, uv);
+    imageStore(out_color, coord, vec4(color.rgb, 1));
 }
-
 

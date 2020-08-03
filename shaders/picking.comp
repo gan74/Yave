@@ -6,17 +6,16 @@ layout(set = 0, binding = 0) uniform sampler2D in_depth;
 layout(set = 0, binding = 1) uniform usampler2D in_id;
 
 layout(set = 0, binding = 2) writeonly buffer Output {
-	float depth;
-	uint entity_id;
+    float depth;
+    uint entity_id;
 };
 
 layout(push_constant) uniform PushConstants {
-	vec2 uv;
+    vec2 uv;
 };
 
 void main() {
-	depth = texture(in_depth, uv).r;
-	entity_id = uint(texelFetch(in_id, ivec2(textureSize(in_id, 0) * uv), 0).r);
+    depth = texture(in_depth, uv).r;
+    entity_id = uint(texelFetch(in_id, ivec2(textureSize(in_id, 0) * uv), 0).r);
 }
-
 

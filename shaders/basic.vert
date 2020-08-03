@@ -3,7 +3,7 @@
 #include "lib/utils.glsl"
 
 layout(set = 0, binding = 0) uniform CameraData {
-	Camera camera;
+    Camera camera;
 };
 
 layout(location = 0) in vec3 in_position;
@@ -19,12 +19,13 @@ layout(location = 2) out vec3 out_bitangent;
 layout(location = 3) out vec2 out_uv;
 
 void main() {
-	out_uv = in_uv;
+    out_uv = in_uv;
 
-	const mat3 model = mat3(in_model);
-	out_normal = model * in_normal;
-	out_tangent = model * in_tangent;
-	out_bitangent = cross(out_tangent, out_normal);
+    const mat3 model = mat3(in_model);
+    out_normal = model * in_normal;
+    out_tangent = model * in_tangent;
+    out_bitangent = cross(out_tangent, out_normal);
 
-	gl_Position = camera.view_proj * in_model * vec4(in_position, 1.0);
+    gl_Position = camera.view_proj * in_model * vec4(in_position, 1.0);
 }
+

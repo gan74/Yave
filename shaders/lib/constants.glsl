@@ -14,3 +14,4 @@ const float lum_histogram_offset = 8.0;
 const float lum_histogram_mul = 8.0;
 
 #endif
+
