@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <array>
+
 namespace yave {
 
 struct Vertex {

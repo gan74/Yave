@@ -100,10 +100,6 @@ class Matrix {
             std::copy(m.begin(), m.end(), begin());
         }
 
-        inline Matrix(const std::array<T, N * M>& m) {
-            std::copy(m.begin(), m.end(), begin());
-        }
-
         inline Matrix(detail::identity_t&&) : Matrix(Matrix::identity()) {
         }
 
@@ -319,12 +315,12 @@ using Matrix2 = Matrix<2, 2, T>;
 
 
 template<usize N, usize M, typename T>
-auto operator*(Matrix<N, M, T> mat, const T& r) {
+inline auto operator*(Matrix<N, M, T> mat, const T& r) {
     return mat *= r;
 }
 
 template<usize N, usize M, typename T>
-auto operator*(const T& r, Matrix<N, M, T> mat) {
+inline auto operator*(const T& r, Matrix<N, M, T> mat) {
     return mat *= r;
 }
 

@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_CAMERA_FRUSTUM_H
 
 #include <yave/yave.h>
+#include <array>
 
 namespace yave {
 

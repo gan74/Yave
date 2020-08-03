@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <y/utils.h>
 
-#include <array>
 #include <cmath>
 
 namespace y {
@@ -32,10 +31,10 @@ namespace math {
 
 namespace detail {
 struct identity_t : NonCopyable {
-    constexpr identity_t() {
+    inline constexpr identity_t() {
     }
 
-    identity_t(identity_t&&) {
+    inline identity_t(identity_t&&) {
     }
 };
 }
@@ -91,12 +90,6 @@ class Vec
         inline constexpr Vec(const Vec<N, X>& v) {
             for(usize i = 0; i != N; ++i) {
                 _vec[i] = T(v[i]);
-            }
-        }
-
-        inline constexpr Vec(const std::array<T, N>& v) {
-            for(usize i = 0; i != N; ++i) {
-                _vec[i] = v[i];
             }
         }
 

@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <yave/assets/AssetType.h>
 
+#include <string_view>
+
 namespace editor {
 
 std::string_view asset_type_name(AssetType type, bool plural = false, bool lowercase = false);

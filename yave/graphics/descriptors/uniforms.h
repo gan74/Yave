@@ -127,7 +127,7 @@ static_assert(sizeof(RayleighSky) % 16 == 0);
 
 
 struct SH {
-    std::array<math::Vec4, 9> values;
+    math::Vec4 value[9];
 };
 
 static_assert(sizeof(SH) % 16 == 0);

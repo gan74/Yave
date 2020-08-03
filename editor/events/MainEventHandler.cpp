@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 
+#include <array>
+
 namespace editor {
 
 static void set_key_bindings() {
