@@ -33,6 +33,7 @@ SOFTWARE.
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/meshes/StaticMesh.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/entities/entities.h>

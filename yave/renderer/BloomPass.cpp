@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "BloomPass.h"
-#include "ToneMappingPass.h"
 #include "BlurPass.h"
 
 #include <yave/framegraph/FrameGraph.h>

@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "StaticMeshComponent.h"
 
+#include <yave/meshes/StaticMesh.h>
+#include <yave/material/Material.h>
+
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 namespace yave {

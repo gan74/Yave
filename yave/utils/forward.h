@@ -176,3 +176,4 @@ class Window;
 }
 
 #endif // YAVE_UTILS_FORWARD_H
+

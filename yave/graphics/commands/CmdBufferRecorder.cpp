@@ -22,13 +22,12 @@ SOFTWARE.
 
 #include "CmdBufferRecorder.h"
 
-#include <yave/graphics/barriers/Barrier.h>
 #include <yave/material/Material.h>
 #include <yave/material/MaterialTemplate.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/graphics/device/Semaphore.h>
+#include <yave/graphics/barriers/Barrier.h>
 
 #include <yave/graphics/device/extentions/DebugUtils.h>
 

@@ -22,10 +22,45 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_BUFFERS_SUBBUFFER_H
 #define YAVE_GRAPHICS_BUFFERS_SUBBUFFER_H
 
-#include "SubBufferBase.h"
+#include <yave/graphics/memory/DeviceMemoryView.h>
+
 #include "Buffer.h"
 
 namespace yave {
+
+class SubBufferBase {
+
+    public:
+        SubBufferBase() = default;
+        SubBufferBase(const BufferBase& base, usize byte_len, usize byte_off);
+
+        explicit SubBufferBase(const BufferBase& base);
+
+        DevicePtr device() const;
+        bool is_null() const;
+
+        usize byte_size() const;
+        usize byte_offset() const;
+
+        VkBuffer vk_buffer() const;
+
+        DeviceMemoryView device_memory() const;
+
+        VkDescriptorBufferInfo descriptor_info() const;
+        VkMappedMemoryRange vk_memory_range() const;
+
+    protected:
+        static usize alignment_for_usage(DevicePtr dptr, BufferUsage usage);
+
+    private:
+        usize _size = 0;
+        usize _offset = 0;
+        VkBuffer _buffer = {};
+        DeviceMemoryView _memory;
+};
+
+// in this case it's ok
+//static_assert(is_safe_base<SubBufferBase>::value);
 
 template<BufferUsage Usage = BufferUsage::None, MemoryType Memory = MemoryType::DontCare>
 class SubBuffer : public SubBufferBase {

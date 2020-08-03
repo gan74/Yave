@@ -24,8 +24,7 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <yave/graphics/buffers/buffers.h>
-#include <yave/material/Material.h>
+#include <yave/graphics/images/ImageView.h>
 
 namespace editor {
 

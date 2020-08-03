@@ -22,13 +22,49 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_BUFFERS_BUFFER_H
 #define YAVE_GRAPHICS_BUFFERS_BUFFER_H
 
+#include <yave/graphics/memory/DeviceMemory.h>
+
 #include "BufferUsage.h"
-#include "BufferBase.h"
+
+#include <yave/utils/traits.h>
 
 namespace yave {
 
 template<BufferUsage Usage, MemoryType Memory>
 class SubBuffer;
+
+class BufferBase : NonCopyable {
+
+    public:
+        ~BufferBase();
+
+        DevicePtr device() const;
+        bool is_null() const;
+
+        BufferUsage usage() const;
+        usize byte_size() const;
+        const DeviceMemory& device_memory() const;
+
+        VkDescriptorBufferInfo descriptor_info() const;
+
+        VkBuffer vk_buffer() const;
+
+    protected:
+        BufferBase() = default;
+        BufferBase(BufferBase&&) = default;
+        BufferBase& operator=(BufferBase&&) = default;
+
+        BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type);
+
+    private:
+        usize _size = 0;
+        BufferUsage _usage = BufferUsage::None;
+
+        VkHandle<VkBuffer> _buffer;
+        DeviceMemory _memory;
+};
+
+static_assert(is_safe_base<BufferBase>::value);
 
 template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage)>
 class Buffer : public BufferBase {

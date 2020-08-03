@@ -31,10 +31,13 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
+
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/Queue.h>
 #include <yave/graphics/images/ImageData.h>
+#include <yave/material/Material.h>
+#include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
 
 #include <yave/components/DirectionalLightComponent.h>

@@ -34,7 +34,7 @@ def process_file(fullname):
             start = line.find(sep[0]) + 1
             end = line.find(sep[1], start)
             name = line[start:end]
-            if not name.endswith(".h"):
+            if not name.endswith(".h") and not name.endswith(".inl"):
                 continue
             if not absolute:
                 name = parent + name
@@ -51,7 +51,7 @@ def process_includes(folders):
     for proj in folders:
         for root, dirs, files in os.walk(proj):
             for file in files:
-                if extension(file) not in {"h", "cpp"}:
+                if extension(file) not in {"h", "inl"}:
                     continue
                 fullname = clean_name(root + "/" + file)
                 
@@ -72,7 +72,7 @@ def print_includes(file, includes, tabs, printed):
         for i in includes[file]:
             total += print_includes(i, includes, tabs + 1, printed)
     except:
-        print("\t" * (tabs + 1) + "????")
+        print("\t" * (tabs + 1) + "???? (" + file + ")")
         pass
         
     return total + 1
@@ -107,9 +107,6 @@ for f in includes.values():
             included[i] += 1
         except:
             pass
-
-
-
 
 
 for p in to_sorted(include_count):

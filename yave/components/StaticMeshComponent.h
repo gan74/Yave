@@ -24,9 +24,7 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
-#include <yave/meshes/StaticMesh.h>
-#include <yave/material/Material.h>
-
+#include <yave/assets/AssetPtr.h>
 #include <yave/scene/Renderable.h>
 
 #include "TransformableComponent.h"

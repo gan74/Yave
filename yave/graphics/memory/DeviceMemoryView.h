@@ -44,7 +44,7 @@ class DeviceMemoryView {
 
     private:
         DevicePtr _device = nullptr;
-        NotOwner<DeviceMemoryHeapBase*> _heap = nullptr;
+        DeviceMemoryHeapBase* _heap = nullptr;
         VkDeviceMemory _memory = {};
         usize _offset;
 };

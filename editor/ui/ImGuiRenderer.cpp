@@ -27,7 +27,8 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/graphics/images/ImageData.h>
-#include <yave/framegraph/FrameGraph.h>
+#include <yave/graphics/buffers/buffers.h>
+#include <yave/material/Material.h>
 
 #include <imgui/yave_imgui.h>
 

@@ -23,7 +23,6 @@ SOFTWARE.
 #define EDITOR_WIDGETS_FILESYSTEMVIEW_H
 
 #include <editor/ui/Widget.h>
-#include <yave/utils/FileSystemModel.h>
 
 #include <y/core/Chrono.h>
 

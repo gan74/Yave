@@ -22,11 +22,59 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_IMAGES_IMAGE_H
 #define YAVE_GRAPHICS_IMAGES_IMAGE_H
 
+#include "ImageUsage.h"
+
+#include <yave/graphics/memory/DeviceMemory.h>
+
+#include <yave/utils/traits.h>
 #include <yave/assets/AssetTraits.h>
 
-#include "ImageBase.h"
-
 namespace yave {
+
+class ImageBase : NonCopyable {
+
+    public:
+        ~ImageBase();
+
+        DevicePtr device() const;
+        bool is_null() const;
+
+        VkImage vk_image() const;
+        VkImageView vk_view() const;
+
+        const DeviceMemory& device_memory() const;
+
+        const math::Vec3ui& image_size() const;
+        usize mipmaps() const;
+
+        usize layers() const;
+
+        ImageFormat format() const;
+        ImageUsage usage() const;
+
+    protected:
+        ImageBase() = default;
+        ImageBase(ImageBase&&) = default;
+        ImageBase& operator=(ImageBase&&) = default;
+
+        ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1);
+        ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data);
+
+
+        math::Vec3ui _size;
+        u32 _layers = 1;
+        u32 _mips = 1;
+
+        ImageFormat _format;
+        ImageUsage _usage = ImageUsage::None;
+
+        DeviceMemory _memory;
+
+        VkHandle<VkImage> _image;
+        VkHandle<VkImageView> _view;
+};
+
+static_assert(is_safe_base<ImageBase>::value);
 
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class Image : public ImageBase {

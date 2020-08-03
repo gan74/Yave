@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "SubBufferBase.h"
+#include "SubBuffer.h"
 
 #include <yave/graphics/utils.h>
 #include <yave/graphics/device/DeviceProperties.h>

@@ -41,6 +41,7 @@ SOFTWARE.
 #include <yave/components/SkyLightComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/meshes/StaticMesh.h>
 #include <yave/entities/entities.h>
 #include <yave/utils/color.h>
 

@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "BlurPass.h"
 
-#include <yave/framegraph/FrameGraphPassBuilder.h>
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/graphics/device/DeviceResources.h>

@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 
+#include <yave/meshes/AABB.h>
 
 namespace yave {
 

@@ -31,7 +31,9 @@ SOFTWARE.
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/meshes/StaticMesh.h>
 #include <yave/entities/entities.h>
+#include <yave/utils/FilesystemModel.h>
 
 #include <y/io2/Buffer.h>
 

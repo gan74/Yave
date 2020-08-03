@@ -25,6 +25,8 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/utils/ui.h>
 
+#include <yave/utils/FilesystemModel.h>
+
 #include <y/utils/sort.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>

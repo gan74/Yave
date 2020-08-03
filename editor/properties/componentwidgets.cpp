@@ -25,6 +25,9 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/components/EditorComponent.h>
 
+#include <editor/utils/ui.h>
+#include <editor/widgets/AssetSelector.h>
+
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
@@ -34,10 +37,9 @@ SOFTWARE.
 
 #include <yave/utils/color.h>
 #include <yave/graphics/images/ImageData.h>
+#include <yave/material/Material.h>
+#include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
-
-#include <editor/utils/ui.h>
-#include <editor/widgets/AssetSelector.h>
 
 #include <imgui/yave_imgui.h>
 
