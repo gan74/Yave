@@ -44,6 +44,7 @@ void CmdBuffer::wait_for(const Semaphore& sem) {
 }
 
 DevicePtr CmdBuffer::device() const {
+    Y_TODO(cache that?)
     const auto pool = _proxy ? _proxy->data().pool() : nullptr;
     return pool ? pool->device() : nullptr;
 }
