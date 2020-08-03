@@ -44,10 +44,10 @@ inline auto log_func(const char* func, const char* cat = "") {
         const char* _cat;
         const char* _func;
         public:
-            Logger(const char* cat, const char* func) : _cat(cat), _func(func) {
+            inline Logger(const char* cat, const char* func) : _cat(cat), _func(func) {
                 enter(cat, func);
             }
-            ~Logger() {
+            inline ~Logger() {
                 leave(_cat, _func);
             }
     };

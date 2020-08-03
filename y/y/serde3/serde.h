@@ -100,14 +100,14 @@ struct NamedObject {
     T& object;
     const std::string_view name;
 
-    constexpr NamedObject(T& t, std::string_view n) : object(t), name(n) {
+    inline constexpr NamedObject(T& t, std::string_view n) : object(t), name(n) {
     }
 
-    constexpr NamedObject<const T> make_const_ref() const {
+    inline constexpr NamedObject<const T> make_const_ref() const {
         return NamedObject<const T>(object, name);
     }
 
-    constexpr NamedObject<T> make_ref() const {
+    inline constexpr NamedObject<T> make_ref() const {
         return *this;
     }
 };
@@ -117,14 +117,14 @@ struct NamedObject<T, false> {
     mutable T object;
     const std::string_view name;
 
-    constexpr NamedObject(T t, std::string_view n) : object(std::move(t)), name(n) {
+    inline constexpr NamedObject(T t, std::string_view n) : object(std::move(t)), name(n) {
     }
 
-    constexpr NamedObject<const T> make_const_ref() const {
+    inline constexpr NamedObject<const T> make_const_ref() const {
         return NamedObject<const T>(object, name);
     }
 
-    constexpr NamedObject<T> make_ref() const {
+    inline constexpr NamedObject<T> make_ref() const {
         return NamedObject<T>(object, name);
     }
 };

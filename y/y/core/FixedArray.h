@@ -47,36 +47,36 @@ class FixedArray {
         using iterator = Elem*;
         using const_iterator = Elem const*;
 
-        FixedArray() = default;
+        inline FixedArray() = default;
 
-        FixedArray(usize size) : _data(std::make_unique<data_type[]>(size)), _size(size) {
+        inline FixedArray(usize size) : _data(std::make_unique<data_type[]>(size)), _size(size) {
         }
 
-        FixedArray(FixedArray&&) = default;
-        FixedArray& operator=(FixedArray&&) = default;
+        inline FixedArray(FixedArray&&) = default;
+        inline FixedArray& operator=(FixedArray&&) = default;
 
 
-        bool operator==(const FixedArray<value_type>& v) const {
+        inline bool operator==(const FixedArray<value_type>& v) const {
             return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
         }
 
-        bool operator!=(const FixedArray<value_type>& v) const {
+        inline bool operator!=(const FixedArray<value_type>& v) const {
             return !operator==(v);
         }
 
-        void swap(FixedArray& v) {
+        inline void swap(FixedArray& v) {
             if(&v != this) {
                 std::swap(_data, v._data);
                 std::swap(_size, v._size);
             }
         }
 
-        void clear() {
+        inline void clear() {
             _size = 0;
             _data = nullptr;
         }
 
-        void resize(usize s) {
+        inline void resize(usize s) {
             auto new_data = std::make_unique<data_type[]>(s);
             std::move(begin(), begin() + std::min(s, size()), new_data.get());
 
@@ -84,54 +84,54 @@ class FixedArray {
             _data = std::move(new_data);
         }
 
-        bool is_empty() const {
+        inline bool is_empty() const {
             return !_size;
         }
 
-        usize size() const {
+        inline usize size() const {
             return _size;
         }
 
-        iterator begin() {
+        inline iterator begin() {
             return _data.get();
         }
 
-        iterator end() {
+        inline iterator end() {
             return _data.get() + _size;
         }
 
-        const_iterator begin() const {
+        inline const_iterator begin() const {
             return _data.get();
         }
 
-        const_iterator end() const {
+        inline const_iterator end() const {
             return _data.get() + _size;
         }
 
-        const_iterator cbegin() const {
+        inline const_iterator cbegin() const {
             return _data.get();
         }
 
-        const_iterator cend() const {
+        inline const_iterator cend() const {
             return _data.get() + _size;
         }
 
 
-        data_type* data() {
+        inline data_type* data() {
             return _data.get();
         }
 
-        const data_type* data() const {
+        inline const data_type* data() const {
             return _data.get();
         }
 
 
-        data_type& operator[](usize i) {
+        inline data_type& operator[](usize i) {
             y_debug_assert(i < _size);
             return _data[i];
         }
 
-        const data_type& operator[](usize i) const {
+        inline const data_type& operator[](usize i) const {
             y_debug_assert(i < _size);
             return _data[i];
         }

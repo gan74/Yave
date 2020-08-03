@@ -48,76 +48,76 @@ class MutableSpan {
         using iterator = T*;
         using const_iterator = const T*;
 
-        constexpr MutableSpan() = default;
+        inline constexpr MutableSpan() = default;
 
-        constexpr MutableSpan(const MutableSpan&) = default;
-        constexpr MutableSpan& operator=(const MutableSpan&) = default;
+        inline constexpr MutableSpan(const MutableSpan&) = default;
+        inline constexpr MutableSpan& operator=(const MutableSpan&) = default;
 
-        constexpr MutableSpan(std::nullptr_t) {
+        inline constexpr MutableSpan(std::nullptr_t) {
         }
 
-        constexpr MutableSpan(T& t) : _data(&t), _size(1) {
+        inline constexpr MutableSpan(T& t) : _data(&t), _size(1) {
         }
 
-        constexpr MutableSpan(T* data, usize size) : _data(data), _size(size) {
-        }
-
-        template<usize N>
-        constexpr MutableSpan(T (&arr)[N]) : _data(arr), _size(N) {
+        inline constexpr MutableSpan(T* data, usize size) : _data(data), _size(size) {
         }
 
         template<usize N>
-        constexpr MutableSpan(std::array<T, N>& arr) : _data(arr.data()), _size(N) {
+        inline constexpr MutableSpan(T (&arr)[N]) : _data(arr), _size(N) {
         }
 
-        constexpr MutableSpan(std::initializer_list<T> l) : _data(l.begin()), _size(l.size()) {
+        template<usize N>
+        inline constexpr MutableSpan(std::array<T, N>& arr) : _data(arr.data()), _size(N) {
+        }
+
+        inline constexpr MutableSpan(std::initializer_list<T> l) : _data(l.begin()), _size(l.size()) {
         }
 
         template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
-        constexpr MutableSpan(C&& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
+        inline constexpr MutableSpan(C&& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
         }
 
-        constexpr usize size() const {
+        inline constexpr usize size() const {
             return _size;
         }
 
-        constexpr bool is_empty() const {
+        inline constexpr bool is_empty() const {
             return !_size;
         }
 
-        constexpr T* data() {
+        inline constexpr T* data() {
             return _data;
         }
 
-        constexpr const T* data() const {
+        inline constexpr const T* data() const {
             return _data;
         }
 
-        constexpr iterator begin() {
+        inline constexpr iterator begin() {
             return _data;
         }
 
-        constexpr iterator end() {
+        inline constexpr iterator end() {
             return _data + _size;
         }
 
-        constexpr const_iterator begin() const {
+        inline constexpr const_iterator begin() const {
             return _data;
         }
 
-        constexpr const_iterator end() const {
+        inline constexpr const_iterator end() const {
             return _data + _size;
         }
 
-        constexpr const_iterator cbegin() const {
+        inline constexpr const_iterator cbegin() const {
             return _data;
         }
 
-        constexpr const_iterator cend() const {
+        inline constexpr const_iterator cend() const {
             return _data + _size;
         }
 
-        constexpr T& operator[](usize i) const {
+        inline constexpr T& operator[](usize i) const {
             y_debug_assert(i < size());
             return _data[i];
         }

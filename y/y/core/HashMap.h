@@ -113,33 +113,33 @@ class ExternalHashMap : Hasher {
 
             usize bits = empty_states;
 
-            void set_hash(usize hash) {
+            inline void set_hash(usize hash) {
                 y_debug_assert(!is_full());
                 bits = hash | hash_bit;
             }
 
-            void make_empty() {
+            inline void make_empty() {
                 y_debug_assert(is_full());
                 bits = tombstone_states;
             }
 
-            bool is_full() const {
+            inline bool is_full() const {
                 return bits & hash_bit;
             }
 
-            bool is_hash(usize hash) const {
+            inline bool is_hash(usize hash) const {
                 return bits == (hash | hash_bit);
             }
 
-            bool is_empty_strict() const {
+            inline bool is_empty_strict() const {
                 return bits == empty_states;
             }
 
-            bool is_tombstone() const {
+            inline bool is_tombstone() const {
                 return bits == tombstone_states;
             }
 
-            usize hash() const {
+            inline usize hash() const {
                 y_debug_assert(is_full());
                 // we dont care about the last bit since we mask instead of %
                 return bits;
@@ -153,28 +153,28 @@ class ExternalHashMap : Hasher {
                 Tombstone
             } state = Empty;
 
-            void set_hash(usize) {
+            inline void set_hash(usize) {
                 state = Full;
             }
 
-            void make_empty() {
+            inline void make_empty() {
                 y_debug_assert(is_full());
                 state = Tombstone;
             }
 
-            bool is_full() const {
+            inline bool is_full() const {
                 return state == Full;
             }
 
-            bool is_hash(usize) const {
+            inline bool is_hash(usize) const {
                 return is_full();
             }
 
-            bool is_empty_strict() const {
+            inline bool is_empty_strict() const {
                 return state == Empty;
             }
 
-            bool is_tombstone() const {
+            inline bool is_tombstone() const {
                 return state == Tombstone;
             }
         };
@@ -182,11 +182,11 @@ class ExternalHashMap : Hasher {
         static_assert(sizeof(StateHash) == sizeof(usize));
         static_assert(sizeof(SimpleState) == sizeof(u8));
 
-        usize retrieve_hash(const key_type&, const StateHash& state) const {
+        inline usize retrieve_hash(const key_type&, const StateHash& state) const {
             return state.hash();
         }
 
-        usize retrieve_hash(const key_type& key, const SimpleState&) const {
+        inline usize retrieve_hash(const key_type& key, const SimpleState&) const {
             return hash(key);
         }
 
@@ -198,26 +198,26 @@ class ExternalHashMap : Hasher {
                 pair_type key_value;
             };
 
-            Entry() {
+            inline Entry() {
             }
 
-            ~Entry() {
+            inline ~Entry() {
             }
 
 
-            void set_empty(const key_type& k) {
+            inline void set_empty(const key_type& k) {
                 ::new(&key_value) pair_type{k, mapped_type{}};
             }
 
-            void set(pair_type&& kv) {
+            inline void set(pair_type&& kv) {
                 ::new(&key_value) pair_type{std::move(kv)};
             }
 
-            void clear() {
+            inline void clear() {
                 key_value.~pair_type();
             }
 
-            const key_type& key() const {
+            inline const key_type& key() const {
                 return key_value.first;
             }
         };
@@ -225,11 +225,11 @@ class ExternalHashMap : Hasher {
         struct KeyValueIt {
             using type = value_type;
 
-            value_type& operator()(Entry& entry) const {
+            inline value_type& operator()(Entry& entry) const {
                 return detail::map_entry_to_value_type(entry.key_value);
             }
 
-            const value_type& operator()(const Entry& entry) const {
+            inline const value_type& operator()(const Entry& entry) const {
                 return detail::map_entry_to_value_type(entry.key_value);
             }
         };
@@ -237,7 +237,7 @@ class ExternalHashMap : Hasher {
         struct KeyIt {
             using type = key_type;
 
-            const key_type& operator()(const Entry& entry) const {
+            inline const key_type& operator()(const Entry& entry) const {
                 return entry.key();
             }
         };
@@ -245,11 +245,11 @@ class ExternalHashMap : Hasher {
         struct ValueIt {
             using type = mapped_type;
 
-            mapped_type& operator()(Entry& entry) const {
+            inline mapped_type& operator()(Entry& entry) const {
                 return entry.key_value.second;
             }
 
-            const mapped_type& operator()(const Entry& entry) const {
+            inline const mapped_type& operator()(const Entry& entry) const {
                 return entry.key_value.second;
             }
         };
@@ -260,53 +260,53 @@ class ExternalHashMap : Hasher {
             using parent_type = const_type_t<Const, ExternalHashMap>;
 
             public:
-                IteratorBase() = default;
-                IteratorBase(const IteratorBase&) = default;
-                IteratorBase& operator=(const IteratorBase&) = default;
+                inline IteratorBase() = default;
+                inline IteratorBase(const IteratorBase&) = default;
+                inline IteratorBase& operator=(const IteratorBase&) = default;
 
                 template<bool C, typename T, typename = std::enable_if_t<(Const > C)>>
-                IteratorBase(const IteratorBase<C, T>& other) {
+                inline IteratorBase(const IteratorBase<C, T>& other) {
                     operator=(other);
                 }
 
                 template<bool C, typename T, typename = std::enable_if_t<(Const > C)>>
-                IteratorBase& operator=(const IteratorBase<C, T>& other) {
+                inline IteratorBase& operator=(const IteratorBase<C, T>& other) {
                     _index = other._index;
                     _parent = other._parent;
                     return *this;
                 }
 
-                auto& operator*() const {
+                inline auto& operator*() const {
                     return Transform::operator()(_parent->_entries[_index]);
                 }
 
-                auto* operator->() const {
+                inline auto* operator->() const {
                     return &(operator*());
                 }
 
-                IteratorBase& operator++() {
+                inline IteratorBase& operator++() {
                     ++_index;
                     find_next();
                     return *this;
                 }
 
-                IteratorBase operator++(int) {
+                inline IteratorBase operator++(int) {
                     auto it = *this;
                     ++(*this);
                     return it;
                 }
 
-                bool at_end() const {
+                inline bool at_end() const {
                     return _index == _parent->bucket_count();
                 }
 
                 template<bool C, typename T>
-                bool operator==(const IteratorBase<C, T>& other) const {
+                inline bool operator==(const IteratorBase<C, T>& other) const {
                     return _index == other._index;
                 }
 
                 template<bool C, typename T>
-                bool operator!=(const IteratorBase<C, T>& other) const {
+                inline bool operator!=(const IteratorBase<C, T>& other) const {
                     return !operator==(other);
                 }
 
@@ -316,11 +316,11 @@ class ExternalHashMap : Hasher {
 
                 friend class ExternalHashMap;
 
-                IteratorBase(parent_type* parent, usize index) : _index(index), _parent(parent) {
+                inline IteratorBase(parent_type* parent, usize index) : _index(index), _parent(parent) {
                     find_next();
                 }
 
-                void find_next() {
+                inline void find_next() {
                     for(;_index < _parent->bucket_count() && !_parent->_states[_index].is_full(); ++_index) {
                         // nothing
                     }
@@ -342,15 +342,15 @@ class ExternalHashMap : Hasher {
                 using pointer = value_type*;
         };
 
-        bool should_expand() const {
+        inline bool should_expand() const {
             return bucket_count() * max_load_factor <= _size;
         }
 
-        usize hash(const key_type& key) const {
+        inline usize hash(const key_type& key) const {
             return Hasher::operator()(key);
         }
 
-        Bucket find_bucket_for_insert(const key_type& key) {
+        inline Bucket find_bucket_for_insert(const key_type& key) {
             const usize h = hash(key);
             return find_bucket_for_insert(key, h);
         }
@@ -444,7 +444,7 @@ class ExternalHashMap : Hasher {
             audit();
         }
 
-        void expand() {
+        inline void expand() {
             expand(bucket_count() == 0 ? min_capacity : 2 * bucket_count());
         }
 
@@ -478,20 +478,20 @@ class ExternalHashMap : Hasher {
         static_assert(std::is_constructible_v<const_iterator, iterator>);
         static_assert(!std::is_constructible_v<iterator, const_iterator>);
 
-        ExternalHashMap() {
+        inline ExternalHashMap() {
             audit();
         }
 
-        ExternalHashMap(ExternalHashMap&& other) {
+        inline ExternalHashMap(ExternalHashMap&& other) {
             swap(other);
         }
 
-        ExternalHashMap& operator=(ExternalHashMap&& other) {
+        inline ExternalHashMap& operator=(ExternalHashMap&& other) {
             swap(other);
             return *this;
         }
 
-        void swap(ExternalHashMap& other) {
+        inline void swap(ExternalHashMap& other) {
             if(&other != this) {
                 std::swap(_states, other._states);
                 std::swap(_entries, other._entries);
@@ -501,11 +501,11 @@ class ExternalHashMap : Hasher {
             audit();
         }
 
-        ~ExternalHashMap() {
+        inline ~ExternalHashMap() {
             make_empty();
         }
 
-        void make_empty() {
+        inline void make_empty() {
             const usize len = bucket_count();
             for(usize i = 0; i != len && _size; ++i) {
                 if(_states[i].is_full()) {
@@ -520,52 +520,52 @@ class ExternalHashMap : Hasher {
             audit();
         }
 
-        void clear() {
+        inline void clear() {
             make_empty();
             _states.clear();
             _entries = nullptr;
             audit();
         }
 
-        iterator begin() {
+        inline iterator begin() {
             return iterator(this, 0);
         }
 
-        const_iterator begin() const {
+        inline const_iterator begin() const {
             return const_iterator(this, 0);
         }
 
-        iterator end() {
+        inline iterator end() {
             return iterator(this, bucket_count());
         }
 
-        const_iterator end() const {
+        inline const_iterator end() const {
             return const_iterator(this, bucket_count());
         }
 
-        auto key_values() {
+        inline auto key_values() {
             return core::Range(begin(), end());
         }
 
-        auto key_values() const {
+        inline auto key_values() const {
             return core::Range(begin(), end());
         }
 
-        auto keys() const {
+        inline auto keys() const {
             return core::Range(
                 IteratorBase<true, KeyIt>(this, 0),
                 IteratorBase<true, KeyIt>(this, bucket_count())
             );
         }
 
-        auto values() {
+        inline auto values() {
             return core::Range(
                 IteratorBase<false, ValueIt>(this, 0),
                 IteratorBase<false, ValueIt>(this, bucket_count())
             );
         }
 
-        auto values() const {
+        inline auto values() const {
             return core::Range(
                 IteratorBase<true, ValueIt>(this, 0),
                 IteratorBase<true, ValueIt>(this, bucket_count())
@@ -573,27 +573,27 @@ class ExternalHashMap : Hasher {
         }
 
 
-        bool is_empty() const {
+        inline bool is_empty() const {
             return !_size;
         }
 
-        usize bucket_count() const {
+        inline usize bucket_count() const {
             return _states.size();
         }
 
-        usize size() const {
+        inline usize size() const {
             return _size;
         }
 
-        double load_factor() const {
+        inline double load_factor() const {
             return double(_size) / double(_entries.size());
         }
 
-        bool contains(const key_type& key) const {
+        inline bool contains(const key_type& key) const {
             return find_bucket(key) != invalid_index;
         }
 
-        iterator find(const key_type& key) {
+        inline iterator find(const key_type& key) {
             const usize index = find_bucket(key);
             if(index != invalid_index) {
                 return iterator(this, index);
@@ -601,7 +601,7 @@ class ExternalHashMap : Hasher {
             return end();
         }
 
-        const_iterator find(const key_type& key) const {
+        inline const_iterator find(const key_type& key) const {
             const usize index = find_bucket(key);
             if(index != invalid_index) {
                 return const_iterator(this, index);
@@ -609,22 +609,22 @@ class ExternalHashMap : Hasher {
             return end();
         }
 
-        void rehash() {
+        inline void rehash() {
             expand(bucket_count());
         }
 
-        void set_min_capacity(usize cap) {
+        inline void set_min_capacity(usize cap) {
             const usize capacity = usize(cap / (max_load_factor * 0.8));
             if(bucket_count() < capacity) {
                 expand(capacity);
             }
         }
 
-        void reserve(usize cap) {
+        inline void reserve(usize cap) {
             set_min_capacity(cap);
         }
 
-        void erase(const iterator& it) {
+        inline void erase(const iterator& it) {
             y_defer(audit());
 
             const usize index = it._index;
@@ -639,11 +639,11 @@ class ExternalHashMap : Hasher {
         }
 
         template<typename... Args>
-        std::pair<iterator, bool> emplace(const key_type& key, Args&&... args) {
+        inline std::pair<iterator, bool> emplace(const key_type& key, Args&&... args) {
             return insert(pair_type{key, mapped_type{y_fwd(args)...}});
         }
 
-        std::pair<iterator, bool> insert(pair_type p) {
+        inline std::pair<iterator, bool> insert(pair_type p) {
             y_defer(audit());
 
             if(should_expand()) {
@@ -667,14 +667,14 @@ class ExternalHashMap : Hasher {
         }
 
         template<typename It>
-        void insert(It beg, It en) {
+        inline void insert(It beg, It en) {
             Y_TODO(Reserve if possible)
             for(; beg != en; ++beg) {
                 insert(*beg);
             }
         }
 
-        mapped_type& operator[](const key_type& key) {
+        inline mapped_type& operator[](const key_type& key) {
             if(should_expand()) {
                 expand();
             }

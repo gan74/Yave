@@ -62,17 +62,17 @@ namespace detail {
 template<typename T>
 struct Ok {
 
-    Ok(T&& t) : _value(std::move(t)) {
+    inline Ok(T&& t) : _value(std::move(t)) {
     }
 
-    Ok(const T& t) : _value(t) {
+    inline Ok(const T& t) : _value(t) {
     }
 
-    const T& get() const {
+    inline const T& get() const {
         return _value;
     }
 
-    T& get() {
+    inline T& get() {
         return _value;
     }
 
@@ -83,17 +83,17 @@ struct Ok {
 template<typename T>
 struct Err {
 
-    Err(T&& t) : _err(std::move(t)) {
+    inline Err(T&& t) : _err(std::move(t)) {
     }
 
-    Err(const T& t) : _err(t) {
+    inline Err(const T& t) : _err(t) {
     }
 
-    const T& get() const {
+    inline const T& get() const {
         return _err;
     }
 
-    T& get() {
+    inline T& get() {
         return _err;
     }
 
@@ -103,28 +103,28 @@ struct Err {
 
 template<>
 struct Ok<void> : NonCopyable {
-    Ok() {
+    inline Ok() {
     }
 
     template<typename T>
-    Ok(T&&) {
+    inline Ok(T&&) {
     }
 
-    void get() const {
+    inline void get() const {
     }
 };
 
 
 template<>
 struct Err<void> : NonCopyable {
-    Err() {
+    inline Err() {
     }
 
     template<typename T>
-    Err(T&&) {
+    inline Err(T&&) {
     }
 
-    void get() const {
+    inline void get() const {
     }
 };
 }
@@ -182,67 +182,67 @@ class [[nodiscard]] Result : NonCopyable {
         using const_error_type_ref =  std::conditional_t<std::is_void_v<error_type_ref>, void, std::add_lvalue_reference_t<const ret_error_type>>;
 
     public:
-        Result(ok_type&& v) : _is_ok(true) {
+        inline Result(ok_type&& v) : _is_ok(true) {
             ::new(&_value) ok_type(std::move(v));
         }
 
-        Result(err_type&& e) : _is_ok(false) {
+        inline Result(err_type&& e) : _is_ok(false) {
             ::new(&_error) err_type(std::move(e));
         }
 
-        Result(Result&& other) {
+        inline Result(Result&& other) {
             move(other);
         }
 
         template<typename A, typename B>
-        Result(Result<A, B>&& other) {
+        inline Result(Result<A, B>&& other) {
             move(other);
         }
 
-        ~Result() {
+        inline ~Result() {
             destroy();
         }
 
-        Result& operator=(Result&& other) {
+        inline Result& operator=(Result&& other) {
             destroy();
             move(other);
             return *this;
         }
 
-        bool is_error() const {
+        inline bool is_error() const {
             return !is_ok();
         }
 
-        bool is_ok() const {
+        inline bool is_ok() const {
             return _is_ok;
         }
 
         // this is necessary to avoid stuff like "if(result)" checking only the state of the result and not the contained value
         // forcing an explicit unwrap seems like the best way to avoid sneaky mistakes
-        explicit operator bool() const {
+        inline explicit operator bool() const {
             static_assert(!std::is_same_v<std::decay_t<T>, bool>, "Result<bool> is not convertible to bool, use unwrap_or");
             return is_ok();
         }
 
-        auto&& ok_object() {
+        inline auto&& ok_object() {
             if(is_error()) {
                 y_fatal("Result is an error.");
             }
             return _value;
         }
 
-        auto&& err_object() {
+        inline auto&& err_object() {
             if(is_ok()) {
                 y_fatal("Result is not an error.");
             }
             return _error;
         }
 
-        const_value_type_ref unwrap() const {
+        inline const_value_type_ref unwrap() const {
             return expected("Unwrap failed.");
         }
 
-        value_type_ref unwrap() {
+        inline value_type_ref unwrap() {
             return expected("Unwrap failed.");
         }
 
@@ -250,14 +250,14 @@ class [[nodiscard]] Result : NonCopyable {
             return std::move(expected("Unwrap failed."));
         }*/
 
-        const_value_type_ref expected(const char* err_msg) const {
+        inline const_value_type_ref expected(const char* err_msg) const {
             if(is_error()) {
                 y_fatal(err_msg);
             }
             return _value.get();
         }
 
-        value_type_ref expected(const char* err_msg) {
+        inline value_type_ref expected(const char* err_msg) {
             if(is_error()) {
                 y_fatal(err_msg);
             }
@@ -271,32 +271,32 @@ class [[nodiscard]] Result : NonCopyable {
             return std::move(_value.get());
         }*/
 
-        void ignore() const {
+        inline void ignore() const {
             /* nothing */
         }
 
-        const_value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed.") const {
+        inline const_value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed.") const {
             if(is_error()) {
                 y_throw_msg(err_msg);
             }
             return _value.get();
         }
 
-        value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed.") {
+        inline value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed.") {
             if(is_error()) {
                 y_throw_msg(err_msg);
             }
             return _value.get();
         }
 
-        const_value_type_ref or_throw() const {
+        inline const_value_type_ref or_throw() const {
             if(is_error()) {
                 throw error();
             }
             return _value.get();
         }
 
-        value_type_ref or_throw() {
+        inline value_type_ref or_throw() {
             if(is_error()) {
                 throw error();
             }
@@ -310,14 +310,14 @@ class [[nodiscard]] Result : NonCopyable {
             return std::move(_value.get());
         }*/
 
-        const_error_type_ref error() const {
+        inline const_error_type_ref error() const {
             if(is_ok()) {
                 y_fatal("Result is not an error.");
             }
             return _error.get();
         }
 
-        error_type_ref error() {
+        inline error_type_ref error() {
             if(is_ok()) {
                 y_fatal("Result is not an error.");
             }
@@ -325,27 +325,27 @@ class [[nodiscard]] Result : NonCopyable {
         }
 
         template<typename U>
-        const_value_type_ref unwrap_or(const U& f) const {
+        inline const_value_type_ref unwrap_or(const U& f) const {
             return is_ok() ? _value.get() : f;
         }
 
         template<typename U>
-        const_error_type_ref error_or(const U& f) const {
+        inline const_error_type_ref error_or(const U& f) const {
             return is_error() ? _error.get() : f;
         }
 
         template<typename U>
-        auto unwrap_or(U&& f) {
+        inline auto unwrap_or(U&& f) {
             return is_ok() ? _value.get() : f;
         }
 
         template<typename U>
-        auto error_or(U&& f) {
+        inline auto error_or(U&& f) {
             return is_error() ? _error.get() : f;
         }
 
         template<typename F>
-        Result<typename map_type<F, value_type>::type, error_type> map(F&& f) const {
+        inline Result<typename map_type<F, value_type>::type, error_type> map(F&& f) const {
             if(is_ok()) {
                 if constexpr(std::is_void_v<value_type>) {
                     return Ok(f());
@@ -361,7 +361,7 @@ class [[nodiscard]] Result : NonCopyable {
         }
 
         template<typename F>
-        Result<value_type, typename map_type<F, error_type>::type> map_err(F&& f) const {
+        inline Result<value_type, typename map_type<F, error_type>::type> map_err(F&& f) const {
             if(is_ok()) {
                 if constexpr(std::is_void_v<value_type>) {
                     return Ok();
@@ -380,7 +380,7 @@ class [[nodiscard]] Result : NonCopyable {
         template<typename, typename>
         friend class Result;
 
-        void destroy() {
+        inline void destroy() {
             if(is_ok()) {
                 _value.~ok_type();
             } else {
@@ -389,7 +389,7 @@ class [[nodiscard]] Result : NonCopyable {
         }
 
         template<typename A, typename B>
-        void move(Result<A, B>& other) {
+        inline void move(Result<A, B>& other) {
             if((_is_ok = other.is_ok())) {
                 if constexpr(!std::is_void_v<decltype(other._value)>) {
                     ::new(&_value) ok_type(std::move(other._value));

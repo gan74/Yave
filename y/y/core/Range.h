@@ -40,38 +40,38 @@ class Range {
         //using value_type = typename iterator_traits::value_type;
         using value_type = std::remove_reference_t<decltype(*std::declval<Iter>())>;
 
-        Range(const Range&) = default;
-        Range& operator=(const Range&) = default;
+        inline Range(const Range&) = default;
+        inline Range& operator=(const Range&) = default;
 
-        Range(Iter b, EndIter e) : _beg(b), _end(e) {
+        inline Range(Iter b, EndIter e) : _beg(b), _end(e) {
         }
 
         template<typename Coll>
-        Range(const Coll& col) : Range(col.begin(), col.end()) {
+        inline Range(const Coll& col) : Range(col.begin(), col.end()) {
         }
 
         template<typename Coll>
-        Range(Coll& col) : Range(col.begin(), col.end()) {
+        inline Range(Coll& col) : Range(col.begin(), col.end()) {
         }
 
-        Iter begin() const {
+        inline Iter begin() const {
             return _beg;
         }
 
-        EndIter end() const {
+        inline EndIter end() const {
             return _end;
         }
 
-        bool is_empty() const {
+        inline bool is_empty() const {
             return  _beg == _end;
         }
 
-        usize size() const {
+        inline usize size() const {
             static_assert(std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::random_access_iterator_tag>);
             return _end - _beg;
         }
 
-        decltype(auto) operator[](usize index) const {
+        inline decltype(auto) operator[](usize index) const {
             static_assert(std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::random_access_iterator_tag>);
             y_debug_assert(index < size());
             return *(_beg + index);

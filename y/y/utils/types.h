@@ -28,7 +28,7 @@ SOFTWARE.
 namespace y {
 
 struct NonCopyable {
-    constexpr NonCopyable() {}
+    inline constexpr NonCopyable() {}
     NonCopyable(const NonCopyable&) = delete;
     NonCopyable& operator=(const NonCopyable&) = delete;
 
@@ -37,7 +37,7 @@ struct NonCopyable {
 };
 
 struct NonMovable {
-    constexpr NonMovable() {}
+    inline constexpr NonMovable() {}
     NonMovable(const NonMovable&) = delete;
     NonMovable& operator=(const NonMovable&) = delete;
 

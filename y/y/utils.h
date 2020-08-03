@@ -45,11 +45,11 @@ constexpr void unused(Args&&...) {}
 
 
 
-constexpr bool is_64_bits() {
+inline constexpr bool is_64_bits() {
     return sizeof(void*) == 8;
 }
 
-constexpr bool is_32_bits() {
+inline constexpr bool is_32_bits() {
     return sizeof(void*) == 4;
 }
 
@@ -61,11 +61,11 @@ namespace detail {
     static constexpr u32 endianness = static_cast<const u8&>(endian);
 }
 
-constexpr bool is_little_endian() {
+inline constexpr bool is_little_endian() {
     return detail::endianness == 0x04;
 }
 
-constexpr bool is_big_endian() {
+inline constexpr bool is_big_endian() {
     return detail::endianness == 0x01;
 }
 
@@ -78,13 +78,13 @@ static_assert(is_little_endian() || is_big_endian(), "Endianness unknown");
 template<typename T>
 class ScopeExit {
     public:
-        ScopeExit(T&& t) : _ex(y_fwd(t)) {
+        inline ScopeExit(T&& t) : _ex(y_fwd(t)) {
         }
 
-        ScopeExit(ScopeExit&& other) : _ex(std::move(other._ex)) {
+        inline ScopeExit(ScopeExit&& other) : _ex(std::move(other._ex)) {
         }
 
-        ~ScopeExit() {
+        inline ~ScopeExit() {
             _ex();
         }
 

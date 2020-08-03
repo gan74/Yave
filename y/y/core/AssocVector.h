@@ -38,11 +38,11 @@ class AssocVector : public Vector<std::pair<Key, Value>, ResizePolicy> {
         using const_iterator = typename Vector<value_type, ResizePolicy>::const_iterator;
 
         template<typename K, typename T>
-        void insert(K&& key, T&& value) {
+        inline void insert(K&& key, T&& value) {
             this->push_back(value_type(y_fwd(key), y_fwd(value)));
         }
 
-        Value& operator[](const Key& key) {
+        inline Value& operator[](const Key& key) {
             for(value_type& e : *this) {
                 if(e.first == key) {
                     return e.second;
@@ -52,19 +52,19 @@ class AssocVector : public Vector<std::pair<Key, Value>, ResizePolicy> {
             return this->last().second;
         }
 
-        iterator find(const Key& key) {
+        inline iterator find(const Key& key) {
             return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k.first == key; });
         }
 
-        const_iterator find(const Key& key) const {
+        inline const_iterator find(const Key& key) const {
             return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k.first == key; });
         }
 
-        iterator find_value(const Value& val) {
+        inline iterator find_value(const Value& val) {
             return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k.second == val; });
         }
 
-        const_iterator find_value(const Value& val) const {
+        inline const_iterator find_value(const Value& val) const {
             return std::find_if(this->begin(), this->end(), [&](const auto& k) { return k.second == val; });
         }
 

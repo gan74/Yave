@@ -34,13 +34,13 @@ class Matrix;
 
 namespace detail {
     template<typename T, usize N>
-    T determinant(const Matrix<N, N, T>& mat);
+    inline T determinant(const Matrix<N, N, T>& mat);
 
     template<typename T>
-    T determinant(const Matrix<2, 2, T>& mat);
+    inline T determinant(const Matrix<2, 2, T>& mat);
 
     template<typename T>
-    T determinant(const Matrix<1, 1, T>& mat);
+    inline T determinant(const Matrix<1, 1, T>& mat);
 }
 
 
@@ -56,13 +56,13 @@ class Matrix {
 
     private:
         template<usize P, typename... Args>
-        void build(T t, Args... args) {
+        inline void build(T t, Args... args) {
             set_at(P, t);
             build<P + 1>(args...);
         }
 
         template<usize P, usize Q, typename... Args>
-        void build(const Vec<Q, T>& t, Args... args) {
+        inline void build(const Vec<Q, T>& t, Args... args) {
             for(usize i = 0; i != Q; ++i) {
                 set_at(P + i, t[i]);
             }
@@ -70,12 +70,12 @@ class Matrix {
         }
 
         template<usize P>
-        void build() {
+        inline void build() {
             static_assert(P == N * M, "Wrong number of arguments");
         }
 
         template<typename U>
-        void set_at(usize i, U u) {
+        inline void set_at(usize i, U u) {
             const usize r = i / M;
             const usize c = i % M;
             _vecs[c][r] = u;
@@ -86,36 +86,36 @@ class Matrix {
         using const_iterator = const T*;
         using value_type = T;
 
-        Matrix() = default;
-        Matrix(const Matrix&) = default;
-        Matrix& operator=(const Matrix&) = default;
+        inline Matrix() = default;
+        inline Matrix(const Matrix&) = default;
+        inline Matrix& operator=(const Matrix&) = default;
 
         template<typename U, typename... Args>
-        explicit Matrix(U t, Args... args) {
+        inline explicit Matrix(U t, Args... args) {
             build<0>(t, args...);
         }
 
         template<typename X>
-        Matrix(const Matrix<N, M, X>& m) {
+        inline Matrix(const Matrix<N, M, X>& m) {
             std::copy(m.begin(), m.end(), begin());
         }
 
-        Matrix(const std::array<T, N * M>& m) {
+        inline Matrix(const std::array<T, N * M>& m) {
             std::copy(m.begin(), m.end(), begin());
         }
 
-        Matrix(detail::identity_t&&) : Matrix(Matrix::identity()) {
+        inline Matrix(detail::identity_t&&) : Matrix(Matrix::identity()) {
         }
 
-        auto& operator[](usize i) {
+        inline auto& operator[](usize i) {
             return _vecs[i];
         }
 
-        const auto& operator[](usize i) const {
+        inline const auto& operator[](usize i) const {
             return _vecs[i];
         }
 
-        Row row(usize row) const {
+        inline Row row(usize row) const {
             Row r;
             for(usize i = 0; i != M; ++i) {
                 r[i] = _vecs[i][row];
@@ -123,20 +123,20 @@ class Matrix {
             return r;
         }
 
-        Column& column(usize col) {
+        inline Column& column(usize col) {
             return _vecs[col];
         }
 
-        const Column& column(usize col) const {
+        inline const Column& column(usize col) const {
             return _vecs[col];
         }
 
-        static constexpr bool is_square() {
+        inline static constexpr bool is_square() {
             return N == M;
         }
 
         template<typename U>
-        auto operator+(const Matrix<N, M, U>& m) const {
+        inline auto operator+(const Matrix<N, M, U>& m) const {
             const Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
             for(usize i = 0; i != N; ++i) {
                 mat._vecs[i] = _vecs[i] + m._vecs[i];
@@ -144,7 +144,7 @@ class Matrix {
             return mat;
         }
 
-        Matrix<M, N, T> transposed() const {
+        inline Matrix<M, N, T> transposed() const {
             Matrix<M, N, T> tr;
             for(usize i = 0; i != vec_count; ++i) {
                 for(usize j = 0; j != vec_size; ++j) {
@@ -154,7 +154,7 @@ class Matrix {
             return tr;
         }
 
-        bool operator==(const Matrix& m) const {
+        inline bool operator==(const Matrix& m) const {
             for(usize i = 0; i != vec_count; ++i) {
                 if(_vecs[i] != m._vecs[i]) {
                     return false;
@@ -164,7 +164,7 @@ class Matrix {
         }
 
         template<usize R, usize C>
-        Matrix<R, C, T> to() const {
+        inline Matrix<R, C, T> to() const {
             static_assert(R <= N && C <= M, "Accessing out of bound member");
             Matrix<R, C, T> mat;
             for(usize i = 0; i != C; ++i) {
@@ -173,7 +173,7 @@ class Matrix {
             return mat;
         }
 
-        constexpr Matrix<N - 1, M - 1, T> sub(usize r, usize c) const {
+        inline constexpr Matrix<N - 1, M - 1, T> sub(usize r, usize c) const {
             Matrix<N - 1, M - 1, T> mat;
             for(usize i = 0; i != vec_count - 1; ++i) {
                 for(usize j = 0; j != vec_size - 1; ++j) {
@@ -185,12 +185,12 @@ class Matrix {
             return mat;
         }
 
-        T determinant() const {
+        inline T determinant() const {
             chk_sq();
             return detail::determinant(*this);
         }
 
-        Matrix inverse() const {
+        inline Matrix inverse() const {
             T d = determinant();
             if(d == 0) {
                 return Matrix();
@@ -206,7 +206,7 @@ class Matrix {
             return inv;
         }
 
-        static constexpr Matrix identity() {
+        inline static constexpr Matrix identity() {
             chk_sq();
             Matrix mat;
             for(usize i = 0; i != N; ++i) {
@@ -215,27 +215,27 @@ class Matrix {
             return mat;
         }
 
-        const_iterator begin() const {
+        inline const_iterator begin() const {
             return &_vecs[0][0];
         }
 
-        const_iterator end() const {
+        inline const_iterator end() const {
             return (&_vecs[0][0]) + (M * N);
         }
 
-        iterator begin() {
+        inline iterator begin() {
             return& _vecs[0][0];
         }
 
-        iterator end() {
+        inline iterator end() {
             return (&_vecs[0][0]) + (M * N);
         }
 
-        constexpr usize size() const {
+        inline constexpr usize size() const {
             return N * M;
         }
 
-        Column operator*(const Row& v) const {
+        inline Column operator*(const Row& v) const {
             Column tr;
             for(usize i = 0; i != M; ++i) {
                 tr += column(i) * v[i];
@@ -244,7 +244,7 @@ class Matrix {
         }
 
         template<typename U, usize P>
-        auto operator*(const Matrix<M, P, U>& m) const {
+        inline auto operator*(const Matrix<M, P, U>& m) const {
             Matrix<N, P, decltype(std::declval<T>() * std::declval<U>())> mat;
             for(usize i = 0; i != N; ++i) {
                 for(usize j = 0; j != P; ++j) {
@@ -259,11 +259,11 @@ class Matrix {
         }
 
         template<typename U, usize P>
-        Matrix& operator*=(const Matrix<M, P, U>& m) {
+        inline Matrix& operator*=(const Matrix<M, P, U>& m) {
             return operator=(*this * m);
         }
 
-        Matrix& operator*=(const T& t) {
+        inline Matrix& operator*=(const T& t) {
             for(auto& i : *this) {
                 i *= t;
             }
@@ -274,7 +274,7 @@ class Matrix {
         template<usize X, usize Y, typename U>
         friend class Matrix;
 
-        static constexpr void chk_sq() {
+        inline static constexpr void chk_sq() {
             static_assert(is_square(), "The matrix must be square");
         }
 
@@ -317,11 +317,6 @@ using Matrix3 = Matrix<3, 3, T>;
 template<typename T = float>
 using Matrix2 = Matrix<2, 2, T>;
 
-
-template<usize M, typename T, typename... Args>
-auto matrix(const Vec<M, T>& v, Args... args) {
-    return Matrix<sizeof...(args) + 1, M, T>(v, args...);
-}
 
 template<usize N, usize M, typename T>
 auto operator*(Matrix<N, M, T> mat, const T& r) {

@@ -83,41 +83,41 @@ class Vector : ResizePolicy, Allocator {
         using iterator = Elem*;
         using const_iterator = Elem const*;
 
-        Vector() = default;
+        inline Vector() = default;
 
-        explicit Vector(const Vector& other) : Vector(other.begin(), other.end()) {
+        inline explicit Vector(const Vector& other) : Vector(other.begin(), other.end()) {
         }
 
-        Vector(usize size, const value_type& elem) {
+        inline Vector(usize size, const value_type& elem) {
             set_min_capacity(size);
             std::fill_n(std::back_inserter(*this), size, elem);
         }
 
         template<typename It>
-        Vector(It beg_it, It end_it) {
+        inline Vector(It beg_it, It end_it) {
             assign(beg_it, end_it);
         }
 
-        Vector(Vector&& other) {
+        inline Vector(Vector&& other) {
             swap(other);
         }
 
-        Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
+        inline Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
         }
 
-        explicit Vector(Span<value_type> other) : Vector(other.begin(), other.end()) {
+        inline explicit Vector(Span<value_type> other) : Vector(other.begin(), other.end()) {
         }
 
         template<typename... Args>
-        Vector(const Vector<Elem, Args...>& other) : Vector(other.begin(), other.end()) {
+        inline Vector(const Vector<Elem, Args...>& other) : Vector(other.begin(), other.end()) {
         }
 
-        Vector& operator=(Vector&& other) {
+        inline Vector& operator=(Vector&& other) {
             swap(other);
             return *this;
         }
 
-        Vector& operator=(const Vector& other) {
+        inline Vector& operator=(const Vector& other) {
             if(&other != this) {
                 if constexpr(std::allocator_traits<Allocator>::propagate_on_container_copy_assignment::value) {
                     clear();
@@ -128,43 +128,43 @@ class Vector : ResizePolicy, Allocator {
             return *this;
         }
 
-        Vector& operator=(std::initializer_list<value_type> l) {
+        inline Vector& operator=(std::initializer_list<value_type> l) {
             assign(l.begin(), l.end());
             return *this;
         }
 
-        Vector& operator=(Span<value_type> l) {
+        inline Vector& operator=(Span<value_type> l) {
             assign(l.begin(), l.end());
             return *this;
         }
 
         template<typename... Args>
-        Vector& operator=(const Vector<Elem, Args...>& l) {
+        inline Vector& operator=(const Vector<Elem, Args...>& l) {
             assign(l.begin(), l.end());
             return *this;
         }
 
-        bool operator==(Span<value_type> v) const {
+        inline bool operator==(Span<value_type> v) const {
             return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
         }
 
-        bool operator!=(Span<value_type> v) const {
+        inline bool operator!=(Span<value_type> v) const {
             return !operator==(v);
         }
 
         template<typename... Args>
-        bool operator==(const Vector<Elem, Args...>& v) const {
+        inline bool operator==(const Vector<Elem, Args...>& v) const {
             return operator==(Span<value_type>(v));
         }
 
         template<typename... Args>
-        bool operator!=(const Vector<Elem, Args...>& v) const {
+        inline bool operator!=(const Vector<Elem, Args...>& v) const {
             return operator!=(Span<value_type>(v));
         }
 
 
         template<typename It>
-        void assign(It beg_it, It end_it) {
+        inline void assign(It beg_it, It end_it) {
             if(contains_it(beg_it)) {
                 Vector other(beg_it, end_it);
                 swap(other);
@@ -174,7 +174,7 @@ class Vector : ResizePolicy, Allocator {
             }
         }
 
-        void swap(Vector& v) {
+        inline void swap(Vector& v) {
             if(&v != this) {
                 if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
                     std::swap<Allocator>(*this, v);
@@ -185,11 +185,11 @@ class Vector : ResizePolicy, Allocator {
             }
         }
 
-        ~Vector() {
+        inline ~Vector() {
             clear();
         }
 
-        void push_back(const_reference elem) {
+        inline void push_back(const_reference elem) {
             if(is_full()) {
                 expend();
             }
@@ -199,7 +199,7 @@ class Vector : ResizePolicy, Allocator {
             ::new(_data_end++) data_type{elem};
         }
 
-        void push_back(value_type&& elem) {
+        inline void push_back(value_type&& elem) {
             if(is_full()) {
                 expend();
             }
@@ -210,7 +210,7 @@ class Vector : ResizePolicy, Allocator {
         }
 
         template<typename... Args>
-        reference emplace_back(Args&&... args) {
+        inline reference emplace_back(Args&&... args) {
             if(is_full()) {
                 expend();
             }
@@ -221,12 +221,12 @@ class Vector : ResizePolicy, Allocator {
         }
 
         template<typename It>
-        void push_back(It beg_it, It end_it) {
+        inline void push_back(It beg_it, It end_it) {
             set_min_capacity(size() + std::distance(beg_it, end_it));
             std::copy(beg_it, end_it, std::back_inserter(*this));
         }
 
-        value_type pop() {
+        inline value_type pop() {
             y_debug_assert(!is_empty());
             --_data_end;
             data_type r = std::move(*_data_end);
@@ -238,20 +238,20 @@ class Vector : ResizePolicy, Allocator {
             return r;
         }
 
-        void erase_unordered(iterator it) {
+        inline void erase_unordered(iterator it) {
             if(it != end() - 1) {
                 std::swap(*it, last());
             }
             pop();
         }
 
-        void erase(iterator it) {
+        inline void erase(iterator it) {
             std::move(it + 1, end(), it);
             pop();
         }
 
         // Slow insert
-        iterator insert(iterator dst, value_type&& elem) {
+        inline iterator insert(iterator dst, value_type&& elem) {
             if(dst == end() || is_empty()) {
                 emplace_back(std::move(elem));
                 return &last();
@@ -265,103 +265,103 @@ class Vector : ResizePolicy, Allocator {
             }
         }
 
-        usize size() const {
+        inline usize size() const {
             return _data_end - _data;
         }
 
-        bool is_empty() const {
+        inline bool is_empty() const {
             return _data == _data_end;
         }
 
-        usize capacity() const {
+        inline usize capacity() const {
             return _alloc_end - _data;
         }
 
-        const_iterator begin() const {
+        inline const_iterator begin() const {
             return _data;
         }
 
-        const_iterator end() const {
+        inline const_iterator end() const {
             return _data_end;
         }
 
-        const_iterator cbegin() const {
+        inline const_iterator cbegin() const {
             return _data;
         }
 
-        const_iterator cend() const {
+        inline const_iterator cend() const {
             return _data_end;
         }
 
-        iterator begin() {
+        inline iterator begin() {
             return _data;
         }
 
-        iterator end() {
+        inline iterator end() {
             return _data_end;
         }
 
-        pointer data() {
+        inline pointer data() {
             return _data;
         }
 
-        const_pointer data() const {
+        inline const_pointer data() const {
             return _data;
         }
 
-        const_reference operator[](usize i) const {
+        inline const_reference operator[](usize i) const {
             y_debug_assert(i < size());
             return _data[i];
         }
 
-        reference operator[](usize i) {
+        inline reference operator[](usize i) {
             y_debug_assert(i < size());
             return _data[i];
         }
 
-        const_reference first() const {
+        inline const_reference first() const {
             y_debug_assert(!is_empty());
             return *_data;
         }
 
-        reference first() {
+        inline reference first() {
             y_debug_assert(!is_empty());
             return *_data;
         }
 
-        const_reference last() const {
+        inline const_reference last() const {
             y_debug_assert(!is_empty());
             return *(_data_end - 1);
         }
 
-        reference last() {
+        inline reference last() {
             y_debug_assert(!is_empty());
             return *(_data_end - 1);
         }
 
-        void set_capacity(usize cap) {
+        inline void set_capacity(usize cap) {
             unsafe_set_capacity(cap);
         }
 
-        void set_min_capacity(usize min_cap) {
+        inline void set_min_capacity(usize min_cap) {
             unsafe_set_capacity(ResizePolicy::ideal_capacity(min_cap));
         }
 
-        void reserve(usize cap) {
+        inline void reserve(usize cap) {
             if(capacity() < cap) {
                 set_capacity(cap);
             }
         }
 
-        void clear() {
+        inline void clear() {
             unsafe_set_capacity(0);
         }
 
-        void squeeze() {
+        inline void squeeze() {
             set_capacity(size());
         }
 
-        void make_empty() {
+        inline void make_empty() {
             clear(_data, _data_end);
             _data_end = _data;
         }
@@ -374,15 +374,15 @@ class Vector : ResizePolicy, Allocator {
         static constexpr bool is_data_trivial = std::is_trivial_v<data_type>;
 #endif
 
-        bool is_full() const {
+        inline bool is_full() const {
             return _data_end == _alloc_end;
         }
 
-        bool contains_it(const_iterator it) const {
+        inline bool contains_it(const_iterator it) const {
             return it >= _data && it < _data_end;
         }
 
-        void move_range(data_type* dst, data_type* src, usize n) {
+        inline void move_range(data_type* dst, data_type* src, usize n) {
             Y_CHECK_ELECTRIC(dst, n);
             if constexpr(is_data_trivial) {
                 std::copy_n(src, n, dst);
@@ -393,7 +393,7 @@ class Vector : ResizePolicy, Allocator {
             }
         }
 
-        void clear(data_type* beg, data_type* en) {
+        inline void clear(data_type* beg, data_type* en) {
             if(!is_data_trivial) {
                 for(data_type* e = en; e != beg;) {
                     (--e)->~data_type();
@@ -403,11 +403,11 @@ class Vector : ResizePolicy, Allocator {
             Y_CLEAR_ELECTRIC(beg, en - beg);
         }
 
-        void expend() {
+        inline void expend() {
             unsafe_set_capacity(this->ideal_capacity(size() + 1));
         }
 
-        void shrink() {
+        inline void shrink() {
             usize current = size();
             usize cap = capacity();
             if(current < cap && ResizePolicy::shrink(current, cap)) {
@@ -416,7 +416,7 @@ class Vector : ResizePolicy, Allocator {
         }
 
         // uses data_end !!
-        void unsafe_set_capacity(usize new_cap) {
+        inline void unsafe_set_capacity(usize new_cap) {
             if(new_cap == capacity()) {
                 return;
             }

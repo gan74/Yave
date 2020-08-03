@@ -107,7 +107,7 @@ class WritableArchive final {
         }
 
         template<typename T>
-        Result serialize(const T& t) {
+        inline Result serialize(const T& t) {
             y_try(write_serde_header());
             y_try(serialize_one(NamedObject{t, detail::version_string}));
             return finalize();
@@ -169,7 +169,7 @@ class WritableArchive final {
         }
 
         template<typename T, bool R>
-        Result serialize_one(const NamedObject<T, R>& non_const_object) {
+        inline Result serialize_one(const NamedObject<T, R>& non_const_object) {
             const auto object = non_const_object.make_const_ref();
 
             static_assert(!has_no_serde3_v<T>, "Type has serialization disabled");
@@ -197,14 +197,14 @@ class WritableArchive final {
 
         // ------------------------------- PROPERTY -------------------------------
         template<typename T, bool R>
-        Result serialize_property(NamedObject<T, R> object) {
+        inline Result serialize_property(NamedObject<T, R> object) {
             return serialize_one(NamedObject<typename T::value_type, T::return_ref>{object.object.get(), object.name});
         }
 
 
         // ------------------------------- PTR -------------------------------
         template<typename T>
-        Result serialize_ptr(NamedObject<T> object) {
+        inline Result serialize_ptr(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
             static_assert(is_std_ptr_v<T>);
 
@@ -223,12 +223,12 @@ class WritableArchive final {
 
         // ------------------------------- COLLECTION -------------------------------
         template<typename T>
-        Result serialize_range(NamedObject<T> object) {
+        inline Result serialize_range(NamedObject<T> object) {
             return serialize_collection(object);
         }
 
         template<typename T, bool R>
-        Result serialize_collection(const NamedObject<T, R>& object) {
+        inline Result serialize_collection(const NamedObject<T, R>& object) {
             static_assert(std::is_const_v<T>);
             static_assert(is_iterable_v<T>);
 
@@ -256,7 +256,7 @@ class WritableArchive final {
 
         // ------------------------------- POLY -------------------------------
         template<typename T>
-        Result serialize_poly(NamedObject<T> object) {
+        inline Result serialize_poly(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
 
             if(object.object == nullptr) {
@@ -289,7 +289,7 @@ class WritableArchive final {
 
         // ------------------------------- POD -------------------------------
         template<typename T, bool R>
-        Result serialize_pod(const NamedObject<T, R>& object) {
+        inline Result serialize_pod(const NamedObject<T, R>& object) {
             static_assert(std::is_const_v<T>);
             static_assert(is_pod_v<T>);
             static_assert(!std::is_pointer_v<T>);
@@ -305,7 +305,7 @@ class WritableArchive final {
 
         // ------------------------------- OBJECT -------------------------------
         template<typename T, bool R>
-        Result serialize_object(const NamedObject<T, R>& object) {
+        inline Result serialize_object(const NamedObject<T, R>& object) {
             static_assert(std::is_const_v<T>);
             static_assert(!has_serde3_ptr_poly_v<T>);
 
@@ -318,12 +318,12 @@ class WritableArchive final {
         }
 
         template<typename T>
-        Result serialize_members(const T& object) {
+        inline Result serialize_members(const T& object) {
             return serialize_members_internal<0>(object._y_serde3_refl());
         }
 
         template<usize I, typename... Args, bool... Refs>
-        Result serialize_members_internal(const std::tuple<NamedObject<Args, Refs>...>& objects) {
+        inline Result serialize_members_internal(const std::tuple<NamedObject<Args, Refs>...>& objects) {
             unused(objects);
             if constexpr(I < sizeof...(Args)) {
                 {
@@ -347,7 +347,7 @@ class WritableArchive final {
 
         // ------------------------------- TUPLE -------------------------------
         template<typename T>
-        Result serialize_tuple(const NamedObject<T>& object) {
+        inline Result serialize_tuple(const NamedObject<T>& object) {
             static_assert(std::is_const_v<T>);
 
             {
@@ -359,7 +359,7 @@ class WritableArchive final {
         }
 
         template<usize I, typename Tpl>
-        Result serialize_tuple_members(const Tpl& object) {
+        inline Result serialize_tuple_members(const Tpl& object) {
             unused(object);
             if constexpr(I < std::tuple_size_v<Tpl>) {
                 y_try(serialize_one(NamedObject{std::get<I>(object), detail::tuple_version_string}));
@@ -371,13 +371,13 @@ class WritableArchive final {
 
         // ------------------------------- WRITE -------------------------------
         template<typename T, bool R>
-        Result write_header(const NamedObject<T, R>& object) {
+        inline Result write_header(const NamedObject<T, R>& object) {
             const auto header = detail::build_header(object);
             return write_one(header);
         }
 
         template<typename T>
-        Result write_one(const T& t) {
+        inline Result write_one(const T& t) {
 #ifdef Y_SERDE3_BUFFER
             if(_buffer.size() + sizeof(T) > buffer_size) {
                 y_try(flush());
@@ -393,7 +393,7 @@ class WritableArchive final {
         }
 
         template<typename T>
-        Result write_array(const T* t, usize size) {
+        inline Result write_array(const T* t, usize size) {
 #ifdef Y_SERDE3_BUFFER
             if(_buffer.size() + (sizeof(T) * size) > buffer_size) {
                 if(!flush()) {
@@ -411,7 +411,7 @@ class WritableArchive final {
             return core::Ok(Success::Full);
         }
 
-        usize tell() const {
+        inline usize tell() const {
 #ifdef Y_SERDE3_BUFFER
             return _cached_file_size + _buffer.tell();
 #else
@@ -419,7 +419,7 @@ class WritableArchive final {
 #endif
         }
 
-        void push_patch(SizePatch patch) {
+        inline void push_patch(SizePatch patch) {
             y_debug_assert(patch.index + patch.size <= tell());
             y_debug_assert(patch.size < size_type(-1));
             _patches << patch;
@@ -468,7 +468,7 @@ class ReadableArchive final {
         }
 
         template<typename T, typename... Args>
-        Result deserialize(T& t, Args&&... args) {
+       inline  Result deserialize(T& t, Args&&... args) {
             y_try(read_serde_header());
             auto res = deserialize_one(NamedObject{t, detail::version_string});
             if(res) {
@@ -479,7 +479,7 @@ class ReadableArchive final {
 
         Y_TODO(post_deserialize might be called several time in some cases (poly mostly))
         template<typename T, typename... Args>
-        static void post_deserialize(T& t, Args&&... args) {
+        inline static void post_deserialize(T& t, Args&&... args) {
             static_assert(!std::is_const_v<T>);
             post_deserialize_one(t, y_fwd(args)...);
         }
@@ -500,7 +500,7 @@ class ReadableArchive final {
 
 
         template<typename T, bool R>
-        Result deserialize_one(const NamedObject<T, R>& non_ref) {
+        inline Result deserialize_one(const NamedObject<T, R>& non_ref) {
             NamedObject<T> object = non_ref.make_ref();
 
             static_assert(!has_no_serde3_v<T>, "Type has serialization disabled");
@@ -529,7 +529,7 @@ class ReadableArchive final {
 
         // ------------------------------- PROPERTY -------------------------------
         template<typename T, bool R>
-        Result deserialize_property(NamedObject<T, R> object) {
+        inline Result deserialize_property(NamedObject<T, R> object) {
             using inner = typename T::value_type;
             inner i;
             y_try(deserialize_one(NamedObject<inner, true>{i, object.name}));
@@ -541,7 +541,7 @@ class ReadableArchive final {
 
         // ------------------------------- PTR -------------------------------
         template<typename T>
-        Result deserialize_ptr(NamedObject<T> object) {
+        inline Result deserialize_ptr(NamedObject<T> object) {
             static_assert(is_std_ptr_v<T>);
 
             u8 non_null = 0;
@@ -559,13 +559,13 @@ class ReadableArchive final {
 
         // ------------------------------- COLLECTION -------------------------------
         template<typename T>
-        Result deserialize_range(NamedObject<T> object) {
+        inline Result deserialize_range(NamedObject<T> object) {
             static_assert(!std::is_const_v<std::remove_reference_t<decltype(*object.object.begin())>>);
             return deserialize_collection<T, true>(object);
         }
 
         template<typename T, bool IsRange = false>
-        Result deserialize_collection(NamedObject<T> object) {
+        inline Result deserialize_collection(NamedObject<T> object) {
             static_assert(is_iterable_v<T>);
 
             if constexpr(!IsRange) {
@@ -654,7 +654,7 @@ class ReadableArchive final {
 
         // ------------------------------- POLY -------------------------------
         template<typename T>
-        Result deserialize_poly(NamedObject<T> object) {
+        inline Result deserialize_poly(NamedObject<T> object) {
             size_type size = 0;
             const usize begin = tell();
             y_try(read_one(size));
@@ -706,7 +706,7 @@ class ReadableArchive final {
 
         // ------------------------------- POD -------------------------------
         template<typename T>
-        Result deserialize_pod(NamedObject<T> object) {
+        inline Result deserialize_pod(NamedObject<T> object) {
             static_assert(is_pod_v<T>);
             static_assert(!std::is_pointer_v<T>);
 
@@ -728,7 +728,7 @@ class ReadableArchive final {
 
         // ------------------------------- OBJECT -------------------------------
         template<typename T>
-        Result deserialize_object(NamedObject<T> object) {
+        inline Result deserialize_object(NamedObject<T> object) {
             static_assert(has_serde3_v<T>);
             static_assert(!has_serde3_ptr_poly_v<T>);
 
@@ -747,7 +747,7 @@ class ReadableArchive final {
         }
 
         template<bool Safe, typename T>
-        Result deserialize_members(T& object, const detail::ObjectHeader& header) {
+        inline Result deserialize_members(T& object, const detail::ObjectHeader& header) {
             ObjectData data;
             if constexpr(Safe) {
                 usize offset = tell();
@@ -769,7 +769,7 @@ class ReadableArchive final {
         }
 
         template<bool Safe, usize I, typename... Args, bool... Refs>
-        Result deserialize_members_internal(const std::tuple<NamedObject<Args, Refs>...>& members,
+        inline Result deserialize_members_internal(const std::tuple<NamedObject<Args, Refs>...>& members,
                                             ObjectData& object_data) {
             unused(object_data);
 
@@ -823,13 +823,13 @@ class ReadableArchive final {
 
         // ------------------------------- TUPLE -------------------------------
         template<typename T>
-        Result deserialize_tuple(NamedObject<T> object) {
+        inline Result deserialize_tuple(NamedObject<T> object) {
             y_try(check_header(object));
             return deserialize_tuple_members<0>(object.object);
         }
 
         template<usize I, typename Tpl>
-        Result deserialize_tuple_members(Tpl& object) {
+        inline Result deserialize_tuple_members(Tpl& object) {
             unused(object);
             if constexpr(I < std::tuple_size_v<Tpl>) {
                 y_try(deserialize_one(NamedObject{std::get<I>(object), detail::tuple_version_string}));
@@ -841,7 +841,7 @@ class ReadableArchive final {
 
         // ------------------------------- POST -------------------------------
         template<typename T, typename... Args>
-        static void post_deserialize_one(T& t, Args&&... args) {
+        inline static void post_deserialize_one(T& t, Args&&... args) {
             unused(t);
 
             constexpr bool has_args = sizeof...(Args) != 0;
@@ -879,7 +879,7 @@ class ReadableArchive final {
         }
 
         template<typename P, typename... Args>
-        static void post_deserialize_property(P& prop, Args&&... args) {
+        inline static void post_deserialize_property(P& prop, Args&&... args) {
             if constexpr(P::return_ref) {
                 post_deserialize_one(prop.get(), args...);
             } else {
@@ -889,14 +889,14 @@ class ReadableArchive final {
         }
 
         template<typename C, typename... Args>
-        static void post_deserialize_collection(C& col, Args&&... args) {
+        inline static void post_deserialize_collection(C& col, Args&&... args) {
             for(auto&& item : col) {
                 post_deserialize_one(item, args...);
             }
         }
 
         template<usize I, typename Tpl, typename... Args>
-        static void post_deserialize_tuple(Tpl& objects, Args&&... args) {
+        inline static void post_deserialize_tuple(Tpl& objects, Args&&... args) {
             if constexpr(I < std::tuple_size_v<Tpl>) {
                 post_deserialize_one(std::get<I>(objects), args...);
                 post_deserialize_tuple<I + 1>(objects, args...);
@@ -904,7 +904,7 @@ class ReadableArchive final {
         }
 
         template<usize I, typename Tpl, typename... Args>
-        static void post_deserialize_named_tuple(Tpl& objects, Args&&... args) {
+        inline static void post_deserialize_named_tuple(Tpl& objects, Args&&... args) {
             if constexpr(I < std::tuple_size_v<Tpl>) {
                 post_deserialize_one(std::get<I>(objects).object, args...);
                 post_deserialize_named_tuple<I + 1>(objects, args...);
@@ -915,7 +915,7 @@ class ReadableArchive final {
         // ------------------------------- READ -------------------------------
 
         template<typename T, bool R>
-        Result check_header(const NamedObject<T, R>& object, detail::ObjectHeader& header) {
+        inline Result check_header(const NamedObject<T, R>& object, detail::ObjectHeader& header) {
             y_try(read_header(header));
 
             const auto check = detail::build_header(object);
@@ -929,14 +929,14 @@ class ReadableArchive final {
         }
 
         template<typename T, bool R>
-        Result check_header(const NamedObject<T, R>& object) {
+        inline Result check_header(const NamedObject<T, R>& object) {
             detail::ObjectHeader header;
             return check_header(object, header);
         }
 
 
         template<typename T>
-        Result read_one(T& t) {
+        inline Result read_one(T& t) {
             static_assert(!std::is_same_v<std::remove_reference_t<T>, detail::ObjectHeader>);
             if(!_file.read_one(t)) {
                 return core::Err(Error(ErrorType::IOError));
@@ -944,7 +944,7 @@ class ReadableArchive final {
             return core::Ok(Success::Full);
         }
 
-        Result read_header(detail::ObjectHeader& header) {
+        inline Result read_header(detail::ObjectHeader& header) {
             Y_TODO(set member name on error)
             if(!_file.read_one(header.type)){
                 return core::Err(Error(ErrorType::IOError));
@@ -961,11 +961,11 @@ class ReadableArchive final {
             return core::Ok(Success::Full);
         }
 
-        usize tell() const {
+        inline usize tell() const {
             return _file.tell();
         }
 
-        void seek(usize offset) {
+        inline void seek(usize offset) {
             _file.seek(offset);
         }
 
