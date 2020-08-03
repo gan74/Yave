@@ -26,7 +26,6 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/device/Queue.h>
 #include <yave/graphics/device/DeviceResources.h>
 
 #include <y/core/Chrono.h>
@@ -120,7 +119,7 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
     }
 
     // use sync compute to avoid having to sync later
-    graphic_queue(dptr).submit<SyncPolicy::Sync>(std::move(recorder));
+    std::move(recorder).submit<SyncPolicy::Sync>();
 }
 
 template<ImageType T>

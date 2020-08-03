@@ -27,7 +27,11 @@ SOFTWARE.
 
 namespace yave {
 
-CmdBuffer::CmdBuffer(std::unique_ptr<CmdBufferDataProxy>&& data) : _proxy(std::move(data)) {
+CmdBuffer::CmdBuffer(std::unique_ptr<CmdBufferDataProxy>&& data) : _proxy(std::move(data))  {
+}
+
+void CmdBuffer::release() {
+    _proxy = nullptr;
 }
 
 void CmdBuffer::wait() const {

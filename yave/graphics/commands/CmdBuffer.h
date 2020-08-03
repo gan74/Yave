@@ -51,13 +51,16 @@ struct CmdBuffer : NonCopyable {
         }
 
     protected:
-        friend class Queue;
-        friend class CmdBufferPool;
-
         CmdBuffer(std::unique_ptr<CmdBufferDataProxy>&& proxy);
 
+        void release();
+
     private:
+        friend class CmdBufferPool;
+        friend class Queue;
+
         std::unique_ptr<CmdBufferDataProxy> _proxy;
+
 };
 
 }

@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/utils.h>
-#include <yave/graphics/device/Queue.h>
 
 namespace yave {
 
@@ -41,7 +40,7 @@ StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
     Y_TODO(change to implicit staging?)
     Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
     Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
-    graphic_queue(dptr).submit<SyncPolicy::Sync>(std::move(recorder));
+    std::move(recorder).submit<SyncPolicy::Sync>();
 
     if(ray_tracing(dptr)) {
         _ray_tracing_data = RayTracing::AccelerationStructure(*this);

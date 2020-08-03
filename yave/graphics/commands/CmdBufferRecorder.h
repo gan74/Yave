@@ -30,15 +30,10 @@ SOFTWARE.
 
 namespace yave {
 
-class DescriptorSetBase;
-class Semaphore;
-class ComputeProgram;
-class Framebuffer;
-class Material;
-class MaterialTemplate;
-class GraphicPipeline;
-class RenderPass;
-
+enum class SyncPolicy {
+    Async,
+    Sync
+};
 
 namespace detail {
 using DescriptorSetList = core::Span<DescriptorSetBase>;
@@ -177,17 +172,23 @@ class CmdBufferRecorder final : public CmdBuffer {
         // never use directly, needed for internal work
         void transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst);
 
-        Y_TODO(abstract that)
+        Y_TODO(Remove)
         CmdBuffer finish() &&;
 
-    protected:
-        CmdBufferRecorder() = default;
+        template<SyncPolicy Policy>
+        void submit() && {
+            submit(Policy);
+        }
 
     private:
         friend class RenderPassRecorder;
 
+        CmdBufferRecorder() = default;
+
         void end_renderpass();
         void check_no_renderpass() const;
+
+        void submit(SyncPolicy policy);
 
         // this could be in RenderPassRecorder, but putting it here makes erroring easier
         const RenderPass* _render_pass = nullptr;

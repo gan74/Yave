@@ -143,7 +143,7 @@ static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integr
         const auto region = recorder.region("create_brdf_lut");
         recorder.dispatch_size(brdf_integrator, image.size(), {dset});
     }
-    graphic_queue(dptr).submit<SyncPolicy::Sync>(std::move(recorder));
+    std::move(recorder).submit<SyncPolicy::Sync>();
 
     return image;
 }

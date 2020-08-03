@@ -28,17 +28,13 @@ SOFTWARE.
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/barriers/Barrier.h>
+#include <yave/graphics/device/Queue.h>
 
 #include <yave/graphics/device/extentions/DebugUtils.h>
 
 namespace yave {
 
-#ifdef Y_DEBUG
-bool disable_render = false;
-#define YAVE_VK_CMD do { if(disable_render) { return; } } while(false)
-#else
-#define YAVE_VK_CMD do { } while(false)
-#endif
+#define YAVE_VK_CMD
 
 
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
@@ -453,11 +449,34 @@ void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, Vk
     barriers({ImageBarrier::transition_barrier(image, src, dst)});
 }
 
+void CmdBufferRecorder::submit(SyncPolicy policy) {
+    check_no_renderpass();
+    vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
+
+    const Queue& queue = graphic_queue(device());
+    queue.submit(*this);
+
+    switch(policy) {
+        case SyncPolicy::Async:
+            // nothing
+        break;
+
+        case SyncPolicy::Sync:
+            queue.wait();
+        break;
+    }
+
+    // Empty state
+    release();
+}
+
 CmdBuffer CmdBufferRecorder::finish() && {
     check_no_renderpass();
     vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
     return std::move(*this); // uuuh ?
 }
+
+#undef YAVE_VK_CMD
 
 }
 

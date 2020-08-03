@@ -55,26 +55,18 @@ void Queue::wait() const {
     vk_check(vkQueueWaitIdle(_queue));
 }
 
-Semaphore Queue::submit_sem(CmdBufferRecorder&& cmd) const {
-    const Semaphore sync(device());
-    cmd._proxy->data()._signal = sync;
-    submit_base(cmd, SyncPolicy::Async);
-    return sync;
-}
-
-void Queue::submit_base(CmdBufferRecorder& rec, SyncPolicy policy) const {
-    const CmdBuffer finished = std::move(rec).finish();
-    const VkCommandBuffer cmd = finished.vk_cmd_buffer();
+void Queue::submit(CmdBufferRecorder& rec) const {
+    const VkCommandBuffer cmd = rec.vk_cmd_buffer();
 
     {
         const auto lock = y_profile_unique_lock(*_lock);
 
-        const auto& wait = finished._proxy->data()._waits;
+        const auto& wait = rec._proxy->data()._waits;
         auto wait_semaphores = core::vector_with_capacity<VkSemaphore>(wait.size());
         std::transform(wait.begin(), wait.end(), std::back_inserter(wait_semaphores), [](const auto& s) { return s.vk_semaphore(); });
         const core::Vector<VkPipelineStageFlags> stages(wait.size(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-        const Semaphore& signal = finished._proxy->data()._signal;
+        const Semaphore& signal = rec._proxy->data()._signal;
         const VkSemaphore sig_semaphore = signal.device() ? signal.vk_semaphore() : VkSemaphore{};
 
         VkSubmitInfo submit_info = vk_struct();
@@ -88,12 +80,7 @@ void Queue::submit_base(CmdBufferRecorder& rec, SyncPolicy policy) const {
             submit_info.pCommandBuffers = &cmd;
         }
 
-        vk_check(vkQueueSubmit(_queue, 1, &submit_info, finished.vk_fence()));
-    }
-
-    if(policy == SyncPolicy::Sync) {
-        y_profile_zone("sync submit");
-        finished.wait();
+        vk_check(vkQueueSubmit(_queue, 1, &submit_info, rec.vk_fence()));
     }
 }
 

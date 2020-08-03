@@ -297,7 +297,7 @@ Device::~Device() {
         Y_TODO(Why do we need this?)
         CmdBufferPool pool(this);
         CmdBufferRecorder rec = pool.create_buffer();
-        graphic_queue().submit<SyncPolicy::Sync>(std::move(rec));
+        std::move(rec).submit<SyncPolicy::Sync>();
     }
 
     wait_all_queues();

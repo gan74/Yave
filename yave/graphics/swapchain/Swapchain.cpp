@@ -255,7 +255,7 @@ void Swapchain::build_swapchain() {
     for(auto& i : _images) {
         recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
     }
-    device()->graphic_queue().submit<SyncPolicy::Sync>(std::move(recorder));
+    std::move(recorder).submit<SyncPolicy::Sync>();
 }
 
 void Swapchain::build_semaphores() {

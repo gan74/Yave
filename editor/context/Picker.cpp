@@ -30,7 +30,6 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/graphics/device/Queue.h>
 
 #include <editor/renderer/EditorEntityPass.h>
 #include <editor/renderer/ScenePickingPass.h>
@@ -80,7 +79,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer(device());
     std::move(framegraph).render(recorder);
-    graphic_queue(device()).submit<SyncPolicy::Sync>(std::move(recorder));
+    std::move(recorder).submit<SyncPolicy::Sync>();
 
     const ReadBackData read_back = TypedMapping(buffer)[0];
     const float depth = read_back.depth;

@@ -22,18 +22,14 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_QUEUES_QUEUE_H
 #define YAVE_GRAPHICS_QUEUES_QUEUE_H
 
+#include "DeviceLinked.h"
+
 #include <yave/graphics/vk/vk.h>
 
-#include "Semaphore.h"
-
 #include <mutex>
+#include <memory>
 
 namespace yave {
-
-enum class SyncPolicy {
-    Async,
-    Sync
-};
 
 class Queue : public DeviceLinked {
 
@@ -49,25 +45,17 @@ class Queue : public DeviceLinked {
 
         void wait() const;
 
-        Semaphore submit_sem(CmdBufferRecorder&& cmd) const;
-
-        template<SyncPolicy Policy>
-        void submit(CmdBufferRecorder&& cmd) const {
-            y_profile();
-            submit_base(cmd, Policy);
-        }
-
         std::mutex& lock() const {
             return *_lock;
         }
 
     private:
         friend class Device;
-        friend class QueueFamily;
+        friend class CmdBufferRecorder;
 
         Queue(DevicePtr dptr, u32 family_index, VkQueue queue);
 
-        void submit_base(CmdBufferRecorder& rec, SyncPolicy policy) const;
+        void submit(CmdBufferRecorder& rec) const;
 
         VkQueue _queue;
         u32 _family_index;
