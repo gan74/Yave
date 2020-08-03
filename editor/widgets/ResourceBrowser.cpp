@@ -155,6 +155,10 @@ void ResourceBrowser::paint_path_bar() {
                 return p;
             };
 
+            auto full_name = [&](std::string_view file) -> core::String {
+                return filesystem()->join(full_path(), file);
+            };
+
             ImGui::SameLine();
             if(ImGui::Button(fmt_c_str("%##%", piece.is_empty() ? "/" : piece, i))) {
                 _set_path_deferred = full_path();
@@ -164,8 +168,8 @@ void ResourceBrowser::paint_path_bar() {
             const core::String menu_name = fmt("##jumpmenu_%", i);
             if(ImGui::Button(fmt_c_str(ICON_FA_ANGLE_RIGHT "##%", i))) {
                 _jump_menu.make_empty();
-                filesystem()->for_each(full_path(), [this](std::string_view f) {
-                        if(filesystem()->is_directory(f).unwrap_or(false)) {
+                filesystem()->for_each(full_path(), [&, this](std::string_view f) {
+                        if(filesystem()->is_directory(full_name(f)).unwrap_or(false)) {
                             _jump_menu << f;
                         }
                     }).ignore();
@@ -176,7 +180,7 @@ void ResourceBrowser::paint_path_bar() {
             if(ImGui::BeginPopup(menu_name.data())) {
                 for(const core::String& dir : _jump_menu) {
                     if(ImGui::Selectable(fmt_c_str(ICON_FA_FOLDER " %", dir))) {
-                        _set_path_deferred = filesystem()->join(full_path(), dir);
+                        _set_path_deferred = full_name(dir);
                     }
                 }
                 if(_jump_menu.is_empty()) {
