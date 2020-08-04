@@ -27,12 +27,69 @@ SOFTWARE.
 #include <y/core/Span.h>
 #include <y/core/Range.h>
 
+#include <y/utils/detect.h>
 #include <y/utils/traits.h>
 
 #include <memory>
 
 namespace y {
 namespace serde3 {
+
+namespace detail {
+template<typename T>
+using has_serde3_t = decltype(std::declval<T>()._y_serde3_refl());
+
+template<typename T>
+using has_no_serde3_t = decltype(std::declval<T>()._y_serde3_no_serde);
+
+template<typename T, typename... Args>
+using has_serde3_post_deser_t = decltype(std::declval<T>().post_deserialize(std::declval<Args>()...));
+template<typename T, typename... Args>
+using has_serde3_post_deser_poly_t = decltype(std::declval<T>().post_deserialize_poly(std::declval<Args>()...));
+
+template<typename T>
+using has_serde3_poly_t = decltype(std::declval<T>()._y_serde3_poly_base);
+template<typename T>
+using has_serde3_ptr_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
+}
+
+template<typename T>
+static constexpr bool has_serde3_v = is_detected_v<detail::has_serde3_t, T>;
+
+template<typename T>
+static constexpr bool has_no_serde3_v = is_detected_v<detail::has_no_serde3_t, T>;
+
+
+template<typename T, typename... Args>
+static constexpr bool has_serde3_post_deser_v = is_detected_v<detail::has_serde3_post_deser_t, T, Args...>;
+
+template<typename T, typename... Args>
+static constexpr bool has_serde3_post_deser_poly_v = is_detected_v<detail::has_serde3_post_deser_poly_t, T, Args...>;
+template<typename T>
+static constexpr bool has_serde3_poly_v = is_detected_v<detail::has_serde3_poly_t, T>;
+
+template<typename T>
+static constexpr bool has_serde3_ptr_poly_v = is_detected_v<detail::has_serde3_ptr_poly_t, T>;
+
+template<typename T>
+constexpr auto members(T&& t) {
+    if constexpr(has_serde3_v<T>) {
+        return t._y_serde3_refl();
+    } else {
+        return std::tuple<>{};
+    }
+}
+
+template<typename T>
+constexpr usize member_count() {
+    return std::tuple_size_v<decltype(members(std::declval<T&>()))>;
+}
+
+
+
+
+
+
 namespace detail {
 
 template<typename T, typename G, typename S>
@@ -159,8 +216,8 @@ auto make_std_ptr() {
     static_assert(is_std_ptr_v<T>);
     return detail::StdPtr<T>::make();
 }
-
 }
+
 }
 
 #endif // Y_SERDE3_TRAITS_H

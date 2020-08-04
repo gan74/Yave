@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <y/utils.h>
 #include <y/utils/recmacros.h>
-#include <y/utils/detect.h>
 
 #include <tuple>
 #include <string_view>
@@ -36,62 +35,9 @@ class WritableArchive;
 class ReadableArchive;
 
 namespace detail {
-
 // https://stackoverflow.com/questions/36296425/how-to-determine-programmatically-if-an-expression-is-rvalue-or-lvalue-in-c/36312021#36312021
 template<typename T>
 constexpr std::is_lvalue_reference<T&&> is_lvalue(T&&);
-
-
-template<typename T>
-using has_serde3_t = decltype(std::declval<T>()._y_serde3_refl());
-
-template<typename T>
-using has_no_serde3_t = decltype(std::declval<T>()._y_serde3_no_serde);
-
-template<typename T, typename... Args>
-using has_serde3_post_deser_t = decltype(std::declval<T>().post_deserialize(std::declval<Args>()...));
-template<typename T, typename... Args>
-using has_serde3_post_deser_poly_t = decltype(std::declval<T>().post_deserialize_poly(std::declval<Args>()...));
-
-template<typename T>
-using has_serde3_poly_t = decltype(std::declval<T>()._y_serde3_poly_base);
-template<typename T>
-using has_serde3_ptr_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
-}
-
-template<typename T>
-static constexpr bool has_serde3_v = is_detected_v<detail::has_serde3_t, T>;
-
-template<typename T>
-static constexpr bool has_no_serde3_v = is_detected_v<detail::has_no_serde3_t, T>;
-
-
-template<typename T, typename... Args>
-static constexpr bool has_serde3_post_deser_v = is_detected_v<detail::has_serde3_post_deser_t, T, Args...>;
-
-template<typename T, typename... Args>
-static constexpr bool has_serde3_post_deser_poly_v = is_detected_v<detail::has_serde3_post_deser_poly_t, T, Args...>;
-template<typename T>
-static constexpr bool has_serde3_poly_v = is_detected_v<detail::has_serde3_poly_t, T>;
-
-template<typename T>
-static constexpr bool has_serde3_ptr_poly_v = is_detected_v<detail::has_serde3_ptr_poly_t, T>;
-
-
-
-
-template<typename T>
-constexpr auto members(T&& t) {
-    if constexpr(has_serde3_v<T>) {
-        return t._y_serde3_refl();
-    } else {
-        return std::tuple<>{};
-    }
-}
-
-template<typename T>
-constexpr usize member_count() {
-    return std::tuple_size_v<decltype(members(std::declval<T&>()))>;
 }
 
 // Ref version
@@ -142,7 +88,7 @@ constexpr auto create_named_object(const std::reference_wrapper<T>& t, std::stri
 
 #define y_serde3_create_item(object) y::serde3::create_named_object<decltype(y::serde3::detail::is_lvalue(object))::value>(object, #object),
 
-#define y_serde3_refl_qual(qual, ...) /*constexpr*/ auto _y_serde3_refl() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_serde3_create_item, __VA_ARGS__))}; }
+#define y_serde3_refl_qual(qual, ...) /*template<typename = void> inline*/ auto _y_serde3_refl() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_serde3_create_item, __VA_ARGS__))}; }
 
 
 #define y_serde3(...)                               \

@@ -37,6 +37,9 @@ SOFTWARE.
 #include <y/io2/Buffer.h>
 #endif
 
+//#define Y_NO_ARCHIVES
+//#define Y_NO_SAFE_DESER
+
 
 Y_TODO(FixedArray is treated as a range rather than a collection)
 
@@ -108,12 +111,18 @@ class WritableArchive final {
 
         template<typename T>
         inline Result serialize(const T& t) {
+#ifdef Y_NO_ARCHIVES
+            unused(t);
+            return core::Ok(Success::Full);
+#else
             y_try(write_serde_header());
             y_try(serialize_one(NamedObject{t, detail::version_string}));
             return finalize();
+#endif
         }
 
     private:
+#ifndef Y_NO_ARCHIVES
         Result write_serde_header() {
             y_try(write_one(detail::magic));
             return write_one(detail::version_id);
@@ -411,7 +420,7 @@ class WritableArchive final {
             return core::Ok(Success::Full);
         }
 
-        inline usize tell() const {
+        usize tell() const {
 #ifdef Y_SERDE3_BUFFER
             return _cached_file_size + _buffer.tell();
 #else
@@ -419,11 +428,12 @@ class WritableArchive final {
 #endif
         }
 
-        inline void push_patch(SizePatch patch) {
+        void push_patch(SizePatch patch) {
             y_debug_assert(patch.index + patch.size <= tell());
             y_debug_assert(patch.size < size_type(-1));
             _patches << patch;
         }
+#endif
 
     private:
         File& _file;
@@ -468,24 +478,35 @@ class ReadableArchive final {
         }
 
         template<typename T, typename... Args>
-       inline  Result deserialize(T& t, Args&&... args) {
+        inline Result deserialize(T& t, Args&&... args) {
+#ifdef Y_NO_ARCHIVES
+            unused(t, args...);
+            return core::Ok(Success::Full);
+#else
             y_try(read_serde_header());
             auto res = deserialize_one(NamedObject{t, detail::version_string});
             if(res) {
                 post_deserialize(t, y_fwd(args)...);
             }
             return res;
+#endif
         }
+
 
         Y_TODO(post_deserialize might be called several time in some cases (poly mostly))
         template<typename T, typename... Args>
         inline static void post_deserialize(T& t, Args&&... args) {
             static_assert(!std::is_const_v<T>);
+#ifdef Y_NO_ARCHIVES
+            unused(t, args...);
+#else
             post_deserialize_one(t, y_fwd(args)...);
+#endif
         }
 
 
     private:
+#ifndef Y_NO_ARCHIVES
         Result read_serde_header() {
             u16 magic = 0;
             u16 version = 0;
@@ -737,10 +758,12 @@ class ReadableArchive final {
             const auto check = detail::build_header(object);
 
             if(header != check) {
-                if(header.type.type_hash != check.type.type_hash) {
-                    return core::Err(Error(ErrorType::SignatureError, object.name.data()));
+#ifndef Y_NO_SAFE_DESER
+                if(header.type.type_hash == check.type.type_hash) {
+                    return deserialize_members<true>(object.object, header);
                 }
-                return deserialize_members<true>(object.object, header);
+#endif
+                return core::Err(Error(ErrorType::SignatureError, object.name.data()));
             } else {
                 return deserialize_members<force_safe>(object.object, header);
             }
@@ -773,6 +796,9 @@ class ReadableArchive final {
                                             ObjectData& object_data) {
             unused(object_data);
 
+#ifdef Y_NO_SAFE_DESER
+            static_assert(!Safe);
+#endif
             if constexpr(I < sizeof...(Args)) {
                 const auto& member = std::get<I>(members);
 
@@ -944,7 +970,7 @@ class ReadableArchive final {
             return core::Ok(Success::Full);
         }
 
-        inline Result read_header(detail::ObjectHeader& header) {
+        Result read_header(detail::ObjectHeader& header) {
             Y_TODO(set member name on error)
             if(!_file.read_one(header.type)){
                 return core::Err(Error(ErrorType::IOError));
@@ -961,13 +987,14 @@ class ReadableArchive final {
             return core::Ok(Success::Full);
         }
 
-        inline usize tell() const {
+        usize tell() const {
             return _file.tell();
         }
 
-        inline void seek(usize offset) {
+        void seek(usize offset) {
             _file.seek(offset);
         }
+#endif
 
     private:
         File& _file;
