@@ -34,13 +34,13 @@ class Matrix;
 
 namespace detail {
     template<typename T, usize N>
-    inline T determinant(const Matrix<N, N, T>& mat);
+    inline constexpr T determinant(const Matrix<N, N, T>& mat);
 
     template<typename T>
-    inline T determinant(const Matrix<2, 2, T>& mat);
+    inline constexpr T determinant(const Matrix<2, 2, T>& mat);
 
     template<typename T>
-    inline T determinant(const Matrix<1, 1, T>& mat);
+    inline constexpr T determinant(const Matrix<1, 1, T>& mat);
 }
 
 
@@ -56,13 +56,13 @@ class Matrix {
 
     private:
         template<usize P, typename... Args>
-        inline void build(T t, Args... args) {
+        inline constexpr void build(T t, Args... args) {
             set_at(P, t);
             build<P + 1>(args...);
         }
 
         template<usize P, usize Q, typename... Args>
-        inline void build(const Vec<Q, T>& t, Args... args) {
+        inline constexpr void build(const Vec<Q, T>& t, Args... args) {
             for(usize i = 0; i != Q; ++i) {
                 set_at(P + i, t[i]);
             }
@@ -70,12 +70,12 @@ class Matrix {
         }
 
         template<usize P>
-        inline void build() {
+        inline constexpr void build() {
             static_assert(P == N * M, "Wrong number of arguments");
         }
 
         template<typename U>
-        inline void set_at(usize i, U u) {
+        inline constexpr void set_at(usize i, U u) {
             const usize r = i / M;
             const usize c = i % M;
             _vecs[c][r] = u;
@@ -86,32 +86,32 @@ class Matrix {
         using const_iterator = const T*;
         using value_type = T;
 
-        inline Matrix() = default;
-        inline Matrix(const Matrix&) = default;
-        inline Matrix& operator=(const Matrix&) = default;
+        inline constexpr Matrix() = default;
+        inline constexpr Matrix(const Matrix&) = default;
+        inline constexpr Matrix& operator=(const Matrix&) = default;
 
         template<typename U, typename... Args>
-        inline explicit Matrix(U t, Args... args) {
+        inline constexpr explicit Matrix(U t, Args... args) {
             build<0>(t, args...);
         }
 
         template<typename X>
-        inline Matrix(const Matrix<N, M, X>& m) {
+        inline constexpr Matrix(const Matrix<N, M, X>& m) {
             std::copy(m.begin(), m.end(), begin());
         }
 
-        inline Matrix(detail::identity_t&&) : Matrix(Matrix::identity()) {
+        inline constexpr Matrix(detail::identity_t&&) : Matrix(Matrix::identity()) {
         }
 
-        inline auto& operator[](usize i) {
+        inline constexpr auto& operator[](usize i) {
             return _vecs[i];
         }
 
-        inline const auto& operator[](usize i) const {
+        inline constexpr const auto& operator[](usize i) const {
             return _vecs[i];
         }
 
-        inline Row row(usize row) const {
+        inline constexpr Row row(usize row) const {
             Row r;
             for(usize i = 0; i != M; ++i) {
                 r[i] = _vecs[i][row];
@@ -119,11 +119,11 @@ class Matrix {
             return r;
         }
 
-        inline Column& column(usize col) {
+        inline constexpr Column& column(usize col) {
             return _vecs[col];
         }
 
-        inline const Column& column(usize col) const {
+        inline constexpr const Column& column(usize col) const {
             return _vecs[col];
         }
 
@@ -132,7 +132,7 @@ class Matrix {
         }
 
         template<typename U>
-        inline auto operator+(const Matrix<N, M, U>& m) const {
+        inline constexpr auto operator+(const Matrix<N, M, U>& m) const {
             const Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
             for(usize i = 0; i != N; ++i) {
                 mat._vecs[i] = _vecs[i] + m._vecs[i];
@@ -140,7 +140,7 @@ class Matrix {
             return mat;
         }
 
-        inline Matrix<M, N, T> transposed() const {
+        inline constexpr Matrix<M, N, T> transposed() const {
             Matrix<M, N, T> tr;
             for(usize i = 0; i != vec_count; ++i) {
                 for(usize j = 0; j != vec_size; ++j) {
@@ -150,7 +150,7 @@ class Matrix {
             return tr;
         }
 
-        inline bool operator==(const Matrix& m) const {
+        inline constexpr bool operator==(const Matrix& m) const {
             for(usize i = 0; i != vec_count; ++i) {
                 if(_vecs[i] != m._vecs[i]) {
                     return false;
@@ -160,7 +160,7 @@ class Matrix {
         }
 
         template<usize R, usize C>
-        inline Matrix<R, C, T> to() const {
+        inline constexpr Matrix<R, C, T> to() const {
             static_assert(R <= N && C <= M, "Accessing out of bound member");
             Matrix<R, C, T> mat;
             for(usize i = 0; i != C; ++i) {
@@ -181,12 +181,12 @@ class Matrix {
             return mat;
         }
 
-        inline T determinant() const {
+        inline constexpr T determinant() const {
             chk_sq();
             return detail::determinant(*this);
         }
 
-        inline Matrix inverse() const {
+        inline constexpr Matrix inverse() const {
             T d = determinant();
             if(d == 0) {
                 return Matrix();
@@ -211,19 +211,19 @@ class Matrix {
             return mat;
         }
 
-        inline const_iterator begin() const {
+        inline constexpr const_iterator begin() const {
             return &_vecs[0][0];
         }
 
-        inline const_iterator end() const {
+        inline constexpr const_iterator end() const {
             return (&_vecs[0][0]) + (M * N);
         }
 
-        inline iterator begin() {
+        inline constexpr iterator begin() {
             return& _vecs[0][0];
         }
 
-        inline iterator end() {
+        inline constexpr iterator end() {
             return (&_vecs[0][0]) + (M * N);
         }
 
@@ -231,7 +231,7 @@ class Matrix {
             return N * M;
         }
 
-        inline Column operator*(const Row& v) const {
+        inline constexpr Column operator*(const Row& v) const {
             Column tr;
             for(usize i = 0; i != M; ++i) {
                 tr += column(i) * v[i];
@@ -240,7 +240,7 @@ class Matrix {
         }
 
         template<typename U, usize P>
-        inline auto operator*(const Matrix<M, P, U>& m) const {
+        inline constexpr auto operator*(const Matrix<M, P, U>& m) const {
             Matrix<N, P, decltype(std::declval<T>() * std::declval<U>())> mat;
             for(usize i = 0; i != N; ++i) {
                 for(usize j = 0; j != P; ++j) {
@@ -255,11 +255,11 @@ class Matrix {
         }
 
         template<typename U, usize P>
-        inline Matrix& operator*=(const Matrix<M, P, U>& m) {
+        inline constexpr Matrix& operator*=(const Matrix<M, P, U>& m) {
             return operator=(*this * m);
         }
 
-        inline Matrix& operator*=(const T& t) {
+        inline constexpr Matrix& operator*=(const T& t) {
             for(auto& i : *this) {
                 i *= t;
             }
@@ -279,7 +279,7 @@ class Matrix {
 
 namespace detail {
     template<typename T, usize N>
-    T determinant(const Matrix<N, N, T>& mat) {
+    constexpr T determinant(const Matrix<N, N, T>& mat) {
         struct {
             int operator()(int index) const {
                 return 2 * (index % 2) - 1;
@@ -294,13 +294,13 @@ namespace detail {
     }
 
     template<typename T>
-    T determinant(const Matrix<2, 2, T>& mat) {
+    constexpr T determinant(const Matrix<2, 2, T>& mat) {
         return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
     }
 
 
     template<typename T>
-    T determinant(const Matrix<1, 1, T>& mat) {
+    constexpr T determinant(const Matrix<1, 1, T>& mat) {
         return mat[0][0];
     }
 }
@@ -315,12 +315,12 @@ using Matrix2 = Matrix<2, 2, T>;
 
 
 template<usize N, usize M, typename T>
-inline auto operator*(Matrix<N, M, T> mat, const T& r) {
+inline constexpr auto operator*(Matrix<N, M, T> mat, const T& r) {
     return mat *= r;
 }
 
 template<usize N, usize M, typename T>
-inline auto operator*(const T& r, Matrix<N, M, T> mat) {
+inline constexpr auto operator*(const T& r, Matrix<N, M, T> mat) {
     return mat *= r;
 }
 

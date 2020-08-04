@@ -42,83 +42,83 @@ class Quaternion {
             RollIndex = 0
         };
 
-        inline Quaternion(detail::identity_t = identity()) : _quat(0, 0, 0, 1) {
+        inline constexpr Quaternion(detail::identity_t = identity()) : _quat(0, 0, 0, 1) {
         }
 
-        inline Quaternion(const Quaternion& q) = default;
+        inline constexpr Quaternion(const Quaternion& q) = default;
 
         template<typename X>
-        inline Quaternion(const Vec<4, X>& q) : _quat(q.normalized()) {
+        inline constexpr Quaternion(const Vec<4, X>& q) : _quat(q.normalized()) {
         }
 
         template<typename X>
-        inline Quaternion(const Quaternion<X>& q) : _quat(q._quat) {
+        inline constexpr Quaternion(const Quaternion<X>& q) : _quat(q._quat) {
         }
 
         template<typename... Args, typename = std::enable_if_t<std::is_constructible_v<Vec<4, T>, Args...>>>
-        inline /*explicit*/ Quaternion(Args&&... args) : _quat(Vec<4, T>(y_fwd(args)...).normalized()) {
+        inline constexpr /*explicit*/ Quaternion(Args&&... args) : _quat(Vec<4, T>(y_fwd(args)...).normalized()) {
         }
 
         template<typename X>
-        inline Quaternion& operator=(const Quaternion<X>& q) {
+        inline constexpr Quaternion& operator=(const Quaternion<X>& q) {
             _quat = q._quat;
             return *this;
         }
 
         template<typename X>
-        inline Quaternion& operator=(const Vec<4, X>& q) {
+        inline constexpr Quaternion& operator=(const Vec<4, X>& q) {
             _quat = q.normalized();
             return *this;
         }
 
-        inline bool operator==(const Quaternion& q) const {
+        inline constexpr bool operator==(const Quaternion& q) const {
             return _quat == q._quat || -_quat == q._quat;
         }
 
-        inline bool operator!=(const Quaternion& q) const {
+        inline constexpr bool operator!=(const Quaternion& q) const {
             return !operator==(q);
         }
 
-        inline auto& as_vec() {
+        inline constexpr auto& as_vec() {
             return _quat;
         }
 
-        inline const auto& as_vec() const {
+        inline constexpr const auto& as_vec() const {
             return _quat;
         }
 
-        inline T angle() const {
+        inline constexpr T angle() const {
             return std::acos(w() * T(2.0f));
         }
 
-        inline Vec<3, T> axis() const {
+        inline constexpr Vec<3, T> axis() const {
             return Vec<3, T>(_quat.template to<3>() / std::sqrt(T(1.0f) - w() * w()));
         }
 
-        inline Quaternion inverse() const {
+        inline constexpr Quaternion inverse() const {
             return Quaternion(-_quat.template to<3>(), _quat.w());
         }
 
-        inline Quaternion flip() const {
+        inline constexpr Quaternion flip() const {
             return Quaternion(-_quat);
         }
 
-        inline Vec<3, T> operator()(const Vec<3, T>& v) const {
+        inline constexpr Vec<3, T> operator()(const Vec<3, T>& v) const {
             Vec<3, T> u = _quat.template to<3>();
             return u * T(2.0f) * u.dot(v) +
                    v * (w() * w() - u.length2()) +
                    u.cross(v) * T(2.0f) * w();
         }
 
-        inline Vec<4, T> to_axis_angle() const {
+        inline constexpr Vec<4, T> to_axis_angle() const {
             return Vec<4, T>(axis(), angle());
         }
 
-        inline Quaternion operator-() const {
+        inline constexpr Quaternion operator-() const {
             return inverse();
         }
 
-        inline Quaternion& operator*=(const Quaternion& q) {
+        inline constexpr Quaternion& operator*=(const Quaternion& q) {
             _quat = {w() * q.x() + x() * q.w() + y() * q.z() - z() * q.y(),
                      w() * q.y() + y() * q.w() + z() * q.x() - x() * q.z(),
                      w() * q.z() + z() * q.w() + x() * q.y() - y() * q.x(),
@@ -126,23 +126,23 @@ class Quaternion {
             return *this;
         }
 
-        inline T x() const {
+        inline constexpr T x() const {
              return _quat.x();
         }
 
-        inline T y() const {
+        inline constexpr T y() const {
              return _quat.y();
         }
 
-        inline T z() const {
+        inline constexpr T z() const {
              return _quat.z();
         }
 
-        inline T w() const {
+        inline constexpr T w() const {
              return _quat.w();
         }
 
-        inline Quaternion slerp(const Quaternion& end_quat, T factor) const {
+        inline constexpr Quaternion slerp(const Quaternion& end_quat, T factor) const {
             Vec<4, T> end = end_quat._quat;
             T dot = _quat.dot(end);
 
@@ -162,7 +162,7 @@ class Quaternion {
             return _quat * (T(1.0f) - factor) + end * factor;
         }
 
-        inline Quaternion lerp(const Quaternion& end_quat, T factor) const {
+        inline constexpr Quaternion lerp(const Quaternion& end_quat, T factor) const {
             Vec<4, T> end = end_quat._quat;
             T dot = _quat.dot(end);
 
@@ -174,16 +174,16 @@ class Quaternion {
             return _quat * (T(1.0f) - factor) + end * factor;
         }
 
-        inline T pitch() const {
+        inline constexpr T pitch() const {
             const T a = T(-2.0f) * (x() * z() - w() * y());
             return std::asin(std::min(std::max(a, T(-1.0f)), T(1.0f)));
         }
 
-        inline T yaw() const {
+        inline constexpr T yaw() const {
             return std::atan2(T(2.0f) * (x() * y() + w() * z()), w() * w() + x() * x() - y() * y() - z() * z());
         }
 
-        inline T roll() const {
+        inline constexpr T roll() const {
             //return T(atan(T(2.0f) * (y * z + w * x), w * w - x * x - y * y + z * z));
             const T a = T(2.0f) * (y() * z() + w() * x());
             T b = w() * w() - x() * x() - y() * y() + z() * z();
@@ -193,7 +193,7 @@ class Quaternion {
             return std::atan2(a, b);
         }
 
-        inline Vec<3, T> to_euler() const {
+        inline constexpr Vec<3, T> to_euler() const {
             Vec<3, T> v;
             v[PitchIndex] = pitch();
             v[YawIndex] = yaw();
@@ -261,20 +261,20 @@ class Quaternion {
 
 
 
-        inline static Quaternion from_euler(const Vec<3, T>& euler) {
+        inline constexpr static Quaternion from_euler(const Vec<3, T>& euler) {
             return from_euler(euler[PitchIndex], euler[YawIndex], euler[RollIndex]);
         }
 
-        inline static Quaternion from_axis_angle(const Vec<3, T>& axis, T ang) {
+        inline constexpr static Quaternion from_axis_angle(const Vec<3, T>& axis, T ang) {
             T s = std::sin(ang * T(0.5)) / axis.length();
             return Quaternion(axis.x() * s, axis.y() * s, axis.z() * s, std::cos(ang * T(0.5)));
         }
 
-        inline static Quaternion from_axis_angle(const Vec<3, T>& axis_ang) {
+        inline constexpr static Quaternion from_axis_angle(const Vec<3, T>& axis_ang) {
             return from_axis_angle(axis_ang, axis_ang.length());
         }
 
-        inline static Quaternion from_axis_angle(const Vec<4, T>& v) {
+        inline constexpr static Quaternion from_axis_angle(const Vec<4, T>& v) {
             return from_axis_angle(v.template to<3>(), v.w());
         }
 
