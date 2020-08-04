@@ -3,25 +3,25 @@ project(y)
 
 # -Wsign-conversion -Wshadow
 set(Y_EXTRA_WARNINGS
-	    -Wzero-as-null-pointer-constant
-		-Wsign-promo
-		-Wfloat-conversion
-		-Woverloaded-virtual
-		-Wnon-virtual-dtor
-		-Wodr
-		-Wdisabled-optimization
-		-Wlogical-op
-		-Wredundant-decls
-		-Wundef
-		-Wtautological-compare
-	)
+        -Wzero-as-null-pointer-constant
+        -Wsign-promo
+        -Wfloat-conversion
+        -Woverloaded-virtual
+        -Wnon-virtual-dtor
+        -Wodr
+        -Wdisabled-optimization
+        -Wlogical-op
+        -Wredundant-decls
+        -Wundef
+        -Wtautological-compare
+    )
 
 
 if(MSVC)
-	# temporary hacks to get it to compile
-	set(Y_COMPILE_OPTIONS /permissive- /W0)
+    # temporary hacks to get it to compile
+    set(Y_COMPILE_OPTIONS /permissive- /W0)
 else()
-	set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${Y_EXTRA_WARNINGS} -fno-common)
+    set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${Y_EXTRA_WARNINGS} -fno-common)
 endif()
 
 
@@ -33,13 +33,13 @@ set(CMAKE_CXX_STANDARD 17)
 
 
 file(GLOB_RECURSE SOURCE_FILES
-	    "y/*.h"
-		"y/*.cpp"
-	)
+        "y/*.h"
+        "y/*.cpp"
+    )
 
 file(GLOB_RECURSE TEST_FILES
-	    "tests/*.cpp"
-	)
+        "tests/*.cpp"
+    )
 
 
 add_library(y STATIC ${SOURCE_FILES})
@@ -49,19 +49,20 @@ target_compile_options(y PUBLIC ${Y_COMPILE_OPTIONS})
 
 option(Y_FORCE_ASSERTS "Build asserts even in release" OFF)
 if((Y_FORCE_ASSERTS) OR NOT (CMAKE_BUILD_TYPE STREQUAL Release))
-	target_compile_options(y PUBLIC "-DY_DEBUG")
+    target_compile_options(y PUBLIC "-DY_DEBUG")
 endif()
 
 if((NOT Y_FORCE_ASSERTS) AND (CMAKE_BUILD_TYPE STREQUAL Release))
-	target_compile_options(y PUBLIC "-DY_NO_DEBUG")
+    target_compile_options(y PUBLIC "-DY_NO_DEBUG")
 endif()
 
 
 option(Y_BUILD_TESTS "Build tests" ON)
 if(Y_BUILD_TESTS)
-	#enable_testing()
-	add_executable(tests ${TEST_FILES} "tests.cpp")
-	target_compile_definitions(tests PRIVATE "-DY_BUILD_TESTS")
-	target_link_libraries(tests y)
-	#add_test(Test tests)
+    #enable_testing()
+    add_executable(tests ${TEST_FILES} "tests.cpp")
+    target_compile_definitions(tests PRIVATE "-DY_BUILD_TESTS")
+    target_link_libraries(tests y)
+    #add_test(Test tests)
 endif()
+
