@@ -22,10 +22,6 @@ SOFTWARE.
 #ifndef EDITOR_IMPORT_IMPORT_H
 #define EDITOR_IMPORT_IMPORT_H
 
-/*#include <yave/meshes/MeshData.h>
-#include <yave/animations/Animation.h>
-#include <yave/graphics/images/ImageData.h>*/
-
 #include <yave/material/SimpleMaterialData.h>
 
 #include <editor/utils/Named.h>

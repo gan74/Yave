@@ -72,42 +72,6 @@ class BufferBarrier {
         PipelineStage _dst;
 };
 
-
-/*class GenericBarrier {
-
-    template<typename T>
-    auto create_barrier(const T& t) {
-        if constexpr(std::is_constructible<ImageBarrier, T>::value) {
-            return ImageBarrier(t);
-        } else {
-            return BufferBarrier(t);
-        }
-    }
-
-    public:
-        enum class Type {
-            Image,
-            Buffer
-        };
-
-        GenericBarrier(const ImageBarrier& barrier);
-        GenericBarrier(const BufferBarrier& barrier);
-
-        template<typename T>
-        GenericBarrier(const T& t) : GenericBarrier(create_barrier(t)) {
-        }
-
-        core::Result<ImageBarrier, BufferBarrier> image_barrier() const;
-        core::Result<BufferBarrier, ImageBarrier> buffer_barrier() const;
-
-    private:
-        Type _type;
-        union {
-            ImageBarrier _image;
-            BufferBarrier _buffer;
-        };
-};*/
-
 }
 
 

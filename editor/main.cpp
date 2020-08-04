@@ -156,7 +156,6 @@ int main(int argc, char** argv) {
         perf::end_capture();
     }
 
-    set_log_callback(nullptr);
     context = nullptr;
 
     return 0;
