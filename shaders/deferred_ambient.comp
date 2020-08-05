@@ -40,7 +40,8 @@ layout(push_constant) uniform PushConstants {
 
 void main() {
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+    const vec2 image_size = vec2(imageSize(out_color).xy);
+    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / image_size;
 
     const float depth = texelFetch(in_depth, coord, 0).x;
     vec3 irradiance = vec3(0.0);

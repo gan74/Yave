@@ -47,6 +47,10 @@ struct Camera {
 
     math::Vec3 up;
     u32 padding_2 = 0;
+
+    float z_near;
+    float z_far;
+    math::Vec2ui padding_3;
 };
 
 static_assert(sizeof(Camera) % 16 == 0);

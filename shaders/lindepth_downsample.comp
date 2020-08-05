@@ -1,0 +1,34 @@
+#version 450
+
+#include "lib/utils.glsl"
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0) uniform sampler2D in_depth;
+
+layout(set = 0, binding =  1) uniform CameraData {
+    Camera camera;
+};
+
+layout(r32f, set = 0, binding = 2) uniform writeonly image2D out_depth;
+
+
+#define LINEARIZE(depth) linearize(depth, camera.z_near, camera.z_far)
+
+void main() {
+    // We volontarily computes UVs using the dispatch size and not the image size here
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    const vec2 uv = vec2(gl_GlobalInvocationID.xy + 0.5) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+
+    const vec4 depths = textureGather(in_depth, uv);
+
+    const float linear_depth = 0.25 * (
+         LINEARIZE(depths.x) +
+         LINEARIZE(depths.y) +
+         LINEARIZE(depths.z) +
+         LINEARIZE(depths.w)
+    );
+
+    imageStore(out_depth, ivec2(gl_GlobalInvocationID.xy), vec4(linear_depth));
+}
+

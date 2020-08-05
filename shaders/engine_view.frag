@@ -12,6 +12,7 @@ layout(set = 0, binding = 1) uniform sampler2D in_final;
 layout(set = 0, binding = 2) uniform sampler2D in_depth;
 layout(set = 0, binding = 3) uniform sampler2D in_color;
 layout(set = 0, binding = 4) uniform sampler2D in_normal;
+layout(set = 0, binding = 5) uniform sampler2D in_ao;
 
 
 layout(location = 0) in vec2 in_uv;
@@ -28,7 +29,6 @@ void main() {
     unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
     unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
 
-    const float depth = texelFetch(in_depth, coord, 0).r;
     const vec3 final = texelFetch(in_final, coord, 0).rgb;
 
     vec3 color = final;
@@ -42,7 +42,11 @@ void main() {
     } else if(target_index == 4) {
         color = vec3(roughness);
     } else if(target_index == 5) {
+        const float depth = texelFetch(in_depth, coord, 0).r;
         color = vec3(pow(depth, 0.35));
+    } else if(target_index == 6) {
+        const float ao = texture(in_ao, in_uv).r;
+        color = vec3(ao);
     }
 
     out_color = vec4(color, 1.0);

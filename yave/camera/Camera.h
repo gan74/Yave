@@ -57,6 +57,7 @@ class Camera {
         math::Matrix4<> _view;
         math::Matrix4<> _proj;
 
+        Y_TODO(This is not thread safe)
         mutable math::Matrix4<> _viewproj;
         mutable bool _up_to_date;
 };

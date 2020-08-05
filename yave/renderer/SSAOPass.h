@@ -19,26 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_RENDERER_SSAOPASS_H
+#define YAVE_RENDERER_SSAOPASS_H
 
-#include "renderer.h"
+#include "GBufferPass.h"
 
 namespace yave {
 
-DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const RendererSettings& settings) {
-    y_profile();
+struct SSAOSettings {
+    enum class SSAOMethod {
+        MiniEngine
+    };
 
-    DefaultRenderer renderer;
+    SSAOMethod method = SSAOMethod::MiniEngine;
+};
 
-    renderer.gbuffer        = GBufferPass::create(framegraph, view, size);
-    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer);
-    renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.lighting.lit, settings.tone_mapping);
-    renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer);
+struct SSAOPass {
+    FrameGraphImageId linear_depth;
+    FrameGraphImageId ao;
 
-    renderer.color = renderer.tone_mapping.tone_mapped;
-    renderer.depth = renderer.gbuffer.depth;
+    static SSAOPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& settings = SSAOSettings());
+};
 
-    return renderer;
+
 }
 
-}
+#endif // YAVE_RENDERER_SSAOPASS_H
 

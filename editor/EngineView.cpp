@@ -87,6 +87,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
+        builder.add_uniform_input(renderer.renderer.ssao.ao, 0, PipelineStage::FragmentBit);
         builder.map_update(buffer);
         builder.set_render_func([=, index = u32(_view), &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
                 auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
@@ -242,7 +243,7 @@ void EngineView::draw_menu_bar() {
             ImGui::Separator();
             {
                 const char* output_names[] = {
-                        "Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth"
+                        "Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "AO"
                     };
                 for(usize i = 0; i != usize(RenderView::MaxRenderViews); ++i) {
                     bool selected = usize(_view) == i;
