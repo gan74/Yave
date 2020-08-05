@@ -83,12 +83,13 @@ MIT
 - [X] Reuse resources over frames
 - [X] Resource aliasing to avoid copies
 - [ ] Merge mapped buffers
+- [ ] Better usage of render passes
 
 ### Engine
 - [X] Asset saving and loading
 - [X] Integrate ECS
 - [X] Switch to VK_EXT_debug_utils
-- [X] Sky
+- [ ] Sky
 - [ ] Make assets easily serializable
 - [ ] Culling
 - [ ] Batching system
@@ -96,6 +97,7 @@ MIT
 - [ ] Proper material system
 - [ ] Shadows
 - [ ] GI
+- [ ] Post processes
 - [X] Spot lights
 - [X] Actual tone mapping
 
@@ -108,7 +110,7 @@ MIT
 - [ ] Save open widgets
 - [ ] Scale 
 - [ ] Edit materials
-- [ ] Prefabs
+- [X] Prefabs
 - [ ] Better save system
 - [ ] Undo/redo
 - [ ] Integrated profiler
