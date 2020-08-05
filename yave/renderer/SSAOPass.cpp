@@ -57,7 +57,8 @@ static MiniAOParams compute_ao_params(const GBufferPass& gbuffer, const math::Ve
     const float tan_half_fov = 1.0f / camera.proj_matrix()[0][0];
 
     const float screenspace_diameter = 10.0f;
-    const float thickness_multiplier = 2.0f * tan_half_fov * screenspace_diameter / size.x();
+    Y_TODO(Do we need to multiply by 2 here?)
+    const float thickness_multiplier = /*2.0f **/ 2.0f * tan_half_fov * screenspace_diameter / size.x();
     const float inv_range = 1.0f / thickness_multiplier;
 
     MiniAOParams params = {};
@@ -78,6 +79,16 @@ static MiniAOParams compute_ao_params(const GBufferPass& gbuffer, const math::Ve
     params.weights[9]  = 8.0f * sample_thickness[9];     // L-shaped
     params.weights[10] = 8.0f * sample_thickness[10];    // L-shaped
     params.weights[11] = 4.0f * sample_thickness[11];    // Diagonal
+
+    // SAMPLE_EXHAUSTIVELY ?
+    // https://github.com/microsoft/DirectX-Graphics-Samples/blob/72b1ff9830286950960116264b414ea3c842ff47/MiniEngine/Core/SSAO.cpp#L202
+    {
+        params.weights[0] = 0.0f;
+        params.weights[2] = 0.0f;
+        params.weights[5] = 0.0f;
+        params.weights[7] = 0.0f;
+        params.weights[9] = 0.0f;
+    }
 
     float total = 0.0f;
     for(usize i = 0; i != 12; ++i) {
