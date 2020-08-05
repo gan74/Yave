@@ -39,6 +39,14 @@ SOFTWARE.
 
 //#define Y_NO_ARCHIVES
 //#define Y_NO_SAFE_DESER
+//#define Y_NO_POST_DESER
+
+
+#ifdef Y_NO_ARCHIVES
+#ifndef Y_NO_POST_DESER
+#define Y_NO_POST_DESER
+#endif
+#endif
 
 
 Y_TODO(FixedArray is treated as a range rather than a collection)
@@ -496,10 +504,9 @@ class ReadableArchive final {
         Y_TODO(post_deserialize might be called several time in some cases (poly mostly))
         template<typename T, typename... Args>
         inline static void post_deserialize(T& t, Args&&... args) {
-            static_assert(!std::is_const_v<T>);
-#ifdef Y_NO_ARCHIVES
             unused(t, args...);
-#else
+#ifndef Y_NO_POST_DESER
+            static_assert(!std::is_const_v<T>);
             post_deserialize_one(t, y_fwd(args)...);
 #endif
         }
@@ -588,6 +595,7 @@ class ReadableArchive final {
         template<typename T, bool IsRange = false>
         inline Result deserialize_collection(NamedObject<T> object) {
             static_assert(is_iterable_v<T>);
+            static_assert(!std::is_const_v<T>);
 
             if constexpr(!IsRange) {
                 if constexpr(has_make_empty_v<T>) {
@@ -865,6 +873,7 @@ class ReadableArchive final {
         }
 
 
+#ifndef Y_NO_POST_DESER
         // ------------------------------- POST -------------------------------
         template<typename T, typename... Args>
         inline static void post_deserialize_one(T& t, Args&&... args) {
@@ -936,6 +945,7 @@ class ReadableArchive final {
                 post_deserialize_named_tuple<I + 1>(objects, args...);
             }
         }
+#endif
 
 
         // ------------------------------- READ -------------------------------
