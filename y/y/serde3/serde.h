@@ -34,14 +34,7 @@ namespace serde3 {
 class WritableArchive;
 class ReadableArchive;
 
-namespace detail {
-// https://stackoverflow.com/questions/36296425/how-to-determine-programmatically-if-an-expression-is-rvalue-or-lvalue-in-c/36312021#36312021
 template<typename T>
-constexpr std::is_lvalue_reference<T&&> is_lvalue(T&&);
-}
-
-// Ref version
-template<typename T, bool Ref = true>
 struct NamedObject {
     T& object;
     const std::string_view name;
@@ -58,35 +51,7 @@ struct NamedObject {
     }
 };
 
-template<typename T>
-struct NamedObject<T, false> {
-    mutable T object;
-    const std::string_view name;
-
-    inline constexpr NamedObject(T t, std::string_view n) : object(std::move(t)), name(n) {
-    }
-
-    inline constexpr NamedObject<const T> make_const_ref() const {
-        return NamedObject<const T>(object, name);
-    }
-
-    inline constexpr NamedObject<T> make_ref() const {
-        return NamedObject<T>(object, name);
-    }
-};
-
-template<bool Ref, typename T>
-constexpr auto create_named_object(T&& t, std::string_view name) {
-    return NamedObject<std::remove_reference_t<T>, Ref>(y_fwd(t), name);
-}
-
-template<bool Ref, typename T>
-constexpr auto create_named_object(const std::reference_wrapper<T>& t, std::string_view name) {
-    return NamedObject<std::remove_reference_t<decltype(t.get())>, true>(t.get(), name);
-}
-
-
-#define y_serde3_create_item(object) y::serde3::create_named_object<decltype(y::serde3::detail::is_lvalue(object))::value>(object, #object),
+#define y_serde3_create_item(object) y::serde3::NamedObject{object, #object},
 
 #define y_serde3_refl_qual(qual, ...) /*template<typename = void> inline*/ auto _y_serde3_refl() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_serde3_create_item, __VA_ARGS__))}; }
 

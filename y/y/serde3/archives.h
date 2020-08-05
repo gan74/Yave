@@ -177,8 +177,8 @@ class WritableArchive final {
             return core::Ok(Success::Full);
         }
 
-        template<typename T, bool R>
-        inline Result serialize_one(const NamedObject<T, R>& non_const_object) {
+        template<typename T>
+        inline Result serialize_one(NamedObject<T> non_const_object) {
             const auto object = non_const_object.make_const_ref();
 
             static_assert(!has_no_serde3_v<T>, "Type has serialization disabled");
@@ -205,9 +205,9 @@ class WritableArchive final {
 
 
         // ------------------------------- PROPERTY -------------------------------
-        template<typename T, bool R>
-        inline Result serialize_property(NamedObject<T, R> object) {
-            return serialize_one(NamedObject<typename T::value_type, T::return_ref>{object.object.get(), object.name});
+        template<typename T>
+        inline Result serialize_property(NamedObject<T> object) {
+            return serialize_one(NamedObject<typename T::value_type>{object.object.get(), object.name});
         }
 
 
@@ -236,8 +236,8 @@ class WritableArchive final {
             return serialize_collection(object);
         }
 
-        template<typename T, bool R>
-        inline Result serialize_collection(const NamedObject<T, R>& object) {
+        template<typename T>
+        inline Result serialize_collection(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
             static_assert(is_iterable_v<T>);
 
@@ -297,8 +297,8 @@ class WritableArchive final {
 
 
         // ------------------------------- POD -------------------------------
-        template<typename T, bool R>
-        inline Result serialize_pod(const NamedObject<T, R>& object) {
+        template<typename T>
+        inline Result serialize_pod(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
             static_assert(is_pod_v<T>);
             static_assert(!std::is_pointer_v<T>);
@@ -313,8 +313,8 @@ class WritableArchive final {
 
 
         // ------------------------------- OBJECT -------------------------------
-        template<typename T, bool R>
-        inline Result serialize_object(const NamedObject<T, R>& object) {
+        template<typename T>
+        inline Result serialize_object(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
             static_assert(!has_serde3_ptr_poly_v<T>);
 
@@ -331,8 +331,8 @@ class WritableArchive final {
             return serialize_members_internal<0>(object._y_serde3_refl());
         }
 
-        template<usize I, typename... Args, bool... Refs>
-        inline Result serialize_members_internal(const std::tuple<NamedObject<Args, Refs>...>& objects) {
+        template<usize I, typename... Args>
+        inline Result serialize_members_internal(const std::tuple<NamedObject<Args>...>& objects) {
             unused(objects);
             if constexpr(I < sizeof...(Args)) {
                 {
@@ -356,7 +356,7 @@ class WritableArchive final {
 
         // ------------------------------- TUPLE -------------------------------
         template<typename T>
-        inline Result serialize_tuple(const NamedObject<T>& object) {
+        inline Result serialize_tuple(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
 
             {
@@ -379,8 +379,8 @@ class WritableArchive final {
 
 
         // ------------------------------- WRITE -------------------------------
-        template<typename T, bool R>
-        inline Result write_header(const NamedObject<T, R>& object) {
+        template<typename T>
+        inline Result write_header(NamedObject<T> object) {
             const auto header = detail::build_header(object);
             return write_one(header);
         }
@@ -520,8 +520,8 @@ class ReadableArchive final {
         }
 
 
-        template<typename T, bool R>
-        inline Result deserialize_one(const NamedObject<T, R>& non_ref) {
+        template<typename T>
+        inline Result deserialize_one(NamedObject<T> non_ref) {
             NamedObject<T> object = non_ref.make_ref();
 
             static_assert(!has_no_serde3_v<T>, "Type has serialization disabled");
@@ -549,11 +549,11 @@ class ReadableArchive final {
 
 
         // ------------------------------- PROPERTY -------------------------------
-        template<typename T, bool R>
-        inline Result deserialize_property(NamedObject<T, R> object) {
+        template<typename T>
+        inline Result deserialize_property(NamedObject<T> object) {
             using inner = typename T::value_type;
             inner i;
-            y_try(deserialize_one(NamedObject<inner, true>{i, object.name}));
+            y_try(deserialize_one(NamedObject<inner>{i, object.name}));
             object.object.set(std::move(i));
             return core::Ok(Success::Full);
         }
@@ -791,8 +791,8 @@ class ReadableArchive final {
             return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
         }
 
-        template<bool Safe, usize I, typename... Args, bool... Refs>
-        inline Result deserialize_members_internal(const std::tuple<NamedObject<Args, Refs>...>& members,
+        template<bool Safe, usize I, typename... Args>
+        inline Result deserialize_members_internal(const std::tuple<NamedObject<Args>...>& members,
                                             ObjectData& object_data) {
             unused(object_data);
 
@@ -940,8 +940,8 @@ class ReadableArchive final {
 
         // ------------------------------- READ -------------------------------
 
-        template<typename T, bool R>
-        inline Result check_header(const NamedObject<T, R>& object, detail::ObjectHeader& header) {
+        template<typename T>
+        inline Result check_header(NamedObject<T> object, detail::ObjectHeader& header) {
             y_try(read_header(header));
 
             const auto check = detail::build_header(object);
@@ -954,8 +954,8 @@ class ReadableArchive final {
             return core::Ok(Success::Full);
         }
 
-        template<typename T, bool R>
-        inline Result check_header(const NamedObject<T, R>& object) {
+        template<typename T>
+        inline Result check_header(NamedObject<T> object) {
             detail::ObjectHeader header;
             return check_header(object, header);
         }

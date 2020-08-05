@@ -149,16 +149,16 @@ constexpr u32 header_type_hash() {
     return hash & ~0x02;
 }
 
-template<typename T, bool R>
-constexpr TypeHeader build_type_header(const NamedObject<T, R>& obj) {
+template<typename T>
+constexpr TypeHeader build_type_header(NamedObject<T> obj) {
     return TypeHeader {
         ct_str_hash(obj.name),
         header_type_hash<T>()
     };
 }
 
-template<usize I, typename... Args, bool... Refs>
-constexpr void hash_members(u32& hash, const std::tuple<NamedObject<Args, Refs>...>& objects) {
+template<usize I, typename... Args>
+constexpr void hash_members(u32& hash, const std::tuple<NamedObject<Args>...>& objects) {
     unused(hash, objects);
     if constexpr(I < sizeof...(Args)) {
         const TypeHeader tpe = build_type_header(std::get<I>(objects));
@@ -169,8 +169,8 @@ constexpr void hash_members(u32& hash, const std::tuple<NamedObject<Args, Refs>.
     }
 }
 
-template<typename T, bool R>
-constexpr MembersHeader build_members_header(const NamedObject<T, R>& obj) {
+template<typename T>
+constexpr MembersHeader build_members_header(NamedObject<T> obj) {
     u32 member_hash = 0xafbbc3d1;
     hash_members<0>(member_hash, members(obj.object));
     return MembersHeader {
@@ -179,8 +179,8 @@ constexpr MembersHeader build_members_header(const NamedObject<T, R>& obj) {
     };
 }
 
-template<typename T, bool R>
-constexpr auto build_header(const NamedObject<T, R>& obj) {
+template<typename T>
+constexpr auto build_header(NamedObject<T> obj) {
 #ifdef Y_SLIM_POD_HEADER
     if constexpr(has_serde3_v<T>) {
         return ObjectHeader {
