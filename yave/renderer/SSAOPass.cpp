@@ -171,10 +171,10 @@ static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
     const math::Vec2ui lo_size = framegraph.image_size(lo_depth);
 
     const float step_size = final_size_x / (float)lo_size.x();
-    float blur_tolerance = 1.0f - std::pow(10.0f, settings.blur_tolerance) * step_size;
+    float blur_tolerance = 1.0f - std::pow(10.0f, -settings.blur_tolerance) * step_size;
     blur_tolerance *= blur_tolerance;
-    const float upsample_tolerance = std::pow(10.0f, settings.upsample_tolerance);
-    const float noise_filter_weight = 1.0f / (std::pow(10.0f, settings.noise_filter_tolerance) + upsample_tolerance);
+    const float upsample_tolerance = std::pow(10.0f, -settings.upsample_tolerance);
+    const float noise_filter_weight = 1.0f / (std::pow(10.0f, -settings.noise_filter_tolerance) + upsample_tolerance);
 
 
     FrameGraphPassBuilder builder = framegraph.add_pass("SSAO upsample pass");

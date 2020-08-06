@@ -141,11 +141,11 @@ void vertical_blur(uint top_index) {
     const bool c24 = compare_deltas(d23, d34, l23, l34);
     const bool c35 = compare_deltas(d34, d45, l34, l45);
 
-    const float aoResult1 = smart_blur(a0, a1, a2, a3, a4, c02, c13, c24);
-    const float aoResult2 = smart_blur(a1, a2, a3, a4, a5, c13, c24, c35);
+    const float result0 = smart_blur(a0, a1, a2, a3, a4, c02, c13, c24);
+    const float result1 = smart_blur(a1, a2, a3, a4, a5, c13, c24, c35);
 
-    ao_samples0[top_index]         = aoResult1;
-    ao_samples0[top_index + 16]    = aoResult2;
+    ao_samples0[top_index]         = result0;
+    ao_samples0[top_index + 16]    = result1;
 }
 
 // We essentially want 5 weights:  4 for each low-res pixel and 1 to blend in when none of the 4 really

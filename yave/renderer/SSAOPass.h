@@ -37,8 +37,8 @@ struct SSAOSettings {
 
     usize level_count = 4;
 
-    float blur_tolerance = -4.6f;
-    float upsample_tolerance = -12.0f;
+    float blur_tolerance = 4.6f;
+    float upsample_tolerance = 12.0f;
     float noise_filter_tolerance = 0.0f;
 };
 

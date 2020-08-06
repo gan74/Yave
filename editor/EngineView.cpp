@@ -231,11 +231,20 @@ void EngineView::draw_settings_menu() {
         ImGui::EndMenu();
     }
 
-    /*if(ImGui::BeginMenu("SSAO")) {
+    if(ImGui::BeginMenu("SSAO")) {
         SSAOSettings& settings = _settings.renderer_settings.ssao;
-        ImGui::SliderFloat("Radius", &settings.radius, 5.0f, 100.0f, "%.2f", 8.0f);
+
+        int levels = settings.level_count;
+
+        ImGui::SliderInt("Levels", &levels, 2, 8);
+        ImGui::SliderFloat("Blur tolerance", &settings.blur_tolerance, 1.0f, 8.0f);
+        ImGui::SliderFloat("Upsample tolerance", &settings.upsample_tolerance, 1.0f, 12.0f);
+        ImGui::SliderFloat("Noise filter", &settings.noise_filter_tolerance, 0.0f, 8.0f);
+
+        settings.level_count = levels;
+
         ImGui::EndMenu();
-    }*/
+    }
 }
 
 void EngineView::draw_menu_bar() {
