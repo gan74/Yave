@@ -21,6 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "SSAOPass.h"
+#include "DownsamplePass.h"
+
 
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/framegraph/FrameGraph.h>
@@ -36,7 +38,19 @@ struct MiniAOParams {
     float weights[12];
 };
 
-static MiniAOParams compute_ao_params(const GBufferPass& gbuffer, const math::Vec2ui& size) {
+struct UpsampleParams {
+    float step_size;
+    float noise_weight;
+    float blur_tolerance;
+    float upsample_tolerance;
+};
+
+static float compute_tan_half_fov(const GBufferPass& gbuffer) {
+    const Camera& camera = gbuffer.scene_pass.scene_view.camera();
+    return 1.0f / camera.proj_matrix()[0][0];
+}
+
+static MiniAOParams compute_ao_params(float tan_half_fov, usize screen_size_x) {
     constexpr float sample_thickness[12] = {
         std::sqrt(1.0f - 0.2f * 0.2f),
         std::sqrt(1.0f - 0.4f * 0.4f),
@@ -53,12 +67,10 @@ static MiniAOParams compute_ao_params(const GBufferPass& gbuffer, const math::Ve
     };
 
 
-    const Camera& camera = gbuffer.scene_pass.scene_view.camera();
-    const float tan_half_fov = 1.0f / camera.proj_matrix()[0][0];
 
     const float screenspace_diameter = 10.0f;
     Y_TODO(Do we need to multiply by 2 here?)
-    const float thickness_multiplier = /*2.0f **/ 2.0f * tan_half_fov * screenspace_diameter / size.x();
+    const float thickness_multiplier = /* 2.0f * */ 2.0f * tan_half_fov * screenspace_diameter / screen_size_x;
     const float inv_range = 1.0f / thickness_multiplier;
 
     MiniAOParams params = {};
@@ -102,58 +114,116 @@ static MiniAOParams compute_ao_params(const GBufferPass& gbuffer, const math::Ve
     return params;
 }
 
-SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& /*settings*/) {
-    Y_TODO(Clamp depth reads to avoid leaks)
-    static constexpr ImageFormat ao_format = VK_FORMAT_R8_UNORM;
+
+
+
+static FrameGraphImageId compute_linear_depth(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size) {
     static constexpr ImageFormat depth_format = VK_FORMAT_R32_SFLOAT;
 
-    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
-    const math::Vec2ui ao_size = size / 2;
+    FrameGraphPassBuilder builder = framegraph.add_pass("Depth linearization pass");
 
-    FrameGraphPassBuilder lindepth_builder = framegraph.add_pass("Depth downsampling pass");
+    const auto linear_depth = builder.declare_image(depth_format, size);
 
-    const auto linear_depth = lindepth_builder.declare_image(depth_format, ao_size);
-
-    lindepth_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
-    lindepth_builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
-    lindepth_builder.add_storage_output(linear_depth, 0, PipelineStage::ComputeBit);
-    lindepth_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources(recorder.device())[DeviceResources::DepthLinearizeDownSampleProgram];
-        recorder.dispatch_size(program, ao_size, {self->descriptor_sets()[0]});
+    builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_storage_output(linear_depth, 0, PipelineStage::ComputeBit);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const auto& program = device_resources(recorder.device())[DeviceResources::LinearizeDepthProgram];
+        recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
     });
 
-    const MiniAOParams params = compute_ao_params(gbuffer, size);
+    return linear_depth;
+}
 
-    FrameGraphPassBuilder ssao_builder = framegraph.add_pass("SSAO pass");
+static FrameGraphImageId compute_ao(FrameGraph& framegraph, FrameGraphImageId linear_depth, float tan_half_fov) {
+    static constexpr ImageFormat format = VK_FORMAT_R8_UNORM;
+    const math::Vec2ui size = framegraph.image_size(linear_depth);
 
-    const auto ao = ssao_builder.declare_image(ao_format, ao_size);
-    const auto params_buffer = ssao_builder.declare_typed_buffer<MiniAOParams>(1);
+    FrameGraphPassBuilder builder = framegraph.add_pass("SSAO pass");
 
-    ssao_builder.add_uniform_input(linear_depth, 0, PipelineStage::ComputeBit);
-    ssao_builder.add_uniform_input(params_buffer, 0, PipelineStage::ComputeBit);
-    ssao_builder.add_storage_output(ao, 0, PipelineStage::ComputeBit);
-    ssao_builder.map_update(params_buffer);
-    ssao_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        self->resources().mapped_buffer(params_buffer)[0] = params;
+    const auto ao = builder.declare_image(format, size);
+    const auto params_buffer = builder.declare_typed_buffer<MiniAOParams>(1);
+
+    builder.add_uniform_input(linear_depth, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(params_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_storage_output(ao, 0, PipelineStage::ComputeBit);
+    builder.map_update(params_buffer);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        self->resources().mapped_buffer(params_buffer)[0] = compute_ao_params(tan_half_fov, size.x());
         const auto& program = device_resources(recorder.device())[DeviceResources::SSAOProgram];
-        recorder.dispatch_size(program, ao_size, {self->descriptor_sets()[0]});
+        recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
     });
 
-#if 0
-    FrameGraphPassBuilder upsample_builder = framegraph.add_pass("SSAO upsampling pass");
+    return ao;
+}
 
-    const auto upsampled = upsample_builder.declare_image(depth_format, size);
+static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
+                                     float final_size_x,
+                                     const SSAOSettings& settings,
+                                     FrameGraphImageId hi_depth,
+                                     FrameGraphImageId lo_depth,
+                                     FrameGraphImageId hi_ao,
+                                     FrameGraphImageId lo_ao = FrameGraphImageId()) {
 
-    upsample_builder.add_uniform_input(ao, 0, PipelineStage::ComputeBit);
-    upsample_builder.add_uniform_input(linear_depth, 0, PipelineStage::ComputeBit);
-    upsample_builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
-    upsample_builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
-    upsample_builder.add_storage_output(upsampled, 0, PipelineStage::ComputeBit);
-    upsample_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+
+    const ImageFormat format = framegraph.image_format(hi_ao);
+    const math::Vec2ui hi_size = framegraph.image_size(hi_depth);
+    const math::Vec2ui lo_size = framegraph.image_size(lo_depth);
+
+    const float step_size = final_size_x / (float)lo_size.x();
+    float blur_tolerance = 1.0f - std::pow(10.0f, settings.blur_tolerance) * step_size;
+    blur_tolerance *= blur_tolerance;
+    const float upsample_tolerance = std::pow(10.0f, settings.upsample_tolerance);
+    const float noise_filter_weight = 1.0f / (std::pow(10.0f, settings.noise_filter_tolerance) + upsample_tolerance);
+
+
+    FrameGraphPassBuilder builder = framegraph.add_pass("SSAO upsample pass");
+
+    const auto upsampled = builder.declare_image(format, hi_size);
+    const auto params_buffer = builder.declare_typed_buffer<UpsampleParams>(1);
+
+    if(lo_ao.is_valid()) {
+        builder.add_uniform_input(lo_ao, 0, PipelineStage::ComputeBit);
+    } else {
+        const Texture& white = *device_resources(builder.device())[DeviceResources::WhiteTexture];
+        builder.add_external_input(Descriptor(white), 0, PipelineStage::ComputeBit);
+    }
+    builder.add_uniform_input(hi_ao, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(lo_depth, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(hi_depth, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(params_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_storage_output(upsampled, 0, PipelineStage::ComputeBit);
+    builder.map_update(params_buffer);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        self->resources().mapped_buffer(params_buffer)[0] = {
+            step_size, noise_filter_weight, blur_tolerance, upsample_tolerance
+        };
         const auto& program = device_resources(recorder.device())[DeviceResources::SSAOUpsampleProgram];
-        recorder.dispatch_size(program, half_size, {self->descriptor_sets()[0]});
+        recorder.dispatch_size(program, hi_size + math::Vec2ui(2), {self->descriptor_sets()[0]});
     });
-#endif
+
+    return upsampled;
+}
+
+
+
+Y_TODO(Clamp depth reads to avoid leaks)
+
+SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& settings) {
+
+    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+    const FrameGraphImageId linear_depth = compute_linear_depth(framegraph, gbuffer, size);
+
+    FrameGraphImageId ao;
+    {
+        y_always_assert(settings.level_count > 1, "SSAOSettings::level_count needs to be at least 2");
+        const DownsamplePass downsample = DownsamplePass::create(framegraph, linear_depth, settings.level_count);
+        const float tan_half_fov = compute_tan_half_fov(gbuffer);
+        for(usize i = settings.level_count - 1; i > 0; --i) {
+            const FrameGraphImageId hi = compute_ao(framegraph, downsample.mips[i], tan_half_fov);
+            ao = upsample_ao(framegraph, size.x(), settings, downsample.mips[i - 1], downsample.mips[i], hi, ao);
+        }
+    }
 
 
     SSAOPass pass;

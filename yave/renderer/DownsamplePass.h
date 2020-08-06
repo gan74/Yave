@@ -29,11 +29,9 @@ SOFTWARE.
 namespace yave {
 
 struct DownsamplePass {
-    FrameGraphImageId original;
-
     core::Vector<FrameGraphImageId> mips;
 
-    static DownsamplePass create(FrameGraph& framegraph, FrameGraphImageId orig, usize max_downsampling = usize(-1));
+    static DownsamplePass create(FrameGraph& framegraph, FrameGraphImageId orig, usize mip_count = usize(-1));
 };
 
 }

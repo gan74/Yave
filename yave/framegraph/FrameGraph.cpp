@@ -232,6 +232,9 @@ void FrameGraph::alloc_resources() {
     std::sort(images.begin(), images.end(), [](const auto& a, const auto& b) { return a.second.first_use < b.second.first_use; });
 
     for(auto&& [res, info] : images) {
+        /*if(info.last_read < info.last_write && (info.usage & ImageUsage::Attachment) == ImageUsage::None) {
+            log_msg(fmt("Image written by % is never consumed", pass_name(info.last_write)), Log::Warning);
+        }*/
         if(info.alias.is_valid()) {
             _resources->create_alias(res, info.alias);
         } else {
@@ -245,6 +248,9 @@ void FrameGraph::alloc_resources() {
     }
 
     for(auto&& [res, info] : _buffers) {
+        if(info.last_read < info.last_write) {
+            log_msg(fmt("Buffer written by % is never consumed", pass_name(info.last_write)), Log::Warning);
+        }
         if(is_none(info.usage)) {
             log_msg("Unused frame graph buffer resource", Log::Warning);
             info.usage = info.usage | BufferUsage::StorageBit;

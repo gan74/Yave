@@ -31,6 +31,7 @@ namespace yave {
 struct RendererSettings {
     ToneMappingSettings tone_mapping;
     ShadowMapPassSettings shadow_map;
+    SSAOSettings ssao;
 };
 
 struct DefaultRenderer {

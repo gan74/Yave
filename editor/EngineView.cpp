@@ -203,42 +203,47 @@ void EngineView::update_picking() {
     }
 }
 
+void EngineView::draw_settings_menu() {
+     if(ImGui::BeginMenu("Tone mapping")) {
+        ToneMappingSettings& settings = _settings.renderer_settings.tone_mapping;
+        ImGui::MenuItem("Auto exposure", nullptr, &settings.auto_exposure);
+
+        // https://docs.unrealengine.com/en-US/Engine/Rendering/PostProcessEffects/AutomaticExposure/index.html
+        float ev = exposure_to_EV100(settings.exposure);
+        if(ImGui::SliderFloat("EV100", &ev, -10.0f, 10.0f)) {
+            settings.exposure = EV100_to_exposure(ev);
+        }
+
+        if(ImGui::IsItemActive() || ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Exposure scale = %.3f", settings.exposure);
+        }
+
+        const char* tone_mappers[] = {"ACES", "Uncharted 2", "Reinhard", "None"};
+        if(ImGui::BeginCombo("Tone mapper", tone_mappers[usize(settings.tone_mapper)])) {
+            for(usize i = 0; i != sizeof(tone_mappers) / sizeof(tone_mappers[0]); ++i) {
+                const bool selected = usize(settings.tone_mapper) == i;
+                if(ImGui::Selectable(tone_mappers[i], selected)) {
+                    settings.tone_mapper = ToneMappingSettings::ToneMapper(i);
+                }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::EndMenu();
+    }
+
+    /*if(ImGui::BeginMenu("SSAO")) {
+        SSAOSettings& settings = _settings.renderer_settings.ssao;
+        ImGui::SliderFloat("Radius", &settings.radius, 5.0f, 100.0f, "%.2f", 8.0f);
+        ImGui::EndMenu();
+    }*/
+}
+
 void EngineView::draw_menu_bar() {
     if(ImGui::BeginMenuBar()) {
         ImGui::PopStyleVar(1);
 
         if(ImGui::BeginMenu("Render")) {
             ImGui::MenuItem("Editor entities", nullptr, &_settings.enable_editor_entities);
-
-            ImGui::Separator();
-            if(ImGui::BeginMenu("Tone mapping")) {
-                ToneMappingSettings& settings = _settings.renderer_settings.tone_mapping;
-                ImGui::MenuItem("Auto exposure", nullptr, &settings.auto_exposure);
-
-                // https://docs.unrealengine.com/en-US/Engine/Rendering/PostProcessEffects/AutomaticExposure/index.html
-                float ev = exposure_to_EV100(settings.exposure);
-                if(ImGui::SliderFloat("EV100", &ev, -10.0f, 10.0f)) {
-                    settings.exposure = EV100_to_exposure(ev);
-                }
-
-                if(ImGui::IsItemActive() || ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("Exposure scale = %.3f", settings.exposure);
-                }
-
-                const char* tone_mappers[] = {"ACES", "Uncharted 2", "Reinhard", "None"};
-                if(ImGui::BeginCombo("Tone mapper", tone_mappers[usize(settings.tone_mapper)])) {
-                    for(usize i = 0; i != sizeof(tone_mappers) / sizeof(tone_mappers[0]); ++i) {
-                        const bool selected = usize(settings.tone_mapper) == i;
-                        if(ImGui::Selectable(tone_mappers[i], selected)) {
-                            settings.tone_mapper = ToneMappingSettings::ToneMapper(i);
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
-
-
-                ImGui::EndMenu();
-            }
 
             ImGui::Separator();
             {
@@ -256,6 +261,12 @@ void EngineView::draw_menu_bar() {
 
             ImGui::Separator();
             ImGui::MenuItem("Disable render", nullptr, &_disable_render);
+
+            ImGui::Separator();
+            if(ImGui::BeginMenu("Rendering Settings")) {
+                draw_settings_menu();
+                ImGui::EndMenu();
+            }
 
             ImGui::EndMenu();
         }

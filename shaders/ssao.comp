@@ -1,9 +1,9 @@
 #version 450
 
-#include "lib/utils.glsl"
-
 // Based on MiniEngine's implementation
 // see: https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/AoRenderCS.hlsli
+
+#include "lib/utils.glsl"
 
 #ifdef WIDE_SAMPLING
 // 32x32 cache size:  the 16x16 in the center forms the area of focus with the 8-pixel perimeter used for wide gathering.
@@ -16,6 +16,7 @@
 #define CENTER_OFFSET 3
 #define COORDS_MUL 1
 #endif
+
 #define TILE_DIM (THREAD_COUNT * 2)
 
 
@@ -80,24 +81,13 @@ float test_samples(uint center_index, int x, int y, float inv_depth, float inv_t
     }
 }
 
-
-vec4 gather(sampler2D smp, ivec2 coords) {
-    vec4 v;
-    v.w = texelFetch(smp, coords + ivec2(0, 0), 0).r;
-    v.z = texelFetch(smp, coords + ivec2(1, 0), 0).r;
-    v.x = texelFetch(smp, coords + ivec2(0, 1), 0).r;
-    v.y = texelFetch(smp, coords + ivec2(1, 1), 0).r;
-    return v;
-}
-
 void main() {
     const vec2 image_size = vec2(textureSize(in_depth, 0).xy);
     //const vec2 image_size = vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     const ivec2 center_coord = ivec2(gl_GlobalInvocationID.xy + gl_LocalInvocationID.xy) - CENTER_OFFSET;
     const vec2 center_uv = vec2(center_coord) / image_size;
 
-    const vec4 depths = gather(in_depth, center_coord);
-    //textureGather(in_depth, center_uv);
+    const vec4 depths = textureGather(in_depth, center_uv);
 
     const uint dst_index = gl_LocalInvocationID.x * 2 + gl_LocalInvocationID.y * 2 * TILE_DIM;
     depth_samples[dst_index]                = depths.w;

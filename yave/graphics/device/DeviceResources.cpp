@@ -84,9 +84,10 @@ static constexpr const char* spirv_names[] = {
         "brdf_integrator.comp",
         "deferred_ambient.comp",
         "deferred_locals.comp",
-        "lindepth_downsample.comp",
+        "linearize_depth.comp",
         "ssao.comp",
         "ssao_upsample.comp",
+        "ssao_upsample_merge.comp",
         "copy.comp",
 
         "histogram_clear.comp",

@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "GBufferPass.h"
 
+#include <y/core/Vector.h>
+
 namespace yave {
 
 struct SSAOSettings {
@@ -32,10 +34,17 @@ struct SSAOSettings {
     };
 
     SSAOMethod method = SSAOMethod::MiniEngine;
+
+    usize level_count = 4;
+
+    float blur_tolerance = -4.6f;
+    float upsample_tolerance = -12.0f;
+    float noise_filter_tolerance = 0.0f;
 };
 
 struct SSAOPass {
     FrameGraphImageId linear_depth;
+
     FrameGraphImageId ao;
 
     static SSAOPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& settings = SSAOSettings());

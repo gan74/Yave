@@ -29,16 +29,16 @@ SOFTWARE.
 
 namespace yave {
 
-DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId orig, usize max_downsampling) {
+DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId orig, usize mip_count) {
     const math::Vec2ui orig_size = framegraph.image_size(orig);
     const ImageFormat format = framegraph.image_format(orig);
 
     DownsamplePass pass;
+    pass.mips << orig;
 
-    FrameGraphImageId last = orig;
-    for(usize m = 1;; ++m) {
+    for(usize m = 1; pass.mips.size() < mip_count; ++m) {
         const math::Vec2ui mip_size = math::Vec2ui(orig_size.x() >> m, orig_size.y() >> m);
-        if(!mip_size.x() || !mip_size.y() || (1u << m) > max_downsampling) {
+        if(!mip_size.x() || !mip_size.y()) {
             break;
         }
 
@@ -47,7 +47,7 @@ DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId 
         const auto mip = builder.declare_image(format, mip_size);
 
         builder.add_color_output(mip);
-        builder.add_uniform_input(last);
+        builder.add_uniform_input(pass.mips.last());
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             const auto* material = device_resources(recorder.device())[DeviceResources::ScreenPassthroughMaterialTemplate];
@@ -56,7 +56,6 @@ DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId 
         });
 
         pass.mips << mip;
-        last = mip;
     }
 
     return pass;

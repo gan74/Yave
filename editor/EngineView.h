@@ -62,6 +62,7 @@ class EngineView final : public Widget, public ContextLinked {
 
         void draw(CmdBufferRecorder& recorder);
         void draw_menu_bar();
+        void draw_settings_menu();
         void draw_gizmo_tool_bar();
 
         bool is_clicked() const;
