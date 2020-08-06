@@ -165,7 +165,7 @@ static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
                                      FrameGraphImageId hi_ao,
                                      FrameGraphImageId lo_ao = FrameGraphImageId()) {
 
-
+    const bool merge = lo_ao.is_valid();
     const ImageFormat format = framegraph.image_format(hi_ao);
     const math::Vec2ui hi_size = framegraph.image_size(hi_depth);
     const math::Vec2ui lo_size = framegraph.image_size(lo_depth);
@@ -182,7 +182,7 @@ static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
     const auto upsampled = builder.declare_image(format, hi_size);
     const auto params_buffer = builder.declare_typed_buffer<UpsampleParams>(1);
 
-    if(lo_ao.is_valid()) {
+    if(merge) {
         builder.add_uniform_input(lo_ao, 0, PipelineStage::ComputeBit);
     } else {
         const Texture& white = *device_resources(builder.device())[DeviceResources::WhiteTexture];
@@ -198,7 +198,7 @@ static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
         self->resources().mapped_buffer(params_buffer)[0] = {
             step_size, noise_filter_weight, blur_tolerance, upsample_tolerance
         };
-        const auto& program = device_resources(recorder.device())[DeviceResources::SSAOUpsampleProgram];
+        const auto& program = device_resources(recorder.device())[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
         recorder.dispatch_size(program, hi_size + math::Vec2ui(2), {self->descriptor_sets()[0]});
     });
 
