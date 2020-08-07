@@ -73,15 +73,16 @@ core::String clean_asset_name(const core::String& name);
 enum class SceneImportFlags {
     None = 0x00,
 
-    ImportMeshes    = 0x01,
-    ImportAnims     = 0x02,
-    ImportImages    = 0x04,
-    ImportMaterials = 0x08 | ImportImages,
-    ImportPrefabs   = 0x10 | ImportMeshes | ImportMaterials,
+    ImportMeshes        = 0x01,
+    ImportAnims         = 0x02,
+    ImportImages        = 0x04,
+    ImportMaterials     = 0x08 | ImportImages,
+    ImportPrefabs       = 0x10 | ImportMeshes | ImportMaterials,
 
-    FlipUVs         = 0x20,
+    FlipUVs             = 0x20,
+    ImportDiffuseAsSRGB = 0x40,
 
-    ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportPrefabs
+    ImportAll = ImportMeshes | ImportAnims | ImportImages | ImportMaterials | ImportPrefabs | ImportDiffuseAsSRGB,
 
 };
 
@@ -97,6 +98,7 @@ enum class ImageImportFlags {
     None = 0x00,
 
     GenerateMipmaps = 0x01,
+    ImportAsSRGB    = 0x02,
 };
 
 Named<ImageData> import_image(const core::String& filename, ImageImportFlags flags = ImageImportFlags::None);

@@ -79,6 +79,31 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
     }
 }
 
+import::SceneImportFlags SceneImporter::scene_import_flags() const {
+    using import::SceneImportFlags;
+
+    SceneImportFlags flags = SceneImportFlags::None;
+    if(_import_meshes) {
+        flags = flags | SceneImportFlags::ImportMeshes;
+    }
+    if(_import_anims) {
+        flags = flags | SceneImportFlags::ImportAnims;
+    }
+    if(_import_images) {
+        flags = flags | SceneImportFlags::ImportImages;
+    }
+    if(_import_materials) {
+        flags = flags | SceneImportFlags::ImportMaterials;
+        flags = flags | SceneImportFlags::ImportDiffuseAsSRGB;
+    }
+    if(_flip_uvs) {
+        flags = flags | SceneImportFlags::FlipUVs;
+    }
+    if(_import_materials && _import_meshes) {
+        flags = flags | SceneImportFlags::ImportPrefabs;
+    }
+    return flags;
+}
 
 void SceneImporter::paint_import_settings() {
     {
@@ -97,17 +122,11 @@ void SceneImporter::paint_import_settings() {
     }
 
     {
-        using import::SceneImportFlags;
-        bool import_meshes = (_flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes;
-        bool import_anims = (_flags & SceneImportFlags::ImportAnims) == SceneImportFlags::ImportAnims;
-        bool import_images = (_flags & SceneImportFlags::ImportImages) == SceneImportFlags::ImportImages;
-        bool import_materials = (_flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials;
-        bool flip_uvs = (_flags & SceneImportFlags::FlipUVs) == SceneImportFlags::FlipUVs;
 
-        ImGui::Checkbox("Import meshes", &import_meshes);
-        ImGui::Checkbox("Import animations", &import_anims);
-        ImGui::Checkbox("Import images", &import_images);
-        ImGui::Checkbox("Import materials", &import_materials);
+        ImGui::Checkbox("Import meshes", &_import_meshes);
+        ImGui::Checkbox("Import animations", &_import_anims);
+        ImGui::Checkbox("Import images", &_import_images);
+        ImGui::Checkbox("Import materials", &_import_materials);
         ImGui::Separator();
 
         const char* axes[] = {"+X", "-X", "+Y", "-Y", "+Z", "-Z"};
@@ -134,7 +153,7 @@ void SceneImporter::paint_import_settings() {
             ImGui::EndCombo();
         }
 
-        ImGui::Checkbox("Flip UVs", &flip_uvs);
+        ImGui::Checkbox("Flip UVs", &_flip_uvs);
         ImGui::Separator();
 
         ImGui::DragFloat("Scale", &_scale);
@@ -142,29 +161,14 @@ void SceneImporter::paint_import_settings() {
 
         // Update state
         {
-            import_materials &= import_images;
-            _flags = (import_meshes ? SceneImportFlags::ImportMeshes : SceneImportFlags::None) |
-                     (import_anims ? SceneImportFlags::ImportAnims : SceneImportFlags::None) |
-                     (import_images ? SceneImportFlags::ImportImages : SceneImportFlags::None) |
-                     (import_materials ? SceneImportFlags::ImportMaterials : SceneImportFlags::None) |
-                     (flip_uvs ? SceneImportFlags::FlipUVs : SceneImportFlags::None)
-                ;
-
-            if(import_materials && import_images) {
-                _flags = _flags | SceneImportFlags::ImportMaterials;
-            }
-
-            if((_flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials &&
-               (_flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes) {
-                _flags = _flags | SceneImportFlags::ImportPrefabs;
-            }
+            _import_materials &= _import_images;
         }
     }
 
     if(ImGui::Button("Ok")) {
         _state = State::Importing;
         _import_future = std::async(std::launch::async, [=] {
-            import(import::import_scene(_filename, _flags));
+            import(import::import_scene(_filename, scene_import_flags()));
         });
     }
     ImGui::SameLine();

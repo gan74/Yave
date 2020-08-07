@@ -62,6 +62,11 @@ extern "C" {
 #pragma GCC diagnostic pop
 #endif
 
+
+
+#include <unordered_set>
+
+
 namespace editor {
 namespace import {
 
@@ -101,13 +106,16 @@ Named<ImageData> import_image(const core::String& filename, ImageImportFlags fla
 
     int width, height, bpp;
     u8* data = stbi_load(filename.data(), &width, &height, &bpp, 4);
-    y_defer(stbi_image_free(data););
+    y_defer(stbi_image_free(data));
 
     if(!data) {
         y_throw_msg(fmt_c_str("Unable to load image \"%\".", filename));
     }
 
-    ImageData img(math::Vec2ui(width, height), data, VK_FORMAT_R8G8B8A8_UNORM);
+    const VkFormat format = ((flags & ImageImportFlags::ImportAsSRGB) == ImageImportFlags::ImportAsSRGB)
+        ? VK_FORMAT_R8G8B8A8_SRGB
+        : VK_FORMAT_R8G8B8A8_UNORM;
+    ImageData img(math::Vec2ui(width, height), data, format);
     if((flags & ImageImportFlags::GenerateMipmaps) == ImageImportFlags::GenerateMipmaps) {
         img = compute_mipmaps(img);
     }
@@ -311,6 +319,17 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
         }
     }
 
+    std::unordered_set<int> diffuse_images;
+    const bool srgb_diffuse = (flags & SceneImportFlags::ImportDiffuseAsSRGB) == SceneImportFlags::ImportDiffuseAsSRGB;
+    if(srgb_diffuse) {
+        for(const tinygltf::Material& material : model.materials) {
+            const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
+            const int diffuse_index = pbr.baseColorTexture.index;
+            if(srgb_diffuse && diffuse_index >= 0) {
+                diffuse_images.insert(diffuse_index);
+            }
+        }
+    }
 
     if((flags & SceneImportFlags::ImportImages) == SceneImportFlags::ImportImages) {
         y_profile_zone("Image import");
@@ -318,9 +337,16 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
         const FileSystemModel* fs = FileSystemModel::local_filesystem();
         auto path = fs->parent_path(filename);
 
-        for(const tinygltf::Image& image : model.images) {
+        for(usize i = 0; i != model.images.size(); ++i) {
+            const tinygltf::Image& image = model.images[i];
             auto full_uri = path ? fs->join(path.unwrap(), image.uri) : core::String(image.uri);
-            scene.images.emplace_back(import_image(full_uri, ImageImportFlags::GenerateMipmaps));
+
+            ImageImportFlags flags = ImageImportFlags::GenerateMipmaps;
+            if(srgb_diffuse && diffuse_images.find(int(i)) != diffuse_images.end()) {
+                flags = flags | ImageImportFlags::ImportAsSRGB;
+            }
+
+            scene.images.emplace_back(import_image(full_uri, flags));
 
             if(!image.name.empty()) {
                 auto& last = scene.images.last();
@@ -328,7 +354,6 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
             }
         }
     }
-
 
     if((flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials) {
         y_profile_zone("Material import");
@@ -350,6 +375,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
             auto& last = scene.materials.emplace_back(name, MaterialData()).obj();
             {
                 const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
+
                 last.textures[SimpleMaterialData::Normal] = tex_name(material.normalTexture.index);
                 last.textures[SimpleMaterialData::Diffuse] = tex_name(pbr.baseColorTexture.index);
                 last.textures[SimpleMaterialData::Metallic] = last.textures[SimpleMaterialData::Roughness] = tex_name(pbr.metallicRoughnessTexture.index);
@@ -358,7 +384,6 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
             }
         }
     }
-
 
     if((flags & SceneImportFlags::ImportPrefabs) == SceneImportFlags::ImportPrefabs) {
         y_profile_zone("Prefab import");

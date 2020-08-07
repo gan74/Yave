@@ -49,6 +49,8 @@ class SceneImporter final : public Widget, public ContextLinked {
         void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
         void paint_import_settings();
 
+        import::SceneImportFlags scene_import_flags() const;
+
         void import(import::SceneData scene);
 
         State _state = State::Browsing;
@@ -58,10 +60,14 @@ class SceneImporter final : public Widget, public ContextLinked {
         core::String _import_path;
         core::String _filename;
 
-        import::SceneImportFlags _flags = import::SceneImportFlags::ImportAll;
-
         usize _forward_axis = 0;
         usize _up_axis = 4;
+
+        bool _import_meshes = true;
+        bool _import_anims = true;
+        bool _import_images = true;
+        bool _import_materials = true;
+        bool _flip_uvs = false;
 
         float _scale = 1.0f;
 
