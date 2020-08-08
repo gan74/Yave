@@ -82,7 +82,7 @@ void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& toke
 import::SceneImportFlags SceneImporter::scene_import_flags() const {
     using import::SceneImportFlags;
 
-    SceneImportFlags flags = SceneImportFlags::None;
+    SceneImportFlags flags = SceneImportFlags::ImportDiffuseAsSRGB;
     if(_import_meshes) {
         flags = flags | SceneImportFlags::ImportMeshes;
     }
@@ -94,7 +94,6 @@ import::SceneImportFlags SceneImporter::scene_import_flags() const {
     }
     if(_import_materials) {
         flags = flags | SceneImportFlags::ImportMaterials;
-        flags = flags | SceneImportFlags::ImportDiffuseAsSRGB;
     }
     if(_flip_uvs) {
         flags = flags | SceneImportFlags::FlipUVs;

@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
 
+#include <y/math/fastmath.h>
 #include <y/utils/log.h>
 #include <y/utils/perf.h>
 
@@ -141,9 +142,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
 
     if(sRGB) {
         y_profile_zone("degamma");
-        for(usize i = 0; i != input.size(); ++i) {
-            input[i] = std::pow(input[i], 2.2f);
-        }
+        math::fast_pow(input.data(), input.size(), 2.2f);
     }
 
     const ImageFormat normalized_format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -187,9 +186,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
 
     if(sRGB) {
         y_profile_zone("regamma");
-        for(usize i = 0; i != output.size(); ++i) {
-            output[i] = std::pow(output[i], 1.0f / 2.2f);
-        }
+        math::fast_pow(output.data(), output.size(), 1.0f / 2.2f);
     }
 
     return output;
@@ -215,22 +212,18 @@ ImageData compute_mipmaps(const ImageData& image) {
     core::FixedArray<float> input(texels * components);
     {
         y_profile_zone("normalization");
-        const u8* image_data = image.data();
-        for(usize i = 0; i != input.size(); ++i) {
-            input[i] = to_normalized(image_data[i]);
-        }
+        math::fast_unpack_unorm(image.data(), input.size(), input.data());
     }
 
     core::FixedArray<float> output = compute_mipmaps_internal(std::move(input), image.size().to<2>(), mip_count, is_sRGB);
     core::FixedArray<u8> data(output.size());
     {
         y_profile_zone("denormalization");
-        for(usize i = 0; i != output.size(); ++i) {
-            data[i] = u8(output[i] * 255.0f);
-        }
+        math::fast_pack_unorm(output.data(), output.size(), data.data());
     }
     output.clear();
 
+    y_profile_zone("building image");
     return ImageData(image.size().to<2>(), data.data(), image.format(), mip_count);
 }
 
