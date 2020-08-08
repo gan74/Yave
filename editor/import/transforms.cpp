@@ -142,7 +142,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
 
     if(sRGB) {
         y_profile_zone("degamma");
-        math::fast_pow(input.data(), input.size(), 2.2f);
+        math::fast_pow_01(input.data(), input.size(), 2.2f);
     }
 
     const ImageFormat normalized_format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -186,7 +186,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
 
     if(sRGB) {
         y_profile_zone("regamma");
-        math::fast_pow(output.data(), output.size(), 1.0f / 2.2f);
+        math::fast_pow_01(output.data(), output.size(), 1.0f / 2.2f);
     }
 
     return output;

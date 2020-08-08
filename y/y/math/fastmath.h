@@ -27,7 +27,8 @@ SOFTWARE.
 namespace y {
 namespace math {
 
-void fast_pow(float* x, usize count, float y);
+// Only work in [0; 1]
+void fast_pow_01(float* x, usize count, float y);
 
 void fast_unpack_unorm(const u8* input, usize count, float* output);
 void fast_pack_unorm(const float* input, usize count, u8* output);

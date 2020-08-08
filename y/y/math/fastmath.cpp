@@ -62,7 +62,7 @@ static inline T* align_end(T* x) {
 
 
 // https://gist.github.com/Novum/1200562/3847ad4e522ba8d30e63357cc4c405ef262f26de
-void fast_pow(float* x, usize count, float y) {
+void fast_pow_01(float* x, usize count, float y) {
 #ifdef Y_USE_INTRINSICS
     const float* end = x + count;
     const float* aligned_begin = align_begin(x);
