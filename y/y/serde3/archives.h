@@ -121,7 +121,7 @@ class WritableArchive final {
         inline Result serialize(const T& t) {
 #ifdef Y_NO_ARCHIVES
             unused(t);
-            return core::Ok(Success::Full);
+            y_fatal("Y_NO_ARCHIVES has been defined");
 #else
             y_try(write_serde_header());
             y_try(serialize_one(NamedObject{t, detail::version_string}));
@@ -489,7 +489,7 @@ class ReadableArchive final {
         inline Result deserialize(T& t, Args&&... args) {
 #ifdef Y_NO_ARCHIVES
             unused(t, args...);
-            return core::Ok(Success::Full);
+            y_fatal("Y_NO_ARCHIVES has been defined");
 #else
             y_try(read_serde_header());
             auto res = deserialize_one(NamedObject{t, detail::version_string});
@@ -505,7 +505,9 @@ class ReadableArchive final {
         template<typename T, typename... Args>
         inline static void post_deserialize(T& t, Args&&... args) {
             unused(t, args...);
-#ifndef Y_NO_POST_DESER
+#ifdef Y_NO_POST_DESER
+            y_fatal("Y_NO_POST_DESER has been defined");
+#else
             static_assert(!std::is_const_v<T>);
             post_deserialize_one(t, y_fwd(args)...);
 #endif
