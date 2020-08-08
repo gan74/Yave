@@ -127,41 +127,46 @@ Animation set_speed(const Animation& anim, float speed) {
     return Animation(anim.duration() / speed, std::move(channels));
 }
 
-ImageData compute_mipmaps(const ImageData& image) {
+
+template<typename T>
+static float to_normalized(T t) {
+    return float(t) / std::numeric_limits<T>::max();
+}
+
+core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, const math::Vec2ui& size, usize mip_count, bool sRGB = false) {
     y_profile();
-    if(image.layers() != 1 || image.size().z() != 1) {
-        log_msg("Only one layer is supported.", Log::Error);
-        return copy(image);
-    }
-    if(image.format() != ImageFormat(VK_FORMAT_R8G8B8A8_UNORM)) {
-        log_msg("Only RGBA is supported.", Log::Error);
-        return copy(image);
-    }
 
-    const ImageFormat format(VK_FORMAT_R8G8B8A8_UNORM);
     const usize components = 4;
+    y_debug_assert(size.x() * size.y() * components == input.size());
 
-    const usize mip_count = ImageData::mip_count(image.size());
-    const usize data_size = ImageData::layer_byte_size(image.size(), format, mip_count);
-    const std::unique_ptr<u8[]> data = std::make_unique<u8[]>(data_size);
+    if(sRGB) {
+        y_profile_zone("degamma");
+        for(usize i = 0; i != input.size(); ++i) {
+            input[i] = std::pow(input[i], 2.2f);
+        }
+    }
 
-    const auto compute_mip = [&](const u8* image_data, u8* output, const math::Vec2ui& orig_size) -> usize {
+    const ImageFormat normalized_format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    const usize output_size = ImageData::layer_byte_size(math::Vec3ui(size, 1), normalized_format, mip_count) / sizeof(float);
+
+    core::FixedArray<float> output(output_size);
+    {
+        const auto compute_mip = [](const float* image_data, float* out, const math::Vec2ui& orig_size) -> usize {
             usize cursor = 0;
             const math::Vec2ui mip_size = {std::max(1u, orig_size.x() / 2),
                                            std::max(1u, orig_size.y() / 2)};
 
-            usize row_size = orig_size.x();
+            const usize row_size = orig_size.x();
 
             for(usize y = 0; y != mip_size.y(); ++y) {
                 for(usize x = 0; x != mip_size.x(); ++x) {
                     const usize orig = (x * 2 + y * 2 * row_size);
-                    for(usize c = 0; c != components; ++c) {
-                        u32 acc  = image_data[components * (orig) + c];
-                        acc     += image_data[components * (orig + 1) + c];
-                        acc     += image_data[components * (orig + row_size) + c];
-                        acc     += image_data[components * (orig + row_size + 1) + c];
-                        y_debug_assert(output + cursor < data.get() + data_size);
-                        output[cursor++] = std::min(acc / 4, 0xFFu);
+                    for(usize cc = 0; cc != components; ++cc) {
+                        const float a = image_data[components * (orig) + cc];
+                        const float b = image_data[components * (orig + 1) + cc];
+                        const float c = image_data[components * (orig + row_size) + cc];
+                        const float d = image_data[components * (orig + row_size + 1) + cc];
+                        out[cursor++] = std::min((a + b + c + d) * 0.25f, 1.0f);
                     }
                 }
             }
@@ -169,18 +174,64 @@ ImageData compute_mipmaps(const ImageData& image) {
         };
 
 
-    u8* image_data = data.get();
-    usize mip_byte_size = image.byte_size(0);
-    std::memcpy(image_data, image.data(), mip_byte_size);
-    for(usize mip = 0; mip < mip_count - 1; ++mip) {
-        const usize s = compute_mip(image_data, image_data + mip_byte_size, image.size(mip).to<2>());
-        image_data += mip_byte_size;
-        mip_byte_size = s;
+        float* out_data = output.data();
+        usize mip_values = size.x() * size.y() * components;
+        std::copy_n(input.data(), mip_values, out_data);
+
+        for(usize mip = 0; mip < mip_count - 1; ++mip) {
+            const usize s = compute_mip(out_data, out_data + mip_values, ImageData::mip_size(math::Vec3ui(size, 1), mip).to<2>());
+            out_data += mip_values;
+            mip_values = s;
+        }
     }
-    y_debug_assert(image_data + mip_byte_size == data.get() + data_size);
 
+    if(sRGB) {
+        y_profile_zone("regamma");
+        for(usize i = 0; i != output.size(); ++i) {
+            output[i] = std::pow(output[i], 1.0f / 2.2f);
+        }
+    }
 
-    return ImageData(image.size().to<2>(), data.get(), format, mip_count);
+    return output;
+}
+
+ImageData compute_mipmaps(const ImageData& image) {
+    y_profile();
+
+    if(image.layers() != 1 || image.size().z() != 1) {
+        log_msg("Only one layer is supported.", Log::Error);
+        return copy(image);
+    }
+    const bool is_sRGB = image.format() == ImageFormat(VK_FORMAT_R8G8B8A8_SRGB);
+    if(image.format() != ImageFormat(VK_FORMAT_R8G8B8A8_UNORM) && !is_sRGB) {
+        log_msg("Only RGBA is supported.", Log::Error);
+        return copy(image);
+    }
+
+    const usize components = 4;
+    const usize texels = image.size().x() * image.size().y();
+    const usize mip_count = ImageData::mip_count(image.size());
+
+    core::FixedArray<float> input(texels * components);
+    {
+        y_profile_zone("normalization");
+        const u8* image_data = image.data();
+        for(usize i = 0; i != input.size(); ++i) {
+            input[i] = to_normalized(image_data[i]);
+        }
+    }
+
+    core::FixedArray<float> output = compute_mipmaps_internal(std::move(input), image.size().to<2>(), mip_count, is_sRGB);
+    core::FixedArray<u8> data(output.size());
+    {
+        y_profile_zone("denormalization");
+        for(usize i = 0; i != output.size(); ++i) {
+            data[i] = u8(output[i] * 255.0f);
+        }
+    }
+    output.clear();
+
+    return ImageData(image.size().to<2>(), data.data(), image.format(), mip_count);
 }
 
 }
