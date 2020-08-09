@@ -28,43 +28,39 @@ namespace yave {
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Descriptor& desc) : _type(BindingType::External), _external(desc) {
 }
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type) :
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(BindingType type, FrameGraphBufferId res) :
         _type(type), _buffer(res) {
 }
 
-FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(FrameGraphImageId res, BindingType type) :
-        _type(type), _image(res) {
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(BindingType type, FrameGraphImageId res, SamplerType sampler) :
+        _type(type), _image({res, sampler}) {
 }
 
+
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_storage_binding(FrameGraphBufferId res) {
-    return FrameGraphDescriptorBinding(res, BindingType::StorageBuffer);
+    return FrameGraphDescriptorBinding(BindingType::StorageBuffer, res);
 }
 
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_storage_binding(FrameGraphImageId res) {
-    return FrameGraphDescriptorBinding(res, BindingType::StorageImage);
+    return FrameGraphDescriptorBinding(BindingType::StorageImage, res);
 }
 
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(FrameGraphBufferId res) {
-    return FrameGraphDescriptorBinding(res, BindingType::InputBuffer);
+    return FrameGraphDescriptorBinding(BindingType::InputBuffer, res);
 }
 
-FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(FrameGraphImageId res) {
-    return FrameGraphDescriptorBinding(res, BindingType::InputImage);
+FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(FrameGraphImageId res, SamplerType sampler) {
+    return FrameGraphDescriptorBinding(BindingType::InputImage, res, sampler);
 }
-
-/*Descriptor FrameGraphDescriptorBinding::create_and_save_descriptor(FrameGraphResourcePool* pool) {
-    operator=(FrameGraphDescriptorBinding(create_descriptor(pool)));
-    return _external;
-}*/
 
 Descriptor FrameGraphDescriptorBinding::create_descriptor(const FrameGraphFrameResources& resources) const {
     switch(_type) {
         case BindingType::External:
             return _external;
         case BindingType::InputImage:
-            return resources.image<ImageUsage::TextureBit>(_image);
+            return Descriptor(resources.image<ImageUsage::TextureBit>(_image.image), _image.sampler);
         case BindingType::StorageImage:
-            return resources.image<ImageUsage::StorageBit>(_image);
+            return resources.image<ImageUsage::StorageBit>(_image.image);
         case BindingType::InputBuffer:
             return resources.buffer<BufferUsage::UniformBit>(_buffer);
         case BindingType::StorageBuffer:

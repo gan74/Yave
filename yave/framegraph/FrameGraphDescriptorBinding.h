@@ -48,17 +48,20 @@ class FrameGraphDescriptorBinding {
         static FrameGraphDescriptorBinding create_storage_binding(FrameGraphImageId res);
 
         static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphBufferId res);
-        static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphImageId res);
+        static FrameGraphDescriptorBinding create_uniform_binding(FrameGraphImageId res, SamplerType sampler);
 
         Descriptor create_descriptor(const FrameGraphFrameResources& resources) const;
 
     private:
-        FrameGraphDescriptorBinding(FrameGraphBufferId res, BindingType type);
-        FrameGraphDescriptorBinding(FrameGraphImageId res, BindingType type);
+        FrameGraphDescriptorBinding(BindingType type, FrameGraphBufferId res);
+        FrameGraphDescriptorBinding(BindingType type, FrameGraphImageId res, SamplerType sampler = SamplerType::Repeat);
 
         BindingType _type = BindingType::None;
         union {
-            FrameGraphImageId _image;
+            struct {
+                FrameGraphImageId image;
+                SamplerType sampler;
+            } _image;
             FrameGraphBufferId _buffer;
             Descriptor _external;
         };

@@ -124,7 +124,12 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphBufferId res, usize ds_i
 
 void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
     add_to_pass(res, ImageUsage::TextureBit, false, stage);
-    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
+    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res, default_sampler), ds_index);
+}
+
+void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, SamplerType sampler, usize ds_index, PipelineStage stage) {
+    add_to_pass(res, ImageUsage::TextureBit, false, stage);
+    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res, sampler), ds_index);
 }
 
 void FrameGraphPassBuilder::add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, usize ds_index, PipelineStage stage) {

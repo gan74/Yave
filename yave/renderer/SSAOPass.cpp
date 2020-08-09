@@ -199,7 +199,7 @@ static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
     return upsampled;
 }
 
-Y_TODO(Clamp depth reads to avoid leaks)
+Y_TODO(Generates line artifacts when size is not divisible by 8)
 
 SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& settings) {
     const auto region = framegraph.region("SSAO");
@@ -214,7 +214,6 @@ SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
             const DownsamplePass downsample = DownsamplePass::create(framegraph, linear_depth, settings.level_count, DownsamplePass::Filter::BestMatch);
             const float tan_half_fov = compute_tan_half_fov(gbuffer);
             for(usize i = settings.level_count - 1; i > 0; --i) {
-                // interleave(framegraph, downsample.mips[i])
                 const math::Vec2ui output_size = framegraph.image_size(downsample.mips[i - 1]);
                 const FrameGraphImageId hi = compute_ao(framegraph, downsample.mips[i], tan_half_fov);
                 ao = upsample_ao(framegraph, size.x(), output_size, settings, downsample.mips[i - 1], downsample.mips[i], hi, ao);
@@ -246,6 +245,41 @@ static FrameGraphImageId interleave(FrameGraph& framegraph, FrameGraphImageId im
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources(recorder.device()).program_from_file("interleave.comp");
         recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
+    });
+
+    return output;
+}
+
+static FrameGraphImageId upsample_ao(FrameGraph& framegraph, const math::Vec2ui& output_size, FrameGraphImageId filter, FrameGraphImageId ao) {
+    struct Params {
+        math::Vec4 weights[9];
+    } params = {};
+
+
+    const float sigma = 2.0f;
+    const usize kernel_size = (9 - 1) / 2;
+    for(usize i = 0; i != kernel_size; ++i) {
+        const float x = float(i);
+        const float w = 0.39894f * std::exp(-0.5f * x * x / (sigma * sigma)) / sigma;
+        params.weights[kernel_size + i] = params.weights[kernel_size - i] = w;
+    }
+
+    const ImageFormat format = framegraph.image_format(ao);
+
+    FrameGraphPassBuilder builder = framegraph.add_pass("TEST pass");
+
+    const auto output = builder.declare_image(format, output_size);
+    const auto params_buffer = builder.declare_typed_buffer<Params>();
+
+    builder.add_uniform_input(ao, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(filter, 0, PipelineStage::ComputeBit);
+    builder.add_storage_output(output, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(params_buffer, 0, PipelineStage::ComputeBit);
+    builder.map_update(params_buffer);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        self->resources().mapped_buffer(params_buffer)[0] = params;
+        const auto& program = device_resources(recorder.device()).program_from_file("bilateral.comp");
+        recorder.dispatch_size(program, output_size * 2, {self->descriptor_sets()[0]});
     });
 
     return output;

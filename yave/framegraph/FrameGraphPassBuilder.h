@@ -27,12 +27,16 @@ SOFTWARE.
 #include <yave/graphics/barriers/PipelineStage.h>
 #include <yave/graphics/images/SamplerType.h>
 #include <yave/graphics/images/ImageUsage.h>
+#include <yave/graphics/images/SamplerType.h>
 #include <yave/graphics/buffers/BufferUsage.h>
 
 namespace yave {
 
 class FrameGraphPassBuilder {
     public:
+        // We are using screen texture 90% of the time, so clamp makes sense as a default
+        const SamplerType default_sampler = SamplerType::Clamp;
+
         using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
         DevicePtr device() const;
@@ -60,6 +64,7 @@ class FrameGraphPassBuilder {
         void add_storage_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
         void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
         void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
+        void add_uniform_input(FrameGraphImageId res, SamplerType sampler, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
         void add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
 
         void add_external_input(Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
