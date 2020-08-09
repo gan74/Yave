@@ -33,14 +33,15 @@ namespace editor {
 
 static constexpr float gizmo_hover_width = 7.5f;
 static constexpr float gizmo_width = 2.5f;
-static constexpr float gizmo_size = 0.15f;
+static constexpr float gizmo_size = 0.25f;
 static constexpr float gizmo_radius = 1.0f;
 static constexpr float gizmo_pick_radius = 0.05f;
 static constexpr u32 gizmo_alpha = 0xB0000000;
 
 // stuff for the 2 axes selection
-static constexpr float gizmo_size_mul_2 = 0.25f;
-static constexpr u32 gizmo_alpha_2 = 0x70000000;
+static constexpr float gizmo_quad_offset = 0.25f;
+static constexpr float gizmo_quad_size = 0.3f;
+static constexpr u32 gizmo_quad_alpha = 0x70000000;
 
 
 static bool is_clicked(bool allow_drag) {
@@ -167,12 +168,14 @@ void Gizmo::draw() {
     const float dist = (obj_pos - cam_pos).length();
     const math::Vec3 projected_mouse = cam_pos + ray * dist;
 
-    const auto center = to_window_pos(obj_pos);
+    const math::Vec2 center = to_window_pos(obj_pos);
 
 
-    std::array<math::Vec3, 3> basis = {math::Vec3{1.0f, 0.0f, 0.0f},
-                                       math::Vec3{0.0f, 1.0f, 0.0f},
-                                       math::Vec3{0.0f, 0.0f, 1.0f}};
+    std::array<math::Vec3, 3> basis = {
+        math::Vec3{1.0f, 0.0f, 0.0f},
+        math::Vec3{0.0f, 1.0f, 0.0f},
+        math::Vec3{0.0f, 0.0f, 1.0f}
+    };
 
 
     {
@@ -200,10 +203,10 @@ void Gizmo::draw() {
         };
 
         Axis axes[] = {
-                {to_window_pos(obj_pos + basis[0] * perspective), 0},
-                {to_window_pos(obj_pos + basis[1] * perspective), 1},
-                {to_window_pos(obj_pos + basis[2] * perspective), 2}
-            };
+            {to_window_pos(obj_pos + basis[0] * perspective), 0},
+            {to_window_pos(obj_pos + basis[1] * perspective), 1},
+            {to_window_pos(obj_pos + basis[2] * perspective), 2}
+        };
 
         // depth sort axes front to back
         sort(std::begin(axes), std::end(axes), [&](const Axis& a, const Axis& b) {
@@ -220,8 +223,9 @@ void Gizmo::draw() {
                 const float da = proj.dot(basis[(index + 1) % 3]);
                 const float db = proj.dot(basis[(index + 2) % 3]);
 
-                const float len = gizmo_size_mul_2 * perspective;
-                if(da > 0.0f && db > 0.0f && da < len && db < len) {
+                const float min_len = gizmo_quad_offset * perspective;
+                const float max_len = (gizmo_quad_size + gizmo_quad_offset) * perspective;
+                if(da > min_len && db > min_len && da < max_len && db < max_len) {
                     hover_mask = axes[(i + 1) % 3].mask() | axes[(i + 2) % 3].mask();
                     break;
                 }
@@ -248,15 +252,16 @@ void Gizmo::draw() {
                 const u32 mask = axes[a].mask() | axes[b].mask();
                 const bool hovered = (hover_mask & mask) == mask;
                 const u32 color = hovered ? hover_color : axis_color(axes[i].index);
+                const math::Vec2 quad_offset = ((axes[a].vec - center)  + (axes[b].vec - center)) * gizmo_quad_offset;
 
-                const auto smaller = [&] (const math::Vec2& v) { return (v - center) * gizmo_size_mul_2 + center; };
-                ImVec2 pts[] = {
-                        center,
-                        smaller(axes[a].vec),
-                        smaller(axes[a].vec + axes[b].vec - center),
-                        smaller(axes[b].vec)
+                const auto smaller = [&] (const math::Vec2& v) { return (v - center) * gizmo_quad_size + center; };
+                const ImVec2 pts[] = {
+                        quad_offset + center,
+                        quad_offset + smaller(axes[a].vec),
+                        quad_offset + smaller(axes[a].vec + axes[b].vec - center),
+                        quad_offset + smaller(axes[b].vec)
                     };
-                ImGui::GetWindowDrawList()->AddConvexPolyFilled(pts, 4, gizmo_alpha_2 | color);
+                ImGui::GetWindowDrawList()->AddConvexPolyFilled(pts, 4, gizmo_quad_alpha | color);
             }
 
             // axes
@@ -291,7 +296,7 @@ void Gizmo::draw() {
         // drag
         if(_dragging_mask) {
             const math::Vec3 new_pos = projected_mouse + _dragging_offset;
-            math::Vec3 vec = new_pos - transformable->position();
+            const math::Vec3 vec = new_pos - transformable->position();
             for(usize i = 0; i != 3; ++i) {
                 if(_dragging_mask & (1 << i)) {
                     transformable->position() += basis[i] * vec.dot(basis[i]);
@@ -313,16 +318,19 @@ void Gizmo::draw() {
 
             const u32 color = rotation_axis == rot_axis ? hover_color :  axis_color(rot_axis);
 
-            auto screen_pos = [&](usize i) {
-                    const math::Vec3 pos = basis[axis] * std::sin(i * seg_ang_size) + basis[(axis + 1) % 3] * std::cos(i * seg_ang_size);
-                    return to_window_pos(obj_pos + pos * gizmo_radius * perspective);
-                };
+            auto point = [&](usize i) -> std::pair<math::Vec2, u32> {
+                const math::Vec3 rad = basis[axis] * std::sin(i * seg_ang_size) + basis[(axis + 1) % 3] * std::cos(i * seg_ang_size);
+                const math::Vec3 world_pos = obj_pos + rad;
+                //const u32 alpha = rad.dot(world_pos - cam_pos) < 0.0f ? gizmo_alpha : 0;
+                const u32 alpha = gizmo_alpha;
+                return {to_window_pos(world_pos * gizmo_radius * perspective), alpha};
+            };
 
-            math::Vec2 last = screen_pos(0);
+            math::Vec2 last_point = point(0).first;
             for(usize i = 1; i != segment_count + 1; ++i) {
-                const math::Vec2 next = screen_pos(i);
-                ImGui::GetWindowDrawList()->AddLine(last, next, gizmo_alpha | color, gizmo_width);
-                last = next;
+                const auto [next, alpha] = point(i);
+                ImGui::GetWindowDrawList()->AddLine(last_point, next, alpha | color, gizmo_width);
+                last_point = next;
             }
         }
 
