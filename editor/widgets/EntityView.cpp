@@ -107,6 +107,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
                 [ctx = context()](AssetId asset) {
                     if(const auto prefab = ctx->loader().load_res<ecs::EntityPrefab>(asset)) {
                         const ecs::EntityId id = ctx->world().create_entity(*prefab.unwrap());
+                        ctx->selection().set_selected(id);
 
                         const auto name = ctx->asset_store().name(asset);
                         if(name) {
@@ -130,6 +131,9 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
             set_entity_name(world, ent, "Spot light");
         }
 
+        if(ent.is_valid()) {
+            context()->selection().set_selected(ent);
+        }
 
         y_debug_assert(!ent.is_valid() || world.has<EditorComponent>(ent));
         y_debug_assert(world.required_components().size() > 0);
@@ -173,6 +177,7 @@ void EntityView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
                 if(EditorComponent* component = world.component<EditorComponent>(copy)) {
                     component->set_name(component->name() + " (Copy)");
                 }
+                context()->selection().set_selected(copy);
             }
 
             ImGui::EndPopup();
