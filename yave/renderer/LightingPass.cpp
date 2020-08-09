@@ -212,6 +212,8 @@ static void local_lights_pass(FrameGraph& framegraph,
 
 
 LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao, const ShadowMapPassSettings& settings) {
+    const auto region = framegraph.region("Lighting");
+
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     const SceneView& scene = gbuffer.scene_pass.scene_view;
 

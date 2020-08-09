@@ -40,6 +40,8 @@ static DeviceResources::MaterialTemplates material_template(DownsamplePass::Filt
 }
 
 DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId orig, usize mip_count, Filter filter) {
+    const auto region = framegraph.region("Downsample");
+
     const math::Vec2ui orig_size = framegraph.image_size(orig);
     const ImageFormat format = framegraph.image_format(orig).non_depth();
 

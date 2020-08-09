@@ -134,6 +134,15 @@ static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameG
 }
 
 
+
+FrameGraphRegion::~FrameGraphRegion() {
+    y_debug_assert(_parent);
+    _parent->end_region(_index);
+}
+
+FrameGraphRegion::FrameGraphRegion(FrameGraph* parent, usize index) : _parent(parent), _index(index) {
+}
+
 FrameGraph::FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool) : _resources(std::make_unique<FrameGraphFrameResources>(std::move(pool))) {
 }
 
@@ -148,13 +157,71 @@ const FrameGraphFrameResources& FrameGraph::resources() const {
     return *_resources;
 }
 
+FrameGraphRegion FrameGraph::region(std::string_view name) {
+    const usize index = _regions.size();
+    _regions.emplace_back(Region{name, _pass_index + 1, _pass_index + 1});
+    return FrameGraphRegion(this, index);
+}
+
+void FrameGraph::end_region(usize index) {
+    _regions[index].end_pass = _pass_index;
+}
+
+
+
+
 void FrameGraph::render(CmdBufferRecorder& recorder) && {
     y_profile();
     Y_TODO(Pass culling)
     Y_TODO(Ensure that pass are always recorded in order)
 
+    // -------------------- region stuff --------------------
     const auto frame_region = recorder.region("Framegraph render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
 
+    struct RuntimeRegion {
+        Region region;
+        CmdBufferRegion cmd;
+        math::Vec4 color;
+
+        math::Vec4 next_color() {
+            color = color * 0.8f + 0.2f;
+            return color;
+        }
+    };
+
+    usize next_region_index = 0;
+    core::Vector<RuntimeRegion> regions;
+    auto next_color = [id = 0]() mutable {
+        return math::Vec4(identifying_color(id++), 1.0f);
+    };
+
+    auto begin_pass_region = [&](const FrameGraphPass& pass) {
+        while(true) {
+            if(next_region_index < _regions.size() && _regions[next_region_index].begin_pass == pass._index) {
+                const math::Vec4 color = next_color();
+                regions.emplace_back(RuntimeRegion{_regions[next_region_index], recorder.region(_regions[next_region_index].name, color), color});
+                ++next_region_index;
+            } else {
+                break;
+            }
+        }
+
+        const math::Vec4 color = regions.is_empty() ? next_color() : regions.last().next_color();
+        return recorder.region(pass.name(), color);
+    };
+
+    auto end_pass_region = [&](const FrameGraphPass& pass) {
+        for(usize i = 0; i != regions.size(); ++i) {
+            if(regions[i].region.end_pass <= pass._index) {
+                regions.erase_unordered(regions.begin() + i);
+                --i;
+            }
+        }
+    };
+
+
+
+    // -------------------- resource management --------------------
     alloc_resources();
 
     usize copy_index = 0;
@@ -164,10 +231,10 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
     core::Vector<BufferBarrier> buffer_barriers;
     core::Vector<ImageBarrier> image_barriers;
 
-    usize pass_id = 0;
+
     for(const auto& pass : _passes) {
         y_profile_zone(pass->name());
-        const auto region = recorder.region(pass->name(), math::Vec4(identifying_color(pass_id++), 1.0f));
+        const auto region = begin_pass_region(*pass);
 
         {
             y_profile_zone("prepare");
@@ -197,6 +264,8 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
             y_profile_zone("render");
             std::move(*pass).render(recorder);
         }
+
+        end_pass_region(*pass);
     }
 
     Y_TODO(Only keep alive cpu mapped buffers)

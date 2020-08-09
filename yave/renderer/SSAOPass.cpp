@@ -202,6 +202,8 @@ static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
 Y_TODO(Clamp depth reads to avoid leaks)
 
 SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& settings) {
+    const auto region = framegraph.region("SSAO");
+
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     const FrameGraphImageId linear_depth = compute_linear_depth(framegraph, gbuffer, size);
 

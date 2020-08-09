@@ -25,12 +25,32 @@ SOFTWARE.
 #include "FrameGraphPassBuilder.h"
 
 #include <y/core/Vector.h>
+#include <y/core/String.h>
 
 #include <memory>
 
 namespace yave {
 
-class FrameGraph : NonCopyable {
+class FrameGraphRegion : NonMovable {
+    public:
+        ~FrameGraphRegion();
+
+    private:
+        friend class FrameGraph;
+
+        FrameGraphRegion(FrameGraph* parent, usize index);
+
+        FrameGraph* _parent = nullptr;
+        usize _index = 0;
+};
+
+class FrameGraph : NonMovable {
+
+    struct Region {
+        core::String name;
+        usize begin_pass = 0;
+        usize end_pass = 0;
+    };
 
     struct ResourceCreateInfo {
         usize last_read = 0;
@@ -82,9 +102,14 @@ class FrameGraph : NonCopyable {
         math::Vec2ui image_size(FrameGraphImageId res) const;
         ImageFormat image_format(FrameGraphImageId res) const;
 
+        FrameGraphRegion region(std::string_view name);
+
     private:
         friend class FrameGraphPassBuilder;
         friend class FrameGraphPass;
+        friend class FrameGraphRegion;
+
+        void end_region(usize index);
 
         FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
         FrameGraphMutableBufferId declare_buffer(usize byte_size);
@@ -117,6 +142,8 @@ class FrameGraph : NonCopyable {
         core::Vector<ImageCopyInfo> _image_copies;
 
         usize _pass_index = 0;
+
+        core::Vector<Region> _regions;
 
 };
 
