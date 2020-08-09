@@ -32,6 +32,8 @@ SOFTWARE.
 namespace yave {
 
 ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings) {
+    const auto region = framegraph.region("Tone mapping");
+
     static constexpr ImageFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     static const math::Vec2ui histogram_size = math::Vec2ui(256, 1);
 
