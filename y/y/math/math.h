@@ -52,6 +52,7 @@ template<typename T>
 static constexpr T epsilon = std::numeric_limits<T>::epsilon();
 
 template<typename T = double>
+
 static constexpr T pi = T(3.1415926535897932384626433832795);
 
 
@@ -93,7 +94,7 @@ auto perspective(T fovy, T aspect, T z_near) {
 template<typename T>
 auto ortho(T left, T right, T bottom, T top, T z_near, T z_far) {
     const Matrix4<T> m(T(2) / (right - left), 0, 0, 0,
-                 0, T(2) / (top - bottom), 0, 0, 
+                 0, T(2) / (top - bottom), 0, 0,
                  0, 0, T(1) / (z_far - z_near), 0,
                  -(right + left) / (right - left), -(top + bottom) / (top - bottom), -z_near / (z_far - z_near), 1);
     return m;
@@ -138,6 +139,15 @@ template<typename T, typename X>
 auto lerp(const T& a, const T& b, X x) {
     return a + x * (b - a);
     //return a * (X(1) - x) + b * x;
+}
+
+template<typename T>
+T sign(T t) {
+    static_assert(std::is_signed_v<T>);
+    if(t == T(0)) {
+        return T(0);
+    }
+    return t > 0.0 ? T(1) : T(-1);
 }
 
 }

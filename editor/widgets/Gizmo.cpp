@@ -120,6 +120,8 @@ math::Vec2 Gizmo::to_window_pos(const math::Vec3& world) {
 }
 
 void Gizmo::draw() {
+    y_profile();
+
     if(!context()->selection().has_selected_entity()) {
         return;
     }
@@ -157,11 +159,12 @@ void Gizmo::draw() {
     const math::Vec4 projected = (view_proj * math::Vec4(obj_pos, 1.0f));
     const float perspective = gizmo_size * projected.w();
 
+    const math::Vec2 mouse = math::Vec2(ImGui::GetIO().MousePos);
     const math::Vec2 viewport = ImGui::GetWindowSize();
     const math::Vec2 offset = ImGui::GetWindowPos();
 
     const auto inv_matrix = _scene_view->camera().inverse_matrix();
-    const math::Vec2 ndc = ((math::Vec2(ImGui::GetIO().MousePos) - offset) / viewport) * 2.0f - 1.0f;
+    const math::Vec2 ndc = ((mouse - offset) / viewport) * 2.0f - 1.0f;
     const math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
     const math::Vec3 world = h_world.to<3>() / h_world.w();
     const math::Vec3 ray = (world - cam_pos).normalized();
@@ -247,6 +250,10 @@ void Gizmo::draw() {
         {
             // quads
             for(usize i = 0; i != 3; ++i) {
+                /*if(std::abs(basis[i].dot(cam_fwd)) < 0.25f) {
+                    continue;
+                }*/
+
                 const usize a = (i + 1) % 3;
                 const usize b = (i + 2) % 3;
                 const u32 mask = axes[a].mask() | axes[b].mask();
@@ -274,15 +281,6 @@ void Gizmo::draw() {
             ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0xFFFFFFFF);
         }
 
-        /*math::Vec3 plan_normal(1.0f);
-        for(usize i = 0; i != 3; ++i) {
-            u32 mask = 1 << i;
-            if(_dragging_mask & mask) {
-                plan_normal[i] = 0.0f;
-            }
-        }
-        projected_mouse = intersect(plan_normal, obj_pos, cam_pos, world);*/
-
         // click
         {
             if(is_clicked(_allow_drag)) {
@@ -305,32 +303,69 @@ void Gizmo::draw() {
         }
     } else if(_mode == Rotate) {
         const usize segment_count = 64;
-        const float seg_ang_size = (1.0f / segment_count) * 2.0f * math::pi<float>;
+        const float inv_segment_count = 1.0f / segment_count;
+        const float seg_ang_size = inv_segment_count * 2.0f * math::pi<float>;
+
         usize rotation_axis = _rotation_axis;
 
+        auto cam_side = [&](math::Vec3 world_pos) {
+            const math::Vec3 local = world_pos - obj_pos;
+            return local.normalized().dot((world_pos - cam_pos).normalized()) < 0.1f;
+        };
+
+
+        auto next_point = [&](usize axis, usize i) -> std::pair<math::Vec2, bool> {
+            const math::Vec3 radial = basis[axis] * std::sin(i * seg_ang_size) + basis[(axis + 1) % 3] * std::cos(i * seg_ang_size);
+            return {to_window_pos(obj_pos + radial * gizmo_radius * perspective), cam_side(obj_pos + radial)};
+        };
+
+        // compute hover
+        bool hovered = false;
+        for(usize axis = 0; !hovered && axis != 3; ++axis) {
+            const usize rot_axis = (axis + 2) % 3;
+
+            math::Vec2 last_point = next_point(axis, 0).first;
+            for(usize i = 1; i != segment_count + 1; ++i) {
+                const auto [next, visible] = next_point(axis, i);
+                y_defer(last_point = next);
+
+                if(!visible) {
+                    continue;
+                }
+                const math::Vec2 vec = next - last_point;
+                if(vec.dot(next - mouse) < 0.0f || vec.dot(last_point - mouse) > 0.0f) {
+                    continue;
+                }
+                const math::Vec2 ortho = math::Vec2(-vec.y(), vec.x()).normalized();
+                if(std::abs(ortho.dot(next - mouse)) > 5.0f) {
+                    continue;
+                }
+                rotation_axis = rot_axis;
+                hovered = true;
+                break;
+            }
+        }
+
+        // draw
+        const usize current_axis = (_rotation_axis == usize(-1) ? rotation_axis : _rotation_axis);
         for(usize axis = 0; axis != 3; ++axis) {
             const usize rot_axis = (axis + 2) % 3;
-            const math::Vec3 proj = intersect(basis[rot_axis], obj_pos, cam_pos, projected_mouse);
-            const bool hovered = std::abs((obj_pos - proj).length() - perspective) < gizmo_pick_radius * perspective;
-            if(hovered) {
-                rotation_axis = rot_axis;
-            }
+            const bool is_current_axis = rot_axis == current_axis;
+            const u32 color = is_current_axis ? hover_color :  axis_color(rot_axis);
 
-            const u32 color = rotation_axis == rot_axis ? hover_color :  axis_color(rot_axis);
-
-            auto point = [&](usize i) -> std::pair<math::Vec2, u32> {
-                const math::Vec3 rad = basis[axis] * std::sin(i * seg_ang_size) + basis[(axis + 1) % 3] * std::cos(i * seg_ang_size);
-                const math::Vec3 world_pos = obj_pos + rad;
-                //const u32 alpha = rad.dot(world_pos - cam_pos) < 0.0f ? gizmo_alpha : 0;
-                const u32 alpha = gizmo_alpha;
-                return {to_window_pos(world_pos * gizmo_radius * perspective), alpha};
-            };
-
-            math::Vec2 last_point = point(0).first;
+            math::Vec2 last_point = next_point(axis, 0).first;
             for(usize i = 1; i != segment_count + 1; ++i) {
-                const auto [next, alpha] = point(i);
+                const auto [next, visible] = next_point(axis, i);
+                y_defer(last_point = next);
+
+                u32 alpha = gizmo_alpha;
+                if(!visible) {
+                    if(!is_current_axis || i % 2) {
+                        continue;
+                    }
+                    alpha /= 2;
+                }
                 ImGui::GetWindowDrawList()->AddLine(last_point, next, alpha | color, gizmo_width);
-                last_point = next;
             }
         }
 
