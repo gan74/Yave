@@ -114,9 +114,6 @@ static MiniAOParams compute_ao_params(float tan_half_fov, usize screen_size_x) {
     return params;
 }
 
-
-
-
 static FrameGraphImageId compute_linear_depth(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size) {
     static constexpr ImageFormat depth_format = VK_FORMAT_R32_SFLOAT;
 
@@ -159,6 +156,7 @@ static FrameGraphImageId compute_ao(FrameGraph& framegraph, FrameGraphImageId li
 
 static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
                                      float final_size_x,
+                                     const math::Vec2ui& output_size,
                                      const SSAOSettings& settings,
                                      FrameGraphImageId hi_depth,
                                      FrameGraphImageId lo_depth,
@@ -167,10 +165,10 @@ static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
 
     const bool merge = lo_ao.is_valid();
     const ImageFormat format = framegraph.image_format(hi_ao);
-    const math::Vec2ui hi_size = framegraph.image_size(hi_depth);
+    //const math::Vec2ui hi_size = framegraph.image_size(hi_depth);
     const math::Vec2ui lo_size = framegraph.image_size(lo_depth);
 
-    const float step_size = final_size_x / (float)lo_size.x();
+    const float step_size = final_size_x / float(lo_size.x());
     float blur_tolerance = 1.0f - std::pow(10.0f, -settings.blur_tolerance) * step_size;
     blur_tolerance *= blur_tolerance;
     const float upsample_tolerance = std::pow(10.0f, -settings.upsample_tolerance);
@@ -179,15 +177,11 @@ static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
 
     FrameGraphPassBuilder builder = framegraph.add_pass("SSAO upsample pass");
 
-    const auto upsampled = builder.declare_image(format, hi_size);
+    const auto upsampled = builder.declare_image(format, output_size);
     const auto params_buffer = builder.declare_typed_buffer<UpsampleParams>(1);
 
-    if(merge) {
-        builder.add_uniform_input(lo_ao, 0, PipelineStage::ComputeBit);
-    } else {
-        const Texture& white = *device_resources(builder.device())[DeviceResources::WhiteTexture];
-        builder.add_external_input(Descriptor(white), 0, PipelineStage::ComputeBit);
-    }
+    const Texture& white = *device_resources(builder.device())[DeviceResources::WhiteTexture];
+    builder.add_uniform_input_with_default(lo_ao, Descriptor(white), 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(hi_ao, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(lo_depth, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(hi_depth, 0, PipelineStage::ComputeBit);
@@ -199,38 +193,62 @@ static FrameGraphImageId upsample_ao(FrameGraph& framegraph,
             step_size, noise_filter_weight, blur_tolerance, upsample_tolerance
         };
         const auto& program = device_resources(recorder.device())[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
-        recorder.dispatch_size(program, hi_size + math::Vec2ui(2), {self->descriptor_sets()[0]});
+        recorder.dispatch_size(program, output_size + math::Vec2ui(2), {self->descriptor_sets()[0]});
     });
 
     return upsampled;
 }
 
-
-
 Y_TODO(Clamp depth reads to avoid leaks)
 
 SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& settings) {
-
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     const FrameGraphImageId linear_depth = compute_linear_depth(framegraph, gbuffer, size);
 
     FrameGraphImageId ao;
-    {
-        y_always_assert(settings.level_count > 1, "SSAOSettings::level_count needs to be at least 2");
-        const DownsamplePass downsample = DownsamplePass::create(framegraph, linear_depth, settings.level_count);
-        const float tan_half_fov = compute_tan_half_fov(gbuffer);
-        for(usize i = settings.level_count - 1; i > 0; --i) {
-            const FrameGraphImageId hi = compute_ao(framegraph, downsample.mips[i], tan_half_fov);
-            ao = upsample_ao(framegraph, size.x(), settings, downsample.mips[i - 1], downsample.mips[i], hi, ao);
-        }
-    }
+    switch(settings.method) {
+        case SSAOSettings::SSAOMethod::MiniEngine: {
+            y_always_assert(settings.level_count > 1, "SSAOSettings::level_count needs to be at least 2");
+            const DownsamplePass downsample = DownsamplePass::create(framegraph, linear_depth, settings.level_count, DownsamplePass::Filter::BestMatch);
+            const float tan_half_fov = compute_tan_half_fov(gbuffer);
+            for(usize i = settings.level_count - 1; i > 0; --i) {
+                // interleave(framegraph, downsample.mips[i])
+                const math::Vec2ui output_size = framegraph.image_size(downsample.mips[i - 1]);
+                const FrameGraphImageId hi = compute_ao(framegraph, downsample.mips[i], tan_half_fov);
+                ao = upsample_ao(framegraph, size.x(), output_size, settings, downsample.mips[i - 1], downsample.mips[i], hi, ao);
+            }
+        } break;
 
+        default:
+        break;
+    }
 
     SSAOPass pass;
     pass.linear_depth = linear_depth;
     pass.ao = ao;
     return pass;
 }
+
+
+#if 0
+static FrameGraphImageId interleave(FrameGraph& framegraph, FrameGraphImageId image) {
+    static constexpr ImageFormat format = VK_FORMAT_R32_SFLOAT;
+    const math::Vec2ui size = framegraph.image_size(image);
+
+    FrameGraphPassBuilder builder = framegraph.add_pass("TEST pass");
+
+    const auto output = builder.declare_image(format, size);
+
+    builder.add_uniform_input(image, 0, PipelineStage::ComputeBit);
+    builder.add_storage_output(output, 0, PipelineStage::ComputeBit);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const auto& program = device_resources(recorder.device()).program_from_file("interleave.comp");
+        recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
+    });
+
+    return output;
+}
+#endif
 
 }
 

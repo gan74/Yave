@@ -29,9 +29,19 @@ SOFTWARE.
 
 namespace yave {
 
-DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId orig, usize mip_count) {
+static DeviceResources::MaterialTemplates material_template(DownsamplePass::Filter filter) {
+    switch(filter) {
+        case DownsamplePass::Filter::BestMatch:
+            return DeviceResources::DownsampleMaterialTemplate;
+
+        default:
+            return DeviceResources::ScreenPassthroughMaterialTemplate;
+    }
+}
+
+DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId orig, usize mip_count, Filter filter) {
     const math::Vec2ui orig_size = framegraph.image_size(orig);
-    const ImageFormat format = framegraph.image_format(orig);
+    const ImageFormat format = framegraph.image_format(orig).non_depth();
 
     DownsamplePass pass;
     pass.mips << orig;
@@ -50,7 +60,7 @@ DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId 
         builder.add_uniform_input(pass.mips.last());
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            const auto* material = device_resources(recorder.device())[DeviceResources::ScreenPassthroughMaterialTemplate];
+            const auto* material = device_resources(recorder.device())[material_template(filter)];
             render_pass.bind_material(material, {self->descriptor_sets()[0]});
             render_pass.draw_array(3);
         });

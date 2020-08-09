@@ -32,6 +32,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/renderer/renderer.h>
 #include <yave/utils/color.h>
@@ -69,11 +70,13 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     TextureView* output = nullptr;
     FrameGraph graph(_resource_pool);
 
-    math::Vec2ui output_size = content_size();
+    const math::Vec2ui output_size = content_size();
     const EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _settings);
 
 
     {
+        const Texture& white = *device_resources(graph.device())[DeviceResources::WhiteTexture];
+
         FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, output_size);
@@ -87,7 +90,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(renderer.renderer.ssao.ao, 0, PipelineStage::FragmentBit);
+        builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white), 0, PipelineStage::FragmentBit);
         builder.map_update(buffer);
         builder.set_render_func([=, index = u32(_view), &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
                 auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
@@ -234,6 +237,9 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("SSAO")) {
         SSAOSettings& settings = _settings.renderer_settings.ssao;
 
+        bool enabled = settings.method != SSAOSettings::SSAOMethod::None;
+        ImGui::Checkbox("Enabled", &enabled);
+
         int levels = settings.level_count;
 
         ImGui::SliderInt("Levels", &levels, 2, 8);
@@ -242,6 +248,7 @@ void EngineView::draw_settings_menu() {
         ImGui::SliderFloat("Noise filter", &settings.noise_filter_tolerance, 0.0f, 8.0f);
 
         settings.level_count = levels;
+        settings.method = enabled ? SSAOSettings::SSAOMethod::MiniEngine : SSAOSettings::SSAOMethod::None;
 
         ImGui::EndMenu();
     }

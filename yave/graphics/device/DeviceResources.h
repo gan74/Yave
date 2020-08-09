@@ -70,6 +70,7 @@ class DeviceResources final : NonCopyable {
             TexturedFrag,
             TexturedAlphaFrag,
             PassthroughFrag,
+            DownsampleFrag,
             BloomFrag,
             HBlurFrag,
             VBlurFrag,
@@ -109,6 +110,8 @@ class DeviceResources final : NonCopyable {
 
             ScreenPassthroughMaterialTemplate,
             ScreenBlendPassthroughMaterialTemplate,
+
+            DownsampleMaterialTemplate,
 
             BloomMaterialTemplate,
 

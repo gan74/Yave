@@ -29,9 +29,14 @@ SOFTWARE.
 namespace yave {
 
 struct DownsamplePass {
+    enum class Filter {
+        Average,    // Average of texel values
+        BestMatch,  // Closest texel to average value
+    };
+
     core::Vector<FrameGraphImageId> mips;
 
-    static DownsamplePass create(FrameGraph& framegraph, FrameGraphImageId orig, usize mip_count = usize(-1));
+    static DownsamplePass create(FrameGraph& framegraph, FrameGraphImageId orig, usize mip_count = usize(-1), Filter filter = Filter::Average);
 };
 
 }

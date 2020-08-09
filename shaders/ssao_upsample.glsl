@@ -185,16 +185,15 @@ void main() {
     const vec4 lo_samples = vec4(ao_samples0[id + 16], ao_samples0[id + 17], ao_samples0[id + 1], ao_samples0[id]);
 
     // We work on a quad of pixels at once because then we can gather 4 each of high and low-res depth values
-    const vec2 uv0 = gl_GlobalInvocationID.xy * inv_lo_res;
-    const vec2 uv1 = gl_GlobalInvocationID.xy * inv_hi_res * 2;
+    const vec2 uv = gl_GlobalInvocationID.xy * inv_lo_res;
 
 #ifdef COMBINE_HIGH
-    const vec4 hi_samples  = textureGather(in_hi_ao, uv1);
+    const vec4 hi_samples  = textureGather(in_hi_ao, uv);
 #else
     const vec4 hi_samples = vec4(1.0);
 #endif
-    const vec4 lo_depths = textureGather(in_lo_depth, uv0);
-    const vec4 hi_depths = textureGather(in_hi_depth, uv1);
+    const vec4 lo_depths = textureGather(in_lo_depth, uv);
+    const vec4 hi_depths = textureGather(in_hi_depth, uv);
 
     const ivec2 out_coord = ivec2(gl_GlobalInvocationID.xy) << 1;
     imageStore(out_ao, out_coord + ivec2(-1,  0), vec4(bilateral_upsample(hi_depths.x, hi_samples.x, lo_depths.xyzw, lo_samples.xyzw)));

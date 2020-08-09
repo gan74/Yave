@@ -82,6 +82,22 @@ bool ImageFormat::is_depth_format() const {
     }
 }
 
+ImageFormat ImageFormat::non_depth() const {
+    switch(_format) {
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+            return VK_FORMAT_R16_UNORM;
+
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            return VK_FORMAT_R32_SFLOAT;
+
+        default:
+            return _format;
+    }
+}
+
 bool ImageFormat::is_float() const {
     switch(_format) {
         case VK_FORMAT_BC1_RGB_UNORM_BLOCK:

@@ -5,6 +5,7 @@
 
 #include "lib/utils.glsl"
 
+//#define WIDE_SAMPLING
 #ifdef WIDE_SAMPLING
 // 32x32 cache size:  the 16x16 in the center forms the area of focus with the 8-pixel perimeter used for wide gathering.
 #define THREAD_COUNT 16
@@ -55,8 +56,8 @@ float test_samples(uint center_index, int x, int y, float inv_depth, float inv_t
     x *= COORDS_MUL;
     y *= COORDS_MUL;
 
-    float inv_range = inv_thickness * inv_depth;
-    float front_depth = inv_thickness - 0.5;
+    const float inv_range = inv_thickness * inv_depth;
+    const float front_depth = inv_thickness - 0.5;
 
     if(y == 0) {
         // Axial
@@ -102,6 +103,20 @@ void main() {
 
     float ao = 0.0;
 
+#if 0
+    ao += weights[0].x * test_samples(index, 1, 0, inv_depth, inv_thickness[0].x);
+    ao += weights[0].y * test_samples(index, 2, 0, inv_depth, inv_thickness[0].y);
+    ao += weights[0].z * test_samples(index, 3, 0, inv_depth, inv_thickness[0].z);
+    ao += weights[0].w * test_samples(index, 4, 0, inv_depth, inv_thickness[0].w);
+    ao += weights[1].x * test_samples(index, 1, 1, inv_depth, inv_thickness[1].x);
+    ao += weights[2].x * test_samples(index, 2, 2, inv_depth, inv_thickness[2].x);
+    ao += weights[2].w * test_samples(index, 3, 3, inv_depth, inv_thickness[2].w);
+    ao += weights[1].y * test_samples(index, 1, 2, inv_depth, inv_thickness[1].y);
+    ao += weights[1].z * test_samples(index, 1, 3, inv_depth, inv_thickness[1].z);
+    ao += weights[1].w * test_samples(index, 1, 4, inv_depth, inv_thickness[1].w);
+    ao += weights[2].y * test_samples(index, 2, 3, inv_depth, inv_thickness[2].y);
+    ao += weights[2].z * test_samples(index, 2, 4, inv_depth, inv_thickness[2].z);
+#else
     // 36 samples:  sample every-other cell in a checker board pattern
     ao += weights[0].y * test_samples(index, 2, 0, inv_depth, inv_thickness[0].y);
     ao += weights[0].w * test_samples(index, 4, 0, inv_depth, inv_thickness[0].w);
@@ -110,6 +125,7 @@ void main() {
     ao += weights[2].w * test_samples(index, 3, 3, inv_depth, inv_thickness[2].w);
     ao += weights[1].z * test_samples(index, 1, 3, inv_depth, inv_thickness[1].z);
     ao += weights[2].z * test_samples(index, 2, 4, inv_depth, inv_thickness[2].z);
+#endif
 
     imageStore(out_ao, ivec2(gl_GlobalInvocationID.xy), vec4(ao));
 }

@@ -9,6 +9,7 @@
 
 #define USE_IBL
 #define IBL_BACKGROUND
+#define USE_AO
 
 // -------------------------------- I/O --------------------------------
 
@@ -17,19 +18,20 @@ layout(local_size_x = 8, local_size_y = 8) in;
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
 layout(set = 0, binding = 1) uniform sampler2D in_color;
 layout(set = 0, binding = 2) uniform sampler2D in_normal;
+layout(set = 0, binding = 3) uniform sampler2D in_ao;
 
-layout(set = 0, binding = 3) uniform samplerCube in_envmap;
-layout(set = 0, binding = 4) uniform sampler2D brdf_lut;
+layout(set = 0, binding = 4) uniform samplerCube in_envmap;
+layout(set = 0, binding = 5) uniform sampler2D brdf_lut;
 
-layout(set = 0, binding = 5) uniform CameraData {
+layout(set = 0, binding = 6) uniform CameraData {
     Camera camera;
 };
 
-layout(set = 0, binding = 6) readonly buffer Lights {
+layout(set = 0, binding = 7) readonly buffer Lights {
     DirectionalLight lights[];
 };
 
-layout(rgba16f, set = 0, binding = 7) uniform writeonly image2D out_color;
+layout(rgba16f, set = 0, binding = 8) uniform writeonly image2D out_color;
 
 layout(push_constant) uniform PushConstants {
     uint light_count;
@@ -37,6 +39,14 @@ layout(push_constant) uniform PushConstants {
 
 
 // -------------------------------- MAIN --------------------------------
+
+float ambient_occlusion(vec2 uv) {
+#ifdef USE_AO
+    return texture(in_ao, uv).r;
+#else
+    return 1.0;
+#endif
+}
 
 void main() {
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
@@ -73,7 +83,7 @@ void main() {
         }
 
 #ifdef USE_IBL
-        irradiance += eval_ibl(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo);
+        irradiance += eval_ibl(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo) * ambient_occlusion(uv);
 #endif
     }
 

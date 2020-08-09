@@ -63,10 +63,12 @@ static const IBLProbe* find_probe(DevicePtr dptr, const ecs::EntityWorld& world)
 
 static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              const math::Vec2ui& size,
-                                             const GBufferPass& gbuffer) {
+                                             const GBufferPass& gbuffer,
+                                             FrameGraphImageId ao) {
 
     const SceneView& scene = gbuffer.scene_pass.scene_view;
     const IBLProbe* ibl_probe = find_probe(framegraph.device(), scene.world());
+    const Texture& white = *device_resources(framegraph.device())[DeviceResources::WhiteTexture];
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
 
@@ -77,6 +79,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input_with_default(ao, Descriptor(white), 0, PipelineStage::ComputeBit);
     builder.add_external_input(*ibl_probe, 0, PipelineStage::ComputeBit);
     builder.add_external_input(Descriptor(device_resources(builder.device()).brdf_lut(), SamplerType::Clamp), 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
@@ -208,14 +211,14 @@ static void local_lights_pass(FrameGraph& framegraph,
 }
 
 
-LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const ShadowMapPassSettings& settings) {
+LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao, const ShadowMapPassSettings& settings) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     const SceneView& scene = gbuffer.scene_pass.scene_view;
 
     LightingPass pass;
     pass.shadow_pass = ShadowMapPass::create(framegraph, scene, settings);
 
-    const auto lit = ambient_pass(framegraph, size, gbuffer);
+    const auto lit = ambient_pass(framegraph, size, gbuffer, ao);
 
     local_lights_pass(framegraph, lit, size, gbuffer, pass.shadow_pass);
 

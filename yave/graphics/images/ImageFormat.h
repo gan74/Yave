@@ -44,6 +44,8 @@ class ImageFormat {
         bool is_block_format() const;
         bool is_depth_format() const;
 
+        ImageFormat non_depth() const;
+
         std::string_view name() const;
 
         bool operator==(const ImageFormat& other) const;

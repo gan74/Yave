@@ -30,7 +30,8 @@ namespace yave {
 
 struct SSAOSettings {
     enum class SSAOMethod {
-        MiniEngine
+        None,
+        MiniEngine,
     };
 
     SSAOMethod method = SSAOMethod::MiniEngine;

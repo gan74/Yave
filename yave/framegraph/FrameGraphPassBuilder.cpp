@@ -127,6 +127,13 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_in
     add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
 }
 
+void FrameGraphPassBuilder::add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, usize ds_index, PipelineStage stage) {
+    if(res.is_valid()) {
+        add_uniform_input(res, ds_index, stage);
+    } else {
+        add_external_input(desc, ds_index, stage);
+    }
+}
 
 // --------------------------------- External ---------------------------------
 
