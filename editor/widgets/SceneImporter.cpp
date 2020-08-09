@@ -34,7 +34,7 @@ SOFTWARE.
 #include <yave/meshes/MeshData.h>
 #include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
-#include <yave/utils/FilesystemModel.h>
+#include <yave/utils/FileSystemModel.h>
 #include <yave/entities/entities.h>
 
 #include <y/io2/Buffer.h>

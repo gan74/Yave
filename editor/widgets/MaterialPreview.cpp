@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
-#include <yave/renderer/renderer.h>
+#include <yave/renderer/DefaultRenderer.h>
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>

@@ -32,7 +32,7 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 
 #include <editor/renderer/EditorEntityPass.h>
-#include <editor/renderer/ScenePickingPass.h>
+#include <editor/renderer/IdBufferPass.h>
 
 namespace editor {
 
@@ -61,7 +61,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
     FrameGraph framegraph(std::make_shared<FrameGraphResourcePool>(device()));
 
     Y_TODO(Take editor renderer settings into account for picking)
-    const ScenePickingPass scene_pass = ScenePickingPass::create(context(), framegraph, scene_view, size);
+    const IdBufferPass scene_pass = IdBufferPass::create(context(), framegraph, scene_view, size);
     const EditorEntityPass entity_pass = EditorEntityPass::create(context(), framegraph, scene_view, scene_pass.depth, scene_pass.id, true);
 
     {

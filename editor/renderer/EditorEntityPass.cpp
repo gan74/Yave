@@ -140,7 +140,7 @@ static void render_selection(ContextPtr ctx,
     }
 }
 
-static void render_editor_entities(ContextPtr ctx, bool picking,
+static void render_editor_entities(ContextPtr ctx, bool id,
                                    RenderPassRecorder& recorder, const FrameGraphPass* pass,
                                    const SceneView& scene_view,
                                    const FrameGraphMutableTypedBufferId<EditorEntityPassData> pass_buffer,
@@ -163,8 +163,8 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
     }
 
     {
-        const auto* material = ctx->resources()[picking
-            ? EditorResources::ImGuiBillBoardPickingMaterialTemplate
+        const auto* material = ctx->resources()[id
+            ? EditorResources::ImGuiBillBoardIdMaterialTemplate
             : EditorResources::ImGuiBillBoardMaterialTemplate];
         recorder.bind_material(material, {pass->descriptor_sets()[0]});
     }
@@ -202,13 +202,13 @@ static void render_editor_entities(ContextPtr ctx, bool picking,
         }
     }
 
-    if(!picking && ctx->selection().has_selected_entity()) {
+    if(!id && ctx->selection().has_selected_entity()) {
         render_selection(ctx, recorder, pass, scene_view);
     }
 }
 
 
-EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool picking) {
+EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool id) {
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
     auto pass_buffer = builder.declare_typed_buffer<EditorEntityPassData>();
@@ -218,7 +218,7 @@ EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph
 
     EditorEntityPass pass;
     pass.depth = depth;
-    (picking ? pass.id : pass.color) = color;
+    (id ? pass.id : pass.color) = color;
 
     builder.add_external_input(ctx->ui_manager().renderer().font_texture());
     builder.add_uniform_input(pass_buffer);
@@ -232,7 +232,7 @@ EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph
     builder.add_color_output(color);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            render_editor_entities(ctx, picking, render_pass, self, view, pass_buffer, vertex_buffer);
+            render_editor_entities(ctx, id, render_pass, self, view, pass_buffer, vertex_buffer);
         });
 
     return pass;

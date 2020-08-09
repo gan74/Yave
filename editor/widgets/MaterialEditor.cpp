@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
-#include <yave/renderer/renderer.h>
+#include <yave/renderer/DefaultRenderer.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>

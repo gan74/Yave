@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 #include <yave/entities/entities.h>
-#include <yave/utils/FilesystemModel.h>
+#include <yave/utils/FileSystemModel.h>
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "ScenePickingPass.h"
+#include "IdBufferPass.h"
 
 #include <editor/context/EditorContext.h>
 
@@ -65,7 +65,7 @@ static usize render_world(ContextPtr ctx,
     const auto ids = pass->resources().buffer<BufferUsage::AttributeBit>(id_buffer);
 
     recorder.bind_attrib_buffers({}, {transforms, ids});
-    recorder.bind_material(ctx->resources()[EditorResources::PickingMaterialTemplate], {pass->descriptor_sets()[0]});
+    recorder.bind_material(ctx->resources()[EditorResources::IdMaterialTemplate], {pass->descriptor_sets()[0]});
 
     for(auto ent : world.view(StaticMeshArchetype())) {
         const auto& [tr, mesh] = ent.components();
@@ -78,11 +78,11 @@ static usize render_world(ContextPtr ctx,
     return index;
 }
 
-ScenePickingPass ScenePickingPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
+IdBufferPass IdBufferPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
     static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;
     static constexpr ImageFormat id_format = VK_FORMAT_R32_UINT;
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("Picking pass");
+    FrameGraphPassBuilder builder = framegraph.add_pass("ID pass");
 
     auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
     const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
@@ -91,7 +91,7 @@ ScenePickingPass ScenePickingPass::create(ContextPtr ctx, FrameGraph& framegraph
     const auto depth = builder.declare_image(depth_format, size);
     const auto id = builder.declare_image(id_format, size);
 
-    ScenePickingPass pass;
+    IdBufferPass pass;
     pass.scene_view = view;
     pass.depth = depth;
     pass.id = id;

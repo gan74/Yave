@@ -31,17 +31,19 @@ SOFTWARE.
 
 namespace editor {
 
+static constexpr  u32 gizmo_hover_color = 0x001A80FF;
+
 static constexpr float gizmo_hover_width = 7.5f;
 static constexpr float gizmo_width = 2.5f;
 static constexpr float gizmo_size = 0.25f;
 static constexpr float gizmo_radius = 1.0f;
 static constexpr float gizmo_pick_radius = 0.05f;
-static constexpr u32 gizmo_alpha = 0xB0000000;
+static constexpr u32 gizmo_alpha = 0xD0000000;
 
 // stuff for the 2 axes selection
 static constexpr float gizmo_quad_offset = 0.25f;
 static constexpr float gizmo_quad_size = 0.3f;
-static constexpr u32 gizmo_quad_alpha = 0x70000000;
+static constexpr u32 gizmo_quad_alpha = 0xB0000000;
 
 
 static bool is_clicked(bool allow_drag) {
@@ -145,7 +147,6 @@ void Gizmo::draw() {
     }
 
     const auto axis_color = [](usize index) { return 0xFF << (8 * index); };
-    const u32 hover_color = 0x001A80FF;
 
     math::Vec3 cam_fwd = _scene_view->camera().forward();
     math::Vec3 cam_pos = _scene_view->camera().position();
@@ -258,7 +259,7 @@ void Gizmo::draw() {
                 const usize b = (i + 2) % 3;
                 const u32 mask = axes[a].mask() | axes[b].mask();
                 const bool hovered = (hover_mask & mask) == mask;
-                const u32 color = hovered ? hover_color : axis_color(axes[i].index);
+                const u32 color = hovered ? gizmo_hover_color : axis_color(axes[i].index);
                 const math::Vec2 quad_offset = ((axes[a].vec - center)  + (axes[b].vec - center)) * gizmo_quad_offset;
 
                 const auto smaller = [&] (const math::Vec2& v) { return (v - center) * gizmo_quad_size + center; };
@@ -275,7 +276,7 @@ void Gizmo::draw() {
             for(usize k = 0; k != 3; ++k) {
                 const usize i = 2 - k;
                 const bool hovered = hover_mask & axes[i].mask();
-                const u32 color = hovered ? hover_color : axis_color(axes[i].index);
+                const u32 color = hovered ? gizmo_hover_color : axis_color(axes[i].index);
                 ImGui::GetWindowDrawList()->AddLine(center, axes[i].vec, gizmo_alpha | color, gizmo_width);
             }
             ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0xFFFFFFFF);
@@ -351,7 +352,7 @@ void Gizmo::draw() {
         for(usize axis = 0; axis != 3; ++axis) {
             const usize rot_axis = (axis + 2) % 3;
             const bool is_current_axis = rot_axis == current_axis;
-            const u32 color = is_current_axis ? hover_color :  axis_color(rot_axis);
+            const u32 color = is_current_axis ? gizmo_hover_color :  axis_color(rot_axis);
 
             math::Vec2 last_point = next_point(axis, 0).first;
             for(usize i = 1; i != segment_count + 1; ++i) {

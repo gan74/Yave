@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
-#include <yave/utils/FilesystemModel.h>
+#include <yave/utils/FileSystemModel.h>
 #include <yave/meshes/MeshData.h>
 
 #include <imgui/yave_imgui.h>

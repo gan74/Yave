@@ -65,7 +65,7 @@ class PropertyPanel;
 class ResourceBrowser;
 class SceneData;
 class SceneImporter;
-class ScenePickingPass;
+class IdBufferPass;
 class Selection;
 class Settings;
 class SettingsPanel;

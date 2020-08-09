@@ -25,7 +25,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/import/import.h>
 
-#include <yave/utils/FilesystemModel.h>
+#include <yave/utils/FileSystemModel.h>
 
 #include <y/io2/Buffer.h>
 

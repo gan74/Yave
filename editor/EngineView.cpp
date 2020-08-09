@@ -34,7 +34,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/DeviceResources.h>
 
-#include <yave/renderer/renderer.h>
+#include <yave/renderer/DefaultRenderer.h>
 #include <yave/utils/color.h>
 
 #include <imgui/yave_imgui.h>
@@ -259,7 +259,7 @@ void EngineView::draw_menu_bar() {
         ImGui::PopStyleVar(1);
 
         if(ImGui::BeginMenu("Render")) {
-            ImGui::MenuItem("Editor entities", nullptr, &_settings.enable_editor_entities);
+            ImGui::MenuItem("Editor entities", nullptr, &_settings.show_editor_entities);
 
             ImGui::Separator();
             {

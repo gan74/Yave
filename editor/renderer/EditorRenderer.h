@@ -23,20 +23,24 @@ SOFTWARE.
 #define EDITOR_RENDERER_EDITORRENDERER_H
 
 #include "EditorEntityPass.h"
+#include "IdBufferPass.h"
 
 namespace editor {
 
 struct EditorRendererSettings {
     RendererSettings renderer_settings;
 
-    bool enable_editor_entities = true;
+    bool show_editor_entities = true;
+    bool show_selection = true;
     float billboard_size = 64.0f;
 };
 
 
 struct EditorRenderer {
     DefaultRenderer renderer;
+
     EditorEntityPass entity_pass;
+    IdBufferPass id_pass;
 
     FrameGraphImageId color;
     FrameGraphImageId depth;

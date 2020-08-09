@@ -19,26 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_RENDERER_DEFAULTRENDERER_H
+#define YAVE_RENDERER_DEFAULTRENDERER_H
 
-#include "renderer.h"
+#include "ShadowMapPass.h"
+#include "ToneMappingPass.h"
+#include "SSAOPass.h"
 
 namespace yave {
 
-DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const RendererSettings& settings) {
-    y_profile();
+struct RendererSettings {
+    ToneMappingSettings tone_mapping;
+    ShadowMapPassSettings shadow_map;
+    SSAOSettings ssao;
+};
 
-    DefaultRenderer renderer;
+struct DefaultRenderer {
+    GBufferPass gbuffer;
+    LightingPass lighting;
+    ToneMappingPass tone_mapping;
+    SSAOPass ssao;
 
-    renderer.gbuffer        = GBufferPass::create(framegraph, view, size);
-    renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
-    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao);
-    renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.lighting.lit, settings.tone_mapping);
+    FrameGraphImageId color;
+    FrameGraphImageId depth;
 
-    renderer.color = renderer.tone_mapping.tone_mapped;
-    renderer.depth = renderer.gbuffer.depth;
+    static DefaultRenderer create(FrameGraph& framegraph,
+                                  const SceneView& view,
+                                  const math::Vec2ui& size,
+                                  const RendererSettings& settings = RendererSettings());
+};
 
-    return renderer;
 }
 
-}
+#endif // YAVE_RENDERER_DEFAULTRENDERER_H
 

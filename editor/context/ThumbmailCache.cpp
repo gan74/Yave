@@ -27,7 +27,7 @@ SOFTWARE.
 #include <editor/utils/assets.h>
 #include <editor/utils/entities.h>
 
-#include <yave/renderer/renderer.h>
+#include <yave/renderer/DefaultRenderer.h>
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>

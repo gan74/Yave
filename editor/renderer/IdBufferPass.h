@@ -19,37 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_RENDERER_H
-#define YAVE_RENDERER_RENDERER_H
+#ifndef EDITOR_RENDERER_IDBUFFERPASS_H
+#define EDITOR_RENDERER_IDBUFFERPASS_H
 
-#include "ShadowMapPass.h"
-#include "ToneMappingPass.h"
-#include "SSAOPass.h"
+#include <editor/editor.h>
 
-namespace yave {
+#include <yave/renderer/GBufferPass.h>
 
-struct RendererSettings {
-    ToneMappingSettings tone_mapping;
-    ShadowMapPassSettings shadow_map;
-    SSAOSettings ssao;
-};
+namespace editor {
 
-struct DefaultRenderer {
-    GBufferPass gbuffer;
-    LightingPass lighting;
-    ToneMappingPass tone_mapping;
-    SSAOPass ssao;
+struct IdBufferPass {
+    static constexpr usize max_batch_size = 128 * 1024;
 
-    FrameGraphImageId color;
+    SceneView scene_view;
+
     FrameGraphImageId depth;
+    FrameGraphImageId id;
 
-    static DefaultRenderer create(FrameGraph& framegraph,
-                                  const SceneView& view,
-                                  const math::Vec2ui& size,
-                                  const RendererSettings& settings = RendererSettings());
+    static IdBufferPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
 };
 
 }
 
-#endif // YAVE_RENDERER_RENDERER_H
+#endif // EDITOR_RENDERER_IDBUFFERPASS_H
 

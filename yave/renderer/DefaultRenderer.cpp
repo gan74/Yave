@@ -19,27 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERER_SCENEPICKINGPASS_H
-#define EDITOR_RENDERER_SCENEPICKINGPASS_H
 
-#include <editor/editor.h>
+#include "DefaultRenderer.h"
 
-#include <yave/renderer/renderer.h>
+namespace yave {
 
-namespace editor {
+DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const RendererSettings& settings) {
+    y_profile();
 
-struct ScenePickingPass {
-    static constexpr usize max_batch_size = 128 * 1024;
+    DefaultRenderer renderer;
 
-    SceneView scene_view;
+    renderer.gbuffer        = GBufferPass::create(framegraph, view, size);
+    renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
+    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao);
+    renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.lighting.lit, settings.tone_mapping);
 
-    FrameGraphImageId depth;
-    FrameGraphImageId id;
+    renderer.color = renderer.tone_mapping.tone_mapped;
+    renderer.depth = renderer.gbuffer.depth;
 
-    static ScenePickingPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
-};
-
+    return renderer;
 }
 
-#endif // EDITOR_RENDERER_SCENEPICKINGPASS_H
+}
 
