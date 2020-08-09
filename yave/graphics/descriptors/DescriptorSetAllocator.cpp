@@ -226,8 +226,6 @@ DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
 }
 
 void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
-    y_profile();
-
     const usize max_inline_uniform_size = device_properties(device()).max_inline_uniform_size;
     const bool inline_uniform_supported = max_inline_uniform_size != 0;
     const usize block_buffer_alignment = inline_sub_buffer_alignment();

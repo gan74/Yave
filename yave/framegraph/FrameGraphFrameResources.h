@@ -29,8 +29,9 @@ SOFTWARE.
 #include <yave/graphics/barriers/Barrier.h>
 
 #include <y/core/Vector.h>
+#include <y/core/HashMap.h>
 
-#include <unordered_map>
+#include <deque>
 #include <memory>
 
 namespace yave {
@@ -39,6 +40,8 @@ class FrameGraphFrameResources final : NonMovable {
     public:
         FrameGraphFrameResources(std::shared_ptr<FrameGraphResourcePool> pool);
         ~FrameGraphFrameResources();
+
+        void reserve(usize images, usize buffers);
 
         DevicePtr device() const;
 
@@ -93,13 +96,13 @@ class FrameGraphFrameResources final : NonMovable {
 
         Y_TODO(replace by vector)
         using hash_t = std::hash<FrameGraphResourceId>;
-        std::unordered_map<FrameGraphImageId, TransientImage<>*, hash_t> _images;
-        std::unordered_map<FrameGraphBufferId, TransientBuffer*, hash_t> _buffers;
+        core::ExternalHashMap<FrameGraphImageId, TransientImage<>*, hash_t> _images;
+        core::ExternalHashMap<FrameGraphBufferId, TransientBuffer*, hash_t> _buffers;
 
         std::shared_ptr<FrameGraphResourcePool> _pool;
 
-        core::Vector<std::unique_ptr<TransientImage<>>> _image_storage;
-        core::Vector<std::unique_ptr<TransientBuffer>> _buffer_storage;
+        std::deque<TransientImage<>> _image_storage;
+        std::deque<TransientBuffer> _buffer_storage;
 };
 
 }

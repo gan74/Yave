@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 #include <y/core/String.h>
+#include <y/core/HashMap.h>
 
 #include <memory>
 
@@ -136,8 +137,8 @@ class FrameGraph : NonMovable {
         core::Vector<std::unique_ptr<FrameGraphPass>> _passes;
 
         using hash_t = std::hash<FrameGraphResourceId>;
-        std::unordered_map<FrameGraphImageId, ImageCreateInfo, hash_t> _images;
-        std::unordered_map<FrameGraphBufferId, BufferCreateInfo, hash_t> _buffers;
+        core::ExternalHashMap<FrameGraphImageId, ImageCreateInfo, hash_t> _images;
+        core::ExternalHashMap<FrameGraphBufferId, BufferCreateInfo, hash_t> _buffers;
 
         core::Vector<ImageCopyInfo> _image_copies;
 

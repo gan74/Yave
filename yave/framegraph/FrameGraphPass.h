@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/graphics/barriers/PipelineStage.h>
 
 #include <y/core/String.h>
+#include <y/core/HashMap.h>
 
 namespace yave {
 

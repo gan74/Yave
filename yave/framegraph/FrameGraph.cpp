@@ -232,40 +232,46 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
     core::Vector<ImageBarrier> image_barriers;
 
 
-    for(const auto& pass : _passes) {
-        y_profile_zone(pass->name());
-        const auto region = begin_pass_region(*pass);
-
-        {
-            y_profile_zone("prepare");
-            while(copy_index < _image_copies.size() && _image_copies[copy_index].pass_index == pass->_index) {
-                // copie_image will not do anything if the two are aliased
-                copy_image(recorder, _image_copies[copy_index].src, _image_copies[copy_index].dst, to_barrier, *_resources);
-                ++copy_index;
-            }
-        }
-
-        {
-            y_profile_zone("init");
+    {
+        y_profile_zone("init");
+        for(const auto& pass : _passes) {
+            y_profile_zone(pass->name());
             pass->init_framebuffer(*_resources);
             pass->init_descriptor_sets(*_resources);
         }
+    }
 
-        {
-            y_profile_zone("barriers");
-            buffer_barriers.make_empty();
-            image_barriers.make_empty();
-            build_barriers(pass->_buffers, buffer_barriers, to_barrier, *_resources);
-            build_barriers(pass->_images, image_barriers, to_barrier, *_resources);
-            recorder.barriers(buffer_barriers, image_barriers);
+    {
+        y_profile_zone("render");
+        for(const auto& pass : _passes) {
+            y_profile_zone(pass->name());
+            const auto region = begin_pass_region(*pass);
+
+            {
+                y_profile_zone("prepare");
+                while(copy_index < _image_copies.size() && _image_copies[copy_index].pass_index == pass->_index) {
+                    // copie_image will not do anything if the two are aliased
+                    copy_image(recorder, _image_copies[copy_index].src, _image_copies[copy_index].dst, to_barrier, *_resources);
+                    ++copy_index;
+                }
+            }
+
+            {
+                y_profile_zone("barriers");
+                buffer_barriers.make_empty();
+                image_barriers.make_empty();
+                build_barriers(pass->_buffers, buffer_barriers, to_barrier, *_resources);
+                build_barriers(pass->_images, image_barriers, to_barrier, *_resources);
+                recorder.barriers(buffer_barriers, image_barriers);
+            }
+
+            {
+                y_profile_zone("render");
+                std::move(*pass).render(recorder);
+            }
+
+            end_pass_region(*pass);
         }
-
-        {
-            y_profile_zone("render");
-            std::move(*pass).render(recorder);
-        }
-
-        end_pass_region(*pass);
     }
 
     Y_TODO(Only keep alive cpu mapped buffers)
@@ -299,6 +305,8 @@ void FrameGraph::alloc_resources() {
     auto images = core::vector_with_capacity<std::pair<FrameGraphImageId, ImageCreateInfo>>(_images.size());
     std::copy(_images.begin(), _images.end(), std::back_inserter(images));
     std::sort(images.begin(), images.end(), [](const auto& a, const auto& b) { return a.second.first_use < b.second.first_use; });
+
+    _resources->reserve(_images.size(), _buffers.size());
 
     for(auto&& [res, info] : images) {
         /*if(info.last_read < info.last_write && (info.usage & ImageUsage::Attachment) == ImageUsage::None) {

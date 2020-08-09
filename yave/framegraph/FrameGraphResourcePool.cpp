@@ -46,6 +46,7 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
 
     TransientImage<> image;
     if(!create_image_from_pool(image, format, size, usage)) {
+        y_profile_zone("create resource");
         image = TransientImage<>(device(), format, usage, size);
     }
 
@@ -64,6 +65,7 @@ TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsa
 
     TransientBuffer buffer;
     if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {
+        y_profile_zone("create resource");
         buffer = TransientBuffer(device(), byte_size, usage, memory);
     }
 
@@ -71,7 +73,6 @@ TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsa
 }
 
 bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
-    y_profile();
     for(auto it = _images.begin(); it != _images.end(); ++it) {
         auto& img = it->first;
 
@@ -91,7 +92,6 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, Image
 
 
 bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory) {
-    y_profile();
     for(auto it = _buffers.begin(); it != _buffers.end(); ++it) {
         auto& buffer = it->first;
 

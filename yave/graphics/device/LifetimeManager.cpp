@@ -191,13 +191,10 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
             if constexpr(std::is_same_v<decltype(res), EmptyResource&>) {
                 y_fatal("Empty resource");
             } else if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
-                y_profile_zone("free");
                 res.free();
             } else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
-                y_profile_zone("recycle");
                 res.recycle();
             } else {
-                y_profile_zone("destroy");
                 vk_destroy(dptr, res);
             }
         },

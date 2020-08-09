@@ -30,14 +30,13 @@ FrameGraphFrameResources::FrameGraphFrameResources(std::shared_ptr<FrameGraphRes
 
 FrameGraphFrameResources::~FrameGraphFrameResources() {
     for(auto&& res : _image_storage) {
-        _pool->release(std::move(*res));
+        _pool->release(std::move(res));
     }
     for(auto&& res : _buffer_storage) {
-        _pool->release(std::move(*res));
+        _pool->release(std::move(res));
     }
     _pool->garbage_collect();
 }
-
 
 DevicePtr FrameGraphFrameResources::device() const {
     return _pool->device();
@@ -48,6 +47,11 @@ u32 FrameGraphFrameResources::create_resource_id() {
 }
 
 
+void FrameGraphFrameResources::reserve(usize images, usize buffers) {
+    _images.reserve(images);
+    _buffers.reserve(buffers);
+}
+
 
 void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
     res.check_valid();
@@ -56,8 +60,8 @@ void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat f
     if(image) {
         y_fatal("Buffer already exists.");
     }
-    _image_storage << std::make_unique<TransientImage<>>(_pool->create_image(format, size, usage));
-    image = _image_storage.last().get();
+    _image_storage.emplace_back(_pool->create_image(format, size, usage));
+    image = &_image_storage.back();
 }
 
 void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory) {
@@ -67,8 +71,8 @@ void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, usize byte_
     if(buffer) {
         y_fatal("Buffer already exists.");
     }
-    _buffer_storage << std::make_unique<TransientBuffer>(_pool->create_buffer(byte_size, usage, memory));
-    buffer = _buffer_storage.last().get();
+    _buffer_storage.emplace_back(_pool->create_buffer(byte_size, usage, memory));
+    buffer = &_buffer_storage.back();
 }
 
 bool FrameGraphFrameResources::is_alive(FrameGraphImageId res) const {
