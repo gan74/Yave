@@ -167,6 +167,7 @@ class EntityWorld {
             Y_TODO(check for duplicates)
             _required_components << find_or_create_container<T>()->type_id();
             for(const ComponentTypeIndex c : _required_components) {
+                unused(c);
                 y_debug_assert(find_container(c)->type_id() == c);
             }
             for(EntityId id : ids()) {

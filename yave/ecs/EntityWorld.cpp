@@ -53,6 +53,7 @@ void EntityWorld::swap(EntityWorld& other) {
         std::swap(_required_components, other._required_components);
     }
     for(const ComponentTypeIndex c : _required_components) {
+        unused(c);
         y_debug_assert(find_container(c));
     }
 }
@@ -180,6 +181,7 @@ void EntityWorld::post_deserialize() {
     }
     _containers = std::move(patched);
     for(const ComponentTypeIndex c : _required_components) {
+        unused(c);
         y_debug_assert(find_container(c));
     }
 }
