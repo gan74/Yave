@@ -556,6 +556,10 @@ AssetStore::Result<AssetId> SQLiteAssetStore::id(std::string_view name) const {
 AssetStore::Result<core::String> SQLiteAssetStore::name(AssetId id) const {
     y_profile();
 
+    if(id == AssetId::invalid_id()) {
+        return core::Err(ErrorType::UnknownID);
+    }
+
     {
         auto lock = y_profile_unique_lock(_cache_lock);
         if(auto it = _name_cache.find(id); it != _name_cache.end()) {
