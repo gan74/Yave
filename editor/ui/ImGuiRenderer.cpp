@@ -35,6 +35,8 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
 
+#include <y/utils/log.h>
+
 
 namespace editor {
 

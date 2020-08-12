@@ -27,6 +27,7 @@ SOFTWARE.
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/FileBrowser.h>
 
+#include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
 
 #include <imgui/yave_imgui.h>

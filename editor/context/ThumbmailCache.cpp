@@ -46,6 +46,9 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/entities/entities.h>
 
+#include <yave/assets/AssetStore.h>
+#include <yave/assets/AssetLoader.h>
+
 #include <yave/utils/color.h>
 #include <yave/utils/entities.h>
 

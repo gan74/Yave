@@ -28,9 +28,11 @@ SOFTWARE.
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
 
+#include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
 
 #include <y/io2/Buffer.h>
+#include <y/utils/log.h>
 
 #include <imgui/yave_imgui.h>
 

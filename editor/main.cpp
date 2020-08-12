@@ -34,6 +34,8 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 #include <y/concurrent/concurrent.h>
 
+#include <y/utils/log.h>
+
 #ifdef Y_OS_WIN
 #include <windows.h>
 #endif

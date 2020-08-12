@@ -29,8 +29,6 @@ SOFTWARE.
 #include "EditorResources.h"
 #include "Notifications.h"
 
-#include <yave/assets/AssetLoader.h>
-
 #include <editor/EditorWorld.h>
 
 
@@ -99,7 +97,7 @@ class EditorContext : NonMovable, public DeviceLinked {
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
 
         std::shared_ptr<AssetStore> _asset_store;
-        AssetLoader _loader;
+        std::unique_ptr<AssetLoader> _loader;
 
         SceneView _default_scene_view;
         SceneView* _scene_view = nullptr;

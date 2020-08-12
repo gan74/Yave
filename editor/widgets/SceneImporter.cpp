@@ -34,10 +34,14 @@ SOFTWARE.
 #include <yave/meshes/MeshData.h>
 #include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
+#include <yave/assets/AssetLoader.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/entities/entities.h>
 
 #include <y/io2/Buffer.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <imgui/yave_imgui.h>
 

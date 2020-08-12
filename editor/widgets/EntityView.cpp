@@ -34,9 +34,14 @@ SOFTWARE.
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 
+#include <yave/assets/AssetLoader.h>
+
 #include <editor/utils/ui.h>
 #include <editor/utils/entities.h>
 #include <editor/widgets/AssetSelector.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <imgui/yave_imgui.h>
 

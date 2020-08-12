@@ -25,9 +25,13 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/import/import.h>
 
+#include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
 
 #include <y/io2/Buffer.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <imgui/yave_imgui.h>
 

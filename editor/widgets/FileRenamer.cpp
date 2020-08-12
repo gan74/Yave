@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 #include <imgui/yave_imgui.h>
 
 namespace editor {

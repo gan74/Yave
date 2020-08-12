@@ -31,22 +31,13 @@ SOFTWARE.
 #include <yave/meshes/MeshData.h>
 
 #include <yave/graphics/images/IBLProbe.h>
-#include <yave/graphics/images/Image.h>
+#include <yave/graphics/images/ImageData.h>
 
 #include <yave/assets/AssetLoader.h>
 #include <yave/assets/AssetPtr.h>
 #include <yave/ecs/EntityWorld.h>
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
-#include <y/core/Vector.h>
-
-#include <array>
-#include <tuple>
-
 namespace yave {
-
 
 template<typename T>
 static core::Span<ecs::EntityId> ids(ecs::EntityWorld& world, bool recent) {

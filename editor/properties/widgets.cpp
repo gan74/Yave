@@ -36,6 +36,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 
 #include <yave/utils/color.h>
+#include <yave/assets/AssetLoader.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/material/Material.h>
 #include <yave/meshes/StaticMesh.h>

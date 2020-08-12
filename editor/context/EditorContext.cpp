@@ -25,8 +25,7 @@ SOFTWARE.
 
 #include <yave/assets/SQLiteAssetStore.h>
 #include <yave/assets/FolderAssetStore.h>
-
-#include <editor/components/EditorComponent.h>
+#include <yave/assets/AssetLoader.h>
 
 #include <y/io2/File.h>
 
@@ -48,7 +47,7 @@ EditorContext::EditorContext(DevicePtr dptr) :
         _resources(dptr),
         _asset_store(std::make_shared<SQLiteAssetStore>(store_file)),
         //_asset_store(std::make_shared<FolderAssetStore>(store_dir)),
-        _loader(dptr, _asset_store, AssetLoadingFlags::SkipFailedDependenciesBit),
+        _loader(std::make_unique<AssetLoader>(dptr, _asset_store, AssetLoadingFlags::SkipFailedDependenciesBit)),
         _scene_view(&_default_scene_view),
         _ui_manager(this),
         _notifs(this),
@@ -175,7 +174,7 @@ Selection& EditorContext::selection() {
 }
 
 AssetLoader& EditorContext::loader() {
-    return _loader;
+    return *_loader;
 }
 
 UiManager& EditorContext::ui_manager() {

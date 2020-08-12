@@ -31,12 +31,14 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/graphics/images/ImageData.h>
+#include <yave/assets/AssetLoader.h>
 #include <yave/entities/entities.h>
 #include <yave/utils/color.h>
 
 #include <y/io2/Buffer.h>
 
 #include <editor/utils/ui.h>
+#include <y/utils/log.h>
 
 #include <imgui/yave_imgui.h>
 
