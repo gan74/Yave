@@ -78,3 +78,4 @@ void AssetLoaderSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
 
 
 }
+

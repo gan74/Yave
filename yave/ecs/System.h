@@ -73,3 +73,4 @@ class FunctorSystem : public System {
 }
 
 #endif // YAVE_ECS_SYSTEM_H
+

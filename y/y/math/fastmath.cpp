@@ -175,4 +175,3 @@ void fast_pack_unorm(const float* input, usize count, u8* output) {
 }
 }
 
-
