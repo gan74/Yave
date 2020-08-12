@@ -19,56 +19,57 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MATERIALPREVIEW_H
-#define EDITOR_MATERIALPREVIEW_H
+#ifndef YAVE_ECS_SYSTEM_H
+#define YAVE_ECS_SYSTEM_H
 
-#include <editor/ui/Widget.h>
+#include <yave/ecs/ecs.h>
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/scene/SceneView.h>
+#include <y/core/String.h>
 
-namespace editor {
+namespace yave {
+namespace ecs {
 
-class MaterialPreview final : public Widget, public ContextLinked {
+class System : NonCopyable {
     public:
-        enum class PreviewObject {
-            Sphere,
-            Cube,
-        };
+        System(core::String name) : _name(std::move(name)) {
+        }
 
-        MaterialPreview(ContextPtr cptr);
+        virtual ~System() = default;
 
-        void refresh() override;
+        const core::String& name() const {
+            return _name;
+        }
 
-        void set_material(const AssetPtr<Material>& material);
 
-        void set_object(const AssetPtr<StaticMesh>& mesh);
-        void set_object(PreviewObject obj);
+        virtual void tick(EntityWorld& world) = 0;
+
+        virtual void setup(EntityWorld&) {
+            // nothing
+        }
+
+        virtual void reset(EntityWorld& world) {
+            setup(world);
+        }
 
     private:
-        void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
-        void paint_mesh_menu();
+        core::String _name;
+};
 
-        void reset_world();
+template<typename F>
+class FunctorSystem : public System {
+    public:
+        FunctorSystem(F&& f) : System("FunctorSystem"), _func(std::move(f)) {
+        }
 
-        void update_camera();
+        void tick(EntityWorld& world) override {
+            _func(world);
+        }
 
-        AssetPtr<Material> _material;
-        AssetPtr<StaticMesh> _mesh;
-
-        std::unique_ptr<EditorWorld> _world;
-        SceneView _view;
-
-        AssetPtr<IBLProbe> _ibl_probe;
-        std::shared_ptr<FrameGraphResourcePool> _resource_pool;
-
-        float _cam_distance = 1.0f;
-        math::Vec2 _angle = math::Vec2(math::to_rad(45.0f));
-
+    private:
+        F _func;
 };
 
 }
+}
 
-
-#endif // EDITOR_MATERIALPREVIEW_H
-
+#endif // YAVE_ECS_SYSTEM_H

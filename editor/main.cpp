@@ -132,6 +132,8 @@ int main(int argc, char** argv) {
         // 35 ms to not spam if we are capped at 30 FPS
         core::DebugTimer frame_timer("frame", core::Duration::milliseconds(35.0));
 
+        ctx.world().tick();
+
         Swapchain* swapchain = window.swapchain();
         if(swapchain && swapchain->is_valid()) {
             FrameToken frame = swapchain->next_frame();

@@ -22,15 +22,16 @@ SOFTWARE.
 #ifndef EDITOR_CONTEXT_EDITORCONTEXT_H
 #define EDITOR_CONTEXT_EDITORCONTEXT_H
 
-#include <yave/ecs/ecs.h>
-#include <yave/assets/AssetLoader.h>
-
 #include "Settings.h"
 #include "Selection.h"
 #include "UiManager.h"
 #include "ThumbmailCache.h"
 #include "EditorResources.h"
 #include "Notifications.h"
+
+#include <yave/assets/AssetLoader.h>
+
+#include <editor/EditorWorld.h>
 
 
 namespace editor {
@@ -53,7 +54,7 @@ class EditorContext : NonMovable, public DeviceLinked {
         void defer(std::function<void()> func);
         void flush_deferred();
 
-        
+
         void save_world() const;
         void load_world();
         void new_world();
@@ -65,7 +66,7 @@ class EditorContext : NonMovable, public DeviceLinked {
         SceneView& scene_view();
         SceneView& default_scene_view();
 
-        ecs::EntityWorld& world();
+        EditorWorld& world();
 
         const FileSystemModel* filesystem() const;
 
@@ -87,8 +88,6 @@ class EditorContext : NonMovable, public DeviceLinked {
         }
 
     private:
-        static ecs::EntityWorld create_editor_world();
-
         std::unique_ptr<FileSystemModel> _filesystem;
 
         std::mutex _deferred_lock;
@@ -112,7 +111,7 @@ class EditorContext : NonMovable, public DeviceLinked {
         Notifications _notifs;
         ThumbmailCache _thumb_cache;
 
-        ecs::EntityWorld _world;
+        EditorWorld _world;
 
         bool _reload_resources = false;
         usize _perf_capture_frames = 0;

@@ -24,11 +24,7 @@ SOFTWARE.
 
 #include "serde.h"
 
-#include <y/core/Span.h>
-#include <y/core/Range.h>
-
-#include <y/utils/detect.h>
-#include <y/utils/traits.h>
+#include <y/reflect/traits.h>
 
 #include <memory>
 
@@ -36,9 +32,6 @@ namespace y {
 namespace serde3 {
 
 namespace detail {
-template<typename T>
-using has_serde3_t = decltype(std::declval<T>()._y_serde3_refl());
-
 template<typename T>
 using has_no_serde3_t = decltype(std::declval<T>()._y_serde3_no_serde);
 
@@ -54,7 +47,7 @@ using has_serde3_ptr_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
 }
 
 template<typename T>
-static constexpr bool has_serde3_v = is_detected_v<detail::has_serde3_t, T>;
+static constexpr bool has_serde3_v = has_reflect_v<T>;
 
 template<typename T>
 static constexpr bool has_no_serde3_v = is_detected_v<detail::has_no_serde3_t, T>;
@@ -71,10 +64,11 @@ static constexpr bool has_serde3_poly_v = is_detected_v<detail::has_serde3_poly_
 template<typename T>
 static constexpr bool has_serde3_ptr_poly_v = is_detected_v<detail::has_serde3_ptr_poly_t, T>;
 
+
 template<typename T>
 constexpr auto members(T&& t) {
     if constexpr(has_serde3_v<T>) {
-        return t._y_serde3_refl();
+        return t._y_reflect();
     } else {
         return std::tuple<>{};
     }
@@ -84,7 +78,6 @@ template<typename T>
 constexpr usize member_count() {
     return std::tuple_size_v<decltype(members(std::declval<T&>()))>;
 }
-
 
 
 
@@ -104,71 +97,6 @@ template<typename T, typename G, typename S>
 struct IsProperty<detail::Property<T, G, S>> {
     static constexpr bool value = true;
 };
-
-template<typename T>
-struct IsRange {
-    static constexpr bool value = false;
-};
-
-template<typename T>
-struct IsRange<core::MutableSpan<T>> {
-    static constexpr bool value = true;
-};
-
-template<typename I, typename E>
-struct IsRange<core::Range<I, E>> {
-    static constexpr bool value = true;
-};
-
-
-template<typename T>
-struct IsTuple {
-    static constexpr bool value = false;
-};
-
-template<typename... Args>
-struct IsTuple<std::tuple<Args...>> {
-    static constexpr bool value = true;
-};
-
-template<typename A, typename B>
-struct IsTuple<std::pair<A, B>> {
-    static constexpr bool value = true;
-};
-
-
-template<typename T>
-struct StdPtr {
-    static constexpr bool is_std_ptr = false;
-};
-
-template<typename T>
-struct StdPtr<std::unique_ptr<T>> {
-    static constexpr bool is_std_ptr = true;
-    static auto make() {
-        return std::make_unique<T>();
-    }
-};
-
-template<typename T>
-struct StdPtr<std::shared_ptr<T>> {
-    static constexpr bool is_std_ptr = true;
-    static auto make() {
-        return std::make_shared<T>();
-    }
-};
-
-
-template<typename T>
-struct IsArray {
-    static constexpr bool value = false;
-};
-
-template<typename T, usize N>
-struct IsArray<std::array<T, N>> {
-    static constexpr bool value = true;
-};
-
 
 template<typename T, typename value_type = remove_cvref_t<typename T::value_type>>
 constexpr bool use_collection_fast_path =
@@ -192,32 +120,14 @@ constexpr bool is_pod_iterable() {
 
 }
 
-template<typename T>
-static constexpr bool is_property_v = detail::IsProperty<remove_cvref_t<T>>::value;
-
-template<typename T>
-static constexpr bool is_range_v = detail::IsRange<remove_cvref_t<T>>::value;
-
-template<typename T>
-static constexpr bool is_tuple_v = detail::IsTuple<remove_cvref_t<T>>::value;
-
-// Warning some types like Range and Span are can be POD (Span is handled separatly tho)
+// Warning: some types like Range and Span are can be POD (Span is handled separatly tho)
 template<typename T>
 static constexpr bool is_pod_v = detail::is_pod_base_v<T> && detail::is_pod_iterable<remove_cvref_t<T>>();
 
 template<typename T>
-static constexpr bool is_std_ptr_v = detail::StdPtr<remove_cvref_t<T>>::is_std_ptr;
+static constexpr bool is_property_v = detail::IsProperty<remove_cvref_t<T>>::value;
 
-template<typename T>
-static constexpr bool is_array_v = detail::IsArray<remove_cvref_t<T>>::value;
-
-template<typename T>
-auto make_std_ptr() {
-    static_assert(is_std_ptr_v<T>);
-    return detail::StdPtr<T>::make();
 }
-}
-
 }
 
 #endif // Y_SERDE3_TRAITS_H

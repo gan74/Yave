@@ -46,8 +46,6 @@ class ComponentBoxBase : NonMovable {
         virtual void add_to(EntityWorld& world, EntityId id) const = 0;
 
         y_serde3_poly_base(ComponentBoxBase)
-
-        virtual void post_deserialize_poly(AssetLoadingContext&) = 0;
 };
 
 template<typename T>
@@ -61,8 +59,6 @@ class ComponentBox final : public ComponentBoxBase {
 
         y_serde3(_component)
         y_serde3_poly(ComponentBox)
-
-        void post_deserialize_poly(AssetLoadingContext& context) override;
 
     private:
         T _component;
@@ -93,6 +89,7 @@ class ComponentContainerBase : NonMovable {
             auto& set = component_set_fast<T>();
             if(!set.contains_index(id.index())) {
                 add_required_components<T>(world, id);
+                _recently_added.emplace_back(id);
                 return set.insert(id, y_fwd(args)...);
             } else {
                 return set[id] = T{y_fwd(args)...};
@@ -139,12 +136,12 @@ class ComponentContainerBase : NonMovable {
             return component_set_fast<T>();
         }
 
-
+        core::Span<EntityId> recently_added() const {
+            return _recently_added;
+        }
 
 
         y_serde3_poly_base(ComponentContainerBase)
-
-        virtual void post_deserialize_poly(AssetLoadingContext&) = 0;
 
     protected:
         template<typename T>
@@ -159,11 +156,21 @@ class ComponentContainerBase : NonMovable {
         void add_required_components(EntityWorld& world, EntityId id);
 
     private:
+        friend class EntityWorld;
+
+        void clear_recent() {
+            return _recently_added.make_empty();
+        }
+
+    private:
         // hacky but avoids a bunch of dynamic casts and virtual calls
         void* _sparse = nullptr;
         SparseIDSet* _ids = nullptr;
 
         const ComponentTypeIndex _type_id;
+
+        Y_TODO(make better version of this)
+        core::Vector<EntityId> _recently_added;
 
 
         template<typename T>
@@ -213,17 +220,10 @@ class ComponentContainer final : public ComponentContainerBase {
         y_serde3(_components)
         y_serde3_poly(ComponentContainer)
 
-        void post_deserialize_poly(AssetLoadingContext& context) override {
-            y_profile();
-            serde3::ReadableArchive::post_deserialize(*this, context);
-        }
 
     private:
         SparseComponentSet<T> _components;
 };
-
-
-static_assert(serde3::has_serde3_post_deser_poly_v<ComponentContainerBase, AssetLoadingContext&>);
 
 }
 }

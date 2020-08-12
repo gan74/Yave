@@ -39,19 +39,6 @@ SOFTWARE.
 
 //#define Y_NO_ARCHIVES
 //#define Y_NO_SAFE_DESER
-//#define Y_NO_POST_DESER
-
-
-#ifdef Y_NO_ARCHIVES
-#ifndef Y_NO_POST_DESER
-#define Y_NO_POST_DESER
-#endif
-#endif
-
-
-Y_TODO(FixedArray is treated as a range rather than a collection)
-
-
 
 #define y_try_status(result)                                                                    \
     do {                                                                                        \
@@ -336,7 +323,7 @@ class WritableArchive final {
 
         template<typename T>
         inline Result serialize_members(const T& object) {
-            return serialize_members_internal<0>(object._y_serde3_refl());
+            return serialize_members_internal<0>(object._y_reflect());
         }
 
         template<usize I, typename... Args>
@@ -485,33 +472,18 @@ class ReadableArchive final {
             _storage = std::move(file);
         }
 
-        template<typename T, typename... Args>
-        inline Result deserialize(T& t, Args&&... args) {
+        template<typename T>
+        inline Result deserialize(T& t) {
 #ifdef Y_NO_ARCHIVES
             unused(t, args...);
             y_fatal("Y_NO_ARCHIVES has been defined");
 #else
             y_try(read_serde_header());
             auto res = deserialize_one(NamedObject{t, detail::version_string});
-            if(res) {
-                post_deserialize(t, y_fwd(args)...);
-            }
             return res;
 #endif
         }
 
-
-        Y_TODO(post_deserialize might be called several time in some cases (poly mostly))
-        template<typename T, typename... Args>
-        inline static void post_deserialize(T& t, Args&&... args) {
-            unused(t, args...);
-#ifdef Y_NO_POST_DESER
-            y_fatal("Y_NO_POST_DESER has been defined");
-#else
-            static_assert(!std::is_const_v<T>);
-            post_deserialize_one(t, y_fwd(args)...);
-#endif
-        }
 
 
     private:
@@ -530,32 +502,41 @@ class ReadableArchive final {
 
 
         template<typename T>
-        inline Result deserialize_one(NamedObject<T> non_ref) {
-            NamedObject<T> object = non_ref.make_ref();
-
+        inline Result deserialize_one(NamedObject<T> object) {
             static_assert(!has_no_serde3_v<T>, "Type has serialization disabled");
 
+            Result res = core::Ok(Success::Full);
+
             if constexpr(is_property_v<T>) {
-                return deserialize_property(object);
+                res = deserialize_property(object);
             } else if constexpr(has_serde3_v<T>) {
-                return deserialize_object(object);
+                res = deserialize_object(object);
             } else if constexpr(has_serde3_ptr_poly_v<T> || has_serde3_poly_v<T>) {
-                return deserialize_poly(object);
+                res = deserialize_poly(object);
             } else if constexpr(is_tuple_v<T>) {
-                return deserialize_tuple(object);
+                res = deserialize_tuple(object);
             } else if constexpr(is_range_v<T>) {
-                return deserialize_range(object);
+                res = deserialize_range(object);
             } else if constexpr(is_pod_v<T>) {
-                return deserialize_pod(object);
+                res = deserialize_pod(object);
             } else if constexpr(is_std_ptr_v<T>) {
-                return deserialize_ptr(object);
+                res = deserialize_ptr(object);
             } else {
                 static_assert(is_iterable_v<T>, "Unable to deserialize type");
-                return deserialize_collection(object);
+                res = deserialize_collection(object);
             }
+
+            if(res.is_ok()) {
+                if constexpr(has_serde3_post_deser_v<T>) {
+                    object.object.post_deserialize();
+                }
+                if constexpr(has_serde3_post_deser_poly_v<T>) {
+                    object.object.post_deserialize_poly();
+                }
+            }
+
+            return res;
         }
-
-
 
         // ------------------------------- PROPERTY -------------------------------
         template<typename T>
@@ -798,7 +779,7 @@ class ReadableArchive final {
             }
 
             y_defer(if constexpr(Safe) { seek(data.end_offset); });
-            return deserialize_members_internal<Safe, 0>(object._y_serde3_refl(), data);
+            return deserialize_members_internal<Safe, 0>(object._y_reflect(), data);
         }
 
         template<bool Safe, usize I, typename... Args>
@@ -873,81 +854,6 @@ class ReadableArchive final {
             }
             return core::Ok(Success::Full);
         }
-
-
-#ifndef Y_NO_POST_DESER
-        // ------------------------------- POST -------------------------------
-        template<typename T, typename... Args>
-        inline static void post_deserialize_one(T& t, Args&&... args) {
-            unused(t);
-
-            constexpr bool has_args = sizeof...(Args) != 0;
-            if constexpr(has_serde3_post_deser_v<T>) {
-                t.post_deserialize();
-            }
-            if constexpr(has_args && has_serde3_post_deser_v<T, Args...>) {
-                t.post_deserialize(args...);
-            }
-
-            if constexpr(!has_serde3_v<T> && has_serde3_poly_v<T>) {
-                if constexpr(has_serde3_post_deser_poly_v<T>) {
-                    t.post_deserialize_poly();
-                }
-                if constexpr(has_args && has_serde3_post_deser_poly_v<T, Args...>) {
-                    t.post_deserialize_poly(args...);
-                }
-            }
-
-
-            if constexpr(is_property_v<T>) {
-                post_deserialize_property(t, args...);
-            } else if constexpr(has_serde3_v<T>) {
-                auto elems = t._y_serde3_refl();
-                post_deserialize_named_tuple<0>(elems, args...);
-            } else if constexpr(is_tuple_v<T>) {
-                post_deserialize_tuple<0>(t, args...);
-            } else if constexpr(is_std_ptr_v<T> || std::is_pointer_v<T>) {
-                if(t != nullptr) {
-                    post_deserialize_one(*t, args...);
-                }
-            } else if constexpr(is_iterable_v<T>) {
-                post_deserialize_collection(t, args...);
-            }
-        }
-
-        template<typename P, typename... Args>
-        inline static void post_deserialize_property(P& prop, Args&&... args) {
-            if constexpr(P::return_ref) {
-                post_deserialize_one(prop.get(), args...);
-            } else {
-                auto t = prop.get();
-                post_deserialize_one(t, args...);
-            }
-        }
-
-        template<typename C, typename... Args>
-        inline static void post_deserialize_collection(C& col, Args&&... args) {
-            for(auto&& item : col) {
-                post_deserialize_one(item, args...);
-            }
-        }
-
-        template<usize I, typename Tpl, typename... Args>
-        inline static void post_deserialize_tuple(Tpl& objects, Args&&... args) {
-            if constexpr(I < std::tuple_size_v<Tpl>) {
-                post_deserialize_one(std::get<I>(objects), args...);
-                post_deserialize_tuple<I + 1>(objects, args...);
-            }
-        }
-
-        template<usize I, typename Tpl, typename... Args>
-        inline static void post_deserialize_named_tuple(Tpl& objects, Args&&... args) {
-            if constexpr(I < std::tuple_size_v<Tpl>) {
-                post_deserialize_one(std::get<I>(objects).object, args...);
-                post_deserialize_named_tuple<I + 1>(objects, args...);
-            }
-        }
-#endif
 
 
         // ------------------------------- READ -------------------------------

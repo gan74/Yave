@@ -48,12 +48,12 @@ EditorContext::EditorContext(DevicePtr dptr) :
         _resources(dptr),
         _asset_store(std::make_shared<SQLiteAssetStore>(store_file)),
         //_asset_store(std::make_shared<FolderAssetStore>(store_dir)),
-        _loader(device(), _asset_store, AssetLoadingFlags::SkipFailedDependenciesBit),
+        _loader(dptr, _asset_store, AssetLoadingFlags::SkipFailedDependenciesBit),
         _scene_view(&_default_scene_view),
         _ui_manager(this),
         _notifs(this),
         _thumb_cache(this),
-        _world(create_editor_world()) {
+        _world(this) {
 
 
     load_world();
@@ -91,7 +91,7 @@ void EditorContext::flush_reload() {
         _thumb_cache.clear();
         _selection.flush_reload();
         _ui_manager.refresh_all();
-        _world.flush_reload(loader());
+        _world.flush_reload();
     });
 }
 
@@ -150,7 +150,7 @@ SceneView& EditorContext::default_scene_view() {
     return _default_scene_view;
 }
 
-ecs::EntityWorld& EditorContext::world() {
+EditorWorld& EditorContext::world() {
     return _world;
 }
 
@@ -216,14 +216,13 @@ void EditorContext::load_world() {
         return;
     }
 
-    ecs::EntityWorld world = create_editor_world();
+    EditorWorld world(this);
     {
         serde3::ReadableArchive arc(file.unwrap());
-        AssetLoadingContext loading_ctx(&loader());
-        const auto status = arc.deserialize(world, loading_ctx);
+        const auto status = arc.deserialize(world);
         if(status.is_error()) {
             log_msg(fmt("Unable to load world: % (for %)", serde3::error_msg(status.error()), status.error().member), Log::Error);
-            world = create_editor_world();
+            world = EditorWorld(this);
         } else if(status.unwrap() == serde3::Success::Partial) {
             log_msg("World was only partialy loaded", Log::Warning);
         }
@@ -234,15 +233,7 @@ void EditorContext::load_world() {
 }
 
 void EditorContext::new_world() {
-    _world = create_editor_world();
-}
-
-ecs::EntityWorld EditorContext::create_editor_world() {
-    y_profile();
-    ecs::EntityWorld world;
-    world.add_required_component<EditorComponent>();
-    y_debug_assert(world.required_components().size() == 1);
-    return world;
+    _world = EditorWorld(this);
 }
 
 }

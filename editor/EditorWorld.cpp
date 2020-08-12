@@ -19,26 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_SERDE3_SERDE_H
-#define Y_SERDE3_SERDE_H
 
-#include <y/reflect/reflect.h>
+#include "EditorWorld.h"
 
-namespace y {
-namespace serde3 {
+#include <editor/context/EditorContext.h>
+#include <editor/components/EditorComponent.h>
 
-using namespace reflect;
+#include <yave/systems/AssetLoaderSystem.h>
 
-class WritableArchive;
-class ReadableArchive;
+namespace editor {
 
-
-#define y_serde3(...) y_reflect(__VA_ARGS__)
-
-#define y_no_serde3() static constexpr int _y_serde3_no_serde = 0;
-
-}
+EditorWorld::EditorWorld(ContextPtr ctx) : ContextLinked(ctx) {
+    add_required_component<EditorComponent>();
+    add_system<AssetLoaderSystem>(ctx->loader());
 }
 
-#endif // Y_SERDE3_SERDE_H
+void EditorWorld::flush_reload() {
+    AssetLoaderSystem* system = find_system<AssetLoaderSystem>();
+    system->reset(*this);
+}
+
+}
+
 

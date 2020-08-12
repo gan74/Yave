@@ -149,7 +149,7 @@ class AssetPtr {
         inline bool operator==(const AssetPtr& other) const;
         inline bool operator!=(const AssetPtr& other) const;
 
-        void post_deserialize(AssetLoadingContext& context);
+        void load(AssetLoadingContext& context);
 
         y_serde3(_id)
 
@@ -215,8 +215,26 @@ class GenericAssetPtr {
         friend class AssetLoadingThreadPool;
 
         std::shared_ptr<detail::AssetPtrDataBase> _data;
-
 };
+
+
+
+
+namespace detail {
+template<typename T>
+struct IsAssetPtr {
+    static constexpr bool value = false;
+};
+template<typename T>
+struct IsAssetPtr<AssetPtr<T>> {
+    static constexpr bool value = true;
+    using type = T;
+};
+}
+
+template<typename T>
+static constexpr bool is_asset_ptr_v = detail::IsAssetPtr<T>::value;
+
 
 }
 

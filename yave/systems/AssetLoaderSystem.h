@@ -19,26 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_SERDE3_SERDE_H
-#define Y_SERDE3_SERDE_H
+#ifndef YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
+#define YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
 
-#include <y/reflect/reflect.h>
+#include <yave/ecs/System.h>
 
-namespace y {
-namespace serde3 {
+namespace yave {
 
-using namespace reflect;
+class AssetLoaderSystem : public ecs::System {
+    public:
+        AssetLoaderSystem(AssetLoader& loader);
 
-class WritableArchive;
-class ReadableArchive;
+        void setup(ecs::EntityWorld& world) override;
+        void tick(ecs::EntityWorld& world) override;
 
+    private:
+        void run_tick(ecs::EntityWorld& world, bool only_recent);
 
-#define y_serde3(...) y_reflect(__VA_ARGS__)
+        AssetLoader* _loader = nullptr;
 
-#define y_no_serde3() static constexpr int _y_serde3_no_serde = 0;
+};
 
 }
-}
 
-#endif // Y_SERDE3_SERDE_H
+#endif // YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
 

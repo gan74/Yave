@@ -38,7 +38,7 @@ class EditorEntityPass;
 class EditorRenderer;
 class EditorRendererSettings;
 class EditorResources;
-class EditorState;
+class EditorWorld;
 class EngineView;
 class EntityView;
 class FPSCameraController;
@@ -47,9 +47,9 @@ class FileRenamer;
 class FileSystemView;
 class Gizmo;
 class HoudiniCameraController;
+class IdBufferPass;
 class ImGuiRenderer;
 class ImageImporter;
-class Logs;
 class MainWindow;
 class MaterialData;
 class MaterialEditor;
@@ -59,24 +59,23 @@ class MenuBar;
 class Notifications;
 class PerfSettings;
 class PerformanceMetrics;
-class PickingManager;
+class Picker;
+class PickingResult;
 class PrefabData;
 class PropertyPanel;
 class ResourceBrowser;
 class SceneData;
 class SceneImporter;
-class IdBufferPass;
 class Selection;
 class Settings;
 class SettingsPanel;
 class SkeletonData;
 class SubMeshData;
 class ThumbmailCache;
-class Ui;
 class UiElement;
+class UiManager;
 class UiSettings;
 class Widget;
 }
 
 #endif // EDITOR_UTILS_FORWARD_H
-

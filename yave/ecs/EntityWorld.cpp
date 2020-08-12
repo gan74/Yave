@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "EntityWorld.h"
 
+
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -51,10 +52,20 @@ void EntityWorld::swap(EntityWorld& other) {
         std::swap(_containers, other._containers);
         std::swap(_entities, other._entities);
         std::swap(_required_components, other._required_components);
+        std::swap(_systems, other._systems);
     }
     for(const ComponentTypeIndex c : _required_components) {
         unused(c);
         y_debug_assert(find_container(c));
+    }
+}
+
+void EntityWorld::tick() {
+    for(auto& system : _systems) {
+        system->tick(*this);
+    }
+    for(auto& container : _containers) {
+        container.second->clear_recent();
     }
 }
 
@@ -163,15 +174,6 @@ void EntityWorld::check_exists(EntityId id) const {
 }
 
 
-void EntityWorld::flush_reload(AssetLoader& loader) {
-    y_profile();
-    for(const auto& cont : _containers) {
-        AssetLoadingContext loading_ctx(&loader);
-        cont.second->post_deserialize_poly(loading_ctx);
-    }
-}
-
-
 void EntityWorld::post_deserialize() {
     core::ExternalHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> patched;
     for(auto& cont : _containers.values()) {
@@ -180,6 +182,11 @@ void EntityWorld::post_deserialize() {
         }
     }
     _containers = std::move(patched);
+    for(auto& system : _systems) {
+        system->reset(*this);
+    }
+
+
     for(const ComponentTypeIndex c : _required_components) {
         unused(c);
         y_debug_assert(find_container(c));

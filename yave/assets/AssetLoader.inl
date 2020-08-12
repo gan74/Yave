@@ -37,9 +37,13 @@ SOFTWARE.
 namespace yave {
 
 template<typename T>
-void AssetPtr<T>::post_deserialize(AssetLoadingContext& context)  {
+void AssetPtr<T>::load(AssetLoadingContext& context)  {
     const AssetId id = _id;
     if(id == AssetId::invalid_id()) {
+        return;
+    }
+
+    if(has_loader()) {
         return;
     }
 
@@ -188,13 +192,23 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 
                 if(auto reader = parent()->store().data(id)) {
                     y_profile_zone("deserializing");
-                    const serde3::Result res = serde3::ReadableArchive(*reader.unwrap()).deserialize(_load_from, loading_context());
+
+                    const serde3::Result res = serde3::ReadableArchive(*reader.unwrap()).deserialize(_load_from);
+
                     if(res.is_error()/* || res.unwrap() == serde3::Success::Partial*/) {
                         _data->set_failed(ErrorType::InvalidData);
                         log_msg(fmt("Unable to load %, invalid data: %", asset_name(), serde3::error_msg(res.error())), Log::Error);
                         return core::Err();
                     }
+
+                    serde3::explore(_load_from, [this](auto& m) {
+                        if constexpr(is_asset_ptr_v<remove_cvref_t<decltype(m)>>) {
+                            m.load(loading_context());
+                        }
+                    });
+
                     return core::Ok();
+
                 }
                 _data->set_failed(ErrorType::InvalidID);
                 y_debug_assert(!_data->is_loading());

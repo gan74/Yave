@@ -61,7 +61,7 @@ MaterialPreview::MaterialPreview(ContextPtr cptr) :
 }
 
 void MaterialPreview::refresh() {
-    _world->flush_reload(context()->loader());
+    _world->flush_reload();
 }
 
 void MaterialPreview::set_material(const AssetPtr<Material>& material) {
@@ -107,7 +107,7 @@ void MaterialPreview::update_camera() {
 
 
 void MaterialPreview::reset_world() {
-    _world = std::make_unique<ecs::EntityWorld>();
+    _world = std::make_unique<EditorWorld>(context());
     _view = SceneView(_world.get());
 
     {

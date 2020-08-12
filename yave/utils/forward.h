@@ -33,6 +33,7 @@ class AssetDependencies;
 class AssetId;
 class AssetIdFactory;
 class AssetLoader;
+class AssetLoaderSystem;
 class AssetLoadingContext;
 class AssetLoadingThreadPool;
 class AssetPtrDataBase;
@@ -95,6 +96,7 @@ class FrameGraphMutableImageId;
 class FrameGraphMutableResourceId;
 class FrameGraphPass;
 class FrameGraphPassBuilder;
+class FrameGraphRegion;
 class FrameGraphResourceId;
 class FrameGraphResourcePool;
 class FrameToken;
@@ -133,6 +135,8 @@ class RendererSettings;
 class ResourceFence;
 class SH;
 class SQLiteAssetStore;
+class SSAOPass;
+class SSAOSettings;
 class Sampler;
 class SceneRenderSubPass;
 class SceneView;
@@ -160,6 +164,7 @@ class StaticMeshComponent;
 class SubBufferBase;
 class Surfel;
 class Swapchain;
+class System;
 class ThreadDeviceLinked;
 class ThreadLocalDevice;
 class TimeQuery;
@@ -176,4 +181,3 @@ class Window;
 }
 
 #endif // YAVE_UTILS_FORWARD_H
-

@@ -26,6 +26,7 @@ SOFTWARE.
 #include "EntityView.h"
 #include "Archetype.h"
 #include "EntityPrefab.h"
+#include "System.h"
 
 #include "ComponentContainer.h"
 
@@ -41,6 +42,8 @@ class EntityWorld {
         EntityWorld& operator=(EntityWorld&& other);
 
         void swap(EntityWorld& other);
+
+        void tick();
 
         usize entity_count() const;
         bool exists(EntityId id) const;
@@ -61,12 +64,41 @@ class EntityWorld {
 
 
 
+
+        template<typename S, typename... Args>
+        S* add_system(Args&&... args) {
+            auto s = std::make_unique<S>(y_fwd(args)...);
+            S* system = s.get();
+            _systems.emplace_back(std::move(s));
+            system->setup(*this);
+            return system;
+        }
+
+        template<typename F>
+        System* add_function_system(F&& func) {
+           return add_system<FunctorSystem<F>>(y_fwd(func));
+        }
+
+        template<typename S>
+        S* find_system() {
+            for(auto& system : _systems) {
+                if(S* s = dynamic_cast<S*>(system.get())) {
+                    return s;
+                }
+            }
+            return nullptr;
+        }
+
+
+
         template<typename... Args>
         EntityId create_entity(StaticArchetype<Args...>) {
             const EntityId id = create_entity();
             add_components<Args...>(id);
             return id;
         }
+
+
 
 
         template<typename T, typename... Args>
@@ -85,6 +117,7 @@ class EntityWorld {
         }
 
 
+
         auto ids() const {
             return _entities.ids();
         }
@@ -94,6 +127,7 @@ class EntityWorld {
             return core::Range(TransformIterator(_containers.values().begin(), tr),
                                _containers.values().end());
         }
+
 
 
         template<typename T>
@@ -107,6 +141,9 @@ class EntityWorld {
             return cont ? cont->contains(id) : false;
         }
 
+
+
+
         template<typename T>
         T* component(EntityId id) {
             ComponentContainerBase* cont = find_container<T>();
@@ -118,6 +155,8 @@ class EntityWorld {
             const ComponentContainerBase* cont = find_container<T>();
             return cont ? cont->template component_ptr<T>(id) : nullptr;
         }
+
+
 
 
         template<typename T>
@@ -137,6 +176,17 @@ class EntityWorld {
             const ComponentContainerBase* cont = find_container<T>();
             return cont ? cont->ids() : core::Span<EntityId>();
         }
+
+
+
+
+        template<typename T>
+        core::Span<EntityId> recently_added() const {
+            const ComponentContainerBase* cont = find_container<T>();
+            return cont ? cont->recently_added() : core::Span<EntityId>();
+        }
+
+
 
 
         template<typename... Args>
@@ -161,6 +211,10 @@ class EntityWorld {
             return view<Args...>();
         }
 
+
+
+
+
         template<typename T>
         void add_required_component() {
             static_assert(std::is_default_constructible_v<T>);
@@ -174,9 +228,6 @@ class EntityWorld {
                 add_component<T>(id);
             }
         }
-
-
-        void flush_reload(AssetLoader& loader);
 
         void post_deserialize();
 
@@ -237,6 +288,8 @@ class EntityWorld {
         EntityIdPool _entities;
 
         core::Vector<ComponentTypeIndex> _required_components;
+
+        core::Vector<std::unique_ptr<System>> _systems;
 };
 
 }

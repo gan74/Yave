@@ -94,7 +94,6 @@ class EntityId {
 };
 
 
-using EntityId = EntityId;
 
 
 template<typename... Args>

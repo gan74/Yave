@@ -19,26 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_SERDE3_SERDE_H
-#define Y_SERDE3_SERDE_H
+#ifndef EDITOR_EDITORWORLD_H
+#define EDITOR_EDITORWORLD_H
 
-#include <y/reflect/reflect.h>
+#include <editor/editor.h>
 
-namespace y {
-namespace serde3 {
+#include <yave/ecs/EntityWorld.h>
 
-using namespace reflect;
+namespace editor {
 
-class WritableArchive;
-class ReadableArchive;
+class EditorWorld : public ecs::EntityWorld, public ContextLinked {
+    public:
+        EditorWorld(ContextPtr ctx);
 
-
-#define y_serde3(...) y_reflect(__VA_ARGS__)
-
-#define y_no_serde3() static constexpr int _y_serde3_no_serde = 0;
+        void flush_reload();
+};
 
 }
-}
 
-#endif // Y_SERDE3_SERDE_H
+#endif // EDITOR_EDITORWORLD_H
 
