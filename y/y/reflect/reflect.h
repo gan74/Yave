@@ -101,6 +101,8 @@ inline void explore(T&& t, F&& func) {
 }
 
 
+Y_TODO(manage inherited objects)
+
 #define y_reflect_create_item(object) y::reflect::NamedObject{object, #object},
 
 #define y_reflect_refl_qual(qual, ...) auto _y_reflect() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_item, __VA_ARGS__))}; }

@@ -92,7 +92,11 @@ class ComponentContainerBase : NonMovable {
                 _recently_added.emplace_back(id);
                 return set.insert(id, y_fwd(args)...);
             } else {
-                return set[id] = T{y_fwd(args)...};
+                if constexpr(sizeof...(Args)) {
+                    return set[id] = T{y_fwd(args)...};
+                } else {
+                    return set[id] = T();
+                }
             }
         }
 

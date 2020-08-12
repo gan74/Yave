@@ -52,7 +52,7 @@ class UiManager : NonMovable, public ContextLinked {
 
         void refresh_all();
 
-        // don't spam these two: they are synchronous and modal (and now supported outside of win32 right now)
+        // don't spam these two: they are synchronous and modal (and not supported outside of win32 right now)
         bool confirm(const char* message);
         void ok(const char* title, const char* message);
 
