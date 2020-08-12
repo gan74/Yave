@@ -32,9 +32,6 @@ using namespace reflect;
 class WritableArchive;
 class ReadableArchive;
 
-
-#define y_serde3(...) y_reflect(__VA_ARGS__)
-
 #define y_no_serde3() static constexpr int _y_serde3_no_serde = 0;
 
 }

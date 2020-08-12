@@ -44,7 +44,7 @@ class AnimationChannel {
         core::Span<BoneKey> keys() const;
 
 
-        y_serde3(_name, _keys)
+        y_reflect(_name, _keys)
 
     private:
         core::String _name;

@@ -56,7 +56,7 @@ class EntityIdPool {
             );
         }
 
-        y_serde3(_ids, _free)
+        y_reflect(_ids, _free)
 
     private:
         core::Vector<EntityId> _ids;

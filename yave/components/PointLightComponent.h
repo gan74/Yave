@@ -45,7 +45,7 @@ class PointLightComponent final : public ecs::RequiredComponents<TransformableCo
         float& falloff();
         float falloff() const;
 
-        y_serde3(_color, _intensity, _radius, _falloff)
+        y_reflect(_color, _intensity, _radius, _falloff)
 
     private:
         math::Vec3 _color = math::Vec3{1.0f};

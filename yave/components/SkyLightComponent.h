@@ -34,7 +34,7 @@ class SkyLightComponent final {
         AssetPtr<IBLProbe>& probe();
         const AssetPtr<IBLProbe>& probe() const;
 
-        y_serde3(_probe)
+        y_reflect(_probe)
 
     private:
         AssetPtr<IBLProbe> _probe;

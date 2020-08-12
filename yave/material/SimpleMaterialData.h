@@ -64,7 +64,7 @@ class SimpleMaterialData {
         bool alpha_tested() const { return _alpha_tested; }
         bool& alpha_tested() { return _alpha_tested; }
 
-        y_serde3(_textures, _constants, _alpha_tested)
+        y_reflect(_textures, _constants, _alpha_tested)
 
     private:
         std::array<AssetId, texture_count> texture_ids() const;

@@ -41,7 +41,7 @@ using namespace y;
 struct Inner {
     int x = 9;
 
-    y_serde3(x)
+    y_reflect(x)
 };
 
 struct Poly {
@@ -57,7 +57,7 @@ struct Poly {
 
 struct Derived : Poly {
     y_serde3_poly(Derived)
-    y_serde3(x)
+    y_reflect(x)
 
 
     void print() const override {
@@ -84,7 +84,7 @@ struct TestStruct {
         }
     }
 
-    y_serde3(b, a, inner, tpl, poly)
+    y_reflect(b, a, inner, tpl, poly)
 };
 
 

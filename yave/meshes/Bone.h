@@ -61,7 +61,7 @@ struct Bone {
         return local_transform.to_transform();
     }
 
-    y_serde3(name, parent, local_transform)
+    y_reflect(name, parent, local_transform)
 };
 
 

@@ -49,7 +49,7 @@ struct CameraSettings {
     // Other camera
     Key center_on_obj = Key::H;
 
-    y_serde3(z_near, fov,
+    y_reflect(z_near, fov,
              move_forward, move_backward, move_right, move_left,
              fps_sensitivity, trackball_sensitivity, dolly_sensitivity,
              center_on_obj)
@@ -61,7 +61,7 @@ struct UiSettings {
     Key change_gizmo_space = Key::Q;
 
 
-    y_serde3(change_gizmo_mode, change_gizmo_space)
+    y_reflect(change_gizmo_mode, change_gizmo_space)
 };
 
 struct PerfSettings {
@@ -69,7 +69,7 @@ struct PerfSettings {
     u32 capture_frames = 60;
     core::String capture_name = "../perfdump.json";
 
-    y_serde3(capture_forever, capture_frames, capture_name)
+    y_reflect(capture_forever, capture_frames, capture_name)
 };
 
 
@@ -82,7 +82,7 @@ class Settings {
         UiSettings& ui();
         PerfSettings& perf();
 
-        y_serde3(_camera, _ui, _perf)
+        y_reflect(_camera, _ui, _perf)
 
     private:
         CameraSettings _camera;

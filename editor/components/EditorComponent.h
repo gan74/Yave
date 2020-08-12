@@ -40,7 +40,7 @@ class EditorComponent {
 
         math::Vec3& euler();
 
-        y_serde3(_name)
+        y_reflect(_name)
 
     private:
         core::String _name = "Unnamed entity";

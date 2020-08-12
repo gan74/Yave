@@ -57,7 +57,7 @@ class ComponentBox final : public ComponentBoxBase {
         ComponentRuntimeInfo runtime_info() const override;
         void add_to(EntityWorld& world, EntityId id) const override;
 
-        y_serde3(_component)
+        y_reflect(_component)
         y_serde3_poly(ComponentBox)
 
     private:
@@ -217,7 +217,7 @@ class ComponentContainer final : public ComponentContainerBase {
             return nullptr;
         }
 
-        y_serde3(_components)
+        y_reflect(_components)
         y_serde3_poly(ComponentContainer)
 
 

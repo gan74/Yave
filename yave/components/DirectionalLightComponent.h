@@ -40,7 +40,7 @@ class DirectionalLightComponent final {
         float& intensity();
         float intensity() const;
 
-        y_serde3(_color, _direction, _intensity)
+        y_reflect(_color, _direction, _intensity)
 
     private:
         math::Vec3 _color = math::Vec3{1.0f};

@@ -231,7 +231,7 @@ class EntityWorld {
 
         void post_deserialize();
 
-        y_serde3(_entities, _containers)
+        y_reflect(_entities, _containers)
 
     private:
         template<typename T>

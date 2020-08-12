@@ -151,7 +151,7 @@ class AssetPtr {
 
         void load(AssetLoadingContext& context);
 
-        y_serde3(_id)
+        y_reflect(_id)
 
     protected:
         friend class GenericAssetPtr;

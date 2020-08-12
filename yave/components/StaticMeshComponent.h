@@ -51,7 +51,7 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
             bool operator==(const SubMesh& other) const;
             bool operator!=(const SubMesh& other) const;
 
-            y_serde3(mesh, material)
+            y_reflect(mesh, material)
         };
 
         StaticMeshComponent() = default;
@@ -68,7 +68,7 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
 
         AABB compute_aabb() const;
 
-        y_serde3(_sub_meshes)
+        y_reflect(_sub_meshes)
 
     private:
         core::Vector<SubMesh> _sub_meshes;

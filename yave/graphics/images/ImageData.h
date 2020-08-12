@@ -58,7 +58,7 @@ class ImageData : NonCopyable {
         const u8* data(usize layer = 0, usize mip = 0) const;
 
 
-        y_serde3(_size, _format, _layers, _mips, _data)
+        y_reflect(_size, _format, _layers, _mips, _data)
 
     private:
         math::Vec3ui _size = math::Vec3ui(0, 0, 1);
