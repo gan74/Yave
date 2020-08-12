@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_COMPONENTS_DIRECTIONALLIGHTCOMPONENT_H
 
 #include <yave/yave.h>
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 
 namespace yave {
 

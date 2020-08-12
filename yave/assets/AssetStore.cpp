@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "AssetStore.h"
 
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 
 namespace yave {
 

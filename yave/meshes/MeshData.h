@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_MESHES_MESHDATA_H
 #define YAVE_MESHES_MESHDATA_H
 
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 
 #include "Skeleton.h"
 #include "AABB.h"

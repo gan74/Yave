@@ -25,7 +25,7 @@ SOFTWARE.
 #include <editor/editor.h>
 #include <yave/ecs/ecs.h>
 
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 #include <y/core/String.h>
 
 namespace editor {

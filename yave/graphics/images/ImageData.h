@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_IMAGES_IMAGEDATA_H
 #define YAVE_GRAPHICS_IMAGES_IMAGEDATA_H
 
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 #include <y/math/Vec.h>
 #include <y/core/FixedArray.h>
 

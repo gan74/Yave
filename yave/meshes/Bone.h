@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_MESHES_BONE_H
 
 #include <yave/yave.h>
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 #include <y/core/String.h>
 
 namespace yave {

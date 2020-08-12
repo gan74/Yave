@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_IMAGES_IMAGEFORMAT_H
 
 #include <yave/graphics/vk/vk.h>
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 
 namespace yave {
 

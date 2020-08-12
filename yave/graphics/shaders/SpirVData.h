@@ -24,9 +24,11 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 #include <y/core/Vector.h>
 #include <y/core/Span.h>
+
+#include <y/io2/io.h>
 
 namespace yave {
 
@@ -40,6 +42,7 @@ class SpirVData {
 
         const u32* data() const;
 
+        Y_TODO(what is this?)
         static SpirVData deserialized(io2::Reader& reader);
 
     private:

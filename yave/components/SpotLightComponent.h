@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_COMPONENTS_SPOTLIGHTCOMPONENT_H
 
 #include <yave/ecs/ecs.h>
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 
 #include "TransformableComponent.h"
 

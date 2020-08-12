@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_ASSETS_ASSETTRAITS_H
 #define YAVE_ASSETS_ASSETTRAITS_H
 
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 
 #include "AssetType.h"
 

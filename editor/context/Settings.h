@@ -25,9 +25,8 @@ SOFTWARE.
 #include <editor/editor.h>
 #include <yave/window/EventHandler.h>
 
-#include <yave/utils/serde.h>
+#include <y/reflect/reflect.h>
 #include <y/core/String.h>
-
 
 namespace editor {
 
@@ -50,9 +49,9 @@ struct CameraSettings {
     Key center_on_obj = Key::H;
 
     y_reflect(z_near, fov,
-             move_forward, move_backward, move_right, move_left,
-             fps_sensitivity, trackball_sensitivity, dolly_sensitivity,
-             center_on_obj)
+              move_forward, move_backward, move_right, move_left,
+              fps_sensitivity, trackball_sensitivity, dolly_sensitivity,
+              center_on_obj)
 
 };
 
