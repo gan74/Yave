@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "renderdochelper.h"
 
-#include <external/renderdoc_app.h>
+#include <renderdoc_app.h>
 #define RENDERDOC_SUPPORTED
 
 namespace editor {
