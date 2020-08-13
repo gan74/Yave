@@ -107,10 +107,12 @@ Y_TODO(manage inherited objects)
 
 #define y_reflect_refl_qual(qual, ...) auto _y_reflect() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_item, __VA_ARGS__))}; }
 
+#define y_reflect_empty() auto _y_reflect() const { return std::tuple<>{}; }
 
 #define y_reflect(...)                              \
     y_reflect_refl_qual(/* */, __VA_ARGS__)         \
     y_reflect_refl_qual(const, __VA_ARGS__)
+
 
 }
 }

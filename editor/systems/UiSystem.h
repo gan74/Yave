@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace editor {
 
-class UiWidget;
+class UiWidgetBase;
 class UiComponent;
 
 class UiSystem : public ecs::System {
@@ -43,11 +43,11 @@ class UiSystem : public ecs::System {
         void tick(ecs::EntityWorld& world) override;
 
     private:
-        bool should_delete(const ecs::EntityWorld& world, const UiComponent* componen) const;
+        bool should_delete(const ecs::EntityWorld& world, const UiComponent* component) const;
 
         void paint_menu(ecs::EntityWorld& world);
         void paint_widgets(ecs::EntityWorld& world, CmdBufferRecorder& recorder);
-        void paint_widget(ecs::EntityWorld& world, CmdBufferRecorder& recorder, UiWidget* widget);
+        void paint_widget(ecs::EntityWorld& world, CmdBufferRecorder& recorder, UiWidgetBase* widget);
 
         MainWindow* _window = nullptr;
         std::unique_ptr<ImGuiRenderer> _renderer;

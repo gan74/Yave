@@ -112,23 +112,6 @@ struct PolyType {
 
 }
 
-#define y_serde3_poly_quals(type, virtual_qual, override_qual)                                                      \
-    inline static struct _y_register_t {                                                                            \
-        _y_register_t() { _y_serde3_poly_base.register_type<type>(); }                                              \
-        void used() {}                                                                                              \
-    } _y_register;                                                                                                  \
-    virtual_qual y::serde3::TypeId _y_serde3_poly_type_id() const override_qual {                                   \
-        return y::serde3::detail::poly_type_id<y::remove_cvref_t<decltype(*this)>>();                               \
-    }                                                                                                               \
-    virtual_qual y::serde3::Result _y_serde3_poly_serialize(y::serde3::WritableArchive& arc) const override_qual {  \
-        _y_register.used();                                                                                         \
-        return arc.serialize(*this);                                                                                \
-    }                                                                                                               \
-    virtual_qual y::serde3::Result _y_serde3_poly_deserialize(y::serde3::ReadableArchive& arc) override_qual {      \
-        _y_register.used();                                                                                         \
-        return arc.deserialize(*this);                                                                              \
-    }
-
 
 
 #define y_serde3_poly_abstract_base(base)                                                                           \
@@ -138,12 +121,22 @@ struct PolyType {
     virtual y::serde3::Result _y_serde3_poly_deserialize(y::serde3::ReadableArchive&) = 0;
 
 
-#define y_serde3_poly_base(base)                                                                                    \
-    static y::serde3::detail::PolyType<base> _y_serde3_poly_base;                                                   \
-    y_serde3_poly_quals(base, virtual, /* */)
-
-
-#define y_serde3_poly(type)         y_serde3_poly_quals(type, /* */, override)
+#define y_serde3_poly(type)                                                                                         \
+    inline static struct _y_register_t {                                                                            \
+        _y_register_t() { _y_serde3_poly_base.register_type<type>(); }                                              \
+        void used() {}                                                                                              \
+    } _y_register;                                                                                                  \
+     y::serde3::TypeId _y_serde3_poly_type_id() const override {                                                    \
+        return y::serde3::detail::poly_type_id<y::remove_cvref_t<decltype(*this)>>();                               \
+    }                                                                                                               \
+     y::serde3::Result _y_serde3_poly_serialize(y::serde3::WritableArchive& arc) const override {                   \
+        _y_register.used();                                                                                         \
+        return arc.serialize(*this);                                                                                \
+    }                                                                                                               \
+     y::serde3::Result _y_serde3_poly_deserialize(y::serde3::ReadableArchive& arc) override {                       \
+        _y_register.used();                                                                                         \
+        return arc.deserialize(*this);                                                                              \
+    }
 
 }
 }

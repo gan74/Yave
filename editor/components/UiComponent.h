@@ -33,16 +33,12 @@ SOFTWARE.
 
 namespace editor {
 
-struct UiWidget : NonMovable {
-    enum Flags : u32 {
-        None        = 0,
-        ShouldClose = 0x01,
-    };
+struct UiWidgetBase : NonMovable {
 
     public:
-        UiWidget(std::string_view title, u32 = 0);
+        UiWidgetBase(std::string_view title, u32 = 0);
 
-        virtual ~UiWidget();
+        virtual ~UiWidgetBase();
 
         virtual void paint(ecs::EntityWorld&, CmdBufferRecorder&);
 
@@ -52,7 +48,6 @@ struct UiWidget : NonMovable {
         virtual void before_paint() {}
         virtual void after_paint() {}
         virtual void refresh() {}
-
 
 
         void set_title(std::string_view title);
@@ -66,8 +61,8 @@ struct UiWidget : NonMovable {
         bool is_focussed() const;
         bool is_mouse_inside() const;
 
-        y_serde3_poly_base(UiWidget)
-        y_reflect(_title_with_id, _position, _size)
+        y_serde3_poly_abstract_base(UiWidgetBase)
+        y_reflect(_title_with_id, _title_size)
 
     private:
         friend class UiSystem;
@@ -77,9 +72,7 @@ struct UiWidget : NonMovable {
         ecs::EntityId _entity_id;
 
         core::String _title_with_id;
-        std::string_view _title;
-
-        u32 _flags = None;
+        usize _title_size;
 
         math::Vec2 _position;
         math::Vec2 _size;
@@ -88,17 +81,24 @@ struct UiWidget : NonMovable {
         bool _mouse_inside = false;
         bool _docked = false;
         bool _focussed = false;
+        bool _visible = true;
 
 };
 
+template<typename Derived>
+struct UiWidget : UiWidgetBase {
+    using UiWidgetBase::UiWidgetBase;
+    y_serde3_poly(Derived)
+};
+
 struct UiComponent {
-    static ecs::EntityId create_widget(ecs::EntityWorld& world, std::unique_ptr<UiWidget> wid);
+    static ecs::EntityId create_widget(ecs::EntityWorld& world, std::unique_ptr<UiWidgetBase> wid);
 
     template<typename F>
     static ecs::EntityId create_widget(ecs::EntityWorld& world, std::string_view title, F&& f) {
-        struct Wid : UiWidget {
-            Wid(std::string_view title, F&& f) : UiWidget(title), _func(std::move(f)) {
-            } 
+        struct Wid : UiWidget<Wid> {
+            Wid(std::string_view title, F&& f) : UiWidget<Wid>(title), _func(std::move(f)) {
+            }
 
             void paint(ecs::EntityWorld&, CmdBufferRecorder&) override {
                 _func();
@@ -109,7 +109,7 @@ struct UiComponent {
         return create_widget(world, std::make_unique<Wid>(title, y_fwd(f)));
     }
 
-    std::unique_ptr<UiWidget> widget;
+    std::unique_ptr<UiWidgetBase> widget;
     ecs::EntityId parent;
 
     Y_TODO(Fix non serializable components breaking everything)

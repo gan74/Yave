@@ -139,7 +139,7 @@ UiSystem::~UiSystem() {
 void UiSystem::tick(ecs::EntityWorld& world) {
     {
         for(ecs::EntityId id : world.recently_added<UiComponent>()) {
-            if(UiWidget* widget = world.component<UiComponent>(id)->widget.get()) {
+            if(UiWidgetBase* widget = world.component<UiComponent>(id)->widget.get()) {
                 widget->_entity_id = id;
             }
         }
@@ -173,25 +173,25 @@ void UiSystem::tick(ecs::EntityWorld& world) {
 
 bool UiSystem::should_delete(const ecs::EntityWorld& world, const UiComponent* component) const {
     return !component ||
-           !component->widget || 
-           (component->widget->_flags & UiWidget::ShouldClose) || 
+           !component->widget ||
+           !component->widget->_visible ||
            (component->parent.is_valid() && !world.has<UiComponent>(component->parent));
 }
 
 void UiSystem::paint_menu(ecs::EntityWorld& world) {
     if(ImGui::BeginMenuBar()) {
         if(ImGui::BeginMenu("View")) {
-            for(const auto* poly_base = UiWidget::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
+            for(const auto* poly_base = UiWidgetBase::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
                 const core::String name = clean_type_name(poly_base->name);
                 if(ImGui::MenuItem(name.data())) {
                     if(auto widget = poly_base->create()) {
-                        UiComponent::create_widget(world, std::move(widget));  
+                        UiComponent::create_widget(world, std::move(widget));
                     } else {
                         log_msg(fmt("Unable to create %", poly_base->name), Log::Error);
                     }
                 }
-                ImGui::EndMenu();
             }
+            ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
     }
@@ -215,14 +215,13 @@ void UiSystem::paint_widgets(ecs::EntityWorld& world, CmdBufferRecorder& recorde
     Y_TODO(check if entity has other components)
     for(ecs::EntityId id : to_remove) {
         world.remove_entity(id);
-    }   
+    }
 }
 
-void UiSystem::paint_widget(ecs::EntityWorld& world, CmdBufferRecorder& recorder, UiWidget* widget) {
+void UiSystem::paint_widget(ecs::EntityWorld& world, CmdBufferRecorder& recorder, UiWidgetBase* widget) {
     y_debug_assert(widget);
 
-    bool open = true;
-    const bool b = ImGui::Begin(widget->_title_with_id.begin(), &open, 0);
+    const bool b = ImGui::Begin(widget->_title_with_id.begin(), &widget->_visible, 0);
     {
         widget->update_attribs();
         if(b) {
@@ -230,10 +229,6 @@ void UiSystem::paint_widget(ecs::EntityWorld& world, CmdBufferRecorder& recorder
         }
     }
     ImGui::End();
-
-    if(!open) {
-        widget->close();
-    }
 }
 
 }

@@ -31,57 +31,57 @@ SOFTWARE.
 
 namespace editor {
 
-void UiWidget::paint(ecs::EntityWorld&, CmdBufferRecorder& rec) {
+void UiWidgetBase::paint(ecs::EntityWorld&, CmdBufferRecorder& rec) {
     paint_ui(rec, FrameToken{});
 }
 
-void UiWidget::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+void UiWidgetBase::paint_ui(CmdBufferRecorder&, const FrameToken&) {
 }
 
 
-UiWidget::UiWidget(std::string_view title, u32) {
+UiWidgetBase::UiWidgetBase(std::string_view title, u32) {
     set_title(title);
 }
 
-UiWidget::~UiWidget() {
+UiWidgetBase::~UiWidgetBase() {
 }
 
-void UiWidget::set_title(std::string_view title) {
+void UiWidgetBase::set_title(std::string_view title) {
     Y_TODO(we need to use an other id to keep imguis setting stack)
     const core::String new_title = fmt("%##%", title, _entity_id.index());
     _title_with_id = std::move(new_title);
-    _title = std::string_view(_title_with_id.begin(), title.size());
+    _title_size = title.size();
 }
 
-void UiWidget::close() {
-    _flags |= ShouldClose;
+void UiWidgetBase::close() {
+    _visible = false;
 }
 
-void UiWidget::show() {
-    _flags &= ~ShouldClose;
+void UiWidgetBase::show() {
+    _visible = true;
 }
 
-const math::Vec2& UiWidget::position() const {
+const math::Vec2& UiWidgetBase::position() const {
     return _position;
 }
 
-const math::Vec2& UiWidget::size() const {
+const math::Vec2& UiWidgetBase::size() const {
     return _size;
 }
 
-math::Vec2ui UiWidget::content_size() const {
+math::Vec2ui UiWidgetBase::content_size() const {
     return _content_size;
 }
 
-bool UiWidget::is_focussed() const {
+bool UiWidgetBase::is_focussed() const {
     return _focussed;
 }
 
-bool UiWidget::is_mouse_inside() const {
+bool UiWidgetBase::is_mouse_inside() const {
     return _mouse_inside;
 }
 
-void UiWidget::update_attribs() {
+void UiWidgetBase::update_attribs() {
     const math::Vec2 content_max = ImGui::GetWindowContentRegionMax();
     const math::Vec2 content_min = ImGui::GetWindowContentRegionMin();
     _position = ImGui::GetWindowPos();
@@ -95,7 +95,7 @@ void UiWidget::update_attribs() {
     _mouse_inside = less(relative_mouse_pos, content_max) && less(content_min, relative_mouse_pos);
 }
 
-ecs::EntityId UiComponent::create_widget(ecs::EntityWorld& world, std::unique_ptr<UiWidget> wid) {
+ecs::EntityId UiComponent::create_widget(ecs::EntityWorld& world, std::unique_ptr<UiWidgetBase> wid) {
     const ecs::EntityId ent = world.create_entity();
     world.add_component<UiComponent>(ent, std::move(wid), ecs::EntityId());
     return ent;
