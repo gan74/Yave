@@ -45,7 +45,7 @@ MenuBar::MenuBar(ContextPtr ctx) : UiElement("Menu bar"), ContextLinked(ctx) {
 }
 
 void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
-    /*if(ImGui::BeginMenuBar()) {
+    if(ImGui::BeginMenuBar()) {
         if(ImGui::BeginMenu(ICON_FA_FILE " File")) {
 
             if(ImGui::MenuItem(ICON_FA_FILE " New")) {
@@ -129,7 +129,7 @@ void MenuBar::paint(CmdBufferRecorder&, const FrameToken&) {
         }
 
         ImGui::EndMenuBar();
-    }*/
+    }
 }
 
 }

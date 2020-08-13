@@ -25,9 +25,6 @@ SOFTWARE.
 #include <editor/utils/crashhandler.h>
 #include <editor/events/MainEventHandler.h>
 #include <editor/context/EditorContext.h>
-#include <editor/systems/UiSystem.h>
-#include <editor/components/UiComponent.h>
-#include <editor/widgets/EngineView.h>
 
 #include <yave/graphics/device/Device.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
@@ -38,8 +35,6 @@ SOFTWARE.
 #include <y/concurrent/concurrent.h>
 
 #include <y/utils/log.h>
-
-#include <imgui/yave_imgui.h>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
@@ -127,23 +122,19 @@ int main(int argc, char** argv) {
     window.set_event_handler(std::make_unique<MainEventHandler>());
     window.show();
 
-    ecs::EntityWorld editor;
-    editor.add_system<UiSystem>(&ctx, window);
-    UiComponent::create_widget(editor, "test", [] { ImGui::ShowDemoWindow(); });
-    UiComponent::create_widget(editor, std::make_unique<EngineView2>(&ctx));
-
     for(;;) {
         if(!window.update()) {
-            break;
+            if(ctx.ui_manager().confirm("Quit ?")) {
+                break;
+            } else {
+                window.show();
+            }
         }
 
         // 35 ms to not spam if we are capped at 30 FPS
         core::DebugTimer frame_timer("frame", core::Duration::milliseconds(35.0));
 
-
-        editor.tick();
-
-        /*ctx.world().tick();
+        ctx.world().tick();
 
         Swapchain* swapchain = window.swapchain();
         if(swapchain && swapchain->is_valid()) {
@@ -161,7 +152,7 @@ int main(int argc, char** argv) {
             device.device_resources().reload();
             ctx.resources().reload();
             ctx.set_device_resource_reloaded();
-        }*/
+        }
     }
 
 
