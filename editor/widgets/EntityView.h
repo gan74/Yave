@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace editor {
 
-class EntityView final : public Widget, public ContextLinked {
+class EntityView final : public UiWidget, public ContextLinked {
 
     public:
         EntityView(ContextPtr cptr);

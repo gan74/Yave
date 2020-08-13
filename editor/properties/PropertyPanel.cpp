@@ -36,10 +36,6 @@ PropertyPanel::PropertyPanel(ContextPtr cptr) :
     set_closable(false);
 }
 
-void PropertyPanel::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
-    Widget::paint(recorder, token);
-}
-
 void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
     if(!context()->selection().has_selected_entity()) {
         return;

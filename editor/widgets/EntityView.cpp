@@ -63,7 +63,7 @@ static auto all_components() {
 
 
 EntityView::EntityView(ContextPtr cptr) :
-        Widget(ICON_FA_CUBES " Entities"),
+        UiWidget(ICON_FA_CUBES " Entities"),
         ContextLinked(cptr),
         _all_components(all_components()) {
 }

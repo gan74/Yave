@@ -23,6 +23,7 @@ SOFTWARE.
 #define EDITOR_UI_WIDGET_H
 
 #include "UiElement.h"
+#include <editor/components/UiComponent.h>
 
 namespace editor {
 

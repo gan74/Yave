@@ -40,7 +40,7 @@ class Gizmo final : public ContextLinked {
 
         Gizmo(ContextPtr cptr, SceneView* view);
 
-        void draw();
+        void draw(/* Widget* parent? */);
 
         bool is_dragging() const;
         void set_allow_drag(bool allow);

@@ -28,53 +28,92 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
-#include <y/serde3/serde.h>
+#include <y/serde3/poly.h>
+#include <y/serde3/archives.h>
 
 namespace editor {
 
 struct UiWidget : NonMovable {
-    enum Flags {
+    enum Flags : u32 {
         None        = 0,
         ShouldClose = 0x01,
     };
 
     public:
-        UiWidget(std::string_view title) {
-            set_title(title);
-        }
+        UiWidget(std::string_view title, u32 = 0);
 
-        virtual ~UiWidget() {
-        }
+        virtual ~UiWidget();
 
+        virtual void paint(ecs::EntityWorld&, CmdBufferRecorder&);
 
-        void set_title(std::string_view title) {
-            Y_TODO(we need to use an other id to keep imguis setting stack)
-            const core::String new_title = fmt("%##%", title, _entity_id.index());
-            _title_with_id = std::move(new_title);
-            _title = std::string_view(_title_with_id.begin(), title.size());
-        }
+         // ------------------------------- COMPAT -------------------------------
+        virtual void paint_ui(CmdBufferRecorder&, const FrameToken&);
+
+        virtual void before_paint() {}
+        virtual void after_paint() {}
+        virtual void refresh() {}
 
 
-        virtual void paint(ecs::EntityWorld&, CmdBufferRecorder&) = 0;
+
+        void set_title(std::string_view title);
+        void close();
+        void show();
+
+        const math::Vec2& position() const;
+        const math::Vec2& size() const;
+        math::Vec2ui content_size() const;
+
+        bool is_focussed() const;
+        bool is_mouse_inside() const;
+
+        y_serde3_poly_base(UiWidget)
+        y_reflect(_title_with_id, _position, _size)
 
     private:
         friend class UiSystem;
 
+        void update_attribs();
+
         ecs::EntityId _entity_id;
-        Flags _flags = None;
 
         core::String _title_with_id;
         std::string_view _title;
 
+        u32 _flags = None;
+
+        math::Vec2 _position;
+        math::Vec2 _size;
+        math::Vec2 _content_size;
+
+        bool _mouse_inside = false;
+        bool _docked = false;
+        bool _focussed = false;
+
 };
 
-class UiComponent {
-    public:
-        Y_TODO(Fix non serializable components breaking everything)
-        y_reflect(parent)
+struct UiComponent {
+    static ecs::EntityId create_widget(ecs::EntityWorld& world, std::unique_ptr<UiWidget> wid);
 
-        std::unique_ptr<UiWidget> widget;
-        ecs::EntityId parent;
+    template<typename F>
+    static ecs::EntityId create_widget(ecs::EntityWorld& world, std::string_view title, F&& f) {
+        struct Wid : UiWidget {
+            Wid(std::string_view title, F&& f) : UiWidget(title), _func(std::move(f)) {
+            } 
+
+            void paint(ecs::EntityWorld&, CmdBufferRecorder&) override {
+                _func();
+            }
+
+            F _func;
+        };
+        return create_widget(world, std::make_unique<Wid>(title, y_fwd(f)));
+    }
+
+    std::unique_ptr<UiWidget> widget;
+    ecs::EntityId parent;
+
+    Y_TODO(Fix non serializable components breaking everything)
+    y_reflect(parent)
 };
 
 }

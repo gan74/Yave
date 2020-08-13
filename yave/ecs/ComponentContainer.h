@@ -45,7 +45,7 @@ class ComponentBoxBase : NonMovable {
         virtual ComponentRuntimeInfo runtime_info() const = 0;
         virtual void add_to(EntityWorld& world, EntityId id) const = 0;
 
-        y_serde3_poly_base(ComponentBoxBase)
+        y_serde3_poly_abstract_base(ComponentBoxBase)
 };
 
 template<typename T>
@@ -145,7 +145,7 @@ class ComponentContainerBase : NonMovable {
         }
 
 
-        y_serde3_poly_base(ComponentContainerBase)
+        y_serde3_poly_abstract_base(ComponentContainerBase)
 
     protected:
         template<typename T>
@@ -169,7 +169,7 @@ class ComponentContainerBase : NonMovable {
     private:
         // hacky but avoids a bunch of dynamic casts and virtual calls
         void* _sparse = nullptr;
-        SparseIDSet* _ids = nullptr;
+        SparseIdSet* _ids = nullptr;
 
         const ComponentTypeIndex _type_id;
 

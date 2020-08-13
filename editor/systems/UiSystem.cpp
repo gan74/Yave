@@ -32,9 +32,38 @@ SOFTWARE.
 #include <yave/ecs/EntityWorld.h>
 #include <yave/graphics/utils.h>
 
+#include <y/io2/File.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 #include <imgui/yave_imgui.h>
 
 namespace editor {
+
+core::String clean_type_name(std::string_view name) {
+    usize start = 0;
+    for(usize i = 0; i != name.size(); ++i) {
+        switch(name[i]) {
+            case ':':
+                start = i + 1;
+            break;
+
+            default:
+            break;
+        }
+    }
+
+    core::String clean;
+    for(usize i = start; i != name.size(); ++i) {
+        if(std::isupper(name[i])) {
+            clean.push_back(' ');
+        }
+        clean.push_back(name[i]);
+    }
+
+    return clean;
+}
 
 static void imgui_begin_frame(const math::Vec2& size, double dt) {
     y_profile();
@@ -61,9 +90,11 @@ static void imgui_begin_frame(const math::Vec2& size, double dt) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Main Window", nullptr, ImGuiWindowFlags_MenuBar | flags);
 
-    ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+    {
+        ImGui::Begin("Main Window", nullptr, ImGuiWindowFlags_MenuBar | flags);
+        ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+    }
 
     ImGui::PopStyleVar(3);
 }
@@ -76,10 +107,33 @@ static void imgui_end_frame() {
     ImGui::Render();
 }
 
+static void imgui_setup() {
+    static bool setup = false;
+    if(!setup) {
+        setup = true;
+
+        ImGui::CreateContext();
+        ImGui::GetIO().IniFilename = "editor.ini";
+        ImGui::GetIO().LogFilename = "editor_logs.txt";
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        ImGui::GetIO().ConfigDockingWithShift = false;
+        //ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
+
+        if(io2::File::open("../editor.ini").is_ok()) {
+            ImGui::GetIO().IniFilename = "../editor.ini";
+        }
+    }
+}
+
 UiSystem::UiSystem(ContextPtr ctx, MainWindow& window) :
         ecs::System("UiSystem"),
         _window(&window),
         _renderer(std::make_unique<ImGuiRenderer>(ctx)) {
+
+    imgui_setup();
+}
+
+UiSystem::~UiSystem() {
 }
 
 void UiSystem::tick(ecs::EntityWorld& world) {
@@ -101,23 +155,10 @@ void UiSystem::tick(ecs::EntityWorld& world) {
 
     {
         imgui_begin_frame(_window->size(), _frame_timer.reset().to_secs());
-        core::Vector<ecs::EntityId> to_remove;
 
-        Y_TODO(Defer component addition so we dont have to copy here)
-        core::Vector<ecs::EntityId> ids(world.component_ids<UiComponent>());
-        for(ecs::EntityId id : ids) {
-            UiComponent* comp = world.component<UiComponent>(id);
-            if(!comp || !comp->widget || !world.has<UiComponent>(comp->parent)) {
-                to_remove << id;
-                continue;
-            }
-            comp->widget->paint(world, recorder);
-        }
+        paint_menu(world);
+        paint_widgets(world, recorder);
 
-        Y_TODO(check if entity has other components)
-        for(ecs::EntityId id : to_remove) {
-            world.remove_entity(id);
-        }
         imgui_end_frame();
     }
 
@@ -126,7 +167,72 @@ void UiSystem::tick(ecs::EntityWorld& world) {
         Framebuffer framebuffer(frame.image_view.device(), {frame.image_view});
         RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
         _renderer->render(pass, frame);
-        _window->present(recorder, frame);
+    }
+    _window->present(recorder, frame);
+}
+
+bool UiSystem::should_delete(const ecs::EntityWorld& world, const UiComponent* component) const {
+    return !component ||
+           !component->widget || 
+           (component->widget->_flags & UiWidget::ShouldClose) || 
+           (component->parent.is_valid() && !world.has<UiComponent>(component->parent));
+}
+
+void UiSystem::paint_menu(ecs::EntityWorld& world) {
+    if(ImGui::BeginMenuBar()) {
+        if(ImGui::BeginMenu("View")) {
+            for(const auto* poly_base = UiWidget::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
+                const core::String name = clean_type_name(poly_base->name);
+                if(ImGui::MenuItem(name.data())) {
+                    if(auto widget = poly_base->create()) {
+                        UiComponent::create_widget(world, std::move(widget));  
+                    } else {
+                        log_msg(fmt("Unable to create %", poly_base->name), Log::Error);
+                    }
+                }
+                ImGui::EndMenu();
+            }
+        }
+        ImGui::EndMenuBar();
+    }
+}
+
+void UiSystem::paint_widgets(ecs::EntityWorld& world, CmdBufferRecorder& recorder) {
+    core::Vector<ecs::EntityId> to_remove;
+
+    Y_TODO(Defer component addition so we dont have to copy here)
+    core::Vector<ecs::EntityId> ids(world.component_ids<UiComponent>());
+    for(ecs::EntityId id : ids) {
+        y_debug_assert(id.is_valid());
+        UiComponent* comp = world.component<UiComponent>(id);
+        if(should_delete(world, comp)) {
+            to_remove << id;
+            continue;
+        }
+        paint_widget(world, recorder, comp->widget.get());
+    }
+
+    Y_TODO(check if entity has other components)
+    for(ecs::EntityId id : to_remove) {
+        world.remove_entity(id);
+    }   
+}
+
+void UiSystem::paint_widget(ecs::EntityWorld& world, CmdBufferRecorder& recorder, UiWidget* widget) {
+    y_debug_assert(widget);
+
+    bool open = true;
+    const bool b = ImGui::Begin(widget->_title_with_id.begin(), &open, 0);
+    {
+        widget->update_attribs();
+        if(b) {
+            widget->paint(world, recorder);
+        }
+    }
+    ImGui::End();
+
+    if(!open) {
+        widget->close();
     }
 }
 

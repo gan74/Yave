@@ -52,7 +52,7 @@ struct Poly {
         log_msg("Poly");
     }
 
-    y_serde3_poly_base(Poly)
+    y_serde3_poly_abstract_base(Poly)
 };
 
 struct Derived : Poly {

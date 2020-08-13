@@ -22,8 +22,84 @@ SOFTWARE.
 
 #include "UiComponent.h"
 
+#include <yave/ecs/EntityWorld.h>
+
+#include <imgui/yave_imgui.h>
+
+// Remove
+#include <yave/graphics/swapchain/FrameToken.h>
+
 namespace editor {
 
+void UiWidget::paint(ecs::EntityWorld&, CmdBufferRecorder& rec) {
+    paint_ui(rec, FrameToken{});
+}
+
+void UiWidget::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+}
+
+
+UiWidget::UiWidget(std::string_view title, u32) {
+    set_title(title);
+}
+
+UiWidget::~UiWidget() {
+}
+
+void UiWidget::set_title(std::string_view title) {
+    Y_TODO(we need to use an other id to keep imguis setting stack)
+    const core::String new_title = fmt("%##%", title, _entity_id.index());
+    _title_with_id = std::move(new_title);
+    _title = std::string_view(_title_with_id.begin(), title.size());
+}
+
+void UiWidget::close() {
+    _flags |= ShouldClose;
+}
+
+void UiWidget::show() {
+    _flags &= ~ShouldClose;
+}
+
+const math::Vec2& UiWidget::position() const {
+    return _position;
+}
+
+const math::Vec2& UiWidget::size() const {
+    return _size;
+}
+
+math::Vec2ui UiWidget::content_size() const {
+    return _content_size;
+}
+
+bool UiWidget::is_focussed() const {
+    return _focussed;
+}
+
+bool UiWidget::is_mouse_inside() const {
+    return _mouse_inside;
+}
+
+void UiWidget::update_attribs() {
+    const math::Vec2 content_max = ImGui::GetWindowContentRegionMax();
+    const math::Vec2 content_min = ImGui::GetWindowContentRegionMin();
+    _position = ImGui::GetWindowPos();
+    _size = ImGui::GetWindowSize();
+    _docked = ImGui::IsWindowDocked();
+    _focussed = ImGui::IsWindowFocused();
+    _content_size = (content_max - content_min).max(math::Vec2(1.0f));
+
+    const math::Vec2 relative_mouse_pos = math::Vec2(ImGui::GetIO().MousePos) - _position;
+    const auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
+    _mouse_inside = less(relative_mouse_pos, content_max) && less(content_min, relative_mouse_pos);
+}
+
+ecs::EntityId UiComponent::create_widget(ecs::EntityWorld& world, std::unique_ptr<UiWidget> wid) {
+    const ecs::EntityId ent = world.create_entity();
+    world.add_component<UiComponent>(ent, std::move(wid), ecs::EntityId());
+    return ent;
+}
 
 }
 

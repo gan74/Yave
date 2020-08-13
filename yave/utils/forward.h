@@ -154,7 +154,7 @@ class SkinWeights;
 class SkinnedMesh;
 class SkinnedVertex;
 class SkyLightComponent;
-class SparseIDSet;
+class SparseIdSet;
 class SpecializationData;
 class SpirVData;
 class SpotLight;

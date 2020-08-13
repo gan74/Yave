@@ -75,7 +75,6 @@ class ThumbmailCache;
 class UiElement;
 class UiManager;
 class UiSettings;
-class Widget;
 }
 
 #endif // EDITOR_UTILS_FORWARD_H

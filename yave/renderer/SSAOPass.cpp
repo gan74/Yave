@@ -213,7 +213,7 @@ SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
             y_always_assert(settings.level_count > 1, "SSAOSettings::level_count needs to be at least 2");
             const DownsamplePass downsample = DownsamplePass::create(framegraph, linear_depth, settings.level_count, DownsamplePass::Filter::BestMatch);
             const float tan_half_fov = compute_tan_half_fov(gbuffer);
-            for(usize i = settings.level_count - 1; i > 0; --i) {
+            for(usize i = downsample.mips.size() - 1; i > 0; --i) {
                 const math::Vec2ui output_size = framegraph.image_size(downsample.mips[i - 1]);
                 const FrameGraphImageId hi = compute_ao(framegraph, downsample.mips[i], tan_half_fov);
                 ao = upsample_ao(framegraph, size.x(), output_size, settings, downsample.mips[i - 1], downsample.mips[i], hi, ao);

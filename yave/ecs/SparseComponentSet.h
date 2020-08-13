@@ -34,7 +34,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class SparseIDSet : NonCopyable {
+class SparseIdSet : NonCopyable {
     public:
         using size_type = usize;
 
@@ -97,7 +97,7 @@ class SparseIDSet : NonCopyable {
 
 
 template<typename Elem>
-class SparseComponentSetBase : public SparseIDSet {
+class SparseComponentSetBase : public SparseIdSet {
 
     public:
         using element_type = Elem;

@@ -57,12 +57,12 @@ UiManager::UiManager(ContextPtr ctx) : ContextLinked(ctx) {
         ImGui::GetIO().IniFilename = "../editor.ini";
     }
 
-    show<EngineView>();
-    show<EntityView>();
-    show<ResourceBrowser>();
-    show<PropertyPanel>();
-    show<MaterialEditor>();
-    show<MenuBar>();
+    // show<EngineView>();
+    // show<EntityView>();
+    // show<ResourceBrowser>();
+    // show<PropertyPanel>();
+    // show<MaterialEditor>();
+    // show<MenuBar>();
 
     _renderer = std::make_unique<ImGuiRenderer>(context());
 }
