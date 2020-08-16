@@ -26,15 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
-struct BloomPassSettings {
+struct BloomSettings {
     float bloom_power = 4.0f;
     float bloom_threshold = 0.9f;
 };
 
 struct BloomPass {
     FrameGraphImageId bloomed;
+    FrameGraphImageId merged;
 
-    static BloomPass create(FrameGraph& framegraph, FrameGraphImageId tone_mapped, const BloomPassSettings& settings = BloomPassSettings());
+    static BloomPass create(FrameGraph& framegraph, FrameGraphImageId tone_mapped, const BloomSettings& settings = BloomSettings());
 };
 
 }

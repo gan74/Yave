@@ -287,15 +287,16 @@ inline constexpr bool is_incomplete(VkResult result) {
     return result == VK_INCOMPLETE;
 }
 
+const char* vk_result_str(VkResult result);
+
 inline void vk_check(VkResult result) {
-    y_always_assert(!is_error(result), "Vulkan error");
+    y_always_assert(!is_error(result), vk_result_str(result));
 }
 
 inline void vk_check_or_incomplete(VkResult result) {
-    y_always_assert(is_incomplete(result) || !is_error(result), "Vulkan error");
+    y_always_assert(is_incomplete(result) || !is_error(result), vk_result_str(result));
 }
 
-const char* vk_result_str(VkResult result);
 
 
 template<typename T>

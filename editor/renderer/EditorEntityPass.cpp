@@ -140,7 +140,7 @@ static void render_selection(ContextPtr ctx,
     }
 }
 
-static void render_editor_entities(ContextPtr ctx, bool id,
+static void render_editor_entities(ContextPtr ctx,
                                    RenderPassRecorder& recorder, const FrameGraphPass* pass,
                                    const SceneView& scene_view,
                                    const FrameGraphMutableTypedBufferId<EditorEntityPassData> pass_buffer,
@@ -163,9 +163,7 @@ static void render_editor_entities(ContextPtr ctx, bool id,
     }
 
     {
-        const auto* material = ctx->resources()[id
-            ? EditorResources::ImGuiBillBoardIdMaterialTemplate
-            : EditorResources::ImGuiBillBoardMaterialTemplate];
+        const auto* material = ctx->resources()[EditorResources::ImGuiBillBoardMaterialTemplate];
         recorder.bind_material(material, {pass->descriptor_sets()[0]});
     }
 
@@ -201,24 +199,26 @@ static void render_editor_entities(ContextPtr ctx, bool id,
             recorder.draw_array(index);
         }
     }
-
-    if(!id && ctx->selection().has_selected_entity()) {
-        render_selection(ctx, recorder, pass, scene_view);
-    }
 }
 
 
-EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool id) {
+FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, FrameGraphImageId in, ImageFormat format, const math::Vec2ui& size) {
+    if(in.is_valid()) {
+        return builder.declare_copy(in);
+    }
+    return builder.declare_image(format, size);
+}
+
+EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id) {
+    const math::Vec2ui size = framegraph.image_size(in_depth);
+
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
     auto pass_buffer = builder.declare_typed_buffer<EditorEntityPassData>();
     const auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(max_batch_size);
     const auto depth = builder.declare_copy(in_depth);
-    const auto color = builder.declare_copy(in_color);
-
-    EditorEntityPass pass;
-    pass.depth = depth;
-    (id ? pass.id : pass.color) = color;
+    const auto color = copy_or_dummy(builder, in_color, VK_FORMAT_R8G8B8A8_UNORM, size);
+    const auto id = copy_or_dummy(builder, in_id, VK_FORMAT_R32_UINT, size);
 
     builder.add_external_input(ctx->ui_manager().renderer().font_texture());
     builder.add_uniform_input(pass_buffer);
@@ -230,11 +230,20 @@ EditorEntityPass EditorEntityPass::create(ContextPtr ctx, FrameGraph& framegraph
 
     builder.add_depth_output(depth);
     builder.add_color_output(color);
+    builder.add_color_output(id);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            render_editor_entities(ctx, id, render_pass, self, view, pass_buffer, vertex_buffer);
+            render_editor_entities(ctx, render_pass, self, view, pass_buffer, vertex_buffer);
+
+            if(ctx->selection().has_selected_entity()) {
+                render_selection(ctx, render_pass, self, view);
+            }
         });
 
+    EditorEntityPass pass;
+    pass.depth = depth;
+    pass.color = color;
+    pass.id = id;
     return pass;
 }
 

@@ -118,6 +118,10 @@ class ShaderModuleBase : NonMovable, public DeviceLinked {
             return _push_constants;
         }
 
+        core::Span<u32> stage_output() const {
+            return _stage_output;
+        }
+
         usize specialization_data_size() const {
             return _spec_constants.is_empty() ? 0 : (_spec_constants.last().offset + _spec_constants.last().size);
         }
@@ -140,7 +144,9 @@ class ShaderModuleBase : NonMovable, public DeviceLinked {
         core::Vector<VkSpecializationMapEntry> _spec_constants;
         core::Vector<VkPushConstantRange> _push_constants;
         core::Vector<Attribute> _attribs;
+        core::Vector<u32> _stage_output;
         math::Vec3ui _local_size;
+
 
 };
 

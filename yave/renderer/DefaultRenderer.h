@@ -25,6 +25,7 @@ SOFTWARE.
 #include "ShadowMapPass.h"
 #include "ToneMappingPass.h"
 #include "SSAOPass.h"
+#include "BloomPass.h"
 
 namespace yave {
 
@@ -32,6 +33,7 @@ struct RendererSettings {
     ToneMappingSettings tone_mapping;
     ShadowMapPassSettings shadow_map;
     SSAOSettings ssao;
+    BloomSettings bloom;
 };
 
 struct DefaultRenderer {
@@ -39,6 +41,7 @@ struct DefaultRenderer {
     LightingPass lighting;
     ToneMappingPass tone_mapping;
     SSAOPass ssao;
+    BloomPass bloom;
 
     FrameGraphImageId color;
     FrameGraphImageId depth;

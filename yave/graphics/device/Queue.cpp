@@ -56,6 +56,8 @@ void Queue::wait() const {
 }
 
 void Queue::submit(CmdBufferRecorder& rec) const {
+    y_profile();
+
     const VkCommandBuffer cmd = rec.vk_cmd_buffer();
 
     {

@@ -29,6 +29,9 @@ SOFTWARE.
 
 #include <y/core/Chrono.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 static void depth_only_stages(core::Vector<VkPipelineShaderStageCreateInfo>& stages) {
@@ -166,10 +169,22 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         color_blend_attachment.dstAlphaBlendFactor = dst_blend;
         color_blend_attachment.srcColorBlendFactor = src_blend;
         color_blend_attachment.srcAlphaBlendFactor = src_blend;
-        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        //color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     }
 
-    const auto att_blends = core::Vector<VkPipelineColorBlendAttachmentState>(render_pass.attachment_count(), color_blend_attachment);
+    auto att_blends = core::Vector<VkPipelineColorBlendAttachmentState>(render_pass.attachment_count(), color_blend_attachment);
+    {
+        usize index = 0;
+        const auto& outputs = program.fragment_outputs();
+        for(u32 i = 0; i != att_blends.size(); ++i) {
+            if(index < outputs.size() && outputs[index] == i) {
+                att_blends[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+                ++index;
+            }
+        }
+    }
+
+
     VkPipelineColorBlendStateCreateInfo color_blending = vk_struct();
     {
         color_blending.logicOpEnable = false;

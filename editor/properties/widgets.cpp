@@ -444,6 +444,8 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
     if(ImGui::InputText("Name", name_buffer.data(), name_buffer.size())) {
         component->set_name(name_buffer.data());
     }
+
+    ImGui::Text("Id: %x", id.index());
 }
 
 }

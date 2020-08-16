@@ -62,7 +62,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
 
     Y_TODO(Take editor renderer settings into account for picking)
     const IdBufferPass scene_pass = IdBufferPass::create(context(), framegraph, scene_view, size);
-    const EditorEntityPass entity_pass = EditorEntityPass::create(context(), framegraph, scene_view, scene_pass.depth, scene_pass.id, true);
+    const EditorEntityPass entity_pass = EditorEntityPass::create(context(), framegraph, scene_view, scene_pass.depth, FrameGraphImageId(), scene_pass.id);
 
     {
         FrameGraphPassBuilder builder = framegraph.add_pass("Picking readback pass");

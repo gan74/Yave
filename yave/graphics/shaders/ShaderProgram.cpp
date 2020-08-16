@@ -35,6 +35,8 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+#include <y/utils/sort.h>
+
 
 namespace yave {
 
@@ -157,6 +159,10 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
         sort(vertex_attribs.begin(), vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; });
         create_vertex_attribs(vertex_attribs, _vertex.bindings, _vertex.attribs);
     }
+    {
+        _fragment_outputs = frag.stage_output();
+        y::sort(_fragment_outputs.begin(), _fragment_outputs.end());
+    }
 }
 
 core::Span<VkPipelineShaderStageCreateInfo> ShaderProgram::vk_pipeline_stage_info() const {
@@ -179,6 +185,9 @@ core::Span<VkPushConstantRange> ShaderProgram::vk_push_constants() const {
     return _push_constants;
 }
 
+core::Span<u32> ShaderProgram::fragment_outputs() const {
+    return _fragment_outputs;
+}
 
 }
 

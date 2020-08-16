@@ -33,63 +33,66 @@ SOFTWARE.
 
 namespace yave {
 
-BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId tone_mapped, const BloomPassSettings& settings) {
+
+static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId tone_mapped, const BloomSettings& settings) {
     const math::Vec2ui size = framegraph.image_size(tone_mapped);
     const ImageFormat format = framegraph.image_format(tone_mapped);
     const math::Vec2ui internal_size = size / 2;
 
-    FrameGraphMutableImageId thresholded;
-    {
-        FrameGraphPassBuilder builder = framegraph.add_pass("Bloom pass");
+    FrameGraphPassBuilder builder = framegraph.add_pass("Bloom pass");
 
-        struct BloomParams {
-            float power;
-            float threshold;
-            float rev_threshold;
-        } params {
-            settings.bloom_power,
-            settings.bloom_threshold,
-            1.0f / (1.0f - settings.bloom_threshold)
-        };
+    struct BloomParams {
+        float power;
+        float threshold;
+        float rev_threshold;
+    } params {
+        settings.bloom_power,
+        settings.bloom_threshold,
+        1.0f / (1.0f - settings.bloom_threshold)
+    };
 
-        thresholded = builder.declare_image(format, internal_size);
+    const auto thresholded = builder.declare_image(format, internal_size);
 
-        const auto param_buffer = builder.declare_typed_buffer<BloomParams>();
+    const auto param_buffer = builder.declare_typed_buffer<BloomParams>();
 
-        builder.add_color_output(thresholded);
-        builder.add_uniform_input(tone_mapped);
-        builder.add_uniform_input(param_buffer);
-        builder.map_update(param_buffer);
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            self->resources().mapped_buffer(param_buffer)[0] = params;
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            const auto* material = device_resources(recorder.device())[DeviceResources::BloomMaterialTemplate];
-            render_pass.bind_material(material, {self->descriptor_sets()[0]});
-            render_pass.draw_array(3);
-        });
-    }
+    builder.add_color_output(thresholded);
+    builder.add_uniform_input(tone_mapped);
+    builder.add_uniform_input(param_buffer);
+    builder.map_update(param_buffer);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        self->resources().mapped_buffer(param_buffer)[0] = params;
+        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        const auto* material = device_resources(recorder.device())[DeviceResources::BloomMaterialTemplate];
+        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.draw_array(3);
+    });
 
-    const BlurPass blur = BlurPass::create(framegraph, thresholded);
+    return thresholded;
+}
 
-    FrameGraphMutableImageId bloomed;
-    {
-        FrameGraphPassBuilder builder = framegraph.add_pass("Bloom merge pass");
+BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId tone_mapped, const BloomSettings& settings) {
+    const auto region = framegraph.region("Bloom");
 
-        bloomed = builder.declare_copy(tone_mapped);
+    const FrameGraphImageId thresholded = threshold(framegraph, tone_mapped, settings);
+    const FrameGraphImageId bloomed = BlurPass::create(framegraph, thresholded).blurred;
 
-        builder.add_color_output(bloomed);
-        builder.add_uniform_input(blur.blurred);
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            const auto* material = device_resources(recorder.device())[DeviceResources::ScreenBlendPassthroughMaterialTemplate];
-            render_pass.bind_material(material, {self->descriptor_sets()[0]});
-            render_pass.draw_array(3);
-        });
-    }
+    FrameGraphPassBuilder builder = framegraph.add_pass("Bloom merge pass");
+
+    const FrameGraphMutableImageId merged = builder.declare_copy(tone_mapped);
+
+    builder.add_color_output(merged);
+    builder.add_uniform_input(bloomed);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        const auto* material = device_resources(recorder.device())[DeviceResources::ScreenBlendPassthroughMaterialTemplate];
+        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.draw_array(3);
+    });
 
 
     BloomPass pass;
     pass.bloomed = bloomed;
+    pass.merged = merged;
 
     return pass;
 }

@@ -85,7 +85,10 @@ static auto stage_data(DevicePtr dptr, usize byte_size, const void* data) {
     y_profile();
     y_debug_assert(data);
     auto staging_buffer = StagingBuffer(dptr, byte_size);
-    std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
+    {
+        y_profile_zone("copy");
+        std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
+    }
     return staging_buffer;
 }
 

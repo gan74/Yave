@@ -39,9 +39,7 @@ struct EditorRendererSettings {
 struct EditorRenderer {
     DefaultRenderer renderer;
 
-    EditorEntityPass entity_pass;
-    IdBufferPass id_pass;
-
+    FrameGraphImageId id;
     FrameGraphImageId color;
     FrameGraphImageId depth;
 

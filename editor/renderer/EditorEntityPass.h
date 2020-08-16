@@ -35,7 +35,7 @@ struct EditorEntityPass {
     FrameGraphImageId color;
     FrameGraphImageId id;
 
-    static EditorEntityPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, bool id = false);
+    static EditorEntityPass create(ContextPtr ctx, FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id);
 };
 
 }

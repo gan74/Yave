@@ -190,12 +190,12 @@ static auto create_attribs(const spirv_cross::Compiler& compiler, const R& resou
 
 
 ShaderType ShaderModuleBase::shader_type(const SpirVData& data) {
-    spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
+    const spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
     return module_type(compiler);
 }
 
 ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : DeviceLinked(dptr), _module(create_shader_module(dptr, data)) {
-    spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
+    const spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
 
     _type = module_type(compiler);
 
@@ -230,6 +230,10 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
     fail_not_empty(resources.atomic_counters);
     fail_not_empty(resources.separate_images);
     fail_not_empty(resources.separate_samplers);
+
+    for(const auto& res : resources.stage_outputs) {
+        _stage_output << compiler.get_decoration(res.id, spv::DecorationLocation);
+    }
 
     u32 spec_offset = 0;
     for(const auto& cst : compiler.get_specialization_constants()) {

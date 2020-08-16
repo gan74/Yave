@@ -44,6 +44,7 @@ static constexpr const char* spirv_names[] = {
         "imgui.frag",
         "imgui_billboard.frag",
         "id.frag",
+        "clear_id.frag",
         "engine_view.frag",
         "selection.frag",
         "wireframe.frag",
@@ -70,12 +71,11 @@ struct DeviceMaterialData {
 
 static constexpr DeviceMaterialData material_datas[] = {
         {SpirV::ImGuiFrag,          SpirV::ImGuiVert,           SpirV::MaxSpirV,            false,  false,  true,   PrimitiveType::Triangles},
-        {SpirV::ImGuiBillBoardFrag, SpirV::ImGuiBillBoardVert,  SpirV::ImGuiBillBoardGeom,  true,   false,  true,   PrimitiveType::Points},
-        {SpirV::IdFrag,             SpirV::IdVert,              SpirV::MaxSpirV,            true,   true,   true,   PrimitiveType::Triangles},
-        {SpirV::IdFrag,             SpirV::ImGuiBillBoardVert,  SpirV::ImGuiBillBoardGeom,  true,   false,  true,   PrimitiveType::Points},
-        {SpirV::EngineViewFrag,     SpirV::ScreenVert,          SpirV::MaxSpirV,            false,  false,  true,   PrimitiveType::Triangles},
+        {SpirV::ImGuiBillBoardFrag, SpirV::ImGuiBillBoardVert,  SpirV::ImGuiBillBoardGeom,  true,   false,  false,  PrimitiveType::Points},
+        {SpirV::IdFrag,             SpirV::IdVert,              SpirV::MaxSpirV,            true,   true,   false,  PrimitiveType::Triangles},
+        {SpirV::EngineViewFrag,     SpirV::ScreenVert,          SpirV::MaxSpirV,            false,  false,  false,  PrimitiveType::Triangles},
         {SpirV::SelectionFrag,      SpirV::ScreenVert,          SpirV::MaxSpirV,            false,  false,  true,   PrimitiveType::Triangles},
-        {SpirV::WireFrameFrag,      SpirV::WireFrameVert,       SpirV::MaxSpirV,            true,   false,  true,   PrimitiveType::Lines},
+        {SpirV::WireFrameFrag,      SpirV::WireFrameVert,       SpirV::MaxSpirV,            true,   false,  false,  PrimitiveType::Lines},
     };
 
 

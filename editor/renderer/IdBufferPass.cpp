@@ -105,9 +105,9 @@ IdBufferPass IdBufferPass::create(ContextPtr ctx, FrameGraph& framegraph, const 
     builder.add_depth_output(depth);
     builder.add_color_output(id);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            render_world(ctx, render_pass, self, view, camera_buffer, transform_buffer, id_buffer);
-        });
+        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        render_world(ctx, render_pass, self, view, camera_buffer, transform_buffer, id_buffer);
+    });
 
     return pass;
 }

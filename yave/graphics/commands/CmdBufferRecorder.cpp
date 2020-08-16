@@ -461,9 +461,10 @@ void CmdBufferRecorder::submit(SyncPolicy policy) {
             // nothing
         break;
 
-        case SyncPolicy::Sync:
+        case SyncPolicy::Sync: {
+            y_profile_zone("sync");
             queue.wait();
-        break;
+        } break;
     }
 
     // Empty state

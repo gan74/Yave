@@ -39,6 +39,7 @@ class EditorResources final : NonMovable {
             ImGuiFrag,
             ImGuiBillBoardFrag,
             IdFrag,
+            ClearIdFrag,
             EngineViewFrag,
             SelectionFrag,
             WireFrameFrag,
@@ -66,7 +67,6 @@ class EditorResources final : NonMovable {
             ImGuiBillBoardMaterialTemplate,
 
             IdMaterialTemplate,
-            ImGuiBillBoardIdMaterialTemplate,
 
             EngineViewMaterialTemplate,
             SelectionMaterialTemplate,
