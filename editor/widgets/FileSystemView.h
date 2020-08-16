@@ -61,7 +61,7 @@ class FileSystemView : public Widget {
         const Entry* entry(usize index) const;
         core::String entry_full_name(const Entry& entry) const;
 
-        void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+        void paint(CmdBufferRecorder&) override;
 
         virtual void update();
         virtual void paint_context_menu();

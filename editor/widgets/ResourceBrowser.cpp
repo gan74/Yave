@@ -66,10 +66,10 @@ bool ResourceBrowser::is_searching() const {
 
 void ResourceBrowser::paint_import_menu() {
     if(ImGui::Selectable("Import objects")) {
-        context()->ui_manager().add<SceneImporter>(context(), path());
+        context()->ui_manager().add_widget<SceneImporter>(context(), path());
     }
     if(ImGui::Selectable("Import image")) {
-        context()->ui_manager().add<ImageImporter>(context(), path());
+        context()->ui_manager().add_widget<ImageImporter>(context(), path());
     }
 }
 
@@ -252,10 +252,8 @@ void ResourceBrowser::paint_search_results(float width) {
 
 
 
-void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
-    unused(recorder, token);
+void ResourceBrowser::paint(CmdBufferRecorder& recorder) {
     y_profile();
-
 
     const float width = ImGui::GetWindowContentRegionWidth();
     const float tree_width = 0.0f;
@@ -271,7 +269,7 @@ void ResourceBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& to
         paint_search_results(list_width);
     } else {
         ImGui::BeginChild("##assets", ImVec2(list_width, 0.0f));
-        FileSystemView::paint_ui(recorder, token);
+        FileSystemView::paint(recorder);
         ImGui::EndChild();
     }
 

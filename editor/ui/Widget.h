@@ -22,18 +22,21 @@ SOFTWARE.
 #ifndef EDITOR_UI_WIDGET_H
 #define EDITOR_UI_WIDGET_H
 
-#include "UiElement.h"
-#include <editor/components/UiComponent.h>
+#include <editor/editor.h>
+
+
+#include <y/core/String.h>
+#include <y/core/Vector.h>
+#include <y/core/Span.h>
 
 namespace editor {
 
-class Widget : public UiElement {
-
+class Widget : NonMovable {
     public:
         Widget(std::string_view title, u32 flags = 0);
-        ~Widget() override;
+        virtual ~Widget();
 
-        void paint(CmdBufferRecorder& recorder, const FrameToken& token) override;
+        virtual void refresh();
 
         const math::Vec2& position() const;
         const math::Vec2& size() const;
@@ -41,30 +44,70 @@ class Widget : public UiElement {
         bool is_focussed() const;
         bool is_mouse_inside() const;
 
+        void set_parent(Widget* parent);
+        bool has_parent() const;
+
+        bool is_visible() const;
+
+        void show();
+        void close();
+
+        std::string_view title() const;
+
+        UiManager* manager() const;
+
+        template<typename T, typename... Args>
+        T* add_child(Args&&... args);
+
+        virtual void paint(CmdBufferRecorder&) = 0;
+
     protected:
-        virtual void paint_ui(CmdBufferRecorder&, const FrameToken&) = 0;
+        friend class UiManager;
+
         virtual void before_paint() {}
         virtual void after_paint() {}
 
+        virtual bool can_destroy() const;
+
+        void refresh_all();
+        void set_flags(u32 flags);
         void set_closable(bool closable);
 
-        void set_flags(u32 flags);
-
         math::Vec2ui content_size() const;
+
+
+        bool _visible = true;
 
     private:
         void update_attribs();
 
+        core::String _title_with_id;
+        std::string_view _title;
+
         math::Vec2 _position;
         math::Vec2 _size;
-
         math::Vec2 _min_size;
 
-        u32 _flags;
+        u32 _flags = 0;
+
+        bool _refresh_all = false;
         bool _closable = true;
         bool _docked = false;
         bool _focussed = false;
         bool _mouse_inside = false;
+
+        void set_id(u64 id);
+        void set_title(std::string_view title);
+
+        bool has_visible_children() const;
+
+        u64 _id = 0;
+
+        bool _has_children = false;
+        Widget* _parent = nullptr;
+        UiManager* _manager = nullptr;
+
+
 };
 
 }

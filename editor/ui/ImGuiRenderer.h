@@ -49,7 +49,7 @@ class ImGuiRenderer : public ContextLinked {
 
         ImGuiRenderer(ContextPtr ctx);
 
-        void render(RenderPassRecorder& recorder, const FrameToken&);
+        void render(RenderPassRecorder& recorder);
 
         void set_style(Style st);
 

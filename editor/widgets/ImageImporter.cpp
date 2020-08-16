@@ -42,14 +42,13 @@ ImageImporter::ImageImporter(ContextPtr ctx, const core::String& import_path) :
         ContextLinked(ctx),
         _import_path(import_path) {
 
-    _browser.set_parent(this);
     _browser.set_selection_filter(false, import::supported_image_extensions());
     _browser.set_selected_callback([this](const auto& filename) { import_async(filename); return true; });
     _browser.set_canceled_callback([this] { close(); return true; });
 }
 
-void ImageImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)  {
-    _browser.paint(recorder, token);
+void ImageImporter::paint(CmdBufferRecorder& recorder)  {
+    _browser.paint(recorder);
 
     if(is_loading()) {
         if(done_loading()) {

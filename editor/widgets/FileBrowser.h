@@ -42,14 +42,14 @@ class FileBrowser final : public FileSystemView {
 
         void set_selection_filter(bool dirs, std::string_view exts = "");
 
+        void paint(CmdBufferRecorder& recorder) override;
+
     protected:
         void path_changed() override;
         core::Result<core::String> entry_icon(const core::String &name, EntryType type) const override;
         void entry_clicked(const Entry& entry) override;
 
     private:
-        void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
-
         bool has_valid_extension(std::string_view filename) const;
         bool done(const core::String& filename);
         void cancel();

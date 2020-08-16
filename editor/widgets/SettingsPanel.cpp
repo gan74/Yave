@@ -93,8 +93,7 @@ static void perf_settings(ContextPtr ctx) {
     }
 }
 
-void SettingsPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
-
+void SettingsPanel::paint(CmdBufferRecorder&) {
 
     struct SettingCategory {
         const char* name;

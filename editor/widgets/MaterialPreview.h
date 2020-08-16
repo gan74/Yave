@@ -45,8 +45,9 @@ class MaterialPreview final : public Widget, public ContextLinked {
         void set_object(const AssetPtr<StaticMesh>& mesh);
         void set_object(PreviewObject obj);
 
+        void paint(CmdBufferRecorder& recorder) override;
+
     private:
-        void paint_ui(CmdBufferRecorder& recorder, const FrameToken&) override;
         void paint_mesh_menu();
 
         void reset_world();

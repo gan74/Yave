@@ -33,7 +33,7 @@ class AssetStringifier : public Widget, public ContextLinked {
         void clear();
 
     private:
-        void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+        void paint(CmdBufferRecorder& recorder) override;
 
         void stringify(AssetId id);
 

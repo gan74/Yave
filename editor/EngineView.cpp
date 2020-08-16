@@ -55,6 +55,7 @@ EngineView::~EngineView() {
 }
 
 void EngineView::before_paint() {
+    Y_TODO(this is not called anymore)
     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, math::Vec4(0.0f));
     ImGui::PushStyleColor(ImGuiCol_Border, math::Vec4(0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2(2.0f, 0.0f));
@@ -127,7 +128,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
 }
 
-void EngineView::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
+void EngineView::paint(CmdBufferRecorder& recorder) {
     y_profile();
 
     update_proj();

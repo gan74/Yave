@@ -28,7 +28,7 @@ SOFTWARE.
 #include <editor/properties/PropertyPanel.h>
 #include <editor/widgets/MaterialEditor.h>
 #include <editor/EngineView.h>
-#include <editor/ui/MenuBar.h>
+#include <editor/ui/Widget.h>
 
 #include <editor/ui/ImGuiRenderer.h>
 #include <imgui/yave_imgui.h>
@@ -42,6 +42,19 @@ SOFTWARE.
 #ifdef Y_OS_WIN
 #include <windows.h>
 #endif
+
+
+#include <editor/widgets/EntityView.h>
+#include <editor/widgets/FileBrowser.h>
+#include <editor/widgets/SettingsPanel.h>
+#include <editor/widgets/CameraDebug.h>
+#include <editor/widgets/MemoryInfo.h>
+#include <editor/widgets/PerformanceMetrics.h>
+#include <editor/widgets/ResourceBrowser.h>
+#include <editor/widgets/MaterialEditor.h>
+#include <editor/widgets/AssetStringifier.h>
+#include <editor/properties/PropertyPanel.h>
+#include <editor/EngineView.h>
 
 namespace editor {
 
@@ -62,7 +75,6 @@ UiManager::UiManager(ContextPtr ctx) : ContextLinked(ctx) {
     show<ResourceBrowser>();
     show<PropertyPanel>();
     show<MaterialEditor>();
-    show<MenuBar>();
 
     _renderer = std::make_unique<ImGuiRenderer>(context());
 }
@@ -75,8 +87,8 @@ const ImGuiRenderer& UiManager::renderer() const {
     return *_renderer;
 }
 
-core::Span<std::unique_ptr<UiElement>> UiManager::ui_elements() const {
-    return _elements;
+core::Span<std::unique_ptr<Widget>> UiManager::widgets() const {
+    return _widgets;
 }
 
 bool UiManager::confirm(const char* message) {
@@ -100,14 +112,16 @@ void UiManager::ok(const char* title, const char* message) {
 
 void UiManager::refresh_all() {
     y_profile();
-    refresh_all(_elements);
+    for(const auto& wid : _widgets) {
+        wid->refresh();
+    }
 }
 
-UiManager::Ids& UiManager::ids_for(UiElement* elem) {
+UiManager::Ids& UiManager::ids_for(Widget* elem) {
     return _ids[typeid(*elem)];
 }
 
-void UiManager::set_id(UiElement* elem) {
+void UiManager::set_id(Widget* elem) {
     auto& ids = ids_for(elem);
     if(!ids.released.is_empty()) {
         elem->set_id(ids.released.pop());
@@ -152,7 +166,8 @@ void UiManager::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
         ImGui::PopStyleVar(3);
     }
 
-    paint_ui(recorder, token);
+    paint_menu_bar();
+    paint_widgets(recorder);
 
     {
         y_profile_zone("end frame");
@@ -160,63 +175,189 @@ void UiManager::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
         ImGui::Render();
     }
 
+    Y_TODO(move that elsewhere)
     {
         y_profile_zone("render");
         Framebuffer framebuffer(token.image_view.device(), {token.image_view});
         RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
-        _renderer->render(pass, token);
+        _renderer->render(pass);
     }
 }
 
-
-void UiManager::refresh_all(core::Span<std::unique_ptr<UiElement>> elements) {
-    for(const auto& elem : elements) {
-        y_profile_zone(elem->title().data());
-        elem->refresh();
-        refresh_all(elem->children());
-    }
+static void fix_undocked_bg() {
+    ImVec4* colors = ImGui::GetStyle().Colors;
+    const math::Vec4 window_bg = colors[ImGuiCol_WindowBg];
+    const math::Vec4 child_col = colors[ImGuiCol_ChildBg];
+    const math::Vec4 final(math::lerp(window_bg.to<3>(), child_col.to<3>(), child_col.w()), window_bg.w());
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, final);
 }
 
-void UiManager::cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child) {
+void UiManager::paint_widget(Widget* widget, CmdBufferRecorder& recorder) {
+    if(!widget->is_visible()) {
+        return;
+    }
+
+    y_profile_zone(widget->_title_with_id.data());
+
+    widget->before_paint();
+
+    {
+        ImGui::SetNextWindowSize(ImVec2(480, 480), ImGuiCond_FirstUseEver);
+
+        // change windows bg to match docked (ie: inside frame) look
+        if(!widget->_docked) {
+            fix_undocked_bg();
+        }
+
+        const bool closable = widget->_closable && !widget->_has_children;
+        const u32 extra_flags = 0;
+
+        const bool b = ImGui::Begin(widget->_title_with_id.begin(), closable ? &widget->_visible : nullptr, widget->_flags | extra_flags);
+        if(!widget->_docked) {
+            ImGui::PopStyleColor();
+        }
+
+        widget->update_attribs();
+        if(b) {
+            widget->paint(recorder);
+        }
+        ImGui::End();
+    }
+
+    widget->after_paint();
+}
+
+void UiManager::cull_closed() {
     y_profile();
-    for(usize i = 0; i < elements.size(); ++i) {
-        y_debug_assert(elements[i]->is_child() == is_child);
-        if(!elements[i]->has_visible_children() && elements[i]->can_destroy()) {
-            if(!is_child) {
-                ids_for(elements[i].get()).released << elements[i]->_id;
-            }
-            elements.erase_unordered(elements.begin() + i);
-            --i;
-        } else {
-            cull_closed(elements[i]->_children, true);
+
+    for(const auto& wid : _widgets) {
+        wid->_has_children = false;
+    }
+
+    for(const auto& wid : _widgets) {
+        if(wid->_parent) {
+            wid->_parent->_has_children = true;
         }
     }
-}
 
-bool UiManager::paint(core::Span<std::unique_ptr<UiElement>> elements, CmdBufferRecorder& recorder, const FrameToken& token) {
-    y_profile();
-    bool refresh = false;
+    for(usize i = 0; i < _widgets.size(); ++i) {
+        Widget* wid = _widgets[i].get();
+        if(wid->_visible || wid->_has_children) {
+            continue;
+        }
 
-    for(const auto& elem : elements) {
-        elem->paint(recorder, token);
-        refresh |= paint(elem->children(), recorder, token);
-        refresh |= elem->_refresh_all;
-        elem->_refresh_all = false;
+        ids_for(_widgets[i].get()).released << _widgets[i]->_id;
+        _widgets.erase_unordered(_widgets.begin() + i);
+        --i;
     }
-
-    return refresh;
 }
 
-void UiManager::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+
+void UiManager::paint_widgets(CmdBufferRecorder& recorder) {
     y_profile();
 
     ImGui::ShowDemoWindow();
 
-    if(paint(_elements, recorder, token)) {
+    bool refresh = false;
+    for(const auto& wid : _widgets) {
+        paint_widget(wid.get(), recorder);
+        refresh |= wid->_refresh_all;
+        wid->_refresh_all = false;
+    }
+
+    if(refresh) {
         refresh_all();
     }
 
-    cull_closed(_elements);
+    cull_closed();
+}
+
+void UiManager::paint_menu_bar() {
+    if(ImGui::BeginMenuBar()) {
+        if(ImGui::BeginMenu(ICON_FA_FILE " File")) {
+
+            if(ImGui::MenuItem(ICON_FA_FILE " New")) {
+                context()->new_world();
+            }
+
+            ImGui::Separator();
+
+            if(ImGui::MenuItem(ICON_FA_SAVE " Save")) {
+                context()->defer([ctx = context()] { ctx->save_world(); });
+            }
+
+            if(ImGui::MenuItem(ICON_FA_FOLDER " Load")) {
+                context()->load_world();
+            }
+
+            ImGui::EndMenu();
+        }
+
+        if(ImGui::BeginMenu("View")) {
+            if(ImGui::MenuItem("Engine view")) add_widget<EngineView>();
+            if(ImGui::MenuItem("Entity view")) add_widget<EntityView>();
+            if(ImGui::MenuItem("Resource browser")) add_widget<ResourceBrowser>();
+            if(ImGui::MenuItem("Material editor")) add_widget<MaterialEditor>();
+
+            ImGui::Separator();
+
+            if(ImGui::BeginMenu("Debug")) {
+                if(ImGui::MenuItem("Camera debug")) add_widget<CameraDebug>();
+
+                ImGui::Separator();
+                if(ImGui::MenuItem("Asset stringifier")) add_widget<AssetStringifier>();
+
+                ImGui::Separator();
+                if(ImGui::MenuItem("Flush reload")) context()->flush_reload();
+
+                y_debug_assert(!(ImGui::Separator(), ImGui::MenuItem("Debug assert")));
+
+                ImGui::EndMenu();
+            }
+            if(ImGui::BeginMenu("Statistics")) {
+                if(ImGui::MenuItem("Performances")) add_widget<PerformanceMetrics>();
+                if(ImGui::MenuItem("Memory info")) add_widget<MemoryInfo>();
+                ImGui::EndMenu();
+            }
+
+            ImGui::Separator();
+
+            if(ImGui::MenuItem(ICON_FA_COG " Settings")) add_widget<SettingsPanel>();
+
+            ImGui::EndMenu();
+        }
+
+        if(ImGui::BeginMenu("Tools")) {
+            if(ImGui::MenuItem("Reload resources")) context()->reload_device_resources();
+            ImGui::EndMenu();
+        }
+
+#ifdef Y_PERF_LOG_ENABLED
+        if(perf::is_capturing()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+            if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->end_perf_capture();
+            ImGui::PopStyleColor();
+        } else {
+            if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->start_perf_capture();
+        }
+#endif
+
+        {
+            const usize progress_bar_size = 300;
+            //ImGui::SameLine(ImGui::GetWindowSize().x - progress_bar_size);
+            auto progress_items = context()->notifications().progress_items();
+            for(const auto& item : progress_items) {
+                if(ImGui::GetContentRegionAvail().x < progress_bar_size) {
+                    break;
+                }
+                if(!item.is_over()) {
+                    ImGui::ProgressBar(item.fraction(), ImVec2(progress_bar_size, 0.0f), fmt_c_str("%: %/%", item.msg, item.it, item.size));
+                }
+            }
+        }
+
+        ImGui::EndMenuBar();
+    }
 }
 
 }

@@ -105,7 +105,7 @@ void ImGuiRenderer::set_style(Style st) {
     }
 }
 
-void ImGuiRenderer::render(RenderPassRecorder& recorder, const FrameToken&) {
+void ImGuiRenderer::render(RenderPassRecorder& recorder) {
     static_assert(sizeof(ImDrawVert) == sizeof(Vertex), "ImDrawVert is not of expected size");
     static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
     y_profile();

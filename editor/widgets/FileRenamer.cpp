@@ -51,7 +51,7 @@ FileRenamer::FileRenamer(const FileSystemModel* fs, core::String filename) :
     std::copy_n(_name.begin(), size, _new_name.begin());
 }
 
-void FileRenamer::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+void FileRenamer::paint(CmdBufferRecorder&) {
     ImGui::Text("Rename: \"%s\"", _name.data());
 
     if(ImGui::InputText("", _new_name.data(), _new_name.size(), ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::Button("Ok")) {

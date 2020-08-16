@@ -121,7 +121,7 @@ core::String FileBrowser::full_path() const {
     return filesystem()->join(path(), _name_buffer.data());
 }
 
-void FileBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+void FileBrowser::paint(CmdBufferRecorder& recorder) {
     static constexpr isize button_width = 75;
 
     {
@@ -152,7 +152,7 @@ void FileBrowser::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)
         }
     }
 
-    FileSystemView::paint_ui(recorder, token);
+    FileSystemView::paint(recorder);
 }
 
 }

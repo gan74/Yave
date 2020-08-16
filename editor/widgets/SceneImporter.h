@@ -42,13 +42,14 @@ class SceneImporter final : public Widget, public ContextLinked {
     public:
         SceneImporter(ContextPtr ctx, const core::String& import_path = ".");
 
-    private:
+        void paint(CmdBufferRecorder&recorder) override;
+
+    protected:
         bool can_destroy() const override;
+
+    private:
         bool done_loading() const;
-
-        void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
         void paint_import_settings();
-
         import::SceneImportFlags scene_import_flags() const;
 
         void import(import::SceneData scene);

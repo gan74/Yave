@@ -52,7 +52,6 @@ SceneImporter::SceneImporter(ContextPtr ctx, const core::String& import_path) :
         ContextLinked(ctx),
         _import_path(import_path) {
 
-    _browser.set_parent(this);
     _browser.set_selection_filter(false, import::supported_scene_extensions());
     _browser.set_canceled_callback([this] { close(); return true; });
     _browser.set_selected_callback([this](const auto& filename) {
@@ -62,9 +61,9 @@ SceneImporter::SceneImporter(ContextPtr ctx, const core::String& import_path) :
         });
 }
 
-void SceneImporter::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token)  {
+void SceneImporter::paint(CmdBufferRecorder& recorder)  {
     if(_state == State::Browsing) {
-        _browser.paint(recorder, token);
+        _browser.paint(recorder);
     } else if(_state == State::Settings) {
         paint_import_settings();
     } else {

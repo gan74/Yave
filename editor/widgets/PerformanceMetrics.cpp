@@ -34,7 +34,7 @@ PerformanceMetrics::PerformanceMetrics(ContextPtr cptr) : Widget("Performance", 
     std::fill(_average.begin(), _average.end(), 0.0f);
 }
 
-void PerformanceMetrics::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+void PerformanceMetrics::paint(CmdBufferRecorder&) {
     const float ms = float(_timer.reset().to_millis());
     const float avg = float(_total / _frames.size());
 

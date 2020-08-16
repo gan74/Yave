@@ -47,7 +47,7 @@ MemoryInfo::MemoryInfo(ContextPtr cptr) : Widget("Memory info", ImGuiWindowFlags
     std::fill(_history.begin(), _history.end(), 0.0f);
 }
 
-void MemoryInfo::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+void MemoryInfo::paint(CmdBufferRecorder&) {
     y_profile();
 
     usize total_used = 0;

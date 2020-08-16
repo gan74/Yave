@@ -36,7 +36,7 @@ PropertyPanel::PropertyPanel(ContextPtr cptr) :
     set_closable(false);
 }
 
-void PropertyPanel::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+void PropertyPanel::paint(CmdBufferRecorder&) {
     if(!context()->selection().has_selected_entity()) {
         return;
     }

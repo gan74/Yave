@@ -31,7 +31,7 @@ class FileRenamer final : public Widget {
         FileRenamer(const FileSystemModel* fs, core::String filename);
 
     private:
-        void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+        void paint(CmdBufferRecorder&) override;
 
     private:
         const FileSystemModel* _filesystem = nullptr;

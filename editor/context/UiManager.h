@@ -46,7 +46,7 @@ class UiManager : NonMovable, public ContextLinked {
         UiManager(ContextPtr ctx);
         ~UiManager();
 
-        core::Span<std::unique_ptr<UiElement>> ui_elements() const;
+        core::Span<std::unique_ptr<Widget>> widgets() const;
 
         const ImGuiRenderer& renderer() const;
 
@@ -56,12 +56,11 @@ class UiManager : NonMovable, public ContextLinked {
         bool confirm(const char* message);
         void ok(const char* title, const char* message);
 
-
         void paint(CmdBufferRecorder& recorder, const FrameToken& token);
 
         template<typename T>
         T* find() {
-            for(auto&& e : _elements) {
+            for(auto&& e : _widgets) {
                 if(T* w = dynamic_cast<T*>(e.get())) {
                     return w;
                 }
@@ -75,32 +74,36 @@ class UiManager : NonMovable, public ContextLinked {
                 w->show();
                 return w;
             }
-            return add<T>();
+            return add_widget<T>();
         }
 
         template<typename T, typename... Args>
-        T* add(Args&&... args) {
+        T* add_widget(Args&&... args) {
             if constexpr(std::is_constructible_v<T, ContextPtr, Args...>) {
-                _elements.emplace_back(std::make_unique<T>(context(), y_fwd(args)...));
+                _widgets.emplace_back(std::make_unique<T>(context(), y_fwd(args)...));
             } else {
-                _elements.emplace_back(std::make_unique<T>(y_fwd(args)...));
+                _widgets.emplace_back(std::make_unique<T>(y_fwd(args)...));
             }
-            UiElement* ptr = _elements.last().get();
+            Widget* ptr = _widgets.last().get();
+            ptr->_manager = this;
             set_id(ptr);
             return dynamic_cast<T*>(ptr);
         }
 
     private:
-        static bool paint(core::Span<std::unique_ptr<UiElement>> elements, CmdBufferRecorder& recorder, const FrameToken& token);
-        static void refresh_all(core::Span<std::unique_ptr<UiElement>> elements);
+        static void paint_widget(Widget* widget, CmdBufferRecorder& recorder);
+        static bool paint(core::Span<std::unique_ptr<Widget>> elements, CmdBufferRecorder& recorder);
 
-        void cull_closed(core::Vector<std::unique_ptr<UiElement>>& elements, bool is_child = false);
-        Ids& ids_for(UiElement* elem);
-        void set_id(UiElement* elem);
+        void paint_menu_bar();
+        void paint_widgets(CmdBufferRecorder& recorder);
 
-        void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token);
+        void cull_closed();
 
-        core::Vector<std::unique_ptr<UiElement>> _elements;
+        Ids& ids_for(Widget* elem);
+        void set_id(Widget* elem);
+
+
+        core::Vector<std::unique_ptr<Widget>> _widgets;
         core::ExternalHashMap<std::type_index, Ids> _ids;
 
         std::unique_ptr<ImGuiRenderer> _renderer;
@@ -108,6 +111,13 @@ class UiManager : NonMovable, public ContextLinked {
         core::Chrono _frame_timer;
 
 };
+
+template<typename T, typename... Args>
+T* Widget::add_child(Args&&... args) {
+    T* wid = manager()->add_widget<T>(y_fwd(args)...);
+    wid->set_parent(this);
+    return wid;
+}
 
 }
 

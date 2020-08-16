@@ -33,6 +33,8 @@ namespace editor {
 class ResourceBrowser : public FileSystemView, public ContextLinked {
     public:
         ResourceBrowser(ContextPtr ctx);
+        
+        void paint(CmdBufferRecorder& recorder) override;
 
     protected:
         ResourceBrowser(ContextPtr ctx, std::string_view title);
@@ -45,7 +47,6 @@ class ResourceBrowser : public FileSystemView, public ContextLinked {
     protected:
         void update() override;
 
-        void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
         void paint_context_menu() override;
         void path_changed() override;
 

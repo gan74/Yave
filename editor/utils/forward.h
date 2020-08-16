@@ -55,7 +55,6 @@ class MaterialData;
 class MaterialEditor;
 class MaterialPreview;
 class MemoryInfo;
-class MenuBar;
 class Notifications;
 class PerfSettings;
 class PerformanceMetrics;
@@ -72,10 +71,9 @@ class SettingsPanel;
 class SkeletonData;
 class SubMeshData;
 class ThumbmailCache;
-class UiElement;
 class UiManager;
 class UiSettings;
+class Widget;
 }
 
 #endif // EDITOR_UTILS_FORWARD_H
-

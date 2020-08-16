@@ -35,7 +35,7 @@ class EntityView final : public Widget, public ContextLinked {
         EntityView(ContextPtr cptr);
 
     private:
-        void paint_ui(CmdBufferRecorder&, const FrameToken&) override;
+        void paint(CmdBufferRecorder&) override;
 
         void paint_view();
 

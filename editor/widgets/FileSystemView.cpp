@@ -163,7 +163,7 @@ bool FileSystemView::allow_modify() const {
     return true;
 }
 
-void FileSystemView::paint_ui(CmdBufferRecorder&, const FrameToken&) {
+void FileSystemView::paint(CmdBufferRecorder&) {
     y_profile();
 
     if(_refresh || _update_chrono.elapsed() > update_duration) {

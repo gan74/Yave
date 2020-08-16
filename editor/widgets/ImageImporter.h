@@ -38,7 +38,7 @@ class ImageImporter final : public Widget, public ContextLinked {
         ImageImporter(ContextPtr ctx, const core::String& import_path = ".");
 
     private:
-        void paint_ui(CmdBufferRecorder&recorder, const FrameToken&token) override;
+        void paint(CmdBufferRecorder&recorder) override;
 
         void import_async(const core::String& filename);
         void import(const Named<ImageData>& asset);

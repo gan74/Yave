@@ -27,21 +27,19 @@ SOFTWARE.
 namespace editor {
 
 Widget::Widget(std::string_view title, u32 flags) :
-        UiElement(title),
         _flags(flags) {
+    set_title(title);
 }
 
 Widget::~Widget() {
-    y_always_assert(!has_children(), "Widget was closed while having children");
+    y_always_assert(!_has_children, "Widget was closed while having children");
 }
 
 const math::Vec2& Widget::position() const {
-    y_debug_assert(!has_parent());
     return _position;
 }
 
 const math::Vec2& Widget::size() const {
-    y_debug_assert(!has_parent());
     return _size;
 }
 
@@ -61,6 +59,10 @@ void Widget::set_flags(u32 flags) {
     _flags = flags;
 }
 
+bool Widget::can_destroy() const {
+    return true;
+}
+
 math::Vec2ui Widget::content_size() const {
     return (math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
 }
@@ -76,64 +78,52 @@ void Widget::update_attribs() {
     _mouse_inside = less(mouse_pos, ImGui::GetWindowContentRegionMax()) && less(ImGui::GetWindowContentRegionMin(), mouse_pos);
 }
 
-static void fix_undocked_bg() {
-    ImVec4* colors = ImGui::GetStyle().Colors;
-    const math::Vec4 window_bg = colors[ImGuiCol_WindowBg];
-    const math::Vec4 child_col = colors[ImGuiCol_ChildBg];
-    const math::Vec4 final(math::lerp(window_bg.to<3>(), child_col.to<3>(), child_col.w()), window_bg.w());
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, final);
+void Widget::set_id(u64 id) {
+    _id = id;
+    set_title(_title);
 }
 
-void Widget::paint(CmdBufferRecorder& recorder, const FrameToken& token) {
-    if(!is_visible()) {
-        return;
-    }
+void Widget::set_title(std::string_view title) {
+    const core::String new_title = fmt("%##%", title, _id);
+    _title_with_id = std::move(new_title);
+    _title = std::string_view(_title_with_id.begin(), title.size());
+}
 
-    y_profile_zone(_title_with_id.data());
+void Widget::refresh_all() {
+    _refresh_all = true;
+}
 
-    before_paint();
+void Widget::refresh() {
+}
 
-    if(has_parent()) {
-        y_always_assert(!has_children(), "Widgets drawn in parents can not have childrens");
+void Widget::set_parent(Widget* parent) {
+    y_always_assert(!_parent || !parent, "Widget already has a parent");
+    _parent = parent;
+}
 
-        /*if(ImGui::BeginChild(_title_with_id.begin(), ImVec2(0, 0), false, _flags)) {
-            paint_ui(recorder, token);
-        }
-        ImGui::EndChild();*/
+bool Widget::has_parent() const {
+    return _parent;
+}
 
-        ImGui::BeginGroup();
-        ImGui::PushID(_title_with_id.begin());
-        {
-            update_attribs();
-            paint_ui(recorder, token);
-        }
-        ImGui::PopID();
-        ImGui::EndGroup();
+bool Widget::is_visible() const {
+    return _visible;
+}
 
-    } else {
-        ImGui::SetNextWindowSize(ImVec2(480, 480), ImGuiCond_FirstUseEver);
+std::string_view Widget::title() const {
+    return _title;
+}
 
-        // change windows bg to match docked (ie: inside frame) look
-        if(!_docked) {
-            fix_undocked_bg();
-        }
+void Widget::show() {
+    _visible = true;
+}
 
-        const bool closable = _closable && !has_children();
-        const u32 extra_flags = is_child() ? ImGuiWindowFlags_NoSavedSettings : 0;
+void Widget::close() {
+    _visible = false;
+}
 
-        const bool b = ImGui::Begin(_title_with_id.begin(), closable ? &_visible : nullptr, _flags | extra_flags);
-        if(!_docked) {
-            ImGui::PopStyleColor();
-        }
-
-        update_attribs();
-        if(b) {
-            paint_ui(recorder, token);
-        }
-        ImGui::End();
-    }
-
-    after_paint();
+UiManager* Widget::manager() const {
+    y_debug_assert(_manager);
+    return _manager;
 }
 
 }

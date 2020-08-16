@@ -85,8 +85,6 @@ MaterialEditor::MaterialEditor(ContextPtr cptr) :
         Widget(ICON_FA_BRUSH " Material Editor"),
         ContextLinked(cptr),
         _preview(cptr) {
-
-    _preview.set_parent(this);
 }
 
 void MaterialEditor::refresh() {
@@ -98,7 +96,7 @@ void MaterialEditor::set_material(const AssetPtr<Material>& mat) {
     _preview.set_material(_material);
 }
 
-void MaterialEditor::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+void MaterialEditor::paint(CmdBufferRecorder& recorder) {
     y_profile();
 
     /*{
@@ -112,7 +110,7 @@ void MaterialEditor::paint_ui(CmdBufferRecorder& recorder, const FrameToken& tok
     }*/
 
     if(_material) {
-        _preview.paint(recorder, token);
+        _preview.paint(recorder);
     }
 
     if(imgui::asset_selector(context(), _material.id(), AssetType::Material, "Material")) {

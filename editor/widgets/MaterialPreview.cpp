@@ -149,7 +149,7 @@ void MaterialPreview::paint_mesh_menu() {
     }
 }
 
-void MaterialPreview::paint_ui(CmdBufferRecorder& recorder, const FrameToken&) {
+void MaterialPreview::paint(CmdBufferRecorder& recorder) {
     y_profile();
 
     update_camera();

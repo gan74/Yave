@@ -40,11 +40,10 @@ AssetStringifier::AssetStringifier(ContextPtr cptr) :
         ContextLinked(cptr),
         _selector(cptr, AssetType::Mesh) {
 
-    _selector.set_parent(this);
     _selector.set_selected_callback([this](AssetId id) { stringify(id); return true; });
 }
 
-void AssetStringifier::paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) {
+void AssetStringifier::paint(CmdBufferRecorder& recorder) {
     {
         if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
             _selector.show();
@@ -58,7 +57,7 @@ void AssetStringifier::paint_ui(CmdBufferRecorder& recorder, const FrameToken& t
         ImGui::InputText("", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
     }
 
-    _selector.paint(recorder, token);
+    _selector.paint(recorder);
 
     if(_selected != AssetId::invalid_id()) {
         ImGui::Text("Vertex data:");

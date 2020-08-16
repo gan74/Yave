@@ -39,7 +39,7 @@ class MaterialEditor final : public Widget, public ContextLinked {
         void set_material(const AssetPtr<Material>& mat);
 
     private:
-        void paint_ui(CmdBufferRecorder& recorder, const FrameToken& token) override;
+        void paint(CmdBufferRecorder& recorder) override;
 
         AssetPtr<Material> _material;
 
