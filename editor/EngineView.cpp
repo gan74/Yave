@@ -55,7 +55,6 @@ EngineView::~EngineView() {
 }
 
 void EngineView::before_paint() {
-    Y_TODO(this is not called anymore)
     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, math::Vec4(0.0f));
     ImGui::PushStyleColor(ImGuiCol_Border, math::Vec4(0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2(2.0f, 0.0f));
@@ -119,11 +118,9 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     }
 
     if(output) {
-        //u32 color = ImGui::IsWindowFocused() ? 0xFFFFFFFF : 0xFF0000FF;
         ImGui::GetWindowDrawList()->AddImage(output,
             position() + math::Vec2(ImGui::GetWindowContentRegionMin()),
-            position() + math::Vec2(ImGui::GetWindowContentRegionMax())/*,
-            math::Vec2(0.0f), math::Vec2(1.0f), color*/);
+            position() + math::Vec2(ImGui::GetWindowContentRegionMax()));
     }
 
 }
@@ -250,6 +247,15 @@ void EngineView::draw_settings_menu() {
 
         settings.level_count = levels;
         settings.method = enabled ? SSAOSettings::SSAOMethod::MiniEngine : SSAOSettings::SSAOMethod::None;
+
+        ImGui::EndMenu();
+    }
+
+    if(ImGui::BeginMenu("Bloom")) {
+        BloomSettings& settings = _settings.renderer_settings.bloom;
+
+        ImGui::SliderFloat("Power", &settings.bloom_power, 0.0f, 100.0f, "%.3f", 10.0f);
+        ImGui::SliderFloat("Threshold", &settings.bloom_threshold, 0.0f, 1.0f);
 
         ImGui::EndMenu();
     }

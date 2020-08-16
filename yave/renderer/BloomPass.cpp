@@ -48,7 +48,9 @@ static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId ton
     } params {
         settings.bloom_power,
         settings.bloom_threshold,
-        1.0f / (1.0f - settings.bloom_threshold)
+        settings.bloom_threshold >= 1.0f
+            ? 0.0f
+            : 1.0f / (1.0f - settings.bloom_threshold)
     };
 
     const auto thresholded = builder.declare_image(format, internal_size);

@@ -169,7 +169,6 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         color_blend_attachment.dstAlphaBlendFactor = dst_blend;
         color_blend_attachment.srcColorBlendFactor = src_blend;
         color_blend_attachment.srcAlphaBlendFactor = src_blend;
-        //color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     }
 
     auto att_blends = core::Vector<VkPipelineColorBlendAttachmentState>(render_pass.attachment_count(), color_blend_attachment);
