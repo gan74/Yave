@@ -60,6 +60,51 @@ static inline T* align_end(T* x) {
     return x;
 }
 
+#if 0
+// https://stackoverflow.com/questions/47025373/fastest-implementation-of-the-natural-exponential-function-using-sse
+void fast_exp(float* x, usize count) {
+#ifdef Y_USE_INTRINSICS
+    const float* end = x + count;
+    const float* aligned_begin = align_begin(x);
+    const float* aligned_end = align_end(end);
+
+    while(x != aligned_begin) {
+        *x = std::exp(*x);
+        ++x;
+    }
+
+    static const __m128 l2e = _mm_set1_ps(1.442695041f);
+    static const __m128 c0  = _mm_set1_ps(0.3371894346f);
+    static const __m128 c1  = _mm_set1_ps(0.657636276f);
+    static const __m128 c2  = _mm_set1_ps(1.00172476f);
+    for(; x < aligned_end; x += 4) {
+        __m128 xx = _mm_load_ps(x);
+        __m128 t = _mm_mul_ps(xx, l2e);
+        __m128i i = _mm_cvttps_epi32(t);
+        __m128i j = _mm_srli_epi32(_mm_castps_si128(xx), 31);
+        i = _mm_sub_epi32 (i, j);
+        __m128 e = _mm_cvtepi32_ps(i);
+        __m128 f = _mm_sub_ps(t, e);
+        __m128 p = c0;
+        p = _mm_mul_ps(p, f);
+        p = _mm_add_ps(p, c1);
+        p = _mm_mul_ps(p, f);
+        p = _mm_add_ps(p, c2);
+        j = _mm_slli_epi32(i, 23);
+        __m128 r = _mm_castsi128_ps(_mm_add_epi32(j, _mm_castps_si128(p)));
+        _mm_store_ps(x, r);
+    }
+
+    while(x != end) {
+        *x = std::exp(*x);
+        ++x;
+    }
+#else
+    for(usize i = 0; i != count; ++i) {
+        x[i] = std::exp(x[i]);
+    }
+#endif
+}
 
 // https://gist.github.com/Novum/1200562/3847ad4e522ba8d30e63357cc4c405ef262f26de
 void fast_pow_01(float* x, usize count, float y) {
@@ -104,6 +149,15 @@ void fast_pow_01(float* x, usize count, float y) {
     }
 #endif
 }
+#else
+
+void fast_pow_01(float* x, usize count, float y) {
+    for(usize i = 0; i != count; ++i) {
+        x[i] = std::pow(x[i], y);
+    }
+}
+
+#endif
 
 
 // https://stackoverflow.com/questions/12121640/how-to-load-a-pixel-struct-into-an-sse-register
