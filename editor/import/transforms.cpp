@@ -26,7 +26,6 @@ SOFTWARE.
 #include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
 
-#include <y/math/fastmath.h>
 #include <y/utils/log.h>
 #include <y/utils/perf.h>
 
@@ -129,21 +128,54 @@ Animation set_speed(const Animation& anim, float speed) {
 }
 
 
-template<typename T>
-static float to_normalized(T t) {
-    return float(t) / std::numeric_limits<T>::max();
+static void unpack_with_gamma(const u8* in, usize size, float* out) {
+    float gamma_lut[256];
+    for(usize i = 0; i != 256; ++i) {
+        gamma_lut[i] = std::pow(i / 255.0f, 2.2f);
+    }
+
+    for(usize i = 0; i != size; ++i) {
+        out[i] = gamma_lut[in[i]];
+    }
 }
 
-core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, const math::Vec2ui& size, usize mip_count, bool sRGB = false) {
+static void unpack(const u8* in, usize size, float* out) {
+    for(usize i = 0; i != size; ++i) {
+        out[i] = in[i] / 255.0f;
+    }
+}
+
+static void pack_with_gamma(const float* in, usize size, u8* out) {
+    const usize lut_size = 1 << 12;
+    const float lut_factor = float(lut_size - 1);
+    const float inv_lut_factor = 1.0f / lut_factor;
+    const float inv_gamma = 1.0f / 2.2f;
+
+    u8 gamma_lut[lut_size];
+    for(usize i = 0; i != lut_size; ++i) {
+        const float with_gamma = std::pow(i * inv_lut_factor, inv_gamma);
+        y_debug_assert(with_gamma <= 1.0f);
+        gamma_lut[i] = u8(std::round(with_gamma * 255.0f));
+    }
+
+    for(usize i = 0; i != size; ++i) {
+        const usize lut_index = usize(std::round(in[i] * lut_factor));
+        y_debug_assert(lut_index < lut_size);
+        out[i] = gamma_lut[lut_index];
+    }
+}
+
+static void pack(const float* in, usize size, u8* out) {
+    for(usize i = 0; i != size; ++i) {
+        out[i] = u8(std::round(in[i] * 255.0f));
+    }
+}
+
+core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, const math::Vec2ui& size, usize mip_count) {
     y_profile();
 
     const usize components = 4;
     y_debug_assert(size.x() * size.y() * components == input.size());
-
-    if(sRGB) {
-        y_profile_zone("degamma");
-        math::fast_pow_01(input.data(), input.size(), 2.2f);
-    }
 
     const ImageFormat normalized_format = VK_FORMAT_R32G32B32A32_SFLOAT;
     const usize output_size = ImageData::layer_byte_size(math::Vec3ui(size, 1), normalized_format, mip_count) / sizeof(float);
@@ -184,11 +216,6 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
         }
     }
 
-    if(sRGB) {
-        y_profile_zone("regamma");
-        math::fast_pow_01(output.data(), output.size(), 1.0f / 2.2f);
-    }
-
     return output;
 }
 
@@ -211,15 +238,23 @@ ImageData compute_mipmaps(const ImageData& image) {
 
     core::FixedArray<float> input(texels * components);
     {
-        y_profile_zone("normalization");
-        math::fast_unpack_unorm(image.data(), input.size(), input.data());
+        y_profile_zone("unpack");
+        if(is_sRGB) {
+            unpack_with_gamma(image.data(), input.size(), input.data());
+        } else {
+            unpack(image.data(), input.size(), input.data());
+        }
     }
 
-    core::FixedArray<float> output = compute_mipmaps_internal(std::move(input), image.size().to<2>(), mip_count, is_sRGB);
+    core::FixedArray<float> output = compute_mipmaps_internal(std::move(input), image.size().to<2>(), mip_count);
     core::FixedArray<u8> data(output.size());
     {
-        y_profile_zone("denormalization");
-        math::fast_pack_unorm(output.data(), output.size(), data.data());
+        y_profile_zone("pack");
+        if(is_sRGB) {
+            pack_with_gamma(output.data(), output.size(), data.data());
+        } else {
+            pack(output.data(), output.size(), data.data());
+        }
     }
     output.clear();
 
