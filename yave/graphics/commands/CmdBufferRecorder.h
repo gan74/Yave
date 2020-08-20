@@ -163,6 +163,8 @@ class CmdBufferRecorder final : public CmdBuffer {
         void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);
         void barriers(core::Span<BufferBarrier> buffers);
         void barriers(core::Span<ImageBarrier> images);
+        
+        void full_barrier();
 
         Y_TODO(Const all this)
         void barriered_copy(const ImageBase& src,  const ImageBase& dst);

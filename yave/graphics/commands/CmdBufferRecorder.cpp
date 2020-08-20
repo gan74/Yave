@@ -358,6 +358,18 @@ void CmdBufferRecorder::barriers(core::Span<ImageBarrier> images) {
     barriers({}, images);
 }
 
+void CmdBufferRecorder::full_barrier() {
+    vkCmdPipelineBarrier(
+        vk_cmd_buffer(),
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        VK_DEPENDENCY_BY_REGION_BIT,
+        0, nullptr,
+        0, nullptr,
+        0, nullptr
+    );
+}
+
 void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
     YAVE_VK_CMD;
 
