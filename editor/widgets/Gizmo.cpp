@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <yave/components/TransformableComponent.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 #include <y/utils/sort.h>
 

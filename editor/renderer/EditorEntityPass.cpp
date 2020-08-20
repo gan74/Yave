@@ -38,7 +38,7 @@ SOFTWARE.
 #include <editor/context/EditorContext.h>
 #include <editor/ui/ImGuiRenderer.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 
 // we actually need this to index utf-8 chars from the imgui font

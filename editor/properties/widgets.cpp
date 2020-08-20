@@ -42,7 +42,7 @@ SOFTWARE.
 #include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 #include <mutex>
 

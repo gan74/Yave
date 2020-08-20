@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 #include "MainEventHandler.h"
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 #include <y/utils/log.h>
 

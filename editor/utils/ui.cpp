@@ -30,7 +30,7 @@ SOFTWARE.
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 namespace imgui {

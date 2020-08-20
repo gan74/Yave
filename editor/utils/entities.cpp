@@ -30,7 +30,7 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/SkyLightComponent.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 

@@ -28,7 +28,7 @@ SOFTWARE.
 #include <yave/camera/Camera.h>
 #include <yave/utils/entities.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 #include <algorithm>
 

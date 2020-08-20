@@ -48,7 +48,7 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 

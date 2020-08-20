@@ -26,7 +26,7 @@ SOFTWARE.
 
 #ifndef YAVE_NO_SQLITE
 
-#include <sqlite/sqlite3.h>
+#include <external/sqlite/sqlite3.h>
 
 #include <thread>
 

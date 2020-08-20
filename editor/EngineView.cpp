@@ -37,7 +37,7 @@ SOFTWARE.
 #include <yave/renderer/DefaultRenderer.h>
 #include <yave/utils/color.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 

@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
+#include <external/stb/stb_image.h>
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
@@ -56,7 +56,7 @@ extern "C" {
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
 #define TINYGLTF_NOEXCEPTION
-#include <tinygltf/tiny_gltf.h>
+#include <external/tinygltf/tiny_gltf.h>
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

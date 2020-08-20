@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/graphics/utils.h>
 #include <yave/graphics/device/LifetimeManager.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 

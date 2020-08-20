@@ -26,7 +26,7 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 

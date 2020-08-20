@@ -23,7 +23,7 @@ SOFTWARE.
 
 #include <editor/context/EditorContext.h>
 
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 

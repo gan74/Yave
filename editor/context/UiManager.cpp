@@ -31,7 +31,7 @@ SOFTWARE.
 #include <editor/ui/Widget.h>
 
 #include <editor/ui/ImGuiRenderer.h>
-#include <imgui/yave_imgui.h>
+#include <external/imgui/yave_imgui.h>
 
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>

@@ -24,8 +24,8 @@ SOFTWARE.
 
 #include <yave/graphics/utils.h>
 
-#include <spirv_cross/spirv.hpp>
-#include <spirv_cross/spirv_cross.hpp>
+#include <external/spirv_cross/spirv.hpp>
+#include <external/spirv_cross/spirv_cross.hpp>
 
 namespace yave {
 
