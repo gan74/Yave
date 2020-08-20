@@ -34,8 +34,11 @@ namespace yave {
 
 class FrameGraphPassBuilder {
     public:
-        // We are using screen texture 90% of the time, so clamp makes sense as a default
-        const SamplerType default_sampler = SamplerType::Clamp;
+        // We are using screen textures 90% of the time, so clamp makes sense as a default
+        const SamplerType default_samplers[2] = {
+            SamplerType::PointClamp,
+            SamplerType::LinearClamp,
+        };
 
         using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 

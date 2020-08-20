@@ -134,7 +134,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder) {
 
     const auto create_descriptor_set = [&](const void* data) {
         const auto* tex = static_cast<const TextureView*>(data);
-        return DescriptorSet(device(), {Descriptor(*tex, SamplerType::Clamp), Descriptor(uniform_buffer)});
+        return DescriptorSet(device(), {Descriptor(*tex, SamplerType::LinearClamp), Descriptor(uniform_buffer)});
     };
 
     const DescriptorSetBase default_set = create_descriptor_set(&_font_view);

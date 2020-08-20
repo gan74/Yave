@@ -81,7 +81,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input_with_default(ao, Descriptor(white), 0, PipelineStage::ComputeBit);
     builder.add_external_input(*ibl_probe, 0, PipelineStage::ComputeBit);
-    builder.add_external_input(Descriptor(device_resources(builder.device()).brdf_lut(), SamplerType::Clamp), 0, PipelineStage::ComputeBit);
+    builder.add_external_input(Descriptor(device_resources(builder.device()).brdf_lut(), SamplerType::LinearClamp), 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
     builder.add_storage_input(directional_buffer, 0, PipelineStage::ComputeBit);
     builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);

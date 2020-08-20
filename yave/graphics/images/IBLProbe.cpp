@@ -98,7 +98,7 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
 
     auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());
     std::transform(views.begin(), views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
-            return DescriptorSet(dptr, {Descriptor(texture, SamplerType::Clamp), Descriptor(view)});
+            return DescriptorSet(dptr, {Descriptor(texture, SamplerType::LinearClamp), Descriptor(view)});
         });
 
 

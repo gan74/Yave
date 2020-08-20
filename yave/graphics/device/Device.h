@@ -77,7 +77,7 @@ class Device : NonMovable {
         VkDevice vk_device() const;
         const VkAllocationCallbacks* vk_allocation_callbacks() const;
         VkPhysicalDevice vk_physical_device() const;
-        VkSampler vk_sampler(SamplerType type = SamplerType::Repeat) const;
+        VkSampler vk_sampler(SamplerType type = SamplerType::LinearRepeat) const;
 
         static VkPhysicalDeviceFeatures required_device_features();
 
@@ -100,7 +100,7 @@ class Device : NonMovable {
 
         Queue _graphic_queue;
 
-        std::array<Sampler, 2> _samplers;
+        std::array<Sampler, 4> _samplers;
 
         mutable DescriptorSetAllocator _descriptor_set_allocator;
 

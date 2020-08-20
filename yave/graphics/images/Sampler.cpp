@@ -28,10 +28,12 @@ namespace yave {
 
 static VkSamplerAddressMode vk_address_mode(SamplerType type) {
     switch(type) {
-        case SamplerType::Repeat:
+        case SamplerType::LinearRepeat:
+        case SamplerType::PointRepeat:
             return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
-        case SamplerType::Clamp:
+        case SamplerType::LinearClamp:
+        case SamplerType::PointClamp:
             return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
         default:
@@ -39,18 +41,51 @@ static VkSamplerAddressMode vk_address_mode(SamplerType type) {
     }
 }
 
+static VkFilter vk_filter(SamplerType type) {
+    switch(type) {
+        case SamplerType::PointRepeat:
+        case SamplerType::PointClamp:
+            return VK_FILTER_NEAREST;
+
+        case SamplerType::LinearRepeat:
+        case SamplerType::LinearClamp:
+            return VK_FILTER_LINEAR;
+
+        default:
+            y_fatal("Unknown sampler type");
+    }
+}
+
+static VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
+    switch(type) {
+        case SamplerType::PointRepeat:
+        case SamplerType::PointClamp:
+            return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+
+        case SamplerType::LinearRepeat:
+        case SamplerType::LinearClamp:
+            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+        default:
+            y_fatal("Unknown sampler type");
+    }
+}
+
+
 static VkSampler create_sampler(DevicePtr dptr, SamplerType type) {
 
     VkSamplerCreateInfo create_info = vk_struct();
     {
         const VkSamplerAddressMode address_mode = vk_address_mode(type);
+        const VkFilter filter = vk_filter(type);
+        const VkSamplerMipmapMode mip_filter = vk_mip_filter(type);
 
         create_info.addressModeU = address_mode;
         create_info.addressModeV = address_mode;
         create_info.addressModeW = address_mode;
-        create_info.magFilter = VK_FILTER_LINEAR;
-        create_info.minFilter = VK_FILTER_LINEAR;
-        create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        create_info.magFilter = filter;
+        create_info.minFilter = filter;
+        create_info.mipmapMode = mip_filter;
         create_info.maxLod = 1000.0f;
         create_info.maxAnisotropy = 1.0f;
     }

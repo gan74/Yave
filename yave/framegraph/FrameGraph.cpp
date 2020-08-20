@@ -289,7 +289,7 @@ void FrameGraph::alloc_resources() {
         auto& dst_info = check_exists(_images, cpy.dst);
         auto* src_info = &check_exists(_images, cpy.src);
 
-        if(src_info->alias.is_valid()) {
+        while(src_info->alias.is_valid()) {
             src_info = &check_exists(_images, src_info->alias);
         }
 

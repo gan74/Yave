@@ -54,7 +54,7 @@ class FrameGraphDescriptorBinding {
 
     private:
         FrameGraphDescriptorBinding(BindingType type, FrameGraphBufferId res);
-        FrameGraphDescriptorBinding(BindingType type, FrameGraphImageId res, SamplerType sampler = SamplerType::Repeat);
+        FrameGraphDescriptorBinding(BindingType type, FrameGraphImageId res, SamplerType sampler = SamplerType::LinearRepeat);
 
         BindingType _type = BindingType::None;
         union {

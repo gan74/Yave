@@ -97,8 +97,8 @@ static bool try_enable_extension(core::Vector<const char*>& exts, const char* na
     return false;
 }
 
-static std::array<Sampler, 2> create_samplers(DevicePtr dptr) {
-    std::array<Sampler, 2> samplers;
+static std::array<Sampler, 4> create_samplers(DevicePtr dptr) {
+    std::array<Sampler, 4> samplers;
     for(usize i = 0; i != samplers.size(); ++i) {
         samplers[i] = Sampler(dptr, SamplerType(i));
     }

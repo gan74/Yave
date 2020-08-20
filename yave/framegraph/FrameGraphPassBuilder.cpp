@@ -28,6 +28,13 @@ SOFTWARE.
 
 namespace yave {
 
+[[maybe_unused]]
+static bool is_sampler_compatible(FrameGraph* framegraph, FrameGraphImageId img, SamplerType sampler) {
+    y_debug_assert(framegraph);
+    y_debug_assert(img.is_valid());
+    return !is_linear(sampler) || framegraph->image_format(img).supports_filtering();
+} 
+
 FrameGraphPassBuilder::FrameGraphPassBuilder(FrameGraphPass* pass) : _pass(pass) {
 }
 
@@ -123,11 +130,14 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphBufferId res, usize ds_i
 }
 
 void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
-    add_to_pass(res, ImageUsage::TextureBit, false, stage);
-    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res, default_sampler), ds_index);
+    Y_TODO(optimize?)
+    const bool filter = parent()->image_format(res).supports_filtering();
+    add_uniform_input(res, default_samplers[filter], ds_index, stage);
 }
 
 void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, SamplerType sampler, usize ds_index, PipelineStage stage) {
+    y_debug_assert(is_sampler_compatible(parent(), res, sampler));
+
     add_to_pass(res, ImageUsage::TextureBit, false, stage);
     add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res, sampler), ds_index);
 }

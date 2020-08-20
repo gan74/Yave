@@ -32,6 +32,7 @@ static VkImageLayout vk_layout(ImageUsage usage) {
         return VK_IMAGE_LAYOUT_GENERAL;
     }
 
+    Y_TODO(maybe transition images before and after copies?)
     const bool texture = (usage & ImageUsage::TextureBit) != ImageUsage::None;
     if((usage & ImageUsage::TransferSrcBit) != ImageUsage::None) {
         return texture ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;

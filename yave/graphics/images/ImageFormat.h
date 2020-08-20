@@ -40,6 +40,8 @@ class ImageFormat {
 
         bool is_valid() const;
         bool is_float() const;
+        
+        bool supports_filtering() const;
 
         bool is_block_format() const;
         bool is_depth_format() const;

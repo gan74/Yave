@@ -35,7 +35,7 @@ static math::Vec2ui compute_size(const Framebuffer::DepthAttachment& depth, core
 
     for(const auto& c : colors) {
         if(c.view.size() != ref) {
-            y_fatal("Invalid attachment size.");
+            y_fatal("Invalid attachment size");
         }
     }
     return ref;

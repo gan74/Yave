@@ -35,7 +35,7 @@ class Sampler final : public DeviceLinked {
         Sampler(Sampler&&) = default;
         Sampler& operator=(Sampler&&) = default;
 
-        Sampler(DevicePtr dptr, SamplerType type = SamplerType::Repeat);
+        Sampler(DevicePtr dptr, SamplerType type = SamplerType::LinearRepeat);
 
         ~Sampler();
 
