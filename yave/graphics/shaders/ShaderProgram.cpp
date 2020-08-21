@@ -29,9 +29,9 @@ SOFTWARE.
 
 #include <numeric>
 
-#include <spirv_cross/spirv.hpp>
-#include <spirv_cross/spirv_cross.hpp>
-#include <spirv_cross/spirv_glsl.hpp>
+#include <external/spirv_cross/spirv.hpp>
+#include <external/spirv_cross/spirv_cross.hpp>
+#include <external/spirv_cross/spirv_glsl.hpp>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
