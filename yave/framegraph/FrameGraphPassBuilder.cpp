@@ -58,7 +58,7 @@ FrameGraphMutableBufferId FrameGraphPassBuilder::declare_buffer(usize byte_size)
 }
 
 FrameGraphMutableImageId FrameGraphPassBuilder::declare_copy(FrameGraphImageId src) {
-    const auto& src_info = parent()->info(src);
+    const auto src_info = parent()->info(src); // Not a ref: declare_image invalidates ImageCreateInfo references
     const auto res = declare_image(src_info.format, src_info.size);
 
     // copies are done before the pass proper so we don't set the stage
