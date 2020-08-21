@@ -71,7 +71,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
     core::String labels = "";
     for(usize i = 0; i != callback_data->cmdBufLabelCount; ++i) {
         labels += callback_data->pCmdBufLabels[i].pLabelName;
-        labels += " ";
+        labels += " > ";
     }
 
     log_msg(fmt("Vk: @[%] %:\n%\n", src, labels, callback_data->pMessage),  level);

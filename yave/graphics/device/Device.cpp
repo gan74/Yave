@@ -185,9 +185,6 @@ static VkDevice create_device(
     auto extensions = core::vector_with_capacity<const char*>(4);
     extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        // Vulkan 1.1
-        VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
     };
 
     try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical.vk_physical_device());

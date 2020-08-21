@@ -55,8 +55,6 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
     auto extention_names = core::vector_with_capacity<const char*>(4);
     extention_names = {
         VK_KHR_SURFACE_EXTENSION_NAME,
-        // Vulkan 1.1
-        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
     };
 
 #ifdef Y_OS_WIN
@@ -70,7 +68,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 
     VkApplicationInfo app_info = vk_struct();
     {
-        app_info.apiVersion = VK_VERSION_1_1;
+        app_info.apiVersion = VK_API_VERSION_1_1;
         app_info.pApplicationName = "Yave";
         app_info.pEngineName = "Yave";
     }
