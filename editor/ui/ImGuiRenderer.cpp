@@ -170,7 +170,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder) {
 
             const math::Vec2i offset(i32(cmd.ClipRect.x), i32(cmd.ClipRect.y));
             const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
-            recorder.set_scissor(offset, extent);
+            recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
 
             if(cmd.UserCallback) {
                 void* ptr = reinterpret_cast<void*>(cmd.UserCallback);
