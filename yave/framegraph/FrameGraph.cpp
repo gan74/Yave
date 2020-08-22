@@ -263,6 +263,8 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
                 build_barriers(pass->_buffers, buffer_barriers, to_barrier, *_resources);
                 build_barriers(pass->_images, image_barriers, to_barrier, *_resources);
                 recorder.barriers(buffer_barriers, image_barriers);
+
+                //recorder.full_barrier();
             }
 
             {

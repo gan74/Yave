@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "Instance.h"
-#include "extentions/DebugUtils.h"
+#include "extensions/DebugUtils.h"
 
 #include <y/core/Span.h>
 #include <y/core/Vector.h>

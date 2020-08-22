@@ -22,31 +22,9 @@ SOFTWARE.
 
 #include "ImageUsage.h"
 
+#include <y/utils/format.h>
+
 namespace yave {
-
-static VkImageLayout vk_layout(ImageUsage usage) {
-    if((usage & ImageUsage::SwapchainBit) != ImageUsage::None) {
-        return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    }
-    if((usage & ImageUsage::StorageBit) != ImageUsage::None) {
-        return VK_IMAGE_LAYOUT_GENERAL;
-    }
-
-    Y_TODO(maybe transition images before and after copies?)
-    const bool texture = (usage & ImageUsage::TextureBit) != ImageUsage::None;
-    if((usage & ImageUsage::TransferSrcBit) != ImageUsage::None) {
-        return texture ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    }
-    if((usage & ImageUsage::TransferDstBit) != ImageUsage::None) {
-        return texture ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    }
-
-    if(texture) {
-        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    }
-
-    y_fatal("Undefined image layout.");
-}
 
 VkImageLayout vk_image_layout(ImageUsage usage) {
     switch(usage) {
@@ -65,13 +43,38 @@ VkImageLayout vk_image_layout(ImageUsage usage) {
         case ImageUsage::SwapchainBit:
             return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+        case ImageUsage::TransferSrcBit:
+            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+
+        case ImageUsage::TransferDstBit:
+            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
         default:
             break;
     }
 
-    return vk_layout(usage);
-}
+    if((usage & ImageUsage::SwapchainBit) != ImageUsage::None) {
+        return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    }
 
+    if((usage & ImageUsage::StorageBit) != ImageUsage::None) {
+        return VK_IMAGE_LAYOUT_GENERAL;
+    }
+
+    if((usage & ImageUsage::TextureBit) != ImageUsage::None) {
+        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
+    if((usage & ImageUsage::DepthBit) != ImageUsage::None) {
+        return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    }
+
+    if((usage & ImageUsage::ColorBit) != ImageUsage::None) {
+        return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+    
+    y_fatal("Unsupported image usage (%)", usage);
+}
 
 }
 

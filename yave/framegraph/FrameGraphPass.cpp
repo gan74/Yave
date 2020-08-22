@@ -24,6 +24,8 @@ SOFTWARE.
 #include "FrameGraphFrameResources.h"
 #include "FrameGraph.h"
 
+#include <yave/graphics/device/extensions/DebugUtils.h>
+
 namespace yave {
 
 FrameGraphPass::FrameGraphPass(std::string_view name, FrameGraph* parent, usize index) : _name(name), _parent(parent), _index(index) {
@@ -61,10 +63,34 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
 
         Framebuffer::DepthAttachment depth;
         if(_depth.image.is_valid()) {
+
+#ifdef Y_DEBUG
+        {
+            const auto& img = resources.image_base(_depth.image);
+            if(const auto* debug = debug_utils(img.device())) {
+                const core::String name = _name + " depth";
+                debug->set_resource_name(img.device(), img.vk_image(), name.data());
+                debug->set_resource_name(img.device(), img.vk_view(), name.data());
+            }
+        }
+#endif
+
             depth = Framebuffer::DepthAttachment(resources.image<ImageUsage::DepthBit>(_depth.image), declared_here(_depth.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
         }
         auto colors = core::vector_with_capacity<Framebuffer::ColorAttachment>(_colors.size());
         for(auto&& color : _colors) {
+
+#ifdef Y_DEBUG
+        {
+            const auto& img = resources.image_base(color.image);
+            if(const auto* debug = debug_utils(img.device())) {
+                const core::String name = (_name + " RT") + colors.size();
+                debug->set_resource_name(img.device(), img.vk_image(), name.data());
+                debug->set_resource_name(img.device(), img.vk_view(), name.data());
+            }
+        }
+#endif
+
             colors << Framebuffer::ColorAttachment(resources.image<ImageUsage::ColorBit>(color.image), declared_here(color.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
         }
         _framebuffer = Framebuffer(resources.device(), depth, colors);
@@ -76,6 +102,15 @@ void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resour
         auto bindings = core::vector_with_capacity<Descriptor>(set.size());
         std::transform(set.begin(), set.end(), std::back_inserter(bindings), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });
         _descriptor_sets << DescriptorSet(resources.device(), bindings);
+
+#ifdef Y_DEBUG
+        {
+            if(const auto* debug = debug_utils(resources.device())) {
+                const core::String name = (_name + " DS") + (_descriptor_sets.size() - 1);
+                debug->set_resource_name(resources.device(), _descriptor_sets.last().vk_descriptor_set(), name.data());
+            }
+        }
+#endif
     }
 }
 

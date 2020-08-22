@@ -30,7 +30,7 @@ SOFTWARE.
 #include <yave/graphics/barriers/Barrier.h>
 #include <yave/graphics/device/Queue.h>
 
-#include <yave/graphics/device/extentions/DebugUtils.h>
+#include <yave/graphics/device/extensions/DebugUtils.h>
 
 namespace yave {
 
@@ -194,6 +194,9 @@ const Viewport& RenderPassRecorder::viewport() const {
 void RenderPassRecorder::set_viewport(const Viewport& vp) {
     YAVE_VK_CMD;
 
+    y_debug_assert(vp.offset.x() >= 0.0f);
+    y_debug_assert(vp.offset.y() >= 0.0f);
+
     _viewport = vp;
     const VkViewport v {
         vp.offset.x(), vp.offset.y(),
@@ -205,6 +208,9 @@ void RenderPassRecorder::set_viewport(const Viewport& vp) {
 
 void RenderPassRecorder::set_scissor(const math::Vec2i& offset, const math::Vec2ui& size) {
     YAVE_VK_CMD;
+
+    y_debug_assert(offset.x() >= 0.0f);
+    y_debug_assert(offset.y() >= 0.0f);
 
     const VkRect2D scissor = {{offset.x(), offset.y()}, {size.x(), size.y()}};
     vkCmdSetScissor(vk_cmd_buffer(), 0, 1, &scissor);
@@ -359,12 +365,47 @@ void CmdBufferRecorder::barriers(core::Span<ImageBarrier> images) {
 }
 
 void CmdBufferRecorder::full_barrier() {
+    VkMemoryBarrier barrier = vk_struct();
+    barrier.srcAccessMask =
+        VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+        VK_ACCESS_INDEX_READ_BIT |
+        VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+        VK_ACCESS_UNIFORM_READ_BIT |
+        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+        VK_ACCESS_SHADER_READ_BIT |
+        VK_ACCESS_SHADER_WRITE_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_TRANSFER_READ_BIT |
+        VK_ACCESS_TRANSFER_WRITE_BIT |
+        VK_ACCESS_HOST_READ_BIT |
+        VK_ACCESS_HOST_WRITE_BIT
+    ;
+    barrier.dstAccessMask =
+        VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+        VK_ACCESS_INDEX_READ_BIT |
+        VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+        VK_ACCESS_UNIFORM_READ_BIT |
+        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+        VK_ACCESS_SHADER_READ_BIT |
+        VK_ACCESS_SHADER_WRITE_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_TRANSFER_READ_BIT |
+        VK_ACCESS_TRANSFER_WRITE_BIT |
+        VK_ACCESS_HOST_READ_BIT |
+        VK_ACCESS_HOST_WRITE_BIT
+    ;
     vkCmdPipelineBarrier(
         vk_cmd_buffer(),
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
         VK_DEPENDENCY_BY_REGION_BIT,
-        0, nullptr,
+        1, &barrier,
         0, nullptr,
         0, nullptr
     );
@@ -423,7 +464,7 @@ void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst)
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
 }
 
-void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
+/*void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
     YAVE_VK_CMD;
 
     y_always_assert(src.size() == dst.size(), "Image size do not match.");
@@ -441,7 +482,7 @@ void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
                    src.vk_image(), vk_image_layout(src.usage()),
                    dst.vk_image(), vk_image_layout(dst.usage()),
                    1, &copy);
-}
+}*/
 
 void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
     YAVE_VK_CMD;

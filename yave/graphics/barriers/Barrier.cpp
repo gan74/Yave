@@ -24,6 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
+#if 0
 static VkAccessFlags vk_layout_access_flags(VkImageLayout layout) {
     switch(layout) {
         case VK_IMAGE_LAYOUT_UNDEFINED:
@@ -59,7 +60,7 @@ static VkAccessFlags vk_layout_access_flags(VkImageLayout layout) {
             break;
     }
 
-    y_fatal("Unsupported layout transition.");
+    y_fatal("Unsupported layout transition");
 }
 
 static VkAccessFlags vk_dst_access_flags(PipelineStage dst) {
@@ -73,11 +74,15 @@ static VkAccessFlags vk_dst_access_flags(PipelineStage dst) {
         case PipelineStage::HostBit:
             return VK_ACCESS_HOST_READ_BIT;
 
+        case PipelineStage::BeginOfPipe:
+        case PipelineStage::EndOfPipe:
+            return VK_ACCESS_MEMORY_READ_BIT;
+
         default:
             break;
     }
 
-    y_fatal("Unsuported pipeline stage.");
+    y_fatal("Unsuported pipeline stage");
 }
 
 static VkAccessFlags vk_src_access_flags(PipelineStage src) {
@@ -94,11 +99,15 @@ static VkAccessFlags vk_src_access_flags(PipelineStage src) {
         case PipelineStage::ColorAttachmentOutBit:
             return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
+        case PipelineStage::BeginOfPipe:
+        case PipelineStage::EndOfPipe:
+            return VK_ACCESS_MEMORY_WRITE_BIT;
+
         default:
             break;
     }
 
-    y_fatal("Unsuported pipeline stage.");
+    y_fatal("Unsuported pipeline stage");
 }
 
 static VkPipelineStageFlags vk_barrier_stage(VkAccessFlags access) {
@@ -121,8 +130,31 @@ static VkPipelineStageFlags vk_barrier_stage(VkAccessFlags access) {
                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     }
 
-    y_fatal("Unknown access flags.");
+    y_fatal("Unknown access flags");
 }
+#else
+static VkAccessFlags vk_layout_access_flags(VkImageLayout) {
+    return VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+}
+
+static VkAccessFlags vk_dst_access_flags(PipelineStage) {
+    return VK_ACCESS_MEMORY_READ_BIT;
+}
+
+static VkAccessFlags vk_src_access_flags(PipelineStage) {
+    return VK_ACCESS_MEMORY_WRITE_BIT;
+}
+    
+static PipelineStage vk_src_barrier_stage(VkAccessFlags) {
+    return PipelineStage::EndOfPipe;
+}
+
+static PipelineStage vk_dst_barrier_stage(VkAccessFlags) {
+    return PipelineStage::EndOfPipe;
+}
+#endif
+
+
 
 
 static VkImageMemoryBarrier create_barrier(VkImage image, ImageFormat format, usize layers, usize mips, VkImageLayout old_layout, VkImageLayout new_layout) {
@@ -167,6 +199,7 @@ static VkImageMemoryBarrier create_barrier(VkImage image, ImageFormat format, us
 static VkBufferMemoryBarrier create_barrier(VkBuffer buffer, usize size, usize offset, PipelineStage src, PipelineStage dst) {
     VkBufferMemoryBarrier barrier = vk_struct();
     {
+        Y_TODO(uniform buffers needs to use VK_ACCESS_UNIFORM_READ_BIT)
         barrier.srcAccessMask = vk_src_access_flags(src);
         barrier.dstAccessMask = vk_dst_access_flags(dst);
         barrier.buffer = buffer;
@@ -187,8 +220,8 @@ ImageBarrier::ImageBarrier(const ImageBase& image, PipelineStage src, PipelineSt
 ImageBarrier ImageBarrier::transition_barrier(const ImageBase& image, VkImageLayout src_layout, VkImageLayout dst_layout) {
     ImageBarrier barrier;
     barrier._barrier = create_barrier(image.vk_image(), image.format(), image.layers(), image.mipmaps(), src_layout, dst_layout);
-    barrier._src = PipelineStage(VkFlags(vk_barrier_stage(barrier._barrier.srcAccessMask)));
-    barrier._dst = PipelineStage(VkFlags(vk_barrier_stage(barrier._barrier.dstAccessMask)));
+    barrier._src = vk_src_barrier_stage(barrier._barrier.srcAccessMask);
+    barrier._dst = vk_dst_barrier_stage(barrier._barrier.dstAccessMask);
 
     return barrier;
 }

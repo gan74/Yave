@@ -25,7 +25,7 @@ SOFTWARE.
 #include "AABB.h"
 
 #include <yave/graphics/buffers/buffers.h>
-#include <yave/graphics/device/extentions/RayTracing.h>
+#include <yave/graphics/device/extensions/RayTracing.h>
 
 #include <yave/assets/AssetTraits.h>
 

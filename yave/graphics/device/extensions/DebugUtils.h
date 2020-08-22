@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_EXTENTIONS_DEBUGUTILS_H
-#define YAVE_DEVICE_EXTENTIONS_DEBUGUTILS_H
+#ifndef YAVE_DEVICE_EXTENSIONS_DEBUGUTILS_H
+#define YAVE_DEVICE_EXTENSIONS_DEBUGUTILS_H
 
 #include <yave/graphics/vk/vk.h>
 
@@ -33,13 +33,33 @@ class DebugUtils : NonCopyable {
         DebugUtils(VkInstance instance);
         ~DebugUtils();
 
-        void set_resource_name(DevicePtr dptr, u64 resource, const char* name) const;
+        void set_resource_name(DevicePtr dptr, VkImage res, const char* name) const {
+            set_name(dptr, u64(res), VK_OBJECT_TYPE_IMAGE, name);
+        }
+
+        void set_resource_name(DevicePtr dptr, VkImageView res, const char* name) const {
+            set_name(dptr, u64(res), VK_OBJECT_TYPE_IMAGE_VIEW, name);
+        }
+
+        void set_resource_name(DevicePtr dptr, VkFramebuffer res, const char* name) const {
+            set_name(dptr, u64(res), VK_OBJECT_TYPE_FRAMEBUFFER, name);
+        }
+
+        void set_resource_name(DevicePtr dptr, VkRenderPass res, const char* name) const {
+            set_name(dptr, u64(res), VK_OBJECT_TYPE_RENDER_PASS, name);
+        }
+
+        void set_resource_name(DevicePtr dptr, VkDescriptorSet res, const char* name) const {
+            set_name(dptr, u64(res), VK_OBJECT_TYPE_DESCRIPTOR_SET, name);
+        }
 
     private:
         friend class CmdBufferRegion;
 
         void begin_region(VkCommandBuffer buffer, const char* name, const math::Vec4& color = math::Vec4()) const;
         void end_region(VkCommandBuffer buffer) const;
+
+        void set_name(DevicePtr dptr, u64 resource, VkObjectType type, const char* name) const;
 
     private:
         VkInstance _instance;
@@ -53,5 +73,5 @@ class DebugUtils : NonCopyable {
 
 }
 
-#endif // YAVE_DEVICE_EXTENTIONS_DEBUGUTILS_H
+#endif // YAVE_DEVICE_EXTENSIONS_DEBUGUTILS_H
 

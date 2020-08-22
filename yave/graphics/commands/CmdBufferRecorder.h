@@ -169,7 +169,7 @@ class CmdBufferRecorder final : public CmdBuffer {
         Y_TODO(Const all this)
         void barriered_copy(const ImageBase& src,  const ImageBase& dst);
         void copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst);
-        void copy(const SrcCopyImage& src,  const DstCopyImage& dst);
+        //void copy(const SrcCopyImage& src,  const DstCopyImage& dst);
         void blit(const SrcCopyImage& src,  const DstCopyImage& dst);
 
 

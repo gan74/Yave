@@ -38,50 +38,40 @@ static VkImageLayout vk_final_image_layout(ImageUsage usage) {
     return vk_image_layout(usage);
 }
 
-static std::array<VkSubpassDependency, 2> create_dependencies() {
+static std::array<VkSubpassDependency, 2> create_dependencies(bool depth, bool color) {
+    VkAccessFlags access_flags = 0;
+    VkPipelineStageFlags stages = 0;
+
+    if(depth) {
+        stages |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        access_flags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    }
+    if(color) {
+        stages |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        access_flags |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    }
+
     VkSubpassDependency top = {};
     {
         top.srcSubpass = VK_SUBPASS_EXTERNAL;
         top.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
         top.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        top.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        top.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-        top.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+        top.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+        top.dstStageMask = stages;
+        top.dstAccessMask = access_flags;
     }
 
     VkSubpassDependency bot = {};
     {
         bot.dstSubpass = VK_SUBPASS_EXTERNAL;
         bot.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-        bot.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        bot.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        bot.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-        bot.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    }
-    return {top, bot};
-}
-
-
-static std::array<VkSubpassDependency, 2> create_depth_pass_dependencies() {
-    VkSubpassDependency top = {};
-    {
-        top.srcSubpass = VK_SUBPASS_EXTERNAL;
-        top.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-        top.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        top.dstStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        top.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-        top.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        bot.srcStageMask = stages;
+        bot.srcAccessMask = access_flags;
+        Y_TODO(Why do we need all commands with shader r/w?)
+        bot.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        bot.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
     }
 
-    VkSubpassDependency bot = {};
-    {
-        bot.dstSubpass = VK_SUBPASS_EXTERNAL;
-        bot.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-        bot.srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        bot.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        bot.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        bot.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    }
     return {top, bot};
 }
 
@@ -113,6 +103,9 @@ static VkAttachmentReference create_attachment_reference(ImageUsage usage, usize
 }
 
 static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, core::Span<RenderPass::ImageData> colors) {
+    const bool has_depth = depth.usage != ImageUsage::None;
+    const bool has_color = !colors.is_empty();
+
     auto attachments = core::vector_with_capacity<VkAttachmentDescription>(colors.size() + 1);
     std::transform(colors.begin(), colors.end(), std::back_inserter(attachments), [=](const auto& color) { return create_attachment(color); });
 
@@ -129,13 +122,13 @@ static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData dept
     }
 
     VkAttachmentReference depth_ref = {};
-    if(depth.usage != ImageUsage::None) {
+    if(has_depth) {
         attachments << create_attachment(depth);
         depth_ref = create_attachment_reference(ImageUsage::DepthBit, color_refs.size());
         subpass.pDepthStencilAttachment = &depth_ref;
     }
 
-    const auto dependencies = colors.is_empty() ? create_depth_pass_dependencies() : create_dependencies();
+    const auto dependencies = create_dependencies(has_depth, has_color);
 
     VkRenderPassCreateInfo create_info = vk_struct();
     {
