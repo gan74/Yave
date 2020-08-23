@@ -230,7 +230,7 @@ static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& mod
     }
 
     core::Vector<IndexedTriangle> triangles;
-    std::fill_n(std::back_inserter(triangles), accessor.count, IndexedTriangle{});
+    std::fill_n(std::back_inserter(triangles), accessor.count / 3, IndexedTriangle{});
     const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
     switch(accessor.componentType) {
         case TINYGLTF_PARAMETER_TYPE_BYTE:
