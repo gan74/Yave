@@ -100,6 +100,10 @@ struct ShadowMapParams {
     math::Matrix4<> view_proj;
     math::Vec2 uv_offset;
     math::Vec2 uv_mul;
+
+    float size;
+    float texel_size;
+    math::Vec2ui padding_0;
 };
 
 static_assert(sizeof(ShadowMapParams) % 16 == 0);

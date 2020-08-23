@@ -2,7 +2,6 @@
 
 #include "lib/lighting.glsl"
 #include "lib/gbuffer.glsl"
-#include "lib/shadows.glsl"
 #include "lib/ibl.glsl"
 
 // -------------------------------- DEFINES --------------------------------

@@ -67,6 +67,10 @@ struct ShadowMapParams {
     mat4 view_proj;
     vec2 uv_offset;
     vec2 uv_mul;
+
+    float size;
+    float texel_size;
+    uvec2 padding_0;
 };
 
 struct ToneMappingParams {

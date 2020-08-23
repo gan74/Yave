@@ -29,9 +29,11 @@ namespace yave {
 enum class SamplerType {
     LinearRepeat,
     LinearClamp,
-    
+
     PointRepeat,
     PointClamp,
+
+    Shadow,
 };
 
 inline bool is_linear(SamplerType sampler) {

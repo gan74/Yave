@@ -100,7 +100,7 @@ class Device : NonMovable {
 
         Queue _graphic_queue;
 
-        std::array<Sampler, 4> _samplers;
+        std::array<Sampler, 5> _samplers;
 
         mutable DescriptorSetAllocator _descriptor_set_allocator;
 

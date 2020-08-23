@@ -32,6 +32,7 @@ static VkSamplerAddressMode vk_address_mode(SamplerType type) {
         case SamplerType::PointRepeat:
             return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
+        case SamplerType::Shadow:
         case SamplerType::LinearClamp:
         case SamplerType::PointClamp:
             return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -47,6 +48,7 @@ static VkFilter vk_filter(SamplerType type) {
         case SamplerType::PointClamp:
             return VK_FILTER_NEAREST;
 
+        case SamplerType::Shadow:
         case SamplerType::LinearRepeat:
         case SamplerType::LinearClamp:
             return VK_FILTER_LINEAR;
@@ -62,6 +64,7 @@ static VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
         case SamplerType::PointClamp:
             return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 
+        case SamplerType::Shadow:
         case SamplerType::LinearRepeat:
         case SamplerType::LinearClamp:
             return VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -88,6 +91,8 @@ static VkSampler create_sampler(DevicePtr dptr, SamplerType type) {
         create_info.mipmapMode = mip_filter;
         create_info.maxLod = 1000.0f;
         create_info.maxAnisotropy = 1.0f;
+        create_info.compareEnable = type == SamplerType::Shadow;
+        create_info.compareOp = VK_COMPARE_OP_GREATER;
     }
 
     VkSampler sampler = {};

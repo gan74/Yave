@@ -119,7 +119,10 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
             pass.sub_passes->lights[spot.id().as_u64()] = {
                 spot_view.camera().viewproj_matrix(),
                 math::Vec2(offset) * uv_mul,
-                math::Vec2(size) * uv_mul
+                math::Vec2(size) * uv_mul,
+                float(size),
+                1.0f / float(size),
+                {},
             };
         }
     }

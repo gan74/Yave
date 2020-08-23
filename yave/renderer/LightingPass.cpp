@@ -269,7 +269,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(shadow_pass.shadow_map, 0, PipelineStage::FragmentBit);
+        builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow, 0, PipelineStage::FragmentBit);
         builder.add_storage_input(shadow_buffer, 0, PipelineStage::ComputeBit);
         builder.add_attrib_input(transform_buffer);
         builder.add_depth_output(copied_depth);
