@@ -68,7 +68,7 @@ static Camera spotlight_camera(const TransformableComponent& tr, const SpotLight
     return cam;
 }
 
-ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapPassSettings& settings) {
+ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings) {
     const auto region = framegraph.region("Shadows");
 
     static constexpr ImageFormat shadow_format = VK_FORMAT_D32_SFLOAT;

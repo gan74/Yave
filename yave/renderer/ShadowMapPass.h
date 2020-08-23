@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-struct ShadowMapPassSettings {
+struct ShadowMapSettings {
     usize shadow_map_size = 1024;
     usize shadow_atlas_size = 8;
 };
@@ -51,7 +51,7 @@ struct ShadowMapPass {
 
     std::shared_ptr<SubPassData> sub_passes;
 
-    static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapPassSettings& settings = ShadowMapPassSettings());
+    static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings = ShadowMapSettings());
 };
 
 

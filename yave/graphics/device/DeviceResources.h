@@ -66,6 +66,9 @@ class DeviceResources final : NonCopyable {
             ToneMapParamsComp,
             DepthBoundComp,
 
+            DeferredPointFrag,
+            DeferredSpotFrag,
+            DeferredAmbientFrag,
             ToneMapFrag,
             TexturedFrag,
             TexturedAlphaFrag,
@@ -75,6 +78,8 @@ class DeviceResources final : NonCopyable {
             HBlurFrag,
             VBlurFrag,
 
+            DeferredPointVert,
+            DeferredSpotVert,
             BasicVert,
             SkinnedVert,
             ScreenVert,
@@ -106,6 +111,9 @@ class DeviceResources final : NonCopyable {
             TexturedAlphaMaterialTemplate,
             TexturedSkinnedMaterialTemplate,
 
+            DeferredPointLightMaterialTemplate,
+            DeferredSpotLightMaterialTemplate,
+            DeferredAmbientMaterialTemplate,
             ToneMappingMaterialTemplate,
 
             ScreenPassthroughMaterialTemplate,

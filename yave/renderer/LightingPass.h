@@ -27,12 +27,17 @@ SOFTWARE.
 
 namespace yave {
 
+struct LightingSettings {
+    ShadowMapSettings shadow_settings;
+    bool use_compute_for_locals = false;
+};
+
 struct LightingPass {
     FrameGraphImageId lit;
 
     ShadowMapPass shadow_pass;
 
-    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao = FrameGraphImageId(), const ShadowMapPassSettings& settings = ShadowMapPassSettings());
+    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao = FrameGraphImageId(), const LightingSettings& settings = LightingSettings());
 };
 
 

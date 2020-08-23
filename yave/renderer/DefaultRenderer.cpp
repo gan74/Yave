@@ -31,7 +31,7 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 
     renderer.gbuffer        = GBufferPass::create(framegraph, view, size);
     renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
-    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao);
+    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao, settings.lighting);
     renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.lighting.lit, settings.tone_mapping);
     renderer.bloom          = BloomPass::create(framegraph, renderer.tone_mapping.tone_mapped, settings.bloom);
 

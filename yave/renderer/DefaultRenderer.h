@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_DEFAULTRENDERER_H
 #define YAVE_RENDERER_DEFAULTRENDERER_H
 
-#include "ShadowMapPass.h"
+#include "LightingPass.h"
 #include "ToneMappingPass.h"
 #include "SSAOPass.h"
 #include "BloomPass.h"
@@ -31,7 +31,7 @@ namespace yave {
 
 struct RendererSettings {
     ToneMappingSettings tone_mapping;
-    ShadowMapPassSettings shadow_map;
+    LightingSettings lighting;
     SSAOSettings ssao;
     BloomSettings bloom;
 };

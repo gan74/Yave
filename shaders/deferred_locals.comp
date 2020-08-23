@@ -179,8 +179,10 @@ void main() {
         light_dir /= distance;
         const float att = attenuation(distance, light.radius, light.falloff);
 
-        const vec3 radiance = light.color * att;
-        irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+        if(att > 0.0) {
+            const vec3 radiance = light.color * att;
+            irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+        }
     }
 #endif
 
@@ -199,13 +201,15 @@ void main() {
         const float spot = pow(max(0.0, (spot_cos_alpha - light.cos_angle) / (1.0 - light.cos_angle)), light.angle_exp);
         float att = spot * attenuation(distance, light.radius, light.falloff);
 
-        if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
-            const ShadowMapParams params = shadow_params[light.shadow_map_index];
-            att *= compute_shadow(in_shadows, params, world_pos);
-        }
+        if(att > 0.0) {
+            if(light.shadow_map_index < 0xFFFFFFFF) {
+                const ShadowMapParams params = shadow_params[light.shadow_map_index];
+                att *= compute_shadow(in_shadows, params, world_pos);
+            }
 
-        const vec3 radiance = light.color * att;
-        irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+            const vec3 radiance = light.color * att;
+            irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+        }
     }
 #endif
 

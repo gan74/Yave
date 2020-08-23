@@ -52,17 +52,18 @@ struct DeviceMaterialData {
     const DepthTestMode depth_test;
     const BlendMode blend_mode;
     const CullMode cull_mode;
+    const bool depth_write;
 
     static constexpr DeviceMaterialData screen(SpirV frag, bool blended = false) {
-        return DeviceMaterialData{frag, SpirV::ScreenVert, DepthTestMode::None, blended ? BlendMode::Add : BlendMode::None, CullMode::None};
+        return DeviceMaterialData{frag, SpirV::ScreenVert, DepthTestMode::None, blended ? BlendMode::Add : BlendMode::None, CullMode::None, false};
     }
 
     static constexpr DeviceMaterialData basic(SpirV frag) {
-        return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None,  CullMode::Back};
+        return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None,  CullMode::Back, true};
     }
 
     static constexpr DeviceMaterialData skinned(SpirV frag) {
-        return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back};
+        return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true};
     }
 };
 
@@ -70,6 +71,9 @@ static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::basic(SpirV::TexturedFrag),
         DeviceMaterialData::basic(SpirV::TexturedAlphaFrag),
         DeviceMaterialData::skinned(SpirV::TexturedFrag),
+        DeviceMaterialData{SpirV::DeferredPointFrag, SpirV::DeferredPointVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+        DeviceMaterialData{SpirV::DeferredSpotFrag, SpirV::DeferredSpotVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+        DeviceMaterialData::screen(SpirV::DeferredAmbientFrag),
         DeviceMaterialData::screen(SpirV::ToneMapFrag),
         DeviceMaterialData::screen(SpirV::PassthroughFrag),
         DeviceMaterialData::screen(SpirV::PassthroughFrag, true),
@@ -96,6 +100,9 @@ static constexpr const char* spirv_names[] = {
         "tonemap_params.comp",
         "depth_bounds.comp",
 
+        "deferred_point.frag",
+        "deferred_spot.frag",
+        "deferred_ambient.frag",
         "tonemap.frag",
         "textured.frag",
         "textured_alpha.frag",
@@ -105,6 +112,8 @@ static constexpr const char* spirv_names[] = {
         "hblur.frag",
         "vblur.frag",
 
+        "deferred_point.vert",
+        "deferred_spot.vert",
         "basic.vert",
         "skinned.vert",
         "screen.vert",
@@ -251,6 +260,7 @@ void DeviceResources::load_resources() {
                 .set_depth_mode(data.depth_test)
                 .set_cull_mode(data.cull_mode)
                 .set_blend_mode(data.blend_mode)
+                .set_depth_write(data.depth_write);
             ;
         _material_templates[i] = MaterialTemplate(device(), std::move(template_data));
     }
