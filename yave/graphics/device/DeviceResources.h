@@ -152,6 +152,7 @@ class DeviceResources final : NonCopyable {
             CubeMesh,
             SphereMesh,
             SimpleSphereMesh,
+            ConeMesh,
             SweepMesh,
 
             MaxMeshes

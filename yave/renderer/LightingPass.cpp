@@ -98,9 +98,9 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
         } push_data {0, 0, 0};
 
         {
-            TypedMapping<uniform::PointLight> mapping = self->resources().mapped_buffer(point_buffer);
+            TypedMapping<uniform::PointLight> points = self->resources().mapped_buffer(point_buffer);
             for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
-                mapping[push_data.point_count++] = {
+                points[push_data.point_count++] = {
                     t.position(),
                     l.radius(),
                     l.color() * l.intensity(),
@@ -110,19 +110,19 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
         }
 
         {
-            TypedMapping<uniform::SpotLight> mapping = self->resources().mapped_buffer(spot_buffer);
-            TypedMapping<uniform::ShadowMapParams> shadow_mapping = self->resources().mapped_buffer(shadow_buffer);
+            TypedMapping<uniform::SpotLight> spots = self->resources().mapped_buffer(spot_buffer);
+            TypedMapping<uniform::ShadowMapParams> shadows = self->resources().mapped_buffer(shadow_buffer);
             for(auto spot : scene.world().view(SpotLightArchetype())) {
                 auto [t, l] = spot.components();
 
                 u32 shadow_index = u32(-1);
                 if(l.cast_shadow() && render_shadows) {
                     if(const auto it = shadow_pass.sub_passes->lights.find(spot.id().as_u64()); it != shadow_pass.sub_passes->lights.end()) {
-                        shadow_mapping[shadow_index = push_data.shadow_count++] = it->second;
+                        shadows[shadow_index = push_data.shadow_count++] = it->second;
                     }
                 }
 
-                mapping[push_data.spot_count++] = {
+                spots[push_data.spot_count++] = {
                     t.position(),
                     l.radius(),
                     l.color() * l.intensity(),
@@ -169,9 +169,11 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
     builder.add_storage_input(directional_buffer, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(light_count_buffer, 0, PipelineStage::ComputeBit);
+
+    builder.add_color_output(lit);
+
     builder.map_update(directional_buffer);
     builder.map_update(light_count_buffer);
-    builder.add_color_output(lit);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         u32 light_count = 0;
@@ -219,6 +221,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
+
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);
 
@@ -228,14 +231,16 @@ static void local_lights_pass(FrameGraph& framegraph,
             usize point_count = 0;
 
             {
-                TypedMapping<uniform::PointLight> mapping = self->resources().mapped_buffer(point_buffer);
+                TypedMapping<uniform::PointLight> points = self->resources().mapped_buffer(point_buffer);
                 for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
-                    mapping[point_count++] = {
+                    points[point_count] = {
                         t.position(),
                         l.radius(),
                         l.color() * l.intensity(),
                         std::max(math::epsilon<float>, l.falloff())
                     };
+
+                    ++point_count;
                 }
             }
 
@@ -243,7 +248,7 @@ static void local_lights_pass(FrameGraph& framegraph,
             const auto* material = device_resources(recorder.device())[DeviceResources::DeferredPointLightMaterialTemplate];
             render_pass.bind_material(material, {self->descriptor_sets()[0]});
             {
-                const StaticMesh& sphere = *device_resources(recorder.device())[DeviceResources::SphereMesh];
+                const StaticMesh& sphere = *device_resources(recorder.device())[DeviceResources::SimpleSphereMesh];
                 VkDrawIndexedIndirectCommand indirect = sphere.indirect_data();
                 indirect.instanceCount = point_count;
                 render_pass.bind_buffers(sphere.triangle_buffer(), sphere.vertex_buffer());
@@ -256,6 +261,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         FrameGraphPassBuilder builder = framegraph.add_pass("Spot light pass");
 
         const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
+        const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_spot_lights);
         const auto shadow_buffer = builder.declare_typed_buffer<uniform::ShadowMapParams>(max_shadow_lights);
 
         builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::VertexBit);
@@ -265,10 +271,12 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(shadow_pass.shadow_map, 0, PipelineStage::FragmentBit);
         builder.add_storage_input(shadow_buffer, 0, PipelineStage::ComputeBit);
+        builder.add_attrib_input(transform_buffer);
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);
 
         builder.map_update(spot_buffer);
+        builder.map_update(transform_buffer);
         builder.map_update(shadow_buffer);
 
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -276,19 +284,25 @@ static void local_lights_pass(FrameGraph& framegraph,
             usize shadow_count = 0;
 
             {
-                TypedMapping<uniform::SpotLight> mapping = self->resources().mapped_buffer(spot_buffer);
-                TypedMapping<uniform::ShadowMapParams> shadow_mapping = self->resources().mapped_buffer(shadow_buffer);
+                TypedMapping<uniform::SpotLight> spots = self->resources().mapped_buffer(spot_buffer);
+                TypedMapping<math::Transform<>> transforms = self->resources().mapped_buffer(transform_buffer);
+                TypedMapping<uniform::ShadowMapParams> shadow = self->resources().mapped_buffer(shadow_buffer);
+
                 for(auto spot : scene.world().view(SpotLightArchetype())) {
                     auto [t, l] = spot.components();
 
                     u32 shadow_index = u32(-1);
                     if(l.cast_shadow() && render_shadows) {
                         if(const auto it = shadow_pass.sub_passes->lights.find(spot.id().as_u64()); it != shadow_pass.sub_passes->lights.end()) {
-                            shadow_mapping[shadow_index = shadow_count++] = it->second;
+                            shadow[shadow_index = shadow_count++] = it->second;
                         }
                     }
 
-                    mapping[spot_count++] = {
+                    const float geom_radius = l.radius() * 1.1f;
+                    const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
+                    transforms[spot_count] = t.non_uniformly_scaled(math::Vec3(1.0f, two_tan_angle, two_tan_angle) * geom_radius);
+
+                    spots[spot_count] = {
                         t.position(),
                         l.radius(),
                         l.color() * l.intensity(),
@@ -299,17 +313,23 @@ static void local_lights_pass(FrameGraph& framegraph,
                         shadow_index,
                         {}
                     };
+
+                    ++spot_count;
                 }
             }
 
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             const auto* material = device_resources(recorder.device())[DeviceResources::DeferredSpotLightMaterialTemplate];
             render_pass.bind_material(material, {self->descriptor_sets()[0]});
+
             {
-                const StaticMesh& sphere = *device_resources(recorder.device())[DeviceResources::SphereMesh];
-                VkDrawIndexedIndirectCommand indirect = sphere.indirect_data();
+                const auto transforms = self->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
+                render_pass.bind_attrib_buffers({}, {transforms});
+
+                const StaticMesh& cone = *device_resources(recorder.device())[DeviceResources::ConeMesh];
+                VkDrawIndexedIndirectCommand indirect = cone.indirect_data();
                 indirect.instanceCount = spot_count;
-                render_pass.bind_buffers(sphere.triangle_buffer(), sphere.vertex_buffer());
+                render_pass.bind_buffers(cone.triangle_buffer(), cone.vertex_buffer());
                 render_pass.draw(indirect);
             }
         });

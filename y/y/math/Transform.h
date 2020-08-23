@@ -80,6 +80,18 @@ struct Transform : Matrix4<T> {
         return this->column(3).template to<3>();
     }
 
+    Transform non_uniformly_scaled(Vec<3, T> scale) const {
+        Transform tr = *this;
+        tr.non_uniform_scale(scale);
+        return tr;
+    }
+
+    void non_uniform_scale(Vec<3, T> scale) {
+        this->column(0).template to<3>() *= scale[0];
+        this->column(1).template to<3>() *= scale[1];
+        this->column(2).template to<3>() *= scale[2];
+    }
+
     Transform scaled(T scale) const {
         Transform tr = *this;
         tr.scale(scale);

@@ -80,6 +80,11 @@ class FrameGraphPassBuilder {
             set_cpu_visible(res);
         }
 
+        template<typename F>
+        void set_render_func(F&& func) {
+            set_render_func(render_func(std::move(func)));
+        }
+
         void set_render_func(render_func&& func);
 
         void add_descriptor_binding(Descriptor bind, usize ds_index = 0);

@@ -142,6 +142,7 @@ static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_coun
 MeshData cube_mesh_data();
 MeshData sphere_mesh_data();
 MeshData simple_sphere_mesh_data();
+MeshData cone_mesh_data();
 MeshData sweep_mesh_data();
 
 
@@ -275,7 +276,8 @@ void DeviceResources::load_resources() {
         _meshes[0] = make_asset<StaticMesh>(device(), cube_mesh_data());
         _meshes[1] = make_asset<StaticMesh>(device(), sphere_mesh_data());
         _meshes[2] = make_asset<StaticMesh>(device(), simple_sphere_mesh_data());
-        _meshes[3] = make_asset<StaticMesh>(device(), sweep_mesh_data());
+        _meshes[3] = make_asset<StaticMesh>(device(), cone_mesh_data());
+        _meshes[4] = make_asset<StaticMesh>(device(), sweep_mesh_data());
     }
 
     _brdf_lut = create_brdf_lut(device(), operator[](BRDFIntegratorProgram));
