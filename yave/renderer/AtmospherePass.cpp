@@ -69,6 +69,36 @@ static const AtmosphereComponent* find_atmosphere_component(const SceneView& sce
     return nullptr;
 }
 
+static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const AtmosphereComponent* atmosphere) {
+    const math::Vec2ui size = math::Vec2ui(128, 128);
+    const ImageFormat format = VK_FORMAT_R16_SFLOAT;
+
+    const float density_falloff = atmosphere->density_falloff;
+
+    FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere integration pass");
+
+    const auto integrated = builder.declare_image(format, size);
+
+    const auto params = builder.declare_typed_buffer<float>();
+
+    builder.add_uniform_input(params, 0, PipelineStage::FragmentBit);
+
+    builder.add_color_output(integrated);
+
+    builder.map_update(params);
+
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        self->resources().mapped_buffer(params)[0] = density_falloff;
+
+        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        const auto* material = device_resources(recorder.device())[DeviceResources::AtmosphereIntegrationMaterialTemplate];
+        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.draw_array(3);
+    });
+
+    return integrated;
+}
+
 AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
     const AtmosphereComponent* atmosphere = find_atmosphere_component(gbuffer.scene_pass.scene_view);
     const DirectionalLightComponent* sun = find_sun(gbuffer.scene_pass.scene_view);
@@ -78,6 +108,10 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
         pass.lit = lit;
         return pass;
     }
+
+    const auto region = framegraph.region("Atmosphere");
+
+    const FrameGraphImageId integrated = integrate_atmosphere(framegraph, atmosphere);
 
     auto rayleigh = [](math::Vec3 v, float scattering_strength) {
         for(auto& x : v) {
@@ -101,13 +135,14 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
         atmosphere->density_falloff,
     };
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("Atmospheric pass");
+    FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere pass");
 
     const auto atmo = builder.declare_copy(lit);
 
     const auto atmo_params = builder.declare_typed_buffer<AtmosphereData>();
 
     builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(integrated, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(atmo_params, 0, PipelineStage::FragmentBit);
 

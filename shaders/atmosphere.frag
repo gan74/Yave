@@ -1,17 +1,17 @@
 #version 450
 
-#include "lib/lighting.glsl"
-#include "lib/gbuffer.glsl"
+#include "lib/atmosphere.glsl"
 
 // -------------------------------- I/O --------------------------------
 
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
+layout(set = 0, binding = 1) uniform sampler2D in_lut;
 
-layout(set = 0, binding = 1) uniform CameraData {
+layout(set = 0, binding = 2) uniform CameraData {
     Camera camera;
 };
 
-layout(set = 0, binding = 2) uniform AtmosphereData {
+layout(set = 0, binding = 3) uniform AtmosphereData {
     vec3 center;
     float planet_radius;
 
@@ -36,26 +36,6 @@ const float km = 1000.0;
 
 
 // -------------------------------- HELPERS --------------------------------
-
-vec2 intersect_sphere(vec3 center, float radius, vec3 origin, vec3 dir) {
-    const vec3 offset = origin - center;
-    const float a = 1.0;
-    const float b = dot(offset, dir) * 2.0;
-    const float c = dot(offset, offset) - (radius * radius);
-    float d = b * b - 4 * a * c;
-
-    if(d > 0.0) {
-        const float s = sqrt(d);
-        const float two_a = 2.0 * a;
-        const float near = max(0.0, -(b + s) / two_a);
-        const float far = (-b + s) / two_a;
-
-        if(far >= 0.0) {
-            return vec2(near, far - near);
-        }
-    }
-    return vec2(-1.0, 0.0);
-}
 
 float atmosphere_density(float normalized_altitude) {
     return exp(-normalized_altitude * density_falloff) * (1.0 - normalized_altitude);

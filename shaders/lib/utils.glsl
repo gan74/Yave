@@ -212,6 +212,27 @@ bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
     return true;
 }
 
+vec2 intersect_sphere(vec3 center, float radius, vec3 origin, vec3 dir) {
+    const vec3 offset = origin - center;
+    const float a = 1.0;
+    const float b = dot(offset, dir) * 2.0;
+    const float c = dot(offset, offset) - (radius * radius);
+    float d = b * b - 4 * a * c;
+
+    if(d > 0.0) {
+        const float s = sqrt(d);
+        const float two_a = 2.0 * a;
+        const float near = max(0.0, -(b + s) / two_a);
+        const float far = (-b + s) / two_a;
+
+        if(far >= 0.0) {
+            return vec2(near, far - near);
+        }
+    }
+    return vec2(-1.0, 0.0);
+}
+
+
 // -------------------------------- SPECTRUM --------------------------------
 
 vec3 spectrum(float x) {

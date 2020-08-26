@@ -349,6 +349,8 @@ void EngineView::draw_menu_bar() {
 }
 
 void EngineView::draw_gizmo_tool_bar() {
+    ImGui::Separator();
+
     auto gizmo_mode = _gizmo.mode();
     auto gizmo_space = _gizmo.space();
     {
