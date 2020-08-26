@@ -54,8 +54,8 @@ class EngineView final : public Widget, public ContextLinked {
     private:
         void paint(CmdBufferRecorder& recorder) override;
 
-        void before_paint();
-        void after_paint();
+        void before_paint() override;
+        void after_paint() override;
 
     private:
         static void draw_callback(RenderPassRecorder& recorder, void* user_data);
@@ -64,8 +64,6 @@ class EngineView final : public Widget, public ContextLinked {
         void draw_menu_bar();
         void draw_settings_menu();
         void draw_gizmo_tool_bar();
-
-        bool is_clicked() const;
 
         void update_proj();
         void update();
@@ -84,6 +82,7 @@ class EngineView final : public Widget, public ContextLinked {
         Gizmo _gizmo;
 
         bool _disable_render = false;
+        isize _resolution = -1;
 };
 
 static_assert(!std::is_move_assignable_v<EngineView>);

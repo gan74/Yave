@@ -41,6 +41,21 @@ SOFTWARE.
 
 namespace editor {
 
+static bool is_clicked() {
+    return ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1) || ImGui::IsMouseClicked(2);
+}
+
+static auto standard_resolutions() {
+    static std::array<std::pair<const char*, math::Vec2ui>, 3> resolutions = {{
+        {"1080p", {1920, 1080}},
+        {"1440p", {2560, 1440}},
+        {"4k",    {3840, 2160}},
+    }};
+
+    return resolutions;
+}
+
+
 EngineView::EngineView(ContextPtr cptr) :
         Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
         ContextLinked(cptr),
@@ -70,9 +85,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     TextureView* output = nullptr;
     FrameGraph graph(_resource_pool);
 
-    const math::Vec2ui output_size = content_size();
-    const EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _settings);
+    const math::Vec2ui output_size = _resolution < 0
+        ? content_size()
+        : standard_resolutions()[_resolution].second;
 
+    const EditorRenderer renderer = EditorRenderer::create(context(), graph, _scene_view, output_size, _settings);
 
     {
         const Texture& white = *device_resources(graph.device())[DeviceResources::WhiteTexture];
@@ -136,11 +153,6 @@ void EngineView::paint(CmdBufferRecorder& recorder) {
 
     update();
 }
-
-bool EngineView::is_clicked() const {
-    return ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1) || ImGui::IsMouseClicked(2);
-}
-
 
 void EngineView::update_proj() {
     const CameraSettings& settings = context()->settings().camera();
@@ -310,7 +322,27 @@ void EngineView::draw_menu_bar() {
             ImGui::EndMenu();
         }
 
+        if(ImGui::BeginMenu("Resolution")) {
+            if(ImGui::MenuItem("Viewport", "", _resolution < 0)) {
+                _resolution = -1;
+            }
+            ImGui::Separator();
+
+            const auto resolutions = standard_resolutions();
+            for(isize i = 0; i != isize(resolutions.size()); ++i) {
+                if(ImGui::MenuItem(resolutions[i].first, "", _resolution == i)) {
+                    _resolution = i;
+                }
+            }
+
+            ImGui::EndMenu();
+        }
+
         draw_gizmo_tool_bar();
+
+        if(_resolution >= 0) {
+            ImGui::TextUnformatted(standard_resolutions()[_resolution].first);
+        }
 
         ImGui::EndMenuBar();
     }
