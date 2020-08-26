@@ -3,7 +3,7 @@
 
 const float pi = 3.1415926535897932384626433832795;
 const float euler = 2.7182818284590452353602874713526;
-const float epsilon = 0.001;
+const float epsilon = 0.0000001;
 
 const uint max_uint = uint(0xFFFFFFFF);
 

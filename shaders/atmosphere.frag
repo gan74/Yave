@@ -12,19 +12,17 @@ layout(set = 0, binding = 1) uniform CameraData {
 };
 
 layout(set = 0, binding = 2) uniform AtmosphereData {
-    float planet_radius;
-    float atmosphere_height;
-    float radius;
-    float density_falloff;
-
     vec3 center;
-    float scattering_strength;
+    float planet_radius;
+
+    vec3 rayleigh;
+    float atmosphere_height;
 
     vec3 light_dir;
-    uint padding_0;
+    float radius;
 
-    vec3 wavelengths;
-    uint padding_1;
+    vec3 light_color;
+    float density_falloff;
 };
 
 
@@ -85,7 +83,7 @@ float optical_depth(vec3 orig, vec3 dir, float len) {
 }
 
 vec3 compute_light(vec3 orig, vec3 dir, float len) {
-    const vec3 scattering_coef = pow(vec3(scattering_strength) / wavelengths, vec3(4.0));
+    const vec3 scattering_coef = rayleigh; //pow(vec3(scattering_strength) / wavelengths, vec3(4.0));
 
     const float step_size = len / (sample_count - 1);
     const vec3 step = dir * step_size;
@@ -125,10 +123,6 @@ void main() {
         if(ground.x > 0.0) {
             view_dist = min(view_dist, ground.x);
         }
-        if(ground.x == 0.0) {
-            out_color = vec4(1, 0, 0, 1);
-            return;
-        }
     }
 
     const vec2 intersection = intersect_sphere(center, radius, cam_pos, view_dir);
@@ -139,7 +133,7 @@ void main() {
 
         const float dist = min(intersection.y, view_dist - intersection.x);
 
-        light = compute_light(start, view_dir, dist);
+        light = compute_light(start, view_dir, dist) * light_color;
     }
 
     out_color = vec4(light, 1.0);

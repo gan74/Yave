@@ -40,19 +40,17 @@ SOFTWARE.
 namespace yave {
 
 struct AtmosphereData {
-    float planet_radius;
-    float atmosphere_height;
-    float radius;
-    float density_falloff;
-
     math::Vec3 center;
-    float scattering_strength;
+    float planet_radius;
+
+    math::Vec3 rayleigh;
+    float atmosphere_height;
 
     math::Vec3 light_dir;
-    u32 padding_0;
+    float radius;
 
-    math::Vec3 wavelengths;
-    u32 padding_1;
+    math::Vec3 light_color;
+    float density_falloff;
 };
 
 static const DirectionalLightComponent* find_sun(const SceneView& scene) {
@@ -81,23 +79,26 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
         return pass;
     }
 
-    /*const float time = core::Chrono::program().to_secs() / 5.0;
-    const math::Vec3 sun_dir(0.0f, std::cos(time), std::abs(std::sin(time)));*/
+    auto rayleigh = [](math::Vec3 v, float scattering_strength) {
+        for(auto& x : v) {
+            x = std::pow(scattering_strength / x, 4.0f);
+        }
+        return v;
+    };
 
     AtmosphereData params {
+        math::Vec3(0.0f, 0.0f, -atmosphere->planet_radius),
         atmosphere->planet_radius,
-        atmosphere->atmosphere_height,
-        atmosphere->planet_radius + atmosphere->atmosphere_height,
-        atmosphere->density_falloff,
 
-        math::Vec3(0.0f, 0.0f, -atmosphere->planet_radius - 0.001f),
-        atmosphere->scattering_strength,
+        rayleigh(atmosphere->wavelengths, atmosphere->scattering_strength),
+        atmosphere->atmosphere_height,
+
 
         -sun->direction().normalized(),
-        0,
+        atmosphere->planet_radius + atmosphere->atmosphere_height,
 
-        atmosphere->wavelengths,
-        0
+        sun->color() * sun->intensity(),
+        atmosphere->density_falloff,
     };
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmospheric pass");
