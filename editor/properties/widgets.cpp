@@ -230,7 +230,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
         //ImGui::InputFloat3("##direction", light->direction().data(), "%.2f");
 
         const math::Vec3 dir = light->direction().normalized();
-        float elevation = math::to_deg(std::asin(dir.z()));
+        float elevation = -math::to_deg(std::asin(dir.z()));
         const math::Vec2 dir_2d = dir.to<2>().normalized();
         float azimuth = math::to_deg(std::copysign(std::acos(dir_2d.x()), std::asin(dir_2d.y())));
 
@@ -239,16 +239,14 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
         changed |= ImGui::DragFloat("Azimuth", &azimuth, 1.0, -180.0f, 180.0f, "%.2f°");
         changed |= ImGui::DragFloat("Elevation", &elevation, 1.0, -90.0f, 90.0f, "%.2f°");
 
-        elevation = math::to_rad(elevation);
-        azimuth = math::to_rad(azimuth);
-
-        math::Vec3 new_dir;
-        new_dir.z() = std::sin(elevation);
-        new_dir.to<2>() = math::Vec2(std::cos(azimuth), std::sin(azimuth)) * std::cos(elevation);
-
-            log_msg(fmt("% => %", dir, new_dir));
-
         if(changed) {
+            elevation = -math::to_rad(elevation);
+            azimuth = math::to_rad(azimuth);
+
+            math::Vec3 new_dir;
+            new_dir.z() = std::sin(elevation);
+            new_dir.to<2>() = math::Vec2(std::cos(azimuth), std::sin(azimuth)) * std::cos(elevation);
+
             light->direction() = new_dir;
         }
     }
