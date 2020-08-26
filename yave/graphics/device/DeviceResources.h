@@ -69,6 +69,7 @@ class DeviceResources final : NonCopyable {
             DeferredPointFrag,
             DeferredSpotFrag,
             DeferredAmbientFrag,
+            AtmosphereFrag,
             ToneMapFrag,
             TexturedFrag,
             TexturedAlphaFrag,
@@ -114,6 +115,7 @@ class DeviceResources final : NonCopyable {
             DeferredPointLightMaterialTemplate,
             DeferredSpotLightMaterialTemplate,
             DeferredAmbientMaterialTemplate,
+            AtmosphereMaterialTemplate,
             ToneMappingMaterialTemplate,
 
             ScreenPassthroughMaterialTemplate,

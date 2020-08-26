@@ -19,42 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_DEFAULTRENDERER_H
-#define YAVE_RENDERER_DEFAULTRENDERER_H
+#ifndef YAVE_COMPONENTS_ATMOSPHERECOMPONENT_H
+#define YAVE_COMPONENTS_ATMOSPHERECOMPONENT_H
 
-#include "LightingPass.h"
-#include "AtmospherePass.h"
-#include "ToneMappingPass.h"
-#include "SSAOPass.h"
-#include "BloomPass.h"
+#include <yave/assets/AssetPtr.h>
+
+#include <yave/graphics/images/IBLProbe.h>
 
 namespace yave {
 
-struct RendererSettings {
-    ToneMappingSettings tone_mapping;
-    LightingSettings lighting;
-    SSAOSettings ssao;
-    BloomSettings bloom;
-};
+class AtmosphereComponent final {
+    public:
+        float planet_radius = 3.0f;
+        float atmosphere_height = 2.0f;
 
-struct DefaultRenderer {
-    GBufferPass gbuffer;
-    LightingPass lighting;
-    AtmospherePass atmosphere;
-    ToneMappingPass tone_mapping;
-    SSAOPass ssao;
-    BloomPass bloom;
+        float density_falloff = 1.0f;
+        float scattering_strength = 400.0f;
 
-    FrameGraphImageId color;
-    FrameGraphImageId depth;
-
-    static DefaultRenderer create(FrameGraph& framegraph,
-                                  const SceneView& view,
-                                  const math::Vec2ui& size,
-                                  const RendererSettings& settings = RendererSettings());
+        math::Vec3 wavelengths = math::Vec3(700.0f, 530.0f, 440.0f);
 };
 
 }
 
-#endif // YAVE_RENDERER_DEFAULTRENDERER_H
+#endif // YAVE_COMPONENTS_ATMOSPHERECOMPONENT_H
 

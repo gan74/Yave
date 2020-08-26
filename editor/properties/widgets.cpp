@@ -34,6 +34,7 @@ SOFTWARE.
 #include <yave/components/SkyLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/AtmosphereComponent.h>
 
 #include <yave/utils/color.h>
 #include <yave/assets/AssetLoader.h>
@@ -43,6 +44,9 @@ SOFTWARE.
 #include <yave/meshes/MeshData.h>
 
 #include <external/imgui/yave_imgui.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <mutex>
 
@@ -223,7 +227,30 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
         ImGui::NextColumn();
         ImGui::Text("Direction");
         ImGui::NextColumn();
-        ImGui::InputFloat3("##direction", light->direction().data(), "%.2f");
+        //ImGui::InputFloat3("##direction", light->direction().data(), "%.2f");
+
+        const math::Vec3 dir = light->direction().normalized();
+        float elevation = math::to_deg(std::asin(dir.z()));
+        const math::Vec2 dir_2d = dir.to<2>().normalized();
+        float azimuth = math::to_deg(std::copysign(std::acos(dir_2d.x()), std::asin(dir_2d.y())));
+
+        bool changed = false;
+
+        changed |= ImGui::DragFloat("Azimuth", &azimuth, 1.0, -180.0f, 180.0f, "%.2f°");
+        changed |= ImGui::DragFloat("Elevation", &elevation, 1.0, -90.0f, 90.0f, "%.2f°");
+
+        elevation = math::to_rad(elevation);
+        azimuth = math::to_rad(azimuth);
+
+        math::Vec3 new_dir;
+        new_dir.z() = std::sin(elevation);
+        new_dir.to<2>() = math::Vec2(std::cos(azimuth), std::sin(azimuth)) * std::cos(elevation);
+
+            log_msg(fmt("% => %", dir, new_dir));
+
+        if(changed) {
+            light->direction() = new_dir;
+        }
     }
     ImGui::Columns(1);
 }
@@ -418,6 +445,29 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
     }
     ImGui::Columns(1);
 }
+
+
+
+/**************************************************************************
+*                               Atmosphere
+**************************************************************************/
+
+editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
+    AtmosphereComponent* component = ctx->world().component<AtmosphereComponent>(id);
+    if(!component) {
+        return;
+    }
+
+    if(!ImGui::CollapsingHeader("Atmosphere", ImGuiTreeNodeFlags_DefaultOpen)) {
+        return;
+    }
+
+    ImGui::InputFloat("Planet radius", &component->planet_radius, 0.0f, 0.0f, "%.6f km");
+    ImGui::InputFloat("Atmosphere height", &component->atmosphere_height, 0.0f, 0.0f, "%.6f km");
+    ImGui::InputFloat("Density falloff", &component->density_falloff, 0.0f, 0.0f, "%.2f");
+    ImGui::InputFloat("Scaterring strength", &component->scattering_strength, 0.0f, 0.0f, "%.2f");
+}
+
 
 
 

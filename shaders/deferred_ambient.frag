@@ -7,7 +7,7 @@
 // -------------------------------- DEFINES --------------------------------
 
 #define USE_IBL
-#define IBL_BACKGROUND
+// #define IBL_BACKGROUND
 #define USE_AO
 
 // -------------------------------- I/O --------------------------------
