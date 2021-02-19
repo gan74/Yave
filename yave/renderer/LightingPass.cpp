@@ -155,7 +155,8 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
 
-    const auto lit = builder.declare_image(lighting_format, size);
+    //const auto lit = builder.declare_image(lighting_format, size);
+    const auto lit = builder.declare_copy(gbuffer.emissive);
 
     const auto directional_buffer = builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_lights);
     const auto light_count_buffer = builder.declare_typed_buffer<u32>(1);

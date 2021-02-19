@@ -44,6 +44,31 @@ SOFTWARE.
 
 namespace editor {
 
+Y_TODO(move into utils)
+static bool color_picker(const char* name, math::Vec3* color) {
+    const int flags =
+        ImGuiColorEditFlags_NoSidePreview |
+        ImGuiColorEditFlags_NoAlpha |
+        ImGuiColorEditFlags_Float |
+        ImGuiColorEditFlags_InputRGB;
+
+    if(ImGui::ColorButton(name, math::Vec4(*color, 1.0f), flags)) {
+        ImGui::OpenPopup("Color##popup");
+    }
+
+    bool changed = false;
+    if(ImGui::BeginPopup("Color##popup")) {
+        changed = ImGui::ColorPicker3("##colorpicker", color->begin(), flags);
+        ImGui::EndPopup();
+    }
+
+    if(changed && color->length2() < 0.001f) {
+        *color = math::Vec3();
+    }
+
+    return changed;
+}
+
 static void save(ContextPtr ctx, SimpleMaterialData data, AssetPtr<Material>& material) {
     io2::Buffer buffer;
     serde3::WritableArchive arc(buffer);
@@ -110,6 +135,7 @@ void MaterialEditor::paint(CmdBufferRecorder& recorder) {
     }*/
 
     if(_material) {
+        _preview.set_inside(this);
         _preview.paint(recorder);
     }
 
@@ -130,7 +156,7 @@ void MaterialEditor::paint(CmdBufferRecorder& recorder) {
 
     SimpleMaterialData data = _material->data();
 
-    const std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic"};
+    const std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic", "Emissive"};
     auto texture_selector = [&](SimpleMaterialData::Textures tex) {
         bool clear = false;
         if(imgui::asset_selector(context(), data.textures()[tex].id(), AssetType::Image, texture_names[tex], &clear)) {
@@ -169,6 +195,18 @@ void MaterialEditor::paint(CmdBufferRecorder& recorder) {
             bool metallic = data.constants().metallic_mul > 0.5f;
             if(ImGui::Checkbox("Metallic##box", &metallic)) {
                 data.constants().metallic_mul = metallic ? 1.0f : 0.0f;
+                save(context(), data, _material);
+            }
+        }
+    }
+
+    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Emissive])) {
+        texture_selector(SimpleMaterialData::Emissive);
+        if(data.textures()[SimpleMaterialData::Emissive].is_empty()) {
+            ImGui::Text("Emissive");
+            ImGui::SameLine();
+            math::Vec3& color = data.constants().emissive_mul;
+            if(color_picker("Emissive##picker", &color)) {
                 save(context(), data, _material);
             }
         }

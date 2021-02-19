@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/graphics/utils.h>
 #include <yave/graphics/framebuffer/RenderPass.h>
+#include <yave/graphics/device/extensions/DebugUtils.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -53,6 +54,13 @@ const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) 
         }
 
         _compiled.insert(key, MaterialCompiler::compile(this, render_pass));
+
+#ifdef Y_DEBUG
+        if(const auto* debug = debug_utils(device()); debug && _name) {
+            debug->set_resource_name(device(), _compiled.last().second.vk_pipeline(), _name);
+        }
+#endif
+
         return _compiled.last().second;
     }
     return it->second;
@@ -61,6 +69,12 @@ const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) 
 
 const MaterialTemplateData& MaterialTemplate::data() const {
     return _data;
+}
+
+void MaterialTemplate::set_name(const char* name) {
+#ifdef Y_DEBUG
+    _name = name;
+#endif
 }
 
 }

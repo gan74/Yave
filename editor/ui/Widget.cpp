@@ -26,8 +26,7 @@ SOFTWARE.
 
 namespace editor {
 
-Widget::Widget(std::string_view title, u32 flags) :
-        _flags(flags) {
+Widget::Widget(std::string_view title, u32 flags) : _flags(flags) {
     set_title(title);
 }
 
@@ -119,6 +118,11 @@ void Widget::show() {
 
 void Widget::close() {
     _visible = false;
+}
+
+void Widget::set_inside(Widget* parent) {
+    y_debug_assert(parent);
+    _manager = parent->manager();
 }
 
 UiManager* Widget::manager() const {

@@ -46,12 +46,18 @@ class MaterialTemplate final : public DeviceLinked {
 
         const MaterialTemplateData& data() const;
 
+        void set_name(const char* name);
+
     private:
         //void swap(Material& other);
 
         mutable core::AssocVector<RenderPass::Layout, GraphicPipeline> _compiled;
 
         MaterialTemplateData _data;
+
+#ifdef Y_DEBUG
+        const char* _name = nullptr;
+#endif
 };
 
 }

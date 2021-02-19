@@ -4,12 +4,18 @@
 layout(location = 0) out vec4 out_color;
 layout(location = 1) out vec4 out_normal;
 
+#ifdef EMISSIVE
+layout(location = 2) out vec4 out_emissive;
+#endif
+
 layout(set = 1, binding = 0) uniform sampler2D in_color;
 layout(set = 1, binding = 1) uniform sampler2D in_normal_map;
 layout(set = 1, binding = 2) uniform sampler2D in_roughness;
 layout(set = 1, binding = 3) uniform sampler2D in_metallic;
+layout(set = 1, binding = 4) uniform sampler2D in_emissive;
 
-layout(set = 1, binding = 4) uniform Constants_Inline {
+layout(set = 1, binding = 5) uniform Constants_Inline {
+    vec3 emissive_mul;
     float roughness_mul;
     float metallic_mul;
 };
@@ -47,5 +53,9 @@ void main() {
 
     out_color = pack_color(color.rgb, metallic);
     out_normal = pack_normal(mapped_normal, roughness);
+
+#ifdef EMISSIVE
+    out_emissive = texture(in_emissive, in_uv) * vec4(emissive_mul, 1.0);
+#endif
 }
 

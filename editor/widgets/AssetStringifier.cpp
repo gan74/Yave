@@ -46,6 +46,7 @@ AssetStringifier::AssetStringifier(ContextPtr cptr) :
 void AssetStringifier::paint(CmdBufferRecorder& recorder) {
     {
         if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
+            _selector.set_inside(this);
             _selector.show();
         }
         ImGui::SameLine();

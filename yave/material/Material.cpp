@@ -34,6 +34,7 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialD
             *device_resources(dptr)[DeviceResources::FlatNormalTexture],
             *device_resources(dptr)[DeviceResources::WhiteTexture],
             *device_resources(dptr)[DeviceResources::WhiteTexture],
+            *device_resources(dptr)[DeviceResources::WhiteTexture],
             InlineDescriptor(data.constants())
         };
 
@@ -48,9 +49,13 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialD
 }
 
 static DeviceResources::MaterialTemplates material_template_for_data(const SimpleMaterialData& data) {
-    return data.alpha_tested()
-        ? DeviceResources::TexturedAlphaMaterialTemplate
-        : DeviceResources::TexturedMaterialTemplate;
+    if(data.has_emissive()) {
+        return DeviceResources::TexturedAlphaEmissiveMaterialTemplate;
+    }
+    if(data.alpha_tested()) {
+       return DeviceResources::TexturedAlphaMaterialTemplate;
+    }
+    return DeviceResources::TexturedMaterialTemplate;
 }
 
 

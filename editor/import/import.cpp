@@ -379,8 +379,13 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
                 last.textures[SimpleMaterialData::Normal] = tex_name(material.normalTexture.index);
                 last.textures[SimpleMaterialData::Diffuse] = tex_name(pbr.baseColorTexture.index);
                 last.textures[SimpleMaterialData::Metallic] = last.textures[SimpleMaterialData::Roughness] = tex_name(pbr.metallicRoughnessTexture.index);
+                last.textures[SimpleMaterialData::Emissive] = tex_name(material.emissiveTexture.index);
                 last.metallic = float(pbr.metallicFactor);
                 last.roughness = float(pbr.roughnessFactor);
+
+                for(usize i = 0; i != 3; ++i) {
+                    last.emissive[i] = float(material.emissiveFactor[0]);
+                }
             }
         }
     }

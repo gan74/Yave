@@ -74,6 +74,7 @@ class DeviceResources final : NonCopyable {
             ToneMapFrag,
             TexturedFrag,
             TexturedAlphaFrag,
+            TexturedAlphaEmissiveFrag,
             PassthroughFrag,
             DownsampleFrag,
             BloomFrag,
@@ -111,6 +112,7 @@ class DeviceResources final : NonCopyable {
         enum MaterialTemplates {
             TexturedMaterialTemplate,
             TexturedAlphaMaterialTemplate,
+            TexturedAlphaEmissiveMaterialTemplate,
             TexturedSkinnedMaterialTemplate,
 
             DeferredPointLightMaterialTemplate,

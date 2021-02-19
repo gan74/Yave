@@ -195,9 +195,9 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 
                     const serde3::Result res = serde3::ReadableArchive(*reader.unwrap()).deserialize(_load_from);
 
-                    if(res.is_error()/* || res.unwrap() == serde3::Success::Partial*/) {
+                    if(res.is_error() || (fail_on_partial_deser && res.unwrap() == serde3::Success::Partial)) {
                         _data->set_failed(ErrorType::InvalidData);
-                        log_msg(fmt("Unable to load %, invalid data: %", asset_name(), serde3::error_msg(res.error())), Log::Error);
+                        log_msg(fmt("Unable to load %, invalid data: %", asset_name(), serde3::error_msg(res)), Log::Error);
                         return core::Err();
                     }
 

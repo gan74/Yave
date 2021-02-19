@@ -30,14 +30,15 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
-
-static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId tone_mapped, const BloomSettings& settings) {
-    const math::Vec2ui size = framegraph.image_size(tone_mapped);
-    const ImageFormat format = framegraph.image_format(tone_mapped);
-    const math::Vec2ui internal_size = size / 2;
+static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId src, const BloomSettings& settings) {
+    const math::Vec2ui size = framegraph.image_size(src);
+    const ImageFormat format = framegraph.image_format(src);
+    const math::Vec2ui internal_size = /*size / 2*/ size;
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Bloom pass");
 
@@ -58,7 +59,7 @@ static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId ton
     const auto param_buffer = builder.declare_typed_buffer<BloomParams>();
 
     builder.add_color_output(thresholded);
-    builder.add_uniform_input(tone_mapped);
+    builder.add_uniform_input(src);
     builder.add_uniform_input(param_buffer);
     builder.map_update(param_buffer);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -76,26 +77,33 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId tone_mappe
     const auto region = framegraph.region("Bloom");
 
     const FrameGraphImageId thresholded = threshold(framegraph, tone_mapped, settings);
-    const FrameGraphImageId bloomed = BlurPass::create(framegraph, thresholded).blurred;
+    const DownsamplePass downsampled = DownsamplePass::create(framegraph, thresholded, 5);
+    const usize mip_count = downsampled.mips.size();
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("Bloom merge pass");
+    FrameGraphImageId src = downsampled.mips.last();
+    for(usize i = 0; i != mip_count - 1; ++i) {
+        const usize dst_index = mip_count - i - 2;
+        y_debug_assert(dst_index < mip_count);
 
-    const FrameGraphMutableImageId merged = builder.declare_copy(tone_mapped);
+        FrameGraphPassBuilder builder = framegraph.add_pass("Bloom upscale pass");
 
-    builder.add_color_output(merged);
-    builder.add_uniform_input(bloomed);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-        const auto* material = device_resources(recorder.device())[DeviceResources::ScreenBlendPassthroughMaterialTemplate];
-        render_pass.bind_material(material, {self->descriptor_sets()[0]});
-        render_pass.draw_array(3);
-    });
+        const auto dst = builder.declare_copy(dst_index ? downsampled.mips[dst_index] : tone_mapped);
+        //const auto dst = builder.declare_copy(downsampled.mips[dst_index]);
 
+        builder.add_color_output(dst);
+        builder.add_uniform_input(src);
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+            const auto* material = device_resources(recorder.device())[DeviceResources::ScreenBlendPassthroughMaterialTemplate];
+            render_pass.bind_material(material, {self->descriptor_sets()[0]});
+            render_pass.draw_array(3);
+        });
+
+        src = dst;
+    }
 
     BloomPass pass;
-    pass.bloomed = bloomed;
-    pass.merged = merged;
-
+    pass.merged = src;
     return pass;
 }
 

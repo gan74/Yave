@@ -35,10 +35,12 @@ class SimpleMaterialData {
             Normal,
             Roughness,
             Metallic,
+            Emissive,
             Max
         };
 
         struct Contants {
+            math::Vec3 emissive_mul;
             float roughness_mul = 1.0f;
             float metallic_mul = 0.0f;
         };
@@ -58,11 +60,13 @@ class SimpleMaterialData {
         const AssetPtr<Texture>& operator[](Textures tex) const;
         const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 
-        const Contants& constants() const { return _constants; }
-        Contants& constants() { return _constants; }
+        const Contants& constants() const;
+        Contants& constants();
 
-        bool alpha_tested() const { return _alpha_tested; }
-        bool& alpha_tested() { return _alpha_tested; }
+        bool alpha_tested() const;
+        bool& alpha_tested();
+
+        bool has_emissive() const;
 
         y_reflect(_textures, _constants, _alpha_tested)
 

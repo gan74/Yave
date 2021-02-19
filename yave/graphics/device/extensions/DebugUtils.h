@@ -53,6 +53,14 @@ class DebugUtils : NonCopyable {
             set_name(dptr, u64(res), VK_OBJECT_TYPE_DESCRIPTOR_SET, name);
         }
 
+        void set_resource_name(DevicePtr dptr, VkPipeline res, const char* name) const {
+            set_name(dptr, u64(res), VK_OBJECT_TYPE_PIPELINE, name);
+        }
+
+        void set_resource_name(DevicePtr dptr, VkShaderModule res, const char* name) const {
+            set_name(dptr, u64(res), VK_OBJECT_TYPE_SHADER_MODULE, name);
+        }
+
     private:
         friend class CmdBufferRegion;
 

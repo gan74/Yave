@@ -98,6 +98,9 @@ class AssetLoader : NonMovable, public DeviceLinked {
         };
 
    public:
+        Y_TODO(make configurable)
+        static constexpr bool fail_on_partial_deser = false;
+
         AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags = AssetLoadingFlags::None, usize concurency = 1);
         ~AssetLoader();
 

@@ -78,9 +78,15 @@ inline const char* error_msg(ErrorType tpe) {
     return msg[usize(tpe)];
 }
 
-
-inline const char* error_msg(const Error &err) {
+inline const char* error_msg(const Error& err) {
     return error_msg(err.type);
+}
+
+inline const char* error_msg(const Result& res) {
+    if(res.is_error()) {
+        return error_msg(res.error());
+    }
+    return "Partial success: format probably mismatch";
 }
 
 }

@@ -270,7 +270,7 @@ void SceneImporter::import(import::SceneData scene) {
             for(const auto& mat : scene.materials) {
                 const auto& data = mat.obj();
                 SimpleMaterialData material;
-                material.constants() = {data.roughness, data.metallic};
+                material.constants() = {data.emissive, data.roughness, data.metallic};
                 for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
                     if(!data.textures[i].is_empty()) {
                         const core::String tex_full_name = make_full_name(image_import_path, data.textures[i]);

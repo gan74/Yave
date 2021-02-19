@@ -54,6 +54,8 @@ class Widget : NonMovable {
 
         std::string_view title() const;
 
+        Y_TODO(remove this)
+        void set_inside(Widget* parent);
         UiManager* manager() const;
 
         template<typename T, typename... Args>
@@ -98,8 +100,6 @@ class Widget : NonMovable {
 
         void set_id(u64 id);
         void set_title(std::string_view title);
-
-        bool has_visible_children() const;
 
         u64 _id = 0;
 

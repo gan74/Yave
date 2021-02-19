@@ -44,6 +44,10 @@ SimpleMaterialData& SimpleMaterialData::set_texture_reset_constants(Textures typ
             _constants.metallic_mul = 1.0f;
         break;
 
+        case Emissive:
+            _constants.emissive_mul = tex.is_empty() ? 0.0f : 1.0f;
+        break;
+
         default:
         break;
     }
@@ -69,6 +73,26 @@ std::array<AssetId, SimpleMaterialData::texture_count> SimpleMaterialData::textu
     return ids;
 }
 
+
+const SimpleMaterialData::Contants& SimpleMaterialData::constants() const {
+    return _constants;
+}
+
+SimpleMaterialData::Contants& SimpleMaterialData::constants() {
+    return _constants;
+}
+
+bool SimpleMaterialData::alpha_tested() const {
+    return _alpha_tested;
+}
+
+bool& SimpleMaterialData::alpha_tested() {
+    return _alpha_tested;
+}
+
+bool SimpleMaterialData::has_emissive() const {
+    return !_textures[Textures::Emissive].is_empty() || !_constants.emissive_mul.is_zero();
+}
 
 }
 

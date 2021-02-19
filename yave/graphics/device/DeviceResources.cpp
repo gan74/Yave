@@ -23,6 +23,7 @@ SOFTWARE.
 #include "DeviceResources.h"
 #include "Device.h"
 
+#include <yave/graphics/device/extensions/DebugUtils.h>
 #include <yave/graphics/shaders/SpirVData.h>
 #include <yave/graphics/shaders/ShaderModule.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
@@ -70,10 +71,11 @@ struct DeviceMaterialData {
 static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::basic(SpirV::TexturedFrag),
         DeviceMaterialData::basic(SpirV::TexturedAlphaFrag),
+        DeviceMaterialData::basic(SpirV::TexturedAlphaEmissiveFrag),
         DeviceMaterialData::skinned(SpirV::TexturedFrag),
         DeviceMaterialData{SpirV::DeferredPointFrag, SpirV::DeferredPointVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
         DeviceMaterialData{SpirV::DeferredSpotFrag, SpirV::DeferredSpotVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-        DeviceMaterialData::screen(SpirV::DeferredAmbientFrag),
+        DeviceMaterialData::screen(SpirV::DeferredAmbientFrag, true),
         DeviceMaterialData::screen(SpirV::AtmosphereFrag, true),
         DeviceMaterialData::screen(SpirV::AtmosphereIntegrationFrag),
         DeviceMaterialData::screen(SpirV::ToneMapFrag),
@@ -110,6 +112,7 @@ static constexpr const char* spirv_names[] = {
         "tonemap.frag",
         "textured.frag",
         "textured_alpha.frag",
+        "textured_alpha_emissive.frag",
         "passthrough.frag",
         "downsample.frag",
         "bloom.frag",
@@ -244,6 +247,12 @@ void DeviceResources::swap(DeviceResources& other) {
 void DeviceResources::load_resources() {
     y_always_assert(is_init(), "DeviceResources has not been initialized");
 
+    const auto set_name = [debug = debug_utils(device()), dptr = device()](auto handle, const char* name) {
+        if(debug) {
+            debug->set_resource_name(dptr, handle, name);
+        }
+    };
+
     for(usize i = 0; i != spirv_count; ++i) {
         const auto file_name = fmt("%.spv", spirv_names[i]);
         _spirv[i] = SpirVData::deserialized(io2::File::open(file_name).expected(fmt_c_str("Unable to open SPIR-V file (%).", file_name)));
@@ -251,10 +260,7 @@ void DeviceResources::load_resources() {
 
     for(usize i = 0; i != compute_count; ++i) {
         _computes[i] = ComputeProgram(ComputeShader(device(), _spirv[i]));
-    }
-
-    for(usize i = 0; i != compute_count; ++i) {
-        _computes[i] = ComputeProgram(ComputeShader(device(), _spirv[i]));
+        set_name(_computes[i].vk_pipeline(), spirv_names[i]);
     }
 
     for(usize i = 0; i != template_count; ++i) {
@@ -268,6 +274,7 @@ void DeviceResources::load_resources() {
                 .set_depth_write(data.depth_write);
             ;
         _material_templates[i] = MaterialTemplate(device(), std::move(template_data));
+        _material_templates[i].set_name(spirv_names[data.frag]);
     }
 
     {
