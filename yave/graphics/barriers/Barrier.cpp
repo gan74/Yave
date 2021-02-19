@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-#if 0
+
 static VkAccessFlags vk_layout_access_flags(VkImageLayout layout) {
     switch(layout) {
         case VK_IMAGE_LAYOUT_UNDEFINED:
@@ -132,27 +132,15 @@ static VkPipelineStageFlags vk_barrier_stage(VkAccessFlags access) {
 
     y_fatal("Unknown access flags");
 }
-#else
-static VkAccessFlags vk_layout_access_flags(VkImageLayout) {
-    return VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+
+
+static PipelineStage vk_src_barrier_stage(VkAccessFlags access) {
+    return PipelineStage(vk_barrier_stage(access));
 }
 
-static VkAccessFlags vk_dst_access_flags(PipelineStage) {
-    return VK_ACCESS_MEMORY_READ_BIT;
+static PipelineStage vk_dst_barrier_stage(VkAccessFlags access) {
+    return PipelineStage(vk_barrier_stage(access));
 }
-
-static VkAccessFlags vk_src_access_flags(PipelineStage) {
-    return VK_ACCESS_MEMORY_WRITE_BIT;
-}
-    
-static PipelineStage vk_src_barrier_stage(VkAccessFlags) {
-    return PipelineStage::EndOfPipe;
-}
-
-static PipelineStage vk_dst_barrier_stage(VkAccessFlags) {
-    return PipelineStage::EndOfPipe;
-}
-#endif
 
 
 
