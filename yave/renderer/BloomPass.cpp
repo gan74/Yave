@@ -30,9 +30,6 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
 namespace yave {
 
 static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId src, const BloomSettings& settings) {
