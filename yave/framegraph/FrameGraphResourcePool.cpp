@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2021 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,9 @@ SOFTWARE.
 **********************************/
 
 #include "FrameGraphResourcePool.h"
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
@@ -47,6 +50,7 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
     TransientImage<> image;
     if(!create_image_from_pool(image, format, size, usage)) {
         y_profile_zone("create resource");
+        //log_msg(fmt("Unable to find image with size = %, reallocating...", size), Log::Warning);
         image = TransientImage<>(device(), format, usage, size);
     }
 

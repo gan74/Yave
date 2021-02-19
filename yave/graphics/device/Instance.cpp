@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2021 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -65,6 +65,20 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
         _debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::extension_name()));
     }
 
+    const std::array<VkValidationFeatureEnableEXT, 5> enabled_validations = {
+            VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+            VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
+            VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+            VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
+            VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
+        };
+
+    VkValidationFeaturesEXT validation_features = vk_struct();
+    {
+        validation_features.enabledValidationFeatureCount = enabled_validations.size();
+        validation_features.pEnabledValidationFeatures = enabled_validations.data();
+    }
+
 
     VkApplicationInfo app_info = vk_struct();
     {
@@ -81,6 +95,12 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
         create_info.ppEnabledLayerNames = _debug_params.instance_layers().data();
         create_info.pApplicationInfo = &app_info;
     }
+
+
+    // if(_debug_params.debug_features_enabled()) {
+    //     create_info.pNext = &validation_features;
+    // }
+
 
     vk_check(vkCreateInstance(&create_info, nullptr, &_instance));
 

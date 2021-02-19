@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2021 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -57,10 +57,10 @@ static VkPresentModeKHR present_mode(DevicePtr dptr, VkSurfaceKHR surface) {
     y_always_assert(mode_count, "No presentation mode supported");
     for(u32 i = 0; i != mode_count; ++i) {
         if(modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-            return modes[i];
+            return VK_PRESENT_MODE_MAILBOX_KHR;
         }
     }
-    return modes[0];
+    return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 static u32 compute_image_count(VkSurfaceCapabilitiesKHR capabilities) {

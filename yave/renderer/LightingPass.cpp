@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2021 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -63,11 +63,12 @@ static const IBLProbe* find_probe(DevicePtr dptr, const ecs::EntityWorld& world)
 
 static void local_lights_pass_compute(FrameGraph& framegraph,
                               FrameGraphMutableImageId lit,
-                              const math::Vec2ui& size,
                               const GBufferPass& gbuffer,
                               const ShadowMapPass& shadow_pass) {
 
     const bool render_shadows = true;
+
+    const math::Vec2ui size = framegraph.image_size(lit);
     const SceneView& scene = gbuffer.scene_pass.scene_view;
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Lighting pass");
@@ -145,7 +146,6 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
 
 
 static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
-                                             const math::Vec2ui& size,
                                              const GBufferPass& gbuffer,
                                              FrameGraphImageId ao) {
 
@@ -155,7 +155,6 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
 
-    //const auto lit = builder.declare_image(lighting_format, size);
     const auto lit = builder.declare_copy(gbuffer.emissive);
 
     const auto directional_buffer = builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_lights);
@@ -341,16 +340,15 @@ static void local_lights_pass(FrameGraph& framegraph,
 LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao, const LightingSettings& settings) {
     const auto region = framegraph.region("Lighting");
 
-    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     const SceneView& scene = gbuffer.scene_pass.scene_view;
 
     LightingPass pass;
     pass.shadow_pass = ShadowMapPass::create(framegraph, scene, settings.shadow_settings);
 
-    const auto lit = ambient_pass(framegraph, size, gbuffer, ao);
+    const auto lit = ambient_pass(framegraph, gbuffer, ao);
 
     if(settings.use_compute_for_locals) {
-        local_lights_pass_compute(framegraph, lit, size, gbuffer, pass.shadow_pass);
+        local_lights_pass_compute(framegraph, lit, gbuffer, pass.shadow_pass);
     } else {
         local_lights_pass(framegraph, lit, gbuffer, pass.shadow_pass);
     }

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2020 Grégoire Angerand
+Copyright (c) 2016-2021 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -70,6 +70,7 @@ VK_STRUCT_INIT(VkPhysicalDeviceInlineUniformBlockPropertiesEXT,     VK_STRUCTURE
 VK_STRUCT_INIT(VkDebugUtilsMessengerCreateInfoEXT,                  VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT)
 VK_STRUCT_INIT(VkDebugUtilsLabelEXT,                                VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT)
 VK_STRUCT_INIT(VkDebugUtilsObjectNameInfoEXT,                       VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT)
+VK_STRUCT_INIT(VkValidationFeaturesEXT,                             VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT)
 
 VK_STRUCT_INIT(VkRayTracingShaderGroupCreateInfoNV,                 VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV)
 VK_STRUCT_INIT(VkRayTracingPipelineCreateInfoNV,                    VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV)
