@@ -160,15 +160,15 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     const auto directional_buffer = builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_lights);
     const auto light_count_buffer = builder.declare_typed_buffer<u32>(1);
 
-    builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input_with_default(ao, Descriptor(white), 0, PipelineStage::ComputeBit);
-    builder.add_external_input(*ibl_probe, 0, PipelineStage::ComputeBit);
-    builder.add_external_input(Descriptor(device_resources(builder.device()).brdf_lut(), SamplerType::LinearClamp), 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
-    builder.add_storage_input(directional_buffer, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(light_count_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input_with_default(ao, Descriptor(white), 0, PipelineStage::FragmentBit);
+    builder.add_external_input(*ibl_probe, 0, PipelineStage::FragmentBit);
+    builder.add_external_input(Descriptor(device_resources(builder.device()).brdf_lut(), SamplerType::LinearClamp), 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
+    builder.add_storage_input(directional_buffer, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(light_count_buffer, 0, PipelineStage::FragmentBit);
 
     builder.add_color_output(lit);
 

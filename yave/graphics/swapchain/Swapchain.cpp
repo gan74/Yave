@@ -28,6 +28,8 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 #include <yave/graphics/barriers/Barrier.h>
 
+#include <yave/graphics/device/extensions/DebugUtils.h>
+
 #include <y/utils/log.h>
 
 namespace yave {
@@ -247,6 +249,13 @@ void Swapchain::build_swapchain() {
         // prevent the images to delete their handles: the swapchain already does that.
         swapchain_image._image = image;
         swapchain_image._view = view;
+
+#ifdef Y_DEBUG
+        if(const auto* debug = debug_utils(device())) {
+            debug->set_resource_name(device(), image, "Swapchain Image");
+            debug->set_resource_name(device(), view, "Swapchain Image View");
+        }
+#endif
 
         _images << std::move(swapchain_image);
     }

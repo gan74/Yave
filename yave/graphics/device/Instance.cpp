@@ -65,11 +65,11 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
         _debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::extension_name()));
     }
 
-    const std::array<VkValidationFeatureEnableEXT, 5> enabled_validations = {
+    const std::array<VkValidationFeatureEnableEXT, 3> enabled_validations = {
             VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
             VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
-            VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-            VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
+            //VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+            //VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
             VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
         };
 
@@ -97,9 +97,9 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
     }
 
 
-    // if(_debug_params.debug_features_enabled()) {
-    //     create_info.pNext = &validation_features;
-    // }
+    if(_debug_params.debug_features_enabled()) {
+        create_info.pNext = &validation_features;
+    }
 
 
     vk_check(vkCreateInstance(&create_info, nullptr, &_instance));

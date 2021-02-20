@@ -65,7 +65,7 @@ static VkAccessFlags vk_layout_access_flags(VkImageLayout layout) {
 
 static VkAccessFlags vk_dst_access_flags(PipelineStage dst) {
     if((dst & PipelineStage::AllShadersBit) != PipelineStage::None) {
-        return VK_ACCESS_SHADER_READ_BIT;
+        return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT;
     }
     switch(dst) {
         case PipelineStage::TransferBit:

@@ -198,6 +198,13 @@ void DeviceResources::init(DevicePtr dptr) {
     for(usize i = 0; i != texture_count; ++i) {
         const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
         _textures[i] = make_asset<Texture>(dptr, ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
+
+#ifdef Y_DEBUG
+        if(const auto* debug = debug_utils(device())) {
+            debug->set_resource_name(dptr, _textures[i]->vk_image(), "Resource Image");
+            debug->set_resource_name(dptr, _textures[i]->vk_view(), "Resource Image View");
+        }
+#endif
     }
 
     load_resources();
@@ -294,6 +301,17 @@ void DeviceResources::load_resources() {
     _brdf_lut = create_brdf_lut(device(), operator[](BRDFIntegratorProgram));
     _probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
     _empty_probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
+
+#ifdef Y_DEBUG
+    if(const auto* debug = debug_utils(device())) {
+        debug->set_resource_name(device(), _brdf_lut.vk_image(), "BRDF LUT");
+        debug->set_resource_name(device(), _brdf_lut.vk_view(), "BRDF LUT View");
+        debug->set_resource_name(device(), _probe->vk_image(), "Default Probe");
+        debug->set_resource_name(device(), _probe->vk_view(), "Default Probe");
+        debug->set_resource_name(device(), _empty_probe->vk_image(), "Empty Probe");
+        debug->set_resource_name(device(), _empty_probe->vk_view(), "Empty Probe");
+    }
+#endif
 }
 
 
