@@ -332,7 +332,11 @@ Queue& Device::graphic_queue() {
 
 void Device::wait_all_queues() const {
     y_profile();
-    vk_check(vkDeviceWaitIdle(vk_device()));
+    // vkDeviceWaitIdle needs to be syncrhonized with other queue operations
+    // vk_check(vkDeviceWaitIdle(vk_device()));
+
+    Y_TODO(Need to sync all queues)
+    _graphic_queue.wait();
 }
 
 ThreadDevicePtr Device::thread_device() const {

@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/graphics/vk/vk.h>
 
 #include <mutex>
+#include <shared_mutex>
 #include <memory>
 
 namespace yave {
