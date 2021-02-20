@@ -89,21 +89,20 @@ template<typename C, typename B>
 static void build_barriers(const C& resources, B& barriers, std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphFrameResources& frame_res) {
     for(auto&& [res, info] : resources) {
         const auto it = to_barrier.find(res);
-        bool exists = it != to_barrier.end();
+        const bool exists = it != to_barrier.end();
         // barrier around attachments are handled by the renderpass
         const PipelineStage stage = info.stage & ~PipelineStage::AllAttachmentOutBit;
-        if(stage == PipelineStage::None) {
+        if(stage != PipelineStage::None) {
             if(exists) {
-                to_barrier.erase(it);
+                barriers.emplace_back(frame_res.barrier(res, it->second, info.stage));
+                it->second = info.stage;
+            } else {
+                to_barrier[res] = info.stage;
             }
-            continue;
         }
 
         if(exists) {
-            barriers.emplace_back(frame_res.barrier(res, it->second, info.stage));
-            it->second = info.stage;
-        } else {
-            to_barrier[res] = info.stage;
+            to_barrier.erase(it);
         }
     }
 }
