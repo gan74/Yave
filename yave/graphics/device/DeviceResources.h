@@ -180,6 +180,8 @@ class DeviceResources final : NonCopyable {
         DevicePtr device() const;
 
         TextureView brdf_lut() const;
+        TextureView white_noise() const;
+
         const AssetPtr<IBLProbe>& ibl_probe() const;
         const AssetPtr<IBLProbe>& empty_probe() const;
 
@@ -210,7 +212,9 @@ class DeviceResources final : NonCopyable {
 
         AssetPtr<IBLProbe> _probe;
         AssetPtr<IBLProbe> _empty_probe;
+
         Texture _brdf_lut;
+        Texture _white_noise;
 
 
 #ifdef Y_DEBUG

@@ -35,10 +35,13 @@ SOFTWARE.
 #include <yave/meshes/StaticMesh.h>
 #include <yave/graphics/images/IBLProbe.h>
 
+#include <y/math/random.h>
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+
+#include <algorithm>
 
 namespace yave {
 
@@ -171,6 +174,18 @@ static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integr
     return image;
 }
 
+static Texture create_white_noise(DevicePtr dptr, usize size = 256) {
+    y_profile();
+    core::DebugTimer _("create_white_noise()");
+
+    std::unique_ptr<u32[]> data = std::make_unique<u32[]>(size * size);
+
+    math::FastRandom rng;
+    std::generate_n(data.get(), size * size, rng);
+
+    return Texture(dptr, ImageData(math::Vec2ui(size, size), reinterpret_cast<const u8*>(data.get()), VK_FORMAT_R8G8B8A8_UNORM));
+}
+
 
 
 DeviceResources::DeviceResources() {
@@ -249,6 +264,7 @@ void DeviceResources::swap(DeviceResources& other) {
     std::swap(other._probe, _probe);
     std::swap(other._empty_probe, _empty_probe);
     std::swap(other._brdf_lut, _brdf_lut);
+    std::swap(other._white_noise, _white_noise);
 }
 
 void DeviceResources::load_resources() {
@@ -299,6 +315,8 @@ void DeviceResources::load_resources() {
     }
 
     _brdf_lut = create_brdf_lut(device(), operator[](BRDFIntegratorProgram));
+    _white_noise = create_white_noise(device());
+
     _probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
     _empty_probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
 
@@ -306,6 +324,9 @@ void DeviceResources::load_resources() {
     if(const auto* debug = debug_utils(device())) {
         debug->set_resource_name(device(), _brdf_lut.vk_image(), "BRDF LUT");
         debug->set_resource_name(device(), _brdf_lut.vk_view(), "BRDF LUT View");
+        debug->set_resource_name(device(), _white_noise.vk_image(), "White Noise");
+        debug->set_resource_name(device(), _white_noise.vk_view(), "White Noise View");
+
         debug->set_resource_name(device(), _probe->vk_image(), "Default Probe");
         debug->set_resource_name(device(), _probe->vk_view(), "Default Probe");
         debug->set_resource_name(device(), _empty_probe->vk_image(), "Empty Probe");
@@ -323,6 +344,11 @@ DevicePtr DeviceResources::device() const {
 TextureView DeviceResources::brdf_lut() const {
     y_debug_assert(is_init());
     return _brdf_lut;
+}
+
+TextureView DeviceResources::white_noise() const {
+    y_debug_assert(is_init());
+    return _white_noise;
 }
 
 const AssetPtr<IBLProbe>& DeviceResources::ibl_probe() const {
