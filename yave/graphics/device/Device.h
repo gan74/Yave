@@ -80,6 +80,8 @@ class Device : NonMovable {
         VkSampler vk_sampler(SamplerType type = SamplerType::LinearRepeat) const;
 
         static VkPhysicalDeviceFeatures required_device_features();
+        static VkPhysicalDeviceVulkan11Features required_device_features_1_1();
+        static VkPhysicalDeviceVulkan12Features required_device_features_1_2();
 
         const DebugUtils* debug_utils() const;
         const RayTracing* ray_tracing() const;

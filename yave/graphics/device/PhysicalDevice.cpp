@@ -25,15 +25,21 @@ SOFTWARE.
 namespace yave {
 
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
-
     vkGetPhysicalDeviceMemoryProperties(_device, &_memory_properties);
-    vkGetPhysicalDeviceFeatures(_device, &_supported_features);
 
     {
-        _uniform_blocks_properties = vk_struct();
+        VkPhysicalDeviceFeatures2 supported_features = vk_struct();
+        supported_features.pNext = &_supported_features_1_1;
+        _supported_features_1_1.pNext = &_supported_features_1_2;
 
+        vkGetPhysicalDeviceFeatures2(_device, &supported_features);
+        _supported_features = supported_features.features;
+    }
+
+    {
         VkPhysicalDeviceProperties2 properties = vk_struct();
         properties.pNext = &_uniform_blocks_properties;
+
         vkGetPhysicalDeviceProperties2(_device, &properties);
         _properties = properties.properties;
     }
@@ -69,15 +75,31 @@ usize PhysicalDevice::total_device_memory() const {
     return total;
 }
 
-bool PhysicalDevice::support_features(const VkPhysicalDeviceFeatures& features) const {
-    const auto supported = reinterpret_cast<const VkBool32*>(&_supported_features);
-    const auto required = reinterpret_cast<const VkBool32*>(&features);
+template<typename T>
+static bool support_all_features(const T& features, const T& supported_features) {
+    Y_TODO(VkPhysicalDeviceVulkan11Features have sType and pNext, which may cause trouble here)
+    static_assert(sizeof(T) % sizeof(VkBool32) == 0);
+
+    const VkBool32* supported = reinterpret_cast<const VkBool32*>(&supported_features);
+    const VkBool32* required = reinterpret_cast<const VkBool32*>(&features);
     for(usize i = 0; i != sizeof(features) / sizeof(VkBool32); ++i) {
         if(required[i] && !supported[i]) {
             return false;
         }
     }
     return true;
+}
+
+bool PhysicalDevice::support_features(const VkPhysicalDeviceFeatures& features) const {
+    return support_all_features(features, _supported_features);
+}
+
+bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan11Features& features) const {
+    return support_all_features(features, _supported_features_1_1);
+}
+
+bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan12Features& features) const {
+    return support_all_features(features, _supported_features_1_2);
 }
 
 }

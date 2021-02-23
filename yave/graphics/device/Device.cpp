@@ -43,6 +43,15 @@ static float device_score(const PhysicalDevice& device) {
         return -std::numeric_limits<float>::max();
     }
 
+    if(!device.support_features(Device::required_device_features_1_1())) {
+        return -std::numeric_limits<float>::max();
+    }
+
+    if(!device.support_features(Device::required_device_features_1_2())) {
+        return -std::numeric_limits<float>::max();
+    }
+
+
     const usize heap_size = device.total_device_memory() / (1024 * 1024);
     const float heap_score = float(heap_size) / float(heap_size + 8 * 1024);
     const float type_score = device.is_discrete() ? 1.0f : 0.0f;
@@ -150,30 +159,6 @@ static void print_physical_properties(const VkPhysicalDeviceProperties& properti
     log_msg(fmt("sizeof(PhysicalDevice) = %", sizeof(PhysicalDevice)));
 }
 
-
-VkPhysicalDeviceFeatures Device::required_device_features() {
-    VkPhysicalDeviceFeatures required = {};
-
-    {
-        required.multiDrawIndirect = true;
-        required.geometryShader = true;
-        required.drawIndirectFirstInstance = true;
-        required.fullDrawIndexUint32 = true;
-        required.textureCompressionBC = true;
-        required.shaderStorageImageExtendedFormats = true;
-        required.shaderUniformBufferArrayDynamicIndexing = true;
-        required.shaderSampledImageArrayDynamicIndexing = true;
-        required.shaderStorageBufferArrayDynamicIndexing = true;
-        required.shaderStorageImageArrayDynamicIndexing = true;
-        required.fragmentStoresAndAtomics = true;
-        required.robustBufferAccess = true;
-        required.independentBlend = true;
-    }
-
-    return required;
-}
-
-
 static VkDevice create_device(
         const PhysicalDevice& physical,
         u32 graphic_queue_index,
@@ -195,8 +180,13 @@ static VkDevice create_device(
     log_msg(fmt("% disabled", RayTracing::extension_name()), Log::Warning);
 #endif
 
-    const VkPhysicalDeviceFeatures required_features = Device::required_device_features();
+    const auto required_features = Device::required_device_features();
+    auto required_features_1_1 = Device::required_device_features_1_1();
+    auto required_features_1_2 = Device::required_device_features_1_2();
+
     y_always_assert(physical.support_features(required_features), "Device doesn't support required features");
+    y_always_assert(physical.support_features(required_features_1_1), "Device doesn't support required features for Vulkan 1.1");
+    y_always_assert(physical.support_features(required_features_1_2), "Device doesn't support required features for Vulkan 1.2");
 
     const float queue_priority = 1.0f;
     VkDeviceQueueCreateInfo queue_create_info = vk_struct();
@@ -206,15 +196,22 @@ static VkDevice create_device(
         queue_create_info.queueCount = 1;
     }
 
+    VkPhysicalDeviceFeatures2 features = vk_struct();
+    {
+        features.features = required_features;
+        features.pNext = &required_features_1_1;
+        required_features_1_1.pNext = &required_features_1_2;
+    }
+
     VkDeviceCreateInfo create_info = vk_struct();
     {
+        create_info.pNext = &features;
         create_info.enabledExtensionCount = extensions.size();
         create_info.ppEnabledExtensionNames = extensions.data();
         create_info.enabledLayerCount = debug.device_layers().size();
         create_info.ppEnabledLayerNames = debug.device_layers().data();
         create_info.queueCreateInfoCount = 1;
         create_info.pQueueCreateInfos = &queue_create_info;
-        create_info.pEnabledFeatures = &required_features;
     }
 
     print_physical_properties(physical.vk_properties());
@@ -408,6 +405,52 @@ const DebugUtils* Device::debug_utils() const {
 const RayTracing* Device::ray_tracing() const {
     return _extensions.raytracing.get();
 }
+
+
+
+
+VkPhysicalDeviceFeatures Device::required_device_features() {
+    VkPhysicalDeviceFeatures required = {};
+
+    {
+        required.multiDrawIndirect = true;
+        required.geometryShader = true;
+        required.drawIndirectFirstInstance = true;
+        required.fullDrawIndexUint32 = true;
+        required.textureCompressionBC = true;
+        required.shaderStorageImageExtendedFormats = true;
+        required.shaderUniformBufferArrayDynamicIndexing = true;
+        required.shaderSampledImageArrayDynamicIndexing = true;
+        required.shaderStorageBufferArrayDynamicIndexing = true;
+        required.shaderStorageImageArrayDynamicIndexing = true;
+        required.fragmentStoresAndAtomics = true;
+        required.robustBufferAccess = true;
+        required.independentBlend = true;
+    }
+
+    return required;
+}
+
+VkPhysicalDeviceVulkan11Features Device::required_device_features_1_1() {
+    VkPhysicalDeviceVulkan11Features required = vk_struct();
+
+    {
+        // We don't actually need anything here...
+    }
+
+    return required;
+}
+
+VkPhysicalDeviceVulkan12Features Device::required_device_features_1_2() {
+    VkPhysicalDeviceVulkan12Features required = vk_struct();
+
+    {
+        //required.timelineSemaphore = true;
+    }
+
+    return required;
+}
+
 
 }
 

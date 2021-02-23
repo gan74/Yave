@@ -41,6 +41,8 @@ class PhysicalDevice {
         usize total_device_memory() const;
 
         bool support_features(const VkPhysicalDeviceFeatures& features) const;
+        bool support_features(const VkPhysicalDeviceVulkan11Features& features) const;
+        bool support_features(const VkPhysicalDeviceVulkan12Features& features) const;
 
     private:
         friend class Instance;
@@ -50,9 +52,13 @@ class PhysicalDevice {
         VkPhysicalDevice _device = {};
         VkPhysicalDeviceProperties _properties = {};
         VkPhysicalDeviceMemoryProperties _memory_properties = {};
+
         VkPhysicalDeviceFeatures _supported_features = {};
 
-        VkPhysicalDeviceInlineUniformBlockPropertiesEXT _uniform_blocks_properties = {};
+        VkPhysicalDeviceVulkan11Features _supported_features_1_1 = vk_struct();
+        VkPhysicalDeviceVulkan12Features _supported_features_1_2 = vk_struct();
+
+        VkPhysicalDeviceInlineUniformBlockPropertiesEXT _uniform_blocks_properties = vk_struct();
 };
 
 }
