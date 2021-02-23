@@ -53,10 +53,6 @@ static VkSurfaceFormatKHR surface_format(DevicePtr dptr, VkSurfaceKHR surface) {
 }
 
 static VkPresentModeKHR present_mode(DevicePtr dptr, VkSurfaceKHR surface) {
-    unused(dptr, surface);
-
-    Y_DEBUG(Re-enable mailbox mode)
-#if 0
     std::array<VkPresentModeKHR, 16> modes = {};
     u32 mode_count = modes.size();
     vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(dptr->vk_physical_device(), surface, &mode_count, modes.data()));
@@ -66,7 +62,6 @@ static VkPresentModeKHR present_mode(DevicePtr dptr, VkSurfaceKHR surface) {
             return VK_PRESENT_MODE_MAILBOX_KHR;
         }
     }
-#endif
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
