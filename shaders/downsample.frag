@@ -20,9 +20,9 @@ void main() {
     samples = transpose(samples);
 
     uint index = 0;
-    float best = dot(samples[0], avg);
+    float best = abs(dot(samples[0], avg));
     for(uint i = 1; i != 4; ++i) {
-        const float score = dot(samples[0], avg);
+        const float score = abs(dot(samples[i], avg));
         if(score < best) {
             best = score;
             index = i;
