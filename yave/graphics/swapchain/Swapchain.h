@@ -32,6 +32,7 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
+
 namespace yave {
 
 static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | ImageUsage::ColorBit;
@@ -53,6 +54,12 @@ class Swapchain : NonMovable, public DeviceLinked {
             friend class Swapchain;
 
             SwapchainImage() = default;
+    };
+
+    struct Semaphores {
+        VkSemaphore image_aquired = vk_null();
+        VkSemaphore render_complete = vk_null();
+        VkFence fence = vk_null();
     };
 
     public:
@@ -80,13 +87,12 @@ class Swapchain : NonMovable, public DeviceLinked {
         bool is_valid() const;
 
         FrameToken next_frame();
-        void present(const FrameToken& token, VkQueue queue);
+        void present(const FrameToken& token, CmdBufferRecorder& recorder, const Queue& queue) ;
 
     private:
         void build_swapchain();
         void build_semaphores();
         void destroy_semaphores();
-
 
         u64 _frame_id = 0;
 
@@ -94,7 +100,7 @@ class Swapchain : NonMovable, public DeviceLinked {
         ImageFormat _color_format;
 
         core::Vector<SwapchainImage> _images;
-        core::Vector<std::pair<VkSemaphore, VkSemaphore>> _semaphores;
+        core::Vector<Semaphores> _semaphores;
 
         VkHandle<VkSurfaceKHR> _surface;
         VkHandle<VkSwapchainKHR> _swapchain;

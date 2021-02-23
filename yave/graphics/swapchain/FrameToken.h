@@ -34,17 +34,12 @@ struct FrameToken {
     const u32 image_count;
 
     const ImageView<ImageUsage::ColorBit> image_view;
-    const VkSemaphore image_aquired = {};
-    const VkSemaphore render_finished = {};
-
 
     bool operator==(const FrameToken& other) const {
         return id == other.id &&
                image_view == other.image_view &&
                image_index == other.image_index &&
-               image_count == other.image_count &&
-               image_aquired == other.image_aquired &&
-               render_finished == other.render_finished;
+               image_count == other.image_count;
     }
 
     bool operator!=(const FrameToken& other) const {
@@ -56,8 +51,7 @@ struct FrameToken {
                 invalid_id,
                 0,
                 1,
-                out_view,
-                vk_null(), vk_null()
+                out_view
             };
     }
 

@@ -53,6 +53,10 @@ static VkSurfaceFormatKHR surface_format(DevicePtr dptr, VkSurfaceKHR surface) {
 }
 
 static VkPresentModeKHR present_mode(DevicePtr dptr, VkSurfaceKHR surface) {
+    unused(dptr, surface);
+
+    Y_DEBUG(Re-enable mailbox mode)
+#if 0
     std::array<VkPresentModeKHR, 16> modes = {};
     u32 mode_count = modes.size();
     vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(dptr->vk_physical_device(), surface, &mode_count, modes.data()));
@@ -62,6 +66,7 @@ static VkPresentModeKHR present_mode(DevicePtr dptr, VkSurfaceKHR surface) {
             return VK_PRESENT_MODE_MAILBOX_KHR;
         }
     }
+#endif
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
@@ -170,8 +175,6 @@ void Swapchain::reset() {
     build_semaphores();
 
     destroy(old);
-
-    y_debug_assert(_images.size() == _semaphores.size());
 }
 
 Swapchain::~Swapchain() {
@@ -268,18 +271,32 @@ void Swapchain::build_swapchain() {
 }
 
 void Swapchain::build_semaphores() {
+    VkFenceCreateInfo fence_create_info = vk_struct();
+    {
+        fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    }
+
+    const VkSemaphoreCreateInfo semaphore_create_info = vk_struct();
+
     for(usize i = 0; i != _images.size(); ++i) {
         auto& semaphores = _semaphores.emplace_back();
-        const VkSemaphoreCreateInfo create_info = vk_struct();
-        vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &semaphores.first));
-        vk_check(vkCreateSemaphore(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &semaphores.second));
+        vk_check(vkCreateSemaphore(device()->vk_device(), &semaphore_create_info, device()->vk_allocation_callbacks(), &semaphores.render_complete));
+        vk_check(vkCreateSemaphore(device()->vk_device(), &semaphore_create_info, device()->vk_allocation_callbacks(), &semaphores.image_aquired));
+        vk_check(vkCreateFence(device()->vk_device(), &fence_create_info, device()->vk_allocation_callbacks(), &semaphores.fence));
     }
+
+    y_debug_assert(_images.size() == _semaphores.size());
 }
 
 void Swapchain::destroy_semaphores() {
     for(const auto& semaphores : _semaphores) {
-        destroy(semaphores.first);
-        destroy(semaphores.second);
+        vk_check(vkWaitForFences(device()->vk_device(), 1, &semaphores.fence, true, u64(-1)));
+    }
+
+    for(const auto& semaphores : _semaphores) {
+        destroy(semaphores.render_complete);
+        destroy(semaphores.image_aquired);
+        destroy(semaphores.fence);
     }
     _semaphores.clear();
 }
@@ -288,28 +305,54 @@ FrameToken Swapchain::next_frame() {
     y_debug_assert(_semaphores.size());
     y_debug_assert(is_valid());
 
-    auto [image_acquired, render_finished] = _semaphores.pop();
+    ++_frame_id;
+    const usize semaphore_index = _frame_id % image_count();
+    const Semaphores& frame_semaphores = _semaphores[semaphore_index];
+
+    //vk_check(vkWaitForFences(device()->vk_device(), 1, &frame_semaphores.fence, true, u64(-1)));
+    //vk_check(vkResetFences(device()->vk_device(), 1, &frame_semaphores.fence));
 
     u32 image_index = 0;
-    vk_check(vkAcquireNextImageKHR(device()->vk_device(), _swapchain, u64(-1), image_acquired, vk_null(), &image_index));
+    vk_check(vkAcquireNextImageKHR(device()->vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, vk_null(), &image_index));
 
     return FrameToken {
-            ++_frame_id,
+            _frame_id,
             image_index,
             u32(image_count()),
             SwapchainImageView(_images[image_index]),
-            image_acquired,
-            render_finished,
         };
 }
 
-void Swapchain::present(const FrameToken& token, VkQueue queue) {
+void Swapchain::present(const FrameToken& token, CmdBufferRecorder& recorder, const Queue& queue) {
     y_profile();
-    _semaphores << std::pair(token.image_aquired, token.render_finished);
-    std::rotate(_semaphores.begin(), _semaphores.end() - 1, _semaphores.end());
+
+    const CmdBuffer cmd_buffer = std::move(recorder).finish();
+
+    const VkCommandBuffer vk_buffer = cmd_buffer.vk_cmd_buffer();
+    const VkQueue vk_queue = queue.vk_queue();
+
+    const usize semaphore_index = token.id % image_count();
+    const Semaphores& frame_semaphores = _semaphores[semaphore_index];
+
+    const VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
     {
         y_profile_zone("queue present");
+
+        const auto lock = y_profile_unique_lock(queue.lock());
+
+        VkSubmitInfo submit_info = vk_struct();
+        {
+            submit_info.waitSemaphoreCount = 1;
+            submit_info.pWaitSemaphores = &frame_semaphores.image_aquired;
+            submit_info.pWaitDstStageMask = &pipe_stage_flags;
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &vk_buffer;
+            submit_info.signalSemaphoreCount = 1;
+            submit_info.pSignalSemaphores = &frame_semaphores.render_complete;
+        }
+
+        vk_check(vkQueueSubmit(vk_queue, 1, &submit_info, cmd_buffer.vk_fence()));
 
         VkPresentInfoKHR present_info = vk_struct();
         {
@@ -317,10 +360,10 @@ void Swapchain::present(const FrameToken& token, VkQueue queue) {
             present_info.pSwapchains = reinterpret_cast<VkSwapchainKHR*>(&_swapchain);
             present_info.pImageIndices = &token.image_index;
             present_info.waitSemaphoreCount = 1;
-            present_info.pWaitSemaphores = &token.render_finished;
+            present_info.pWaitSemaphores = &frame_semaphores.render_complete;
         }
 
-        vk_check(vkQueuePresentKHR(queue, &present_info));
+        vk_check(vkQueuePresentKHR(vk_queue, &present_info));
     }
 }
 

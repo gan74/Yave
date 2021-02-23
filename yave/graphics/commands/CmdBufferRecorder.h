@@ -163,7 +163,7 @@ class CmdBufferRecorder final : public CmdBuffer {
         void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);
         void barriers(core::Span<BufferBarrier> buffers);
         void barriers(core::Span<ImageBarrier> images);
-        
+
         void full_barrier();
 
         Y_TODO(Const all this)
@@ -179,7 +179,7 @@ class CmdBufferRecorder final : public CmdBuffer {
         Y_TODO(Remove)
         CmdBuffer finish() &&;
 
-        template<SyncPolicy Policy>
+        template<SyncPolicy Policy = SyncPolicy::Async>
         void submit() && {
             submit(Policy);
         }
