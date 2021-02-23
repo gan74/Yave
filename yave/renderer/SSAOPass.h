@@ -36,7 +36,7 @@ struct SSAOSettings {
 
     SSAOMethod method = SSAOMethod::MiniEngine;
 
-    usize level_count = 4;
+    usize level_count = 3;
 
     float blur_tolerance = 4.6f;
     float upsample_tolerance = 12.0f;
