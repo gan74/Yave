@@ -23,8 +23,6 @@ SOFTWARE.
 #include "CmdBuffer.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
-#include <yave/graphics/device/LifetimeManager.h>
-#include <yave/graphics/utils.h>
 
 namespace yave {
 
@@ -45,8 +43,10 @@ CmdBuffer::~CmdBuffer() {
 }
 
 void CmdBuffer::release() {
-    if(DevicePtr dptr = device()) {
-        lifetime_manager(dptr).recycle(std::move(_data));
+    if(_data) {
+        if(CmdBufferPool* pool = _data->pool()) {
+            pool->release(std::move(_data));
+        }
     }
 }
 

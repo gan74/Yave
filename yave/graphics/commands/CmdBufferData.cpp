@@ -22,16 +22,15 @@ SOFTWARE.
 
 #include "CmdBufferData.h"
 
-#include <yave/graphics/utils.h>
-#include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/commands/CmdBufferPool.h>
+#include <yave/graphics/device/LifetimeManager.h>
+#include <yave/graphics/utils.h>
 
 namespace yave {
 
 CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p) :
         _cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(lifetime_manager(device()).create_fence()) {
 }
-
 
 CmdBufferData::~CmdBufferData() {
     if(_pool) {

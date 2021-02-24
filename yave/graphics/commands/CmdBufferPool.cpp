@@ -25,9 +25,11 @@ SOFTWARE.
 
 #include <yave/graphics/utils.h>
 #include <yave/graphics/device/Queue.h>
+#include <yave/graphics/device/LifetimeManager.h>
 
 #include <y/core/Chrono.h>
 #include <y/concurrent/concurrent.h>
+
 
 namespace yave {
 
@@ -80,6 +82,10 @@ void CmdBufferPool::join_all() {
 }
 
 void CmdBufferPool::release(std::unique_ptr<CmdBufferData> data) {
+    lifetime_manager(device()).recycle(std::move(data));
+}
+
+void CmdBufferPool::reset(std::unique_ptr<CmdBufferData> data) {
     y_profile();
 
     if(data->pool() != this) {

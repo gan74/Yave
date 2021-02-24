@@ -116,7 +116,7 @@ void LifetimeManager::collect() {
         y_profile_zone("release");
         for(auto& cmd : to_clean) {
             if(cmd->pool()) {
-                cmd->pool()->release(std::move(cmd));
+                cmd->pool()->reset(std::move(cmd));
             }
         }
     }

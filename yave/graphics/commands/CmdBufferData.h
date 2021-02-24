@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
+#include <memory>
+
 namespace yave {
 
 class ResourceFence {
