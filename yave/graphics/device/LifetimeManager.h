@@ -34,15 +34,6 @@ SOFTWARE.
 #include <deque>
 #include <mutex>
 
-
-//#define YAVE_ASYNC_RESOURCE_COLLECTION
-
-#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
-#include <thread>
-#include <condition_variable>
-#endif
-
-
 namespace yave {
 
 class LifetimeManager : public DeviceLinked {
@@ -56,24 +47,27 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
         EmptyResource
         >;
 
+    struct InFlightCmdBuffer {
+        ResourceFence fence;
+        std::unique_ptr<CmdBufferData> cmd_buffer;
+
+        bool operator<(const InFlightCmdBuffer& cmd) const {
+            return fence < cmd.fence;
+        }
+    };
+
     public:
         LifetimeManager(DevicePtr dptr);
         ~LifetimeManager();
 
-        void stop_async_collection(); // Not thread safe
-        bool is_async() const;
-
         ResourceFence create_fence();
 
-        void recycle(CmdBufferData&& cmd);
+        void recycle(std::unique_ptr<CmdBufferData> cmd);
 
         void collect();
 
         usize pending_deletions() const;
         usize active_cmd_buffers() const;
-
-
-
 
 
 #define YAVE_GENERATE_DESTROY(T)                                                \
@@ -92,23 +86,13 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 
 
         std::deque<std::pair<u64, ManagedResource>> _to_destroy;
-        std::deque<CmdBufferData> _in_flight;
+        std::deque<InFlightCmdBuffer> _in_flight;
 
         mutable std::mutex _cmd_lock;
         mutable std::mutex _resource_lock;
 
         std::atomic<u64> _counter = 0;
         u64 _done_counter = 0;
-
-        // Async collection
-        void schedule_collection();
-
-#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
-        std::condition_variable _collect_condition;
-        std::unique_ptr<std::thread> _collect_thread;
-        std::atomic<bool> _run_async = false;
-        std::atomic<u32> _collection_interval = 0;
-#endif
 };
 
 }

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2020 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,8 +38,10 @@ class AssetLoadingContext;
 class AssetLoadingThreadPool;
 class AssetPtrDataBase;
 class AssetStore;
+class AtmosphereComponent;
+class AtmospherePass;
 class BloomPass;
-class BloomPassSettings;
+class BloomSettings;
 class BlurPass;
 class Bone;
 class BoneTransform;
@@ -48,7 +50,6 @@ class BufferBase;
 class Camera;
 class CmdBuffer;
 class CmdBufferData;
-class CmdBufferDataProxy;
 class CmdBufferPool;
 class CmdBufferRecorder;
 class CmdBufferRegion;
@@ -114,6 +115,7 @@ class InlineDescriptor;
 class Instance;
 class LifetimeManager;
 class LightingPass;
+class LightingSettings;
 class LocalFileSystemModel;
 class Mapping;
 class Material;
@@ -141,12 +143,11 @@ class Sampler;
 class SceneRenderSubPass;
 class SceneView;
 class SearchableFileSystemModel;
-class Semaphore;
 class ShaderModuleBase;
 class ShaderProgram;
 class ShadowMapParams;
 class ShadowMapPass;
-class ShadowMapPassSettings;
+class ShadowMapSettings;
 class SimpleMaterialData;
 class Skeleton;
 class SkeletonInstance;
@@ -181,4 +182,3 @@ class Window;
 }
 
 #endif // YAVE_UTILS_FORWARD_H
-

@@ -19,60 +19,60 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+
 #ifndef YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 #define YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 
-#include <yave/graphics/device/Semaphore.h>
+#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/vk/vk.h>
 
 #include <y/core/Vector.h>
 
 namespace yave {
 
-class CmdBufferDataProxy;
-
 class ResourceFence {
-public:
-    ResourceFence() = default;
+    public:
+        ResourceFence() = default;
 
-    bool operator==(const ResourceFence& other) const {
-        return _value == other._value;
-    }
+        bool operator==(const ResourceFence& other) const {
+            return _value == other._value;
+        }
 
-    bool operator!=(const ResourceFence& other) const {
-        return _value != other._value;
-    }
-
-
-    bool operator<(const ResourceFence& other) const {
-        return _value < other._value;
-    }
-
-    bool operator<=(const ResourceFence& other) const {
-        return _value <= other._value;
-    }
+        bool operator!=(const ResourceFence& other) const {
+            return _value != other._value;
+        }
 
 
-    bool operator>(const ResourceFence& other) const {
-        return _value > other._value;
-    }
+        bool operator<(const ResourceFence& other) const {
+            return _value < other._value;
+        }
 
-    bool operator>=(const ResourceFence& other) const {
-        return _value >= other._value;
-    }
+        bool operator<=(const ResourceFence& other) const {
+            return _value <= other._value;
+        }
 
 
-private:
-    friend class LifetimeManager;
+        bool operator>(const ResourceFence& other) const {
+            return _value > other._value;
+        }
 
-    ResourceFence(u64 v) : _value(v) {
-    }
+        bool operator>=(const ResourceFence& other) const {
+            return _value >= other._value;
+        }
 
-    u64 _value = 0;
+
+    private:
+        friend class LifetimeManager;
+
+        ResourceFence(u64 v) : _value(v) {
+        }
+
+        u64 _value = 0;
 };
 
 
 
-class CmdBufferData final : NonCopyable {
+class CmdBufferData final : NonMovable {
 
     struct KeepAlive : NonCopyable {
         virtual ~KeepAlive() {}
@@ -82,10 +82,6 @@ class CmdBufferData final : NonCopyable {
         CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p);
 
         CmdBufferData() = default;
-
-        CmdBufferData(CmdBufferData&& other);
-        CmdBufferData& operator=(CmdBufferData&& other);
-
         ~CmdBufferData();
 
         DevicePtr device() const;
@@ -100,8 +96,6 @@ class CmdBufferData final : NonCopyable {
         void reset();
         void release_resources();
 
-        void wait_for(const Semaphore& sem);
-
         template<typename T>
         void keep_alive(T&& t) {
             struct Box : KeepAlive {
@@ -115,7 +109,6 @@ class CmdBufferData final : NonCopyable {
 
     private:
         friend class Queue;
-        void swap(CmdBufferData& other);
 
         VkHandle<VkCommandBuffer> _cmd_buffer;
         VkHandle<VkFence> _fence;
@@ -123,28 +116,8 @@ class CmdBufferData final : NonCopyable {
         core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
         CmdBufferPool* _pool = nullptr;
 
-        Semaphore _signal;
-        core::Vector<Semaphore> _waits;
-
         ResourceFence _resource_fence;
 };
-
-
-class CmdBufferDataProxy : NonMovable {
-
-    public:
-        CmdBufferDataProxy() = default;
-        CmdBufferDataProxy(CmdBufferData&& d);
-
-        ~CmdBufferDataProxy();
-
-        CmdBufferData& data();
-
-    private:
-        CmdBufferData _data;
-
-};
-
 
 }
 

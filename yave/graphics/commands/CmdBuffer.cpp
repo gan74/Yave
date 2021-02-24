@@ -23,15 +23,31 @@ SOFTWARE.
 #include "CmdBuffer.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
+#include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/utils.h>
 
 namespace yave {
 
-CmdBuffer::CmdBuffer(std::unique_ptr<CmdBufferDataProxy>&& data) : _proxy(std::move(data))  {
+CmdBuffer::CmdBuffer(std::unique_ptr<CmdBufferData> data) : _data(std::move(data))  {
+}
+
+CmdBuffer::CmdBuffer(CmdBuffer&& other) {
+    swap(other);
+}
+
+CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) {
+    swap(other);
+    return *this;
+}
+
+CmdBuffer::~CmdBuffer() {
+    release();
 }
 
 void CmdBuffer::release() {
-    _proxy = nullptr;
+    if(DevicePtr dptr = device()) {
+        lifetime_manager(dptr).recycle(std::move(_data));
+    }
 }
 
 void CmdBuffer::wait() const {
@@ -39,30 +55,31 @@ void CmdBuffer::wait() const {
     vk_check(vkWaitForFences(vk_device(device()), 1, &fence, true, u64(-1)));
 }
 
-void CmdBuffer::wait_for(const Semaphore& sem) {
-    _proxy->data().wait_for(sem);
-}
-
 DevicePtr CmdBuffer::device() const {
     Y_TODO(cache that?)
-    const auto pool = _proxy ? _proxy->data().pool() : nullptr;
+    const auto pool = _data ? _data->pool() : nullptr;
     return pool ? pool->device() : nullptr;
 }
 
 VkCommandBuffer CmdBuffer::vk_cmd_buffer() const {
-    y_debug_assert(_proxy);
-    return _proxy->data().vk_cmd_buffer();
+    y_debug_assert(_data);
+    return _data->vk_cmd_buffer();
 }
 
 VkFence CmdBuffer::vk_fence() const {
-    y_debug_assert(_proxy);
-    return  _proxy->data().vk_fence();
+    y_debug_assert(_data);
+    return  _data->vk_fence();
 }
 
 ResourceFence CmdBuffer::resource_fence() const {
-    y_debug_assert(_proxy);
-    return _proxy->data().resource_fence();
+    y_debug_assert(_data);
+    return _data->resource_fence();
 }
+
+void CmdBuffer::swap(CmdBuffer &other) {
+    std::swap(_data, other._data);
+}
+
 
 }
 

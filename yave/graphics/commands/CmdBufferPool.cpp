@@ -79,36 +79,37 @@ void CmdBufferPool::join_all() {
     }
 }
 
-void CmdBufferPool::release(CmdBufferData&& data) {
+void CmdBufferPool::release(std::unique_ptr<CmdBufferData> data) {
     y_profile();
 
-    if(data.pool() != this) {
+    if(data->pool() != this) {
         y_fatal("CmdBufferData was not returned to its original pool.");
     }
-    data.release_resources();
+    data->release_resources();
+
     const auto lock = y_profile_unique_lock(_lock);
     _cmd_buffers.push_back(std::move(data));
 }
 
-std::unique_ptr<CmdBufferDataProxy> CmdBufferPool::alloc() {
+std::unique_ptr<CmdBufferData> CmdBufferPool::alloc() {
     y_profile();
 
     y_debug_assert(concurrent::thread_id() == _thread_id);
     {
         auto lock = y_profile_unique_lock(_lock);
         if(!_cmd_buffers.is_empty()) {
-            CmdBufferData data = _cmd_buffers.pop();
+            auto data = _cmd_buffers.pop();
             lock.unlock();
 
-            data.reset();
-            return std::make_unique<CmdBufferDataProxy>(std::move(data));
+            data->reset();
+            return data;
         }
     }
 
-    return std::make_unique<CmdBufferDataProxy>(create_data());
+    return create_data();
 }
 
-CmdBufferData CmdBufferPool::create_data() {
+std::unique_ptr<CmdBufferData> CmdBufferPool::create_data() {
     const VkFenceCreateInfo fence_create_info = vk_struct();
     VkCommandBufferAllocateInfo allocate_info = vk_struct();
     {
@@ -122,9 +123,8 @@ CmdBufferData CmdBufferPool::create_data() {
     vk_check(vkAllocateCommandBuffers(vk_device(device()), &allocate_info, &buffer));
     vk_check(vkCreateFence(vk_device(device()), &fence_create_info, vk_allocation_callbacks(device()), &fence));
 
-
     _fences << fence;
-    return CmdBufferData(buffer, fence, this);
+    return std::make_unique<CmdBufferData>(buffer, fence, this);
 }
 
 

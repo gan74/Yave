@@ -30,6 +30,11 @@ struct CmdBuffer : NonCopyable {
     public:
         CmdBuffer() = default;
 
+        CmdBuffer(CmdBuffer&& other);
+        CmdBuffer& operator=(CmdBuffer&& other);
+
+        ~CmdBuffer();
+
         DevicePtr device() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
@@ -37,30 +42,24 @@ struct CmdBuffer : NonCopyable {
         ResourceFence resource_fence() const;
 
         void wait() const;
-        void wait_for(const Semaphore& sem);
-
-        template<typename T>
-        T wait_for(BoxSemaphore<T>&& t) {
-            CmdBuffer::wait_for(static_cast<const Semaphore&>(t));
-            return std::move(t._boxed);
-        }
 
         template<typename T>
         void keep_alive(T&& t) {
-            _proxy->data().keep_alive(y_fwd(t));
+            _data->keep_alive(y_fwd(t));
         }
 
     protected:
-        CmdBuffer(std::unique_ptr<CmdBufferDataProxy>&& proxy);
+        CmdBuffer(std::unique_ptr<CmdBufferData> data);
 
         void release();
+
+        void swap(CmdBuffer& other);
 
     private:
         friend class CmdBufferPool;
         friend class Queue;
 
-        std::unique_ptr<CmdBufferDataProxy> _proxy;
-
+        std::unique_ptr<CmdBufferData> _data;
 };
 
 }

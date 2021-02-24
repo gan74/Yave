@@ -28,39 +28,17 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/commands/CmdBufferPool.h>
 
-
-#include <y/concurrent/concurrent.h>
-#include <y/core/Chrono.h>
-
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
 namespace yave {
 
 LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
-#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
-    _run_async = true;
-    _collect_thread = std::make_unique<std::thread>([this] {
-        concurrent::set_thread_name("Resource collection thread");
-        std::mutex mutex;
-        while(_run_async) {
-            auto lock = y_profile_unique_lock(mutex);
-            const u32 ms = _collection_interval;
-            if(ms) {
-                _collect_condition.wait_for(lock, std::chrono::milliseconds(ms));
-            } else {
-                _collect_condition.wait(lock);
-            }
-            collect();
-        }
-    });
-#endif
 }
 
 LifetimeManager::~LifetimeManager() {
     y_debug_assert(_counter == _done_counter);
 
-    stop_async_collection();
     collect();
 
     for(auto& r : _to_destroy) {
@@ -72,58 +50,26 @@ LifetimeManager::~LifetimeManager() {
     }
 }
 
-void LifetimeManager::stop_async_collection() {
-#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
-    if(is_async()) {
-        y_profile();
-        _run_async = false;
-        _collect_condition.notify_all();
-        _collect_thread->join();
-        _collect_thread = nullptr;
-    }
-#endif
-}
-
-bool LifetimeManager::is_async() const {
-#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
-    return _run_async;
-#else
-    return false;
-#endif
-}
-
-void LifetimeManager::schedule_collection() {
-#ifdef YAVE_ASYNC_RESOURCE_COLLECTION
-    if(is_async()) {
-        y_profile_event();
-        _collect_condition.notify_all();
-    } else {
-        collect();
-    }
-#else
-    collect();
-#endif
-}
-
-
 ResourceFence LifetimeManager::create_fence() {
     return ++_counter;
 }
 
-void LifetimeManager::recycle(CmdBufferData&& cmd) {
+void LifetimeManager::recycle(std::unique_ptr<CmdBufferData> cmd) {
     y_profile();
 
     bool run_collect = false;
     {
+        InFlightCmdBuffer in_flight = { cmd->resource_fence(), std::move(cmd) };
+
         const auto lock = y_profile_unique_lock(_cmd_lock);
-        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd,
-                                   [](const auto& a, const auto& b) { return a.resource_fence() < b.resource_fence(); });
-        _in_flight.insert(it, std::move(cmd));
-        run_collect = (_in_flight.front().resource_fence()._value == _done_counter + 1);
+        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), in_flight);
+        _in_flight.insert(it, std::move(in_flight));
+
+        run_collect = (_in_flight.front().fence._value == _done_counter + 1);
     }
 
     if(run_collect) {
-        schedule_collection();
+        collect();
     }
 }
 
@@ -134,21 +80,26 @@ void LifetimeManager::collect() {
     bool clear = false;
 
     // To ensure that CmdBufferData keep alives are freed outside the lock
-    core::Vector<CmdBufferData> to_clean;
+    core::Vector<std::unique_ptr<CmdBufferData>> to_clean;
     {
         y_profile_zone("fence polling");
         const auto lock = y_profile_unique_lock(_cmd_lock);
         next = _done_counter;
         while(!_in_flight.empty()) {
-            CmdBufferData& cmd = _in_flight.front();
-            const u64 fence = cmd.resource_fence()._value;
+            InFlightCmdBuffer& cmd = _in_flight.front();
+            y_debug_assert(cmd.cmd_buffer);
+
+            const u64 fence = cmd.fence._value;
             if(fence != next + 1) {
                 break;
             }
 
-            if(vkGetFenceStatus(vk_device(device()), cmd.vk_fence()) == VK_SUCCESS) {
+            auto& cmd_buffer = cmd.cmd_buffer;
+            y_debug_assert(cmd_buffer);
+
+            if(vkGetFenceStatus(vk_device(device()), cmd_buffer->vk_fence()) == VK_SUCCESS) {
                 next = fence;
-                to_clean.emplace_back(std::move(_in_flight.front()));
+                to_clean.emplace_back(std::move(cmd_buffer));
                 _in_flight.pop_front();
             } else {
                 break;
@@ -164,8 +115,8 @@ void LifetimeManager::collect() {
     {
         y_profile_zone("release");
         for(auto& cmd : to_clean) {
-            if(cmd.pool()) {
-                cmd.pool()->release(std::move(cmd));
+            if(cmd->pool()) {
+                cmd->pool()->release(std::move(cmd));
             }
         }
     }

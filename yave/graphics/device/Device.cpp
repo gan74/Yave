@@ -287,7 +287,6 @@ Device::Device(Instance& instance, PhysicalDevice device) :
 
 Device::~Device() {
     _resources = DeviceResources();
-    _lifetime_manager.stop_async_collection();
 
     {
         Y_TODO(Why do we need this?)

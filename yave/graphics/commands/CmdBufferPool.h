@@ -32,8 +32,6 @@ SOFTWARE.
 
 namespace yave {
 
-class CmdBufferDataProxy;
-
 class CmdBufferPool : NonMovable, public DeviceLinked {
 
     public:
@@ -47,20 +45,19 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
         CmdBuffer create_buffer();
 
     private:
-        friend class CmdBufferDataProxy;
         friend class LifetimeManager;
 
-        void release(CmdBufferData&& data);
-        std::unique_ptr<CmdBufferDataProxy> alloc();
+        void release(std::unique_ptr<CmdBufferData> data);
+        std::unique_ptr<CmdBufferData> alloc();
 
         void join_all();
 
     private:
-        CmdBufferData create_data();
+        std::unique_ptr<CmdBufferData> create_data();
 
         std::mutex _lock;
         VkHandle<VkCommandPool> _pool;
-        core::Vector<CmdBufferData> _cmd_buffers;
+        core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
         core::Vector<VkFence> _fences;
 
         const u32 _thread_id;

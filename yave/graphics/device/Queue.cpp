@@ -63,21 +63,8 @@ void Queue::submit(CmdBufferRecorder& rec) const {
     {
         const auto lock = y_profile_unique_lock(*_lock);
 
-        const auto& wait = rec._proxy->data()._waits;
-        auto wait_semaphores = core::vector_with_capacity<VkSemaphore>(wait.size());
-        std::transform(wait.begin(), wait.end(), std::back_inserter(wait_semaphores), [](const auto& s) { return s.vk_semaphore(); });
-        const core::Vector<VkPipelineStageFlags> stages(wait.size(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-        const Semaphore& signal = rec._proxy->data()._signal;
-        const VkSemaphore sig_semaphore = signal.device() ? signal.vk_semaphore() : VkSemaphore{};
-
         VkSubmitInfo submit_info = vk_struct();
         {
-            submit_info.signalSemaphoreCount = signal.device() ? 1 : 0;
-            submit_info.pSignalSemaphores = signal.device() ? &sig_semaphore : nullptr;
-            submit_info.waitSemaphoreCount = wait_semaphores.size();
-            submit_info.pWaitSemaphores = wait_semaphores.data();
-            submit_info.pWaitDstStageMask = stages.data();
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &cmd;
         }
