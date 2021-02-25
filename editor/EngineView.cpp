@@ -72,13 +72,10 @@ EngineView::~EngineView() {
 void EngineView::before_paint() {
     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, math::Vec4(0.0f));
     ImGui::PushStyleColor(ImGuiCol_Border, math::Vec4(0.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2(2.0f, 0.0f));
 }
 
 void EngineView::after_paint() {
     ImGui::PopStyleColor(2);
-    // poped during menu rendering
-    // ImGui::PopStyleVar(1);
 }
 
 void EngineView::draw(CmdBufferRecorder& recorder) {
@@ -284,8 +281,6 @@ void EngineView::draw_settings_menu() {
 
 void EngineView::draw_menu_bar() {
     if(ImGui::BeginMenuBar()) {
-        ImGui::PopStyleVar(1);
-
         if(ImGui::BeginMenu("Render")) {
             ImGui::MenuItem("Editor entities", nullptr, &_settings.show_editor_entities);
 
