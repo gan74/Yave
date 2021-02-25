@@ -18,15 +18,23 @@ bool matches(ivec2 coords) {
     return value == (selected + 1);
 }
 
+float dist_to_bound(ivec2 coords, ivec2 size) {
+    const vec2 dist = size - coords;
+    return min(min(dist.x, dist.y), min(coords.x, coords.y) + 1);
+}
+
 void main() {
+    const int size = 2;
     const ivec2 coords = ivec2(gl_FragCoord.xy);
 
     if(matches(coords)) {
-        out_color = vec4(0.0);
+        if(dist_to_bound(coords, textureSize(in_ids, 0).xy) <= size) {
+            out_color = vec4(selection_color, 1.0);
+        } else {
+            out_color = vec4(0.0);
+        }
         return;
     }
-
-    const int size = 2;
 
     float sum = 0.0;
     float total = 0.0;
