@@ -89,7 +89,7 @@ void MaterialPreview::set_object(PreviewObject obj) {
 
 
 void MaterialPreview::update_camera() {
-    if(ImGui::IsMouseDown(0) && is_mouse_inside()) {
+    if(ImGui::IsMouseDown(0) && /*is_mouse_inside()*/ ImGui::IsWindowHovered()) {
         math::Vec2 delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(content_size());
         delta *= context()->settings().camera().trackball_sensitivity;
 
@@ -163,6 +163,8 @@ void MaterialPreview::paint(CmdBufferRecorder& recorder) {
         FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_copy(renderer.lighting.lit);
+        Y_TODO(This is not enough to properly sync)
+        builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
                 auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
                 output = out.get();

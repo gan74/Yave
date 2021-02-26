@@ -113,7 +113,7 @@ static void light_widget(T* light) {
     ImGui::NextColumn();
     ImGui::Text("Intensity");
     ImGui::NextColumn();
-    ImGui::DragFloat("##intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+    ImGui::DragFloat("##intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", ImGuiSliderFlags_Logarithmic);
 }
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
@@ -139,7 +139,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
         ImGui::NextColumn();
         ImGui::Text("Falloff");
         ImGui::NextColumn();
-        ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
+        ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
     }
     ImGui::Columns(1);
 }
@@ -167,7 +167,7 @@ editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
         ImGui::NextColumn();
         ImGui::Text("Falloff");
         ImGui::NextColumn();
-        ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", 2.0f);
+        ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
 
         ImGui::NextColumn();
         ImGui::Text("Angle");
