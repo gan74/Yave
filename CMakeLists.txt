@@ -42,17 +42,7 @@ if(MINGW)
     endif()
 endif()
 
-find_library(Vulkan REQUIRED)
-
-# Another shitty hack to locate vulkan SDK if CMake fails
-
-if(NOT Vulkan_FOUND)
-    message("Vulkan not found, setting using VULKAN_SDK env")
-    file(TO_CMAKE_PATH $ENV{VULKAN_SDK} Vulkan_SDK_Dir)
-    set(Vulkan_INCLUDE_DIRS ${Vulkan_SDK_Dir}/Include)
-    set(Vulkan_LIBRARY ${Vulkan_SDK_Dir}/Lib/vulkan-1.lib)
-endif()
-message(STATUS ${Vulkan_LIBRARY})
+find_package(Vulkan REQUIRED)
 
 
 # add y subtree

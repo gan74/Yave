@@ -4,16 +4,12 @@ project(y)
 # -Wsign-conversion -Wshadow
 set(Y_EXTRA_WARNINGS
         -Wzero-as-null-pointer-constant
-        -Wsign-promo
         -Wfloat-conversion
         -Woverloaded-virtual
         -Wnon-virtual-dtor
-        -Wodr
-        -Wdisabled-optimization
         -Wlogical-op
         -Wredundant-decls
         -Wundef
-        -Wtautological-compare
     )
 
 
@@ -21,7 +17,7 @@ if(MSVC)
     # temporary hacks to get it to compile
     set(Y_COMPILE_OPTIONS /permissive- /W0)
 else()
-    set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${Y_EXTRA_WARNINGS} -fno-common)
+    set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${Y_EXTRA_WARNINGS})
 endif()
 
 
