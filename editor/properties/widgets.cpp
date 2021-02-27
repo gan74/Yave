@@ -113,7 +113,7 @@ static void light_widget(T* light) {
     ImGui::NextColumn();
     ImGui::Text("Intensity");
     ImGui::NextColumn();
-    ImGui::DragFloat("##intensity", &light->intensity(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f", ImGuiSliderFlags_Logarithmic);
+    ImGui::DragFloat("##intensity", &light->intensity(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
 }
 
 editor_widget_draw_func(ContextPtr ctx, ecs::EntityId id) {
