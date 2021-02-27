@@ -102,17 +102,28 @@ class EntityWorld {
 
 
         template<typename T, typename... Args>
-        void add_component(EntityId id, Args&&... args) {
+        T* add_component(EntityId id, Args&&... args) {
             check_exists(id);
-            find_or_create_container<T>()->template add<T>(*this, id, y_fwd(args)...);
+            return &find_or_create_container<T>()->template add<T>(*this, id, y_fwd(args)...);
         }
 
         template<typename First, typename... Args>
         void add_components(EntityId id) {
             y_debug_assert(exists(id));
-            add_component<First>(id);
+            if(!has<First>(id)) {
+                add_component<First>(id);
+            }
             if constexpr(sizeof...(Args)) {
                 add_components<Args...>(id);
+            }
+        }
+
+        template<typename First, typename... Args>
+        void add_or_replace_components(EntityId id) {
+            y_debug_assert(exists(id));
+            add_component<First>(id);
+            if constexpr(sizeof...(Args)) {
+                add_or_replace_components<Args...>(id);
             }
         }
 
