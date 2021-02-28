@@ -63,6 +63,7 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
         ResourceFence create_fence();
 
         void queue_for_recycling(CmdBufferData* data);
+        void set_recycled(CmdBufferData* data);
 
         void collect();
 

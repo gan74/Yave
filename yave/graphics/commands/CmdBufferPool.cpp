@@ -46,10 +46,6 @@ static VkCommandPool create_pool(DevicePtr dptr) {
 }
 
 
-
-CmdBufferPool::CmdBufferPool() : _thread_id(concurrent::thread_id()) {
-}
-
 CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
         DeviceLinked(dptr),
         _pool(create_pool(dptr)),
@@ -57,17 +53,18 @@ CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
 }
 
 CmdBufferPool::~CmdBufferPool() {
-    if(device()) {
-        join_all();
+    join_all();
 
-        _cmd_buffers.clear();
-        _reset.clear();
+    y_debug_assert(_pending.is_empty()); // We probably need to wait for those too....
+    y_debug_assert(_cmd_buffers.size() == _recycled.size());
 
-        for(const VkFence fence : _fences) {
-            destroy(fence);
-        }
-        destroy(_pool);
+    _cmd_buffers.clear();
+    _recycled.clear();
+
+    for(const VkFence fence : _fences) {
+        destroy(fence);
     }
+    destroy(_pool);
 }
 
 VkCommandPool CmdBufferPool::vk_pool() const {
@@ -75,6 +72,8 @@ VkCommandPool CmdBufferPool::vk_pool() const {
 }
 
 void CmdBufferPool::join_all() {
+    const auto lock = y_profile_unique_lock(_pool_lock);
+
     if(_fences.is_empty()) {
         return;
     }
@@ -83,43 +82,85 @@ void CmdBufferPool::join_all() {
 }
 
 void CmdBufferPool::release(CmdBufferData* data) {
-    y_debug_assert(data->_pool == this);
+    y_debug_assert(data->pool() == this);
+
+    {
+        const auto lock = y_profile_unique_lock(_pending_lock);
+        _pending << data;
+    }
+
     lifetime_manager(device()).queue_for_recycling(data);
 }
 
-void CmdBufferPool::reset(CmdBufferData* data) {
+
+void CmdBufferPool::prepare_for_recycling(CmdBufferData* data) {
+    data->set_signaled();
+    data->release_resources();
+}
+
+void CmdBufferPool::recycle(CmdBufferData* data) {
     y_profile();
 
-    if(data->pool() != this) {
-        y_fatal("CmdBufferData was not returned to its original pool.");
+    y_debug_assert(data->poll_fence());
+    y_debug_assert(data->pool() == this);
+
+    {
+        const auto lock = y_profile_unique_lock(_pending_lock);
+        const auto it = std::find(_pending.begin(), _pending.end(), data);
+
+        // Already recycled
+        if(it == _pending.end()) {
+            return;
+        }
+
+        _pending.erase_unordered(it);
     }
 
-    data->set_signaled();
+    prepare_for_recycling(data);
 
-    const auto lock = y_profile_unique_lock(_lock);
-    _reset << data;
+    {
+        const auto lock = y_profile_unique_lock(_recycle_lock);
+        _recycled << data;
+    }
 }
 
 CmdBufferData* CmdBufferPool::alloc() {
     y_profile();
 
     y_debug_assert(concurrent::thread_id() == _thread_id);
-    {
-        auto lock = y_profile_unique_lock(_lock);
-        if(!_reset.is_empty()) {
-            CmdBufferData* data = _reset.pop();
-            lock.unlock();
 
-            data->reset();
-            return data;
+    CmdBufferData* data = nullptr;
+    {
+        const auto lock = y_profile_unique_lock(_recycle_lock);
+        if(!_recycled.is_empty()) {
+            data = _recycled.pop();
         }
+    }
+
+    if(!data) {
+        auto lock = y_profile_unique_lock(_pending_lock);
+        const auto it = std::find_if(_pending.begin(), _pending.end(), [](CmdBufferData* data) { return data->poll_fence(); });
+
+        if(it != _pending.end()) {
+            data = *it;
+            _pending.erase_unordered(it);
+            lifetime_manager(device()).set_recycled(data);
+
+            lock.unlock(); // Remove this?  =|
+            prepare_for_recycling(data);
+        }
+    }
+
+    if(data) {
+        data->reset();
+        return data;
     }
 
     return create_data();
 }
 
 CmdBufferData* CmdBufferPool::create_data() {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = y_profile_unique_lock(_pool_lock);
 
     const VkFenceCreateInfo fence_create_info = vk_struct();
     VkCommandBufferAllocateInfo allocate_info = vk_struct();

@@ -61,9 +61,9 @@ void LifetimeManager::queue_for_recycling(CmdBufferData* data) {
 
     bool run_collect = false;
     {
-        const InFlightCmdBuffer in_flight = { data->resource_fence(), data };
-
         const auto lock = y_profile_unique_lock(_cmd_lock);
+
+        const InFlightCmdBuffer in_flight = { data->resource_fence(), data };
         const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), in_flight);
         _in_flight.insert(it, in_flight);
 
@@ -75,6 +75,24 @@ void LifetimeManager::queue_for_recycling(CmdBufferData* data) {
     }
 }
 
+
+void LifetimeManager::set_recycled(CmdBufferData* data) {
+    y_profile();
+
+    {
+        const InFlightCmdBuffer cmd = { data->resource_fence(), data };
+
+        const auto lock = y_profile_unique_lock(_cmd_lock);
+        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd);
+
+        y_debug_assert(it != _in_flight.end());
+        y_debug_assert(it->fence == cmd.fence);
+        y_debug_assert(it->data == cmd.data);
+
+        it->data = nullptr;
+    }
+}
+
 void LifetimeManager::collect() {
     y_profile();
 
@@ -82,7 +100,7 @@ void LifetimeManager::collect() {
     bool clear = false;
 
     // To ensure that CmdBufferData keep alives are freed outside the lock
-    core::Vector<CmdBufferData*> to_clean;
+    core::Vector<CmdBufferData*> to_recycle;
     {
         y_profile_zone("fence polling");
         const auto lock = y_profile_unique_lock(_cmd_lock);
@@ -99,13 +117,13 @@ void LifetimeManager::collect() {
             }
 
             CmdBufferData* data = cmd.data;
-            y_debug_assert(data);
-
-            Y_TODO(poll fence can release resources, which we might want to delay to avoid hogging the lock)
-            if(data->poll_fence()) {
+            if(!data || data->poll_fence()) {
                 next = fence;
-                to_clean.emplace_back(std::move(data));
                 _in_flight.pop_front();
+
+                if(data) {
+                    to_recycle.emplace_back(data);
+                }
             } else {
                 break;
             }
@@ -119,10 +137,8 @@ void LifetimeManager::collect() {
 
     {
         y_profile_zone("release");
-        for(auto& cmd : to_clean) {
-            if(cmd->pool()) {
-                cmd->pool()->reset(cmd);
-            }
+        for(const auto& cmd : to_recycle) {
+            cmd->pool()->recycle(cmd);
         }
     }
 

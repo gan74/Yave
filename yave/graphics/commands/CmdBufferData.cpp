@@ -122,11 +122,9 @@ void CmdBufferData::release_resources() {
 
 
 void CmdBufferData::set_signaled() {
-    const State previous_state = _state.exchange(State::Signaled, std::memory_order_acquire) ;
-    if(previous_state != State::Signaled) {
-        y_debug_assert(previous_state == State::Submitted);
-        release_resources();
-    }
+    const State previous_state = _state.exchange(State::Signaled, std::memory_order_acquire);
+    unused(previous_state);
+    y_debug_assert(previous_state == State::Signaled || previous_state == State::Submitted);
 }
 
 void CmdBufferData::set_submitted() {
