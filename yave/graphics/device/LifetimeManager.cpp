@@ -54,16 +54,18 @@ ResourceFence LifetimeManager::create_fence() {
     return ++_counter;
 }
 
-void LifetimeManager::queue_for_recycling(std::unique_ptr<CmdBufferData> data) {
+void LifetimeManager::queue_for_recycling(CmdBufferData* data) {
     y_profile();
+
+    Y_TODO(check for data state)
 
     bool run_collect = false;
     {
-        InFlightCmdBuffer in_flight = { data->resource_fence(), std::move(data) };
+        const InFlightCmdBuffer in_flight = { data->resource_fence(), data };
 
         const auto lock = y_profile_unique_lock(_cmd_lock);
         const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), in_flight);
-        _in_flight.insert(it, std::move(in_flight));
+        _in_flight.insert(it, in_flight);
 
         run_collect = (_in_flight.front().fence._value == _done_counter + 1);
     }
@@ -80,7 +82,7 @@ void LifetimeManager::collect() {
     bool clear = false;
 
     // To ensure that CmdBufferData keep alives are freed outside the lock
-    core::Vector<std::unique_ptr<CmdBufferData>> to_clean;
+    core::Vector<CmdBufferData*> to_clean;
     {
         y_profile_zone("fence polling");
         const auto lock = y_profile_unique_lock(_cmd_lock);
@@ -96,7 +98,7 @@ void LifetimeManager::collect() {
                 break;
             }
 
-            auto& data = cmd.data;
+            CmdBufferData* data = cmd.data;
             y_debug_assert(data);
 
             Y_TODO(poll fence can release resources, which we might want to delay to avoid hogging the lock)
@@ -119,7 +121,7 @@ void LifetimeManager::collect() {
         y_profile_zone("release");
         for(auto& cmd : to_clean) {
             if(cmd->pool()) {
-                cmd->pool()->reset(std::move(cmd));
+                cmd->pool()->reset(cmd);
             }
         }
     }

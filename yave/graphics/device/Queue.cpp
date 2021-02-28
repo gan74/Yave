@@ -71,6 +71,8 @@ void Queue::submit(CmdBufferRecorder& rec) const {
 
         vk_check(vkQueueSubmit(_queue, 1, &submit_info, rec.vk_fence()));
     }
+
+    rec.make_submitted();
 }
 
 }

@@ -41,6 +41,8 @@ struct CmdBuffer : NonCopyable {
         VkFence vk_fence() const;
         ResourceFence resource_fence() const;
 
+        bool is_submitted() const;
+
         void wait() const;
 
         template<typename T>
@@ -49,9 +51,10 @@ struct CmdBuffer : NonCopyable {
         }
 
     protected:
-        CmdBuffer(std::unique_ptr<CmdBufferData> data);
+        CmdBuffer(CmdBufferData* data);
 
-        void make_pending();
+        void make_submitted();
+        void release();
 
         void swap(CmdBuffer& other);
 
@@ -59,7 +62,7 @@ struct CmdBuffer : NonCopyable {
         friend class CmdBufferPool;
         friend class Queue;
 
-        std::unique_ptr<CmdBufferData> _data;
+        CmdBufferData* _data = nullptr;
 
 };
 

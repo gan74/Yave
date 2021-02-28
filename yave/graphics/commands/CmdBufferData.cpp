@@ -48,12 +48,21 @@ bool CmdBufferData::is_null() const {
     return !device();
 }
 
+
+CmdBufferData::State CmdBufferData::state() const {
+    return _state;
+}
+
 bool CmdBufferData::is_signaled() const {
     return _state == State::Signaled;
 }
 
-bool CmdBufferData::is_pending() const {
-    return _state == State::Pending;
+bool CmdBufferData::is_submitted() const {
+    return _state == State::Submitted;
+}
+
+bool CmdBufferData::is_reset() const {
+    return _state == State::Reset;
 }
 
 CmdBufferPool* CmdBufferData::pool() const {
@@ -77,6 +86,8 @@ void CmdBufferData::wait() {
         return;
     }
 
+    y_debug_assert(is_submitted());
+
     vk_check(vkWaitForFences(vk_device(device()), 1, &_fence, true, u64(-1)));
     set_signaled();
 }
@@ -95,6 +106,7 @@ void CmdBufferData::reset() {
     y_profile();
     y_debug_assert(is_signaled());
 
+    Y_TODO(move this to signal?)
     vk_check(vkResetFences(vk_device(device()), 1, &_fence));
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 
@@ -112,17 +124,16 @@ void CmdBufferData::release_resources() {
 void CmdBufferData::set_signaled() {
     const State previous_state = _state.exchange(State::Signaled, std::memory_order_acquire) ;
     if(previous_state != State::Signaled) {
-        y_debug_assert(previous_state == State::Pending);
+        y_debug_assert(previous_state == State::Submitted);
         release_resources();
     }
 }
 
-void CmdBufferData::set_pending() {
-    const State previous_state = _state.exchange(State::Pending, std::memory_order_acquire) ;
+void CmdBufferData::set_submitted() {
+    const State previous_state = _state.exchange(State::Submitted, std::memory_order_acquire) ;
     unused(previous_state);
     y_debug_assert(previous_state == State::Reset);
 }
-
 
 }
 

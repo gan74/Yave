@@ -61,6 +61,7 @@ CmdBufferPool::~CmdBufferPool() {
         join_all();
 
         _cmd_buffers.clear();
+        _reset.clear();
 
         for(const VkFence fence : _fences) {
             destroy(fence);
@@ -81,12 +82,12 @@ void CmdBufferPool::join_all() {
     vk_check(vkWaitForFences(vk_device(device()), _fences.size(), _fences.data(), true, u64(-1)));
 }
 
-void CmdBufferPool::make_pending(std::unique_ptr<CmdBufferData> data) {
-    data->set_pending();
-    lifetime_manager(device()).queue_for_recycling(std::move(data));
+void CmdBufferPool::release(CmdBufferData* data) {
+    y_debug_assert(data->_pool == this);
+    lifetime_manager(device()).queue_for_recycling(data);
 }
 
-void CmdBufferPool::reset(std::unique_ptr<CmdBufferData> data) {
+void CmdBufferPool::reset(CmdBufferData* data) {
     y_profile();
 
     if(data->pool() != this) {
@@ -96,17 +97,17 @@ void CmdBufferPool::reset(std::unique_ptr<CmdBufferData> data) {
     data->set_signaled();
 
     const auto lock = y_profile_unique_lock(_lock);
-    _cmd_buffers.push_back(std::move(data));
+    _reset << data;
 }
 
-std::unique_ptr<CmdBufferData> CmdBufferPool::alloc() {
+CmdBufferData* CmdBufferPool::alloc() {
     y_profile();
 
     y_debug_assert(concurrent::thread_id() == _thread_id);
     {
         auto lock = y_profile_unique_lock(_lock);
-        if(!_cmd_buffers.is_empty()) {
-            auto data = _cmd_buffers.pop();
+        if(!_reset.is_empty()) {
+            CmdBufferData* data = _reset.pop();
             lock.unlock();
 
             data->reset();
@@ -117,7 +118,9 @@ std::unique_ptr<CmdBufferData> CmdBufferPool::alloc() {
     return create_data();
 }
 
-std::unique_ptr<CmdBufferData> CmdBufferPool::create_data() {
+CmdBufferData* CmdBufferPool::create_data() {
+    const auto lock = y_profile_unique_lock(_lock);
+
     const VkFenceCreateInfo fence_create_info = vk_struct();
     VkCommandBufferAllocateInfo allocate_info = vk_struct();
     {
@@ -132,7 +135,7 @@ std::unique_ptr<CmdBufferData> CmdBufferPool::create_data() {
     vk_check(vkCreateFence(vk_device(device()), &fence_create_info, vk_allocation_callbacks(device()), &fence));
 
     _fences << fence;
-    return std::make_unique<CmdBufferData>(buffer, fence, this);
+    return _cmd_buffers.emplace_back(std::make_unique<CmdBufferData>(buffer, fence, this)).get();
 }
 
 

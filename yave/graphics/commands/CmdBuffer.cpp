@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-CmdBuffer::CmdBuffer(std::unique_ptr<CmdBufferData> data) : _data(std::move(data))  {
+CmdBuffer::CmdBuffer(CmdBufferData* data) : _data(data)  {
 }
 
 CmdBuffer::CmdBuffer(CmdBuffer&& other) {
@@ -39,27 +39,28 @@ CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) {
 }
 
 CmdBuffer::~CmdBuffer() {
-    make_pending();
+    release();
 }
 
-void CmdBuffer::make_pending() {
+void CmdBuffer::release() {
     if(_data) {
-        if(CmdBufferPool* pool = _data->pool()) {
-            pool->make_pending(std::move(_data));
-        }
+        _data->pool()->release(_data);
+        _data = nullptr;
     }
+}
+
+void CmdBuffer::make_submitted() {
+    _data->set_submitted();
 }
 
 void CmdBuffer::wait() const {
-    if(_data) {
-        _data->wait();
-    }
+    y_debug_assert(_data);
+    _data->wait();
 }
 
 DevicePtr CmdBuffer::device() const {
     Y_TODO(cache that?)
-    const auto pool = _data ? _data->pool() : nullptr;
-    return pool ? pool->device() : nullptr;
+    return _data ? _data->pool()->device() : nullptr;
 }
 
 VkCommandBuffer CmdBuffer::vk_cmd_buffer() const {
@@ -75,6 +76,10 @@ VkFence CmdBuffer::vk_fence() const {
 ResourceFence CmdBuffer::resource_fence() const {
     y_debug_assert(_data);
     return _data->resource_fence();
+}
+
+bool CmdBuffer::is_submitted() const {
+    return _data && !_data->is_reset();
 }
 
 void CmdBuffer::swap(CmdBuffer &other) {

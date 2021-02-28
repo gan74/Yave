@@ -81,23 +81,25 @@ class CmdBufferData final : NonMovable {
         virtual ~KeepAlive() {}
     };
 
-    enum class State : u8 {
-        Reset,
-        Pending,
-        Signaled,
-    };
-
     public:
-        CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p);
+        enum class State : u8 {
+            Reset,
+            Submitted,
+            Signaled,
+        };
 
-        CmdBufferData() = default;
+
+        CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p);
         ~CmdBufferData();
 
         DevicePtr device() const;
         bool is_null() const;
 
+        State state() const;
+
         bool is_signaled() const;
-        bool is_pending() const;
+        bool is_submitted() const;
+        bool is_reset() const;
 
         CmdBufferPool* pool() const;
         ResourceFence resource_fence() const;
@@ -123,10 +125,12 @@ class CmdBufferData final : NonMovable {
 
     private:
         friend class CmdBufferPool;
+        friend class CmdBuffer;
 
         void set_signaled();
-        void set_pending();
+        void set_submitted();
 
+        // These are owned by the command pool
         VkCommandBuffer _cmd_buffer;
         VkFence _fence;
 

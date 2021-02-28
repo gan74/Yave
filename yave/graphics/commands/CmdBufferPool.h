@@ -48,19 +48,22 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
         friend class LifetimeManager;
         friend class CmdBuffer;
 
-        void make_pending(std::unique_ptr<CmdBufferData> data);
-        void reset(std::unique_ptr<CmdBufferData> data);
+        void release(CmdBufferData* data);
+        void reset(CmdBufferData* data);
 
-        std::unique_ptr<CmdBufferData> alloc();
+        CmdBufferData* alloc();
 
         void join_all();
 
     private:
-        std::unique_ptr<CmdBufferData> create_data();
+        CmdBufferData* create_data();
 
         std::mutex _lock;
         VkHandle<VkCommandPool> _pool;
+
         core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
+        core::Vector<CmdBufferData*> _reset;
+
         core::Vector<VkFence> _fences;
 
         const u32 _thread_id;

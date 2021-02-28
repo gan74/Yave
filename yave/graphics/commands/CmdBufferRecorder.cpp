@@ -231,8 +231,8 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& base) : CmdBuffer(std::move(bas
 
 CmdBufferRecorder::~CmdBufferRecorder() {
     if(device()) {
-        y_always_assert(_render_pass, "CmdBufferRecorder destroyed before one of its RenderPassRecorder.");
-        y_always_assert(!vk_cmd_buffer(), "CmdBufferRecorder destroyed before end() was called.");
+        check_no_renderpass();
+        y_always_assert(is_submitted(), "CmdBufferRecorder destroyed before end() was called.");
     }
 }
 
@@ -244,7 +244,7 @@ void CmdBufferRecorder::end_renderpass() {
 }
 
 void CmdBufferRecorder::check_no_renderpass() const {
-    y_always_assert(!_render_pass, "This command can not be used while this command buffer has a RenderPassRecorder.");
+    y_always_assert(!_render_pass, "Command can not be used or destoryed while it has a RenderPassRecorder.");
 }
 
 CmdBufferRegion CmdBufferRecorder::region(const char* name, const math::Vec4& color) {
@@ -509,8 +509,6 @@ void CmdBufferRecorder::submit(SyncPolicy policy) {
     const Queue& queue = graphic_queue(device());
     queue.submit(*this);
 
-    make_pending();
-
     switch(policy) {
         case SyncPolicy::Async:
             // nothing
@@ -524,8 +522,10 @@ void CmdBufferRecorder::submit(SyncPolicy policy) {
 }
 
 CmdBuffer CmdBufferRecorder::finish() && {
+    Y_TODO(This is super sketchy, it needs to be removed ASAP)
     check_no_renderpass();
     vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
+    make_submitted();
     return std::move(*this); // uuuh ?
 }
 
