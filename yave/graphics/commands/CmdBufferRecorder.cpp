@@ -509,6 +509,8 @@ void CmdBufferRecorder::submit(SyncPolicy policy) {
     const Queue& queue = graphic_queue(device());
     queue.submit(*this);
 
+    make_pending();
+
     switch(policy) {
         case SyncPolicy::Async:
             // nothing
@@ -516,12 +518,9 @@ void CmdBufferRecorder::submit(SyncPolicy policy) {
 
         case SyncPolicy::Sync: {
             y_profile_zone("sync");
-            queue.wait();
+            wait();
         } break;
     }
-
-    // Empty state
-    release();
 }
 
 CmdBuffer CmdBufferRecorder::finish() && {

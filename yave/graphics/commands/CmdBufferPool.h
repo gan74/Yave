@@ -48,7 +48,7 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
         friend class LifetimeManager;
         friend class CmdBuffer;
 
-        void release(std::unique_ptr<CmdBufferData> data);
+        void make_pending(std::unique_ptr<CmdBufferData> data);
         void reset(std::unique_ptr<CmdBufferData> data);
 
         std::unique_ptr<CmdBufferData> alloc();

@@ -29,6 +29,7 @@ SOFTWARE.
 #include <y/core/Vector.h>
 
 #include <memory>
+#include <atomic>
 
 namespace yave {
 
@@ -80,6 +81,12 @@ class CmdBufferData final : NonMovable {
         virtual ~KeepAlive() {}
     };
 
+    enum class State : u8 {
+        Reset,
+        Pending,
+        Signaled,
+    };
+
     public:
         CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p);
 
@@ -89,11 +96,17 @@ class CmdBufferData final : NonMovable {
         DevicePtr device() const;
         bool is_null() const;
 
+        bool is_signaled() const;
+        bool is_pending() const;
+
         CmdBufferPool* pool() const;
         ResourceFence resource_fence() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
         VkFence vk_fence() const;
+
+        void wait();
+        bool poll_fence();
 
         void reset();
         void release_resources();
@@ -108,15 +121,18 @@ class CmdBufferData final : NonMovable {
             _keep_alive.emplace_back(std::make_unique<Box>(y_fwd(t)));
         }
 
-
     private:
-        friend class Queue;
+        friend class CmdBufferPool;
 
-        VkHandle<VkCommandBuffer> _cmd_buffer;
-        VkHandle<VkFence> _fence;
+        void set_signaled();
+        void set_pending();
+
+        VkCommandBuffer _cmd_buffer;
+        VkFence _fence;
 
         core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
         CmdBufferPool* _pool = nullptr;
+        std::atomic<State> _state = State::Reset;
 
         ResourceFence _resource_fence;
 };

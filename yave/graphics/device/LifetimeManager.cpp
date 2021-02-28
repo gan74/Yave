@@ -54,12 +54,12 @@ ResourceFence LifetimeManager::create_fence() {
     return ++_counter;
 }
 
-void LifetimeManager::recycle(std::unique_ptr<CmdBufferData> cmd) {
+void LifetimeManager::queue_for_recycling(std::unique_ptr<CmdBufferData> data) {
     y_profile();
 
     bool run_collect = false;
     {
-        InFlightCmdBuffer in_flight = { cmd->resource_fence(), std::move(cmd) };
+        InFlightCmdBuffer in_flight = { data->resource_fence(), std::move(data) };
 
         const auto lock = y_profile_unique_lock(_cmd_lock);
         const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), in_flight);
@@ -84,22 +84,25 @@ void LifetimeManager::collect() {
     {
         y_profile_zone("fence polling");
         const auto lock = y_profile_unique_lock(_cmd_lock);
+
+        y_debug_assert(std::is_sorted(_in_flight.begin(), _in_flight.end()));
+
         next = _done_counter;
         while(!_in_flight.empty()) {
             InFlightCmdBuffer& cmd = _in_flight.front();
-            y_debug_assert(cmd.cmd_buffer);
 
             const u64 fence = cmd.fence._value;
             if(fence != next + 1) {
                 break;
             }
 
-            auto& cmd_buffer = cmd.cmd_buffer;
-            y_debug_assert(cmd_buffer);
+            auto& data = cmd.data;
+            y_debug_assert(data);
 
-            if(vkGetFenceStatus(vk_device(device()), cmd_buffer->vk_fence()) == VK_SUCCESS) {
+            Y_TODO(poll fence can release resources, which we might want to delay to avoid hogging the lock)
+            if(data->poll_fence()) {
                 next = fence;
-                to_clean.emplace_back(std::move(cmd_buffer));
+                to_clean.emplace_back(std::move(data));
                 _in_flight.pop_front();
             } else {
                 break;

@@ -51,7 +51,7 @@ struct CmdBuffer : NonCopyable {
     protected:
         CmdBuffer(std::unique_ptr<CmdBufferData> data);
 
-        void release();
+        void make_pending();
 
         void swap(CmdBuffer& other);
 
@@ -60,6 +60,7 @@ struct CmdBuffer : NonCopyable {
         friend class Queue;
 
         std::unique_ptr<CmdBufferData> _data;
+
 };
 
 }

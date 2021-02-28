@@ -58,9 +58,6 @@ CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
 
 CmdBufferPool::~CmdBufferPool() {
     if(device()) {
-        if(_fences.size() != _cmd_buffers.size()) {
-            y_fatal("CmdBuffers are still in use (% fences, % buffers).", _fences.size(), _cmd_buffers.size());
-        }
         join_all();
         _cmd_buffers.clear();
         destroy(_pool);
@@ -81,8 +78,9 @@ void CmdBufferPool::join_all() {
     }
 }
 
-void CmdBufferPool::release(std::unique_ptr<CmdBufferData> data) {
-    lifetime_manager(device()).recycle(std::move(data));
+void CmdBufferPool::make_pending(std::unique_ptr<CmdBufferData> data) {
+    data->set_pending();
+    lifetime_manager(device()).queue_for_recycling(std::move(data));
 }
 
 void CmdBufferPool::reset(std::unique_ptr<CmdBufferData> data) {
@@ -91,7 +89,8 @@ void CmdBufferPool::reset(std::unique_ptr<CmdBufferData> data) {
     if(data->pool() != this) {
         y_fatal("CmdBufferData was not returned to its original pool.");
     }
-    data->release_resources();
+
+    data->set_signaled();
 
     const auto lock = y_profile_unique_lock(_lock);
     _cmd_buffers.push_back(std::move(data));

@@ -26,6 +26,8 @@ SOFTWARE.
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/utils.h>
 
+#include <y/utils/log.h>
+
 namespace yave {
 
 CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p) :
@@ -34,10 +36,10 @@ CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p)
 
 CmdBufferData::~CmdBufferData() {
     if(_pool) {
-        if(_fence && vkGetFenceStatus(vk_device(device()), _fence) != VK_SUCCESS) {
+        if(vkGetFenceStatus(vk_device(device()), _fence) != VK_SUCCESS) {
             y_fatal("CmdBuffer is still in use.");
         }
-        vkFreeCommandBuffers(vk_device(device()), _pool->vk_pool(), 1, &_cmd_buffer.get());
+        vkFreeCommandBuffers(vk_device(device()), _pool->vk_pool(), 1, &_cmd_buffer);
         device_destroy(device(), _fence);
     }
 }
@@ -48,6 +50,14 @@ DevicePtr CmdBufferData::device() const {
 
 bool CmdBufferData::is_null() const {
     return !device();
+}
+
+bool CmdBufferData::is_signaled() const {
+    return _state == State::Signaled;
+}
+
+bool CmdBufferData::is_pending() const {
+    return _state == State::Pending;
 }
 
 CmdBufferPool* CmdBufferData::pool() const {
@@ -66,20 +76,57 @@ ResourceFence CmdBufferData::resource_fence() const {
     return _resource_fence;
 }
 
-void CmdBufferData::reset() {
-    y_profile();
-    if(_fence) {
-        vk_check(vkResetFences(vk_device(device()), 1, &_fence.get()));
+void CmdBufferData::wait() {
+    if(is_signaled()) {
+        return;
     }
 
+    vk_check(vkWaitForFences(vk_device(device()), 1, &_fence, true, u64(-1)));
+    set_signaled();
+}
+
+bool CmdBufferData::poll_fence() {
+    if(is_signaled()) {
+        return true;
+    }
+    if(vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS) {
+        return true;
+    }
+    return false;
+}
+
+void CmdBufferData::reset() {
+    y_profile();
+    y_debug_assert(is_signaled());
+
+    vk_check(vkResetFences(vk_device(device()), 1, &_fence));
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
+
     _resource_fence = lifetime_manager(device()).create_fence();
+    _state = State::Reset;
 }
 
 void CmdBufferData::release_resources() {
     y_profile();
+    y_debug_assert(is_signaled());
     _keep_alive.clear();
 }
+
+
+void CmdBufferData::set_signaled() {
+    const State previous_state = _state.exchange(State::Signaled, std::memory_order_acquire) ;
+    if(previous_state != State::Signaled) {
+        y_debug_assert(previous_state == State::Pending);
+        release_resources();
+    }
+}
+
+void CmdBufferData::set_pending() {
+    const State previous_state = _state.exchange(State::Pending, std::memory_order_acquire) ;
+    unused(previous_state);
+    y_debug_assert(previous_state == State::Reset);
+}
+
 
 }
 

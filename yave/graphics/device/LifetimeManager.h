@@ -49,7 +49,7 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
 
     struct InFlightCmdBuffer {
         ResourceFence fence;
-        std::unique_ptr<CmdBufferData> cmd_buffer;
+        std::unique_ptr<CmdBufferData> data;
 
         bool operator<(const InFlightCmdBuffer& cmd) const {
             return fence < cmd.fence;
@@ -62,7 +62,7 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
 
         ResourceFence create_fence();
 
-        void recycle(std::unique_ptr<CmdBufferData> cmd);
+        void queue_for_recycling(std::unique_ptr<CmdBufferData> data);
 
         void collect();
 

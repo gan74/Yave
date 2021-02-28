@@ -39,20 +39,21 @@ CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) {
 }
 
 CmdBuffer::~CmdBuffer() {
-    release();
+    make_pending();
 }
 
-void CmdBuffer::release() {
+void CmdBuffer::make_pending() {
     if(_data) {
         if(CmdBufferPool* pool = _data->pool()) {
-            pool->release(std::move(_data));
+            pool->make_pending(std::move(_data));
         }
     }
 }
 
 void CmdBuffer::wait() const {
-    const VkFence fence = vk_fence();
-    vk_check(vkWaitForFences(vk_device(device()), 1, &fence, true, u64(-1)));
+    if(_data) {
+        _data->wait();
+    }
 }
 
 DevicePtr CmdBuffer::device() const {
