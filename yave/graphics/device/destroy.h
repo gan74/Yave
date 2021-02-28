@@ -68,7 +68,6 @@ void vk_destroy(DevicePtr dptr, VkShaderModule module) {
     }
 }
 
-
 void vk_destroy(DevicePtr dptr, VkSampler sampler) {
     /*if(dptr)*/ {
         vkDestroySampler(vk_device(dptr), sampler, vk_allocation_callbacks(dptr));

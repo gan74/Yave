@@ -59,7 +59,12 @@ CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
 CmdBufferPool::~CmdBufferPool() {
     if(device()) {
         join_all();
+
         _cmd_buffers.clear();
+
+        for(const VkFence fence : _fences) {
+            destroy(fence);
+        }
         destroy(_pool);
     }
 }
@@ -73,9 +78,7 @@ void CmdBufferPool::join_all() {
         return;
     }
 
-    if(vkWaitForFences(vk_device(device()), _fences.size(), _fences.data(), true, u64(-1)) != VK_SUCCESS) {
-        y_fatal("Unable to join fences.");
-    }
+    vk_check(vkWaitForFences(vk_device(device()), _fences.size(), _fences.data(), true, u64(-1)));
 }
 
 void CmdBufferPool::make_pending(std::unique_ptr<CmdBufferData> data) {

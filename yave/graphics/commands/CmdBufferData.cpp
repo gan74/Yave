@@ -36,11 +36,7 @@ CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p)
 
 CmdBufferData::~CmdBufferData() {
     if(_pool) {
-        if(vkGetFenceStatus(vk_device(device()), _fence) != VK_SUCCESS) {
-            y_fatal("CmdBuffer is still in use.");
-        }
-        vkFreeCommandBuffers(vk_device(device()), _pool->vk_pool(), 1, &_cmd_buffer);
-        device_destroy(device(), _fence);
+        y_debug_assert(vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS);
     }
 }
 
