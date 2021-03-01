@@ -19,12 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef Y_UTILS_PERF_H
-#define Y_UTILS_PERF_H
+#ifndef YAVE_UTILS_PERF_H
+#define YAVE_UTILS_PERF_H
 
 #include <y/utils.h>
 
-namespace y {
+
+#ifdef Y_DEBUG
+#ifndef YAVE_PERF_LOG_DISABLED
+#define YAVE_PERF_LOG_ENABLED
+#endif
+#endif
+
+
+namespace yave {
 namespace perf {
 
 // For use with chrome://tracing
@@ -40,7 +48,7 @@ void leave(const char* cat, const char* func);
 void event(const char* cat, const char* name);
 
 inline auto log_func(const char* func, const char* cat = "") {
-    class Logger : NonCopyable {
+    class Logger : y::NonCopyable {
         const char* _cat;
         const char* _func;
         public:
@@ -55,11 +63,11 @@ inline auto log_func(const char* func, const char* cat = "") {
     return Logger(cat, func);
 }
 
-#ifdef Y_PERF_LOG_ENABLED
+#ifdef YAVE_PERF_LOG_ENABLED
 
-#define y_profile_event() y::perf::event("", Y_FUNCTION_NAME)
-#define y_profile() auto y_create_name_with_prefix(prof) = y::perf::log_func(Y_FUNCTION_NAME)
-#define y_profile_zone(name) auto y_create_name_with_prefix(prof) = y::perf::log_func(name)
+#define y_profile_event() yave::perf::event("", Y_FUNCTION_NAME)
+#define y_profile() auto y_create_name_with_prefix(prof) = yave::perf::log_func(Y_FUNCTION_NAME)
+#define y_profile_zone(name) auto y_create_name_with_prefix(prof) = yave::perf::log_func(name)
 #define y_profile_unique_lock(inner) [&]() {                            \
         std::unique_lock l(inner, std::defer_lock);                     \
         if(l.try_lock()) {                                              \
@@ -81,5 +89,5 @@ inline auto log_func(const char* func, const char* cat = "") {
 }
 }
 
-#endif // Y_UTILS_PERF_H
+#endif // YAVE_UTILS_PERF_H
 

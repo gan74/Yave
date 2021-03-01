@@ -24,7 +24,6 @@ SOFTWARE.
 #include "concurrent.h"
 
 #include <y/core/Chrono.h>
-#include <y/utils/perf.h>
 
 namespace y {
 namespace concurrent {
@@ -119,17 +118,14 @@ void StaticThreadPool::schedule(Func&& func, DependencyGroup* on_done, Dependenc
 }
 
 bool StaticThreadPool::process_one(std::unique_lock<std::mutex> lock) {
-    y_profile();
     for(auto it = _shared_data.queue.begin(); it != _shared_data.queue.end(); ++it) {
         if(it->wait_for.is_ready()) {
             auto f = std::move(*it);
             _shared_data.queue.erase(it);
             lock.unlock();
 
-            {
-                y_profile_zone("exec");
-                f.function();
-            }
+            f.function();
+
             {
                 f.on_done.solve_dependency();
                 if(f.on_done.is_ready()) {

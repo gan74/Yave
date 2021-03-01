@@ -25,7 +25,7 @@ SOFTWARE.
 #include "AssetLoader.h"
 
 #include <y/concurrent/concurrent.h>
-#include <y/utils/perf.h>
+#include <yave/utils/perf.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>

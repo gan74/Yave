@@ -19,29 +19,60 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_YAVE_H
-#define YAVE_YAVE_H
 
-#include <yave/utils/forward.h>
-#include <yave/utils/perf.h>
+#include <yave/yave.h>
 
-#include <y/math/Transform.h>
-
-namespace y::core {
-class String;
-}
+#ifdef YAVE_PERF_LOG_ENABLED
+#define TRACY_ENABLE
+#endif
 
 namespace yave {
+namespace perf {
 
-using namespace y;
+namespace {
+static struct Guard {
+    ~Guard() {
+        if(is_capturing()) {
+            y_fatal("Capture still in progress.");
+        }
+    }
 
-class Device;
-using DevicePtr = const Device*;
-
-class ThreadLocalDevice;
-using ThreadDevicePtr = const ThreadLocalDevice*;
-
+    void use() {
+    }
+} guard;
 }
 
-#endif // YAVE_YAVE_H
+#ifdef YAVE_PERF_LOG_ENABLED
+
+void start_capture(const char* out_filename) {
+}
+
+void end_capture() {
+}
+
+bool is_capturing() {
+    return false;
+}
+
+void enter(const char* cat, const char* func) {
+}
+
+void leave(const char* cat, const char* func) {
+}
+
+void event(const char* cat, const char* name) {
+}
+
+
+#else
+void start_capture(const char*) {}
+void end_capture() {}
+bool is_capturing() { return false; }
+void enter(const char*, const char*) {}
+void leave(const char*, const char*) {}
+void event(const char*, const char*) {}
+#endif
+
+}
+}
 

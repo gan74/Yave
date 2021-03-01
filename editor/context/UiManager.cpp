@@ -332,7 +332,7 @@ void UiManager::paint_menu_bar() {
             ImGui::EndMenu();
         }
 
-#ifdef Y_PERF_LOG_ENABLED
+#ifdef YAVE_PERF_LOG_ENABLED
         if(perf::is_capturing()) {
             ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
             if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->end_perf_capture();
