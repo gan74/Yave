@@ -360,6 +360,8 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder& recorder, co
 
         vk_check(vkQueuePresentKHR(vk_queue, &present_info));
     }
+
+    y_profile_frame_end();
 }
 
 VkSwapchainKHR Swapchain::vk_swapchain() const {

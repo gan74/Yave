@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <y/utils.h>
 
-
 #ifdef Y_DEBUG
 #ifndef YAVE_PERF_LOG_DISABLED
 #define YAVE_PERF_LOG_ENABLED
@@ -32,42 +31,48 @@ SOFTWARE.
 #endif
 
 
+#ifdef YAVE_PERF_LOG_ENABLED
+#ifndef TRACY_ENABLE
+#error TRACY_ENABLE should be set if YAVE_PERF_LOG_ENABLED is set
+#endif
+#endif
+
+#include <external/tracy/Tracy.hpp>
+#include <external/tracy/TracyC.h>
+
 namespace yave {
 namespace perf {
 
-// For use with chrome://tracing
-// Format described here: https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
-
-void start_capture(const char* out_filename);
-void end_capture();
-
-bool is_capturing();
-
-void enter(const char* cat, const char* func);
-void leave(const char* cat, const char* func);
-void event(const char* cat, const char* name);
-
-inline auto log_func(const char* func, const char* cat = "") {
-    class Logger : y::NonCopyable {
-        const char* _cat;
-        const char* _func;
-        public:
-            inline Logger(const char* cat, const char* func) : _cat(cat), _func(func) {
-                enter(cat, func);
-            }
-            inline ~Logger() {
-                leave(_cat, _func);
-            }
-    };
-
-    return Logger(cat, func);
-}
+using namespace y;
 
 #ifdef YAVE_PERF_LOG_ENABLED
 
-#define y_profile_event() yave::perf::event("", Y_FUNCTION_NAME)
-#define y_profile() auto y_create_name_with_prefix(prof) = yave::perf::log_func(Y_FUNCTION_NAME)
-#define y_profile_zone(name) auto y_create_name_with_prefix(prof) = yave::perf::log_func(name)
+inline void start_capture(const char* out_filename) {
+
+}
+
+inline void end_capture() {
+
+}
+
+inline bool is_capturing() {
+    return false;
+}
+
+#define y_profile_frame_end() do { TracyCFrameMark } while(false)
+
+#define y_profile()                                                                                                                             \
+    static const auto y_create_name_with_prefix(sloc) = ___tracy_source_location_data { nullptr, __FUNCTION__, __FILE__, __LINE__, 0};          \
+    const auto y_create_name_with_prefix(ctx) = ___tracy_emit_zone_begin(&y_create_name_with_prefix(sloc), true);                               \
+    y_defer(___tracy_emit_zone_end(y_create_name_with_prefix(ctx)))
+
+#define y_profile_zone(name)                                                                                                                    \
+    static const auto y_create_name_with_prefix(sloc) = ___tracy_source_location_data { nullptr, __FUNCTION__, __FILE__, __LINE__, 0};          \
+    const char* y_create_name_with_prefix(zone) = (name);                                                                                       \
+    const auto y_create_name_with_prefix(ctx) = ___tracy_emit_zone_begin(&y_create_name_with_prefix(sloc), true);                               \
+    ___tracy_emit_zone_name(y_create_name_with_prefix(ctx), y_create_name_with_prefix(zone), std::strlen(y_create_name_with_prefix(zone)));     \
+    y_defer(___tracy_emit_zone_end(y_create_name_with_prefix(ctx)))
+
 #define y_profile_unique_lock(inner) [&]() {                            \
         std::unique_lock l(inner, std::defer_lock);                     \
         if(l.try_lock()) {                                              \
@@ -80,8 +85,13 @@ inline auto log_func(const char* func, const char* cat = "") {
 
 #else
 
-#define y_profile() do {} while(false)
-#define y_profile_zone(name) do {} while(false)
+inline void start_capture(const char*) {}
+inline void end_capture() {}
+inline bool is_capturing() { return false; }
+
+#define y_profile_frame_end()       do {} while(false)
+#define y_profile()                 do {} while(false)
+#define y_profile_zone(name)        do {} while(false)
 #define y_profile_unique_lock(lock) std::unique_lock(lock)
 
 #endif

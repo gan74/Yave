@@ -27,6 +27,7 @@ endfunction(enable_unity_build)
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
+option(YAVE_TRACY_PROFILING "Use Tracy profiling" ON)
 option(YAVE_BUILD_SHARED "Build as shared library" OFF)
 option(YAVE_UNITY_BUILD "Force unity build" OFF)
 
@@ -70,6 +71,12 @@ file(GLOB_RECURSE SQLITE_FILES
         "external/sqlite/*.c"
     )
 
+
+set(TRACY_FILES
+        "external/tracy/TracyClient.cpp"
+        "external/tracy/Tracy.hpp"
+    )
+
 # Editor files
 file(GLOB_RECURSE EDITOR_FILES
         "editor/*.cpp"
@@ -98,6 +105,8 @@ file(GLOB_RECURSE SHADER_LIBS
     )
 
 
+
+
 if(CMAKE_BUILD_TYPE STREQUAL Release OR YAVE_UNITY_BUILD)
     enable_unity_build(yave YAVE_FILES)
 endif()
@@ -105,13 +114,21 @@ endif()
 
 
 if(YAVE_BUILD_YAVE)
-    add_library(sqlite3 STATIC ${SQLITE_FILES})
-
     if(YAVE_BUILD_SHARED)
         add_library(yave SHARED ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIB_FILES})
     else()
         add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIB_FILES})
     endif()
+
+    if(YAVE_TRACY_PROFILING)
+        add_library(tracy STATIC ${TRACY_FILES})
+        target_link_libraries(tracy ws2_32 dbghelp)
+        target_compile_options(tracy PUBLIC "-DTRACY_ENABLE")
+        target_link_libraries(yave tracy)
+    endif()
+
+    add_library(sqlite3 STATIC ${SQLITE_FILES})
+
 
     target_link_libraries(yave ${Vulkan_LIBRARY})
     target_link_libraries(yave y spirv-cross-core sqlite3)
