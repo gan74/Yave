@@ -37,22 +37,185 @@ LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 LifetimeManager::~LifetimeManager() {
-    y_debug_assert(_counter == _done_counter);
-
-    collect();
+    y_debug_assert(_create_counter == _next);
 
     for(auto& r : _to_destroy) {
         destroy_resource(r.second);
     }
 
-    if(_in_flight.size()) {
-        y_fatal("% CmdBuffer still in flight.", _in_flight.size());
+    if(_fences.size()) {
+        y_fatal("% fences still in flight.", _fences.size());
     }
 }
 
 ResourceFence LifetimeManager::create_fence() {
-    return ++_counter;
+    return _create_counter++;
 }
+
+void LifetimeManager::release_fence(ResourceFence fence) {
+    y_profile();
+
+    auto lock = y_profile_unique_lock(_resources_lock);
+
+    log_msg(fmt("waiting for %, got %", _next, fence._value), Log::Error);
+    if(fence == _next) {
+        const u64 prev = ++_next;
+        const u64 next = best_next();
+        _next = next;
+
+        lock.unlock();
+
+        if(prev != next) {
+            clear_fences(next);
+        }
+
+        clear_resources(next);
+    } else {
+        {
+            const auto lock = y_profile_unique_lock(_fences_lock);
+            const auto it = std::lower_bound(_fences.begin(), _fences.end(), fence);
+            _fences.insert(it, fence);
+            y_debug_assert(std::is_sorted(_fences.begin(), _fences.end()));
+        }
+
+        lock.unlock();
+
+        poll_cmd_buffers();
+    }
+}
+
+u64 LifetimeManager::best_next() {
+    const auto lock = y_profile_unique_lock(_fences_lock);
+
+    u64 next = _next;
+    for(usize i = 0; i != _fences.size(); ++i) {
+        if(_fences[i] != next) {
+            break;
+        }
+        ++next;
+    }
+
+    return next;
+}
+
+void LifetimeManager::register_for_polling(CmdBufferData* data) {
+    if(data->is_signaled()) {
+        return;
+    }
+
+    const auto lock = y_profile_unique_lock(_cmd_lock);
+
+    y_debug_assert(!data->_polling);
+
+    data->_polling = true;
+    _to_poll << data;
+}
+
+void LifetimeManager::unregister(CmdBufferData* data) {
+    y_profile();
+
+    const auto lock = y_profile_unique_lock(_cmd_lock);
+
+    if(!data->_polling) {
+        return;
+    }
+
+    const auto it = std::find(_to_poll.begin(), _to_poll.end(), data);
+    y_debug_assert(it != _to_poll.end());
+    _to_poll.erase_unordered(it);
+    data->_polling = false;
+}
+
+void LifetimeManager::poll_cmd_buffers() {
+    y_profile();
+
+    if(_polling.exchange(true, std::memory_order_acquire)) {
+        return;
+    }
+    y_defer(_polling = false);
+
+    const auto lock = y_profile_unique_lock(_cmd_lock);
+
+
+    usize j = 0;
+    for(usize i = 0; i != _to_poll.size(); ++i) {
+        y_debug_assert(_to_poll[i]->_polling);
+        _to_poll[i - j] = _to_poll[i];
+        if(_to_poll[i]->poll_fence()) {
+            _to_poll[i]->_polling = false;
+            ++j;
+        }
+    }
+
+    for(usize i = 0; i != j; ++i) {
+        _to_poll.pop();
+    }
+}
+
+
+usize LifetimeManager::polling_cmd_buffers() const {
+    const auto lock = y_profile_unique_lock(_cmd_lock);
+    return _to_poll.size();
+}
+
+usize LifetimeManager::pending_fences() const {
+    const auto lock = y_profile_unique_lock(_fences_lock);
+    return _fences.size();
+}
+
+usize LifetimeManager::pending_deletions() const {
+    const auto lock = y_profile_unique_lock(_resources_lock);
+    return _to_destroy.size();
+}
+
+void LifetimeManager::clear_fences(u64 up_to) {
+    const auto lock = y_profile_unique_lock(_fences_lock);
+
+    while(!_fences.empty() && _fences.front() < up_to) {
+        _fences.pop_front();
+    }
+}
+
+void LifetimeManager::clear_resources(u64 up_to) {
+    y_profile();
+
+    core::Vector<ManagedResource> to_delete;
+
+    {
+        y_profile_zone("collection");
+        const auto lock = y_profile_unique_lock(_resources_lock);
+        while(!_to_destroy.empty() && _to_destroy.front().first < up_to) {
+            to_delete << std::move(_to_destroy.front().second);
+            _to_destroy.pop_front();
+        }
+    }
+
+
+    y_profile_zone("clear");
+    for(auto& res : to_delete) {
+        destroy_resource(res);
+    }
+}
+
+void LifetimeManager::destroy_resource(ManagedResource& resource) const {
+    std::visit(
+        [dptr = device()](auto& res) {
+            if constexpr(std::is_same_v<decltype(res), EmptyResource&>) {
+                y_fatal("Empty resource");
+            } else if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
+                res.free();
+            } else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
+                res.recycle();
+            } else {
+                vk_destroy(dptr, res);
+            }
+        },
+        resource);
+}
+
+
+
+#if 0
 
 void LifetimeManager::queue_for_recycling(CmdBufferData* data) {
     y_profile();
@@ -146,50 +309,8 @@ void LifetimeManager::collect() {
     }
 }
 
-usize LifetimeManager::pending_deletions() const {
-    const std::unique_lock lock(_resource_lock);
-    return _to_destroy.size();
-}
+#endif
 
-usize LifetimeManager::active_cmd_buffers() const {
-    const auto lock = y_profile_unique_lock(_cmd_lock);
-    return _in_flight.size();
-}
-
-void LifetimeManager::destroy_resource(ManagedResource& resource) const {
-    std::visit(
-        [dptr = device()](auto& res) {
-            if constexpr(std::is_same_v<decltype(res), EmptyResource&>) {
-                y_fatal("Empty resource");
-            } else if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
-                res.free();
-            } else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
-                res.recycle();
-            } else {
-                vk_destroy(dptr, res);
-            }
-        },
-        resource);
-}
-
-void LifetimeManager::clear_resources(u64 up_to) {
-    y_profile();
-    core::Vector<ManagedResource> to_del;
-
-    {
-        y_profile_zone("collection");
-        const auto lock = y_profile_unique_lock(_cmd_lock);
-        while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
-            to_del << std::move(_to_destroy.front().second);
-            _to_destroy.pop_front();
-        }
-    }
-
-    y_profile_zone("clear");
-    for(auto& res : to_del) {
-        destroy_resource(res);
-    }
-}
 
 }
 

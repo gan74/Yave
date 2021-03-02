@@ -24,6 +24,9 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferPool.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 CmdBuffer::CmdBuffer(CmdBufferData* data) : _data(data)  {
@@ -44,13 +47,10 @@ CmdBuffer::~CmdBuffer() {
 
 void CmdBuffer::release() {
     if(_data) {
+        log_msg(fmt("Releasing %", _data->resource_fence().value()), Log::Debug);
         _data->pool()->release(_data);
         _data = nullptr;
     }
-}
-
-void CmdBuffer::make_submitted() {
-    _data->set_submitted();
 }
 
 void CmdBuffer::wait() const {
@@ -76,10 +76,6 @@ VkFence CmdBuffer::vk_fence() const {
 ResourceFence CmdBuffer::resource_fence() const {
     y_debug_assert(_data);
     return _data->resource_fence();
-}
-
-bool CmdBuffer::is_submitted() const {
-    return _data && !_data->is_reset();
 }
 
 void CmdBuffer::swap(CmdBuffer &other) {

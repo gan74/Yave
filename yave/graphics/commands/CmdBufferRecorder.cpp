@@ -232,7 +232,6 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& base) : CmdBuffer(std::move(bas
 CmdBufferRecorder::~CmdBufferRecorder() {
     if(device()) {
         check_no_renderpass();
-        y_always_assert(is_submitted(), "CmdBufferRecorder destroyed before end() was called.");
     }
 }
 
@@ -525,7 +524,6 @@ CmdBuffer CmdBufferRecorder::finish() && {
     Y_TODO(This is super sketchy, it needs to be removed ASAP)
     check_no_renderpass();
     vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
-    make_submitted();
     return std::move(*this); // uuuh ?
 }
 

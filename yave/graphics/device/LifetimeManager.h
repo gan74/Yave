@@ -26,7 +26,6 @@ SOFTWARE.
 #include "ResourceType.h"
 
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
-#include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/memory/DeviceMemory.h>
 #include <yave/graphics/vk/vk.h>
 
@@ -47,53 +46,52 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
         EmptyResource
         >;
 
-    struct InFlightCmdBuffer {
-        ResourceFence fence;
-        CmdBufferData* data = nullptr;
-
-        bool operator<(const InFlightCmdBuffer& cmd) const {
-            return fence < cmd.fence;
-        }
-    };
 
     public:
         LifetimeManager(DevicePtr dptr);
         ~LifetimeManager();
 
         ResourceFence create_fence();
+        void release_fence(ResourceFence fence);
 
-        void queue_for_recycling(CmdBufferData* data);
-        void set_recycled(CmdBufferData* data);
-
-        void collect();
+        void register_for_polling(CmdBufferData* data);
+        void unregister(CmdBufferData* data);
 
         usize pending_deletions() const;
-        usize active_cmd_buffers() const;
+        usize pending_fences() const;
+        usize polling_cmd_buffers() const;
 
+        void poll_cmd_buffers();
 
-#define YAVE_GENERATE_DESTROY(T)                                                \
-        void destroy_later(T&& t) {                                             \
-            const std::unique_lock lock(_resource_lock);                        \
-            _to_destroy.emplace_back(_counter, ManagedResource(y_fwd(t)));      \
+#define YAVE_GENERATE_DESTROY(T)                                                    \
+        void destroy_later(T&& t) {                                                 \
+            const auto lock = y_profile_unique_lock(_resources_lock);                \
+            _to_destroy.emplace_back(_create_counter, ManagedResource(y_fwd(t)));   \
         }
 YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
 
-
-
     private:
-        void destroy_resource(ManagedResource& resource) const;
+        u64 best_next();
+
+        void clear_fences(u64 up_to);
         void clear_resources(u64 up_to);
+        void destroy_resource(ManagedResource& resource) const;
 
 
         std::deque<std::pair<u64, ManagedResource>> _to_destroy;
-        std::deque<InFlightCmdBuffer> _in_flight;
+        std::deque<ResourceFence> _fences;
 
+        mutable std::mutex _resources_lock;
+        mutable std::mutex _fences_lock;
+
+        std::atomic<u64> _create_counter = 0;
+        u64 _next = 0; // Guarded by _resources_lock
+
+
+        core::Vector<CmdBufferData*> _to_poll;
         mutable std::mutex _cmd_lock;
-        mutable std::mutex _resource_lock;
-
-        std::atomic<u64> _counter = 0;
-        u64 _done_counter = 0;
+        std::atomic<bool> _polling = false;
 };
 
 }

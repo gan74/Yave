@@ -289,7 +289,7 @@ Device::~Device() {
     _resources = DeviceResources();
 
     {
-        Y_TODO(Why do we need this?)
+        Y_TODO(Why did we need this? Do we still need it?)
         CmdBufferPool pool(this);
         CmdBufferRecorder rec = pool.create_buffer();
         std::move(rec).submit<SyncPolicy::Sync>();
@@ -298,8 +298,6 @@ Device::~Device() {
     wait_all_queues();
     _thread_devices.clear();
     wait_all_queues();
-
-    _lifetime_manager.collect();
 }
 
 const PhysicalDevice& Device::physical_device() const {

@@ -54,6 +54,7 @@ class FrameGraphResourcePool : NonMovable, public DeviceLinked {
         core::Vector<std::pair<TransientBuffer, u64>> _buffers;
 
         u64 _collection_id = 0;
+        u64 _allocated = 0;
 
         void audit() const;
 

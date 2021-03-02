@@ -34,9 +34,6 @@ namespace yave {
 
 class CmdBufferPool : NonMovable, public DeviceLinked {
 
-    // This breaks stuff 
-    static constexpr bool allow_recycle_on_alloc = false;
-
     public:
         CmdBufferPool(DevicePtr dptr);
 
@@ -51,7 +48,6 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
         friend class CmdBuffer;
 
         void release(CmdBufferData* data);
-        void recycle(CmdBufferData* data);
 
         CmdBufferData* alloc();
 
@@ -61,15 +57,12 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
         CmdBufferData* create_data();
 
         std::mutex _pool_lock;
-        std::recursive_mutex _recycling_lock;
-
         VkHandle<VkCommandPool> _pool;
-
+        core::Vector<VkFence> _fences;
         core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
 
+        std::recursive_mutex _pending_lock;
         core::Vector<CmdBufferData*> _pending;
-
-        core::Vector<VkFence> _fences;
 
         const u32 _thread_id;
 };

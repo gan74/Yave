@@ -50,8 +50,9 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
     TransientImage<> image;
     if(!create_image_from_pool(image, format, size, usage)) {
         y_profile_zone("create image");
-        log_msg(fmt("image size = %", size), Log::Warning);
+        log_msg(fmt("image size = % (% - %)", size, _images.size(), _allocated), Log::Perf);
         image = TransientImage<>(device(), format, usage, size);
+        ++_allocated;
     }
 
     return image;
@@ -136,11 +137,13 @@ void FrameGraphResourcePool::garbage_collect() {
 
     audit();
 
-    const u64 max_col_count = 3;
+    const u64 max_col_count = 6;
 
     for(usize i = 0; i < _images.size(); ++i) {
         if(_images[i].second + max_col_count < _collection_id) {
+            log_msg(fmt("deleting image size = %", _images[i].first.size()), Log::Debug);
             _images.erase_unordered(_images.begin() + i);
+            --_allocated;
             --i;
         }
     }

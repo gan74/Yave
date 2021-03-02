@@ -48,25 +48,8 @@ bool CmdBufferData::is_null() const {
     return !device();
 }
 
-
-CmdBufferData::State CmdBufferData::state() const {
-    return _state;
-}
-
-bool CmdBufferData::is_recycled() const {
-    return _state == State::Recycled;
-}
-
 bool CmdBufferData::is_signaled() const {
-    return _state == State::Signaled;
-}
-
-bool CmdBufferData::is_submitted() const {
-    return _state == State::Submitted;
-}
-
-bool CmdBufferData::is_reset() const {
-    return _state == State::Reset;
+    return _signaled;
 }
 
 CmdBufferPool* CmdBufferData::pool() const {
@@ -86,14 +69,10 @@ ResourceFence CmdBufferData::resource_fence() const {
 }
 
 void CmdBufferData::wait() {
-    if(is_signaled()) {
-        return;
+    if(!is_signaled()) {
+        vk_check(vkWaitForFences(vk_device(device()), 1, &_fence, true, u64(-1)));
+        set_signaled();
     }
-
-    y_debug_assert(is_submitted());
-
-    vk_check(vkWaitForFences(vk_device(device()), 1, &_fence, true, u64(-1)));
-    set_signaled();
 }
 
 bool CmdBufferData::poll_fence() {
@@ -107,48 +86,35 @@ bool CmdBufferData::poll_fence() {
     return false;
 }
 
-void CmdBufferData::reset() {
+void CmdBufferData::begin() {
     y_profile();
-    y_debug_assert(is_recycled());
+
+    y_debug_assert(is_signaled());
+    y_debug_assert(!_polling);
+
+    recycle_resources(); // just in case
 
     vk_check(vkResetFences(vk_device(device()), 1, &_fence));
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
+    _signaled = false;
 
     _resource_fence = lifetime_manager(device()).create_fence();
-    _state = State::Reset;
 }
 
 void CmdBufferData::recycle_resources() {
     y_profile();
 
-    if(set_recycled()) {
-        _keep_alive.clear();
+    y_debug_assert(is_signaled());
+
+    _keep_alive.clear();
+}
+
+void CmdBufferData::set_signaled() {
+    const bool previous = _signaled.exchange(true, std::memory_order_acquire);
+    if(!previous) {
+        recycle_resources();
+        lifetime_manager(device()).release_fence(_resource_fence);
     }
-}
-
-bool CmdBufferData::set_recycled() {
-    const State previous_state = _state.exchange(State::Recycled, std::memory_order_acquire);
-
-    y_debug_assert(previous_state == State::Recycled || previous_state == State::Signaled);
-
-    return previous_state != State::Recycled;
-}
-
-
-bool CmdBufferData::set_signaled() {
-    const State previous_state = _state.exchange(State::Signaled, std::memory_order_acquire);
-
-    y_debug_assert(previous_state == State::Signaled || previous_state == State::Submitted);
-    return previous_state != State::Signaled;
-}
-
-bool CmdBufferData::set_submitted() {
-    const State previous_state = _state.exchange(State::Submitted, std::memory_order_acquire);
-
-    unused(previous_state);
-    y_debug_assert(previous_state == State::Reset);
-
-    return true;
 }
 
 }
