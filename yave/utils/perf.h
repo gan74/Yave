@@ -71,7 +71,7 @@ bool is_capturing();
 
 #define y_profile_internal_set_arg(arg)                                                                                                         \
     const char* y_create_name_with_prefix(args) = (arg);                                                                                        \
-    ___tracy_emit_zone_name(y_create_name_with_prefix(ctx), y_create_name_with_prefix(args), strlen(y_create_name_with_prefix(args)));          \
+    ___tracy_emit_zone_text(y_create_name_with_prefix(ctx), y_create_name_with_prefix(args), strlen(y_create_name_with_prefix(args)));          \
 
 
 
