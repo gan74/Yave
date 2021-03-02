@@ -34,6 +34,9 @@ namespace yave {
 
 class CmdBufferPool : NonMovable, public DeviceLinked {
 
+    // This breaks stuff 
+    static constexpr bool allow_recycle_on_alloc = false;
+
     public:
         CmdBufferPool(DevicePtr dptr);
 

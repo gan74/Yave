@@ -114,7 +114,7 @@ CmdBufferData* CmdBufferPool::alloc() {
             }
         }
 
-        if(!data) {
+        if(allow_recycle_on_alloc && !data) {
             for(auto it = _pending.begin(); it != _pending.end(); ++it) {
                 if((*it)->poll_fence()) {
                     data = *it;
