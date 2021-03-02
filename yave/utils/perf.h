@@ -88,11 +88,11 @@ bool is_capturing();
 
 #define y_profile_zone_arg(name, arg)           \
     y_profile_zone(name);                       \
-    y_profile_internal_set_arg(args)
+    y_profile_internal_set_arg(arg)
 
 #define y_profile_dyn_zone_arg(name, arg)       \
     y_profile_dyn_zone(name);                   \
-    y_profile_internal_set_arg(args)
+    y_profile_internal_set_arg(arg)
 
 
 
