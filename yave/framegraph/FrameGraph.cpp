@@ -234,7 +234,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
     {
         y_profile_zone("init");
         for(const auto& pass : _passes) {
-            y_profile_zone(pass->name());
+            y_profile_dyn_zone(pass->name());
             pass->init_framebuffer(*_resources);
             pass->init_descriptor_sets(*_resources);
         }
@@ -243,7 +243,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
     {
         y_profile_zone("render");
         for(const auto& pass : _passes) {
-            y_profile_zone(pass->name());
+            y_profile_dyn_zone(pass->name());
             const auto region = begin_pass_region(*pass);
 
             {

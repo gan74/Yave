@@ -63,7 +63,7 @@ void EntityWorld::swap(EntityWorld& other) {
 void EntityWorld::tick() {
     y_profile();
     for(auto& system : _systems) {
-        y_profile_zone(system->name());
+        y_profile_dyn_zone(system->name());
         system->tick(*this);
     }
     for(auto& container : _containers) {

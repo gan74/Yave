@@ -55,19 +55,46 @@ void start_capture(const char* out_filename);
 void end_capture();
 bool is_capturing();
 
-#define y_profile_capturing() (yave::perf::always_capture || yave::perf::is_capturing())
+
+#define y_profile_internal_capturing() (yave::perf::always_capture || yave::perf::is_capturing())
+
+#define y_profile_internal(name)                                                                                                                \
+    static constexpr const char* y_create_name_with_prefix(static_name) = (name);                                                               \
+    static constexpr auto y_create_name_with_prefix(sloc) = ___tracy_source_location_data {                                                     \
+        y_create_name_with_prefix(static_name), __FUNCTION__, __FILE__, __LINE__, 0};                                                           \
+    const auto y_create_name_with_prefix(ctx) = ___tracy_emit_zone_begin(&y_create_name_with_prefix(sloc), y_profile_internal_capturing());     \
+    y_defer(___tracy_emit_zone_end(y_create_name_with_prefix(ctx)))
+
+#define y_profile_internal_set_name(name)                                                                                                       \
+    const char* y_create_name_with_prefix(zone) = (name);                                                                                       \
+    ___tracy_emit_zone_name(y_create_name_with_prefix(ctx), y_create_name_with_prefix(zone), strlen(y_create_name_with_prefix(zone)));     
+
+#define y_profile_internal_set_arg(arg)                                                                                                         \
+    const char* y_create_name_with_prefix(args) = (arg);                                                                                        \
+    ___tracy_emit_zone_name(y_create_name_with_prefix(ctx), y_create_name_with_prefix(args), strlen(y_create_name_with_prefix(args)));          \
+
+
+
 
 #define y_profile_frame_end() do { ___tracy_emit_frame_mark(nullptr); } while(false)
 
-#define y_profile()                                                                                                                             \
-    static constexpr auto y_create_name_with_prefix(sloc) = ___tracy_source_location_data { nullptr, __FUNCTION__, __FILE__, __LINE__, 0};      \
-    const auto y_create_name_with_prefix(ctx) = ___tracy_emit_zone_begin(&y_create_name_with_prefix(sloc), y_profile_capturing());              \
-    y_defer(___tracy_emit_zone_end(y_create_name_with_prefix(ctx)))
+#define y_profile()  y_profile_internal(nullptr)
+#define y_profile_zone(name) y_profile_internal(name)
 
-#define y_profile_zone(name)                                                                                                                    \
-    y_profile();                                                                                                                                \
-    const char* y_create_name_with_prefix(zone) = (name);                                                                                       \
-    ___tracy_emit_zone_name(y_create_name_with_prefix(ctx), y_create_name_with_prefix(zone), std::strlen(y_create_name_with_prefix(zone)));     \
+
+#define y_profile_dyn_zone(name)                \
+    y_profile();                                \
+    y_profile_internal_set_name(name)
+
+#define y_profile_zone_arg(name, arg)           \
+    y_profile_zone(name);                       \
+    y_profile_internal_set_arg(args)
+
+#define y_profile_dyn_zone_arg(name, arg)       \
+    y_profile_dyn_zone(name);                   \
+    y_profile_internal_set_arg(args)
+
+
 
 #define y_profile_unique_lock(inner) [&]() {                            \
         std::unique_lock l(inner, std::defer_lock);                     \
@@ -75,15 +102,7 @@ bool is_capturing();
             return l;                                                   \
         }                                                               \
         y_profile_zone("waiting for lock: " #inner);                    \
-        y::core::Chrono chrono;                                         \
-        while(!l.try_lock()) {                                          \
-            if(chrono.elapsed().to_millis() > 10) {                     \
-                log_msg("waiting for: " #inner " in");                  \
-                log_msg(__PRETTY_FUNCTION__);                           \
-                chrono.reset();                                         \
-            }                                                           \
-            std::this_thread::yield();                                  \
-        }                                                               \
+        l.lock();                                                       \
         return l;                                                       \
     }()
 
@@ -93,10 +112,13 @@ inline void start_capture(const char*) {}
 inline void end_capture() {}
 inline bool is_capturing() { return false; }
 
-#define y_profile_frame_end()       do {} while(false)
-#define y_profile()                 do {} while(false)
-#define y_profile_zone(name)        do {} while(false)
-#define y_profile_unique_lock(lock) std::unique_lock(lock)
+#define y_profile_frame_end()               do {} while(false)
+#define y_profile()                         do {} while(false)
+#define y_profile_zone(name)                do {} while(false)
+#define y_profile_dyn_zone(name)            do {} while(false)
+#define y_profile_zone_arg(name, arg)       do {} while(false)
+#define y_profile_dyn_zone_arg(name, arg)   do {} while(false)
+#define y_profile_unique_lock(lock)         std::unique_lock(lock)
 
 #endif
 

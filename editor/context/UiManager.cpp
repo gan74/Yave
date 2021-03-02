@@ -197,7 +197,7 @@ void UiManager::paint_widget(Widget* widget, CmdBufferRecorder& recorder) {
         return;
     }
 
-    y_profile_zone(widget->_title_with_id.data());
+    y_profile_dyn_zone(widget->_title_with_id.data());
 
     widget->before_paint();
 
