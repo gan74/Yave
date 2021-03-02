@@ -155,11 +155,6 @@ int main(int argc, char** argv) {
         }
     }
 
-
-    if(perf::is_capturing()) {
-        perf::end_capture();
-    }
-
     context = nullptr;
 
     return 0;

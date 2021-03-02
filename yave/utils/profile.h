@@ -19,44 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_UTILS_PERF_H
-#define YAVE_UTILS_PERF_H
+#ifndef YAVE_UTILS_PROFILE_H
+#define YAVE_UTILS_PROFILE_H
 
-#include <y/utils.h>
-#include <y/utils/log.h>
+#include <y/defines.h>
 
-#include <y/core/Chrono.h>
 
-#include <thread>
-
-#ifdef Y_DEBUG
-#if !defined(YAVE_PERF_LOG_DISABLED) && !defined(YAVE_PERF_LOG_ENABLED)
-#define YAVE_PERF_LOG_ENABLED
+#if defined(TRACY_ENABLE) && !defined(YAVE_PROFILING_DISABLED)
+#define YAVE_PROFILING
 #endif
+
+#if defined(YAVE_PROFILING) && !defined(TRACY_ENABLE)
+#error TRACY_ENABLE should be set if YAVE_PROFILING is set
 #endif
 
 
-#if defined(YAVE_PERF_LOG_ENABLED) && !defined(TRACY_ENABLE)
-#error TRACY_ENABLE should be set if YAVE_PERF_LOG_ENABLED is set
-#endif
+#ifdef YAVE_PROFILING
+
 
 #include <external/tracy/TracyC.h>
 
-namespace yave {
-namespace perf {
 
-using namespace y;
-
-#ifdef YAVE_PERF_LOG_ENABLED
-
-static constexpr bool always_capture = true;
-
-void start_capture(const char* out_filename);
-void end_capture();
-bool is_capturing();
-
-
-#define y_profile_internal_capturing() (yave::perf::always_capture || yave::perf::is_capturing())
+#define y_profile_internal_capturing() (true)
 
 #define y_profile_internal(name)                                                                                                                \
     static constexpr const char* y_create_name_with_prefix(static_name) = (name);                                                               \
@@ -67,7 +51,7 @@ bool is_capturing();
 
 #define y_profile_internal_set_name(name)                                                                                                       \
     const char* y_create_name_with_prefix(zone) = (name);                                                                                       \
-    ___tracy_emit_zone_name(y_create_name_with_prefix(ctx), y_create_name_with_prefix(zone), strlen(y_create_name_with_prefix(zone)));     
+    ___tracy_emit_zone_name(y_create_name_with_prefix(ctx), y_create_name_with_prefix(zone), strlen(y_create_name_with_prefix(zone)));
 
 #define y_profile_internal_set_arg(arg)                                                                                                         \
     const char* y_create_name_with_prefix(args) = (arg);                                                                                        \
@@ -78,13 +62,22 @@ bool is_capturing();
 
 #define y_profile_frame_end() do { ___tracy_emit_frame_mark(nullptr); } while(false)
 
-#define y_profile()  y_profile_internal(nullptr)
-#define y_profile_zone(name) y_profile_internal(name)
 
+
+#define y_profile()  y_profile_internal(nullptr)
+
+#define y_profile_zone(name) y_profile_internal(name)
 
 #define y_profile_dyn_zone(name)                \
     y_profile();                                \
     y_profile_internal_set_name(name)
+
+
+
+#define y_profile_arg(arg)                      \
+    y_profile();                                \
+    y_profile_internal_set_arg(arg)
+
 
 #define y_profile_zone_arg(name, arg)           \
     y_profile_zone(name);                       \
@@ -108,22 +101,19 @@ bool is_capturing();
 
 #else
 
-inline void start_capture(const char*) {}
-inline void end_capture() {}
-inline bool is_capturing() { return false; }
-
 #define y_profile_frame_end()               do {} while(false)
+
 #define y_profile()                         do {} while(false)
 #define y_profile_zone(name)                do {} while(false)
 #define y_profile_dyn_zone(name)            do {} while(false)
+
+#define y_profile_arg(arg)                  do {} while(false)
 #define y_profile_zone_arg(name, arg)       do {} while(false)
 #define y_profile_dyn_zone_arg(name, arg)   do {} while(false)
+
 #define y_profile_unique_lock(lock)         std::unique_lock(lock)
 
 #endif
 
-}
-}
-
-#endif // YAVE_UTILS_PERF_H
+#endif // YAVE_PROFILING
 

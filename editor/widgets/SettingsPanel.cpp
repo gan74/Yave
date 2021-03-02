@@ -84,13 +84,7 @@ static void ui_settings(ContextPtr ctx) {
 static void perf_settings(ContextPtr ctx) {
     PerfSettings& perf = ctx->settings().perf();
 
-    int capture_frames = perf.capture_frames;
-    ImGui::InputInt("Number of frames to capture", &capture_frames);
-    ImGui::Checkbox("Capture indefinitely", &perf.capture_forever);
-
-    if(capture_frames > 1) {
-        perf.capture_frames = capture_frames;
-    }
+    unused(perf);
 }
 
 void SettingsPanel::paint(CmdBufferRecorder&) {

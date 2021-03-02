@@ -64,11 +64,6 @@ struct UiSettings {
 };
 
 struct PerfSettings {
-    bool capture_forever = false;
-    u32 capture_frames = 60;
-    core::String capture_name = "../perfdump.json";
-
-    y_reflect(capture_forever, capture_frames, capture_name)
 };
 
 

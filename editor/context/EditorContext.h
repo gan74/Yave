@@ -42,8 +42,6 @@ class EditorContext : NonMovable, public DeviceLinked {
 
         void flush_reload();
 
-        void start_perf_capture();
-        void end_perf_capture();
         void reload_device_resources();
         void set_device_resource_reloaded();
         bool device_resources_reload_requested() const;

@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_YAVE_H
 
 #include <yave/utils/forward.h>
-#include <yave/utils/perf.h>
+#include <yave/utils/profile.h>
 
 #include <y/math/Transform.h>
 

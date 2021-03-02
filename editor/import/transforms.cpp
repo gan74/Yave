@@ -27,7 +27,6 @@ SOFTWARE.
 #include <yave/graphics/images/ImageData.h>
 
 #include <y/utils/log.h>
-#include <yave/utils/perf.h>
 
 namespace editor {
 namespace import {

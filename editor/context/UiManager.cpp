@@ -332,15 +332,6 @@ void UiManager::paint_menu_bar() {
             ImGui::EndMenu();
         }
 
-#ifdef YAVE_PERF_LOG_ENABLED
-        if(perf::is_capturing()) {
-            ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-            if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->end_perf_capture();
-            ImGui::PopStyleColor();
-        } else {
-            if(ImGui::MenuItem(ICON_FA_STOPWATCH)) context()->start_perf_capture();
-        }
-#endif
 
         {
             const usize progress_bar_size = 300;
