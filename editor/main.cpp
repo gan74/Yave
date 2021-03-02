@@ -61,21 +61,22 @@ static void hide_console() {
 }
 
 static void parse_args(int argc, char** argv) {
-    for(std::string_view arg : core::Span<const char*>(argv, argc)) {
+    for(std::string_view arg : core::Span<const char*>(argv + 1, argc - 1)) {
         if(arg == "--nodebug") {
             debug_instance = false;
-        }
-        if(arg == "--debug") {
+        } else if(arg == "--debug") {
             debug_instance = true;
-        }
-        if(arg == "--console") {
+        } else if(arg == "--console") {
             display_console = true;
         }
 #ifdef Y_DEBUG
-        if(arg == "--errbreak") {
+        else if(arg == "--errbreak") {
             core::result::break_on_error = true;
         }
 #endif
+        else {
+            log_msg(fmt("Unknown argumeent: %", arg), Log::Error);
+        }
     }
 
     if(!display_console) {
