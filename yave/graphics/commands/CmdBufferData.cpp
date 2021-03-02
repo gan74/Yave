@@ -53,6 +53,10 @@ CmdBufferData::State CmdBufferData::state() const {
     return _state;
 }
 
+bool CmdBufferData::is_recycled() const {
+    return _state == State::Recycled;
+}
+
 bool CmdBufferData::is_signaled() const {
     return _state == State::Signaled;
 }
@@ -97,6 +101,7 @@ bool CmdBufferData::poll_fence() {
         return true;
     }
     if(vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS) {
+        set_signaled();
         return true;
     }
     return false;
@@ -104,9 +109,8 @@ bool CmdBufferData::poll_fence() {
 
 void CmdBufferData::reset() {
     y_profile();
-    y_debug_assert(is_signaled());
+    y_debug_assert(is_recycled());
 
-    Y_TODO(move this to signal?)
     vk_check(vkResetFences(vk_device(device()), 1, &_fence));
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 
@@ -114,23 +118,37 @@ void CmdBufferData::reset() {
     _state = State::Reset;
 }
 
-void CmdBufferData::release_resources() {
+void CmdBufferData::recycle_resources() {
     y_profile();
-    y_debug_assert(is_signaled());
-    _keep_alive.clear();
+
+    if(set_recycled()) {
+        _keep_alive.clear();
+    }
+}
+
+bool CmdBufferData::set_recycled() {
+    const State previous_state = _state.exchange(State::Recycled, std::memory_order_acquire);
+
+    y_debug_assert(previous_state == State::Recycled || previous_state == State::Signaled);
+
+    return previous_state != State::Recycled;
 }
 
 
-void CmdBufferData::set_signaled() {
+bool CmdBufferData::set_signaled() {
     const State previous_state = _state.exchange(State::Signaled, std::memory_order_acquire);
-    unused(previous_state);
+
     y_debug_assert(previous_state == State::Signaled || previous_state == State::Submitted);
+    return previous_state != State::Signaled;
 }
 
-void CmdBufferData::set_submitted() {
-    const State previous_state = _state.exchange(State::Submitted, std::memory_order_acquire) ;
+bool CmdBufferData::set_submitted() {
+    const State previous_state = _state.exchange(State::Submitted, std::memory_order_acquire);
+
     unused(previous_state);
     y_debug_assert(previous_state == State::Reset);
+
+    return true;
 }
 
 }

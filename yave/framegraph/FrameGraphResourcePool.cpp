@@ -49,7 +49,8 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
 
     TransientImage<> image;
     if(!create_image_from_pool(image, format, size, usage)) {
-        y_profile_zone("create resource");
+        y_profile_zone("create image");
+        log_msg(fmt("image size = %", size), Log::Warning);
         image = TransientImage<>(device(), format, usage, size);
     }
 
@@ -68,7 +69,7 @@ TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsa
 
     TransientBuffer buffer;
     if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {
-        y_profile_zone("create resource");
+        y_profile_zone("create buffer");
         buffer = TransientBuffer(device(), byte_size, usage, memory);
     }
 

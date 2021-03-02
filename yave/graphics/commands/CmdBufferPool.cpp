@@ -55,11 +55,10 @@ CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
 CmdBufferPool::~CmdBufferPool() {
     join_all();
 
-    y_debug_assert(_pending.is_empty()); // We probably need to wait for those too....
-    y_debug_assert(_cmd_buffers.size() == _recycled.size());
+    y_debug_assert(_cmd_buffers.size() == _pending.size());
 
     _cmd_buffers.clear();
-    _recycled.clear();
+    _pending.clear();
 
     for(const VkFence fence : _fences) {
         destroy(fence);
@@ -85,43 +84,17 @@ void CmdBufferPool::release(CmdBufferData* data) {
     y_debug_assert(data->pool() == this);
 
     {
-        const auto lock = y_profile_unique_lock(_pending_lock);
+        const auto lock = y_profile_unique_lock(_recycling_lock);
         _pending << data;
     }
 
     lifetime_manager(device()).queue_for_recycling(data);
 }
 
-
-void CmdBufferPool::prepare_for_recycling(CmdBufferData* data) {
-    data->set_signaled();
-    data->release_resources();
-}
-
 void CmdBufferPool::recycle(CmdBufferData* data) {
-    y_profile();
-
-    y_debug_assert(data->poll_fence());
     y_debug_assert(data->pool() == this);
 
-    {
-        const auto lock = y_profile_unique_lock(_pending_lock);
-        const auto it = std::find(_pending.begin(), _pending.end(), data);
-
-        // Already recycled
-        if(it == _pending.end()) {
-            return;
-        }
-
-        _pending.erase_unordered(it);
-    }
-
-    prepare_for_recycling(data);
-
-    {
-        const auto lock = y_profile_unique_lock(_recycle_lock);
-        _recycled << data;
-    }
+    data->recycle_resources();
 }
 
 CmdBufferData* CmdBufferPool::alloc() {
@@ -131,23 +104,28 @@ CmdBufferData* CmdBufferPool::alloc() {
 
     CmdBufferData* data = nullptr;
     {
-        const auto lock = y_profile_unique_lock(_recycle_lock);
-        if(!_recycled.is_empty()) {
-            data = _recycled.pop();
+        auto lock = y_profile_unique_lock(_recycling_lock);
+
+        for(auto it = _pending.begin(); it != _pending.end(); ++it) {
+            if((*it)->is_recycled()) {
+                data = *it;
+                _pending.erase_unordered(it);
+                break;
+            }
         }
-    }
 
-    if(!data) {
-        auto lock = y_profile_unique_lock(_pending_lock);
-        const auto it = std::find_if(_pending.begin(), _pending.end(), [](CmdBufferData* data) { return data->poll_fence(); });
+        if(!data) {
+            for(auto it = _pending.begin(); it != _pending.end(); ++it) {
+                if((*it)->poll_fence()) {
+                    data = *it;
+                    _pending.erase_unordered(it);
+                    lock.unlock();
 
-        if(it != _pending.end()) {
-            data = *it;
-            _pending.erase_unordered(it);
-            lifetime_manager(device()).set_recycled(data);
-
-            lock.unlock(); // Remove this?  =|
-            prepare_for_recycling(data);
+                    recycle(data);
+                    lifetime_manager(device()).set_recycled(data);
+                    break;
+                }
+            }
         }
     }
 

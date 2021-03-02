@@ -86,6 +86,7 @@ class CmdBufferData final : NonMovable {
             Reset,
             Submitted,
             Signaled,
+            Recycled,
         };
 
 
@@ -97,6 +98,7 @@ class CmdBufferData final : NonMovable {
 
         State state() const;
 
+        bool is_recycled() const;
         bool is_signaled() const;
         bool is_submitted() const;
         bool is_reset() const;
@@ -110,8 +112,6 @@ class CmdBufferData final : NonMovable {
         void wait();
         bool poll_fence();
 
-        void reset();
-        void release_resources();
 
         template<typename T>
         void keep_alive(T&& t) {
@@ -127,8 +127,12 @@ class CmdBufferData final : NonMovable {
         friend class CmdBufferPool;
         friend class CmdBuffer;
 
-        void set_signaled();
-        void set_submitted();
+        void reset();
+        void recycle_resources();
+
+        bool set_recycled();
+        bool set_signaled();
+        bool set_submitted();
 
         // These are owned by the command pool
         VkCommandBuffer _cmd_buffer;

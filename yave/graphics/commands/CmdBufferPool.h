@@ -50,9 +50,6 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
         void release(CmdBufferData* data);
         void recycle(CmdBufferData* data);
 
-
-        static void prepare_for_recycling(CmdBufferData* data);
-
         CmdBufferData* alloc();
 
         void join_all();
@@ -61,15 +58,13 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
         CmdBufferData* create_data();
 
         std::mutex _pool_lock;
-        std::mutex _pending_lock;
-        std::mutex _recycle_lock;
+        std::recursive_mutex _recycling_lock;
 
         VkHandle<VkCommandPool> _pool;
 
         core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
 
         core::Vector<CmdBufferData*> _pending;
-        core::Vector<CmdBufferData*> _recycled;
 
         core::Vector<VkFence> _fences;
 

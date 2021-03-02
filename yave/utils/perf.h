@@ -23,6 +23,11 @@ SOFTWARE.
 #define YAVE_UTILS_PERF_H
 
 #include <y/utils.h>
+#include <y/utils/log.h>
+
+#include <y/core/Chrono.h>
+
+#include <thread>
 
 #ifdef Y_DEBUG
 #if !defined(YAVE_PERF_LOG_DISABLED) && !defined(YAVE_PERF_LOG_ENABLED)
@@ -70,7 +75,15 @@ bool is_capturing();
             return l;                                                   \
         }                                                               \
         y_profile_zone("waiting for lock: " #inner);                    \
-        l.lock();                                                       \
+        y::core::Chrono chrono;                                         \
+        while(!l.try_lock()) {                                          \
+            if(chrono.elapsed().to_millis() > 10) {                     \
+                log_msg("waiting for: " #inner " in");                  \
+                log_msg(__PRETTY_FUNCTION__);                           \
+                chrono.reset();                                         \
+            }                                                           \
+            std::this_thread::yield();                                  \
+        }                                                               \
         return l;                                                       \
     }()
 

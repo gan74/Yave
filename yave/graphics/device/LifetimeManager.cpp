@@ -85,11 +85,10 @@ void LifetimeManager::set_recycled(CmdBufferData* data) {
         const auto lock = y_profile_unique_lock(_cmd_lock);
         const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd);
 
-        y_debug_assert(it != _in_flight.end());
-        y_debug_assert(it->fence == cmd.fence);
-        y_debug_assert(it->data == cmd.data);
-
-        it->data = nullptr;
+        // Lookup may fail if the cmd buffer got recycled (from another thread) in between the poll_fence() and here
+        if(it != _in_flight.end() && it->fence == cmd.fence) {
+            it->data = nullptr;
+        }
     }
 }
 
