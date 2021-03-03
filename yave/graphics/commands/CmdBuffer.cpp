@@ -23,9 +23,7 @@ SOFTWARE.
 #include "CmdBuffer.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
-
-#include <y/utils/log.h>
-#include <y/utils/format.h>
+#include <yave/graphics/device/LifetimeManager.h>
 
 namespace yave {
 
@@ -42,14 +40,8 @@ CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) {
 }
 
 CmdBuffer::~CmdBuffer() {
-    release();
-}
-
-void CmdBuffer::release() {
     if(_data) {
-        log_msg(fmt("Releasing %", _data->resource_fence().value()), Log::Debug);
-        _data->pool()->release(_data);
-        _data = nullptr;
+        lifetime_manager(device()).register_for_polling(_data);
     }
 }
 

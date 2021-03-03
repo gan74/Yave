@@ -52,14 +52,11 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
         ~LifetimeManager();
 
         ResourceFence create_fence();
-        void release_fence(ResourceFence fence);
-
         void register_for_polling(CmdBufferData* data);
-        void unregister(CmdBufferData* data);
 
         usize pending_deletions() const;
         usize pending_fences() const;
-        usize polling_cmd_buffers() const;
+        usize pending_cmd_buffers() const;
 
         void poll_cmd_buffers();
 
@@ -72,26 +69,23 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
 
     private:
-        u64 best_next();
+        void release(core::Span<CmdBufferData*> buffers);
 
-        void clear_fences(u64 up_to);
         void clear_resources(u64 up_to);
         void destroy_resource(ManagedResource& resource) const;
 
 
         std::deque<std::pair<u64, ManagedResource>> _to_destroy;
-        std::deque<ResourceFence> _fences;
+        core::Vector<ResourceFence> _fences;
 
         mutable std::mutex _resources_lock;
         mutable std::mutex _fences_lock;
 
         std::atomic<u64> _create_counter = 0;
-        u64 _next = 0; // Guarded by _resources_lock
+        u64 _next = 0; // Guarded by _fences_lock
 
-
-        core::Vector<CmdBufferData*> _to_poll;
+        core::Vector<CmdBufferData*> _in_flight;
         mutable std::mutex _cmd_lock;
-        std::atomic<bool> _polling = false;
 };
 
 }

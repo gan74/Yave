@@ -51,8 +51,6 @@ struct CmdBuffer : NonCopyable {
     protected:
         CmdBuffer(CmdBufferData* data);
 
-        void release();
-
         void swap(CmdBuffer& other);
 
     private:

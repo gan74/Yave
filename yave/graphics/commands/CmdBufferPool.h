@@ -45,7 +45,6 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
 
     private:
         friend class LifetimeManager;
-        friend class CmdBuffer;
 
         void release(CmdBufferData* data);
 
@@ -61,13 +60,11 @@ class CmdBufferPool : NonMovable, public DeviceLinked {
         core::Vector<VkFence> _fences;
         core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
 
-        std::recursive_mutex _pending_lock;
-        core::Vector<CmdBufferData*> _pending;
+        std::mutex _release_lock;
+        core::Vector<CmdBufferData*> _released;
 
         const u32 _thread_id;
 };
-
-static_assert(is_safe_base<CmdBufferPool>::value);
 
 }
 

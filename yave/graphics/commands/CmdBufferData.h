@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/graphics/vk/vk.h>
 
 #include <y/core/Vector.h>
+#include <y/core/Chrono.h>
 
 #include <memory>
 #include <atomic>
@@ -61,10 +62,6 @@ class ResourceFence {
 
         bool operator>=(const ResourceFence& other) const {
             return _value >= other._value;
-        }
-
-        u64 value() const {
-            return _value;
         }
 
     private:
@@ -113,9 +110,7 @@ class CmdBufferData final : NonMovable {
 
     private:
         friend class CmdBufferPool;
-        friend class LifetimeManager;
 
-        bool poll() const;
         void set_signaled();
 
         void begin();
@@ -133,8 +128,10 @@ class CmdBufferData final : NonMovable {
 
         std::atomic<bool> _signaled = false;
 
-        // For LifetimeManager
-        bool _polling = false;
+
+
+        friend class LifetimeManager;
+        core::Chrono _timer;
 };
 
 }

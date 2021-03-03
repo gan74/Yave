@@ -67,7 +67,7 @@ void PerformanceMetrics::paint(CmdBufferRecorder&) {
 
     ImGui::Text("%.3u resources waiting deletion", unsigned(lifetime_manager(device()).pending_deletions()));
     ImGui::Text("%.3u active fences", unsigned(lifetime_manager(device()).pending_fences()));
-    ImGui::Text("%.3u cmd buffer polled", unsigned(lifetime_manager(device()).polling_cmd_buffers()));
+    ImGui::Text("%.3u active command buffers", unsigned(lifetime_manager(device()).pending_cmd_buffers()));
 }
 
 }

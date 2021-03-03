@@ -79,30 +79,24 @@ bool CmdBufferData::poll_and_signal() {
     if(is_signaled()) {
         return true;
     }
-    if(poll()) {
+    if(vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS) {
         set_signaled();
         return true;
     }
     return false;
 }
 
-bool CmdBufferData::poll() const {
-    return vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS;
-}
-
 void CmdBufferData::begin() {
     y_profile();
 
     y_debug_assert(is_signaled());
-    y_debug_assert(!_polling);
-
-    recycle_resources(); // just in case
+    y_debug_assert(_keep_alive.is_empty());
 
     vk_check(vkResetFences(vk_device(device()), 1, &_fence));
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
-    _signaled = false;
 
     _resource_fence = lifetime_manager(device()).create_fence();
+    _signaled = false;
 }
 
 void CmdBufferData::recycle_resources() {
@@ -114,12 +108,7 @@ void CmdBufferData::recycle_resources() {
 }
 
 void CmdBufferData::set_signaled() {
-    const bool previous = _signaled.exchange(true, std::memory_order_acquire);
-    if(!previous) {
-        recycle_resources();
-        lifetime_manager(device()).release_fence(_resource_fence);
-    }
+    _signaled.exchange(true, std::memory_order_acquire);
 }
 
 }
-

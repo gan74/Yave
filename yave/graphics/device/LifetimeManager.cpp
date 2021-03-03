@@ -33,6 +33,10 @@ SOFTWARE.
 
 namespace yave {
 
+static bool compare_cmd_buffers(CmdBufferData* a, CmdBufferData* b) {
+    return a->resource_fence() < b->resource_fence();
+}
+
 LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
@@ -52,117 +56,117 @@ ResourceFence LifetimeManager::create_fence() {
     return _create_counter++;
 }
 
-void LifetimeManager::release_fence(ResourceFence fence) {
-    y_profile();
-
-    auto lock = y_profile_unique_lock(_resources_lock);
-
-    log_msg(fmt("waiting for %, got %", _next, fence._value), Log::Error);
-    if(fence == _next) {
-        const u64 prev = ++_next;
-        const u64 next = best_next();
-        _next = next;
-
-        lock.unlock();
-
-        if(prev != next) {
-            clear_fences(next);
-        }
-
-        clear_resources(next);
-    } else {
-        {
-            const auto lock = y_profile_unique_lock(_fences_lock);
-            const auto it = std::lower_bound(_fences.begin(), _fences.end(), fence);
-            _fences.insert(it, fence);
-            y_debug_assert(std::is_sorted(_fences.begin(), _fences.end()));
-        }
-
-        lock.unlock();
-
-        poll_cmd_buffers();
-    }
-}
-
-u64 LifetimeManager::best_next() {
-    const auto lock = y_profile_unique_lock(_fences_lock);
-
-    u64 next = _next;
-    for(usize i = 0; i != _fences.size(); ++i) {
-        if(_fences[i] != next) {
-            break;
-        }
-        ++next;
-    }
-
-    return next;
-}
-
 void LifetimeManager::register_for_polling(CmdBufferData* data) {
     if(data->is_signaled()) {
+        release({data});
         return;
     }
 
-    const auto lock = y_profile_unique_lock(_cmd_lock);
+    {
+        const auto lock = y_profile_unique_lock(_cmd_lock);
 
-    y_debug_assert(!data->_polling);
+        data->_timer.reset();
 
-    data->_polling = true;
-    _to_poll << data;
-}
+        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), data, compare_cmd_buffers);
+        _in_flight.insert(it, data);
 
-void LifetimeManager::unregister(CmdBufferData* data) {
-    y_profile();
-
-    const auto lock = y_profile_unique_lock(_cmd_lock);
-
-    if(!data->_polling) {
-        return;
+        y_debug_assert(std::is_sorted(_in_flight.begin(), _in_flight.end(), compare_cmd_buffers));
     }
 
-    const auto it = std::find(_to_poll.begin(), _to_poll.end(), data);
-    y_debug_assert(it != _to_poll.end());
-    _to_poll.erase_unordered(it);
-    data->_polling = false;
+    poll_cmd_buffers();
 }
+
 
 void LifetimeManager::poll_cmd_buffers() {
     y_profile();
 
-    if(_polling.exchange(true, std::memory_order_acquire)) {
-        return;
-    }
-    y_defer(_polling = false);
+    log_msg("Polling...");
 
-    core::Vector<CmdBufferData*> to_signal;
+    core::Vector<CmdBufferData*> to_release;
     {
         const auto lock = y_profile_unique_lock(_cmd_lock);
 
         usize j = 0;
-        for(usize i = 0; i != _to_poll.size(); ++i) {
-            y_debug_assert(_to_poll[i]->_polling);
-            _to_poll[i - j] = _to_poll[i];
-            if(_to_poll[i]->poll()) {
-                _to_poll[i]->_polling = false;
-                to_signal << _to_poll[i];
+        for(usize i = 0; i != _in_flight.size(); ++i) {
+            _in_flight[i - j] = _in_flight[i];
+            if(_in_flight[i]->_timer.elapsed().to_secs() < 1) {
+                continue;
+            }
+            if(_in_flight[i]->poll_and_signal()) {
+                to_release << _in_flight[i];
+                log_msg(fmt("releasing after % ms", _in_flight[i]->_timer.elapsed().to_millis()));
                 ++j;
             }
         }
 
         for(usize i = 0; i != j; ++i) {
-            _to_poll.pop();
+            _in_flight.pop();
         }
     }
 
-    for(CmdBufferData* data : to_signal) {
-        data->set_signaled();
-    }
+    release(to_release);
 }
 
 
-usize LifetimeManager::polling_cmd_buffers() const {
+void LifetimeManager::release(core::Span<CmdBufferData*> buffers) {
+    y_profile();
+
+    if(buffers.is_empty()) {
+        return;
+    }
+
+    y_debug_assert(std::is_sorted(buffers.begin(), buffers.end(), compare_cmd_buffers));
+
+    u64 up_to = 0;
+    bool run_collection = false;
+    {
+        const auto lock = y_profile_unique_lock(_fences_lock);
+        const u64 prev = _next;
+
+        usize to_skip = 0;
+        while(to_skip < buffers.size() && buffers[to_skip]->resource_fence()._value == _next) {
+            ++to_skip;
+            ++_next;
+        }
+
+        if(to_skip != buffers.size()) {
+
+            Y_TODO(Optimize)
+            std::transform(buffers.begin() + to_skip, buffers.end(), std::back_inserter(_fences), [](CmdBufferData* data) { return data->resource_fence(); });
+            std::sort(_fences.begin(), _fences.end());
+
+            usize fence_index = 0;
+            while(fence_index < _fences.size() && _fences[fence_index] == _next) {
+                ++fence_index;
+                ++_next;
+            }
+
+            if(fence_index) {
+                for(usize i = 0; i != _fences.size() - fence_index; ++i) {
+                    _fences[i] = _fences[i + fence_index];
+                }
+                for(usize i = 0; i != fence_index; ++i) {
+                    _fences.pop();
+                }
+            }
+        }
+
+        up_to = _next;
+        run_collection = prev != up_to;
+    }
+
+    for(CmdBufferData* data : buffers) {
+        data->pool()->release(data);
+    }
+
+    if(run_collection) {
+        clear_resources(up_to);
+    }
+}
+
+usize LifetimeManager::pending_cmd_buffers() const {
     const auto lock = y_profile_unique_lock(_cmd_lock);
-    return _to_poll.size();
+    return _in_flight.size();
 }
 
 usize LifetimeManager::pending_fences() const {
@@ -173,14 +177,6 @@ usize LifetimeManager::pending_fences() const {
 usize LifetimeManager::pending_deletions() const {
     const auto lock = y_profile_unique_lock(_resources_lock);
     return _to_destroy.size();
-}
-
-void LifetimeManager::clear_fences(u64 up_to) {
-    const auto lock = y_profile_unique_lock(_fences_lock);
-
-    while(!_fences.empty() && _fences.front() < up_to) {
-        _fences.pop_front();
-    }
 }
 
 void LifetimeManager::clear_resources(u64 up_to) {

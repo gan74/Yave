@@ -30,9 +30,6 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 #include <y/concurrent/concurrent.h>
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
 namespace yave {
 
 static VkCommandPool create_pool(DevicePtr dptr) {
@@ -57,11 +54,7 @@ CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
 CmdBufferPool::~CmdBufferPool() {
     join_all();
 
-    y_debug_assert(_cmd_buffers.size() == _pending.size());
-
-    for(CmdBufferData* data : _pending) {
-        lifetime_manager(device()).unregister(data);
-    }
+    y_debug_assert(_cmd_buffers.size() == _released.size());
 
     for(const VkFence fence : _fences) {
         destroy(fence);
@@ -74,28 +67,30 @@ VkCommandPool CmdBufferPool::vk_pool() const {
 }
 
 void CmdBufferPool::join_all() {
+    y_profile();
+
     const auto pool_lock = y_profile_unique_lock(_pool_lock);
 
     if(_fences.is_empty()) {
         return;
     }
 
-    const auto pending_lock = y_profile_unique_lock(_pending_lock);
-    y_always_assert(_pending.size() == _cmd_buffers.size(), "Can not wait on pool unless none of its buffers are in use");
-
-    for(CmdBufferData* data : _pending) {
+    for(auto& data : _cmd_buffers) {
         data->wait();
     }
 }
 
 void CmdBufferPool::release(CmdBufferData* data) {
-    y_debug_assert(data->pool() == this);
+    y_profile();
 
-    lifetime_manager(device()).register_for_polling(data);
+    y_debug_assert(data->pool() == this);
+    y_debug_assert(data->is_signaled());
+
+    data->recycle_resources();
 
     {
-        const auto lock = y_profile_unique_lock(_pending_lock);
-        _pending << data;
+        const auto lock = y_profile_unique_lock(_release_lock);
+        _released << data;
     }
 }
 
@@ -106,29 +101,14 @@ CmdBufferData* CmdBufferPool::alloc() {
     CmdBufferData* ready = nullptr;
 
     {
-        const auto lock = y_profile_unique_lock(_pending_lock);
+        const auto lock = y_profile_unique_lock(_release_lock);
 
-        auto find_ready = [&](auto&& ready_func) {
-            if(ready) {
-                return;
-            }
-            for(auto it = _pending.begin(); it != _pending.end(); ++it) {
-                CmdBufferData* data = *it;
-                if(ready_func(data)) {
-                    _pending.erase_unordered(it);
-
-                    ready = data;
-                    return;
-                }
-            }
-        };
-
-        find_ready([](CmdBufferData* data) { return data->is_signaled(); });
-        find_ready([](CmdBufferData* data) { return data->poll_and_signal(); });
+        if(!_released.is_empty()) {
+            ready = _released.pop();
+        }
     }
 
     if(ready) {
-        lifetime_manager(device()).unregister(ready);
         ready->begin();
         return ready;
     }
