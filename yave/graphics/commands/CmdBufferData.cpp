@@ -75,15 +75,19 @@ void CmdBufferData::wait() {
     }
 }
 
-bool CmdBufferData::poll_fence() {
+bool CmdBufferData::poll_and_signal() {
     if(is_signaled()) {
         return true;
     }
-    if(vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS) {
+    if(poll()) {
         set_signaled();
         return true;
     }
     return false;
+}
+
+bool CmdBufferData::poll() const {
+    return vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS;
 }
 
 void CmdBufferData::begin() {

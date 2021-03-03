@@ -134,21 +134,28 @@ void LifetimeManager::poll_cmd_buffers() {
     }
     y_defer(_polling = false);
 
-    const auto lock = y_profile_unique_lock(_cmd_lock);
+    core::Vector<CmdBufferData*> to_signal;
+    {
+        const auto lock = y_profile_unique_lock(_cmd_lock);
 
+        usize j = 0;
+        for(usize i = 0; i != _to_poll.size(); ++i) {
+            y_debug_assert(_to_poll[i]->_polling);
+            _to_poll[i - j] = _to_poll[i];
+            if(_to_poll[i]->poll()) {
+                _to_poll[i]->_polling = false;
+                to_signal << _to_poll[i];
+                ++j;
+            }
+        }
 
-    usize j = 0;
-    for(usize i = 0; i != _to_poll.size(); ++i) {
-        y_debug_assert(_to_poll[i]->_polling);
-        _to_poll[i - j] = _to_poll[i];
-        if(_to_poll[i]->poll_fence()) {
-            _to_poll[i]->_polling = false;
-            ++j;
+        for(usize i = 0; i != j; ++i) {
+            _to_poll.pop();
         }
     }
 
-    for(usize i = 0; i != j; ++i) {
-        _to_poll.pop();
+    for(CmdBufferData* data : to_signal) {
+        data->set_signaled();
     }
 }
 
@@ -248,7 +255,7 @@ void LifetimeManager::set_recycled(CmdBufferData* data) {
         const auto lock = y_profile_unique_lock(_cmd_lock);
         const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd);
 
-        // Lookup may fail if the cmd buffer got recycled (from another thread) in between the poll_fence() and here
+        // Lookup may fail if the cmd buffer got recycled (from another thread) in between the poll_and_signal() and here
         if(it != _in_flight.end() && it->fence == cmd.fence) {
             it->data = nullptr;
         }
@@ -279,7 +286,7 @@ void LifetimeManager::collect() {
             }
 
             CmdBufferData* data = cmd.data;
-            if(!data || data->poll_fence()) {
+            if(!data || data->poll_and_signal()) {
                 next = fence;
                 _in_flight.pop_front();
 

@@ -79,7 +79,6 @@ class ResourceFence {
 
 
 class CmdBufferData final : NonMovable {
-
     struct KeepAlive : NonCopyable {
         virtual ~KeepAlive() {}
     };
@@ -100,7 +99,7 @@ class CmdBufferData final : NonMovable {
         VkFence vk_fence() const;
 
         void wait();
-        bool poll_fence();
+        bool poll_and_signal();
 
         template<typename T>
         void keep_alive(T&& t) {
@@ -116,6 +115,7 @@ class CmdBufferData final : NonMovable {
         friend class CmdBufferPool;
         friend class LifetimeManager;
 
+        bool poll() const;
         void set_signaled();
 
         void begin();

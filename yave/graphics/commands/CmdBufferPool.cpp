@@ -124,7 +124,7 @@ CmdBufferData* CmdBufferPool::alloc() {
         };
 
         find_ready([](CmdBufferData* data) { return data->is_signaled(); });
-        find_ready([](CmdBufferData* data) { return data->poll_fence(); });
+        find_ready([](CmdBufferData* data) { return data->poll_and_signal(); });
     }
 
     if(ready) {
