@@ -23,12 +23,14 @@ SOFTWARE.
 #include "FrameGraphFrameResources.h"
 #include "FrameGraphResourcePool.h"
 
+
 namespace yave {
 
 FrameGraphFrameResources::FrameGraphFrameResources(std::shared_ptr<FrameGraphResourcePool> pool) : _pool(pool) {
 }
 
 FrameGraphFrameResources::~FrameGraphFrameResources() {
+    Y_TODO(release images before the cmd buffer is recycled)
     for(auto&& res : _image_storage) {
         _pool->release(std::move(res));
     }

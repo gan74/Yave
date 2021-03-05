@@ -184,6 +184,12 @@ class CmdBufferRecorder final : public CmdBuffer {
             submit(Policy);
         }
 
+        template<SyncPolicy Policy = SyncPolicy::Async>
+        void submit(const Queue& queue) && {
+            submit(queue, Policy);
+        }
+
+
     private:
         friend class RenderPassRecorder;
 
@@ -193,6 +199,7 @@ class CmdBufferRecorder final : public CmdBuffer {
         void check_no_renderpass() const;
 
         void submit(SyncPolicy policy);
+        void submit(const Queue& queue, SyncPolicy policy);
 
         // this could be in RenderPassRecorder, but putting it here makes erroring easier
         const RenderPass* _render_pass = nullptr;

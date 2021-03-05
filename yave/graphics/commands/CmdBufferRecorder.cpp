@@ -502,10 +502,13 @@ void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, Vk
 }
 
 void CmdBufferRecorder::submit(SyncPolicy policy) {
+    submit(graphic_queue(device()), policy);
+}
+
+void CmdBufferRecorder::submit(const Queue& queue, SyncPolicy policy) {
     check_no_renderpass();
     vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
 
-    const Queue& queue = graphic_queue(device());
     queue.submit(*this);
 
     switch(policy) {
@@ -514,7 +517,6 @@ void CmdBufferRecorder::submit(SyncPolicy policy) {
         break;
 
         case SyncPolicy::Sync: {
-            y_profile_zone("sync");
             wait();
         } break;
     }

@@ -69,12 +69,7 @@ VkCommandPool CmdBufferPool::vk_pool() const {
 void CmdBufferPool::join_all() {
     y_profile();
 
-    const auto pool_lock = y_profile_unique_lock(_pool_lock);
-
-    if(_fences.is_empty()) {
-        return;
-    }
-
+    const auto lock = y_profile_unique_lock(_pool_lock);
     for(auto& data : _cmd_buffers) {
         data->wait();
     }

@@ -66,7 +66,6 @@ void PerformanceMetrics::paint(CmdBufferRecorder&) {
     ImGui::PlotLines("##frames", _frames.data(), _frames.size(), _current_frame, "", 0.0f, _max, ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 
     ImGui::Text("%.3u resources waiting deletion", unsigned(lifetime_manager(device()).pending_deletions()));
-    ImGui::Text("%.3u active fences", unsigned(lifetime_manager(device()).pending_fences()));
     ImGui::Text("%.3u active command buffers", unsigned(lifetime_manager(device()).pending_cmd_buffers()));
 }
 

@@ -142,7 +142,7 @@ static void transition_image(ImageBase& image) {
 
     CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
     recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, vk_image_layout(image.usage()))});
-    std::move(recorder).submit<SyncPolicy::Sync>();
+    std::move(recorder).submit<SyncPolicy::Sync>(loading_queue(dptr));
 }
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {

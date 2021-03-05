@@ -50,11 +50,10 @@ class FrameGraphResourcePool : NonMovable, public DeviceLinked {
         bool create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
         bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory);
 
-        core::Vector<std::pair<TransientImage<>, u64>> _images;
-        core::Vector<std::pair<TransientBuffer, u64>> _buffers;
+        std::vector<std::pair<TransientImage<>, u64>> _images;
+        std::vector<std::pair<TransientBuffer, u64>> _buffers;
 
         u64 _collection_id = 0;
-        u64 _allocated = 0;
 
         void audit() const;
 

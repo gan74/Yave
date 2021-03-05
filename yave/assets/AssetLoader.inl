@@ -179,6 +179,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
         public:
             Job(AssetLoader* loader, std::shared_ptr<Data> data) : LoadingJob(loader), _data(std::move(data)) {
                 y_always_assert(_data, "Invalid asset");
+                y_profile_msg(fmt_c_str("Adding loading request for %", asset_name()));
             }
 
             core::Result<void> read() override {

@@ -128,10 +128,10 @@ class CmdBufferData final : NonMovable {
 
         std::atomic<bool> _signaled = false;
 
+#ifdef Y_DEBUG
+        std::atomic<bool> _lock = false;
+#endif
 
-
-        friend class LifetimeManager;
-        core::Chrono _timer;
 };
 
 }

@@ -50,22 +50,31 @@ MemoryInfo::MemoryInfo(ContextPtr cptr) : Widget("Memory info", ImGuiWindowFlags
 void MemoryInfo::paint(CmdBufferRecorder&) {
     y_profile();
 
+    static constexpr bool show_heaps = false;
+
     usize total_used = 0;
     usize total_allocated = 0;
     for(auto&& [type, heaps] : device_allocator(device()).heaps()) {
-        ImGui::BulletText(fmt_c_str("Heap [%]", memory_type_name(type.second)));
-        ImGui::Indent();
+        if(show_heaps) {
+            ImGui::BulletText(fmt_c_str("Heap [%]", memory_type_name(type.second)));
+            ImGui::Indent();
+        }
         for(const auto& heap : heaps) {
             usize free = heap->available();
             const usize used = heap->size() - free;
             total_used += used;
             total_allocated += heap->size();
 
-            ImGui::ProgressBar(used / float(heap->size()), ImVec2(0, 0), fmt_c_str("%KB / %KB", to_kb(used), to_kb(heap->size())));
-            ImGui::Text("Free blocks: %u", unsigned(heap->free_blocks()));
-            ImGui::Spacing();
+            if(show_heaps) {
+                ImGui::ProgressBar(used / float(heap->size()), ImVec2(0, 0), fmt_c_str("%KB / %KB", to_kb(used), to_kb(heap->size())));
+                ImGui::Text("Free blocks: %u", unsigned(heap->free_blocks()));
+                ImGui::Spacing();
+            }
         }
-        ImGui::Unindent();
+
+        if(show_heaps) {
+            ImGui::Unindent();
+        }
     }
 
     usize dedicated = 0;

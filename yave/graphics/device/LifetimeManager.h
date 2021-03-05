@@ -55,37 +55,33 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
         void register_for_polling(CmdBufferData* data);
 
         usize pending_deletions() const;
-        usize pending_fences() const;
         usize pending_cmd_buffers() const;
 
         void poll_cmd_buffers();
+        void wait_cmd_buffers();
 
 #define YAVE_GENERATE_DESTROY(T)                                                    \
         void destroy_later(T&& t) {                                                 \
-            const auto lock = y_profile_unique_lock(_resources_lock);                \
+            const auto lock = y_profile_unique_lock(_resources_lock);               \
             _to_destroy.emplace_back(_create_counter, ManagedResource(y_fwd(t)));   \
         }
 YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
 
     private:
-        void release(core::Span<CmdBufferData*> buffers);
-
         void clear_resources(u64 up_to);
         void destroy_resource(ManagedResource& resource) const;
 
 
         std::deque<std::pair<u64, ManagedResource>> _to_destroy;
-        core::Vector<ResourceFence> _fences;
+        std::deque<CmdBufferData*> _in_flight;
 
         mutable std::mutex _resources_lock;
-        mutable std::mutex _fences_lock;
+        mutable std::recursive_mutex _cmd_lock;
 
         std::atomic<u64> _create_counter = 0;
-        u64 _next = 0; // Guarded by _fences_lock
+        u64 _next = 0; // Guarded by _cmd_lock
 
-        core::Vector<CmdBufferData*> _in_flight;
-        mutable std::mutex _cmd_lock;
 };
 
 }

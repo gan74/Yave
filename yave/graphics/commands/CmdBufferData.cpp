@@ -26,7 +26,13 @@ SOFTWARE.
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/utils.h>
 
-#include <y/utils/log.h>
+#ifdef Y_DEBUG
+#define YAVE_CMD_CHECK_LOCK()                                                           \
+    y_debug_assert(_lock.exchange(true, std::memory_order_acquire) == false);           \
+    y_defer(y_debug_assert(_lock.exchange(false, std::memory_order_acquire) == true))
+#else
+#define YAVE_CMD_CHECK_LOCK()   do {} while(false)
+#endif
 
 namespace yave {
 
@@ -35,9 +41,8 @@ CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p)
 }
 
 CmdBufferData::~CmdBufferData() {
-    if(_pool) {
-        y_debug_assert(vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS);
-    }
+    YAVE_CMD_CHECK_LOCK();
+    y_debug_assert(!_pool || vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS);
 }
 
 DevicePtr CmdBufferData::device() const {
@@ -69,6 +74,7 @@ ResourceFence CmdBufferData::resource_fence() const {
 }
 
 void CmdBufferData::wait() {
+    y_profile();
     if(!is_signaled()) {
         vk_check(vkWaitForFences(vk_device(device()), 1, &_fence, true, u64(-1)));
         set_signaled();
@@ -87,7 +93,9 @@ bool CmdBufferData::poll_and_signal() {
 }
 
 void CmdBufferData::begin() {
+    YAVE_CMD_CHECK_LOCK();
     y_profile();
+
 
     y_debug_assert(is_signaled());
     y_debug_assert(_keep_alive.is_empty());
@@ -100,10 +108,10 @@ void CmdBufferData::begin() {
 }
 
 void CmdBufferData::recycle_resources() {
+    YAVE_CMD_CHECK_LOCK();
     y_profile();
 
     y_debug_assert(is_signaled());
-
     _keep_alive.clear();
 }
 
@@ -112,3 +120,5 @@ void CmdBufferData::set_signaled() {
 }
 
 }
+
+#undef YAVE_CMD_CHECK_LOCK
