@@ -61,10 +61,10 @@ class Window : NonMovable {
         void show();
 
         void set_size(const math::Vec2ui& size);
-        void set_position(const math::Vec2ui& pos);
+        void set_position(const math::Vec2i& pos);
 
         math::Vec2ui size() const;
-        math::Vec2ui position() const;
+        math::Vec2i position() const;
 
 
         void set_title(std::string_view title);
@@ -85,9 +85,9 @@ class Window : NonMovable {
 #ifdef Y_OS_WIN
         friend void notify_resized(Window* win);
 
-        HINSTANCE_ _hinstance;
-        HWND_ _hwnd;
-        bool _run;
+        HINSTANCE_ _hinstance = nullptr;
+        HWND_ _hwnd = nullptr;
+        bool _run = true;
 #endif
 
 

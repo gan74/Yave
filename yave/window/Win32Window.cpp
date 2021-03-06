@@ -189,7 +189,6 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
 
 
 Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) : _event_handler(nullptr) {
-    _run = true;
     _hinstance = GetModuleHandle(nullptr);
 
     WNDCLASSEX win_class = {};
@@ -218,11 +217,14 @@ Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) : 
 
     _hwnd = CreateWindowEx(ex_style, class_name, title.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, nullptr, nullptr, _hinstance, nullptr);
     SetWindowLongPtr(_hwnd, GWLP_USERDATA, LONG_PTR(this));
+
+    y_debug_assert(_hwnd);
 }
 
 Window::~Window() {
     DestroyWindow(_hwnd);
-    UnregisterClass(class_name, _hinstance);
+    // We might need the class later
+    // UnregisterClass(class_name, _hinstance);
 }
 
 void Window::close() {
@@ -251,20 +253,22 @@ void Window::set_size(const math::Vec2ui& size) {
     SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
 }
 
-void Window::set_position(const math::Vec2ui& pos) {
-    //SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
+void Window::set_position(const math::Vec2i& pos) {
+    SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
 }
 
 math::Vec2ui Window::size() const {
-    RECT rect;
-    GetWindowRect(_hwnd, &rect);
+    y_debug_assert(_hwnd);
+    RECT rect = {};
+    y_always_assert(GetWindowRect(_hwnd, &rect), "Unable to query window rect.");
     return math::Vec2ui(u32(std::abs(rect.right - rect.left)), u32(std::abs(rect.bottom - rect.top)));
 }
 
-math::Vec2ui Window::position() const {
-    RECT rect;
+math::Vec2i Window::position() const {
+    y_debug_assert(_hwnd);
+    RECT rect = {};
     GetWindowRect(_hwnd, &rect);
-    return math::Vec2ui(rect.left, rect.top);
+    return math::Vec2i(rect.left, rect.top);
 }
 
 void Window::set_title(std::string_view title) {

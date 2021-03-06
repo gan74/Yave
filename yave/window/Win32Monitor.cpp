@@ -39,9 +39,9 @@ core::Vector<Monitor> Monitor::monitors() {
         }
 
         Monitor monitor;
-        monitor.position        = math::Vec2ui(info.rcMonitor.left, info.rcMonitor.top);
+        monitor.position        = math::Vec2i(info.rcMonitor.left, info.rcMonitor.top);
+        monitor.work_position   = math::Vec2i(info.rcWork.left, info.rcWork.top);
         monitor.size            = math::Vec2ui(info.rcMonitor.right - info.rcMonitor.left, info.rcMonitor.bottom - info.rcMonitor.top);
-        monitor.work_position   = math::Vec2ui(info.rcWork.left, info.rcWork.top);
         monitor.work_size       = math::Vec2ui(info.rcWork.right - info.rcWork.left, info.rcWork.bottom - info.rcWork.top);
         monitor.is_primary      = (info.dwFlags & MONITORINFOF_PRIMARY) != 0;
 
@@ -51,7 +51,7 @@ core::Vector<Monitor> Monitor::monitors() {
     };
 
     core::Vector<Monitor> monitors;
-    EnumDisplayMonitors(nullptr, nullptr, discover_monitor, reinterpret_cast<LPARAM>(&monitors));
+    y_always_assert(EnumDisplayMonitors(nullptr, nullptr, discover_monitor, reinterpret_cast<LPARAM>(&monitors)), "Unable to enum monitors");
 
     return monitors;
 }

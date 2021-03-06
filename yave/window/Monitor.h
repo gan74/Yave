@@ -29,10 +29,10 @@ SOFTWARE.
 namespace yave {
 
 struct Monitor {
-    math::Vec2ui position;
-    math::Vec2ui size;
+    math::Vec2i position;
+    math::Vec2i work_position;
 
-    math::Vec2ui work_position;
+    math::Vec2ui size;
     math::Vec2ui work_size;
 
     bool is_primary = false;
