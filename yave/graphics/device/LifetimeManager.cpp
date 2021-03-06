@@ -69,12 +69,18 @@ ResourceFence LifetimeManager::create_fence() {
 }
 
 void LifetimeManager::register_for_polling(CmdBufferData* data) {
-    const auto lock = y_profile_unique_lock(_cmd_lock);
+    bool collect = false;
 
-    const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), data, compare_cmd_buffers);
-    _in_flight.insert(it, data);
+    {
+        const auto lock = y_profile_unique_lock(_cmd_lock);
 
-    if(_in_flight.front()->resource_fence()._value == _next) {
+        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), data, compare_cmd_buffers);
+        _in_flight.insert(it, data);
+
+        collect = (_in_flight.front()->resource_fence()._value == _next);
+    }
+
+    if(collect) {
         poll_cmd_buffers();
     }
 }
