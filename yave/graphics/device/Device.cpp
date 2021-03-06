@@ -139,9 +139,9 @@ static u32 queue_family_index(VkPhysicalDevice device, VkQueueFlags flags) {
     return queue_family_index(families, flags);
 }
 
-static VkQueue create_queue(DevicePtr dptr, u32 index) {
+static VkQueue create_queue(DevicePtr dptr, u32 family_index, u32 index) {
     VkQueue q = {};
-    vkGetDeviceQueue(vk_device(dptr), index, 0, &q);
+    vkGetDeviceQueue(vk_device(dptr), family_index, index, &q);
     return q;
 }
 
@@ -188,12 +188,13 @@ static VkDevice create_device(
     y_always_assert(physical.support_features(required_features_1_1), "Device doesn't support required features for Vulkan 1.1");
     y_always_assert(physical.support_features(required_features_1_2), "Device doesn't support required features for Vulkan 1.2");
 
-    const float queue_priority = 1.0f;
+    const std::array<float, 2> queue_priorityies = {1.0f, 0.0f};
+
     VkDeviceQueueCreateInfo queue_create_info = vk_struct();
     {
         queue_create_info.queueFamilyIndex = graphic_queue_index;
-        queue_create_info.pQueuePriorities = &queue_priority;
-        queue_create_info.queueCount = 1;
+        queue_create_info.pQueuePriorities = queue_priorityies.data();
+        queue_create_info.queueCount = queue_priorityies.size();
     }
 
     VkPhysicalDeviceFeatures2 features = vk_struct();
@@ -267,8 +268,8 @@ Device::Device(Instance& instance, PhysicalDevice device) :
         _main_queue_index(queue_family_index(_physical.vk_physical_device(), graphic_queue_flags)),
         _device{create_device(_physical, _main_queue_index, _instance.debug_params())},
         _properties(create_properties(_physical)),
-        _graphic_queue(this, _main_queue_index, create_queue(this, _main_queue_index)),
-        _loading_queue(this, _main_queue_index, create_queue(this, _main_queue_index)),
+        _graphic_queue(this, _main_queue_index, create_queue(this, _main_queue_index, 0)),
+        _loading_queue(this, _main_queue_index, create_queue(this, _main_queue_index, 1)),
         _allocator(this),
         _lifetime_manager(this),
         _samplers(create_samplers(this)),
