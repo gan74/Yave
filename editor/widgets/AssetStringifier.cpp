@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+#include <y/serde3/archives.h>
 
 #include <external/imgui/yave_imgui.h>
 

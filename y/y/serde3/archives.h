@@ -919,6 +919,22 @@ class ReadableArchive final {
         std::unique_ptr<File> _storage;
 };
 
+
+namespace detail {
+
+template<typename T>
+Result serialize_one(WritableArchive& arc, const T& t) {
+    return arc.serialize(t);
+}
+
+template<typename T>
+Result deserialize_one(ReadableArchive& arc, T& t) {
+    return arc.deserialize(t);
+}
+
+}
+
+
 }
 }
 

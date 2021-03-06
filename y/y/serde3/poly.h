@@ -41,6 +41,12 @@ using TypeId = u64;
 namespace detail {
 
 template<typename T>
+Result serialize_one(WritableArchive& arc, const T& t);
+template<typename T>
+Result deserialize_one(ReadableArchive& arc, T& t);
+
+
+template<typename T>
 constexpr TypeId poly_type_id() {
     using naked = remove_cvref_t<T>;
     TypeId hash = 0xe50c9771d834a0bb;
@@ -131,11 +137,11 @@ struct PolyType {
     }                                                                                                               \
      y::serde3::Result _y_serde3_poly_serialize(y::serde3::WritableArchive& arc) const override {                   \
         _y_register.used();                                                                                         \
-        return arc.serialize(*this);                                                                                \
+        return y::serde3::detail::serialize_one(arc, *this);                                                             \
     }                                                                                                               \
      y::serde3::Result _y_serde3_poly_deserialize(y::serde3::ReadableArchive& arc) override {                       \
         _y_register.used();                                                                                         \
-        return arc.deserialize(*this);                                                                              \
+        return y::serde3::detail::deserialize_one(arc, *this);                                                           \
     }
 
 }
