@@ -26,8 +26,7 @@ SOFTWARE.
 
 #include "EventHandler.h"
 
-#include <y/core/String.h>
-
+#include <string_view>
 #include <memory>
 
 
@@ -52,7 +51,7 @@ class Window : NonMovable {
         };
 
 
-        Window(const math::Vec2ui& size, std::string_view title, Flags flags = NoFlags);
+        Window(const math::Vec2ui& size, std::string_view title, Flags flags = Resizable);
         virtual ~Window();
 
         void close();

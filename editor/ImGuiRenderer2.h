@@ -19,52 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_RENDERERS_IMGUIRENDERER2_H
+#define EDITOR_RENDERERS_IMGUIRENDERER2_H
 
-#include "MainWindow.h"
+#include <editor/editor.h>
 
-#include <editor/context/EditorContext.h>
-
-#include <yave/graphics/swapchain/Swapchain.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/device/Queue.h>
-
-#include <external/imgui/yave_imgui.h>
+#include <yave/graphics/images/ImageView.h>
+#include <yave/material/MaterialTemplate.h>
 
 namespace editor {
 
-MainWindow::MainWindow(ContextPtr cptr) :
-        Window({1280, 768}, "Yave", Window::Flags(Window::Resizable/* | Window::HideConsole*/)),
-        ContextLinked(cptr) {
-}
+class ImGuiRenderer2 : public DeviceLinked {
 
-MainWindow::~MainWindow() {
-}
+    struct Vertex {
+        const math::Vec2 pos;
+        const math::Vec2 uv;
+        const u32 col;
+    };
 
-Swapchain* MainWindow::swapchain() {
-    return _swapchain.get();
-}
+    public:
+        ImGuiRenderer2(DevicePtr dptr);
 
-void MainWindow::resized() {
-    create_swapchain();
-}
+        void render(RenderPassRecorder& recorder);
 
-void MainWindow::create_swapchain() {
-    y_profile();
-    // needed because the swapchain immediatly destroys it images
-    wait_all_queues(device());
+        const Texture& font_texture() const;
 
-    if(_swapchain) {
-        _swapchain->reset();
-    } else {
-        _swapchain = std::make_unique<Swapchain>(device(), static_cast<Window*>(this));
-    }
-}
+    private:
+        Texture _font;
+        TextureView _font_view;
 
-void MainWindow::present(CmdBufferRecorder&& recorder, const FrameToken& token) {
-    y_profile();
-
-    _swapchain->present(token, std::move(recorder), graphic_queue(device()));
-}
+        MaterialTemplate _material;
+};
 
 }
+
+#endif // EDITOR_RENDERERS_IMGUIRENDERER2_H
 

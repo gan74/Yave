@@ -24,23 +24,42 @@ SOFTWARE.
 #define EDITOR_IMGUIPLATFORM_H
 
 #include <editor/editor.h>
+#include <editor/ImGuiRenderer2.h>
 
+#include <yave/graphics/swapchain/Swapchain.h>
 #include <yave/window/Window.h>
 
+#include <y/core/Chrono.h>
 #include <y/core/Vector.h>
 
 struct ImGuiViewport;
 
 namespace editor {
 
-class ImGuiPlatform {
-    public:
-        ImGuiPlatform();
+class ImGuiPlatform : NonMovable {
+    struct PlatformWindow {
+        PlatformWindow(DevicePtr dptr, const math::Vec2ui& size, std::string_view title);
 
-        Window* create_window(const math::Vec2ui& size, const core::String& name = "Window");
+        std::unique_ptr<Window> window;
+        std::unique_ptr<Swapchain> swapchain;
+    };
+
+    public:
+        ImGuiPlatform(DevicePtr dptr, bool multi_viewport = true);
+
+        DevicePtr device() const;
+
+        void run();
+
+        Window* create_window(const math::Vec2ui& size, std::string_view title = "Window");
 
     private:
-        core::Vector<std::unique_ptr<Window>> _windows;
+        PlatformWindow _main_window;
+        core::Vector<PlatformWindow> _windows;
+
+        std::unique_ptr<ImGuiRenderer2> _renderer;
+
+        core::Chrono _frame_timer;
 };
 
 }

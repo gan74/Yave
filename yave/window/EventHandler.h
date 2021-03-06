@@ -71,7 +71,7 @@ class EventHandler {
 
         virtual void mouse_wheel(i32)                                       {}
 
-        virtual void char_input(u32 character)                              { unused(character); }
+        virtual void char_input(u32)                                        {}
 
         virtual void key_pressed(Key)                                       {}
         virtual void key_released(Key)                                      {}

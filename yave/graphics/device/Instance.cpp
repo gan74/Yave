@@ -65,7 +65,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
         _debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::extension_name()));
     }
 
-    const std::array<VkValidationFeatureEnableEXT, 3> enabled_validations = {
+    const std::array enabled_validations = {
             VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
             VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
             //VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,

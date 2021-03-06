@@ -24,6 +24,7 @@ SOFTWARE.
 #ifdef Y_OS_WIN
 
 #include <windows.h>
+#include <winuser.h>
 
 namespace yave {
 

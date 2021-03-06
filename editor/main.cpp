@@ -113,17 +113,24 @@ int main(int argc, char** argv) {
         log_msg("Unable to setup crash handler.", Log::Warning);
     }
 
-    ImGuiPlatform platform;
 
     Instance instance = create_instance();
-
     Device device = create_device(instance);
+
+
+    ImGuiPlatform platform(&device);
+
+    platform.run();
+
+
+#if 0
     EditorContext ctx = create_context(device);
     context = &ctx;
 
     MainWindow window(&ctx);
     window.set_event_handler(std::make_unique<MainEventHandler>());
     window.show();
+    platform.add_main_window(&window);
 
     for(;;) {
         if(!window.update()) {
@@ -143,7 +150,7 @@ int main(int argc, char** argv) {
 
             ctx.ui_manager().paint(recorder, frame);
 
-            window.present(recorder, frame);
+            window.present(std::move(recorder), frame);
         }
 
         ctx.flush_deferred();
@@ -158,6 +165,7 @@ int main(int argc, char** argv) {
     context = nullptr;
 
     log_msg("Quitting...");
+#endif
 
     return 0;
 }

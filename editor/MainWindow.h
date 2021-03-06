@@ -36,7 +36,7 @@ class MainWindow : public Window, public ContextLinked {
 
         Swapchain* swapchain();
 
-        void present(CmdBufferRecorder& recorder, const FrameToken& token);
+        void present(CmdBufferRecorder&& recorder, const FrameToken& token);
 
     private:
         void resized() override;

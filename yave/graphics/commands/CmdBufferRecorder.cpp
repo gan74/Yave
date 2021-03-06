@@ -414,7 +414,7 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
     YAVE_VK_CMD;
 
     {
-        const std::array<ImageBarrier, 2> image_barriers = {
+        const std::array image_barriers = {
                 ImageBarrier::transition_to_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
                 ImageBarrier::transition_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL),
             };
@@ -440,7 +440,7 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
     }
 
     {
-        const std::array<ImageBarrier, 2> image_barriers = {
+        const std::array image_barriers = {
                 ImageBarrier::transition_from_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
                 ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
             };

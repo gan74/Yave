@@ -188,7 +188,7 @@ static VkDevice create_device(
     y_always_assert(physical.support_features(required_features_1_1), "Device doesn't support required features for Vulkan 1.1");
     y_always_assert(physical.support_features(required_features_1_2), "Device doesn't support required features for Vulkan 1.2");
 
-    const std::array<float, 2> queue_priorityies = {1.0f, 0.0f};
+    const std::array queue_priorityies = {1.0f, 0.0f};
 
     VkDeviceQueueCreateInfo queue_create_info = vk_struct();
     {

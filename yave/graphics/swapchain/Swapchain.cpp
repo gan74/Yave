@@ -303,7 +303,7 @@ FrameToken Swapchain::next_frame() {
         };
 }
 
-void Swapchain::present(const FrameToken& token, CmdBufferRecorder& recorder, const Queue& queue) {
+void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, const Queue& queue) {
     y_profile();
 
     const CmdBuffer cmd_buffer = std::move(recorder).finish();

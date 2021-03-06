@@ -212,7 +212,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         vk_check(vkCreatePipelineLayout(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &pipeline_layout));
     }
 
-    const std::array<VkDynamicState, 2> dynamics = {{VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR}};
+    const std::array dynamics = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamic_states = vk_struct();
     {
         dynamic_states.dynamicStateCount = dynamics.size();
