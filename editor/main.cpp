@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "MainWindow.h"
+#include "ImGuiPlatform.h"
 
 #include <editor/utils/crashhandler.h>
 #include <editor/events/MainEventHandler.h>
@@ -112,8 +113,9 @@ int main(int argc, char** argv) {
         log_msg("Unable to setup crash handler.", Log::Warning);
     }
 
-    Instance instance = create_instance();
+    ImGuiPlatform platform;
 
+    Instance instance = create_instance();
 
     Device device = create_device(instance);
     EditorContext ctx = create_context(device);

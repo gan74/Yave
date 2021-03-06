@@ -22,8 +22,9 @@ SOFTWARE.
 
 #include "Swapchain.h"
 
-#include <yave/graphics/device/Device.h>
 #include <yave/window/Window.h>
+
+#include <yave/graphics/device/Device.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 #include <yave/graphics/barriers/Barrier.h>
@@ -35,15 +36,12 @@ SOFTWARE.
 namespace yave {
 
 static VkSurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, VkSurfaceKHR surface) {
-    y_profile();
     VkSurfaceCapabilitiesKHR capabilities = {};
     vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dptr->vk_physical_device(), surface, &capabilities));
     return capabilities;
 }
 
 static VkSurfaceFormatKHR surface_format(DevicePtr dptr, VkSurfaceKHR surface) {
-    y_profile();
-
     Y_TODO(Find best format instead of always returning first)
     u32 format_count = 1;
     VkSurfaceFormatKHR format = {};
@@ -138,14 +136,6 @@ static VkSurfaceKHR create_surface(DevicePtr dptr, Window* window) {
     return vk_null();
 }
 
-
-
-
-
-#ifdef Y_OS_WIN
-Swapchain::Swapchain(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle) : Swapchain(dptr, create_surface(dptr, instance, handle)) {
-}
-#endif
 
 Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_surface(dptr, window)) {
 }

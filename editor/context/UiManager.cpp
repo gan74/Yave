@@ -37,8 +37,6 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/swapchain/FrameToken.h>
 
-#include <y/io2/File.h>
-
 #ifdef Y_OS_WIN
 #include <windows.h>
 #endif
@@ -59,16 +57,6 @@ SOFTWARE.
 namespace editor {
 
 UiManager::UiManager(ContextPtr ctx) : ContextLinked(ctx) {
-    ImGui::CreateContext();
-    ImGui::GetIO().IniFilename = "editor.ini";
-    ImGui::GetIO().LogFilename = "editor_logs.txt";
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    ImGui::GetIO().ConfigDockingWithShift = false;
-    //ImGui::GetIO().ConfigResizeWindowsFromEdges = true;
-
-    if(io2::File::open("../editor.ini").is_ok()) {
-        ImGui::GetIO().IniFilename = "../editor.ini";
-    }
 
     show<EngineView>();
     show<EntityView>();

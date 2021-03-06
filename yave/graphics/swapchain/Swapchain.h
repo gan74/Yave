@@ -26,12 +26,10 @@ SOFTWARE.
 
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/device/DeviceLinked.h>
-#include <yave/window/Window.h>
 
 #include "FrameToken.h"
 
 #include <y/core/Vector.h>
-
 
 namespace yave {
 
@@ -63,10 +61,6 @@ class Swapchain : NonMovable, public DeviceLinked {
     };
 
     public:
-#ifdef Y_OS_WIN
-        Swapchain(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle);
-#endif
-
         Swapchain(DevicePtr dptr, VkSurfaceKHR surface);
         Swapchain(DevicePtr dptr, Window* window);
         ~Swapchain();
