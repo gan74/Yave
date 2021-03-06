@@ -100,7 +100,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
         builder.add_color_output(output_image);
         builder.add_uniform_input(buffer);
-        builder.add_uniform_input(renderer.color, 0, PipelineStage::FragmentBit);
+        builder.add_uniform_input(renderer.final, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);

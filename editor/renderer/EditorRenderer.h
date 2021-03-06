@@ -40,7 +40,7 @@ struct EditorRenderer {
     DefaultRenderer renderer;
 
     FrameGraphImageId id;
-    FrameGraphImageId color;
+    FrameGraphImageId final;
     FrameGraphImageId depth;
 
     static EditorRenderer create(ContextPtr ctx,

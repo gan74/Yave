@@ -45,7 +45,7 @@ struct DefaultRenderer {
     SSAOPass ssao;
     BloomPass bloom;
 
-    FrameGraphImageId color;
+    FrameGraphImageId final;
     FrameGraphImageId depth;
 
     static DefaultRenderer create(FrameGraph& framegraph,
