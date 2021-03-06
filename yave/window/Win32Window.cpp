@@ -191,29 +191,32 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
 Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) : _event_handler(nullptr) {
     _run = true;
     _hinstance = GetModuleHandle(nullptr);
-    WNDCLASSEX wc = {};
-    wc.cbSize        = sizeof(WNDCLASSEX);
-    wc.style         = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc   = windows_event_handler;
-    wc.hInstance     = _hinstance;
-    wc.hIcon         = LoadIcon(nullptr, IDI_APPLICATION);
-    wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);
-    wc.hbrBackground = HBRUSH(COLOR_WINDOW + 1);
-    wc.lpszClassName = class_name;
-    wc.hIconSm       = LoadIcon(nullptr, IDI_APPLICATION);
-    RegisterClassEx(&wc);
 
-    DWORD ex_style = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-    DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+    WNDCLASSEX win_class = {};
+    win_class.cbSize            = sizeof(WNDCLASSEX);
+    win_class.style             = CS_HREDRAW | CS_VREDRAW;
+    win_class.lpfnWndProc       = windows_event_handler;
+    win_class.hInstance         = _hinstance;
+    win_class.hIcon             = LoadIcon(nullptr, IDI_APPLICATION);
+    win_class.hCursor           = LoadCursor(nullptr, IDC_ARROW);
+    win_class.hbrBackground     = HBRUSH(COLOR_WINDOW + 1);
+    win_class.lpszClassName     = class_name;
+    win_class.hIconSm           = LoadIcon(nullptr, IDI_APPLICATION);
+    RegisterClassEx(&win_class);
+
+    DWORD ex_style = WS_EX_APPWINDOW;
+    DWORD style = (flags & NoDecoration)
+        ? WS_POPUP
+        : WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 
     if(flags & Resizable) {
         style |= WS_SIZEBOX | WS_MAXIMIZEBOX;
     }
 
-    RECT wr = {0, 0, LONG(size.x()), LONG(size.y())};
-    AdjustWindowRectEx(&wr, style, FALSE, ex_style);
+    RECT rect = {0, 0, LONG(size.x()), LONG(size.y())};
+    AdjustWindowRectEx(&rect, style, false, ex_style);
 
-    _hwnd = CreateWindowEx(0, class_name, title.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top, nullptr, nullptr, _hinstance, nullptr);
+    _hwnd = CreateWindowEx(ex_style, class_name, title.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, nullptr, nullptr, _hinstance, nullptr);
     SetWindowLongPtr(_hwnd, GWLP_USERDATA, LONG_PTR(this));
 }
 
@@ -245,11 +248,11 @@ void Window::show() {
 }
 
 void Window::set_size(const math::Vec2ui& size) {
-    SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+    SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
 }
 
 void Window::set_position(const math::Vec2ui& pos) {
-    SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+    //SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
 }
 
 math::Vec2ui Window::size() const {
@@ -263,7 +266,6 @@ math::Vec2ui Window::position() const {
     GetWindowRect(_hwnd, &rect);
     return math::Vec2ui(rect.left, rect.top);
 }
-
 
 void Window::set_title(std::string_view title) {
     SetWindowTextA(_hwnd, title.data());

@@ -47,7 +47,8 @@ class Window : NonMovable {
     public:
         enum Flags {
             NoFlags = 0,
-            Resizable = 0x01
+            Resizable = 0x01,
+            NoDecoration = 0x02,
         };
 
 
