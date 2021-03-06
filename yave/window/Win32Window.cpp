@@ -22,12 +22,10 @@ SOFTWARE.
 #include "Window.h"
 
 #ifdef Y_OS_WIN
+
 #include <windows.h>
-#endif
 
 namespace yave {
-
-#ifdef Y_OS_WIN
 
 static const char class_name[] = "Yave";
 
@@ -84,9 +82,8 @@ static Key to_key(WPARAM w_param, LPARAM l_param) {
     return Key::Unknown;
 }
 
-void set_window_size(Window* win, const math::Vec2ui& size)  {
-    win->_size = size;
-    win->resized();
+void notify_resized(Window* window) {
+    window->resized();
 }
 
 static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param) {
@@ -99,7 +96,7 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
                 return 0;
 
             case WM_SIZE:
-                set_window_size(window, lvec);
+                notify_resized(window);
                 return 0;
 
             case WM_SYSKEYDOWN:
@@ -189,12 +186,8 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
     return DefWindowProc(hwnd, u_msg, w_param, l_param);
 }
 
-#endif
 
-
-
-Window::Window(const math::Vec2ui& size, const core::String& name, Flags flags) : _size(size), _name(name), _event_handler(nullptr) {
-#ifdef Y_OS_WIN
+Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) : _event_handler(nullptr) {
     _run = true;
     _hinstance = GetModuleHandle(nullptr);
     WNDCLASSEX wc = {};
@@ -219,26 +212,20 @@ Window::Window(const math::Vec2ui& size, const core::String& name, Flags flags) 
     RECT wr = {0, 0, LONG(size.x()), LONG(size.y())};
     AdjustWindowRectEx(&wr, style, FALSE, ex_style);
 
-    _hwnd = CreateWindowEx(0, class_name, name.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top, nullptr, nullptr, _hinstance, nullptr);
+    _hwnd = CreateWindowEx(0, class_name, title.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top, nullptr, nullptr, _hinstance, nullptr);
     SetWindowLongPtr(_hwnd, GWLP_USERDATA, LONG_PTR(this));
-#endif
 }
 
 Window::~Window() {
-#ifdef Y_OS_WIN
     DestroyWindow(_hwnd);
     UnregisterClass(class_name, _hinstance);
-#endif
 }
 
 void Window::close() {
-#ifdef Y_OS_WIN
     _run = false;
-#endif
 }
 
 bool Window::update() {
-#ifdef Y_OS_WIN
     y_profile();
     MSG msg;
     while(PeekMessage(&msg, _hwnd, 0, 0, PM_REMOVE)) {
@@ -246,38 +233,41 @@ bool Window::update() {
         DispatchMessage(&msg);
     }
     return _run;
-#endif
 }
 
 void Window::show() {
-#ifdef Y_OS_WIN
     y_profile();
     _run = true;
     ShowWindow(_hwnd, SW_SHOW);
     SetForegroundWindow(_hwnd);
     SetFocus(_hwnd);
-#endif
 }
 
-const math::Vec2ui& Window::size() const {
-    return _size;
+void Window::set_size(const math::Vec2ui& size) {
+    SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+}
+
+void Window::set_position(const math::Vec2ui& pos) {
+    SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+}
+
+math::Vec2ui Window::size() const {
+    RECT rect;
+    GetWindowRect(_hwnd, &rect);
+    return math::Vec2ui(u32(std::abs(rect.right - rect.left)), u32(std::abs(rect.bottom - rect.top)));
 }
 
 math::Vec2ui Window::position() const {
-#ifdef Y_OS_WIN
     RECT rect;
     GetWindowRect(_hwnd, &rect);
-    return math::Vec2ui(rect.left, 0);
+    return math::Vec2ui(rect.left, rect.top);
+}
+
+
+void Window::set_title(std::string_view title) {
+    SetWindowTextA(_hwnd, title.data());
+}
+
+}
+
 #endif
-}
-
-void Window::set_event_handler(std::unique_ptr<EventHandler> handler) {
-    _event_handler = std::move(handler);
-}
-
-EventHandler* Window::event_handler() const {
-    return _event_handler.get();
-}
-
-}
-
