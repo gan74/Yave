@@ -34,52 +34,7 @@ SOFTWARE.
 
 namespace editor {
 
-static ImGuiPlatform* get_platform(ImGuiViewport* vp) {
-    y_debug_assert(vp->PlatformUserData);
-    return static_cast<ImGuiPlatform*>(vp->PlatformUserData);
-}
-
-static Window* get_window(ImGuiViewport* vp) {
-    y_debug_assert(vp->PlatformHandle);
-    return static_cast<Window*>(vp->PlatformHandle);
-}
-
-static void create_window_callback(ImGuiViewport* vp) {
-    vp->PlatformHandle = get_platform(vp)->create_window(vp->Size);
-}
-
-static void close_window_callback(ImGuiViewport* vp) {
-    get_window(vp)->close();
-}
-
-static void show_window_callback(ImGuiViewport* vp) {
-    get_window(vp)->show();
-}
-
-static void set_window_pos_callback(ImGuiViewport* vp, ImVec2 pos) {
-    get_window(vp)->set_position(pos);
-}
-
-static void set_window_size_callback(ImGuiViewport* vp, ImVec2 size) {
-    get_window(vp)->set_size(size);
-}
-
-static ImVec2 get_window_pos_callback(ImGuiViewport* vp) {
-    return get_window(vp)->position();
-}
-
-static ImVec2 get_window_size_callback(ImGuiViewport* vp) {
-    return get_window(vp)->size();
-}
-
-
-
-static void window_set_title_callback(ImGuiViewport* vp, const char* title) {
-    get_window(vp)->set_title(title);
-}
-
-
-struct ImGuiEventHandler : EventHandler{
+struct ImGuiEventHandler : EventHandler {
     void mouse_moved(const math::Vec2i& pos) override {
         ImGui::GetIO().MousePos = ImVec2(pos.x(), pos.y());
     }
@@ -141,23 +96,7 @@ struct ImGuiEventHandler : EventHandler{
 };
 
 
-
-
-
-
-
-
-ImGuiPlatform::PlatformWindow::PlatformWindow(DevicePtr dptr, const math::Vec2ui& size, std::string_view title) :
-        window(std::make_unique<Window>(size, title)),
-        swapchain(std::make_unique<Swapchain>(dptr, window.get())) {
-
-    window->set_event_handler(std::make_unique<ImGuiEventHandler>());
-    window->show();
-}
-
-
-static void set_key_bindings() {
-    ImGuiIO& io = ImGui::GetIO();
+static void setup_key_bindings(ImGuiIO& io) {
     io.KeyMap[ImGuiKey_Tab]         = int(Key::Tab);
     io.KeyMap[ImGuiKey_LeftArrow]   = int(Key::Left);
     io.KeyMap[ImGuiKey_RightArrow]  = int(Key::Right);
@@ -180,65 +119,119 @@ static void set_key_bindings() {
     io.KeyMap[ImGuiKey_Z]           = io.KeyMap[ImGuiKey_A] + 5;
 }
 
+static void setup_config_files(ImGuiIO& io) {
+    io.IniFilename = "editor.ini";
+    io.LogFilename = "editor_logs.txt";
+    if(io2::File::open("../editor.ini").is_ok()) {
+        io.IniFilename = "../editor.ini";
+    }
+}
+
+static void setup_backend_flags(ImGuiIO& io, bool multi_viewport) {
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigDockingWithShift = false;
+
+    io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports | ImGuiBackendFlags_RendererHasViewports;
+    if(multi_viewport) {
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    }
+}
+
+static void discover_monitors(ImGuiPlatformIO& platform) {
+    platform.Monitors.clear();
+
+    auto monitors = Monitor::monitors();
+    std::sort(monitors.begin(), monitors.end(), [](const Monitor& a, const Monitor& b) { return b.is_primary < a.is_primary; });
+    std::transform(monitors.begin(), monitors.end(), std::back_inserter(platform.Monitors), [](const Monitor& monitor) {
+        ImGuiPlatformMonitor imgui_mon;
+        imgui_mon.MainPos = monitor.position;
+        imgui_mon.MainSize = monitor.size;
+        imgui_mon.MainPos = monitor.position;
+        imgui_mon.MainSize = monitor.size;
+        return imgui_mon;
+    });
+}
 
 
-ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) : _main_window(dptr, {1280, 768}, "Yave") {
 
-    ImGui::CreateContext();
-    set_key_bindings();
+ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent) :
+        platform(parent),
+        window({1280, 768}, "Window", Window::NoDecoration),
+        swapchain(platform->device(), &window) {
 
-    {
-        auto& io = ImGui::GetIO();
+    window.set_event_handler(std::make_unique<ImGuiEventHandler>());
+    window.show();
+}
 
-        io.IniFilename = "editor.ini";
-        io.LogFilename = "editor_logs.txt";
-        if(io2::File::open("../editor.ini").is_ok()) {
-            io.IniFilename = "../editor.ini";
-        }
+void ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
+    DevicePtr dptr = platform->device();
 
-        io.ConfigDockingWithShift = false;
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        if(multi_viewport) {
-            io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-        }
-
-        y_always_assert(io.BackendPlatformUserData == nullptr, "ImGui already has a platform backend.");
-        io.BackendPlatformUserData = this;
+    window.update();
+    if(swapchain.size() != window.size()) {
+        wait_all_queues(dptr);
+        swapchain.reset();
     }
 
+    if(swapchain.is_valid()) {
+        const FrameToken token = swapchain.next_frame();
+        CmdBufferRecorder recorder = create_disposable_cmd_buffer(dptr);
+
+        {
+            Framebuffer framebuffer(token.image_view.device(), {token.image_view});
+            RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
+            platform->_renderer->render(viewport->DrawData, pass);
+        }
+
+        swapchain.present(token, std::move(recorder), graphic_queue(dptr));
+    }
+}
+
+
+ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
+    ImGui::CreateContext();
+
+    auto& io = ImGui::GetIO();
+
+    y_always_assert(io.BackendPlatformUserData == nullptr, "ImGui already has a platform backend.");
+    io.BackendPlatformUserData = this;
+
+    setup_key_bindings(io);
+    setup_config_files(io);
+    setup_backend_flags(io, multi_viewport);
 
     if(multi_viewport) {
         auto& platform = ImGui::GetPlatformIO();
-        platform.Platform_CreateWindow      = create_window_callback;
-        platform.Platform_DestroyWindow     = close_window_callback;
-        platform.Platform_ShowWindow        = show_window_callback;
-        platform.Platform_SetWindowPos      = set_window_pos_callback;
-        platform.Platform_SetWindowSize     = set_window_size_callback;
-        platform.Platform_GetWindowPos      = get_window_pos_callback;
-        platform.Platform_GetWindowSize     = get_window_size_callback;
 
-        platform.Platform_SetWindowTitle    = window_set_title_callback;
+        Y_TODO(do every frame)
+        discover_monitors(platform);
 
-        platform.Platform_SetWindowFocus = [](ImGuiViewport*) {};
-        platform.Platform_GetWindowFocus = [](ImGuiViewport*) { return false; };
-        platform.Platform_GetWindowMinimized = [](ImGuiViewport*) { return false; };
+        platform.Platform_CreateWindow      = [](ImGuiViewport* vp) {
+            ImGuiPlatform* self = ImGuiPlatform::get_platform();
+            vp->PlatformHandle = self->_windows.emplace_back(std::make_unique<PlatformWindow>(self)).get();
+        };
 
-        platform.Monitors.clear();
+        platform.Platform_DestroyWindow         = [](ImGuiViewport* vp) { get_window(vp)->close(); };
+        platform.Platform_ShowWindow            = [](ImGuiViewport* vp) { get_window(vp)->show(); };
+        platform.Platform_SetWindowPos          = [](ImGuiViewport* vp, ImVec2 pos) { get_window(vp)->set_position(pos); };
+        platform.Platform_SetWindowSize         = [](ImGuiViewport* vp, ImVec2 size) { get_window(vp)->set_size(size); };
+        platform.Platform_GetWindowPos          = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->position()); };
+        platform.Platform_GetWindowSize         = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->size()); };
 
-        auto monitors = Monitor::monitors();
-        std::sort(monitors.begin(), monitors.end(), [](const Monitor& a, const Monitor& b) { return b.is_primary < a.is_primary; });
-        std::transform(monitors.begin(), monitors.end(), std::back_inserter(platform.Monitors), [](const Monitor& monitor) {
-            ImGuiPlatformMonitor imgui_mon;
-            imgui_mon.MainPos = monitor.position;
-            imgui_mon.MainSize = monitor.size;
-            imgui_mon.MainPos = monitor.position;
-            imgui_mon.MainSize = monitor.size;
-            return imgui_mon;
-        });
+        platform.Platform_SetWindowTitle        = [](ImGuiViewport* vp, const char* title) { get_window(vp)->set_title(title); };
+
+        platform.Platform_SetWindowFocus        = [](ImGuiViewport*) {};
+        platform.Platform_GetWindowFocus        = [](ImGuiViewport*) { return false; };
+        platform.Platform_GetWindowMinimized    = [](ImGuiViewport*) { return false; };
+
+        platform.Renderer_RenderWindow          = [](ImGuiViewport* vp, void*) { get_platform_window(vp)->render(vp); };
+
     }
 
-
     _renderer = std::make_unique<ImGuiRenderer2>(dptr);
+    _main_window = std::make_unique<PlatformWindow>(this);
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    viewport->PlatformHandle = &_main_window;
 }
 
 DevicePtr ImGuiPlatform::device() const {
@@ -246,11 +239,29 @@ DevicePtr ImGuiPlatform::device() const {
 }
 
 void ImGuiPlatform::run() {
-    while(_main_window.window->update()) {
-        Swapchain* swapchain = _main_window.swapchain.get();
+    /*while(true) {
+        ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
+        ImGui::GetIO().DisplaySize =ImGui::GetMainViewport()->Size;
 
-        if(swapchain && swapchain->is_valid()) {
-            const FrameToken frame = swapchain->next_frame();
+        ImGui::NewFrame();
+
+        ImGui::ShowDemoWindow();
+        ImGui::ShowMetricsWindow();
+
+        ImGui::Render();
+
+
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+
+
+    }*/
+
+    while(_main_window->window.update()) {
+        Swapchain& swapchain = _main_window->swapchain;
+
+        if(swapchain.is_valid()) {
+            const FrameToken frame = swapchain.next_frame();
             CmdBufferRecorder recorder = create_disposable_cmd_buffer(device());
 
             ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
@@ -259,27 +270,36 @@ void ImGuiPlatform::run() {
             ImGui::NewFrame();
 
             ImGui::ShowDemoWindow();
-            ImGui::ShowMetricsWindow();
+            //ImGui::ShowMetricsWindow();
 
             ImGui::Render();
 
             {
                 Framebuffer framebuffer(frame.image_view.device(), {frame.image_view});
                 RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
-                _renderer->render(pass);
+                _renderer->render(ImGui::GetDrawData(), pass);
             }
 
-            // ImGui::UpdatePlatformWindows();
-            // ImGui::RenderPlatformWindowsDefault();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
 
-            swapchain->present(frame, std::move(recorder), graphic_queue(device()));
+            swapchain.present(frame, std::move(recorder), graphic_queue(device()));
         }
     }
-
 }
 
-Window* ImGuiPlatform::create_window(const math::Vec2ui& size, std::string_view title) {
-    return _windows.emplace_back(device(), size, title).window.get();
+
+ImGuiPlatform* ImGuiPlatform::get_platform() {
+    return static_cast<ImGuiPlatform*>(ImGui::GetIO().BackendPlatformUserData);
+}
+
+Window* ImGuiPlatform::get_window(ImGuiViewport* vp) {
+    return &get_platform_window(vp)->window;
+}
+
+ImGuiPlatform::PlatformWindow* ImGuiPlatform::get_platform_window(ImGuiViewport* vp) {
+    y_debug_assert(vp->PlatformHandle);
+    return static_cast<PlatformWindow*>(vp->PlatformHandle);
 }
 
 }

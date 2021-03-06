@@ -77,23 +77,24 @@ const Texture& ImGuiRenderer2::font_texture() const {
     return _font;
 }
 
-void ImGuiRenderer2::render(RenderPassRecorder& recorder) {
+void ImGuiRenderer2::render(ImDrawData* draw_data, RenderPassRecorder& recorder) {
     static_assert(sizeof(ImDrawVert) == sizeof(Vertex), "ImDrawVert is not of expected size");
     static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
 
     y_profile();
 
-    const auto region = recorder.region("ImGui render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
-
-    ImDrawData* draw_data = ImGui::GetDrawData();
-
     if(!draw_data) {
         return;
     }
 
+    const auto region = recorder.region("ImGui render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+
     const auto next_power_of_2 = [](usize size) { return 2 << log2ui(size); };
-    const usize imgui_index_buffer_size = next_power_of_2(ImGui::GetIO().MetricsRenderIndices);
-    const usize imgui_vertex_buffer_size = next_power_of_2(ImGui::GetIO().MetricsRenderVertices);
+    const usize imgui_index_buffer_size = next_power_of_2(draw_data->TotalIdxCount);
+    const usize imgui_vertex_buffer_size = next_power_of_2(draw_data->TotalVtxCount);
+    const math::Vec2 viewport_size = recorder.viewport().extent;
+
+
     const TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> index_buffer(device(), imgui_index_buffer_size);
     const TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(device(), imgui_vertex_buffer_size);
     const TypedUniformBuffer<math::Vec2> uniform_buffer(device(), 1);
@@ -102,7 +103,7 @@ void ImGuiRenderer2::render(RenderPassRecorder& recorder) {
     auto vertices = TypedMapping(vertex_buffer);
 
     auto uniform = TypedMapping(uniform_buffer);
-    uniform[0] = math::Vec2(ImGui::GetIO().DisplaySize);
+    uniform[0] = viewport_size;
 
 
     const auto create_descriptor_set = [&](const void* data) {
@@ -122,6 +123,8 @@ void ImGuiRenderer2::render(RenderPassRecorder& recorder) {
 
     recorder.bind_buffers(index_buffer, {vertex_buffer});
     for(auto c = 0; c != draw_data->CmdListsCount; ++c) {
+        Y_TODO(Use vertex offsets so we can enable ImGuiBackendFlags_RendererHasVtxOffset)
+
         const ImDrawList* cmd_list = draw_data->CmdLists[c];
 
         if(cmd_list->IdxBuffer.Size + index_offset >= index_buffer.size()) {

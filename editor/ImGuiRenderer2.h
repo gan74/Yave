@@ -27,6 +27,8 @@ SOFTWARE.
 #include <yave/graphics/images/ImageView.h>
 #include <yave/material/MaterialTemplate.h>
 
+struct ImDrawData;
+
 namespace editor {
 
 class ImGuiRenderer2 : public DeviceLinked {
@@ -40,7 +42,7 @@ class ImGuiRenderer2 : public DeviceLinked {
     public:
         ImGuiRenderer2(DevicePtr dptr);
 
-        void render(RenderPassRecorder& recorder);
+        void render(ImDrawData* draw_data, RenderPassRecorder& recorder);
 
         const Texture& font_texture() const;
 

@@ -37,11 +37,15 @@ struct ImGuiViewport;
 namespace editor {
 
 class ImGuiPlatform : NonMovable {
-    struct PlatformWindow {
-        PlatformWindow(DevicePtr dptr, const math::Vec2ui& size, std::string_view title);
 
-        std::unique_ptr<Window> window;
-        std::unique_ptr<Swapchain> swapchain;
+    struct PlatformWindow : NonMovable {
+        PlatformWindow(ImGuiPlatform* parent);
+
+        void render(ImGuiViewport* viewport);
+
+        ImGuiPlatform* platform = nullptr;
+        Window window;
+        Swapchain swapchain;
     };
 
     public:
@@ -51,11 +55,16 @@ class ImGuiPlatform : NonMovable {
 
         void run();
 
-        Window* create_window(const math::Vec2ui& size, std::string_view title = "Window");
+    private:
+        static ImGuiPlatform* get_platform();
+        static Window* get_window(ImGuiViewport* vp);
+        static PlatformWindow* get_platform_window(ImGuiViewport* vp);
+
+        friend class PlatformWindow;
 
     private:
-        PlatformWindow _main_window;
-        core::Vector<PlatformWindow> _windows;
+        std::unique_ptr<PlatformWindow> _main_window;
+        core::Vector<std::unique_ptr<PlatformWindow>> _windows;
 
         std::unique_ptr<ImGuiRenderer2> _renderer;
 
