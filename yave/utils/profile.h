@@ -60,7 +60,15 @@ SOFTWARE.
 
 
 
-#define y_profile_frame_end() do { ___tracy_emit_frame_mark(nullptr); } while(false)
+#define y_profile_frame_end()       do { ___tracy_emit_frame_mark(nullptr); } while(false)
+
+
+
+#define y_profile_msg(msg)          do { const char* _y_msg = (msg); TracyCMessage(_y_msg, strlen(_y_msg)); } while(false)
+
+
+
+#define y_profile_plot(name, val)   do { static constexpr const char* _y_plot = (name); TracyCPlot(_y_plot, (val)); } while(false)
 
 
 
@@ -99,9 +107,16 @@ SOFTWARE.
         return l;                                                       \
     }()
 
+
+
+
 #else
 
 #define y_profile_frame_end()               do {} while(false)
+
+#define y_profile_msg(msg)                  do {} while(false)
+
+#define y_profile_plot(name, val)           do {} while(false)
 
 #define y_profile()                         do {} while(false)
 #define y_profile_zone(name)                do {} while(false)
@@ -111,9 +126,10 @@ SOFTWARE.
 #define y_profile_zone_arg(name, arg)       do {} while(false)
 #define y_profile_dyn_zone_arg(name, arg)   do {} while(false)
 
+
 #define y_profile_unique_lock(lock)         std::unique_lock(lock)
 
-#endif
+#endif // YAVE_PROFILING
 
 #endif // YAVE_PROFILING
 

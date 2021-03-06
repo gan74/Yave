@@ -56,6 +56,10 @@ const Queue& graphic_queue(DevicePtr dptr) {
     return dptr->graphic_queue();
 }
 
+const Queue& loading_queue(DevicePtr dptr) {
+    return dptr->loading_queue();
+}
+
 const DeviceResources& device_resources(DevicePtr dptr) {
     return dptr->device_resources();
 }

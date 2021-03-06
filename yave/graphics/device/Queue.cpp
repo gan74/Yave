@@ -58,6 +58,8 @@ void Queue::wait() const {
 void Queue::submit(CmdBufferRecorder& rec) const {
     y_profile();
 
+    y_debug_assert(vkGetFenceStatus(vk_device(device()), rec.vk_fence()) == VK_NOT_READY);
+
     const VkCommandBuffer cmd = rec.vk_cmd_buffer();
 
     {
@@ -71,8 +73,6 @@ void Queue::submit(CmdBufferRecorder& rec) const {
 
         vk_check(vkQueueSubmit(_queue, 1, &submit_info, rec.vk_fence()));
     }
-
-    rec.make_submitted();
 }
 
 }

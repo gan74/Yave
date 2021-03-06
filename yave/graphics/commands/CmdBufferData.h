@@ -63,7 +63,6 @@ class ResourceFence {
             return _value >= other._value;
         }
 
-
     private:
         friend class LifetimeManager;
 
@@ -76,32 +75,18 @@ class ResourceFence {
 
 
 class CmdBufferData final : NonMovable {
-
     struct KeepAlive : NonCopyable {
         virtual ~KeepAlive() {}
     };
 
     public:
-        enum class State : u8 {
-            Reset,
-            Submitted,
-            Signaled,
-            Recycled,
-        };
-
-
         CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p);
         ~CmdBufferData();
 
         DevicePtr device() const;
         bool is_null() const;
 
-        State state() const;
-
-        bool is_recycled() const;
         bool is_signaled() const;
-        bool is_submitted() const;
-        bool is_reset() const;
 
         CmdBufferPool* pool() const;
         ResourceFence resource_fence() const;
@@ -110,8 +95,7 @@ class CmdBufferData final : NonMovable {
         VkFence vk_fence() const;
 
         void wait();
-        bool poll_fence();
-
+        bool poll_and_signal();
 
         template<typename T>
         void keep_alive(T&& t) {
@@ -125,14 +109,12 @@ class CmdBufferData final : NonMovable {
 
     private:
         friend class CmdBufferPool;
-        friend class CmdBuffer;
 
-        void reset();
-        void recycle_resources();
+        void set_signaled();
 
-        bool set_recycled();
-        bool set_signaled();
-        bool set_submitted();
+        void begin();
+        void recycle_resources(); // This can not be called while pool's _pending_lock is locked
+
 
         // These are owned by the command pool
         VkCommandBuffer _cmd_buffer;
@@ -140,9 +122,15 @@ class CmdBufferData final : NonMovable {
 
         core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
         CmdBufferPool* _pool = nullptr;
-        std::atomic<State> _state = State::Reset;
 
         ResourceFence _resource_fence;
+
+        std::atomic<bool> _signaled = false;
+
+#ifdef Y_DEBUG
+        std::atomic<bool> _lock = false;
+#endif
+
 };
 
 }

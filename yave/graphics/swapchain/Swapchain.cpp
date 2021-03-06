@@ -266,11 +266,7 @@ void Swapchain::build_swapchain() {
 }
 
 void Swapchain::build_semaphores() {
-    VkFenceCreateInfo fence_create_info = vk_struct();
-    {
-        fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    }
-
+    const VkFenceCreateInfo fence_create_info = vk_struct();
     const VkSemaphoreCreateInfo semaphore_create_info = vk_struct();
 
     for(usize i = 0; i != _images.size(); ++i) {
@@ -284,10 +280,6 @@ void Swapchain::build_semaphores() {
 }
 
 void Swapchain::destroy_semaphores() {
-    for(const auto& semaphores : _semaphores) {
-        vk_check(vkWaitForFences(device()->vk_device(), 1, &semaphores.fence, true, u64(-1)));
-    }
-
     for(const auto& semaphores : _semaphores) {
         destroy(semaphores.render_complete);
         destroy(semaphores.image_aquired);
@@ -304,11 +296,14 @@ FrameToken Swapchain::next_frame() {
     const usize semaphore_index = _frame_id % image_count();
     const Semaphores& frame_semaphores = _semaphores[semaphore_index];
 
-    //vk_check(vkWaitForFences(device()->vk_device(), 1, &frame_semaphores.fence, true, u64(-1)));
-    //vk_check(vkResetFences(device()->vk_device(), 1, &frame_semaphores.fence));
-
     u32 image_index = 0;
-    vk_check(vkAcquireNextImageKHR(device()->vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, vk_null(), &image_index));
+    vk_check(vkAcquireNextImageKHR(device()->vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index));
+
+    {
+        y_profile_zone("image fence");
+        vk_check(vkWaitForFences(device()->vk_device(), 1, &frame_semaphores.fence, true, u64(-1)));
+        vk_check(vkResetFences(device()->vk_device(), 1, &frame_semaphores.fence));
+    }
 
     return FrameToken {
             _frame_id,
@@ -348,6 +343,8 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder& recorder, co
         }
 
         vk_check(vkQueueSubmit(vk_queue, 1, &submit_info, cmd_buffer.vk_fence()));
+
+        y_profile_zone("present");
 
         VkPresentInfoKHR present_info = vk_struct();
         {

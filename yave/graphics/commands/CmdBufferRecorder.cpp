@@ -232,7 +232,6 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& base) : CmdBuffer(std::move(bas
 CmdBufferRecorder::~CmdBufferRecorder() {
     if(device()) {
         check_no_renderpass();
-        y_always_assert(is_submitted(), "CmdBufferRecorder destroyed before end() was called.");
     }
 }
 
@@ -503,10 +502,13 @@ void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, Vk
 }
 
 void CmdBufferRecorder::submit(SyncPolicy policy) {
+    submit(graphic_queue(device()), policy);
+}
+
+void CmdBufferRecorder::submit(const Queue& queue, SyncPolicy policy) {
     check_no_renderpass();
     vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
 
-    const Queue& queue = graphic_queue(device());
     queue.submit(*this);
 
     switch(policy) {
@@ -515,7 +517,6 @@ void CmdBufferRecorder::submit(SyncPolicy policy) {
         break;
 
         case SyncPolicy::Sync: {
-            y_profile_zone("sync");
             wait();
         } break;
     }
@@ -525,7 +526,6 @@ CmdBuffer CmdBufferRecorder::finish() && {
     Y_TODO(This is super sketchy, it needs to be removed ASAP)
     check_no_renderpass();
     vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
-    make_submitted();
     return std::move(*this); // uuuh ?
 }
 

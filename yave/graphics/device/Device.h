@@ -62,7 +62,7 @@ class Device : NonMovable {
         CmdBuffer create_disposable_cmd_buffer() const;
 
         const Queue& graphic_queue() const;
-        Queue& graphic_queue();
+        const Queue& loading_queue() const;
 
         void wait_all_queues() const;
 
@@ -92,15 +92,17 @@ class Device : NonMovable {
         Y_TODO(move this to the heap or slim it)
         PhysicalDevice _physical;
 
-        u32 _graphic_queue_index = 0;
+        u32 _main_queue_index = 0;
 
         ScopedDevice _device;
         DeviceProperties _properties;
 
+        Queue _graphic_queue;
+        Queue _loading_queue;
+
         mutable DeviceMemoryAllocator _allocator;
         mutable LifetimeManager _lifetime_manager;
 
-        Queue _graphic_queue;
 
         std::array<Sampler, 5> _samplers;
 

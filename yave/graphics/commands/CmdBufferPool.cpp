@@ -30,7 +30,6 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 #include <y/concurrent/concurrent.h>
 
-
 namespace yave {
 
 static VkCommandPool create_pool(DevicePtr dptr) {
@@ -55,10 +54,7 @@ CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
 CmdBufferPool::~CmdBufferPool() {
     join_all();
 
-    y_debug_assert(_cmd_buffers.size() == _pending.size());
-
-    _cmd_buffers.clear();
-    _pending.clear();
+    y_debug_assert(_cmd_buffers.size() == _released.size());
 
     for(const VkFence fence : _fences) {
         destroy(fence);
@@ -71,67 +67,45 @@ VkCommandPool CmdBufferPool::vk_pool() const {
 }
 
 void CmdBufferPool::join_all() {
+    y_profile();
+
     const auto lock = y_profile_unique_lock(_pool_lock);
-
-    if(_fences.is_empty()) {
-        return;
+    for(auto& data : _cmd_buffers) {
+        data->wait();
     }
-
-    vk_check(vkWaitForFences(vk_device(device()), _fences.size(), _fences.data(), true, u64(-1)));
 }
 
 void CmdBufferPool::release(CmdBufferData* data) {
+    y_profile();
+
     y_debug_assert(data->pool() == this);
-
-    {
-        const auto lock = y_profile_unique_lock(_recycling_lock);
-        _pending << data;
-    }
-
-    lifetime_manager(device()).queue_for_recycling(data);
-}
-
-void CmdBufferPool::recycle(CmdBufferData* data) {
-    y_debug_assert(data->pool() == this);
+    y_debug_assert(data->is_signaled());
 
     data->recycle_resources();
+
+    {
+        const auto lock = y_profile_unique_lock(_release_lock);
+        _released << data;
+    }
 }
 
 CmdBufferData* CmdBufferPool::alloc() {
     y_profile();
-
     y_debug_assert(concurrent::thread_id() == _thread_id);
 
-    CmdBufferData* data = nullptr;
+    CmdBufferData* ready = nullptr;
+
     {
-        auto lock = y_profile_unique_lock(_recycling_lock);
+        const auto lock = y_profile_unique_lock(_release_lock);
 
-        for(auto it = _pending.begin(); it != _pending.end(); ++it) {
-            if((*it)->is_recycled()) {
-                data = *it;
-                _pending.erase_unordered(it);
-                break;
-            }
-        }
-
-        if(allow_recycle_on_alloc && !data) {
-            for(auto it = _pending.begin(); it != _pending.end(); ++it) {
-                if((*it)->poll_fence()) {
-                    data = *it;
-                    _pending.erase_unordered(it);
-                    lock.unlock();
-
-                    recycle(data);
-                    lifetime_manager(device()).set_recycled(data);
-                    break;
-                }
-            }
+        if(!_released.is_empty()) {
+            ready = _released.pop();
         }
     }
 
-    if(data) {
-        data->reset();
-        return data;
+    if(ready) {
+        ready->begin();
+        return ready;
     }
 
     return create_data();

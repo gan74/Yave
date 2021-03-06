@@ -28,71 +28,65 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/commands/CmdBufferPool.h>
 
-#include <y/utils/log.h>
 #include <y/utils/format.h>
 
 namespace yave {
+
+static bool compare_cmd_buffers(CmdBufferData* a, CmdBufferData* b) {
+    return a->resource_fence() < b->resource_fence();
+}
 
 LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 LifetimeManager::~LifetimeManager() {
-    y_debug_assert(_counter == _done_counter);
+    y_debug_assert(_create_counter == _next);
 
-    collect();
+    wait_cmd_buffers();
 
-    for(auto& r : _to_destroy) {
-        destroy_resource(r.second);
-    }
+    y_always_assert(_in_flight.empty(), "CmdBuffer still in flight");
 
-    if(_in_flight.size()) {
-        y_fatal("% CmdBuffer still in flight.", _in_flight.size());
+    for(auto& res : _to_destroy) {
+        y_always_assert(res.first == _next, "Resourse is still waiting on unsignaled fence.");
+        destroy_resource(res.second);
     }
 }
+
+void LifetimeManager::wait_cmd_buffers() {
+    y_profile();
+
+    const auto lock = y_profile_unique_lock(_cmd_lock);
+
+    for(CmdBufferData* data : _in_flight) {
+        data->wait();
+    }
+
+    poll_cmd_buffers();
+}
+
 
 ResourceFence LifetimeManager::create_fence() {
-    return ++_counter;
+    return _create_counter++;
 }
 
-void LifetimeManager::queue_for_recycling(CmdBufferData* data) {
-    y_profile();
+void LifetimeManager::register_for_polling(CmdBufferData* data) {
+    bool collect = false;
 
-    Y_TODO(check for data state)
-
-    bool run_collect = false;
     {
         const auto lock = y_profile_unique_lock(_cmd_lock);
 
-        const InFlightCmdBuffer in_flight = { data->resource_fence(), data };
-        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), in_flight);
-        _in_flight.insert(it, in_flight);
+        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), data, compare_cmd_buffers);
+        _in_flight.insert(it, data);
 
-        run_collect = (_in_flight.front().fence._value == _done_counter + 1);
+        collect = (_in_flight.front()->resource_fence()._value == _next);
     }
 
-    if(run_collect) {
-        collect();
-    }
-}
-
-
-void LifetimeManager::set_recycled(CmdBufferData* data) {
-    y_profile();
-
-    {
-        const InFlightCmdBuffer cmd = { data->resource_fence(), data };
-
-        const auto lock = y_profile_unique_lock(_cmd_lock);
-        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), cmd);
-
-        // Lookup may fail if the cmd buffer got recycled (from another thread) in between the poll_fence() and here
-        if(it != _in_flight.end() && it->fence == cmd.fence) {
-            it->data = nullptr;
-        }
+    if(collect) {
+        poll_cmd_buffers();
     }
 }
 
-void LifetimeManager::collect() {
+void LifetimeManager::poll_cmd_buffers() {
     y_profile();
 
     u64 next = 0;
@@ -104,40 +98,33 @@ void LifetimeManager::collect() {
         y_profile_zone("fence polling");
         const auto lock = y_profile_unique_lock(_cmd_lock);
 
-        y_debug_assert(std::is_sorted(_in_flight.begin(), _in_flight.end()));
+        y_debug_assert(std::is_sorted(_in_flight.begin(), _in_flight.end(), compare_cmd_buffers));
 
-        next = _done_counter;
+        next = _next;
         while(!_in_flight.empty()) {
-            InFlightCmdBuffer& cmd = _in_flight.front();
-
-            const u64 fence = cmd.fence._value;
-            if(fence != next + 1) {
+            CmdBufferData* data = _in_flight.front();
+            if(data->resource_fence()._value != next) {
                 break;
             }
 
-            CmdBufferData* data = cmd.data;
-            if(!data || data->poll_fence()) {
-                next = fence;
+            if(data->poll_and_signal()) {
                 _in_flight.pop_front();
+                ++next;
 
-                if(data) {
-                    to_recycle.emplace_back(data);
-                }
+                to_recycle.emplace_back(data);
             } else {
                 break;
             }
         }
 
-        if(next != _done_counter) {
-            clear = true;
-            _done_counter = next;
-        }
+        clear = next != _next;
+        _next = next;
     }
 
     {
         y_profile_zone("release");
-        for(const auto& cmd : to_recycle) {
-            cmd->pool()->recycle(cmd);
+        for(CmdBufferData* data : to_recycle) {
+            data->pool()->release(data);
         }
     }
 
@@ -146,14 +133,25 @@ void LifetimeManager::collect() {
     }
 }
 
-usize LifetimeManager::pending_deletions() const {
-    const std::unique_lock lock(_resource_lock);
-    return _to_destroy.size();
-}
+void LifetimeManager::clear_resources(u64 up_to) {
+    y_profile();
 
-usize LifetimeManager::active_cmd_buffers() const {
-    const auto lock = y_profile_unique_lock(_cmd_lock);
-    return _in_flight.size();
+    core::Vector<ManagedResource> to_delete;
+
+    {
+        y_profile_zone("collection");
+        const auto lock = y_profile_unique_lock(_resources_lock);
+        while(!_to_destroy.empty() && _to_destroy.front().first < up_to) {
+            to_delete << std::move(_to_destroy.front().second);
+            _to_destroy.pop_front();
+        }
+    }
+
+
+    y_profile_zone("clear");
+    for(auto& res : to_delete) {
+        destroy_resource(res);
+    }
 }
 
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
@@ -172,24 +170,15 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
         resource);
 }
 
-void LifetimeManager::clear_resources(u64 up_to) {
-    y_profile();
-    core::Vector<ManagedResource> to_del;
-
-    {
-        y_profile_zone("collection");
-        const auto lock = y_profile_unique_lock(_cmd_lock);
-        while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
-            to_del << std::move(_to_destroy.front().second);
-            _to_destroy.pop_front();
-        }
-    }
-
-    y_profile_zone("clear");
-    for(auto& res : to_del) {
-        destroy_resource(res);
-    }
+usize LifetimeManager::pending_cmd_buffers() const {
+    const auto lock = y_profile_unique_lock(_cmd_lock);
+    return _in_flight.size();
 }
 
+usize LifetimeManager::pending_deletions() const {
+    const auto lock = y_profile_unique_lock(_resources_lock);
+    return _to_destroy.size();
 }
 
+
+}

@@ -250,21 +250,6 @@ class Vector : ResizePolicy, Allocator {
             pop();
         }
 
-        // Slow insert
-        inline iterator insert(iterator dst, value_type&& elem) {
-            if(dst == end() || is_empty()) {
-                emplace_back(std::move(elem));
-                return &last();
-            } else {
-                y_debug_assert(contains_it(dst));
-                const usize index = dst - begin();
-                emplace_back(std::move(elem));
-                const iterator pivot = begin() + index;
-                std::rotate(std::make_reverse_iterator(pivot), std::make_reverse_iterator(pivot) + 1, std::make_reverse_iterator(end()));
-                return pivot;
-            }
-        }
-
         inline usize size() const {
             return _data_end - _data;
         }

@@ -264,12 +264,13 @@ Device::Device(Instance& instance) : Device(instance, find_best_device(instance.
 Device::Device(Instance& instance, PhysicalDevice device) :
         _instance(instance),
         _physical(device),
-        _graphic_queue_index(queue_family_index(_physical.vk_physical_device(), graphic_queue_flags)),
-        _device{create_device(_physical, _graphic_queue_index, _instance.debug_params())},
+        _main_queue_index(queue_family_index(_physical.vk_physical_device(), graphic_queue_flags)),
+        _device{create_device(_physical, _main_queue_index, _instance.debug_params())},
         _properties(create_properties(_physical)),
+        _graphic_queue(this, _main_queue_index, create_queue(this, _main_queue_index)),
+        _loading_queue(this, _main_queue_index, create_queue(this, _main_queue_index)),
         _allocator(this),
         _lifetime_manager(this),
-        _graphic_queue(this, _graphic_queue_index, create_queue(this, _graphic_queue_index)),
         _samplers(create_samplers(this)),
         _descriptor_set_allocator(this) {
 
@@ -288,18 +289,14 @@ Device::Device(Instance& instance, PhysicalDevice device) :
 Device::~Device() {
     _resources = DeviceResources();
 
-    {
-        Y_TODO(Why do we need this?)
-        CmdBufferPool pool(this);
-        CmdBufferRecorder rec = pool.create_buffer();
-        std::move(rec).submit<SyncPolicy::Sync>();
-    }
+    auto full_flush = [this] {
+        // We need this to forcefully flush the lifetime manager
+        CmdBufferRecorder(CmdBufferPool(this).create_buffer()).submit<SyncPolicy::Sync>();
+        lifetime_manager().wait_cmd_buffers();
+    };
 
-    wait_all_queues();
+    full_flush();
     _thread_devices.clear();
-    wait_all_queues();
-
-    _lifetime_manager.collect();
 }
 
 const PhysicalDevice& Device::physical_device() const {
@@ -322,8 +319,8 @@ const Queue& Device::graphic_queue() const {
     return _graphic_queue;
 }
 
-Queue& Device::graphic_queue() {
-    return _graphic_queue;
+const Queue& Device::loading_queue() const {
+    return _loading_queue;
 }
 
 void Device::wait_all_queues() const {
@@ -333,6 +330,7 @@ void Device::wait_all_queues() const {
 
     Y_TODO(Need to sync all queues)
     _graphic_queue.wait();
+    _loading_queue.wait();
 }
 
 ThreadDevicePtr Device::thread_device() const {

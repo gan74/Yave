@@ -29,7 +29,6 @@ namespace yave {
 
 template<ImageType Type = ImageType::TwoD>
 class TransientImage final : public ImageBase {
-
     static constexpr bool is_3d = Type == ImageType::ThreeD;
 
     template<typename T>

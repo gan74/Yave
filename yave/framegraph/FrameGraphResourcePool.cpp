@@ -22,9 +22,6 @@ SOFTWARE.
 
 #include "FrameGraphResourcePool.h"
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
 namespace yave {
 
 template<typename U>
@@ -50,7 +47,6 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
     TransientImage<> image;
     if(!create_image_from_pool(image, format, size, usage)) {
         y_profile_zone("create image");
-        log_msg(fmt("image size = %", size), Log::Warning);
         image = TransientImage<>(device(), format, usage, size);
     }
 
@@ -83,7 +79,7 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, Image
         if(img.format() == format && img.size() == size && img.usage() == usage) {
 
             res = std::move(img);
-            _images.erase_unordered(it);
+            _images.erase(it);
 
             audit();
             y_debug_assert(res.device());
@@ -104,7 +100,7 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
            (buffer.memory_type() == memory || memory == MemoryType::DontCare)) {
 
             res = std::move(buffer);
-            _buffers.erase_unordered(it);
+            _buffers.erase(it);
 
             audit();
             y_debug_assert(res.device());
@@ -119,6 +115,7 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 void FrameGraphResourcePool::release(TransientImage<> image) {
     const auto lock = y_profile_unique_lock(_lock);
 
+    y_debug_assert(image.device());
     _images.emplace_back(std::move(image), _collection_id);
     audit();
 }
@@ -126,6 +123,7 @@ void FrameGraphResourcePool::release(TransientImage<> image) {
 void FrameGraphResourcePool::release(TransientBuffer buffer) {
     const auto lock = y_profile_unique_lock(_lock);
 
+    y_debug_assert(buffer.device());
     _buffers.emplace_back(std::move(buffer), _collection_id);
     audit();
 }
@@ -136,18 +134,18 @@ void FrameGraphResourcePool::garbage_collect() {
 
     audit();
 
-    const u64 max_col_count = 3;
+    const u64 max_col_count = 6;
 
     for(usize i = 0; i < _images.size(); ++i) {
         if(_images[i].second + max_col_count < _collection_id) {
-            _images.erase_unordered(_images.begin() + i);
+            _images.erase(_images.begin() + i);
             --i;
         }
     }
 
     for(usize i = 0; i < _buffers.size(); ++i) {
         if(_buffers[i].second + max_col_count < _collection_id) {
-            _buffers.erase_unordered(_buffers.begin() + i);
+            _buffers.erase(_buffers.begin() + i);
             --i;
         }
     }
@@ -171,6 +169,4 @@ void FrameGraphResourcePool::audit() const {
 }
 
 }
-
-#undef CHECK_NON_CONCURENT
 

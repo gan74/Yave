@@ -23,6 +23,7 @@ SOFTWARE.
 #include "CmdBuffer.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
+#include <yave/graphics/device/LifetimeManager.h>
 
 namespace yave {
 
@@ -39,18 +40,9 @@ CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) {
 }
 
 CmdBuffer::~CmdBuffer() {
-    release();
-}
-
-void CmdBuffer::release() {
     if(_data) {
-        _data->pool()->release(_data);
-        _data = nullptr;
+        lifetime_manager(device()).register_for_polling(_data);
     }
-}
-
-void CmdBuffer::make_submitted() {
-    _data->set_submitted();
 }
 
 void CmdBuffer::wait() const {
@@ -76,10 +68,6 @@ VkFence CmdBuffer::vk_fence() const {
 ResourceFence CmdBuffer::resource_fence() const {
     y_debug_assert(_data);
     return _data->resource_fence();
-}
-
-bool CmdBuffer::is_submitted() const {
-    return _data && !_data->is_reset();
 }
 
 void CmdBuffer::swap(CmdBuffer &other) {

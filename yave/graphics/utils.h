@@ -40,6 +40,7 @@ const PhysicalDevice& physical_device(DevicePtr dptr);
 DeviceMemoryAllocator& device_allocator(DevicePtr dptr);
 DescriptorSetAllocator& descriptor_set_allocator(DevicePtr dptr);
 const Queue& graphic_queue(DevicePtr dptr);
+const Queue& loading_queue(DevicePtr dptr);
 const DeviceResources& device_resources(DevicePtr dptr);
 const DeviceProperties& device_properties(DevicePtr dptr);
 LifetimeManager& lifetime_manager(DevicePtr dptr);

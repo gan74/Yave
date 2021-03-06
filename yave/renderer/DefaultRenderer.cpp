@@ -36,7 +36,7 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.atmosphere.lit, settings.tone_mapping);
     renderer.bloom          = BloomPass::create(framegraph, renderer.tone_mapping.tone_mapped, settings.bloom);
 
-    renderer.color = renderer.bloom.merged;
+    renderer.final = renderer.bloom.merged;
     renderer.depth = renderer.gbuffer.depth;
 
     return renderer;

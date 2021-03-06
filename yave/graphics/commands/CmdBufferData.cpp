@@ -26,7 +26,13 @@ SOFTWARE.
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/utils.h>
 
-#include <y/utils/log.h>
+#ifdef Y_DEBUG
+#define YAVE_CMD_CHECK_LOCK()                                                           \
+    y_debug_assert(_lock.exchange(true, std::memory_order_acquire) == false);           \
+    y_defer(y_debug_assert(_lock.exchange(false, std::memory_order_acquire) == true))
+#else
+#define YAVE_CMD_CHECK_LOCK()   do {} while(false)
+#endif
 
 namespace yave {
 
@@ -35,9 +41,8 @@ CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p)
 }
 
 CmdBufferData::~CmdBufferData() {
-    if(_pool) {
-        y_debug_assert(vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS);
-    }
+    YAVE_CMD_CHECK_LOCK();
+    y_debug_assert(!_pool || vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS);
 }
 
 DevicePtr CmdBufferData::device() const {
@@ -48,25 +53,8 @@ bool CmdBufferData::is_null() const {
     return !device();
 }
 
-
-CmdBufferData::State CmdBufferData::state() const {
-    return _state;
-}
-
-bool CmdBufferData::is_recycled() const {
-    return _state == State::Recycled;
-}
-
 bool CmdBufferData::is_signaled() const {
-    return _state == State::Signaled;
-}
-
-bool CmdBufferData::is_submitted() const {
-    return _state == State::Submitted;
-}
-
-bool CmdBufferData::is_reset() const {
-    return _state == State::Reset;
+    return _signaled;
 }
 
 CmdBufferPool* CmdBufferData::pool() const {
@@ -86,17 +74,14 @@ ResourceFence CmdBufferData::resource_fence() const {
 }
 
 void CmdBufferData::wait() {
-    if(is_signaled()) {
-        return;
+    y_profile();
+    if(!is_signaled()) {
+        vk_check(vkWaitForFences(vk_device(device()), 1, &_fence, true, u64(-1)));
+        set_signaled();
     }
-
-    y_debug_assert(is_submitted());
-
-    vk_check(vkWaitForFences(vk_device(device()), 1, &_fence, true, u64(-1)));
-    set_signaled();
 }
 
-bool CmdBufferData::poll_fence() {
+bool CmdBufferData::poll_and_signal() {
     if(is_signaled()) {
         return true;
     }
@@ -107,49 +92,33 @@ bool CmdBufferData::poll_fence() {
     return false;
 }
 
-void CmdBufferData::reset() {
+void CmdBufferData::begin() {
+    YAVE_CMD_CHECK_LOCK();
     y_profile();
-    y_debug_assert(is_recycled());
+
+
+    y_debug_assert(is_signaled());
+    y_debug_assert(_keep_alive.is_empty());
 
     vk_check(vkResetFences(vk_device(device()), 1, &_fence));
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 
     _resource_fence = lifetime_manager(device()).create_fence();
-    _state = State::Reset;
+    _signaled = false;
 }
 
 void CmdBufferData::recycle_resources() {
+    YAVE_CMD_CHECK_LOCK();
     y_profile();
 
-    if(set_recycled()) {
-        _keep_alive.clear();
-    }
+    y_debug_assert(is_signaled());
+    _keep_alive.clear();
 }
 
-bool CmdBufferData::set_recycled() {
-    const State previous_state = _state.exchange(State::Recycled, std::memory_order_acquire);
-
-    y_debug_assert(previous_state == State::Recycled || previous_state == State::Signaled);
-
-    return previous_state != State::Recycled;
-}
-
-
-bool CmdBufferData::set_signaled() {
-    const State previous_state = _state.exchange(State::Signaled, std::memory_order_acquire);
-
-    y_debug_assert(previous_state == State::Signaled || previous_state == State::Submitted);
-    return previous_state != State::Signaled;
-}
-
-bool CmdBufferData::set_submitted() {
-    const State previous_state = _state.exchange(State::Submitted, std::memory_order_acquire);
-
-    unused(previous_state);
-    y_debug_assert(previous_state == State::Reset);
-
-    return true;
+void CmdBufferData::set_signaled() {
+    _signaled.exchange(true, std::memory_order_acquire);
 }
 
 }
 
+#undef YAVE_CMD_CHECK_LOCK

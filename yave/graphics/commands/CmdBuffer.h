@@ -41,8 +41,6 @@ struct CmdBuffer : NonCopyable {
         VkFence vk_fence() const;
         ResourceFence resource_fence() const;
 
-        bool is_submitted() const;
-
         void wait() const;
 
         template<typename T>
@@ -52,9 +50,6 @@ struct CmdBuffer : NonCopyable {
 
     protected:
         CmdBuffer(CmdBufferData* data);
-
-        void make_submitted();
-        void release();
 
         void swap(CmdBuffer& other);
 

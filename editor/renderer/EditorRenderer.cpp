@@ -64,21 +64,21 @@ EditorRenderer EditorRenderer::create(ContextPtr ctx, FrameGraph& framegraph, co
     {
         const auto region = framegraph.region("Engine");
         renderer.renderer = DefaultRenderer::create(framegraph, view, size, settings.renderer_settings);
-        renderer.color = renderer.renderer.color;
+        renderer.final = renderer.renderer.final;
         renderer.depth = renderer.renderer.depth;
     }
 
     renderer.id = IdBufferPass::create(ctx, framegraph, view, size).id;
 
     if(settings.show_editor_entities) {
-        const EditorEntityPass ed = EditorEntityPass::create(ctx, framegraph, view, renderer.depth, renderer.color, renderer.id);
+        const EditorEntityPass ed = EditorEntityPass::create(ctx, framegraph, view, renderer.depth, renderer.final, renderer.id);
         renderer.depth = ed.depth;
-        renderer.color = ed.color;
+        renderer.final = ed.color;
         renderer.id = ed.id;
     }
 
     if(settings.show_selection) {
-        renderer.color = render_selection_outline(ctx, framegraph, renderer.color, renderer.id);
+        renderer.final = render_selection_outline(ctx, framegraph, renderer.final, renderer.id);
     }
 
     return renderer;
