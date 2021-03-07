@@ -79,26 +79,8 @@ static const PhysicalDevice& find_best_device(core::Span<PhysicalDevice> devices
 
 static const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
 
-static bool is_extension_supported(const char* name, VkPhysicalDevice device) {
-    core::Vector<VkExtensionProperties> supported_extensions;
-    {
-        u32 count = 0;
-        vk_check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr));
-        supported_extensions = core::Vector<VkExtensionProperties>(count, VkExtensionProperties{});
-        vk_check(vkEnumerateDeviceExtensionProperties(device, nullptr, &count, supported_extensions.data()));
-    }
-
-    const std::string_view name_view = name;
-    for(const VkExtensionProperties& ext : supported_extensions) {
-        if(name_view == ext.extensionName) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool try_enable_extension(core::Vector<const char*>& exts, const char* name, VkPhysicalDevice physical) {
-    if(is_extension_supported(name, physical)) {
+static bool try_enable_extension(core::Vector<const char*>& exts, const char* name, const PhysicalDevice& device) {
+    if(device.is_extension_supported(name)) {
         exts << name;
         return true;
     }
@@ -179,7 +161,7 @@ static VkDevice create_device(
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
 
-    try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical.vk_physical_device());
+    try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical);
 
 #ifdef YAVE_NV_RAY_TRACING
     try_enable_extension(extensions, RayTracing::extension_name(), physical);
@@ -244,11 +226,7 @@ static DeviceProperties create_properties(const PhysicalDevice& device) {
 
     properties.max_memory_allocations = limits.maxMemoryAllocationCount;
 
-    properties.max_inline_uniform_size = 0;
-    if(is_extension_supported(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, device.vk_physical_device())) {
-        properties.max_inline_uniform_size = device.vk_uniform_block_properties().maxInlineUniformBlockSize;
-    }
-
+    properties.max_inline_uniform_size = device.vk_uniform_block_properties().maxInlineUniformBlockSize;
 
     return properties;
 }
@@ -457,7 +435,6 @@ VkPhysicalDeviceVulkan12Features Device::required_device_features_1_2() {
 
     return required;
 }
-
 
 }
 

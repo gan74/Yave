@@ -24,6 +24,23 @@ SOFTWARE.
 
 namespace yave {
 
+template<typename T>
+static bool support_all_features(const T& features, const T& supported_features) {
+    Y_TODO(VkPhysicalDeviceVulkan11Features have sType and pNext, which may cause trouble here)
+    static_assert(sizeof(T) % sizeof(VkBool32) == 0);
+
+    const VkBool32* supported = reinterpret_cast<const VkBool32*>(&supported_features);
+    const VkBool32* required = reinterpret_cast<const VkBool32*>(&features);
+    for(usize i = 0; i != sizeof(features) / sizeof(VkBool32); ++i) {
+        if(required[i] && !supported[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
     vkGetPhysicalDeviceMemoryProperties(_device, &_memory_properties);
 
@@ -75,21 +92,6 @@ usize PhysicalDevice::total_device_memory() const {
     return total;
 }
 
-template<typename T>
-static bool support_all_features(const T& features, const T& supported_features) {
-    Y_TODO(VkPhysicalDeviceVulkan11Features have sType and pNext, which may cause trouble here)
-    static_assert(sizeof(T) % sizeof(VkBool32) == 0);
-
-    const VkBool32* supported = reinterpret_cast<const VkBool32*>(&supported_features);
-    const VkBool32* required = reinterpret_cast<const VkBool32*>(&features);
-    for(usize i = 0; i != sizeof(features) / sizeof(VkBool32); ++i) {
-        if(required[i] && !supported[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
 bool PhysicalDevice::support_features(const VkPhysicalDeviceFeatures& features) const {
     return support_all_features(features, _supported_features);
 }
@@ -100,6 +102,23 @@ bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan11Features& fe
 
 bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan12Features& features) const {
     return support_all_features(features, _supported_features_1_2);
+}
+
+core::Vector<VkExtensionProperties> PhysicalDevice::supported_extensions() const {
+    u32 count = 0;
+    vk_check(vkEnumerateDeviceExtensionProperties(_device, nullptr, &count, nullptr));
+    core::Vector<VkExtensionProperties> ext = core::Vector<VkExtensionProperties>(count, VkExtensionProperties{});
+    vk_check(vkEnumerateDeviceExtensionProperties(_device, nullptr, &count, ext.data()));
+    return ext;
+}
+
+bool PhysicalDevice::is_extension_supported(std::string_view name) const {
+    for(const VkExtensionProperties& ext : supported_extensions()) {
+        if(name == ext.extensionName) {
+            return true;
+        }
+    }
+    return false;
 }
 
 }

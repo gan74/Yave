@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <yave/graphics/vk/vk.h>
 
+#include <y/core/Vector.h>
+
 namespace yave {
 
 class PhysicalDevice {
@@ -43,6 +45,9 @@ class PhysicalDevice {
         bool support_features(const VkPhysicalDeviceFeatures& features) const;
         bool support_features(const VkPhysicalDeviceVulkan11Features& features) const;
         bool support_features(const VkPhysicalDeviceVulkan12Features& features) const;
+
+        core::Vector<VkExtensionProperties> supported_extensions() const;
+        bool is_extension_supported(std::string_view name) const;
 
     private:
         friend class Instance;
