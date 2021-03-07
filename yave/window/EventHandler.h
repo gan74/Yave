@@ -54,14 +54,14 @@ enum class Key {
 
 static_assert(char(Key::Z) == 'Z');
 
+enum class MouseButton {
+    LeftButton,
+    RightButton,
+    MiddleButton
+};
+
 class EventHandler {
     public:
-        enum MouseButton {
-            LeftButton,
-            RightButton,
-            MiddleButton
-        };
-
         virtual ~EventHandler() {
         }
 
@@ -69,7 +69,7 @@ class EventHandler {
         virtual void mouse_pressed(const math::Vec2i&, MouseButton)         {}
         virtual void mouse_released(const math::Vec2i&, MouseButton)        {}
 
-        virtual void mouse_wheel(i32)                                       {}
+        virtual void mouse_wheel(i32, i32)                                  {}
 
         virtual void char_input(u32)                                        {}
 

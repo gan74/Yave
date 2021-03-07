@@ -26,8 +26,10 @@ SOFTWARE.
 #include <editor/editor.h>
 #include <editor/ImGuiRenderer2.h>
 
-#include <yave/graphics/swapchain/Swapchain.h>
 #include <yave/window/Window.h>
+#include <yave/window/EventHandler.h>
+
+#include <yave/graphics/swapchain/Swapchain.h>
 
 #include <y/core/Chrono.h>
 #include <y/core/Vector.h>
@@ -46,8 +48,10 @@ class ImGuiPlatform : NonMovable {
         bool render(ImGuiViewport* viewport);
 
         ImGuiPlatform* platform = nullptr;
+
         Window window;
         Swapchain swapchain;
+        std::unique_ptr<EventHandler> event_handler;
     };
 
     public:

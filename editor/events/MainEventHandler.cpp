@@ -75,8 +75,9 @@ void MainEventHandler::mouse_released(const math::Vec2i& pos, MouseButton button
     ImGui::GetIO().MouseDown[usize(button)] = false;
 }
 
-void MainEventHandler::mouse_wheel(int delta) {
-    ImGui::GetIO().MouseWheel += delta;
+void MainEventHandler::mouse_wheel(i32 vdelta, i32 hdelta) {
+    ImGui::GetIO().MouseWheel += vdelta;
+    ImGui::GetIO().MouseWheelH += hdelta;
 }
 
 void MainEventHandler::char_input(u32 character) {

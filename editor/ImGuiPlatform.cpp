@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/window/Monitor.h>
-#include <yave/window/EventHandler.h>
 
 #include <y/io2/File.h>
 #include <y/utils/log.h>
@@ -41,7 +40,8 @@ struct ImGuiEventHandler : EventHandler {
     }
 
     void mouse_moved(const math::Vec2i& pos) override {
-        ImGui::GetIO().MousePos = pos + window->position();
+        Y_TODO(fix this when multi viewport isnt enabled)
+        ImGui::GetIO().MousePos = pos + window->window_position();
     }
 
     void mouse_pressed(const math::Vec2i& pos, MouseButton button) override {
@@ -54,8 +54,9 @@ struct ImGuiEventHandler : EventHandler {
         ImGui::GetIO().MouseDown[usize(button)] = false;
     }
 
-    void mouse_wheel(int delta) override {
-        ImGui::GetIO().MouseWheel += delta;
+    void mouse_wheel(i32 vdelta, i32 hdelta) override {
+        ImGui::GetIO().MouseWheel += vdelta;
+        ImGui::GetIO().MouseWheelH += hdelta;
     }
 
     void char_input(u32 character) override {
@@ -162,9 +163,10 @@ static void discover_monitors(ImGuiPlatformIO& platform) {
 ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent, Window::Flags flags) :
         platform(parent),
         window({1280, 768}, "Window", flags),
-        swapchain(platform->device(), &window) {
+        swapchain(platform->device(), &window),
+        event_handler(std::make_unique<ImGuiEventHandler>(&window)) {
 
-    window.set_event_handler(std::make_unique<ImGuiEventHandler>(&window));
+    window.set_event_handler(event_handler.get());
     window.show();
 }
 
@@ -231,13 +233,13 @@ ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
         platform.Platform_ShowWindow            = [](ImGuiViewport* vp) { get_window(vp)->show(); };
         platform.Platform_SetWindowPos          = [](ImGuiViewport* vp, ImVec2 pos) { get_window(vp)->set_position(pos); };
         platform.Platform_SetWindowSize         = [](ImGuiViewport* vp, ImVec2 size) { get_window(vp)->set_size(size); };
-        platform.Platform_GetWindowPos          = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->position()); };
+        platform.Platform_GetWindowPos          = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->window_position()); };
         platform.Platform_GetWindowSize         = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->size()); };
 
         platform.Platform_SetWindowTitle        = [](ImGuiViewport* vp, const char* title) { get_window(vp)->set_title(title); };
 
-        platform.Platform_SetWindowFocus        = [](ImGuiViewport*) {};
-        platform.Platform_GetWindowFocus        = [](ImGuiViewport*) { return false; };
+        platform.Platform_SetWindowFocus        = [](ImGuiViewport* vp) { get_window(vp)->focus(); };
+        platform.Platform_GetWindowFocus        = [](ImGuiViewport* vp) { return get_window(vp)->has_focus(); };
         platform.Platform_GetWindowMinimized    = [](ImGuiViewport*) { return false; };
 
         platform.Renderer_RenderWindow          = [](ImGuiViewport* vp, void*) { get_platform_window(vp)->render(vp); };

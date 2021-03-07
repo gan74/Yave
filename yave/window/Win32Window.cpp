@@ -28,18 +28,17 @@ SOFTWARE.
 
 namespace yave {
 
-static const char class_name[] = "Yave";
+static const char windows_class_name[] = "Yave Platform";
 
 static u32 is_ascii(WPARAM w_param, LPARAM l_param) {
     //https://stackoverflow.com/questions/44660035/how-to-extract-the-character-from-wm-keydown-in-pretranslatemessagemsgpmsg
     static BYTE kb_state[256];
-    static auto init = GetKeyboardState(kb_state);
+    static auto init = ::GetKeyboardState(kb_state);
     unused(init);
     const auto scan_code = (l_param >> 16) & 0xFF;
     WORD ascii = 0;
-    return ToAscii(w_param, scan_code, kb_state, &ascii, 0);
+    return ::ToAscii(w_param, scan_code, kb_state, &ascii, 0);
 }
-
 
 static Key to_key(WPARAM w_param, LPARAM l_param) {
     if(!std::iscntrl(w_param) && is_ascii(w_param, l_param)) {
@@ -83,14 +82,78 @@ static Key to_key(WPARAM w_param, LPARAM l_param) {
     return Key::Unknown;
 }
 
+static bool mouse_button_down(UINT u_msg) {
+    switch(u_msg) {
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN:
+        case WM_MBUTTONDOWN:
+            return true;
+
+        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONUP:
+            return false;
+
+        default:
+        break;
+    }
+    y_fatal("Unknown mouse button");
+}
+
+static MouseButton mouse_button(UINT u_msg) {
+    switch(u_msg) {
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+            return MouseButton::LeftButton;
+
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+            return MouseButton::RightButton;
+
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONUP:
+            return MouseButton::MiddleButton;
+
+        default:
+        break;
+    }
+    y_fatal("Unknown mouse button");
+}
+
+[[maybe_unused]]
+static math::Vec2i client_mouse_pos(Window* win) {
+    POINT mouse_pos = {};
+    ::GetCursorPos(&mouse_pos);
+    ::ScreenToClient(win->handle(), &mouse_pos);
+    return math::Vec2i(mouse_pos.x, mouse_pos.y);
+}
+
+
 void notify_resized(Window* window) {
     window->resized();
 }
 
+void update_capture_state(Window* win, bool button_down, MouseButton button) {
+    const u32 mask = 1 << u32(button);
+
+    if(button_down) {
+        win->_mouse_state |= mask;
+        if(!::GetCapture()) {
+            ::SetCapture(win->handle());
+        }
+    } else {
+        win->_mouse_state &= ~mask;
+        if(!win->_mouse_state && ::GetCapture() == win->handle()) {
+            ::ReleaseCapture();
+        }
+    }
+}
+
 static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_param, LPARAM l_param) {
-    Window* window = reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+    Window* window = reinterpret_cast<Window*>(::GetWindowLongPtrW(hwnd, GWLP_USERDATA));
     if(window) {
-        const math::Vec2ui lvec(usize(LOWORD(l_param)), usize(HIWORD(l_param)));
+        const i16* l_params = reinterpret_cast<const i16*>(&l_param);
+        const math::Vec2i lvec(l_params[0], l_params[1]);
         switch(u_msg) {
             case WM_CLOSE:
                 window->close();
@@ -104,16 +167,17 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
             case WM_SYSKEYUP:
             case WM_KEYDOWN:
             case WM_KEYUP: {
-                const bool is_down = u_msg == WM_SYSKEYDOWN ||
-                               u_msg == WM_KEYDOWN;
-                const bool is_system = u_msg == WM_SYSKEYDOWN ||
-                                 u_msg == WM_SYSKEYUP;
+                const bool is_down =
+                    u_msg == WM_SYSKEYDOWN ||
+                    u_msg == WM_KEYDOWN;
+                const bool is_system =
+                    u_msg == WM_SYSKEYDOWN ||
+                    u_msg == WM_SYSKEYUP;
+
                 if(const auto handler = window->event_handler()) {
                     const auto k = to_key(w_param, l_param);
                     if(k != Key::Unknown) {
-                        is_down
-                            ? handler->key_pressed(k)
-                            : handler->key_released(k);
+                        is_down ? handler->key_pressed(k) : handler->key_released(k);
                         if(!is_system) {
                             return 0;
                         }
@@ -137,71 +201,55 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
             case WM_MBUTTONDOWN:
             case WM_LBUTTONUP:
             case WM_RBUTTONUP:
-            case WM_MBUTTONUP:
-            case WM_MOUSEMOVE:
-            case WM_MOUSEWHEEL:
+            case WM_MBUTTONUP: {
+                const bool down = mouse_button_down(u_msg);
+                const MouseButton button = mouse_button(u_msg);
+                update_capture_state(window, down, button);
                 if(const auto handler = window->event_handler()) {
-                    switch(u_msg) {
-                        case WM_LBUTTONDOWN:
-                            handler->mouse_pressed(lvec, EventHandler::LeftButton);
-                            return 0;
-
-                        case WM_RBUTTONDOWN:
-                            handler->mouse_pressed(lvec, EventHandler::RightButton);
-                            return 0;
-
-                        case WM_MBUTTONDOWN:
-                            handler->mouse_pressed(lvec, EventHandler::MiddleButton);
-                            return 0;
-
-                        case WM_LBUTTONUP:
-                            handler->mouse_released(lvec, EventHandler::LeftButton);
-                            return 0;
-
-                        case WM_RBUTTONUP:
-                            handler->mouse_released(lvec, EventHandler::RightButton);
-                            return 0;
-
-                        case WM_MBUTTONUP:
-                            handler->mouse_released(lvec, EventHandler::MiddleButton);
-                            return 0;
-
-                        case WM_MOUSEMOVE:
-                            handler->mouse_moved(lvec);
-                            return 0;
-
-                        case WM_MOUSEWHEEL:
-                            handler->mouse_wheel(i32(i16(HIWORD(w_param)) / WHEEL_DELTA));
-                            return 0;
-
-                        default:
-                        break;
-                    }
+                    down ? handler->mouse_pressed(lvec, button) : handler->mouse_released(lvec, button);
+                    return 0;
                 }
-                break;
+             } break;
+
+            case WM_MOUSEMOVE:
+                if(const auto handler = window->event_handler()) {
+                    handler->mouse_moved(lvec);
+                    return 0;
+                }
+            break;
+
+            case WM_MOUSEWHEEL:
+            case WM_MOUSEHWHEEL:
+                if(const auto handler = window->event_handler()) {
+                    const i32 delta = i32(i16(HIWORD(w_param)) / WHEEL_DELTA);
+                    const bool v = u_msg == WM_MOUSEWHEEL;
+                    handler->mouse_wheel(v ? delta : 0, v ? 0 : delta);
+                    return 0;
+                }
+            break;
 
             default:
             break;
         }
     }
-    return DefWindowProc(hwnd, u_msg, w_param, l_param);
+    return ::DefWindowProc(hwnd, u_msg, w_param, l_param);
 }
 
 
 Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) : _event_handler(nullptr) {
-    _hinstance = GetModuleHandle(nullptr);
+    _hinstance = ::GetModuleHandle(nullptr);
 
     WNDCLASSEX win_class = {};
     win_class.cbSize            = sizeof(WNDCLASSEX);
     win_class.style             = CS_HREDRAW | CS_VREDRAW;
     win_class.lpfnWndProc       = windows_event_handler;
     win_class.hInstance         = _hinstance;
-    win_class.hIcon             = LoadIcon(nullptr, IDI_APPLICATION);
-    win_class.hCursor           = LoadCursor(nullptr, IDC_ARROW);
+    win_class.hIcon             = ::LoadIcon(nullptr, IDI_APPLICATION);
+    win_class.hCursor           = ::LoadCursor(nullptr, IDC_ARROW);
     win_class.hbrBackground     = HBRUSH(COLOR_WINDOW + 1);
-    win_class.lpszClassName     = class_name;
-    win_class.hIconSm           = LoadIcon(nullptr, IDI_APPLICATION);
-    RegisterClassEx(&win_class);
+    win_class.lpszClassName     = windows_class_name;
+    win_class.hIconSm           = ::LoadIcon(nullptr, IDI_APPLICATION);
+    ::RegisterClassEx(&win_class);
 
     DWORD ex_style = WS_EX_APPWINDOW;
     DWORD style = (flags & NoDecoration)
@@ -213,18 +261,18 @@ Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) : 
     }
 
     RECT rect = {0, 0, LONG(size.x()), LONG(size.y())};
-    AdjustWindowRectEx(&rect, style, false, ex_style);
+    ::AdjustWindowRectEx(&rect, style, false, ex_style);
 
-    _hwnd = CreateWindowEx(ex_style, class_name, title.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, nullptr, nullptr, _hinstance, nullptr);
-    SetWindowLongPtr(_hwnd, GWLP_USERDATA, LONG_PTR(this));
+    _hwnd = ::CreateWindowEx(ex_style, windows_class_name, title.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, nullptr, nullptr, _hinstance, nullptr);
+    ::SetWindowLongPtr(_hwnd, GWLP_USERDATA, LONG_PTR(this));
 
     y_debug_assert(_hwnd);
 }
 
 Window::~Window() {
-    DestroyWindow(_hwnd);
+    ::DestroyWindow(_hwnd);
     // We might need the class later
-    // UnregisterClass(class_name, _hinstance);
+    // ::UnregisterClass(class_name, _hinstance);
 }
 
 void Window::close() {
@@ -234,45 +282,63 @@ void Window::close() {
 bool Window::update() {
     y_profile();
     MSG msg;
-    while(PeekMessage(&msg, _hwnd, 0, 0, PM_REMOVE)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+    while(::PeekMessage(&msg, _hwnd, 0, 0, PM_REMOVE)) {
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
     }
     return _run;
 }
 
 void Window::show() {
-    y_profile();
     _run = true;
-    ShowWindow(_hwnd, SW_SHOW);
-    SetForegroundWindow(_hwnd);
-    SetFocus(_hwnd);
+    ::ShowWindow(_hwnd, SW_SHOW);
+    focus();
+}
+
+void Window::focus() {
+    ::BringWindowToTop(_hwnd);
+    ::SetForegroundWindow(_hwnd);
+    ::SetFocus(_hwnd);
+}
+
+bool Window::has_focus() const {
+    return _hwnd == ::GetForegroundWindow();
 }
 
 void Window::set_size(const math::Vec2ui& size) {
-    SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
+    ::SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
 }
 
 void Window::set_position(const math::Vec2i& pos) {
-    SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
+    ::SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
 }
 
 math::Vec2ui Window::size() const {
-    y_debug_assert(_hwnd);
     RECT rect = {};
-    GetClientRect(_hwnd, &rect);
+    ::GetClientRect(_hwnd, &rect);
     return math::Vec2ui(u32(std::abs(rect.right - rect.left)), u32(std::abs(rect.bottom - rect.top)));
 }
 
 math::Vec2i Window::position() const {
-    y_debug_assert(_hwnd);
     RECT rect = {};
-    GetWindowRect(_hwnd, &rect);
+    ::GetClientRect(_hwnd, &rect);
+    return math::Vec2i(rect.left, rect.top);
+}
+
+math::Vec2ui Window::window_size() const {
+    RECT rect = {};
+    ::GetWindowRect(_hwnd, &rect);
+    return math::Vec2ui(u32(std::abs(rect.right - rect.left)), u32(std::abs(rect.bottom - rect.top)));
+}
+
+math::Vec2i Window::window_position() const {
+    RECT rect = {};
+    ::GetWindowRect(_hwnd, &rect);
     return math::Vec2i(rect.left, rect.top);
 }
 
 void Window::set_title(std::string_view title) {
-    SetWindowTextA(_hwnd, title.data());
+    ::SetWindowTextA(_hwnd, title.data());
 }
 
 }

@@ -60,18 +60,24 @@ class Window : NonMovable {
 
         void show();
 
+        void focus();
+        bool has_focus() const;
+
         void set_size(const math::Vec2ui& size);
         void set_position(const math::Vec2i& pos);
 
         math::Vec2ui size() const;
         math::Vec2i position() const;
 
+        math::Vec2ui window_size() const;
+        math::Vec2i window_position() const;
+
 
         void set_title(std::string_view title);
 
 
-        void set_event_handler(std::unique_ptr<EventHandler> handler) { _event_handler = std::move(handler); }
-        EventHandler* event_handler() const { return _event_handler.get(); }
+        void set_event_handler(EventHandler* handler) { _event_handler = handler; }
+        EventHandler* event_handler() const { return _event_handler; }
 
 #ifdef Y_OS_WIN
         HINSTANCE_ instance() const { return _hinstance; }
@@ -84,14 +90,16 @@ class Window : NonMovable {
     private:
 #ifdef Y_OS_WIN
         friend void notify_resized(Window* win);
+        friend void update_capture_state(Window* win, bool button_down, MouseButton button);
 
         HINSTANCE_ _hinstance = nullptr;
         HWND_ _hwnd = nullptr;
         bool _run = true;
+        u32 _mouse_state = 0;
 #endif
 
 
-        mutable std::unique_ptr<EventHandler> _event_handler;
+        EventHandler* _event_handler = nullptr;
 };
 
 }
