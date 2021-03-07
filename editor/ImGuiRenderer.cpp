@@ -31,19 +31,44 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
+#include <external/imgui/IconsFontAwesome5.h>
 #include <external/imgui/yave_imgui.h>
 
 namespace editor {
 
+static const char* find_font(std::string_view name) {
+    const std::array font_paths = {".", "..", "./fonts", "../fonts"};
+    for(const auto path : font_paths) {
+        const char* file = fmt_c_str("%/%", path, name);
+        if(io2::File::open(file).is_ok()) {
+            return file;
+        }
+    }
+    return nullptr;
+}
+
 static ImageData load_font() {
     y_profile();
 
-    ImGuiIO& io = ImGui::GetIO();
+    ImFontAtlas* fonts = ImGui::GetIO().Fonts;
+    fonts->AddFontDefault();
+
+    if(const char* filename = find_font(FONT_ICON_FILE_NAME_FAS)) {
+        ImFontConfig config;
+        config.MergeMode = true;
+        const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+        fonts->AddFontFromFileTTF(filename, 13.0f, &config, icon_ranges);
+    } else {
+        log_msg(FONT_ICON_FILE_NAME_FAS " not found.", Log::Error);
+    }
 
     u8* font_data = nullptr;
     int width = 0;
     int height = 0;
-    io.Fonts->GetTexDataAsRGBA32(&font_data, &width, &height);
+    fonts->GetTexDataAsRGBA32(&font_data, &width, &height);
     return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(VK_FORMAT_R8G8B8A8_UNORM));
 }
 
