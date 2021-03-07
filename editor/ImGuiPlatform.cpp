@@ -172,7 +172,6 @@ bool ImGuiPlatform::PlatformWindow::update_swapchain() {
     y_profile();
 
     if(swapchain.size() != window.size()) {
-        log_msg(fmt("% != %", swapchain.size(), window.size()));
         wait_all_queues(platform->device());
         swapchain.reset();
     }

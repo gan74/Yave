@@ -260,7 +260,7 @@ void Window::set_position(const math::Vec2i& pos) {
 math::Vec2ui Window::size() const {
     y_debug_assert(_hwnd);
     RECT rect = {};
-    GetWindowRect(_hwnd, &rect);
+    GetClientRect(_hwnd, &rect);
     return math::Vec2ui(u32(std::abs(rect.right - rect.left)), u32(std::abs(rect.bottom - rect.top)));
 }
 
