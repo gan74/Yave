@@ -120,7 +120,9 @@ int main(int argc, char** argv) {
 
     ImGuiPlatform platform(&device);
 
-    platform.run();
+    while(platform.update()) {
+        // ...
+    }
 
 
 #if 0
@@ -163,9 +165,9 @@ int main(int argc, char** argv) {
     }
 
     context = nullptr;
+#endif
 
     log_msg("Quitting...");
-#endif
 
     return 0;
 }

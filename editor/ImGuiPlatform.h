@@ -39,9 +39,11 @@ namespace editor {
 class ImGuiPlatform : NonMovable {
 
     struct PlatformWindow : NonMovable {
-        PlatformWindow(ImGuiPlatform* parent, Window::Flags flags = Window::NoDecoration);
+        PlatformWindow(ImGuiPlatform* parent, Window::Flags flags);
 
-        void render(ImGuiViewport* viewport);
+        bool update_swapchain();
+
+        bool render(ImGuiViewport* viewport);
 
         ImGuiPlatform* platform = nullptr;
         Window window;
@@ -53,14 +55,16 @@ class ImGuiPlatform : NonMovable {
 
         DevicePtr device() const;
 
-        void run();
+        bool update();
 
     private:
+        friend class PlatformWindow;
+
+        void close_window(PlatformWindow* window);
+
         static ImGuiPlatform* get_platform();
         static Window* get_window(ImGuiViewport* vp);
         static PlatformWindow* get_platform_window(ImGuiViewport* vp);
-
-        friend class PlatformWindow;
 
     private:
         std::unique_ptr<PlatformWindow> _main_window;
