@@ -60,7 +60,7 @@ bool ResourceBrowser::is_searching() const {
 
 
 
-void ResourceBrowser::paint_import_menu() {
+void ResourceBrowser::draw_import_menu() {
     // if(ImGui::Selectable("Import objects")) {
     //     Editor::instance()->ui().add_widget<SceneImporter>(context(), path());
     // }
@@ -69,12 +69,12 @@ void ResourceBrowser::paint_import_menu() {
     // }
 }
 
-void ResourceBrowser::paint_context_menu() {
-    FileSystemView::paint_context_menu();
+void ResourceBrowser::draw_context_menu() {
+    FileSystemView::draw_context_menu();
 
     ImGui::Separator();
 
-    paint_import_menu();
+    draw_import_menu();
 
     ImGui::Separator();
 
@@ -94,11 +94,7 @@ void ResourceBrowser::paint_context_menu() {
     }
 }
 
-void ResourceBrowser::paint_preview(float width) {
-    unused(width);
-}
-
-void ResourceBrowser::paint_path_bar() {
+void ResourceBrowser::draw_top_bar() {
     ImGui::PushID("##pathbar");
 
     if(ImGui::Button(ICON_FA_PLUS " Import")) {
@@ -106,7 +102,7 @@ void ResourceBrowser::paint_path_bar() {
     }
 
     if(ImGui::BeginPopup("##importmenu")) {
-        paint_import_menu();
+        draw_import_menu();
         ImGui::EndPopup();
     }
 
@@ -166,37 +162,39 @@ void ResourceBrowser::paint_path_bar() {
         ImGui::PopStyleColor();
     }
 
+
     {
-        bool has_seach_bar = false;
-        if(dynamic_cast<const SearchableFileSystemModel*>(filesystem())) {
-            const usize search_bar_size = 200;
-            const float width = ImGui::GetWindowSize().x;
-            if(search_bar_size < width) {
-                has_seach_bar = true;
-                ImGui::SameLine(width - (search_bar_size + 24));
-                ImGui::SetNextItemWidth(search_bar_size);
-                /*if(ImGui::InputTextWithHint("##searchbar", " " ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
-                    update_search();
-                }*/
-                if(ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
-                    update_search();
-                }
+        ImGui::SameLine();
+
+        const usize search_bar_size = 200;
+        const usize margin = 24;
+
+        const bool has_seach_bar = (ImGui::GetContentRegionAvail().x > margin + search_bar_size) && dynamic_cast<const SearchableFileSystemModel*>(filesystem());
+        if(has_seach_bar) {
+            ImGui::SameLine(ImGui::GetContentRegionMax().x - (search_bar_size + margin));
+            ImGui::SetNextItemWidth(search_bar_size);
+            if(ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
+                update_search();
             }
+        } else {
+            ImGui::NewLine();
         }
+
 
         if(!has_seach_bar || !_search_pattern[0]) {
             _search_results = nullptr;
         }
     }
 
+
     ImGui::PopID();
 }
 
-void ResourceBrowser::paint_search_results(float width) {
+void ResourceBrowser::draw_search_results() {
     Y_TODO(Replace by table when available)
 
     _preview_id = AssetId::invalid_id();
-    ImGui::BeginChild("##searchresults", ImVec2(width, 0), true);
+    ImGui::BeginChild("##searchresults", ImVec2(0, 0), true);
     {
         imgui::alternating_rows_background();
         for(const Entry& entry : *_search_results) {
@@ -226,25 +224,15 @@ void ResourceBrowser::paint_search_results(float width) {
 void ResourceBrowser::draw_gui() {
     y_profile();
 
-    const float width = ImGui::GetWindowContentRegionWidth();
-    const float tree_width = 0.0f;
-    const bool render_preview = width - tree_width > 400.0f;
-    const float list_width = render_preview ? width - tree_width - 200.0f : 0.0f;
-    const float preview_width = width - tree_width - list_width;
-
-    {
-        paint_path_bar();
-    }
+    draw_top_bar();
 
     if(is_searching()) {
-        paint_search_results(list_width);
+        draw_search_results();
     } else {
-        ImGui::BeginChild("##assets", ImVec2(list_width, 0.0f));
+        ImGui::BeginChild("##assets");
         FileSystemView::draw_gui();
         ImGui::EndChild();
     }
-
-    paint_preview(render_preview ? preview_width : 0.0f);
 
     if(_set_path_deferred != path()) {
         set_path(_set_path_deferred);

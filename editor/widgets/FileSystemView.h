@@ -65,7 +65,7 @@ class FileSystemView : public Widget {
         void draw_gui() override;
 
         virtual void update();
-        virtual void paint_context_menu();
+        virtual void draw_context_menu();
         virtual core::Result<core::String> entry_icon(const core::String&, EntryType type) const;
 
         virtual void path_changed() {}

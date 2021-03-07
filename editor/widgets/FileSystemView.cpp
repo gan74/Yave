@@ -225,13 +225,13 @@ bool FileSystemView::process_context_menu() {
 
     if(ImGui::BeginPopup("##contextmenu")) {
         menu_openned = true;
-        paint_context_menu();
+        draw_context_menu();
         ImGui::EndPopup();
     }
     return menu_openned;
 }
 
-void FileSystemView::paint_context_menu() {
+void FileSystemView::draw_context_menu() {
     if(ImGui::Selectable("New folder")) {
         if(!filesystem()->create_directory(filesystem()->join(path(), "new folder"))) {
             log_msg("Unable to create directory.", Log::Error);

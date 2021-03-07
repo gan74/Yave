@@ -318,6 +318,7 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
 FileSystemModel::Result<core::Vector<core::String>> SQLiteAssetStore::SQLiteFileSystemModel::search(std::string_view pattern) const {
     y_profile();
 
+    Y_TODO(This is still case sensitive, somehow)
     core::Vector<core::String> results;
 
     sqlite3_stmt* stmt = nullptr;

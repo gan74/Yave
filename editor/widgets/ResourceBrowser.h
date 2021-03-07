@@ -47,7 +47,7 @@ class ResourceBrowser : public FileSystemView {
     protected:
         void update() override;
 
-        void paint_context_menu() override;
+        void draw_context_menu() override;
         void path_changed() override;
 
         core::Result<core::String> entry_icon(const core::String& name, EntryType type) const override;
@@ -57,10 +57,9 @@ class ResourceBrowser : public FileSystemView {
         bool is_searching() const;
 
     private:
-        void paint_search_results(float width = 0.0f);
-        void paint_preview(float width = 0.0f);
-        void paint_path_bar();
-        void paint_import_menu();
+        void draw_search_results();
+        void draw_top_bar();
+        void draw_import_menu();
 
         void update_search();
 
