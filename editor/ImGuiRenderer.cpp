@@ -59,6 +59,9 @@ static ImageData load_font() {
     if(const char* filename = find_font(FONT_ICON_FILE_NAME_FAS)) {
         ImFontConfig config;
         config.MergeMode = true;
+        config.PixelSnapH = true;
+        config.OversampleH = 1;
+
         const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
         fonts->AddFontFromFileTTF(filename, 13.0f, &config, icon_ranges);
     } else {
