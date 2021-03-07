@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "FileBrowser.h"
 
-#include <editor/context/EditorContext.h>
 #include <editor/utils/ui.h>
 
 #include <yave/utils/FileSystemModel.h>
@@ -57,7 +56,7 @@ void FileBrowser::set_selection_filter(bool dirs, std::string_view exts) {
         }
     }
     y::sort(_extensions.begin(), _extensions.end());
-    refresh();
+    // refresh();
 }
 
 
@@ -121,7 +120,7 @@ core::String FileBrowser::full_path() const {
     return filesystem()->join(path(), _name_buffer.data());
 }
 
-void FileBrowser::paint(CmdBufferRecorder& recorder) {
+void FileBrowser::draw_gui() {
     static constexpr isize button_width = 75;
 
     {
@@ -152,7 +151,7 @@ void FileBrowser::paint(CmdBufferRecorder& recorder) {
         }
     }
 
-    FileSystemView::paint(recorder);
+    FileSystemView::draw_gui();
 }
 
 }

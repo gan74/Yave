@@ -276,7 +276,7 @@ ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
 
     }
 
-    _renderer = std::make_unique<ImGuiRenderer2>(dptr);
+    _renderer = std::make_unique<ImGuiRenderer>(dptr);
     _main_window = std::make_unique<PlatformWindow>(this, Window::Resizable);
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -287,10 +287,10 @@ DevicePtr ImGuiPlatform::device() const {
     return _renderer->device();
 }
 
-bool ImGuiPlatform::exec(OnGuiFunc func) {
+bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
     y_profile();
 
-    if(_main_window->window.update()) {
+    while(_main_window->window.update()) {
         ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
         ImGui::GetIO().DisplaySize = _main_window->window.size();
 
@@ -327,7 +327,9 @@ bool ImGuiPlatform::exec(OnGuiFunc func) {
             _main_window->swapchain.present(frame, std::move(recorder), graphic_queue(device()));
         }
 
-        return true;
+        if(once) {
+            return true;
+        }
     }
 
     return false;

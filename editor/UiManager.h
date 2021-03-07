@@ -19,22 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_PROPERTYPANEL_H
-#define EDITOR_WIDGETS_PROPERTYPANEL_H
+#ifndef EDITOR_UIMANAGER_H
+#define EDITOR_UIMANAGER_H
 
-#include <editor/ui/Widget.h>
+#include "Widget.h"
+
+#include <y/core/Vector.h>
+#include <y/core/HashMap.h>
+
+#include <typeindex>
+#include <memory>
 
 namespace editor {
 
-class PropertyPanel final : public Widget, public ContextLinked {
+class UiDebugWidget : public Widget {
     public:
-        PropertyPanel(ContextPtr cptr);
+        UiDebugWidget();
+        void draw_gui() override;
+};
+
+class UiManager : NonMovable {
+
+    struct WidgetIdStack {
+        core::Vector<u64> released;
+        u64 next = 0;
+    };
+
+    public:
+        UiManager();
+        ~UiManager();
+
+        void draw_gui();
+
+        void add_widget(std::unique_ptr<Widget> widget);
+
+        // y_reflect(_widgets);
 
     private:
-        void paint(CmdBufferRecorder&) override;
+        void set_widget_id(Widget* widget);
+
+        core::Vector<std::unique_ptr<Widget>> _widgets;
+        core::ExternalHashMap<std::type_index, WidgetIdStack> _ids;
 };
+
 
 }
 
-#endif // EDITOR_WIDGETS_PROPERTYPANEL_H
+#endif // EDITOR_UIMANAGER_H
 

@@ -42,7 +42,7 @@ class FileBrowser final : public FileSystemView {
 
         void set_selection_filter(bool dirs, std::string_view exts = "");
 
-        void paint(CmdBufferRecorder& recorder) override;
+        void draw_gui() override;
 
     protected:
         void path_changed() override;

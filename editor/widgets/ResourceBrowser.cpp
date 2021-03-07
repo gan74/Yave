@@ -21,15 +21,13 @@ SOFTWARE.
 **********************************/
 
 #include "ResourceBrowser.h"
-#include "SceneImporter.h"
-#include "ImageImporter.h"
 
-#include <editor/context/EditorContext.h>
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
 
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
+#include <yave/material/SimpleMaterialData.h>
 
 #include <y/io2/Buffer.h>
 #include <y/utils/log.h>
@@ -40,23 +38,20 @@ SOFTWARE.
 
 namespace editor {
 
-ResourceBrowser::ResourceBrowser(ContextPtr ctx) : ResourceBrowser(ctx, ICON_FA_FOLDER_OPEN " Resource Browser") {
+ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resource Browser") {
 }
 
-ResourceBrowser::ResourceBrowser(ContextPtr ctx, std::string_view title) :
-        FileSystemView(ctx->asset_store().filesystem(), title),
-        ContextLinked(ctx) {
-
-    set_flags(ImGuiWindowFlags_NoScrollbar);
+ResourceBrowser::ResourceBrowser(std::string_view title) : FileSystemView(Editor::instance()->asset_store().filesystem(), title) {
+    //set_flags(ImGuiWindowFlags_NoScrollbar);
     path_changed();
 }
 
 AssetId ResourceBrowser::asset_id(std::string_view name) const {
-    return context()->asset_store().id(name).unwrap_or(AssetId());
+    return Editor::instance()->asset_store().id(name).unwrap_or(AssetId());
 }
 
 AssetType ResourceBrowser::read_file_type(AssetId id) const {
-    return context()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+    return Editor::instance()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 }
 
 bool ResourceBrowser::is_searching() const {
@@ -66,12 +61,12 @@ bool ResourceBrowser::is_searching() const {
 
 
 void ResourceBrowser::paint_import_menu() {
-    if(ImGui::Selectable("Import objects")) {
-        context()->ui_manager().add_widget<SceneImporter>(context(), path());
-    }
-    if(ImGui::Selectable("Import image")) {
-        context()->ui_manager().add_widget<ImageImporter>(context(), path());
-    }
+    // if(ImGui::Selectable("Import objects")) {
+    //     Editor::instance()->ui().add_widget<SceneImporter>(context(), path());
+    // }
+    // if(ImGui::Selectable("Import image")) {
+    //     Editor::instance()->ui().add_widget<ImageImporter>(context(), path());
+    // }
 }
 
 void ResourceBrowser::paint_context_menu() {
@@ -89,44 +84,18 @@ void ResourceBrowser::paint_context_menu() {
         serde3::WritableArchive arc(buffer);
         if(arc.serialize(material)) {
             buffer.reset();
-            AssetStore& store = context()->asset_store();
+            AssetStore& store = Editor::instance()->asset_store();
             if(!store.import(buffer, store.filesystem()->join(path(), "new material"), AssetType::Material)) {
                 log_msg("Unable to import new material.", Log::Error);
             }
         } else {
             log_msg("Unable to create new material.", Log::Error);
         }
-
-        refresh_all();
     }
 }
 
 void ResourceBrowser::paint_preview(float width) {
-    if(_preview_id != AssetId::invalid_id()) {
-        const auto thumb_data = context()->thumbmail_cache().get_thumbmail(_preview_id);
-        auto paint_properties = [&] {
-            ImGui::Text("ID: 0x%.8x", unsigned(_preview_id.id()));
-            for(const auto& [name, value] : thumb_data.properties) {
-                ImGui::TextUnformatted(fmt_c_str("%: %", name, value));
-            }
-        };
-
-        if(width > 0.0f) {
-            ImGui::SameLine();
-            ImGui::BeginGroup();
-            if(TextureView* image = thumb_data.image) {
-                ImGui::Image(image, math::Vec2(width));
-            }
-            paint_properties();
-            ImGui::EndGroup();
-        }
-
-        {
-            ImGui::BeginTooltip();
-            paint_properties();
-            ImGui::EndTooltip();
-        }
-    }
+    unused(width);
 }
 
 void ResourceBrowser::paint_path_bar() {
@@ -201,9 +170,10 @@ void ResourceBrowser::paint_path_bar() {
         bool has_seach_bar = false;
         if(dynamic_cast<const SearchableFileSystemModel*>(filesystem())) {
             const usize search_bar_size = 200;
-            if(search_bar_size < size().x()) {
+            const float width = ImGui::GetWindowSize().x;
+            if(search_bar_size < width) {
                 has_seach_bar = true;
-                ImGui::SameLine(size().x() - (search_bar_size + 24));
+                ImGui::SameLine(width - (search_bar_size + 24));
                 ImGui::SetNextItemWidth(search_bar_size);
                 /*if(ImGui::InputTextWithHint("##searchbar", " " ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
                     update_search();
@@ -253,7 +223,7 @@ void ResourceBrowser::paint_search_results(float width) {
 
 
 
-void ResourceBrowser::paint(CmdBufferRecorder& recorder) {
+void ResourceBrowser::draw_gui() {
     y_profile();
 
     const float width = ImGui::GetWindowContentRegionWidth();
@@ -270,7 +240,7 @@ void ResourceBrowser::paint(CmdBufferRecorder& recorder) {
         paint_search_results(list_width);
     } else {
         ImGui::BeginChild("##assets", ImVec2(list_width, 0.0f));
-        FileSystemView::paint(recorder);
+        FileSystemView::draw_gui();
         ImGui::EndChild();
     }
 

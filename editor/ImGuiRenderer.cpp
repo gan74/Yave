@@ -22,60 +22,23 @@ SOFTWARE.
 
 #include "ImGuiRenderer.h"
 
-#include <editor/context/EditorContext.h>
-
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/material/Material.h>
 
-#include <external/imgui/yave_imgui.h>
-
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
 
-#include <y/utils/log.h>
-
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
-
-static const char* find_font(std::string_view name) {
-    const std::array font_paths = {".", "..", "./fonts", "../fonts"};
-    for(const auto path : font_paths) {
-        const char* file = fmt_c_str("%/%", path, name);
-        if(io2::File::open(file).is_ok()) {
-            return file;
-        }
-    }
-    return nullptr;
-}
 
 static ImageData load_font() {
     y_profile();
 
     ImGuiIO& io = ImGui::GetIO();
-
-    // https://skia.googlesource.com/external/github.com/ocornut/imgui/+/v1.50/extra_fonts/README.txt
-#if 0
-    if(const char* font = find_font("Roboto-Regular.ttf")) {
-        io.Fonts->AddFontFromFileTTF(font, 14.0f);
-    } else {
-        io.Fonts->AddFontDefault();
-        log_msg("Roboto-Regular.ttf not found.", Log::Error);
-    }
-#else
-    io.Fonts->AddFontDefault();
-#endif
-
-    if(const char* icons = find_font("fa-solid-900.ttf")) {
-        ImFontConfig config;
-        config.MergeMode = true;
-        const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-        io.Fonts->AddFontFromFileTTF(icons, 13.0f, &config, icon_ranges);
-    } else {
-        log_msg("fa-solid-900.ttf not found.", Log::Error);
-    }
 
     u8* font_data = nullptr;
     int width = 0;
@@ -84,13 +47,24 @@ static ImageData load_font() {
     return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(VK_FORMAT_R8G8B8A8_UNORM));
 }
 
-ImGuiRenderer::ImGuiRenderer(ContextPtr ctx) :
-        ContextLinked(ctx),
+static MaterialTemplateData create_imgui_material_data() {
+    return MaterialTemplateData()
+            .set_frag_data(SpirVData::deserialized(io2::File::open("imgui.frag.spv").expected("Unable to open SPIR-V file.")))
+            .set_vert_data(SpirVData::deserialized(io2::File::open("imgui.vert.spv").expected("Unable to open SPIR-V file.")))
+            .set_depth_mode(DepthTestMode::None)
+            .set_cull_mode(CullMode::None)
+            .set_blend_mode(BlendMode::SrcAlpha)
+        ;
+}
+
+
+ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
+        DeviceLinked(dptr),
         _font(device(), load_font()),
-        _font_view(_font) {
+        _font_view(_font),
+        _material(device(), create_imgui_material_data()) {
 
     ImGui::GetIO().Fonts->TexID = &_font_view;
-    set_style(Style::Corporate3D);
 }
 
 
@@ -98,39 +72,35 @@ const Texture& ImGuiRenderer::font_texture() const {
     return _font;
 }
 
-void ImGuiRenderer::set_style(Style st) {
-    Style _style = st;
-    {
-#include "style.h"
-    }
-}
-
-void ImGuiRenderer::render(RenderPassRecorder& recorder) {
+void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) {
     static_assert(sizeof(ImDrawVert) == sizeof(Vertex), "ImDrawVert is not of expected size");
     static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
+
     y_profile();
-
-    const auto region = recorder.region("ImGui render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
-
-    ImDrawData* draw_data = ImGui::GetDrawData();
 
     if(!draw_data) {
         return;
     }
 
+    const auto region = recorder.region("ImGui render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+
     const auto next_power_of_2 = [](usize size) { return 2 << log2ui(size); };
-    const usize imgui_index_buffer_size = next_power_of_2(ImGui::GetIO().MetricsRenderIndices);
-    const usize imgui_vertex_buffer_size = next_power_of_2(ImGui::GetIO().MetricsRenderVertices);
+    const usize imgui_index_buffer_size = next_power_of_2(draw_data->TotalIdxCount);
+    const usize imgui_vertex_buffer_size = next_power_of_2(draw_data->TotalVtxCount);
+    const math::Vec2 viewport_size = recorder.viewport().extent;
+    const math::Vec2 viewport_offset = draw_data->DisplayPos;
+
+
     const TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> index_buffer(device(), imgui_index_buffer_size);
     const TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(device(), imgui_vertex_buffer_size);
-    const TypedUniformBuffer<math::Vec2> uniform_buffer(device(), 1);
+    const TypedUniformBuffer<math::Vec2> uniform_buffer(device(), 2);
 
     auto indexes = TypedMapping(index_buffer);
     auto vertices = TypedMapping(vertex_buffer);
 
     auto uniform = TypedMapping(uniform_buffer);
-    uniform[0] = math::Vec2(ImGui::GetIO().DisplaySize);
-
+    uniform[0] = viewport_size;
+    uniform[1] = viewport_offset;
 
     const auto create_descriptor_set = [&](const void* data) {
         const auto* tex = static_cast<const TextureView*>(data);
@@ -140,9 +110,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder) {
     const DescriptorSetBase default_set = create_descriptor_set(&_font_view);
 
     const auto setup_state = [&](const void* tex) {
-        y_profile_zone("setup state");
-        const auto* material = context()->resources()[EditorResources::ImGuiMaterialTemplate];
-        recorder.bind_material(material, {tex ? create_descriptor_set(tex) : default_set});
+        recorder.bind_material(&_material, {tex ? create_descriptor_set(tex) : default_set});
     };
 
     usize index_offset = 0;
@@ -151,6 +119,8 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder) {
 
     recorder.bind_buffers(index_buffer, {vertex_buffer});
     for(auto c = 0; c != draw_data->CmdListsCount; ++c) {
+        Y_TODO(Use vertex offsets so we can enable ImGuiBackendFlags_RendererHasVtxOffset)
+
         const ImDrawList* cmd_list = draw_data->CmdLists[c];
 
         if(cmd_list->IdxBuffer.Size + index_offset >= index_buffer.size()) {
@@ -168,7 +138,7 @@ void ImGuiRenderer::render(RenderPassRecorder& recorder) {
         for(auto i = 0; i != cmd_list->CmdBuffer.Size; ++i) {
             const ImDrawCmd& cmd = cmd_list->CmdBuffer[i];
 
-            const math::Vec2i offset(i32(cmd.ClipRect.x), i32(cmd.ClipRect.y));
+            const math::Vec2i offset = math::Vec2i(i32(cmd.ClipRect.x), i32(cmd.ClipRect.y)) - math::Vec2i(viewport_offset);
             const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
             recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
 

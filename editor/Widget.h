@@ -19,38 +19,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERER_EDITORRENDERER_H
-#define EDITOR_RENDERER_EDITORRENDERER_H
+#ifndef EDITOR_WIDGET_H
+#define EDITOR_WIDGET_H
 
-#include "EditorEntityPass.h"
-#include "IdBufferPass.h"
+#include <editor/Editor.h>
+
+#include <y/core/String.h>
+
+// #include <y/serde3/poly.h>
 
 namespace editor {
 
-struct EditorRendererSettings {
-    RendererSettings renderer_settings;
+class Widget : NonMovable {
 
-    bool show_editor_entities = true;
-    bool show_selection = true;
-    float billboard_size = 64.0f;
-};
+    public:
+        Widget(std::string_view title);
+        virtual ~Widget();
+
+        void close();
+        bool is_visible() const;
+
+        virtual void refresh();
+        virtual void refresh_all();
+
+        virtual void draw_gui();
+
+        void draw_gui_inside();
+
+        // y_reflect(_title_with_id, _title, _id)
+        // y_serde3_poly_base(Widget)
+
+    protected:
+        bool _visible = true;
+
+    private:
+        friend class UiManager;
+
+        bool begin();
+        void end();
+
+        void set_id(u64 id);
+        void set_title(std::string_view title);
+
+        core::String _title_with_id;
 
 
-struct EditorRenderer {
-    DefaultRenderer renderer;
-
-    FrameGraphImageId id;
-    FrameGraphImageId final;
-    FrameGraphImageId depth;
-
-    static EditorRenderer create(ContextPtr ctx,
-                                 FrameGraph& framegraph,
-                                 const SceneView& view,
-                                 const math::Vec2ui& size,
-                                 const EditorRendererSettings& settings = EditorRendererSettings());
+        std::string_view _title;
+        u64 _id = 0;
 };
 
 }
 
-#endif // EDITOR_RENDERER_EDITORRENDERER_H
+#endif // EDITOR_WIDGET_H
 

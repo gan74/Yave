@@ -23,8 +23,8 @@ SOFTWARE.
 #ifndef EDITOR_IMGUIPLATFORM_H
 #define EDITOR_IMGUIPLATFORM_H
 
-#include <editor/editor.h>
-#include <editor/ImGuiRenderer2.h>
+#include <editor/Editor.h>
+#include <editor/ImGuiRenderer.h>
 
 #include <yave/window/Window.h>
 #include <yave/window/EventHandler.h>
@@ -61,7 +61,7 @@ class ImGuiPlatform : NonMovable {
 
         DevicePtr device() const;
 
-        bool exec(OnGuiFunc func = nullptr);
+        bool exec(OnGuiFunc func = nullptr, bool once = false);
 
     private:
         friend class PlatformWindow;
@@ -76,7 +76,7 @@ class ImGuiPlatform : NonMovable {
         std::unique_ptr<PlatformWindow> _main_window;
         core::Vector<std::unique_ptr<PlatformWindow>> _windows;
 
-        std::unique_ptr<ImGuiRenderer2> _renderer;
+        std::unique_ptr<ImGuiRenderer> _renderer;
 
         core::Chrono _frame_timer;
 };

@@ -22,32 +22,38 @@ SOFTWARE.
 
 #include "Editor.h"
 
-#include <yave/ecs/EntityWorld.h>
+#include "UiManager.h"
 
-#include <editor/systems/RenderingSystem.h>
-#include <editor/systems/UiSystem.h>
-
-
-#include <editor/components/UiComponent.h>
+#include <yave/assets/SQLiteAssetStore.h>
 
 namespace editor {
 
-Editor::Editor(DevicePtr dptr) : _world(std::make_unique<ecs::EntityWorld>()) {
-    _world->add_system<RenderingSystem>(dptr);
-    _world->add_system<UiSystem>();
+static Editor* editor_instance = nullptr;
 
-    {
-        const auto id = _world->create_entity();
-        UiComponent* c = _world->add_component<UiComponent>(id);
-        c->widget = std::make_unique<Widget2>("floop");
-    }
+Editor* Editor::instance() {
+    y_debug_assert(editor_instance);
+    return editor_instance;
+}
+
+Editor* Editor::init(DevicePtr dptr) {
+    y_always_assert(!editor_instance, "Editor already initialized.");
+    return editor_instance = new Editor(dptr);
+}
+
+void Editor::destroy() {
+    y_always_assert(editor_instance, "No editor.");
+    delete editor_instance;
+    editor_instance = nullptr;
+}
+
+
+Editor::Editor(DevicePtr dptr) : DeviceLinked(dptr) {
+    _ui = std::make_unique<UiManager>();
+    _asset_store = std::make_unique<SQLiteAssetStore>("../store.sqlite3");
 }
 
 Editor::~Editor() {
 }
 
-void Editor::tick() {
-    _world->tick();
-}
 
 }

@@ -26,8 +26,8 @@ SOFTWARE.
 
 namespace editor {
 
-AssetSelector::AssetSelector(ContextPtr ctx, AssetType filter) :
-        ResourceBrowser(ctx, fmt("% Asset selector", asset_type_icon(filter))),
+AssetSelector::AssetSelector(AssetType filter) :
+        ResourceBrowser(fmt("% Asset selector", asset_type_icon(filter))),
         _filter(filter) {
 }
 

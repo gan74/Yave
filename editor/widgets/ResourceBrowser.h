@@ -30,14 +30,14 @@ SOFTWARE.
 
 namespace editor {
 
-class ResourceBrowser : public FileSystemView, public ContextLinked {
+class ResourceBrowser : public FileSystemView {
     public:
-        ResourceBrowser(ContextPtr ctx);
-        
-        void paint(CmdBufferRecorder& recorder) override;
+        ResourceBrowser();
+
+        void draw_gui() override;
 
     protected:
-        ResourceBrowser(ContextPtr ctx, std::string_view title);
+        ResourceBrowser(std::string_view title);
 
         AssetId asset_id(std::string_view name) const;
         AssetType read_file_type(AssetId id) const;

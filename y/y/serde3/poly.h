@@ -118,6 +118,23 @@ struct PolyType {
 
 }
 
+#define y_serde3_poly_qual(type, virt, over)                                                                        \
+    inline static struct _y_register_t {                                                                            \
+        _y_register_t() { _y_serde3_poly_base.register_type<type>(); }                                              \
+        void used() {}                                                                                              \
+    } _y_register;                                                                                                  \
+    virt y::serde3::TypeId _y_serde3_poly_type_id() const over {                                                    \
+        return y::serde3::detail::poly_type_id<y::remove_cvref_t<decltype(*this)>>();                               \
+    }                                                                                                               \
+    virt y::serde3::Result _y_serde3_poly_serialize(y::serde3::WritableArchive& arc) const over {                   \
+        _y_register.used();                                                                                         \
+        return y::serde3::detail::serialize_one(arc, *this);                                                        \
+    }                                                                                                               \
+    virt y::serde3::Result _y_serde3_poly_deserialize(y::serde3::ReadableArchive& arc) over {                       \
+        _y_register.used();                                                                                         \
+        return y::serde3::detail::deserialize_one(arc, *this);                                                      \
+    }
+
 
 
 #define y_serde3_poly_abstract_base(base)                                                                           \
@@ -126,23 +143,13 @@ struct PolyType {
     virtual y::serde3::Result _y_serde3_poly_serialize(y::serde3::WritableArchive&) const = 0;                      \
     virtual y::serde3::Result _y_serde3_poly_deserialize(y::serde3::ReadableArchive&) = 0;
 
+#define y_serde3_poly_base(base)                                                                                    \
+    static y::serde3::detail::PolyType<base> _y_serde3_poly_base;                                                   \
+    y_serde3_poly_qual(base, virtual, /*...*/)
 
-#define y_serde3_poly(type)                                                                                         \
-    inline static struct _y_register_t {                                                                            \
-        _y_register_t() { _y_serde3_poly_base.register_type<type>(); }                                              \
-        void used() {}                                                                                              \
-    } _y_register;                                                                                                  \
-     y::serde3::TypeId _y_serde3_poly_type_id() const override {                                                    \
-        return y::serde3::detail::poly_type_id<y::remove_cvref_t<decltype(*this)>>();                               \
-    }                                                                                                               \
-     y::serde3::Result _y_serde3_poly_serialize(y::serde3::WritableArchive& arc) const override {                   \
-        _y_register.used();                                                                                         \
-        return y::serde3::detail::serialize_one(arc, *this);                                                             \
-    }                                                                                                               \
-     y::serde3::Result _y_serde3_poly_deserialize(y::serde3::ReadableArchive& arc) override {                       \
-        _y_register.used();                                                                                         \
-        return y::serde3::detail::deserialize_one(arc, *this);                                                           \
-    }
+#define y_serde3_poly(base)                                                                                         \
+    y_serde3_poly_qual(base, /*   */, override)
+
 
 }
 }

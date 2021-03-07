@@ -22,9 +22,10 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_FILESYSTEMVIEW_H
 #define EDITOR_WIDGETS_FILESYSTEMVIEW_H
 
-#include <editor/ui/Widget.h>
+#include <editor/Widget.h>
 
 #include <y/core/Chrono.h>
+#include <y/core/Vector.h>
 #include <y/core/Result.h>
 
 namespace editor {
@@ -61,7 +62,7 @@ class FileSystemView : public Widget {
         const Entry* entry(usize index) const;
         core::String entry_full_name(const Entry& entry) const;
 
-        void paint(CmdBufferRecorder&) override;
+        void draw_gui() override;
 
         virtual void update();
         virtual void paint_context_menu();

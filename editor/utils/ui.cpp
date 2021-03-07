@@ -23,7 +23,6 @@ SOFTWARE.
 #include "ui.h"
 #include "assets.h"
 
-#include <editor/context/EditorContext.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/FileBrowser.h>
 
@@ -39,13 +38,13 @@ bool should_open_context_menu() {
     return ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1);
 }
 
-bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view text, bool* clear) {
+bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear) {
     static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
 
     ImGui::PushID(fmt_c_str("%_%_%", id.id(), uenum(type), text));
     ImGui::BeginGroup();
 
-    const auto name = ctx->asset_store().name(id);
+    const auto name = Editor::instance()->asset_store().name(id);
     const bool is_valid = name.is_ok();
 
     if(clear) {
@@ -55,10 +54,10 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
     bool ret = false;
     bool button = false;
     if(is_valid) {
-        if(TextureView* image = ctx->thumbmail_cache().get_thumbmail(id).image) {
-            button = true;
-            ret = ImGui::ImageButton(image, button_size);
-        }
+        // if(TextureView* image = ctx->thumbmail_cache().get_thumbmail(id).image) {
+        //     button = true;
+        //     ret = ImGui::ImageButton(image, button_size);
+        // }
     }
 
     if(!button) {
@@ -68,7 +67,7 @@ bool asset_selector(ContextPtr ctx, AssetId id, AssetType type, std::string_view
 
     ImGui::SameLine();
     if(ImGui::GetContentRegionAvail().x > button_size.x() * 0.5f) {
-        const auto clean_name = [=](auto&& n) { return ctx->asset_store().filesystem()->filename(n); };
+        const auto clean_name = [=](auto&& n) { return Editor::instance()->asset_store().filesystem()->filename(n); };
         const core::String clean = name.map(clean_name).unwrap_or(core::String());
 
         const bool is_empty = clean.is_empty();

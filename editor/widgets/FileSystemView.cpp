@@ -21,9 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "FileSystemView.h"
-#include "FileRenamer.h"
 
-#include <editor/context/EditorContext.h>
 #include <editor/utils/ui.h>
 
 #include <yave/utils/FileSystemModel.h>
@@ -163,7 +161,7 @@ bool FileSystemView::allow_modify() const {
     return true;
 }
 
-void FileSystemView::paint(CmdBufferRecorder&) {
+void FileSystemView::draw_gui() {
     y_profile();
 
     if(_refresh || _update_chrono.elapsed() > update_duration) {
@@ -248,9 +246,9 @@ void FileSystemView::paint_context_menu() {
         const auto& entry = _entries[_hovered];
         const core::String full_name = filesystem()->join(_current_path, entry.name);
 
-        if(ImGui::MenuItem("Rename")) {
-            add_child<FileRenamer>(filesystem(), full_name);
-        }
+        // if(ImGui::MenuItem("Rename")) {
+        //     add_child<FileRenamer>(filesystem(), full_name);
+        // }
 
         if(ImGui::MenuItem("Delete")) {
             if(!filesystem()->remove(full_name)) {

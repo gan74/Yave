@@ -19,52 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_COMPONENTS_UICOMPONENT_H
-#define EDITOR_COMPONENTS_UICOMPONENT_H
+#ifndef EDITOR_IMGUIRENDERER_H
+#define EDITOR_IMGUIRENDERER_H
 
 #include <editor/Editor.h>
 
-#include <y/core/String.h>
+#include <yave/graphics/images/ImageView.h>
+#include <yave/material/MaterialTemplate.h>
 
-#include <memory>
+struct ImDrawData;
 
 namespace editor {
 
-class Widget2 : NonMovable {
+class ImGuiRenderer : public DeviceLinked {
+
+    struct Vertex {
+        const math::Vec2 pos;
+        const math::Vec2 uv;
+        const u32 col;
+    };
+
     public:
-        Widget2(std::string_view title);
-        virtual ~Widget2();
+        ImGuiRenderer(DevicePtr dptr);
 
-        bool is_visible() const;
+        void render(ImDrawData* draw_data, RenderPassRecorder& recorder);
 
-        virtual void draw_gui();
-
-        void draw_gui_inside();
+        const Texture& font_texture() const;
 
     private:
-        bool begin();
-        void end();
+        Texture _font;
+        TextureView _font_view;
 
-        void set_id(u64 id);
-        void set_title(std::string_view title);
-
-        core::String _title_with_id;
-        bool _visible = true;
-
-
-        std::string_view _title;
-        u64 _id = 0;
-};
-
-class UiComponent {
-    public:
-        std::unique_ptr<Widget2> widget;
-
-    private:
-
+        MaterialTemplate _material;
 };
 
 }
 
-#endif // EDITOR_COMPONENTS_UICOMPONENT_H
+#endif // EDITOR_IMGUIRENDERER_H
 

@@ -22,15 +22,15 @@ SOFTWARE.
 #ifndef EDITOR_EDITORWORLD_H
 #define EDITOR_EDITORWORLD_H
 
-#include <editor/editor.h>
+#include <editor/Editor.h>
 
 #include <yave/ecs/EntityWorld.h>
 
 namespace editor {
 
-class EditorWorld : public ecs::EntityWorld, public ContextLinked {
+class EditorWorld : public ecs::EntityWorld {
     public:
-        EditorWorld(ContextPtr ctx);
+        EditorWorld(AssetLoader& loader);
 
         void flush_reload();
 };

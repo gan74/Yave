@@ -19,41 +19,63 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_IMAGEIMPORTER_H
-#define EDITOR_WIDGETS_IMAGEIMPORTER_H
 
-#include "FileBrowser.h"
+#include "Widget.h"
 
-#include <yave/graphics/images/ImageData.h>
-
-#include <editor/utils/Named.h>
-
-#include <future>
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 
-class ImageImporter final : public Widget, public ContextLinked {
-
-    public:
-        ImageImporter(ContextPtr ctx, const core::String& import_path = ".");
-
-    private:
-        void paint(CmdBufferRecorder&recorder) override;
-
-        void import_async(const core::String& filename);
-        void import(const Named<ImageData>& asset);
-
-        bool done_loading() const;
-        bool is_loading() const;
-
-        FileBrowser _browser;
-
-        core::String _import_path;
-
-        std::future<Named<ImageData>> _import_future;
-};
-
+Widget::Widget(std::string_view title) {
+    set_title(title);
 }
 
-#endif // EDITOR_WIDGETS_IMAGEIMPORTER_H
+Widget::~Widget() {
+}
+
+void Widget::close() {
+    _visible = false;
+}
+
+bool Widget::is_visible() const {
+    return _visible;
+}
+
+void Widget::refresh() {
+}
+
+void Widget::refresh_all() {
+    refresh();
+}
+
+void Widget::draw_gui() {
+    ImGui::Text("Empty widget");
+}
+
+void Widget::draw_gui_inside() {
+    if(begin()) {
+        draw_gui();
+        end();
+    }
+}
+
+bool Widget::begin() {
+    return _visible && ImGui::Begin(_title_with_id.data(), &_visible);
+}
+
+void Widget::end() {
+    ImGui::End();
+}
+
+void Widget::set_id(u64 id) {
+    _id = id;
+    set_title(_title);
+}
+
+void Widget::set_title(std::string_view title) {
+    _title_with_id = fmt("%##%", title, _id);
+    _title = std::string_view(_title_with_id.begin(), title.size());
+}
+
+}
 

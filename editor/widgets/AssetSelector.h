@@ -28,7 +28,7 @@ namespace editor {
 
 class AssetSelector final : public ResourceBrowser {
     public:
-        AssetSelector(ContextPtr ctx, AssetType filter);
+        AssetSelector(AssetType filter);
 
         template<typename F>
         void set_selected_callback(F&& func) {

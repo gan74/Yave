@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_UTILS_ENTITIES_H
 #define EDITOR_UTILS_ENTITIES_H
 
-#include <editor/editor.h>
+#include <editor/Editor.h>
 
 #include <editor/components/EditorComponent.h>
 

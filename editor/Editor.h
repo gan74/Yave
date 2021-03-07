@@ -23,28 +23,41 @@ SOFTWARE.
 #ifndef EDITOR_EDITOR_H
 #define EDITOR_EDITOR_H
 
-#warning for back comp only, remove ASAP
-#include "utils.h"
+#include <yave/yave.h>
+
+#include <editor/utils/forward.h>
+
+#include <yave/graphics/device/DeviceLinked.h>
 
 #include <memory>
 
-namespace yave {
-namespace ecs {
-class EntityWorld;
-}
-}
-
 namespace editor {
 
-class Editor : NonMovable {
+using namespace yave;
+
+using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
+
+class UiManager;
+
+
+class Editor : NonMovable, public DeviceLinked {
     public:
+        static Editor* instance();
+
+        static Editor* init(DevicePtr dptr);
+        static void destroy();
+
+
+        UiManager& ui() { return *_ui; }
+        AssetStore& asset_store() { return *_asset_store; }
+
+
+    private:
         Editor(DevicePtr dptr);
         ~Editor();
 
-        void tick();
-
-    private:
-        std::unique_ptr<ecs::EntityWorld> _world;
+        std::unique_ptr<UiManager> _ui;
+        std::unique_ptr<AssetStore> _asset_store;
 };
 
 }

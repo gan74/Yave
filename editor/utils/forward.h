@@ -25,59 +25,30 @@ SOFTWARE.
 // Auto generated: forward definitions for most non template classes
 // TODO: Classes nested in namespaces or other classes will not be declared correctly
 namespace editor {
-class AssetSelector;
-class AssetStringifier;
 class CameraController;
-class CameraDebug;
-class CameraSettings;
 class ComponentWidgetData;
-class ContextLinked;
 class Editor;
 class EditorComponent;
-class EditorContext;
 class EditorEntityPass;
 class EditorRenderer;
 class EditorRendererSettings;
-class EditorResources;
 class EditorWorld;
-class EngineView;
-class EntityView;
 class FPSCameraController;
 class FileBrowser;
-class FileRenamer;
 class FileSystemView;
-class Gizmo;
 class HoudiniCameraController;
 class IdBufferPass;
 class ImGuiPlatform;
 class ImGuiRenderer;
-class ImGuiRenderer2;
-class ImageImporter;
 class MaterialData;
-class MaterialEditor;
-class MaterialPreview;
-class MemoryInfo;
-class Notifications;
-class PerfSettings;
-class PerformanceMetrics;
-class Picker;
-class PickingResult;
 class PrefabData;
 class PropertyPanel;
-class RenderingSystem;
 class ResourceBrowser;
 class SceneData;
-class SceneImporter;
-class Selection;
-class Settings;
-class SettingsPanel;
 class SkeletonData;
 class SubMeshData;
-class ThumbmailCache;
-class UiComponent;
+class UiDebugWidget;
 class UiManager;
-class UiSettings;
-class UiSystem;
 class Widget;
 }
 

@@ -22,16 +22,15 @@ SOFTWARE.
 
 #include "EditorWorld.h"
 
-#include <editor/context/EditorContext.h>
 #include <editor/components/EditorComponent.h>
 
 #include <yave/systems/AssetLoaderSystem.h>
 
 namespace editor {
 
-EditorWorld::EditorWorld(ContextPtr ctx) : ContextLinked(ctx) {
+EditorWorld::EditorWorld(AssetLoader& loader) {
     add_required_component<EditorComponent>();
-    add_system<AssetLoaderSystem>(ctx->loader());
+    add_system<AssetLoaderSystem>(loader);
 }
 
 void EditorWorld::flush_reload() {
