@@ -19,34 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_UTILS_H
+#define EDITOR_UTILS_H
 
-#ifndef EDITOR_EDITOR_H
-#define EDITOR_EDITOR_H
+#include <yave/yave.h>
 
-#warning for back comp only, remove ASAP
-#include "utils.h"
-
-#include <memory>
-
-namespace yave {
-namespace ecs {
-class EntityWorld;
-}
-}
+#include <editor/utils/forward.h>
+#include <editor/utils/renderdochelper.h>
 
 namespace editor {
 
-class Editor : NonMovable {
-    public:
-        Editor();
-        ~Editor();
+using namespace yave;
 
-        void tick();
+using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
+
+class EditorContext;
+using ContextPtr = EditorContext*;
+
+class ContextLinked : NonCopyable {
+    public:
+        ContextLinked() = default;
+
+        ContextLinked(EditorContext* ctx) : _ctx(ctx) {
+            y_debug_assert(_ctx);
+        }
+
+        ContextPtr context() const {
+            return _ctx;
+        }
+
+        // see EditorContext.cpp
+        DevicePtr device() const;
 
     private:
-        std::unique_ptr<ecs::EntityWorld> _world;
+        ContextPtr _ctx = nullptr;
 };
 
 }
 
-#endif // EDITOR_EDITOR_H
+#endif // EDITOR_UTILS_H
+

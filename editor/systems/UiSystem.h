@@ -19,34 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_SYSTEMS_UISYSTEM_H
+#define EDITOR_SYSTEMS_UISYSTEM_H
 
-#ifndef EDITOR_EDITOR_H
-#define EDITOR_EDITOR_H
+#include <editor/Editor.h>
 
-#warning for back comp only, remove ASAP
-#include "utils.h"
-
-#include <memory>
-
-namespace yave {
-namespace ecs {
-class EntityWorld;
-}
-}
+#include <yave/ecs/System.h>
 
 namespace editor {
 
-class Editor : NonMovable {
+class UiSystem : public ecs::System {
     public:
-        Editor();
-        ~Editor();
+        UiSystem();
 
-        void tick();
+        void setup(ecs::EntityWorld& world) override;
+        void tick(ecs::EntityWorld& world) override;
 
     private:
-        std::unique_ptr<ecs::EntityWorld> _world;
+
 };
 
 }
 
-#endif // EDITOR_EDITOR_H
+#endif // EDITOR_SYSTEMS_UISYSTEM_H
+

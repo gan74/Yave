@@ -20,50 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "MainWindow.h"
+#include "RenderingSystem.h"
 
-#include <editor/context/EditorContext.h>
+namespace yave {
 
-#include <yave/graphics/swapchain/Swapchain.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/device/Queue.h>
-
-#include <external/imgui/yave_imgui.h>
-
-namespace editor {
-
-MainWindow::MainWindow(ContextPtr cptr) :
-        Window({1280, 768}, "Yave", Window::Flags(Window::Resizable/* | Window::HideConsole*/)),
-        ContextLinked(cptr) {
+RenderingSystem::RenderingSystem(DevicePtr dptr) : ecs::System("RenderingSystem"), DeviceLinked(dptr) {
 }
 
-MainWindow::~MainWindow() {
-}
-
-Swapchain* MainWindow::swapchain() {
-    return _swapchain.get();
-}
-
-void MainWindow::resized() {
-    create_swapchain();
-}
-
-void MainWindow::create_swapchain() {
-    y_profile();
-    // needed because the swapchain immediatly destroys it images
-    wait_all_queues(device());
-
-    if(_swapchain) {
-        _swapchain->reset();
-    } else {
-        _swapchain = std::make_unique<Swapchain>(device(), static_cast<Window*>(this));
-    }
-}
-
-void MainWindow::present(CmdBufferRecorder&& recorder, const FrameToken& token) {
-    y_profile();
-
-    _swapchain->present(token, std::move(recorder), graphic_queue(device()));
+void RenderingSystem::tick(ecs::EntityWorld& world) {
+    unused(world);
 }
 
 }

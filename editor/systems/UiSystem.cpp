@@ -20,33 +20,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#ifndef EDITOR_EDITOR_H
-#define EDITOR_EDITOR_H
+#include "UiSystem.h"
+#include "RenderingSystem.h"
 
-#warning for back comp only, remove ASAP
-#include "utils.h"
+#include <editor/components/UiComponent.h>
 
-#include <memory>
+#include <yave/ecs/EntityWorld.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/utils.h>
 
-namespace yave {
-namespace ecs {
-class EntityWorld;
-}
-}
 
 namespace editor {
 
-class Editor : NonMovable {
-    public:
-        Editor();
-        ~Editor();
+UiSystem::UiSystem() : ecs::System("UiSystem") {
+}
 
-        void tick();
+void UiSystem::setup(ecs::EntityWorld& world) {
+    unused(world);
+}
 
-    private:
-        std::unique_ptr<ecs::EntityWorld> _world;
-};
+void UiSystem::tick(ecs::EntityWorld& world) {
+    RenderingSystem* rendering = world.find_system<RenderingSystem>();
+
+    //CmdBufferRecorder recorder = create_disposable_cmd_buffer(rendering->device());
+    for(auto& ui : world.components<UiComponent>()) {
+        if(ui.widget) {
+            //ui.widget->
+        }
+    }
+}
 
 }
 
-#endif // EDITOR_EDITOR_H

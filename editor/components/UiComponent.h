@@ -19,34 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_COMPONENTS_UICOMPONENT_H
+#define EDITOR_COMPONENTS_UICOMPONENT_H
 
-#ifndef EDITOR_EDITOR_H
-#define EDITOR_EDITOR_H
+#include <editor/Editor.h>
+#include <editor/ui/Widget.h>
 
-#warning for back comp only, remove ASAP
-#include "utils.h"
+// #include <y/serde3/serde.h>
 
 #include <memory>
 
-namespace yave {
-namespace ecs {
-class EntityWorld;
-}
-}
-
 namespace editor {
 
-class Editor : NonMovable {
+class UiComponent {
     public:
-        Editor();
-        ~Editor();
+        std::unique_ptr<Widget> widget;
 
-        void tick();
 
     private:
-        std::unique_ptr<ecs::EntityWorld> _world;
+
 };
 
 }
 
-#endif // EDITOR_EDITOR_H
+#endif // EDITOR_COMPONENTS_UICOMPONENT_H
+

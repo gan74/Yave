@@ -20,33 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#ifndef EDITOR_EDITOR_H
-#define EDITOR_EDITOR_H
-
-#warning for back comp only, remove ASAP
-#include "utils.h"
-
-#include <memory>
-
-namespace yave {
-namespace ecs {
-class EntityWorld;
-}
-}
+#include "UiComponent.h"
 
 namespace editor {
 
-class Editor : NonMovable {
-    public:
-        Editor();
-        ~Editor();
-
-        void tick();
-
-    private:
-        std::unique_ptr<ecs::EntityWorld> _world;
-};
 
 }
 
-#endif // EDITOR_EDITOR_H

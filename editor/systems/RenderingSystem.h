@@ -19,38 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_EVENTS_MAINEVENTHANDLER_H
-#define EDITOR_EVENTS_MAINEVENTHANDLER_H
+#ifndef EDITOR_SYSTEMS_RENDERINGSYSTEM_H
+#define EDITOR_SYSTEMS_RENDERINGSYSTEM_H
 
-#include <editor/editor.h>
+#include <editor/Editor.h>
 
-#include <yave/window/EventHandler.h>
+#include <yave/ecs/System.h>
+
+#include <yave/graphics/device/DeviceLinked.h>
 
 namespace editor {
 
-class MainEventHandler : public EventHandler
-{
+class RenderingSystem : public ecs::System, public DeviceLinked {
     public:
-        MainEventHandler();
+        RenderingSystem(DevicePtr dptr);
 
-        virtual ~MainEventHandler();
-
-        void mouse_moved(const math::Vec2i& pos) override;
-        void mouse_pressed(const math::Vec2i& pos, MouseButton button) override;
-        void mouse_released(const math::Vec2i& pos, MouseButton button) override;
-
-        void mouse_wheel(i32 vdelta, i32 hdelta) override;
-
-        void char_input(u32 character) override;
-
-        void key_pressed(Key key) override;
-        void key_released(Key key) override;
+        void tick(ecs::EntityWorld& world) override;
 
     private:
-        void key_event(Key key, bool pressed);
+
 };
 
 }
 
-#endif // EDITOR_EVENTS_MAINEVENTHANDLER_H
+#endif // EDITOR_SYSTEMS_RENDERINGSYSTEM_H
 

@@ -30,14 +30,10 @@ SOFTWARE.
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/material/Material.h>
 
-#include <external/imgui/yave_imgui.h>
-
 #include <y/core/Chrono.h>
 #include <y/io2/File.h>
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 
