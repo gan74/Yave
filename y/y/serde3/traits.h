@@ -35,22 +35,33 @@ namespace detail {
 template<typename T>
 using has_no_serde3_t = decltype(std::declval<T>()._y_serde3_no_serde);
 
+template<typename T>
+static inline constexpr bool has_no_serde3_impl() {
+    if constexpr(is_detected_v<has_no_serde3_t, T>) {
+        return T::_y_serde3_no_serde;
+    }
+    return false;
+}
+
+
 template<typename T, typename... Args>
 using has_serde3_post_deser_t = decltype(std::declval<T>().post_deserialize(std::declval<Args>()...));
 template<typename T, typename... Args>
 using has_serde3_post_deser_poly_t = decltype(std::declval<T>().post_deserialize_poly(std::declval<Args>()...));
 
+
 template<typename T>
 using has_serde3_poly_t = decltype(std::declval<T>()._y_serde3_poly_base);
 template<typename T>
 using has_serde3_ptr_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
+
 }
 
 template<typename T>
 static constexpr bool has_serde3_v = has_reflect_v<T>;
 
 template<typename T>
-static constexpr bool has_no_serde3_v = is_detected_v<detail::has_no_serde3_t, T>;
+static constexpr bool has_no_serde3_v = detail::has_no_serde3_impl<T>();
 
 
 template<typename T, typename... Args>

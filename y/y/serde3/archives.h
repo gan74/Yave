@@ -924,12 +924,22 @@ namespace detail {
 
 template<typename T>
 Result serialize_one(WritableArchive& arc, const T& t) {
-    return arc.serialize(t);
+    unused(arc, t);
+    if constexpr(has_no_serde3_v<T>) {
+        return core::Ok(Success::Full);
+    } else {
+        return arc.serialize(t);
+    }
 }
 
 template<typename T>
 Result deserialize_one(ReadableArchive& arc, T& t) {
-    return arc.deserialize(t);
+    unused(arc, t);
+    if constexpr(has_no_serde3_v<T>) {
+        return core::Ok(Success::Full);
+    } else {
+        return arc.deserialize(t);
+    }
 }
 
 }

@@ -32,7 +32,8 @@ using namespace reflect;
 class WritableArchive;
 class ReadableArchive;
 
-#define y_no_serde3() static constexpr int _y_serde3_no_serde = 0;
+#define y_no_serde3()           static constexpr bool _y_serde3_no_serde = true;
+#define y_no_serde3_expr(expr)  static constexpr bool _y_serde3_no_serde = (expr);
 
 }
 }
