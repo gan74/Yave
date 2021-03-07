@@ -36,6 +36,7 @@ SOFTWARE.
 #include <y/io2/File.h>
 
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 
 namespace editor {
@@ -93,18 +94,19 @@ void ImGuiRenderer2::render(ImDrawData* draw_data, RenderPassRecorder& recorder)
     const usize imgui_index_buffer_size = next_power_of_2(draw_data->TotalIdxCount);
     const usize imgui_vertex_buffer_size = next_power_of_2(draw_data->TotalVtxCount);
     const math::Vec2 viewport_size = recorder.viewport().extent;
+    const math::Vec2 viewport_offset = draw_data->DisplayPos;
 
 
     const TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> index_buffer(device(), imgui_index_buffer_size);
     const TypedBuffer<Vertex, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(device(), imgui_vertex_buffer_size);
-    const TypedUniformBuffer<math::Vec2> uniform_buffer(device(), 1);
+    const TypedUniformBuffer<math::Vec2> uniform_buffer(device(), 2);
 
     auto indexes = TypedMapping(index_buffer);
     auto vertices = TypedMapping(vertex_buffer);
 
     auto uniform = TypedMapping(uniform_buffer);
     uniform[0] = viewport_size;
-
+    uniform[1] = viewport_offset;
 
     const auto create_descriptor_set = [&](const void* data) {
         const auto* tex = static_cast<const TextureView*>(data);
@@ -142,7 +144,7 @@ void ImGuiRenderer2::render(ImDrawData* draw_data, RenderPassRecorder& recorder)
         for(auto i = 0; i != cmd_list->CmdBuffer.Size; ++i) {
             const ImDrawCmd& cmd = cmd_list->CmdBuffer[i];
 
-            const math::Vec2i offset(i32(cmd.ClipRect.x), i32(cmd.ClipRect.y));
+            const math::Vec2i offset = math::Vec2i(i32(cmd.ClipRect.x), i32(cmd.ClipRect.y)) - math::Vec2i(viewport_offset);
             const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
             recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
 

@@ -63,15 +63,20 @@
 //---- Define constructor and implicit cast operators to convert back<>forth from your math types and ImVec2/ImVec4.
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
 
-#define IM_VEC2_CLASS_EXTRA																	\
-		ImVec2(const y::math::Vec2& f) { x = f.x(); y = f.y(); }							\
-		operator y::math::Vec2() const { return y::math::Vec2(x, y); }						\
-		ImVec2(const y::math::Vec2ui& f) { x = float(f.x()); y = float(f.y()); }			\
-		operator y::math::Vec2ui() const { return y::math::Vec2ui(y::u32(x), y::u32(y)); }
+#define IM_VEC2_CLASS_EXTRA                                                                     \
+        ImVec2(const y::math::Vec2& f) { x = f.x(); y = f.y(); }                                \
+        operator y::math::Vec2() const { return y::math::Vec2(x, y); }                          \
+        ImVec2(const y::math::Vec2i& f) { x = float(f.x()); y = float(f.y()); }                 \
+        operator y::math::Vec2i() const { return y::math::Vec2i(y::i32(x), y::i32(y)); }        \
+        ImVec2(const y::math::Vec2ui& f) { x = float(f.x()); y = float(f.y()); }                \
+        operator y::math::Vec2ui() const {                                                      \
+            y_debug_assert(x >= 0.0f && y >= 0.0f);                                             \
+            return y::math::Vec2ui(y::u32(x), y::u32(y));                                       \
+        }
 
-#define IM_VEC4_CLASS_EXTRA																	\
-		ImVec4(const y::math::Vec4& f) { x = f.x(); y = f.y(); z = f.z(); w = f.w(); }		\
-		operator y::math::Vec4() const { return  y::math::Vec4(x, y, z, w); }
+#define IM_VEC4_CLASS_EXTRA                                                                     \
+        ImVec4(const y::math::Vec4& f) { x = f.x(); y = f.y(); z = f.z(); w = f.w(); }          \
+        operator y::math::Vec4() const { return  y::math::Vec4(x, y, z, w); }
 
 
 //---- Use 32-bit vertex indices (instead of default 16-bit) to allow meshes with more than 64K vertices. Render function needs to support it.

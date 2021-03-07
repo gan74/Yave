@@ -39,7 +39,7 @@ namespace editor {
 class ImGuiPlatform : NonMovable {
 
     struct PlatformWindow : NonMovable {
-        PlatformWindow(ImGuiPlatform* parent);
+        PlatformWindow(ImGuiPlatform* parent, Window::Flags flags = Window::NoDecoration);
 
         void render(ImGuiViewport* viewport);
 

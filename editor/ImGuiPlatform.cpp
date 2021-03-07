@@ -146,17 +146,17 @@ static void discover_monitors(ImGuiPlatformIO& platform) {
         ImGuiPlatformMonitor imgui_mon;
         imgui_mon.MainPos = monitor.position;
         imgui_mon.MainSize = monitor.size;
-        imgui_mon.MainPos = monitor.position;
-        imgui_mon.MainSize = monitor.size;
+        imgui_mon.WorkPos = monitor.work_position;
+        imgui_mon.WorkSize = monitor.work_size;
         return imgui_mon;
     });
 }
 
 
 
-ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent) :
+ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent, Window::Flags flags) :
         platform(parent),
-        window({1280, 768}, "Window", Window::NoDecoration),
+        window({1280, 768}, "Window", flags),
         swapchain(platform->device(), &window) {
 
     window.set_event_handler(std::make_unique<ImGuiEventHandler>());
@@ -212,9 +212,9 @@ ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
 
         platform.Platform_DestroyWindow         = [](ImGuiViewport* vp) { get_window(vp)->close(); };
         platform.Platform_ShowWindow            = [](ImGuiViewport* vp) { get_window(vp)->show(); };
-        platform.Platform_SetWindowPos          = [](ImGuiViewport* vp, ImVec2 pos) { get_window(vp)->set_position(pos); };
+        platform.Platform_SetWindowPos          = [](ImGuiViewport* vp, ImVec2 pos) { log_msg(fmt("pos <<< %", math::Vec2(pos))); get_window(vp)->set_position(pos); };
         platform.Platform_SetWindowSize         = [](ImGuiViewport* vp, ImVec2 size) { get_window(vp)->set_size(size); };
-        platform.Platform_GetWindowPos          = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->position()); };
+        platform.Platform_GetWindowPos          = [](ImGuiViewport* vp) {  log_msg(fmt("pos >>> %", math::Vec2(get_window(vp)->position()))); return ImVec2(get_window(vp)->position()); };
         platform.Platform_GetWindowSize         = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->size()); };
 
         platform.Platform_SetWindowTitle        = [](ImGuiViewport* vp, const char* title) { get_window(vp)->set_title(title); };
@@ -228,10 +228,10 @@ ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
     }
 
     _renderer = std::make_unique<ImGuiRenderer2>(dptr);
-    _main_window = std::make_unique<PlatformWindow>(this);
+    _main_window = std::make_unique<PlatformWindow>(this, Window::Resizable);
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
-    viewport->PlatformHandle = &_main_window;
+    viewport->PlatformHandle = _main_window.get();
 }
 
 DevicePtr ImGuiPlatform::device() const {
@@ -239,33 +239,15 @@ DevicePtr ImGuiPlatform::device() const {
 }
 
 void ImGuiPlatform::run() {
-    /*while(true) {
-        ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
-        ImGui::GetIO().DisplaySize =ImGui::GetMainViewport()->Size;
-
-        ImGui::NewFrame();
-
-        ImGui::ShowDemoWindow();
-        ImGui::ShowMetricsWindow();
-
-        ImGui::Render();
-
-
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-
-
-    }*/
-
     while(_main_window->window.update()) {
         Swapchain& swapchain = _main_window->swapchain;
+
+        ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
+        ImGui::GetIO().DisplaySize = _main_window->window.size();
 
         if(swapchain.is_valid()) {
             const FrameToken frame = swapchain.next_frame();
             CmdBufferRecorder recorder = create_disposable_cmd_buffer(device());
-
-            ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
-            ImGui::GetIO().DisplaySize = frame.image_view.size();
 
             ImGui::NewFrame();
 
@@ -290,6 +272,7 @@ void ImGuiPlatform::run() {
 
 
 ImGuiPlatform* ImGuiPlatform::get_platform() {
+    y_debug_assert(ImGui::GetIO().BackendPlatformUserData);
     return static_cast<ImGuiPlatform*>(ImGui::GetIO().BackendPlatformUserData);
 }
 
