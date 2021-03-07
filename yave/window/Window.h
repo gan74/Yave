@@ -63,15 +63,17 @@ class Window : NonMovable {
         void focus();
         bool has_focus() const;
 
-        void set_size(const math::Vec2ui& size);
-        void set_position(const math::Vec2i& pos);
-
         math::Vec2ui size() const;
         math::Vec2i position() const;
+
+        void set_size(const math::Vec2ui& size);
+        void set_position(const math::Vec2i& pos);
 
         math::Vec2ui window_size() const;
         math::Vec2i window_position() const;
 
+        void set_window_size(const math::Vec2ui& size);
+        void set_window_position(const math::Vec2i& pos);
 
         void set_title(std::string_view title);
 
@@ -96,6 +98,9 @@ class Window : NonMovable {
         HWND_ _hwnd = nullptr;
         bool _run = true;
         u32 _mouse_state = 0;
+
+        u32 _style = 0;
+        u32 _ex_style = 0;
 #endif
 
 

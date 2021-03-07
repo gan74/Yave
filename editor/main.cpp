@@ -20,30 +20,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "MainWindow.h"
 #include "ImGuiPlatform.h"
 
 #include <editor/utils/crashhandler.h>
-#include <editor/events/MainEventHandler.h>
-#include <editor/context/EditorContext.h>
 
 #include <yave/graphics/device/Device.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/swapchain/Swapchain.h>
-#include <yave/assets/SQLiteAssetStore.h>
 
-#include <y/core/Chrono.h>
 #include <y/concurrent/concurrent.h>
 
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
 #endif
 
 using namespace editor;
-
-static EditorContext* context = nullptr;
 
 #ifdef Y_DEBUG
 static bool display_console = true;
@@ -57,7 +49,7 @@ static bool debug_instance = false;
 
 static void hide_console() {
 #ifdef Y_OS_WIN
-    ShowWindow(GetConsoleWindow(), SW_HIDE);
+    ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 #endif
 }
 
@@ -99,11 +91,6 @@ static Device create_device(Instance& instance) {
     return Device(instance);
 }
 
-static EditorContext create_context(const Device& device) {
-    y_profile();
-    return EditorContext(&device);
-}
-
 int main(int argc, char** argv) {
     concurrent::set_thread_name("Main thread");
 
@@ -112,7 +99,6 @@ int main(int argc, char** argv) {
     if(!crashhandler::setup_handler()) {
         log_msg("Unable to setup crash handler.", Log::Warning);
     }
-
 
     Instance instance = create_instance();
     Device device = create_device(instance);
@@ -124,47 +110,14 @@ int main(int argc, char** argv) {
         // ...
     }
 
-
 #if 0
-    EditorContext ctx = create_context(device);
-    context = &ctx;
+    Window win(math::Vec2ui(1280, 768), "test");
+    win.show();
 
-    MainWindow window(&ctx);
-    window.set_event_handler(std::make_unique<MainEventHandler>());
-    window.show();
-    platform.add_main_window(&window);
-
-    for(;;) {
-        if(!window.update()) {
-            if(ctx.ui_manager().confirm("Quit ?")) {
-                break;
-            } else {
-                window.show();
-            }
-        }
-
-        ctx.world().tick();
-
-        Swapchain* swapchain = window.swapchain();
-        if(swapchain && swapchain->is_valid()) {
-            FrameToken frame = swapchain->next_frame();
-            CmdBufferRecorder recorder(device.create_disposable_cmd_buffer());
-
-            ctx.ui_manager().paint(recorder, frame);
-
-            window.present(std::move(recorder), frame);
-        }
-
-        ctx.flush_deferred();
-
-        if(ctx.device_resources_reload_requested()) {
-            device.device_resources().reload();
-            ctx.resources().reload();
-            ctx.set_device_resource_reloaded();
-        }
+    while(win.update()) {
+        log_msg(fmt("client % %", win.position(), win.size()));
+        log_msg(fmt("window % %\n", win.window_position(), win.window_size()));
     }
-
-    context = nullptr;
 #endif
 
     log_msg("Quitting...");

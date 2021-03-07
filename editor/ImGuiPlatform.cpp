@@ -41,7 +41,7 @@ struct ImGuiEventHandler : EventHandler {
 
     void mouse_moved(const math::Vec2i& pos) override {
         Y_TODO(fix this when multi viewport isnt enabled)
-        ImGui::GetIO().MousePos = pos + window->window_position();
+        ImGui::GetIO().MousePos = pos + window->position();
     }
 
     void mouse_pressed(const math::Vec2i& pos, MouseButton button) override {
@@ -233,7 +233,7 @@ ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
         platform.Platform_ShowWindow            = [](ImGuiViewport* vp) { get_window(vp)->show(); };
         platform.Platform_SetWindowPos          = [](ImGuiViewport* vp, ImVec2 pos) { get_window(vp)->set_position(pos); };
         platform.Platform_SetWindowSize         = [](ImGuiViewport* vp, ImVec2 size) { get_window(vp)->set_size(size); };
-        platform.Platform_GetWindowPos          = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->window_position()); };
+        platform.Platform_GetWindowPos          = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->position()); };
         platform.Platform_GetWindowSize         = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->size()); };
 
         platform.Platform_SetWindowTitle        = [](ImGuiViewport* vp, const char* title) { get_window(vp)->set_title(title); };
@@ -268,21 +268,24 @@ bool ImGuiPlatform::update() {
             const FrameToken frame = _main_window->swapchain.next_frame();
             CmdBufferRecorder recorder = create_disposable_cmd_buffer(device());
 
-            ImGui::NewFrame();
+            {
+                y_profile_zone("imgui");
+                ImGui::NewFrame();
 
-            ImGui::ShowDemoWindow();
-            //ImGui::ShowMetricsWindow();
+                ImGui::ShowDemoWindow();
 
-            ImGui::Render();
+                ImGui::Render();
+            }
 
             {
+                y_profile_zone("main window");
                 Framebuffer framebuffer(frame.image_view.device(), {frame.image_view});
                 RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
                 _renderer->render(ImGui::GetDrawData(), pass);
             }
 
             {
-                y_profile_zone("ImGui platform windows");
+                y_profile_zone("secondary windows");
                 ImGui::UpdatePlatformWindows();
                 ImGui::RenderPlatformWindowsDefault();
             }

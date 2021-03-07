@@ -236,7 +236,10 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
 }
 
 
-Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) : _event_handler(nullptr) {
+
+
+
+Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) {
     _hinstance = ::GetModuleHandle(nullptr);
 
     WNDCLASSEX win_class = {};
@@ -251,19 +254,19 @@ Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) : 
     win_class.hIconSm           = ::LoadIcon(nullptr, IDI_APPLICATION);
     ::RegisterClassEx(&win_class);
 
-    DWORD ex_style = WS_EX_APPWINDOW;
-    DWORD style = (flags & NoDecoration)
+    _ex_style = WS_EX_APPWINDOW;
+    _style = (flags & NoDecoration)
         ? WS_POPUP
         : WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 
     if(flags & Resizable) {
-        style |= WS_SIZEBOX | WS_MAXIMIZEBOX;
+        _style |= WS_SIZEBOX | WS_MAXIMIZEBOX;
     }
 
     RECT rect = {0, 0, LONG(size.x()), LONG(size.y())};
-    ::AdjustWindowRectEx(&rect, style, false, ex_style);
+    ::AdjustWindowRectEx(&rect, _style, false, _ex_style);
 
-    _hwnd = ::CreateWindowEx(ex_style, windows_class_name, title.data(), style, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, nullptr, nullptr, _hinstance, nullptr);
+    _hwnd = ::CreateWindowEx(_ex_style, windows_class_name, title.data(), _style, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, nullptr, nullptr, _hinstance, nullptr);
     ::SetWindowLongPtr(_hwnd, GWLP_USERDATA, LONG_PTR(this));
 
     y_debug_assert(_hwnd);
@@ -305,14 +308,6 @@ bool Window::has_focus() const {
     return _hwnd == ::GetForegroundWindow();
 }
 
-void Window::set_size(const math::Vec2ui& size) {
-    ::SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
-}
-
-void Window::set_position(const math::Vec2i& pos) {
-    ::SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
-}
-
 math::Vec2ui Window::size() const {
     RECT rect = {};
     ::GetClientRect(_hwnd, &rect);
@@ -320,21 +315,41 @@ math::Vec2ui Window::size() const {
 }
 
 math::Vec2i Window::position() const {
-    RECT rect = {};
-    ::GetClientRect(_hwnd, &rect);
-    return math::Vec2i(rect.left, rect.top);
+    POINT pos = {};
+    ::ClientToScreen(_hwnd, &pos);
+    return math::Vec2i(pos.x, pos.y);
+}
+
+void Window::set_size(const math::Vec2ui& size) {
+    RECT rect = {0, 0, LONG(size.x()), LONG(size.y())};
+    ::AdjustWindowRectEx(&rect, _style, false, _ex_style);
+    set_window_size(math::Vec2ui(u32(rect.right - rect.left), u32(rect.bottom - rect.top)));
+}
+
+void Window::set_position(const math::Vec2i& pos) {
+    RECT rect = {pos.x(), pos.y(), 0, 0};
+    ::AdjustWindowRectEx(&rect, _style, false, _ex_style);
+    set_window_position(math::Vec2i(rect.left, rect.top));
 }
 
 math::Vec2ui Window::window_size() const {
     RECT rect = {};
     ::GetWindowRect(_hwnd, &rect);
-    return math::Vec2ui(u32(std::abs(rect.right - rect.left)), u32(std::abs(rect.bottom - rect.top)));
+    return math::Vec2ui(u32(rect.right - rect.left), u32(rect.bottom - rect.top));
 }
 
 math::Vec2i Window::window_position() const {
     RECT rect = {};
     ::GetWindowRect(_hwnd, &rect);
     return math::Vec2i(rect.left, rect.top);
+}
+
+void Window::set_window_size(const math::Vec2ui& size) {
+    ::SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
+}
+
+void Window::set_window_position(const math::Vec2i &pos) {
+    ::SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
 }
 
 void Window::set_title(std::string_view title) {
