@@ -55,9 +55,6 @@ class Widget : NonMovable {
     private:
         friend class UiManager;
 
-        bool begin();
-        void end();
-
         void set_id(u64 id);
         void set_title(std::string_view title);
 

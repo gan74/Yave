@@ -45,6 +45,7 @@ void Widget::refresh() {
 }
 
 void Widget::refresh_all() {
+    Y_TODO(fix refresh)
     refresh();
 }
 
@@ -53,17 +54,13 @@ void Widget::draw_gui() {
 }
 
 void Widget::draw_gui_inside() {
-    if(begin()) {
-        draw_gui();
-        end();
+    if(!_visible) {
+        return;
     }
-}
 
-bool Widget::begin() {
-    return _visible && ImGui::Begin(_title_with_id.data(), &_visible);
-}
-
-void Widget::end() {
+    if(ImGui::Begin(_title_with_id.data(), &_visible)) {
+        draw_gui();
+    }
     ImGui::End();
 }
 
