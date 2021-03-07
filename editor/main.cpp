@@ -103,22 +103,12 @@ int main(int argc, char** argv) {
     Instance instance = create_instance();
     Device device = create_device(instance);
 
-
     ImGuiPlatform platform(&device);
 
-    while(platform.update()) {
+    while(platform.exec()) {
         // ...
     }
 
-#if 0
-    Window win(math::Vec2ui(1280, 768), "test");
-    win.show();
-
-    while(win.update()) {
-        log_msg(fmt("client % %", win.position(), win.size()));
-        log_msg(fmt("window % %\n", win.window_position(), win.window_size()));
-    }
-#endif
 
     log_msg("Quitting...");
 

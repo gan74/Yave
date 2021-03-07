@@ -206,6 +206,36 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
 }
 
 
+
+
+static void setup_imgui_dockspace() {
+    const ImGuiWindowFlags main_window_flags =
+        ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus |
+        ImGuiWindowFlags_NoNavFocus;
+
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    ImGui::Begin("Main Window", nullptr, main_window_flags);
+    ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+    ImGui::End();
+
+    ImGui::PopStyleVar(3);
+}
+
+
 ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
     ImGui::CreateContext();
 
@@ -257,7 +287,7 @@ DevicePtr ImGuiPlatform::device() const {
     return _renderer->device();
 }
 
-bool ImGuiPlatform::update() {
+bool ImGuiPlatform::exec(OnGuiFunc func) {
     y_profile();
 
     if(_main_window->window.update()) {
@@ -272,7 +302,11 @@ bool ImGuiPlatform::update() {
                 y_profile_zone("imgui");
                 ImGui::NewFrame();
 
-                ImGui::ShowDemoWindow();
+                setup_imgui_dockspace();
+
+                if(func) {
+                    func(recorder);
+                }
 
                 ImGui::Render();
             }
