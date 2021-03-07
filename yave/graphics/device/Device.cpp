@@ -159,6 +159,13 @@ static void print_physical_properties(const VkPhysicalDeviceProperties& properti
     log_msg(fmt("sizeof(PhysicalDevice) = %", sizeof(PhysicalDevice)));
 }
 
+static void print_enabled_extensions(core::Span<const char*> extensions) {
+    for(const char* ext : extensions) {
+        log_msg(fmt("% enabled", ext), Log::Debug);
+    }
+}
+
+
 static VkDevice create_device(
         const PhysicalDevice& physical,
         u32 graphic_queue_index,
@@ -216,6 +223,8 @@ static VkDevice create_device(
     }
 
     print_physical_properties(physical.vk_properties());
+    print_enabled_extensions(extensions);
+
 
     VkDevice device = {};
     vk_check(vkCreateDevice(physical.vk_physical_device(), &create_info, nullptr, &device));
