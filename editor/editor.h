@@ -38,7 +38,7 @@ namespace editor {
 
 class Editor : NonMovable {
     public:
-        Editor();
+        Editor(DevicePtr dptr);
         ~Editor();
 
         void tick();

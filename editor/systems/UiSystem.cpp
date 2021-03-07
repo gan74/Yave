@@ -40,12 +40,17 @@ void UiSystem::setup(ecs::EntityWorld& world) {
 }
 
 void UiSystem::tick(ecs::EntityWorld& world) {
-    RenderingSystem* rendering = world.find_system<RenderingSystem>();
+    y_profile();
 
-    //CmdBufferRecorder recorder = create_disposable_cmd_buffer(rendering->device());
-    for(auto& ui : world.components<UiComponent>()) {
-        if(ui.widget) {
-            //ui.widget->
+    // RenderingSystem* rendering = world.find_system<RenderingSystem>();
+    // CmdBufferRecorder recorder = create_disposable_cmd_buffer(rendering->device());
+
+    // Needed to avoid problem when inserting new components
+    const core::Vector<ecs::EntityId> ids(world.component_ids<UiComponent>());
+    for(const ecs::EntityId id : ids) {
+        UiComponent* ui = world.component<UiComponent>(id);
+        if(ui->widget) {
+            ui->widget->draw_gui_inside();
         }
     }
 }

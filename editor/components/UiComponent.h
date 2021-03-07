@@ -23,18 +23,42 @@ SOFTWARE.
 #define EDITOR_COMPONENTS_UICOMPONENT_H
 
 #include <editor/Editor.h>
-#include <editor/ui/Widget.h>
 
-// #include <y/serde3/serde.h>
+#include <y/core/String.h>
 
 #include <memory>
 
 namespace editor {
 
+class Widget2 : NonMovable {
+    public:
+        Widget2(std::string_view title);
+        virtual ~Widget2();
+
+        bool is_visible() const;
+
+        virtual void draw_gui();
+
+        void draw_gui_inside();
+
+    private:
+        bool begin();
+        void end();
+
+        void set_id(u64 id);
+        void set_title(std::string_view title);
+
+        core::String _title_with_id;
+        bool _visible = true;
+
+
+        std::string_view _title;
+        u64 _id = 0;
+};
+
 class UiComponent {
     public:
-        std::unique_ptr<Widget> widget;
-
+        std::unique_ptr<Widget2> widget;
 
     private:
 

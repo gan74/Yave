@@ -25,7 +25,6 @@ SOFTWARE.
 #include <editor/utils/crashhandler.h>
 
 #include <yave/graphics/device/Device.h>
-
 #include <y/concurrent/concurrent.h>
 
 #include <y/utils/log.h>
@@ -105,7 +104,10 @@ int main(int argc, char** argv) {
 
     ImGuiPlatform platform(&device);
 
-    while(platform.exec()) {
+    Editor editor(&device);
+
+
+    while(platform.exec([&](CmdBufferRecorder&) { editor.tick(); })) {
         // ...
     }
 

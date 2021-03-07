@@ -22,8 +22,49 @@ SOFTWARE.
 
 #include "UiComponent.h"
 
+#include <external/imgui/yave_imgui.h>
+
 namespace editor {
 
+Widget2::Widget2(std::string_view title) {
+    set_title(title);
+}
+
+Widget2::~Widget2() {
+}
+
+bool Widget2::is_visible() const {
+    return _visible;
+}
+
+void Widget2::draw_gui() {
+    ImGui::Text("Empty widget");
+}
+
+void Widget2::draw_gui_inside() {
+    if(begin()) {
+        draw_gui();
+        end();
+    }
+}
+
+bool Widget2::begin() {
+    return _visible && ImGui::Begin(_title_with_id.data(), &_visible);
+}
+
+void Widget2::end() {
+    ImGui::End();
+}
+
+void Widget2::set_id(u64 id) {
+    _id = id;
+    set_title(_title);
+}
+
+void Widget2::set_title(std::string_view title) {
+    _title_with_id = fmt("%##%", title, _id);
+    _title = std::string_view(_title_with_id.begin(), title.size());
+}
 
 }
 

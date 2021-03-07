@@ -24,12 +24,23 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
+#include <editor/systems/RenderingSystem.h>
 #include <editor/systems/UiSystem.h>
+
+
+#include <editor/components/UiComponent.h>
 
 namespace editor {
 
-Editor::Editor() : _world(std::make_unique<ecs::EntityWorld>()) {
+Editor::Editor(DevicePtr dptr) : _world(std::make_unique<ecs::EntityWorld>()) {
+    _world->add_system<RenderingSystem>(dptr);
     _world->add_system<UiSystem>();
+
+    {
+        const auto id = _world->create_entity();
+        UiComponent* c = _world->add_component<UiComponent>(id);
+        c->widget = std::make_unique<Widget2>("floop");
+    }
 }
 
 Editor::~Editor() {

@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "RenderingSystem.h"
 
-namespace yave {
+namespace editor {
 
 RenderingSystem::RenderingSystem(DevicePtr dptr) : ecs::System("RenderingSystem"), DeviceLinked(dptr) {
 }
