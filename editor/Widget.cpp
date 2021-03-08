@@ -91,5 +91,20 @@ void Widget::set_title(std::string_view title) {
     _title = std::string_view(_title_with_id.begin(), title.size());
 }
 
+
+namespace detail {
+WidgetType* first_widget = nullptr;
+void print_all_available_widgets() {
+    for(WidgetType* it = first_widget; it; it = it->next) {
+        core::String name = it->names[0];
+        for(usize i = 1; i != it->name_count; ++i) {
+            name += " > ";
+            name += it->names[i];
+        }
+        log_msg(name);
+    }
+}
+}
+
 }
 

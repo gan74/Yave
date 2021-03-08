@@ -46,7 +46,6 @@ static bool debug_instance = false;
 #endif
 
 
-
 static void hide_console() {
 #ifdef Y_OS_WIN
     ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
@@ -110,6 +109,8 @@ int main(int argc, char** argv) {
     editor.exec();
 
     log_msg("Quitting...");
+
+    editor::detail::print_all_available_widgets();
 
     return 0;
 }

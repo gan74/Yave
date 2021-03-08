@@ -29,6 +29,9 @@ SOFTWARE.
 namespace editor {
 
 class PerformanceMetrics : public Widget {
+
+    editor_register_widget(PerformanceMetrics, "View", "Statistics");
+
     public:
         PerformanceMetrics();
 

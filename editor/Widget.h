@@ -26,11 +26,16 @@ SOFTWARE.
 
 #include <y/core/String.h>
 
+#include <y/utils/log.h>
+
+#include <array>
+
 // #include <y/serde3/poly.h>
 
 namespace editor {
 
 class Widget : NonMovable {
+
 
     public:
         Widget(std::string_view title, int flags = 0);
@@ -75,7 +80,47 @@ class Widget : NonMovable {
         int _flags = 0;
 };
 
+
+
+namespace detail {
+
+struct WidgetType {
+    using create_func = std::unique_ptr<Widget> (*)();
+    WidgetType* next = nullptr;
+    create_func create = nullptr;
+    const char* const* names = nullptr;
+    usize name_count = 0;
+};
+
+extern WidgetType* first_widget;
+
+template<typename T, usize N>
+void register_widget_type(const std::array<const char*, N>& names) {
+    static WidgetType type {
+        first_widget, []() -> std::unique_ptr<Widget> { return std::make_unique<T>(); },
+        names.data(), names.size()
+    };
+    first_widget = &type;
 }
+
+void print_all_available_widgets();
+
+}
+
+}
+
+
+#define editor_register_widget(type, ...)                                                                           \
+    inline static struct _widget_register_t {                                                                       \
+        _widget_register_t() {                                                                                      \
+            static constexpr std::array names = { #type,  __VA_ARGS__ };                                            \
+            editor::detail::register_widget_type<type>(names);                                                      \
+        }                                                                                                           \
+        void trigger() {}                                                                                           \
+    } _widget_register;                                                                                             \
+    void _widget_register_trigger() { _widget_register.trigger(); }
+
+
 
 #endif // EDITOR_WIDGET_H
 

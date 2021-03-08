@@ -33,6 +33,9 @@ SOFTWARE.
 namespace editor {
 
 class UiDebugWidget : public Widget {
+
+    editor_register_widget(UiDebugWidget, "View", "Debug");
+
     public:
         UiDebugWidget();
 
