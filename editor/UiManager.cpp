@@ -37,7 +37,7 @@ namespace editor {
 UiDebugWidget::UiDebugWidget() : Widget("UI Debug") {
 }
 
-void UiDebugWidget::draw_gui() {
+void UiDebugWidget::on_gui() {
     if(ImGui::Button("Add test widget")) {
         add_widget(std::make_unique<Widget>("Test widget"), true);
     }
@@ -58,7 +58,7 @@ UiManager::UiManager() {
 UiManager::~UiManager() {
 }
 
-void UiManager::draw_gui() {
+void UiManager::on_gui() {
     core::ExternalHashMap<Widget*, int> to_destroy;
 
     for(auto& widget : _widgets) {

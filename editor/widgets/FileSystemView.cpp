@@ -161,7 +161,7 @@ bool FileSystemView::allow_modify() const {
     return true;
 }
 
-void FileSystemView::draw_gui() {
+void FileSystemView::on_gui() {
     y_profile();
 
     if(_refresh || _update_chrono.elapsed() > update_duration) {

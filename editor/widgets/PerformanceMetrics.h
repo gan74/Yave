@@ -32,7 +32,8 @@ class PerformanceMetrics : public Widget {
     public:
         PerformanceMetrics();
 
-        void draw_gui() override;
+    protected:
+        void on_gui() override;
 
     private:
         core::Chrono _timer;

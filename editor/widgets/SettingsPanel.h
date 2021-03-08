@@ -30,7 +30,8 @@ class SettingsPanel : public Widget {
     public:
         SettingsPanel();
 
-        void draw_gui() override;
+    protected:
+        void on_gui() override;
 
     private:
         usize _category = 0;

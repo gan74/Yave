@@ -34,7 +34,7 @@ PerformanceMetrics::PerformanceMetrics() : Widget("Performance", ImGuiWindowFlag
     std::fill(_average.begin(), _average.end(), 0.0f);
 }
 
-void PerformanceMetrics::draw_gui() {
+void PerformanceMetrics::on_gui() {
     const float ms = float(_timer.reset().to_millis());
     const float avg = float(_total / _frames.size());
 

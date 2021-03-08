@@ -42,7 +42,8 @@ class SceneImporter final : public Widget {
     public:
         SceneImporter(const core::String& import_path = ".");
 
-        void draw_gui() override;
+    protected:
+        void on_gui() override;
 
     private:
         bool done_loading() const;

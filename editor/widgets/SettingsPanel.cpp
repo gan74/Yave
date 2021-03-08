@@ -87,7 +87,7 @@ static void perf_settings() {
 SettingsPanel::SettingsPanel() : Widget(ICON_FA_COG " Settings") {
 }
 
-void SettingsPanel::draw_gui() {
+void SettingsPanel::on_gui() {
 
     struct SettingCategory {
         const char* name;

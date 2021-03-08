@@ -75,7 +75,7 @@ void EditorApplication::exec() {
     _platform->exec([this](CmdBufferRecorder& rec) {
         y_debug_assert(!_recorder);
         _recorder = &rec;
-        _ui->draw_gui();
+        _ui->on_gui();
         _recorder = nullptr;
     });
 }

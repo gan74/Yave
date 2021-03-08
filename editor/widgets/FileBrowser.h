@@ -42,9 +42,9 @@ class FileBrowser final : public FileSystemView {
 
         void set_selection_filter(bool dirs, std::string_view exts = "");
 
-        void draw_gui() override;
-
     protected:
+        void on_gui() override;
+
         void path_changed() override;
         core::Result<core::String> entry_icon(const core::String &name, EntryType type) const override;
         void entry_clicked(const Entry& entry) override;

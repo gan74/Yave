@@ -144,7 +144,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
 }
 
-void EngineView::draw_gui() {
+void EngineView::on_gui() {
     y_profile();
 
     update_proj();

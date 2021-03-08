@@ -34,10 +34,10 @@ class ResourceBrowser : public FileSystemView {
     public:
         ResourceBrowser();
 
-        void draw_gui() override;
-
     protected:
         ResourceBrowser(std::string_view title);
+
+        void on_gui() override;
 
         AssetId asset_id(std::string_view name) const;
         AssetType read_file_type(AssetId id) const;

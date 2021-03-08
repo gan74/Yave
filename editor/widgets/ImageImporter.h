@@ -37,7 +37,8 @@ class ImageImporter final : public Widget {
     public:
         ImageImporter(const core::String& import_path = ".");
 
-        void draw_gui() override;
+    protected:
+        void on_gui() override;
 
     private:
         void import_async(const core::String& filename);

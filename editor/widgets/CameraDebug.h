@@ -30,7 +30,8 @@ class CameraDebug : public Widget {
     public:
         CameraDebug();
 
-        void draw_gui() override;
+    protected:
+        void on_gui() override;
 };
 
 }

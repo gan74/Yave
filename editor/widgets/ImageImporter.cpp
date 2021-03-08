@@ -47,7 +47,7 @@ ImageImporter::ImageImporter(const core::String& import_path) :
     _browser.set_canceled_callback([this] { close(); return true; });
 }
 
-void ImageImporter::draw_gui()  {
+void ImageImporter::on_gui()  {
     if(is_loading()) {
         if(done_loading()) {
             try {

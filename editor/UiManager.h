@@ -35,7 +35,9 @@ namespace editor {
 class UiDebugWidget : public Widget {
     public:
         UiDebugWidget();
-        void draw_gui() override;
+
+    protected:
+        void on_gui() override;
 };
 
 class UiManager : NonMovable {
@@ -49,7 +51,7 @@ class UiManager : NonMovable {
         UiManager();
         ~UiManager();
 
-        void draw_gui();
+        void on_gui();
 
         Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
 

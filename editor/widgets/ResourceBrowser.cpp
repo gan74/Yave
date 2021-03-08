@@ -224,7 +224,7 @@ void ResourceBrowser::draw_search_results() {
 
 
 
-void ResourceBrowser::draw_gui() {
+void ResourceBrowser::on_gui() {
     y_profile();
 
     draw_top_bar();
@@ -233,7 +233,7 @@ void ResourceBrowser::draw_gui() {
         draw_search_results();
     } else {
         ImGui::BeginChild("##assets");
-        FileSystemView::draw_gui();
+        FileSystemView::on_gui();
         ImGui::EndChild();
     }
 

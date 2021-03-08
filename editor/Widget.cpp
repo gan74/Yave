@@ -58,7 +58,7 @@ void Widget::refresh_all() {
     refresh();
 }
 
-void Widget::draw_gui() {
+void Widget::on_gui() {
     ImGui::Text("Empty widget");
 }
 
@@ -68,7 +68,7 @@ void Widget::draw_gui_inside() {
     }
 
     if(ImGui::Begin(_title_with_id.data(), &_visible, _flags)) {
-        draw_gui();
+        on_gui();
     }
     ImGui::End();
 }

@@ -30,7 +30,7 @@ namespace editor {
 CameraDebug::CameraDebug() : Widget(ICON_FA_VIDEO " Camera debug", ImGuiWindowFlags_AlwaysAutoResize) {
 }
 
-void CameraDebug::draw_gui() {
+void CameraDebug::on_gui() {
     const auto& camera = scene_view().camera();
     auto pos = camera.position();
     auto fwd = camera.forward();

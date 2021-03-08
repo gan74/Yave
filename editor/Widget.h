@@ -46,14 +46,14 @@ class Widget : NonMovable {
         virtual void refresh();
         virtual void refresh_all();
 
-        virtual void draw_gui();
-
         void draw_gui_inside();
 
         // y_reflect(_title_with_id, _title, _id)
         // y_serde3_poly_base(Widget)
 
     protected:
+        virtual void on_gui();
+
         math::Vec2ui content_size() const;
 
         void set_flags(int flags);

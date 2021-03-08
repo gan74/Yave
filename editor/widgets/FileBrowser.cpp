@@ -120,7 +120,7 @@ core::String FileBrowser::full_path() const {
     return filesystem()->join(path(), _name_buffer.data());
 }
 
-void FileBrowser::draw_gui() {
+void FileBrowser::on_gui() {
     static constexpr isize button_width = 75;
 
     {
@@ -151,7 +151,7 @@ void FileBrowser::draw_gui() {
         }
     }
 
-    FileSystemView::draw_gui();
+    FileSystemView::on_gui();
 }
 
 }

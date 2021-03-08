@@ -62,7 +62,6 @@ class FileSystemView : public Widget {
         const Entry* entry(usize index) const;
         core::String entry_full_name(const Entry& entry) const;
 
-        void draw_gui() override;
 
         virtual void update();
         virtual void draw_context_menu();
@@ -72,6 +71,9 @@ class FileSystemView : public Widget {
         virtual void entry_hoverred(const Entry*) {}
         virtual void entry_clicked(const Entry& entry);
         virtual bool allow_modify() const;
+
+    protected:
+        void on_gui() override;
 
     private:
         bool process_context_menu();

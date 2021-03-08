@@ -61,7 +61,7 @@ SceneImporter::SceneImporter(const core::String& import_path) :
         });
 }
 
-void SceneImporter::draw_gui() {
+void SceneImporter::on_gui() {
     if(_state == State::Browsing) {
         _browser.draw_gui_inside();
     } else if(_state == State::Settings) {

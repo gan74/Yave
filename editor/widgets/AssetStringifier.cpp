@@ -42,7 +42,7 @@ AssetStringifier::AssetStringifier() :
     _selector.set_selected_callback([this](AssetId id) { stringify(id); return true; });
 }
 
-void AssetStringifier::draw_gui() {
+void AssetStringifier::on_gui() {
     {
         if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
             _selector.set_visible(true);
