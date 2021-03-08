@@ -36,13 +36,13 @@ UiDebugWidget::UiDebugWidget() : Widget("UI Debug") {
 
 void UiDebugWidget::draw_gui() {
     if(ImGui::Button("Add test widget")) {
-        Editor::instance()->ui().add_widget(std::make_unique<Widget>("Test widget"));
+        add_widget(std::make_unique<Widget>("Test widget"));
     }
     if(ImGui::Button("Add resource browser")) {
-        Editor::instance()->ui().add_widget(std::make_unique<ResourceBrowser>());
+        add_widget(std::make_unique<ResourceBrowser>());
     }
     if(ImGui::Button("Add file explorer")) {
-        Editor::instance()->ui().add_widget(std::make_unique<FileBrowser>(FileSystemModel::local_filesystem()));
+        add_widget(std::make_unique<FileBrowser>(FileSystemModel::local_filesystem()));
     }
 }
 

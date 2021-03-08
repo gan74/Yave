@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_UTILS_NAMED_H
 #define EDITOR_UTILS_NAMED_H
 
-#include <editor/Editor.h>
+#include <editor/editor.h>
 
 #include <y/core/String.h>
 

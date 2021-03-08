@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_IMGUIRENDERER_H
 #define EDITOR_IMGUIRENDERER_H
 
-#include <editor/Editor.h>
+#include <editor/editor.h>
 
 #include <yave/graphics/images/ImageView.h>
 #include <yave/material/MaterialTemplate.h>

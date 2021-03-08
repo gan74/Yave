@@ -19,21 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_UTILS_ASSETS_H
-#define EDITOR_UTILS_ASSETS_H
 
-#include <editor/editor.h>
+#include "EditorApplication.h"
 
-#include <yave/assets/AssetType.h>
+#include "UiManager.h"
 
-#include <string_view>
+#include <yave/assets/SQLiteAssetStore.h>
 
 namespace editor {
 
-std::string_view asset_type_name(AssetType type, bool plural = false, bool lowercase = false);
-std::string_view asset_type_icon(AssetType type);
+EditorApplication* EditorApplication::_instance = nullptr;
 
+EditorApplication* EditorApplication::instance() {
+    y_debug_assert(_instance);
+    return _instance;
 }
 
-#endif // EDITOR_UTILS_ASSETS_H
+EditorApplication::EditorApplication(DevicePtr dptr) : DeviceLinked(dptr) {
+    y_always_assert(_instance == nullptr, "Editor instance already exists.");
+    _instance = this;
 
+    _ui = std::make_unique<UiManager>();
+    _asset_store = std::make_unique<SQLiteAssetStore>("../store.sqlite3");
+}
+
+EditorApplication::~EditorApplication() {
+    y_always_assert(_instance == this, "Editor instance isn't set propertly.");
+}
+
+
+}

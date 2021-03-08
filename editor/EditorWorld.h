@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_EDITORWORLD_H
 #define EDITOR_EDITORWORLD_H
 
-#include <editor/Editor.h>
+#include <editor/editor.h>
 
 #include <yave/ecs/EntityWorld.h>
 

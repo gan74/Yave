@@ -24,10 +24,7 @@ SOFTWARE.
 #define EDITOR_EDITOR_H
 
 #include <yave/yave.h>
-
 #include <editor/utils/forward.h>
-
-#include <yave/graphics/device/DeviceLinked.h>
 
 #include <memory>
 
@@ -37,29 +34,14 @@ using namespace yave;
 
 using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
 
-class UiManager;
+EditorApplication* application();
+UiManager& ui();
+AssetStore& asset_store();
 
 
-class Editor : NonMovable, public DeviceLinked {
-    public:
-        static Editor* instance();
-
-        static Editor* init(DevicePtr dptr);
-        static void destroy();
-
-
-        UiManager& ui() { return *_ui; }
-        AssetStore& asset_store() { return *_asset_store; }
-
-
-    private:
-        Editor(DevicePtr dptr);
-        ~Editor();
-
-        std::unique_ptr<UiManager> _ui;
-        std::unique_ptr<AssetStore> _asset_store;
-};
+Widget* add_widget(std::unique_ptr<Widget> widget);
 
 }
+
 
 #endif // EDITOR_EDITOR_H

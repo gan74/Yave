@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_WIDGET_H
 #define EDITOR_WIDGET_H
 
-#include <editor/Editor.h>
+#include <editor/editor.h>
 
 #include <y/core/String.h>
 

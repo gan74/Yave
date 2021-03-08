@@ -19,21 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_UTILS_ASSETS_H
-#define EDITOR_UTILS_ASSETS_H
+
+#ifndef EDITOR_EDITORAPPLICATION_H
+#define EDITOR_EDITORAPPLICATION_H
 
 #include <editor/editor.h>
 
-#include <yave/assets/AssetType.h>
+#include <yave/graphics/device/DeviceLinked.h>
 
-#include <string_view>
+#include <memory>
 
 namespace editor {
 
-std::string_view asset_type_name(AssetType type, bool plural = false, bool lowercase = false);
-std::string_view asset_type_icon(AssetType type);
+class EditorApplication : NonMovable, public DeviceLinked {
+    public:
+        EditorApplication(DevicePtr dptr);
+        ~EditorApplication();
+
+        static EditorApplication* instance();
+
+        UiManager& ui() { return *_ui; }
+        AssetStore& asset_store() { return *_asset_store; }
+
+
+    private:
+        static EditorApplication* _instance;
+
+        std::unique_ptr<UiManager> _ui;
+        std::unique_ptr<AssetStore> _asset_store;
+};
 
 }
 
-#endif // EDITOR_UTILS_ASSETS_H
-
+#endif // EDITOR_EDITORAPPLICATION_H

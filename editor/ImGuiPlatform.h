@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef EDITOR_IMGUIPLATFORM_H
 #define EDITOR_IMGUIPLATFORM_H
 
-#include <editor/Editor.h>
+#include <editor/editor.h>
 #include <editor/ImGuiRenderer.h>
 
 #include <yave/window/Window.h>

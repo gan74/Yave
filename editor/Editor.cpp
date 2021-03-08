@@ -20,40 +20,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Editor.h"
+#include "editor.h"
 
+#include "EditorApplication.h"
 #include "UiManager.h"
-
-#include <yave/assets/SQLiteAssetStore.h>
 
 namespace editor {
 
-static Editor* editor_instance = nullptr;
-
-Editor* Editor::instance() {
-    y_debug_assert(editor_instance);
-    return editor_instance;
+EditorApplication* application() {
+    return EditorApplication::instance();
 }
 
-Editor* Editor::init(DevicePtr dptr) {
-    y_always_assert(!editor_instance, "Editor already initialized.");
-    return editor_instance = new Editor(dptr);
+UiManager& ui() {
+    return application()->ui();
 }
 
-void Editor::destroy() {
-    y_always_assert(editor_instance, "No editor.");
-    delete editor_instance;
-    editor_instance = nullptr;
+AssetStore& asset_store() {
+    return application()->asset_store();
 }
 
 
-Editor::Editor(DevicePtr dptr) : DeviceLinked(dptr) {
-    _ui = std::make_unique<UiManager>();
-    _asset_store = std::make_unique<SQLiteAssetStore>("../store.sqlite3");
+
+Widget* add_widget(std::unique_ptr<Widget> widget) {
+    Widget* w = widget.get();
+    ui().add_widget(std::move(widget));
+    return w;
 }
 
-Editor::~Editor() {
 }
 
 
-}

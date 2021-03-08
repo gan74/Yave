@@ -41,17 +41,17 @@ namespace editor {
 ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resource Browser") {
 }
 
-ResourceBrowser::ResourceBrowser(std::string_view title) : FileSystemView(Editor::instance()->asset_store().filesystem(), title) {
+ResourceBrowser::ResourceBrowser(std::string_view title) : FileSystemView(asset_store().filesystem(), title) {
     //set_flags(ImGuiWindowFlags_NoScrollbar);
     path_changed();
 }
 
 AssetId ResourceBrowser::asset_id(std::string_view name) const {
-    return Editor::instance()->asset_store().id(name).unwrap_or(AssetId());
+    return asset_store().id(name).unwrap_or(AssetId());
 }
 
 AssetType ResourceBrowser::read_file_type(AssetId id) const {
-    return Editor::instance()->asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+    return asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 }
 
 bool ResourceBrowser::is_searching() const {
@@ -62,10 +62,10 @@ bool ResourceBrowser::is_searching() const {
 
 void ResourceBrowser::draw_import_menu() {
     // if(ImGui::Selectable("Import objects")) {
-    //     Editor::instance()->ui().add_widget<SceneImporter>(context(), path());
+    //     add_widget<SceneImporter>(context(), path());
     // }
     // if(ImGui::Selectable("Import image")) {
-    //     Editor::instance()->ui().add_widget<ImageImporter>(context(), path());
+    //     add_widget<ImageImporter>(context(), path());
     // }
 }
 
@@ -84,7 +84,7 @@ void ResourceBrowser::draw_context_menu() {
         serde3::WritableArchive arc(buffer);
         if(arc.serialize(material)) {
             buffer.reset();
-            AssetStore& store = Editor::instance()->asset_store();
+            AssetStore& store = asset_store();
             if(!store.import(buffer, store.filesystem()->join(path(), "new material"), AssetType::Material)) {
                 log_msg("Unable to import new material.", Log::Error);
             }

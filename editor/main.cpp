@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Editor.h"
+#include "EditorApplication.h"
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
 
@@ -106,16 +106,14 @@ int main(int argc, char** argv) {
 
     ImGuiPlatform platform(&device);
 
-    Editor* editor = Editor::init(&device);
+    EditorApplication editor(&device);
 
-    editor->ui().add_widget(std::make_unique<UiDebugWidget>());
+    ui().add_widget(std::make_unique<UiDebugWidget>());
 
     platform.exec([&](CmdBufferRecorder&) {
-        editor->ui().draw_gui();
+        editor.ui().draw_gui();
     });
 
-
-    Editor::destroy();
     log_msg("Quitting...");
 
     return 0;

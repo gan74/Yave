@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_UTILS_UI_H
 #define EDITOR_UTILS_UI_H
 
-#include <editor/Editor.h>
+#include <editor/editor.h>
 
 #include <yave/assets/AssetId.h>
 

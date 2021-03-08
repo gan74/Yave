@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_COMPONENTS_EDITORCOMPONENT_H
 #define EDITOR_COMPONENTS_EDITORCOMPONENT_H
 
-#include <editor/Editor.h>
+#include <editor/editor.h>
 #include <yave/ecs/ecs.h>
 
 #include <y/reflect/reflect.h>

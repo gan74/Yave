@@ -25,24 +25,16 @@ SOFTWARE.
 // Auto generated: forward definitions for most non template classes
 // TODO: Classes nested in namespaces or other classes will not be declared correctly
 namespace editor {
-class CameraController;
-class ComponentWidgetData;
-class Editor;
+class AssetSelector;
+class EditorApplication;
 class EditorComponent;
-class EditorEntityPass;
-class EditorRenderer;
-class EditorRendererSettings;
 class EditorWorld;
-class FPSCameraController;
 class FileBrowser;
 class FileSystemView;
-class HoudiniCameraController;
-class IdBufferPass;
 class ImGuiPlatform;
 class ImGuiRenderer;
 class MaterialData;
 class PrefabData;
-class PropertyPanel;
 class ResourceBrowser;
 class SceneData;
 class SkeletonData;

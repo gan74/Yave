@@ -44,7 +44,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     ImGui::PushID(fmt_c_str("%_%_%", id.id(), uenum(type), text));
     ImGui::BeginGroup();
 
-    const auto name = Editor::instance()->asset_store().name(id);
+    const auto name = asset_store().name(id);
     const bool is_valid = name.is_ok();
 
     if(clear) {
@@ -67,7 +67,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
 
     ImGui::SameLine();
     if(ImGui::GetContentRegionAvail().x > button_size.x() * 0.5f) {
-        const auto clean_name = [=](auto&& n) { return Editor::instance()->asset_store().filesystem()->filename(n); };
+        const auto clean_name = [=](auto&& n) { return asset_store().filesystem()->filename(n); };
         const core::String clean = name.map(clean_name).unwrap_or(core::String());
 
         const bool is_empty = clean.is_empty();
