@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "ResourceBrowser.h"
 
+#include "SceneImporter.h"
+#include "ImageImporter.h"
+
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
 
@@ -42,7 +45,7 @@ ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resou
 }
 
 ResourceBrowser::ResourceBrowser(std::string_view title) : FileSystemView(asset_store().filesystem(), title) {
-    //set_flags(ImGuiWindowFlags_NoScrollbar);
+    set_flags(ImGuiWindowFlags_NoScrollbar);
     path_changed();
 }
 
@@ -61,12 +64,12 @@ bool ResourceBrowser::is_searching() const {
 
 
 void ResourceBrowser::draw_import_menu() {
-    // if(ImGui::Selectable("Import objects")) {
-    //     add_widget<SceneImporter>(context(), path());
-    // }
-    // if(ImGui::Selectable("Import image")) {
-    //     add_widget<ImageImporter>(context(), path());
-    // }
+    if(ImGui::Selectable("Import objects")) {
+        add_detached_widget<SceneImporter>(path());
+    }
+    if(ImGui::Selectable("Import image")) {
+        add_detached_widget<ImageImporter>(path());
+    }
 }
 
 void ResourceBrowser::draw_context_menu() {

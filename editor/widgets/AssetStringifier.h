@@ -19,50 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_WIDGETS_ASSETSTRINGIFIER_H
+#define EDITOR_WIDGETS_ASSETSTRINGIFIER_H
 
-#ifndef EDITOR_EDITOR_H
-#define EDITOR_EDITOR_H
-
-#include <yave/yave.h>
-#include <editor/utils/forward.h>
-
-#include <memory>
+#include "AssetSelector.h"
 
 namespace editor {
 
-using namespace yave;
+class AssetStringifier : public Widget {
+    public:
+        AssetStringifier();
 
-EditorApplication* application();
-DevicePtr app_device();
+        void clear();
 
-Settings& app_settings();
-Selection& selection();
+        void draw_gui() override;
 
+    private:
+        void stringify(AssetId id);
 
-AssetStore& asset_store();
-AssetLoader& asset_loader();
-EditorWorld& world();
-const SceneView& scene_view();
+        AssetSelector _selector;
 
-
-const EditorResources& resources();
-UiManager& ui();
-ImGuiPlatform* imgui_platform();
-
-
-Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
-
-template<typename T, typename... Args>
-T* add_child_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), true));
-}
-
-template<typename T, typename... Args>
-T* add_detached_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), false));
-}
+        AssetId _selected;
+        core::String _vertices;
+        core::String _triangles;
+};
 
 }
 
+#endif // EDITOR_WIDGETS_ASSETSTRINGIFIER_H
 
-#endif // EDITOR_EDITOR_H

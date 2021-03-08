@@ -41,6 +41,15 @@ bool Widget::is_visible() const {
     return _visible;
 }
 
+void Widget::set_visible(bool visible) {
+    _visible = visible;
+}
+
+void Widget::set_parent(Widget* parent) {
+    y_debug_assert(!parent != !_parent);
+    _parent = parent;
+}
+
 void Widget::refresh() {
 }
 
@@ -68,6 +77,9 @@ math::Vec2ui Widget::content_size() const {
     return (math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
 }
 
+void Widget::set_flags(int flags) {
+    _flags |= flags;
+}
 
 void Widget::set_id(u64 id) {
     _id = id;

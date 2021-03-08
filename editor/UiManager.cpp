@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include <yave/utils/FileSystemModel.h>
 
+#include <y/core/HashMap.h>
+
 #include <external/imgui/yave_imgui.h>
 
 namespace editor {
@@ -37,16 +39,16 @@ UiDebugWidget::UiDebugWidget() : Widget("UI Debug") {
 
 void UiDebugWidget::draw_gui() {
     if(ImGui::Button("Add test widget")) {
-        add_widget(std::make_unique<Widget>("Test widget"));
+        add_widget(std::make_unique<Widget>("Test widget"), true);
     }
     if(ImGui::Button("Add resource browser")) {
-        add_widget(std::make_unique<ResourceBrowser>());
+        add_widget(std::make_unique<ResourceBrowser>(), true);
     }
     if(ImGui::Button("Add file explorer")) {
-        add_widget(std::make_unique<FileBrowser>(FileSystemModel::local_filesystem()));
+        add_widget(std::make_unique<FileBrowser>(FileSystemModel::local_filesystem()), true);
     }
     if(ImGui::Button("Add engine view")) {
-        add_widget(std::make_unique<EngineView>());
+        add_widget(std::make_unique<EngineView>(), true);
     }
 }
 
@@ -57,21 +59,48 @@ UiManager::~UiManager() {
 }
 
 void UiManager::draw_gui() {
-    for(usize i = 0; i != _widgets.size(); ++i) {
-        y_profile_dyn_zone(_widgets[i]->_title_with_id);
+    core::ExternalHashMap<Widget*, int> to_destroy;
 
-        _widgets[i]->draw_gui_inside();
+    for(auto& widget : _widgets) {
+        y_profile_dyn_zone(widget->_title_with_id);
 
-        if(!_widgets[i]->is_visible()) {
-            _widgets.erase_unordered(_widgets.begin() + i);
-            --i;
+        _auto_parent = widget.get();
+        widget->draw_gui_inside();
+
+        if(!widget->is_visible()) {
+            to_destroy[widget.get()];
+        }
+    }
+
+    _auto_parent = nullptr;
+
+
+   if(!to_destroy.is_empty()) {
+        for(usize i = 0;  i != _widgets.size(); ++i) {
+            bool destroy = to_destroy.contains(_widgets[i].get());
+            for(Widget* parent = _widgets[i]->_parent; parent && !destroy; parent = parent->_parent) {
+                destroy |= to_destroy.contains(parent);
+            }
+
+            if(destroy) {
+                _widgets.erase_unordered(_widgets.begin() + i);
+                --i;
+            }
         }
     }
 }
 
-void UiManager::add_widget(std::unique_ptr<Widget> widget) {
-    set_widget_id(widget.get());
+Widget* UiManager::add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {
+    Widget* wid = widget.get();
+
+    if(auto_parent && _auto_parent) {
+        wid->set_parent(_auto_parent);
+    }
+
+    set_widget_id(wid);
     _widgets << std::move(widget);
+
+    return wid;
 }
 
 void UiManager::set_widget_id(Widget* widget) {

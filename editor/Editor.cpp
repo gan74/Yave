@@ -55,10 +55,17 @@ AssetStore& asset_store() {
     return application()->asset_store();
 }
 
+AssetLoader& asset_loader() {
+    return application()->asset_loader();
+}
+
 EditorWorld& world() {
     return application()->world();
 }
 
+const SceneView& scene_view() {
+    return application()->scene_view();
+}
 
 const EditorResources& resources() {
     return application()->resources();
@@ -73,10 +80,8 @@ ImGuiPlatform* imgui_platform() {
 }
 
 
-Widget* add_widget(std::unique_ptr<Widget> widget) {
-    Widget* w = widget.get();
-    ui().add_widget(std::move(widget));
-    return w;
+Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {
+    return ui().add_widget(std::move(widget), auto_parent);
 }
 
 }

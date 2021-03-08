@@ -19,50 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_WIDGETS_IMAGEIMPORTER_H
+#define EDITOR_WIDGETS_IMAGEIMPORTER_H
 
-#ifndef EDITOR_EDITOR_H
-#define EDITOR_EDITOR_H
+#include "FileBrowser.h"
 
-#include <yave/yave.h>
-#include <editor/utils/forward.h>
+#include <yave/graphics/images/ImageData.h>
 
-#include <memory>
+#include <editor/utils/Named.h>
+
+#include <future>
 
 namespace editor {
 
-using namespace yave;
+class ImageImporter final : public Widget {
 
-EditorApplication* application();
-DevicePtr app_device();
+    public:
+        ImageImporter(const core::String& import_path = ".");
 
-Settings& app_settings();
-Selection& selection();
+        void draw_gui() override;
 
+    private:
+        void import_async(const core::String& filename);
+        void import(const Named<ImageData>& asset);
 
-AssetStore& asset_store();
-AssetLoader& asset_loader();
-EditorWorld& world();
-const SceneView& scene_view();
+        bool done_loading() const;
+        bool is_loading() const;
 
+        FileBrowser _browser;
 
-const EditorResources& resources();
-UiManager& ui();
-ImGuiPlatform* imgui_platform();
+        core::String _import_path;
 
-
-Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
-
-template<typename T, typename... Args>
-T* add_child_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), true));
-}
-
-template<typename T, typename... Args>
-T* add_detached_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), false));
-}
+        std::future<Named<ImageData>> _import_future;
+};
 
 }
 
+#endif // EDITOR_WIDGETS_IMAGEIMPORTER_H
 
-#endif // EDITOR_EDITOR_H

@@ -51,7 +51,7 @@ class UiManager : NonMovable {
 
         void draw_gui();
 
-        void add_widget(std::unique_ptr<Widget> widget);
+        Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
 
         // y_reflect(_widgets);
 
@@ -60,6 +60,8 @@ class UiManager : NonMovable {
 
         core::Vector<std::unique_ptr<Widget>> _widgets;
         core::ExternalHashMap<std::type_index, WidgetIdStack> _ids;
+
+        Widget* _auto_parent = nullptr;
 };
 
 

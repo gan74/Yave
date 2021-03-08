@@ -48,12 +48,16 @@ class EditorApplication : NonMovable, public DeviceLinked {
             return *_scene_view;
         }
 
-        EditorWorld& world() {
-            return *_world;
-        }
-
         AssetStore& asset_store() {
             return *_asset_store;
+        }
+
+        AssetLoader& asset_loader() {
+            return *_loader;
+        }
+
+        EditorWorld& world() {
+            return *_world;
         }
 
         const EditorResources& resources() const {

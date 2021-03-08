@@ -39,6 +39,10 @@ class Widget : NonMovable {
         void close();
         bool is_visible() const;
 
+        void set_visible(bool visible);
+
+        void set_parent(Widget* parent);
+
         virtual void refresh();
         virtual void refresh_all();
 
@@ -50,9 +54,9 @@ class Widget : NonMovable {
         // y_serde3_poly_base(Widget)
 
     protected:
-        bool _visible = true;
-
         math::Vec2ui content_size() const;
+
+        void set_flags(int flags);
 
     private:
         friend class UiManager;
@@ -62,10 +66,12 @@ class Widget : NonMovable {
 
         core::String _title_with_id;
 
-
         std::string_view _title;
         u64 _id = 0;
 
+        bool _visible = true;
+
+        Widget* _parent = nullptr;
         int _flags = 0;
 };
 

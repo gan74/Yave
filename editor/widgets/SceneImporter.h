@@ -19,50 +19,60 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_WIDGETS_SCENEIMPORTER_H
+#define EDITOR_WIDGETS_SCENEIMPORTER_H
 
-#ifndef EDITOR_EDITOR_H
-#define EDITOR_EDITOR_H
+#include "FileBrowser.h"
 
-#include <yave/yave.h>
-#include <editor/utils/forward.h>
+#include <editor/import/import.h>
 
-#include <memory>
+#include <future>
 
 namespace editor {
 
-using namespace yave;
+class SceneImporter final : public Widget {
 
-EditorApplication* application();
-DevicePtr app_device();
+    enum class State {
+        Browsing,
+        Settings,
+        Importing,
+        Done,
+    };
 
-Settings& app_settings();
-Selection& selection();
+    public:
+        SceneImporter(const core::String& import_path = ".");
 
+        void draw_gui() override;
 
-AssetStore& asset_store();
-AssetLoader& asset_loader();
-EditorWorld& world();
-const SceneView& scene_view();
+    private:
+        bool done_loading() const;
+        void paint_import_settings();
+        import::SceneImportFlags scene_import_flags() const;
 
+        void import(import::SceneData scene);
 
-const EditorResources& resources();
-UiManager& ui();
-ImGuiPlatform* imgui_platform();
+        State _state = State::Browsing;
 
+        FileBrowser _browser;
 
-Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
+        core::String _import_path;
+        core::String _filename;
 
-template<typename T, typename... Args>
-T* add_child_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), true));
+        usize _forward_axis = 0;
+        usize _up_axis = 4;
+
+        bool _import_meshes = true;
+        bool _import_anims = true;
+        bool _import_images = true;
+        bool _import_materials = true;
+        bool _flip_uvs = false;
+
+        float _scale = 1.0f;
+
+        std::future<void> _import_future;
+};
+
 }
 
-template<typename T, typename... Args>
-T* add_detached_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), false));
-}
+#endif // EDITOR_WIDGETS_SCENEIMPORTER_H
 
-}
-
-
-#endif // EDITOR_EDITOR_H

@@ -69,6 +69,8 @@ class AssetLoader : NonMovable, public DeviceLinked {
             using Data = typename AssetPtr<T>::Data;
             using WeakAssetPtr = std::weak_ptr<Data>;
 
+            static_assert(sizeof(T) > 0, "Type is not defined");
+
             using traits = AssetTraits<T>;
             static_assert(traits::is_asset, "Type is missing asset traits");
 

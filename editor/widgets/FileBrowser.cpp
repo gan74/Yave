@@ -101,7 +101,7 @@ bool FileBrowser::done(const core::String& filename) {
 
     bool changed = true;
     if((valid_dir && _dirs) || valid_file) {
-        _visible = !_callbacks.selected(filename);
+        set_visible(!_callbacks.selected(filename));
     } else if(valid_dir) {
         set_path(filename);
     } else {
@@ -113,7 +113,7 @@ bool FileBrowser::done(const core::String& filename) {
 }
 
 void FileBrowser::cancel() {
-    _visible = !_callbacks.canceled();
+    set_visible(!_callbacks.canceled());
 }
 
 core::String FileBrowser::full_path() const {

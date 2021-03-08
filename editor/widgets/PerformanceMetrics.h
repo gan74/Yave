@@ -19,50 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_WIDGETS_PERFORMANCEMETRICS_H
+#define EDITOR_WIDGETS_PERFORMANCEMETRICS_H
 
-#ifndef EDITOR_EDITOR_H
-#define EDITOR_EDITOR_H
+#include <editor/Widget.h>
 
-#include <yave/yave.h>
-#include <editor/utils/forward.h>
-
-#include <memory>
+#include <y/core/Chrono.h>
 
 namespace editor {
 
-using namespace yave;
+class PerformanceMetrics : public Widget {
+    public:
+        PerformanceMetrics();
 
-EditorApplication* application();
-DevicePtr app_device();
+        void draw_gui() override;
 
-Settings& app_settings();
-Selection& selection();
+    private:
+        core::Chrono _timer;
 
+        std::array<float, 128> _frames;
+        usize _current_frame = 0;
 
-AssetStore& asset_store();
-AssetLoader& asset_loader();
-EditorWorld& world();
-const SceneView& scene_view();
+        usize _current_average = 0;
+        std::array<float, 128> _average;
 
-
-const EditorResources& resources();
-UiManager& ui();
-ImGuiPlatform* imgui_platform();
-
-
-Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
-
-template<typename T, typename... Args>
-T* add_child_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), true));
-}
-
-template<typename T, typename... Args>
-T* add_detached_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), false));
-}
+        double _total = 0.0;
+        float _max = 16.0f;
+};
 
 }
 
+#endif // EDITOR_WIDGETS_PERFORMANCEMETRICS_H
 
-#endif // EDITOR_EDITOR_H
