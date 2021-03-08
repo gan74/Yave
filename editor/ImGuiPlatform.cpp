@@ -335,6 +335,7 @@ ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
 
     y_always_assert(io.BackendPlatformUserData == nullptr, "ImGui already has a platform backend.");
     io.BackendPlatformUserData = this;
+    io.ConfigWindowsMoveFromTitleBarOnly = true;
 
     setup_key_bindings(io);
     setup_config_files(io);
