@@ -25,9 +25,8 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
+#include <yave/scene/SceneView.h>
 #include <yave/graphics/device/DeviceLinked.h>
-
-#include <memory>
 
 namespace editor {
 
@@ -38,15 +37,65 @@ class EditorApplication : NonMovable, public DeviceLinked {
 
         static EditorApplication* instance();
 
-        UiManager& ui() { return *_ui; }
-        AssetStore& asset_store() { return *_asset_store; }
+        void exec();
+
+
+        void set_scene_view(SceneView* scene);
+        void unset_scene_view(SceneView* scene);
+
+
+        SceneView& scene_view() {
+            return *_scene_view;
+        }
+
+        EditorWorld& world() {
+            return *_world;
+        }
+
+        AssetStore& asset_store() {
+            return *_asset_store;
+        }
+
+        const EditorResources& resources() const {
+            return *_resources;
+        }
+
+        UiManager& ui() {
+            return *_ui;
+        }
+
+        ImGuiPlatform* imgui_platform() {
+            return _platform.get();
+        }
+
+        CmdBufferRecorder& recorder() {
+            y_debug_assert(_recorder);
+            return *_recorder;
+        }
+
+
 
 
     private:
         static EditorApplication* _instance;
 
+        void load_world();
+
+        std::unique_ptr<EditorResources> _resources;
+
+        std::shared_ptr<AssetStore> _asset_store;
+        std::unique_ptr<AssetLoader> _loader;
+        std::unique_ptr<EditorWorld> _world;
+
+
+
+        std::unique_ptr<ImGuiPlatform> _platform;
         std::unique_ptr<UiManager> _ui;
-        std::unique_ptr<AssetStore> _asset_store;
+
+        CmdBufferRecorder* _recorder = nullptr;
+
+        SceneView _default_scene_view;
+        SceneView* _scene_view = nullptr;
 };
 
 }

@@ -379,6 +379,10 @@ DevicePtr ImGuiPlatform::device() const {
     return _renderer->device();
 }
 
+const ImGuiRenderer* ImGuiPlatform::renderer() const {
+    return _renderer.get();
+}
+
 bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
     y_profile();
 

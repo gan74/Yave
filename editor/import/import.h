@@ -22,9 +22,9 @@ SOFTWARE.
 #ifndef EDITOR_IMPORT_IMPORT_H
 #define EDITOR_IMPORT_IMPORT_H
 
-#include <yave/material/SimpleMaterialData.h>
-
 #include <editor/utils/Named.h>
+
+#include <yave/material/SimpleMaterialData.h>
 
 #include <y/core/Vector.h>
 #include <y/math/math.h>

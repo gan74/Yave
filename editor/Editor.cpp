@@ -25,20 +25,52 @@ SOFTWARE.
 #include "EditorApplication.h"
 #include "UiManager.h"
 
+#include "Settings.h"
+#include "Selection.h"
+
+
 namespace editor {
 
 EditorApplication* application() {
     return EditorApplication::instance();
 }
 
-UiManager& ui() {
-    return application()->ui();
+DevicePtr app_device() {
+    return application()->device();
 }
+
+
+Settings& app_settings() {
+    static Settings settings;
+    return settings;
+}
+
+Selection& selection() {
+    static Selection select;
+    return select;
+}
+
 
 AssetStore& asset_store() {
     return application()->asset_store();
 }
 
+EditorWorld& world() {
+    return application()->world();
+}
+
+
+const EditorResources& resources() {
+    return application()->resources();
+}
+
+UiManager& ui() {
+    return application()->ui();
+}
+
+ImGuiPlatform* imgui_platform() {
+    return application()->imgui_platform();
+}
 
 
 Widget* add_widget(std::unique_ptr<Widget> widget) {

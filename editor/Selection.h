@@ -19,65 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_SELECTION_H
+#define EDITOR_SELECTION_H
 
-#include "Widget.h"
+#include <editor/editor.h>
 
-#include <external/imgui/yave_imgui.h>
+#include <yave/ecs/ecs.h>
 
 namespace editor {
 
-Widget::Widget(std::string_view title, int flags) : _flags(flags) {
-    set_title(title);
-}
+class Selection {
+    public:
+        bool has_selected_entity() const {
+            return _id.is_valid();
+        }
 
-Widget::~Widget() {
-}
+        ecs::EntityId selected_entity() const {
+            return _id;
+        }
 
-void Widget::close() {
-    _visible = false;
-}
+        void set_selected(ecs::EntityId id) {
+            _id = id;
+        }
 
-bool Widget::is_visible() const {
-    return _visible;
-}
-
-void Widget::refresh() {
-}
-
-void Widget::refresh_all() {
-    Y_TODO(fix refresh)
-    refresh();
-}
-
-void Widget::draw_gui() {
-    ImGui::Text("Empty widget");
-}
-
-void Widget::draw_gui_inside() {
-    if(!_visible) {
-        return;
-    }
-
-    if(ImGui::Begin(_title_with_id.data(), &_visible, _flags)) {
-        draw_gui();
-    }
-    ImGui::End();
-}
-
-math::Vec2ui Widget::content_size() const {
-    return (math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
-}
-
-
-void Widget::set_id(u64 id) {
-    _id = id;
-    set_title(_title);
-}
-
-void Widget::set_title(std::string_view title) {
-    _title_with_id = fmt("%##%", title, _id);
-    _title = std::string_view(_title_with_id.begin(), title.size());
-}
+    private:
+        ecs::EntityId _id;
+};
 
 }
+
+#endif // EDITOR_CONTEXT_SELECTION_H
 

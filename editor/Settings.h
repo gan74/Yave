@@ -19,36 +19,73 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_COMPONENTS_EDITORCOMPONENT_H
-#define EDITOR_COMPONENTS_EDITORCOMPONENT_H
+#ifndef EDITOR_SETTINGS_H
+#define EDITOR_SETTINGS_H
 
 #include <editor/editor.h>
 
-#include <yave/ecs/ecs.h>
+#include <yave/window/EventHandler.h>
 
 #include <y/reflect/reflect.h>
 #include <y/core/String.h>
 
 namespace editor {
 
-class EditorComponent {
+struct CameraSettings {
+    float z_near = 1.0f;
+    float fov = 60.0f;
+
+    // FPS
+    Key move_forward = Key::W;
+    Key move_backward = Key::S;
+    Key move_right = Key::D;
+    Key move_left = Key::A;
+    float fps_sensitivity = 4.0f;
+
+    // Houdini
+    float trackball_sensitivity = 6.0f;
+    float dolly_sensitivity = 2.5f;
+
+    // Other camera
+    Key center_on_obj = Key::H;
+
+    y_reflect(z_near, fov,
+              move_forward, move_backward, move_right, move_left,
+              fps_sensitivity, trackball_sensitivity, dolly_sensitivity,
+              center_on_obj)
+
+};
+
+struct UiSettings {
+    Key change_gizmo_mode = Key::R;
+    Key change_gizmo_space = Key::Q;
+
+
+    y_reflect(change_gizmo_mode, change_gizmo_space)
+};
+
+struct PerfSettings {
+};
+
+
+class Settings {
     public:
-        EditorComponent() = default;
-        EditorComponent(std::string_view name);
+        Settings(bool load = true);
+        ~Settings();
 
-        const core::String& name() const;
-        void set_name(core::String name);
+        CameraSettings& camera();
+        UiSettings& ui();
+        PerfSettings& perf();
 
-        math::Vec3& euler();
-
-        y_reflect(_name)
+        y_reflect(_camera, _ui, _perf)
 
     private:
-        core::String _name = "Unnamed entity";
-        math::Vec3 _euler;
+        CameraSettings _camera;
+        UiSettings _ui;
+        PerfSettings _perf;
 };
 
 }
 
-#endif // EDITOR_COMPONENTS_EDITORCOMPONENT_H
+#endif // EDITOR_CONTEXT_SETTINGS_H
 

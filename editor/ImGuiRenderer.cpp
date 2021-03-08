@@ -34,7 +34,6 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-#include <external/imgui/IconsFontAwesome5.h>
 #include <external/imgui/yave_imgui.h>
 #include <external/imgui/fa-solid-900.h>
 
@@ -157,11 +156,11 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
             const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
             recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
 
-            if(cmd.UserCallback) {
-                void* ptr = reinterpret_cast<void*>(cmd.UserCallback);
-                reinterpret_cast<UIDrawCallback>(ptr)(recorder, cmd.UserCallbackData);
-                current_tex = nullptr;
-            }
+            // if(cmd.UserCallback) {
+            //     cmd.UserCallback(recorder, cmd.UserCallbackData);
+            //     current_tex = nullptr;
+            // }
+            y_debug_assert(!cmd.UserCallback);
 
             if(cmd.ElemCount) {
                 if(current_tex != cmd.TextureId) {

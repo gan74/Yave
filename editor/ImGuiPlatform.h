@@ -23,8 +23,7 @@ SOFTWARE.
 #ifndef EDITOR_IMGUIPLATFORM_H
 #define EDITOR_IMGUIPLATFORM_H
 
-#include <editor/editor.h>
-#include <editor/ImGuiRenderer.h>
+#include "ImGuiRenderer.h"
 
 #include <yave/window/Window.h>
 #include <yave/window/EventHandler.h>
@@ -60,6 +59,7 @@ class ImGuiPlatform : NonMovable {
         ImGuiPlatform(DevicePtr dptr, bool multi_viewport = true);
 
         DevicePtr device() const;
+        const ImGuiRenderer* renderer() const;
 
         bool exec(OnGuiFunc func = nullptr, bool once = false);
 

@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "UiManager.h"
 
+#include <editor/widgets/EngineView.h>
 #include <editor/widgets/ResourceBrowser.h>
 #include <editor/widgets/FileBrowser.h>
 
@@ -43,6 +44,9 @@ void UiDebugWidget::draw_gui() {
     }
     if(ImGui::Button("Add file explorer")) {
         add_widget(std::make_unique<FileBrowser>(FileSystemModel::local_filesystem()));
+    }
+    if(ImGui::Button("Add engine view")) {
+        add_widget(std::make_unique<EngineView>());
     }
 }
 

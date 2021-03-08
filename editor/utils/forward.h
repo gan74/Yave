@@ -26,21 +26,36 @@ SOFTWARE.
 // TODO: Classes nested in namespaces or other classes will not be declared correctly
 namespace editor {
 class AssetSelector;
+class CameraController;
+class CameraSettings;
 class EditorApplication;
 class EditorComponent;
+class EditorRenderer;
+class EditorRendererSettings;
+class EditorResources;
 class EditorWorld;
+class EngineView;
+class FPSCameraController;
 class FileBrowser;
 class FileSystemView;
+class Gizmo;
+class HoudiniCameraController;
 class ImGuiPlatform;
 class ImGuiRenderer;
 class MaterialData;
+class PerfSettings;
+class Picker;
+class PickingResult;
 class PrefabData;
 class ResourceBrowser;
 class SceneData;
+class Selection;
+class Settings;
 class SkeletonData;
 class SubMeshData;
 class UiDebugWidget;
 class UiManager;
+class UiSettings;
 class Widget;
 }
 

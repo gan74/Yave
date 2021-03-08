@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "EditorApplication.h"
 #include "UiManager.h"
-#include "ImGuiPlatform.h"
 
 #include <editor/utils/crashhandler.h>
 
@@ -104,15 +103,11 @@ int main(int argc, char** argv) {
     Instance instance = create_instance();
     Device device = create_device(instance);
 
-    ImGuiPlatform platform(&device);
-
     EditorApplication editor(&device);
 
     ui().add_widget(std::make_unique<UiDebugWidget>());
 
-    platform.exec([&](CmdBufferRecorder&) {
-        editor.ui().draw_gui();
-    });
+    editor.exec();
 
     log_msg("Quitting...");
 

@@ -33,7 +33,7 @@ namespace editor {
 class Widget : NonMovable {
 
     public:
-        Widget(std::string_view title);
+        Widget(std::string_view title, int flags = 0);
         virtual ~Widget();
 
         void close();
@@ -52,6 +52,8 @@ class Widget : NonMovable {
     protected:
         bool _visible = true;
 
+        math::Vec2ui content_size() const;
+
     private:
         friend class UiManager;
 
@@ -63,6 +65,8 @@ class Widget : NonMovable {
 
         std::string_view _title;
         u64 _id = 0;
+
+        int _flags = 0;
 };
 
 }

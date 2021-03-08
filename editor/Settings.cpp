@@ -20,63 +20,53 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Widget.h"
+#include "Settings.h"
 
-#include <external/imgui/yave_imgui.h>
+#include <y/serde3/archives.h>
+#include <y/io2/File.h>
+#include <y/utils/log.h>
 
 namespace editor {
 
-Widget::Widget(std::string_view title, int flags) : _flags(flags) {
-    set_title(title);
+static constexpr std::string_view settings_file = "../settings.dat";
+
+Settings::Settings(bool load) {
+    if(load) {
+        auto file = io2::File::open(settings_file);
+        if(!file) {
+            log_msg("Unable to open settings file.", Log::Error);
+            return;
+        }
+        serde3::ReadableArchive arc(file.unwrap());
+        if(!arc.deserialize(*this)) {
+            log_msg("Unable to read settings file.", Log::Error);
+            *this = Settings(false);
+        }
+    }
 }
 
-Widget::~Widget() {
-}
-
-void Widget::close() {
-    _visible = false;
-}
-
-bool Widget::is_visible() const {
-    return _visible;
-}
-
-void Widget::refresh() {
-}
-
-void Widget::refresh_all() {
-    Y_TODO(fix refresh)
-    refresh();
-}
-
-void Widget::draw_gui() {
-    ImGui::Text("Empty widget");
-}
-
-void Widget::draw_gui_inside() {
-    if(!_visible) {
+Settings::~Settings() {
+    auto file = io2::File::create(settings_file);
+    if(!file) {
+        log_msg("Unable to open settings file.", Log::Error);
         return;
     }
-
-    if(ImGui::Begin(_title_with_id.data(), &_visible, _flags)) {
-        draw_gui();
+    serde3::WritableArchive arc(file.unwrap());
+    if(!arc.serialize(*this)) {
+        log_msg("Unable to write settings file.", Log::Error);
     }
-    ImGui::End();
 }
 
-math::Vec2ui Widget::content_size() const {
-    return (math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
+CameraSettings& Settings::camera() {
+    return _camera;
 }
 
-
-void Widget::set_id(u64 id) {
-    _id = id;
-    set_title(_title);
+UiSettings& Settings::ui() {
+    return _ui;
 }
 
-void Widget::set_title(std::string_view title) {
-    _title_with_id = fmt("%##%", title, _id);
-    _title = std::string_view(_title_with_id.begin(), title.size());
+PerfSettings& Settings::perf() {
+    return _perf;
 }
 
 }

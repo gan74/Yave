@@ -32,11 +32,19 @@ namespace editor {
 
 using namespace yave;
 
-using UIDrawCallback = void(*)(RenderPassRecorder&, void* user_data);
-
 EditorApplication* application();
-UiManager& ui();
+DevicePtr app_device();
+
+Settings& app_settings();
+Selection& selection();
+
+
 AssetStore& asset_store();
+EditorWorld& world();
+
+const EditorResources& resources();
+UiManager& ui();
+ImGuiPlatform* imgui_platform();
 
 
 Widget* add_widget(std::unique_ptr<Widget> widget);

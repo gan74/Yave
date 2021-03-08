@@ -19,65 +19,57 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_WIDGETS_GIZMO_H
+#define EDITOR_WIDGETS_GIZMO_H
 
-#include "Widget.h"
-
-#include <external/imgui/yave_imgui.h>
+#include <editor/editor.h>
 
 namespace editor {
 
-Widget::Widget(std::string_view title, int flags) : _flags(flags) {
-    set_title(title);
-}
+class Gizmo final {
+    public:
+        enum Mode {
+            Translate,
+            Rotate,
+        };
 
-Widget::~Widget() {
-}
+        enum Space {
+            World,
+            Local,
+        };
 
-void Widget::close() {
-    _visible = false;
-}
+        Gizmo(SceneView* view);
 
-bool Widget::is_visible() const {
-    return _visible;
-}
+        void draw();
 
-void Widget::refresh() {
-}
+        bool is_dragging() const;
+        void set_allow_drag(bool allow);
 
-void Widget::refresh_all() {
-    Y_TODO(fix refresh)
-    refresh();
-}
+        Mode mode() const;
+        void set_mode(Mode mode);
 
-void Widget::draw_gui() {
-    ImGui::Text("Empty widget");
-}
+        Space space() const;
+        void set_space(Space space);
 
-void Widget::draw_gui_inside() {
-    if(!_visible) {
-        return;
-    }
+    private:
 
-    if(ImGui::Begin(_title_with_id.data(), &_visible, _flags)) {
-        draw_gui();
-    }
-    ImGui::End();
-}
+        math::Vec3 to_screen_pos(const math::Vec3& world);
+        math::Vec2 to_window_pos(const math::Vec3& world);
 
-math::Vec2ui Widget::content_size() const {
-    return (math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
-}
+        SceneView* _scene_view = nullptr;
 
+        usize _rotation_axis = usize(-1);
+        float _rotation_offset;
 
-void Widget::set_id(u64 id) {
-    _id = id;
-    set_title(_title);
-}
+        math::Vec3 _dragging_offset;
+        u32 _dragging_mask = 0;
 
-void Widget::set_title(std::string_view title) {
-    _title_with_id = fmt("%##%", title, _id);
-    _title = std::string_view(_title_with_id.begin(), title.size());
-}
+        bool _allow_drag = true;
+        Mode _mode = Translate;
+        Space _space = World;
+};
 
 }
+
+#endif // EDITOR_WIDGETS_GIZMO_H
 
