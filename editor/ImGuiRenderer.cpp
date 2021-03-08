@@ -36,19 +36,9 @@ SOFTWARE.
 
 #include <external/imgui/IconsFontAwesome5.h>
 #include <external/imgui/yave_imgui.h>
+#include <external/imgui/fa-solid-900.h>
 
 namespace editor {
-
-static const char* find_font(std::string_view name) {
-    const std::array font_paths = {".", "..", "./fonts", "../fonts"};
-    for(const auto path : font_paths) {
-        const char* file = fmt_c_str("%/%", path, name);
-        if(io2::File::open(file).is_ok()) {
-            return file;
-        }
-    }
-    return nullptr;
-}
 
 static ImageData load_font() {
     y_profile();
@@ -56,17 +46,14 @@ static ImageData load_font() {
     ImFontAtlas* fonts = ImGui::GetIO().Fonts;
     fonts->AddFontDefault();
 
-    if(const char* filename = find_font(FONT_ICON_FILE_NAME_FAS)) {
-        ImFontConfig config;
-        config.MergeMode = true;
-        config.PixelSnapH = true;
-        config.OversampleH = 1;
+    ImFontConfig config;
+    config.MergeMode = true;
+    config.PixelSnapH = true;
+    config.OversampleH = 1;
+    config.GlyphOffset.y = 1.7f;
 
-        const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-        fonts->AddFontFromFileTTF(filename, 13.0f, &config, icon_ranges);
-    } else {
-        log_msg(FONT_ICON_FILE_NAME_FAS " not found.", Log::Error);
-    }
+    const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    fonts->AddFontFromMemoryCompressedTTF(font_awesome_compressed_data, font_awesome_compressed_size, 13.0f, &config, icon_ranges);
 
     u8* font_data = nullptr;
     int width = 0;
