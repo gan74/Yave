@@ -102,22 +102,22 @@ void UiManager::on_gui() {
 
 void UiManager::draw_menu_bar() {
     if(ImGui::BeginMainMenuBar()) {
-        for(auto* wid_type = detail::first_widget_type; wid_type; wid_type = wid_type->next) {
-            if(!wid_type->menu_names_count) {
+        for(EditorAction const* action = all_actions(); action; action = action->next) {
+            if(!action->menu.size()) {
                 continue;
             }
 
             usize stack_size = 0;
-            for(usize i = 0; i != wid_type->menu_names_count; ++i) {
-                if(!ImGui::BeginMenu(wid_type->menu_names[i])) {
+            for(std::string_view menu : action->menu) {
+                if(!ImGui::BeginMenu(menu.data())) {
                     break;
                 }
                 ++stack_size;
             }
 
-            if(wid_type->menu_names_count == stack_size) {
-                if(ImGui::MenuItem(wid_type->name)) {
-                    add_widget(wid_type->create(), false);
+            if(stack_size == action->menu.size()) {
+                if(ImGui::MenuItem(action->name.data())) {
+                    action->function();
                 }
             }
 
@@ -127,22 +127,23 @@ void UiManager::draw_menu_bar() {
         }
 
         {
-            const usize search_bar_size = 200;
-            const usize margin = 24;
+            const float margin = 24.0f;
+            const float search_bar_size = 200.0;
+            const float offset = ImGui::GetContentRegionMax().x - (search_bar_size + margin);
 
-            math::Vec2 menu_pos;
-            if(ImGui::GetContentRegionAvail().x > margin + search_bar_size) {
-                ImGui::SameLine(ImGui::GetContentRegionMax().x - (search_bar_size + margin));
+            if(offset > 0.0f) {
+                ImGui::Indent(offset);
                 ImGui::SetNextItemWidth(search_bar_size);
-                menu_pos = imgui::client_cursor_pos()  + math::Vec2(0.0f, ImGui::GetItemRectSize().y + 4.0f);
                 _search_results_visible |= ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size());
-                _search_results_visible &= ImGui::IsItemFocused();
+                _search_results_visible &= ImGui::IsItemFocused() && _search_pattern[0];
             } else {
                 _search_results_visible = false;
             }
 
             Y_TODO(Make this a common imgui primitive)
             if(_search_results_visible) {
+                y_profile_zone("search bar");
+
                 const ImGuiWindowFlags popup_flags =
                         ImGuiWindowFlags_NoFocusOnAppearing     |
                         ImGuiWindowFlags_NoBringToFrontOnFocus  |
@@ -151,6 +152,8 @@ void UiManager::draw_menu_bar() {
                         ImGuiWindowFlags_NoResize               |
                         ImGuiWindowFlags_NoMove                 |
                         ImGuiWindowFlags_NoSavedSettings;
+
+                const math::Vec2 menu_pos = imgui::from_client_pos(math::Vec2(offset + 4.0f, ImGui::GetItemRectSize().y));
 
                 ImGui::SetNextWindowPos(menu_pos);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -161,13 +164,12 @@ void UiManager::draw_menu_bar() {
 
                 bool empty = true;
                 const std::regex regex(_search_pattern.data(), std::regex::icase);
-                for(auto* wid_type = detail::first_widget_type; wid_type; wid_type = wid_type->next) {
-                    if(!std::regex_search(wid_type->name, regex)) {
-                        continue;
-                    }
-                    empty = false;
-                    if(ImGui::MenuItem(wid_type->name)) {
-                        add_widget(wid_type->create(), false);
+                for(EditorAction const* action = all_actions(); action; action = action->next) {
+                    if(std::regex_search(action->name.data(), regex)) {
+                        empty = false;
+                        if(ImGui::MenuItem(action->name.data())) {
+                            action->function();
+                        }
                     }
                 }
 
@@ -184,8 +186,6 @@ void UiManager::draw_menu_bar() {
 
         ImGui::EndMainMenuBar();
     }
-
-
 }
 
 Widget* UiManager::add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {

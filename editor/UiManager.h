@@ -68,7 +68,7 @@ class UiManager : NonMovable {
 
 class UiDebugWidget : public Widget {
 
-    editor_register_widget(UiDebugWidget, "View", "Debug");
+    editor_widget_action(UiDebugWidget, "View", "Debug")
 
     public:
         UiDebugWidget();

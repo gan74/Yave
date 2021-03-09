@@ -28,6 +28,9 @@ SOFTWARE.
 #include "Settings.h"
 #include "Selection.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 
 namespace editor {
 
@@ -82,6 +85,21 @@ ImGuiPlatform* imgui_platform() {
 
 Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {
     return ui().add_widget(std::move(widget), auto_parent);
+}
+
+
+namespace detail {
+EditorAction* first_action = nullptr;
+
+void register_action(EditorAction* action) {
+    log_msg(fmt("Registering action \"%\"", action->name), Log::Debug);
+    action->next = first_action;
+    first_action = action;
+}
+}
+
+const EditorAction* all_actions() {
+    return detail::first_action;
 }
 
 }

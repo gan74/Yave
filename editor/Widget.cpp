@@ -91,10 +91,5 @@ void Widget::set_title(std::string_view title) {
     _title = std::string_view(_title_with_id.begin(), title.size());
 }
 
-
-namespace detail {
-WidgetType* first_widget_type = nullptr;
-}
-
 }
 

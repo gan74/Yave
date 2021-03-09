@@ -38,12 +38,15 @@ bool should_open_context_menu() {
     return ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1);
 }
 
-math::Vec2 client_cursor_pos() {
-    math::Vec2 pos = ImGui::GetCursorPos();
+math::Vec2 client_window_pos() {
     if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        pos += ImGui::GetWindowPos();
+        return ImGui::GetWindowPos();
     }
-    return pos;
+    return math::Vec2(0.0f);
+}
+
+math::Vec2 from_client_pos(const math::Vec2& pos) {
+    return client_window_pos() + pos;
 }
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear) {

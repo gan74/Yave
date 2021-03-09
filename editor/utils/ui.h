@@ -30,7 +30,9 @@ namespace editor {
 namespace imgui {
 
 bool should_open_context_menu();
-math::Vec2 client_cursor_pos();
+
+math::Vec2 client_window_pos();
+math::Vec2 from_client_pos(const math::Vec2& pos);
 
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear = nullptr);

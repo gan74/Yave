@@ -32,6 +32,9 @@ SOFTWARE.
 
 // #include <y/serde3/poly.h>
 
+
+#define editor_widget_action(type, ...)  editor_action(#type, []{ editor::add_child_widget<type>(); }, __VA_ARGS__)
+
 namespace editor {
 
 class Widget : NonMovable {
@@ -78,47 +81,7 @@ class Widget : NonMovable {
         Widget* _parent = nullptr;
         int _flags = 0;
 };
-
-
-
-
-
-namespace detail {
-struct WidgetType {
-    using create_func = std::unique_ptr<Widget> (*)();
-    WidgetType* next = nullptr;
-    create_func create = nullptr;
-    const char* name = nullptr;
-    const char* const* menu_names = nullptr;
-    usize menu_names_count = 0;
-};
-
-extern WidgetType* first_widget_type;
-
-template<typename T, usize N>
-void register_widget_type(const std::array<const char*, N>& names) {
-    static WidgetType type {
-        first_widget_type, []() -> std::unique_ptr<Widget> { return std::make_unique<T>(); },
-        names[0], names.data() + 1, names.size() - 1
-    };
-    first_widget_type = &type;
 }
-}
-
-
-}
-
-
-#define editor_register_widget(type, ...)                                                                           \
-    inline static struct _widget_register_t {                                                                       \
-        _widget_register_t() {                                                                                      \
-            static constexpr std::array names = { #type,  __VA_ARGS__ };                                            \
-            editor::detail::register_widget_type<type>(names);                                                      \
-        }                                                                                                           \
-        void trigger() {}                                                                                           \
-    } _widget_register;                                                                                             \
-    void _widget_register_trigger() { _widget_register.trigger(); }
-
 
 
 #endif // EDITOR_WIDGET_H

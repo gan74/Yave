@@ -26,11 +26,16 @@ SOFTWARE.
 #include <yave/yave.h>
 #include <editor/utils/forward.h>
 
+#include <y/core/Span.h>
+
 #include <memory>
+#include <string_view>
+
 
 namespace editor {
 
 using namespace yave;
+
 
 EditorApplication* application();
 DevicePtr app_device();
@@ -50,6 +55,9 @@ UiManager& ui();
 ImGuiPlatform* imgui_platform();
 
 
+
+
+
 Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
 
 template<typename T, typename... Args>
@@ -62,7 +70,39 @@ T* add_detached_widget(Args&&... args) {
     return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), false));
 }
 
+
+
+
+struct EditorAction {
+    std::string_view name;
+    void (*function)() = nullptr;
+    core::Span<std::string_view> menu;
+    EditorAction const* next = nullptr;
+};
+
+const EditorAction* all_actions();
+
+namespace detail {
+void register_action(EditorAction* action);
 }
 
+}
+
+
+#define editor_action(name, func, ...)                                                                  \
+    struct y_create_name_with_prefix(trigger_t) {                                                       \
+        inline static struct action_register_t {                                                        \
+            action_register_t() {                                                                       \
+                static constexpr std::string_view names[] = { name, __VA_ARGS__ };                      \
+                static editor::EditorAction action = {                                                  \
+                    names[0], []{ func(); },                                                            \
+                    y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr           \
+                };                                                                                      \
+                editor::detail::register_action(&action);                                               \
+            }                                                                                           \
+            void trigger() {}                                                                           \
+        } action_registerer;                                                                            \
+        void trigger() { action_registerer.trigger(); }                                                 \
+    };
 
 #endif // EDITOR_EDITOR_H

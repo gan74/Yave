@@ -30,7 +30,7 @@ namespace editor {
 
 class PerformanceMetrics : public Widget {
 
-    editor_register_widget(PerformanceMetrics, "View", "Statistics");
+    editor_widget_action(PerformanceMetrics, "View", "Statistics")
 
     public:
         PerformanceMetrics();

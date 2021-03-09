@@ -34,6 +34,10 @@ SOFTWARE.
 #include <y/serde3/archives.h>
 #include <y/utils/log.h>
 
+
+
+editor_action("Debug assert", [] { y_debug_assert(false); })
+
 namespace editor {
 
 

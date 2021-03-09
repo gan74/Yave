@@ -28,11 +28,12 @@ SOFTWARE.
 
 #include <y/core/FixedArray.h>
 
+
 namespace editor {
 
 class ResourceBrowser : public FileSystemView {
 
-    editor_register_widget(ResourceBrowser, "View")
+    editor_widget_action(ResourceBrowser, "View")
 
     public:
         ResourceBrowser();
