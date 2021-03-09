@@ -36,7 +36,6 @@ namespace editor {
 
 class Widget : NonMovable {
 
-
     public:
         Widget(std::string_view title, int flags = 0);
         virtual ~Widget();
@@ -82,30 +81,30 @@ class Widget : NonMovable {
 
 
 
-namespace detail {
 
+
+namespace detail {
 struct WidgetType {
     using create_func = std::unique_ptr<Widget> (*)();
     WidgetType* next = nullptr;
     create_func create = nullptr;
-    const char* const* names = nullptr;
-    usize name_count = 0;
+    const char* name = nullptr;
+    const char* const* menu_names = nullptr;
+    usize menu_names_count = 0;
 };
 
-extern WidgetType* first_widget;
+extern WidgetType* first_widget_type;
 
 template<typename T, usize N>
 void register_widget_type(const std::array<const char*, N>& names) {
     static WidgetType type {
-        first_widget, []() -> std::unique_ptr<Widget> { return std::make_unique<T>(); },
-        names.data(), names.size()
+        first_widget_type, []() -> std::unique_ptr<Widget> { return std::make_unique<T>(); },
+        names[0], names.data() + 1, names.size() - 1
     };
-    first_widget = &type;
+    first_widget_type = &type;
+}
 }
 
-void print_all_available_widgets();
-
-}
 
 }
 

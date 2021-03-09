@@ -32,7 +32,7 @@ namespace editor {
 
 class ResourceBrowser : public FileSystemView {
 
-    editor_register_widget(ResourceBrowser)
+    editor_register_widget(ResourceBrowser, "View")
 
     public:
         ResourceBrowser();

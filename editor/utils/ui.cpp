@@ -38,6 +38,14 @@ bool should_open_context_menu() {
     return ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1);
 }
 
+math::Vec2 client_cursor_pos() {
+    math::Vec2 pos = ImGui::GetCursorPos();
+    if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        pos += ImGui::GetWindowPos();
+    }
+    return pos;
+}
+
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear) {
     static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
 

@@ -30,11 +30,14 @@ namespace editor {
 namespace imgui {
 
 bool should_open_context_menu();
+math::Vec2 client_cursor_pos();
+
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear = nullptr);
 bool path_selector(std::string_view text, const core::String& path);
 
 void alternating_rows_background(float line_height = -1.0f, const math::Vec4& color = math::Vec4(20.0f, 20.0f, 20.0f, 48.0f) / 255.0f);
+
 
 }
 }

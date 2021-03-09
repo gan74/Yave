@@ -26,22 +26,12 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
+#include <y/core/FixedArray.h>
 
 #include <typeindex>
 #include <memory>
 
 namespace editor {
-
-class UiDebugWidget : public Widget {
-
-    editor_register_widget(UiDebugWidget, "View", "Debug");
-
-    public:
-        UiDebugWidget();
-
-    protected:
-        void on_gui() override;
-};
 
 class UiManager : NonMovable {
 
@@ -61,12 +51,46 @@ class UiManager : NonMovable {
         // y_reflect(_widgets);
 
     private:
+        void draw_menu_bar();
         void set_widget_id(Widget* widget);
 
         core::Vector<std::unique_ptr<Widget>> _widgets;
         core::ExternalHashMap<std::type_index, WidgetIdStack> _ids;
 
         Widget* _auto_parent = nullptr;
+
+        core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
+        bool _search_results_visible = false;
+};
+
+
+
+
+class UiDebugWidget : public Widget {
+
+    editor_register_widget(UiDebugWidget, "View", "Debug");
+
+    public:
+        UiDebugWidget();
+
+    protected:
+        void on_gui() override;
+};
+
+class FunctionWidget final : public Widget {
+    public:
+        FunctionWidget(std::string_view name, std::function<void()> gui) : Widget(name), _on_gui(std::move(gui)) {
+        }
+
+    protected:
+        void on_gui() override {
+            if(_on_gui) {
+                _on_gui();
+            }
+        }
+
+    private:
+        std::function<void()> _on_gui;
 };
 
 

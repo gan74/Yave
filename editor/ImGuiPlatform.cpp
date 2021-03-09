@@ -306,7 +306,8 @@ static void setup_imgui_dockspace() {
         ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoBringToFrontOnFocus |
-        ImGuiWindowFlags_NoNavFocus;
+        ImGuiWindowFlags_NoNavFocus |
+        ImGuiWindowFlags_MenuBar;
 
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -399,6 +400,7 @@ bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
                 y_profile_zone("imgui");
                 ImGui::NewFrame();
 
+                ImGui::ShowDemoWindow();
                 setup_imgui_dockspace();
 
                 if(func) {

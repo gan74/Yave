@@ -110,8 +110,6 @@ int main(int argc, char** argv) {
 
     log_msg("Quitting...");
 
-    editor::detail::print_all_available_widgets();
-
     return 0;
 }
 
