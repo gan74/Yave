@@ -364,7 +364,7 @@ ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
 
         platform.Platform_SetWindowFocus        = [](ImGuiViewport* vp) { get_window(vp)->focus(); };
         platform.Platform_GetWindowFocus        = [](ImGuiViewport* vp) { return get_window(vp)->has_focus(); };
-        platform.Platform_GetWindowMinimized    = [](ImGuiViewport*) { return false; };
+        platform.Platform_GetWindowMinimized    = [](ImGuiViewport* vp) {return get_window(vp)->is_minimized(); };
 
         platform.Renderer_RenderWindow          = [](ImGuiViewport* vp, void*) { get_platform_window(vp)->render(vp); };
 

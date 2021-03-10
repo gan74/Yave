@@ -156,10 +156,10 @@ void Swapchain::reset() {
 
     const VkSwapchainKHR old = _swapchain;
 
-    build_swapchain();
-    build_semaphores();
-
-    destroy(old);
+    if(build_swapchain()) {
+        build_semaphores();
+        destroy(old);
+    }
 }
 
 Swapchain::~Swapchain() {
@@ -171,7 +171,8 @@ Swapchain::~Swapchain() {
     destroy(_surface);
 }
 
-void Swapchain::build_swapchain() {
+bool Swapchain::build_swapchain() {
+
     const VkSurfaceCapabilitiesKHR capabilities = compute_capabilities(device(), _surface);
     const VkSurfaceFormatKHR format = surface_format(device(), _surface);
 
@@ -184,7 +185,7 @@ void Swapchain::build_swapchain() {
     _color_format = VkFormat(format.format);
 
     if(!_size.x() || !_size.y()) {
-        return;
+        return false;
     }
 
     {
@@ -253,6 +254,8 @@ void Swapchain::build_swapchain() {
         recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
     }
     std::move(recorder).submit<SyncPolicy::Sync>();
+
+    return true;
 }
 
 void Swapchain::build_semaphores() {

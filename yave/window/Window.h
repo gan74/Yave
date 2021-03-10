@@ -63,6 +63,8 @@ class Window : NonMovable {
         void focus();
         bool has_focus() const;
 
+        bool is_minimized() const;
+
         math::Vec2ui size() const;
         math::Vec2i position() const;
 

@@ -308,6 +308,11 @@ bool Window::has_focus() const {
     return _hwnd == ::GetForegroundWindow();
 }
 
+bool Window::is_minimized() const {
+    // Win API names, WTF
+    return ::IsIconic(_hwnd);
+}
+
 math::Vec2ui Window::size() const {
     RECT rect = {};
     ::GetClientRect(_hwnd, &rect);

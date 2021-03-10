@@ -84,7 +84,7 @@ class Swapchain : NonMovable, public DeviceLinked {
         void present(const FrameToken& token, CmdBufferRecorder&& recorder, const Queue& queue);
 
     private:
-        void build_swapchain();
+        bool build_swapchain();
         void build_semaphores();
         void destroy_semaphores();
 
