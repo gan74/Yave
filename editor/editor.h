@@ -75,6 +75,7 @@ T* add_detached_widget(Args&&... args) {
 
 struct EditorAction {
     std::string_view name;
+    std::string_view description;
     void (*function)() = nullptr;
     core::Span<std::string_view> menu;
     EditorAction const* next = nullptr;
@@ -89,13 +90,13 @@ void register_action(EditorAction* action);
 }
 
 
-#define editor_action(name, func, ...)                                                                  \
+#define editor_action_desc(name, desc, func, ...)                                                       \
     struct y_create_name_with_prefix(trigger_t) {                                                       \
         inline static struct action_register_t {                                                        \
             action_register_t() {                                                                       \
                 static constexpr std::string_view names[] = { name, __VA_ARGS__ };                      \
                 static editor::EditorAction action = {                                                  \
-                    names[0], []{ func(); },                                                            \
+                    names[0], desc, []{ func(); },                                                      \
                     y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr           \
                 };                                                                                      \
                 editor::detail::register_action(&action);                                               \
@@ -104,5 +105,9 @@ void register_action(EditorAction* action);
         } action_registerer;                                                                            \
         void trigger() { action_registerer.trigger(); }                                                 \
     };
+
+
+#define editor_action(name, func, ...) editor_action_desc(name, "", func, __VA_ARGS__)
+
 
 #endif // EDITOR_EDITOR_H

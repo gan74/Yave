@@ -61,6 +61,8 @@ class ImGuiPlatform : NonMovable {
         DevicePtr device() const;
         const ImGuiRenderer* renderer() const;
 
+        Window* main_window();
+
         bool exec(OnGuiFunc func = nullptr, bool once = false);
 
     private:

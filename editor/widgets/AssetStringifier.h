@@ -27,6 +27,9 @@ SOFTWARE.
 namespace editor {
 
 class AssetStringifier : public Widget {
+
+    editor_widget_action(AssetStringifier, "View", "Debug")
+
     public:
         AssetStringifier();
 

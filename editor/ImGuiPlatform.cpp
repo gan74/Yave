@@ -385,10 +385,14 @@ const ImGuiRenderer* ImGuiPlatform::renderer() const {
     return _renderer.get();
 }
 
-bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
-    y_profile();
+Window* ImGuiPlatform::main_window() {
+    return &_main_window->window;
+}
 
+bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
     while(_main_window->window.update()) {
+        y_profile_zone("exec once");
+
         ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
         ImGui::GetIO().DisplaySize = _main_window->window.size();
 

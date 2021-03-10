@@ -33,6 +33,8 @@ namespace editor {
 
 class EngineView final : public Widget {
 
+    editor_widget_action(EngineView, "View")
+
     public:
         enum class RenderView {
             Lit,

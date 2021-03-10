@@ -35,11 +35,14 @@ SOFTWARE.
 #include <y/utils/log.h>
 
 
-
-editor_action("Debug assert", [] { y_debug_assert(false); })
-
 namespace editor {
 
+
+#ifdef Y_DEBUG
+editor_action_desc("Debug assert", "Calls assert(false) and crashes the program", [] { y_debug_assert(false); })
+#endif
+
+editor_action("Quit", [] { imgui_platform()->main_window()->close(); })
 
 static constexpr std::string_view world_file = "../world.yw3";
 static constexpr std::string_view store_file = "../store.sqlite3";

@@ -170,6 +170,11 @@ void UiManager::draw_menu_bar() {
                         if(ImGui::MenuItem(action->name.data())) {
                             action->function();
                         }
+                        if(!action->description.empty() && ImGui::IsItemHovered()) {
+                            ImGui::BeginTooltip();
+                            ImGui::TextUnformatted(action->description.data());
+                            ImGui::EndTooltip();
+                        }
                     }
                 }
 
