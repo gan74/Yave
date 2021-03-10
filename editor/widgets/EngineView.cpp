@@ -84,6 +84,17 @@ bool EngineView::is_focussed() const {
 
 // ---------------------------------------------- DRAW ----------------------------------------------
 
+bool EngineView::before_gui() {
+    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, math::Vec4(0.0f));
+    ImGui::PushStyleColor(ImGuiCol_Border, math::Vec4(0.0f));
+
+    return true;
+}
+
+void EngineView::after_gui() {
+    ImGui::PopStyleColor(2);
+}
+
 void EngineView::draw(CmdBufferRecorder& recorder) {
     TextureView* output = nullptr;
     FrameGraph graph(_resource_pool);
