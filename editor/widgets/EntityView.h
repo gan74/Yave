@@ -19,29 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_UTILS_ENTITIES_H
-#define EDITOR_UTILS_ENTITIES_H
+#ifndef EDITOR_WIDGETS_ENTITYVIEW_H
+#define EDITOR_WIDGETS_ENTITYVIEW_H
 
-#include <editor/editor.h>
+#include <editor/Widget.h>
 
-#include <editor/components/EditorComponent.h>
+#include <yave/ecs/ComponentRuntimeInfo.h>
 
-#include <yave/components/DirectionalLightComponent.h>
-#include <yave/components/PointLightComponent.h>
-#include <yave/components/StaticMeshComponent.h>
-#include <yave/components/TransformableComponent.h>
-
-#include <yave/ecs/ecs.h>
 
 namespace editor {
 
-bool set_entity_name(ecs::EntityWorld& world, ecs::EntityId id, std::string_view name);
-std::string_view entity_name(const ecs::EntityWorld& world, ecs::EntityId id);
-std::string_view entity_icon(const ecs::EntityWorld& world, ecs::EntityId id);
+class EntityView final : public Widget {
 
-std::string_view clean_component_name(std::string_view name);
+    editor_widget_action(EntityView, "View")
+
+    public:
+        EntityView();
+
+    protected:
+        void on_gui() override;
+
+    private:
+        void paint_view();
+
+        ecs::EntityId _hovered;
+};
 
 }
 
-#endif // EDITOR_UTILS_ENTITIES_H
+#endif // EDITOR_WIDGETS_ENTITYVIEW_H
 

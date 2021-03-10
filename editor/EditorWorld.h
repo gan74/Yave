@@ -26,13 +26,32 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
+#include <y/core/Span.h>
+
 namespace editor {
+
+std::string_view clean_component_name(std::string_view name);
 
 class EditorWorld : public ecs::EntityWorld {
     public:
         EditorWorld(AssetLoader& loader);
 
         void flush_reload();
+
+        bool set_entity_name(ecs::EntityId id, std::string_view name);
+        std::string_view entity_name(ecs::EntityId id) const;
+        std::string_view entity_icon(ecs::EntityId id) const;
+
+        template<typename... Args>
+        ecs::EntityId create_named_entity(std::string_view name, Args&&... args) {
+            const ecs::EntityId id = create_entity(y_fwd(args)...);
+            y_always_assert(set_entity_name(id, name), "Unable to set entity name.");
+            return id;
+        }
+
+        static core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> component_types();
+
+    private:
 };
 
 }
