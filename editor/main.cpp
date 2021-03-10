@@ -38,14 +38,8 @@ SOFTWARE.
 
 using namespace editor;
 
-#ifdef Y_DEBUG
-static bool display_console = true;
-static bool debug_instance = true;
-#else
-static bool display_console = false;
-static bool debug_instance = false;
-#endif
-
+static bool display_console = is_debug_defined;
+static bool debug_instance = is_debug_defined;
 static bool multi_viewport = true;
 
 
@@ -65,12 +59,13 @@ static void parse_args(int argc, char** argv) {
             display_console = true;
         } else if(arg == "--nomv") {
             multi_viewport = false;
+        } else if(arg == "--errbreak") {
+            if constexpr(is_debug_defined) {
+                core::result::break_on_error = true;
+            } else {
+                log_msg(fmt("% is not supported unless Y_DEBUG is defined%", arg), Log::Error);
+            }
         }
-#ifdef Y_DEBUG
-        else if(arg == "--errbreak") {
-            core::result::break_on_error = true;
-        }
-#endif
         else {
             log_msg(fmt("Unknown argumeent: %", arg), Log::Error);
         }

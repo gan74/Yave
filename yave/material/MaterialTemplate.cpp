@@ -72,6 +72,7 @@ const MaterialTemplateData& MaterialTemplate::data() const {
 }
 
 void MaterialTemplate::set_name(const char* name) {
+    unused(name);
 #ifdef Y_DEBUG
     _name = name;
 #endif

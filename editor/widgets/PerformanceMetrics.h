@@ -69,6 +69,8 @@ class PerformanceMetrics : public Widget {
     protected:
         void on_gui() override;
 
+        bool before_gui() override;
+
     private:
         void draw_timings();
         void draw_memory();

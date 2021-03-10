@@ -108,6 +108,12 @@ PerformanceMetrics::PerformanceMetrics() :
         _frames(core::Duration::seconds(1)) {
 }
 
+
+bool PerformanceMetrics::before_gui() {
+    ImGui::SetNextWindowSizeConstraints(ImVec2(-1.0f, 0.0f), ImVec2(-1.0f, std::numeric_limits<float>::max()));
+    return true;
+}
+
 void PerformanceMetrics::on_gui() {
     if(ImGui::CollapsingHeader("Timings", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();

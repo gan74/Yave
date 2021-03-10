@@ -62,15 +62,25 @@ void Widget::on_gui() {
     ImGui::Text("Empty widget");
 }
 
+bool Widget::before_gui() {
+    return true;
+}
+
+void Widget::after_gui() {
+}
+
 void Widget::draw_gui_inside() {
-    if(!_visible) {
+    if(!_visible || !before_gui()) {
         return;
     }
 
     if(ImGui::Begin(_title_with_id.data(), &_visible, _flags)) {
         on_gui();
     }
+
     ImGui::End();
+
+    after_gui();
 }
 
 math::Vec2ui Widget::content_size() const {

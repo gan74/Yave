@@ -51,16 +51,12 @@ void SpinLock::lock() {
 
 bool SpinLock::try_lock() {
     const Type res = _spin.exchange(Locked, std::memory_order_acquire);
-#ifdef Y_DEBUG
     y_debug_assert(res != Destroyed);
-#endif
     return res == Unlocked;
 }
 
 void SpinLock::unlock() {
-#ifdef Y_DEBUG
     y_debug_assert(_spin != Destroyed);
-#endif
     _spin.store(Unlocked, std::memory_order_release);
 }
 

@@ -52,6 +52,14 @@ void break_in_debugger();
 
 #define y_fwd(var) std::forward<decltype(var)>(var)
 
+namespace y {
+#ifdef Y_DEBUG
+static constexpr bool is_debug_defined = true;
+#else
+static constexpr bool is_debug_defined = false;
+#endif
+}
+
 
 /****************** OS DEFINES BELOW ******************/
 

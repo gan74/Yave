@@ -60,6 +60,8 @@ class Widget : NonMovable {
 
     protected:
         virtual void on_gui();
+        virtual bool before_gui();
+        virtual void after_gui();
 
         math::Vec2ui content_size() const;
 
