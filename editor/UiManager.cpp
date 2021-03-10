@@ -34,11 +34,19 @@ SOFTWARE.
 #include <external/imgui/yave_imgui.h>
 
 #include <regex>
+#include <tuple>
 
 namespace editor {
 
 
 UiManager::UiManager() {
+    for(const EditorAction* action = all_actions(); action; action = action->next) {
+        _actions << action;
+    }
+
+    std::sort(_actions.begin(), _actions.end(), [](const EditorAction* a, const EditorAction* b) {
+        return std::lexicographical_compare(b->menu.begin(), b->menu.end(), a->menu.begin(), a->menu.end());
+    });
 }
 
 UiManager::~UiManager() {
@@ -82,7 +90,16 @@ void UiManager::on_gui() {
 
 void UiManager::draw_menu_bar() {
     if(ImGui::BeginMainMenuBar()) {
-        for(EditorAction const* action = all_actions(); action; action = action->next) {
+
+        if(ImGui::BeginMenu("File")) {
+            ImGui::EndMenu();
+        }
+        if(ImGui::BeginMenu("View")) {
+            ImGui::EndMenu();
+        }
+
+
+        for(const EditorAction* action : _actions) {
             if(!action->menu.size()) {
                 continue;
             }
@@ -111,17 +128,16 @@ void UiManager::draw_menu_bar() {
             const float search_bar_size = 200.0;
             const float offset = ImGui::GetContentRegionMax().x - (search_bar_size + margin);
 
+            bool show_results = false;
             if(offset > 0.0f) {
                 ImGui::Indent(offset);
                 ImGui::SetNextItemWidth(search_bar_size);
-                _search_results_visible |= ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size());
-                _search_results_visible &= ImGui::IsItemFocused() && _search_pattern[0];
-            } else {
-                _search_results_visible = false;
+                ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size());
+                show_results = ImGui::IsItemFocused();
             }
 
             Y_TODO(Make this a common imgui primitive)
-            if(_search_results_visible) {
+            if(show_results) {
                 y_profile_zone("search bar");
 
                 const ImGuiWindowFlags popup_flags =
@@ -143,7 +159,7 @@ void UiManager::draw_menu_bar() {
 
                 bool empty = true;
                 const std::regex regex(_search_pattern.data(), std::regex::icase);
-                for(EditorAction const* action = all_actions(); action; action = action->next) {
+                for(const EditorAction* action : _actions) {
                     if(std::regex_search(action->name.data(), regex)) {
                         empty = false;
                         if(ImGui::MenuItem(action->name.data())) {

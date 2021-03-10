@@ -61,8 +61,9 @@ class UiManager : NonMovable {
 
         Widget* _auto_parent = nullptr;
 
+        core::Vector<const EditorAction*> _actions;
+
         core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
-        bool _search_results_visible = false;
 };
 
 
