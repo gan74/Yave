@@ -23,6 +23,7 @@ SOFTWARE.
 #include "ui.h"
 #include "assets.h"
 
+#include <editor/ThumbmailRenderer.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/FileBrowser.h>
 
@@ -65,11 +66,10 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     bool ret = false;
     bool button = false;
     if(is_valid) {
-        button = true;
-        Y_TODO(add thumbmail)
-        ImGui::SetWindowFontScale(3.0f);
-        ret = ImGui::Button(ICON_FA_DATABASE, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
-        ImGui::SetWindowFontScale(1.0f);
+        if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
+            button = true;
+            ret = ImGui::ImageButton(const_cast<TextureView*>(img), button_size);
+        }
     }
 
     if(!button) {

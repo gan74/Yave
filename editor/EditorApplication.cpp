@@ -26,6 +26,7 @@ SOFTWARE.
 #include "EditorResources.h"
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
+#include "ThumbmailRenderer.h"
 
 #include <yave/assets/SQLiteAssetStore.h>
 #include <yave/assets/AssetLoader.h>
@@ -70,6 +71,8 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : DeviceLinked(pla
 
     _asset_store = std::make_shared<SQLiteAssetStore>(store_file);
     _loader = std::make_unique<AssetLoader>(device(), _asset_store);
+    _thumbmail_renderer = std::make_unique<ThumbmailRenderer>(*_loader);
+
     _world = std::make_unique<EditorWorld>(*_loader);
 
     _default_scene_view = SceneView(_world.get());

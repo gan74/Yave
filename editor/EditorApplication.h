@@ -61,6 +61,10 @@ class EditorApplication : NonMovable, public DeviceLinked {
             return *_loader;
         }
 
+        ThumbmailRenderer& thumbmail_renderer() {
+            return *_thumbmail_renderer;
+        }
+
         EditorWorld& world() {
             return *_world;
         }
@@ -92,6 +96,8 @@ class EditorApplication : NonMovable, public DeviceLinked {
 
         std::shared_ptr<AssetStore> _asset_store;
         std::unique_ptr<AssetLoader> _loader;
+        std::unique_ptr<ThumbmailRenderer> _thumbmail_renderer;
+
         std::unique_ptr<EditorWorld> _world;
 
 

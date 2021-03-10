@@ -62,6 +62,11 @@ AssetLoader& asset_loader() {
     return application()->asset_loader();
 }
 
+ThumbmailRenderer& thumbmail_renderer() {
+    return application()->thumbmail_renderer();
+}
+
+
 EditorWorld& world() {
     return application()->world();
 }
@@ -69,6 +74,7 @@ EditorWorld& world() {
 const SceneView& scene_view() {
     return application()->scene_view();
 }
+
 
 const EditorResources& resources() {
     return application()->resources();

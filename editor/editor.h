@@ -46,6 +46,8 @@ Selection& selection();
 
 AssetStore& asset_store();
 AssetLoader& asset_loader();
+ThumbmailRenderer& thumbmail_renderer();
+
 EditorWorld& world();
 const SceneView& scene_view();
 

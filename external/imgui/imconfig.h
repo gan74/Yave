@@ -84,10 +84,3 @@
 
 //#define ImTextureID const void*
 
-
-#if 0
-namespace yave { class RenderPassRecorder; }
-using ImGuiDrawCallBack = void(*)(yave::RenderPassRecorder&, void*);
-
-#define ImDrawCallback ImGuiDrawCallBack
-#endif
