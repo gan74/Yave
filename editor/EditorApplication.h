@@ -32,7 +32,7 @@ namespace editor {
 
 class EditorApplication : NonMovable, public DeviceLinked {
     public:
-        EditorApplication(DevicePtr dptr);
+        EditorApplication(ImGuiPlatform* platform);
         ~EditorApplication();
 
         static EditorApplication* instance();
@@ -68,10 +68,6 @@ class EditorApplication : NonMovable, public DeviceLinked {
             return *_ui;
         }
 
-        ImGuiPlatform* imgui_platform() {
-            return _platform.get();
-        }
-
         CmdBufferRecorder& recorder() {
             y_debug_assert(_recorder);
             return *_recorder;
@@ -85,6 +81,8 @@ class EditorApplication : NonMovable, public DeviceLinked {
 
         void load_world();
 
+        ImGuiPlatform* _platform = nullptr;
+
         std::unique_ptr<EditorResources> _resources;
 
         std::shared_ptr<AssetStore> _asset_store;
@@ -92,8 +90,6 @@ class EditorApplication : NonMovable, public DeviceLinked {
         std::unique_ptr<EditorWorld> _world;
 
 
-
-        std::unique_ptr<ImGuiPlatform> _platform;
         std::unique_ptr<UiManager> _ui;
 
         CmdBufferRecorder* _recorder = nullptr;

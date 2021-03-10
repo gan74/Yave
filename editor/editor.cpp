@@ -78,10 +78,6 @@ UiManager& ui() {
     return application()->ui();
 }
 
-ImGuiPlatform* imgui_platform() {
-    return application()->imgui_platform();
-}
-
 
 Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {
     return ui().add_widget(std::move(widget), auto_parent);

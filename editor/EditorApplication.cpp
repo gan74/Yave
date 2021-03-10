@@ -43,6 +43,7 @@ editor_action_desc("Debug assert", "Calls assert(false) and crashes the program"
 #endif
 
 editor_action("Quit", [] { imgui_platform()->main_window()->close(); })
+editor_action("Show ImGui demo", []{ imgui_platform()->show_demo(); })
 
 static constexpr std::string_view world_file = "../world.yw3";
 static constexpr std::string_view store_file = "../store.sqlite3";
@@ -55,17 +56,15 @@ EditorApplication* EditorApplication::instance() {
     return _instance;
 }
 
-EditorApplication::EditorApplication(DevicePtr dptr) : DeviceLinked(dptr) {
+EditorApplication::EditorApplication(ImGuiPlatform* platform) : DeviceLinked(platform->device()), _platform(platform) {
     y_always_assert(_instance == nullptr, "Editor instance already exists.");
     _instance = this;
 
-    _resources = std::make_unique<EditorResources>(dptr);
-
-    _platform = std::make_unique<ImGuiPlatform>(dptr);
+    _resources = std::make_unique<EditorResources>(device());
     _ui = std::make_unique<UiManager>();
 
     _asset_store = std::make_shared<SQLiteAssetStore>(store_file);
-    _loader = std::make_unique<AssetLoader>(dptr, _asset_store);
+    _loader = std::make_unique<AssetLoader>(device(), _asset_store);
     _world = std::make_unique<EditorWorld>(*_loader);
 
     _default_scene_view = SceneView(_world.get());
@@ -75,7 +74,8 @@ EditorApplication::EditorApplication(DevicePtr dptr) : DeviceLinked(dptr) {
 }
 
 EditorApplication::~EditorApplication() {
-    y_always_assert(_instance == this, "Editor instance isn't set propertly.");
+    y_always_assert(_instance == this, "Editor instance has already been deleted.");
+    _instance = nullptr;
 }
 
 void EditorApplication::exec() {

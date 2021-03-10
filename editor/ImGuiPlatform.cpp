@@ -33,6 +33,10 @@ SOFTWARE.
 
 namespace editor {
 
+ImGuiPlatform* imgui_platform() {
+    return ImGuiPlatform::instance();
+}
+
 struct ImGuiEventHandler : EventHandler {
     Window* window = nullptr;
 
@@ -191,7 +195,6 @@ static void setup_style(bool is_3D = true) {
     style.IndentSpacing     = 12;
 }
 
-
 static void setup_key_bindings(ImGuiIO& io) {
     io.KeyMap[ImGuiKey_Tab]         = int(Key::Tab);
     io.KeyMap[ImGuiKey_LeftArrow]   = int(Key::Left);
@@ -214,6 +217,35 @@ static void setup_key_bindings(ImGuiIO& io) {
     io.KeyMap[ImGuiKey_Y]           = io.KeyMap[ImGuiKey_A] + 4;
     io.KeyMap[ImGuiKey_Z]           = io.KeyMap[ImGuiKey_A] + 5;
 }
+
+static void setup_imgui_dockspace() {
+    const ImGuiWindowFlags main_window_flags =
+        ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus |
+        ImGuiWindowFlags_NoNavFocus |
+        ImGuiWindowFlags_MenuBar;
+
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    ImGui::Begin("Main Window", nullptr, main_window_flags);
+    ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+    ImGui::End();
+
+    ImGui::PopStyleVar(3);
+}
+
 
 static void setup_config_files(ImGuiIO& io) {
     io.IniFilename = "editor.ini";
@@ -249,6 +281,8 @@ static void discover_monitors(ImGuiPlatformIO& platform) {
 }
 
 
+
+// ---------------------------------------------- PLATFORM WINDOW ----------------------------------------------
 
 ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent, Window::Flags flags) :
         platform(parent),
@@ -296,38 +330,19 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
 }
 
 
+// ---------------------------------------------- PLATFORM ----------------------------------------------
 
+ImGuiPlatform* ImGuiPlatform::_instance = nullptr;
 
-static void setup_imgui_dockspace() {
-    const ImGuiWindowFlags main_window_flags =
-        ImGuiWindowFlags_NoDocking |
-        ImGuiWindowFlags_NoTitleBar |
-        ImGuiWindowFlags_NoCollapse |
-        ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoBringToFrontOnFocus |
-        ImGuiWindowFlags_NoNavFocus |
-        ImGuiWindowFlags_MenuBar;
-
-
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->Pos);
-    ImGui::SetNextWindowSize(viewport->Size);
-    ImGui::SetNextWindowViewport(viewport->ID);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-    ImGui::Begin("Main Window", nullptr, main_window_flags);
-    ImGui::DockSpace(ImGui::GetID("Dockspace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
-    ImGui::End();
-
-    ImGui::PopStyleVar(3);
+ImGuiPlatform* ImGuiPlatform::instance() {
+    y_debug_assert(_instance);
+    return _instance;
 }
 
-
 ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
+    y_always_assert(_instance == nullptr, "ImGuiPlatform instance already exists.");
+    _instance = this;
+
     ImGui::CreateContext();
 
     setup_style();
@@ -377,6 +392,11 @@ ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
     viewport->PlatformHandle = _main_window.get();
 }
 
+ImGuiPlatform::~ImGuiPlatform() {
+    y_always_assert(_instance == this, "ImGuiPlatform instance has already been deleted.");
+    _instance = nullptr;
+}
+
 DevicePtr ImGuiPlatform::device() const {
     return _renderer->device();
 }
@@ -404,8 +424,11 @@ bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
                 y_profile_zone("imgui");
                 ImGui::NewFrame();
 
-                ImGui::ShowDemoWindow();
                 setup_imgui_dockspace();
+
+                if(_demo_window) {
+                    ImGui::ShowDemoWindow(&_demo_window);
+                }
 
                 if(func) {
                     func(recorder);
@@ -468,6 +491,10 @@ Window* ImGuiPlatform::get_window(ImGuiViewport* vp) {
 ImGuiPlatform::PlatformWindow* ImGuiPlatform::get_platform_window(ImGuiViewport* vp) {
     y_debug_assert(vp->PlatformHandle);
     return static_cast<PlatformWindow*>(vp->PlatformHandle);
+}
+
+void ImGuiPlatform::show_demo() {
+    _demo_window = true;
 }
 
 }

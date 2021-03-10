@@ -52,10 +52,6 @@ const SceneView& scene_view();
 
 const EditorResources& resources();
 UiManager& ui();
-ImGuiPlatform* imgui_platform();
-
-
-
 
 
 Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);

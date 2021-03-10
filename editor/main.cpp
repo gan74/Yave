@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
+#include "ImGuiPlatform.h"
 #include "EditorApplication.h"
 #include "UiManager.h"
 
@@ -45,6 +46,8 @@ static bool display_console = false;
 static bool debug_instance = false;
 #endif
 
+static bool multi_viewport = true;
+
 
 static void hide_console() {
 #ifdef Y_OS_WIN
@@ -60,6 +63,8 @@ static void parse_args(int argc, char** argv) {
             debug_instance = true;
         } else if(arg == "--console") {
             display_console = true;
+        } else if(arg == "--nomv") {
+            multi_viewport = false;
         }
 #ifdef Y_DEBUG
         else if(arg == "--errbreak") {
@@ -102,7 +107,8 @@ int main(int argc, char** argv) {
     Instance instance = create_instance();
     Device device = create_device(instance);
 
-    EditorApplication editor(&device);
+    ImGuiPlatform platform(&device);
+    EditorApplication editor(&platform);
 
     editor.exec();
 

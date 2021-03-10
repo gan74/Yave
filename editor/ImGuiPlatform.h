@@ -37,6 +37,8 @@ struct ImGuiViewport;
 
 namespace editor {
 
+ImGuiPlatform* imgui_platform();
+
 class ImGuiPlatform : NonMovable {
 
     struct PlatformWindow : NonMovable {
@@ -57,6 +59,9 @@ class ImGuiPlatform : NonMovable {
         using OnGuiFunc = std::function<void(CmdBufferRecorder&)>;
 
         ImGuiPlatform(DevicePtr dptr, bool multi_viewport = true);
+        ~ImGuiPlatform();
+
+        static ImGuiPlatform* instance();
 
         DevicePtr device() const;
         const ImGuiRenderer* renderer() const;
@@ -64,6 +69,8 @@ class ImGuiPlatform : NonMovable {
         Window* main_window();
 
         bool exec(OnGuiFunc func = nullptr, bool once = false);
+
+        void show_demo();
 
     private:
         friend class PlatformWindow;
@@ -75,12 +82,16 @@ class ImGuiPlatform : NonMovable {
         static PlatformWindow* get_platform_window(ImGuiViewport* vp);
 
     private:
+        static ImGuiPlatform* _instance;
+
         std::unique_ptr<PlatformWindow> _main_window;
         core::Vector<std::unique_ptr<PlatformWindow>> _windows;
 
         std::unique_ptr<ImGuiRenderer> _renderer;
 
         core::Chrono _frame_timer;
+
+        bool _demo_window = false;
 };
 
 }
