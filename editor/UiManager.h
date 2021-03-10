@@ -48,6 +48,8 @@ class UiManager : NonMovable {
 
         Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
 
+        void close_all();
+
         // y_reflect(_widgets);
 
     private:

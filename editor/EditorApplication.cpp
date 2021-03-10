@@ -74,6 +74,8 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : DeviceLinked(pla
 }
 
 EditorApplication::~EditorApplication() {
+    _ui->close_all();
+
     y_always_assert(_instance == this, "Editor instance has already been deleted.");
     _instance = nullptr;
 }

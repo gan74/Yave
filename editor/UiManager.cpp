@@ -187,6 +187,11 @@ Widget* UiManager::add_widget(std::unique_ptr<Widget> widget, bool auto_parent) 
     return wid;
 }
 
+void UiManager::close_all() {
+    _widgets.clear();
+    _ids.clear();
+}
+
 void UiManager::set_widget_id(Widget* widget) {
     WidgetIdStack& ids = _ids[typeid(*widget)];
     if(!ids.released.is_empty()) {
