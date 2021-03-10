@@ -32,7 +32,7 @@ namespace editor {
 
 class PerformanceMetrics : public Widget {
 
-    editor_widget_action(PerformanceMetrics, "View", "Statistics")
+    editor_widget(PerformanceMetrics, "View", "Statistics")
 
     class PlotData {
         public:

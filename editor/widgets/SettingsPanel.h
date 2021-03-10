@@ -27,6 +27,9 @@ SOFTWARE.
 namespace editor {
 
 class SettingsPanel : public Widget {
+
+    editor_widget(SettingsPanel)
+
     public:
         SettingsPanel();
 

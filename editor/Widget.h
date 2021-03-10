@@ -33,7 +33,10 @@ SOFTWARE.
 // #include <y/serde3/poly.h>
 
 
-#define editor_widget_action(type, ...)  editor_action_desc(#type, "Open a new " #type, []{ editor::add_child_widget<type>(); }, __VA_ARGS__)
+#define editor_widget(type, ...)  editor_action_(#type, "Open a new " #type, 0, []{ editor::add_child_widget<type>(); }, __VA_ARGS__)
+
+Y_TODO(change this?)
+#define editor_widget_open(type, ...)  editor_action_(#type, "Open a new " #type, 0x01, []{ editor::add_child_widget<type>(); }, __VA_ARGS__)
 
 namespace editor {
 

@@ -31,7 +31,7 @@ namespace editor {
 
 class EntityView final : public Widget {
 
-    editor_widget_action(EntityView, "View")
+    editor_widget_open(EntityView, "View")
 
     public:
         EntityView();

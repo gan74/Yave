@@ -54,16 +54,16 @@ static void camera_settings() {
         ImGui::SameLine();
         keybox("Right", cam.move_right);
 
-        ImGui::SliderFloat("Sensitivity##FPS", &cam.fps_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+        ImGui::SliderFloat("Sensitivity##FPS", &cam.fps_sensitivity, 0.1f, 10.0f, "%.1f");
     }
 
     if(ImGui::CollapsingHeader("Houdini Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::SliderFloat("Trackball sensitivity##Houdini", &cam.trackball_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
-        ImGui::SliderFloat("Dolly sensitivity##Houdini", &cam.dolly_sensitivity, 0.1f, 10.0f, "%.1f", 2.0f);
+        ImGui::SliderFloat("Trackball sensitivity##Houdini", &cam.trackball_sensitivity, 0.1f, 10.0f, "%.1f");
+        ImGui::SliderFloat("Dolly sensitivity##Houdini", &cam.dolly_sensitivity, 0.1f, 10.0f, "%.1f");
     }
 
-    ImGui::SliderFloat("Near plane distance", &cam.z_near, 0.01f, 10.0f, "%.2f", 2.0f);
-    ImGui::SliderFloat("Field of view", &cam.fov, 30.0f, 170.0f, "%.0f", 2.0f);
+    ImGui::SliderFloat("Near plane distance", &cam.z_near, 0.01f, 10.0f, "%.2f");
+    ImGui::SliderFloat("Field of view", &cam.fov, 30.0f, 170.0f, "%.0f");
 
     keybox("Center on selected object", cam.center_on_obj);
 }

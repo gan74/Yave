@@ -28,7 +28,7 @@ namespace editor {
 
 class PropertyPanel final : public Widget {
 
-    editor_widget_action(PropertyPanel)
+    editor_widget_open(PropertyPanel)
 
     public:
         PropertyPanel();

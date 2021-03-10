@@ -28,7 +28,7 @@ namespace editor {
 
 class CameraDebug : public Widget {
 
-    editor_widget_action(CameraDebug, "View", "Debug")
+    editor_widget(CameraDebug, "View", "Debug")
 
     public:
         CameraDebug();

@@ -105,6 +105,12 @@ int main(int argc, char** argv) {
     ImGuiPlatform platform(&device);
     EditorApplication editor(&platform);
 
+    for(EditorAction const* action = all_actions(); action; action = action->next) {
+        if(action->flags & EditorAction::CallOnStartUp) {
+            action->function();
+        }
+    }
+
     editor.exec();
 
     log_msg("Quitting...");
