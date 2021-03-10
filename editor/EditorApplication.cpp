@@ -34,6 +34,7 @@ SOFTWARE.
 #include <y/serde3/archives.h>
 #include <y/utils/log.h>
 
+#include <external/imgui/IconsFontAwesome5.h>
 
 namespace editor {
 
@@ -45,11 +46,15 @@ editor_action_desc("Debug assert", "Calls assert(false) and crashes the program"
 editor_action("Quit", [] { imgui_platform()->main_window()->close(); })
 editor_action("Show ImGui demo", []{ imgui_platform()->show_demo(); })
 
+editor_action(ICON_FA_SAVE " Save", []{ application()->save_world(); }, "File")
+editor_action(ICON_FA_FOLDER " Load", []{ application()->load_world(); }, "File")
+
+
+
 static constexpr std::string_view world_file = "../world.yw3";
 static constexpr std::string_view store_file = "../store.sqlite3";
 
 EditorApplication* EditorApplication::_instance = nullptr;
-
 
 EditorApplication* EditorApplication::instance() {
     y_debug_assert(_instance);
@@ -70,7 +75,7 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : DeviceLinked(pla
     _default_scene_view = SceneView(_world.get());
     _scene_view = &_default_scene_view;
 
-    load_world();
+    load_world_deferred();
 }
 
 EditorApplication::~EditorApplication() {
@@ -85,6 +90,7 @@ void EditorApplication::exec() {
         y_debug_assert(!_recorder);
         _recorder = &rec;
         _ui->on_gui();
+        process_deferred_actions();
         _recorder = nullptr;
     });
 }
@@ -104,7 +110,41 @@ void EditorApplication::unset_scene_view(SceneView* scene) {
 }
 
 
+void EditorApplication::save_world() {
+    _deferred_actions |= Save;
+}
+
 void EditorApplication::load_world() {
+    _deferred_actions |= Load;
+}
+
+void EditorApplication::process_deferred_actions() {
+
+    if(_deferred_actions & Save) {
+        save_world_deferred();
+    }
+    if(_deferred_actions & Load) {
+        load_world_deferred();
+    }
+
+    _deferred_actions = None;
+}
+
+void EditorApplication::save_world_deferred() const {
+    y_profile();
+
+    auto file = io2::File::create(world_file);
+    if(!file) {
+        log_msg("Unable to open file", Log::Error);
+        return;
+    }
+    serde3::WritableArchive arc(file.unwrap());
+    if(auto r = arc.serialize(*_world); !r) {
+        log_msg(fmt("Unable to save world: %", serde3::error_msg(r.error())), Log::Error);
+    }
+}
+
+void EditorApplication::load_world_deferred() {
     y_profile();
 
     auto file = io2::File::open(world_file);

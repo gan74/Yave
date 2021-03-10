@@ -44,6 +44,10 @@ class EditorApplication : NonMovable, public DeviceLinked {
         void unset_scene_view(SceneView* scene);
 
 
+        void save_world();
+        void load_world();
+
+
         SceneView& scene_view() {
             return *_scene_view;
         }
@@ -73,13 +77,13 @@ class EditorApplication : NonMovable, public DeviceLinked {
             return *_recorder;
         }
 
-
-
-
     private:
         static EditorApplication* _instance;
 
-        void load_world();
+        void process_deferred_actions();
+        void save_world_deferred() const;
+        void load_world_deferred();
+
 
         ImGuiPlatform* _platform = nullptr;
 
@@ -96,6 +100,15 @@ class EditorApplication : NonMovable, public DeviceLinked {
 
         SceneView _default_scene_view;
         SceneView* _scene_view = nullptr;
+
+
+        enum DeferredActions : u32 {
+            None = 0x00,
+            Save = 0x01,
+            Load = 0x02,
+        };
+
+        u32 _deferred_actions = None;
 };
 
 }
