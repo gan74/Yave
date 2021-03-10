@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     Instance instance = create_instance();
     Device device = create_device(instance);
 
-    ImGuiPlatform platform(&device);
+    ImGuiPlatform platform(&device, multi_viewport);
     EditorApplication editor(&platform);
 
     for(EditorAction const* action = all_actions(); action; action = action->next) {

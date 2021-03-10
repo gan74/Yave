@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "ImGuiPlatform.h"
 
+#include <editor/utils/ui.h>
+
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/window/Monitor.h>
@@ -44,8 +46,9 @@ struct ImGuiEventHandler : EventHandler {
     }
 
     void mouse_moved(const math::Vec2i& pos) override {
-        Y_TODO(fix this when multi viewport isnt enabled)
-        ImGui::GetIO().MousePos = pos + window->position();
+        // We can't use imgui::from_client_pos here since the ImGui window isn't set
+        ImGui::GetIO().MousePos = ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable
+            ? pos + window->position() : pos;
     }
 
     void mouse_pressed(const math::Vec2i& pos, MouseButton button) override {

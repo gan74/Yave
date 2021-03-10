@@ -126,7 +126,6 @@ void UiManager::draw_menu_bar() {
 
                 const ImGuiWindowFlags popup_flags =
                         ImGuiWindowFlags_NoFocusOnAppearing     |
-                        ImGuiWindowFlags_NoBringToFrontOnFocus  |
                         ImGuiWindowFlags_NoTitleBar             |
                         ImGuiWindowFlags_AlwaysAutoResize       |
                         ImGuiWindowFlags_NoResize               |
