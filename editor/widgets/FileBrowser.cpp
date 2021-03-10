@@ -55,7 +55,7 @@ void FileBrowser::set_selection_filter(bool dirs, std::string_view exts) {
             _extensions.last().push_back(c);
         }
     }
-    y::sort(_extensions.begin(), _extensions.end());
+    std::sort(_extensions.begin(), _extensions.end());
     // refresh();
 }
 

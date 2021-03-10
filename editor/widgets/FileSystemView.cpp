@@ -26,11 +26,12 @@ SOFTWARE.
 
 #include <yave/utils/FileSystemModel.h>
 
-#include <y/utils/sort.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
 #include <external/imgui/yave_imgui.h>
+
+#include <algorithm>
 
 namespace editor {
 
@@ -125,7 +126,7 @@ void FileSystemView::update() {
                     _entries.emplace_back(Entry{name, type, std::move(icon.unwrap())});
                 }
             }).ignore();
-        y::sort(_entries.begin(), _entries.end());
+        std::sort(_entries.begin(), _entries.end());
     } else {
         if(const auto p = filesystem()->parent_path(path)) {
             set_path(p.unwrap());

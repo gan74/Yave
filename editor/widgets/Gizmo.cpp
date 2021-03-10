@@ -29,8 +29,6 @@ SOFTWARE.
 
 #include <external/imgui/yave_imgui.h>
 
-#include <y/utils/sort.h>
-
 namespace editor {
 
 static constexpr  u32 gizmo_hover_color = 0x001A80FF;
@@ -218,7 +216,7 @@ void Gizmo::draw() {
         };
 
         // depth sort axes front to back
-        sort(std::begin(axes), std::end(axes), [&](const Axis& a, const Axis& b) {
+        std::sort(std::begin(axes), std::end(axes), [&](const Axis& a, const Axis& b) {
             return basis[a.index].dot(cam_fwd) < basis[b.index].dot(cam_fwd);
         });
 

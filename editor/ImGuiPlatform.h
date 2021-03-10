@@ -91,7 +91,6 @@ class ImGuiPlatform : NonMovable {
 
         core::Chrono _frame_timer;
 
-
         bool _demo_window = is_debug_defined;
 };
 

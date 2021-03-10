@@ -23,38 +23,12 @@ SOFTWARE.
 #define Y_UTILS_SORT_H
 
 #include "types.h"
-#include <array>
 
-#if __has_include(<pdqsort.h>)
-#include <pdqsort.h>
-#define Y_USE_PDQSORT
-#else
+#include <array>
 #include <algorithm>
-// you can find pdqsort at https://github.com/orlp/pdqsort
-#endif
 
 
 namespace y {
-
-template<typename It, typename Compare>
-inline void sort(It begin, It end, Compare&& comp) {
-#ifdef Y_USE_PDQSORT
-    pdqsort(begin, end, y_fwd(comp));
-#else
-    std::sort(begin, end, y_fwd(comp));
-#endif
-}
-
-template<typename It>
-inline void sort(It begin, It end) {
-#ifdef Y_USE_PDQSORT
-    pdqsort(begin, end);
-#else
-    std::sort(begin, end);
-#endif
-}
-
-
 
 // waiting for C++20
 template<typename It, typename C = std::less<>>

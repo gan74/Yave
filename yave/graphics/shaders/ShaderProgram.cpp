@@ -25,8 +25,6 @@ SOFTWARE.
 #include <yave/graphics/utils.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
-#include <y/utils/sort.h>
-
 #include <numeric>
 
 #include <external/spirv_cross/spirv.hpp>
@@ -35,7 +33,6 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
-#include <y/utils/sort.h>
 
 
 namespace yave {
@@ -156,12 +153,12 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
     }
     {
         auto vertex_attribs = vert.attributes();
-        sort(vertex_attribs.begin(), vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; });
+        std::sort(vertex_attribs.begin(), vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; });
         create_vertex_attribs(vertex_attribs, _vertex.bindings, _vertex.attribs);
     }
     {
         _fragment_outputs = frag.stage_output();
-        y::sort(_fragment_outputs.begin(), _fragment_outputs.end());
+        std::sort(_fragment_outputs.begin(), _fragment_outputs.end());
     }
 }
 
