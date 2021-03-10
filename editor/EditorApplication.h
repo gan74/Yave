@@ -39,6 +39,7 @@ class EditorApplication : NonMovable, public DeviceLinked {
 
         void exec();
 
+        void flush_reload();
 
         void set_scene_view(SceneView* scene);
         void unset_scene_view(SceneView* scene);

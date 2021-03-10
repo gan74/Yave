@@ -95,6 +95,10 @@ void EditorApplication::exec() {
     });
 }
 
+void EditorApplication::flush_reload() {
+
+}
+
 void EditorApplication::set_scene_view(SceneView* scene) {
     if(!scene) {
         _scene_view = &_default_scene_view;

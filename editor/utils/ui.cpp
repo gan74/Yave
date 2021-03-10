@@ -65,10 +65,11 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     bool ret = false;
     bool button = false;
     if(is_valid) {
-        // if(TextureView* image = ctx->thumbmail_cache().get_thumbmail(id).image) {
-        //     button = true;
-        //     ret = ImGui::ImageButton(image, button_size);
-        // }
+        button = true;
+        Y_TODO(add thumbmail)
+        ImGui::SetWindowFontScale(3.0f);
+        ret = ImGui::Button(ICON_FA_DATABASE, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
+        ImGui::SetWindowFontScale(1.0f);
     }
 
     if(!button) {
