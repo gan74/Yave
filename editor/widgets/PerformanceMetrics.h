@@ -24,13 +24,44 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 
+#include <y/core/FixedArray.h>
 #include <y/core/Chrono.h>
+
 
 namespace editor {
 
 class PerformanceMetrics : public Widget {
 
     editor_widget_action(PerformanceMetrics, "View", "Statistics")
+
+    class PlotData {
+        public:
+            PlotData(core::Duration total_duration = core::Duration::seconds(60.0), usize size = 256);
+
+            void push(float value);
+            float last();
+
+            core::Span<float> values() const;
+            usize value_count() const;
+            usize current_index() const;
+            usize next_index() const;
+            float max() const;
+            float average() const;
+
+        private:
+            void advance();
+
+            core::Chrono _timer;
+
+            core::FixedArray<float> _data;
+            usize _current = 0;
+            bool _full = false;
+
+            float _max = 0.0f;
+            double _total = 0.0;
+
+            double _duration = 1.0;
+    };
 
     public:
         PerformanceMetrics();
@@ -39,16 +70,14 @@ class PerformanceMetrics : public Widget {
         void on_gui() override;
 
     private:
+        void draw_timings();
+        void draw_memory();
+
         core::Chrono _timer;
 
-        std::array<float, 128> _frames;
-        usize _current_frame = 0;
-
-        usize _current_average = 0;
-        std::array<float, 128> _average;
-
-        double _total = 0.0;
-        float _max = 16.0f;
+        PlotData _frames;
+        PlotData _average;
+        PlotData _memory;
 };
 
 }
