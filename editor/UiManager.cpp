@@ -37,28 +37,6 @@ SOFTWARE.
 
 namespace editor {
 
-UiDebugWidget::UiDebugWidget() : Widget("UI Debug") {
-}
-
-void UiDebugWidget::on_gui() {
-    if(ImGui::Button("Add test widget")) {
-        add_widget(std::make_unique<Widget>("Test widget"), true);
-    }
-    if(ImGui::Button("Add resource browser")) {
-        add_widget(std::make_unique<ResourceBrowser>(), true);
-    }
-    if(ImGui::Button("Add file explorer")) {
-        add_widget(std::make_unique<FileBrowser>(FileSystemModel::local_filesystem()), true);
-    }
-    if(ImGui::Button("Add engine view")) {
-        add_widget(std::make_unique<EngineView>(), true);
-    }
-}
-
-
-
-
-
 
 UiManager::UiManager() {
 }
@@ -87,12 +65,14 @@ void UiManager::on_gui() {
 
    if(!to_destroy.is_empty()) {
         for(usize i = 0;  i != _widgets.size(); ++i) {
-            bool destroy = to_destroy.contains(_widgets[i].get());
-            for(Widget* parent = _widgets[i]->_parent; parent && !destroy; parent = parent->_parent) {
+            Widget* wid = _widgets[i].get();
+            bool destroy = to_destroy.contains(wid);
+            for(Widget* parent = wid->_parent; parent && !destroy; parent = parent->_parent) {
                 destroy |= to_destroy.contains(parent);
             }
 
             if(destroy) {
+                _ids[typeid(*wid)].released << wid->_id;
                 _widgets.erase_unordered(_widgets.begin() + i);
                 --i;
             }
@@ -168,6 +148,7 @@ void UiManager::draw_menu_bar() {
                     if(std::regex_search(action->name.data(), regex)) {
                         empty = false;
                         if(ImGui::MenuItem(action->name.data())) {
+                            _search_pattern[0] = 0;
                             action->function();
                         }
                         if(!action->description.empty() && ImGui::IsItemHovered()) {

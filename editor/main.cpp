@@ -104,8 +104,6 @@ int main(int argc, char** argv) {
 
     EditorApplication editor(&device);
 
-    ui().add_widget(std::make_unique<UiDebugWidget>());
-
     editor.exec();
 
     log_msg("Quitting...");

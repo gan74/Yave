@@ -65,18 +65,6 @@ class UiManager : NonMovable {
 
 
 
-
-class UiDebugWidget : public Widget {
-
-    editor_widget_action(UiDebugWidget, "View", "Debug")
-
-    public:
-        UiDebugWidget();
-
-    protected:
-        void on_gui() override;
-};
-
 class FunctionWidget final : public Widget {
     public:
         FunctionWidget(std::string_view name, std::function<void()> gui) : Widget(name), _on_gui(std::move(gui)) {
