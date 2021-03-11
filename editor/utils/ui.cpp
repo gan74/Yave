@@ -64,15 +64,13 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     }
 
     bool ret = false;
-    bool button = false;
     if(is_valid) {
         if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
-            button = true;
             ret = ImGui::ImageButton(const_cast<TextureView*>(img), button_size);
+        } else {
+            ret = ImGui::Button(ICON_FA_QUESTION, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
         }
-    }
-
-    if(!button) {
+    } else {
         ret = ImGui::Button(ICON_FA_FOLDER_OPEN, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
     }
 

@@ -24,12 +24,17 @@ SOFTWARE.
 #define EDITOR_EDITOR_H
 
 #include <yave/yave.h>
+
 #include <editor/utils/forward.h>
 
 #include <y/core/Span.h>
 
 #include <memory>
 #include <string_view>
+
+
+// Just for convenience
+#include <editor/utils/renderdochelper.h>
 
 
 namespace editor {

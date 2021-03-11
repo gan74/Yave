@@ -37,7 +37,7 @@ namespace renderdoc {
 
 #ifdef RENDERDOC_SUPPORTED
 
-static RENDERDOC_API_1_1_2 *renderdoc_api = nullptr;
+static RENDERDOC_API_1_1_2* renderdoc_api = nullptr;
 
 static void init_renderdoc() {
 #ifdef Y_OS_WIN
