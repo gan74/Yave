@@ -70,15 +70,28 @@ void Widget::after_gui() {
 }
 
 void Widget::draw_gui_inside() {
+    draw(true);
+}
+
+
+void Widget::draw(bool inside) {
     if(!_visible || !before_gui()) {
         return;
     }
 
-    if(ImGui::Begin(_title_with_id.data(), &_visible, _flags)) {
+    const bool opened = inside
+        ? ImGui::BeginChild(_title_with_id.data(), math::Vec2(), false, _flags)
+        : ImGui::Begin(_title_with_id.data(), &_visible, _flags);
+
+    if(opened) {
         on_gui();
     }
 
-    ImGui::End();
+    if(inside) {
+        ImGui::EndChild();
+    } else {
+        ImGui::End();
+    }
 
     after_gui();
 }

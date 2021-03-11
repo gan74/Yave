@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2021 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,61 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_MATERIALEDITOR_H
-#define EDITOR_MATERIALEDITOR_H
+#ifndef EDITOR_PREVIEW_H
+#define EDITOR_PREVIEW_H
 
-#include "Preview.h"
+#include <editor/Widget.h>
 
-#include <yave/material/Material.h>
+#include <yave/assets/AssetPtr.h>
+#include <yave/scene/SceneView.h>
 
 namespace editor {
 
-class MaterialEditor final : public Widget {
-
-    editor_widget(MaterialEditor)
+class Preview final : public Widget {
 
     public:
-        MaterialEditor();
+        enum class PreviewObject {
+            Sphere,
+            Cube,
+        };
 
-        void set_material(const AssetPtr<Material>& mat);
+        Preview();
+        ~Preview();
+
+        void refresh() override;
+
+        void set_material(const AssetPtr<Material>& material);
+
+        void set_object(const AssetPtr<StaticMesh>& mesh);
+        void set_object(PreviewObject obj);
+
+
+        const AssetPtr<Material>& material() const;
 
     protected:
         void on_gui() override;
 
     private:
-        AssetPtr<Material> _material;
+        void draw_mesh_menu();
+        void reset_world();
+        void update_camera();
 
-        Preview _preview;
+        AssetPtr<Material> _material;
+        AssetPtr<StaticMesh> _mesh;
+
+        std::unique_ptr<EditorWorld> _world;
+        SceneView _view;
+
+        AssetPtr<IBLProbe> _ibl_probe;
+        std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+
+        float _cam_distance = 1.0f;
+        math::Vec2 _angle = math::Vec2(math::to_rad(45.0f));
 
 };
 
 }
 
-#endif // EDITOR_MATERIALEDITOR_H
+
+#endif // EDITOR_PREVIEW_H
 

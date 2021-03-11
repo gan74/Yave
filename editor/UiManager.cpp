@@ -61,7 +61,7 @@ void UiManager::on_gui() {
         y_profile_dyn_zone(widget->_title_with_id);
 
         _auto_parent = widget.get();
-        widget->draw_gui_inside();
+        widget->draw(false);
 
         if(!widget->is_visible()) {
             to_destroy[widget.get()];

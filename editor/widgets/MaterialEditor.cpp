@@ -111,6 +111,11 @@ void MaterialEditor::set_material(const AssetPtr<Material>& mat) {
 void MaterialEditor::on_gui() {
     y_profile();
 
+    if(_material) {
+        _preview.set_material(_material);
+        _preview.draw_gui_inside();
+    }
+
     if(imgui::asset_selector(_material.id(), AssetType::Material, "Material")) {
         add_child_widget<AssetSelector>(AssetType::Material)->set_selected_callback(
             [this](AssetId asset) {
