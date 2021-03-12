@@ -50,6 +50,16 @@ struct NamedObject {
 
 namespace detail {
 
+template<usize I, typename Tpl, typename F>
+inline void explore_member(Tpl&& tpl, F&& func) {
+    if constexpr(I < std::tuple_size_v<std::decay_t<Tpl>>) {
+        auto&& elem = std::get<I>(tpl);
+        func(elem.name, elem.object);
+        explore_member<I + 1>(tpl, func);
+    }
+}
+
+
 template<typename T, typename F>
 void explore_one(T&& t, F&& func);
 
@@ -96,12 +106,22 @@ void explore_one(T&& t, F&& func) {
 
 
 template<typename T, typename F>
-inline void explore(T&& t, F&& func) {
+inline void explore_recursive(T&& t, F&& func) {
     detail::explore_one(t, func);
 }
 
 
+template<typename T, typename F>
+inline void explore_members(T&& t, F&& func) {
+    if constexpr(has_reflect_v<T>) {
+        auto elems = t._y_reflect();
+        detail::explore_member<0>(elems, func);
+    }
+}
+
+
 Y_TODO(manage inherited objects)
+// https://godbolt.org/z/b6j3Ts
 
 #define y_reflect_create_item(object) y::reflect::NamedObject{object, #object},
 

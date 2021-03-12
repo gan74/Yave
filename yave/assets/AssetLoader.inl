@@ -202,7 +202,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                         return core::Err();
                     }
 
-                    serde3::explore(_load_from, [this](auto& m) {
+                    reflect::explore_recursive(_load_from, [this](auto& m) {
                         if constexpr(is_asset_ptr_v<remove_cvref_t<decltype(m)>>) {
                             m.load(loading_context());
                         }
