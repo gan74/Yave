@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "FileSystemView.h"
+#include "FileRenamer.h"
 
 #include <editor/utils/ui.h>
 
@@ -247,9 +248,9 @@ void FileSystemView::draw_context_menu() {
         const auto& entry = _entries[_hovered];
         const core::String full_name = filesystem()->join(_current_path, entry.name);
 
-        // if(ImGui::MenuItem("Rename")) {
-        //     add_child<FileRenamer>(filesystem(), full_name);
-        // }
+        if(ImGui::MenuItem("Rename")) {
+            add_detached_widget<FileRenamer>(filesystem(), full_name);
+        }
 
         if(ImGui::MenuItem("Delete")) {
             if(!filesystem()->remove(full_name)) {
