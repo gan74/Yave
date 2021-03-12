@@ -36,9 +36,13 @@ math::Vec2 from_client_pos(const math::Vec2& pos);
 
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear = nullptr);
-bool path_selector(std::string_view text, const core::String& path);
+bool path_selector(const char* text, const core::String& path);
 
 void alternating_rows_background(float line_height = -1.0f, const math::Vec4& color = math::Vec4(20.0f, 20.0f, 20.0f, 48.0f) / 255.0f);
+
+
+bool begin_suggestion_popup(const char* name, bool* open = nullptr);
+void end_suggestion_popup();
 
 
 }

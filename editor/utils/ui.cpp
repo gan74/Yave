@@ -121,13 +121,13 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     return ret;
 }
 
-bool path_selector(std::string_view text, const core::String& path) {
+bool path_selector(const char* text, const core::String& path) {
     static constexpr usize buffer_capacity = 1024;
 
-    ImGui::PushID(text.data());
+    ImGui::PushID(text);
     ImGui::BeginGroup();
 
-    ImGui::TextUnformatted(text.data());
+    ImGui::TextUnformatted(text);
 
     std::array<char, buffer_capacity> buffer;
     {
@@ -188,6 +188,38 @@ void alternating_rows_background(float line_height, const math::Vec4& color) {
     }
 
     draw_list->PopClipRect();
+}
+
+
+
+bool begin_suggestion_popup(const char* name, bool* open) {
+    const ImGuiWindowFlags popup_flags =
+            ImGuiWindowFlags_NoFocusOnAppearing     |
+            ImGuiWindowFlags_NoTitleBar             |
+            ImGuiWindowFlags_AlwaysAutoResize       |
+            ImGuiWindowFlags_NoResize               |
+            ImGuiWindowFlags_NoMove                 |
+            ImGuiWindowFlags_NoSavedSettings;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, math::Vec4(40.0f, 40.0f, 40.0f, 220.0f) / 255.0f);
+
+    ImGui::SetNextWindowPos(imgui::from_client_pos(ImGui::GetCursorPos()));
+
+    const bool visible = ImGui::Begin(name, open, popup_flags);
+
+    if(!visible) {
+        end_suggestion_popup();
+    }
+
+    return visible;
+}
+
+void end_suggestion_popup() {
+    ImGui::End();
+
+    ImGui::PopStyleColor(1);
+    ImGui::PopStyleVar(1);
 }
 
 }

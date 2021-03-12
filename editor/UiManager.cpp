@@ -131,57 +131,38 @@ void UiManager::draw_menu_bar() {
             bool show_results = false;
             if(offset > 0.0f) {
                 ImGui::Indent(offset);
-                ImGui::SetNextItemWidth(search_bar_size);
+                ImGui::SetNextItemWidth(-margin);
                 ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size());
                 show_results = ImGui::IsItemFocused();
             }
 
-            Y_TODO(Make this a common imgui primitive)
             if(show_results) {
-                y_profile_zone("search bar");
-
-                const ImGuiWindowFlags popup_flags =
-                        ImGuiWindowFlags_NoFocusOnAppearing     |
-                        ImGuiWindowFlags_NoTitleBar             |
-                        ImGuiWindowFlags_AlwaysAutoResize       |
-                        ImGuiWindowFlags_NoResize               |
-                        ImGuiWindowFlags_NoMove                 |
-                        ImGuiWindowFlags_NoSavedSettings;
-
-                const math::Vec2 menu_pos = imgui::from_client_pos(math::Vec2(offset + 4.0f, ImGui::GetItemRectSize().y));
-
-                ImGui::SetNextWindowPos(menu_pos);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(search_bar_size, 0.0f));
-                ImGui::PushStyleColor(ImGuiCol_WindowBg, math::Vec4(40.0f, 40.0f, 40.0f, 220.0f) / 255.0f);
-
-                ImGui::Begin("search results", nullptr, popup_flags);
-
-                bool empty = true;
-                const std::regex regex(_search_pattern.data(), std::regex::icase);
-                for(const EditorAction* action : _actions) {
-                    if(std::regex_search(action->name.data(), regex)) {
-                        empty = false;
-                        if(ImGui::MenuItem(action->name.data())) {
-                            _search_pattern[0] = 0;
-                            action->function();
-                        }
-                        if(!action->description.empty() && ImGui::IsItemHovered()) {
-                            ImGui::BeginTooltip();
-                            ImGui::TextUnformatted(action->description.data());
-                            ImGui::EndTooltip();
+                ImGui::NewLine();
+                ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, 0.0f));
+                if(imgui::begin_suggestion_popup("##searchresults", &show_results)) {
+                    bool empty = true;
+                    const std::regex regex(_search_pattern.data(), std::regex::icase);
+                    for(const EditorAction* action : _actions) {
+                        if(std::regex_search(action->name.data(), regex)) {
+                            empty = false;
+                            if(ImGui::MenuItem(action->name.data())) {
+                                _search_pattern[0] = 0;
+                                action->function();
+                            }
+                            if(!action->description.empty() && ImGui::IsItemHovered()) {
+                                ImGui::BeginTooltip();
+                                ImGui::TextUnformatted(action->description.data());
+                                ImGui::EndTooltip();
+                            }
                         }
                     }
+
+                    if(empty) {
+                        ImGui::MenuItem("No results found", nullptr, false, false);
+                    }
+
+                    imgui::end_suggestion_popup();
                 }
-
-                if(empty) {
-                    ImGui::MenuItem("No results found", nullptr, false, false);
-                }
-
-                ImGui::End();
-
-                ImGui::PopStyleColor(1);
-                ImGui::PopStyleVar(2);
             }
         }
 
