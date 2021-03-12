@@ -28,8 +28,6 @@ SOFTWARE.
 
 namespace yave {
 
-static const char windows_class_name[] = "Yave Platform";
-
 static u32 is_ascii(WPARAM w_param, LPARAM l_param) {
     //https://stackoverflow.com/questions/44660035/how-to-extract-the-character-from-wm-keydown-in-pretranslatemessagemsgpmsg
     static BYTE kb_state[256];
@@ -236,23 +234,34 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
 }
 
 
+static const char windows_class_name[] = "yave_window";
+
+static void register_window_class() {
+    static bool registered = false;
+
+    if(!registered) {
+        WNDCLASSEX win_class = {};
+        win_class.cbSize            = sizeof(WNDCLASSEX);
+        win_class.style             = CS_HREDRAW | CS_VREDRAW;
+        win_class.lpfnWndProc       = windows_event_handler;
+        win_class.hInstance         = ::GetModuleHandle(nullptr);
+        win_class.hIcon             = ::LoadIcon(nullptr, IDI_APPLICATION);
+        win_class.hCursor           = ::LoadCursor(nullptr, IDC_ARROW);
+        win_class.hbrBackground     = HBRUSH(COLOR_WINDOW + 1);
+        win_class.lpszClassName     = windows_class_name;
+        win_class.hIconSm           = ::LoadIcon(nullptr, IDI_APPLICATION);
+        ::RegisterClassEx(&win_class);
+
+        registered = true;
+    }
+}
 
 
 
 Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) {
-    _hinstance = ::GetModuleHandle(nullptr);
+    register_window_class();
 
-    WNDCLASSEX win_class = {};
-    win_class.cbSize            = sizeof(WNDCLASSEX);
-    win_class.style             = CS_HREDRAW | CS_VREDRAW;
-    win_class.lpfnWndProc       = windows_event_handler;
-    win_class.hInstance         = _hinstance;
-    win_class.hIcon             = ::LoadIcon(nullptr, IDI_APPLICATION);
-    win_class.hCursor           = ::LoadCursor(nullptr, IDC_ARROW);
-    win_class.hbrBackground     = HBRUSH(COLOR_WINDOW + 1);
-    win_class.lpszClassName     = windows_class_name;
-    win_class.hIconSm           = ::LoadIcon(nullptr, IDI_APPLICATION);
-    ::RegisterClassEx(&win_class);
+    _hinstance = ::GetModuleHandle(nullptr);
 
     _ex_style = WS_EX_APPWINDOW;
     _style = (flags & NoDecoration)
@@ -274,8 +283,6 @@ Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) {
 
 Window::~Window() {
     ::DestroyWindow(_hwnd);
-    // We might need the class later
-    // ::UnregisterClass(class_name, _hinstance);
 }
 
 void Window::close() {

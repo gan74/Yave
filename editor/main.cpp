@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
 
     editor.exec();
 
-    log_msg("Quitting...");
+    log_msg("exiting...");
 
     return 0;
 }
