@@ -225,12 +225,23 @@ String::const_iterator String::find(const char* str) const {
     return found ? found : end();
 }
 
+String::iterator String::find(std::string_view str) {
+    return const_cast<iterator>(const_this()->find(str));
+}
+
+String::const_iterator String::find(std::string_view str) const {
+    if(const auto i = view().find(str); i != std::string_view::npos) {
+        return begin() + i;
+    }
+    return end();
+}
+
 std::string_view String::sub_str(usize beg) const {
     return beg < size() ? std::string_view(begin() + beg, size() - beg) : std::string_view();
 }
 
 std::string_view String::sub_str(usize beg, usize len) const {
-    usize si = size();
+    const usize si = size();
     beg = std::min(beg, si);
     return std::string_view(begin() + beg, std::min(len, si - beg));
 }
@@ -345,10 +356,8 @@ char String::operator[](usize i) const {
     return data()[i];
 }
 
-
 bool String::operator==(const char* str) const {
-    const usize len = std::strlen(str);
-    return size() == len ? std::equal(begin(), end(), str, str + len) : false;
+    return operator==(std::string_view(str));
 }
 
 bool String::operator!=(const char* str) const {
@@ -356,18 +365,52 @@ bool String::operator!=(const char* str) const {
 }
 
 bool String::operator==(const String& str) const {
-    return size() == str.size() ? std::equal(begin(), end(), str.begin(), str.end()) : false;
+    return operator==(str.view());
 }
 
 bool String::operator!=(const String& str) const {
-    return !operator==(str);
+    return operator!=(str.view());
 }
 
 bool String::operator<(const String& str) const {
-    //return strcmp(data(), str.data()) < 0;
+    return operator<(str.view());
+}
+
+bool String::operator==(std::string_view str) const {
+    return size() == str.size() ? std::equal(begin(), end(), str.begin(), str.end()) : false;
+}
+
+bool String::operator!=(std::string_view str) const {
+    return !operator==(str);
+}
+
+bool String::operator<(std::string_view str) const {
     return std::lexicographical_compare(begin(), end(), str.begin(), str.end());
 }
 
+
+std::string_view trim_left(std::string_view str) {
+    for(usize i = 0; i != str.size(); ++i) {
+        if(!std::isspace(str[i])) {
+            return str.substr(i);
+        }
+    }
+    return std::string_view();
+}
+
+std::string_view trim_right(std::string_view str) {
+    for(usize i = 0; i != str.size(); ++i) {
+        const usize index = str.size() - i - 1;
+        if(!std::isspace(str[index])) {
+            return str.substr(0, index + 1);
+        }
+    }
+    return std::string_view();
+}
+
+std::string_view trim(std::string_view str) {
+    return trim_left(trim_right(str));
+}
 
 /*static usize utf8_len(char c) {
     if(c & 0x80) {

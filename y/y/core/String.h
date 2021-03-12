@@ -73,7 +73,7 @@ class String {
         LongData(LongData&& _l);
         LongData(const char* str, usize cap, usize len);
         LongData(const char* str, usize len);
-        
+
         ~LongData() = default;
 
         LongData& operator=(const LongData &) = delete;
@@ -87,7 +87,7 @@ class String {
 
         ShortData();
         ShortData(const ShortData&) = default;
-        
+
         ShortData(const char* str, usize len);
 
         const ShortData& operator=(const ShortData &) = delete;
@@ -143,6 +143,9 @@ class String {
         iterator find(const char* str);
         const_iterator find(const char* str) const;
 
+        iterator find(std::string_view str);
+        const_iterator find(std::string_view str) const;
+
         std::string_view sub_str(usize beg) const;
         std::string_view sub_str(usize beg, usize len) const;
 
@@ -178,6 +181,10 @@ class String {
         bool operator==(const String& str) const;
         bool operator!=(const String& str) const;
         bool operator<(const String& str) const;
+
+        bool operator==(std::string_view str) const;
+        bool operator!=(std::string_view str) const;
+        bool operator<(std::string_view str) const;
 
 
         template<typename T>
@@ -232,7 +239,9 @@ class String {
 };
 
 
-
+std::string_view trim_left(std::string_view str);
+std::string_view trim_right(std::string_view str);
+std::string_view trim(std::string_view str);
 
 
 namespace detail {
