@@ -229,7 +229,7 @@ void SceneImporter::import(import::SceneData scene) {
         const math::Vec3 up = axes[_up_axis];
 
         math::Transform<> transform;
-        transform.set_basis(forward * _scale, -forward.cross(up) * _scale, up * _scale);
+        transform.set_basis(forward * _scale, forward.cross(up) * _scale, up * _scale);
 
         for(auto& mesh : scene.meshes) {
             mesh = import::transform(mesh.obj(), transform.transposed());

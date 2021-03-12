@@ -55,18 +55,17 @@ struct Transform : Matrix4<T> {
         return *this;
     }
 
-    /*auto right() const {
-        return -this->column(1).template to<3>();
-    }*/
-
+    // Y forward
     const auto& forward() const {
-        return this->column(0).template to<3>();
-    }
-
-    const auto& left() const {
         return this->column(1).template to<3>();
     }
 
+    // X right
+    const auto& right() const {
+        return this->column(0).template to<3>();
+    }
+
+    // Z up
     const auto& up() const {
         return this->column(2).template to<3>();
     }
@@ -104,9 +103,9 @@ struct Transform : Matrix4<T> {
         this->column(2).template to<3>() *= scale;
     }
 
-    void set_basis(const Vec<3, T>& forward, const Vec<3, T>& left, const Vec<3, T>& up) {
-        this->column(0).template to<3>() = forward;
-        this->column(1).template to<3>() = left;
+    void set_basis(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
+        this->column(0).template to<3>() = right;
+        this->column(1).template to<3>() = forward;
         this->column(2).template to<3>() = up;
     }
 
@@ -120,6 +119,17 @@ struct Transform : Matrix4<T> {
         const auto& z = this->column(2).template to<3>();
         const Vec<3, T> scale = {x.length(), y.length(), z.length()};
         return {position(), Quaternion<T>::from_base(x / scale.x(), y / scale.y(), z / scale.z()), scale};
+    }
+
+
+
+    // Legacy, remove at some point
+    auto left() const {
+        return -right();
+    }
+
+    void set_basis_l(const Vec<3, T>& forward, const Vec<3, T>& left, const Vec<3, T>& up) {
+        set_basis(forward, -left, up);
     }
 
 };

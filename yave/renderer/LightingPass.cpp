@@ -244,6 +244,10 @@ static void local_lights_pass(FrameGraph& framegraph,
                 }
             }
 
+            if(!point_count) {
+                return;
+            }
+
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             const auto* material = device_resources(recorder.device())[DeviceResources::DeferredPointLightMaterialTemplate];
             render_pass.bind_material(material, {self->descriptor_sets()[0]});
@@ -300,7 +304,7 @@ static void local_lights_pass(FrameGraph& framegraph,
 
                     const float geom_radius = l.radius() * 1.1f;
                     const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
-                    transforms[spot_count] = t.non_uniformly_scaled(math::Vec3(1.0f, two_tan_angle, two_tan_angle) * geom_radius);
+                    transforms[spot_count] = t.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
 
                     spots[spot_count] = {
                         t.position(),
@@ -316,6 +320,10 @@ static void local_lights_pass(FrameGraph& framegraph,
 
                     ++spot_count;
                 }
+            }
+
+            if(!spot_count) {
+                return;
             }
 
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
