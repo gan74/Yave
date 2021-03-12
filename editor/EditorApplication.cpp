@@ -92,6 +92,7 @@ void EditorApplication::exec() {
     _platform->exec([this](CmdBufferRecorder& rec) {
         y_debug_assert(!_recorder);
         _recorder = &rec;
+        _world->tick();
         _ui->on_gui();
         process_deferred_actions();
         _recorder = nullptr;
