@@ -59,6 +59,14 @@ class InlineDescriptor {
             return !_size;
         }
 
+        usize size_in_words() const {
+            return _size / sizeof(u32);
+        }
+
+        const u32* words() const {
+            return static_cast<const u32*>(_data);
+        }
+
     private:
         const void* _data = nullptr;
         usize _size = 0;

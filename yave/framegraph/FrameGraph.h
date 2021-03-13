@@ -89,6 +89,13 @@ class FrameGraph : NonMovable {
         FrameGraphImageId src;
     };
 
+    struct InlineStorage {
+        InlineStorage(usize size) : storage(size) {}
+
+        core::FixedArray<u32> storage;
+        usize used = 0;
+    };
+
     public:
         FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool);
         ~FrameGraph();
@@ -122,6 +129,8 @@ class FrameGraph : NonMovable {
         void register_usage(FrameGraphBufferId res, BufferUsage usage, bool is_written, const FrameGraphPass* pass);
         void register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass);
 
+        [[nodiscard]] InlineDescriptor copy_inline_descriptor(InlineDescriptor desc);
+
         void set_cpu_visible(FrameGraphMutableBufferId res, const FrameGraphPass* pass);
 
         bool is_attachment(FrameGraphImageId res) const;
@@ -141,6 +150,7 @@ class FrameGraph : NonMovable {
         core::ExternalHashMap<FrameGraphBufferId, BufferCreateInfo, hash_t> _buffers;
 
         core::Vector<ImageCopyInfo> _image_copies;
+        core::Vector<InlineStorage> _inline_storage;
 
         usize _pass_index = 0;
 

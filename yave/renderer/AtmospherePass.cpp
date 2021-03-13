@@ -84,16 +84,9 @@ static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const Atmo
 
     const auto integrated = builder.declare_image(format, size);
 
-    const auto params = builder.declare_typed_buffer<math::Vec4>();
-
-    builder.add_uniform_input(params, 0, PipelineStage::FragmentBit);
+    builder.add_inline_input(atmosphere_data, 0);
     builder.add_color_output(integrated);
-
-    builder.map_update(params);
-
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        self->resources().mapped_buffer(params)[0] = atmosphere_data;
-
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources(recorder.device())[DeviceResources::AtmosphereIntegrationMaterialTemplate];
         render_pass.bind_material(material, {self->descriptor_sets()[0]});

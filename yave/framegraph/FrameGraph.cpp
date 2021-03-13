@@ -441,6 +441,32 @@ void FrameGraph::register_image_copy(FrameGraphMutableImageId dst, FrameGraphIma
     _image_copies.push_back({pass->_index, dst, src});
 }
 
+InlineDescriptor FrameGraph::copy_inline_descriptor(InlineDescriptor desc) {
+    const usize desc_word_size = desc.size_in_words();
+
+    for(InlineStorage& storage : _inline_storage) {
+        if(storage.storage.size() - storage.used < desc_word_size) {
+            continue;
+        }
+
+        u32* begin = storage.storage.data() + storage.used;
+        const InlineDescriptor ret(core::Span<u32>(begin, desc_word_size));
+        std::copy_n(desc.words(), desc_word_size, begin);
+        storage.used += desc_word_size;
+        return ret;
+    }
+
+    // 64KB blocks
+    const usize size = std::max(usize(16 * 1024), desc_word_size);
+    InlineStorage& storage = _inline_storage.emplace_back(size);
+
+    u32* begin = storage.storage.data() + storage.used;
+    const InlineDescriptor ret(core::Span<u32>(begin, desc_word_size));
+    std::copy_n(desc.words(), desc_word_size, begin);
+    storage.used += desc_word_size;
+    return ret;
+}
+
 void FrameGraph::set_cpu_visible(FrameGraphMutableBufferId res, const FrameGraphPass* pass) {
     auto& info = check_exists(_buffers, res);
     info.memory_type = MemoryType::CpuVisible;

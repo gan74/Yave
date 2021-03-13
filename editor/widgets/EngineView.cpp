@@ -217,7 +217,7 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("Bloom")) {
         BloomSettings& settings = _settings.renderer_settings.bloom;
 
-        ImGui::SliderFloat("Power", &settings.bloom_power, 0.0f, 100.0f, "%.3f", 10.0f);
+        ImGui::SliderFloat("Power", &settings.bloom_power, 0.0f, 100.0f, "%.3f");
         ImGui::SliderFloat("Threshold", &settings.bloom_threshold, 0.0f, 1.0f);
 
         ImGui::EndMenu();

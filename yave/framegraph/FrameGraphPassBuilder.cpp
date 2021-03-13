@@ -33,7 +33,7 @@ static bool is_sampler_compatible(FrameGraph* framegraph, FrameGraphImageId img,
     y_debug_assert(framegraph);
     y_debug_assert(img.is_valid());
     return !is_linear(sampler) || framegraph->image_format(img).supports_filtering();
-} 
+}
 
 FrameGraphPassBuilder::FrameGraphPassBuilder(FrameGraphPass* pass) : _pass(pass) {
 }
@@ -143,6 +143,7 @@ void FrameGraphPassBuilder::add_uniform_input(FrameGraphImageId res, SamplerType
 }
 
 void FrameGraphPassBuilder::add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, usize ds_index, PipelineStage stage) {
+    y_debug_assert(!desc.is_inline_block());
     if(res.is_valid()) {
         add_uniform_input(res, ds_index, stage);
     } else {
@@ -150,10 +151,17 @@ void FrameGraphPassBuilder::add_uniform_input_with_default(FrameGraphImageId res
     }
 }
 
+// --------------------------------- Inline ---------------------------------
+
+void FrameGraphPassBuilder::add_inline_input(InlineDescriptor desc, usize ds_index) {
+    add_uniform(Descriptor(parent()->copy_inline_descriptor(desc)), ds_index);
+}
+
 // --------------------------------- External ---------------------------------
 
 Y_TODO(external framegraph resources are not synchronized)
 void FrameGraphPassBuilder::add_external_input(Descriptor desc, usize ds_index, PipelineStage) {
+    y_debug_assert(!desc.is_inline_block());
     add_uniform(desc, ds_index);
 }
 
