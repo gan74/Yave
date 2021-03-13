@@ -6,6 +6,10 @@
 
 layout(set = 0, binding = 0) uniform Falloff {
     float density_falloff;
+    float planet_radius;
+    float atmosphere_height;
+    float radius;
+
 };
 
 layout(location = 0) in vec2 in_uv;
@@ -16,9 +20,6 @@ layout(location = 0) out float out_color;
 const uint sample_count = 64;
 
 const vec3 center = vec3(0.0, 0.0, 0.0);
-const float planet_radius = 3.0;
-const float atmosphere_height = 2.0;
-const float radius = planet_radius + atmosphere_height;
 
 
 // -------------------------------- HELPERS --------------------------------

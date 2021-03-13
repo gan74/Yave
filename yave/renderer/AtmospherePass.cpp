@@ -73,13 +73,18 @@ static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const Atmo
     const math::Vec2ui size = math::Vec2ui(64, 64);
     const ImageFormat format = VK_FORMAT_R16_SFLOAT;
 
-    const float density_falloff = atmosphere->density_falloff;
+    const math::Vec4 atmosphere_data = {
+        atmosphere->density_falloff,
+        atmosphere->planet_radius,
+        atmosphere->atmosphere_height,
+        atmosphere->planet_radius + atmosphere->atmosphere_height,
+    };
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere integration pass");
 
     const auto integrated = builder.declare_image(format, size);
 
-    const auto params = builder.declare_typed_buffer<float>();
+    const auto params = builder.declare_typed_buffer<math::Vec4>();
 
     builder.add_uniform_input(params, 0, PipelineStage::FragmentBit);
     builder.add_color_output(integrated);
@@ -87,7 +92,7 @@ static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const Atmo
     builder.map_update(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        self->resources().mapped_buffer(params)[0] = density_falloff;
+        self->resources().mapped_buffer(params)[0] = atmosphere_data;
 
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources(recorder.device())[DeviceResources::AtmosphereIntegrationMaterialTemplate];
