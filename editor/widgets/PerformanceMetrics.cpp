@@ -94,9 +94,11 @@ void PerformanceMetrics::PlotData::advance() {
     }
     _data[_current] = 0.0f;
     if(_full) {
-        _max = {};
+        _max = 0.0f;
+        _total = 0.0f;
         for(usize i = 0; i != _data.size(); ++i) {
             _max = std::max(_max, _data[i]);
+            _total += _data[i];
         }
     }
 }
@@ -133,7 +135,7 @@ void PerformanceMetrics::draw_timings() {
     _frames.push(ms);
 
     ImGui::Text("Max time: %.2fms", _average.max());
-    ImGui::Text("Average time: %.2fms", _average.average());
+    ImGui::Text("Average time: %.2fms", _frames.average());
     ImGui::SetNextItemWidth(-1);
     ImGui::PlotLines("##averages", _average.values().data(), _average.values().size(), _average.next_index(), "", 0.0f, _average.max(), ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 

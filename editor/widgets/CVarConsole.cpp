@@ -116,7 +116,6 @@ void CVarConsole::on_gui() {
     ImGui::TextUnformatted(ICON_FA_EXCLAMATION_TRIANGLE " Don't use this if you don't know what you are doing!");
     ImGui::PopStyleColor();
 
-
     const float footer_height = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ChildBorderSize;
     if(ImGui::BeginChild("##CVarConsole", ImVec2(0.0f, -footer_height), true)) {
 
@@ -129,17 +128,25 @@ void CVarConsole::on_gui() {
     }
     ImGui::EndChild();
 
-    ImGui::SetNextItemWidth(-24.0f);
-    if(ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-        process_command(_search_pattern.data());
-        _search_pattern[0] = 0;
+    if(_grab_focus) {
+        ImGui::SetKeyboardFocusHere();
+        _grab_focus = false;
     }
 
-    bool opened = ImGui::IsItemFocused();
-    if(opened && _search_pattern[0]) {
-        ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, 0.0f));
-        if(imgui::begin_suggestion_popup("##searchresults", &opened)) {
+    ImGui::SetNextItemWidth(-24.0f);
+    const int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll;
+    if(ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size(), flags)) {
+        process_command(_search_pattern.data());
+        _search_pattern[0] = 0;
+        _grab_focus = true;
+    }
 
+    ImGui::SetItemDefaultFocus();
+
+    bool open_popup = ImGui::IsItemFocused();
+    if(open_popup && _search_pattern[0]) {
+        ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, 0.0f));
+        if(imgui::begin_suggestion_popup("##searchresults", &open_popup)) {
             const std::string_view pattern = _search_pattern.data();
 
             bool empty = true;
@@ -149,6 +156,7 @@ void CVarConsole::on_gui() {
                     if(ImGui::MenuItem(with_value.data())) {
                         const usize size = std::min(var.full_name.size(), _search_pattern.size() - 1);
                         std::copy_n(var.full_name.data(), size + 1, _search_pattern.data());
+                        _grab_focus = true;
                     }
                     empty = false;
                 }

@@ -60,6 +60,8 @@ class CVarConsole : public Widget {
 
         core::Vector<CVar> _cvars;
         core::Vector<Msg> _msgs;
+
+        bool _grab_focus = true;
 };
 
 }
