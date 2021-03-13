@@ -155,20 +155,15 @@ static FrameGraphImageId upsample_mini_ao(FrameGraph& framegraph,
     FrameGraphPassBuilder builder = framegraph.add_pass("SSAO upsample pass");
 
     const auto upsampled = builder.declare_image(format, output_size);
-    const auto params_buffer = builder.declare_typed_buffer<UpsampleParams>(1);
 
     const Texture& white = *device_resources(builder.device())[DeviceResources::WhiteTexture];
     builder.add_uniform_input_with_default(lo_ao, Descriptor(white), 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(hi_ao, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(lo_depth, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(hi_depth, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(params_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_inline_input(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance}, 0);
     builder.add_storage_output(upsampled, 0, PipelineStage::ComputeBit);
-    builder.map_update(params_buffer);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        self->resources().mapped_buffer(params_buffer)[0] = {
-            step_size, noise_filter_weight, blur_tolerance, upsample_tolerance
-        };
         const auto& program = device_resources(recorder.device())[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
         recorder.dispatch_size(program, output_size + math::Vec2ui(2), {self->descriptor_sets()[0]});
     });
@@ -183,14 +178,11 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
     FrameGraphPassBuilder builder = framegraph.add_pass("SSAO pass");
 
     const auto ao = builder.declare_image(format, size);
-    const auto params_buffer = builder.declare_typed_buffer<MiniAOParams>(1);
 
     builder.add_uniform_input(linear_depth, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(params_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_inline_input(compute_ao_params(tan_half_fov, size.x()), 0);
     builder.add_storage_output(ao, 0, PipelineStage::ComputeBit);
-    builder.map_update(params_buffer);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        self->resources().mapped_buffer(params_buffer)[0] = compute_ao_params(tan_half_fov, size.x());
         const auto& program = device_resources(recorder.device())[DeviceResources::SSAOProgram];
         recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
     });

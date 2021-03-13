@@ -3,7 +3,7 @@
 layout(location = 0) out vec4 out_color;
 
 layout(set = 0, binding = 0) uniform sampler2D in_color;
-layout(set = 0, binding = 1) uniform BloomParams {
+layout(set = 0, binding = 1) uniform BloomParams_Inline {
     float power;
     float threshold;
     float rev_threshold;

@@ -53,7 +53,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
             recorder.dispatch_size(program, histogram_size, {self->descriptor_sets()[0]});
         });
 
-        FrameGraphPassBuilder histogram_builder = framegraph.add_pass("Histogram compute pass");
+        FrameGraphPassBuilder histogram_builder = framegraph.add_pass("Histogram gather pass");
 
         histogram_builder.add_storage_output(histogram, 0, PipelineStage::ComputeBit);
         histogram_builder.add_uniform_input(in_lit, 0, PipelineStage::ComputeBit);
@@ -63,7 +63,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
             y_debug_assert(program.thread_count() == histogram_size.x());
         });
 
-        FrameGraphPassBuilder params_builder = framegraph.add_pass("Tone mapping params pass");
+        FrameGraphPassBuilder params_builder = framegraph.add_pass("Exposure compute pass");
 
         params = params_builder.declare_typed_buffer<uniform::ToneMappingParams>(1);
 
@@ -88,9 +88,6 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 
     const auto tone_mapped = builder.declare_image(format, size);
 
-    Y_TODO(Add way to use inline uniform with framegraph)
-    const auto settings_buffer = builder.declare_typed_buffer<ShaderSettings>();
-
     if(!settings.auto_exposure) {
         params = builder.declare_typed_buffer<uniform::ToneMappingParams>();
         builder.map_update(params);
@@ -99,10 +96,8 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     builder.add_color_output(tone_mapped);
     builder.add_uniform_input(in_lit, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(params, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(settings_buffer, 0, PipelineStage::FragmentBit);
-    builder.map_update(settings_buffer);
+    builder.add_inline_input(shader_settings, 0);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        self->resources().mapped_buffer(settings_buffer)[0] = shader_settings;
         if(!settings.auto_exposure) {
             TypedMapping<uniform::ToneMappingParams> mapping = self->resources().mapped_buffer(params);
             mapping[0] = uniform::ToneMappingParams{};

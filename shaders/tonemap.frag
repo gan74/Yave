@@ -10,11 +10,11 @@
 
 layout(set = 0, binding = 0) uniform sampler2D in_color;
 
-layout(set = 0, binding = 1) uniform ToneMapping {
+layout(set = 0, binding = 1) uniform Params {
     ToneMappingParams params;
 };
 
-layout(set = 0, binding = 2) uniform Settings {
+layout(set = 0, binding = 2) uniform Settings_Inline {
     float exposure;
     uint tone_mapper;
 };

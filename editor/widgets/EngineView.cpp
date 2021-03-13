@@ -109,25 +109,20 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, output_size);
-        const auto buffer = builder.declare_typed_buffer<u32>(1);
 
         const auto gbuffer = renderer.renderer.gbuffer;
         builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
         builder.add_color_output(output_image);
-        builder.add_uniform_input(buffer);
+        builder.add_inline_input(u32(_view), 0);
         builder.add_uniform_input(renderer.final, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white), 0, PipelineStage::FragmentBit);
-        builder.map_update(buffer);
         builder.set_render_func([=, index = u32(_view), &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
                 auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
                 output = out.get();
                 recorder.keep_alive(std::move(out));
-
-                TypedMapping<u32> mapping = self->resources().mapped_buffer(buffer);
-                mapping[0] = index;
 
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
                 const MaterialTemplate* material = resources()[EditorResources::EngineViewMaterialTemplate];

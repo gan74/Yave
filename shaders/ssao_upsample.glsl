@@ -10,7 +10,7 @@ layout(set = 0, binding = 1) uniform sampler2D in_hi_ao;
 layout(set = 0, binding = 2) uniform sampler2D in_lo_depth;
 layout(set = 0, binding = 3) uniform sampler2D in_hi_depth;
 
-layout(set = 0, binding =  4) uniform UpsampleData {
+layout(set = 0, binding =  4) uniform UpsampleData_Inline {
     float step_size;
     float noise_filter_weight;
     float blur_tolerance;

@@ -25,7 +25,7 @@ layout(local_size_x = THREAD_COUNT, local_size_y = THREAD_COUNT) in;
 
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
 
-layout(set = 0, binding =  1) uniform Params {
+layout(set = 0, binding =  1) uniform Params_Inline {
     vec4 inv_thickness[3];
     vec4 weights[3];
 };

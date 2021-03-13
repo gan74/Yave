@@ -13,7 +13,7 @@ layout(set = 0, binding = 2) uniform CameraData {
     Camera camera;
 };
 
-layout(set = 0, binding = 3) uniform AtmosphereData {
+layout(set = 0, binding = 3) uniform AtmosphereData_Inline {
     vec3 center;
     float planet_radius;
 

@@ -4,7 +4,7 @@
 #include "lib/gbuffer.glsl"
 
 
-layout(set = 0, binding = 0) uniform Target {
+layout(set = 0, binding = 0) uniform Target_Inline {
     uint target_index;
 };
 

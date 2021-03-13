@@ -53,14 +53,10 @@ static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId src
 
     const auto thresholded = builder.declare_image(format, internal_size);
 
-    const auto param_buffer = builder.declare_typed_buffer<BloomParams>();
-
     builder.add_color_output(thresholded);
     builder.add_uniform_input(src);
-    builder.add_uniform_input(param_buffer);
-    builder.map_update(param_buffer);
+    builder.add_inline_input(params);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        self->resources().mapped_buffer(param_buffer)[0] = params;
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources(recorder.device())[DeviceResources::BloomMaterialTemplate];
         render_pass.bind_material(material, {self->descriptor_sets()[0]});

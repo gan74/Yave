@@ -108,8 +108,6 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
 
     const auto region = framegraph.region("Atmosphere");
 
-    const FrameGraphImageId integrated = integrate_atmosphere(framegraph, atmosphere);
-
     auto rayleigh = [](math::Vec3 v, float scattering_strength) {
         for(auto& x : v) {
             x = std::pow(scattering_strength / x, 4.0f);
@@ -117,7 +115,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
         return v;
     };
 
-    AtmosphereData params {
+    const AtmosphereData atmosphere_data {
         math::Vec3(0.0f, 0.0f, -atmosphere->planet_radius),
         atmosphere->planet_radius,
 
@@ -132,24 +130,19 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
         atmosphere->density_falloff,
     };
 
+
+    const FrameGraphImageId integrated = integrate_atmosphere(framegraph, atmosphere);
+
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere pass");
 
     const auto atmo = builder.declare_copy(lit);
 
-    const auto atmo_params = builder.declare_typed_buffer<AtmosphereData>();
-
     builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(integrated, SamplerType::LinearClamp, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(atmo_params, 0, PipelineStage::FragmentBit);
-
+    builder.add_inline_input(atmosphere_data, 0);
     builder.add_color_output(atmo);
-
-    builder.map_update(atmo_params);
-
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        self->resources().mapped_buffer(atmo_params)[0] = params;
-
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources(recorder.device())[DeviceResources::AtmosphereMaterialTemplate];
         render_pass.bind_material(material, {self->descriptor_sets()[0]});

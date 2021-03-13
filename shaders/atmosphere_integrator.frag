@@ -4,7 +4,7 @@
 
 // -------------------------------- I/O --------------------------------
 
-layout(set = 0, binding = 0) uniform Data_Inline {
+layout(set = 0, binding = 0) uniform AtmosphereData_Inline {
     float density_falloff;
     float planet_radius;
     float atmosphere_height;
