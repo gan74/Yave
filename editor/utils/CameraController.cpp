@@ -50,7 +50,7 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
         return;
     }
 
-    const CameraSettings& settings = app_settings().camera();
+    const CameraSettings& settings = app_settings().camera;
     math::Vec3 cam_pos = camera.position();
     math::Vec3 cam_fwd = camera.forward();
     math::Vec3 cam_lft = camera.left();
@@ -77,7 +77,7 @@ FPSCameraController::FPSCameraController() : CameraController() {
 }
 
 void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& viewport_size) {
-    const CameraSettings& settings = app_settings().camera();
+    const CameraSettings& settings = app_settings().camera;
     math::Vec3 cam_pos = camera.position();
     math::Vec3 cam_fwd = camera.forward();
     math::Vec3 cam_lft = camera.left();
@@ -158,7 +158,7 @@ bool HoudiniCameraController::viewport_clicked(const PickingResult& point) {
 void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& viewport_size) {
     const bool cam_key_down = ImGui::IsKeyDown(camera_key());
 
-    const CameraSettings& settings = app_settings().camera();
+    const CameraSettings& settings = app_settings().camera;
     math::Vec3 cam_pos = camera.position();
     math::Vec3 cam_fwd = camera.forward();
     math::Vec3 cam_lft = camera.left();

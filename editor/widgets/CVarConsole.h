@@ -19,68 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_SETTINGS_H
-#define EDITOR_SETTINGS_H
+#ifndef EDITOR_WIDGETS_CVARCONSOLE_H
+#define EDITOR_WIDGETS_CVARCONSOLE_H
 
-#include <editor/editor.h>
+#include <editor/Widget.h>
 
-#include <yave/window/EventHandler.h>
+#include <y/core/FixedArray.h>
+#include <y/core/Vector.h>
 
-#include <y/reflect/reflect.h>
-#include <y/core/String.h>
+#include <functional>
 
 namespace editor {
 
-struct CameraSettings {
-    float z_near = 1.0f;
-    float fov = 60.0f;
+class CVarConsole : public Widget {
 
-    // FPS
-    Key move_forward = Key::W;
-    Key move_backward = Key::S;
-    Key move_right = Key::D;
-    Key move_left = Key::A;
-    float fps_sensitivity = 4.0f;
+    editor_widget(CVarConsole)
 
-    // Houdini
-    float trackball_sensitivity = 6.0f;
-    float dolly_sensitivity = 2.5f;
+    struct CVar {
+        core::String full_name;
+        std::function<std::string_view()> to_string;
+        std::function<bool(std::string_view)> from_string;
+    };
 
-    // Other camera
-    Key center_on_obj = Key::H;
+    struct Msg {
+        core::String command;
+        core::String result;
+        bool is_error = false;
+    };
 
-    y_reflect(z_near, fov,
-              move_forward, move_backward, move_right, move_left,
-              fps_sensitivity, trackball_sensitivity, dolly_sensitivity,
-              center_on_obj)
-
-};
-
-struct UiSettings {
-    Key change_gizmo_mode = Key::R;
-    Key change_gizmo_space = Key::Q;
-
-
-    y_reflect(change_gizmo_mode, change_gizmo_space)
-};
-
-struct PerfSettings {
-};
-
-
-class Settings {
     public:
-        Settings(bool load = true);
-        ~Settings();
+        CVarConsole();
 
-        CameraSettings camera;
-        UiSettings ui;
-        PerfSettings perf;
+        void process_command(std::string_view command);
 
-        y_reflect(camera, ui, perf)
+    protected:
+        void on_gui() override;
+
+    private:
+        core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
+
+        core::Vector<CVar> _cvars;
+        core::Vector<Msg> _msgs;
 };
 
 }
 
-#endif // EDITOR_CONTEXT_SETTINGS_H
+#endif // EDITOR_WIDGETS_CVARCONSOLE_H
 

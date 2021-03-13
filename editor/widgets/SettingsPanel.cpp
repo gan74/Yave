@@ -43,7 +43,7 @@ static void keybox(const char* name, Key& key) {
 }
 
 static void camera_settings() {
-    CameraSettings& cam = app_settings().camera();
+    CameraSettings& cam = app_settings().camera;
 
     if(ImGui::CollapsingHeader("FPS Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
         keybox("Forward", cam.move_forward);
@@ -69,7 +69,7 @@ static void camera_settings() {
 }
 
 static void ui_settings() {
-    UiSettings& ui = app_settings().ui();
+    UiSettings& ui = app_settings().ui;
 
     keybox("Change gizmo mode", ui.change_gizmo_mode);
     ImGui::SameLine();
@@ -77,7 +77,7 @@ static void ui_settings() {
 }
 
 static void perf_settings() {
-    PerfSettings& perf = app_settings().perf();
+    PerfSettings& perf = app_settings().perf;
 
     unused(perf);
 }

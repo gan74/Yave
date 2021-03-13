@@ -320,7 +320,7 @@ void EngineView::draw_gizmo_tool_bar() {
     }
 
     if(is_focussed()) {
-        const UiSettings& settings = app_settings().ui();
+        const UiSettings& settings = app_settings().ui;
         if(ImGui::IsKeyReleased(int(settings.change_gizmo_mode))) {
             gizmo_mode = Gizmo::Mode(!usize(gizmo_mode));
         }
@@ -363,7 +363,7 @@ void EngineView::update() {
 }
 
 void EngineView::update_proj() {
-    const CameraSettings& settings = app_settings().camera();
+    const CameraSettings& settings = app_settings().camera;
     math::Vec2ui viewport_size = content_size();
 
     const float fov = math::to_rad(settings.fov);

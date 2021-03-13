@@ -57,17 +57,5 @@ Settings::~Settings() {
     }
 }
 
-CameraSettings& Settings::camera() {
-    return _camera;
-}
-
-UiSettings& Settings::ui() {
-    return _ui;
-}
-
-PerfSettings& Settings::perf() {
-    return _perf;
-}
-
 }
 

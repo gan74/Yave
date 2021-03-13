@@ -79,6 +79,8 @@ void Widget::draw(bool inside) {
         return;
     }
 
+    ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+
     const bool opened = inside
         ? ImGui::BeginChild(_title_with_id.data(), math::Vec2(), false, _flags)
         : ImGui::Begin(_title_with_id.data(), &_visible, _flags);

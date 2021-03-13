@@ -103,7 +103,7 @@ const AssetPtr<Material>& Preview::material() const {
 void Preview::update_camera() {
     if(ImGui::IsMouseDown(0) && /*is_mouse_inside()*/ ImGui::IsWindowHovered()) {
         math::Vec2 delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(content_size());
-        delta *= app_settings().camera().trackball_sensitivity;
+        delta *= app_settings().camera.trackball_sensitivity;
 
         const float pi_2 = (math::pi<float> * 0.5f) - 0.001f;
         _angle.y() = std::clamp(_angle.y() + delta.y(), -pi_2, pi_2);
