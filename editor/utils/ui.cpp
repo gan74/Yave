@@ -204,7 +204,8 @@ bool begin_suggestion_popup(const char* name, bool* open) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleColor(ImGuiCol_WindowBg, math::Vec4(40.0f, 40.0f, 40.0f, 220.0f) / 255.0f);
 
-    ImGui::SetNextWindowPos(imgui::from_client_pos(ImGui::GetCursorPos()));
+
+    ImGui::SetNextWindowPos(math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetCursorPos()));
 
     const bool visible = ImGui::Begin(name, open, popup_flags);
 
