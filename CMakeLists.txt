@@ -115,9 +115,9 @@ endif()
 
 if(YAVE_BUILD_YAVE)
     if(YAVE_BUILD_SHARED)
-        add_library(yave SHARED ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIB_FILES})
+        add_library(yave SHARED ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
     else()
-        add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIB_FILES})
+        add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
     endif()
 
     if(YAVE_TRACY_PROFILING)
