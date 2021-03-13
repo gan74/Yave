@@ -70,7 +70,7 @@ static const AtmosphereComponent* find_atmosphere_component(const SceneView& sce
 }
 
 static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const AtmosphereComponent* atmosphere) {
-    const math::Vec2ui size = math::Vec2ui(128, 128);
+    const math::Vec2ui size = math::Vec2ui(64, 64);
     const ImageFormat format = VK_FORMAT_R16_SFLOAT;
 
     const float density_falloff = atmosphere->density_falloff;

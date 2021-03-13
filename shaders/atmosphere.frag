@@ -1,6 +1,6 @@
 #version 450
 
-#include "lib/atmosphere.glsl"
+#include "lib/utils.glsl"
 
 #define USE_LUT
 
@@ -33,6 +33,7 @@ layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 out_color;
 
 
+const uint optical_depth_sample_count = 16;
 const uint sample_count = 16;
 const float km = 1000.0;
 
@@ -59,7 +60,7 @@ float atmosphere_density(vec3 pos) {
 
 
 float optical_depth_from_lut(vec3 orig, vec3 dir) {
-    const float cos_t = dot(normalize(orig - center), dir);
+    const float cos_t = dot(normalize(orig - center), normalize(dir));
     const float norm_alt = normalized_altitude(orig);
 
     return texture(in_lut, vec2(cos_t * 0.5 + 0.5, norm_alt)).x;
@@ -74,12 +75,12 @@ float optical_depth(vec3 orig, vec3 dir, float len) {
 #ifdef USE_LUT
     return optical_depth_from_lut(orig, dir, len);
 #else
-    const float step_size = len / (sample_count - 1);
+    const float step_size = len / (optical_depth_sample_count - 1);
     const vec3 step = dir * step_size;
 
     float depth = 0.0;
     vec3 pos = orig;
-    for(uint i = 0; i != sample_count; ++i) {
+    for(uint i = 0; i != optical_depth_sample_count; ++i) {
         const float density = atmosphere_density(pos);
         depth += density * step_size;
         pos += step;

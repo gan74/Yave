@@ -1,6 +1,6 @@
 #version 450
 
-#include "lib/atmosphere.glsl"
+#include "lib/utils.glsl"
 
 // -------------------------------- I/O --------------------------------
 
@@ -16,8 +16,8 @@ layout(location = 0) out float out_color;
 const uint sample_count = 64;
 
 const vec3 center = vec3(0.0, 0.0, 0.0);
-const float planet_radius = 1.0;
-const float atmosphere_height = 1.0;
+const float planet_radius = 3.0;
+const float atmosphere_height = 2.0;
 const float radius = planet_radius + atmosphere_height;
 
 
@@ -60,11 +60,11 @@ float optical_depth(vec3 orig, vec3 dir, float len) {
 void main() {
     const float cos_t = in_uv.x * 2.0 - 1.0;
     const float sin_t = sqrt(1.0 - sqr(cos_t));
-    const vec3 dir = vec3(cos_t, 0.0,sin_t);
+    const vec3 dir = vec3(sin_t, 0.0, cos_t);
 
     const float norm_alt = in_uv.y;
-    const float altitude = planet_radius + norm_alt;
-    const vec3 orig = vec3(0.0, 0.0, altitude);
+    const float altitude = planet_radius + norm_alt * atmosphere_height;
+    const vec3 orig = center + vec3(0.0, 0.0, altitude);
 
     const float depth = optical_depth(orig, dir, 2.0 * radius);
 
