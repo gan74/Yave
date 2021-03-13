@@ -34,7 +34,7 @@ layout(location = 0) out vec4 out_color;
 
 
 const uint optical_depth_sample_count = 16;
-const uint sample_count = 16;
+const uint sample_count = 8;
 const float km = 1000.0;
 
 
@@ -56,7 +56,6 @@ float atmosphere_density(float norm_alt) {
 float atmosphere_density(vec3 pos) {
     return atmosphere_density(normalized_altitude(pos));
 }
-
 
 
 float optical_depth_from_lut(vec3 orig, vec3 dir) {
@@ -93,7 +92,7 @@ float optical_depth(vec3 orig, vec3 dir, float len) {
 
 
 
-vec3 compute_light(vec3 orig, vec3 dir, float len) {
+vec3 compute_scattered_light(vec3 orig, vec3 dir, float len) {
     const vec3 scattering_coef = rayleigh; //pow(vec3(scattering_strength) / wavelengths, vec3(4.0));
 
     const float step_size = len / (sample_count - 1);
@@ -146,7 +145,7 @@ void main() {
     if(enters >= 0.0 && enters < view_dist) {
         const vec3 start = cam_pos + view_dir * enters;
         const float dist = min(exits, view_dist - enters);
-        light = compute_light(start, view_dir, dist) * light_color;
+        light = compute_scattered_light(start, view_dir, dist) * light_color;
     }
 
     out_color = vec4(light, 1.0);
