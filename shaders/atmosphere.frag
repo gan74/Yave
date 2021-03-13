@@ -2,6 +2,8 @@
 
 #include "lib/atmosphere.glsl"
 
+#define USE_LUT
+
 // -------------------------------- I/O --------------------------------
 
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
@@ -37,17 +39,41 @@ const float km = 1000.0;
 
 // -------------------------------- HELPERS --------------------------------
 
-float atmosphere_density(float normalized_altitude) {
-    return exp(-normalized_altitude * density_falloff) * (1.0 - normalized_altitude);
+float normalized_altitude(float altitude) {
+    return altitude / (radius - planet_radius);
+}
+
+float normalized_altitude(vec3 pos) {
+    const float altitude = length(center - pos) - planet_radius;
+    return normalized_altitude(altitude);
+}
+
+float atmosphere_density(float norm_alt) {
+    return exp(-norm_alt * density_falloff) * (1.0 - norm_alt);
 }
 
 float atmosphere_density(vec3 pos) {
-    const float altitude = length(center - pos) - planet_radius;
-    const float normalized_alt = altitude / (radius - planet_radius);
-    return atmosphere_density(normalized_alt);
+    return atmosphere_density(normalized_altitude(pos));
+}
+
+
+
+float optical_depth_from_lut(vec3 orig, vec3 dir) {
+    const float cos_t = dot(normalize(orig - center), dir);
+    const float norm_alt = normalized_altitude(orig);
+
+    return texture(in_lut, vec2(cos_t * 0.5 + 0.5, norm_alt)).x;
+}
+
+float optical_depth_from_lut(vec3 orig, vec3 dir, float len) {
+    const vec3 end = orig + dir * len;
+    return optical_depth_from_lut(orig, dir) - optical_depth_from_lut(end, dir);
 }
 
 float optical_depth(vec3 orig, vec3 dir, float len) {
+#ifdef USE_LUT
+    return optical_depth_from_lut(orig, dir, len);
+#else
     const float step_size = len / (sample_count - 1);
     const vec3 step = dir * step_size;
 
@@ -60,7 +86,11 @@ float optical_depth(vec3 orig, vec3 dir, float len) {
     }
 
     return depth;
+#endif
 }
+
+
+
 
 vec3 compute_light(vec3 orig, vec3 dir, float len) {
     const vec3 scattering_coef = rayleigh; //pow(vec3(scattering_strength) / wavelengths, vec3(4.0));
@@ -87,6 +117,7 @@ vec3 compute_light(vec3 orig, vec3 dir, float len) {
 
 // -------------------------------- MAIN --------------------------------
 
+
 void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
 
@@ -99,20 +130,21 @@ void main() {
     const vec3 view_dir = view_vec / view_dist;
 
     {
-        const vec2 ground = intersect_sphere(center, planet_radius, cam_pos, view_dir);
-        if(ground.x > 0.0) {
-            view_dist = min(view_dist, ground.x);
+        const float ground_dist = intersect_sphere(center, planet_radius, cam_pos, view_dir).x;
+        if(ground_dist > 0.0) {
+            view_dist = min(view_dist, ground_dist);
         }
     }
 
     const vec2 intersection = intersect_sphere(center, radius, cam_pos, view_dir);
+    const float enters = intersection.x;
+    const float exits = intersection.y;
 
     vec3 light = vec3(0.0);
-    if(intersection.x >= 0.0 && intersection.x < view_dist) {
-        const vec3 start = cam_pos + view_dir * intersection.x;
 
-        const float dist = min(intersection.y, view_dist - intersection.x);
-
+    if(enters >= 0.0 && enters < view_dist) {
+        const vec3 start = cam_pos + view_dir * enters;
+        const float dist = min(exits, view_dist - enters);
         light = compute_light(start, view_dir, dist) * light_color;
     }
 

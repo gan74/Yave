@@ -212,6 +212,7 @@ bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
     return true;
 }
 
+// Returns (near, dist exit)
 vec2 intersect_sphere(vec3 center, float radius, vec3 origin, vec3 dir) {
     const vec3 offset = origin - center;
     const float a = 1.0;

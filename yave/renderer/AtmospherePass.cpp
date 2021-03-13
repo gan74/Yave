@@ -82,7 +82,6 @@ static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const Atmo
     const auto params = builder.declare_typed_buffer<float>();
 
     builder.add_uniform_input(params, 0, PipelineStage::FragmentBit);
-
     builder.add_color_output(integrated);
 
     builder.map_update(params);
@@ -142,7 +141,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     const auto atmo_params = builder.declare_typed_buffer<AtmosphereData>();
 
     builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(integrated, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(integrated, SamplerType::LinearClamp, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(atmo_params, 0, PipelineStage::FragmentBit);
 
