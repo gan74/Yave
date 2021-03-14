@@ -28,10 +28,14 @@ SOFTWARE.
 
 namespace yave {
 
+struct BlurSettings {
+    float sigma = 1.0f;
+};
+
 struct BlurPass {
     FrameGraphImageId blurred;
 
-    static BlurPass create(FrameGraph& framegraph, FrameGraphImageId in_image);
+    static BlurPass create(FrameGraph& framegraph, FrameGraphImageId in_image, const BlurSettings& settings = BlurSettings());
 };
 
 }

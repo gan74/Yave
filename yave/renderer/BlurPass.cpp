@@ -29,15 +29,33 @@ SOFTWARE.
 
 namespace yave {
 
-BlurPass BlurPass::create(FrameGraph& framegraph, FrameGraphImageId in_image) {
+struct BlurWeights {
+    float weights[16];
+};
+
+static BlurWeights compute_gaussian_weights(float sigma) {
+    BlurWeights weights;
+    const float denom = 2.0f * sigma * sigma;
+    for(usize i = 0; i != 16; ++i) {
+        weights.weights[i] = std::exp(-float(i * i) / denom);
+    }
+    return weights;
+}
+
+BlurPass BlurPass::create(FrameGraph& framegraph, FrameGraphImageId in_image, const BlurSettings& settings) {
+    const auto region = framegraph.region("Blur");
+
     const math::Vec2ui size = framegraph.image_size(in_image);
     const ImageFormat format = framegraph.image_format(in_image);
+
+    const BlurWeights weights = compute_gaussian_weights(settings.sigma);
 
     auto blur_sub_pass = [&](FrameGraphPassBuilder builder, FrameGraphImageId in, DeviceResources::MaterialTemplates mat) -> FrameGraphMutableImageId {
         const auto blurred = builder.declare_image(format, size);
 
         builder.add_color_output(blurred);
         builder.add_uniform_input(in);
+        builder.add_inline_input(core::Span<float>(weights.weights));
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             const auto* material = device_resources(recorder.device())[mat];

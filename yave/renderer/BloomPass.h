@@ -23,19 +23,22 @@ SOFTWARE.
 #define YAVE_RENDERER_BLOOMPASS_H
 
 #include "DownsamplePass.h"
+#include "BlurPass.h"
 
 namespace yave {
 
 struct BloomSettings {
     float bloom_power = 4.0f;
     float bloom_threshold = 0.9f;
+    u32 downsample_mips = 3;
+    BlurSettings blur = {};
 };
 
 struct BloomPass {
     FrameGraphImageId bloomed;
     FrameGraphImageId merged;
 
-    static BloomPass create(FrameGraph& framegraph, FrameGraphImageId tone_mapped, const BloomSettings& settings = BloomSettings());
+    static BloomPass create(FrameGraph& framegraph, FrameGraphImageId input, const BloomSettings& settings = BloomSettings());
 };
 
 }

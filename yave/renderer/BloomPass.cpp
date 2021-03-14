@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "BloomPass.h"
-#include "BlurPass.h"
+#include "ToneMappingPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -30,11 +30,12 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
+
 namespace yave {
 
-static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId src, const BloomSettings& settings) {
-    const math::Vec2ui size = framegraph.image_size(src);
-    const ImageFormat format = framegraph.image_format(src);
+static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId input, const BloomSettings& settings) {
+    const math::Vec2ui size = framegraph.image_size(input);
+    const ImageFormat format = framegraph.image_format(input);
     const math::Vec2ui internal_size = /*size / 2*/ size;
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Bloom pass");
@@ -54,7 +55,7 @@ static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId src
     const auto thresholded = builder.declare_image(format, internal_size);
 
     builder.add_color_output(thresholded);
-    builder.add_uniform_input(src);
+    builder.add_uniform_input(input);
     builder.add_inline_input(params);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -66,37 +67,28 @@ static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId src
     return thresholded;
 }
 
-BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId tone_mapped, const BloomSettings& settings) {
+BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, const BloomSettings& settings) {
     const auto region = framegraph.region("Bloom");
 
-    const FrameGraphImageId thresholded = threshold(framegraph, tone_mapped, settings);
-    const DownsamplePass downsampled = DownsamplePass::create(framegraph, thresholded, 5);
-    const usize mip_count = downsampled.mips.size();
+    const FrameGraphImageId thresholded = threshold(framegraph, input, settings);
+    const DownsamplePass downsampled = DownsamplePass::create(framegraph, thresholded, settings.downsample_mips);
+    const BlurPass blur = BlurPass::create(framegraph, downsampled.mips.last(), settings.blur);
 
-    FrameGraphImageId src = downsampled.mips.last();
-    for(usize i = 0; i != mip_count - 1; ++i) {
-        const usize dst_index = mip_count - i - 2;
-        y_debug_assert(dst_index < mip_count);
+    FrameGraphPassBuilder builder = framegraph.add_pass("Bloom merge pass");
 
-        FrameGraphPassBuilder builder = framegraph.add_pass("Bloom upscale pass");
+    const auto merged = builder.declare_copy(input);
 
-        const auto dst = builder.declare_copy(dst_index ? downsampled.mips[dst_index] : tone_mapped);
-        //const auto dst = builder.declare_copy(downsampled.mips[dst_index]);
-
-        builder.add_color_output(dst);
-        builder.add_uniform_input(src);
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            const auto* material = device_resources(recorder.device())[DeviceResources::ScreenBlendPassthroughMaterialTemplate];
-            render_pass.bind_material(material, {self->descriptor_sets()[0]});
-            render_pass.draw_array(3);
-        });
-
-        src = dst;
-    }
+    builder.add_color_output(merged);
+    builder.add_uniform_input(blur.blurred);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        const auto* material = device_resources(recorder.device())[DeviceResources::ScreenBlendPassthroughMaterialTemplate];
+        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.draw_array(3);
+    });
 
     BloomPass pass;
-    pass.merged = src;
+    pass.merged = merged;
     return pass;
 }
 

@@ -41,9 +41,9 @@ struct DefaultRenderer {
     GBufferPass gbuffer;
     LightingPass lighting;
     AtmospherePass atmosphere;
+    BloomPass bloom;
     ToneMappingPass tone_mapping;
     SSAOPass ssao;
-    BloomPass bloom;
 
     FrameGraphImageId final;
     FrameGraphImageId depth;

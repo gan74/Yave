@@ -1,5 +1,7 @@
 #version 450
 
+#include "lib/hdr.glsl"
+
 layout(location = 0) out vec4 out_color;
 
 layout(set = 0, binding = 0) uniform sampler2D in_color;
@@ -11,11 +13,13 @@ layout(set = 0, binding = 1) uniform BloomParams_Inline {
 
 layout(location = 0) in vec2 in_uv;
 
-
 void main() {
     const vec3 color = texture(in_color, in_uv).rgb;
+    const float lum = luminance(color);
 
-    const vec3 thresholded = (color - threshold) * rev_threshold;
-    out_color = vec4(pow(thresholded, vec3(power)), 1.0);
+    const float thresholded = max(0.0, (lum - threshold) * rev_threshold);
+    const float bloom_factor = pow(thresholded, power);
+
+    out_color = vec4(color * bloom_factor, 1.0);
 }
 

@@ -39,6 +39,8 @@ class InlineDescriptor {
         constexpr InlineDescriptor(const T& data) : _data(&data), _size(sizeof(T)) {
             static_assert(sizeof(T) % 4 == 0, "InlineDescriptor's size must be a multiple of 4");
             static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
+            static_assert(!std::is_pointer_v<T>, "T shouldn't be a pointer, use a span instead");
+            static_assert(!std::is_array_v<T>, "T shouldn't be an array, use a span instead");
         }
 
         template<typename T>
