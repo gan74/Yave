@@ -33,7 +33,7 @@ namespace editor {
 
 class CVarConsole : public Widget {
 
-    editor_widget_open(CVarConsole)
+    editor_widget(CVarConsole)
 
     struct CVar {
         core::String full_name;
