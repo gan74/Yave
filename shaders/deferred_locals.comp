@@ -14,8 +14,8 @@
 layout(local_size_x = 16, local_size_y = 16) in;
 
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
-layout(set = 0, binding = 1) uniform sampler2D in_color;
-layout(set = 0, binding = 2) uniform sampler2D in_normal;
+layout(set = 0, binding = 1) uniform sampler2D in_rt0;
+layout(set = 0, binding = 2) uniform sampler2D in_rt1;
 layout(set = 0, binding = 3) uniform sampler2D in_shadows;
 
 layout(set = 0, binding = 4) uniform CameraData {
@@ -192,12 +192,8 @@ void main() {
     }
 
     vec3 irradiance = imageLoad(out_color, coord).rgb;
-    vec3 albedo;
-    float metallic;
-    vec3 normal;
-    float roughness;
-    unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
-    unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
+
+    const GBufferData gbuffer = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 
     const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
     const vec3 view_dir = normalize(camera.position - world_pos);
@@ -216,7 +212,7 @@ void main() {
 
         if(att > 0.0) {
             const vec3 radiance = light.color * att;
-            irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+            irradiance += radiance * L0(light_dir, view_dir, gbuffer);
         }
     }
 #endif
@@ -243,7 +239,7 @@ void main() {
             }
 
             const vec3 radiance = light.color * att;
-            irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+            irradiance += radiance * L0(light_dir, view_dir, gbuffer);
         }
     }
 #endif

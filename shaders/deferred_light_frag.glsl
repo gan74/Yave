@@ -10,8 +10,8 @@ layout(set = 0, binding = 1) readonly buffer Lights {
 };
 
 layout(set = 0, binding = 2) uniform sampler2D in_depth;
-layout(set = 0, binding = 3) uniform sampler2D in_color;
-layout(set = 0, binding = 4) uniform sampler2D in_normal;
+layout(set = 0, binding = 3) uniform sampler2D in_rt0;
+layout(set = 0, binding = 4) uniform sampler2D in_rt1;
 
 #ifdef SPOT_LIGHT
 layout(set = 0, binding = 5) uniform sampler2DShadow in_shadows;
@@ -102,12 +102,7 @@ void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
     const vec2 uv = gl_FragCoord.xy / vec2(textureSize(in_depth, 0).xy);
 
-    vec3 albedo;
-    float metallic;
-    vec3 normal;
-    float roughness;
-    unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
-    unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
+    const GBufferData gbuffer = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 
     const float depth = texelFetch(in_depth, coord, 0).x;
 
@@ -135,7 +130,7 @@ void main() {
 
         if(att > 0.0) {
             const vec3 radiance = light.color * att;
-            irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+            irradiance += radiance * L0(light_dir, view_dir, gbuffer);
         }
     }
 

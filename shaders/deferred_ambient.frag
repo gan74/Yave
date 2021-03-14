@@ -13,8 +13,8 @@
 // -------------------------------- I/O --------------------------------
 
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
-layout(set = 0, binding = 1) uniform sampler2D in_color;
-layout(set = 0, binding = 2) uniform sampler2D in_normal;
+layout(set = 0, binding = 1) uniform sampler2D in_rt0;
+layout(set = 0, binding = 2) uniform sampler2D in_rt1;
 layout(set = 0, binding = 3) uniform sampler2D in_ao;
 
 layout(set = 0, binding = 4) uniform samplerCube in_envmap;
@@ -59,12 +59,7 @@ void main() {
         irradiance = texture(in_envmap, forward).rgb;
 #endif
     } else {
-        vec3 albedo;
-        float metallic;
-        vec3 normal;
-        float roughness;
-        unpack_color(texelFetch(in_color, coord, 0), albedo, metallic);
-        unpack_normal(texelFetch(in_normal, coord, 0), normal, roughness);
+        const GBufferData gbuffer = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 
         const vec3 world_pos = unproject(in_uv, depth, camera.inv_view_proj);
         const vec3 view_dir = normalize(camera.position - world_pos);
@@ -76,11 +71,11 @@ void main() {
             const vec3 light_dir = light.direction; // assume normalized
 
             const vec3 radiance = light.color;
-            irradiance += radiance * L0(normal, light_dir, view_dir, roughness, metallic, albedo);
+            irradiance += radiance * L0(light_dir, view_dir, gbuffer);
         }
 
 #ifdef USE_IBL
-        irradiance += eval_ibl(in_envmap, brdf_lut, normal, view_dir, roughness, metallic, albedo) * ambient_occlusion();
+        irradiance += eval_ibl(in_envmap, brdf_lut, view_dir, gbuffer) * ambient_occlusion();
 #endif
     }
 

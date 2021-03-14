@@ -233,6 +233,12 @@ vec2 intersect_sphere(vec3 center, float radius, vec3 origin, vec3 dir) {
     return vec2(-1.0, 0.0);
 }
 
+vec3 unpack_normal_map(vec2 normal) {
+    normal = normal * 2.0 - vec2(1.0);
+    return vec3(normal, 1.0 - sqrt(dot(normal, normal)));
+}
+
+
 
 // -------------------------------- SPECTRUM --------------------------------
 

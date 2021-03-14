@@ -61,6 +61,18 @@ vec3 eval_ibl(SH probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float ro
     return diffuse + specular;
 }
 
+vec3 eval_ibl(samplerCube probe, sampler2D brdf_lut, vec3 view_dir, GBufferData gbuffer) {
+    return eval_ibl(probe, brdf_lut, gbuffer.normal, view_dir, gbuffer.roughness, gbuffer.metallic, gbuffer.albedo);
+}
+
+vec3 eval_ibl(SH probe, sampler2D brdf_lut, vec3 view_dir, GBufferData gbuffer) {
+    return eval_ibl(probe, brdf_lut, gbuffer.normal, view_dir, gbuffer.roughness, gbuffer.metallic, gbuffer.albedo);
+}
+
+
+
+
+
 
 
 vec3 importance_sample_GGX(vec2 Xi, vec3 normal, float roughness) {
@@ -195,8 +207,6 @@ vec3 diffuse_convolution(sampler2D envmap, vec3 normal) {
     }
     return (acc / samples) * pi;
 }
-
-
 
 
 #endif // IBL_GLSL
