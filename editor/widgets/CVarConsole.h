@@ -33,7 +33,7 @@ namespace editor {
 
 class CVarConsole : public Widget {
 
-    editor_widget(CVarConsole)
+    editor_widget_open(CVarConsole)
 
     struct CVar {
         core::String full_name;
@@ -50,18 +50,18 @@ class CVarConsole : public Widget {
     public:
         CVarConsole();
 
-        void process_command(std::string_view command);
 
     protected:
         void on_gui() override;
 
+        void set_pattern(std::string_view str);
+        void process_command(std::string_view command);
+
     private:
-        core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
+        core::String _search_pattern;
 
         core::Vector<CVar> _cvars;
         core::Vector<Msg> _msgs;
-
-        bool _grab_focus = true;
 };
 
 }

@@ -104,11 +104,15 @@ static void explore(C& vars, const core::String& parent, std::string_view name, 
     });
 }
 
-
-
-
 CVarConsole::CVarConsole() : Widget(ICON_FA_STREAM " CVars") {
     explore(_cvars, "", "settings", app_settings);
+    set_pattern("");
+}
+
+
+void CVarConsole::set_pattern(std::string_view str) {
+    _search_pattern = str;
+    _search_pattern.grow(256, 0);
 }
 
 void CVarConsole::on_gui() {
@@ -128,46 +132,22 @@ void CVarConsole::on_gui() {
     }
     ImGui::EndChild();
 
-    if(_grab_focus) {
-        ImGui::SetKeyboardFocusHere();
-        _grab_focus = false;
-    }
-
-    ImGui::SetNextItemWidth(-24.0f);
-    const int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll;
-    if(ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size(), flags)) {
+    if(imgui::search_bar(_search_pattern.data(), _search_pattern.size())) {
         process_command(_search_pattern.data());
         _search_pattern[0] = 0;
-        _grab_focus = true;
     }
 
-    ImGui::SetItemDefaultFocus();
-
-    bool open_popup = ImGui::IsItemFocused();
-    if(open_popup && _search_pattern[0]) {
-        ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, 0.0f));
-        if(imgui::begin_suggestion_popup("##searchresults", &open_popup)) {
-            const std::string_view pattern = _search_pattern.data();
-
-            bool empty = true;
-            for(const auto& var : _cvars) {
-                if(var.full_name.find(pattern) != var.full_name.end()) {
-                    const std::string_view with_value = fmt("% = %", var.full_name, var.to_string());
-                    if(ImGui::MenuItem(with_value.data())) {
-                        const usize size = std::min(var.full_name.size(), _search_pattern.size() - 1);
-                        std::copy_n(var.full_name.data(), size + 1, _search_pattern.data());
-                        _grab_focus = true;
-                    }
-                    empty = false;
+    if(imgui::begin_suggestion_popup()) {
+        const std::string_view pattern = _search_pattern.data();
+        for(const auto& var : _cvars) {
+            if(var.full_name.find(pattern) != var.full_name.end()) {
+                const char* name = fmt_c_str("% = %", var.full_name, var.to_string());
+                if(imgui::suggestion_item(name)) {
+                    set_pattern(var.full_name);
                 }
             }
-
-            if(empty) {
-                ImGui::MenuItem("no result", nullptr, false, false);
-            }
-
-            imgui::end_suggestion_popup();
         }
+        imgui::end_suggestion_popup();
     }
 }
 

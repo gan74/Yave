@@ -128,26 +128,19 @@ void UiManager::draw_menu_bar() {
             const float search_bar_size = 200.0;
             const float offset = ImGui::GetContentRegionMax().x - (search_bar_size + margin);
 
-            bool show_results = false;
             if(offset > 0.0f) {
                 ImGui::Indent(offset);
                 ImGui::SetNextItemWidth(-margin);
-                ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size());
-                show_results = ImGui::IsItemFocused();
-            }
 
-            if(show_results) {
-                ImGui::NewLine();
-                ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, 0.0f));
-                if(imgui::begin_suggestion_popup("##searchresults", &show_results)) {
-                    bool empty = true;
+                imgui::search_bar(_search_pattern.data(), _search_pattern.size());
+
+                if(imgui::begin_suggestion_popup()) {
                     const std::regex regex(_search_pattern.data(), std::regex::icase);
                     for(const EditorAction* action : _actions) {
                         if(std::regex_search(action->name.data(), regex)) {
-                            empty = false;
-                            if(ImGui::MenuItem(action->name.data())) {
-                                _search_pattern[0] = 0;
+                            if(imgui::suggestion_item(action->name.data())) {
                                 action->function();
+                                _search_pattern[0] = 0;
                             }
                             if(!action->description.empty() && ImGui::IsItemHovered()) {
                                 ImGui::BeginTooltip();
@@ -157,9 +150,6 @@ void UiManager::draw_menu_bar() {
                         }
                     }
 
-                    if(empty) {
-                        ImGui::MenuItem("No results found", nullptr, false, false);
-                    }
 
                     imgui::end_suggestion_popup();
                 }
