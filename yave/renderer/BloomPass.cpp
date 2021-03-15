@@ -89,7 +89,7 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, con
 
     FrameGraphImageId bloomed = input;
     if(!pyramids.is_empty()) {
-        const auto region = framegraph.region("Pyramid merge");
+        const auto region = framegraph.region("Pryramid merge");
 
         bloomed = pyramids.last();
         auto merge = [&](FrameGraphPassBuilder builder,  FrameGraphImageId dst) {

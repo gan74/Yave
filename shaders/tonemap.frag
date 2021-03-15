@@ -51,18 +51,11 @@ vec3 tone_map(vec3 hdr, float exposure, uint mode) {
 }
 
 
-vec3 gamma_correction(vec3 color) {
-    const float gamma = 2.0;
-    const float inv_gamma = 1.0 / gamma;
-
-    return pow(color, vec3(inv_gamma));
-}
-
 void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
     const vec3 hdr = texelFetch(in_color, coord, 0).rgb;
 
     const vec3 tone_mapped = tone_map(hdr, params.exposure * exposure, tone_mapper);
-    out_color = vec4(gamma_correction(tone_mapped), 1.0);
+    out_color = vec4(linear_to_sRGB(tone_mapped), 1.0);
 }
 

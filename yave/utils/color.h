@@ -36,6 +36,35 @@ inline float exposure_to_EV100(float exposure) {
 }
 
 
+inline float sRGB_to_linear(float x) {
+    if(x <= 0.04045f) {
+        return x / 12.92f;
+    }
+    return std::pow((x + 0.055f) / 1.055f, 2.4f);
+}
+
+inline float linear_to_sRGB(float x) {
+    if(x <= 0.0031308f) {
+        return x * 12.92f;
+    }
+    return 1.055f * std::pow(x, 1.0f / 2.4f) - 0.055f;
+}
+
+inline math::Vec3 sRGB_to_linear(const math::Vec3& v) {
+    return math::Vec3(sRGB_to_linear(v.x()), sRGB_to_linear(v.y()), sRGB_to_linear(v.z()));
+}
+
+inline math::Vec3 linear_to_sRGB(const math::Vec3& v) {
+    return math::Vec3(linear_to_sRGB(v.x()), linear_to_sRGB(v.y()), linear_to_sRGB(v.z()));
+}
+
+inline math::Vec4 sRGB_to_linear(const math::Vec4& v) {
+    return math::Vec4(sRGB_to_linear(v.to<3>()), v.w());
+}
+
+inline math::Vec4 linear_to_sRGB(const math::Vec4& v) {
+    return math::Vec4(linear_to_sRGB(v.to<3>()), v.w());
+}
 
 
 // from imgui

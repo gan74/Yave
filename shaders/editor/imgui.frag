@@ -10,10 +10,12 @@ layout(set = 0, binding = 1) uniform Buffer {
     vec2 viewport_size;
 };
 
-//const float gamma = 2.2f;
 
 void main() {
     const vec4 color = v_color * texture(font_texture, v_uv);
+
+    // We can't do linear to sRGB conversion here, since this shader is used to render
+    // images that are already in sRGB in the UI
     out_color = color;
 }
 

@@ -255,6 +255,39 @@ vec3 intersection_point(vec4 plane, vec3 origin, vec3 dir) {
 }
 
 
+// -------------------------------- sRGB --------------------------------
+
+float sRGB_to_linear(float x) {
+    if(x <= 0.04045) {
+        return x / 12.92;
+    }
+    return pow((x + 0.055) / 1.055, 2.4);
+}
+
+float linear_to_sRGB(float x) {
+    if(x <= 0.0031308) {
+        return x * 12.92;
+    }
+    return 1.055 * pow(x, 1.0 / 2.4) - 0.055;
+}
+
+vec3 sRGB_to_linear(vec3 v) {
+    return vec3(sRGB_to_linear(v.r), sRGB_to_linear(v.g), sRGB_to_linear(v.b));
+}
+
+vec3 linear_to_sRGB(vec3 v) {
+    return vec3(linear_to_sRGB(v.r), linear_to_sRGB(v.g), linear_to_sRGB(v.b));
+}
+
+vec4 sRGB_to_linear(vec4 v) {
+    return vec4(sRGB_to_linear(v.rgb), v.a);
+}
+
+vec4 linear_to_sRGB(vec4 v) {
+    return vec4(linear_to_sRGB(v.rgb), v.a);
+}
+
+
 // -------------------------------- SPECTRUM --------------------------------
 
 vec3 spectrum(float x) {
