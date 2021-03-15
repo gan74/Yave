@@ -30,7 +30,10 @@ layout(location = 0) out vec4 out_color;
 // -------------------------------- SHADOWS --------------------------------
 
 float sample_shadow(sampler2DShadow shadow_map, vec2 uvs, float proj_z, float bias_scale) {
-    const float bias = fwidth(proj_z) * bias_scale;
+    // Using derivatives cause artefacting around big depth discontinuities
+    // const float bias = fwidth(proj_z) * bias_scale;
+
+    const float bias = 0.0;
     return texture(shadow_map, vec3(uvs, proj_z + bias)).x;
 }
 

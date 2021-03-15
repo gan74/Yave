@@ -238,6 +238,21 @@ vec3 unpack_normal_map(vec2 normal) {
     return vec3(normal, 1.0 - sqrt(dot(normal, normal)));
 }
 
+vec3 create_perpendicular(vec3 v) {
+    vec3 t = vec3(1, 0, 0);
+    if(abs(v.x) > 0.99) {
+        t = vec3(0, 1, 0);
+    }
+    return cross(t, v);
+}
+
+float intersection_distance(vec4 plane, vec3 origin, vec3 dir) {
+    return -(dot(origin, plane.xyz) + plane.w) / dot(dir, plane.xyz);
+}
+
+vec3 intersection_point(vec4 plane, vec3 origin, vec3 dir) {
+    return origin + intersection_distance(plane, origin, dir) * dir;
+}
 
 
 // -------------------------------- SPECTRUM --------------------------------
