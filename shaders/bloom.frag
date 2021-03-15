@@ -14,12 +14,15 @@ layout(set = 0, binding = 1) uniform BloomParams_Inline {
 layout(location = 0) in vec2 in_uv;
 
 void main() {
-    const vec3 color = texture(in_color, in_uv).rgb;
-    const float lum = luminance(color);
+    const vec3 hdr = texture(in_color, in_uv).rgb;
+    const float hdr_lum = luminance(hdr);
+
+    const float hdr_weight = 1.0 / (1.0 + hdr_lum);
+    const float lum = hdr_lum * hdr_weight;
 
     const float thresholded = max(0.0, (lum - threshold) * rev_threshold);
     const float bloom_factor = pow(thresholded, power);
 
-    out_color = vec4(color * bloom_factor, 1.0);
+    out_color = vec4(hdr * bloom_factor * hdr_weight, 1.0);
 }
 

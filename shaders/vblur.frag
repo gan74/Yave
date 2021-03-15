@@ -1,4 +1,4 @@
 #version 450
 
-#define V_BLUR
+#define BLUR_DIRECTION y
 #include "blur.glsl"

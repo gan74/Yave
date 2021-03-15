@@ -347,6 +347,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
 }
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
+    y_debug_assert(size.x() > 0 && size.y() > 0);
     FrameGraphMutableImageId res;
     res._id = _resources->create_resource_id();
     auto& r = _images[res];
@@ -356,6 +357,7 @@ FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const mat
 }
 
 FrameGraphMutableBufferId FrameGraph::declare_buffer(usize byte_size) {
+    y_debug_assert(byte_size > 0);
     FrameGraphMutableBufferId res;
     res._id = _resources->create_resource_id();
     auto& r = _buffers[res];

@@ -50,9 +50,9 @@ static bool is_clicked() {
 
 static auto standard_resolutions() {
     static std::array<std::pair<const char*, math::Vec2ui>, 3> resolutions = {{
-        {"1080p", {1920, 1080}},
-        {"1440p", {2560, 1440}},
-        {"4k",    {3840, 2160}},
+        {"1080p",   {1920, 1080}},
+        {"1440p",   {2560, 1440}},
+        {"4k",      {3840, 2160}}
     }};
 
     return resolutions;
@@ -211,11 +211,15 @@ void EngineView::draw_settings_menu() {
 
     if(ImGui::BeginMenu("Bloom")) {
         BloomSettings& settings = _settings.renderer_settings.bloom;
+        int pyramids = settings.pyramids;
 
         ImGui::SliderFloat("Power", &settings.bloom_power, 0.01f, 10.0f, "%.3f");
         ImGui::SliderFloat("Threshold", &settings.bloom_threshold, 0.0f, 1.0f);
+        ImGui::SliderInt("Pyramids", &pyramids, 1, 8);
         ImGui::Separator();
-        ImGui::SliderFloat("Blur sigma", &settings.blur.sigma, 0.01f, 2.0f);
+        ImGui::SliderFloat("Blur sigma", &settings.blur.sigma, 0.01f, 6.0f);
+
+        settings.pyramids = usize(pyramids);
 
         ImGui::EndMenu();
     }

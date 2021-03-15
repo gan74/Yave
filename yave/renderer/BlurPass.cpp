@@ -29,33 +29,37 @@ SOFTWARE.
 
 namespace yave {
 
-struct BlurWeights {
-    float weights[16];
-};
+static constexpr usize sample_count = 12;
 
-static BlurWeights compute_gaussian_weights(float sigma) {
-    BlurWeights weights;
+static std::array<float, sample_count> compute_gaussian_weights(float sigma) {
     const float denom = 2.0f * sigma * sigma;
-    for(usize i = 0; i != 16; ++i) {
-        weights.weights[i] = std::exp(-float(i * i) / denom);
+
+    float total = 0.0f;
+    std::array<float, sample_count> weights = {};
+    for(usize i = 0; i != weights.size(); ++i) {
+        const float w = std::exp(-float(i * i) / denom);
+        weights[i] = w;
+        total += i == 0 ? 2.0f * w : w;
+    }
+    for(usize i = 0; i != sample_count; ++i) {
+        weights[i] /= total;
     }
     return weights;
 }
 
-BlurPass BlurPass::create(FrameGraph& framegraph, FrameGraphImageId in_image, const BlurSettings& settings) {
+static BlurPass create_blur(FrameGraph& framegraph, FrameGraphImageId in_image, const math::Vec2ui& in_size, const math::Vec2ui& out_size, const BlurSettings& settings) {
     const auto region = framegraph.region("Blur");
 
-    const math::Vec2ui size = framegraph.image_size(in_image);
     const ImageFormat format = framegraph.image_format(in_image);
 
-    const BlurWeights weights = compute_gaussian_weights(settings.sigma);
+    const auto weights = compute_gaussian_weights(settings.sigma);
 
-    auto blur_sub_pass = [&](FrameGraphPassBuilder builder, FrameGraphImageId in, DeviceResources::MaterialTemplates mat) -> FrameGraphMutableImageId {
-        const auto blurred = builder.declare_image(format, size);
+    auto blur_sub_pass = [&](FrameGraphPassBuilder builder, const math::Vec2ui& target_size, FrameGraphImageId in, DeviceResources::MaterialTemplates mat) -> FrameGraphMutableImageId {
+        const auto blurred = builder.declare_image(format, target_size);
 
         builder.add_color_output(blurred);
         builder.add_uniform_input(in);
-        builder.add_inline_input(core::Span<float>(weights.weights));
+        builder.add_inline_input(weights);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             const auto* material = device_resources(recorder.device())[mat];
@@ -66,13 +70,25 @@ BlurPass BlurPass::create(FrameGraph& framegraph, FrameGraphImageId in_image, co
         return blurred;
     };
 
-    const FrameGraphMutableImageId h_blur = blur_sub_pass(framegraph.add_pass("Blur horizontal pass"), in_image, DeviceResources::HBlurMaterialTemplate);
-    const FrameGraphMutableImageId v_blur = blur_sub_pass(framegraph.add_pass("Blur vertical pass"), h_blur, DeviceResources::VBlurMaterialTemplate);
+    const math::Vec2ui v_size(in_size.x(), out_size.y());
+
+    const FrameGraphMutableImageId v_blur = blur_sub_pass(framegraph.add_pass("Blur vertical pass"), v_size, in_image, DeviceResources::VBlurMaterialTemplate);
+    const FrameGraphMutableImageId h_blur = blur_sub_pass(framegraph.add_pass("Blur horizontal pass"), out_size, v_blur, DeviceResources::HBlurMaterialTemplate);
 
     BlurPass pass;
-    pass.blurred = v_blur;
-
+    pass.blurred = h_blur;
     return pass;
+}
+
+
+BlurPass BlurPass::create(FrameGraph& framegraph, FrameGraphImageId in_image, const BlurSettings& settings) {
+    const math::Vec2ui in_size = framegraph.image_size(in_image);
+    return create_blur(framegraph, in_image, in_size, in_size, settings);
+}
+
+BlurPass BlurPass::create(FrameGraph& framegraph, FrameGraphImageId in_image, const math::Vec2ui& size, const BlurSettings& settings) {
+    const math::Vec2ui in_size = framegraph.image_size(in_image);
+    return create_blur(framegraph, in_image, in_size, size, settings);
 }
 
 }

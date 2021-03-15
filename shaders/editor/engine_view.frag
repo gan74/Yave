@@ -1,7 +1,7 @@
 #version 450
 
-#include "lib/utils.glsl"
-#include "lib/gbuffer.glsl"
+#include "../lib/utils.glsl"
+#include "../lib/gbuffer.glsl"
 
 
 layout(set = 0, binding = 0) uniform Target_Inline {
