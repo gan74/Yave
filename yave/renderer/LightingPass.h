@@ -29,7 +29,7 @@ namespace yave {
 
 struct LightingSettings {
     ShadowMapSettings shadow_settings;
-    bool use_compute_for_locals = false;
+    bool use_compute_for_locals = true;
 };
 
 struct LightingPass {

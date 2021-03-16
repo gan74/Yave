@@ -57,6 +57,9 @@ struct SpotLight {
     vec3 forward;
     float cos_angle;
 
+    vec3 encl_sphere_center;
+    float encl_sphere_radius;
+
     float angle_exp;
     uint shadow_map_index;
 

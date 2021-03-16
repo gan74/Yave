@@ -116,6 +116,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
 
 
+
 static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView& scene) {
     u32 count = 0;
     for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
@@ -157,6 +158,9 @@ static std::pair<u32, u32> fill_spot_light_buffer(
             transforms[count] = t.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
         }
 
+        const auto enclosing_sphere = l.enclosing_sphere();
+        const math::Vec3 encl_sphere_center = t.forward() * enclosing_sphere.dist_to_center + t.position();
+
         spots[count++] = {
             t.position(),
             l.radius(),
@@ -164,6 +168,8 @@ static std::pair<u32, u32> fill_spot_light_buffer(
             std::max(math::epsilon<float>, l.falloff()),
             t.forward(),
             std::cos(l.half_angle()),
+            encl_sphere_center,
+            enclosing_sphere.radius,
             std::max(math::epsilon<float>, l.angle_exponent()),
             shadow_index,
             {}

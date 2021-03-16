@@ -115,6 +115,8 @@ static void render_selection(RenderPassRecorder& recorder,
         return;
     }
 
+    constexpr bool draw_enclosing_sphere = false;
+
     core::Vector<math::Vec3> points;
     {
         const math::Vec3 z = tr->up();
@@ -127,6 +129,14 @@ static void render_selection(RenderPassRecorder& recorder,
         }
         if(const auto* l = world.component<SpotLightComponent>(selected)) {
             add_cone(points, tr->position(), x, y, l->radius(), l->half_angle());
+
+            if(draw_enclosing_sphere) {
+                const auto enclosing = l->enclosing_sphere();
+                const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center;
+                add_circle(points, center, x, y, enclosing.radius);
+                add_circle(points, center, y, z, enclosing.radius);
+                add_circle(points, center, z, x, enclosing.radius);
+            }
         }
     }
 

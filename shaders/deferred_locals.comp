@@ -113,7 +113,7 @@ void cull_spots() {
     const uvec2 range = dispatch_range(spot_count);
 
     for(uint i = range.x; i != range.y; ++i) {
-        if(is_inside(spot_lights[i].position, spot_lights[i].radius)) {
+        if(is_inside(spot_lights[i].encl_sphere_center, spot_lights[i].encl_sphere_radius)) {
             uint light_index = atomicAdd(tile_spot_count, 1) + tile_point_count;
             if(light_index >= max_tile_lights) {
                 break;

@@ -24,6 +24,18 @@ SOFTWARE.
 
 namespace yave {
 
+SpotLightComponent::EnclosingSphere SpotLightComponent::enclosing_sphere() const {
+    if(_half_angle > math::pi<float> * 0.25f) {
+        return {
+            std::cos(_half_angle) * _radius,
+            std::sin(_half_angle) * _radius
+        };
+    }
+    const float half_radius = _radius * 0.5f;
+    const float dist = half_radius / std::cos(_half_angle);
+    return {dist, dist};
+}
+
 math::Vec3& SpotLightComponent::color() {
     return _color;
 }
@@ -57,11 +69,11 @@ float SpotLightComponent::falloff() const {
 }
 
 float& SpotLightComponent::half_angle() {
-    return _angle;
+    return _half_angle;
 }
 
 float SpotLightComponent::half_angle() const {
-    return _angle;
+    return _half_angle;
 }
 
 float& SpotLightComponent::angle_exponent() {
@@ -71,7 +83,6 @@ float& SpotLightComponent::angle_exponent() {
 float SpotLightComponent::angle_exponent() const {
     return _angle_exp;
 }
-
 
 bool& SpotLightComponent::cast_shadow() {
     return _cast_shadow;
@@ -88,14 +99,6 @@ u32& SpotLightComponent::shadow_lod() {
 u32 SpotLightComponent::shadow_lod() const {
     return _shadow_lod;
 }
-
-/*math::Vec2& SpotLightComponent::depth_bias() {
-    return _depth_bias;
-}
-
-math::Vec2 SpotLightComponent::depth_bias() const {
-    return _depth_bias;
-}*/
 
 }
 

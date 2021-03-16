@@ -88,8 +88,12 @@ struct SpotLight {
     math::Vec3 forward;
     float cos_angle = 0.5f;
 
+    math::Vec3 encl_sphere_center;
+    float encl_sphere_radius;
+
     float angle_exp;
     u32 shadow_map_index = u32(-1);
+
     math::Vec2ui padding_0;
 };
 
