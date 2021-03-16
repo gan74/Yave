@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/assets/AssetPtr.h>
 
 #include <y/core/HashMap.h>
+#include <y/concurrent/StaticThreadPool.h>
 
 #include <mutex>
 
@@ -41,7 +42,9 @@ class ThumbmailRenderer : NonMovable, public DeviceLinked {
         TextureView view;
         GenericAssetPtr asset_ptr;
         std::function<Texture()> render = nullptr;
-        bool failed = false;
+        // To avoid futures...
+        concurrent::DependencyGroup done;
+        std::atomic<bool> failed = false;
     };
 
     public:
@@ -58,6 +61,7 @@ class ThumbmailRenderer : NonMovable, public DeviceLinked {
         AssetLoader* _loader = nullptr;
 
         std::mutex _lock;
+        concurrent::WorkerThread _render_thread;
 };
 
 }

@@ -43,6 +43,7 @@ class DependencyGroup {
     public:
         DependencyGroup() = default;
 
+        bool is_empty() const;
         bool is_ready() const;
         bool is_expired() const;
         u32 dependency_count() const;
@@ -93,9 +94,9 @@ class StaticThreadPool : NonMovable {
 
         template<typename F, typename R = decltype(std::declval<F>()())>
         std::future<R> schedule_with_future(F&& func, DependencyGroup* on_done = nullptr, DependencyGroup wait_for = DependencyGroup()) {
-            struct { mutable std::promise<R> promise; } box;
-            auto future = box.promise.get_future();
-            schedule([b = std::move(box), f = y_fwd(func)]() { b.promise.set_value(f()); }, on_done, wait_for);
+            auto promise = std::make_shared<std::promise<R>>();
+            auto future = promise->get_future();
+            schedule(std::move([p = std::move(promise), f = y_fwd(func)]() { p->set_value(f()); }), on_done, wait_for);
             return future;
         }
 

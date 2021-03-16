@@ -56,19 +56,6 @@ SOFTWARE.
 
 namespace editor {
 
-static Texture render_texture(const AssetPtr<Texture>& tex) {
-    y_profile();
-
-    CmdBufferRecorder recorder = create_disposable_cmd_buffer(app_device());
-    StorageTexture out(app_device(), ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
-    {
-        const DescriptorSet set(app_device(), {Descriptor(*tex, SamplerType::LinearClamp), Descriptor(StorageView(out))});
-        recorder.dispatch_size(device_resources(app_device())[DeviceResources::CopyProgram],  out.size(), {set});
-    }
-    std::move(recorder).submit<SyncPolicy::Sync>();
-    return out;
-}
-
 static Texture render_world(const ecs::EntityWorld& world) {
     y_profile();
 
@@ -151,6 +138,8 @@ static math::Transform<> center_to_camera(const AABB& box) {
 }
 
 static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) {
+    y_profile();
+
     ecs::EntityWorld world;
     fill_world(world);
 
@@ -164,6 +153,8 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
 }
 
 static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
+    y_profile();
+
     ecs::EntityWorld world;
     fill_world(world);
 
@@ -178,6 +169,20 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
 
     return render_world(world);
 }
+
+static Texture render_texture(const AssetPtr<Texture>& tex) {
+    y_profile();
+
+    CmdBufferRecorder recorder = create_disposable_cmd_buffer(app_device());
+    StorageTexture out(app_device(), ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
+    {
+        const DescriptorSet set(app_device(), {Descriptor(*tex, SamplerType::LinearClamp), Descriptor(StorageView(out))});
+        recorder.dispatch_size(device_resources(app_device())[DeviceResources::CopyProgram],  out.size(), {set});
+    }
+    std::move(recorder).submit<SyncPolicy::Sync>();
+    return out;
+}
+
 
 
 ThumbmailRenderer::ThumbmailRenderer(AssetLoader& loader) : DeviceLinked(loader.device()), _loader(&loader) {
@@ -202,13 +207,17 @@ const TextureView* ThumbmailRenderer::thumbmail(AssetId id) {
 
     if(data->failed) {
         return nullptr;
-    } else if(data->view.device()) {
-        return &data->view;
     } else if(data->asset_ptr.is_loaded()) {
-        data->texture = data->render();
-        data->render = []() -> Texture { y_fatal("Thumbmail already rendered"); };
-        if(!(data->failed = data->texture.is_null())) {
-            data->view = data->texture;
+        if(data->done.is_empty()) {
+            y_profile_zone("schedule render");
+            _render_thread.schedule([d = data.get()]() {
+                d->texture = d->render();
+                if(!(d->failed = d->texture.is_null())) {
+                    d->view = d->texture;
+                }
+            }, &data->done);
+        } else if(data->done.is_ready() && !data->failed) {
+            return &data->view;
         }
     }
 

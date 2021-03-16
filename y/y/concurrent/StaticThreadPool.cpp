@@ -28,6 +28,9 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
+bool DependencyGroup::is_empty() const {
+    return _counter == nullptr;
+}
 
 bool DependencyGroup::is_ready() const {
     return dependency_count() == 0;
@@ -101,7 +104,7 @@ void StaticThreadPool::process_until_empty() {
 
 void StaticThreadPool::schedule(Func&& func, DependencyGroup* on_done, DependencyGroup wait_for) {
     {
-        const std::unique_lock lock(_shared_data.lock);
+        const auto lock = std::unique_lock(_shared_data.lock);
         if(on_done) {
             on_done->add_dependency();
             _shared_data.queue.emplace_back(std::move(func), std::move(wait_for), *on_done);
