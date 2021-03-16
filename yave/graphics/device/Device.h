@@ -53,6 +53,7 @@ class Device : NonMovable {
         Device(Instance& instance, PhysicalDevice device);
         ~Device();
 
+
         const PhysicalDevice& physical_device() const;
         const Instance& instance() const;
 
@@ -82,6 +83,10 @@ class Device : NonMovable {
         static VkPhysicalDeviceFeatures required_device_features();
         static VkPhysicalDeviceVulkan11Features required_device_features_1_1();
         static VkPhysicalDeviceVulkan12Features required_device_features_1_2();
+
+        static bool has_required_features(const PhysicalDevice& physical);
+        static bool has_required_properties(const PhysicalDevice& physical);
+
 
         const DebugUtils* debug_utils() const;
         const RayTracing* ray_tracing() const;

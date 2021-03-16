@@ -137,7 +137,7 @@ if(YAVE_BUILD_YAVE)
         target_link_libraries(yave stdc++fs)
     endif()
 
-    add_custom_target(shaders COMMAND glslc -c ${SHADER_FILES})
+    add_custom_target(shaders COMMAND glslc -c --target-env=vulkan1.2 ${SHADER_FILES})
     add_dependencies(yave shaders)
 endif()
 

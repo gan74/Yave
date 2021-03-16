@@ -34,10 +34,12 @@ class PhysicalDevice {
         VkPhysicalDevice vk_physical_device() const;
 
         const VkPhysicalDeviceProperties& vk_properties() const;
+        const VkPhysicalDeviceVulkan11Properties& vk_properties_1_1() const;
+        const VkPhysicalDeviceVulkan12Properties& vk_properties_1_2() const;
+
         const VkPhysicalDeviceInlineUniformBlockPropertiesEXT& vk_uniform_block_properties() const;
 
         const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
-        const VkPhysicalDeviceFeatures& vk_supported_features() const;
 
         bool is_discrete() const;
         usize total_device_memory() const;
@@ -55,11 +57,13 @@ class PhysicalDevice {
         PhysicalDevice(VkPhysicalDevice device);
 
         VkPhysicalDevice _device = {};
-        VkPhysicalDeviceProperties _properties = {};
         VkPhysicalDeviceMemoryProperties _memory_properties = {};
 
-        VkPhysicalDeviceFeatures _supported_features = {};
+        VkPhysicalDeviceProperties2 _properties = vk_struct();
+        VkPhysicalDeviceVulkan11Properties _properties_1_1 = vk_struct();
+        VkPhysicalDeviceVulkan12Properties _properties_1_2 = vk_struct();
 
+        VkPhysicalDeviceFeatures2 _supported_features = vk_struct();
         VkPhysicalDeviceVulkan11Features _supported_features_1_1 = vk_struct();
         VkPhysicalDeviceVulkan12Features _supported_features_1_2 = vk_struct();
 

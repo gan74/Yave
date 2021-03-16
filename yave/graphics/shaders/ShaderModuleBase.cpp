@@ -60,9 +60,7 @@ static ShaderType module_type(const spirv_cross::Compiler& compiler) {
             return ShaderType::Fragment;
         case spv::ExecutionModelGeometry:
             return ShaderType::Geomery;
-
         case spv::ExecutionModelGLCompute:
-        case spv::ExecutionModelKernel:
             return ShaderType::Compute;
 
         default:

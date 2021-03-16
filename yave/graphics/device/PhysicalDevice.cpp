@@ -45,20 +45,18 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
     vkGetPhysicalDeviceMemoryProperties(_device, &_memory_properties);
 
     {
-        VkPhysicalDeviceFeatures2 supported_features = vk_struct();
-        supported_features.pNext = &_supported_features_1_1;
+        _supported_features.pNext = &_supported_features_1_1;
         _supported_features_1_1.pNext = &_supported_features_1_2;
 
-        vkGetPhysicalDeviceFeatures2(_device, &supported_features);
-        _supported_features = supported_features.features;
+        vkGetPhysicalDeviceFeatures2(_device, &_supported_features);
     }
 
     {
-        VkPhysicalDeviceProperties2 properties = vk_struct();
-        properties.pNext = &_uniform_blocks_properties;
+        _properties.pNext = &_uniform_blocks_properties;
+        _uniform_blocks_properties.pNext = &_properties_1_1;
+        _properties_1_1.pNext = &_properties_1_2;
 
-        vkGetPhysicalDeviceProperties2(_device, &properties);
-        _properties = properties.properties;
+        vkGetPhysicalDeviceProperties2(_device, &_properties);
     }
 }
 
@@ -67,7 +65,15 @@ VkPhysicalDevice PhysicalDevice::vk_physical_device() const {
 }
 
 const VkPhysicalDeviceProperties& PhysicalDevice::vk_properties() const {
-    return _properties;
+    return _properties.properties;
+}
+
+const VkPhysicalDeviceVulkan11Properties& PhysicalDevice::vk_properties_1_1() const {
+    return _properties_1_1;
+}
+
+const VkPhysicalDeviceVulkan12Properties& PhysicalDevice::vk_properties_1_2() const {
+    return _properties_1_2;
 }
 
 const VkPhysicalDeviceInlineUniformBlockPropertiesEXT& PhysicalDevice::vk_uniform_block_properties() const {
@@ -79,7 +85,7 @@ const VkPhysicalDeviceMemoryProperties& PhysicalDevice::vk_memory_properties() c
 }
 
 bool PhysicalDevice::is_discrete() const {
-    return _properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    return vk_properties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 }
 
 usize PhysicalDevice::total_device_memory() const {
@@ -93,7 +99,7 @@ usize PhysicalDevice::total_device_memory() const {
 }
 
 bool PhysicalDevice::support_features(const VkPhysicalDeviceFeatures& features) const {
-    return support_all_features(features, _supported_features);
+    return support_all_features(features, _supported_features.features);
 }
 
 bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan11Features& features) const {

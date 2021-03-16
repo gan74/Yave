@@ -1,7 +1,6 @@
 #include "lib/utils.glsl"
 #include "lib/gbuffer.glsl"
 #include "lib/ibl.glsl"
-
 // -------------------------------- DEFINES --------------------------------
 
 #ifdef POINT_LIGHT

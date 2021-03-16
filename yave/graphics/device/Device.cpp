@@ -39,18 +39,13 @@ SOFTWARE.
 namespace yave {
 
 static float device_score(const PhysicalDevice& device) {
-    if(!device.support_features(Device::required_device_features())) {
+    if(!Device::has_required_features(device)) {
         return -std::numeric_limits<float>::max();
     }
 
-    if(!device.support_features(Device::required_device_features_1_1())) {
+    if(!Device::has_required_properties(device)) {
         return -std::numeric_limits<float>::max();
     }
-
-    if(!device.support_features(Device::required_device_features_1_2())) {
-        return -std::numeric_limits<float>::max();
-    }
-
 
     const usize heap_size = device.total_device_memory() / (1024 * 1024);
     const float heap_score = float(heap_size) / float(heap_size + 8 * 1024);
@@ -155,7 +150,6 @@ static VkDevice create_device(
 
     y_profile();
 
-    Y_TODO(Use Vulkan 1.1 ext stuff)
     auto extensions = core::vector_with_capacity<const char*>(4);
     extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -168,14 +162,12 @@ static VkDevice create_device(
 #else
     log_msg(fmt("% disabled", RayTracing::extension_name()), Log::Warning);
 #endif
-
     const auto required_features = Device::required_device_features();
     auto required_features_1_1 = Device::required_device_features_1_1();
     auto required_features_1_2 = Device::required_device_features_1_2();
 
-    y_always_assert(physical.support_features(required_features), "Device doesn't support required features");
-    y_always_assert(physical.support_features(required_features_1_1), "Device doesn't support required features for Vulkan 1.1");
-    y_always_assert(physical.support_features(required_features_1_2), "Device doesn't support required features for Vulkan 1.2");
+    y_always_assert(Device::has_required_features(physical), "Device doesn't support required features");
+    y_always_assert(Device::has_required_properties(physical), "Device doesn't support required properties");
 
     const std::array queue_priorityies = {1.0f, 0.0f};
 
@@ -434,6 +426,32 @@ VkPhysicalDeviceVulkan12Features Device::required_device_features_1_2() {
     }
 
     return required;
+}
+
+bool Device::has_required_features(const PhysicalDevice& physical) {
+    if(!physical.support_features(Device::required_device_features())) {
+        return false;
+    }
+
+    if(!physical.support_features(Device::required_device_features_1_1())) {
+        return false;
+    }
+
+    if(!physical.support_features(Device::required_device_features_1_2())) {
+        return false;
+    }
+
+    return true;
+}
+
+bool Device::has_required_properties(const PhysicalDevice &physical) {
+    const auto& p11 = physical.vk_properties_1_1();
+
+    bool ok = true;
+
+    ok &= p11.subgroupQuadOperationsInAllStages;
+
+    return ok;
 }
 
 }

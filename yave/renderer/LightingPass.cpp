@@ -61,89 +61,6 @@ static const IBLProbe* find_probe(DevicePtr dptr, const ecs::EntityWorld& world)
     return device_resources(dptr).empty_probe().get();
 }
 
-static void local_lights_pass_compute(FrameGraph& framegraph,
-                              FrameGraphMutableImageId lit,
-                              const GBufferPass& gbuffer,
-                              const ShadowMapPass& shadow_pass) {
-
-    const bool render_shadows = true;
-
-    const math::Vec2ui size = framegraph.image_size(lit);
-    const SceneView& scene = gbuffer.scene_pass.scene_view;
-
-    FrameGraphPassBuilder builder = framegraph.add_pass("Lighting pass");
-
-    const auto point_buffer = builder.declare_typed_buffer<uniform::PointLight>(max_point_lights);
-    const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
-    const auto shadow_buffer = builder.declare_typed_buffer<uniform::ShadowMapParams>(max_shadow_lights);
-
-    builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(shadow_pass.shadow_map, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
-    builder.add_storage_input(point_buffer, 0, PipelineStage::ComputeBit);
-    builder.add_storage_input(spot_buffer, 0, PipelineStage::ComputeBit);
-    builder.add_storage_input(shadow_buffer, 0, PipelineStage::ComputeBit);
-    builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
-
-    builder.map_update(point_buffer);
-    builder.map_update(spot_buffer);
-    builder.map_update(shadow_buffer);
-
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        struct PushData {
-            u32 point_count;
-            u32 spot_count;
-            u32 shadow_count;
-        } push_data {0, 0, 0};
-
-        {
-            TypedMapping<uniform::PointLight> points = self->resources().mapped_buffer(point_buffer);
-            for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
-                points[push_data.point_count++] = {
-                    t.position(),
-                    l.radius(),
-                    l.color() * l.intensity(),
-                    std::max(math::epsilon<float>, l.falloff())
-                };
-            }
-        }
-
-        {
-            TypedMapping<uniform::SpotLight> spots = self->resources().mapped_buffer(spot_buffer);
-            TypedMapping<uniform::ShadowMapParams> shadows = self->resources().mapped_buffer(shadow_buffer);
-            for(auto spot : scene.world().view(SpotLightArchetype())) {
-                auto [t, l] = spot.components();
-
-                u32 shadow_index = u32(-1);
-                if(l.cast_shadow() && render_shadows) {
-                    if(const auto it = shadow_pass.sub_passes->lights.find(spot.id().as_u64()); it != shadow_pass.sub_passes->lights.end()) {
-                        shadows[shadow_index = push_data.shadow_count++] = it->second;
-                    }
-                }
-
-                spots[push_data.spot_count++] = {
-                    t.position(),
-                    l.radius(),
-                    l.color() * l.intensity(),
-                    std::max(math::epsilon<float>, l.falloff()),
-                    t.forward(),
-                    std::cos(l.half_angle()),
-                    std::max(math::epsilon<float>, l.angle_exponent()),
-                    shadow_index,
-                    {}
-                };
-            }
-        }
-
-        if(push_data.point_count || push_data.spot_count) {
-            const auto& program = device_resources(recorder.device())[DeviceResources::DeferredLocalsProgram];
-            recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, push_data);
-        }
-    });
-}
-
 
 static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              const GBufferPass& gbuffer,
@@ -169,12 +86,9 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
     builder.add_storage_input(directional_buffer, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(light_count_buffer, 0, PipelineStage::FragmentBit);
-
     builder.add_color_output(lit);
-
     builder.map_update(directional_buffer);
     builder.map_update(light_count_buffer);
-
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         u32 light_count = 0;
         TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
@@ -197,6 +111,116 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     return lit;
 }
 
+
+
+
+
+
+static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView& scene) {
+    u32 count = 0;
+    for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
+        points[count++] = {
+            t.position(),
+            l.radius(),
+            l.color() * l.intensity(),
+            std::max(math::epsilon<float>, l.falloff())
+        };
+    }
+    return count;
+}
+
+template<bool Transforms>
+static std::pair<u32, u32> fill_spot_light_buffer(
+        uniform::SpotLight* spots,
+        uniform::ShadowMapParams* shadows,
+        math::Transform<>* transforms,
+        const SceneView& scene, bool render_shadows,
+        const ShadowMapPass& shadow_pass) {
+
+    y_debug_assert(Transforms == !!transforms);
+
+    u32 count = 0;
+    u32 shadow_count = 0;
+    for(auto spot : scene.world().view(SpotLightArchetype())) {
+        auto [t, l] = spot.components();
+
+        u32 shadow_index = u32(-1);
+        if(l.cast_shadow() && render_shadows) {
+            if(const auto it = shadow_pass.sub_passes->lights.find(spot.id().as_u64()); it != shadow_pass.sub_passes->lights.end()) {
+                shadows[shadow_index = shadow_count++] = it->second;
+            }
+        }
+
+        if constexpr(Transforms) {
+            const float geom_radius = l.radius() * 1.1f;
+            const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
+            transforms[count] = t.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
+        }
+
+        spots[count++] = {
+            t.position(),
+            l.radius(),
+            l.color() * l.intensity(),
+            std::max(math::epsilon<float>, l.falloff()),
+            t.forward(),
+            std::cos(l.half_angle()),
+            std::max(math::epsilon<float>, l.angle_exponent()),
+            shadow_index,
+            {}
+        };
+    }
+
+    return {count, shadow_count};
+}
+
+static void local_lights_pass_compute(FrameGraph& framegraph,
+                              FrameGraphMutableImageId lit,
+                              const GBufferPass& gbuffer,
+                              const ShadowMapPass& shadow_pass) {
+
+    const bool render_shadows = true;
+
+    const math::Vec2ui size = framegraph.image_size(lit);
+    const SceneView& scene = gbuffer.scene_pass.scene_view;
+
+    FrameGraphPassBuilder builder = framegraph.add_pass("Lighting pass");
+
+    const auto point_buffer = builder.declare_typed_buffer<uniform::PointLight>(max_point_lights);
+    const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
+    const auto shadow_buffer = builder.declare_typed_buffer<uniform::ShadowMapParams>(max_shadow_lights);
+
+    builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_storage_input(point_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_storage_input(spot_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_storage_input(shadow_buffer, 0, PipelineStage::ComputeBit);
+    builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
+    builder.map_update(point_buffer);
+    builder.map_update(spot_buffer);
+    builder.map_update(shadow_buffer);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        TypedMapping<uniform::PointLight> points = self->resources().mapped_buffer(point_buffer);
+        TypedMapping<uniform::SpotLight> spots = self->resources().mapped_buffer(spot_buffer);
+        TypedMapping<uniform::ShadowMapParams> shadows = self->resources().mapped_buffer(shadow_buffer);
+
+        const u32 point_count = fill_point_light_buffer(points.data(), scene);
+        const auto [spot_count, shadow_count] = fill_spot_light_buffer<false>(spots.data(), shadows.data(), nullptr, scene, render_shadows, shadow_pass);
+
+        struct PushData {
+            u32 point_count;
+            u32 spot_count;
+            u32 shadow_count;
+        };
+
+        if(point_count || spot_count) {
+            const auto& program = device_resources(recorder.device())[DeviceResources::DeferredLocalsProgram];
+            recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, PushData{point_count, spot_count, shadow_count});
+        }
+    });
+}
 
 static void local_lights_pass(FrameGraph& framegraph,
                               FrameGraphMutableImageId lit,
@@ -221,28 +245,12 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
-
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);
-
         builder.map_update(point_buffer);
-
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            usize point_count = 0;
-
-            {
-                TypedMapping<uniform::PointLight> points = self->resources().mapped_buffer(point_buffer);
-                for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
-                    points[point_count] = {
-                        t.position(),
-                        l.radius(),
-                        l.color() * l.intensity(),
-                        std::max(math::epsilon<float>, l.falloff())
-                    };
-
-                    ++point_count;
-                }
-            }
+            TypedMapping<uniform::PointLight> points = self->resources().mapped_buffer(point_buffer);
+            const u32 point_count = fill_point_light_buffer(points.data(), scene);
 
             if(!point_count) {
                 return;
@@ -278,49 +286,15 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.add_attrib_input(transform_buffer);
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);
-
         builder.map_update(spot_buffer);
         builder.map_update(transform_buffer);
         builder.map_update(shadow_buffer);
-
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            usize spot_count = 0;
-            usize shadow_count = 0;
+            TypedMapping<uniform::SpotLight> spots = self->resources().mapped_buffer(spot_buffer);
+            TypedMapping<uniform::ShadowMapParams> shadows = self->resources().mapped_buffer(shadow_buffer);
+            TypedMapping<math::Transform<>> transforms = self->resources().mapped_buffer(transform_buffer);
 
-            {
-                TypedMapping<uniform::SpotLight> spots = self->resources().mapped_buffer(spot_buffer);
-                TypedMapping<math::Transform<>> transforms = self->resources().mapped_buffer(transform_buffer);
-                TypedMapping<uniform::ShadowMapParams> shadow = self->resources().mapped_buffer(shadow_buffer);
-
-                for(auto spot : scene.world().view(SpotLightArchetype())) {
-                    auto [t, l] = spot.components();
-
-                    u32 shadow_index = u32(-1);
-                    if(l.cast_shadow() && render_shadows) {
-                        if(const auto it = shadow_pass.sub_passes->lights.find(spot.id().as_u64()); it != shadow_pass.sub_passes->lights.end()) {
-                            shadow[shadow_index = shadow_count++] = it->second;
-                        }
-                    }
-
-                    const float geom_radius = l.radius() * 1.1f;
-                    const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
-                    transforms[spot_count] = t.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
-
-                    spots[spot_count] = {
-                        t.position(),
-                        l.radius(),
-                        l.color() * l.intensity(),
-                        std::max(math::epsilon<float>, l.falloff()),
-                        t.forward(),
-                        std::cos(l.half_angle()),
-                        std::max(math::epsilon<float>, l.angle_exponent()),
-                        shadow_index,
-                        {}
-                    };
-
-                    ++spot_count;
-                }
-            }
+            const auto [spot_count, shadow_count] = fill_spot_light_buffer<true>(spots.data(), shadows.data(), transforms.data(), scene, render_shadows, shadow_pass);
 
             if(!spot_count) {
                 return;

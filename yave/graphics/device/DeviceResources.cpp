@@ -94,7 +94,6 @@ static constexpr const char* spirv_names[] = {
         "equirec_convolution.comp",
         "cubemap_convolution.comp",
         "brdf_integrator.comp",
-        "deferred_ambient.comp",
         "deferred_locals.comp",
         "linearize_depth.comp",
         "ssao.comp",
