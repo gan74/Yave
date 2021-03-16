@@ -36,7 +36,6 @@ SOFTWARE.
 #include <yave/graphics/images/ImageData.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/FileSystemModel.h>
-#include <yave/entities/entities.h>
 #include <yave/ecs/EntityWorld.h>
 
 #include <y/io2/Buffer.h>

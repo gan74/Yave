@@ -37,7 +37,6 @@ SOFTWARE.
 #include <yave/meshes/StaticMesh.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/meshes/MeshData.h>
-#include <yave/entities/entities.h>
 
 
 Y_TODO(merge with scene sub pass?)
@@ -67,7 +66,7 @@ static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pa
     recorder.bind_attrib_buffers({}, {transforms, ids});
     recorder.bind_material(resources()[EditorResources::IdMaterialTemplate], {pass->descriptor_sets()[0]});
 
-    for(auto ent : world.view(StaticMeshArchetype())) {
+    for(auto ent : world.view<TransformableComponent, StaticMeshComponent>()) {
         const auto& [tr, mesh] = ent.components();
         transform_mapping[index] = tr.transform();
         id_mapping[index] = ent.id().index();

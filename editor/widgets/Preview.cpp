@@ -46,7 +46,6 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/assets/AssetLoader.h>
-#include <yave/entities/entities.h>
 #include <yave/utils/color.h>
 
 
@@ -124,18 +123,18 @@ void Preview::reset_world() {
     _view = SceneView(_world.get());
 
     {
-        const ecs::EntityId sky_id = _world->create_entity(ecs::StaticArchetype<SkyLightComponent>());
+        const ecs::EntityId sky_id = _world->create_entity<SkyLightComponent>();
         _world->component<SkyLightComponent>(sky_id)->probe() = _ibl_probe
             ? _ibl_probe
             : device_resources(app_device()).ibl_probe();
     }
 
     if(!_mesh.is_empty() && !_material.is_empty()) {
-        const ecs::EntityId id = _world->create_entity(StaticMeshArchetype());
+        const ecs::EntityId id = _world->create_entity<StaticMeshComponent>();
         *_world->component<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
 
         const float radius = _mesh->radius();
-        _cam_distance = std::sqrt(3 * radius * radius) * 1.5f;
+        _cam_distance = std::sqrt(3.0f * radius * radius) * 1.5f;
     }
 }
 

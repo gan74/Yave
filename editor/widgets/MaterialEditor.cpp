@@ -28,7 +28,6 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageData.h>
 #include <yave/assets/AssetLoader.h>
-#include <yave/entities/entities.h>
 #include <yave/utils/color.h>
 
 #include <y/io2/Buffer.h>

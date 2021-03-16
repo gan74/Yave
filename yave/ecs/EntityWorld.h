@@ -92,7 +92,7 @@ class EntityWorld {
 
 
         template<typename... Args>
-        EntityId create_entity(StaticArchetype<Args...>) {
+        EntityId create_entity(StaticArchetype<Args...> = {}) {
             const EntityId id = create_entity();
             add_components<Args...>(id);
             return id;

@@ -27,7 +27,6 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 #include <yave/components/SpotLightComponent.h>
-#include <yave/entities/entities.h>
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
@@ -97,7 +96,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
     {
         const math::Vec2 uv_mul = 1.0f / math::Vec2(shadow_map_size);
-        for(auto spot : world.view(SpotLightArchetype())) {
+        for(auto spot : world.view<TransformableComponent, SpotLightComponent>()) {
             auto [t, l] = spot.components();
             if(!l.cast_shadow()) {
                 continue;

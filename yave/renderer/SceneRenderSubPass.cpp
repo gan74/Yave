@@ -31,7 +31,6 @@ SOFTWARE.
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
-#include <yave/entities/entities.h>
 
 
 namespace yave {
@@ -66,7 +65,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 
     recorder.bind_attrib_buffers({}, {transforms});
 
-    for(const auto& [tr, me] : world.view(StaticMeshArchetype()).components()) {
+    for(const auto& [tr, me] : world.view<TransformableComponent, StaticMeshComponent>().components()) {
         transform_mapping[index] = tr.transform();
         me.render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
         ++index;

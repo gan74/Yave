@@ -35,7 +35,6 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
-#include <yave/entities/entities.h>
 
 #include <yave/meshes/StaticMesh.h>
 #include <yave/graphics/images/IBLProbe.h>
@@ -92,7 +91,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         u32 light_count = 0;
         TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
-        for(auto [l] : scene.world().view(DirectionalLightArchetype()).components()) {
+        for(auto [l] : scene.world().view<DirectionalLightComponent>().components()) {
             mapping[light_count++] = {
                     -l.direction().normalized(),
                     0,
@@ -119,7 +118,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
 static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView& scene) {
     u32 count = 0;
-    for(auto [t, l] : scene.world().view(PointLightArchetype()).components()) {
+    for(auto [t, l] : scene.world().view<TransformableComponent, PointLightComponent>().components()) {
         points[count++] = {
             t.position(),
             l.radius(),
@@ -142,7 +141,7 @@ static std::pair<u32, u32> fill_spot_light_buffer(
 
     u32 count = 0;
     u32 shadow_count = 0;
-    for(auto spot : scene.world().view(SpotLightArchetype())) {
+    for(auto spot : scene.world().view<TransformableComponent, SpotLightComponent>()) {
         auto [t, l] = spot.components();
 
         u32 shadow_index = u32(-1);

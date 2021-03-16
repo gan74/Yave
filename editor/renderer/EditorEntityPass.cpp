@@ -38,7 +38,6 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
-#include <yave/entities/entities.h>
 
 #include <external/imgui/yave_imgui.h>
 

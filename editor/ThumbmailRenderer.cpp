@@ -46,7 +46,6 @@ SOFTWARE.
 #include <yave/ecs/EntityPrefab.h>
 #include <yave/ecs/EntityWorld.h>
 
-#include <yave/entities/entities.h>
 #include <yave/utils/color.h>
 #include <yave/utils/entities.h>
 
@@ -110,13 +109,13 @@ static void fill_world(ecs::EntityWorld& world) {
     const float intensity = 1.0f;
 
     {
-        const ecs::EntityId light_id = world.create_entity(DirectionalLightArchetype());
+        const ecs::EntityId light_id = world.create_entity<DirectionalLightComponent>();
         DirectionalLightComponent* light_comp = world.component<DirectionalLightComponent>(light_id);
         light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
         light_comp->intensity() = 3.0f * intensity;
     }
     {
-        const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+        const ecs::EntityId light_id = world.create_entity<PointLightComponent>();
         world.component<TransformableComponent>(light_id)->position() = math::Vec3(0.75f, -0.5f, 0.5f);
         PointLightComponent* light = world.component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(2500.0f);
@@ -125,7 +124,7 @@ static void fill_world(ecs::EntityWorld& world) {
         light->radius() = 2.0f;
     }
     {
-        const ecs::EntityId light_id = world.create_entity(PointLightArchetype());
+        const ecs::EntityId light_id = world.create_entity<PointLightComponent>();
         world.component<TransformableComponent>(light_id)->position() = math::Vec3(-0.75f, -0.5f, 0.5f);
         PointLightComponent* light = world.component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(10000.0f);
@@ -135,7 +134,7 @@ static void fill_world(ecs::EntityWorld& world) {
     }
 
     {
-        const ecs::EntityId sky_id = world.create_entity(ecs::StaticArchetype<SkyLightComponent>());
+        const ecs::EntityId sky_id = world.create_entity<SkyLightComponent>();
         world.component<SkyLightComponent>(sky_id)->probe() = device_resources(app_device()).ibl_probe();
     }
 
@@ -156,7 +155,7 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
     fill_world(world);
 
     {
-        const ecs::EntityId entity = world.create_entity(StaticMeshArchetype());
+        const ecs::EntityId entity = world.create_entity<StaticMeshComponent>();
         *world.component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, mat);
         world.component<TransformableComponent>(entity)->transform() = center_to_camera(mesh->aabb());
     }

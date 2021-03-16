@@ -27,15 +27,13 @@ SOFTWARE.
 #include <editor/widgets/AssetSelector.h>
 #include <editor/components/EditorComponent.h>
 
-#include <yave/entities/entities.h>
-#include <yave/utils/FileSystemModel.h>
-
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 
+#include <yave/utils/FileSystemModel.h>
 #include <yave/assets/AssetLoader.h>
 
 #include <y/utils/log.h>
@@ -106,11 +104,11 @@ void EntityView::on_gui() {
         ImGui::Separator();
 
         if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add Point light")) {
-            ent = w.create_named_entity("Point light", PointLightArchetype());
+            ent = w.create_named_entity("Point light", ecs::StaticArchetype<PointLightComponent>());
         }
 
         if(ImGui::MenuItem(ICON_FA_VIDEO " Add Spot light")) {
-            ent = w.create_named_entity("Spot light", SpotLightArchetype());
+            ent = w.create_named_entity("Spot light", ecs::StaticArchetype<SpotLightComponent>());
         }
 
         if(ent.is_valid()) {
