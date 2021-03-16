@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include <yave/graphics/device/Device.h>
 #include <y/concurrent/concurrent.h>
+#include <y/reflect/dyn.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -89,6 +90,13 @@ static Device create_device(Instance& instance) {
     y_profile();
     return Device(instance);
 }
+
+struct Test {
+    int x = 4;
+    double y = 7.0;
+
+    y_reflect(x, y)
+};
 
 int main(int argc, char** argv) {
     concurrent::set_thread_name("Main thread");
