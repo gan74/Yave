@@ -29,8 +29,6 @@ SOFTWARE.
 Y_TODO(try replacing this?)
 #include <y/serde3/archives.h>
 
-#include <y/reflect/dyn.h>
-
 namespace yave {
 namespace ecs {
 
@@ -84,6 +82,7 @@ class ComponentContainerBase : NonMovable {
         virtual void remove(EntityId id) = 0;
 
         virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
+
 
 
         template<typename T, typename... Args>
@@ -146,9 +145,6 @@ class ComponentContainerBase : NonMovable {
             return _recently_added;
         }
 
-
-
-        virtual core::Vector<reflect::DynObject<>> reflect_component(EntityId id) = 0;
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
 
@@ -224,17 +220,6 @@ class ComponentContainer final : public ComponentContainerBase {
                 return std::make_unique<ComponentBox<T>>(_components[id]);
             }
             return nullptr;
-        }
-
-        core::Vector<reflect::DynObject<>> reflect_component(EntityId id) override {
-            unused(id);
-            core::Vector<reflect::DynObject<>> members;
-            if constexpr(reflect::has_reflect_v<T>) {
-                if(T* ptr = component_ptr<T>(id)) {
-                    reflect::explore_dyn(*ptr, [&](auto&& d) { members << d; });
-                }
-            }
-            return members;
         }
 
         y_no_serde3_expr(serde3::has_no_serde3_v<T> || (!serde3::has_serde3_v<T> && !serde3::is_pod_v<T>))

@@ -55,7 +55,6 @@ void FrameGraphPass::render(CmdBufferRecorder& recorder) && {
 }
 
 void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources) {
-    y_profile();
     if(_depth.image.is_valid() || _colors.size()) {
         auto declared_here = [&](FrameGraphImageId id) {
             const auto& info = _parent->info(id);
@@ -100,7 +99,6 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
 }
 
 void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resources) {
-    y_profile();
     for(const auto& set : _bindings) {
         auto bindings = core::vector_with_capacity<Descriptor>(set.size());
         std::transform(set.begin(), set.end(), std::back_inserter(bindings), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });

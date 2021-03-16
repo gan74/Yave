@@ -223,10 +223,8 @@ class EntityWorld {
         }
 
 
-        Y_TODO(const correct this...)
-        const auto& component_containers() const {
-            return _containers;
-        }
+
+
 
         template<typename T>
         void add_required_component() {

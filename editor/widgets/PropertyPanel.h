@@ -24,26 +24,17 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 
-#include <y/core/HashMap.h>
-#include <y/reflect/dyn.h>
-
 namespace editor {
 
 class PropertyPanel final : public Widget {
 
     editor_widget_open(PropertyPanel)
 
-
     public:
         PropertyPanel();
 
     protected:
         void on_gui() override;
-
-    private:
-        using DisplayFunc = bool(*)(reflect::DynObject<>);
-
-        core::ExternalHashMap<std::string_view, DisplayFunc> _display_funcs;
 };
 
 }
