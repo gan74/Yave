@@ -294,7 +294,7 @@ void FrameGraph::alloc_resources() {
             src_info = &check_exists(_images, src_info->alias);
         }
 
-        usize src_last_use = src_info->last_use();
+        const usize src_last_use = src_info->last_use();
         if(src_last_use < dst_info.first_use || (src_last_use == dst_info.first_use && src_info->can_alias_on_last)) {
             src_info->register_alias(dst_info);
 
@@ -314,6 +314,7 @@ void FrameGraph::alloc_resources() {
             log_msg(fmt("Image written by % is never consumed", pass_name(info.last_write)), Log::Warning);
         }*/
         if(info.alias.is_valid()) {
+            y_debug_assert(allow_image_aliasing);
             _resources->create_alias(res, info.alias);
         } else {
             if(!info.has_usage()) {
@@ -343,7 +344,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
             return pass->name();
         }
     }
-    /*return*/ y_fatal("Pass index out of bounds (%)", pass_index);
+    y_fatal("Pass index out of bounds (%)", pass_index);
 }
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
@@ -418,12 +419,14 @@ void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is
     auto& info = check_exists(_images, res);
     info.usage = info.usage | usage;
 
-    const bool can_alias = info.last_use() != pass->_index || info.can_alias_on_last;
+    const bool can_alias = allow_image_aliasing && (info.last_use() != pass->_index || info.can_alias_on_last);
     info.register_use(pass->_index, is_written);
 
     // copies are done before the pass so we can alias even if the image is copied
     if(can_alias && usage == ImageUsage::TransferSrcBit) {
         info.can_alias_on_last = true;
+    } else if(usage != ImageUsage::TransferSrcBit) {
+        info.can_alias_on_last = false;
     }
 }
 

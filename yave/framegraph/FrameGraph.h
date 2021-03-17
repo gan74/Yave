@@ -96,6 +96,8 @@ class FrameGraph : NonMovable {
         usize used = 0;
     };
 
+    static constexpr bool allow_image_aliasing = true;
+
     public:
         FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool);
         ~FrameGraph();
