@@ -70,7 +70,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
 
     core::String labels = "";
     for(usize i = 0; i != callback_data->cmdBufLabelCount; ++i) {
-        labels += callback_data->pCmdBufLabels[i].pLabelName;
+        labels += callback_data->pCmdBufLabels[callback_data->cmdBufLabelCount - i - 1].pLabelName;
         labels += " > ";
     }
 

@@ -33,28 +33,27 @@ SOFTWARE.
 
 namespace yave {
 
+static math::Vec4 compute_bloom_params(const BloomSettings& settings) {
+    return math::Vec4(
+        settings.power,
+        settings.threshold,
+        settings.threshold >= 1.0f
+            ? 0.0f
+            : 1.0f / (1.0f - settings.threshold),
+        settings.scatter_intensity
+    );
+}
+
 static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId input, const math::Vec2ui& size, const BloomSettings& settings) {
     const ImageFormat format = framegraph.image_format(input);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Bloom pass");
 
-    struct BloomParams {
-        float power;
-        float threshold;
-        float rev_threshold;
-    } params {
-        settings.bloom_power,
-        settings.bloom_threshold,
-        settings.bloom_threshold >= 1.0f
-            ? 0.0f
-            : 1.0f / (1.0f - settings.bloom_threshold)
-    };
-
     const auto thresholded = builder.declare_image(format, size);
 
     builder.add_color_output(thresholded);
     builder.add_uniform_input(input);
-    builder.add_inline_input(params);
+    builder.add_inline_input(compute_bloom_params(settings));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources(recorder.device())[DeviceResources::BloomMaterialTemplate];
@@ -89,17 +88,24 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, con
 
     FrameGraphImageId bloomed = input;
     if(!pyramids.is_empty()) {
-        const auto region = framegraph.region("Pryramid merge");
+        const auto region = framegraph.region("Pyramid merge");
 
         bloomed = pyramids.last();
-        auto merge = [&](FrameGraphPassBuilder builder,  FrameGraphImageId dst) {
+        auto merge = [&](FrameGraphPassBuilder builder,  FrameGraphImageId dst, bool scatter = false) {
             const auto merged = builder.declare_copy(dst);
 
             builder.add_color_output(merged);
             builder.add_uniform_input(bloomed);
+            if(scatter) {
+                builder.add_uniform_input(input);
+                builder.add_inline_input(compute_bloom_params(settings));
+            }
             builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-                const auto* material = device_resources(recorder.device())[DeviceResources::ScreenBlendPassthroughMaterialTemplate];
+                const auto merge_mat = scatter
+                    ? DeviceResources::BloomCombineMaterialTemplate
+                    : DeviceResources::ScreenBlendPassthroughMaterialTemplate;
+                const auto* material = device_resources(recorder.device())[merge_mat];
                 render_pass.bind_material(material, {self->descriptor_sets()[0]});
                 render_pass.draw_array(3);
             });
@@ -110,7 +116,7 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, con
         for(usize i = 1; i < pyramids.size(); ++i) {
             merge(framegraph.add_pass("Merge pass"), pyramids[pyramids.size() - i - 1]);
         }
-        merge(framegraph.add_pass("Final merge pass"), input);
+        merge(framegraph.add_pass("Final merge pass"), input, settings.type == BloomSettings::Scattering);
     }
 
     y_debug_assert(framegraph.image_size(bloomed) == size);

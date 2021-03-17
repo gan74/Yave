@@ -77,6 +77,7 @@ class DeviceResources final : NonCopyable {
             PassthroughFrag,
             DownsampleFrag,
             BloomFrag,
+            BloomCombineFrag,
             HBlurFrag,
             VBlurFrag,
 
@@ -126,6 +127,7 @@ class DeviceResources final : NonCopyable {
             DownsampleMaterialTemplate,
 
             BloomMaterialTemplate,
+            BloomCombineMaterialTemplate,
 
             HBlurMaterialTemplate,
             VBlurMaterialTemplate,

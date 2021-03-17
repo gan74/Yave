@@ -212,14 +212,19 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("Bloom")) {
         BloomSettings& settings = _settings.renderer_settings.bloom;
         int pyramids = settings.pyramids;
+        bool scatter = settings.type == BloomSettings::Scattering;
 
-        ImGui::SliderFloat("Power", &settings.bloom_power, 0.01f, 10.0f, "%.3f");
-        ImGui::SliderFloat("Threshold", &settings.bloom_threshold, 0.0f, 1.0f);
+        ImGui::Checkbox("Use scattering", &scatter);
+        ImGui::SliderFloat("Scattering intensity", &settings.scatter_intensity, 0.01f, 1.0f, "%.3f");
+        ImGui::Separator();
+        ImGui::SliderFloat("Power", &settings.power, 0.01f, 10.0f, "%.3f");
+        ImGui::SliderFloat("Threshold", &settings.threshold, 0.0f, 1.0f);
         ImGui::SliderInt("Pyramids", &pyramids, 1, 8);
         ImGui::Separator();
         ImGui::SliderFloat("Blur sigma", &settings.blur.sigma, 0.01f, 6.0f);
 
         settings.pyramids = usize(pyramids);
+        settings.type = scatter ? BloomSettings::Scattering : BloomSettings::Additive;
 
         ImGui::EndMenu();
     }
