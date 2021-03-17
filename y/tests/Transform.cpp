@@ -32,7 +32,7 @@ y_test_func("Transform set basis") {
     Transform<> tr;
     tr.set_basis(Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f, 0.0f, 1.0f));
 
-    y_test_assert(tr.up() == Vec(0.0f, 0.0f, 1.0f));
+    y_test_assert(tr.up() == Vec3(0.0f, 0.0f, 1.0f));
 }
 
 y_test_func("Transform decompose basic") {
