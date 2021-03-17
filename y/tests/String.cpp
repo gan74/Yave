@@ -40,7 +40,7 @@ const char* get_long_c_str() {
 y_test_func("String short creation") {
     const String s = "lele";
 
-    y_test_assert(!std::strcmp(s, "lele"));
+    y_test_assert(!std::strcmp(s.data(), "lele"));
     y_test_assert(s.size() == 4);
     y_test_assert(s.capacity() == String::max_short_size);
 }
@@ -48,7 +48,7 @@ y_test_func("String short creation") {
 y_test_func("String long creation") {
     String s = get_long_c_str();
 
-    y_test_assert(!std::strcmp(s, get_long_c_str()));
+    y_test_assert(!std::strcmp(s.data(), get_long_c_str()));
     y_test_assert(s.size() > String::max_short_size);
     y_test_assert(s.capacity() >= s.size());
     y_test_assert(s.is_long());
@@ -86,13 +86,13 @@ y_test_func("String add") {
     a += String(c_str + 3, 3);
 
     y_test_assert(a.size() == 6);
-    y_test_assert(!strncmp(a, c_str, a.size()));
+    y_test_assert(!strncmp(a.data(), c_str, a.size()));
     y_test_assert(!a.is_long());
 
     a += c_str + 6;
     y_test_assert(a.is_long());
     y_test_assert(a.size() == strlen(c_str));
-    y_test_assert(!std::strcmp(a, c_str));
+    y_test_assert(!std::strcmp(a.data(), c_str));
 
     a = "a string";
     a += "another string";
@@ -102,11 +102,11 @@ y_test_func("String add") {
 y_test_func("String from") {
     {
         const auto s = core::String() + 125;
-        y_test_assert(!std::strcmp(s, "125"));
+        y_test_assert(!std::strcmp(s.data(), "125"));
     }
     {
         const auto s = core::String() + "flubudu";
-        y_test_assert(!std::strcmp(s, "flubudu"));
+        y_test_assert(!std::strcmp(s.data(), "flubudu"));
     }
     /*{
         auto s = core::String() + 3.1415f;

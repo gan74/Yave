@@ -23,6 +23,8 @@ SOFTWARE.
 
 #ifdef Y_OS_WIN
 
+#include <cctype>
+
 #include <windows.h>
 #include <winuser.h>
 

@@ -25,6 +25,8 @@ SOFTWARE.
 #include <y/utils.h>
 #include "Vec.h"
 
+#include <algorithm>
+
 namespace y {
 namespace math {
 

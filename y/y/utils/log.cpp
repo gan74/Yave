@@ -22,8 +22,6 @@ SOFTWARE.
 #include "log.h"
 #include <y/utils.h>
 
-#include <mutex>
-
 #include <iostream>
 #include <array>
 
@@ -54,8 +52,6 @@ void setup_console() {
 static detail::log_callback callback = nullptr;
 static void* callback_user_data = nullptr;
 
-static std::mutex lock;
-
 void log_msg(std::string_view msg, Log type) {
     // https://en.wikipedia.org/wiki/ANSI_escape_code
     static constexpr std::array<const char*, 5> log_type_str = {{
@@ -65,8 +61,6 @@ void log_msg(std::string_view msg, Log type) {
         "\x1b[94m[debug]\x1b[0m ",
         "\x1b[35m[perf]\x1b[0m "
     }};
-
-    std::lock_guard _(lock);
 
     detail::setup_console();
 
@@ -78,7 +72,6 @@ void log_msg(std::string_view msg, Log type) {
 }
 
 void set_log_callback(detail::log_callback func, void* user_data) {
-    std::lock_guard _(lock);
     callback = func;
     callback_user_data = user_data;
 }

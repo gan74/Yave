@@ -58,7 +58,7 @@ void UiManager::on_gui() {
     core::ExternalHashMap<Widget*, int> to_destroy;
 
     for(auto& widget : _widgets) {
-        y_profile_dyn_zone(widget->_title_with_id);
+        y_profile_dyn_zone(widget->_title_with_id.data());
 
         _auto_parent = widget.get();
         widget->draw(false);

@@ -122,6 +122,15 @@ class MutableSpan {
             return _data[i];
         }
 
+        bool operator==(const MutableSpan& other) const {
+            return _data == other._data && _size == other._size;
+        }
+
+        bool operator!=(const MutableSpan& other) const {
+            return !operator==(other);
+        }
+
+
     private:
         NotOwner<T*> _data = nullptr;
         usize _size = 0;

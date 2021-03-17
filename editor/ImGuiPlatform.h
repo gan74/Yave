@@ -27,11 +27,12 @@ SOFTWARE.
 
 #include <yave/window/Window.h>
 #include <yave/window/EventHandler.h>
-
 #include <yave/graphics/swapchain/Swapchain.h>
 
 #include <y/core/Chrono.h>
 #include <y/core/Vector.h>
+
+#include <functional>
 
 struct ImGuiViewport;
 

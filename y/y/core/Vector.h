@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <cstring>
 #include <algorithm>
+#include <iterator>
 
 #ifdef Y_DEBUG
 #define Y_VECTOR_ELECTRIC

@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include <y/math/random.h>
 
+#include <unordered_map>
+#include <random>
 #include <ctime>
 
 namespace {

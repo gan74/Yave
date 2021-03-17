@@ -1,31 +1,32 @@
 cmake_minimum_required(VERSION 3.7)
 project(y)
 
-# -Wsign-conversion -Wshadow
-set(Y_EXTRA_WARNINGS
-        -Wzero-as-null-pointer-constant
-        -Wfloat-conversion
-        -Woverloaded-virtual
-        -Wnon-virtual-dtor
-        -Wlogical-op
-        -Wredundant-decls
-        -Wundef
-    )
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 if(MSVC)
     # temporary hacks to get it to compile
-    set(Y_COMPILE_OPTIONS /permissive- /W0)
+    set(Y_COMPILE_OPTIONS /permissive- /W0 /std:c++latest /Zc:__cplusplus)
 else()
+    # -Wsign-conversion -Wshadow
+    set(Y_EXTRA_WARNINGS
+            -Wzero-as-null-pointer-constant
+            -Wfloat-conversion
+            -Woverloaded-virtual
+            -Wnon-virtual-dtor
+            -Wlogical-op
+            -Wredundant-decls
+            -Wundef
+        )
     set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${Y_EXTRA_WARNINGS})
+
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
+    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wodr")
 endif()
 
-
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wodr")
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 17)
 
 
 file(GLOB_RECURSE SOURCE_FILES
@@ -39,6 +40,7 @@ file(GLOB_RECURSE TEST_FILES
 
 
 add_library(y STATIC ${SOURCE_FILES})
+
 # compile options are exported, this is generally bad, but it makes stuff simpler
 target_compile_options(y PUBLIC ${Y_COMPILE_OPTIONS})
 

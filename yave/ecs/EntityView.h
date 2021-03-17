@@ -96,7 +96,7 @@ class EntityView {
     }
 
     public:
-        class IDComponents {
+        class IdComponents {
             public:
                 auto id() const {
                     return _id;
@@ -107,47 +107,120 @@ class EntityView {
                 }
 
                 template<typename T>
-                auto&& component() const {
+                decltype(auto) component() const {
                     using type = std::conditional_t<Const, const remove_cvref_t<T>&, remove_cvref_t<T>>;
                     constexpr usize index = detail::tuple_index<type, decltype(components())>::value;
                     static_assert(std::is_same_v<type, std::tuple_element_t<index, decltype(components())>>);
                     return std::get<index>(components());
                 }
 
-                IDComponents(EntityId id, component_tuple components) : _id(id), _components(components) {
+                IdComponents(EntityId id, component_tuple components) : _id(id), _components(components) {
                 }
 
             private:
                 EntityId _id;
                 component_tuple _components;
-
         };
 
+        struct IdComponentsReturnPolicy {
+            static decltype(auto) make(EntityId id, const set_tuple& sets) {
+                return IdComponents(id, make_component_tuple(sets, id));
+            }
+        };
+
+        struct IdReturnPolicy {
+            static EntityId make(EntityId id, const set_tuple&) {
+                return id;
+            }
+        };
+
+        struct ComponentsReturnPolicy {
+            static decltype(auto) make(EntityId id, const set_tuple& sets) {
+                return make_component_tuple(sets, id);
+            }
+        };
+
+        template<typename ReturnPolicy>
+        class Iterator {
+            id_range _range;
+            const set_tuple* _sets = nullptr;
+
+            public:
+                inline Iterator() = default;
+
+                inline Iterator(id_range range, const set_tuple& sets) : _range(range), _sets(&sets) {
+                    find_next_valid();
+                }
+
+                inline void advance() {
+                    y_debug_assert(!at_end());
+                    move_one();
+                    find_next_valid();
+                }
+
+                inline bool at_end() const {
+                    return _range.is_empty();
+                }
+
+                inline Iterator& operator++() {
+                    advance();
+                    return *this;
+                }
+
+                inline Iterator operator++(int) {
+                    const Iterator it = *this;
+                    advance();
+                    return it;
+                }
+
+                inline bool operator==(const Iterator& other) const {
+                    return _range == other._range;
+                }
+
+                inline bool operator!=(const Iterator& other) const {
+                    return _range != other._range;
+                }
+
+                inline auto operator*() const {
+                    return ReturnPolicy::make(_range[0], *_sets);
+                }
+
+            private:
+                inline void find_next_valid() {
+                    while(!at_end()) {
+                        if(has_all<0>(*_sets, _range[0])) {
+                            break;
+                        }
+                        move_one();
+                    }
+                }
+
+                inline void move_one() {
+                    y_debug_assert(!_range.is_empty());
+                    _range = id_range(_range.begin() + 1, _range.size() - 1);
+                }
+        };
 
         EntityView(const set_tuple& sets) : _sets(sets), _short(shortest_range()) {
         }
 
-        auto id_components() const {
-            auto tr = [sets = _sets](EntityId id){ return IDComponents(id, make_component_tuple(sets, id)); };
-            return core::Range(TransformIterator(ids().begin(), tr), ids().end());
+        core::Range<Iterator<IdComponentsReturnPolicy>, EndIterator> id_components() const {
+            return {Iterator<IdComponentsReturnPolicy>(_short, _sets), EndIterator{}};
         }
 
-        auto components() const {
-            auto tr = [sets = _sets](EntityId id) { return make_component_tuple(sets, id); };
-            return core::Range(TransformIterator(ids().begin(), tr), ids().end());
+        core::Range<Iterator<ComponentsReturnPolicy>, EndIterator> components() const {
+            return {Iterator<ComponentsReturnPolicy>(_short, _sets), EndIterator{}};
         }
 
-        auto ids() const {
-            auto filter = [sets = _sets](EntityId id) { return has_all<0>(sets, id); };
-            return core::Range(FilterIterator(_short.begin(), _short.end(), filter), EndIterator{});
+        core::Range<Iterator<IdReturnPolicy>, EndIterator> ids() const {
+            return {Iterator<IdReturnPolicy>(_short, _sets), EndIterator{}};
         }
 
-
-        auto begin() const {
+        Iterator<IdComponentsReturnPolicy> begin() const {
             return id_components().begin();
         }
 
-        auto end() const {
+        EndIterator end() const {
             return id_components().end();
         }
 
@@ -157,7 +230,7 @@ class EntityView {
         id_range _short;
 
     public:
-        using const_iterator = decltype(std::declval<const EntityView<Const, Args...>>().begin());
+        using const_iterator = Iterator<IdComponentsReturnPolicy>;
 };
 
 }

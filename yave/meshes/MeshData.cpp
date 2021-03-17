@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-MeshData::MeshData(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin, core::Vector<Bone>&& bones) :
+MeshData::MeshData(core::Vector<Vertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin, core::Vector<Bone> bones) :
         _vertices(std::move(vertices)),
         _triangles(std::move(triangles)) {
 

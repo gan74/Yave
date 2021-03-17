@@ -27,6 +27,8 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/Result.h>
 
+#include <functional>
+
 namespace yave {
 
 class FileSystemModel : NonCopyable {

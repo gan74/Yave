@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
+#include <string_view>
+
 namespace yave {
 
 class PhysicalDevice {

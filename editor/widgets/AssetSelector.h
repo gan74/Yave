@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "ResourceBrowser.h"
 
+#include <functional>
+
 namespace editor {
 
 class AssetSelector final : public ResourceBrowser {

@@ -281,7 +281,7 @@ class ExternalHashMap : Hasher {
                 }
 
                 inline auto* operator->() const {
-                    return &(operator*());
+                    return &Transform::operator()(_parent->_entries[_index]);
                 }
 
                 inline IteratorBase& operator++() {

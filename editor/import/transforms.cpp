@@ -181,7 +181,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
 
     core::FixedArray<float> output(output_size);
     {
-        const auto compute_mip = [](const float* image_data, float* out, const math::Vec2ui& orig_size) -> usize {
+        const auto compute_mip = [&](const float* image_data, float* out, const math::Vec2ui& orig_size) -> usize {
             usize cursor = 0;
             const math::Vec2ui mip_size = {std::max(1u, orig_size.x() / 2),
                                            std::max(1u, orig_size.y() / 2)};

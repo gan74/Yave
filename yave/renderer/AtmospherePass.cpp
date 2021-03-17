@@ -28,12 +28,10 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include <yave/ecs/EntityWorld.h>
-
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/AtmosphereComponent.h>
-
 #include <yave/meshes/StaticMesh.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <y/core/Chrono.h>
 

@@ -152,8 +152,8 @@ class String {
         bool starts_with(std::string_view str) const;
         bool ends_with(std::string_view str) const;
 
-        operator const char*() const;
-        operator char*();
+        explicit operator const char*() const;
+        explicit operator char*();
 
         // to prevent Strings converting to bool via operator char*
         explicit operator bool() = delete;

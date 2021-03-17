@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <y/utils/iter.h>
 
+#include <tuple>
+
 // #define YAVE_ECS_COMPONENT_SET_AUDIT
 
 namespace yave {
@@ -115,6 +117,46 @@ class SparseComponentSetBase : public SparseIdSet {
         core::Vector<element_type> _values;
 
     public:
+        template<bool Const>
+        class PairIterator {
+            public:
+                using pointer_t = std::conditional_t<Const, const_pointer, pointer>;
+
+                const EntityId* _id = nullptr;
+                pointer_t _value = nullptr;
+
+                PairIterator() = default;
+                PairIterator(const EntityId* id, pointer_t value) : _id(id), _value(value) {
+                }
+
+                auto operator*() const {
+                    return std::tie(*_id, *_value);
+                }
+
+                PairIterator operator++() {
+                    ++_id;
+                    ++_value;
+                    return *this;
+                }
+
+                PairIterator operator++(int) {
+                    const PairIterator it = *this;
+                    operator++();
+                    return it;
+                }
+
+                bool operator==(const PairIterator& other) const {
+                    return _id == other._id;
+                }
+
+                bool operator!=(const PairIterator& other) const {
+                    return !operator==(other);
+                }
+        };
+
+        using iterator = PairIterator<false>;
+        using const_iterator = PairIterator<true>;
+
         template<typename... Args>
         reference insert(EntityId id, Args&&... args) {
             y_debug_assert(!contains(id));
@@ -211,40 +253,36 @@ class SparseComponentSetBase : public SparseIdSet {
             audit();
         }
 
-        auto begin() const {
-            return as_pairs().begin();
+        const_iterator begin() const {
+            return const_iterator(_dense.begin(), _values.begin());
         }
 
-        auto end() const {
-            return as_pairs().end();
+        const_iterator end() const {
+            return const_iterator(_dense.end(), _values.end());
         }
 
-        auto cbegin() const {
-            return as_pairs().begin();
+        const_iterator cbegin() const {
+            return const_iterator(_dense.begin(), _values.begin());
         }
 
-        auto cend() const {
-            return as_pairs().end();
+        const_iterator cend() const {
+            return const_iterator(_dense.end(), _values.end());
         }
 
-        auto begin() {
-            return as_pairs().begin();
+        iterator begin() {
+            return iterator(_dense.begin(), _values.begin());
         }
 
-        auto end() {
-            return as_pairs().end();
+        iterator end() {
+            return iterator(_dense.end(), _values.end());
         }
 
-        auto as_pairs() {
-            auto pair = [this](usize index) { return std::tie(_dense[index], _values[index]); };
-            return core::Range(TransformIterator(IndexIterator(0), pair),
-                               IndexIterator(size()));
+        core::Range<iterator> as_pairs() {
+            return {begin(), end()};
         }
 
-        auto as_pairs() const {
-            auto pair = [this](usize index) { return std::tie(_dense[index], _values[index]); };
-            return core::Range(TransformIterator(IndexIterator(0), pair),
-                               IndexIterator(size()));
+        core::Range<const_iterator> as_pairs() const {
+            return {begin(), end()};
         }
 
         core::MutableSpan<element_type> values() {
@@ -276,15 +314,14 @@ class SparseComponentSetBase : public SparseIdSet {
 #endif
         }
 
-
 };
 
-// Why we need to do this to not have implete types?
+// Why we need to do this to not have imcomplete types?
 template<typename Elem>
 class SparseComponentSet : public SparseComponentSetBase<Elem> {
     public:
-        using iterator       = decltype(std::declval<      SparseComponentSet<Elem>>().begin());
-        using const_iterator = decltype(std::declval<const SparseComponentSet<Elem>>().begin());
+        // using iterator       = decltype(std::declval<      SparseComponentSet<Elem>>().begin());
+        // using const_iterator = decltype(std::declval<const SparseComponentSet<Elem>>().begin());
 };
 
 }

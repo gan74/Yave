@@ -22,12 +22,11 @@ SOFTWARE.
 
 #include "entities.h"
 
-#include <yave/ecs/EntityWorld.h>
-
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <yave/meshes/AABB.h>
 

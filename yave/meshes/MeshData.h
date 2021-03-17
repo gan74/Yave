@@ -22,10 +22,10 @@ SOFTWARE.
 #ifndef YAVE_MESHES_MESHDATA_H
 #define YAVE_MESHES_MESHDATA_H
 
-#include <y/reflect/reflect.h>
-
 #include "Skeleton.h"
 #include "AABB.h"
+
+#include <y/reflect/reflect.h>
 
 #include <memory>
 
@@ -35,7 +35,7 @@ class MeshData {
 
     public:
         MeshData() = default;
-        MeshData(core::Vector<Vertex>&& vertices, core::Vector<IndexedTriangle>&& triangles, core::Vector<SkinWeights>&& skin = {}, core::Vector<Bone>&& bones = {});
+        MeshData(core::Vector<Vertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin = {}, core::Vector<Bone> bones = {});
 
         float radius() const;
         const AABB& aabb() const;

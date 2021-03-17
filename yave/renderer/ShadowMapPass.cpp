@@ -25,10 +25,9 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 
-#include <yave/ecs/EntityWorld.h>
 #include <yave/components/SpotLightComponent.h>
-
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <y/utils/log.h>
 

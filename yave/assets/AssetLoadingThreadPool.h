@@ -31,6 +31,7 @@ SOFTWARE.
 #include <condition_variable>
 #include <deque>
 #include <list>
+#include <functional>
 
 namespace yave {
 

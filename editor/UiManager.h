@@ -31,6 +31,8 @@ SOFTWARE.
 #include <typeindex>
 #include <memory>
 
+#include <functional>
+
 namespace editor {
 
 class UiManager : NonMovable {

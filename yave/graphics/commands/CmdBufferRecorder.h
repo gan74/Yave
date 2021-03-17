@@ -120,6 +120,7 @@ class RenderPassRecorder final : NonMovable {
 
         // proxies from _cmd_buffer
         CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
+
         VkCommandBuffer vk_cmd_buffer() const;
 
         // Statefull stuff

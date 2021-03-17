@@ -30,16 +30,8 @@ SOFTWARE.
 #endif
 
 
-
 namespace yave {
 namespace ecs {
-
-namespace detail {
-template<typename T>
-using has_required_components_t = decltype(std::declval<T>().required_components_archetype());
-}
-
-
 
 template<typename T>
 std::unique_ptr<ComponentContainerBase> create_container() {

@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "FileSystemView.h"
 
+#include <functional>
+
 namespace editor {
 
 class FileBrowser final : public FileSystemView {

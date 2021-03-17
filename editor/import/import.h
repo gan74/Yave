@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <editor/utils/Named.h>
 
+#include <yave/meshes/MeshData.h>
 #include <yave/material/SimpleMaterialData.h>
 
 #include <y/core/Vector.h>

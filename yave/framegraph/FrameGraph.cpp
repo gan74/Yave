@@ -198,7 +198,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
         while(true) {
             if(next_region_index < _regions.size() && _regions[next_region_index].begin_pass == pass._index) {
                 const math::Vec4 color = next_color();
-                regions.emplace_back(RuntimeRegion{_regions[next_region_index], recorder.region(_regions[next_region_index].name, color), color});
+                regions.emplace_back(RuntimeRegion{_regions[next_region_index], recorder.region(_regions[next_region_index].name.data(), color), color});
                 ++next_region_index;
             } else {
                 break;
@@ -206,7 +206,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
         }
 
         const math::Vec4 color = regions.is_empty() ? next_color() : regions.last().next_color();
-        return recorder.region(pass.name(), color);
+        return recorder.region(pass.name().data(), color);
     };
 
     auto end_pass_region = [&](const FrameGraphPass& pass) {
@@ -234,7 +234,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
     {
         y_profile_zone("init");
         for(const auto& pass : _passes) {
-            y_profile_dyn_zone(pass->name());
+            y_profile_dyn_zone(pass->name().data());
             pass->init_framebuffer(*_resources);
             pass->init_descriptor_sets(*_resources);
         }
@@ -243,7 +243,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
     {
         y_profile_zone("render");
         for(const auto& pass : _passes) {
-            y_profile_dyn_zone(pass->name());
+            y_profile_dyn_zone(pass->name().data());
             const auto region = begin_pass_region(*pass);
 
             {

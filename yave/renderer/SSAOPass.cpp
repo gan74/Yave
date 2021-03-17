@@ -23,12 +23,12 @@ SOFTWARE.
 #include "SSAOPass.h"
 #include "DownsamplePass.h"
 
-#include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
-#include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/shaders/ComputeProgram.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 namespace yave {
 
@@ -50,7 +50,7 @@ static float compute_tan_half_fov(const GBufferPass& gbuffer) {
 }
 
 static MiniAOParams compute_ao_params(float tan_half_fov, usize screen_size_x) {
-    constexpr float sample_thickness[12] = {
+    const float sample_thickness[12] = {
         std::sqrt(1.0f - 0.2f * 0.2f),
         std::sqrt(1.0f - 0.4f * 0.4f),
         std::sqrt(1.0f - 0.6f * 0.6f),

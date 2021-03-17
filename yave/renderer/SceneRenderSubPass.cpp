@@ -27,11 +27,9 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include <yave/ecs/EntityWorld.h>
-
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
-
+#include <yave/ecs/EntityWorld.h>
 
 namespace yave {
 

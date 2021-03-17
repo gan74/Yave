@@ -28,17 +28,15 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/meshes/StaticMesh.h>
+#include <yave/graphics/images/IBLProbe.h>
 
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
-
-#include <yave/meshes/StaticMesh.h>
-#include <yave/graphics/images/IBLProbe.h>
-
+#include <yave/ecs/EntityWorld.h>
 
 namespace yave {
 

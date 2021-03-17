@@ -23,13 +23,14 @@ SOFTWARE.
 #include "import.h"
 #include "transforms.h"
 
-#include <yave/meshes/MeshData.h>
 #include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/utils/FileSystemModel.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+
+#include <y/serde3/archives.h>
 
 // -------------- STB --------------
 extern "C" {
@@ -69,7 +70,6 @@ extern "C" {
 
 namespace editor {
 namespace import {
-
 
 core::String clean_asset_name(const core::String& name) {
     if(name.is_empty()) {

@@ -161,7 +161,7 @@ static auto create_push_constants(const spirv_cross::Compiler& compiler, const R
     core::Vector<VkPushConstantRange> push_constants;
     for(const auto& r : resources) {
         const auto& type = compiler.get_type(r.type_id);
-        push_constants << VkPushConstantRange{VkShaderStageFlagBits(shader_type), 0, u32(compiler.get_declared_struct_size(type))};
+        push_constants << VkPushConstantRange{VkShaderStageFlags(shader_type), 0, u32(compiler.get_declared_struct_size(type))};
     }
     return push_constants;
 }
