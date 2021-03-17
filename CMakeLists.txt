@@ -24,6 +24,14 @@ function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
     set(${SOURCE_VARIABLE_NAME} ${${SOURCE_VARIABLE_NAME}} ${UNIT_BUILD_FILE} PARENT_SCOPE)
 endfunction(enable_unity_build)
 
+function(optimize_shaders SHADER_TARGET)
+    file(GLOB SHADER_BINARIES "${CMAKE_CURRENT_BINARY_DIR}/*.spv")
+    foreach(SHADER ${SHADER_BINARIES})
+        add_custom_command(TARGET ${SHADER_TARGET} POST_BUILD COMMAND spirv-opt ${SHADER} -O --preserve-bindings -o ${SHADER})
+    endforeach()
+endfunction(optimize_shaders)
+
+
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
@@ -138,6 +146,8 @@ if(YAVE_BUILD_YAVE)
     endif()
 
     add_custom_target(shaders COMMAND glslc -c --target-env=vulkan1.2 ${SHADER_FILES})
+    optimize_shaders(shaders)
+
     add_dependencies(yave shaders)
 endif()
 
