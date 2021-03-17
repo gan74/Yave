@@ -30,19 +30,9 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat"
-#endif
-
 #include <external/spirv_cross/spirv.hpp>
 #include <external/spirv_cross/spirv_cross.hpp>
 #include <external/spirv_cross/spirv_glsl.hpp>
-
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-
 
 namespace yave {
 
