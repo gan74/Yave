@@ -46,9 +46,9 @@ inline auto identity() {
 template<usize N, typename T = float>
 class Vec
 {
-    template<usize P, typename... Args>
-    inline constexpr void build(T t, Args... args) {
-        _vec[P] = t;
+    template<usize P, typename A, typename... Args, typename = std::enable_if_t<std::is_arithmetic_v<A>>>
+    inline constexpr void build(A a, Args... args) {
+        _vec[P] = T(a);
         build<P + 1>(args...);
     }
 

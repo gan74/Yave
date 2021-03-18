@@ -57,9 +57,9 @@ class Matrix {
         using Row = Vec<M, T>;
 
     private:
-        template<usize P, typename... Args>
-        inline constexpr void build(T t, Args... args) {
-            set_at(P, t);
+        template<usize P, typename A, typename... Args, typename = std::enable_if_t<std::is_arithmetic_v<A>>>
+        inline constexpr void build(A a, Args... args) {
+            set_at(P, T(a));
             build<P + 1>(args...);
         }
 

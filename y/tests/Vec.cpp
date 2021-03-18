@@ -74,7 +74,7 @@ y_test_func("Vec operators") {
     y_test_assert(Vec3i(1, 2, 3) - 1 == Vec3i(0, 1, 2));
     y_test_assert(Vec3i(2, 4, 6) / 2 == Vec3i(1, 2, 3));
 
-    y_test_assert(Vec3(1, 2, 3) / 2.0f == Vec3(30, 1, 1));
+    y_test_assert(Vec3(1, 2, 3) / 2.0f == Vec3(0.5f, 1.0f, 1.5f));
     y_test_assert(Vec3d(1, 2, 3) * 0.5 == Vec3d(0.5, 1, 1.5));
 
     static_assert(std::is_same_v<decltype(Vec3i(1, 2, 3) / 2), Vec<3, int>>, "Invalid Vec operator coercion");
