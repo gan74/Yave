@@ -23,53 +23,70 @@ SOFTWARE.
 #define EDITOR_UTILS_FORWARD_H
 
 // Auto generated: forward definitions for most non template classes
-// TODO: Classes nested in namespaces or other classes will not be declared correctly
+// TODO: Nested classes will not be declared correctly
+
 namespace editor {
-class AssetSelector;
-class AssetStringifier;
-class CameraController;
-class CameraDebug;
-class CameraSettings;
-class EditorAction;
-class EditorApplication;
-class EditorComponent;
-class EditorEntityPass;
-class EditorRenderer;
-class EditorRendererSettings;
-class EditorResources;
-class EditorWorld;
-class EngineView;
-class EntityView;
-class FPSCameraController;
-class FileBrowser;
-class FileSystemView;
-class FunctionWidget;
-class Gizmo;
-class HoudiniCameraController;
-class IdBufferPass;
-class ImGuiPlatform;
 class ImGuiRenderer;
-class ImageImporter;
-class MaterialData;
-class MaterialEditor;
-class PerfSettings;
-class PerformanceMetrics;
-class Picker;
-class PickingResult;
-class PrefabData;
-class PropertyPanel;
-class ResourceBrowser;
-class SceneData;
-class SceneImporter;
-class Selection;
-class Settings;
-class SettingsPanel;
-class SkeletonData;
-class SubMeshData;
-class ThumbmailRenderer;
-class UiManager;
-class UiSettings;
+struct Msg;
+class EditorResources;
+class FPSCameraController;
+struct WidgetIdStack;
 class Widget;
+class FileRenamer;
+class Gizmo;
+class CVarConsole;
+class ResourceBrowser;
+class ImGuiPlatform;
+class HoudiniCameraController;
+struct EditorAction;
+struct EditorRendererSettings;
+class PlotData;
+class EditorWorld;
+class Preview;
+struct Entry;
+class ImageImporter;
+class Settings;
+class FileBrowser;
+class CameraDebug;
+class AssetStringifier;
+struct ImVertex;
+class UiManager;
+class SceneImporter;
+struct PickingResult;
+struct CVar;
+class EntityView;
+struct UiSettings;
+class EngineView;
+struct PerfSettings;
+struct PlatformWindow;
+struct Picker;
+class EditorComponent;
+class AssetSelector;
+class Selection;
+class EditorApplication;
+class ThumbmailRenderer;
+class MaterialEditor;
+class FileSystemView;
+struct EditorRenderer;
+struct IdBufferPass;
+class SettingsPanel;
+class PropertyPanel;
+class PerformanceMetrics;
+struct CameraSettings;
+struct ThumbmailData;
+class FunctionWidget;
+struct EditorEntityPass;
+class CameraController;
 }
+
+
+namespace editor::import {
+struct SkeletonData;
+struct SubMeshData;
+struct MaterialData;
+struct SceneData;
+struct PrefabData;
+}
+
 
 #endif // EDITOR_UTILS_FORWARD_H

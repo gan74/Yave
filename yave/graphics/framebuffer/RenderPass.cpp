@@ -75,13 +75,13 @@ static std::array<VkSubpassDependency, 2> create_dependencies(bool depth, bool c
     return {top, bot};
 }
 
-static VkAttachmentLoadOp attachment_load_op(const RenderPass::ImageData& image) {
+static VkAttachmentLoadOp attachment_load_op(const RenderPass::AttachmentData& image) {
     return image.load_op == RenderPass::LoadOp::Clear
         ? VK_ATTACHMENT_LOAD_OP_CLEAR
         : VK_ATTACHMENT_LOAD_OP_LOAD;
 }
 
-static VkAttachmentDescription create_attachment(RenderPass::ImageData image) {
+static VkAttachmentDescription create_attachment(RenderPass::AttachmentData image) {
     VkAttachmentDescription description = {};
     {
         const auto layout = vk_final_image_layout(image.usage);
@@ -102,7 +102,7 @@ static VkAttachmentReference create_attachment_reference(ImageUsage usage, usize
     return VkAttachmentReference{u32(index), vk_initial_image_layout(usage)};
 }
 
-static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData depth, core::Span<RenderPass::ImageData> colors) {
+static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::AttachmentData depth, core::Span<RenderPass::AttachmentData> colors) {
     const bool has_depth = depth.usage != ImageUsage::None;
     const bool has_color = !colors.is_empty();
 
@@ -117,7 +117,7 @@ static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData dept
     VkSubpassDescription subpass = {};
     {
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = color_refs.size();
+        subpass.colorAttachmentCount = u32(color_refs.size());
         subpass.pColorAttachments = color_refs.data();
     }
 
@@ -132,11 +132,11 @@ static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData dept
 
     VkRenderPassCreateInfo create_info = vk_struct();
     {
-        create_info.attachmentCount = attachments.size();
+        create_info.attachmentCount = u32(attachments.size());
         create_info.pAttachments = attachments.data();
         create_info.subpassCount = 1;
         create_info.pSubpasses = &subpass;
-        create_info.dependencyCount = dependencies.size();
+        create_info.dependencyCount = u32(dependencies.size());
         create_info.pDependencies = dependencies.data();
     }
 
@@ -145,7 +145,7 @@ static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::ImageData dept
     return renderpass;
 }
 
-RenderPass::Layout::Layout(ImageData depth, core::Span<ImageData> colors) : _depth(depth.format) {
+RenderPass::Layout::Layout(AttachmentData depth, core::Span<AttachmentData> colors) : _depth(depth.format) {
     _colors.reserve(colors.size());
     std::transform(colors.begin(), colors.end(), std::back_inserter(_colors), [](const auto& e) { return e.format; });
 }
@@ -167,15 +167,15 @@ bool RenderPass::Layout::operator==(const Layout& other) const {
 }
 
 
-RenderPass::RenderPass(DevicePtr dptr, ImageData depth, core::Span<ImageData> colors) :
+RenderPass::RenderPass(DevicePtr dptr, AttachmentData depth, core::Span<AttachmentData> colors) :
         DeviceLinked(dptr),
         _attachment_count(colors.size()),
         _render_pass(create_renderpass(dptr, depth, colors)),
         _layout(depth, colors) {
 }
 
-RenderPass::RenderPass(DevicePtr dptr, core::Span<ImageData> colors) :
-        RenderPass(dptr, ImageData(), colors) {
+RenderPass::RenderPass(DevicePtr dptr, core::Span<AttachmentData> colors) :
+        RenderPass(dptr, AttachmentData(), colors) {
 }
 
 RenderPass::~RenderPass() {

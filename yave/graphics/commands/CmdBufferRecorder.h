@@ -40,7 +40,6 @@ using DescriptorSetList = core::Span<DescriptorSetBase>;
 }
 
 class PushConstant : NonCopyable {
-
     public:
         constexpr PushConstant() = default;
 
@@ -78,7 +77,7 @@ class PushConstant : NonCopyable {
         usize _size = 0;
 };
 
-struct CmdBufferRegion : public DeviceLinked {
+class CmdBufferRegion : public DeviceLinked {
     public:
         CmdBufferRegion() = default;
         CmdBufferRegion(CmdBufferRegion&&) = default;

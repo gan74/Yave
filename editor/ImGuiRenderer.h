@@ -33,12 +33,6 @@ namespace editor {
 
 class ImGuiRenderer : public DeviceLinked {
 
-    struct Vertex {
-        const math::Vec2 pos;
-        const math::Vec2 uv;
-        const u32 col;
-    };
-
     public:
         ImGuiRenderer(DevicePtr dptr);
 

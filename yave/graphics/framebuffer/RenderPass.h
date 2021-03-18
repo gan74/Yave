@@ -40,28 +40,28 @@ class RenderPass : public DeviceLinked {
             Load
         };
 
-        struct ImageData {
+        struct AttachmentData {
             const ImageFormat format;
             const ImageUsage usage = ImageUsage::None;
             const LoadOp load_op = LoadOp::Clear;
 
-            ImageData() = default;
+            AttachmentData() = default;
 
-            ImageData(ImageFormat fmt, ImageUsage us, LoadOp op) : format(fmt), usage(us), load_op(op) {
+            AttachmentData(ImageFormat fmt, ImageUsage us, LoadOp op) : format(fmt), usage(us), load_op(op) {
             }
 
-            ImageData(const ImageBase& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
+            AttachmentData(const ImageBase& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
             }
 
             template<ImageUsage Usage>
-            ImageData(const ImageView<Usage>& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
+            AttachmentData(const ImageView<Usage>& img, LoadOp op) : format(img.format()), usage(img.usage()), load_op(op) {
             }
         };
 
         class Layout {
             public:
                 Layout() = default;
-                Layout(ImageData depth, core::Span<ImageData> colors);
+                Layout(AttachmentData depth, core::Span<AttachmentData> colors);
 
                 u64 hash() const;
                 bool is_depth_only() const;
@@ -77,8 +77,8 @@ class RenderPass : public DeviceLinked {
         RenderPass(RenderPass&&) = default;
         RenderPass& operator=(RenderPass&&) = default;
 
-        RenderPass(DevicePtr dptr, ImageData depth, core::Span<ImageData> colors);
-        RenderPass(DevicePtr dptr, core::Span<ImageData> colors);
+        RenderPass(DevicePtr dptr, AttachmentData depth, core::Span<AttachmentData> colors);
+        RenderPass(DevicePtr dptr, core::Span<AttachmentData> colors);
 
         ~RenderPass();
 

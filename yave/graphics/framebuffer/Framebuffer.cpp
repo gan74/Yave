@@ -46,10 +46,10 @@ static core::Vector<Framebuffer::ColorAttachment> color_attachments(core::Span<C
 }
 
 static std::unique_ptr<RenderPass> create_render_pass(DevicePtr dptr, const Framebuffer::DepthAttachment& depth, core::Span<Framebuffer::ColorAttachment> colors) {
-    auto color_vec = core::vector_with_capacity<RenderPass::ImageData>(colors.size());
-    std::transform(colors.begin(), colors.end(), std::back_inserter(color_vec), [](const auto& c) { return RenderPass::ImageData(c.view, c.load_op); });
+    auto color_vec = core::vector_with_capacity<RenderPass::AttachmentData>(colors.size());
+    std::transform(colors.begin(), colors.end(), std::back_inserter(color_vec), [](const auto& c) { return RenderPass::AttachmentData(c.view, c.load_op); });
     return depth.view.device()
-        ? std::make_unique<RenderPass>(dptr, RenderPass::ImageData(depth.view, depth.load_op), color_vec)
+        ? std::make_unique<RenderPass>(dptr, RenderPass::AttachmentData(depth.view, depth.load_op), color_vec)
         : std::make_unique<RenderPass>(dptr, color_vec);
 }
 
