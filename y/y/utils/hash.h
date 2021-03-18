@@ -38,17 +38,7 @@ inline constexpr void hash_combine(T& seed, T value) {
 }
 
 template<typename T>
-inline constexpr u64 type_hash() {
-    u64 hash = 0xdeaddead;
-    Y_TODO(Replace by ct_type_name)
-    for(char c : Y_FUNCTION_NAME) {
-        hash_combine(hash, u64(c));
-    }
-    return hash;
-}
-
-template<typename T>
-inline constexpr u64 type_hash_2() {
+inline constexpr u64 ct_type_hash() {
     u64 hash = 0xd5a7de585d2af52b;
     for(char c : ct_type_name<T>()) {
         hash_combine(hash, u64(c));

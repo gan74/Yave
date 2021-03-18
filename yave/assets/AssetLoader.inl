@@ -200,6 +200,8 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                         _data->set_failed(ErrorType::InvalidData);
                         log_msg(fmt("Unable to load %, invalid data: %", asset_name(), serde3::error_msg(res)), Log::Error);
                         return core::Err();
+                    } else if(res.unwrap() == serde3::Success::Partial) {
+                        log_msg(fmt("% was only partially deserialized", asset_name()), Log::Warning);
                     }
 
                     reflect::explore_recursive(_load_from, [this](auto& m) {

@@ -80,6 +80,8 @@ static constexpr bool is_debug_defined = false;
 
 #ifdef _MSC_VER
 #define Y_MSVC
+// Disable warning about "defined" in macro expansion (happens in windows.h)
+#pragma warning(disable : 5105)
 #endif
 
 #ifdef __GNUC__
@@ -106,11 +108,7 @@ static constexpr bool is_debug_defined = false;
 #define y_create_name y_create_name_with_prefix()
 
 
-#ifdef Y_MSVC
-#define Y_FUNCTION_NAME __FUNCSIG__
-#else
-#define Y_FUNCTION_NAME __PRETTY_FUNCTION__
-#endif
+
 
 
 // For some reason gcc 9.2 accepts even in C++17
