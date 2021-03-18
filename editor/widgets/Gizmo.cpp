@@ -360,7 +360,7 @@ void Gizmo::draw() {
             math::Vec2 last_point = next_point(axis, 0).first;
             for(usize i = 1; i != segment_count + 1; ++i) {
                 const auto [next, visible] = next_point(axis, i);
-                y_defer(last_point = next);
+                y_defer(last_point == next);
 
                 u32 alpha = gizmo_alpha;
                 if(!visible) {
