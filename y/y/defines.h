@@ -22,10 +22,6 @@ SOFTWARE.
 #ifndef Y_DEFINES_H
 #define Y_DEFINES_H
 
-#if __cplusplus < 201703L
-#error No C++17
-#endif
-
 
 namespace y {
 [[noreturn]] void fatal(const char* msg, const char* file = nullptr, int line = 0);

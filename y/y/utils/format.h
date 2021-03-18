@@ -132,7 +132,7 @@ void fmt_rec(FmtBuffer& buffer, const char* fmt, T&& t, Args&&... args) {
             buffer.fmt_one(y_fwd(t));
         }
 
-        if constexpr(sizeof...(args)) {
+        if constexpr(sizeof...(args) != 0) {
             fmt_rec(buffer, c, y_fwd(args)...);
         } else {
             buffer.fmt_one(c);
@@ -146,7 +146,7 @@ static constexpr usize fmt_max_size = 1023;
 
 template<typename... Args>
 std::string_view fmt(const char* fmt_str, Args&&... args) {
-    if constexpr(sizeof...(args)) {
+    if constexpr(sizeof...(args) != 0) {
         detail::FmtBuffer buffer;
         detail::fmt_rec(buffer, fmt_str, y_fwd(args)...);
         return std::move(buffer).done();
@@ -158,7 +158,7 @@ std::string_view fmt(const char* fmt_str, Args&&... args) {
 template<typename... Args>
 std::string_view fmt_into(core::String& out, const char* fmt_str, Args&&... args) {
     detail::FmtBuffer buffer(out);
-    if constexpr(sizeof...(args)) {
+    if constexpr(sizeof...(args) != 0) {
         detail::fmt_rec(buffer, fmt_str, y_fwd(args)...);
     } else {
         buffer.fmt_one(fmt_str);

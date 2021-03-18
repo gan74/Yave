@@ -449,7 +449,7 @@ bool Device::has_required_properties(const PhysicalDevice &physical) {
 
     bool ok = true;
 
-    ok &= p11.subgroupQuadOperationsInAllStages;
+    ok &= !!p11.subgroupQuadOperationsInAllStages;
 
     return ok;
 }

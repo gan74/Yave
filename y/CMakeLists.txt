@@ -1,15 +1,17 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.18)
 project(y)
 
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_EXTENSIONS OFF)
+
+# This causes recursive macros to generate a bunch of warnings, solved by C++20
+# set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 if(MSVC)
-    # temporary hacks to get it to compile
-    set(Y_COMPILE_OPTIONS /permissive- /W0 /std:c++latest /Zc:__cplusplus)
+    set(Y_COMPILE_OPTIONS /permissive- /W3)
+    # https://docs.microsoft.com/en-us/cpp/build/reference/zm-specify-precompiled-header-memory-allocation-limit?view=msvc-160
 else()
     # -Wsign-conversion -Wshadow
     set(Y_EXTRA_WARNINGS

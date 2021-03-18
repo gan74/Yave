@@ -643,7 +643,7 @@ FolderAssetStore::Result<> FolderAssetStore::save() {
             y_debug_assert(_filesystem.is_directory(strict_parent_path(asset.first)).unwrap_or(false));
 
             //fmt_into(data, "% % %\n", asset.second.id, usize(asset.second.type), asset.first);
-            data += fmt("% % ", asset.second.id, usize(asset.second.type));
+            data += fmt("% % ", asset.second.id.id(), usize(asset.second.type));
             data += asset.first;
             data += "\n";
         }

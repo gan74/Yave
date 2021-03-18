@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "SparseComponentSet.h"
 
+#include <y/utils/iter.h>
+
 namespace yave {
 namespace ecs {
 
@@ -98,23 +100,23 @@ class EntityView {
     public:
         class IdComponents {
             public:
-                auto id() const {
+                inline auto id() const {
                     return _id;
                 }
 
-                auto components() const {
+                inline auto components() const {
                     return _components;
                 }
 
                 template<typename T>
-                decltype(auto) component() const {
+                inline decltype(auto) component() const {
                     using type = std::conditional_t<Const, const remove_cvref_t<T>&, remove_cvref_t<T>>;
                     constexpr usize index = detail::tuple_index<type, decltype(components())>::value;
                     static_assert(std::is_same_v<type, std::tuple_element_t<index, decltype(components())>>);
                     return std::get<index>(components());
                 }
 
-                IdComponents(EntityId id, component_tuple components) : _id(id), _components(components) {
+                inline IdComponents(EntityId id, component_tuple components) : _id(id), _components(components) {
                 }
 
             private:
@@ -122,35 +124,29 @@ class EntityView {
                 component_tuple _components;
         };
 
+    private:
         struct IdComponentsReturnPolicy {
-            static decltype(auto) make(EntityId id, const set_tuple& sets) {
+            inline static decltype(auto) make(EntityId id, const set_tuple& sets) {
                 return IdComponents(id, make_component_tuple(sets, id));
             }
         };
 
         struct IdReturnPolicy {
-            static EntityId make(EntityId id, const set_tuple&) {
+            inline static EntityId make(EntityId id, const set_tuple&) {
                 return id;
             }
         };
 
         struct ComponentsReturnPolicy {
-            static decltype(auto) make(EntityId id, const set_tuple& sets) {
+            inline static decltype(auto) make(EntityId id, const set_tuple& sets) {
                 return make_component_tuple(sets, id);
             }
         };
 
         template<typename ReturnPolicy>
         class Iterator {
-            id_range _range;
-            const set_tuple* _sets = nullptr;
-
             public:
                 inline Iterator() = default;
-
-                inline Iterator(id_range range, const set_tuple& sets) : _range(range), _sets(&sets) {
-                    find_next_valid();
-                }
 
                 inline void advance() {
                     y_debug_assert(!at_end());
@@ -186,6 +182,13 @@ class EntityView {
                 }
 
             private:
+                friend class EntityView;
+
+                inline Iterator(id_range range, const set_tuple& sets) : _range(range), _sets(&sets) {
+                    find_next_valid();
+                }
+
+
                 inline void find_next_valid() {
                     while(!at_end()) {
                         if(has_all<0>(*_sets, _range[0])) {
@@ -199,38 +202,46 @@ class EntityView {
                     y_debug_assert(!_range.is_empty());
                     _range = id_range(_range.begin() + 1, _range.size() - 1);
                 }
+
+                id_range _range;
+                const set_tuple* _sets = nullptr;
         };
+
+    public:
+        using const_iterator = Iterator<IdComponentsReturnPolicy>;
+
+        using const_component_iterator = Iterator<ComponentsReturnPolicy>;
+        using const_id_iterator = Iterator<IdReturnPolicy>;
+
+        using const_end_iterator = EndIterator;
+
 
         EntityView(const set_tuple& sets) : _sets(sets), _short(shortest_range()) {
         }
 
-        core::Range<Iterator<IdComponentsReturnPolicy>, EndIterator> id_components() const {
-            return {Iterator<IdComponentsReturnPolicy>(_short, _sets), EndIterator{}};
+        core::Range<const_iterator, const_end_iterator> id_components() const {
+            return {const_iterator(_short, _sets), const_end_iterator{}};
         }
 
-        core::Range<Iterator<ComponentsReturnPolicy>, EndIterator> components() const {
-            return {Iterator<ComponentsReturnPolicy>(_short, _sets), EndIterator{}};
+        core::Range<const_component_iterator, const_end_iterator> components() const {
+            return {const_component_iterator(_short, _sets), const_end_iterator{}};
         }
 
-        core::Range<Iterator<IdReturnPolicy>, EndIterator> ids() const {
-            return {Iterator<IdReturnPolicy>(_short, _sets), EndIterator{}};
+        core::Range<const_id_iterator, const_end_iterator> ids() const {
+            return {const_id_iterator(_short, _sets), const_end_iterator{}};
         }
 
-        Iterator<IdComponentsReturnPolicy> begin() const {
+        const_iterator begin() const {
             return id_components().begin();
         }
 
-        EndIterator end() const {
+        const_end_iterator end() const {
             return id_components().end();
         }
-
 
     private:
         set_tuple _sets;
         id_range _short;
-
-    public:
-        using const_iterator = Iterator<IdComponentsReturnPolicy>;
 };
 
 }

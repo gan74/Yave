@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.18)
 project(yave)
 
 function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
@@ -40,7 +40,16 @@ option(YAVE_BUILD_SHARED "Build as shared library" OFF)
 option(YAVE_UNITY_BUILD "Force unity build" OFF)
 
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_CXX_STANDARD 17)
 
+# See note in y
+# set(CMAKE_CXX_EXTENSIONS OFF)
+
+
+
+
+#Compiler specific stuff
 # Shitty hack to use lld when using MinGW to avoid long link times
 if(MINGW)
     option(YAVE_USE_LLD "Use LLD" OFF)
@@ -51,8 +60,11 @@ if(MINGW)
     endif()
 endif()
 
-find_package(Vulkan REQUIRED)
 
+
+
+
+find_package(Vulkan REQUIRED)
 
 # add y subtree
 add_subdirectory(y)
@@ -64,8 +76,6 @@ include_directories(${y_SOURCE_DIR})
 include_directories(${yave_SOURCE_DIR})
 include_directories(${Vulkan_INCLUDE_DIRS})
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 17)
 
 
 # Yave's core file

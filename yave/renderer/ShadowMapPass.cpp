@@ -49,7 +49,7 @@ static std::pair<math::Vec2ui, u32> alloc_sub_atlas(u32 level, usize& first_leve
 
     if(level == 0) {
         if(first_level_index < levels.size()) {
-            return {math::Vec2ui(0, first_level_index++) * first_level_size, first_level_size};
+            return {math::Vec2ui(0, u32(first_level_index++)) * first_level_size, u32(first_level_size)};
         }
         return {math::Vec2ui(), 0};
     }

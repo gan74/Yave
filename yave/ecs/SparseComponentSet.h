@@ -27,11 +27,10 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/Range.h>
 
-#include <y/utils/iter.h>
-
 #include <tuple>
 
 // #define YAVE_ECS_COMPONENT_SET_AUDIT
+
 
 namespace yave {
 namespace ecs {
@@ -114,46 +113,48 @@ class SparseComponentSetBase : public SparseIdSet {
         using const_pointer = const element_type*;
 
     private:
-        core::Vector<element_type> _values;
-
-    public:
         template<bool Const>
         class PairIterator {
+            using pointer_t = std::conditional_t<Const, const_pointer, pointer>;
+
             public:
-                using pointer_t = std::conditional_t<Const, const_pointer, pointer>;
+                inline PairIterator() = default;
 
-                const EntityId* _id = nullptr;
-                pointer_t _value = nullptr;
-
-                PairIterator() = default;
-                PairIterator(const EntityId* id, pointer_t value) : _id(id), _value(value) {
-                }
-
-                auto operator*() const {
+                inline auto operator*() const {
                     return std::tie(*_id, *_value);
                 }
 
-                PairIterator operator++() {
+                inline PairIterator operator++() {
                     ++_id;
                     ++_value;
                     return *this;
                 }
 
-                PairIterator operator++(int) {
+                inline PairIterator operator++(int) {
                     const PairIterator it = *this;
                     operator++();
                     return it;
                 }
 
-                bool operator==(const PairIterator& other) const {
+                inline bool operator==(const PairIterator& other) const {
                     return _id == other._id;
                 }
 
-                bool operator!=(const PairIterator& other) const {
+                inline bool operator!=(const PairIterator& other) const {
                     return !operator==(other);
                 }
+
+            private:
+                friend class SparseComponentSetBase;
+
+                inline PairIterator(const EntityId* id, pointer_t value) : _id(id), _value(value) {
+                }
+
+                const EntityId* _id = nullptr;
+                pointer_t _value = nullptr;
         };
 
+    public:
         using iterator = PairIterator<false>;
         using const_iterator = PairIterator<true>;
 
@@ -294,6 +295,8 @@ class SparseComponentSetBase : public SparseIdSet {
         }
 
     private:
+        core::Vector<element_type> _values;
+
         void audit() {
 #ifdef YAVE_ECS_COMPONENT_SET_AUDIT
             y_debug_assert(_dense.size() == _values.size());

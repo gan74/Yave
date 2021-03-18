@@ -48,7 +48,7 @@ struct AssetId {
             return _id != _invalid_id;
         }*/
 
-        constexpr operator u64() const {
+        constexpr explicit operator u64() const {
             return _id;
         }
 
@@ -86,7 +86,7 @@ static_assert(std::is_trivially_copyable_v<AssetId>);
 class AssetIdFactory {
     public:
         static AssetIdFactory create(u64 first) {
-            if(first == AssetId::invalid_id()) {
+            if(AssetId(first) == AssetId::invalid_id()) {
                 y_fatal("Invalid first ID.");
             }
             AssetIdFactory factory;
@@ -110,7 +110,7 @@ namespace std {
 template<>
 struct hash<yave::AssetId> : hash<yave::u64> {
     auto operator()(const yave::AssetId& id) const {
-        return hash<yave::u64>::operator()(id);
+        return hash<yave::u64>::operator()(id.id());
     }
 };
 }
