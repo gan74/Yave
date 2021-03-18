@@ -78,16 +78,21 @@ static constexpr bool is_debug_defined = false;
 
 #endif
 
-#ifdef _MSC_VER
-#define Y_MSVC
-#endif
-
 #if defined(__linux__) || defined(__gnu_linux__)
 #define Y_OS_LINUX
 #endif
 
+#ifdef _MSC_VER
+#define Y_MSVC
+#endif
 
+#ifdef __GNUC__
+#define Y_GCC
+#endif
 
+#ifdef __clang__
+#define Y_CLANG
+#endif
 
 
 #ifdef Y_DEBUG

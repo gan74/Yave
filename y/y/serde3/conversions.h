@@ -28,7 +28,7 @@ SOFTWARE.
 #include <y/io2/io.h>
 
 Y_TODO(Remove this (is this a GCC bug?))
-#ifdef __GNUC__
+#ifdef Y_GCC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-conversion"
 #endif
@@ -81,7 +81,7 @@ Result try_convert(T& t, detail::TypeHeader type, io2::Reader& reader) {
 
 #undef y_serde3_try_convert
 
-#ifdef __GNUC__
+#ifdef Y_GCC
 #pragma GCC diagnostic pop
 #endif
 

@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <array>
 
-#ifdef __GNUC__
+#ifdef Y_GCC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winit-list-lifetime"
 #endif
@@ -143,7 +143,7 @@ using Span = MutableSpan<const T>;
 }
 }
 
-#ifdef  __GNUC__
+#ifdef  Y_GCC
 #pragma GCC diagnostic pop
 #endif
 

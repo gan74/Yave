@@ -30,7 +30,7 @@ SOFTWARE.
 #include <windows.h>
 #endif
 
-#ifdef __GNUG__
+#ifdef Y_GCC
 #include <cstdlib>
 #include <memory>
 #include <cxxabi.h>
