@@ -97,12 +97,16 @@ class EntityView {
         return true;
     }
 
+
     template<usize I = 0>
-    static void check_sets(const set_tuple& sets) {
+    [[maybe_unused]] static bool has_null_sets(const set_tuple& sets) {
         if constexpr(I < sizeof...(Args)) {
-            y_debug_assert(std::get<I>(sets));
-            check_sets<I + 1>(sets);
+            if(!std::get<I>(sets)) {
+                return true;
+            }
+            return has_null_sets<I + 1>(sets);
         }
+            return false;
     }
 
     public:
@@ -156,12 +160,6 @@ class EntityView {
             public:
                 inline Iterator() = default;
 
-                inline void advance() {
-                    y_debug_assert(!at_end());
-                    move_one();
-                    find_next_valid();
-                }
-
                 inline bool at_end() const {
                     return _range.is_empty();
                 }
@@ -186,22 +184,25 @@ class EntityView {
                 }
 
                 inline auto operator*() const {
-                    return ReturnPolicy::make(_range[0], *_sets);
+                    return ReturnPolicy::make(_range[0], _sets);
                 }
 
             private:
                 friend class EntityView;
 
-                inline Iterator(id_range range, const set_tuple& sets) : _range(range), _sets(&sets) {
+                inline Iterator(id_range range, const set_tuple& sets) : _range(range), _sets(sets) {
                     find_next_valid();
                 }
 
+                inline void advance() {
+                    y_debug_assert(!at_end());
+                    move_one();
+                    find_next_valid();
+                }
 
                 inline void find_next_valid() {
-                    y_debug_assert(_sets);
-                    check_sets(*_sets);
                     while(!at_end()) {
-                        if(has_all<0>(*_sets, _range[0])) {
+                        if(has_all<0>(_sets, _range[0])) {
                             break;
                         }
                         move_one();
@@ -214,7 +215,7 @@ class EntityView {
                 }
 
                 id_range _range;
-                const set_tuple* _sets = nullptr;
+                set_tuple _sets;
         };
 
     public:
@@ -227,7 +228,7 @@ class EntityView {
 
 
         EntityView(const set_tuple& sets) : _sets(sets), _short(shortest_range()) {
-            check_sets(_sets);
+            y_debug_assert(_short.is_empty() || !has_null_sets<0>(_sets));
         }
 
         core::Range<const_iterator, const_end_iterator> id_components() const {
