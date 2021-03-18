@@ -379,7 +379,7 @@ void Gizmo::draw() {
                 return std::copysign(std::acos(vec[(axis + 1) % 3]), vec[(axis + 2) % 3]);
             };
 
-        if(is_clicked(_allow_drag)) {
+        if(is_clicked(_allow_drag) && _rotation_axis != usize(-1)) {
             _rotation_axis = rotation_axis;
             _rotation_offset = compute_angle(_rotation_axis);
         } if(!ImGui::IsMouseDown(0)) {
