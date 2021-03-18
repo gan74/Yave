@@ -48,7 +48,7 @@ class Vec
 {
     template<usize P, typename... Args>
     inline constexpr void build(T t, Args... args) {
-        _vec[P] = T(t);
+        _vec[P] = t;
         build<P + 1>(args...);
     }
 

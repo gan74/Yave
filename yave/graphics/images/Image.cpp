@@ -43,13 +43,13 @@ static VkImage create_image(DevicePtr dptr, const math::Vec3ui& size, usize laye
     {
         create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         create_info.flags = type == ImageType::Cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-        create_info.arrayLayers = layers;
+        create_info.arrayLayers = u32(layers);
         create_info.extent = {size.x(), size.y(), size.z()};
         create_info.format = format.vk_format();
         create_info.imageType = VK_IMAGE_TYPE_2D;
         create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
         create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        create_info.mipLevels = mips;
+        create_info.mipLevels = u32(mips);
         create_info.usage = VkImageUsageFlags(usage);
         create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     }
@@ -70,8 +70,8 @@ static auto get_copy_regions(const ImageData& data) {
                 copy.bufferOffset = data.data_offset(l, m);
                 copy.imageExtent = {size.x(), size.y(), size.z()};
                 copy.imageSubresource.aspectMask = data.format().vk_aspect();
-                copy.imageSubresource.mipLevel = m;
-                copy.imageSubresource.baseArrayLayer = l;
+                copy.imageSubresource.mipLevel = u32(m);
+                copy.imageSubresource.baseArrayLayer = u32(l);
                 copy.imageSubresource.layerCount = 1;
             }
             regions << copy;
@@ -92,7 +92,7 @@ static auto stage_data(DevicePtr dptr, usize byte_size, const void* data) {
     return staging_buffer;
 }
 
-static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format, usize layers, usize mips, ImageType type) {
+static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format, u32 layers, u32 mips, ImageType type) {
     VkImageViewCreateInfo create_info = vk_struct();
     {
         create_info.image = image;
@@ -108,7 +108,7 @@ static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format
     return view;
 }
 
-static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, u32 layers, u32 mips, ImageFormat format, ImageUsage usage, ImageType type) {
     y_profile();
     const auto image = create_image(dptr, size, layers, mips, format, usage, type);
     auto memory = device_allocator(dptr).alloc(image);
@@ -129,7 +129,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
     {
         const auto region = recorder.region("Image upload");
         recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)});
-        vkCmdCopyBufferToImage(recorder.vk_cmd_buffer(), staging_buffer.vk_buffer(), image.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
+        vkCmdCopyBufferToImage(recorder.vk_cmd_buffer(), staging_buffer.vk_buffer(), image.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, u32(regions.size()), regions.data());
         recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_image_layout(image.usage()))});
     }
 
@@ -163,8 +163,8 @@ static void check_layer_count(ImageType type, const math::Vec3ui& size, usize la
 
 ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips) :
         _size(size),
-        _layers(layers),
-        _mips(mips),
+        _layers(u32(layers)),
+        _mips(u32(mips)),
         _format(format),
         _usage(usage) {
 
@@ -177,8 +177,8 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 
 ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data) :
         _size(data.size()),
-        _layers(data.layers()),
-        _mips(data.mipmaps()),
+        _layers(u32(data.layers())),
+        _mips(u32(data.mipmaps())),
         _format(data.format()),
         _usage(usage | ImageUsage::TransferDstBit) {
 

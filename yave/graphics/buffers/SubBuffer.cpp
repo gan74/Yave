@@ -49,14 +49,14 @@ bool SubBufferBase::is_null() const {
 
 usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
     const auto& props = device_properties(dptr);
-    u32 align = props.non_coherent_atom_size;
+    u64 align = props.non_coherent_atom_size;
     if((usage & BufferUsage::UniformBit) != BufferUsage::None) {
         align = std::max(props.uniform_buffer_alignment, align);
     }
     if((usage & BufferUsage::StorageBit) != BufferUsage::None) {
         align = std::max(props.storage_buffer_alignment, align);
     }
-    return align;
+    return usize(align);
 }
 
 usize SubBufferBase::byte_size() const {

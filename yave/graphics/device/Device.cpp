@@ -175,7 +175,7 @@ static VkDevice create_device(
     {
         queue_create_info.queueFamilyIndex = graphic_queue_index;
         queue_create_info.pQueuePriorities = queue_priorityies.data();
-        queue_create_info.queueCount = queue_priorityies.size();
+        queue_create_info.queueCount = u32(queue_priorityies.size());
     }
 
     VkPhysicalDeviceFeatures2 features = vk_struct();
@@ -188,9 +188,9 @@ static VkDevice create_device(
     VkDeviceCreateInfo create_info = vk_struct();
     {
         create_info.pNext = &features;
-        create_info.enabledExtensionCount = extensions.size();
+        create_info.enabledExtensionCount = u32(extensions.size());
         create_info.ppEnabledExtensionNames = extensions.data();
-        create_info.enabledLayerCount = debug.device_layers().size();
+        create_info.enabledLayerCount = u32(debug.device_layers().size());
         create_info.ppEnabledLayerNames = debug.device_layers().data();
         create_info.queueCreateInfoCount = 1;
         create_info.pQueueCreateInfos = &queue_create_info;

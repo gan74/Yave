@@ -34,7 +34,7 @@ class ImageData : NonCopyable {
 
     public:
         ImageData() = default;
-        ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips = 1);
+        ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, usize mips = 1);
 
 
         static usize mip_count(const math::Vec3ui& size);

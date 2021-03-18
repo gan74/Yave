@@ -181,7 +181,7 @@ y_test_func("HashMap bad hash") {
 }
 
 y_test_func("HashMap fuzz") {
-    const u32 seed = std::time(nullptr);
+    const u32 seed = u32(std::time(nullptr));
     const usize fuzz_count = 25000;
     const auto m0 = fuzz<std::unordered_map<i32, i32>>(fuzz_count, seed);
 

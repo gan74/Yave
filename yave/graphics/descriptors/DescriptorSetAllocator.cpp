@@ -37,7 +37,7 @@ static constexpr usize inline_block_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT 
 static core::Vector<VkDescriptorSetLayoutBinding> create_layout_bindings(core::Span<Descriptor> descriptors) {
     auto layout_bindings = core::vector_with_capacity<VkDescriptorSetLayoutBinding>(descriptors.size());
     for(const Descriptor& d : descriptors) {
-        layout_bindings << d.descriptor_set_layout_binding(layout_bindings.size());
+        layout_bindings << d.descriptor_set_layout_binding(u32(layout_bindings.size()));
     }
     return layout_bindings;
 }
@@ -106,7 +106,7 @@ DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptor
 
     VkDescriptorSetLayoutCreateInfo create_info = vk_struct();
     {
-        create_info.bindingCount = bindings.size();
+        create_info.bindingCount = u32(bindings.size());
         create_info.pBindings = bindings.data();
     }
     vk_check(vkCreateDescriptorSetLayout(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &_layout.get()));
@@ -145,7 +145,7 @@ static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout
         if(type_count) {
             VkDescriptorPoolSize& pool_size = sizes[sizes_count++];
             pool_size.type = index_descriptor_type(i);
-            pool_size.descriptorCount = type_count * set_count;
+            pool_size.descriptorCount = u32(type_count * set_count);
         }
     }
 
@@ -155,9 +155,9 @@ static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout
 
     VkDescriptorPoolCreateInfo create_info = vk_struct();
     {
-        create_info.poolSizeCount = sizes_count;
+        create_info.poolSizeCount = u32(sizes_count);
         create_info.pPoolSizes = sizes.data();
-        create_info.maxSets = set_count;
+        create_info.maxSets = u32(set_count);
     }
 
     VkDescriptorPool pool = {};
@@ -247,7 +247,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
         VkWriteDescriptorSet write = vk_struct();
         {
             write.dstSet = _sets[id];
-            write.dstBinding = writes.size();
+            write.dstBinding = u32(writes.size());
             write.dstArrayElement = 0;
             write.descriptorCount = descriptor_count;
             write.descriptorType = desc.vk_descriptor_type();
@@ -278,7 +278,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
             } else {
                 VkWriteDescriptorSetInlineUniformBlockEXT& inline_block = inline_blocks.emplace_back(VkWriteDescriptorSetInlineUniformBlockEXT(vk_struct()));
                 inline_block.pData = block.data;
-                inline_block.dataSize = block.size;
+                inline_block.dataSize = u32(block.size);
                 write.pNext = &inline_block;
                 y_debug_assert(inline_block.dataSize % 4 == 0);
             }
@@ -290,7 +290,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
         writes << write;
     }
 
-    vkUpdateDescriptorSets(vk_device(device()), writes.size(), writes.data(), 0, nullptr);
+    vkUpdateDescriptorSets(vk_device(device()), u32(writes.size()), writes.data(), 0, nullptr);
 }
 
 

@@ -69,7 +69,7 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Spa
     VkFramebufferCreateInfo create_info = vk_struct();
     {
         create_info.renderPass = _render_pass->vk_render_pass();
-        create_info.attachmentCount = views.size();
+        create_info.attachmentCount = u32(views.size());
         create_info.pAttachments = views.data();
         create_info.width = _size.x();
         create_info.height = _size.y();

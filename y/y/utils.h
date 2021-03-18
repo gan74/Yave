@@ -33,7 +33,8 @@ namespace y {
 struct Empty {};
 
 
-constexpr usize log2ui(usize n) {
+template<typename T>
+constexpr T log2ui(T n) {
     return (n >> 1) ? log2ui(n >> 1) + 1 : 0;
 }
 

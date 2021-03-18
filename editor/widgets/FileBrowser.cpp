@@ -121,7 +121,7 @@ core::String FileBrowser::full_path() const {
 }
 
 void FileBrowser::on_gui() {
-    static constexpr isize button_width = 75;
+    static constexpr float button_width = 75.0f;
 
     {
         const float button_inner_width = button_width - (ImGui::GetStyle().FramePadding.x * 2.0f);

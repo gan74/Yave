@@ -29,7 +29,7 @@ SOFTWARE.
 namespace yave {
 
 struct ShadowMapSettings {
-    usize shadow_map_size = 1024;
+    u32 shadow_map_size = 1024;
     usize shadow_atlas_size = 8;
 };
 

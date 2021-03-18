@@ -10,7 +10,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 
 if(MSVC)
-    set(Y_COMPILE_OPTIONS /permissive- /W3)
+    set(Y_COMPILE_OPTIONS /permissive- /W3 /WX)
+    set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} -D_CRT_SECURE_NO_DEPRECATE)
     # https://docs.microsoft.com/en-us/cpp/build/reference/zm-specify-precompiled-header-memory-allocation-limit?view=msvc-160
 else()
     # -Wsign-conversion -Wshadow

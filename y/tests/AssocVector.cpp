@@ -66,7 +66,7 @@ y_test_func("AssocVector creation") {
 y_test_func("AssocVector movable values") {
     AssocVector<usize, NonCopyableValue> av;
     for(usize i = 0; i != 16; ++i) {
-        av[i] = NonCopyableValue(i);
+        av[i] = NonCopyableValue(int(i));
     }
     for(usize i = 0; i != av.size(); ++i) {
         const auto& value = av[i];

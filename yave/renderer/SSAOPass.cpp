@@ -132,7 +132,7 @@ static FrameGraphImageId compute_linear_depth(FrameGraph& framegraph, const GBuf
 }
 
 static FrameGraphImageId upsample_mini_ao(FrameGraph& framegraph,
-                                     float final_size_x,
+                                     u32 final_size_x,
                                      const math::Vec2ui& output_size,
                                      const SSAOSettings& settings,
                                      FrameGraphImageId hi_depth,

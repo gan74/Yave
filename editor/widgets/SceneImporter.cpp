@@ -197,14 +197,13 @@ void SceneImporter::import(import::SceneData scene) {
             y_profile_zone("asset import");
             io2::Buffer buffer;
             serde3::WritableArchive arc(buffer);
-            if(arc.serialize(asset)) {
-                buffer.reset();
-                if(asset_store().import(buffer, name, type)) {
-                    return;
-                }
-                log_msg(fmt("Unable import \"%\"", name), Log::Error);
+            if(auto sr = arc.serialize(asset); sr.is_error()) {
+                log_msg(fmt("Unable serialize \"%\": error %", name, sr.error().type), Log::Error);
             } else {
-                log_msg(fmt("Unable serialize \"%\"", name), Log::Error);
+                buffer.reset();
+                if(auto r = asset_store().import(buffer, name, type); r.is_error()) {
+                    log_msg(fmt("Unable to import \"%\": error %", name, r.error()), Log::Error);
+                }
             }
         };
 

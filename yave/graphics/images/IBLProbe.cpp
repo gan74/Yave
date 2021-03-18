@@ -40,7 +40,7 @@ static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format
         create_info.format = format.vk_format();
         create_info.subresourceRange.aspectMask = format.vk_aspect();
         create_info.subresourceRange.layerCount = 6;
-        create_info.subresourceRange.baseMipLevel = start_mip;
+        create_info.subresourceRange.baseMipLevel = u32(start_mip);
         create_info.subresourceRange.levelCount = 1;
     }
 

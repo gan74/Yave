@@ -157,8 +157,8 @@ static VkImageMemoryBarrier create_barrier(VkImage image, ImageFormat format, us
         barrier.image = image;
 
         barrier.subresourceRange.aspectMask = format.vk_aspect();
-        barrier.subresourceRange.layerCount = layers;
-        barrier.subresourceRange.levelCount = mips;
+        barrier.subresourceRange.layerCount = u32(layers);
+        barrier.subresourceRange.levelCount = u32(mips);
     }
     return barrier;
 }
@@ -178,8 +178,8 @@ static VkImageMemoryBarrier create_barrier(VkImage image, ImageFormat format, us
         barrier.image = image;
 
         barrier.subresourceRange.aspectMask = format.vk_aspect();
-        barrier.subresourceRange.layerCount = layers;
-        barrier.subresourceRange.levelCount = mips;
+        barrier.subresourceRange.layerCount = u32(layers);
+        barrier.subresourceRange.levelCount = u32(mips);
     }
     return barrier;
 }

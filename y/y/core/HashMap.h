@@ -60,7 +60,7 @@ inline std::pair<const K, V>& map_entry_to_value_type(std::pair<K, V>& p) {
 }
 
 inline constexpr usize ceil_next_power_of_2(usize k) {
-    return 1 << log2ui(k + 1);
+    return 1_uu << log2ui(k + 1);
 }
 
 

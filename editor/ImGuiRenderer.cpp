@@ -147,7 +147,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
         std::copy(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Data + cmd_list->IdxBuffer.Size, &indexes[index_offset]);
         std::copy(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Data + cmd_list->VtxBuffer.Size, &vertices[vertex_offset]);
 
-        u32 drawn_index_offset = index_offset;
+        usize drawn_index_offset = index_offset;
         for(auto i = 0; i != cmd_list->CmdBuffer.Size; ++i) {
             const ImDrawCmd& cmd = cmd_list->CmdBuffer[i];
 
@@ -168,8 +168,8 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
 
                 VkDrawIndexedIndirectCommand command = {};
                 {
-                    command.firstIndex = drawn_index_offset;
-                    command.vertexOffset = vertex_offset;
+                    command.firstIndex = u32(drawn_index_offset);
+                    command.vertexOffset = u32(vertex_offset);
                     command.indexCount = cmd.ElemCount;
                     command.instanceCount = 1;
                 }

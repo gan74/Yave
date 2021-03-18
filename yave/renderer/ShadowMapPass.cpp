@@ -38,7 +38,7 @@ struct SubAtlas {
     u32 subs = 4;
 };
 
-static std::pair<math::Vec2ui, u32> alloc_sub_atlas(u32 level, usize& first_level_index, core::MutableSpan<SubAtlas> levels, usize first_level_size) {
+static std::pair<math::Vec2ui, u32> alloc_sub_atlas(u32 level, usize& first_level_index, core::MutableSpan<SubAtlas> levels, u32 first_level_size) {
     y_always_assert(level < levels.size(), "Invalid atlas level");
     const u32 size = first_level_size >> level;
     const u32 index = levels[level].subs;
@@ -74,8 +74,8 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Shadow pass");
 
-    const usize shadow_map_log_size = log2ui(settings.shadow_map_size);
-    const usize first_level_size = 1 << shadow_map_log_size;
+    const u32 shadow_map_log_size = log2ui(settings.shadow_map_size);
+    const u32 first_level_size = 1 << shadow_map_log_size;
     if(first_level_size != settings.shadow_map_size) {
         log_msg("Shadow map size is not a power of two", Log::Warning);
     }
@@ -114,12 +114,14 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
                 SceneRenderSubPass::create(builder, spot_view),
                 offset, size
             });
+
+            const float size_f = float(size);
             pass.sub_passes->lights[spot.id().as_u64()] = {
                 spot_view.camera().viewproj_matrix(),
                 math::Vec2(offset) * uv_mul,
-                math::Vec2(size) * uv_mul,
-                float(size),
-                1.0f / float(size),
+                uv_mul * size_f,
+                size_f,
+                1.0f / size_f,
                 {},
             };
         }
@@ -130,7 +132,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
 
         for(const auto& sub_pass : pass.sub_passes->passes) {
-            render_pass.set_viewport(Viewport(math::Vec2(sub_pass.viewport_size), sub_pass.viewport_offset));
+            render_pass.set_viewport(Viewport(math::Vec2(float(sub_pass.viewport_size)), sub_pass.viewport_offset));
             sub_pass.scene_pass.render(render_pass, self);
         }
     });

@@ -85,7 +85,7 @@ void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, Descript
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             pipeline.vk_pipeline_layout(),
             0,
-            descriptor_sets.size(), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
+            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
             0, nullptr
         );
     }
@@ -117,14 +117,14 @@ void RenderPassRecorder::draw(const VkDrawIndirectCommand& indirect) {
 
 void RenderPassRecorder::draw_indexed(usize index_count) {
     VkDrawIndexedIndirectCommand command = {};
-    command.indexCount = index_count;
+    command.indexCount = u32(index_count);
     command.instanceCount = 1;
     draw(command);
 }
 
 void RenderPassRecorder::draw_array(usize vertex_count) {
     VkDrawIndirectCommand command = {};
-    command.vertexCount = vertex_count;
+    command.vertexCount = u32(vertex_count);
     command.instanceCount = 1;
     draw(command);
 }
@@ -152,8 +152,8 @@ void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::Attrib
         const VkBuffer buffer = per_vertex.vk_buffer();
         vkCmdBindVertexBuffers(vk_cmd_buffer(), 0, 1, &buffer, &offset);
     } else {
-        bool has_per_vertex = per_vertex.device();
-        const u32 attrib_count = per_instance.size() + has_per_vertex;
+        const bool has_per_vertex = per_vertex.device();
+        const u32 attrib_count = u32(per_instance.size()) + has_per_vertex;
 
         auto offsets = core::vector_with_capacity<VkDeviceSize>(attrib_count);
         auto buffers = core::vector_with_capacity<VkBuffer>(attrib_count);
@@ -271,7 +271,7 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
         begin_info.renderPass = framebuffer.render_pass().vk_render_pass();
         begin_info.framebuffer = framebuffer.vk_framebuffer();
         begin_info.pClearValues = clear_values.begin();
-        begin_info.clearValueCount = clear_values.size();
+        begin_info.clearValueCount = u32(clear_values.size());
     }
 
 
@@ -293,12 +293,12 @@ void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3
             VK_PIPELINE_BIND_POINT_COMPUTE,
             program.vk_pipeline_layout(),
             0,
-            descriptor_sets.size(), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
+            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
             0, nullptr);
     }
 
     if(!push_constants.is_empty()) {
-        vkCmdPushConstants(vk_cmd_buffer(), program.vk_pipeline_layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants.size(), push_constants.data());
+        vkCmdPushConstants(vk_cmd_buffer(), program.vk_pipeline_layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, u32(push_constants.size()), push_constants.data());
     }
 
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
@@ -350,8 +350,8 @@ void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<I
         VkPipelineStageFlags(dst_mask),
         VK_DEPENDENCY_BY_REGION_BIT,
         0, nullptr,
-        buffer_barriers.size(), buffer_barriers.data(),
-        image_barriers.size(), image_barriers.data()
+        u32(buffer_barriers.size()), buffer_barriers.data(),
+        u32(image_barriers.size()), image_barriers.data()
     );
 }
 
@@ -428,9 +428,9 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
         {
             copy.extent = {src.image_size().x(), src.image_size().y(), src.image_size().z()};
             copy.srcSubresource.aspectMask = src.format().vk_aspect();
-            copy.srcSubresource.layerCount = src.layers();
+            copy.srcSubresource.layerCount = u32(src.layers());
             copy.dstSubresource.aspectMask = dst.format().vk_aspect();
-            copy.dstSubresource.layerCount = dst.layers();
+            copy.dstSubresource.layerCount = u32(dst.layers());
         }
 
         vkCmdCopyImage(vk_cmd_buffer(),

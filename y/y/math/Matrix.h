@@ -282,11 +282,9 @@ class Matrix {
 namespace detail {
     template<typename T, usize N>
     constexpr T determinant(const Matrix<N, N, T>& mat) {
-        struct {
-            int operator()(int index) const {
-                return 2 * (index % 2) - 1;
-            }
-        } sgn;
+        auto sgn = [](usize index) {
+            return 2 * int(index % 2) - 1;
+        };
         T d(0);
         const auto row = mat.row(0);
         for(usize i = 0; i != N; ++i) {

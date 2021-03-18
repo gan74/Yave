@@ -97,6 +97,14 @@ class EntityView {
         return true;
     }
 
+    template<usize I = 0>
+    static void check_sets(const set_tuple& sets) {
+        if constexpr(I < sizeof...(Args)) {
+            y_debug_assert(std::get<I>(sets));
+            check_sets<I + 1>(sets);
+        }
+    }
+
     public:
         class IdComponents {
             public:
@@ -190,6 +198,8 @@ class EntityView {
 
 
                 inline void find_next_valid() {
+                    y_debug_assert(_sets);
+                    check_sets(*_sets);
                     while(!at_end()) {
                         if(has_all<0>(*_sets, _range[0])) {
                             break;
@@ -217,6 +227,7 @@ class EntityView {
 
 
         EntityView(const set_tuple& sets) : _sets(sets), _short(shortest_range()) {
+            check_sets(_sets);
         }
 
         core::Range<const_iterator, const_end_iterator> id_components() const {

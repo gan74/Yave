@@ -35,7 +35,7 @@ SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
         _skeleton(mesh_data.bones()),
         _radius(mesh_data.radius()) {
 
-    _indirect_data.indexCount = mesh_data.triangles().size() * 3;
+    _indirect_data.indexCount = u32(mesh_data.triangles().size() * 3);
     _indirect_data.instanceCount = 1;
 
     CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));

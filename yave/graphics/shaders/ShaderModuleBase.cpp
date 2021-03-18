@@ -82,7 +82,7 @@ static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::
 }
 
 static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res, VkDescriptorType type) {
-    u32 size = 1;
+    usize size = 1;
     if(is_inline(compiler, res)) {
         type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
         size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
@@ -90,7 +90,7 @@ static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& 
     VkDescriptorSetLayoutBinding binding = {};
     {
         binding.binding = compiler.get_decoration(res.id, spv::DecorationBinding);
-        binding.descriptorCount = size;
+        binding.descriptorCount = u32(size);
         binding.descriptorType = type;
         binding.stageFlags = VK_SHADER_STAGE_ALL;
     }
@@ -178,7 +178,7 @@ static auto create_attribs(const spirv_cross::Compiler& compiler, const R& resou
         attribs << ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype)};
 
         for(usize i = location; i != location + type.columns; ++i) {
-            if(!locations.insert(i).second) {
+            if(!locations.insert(u32(i)).second) {
                 y_fatal("Duplicate or overlapping attribute locations.");
             }
         }
@@ -241,7 +241,7 @@ ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : Devi
         spec_offset += size;
     }
 
-    for(usize i = 0; i != 3; ++i) {
+    for(u32 i = 0; i != 3; ++i) {
         _local_size[i] = compiler.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, i);
     }
 }

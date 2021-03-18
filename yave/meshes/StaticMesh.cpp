@@ -33,7 +33,7 @@ StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
         _vertex_buffer(dptr, mesh_data.vertices().size()),
         _aabb(mesh_data.aabb()) {
 
-    _indirect_data.indexCount = mesh_data.triangles().size() * 3;
+    _indirect_data.indexCount = u32(mesh_data.triangles().size() * 3);
     _indirect_data.instanceCount = 1;
 
     CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));

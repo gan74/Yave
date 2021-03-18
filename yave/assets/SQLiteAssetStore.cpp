@@ -157,8 +157,8 @@ FileSystemModel::Result<bool> SQLiteAssetStore::SQLiteFileSystemModel::exists(st
 
     sqlite3_stmt* stmt = nullptr;
     check(sqlite3_prepare_v2(_database, "SELECT 1 FROM Assets WHERE name = ? UNION SELECT 1 FROM Folders WHERE name = ?", -1, &stmt, nullptr));
-    check(sqlite3_bind_text(stmt, 1, path.data(), path.size(), nullptr));
-    check(sqlite3_bind_text(stmt, 2, path.data(), path.size() - has_delim, nullptr));
+    check(sqlite3_bind_text(stmt, 1, path.data(), int(path.size()), nullptr));
+    check(sqlite3_bind_text(stmt, 2, path.data(), int(path.size() - has_delim), nullptr));
     y_defer(sqlite3_finalize(stmt));
 
     return core::Ok(is_row(step_db(stmt)));
@@ -171,7 +171,7 @@ FileSystemModel::Result<bool> SQLiteAssetStore::SQLiteFileSystemModel::is_direct
 
     sqlite3_stmt* stmt = nullptr;
     check(sqlite3_prepare_v2(_database, "SELECT 1 FROM Folders WHERE name = ?", -1, &stmt, nullptr));
-    check(sqlite3_bind_text(stmt, 1, path.data(), path.size() - has_delim, nullptr));
+    check(sqlite3_bind_text(stmt, 1, path.data(), int(path.size() - has_delim), nullptr));
     y_defer(sqlite3_finalize(stmt));
 
     return core::Ok(is_row(step_db(stmt)));
@@ -222,7 +222,7 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::create_direct
 
         sqlite3_stmt* stmt = nullptr;
         check(sqlite3_prepare_v2(_database, "INSERT INTO Folders(name, folderid, parentid) VALUES(?, (SELECT MAX(folderid) FROM Folders) + 1, ?)", -1, &stmt, nullptr));
-        check(sqlite3_bind_text(stmt, 1, path.data(), path.size() - has_delim, nullptr));
+        check(sqlite3_bind_text(stmt, 1, path.data(), int(path.size() - has_delim), nullptr));
         check(sqlite3_bind_int64(stmt, 2, fid.unwrap()));
         y_defer(sqlite3_finalize(stmt));
 
@@ -302,9 +302,9 @@ FileSystemModel::Result<> SQLiteAssetStore::SQLiteFileSystemModel::rename(std::s
     } else {
         sqlite3_stmt* stmt = nullptr;
         check(sqlite3_prepare_v2(_database, "UPDATE Assets SET name = ?, folderid = ? WHERE name = ?", -1, &stmt, nullptr));
-        check(sqlite3_bind_text(stmt, 1, to.data(), to.size(), nullptr));
+        check(sqlite3_bind_text(stmt, 1, to.data(), int(to.size()), nullptr));
         check(sqlite3_bind_int64(stmt, 2, fid.unwrap()));
-        check(sqlite3_bind_text(stmt, 3, from.data(), from.size(), nullptr));
+        check(sqlite3_bind_text(stmt, 3, from.data(), int(from.size()), nullptr));
         y_defer(sqlite3_finalize(stmt));
 
         if(!is_done(step_db(stmt))) {
@@ -323,8 +323,8 @@ FileSystemModel::Result<core::Vector<core::String>> SQLiteAssetStore::SQLiteFile
 
     sqlite3_stmt* stmt = nullptr;
     check(sqlite3_prepare_v2(_database, "SELECT name FROM (SELECT name FROM Folders WHERE UPPER(name) LIKE UPPER(?) UNION SELECT name FROM Assets WHERE name LIKE ? COLLATE NOCASE)", -1, &stmt, nullptr));
-    check(sqlite3_bind_text(stmt, 1, pattern.data(), pattern.size(), nullptr));
-    check(sqlite3_bind_text(stmt, 2, pattern.data(), pattern.size(), nullptr));
+    check(sqlite3_bind_text(stmt, 1, pattern.data(), int(pattern.size()), nullptr));
+    check(sqlite3_bind_text(stmt, 2, pattern.data(), int(pattern.size()), nullptr));
     y_defer(sqlite3_finalize(stmt));
 
     for(auto row : rows(stmt)) {
@@ -347,7 +347,7 @@ FileSystemModel::Result<i64> SQLiteAssetStore::SQLiteFileSystemModel::folder_id(
 
     sqlite3_stmt* stmt = nullptr;
     check(sqlite3_prepare_v2(_database, "SELECT folderid FROM Folders WHERE name = ?", -1, &stmt, nullptr));
-    check(sqlite3_bind_text(stmt, 1, path.data(), path.size() - has_delim, nullptr));
+    check(sqlite3_bind_text(stmt, 1, path.data(), int(path.size() - has_delim), nullptr));
     y_defer(sqlite3_finalize(stmt));
 
     if(!is_row(step_db(stmt))) {
@@ -497,7 +497,7 @@ AssetStore::Result<AssetId> SQLiteAssetStore::import(io2::Reader& data, std::str
     {
         sqlite3_stmt* stmt = nullptr;
         check(sqlite3_prepare_v2(_database, "INSERT INTO Assets(name, uid, folderid, type) VALUES(?, ?, ?, ?)", -1, &stmt, nullptr));
-        check(sqlite3_bind_text(stmt, 1, dst_name.data(), dst_name.size(), nullptr));
+        check(sqlite3_bind_text(stmt, 1, dst_name.data(), int(dst_name.size()), nullptr));
         check(sqlite3_bind_int64(stmt, 2, id.id()));
         check(sqlite3_bind_int64(stmt, 3, folder_id.unwrap()));
         check(sqlite3_bind_int(stmt, 4, int(type)));
@@ -528,7 +528,7 @@ AssetStore::Result<> SQLiteAssetStore::write(AssetId id, io2::Reader& data) {
     {
         sqlite3_stmt* stmt = nullptr;
         check(sqlite3_prepare_v2(_database, "UPDATE Assets SET data = ? WHERE uid = ?", -1, &stmt, nullptr));
-        check(sqlite3_bind_blob(stmt, 1, buffer.data(), buffer.size(), nullptr));
+        check(sqlite3_bind_blob(stmt, 1, buffer.data(), int(buffer.size()), nullptr));
         check(sqlite3_bind_int64(stmt, 2, id.id()));
         y_defer(sqlite3_finalize(stmt));
 
@@ -544,7 +544,7 @@ AssetStore::Result<AssetId> SQLiteAssetStore::id(std::string_view name) const {
 
     sqlite3_stmt* stmt = nullptr;
     check(sqlite3_prepare_v2(_database, "SELECT uid FROM Assets WHERE name = ?", -1, &stmt, nullptr));
-    check(sqlite3_bind_text(stmt, 1, name.data(), name.size(), nullptr));
+    check(sqlite3_bind_text(stmt, 1, name.data(), int(name.size()), nullptr));
     y_defer(sqlite3_finalize(stmt));
 
     if(!is_row(step_db(stmt))) {

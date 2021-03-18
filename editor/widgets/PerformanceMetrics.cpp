@@ -39,6 +39,10 @@ static double to_mb(double b) {
     return b / (1024 * 1024);
 }
 
+static double to_mb(usize b) {
+    return to_mb(double(b));
+}
+
 static const char* memory_type_name(MemoryType type) {
     const char* names[] = {"Generic", "Device local", "Host visible", "Staging"};
     return names[usize(type)];
@@ -110,7 +114,6 @@ PerformanceMetrics::PerformanceMetrics() :
         _frames(core::Duration::seconds(1)) {
 }
 
-
 bool PerformanceMetrics::before_gui() {
     ImGui::SetNextWindowSizeConstraints(ImVec2(-1.0f, 0.0f), ImVec2(-1.0f, std::numeric_limits<float>::max()));
     return true;
@@ -137,11 +140,11 @@ void PerformanceMetrics::draw_timings() {
     ImGui::Text("Max time: %.2fms", _average.max());
     ImGui::Text("Average time: %.2fms", _frames.average());
     ImGui::SetNextItemWidth(-1);
-    ImGui::PlotLines("##averages", _average.values().data(), _average.values().size(), _average.next_index(), "", 0.0f, _average.max(), ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
+    ImGui::PlotLines("##averages", _average.values().data(), int(_average.values().size()), int(_average.next_index()), "", 0.0f, _average.max(), ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 
     ImGui::Text("Frame time: %.2fms", ms);
     ImGui::SetNextItemWidth(-1);
-    ImGui::PlotLines("##frames", _frames.values().data(), _frames.values().size(), _frames.next_index(), "", 0.0f, _average.max(), ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
+    ImGui::PlotLines("##frames", _frames.values().data(), int(_frames.values().size()), int(_frames.next_index()), "", 0.0f, _average.max(), ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 
     ImGui::Text("%.3u resources waiting deletion", unsigned(lifetime_manager(app_device()).pending_deletions()));
     ImGui::Text("%.3u active command buffers", unsigned(lifetime_manager(app_device()).pending_cmd_buffers()));
@@ -203,7 +206,7 @@ void PerformanceMetrics::draw_memory() {
         ImGui::Text("Max usage: %.1fMB", _memory.max());
 
         ImGui::SetNextItemWidth(-1);
-        ImGui::PlotLines("##memory", _memory.values().data(), _memory.values().size(), _memory.next_index(), "", 0.0f, _memory.max() * 1.33f, ImVec2(0, 80));
+        ImGui::PlotLines("##memory", _memory.values().data(), int(_memory.values().size()), int(_memory.next_index()), "", 0.0f, _memory.max() * 1.33f, ImVec2(0, 80));
     }
 
     {

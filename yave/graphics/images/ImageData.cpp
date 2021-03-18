@@ -95,11 +95,11 @@ const u8* ImageData::data(usize layer, usize mip) const {
     return _data.data() + data_offset(layer, mip);
 }
 
-ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, u32 mips) :
+ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, usize mips) :
         _size(size, 1),
         _format(format),
         _layers(1),
-        _mips(mips) {
+        _mips(u32(mips)) {
 
     usize data_size = combined_byte_size();
     _data = core::FixedArray<u8>(data_size);

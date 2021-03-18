@@ -119,9 +119,9 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 
     VkPipelineVertexInputStateCreateInfo vertex_input = vk_struct();
     {
-        vertex_input.vertexAttributeDescriptionCount = attribute_descriptions.size();
+        vertex_input.vertexAttributeDescriptionCount = u32(attribute_descriptions.size());
         vertex_input.pVertexAttributeDescriptions = attribute_descriptions.data();
-        vertex_input.vertexBindingDescriptionCount = attribute_bindings.size();
+        vertex_input.vertexBindingDescriptionCount = u32(attribute_bindings.size());
         vertex_input.pVertexBindingDescriptions = attribute_bindings.data();
     }
 
@@ -215,7 +215,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     const std::array dynamics = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamic_states = vk_struct();
     {
-        dynamic_states.dynamicStateCount = dynamics.size();
+        dynamic_states.dynamicStateCount = u32(dynamics.size());
         dynamic_states.pDynamicStates = dynamics.data();
     }
 

@@ -45,7 +45,7 @@ EntityId EntityIdPool::id_from_index(u32 index) const {
 EntityId EntityIdPool::create() {
     if(_free.is_empty()) {
         const usize index = _ids.size();
-        _ids.emplace_back(EntityId(index));
+        _ids.emplace_back(EntityId(u32(index)));
         return _ids.last();
     }
 

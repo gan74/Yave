@@ -175,7 +175,7 @@ constexpr MembersHeader build_members_header(NamedObject<T> obj) {
     hash_members<0>(member_hash, members(obj.object));
     return MembersHeader {
         member_hash,
-        member_count<T>(),
+        u32(member_count<T>()),
     };
 }
 

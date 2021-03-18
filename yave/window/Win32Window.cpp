@@ -37,12 +37,12 @@ static u32 is_ascii(WPARAM w_param, LPARAM l_param) {
     unused(init);
     const auto scan_code = (l_param >> 16) & 0xFF;
     WORD ascii = 0;
-    return ::ToAscii(w_param, scan_code, kb_state, &ascii, 0);
+    return ::ToAscii(UINT(w_param), UINT(scan_code), kb_state, &ascii, 0);
 }
 
 static Key to_key(WPARAM w_param, LPARAM l_param) {
-    if(!std::iscntrl(w_param) && is_ascii(w_param, l_param)) {
-        return Key(std::toupper(w_param));
+    if(!std::iscntrl(int(w_param)) && is_ascii(w_param, l_param)) {
+        return Key(std::toupper(int(w_param)));
     }
     switch(w_param) {
         case VK_TAB:        return Key::Tab;

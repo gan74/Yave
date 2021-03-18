@@ -52,7 +52,7 @@ static VkSurfaceFormatKHR surface_format(DevicePtr dptr, VkSurfaceKHR surface) {
 
 static VkPresentModeKHR present_mode(DevicePtr dptr, VkSurfaceKHR surface) {
     std::array<VkPresentModeKHR, 16> modes = {};
-    u32 mode_count = modes.size();
+    u32 mode_count = u32(modes.size());
     vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(dptr->vk_physical_device(), surface, &mode_count, modes.data()));
     y_always_assert(mode_count, "No presentation mode supported");
     for(u32 i = 0; i != mode_count; ++i) {

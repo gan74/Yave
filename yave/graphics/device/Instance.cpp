@@ -74,9 +74,9 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 
     VkInstanceCreateInfo create_info = vk_struct();
     {
-        create_info.enabledExtensionCount = extention_names.size();
+        create_info.enabledExtensionCount = u32(extention_names.size());
         create_info.ppEnabledExtensionNames = extention_names.data();
-        create_info.enabledLayerCount = _debug_params.instance_layers().size();
+        create_info.enabledLayerCount = u32(_debug_params.instance_layers().size());
         create_info.ppEnabledLayerNames = _debug_params.instance_layers().data();
         create_info.pApplicationInfo = &app_info;
     }

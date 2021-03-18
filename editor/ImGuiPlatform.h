@@ -74,7 +74,7 @@ class ImGuiPlatform : NonMovable {
         void show_demo();
 
     private:
-        friend class PlatformWindow;
+        friend struct PlatformWindow;
 
         void close_window(PlatformWindow* window);
 

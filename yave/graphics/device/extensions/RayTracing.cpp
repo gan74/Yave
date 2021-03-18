@@ -41,13 +41,13 @@ static VkGeometryNV create_mesh_geometry(const StaticMesh& mesh) {
 
         geometry.geometry.triangles.vertexData = mesh.vertex_buffer().vk_buffer();
         geometry.geometry.triangles.vertexOffset = 0;
-        geometry.geometry.triangles.vertexCount = mesh.vertex_buffer().size();
+        geometry.geometry.triangles.vertexCount = u32(mesh.vertex_buffer().size());
         geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
         geometry.geometry.triangles.vertexStride = sizeof(Vertex);
 
         geometry.geometry.triangles.indexData = mesh.triangle_buffer().vk_buffer();
         geometry.geometry.triangles.indexOffset = 0;
-        geometry.geometry.triangles.indexCount = mesh.triangle_buffer().size() * 3;
+        geometry.geometry.triangles.indexCount = u32(mesh.triangle_buffer().size() * 3);
         geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
     }
     {
@@ -68,7 +68,7 @@ RayTracing::AccelerationStructure::AccelerationStructure(DevicePtr dptr, core::S
     {
         VkAccelerationStructureInfoNV as_info = vk_struct();
         as_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
-        as_info.geometryCount = geometries.size();
+        as_info.geometryCount = u32(geometries.size());
         as_info.pGeometries = geometries.data();
 
         VkAccelerationStructureCreateInfoNV create_info = vk_struct();

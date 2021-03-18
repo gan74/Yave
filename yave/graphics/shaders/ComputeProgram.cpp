@@ -44,9 +44,9 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 
     VkPipelineLayoutCreateInfo layout_create_info = vk_struct();
     {
-        layout_create_info.setLayoutCount = layouts.size();
+        layout_create_info.setLayoutCount = u32(layouts.size());
         layout_create_info.pSetLayouts = layouts.data();
-        layout_create_info.pushConstantRangeCount = comp.vk_push_constants().size();
+        layout_create_info.pushConstantRangeCount = u32(comp.vk_push_constants().size());
         layout_create_info.pPushConstantRanges = comp.vk_push_constants().data();
     }
 
@@ -60,9 +60,9 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
     auto entries = data.size() ? comp.specialization_entries() : core::Span<VkSpecializationMapEntry>();
     VkSpecializationInfo spec_info = {};
     {
-        spec_info.mapEntryCount = entries.size();
+        spec_info.mapEntryCount = u32(entries.size());
         spec_info.pMapEntries = entries.data();
-        spec_info.dataSize = data.size();
+        spec_info.dataSize = u32(data.size());
         spec_info.pData = data.data();
     }
 

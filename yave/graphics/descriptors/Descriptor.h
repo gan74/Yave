@@ -138,8 +138,8 @@ class Descriptor {
         }
 
 
-        VkDescriptorSetLayoutBinding descriptor_set_layout_binding(usize index) const {
-            const u32 size = is_inline_block() ? _info.inline_block.size : 1;
+        VkDescriptorSetLayoutBinding descriptor_set_layout_binding(u32 index) const {
+            const u32 size = is_inline_block() ? u32(_info.inline_block.size) : 1;
             VkDescriptorSetLayoutBinding binding = {};
             {
                 binding.binding = index;

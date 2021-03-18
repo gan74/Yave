@@ -196,7 +196,7 @@ void EngineView::draw_settings_menu() {
         bool enabled = settings.method != SSAOSettings::SSAOMethod::None;
         ImGui::Checkbox("Enabled", &enabled);
 
-        int levels = settings.level_count;
+        int levels = int(settings.level_count);
 
         ImGui::SliderInt("Levels", &levels, 2, 8);
         ImGui::SliderFloat("Blur tolerance", &settings.blur_tolerance, 1.0f, 8.0f);
@@ -211,7 +211,7 @@ void EngineView::draw_settings_menu() {
 
     if(ImGui::BeginMenu("Bloom")) {
         BloomSettings& settings = _settings.renderer_settings.bloom;
-        int pyramids = settings.pyramids;
+        int pyramids = int(settings.pyramids);
         bool scatter = settings.type == BloomSettings::Scattering;
 
         ImGui::Checkbox("Use scattering", &scatter);

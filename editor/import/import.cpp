@@ -23,6 +23,7 @@ SOFTWARE.
 #include "import.h"
 #include "transforms.h"
 
+#include <yave/meshes/Vertex.h>
 #include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/utils/FileSystemModel.h>
