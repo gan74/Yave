@@ -232,6 +232,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                     unused(dptr);
                     _data->finalize_loading(std::move(_load_from));
                 }
+                y_profile_msg(fmt_c_str("finished loading %", asset_name()));
             }
 
             void set_dependencies_failed() {

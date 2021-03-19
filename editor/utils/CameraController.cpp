@@ -58,8 +58,8 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
     if(ImGui::IsKeyDown(int(settings.center_on_obj))) {
         auto id = selection().selected_entity();
         if(id.is_valid()) {
-            if(const auto pos = entity_position(world(), id)) {
-                const float radius = entity_radius(world(), id).unwrap_or(10.0f);
+            if(const auto pos = entity_position(current_world(), id)) {
+                const float radius = entity_radius(current_world(), id).unwrap_or(10.0f);
                 cam_pos = pos.unwrap() - cam_fwd * (radius * 1.5f);
             }
         }

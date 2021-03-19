@@ -158,7 +158,7 @@ static void light_widget(T* light) {
 }
 
 editor_widget_draw_func(ecs::EntityId id) {
-    PointLightComponent* light = world().component<PointLightComponent>(id);
+    PointLightComponent* light = current_world().component<PointLightComponent>(id);
     if(!light) {
         return;
     }
@@ -186,7 +186,7 @@ editor_widget_draw_func(ecs::EntityId id) {
 }
 
 editor_widget_draw_func(ecs::EntityId id) {
-    SpotLightComponent* light = world().component<SpotLightComponent>(id);
+    SpotLightComponent* light = current_world().component<SpotLightComponent>(id);
     if(!light) {
         return;
     }
@@ -251,7 +251,7 @@ editor_widget_draw_func(ecs::EntityId id) {
 }
 
 editor_widget_draw_func(ecs::EntityId id) {
-    DirectionalLightComponent* light = world().component<DirectionalLightComponent>(id);
+    DirectionalLightComponent* light = current_world().component<DirectionalLightComponent>(id);
     if(!light) {
         return;
     }
@@ -296,7 +296,7 @@ editor_widget_draw_func(ecs::EntityId id) {
 
 
 editor_widget_draw_func(ecs::EntityId id) {
-    SkyLightComponent* sky = world().component<SkyLightComponent>(id);
+    SkyLightComponent* sky = current_world().component<SkyLightComponent>(id);
     if(!sky) {
         return;
     }
@@ -314,7 +314,7 @@ editor_widget_draw_func(ecs::EntityId id) {
             add_child_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
                 [=](AssetId asset) {
                     if(const auto probe = asset_loader().load_res<IBLProbe>(asset)) {
-                        if(SkyLightComponent* sky = world().component<SkyLightComponent>(id)) {
+                        if(SkyLightComponent* sky = current_world().component<SkyLightComponent>(id)) {
                             sky->probe() = probe.unwrap();
                         }
                     }
@@ -333,7 +333,7 @@ editor_widget_draw_func(ecs::EntityId id) {
 **************************************************************************/
 
 editor_widget_draw_func(ecs::EntityId id) {
-    StaticMeshComponent* static_mesh = world().component<StaticMeshComponent>(id);
+    StaticMeshComponent* static_mesh = current_world().component<StaticMeshComponent>(id);
     if(!static_mesh) {
         return;
     }
@@ -349,7 +349,7 @@ editor_widget_draw_func(ecs::EntityId id) {
 
             auto find_sub_mesh = [id, i, sub = sub_mesh]() -> StaticMeshComponent::SubMesh* {
                 static_assert(!std::is_reference_v<decltype(sub)>);
-                if(StaticMeshComponent* comp = world().component<StaticMeshComponent>(id)) {
+                if(StaticMeshComponent* comp = current_world().component<StaticMeshComponent>(id)) {
                     if(comp->sub_meshes().size() > i && comp->sub_meshes()[i] == sub) {
                         return &comp->sub_meshes()[i];
                     }
@@ -417,7 +417,7 @@ editor_widget_draw_func(ecs::EntityId id) {
 **************************************************************************/
 
 editor_widget_draw_func(ecs::EntityId id) {
-    TransformableComponent* component = world().component<TransformableComponent>(id);
+    TransformableComponent* component = current_world().component<TransformableComponent>(id);
     if(!component) {
         return;
     }
@@ -462,7 +462,7 @@ editor_widget_draw_func(ecs::EntityId id) {
 
 
             math::Vec3 actual_euler = rot.to_euler();
-            auto& euler = world().component<EditorComponent>(id)->euler();
+            auto& euler = current_world().component<EditorComponent>(id)->euler();
 
             if(!is_same_angle(actual_euler, euler)) {
                 euler = actual_euler;
@@ -492,7 +492,7 @@ editor_widget_draw_func(ecs::EntityId id) {
 **************************************************************************/
 
 editor_widget_draw_func(ecs::EntityId id) {
-    AtmosphereComponent* component = world().component<AtmosphereComponent>(id);
+    AtmosphereComponent* component = current_world().component<AtmosphereComponent>(id);
     if(!component) {
         return;
     }
@@ -515,7 +515,7 @@ editor_widget_draw_func(ecs::EntityId id) {
 **************************************************************************/
 
 editor_widget_draw_func(ecs::EntityId id) {
-    EditorComponent* component = world().component<EditorComponent>(id);
+    EditorComponent* component = current_world().component<EditorComponent>(id);
     if(!component) {
         return;
     }

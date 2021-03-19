@@ -53,7 +53,7 @@ AssetStore& asset_store();
 AssetLoader& asset_loader();
 ThumbmailRenderer& thumbmail_renderer();
 
-EditorWorld& world();
+EditorWorld& current_world();
 const SceneView& scene_view();
 
 

@@ -67,7 +67,7 @@ ThumbmailRenderer& thumbmail_renderer() {
 }
 
 
-EditorWorld& world() {
+EditorWorld& current_world() {
     return application()->world();
 }
 

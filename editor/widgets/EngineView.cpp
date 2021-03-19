@@ -62,7 +62,7 @@ static auto standard_resolutions() {
 EngineView::EngineView() :
         Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
         _resource_pool(std::make_shared<FrameGraphResourcePool>(app_device())),
-        _scene_view(&world()),
+        _scene_view(&current_world()),
         _camera_controller(std::make_unique<HoudiniCameraController>()),
         _gizmo(&_scene_view) {
 }
@@ -399,7 +399,7 @@ void EngineView::update_picking() {
 
     if(ImGui::IsMouseClicked(0)) {
         if(!_gizmo.is_dragging()) {
-            ecs::EntityId picked_id = picking_data.hit() ? world().id_from_index(picking_data.entity_index) : ecs::EntityId();
+            ecs::EntityId picked_id = picking_data.hit() ? current_world().id_from_index(picking_data.entity_index) : ecs::EntityId();
             selection().set_selected(picked_id);
         }
     }

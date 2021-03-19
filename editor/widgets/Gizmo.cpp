@@ -144,7 +144,7 @@ void Gizmo::draw() {
         _space = Space(!usize(_space));
     }*/
 
-    TransformableComponent* transformable = world().component<TransformableComponent>(selection().selected_entity());
+    TransformableComponent* transformable = current_world().component<TransformableComponent>(selection().selected_entity());
     if(!transformable) {
         return;
     }
