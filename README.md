@@ -2,10 +2,13 @@
 Yet another C++17 Vulkan engine.
 
 ## Disclaimer
-This is a pet/learning project, it's not meant to be a serious engine and should not be used for anything beside playing with vulkan.
+This is a pet/learning project, it's not meant to be a serious engine and should not be used for anything beside playing with Vulkan.
 
-Currently only supports Windows, and only tested with GCC 8+ (I use MSYS2, but any version should do), doesn't work with MSVC, not tested with Clang.
+Currently only supports Windows
+ * With GCC 9+ through MSYS2
+ * With MSVC 16.9+
 
+Serialization format is compiler dependent!
 
 ## Status
 
@@ -19,13 +22,11 @@ For now I am focussing on creating a decent Vulkan wrapper/interface and a small
 ![Current status](https://i.imgur.com/NsngKS3.png)
 ![Current status](https://i.imgur.com/fYBbB80.png)
 
-The editor is currently unusable but I am working on it.
-
 ## Project structure
 
  * y: Core library with a bunch of utility functions and classes
  * yave: The engine itself
-	It links only to y and spirv-cross
+    It links only to y and spirv-cross
  * editor: A scene editor build on top of yave
  * shaders: All the shaders for both the engine and the editor
  * external: Third party libraries
@@ -33,8 +34,8 @@ The editor is currently unusable but I am working on it.
 
 ## Building
 You need:
- * CMake (3.7)
- * A C++17 compiler (such as GCC 9.2)
+ * CMake (3.18)
+ * A C++17 compiler
  * [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
 
 
@@ -64,8 +65,6 @@ Implemented features:
 ### Licence:
 MIT
 
-
-
 ## To Do
 
 
@@ -75,7 +74,7 @@ MIT
 - [ ] Rewrite SmallVector (with new allocators)
 - [X] Rename ArrayView to Span and MutableSpan
 - [X] HashMap
-- [ ] Basic reflection
+- [X] Basic reflection
 - [X] More robust serialization
 
 ### Framegraph
@@ -95,7 +94,7 @@ MIT
 - [ ] Batching system
 - [ ] Streaming
 - [ ] Proper material system
-- [ ] Shadows
+- [X] Shadows
 - [ ] GI
 - [ ] Post processes
 - [X] Spot lights
