@@ -360,7 +360,7 @@ void Gizmo::draw() {
             math::Vec2 last_point = next_point(axis, 0).first;
             for(usize i = 1; i != segment_count + 1; ++i) {
                 const auto [next, visible] = next_point(axis, i);
-                y_defer(last_point == next);
+                y_defer(last_point = next);
 
                 u32 alpha = gizmo_alpha;
                 if(!visible) {
@@ -374,12 +374,15 @@ void Gizmo::draw() {
         }
 
         auto compute_angle = [&](usize axis) {
+                if(axis >= 3) {
+                    return 0.0f;
+                }
                 const math::Vec3 proj = intersect(basis[axis], obj_pos, cam_pos, projected_mouse);
                 const math::Vec3 vec = (proj - obj_pos).normalized();
                 return std::copysign(std::acos(vec[(axis + 1) % 3]), vec[(axis + 2) % 3]);
             };
 
-        if(is_clicked(_allow_drag) && _rotation_axis != usize(-1)) {
+        if(is_clicked(_allow_drag)) {
             _rotation_axis = rotation_axis;
             _rotation_offset = compute_angle(_rotation_axis);
         } if(!ImGui::IsMouseDown(0)) {
