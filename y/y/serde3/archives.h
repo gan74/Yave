@@ -62,9 +62,21 @@ static constexpr std::string_view collection_version_string = "serde3.col.v1.0";
 static constexpr std::string_view tuple_version_string      = "serde3.tpl.v1.0";
 static constexpr std::string_view ptr_version_string        = "serde3.ptr.v1.0";
 
-static constexpr u16 magic = 0x7966;
-static constexpr u16 version_id = 2;
 
+
+// Format is compiler dependent for now, so we have to do this to avoid all kind of problems
+#if defined(Y_MSVC)
+static constexpr u16 compiler_id = 0x01;
+#elif defined(Y_CLANG)
+static constexpr u16 compiler_id = 0x02;
+#elif defined(Y_GCC)
+static constexpr u16 compiler_id = 0x03;
+#else
+static constexpr u16 compiler_id = 0x00;
+#endif
+
+static constexpr u16 magic = 0x7966;
+static constexpr u16 version_id = 2 | (compiler_id << 12);
 }
 
 
