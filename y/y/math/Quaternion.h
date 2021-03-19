@@ -38,8 +38,8 @@ class Quaternion {
     public:
         enum Euler {
             YawIndex = 2,
-            PitchIndex = 1,
-            RollIndex = 0
+            RollIndex = 1,
+            PitchIndex = 0,
         };
 
         inline constexpr Quaternion(detail::identity_t = identity()) : _quat(0, 0, 0, 1) {
@@ -175,15 +175,6 @@ class Quaternion {
         }
 
         inline constexpr T pitch() const {
-            const T a = T(-2.0f) * (x() * z() - w() * y());
-            return std::asin(std::min(std::max(a, T(-1.0f)), T(1.0f)));
-        }
-
-        inline constexpr T yaw() const {
-            return std::atan2(T(2.0f) * (x() * y() + w() * z()), w() * w() + x() * x() - y() * y() - z() * z());
-        }
-
-        inline constexpr T roll() const {
             //return T(atan(T(2.0f) * (y * z + w * x), w * w - x * x - y * y + z * z));
             const T a = T(2.0f) * (y() * z() + w() * x());
             T b = w() * w() - x() * x() - y() * y() + z() * z();
@@ -191,6 +182,15 @@ class Quaternion {
                 return T(2.0f) * std::atan2(x(), w());
             }
             return std::atan2(a, b);
+        }
+
+        inline constexpr T yaw() const {
+            return std::atan2(T(2.0f) * (x() * y() + w() * z()), w() * w() + x() * x() - y() * y() - z() * z());
+        }
+
+        inline constexpr T roll() const {
+            const T a = T(-2.0f) * (x() * z() - w() * y());
+            return std::asin(std::min(std::max(a, T(-1.0f)), T(1.0f)));
         }
 
         inline constexpr Vec<3, T> to_euler() const {
@@ -218,8 +218,8 @@ class Quaternion {
             // from https://github.com/g-truc/glm/blob/master/glm/gtc/quaternion.inl#L173
 
             // swizzle of doom
-            const Vec<3, T> c(std::cos(roll * T(0.5)), std::cos(pitch * T(0.5)), std::cos(yaw * T(0.5)));
-            const Vec<3, T> s(std::sin(roll * T(0.5)), std::sin(pitch * T(0.5)), std::sin(yaw * T(0.5)));
+            const Vec<3, T> c(std::cos(pitch * T(0.5)), std::cos(roll * T(0.5)), std::cos(yaw * T(0.5)));
+            const Vec<3, T> s(std::sin(pitch * T(0.5)), std::sin(roll * T(0.5)), std::sin(yaw * T(0.5)));
             Vec<4, T> q;
             q.x() = s.x() * c.y() * c.z() - c.x() * s.y() * s.z();
             q.y() = c.x() * s.y() * c.z() + s.x() * c.y() * s.z();

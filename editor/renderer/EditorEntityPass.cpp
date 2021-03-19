@@ -119,7 +119,7 @@ static void render_selection(RenderPassRecorder& recorder,
     core::Vector<math::Vec3> points;
     {
         const math::Vec3 z = tr->up();
-        const math::Vec3 y = tr->left();
+        const math::Vec3 y = tr->right();
         const math::Vec3 x = tr->forward();
         if(const auto* l = world.component<PointLightComponent>(selected)) {
             add_circle(points, tr->position(), x, y, l->radius());

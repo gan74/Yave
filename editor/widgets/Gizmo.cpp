@@ -393,7 +393,7 @@ void Gizmo::draw() {
             const float angle = compute_angle(_rotation_axis);
             const math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(basis[_rotation_axis], (angle - _rotation_offset));
             math::Transform<>& tr = transformable->transform();
-            tr.set_basis_l(rot(tr.forward()), rot(tr.left()), rot(tr.up()));
+            tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
             _rotation_offset = angle;
         }
     }

@@ -120,18 +120,6 @@ struct Transform : Matrix4<T> {
         const Vec<3, T> scale = {x.length(), y.length(), z.length()};
         return {position(), Quaternion<T>::from_base(x / scale.x(), y / scale.y(), z / scale.z()), scale};
     }
-
-
-
-    // Legacy, remove at some point
-    auto left() const {
-        return -right();
-    }
-
-    void set_basis_l(const Vec<3, T>& forward, const Vec<3, T>& left, const Vec<3, T>& up) {
-        set_basis(forward, -left, up);
-    }
-
 };
 
 
