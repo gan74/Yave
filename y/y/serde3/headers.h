@@ -139,8 +139,7 @@ constexpr u32 header_type_hash() {
         return hash | 0x02;
     }
 
-    u32 hash = ct_str_hash(ct_type_name<naked>());
-
+    u32 hash = u32(ct_type_hash<naked>());
     if constexpr(has_serde3_v<T>) {
         hash |= 0x01;
     } else {

@@ -22,10 +22,9 @@ SOFTWARE.
 #ifndef Y_UTILS_NAME_H
 #define Y_UTILS_NAME_H
 
-#include <y/utils.h>
+#include <y/defines.h>
 
 #include <string_view>
-#include <array>
 
 namespace y {
 namespace detail {
@@ -42,51 +41,18 @@ constexpr std::string_view ct_type_name() {
 static_assert(false, "ct_type_name is not supported");
 #endif
 }
-
-template<usize N>
-constexpr auto clean_name_to_buffer(std::string_view name) {
-    std::array<char, N + 1> buffer = {};
-
-    usize k = 0;
-    for(usize i = 0; i != N; ++i) {
-        if(name[i] == ' ') {
-            continue;
-#ifdef Y_MSVC
-        } else if(name.substr(i, 6) == "class ") {
-            i += 5;
-            continue;
-        } else if(name.substr(i, 7) == "struct ") {
-            i += 6;
-            continue;
-#endif
-        }
-        buffer[k++] = name[i];
-    }
-
-    return buffer;
-}
-
-template<typename T>
-constexpr auto clean_type_name() {
-    constexpr std::string_view name = detail::ct_type_name<T>();
-    return clean_name_to_buffer<name.size()>(name);
-}
-
-template<typename T>
-static constexpr auto ct_clean_type_name_buffer = clean_type_name<T>();
-
-template<typename T>
-static constexpr std::string_view ct_clean_type_name = ct_clean_type_name_buffer<T>.data();
 }
 
 template<typename T>
 constexpr std::string_view ct_type_name() {
-    return detail::ct_clean_type_name<T>;
+    return detail::ct_type_name<T>();
 }
 
 static_assert(ct_type_name<int>() == "int");
 static_assert(ct_type_name<float>() == "float");
-static_assert(ct_type_name<std::string_view>() == "std::basic_string_view<char,std::char_traits<char>>");
+
+// This is compiler dependent =(
+//static_assert(ct_type_name<std::string_view>() == "std::basic_string_view<char,std::char_traits<char>>");
 
 }
 

@@ -49,11 +49,7 @@ Result deserialize_one(ReadableArchive& arc, T& t);
 template<typename T>
 constexpr TypeId poly_type_id() {
     using naked = remove_cvref_t<T>;
-    TypeId hash = 0xe50c9771d834a0bb;
-    for(char c : ct_type_name<naked>()) {
-        hash_combine(hash, u64(c));
-    }
-    return hash;
+    return TypeId(ct_type_hash<naked>());
 }
 
 template<typename Base>

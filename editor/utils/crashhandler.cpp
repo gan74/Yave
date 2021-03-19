@@ -50,9 +50,13 @@ static decltype(&::StackWalk64) stack_walk = nullptr;
 
 
 static int print_addr(const void* ptr) {
+#ifdef Y_MSVC
+    return 0;
+#else
     char buffer[512] = {};
     std::sprintf(buffer, "addr2line -f -p -s -C -e %s %p", __argv[0], ptr);
     return ::system(buffer);
+#endif
 }
 
 // https://gist.github.com/jvranish/4441299
@@ -82,7 +86,9 @@ static void print_stacktrace() {
 }
 
 static void handler(int sig) {
-    // calling basically anything here is UB but we don't really care
+    // calling basically anything here is UB but we don't really care since we already crashed
+
+    y_breakpoint;
     if(sig == SIGABRT) {
         std::printf("Program has aborted, dumping stack:\n");
     } else {
