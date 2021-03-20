@@ -38,7 +38,7 @@ static math::Vec3 extract_forward(const math::Matrix4<>& view) {
 }
 
 static math::Vec3 extract_right(const math::Matrix4<>& view) {
-    return view.row(0).to<3>().normalized();
+    return -view.row(0).to<3>().normalized();
 }
 
 static math::Vec3 extract_up(const math::Matrix4<>& view) {
@@ -46,19 +46,30 @@ static math::Vec3 extract_up(const math::Matrix4<>& view) {
 }
 
 
-static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj) {
-    const auto x = viewproj.row(0);
+static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj, float ratio) {
+    /*const auto x = viewproj.row(0);
     const auto y = viewproj.row(1);
     const auto z = viewproj.row(2);
     const auto w = viewproj.row(3);
     return {{
-            (w + x).normalized(),
-            (w - x).normalized(),
-            (w + y).normalized(),
-            (w - y).normalized(),
-            (w + z).normalized(),
-            (w - z).normalized()
-        }};
+        (w + x),
+        (w - x),
+        (w + y),
+        (w - y),
+        (w + z),
+        (w - z),
+    }};*/
+
+
+    auto m = viewproj;
+
+
+    std::array<math::Vec4, 6> planes;
+    planes[0] = math::Vec4(m[0][3] + m[0][0], m[1][3] + m[1][0], m[2][3] + m[2][0], m[3][3] + m[3][0]) / ratio;
+    planes[1] = math::Vec4(m[0][3] - m[0][0], m[1][3] - m[1][0], m[2][3] - m[2][0], m[3][3] - m[3][0]) / ratio;
+
+    planes[2] = planes[3] = planes[4] = planes[5] = planes[0];
+    return planes;
 }
 
 Camera::Camera() {
@@ -101,16 +112,17 @@ math::Matrix4<> Camera::inverse_matrix() const {
     return (viewproj_matrix()).inverse();
 }
 
+float Camera::aspect_ratio() const {
+    const float f = _proj[1][1];
+    return 1.0f / (_proj[0][0] / f);
+}
+
 math::Vec3 Camera::position() const {
     return extract_position(_view);
 }
 
 math::Vec3 Camera::forward() const {
     return extract_forward(_view);
-}
-
-math::Vec3 Camera::left() const {
-    return -right();
 }
 
 math::Vec3 Camera::right() const {
@@ -122,7 +134,7 @@ math::Vec3 Camera::up() const {
 }
 
 Frustum Camera::frustum() const {
-    return extract_frustum(viewproj_matrix());
+    return extract_frustum(viewproj_matrix(), aspect_ratio());
 }
 
 Camera::operator uniform::Camera() const {

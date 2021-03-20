@@ -42,9 +42,10 @@ class Camera {
 
         math::Matrix4<> inverse_matrix() const;
 
+        float aspect_ratio() const;
+
         math::Vec3 position() const;
         math::Vec3 forward() const;
-        math::Vec3 left() const;
         math::Vec3 right() const;
         math::Vec3 up() const;
         Frustum frustum() const;

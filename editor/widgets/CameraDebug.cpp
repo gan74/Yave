@@ -34,14 +34,14 @@ void CameraDebug::on_gui() {
     const auto& camera = scene_view().camera();
     auto pos = camera.position();
     auto fwd = camera.forward();
-    auto lft = camera.left();
-    const auto up = fwd.cross(lft);
+    auto rht = camera.right();
+    const auto up = fwd.cross(rht);
 
-    const math::Quaternion<> rot = math::Quaternion<>::from_base(fwd, lft, up);
+    const math::Quaternion<> rot = math::Quaternion<>::from_base(fwd, rht, up);
 
     ImGui::Text("position: %.1f, %.1f, %.1f", pos.x(), pos.y(), pos.z());
     ImGui::Text("forward : %.1f, %.1f, %.1f", fwd.x(), fwd.y(), fwd.z());
-    ImGui::Text("left    : %.1f, %.1f, %.1f", lft.x(), lft.y(), lft.z());
+    ImGui::Text("right   : %.1f, %.1f, %.1f", rht.x(), rht.y(), rht.z());
     ImGui::Text("up      : %.1f, %.1f, %.1f", up.x(), up.y(), up.z());
 
     ImGui::Text("rotation: %.1f, %.1f, %.1f, %.1f", rot.x(), rot.y(), rot.z(), rot.w());
