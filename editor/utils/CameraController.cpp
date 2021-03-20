@@ -53,7 +53,7 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
     const CameraSettings& settings = app_settings().camera;
     math::Vec3 cam_pos = camera.position();
     math::Vec3 cam_fwd = camera.forward();
-    math::Vec3 cam_lft = camera.left();
+    math::Vec3 cam_rht = camera.right();
 
     if(ImGui::IsKeyDown(int(settings.center_on_obj))) {
         auto id = selection().selected_entity();
@@ -65,7 +65,7 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
         }
     }
 
-    const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+    const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_rht));
     if(fully_finite(view)) {
         camera.set_view(view);
     }
@@ -80,7 +80,7 @@ void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& view
     const CameraSettings& settings = app_settings().camera;
     math::Vec3 cam_pos = camera.position();
     math::Vec3 cam_fwd = camera.forward();
-    math::Vec3 cam_lft = camera.left();
+    math::Vec3 cam_rht = camera.right();
 
     if(ImGui::IsWindowFocused()) {
         const float cam_speed = 500.0f;
@@ -93,10 +93,10 @@ void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& view
             cam_pos -= cam_fwd * dt;
         }
         if(ImGui::IsKeyDown(int(settings.move_left))) {
-            cam_pos += cam_lft * dt;
+            cam_pos -= cam_rht * dt;
         }
         if(ImGui::IsKeyDown(int(settings.move_right))) {
-            cam_pos -= cam_lft * dt;
+            cam_pos += cam_rht * dt;
         }
 
         if(ImGui::IsMouseDown(1)) {
@@ -104,31 +104,31 @@ void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& view
             delta *= settings.fps_sensitivity;
 
             {
-                const auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
+                const auto pitch = math::Quaternion<>::from_axis_angle(cam_rht, delta.y());
                 cam_fwd = pitch(cam_fwd);
             }
             {
-                const auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_lft), -delta.x());
+                const auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_rht), -delta.x());
                 cam_fwd = yaw(cam_fwd);
-                cam_lft = yaw(cam_lft);
+                cam_rht = yaw(cam_rht);
             }
 
-            auto euler = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft)).to_euler();
-            const bool upside_down = cam_fwd.cross(cam_lft).z() < 0.0f;
+            auto euler = math::Quaternion<>::from_base(cam_fwd, cam_rht, cam_fwd.cross(cam_rht)).to_euler();
+            const bool upside_down = cam_fwd.cross(cam_rht).z() < 0.0f;
             euler[math::Quaternion<>::RollIndex] = upside_down ? -math::pi<float> : 0.0f;
             const auto rotation = math::Quaternion<>::from_euler(euler);
             cam_fwd = rotation({1.0f, 0.0f, 0.0f});
-            cam_lft = rotation({0.0f, 1.0f, 0.0f});
+            cam_rht = rotation({0.0f, 1.0f, 0.0f});
         }
 
 
         if(ImGui::IsMouseDown(2)) {
             const auto delta = ImGui::GetIO().MouseDelta;
-            cam_pos -= (delta.y * cam_fwd.cross(cam_lft) + delta.x * cam_lft);
+            cam_pos -= (delta.y * cam_fwd.cross(cam_rht) + delta.x * cam_rht);
         }
     }
 
-    const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+    const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_rht));
     if(fully_finite(view)) {
         camera.set_view(view);
     }
@@ -161,7 +161,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
     const CameraSettings& settings = app_settings().camera;
     math::Vec3 cam_pos = camera.position();
     math::Vec3 cam_fwd = camera.forward();
-    math::Vec3 cam_lft = camera.left();
+    math::Vec3 cam_rht = camera.right();
 
     for(int i = 0; i != 3; ++i) {
         if(ImGui::IsMouseClicked(i)) {
@@ -201,70 +201,72 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
     _cumulated_delta += delta;
 
 
-    // Trackball
-    if(cam_key_down && _mouse_button == 0) {
-        math::Vec3 boom_arm = cam_pos - _picked_pos;
-        delta *= settings.trackball_sensitivity;
-        {
-            const auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
-            boom_arm = pitch(boom_arm);
-            _target_offset = pitch(_target_offset);
-        }
-        {
-            const auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, -1.0f), delta.x());
-            boom_arm = yaw(boom_arm);
-            _target_offset = yaw(_target_offset);
-
-            cam_lft = yaw(cam_lft);
-        }
-
-        cam_pos = _picked_pos + boom_arm;
-        cam_fwd = (_picked_pos + _target_offset - cam_pos).normalized();
-    }
-
-    // Dolly
-    if(cam_key_down && _mouse_button == 1) {
-        const math::Vec3 dolly_vec = _picked_pos - _orig_pos;
-        const float f = _cumulated_delta.y() * -settings.dolly_sensitivity;
-        cam_pos = _picked_pos - dolly_vec * (1.0f + f);
-    }
-
-    // Pan
-    if(cam_key_down && _mouse_button == 2) {
-        const math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4((_picking_uvs - delta) * 2.0f - 1.0f, _picking_depth, 1.0f);
-        cam_pos = _orig_pos + (hp.to<3>() / hp.w()) - _picked_pos;
+    if(!cam_key_down) {
+        return;
     }
 
 
-    // FPS
-    if(cam_key_down && fps) {
+    if(fps) {
+        // FPS
         delta *= settings.trackball_sensitivity;
 
         {
-            const auto pitch = math::Quaternion<>::from_axis_angle(cam_lft, delta.y());
+            const auto pitch = math::Quaternion<>::from_axis_angle(cam_rht, delta.y());
             cam_fwd = pitch(cam_fwd);
         }
         {
-            const auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_lft), -delta.x());
+            const auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_rht), -delta.x());
             cam_fwd = yaw(cam_fwd);
-            cam_lft = yaw(cam_lft);
+            cam_rht = yaw(cam_rht);
         }
 
-        auto euler = math::Quaternion<>::from_base(cam_fwd, cam_lft, cam_fwd.cross(cam_lft)).to_euler();
-        const bool upside_down = cam_fwd.cross(cam_lft).z() < 0.0f;
-        euler[math::Quaternion<>::RollIndex] = upside_down ? -math::pi<float> : 0.0f;
-        const auto rotation = math::Quaternion<>::from_euler(euler);
+        const auto rotation = math::Quaternion<>::from_base(cam_fwd, cam_rht, cam_fwd.cross(cam_rht));
         cam_fwd = rotation({1.0f, 0.0f, 0.0f});
-        cam_lft = rotation({0.0f, 1.0f, 0.0f});
+        cam_rht = rotation({0.0f, 1.0f, 0.0f});
+    } else {
+        // Trackball
+        if(_mouse_button == 0) {
+            math::Vec3 boom_arm = cam_pos - _picked_pos;
+            delta *= settings.trackball_sensitivity;
+            {
+                const auto pitch = math::Quaternion<>::from_axis_angle(cam_rht, delta.y());
+                boom_arm = pitch(boom_arm);
+                _target_offset = pitch(_target_offset);
+            }
+            {
+                const auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, -1.0f), delta.x());
+                boom_arm = yaw(boom_arm);
+                _target_offset = yaw(_target_offset);
+
+                cam_rht = yaw(cam_rht);
+            }
+
+            cam_pos = _picked_pos + boom_arm;
+            cam_fwd = (_picked_pos + _target_offset - cam_pos).normalized();
+        }
+
+        // Dolly
+        if(_mouse_button == 1) {
+            const math::Vec3 dolly_vec = _picked_pos - _orig_pos;
+            const float f = _cumulated_delta.y() * -settings.dolly_sensitivity;
+            cam_pos = _picked_pos - dolly_vec * (1.0f + f);
+        }
+
+        // Pan
+        if(_mouse_button == 2) {
+            const math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4((_picking_uvs - delta) * 2.0f - 1.0f, _picking_depth, 1.0f);
+            cam_pos = _orig_pos + (hp.to<3>() / hp.w()) - _picked_pos;
+        }
     }
+
 
     // kill any roll that might arise from imprecisions
     {
-        cam_lft.z() = 0.0f;
-        cam_lft.normalize();
+        cam_rht.z() = 0.0f;
+        cam_rht.normalize();
     }
 
-    const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_lft));
+    const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_rht));
     if(fully_finite(view)) {
         camera.set_view(view);
     }

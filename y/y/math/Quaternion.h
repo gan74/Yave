@@ -177,7 +177,7 @@ class Quaternion {
         inline constexpr T pitch() const {
             //return T(atan(T(2.0f) * (y * z + w * x), w * w - x * x - y * y + z * z));
             const T a = T(2.0f) * (y() * z() + w() * x());
-            T b = w() * w() - x() * x() - y() * y() + z() * z();
+            const T b = w() * w() - x() * x() - y() * y() + z() * z();
             if(b == 0 && a == 0) {
                 return T(2.0f) * std::atan2(x(), w());
             }

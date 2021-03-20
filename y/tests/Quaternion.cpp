@@ -29,14 +29,16 @@ using namespace y;
 using namespace y::math;
 
 y_test_func("Quaternion from_euler pitch") {
+    // Rotation around X
     const auto q = Quaternion<>::from_euler(to_rad(90), 0, 0);
 
-    y_test_assert(q({1.0f, 0.0f, 0.0f}).z() < -0.99f);
-    y_test_assert(q({0.0f, 0.0f, 1.0f}).x() > 0.99f);
+    y_test_assert(q({0.0f, 1.0f, 0.0f}).z() > 0.99f);
+    y_test_assert(q({0.0f, 0.0f, 1.0f}).y() < -0.99f);
     y_test_assert(to_deg(q.pitch()) == 90.0f);
 }
 
 y_test_func("Quaternion from_euler yaw") {
+    // Rotation around Z
     const auto q = Quaternion<>::from_euler(0, to_rad(90), 0);
 
     y_test_assert(q({1.0f, 0.0f, 0.0f}).y() > 0.99f);
@@ -45,10 +47,11 @@ y_test_func("Quaternion from_euler yaw") {
 }
 
 y_test_func("Quaternion from_euler roll") {
+    // Rotation around Y
     const auto q = Quaternion<>::from_euler(0, 0, to_rad(90));
 
-    y_test_assert(q({1.0f, 0.0f, 0.0f}).x() > 0.99f);
-    y_test_assert(q({0.0f, 0.0f, 1.0f}).y() < -0.99f);
+    y_test_assert(q({1.0f, 0.0f, 0.0f}).z() < -0.99f);
+    y_test_assert(q({0.0f, 0.0f, 1.0f}).x() > 0.99f);
     y_test_assert(to_deg(q.roll()) == 90.0f);
 }
 
