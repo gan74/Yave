@@ -37,9 +37,10 @@ vec3 L0(vec3 normal, vec3 light_dir, vec3 view_dir, float roughness, float metal
     const vec3 kS = F;
     const vec3 kD = (1.0 - kS) * (1.0 - metallic);
 
-    const vec3 specular = F * (NDF * G / cook_torrance_denom(NoV, NoL));
+    const vec3 specular = kS * max(0.0, NDF * G / cook_torrance_denom(NoV, NoL));
     const vec3 diffuse = kD * albedo * (1.0 / pi);
 
+    return diffuse;
     return (diffuse + specular) * NoL;
 }
 
