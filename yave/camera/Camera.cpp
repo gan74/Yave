@@ -24,6 +24,18 @@ SOFTWARE.
 
 namespace yave {
 
+
+static float extract_ratio(const math::Matrix4<>& proj) {
+    const float f = proj[1][1];
+    return 1.0f / (proj[0][0] / f);
+}
+
+static float extract_fov(const math::Matrix4<>& proj) {
+    const float f = proj[1][1];
+    return 2.0f * std::atan(1.0f / f);
+}
+
+
 static math::Vec3 extract_position(const math::Matrix4<>& view) {
     math::Vec3 pos;
     for(usize i = 0; i != 3; ++i) {
@@ -46,30 +58,32 @@ static math::Vec3 extract_up(const math::Matrix4<>& view) {
 }
 
 
-static std::array<Plane, 6> extract_frustum(const math::Matrix4<>& viewproj, float ratio) {
-    /*const auto x = viewproj.row(0);
-    const auto y = viewproj.row(1);
-    const auto z = viewproj.row(2);
-    const auto w = viewproj.row(3);
-    return {{
-        (w + x),
-        (w - x),
-        (w + y),
-        (w - y),
-        (w + z),
-        (w - z),
-    }};*/
+static Frustum extract_frustum(const math::Matrix4<>& view, const math::Matrix4<>& proj) {
+    const float fov = extract_fov(proj);
+    const float ratio = extract_ratio(proj);
+    const math::Vec3 forward = extract_forward(view);
+    const math::Vec3 up = extract_up(view);
+    const math::Vec3 right = extract_right(view);
+    const math::Vec3 pos = extract_position(view);
 
+    const float half_fov = fov * 0.5f;
+    const float half_fov_v = std::atan(std::tan(half_fov) * ratio);
 
-    auto m = viewproj;
+    std::array<math::Vec3, 4> normals;
+    {
+        const float c = std::cos(half_fov);
+        const float s = std::sin(half_fov);
+        normals[0] = forward * s + up * c;
+        normals[1] = forward * s - up * c;
+    }
+    {
+        const float c = std::cos(half_fov_v);
+        const float s = std::sin(half_fov_v);
+        normals[2] = forward * s + right * c;
+        normals[3] = forward * s - right * c;
+    }
 
-
-    std::array<math::Vec4, 6> planes;
-    planes[0] = math::Vec4(m[0][3] + m[0][0], m[1][3] + m[1][0], m[2][3] + m[2][0], m[3][3] + m[3][0]) / ratio;
-    planes[1] = math::Vec4(m[0][3] - m[0][0], m[1][3] - m[1][0], m[2][3] - m[2][0], m[3][3] - m[3][0]) / ratio;
-
-    planes[2] = planes[3] = planes[4] = planes[5] = planes[0];
-    return planes;
+    return Frustum(normals, pos, forward);
 }
 
 Camera::Camera() {
@@ -80,18 +94,18 @@ Camera::Camera() {
 
 void Camera::set_view(const math::Matrix4<>& view) {
     _view = view;
-    _up_to_date = false;
+    _dirty = true;
 }
 
 void Camera::set_proj(const math::Matrix4<>& proj) {
     _proj = proj;
-    _up_to_date = false;
+    _dirty = true;
 }
 
 void Camera::update_viewproj() const {
-    if(!_up_to_date) {
+    if(_dirty) {
         _viewproj = _proj * _view;
-        _up_to_date = true;
+        _dirty = false;
     }
 }
 
@@ -113,8 +127,11 @@ math::Matrix4<> Camera::inverse_matrix() const {
 }
 
 float Camera::aspect_ratio() const {
-    const float f = _proj[1][1];
-    return 1.0f / (_proj[0][0] / f);
+    return extract_ratio(_proj);
+}
+
+float Camera::field_of_view() const {
+    return extract_fov(_proj);
 }
 
 math::Vec3 Camera::position() const {
@@ -134,7 +151,7 @@ math::Vec3 Camera::up() const {
 }
 
 Frustum Camera::frustum() const {
-    return extract_frustum(viewproj_matrix(), aspect_ratio());
+    return extract_frustum(view_matrix(), proj_matrix());
 }
 
 Camera::operator uniform::Camera() const {

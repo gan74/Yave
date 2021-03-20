@@ -24,13 +24,20 @@ SOFTWARE.
 
 namespace yave {
 
+Frustum::Frustum(const std::array<math::Vec3, 4>& normals, const math::Vec3& pos, const math::Vec3& forward) :
+        _normals(normals),
+        _pos(pos),
+        _forward(forward) {
+}
+
 bool Frustum::is_inside(const math::Vec3& pos, float radius) const {
-    for(const auto& plane : *this) {
-        if(plane.dot({pos, 1.0f}) + radius < 0.0f) {
-            return false;
-        }
-    }
-    return true;
+    const math::Vec3 v = (pos - _pos);
+    const float z = v.dot(_forward);
+    return z + radius > 0.0f
+        && v.dot(_normals[0]) + radius > 0.0f
+        && v.dot(_normals[1]) + radius > 0.0f
+        && v.dot(_normals[2]) + radius > 0.0f
+        && v.dot(_normals[3]) + radius > 0.0f;
 }
 
 }

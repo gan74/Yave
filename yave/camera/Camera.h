@@ -43,6 +43,7 @@ class Camera {
         math::Matrix4<> inverse_matrix() const;
 
         float aspect_ratio() const;
+        float field_of_view() const;
 
         math::Vec3 position() const;
         math::Vec3 forward() const;
@@ -60,7 +61,7 @@ class Camera {
 
         Y_TODO(This is not thread safe)
         mutable math::Matrix4<> _viewproj;
-        mutable bool _up_to_date;
+        mutable bool _dirty = true;
 };
 
 }

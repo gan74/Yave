@@ -27,20 +27,19 @@ SOFTWARE.
 
 namespace yave {
 
-using Plane = math::Vec4;
-
-class Frustum : public std::array<Plane, 6> {
-    using Base = std::array<Plane, 6>;
+class Frustum {
 
     public:
         Frustum() = default;
 
-        Frustum(const Base& fru) : Base(fru) {
-        }
+        Frustum(const std::array<math::Vec3, 4>& normals, const math::Vec3& pos, const math::Vec3& forward);
 
         bool is_inside(const math::Vec3& pos, float radius) const;
 
     private:
+        std::array<math::Vec3, 4> _normals;
+        math::Vec3 _pos;
+        math::Vec3 _forward;
 
 };
 

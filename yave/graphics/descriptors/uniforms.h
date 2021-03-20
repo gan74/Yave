@@ -28,16 +28,10 @@ SOFTWARE.
 namespace yave {
 namespace uniform {
 
-using Frustum = yave::Frustum;
-
-static_assert(sizeof(Frustum) % 16 == 0);
-
 
 struct Camera {
     math::Matrix4<> view_proj;
     math::Matrix4<> inv_view_proj;
-
-    // Frustum frustum;
 
     math::Vec3 position;
     u32 padding_0 = 0;
