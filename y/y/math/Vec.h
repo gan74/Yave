@@ -418,6 +418,11 @@ using Vec2ui = Vec<2, u32>;
 using Vec3ui = Vec<3, u32>;
 using Vec4ui = Vec<4, u32>;
 
+using Vec2b = Vec<2, u8>;
+using Vec3b = Vec<3, u8>;
+using Vec4b = Vec<4, u8>;
+
+
 
 
 namespace detail {

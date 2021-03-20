@@ -24,19 +24,20 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <yave/meshes/AABB.h>
+
 namespace yave {
 
 class TransformableComponent final : public math::Transform<> {
     public:
         using Transform::Transform;
 
-        math::Transform<>& transform() {
-            return *this;
-        }
+        math::Transform<>& transform();
+        const math::Transform<>& transform() const;
 
-        const math::Transform<>& transform() const {
-            return *this;
-        }
+        AABB to_global(const AABB& aabb) const;
+
+
 
 };
 

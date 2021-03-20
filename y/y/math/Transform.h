@@ -32,6 +32,8 @@ namespace math {
 template<typename T = float>
 struct Transform : Matrix4<T> {
 
+    using Matrix4<T>::operator*;
+
     Transform() : Matrix4<T>(identity()) {
     }
 
@@ -49,10 +51,19 @@ struct Transform : Matrix4<T> {
         this->column(3) = Vec<4, T>(pos, 1);
     }
 
-    using Matrix4<T>::operator*;
-
     operator Matrix4<T>() const {
         return *this;
+    }
+
+    math::Vec<3, T> to_global(const Vec<3, T>& p) const {
+        return position() + to_global_normal(p);
+    }
+
+    math::Vec<3, T> to_global_normal(const Vec<3, T>& p) const {
+        return
+            this->column(0).template to<3>() * p.x() +
+            this->column(1).template to<3>() * p.y() +
+            this->column(2).template to<3>() * p.z();
     }
 
     // Y forward

@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetPtr.h>
 #include <yave/scene/Renderable.h>
-
+#include <yave/meshes/AABB.h>
 #include "TransformableComponent.h"
 
 #include <y/core/Vector.h>
@@ -34,6 +34,11 @@ SOFTWARE.
 namespace yave {
 
 class StaticMeshComponent final : public Renderable, public ecs::RequiredComponents<TransformableComponent> {
+
+    enum Flags : u32 {
+        None,
+        AABBDirty = 0x01,
+    };
 
     public:
         struct SubMesh {
@@ -66,12 +71,19 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
         const core::Vector<SubMesh>& sub_meshes() const;
         core::Vector<SubMesh>& sub_meshes();
 
+        const AABB& aabb() const;
         AABB compute_aabb() const;
 
         y_reflect(_sub_meshes)
 
     private:
+
         core::Vector<SubMesh> _sub_meshes;
+
+        Y_TODO(Thread safety?)
+        mutable AABB _aabb;
+        mutable Flags _flags = AABBDirty;
+
 };
 
 }

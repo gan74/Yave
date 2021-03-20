@@ -38,6 +38,10 @@ SOFTWARE.
 #include <yave/components/SkyLightComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
+
 namespace yave {
 
 static constexpr ImageFormat lighting_format = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -115,8 +119,14 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
 
 static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView& scene) {
+    const Frustum frustum = scene.camera().frustum();
+
     u32 count = 0;
     for(auto [t, l] : scene.world().view<TransformableComponent, PointLightComponent>().components()) {
+        if(!frustum.is_inside(t.position(), l.radius())) {
+            continue;
+        }
+
         points[count++] = {
             t.position(),
             l.radius(),
@@ -137,10 +147,18 @@ static std::pair<u32, u32> fill_spot_light_buffer(
 
     y_debug_assert(Transforms == !!transforms);
 
+    const Frustum frustum = scene.camera().frustum();
+
     u32 count = 0;
     u32 shadow_count = 0;
     for(auto spot : scene.world().view<TransformableComponent, SpotLightComponent>()) {
         auto [t, l] = spot.components();
+
+        const auto enclosing_sphere = l.enclosing_sphere();
+        const math::Vec3 encl_sphere_center = t.forward() * enclosing_sphere.dist_to_center + t.position();
+        if(!frustum.is_inside(encl_sphere_center, enclosing_sphere.radius)) {
+            continue;
+        }
 
         u32 shadow_index = u32(-1);
         if(l.cast_shadow() && render_shadows) {
@@ -154,9 +172,6 @@ static std::pair<u32, u32> fill_spot_light_buffer(
             const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
             transforms[count] = t.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
         }
-
-        const auto enclosing_sphere = l.enclosing_sphere();
-        const math::Vec3 encl_sphere_center = t.forward() * enclosing_sphere.dist_to_center + t.position();
 
         spots[count++] = {
             t.position(),

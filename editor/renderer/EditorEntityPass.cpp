@@ -38,6 +38,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
+#include <yave/components/StaticMeshComponent.h>
 
 #include <external/imgui/yave_imgui.h>
 
@@ -101,6 +102,24 @@ static void add_cone(core::Vector<math::Vec3>& points, const math::Vec3& positio
     }
 }
 
+static void add_box(core::Vector<math::Vec3>& points, const math::Transform<>& transform, const AABB& aabb) {
+    const math::Vec3 size = aabb.half_extent();
+    const std::array corners = {
+        size,
+        math::Vec3(-size.x(), -size.y(), size.z()),
+        math::Vec3(size.x(), -size.y(), -size.z()),
+        math::Vec3(-size.x(), size.y(), -size.z()),
+    };
+    const math::Vec3 center = aabb.center();
+    for(const math::Vec3 a : corners) {
+        for(usize i = 0; i != 3; ++i) {
+            math::Vec3 b = a;
+            b[i] *= -1.0f;
+            points << transform.to_global(center + a) << transform.to_global(center + b);
+        }
+    }
+}
+
 
 static void render_selection(RenderPassRecorder& recorder,
                              const FrameGraphPass* pass,
@@ -115,6 +134,8 @@ static void render_selection(RenderPassRecorder& recorder,
     }
 
     constexpr bool draw_enclosing_sphere = false;
+    constexpr bool draw_oobb = false;
+    constexpr bool draw_aabb = false;
 
     core::Vector<math::Vec3> points;
     {
@@ -126,6 +147,7 @@ static void render_selection(RenderPassRecorder& recorder,
             add_circle(points, tr->position(), y, z, l->radius());
             add_circle(points, tr->position(), z, x, l->radius());
         }
+
         if(const auto* l = world.component<SpotLightComponent>(selected)) {
             add_cone(points, tr->position(), x, y, l->radius(), l->half_angle());
 
@@ -135,6 +157,15 @@ static void render_selection(RenderPassRecorder& recorder,
                 add_circle(points, center, x, y, enclosing.radius);
                 add_circle(points, center, y, z, enclosing.radius);
                 add_circle(points, center, z, x, enclosing.radius);
+            }
+        }
+
+        if(const auto* m = world.component<StaticMeshComponent>(selected)) {
+            if(draw_oobb) {
+                add_box(points, tr->transform(), m->aabb());
+            }
+            if(draw_aabb) {
+                add_box(points, math::Transform<>(), tr->to_global(m->aabb()));
             }
         }
     }

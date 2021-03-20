@@ -183,6 +183,14 @@ class Matrix {
             return mat;
         }
 
+        inline constexpr Matrix abs() const {
+            Matrix mat;
+            for(usize i = 0; i != vec_count; ++i) {
+                mat[i] = _vecs[i].abs();
+            }
+            return mat;
+        }
+
         inline constexpr T determinant() const {
             chk_sq();
             return detail::determinant(*this);

@@ -20,40 +20,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "entities.h"
-
-#include <yave/components/TransformableComponent.h>
-#include <yave/components/StaticMeshComponent.h>
-#include <yave/components/PointLightComponent.h>
-#include <yave/components/SpotLightComponent.h>
-#include <yave/ecs/EntityWorld.h>
-
-#include <yave/meshes/AABB.h>
+#include "TransformableComponent.h"
 
 namespace yave {
 
-core::Result<float> entity_radius(const ecs::EntityWorld& world, ecs::EntityId id) {
-    if(const StaticMeshComponent* mesh = world.component<StaticMeshComponent>(id)) {
-        return core::Ok(mesh->aabb().origin_radius());
-    }
-
-    if(const PointLightComponent* light = world.component<PointLightComponent>(id)) {
-        return core::Ok(light->radius());
-    }
-
-    if(const SpotLightComponent* light = world.component<SpotLightComponent>(id)) {
-        return core::Ok(light->radius());
-    }
-
-    return core::Err();
+math::Transform<>& TransformableComponent::transform() {
+    return *this;
 }
 
-core::Result<math::Vec3> entity_position(const ecs::EntityWorld& world, ecs::EntityId id) {
-    if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
-        return core::Ok(tr->transform().position());
-    }
+const math::Transform<>& TransformableComponent::transform() const {
+    return *this;
+}
 
-    return core::Err();
+AABB TransformableComponent::to_global(const AABB& aabb) const {
+    // https://zeux.io/2010/10/17/aabb-from-obb-with-component-wise-abs/
+    const math::Transform<> abs_tr = transform().abs();
+    const math::Vec3 center = transform().to_global(aabb.center());
+    const math::Vec3 half_extent = abs_tr.to_global_normal(aabb.half_extent());
+
+    return AABB(center - half_extent, center + half_extent);
 }
 
 }

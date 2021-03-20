@@ -108,6 +108,14 @@ core::Vector<StaticMeshComponent::SubMesh>& StaticMeshComponent::sub_meshes() {
     return _sub_meshes;
 }
 
+const AABB& StaticMeshComponent::aabb() const {
+    if(_flags & AABBDirty) {
+        _aabb = compute_aabb();
+        _flags = Flags(_flags & ~AABBDirty);
+    }
+    return _aabb;
+}
+
 AABB StaticMeshComponent::compute_aabb() const {
     AABB aabb;
     usize i = 0;

@@ -257,6 +257,14 @@ vec3 intersection_point(vec4 plane, vec3 origin, vec3 dir) {
     return origin + intersection_distance(plane, origin, dir) * dir;
 }
 
+vec4 unpack_color(uint packed) {
+    return vec4(
+        (packed >> 0) & 0xFF,
+        (packed >> 8) & 0xFF,
+        (packed >> 16) & 0xFF,
+        (packed >> 24) & 0xFF
+    ) / 255.0;
+}
 
 // -------------------------------- sRGB --------------------------------
 
