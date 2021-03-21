@@ -31,7 +31,7 @@ struct ImDrawData;
 
 namespace editor {
 
-class ImGuiRenderer : public DeviceLinked {
+class ImGuiRenderer : public GraphicObject {
 
     public:
         ImGuiRenderer(DevicePtr dptr);

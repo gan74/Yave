@@ -31,7 +31,7 @@ static void check_usage(U u) {
     }
 }
 
-FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) : DeviceLinked(dptr) {
+FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) : GraphicObject(dptr) {
 }
 
 FrameGraphResourcePool::~FrameGraphResourcePool() {

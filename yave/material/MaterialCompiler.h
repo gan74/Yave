@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class MaterialCompiler : public DeviceLinked {
+class MaterialCompiler : public GraphicObject {
     public:
         static GraphicPipeline compile(const MaterialTemplate* material, const RenderPass& render_pass);
 };

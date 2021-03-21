@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationData& data) : DeviceLinked(comp.device()), _local_size(comp.local_size()) {
+ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationData& data) : GraphicObject(comp.device()), _local_size(comp.local_size()) {
     const auto& bindings = comp.bindings();
 
     const u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });

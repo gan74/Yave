@@ -168,7 +168,7 @@ bool RenderPass::Layout::operator==(const Layout& other) const {
 
 
 RenderPass::RenderPass(DevicePtr dptr, AttachmentData depth, core::Span<AttachmentData> colors) :
-        DeviceLinked(dptr),
+        GraphicObject(dptr),
         _attachment_count(colors.size()),
         _render_pass(create_renderpass(dptr, depth, colors)),
         _layout(depth, colors) {

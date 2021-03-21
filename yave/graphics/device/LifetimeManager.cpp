@@ -36,7 +36,7 @@ static bool compare_cmd_buffers(CmdBufferData* a, CmdBufferData* b) {
     return a->resource_fence() < b->resource_fence();
 }
 
-LifetimeManager::LifetimeManager(DevicePtr dptr) : DeviceLinked(dptr) {
+LifetimeManager::LifetimeManager(DevicePtr dptr) : GraphicObject(dptr) {
 }
 
 LifetimeManager::~LifetimeManager() {

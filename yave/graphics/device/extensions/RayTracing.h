@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-class RayTracing : public DeviceLinked {
+class RayTracing : public GraphicObject {
     public:
         class AccelerationStructure {
             public:

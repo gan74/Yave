@@ -75,7 +75,7 @@ static VkDescriptorSetLayoutBinding create_inline_uniform_binding_fallback(const
 
 
 
-DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings) : DeviceLinked(dptr) {
+DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings) : GraphicObject(dptr) {
     const usize max_inline_uniform_size = device_properties(dptr).max_inline_uniform_size;
     const bool inline_uniform_supported = max_inline_uniform_size != 0;
     const auto needs_fallback = [=](const VkDescriptorSetLayoutBinding& binding) {
@@ -166,7 +166,7 @@ static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout
 }
 
 DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
-    DeviceLinked(layout.device()),
+    GraphicObject(layout.device()),
     _pool(create_descriptor_pool(layout, pool_size)),
     _layout(layout.vk_descriptor_set_layout()),
     _inline_blocks(layout.inline_blocks()) {
@@ -331,7 +331,7 @@ usize DescriptorSetPool::used_sets() const {
 
 
 
-DescriptorSetAllocator::DescriptorSetAllocator(DevicePtr dptr) : DeviceLinked(dptr) {
+DescriptorSetAllocator::DescriptorSetAllocator(DevicePtr dptr) : GraphicObject(dptr) {
 }
 
 

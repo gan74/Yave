@@ -34,7 +34,7 @@ SOFTWARE.
 
 namespace yave {
 
-class MaterialTemplate final : public DeviceLinked {
+class MaterialTemplate final : public GraphicObject {
 
     public:
         static constexpr usize max_compiled_pipelines = 8;

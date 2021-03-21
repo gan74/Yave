@@ -28,7 +28,7 @@ namespace yave {
 
 class MaterialTemplate;
 
-class GraphicPipeline : public DeviceLinked {
+class GraphicPipeline : public GraphicObject {
 
     public:
         GraphicPipeline() = default;

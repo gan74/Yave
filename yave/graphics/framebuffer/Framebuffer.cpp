@@ -54,7 +54,7 @@ static std::unique_ptr<RenderPass> create_render_pass(DevicePtr dptr, const Fram
 }
 
 Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Span<ColorAttachment> colors) :
-        DeviceLinked(dptr),
+        GraphicObject(dptr),
         _size(compute_size(depth, colors)),
         _attachment_count(colors.size()),
         _render_pass(create_render_pass(dptr, depth, colors)) {

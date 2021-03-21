@@ -45,7 +45,7 @@ usize DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
 
 
 DeviceMemoryAllocator::DeviceMemoryAllocator(DevicePtr dptr) :
-        DeviceLinked(dptr),
+        GraphicObject(dptr),
         _max_allocs(device_properties(dptr).max_memory_allocations) {
 }
 

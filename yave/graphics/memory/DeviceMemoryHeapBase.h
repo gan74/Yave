@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-class DeviceMemoryHeapBase : NonMovable, public DeviceLinked {
+class DeviceMemoryHeapBase : NonMovable, public GraphicObject {
     public:
         virtual ~DeviceMemoryHeapBase() {
         }
@@ -44,7 +44,7 @@ class DeviceMemoryHeapBase : NonMovable, public DeviceLinked {
         virtual void unmap(const DeviceMemoryView& view) = 0;
 
     protected:
-        DeviceMemoryHeapBase(DevicePtr dptr) : DeviceLinked(dptr) {
+        DeviceMemoryHeapBase(DevicePtr dptr) : GraphicObject(dptr) {
         }
 };
 

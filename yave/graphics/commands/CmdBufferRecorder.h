@@ -77,7 +77,7 @@ class PushConstant : NonCopyable {
         usize _size = 0;
 };
 
-class CmdBufferRegion : public DeviceLinked {
+class CmdBufferRegion : public GraphicObject {
     public:
         CmdBufferRegion() = default;
         CmdBufferRegion(CmdBufferRegion&&) = default;

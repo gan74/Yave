@@ -31,7 +31,7 @@ DeviceMemory::DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, us
 }
 
 DeviceMemory::DeviceMemory(DevicePtr dptr, VkDeviceMemory memory, usize offset, usize size) :
-        DeviceLinked(dptr),
+        GraphicObject(dptr),
         _memory(memory),
         _offset(offset),
         _size(size) {
@@ -59,8 +59,8 @@ void DeviceMemory::free() {
         _heap->free(*this);
     }
     // set device to nullptr
-    struct Empty : DeviceLinked {} empty;
-    DeviceLinked::swap(empty);
+    struct Empty : GraphicObject {} empty;
+    GraphicObject::swap(empty);
 }
 
 VkDeviceMemory DeviceMemory::vk_memory() const {
@@ -80,7 +80,7 @@ DeviceMemoryHeapBase* DeviceMemory::heap() const {
 }
 
 void DeviceMemory::swap(DeviceMemory& other) {
-    DeviceLinked::swap(other);
+    GraphicObject::swap(other);
     std::swap(_heap, other._heap);
     std::swap(_memory, other._memory);
     std::swap(_offset, other._offset);

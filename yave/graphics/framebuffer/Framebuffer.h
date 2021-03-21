@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Framebuffer final : public DeviceLinked {
+class Framebuffer final : public GraphicObject {
 
     public:
         using LoadOp = RenderPass::LoadOp;

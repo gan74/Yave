@@ -34,7 +34,7 @@ SOFTWARE.
 namespace yave {
 
 MaterialTemplate::MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data) :
-        DeviceLinked(dptr),
+        GraphicObject(dptr),
         _data(std::move(data)) {
 }
 

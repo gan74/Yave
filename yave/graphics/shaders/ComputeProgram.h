@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class ComputeProgram final : public DeviceLinked {
+class ComputeProgram final : public GraphicObject {
     public:
         ComputeProgram() = default;
         ComputeProgram(ComputeProgram&&) = default;

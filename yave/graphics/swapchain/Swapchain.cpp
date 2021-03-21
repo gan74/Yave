@@ -140,7 +140,7 @@ static VkSurfaceKHR create_surface(DevicePtr dptr, Window* window) {
 Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_surface(dptr, window)) {
 }
 
-Swapchain::Swapchain(DevicePtr dptr, VkSurfaceKHR surface) : DeviceLinked(dptr), _surface(surface) {
+Swapchain::Swapchain(DevicePtr dptr, VkSurfaceKHR surface) : GraphicObject(dptr), _surface(surface) {
     build_swapchain();
     build_semaphores();
     y_debug_assert(_images.size() == _semaphores.size());

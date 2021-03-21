@@ -35,7 +35,7 @@ SOFTWARE.
 
 namespace editor {
 
-class ThumbmailRenderer : NonMovable, public DeviceLinked {
+class ThumbmailRenderer : NonMovable, public GraphicObject {
 
     struct ThumbmailData : NonMovable {
         Texture texture;

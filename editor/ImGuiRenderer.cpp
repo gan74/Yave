@@ -73,7 +73,7 @@ static MaterialTemplateData create_imgui_material_data() {
 
 
 ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
-        DeviceLinked(dptr),
+        GraphicObject(dptr),
         _font(device(), load_font()),
         _font_view(_font),
         _material(device(), create_imgui_material_data()) {

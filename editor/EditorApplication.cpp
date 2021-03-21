@@ -59,7 +59,7 @@ EditorApplication* EditorApplication::instance() {
     return _instance;
 }
 
-EditorApplication::EditorApplication(ImGuiPlatform* platform) : DeviceLinked(platform->device()), _platform(platform) {
+EditorApplication::EditorApplication(ImGuiPlatform* platform) : GraphicObject(platform->device()), _platform(platform) {
     y_always_assert(_instance == nullptr, "Editor instance already exists.");
     _instance = this;
 

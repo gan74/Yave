@@ -46,7 +46,7 @@ CmdBufferRegion::~CmdBufferRegion() {
 }
 
 CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color) :
-        DeviceLinked(cmd_buffer.device()),
+        GraphicObject(cmd_buffer.device()),
         _buffer(cmd_buffer.vk_cmd_buffer()) {
 
     if(const DebugUtils* debug = debug_utils(device())) {

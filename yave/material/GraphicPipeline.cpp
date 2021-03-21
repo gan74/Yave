@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 GraphicPipeline::GraphicPipeline(const MaterialTemplate* mat, VkPipeline pipeline, VkPipelineLayout layout) :
-        DeviceLinked(mat->device()),
+        GraphicObject(mat->device()),
         _pipeline(pipeline),
         _layout(layout)  {
 }

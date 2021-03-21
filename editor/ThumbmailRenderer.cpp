@@ -185,7 +185,7 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
 
 
 
-ThumbmailRenderer::ThumbmailRenderer(AssetLoader& loader) : DeviceLinked(loader.device()), _loader(&loader) {
+ThumbmailRenderer::ThumbmailRenderer(AssetLoader& loader) : GraphicObject(loader.device()), _loader(&loader) {
 }
 
 const TextureView* ThumbmailRenderer::thumbmail(AssetId id) {

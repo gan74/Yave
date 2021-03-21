@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-class RenderPass : public DeviceLinked {
+class RenderPass : public GraphicObject {
     public:
         enum class LoadOp : u32 {
             Clear,

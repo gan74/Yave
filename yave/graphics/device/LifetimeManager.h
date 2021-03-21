@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-class LifetimeManager : public DeviceLinked {
+class LifetimeManager : public GraphicObject {
 
     struct EmptyResource {};
 

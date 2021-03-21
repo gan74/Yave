@@ -85,8 +85,6 @@ class GraphicObject : NonCopyable {
         DevicePtr _device = nullptr;
 };
 
-using DeviceLinked = GraphicObject;
-
 }
 
 

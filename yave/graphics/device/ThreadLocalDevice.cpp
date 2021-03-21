@@ -28,7 +28,7 @@ SOFTWARE.
 namespace yave {
 
 ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) :
-        DeviceLinked(dptr),
+        GraphicObject(dptr),
         _disposable_cmd_pool(dptr) {
 }
 

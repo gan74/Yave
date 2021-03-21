@@ -46,7 +46,7 @@ static VkCommandPool create_pool(DevicePtr dptr) {
 
 
 CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
-        DeviceLinked(dptr),
+        GraphicObject(dptr),
         _pool(create_pool(dptr)),
         _thread_id(concurrent::thread_id()) {
 }

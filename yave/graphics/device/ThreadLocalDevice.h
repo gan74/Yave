@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-class ThreadLocalDevice : NonMovable, public DeviceLinked {
+class ThreadLocalDevice : NonMovable, public GraphicObject {
     public:
         ThreadLocalDevice(DevicePtr dptr);
 

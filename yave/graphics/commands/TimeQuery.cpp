@@ -39,7 +39,7 @@ static VkQueryPool create_query_pool(DevicePtr dptr) {
     return pool;
 }
 
-TimeQuery::TimeQuery(DevicePtr dptr)  : DeviceLinked(dptr), _pool(create_query_pool(dptr)) {
+TimeQuery::TimeQuery(DevicePtr dptr)  : GraphicObject(dptr), _pool(create_query_pool(dptr)) {
 }
 
 TimeQuery::~TimeQuery() {

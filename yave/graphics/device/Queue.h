@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Queue : public DeviceLinked {
+class Queue : public GraphicObject {
 
     public:
         Queue() = default;

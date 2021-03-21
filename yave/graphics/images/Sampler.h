@@ -28,7 +28,7 @@ SOFTWARE.
 namespace yave {
 
 Y_TODO(move to device)
-class Sampler final : public DeviceLinked {
+class Sampler final : public GraphicObject {
     public:
 
         Sampler() = default;

@@ -28,7 +28,7 @@ namespace yave {
 
 class DeviceMemoryHeapBase;
 
-class DeviceMemory : public DeviceLinked {
+class DeviceMemory : public GraphicObject {
 
     public:
         DeviceMemory() = default;

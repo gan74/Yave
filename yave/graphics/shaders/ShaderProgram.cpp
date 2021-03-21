@@ -134,7 +134,7 @@ static void validate_bindings(core::Span<VkDescriptorSetLayoutBinding> bindings)
     y_debug_assert(max == bindings.size());
 }
 
-ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) : DeviceLinked(frag.device()) {
+ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) : GraphicObject(frag.device()) {
     {
         merge_bindings(_bindings, frag.bindings());
         merge_bindings(_bindings, vert.bindings());

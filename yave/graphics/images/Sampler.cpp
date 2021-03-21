@@ -100,7 +100,7 @@ static VkSampler create_sampler(DevicePtr dptr, SamplerType type) {
     return sampler;
 }
 
-Sampler::Sampler(DevicePtr dptr, SamplerType type) : DeviceLinked(dptr), _sampler(create_sampler(dptr, type)) {
+Sampler::Sampler(DevicePtr dptr, SamplerType type) : GraphicObject(dptr), _sampler(create_sampler(dptr, type)) {
 }
 
 Sampler::~Sampler() {
