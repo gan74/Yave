@@ -23,7 +23,7 @@ SOFTWARE.
 #include "LifetimeManager.h"
 #include "destroy.h"
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 #include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/commands/CmdBufferPool.h>

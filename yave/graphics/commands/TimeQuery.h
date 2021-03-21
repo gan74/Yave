@@ -23,8 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_COMMANDS_TIMEQUERY_H
 
 #include <yave/yave.h>
-#include <yave/graphics/device/DeviceLinked.h>
-#include <yave/graphics/vk/vk.h>
+#include <yave/graphics/graphics.h>
 
 #include <y/core/Chrono.h>
 

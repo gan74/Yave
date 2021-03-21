@@ -22,10 +22,8 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_EXTENSIONS_RAYTRACING_H
 #define YAVE_DEVICE_EXTENSIONS_RAYTRACING_H
 
-#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/memory/DeviceMemory.h>
-
-#include <yave/graphics/vk/vk.h>
 
 #include <y/core/Span.h>
 

@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "RayTracing.h"
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 
 #include <yave/meshes/StaticMesh.h>

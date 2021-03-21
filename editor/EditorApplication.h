@@ -26,7 +26,7 @@ SOFTWARE.
 #include <editor/editor.h>
 
 #include <yave/scene/SceneView.h>
-#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/graphics.h>
 
 namespace editor {
 

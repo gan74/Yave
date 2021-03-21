@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_IMAGES_IMAGEFORMAT_H
 
 #include <yave/graphics/vk/vk.h>
+
 #include <y/reflect/reflect.h>
 
 namespace yave {
@@ -40,7 +41,7 @@ class ImageFormat {
 
         bool is_valid() const;
         bool is_float() const;
-        
+
         bool supports_filtering() const;
 
         bool is_block_format() const;

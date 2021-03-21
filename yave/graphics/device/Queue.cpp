@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 

@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <yave/graphics/images/Image.h>
-#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/graphics.h>
 
 #include "FrameToken.h"
 

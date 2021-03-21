@@ -16,7 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef YAVE_GRAPHICS_DEVICE_DESTROY_H
 #define YAVE_GRAPHICS_DEVICE_DESTROY_H
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 namespace yave {
 

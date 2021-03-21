@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferPool.h>
 #include <yave/graphics/device/LifetimeManager.h>
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 #ifdef Y_DEBUG
 #define YAVE_CMD_CHECK_LOCK()                                                           \

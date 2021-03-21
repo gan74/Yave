@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "DebugUtils.h"
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 #include <y/core/String.h>
 #include <y/utils/log.h>

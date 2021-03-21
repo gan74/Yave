@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "ShaderModuleBase.h"
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 #include <external/spirv_cross/spirv.hpp>
 #include <external/spirv_cross/spirv_cross.hpp>

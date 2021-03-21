@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "Buffer.h"
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/device/DeviceProperties.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 

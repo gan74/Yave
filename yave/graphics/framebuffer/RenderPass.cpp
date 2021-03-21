@@ -22,7 +22,7 @@ SOFTWARE.
 #include "RenderPass.h"
 
 #include <yave/graphics/images/Image.h>
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 #include <y/utils/hash.h>
 

@@ -22,10 +22,8 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_THREADLOCALDEVICE_H
 #define YAVE_DEVICE_THREADLOCALDEVICE_H
 
-#include <yave/graphics/vk/vk.h>
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/commands/CmdBufferPool.h>
-
-#include "DeviceLinked.h"
 
 namespace yave {
 

@@ -23,7 +23,7 @@ SOFTWARE.
 #include "DeviceMemoryView.h"
 #include "DeviceMemoryHeap.h"
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/device/DeviceProperties.h>
 
 namespace yave {

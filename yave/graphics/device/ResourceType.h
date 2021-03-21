@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_DEVICE_RESOURCETYPE_H
 
 #include <yave/yave.h>
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 namespace yave {
 

@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/graphics/framebuffer/RenderPass.h>
 #include <yave/graphics/shaders/ShaderProgram.h>
 #include <yave/meshes/Vertex.h>
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 #include <y/core/Chrono.h>
 

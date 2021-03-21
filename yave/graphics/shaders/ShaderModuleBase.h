@@ -24,8 +24,7 @@ SOFTWARE.
 
 #include "SpirVData.h"
 
-#include <yave/graphics/vk/vk.h>
-#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/graphics.h>
 
 #include <yave/utils/traits.h>
 

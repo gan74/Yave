@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <y/core/HashMap.h>
 
-#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/graphics.h>
 
 #include "AssetStore.h"
 #include "AssetLoadingContext.h"

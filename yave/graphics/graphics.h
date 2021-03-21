@@ -19,9 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_UTILS_H
-#define YAVE_GRAPHICS_UTILS_H
-
+#ifndef YAVE_GRAPHICS_GRAPHICS_H
+#define YAVE_GRAPHICS_GRAPHICS_H
 
 #include <yave/yave.h>
 
@@ -57,8 +56,39 @@ void wait_all_queues(DevicePtr dptr);
 YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
 
+
+class GraphicObject : NonCopyable {
+    public:
+        ~GraphicObject() = default;
+
+        DevicePtr device() const;
+        bool is_null() const;
+
+        template<typename T>
+        void destroy(T&& t) const {
+            device_destroy(_device, y_fwd(t));
+        }
+
+    protected:
+        // Only default constructor should not link any device: explicitly passing nullptr to GraphicObject is an error
+        GraphicObject();
+        GraphicObject(DevicePtr dev);
+        GraphicObject(ThreadDevicePtr dev);
+
+        GraphicObject(GraphicObject&& other);
+        GraphicObject& operator=(GraphicObject&& other);
+
+
+        void swap(GraphicObject& other);
+
+    private:
+        DevicePtr _device = nullptr;
+};
+
+using DeviceLinked = GraphicObject;
+
 }
 
 
-#endif // YAVE_DEVICE_DEVICE_UTILS_H
+#endif // YAVE_GRAPHICS_GRAPHICS_H
 

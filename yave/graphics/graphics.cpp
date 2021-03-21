@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "utils.h"
+#include "graphics.h"
 
 #include <yave/graphics/device/Device.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
@@ -102,6 +102,43 @@ void wait_all_queues(DevicePtr dptr) {
 
 YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
 #undef YAVE_GENERATE_DESTROY_IMPL
+
+
+
+DevicePtr GraphicObject::device() const {
+    return _device;
+}
+
+bool GraphicObject::is_null() const {
+    return !_device;
+}
+
+GraphicObject::GraphicObject() : _device(nullptr) {
+    // for putting breakpoints
+}
+
+GraphicObject::GraphicObject(DevicePtr dev) : _device(dev) {
+    if(!dev) {
+        y_fatal("Null device.");
+    }
+}
+
+GraphicObject::GraphicObject(ThreadDevicePtr dev) : GraphicObject(dev->device()) {
+}
+
+GraphicObject::GraphicObject(GraphicObject&& other) {
+    swap(other);
+}
+
+GraphicObject& GraphicObject::operator=(GraphicObject&& other) {
+    swap(other);
+    return *this;
+}
+
+void GraphicObject::swap(GraphicObject& other) {
+    std::swap(_device, other._device);
+}
+
 
 }
 

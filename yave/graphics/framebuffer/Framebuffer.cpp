@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 #include "Framebuffer.h"
 #include "RenderPass.h"
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 namespace yave {
 

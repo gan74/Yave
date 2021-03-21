@@ -22,9 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_QUEUES_QUEUE_H
 #define YAVE_GRAPHICS_QUEUES_QUEUE_H
 
-#include "DeviceLinked.h"
-
-#include <yave/graphics/vk/vk.h>
+#include <yave/graphics/graphics.h>
 
 #include <mutex>
 #include <shared_mutex>

@@ -36,7 +36,10 @@ SOFTWARE.
 namespace editor {
 
 template<typename T>
-static constexpr bool is_printable_v = std::is_arithmetic_v<T>/* || std::is_enum_v<T>*/;
+static constexpr bool is_printable_v =
+    std::is_arithmetic_v<T> ||
+    //std::is_enum_v<T> ||
+    (std::is_constructible_v<std::string_view, T> && std::is_constructible_v<T, std::string_view>);
 
 
 template<typename T>
@@ -54,6 +57,9 @@ static bool try_parse(std::string_view str, T& t) {
         } catch(...) {
             return false;
         }
+    } else if constexpr(std::is_constructible_v<std::string_view>) {
+        t = T(str);
+        return true;
     }
     return false;
 }

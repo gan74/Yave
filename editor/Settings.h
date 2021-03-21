@@ -31,6 +31,13 @@ SOFTWARE.
 
 namespace editor {
 
+struct EditorSettings {
+    core::String world_file = "../world.yw3";
+    core::String asset_store = "../store.sqlite3";
+
+    y_reflect(world_file, asset_store)
+};
+
 struct CameraSettings {
     float z_near = 1.0f;
     float fov = 60.0f;
@@ -73,11 +80,12 @@ class Settings {
         Settings(bool load = true);
         ~Settings();
 
+        EditorSettings editor;
         CameraSettings camera;
         UiSettings ui;
         PerfSettings perf;
 
-        y_reflect(camera, ui, perf)
+        y_reflect(editor, camera, ui, perf)
 };
 
 }

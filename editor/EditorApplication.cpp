@@ -23,6 +23,7 @@ SOFTWARE.
 #include "EditorApplication.h"
 #include "EditorWorld.h"
 
+#include "Settings.h"
 #include "EditorResources.h"
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
@@ -51,10 +52,6 @@ editor_action(ICON_FA_SAVE " Save", []{ application()->save_world(); }, "File")
 editor_action(ICON_FA_FOLDER " Load", []{ application()->load_world(); }, "File")
 
 
-
-static constexpr std::string_view world_file = "../world.yw3";
-static constexpr std::string_view store_file = "../store.sqlite3";
-
 EditorApplication* EditorApplication::_instance = nullptr;
 
 EditorApplication* EditorApplication::instance() {
@@ -69,7 +66,7 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : DeviceLinked(pla
     _resources = std::make_unique<EditorResources>(device());
     _ui = std::make_unique<UiManager>();
 
-    _asset_store = std::make_shared<SQLiteAssetStore>(store_file);
+    _asset_store = std::make_shared<SQLiteAssetStore>(app_settings().editor.asset_store);
     _loader = std::make_unique<AssetLoader>(device(), _asset_store);
     _thumbmail_renderer = std::make_unique<ThumbmailRenderer>(*_loader);
 
@@ -141,7 +138,7 @@ void EditorApplication::process_deferred_actions() {
 void EditorApplication::save_world_deferred() const {
     y_profile();
 
-    auto file = io2::File::create(world_file);
+    auto file = io2::File::create(app_settings().editor.world_file);
     if(!file) {
         log_msg("Unable to open file", Log::Error);
         return;
@@ -155,7 +152,7 @@ void EditorApplication::save_world_deferred() const {
 void EditorApplication::load_world_deferred() {
     y_profile();
 
-    auto file = io2::File::open(world_file);
+    auto file = io2::File::open(app_settings().editor.world_file);
     if(!file) {
         log_msg("Unable to open file", Log::Error);
         return;

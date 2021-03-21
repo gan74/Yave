@@ -22,7 +22,7 @@ SOFTWARE.
 #include "GraphicPipeline.h"
 #include "MaterialTemplate.h"
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 
 namespace yave {
 

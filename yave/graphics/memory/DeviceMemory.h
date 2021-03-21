@@ -22,8 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_MEMORY_DEVICEMEMORY_H
 #define YAVE_GRAPHICS_MEMORY_DEVICEMEMORY_H
 
-#include <yave/graphics/vk/vk.h>
-#include <yave/graphics/device/DeviceLinked.h>
+#include <yave/graphics/graphics.h>
 
 namespace yave {
 

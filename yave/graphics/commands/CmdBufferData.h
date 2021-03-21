@@ -23,8 +23,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 #define YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 
-#include <yave/graphics/device/DeviceLinked.h>
-#include <yave/graphics/vk/vk.h>
+#include <yave/graphics/graphics.h>
 
 #include <y/core/Vector.h>
 

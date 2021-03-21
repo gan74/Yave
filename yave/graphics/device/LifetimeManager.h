@@ -22,12 +22,9 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_LIFETIMEMANAGER_H
 #define YAVE_DEVICE_LIFETIMEMANAGER_H
 
-#include "DeviceLinked.h"
-#include "ResourceType.h"
-
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemory.h>
-#include <yave/graphics/vk/vk.h>
 
 #include <variant>
 #include <deque>

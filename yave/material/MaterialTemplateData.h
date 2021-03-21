@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_MATERIAL_MATERIALTEMPLATEDATA_H
 #define YAVE_MATERIAL_MATERIALTEMPLATEDATA_H
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/shaders/SpirVData.h>
 
 namespace yave {

@@ -22,7 +22,7 @@ SOFTWARE.
 #include "MaterialTemplate.h"
 #include "MaterialCompiler.h"
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/framebuffer/RenderPass.h>
 #include <yave/graphics/device/extensions/DebugUtils.h>
 

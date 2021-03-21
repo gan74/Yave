@@ -23,7 +23,7 @@ SOFTWARE.
 #include "CmdBufferPool.h"
 #include "CmdBuffer.h"
 
-#include <yave/graphics/utils.h>
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/device/Queue.h>
 #include <yave/graphics/device/LifetimeManager.h>
 

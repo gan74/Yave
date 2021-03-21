@@ -39,6 +39,12 @@ void CameraDebug::on_gui() {
 
     const math::Quaternion<> rot = math::Quaternion<>::from_base(fwd, rht, up);
 
+
+    ImGui::Text("FoV: %.1f", camera.field_of_view());
+    ImGui::Text("Aspect ratio: %.2f", camera.aspect_ratio());
+
+    ImGui::Separator();
+
     ImGui::Text("position: %.1f, %.1f, %.1f", pos.x(), pos.y(), pos.z());
     ImGui::Text("forward : %.1f, %.1f, %.1f", fwd.x(), fwd.y(), fwd.z());
     ImGui::Text("right   : %.1f, %.1f, %.1f", rht.x(), rht.y(), rht.z());
