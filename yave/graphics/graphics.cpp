@@ -27,118 +27,95 @@ SOFTWARE.
 
 namespace yave {
 
-VkDevice vk_device(DevicePtr dptr) {
-    return dptr->vk_device();
+DevicePtr main_device() {
+    return Device::main_device();
 }
 
-VkInstance vk_device_instance(DevicePtr dptr) {
-    return dptr->instance().vk_instance();
+VkDevice vk_device() {
+    return main_device()->vk_device();
 }
 
-
-const PhysicalDevice& physical_device(DevicePtr dptr) {
-    return dptr->physical_device();
-}
-
-CmdBuffer create_disposable_cmd_buffer(DevicePtr dptr) {
-    return dptr->create_disposable_cmd_buffer();
-}
-
-DeviceMemoryAllocator& device_allocator(DevicePtr dptr) {
-    return dptr->allocator();
-}
-
-DescriptorSetAllocator& descriptor_set_allocator(DevicePtr dptr) {
-    return dptr->descriptor_set_allocator();
-}
-
-const Queue& graphic_queue(DevicePtr dptr) {
-    return dptr->graphic_queue();
-}
-
-const Queue& loading_queue(DevicePtr dptr) {
-    return dptr->loading_queue();
-}
-
-const DeviceResources& device_resources(DevicePtr dptr) {
-    return dptr->device_resources();
-}
-
-const DeviceProperties& device_properties(DevicePtr dptr) {
-    return dptr->device_properties();
-}
-
-LifetimeManager& lifetime_manager(DevicePtr dptr) {
-    return dptr->lifetime_manager();
-}
-
-const VkAllocationCallbacks* vk_allocation_callbacks(DevicePtr dptr) {
-    return dptr->vk_allocation_callbacks();
-}
-
-VkSampler vk_sampler(DevicePtr dptr, SamplerType type) {
-    return dptr->vk_sampler(type);
-}
-
-const DebugUtils* debug_utils(DevicePtr dptr) {
-    return dptr ? dptr->debug_utils() : nullptr;
-}
-
-const RayTracing* ray_tracing(DevicePtr dptr) {
-    return dptr ? dptr->ray_tracing() : nullptr;
-}
-
-void wait_all_queues(DevicePtr dptr) {
-    dptr->wait_all_queues();
+VkInstance vk_device_instance() {
+    return main_device()->instance().vk_instance();
 }
 
 
-#define YAVE_GENERATE_DESTROY_IMPL(T)                                   \
-    void device_destroy(DevicePtr dptr, T t) {                          \
-        if(dptr) {                                                      \
-            lifetime_manager(dptr).destroy_later(std::move(t));         \
-        }                                                               \
+const PhysicalDevice& physical_device() {
+    return main_device()->physical_device();
+}
+
+CmdBuffer create_disposable_cmd_buffer() {
+    return main_device()->create_disposable_cmd_buffer();
+}
+
+DeviceMemoryAllocator& device_allocator() {
+    return main_device()->allocator();
+}
+
+DescriptorSetAllocator& descriptor_set_allocator() {
+    return main_device()->descriptor_set_allocator();
+}
+
+const Queue& graphic_queue() {
+    return main_device()->graphic_queue();
+}
+
+const Queue& loading_queue() {
+    return main_device()->loading_queue();
+}
+
+const DeviceResources& device_resources() {
+    return main_device()->device_resources();
+}
+
+const DeviceProperties& device_properties() {
+    return main_device()->device_properties();
+}
+
+LifetimeManager& lifetime_manager() {
+    return main_device()->lifetime_manager();
+}
+
+const VkAllocationCallbacks* vk_allocation_callbacks() {
+    return main_device()->vk_allocation_callbacks();
+}
+
+VkSampler vk_sampler(SamplerType type) {
+    return main_device()->vk_sampler(type);
+}
+
+const DebugUtils* debug_utils() {
+    return main_device()->debug_utils();
+}
+
+const RayTracing* ray_tracing() {
+    return main_device()->ray_tracing();
+}
+
+void wait_all_queues() {
+    main_device()->wait_all_queues();
+}
+
+
+#define YAVE_GENERATE_DESTROY_IMPL(T)                                                   \
+    void device_destroy(T t) {                                                          \
+        if(t != vk_null()) {                                                            \
+            lifetime_manager().destroy_later(std::move(t));                             \
+        }                                                                               \
     }
 
-YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
+YAVE_VK_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
 #undef YAVE_GENERATE_DESTROY_IMPL
 
-
-
-DevicePtr GraphicObject::device() const {
-    return _device;
-}
-
-bool GraphicObject::is_null() const {
-    return !_device;
-}
-
-GraphicObject::GraphicObject() : _device(nullptr) {
-    // for putting breakpoints
-}
-
-GraphicObject::GraphicObject(DevicePtr dev) : _device(dev) {
-    if(!dev) {
-        y_fatal("Null device.");
+#define YAVE_GENERATE_DESTROY_IMPL(T)                                                   \
+    void device_destroy(T t) {                                                          \
+        if(!t.is_null()) {                                                              \
+            lifetime_manager().destroy_later(std::move(t));                             \
+        }                                                                               \
     }
-}
 
-GraphicObject::GraphicObject(ThreadDevicePtr dev) : GraphicObject(dev->device()) {
-}
-
-GraphicObject::GraphicObject(GraphicObject&& other) {
-    swap(other);
-}
-
-GraphicObject& GraphicObject::operator=(GraphicObject&& other) {
-    swap(other);
-    return *this;
-}
-
-void GraphicObject::swap(GraphicObject& other) {
-    std::swap(_device, other._device);
-}
-
+YAVE_YAVE_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
+#undef YAVE_GENERATE_DESTROY_IMPL
 
 }
 

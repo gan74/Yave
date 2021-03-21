@@ -113,10 +113,10 @@ inline VkDeviceMemory alloc_memory(DevicePtr dptr, usize size, u32 type_bits, Me
     VkMemoryAllocateInfo allocate_info = vk_struct();
     {
         allocate_info.allocationSize = size;
-        allocate_info.memoryTypeIndex = get_memory_type(physical_device(dptr).vk_memory_properties(), type_bits, type);
+        allocate_info.memoryTypeIndex = get_memory_type(physical_device().vk_memory_properties(), type_bits, type);
     }
     VkDeviceMemory memory = {};
-    const VkResult result = vkAllocateMemory(vk_device(dptr), &allocate_info, vk_allocation_callbacks(dptr), &memory);
+    const VkResult result = vkAllocateMemory(vk_device(), &allocate_info, vk_allocation_callbacks(), &memory);
     if(is_error(result)) {
         y_fatal("Failed to allocate memory: %", vk_result_str(result));
     }

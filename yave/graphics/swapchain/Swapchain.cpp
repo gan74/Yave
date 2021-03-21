@@ -140,7 +140,7 @@ static VkSurfaceKHR create_surface(DevicePtr dptr, Window* window) {
 Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_surface(dptr, window)) {
 }
 
-Swapchain::Swapchain(DevicePtr dptr, VkSurfaceKHR surface) : GraphicObject(dptr), _surface(surface) {
+Swapchain::Swapchain(DevicePtr dptr, VkSurfaceKHR surface) : _surface(surface) {
     build_swapchain();
     build_semaphores();
     y_debug_assert(_images.size() == _semaphores.size());
@@ -158,7 +158,7 @@ void Swapchain::reset() {
 
     if(build_swapchain()) {
         build_semaphores();
-        destroy(old);
+        device_destroy(old);
     }
 }
 
@@ -167,14 +167,14 @@ Swapchain::~Swapchain() {
 
     destroy_semaphores();
 
-    destroy(_swapchain);
-    destroy(_surface);
+    device_destroy(_swapchain);
+    device_destroy(_surface);
 }
 
 bool Swapchain::build_swapchain() {
 
-    const VkSurfaceCapabilitiesKHR capabilities = compute_capabilities(device(), _surface);
-    const VkSurfaceFormatKHR format = surface_format(device(), _surface);
+    const VkSurfaceCapabilitiesKHR capabilities = compute_capabilities(main_device(), _surface);
+    const VkSurfaceFormatKHR format = surface_format(main_device(), _surface);
 
     const VkImageUsageFlagBits image_usage_flags = VkImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
     if((capabilities.supportedUsageFlags & image_usage_flags) != image_usage_flags) {
@@ -203,10 +203,10 @@ bool Swapchain::build_swapchain() {
             create_info.imageColorSpace = format.colorSpace;
             create_info.imageExtent = capabilities.currentExtent;
             create_info.minImageCount = compute_image_count(capabilities);
-            create_info.presentMode = present_mode(device(), _surface);
+            create_info.presentMode = present_mode(main_device(), _surface);
             create_info.oldSwapchain = _swapchain;
         }
-        vk_check(vkCreateSwapchainKHR(device()->vk_device(), &create_info, device()->vk_allocation_callbacks(), &_swapchain.get()));
+        vk_check(vkCreateSwapchainKHR(vk_device(), &create_info, vk_allocation_callbacks(), &_swapchain.get()));
     }
 
     y_profile_zone("image setup");
@@ -214,13 +214,13 @@ bool Swapchain::build_swapchain() {
     core::Vector<VkImage> images;
     {
         u32 count = 0;
-        vk_check(vkGetSwapchainImagesKHR(device()->vk_device(), _swapchain, &count, nullptr));
+        vk_check(vkGetSwapchainImagesKHR(vk_device(), _swapchain, &count, nullptr));
         images = core::Vector<VkImage>(count, VkImage{});
-        vk_check(vkGetSwapchainImagesKHR(device()->vk_device(), _swapchain, &count, images.data()));
+        vk_check(vkGetSwapchainImagesKHR(vk_device(), _swapchain, &count, images.data()));
     }
 
     for(auto image : images) {
-        const VkImageView view = create_image_view(device(), image, _color_format.vk_format());
+        const VkImageView view = create_image_view(main_device(), image, _color_format.vk_format());
 
         struct SwapchainImageMemory : DeviceMemory {
             SwapchainImageMemory(DevicePtr dptr) : DeviceMemory(dptr, vk_null(), 0, 0) {
@@ -229,7 +229,7 @@ bool Swapchain::build_swapchain() {
 
         auto swapchain_image = SwapchainImage();
 
-        swapchain_image._memory = SwapchainImageMemory(device());
+        swapchain_image._memory = SwapchainImageMemory(main_device());
 
         swapchain_image._size = math::Vec3ui(_size, 1);
         swapchain_image._format = _color_format;
@@ -240,16 +240,16 @@ bool Swapchain::build_swapchain() {
         swapchain_image._view = view;
 
 #ifdef Y_DEBUG
-        if(const auto* debug = debug_utils(device())) {
-            debug->set_resource_name(device(), image, "Swapchain Image");
-            debug->set_resource_name(device(), view, "Swapchain Image View");
+        if(const auto* debug = debug_utils()) {
+            debug->set_resource_name(image, "Swapchain Image");
+            debug->set_resource_name(view, "Swapchain Image View");
         }
 #endif
 
         _images << std::move(swapchain_image);
     }
 
-    CmdBufferRecorder recorder(device()->create_disposable_cmd_buffer());
+    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
     for(auto& i : _images) {
         recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
     }
@@ -264,9 +264,9 @@ void Swapchain::build_semaphores() {
 
     for(usize i = 0; i != _images.size(); ++i) {
         auto& semaphores = _semaphores.emplace_back();
-        vk_check(vkCreateSemaphore(device()->vk_device(), &semaphore_create_info, device()->vk_allocation_callbacks(), &semaphores.render_complete));
-        vk_check(vkCreateSemaphore(device()->vk_device(), &semaphore_create_info, device()->vk_allocation_callbacks(), &semaphores.image_aquired));
-        vk_check(vkCreateFence(device()->vk_device(), &fence_create_info, device()->vk_allocation_callbacks(), &semaphores.fence));
+        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &semaphores.render_complete));
+        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &semaphores.image_aquired));
+        vk_check(vkCreateFence(vk_device(), &fence_create_info, vk_allocation_callbacks(), &semaphores.fence));
     }
 
     y_debug_assert(_images.size() == _semaphores.size());
@@ -274,9 +274,9 @@ void Swapchain::build_semaphores() {
 
 void Swapchain::destroy_semaphores() {
     for(const auto& semaphores : _semaphores) {
-        destroy(semaphores.render_complete);
-        destroy(semaphores.image_aquired);
-        destroy(semaphores.fence);
+        device_destroy(semaphores.render_complete);
+        device_destroy(semaphores.image_aquired);
+        device_destroy(semaphores.fence);
     }
     _semaphores.clear();
 }
@@ -290,12 +290,12 @@ FrameToken Swapchain::next_frame() {
     const Semaphores& frame_semaphores = _semaphores[semaphore_index];
 
     u32 image_index = 0;
-    vk_check(vkAcquireNextImageKHR(device()->vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index));
+    vk_check(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index));
 
     {
         y_profile_zone("image fence");
-        vk_check(vkWaitForFences(device()->vk_device(), 1, &frame_semaphores.fence, true, u64(-1)));
-        vk_check(vkResetFences(device()->vk_device(), 1, &frame_semaphores.fence));
+        vk_check(vkWaitForFences(vk_device(), 1, &frame_semaphores.fence, true, u64(-1)));
+        vk_check(vkResetFences(vk_device(), 1, &frame_semaphores.fence));
     }
 
     return FrameToken {

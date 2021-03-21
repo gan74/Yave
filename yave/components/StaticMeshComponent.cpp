@@ -42,8 +42,8 @@ void StaticMeshComponent::SubMesh::render(RenderPassRecorder& recorder, const Sc
         return;
     }
 
-    y_debug_assert(material->device());
-    y_debug_assert(mesh->device());
+    y_debug_assert(!material->is_null());
+    y_debug_assert(!mesh->is_null());
 
     if(material->descriptor_set().is_null()) {
         recorder.bind_material(material->material_template(), {scene_data.descriptor_set});

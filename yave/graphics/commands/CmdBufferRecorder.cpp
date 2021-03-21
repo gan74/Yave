@@ -40,16 +40,13 @@ namespace yave {
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
 CmdBufferRegion::~CmdBufferRegion() {
-    if(const DebugUtils* debug = debug_utils(device())) {
+    if(const DebugUtils* debug = debug_utils()) {
         debug->end_region(_buffer);
     }
 }
 
-CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color) :
-        GraphicObject(cmd_buffer.device()),
-        _buffer(cmd_buffer.vk_cmd_buffer()) {
-
-    if(const DebugUtils* debug = debug_utils(device())) {
+CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color) : _buffer(cmd_buffer.vk_cmd_buffer()) {
+    if(const DebugUtils* debug = debug_utils()) {
         debug->begin_region(_buffer, name, color);
     }
 }
@@ -152,7 +149,7 @@ void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::Attrib
         const VkBuffer buffer = per_vertex.vk_buffer();
         vkCmdBindVertexBuffers(vk_cmd_buffer(), 0, 1, &buffer, &offset);
     } else {
-        const bool has_per_vertex = per_vertex.device();
+        const bool has_per_vertex = !per_vertex.is_null();
         const u32 attrib_count = u32(per_instance.size()) + has_per_vertex;
 
         auto offsets = core::vector_with_capacity<VkDeviceSize>(attrib_count);
@@ -173,14 +170,6 @@ void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::Attrib
 
 CmdBufferRegion RenderPassRecorder::region(const char* name, const math::Vec4& color) {
     return _cmd_buffer.region(name, color);
-}
-
-DevicePtr RenderPassRecorder::device() const {
-    return _cmd_buffer.device();
-}
-
-bool RenderPassRecorder::is_null() const {
-    return !device();
 }
 
 VkCommandBuffer RenderPassRecorder::vk_cmd_buffer() const {
@@ -230,9 +219,7 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& base) : CmdBuffer(std::move(bas
 }
 
 CmdBufferRecorder::~CmdBufferRecorder() {
-    if(device()) {
-        check_no_renderpass();
-    }
+    check_no_renderpass();
 }
 
 void CmdBufferRecorder::end_renderpass() {
@@ -502,7 +489,7 @@ void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, Vk
 }
 
 void CmdBufferRecorder::submit(SyncPolicy policy) {
-    submit(graphic_queue(device()), policy);
+    submit(graphic_queue(), policy);
 }
 
 void CmdBufferRecorder::submit(const Queue& queue, SyncPolicy policy) {

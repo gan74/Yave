@@ -36,7 +36,7 @@ namespace yave {
 static constexpr ImageUsage SwapchainImageUsage = ImageUsage::SwapchainBit | ImageUsage::ColorBit;
 using SwapchainImageView = ImageView<SwapchainImageUsage>;
 
-class Swapchain : NonMovable, public GraphicObject {
+class Swapchain : NonMovable {
 
     class SwapchainImage : public Image<SwapchainImageUsage> {
         public:

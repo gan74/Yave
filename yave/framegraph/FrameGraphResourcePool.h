@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace yave {
 
-class FrameGraphResourcePool : NonMovable, public GraphicObject {
+class FrameGraphResourcePool : NonMovable {
 
     public:
         FrameGraphResourcePool(DevicePtr dptr);

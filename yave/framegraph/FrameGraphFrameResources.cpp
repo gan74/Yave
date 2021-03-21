@@ -40,20 +40,14 @@ FrameGraphFrameResources::~FrameGraphFrameResources() {
     _pool->garbage_collect();
 }
 
-DevicePtr FrameGraphFrameResources::device() const {
-    return _pool->device();
-}
-
 u32 FrameGraphFrameResources::create_resource_id() {
     return _next_id++;
 }
-
 
 void FrameGraphFrameResources::reserve(usize images, usize buffers) {
     _images.reserve(images);
     _buffers.reserve(buffers);
 }
-
 
 void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
     res.check_valid();

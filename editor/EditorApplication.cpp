@@ -59,15 +59,15 @@ EditorApplication* EditorApplication::instance() {
     return _instance;
 }
 
-EditorApplication::EditorApplication(ImGuiPlatform* platform) : GraphicObject(platform->device()), _platform(platform) {
+EditorApplication::EditorApplication(ImGuiPlatform* platform) : _platform(platform) {
     y_always_assert(_instance == nullptr, "Editor instance already exists.");
     _instance = this;
 
-    _resources = std::make_unique<EditorResources>(device());
+    _resources = std::make_unique<EditorResources>(main_device());
     _ui = std::make_unique<UiManager>();
 
     _asset_store = std::make_shared<SQLiteAssetStore>(app_settings().editor.asset_store);
-    _loader = std::make_unique<AssetLoader>(device(), _asset_store);
+    _loader = std::make_unique<AssetLoader>(main_device(), _asset_store);
     _thumbmail_renderer = std::make_unique<ThumbmailRenderer>(*_loader);
 
     _world = std::make_unique<EditorWorld>(*_loader);

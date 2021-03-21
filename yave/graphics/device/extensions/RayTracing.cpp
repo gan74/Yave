@@ -58,11 +58,11 @@ static VkGeometryNV create_mesh_geometry(const StaticMesh& mesh) {
 }
 
 
-RayTracing::AccelerationStructure::AccelerationStructure(const StaticMesh& mesh) : AccelerationStructure(mesh.device(), {create_mesh_geometry(mesh)}) {
+RayTracing::AccelerationStructure::AccelerationStructure(const StaticMesh& mesh) : AccelerationStructure(main_device(), {create_mesh_geometry(mesh)}) {
 }
 
 RayTracing::AccelerationStructure::AccelerationStructure(DevicePtr dptr, core::Span<VkGeometryNV> geometries) {
-    const RayTracing* rt = ray_tracing(dptr);
+    const RayTracing* rt = ray_tracing();
     y_debug_assert(rt);
 
     {
@@ -73,7 +73,7 @@ RayTracing::AccelerationStructure::AccelerationStructure(DevicePtr dptr, core::S
 
         VkAccelerationStructureCreateInfoNV create_info = vk_struct();
         create_info.info = as_info;
-        vk_check(rt->_create_acceleration_structure(vk_device(dptr), &create_info, vk_allocation_callbacks(device()), &_acceleration_structure.get()));
+        vk_check(rt->_create_acceleration_structure(vk_device(), &create_info, vk_allocation_callbacks(), &_acceleration_structure.get()));
     }
 
     {
@@ -82,33 +82,28 @@ RayTracing::AccelerationStructure::AccelerationStructure(DevicePtr dptr, core::S
         mem_reqs_info.accelerationStructure = _acceleration_structure;
 
         VkMemoryRequirements2 mem_reqs = vk_struct();
-        rt->_acceleration_structure_memory_reqs(vk_device(dptr), &mem_reqs_info, &mem_reqs);
+        rt->_acceleration_structure_memory_reqs(vk_device(), &mem_reqs_info, &mem_reqs);
 
-        _memory = device_allocator(dptr).alloc(mem_reqs.memoryRequirements, MemoryType::DeviceLocal);
+        _memory = device_allocator().alloc(mem_reqs.memoryRequirements, MemoryType::DeviceLocal);
     }
 
     {
         VkBindAccelerationStructureMemoryInfoNV bind_info = vk_struct();
         bind_info.accelerationStructure = _acceleration_structure;
         bind_info.memory = _memory.vk_memory();
-        vk_check(rt->_bind_acceleration_structure_memory(vk_device(dptr), 1, &bind_info));
+        vk_check(rt->_bind_acceleration_structure_memory(vk_device(), 1, &bind_info));
     }
 }
 
 RayTracing::AccelerationStructure::~AccelerationStructure() {
-    if(DevicePtr dptr = device()) {
-        const RayTracing* rt = ray_tracing(dptr);
-        y_debug_assert(rt);
+    const RayTracing* rt = ray_tracing();
+    y_debug_assert(rt);
 
-        rt->_destroy_acceleration_structure(vk_device(dptr), _acceleration_structure, vk_allocation_callbacks(dptr));
+    rt->_destroy_acceleration_structure(vk_device(), _acceleration_structure, vk_allocation_callbacks());
 
-        device_destroy(dptr, std::move(_memory));
-    }
+    device_destroy(std::move(_memory));
 }
 
-DevicePtr RayTracing::AccelerationStructure::device() const {
-    return _memory.device();
-}
 
 
 
@@ -118,9 +113,9 @@ const char* RayTracing::extension_name() {
     return VK_NV_RAY_TRACING_EXTENSION_NAME;
 }
 
-RayTracing::RayTracing(DevicePtr dptr) : GraphicObject(dptr) {
+RayTracing::RayTracing(DevicePtr dptr) {
 
-#define GET_PROC(name) reinterpret_cast<PFN_ ## name>(vkGetDeviceProcAddr(vk_device(dptr), #name));
+#define GET_PROC(name) reinterpret_cast<PFN_ ## name>(vkGetDeviceProcAddr(vk_device(), #name));
 
     _create_acceleration_structure = GET_PROC(vkCreateAccelerationStructureNV);
     _destroy_acceleration_structure = GET_PROC(vkDestroyAccelerationStructureNV);

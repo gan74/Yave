@@ -101,7 +101,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
     Y_TODO(move program creation programs can be reused)
 
-    DevicePtr dptr = material->device();
+    DevicePtr dptr = main_device();
     const auto& mat_data = material->data();
 
     const FragmentShader frag = FragmentShader(dptr, mat_data._frag);
@@ -209,7 +209,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         create_info.pSetLayouts = program.vk_descriptor_layouts().data();
         create_info.pushConstantRangeCount = u32(program.vk_push_constants().size());
         create_info.pPushConstantRanges = program.vk_push_constants().data();
-        vk_check(vkCreatePipelineLayout(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &pipeline_layout));
+        vk_check(vkCreatePipelineLayout(vk_device(), &create_info, vk_allocation_callbacks(), &pipeline_layout));
     }
 
     const std::array dynamics = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
@@ -238,7 +238,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     }
 
     VkPipeline pipeline = {};
-    vk_check(vkCreateGraphicsPipelines(vk_device(dptr), vk_null(), 1, &create_info, vk_allocation_callbacks(dptr), &pipeline));
+    vk_check(vkCreateGraphicsPipelines(vk_device(), vk_null(), 1, &create_info, vk_allocation_callbacks(), &pipeline));
     return GraphicPipeline(material, pipeline, pipeline_layout);
 }
 

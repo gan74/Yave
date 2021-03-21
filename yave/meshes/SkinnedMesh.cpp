@@ -38,7 +38,7 @@ SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
     _indirect_data.indexCount = u32(mesh_data.triangles().size() * 3);
     _indirect_data.instanceCount = 1;
 
-    CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
+    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
     Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
     Mapping::stage(_vertex_buffer, recorder, mesh_data.skinned_vertices().data());
     std::move(recorder).submit<SyncPolicy::Sync>();

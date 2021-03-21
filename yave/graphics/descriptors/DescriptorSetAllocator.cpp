@@ -75,8 +75,8 @@ static VkDescriptorSetLayoutBinding create_inline_uniform_binding_fallback(const
 
 
 
-DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings) : GraphicObject(dptr) {
-    const usize max_inline_uniform_size = device_properties(dptr).max_inline_uniform_size;
+DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings) {
+    const usize max_inline_uniform_size = device_properties().max_inline_uniform_size;
     const bool inline_uniform_supported = max_inline_uniform_size != 0;
     const auto needs_fallback = [=](const VkDescriptorSetLayoutBinding& binding) {
         return binding.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT && (!inline_uniform_supported || binding.descriptorCount > max_inline_uniform_size);
@@ -109,11 +109,15 @@ DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptor
         create_info.bindingCount = u32(bindings.size());
         create_info.pBindings = bindings.data();
     }
-    vk_check(vkCreateDescriptorSetLayout(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &_layout.get()));
+    vk_check(vkCreateDescriptorSetLayout(vk_device(), &create_info, vk_allocation_callbacks(), &_layout.get()));
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
-    destroy(_layout);
+    device_destroy(_layout);
+}
+
+bool DescriptorSetLayout::is_null() const {
+    return !_layout;
 }
 
 const std::array<u32, DescriptorSetLayout::descriptor_type_count>& DescriptorSetLayout::desciptors_count() const {
@@ -161,12 +165,11 @@ static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout
     }
 
     VkDescriptorPool pool = {};
-    vk_check(vkCreateDescriptorPool(vk_device(layout.device()), &create_info, vk_allocation_callbacks(layout.device()), &pool));
+    vk_check(vkCreateDescriptorPool(vk_device(), &create_info, vk_allocation_callbacks(), &pool));
     return pool;
 }
 
 DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
-    GraphicObject(layout.device()),
     _pool(create_descriptor_pool(layout, pool_size)),
     _layout(layout.vk_descriptor_set_layout()),
     _inline_blocks(layout.inline_blocks()) {
@@ -181,7 +184,7 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
         allocate_info.pSetLayouts = layouts.data();
     }
 
-    vk_check(vkAllocateDescriptorSets(vk_device(device()), &allocate_info, _sets.data()));
+    vk_check(vkAllocateDescriptorSets(vk_device(), &allocate_info, _sets.data()));
 
     if(!layout.inline_blocks_fallbacks().is_empty()) {
         const usize alignment = inline_sub_buffer_alignment();
@@ -189,17 +192,17 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
             _descriptor_buffer_size += memory::align_up_to(buffer.byte_size, alignment);
         }
         log_msg(fmt("Allocation % * % bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
-        _inline_buffer = Buffer<BufferUsage::UniformBit>(device(), _descriptor_buffer_size * pool_size);
+        _inline_buffer = Buffer<BufferUsage::UniformBit>(main_device(), _descriptor_buffer_size * pool_size);
     }
 }
 
 DescriptorSetPool::~DescriptorSetPool() {
     y_debug_assert(_taken.none());
-    destroy(_pool);
+    device_destroy(_pool);
 }
 
 usize DescriptorSetPool::inline_sub_buffer_alignment() const {
-    return SubBuffer<BufferUsage::UniformBit>::alignment(device());
+    return SubBuffer<BufferUsage::UniformBit>::alignment();
 }
 
 DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
@@ -226,7 +229,7 @@ DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
 }
 
 void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
-    const usize max_inline_uniform_size = device_properties(device()).max_inline_uniform_size;
+    const usize max_inline_uniform_size = device_properties().max_inline_uniform_size;
     const bool inline_uniform_supported = max_inline_uniform_size != 0;
     const usize block_buffer_alignment = inline_sub_buffer_alignment();
 
@@ -236,7 +239,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
     if(_inline_blocks) {
         inline_blocks.set_min_capacity(descriptors.size());
     }
-    if(_inline_buffer.device()) {
+    if(!_inline_buffer.is_null()) {
         inline_blocks_buffer_infos.set_min_capacity(descriptors.size());
     }
 
@@ -290,7 +293,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
         writes << write;
     }
 
-    vkUpdateDescriptorSets(vk_device(device()), u32(writes.size()), writes.data(), 0, nullptr);
+    vkUpdateDescriptorSets(vk_device(), u32(writes.size()), writes.data(), 0, nullptr);
 }
 
 
@@ -331,7 +334,7 @@ usize DescriptorSetPool::used_sets() const {
 
 
 
-DescriptorSetAllocator::DescriptorSetAllocator(DevicePtr dptr) : GraphicObject(dptr) {
+DescriptorSetAllocator::DescriptorSetAllocator(DevicePtr dptr) {
 }
 
 
@@ -362,7 +365,7 @@ const DescriptorSetLayout& DescriptorSetAllocator::descriptor_set_layout(const K
 DescriptorSetAllocator::LayoutPools& DescriptorSetAllocator::layout(const Key& bindings) {
     auto& layout  = _layouts[bindings];
     if(layout.layout.is_null()) {
-        layout.layout = DescriptorSetLayout(device(), bindings);
+        layout.layout = DescriptorSetLayout(main_device(), bindings);
     }
     return layout;
 }

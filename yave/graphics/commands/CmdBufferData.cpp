@@ -37,20 +37,16 @@ SOFTWARE.
 namespace yave {
 
 CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p) :
-        _cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(lifetime_manager(device()).create_fence()) {
+        _cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(lifetime_manager().create_fence()) {
 }
 
 CmdBufferData::~CmdBufferData() {
     YAVE_CMD_CHECK_LOCK();
-    y_debug_assert(!_pool || vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS);
-}
-
-DevicePtr CmdBufferData::device() const {
-    return _pool ? _pool->device() : nullptr;
+    y_debug_assert(!_pool || vkGetFenceStatus(vk_device(), _fence) == VK_SUCCESS);
 }
 
 bool CmdBufferData::is_null() const {
-    return !device();
+    return !_cmd_buffer;
 }
 
 bool CmdBufferData::is_signaled() const {
@@ -76,7 +72,7 @@ ResourceFence CmdBufferData::resource_fence() const {
 void CmdBufferData::wait() {
     y_profile();
     if(!is_signaled()) {
-        vk_check(vkWaitForFences(vk_device(device()), 1, &_fence, true, u64(-1)));
+        vk_check(vkWaitForFences(vk_device(), 1, &_fence, true, u64(-1)));
         set_signaled();
     }
 }
@@ -85,7 +81,7 @@ bool CmdBufferData::poll_and_signal() {
     if(is_signaled()) {
         return true;
     }
-    if(vkGetFenceStatus(vk_device(device()), _fence) == VK_SUCCESS) {
+    if(vkGetFenceStatus(vk_device(), _fence) == VK_SUCCESS) {
         set_signaled();
         return true;
     }
@@ -100,10 +96,10 @@ void CmdBufferData::begin() {
     y_debug_assert(is_signaled());
     y_debug_assert(_keep_alive.is_empty());
 
-    vk_check(vkResetFences(vk_device(device()), 1, &_fence));
+    vk_check(vkResetFences(vk_device(), 1, &_fence));
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 
-    _resource_fence = lifetime_manager(device()).create_fence();
+    _resource_fence = lifetime_manager().create_fence();
     _signaled = false;
 }
 

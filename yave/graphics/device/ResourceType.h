@@ -47,9 +47,12 @@ namespace yave {
     X(VkEvent)                              \
     X(VkSurfaceKHR)
 
-#define YAVE_GRAPHIC_RESOURCE_TYPES(X)      \
+#define YAVE_YAVE_RESOURCE_TYPES(X)         \
     X(DeviceMemory)                         \
-    X(DescriptorSetData)                    \
+    X(DescriptorSetData)
+
+#define YAVE_GRAPHIC_RESOURCE_TYPES(X)      \
+    YAVE_YAVE_RESOURCE_TYPES(X)             \
     YAVE_VK_RESOURCE_TYPES(X)
 
 

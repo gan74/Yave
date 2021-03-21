@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-class RenderPass : public GraphicObject {
+class RenderPass {
     public:
         enum class LoadOp : u32 {
             Clear,
@@ -86,6 +86,8 @@ class RenderPass : public GraphicObject {
 
         const Layout& layout() const;
         usize attachment_count() const;
+
+        bool is_null() const;
 
         VkRenderPass vk_render_pass() const;
 

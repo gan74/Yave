@@ -40,7 +40,6 @@ class StaticMesh : NonCopyable {
 
         StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
 
-        DevicePtr device() const;
         bool is_null() const;
 
         const TriangleBuffer<>& triangle_buffer() const;
@@ -57,9 +56,6 @@ class StaticMesh : NonCopyable {
         VkDrawIndexedIndirectCommand _indirect_data = {};
 
         AABB _aabb;
-
-        Y_TODO(Move this somewhere else)
-        RayTracing::AccelerationStructure _ray_tracing_data;
 };
 
 YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);

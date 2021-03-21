@@ -46,16 +46,15 @@ void DeviceMemoryHeap::FreeBlock::merge(const FreeBlock& block) {
 }
 
 
-DeviceMemoryHeap::DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type, usize heap_size) :
-        DeviceMemoryHeapBase(dptr),
-        _memory(alloc_memory(dptr, heap_size, type_bits, type)),
+DeviceMemoryHeap::DeviceMemoryHeap(u32 type_bits, MemoryType type, usize heap_size) :
+        _memory(alloc_memory(main_device(), heap_size, type_bits, type)),
         _heap_size(heap_size),
         _blocks({FreeBlock{0, heap_size}}),
         _mapping(nullptr) {
 
     if(is_cpu_visible(type)) {
         const VkMemoryMapFlags flags = {};
-        vk_check(vkMapMemory(vk_device(device()), _memory, 0, heap_size, flags, &_mapping));
+        vk_check(vkMapMemory(vk_device(), _memory, 0, heap_size, flags, &_mapping));
     }
 
     if(_heap_size % alignment) {
@@ -71,9 +70,9 @@ DeviceMemoryHeap::~DeviceMemoryHeap() {
         y_fatal("Not all memory has been freed.");
     }
     if(_mapping) {
-        vkUnmapMemory(vk_device(device()), _memory);
+        vkUnmapMemory(vk_device(), _memory);
     }
-    vkFreeMemory(vk_device(device()), _memory, vk_allocation_callbacks(device()));
+    vkFreeMemory(vk_device(), _memory, vk_allocation_callbacks());
 }
 
 DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {

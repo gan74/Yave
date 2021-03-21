@@ -46,7 +46,7 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
         static constexpr usize alignment = 256;
 
 
-        DeviceMemoryHeap(DevicePtr dptr, u32 type_bits, MemoryType type, usize heap_size);
+        DeviceMemoryHeap(u32 type_bits, MemoryType type, usize heap_size);
         ~DeviceMemoryHeap() override;
 
         core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) override;

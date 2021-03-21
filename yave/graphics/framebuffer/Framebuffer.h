@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Framebuffer final : public GraphicObject {
+class Framebuffer final {
 
     public:
         using LoadOp = RenderPass::LoadOp;
@@ -62,15 +62,14 @@ class Framebuffer final : public GraphicObject {
 
         ~Framebuffer();
 
-        const math::Vec2ui& size() const;
-
+        bool is_null() const;
         VkFramebuffer vk_framebuffer() const;
+
+        const math::Vec2ui& size() const;
 
         const RenderPass& render_pass() const;
 
-        usize attachment_count() const {
-            return _attachment_count;
-        }
+        usize attachment_count() const;
 
     private:
         math::Vec2ui _size;

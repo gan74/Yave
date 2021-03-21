@@ -165,7 +165,7 @@ static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integr
 
     const DescriptorSet dset(dptr, {Descriptor(StorageView(image))});
 
-    CmdBufferRecorder recorder = create_disposable_cmd_buffer(dptr);
+    CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     {
         const auto region = recorder.region("create_brdf_lut");
         recorder.dispatch_size(brdf_integrator, image.size(), {dset});
@@ -216,9 +216,9 @@ void DeviceResources::init(DevicePtr dptr) {
         _textures[i] = make_asset<Texture>(dptr, ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
 
 #ifdef Y_DEBUG
-        if(const auto* debug = debug_utils(device())) {
-            debug->set_resource_name(dptr, _textures[i]->vk_image(), "Resource Image");
-            debug->set_resource_name(dptr, _textures[i]->vk_view(), "Resource Image View");
+        if(const auto* debug = debug_utils()) {
+            debug->set_resource_name(_textures[i]->vk_image(), "Resource Image");
+            debug->set_resource_name(_textures[i]->vk_view(), "Resource Image View");
         }
 #endif
     }
@@ -271,9 +271,9 @@ void DeviceResources::swap(DeviceResources& other) {
 void DeviceResources::load_resources() {
     y_always_assert(is_init(), "DeviceResources has not been initialized");
 
-    const auto set_name = [debug = debug_utils(device()), dptr = device()](auto handle, const char* name) {
+    const auto set_name = [debug = debug_utils(), dptr = device()](auto handle, const char* name) {
         if(debug) {
-            debug->set_resource_name(dptr, handle, name);
+            debug->set_resource_name(handle, name);
         }
     };
 
@@ -283,7 +283,7 @@ void DeviceResources::load_resources() {
     }
 
     for(usize i = 0; i != compute_count; ++i) {
-        _computes[i] = ComputeProgram(ComputeShader(device(), _spirv[i]));
+        _computes[i] = ComputeProgram(ComputeShader(main_device(), _spirv[i]));
         set_name(_computes[i].vk_pipeline(), spirv_names[i]);
     }
 
@@ -297,7 +297,7 @@ void DeviceResources::load_resources() {
                 .set_blend_mode(data.blend_mode)
                 .set_depth_write(data.depth_write);
             ;
-        _material_templates[i] = MaterialTemplate(device(), std::move(template_data));
+        _material_templates[i] = MaterialTemplate(main_device(), std::move(template_data));
         _material_templates[i].set_name(spirv_names[data.frag]);
     }
 
@@ -308,30 +308,30 @@ void DeviceResources::load_resources() {
 
     {
         _meshes = std::make_unique<AssetPtr<StaticMesh>[]>(usize(MaxMeshes));
-        _meshes[0] = make_asset<StaticMesh>(device(), cube_mesh_data());
-        _meshes[1] = make_asset<StaticMesh>(device(), sphere_mesh_data());
-        _meshes[2] = make_asset<StaticMesh>(device(), simple_sphere_mesh_data());
-        _meshes[3] = make_asset<StaticMesh>(device(), cone_mesh_data());
-        _meshes[4] = make_asset<StaticMesh>(device(), sweep_mesh_data());
+        _meshes[0] = make_asset<StaticMesh>(main_device(), cube_mesh_data());
+        _meshes[1] = make_asset<StaticMesh>(main_device(), sphere_mesh_data());
+        _meshes[2] = make_asset<StaticMesh>(main_device(), simple_sphere_mesh_data());
+        _meshes[3] = make_asset<StaticMesh>(main_device(), cone_mesh_data());
+        _meshes[4] = make_asset<StaticMesh>(main_device(), sweep_mesh_data());
     }
 
-    _brdf_lut = create_brdf_lut(device(), operator[](BRDFIntegratorProgram));
-    _white_noise = create_white_noise(device());
+    _brdf_lut = create_brdf_lut(main_device(), operator[](BRDFIntegratorProgram));
+    _white_noise = create_white_noise(main_device());
 
     _probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
     _empty_probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
 
 #ifdef Y_DEBUG
-    if(const auto* debug = debug_utils(device())) {
-        debug->set_resource_name(device(), _brdf_lut.vk_image(), "BRDF LUT");
-        debug->set_resource_name(device(), _brdf_lut.vk_view(), "BRDF LUT View");
-        debug->set_resource_name(device(), _white_noise.vk_image(), "White Noise");
-        debug->set_resource_name(device(), _white_noise.vk_view(), "White Noise View");
+    if(const auto* debug = debug_utils()) {
+        debug->set_resource_name(_brdf_lut.vk_image(), "BRDF LUT");
+        debug->set_resource_name(_brdf_lut.vk_view(), "BRDF LUT View");
+        debug->set_resource_name(_white_noise.vk_image(), "White Noise");
+        debug->set_resource_name(_white_noise.vk_view(), "White Noise View");
 
-        debug->set_resource_name(device(), _probe->vk_image(), "Default Probe");
-        debug->set_resource_name(device(), _probe->vk_view(), "Default Probe");
-        debug->set_resource_name(device(), _empty_probe->vk_image(), "Empty Probe");
-        debug->set_resource_name(device(), _empty_probe->vk_view(), "Empty Probe");
+        debug->set_resource_name(_probe->vk_image(), "Default Probe");
+        debug->set_resource_name(_probe->vk_view(), "Default Probe");
+        debug->set_resource_name(_empty_probe->vk_image(), "Empty Probe");
+        debug->set_resource_name(_empty_probe->vk_view(), "Empty Probe");
     }
 #endif
 }
@@ -406,7 +406,7 @@ const ComputeProgram& DeviceResources::program_from_file(std::string_view file) 
     auto& prog = _programs[file];
     if(!prog) {
         auto spirv = SpirVData::deserialized(io2::File::open(fmt("%.spv", file)).expected("Unable to open SPIR-V file"));
-        prog = std::make_unique<ComputeProgram>(ComputeShader(device(), spirv));
+        prog = std::make_unique<ComputeProgram>(ComputeShader(main_device(), spirv));
     }
     return *prog;
 }

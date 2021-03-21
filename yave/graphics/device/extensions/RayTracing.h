@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-class RayTracing : public GraphicObject {
+class RayTracing {
     public:
         class AccelerationStructure {
             public:
@@ -42,8 +42,6 @@ class RayTracing : public GraphicObject {
                 AccelerationStructure(DevicePtr dptr, core::Span<VkGeometryNV> geometries);
 
                 ~AccelerationStructure();
-
-                DevicePtr device() const;
 
             private:
                 DeviceMemory _memory;

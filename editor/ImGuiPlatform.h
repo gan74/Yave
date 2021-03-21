@@ -64,7 +64,6 @@ class ImGuiPlatform : NonMovable {
 
         static ImGuiPlatform* instance();
 
-        DevicePtr device() const;
         const ImGuiRenderer* renderer() const;
 
         Window* main_window();

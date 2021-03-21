@@ -146,8 +146,8 @@ void PerformanceMetrics::draw_timings() {
     ImGui::SetNextItemWidth(-1);
     ImGui::PlotLines("##frames", _frames.values().data(), int(_frames.values().size()), int(_frames.next_index()), "", 0.0f, _average.max(), ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
 
-    ImGui::Text("%.3u resources waiting deletion", unsigned(lifetime_manager(app_device()).pending_deletions()));
-    ImGui::Text("%.3u active command buffers", unsigned(lifetime_manager(app_device()).pending_cmd_buffers()));
+    ImGui::Text("%.3u resources waiting deletion", unsigned(lifetime_manager().pending_deletions()));
+    ImGui::Text("%.3u active command buffers", unsigned(lifetime_manager().pending_cmd_buffers()));
 }
 
 void PerformanceMetrics::draw_memory() {
@@ -155,7 +155,7 @@ void PerformanceMetrics::draw_memory() {
 
     double total_used = 0;
     double total_allocated = 0;
-    for(auto&& [type, heaps] : device_allocator(app_device()).heaps()) {
+    for(auto&& [type, heaps] : device_allocator().heaps()) {
         if(show_heaps) {
             ImGui::Bullet();
             ImGui::TextUnformatted(fmt_c_str("Heap [%]", memory_type_name(type.second)));
@@ -185,7 +185,7 @@ void PerformanceMetrics::draw_memory() {
     }
 
     double dedicated = 0;
-    for(auto&& [type, heap] : device_allocator(app_device()).dedicated_heaps()) {
+    for(auto&& [type, heap] : device_allocator().dedicated_heaps()) {
         unused(type);
         dedicated += to_mb(heap->allocated_size());
     }
@@ -213,7 +213,7 @@ void PerformanceMetrics::draw_memory() {
         ImGui::Spacing();
         ImGui::Separator();
 
-        DescriptorSetAllocator& alloc = descriptor_set_allocator(app_device());
+        DescriptorSetAllocator& alloc = descriptor_set_allocator();
         usize pools = alloc.pool_count();
         const usize total_sets = pools * DescriptorSetPool::pool_size;
         usize free_sets = alloc.free_sets();

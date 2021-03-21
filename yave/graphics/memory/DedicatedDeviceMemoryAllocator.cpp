@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-DedicatedDeviceMemoryAllocator::DedicatedDeviceMemoryAllocator(DevicePtr dptr, MemoryType type) : DeviceMemoryHeapBase(dptr), _type(type) {
+DedicatedDeviceMemoryAllocator::DedicatedDeviceMemoryAllocator(MemoryType type) : _type(type) {
 }
 
 DedicatedDeviceMemoryAllocator::~DedicatedDeviceMemoryAllocator() {
@@ -33,7 +33,7 @@ DedicatedDeviceMemoryAllocator::~DedicatedDeviceMemoryAllocator() {
 
 core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(VkMemoryRequirements reqs) {
     _size += reqs.size;
-    return core::Ok(DeviceMemory(this, alloc_memory(device(), reqs, _type), 0, reqs.size));
+    return core::Ok(DeviceMemory(this, alloc_memory(main_device(), reqs, _type), 0, reqs.size));
 }
 
 void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
@@ -41,18 +41,18 @@ void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
         y_fatal("Tried to free memory using non zero offset.");
     }
     _size -= memory.vk_size();
-    vkFreeMemory(vk_device(device()), memory.vk_memory(), vk_allocation_callbacks(device()));
+    vkFreeMemory(vk_device(), memory.vk_memory(), vk_allocation_callbacks());
 }
 
 void* DedicatedDeviceMemoryAllocator::map(const DeviceMemoryView& view) {
     void* mapping = nullptr;
     const VkMemoryMapFlags flags = {};
-    vk_check(vkMapMemory(vk_device(device()), view.vk_memory(), view.vk_offset(), VK_WHOLE_SIZE, flags, &mapping));
+    vk_check(vkMapMemory(vk_device(), view.vk_memory(), view.vk_offset(), VK_WHOLE_SIZE, flags, &mapping));
     return mapping;
 }
 
 void DedicatedDeviceMemoryAllocator::unmap(const DeviceMemoryView& view) {
-    vkUnmapMemory(vk_device(device()), view.vk_memory());
+    vkUnmapMemory(vk_device(), view.vk_memory());
 }
 
 usize DedicatedDeviceMemoryAllocator::allocated_size() const {

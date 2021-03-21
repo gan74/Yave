@@ -29,14 +29,13 @@ SOFTWARE.
 namespace yave {
 
 Queue::Queue(DevicePtr dptr, u32 family_index, VkQueue queue) :
-        GraphicObject(dptr),
         _queue(queue),
         _family_index(family_index),
         _lock(std::make_unique<std::mutex>()){
 }
 
 Queue::~Queue() {
-    if(device()) {
+    if(_queue) {
         wait();
     }
 }
@@ -58,7 +57,7 @@ void Queue::wait() const {
 void Queue::submit(CmdBufferRecorder& rec) const {
     y_profile();
 
-    y_debug_assert(vkGetFenceStatus(vk_device(device()), rec.vk_fence()) == VK_NOT_READY);
+    y_debug_assert(vkGetFenceStatus(vk_device(), rec.vk_fence()) == VK_NOT_READY);
 
     const VkCommandBuffer cmd = rec.vk_cmd_buffer();
 

@@ -54,7 +54,6 @@ static std::unique_ptr<RenderPass> create_render_pass(DevicePtr dptr, const Fram
 }
 
 Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Span<ColorAttachment> colors) :
-        GraphicObject(dptr),
         _size(compute_size(depth, colors)),
         _attachment_count(colors.size()),
         _render_pass(create_render_pass(dptr, depth, colors)) {
@@ -76,7 +75,7 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Spa
         create_info.layers = 1;
     }
 
-    vk_check(vkCreateFramebuffer(vk_device(device()), &create_info, vk_allocation_callbacks(device()), &_framebuffer.get()));
+    vk_check(vkCreateFramebuffer(vk_device(), &create_info, vk_allocation_callbacks(), &_framebuffer.get()));
 }
 
 Framebuffer::Framebuffer(DevicePtr dptr, core::Span<ColorAttachmentView> colors, LoadOp load_op) :
@@ -88,20 +87,28 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core:
 }
 
 Framebuffer::~Framebuffer() {
-    destroy(_framebuffer);
+    device_destroy(_framebuffer);
+}
+
+bool Framebuffer::is_null() const {
+    return !_framebuffer;
+}
+
+VkFramebuffer Framebuffer::vk_framebuffer() const {
+    y_debug_assert(!is_null());
+    return _framebuffer;
 }
 
 const math::Vec2ui& Framebuffer::size() const {
     return _size;
 }
 
-VkFramebuffer Framebuffer::vk_framebuffer() const {
-    y_debug_assert(device());
-    return _framebuffer;
-}
-
 const RenderPass& Framebuffer::render_pass() const {
     return *_render_pass;
+}
+
+usize Framebuffer::attachment_count() const {
+    return _attachment_count;
 }
 
 }

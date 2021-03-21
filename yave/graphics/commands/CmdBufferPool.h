@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-class CmdBufferPool : NonMovable, public GraphicObject {
+class CmdBufferPool : NonMovable {
 
     public:
         CmdBufferPool(DevicePtr dptr);

@@ -38,10 +38,6 @@ static bool is_sampler_compatible(FrameGraph* framegraph, FrameGraphImageId img,
 FrameGraphPassBuilder::FrameGraphPassBuilder(FrameGraphPass* pass) : _pass(pass) {
 }
 
-DevicePtr FrameGraphPassBuilder::device() const {
-    return parent()->device();
-}
-
 void FrameGraphPassBuilder::set_render_func(render_func&& func) {
     _pass->_render = std::move(func);
 }

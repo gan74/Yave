@@ -125,10 +125,6 @@ void EditorResources::load_resources(DevicePtr dptr) {
     }
 }
 
-DevicePtr EditorResources::device() const {
-    return _computes[0].device();
-}
-
 const ComputeProgram& EditorResources::operator[](ComputePrograms i) const {
     y_debug_assert(usize(i) < usize(MaxComputePrograms));
     return _computes[usize(i)];
@@ -141,8 +137,8 @@ const MaterialTemplate* EditorResources::operator[](MaterialTemplates i) const {
 
 void EditorResources::reload() {
     y_profile();
-    const DevicePtr dptr = device();
-    wait_all_queues(dptr);
+    const DevicePtr dptr = main_device();
+    wait_all_queues();
     load_resources(dptr);
 }
 

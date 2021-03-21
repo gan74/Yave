@@ -118,7 +118,7 @@ static u32 queue_family_index(VkPhysicalDevice device, VkQueueFlags flags) {
 
 static VkQueue create_queue(DevicePtr dptr, u32 family_index, u32 index) {
     VkQueue q = {};
-    vkGetDeviceQueue(vk_device(dptr), family_index, index, &q);
+    vkGetDeviceQueue(vk_device(), family_index, index, &q);
     return q;
 }
 
@@ -230,13 +230,17 @@ static void print_properties(const DeviceProperties& properties) {
 }
 
 
+static DevicePtr _main_device = nullptr;
 
-
+Device::ScopedDevice::ScopedDevice(DevicePtr dptr, VkDevice dev) : device(dev) {
+    y_always_assert(_main_device == nullptr, "Device already exists");
+    _main_device = dptr;
+}
 
 Device::ScopedDevice::~ScopedDevice() {
     vkDestroyDevice(device, nullptr);
+    _main_device = nullptr;
 }
-
 
 Device::Device(Instance& instance) : Device(instance, find_best_device(instance.physical_devices())) {
 }
@@ -245,7 +249,7 @@ Device::Device(Instance& instance, PhysicalDevice device) :
         _instance(instance),
         _physical(device),
         _main_queue_index(queue_family_index(_physical.vk_physical_device(), graphic_queue_flags)),
-        _device{create_device(_physical, _main_queue_index, _instance.debug_params())},
+        _device(this, create_device(_physical, _main_queue_index, _instance.debug_params())),
         _properties(create_properties(_physical)),
         _graphic_queue(this, _main_queue_index, create_queue(this, _main_queue_index, 0)),
         _loading_queue(this, _main_queue_index, create_queue(this, _main_queue_index, 1)),
@@ -263,10 +267,11 @@ Device::Device(Instance& instance, PhysicalDevice device) :
     print_properties(_properties);
 
     _resources.init(this);
-
 }
 
 Device::~Device() {
+    y_always_assert(_main_device == this, "Device doest exist");
+
     _resources = DeviceResources();
 
     auto full_flush = [this] {
@@ -277,6 +282,11 @@ Device::~Device() {
 
     full_flush();
     _thread_devices.clear();
+}
+
+DevicePtr Device::main_device() {
+    y_debug_assert(_main_device);
+    return _main_device;
 }
 
 const PhysicalDevice& Device::physical_device() const {

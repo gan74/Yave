@@ -36,7 +36,6 @@ class ImageBase : NonCopyable {
     public:
         ~ImageBase();
 
-        DevicePtr device() const;
         bool is_null() const;
 
         VkImage vk_image() const;

@@ -44,6 +44,7 @@ namespace yave {
 class Device : NonMovable {
 
     struct ScopedDevice {
+        ScopedDevice(DevicePtr dptr, VkDevice dev);
         ~ScopedDevice();
         const VkDevice device;
     };
@@ -52,6 +53,8 @@ class Device : NonMovable {
         explicit Device(Instance& instance);
         Device(Instance& instance, PhysicalDevice device);
         ~Device();
+
+        static DevicePtr main_device();
 
 
         const PhysicalDevice& physical_device() const;

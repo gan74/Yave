@@ -73,7 +73,7 @@ class SpecializationData : NonCopyable {
         usize _size = 0;
 };
 
-class ShaderModuleBase : NonMovable, public GraphicObject {
+class ShaderModuleBase : NonMovable {
 
     public:
         enum class AttribType {

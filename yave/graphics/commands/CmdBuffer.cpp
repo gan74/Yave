@@ -41,18 +41,13 @@ CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) {
 
 CmdBuffer::~CmdBuffer() {
     if(_data) {
-        lifetime_manager(device()).register_for_polling(_data);
+        lifetime_manager().register_for_polling(_data);
     }
 }
 
 void CmdBuffer::wait() const {
     y_debug_assert(_data);
     _data->wait();
-}
-
-DevicePtr CmdBuffer::device() const {
-    Y_TODO(cache that?)
-    return _data ? _data->pool()->device() : nullptr;
 }
 
 VkCommandBuffer CmdBuffer::vk_cmd_buffer() const {

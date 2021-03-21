@@ -96,15 +96,15 @@ static VkSampler create_sampler(DevicePtr dptr, SamplerType type) {
     }
 
     VkSampler sampler = {};
-    vk_check(vkCreateSampler(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &sampler));
+    vk_check(vkCreateSampler(vk_device(), &create_info, vk_allocation_callbacks(), &sampler));
     return sampler;
 }
 
-Sampler::Sampler(DevicePtr dptr, SamplerType type) : GraphicObject(dptr), _sampler(create_sampler(dptr, type)) {
+Sampler::Sampler(DevicePtr dptr, SamplerType type) : _sampler(create_sampler(dptr, type)) {
 }
 
 Sampler::~Sampler() {
-    destroy(_sampler);
+    device_destroy(_sampler);
 }
 
 VkSampler Sampler::vk_sampler() const {

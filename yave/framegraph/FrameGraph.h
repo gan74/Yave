@@ -102,7 +102,6 @@ class FrameGraph : NonMovable {
         FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool);
         ~FrameGraph();
 
-        DevicePtr device() const;
         const FrameGraphFrameResources& resources() const;
 
         void render(CmdBufferRecorder& recorder) &&;

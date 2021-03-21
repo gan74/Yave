@@ -22,103 +22,103 @@ namespace yave {
 
 void vk_destroy(DevicePtr dptr, VkBuffer buffer) {
     /*if(dptr)*/ {
-        vkDestroyBuffer(vk_device(dptr), buffer, vk_allocation_callbacks(dptr));
+        vkDestroyBuffer(vk_device(), buffer, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkImage image) {
     /*if(dptr)*/ {
-        vkDestroyImage(vk_device(dptr), image, vk_allocation_callbacks(dptr));
+        vkDestroyImage(vk_device(), image, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkImageView image_view) {
     /*if(dptr)*/ {
-        vkDestroyImageView(vk_device(dptr), image_view, vk_allocation_callbacks(dptr));
+        vkDestroyImageView(vk_device(), image_view, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkRenderPass render_pass) {
     /*if(dptr)*/ {
-        vkDestroyRenderPass(vk_device(dptr), render_pass, vk_allocation_callbacks(dptr));
+        vkDestroyRenderPass(vk_device(), render_pass, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkFramebuffer framebuffer) {
     /*if(dptr)*/ {
-        vkDestroyFramebuffer(vk_device(dptr), framebuffer, vk_allocation_callbacks(dptr));
+        vkDestroyFramebuffer(vk_device(), framebuffer, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkPipeline pipeline) {
     /*if(dptr)*/ {
-        vkDestroyPipeline(vk_device(dptr), pipeline, vk_allocation_callbacks(dptr));
+        vkDestroyPipeline(vk_device(), pipeline, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkPipelineLayout pipeline_layout) {
     /*if(dptr)*/ {
-        vkDestroyPipelineLayout(vk_device(dptr), pipeline_layout, vk_allocation_callbacks(dptr));
+        vkDestroyPipelineLayout(vk_device(), pipeline_layout, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkShaderModule module) {
     /*if(dptr)*/ {
-        vkDestroyShaderModule(vk_device(dptr), module, vk_allocation_callbacks(dptr));
+        vkDestroyShaderModule(vk_device(), module, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkSampler sampler) {
     /*if(dptr)*/ {
-        vkDestroySampler(vk_device(dptr), sampler, vk_allocation_callbacks(dptr));
+        vkDestroySampler(vk_device(), sampler, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkSwapchainKHR swapchain) {
     /*if(dptr)*/ {
-        vkDestroySwapchainKHR(vk_device(dptr), swapchain, vk_allocation_callbacks(dptr));
+        vkDestroySwapchainKHR(vk_device(), swapchain, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkCommandPool pool) {
     /*if(dptr)*/ {
-        vkDestroyCommandPool(vk_device(dptr), pool, vk_allocation_callbacks(dptr));
+        vkDestroyCommandPool(vk_device(), pool, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkFence fence) {
     /*if(dptr)*/ {
-        vkDestroyFence(vk_device(dptr), fence, vk_allocation_callbacks(dptr));
+        vkDestroyFence(vk_device(), fence, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkDescriptorPool pool) {
     /*if(dptr)*/ {
-        vkDestroyDescriptorPool(vk_device(dptr), pool, vk_allocation_callbacks(dptr));
+        vkDestroyDescriptorPool(vk_device(), pool, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkDescriptorSetLayout layout) {
     /*if(dptr)*/ {
-        vkDestroyDescriptorSetLayout(vk_device(dptr), layout, vk_allocation_callbacks(dptr));
+        vkDestroyDescriptorSetLayout(vk_device(), layout, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkSemaphore semaphore) {
     /*if(dptr)*/ {
-        vkDestroySemaphore(vk_device(dptr), semaphore, vk_allocation_callbacks(dptr));
+        vkDestroySemaphore(vk_device(), semaphore, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkQueryPool pool) {
     /*if(dptr)*/ {
-        vkDestroyQueryPool(vk_device(dptr), pool, vk_allocation_callbacks(dptr));
+        vkDestroyQueryPool(vk_device(), pool, vk_allocation_callbacks());
     }
 }
 
 void vk_destroy(DevicePtr dptr, VkEvent event) {
     /*if(dptr)*/ {
-        vkDestroyEvent(vk_device(dptr), event, vk_allocation_callbacks(dptr));
+        vkDestroyEvent(vk_device(), event, vk_allocation_callbacks());
     }
 }
 
@@ -127,7 +127,7 @@ void vk_destroy(DevicePtr dptr, VkEvent event) {
 
 void vk_destroy(DevicePtr dptr, VkSurfaceKHR surface) {
     /*if(dptr)*/ {
-        vkDestroySurfaceKHR(vk_device_instance(dptr), surface, vk_allocation_callbacks(dptr));
+        vkDestroySurfaceKHR(vk_device_instance(), surface, vk_allocation_callbacks());
     }
 }
 

@@ -37,7 +37,7 @@ namespace yave {
 
 class AssetLoadingContext;
 
-class AssetLoader : NonMovable, public GraphicObject {
+class AssetLoader : NonMovable {
     public:
          using ErrorType = AssetLoadingErrorType;
 

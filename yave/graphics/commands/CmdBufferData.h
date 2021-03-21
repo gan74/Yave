@@ -82,7 +82,6 @@ class CmdBufferData final : NonMovable {
         CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p);
         ~CmdBufferData();
 
-        DevicePtr device() const;
         bool is_null() const;
 
         bool is_signaled() const;

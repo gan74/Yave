@@ -27,12 +27,8 @@ namespace yave {
 DescriptorSetData::DescriptorSetData(DescriptorSetPool* pool, u32 id) : _pool(pool), _index(id) {
 }
 
-DevicePtr DescriptorSetData::device() const {
-    return _pool ? _pool->device() : nullptr;
-}
-
 bool DescriptorSetData::is_null() const {
-    return !device();
+    return !_pool;
 }
 
 void DescriptorSetData::recycle() {

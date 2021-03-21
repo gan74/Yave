@@ -33,9 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-MaterialTemplate::MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data) :
-        GraphicObject(dptr),
-        _data(std::move(data)) {
+MaterialTemplate::MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data) : _data(std::move(data)) {
 }
 
 const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) const {
@@ -56,8 +54,8 @@ const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) 
         _compiled.insert(key, MaterialCompiler::compile(this, render_pass));
 
 #ifdef Y_DEBUG
-        if(const auto* debug = debug_utils(device()); debug && _name) {
-            debug->set_resource_name(device(), _compiled.last().second.vk_pipeline(), _name);
+        if(const auto* debug = debug_utils(); debug && _name) {
+            debug->set_resource_name(_compiled.last().second.vk_pipeline(), _name);
         }
 #endif
 

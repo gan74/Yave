@@ -66,7 +66,7 @@ DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId 
         builder.add_uniform_input(pass.mips.last());
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            const auto* material = device_resources(recorder.device())[material_template(filter)];
+            const auto* material = device_resources()[material_template(filter)];
             render_pass.bind_material(material, {self->descriptor_sets()[0]});
             render_pass.draw_array(3);
         });

@@ -28,7 +28,7 @@ namespace yave {
 
 class DeviceMemoryHeapBase;
 
-class DeviceMemory : public GraphicObject {
+class DeviceMemory {
 
     public:
         DeviceMemory() = default;
@@ -40,6 +40,8 @@ class DeviceMemory : public GraphicObject {
 
         DeviceMemory(DeviceMemory&& other);
         DeviceMemory& operator=(DeviceMemory&& other);
+
+        bool is_null() const;
 
         VkDeviceMemory vk_memory() const;
         usize vk_offset() const;

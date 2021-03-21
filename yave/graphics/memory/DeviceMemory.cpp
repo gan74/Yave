@@ -26,12 +26,11 @@ SOFTWARE.
 namespace yave {
 
 DeviceMemory::DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, usize offset, usize size) :
-        DeviceMemory(heap->device(), memory, offset, size) {
+        DeviceMemory(main_device(), memory, offset, size) {
     _heap = heap;
 }
 
 DeviceMemory::DeviceMemory(DevicePtr dptr, VkDeviceMemory memory, usize offset, usize size) :
-        GraphicObject(dptr),
         _memory(memory),
         _offset(offset),
         _size(size) {
@@ -48,19 +47,22 @@ DeviceMemory& DeviceMemory::operator=(DeviceMemory&& other) {
 
 DeviceMemory::~DeviceMemory() {
     Y_TODO(right now we have to do device()->destroy to recycle memory properly, maybe we want to change that)
-    if(device()) {
-        y_fatal("DeviceMemory has not been freed.");
-    }
+    y_always_assert(is_null(), "DeviceMemory has not been freed.");
+}
+
+bool DeviceMemory::is_null() const {
+    y_debug_assert(!_memory == !_heap);
+    return !_memory;
 }
 
 void DeviceMemory::free() {
     y_profile();
+    y_debug_assert(!_memory == !_heap);
     if(_memory && _heap) {
         _heap->free(*this);
+        _memory = vk_null();
+        _heap = nullptr;
     }
-    // set device to nullptr
-    struct Empty : GraphicObject {} empty;
-    GraphicObject::swap(empty);
 }
 
 VkDeviceMemory DeviceMemory::vk_memory() const {
@@ -80,7 +82,6 @@ DeviceMemoryHeapBase* DeviceMemory::heap() const {
 }
 
 void DeviceMemory::swap(DeviceMemory& other) {
-    GraphicObject::swap(other);
     std::swap(_heap, other._heap);
     std::swap(_memory, other._memory);
     std::swap(_offset, other._offset);

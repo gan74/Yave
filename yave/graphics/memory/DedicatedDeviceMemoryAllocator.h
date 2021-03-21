@@ -29,7 +29,7 @@ namespace yave {
 // Allocator disgased as a heap
 class DedicatedDeviceMemoryAllocator : public DeviceMemoryHeapBase {
     public:
-        DedicatedDeviceMemoryAllocator(DevicePtr dptr, MemoryType type);
+        DedicatedDeviceMemoryAllocator(MemoryType type);
 
         ~DedicatedDeviceMemoryAllocator() override;
 

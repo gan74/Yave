@@ -136,14 +136,14 @@ void DebugUtils::end_region(VkCommandBuffer buffer) const {
     _end_label(buffer);
 }
 
-void DebugUtils::set_name(DevicePtr dptr, u64 resource, VkObjectType type, const char *name) const {
+void DebugUtils::set_name(u64 resource, VkObjectType type, const char *name) const {
     VkDebugUtilsObjectNameInfoEXT name_info = vk_struct();
     name_info.objectType = type;
     name_info.objectHandle = resource;
     name_info.pObjectName = name;
 
     y_debug_assert(_set_object_name);
-    vk_check(_set_object_name(vk_device(dptr), &name_info));
+    vk_check(_set_object_name(vk_device(), &name_info));
 }
 
 }

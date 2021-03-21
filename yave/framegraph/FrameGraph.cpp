@@ -148,10 +148,6 @@ FrameGraph::FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool) : _resource
 FrameGraph::~FrameGraph() {
 }
 
-DevicePtr FrameGraph::device() const {
-    return _resources->device();
-}
-
 const FrameGraphFrameResources& FrameGraph::resources() const {
     return *_resources;
 }

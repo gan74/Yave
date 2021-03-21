@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace editor {
 
-class EditorApplication : NonMovable, public GraphicObject {
+class EditorApplication : NonMovable {
     public:
         EditorApplication(ImGuiPlatform* platform);
         ~EditorApplication();

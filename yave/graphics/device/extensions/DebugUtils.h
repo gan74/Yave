@@ -33,32 +33,32 @@ class DebugUtils : NonCopyable {
         DebugUtils(VkInstance instance);
         ~DebugUtils();
 
-        void set_resource_name(DevicePtr dptr, VkImage res, const char* name) const {
-            set_name(dptr, u64(res), VK_OBJECT_TYPE_IMAGE, name);
+        void set_resource_name(VkImage res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_IMAGE, name);
         }
 
-        void set_resource_name(DevicePtr dptr, VkImageView res, const char* name) const {
-            set_name(dptr, u64(res), VK_OBJECT_TYPE_IMAGE_VIEW, name);
+        void set_resource_name(VkImageView res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_IMAGE_VIEW, name);
         }
 
-        void set_resource_name(DevicePtr dptr, VkFramebuffer res, const char* name) const {
-            set_name(dptr, u64(res), VK_OBJECT_TYPE_FRAMEBUFFER, name);
+        void set_resource_name(VkFramebuffer res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_FRAMEBUFFER, name);
         }
 
-        void set_resource_name(DevicePtr dptr, VkRenderPass res, const char* name) const {
-            set_name(dptr, u64(res), VK_OBJECT_TYPE_RENDER_PASS, name);
+        void set_resource_name(VkRenderPass res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_RENDER_PASS, name);
         }
 
-        void set_resource_name(DevicePtr dptr, VkDescriptorSet res, const char* name) const {
-            set_name(dptr, u64(res), VK_OBJECT_TYPE_DESCRIPTOR_SET, name);
+        void set_resource_name(VkDescriptorSet res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_DESCRIPTOR_SET, name);
         }
 
-        void set_resource_name(DevicePtr dptr, VkPipeline res, const char* name) const {
-            set_name(dptr, u64(res), VK_OBJECT_TYPE_PIPELINE, name);
+        void set_resource_name(VkPipeline res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_PIPELINE, name);
         }
 
-        void set_resource_name(DevicePtr dptr, VkShaderModule res, const char* name) const {
-            set_name(dptr, u64(res), VK_OBJECT_TYPE_SHADER_MODULE, name);
+        void set_resource_name(VkShaderModule res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_SHADER_MODULE, name);
         }
 
     private:
@@ -67,7 +67,7 @@ class DebugUtils : NonCopyable {
         void begin_region(VkCommandBuffer buffer, const char* name, const math::Vec4& color = math::Vec4()) const;
         void end_region(VkCommandBuffer buffer) const;
 
-        void set_name(DevicePtr dptr, u64 resource, VkObjectType type, const char* name) const;
+        void set_name(u64 resource, VkObjectType type, const char* name) const;
 
     private:
         VkInstance _instance;

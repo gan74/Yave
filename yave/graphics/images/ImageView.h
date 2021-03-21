@@ -42,12 +42,12 @@ class ImageView {
         ImageView() = default;
 
         template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-        ImageView(const Image<U, Type>& img) : ImageView(img.device(), img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
+        ImageView(const Image<U, Type>& img) : ImageView(main_device(), img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
             static_assert(is_compatible(U));
         }
 
         template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-        ImageView(const ImageView<U, Type>& img) : ImageView(img.device(), img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
+        ImageView(const ImageView<U, Type>& img) : ImageView(main_device(), img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
             static_assert(is_compatible(U));
         }
 

@@ -31,7 +31,7 @@ static void check_usage(U u) {
     }
 }
 
-FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) : GraphicObject(dptr) {
+FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) {
 }
 
 FrameGraphResourcePool::~FrameGraphResourcePool() {
@@ -47,7 +47,7 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
     TransientImage<> image;
     if(!create_image_from_pool(image, format, size, usage)) {
         y_profile_zone("create image");
-        image = TransientImage<>(device(), format, usage, size);
+        image = TransientImage<>(main_device(), format, usage, size);
     }
 
     return image;
@@ -66,7 +66,7 @@ TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsa
     TransientBuffer buffer;
     if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {
         y_profile_zone("create buffer");
-        buffer = TransientBuffer(device(), byte_size, usage, memory);
+        buffer = TransientBuffer(main_device(), byte_size, usage, memory);
     }
 
     return buffer;
@@ -82,7 +82,7 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, Image
             _images.erase(it);
 
             audit();
-            y_debug_assert(res.device());
+            y_debug_assert(!res.is_null());
 
             return true;
         }
@@ -103,7 +103,7 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
             _buffers.erase(it);
 
             audit();
-            y_debug_assert(res.device());
+            y_debug_assert(!res.is_null());
 
             return true;
         }
@@ -115,7 +115,7 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 void FrameGraphResourcePool::release(TransientImage<> image) {
     const auto lock = y_profile_unique_lock(_lock);
 
-    y_debug_assert(image.device());
+    y_debug_assert(!image.is_null());
     _images.emplace_back(std::move(image), _collection_id);
     audit();
 }
@@ -123,7 +123,7 @@ void FrameGraphResourcePool::release(TransientImage<> image) {
 void FrameGraphResourcePool::release(TransientBuffer buffer) {
     const auto lock = y_profile_unique_lock(_lock);
 
-    y_debug_assert(buffer.device());
+    y_debug_assert(!buffer.is_null());
     _buffers.emplace_back(std::move(buffer), _collection_id);
     audit();
 }

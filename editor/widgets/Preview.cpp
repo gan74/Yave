@@ -86,11 +86,11 @@ void Preview::set_object(const AssetPtr<StaticMesh>& mesh) {
 void Preview::set_object(PreviewObject obj) {
     switch(obj) {
         case PreviewObject::Cube:
-            _mesh = device_resources(app_device())[DeviceResources::CubeMesh];
+            _mesh = device_resources()[DeviceResources::CubeMesh];
         break;
 
         default:
-            _mesh = device_resources(app_device())[DeviceResources::SphereMesh];
+            _mesh = device_resources()[DeviceResources::SphereMesh];
     }
     reset_world();
 }
@@ -126,7 +126,7 @@ void Preview::reset_world() {
         const ecs::EntityId sky_id = _world->create_entity<SkyLightComponent>();
         _world->component<SkyLightComponent>(sky_id)->probe() = _ibl_probe
             ? _ibl_probe
-            : device_resources(app_device()).ibl_probe();
+            : device_resources().ibl_probe();
     }
 
     if(!_mesh.is_empty() && !_material.is_empty()) {

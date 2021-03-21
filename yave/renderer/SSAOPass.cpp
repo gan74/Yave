@@ -124,7 +124,7 @@ static FrameGraphImageId compute_linear_depth(FrameGraph& framegraph, const GBuf
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
     builder.add_storage_output(linear_depth, 0, PipelineStage::ComputeBit);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources(recorder.device())[DeviceResources::LinearizeDepthProgram];
+        const auto& program = device_resources()[DeviceResources::LinearizeDepthProgram];
         recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
     });
 
@@ -156,7 +156,7 @@ static FrameGraphImageId upsample_mini_ao(FrameGraph& framegraph,
 
     const auto upsampled = builder.declare_image(format, output_size);
 
-    const Texture& white = *device_resources(builder.device())[DeviceResources::WhiteTexture];
+    const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
     builder.add_uniform_input_with_default(lo_ao, Descriptor(white), 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(hi_ao, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(lo_depth, 0, PipelineStage::ComputeBit);
@@ -164,7 +164,7 @@ static FrameGraphImageId upsample_mini_ao(FrameGraph& framegraph,
     builder.add_inline_input(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance}, 0);
     builder.add_storage_output(upsampled, 0, PipelineStage::ComputeBit);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources(recorder.device())[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
+        const auto& program = device_resources()[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
         recorder.dispatch_size(program, output_size + math::Vec2ui(2), {self->descriptor_sets()[0]});
     });
 
@@ -183,7 +183,7 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
     builder.add_inline_input(compute_ao_params(tan_half_fov, size.x()), 0);
     builder.add_storage_output(ao, 0, PipelineStage::ComputeBit);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources(recorder.device())[DeviceResources::SSAOProgram];
+        const auto& program = device_resources()[DeviceResources::SSAOProgram];
         recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
     });
 

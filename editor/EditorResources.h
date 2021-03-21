@@ -80,8 +80,6 @@ class EditorResources final : NonMovable {
         // can't default for inclusion reasons
         ~EditorResources();
 
-        DevicePtr device() const;
-
         const ComputeProgram& operator[](ComputePrograms i) const;
         const MaterialTemplate* operator[](MaterialTemplates i) const;
 

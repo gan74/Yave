@@ -77,7 +77,7 @@ class PushConstant : NonCopyable {
         usize _size = 0;
 };
 
-class CmdBufferRegion : public GraphicObject {
+class CmdBufferRegion {
     public:
         CmdBufferRegion() = default;
         CmdBufferRegion(CmdBufferRegion&&) = default;
@@ -98,9 +98,6 @@ class RenderPassRecorder final : NonMovable {
         using DescriptorSetList = detail::DescriptorSetList;
 
         ~RenderPassRecorder();
-
-        DevicePtr device() const;
-        bool is_null() const;
 
         // specific
         void bind_material(const Material& material);

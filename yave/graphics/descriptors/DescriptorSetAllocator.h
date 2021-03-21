@@ -56,7 +56,7 @@ struct hash<y::core::Vector<VkDescriptorSetLayoutBinding>> {
 
 namespace yave {
 
-class DescriptorSetLayout : public GraphicObject {
+class DescriptorSetLayout {
     public:
         static constexpr usize descriptor_type_count = 12;
 
@@ -73,6 +73,8 @@ class DescriptorSetLayout : public GraphicObject {
 
         ~DescriptorSetLayout();
 
+        bool is_null() const;
+
         const std::array<u32, descriptor_type_count>& desciptors_count() const;
 
         core::Span<InlineBlock> inline_blocks_fallbacks() const;
@@ -88,7 +90,7 @@ class DescriptorSetLayout : public GraphicObject {
         core::Vector<InlineBlock> _inline_blocks_fallbacks;
 };
 
-class DescriptorSetPool : NonMovable, public GraphicObject {
+class DescriptorSetPool : NonMovable {
     public:
         static constexpr usize pool_size = 128;
 
@@ -127,7 +129,7 @@ class DescriptorSetPool : NonMovable, public GraphicObject {
         Buffer<BufferUsage::UniformBit> _inline_buffer;
 };
 
-class DescriptorSetAllocator : public GraphicObject  {
+class DescriptorSetAllocator {
 
     using Key = core::Vector<VkDescriptorSetLayoutBinding>;
 

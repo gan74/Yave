@@ -38,14 +38,13 @@ class BufferBase : NonCopyable {
     public:
         ~BufferBase();
 
-        DevicePtr device() const;
-        bool is_null() const;
-
         BufferUsage usage() const;
         usize byte_size() const;
         const DeviceMemory& device_memory() const;
 
         VkDescriptorBufferInfo descriptor_info() const;
+
+        bool is_null() const;
 
         VkBuffer vk_buffer() const;
 

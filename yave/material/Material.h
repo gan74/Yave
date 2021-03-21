@@ -35,7 +35,6 @@ class Material final : NonCopyable {
         Material(DevicePtr dptr, SimpleMaterialData&& data);
         Material(const MaterialTemplate* tmp, SimpleMaterialData&& data = SimpleMaterialData());
 
-        DevicePtr device() const;
         bool is_null() const;
 
         const MaterialTemplate* material_template() const;

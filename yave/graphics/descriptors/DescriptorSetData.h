@@ -31,7 +31,6 @@ class DescriptorSetData {
     public:
         DescriptorSetData() = default;
 
-        DevicePtr device() const;
         bool is_null() const;
 
         VkDescriptorSetLayout vk_descriptor_set_layout() const;

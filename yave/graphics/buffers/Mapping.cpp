@@ -36,16 +36,14 @@ Mapping::Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buf
 }
 
 Mapping::~Mapping() {
-    if(_buffer.device() && _mapping) {
-        flush();
-    }
+    flush();
 }
 
 void Mapping::flush() {
-    if(_buffer.device() && _mapping) {
+    if(_mapping) {
         const VkMappedMemoryRange range = _buffer.vk_memory_range();
         Y_TODO(Maybe merge flush & unmap)
-        vk_check(vkFlushMappedMemoryRanges(vk_device(_buffer.device()), 1, &range));
+        vk_check(vkFlushMappedMemoryRanges(vk_device(), 1, &range));
         _buffer.device_memory().unmap();
     }
 }
@@ -68,7 +66,7 @@ const void* Mapping::data() const {
 }
 
 void Mapping::stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data) {
-    const StagingBuffer buffer(dst.device(), dst.byte_size());
+    const StagingBuffer buffer(main_device(), dst.byte_size());
     Mapping map(buffer);
     std::memcpy(map.data(), data, dst.byte_size());
     recorder.copy(buffer, dst);

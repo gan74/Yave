@@ -64,9 +64,6 @@ class AssetLoadingThreadPool : NonMovable {
         AssetLoadingThreadPool(AssetLoader* parent, usize concurency = 1);
         ~AssetLoadingThreadPool();
 
-        DevicePtr device() const;
-
-
         void wait_until_loaded(const GenericAssetPtr& ptr);
 
         void add_loading_job(std::unique_ptr<LoadingJob> job);

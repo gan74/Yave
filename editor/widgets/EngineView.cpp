@@ -104,7 +104,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, _settings);
 
     {
-        const Texture& white = *device_resources(graph.device())[DeviceResources::WhiteTexture];
+        const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
         FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 

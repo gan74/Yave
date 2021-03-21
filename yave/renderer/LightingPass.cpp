@@ -54,12 +54,12 @@ static constexpr usize max_shadow_lights = 128;
 static const IBLProbe* find_probe(DevicePtr dptr, const ecs::EntityWorld& world) {
     for(const SkyLightComponent& sky : world.components<SkyLightComponent>()) {
         if(const IBLProbe* probe = sky.probe().get()) {
-            y_debug_assert(probe->device());
+            y_debug_assert(!probe->is_null());
             return probe;
         }
     }
 
-    return device_resources(dptr).empty_probe().get();
+    return device_resources().empty_probe().get();
 }
 
 
@@ -68,8 +68,8 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              FrameGraphImageId ao) {
 
     const SceneView& scene = gbuffer.scene_pass.scene_view;
-    const IBLProbe* ibl_probe = find_probe(framegraph.device(), scene.world());
-    const Texture& white = *device_resources(framegraph.device())[DeviceResources::WhiteTexture];
+    const IBLProbe* ibl_probe = find_probe(main_device(), scene.world());
+    const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
 
@@ -83,7 +83,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input_with_default(ao, Descriptor(white), 0, PipelineStage::FragmentBit);
     builder.add_external_input(*ibl_probe, 0, PipelineStage::FragmentBit);
-    builder.add_external_input(Descriptor(device_resources(builder.device()).brdf_lut(), SamplerType::LinearClamp), 0, PipelineStage::FragmentBit);
+    builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp), 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
     builder.add_storage_input(directional_buffer, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(light_count_buffer, 0, PipelineStage::FragmentBit);
@@ -104,7 +104,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         self->resources().mapped_buffer(light_count_buffer)[0] = light_count;
 
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-        const auto* material = device_resources(recorder.device())[DeviceResources::DeferredAmbientMaterialTemplate];
+        const auto* material = device_resources()[DeviceResources::DeferredAmbientMaterialTemplate];
         render_pass.bind_material(material, {self->descriptor_sets()[0]});
         render_pass.draw_array(3);
     });
@@ -234,7 +234,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
         };
 
         if(point_count || spot_count) {
-            const auto& program = device_resources(recorder.device())[DeviceResources::DeferredLocalsProgram];
+            const auto& program = device_resources()[DeviceResources::DeferredLocalsProgram];
             recorder.dispatch_size(program, size, {self->descriptor_sets()[0]}, PushData{point_count, spot_count, shadow_count});
         }
     });
@@ -275,10 +275,10 @@ static void local_lights_pass(FrameGraph& framegraph,
             }
 
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            const auto* material = device_resources(recorder.device())[DeviceResources::DeferredPointLightMaterialTemplate];
+            const auto* material = device_resources()[DeviceResources::DeferredPointLightMaterialTemplate];
             render_pass.bind_material(material, {self->descriptor_sets()[0]});
             {
-                const StaticMesh& sphere = *device_resources(recorder.device())[DeviceResources::SimpleSphereMesh];
+                const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
                 VkDrawIndexedIndirectCommand indirect = sphere.indirect_data();
                 indirect.instanceCount = point_count;
                 render_pass.bind_buffers(sphere.triangle_buffer(), sphere.vertex_buffer());
@@ -319,14 +319,14 @@ static void local_lights_pass(FrameGraph& framegraph,
             }
 
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            const auto* material = device_resources(recorder.device())[DeviceResources::DeferredSpotLightMaterialTemplate];
+            const auto* material = device_resources()[DeviceResources::DeferredSpotLightMaterialTemplate];
             render_pass.bind_material(material, {self->descriptor_sets()[0]});
 
             {
                 const auto transforms = self->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
                 render_pass.bind_attrib_buffers({}, {transforms});
 
-                const StaticMesh& cone = *device_resources(recorder.device())[DeviceResources::ConeMesh];
+                const StaticMesh& cone = *device_resources()[DeviceResources::ConeMesh];
                 VkDrawIndexedIndirectCommand indirect = cone.indirect_data();
                 indirect.instanceCount = spot_count;
                 render_pass.bind_buffers(cone.triangle_buffer(), cone.vertex_buffer());

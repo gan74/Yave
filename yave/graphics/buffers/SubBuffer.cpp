@@ -39,16 +39,12 @@ SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_len, usize byte_
 SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, base.byte_size(), 0) {
 }
 
-DevicePtr SubBufferBase::device() const {
-    return _memory.device();
-}
-
 bool SubBufferBase::is_null() const {
-    return !device();
+    return !_buffer;
 }
 
 usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
-    const auto& props = device_properties(dptr);
+    const auto& props = device_properties();
     u64 align = props.non_coherent_atom_size;
     if((usage & BufferUsage::UniformBit) != BufferUsage::None) {
         align = std::max(props.uniform_buffer_alignment, align);

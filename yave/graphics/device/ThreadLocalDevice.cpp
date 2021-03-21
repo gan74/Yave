@@ -27,9 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) :
-        GraphicObject(dptr),
-        _disposable_cmd_pool(dptr) {
+ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) : _disposable_cmd_pool(dptr) {
 }
 
 CmdBuffer ThreadLocalDevice::create_disposable_cmd_buffer() const {

@@ -35,18 +35,17 @@ namespace yave {
 static VkCommandPool create_pool(DevicePtr dptr) {
     VkCommandPoolCreateInfo create_info = vk_struct();
     {
-        create_info.queueFamilyIndex = graphic_queue(dptr).family_index();
+        create_info.queueFamilyIndex = graphic_queue().family_index();
         create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     }
 
     VkCommandPool pool = {};
-    vk_check(vkCreateCommandPool(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &pool));
+    vk_check(vkCreateCommandPool(vk_device(), &create_info, vk_allocation_callbacks(), &pool));
     return pool;
 }
 
 
 CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
-        GraphicObject(dptr),
         _pool(create_pool(dptr)),
         _thread_id(concurrent::thread_id()) {
 }
@@ -57,9 +56,9 @@ CmdBufferPool::~CmdBufferPool() {
     y_debug_assert(_cmd_buffers.size() == _released.size());
 
     for(const VkFence fence : _fences) {
-        destroy(fence);
+        device_destroy(fence);
     }
-    destroy(_pool);
+    device_destroy(_pool);
 }
 
 VkCommandPool CmdBufferPool::vk_pool() const {
@@ -124,8 +123,8 @@ CmdBufferData* CmdBufferPool::create_data() {
 
     VkCommandBuffer buffer = {};
     VkFence fence = {};
-    vk_check(vkAllocateCommandBuffers(vk_device(device()), &allocate_info, &buffer));
-    vk_check(vkCreateFence(vk_device(device()), &fence_create_info, vk_allocation_callbacks(device()), &fence));
+    vk_check(vkAllocateCommandBuffers(vk_device(), &allocate_info, &buffer));
+    vk_check(vkCreateFence(vk_device(), &fence_create_info, vk_allocation_callbacks(), &fence));
 
     _fences << fence;
     return _cmd_buffers.emplace_back(std::make_unique<CmdBufferData>(buffer, fence, this)).get();

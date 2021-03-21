@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-class ComputeProgram final : public GraphicObject {
+class ComputeProgram final {
     public:
         ComputeProgram() = default;
         ComputeProgram(ComputeProgram&&) = default;
@@ -34,6 +34,8 @@ class ComputeProgram final : public GraphicObject {
 
         explicit ComputeProgram(const ComputeShader& comp, const SpecializationData& data = SpecializationData());
         ~ComputeProgram();
+
+        bool is_null() const;
 
         const math::Vec3ui& local_size() const;
         usize thread_count() const;

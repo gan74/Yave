@@ -63,7 +63,7 @@ static Texture render_world(const ecs::EntityWorld& world) {
     scene.camera().set_proj(math::perspective(math::to_rad(45.0f), 1.0f, 0.1f));
     scene.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
 
-    CmdBufferRecorder recorder = create_disposable_cmd_buffer(app_device());
+    CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     StorageTexture out(app_device(), ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
     {
         const auto region = recorder.region("Thumbmail cache render");
@@ -122,7 +122,7 @@ static void fill_world(ecs::EntityWorld& world) {
 
     {
         const ecs::EntityId sky_id = world.create_entity<SkyLightComponent>();
-        world.component<SkyLightComponent>(sky_id)->probe() = device_resources(app_device()).ibl_probe();
+        world.component<SkyLightComponent>(sky_id)->probe() = device_resources().ibl_probe();
     }
 
 }
@@ -173,11 +173,11 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
 static Texture render_texture(const AssetPtr<Texture>& tex) {
     y_profile();
 
-    CmdBufferRecorder recorder = create_disposable_cmd_buffer(app_device());
+    CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     StorageTexture out(app_device(), ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
     {
         const DescriptorSet set(app_device(), {Descriptor(*tex, SamplerType::LinearClamp), Descriptor(StorageView(out))});
-        recorder.dispatch_size(device_resources(app_device())[DeviceResources::CopyProgram],  out.size(), {set});
+        recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), {set});
     }
     std::move(recorder).submit<SyncPolicy::Sync>();
     return out;
@@ -185,7 +185,7 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
 
 
 
-ThumbmailRenderer::ThumbmailRenderer(AssetLoader& loader) : GraphicObject(loader.device()), _loader(&loader) {
+ThumbmailRenderer::ThumbmailRenderer(AssetLoader& loader) : _loader(&loader) {
 }
 
 const TextureView* ThumbmailRenderer::thumbmail(AssetId id) {
@@ -232,7 +232,7 @@ void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
         case AssetType::Mesh: {
             const auto ptr = _loader->load_async<StaticMesh>(id);
             data.asset_ptr = ptr;
-            data.render = [ptr]{ return render_object(ptr, device_resources(app_device())[DeviceResources::EmptyMaterial]); };
+            data.render = [ptr]{ return render_object(ptr, device_resources()[DeviceResources::EmptyMaterial]); };
         } break;
 
         case AssetType::Image: {
@@ -244,7 +244,7 @@ void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
         case AssetType::Material: {
             const auto ptr = _loader->load_async<Material>(id);
             data.asset_ptr = ptr;
-            data.render = [ptr]{ return render_object(device_resources(app_device())[DeviceResources::SphereMesh], ptr); };
+            data.render = [ptr]{ return render_object(device_resources()[DeviceResources::SphereMesh], ptr); };
         } break;
 
         case AssetType::Prefab: {

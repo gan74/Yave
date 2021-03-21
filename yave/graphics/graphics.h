@@ -30,60 +30,33 @@ SOFTWARE.
 
 namespace yave {
 
-VkDevice vk_device(DevicePtr dptr);
-VkInstance vk_device_instance(DevicePtr dptr);
+DevicePtr main_device();
 
-CmdBuffer create_disposable_cmd_buffer(DevicePtr dptr);
+VkDevice vk_device();
+VkInstance vk_device_instance();
 
-const PhysicalDevice& physical_device(DevicePtr dptr);
-DeviceMemoryAllocator& device_allocator(DevicePtr dptr);
-DescriptorSetAllocator& descriptor_set_allocator(DevicePtr dptr);
-const Queue& graphic_queue(DevicePtr dptr);
-const Queue& loading_queue(DevicePtr dptr);
-const DeviceResources& device_resources(DevicePtr dptr);
-const DeviceProperties& device_properties(DevicePtr dptr);
-LifetimeManager& lifetime_manager(DevicePtr dptr);
+CmdBuffer create_disposable_cmd_buffer();
 
-const VkAllocationCallbacks* vk_allocation_callbacks(DevicePtr dptr);
-VkSampler vk_sampler(DevicePtr dptr, SamplerType type);
+const PhysicalDevice& physical_device();
+DeviceMemoryAllocator& device_allocator();
+DescriptorSetAllocator& descriptor_set_allocator();
+const Queue& graphic_queue();
+const Queue& loading_queue();
+const DeviceResources& device_resources();
+const DeviceProperties& device_properties();
+LifetimeManager& lifetime_manager();
 
-const DebugUtils* debug_utils(DevicePtr dptr);
-const RayTracing* ray_tracing(DevicePtr dptr);
+const VkAllocationCallbacks* vk_allocation_callbacks();
+VkSampler vk_sampler(SamplerType type);
 
-void wait_all_queues(DevicePtr dptr);
+const DebugUtils* debug_utils();
+const RayTracing* ray_tracing();
 
-#define YAVE_GENERATE_DESTROY(T) void device_destroy(DevicePtr dptr, T t);
+void wait_all_queues();
+
+#define YAVE_GENERATE_DESTROY(T) void device_destroy(T t);
 YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
-
-
-class GraphicObject : NonCopyable {
-    public:
-        ~GraphicObject() = default;
-
-        DevicePtr device() const;
-        bool is_null() const;
-
-        template<typename T>
-        void destroy(T&& t) const {
-            device_destroy(_device, y_fwd(t));
-        }
-
-    protected:
-        // Only default constructor should not link any device: explicitly passing nullptr to GraphicObject is an error
-        GraphicObject();
-        GraphicObject(DevicePtr dev);
-        GraphicObject(ThreadDevicePtr dev);
-
-        GraphicObject(GraphicObject&& other);
-        GraphicObject& operator=(GraphicObject&& other);
-
-
-        void swap(GraphicObject& other);
-
-    private:
-        DevicePtr _device = nullptr;
-};
 
 }
 

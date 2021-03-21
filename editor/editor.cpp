@@ -39,7 +39,7 @@ EditorApplication* application() {
 }
 
 DevicePtr app_device() {
-    return application()->device();
+    return main_device();
 }
 
 

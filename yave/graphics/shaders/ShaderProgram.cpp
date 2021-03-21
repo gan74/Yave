@@ -134,7 +134,7 @@ static void validate_bindings(core::Span<VkDescriptorSetLayoutBinding> bindings)
     y_debug_assert(max == bindings.size());
 }
 
-ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) : GraphicObject(frag.device()) {
+ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) {
     {
         merge_bindings(_bindings, frag.bindings());
         merge_bindings(_bindings, vert.bindings());
@@ -154,7 +154,7 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
             _layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
             for(const auto& binding : _bindings) {
                 validate_bindings(binding.second);
-                _layouts[binding.first] = descriptor_set_allocator(device()).descriptor_set_layout(binding.second).vk_descriptor_set_layout();
+                _layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
             }
         }
     }

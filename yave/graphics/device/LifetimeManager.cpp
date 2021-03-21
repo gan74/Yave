@@ -36,7 +36,7 @@ static bool compare_cmd_buffers(CmdBufferData* a, CmdBufferData* b) {
     return a->resource_fence() < b->resource_fence();
 }
 
-LifetimeManager::LifetimeManager(DevicePtr dptr) : GraphicObject(dptr) {
+LifetimeManager::LifetimeManager(DevicePtr dptr) {
 }
 
 LifetimeManager::~LifetimeManager() {
@@ -156,7 +156,7 @@ void LifetimeManager::clear_resources(u64 up_to) {
 
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
     std::visit(
-        [dptr = device()](auto& res) {
+        [](auto& res) {
             if constexpr(std::is_same_v<decltype(res), EmptyResource&>) {
                 y_fatal("Empty resource");
             } else if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
@@ -164,7 +164,7 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
             } else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
                 res.recycle();
             } else {
-                vk_destroy(dptr, res);
+                vk_destroy(main_device(), res);
             }
         },
         resource);

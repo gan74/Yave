@@ -30,14 +30,14 @@ namespace yave {
 
 DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings) {
     if(!bindings.is_empty()) {
-        _data = descriptor_set_allocator(dptr).create_descritptor_set(bindings);
+        _data = descriptor_set_allocator().create_descritptor_set(bindings);
         _set = _data.vk_descriptor_set();
 
     }
 }
 
 DescriptorSet::~DescriptorSet() {
-    device_destroy(device(), std::move(_data));
+    device_destroy(std::move(_data));
 }
 
 DescriptorSet::DescriptorSet(DescriptorSet&& other) {
@@ -49,16 +49,12 @@ DescriptorSet& DescriptorSet::operator=(DescriptorSet&& other) {
     return *this;
 }
 
-DevicePtr DescriptorSet::device() const {
-    return _data.device();
-}
-
 bool DescriptorSet::is_null() const  {
     return _data.is_null();
 }
 
 VkDescriptorSetLayout DescriptorSet::vk_descriptor_set_layout() const {
-    y_debug_assert(device());
+    y_debug_assert(!is_null());
     return _data.vk_descriptor_set_layout();
 }
 

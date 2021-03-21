@@ -35,15 +35,15 @@ static VkQueryPool create_query_pool(DevicePtr dptr) {
     }
 
     VkQueryPool pool = {};
-    vk_check(vkCreateQueryPool(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &pool));
+    vk_check(vkCreateQueryPool(vk_device(), &create_info, vk_allocation_callbacks(), &pool));
     return pool;
 }
 
-TimeQuery::TimeQuery(DevicePtr dptr)  : GraphicObject(dptr), _pool(create_query_pool(dptr)) {
+TimeQuery::TimeQuery(DevicePtr dptr) : _pool(create_query_pool(dptr)) {
 }
 
 TimeQuery::~TimeQuery() {
-    destroy(_pool);
+    device_destroy(_pool);
 }
 
 void TimeQuery::start(CmdBufferRecorder& recorder) {
@@ -56,7 +56,7 @@ void TimeQuery::stop(CmdBufferRecorder& recorder) {
 
 core::Duration TimeQuery::get() {
     std::array<u64, 2> results;
-    vk_check(vkGetQueryPoolResults(vk_device(device()), _pool, 0, 2, 2 * sizeof(u64), results.data(), 0, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
+    vk_check(vkGetQueryPoolResults(vk_device(), _pool, 0, 2, 2 * sizeof(u64), results.data(), 0, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
     return core::Duration::nanoseconds(results[1] - results[0]);
 }
 

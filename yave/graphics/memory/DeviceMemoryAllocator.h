@@ -34,7 +34,7 @@ SOFTWARE.
 
 namespace yave {
 
-class DeviceMemoryAllocator : public GraphicObject {
+class DeviceMemoryAllocator {
 
     using HeapType = std::pair<u32, MemoryType>;
 

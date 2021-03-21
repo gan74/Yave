@@ -71,11 +71,6 @@ AssetLoadingThreadPool::~AssetLoadingThreadPool() {
     }
 }
 
-DevicePtr AssetLoadingThreadPool::device() const {
-    y_debug_assert(_parent);
-    return _parent->device();
-}
-
 void AssetLoadingThreadPool::wait_until_loaded(const GenericAssetPtr& ptr) {
     y_profile();
     while(ptr.is_loading()) {
@@ -105,7 +100,7 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
                 lock.unlock();
 
                 if(state == AssetLoadingState::Loaded) {
-                    job->finalize(device());
+                    job->finalize(main_device());
                 } else if(state == AssetLoadingState::Failed) {
                     job->set_dependencies_failed();
                 }
@@ -128,7 +123,7 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
             const AssetLoadingState state = job->dependencies().state();
             if(state != AssetLoadingState::NotLoaded) {
                 if(state == AssetLoadingState::Loaded) {
-                    job->finalize(device());
+                    job->finalize(main_device());
                 } else if(state == AssetLoadingState::Failed) {
                     job->set_dependencies_failed();
                 }

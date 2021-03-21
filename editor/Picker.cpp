@@ -73,7 +73,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
         });
     }
 
-    CmdBufferRecorder recorder = create_disposable_cmd_buffer(app_device());
+    CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     std::move(framegraph).render(recorder);
     std::move(recorder).submit<SyncPolicy::Sync>();
 

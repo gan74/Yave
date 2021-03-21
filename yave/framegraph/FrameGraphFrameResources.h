@@ -43,8 +43,6 @@ class FrameGraphFrameResources final : NonMovable {
 
         void reserve(usize images, usize buffers);
 
-        DevicePtr device() const;
-
         u32 create_resource_id();
 
         void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);

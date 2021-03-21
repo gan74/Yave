@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-class TimeQuery : public GraphicObject {
+class TimeQuery {
 
     public:
         TimeQuery(DevicePtr dptr);

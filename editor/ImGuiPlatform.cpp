@@ -290,7 +290,7 @@ static void discover_monitors(ImGuiPlatformIO& platform) {
 ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent, Window::Flags flags) :
         platform(parent),
         window({1280, 768}, "Window", flags),
-        swapchain(platform->device(), &window),
+        swapchain(main_device(), &window),
         event_handler(std::make_unique<ImGuiEventHandler>(&window)) {
 
     window.set_event_handler(event_handler.get());
@@ -301,7 +301,7 @@ bool ImGuiPlatform::PlatformWindow::update_swapchain() {
     y_profile();
 
     if(swapchain.size() != window.size()) {
-        wait_all_queues(platform->device());
+        wait_all_queues();
         swapchain.reset();
     }
     return swapchain.is_valid();
@@ -315,10 +315,8 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
     }
 
     if(update_swapchain()) {
-        DevicePtr dptr = platform->device();
-
         const FrameToken token = swapchain.next_frame();
-        CmdBufferRecorder recorder = create_disposable_cmd_buffer(dptr);
+        CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
         {
             Framebuffer framebuffer(token.image_view.device(), {token.image_view});
@@ -326,7 +324,7 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
             platform->_renderer->render(viewport->DrawData, pass);
         }
 
-        swapchain.present(token, std::move(recorder), graphic_queue(dptr));
+        swapchain.present(token, std::move(recorder), graphic_queue());
     }
 
     return true;
@@ -400,9 +398,6 @@ ImGuiPlatform::~ImGuiPlatform() {
     _instance = nullptr;
 }
 
-DevicePtr ImGuiPlatform::device() const {
-    return _renderer->device();
-}
 
 const ImGuiRenderer* ImGuiPlatform::renderer() const {
     return _renderer.get();
@@ -421,7 +416,7 @@ bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
 
         if(_main_window->update_swapchain()) {
             const FrameToken frame = _main_window->swapchain.next_frame();
-            CmdBufferRecorder recorder = create_disposable_cmd_buffer(device());
+            CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
             {
                 y_profile_zone("imgui");
@@ -453,7 +448,7 @@ bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
                 ImGui::RenderPlatformWindowsDefault();
             }
 
-            _main_window->swapchain.present(frame, std::move(recorder), graphic_queue(device()));
+            _main_window->swapchain.present(frame, std::move(recorder), graphic_queue());
         }
 
         if(once) {

@@ -141,7 +141,7 @@ static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::AttachmentData
     }
 
     VkRenderPass renderpass = {};
-    vk_check(vkCreateRenderPass(vk_device(dptr), &create_info, vk_allocation_callbacks(dptr), &renderpass));
+    vk_check(vkCreateRenderPass(vk_device(), &create_info, vk_allocation_callbacks(), &renderpass));
     return renderpass;
 }
 
@@ -168,7 +168,6 @@ bool RenderPass::Layout::operator==(const Layout& other) const {
 
 
 RenderPass::RenderPass(DevicePtr dptr, AttachmentData depth, core::Span<AttachmentData> colors) :
-        GraphicObject(dptr),
         _attachment_count(colors.size()),
         _render_pass(create_renderpass(dptr, depth, colors)),
         _layout(depth, colors) {
@@ -179,11 +178,15 @@ RenderPass::RenderPass(DevicePtr dptr, core::Span<AttachmentData> colors) :
 }
 
 RenderPass::~RenderPass() {
-    destroy(_render_pass);
+    device_destroy(_render_pass);
+}
+
+bool RenderPass::is_null() const {
+    return !_render_pass;
 }
 
 VkRenderPass RenderPass::vk_render_pass() const {
-    y_debug_assert(device());
+    y_debug_assert(!is_null());
     return _render_pass;
 }
 

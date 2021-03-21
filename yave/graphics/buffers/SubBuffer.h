@@ -36,7 +36,6 @@ class SubBufferBase {
 
         explicit SubBufferBase(const BufferBase& base);
 
-        DevicePtr device() const;
         bool is_null() const;
 
         usize byte_size() const;
@@ -90,8 +89,8 @@ class SubBuffer : public SubBufferBase {
         using base_buffer_type = Buffer<Usage, memory_type>;
 
 
-        static usize alignment(DevicePtr dptr) {
-            return alignment_for_usage(dptr, Usage);
+        static usize alignment() {
+            return alignment_for_usage(main_device(), Usage);
         }
 
         static usize total_byte_size(usize size) {
@@ -116,7 +115,7 @@ class SubBuffer : public SubBufferBase {
         template<BufferUsage U, MemoryType M>
         SubBuffer(const Buffer<U, M>& buffer, usize byte_len, usize byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
             static_assert(is_compatible(U, M));
-            y_debug_assert(byte_offset() % alignment(device()) == 0);
+            y_debug_assert(byte_offset() % alignment() == 0);
         }
 };
 

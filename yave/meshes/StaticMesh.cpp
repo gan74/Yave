@@ -36,23 +36,15 @@ StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
     _indirect_data.indexCount = u32(mesh_data.triangles().size() * 3);
     _indirect_data.instanceCount = 1;
 
-    CmdBufferRecorder recorder(create_disposable_cmd_buffer(dptr));
+    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
     Y_TODO(change to implicit staging?)
     Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
     Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
     std::move(recorder).submit<SyncPolicy::Sync>();
-
-    if(ray_tracing(dptr)) {
-        _ray_tracing_data = RayTracing::AccelerationStructure(*this);
-    }
-}
-
-DevicePtr StaticMesh::device() const {
-    return _triangle_buffer.device();
 }
 
 bool StaticMesh::is_null() const {
-    return !device();
+    return _triangle_buffer.is_null();
 }
 
 const TriangleBuffer<>& StaticMesh::triangle_buffer() const {

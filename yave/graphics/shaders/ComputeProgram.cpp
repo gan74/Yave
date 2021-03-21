@@ -32,32 +32,32 @@ SOFTWARE.
 
 namespace yave {
 
-ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationData& data) : GraphicObject(comp.device()), _local_size(comp.local_size()) {
+ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationData& data) : _local_size(comp.local_size()) {
     const auto& bindings = comp.bindings();
 
     const u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
     auto layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout());
     for(const auto& binding : bindings) {
-        layouts[binding.first] = descriptor_set_allocator(device()).descriptor_set_layout(binding.second).vk_descriptor_set_layout();
+        layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
     }
 
     VkPipelineLayoutCreateInfo layout_create_info = vk_struct();
     {
-        layout_create_info.setLayoutCount = u32(layouts.size());
         layout_create_info.pSetLayouts = layouts.data();
+        layout_create_info.setLayoutCount = u32(layouts.size());
         layout_create_info.pushConstantRangeCount = u32(comp.vk_push_constants().size());
         layout_create_info.pPushConstantRanges = comp.vk_push_constants().data();
     }
 
-    vk_check(vkCreatePipelineLayout(vk_device(device()), &layout_create_info, vk_allocation_callbacks(device()), &_layout.get()));
-
+    vk_check(vkCreatePipelineLayout(vk_device(), &layout_create_info, vk_allocation_callbacks(), &_layout.get()));
 
     if(data.size() && data.size() != comp.specialization_data_size()) {
         y_fatal("Incompatible specialization data.");
     }
 
-    auto entries = data.size() ? comp.specialization_entries() : core::Span<VkSpecializationMapEntry>();
+    const auto entries = data.size() ? comp.specialization_entries() : core::Span<VkSpecializationMapEntry>();
+
     VkSpecializationInfo spec_info = {};
     {
         spec_info.mapEntryCount = u32(entries.size());
@@ -80,12 +80,16 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
         create_info.stage = stage;
     }
 
-    vk_check(vkCreateComputePipelines(vk_device(device()), vk_null(), 1, &create_info, vk_allocation_callbacks(device()), &_pipeline.get()));
+    vk_check(vkCreateComputePipelines(vk_device(), vk_null(), 1, &create_info, vk_allocation_callbacks(), &_pipeline.get()));
 }
 
 ComputeProgram::~ComputeProgram() {
-    destroy(_layout);
-    destroy(_pipeline);
+    device_destroy(_layout);
+    device_destroy(_pipeline);
+}
+
+bool ComputeProgram::is_null() const {
+    return !_pipeline;
 }
 
 const math::Vec3ui& ComputeProgram::local_size() const {
@@ -97,12 +101,12 @@ usize ComputeProgram::thread_count() const {
 }
 
 VkPipeline ComputeProgram::vk_pipeline() const {
-    y_debug_assert(device());
+    y_debug_assert(!is_null());
     return _pipeline;
 }
 
 VkPipelineLayout ComputeProgram::vk_pipeline_layout() const {
-    y_debug_assert(device());
+    y_debug_assert(!is_null());
     return _layout;
 }
 
