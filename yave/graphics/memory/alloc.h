@@ -67,14 +67,40 @@ static const VkMemoryPropertyFlags* memory_type_flags[] = {
 };
 
 
+
+// https://en.wikipedia.org/wiki/Hamming_weight
+static inline u32 popcnt_32(u32 x) {
+    x -= (x >> 1) & 0x55555555;
+    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+    x = (x + (x >> 4)) & 0x0f0f0f0f;
+    return (x * 0x01010101) >> 24;
+}
+
 inline u32 get_memory_type(const VkPhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType type) {
     for(const VkMemoryPropertyFlags* type_flags = memory_type_flags[uenum(type)]; *type_flags; ++type_flags) {
         const VkMemoryPropertyFlags flags = *type_flags;
+
+        u32 best_index = u32(-1);
+        u32 best_pop = u32(-1);
+
         for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
-            const auto memory_type = properties.memoryTypes[i];
-            if(type_filter & (1 << i) && (memory_type.propertyFlags & flags) == flags) {
-                return i;
+            if((type_filter & (1 << i)) == 0) {
+                continue;
             }
+            const auto memory_type = properties.memoryTypes[i];
+            if(memory_type.propertyFlags == flags) {
+                return i;
+            } else if((memory_type.propertyFlags & flags) == flags) {
+                const u32 pop = popcnt_32(memory_type.propertyFlags);
+                if(pop < best_pop) {
+                    best_pop = pop;
+                    best_index = i;
+                }
+            }
+        }
+
+        if(best_index != u32(-1)) {
+            return best_index;
         }
     }
 
