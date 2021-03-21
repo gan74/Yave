@@ -34,6 +34,7 @@ DevicePtr main_device();
 
 VkDevice vk_device();
 VkInstance vk_device_instance();
+VkPhysicalDevice vk_physical_device();
 
 CmdBuffer create_disposable_cmd_buffer();
 

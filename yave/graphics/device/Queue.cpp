@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-Queue::Queue(DevicePtr dptr, u32 family_index, VkQueue queue) :
+Queue::Queue(u32 family_index, VkQueue queue) :
         _queue(queue),
         _family_index(family_index),
         _lock(std::make_unique<std::mutex>()){

@@ -32,13 +32,11 @@ class DescriptorSet : public DescriptorSetBase, NonCopyable {
     public:
         DescriptorSet() = default;
 
-        DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings);
+        DescriptorSet(core::Span<Descriptor> bindings);
         ~DescriptorSet();
 
         DescriptorSet(DescriptorSet&& other);
         DescriptorSet& operator=(DescriptorSet&& other);
-
-        bool is_null() const;
 
         VkDescriptorSetLayout vk_descriptor_set_layout() const;
 

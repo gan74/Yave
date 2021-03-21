@@ -29,9 +29,9 @@ SOFTWARE.
 
 namespace yave {
 
-SkinnedMesh::SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data) :
-        _triangle_buffer(dptr, mesh_data.triangles().size()),
-        _vertex_buffer(dptr, mesh_data.skinned_vertices().size()),
+SkinnedMesh::SkinnedMesh(const MeshData& mesh_data) :
+        _triangle_buffer(mesh_data.triangles().size()),
+        _vertex_buffer(mesh_data.skinned_vertices().size()),
         _skeleton(mesh_data.bones()),
         _radius(mesh_data.radius()) {
 

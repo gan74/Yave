@@ -24,11 +24,11 @@ SOFTWARE.
 
 namespace yave {
 
-SkeletonInstance::SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton) :
+SkeletonInstance::SkeletonInstance(const Skeleton* skeleton) :
         _skeleton(skeleton),
         _bone_transforms(new std::array<math::Transform<>, Skeleton::max_bones>()),
-        _bone_transform_buffer(dptr, Skeleton::max_bones),
-        _descriptor_set(dptr, {Descriptor(_bone_transform_buffer)}) {
+        _bone_transform_buffer(Skeleton::max_bones),
+        _descriptor_set(Descriptor(_bone_transform_buffer)) {
 
     flush_data();
 }

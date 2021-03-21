@@ -36,7 +36,7 @@ static bool compare_cmd_buffers(CmdBufferData* a, CmdBufferData* b) {
     return a->resource_fence() < b->resource_fence();
 }
 
-LifetimeManager::LifetimeManager(DevicePtr dptr) {
+LifetimeManager::LifetimeManager() {
 }
 
 LifetimeManager::~LifetimeManager() {
@@ -164,7 +164,7 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
             } else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
                 res.recycle();
             } else {
-                vk_destroy(main_device(), res);
+                vk_destroy(res);
             }
         },
         resource);

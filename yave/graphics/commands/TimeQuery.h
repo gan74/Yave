@@ -32,7 +32,7 @@ namespace yave {
 class TimeQuery {
 
     public:
-        TimeQuery(DevicePtr dptr);
+        TimeQuery();
         ~TimeQuery();
 
         void start(CmdBufferRecorder& recorder);

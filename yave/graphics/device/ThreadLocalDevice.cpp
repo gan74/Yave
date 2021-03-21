@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) : _disposable_cmd_pool(dptr) {
+ThreadLocalDevice::ThreadLocalDevice() : _disposable_cmd_pool() {
 }
 
 CmdBuffer ThreadLocalDevice::create_disposable_cmd_buffer() const {

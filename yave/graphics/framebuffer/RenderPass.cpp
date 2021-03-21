@@ -102,7 +102,7 @@ static VkAttachmentReference create_attachment_reference(ImageUsage usage, usize
     return VkAttachmentReference{u32(index), vk_initial_image_layout(usage)};
 }
 
-static VkRenderPass create_renderpass(DevicePtr dptr, RenderPass::AttachmentData depth, core::Span<RenderPass::AttachmentData> colors) {
+static VkRenderPass create_renderpass(RenderPass::AttachmentData depth, core::Span<RenderPass::AttachmentData> colors) {
     const bool has_depth = depth.usage != ImageUsage::None;
     const bool has_color = !colors.is_empty();
 
@@ -167,14 +167,14 @@ bool RenderPass::Layout::operator==(const Layout& other) const {
 }
 
 
-RenderPass::RenderPass(DevicePtr dptr, AttachmentData depth, core::Span<AttachmentData> colors) :
+RenderPass::RenderPass(AttachmentData depth, core::Span<AttachmentData> colors) :
         _attachment_count(colors.size()),
-        _render_pass(create_renderpass(dptr, depth, colors)),
+        _render_pass(create_renderpass(depth, colors)),
         _layout(depth, colors) {
 }
 
-RenderPass::RenderPass(DevicePtr dptr, core::Span<AttachmentData> colors) :
-        RenderPass(dptr, AttachmentData(), colors) {
+RenderPass::RenderPass(core::Span<AttachmentData> colors) :
+        RenderPass(AttachmentData(), colors) {
 }
 
 RenderPass::~RenderPass() {

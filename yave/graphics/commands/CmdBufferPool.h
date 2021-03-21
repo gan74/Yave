@@ -35,7 +35,7 @@ namespace yave {
 class CmdBufferPool : NonMovable {
 
     public:
-        CmdBufferPool(DevicePtr dptr);
+        CmdBufferPool();
 
         ~CmdBufferPool();
 

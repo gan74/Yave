@@ -83,11 +83,14 @@ static bool try_enable_extension(core::Vector<const char*>& exts, const char* na
     return false;
 }
 
-static std::array<Sampler, 5> create_samplers(DevicePtr dptr) {
-    std::array<Sampler, 5> samplers;
-    for(usize i = 0; i != samplers.size(); ++i) {
-        samplers[i] = Sampler(dptr, SamplerType(i));
-    }
+static std::array<Sampler, 5> create_samplers() {
+    std::array<Sampler, 5> samplers = {
+        SamplerType::LinearRepeat,
+        SamplerType::LinearClamp,
+        SamplerType::PointRepeat,
+        SamplerType::PointClamp,
+        SamplerType::Shadow,
+    };
     return samplers;
 }
 
@@ -116,7 +119,7 @@ static u32 queue_family_index(VkPhysicalDevice device, VkQueueFlags flags) {
     return queue_family_index(families, flags);
 }
 
-static VkQueue create_queue(DevicePtr dptr, u32 family_index, u32 index) {
+static VkQueue create_queue(u32 family_index, u32 index) {
     VkQueue q = {};
     vkGetDeviceQueue(vk_device(), family_index, index, &q);
     return q;
@@ -251,12 +254,9 @@ Device::Device(Instance& instance, PhysicalDevice device) :
         _main_queue_index(queue_family_index(_physical.vk_physical_device(), graphic_queue_flags)),
         _device(this, create_device(_physical, _main_queue_index, _instance.debug_params())),
         _properties(create_properties(_physical)),
-        _graphic_queue(this, _main_queue_index, create_queue(this, _main_queue_index, 0)),
-        _loading_queue(this, _main_queue_index, create_queue(this, _main_queue_index, 1)),
-        _allocator(this),
-        _lifetime_manager(this),
-        _samplers(create_samplers(this)),
-        _descriptor_set_allocator(this) {
+        _graphic_queue(_main_queue_index, create_queue(_main_queue_index, 0)),
+        _loading_queue(_main_queue_index, create_queue(_main_queue_index, 1)),
+        _samplers(create_samplers()) {
 
 #ifdef YAVE_NV_RAY_TRACING
     if(is_extension_supported(RayTracing::extension_name(), _physical.vk_physical_device())) {
@@ -266,7 +266,7 @@ Device::Device(Instance& instance, PhysicalDevice device) :
 
     print_properties(_properties);
 
-    _resources.init(this);
+    _resources.init();
 }
 
 Device::~Device() {
@@ -276,7 +276,7 @@ Device::~Device() {
 
     auto full_flush = [this] {
         // We need this to forcefully flush the lifetime manager
-        CmdBufferRecorder(CmdBufferPool(this).create_buffer()).submit<SyncPolicy::Sync>();
+        CmdBufferRecorder(CmdBufferPool().create_buffer()).submit<SyncPolicy::Sync>();
         lifetime_manager().wait_cmd_buffers();
     };
 
@@ -335,7 +335,7 @@ ThreadDevicePtr Device::thread_device() const {
         }
         auto& data = _thread_devices[thread_id];
         if(!data) {
-            data = std::make_unique<ThreadLocalDevice>(this);
+            data = std::make_unique<ThreadLocalDevice>();
             if(_thread_devices.size() > 64) {
                 log_msg("64 ThreadLocalDevice have been created.", Log::Warning);
             }
@@ -347,12 +347,10 @@ ThreadDevicePtr Device::thread_device() const {
 }
 
 const DeviceResources& Device::device_resources() const {
-    y_debug_assert(_resources.device() == this);
     return _resources;
 }
 
 DeviceResources& Device::device_resources() {
-    y_debug_assert(_resources.device() == this);
     return _resources;
 }
 

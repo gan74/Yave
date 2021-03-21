@@ -39,7 +39,7 @@ class RayTracing {
                 AccelerationStructure& operator=(AccelerationStructure&&) = default;
 
                 AccelerationStructure(const StaticMesh& mesh);
-                AccelerationStructure(DevicePtr dptr, core::Span<VkGeometryNV> geometries);
+                AccelerationStructure(core::Span<VkGeometryNV> geometries);
 
                 ~AccelerationStructure();
 
@@ -51,7 +51,7 @@ class RayTracing {
 
         static const char* extension_name();
 
-        RayTracing(DevicePtr dptr);
+        RayTracing();
 
     private:
         friend class AccelerationStructure;

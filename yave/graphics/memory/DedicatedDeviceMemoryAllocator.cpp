@@ -33,7 +33,7 @@ DedicatedDeviceMemoryAllocator::~DedicatedDeviceMemoryAllocator() {
 
 core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(VkMemoryRequirements reqs) {
     _size += reqs.size;
-    return core::Ok(DeviceMemory(this, alloc_memory(main_device(), reqs, _type), 0, reqs.size));
+    return core::Ok(DeviceMemory(this, alloc_memory(reqs, _type), 0, reqs.size));
 }
 
 void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {

@@ -100,7 +100,7 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
                 lock.unlock();
 
                 if(state == AssetLoadingState::Loaded) {
-                    job->finalize(main_device());
+                    job->finalize();
                 } else if(state == AssetLoadingState::Failed) {
                     job->set_dependencies_failed();
                 }
@@ -123,7 +123,7 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
             const AssetLoadingState state = job->dependencies().state();
             if(state != AssetLoadingState::NotLoaded) {
                 if(state == AssetLoadingState::Loaded) {
-                    job->finalize(main_device());
+                    job->finalize();
                 } else if(state == AssetLoadingState::Failed) {
                     job->set_dependencies_failed();
                 }

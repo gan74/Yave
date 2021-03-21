@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format, usize start_mip) {
+static VkImageView create_view(VkImage image, ImageFormat format, usize start_mip) {
     VkImageViewCreateInfo create_info = vk_struct();
     {
         create_info.image = image;
@@ -66,43 +66,40 @@ static usize mipmap_count(usize size) {
 using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
 
 struct ProbeBase : ImageBase {
-    ProbeBase(DevicePtr dptr, usize size, ImageFormat format = VK_FORMAT_R8G8B8A8_UNORM) :
-        ImageBase(dptr, format, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size, 1}, ImageType::Cube, 6, mipmap_count(size)) {
+    ProbeBase(usize size, ImageFormat format = VK_FORMAT_R8G8B8A8_UNORM) :
+        ImageBase(format, ImageUsage::TextureBit | ImageUsage::StorageBit, {size, size, 1}, ImageType::Cube, 6, mipmap_count(size)) {
     }
 };
 
 struct ProbeBaseView : ViewBase {
     // does not destroy the view, need to be done manually
     ProbeBaseView(ProbeBase& base, usize mip) :
-            ViewBase(main_device(),
-                     base.image_size().to<2>() / (1 << mip),
+            ViewBase(base.image_size().to<2>() / (1 << mip),
                      base.usage(),
                      base.format(),
-                     create_view(main_device(), base.vk_image(), base.format(), mip),
+                     create_view(base.vk_image(), base.format(), mip),
                      base.vk_image()) {
     }
 };
 
-static const ComputeProgram& convolution_program(DevicePtr dptr, const Cubemap&) {
+static const ComputeProgram& convolution_program(const Cubemap&) {
     return device_resources()[DeviceResources::CubemapConvolutionProgram];
 }
 
-static const ComputeProgram& convolution_program(DevicePtr dptr, const Texture&) {
+static const ComputeProgram& convolution_program(const Texture&) {
     return device_resources()[DeviceResources::EquirecConvolutionProgram];
 }
 
 
 template<ImageType T>
 static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::TextureBit, T>& texture) {
-    DevicePtr dptr = main_device();
-
     auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());
     std::transform(views.begin(), views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
-            return DescriptorSet(dptr, {Descriptor(texture, SamplerType::LinearClamp), Descriptor(view)});
+            return DescriptorSet({Descriptor(texture, SamplerType::LinearClamp), Descriptor(view)});
         });
 
 
-    const ComputeProgram& conv_program = convolution_program(dptr, texture);
+    const ComputeProgram& conv_program = convolution_program(texture);
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
     const float roughness_step = 1.0f / (views.size() - 1);
@@ -125,7 +122,6 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
 template<ImageType T>
 static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, T>& texture) {
     y_profile();
-    DevicePtr dptr = main_device();
 
     if(probe.mipmaps() == 1) {
         y_fatal("IBL probe is too small.");
@@ -159,17 +155,17 @@ static usize probe_size(const Texture& tex) {
 
 
 
-IBLProbe::IBLProbe(DevicePtr dptr, const ImageData& data) {
+IBLProbe::IBLProbe(const ImageData& data) {
     *this = data.layers() == 6
-        ? from_cubemap(Cubemap(dptr, data))
-        : from_equirec(Texture(dptr, data));
+        ? from_cubemap(Cubemap(data))
+        : from_equirec(Texture(data));
 }
 
 
 IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
     core::DebugTimer _("IBLProbe::from_cubemap()");
 
-    ProbeBase probe(main_device(), probe_size(cube), cube.format());
+    ProbeBase probe(probe_size(cube), cube.format());
     compute_probe(probe, cube);
 
     IBLProbe final;
@@ -180,7 +176,7 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 IBLProbe IBLProbe::from_equirec(const Texture& equirec) {
     core::DebugTimer _("IBLProbe::from_equirec()");
 
-    ProbeBase probe(main_device(), probe_size(equirec), equirec.format());
+    ProbeBase probe(probe_size(equirec), equirec.format());
     compute_probe(probe, equirec);
 
     IBLProbe final;

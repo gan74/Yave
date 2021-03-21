@@ -87,7 +87,7 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
             }
 #endif
         }
-        _framebuffer = Framebuffer(main_device(), depth, colors);
+        _framebuffer = Framebuffer(depth, colors);
 
 #ifdef Y_DEBUG
         if(const auto* debug = debug_utils()) {
@@ -102,7 +102,7 @@ void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resour
     for(const auto& set : _bindings) {
         auto bindings = core::vector_with_capacity<Descriptor>(set.size());
         std::transform(set.begin(), set.end(), std::back_inserter(bindings), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });
-        _descriptor_sets << DescriptorSet(main_device(), bindings);
+        _descriptor_sets << DescriptorSet(bindings);
 
 #ifdef Y_DEBUG
         if(const auto* debug = debug_utils()) {

@@ -72,10 +72,10 @@ static MaterialTemplateData create_imgui_material_data() {
 }
 
 
-ImGuiRenderer::ImGuiRenderer(DevicePtr dptr) :
-        _font(main_device(), load_font()),
+ImGuiRenderer::ImGuiRenderer() :
+        _font(load_font()),
         _font_view(_font),
-        _material(main_device(), create_imgui_material_data()) {
+        _material(create_imgui_material_data()) {
 
     ImGui::GetIO().Fonts->TexID = &_font_view;
 }
@@ -103,9 +103,9 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
     const math::Vec2 viewport_offset = draw_data->DisplayPos;
 
 
-    const TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> index_buffer(main_device(), imgui_index_buffer_size);
-    const TypedBuffer<ImDrawVert, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(main_device(), imgui_vertex_buffer_size);
-    const TypedUniformBuffer<math::Vec2> uniform_buffer(main_device(), 2);
+    const TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> index_buffer(imgui_index_buffer_size);
+    const TypedBuffer<ImDrawVert, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(imgui_vertex_buffer_size);
+    const TypedUniformBuffer<math::Vec2> uniform_buffer(2);
 
     auto indexes = TypedMapping(index_buffer);
     auto vertices = TypedMapping(vertex_buffer);
@@ -116,7 +116,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
 
     const auto create_descriptor_set = [&](const void* data) {
         const auto* tex = static_cast<const TextureView*>(data);
-        return DescriptorSet(main_device(), {Descriptor(*tex, SamplerType::LinearClamp), Descriptor(uniform_buffer)});
+        return DescriptorSet({Descriptor(*tex, SamplerType::LinearClamp), Descriptor(uniform_buffer)});
     };
 
     const DescriptorSetBase default_set = create_descriptor_set(&_font_view);

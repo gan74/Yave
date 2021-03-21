@@ -52,7 +52,7 @@ class TypedWrapper final : public Buff {
 
         TypedWrapper() = default;
 
-        TypedWrapper(DevicePtr dptr, usize elem_count) : Buff(dptr, elem_count * sizeof(value_type)) {
+        TypedWrapper(usize elem_count) : Buff(elem_count * sizeof(value_type)) {
         }
 
         template<BufferUsage U, MemoryType M>

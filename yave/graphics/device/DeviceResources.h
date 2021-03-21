@@ -165,9 +165,8 @@ class DeviceResources final : NonCopyable {
         };
 
         DeviceResources();
-        DeviceResources(DevicePtr dptr);
 
-        void init(DevicePtr dptr);
+        void init();
 
         DeviceResources(DeviceResources&& other);
         DeviceResources& operator=(DeviceResources&& other);
@@ -176,8 +175,6 @@ class DeviceResources final : NonCopyable {
         ~DeviceResources();
 
         bool is_init() const;
-
-        DevicePtr device() const;
 
         TextureView brdf_lut() const;
         TextureView white_noise() const;
@@ -200,8 +197,6 @@ class DeviceResources final : NonCopyable {
 
         void load_resources();
 
-        DevicePtr _device = nullptr;
-
         std::unique_ptr<SpirVData[]> _spirv;
         std::unique_ptr<ComputeProgram[]> _computes;
         std::unique_ptr<MaterialTemplate[]> _material_templates;
@@ -216,6 +211,7 @@ class DeviceResources final : NonCopyable {
         Texture _brdf_lut;
         Texture _white_noise;
 
+        bool _is_init = false;
 
 #ifdef Y_DEBUG
         std::unique_ptr<std::recursive_mutex> _lock;

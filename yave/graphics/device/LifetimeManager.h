@@ -45,7 +45,7 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
 
 
     public:
-        LifetimeManager(DevicePtr dptr);
+        LifetimeManager();
         ~LifetimeManager();
 
         ResourceFence create_fence();

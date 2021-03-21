@@ -134,7 +134,7 @@ class ShaderModuleBase : NonMovable {
     protected:
         ShaderModuleBase() = default;
 
-        ShaderModuleBase(DevicePtr dptr, const SpirVData& data);
+        ShaderModuleBase(const SpirVData& data);
 
     private:
         VkHandle<VkShaderModule> _module;

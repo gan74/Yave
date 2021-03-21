@@ -34,7 +34,7 @@ class DeviceMemory {
         DeviceMemory() = default;
 
         DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, usize offset, usize size);
-        DeviceMemory(DevicePtr dptr, VkDeviceMemory memory, usize offset, usize size);
+        DeviceMemory(VkDeviceMemory memory, usize offset, usize size);
 
         ~DeviceMemory();
 

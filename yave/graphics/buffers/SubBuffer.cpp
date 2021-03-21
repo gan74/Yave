@@ -43,7 +43,7 @@ bool SubBufferBase::is_null() const {
     return !_buffer;
 }
 
-usize SubBufferBase::alignment_for_usage(DevicePtr dptr, BufferUsage usage) {
+usize SubBufferBase::alignment_for_usage(BufferUsage usage) {
     const auto& props = device_properties();
     u64 align = props.non_coherent_atom_size;
     if((usage & BufferUsage::UniformBit) != BufferUsage::None) {

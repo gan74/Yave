@@ -27,7 +27,7 @@ namespace yave {
 
 static math::Vec2ui compute_size(const Framebuffer::DepthAttachment& depth, core::Span<Framebuffer::ColorAttachment> colors) {
     math::Vec2ui ref;
-    if(depth.view.device()) {
+    if(!depth.view.is_null()) {
         ref = depth.view.size();
     } else if(!colors.is_empty()) {
         ref = colors[0].view.size();
@@ -45,23 +45,23 @@ static core::Vector<Framebuffer::ColorAttachment> color_attachments(core::Span<C
     return colors;
 }
 
-static std::unique_ptr<RenderPass> create_render_pass(DevicePtr dptr, const Framebuffer::DepthAttachment& depth, core::Span<Framebuffer::ColorAttachment> colors) {
+static std::unique_ptr<RenderPass> create_render_pass(const Framebuffer::DepthAttachment& depth, core::Span<Framebuffer::ColorAttachment> colors) {
     auto color_vec = core::vector_with_capacity<RenderPass::AttachmentData>(colors.size());
     std::transform(colors.begin(), colors.end(), std::back_inserter(color_vec), [](const auto& c) { return RenderPass::AttachmentData(c.view, c.load_op); });
-    return depth.view.device()
-        ? std::make_unique<RenderPass>(dptr, RenderPass::AttachmentData(depth.view, depth.load_op), color_vec)
-        : std::make_unique<RenderPass>(dptr, color_vec);
+    return !depth.view.is_null()
+        ? std::make_unique<RenderPass>(RenderPass::AttachmentData(depth.view, depth.load_op), color_vec)
+        : std::make_unique<RenderPass>(color_vec);
 }
 
-Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Span<ColorAttachment> colors) :
+Framebuffer::Framebuffer(const DepthAttachment& depth, core::Span<ColorAttachment> colors) :
         _size(compute_size(depth, colors)),
         _attachment_count(colors.size()),
-        _render_pass(create_render_pass(dptr, depth, colors)) {
+        _render_pass(create_render_pass(depth, colors)) {
 
     auto views = core::vector_with_capacity<VkImageView>(colors.size() + 1);
     std::transform(colors.begin(), colors.end(), std::back_inserter(views), [](const auto& v) { return v.view.vk_view(); });
 
-    if(depth.view.device()) {
+    if(!depth.view.is_null()) {
         views << depth.view.vk_view();
     }
 
@@ -78,12 +78,12 @@ Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Spa
     vk_check(vkCreateFramebuffer(vk_device(), &create_info, vk_allocation_callbacks(), &_framebuffer.get()));
 }
 
-Framebuffer::Framebuffer(DevicePtr dptr, core::Span<ColorAttachmentView> colors, LoadOp load_op) :
-        Framebuffer(dptr, DepthAttachment(), color_attachments(colors, load_op)) {
+Framebuffer::Framebuffer(core::Span<ColorAttachmentView> colors, LoadOp load_op) :
+        Framebuffer(DepthAttachment(), color_attachments(colors, load_op)) {
 }
 
-Framebuffer::Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::Span<ColorAttachmentView> colors, LoadOp load_op) :
-        Framebuffer(dptr, DepthAttachment(depth, load_op), color_attachments(colors, load_op)) {
+Framebuffer::Framebuffer(const DepthAttachmentView& depth, core::Span<ColorAttachmentView> colors, LoadOp load_op) :
+        Framebuffer(DepthAttachment(depth, load_op), color_attachments(colors, load_op)) {
 }
 
 Framebuffer::~Framebuffer() {

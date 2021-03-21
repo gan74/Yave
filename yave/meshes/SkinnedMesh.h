@@ -35,7 +35,7 @@ class SkinnedMesh : NonCopyable {
     public:
         SkinnedMesh() = default;
 
-        SkinnedMesh(DevicePtr dptr, const MeshData& mesh_data);
+        SkinnedMesh(const MeshData& mesh_data);
 
         const TriangleBuffer<>& triangle_buffer() const;
         const SkinnedVertexBuffer<>& vertex_buffer() const;

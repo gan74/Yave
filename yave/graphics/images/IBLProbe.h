@@ -29,7 +29,7 @@ namespace yave {
 class IBLProbe final : public Cubemap {
     public:
         IBLProbe() = default;
-        IBLProbe(DevicePtr dptr, const ImageData& data);
+        IBLProbe(const ImageData& data);
 
         static IBLProbe from_cubemap(const Cubemap& cube);
         static IBLProbe from_equirec(const Texture& equirec);

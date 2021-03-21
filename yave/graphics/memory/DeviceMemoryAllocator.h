@@ -41,8 +41,7 @@ class DeviceMemoryAllocator {
     static constexpr usize default_heap_size = 128 * 1024 * 1024;
 
     public:
-        DeviceMemoryAllocator() = default;
-        DeviceMemoryAllocator(DevicePtr dptr);
+        DeviceMemoryAllocator();
 
         DeviceMemory alloc(VkImage image);
         DeviceMemory alloc(VkBuffer buffer, MemoryType type);

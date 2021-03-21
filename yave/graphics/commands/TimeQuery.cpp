@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-static VkQueryPool create_query_pool(DevicePtr dptr) {
+static VkQueryPool create_query_pool() {
     VkQueryPoolCreateInfo create_info = vk_struct();
     {
         create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
@@ -39,7 +39,7 @@ static VkQueryPool create_query_pool(DevicePtr dptr) {
     return pool;
 }
 
-TimeQuery::TimeQuery(DevicePtr dptr) : _pool(create_query_pool(dptr)) {
+TimeQuery::TimeQuery() : _pool(create_query_pool()) {
 }
 
 TimeQuery::~TimeQuery() {

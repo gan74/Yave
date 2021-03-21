@@ -49,7 +49,7 @@ class SubBufferBase {
         VkMappedMemoryRange vk_memory_range() const;
 
     protected:
-        static usize alignment_for_usage(DevicePtr dptr, BufferUsage usage);
+        static usize alignment_for_usage(BufferUsage usage);
 
     private:
         usize _size = 0;
@@ -90,7 +90,7 @@ class SubBuffer : public SubBufferBase {
 
 
         static usize alignment() {
-            return alignment_for_usage(main_device(), Usage);
+            return alignment_for_usage(Usage);
         }
 
         static usize total_byte_size(usize size) {

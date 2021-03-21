@@ -30,11 +30,11 @@ SOFTWARE.
 
 namespace yave {
 
-static void bind_buffer_memory(DevicePtr dptr, VkBuffer buffer, const DeviceMemory& memory) {
+static void bind_buffer_memory(VkBuffer buffer, const DeviceMemory& memory) {
     vk_check(vkBindBufferMemory(vk_device(), buffer, memory.vk_memory(), memory.vk_offset()));
 }
 
-static VkBuffer create_buffer(DevicePtr dptr, usize byte_size, VkBufferUsageFlags usage) {
+static VkBuffer create_buffer(usize byte_size, VkBufferUsageFlags usage) {
     y_debug_assert(byte_size);
     if(usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
         if(byte_size > device_properties().max_uniform_buffer_size) {
@@ -54,20 +54,20 @@ static VkBuffer create_buffer(DevicePtr dptr, usize byte_size, VkBufferUsageFlag
     return buffer;
 }
 
-static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(DevicePtr dptr, usize buffer_size, VkBufferUsageFlags usage, MemoryType type) {
+static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(usize buffer_size, VkBufferUsageFlags usage, MemoryType type) {
     y_debug_assert(buffer_size);
 
-    const auto buffer = create_buffer(dptr, buffer_size, usage);
+    const auto buffer = create_buffer(buffer_size, usage);
     auto memory = device_allocator().alloc(buffer, type);
-    bind_buffer_memory(dptr, buffer, memory);
+    bind_buffer_memory(buffer, memory);
 
     return {buffer, std::move(memory)};
 }
 
 
 
-BufferBase::BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type) : _size(byte_size), _usage(usage) {
-    std::tie(_buffer, _memory) = alloc_buffer(dptr, byte_size, VkBufferUsageFlagBits(usage), type);
+BufferBase::BufferBase(usize byte_size, BufferUsage usage, MemoryType type) : _size(byte_size), _usage(usage) {
+    std::tie(_buffer, _memory) = alloc_buffer(byte_size, VkBufferUsageFlagBits(usage), type);
 }
 
 BufferBase::~BufferBase() {

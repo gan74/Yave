@@ -43,7 +43,7 @@ class TransientImage final : public ImageBase {
 
         TransientImage() = default;
 
-        TransientImage(DevicePtr dptr, ImageFormat format, ImageUsage usage, const size_type& image_size) : ImageBase(dptr, format, usage, to_3d_size(image_size)) {
+        TransientImage(ImageFormat format, ImageUsage usage, const size_type& image_size) : ImageBase(format, usage, to_3d_size(image_size)) {
         }
 
         TransientImage(TransientImage&&) = default;
@@ -69,7 +69,7 @@ template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class TransientImageView final : public ImageView<Usage, Type> {
     public:
         TransientImageView(const TransientImage<Type>& image) :
-                ImageView<Usage, Type>(main_device(), image.size(), image.usage(), image.format(), image.vk_view(), image.vk_image()) {
+                ImageView<Usage, Type>(image.size(), image.usage(), image.format(), image.vk_view(), image.vk_image()) {
 
             if(!ImageView<Usage, Type>::is_compatible(image.usage())) {
                 y_fatal("Invalid image view.");

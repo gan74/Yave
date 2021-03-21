@@ -64,11 +64,11 @@ static Texture render_world(const ecs::EntityWorld& world) {
     scene.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-    StorageTexture out(app_device(), ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
+    StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
     {
         const auto region = recorder.region("Thumbmail cache render");
 
-        auto resource_pool = std::make_shared<FrameGraphResourcePool>(app_device());
+        auto resource_pool = std::make_shared<FrameGraphResourcePool>();
         FrameGraph graph(resource_pool);
 
         RendererSettings settings;
@@ -174,9 +174,9 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
     y_profile();
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-    StorageTexture out(app_device(), ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
+    StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
     {
-        const DescriptorSet set(app_device(), {Descriptor(*tex, SamplerType::LinearClamp), Descriptor(StorageView(out))});
+        const DescriptorSet set = DescriptorSet({Descriptor(*tex, SamplerType::LinearClamp), Descriptor(StorageView(out))});
         recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), {set});
     }
     std::move(recorder).submit<SyncPolicy::Sync>();

@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-MaterialTemplate::MaterialTemplate(DevicePtr dptr, MaterialTemplateData&& data) : _data(std::move(data)) {
+MaterialTemplate::MaterialTemplate(MaterialTemplateData&& data) : _data(std::move(data)) {
 }
 
 const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) const {

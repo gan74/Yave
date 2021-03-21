@@ -34,7 +34,7 @@ namespace editor {
 class ImGuiRenderer {
 
     public:
-        ImGuiRenderer(DevicePtr dptr);
+        ImGuiRenderer();
 
         void render(ImDrawData* draw_data, RenderPassRecorder& recorder);
 

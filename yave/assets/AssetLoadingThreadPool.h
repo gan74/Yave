@@ -45,7 +45,7 @@ class AssetLoadingThreadPool : NonMovable {
                 virtual ~LoadingJob();
 
                 virtual core::Result<void> read() = 0;
-                virtual void finalize(DevicePtr dptr) = 0;
+                virtual void finalize() = 0;
                 virtual void set_dependencies_failed() = 0;
 
                 const AssetDependencies& dependencies() const;

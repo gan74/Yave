@@ -77,8 +77,8 @@ class RenderPass {
         RenderPass(RenderPass&&) = default;
         RenderPass& operator=(RenderPass&&) = default;
 
-        RenderPass(DevicePtr dptr, AttachmentData depth, core::Span<AttachmentData> colors);
-        RenderPass(DevicePtr dptr, core::Span<AttachmentData> colors);
+        RenderPass(AttachmentData depth, core::Span<AttachmentData> colors);
+        RenderPass(core::Span<AttachmentData> colors);
 
         ~RenderPass();
 

@@ -171,7 +171,7 @@ static void render_selection(RenderPassRecorder& recorder,
     }
 
     if(!points.is_empty()) {
-        TypedAttribBuffer<math::Vec3, MemoryType::CpuVisible> vertices(main_device(), points.size());
+        TypedAttribBuffer<math::Vec3, MemoryType::CpuVisible> vertices(points.size());
         TypedMapping<math::Vec3> mapping(vertices);
         std::copy(points.begin(), points.end(), mapping.begin());
 

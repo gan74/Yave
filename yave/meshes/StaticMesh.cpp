@@ -28,9 +28,9 @@ SOFTWARE.
 
 namespace yave {
 
-StaticMesh::StaticMesh(DevicePtr dptr, const MeshData& mesh_data) :
-        _triangle_buffer(dptr, mesh_data.triangles().size()),
-        _vertex_buffer(dptr, mesh_data.vertices().size()),
+StaticMesh::StaticMesh(const MeshData& mesh_data) :
+        _triangle_buffer(mesh_data.triangles().size()),
+        _vertex_buffer(mesh_data.vertices().size()),
         _aabb(mesh_data.aabb()) {
 
     _indirect_data.indexCount = u32(mesh_data.triangles().size() * 3);

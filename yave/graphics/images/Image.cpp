@@ -32,11 +32,11 @@ SOFTWARE.
 
 namespace yave {
 
-static void bind_image_memory(DevicePtr dptr, VkImage image, const DeviceMemory& memory) {
+static void bind_image_memory(VkImage image, const DeviceMemory& memory) {
     vk_check(vkBindImageMemory(vk_device(), image, memory.vk_memory(), memory.vk_offset()));
 }
 
-static VkImage create_image(DevicePtr dptr, const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static VkImage create_image(const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
     y_debug_assert(usage != ImageUsage::TransferDstBit);
 
     VkImageCreateInfo create_info = vk_struct();
@@ -81,10 +81,10 @@ static auto get_copy_regions(const ImageData& data) {
     return regions;
 }
 
-static auto stage_data(DevicePtr dptr, usize byte_size, const void* data) {
+static auto stage_data(usize byte_size, const void* data) {
     y_profile();
     y_debug_assert(data);
-    auto staging_buffer = StagingBuffer(dptr, byte_size);
+    auto staging_buffer = StagingBuffer(byte_size);
     {
         y_profile_zone("copy");
         std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
@@ -92,7 +92,7 @@ static auto stage_data(DevicePtr dptr, usize byte_size, const void* data) {
     return staging_buffer;
 }
 
-static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format, u32 layers, u32 mips, ImageType type) {
+static VkImageView create_view(VkImage image, ImageFormat format, u32 layers, u32 mips, ImageType type) {
     VkImageViewCreateInfo create_info = vk_struct();
     {
         create_info.image = image;
@@ -108,20 +108,20 @@ static VkImageView create_view(DevicePtr dptr, VkImage image, ImageFormat format
     return view;
 }
 
-static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(DevicePtr dptr, const math::Vec3ui& size, u32 layers, u32 mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(const math::Vec3ui& size, u32 layers, u32 mips, ImageFormat format, ImageUsage usage, ImageType type) {
     y_profile();
-    const auto image = create_image(dptr, size, layers, mips, format, usage, type);
+    const auto image = create_image(size, layers, mips, format, usage, type);
     auto memory = device_allocator().alloc(image);
-    bind_image_memory(dptr, image, memory);
+    bind_image_memory(image, memory);
 
-    return {image, std::move(memory), create_view(dptr, image, format, layers, mips, type)};
+    return {image, std::move(memory), create_view(image, format, layers, mips, type)};
 }
 
 static void upload_data(ImageBase& image, const ImageData& data) {
     y_profile();
     DevicePtr dptr = main_device();
 
-    const auto staging_buffer = stage_data(dptr, data.combined_byte_size(), data.data());
+    const auto staging_buffer = stage_data(data.combined_byte_size(), data.data());
     const auto regions = get_copy_regions(data);
 
     CmdBufferRecorder recorder(create_disposable_cmd_buffer());
@@ -160,7 +160,7 @@ static void check_layer_count(ImageType type, const math::Vec3ui& size, usize la
 }
 
 
-ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips) :
+ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips) :
         _size(size),
         _layers(u32(layers)),
         _mips(u32(mips)),
@@ -169,12 +169,12 @@ ImageBase::ImageBase(DevicePtr dptr, ImageFormat format, ImageUsage usage, const
 
     check_layer_count(type, _size, _layers);
 
-    std::tie(_image, _memory, _view) = alloc_image(dptr, _size, _layers, _mips, _format, _usage, type);
+    std::tie(_image, _memory, _view) = alloc_image(_size, _layers, _mips, _format, _usage, type);
 
     transition_image(*this);
 }
 
-ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const ImageData& data) :
+ImageBase::ImageBase(ImageUsage usage, ImageType type, const ImageData& data) :
         _size(data.size()),
         _layers(u32(data.layers())),
         _mips(u32(data.mipmaps())),
@@ -183,7 +183,7 @@ ImageBase::ImageBase(DevicePtr dptr, ImageUsage usage, ImageType type, const Ima
 
     check_layer_count(type, _size, _layers);
 
-    std::tie(_image, _memory, _view) = alloc_image(dptr, _size, _layers, _mips, _format, _usage, type);
+    std::tie(_image, _memory, _view) = alloc_image(_size, _layers, _mips, _format, _usage, type);
 
     upload_data(*this, data);
 }

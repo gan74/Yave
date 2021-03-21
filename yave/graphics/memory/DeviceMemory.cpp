@@ -26,11 +26,11 @@ SOFTWARE.
 namespace yave {
 
 DeviceMemory::DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, usize offset, usize size) :
-        DeviceMemory(main_device(), memory, offset, size) {
+        DeviceMemory(memory, offset, size) {
     _heap = heap;
 }
 
-DeviceMemory::DeviceMemory(DevicePtr dptr, VkDeviceMemory memory, usize offset, usize size) :
+DeviceMemory::DeviceMemory(VkDeviceMemory memory, usize offset, usize size) :
         _memory(memory),
         _offset(offset),
         _size(size) {

@@ -32,7 +32,7 @@ class Material final : NonCopyable {
 
     public:
         Material() = default;
-        Material(DevicePtr dptr, SimpleMaterialData&& data);
+        Material(SimpleMaterialData&& data);
         Material(const MaterialTemplate* tmp, SimpleMaterialData&& data = SimpleMaterialData());
 
         bool is_null() const;

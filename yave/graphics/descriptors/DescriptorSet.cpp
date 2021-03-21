@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-DescriptorSet::DescriptorSet(DevicePtr dptr, core::Span<Descriptor> bindings) {
+DescriptorSet::DescriptorSet(core::Span<Descriptor> bindings) {
     if(!bindings.is_empty()) {
         _data = descriptor_set_allocator().create_descritptor_set(bindings);
         _set = _data.vk_descriptor_set();
@@ -47,10 +47,6 @@ DescriptorSet::DescriptorSet(DescriptorSet&& other) {
 DescriptorSet& DescriptorSet::operator=(DescriptorSet&& other) {
     swap(other);
     return *this;
-}
-
-bool DescriptorSet::is_null() const  {
-    return _data.is_null();
 }
 
 VkDescriptorSetLayout DescriptorSet::vk_descriptor_set_layout() const {

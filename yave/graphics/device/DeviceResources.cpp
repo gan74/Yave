@@ -157,25 +157,25 @@ MeshData cone_mesh_data();
 MeshData sweep_mesh_data();
 
 
-static Texture create_brdf_lut(DevicePtr dptr, const ComputeProgram& brdf_integrator, usize size = 512) {
+static Texture create_brdf_lut(const ComputeProgram& brdf_integrator, usize size = 512) {
     y_profile();
     core::DebugTimer _("create_ibl_lut()");
 
-    StorageTexture image(dptr, ImageFormat(VK_FORMAT_R16G16_UNORM), {size, size});
+    StorageTexture image(ImageFormat(VK_FORMAT_R16G16_UNORM), {size, size});
 
-    const DescriptorSet dset(dptr, {Descriptor(StorageView(image))});
+    const DescriptorSet dset = DescriptorSet(Descriptor(StorageView(image)));
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     {
         const auto region = recorder.region("create_brdf_lut");
-        recorder.dispatch_size(brdf_integrator, image.size(), {dset});
+        recorder.dispatch_size(brdf_integrator, image.size(), dset);
     }
     std::move(recorder).submit<SyncPolicy::Sync>();
 
     return image;
 }
 
-static Texture create_white_noise(DevicePtr dptr, usize size = 256) {
+static Texture create_white_noise(usize size = 256) {
     y_profile();
     core::DebugTimer _("create_white_noise()");
 
@@ -184,7 +184,7 @@ static Texture create_white_noise(DevicePtr dptr, usize size = 256) {
     math::FastRandom rng;
     std::generate_n(data.get(), size * size, rng);
 
-    return Texture(dptr, ImageData(math::Vec2ui(size, size), reinterpret_cast<const u8*>(data.get()), VK_FORMAT_R8G8B8A8_UNORM));
+    return Texture(ImageData(math::Vec2ui(size, size), reinterpret_cast<const u8*>(data.get()), VK_FORMAT_R8G8B8A8_UNORM));
 }
 
 
@@ -192,14 +192,8 @@ static Texture create_white_noise(DevicePtr dptr, usize size = 256) {
 DeviceResources::DeviceResources() {
 }
 
-DeviceResources::DeviceResources(DevicePtr dptr) {
-    init(dptr);
-}
-
-void DeviceResources::init(DevicePtr dptr) {
+void DeviceResources::init() {
     y_always_assert(!is_init(), "DeviceResources has already been initialized");
-
-    _device = dptr;
 
 #ifdef Y_DEBUG
     _lock = std::make_unique<std::recursive_mutex>();
@@ -213,7 +207,7 @@ void DeviceResources::init(DevicePtr dptr) {
     // Load textures here because they won't change and might get packed into descriptor sets that won't be reloaded (in the case of material defaults)
     for(usize i = 0; i != texture_count; ++i) {
         const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
-        _textures[i] = make_asset<Texture>(dptr, ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
+        _textures[i] = make_asset<Texture>(ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
 
 #ifdef Y_DEBUG
         if(const auto* debug = debug_utils()) {
@@ -222,6 +216,8 @@ void DeviceResources::init(DevicePtr dptr) {
         }
 #endif
     }
+
+    _is_init = true;
 
     load_resources();
 }
@@ -239,12 +235,10 @@ DeviceResources::~DeviceResources() {
 }
 
 bool DeviceResources::is_init() const {
-    return _device;
+    return _is_init;
 }
 
 void DeviceResources::swap(DeviceResources& other) {
-    std::swap(_device, other._device);
-
 #ifdef Y_DEBUG
     const auto lock = y_profile_unique_lock(*_lock);
     std::unique_lock<std::recursive_mutex> other_lock;
@@ -271,7 +265,7 @@ void DeviceResources::swap(DeviceResources& other) {
 void DeviceResources::load_resources() {
     y_always_assert(is_init(), "DeviceResources has not been initialized");
 
-    const auto set_name = [debug = debug_utils(), dptr = device()](auto handle, const char* name) {
+    const auto set_name = [debug = debug_utils()](auto handle, const char* name) {
         if(debug) {
             debug->set_resource_name(handle, name);
         }
@@ -283,7 +277,7 @@ void DeviceResources::load_resources() {
     }
 
     for(usize i = 0; i != compute_count; ++i) {
-        _computes[i] = ComputeProgram(ComputeShader(main_device(), _spirv[i]));
+        _computes[i] = ComputeProgram(ComputeShader(_spirv[i]));
         set_name(_computes[i].vk_pipeline(), spirv_names[i]);
     }
 
@@ -297,7 +291,7 @@ void DeviceResources::load_resources() {
                 .set_blend_mode(data.blend_mode)
                 .set_depth_write(data.depth_write);
             ;
-        _material_templates[i] = MaterialTemplate(main_device(), std::move(template_data));
+        _material_templates[i] = MaterialTemplate(std::move(template_data));
         _material_templates[i].set_name(spirv_names[data.frag]);
     }
 
@@ -308,15 +302,15 @@ void DeviceResources::load_resources() {
 
     {
         _meshes = std::make_unique<AssetPtr<StaticMesh>[]>(usize(MaxMeshes));
-        _meshes[0] = make_asset<StaticMesh>(main_device(), cube_mesh_data());
-        _meshes[1] = make_asset<StaticMesh>(main_device(), sphere_mesh_data());
-        _meshes[2] = make_asset<StaticMesh>(main_device(), simple_sphere_mesh_data());
-        _meshes[3] = make_asset<StaticMesh>(main_device(), cone_mesh_data());
-        _meshes[4] = make_asset<StaticMesh>(main_device(), sweep_mesh_data());
+        _meshes[0] = make_asset<StaticMesh>(cube_mesh_data());
+        _meshes[1] = make_asset<StaticMesh>(sphere_mesh_data());
+        _meshes[2] = make_asset<StaticMesh>(simple_sphere_mesh_data());
+        _meshes[3] = make_asset<StaticMesh>(cone_mesh_data());
+        _meshes[4] = make_asset<StaticMesh>(sweep_mesh_data());
     }
 
-    _brdf_lut = create_brdf_lut(main_device(), operator[](BRDFIntegratorProgram));
-    _white_noise = create_white_noise(main_device());
+    _brdf_lut = create_brdf_lut(operator[](BRDFIntegratorProgram));
+    _white_noise = create_white_noise();
 
     _probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
     _empty_probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
@@ -334,12 +328,6 @@ void DeviceResources::load_resources() {
         debug->set_resource_name(_empty_probe->vk_view(), "Empty Probe");
     }
 #endif
-}
-
-
-DevicePtr DeviceResources::device() const {
-    y_debug_assert(is_init());
-    return _device;
 }
 
 TextureView DeviceResources::brdf_lut() const {
@@ -406,7 +394,7 @@ const ComputeProgram& DeviceResources::program_from_file(std::string_view file) 
     auto& prog = _programs[file];
     if(!prog) {
         auto spirv = SpirVData::deserialized(io2::File::open(fmt("%.spv", file)).expected("Unable to open SPIR-V file"));
-        prog = std::make_unique<ComputeProgram>(ComputeShader(main_device(), spirv));
+        prog = std::make_unique<ComputeProgram>(ComputeShader(spirv));
     }
     return *prog;
 }
@@ -415,7 +403,7 @@ const ComputeProgram& DeviceResources::program_from_file(std::string_view file) 
 void DeviceResources::reload() {
     y_debug_assert(is_init());
     y_profile();
-    device()->wait_all_queues();
+    wait_all_queues();
 
 #ifdef Y_DEBUG
     const auto lock = y_profile_unique_lock(*_lock);

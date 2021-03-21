@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialData& data) {
+static DescriptorSet create_descriptor_set(const SimpleMaterialData& data) {
 
     std::array<Descriptor, SimpleMaterialData::texture_count + 1> bindings = {
             *device_resources()[DeviceResources::GreyTexture],
@@ -45,7 +45,7 @@ static DescriptorSet create_descriptor_set(DevicePtr dptr, const SimpleMaterialD
         }
     }
 
-    return DescriptorSet(dptr, bindings);
+    return DescriptorSet(bindings);
 }
 
 static DeviceResources::MaterialTemplates material_template_for_data(const SimpleMaterialData& data) {
@@ -59,15 +59,15 @@ static DeviceResources::MaterialTemplates material_template_for_data(const Simpl
 }
 
 
-Material::Material(DevicePtr dptr, SimpleMaterialData&& data) :
+Material::Material(SimpleMaterialData&& data) :
         _template(device_resources()[material_template_for_data(data)]),
-        _set(create_descriptor_set(main_device(), data)),
+        _set(create_descriptor_set(data)),
         _data(std::move(data)) {
 }
 
 Material::Material(const MaterialTemplate* tmp, SimpleMaterialData&& data) :
         _template(tmp),
-        _set(create_descriptor_set(main_device(), data)),
+        _set(create_descriptor_set(data)),
         _data(std::move(data)) {
 }
 

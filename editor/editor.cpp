@@ -38,10 +38,6 @@ EditorApplication* application() {
     return EditorApplication::instance();
 }
 
-DevicePtr app_device() {
-    return main_device();
-}
-
 
 Settings& app_settings() {
     static Settings settings;

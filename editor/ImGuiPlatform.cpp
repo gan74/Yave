@@ -290,7 +290,7 @@ static void discover_monitors(ImGuiPlatformIO& platform) {
 ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent, Window::Flags flags) :
         platform(parent),
         window({1280, 768}, "Window", flags),
-        swapchain(main_device(), &window),
+        swapchain(&window),
         event_handler(std::make_unique<ImGuiEventHandler>(&window)) {
 
     window.set_event_handler(event_handler.get());
@@ -319,7 +319,7 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
         CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
         {
-            Framebuffer framebuffer(token.image_view.device(), {token.image_view});
+            Framebuffer framebuffer(token.image_view);
             RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
             platform->_renderer->render(viewport->DrawData, pass);
         }
@@ -340,7 +340,7 @@ ImGuiPlatform* ImGuiPlatform::instance() {
     return _instance;
 }
 
-ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
+ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
     y_always_assert(_instance == nullptr, "ImGuiPlatform instance already exists.");
     _instance = this;
 
@@ -386,7 +386,7 @@ ImGuiPlatform::ImGuiPlatform(DevicePtr dptr, bool multi_viewport) {
 
     }
 
-    _renderer = std::make_unique<ImGuiRenderer>(dptr);
+    _renderer = std::make_unique<ImGuiRenderer>();
     _main_window = std::make_unique<PlatformWindow>(this, Window::Resizable);
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -437,7 +437,7 @@ bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
 
             {
                 y_profile_zone("main window");
-                Framebuffer framebuffer(frame.image_view.device(), {frame.image_view});
+                Framebuffer framebuffer(frame.image_view);
                 RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
                 _renderer->render(ImGui::GetDrawData(), pass);
             }

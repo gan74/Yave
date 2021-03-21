@@ -53,7 +53,7 @@ class BufferBase : NonCopyable {
         BufferBase(BufferBase&&) = default;
         BufferBase& operator=(BufferBase&&) = default;
 
-        BufferBase(DevicePtr dptr, usize byte_size, BufferUsage usage, MemoryType type);
+        BufferBase(usize byte_size, BufferUsage usage, MemoryType type);
 
     private:
         usize _size = 0;
@@ -97,7 +97,7 @@ class Buffer : public BufferBase {
         // This is important: it prevent the ctor from being instanciated for Buffer specialisations that should not be created this way,
         // thus preventing static_assert from going off.
         template<typename = void>
-        Buffer(DevicePtr dptr, usize byte_size) : BufferBase(dptr, byte_size, Usage, Memory) {
+        Buffer(usize byte_size) : BufferBase(byte_size, Usage, Memory) {
             static_assert(Usage != BufferUsage::None, "Buffers should not have Usage == BufferUsage::None");
             static_assert(Memory != MemoryType::DontCare, "Buffers should not have Memory == MemoryType::DontCare");
         }

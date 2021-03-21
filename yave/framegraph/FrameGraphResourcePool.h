@@ -34,7 +34,7 @@ namespace yave {
 class FrameGraphResourcePool : NonMovable {
 
     public:
-        FrameGraphResourcePool(DevicePtr dptr);
+        FrameGraphResourcePool();
         ~FrameGraphResourcePool();
 
 

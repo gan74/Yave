@@ -86,24 +86,24 @@ static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
 static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == template_count);
 
 
-EditorResources::EditorResources(DevicePtr dptr) :
+EditorResources::EditorResources() :
         _spirv(std::make_unique<SpirVData[]>(spirv_count)),
         _computes(std::make_unique<ComputeProgram[]>(compute_count)),
         _material_templates(std::make_unique<MaterialTemplate[]>(template_count)) {
 
-    load_resources(dptr);
+    load_resources();
 }
 
 EditorResources::~EditorResources() {
 }
 
-void EditorResources::load_resources(DevicePtr dptr) {
+void EditorResources::load_resources() {
     for(usize i = 0; i != spirv_count; ++i) {
         _spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
     }
 
     for(usize i = 0; i != compute_count; ++i) {
-        _computes[i] = ComputeProgram(ComputeShader(dptr, _spirv[i]));
+        _computes[i] = ComputeProgram(ComputeShader(_spirv[i]));
     }
 
     for(usize i = 0; i != template_count; ++i) {
@@ -121,7 +121,7 @@ void EditorResources::load_resources(DevicePtr dptr) {
             template_data.set_geom_data(_spirv[data.geom]);
         }
 
-        _material_templates[i] = MaterialTemplate(dptr, std::move(template_data));
+        _material_templates[i] = MaterialTemplate(std::move(template_data));
     }
 }
 
@@ -139,7 +139,7 @@ void EditorResources::reload() {
     y_profile();
     const DevicePtr dptr = main_device();
     wait_all_queues();
-    load_resources(dptr);
+    load_resources();
 }
 
 }

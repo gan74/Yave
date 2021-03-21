@@ -75,7 +75,7 @@ static VkDescriptorSetLayoutBinding create_inline_uniform_binding_fallback(const
 
 
 
-DescriptorSetLayout::DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings) {
+DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding> bindings) {
     const usize max_inline_uniform_size = device_properties().max_inline_uniform_size;
     const bool inline_uniform_supported = max_inline_uniform_size != 0;
     const auto needs_fallback = [=](const VkDescriptorSetLayoutBinding& binding) {
@@ -192,7 +192,7 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
             _descriptor_buffer_size += memory::align_up_to(buffer.byte_size, alignment);
         }
         log_msg(fmt("Allocation % * % bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
-        _inline_buffer = Buffer<BufferUsage::UniformBit>(main_device(), _descriptor_buffer_size * pool_size);
+        _inline_buffer = Buffer<BufferUsage::UniformBit>(_descriptor_buffer_size * pool_size);
     }
 }
 
@@ -334,7 +334,7 @@ usize DescriptorSetPool::used_sets() const {
 
 
 
-DescriptorSetAllocator::DescriptorSetAllocator(DevicePtr dptr) {
+DescriptorSetAllocator::DescriptorSetAllocator() {
 }
 
 
@@ -365,7 +365,7 @@ const DescriptorSetLayout& DescriptorSetAllocator::descriptor_set_layout(const K
 DescriptorSetAllocator::LayoutPools& DescriptorSetAllocator::layout(const Key& bindings) {
     auto& layout  = _layouts[bindings];
     if(layout.layout.is_null()) {
-        layout.layout = DescriptorSetLayout(main_device(), bindings);
+        layout.layout = DescriptorSetLayout(bindings);
     }
     return layout;
 }

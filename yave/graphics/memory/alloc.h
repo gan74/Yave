@@ -108,7 +108,7 @@ inline u32 get_memory_type(const VkPhysicalDeviceMemoryProperties& properties, u
 
 
 
-inline VkDeviceMemory alloc_memory(DevicePtr dptr, usize size, u32 type_bits, MemoryType type) {
+inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
     y_profile();
     VkMemoryAllocateInfo allocate_info = vk_struct();
     {
@@ -123,8 +123,8 @@ inline VkDeviceMemory alloc_memory(DevicePtr dptr, usize size, u32 type_bits, Me
     return memory;
 }
 
-inline VkDeviceMemory alloc_memory(DevicePtr dptr, VkMemoryRequirements reqs, MemoryType type) {
-    return alloc_memory(dptr, reqs.size, reqs.memoryTypeBits, type);
+inline VkDeviceMemory alloc_memory(VkMemoryRequirements reqs, MemoryType type) {
+    return alloc_memory(reqs.size, reqs.memoryTypeBits, type);
 }
 
 }

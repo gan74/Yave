@@ -36,7 +36,7 @@ static void merge(M& into, const M& o) {
     }
 }
 
-static VkShaderModule create_shader_module(DevicePtr dptr, const SpirVData& data) {
+static VkShaderModule create_shader_module(const SpirVData& data) {
     VkShaderModule shader = vk_null();
     if(data.is_empty()) {
         return shader;
@@ -192,7 +192,7 @@ ShaderType ShaderModuleBase::shader_type(const SpirVData& data) {
     return module_type(compiler);
 }
 
-ShaderModuleBase::ShaderModuleBase(DevicePtr dptr, const SpirVData& data) : _module(create_shader_module(dptr, data)) {
+ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shader_module(data)) {
     const spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
 
     _type = module_type(compiler);

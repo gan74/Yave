@@ -87,11 +87,11 @@ static VkCompareOp depth_mode(DepthTestMode mode) {
     }
 }
 
-static GeometryShader create_geometry_shader(DevicePtr dptr, const SpirVData& geom) {
+static GeometryShader create_geometry_shader(const SpirVData& geom) {
     if(geom.is_empty()) {
         return GeometryShader();
     }
-    return GeometryShader(dptr, geom);
+    return GeometryShader(geom);
 }
 
 
@@ -104,9 +104,9 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     DevicePtr dptr = main_device();
     const auto& mat_data = material->data();
 
-    const FragmentShader frag = FragmentShader(dptr, mat_data._frag);
-    const VertexShader vert = VertexShader(dptr, mat_data._vert);
-    const GeometryShader geom = create_geometry_shader(dptr, mat_data._geom);
+    const FragmentShader frag = FragmentShader(mat_data._frag);
+    const VertexShader vert = VertexShader(mat_data._vert);
+    const GeometryShader geom = create_geometry_shader(mat_data._geom);
     const ShaderProgram program(frag, vert, geom);
 
     core::Vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages(program.vk_pipeline_stage_info());

@@ -39,6 +39,9 @@ VkInstance vk_device_instance() {
     return main_device()->instance().vk_instance();
 }
 
+VkPhysicalDevice vk_physical_device() {
+    return main_device()->physical_device().vk_physical_device();
+}
 
 const PhysicalDevice& physical_device() {
     return main_device()->physical_device();

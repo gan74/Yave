@@ -38,7 +38,7 @@ class StaticMesh : NonCopyable {
     public:
         StaticMesh() = default;
 
-        StaticMesh(DevicePtr dptr, const MeshData& mesh_data);
+        StaticMesh(const MeshData& mesh_data);
 
         bool is_null() const;
 

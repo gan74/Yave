@@ -75,7 +75,7 @@ static VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
 }
 
 
-static VkSampler create_sampler(DevicePtr dptr, SamplerType type) {
+static VkSampler create_sampler(SamplerType type) {
 
     VkSamplerCreateInfo create_info = vk_struct();
     {
@@ -100,7 +100,7 @@ static VkSampler create_sampler(DevicePtr dptr, SamplerType type) {
     return sampler;
 }
 
-Sampler::Sampler(DevicePtr dptr, SamplerType type) : _sampler(create_sampler(dptr, type)) {
+Sampler::Sampler(SamplerType type) : _sampler(create_sampler(type)) {
 }
 
 Sampler::~Sampler() {

@@ -23,21 +23,19 @@ SOFTWARE.
 #define YAVE_GRAPHICS_IMAGES_SAMPLER_H
 
 #include "SamplerType.h"
-#include "Image.h"
+
+#include <yave/graphics/vk/vk.h>
 
 namespace yave {
 
 Y_TODO(move to device)
 class Sampler final {
     public:
+        Sampler(SamplerType type = SamplerType::LinearRepeat);
+        ~Sampler();
 
-        Sampler() = default;
         Sampler(Sampler&&) = default;
         Sampler& operator=(Sampler&&) = default;
-
-        Sampler(DevicePtr dptr, SamplerType type = SamplerType::LinearRepeat);
-
-        ~Sampler();
 
         VkSampler vk_sampler() const;
 

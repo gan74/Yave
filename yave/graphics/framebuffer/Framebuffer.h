@@ -56,9 +56,9 @@ class Framebuffer final {
         Framebuffer(Framebuffer&&) = default;
         Framebuffer& operator=(Framebuffer&&) = default;
 
-        Framebuffer(DevicePtr dptr, const DepthAttachment& depth, core::Span<ColorAttachment> colors = {});
-        Framebuffer(DevicePtr dptr, core::Span<ColorAttachmentView> colors = {}, LoadOp load_op = LoadOp::Clear);
-        Framebuffer(DevicePtr dptr, const DepthAttachmentView& depth, core::Span<ColorAttachmentView> colors = {}, LoadOp load_op = LoadOp::Clear);
+        Framebuffer(const DepthAttachment& depth, core::Span<ColorAttachment> colors = {});
+        Framebuffer(core::Span<ColorAttachmentView> colors, LoadOp load_op = LoadOp::Clear);
+        Framebuffer(const DepthAttachmentView& depth, core::Span<ColorAttachmentView> colors = {}, LoadOp load_op = LoadOp::Clear);
 
         ~Framebuffer();
 

@@ -39,7 +39,7 @@ class SkeletonInstance {
         SkeletonInstance() = default;
 
         // this seems unsafe...
-        SkeletonInstance(DevicePtr dptr, const Skeleton* skeleton);
+        SkeletonInstance(const Skeleton* skeleton);
 
         void flush_reload();
 

@@ -52,7 +52,7 @@ class Queue {
         friend class Device;
         friend class CmdBufferRecorder;
 
-        Queue(DevicePtr dptr, u32 family_index, VkQueue queue);
+        Queue(u32 family_index, VkQueue queue);
 
         void submit(CmdBufferRecorder& rec) const;
 

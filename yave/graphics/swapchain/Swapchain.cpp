@@ -35,25 +35,25 @@ SOFTWARE.
 
 namespace yave {
 
-static VkSurfaceCapabilitiesKHR compute_capabilities(DevicePtr dptr, VkSurfaceKHR surface) {
+static VkSurfaceCapabilitiesKHR compute_capabilities(VkSurfaceKHR surface) {
     VkSurfaceCapabilitiesKHR capabilities = {};
-    vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dptr->vk_physical_device(), surface, &capabilities));
+    vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_physical_device(), surface, &capabilities));
     return capabilities;
 }
 
-static VkSurfaceFormatKHR surface_format(DevicePtr dptr, VkSurfaceKHR surface) {
+static VkSurfaceFormatKHR surface_format(VkSurfaceKHR surface) {
     Y_TODO(Find best format instead of always returning first)
     u32 format_count = 1;
     VkSurfaceFormatKHR format = {};
-    vk_check_or_incomplete(vkGetPhysicalDeviceSurfaceFormatsKHR(dptr->vk_physical_device(), surface, &format_count, &format));
+    vk_check_or_incomplete(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_physical_device(), surface, &format_count, &format));
     y_always_assert(format_count, "No swapchain format supported");
     return format;
 }
 
-static VkPresentModeKHR present_mode(DevicePtr dptr, VkSurfaceKHR surface) {
+static VkPresentModeKHR present_mode(VkSurfaceKHR surface) {
     std::array<VkPresentModeKHR, 16> modes = {};
     u32 mode_count = u32(modes.size());
-    vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(dptr->vk_physical_device(), surface, &mode_count, modes.data()));
+    vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_physical_device(), surface, &mode_count, modes.data()));
     y_always_assert(mode_count, "No presentation mode supported");
     for(u32 i = 0; i != mode_count; ++i) {
         if(modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -74,7 +74,7 @@ static u32 compute_image_count(VkSurfaceCapabilitiesKHR capabilities) {
     return ideal;
 }
 
-static VkImageView create_image_view(DevicePtr dptr, VkImage image, VkFormat format) {
+static VkImageView create_image_view(VkImage image, VkFormat format) {
     const VkComponentMapping mapping = {
         VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
         VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY
@@ -97,19 +97,19 @@ static VkImageView create_image_view(DevicePtr dptr, VkImage image, VkFormat for
     }
 
     VkImageView view = {};
-    vk_check(vkCreateImageView(dptr->vk_device(), &create_info, dptr->vk_allocation_callbacks(), &view));
+    vk_check(vkCreateImageView(vk_device(), &create_info, vk_allocation_callbacks(), &view));
     return view;
 }
 
-static bool has_wsi_support(DevicePtr dptr, VkSurfaceKHR surface) {
-    const u32 index =  dptr->graphic_queue().family_index();
+static bool has_wsi_support(VkSurfaceKHR surface) {
+    const u32 index =  graphic_queue().family_index();
     VkBool32 supported = false;
-    vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(dptr->vk_physical_device(), index, surface, &supported));
+    vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(vk_physical_device(), index, surface, &supported));
     return supported;
 }
 
 #ifdef Y_OS_WIN
-static VkSurfaceKHR create_surface(DevicePtr dptr, HINSTANCE_ instance, HWND_ handle) {
+static VkSurfaceKHR create_surface(HINSTANCE_ instance, HWND_ handle) {
     VkWin32SurfaceCreateInfoKHR create_info = vk_struct();
     {
         create_info.hinstance = instance;
@@ -117,9 +117,9 @@ static VkSurfaceKHR create_surface(DevicePtr dptr, HINSTANCE_ instance, HWND_ ha
     }
 
     VkSurfaceKHR surface = {};
-    vk_check(vkCreateWin32SurfaceKHR(dptr->instance().vk_instance(), &create_info, dptr->vk_allocation_callbacks(), &surface));
+    vk_check(vkCreateWin32SurfaceKHR(vk_device_instance(), &create_info, vk_allocation_callbacks(), &surface));
 
-    if(!has_wsi_support(dptr, surface)) {
+    if(!has_wsi_support(surface)) {
         y_fatal("No WSI support.");
     }
     log_msg("Vulkan WSI supported!");
@@ -128,19 +128,19 @@ static VkSurfaceKHR create_surface(DevicePtr dptr, HINSTANCE_ instance, HWND_ ha
 }
 #endif
 
-static VkSurfaceKHR create_surface(DevicePtr dptr, Window* window) {
+static VkSurfaceKHR create_surface(Window* window) {
     y_profile();
     #ifdef Y_OS_WIN
-        return create_surface(dptr, window->instance(), window->handle());
+        return create_surface(window->instance(), window->handle());
     #endif
     return vk_null();
 }
 
 
-Swapchain::Swapchain(DevicePtr dptr, Window* window) : Swapchain(dptr, create_surface(dptr, window)) {
+Swapchain::Swapchain(Window* window) : Swapchain(create_surface(window)) {
 }
 
-Swapchain::Swapchain(DevicePtr dptr, VkSurfaceKHR surface) : _surface(surface) {
+Swapchain::Swapchain(VkSurfaceKHR surface) : _surface(surface) {
     build_swapchain();
     build_semaphores();
     y_debug_assert(_images.size() == _semaphores.size());
@@ -173,8 +173,8 @@ Swapchain::~Swapchain() {
 
 bool Swapchain::build_swapchain() {
 
-    const VkSurfaceCapabilitiesKHR capabilities = compute_capabilities(main_device(), _surface);
-    const VkSurfaceFormatKHR format = surface_format(main_device(), _surface);
+    const VkSurfaceCapabilitiesKHR capabilities = compute_capabilities(_surface);
+    const VkSurfaceFormatKHR format = surface_format(_surface);
 
     const VkImageUsageFlagBits image_usage_flags = VkImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
     if((capabilities.supportedUsageFlags & image_usage_flags) != image_usage_flags) {
@@ -203,7 +203,7 @@ bool Swapchain::build_swapchain() {
             create_info.imageColorSpace = format.colorSpace;
             create_info.imageExtent = capabilities.currentExtent;
             create_info.minImageCount = compute_image_count(capabilities);
-            create_info.presentMode = present_mode(main_device(), _surface);
+            create_info.presentMode = present_mode(_surface);
             create_info.oldSwapchain = _swapchain;
         }
         vk_check(vkCreateSwapchainKHR(vk_device(), &create_info, vk_allocation_callbacks(), &_swapchain.get()));
@@ -220,16 +220,16 @@ bool Swapchain::build_swapchain() {
     }
 
     for(auto image : images) {
-        const VkImageView view = create_image_view(main_device(), image, _color_format.vk_format());
+        const VkImageView view = create_image_view(image, _color_format.vk_format());
 
         struct SwapchainImageMemory : DeviceMemory {
-            SwapchainImageMemory(DevicePtr dptr) : DeviceMemory(dptr, vk_null(), 0, 0) {
+            SwapchainImageMemory() : DeviceMemory(vk_null(), 0, 0) {
             }
         };
 
         auto swapchain_image = SwapchainImage();
 
-        swapchain_image._memory = SwapchainImageMemory(main_device());
+        swapchain_image._memory = SwapchainImageMemory();
 
         swapchain_image._size = math::Vec3ui(_size, 1);
         swapchain_image._format = _color_format;

@@ -219,19 +219,14 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                 return core::Err();
             }
 
-            void finalize(DevicePtr dptr) {
+            void finalize() {
                 if(_data->is_failed()) {
                     return;
                 }
 
                 y_profile_zone_arg("finalizing", asset_name().data());
                 y_debug_assert(_data->is_loading());
-                if constexpr(is_graphic_loader) {
-                    _data->finalize_loading(T(dptr, std::move(_load_from)));
-                } else {
-                    unused(dptr);
-                    _data->finalize_loading(std::move(_load_from));
-                }
+                _data->finalize_loading(std::move(_load_from));
                 y_profile_msg(fmt_c_str("finished loading %", asset_name()));
             }
 

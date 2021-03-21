@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-static VkCommandPool create_pool(DevicePtr dptr) {
+static VkCommandPool create_pool() {
     VkCommandPoolCreateInfo create_info = vk_struct();
     {
         create_info.queueFamilyIndex = graphic_queue().family_index();
@@ -45,8 +45,8 @@ static VkCommandPool create_pool(DevicePtr dptr) {
 }
 
 
-CmdBufferPool::CmdBufferPool(DevicePtr dptr) :
-        _pool(create_pool(dptr)),
+CmdBufferPool::CmdBufferPool() :
+        _pool(create_pool()),
         _thread_id(concurrent::thread_id()) {
 }
 

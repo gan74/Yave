@@ -61,7 +61,7 @@ static auto standard_resolutions() {
 
 EngineView::EngineView() :
         Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
-        _resource_pool(std::make_shared<FrameGraphResourcePool>(app_device())),
+        _resource_pool(std::make_shared<FrameGraphResourcePool>()),
         _scene_view(&current_world()),
         _camera_controller(std::make_unique<HoudiniCameraController>()),
         _gizmo(&_scene_view) {

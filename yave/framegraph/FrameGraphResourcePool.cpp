@@ -31,7 +31,7 @@ static void check_usage(U u) {
     }
 }
 
-FrameGraphResourcePool::FrameGraphResourcePool(DevicePtr dptr) {
+FrameGraphResourcePool::FrameGraphResourcePool() {
 }
 
 FrameGraphResourcePool::~FrameGraphResourcePool() {
@@ -47,7 +47,7 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
     TransientImage<> image;
     if(!create_image_from_pool(image, format, size, usage)) {
         y_profile_zone("create image");
-        image = TransientImage<>(main_device(), format, usage, size);
+        image = TransientImage<>(format, usage, size);
     }
 
     return image;
@@ -66,7 +66,7 @@ TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsa
     TransientBuffer buffer;
     if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {
         y_profile_zone("create buffer");
-        buffer = TransientBuffer(main_device(), byte_size, usage, memory);
+        buffer = TransientBuffer(byte_size, usage, memory);
     }
 
     return buffer;

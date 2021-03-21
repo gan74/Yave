@@ -51,7 +51,7 @@ static constexpr usize max_spot_lights = 1024;
 static constexpr usize max_shadow_lights = 128;
 
 
-static const IBLProbe* find_probe(DevicePtr dptr, const ecs::EntityWorld& world) {
+static const IBLProbe* find_probe(const ecs::EntityWorld& world) {
     for(const SkyLightComponent& sky : world.components<SkyLightComponent>()) {
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
@@ -68,7 +68,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              FrameGraphImageId ao) {
 
     const SceneView& scene = gbuffer.scene_pass.scene_view;
-    const IBLProbe* ibl_probe = find_probe(main_device(), scene.world());
+    const IBLProbe* ibl_probe = find_probe(scene.world());
     const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");

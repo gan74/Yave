@@ -43,7 +43,6 @@ using namespace yave;
 
 
 EditorApplication* application();
-DevicePtr app_device();
 
 Settings& app_settings();
 Selection& selection();

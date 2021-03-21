@@ -52,9 +52,9 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
     using ReadBackBuffer = TypedBuffer<ReadBackData, BufferUsage::StorageBit, MemoryType::CpuVisible>;
 
 
-    ReadBackBuffer buffer(app_device(), 1);
+    ReadBackBuffer buffer(1);
 
-    FrameGraph framegraph(std::make_shared<FrameGraphResourcePool>(app_device()));
+    FrameGraph framegraph(std::make_shared<FrameGraphResourcePool>());
 
     Y_TODO(Take editor renderer settings into account for picking)
     const IdBufferPass scene_pass = IdBufferPass::create(framegraph, scene_view, size);

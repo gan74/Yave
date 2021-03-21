@@ -61,8 +61,8 @@ class Swapchain : NonMovable {
     };
 
     public:
-        Swapchain(DevicePtr dptr, VkSurfaceKHR surface);
-        Swapchain(DevicePtr dptr, Window* window);
+        Swapchain(VkSurfaceKHR surface);
+        Swapchain(Window* window);
         ~Swapchain();
 
         void reset();

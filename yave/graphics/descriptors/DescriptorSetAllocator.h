@@ -66,7 +66,7 @@ class DescriptorSetLayout {
         };
 
         DescriptorSetLayout() = default;
-        DescriptorSetLayout(DevicePtr dptr, core::Span<VkDescriptorSetLayoutBinding> bindings);
+        DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding> bindings);
 
         DescriptorSetLayout(DescriptorSetLayout&&) = default;
         DescriptorSetLayout& operator=(DescriptorSetLayout&&) = default;
@@ -139,7 +139,7 @@ class DescriptorSetAllocator {
     };
 
     public:
-        DescriptorSetAllocator(DevicePtr dptr);
+        DescriptorSetAllocator();
 
         DescriptorSetData create_descritptor_set(core::Span<Descriptor> descriptors);
         const DescriptorSetLayout& descriptor_set_layout(const Key& bindings);

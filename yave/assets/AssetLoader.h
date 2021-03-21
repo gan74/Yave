@@ -76,8 +76,6 @@ class AssetLoader : NonMovable {
 
             using LoadFrom = typename traits::load_from;
 
-            static constexpr bool is_graphic_loader = traits::is_graphic_asset;
-
             public:
                 Loader(AssetLoader* parent);
                 ~Loader();
@@ -103,7 +101,7 @@ class AssetLoader : NonMovable {
         Y_TODO(make configurable)
         static constexpr bool fail_on_partial_deser = false;
 
-        AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags = AssetLoadingFlags::None, usize concurency = 1);
+        AssetLoader(const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags = AssetLoadingFlags::None, usize concurency = 1);
         ~AssetLoader();
 
         AssetStore& store();

@@ -47,7 +47,7 @@ void DeviceMemoryHeap::FreeBlock::merge(const FreeBlock& block) {
 
 
 DeviceMemoryHeap::DeviceMemoryHeap(u32 type_bits, MemoryType type, usize heap_size) :
-        _memory(alloc_memory(main_device(), heap_size, type_bits, type)),
+        _memory(alloc_memory(heap_size, type_bits, type)),
         _heap_size(heap_size),
         _blocks({FreeBlock{0, heap_size}}),
         _mapping(nullptr) {

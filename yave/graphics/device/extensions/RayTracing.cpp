@@ -58,10 +58,10 @@ static VkGeometryNV create_mesh_geometry(const StaticMesh& mesh) {
 }
 
 
-RayTracing::AccelerationStructure::AccelerationStructure(const StaticMesh& mesh) : AccelerationStructure(main_device(), {create_mesh_geometry(mesh)}) {
+RayTracing::AccelerationStructure::AccelerationStructure(const StaticMesh& mesh) : AccelerationStructure(create_mesh_geometry(mesh)) {
 }
 
-RayTracing::AccelerationStructure::AccelerationStructure(DevicePtr dptr, core::Span<VkGeometryNV> geometries) {
+RayTracing::AccelerationStructure::AccelerationStructure(core::Span<VkGeometryNV> geometries) {
     const RayTracing* rt = ray_tracing();
     y_debug_assert(rt);
 
@@ -113,7 +113,7 @@ const char* RayTracing::extension_name() {
     return VK_NV_RAY_TRACING_EXTENSION_NAME;
 }
 
-RayTracing::RayTracing(DevicePtr dptr) {
+RayTracing::RayTracing() {
 
 #define GET_PROC(name) reinterpret_cast<PFN_ ## name>(vkGetDeviceProcAddr(vk_device(), #name));
 

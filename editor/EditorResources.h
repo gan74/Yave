@@ -75,7 +75,7 @@ class EditorResources final : NonMovable {
         };
 
 
-        EditorResources(DevicePtr dptr);
+        EditorResources();
 
         // can't default for inclusion reasons
         ~EditorResources();
@@ -86,7 +86,7 @@ class EditorResources final : NonMovable {
         void reload();
 
     private:
-        void load_resources(DevicePtr dptr);
+        void load_resources();
 
         std::unique_ptr<SpirVData[]> _spirv;
         std::unique_ptr<ComputeProgram[]> _computes;

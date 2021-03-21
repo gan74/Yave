@@ -41,7 +41,7 @@ AssetLoader* AssetLoader::LoaderBase::parent() const {
 }
 
 
-AssetLoader::AssetLoader(DevicePtr dptr, const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags, usize concurency) :
+AssetLoader::AssetLoader(const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags, usize concurency) :
         _store(store),
         _thread_pool(this, concurency),
         _loading_flags(flags) {

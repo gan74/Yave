@@ -42,17 +42,17 @@ class ImageView {
         ImageView() = default;
 
         template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-        ImageView(const Image<U, Type>& img) : ImageView(main_device(), img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
+        ImageView(const Image<U, Type>& img) : ImageView(img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
             static_assert(is_compatible(U));
         }
 
         template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-        ImageView(const ImageView<U, Type>& img) : ImageView(main_device(), img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
+        ImageView(const ImageView<U, Type>& img) : ImageView(img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
             static_assert(is_compatible(U));
         }
 
-        DevicePtr device() const {
-            return _device;
+        bool is_null() const {
+            return !_view;
         }
 
         VkImageView vk_view() const {
@@ -84,8 +84,7 @@ class ImageView {
         }
 
     protected:
-        ImageView(DevicePtr dptr, const size_type& size, ImageUsage usage, ImageFormat format, VkImageView view, VkImage image) :
-                _device(dptr),
+        ImageView(const size_type& size, ImageUsage usage, ImageFormat format, VkImageView view, VkImage image) :
                 _size(size),
                 _usage(usage),
                 _format(format),
@@ -98,7 +97,6 @@ class ImageView {
         template<ImageUsage U, ImageType T>
         friend class ImageView;
 
-        DevicePtr _device = nullptr;
         size_type _size;
         ImageUsage _usage = ImageUsage::None;
         ImageFormat _format;
@@ -116,8 +114,6 @@ using ColorTextureAttachmentView = ImageView<ImageUsage::ColorBit | ImageUsage::
 using CubemapView = ImageView<ImageUsage::TextureBit, ImageType::Cube>;
 using CubemapStorageView = ImageView<ImageUsage::StorageBit, ImageType::Cube>;
 
-
-static_assert(sizeof(TextureView) == 5 * 8);
 
 }
 
