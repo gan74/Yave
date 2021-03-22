@@ -305,12 +305,13 @@ const Queue& Device::loading_queue() const {
 
 void Device::wait_all_queues() const {
     y_profile();
-    // vkDeviceWaitIdle needs to be syncrhonized with other queue operations
-    // vk_check(vkDeviceWaitIdle(vk_device()));
 
-    Y_TODO(Need to sync all queues)
-    _graphic_queue.wait();
-    _loading_queue.wait();
+
+    const auto lock = std::scoped_lock(
+        _graphic_queue.lock(),
+        _loading_queue.lock()
+    );
+    vk_check(vkDeviceWaitIdle(vk_device()));
 }
 
 ThreadDevicePtr Device::thread_device() const {
