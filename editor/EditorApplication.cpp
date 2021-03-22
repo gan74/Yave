@@ -81,6 +81,9 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : _platform(platfo
 EditorApplication::~EditorApplication() {
     _ui->close_all();
 
+    // Close threads before unsetting the instance
+    _thumbmail_renderer = nullptr;
+
     y_always_assert(_instance == this, "Editor instance has already been deleted.");
     _instance = nullptr;
 }
