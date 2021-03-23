@@ -183,7 +183,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
             }
 
             core::Result<void> read() override {
-                y_profile_zone_arg("loading", asset_name().data());
+                y_profile_zone_arg("loading", fmt_c_str("%", asset_name()));
 
                 const AssetId id = _data->id;
 
@@ -224,7 +224,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                     return;
                 }
 
-                y_profile_zone_arg("finalizing", asset_name().data());
+                y_profile_zone_arg("finalizing", fmt_c_str("%", asset_name()));
                 y_debug_assert(_data->is_loading());
                 _data->finalize_loading(std::move(_load_from));
                 y_profile_msg(fmt_c_str("finished loading %", asset_name()));
