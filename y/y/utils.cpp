@@ -26,6 +26,8 @@ SOFTWARE.
 #include <y/utils/format.h>
 #include <y/core/String.h>
 
+#include <y/concurrent/concurrent.h>
+
 #ifdef Y_OS_WIN
 #include <windows.h>
 #endif
@@ -62,6 +64,11 @@ void fatal(const char* msg, const char* file, int line) {
     if(line) {
         msg_str += fmt(" at line %", line);
     }
+
+    if(const char* thread_name = concurrent::thread_name()) {
+        msg_str += fmt(" on thread \"%\"", thread_name);
+    }
+
     log_msg(msg_str, Log::Error);
     y_breakpoint;
     std::abort();
