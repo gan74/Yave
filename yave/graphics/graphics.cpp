@@ -31,6 +31,10 @@ DevicePtr main_device() {
     return Device::main_device();
 }
 
+ThreadDevicePtr thread_device() {
+    return main_device()->thread_device();
+}
+
 VkDevice vk_device() {
     return main_device()->vk_device();
 }
@@ -48,7 +52,7 @@ const PhysicalDevice& physical_device() {
 }
 
 CmdBuffer create_disposable_cmd_buffer() {
-    return main_device()->thread_device()->create_disposable_cmd_buffer();
+    return thread_device()->create_disposable_cmd_buffer();
 }
 
 DeviceMemoryAllocator& device_allocator() {

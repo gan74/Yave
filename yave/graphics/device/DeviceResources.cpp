@@ -189,6 +189,8 @@ static Texture create_white_noise(usize size = 256) {
 
 
 DeviceResources::DeviceResources() {
+    y_profile();
+
     _spirv = std::make_unique<SpirVData[]>(spirv_count);
     _computes = std::make_unique<ComputeProgram[]>(compute_count);
     _material_templates = std::make_unique<MaterialTemplate[]>(template_count);
@@ -313,10 +315,6 @@ const AssetPtr<Material>& DeviceResources::operator[](Materials i) const {
 const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
     y_debug_assert(usize(i) < usize(MaxMeshes));
     return _meshes[usize(i)];
-}
-
-void DeviceResources::reload() {
-    y_fatal("Not supported");
 }
 
 }

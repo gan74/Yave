@@ -85,10 +85,7 @@ static Instance create_instance() {
     return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
 }
 
-static Device create_device(Instance& instance) {
-    y_profile();
-    return Device(instance);
-}
+
 
 int main(int argc, char** argv) {
     concurrent::set_thread_name("Main thread");
@@ -100,7 +97,7 @@ int main(int argc, char** argv) {
     }
 
     Instance instance = create_instance();
-    Device device = create_device(instance);
+    Device device(instance);
 
     ImGuiPlatform platform(multi_viewport);
     EditorApplication editor(&platform);

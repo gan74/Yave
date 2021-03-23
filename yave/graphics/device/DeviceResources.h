@@ -174,8 +174,6 @@ class DeviceResources final : NonMovable {
         const AssetPtr<Material>& operator[](Materials i) const;
         const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
-        void reload();
-
     private:
         std::unique_ptr<SpirVData[]> _spirv;
         std::unique_ptr<ComputeProgram[]> _computes;

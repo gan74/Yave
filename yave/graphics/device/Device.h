@@ -32,15 +32,17 @@ SOFTWARE.
 #include "DeviceResources.h"
 #include "LifetimeManager.h"
 
-#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
-
 #include <yave/graphics/images/Sampler.h>
+#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
+
+#include <y/concurrent/VectorLock.h>
 
 #include <thread>
 
 namespace yave {
 
+Y_TODO(const corrrectness?)
 class Device : NonMovable {
 
     public:
@@ -52,6 +54,7 @@ class Device : NonMovable {
         static DevicePtr main_device();
 
         void wait_all_queues() const;
+        concurrent::VectorLock<std::mutex> lock_all_queues_and_wait() const;
 
         const PhysicalDevice& physical_device() const;
         const Instance& instance() const;
@@ -75,8 +78,6 @@ class Device : NonMovable {
 
         const DeviceProperties& device_properties() const;
 
-
-
         static VkPhysicalDeviceFeatures required_device_features();
         static VkPhysicalDeviceVulkan11Features required_device_features_1_1();
         static VkPhysicalDeviceVulkan12Features required_device_features_1_2();
@@ -89,7 +90,11 @@ class Device : NonMovable {
         const RayTracing* ray_tracing() const;
 
     private:
-        static DevicePtr _main_device;
+        void create_thread_device(ThreadDevicePtr* dptr) const;
+        void destroy_thread_device(ThreadDevicePtr device) const;
+
+        static Device* _main_device;
+
 
         VkDevice _device = {};
 
@@ -102,8 +107,8 @@ class Device : NonMovable {
 
         std::array<Uninitialized<Sampler>, 5> _samplers;
 
-        mutable concurrent::SpinLock _lock;
-        mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
+        mutable std::mutex _devices_lock;
+        mutable core::Vector<std::pair<std::unique_ptr<ThreadLocalDevice>, ThreadDevicePtr*>> _thread_devices;
 
         Uninitialized<DeviceResources> _resources;
 

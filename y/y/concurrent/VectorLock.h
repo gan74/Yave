@@ -19,49 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_GRAPHICS_H
-#define YAVE_GRAPHICS_GRAPHICS_H
 
-#include <yave/yave.h>
+#ifndef Y_CONCURRENT_VECTORLOCK_H
+#define Y_CONCURRENT_VECTORLOCK_H
 
-#include <yave/graphics/vk/vk.h>
-#include <yave/graphics/device/ResourceType.h>
-#include <yave/graphics/images/SamplerType.h>
+#include <y/core/Vector.h>
 
-namespace yave {
+namespace y {
+namespace concurrent {
 
-DevicePtr main_device();
-ThreadDevicePtr thread_device();
+template<typename T>
+class VectorLock : NonCopyable {
+    public:
+        VectorLock(VectorLock&&) = default;
+        VectorLock& operator=(VectorLock&&) = default;
 
-VkDevice vk_device();
-VkInstance vk_device_instance();
-VkPhysicalDevice vk_physical_device();
+        VectorLock(core::Vector<std::reference_wrapper<T>> locks) : _locks(std::move(locks)) {
+            while(!try_lock_all()) {
+            }
+        }
 
-CmdBuffer create_disposable_cmd_buffer();
+        ~VectorLock() {
+            for(usize i = 0; i != _locks.size(); ++i) {
+                _locks[_locks.size() - i - 1].get().unlock();
+            }
+        }
 
-const PhysicalDevice& physical_device();
-DeviceMemoryAllocator& device_allocator();
-DescriptorSetAllocator& descriptor_set_allocator();
-const Queue& graphic_queue();
-const Queue& loading_queue();
-const DeviceResources& device_resources();
-const DeviceProperties& device_properties();
-LifetimeManager& lifetime_manager();
+    private:
+        bool try_lock_all() {
+            for(usize i = 0; i != _locks.size(); ++i) {
+                if(!_locks[i].get().try_lock()) {
+                    for(usize j = 0; j + 1 < i; ++j) {
+                        _locks[i - j - 1].get().unlock();
+                    }
+                    return false;
+                }
+            }
+            return true;
+        }
 
-const VkAllocationCallbacks* vk_allocation_callbacks();
-VkSampler vk_sampler(SamplerType type);
+        core::Vector<std::reference_wrapper<T>> _locks;
+};
 
-const DebugUtils* debug_utils();
-const RayTracing* ray_tracing();
-
-void wait_all_queues();
-
-#define YAVE_GENERATE_DESTROY(T) void device_destroy(T t);
-YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
-#undef YAVE_GENERATE_DESTROY
 
 }
+}
 
-
-#endif // YAVE_GRAPHICS_GRAPHICS_H
+#endif // Y_CONCURRENT_VECTORLOCK_H
 

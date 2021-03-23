@@ -34,7 +34,7 @@ SOFTWARE.
 
 namespace yave {
 
-DevicePtr Device::_main_device = nullptr;
+Device* Device::_main_device = nullptr;
 
 static float device_score(const PhysicalDevice& device) {
     if(!Device::has_required_features(device)) {
@@ -153,6 +153,7 @@ Device::Device(Instance& instance, PhysicalDevice device) :
         _instance(instance),
         _physical(std::make_unique<PhysicalDevice>(device)),
         _properties(_physical->device_properties()) {
+
     y_profile();
 
     const DebugParams& debug = _instance.debug_params();
@@ -205,11 +206,14 @@ Device::Device(Instance& instance, PhysicalDevice device) :
         create_info.pQueueCreateInfos = &queue_create_info;
     }
 
-    vk_check(vkCreateDevice(physical_device().vk_physical_device(), &create_info, nullptr, &_device));
+    {
+        y_profile_zone("vkCreateDevice");
+        vk_check(vkCreateDevice(physical_device().vk_physical_device(), &create_info, nullptr, &_device));
+    }
 
     print_properties(_properties);
 
-    y_always_assert(_main_device == nullptr, "Device already exists");
+    y_always_assert(_main_device == nullptr, "Device already exists.");
     _main_device = this;
 
     _graphic_queue = Queue(_main_queue_index, create_queue(_main_queue_index, 0));
@@ -222,28 +226,43 @@ Device::Device(Instance& instance, PhysicalDevice device) :
     _lifetime_manager.init();
     _allocator.init();
     _descriptor_set_allocator.init();
-    _resources.init();
+
+    {
+        y_profile_zone("loading resources");
+        _resources.init();
+    }
 }
 
 Device::~Device() {
-    y_always_assert(_main_device == this, "Device does not exist");
+    y_profile();
+
+    y_always_assert(_main_device == this, "Device does not exist.");
 
     wait_all_queues();
 
-    _resources.destroy();
+    {
+        y_profile_zone("clearing resources");
+        _resources.destroy();
+    }
 
     {
+        y_profile_zone("flushing command pools");
         CmdBufferRecorder(CmdBufferPool().create_buffer()).submit<SyncPolicy::Sync>();
         lifetime_manager().wait_cmd_buffers();
+    }
 
-        const auto lock = y_profile_unique_lock(_lock);
+    {
+        y_profile_zone("collecting thread devices");
+        const auto lock = y_profile_unique_lock(_devices_lock);
+        for(const auto& p : _thread_devices) {
+            *p.second = nullptr;
+        }
         _thread_devices.clear();
     }
 
     for(auto& sampler : _samplers) {
         sampler.destroy();
     }
-
 
     _descriptor_set_allocator.destroy();
     _lifetime_manager.destroy();
@@ -252,10 +271,37 @@ Device::~Device() {
     _graphic_queue = {};
     _loading_queue = {};
 
-    vkDestroyDevice(_device, nullptr);
-    _device = {};
+    {
+        y_profile_zone("vkDestroyDevice");
+        vkDestroyDevice(_device, nullptr);
+        _device = {};
+    }
 
     _main_device = nullptr;
+}
+
+
+void Device::create_thread_device(ThreadDevicePtr* dptr) const {
+    y_debug_assert(dptr && *dptr == nullptr);
+
+    auto device = std::make_unique<ThreadLocalDevice>(this);
+    *dptr = device.get();
+
+    const auto lock = y_profile_unique_lock(_devices_lock);
+    _thread_devices.emplace_back(std::move(device), dptr);
+}
+
+void Device::destroy_thread_device(ThreadDevicePtr device) const {
+    y_debug_assert(device);
+
+    const auto lock = y_profile_unique_lock(_devices_lock);
+    const auto it = std::find_if(_thread_devices.begin(), _thread_devices.end(), [&](const auto& p) { return p.first.get() == device; });
+
+    y_always_assert(it != _thread_devices.end(), "ThreadLocalDevice not found.");
+    y_debug_assert(*it->second == device);
+
+    *it->second = nullptr;
+    _thread_devices.erase_unordered(it);
 }
 
 
@@ -332,6 +378,7 @@ DevicePtr Device::main_device() {
     return _main_device;
 }
 
+
 const PhysicalDevice& Device::physical_device() const {
     return *_physical;
 }
@@ -357,37 +404,35 @@ const Queue& Device::loading_queue() const {
 }
 
 void Device::wait_all_queues() const {
+    Y_TODO(Remove and use lock_all_queues_and_wait everywhere)
+    lock_all_queues_and_wait();
+}
+
+concurrent::VectorLock<std::mutex> Device::lock_all_queues_and_wait() const {
     y_profile();
 
-
-    const auto lock = std::scoped_lock(
+    auto lock = concurrent::VectorLock<std::mutex>({
         _graphic_queue.lock(),
         _loading_queue.lock()
-    );
+    });
+
     vk_check(vkDeviceWaitIdle(vk_device()));
+
+    return lock;
 }
 
 ThreadDevicePtr Device::thread_device() const {
-    static thread_local usize thread_id = concurrent::thread_id();
-    static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
+    static thread_local ThreadDevicePtr thread_device = nullptr;
+    static thread_local y_defer({
+        if(thread_device) {
+            thread_device->parent()->destroy_thread_device(thread_device);
+        }
+    });
 
-    auto& cache = thread_cache;
-    if(cache.first != this) {
-        const auto lock = y_profile_unique_lock(_lock);
-        while(_thread_devices.size() <= thread_id) {
-            _thread_devices.emplace_back();
-        }
-        auto& data = _thread_devices[thread_id];
-        if(!data) {
-            data = std::make_unique<ThreadLocalDevice>();
-            if(_thread_devices.size() > 64) {
-                log_msg("64 ThreadLocalDevice have been created.", Log::Warning);
-            }
-        }
-        cache = {this, data.get()};
-        return data.get();
+    if(!thread_device) {
+        create_thread_device(&thread_device);
     }
-    return cache.second;
+    return thread_device;
 }
 
 const DeviceResources& Device::device_resources() const {
