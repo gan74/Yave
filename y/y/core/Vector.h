@@ -355,12 +355,7 @@ class Vector : ResizePolicy, Allocator {
         }
 
     private:
-#ifdef Y_MSVC
-        Y_TODO(Fix trivial data_type on MSVC)
-        static constexpr bool is_data_trivial = false;
-#else
         static constexpr bool is_data_trivial = std::is_trivial_v<data_type>;
-#endif
 
         inline bool is_full() const {
             return _data_end == _alloc_end;

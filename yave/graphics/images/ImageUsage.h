@@ -39,12 +39,7 @@ enum class ImageUsage : u32 {
     TransferSrcBit  = VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
     TransferDstBit  = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
 
-#ifdef Y_MSVC
-    Y_TODO(MSVC fix)
-    SwapchainBit    = 0x00000400,
-#else
     SwapchainBit    = std::max({None, DepthBit, ColorBit, TextureBit, StorageBit}) << 1,
-#endif
 
     // Never use directly:
     Attachment      = ColorBit | DepthBit,
