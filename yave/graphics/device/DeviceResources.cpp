@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "DeviceResources.h"
-#include "Device.h"
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
 #include <yave/graphics/shaders/SpirVData.h>
@@ -190,86 +189,25 @@ static Texture create_white_noise(usize size = 256) {
 
 
 DeviceResources::DeviceResources() {
-}
-
-void DeviceResources::init() {
-    y_always_assert(!is_init(), "DeviceResources has already been initialized");
-
-#ifdef Y_DEBUG
-    _lock = std::make_unique<std::recursive_mutex>();
-#endif
-
     _spirv = std::make_unique<SpirVData[]>(spirv_count);
     _computes = std::make_unique<ComputeProgram[]>(compute_count);
     _material_templates = std::make_unique<MaterialTemplate[]>(template_count);
     _textures = std::make_unique<AssetPtr<Texture>[]>(texture_count);
-
-    // Load textures here because they won't change and might get packed into descriptor sets that won't be reloaded (in the case of material defaults)
-    for(usize i = 0; i != texture_count; ++i) {
-        const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
-        _textures[i] = make_asset<Texture>(ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
-
-#ifdef Y_DEBUG
-        if(const auto* debug = debug_utils()) {
-            debug->set_resource_name(_textures[i]->vk_image(), "Resource Image");
-            debug->set_resource_name(_textures[i]->vk_view(), "Resource Image View");
-        }
-#endif
-    }
-
-    _is_init = true;
-
-    load_resources();
-}
-
-DeviceResources::DeviceResources(DeviceResources&& other) {
-    swap(other);
-}
-
-DeviceResources& DeviceResources::operator=(DeviceResources&& other) {
-    swap(other);
-    return *this;
-}
-
-DeviceResources::~DeviceResources() {
-}
-
-bool DeviceResources::is_init() const {
-    return _is_init;
-}
-
-void DeviceResources::swap(DeviceResources& other) {
-#ifdef Y_DEBUG
-    const auto lock = y_profile_unique_lock(*_lock);
-    std::unique_lock<std::recursive_mutex> other_lock;
-    if(other._lock) {
-        other_lock = y_profile_unique_lock(*other._lock);
-    }
-
-    std::swap(other._lock, _lock);
-    std::swap(other._programs, _programs);
-#endif
-
-    std::swap(other._spirv, _spirv);
-    std::swap(other._computes, _computes);
-    std::swap(other._material_templates, _material_templates);
-    std::swap(other._textures, _textures);
-    std::swap(other._materials, _materials);
-    std::swap(other._meshes, _meshes);
-    std::swap(other._probe, _probe);
-    std::swap(other._empty_probe, _empty_probe);
-    std::swap(other._brdf_lut, _brdf_lut);
-    std::swap(other._white_noise, _white_noise);
-}
-
-void DeviceResources::load_resources() {
-    y_always_assert(is_init(), "DeviceResources has not been initialized");
 
     const auto set_name = [debug = debug_utils()](auto handle, const char* name) {
         if(debug) {
             debug->set_resource_name(handle, name);
         }
     };
+
+    // Load textures here because they won't change and might get packed into descriptor sets that won't be reloaded (in the case of material defaults)
+    for(usize i = 0; i != texture_count; ++i) {
+        const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
+        _textures[i] = make_asset<Texture>(ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
+
+        set_name(_textures[i]->vk_image(), "Resource Image");
+        set_name(_textures[i]->vk_view(), "Resource Image View");
+    }
 
     for(usize i = 0; i != spirv_count; ++i) {
         const auto file_name = fmt("%.spv", spirv_names[i]);
@@ -309,109 +247,76 @@ void DeviceResources::load_resources() {
         _meshes[4] = make_asset<StaticMesh>(sweep_mesh_data());
     }
 
+
     _brdf_lut = create_brdf_lut(operator[](BRDFIntegratorProgram));
+    set_name(_brdf_lut.vk_image(), "BRDF LUT");
+    set_name(_brdf_lut.vk_view(), "BRDF LUT View");
+
     _white_noise = create_white_noise();
+    set_name(_white_noise.vk_image(), "White Noise");
+    set_name(_white_noise.vk_view(), "White Noise View");
 
     _probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
+    set_name(_probe->vk_image(), "Default Probe");
+    set_name(_probe->vk_view(), "Default Probe");
+
     _empty_probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
+    set_name(_empty_probe->vk_image(), "Empty Probe");
+    set_name(_empty_probe->vk_view(), "Empty Probe");
+}
 
-#ifdef Y_DEBUG
-    if(const auto* debug = debug_utils()) {
-        debug->set_resource_name(_brdf_lut.vk_image(), "BRDF LUT");
-        debug->set_resource_name(_brdf_lut.vk_view(), "BRDF LUT View");
-        debug->set_resource_name(_white_noise.vk_image(), "White Noise");
-        debug->set_resource_name(_white_noise.vk_view(), "White Noise View");
 
-        debug->set_resource_name(_probe->vk_image(), "Default Probe");
-        debug->set_resource_name(_probe->vk_view(), "Default Probe");
-        debug->set_resource_name(_empty_probe->vk_image(), "Empty Probe");
-        debug->set_resource_name(_empty_probe->vk_view(), "Empty Probe");
-    }
-#endif
+DeviceResources::~DeviceResources() {
 }
 
 TextureView DeviceResources::brdf_lut() const {
-    y_debug_assert(is_init());
     return _brdf_lut;
 }
 
 TextureView DeviceResources::white_noise() const {
-    y_debug_assert(is_init());
     return _white_noise;
 }
 
 const AssetPtr<IBLProbe>& DeviceResources::ibl_probe() const {
-    y_debug_assert(is_init());
     return _probe;
 }
 
 const AssetPtr<IBLProbe>& DeviceResources::empty_probe() const {
-    y_debug_assert(is_init());
     return _empty_probe;
 }
 
 const SpirVData& DeviceResources::operator[](SpirV i) const {
-    y_debug_assert(is_init());
     y_debug_assert(usize(i) < usize(MaxSpirV));
     return _spirv[usize(i)];
 }
 
 const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {
-    y_debug_assert(is_init());
     y_debug_assert(usize(i) < usize(MaxComputePrograms));
     return _computes[usize(i)];
 }
 
 const MaterialTemplate* DeviceResources::operator[](MaterialTemplates i) const {
-    y_debug_assert(is_init());
     y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
     return &_material_templates[usize(i)];
 }
 
 const AssetPtr<Texture>& DeviceResources::operator[](Textures i) const {
-    y_debug_assert(is_init());
     y_debug_assert(usize(i) < usize(MaxTextures));
     return _textures[usize(i)];
 }
 
 const AssetPtr<Material>& DeviceResources::operator[](Materials i) const {
-    y_debug_assert(is_init());
     y_debug_assert(usize(i) < usize(MaxMaterials));
     return _materials[usize(i)];
 }
 
 const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
-    y_debug_assert(is_init());
     y_debug_assert(usize(i) < usize(MaxMeshes));
     return _meshes[usize(i)];
 }
 
-
-#ifdef Y_DEBUG
-const ComputeProgram& DeviceResources::program_from_file(std::string_view file) const {
-    y_debug_assert(is_init());
-    const auto lock = y_profile_unique_lock(*_lock);
-    auto& prog = _programs[file];
-    if(!prog) {
-        auto spirv = SpirVData::deserialized(io2::File::open(fmt("%.spv", file)).expected("Unable to open SPIR-V file"));
-        prog = std::make_unique<ComputeProgram>(ComputeShader(spirv));
-    }
-    return *prog;
-}
-#endif
-
 void DeviceResources::reload() {
-    y_debug_assert(is_init());
-    y_profile();
-    wait_all_queues();
-
-#ifdef Y_DEBUG
-    const auto lock = y_profile_unique_lock(*_lock);
-    _programs.clear();
-#endif
-
-    load_resources();
-    log_msg("Resources reloaded");
+    y_fatal("Not supported");
 }
 
 }

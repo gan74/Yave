@@ -119,7 +119,6 @@ static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(const math::Ve
 
 static void upload_data(ImageBase& image, const ImageData& data) {
     y_profile();
-    DevicePtr dptr = main_device();
 
     const auto staging_buffer = stage_data(data.combined_byte_size(), data.data());
     const auto regions = get_copy_regions(data);

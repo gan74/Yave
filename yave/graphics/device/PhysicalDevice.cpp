@@ -60,6 +60,23 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
     }
 }
 
+DeviceProperties PhysicalDevice::device_properties() const {
+    const VkPhysicalDeviceLimits& limits = vk_properties().limits;
+
+    DeviceProperties properties = {};
+
+    properties.non_coherent_atom_size = limits.nonCoherentAtomSize;
+    properties.max_uniform_buffer_size = limits.maxUniformBufferRange;
+    properties.uniform_buffer_alignment = limits.minUniformBufferOffsetAlignment;
+    properties.storage_buffer_alignment = limits.minStorageBufferOffsetAlignment;
+
+    properties.max_memory_allocations = limits.maxMemoryAllocationCount;
+
+    properties.max_inline_uniform_size = vk_uniform_block_properties().maxInlineUniformBlockSize;
+
+    return properties;
+}
+
 VkPhysicalDevice PhysicalDevice::vk_physical_device() const {
     return _device;
 }

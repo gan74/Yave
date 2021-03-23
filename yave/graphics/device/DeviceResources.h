@@ -29,16 +29,6 @@ SOFTWARE.
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 
-#include <y/core/String.h>
-#include <y/core/HashMap.h>
-
-#include <y/utils/hash.h>
-
-
-#ifdef Y_DEBUG
-#include <mutex>
-#endif
-
 namespace yave {
 
 class SpirVData;
@@ -48,7 +38,7 @@ class Material;
 class StaticMesh;
 class IBLProbe;
 
-class DeviceResources final : NonCopyable {
+class DeviceResources final : NonMovable {
     public:
         enum SpirV {
             EquirecConvolutionComp,
@@ -166,15 +156,9 @@ class DeviceResources final : NonCopyable {
 
         DeviceResources();
 
-        void init();
-
-        DeviceResources(DeviceResources&& other);
-        DeviceResources& operator=(DeviceResources&& other);
-
         // can't default for inclusion reasons
         ~DeviceResources();
 
-        bool is_init() const;
 
         TextureView brdf_lut() const;
         TextureView white_noise() const;
@@ -193,10 +177,6 @@ class DeviceResources final : NonCopyable {
         void reload();
 
     private:
-        void swap(DeviceResources& other);
-
-        void load_resources();
-
         std::unique_ptr<SpirVData[]> _spirv;
         std::unique_ptr<ComputeProgram[]> _computes;
         std::unique_ptr<MaterialTemplate[]> _material_templates;
@@ -210,17 +190,6 @@ class DeviceResources final : NonCopyable {
 
         Texture _brdf_lut;
         Texture _white_noise;
-
-        bool _is_init = false;
-
-#ifdef Y_DEBUG
-        std::unique_ptr<std::recursive_mutex> _lock;
-        mutable core::ExternalHashMap<core::String, std::unique_ptr<ComputeProgram>> _programs;
-
-    public:
-        const ComputeProgram& program_from_file(std::string_view file) const;
-#endif
-
 };
 }
 

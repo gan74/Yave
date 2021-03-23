@@ -35,7 +35,7 @@ Queue::Queue(u32 family_index, VkQueue queue) :
 }
 
 Queue::~Queue() {
-    if(_queue) {
+    if(_queue && _lock) {
         wait();
     }
 }

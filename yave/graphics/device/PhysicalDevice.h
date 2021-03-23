@@ -22,7 +22,8 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_PHYSICALDEVICE_H
 #define YAVE_DEVICE_PHYSICALDEVICE_H
 
-#include <yave/yave.h>
+#include "DeviceProperties.h"
+
 #include <yave/graphics/vk/vk.h>
 
 #include <y/core/Vector.h>
@@ -34,6 +35,8 @@ namespace yave {
 class PhysicalDevice {
     public:
         VkPhysicalDevice vk_physical_device() const;
+
+        DeviceProperties device_properties() const;
 
         const VkPhysicalDeviceProperties& vk_properties() const;
         const VkPhysicalDeviceVulkan11Properties& vk_properties_1_1() const;

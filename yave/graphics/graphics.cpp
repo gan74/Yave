@@ -48,7 +48,7 @@ const PhysicalDevice& physical_device() {
 }
 
 CmdBuffer create_disposable_cmd_buffer() {
-    return main_device()->create_disposable_cmd_buffer();
+    return main_device()->thread_device()->create_disposable_cmd_buffer();
 }
 
 DeviceMemoryAllocator& device_allocator() {

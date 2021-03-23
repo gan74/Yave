@@ -101,7 +101,6 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
     Y_TODO(move program creation programs can be reused)
 
-    DevicePtr dptr = main_device();
     const auto& mat_data = material->data();
 
     const FragmentShader frag = FragmentShader(mat_data._frag);

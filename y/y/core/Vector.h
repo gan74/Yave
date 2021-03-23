@@ -90,8 +90,10 @@ class Vector : ResizePolicy, Allocator {
         }
 
         inline Vector(usize size, const value_type& elem) {
-            set_min_capacity(size);
-            std::fill_n(std::back_inserter(*this), size, elem);
+            if(size) {
+                set_min_capacity(size);
+                std::fill_n(std::back_inserter(*this), size, elem);
+            }
         }
 
         template<typename It>

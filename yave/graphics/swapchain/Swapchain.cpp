@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/window/Window.h>
 
-#include <yave/graphics/device/Device.h>
+#include <yave/graphics/device/Queue.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 #include <yave/graphics/barriers/Barrier.h>

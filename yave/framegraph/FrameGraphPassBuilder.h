@@ -42,8 +42,6 @@ class FrameGraphPassBuilder {
 
         using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
-        DevicePtr device() const;
-
         FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
         FrameGraphMutableBufferId declare_buffer(usize byte_size);
 

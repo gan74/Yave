@@ -43,45 +43,39 @@ namespace yave {
 
 class Device : NonMovable {
 
-    struct ScopedDevice {
-        ScopedDevice(DevicePtr dptr, VkDevice dev);
-        ~ScopedDevice();
-        const VkDevice device;
-    };
-
     public:
         explicit Device(Instance& instance);
+
         Device(Instance& instance, PhysicalDevice device);
         ~Device();
 
         static DevicePtr main_device();
 
+        void wait_all_queues() const;
 
         const PhysicalDevice& physical_device() const;
         const Instance& instance() const;
+        ThreadDevicePtr thread_device() const;
+
+        VkDevice vk_device() const;
+        VkPhysicalDevice vk_physical_device() const;
+        VkSampler vk_sampler(SamplerType type = SamplerType::LinearRepeat) const;
+        const VkAllocationCallbacks* vk_allocation_callbacks() const;
+
+        LifetimeManager& lifetime_manager() const;
 
         DeviceMemoryAllocator& allocator() const;
         DescriptorSetAllocator& descriptor_set_allocator() const;
 
-        CmdBuffer create_disposable_cmd_buffer() const;
-
         const Queue& graphic_queue() const;
         const Queue& loading_queue() const;
 
-        void wait_all_queues() const;
-
-        ThreadDevicePtr thread_device() const;
         const DeviceResources& device_resources() const;
         DeviceResources& device_resources();
 
         const DeviceProperties& device_properties() const;
 
-        LifetimeManager& lifetime_manager() const;
 
-        VkDevice vk_device() const;
-        const VkAllocationCallbacks* vk_allocation_callbacks() const;
-        VkPhysicalDevice vk_physical_device() const;
-        VkSampler vk_sampler(SamplerType type = SamplerType::LinearRepeat) const;
 
         static VkPhysicalDeviceFeatures required_device_features();
         static VkPhysicalDeviceVulkan11Features required_device_features_1_1();
@@ -95,35 +89,30 @@ class Device : NonMovable {
         const RayTracing* ray_tracing() const;
 
     private:
-        Instance& _instance;
+        static DevicePtr _main_device;
 
-        Y_TODO(move this to the heap or slim it)
-        PhysicalDevice _physical;
-
-        u32 _main_queue_index = 0;
-
-        ScopedDevice _device;
-        DeviceProperties _properties;
+        VkDevice _device = {};
 
         Queue _graphic_queue;
         Queue _loading_queue;
 
-        mutable DeviceMemoryAllocator _allocator;
-        mutable LifetimeManager _lifetime_manager;
+        mutable Uninitialized<DeviceMemoryAllocator> _allocator;
+        mutable Uninitialized<LifetimeManager> _lifetime_manager;
+        mutable Uninitialized<DescriptorSetAllocator> _descriptor_set_allocator;
 
-
-        std::array<Sampler, 5> _samplers;
-
-        mutable DescriptorSetAllocator _descriptor_set_allocator;
+        std::array<Uninitialized<Sampler>, 5> _samplers;
 
         mutable concurrent::SpinLock _lock;
         mutable core::Vector<std::unique_ptr<ThreadLocalDevice>> _thread_devices;
 
-        struct {
-            std::unique_ptr<RayTracing> raytracing;
-        } _extensions;
+        Uninitialized<DeviceResources> _resources;
 
-        DeviceResources _resources;
+        u32 _main_queue_index = 0;
+
+        Instance& _instance;
+        std::unique_ptr<PhysicalDevice> _physical;
+
+        DeviceProperties _properties = {};
 };
 
 }

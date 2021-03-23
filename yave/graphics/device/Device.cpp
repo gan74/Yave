@@ -23,20 +23,18 @@ SOFTWARE.
 #include "Device.h"
 #include "PhysicalDevice.h"
 
-#include <yave/graphics/device/extensions/RayTracing.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/concurrent/concurrent.h>
-
-#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
 #include <mutex>
 
-//#define YAVE_NV_RAY_TRACING
-
 namespace yave {
+
+DevicePtr Device::_main_device = nullptr;
 
 static float device_score(const PhysicalDevice& device) {
     if(!Device::has_required_features(device)) {
@@ -70,9 +68,6 @@ static const PhysicalDevice& find_best_device(core::Span<PhysicalDevice> devices
     return devices[device_index];
 }
 
-
-
-static const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
 
 static bool try_enable_extension(core::Vector<const char*>& exts, const char* name, const PhysicalDevice& device) {
     if(device.is_extension_supported(name)) {
@@ -114,11 +109,6 @@ static u32 queue_family_index(core::Span<VkQueueFamilyProperties> families, VkQu
     y_fatal("No queue available for given flag set");
 }
 
-static u32 queue_family_index(VkPhysicalDevice device, VkQueueFlags flags) {
-    const core::Vector<VkQueueFamilyProperties> families = enumerate_family_properties(device);
-    return queue_family_index(families, flags);
-}
-
 static VkQueue create_queue(u32 family_index, u32 index) {
     VkQueue q = {};
     vkGetDeviceQueue(vk_device(), family_index, index, &q);
@@ -145,38 +135,54 @@ static void print_enabled_extensions(core::Span<const char*> extensions) {
     }
 }
 
+static void print_properties(const DeviceProperties& properties) {
+    log_msg(fmt("max_memory_allocations = %", properties.max_memory_allocations), Log::Debug);
+    log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size), Log::Debug);
+    log_msg(fmt("max_uniform_buffer_size = %", properties.max_uniform_buffer_size), Log::Debug);
+}
 
-static VkDevice create_device(
-        const PhysicalDevice& physical,
-        u32 graphic_queue_index,
-        const DebugParams& debug) {
 
+
+static const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+
+Device::Device(Instance& instance) : Device(instance, find_best_device(instance.physical_devices())) {
+}
+
+
+Device::Device(Instance& instance, PhysicalDevice device) :
+        _instance(instance),
+        _physical(std::make_unique<PhysicalDevice>(device)),
+        _properties(_physical->device_properties()) {
     y_profile();
+
+    const DebugParams& debug = _instance.debug_params();
+
+    const core::Vector<VkQueueFamilyProperties> queue_families = enumerate_family_properties(vk_physical_device());
+    _main_queue_index = queue_family_index(queue_families, graphic_queue_flags);
 
     auto extensions = core::vector_with_capacity<const char*>(4);
     extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
 
-    try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical);
+    try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical_device());
 
-#ifdef YAVE_NV_RAY_TRACING
-    try_enable_extension(extensions, RayTracing::extension_name(), physical);
-#else
-    log_msg(fmt("% disabled", RayTracing::extension_name()), Log::Warning);
-#endif
     const auto required_features = Device::required_device_features();
     auto required_features_1_1 = Device::required_device_features_1_1();
     auto required_features_1_2 = Device::required_device_features_1_2();
 
-    y_always_assert(Device::has_required_features(physical), "Device doesn't support required features");
-    y_always_assert(Device::has_required_properties(physical), "Device doesn't support required properties");
+    y_always_assert(Device::has_required_features(physical_device()), "Device doesn't support required features");
+    y_always_assert(Device::has_required_properties(physical_device()), "Device doesn't support required properties");
+
+    print_physical_properties(physical_device().vk_properties());
+    print_enabled_extensions(extensions);
+
 
     const std::array queue_priorityies = {1.0f, 0.0f};
 
     VkDeviceQueueCreateInfo queue_create_info = vk_struct();
     {
-        queue_create_info.queueFamilyIndex = graphic_queue_index;
+        queue_create_info.queueFamilyIndex = _main_queue_index;
         queue_create_info.pQueuePriorities = queue_priorityies.data();
         queue_create_info.queueCount = u32(queue_priorityies.size());
     }
@@ -199,200 +205,58 @@ static VkDevice create_device(
         create_info.pQueueCreateInfos = &queue_create_info;
     }
 
-    print_physical_properties(physical.vk_properties());
-    print_enabled_extensions(extensions);
-
-
-    VkDevice device = {};
-    vk_check(vkCreateDevice(physical.vk_physical_device(), &create_info, nullptr, &device));
-    return device;
-}
-
-
-static DeviceProperties create_properties(const PhysicalDevice& device) {
-    const VkPhysicalDeviceLimits& limits = device.vk_properties().limits;
-
-    DeviceProperties properties = {};
-
-    properties.non_coherent_atom_size = limits.nonCoherentAtomSize;
-    properties.max_uniform_buffer_size = limits.maxUniformBufferRange;
-    properties.uniform_buffer_alignment = limits.minUniformBufferOffsetAlignment;
-    properties.storage_buffer_alignment = limits.minStorageBufferOffsetAlignment;
-
-    properties.max_memory_allocations = limits.maxMemoryAllocationCount;
-
-    properties.max_inline_uniform_size = device.vk_uniform_block_properties().maxInlineUniformBlockSize;
-
-    return properties;
-}
-
-static void print_properties(const DeviceProperties& properties) {
-    log_msg(fmt("max_memory_allocations = %", properties.max_memory_allocations), Log::Debug);
-    log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size), Log::Debug);
-    log_msg(fmt("max_uniform_buffer_size = %", properties.max_uniform_buffer_size), Log::Debug);
-}
-
-
-static DevicePtr _main_device = nullptr;
-
-Device::ScopedDevice::ScopedDevice(DevicePtr dptr, VkDevice dev) : device(dev) {
-    y_always_assert(_main_device == nullptr, "Device already exists");
-    _main_device = dptr;
-}
-
-Device::ScopedDevice::~ScopedDevice() {
-    vkDestroyDevice(device, nullptr);
-    _main_device = nullptr;
-}
-
-Device::Device(Instance& instance) : Device(instance, find_best_device(instance.physical_devices())) {
-}
-
-Device::Device(Instance& instance, PhysicalDevice device) :
-        _instance(instance),
-        _physical(device),
-        _main_queue_index(queue_family_index(_physical.vk_physical_device(), graphic_queue_flags)),
-        _device(this, create_device(_physical, _main_queue_index, _instance.debug_params())),
-        _properties(create_properties(_physical)),
-        _graphic_queue(_main_queue_index, create_queue(_main_queue_index, 0)),
-        _loading_queue(_main_queue_index, create_queue(_main_queue_index, 1)),
-        _samplers(create_samplers()) {
-
-#ifdef YAVE_NV_RAY_TRACING
-    if(is_extension_supported(RayTracing::extension_name(), _physical.vk_physical_device())) {
-        _extensions.raytracing = std::make_unique<RayTracing>(this);
-    }
-#endif
+    vk_check(vkCreateDevice(physical_device().vk_physical_device(), &create_info, nullptr, &_device));
 
     print_properties(_properties);
 
+    y_always_assert(_main_device == nullptr, "Device already exists");
+    _main_device = this;
+
+    _graphic_queue = Queue(_main_queue_index, create_queue(_main_queue_index, 0));
+    _loading_queue = Queue(_main_queue_index, create_queue(_main_queue_index, 1));
+
+    for(usize i = 0; i != _samplers.size(); ++i) {
+        _samplers[i].init(SamplerType(i));
+    }
+
+    _lifetime_manager.init();
+    _allocator.init();
+    _descriptor_set_allocator.init();
     _resources.init();
 }
 
 Device::~Device() {
-    y_always_assert(_main_device == this, "Device doest exist");
+    y_always_assert(_main_device == this, "Device does not exist");
 
-    _resources = DeviceResources();
+    wait_all_queues();
 
-    auto full_flush = [this] {
-        // We need this to forcefully flush the lifetime manager
+    _resources.destroy();
+
+    {
         CmdBufferRecorder(CmdBufferPool().create_buffer()).submit<SyncPolicy::Sync>();
         lifetime_manager().wait_cmd_buffers();
-    };
 
-    full_flush();
-    _thread_devices.clear();
-}
-
-DevicePtr Device::main_device() {
-    y_debug_assert(_main_device);
-    return _main_device;
-}
-
-const PhysicalDevice& Device::physical_device() const {
-    return _physical;
-}
-
-const Instance &Device::instance() const {
-    return _instance;
-}
-
-DeviceMemoryAllocator& Device::allocator() const {
-    return _allocator;
-}
-
-DescriptorSetAllocator& Device::descriptor_set_allocator() const {
-    return _descriptor_set_allocator;
-}
-
-const Queue& Device::graphic_queue() const {
-    return _graphic_queue;
-}
-
-const Queue& Device::loading_queue() const {
-    return _loading_queue;
-}
-
-void Device::wait_all_queues() const {
-    y_profile();
-
-
-    const auto lock = std::scoped_lock(
-        _graphic_queue.lock(),
-        _loading_queue.lock()
-    );
-    vk_check(vkDeviceWaitIdle(vk_device()));
-}
-
-ThreadDevicePtr Device::thread_device() const {
-    static thread_local usize thread_id = concurrent::thread_id();
-    static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
-
-    auto& cache = thread_cache;
-    if(cache.first != this) {
         const auto lock = y_profile_unique_lock(_lock);
-        while(_thread_devices.size() <= thread_id) {
-            _thread_devices.emplace_back();
-        }
-        auto& data = _thread_devices[thread_id];
-        if(!data) {
-            data = std::make_unique<ThreadLocalDevice>();
-            if(_thread_devices.size() > 64) {
-                log_msg("64 ThreadLocalDevice have been created.", Log::Warning);
-            }
-        }
-        cache = {this, data.get()};
-        return data.get();
+        _thread_devices.clear();
     }
-    return cache.second;
+
+    for(auto& sampler : _samplers) {
+        sampler.destroy();
+    }
+
+
+    _descriptor_set_allocator.destroy();
+    _lifetime_manager.destroy();
+    _allocator.destroy();
+
+    _graphic_queue = {};
+    _loading_queue = {};
+
+    vkDestroyDevice(_device, nullptr);
+    _device = {};
+
+    _main_device = nullptr;
 }
-
-const DeviceResources& Device::device_resources() const {
-    return _resources;
-}
-
-DeviceResources& Device::device_resources() {
-    return _resources;
-}
-
-LifetimeManager& Device::lifetime_manager() const {
-    return _lifetime_manager;
-}
-
-const DeviceProperties& Device::device_properties() const {
-    return _properties;
-}
-
-VkDevice Device::vk_device() const {
-    return _device.device;
-}
-
-const VkAllocationCallbacks* Device::vk_allocation_callbacks() const {
-    return nullptr;
-}
-
-VkPhysicalDevice Device::vk_physical_device() const {
-    return _physical.vk_physical_device();
-}
-
-VkSampler Device::vk_sampler(SamplerType type) const {
-    y_debug_assert(usize(type) < _samplers.size());
-    return _samplers[usize(type)].vk_sampler();
-}
-
-CmdBuffer Device::create_disposable_cmd_buffer() const {
-    return thread_device()->create_disposable_cmd_buffer();
-}
-
-const DebugUtils* Device::debug_utils() const {
-    return _instance.debug_utils();
-}
-
-const RayTracing* Device::ray_tracing() const {
-    return _extensions.raytracing.get();
-}
-
-
 
 
 VkPhysicalDeviceFeatures Device::required_device_features() {
@@ -461,6 +325,110 @@ bool Device::has_required_properties(const PhysicalDevice &physical) {
     ok &= !!p11.subgroupQuadOperationsInAllStages;
 
     return ok;
+}
+
+DevicePtr Device::main_device() {
+    y_debug_assert(_main_device);
+    return _main_device;
+}
+
+const PhysicalDevice& Device::physical_device() const {
+    return *_physical;
+}
+
+const Instance &Device::instance() const {
+    return _instance;
+}
+
+DeviceMemoryAllocator& Device::allocator() const {
+    return _allocator.get();
+}
+
+DescriptorSetAllocator& Device::descriptor_set_allocator() const {
+    return _descriptor_set_allocator.get();
+}
+
+const Queue& Device::graphic_queue() const {
+    return _graphic_queue;
+}
+
+const Queue& Device::loading_queue() const {
+    return _loading_queue;
+}
+
+void Device::wait_all_queues() const {
+    y_profile();
+
+
+    const auto lock = std::scoped_lock(
+        _graphic_queue.lock(),
+        _loading_queue.lock()
+    );
+    vk_check(vkDeviceWaitIdle(vk_device()));
+}
+
+ThreadDevicePtr Device::thread_device() const {
+    static thread_local usize thread_id = concurrent::thread_id();
+    static thread_local std::pair<DevicePtr, ThreadDevicePtr> thread_cache;
+
+    auto& cache = thread_cache;
+    if(cache.first != this) {
+        const auto lock = y_profile_unique_lock(_lock);
+        while(_thread_devices.size() <= thread_id) {
+            _thread_devices.emplace_back();
+        }
+        auto& data = _thread_devices[thread_id];
+        if(!data) {
+            data = std::make_unique<ThreadLocalDevice>();
+            if(_thread_devices.size() > 64) {
+                log_msg("64 ThreadLocalDevice have been created.", Log::Warning);
+            }
+        }
+        cache = {this, data.get()};
+        return data.get();
+    }
+    return cache.second;
+}
+
+const DeviceResources& Device::device_resources() const {
+    return _resources.get();
+}
+
+DeviceResources& Device::device_resources() {
+    return _resources.get();
+}
+
+LifetimeManager& Device::lifetime_manager() const {
+    return _lifetime_manager.get();
+}
+
+const DeviceProperties& Device::device_properties() const {
+    return _properties;
+}
+
+VkDevice Device::vk_device() const {
+    return _device;
+}
+
+const VkAllocationCallbacks* Device::vk_allocation_callbacks() const {
+    return nullptr;
+}
+
+VkPhysicalDevice Device::vk_physical_device() const {
+    return _physical->vk_physical_device();
+}
+
+VkSampler Device::vk_sampler(SamplerType type) const {
+    y_debug_assert(usize(type) < _samplers.size());
+    return _samplers[usize(type)].get().vk_sampler();
+}
+
+const DebugUtils* Device::debug_utils() const {
+    return _instance.debug_utils();
+}
+
+const RayTracing* Device::ray_tracing() const {
+    return nullptr;
 }
 
 }

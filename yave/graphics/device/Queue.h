@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class Queue {
+class Queue : NonCopyable {
 
     public:
         Queue() = default;
@@ -56,8 +56,8 @@ class Queue {
 
         void submit(CmdBufferRecorder& rec) const;
 
-        VkQueue _queue;
-        u32 _family_index;
+        VkQueue _queue = {};
+        u32 _family_index = u32(-1);
         std::unique_ptr<std::mutex> _lock;
 };
 
