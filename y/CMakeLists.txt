@@ -15,6 +15,12 @@ if(MSVC)
     set(Y_COMPILE_OPTIONS /permissive- /W3 /WX)
     set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} -D_CRT_SECURE_NO_DEPRECATE)
     set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} /Zc:preprocessor)
+
+    option(Y_USE_ASAN "Enable ASAN" OFF)
+
+    if(Y_USE_ASAN)
+        set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} /fsanitize=address)
+    endif()
 else()
     # -Wsign-conversion -Wshadow
     set(Y_EXTRA_WARNINGS
