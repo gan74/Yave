@@ -47,20 +47,33 @@ static decltype(&::SymCleanup) sym_cleanup = nullptr;
 static decltype(&::SymFunctionTableAccess64) func_table = nullptr;
 static decltype(&::SymGetModuleBase64) module_base = nullptr;
 static decltype(&::StackWalk64) stack_walk = nullptr;
+static decltype(&::SymGetSymFromAddr64) sym_from_addr = nullptr;
 
 
-static int print_addr(const void* ptr) {
+static int print_addr(STACKFRAME64 frame) {
+    const void* ptr = reinterpret_cast<const void*>(frame.AddrPC.Offset);
 #ifdef Y_MSVC
+    static constexpr int max_name_len = 255;
+    char buffer[sizeof(IMAGEHLP_SYMBOL64) + max_name_len * sizeof(TCHAR)] = {};
+    IMAGEHLP_SYMBOL64* symbol = reinterpret_cast<IMAGEHLP_SYMBOL64*>(buffer);
+    symbol->SizeOfStruct  = sizeof(IMAGEHLP_SYMBOL64);
+    symbol->MaxNameLength = max_name_len;
+    if(sym_from_addr && sym_from_addr(::GetCurrentProcess(), frame.AddrPC.Offset, nullptr, symbol)) {
+        std::printf("%p: %s\n", ptr, symbol->Name);
+    } else {
+        std::printf("%p: ??\n", ptr);
+    }
+
     return 0;
 #else
+    // https://gist.github.com/jvranish/4441299
+    // http://theorangeduck.com/page/printing-stack-trace-mingw
     char buffer[512] = {};
     std::sprintf(buffer, "addr2line -f -p -s -C -e %s %p", __argv[0], ptr);
     return ::system(buffer);
 #endif
 }
 
-// https://gist.github.com/jvranish/4441299
-// http://theorangeduck.com/page/printing-stack-trace-mingw
 static void print_stacktrace() {
     HANDLE process = ::GetCurrentProcess();
 
@@ -79,7 +92,7 @@ static void print_stacktrace() {
     stackframe.AddrStack.Mode = AddrModeFlat;
 
     while(stack_walk(IMAGE_FILE_MACHINE_AMD64, process, ::GetCurrentThread(), &stackframe, &context, nullptr, func_table, module_base, nullptr)) {
-        print_addr(reinterpret_cast<const void*>(stackframe.AddrPC.Offset));
+        print_addr(stackframe);
     }
 
     sym_cleanup(process);
@@ -104,6 +117,7 @@ bool setup_handler() {
         func_table = reinterpret_cast<decltype(func_table)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymFunctionTableAccess64")));
         module_base = reinterpret_cast<decltype(module_base)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymGetModuleBase64")));
         stack_walk = reinterpret_cast<decltype(stack_walk)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "StackWalk64")));
+        sym_from_addr = reinterpret_cast<decltype(sym_from_addr)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymGetSymFromAddr64")));
     }
     if(sym_init && sym_cleanup && func_table && module_base && stack_walk) {
         std::signal(SIGSEGV, handler);
