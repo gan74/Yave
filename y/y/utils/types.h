@@ -75,6 +75,54 @@ inline constexpr usize operator"" _uu(unsigned long long int t) {
     return usize(t);
 }
 
+
+
+template<typename T>
+class Uninitialized : NonMovable {
+    public:
+        Uninitialized() = default;
+
+        ~Uninitialized() {
+            y_debug_assert(!_is_init);
+        }
+
+        template<typename... Args>
+        T& init(Args&&... args) {
+            y_debug_assert((_is_init = !_is_init));
+            return *(new(&_storage.obj) T(y_fwd(args)...));
+        }
+
+        void destroy() {
+            y_debug_assert(!(_is_init = !_is_init));
+            _storage.obj.~T();
+        }
+
+        T& get() {
+            y_debug_assert(_is_init);
+            return _storage.obj;
+        }
+
+        const T& get() const {
+            y_debug_assert(_is_init);
+            return _storage.obj;
+        }
+    private:
+        union Storage {
+            Storage() : dummy(0) {
+            }
+
+            ~Storage() {
+            }
+
+            T obj;
+            u8 dummy;
+        } _storage;
+
+#ifdef Y_DEBUG
+        bool _is_init = false;
+#endif
+};
+
 }
 
 
