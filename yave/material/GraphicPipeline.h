@@ -32,7 +32,7 @@ class GraphicPipeline {
 
     public:
         GraphicPipeline() = default;
-        GraphicPipeline(const MaterialTemplate* mat, VkPipeline pipeline, VkPipelineLayout layout);
+        GraphicPipeline(VkPipeline pipeline, VkPipelineLayout layout);
 
         ~GraphicPipeline();
 

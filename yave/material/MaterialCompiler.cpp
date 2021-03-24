@@ -238,7 +238,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 
     VkPipeline pipeline = {};
     vk_check(vkCreateGraphicsPipelines(vk_device(), vk_null(), 1, &create_info, vk_allocation_callbacks(), &pipeline));
-    return GraphicPipeline(material, pipeline, pipeline_layout);
+    return GraphicPipeline(pipeline, pipeline_layout);
 }
 
 }

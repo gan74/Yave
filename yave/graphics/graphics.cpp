@@ -106,7 +106,7 @@ void wait_all_queues() {
 
 #define YAVE_GENERATE_DESTROY_IMPL(T)                                                   \
     void device_destroy(T t) {                                                          \
-        if(t != vk_null()) {                                                            \
+        if(t) {                                                                         \
             lifetime_manager().destroy_later(std::move(t));                             \
         }                                                                               \
     }
