@@ -90,7 +90,7 @@ class CmdBufferRegion {
 
         CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color);
 
-        VkCommandBuffer _buffer = {};
+        VkHandle<VkCommandBuffer> _buffer = {};
 };
 
 class RenderPassRecorder final : NonMovable {

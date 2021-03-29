@@ -40,8 +40,10 @@ namespace yave {
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
 CmdBufferRegion::~CmdBufferRegion() {
-    if(const DebugUtils* debug = debug_utils()) {
-        debug->end_region(_buffer);
+    if(_buffer) {
+        if(const DebugUtils* debug = debug_utils()) {
+            debug->end_region(_buffer);
+        }
     }
 }
 
