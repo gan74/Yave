@@ -43,6 +43,9 @@ SOFTWARE.
 #include <external/imgui/yave_imgui.h>
 
 
+#include <yave/scene/Octree.h>
+#include <yave/utils/entities.h>
+
 // we actually need this to index utf-8 chars from the imgui font (defined in imgui_internal)
 IMGUI_API int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, const char* in_text_end);
 
@@ -182,6 +185,53 @@ static void render_selection(RenderPassRecorder& recorder,
     }
 }
 
+static void visit_octree(const OctreeNode& node, core::Vector<math::Vec3>& points) {
+    if(node.is_empty()) {
+        return;
+    }
+
+    add_box(points, math::Transform<>(), node.strict_aabb());
+
+    for(const OctreeNode& c : node.children()) {
+        visit_octree(c, points);
+    }
+}
+
+[[maybe_unused]]
+static void render_octree(RenderPassRecorder& recorder,
+                          const FrameGraphPass* pass,
+                          const SceneView& scene_view) {
+
+    const ecs::EntityWorld& world = scene_view.world();
+
+
+    Octree tree;
+    {
+        core::DebugTimer _("octree");
+        for(const auto id_comp  : world.view<TransformableComponent>().id_components()) {
+            const float radius = entity_radius(world, id_comp.id()).unwrap_or(1.0f);
+            const AABB bbox = AABB::from_center_extent(id_comp.component<TransformableComponent>().position(), math::Vec3(radius * 2.0f));
+            tree.insert(id_comp.id(), bbox);
+        }
+    }
+
+
+    core::Vector<math::Vec3> points;
+    visit_octree(tree.root(), points);
+
+    if(!points.is_empty()) {
+        TypedAttribBuffer<math::Vec3, MemoryType::CpuVisible> vertices(points.size());
+        TypedMapping<math::Vec3> mapping(vertices);
+        std::copy(points.begin(), points.end(), mapping.begin());
+
+        const auto* material = resources()[EditorResources::WireFrameMaterialTemplate];
+        recorder.bind_material(material, {pass->descriptor_sets()[0]});
+        recorder.bind_attrib_buffers(vertices);
+        recorder.draw_array(points.size());
+    }
+}
+
+
 static void render_editor_entities(RenderPassRecorder& recorder, const FrameGraphPass* pass,
                                    const SceneView& scene_view,
                                    const FrameGraphMutableTypedBufferId<EditorEntityPassData> pass_buffer,
@@ -280,6 +330,8 @@ EditorEntityPass EditorEntityPass::create( FrameGraph& framegraph, const SceneVi
             if(selection().has_selected_entity()) {
                 render_selection(render_pass, self, view);
             }
+
+            //render_octree(render_pass, self, view);
         });
 
     EditorEntityPass pass;

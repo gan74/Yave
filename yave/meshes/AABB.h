@@ -36,6 +36,11 @@ class AABB {
             }
         }
 
+        static AABB from_center_extent(const math::Vec3& center, const math::Vec3& extent) {
+            const math::Vec3 half_extent =  extent * 0.5f;
+            return AABB(center - half_extent, center + half_extent);
+        }
+
         math::Vec3 center() const {
             return (_min + _max) * 0.5f;
         }
@@ -66,6 +71,24 @@ class AABB {
 
         AABB merged(const AABB& other) const {
             return AABB(_min.min(other._min), _max.max(other._max));
+        }
+
+        bool contains(const math::Vec3& point) const {
+            for(usize i = 0; i != 3; ++i) {
+                if(point[i] < _min[i] || point[i] > _max[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        bool contains(const AABB& other) const {
+            for(usize i = 0; i != 3; ++i) {
+                if(other._min[i] < _min[i] || other._max[i] > _max[i]) {
+                    return false;
+                }
+            }
+            return true;
         }
 
     private:

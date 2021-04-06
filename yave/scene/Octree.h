@@ -19,27 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERER_EDITORENTITYPASS_H
-#define EDITOR_RENDERER_EDITORENTITYPASS_H
+#ifndef YAVE_SCENE_OCTREE_H
+#define YAVE_SCENE_OCTREE_H
 
-#include <editor/editor.h>
+#include "OctreeNode.h"
 
-#include <yave/renderer/DefaultRenderer.h>
+namespace yave {
 
-namespace editor {
+class Octree : NonMovable {
 
-struct EditorEntityPass {
-    Y_TODO(make dynamic)
-    static constexpr usize max_batch_size = 128 * 1024;
+    public:
+        Octree();
 
-    FrameGraphImageId depth;
-    FrameGraphImageId color;
-    FrameGraphImageId id;
+        void insert(ecs::EntityId id, const AABB& bbox);
 
-    static EditorEntityPass create(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id);
+        const OctreeNode& root() const;
+
+    private:
+        OctreeNode _root;
 };
 
 }
 
-#endif // EDITOR_RENDERER_EDITORENTITYPASS_H
+#endif // YAVE_SCENE_OCTREE_H
 
