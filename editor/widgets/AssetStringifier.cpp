@@ -101,15 +101,16 @@ void AssetStringifier::stringify(AssetId id) {
     const int prec = 3;
 
     auto vertices = core::vector_with_capacity<core::String>(mesh.vertices().size());
-    std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const Vertex& v) {
-            std::array<char, 1024> buffer;
-            std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff}}",
-                          prec, v.position.x(), prec, v.position.y(), prec, v.position.z(),
-                          prec, v.normal.x(), prec, v.normal.y(), prec, v.normal.z(),
-                          prec, v.tangent.x(), prec, v.tangent.y(), prec, v.tangent.z(),
-                          prec, v.uv.x(), prec, v.uv.y());
-            return buffer.data();
-        });
+    for(const Vertex& v : mesh.vertices()) {
+        std::array<char, 1024> buffer;
+        std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff}}",
+                      prec, v.position.x(), prec, v.position.y(), prec, v.position.z(),
+                      prec, v.normal.x(), prec, v.normal.y(), prec, v.normal.z(),
+                      prec, v.tangent.x(), prec, v.tangent.y(), prec, v.tangent.z(),
+                      prec, v.uv.x(), prec, v.uv.y());
+        vertices.emplace_back(buffer.data());
+    };
+
     fmt_into(_vertices, "%", vertices);
     fmt_into(_triangles, "%", mesh.triangles());
 
