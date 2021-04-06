@@ -32,10 +32,6 @@ void break_in_debugger();
 
 #define Y_TODO(...) /* __VA_ARGS__ */
 
-#if defined(NDEBUG) && !defined(Y_DEBUG)
-#define Y_DEBUG
-#endif
-
 #if defined(Y_NO_DEBUG) && defined(Y_DEBUG)
 #undef Y_DEBUG
 #endif
