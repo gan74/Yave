@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "EditorEntityPass.h"
 
+#include <editor/Settings.h>
 #include <editor/Selection.h>
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
@@ -137,8 +138,7 @@ static void render_selection(RenderPassRecorder& recorder,
     }
 
     constexpr bool draw_enclosing_sphere = false;
-    constexpr bool draw_oobb = false;
-    constexpr bool draw_aabb = false;
+    const bool draw_bbox = app_settings().debug.display_selected_bbox;
 
     core::Vector<math::Vec3> points;
     {
@@ -164,10 +164,8 @@ static void render_selection(RenderPassRecorder& recorder,
         }
 
         if(const auto* m = world.component<StaticMeshComponent>(selected)) {
-            if(draw_oobb) {
+            if(draw_bbox) {
                 add_box(points, tr->transform(), m->aabb());
-            }
-            if(draw_aabb) {
                 add_box(points, math::Transform<>(), tr->to_global(m->aabb()));
             }
         }
@@ -197,22 +195,17 @@ static void visit_octree(const OctreeNode& node, core::Vector<math::Vec3>& point
     }
 }
 
-[[maybe_unused]]
 static void render_octree(RenderPassRecorder& recorder,
                           const FrameGraphPass* pass,
                           const SceneView& scene_view) {
 
     const ecs::EntityWorld& world = scene_view.world();
 
-
     Octree tree;
-    {
-        core::DebugTimer _("octree");
-        for(const auto id_comp  : world.view<TransformableComponent>().id_components()) {
-            const float radius = entity_radius(world, id_comp.id()).unwrap_or(1.0f);
-            const AABB bbox = AABB::from_center_extent(id_comp.component<TransformableComponent>().position(), math::Vec3(radius * 2.0f));
-            tree.insert(id_comp.id(), bbox);
-        }
+    for(const auto id_comp  : world.view<TransformableComponent>().id_components()) {
+        const float radius = entity_radius(world, id_comp.id()).unwrap_or(1.0f);
+        const AABB bbox = AABB::from_center_extent(id_comp.component<TransformableComponent>().position(), math::Vec3(radius * 2.0f));
+        tree.insert(id_comp.id(), bbox);
     }
 
 
@@ -331,7 +324,9 @@ EditorEntityPass EditorEntityPass::create( FrameGraph& framegraph, const SceneVi
                 render_selection(render_pass, self, view);
             }
 
-            //render_octree(render_pass, self, view);
+            if(app_settings().debug.display_octree) {
+                render_octree(render_pass, self, view);
+            }
         });
 
     EditorEntityPass pass;

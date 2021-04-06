@@ -74,6 +74,14 @@ struct UiSettings {
 struct PerfSettings {
 };
 
+struct DebugSettings {
+    usize entity_count = 1000;
+    bool display_octree = false;
+    bool display_selected_bbox = false;
+
+    y_reflect(entity_count, display_octree, display_selected_bbox)
+};
+
 
 class Settings {
     public:
@@ -84,8 +92,9 @@ class Settings {
         CameraSettings camera;
         UiSettings ui;
         PerfSettings perf;
+        DebugSettings debug;
 
-        y_reflect(editor, camera, ui, perf)
+        y_reflect(editor, camera, ui, perf, debug)
 };
 
 }

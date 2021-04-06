@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 #include "EntityView.h"
 
+#include <editor/Settings.h>
 #include <editor/Selection.h>
 #include <editor/EditorWorld.h>
 #include <editor/utils/ui.h>
@@ -33,6 +34,7 @@ SOFTWARE.
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 
+#include <yave/graphics/device/DeviceResources.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/assets/AssetLoader.h>
 
@@ -42,6 +44,29 @@ SOFTWARE.
 #include <external/imgui/yave_imgui.h>
 
 namespace editor {
+
+static void add_debug_entities() {
+    EditorWorld& world = current_world();
+
+    const auto mesh = device_resources()[DeviceResources::CubeMesh];
+    const auto material = device_resources()[DeviceResources::EmptyMaterial];
+
+    const usize entity_count = app_settings().debug.entity_count;
+    const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
+    for(usize i = 0; i != entity_count; ++i) {
+        const ecs::EntityId entity = world.create_entity<StaticMeshComponent>();
+        world.set_entity_name(entity, "Debug entity");
+
+
+        const math::Vec3 pos = math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
+        world.component<TransformableComponent>(entity)->position() = pos * 10.0f;
+        *world.component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, material);
+    }
+}
+
+editor_action("Add debug entities", add_debug_entities)
+
+
 
 EntityView::EntityView() : Widget(ICON_FA_CUBES " Entities") {
 }
