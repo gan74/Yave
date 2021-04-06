@@ -220,11 +220,14 @@ static struct SearchBarState {
         ImVec2 popup_pos;
         float popup_width = 0.0f;
         bool open_popup = false;
+        bool enter_pressed = false;
+        bool grab_focus = false;
     } search_bar_state(0);
 
 
 bool search_bar(char* buffer, usize buffer_size) {
     ImGuiInputTextState* imgui_state = ImGui::GetInputTextState(ImGui::GetID(ICON_FA_SEARCH));
+
     if(imgui_state) {
         if(search_bar_state.id != imgui_state->ID) {
             search_bar_state = SearchBarState(imgui_state->ID);
@@ -235,8 +238,13 @@ bool search_bar(char* buffer, usize buffer_size) {
 
     search_bar_state.popup_pos = math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetCursorPos());
 
+    if(imgui_state && search_bar_state.grab_focus) {
+        ImGui::SetKeyboardFocusHere(0);
+        search_bar_state.grab_focus = false;
+    }
+
     const int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackHistory;
-    const bool ret =  ImGui::InputText(ICON_FA_SEARCH, buffer, buffer_size, flags, history_callback, &search_bar_state.selection_index);
+    search_bar_state.enter_pressed = ImGui::InputText(ICON_FA_SEARCH, buffer, buffer_size, flags, history_callback, &search_bar_state.selection_index);
 
     const ImVec2 rect = ImGui::GetItemRectSize();
     search_bar_state.popup_pos.y += rect.y + 1.0f;
@@ -251,7 +259,7 @@ bool search_bar(char* buffer, usize buffer_size) {
         search_bar_state.open_popup = false;
     }
 
-    return ret;
+    return search_bar_state.enter_pressed && search_bar_state.selection_index < 0;
 }
 
 bool begin_suggestion_popup() {
@@ -299,7 +307,12 @@ bool suggestion_item(const char* name) {
     y_debug_assert(search_bar_state.open_popup);
 
     bool selected = search_bar_state.item_count == search_bar_state.selection_index;
-    const bool activated = ImGui::Selectable(name, &selected);
+    bool activated = ImGui::Selectable(name, &selected);
+
+    if(selected && search_bar_state.enter_pressed) {
+        activated = true;
+        search_bar_state.grab_focus = true;
+    }
 
     if(selected || ImGui::IsItemHovered()) {
         search_bar_state.selection_index = search_bar_state.item_count;
