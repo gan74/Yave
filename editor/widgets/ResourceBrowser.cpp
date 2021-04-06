@@ -41,6 +41,10 @@ SOFTWARE.
 
 namespace editor {
 
+editor_action("Import objects", add_detached_widget<SceneImporter>)
+editor_action("Import image", add_detached_widget<ImageImporter>)
+
+
 ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resource Browser") {
 }
 
@@ -60,11 +64,6 @@ AssetType ResourceBrowser::read_file_type(AssetId id) const {
 bool ResourceBrowser::is_searching() const {
     return !!_search_results;
 }
-
-
-Y_TODO(these dont work)
-// editor_action("Import objects", add_detached_widget<SceneImporter>)
-// editor_action("Import image", add_detached_widget<ImageImporter>)
 
 void ResourceBrowser::draw_import_menu() {
     if(ImGui::Selectable("Import objects")) {

@@ -38,6 +38,9 @@ SOFTWARE.
 
 namespace editor {
 
+ImageImporter::ImageImporter() : ImageImporter(FileSystemModel::local_filesystem()->current_path().unwrap_or("")) {
+}
+
 ImageImporter::ImageImporter(const core::String& import_path) :
         Widget("Image importer"),
         _import_path(import_path) {

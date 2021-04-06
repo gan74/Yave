@@ -35,7 +35,8 @@ namespace editor {
 class ImageImporter final : public Widget {
 
     public:
-        ImageImporter(const core::String& import_path = ".");
+        ImageImporter();
+        ImageImporter(const core::String& import_path);
 
     protected:
         void on_gui() override;

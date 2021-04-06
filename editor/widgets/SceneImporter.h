@@ -40,7 +40,8 @@ class SceneImporter final : public Widget {
     };
 
     public:
-        SceneImporter(const core::String& import_path = ".");
+        SceneImporter();
+        SceneImporter(const core::String& import_path);
 
     protected:
         void on_gui() override;

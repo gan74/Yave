@@ -47,6 +47,9 @@ SOFTWARE.
 
 namespace editor {
 
+SceneImporter::SceneImporter() : SceneImporter(FileSystemModel::local_filesystem()->current_path().unwrap_or("")) {
+}
+
 SceneImporter::SceneImporter(const core::String& import_path) :
         Widget("Mesh importer"),
         _import_path(import_path) {
