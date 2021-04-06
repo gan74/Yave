@@ -37,7 +37,8 @@ void OctreeNode::swap(OctreeNode& other) {
 OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
     y_debug_assert(contains(bbox));
 
-    const bool should_insert_into_children = _entities.size() >= max_entities_per_node || bbox.half_extent().length() < _half_extent / 16.0f;
+    const bool split_small = split_small_object && bbox.half_extent().length() < _half_extent / min_object_size_ratio;
+    const bool should_insert_into_children = _entities.size() >= max_entities_per_node || split_small;
     if(!has_children() && should_insert_into_children && _half_extent * 2.0f > min_node_extent) {
         build_children();
     }

@@ -37,6 +37,9 @@ class OctreeNode {
 
     using Children = std::array<OctreeNode, 8>;
 
+    static constexpr bool split_small_object = true;
+    static constexpr float min_object_size_ratio = 16.0f;
+
     static constexpr usize max_entities_per_node = 32;
     static constexpr float min_node_extent = 1.0f;
 
