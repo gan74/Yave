@@ -78,8 +78,9 @@ struct DebugSettings {
     usize entity_count = 1000;
     bool display_octree = false;
     bool display_selected_bbox = false;
+    bool display_hidden_entities = false;
 
-    y_reflect(entity_count, display_octree, display_selected_bbox)
+    y_reflect(entity_count, display_octree, display_selected_bbox, display_hidden_entities)
 };
 
 

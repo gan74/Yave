@@ -57,10 +57,10 @@ static void add_debug_entities() {
         const ecs::EntityId entity = world.create_entity<StaticMeshComponent>();
         world.set_entity_name(entity, "Debug entity");
 
-
         const math::Vec3 pos = math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.component<TransformableComponent>(entity)->position() = pos * 10.0f;
         *world.component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, material);
+        world.component<EditorComponent>(entity)->set_hidden_in_editor(true);
     }
 }
 
@@ -74,12 +74,18 @@ EntityView::EntityView() : Widget(ICON_FA_CUBES " Entities") {
 void EntityView::paint_view() {
     EditorWorld& world = current_world();
 
+    const bool display_hidden = app_settings().debug.display_hidden_entities;
+
     if(ImGui::BeginChild("##entities", ImVec2(), true)) {
         imgui::alternating_rows_background();
         for(ecs::EntityId id : world.ids()) {
             const EditorComponent* comp = world.component<EditorComponent>(id);
             if(!comp) {
                 log_msg(fmt("Entity with id % is missing EditorComponent", id.index()), Log::Warning);
+                continue;
+            }
+
+            if(!display_hidden && comp->is_hidden_in_editor()) {
                 continue;
             }
 

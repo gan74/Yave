@@ -41,11 +41,16 @@ class EditorComponent {
 
         math::Vec3& euler();
 
-        y_reflect(_name)
+        void set_hidden_in_editor(bool hide);
+        bool is_hidden_in_editor() const;
+
+        y_reflect(_name, _hide_in_editor)
 
     private:
         core::String _name = "Unnamed entity";
         math::Vec3 _euler;
+
+        bool _hide_in_editor = false;
 };
 
 }

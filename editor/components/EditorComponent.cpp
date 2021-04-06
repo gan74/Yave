@@ -39,5 +39,13 @@ math::Vec3& EditorComponent::euler() {
     return _euler;
 }
 
+void EditorComponent::set_hidden_in_editor(bool hide) {
+    _hide_in_editor = hide;
+}
+
+bool EditorComponent::is_hidden_in_editor() const {
+    return _hide_in_editor;
+}
+
 }
 
