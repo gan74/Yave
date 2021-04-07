@@ -238,12 +238,14 @@ bool search_bar(char* buffer, usize buffer_size) {
 
     search_bar_state.popup_pos = math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetCursorPos());
 
-    if(imgui_state && search_bar_state.grab_focus) {
+    const bool grab_focus = imgui_state && search_bar_state.grab_focus;
+    if(grab_focus) {
         ImGui::SetKeyboardFocusHere(0);
         search_bar_state.grab_focus = false;
+        imgui_state->Stb.cursor = imgui_state->Stb.select_start = imgui_state->Stb.select_end = imgui_state->TextW.size();
     }
 
-    const int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackHistory;
+    const int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory;
     search_bar_state.enter_pressed = ImGui::InputText(ICON_FA_SEARCH, buffer, buffer_size, flags, history_callback, &search_bar_state.selection_index);
 
     const ImVec2 rect = ImGui::GetItemRectSize();
