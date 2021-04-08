@@ -41,7 +41,7 @@ SOFTWARE.
 
 Y_TODO(merge with scene sub pass?)
 
-// mostly copied from SceneRednerSubPass and EditorEntityPass
+// mostly copied from SceneRednerSubPass and EditorPass
 namespace editor {
 
 static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pass,

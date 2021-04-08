@@ -68,7 +68,7 @@ class EditorResources;
 struct Msg;
 class CameraController;
 class ResourceBrowser;
-struct EditorEntityPass;
+struct EditorPass;
 class ImGuiRenderer;
 class PlotData;
 class FileBrowser;

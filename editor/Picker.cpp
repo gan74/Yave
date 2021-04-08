@@ -23,7 +23,7 @@ SOFTWARE.
 #include "Picker.h"
 
 #include <editor/EditorResources.h>
-#include <editor/renderer/EditorEntityPass.h>
+#include <editor/renderer/EditorPass.h>
 #include <editor/renderer/IdBufferPass.h>
 
 #include <yave/framegraph/FrameGraph.h>
@@ -58,7 +58,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
 
     Y_TODO(Take editor renderer settings into account for picking)
     const IdBufferPass scene_pass = IdBufferPass::create(framegraph, scene_view, size);
-    const EditorEntityPass entity_pass = EditorEntityPass::create(framegraph, scene_view, scene_pass.depth, FrameGraphImageId(), scene_pass.id);
+    const EditorPass entity_pass = EditorPass::create(framegraph, scene_view, scene_pass.depth, FrameGraphImageId(), scene_pass.id);
 
     {
         FrameGraphPassBuilder builder = framegraph.add_pass("Picking readback pass");

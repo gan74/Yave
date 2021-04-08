@@ -24,17 +24,15 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <yave/ecs/ecs.h>
-
-#include <y/reflect/reflect.h>
 #include <y/core/String.h>
+#include <y/reflect/reflect.h>
 
 namespace editor {
 
 class EditorComponent {
     public:
         EditorComponent() = default;
-        EditorComponent(std::string_view name);
+        EditorComponent(core::String name);
 
         const core::String& name() const;
         void set_name(core::String name);

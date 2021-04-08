@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_RENDERER_EDITORENTITYPASS_H
-#define EDITOR_RENDERER_EDITORENTITYPASS_H
+#ifndef EDITOR_RENDERER_EDITORPASS_H
+#define EDITOR_RENDERER_EDITORPASS_H
 
 #include <editor/editor.h>
 
@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace editor {
 
-struct EditorEntityPass {
+struct EditorPass {
     Y_TODO(make dynamic)
     static constexpr usize max_batch_size = 128 * 1024;
 
@@ -36,10 +36,10 @@ struct EditorEntityPass {
     FrameGraphImageId color;
     FrameGraphImageId id;
 
-    static EditorEntityPass create(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id);
+    static EditorPass create(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id);
 };
 
 }
 
-#endif // EDITOR_RENDERER_EDITORENTITYPASS_H
+#endif // EDITOR_RENDERER_EDITORPASS_H
 

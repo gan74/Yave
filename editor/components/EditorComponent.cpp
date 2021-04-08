@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace editor {
 
-EditorComponent::EditorComponent(std::string_view name) : _name(name) {
+EditorComponent::EditorComponent(core::String name) : _name(std::move(name)) {
 }
 
 const core::String& EditorComponent::name() const {

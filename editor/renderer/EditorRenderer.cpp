@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "EditorRenderer.h"
 #include "IdBufferPass.h"
-#include "EditorEntityPass.h"
+#include "EditorPass.h"
 
 #include <editor/Selection.h>
 #include <editor/EditorResources.h>
@@ -71,7 +71,7 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
     renderer.id = IdBufferPass::create(framegraph, view, size).id;
 
     if(settings.show_editor_entities) {
-        const EditorEntityPass ed = EditorEntityPass::create(framegraph, view, renderer.depth, renderer.final, renderer.id);
+        const EditorPass ed = EditorPass::create(framegraph, view, renderer.depth, renderer.final, renderer.id);
         renderer.depth = ed.depth;
         renderer.final = ed.color;
         renderer.id = ed.id;

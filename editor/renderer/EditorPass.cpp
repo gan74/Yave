@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "EditorEntityPass.h"
+#include "EditorPass.h"
 
 #include <editor/Settings.h>
 #include <editor/Selection.h>
@@ -60,7 +60,7 @@ struct ImGuiBillboardVertex {
     u32 entity_index;
 };
 
-struct EditorEntityPassData {
+struct EditorPassData {
     math::Matrix4<> view_proj;
     math::Vec2 viewport_size;
     float size;
@@ -227,7 +227,7 @@ static void render_octree(RenderPassRecorder& recorder,
 
 static void render_editor_entities(RenderPassRecorder& recorder, const FrameGraphPass* pass,
                                    const SceneView& scene_view,
-                                   const FrameGraphMutableTypedBufferId<EditorEntityPassData> pass_buffer,
+                                   const FrameGraphMutableTypedBufferId<EditorPassData> pass_buffer,
                                    FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer) {
 
     y_profile();
@@ -294,12 +294,12 @@ static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, Fr
 
 
 
-EditorEntityPass EditorEntityPass::create( FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id) {
+EditorPass EditorPass::create( FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id) {
     const math::Vec2ui size = framegraph.image_size(in_depth);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
-    auto pass_buffer = builder.declare_typed_buffer<EditorEntityPassData>();
+    auto pass_buffer = builder.declare_typed_buffer<EditorPassData>();
     const auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(max_batch_size);
     const auto depth = builder.declare_copy(in_depth);
     const auto color = copy_or_dummy(builder, in_color, VK_FORMAT_R8G8B8A8_UNORM, size);
@@ -329,7 +329,7 @@ EditorEntityPass EditorEntityPass::create( FrameGraph& framegraph, const SceneVi
             }
         });
 
-    EditorEntityPass pass;
+    EditorPass pass;
     pass.depth = depth;
     pass.color = color;
     pass.id = id;
