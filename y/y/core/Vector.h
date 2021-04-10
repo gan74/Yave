@@ -332,7 +332,9 @@ class Vector : ResizePolicy, Allocator {
         }
 
         inline void set_min_capacity(usize min_cap) {
-            unsafe_set_capacity(ResizePolicy::ideal_capacity(min_cap));
+            if(capacity() < min_cap) {
+                unsafe_set_capacity(ResizePolicy::ideal_capacity(min_cap));
+            }
         }
 
         inline void reserve(usize cap) {
