@@ -24,17 +24,17 @@ SOFTWARE.
 
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/Material.h>
+#include <yave/material/Material.h>
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+
+#include <yave/meshes/MeshData.h>
+#include <yave/graphics/images/ImageData.h>
+#include <yave/assets/AssetLoader.h>
 
 namespace yave {
 
 StaticMeshComponent::SubMesh::SubMesh(const AssetPtr<StaticMesh>& me, const AssetPtr<Material>& ma) : mesh(me), material(ma) {
-}
-
-void StaticMeshComponent::SubMesh::flush_reload() {
-    mesh.flush_reload();
-    material.flush_reload();
 }
 
 void StaticMeshComponent::SubMesh::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
@@ -82,12 +82,6 @@ StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const
 StaticMeshComponent::StaticMeshComponent(core::Vector<SubMesh> sub_meshes) : _sub_meshes(std::move(sub_meshes)) {
 }
 
-void StaticMeshComponent::flush_reload() {
-    for(SubMesh& sub : _sub_meshes) {
-        sub.flush_reload();
-    }
-}
-
 void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
     for(const SubMesh& sub : _sub_meshes) {
         sub.render(recorder, scene_data);
@@ -109,10 +103,6 @@ core::Vector<StaticMeshComponent::SubMesh>& StaticMeshComponent::sub_meshes() {
 }
 
 const AABB& StaticMeshComponent::aabb() const {
-    if(_flags & AABBDirty) {
-        _aabb = compute_aabb();
-        _flags = Flags(_flags & ~AABBDirty);
-    }
     return _aabb;
 }
 
@@ -131,6 +121,24 @@ AABB StaticMeshComponent::compute_aabb() const {
     }
 
     return aabb;
+}
+
+bool StaticMeshComponent::update_asset_loading_status() {
+    for(const SubMesh& sub : _sub_meshes) {
+       if(!sub.mesh.is_loaded() || !sub.material.is_loaded()) {
+           return false;
+       }
+    }
+
+    _aabb = compute_aabb();
+    return true;
+}
+
+void StaticMeshComponent::load_assets(AssetLoadingContext& loading_ctx) {
+    for(auto& sub : _sub_meshes) {
+        sub.mesh.load(loading_ctx);
+        sub.material.load(loading_ctx);
+    }
 }
 
 }

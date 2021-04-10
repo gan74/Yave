@@ -22,17 +22,19 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_SKYLIGHTCOMPONENT_H
 #define YAVE_COMPONENTS_SKYLIGHTCOMPONENT_H
 
-#include <yave/assets/AssetPtr.h>
+#include "HasLoadableAssetsTag.h"
 
 #include <yave/graphics/images/IBLProbe.h>
 
 namespace yave {
 
-class SkyLightComponent final {
+class SkyLightComponent final : public HasLoadableAssetsTag<SkyLightComponent> {
     public:
-
         AssetPtr<IBLProbe>& probe();
         const AssetPtr<IBLProbe>& probe() const;
+
+        bool update_asset_loading_status();
+        void load_assets(AssetLoadingContext& loading_ctx);
 
         y_reflect(_probe)
 

@@ -22,23 +22,21 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 #define YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 
-#include <yave/ecs/ecs.h>
+#include "HasLoadableAssetsTag.h"
 
-#include <yave/assets/AssetPtr.h>
+#include "TransformableComponent.h"
+
 #include <yave/scene/Renderable.h>
 #include <yave/meshes/AABB.h>
-#include "TransformableComponent.h"
 
 #include <y/core/Vector.h>
 
 namespace yave {
 
-class StaticMeshComponent final : public Renderable, public ecs::RequiredComponents<TransformableComponent> {
-
-    enum Flags : u32 {
-        None,
-        AABBDirty = 0x01,
-    };
+class StaticMeshComponent final :
+        public Renderable,
+        public ecs::RequiredComponents<TransformableComponent>,
+        public HasLoadableAssetsTag<StaticMeshComponent> {
 
     public:
         struct SubMesh {
@@ -47,8 +45,6 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
 
             SubMesh() = default;
             SubMesh(const AssetPtr<StaticMesh>& me, const AssetPtr<Material>& ma);
-
-            void flush_reload();
 
             void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
             void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
@@ -63,8 +59,6 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
         StaticMeshComponent(core::Vector<SubMesh> sub_meshes);
 
-        void flush_reload();
-
         void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
         void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
@@ -72,17 +66,17 @@ class StaticMeshComponent final : public Renderable, public ecs::RequiredCompone
         core::Vector<SubMesh>& sub_meshes();
 
         const AABB& aabb() const;
-        AABB compute_aabb() const;
+
+        bool update_asset_loading_status();
+        void load_assets(AssetLoadingContext& loading_ctx);
 
         y_reflect(_sub_meshes)
 
     private:
+        AABB compute_aabb() const;
 
         core::Vector<SubMesh> _sub_meshes;
-
-        Y_TODO(Thread safety?)
-        mutable AABB _aabb;
-        mutable Flags _flags = AABBDirty;
+        AABB _aabb;
 
 };
 

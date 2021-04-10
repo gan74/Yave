@@ -22,7 +22,10 @@ SOFTWARE.
 #ifndef YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
 #define YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
 
-#include <yave/ecs/System.h>
+#include <yave/ecs/EntityWorld.h>
+
+#include <y/core/Vector.h>
+#include <y/core/HashMap.h>
 
 namespace yave {
 
@@ -35,9 +38,57 @@ class AssetLoaderSystem : public ecs::System {
 
     private:
         void run_tick(ecs::EntityWorld& world, bool only_recent);
+        void post_load(ecs::EntityWorld& world);
+
+        core::ExternalHashMap<ecs::ComponentTypeIndex, core::Vector<ecs::EntityId>> _loading;
 
         AssetLoader* _loader = nullptr;
 
+
+
+
+    private:
+        template<typename CRTP>
+        friend class HasLoadableAssetsTag;
+
+        struct LoadableComponentTypeInfo {
+            void (*start_loading)(ecs::EntityWorld&, AssetLoadingContext&, core::Vector<ecs::EntityId>&) = nullptr;
+            void (*update_status)(ecs::EntityWorld&, core::Vector<ecs::EntityId>&) = nullptr;
+            ecs::ComponentTypeIndex type;
+            LoadableComponentTypeInfo* next = nullptr;
+        };
+
+        template<typename T>
+        static void register_loadable_component_type() {
+            static LoadableComponentTypeInfo info = LoadableComponentTypeInfo {
+                &start_loading_components<T>,
+                &update_loading_status<T>,
+                ecs::type_index<T>(),
+                _first_info
+            };
+            _first_info = &info;
+        }
+
+        template<typename T>
+        static void start_loading_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, core::Vector<ecs::EntityId>& ids) {
+            for(auto id_comp : world.view<T>().id_components()) {
+                id_comp.component<T>().load_assets(loading_ctx);
+                ids << id_comp.id();
+            }
+        }
+
+        template<typename T>
+        static void update_loading_status(ecs::EntityWorld& world, core::Vector<ecs::EntityId>& ids) {
+            for(usize i = 0; i != ids.size(); ++i) {
+                T* component = world.component<T>(ids[i]);
+                if(component->update_asset_loading_status()) {
+                    ids.erase_unordered(ids.begin() + i);
+                    --i;
+                }
+            }
+        }
+
+        static LoadableComponentTypeInfo* _first_info;
 };
 
 }

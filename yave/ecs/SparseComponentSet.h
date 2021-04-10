@@ -36,27 +36,19 @@ namespace yave {
 namespace ecs {
 
 class SparseIdSet : NonCopyable {
+
     public:
+        using index_type = u32;
         using size_type = usize;
 
-    protected:
-        static constexpr usize page_size = 1024;
+        static constexpr index_type invalid_index = index_type(-1);
 
-        using page_index_type = u32;
-        static constexpr page_index_type page_invalid_index = page_index_type(-1);
-        using page_type = std::array<page_index_type, page_size>;
-
-    public:
         bool contains(EntityId id) const {
-            const auto [i, o] = page_index(id);
-            return i < _sparse.size() &&
-                   _sparse[i][o] != page_invalid_index &&
-                   _dense[_sparse[i][o]] == id;
+            return contains_index(id.index()) && _dense[_sparse[id.index()]] == id;
         }
 
-        bool contains_index(u32 index) const {
-            const auto [i, o] = page_index(index);
-            return i < _sparse.size() && _sparse[i][o] != page_invalid_index;
+        bool contains_index(index_type index) const {
+            return index < _sparse.size() && _sparse[index] != invalid_index;
         }
 
         usize size() const {
@@ -71,29 +63,25 @@ class SparseIdSet : NonCopyable {
             return _dense;
         }
 
+        index_type dense_index_of(EntityId id) const {
+            return contains(id) ? _sparse[id.index()] : invalid_index;
+        }
+
+        index_type dense_index_of(index_type index) const {
+            return index < _sparse.size() ? _sparse[index] : invalid_index;
+        }
+
     protected:
-        static std::pair<usize, usize> page_index(EntityId id) {
-            return page_index(id.index());
-        }
-
-        static std::pair<usize, usize> page_index(u32 index) {
-            const usize i = usize(index) / page_size;
-            const usize o = usize(index) % page_size;
-            return {i, o};
-        }
-
-        page_type& create_page(usize new_page_index) {
-            Y_TODO(Fix this (alloc pages on the heap?))
-            while(new_page_index >= _sparse.size()) {
-                _sparse.emplace_back();
-                auto& page = _sparse.last();
-                std::fill(page.begin(), page.end(), page_invalid_index);
+        void grow_sparse(index_type max_index) {
+            const usize target_size = usize(max_index + 1);
+            _sparse.set_min_capacity(target_size);
+            while(_sparse.size() < target_size) {
+                _sparse << invalid_index;
             }
-            return _sparse[new_page_index];
         }
 
         core::Vector<EntityId> _dense;
-        core::Vector<page_type> _sparse;
+        core::Vector<index_type> _sparse;
 };
 
 
@@ -162,8 +150,10 @@ class SparseComponentSetBase : public SparseIdSet {
         reference insert(EntityId id, Args&&... args) {
             y_debug_assert(!contains(id));
 
-            const auto [i, o] = page_index(id);
-            create_page(i)[o] = page_index_type(_dense.size());
+            const index_type index = id.index();
+            grow_sparse(index);
+
+            _sparse[index] = index_type(_dense.size());
             _dense.emplace_back(id);
             _values.emplace_back(y_fwd(args)...);
 
@@ -179,22 +169,22 @@ class SparseComponentSetBase : public SparseIdSet {
         void erase(EntityId id) {
             y_debug_assert(contains(id));
 
-            const auto [i, o] = page_index(id);
-            const page_index_type dense_index = _sparse[i][o];
-            const page_index_type last_index = page_index_type(_dense.size() - 1);
-            const EntityId last_sparse = _dense[last_index];
+            const index_type index = id.index();
+            const index_type dense_index = _sparse[index];
+            const index_type last_dense_index = index_type(_dense.size() - 1);
+            const EntityId last = _dense[last_dense_index];
 
             y_debug_assert(_dense[dense_index] == id);
 
-            std::swap(_dense[dense_index], _dense[last_index]);
-            std::swap(_values[dense_index], _values[last_index]);
+            std::swap(_dense[dense_index], _dense[last_dense_index]);
+            std::swap(_values[dense_index], _values[last_dense_index]);
 
             _dense.pop();
             _values.pop();
 
-            const auto [li, lo] = page_index(last_sparse);
-            _sparse[li][lo] = dense_index;
-            _sparse[i][o] = page_invalid_index;
+            const index_type last_sparse_index = last.index();
+            _sparse[last_sparse_index] = dense_index;
+            _sparse[index] = invalid_index;
 
             audit();
 
@@ -204,31 +194,29 @@ class SparseComponentSetBase : public SparseIdSet {
 
         reference operator[](EntityId id) {
             y_debug_assert(contains(id));
-            const auto [i, o] = page_index(id);
-            return _values[_sparse[i][o]];
+            return _values[_sparse[id.index()]];
         }
 
         const_reference operator[](EntityId id) const {
             y_debug_assert(contains(id));
-            const auto [i, o] = page_index(id);
-            return _values[_sparse[i][o]];
+            return _values[_sparse[id.index()]];
         }
 
         pointer try_get(EntityId id) {
-            const auto [i, o] = page_index(id);
-            if(i >= _sparse.size()) {
+            const index_type index = id.index();
+            if(index >= _sparse.size()) {
                 return nullptr;
             }
-            const usize pi = _sparse[i][o];
+            const index_type pi = _sparse[index];
             return pi < _values.size() ? &_values[pi] : nullptr;
         }
 
         const_pointer try_get(EntityId id) const {
-            const auto [i, o] = page_index(id);
-            if(i >= _sparse.size()) {
+            const index_type index = id.index();
+            if(index >= _sparse.size()) {
                 return nullptr;
             }
-            const usize pi = _sparse[i][o];
+            const index_type pi = _sparse[index];
             return pi < _values.size() ? &_values[pi] : nullptr;
         }
 
@@ -322,9 +310,6 @@ class SparseComponentSetBase : public SparseIdSet {
 // Why we need to do this to not have imcomplete types?
 template<typename Elem>
 class SparseComponentSet : public SparseComponentSetBase<Elem> {
-    public:
-        // using iterator       = decltype(std::declval<      SparseComponentSet<Elem>>().begin());
-        // using const_iterator = decltype(std::declval<const SparseComponentSet<Elem>>().begin());
 };
 
 }

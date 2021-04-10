@@ -22,28 +22,22 @@ SOFTWARE.
 
 #include "AssetLoaderSystem.h"
 
-#include <yave/components/StaticMeshComponent.h>
-#include <yave/components/SkyLightComponent.h>
-
-#include <yave/material/Material.h>
-#include <yave/material/SimpleMaterialData.h>
-#include <yave/meshes/StaticMesh.h>
-#include <yave/meshes/MeshData.h>
-
-#include <yave/graphics/images/IBLProbe.h>
-#include <yave/graphics/images/ImageData.h>
-
 #include <yave/assets/AssetLoader.h>
-#include <yave/assets/AssetPtr.h>
-#include <yave/ecs/EntityWorld.h>
 
 namespace yave {
+
+AssetLoaderSystem::LoadableComponentTypeInfo* AssetLoaderSystem::_first_info = nullptr;
 
 template<typename T>
 static core::Span<ecs::EntityId> ids(ecs::EntityWorld& world, bool recent) {
     return recent
         ? world.recently_added<T>()
         : world.component_ids<T>();
+}
+
+template<typename T>
+static auto view(ecs::EntityWorld& world, bool recent) {
+    return world.view<T>(ids<T>(world, recent));
 }
 
 
@@ -59,22 +53,30 @@ void AssetLoaderSystem::tick(ecs::EntityWorld& world) {
 }
 
 void AssetLoaderSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
+    y_profile();
+
     AssetLoadingContext loading_ctx(_loader);
 
-    for(ecs::EntityId id : ids<StaticMeshComponent>(world, only_recent)) {
-        StaticMeshComponent* component = world.component<StaticMeshComponent>(id);
-        for(auto& sub_mesh : component->sub_meshes()) {
-            sub_mesh.mesh.load(loading_ctx);
-            sub_mesh.material.load(loading_ctx);
+    {
+        for(const LoadableComponentTypeInfo* info = _first_info; info; info = info->next) {
+            auto& ids = _loading[info->type];
+            info->start_loading(world, loading_ctx, ids);
         }
     }
 
-    for(ecs::EntityId id : ids<SkyLightComponent>(world, only_recent)) {
-        SkyLightComponent* component = world.component<SkyLightComponent>(id);
-        component->probe().load(loading_ctx);
-    }
+    post_load(world);
 }
 
+void AssetLoaderSystem::post_load(ecs::EntityWorld& world) {
+    y_profile();
+
+    {
+        for(const LoadableComponentTypeInfo* info = _first_info; info; info = info->next) {
+            auto& ids = _loading[info->type];
+            info->update_status(world, ids);
+        }
+    }
+}
 
 
 }

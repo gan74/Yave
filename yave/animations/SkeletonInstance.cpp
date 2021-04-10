@@ -33,10 +33,6 @@ SkeletonInstance::SkeletonInstance(const Skeleton* skeleton) :
     flush_data();
 }
 
-void SkeletonInstance::flush_reload() {
-    _animation.flush_reload();
-}
-
 void SkeletonInstance::animate(const AssetPtr<Animation>& anim) {
     _animation = anim;
     _anim_timer.reset();

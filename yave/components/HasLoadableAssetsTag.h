@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Gr�goire Angerand
+Copyright (c) 2016-2021 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_COMPONENTS_HASLOADABLEASSETSTAG_H
+#define YAVE_COMPONENTS_HASLOADABLEASSETSTAG_H
 
-#include "SkyLightComponent.h"
+#include <yave/systems/AssetLoaderSystem.h>
 
-#include <yave/graphics/images/ImageData.h>
-#include <yave/assets/AssetLoader.h>
+#include <yave/assets/AssetPtr.h>
 
 namespace yave {
 
-AssetPtr<IBLProbe>& SkyLightComponent::probe() {
-    return _probe;
+template<typename CRTP>
+class HasLoadableAssetsTag {
+    public:
+        HasLoadableAssetsTag() {
+            LoadableComponentRegister().trigger();
+        }
+
+        /*
+        bool update_asset_loading_status();
+        void load_assets(AssetLoadingContext& loading_ctx);
+        */
+
+    private:
+        struct LoadableComponentRegister {
+            inline static struct Registerer {
+                Registerer() { AssetLoaderSystem::register_loadable_component_type<CRTP>(); }
+                void trigger() {}
+            } loadable_registerer;
+            void trigger() { loadable_registerer.trigger(); }
+        };
+};
+
 }
 
-const AssetPtr<IBLProbe>& SkyLightComponent::probe() const {
-    return _probe;
-}
-
-bool SkyLightComponent::update_asset_loading_status() {
-    return true;
-}
-
-void SkyLightComponent::load_assets(AssetLoadingContext& loading_ctx) {
-    _probe.load(loading_ctx);
-}
-
-}
+#endif // YAVE_COMPONENTS_HASLOADABLEASSETSTAG_H
 

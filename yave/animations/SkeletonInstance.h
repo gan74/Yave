@@ -41,8 +41,6 @@ class SkeletonInstance {
         // this seems unsafe...
         SkeletonInstance(const Skeleton* skeleton);
 
-        void flush_reload();
-
         void animate(const AssetPtr<Animation>& anim);
 
         void update();
