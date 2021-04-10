@@ -213,6 +213,18 @@ class EntityWorld {
         }
 
         template<typename... Args>
+        EntityView<false, Args...> view(core::Span<EntityId> ids) {
+            static_assert(sizeof...(Args));
+            return EntityView<false, Args...>(typed_component_sets<Args...>(), ids);
+        }
+
+        template<typename... Args>
+        EntityView<true, Args...> view(core::Span<EntityId> ids) const {
+            static_assert(sizeof...(Args));
+            return EntityView<true, Args...>(typed_component_sets<Args...>(), ids);
+        }
+
+        template<typename... Args>
         auto view(StaticArchetype<Args...>) {
             return view<Args...>();
         }
@@ -295,6 +307,7 @@ class EntityWorld {
         void check_exists(EntityId id) const;
 
 
+        Y_TODO(replace by vector)
         core::ExternalHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> _containers;
         EntityIdPool _entities;
 
