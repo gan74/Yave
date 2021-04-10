@@ -122,7 +122,7 @@ class EntityView {
 
                 template<typename T>
                 inline decltype(auto) component() const {
-                    using type = std::conditional_t<Const, const remove_cvref_t<T>&, remove_cvref_t<T>>;
+                    using type = std::conditional_t<Const, const remove_cvref_t<T>&, remove_cvref_t<T>&>;
                     constexpr usize index = detail::tuple_index<type, decltype(components())>::value;
                     static_assert(std::is_same_v<type, std::tuple_element_t<index, decltype(components())>>);
                     return std::get<index>(components());
@@ -230,6 +230,21 @@ class EntityView {
         EntityView(const set_tuple& sets) : _sets(sets), _short(shortest_range()) {
             y_debug_assert(_short.is_empty() || !has_null_sets<0>(_sets));
         }
+
+        EntityView(const set_tuple& sets, id_range ids) : _sets(sets) {
+            if(!has_null_sets<0>(_sets)) {
+                /*for(usize i = 0; i != ids.size(); ++i) {
+                    if(has_all<0>(_sets, ids[i])) {
+                        _short = id_range(ids.data() + i, ids.size() - i);
+                        break;
+                    }
+                }*/
+                _short = ids;
+            }
+
+            y_debug_assert(_short.is_empty() || !has_null_sets<0>(_sets));
+        }
+
 
         core::Range<const_iterator, const_end_iterator> id_components() const {
             return {const_iterator(_short, _sets), const_end_iterator{}};
