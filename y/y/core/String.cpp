@@ -75,7 +75,26 @@ usize String::compute_capacity(usize len) {
 }
 
 void String::free_long(LongData& d) {
+#ifdef Y_DEBUG
+    if(d.data) {
+        std::memset(d.data, 0xFE, d.length + 1);
+    }
+#endif
     delete[] d.data;
+}
+
+void String::free_short(ShortData& d) {
+#ifdef Y_DEBUG
+    std::memset(d.data, 0xFE, d.length + 1);
+#endif
+}
+
+void String::free_data() {
+    if(is_long()) {
+        free_long(_l);
+    } else {
+        free_short(_s);
+    }
 }
 
 // --------------------------------------------------- STRING ---------------------------------------------------
@@ -124,9 +143,7 @@ String::String(const char* beg, const char* end) : String(beg, usize(end - beg))
 }
 
 String::~String() {
-    if(is_long()) {
-        free_long(_l);
-    }
+    free_data();
 }
 
 void String::set_min_capacity(usize cap) {
@@ -134,10 +151,8 @@ void String::set_min_capacity(usize cap) {
         usize self_size = size();
 
         LongData new_dat(data(), compute_capacity(cap), self_size);
-        if(is_long()) {
-            free_long(_l);
-        }
-        _l = std::move(new_dat);
+        free_data();
+        new(&_l) LongData(std::move(new_dat));
     }
 }
 
@@ -158,9 +173,7 @@ bool String::is_long() const {
 }
 
 void String::clear() {
-    if(is_long()) {
-        free_long(_l);
-    }
+    free_data();
     ::new(&_s) ShortData();
 }
 
@@ -286,9 +299,7 @@ String& String::operator=(const String& str) {
                 _s.length = str.size();
             }
         } else {
-            if(is_long()) {
-                free_long(_l);
-            }
+            free_data();
             if(str.is_long()) {
                 ::new(&_l) LongData(str._l);
             } else {

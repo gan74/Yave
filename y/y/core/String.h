@@ -235,6 +235,9 @@ class String {
         static char* alloc_long(usize capacity);
         static usize compute_capacity(usize len);
         static void free_long(LongData& d);
+        static void free_short(ShortData& d);
+
+        void free_data();
 
 };
 
