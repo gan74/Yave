@@ -128,12 +128,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
                 const MaterialTemplate* material = resources()[EditorResources::EngineViewMaterialTemplate];
                 render_pass.bind_material(material, {self->descriptor_sets()[0]});
 
-                VkDrawIndirectCommand command = {};
-                {
-                    command.vertexCount = 6;
-                    command.instanceCount = 1;
-                }
-                render_pass.draw(command);
+                render_pass.draw_array(3);
             });
     }
 
@@ -296,6 +291,7 @@ void EngineView::draw_menu_bar() {
         draw_gizmo_tool_bar();
 
         if(_resolution >= 0) {
+            ImGui::Separator();
             ImGui::TextUnformatted(standard_resolutions()[_resolution].first);
         }
 
@@ -308,6 +304,8 @@ void EngineView::draw_gizmo_tool_bar() {
 
     auto gizmo_mode = _gizmo.mode();
     auto gizmo_space = _gizmo.space();
+    auto snapping = _gizmo.snapping();
+
     {
         if(ImGui::MenuItem(ICON_FA_ARROWS_ALT, nullptr, false, gizmo_mode != Gizmo::Translate)) {
             gizmo_mode = Gizmo::Translate;
@@ -324,6 +322,26 @@ void EngineView::draw_gizmo_tool_bar() {
             gizmo_space = Gizmo::Local;
         }
     }
+    {
+        ImGui::Separator();
+        if(ImGui::BeginMenu(ICON_FA_MAGNET)) {
+            for(int i = -3; i != 3; ++i) {
+                const float x = std::pow(2.0f, float(i));
+
+                std::array<char, 16> buffer = {};
+                std::snprintf(buffer.data(), buffer.size(), "%g", x);
+
+                const bool selected = x == snapping;
+                if(ImGui::MenuItem(buffer.data(), nullptr, selected)) {
+                    snapping = selected ? 0.0f : x;
+                }
+            }
+
+            ImGui::EndMenu();
+        }
+    }
+
+
 
     if(is_focussed()) {
         const UiSettings& settings = app_settings().ui;
@@ -334,8 +352,10 @@ void EngineView::draw_gizmo_tool_bar() {
             gizmo_space = Gizmo::Space(!usize(gizmo_space));
         }
     }
+
     _gizmo.set_mode(gizmo_mode);
     _gizmo.set_space(gizmo_space);
+    _gizmo.set_snapping(snapping);
 }
 
 

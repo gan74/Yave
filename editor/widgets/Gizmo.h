@@ -51,10 +51,14 @@ class Gizmo final {
         Space space() const;
         void set_space(Space space);
 
-    private:
+        float snapping() const;
+        void set_snapping(float snapping);
 
+    private:
         math::Vec3 to_screen_pos(const math::Vec3& world);
         math::Vec2 to_window_pos(const math::Vec3& world);
+
+        float snap(float x) const;
 
         SceneView* _scene_view = nullptr;
 
@@ -67,6 +71,8 @@ class Gizmo final {
         bool _allow_drag = true;
         Mode _mode = Translate;
         Space _space = World;
+
+        float _snapping = 0.0f;
 };
 
 }

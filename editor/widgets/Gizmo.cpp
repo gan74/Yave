@@ -106,6 +106,14 @@ void Gizmo::set_space(Space space) {
     _space = space;
 }
 
+float Gizmo::snapping() const {
+    return _snapping;
+}
+
+void Gizmo::set_snapping(float snapping) {
+    _snapping = snapping;
+}
+
 math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
     const auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
     return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
@@ -122,6 +130,12 @@ math::Vec2 Gizmo::to_window_pos(const math::Vec3& world) {
     }
 
     return screen.to<2>() * viewport + offset;
+}
+
+float Gizmo::snap(float x) const {
+    return _snapping == 0.0f
+        ? x
+        : std::round(x / _snapping) * _snapping;
 }
 
 void Gizmo::draw() {
@@ -285,6 +299,7 @@ void Gizmo::draw() {
             ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0xFFFFFFFF);
         }
 
+
         // click
         {
             if(is_clicked(_allow_drag)) {
@@ -301,7 +316,8 @@ void Gizmo::draw() {
             const math::Vec3 vec = new_pos - transformable->position();
             for(usize i = 0; i != 3; ++i) {
                 if(_dragging_mask & (1 << i)) {
-                    transformable->position() += basis[i] * vec.dot(basis[i]);
+                    const math::Vec3 offset = basis[i] * vec.dot(basis[i]);
+                    transformable->position() += math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z()));
                 }
             }
         }
@@ -392,8 +408,9 @@ void Gizmo::draw() {
         if(_rotation_axis != usize(-1)) {
             const float angle = compute_angle(_rotation_axis);
             const math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(basis[_rotation_axis], (angle - _rotation_offset));
-            math::Transform<>& tr = transformable->transform();
+            math::Transform<> tr = transformable->transform();
             tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
+            transformable->set_transform(tr);
             _rotation_offset = angle;
         }
     }
