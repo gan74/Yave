@@ -206,11 +206,11 @@ void FmtBuffer::fmt_one(long long unsigned i) {
 }
 
 void FmtBuffer::fmt_one(float i) {
-    y_buff_fmt_("%f", i);
+    y_buff_fmt_("%g", i);
 }
 
 void FmtBuffer::fmt_one(double i) {
-    y_buff_fmt_("%lf", i);
+    y_buff_fmt_("%lg", i);
 }
 
 #undef y_buff_fmt_

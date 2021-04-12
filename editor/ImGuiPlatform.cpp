@@ -411,7 +411,7 @@ bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
     while(_main_window->window.update()) {
         y_profile_zone("exec once");
 
-        ImGui::GetIO().DeltaTime = float(_frame_timer.reset().to_secs());
+        ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
         ImGui::GetIO().DisplaySize = _main_window->window.size();
 
         if(_main_window->update_swapchain()) {

@@ -274,6 +274,7 @@ class WritableArchive final {
         template<typename T>
         inline Result serialize_poly(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
+            static_assert(is_std_ptr_v<T> || std::is_pointer_v<T>);
 
             if(object.object == nullptr) {
                 return write_one(size_type(0));
