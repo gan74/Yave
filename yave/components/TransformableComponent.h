@@ -22,8 +22,7 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 #define YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 
-#include <yave/ecs/ecs.h>
-
+#include <yave/scene/OctreeData.h>
 #include <yave/meshes/AABB.h>
 
 #include <y/reflect/reflect.h>
@@ -42,19 +41,21 @@ class TransformableComponent final {
         const math::Vec3& position() const;
         math::Vec3& position();
 
+        math::Vec3 to_global(const math::Vec3& pos) const;
         AABB to_global(const AABB& aabb) const;
 
         y_reflect(_transform)
 
     private:
+        friend class Octree;
         friend class OctreeSystem;
 
         void update_node();
 
         math::Transform<> _transform;
 
-        // ecs::EntityId _node_id;
-        // OctreeNode* _node = nullptr;
+        OctreeEntityId _node_id;
+        OctreeNode* _node = nullptr;
 };
 
 }

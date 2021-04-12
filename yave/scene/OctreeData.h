@@ -19,33 +19,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SYSTEMS_OCTREESYSTEM_H
-#define YAVE_SYSTEMS_OCTREESYSTEM_H
+#ifndef YAVE_SCENE_OCTREEDATA_H
+#define YAVE_SCENE_OCTREEDATA_H
 
-#include <yave/ecs/System.h>
-
-#include <yave/scene/Octree.h>
+#include <yave/yave.h>
 
 #include <y/core/Vector.h>
 
 namespace yave {
 
-class OctreeSystem : public ecs::System {
+class OctreeEntityId {
     public:
-        OctreeSystem();
+        OctreeEntityId() = default;
 
-        void setup(ecs::EntityWorld&) override;
-        void tick(ecs::EntityWorld& world) override;
+        bool is_valid() const;
 
-        const OctreeNode& root() const;
+        bool operator==(const OctreeEntityId& other) const;
 
     private:
-        void run_tick(ecs::EntityWorld& world, bool only_recent);
+        friend class OctreeData;
 
-        Octree _tree;
+        static constexpr u64 invalid_id = u64(-1);
+
+        OctreeEntityId(u64 id);
+        u64 _id = invalid_id;
 };
+
+class OctreeData : NonMovable {
+    public:
+        OctreeData() = default;
+
+        OctreeEntityId create_id();
+
+        void set_dirty(OctreeEntityId id);
+
+    private:
+        core::Vector<OctreeEntityId> _dirty;
+        u64 _next_id = 0;
+};
+
 
 }
 
-#endif // YAVE_SYSTEMS_OCTREESYSTEM_H
+#endif // YAVE_SCENE_OCTREEDATA_H
 

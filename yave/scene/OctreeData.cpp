@@ -19,33 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SYSTEMS_OCTREESYSTEM_H
-#define YAVE_SYSTEMS_OCTREESYSTEM_H
 
-#include <yave/ecs/System.h>
-
-#include <yave/scene/Octree.h>
-
-#include <y/core/Vector.h>
+#include "OctreeData.h"
 
 namespace yave {
 
-class OctreeSystem : public ecs::System {
-    public:
-        OctreeSystem();
-
-        void setup(ecs::EntityWorld&) override;
-        void tick(ecs::EntityWorld& world) override;
-
-        const OctreeNode& root() const;
-
-    private:
-        void run_tick(ecs::EntityWorld& world, bool only_recent);
-
-        Octree _tree;
-};
-
+OctreeEntityId::OctreeEntityId(u64 id) : _id(id) {
 }
 
-#endif // YAVE_SYSTEMS_OCTREESYSTEM_H
+bool OctreeEntityId::is_valid() const {
+    return _id != invalid_id;
+}
 
+bool OctreeEntityId::operator==(const OctreeEntityId& other) const {
+    return other._id == _id;
+}
+
+
+
+OctreeEntityId OctreeData::create_id() {
+    return OctreeEntityId(_next_id++);
+}
+
+void OctreeData::set_dirty(OctreeEntityId id) {
+    _dirty << id;
+}
+
+}

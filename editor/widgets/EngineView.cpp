@@ -356,7 +356,7 @@ void EngineView::draw_gizmo_tool_bar() {
             std::array<char, 16> buffer = {};
 
             for(const float d : snapping_distances()) {
-                std::snprintf(buffer.data(), buffer.size(), "%g", d);
+                std::snprintf(buffer.data(), buffer.size(), "%g m", d);
                 const bool selected = d == snapping;
                 if(ImGui::MenuItem(buffer.data(), nullptr, selected)) {
                     snapping = selected ? 0.0f : d;

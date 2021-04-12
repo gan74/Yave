@@ -24,15 +24,15 @@ SOFTWARE.
 
 namespace yave {
 
-Octree::Octree() : _root({}, 1024.0, &_dirty) {
+Octree::Octree() : _root({}, 1024.0, &_data) {
 }
 
-void Octree::insert(ecs::EntityId id, const AABB& bbox) {
+std::pair<OctreeNode*, OctreeEntityId> Octree::insert(const AABB& bbox) {
     const math::Vec3 pos = bbox.center();
     while(!_root.contains(bbox)) {
         _root.into_parent(pos);
     }
-    _root.insert(id, bbox);
+    return _root.insert(bbox);
 }
 
 const OctreeNode& Octree::root() const {

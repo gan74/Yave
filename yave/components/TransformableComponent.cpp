@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "TransformableComponent.h"
 
+#include <yave/scene/OctreeNode.h>
+
 namespace yave {
 
 void TransformableComponent::set_transform(const math::Transform<>& tr) {
@@ -52,6 +54,10 @@ math::Vec3& TransformableComponent::position() {
     return _transform.position();
 }
 
+math::Vec3 TransformableComponent::to_global(const math::Vec3& pos) const {
+    return _transform.to_global(pos);
+}
+
 AABB TransformableComponent::to_global(const AABB& aabb) const {
     // https://zeux.io/2010/10/17/aabb-from-obb-with-component-wise-abs/
     const math::Transform<> abs_tr = _transform.abs();
@@ -62,7 +68,9 @@ AABB TransformableComponent::to_global(const AABB& aabb) const {
 }
 
 void TransformableComponent::update_node() {
-    // TODO...
+    /*if(_node) {
+        _node->set_dirty(_node_id);
+    }*/
 }
 
 }

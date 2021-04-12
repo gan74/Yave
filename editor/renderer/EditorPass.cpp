@@ -40,11 +40,10 @@ SOFTWARE.
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/systems/OctreeSystem.h>
 
 #include <external/imgui/yave_imgui.h>
 
-
-#include <yave/scene/Octree.h>
 #include <yave/utils/entities.h>
 
 // we actually need this to index utf-8 chars from the imgui font (defined in imgui_internal)
@@ -200,17 +199,10 @@ static void render_octree(RenderPassRecorder& recorder,
                           const SceneView& scene_view) {
 
     const ecs::EntityWorld& world = scene_view.world();
-
-    Octree tree;
-    for(const auto id_comp  : world.view<TransformableComponent>().id_components()) {
-        const float radius = entity_radius(world, id_comp.id()).unwrap_or(1.0f);
-        const AABB bbox = AABB::from_center_extent(id_comp.component<TransformableComponent>().position(), math::Vec3(radius * 2.0f));
-        tree.insert(id_comp.id(), bbox);
-    }
-
+    const OctreeSystem* octree = world.find_system<OctreeSystem>();
 
     core::Vector<math::Vec3> points;
-    visit_octree(tree.root(), points);
+    visit_octree(octree->root(), points);
 
     if(!points.is_empty()) {
         TypedAttribBuffer<math::Vec3, MemoryType::CpuVisible> vertices(points.size());

@@ -31,13 +31,13 @@ class Octree : NonMovable {
     public:
         Octree();
 
-        void insert(ecs::EntityId id, const AABB& bbox);
+        std::pair<OctreeNode*, OctreeEntityId> insert(const AABB& bbox);
 
         const OctreeNode& root() const;
 
     private:
+        OctreeData _data;
         OctreeNode _root;
-        core::Vector<ecs::EntityId> _dirty;
 };
 
 }

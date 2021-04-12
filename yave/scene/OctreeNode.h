@@ -22,16 +22,15 @@ SOFTWARE.
 #ifndef YAVE_SCENE_OCTREENODE_H
 #define YAVE_SCENE_OCTREENODE_H
 
+#include "OctreeData.h"
+
 #include <yave/meshes/AABB.h>
-
-#include <yave/ecs/ecs.h>
-
-#include <y/core/Vector.h>
 
 #include <array>
 #include <memory>
 
 namespace yave {
+
 
 class OctreeNode {
 
@@ -48,9 +47,9 @@ class OctreeNode {
 
     public:
         OctreeNode() = default;
-        OctreeNode(const math::Vec3& center, float half_extent, core::Vector<ecs::EntityId>* dirty);
+        OctreeNode(const math::Vec3& center, float half_extent, OctreeData* data);
 
-        OctreeNode* insert(ecs::EntityId id, const AABB& bbox);
+        std::pair<OctreeNode*, OctreeEntityId> insert(const AABB& bbox);
 
         AABB aabb() const;
         AABB strict_aabb() const;
@@ -63,7 +62,8 @@ class OctreeNode {
 
         core::Span<OctreeNode> children() const;
 
-        void set_dirty(ecs::EntityId id);
+        Y_TODO(Make thread safe)
+        void set_dirty(OctreeEntityId id);
 
     private:
         friend class Octree;
@@ -81,9 +81,9 @@ class OctreeNode {
 
         std::unique_ptr<Children> _children;
 
-        core::Vector<ecs::EntityId> _entities;
+        core::Vector<OctreeEntityId> _entities;
 
-        core::Vector<ecs::EntityId>* _dirty = nullptr;
+        OctreeData* _data = nullptr;
 };
 
 }

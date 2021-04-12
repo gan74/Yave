@@ -24,10 +24,10 @@ SOFTWARE.
 
 namespace yave {
 
-OctreeNode::OctreeNode(const math::Vec3& center, float half_extent, core::Vector<ecs::EntityId>* dirty) :
+OctreeNode::OctreeNode(const math::Vec3& center, float half_extent, OctreeData* data) :
         _center(center),
         _half_extent(half_extent),
-        _dirty(dirty) {
+        _data(data) {
 }
 
 void OctreeNode::swap(OctreeNode& other) {
@@ -35,10 +35,10 @@ void OctreeNode::swap(OctreeNode& other) {
     std::swap(other._half_extent, _half_extent);
     std::swap(other._children, _children);
     std::swap(other._entities, _entities);
-    std::swap(other._dirty, _dirty);
+    std::swap(other._data, _data);
 }
 
-OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
+std::pair<OctreeNode*, OctreeEntityId> OctreeNode::insert(const AABB& bbox) {
     y_debug_assert(contains(bbox));
 
     const bool split_small = split_small_object && bbox.half_extent().length() < _half_extent / min_object_size_ratio;
@@ -50,13 +50,14 @@ OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
     if(has_children()) {
         const usize index = children_index(bbox.center());
         if((*_children)[index].contains(bbox)) {
-            return (*_children)[index].insert(id, bbox);
+            return (*_children)[index].insert(bbox);
         }
     }
 
+    const OctreeEntityId id = _data->create_id();
     _entities << id;
 
-    return this;
+    return {this, id};
 }
 
 AABB OctreeNode::aabb() const {
@@ -96,9 +97,14 @@ core::Span<OctreeNode> OctreeNode::children() const {
     return has_children() ? core::Span<OctreeNode>(_children->data(), _children->size()) : core::Span<OctreeNode>();
 }
 
-void OctreeNode::set_dirty(ecs::EntityId id) {
-    y_debug_assert(_dirty);
-    _dirty->push_back(id);
+void OctreeNode::set_dirty(OctreeEntityId id) {
+    const auto it = std::find(_entities.begin(), _entities.end(), id);
+    y_debug_assert(it != _entities.end());
+
+    _entities.erase_unordered(it);
+
+    y_debug_assert(_data);
+    _data->set_dirty(id);
 }
 
 void OctreeNode::into_parent(const math::Vec3& toward) {
@@ -109,7 +115,7 @@ void OctreeNode::into_parent(const math::Vec3& toward) {
         (index & 0x04 ? _half_extent : -_half_extent)
     };
 
-    OctreeNode parent(_center + parent_offset, _half_extent * 2.0f, _dirty);
+    OctreeNode parent(_center + parent_offset, _half_extent * 2.0f, _data);
     parent.build_children();
 
     const usize self_index = 7 - index;
@@ -132,7 +138,7 @@ void OctreeNode::build_children() {
             (i & 0x02 ? child_extent : -child_extent),
             (i & 0x04 ? child_extent : -child_extent)
         };
-        (*_children)[i] = OctreeNode(_center + offset, child_extent, _dirty);
+        (*_children)[i] = OctreeNode(_center + offset, child_extent, _data);
     }
 }
 

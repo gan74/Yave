@@ -32,20 +32,49 @@ SOFTWARE.
 
 namespace yave {
 
+static core::Span<ecs::EntityId> transformable_ids(ecs::EntityWorld& world, bool recent) {
+    return recent
+        ? world.recently_added<TransformableComponent>()
+        : world.component_ids<TransformableComponent>();
+}
+
+
 OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
 
-void OctreeSystem::setup(ecs::EntityWorld&) {
+void OctreeSystem::setup(ecs::EntityWorld& world) {
+    run_tick(world, false);
 }
 
 void OctreeSystem::tick(ecs::EntityWorld& world) {
-    //core::DebugTimer _("octree");
-    Octree tree;
-    for(const auto id_comp  : world.view<TransformableComponent>().id_components()) {
-        const float radius = entity_radius(world, id_comp.id()).unwrap_or(1.0f);
-        const AABB bbox = AABB::from_center_extent(id_comp.component<TransformableComponent>().position(), math::Vec3(radius * 2.0f));
-        tree.insert(id_comp.id(), bbox);
+    run_tick(world, true);
+}
+
+void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
+
+    // TEMP TEMP TEMP TEMP
+    {
+        _tree.~Octree();
+        new(&_tree) Octree();
+        only_recent = false;
     }
+
+
+    for(auto&& id_comp  : world.view<TransformableComponent>(transformable_ids(world, only_recent)).id_components()) {
+        const auto id = id_comp.id();
+        auto& tr = id_comp.component<TransformableComponent>();
+
+        const float radius = entity_radius(world, id).unwrap_or(1.0f);
+        const AABB bbox = AABB::from_center_extent(tr.position(), math::Vec3(radius * 2.0f));
+        const auto [node, octree_id] = _tree.insert(bbox);
+
+        tr._node_id = octree_id;
+        tr._node = node;
+    }
+}
+
+const OctreeNode& OctreeSystem::root() const {
+    return _tree.root();
 }
 
 }
