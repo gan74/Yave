@@ -24,7 +24,10 @@ SOFTWARE.
 
 namespace yave {
 
-OctreeNode::OctreeNode(const math::Vec3& center, float half_extent) : _center(center), _half_extent(half_extent) {
+OctreeNode::OctreeNode(const math::Vec3& center, float half_extent, core::Vector<ecs::EntityId>* dirty) :
+        _center(center),
+        _half_extent(half_extent),
+        _dirty(dirty) {
 }
 
 void OctreeNode::swap(OctreeNode& other) {
@@ -32,6 +35,7 @@ void OctreeNode::swap(OctreeNode& other) {
     std::swap(other._half_extent, _half_extent);
     std::swap(other._children, _children);
     std::swap(other._entities, _entities);
+    std::swap(other._dirty, _dirty);
 }
 
 OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
@@ -92,6 +96,11 @@ core::Span<OctreeNode> OctreeNode::children() const {
     return has_children() ? core::Span<OctreeNode>(_children->data(), _children->size()) : core::Span<OctreeNode>();
 }
 
+void OctreeNode::set_dirty(ecs::EntityId id) {
+    y_debug_assert(_dirty);
+    _dirty->push_back(id);
+}
+
 void OctreeNode::into_parent(const math::Vec3& toward) {
     const usize index = children_index(toward);
     const math::Vec3 parent_offset = {
@@ -100,7 +109,7 @@ void OctreeNode::into_parent(const math::Vec3& toward) {
         (index & 0x04 ? _half_extent : -_half_extent)
     };
 
-    OctreeNode parent(_center + parent_offset, _half_extent * 2.0f);
+    OctreeNode parent(_center + parent_offset, _half_extent * 2.0f, _dirty);
     parent.build_children();
 
     const usize self_index = 7 - index;
@@ -123,7 +132,7 @@ void OctreeNode::build_children() {
             (i & 0x02 ? child_extent : -child_extent),
             (i & 0x04 ? child_extent : -child_extent)
         };
-        (*_children)[i] = OctreeNode(_center + offset, child_extent);
+        (*_children)[i] = OctreeNode(_center + offset, child_extent, _dirty);
     }
 }
 

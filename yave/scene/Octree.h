@@ -37,6 +37,7 @@ class Octree : NonMovable {
 
     private:
         OctreeNode _root;
+        core::Vector<ecs::EntityId> _dirty;
 };
 
 }

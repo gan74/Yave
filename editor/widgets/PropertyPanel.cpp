@@ -480,7 +480,7 @@ editor_widget_draw_func(ecs::EntityId id) {
             }
         }
 
-        component->transform() = math::Transform<>(pos, rot, scale);
+        component->set_transform(math::Transform<>(pos, rot, scale));
     }
     ImGui::Columns(1);
 }

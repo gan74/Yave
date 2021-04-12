@@ -146,7 +146,7 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
     {
         const ecs::EntityId entity = world.create_entity<StaticMeshComponent>();
         *world.component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, mat);
-        world.component<TransformableComponent>(entity)->transform() = center_to_camera(mesh->aabb());
+        world.component<TransformableComponent>(entity)->set_transform(center_to_camera(mesh->aabb()));
     }
 
     return render_world(world);
@@ -162,7 +162,7 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
         const ecs::EntityId entity = world.create_entity(*prefab);
         if(const StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
             if(TransformableComponent* trans_comp = world.component<TransformableComponent>(entity)) {
-                trans_comp->transform() = center_to_camera(mesh_comp->aabb());
+                trans_comp->set_transform(center_to_camera(mesh_comp->aabb()));
             }
         }
     }

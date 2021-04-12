@@ -24,21 +24,45 @@ SOFTWARE.
 
 namespace yave {
 
-math::Transform<>& TransformableComponent::transform() {
-    return *this;
+void TransformableComponent::set_transform(const math::Transform<>& tr) {
+    _transform = tr;
 }
 
 const math::Transform<>& TransformableComponent::transform() const {
-    return *this;
+    return _transform;
+}
+
+const math::Vec3& TransformableComponent::forward() const {
+    return _transform.forward();
+}
+
+const math::Vec3& TransformableComponent::right() const {
+    return _transform.right();
+}
+
+const math::Vec3& TransformableComponent::up() const {
+    return _transform.up();
+}
+
+const math::Vec3& TransformableComponent::position() const {
+    return _transform.position();
+}
+
+math::Vec3& TransformableComponent::position() {
+    return _transform.position();
 }
 
 AABB TransformableComponent::to_global(const AABB& aabb) const {
     // https://zeux.io/2010/10/17/aabb-from-obb-with-component-wise-abs/
-    const math::Transform<> abs_tr = transform().abs();
+    const math::Transform<> abs_tr = _transform.abs();
     const math::Vec3 center = transform().to_global(aabb.center());
     const math::Vec3 half_extent = abs_tr.to_global_normal(aabb.half_extent());
 
     return AABB(center - half_extent, center + half_extent);
+}
+
+void TransformableComponent::update_node() {
+    // TODO...
 }
 
 }

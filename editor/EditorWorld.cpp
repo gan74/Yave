@@ -26,13 +26,15 @@ SOFTWARE.
 
 #include <yave/ecs/EntityPrefab.h>
 #include <yave/ecs/EntityPrefab.h>
-#include <yave/systems/AssetLoaderSystem.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
+
+#include <yave/systems/AssetLoaderSystem.h>
+#include <yave/systems/OctreeSystem.h>
 
 
 #include <external/imgui/IconsFontAwesome5.h>
@@ -60,6 +62,7 @@ std::string_view clean_component_name(std::string_view name) {
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_required_component<EditorComponent>();
     add_system<AssetLoaderSystem>(loader);
+    add_system<OctreeSystem>();
 }
 
 void EditorWorld::flush_reload() {

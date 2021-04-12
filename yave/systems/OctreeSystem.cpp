@@ -19,45 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
-#define YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 
-#include <yave/ecs/ecs.h>
+#include "OctreeSystem.h"
 
-#include <yave/meshes/AABB.h>
+#include <yave/components/TransformableComponent.h>
 
-#include <y/reflect/reflect.h>
+#include <yave/ecs/EntityWorld.h>
+
+#include <yave/utils/entities.h>
+
+#include <y/core/Chrono.h>
 
 namespace yave {
 
-class TransformableComponent final {
-    public:
-        void set_transform(const math::Transform<>& tr);
-        const math::Transform<>& transform() const;
-
-        const math::Vec3& forward() const;
-        const math::Vec3& right() const;
-        const math::Vec3& up() const;
-
-        const math::Vec3& position() const;
-        math::Vec3& position();
-
-        AABB to_global(const AABB& aabb) const;
-
-        y_reflect(_transform)
-
-    private:
-        friend class OctreeSystem;
-
-        void update_node();
-
-        math::Transform<> _transform;
-
-        // ecs::EntityId _node_id;
-        // OctreeNode* _node = nullptr;
-};
-
+OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
 
-#endif // YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
+void OctreeSystem::setup(ecs::EntityWorld&) {
+}
+
+void OctreeSystem::tick(ecs::EntityWorld& world) {
+    //core::DebugTimer _("octree");
+    Octree tree;
+    for(const auto id_comp  : world.view<TransformableComponent>().id_components()) {
+        const float radius = entity_radius(world, id_comp.id()).unwrap_or(1.0f);
+        const AABB bbox = AABB::from_center_extent(id_comp.component<TransformableComponent>().position(), math::Vec3(radius * 2.0f));
+        tree.insert(id_comp.id(), bbox);
+    }
+}
+
+}
 

@@ -170,7 +170,7 @@ static std::pair<u32, u32> fill_spot_light_buffer(
         if constexpr(Transforms) {
             const float geom_radius = l.radius() * 1.1f;
             const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
-            transforms[count] = t.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
+            transforms[count] = t.transform().non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
         }
 
         spots[count++] = {

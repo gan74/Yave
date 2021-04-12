@@ -19,45 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
-#define YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
+#ifndef YAVE_SYSTEMS_OCTREESYSTEM_H
+#define YAVE_SYSTEMS_OCTREESYSTEM_H
 
-#include <yave/ecs/ecs.h>
+#include <yave/ecs/System.h>
 
-#include <yave/meshes/AABB.h>
+#include <yave/scene/Octree.h>
 
-#include <y/reflect/reflect.h>
+#include <y/core/Vector.h>
 
 namespace yave {
 
-class TransformableComponent final {
+class OctreeSystem : public ecs::System {
     public:
-        void set_transform(const math::Transform<>& tr);
-        const math::Transform<>& transform() const;
+        OctreeSystem();
 
-        const math::Vec3& forward() const;
-        const math::Vec3& right() const;
-        const math::Vec3& up() const;
-
-        const math::Vec3& position() const;
-        math::Vec3& position();
-
-        AABB to_global(const AABB& aabb) const;
-
-        y_reflect(_transform)
+        void setup(ecs::EntityWorld&) override;
+        void tick(ecs::EntityWorld& world) override;
 
     private:
-        friend class OctreeSystem;
 
-        void update_node();
-
-        math::Transform<> _transform;
-
-        // ecs::EntityId _node_id;
-        // OctreeNode* _node = nullptr;
 };
 
 }
 
-#endif // YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
+#endif // YAVE_SYSTEMS_OCTREESYSTEM_H
 

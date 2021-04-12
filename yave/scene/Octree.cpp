@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-Octree::Octree() : _root({}, 1024.0) {
+Octree::Octree() : _root({}, 1024.0, &_dirty) {
 }
 
 void Octree::insert(ecs::EntityId id, const AABB& bbox) {

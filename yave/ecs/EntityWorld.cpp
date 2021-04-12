@@ -184,7 +184,9 @@ void EntityWorld::post_deserialize() {
         }
     }
     _containers = std::move(patched);
+
     for(auto& system : _systems) {
+        y_debug_assert(system);
         system->reset(*this);
     }
 

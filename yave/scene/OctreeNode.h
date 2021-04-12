@@ -48,7 +48,7 @@ class OctreeNode {
 
     public:
         OctreeNode() = default;
-        OctreeNode(const math::Vec3& center, float half_extent);
+        OctreeNode(const math::Vec3& center, float half_extent, core::Vector<ecs::EntityId>* dirty);
 
         OctreeNode* insert(ecs::EntityId id, const AABB& bbox);
 
@@ -62,6 +62,8 @@ class OctreeNode {
         bool is_empty() const;
 
         core::Span<OctreeNode> children() const;
+
+        void set_dirty(ecs::EntityId id);
 
     private:
         friend class Octree;
@@ -80,6 +82,8 @@ class OctreeNode {
         std::unique_ptr<Children> _children;
 
         core::Vector<ecs::EntityId> _entities;
+
+        core::Vector<ecs::EntityId>* _dirty = nullptr;
 };
 
 }
