@@ -52,7 +52,7 @@ class AssetLoaderSystem : public ecs::System {
         friend class HasLoadableAssetsTag;
 
         struct LoadableComponentTypeInfo {
-            void (*start_loading)(ecs::EntityWorld&, AssetLoadingContext&, core::Vector<ecs::EntityId>&) = nullptr;
+            void (*start_loading)(ecs::EntityWorld&, AssetLoadingContext&, bool, core::Vector<ecs::EntityId>&) = nullptr;
             void (*update_status)(ecs::EntityWorld&, core::Vector<ecs::EntityId>&) = nullptr;
             ecs::ComponentTypeIndex type;
             LoadableComponentTypeInfo* next = nullptr;
@@ -70,10 +70,22 @@ class AssetLoaderSystem : public ecs::System {
         }
 
         template<typename T>
-        static void start_loading_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, core::Vector<ecs::EntityId>& ids) {
-            for(auto id_comp : world.view<T>().id_components()) {
+        static core::Span<ecs::EntityId> ids(ecs::EntityWorld& world, bool recent) {
+            return recent
+                ? world.recently_added<T>()
+                : world.component_ids<T>();
+        }
+
+        template<typename T>
+        static auto view(ecs::EntityWorld& world, bool recent) {
+            return world.view<T>(ids<T>(world, recent));
+        }
+
+        template<typename T>
+        static void start_loading_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, bool recent, core::Vector<ecs::EntityId>& out_ids) {
+            for(auto id_comp : view<T>(world, recent).id_components()) {
                 id_comp.component<T>().load_assets(loading_ctx);
-                ids << id_comp.id();
+                out_ids << id_comp.id();
             }
         }
 

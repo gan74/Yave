@@ -138,6 +138,16 @@ EntityPrefab EntityWorld::create_prefab(EntityId id) const {
     return prefab;
 }
 
+core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) const {
+    const ComponentContainerBase* cont = find_container(type_id);
+    return cont ? cont->ids() : core::Span<EntityId>();
+}
+
+core::Span<EntityId> EntityWorld::recently_added(ComponentTypeIndex type_id) const {
+    const ComponentContainerBase* cont = find_container(type_id);
+    return cont ? cont->recently_added() : core::Span<EntityId>();
+}
+
 core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
     return _required_components;
 }

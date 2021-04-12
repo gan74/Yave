@@ -28,19 +28,6 @@ namespace yave {
 
 AssetLoaderSystem::LoadableComponentTypeInfo* AssetLoaderSystem::_first_info = nullptr;
 
-template<typename T>
-static core::Span<ecs::EntityId> ids(ecs::EntityWorld& world, bool recent) {
-    return recent
-        ? world.recently_added<T>()
-        : world.component_ids<T>();
-}
-
-template<typename T>
-static auto view(ecs::EntityWorld& world, bool recent) {
-    return world.view<T>(ids<T>(world, recent));
-}
-
-
 AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs::System("AssetLoaderSystem"), _loader(&loader) {
 }
 
@@ -59,8 +46,7 @@ void AssetLoaderSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
 
     {
         for(const LoadableComponentTypeInfo* info = _first_info; info; info = info->next) {
-            auto& ids = _loading[info->type];
-            info->start_loading(world, loading_ctx, ids);
+            info->start_loading(world, loading_ctx, only_recent, _loading[info->type]);
         }
     }
 
@@ -72,8 +58,7 @@ void AssetLoaderSystem::post_load(ecs::EntityWorld& world) {
 
     {
         for(const LoadableComponentTypeInfo* info = _first_info; info; info = info->next) {
-            auto& ids = _loading[info->type];
-            info->update_status(world, ids);
+            info->update_status(world, _loading[info->type]);
         }
     }
 }

@@ -58,6 +58,10 @@ class EntityWorld {
 
         EntityPrefab create_prefab(EntityId id) const;
 
+        core::Span<EntityId> component_ids(ComponentTypeIndex type_id) const;
+        core::Span<EntityId> recently_added(ComponentTypeIndex type_id) const;
+
+
         core::Span<ComponentTypeIndex> required_components() const;
 
         std::string_view component_type_name(ComponentTypeIndex type_id) const;
@@ -80,6 +84,16 @@ class EntityWorld {
         }
 
         template<typename S>
+        const S* find_system() const {
+            for(auto& system : _systems) {
+                if(const S* s = dynamic_cast<const S*>(system.get())) {
+                    return s;
+                }
+            }
+            return nullptr;
+        }
+
+        template<typename S>
         S* find_system() {
             for(auto& system : _systems) {
                 if(S* s = dynamic_cast<S*>(system.get())) {
@@ -88,7 +102,6 @@ class EntityWorld {
             }
             return nullptr;
         }
-
 
 
         template<typename... Args>
@@ -184,8 +197,7 @@ class EntityWorld {
 
         template<typename T>
         core::Span<EntityId> component_ids() const {
-            const ComponentContainerBase* cont = find_container<T>();
-            return cont ? cont->ids() : core::Span<EntityId>();
+            return component_ids(type_index<T>());
         }
 
 
@@ -193,10 +205,8 @@ class EntityWorld {
 
         template<typename T>
         core::Span<EntityId> recently_added() const {
-            const ComponentContainerBase* cont = find_container<T>();
-            return cont ? cont->recently_added() : core::Span<EntityId>();
+            return recently_added(type_index<T>());
         }
-
 
 
 
