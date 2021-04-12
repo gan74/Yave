@@ -44,6 +44,30 @@ SOFTWARE.
 
 namespace editor {
 
+static auto snapping_distances() {
+    return std::array {
+        0.125f,
+        0.25f,
+        0.5f,
+        1.0f,
+        2.5f,
+        5.0f,
+        10.0f,
+    };
+}
+
+static auto snapping_angles() {
+    return std::array {
+        1.0f,
+        5.0f,
+        15.0f,
+        30.0f,
+        45.0f,
+        60.0f,
+        90.0f
+    };
+}
+
 static bool is_clicked() {
     return ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1) || ImGui::IsMouseClicked(2);
 }
@@ -57,6 +81,9 @@ static auto standard_resolutions() {
 
     return resolutions;
 }
+
+
+
 
 
 EngineView::EngineView() :
@@ -305,6 +332,7 @@ void EngineView::draw_gizmo_tool_bar() {
     auto gizmo_mode = _gizmo.mode();
     auto gizmo_space = _gizmo.space();
     auto snapping = _gizmo.snapping();
+    auto rot_snap = _gizmo.rotation_snapping();
 
     {
         if(ImGui::MenuItem(ICON_FA_ARROWS_ALT, nullptr, false, gizmo_mode != Gizmo::Translate)) {
@@ -325,15 +353,24 @@ void EngineView::draw_gizmo_tool_bar() {
     {
         ImGui::Separator();
         if(ImGui::BeginMenu(ICON_FA_MAGNET)) {
-            for(int i = -3; i != 3; ++i) {
-                const float x = std::pow(2.0f, float(i));
+            std::array<char, 16> buffer = {};
 
-                std::array<char, 16> buffer = {};
-                std::snprintf(buffer.data(), buffer.size(), "%g", x);
-
-                const bool selected = x == snapping;
+            for(const float d : snapping_distances()) {
+                std::snprintf(buffer.data(), buffer.size(), "%g", d);
+                const bool selected = d == snapping;
                 if(ImGui::MenuItem(buffer.data(), nullptr, selected)) {
-                    snapping = selected ? 0.0f : x;
+                    snapping = selected ? 0.0f : d;
+                }
+            }
+
+            ImGui::Separator();
+
+            for(const float d : snapping_angles()) {
+                std::snprintf(buffer.data(), buffer.size(), "%g°", d);
+                const float angle = math::to_rad(d);
+                const bool selected = angle == rot_snap;
+                if(ImGui::MenuItem(buffer.data(), nullptr, selected)) {
+                    rot_snap = selected ? 0.0f : angle;
                 }
             }
 
@@ -356,6 +393,7 @@ void EngineView::draw_gizmo_tool_bar() {
     _gizmo.set_mode(gizmo_mode);
     _gizmo.set_space(gizmo_space);
     _gizmo.set_snapping(snapping);
+    _gizmo.set_rotation_snapping(rot_snap);
 }
 
 

@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <external/imgui/yave_imgui.h>
 
+
 namespace editor {
 
 static constexpr  u32 gizmo_hover_color = 0x001A80FF;
@@ -114,6 +115,14 @@ void Gizmo::set_snapping(float snapping) {
     _snapping = snapping;
 }
 
+float Gizmo::rotation_snapping() const {
+    return _rot_snapping;
+}
+
+void Gizmo::set_rotation_snapping(float snapping) {
+    _rot_snapping = snapping;
+}
+
 math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
     const auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
     return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
@@ -136,6 +145,12 @@ float Gizmo::snap(float x) const {
     return _snapping == 0.0f
         ? x
         : std::round(x / _snapping) * _snapping;
+}
+
+float Gizmo::snap_rot(float x) const {
+    return _rot_snapping == 0.0f
+        ? x
+        : std::round(x / _rot_snapping) * _rot_snapping;
 }
 
 void Gizmo::draw() {
@@ -407,11 +422,12 @@ void Gizmo::draw() {
 
         if(_rotation_axis != usize(-1)) {
             const float angle = compute_angle(_rotation_axis);
-            const math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(basis[_rotation_axis], (angle - _rotation_offset));
+            const float angle_offset = snap_rot(angle - _rotation_offset);
+            const math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(basis[_rotation_axis], angle_offset);
             math::Transform<> tr = transformable->transform();
             tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
             transformable->set_transform(tr);
-            _rotation_offset = angle;
+            _rotation_offset += angle_offset;
         }
     }
 }

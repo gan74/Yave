@@ -54,11 +54,15 @@ class Gizmo final {
         float snapping() const;
         void set_snapping(float snapping);
 
+        float rotation_snapping() const;
+        void set_rotation_snapping(float snapping);
+
     private:
         math::Vec3 to_screen_pos(const math::Vec3& world);
         math::Vec2 to_window_pos(const math::Vec3& world);
 
         float snap(float x) const;
+        float snap_rot(float x) const;
 
         SceneView* _scene_view = nullptr;
 
@@ -73,6 +77,7 @@ class Gizmo final {
         Space _space = World;
 
         float _snapping = 0.0f;
+        float _rot_snapping = 0.0f;
 };
 
 }
