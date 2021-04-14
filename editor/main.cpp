@@ -60,11 +60,11 @@ static void parse_args(int argc, char** argv) {
         } else if(arg == "--nomv") {
             multi_viewport = false;
         } else if(arg == "--errbreak") {
-            if constexpr(is_debug_defined) {
+#ifdef Y_DEBUG
                 core::result::break_on_error = true;
-            } else {
+#else
                 log_msg(fmt("% is not supported unless Y_DEBUG is defined%", arg), Log::Error);
-            }
+#endif
         }
         else {
             log_msg(fmt("Unknown argumeent: %", arg), Log::Error);
