@@ -29,7 +29,6 @@ SOFTWARE.
 
 namespace y {
 
-
 static_assert(std::is_move_assignable_v<NonCopyable>);
 static_assert(std::is_move_constructible_v<NonCopyable>);
 
@@ -52,22 +51,8 @@ void do_not_destroy(T&& t) {
 template<bool B>
 using bool_type = typename std::integral_constant<bool, B>;
 
-
-namespace detail {
 template<bool C, typename T>
-struct ConstType {
-    using type = T;
-};
-template<typename T>
-struct ConstType<true, T> {
-    using type = const T;
-};
-}
-
-template<bool C, typename T>
-using const_type = detail::ConstType<C, T>;
-template<bool C, typename T>
-using const_type_t = typename const_type<C, T>::type;
+using const_type_t = std::conditional_t<C, const T, T>;
 
 
 // type traits
@@ -131,9 +116,7 @@ template<typename T>
 static constexpr bool is_iterable_v = is_iterable<T>::value;
 
 template<typename T>
-struct remove_cvref {
-    using type = std::remove_cv_t<std::remove_reference_t<T>>;
-};
+using remove_cvref = std::remove_cv<std::remove_reference_t<T>>;
 
 template<typename T>
 using remove_cvref_t = typename remove_cvref<T>::type;

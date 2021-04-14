@@ -261,3 +261,4 @@ void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
 }
 
 }
+

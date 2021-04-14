@@ -97,3 +97,4 @@ class ImGuiPlatform : NonMovable {
 }
 
 #endif // EDITOR_IMGUIPLATFORM_H
+

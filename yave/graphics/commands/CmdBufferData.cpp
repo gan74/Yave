@@ -118,3 +118,4 @@ void CmdBufferData::set_signaled() {
 }
 
 #undef YAVE_CMD_CHECK_LOCK
+

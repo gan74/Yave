@@ -26,4 +26,3 @@ void main() {
     out_color = blur(in_color, in_uv);
 }
 
-

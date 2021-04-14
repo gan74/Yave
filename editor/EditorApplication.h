@@ -121,3 +121,4 @@ class EditorApplication : NonMovable {
 }
 
 #endif // EDITOR_EDITORAPPLICATION_H
+

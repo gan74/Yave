@@ -119,3 +119,4 @@ void register_action(EditorAction* action);
 
 
 #endif // EDITOR_EDITOR_H
+

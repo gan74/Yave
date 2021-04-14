@@ -102,4 +102,3 @@ const EditorAction* all_actions() {
 
 }
 
-

@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     ImGuiPlatform platform(multi_viewport);
     EditorApplication editor(&platform);
 
-    for(EditorAction const* action = all_actions(); action; action = action->next) {
+    for(const EditorAction* action = all_actions(); action; action = action->next) {
         if(action->flags & EditorAction::CallOnStartUp) {
             action->function();
         }

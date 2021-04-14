@@ -67,3 +67,4 @@ class ThumbmailRenderer : NonMovable {
 }
 
 #endif // EDITOR_THUMBMAILRENDERER_H
+

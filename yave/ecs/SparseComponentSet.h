@@ -89,7 +89,7 @@ template<typename Elem>
 class SparseComponentSetBase : public SparseIdSet {
 
     public:
-        using element_type = Elem;
+        using element_type = std::remove_cv_t<Elem>;
         using size_type = usize;
 
         using value_type = std::tuple<EntityId, element_type>;
