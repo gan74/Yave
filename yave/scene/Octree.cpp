@@ -27,16 +27,19 @@ namespace yave {
 Octree::Octree() : _root({}, 1024.0, &_data) {
 }
 
-std::pair<OctreeNode*, OctreeEntityId> Octree::insert(const AABB& bbox) {
+OctreeNode* Octree::insert(ecs::EntityId id, const AABB& bbox) {
     const math::Vec3 pos = bbox.center();
     while(!_root.contains(bbox)) {
         _root.into_parent(pos);
     }
-    return _root.insert(bbox);
+    return _root.insert(id, bbox);
 }
 
 const OctreeNode& Octree::root() const {
     return _root;
+}
+
+void Octree::flush_dirty() {
 }
 
 }

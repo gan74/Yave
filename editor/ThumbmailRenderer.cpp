@@ -103,7 +103,7 @@ static void fill_world(ecs::EntityWorld& world) {
     }
     {
         const ecs::EntityId light_id = world.create_entity<PointLightComponent>();
-        world.component<TransformableComponent>(light_id)->position() = math::Vec3(0.75f, -0.5f, 0.5f);
+        world.component<TransformableComponent>(light_id)->set_position(math::Vec3(0.75f, -0.5f, 0.5f));
         PointLightComponent* light = world.component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(2500.0f);
         light->intensity() = 1.5f * intensity;
@@ -112,7 +112,7 @@ static void fill_world(ecs::EntityWorld& world) {
     }
     {
         const ecs::EntityId light_id = world.create_entity<PointLightComponent>();
-        world.component<TransformableComponent>(light_id)->position() = math::Vec3(-0.75f, -0.5f, 0.5f);
+        world.component<TransformableComponent>(light_id)->set_position(math::Vec3(-0.75f, -0.5f, 0.5f));
         PointLightComponent* light = world.component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(10000.0f);
         light->intensity() = 1.5f * intensity;

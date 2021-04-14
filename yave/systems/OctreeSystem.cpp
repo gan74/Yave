@@ -38,6 +38,16 @@ static core::Span<ecs::EntityId> transformable_ids(ecs::EntityWorld& world, bool
         : world.component_ids<TransformableComponent>();
 }
 
+static AABB find_aabb(const ecs::EntityWorld& world, ecs::EntityId id, const math::Vec3& pos) {
+    const auto aabb = entity_aabb(world, id);
+    if(aabb) {
+        return aabb.unwrap();
+    }
+
+    const float radius = entity_radius(world, id).unwrap_or(1.0f);
+    return AABB::from_center_extent(pos, math::Vec3(radius * 2.0f));
+}
+
 
 OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
@@ -51,25 +61,37 @@ void OctreeSystem::tick(ecs::EntityWorld& world) {
 }
 
 void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
+    y_profile();
 
-    // TEMP TEMP TEMP TEMP
-    {
-        _tree.~Octree();
-        new(&_tree) Octree();
-        only_recent = false;
-    }
-
-
-    for(auto&& id_comp  : world.view<TransformableComponent>(transformable_ids(world, only_recent)).id_components()) {
+    for(auto&& id_comp : world.view<TransformableComponent>(transformable_ids(world, only_recent)).id_components()) {
         const auto id = id_comp.id();
         auto& tr = id_comp.component<TransformableComponent>();
+        const AABB bbox = find_aabb(world, id, tr.position());
 
-        const float radius = entity_radius(world, id).unwrap_or(1.0f);
-        const AABB bbox = AABB::from_center_extent(tr.position(), math::Vec3(radius * 2.0f));
-        const auto [node, octree_id] = _tree.insert(bbox);
+        tr._id = id;
+        tr._node = _tree.insert(id, bbox);
+    }
 
-        tr._node_id = octree_id;
-        tr._node = node;
+    {
+        for(auto& [node, id] : _tree._data._dirty) {
+            {
+                auto& entities = node->_entities;
+                const auto it = std::find(entities.begin(), entities.end(), id);
+                if(it != entities.end()) {
+                    entities.erase_unordered(it);
+                }
+            }
+            {
+                TransformableComponent* tr = world.component<TransformableComponent>(id);
+                const AABB bbox = find_aabb(world, id, tr->position());
+
+                y_debug_assert(tr->_id == id);
+                y_debug_assert(!tr->_node);
+                tr->_node = _tree.insert(id, bbox);
+            }
+        }
+
+        _tree._data._dirty.clear();
     }
 }
 

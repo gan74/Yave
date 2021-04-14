@@ -28,6 +28,12 @@ namespace yave {
 
 void TransformableComponent::set_transform(const math::Transform<>& tr) {
     _transform = tr;
+    update_node();
+}
+
+void TransformableComponent::set_position(const math::Vec3& pos) {
+    _transform.position() = pos;
+    update_node();
 }
 
 const math::Transform<>& TransformableComponent::transform() const {
@@ -50,10 +56,6 @@ const math::Vec3& TransformableComponent::position() const {
     return _transform.position();
 }
 
-math::Vec3& TransformableComponent::position() {
-    return _transform.position();
-}
-
 math::Vec3 TransformableComponent::to_global(const math::Vec3& pos) const {
     return _transform.to_global(pos);
 }
@@ -68,9 +70,10 @@ AABB TransformableComponent::to_global(const AABB& aabb) const {
 }
 
 void TransformableComponent::update_node() {
-    /*if(_node) {
-        _node->set_dirty(_node_id);
-    }*/
+    if(_node) {
+        _node->set_dirty(_id);
+        _node = nullptr;
+    }
 }
 
 }

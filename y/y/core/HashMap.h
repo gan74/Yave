@@ -586,7 +586,7 @@ class ExternalHashMap : Hasher {
         }
 
         inline double load_factor() const {
-            return double(_size) / double(_entries.size());
+            return double(_size) / double(_states.size());
         }
 
         inline bool contains(const key_type& key) const {

@@ -32,6 +32,8 @@ namespace yave {
 class TransformableComponent final {
     public:
         void set_transform(const math::Transform<>& tr);
+        void set_position(const math::Vec3& pos);
+
         const math::Transform<>& transform() const;
 
         const math::Vec3& forward() const;
@@ -39,7 +41,6 @@ class TransformableComponent final {
         const math::Vec3& up() const;
 
         const math::Vec3& position() const;
-        math::Vec3& position();
 
         math::Vec3 to_global(const math::Vec3& pos) const;
         AABB to_global(const AABB& aabb) const;
@@ -54,7 +55,7 @@ class TransformableComponent final {
 
         math::Transform<> _transform;
 
-        OctreeEntityId _node_id;
+        ecs::EntityId _id;
         OctreeNode* _node = nullptr;
 };
 

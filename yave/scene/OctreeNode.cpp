@@ -38,7 +38,7 @@ void OctreeNode::swap(OctreeNode& other) {
     std::swap(other._data, _data);
 }
 
-std::pair<OctreeNode*, OctreeEntityId> OctreeNode::insert(const AABB& bbox) {
+OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
     y_debug_assert(contains(bbox));
 
     const bool split_small = split_small_object && bbox.half_extent().length() < _half_extent / min_object_size_ratio;
@@ -50,14 +50,13 @@ std::pair<OctreeNode*, OctreeEntityId> OctreeNode::insert(const AABB& bbox) {
     if(has_children()) {
         const usize index = children_index(bbox.center());
         if((*_children)[index].contains(bbox)) {
-            return (*_children)[index].insert(bbox);
+            return (*_children)[index].insert(id, bbox);
         }
     }
 
-    const OctreeEntityId id = _data->create_id();
     _entities << id;
 
-    return {this, id};
+    return this;
 }
 
 AABB OctreeNode::aabb() const {
@@ -97,14 +96,9 @@ core::Span<OctreeNode> OctreeNode::children() const {
     return has_children() ? core::Span<OctreeNode>(_children->data(), _children->size()) : core::Span<OctreeNode>();
 }
 
-void OctreeNode::set_dirty(OctreeEntityId id) {
-    const auto it = std::find(_entities.begin(), _entities.end(), id);
-    y_debug_assert(it != _entities.end());
-
-    _entities.erase_unordered(it);
-
+void OctreeNode::set_dirty(ecs::EntityId id) {
     y_debug_assert(_data);
-    _data->set_dirty(id);
+    _data->_dirty.emplace_back(this, id);
 }
 
 void OctreeNode::into_parent(const math::Vec3& toward) {

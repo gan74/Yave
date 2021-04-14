@@ -327,12 +327,13 @@ void Gizmo::draw() {
 
         // drag
         if(_dragging_mask) {
+            const math::Vec3 orig_pos = transformable->position();
             const math::Vec3 new_pos = projected_mouse + _dragging_offset;
-            const math::Vec3 vec = new_pos - transformable->position();
+            const math::Vec3 vec = new_pos - orig_pos;
             for(usize i = 0; i != 3; ++i) {
                 if(_dragging_mask & (1 << i)) {
                     const math::Vec3 offset = basis[i] * vec.dot(basis[i]);
-                    transformable->position() += math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z()));
+                    transformable->set_position(orig_pos + math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z())));
                 }
             }
         }

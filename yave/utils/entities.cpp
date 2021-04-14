@@ -48,6 +48,14 @@ core::Result<float> entity_radius(const ecs::EntityWorld& world, ecs::EntityId i
     return core::Err();
 }
 
+core::Result<AABB> entity_aabb(const ecs::EntityWorld& world, ecs::EntityId id) {
+    if(const StaticMeshComponent* mesh = world.component<StaticMeshComponent>(id)) {
+        return core::Ok(mesh->aabb());
+    }
+
+    return core::Err();
+}
+
 core::Result<math::Vec3> entity_position(const ecs::EntityWorld& world, ecs::EntityId id) {
     if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
         return core::Ok(tr->transform().position());

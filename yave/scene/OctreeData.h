@@ -22,40 +22,19 @@ SOFTWARE.
 #ifndef YAVE_SCENE_OCTREEDATA_H
 #define YAVE_SCENE_OCTREEDATA_H
 
-#include <yave/yave.h>
+#include <yave/ecs/ecs.h>
 
 #include <y/core/Vector.h>
 
+#include <utility>
+
 namespace yave {
-
-class OctreeEntityId {
-    public:
-        OctreeEntityId() = default;
-
-        bool is_valid() const;
-
-        bool operator==(const OctreeEntityId& other) const;
-
-    private:
-        friend class OctreeData;
-
-        static constexpr u64 invalid_id = u64(-1);
-
-        OctreeEntityId(u64 id);
-        u64 _id = invalid_id;
-};
 
 class OctreeData : NonMovable {
     public:
-        OctreeData() = default;
 
-        OctreeEntityId create_id();
-
-        void set_dirty(OctreeEntityId id);
-
-    private:
-        core::Vector<OctreeEntityId> _dirty;
-        u64 _next_id = 0;
+    //private:
+        core::Vector<std::pair<OctreeNode*, ecs::EntityId>> _dirty;
 };
 
 

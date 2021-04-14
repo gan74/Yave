@@ -49,7 +49,7 @@ class OctreeNode {
         OctreeNode() = default;
         OctreeNode(const math::Vec3& center, float half_extent, OctreeData* data);
 
-        std::pair<OctreeNode*, OctreeEntityId> insert(const AABB& bbox);
+        OctreeNode* insert(ecs::EntityId id, const AABB& bbox);
 
         AABB aabb() const;
         AABB strict_aabb() const;
@@ -63,10 +63,13 @@ class OctreeNode {
         core::Span<OctreeNode> children() const;
 
         Y_TODO(Make thread safe)
-        void set_dirty(OctreeEntityId id);
+        void set_dirty(ecs::EntityId id);
 
     private:
         friend class Octree;
+
+        // REMOVE
+        friend class OctreeSystem;
 
         void into_parent(const math::Vec3& toward);
 
@@ -81,7 +84,7 @@ class OctreeNode {
 
         std::unique_ptr<Children> _children;
 
-        core::Vector<OctreeEntityId> _entities;
+        core::Vector<ecs::EntityId> _entities;
 
         OctreeData* _data = nullptr;
 };

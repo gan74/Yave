@@ -24,26 +24,5 @@ SOFTWARE.
 
 namespace yave {
 
-OctreeEntityId::OctreeEntityId(u64 id) : _id(id) {
-}
-
-bool OctreeEntityId::is_valid() const {
-    return _id != invalid_id;
-}
-
-bool OctreeEntityId::operator==(const OctreeEntityId& other) const {
-    return other._id == _id;
-}
-
-
-
-OctreeEntityId OctreeData::create_id() {
-    return OctreeEntityId(_next_id++);
-}
-
-void OctreeData::set_dirty(OctreeEntityId id) {
-    _dirty << id;
-}
-
 }
 

@@ -58,7 +58,7 @@ static void add_debug_entities() {
         world.set_entity_name(entity, "Debug entity");
 
         const math::Vec3 pos = math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
-        world.component<TransformableComponent>(entity)->position() = pos * 10.0f;
+        world.component<TransformableComponent>(entity)->set_position(pos * 10.0f);
         *world.component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, material);
         world.component<EditorComponent>(entity)->set_hidden_in_editor(true);
     }
