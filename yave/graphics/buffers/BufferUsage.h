@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_BUFFERS_BUFFERUSAGE_H
 
 #include <yave/graphics/vk/vk.h>
-#include <yave/graphics/memory/memoryType.h>
+#include <yave/graphics/memory/MemoryType.h>
 
 namespace yave {
 
