@@ -297,16 +297,6 @@ ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent, Window::Fla
     window.show();
 }
 
-bool ImGuiPlatform::PlatformWindow::update_swapchain() {
-    y_profile();
-
-    if(swapchain.size() != window.size()) {
-        wait_all_queues();
-        swapchain.reset();
-    }
-    return swapchain.is_valid();
-}
-
 bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
     y_profile();
 
@@ -314,7 +304,7 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
         return false;
     }
 
-    if(update_swapchain()) {
+    if(swapchain.is_valid()) {
         const FrameToken token = swapchain.next_frame();
         CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
@@ -414,7 +404,7 @@ bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
         ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
         ImGui::GetIO().DisplaySize = _main_window->window.size();
 
-        if(_main_window->update_swapchain()) {
+        if(_main_window->swapchain.is_valid()) {
             const FrameToken frame = _main_window->swapchain.next_frame();
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
@@ -442,7 +432,7 @@ bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
                 _renderer->render(ImGui::GetDrawData(), pass);
             }
 
-            {
+            if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable) {
                 y_profile_zone("secondary windows");
                 ImGui::UpdatePlatformWindows();
                 ImGui::RenderPlatformWindowsDefault();

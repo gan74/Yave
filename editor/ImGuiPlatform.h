@@ -45,8 +45,6 @@ class ImGuiPlatform : NonMovable {
     struct PlatformWindow : NonMovable {
         PlatformWindow(ImGuiPlatform* parent, Window::Flags flags);
 
-        bool update_swapchain();
-
         bool render(ImGuiViewport* viewport);
 
         ImGuiPlatform* platform = nullptr;

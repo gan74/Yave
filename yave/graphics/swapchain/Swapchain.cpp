@@ -130,9 +130,9 @@ static VkSurfaceKHR create_surface(HINSTANCE_ instance, HWND_ handle) {
 
 static VkSurfaceKHR create_surface(Window* window) {
     y_profile();
-    #ifdef Y_OS_WIN
-        return create_surface(window->instance(), window->handle());
-    #endif
+#ifdef Y_OS_WIN
+    return create_surface(window->instance(), window->handle());
+#endif
     return vk_null();
 }
 
@@ -151,13 +151,13 @@ bool Swapchain::is_valid() const {
 }
 
 void Swapchain::reset() {
+    wait_all_queues();
+
     _images.clear();
-    destroy_semaphores();
 
     const VkSwapchainKHR old = _swapchain;
 
     if(build_swapchain()) {
-        build_semaphores();
         device_destroy(old);
     }
 }
@@ -282,6 +282,8 @@ void Swapchain::destroy_semaphores() {
 }
 
 FrameToken Swapchain::next_frame() {
+    y_profile();
+
     y_debug_assert(_semaphores.size());
     y_debug_assert(is_valid());
 
@@ -290,7 +292,9 @@ FrameToken Swapchain::next_frame() {
     const Semaphores& frame_semaphores = _semaphores[semaphore_index];
 
     u32 image_index = 0;
-    vk_check(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index));
+    while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index))) {
+        reset();
+    }
 
     {
         y_profile_zone("image fence");
@@ -348,7 +352,9 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, c
             present_info.pWaitSemaphores = &frame_semaphores.render_complete;
         }
 
-        vk_check(vkQueuePresentKHR(vk_queue, &present_info));
+        if(vk_swapchain_out_of_date(vkQueuePresentKHR(vk_queue, &present_info))) {
+            // Nothing ?
+        }
     }
 
     y_profile_frame_end();

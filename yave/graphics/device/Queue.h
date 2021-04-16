@@ -45,6 +45,7 @@ class Queue : NonCopyable {
         void wait() const;
 
         std::mutex& lock() const {
+            y_debug_assert(_lock);
             return *_lock;
         }
 
