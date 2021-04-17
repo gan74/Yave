@@ -197,6 +197,7 @@ void set_stage(const FrameGraphPass* pass, T& info, PipelineStage stage) {
 void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage, bool is_written, PipelineStage stage) {
     res.check_valid();
     auto& info = _pass->_images[res];
+    info.written_to |= is_written;
     set_stage(_pass, info, stage);
     parent()->register_usage(res, usage, is_written, _pass);
 }
@@ -204,6 +205,7 @@ void FrameGraphPassBuilder::add_to_pass(FrameGraphImageId res, ImageUsage usage,
 void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usage, bool is_written, PipelineStage stage) {
     res.check_valid();
     auto& info = _pass->_buffers[res];
+    info.written_to |= is_written;
     set_stage(_pass, info, stage);
     parent()->register_usage(res, usage, is_written, _pass);
 }

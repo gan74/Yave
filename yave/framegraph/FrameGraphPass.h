@@ -43,6 +43,7 @@ class FrameGraphPass final : NonMovable {
     public:
         struct ResourceUsageInfo {
             PipelineStage stage = PipelineStage::None;
+            bool written_to = false;
         };
 
         using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;

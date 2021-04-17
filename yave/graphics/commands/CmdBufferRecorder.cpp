@@ -295,8 +295,9 @@ void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3
 
 void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
     math::Vec3ui dispatch_size;
+    const math::Vec3ui program_size = program.local_size();
     for(usize i = 0; i != 3; ++i) {
-        dispatch_size[i] = size[i] / program.local_size()[i] + !!(size[i] % program.local_size()[i]);
+        dispatch_size[i] = size[i] / program_size[i] + !!(size[i] % program_size[i]);
     }
     dispatch(program, dispatch_size, descriptor_sets, push_constants);
 }

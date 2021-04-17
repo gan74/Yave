@@ -88,21 +88,19 @@ static auto&& check_exists(C& c, T t) {
 template<typename C, typename B>
 static void build_barriers(const C& resources, B& barriers, std::unordered_map<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphFrameResources& frame_res) {
     for(auto&& [res, info] : resources) {
-        const auto it = to_barrier.find(res);
-        const bool exists = it != to_barrier.end();
         // barrier around attachments are handled by the renderpass
         const PipelineStage stage = info.stage & ~PipelineStage::AllAttachmentOutBit;
         if(stage != PipelineStage::None) {
+            const auto it = to_barrier.find(res);
+            const bool exists = it != to_barrier.end();
             if(exists) {
                 barriers.emplace_back(frame_res.barrier(res, it->second, info.stage));
-                it->second = info.stage;
-            } else {
+                to_barrier.erase(it);
+            }
+
+            if(info.written_to) {
                 to_barrier[res] = info.stage;
             }
-        }
-
-        if(exists) {
-            to_barrier.erase(it);
         }
     }
 }
