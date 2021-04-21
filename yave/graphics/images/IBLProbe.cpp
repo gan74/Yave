@@ -71,14 +71,18 @@ struct ProbeBase : ImageBase {
     }
 };
 
-struct ProbeBaseView : ViewBase {
-    // does not destroy the view, need to be done manually
+struct ProbeBaseView : NonMovable, ViewBase {
     ProbeBaseView(ProbeBase& base, usize mip) :
             ViewBase(base.image_size().to<2>() / (1 << mip),
                      base.usage(),
                      base.format(),
                      create_view(base.vk_image(), base.format(), mip),
                      base.vk_image()) {
+    }
+
+    ~ProbeBaseView() {
+        // Unlike "normal" image views we own the vulkan object
+        device_destroy(vk_view());
     }
 };
 
@@ -133,10 +137,6 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
     }
 
     fill_probe(mip_views, texture);
-
-    for(const auto& v : mip_views) {
-        device_destroy(v.vk_view());
-    }
 }
 
 
