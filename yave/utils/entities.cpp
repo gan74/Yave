@@ -50,7 +50,9 @@ core::Result<float> entity_radius(const ecs::EntityWorld& world, ecs::EntityId i
 
 core::Result<AABB> entity_aabb(const ecs::EntityWorld& world, ecs::EntityId id) {
     if(const StaticMeshComponent* mesh = world.component<StaticMeshComponent>(id)) {
-        return core::Ok(mesh->aabb());
+        if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
+            return core::Ok(tr->to_global(mesh->aabb()));
+        }
     }
 
     return core::Err();

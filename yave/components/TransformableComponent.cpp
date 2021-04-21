@@ -69,6 +69,10 @@ AABB TransformableComponent::to_global(const AABB& aabb) const {
     return AABB(center - half_extent, center + half_extent);
 }
 
+const OctreeNode* TransformableComponent::octree_node() const {
+    return _node;
+}
+
 void TransformableComponent::update_node() {
     if(_node) {
         _node->set_dirty(_id);

@@ -45,6 +45,8 @@ class TransformableComponent final {
         math::Vec3 to_global(const math::Vec3& pos) const;
         AABB to_global(const AABB& aabb) const;
 
+        const OctreeNode* octree_node() const;
+
         y_reflect(_transform)
 
     private:

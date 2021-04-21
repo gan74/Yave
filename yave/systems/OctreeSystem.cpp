@@ -93,6 +93,14 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
 
         _tree._data._dirty.clear();
     }
+
+    /*for(auto&& id_comp  : world.view<TransformableComponent>(transformable_ids(world, false)).id_components()) {
+        const auto& tr = id_comp.component<TransformableComponent>();
+        y_debug_assert(tr.octree_node());
+
+        const AABB bbox = find_aabb(world, id_comp.id(), tr.position());
+        y_debug_assert(tr.octree_node()->contains(bbox));
+    }*/
 }
 
 const OctreeNode& OctreeSystem::root() const {
