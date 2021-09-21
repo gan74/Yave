@@ -252,7 +252,7 @@ bool search_bar(char* buffer, usize buffer_size) {
     search_bar_state.popup_pos.y += rect.y + 1.0f;
     search_bar_state.popup_width = rect.x;
 
-    search_bar_state.open_popup = true;
+    search_bar_state.open_popup = ImGui::GetFocusID() == search_bar_state.id;
     if(!buffer_size || !imgui_state) {
         search_bar_state.open_popup = false;
     }
