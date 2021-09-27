@@ -29,11 +29,15 @@ SOFTWARE.
 #define YAVE_VK_PLATFORM_INCLUDES
 
 #ifdef YAVE_VK_PLATFORM_INCLUDES
-#ifdef Y_OS_WIN
+
+#if defined(Y_OS_WIN)
 #define VK_USE_PLATFORM_WIN32_KHR
+#elif defined(Y_OS_LINUX)
+#define VK_USE_PLATFORM_XLIB_KHR
 #else
 #error Unsupported platform
 #endif
+
 #endif
 
 /**********************************
@@ -282,7 +286,7 @@ inline constexpr auto vk_null() {
 }
 
 inline constexpr bool is_error(VkResult result) {
-    return result != VK_SUCCESS;
+    return result < VK_SUCCESS;
 }
 inline constexpr bool is_incomplete(VkResult result) {
     return result == VK_INCOMPLETE;
@@ -292,6 +296,14 @@ const char* vk_result_str(VkResult result);
 
 inline void vk_check(VkResult result) {
     y_always_assert(!is_error(result), vk_result_str(result));
+}
+
+inline [[nodiscard]] bool vk_swapchain_out_of_date(VkResult result) {
+    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        return true;
+    }
+    vk_check(result);
+    return false;
 }
 
 inline void vk_check_or_incomplete(VkResult result) {
