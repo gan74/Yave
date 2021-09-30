@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
+// #include <y/utils/format.h>
 
 #include <external/imgui/imgui.h>
 #include <external/imgui/imgui_internal.h>
@@ -212,6 +213,7 @@ static int history_callback(ImGuiInputTextCallbackData* data) {
     return 0;
 }
 
+
 static struct SearchBarState {
         SearchBarState(ImGuiID i) : id(i) {}
         ImGuiID id = 0;
@@ -221,7 +223,7 @@ static struct SearchBarState {
         float popup_width = 0.0f;
         bool open_popup = false;
         bool enter_pressed = false;
-        bool grab_focus = false;
+        bool activated = false;
     } search_bar_state(0);
 
 
@@ -238,21 +240,17 @@ bool search_bar(char* buffer, usize buffer_size) {
 
     search_bar_state.popup_pos = math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetCursorPos());
 
-    const bool grab_focus = imgui_state && search_bar_state.grab_focus;
-    if(grab_focus) {
-        ImGui::SetKeyboardFocusHere(0);
-        search_bar_state.grab_focus = false;
-        imgui_state->Stb.cursor = imgui_state->Stb.select_start = imgui_state->Stb.select_end = imgui_state->TextW.size();
-    }
-
     const int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory;
     search_bar_state.enter_pressed = ImGui::InputText(ICON_FA_SEARCH, buffer, buffer_size, flags, history_callback, &search_bar_state.selection_index);
+
 
     const ImVec2 rect = ImGui::GetItemRectSize();
     search_bar_state.popup_pos.y += rect.y + 1.0f;
     search_bar_state.popup_width = rect.x;
 
-    search_bar_state.open_popup = ImGui::GetFocusID() == search_bar_state.id;
+
+    search_bar_state.open_popup = !search_bar_state.activated;
+
     if(!buffer_size || !imgui_state) {
         search_bar_state.open_popup = false;
     }
@@ -313,7 +311,6 @@ bool suggestion_item(const char* name) {
 
     if(selected && search_bar_state.enter_pressed) {
         activated = true;
-        search_bar_state.grab_focus = true;
     }
 
     if(selected || ImGui::IsItemHovered()) {
@@ -325,7 +322,7 @@ bool suggestion_item(const char* name) {
 
     ++search_bar_state.item_count;
 
-    return activated;
+    return search_bar_state.activated = activated;
 }
 
 }
