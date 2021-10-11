@@ -222,8 +222,8 @@ static struct SearchBarState {
         ImVec2 popup_pos;
         float popup_width = 0.0f;
         bool open_popup = false;
+        bool keep_open = false;
         bool enter_pressed = false;
-        bool activated = false;
     } search_bar_state(0);
 
 
@@ -248,9 +248,7 @@ bool search_bar(char* buffer, usize buffer_size) {
     search_bar_state.popup_pos.y += rect.y + 1.0f;
     search_bar_state.popup_width = rect.x;
 
-
-    search_bar_state.open_popup = !search_bar_state.activated;
-
+    search_bar_state.open_popup = search_bar_state.keep_open || ImGui::GetFocusID() == search_bar_state.id;
     if(!buffer_size || !imgui_state) {
         search_bar_state.open_popup = false;
     }
@@ -258,6 +256,8 @@ bool search_bar(char* buffer, usize buffer_size) {
     if(!buffer[0] && search_bar_state.selection_index < 0) {
         search_bar_state.open_popup = false;
     }
+
+    search_bar_state.keep_open = false;
 
     return search_bar_state.enter_pressed && search_bar_state.selection_index < 0;
 }
@@ -309,11 +309,14 @@ bool suggestion_item(const char* name) {
     bool selected = search_bar_state.item_count == search_bar_state.selection_index;
     bool activated = ImGui::Selectable(name, &selected);
 
+    const bool hovered = ImGui::IsItemHovered();
+    search_bar_state.keep_open |= hovered;
+
     if(selected && search_bar_state.enter_pressed) {
         activated = true;
     }
 
-    if(selected || ImGui::IsItemHovered()) {
+    if(selected || hovered) {
         search_bar_state.selection_index = search_bar_state.item_count;
     }
     if(activated) {
@@ -322,7 +325,7 @@ bool suggestion_item(const char* name) {
 
     ++search_bar_state.item_count;
 
-    return search_bar_state.activated = activated;
+    return activated;
 }
 
 }
