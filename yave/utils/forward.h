@@ -112,8 +112,6 @@ class IBLProbe;
 class FrameGraphPass;
 class ComputeProgram;
 class RayTracing;
-class SQLiteFileSystemModel;
-class LocalFileSystemModel;
 struct SkinnedVertex;
 class LifetimeManager;
 class OctreeSystem;

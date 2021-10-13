@@ -33,7 +33,7 @@ namespace editor {
 
 struct EditorSettings {
     core::String world_file = "../world.yw3";
-    core::String asset_store = "../store.sqlite3";
+    core::String asset_store = "../store";
 
     y_reflect(world_file, asset_store)
 };
