@@ -171,25 +171,22 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::for_each(std:
     const bool is_root = path.empty();
 
     const auto lock = y_profile_unique_lock(_parent->_lock);
-    {
-        for(auto it = _parent->_folders.lower_bound(path); it != _parent->_folders.end(); ++it) {
-            if(is_strict_direct_parent(path, *it)) {
-                func(it->sub_str(path.size() + !is_root));
-            } else if(!it->starts_with(path)) {
-                break;
-            }
-        }
 
-        for(auto it = _parent->_assets.lower_bound(path); it != _parent->_assets.end(); ++it) {
-            if(is_strict_direct_parent(path, it->first)) {
-                func(it->first.sub_str(path.size() + !is_root));
-            } else if(!it->first.starts_with(path)) {
-                break;
-            }
+    for(auto it = _parent->_folders.lower_bound(path); it != _parent->_folders.end(); ++it) {
+        if(is_strict_direct_parent(path, *it)) {
+            func(it->sub_str(path.size() + !is_root));
+        } else if(!it->starts_with(path)) {
+            break;
         }
     }
 
-    //_parent->save().unwrap();
+    for(auto it = _parent->_assets.lower_bound(path); it != _parent->_assets.end(); ++it) {
+        if(is_strict_direct_parent(path, it->first)) {
+            func(it->first.sub_str(path.size() + !is_root));
+        } else if(!it->first.starts_with(path)) {
+            break;
+        }
+    }
 
     return core::Ok();
 
@@ -255,9 +252,9 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
         }
     }
 
+    _parent->_ids = nullptr;
     std::swap(new_folders, _parent->_folders);
     std::swap(new_assets, _parent->_assets);
-    _parent->_ids = nullptr;
 
     return _parent->save_or_restore_tree();
 }
@@ -318,9 +315,9 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::rename(std::s
         }
     }
 
+    _parent->_ids = nullptr;
     std::swap(new_folders, _parent->_folders);
     std::swap(new_assets, _parent->_assets);
-    _parent->_ids = nullptr;
 
     return _parent->save_or_restore_tree();
 }
@@ -338,7 +335,7 @@ FolderAssetStore::FolderAssetStore(const core::String& root) : _root(FileSystemM
 }
 
 FolderAssetStore::~FolderAssetStore() {
-   save_next_id().unwrap();
+    save_next_id().unwrap();
 }
 
 core::String FolderAssetStore::asset_data_file_name(AssetId id) const {
@@ -417,7 +414,7 @@ void FolderAssetStore::rebuild_id_map() const {
     const auto lock = y_profile_unique_lock(_lock);
 
     if(!_ids) {
-        _ids = std::make_unique<core::ExternalHashMap<AssetId, std::map<core::String, AssetData>::const_iterator>>();
+        _ids = std::make_unique<std::remove_reference_t<decltype(*_ids)>>();
         _ids->reserve(_assets.size());
 
         for(auto it = _assets.begin(); it != _assets.end(); ++it) {
@@ -661,6 +658,7 @@ FolderAssetStore::Result<> FolderAssetStore::save_or_restore_tree() {
     y_profile();
 
     const auto lock = y_profile_unique_lock(_lock);
+
     if(!save_tree()) {
         load_tree().unwrap();
         log_msg("Failed to save tree", Log::Error);
@@ -674,9 +672,8 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
 
     const auto lock = y_profile_unique_lock(_lock);
 
-    _assets.clear();
     _ids = nullptr;
-    _next_id = 0;
+    _assets.clear();
 
     const FileSystemModel* fs = FileSystemModel::local_filesystem();
     const auto result = fs->for_each(_root, [&](std::string_view name) {
@@ -702,7 +699,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
                 const AssetDesc desc = r.unwrap();
                 const AssetData data = { id, desc.type };
 
-                _assets.insert(std::pair(desc.name, data));
+                _assets.emplace(desc.name, data);
 
                 if(auto parent = _filesystem.parent_path(desc.name); parent && !parent.unwrap().is_empty()) {
                     _folders.insert(parent.unwrap());
@@ -755,6 +752,8 @@ FolderAssetStore::Result<> FolderAssetStore::reload_all() {
     load_next_id().ignore();
     load_tree().unwrap();
     load_assets().unwrap();
+
+    rebuild_id_map();
 
     return core::Ok();
 }
