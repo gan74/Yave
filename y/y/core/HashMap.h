@@ -28,8 +28,6 @@ SOFTWARE.
 
 #include <y/utils/traits.h>
 
-// #define Y_HASHMAP_AUDIT
-
 namespace y {
 namespace core {
 
@@ -154,6 +152,7 @@ class ExternalHashMap : Hasher {
             } state = Empty;
 
             inline void set_hash(usize) {
+                y_debug_assert(!is_full());
                 state = Full;
             }
 
@@ -202,24 +201,49 @@ class ExternalHashMap : Hasher {
             }
 
             inline ~Entry() {
+                checked_set_full();
             }
 
 
             inline void set_empty(const key_type& k) {
+                checked_set_full();
                 ::new(&key_value) pair_type{k, mapped_type{}};
             }
 
             inline void set(pair_type&& kv) {
+                checked_set_full();
                 ::new(&key_value) pair_type{std::move(kv)};
             }
 
             inline void clear() {
+                checked_set_empty();
                 key_value.~pair_type();
             }
 
             inline const key_type& key() const {
+                y_debug_assert(!empty);
                 return key_value.first;
             }
+
+#ifdef Y_DEBUG
+            bool empty = true;
+
+            inline void checked_set_full() {
+                y_debug_assert(empty);
+                empty = false;
+            }
+
+            inline void checked_set_empty() {
+                y_debug_assert(!empty);
+                empty = true;
+            }
+#else
+            inline void checked_set_full() {
+            }
+
+            inline void checked_set_empty() {
+            }
+#endif
         };
 
         struct KeyValueIt {
@@ -437,31 +461,15 @@ class ExternalHashMap : Hasher {
 
                         _states[new_index].set_hash(bucket.hash);
                         _entries[new_index].set(std::move(old_entries[i].key_value));
+
+                        old_entries[i].clear();
                     }
                 }
             }
-
-            audit();
         }
 
         inline void expand() {
             expand(bucket_count() == 0 ? min_capacity : 2 * bucket_count());
-        }
-
-        void audit() {
-#ifdef Y_HASHMAP_AUDIT
-            usize entry_count = 0;
-            for(usize i = 0; i != bucket_count(); ++i) {
-                if(!_states[i].is_full()) {
-                    continue;
-                }
-                ++entry_count;
-                const key_type& k = _entries[i].key();
-                const Bucket b = find_bucket_for_insert(k);
-                y_debug_assert(b.index == i);
-            }
-            y_debug_assert(entry_count == _size);
-#endif
         }
 
         FixedArray<State> _states;
@@ -479,7 +487,6 @@ class ExternalHashMap : Hasher {
         static_assert(!std::is_constructible_v<iterator, const_iterator>);
 
         inline ExternalHashMap() {
-            audit();
         }
 
         inline ExternalHashMap(ExternalHashMap&& other) {
@@ -498,7 +505,6 @@ class ExternalHashMap : Hasher {
                 std::swap(_size, other._size);
                 std::swap(_max_probe_len, other._max_probe_len);
             }
-            audit();
         }
 
         inline ~ExternalHashMap() {
@@ -517,14 +523,12 @@ class ExternalHashMap : Hasher {
             _max_probe_len = 0;
 
             y_debug_assert(_size == 0);
-            audit();
         }
 
         inline void clear() {
             make_empty();
             _states.clear();
             _entries = nullptr;
-            audit();
         }
 
         inline iterator begin() {
@@ -625,12 +629,11 @@ class ExternalHashMap : Hasher {
         }
 
         inline void erase(const iterator& it) {
-            y_defer(audit());
-
             const usize index = it._index;
 
             y_debug_assert(index < bucket_count());
             y_debug_assert(it._parent == this);
+            y_debug_assert(_states[index].is_full());
 
             _entries[index].clear();
             _states[index].make_empty();
@@ -644,8 +647,6 @@ class ExternalHashMap : Hasher {
         }
 
         inline std::pair<iterator, bool> insert(pair_type p) {
-            y_defer(audit());
-
             if(should_expand()) {
                 expand();
             }
