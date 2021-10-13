@@ -367,6 +367,8 @@ core::String FolderAssetStore::next_id_file_name() const {
 }
 
 AssetStore::Result<FolderAssetStore::AssetDesc> FolderAssetStore::load_desc(AssetId id) const {
+    y_profile();
+
     core::Vector<u8> data;
     if(auto file = io2::File::open(asset_desc_file_name(id));
         file.is_error() || file.unwrap().read_all(data).is_error()) {
@@ -398,6 +400,8 @@ AssetStore::Result<FolderAssetStore::AssetDesc> FolderAssetStore::load_desc(Asse
 }
 
 AssetStore::Result<> FolderAssetStore::save_desc(AssetId id, const AssetDesc& desc) const {
+    y_profile();
+
     const std::string_view data = fmt("%\n%\n", desc.name, desc.type);
     if(auto file = io2::File::create(asset_desc_file_name(id));
        file.is_error() || file.unwrap().write_array(data.data(), data.size()).is_error()) {
@@ -654,6 +658,8 @@ FolderAssetStore::Result<> FolderAssetStore::save_tree() const {
 }
 
 FolderAssetStore::Result<> FolderAssetStore::save_or_restore_tree() {
+    y_profile();
+
     const auto lock = y_profile_unique_lock(_lock);
     if(!save_tree()) {
         load_tree().unwrap();
@@ -712,6 +718,8 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
 }
 
 FolderAssetStore::Result<> FolderAssetStore::load_next_id() {
+    y_profile();
+
     core::Vector<u8> data;
     if(auto file = io2::File::open(next_id_file_name());
         file.is_error() || file.unwrap().read_all(data).is_error()) {
@@ -731,6 +739,8 @@ FolderAssetStore::Result<> FolderAssetStore::load_next_id() {
 }
 
 FolderAssetStore::Result<> FolderAssetStore::save_next_id() const {
+    y_profile();
+
     const std::string_view data = fmt("%", _next_id);
     if(auto file = io2::File::create(next_id_file_name()); file.is_error() || file.unwrap().write_array(data.data(), data.size()).is_error()) {
         return core::Err(ErrorType::FilesytemError);
@@ -740,6 +750,8 @@ FolderAssetStore::Result<> FolderAssetStore::save_next_id() const {
 }
 
 FolderAssetStore::Result<> FolderAssetStore::reload_all() {
+    y_profile();
+
     load_next_id().ignore();
     load_tree().unwrap();
     load_assets().unwrap();
