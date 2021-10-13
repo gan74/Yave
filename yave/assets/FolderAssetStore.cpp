@@ -68,7 +68,7 @@ static bool is_strict_indirect_parent(std::string_view parent, std::string_view 
 }
 
 static bool is_valid_name_char(char c) {
-    return std::isalnum(c) || c == '_' || c == ' ';
+    return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == ' ';
 }
 
 static bool is_valid_path_char(char c) {
@@ -238,7 +238,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
     std::map<core::String, AssetData> new_assets;
     {
         for(const auto &[name, data] : _parent->_assets) {
-            if(is_strict_indirect_parent(path, name)) {
+            if(is_strict_indirect_parent(path, name) || name == path) {
                 const AssetId id = data.id;
                 if(auto r = FileSystemModel::local_filesystem()->remove(_parent->asset_desc_file_name(id)); !r) {
                     _parent->reload_all().ignore();
@@ -276,9 +276,9 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::rename(std::s
         for(const auto &[name, data] : _parent->_assets) {
             if(is_strict_indirect_parent(from, name) || from == name) {
                 const std::string_view end = name.sub_str(from.size() + 1);
-                core::String new_name = end.empty() ? core::String(to) : join(to, end);
+                const core::String new_name = end.empty() ? core::String(to) : join(to, end);
 
-                if(_parent->_assets.emplace(std::move(new_name), data).second) {
+                if(_parent->_assets.emplace(new_name, data).second) {
                     if(auto r = _parent->load_desc(data.id)) {
                         AssetDesc desc = std::move(r.unwrap());
                         desc.name = new_name;
@@ -452,9 +452,11 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
     const AssetDesc desc = { dst_name, type };
     y_try(save_desc(id, desc));
 
-    _assets[dst_name] = AssetData{id, type};
+    const auto it = _assets.emplace(dst_name, AssetData{id, type}).first;
+    if(_ids) {
+        (*_ids)[id] = it;
+    }
 
-    y_try(save_or_restore_tree());
     return core::Ok(id);
 }
 
