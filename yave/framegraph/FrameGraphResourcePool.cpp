@@ -35,27 +35,26 @@ FrameGraphResourcePool::FrameGraphResourcePool() {
 }
 
 FrameGraphResourcePool::~FrameGraphResourcePool() {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto image_lock = y_profile_unique_lock(_image_lock);
+    const auto buffer_lock = y_profile_unique_lock(_buffer_lock);
 }
 
 TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
     y_profile();
-    const auto lock = y_profile_unique_lock(_lock);
 
     check_usage(usage);
 
     TransientImage<> image;
-    if(!create_image_from_pool(image, format, size, usage)) {
-        y_profile_zone("create image");
-        image = TransientImage<>(format, usage, size);
+    if(create_image_from_pool(image, format, size, usage)) {
+        return image;
     }
 
-    return image;
+    y_profile_zone("create image");
+    return TransientImage<>(format, usage, size);;
 }
 
 TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsage usage, MemoryType memory) {
     y_profile();
-    const auto lock = y_profile_unique_lock(_lock);
 
     check_usage(usage);
 
@@ -64,15 +63,17 @@ TransientBuffer FrameGraphResourcePool::create_buffer(usize byte_size, BufferUsa
     }
 
     TransientBuffer buffer;
-    if(!create_buffer_from_pool(buffer, byte_size, usage, memory)) {
-        y_profile_zone("create buffer");
-        buffer = TransientBuffer(byte_size, usage, memory);
+    if(create_buffer_from_pool(buffer, byte_size, usage, memory)) {
+        return buffer;
     }
 
-    return buffer;
+    y_profile_zone("create buffer");
+    return TransientBuffer(byte_size, usage, memory);
 }
 
 bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+    const auto lock = y_profile_unique_lock(_image_lock);
+
     for(auto it = _images.begin(); it != _images.end(); ++it) {
         auto& img = it->first;
 
@@ -81,7 +82,6 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, Image
             res = std::move(img);
             _images.erase(it);
 
-            audit();
             y_debug_assert(!res.is_null());
 
             return true;
@@ -90,8 +90,9 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage<>& res, Image
     return false;
 }
 
-
 bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory) {
+    const auto lock = y_profile_unique_lock(_buffer_lock);
+
     for(auto it = _buffers.begin(); it != _buffers.end(); ++it) {
         auto& buffer = it->first;
 
@@ -102,7 +103,6 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
             res = std::move(buffer);
             _buffers.erase(it);
 
-            audit();
             y_debug_assert(!res.is_null());
 
             return true;
@@ -113,60 +113,46 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
 
 
 void FrameGraphResourcePool::release(TransientImage<> image) {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = y_profile_unique_lock(_image_lock);
 
     y_debug_assert(!image.is_null());
     _images.emplace_back(std::move(image), _collection_id);
-    audit();
 }
 
 void FrameGraphResourcePool::release(TransientBuffer buffer) {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = y_profile_unique_lock(_buffer_lock);
 
     y_debug_assert(!buffer.is_null());
     _buffers.emplace_back(std::move(buffer), _collection_id);
-    audit();
 }
 
 void FrameGraphResourcePool::garbage_collect() {
     y_profile();
-    const auto lock = y_profile_unique_lock(_lock);
-
-    audit();
 
     const u64 max_col_count = 6;
+    const u64 collect_id = _collection_id++;
 
-    for(usize i = 0; i < _images.size(); ++i) {
-        if(_images[i].second + max_col_count < _collection_id) {
-            _images.erase(_images.begin() + i);
-            --i;
+    {
+        const auto lock = y_profile_unique_lock(_image_lock);
+        for(usize i = 0; i < _images.size(); ++i) {
+            if(_images[i].second + max_col_count < collect_id) {
+                _images.erase(_images.begin() + i);
+                --i;
+            }
         }
     }
 
-    for(usize i = 0; i < _buffers.size(); ++i) {
-        if(_buffers[i].second + max_col_count < _collection_id) {
-            _buffers.erase(_buffers.begin() + i);
-            --i;
+    {
+        const auto lock = y_profile_unique_lock(_buffer_lock);
+        for(usize i = 0; i < _buffers.size(); ++i) {
+            if(_buffers[i].second + max_col_count < collect_id) {
+                _buffers.erase(_buffers.begin() + i);
+                --i;
+            }
         }
     }
-
-    ++_collection_id;
-
-    audit();
 }
 
-void FrameGraphResourcePool::audit() const {
-/*#ifdef Y_DEBUG
-    for(const auto& [res, col] : _images) {
-        unused(res, col);
-        y_debug_assert(res.device());
-    }
-    for(const auto& [res, col] : _buffers) {
-        unused(res, col);
-        y_debug_assert(res.device());
-    }
-#endif*/
-}
 
 }
 

@@ -53,12 +53,11 @@ class FrameGraphResourcePool : NonMovable {
         core::Vector<std::pair<TransientImage<>, u64>> _images;
         core::Vector<std::pair<TransientBuffer, u64>> _buffers;
 
-        u64 _collection_id = 0;
-
-        void audit() const;
+        std::atomic<u64> _collection_id = 0;
 
         Y_TODO(Find a way to not lock on every method call)
-        std::recursive_mutex _lock;
+        std::recursive_mutex _image_lock;
+        std::recursive_mutex _buffer_lock;
 };
 
 }
