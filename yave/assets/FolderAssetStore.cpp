@@ -339,17 +339,15 @@ FolderAssetStore::~FolderAssetStore() {
 }
 
 core::String FolderAssetStore::asset_data_file_name(AssetId id) const {
-    std::array<char, 23> buffer = {0};
+    std::array<char, 32> buffer = {0};
     std::snprintf(buffer.data(), buffer.size(), "%016" PRIx64 ".asset", id.id());
-    const std::string_view name(buffer.data(), buffer.size() - 1);
-    return _filesystem.join(_root, name);
+    return _filesystem.join(_root, buffer.data());
 }
 
 core::String FolderAssetStore::asset_desc_file_name(AssetId id) const {
-    std::array<char, 22> buffer = {0};
+    std::array<char, 32> buffer = {0};
     std::snprintf(buffer.data(), buffer.size(), "%016" PRIx64 ".desc", id.id());
-    const std::string_view name(buffer.data(), buffer.size() - 1);
-    return _filesystem.join(_root, name);
+    return _filesystem.join(_root, buffer.data());
 }
 
 
@@ -400,8 +398,15 @@ AssetStore::Result<> FolderAssetStore::save_desc(AssetId id, const AssetDesc& de
     y_profile();
 
     const std::string_view data = fmt("%\n%\n", desc.name, desc.type);
-    if(auto file = io2::File::create(asset_desc_file_name(id));
+
+    const core::String file_name = asset_desc_file_name(id);
+    const core::String tmp_file = file_name + "_";
+
+    if(auto file = io2::File::create(tmp_file);
        file.is_error() || file.unwrap().write_array(data.data(), data.size()).is_error()) {
+        return core::Err(ErrorType::FilesytemError);
+    }
+    if(!FileSystemModel::local_filesystem()->rename(tmp_file, file_name)) {
         return core::Err(ErrorType::FilesytemError);
     }
 
@@ -638,17 +643,15 @@ FolderAssetStore::Result<> FolderAssetStore::save_tree() const {
     }
 
     {
-        y_profile_zone("writing");
-
-        const core::String tree_file = tree_file_name();
-        const core::String tmp_file = tree_file + "_";
+        const core::String file_name = tree_file_name();
+        const core::String tmp_file = file_name + "_";
 
         Y_TODO(Openning file is slow, maybe we should cache it)
         if(auto file = io2::File::create(tmp_file); file.is_error() || file.unwrap().write_array(tree_data.data(), tree_data.size()).is_error()) {
             return core::Err(ErrorType::FilesytemError);
         }
 
-        if(!FileSystemModel::local_filesystem()->rename(tmp_file, tree_file)) {
+        if(!FileSystemModel::local_filesystem()->rename(tmp_file, file_name)) {
             return core::Err(ErrorType::FilesytemError);
         }
     }
