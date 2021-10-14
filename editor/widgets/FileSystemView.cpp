@@ -236,7 +236,7 @@ bool FileSystemView::process_context_menu() {
 void FileSystemView::draw_context_menu() {
     if(ImGui::Selectable("New folder")) {
         if(!filesystem()->create_directory(filesystem()->join(path(), "new folder"))) {
-            log_msg("Unable to create directory.", Log::Error);
+            log_msg("Unable to create directory", Log::Error);
         }
         refresh_all();
     }
@@ -268,7 +268,7 @@ void FileSystemView::make_drop_target(std::string_view drop_path) {
             const FileSystemModel* fs = filesystem();
             const core::String target_name = fs->join(drop_path, fs->filename(original_name));
             if(!fs->rename(original_name, target_name)) {
-                log_msg(fmt("Unable to move \"%\" to \"%\".", original_name, drop_path), Log::Error);
+                log_msg(fmt("Unable to move \"%\" to \"%\"", original_name, drop_path), Log::Error);
             }
             refresh_all();
         }

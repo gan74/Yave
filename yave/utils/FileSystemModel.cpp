@@ -144,6 +144,7 @@ FileSystemModel::Result<> LocalFileSystemModel::for_each(std::string_view path, 
             auto str = p.string();
             func(str);
         }
+        return core::Ok();
     } catch(...) {
     }
     return core::Err();

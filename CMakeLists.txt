@@ -84,12 +84,6 @@ file(GLOB_RECURSE YAVE_FILES
         "yave/*.cpp"
     )
 
-file(GLOB_RECURSE SQLITE_FILES
-        "external/sqlite/*.h"
-        "external/sqlite/*.c"
-    )
-
-
 set(TRACY_FILES
         "external/tracy/TracyClient.cpp"
         "external/tracy/Tracy.hpp"
@@ -145,11 +139,8 @@ if(YAVE_BUILD_YAVE)
         target_link_libraries(yave tracy)
     endif()
 
-    add_library(sqlite3 STATIC ${SQLITE_FILES})
-
-
     target_link_libraries(yave ${Vulkan_LIBRARY})
-    target_link_libraries(yave y spirv-cross-core sqlite3)
+    target_link_libraries(yave y spirv-cross-core)
 
     if(NOT MSVC)
         target_link_libraries(yave stdc++fs)

@@ -70,6 +70,11 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         AssetType type;
     };
 
+    struct AssetDesc {
+        core::String name;
+        AssetType type;
+    };
+
     public:
         FolderAssetStore(const core::String& root = "./store");
         ~FolderAssetStore() override;
@@ -92,14 +97,28 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         Result<AssetType> asset_type(AssetId id) const override;
 
     private:
-        core::String index_file_name() const;
-        core::String asset_file_name(AssetId id) const;
         AssetId next_id();
         void rebuild_id_map() const;
 
-        Result<> load();
-        Result<> save();
-        Result<> save_or_restore();
+        core::String tree_file_name() const;
+        core::String next_id_file_name() const;
+        core::String asset_data_file_name(AssetId id) const;
+        core::String asset_desc_file_name(AssetId id) const;
+
+        Result<AssetDesc> load_desc(AssetId id) const;
+        Result<> save_desc(AssetId id, const AssetDesc& desc) const;
+
+        Result<> save_or_restore_tree();
+
+        Result<> load_tree();
+        Result<> save_tree() const;
+
+        Result<> load_assets();
+
+        Result<> load_next_id();
+        Result<> save_next_id() const;
+
+        Result<> reload_all();
 
         core::String _root;
 

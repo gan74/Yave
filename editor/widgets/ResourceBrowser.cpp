@@ -91,10 +91,10 @@ void ResourceBrowser::draw_context_menu() {
             buffer.reset();
             AssetStore& store = asset_store();
             if(!store.import(buffer, store.filesystem()->join(path(), "new material"), AssetType::Material)) {
-                log_msg("Unable to import new material.", Log::Error);
+                log_msg("Unable to import new material", Log::Error);
             }
         } else {
-            log_msg("Unable to create new material.", Log::Error);
+            log_msg("Unable to create new material", Log::Error);
         }
     }
 }
@@ -299,7 +299,7 @@ void ResourceBrowser::update_search() {
                 }
             }
         } else {
-            log_msg("Search failed.", Log::Warning);
+            log_msg("Search failed", Log::Warning);
         }
     }
 }

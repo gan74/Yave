@@ -29,7 +29,7 @@ SOFTWARE.
 #include "ImGuiPlatform.h"
 #include "ThumbmailRenderer.h"
 
-#include <yave/assets/SQLiteAssetStore.h>
+#include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
 
 #include <y/io2/File.h>
@@ -66,7 +66,7 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : _platform(platfo
     _resources = std::make_unique<EditorResources>();
     _ui = std::make_unique<UiManager>();
 
-    _asset_store = std::make_shared<SQLiteAssetStore>(app_settings().editor.asset_store);
+    _asset_store = std::make_shared<FolderAssetStore>(app_settings().editor.asset_store);
     _loader = std::make_unique<AssetLoader>(_asset_store);
     _thumbmail_renderer = std::make_unique<ThumbmailRenderer>(*_loader);
 
