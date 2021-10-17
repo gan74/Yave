@@ -30,8 +30,6 @@ SOFTWARE.
 
 namespace editor {
 
-std::string_view clean_component_name(std::string_view name);
-
 class EditorWorld : public ecs::EntityWorld {
     public:
         EditorWorld(AssetLoader& loader);

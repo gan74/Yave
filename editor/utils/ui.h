@@ -48,6 +48,8 @@ void end_suggestion_popup();
 
 bool suggestion_item(const char* name);
 
+void table_begin_next_row(int row_index = 0);
+
 }
 }
 

@@ -26,67 +26,68 @@ SOFTWARE.
 // TODO: Nested classes will not be declared correctly
 
 namespace editor {
-struct EditorRendererSettings;
 struct UiSettings;
-class EditorResources;
-struct EditorPass;
-class MaterialEditor;
-class EntityView;
-struct Msg;
-class CVarConsole;
-class PropertyPanel;
-class Settings;
-struct ThumbmailData;
-class FileRenamer;
-class FileSystemView;
-class ImGuiRenderer;
-class FunctionWidget;
-class FileBrowser;
-class SettingsPanel;
-struct PerfSettings;
-class ImGuiPlatform;
-class HoudiniCameraController;
-class SceneImporter;
-class FPSCameraController;
-class ImageImporter;
-class EngineView;
-struct Picker;
-struct EditorRenderer;
-class PlotData;
-class EditorComponent;
-class ResourceBrowser;
-struct PlatformWindow;
-struct WidgetIdStack;
-class EditorApplication;
-struct EditorAction;
-class EditorWorld;
-class Selection;
-class Gizmo;
-class AssetSelector;
-struct PickingResult;
 class Preview;
-class UiManager;
+struct EditorPass;
+class FileBrowser;
+struct PerfSettings;
 struct EditorSettings;
-class PerformanceMetrics;
-struct CameraSettings;
-class Widget;
-struct CVar;
-class CameraDebug;
 class AssetStringifier;
+class ComponentPanel;
+class MaterialEditor;
+struct Picker;
+struct PlatformWindow;
+class EntityView;
+class PerformanceMetrics;
+class ResourceBrowser;
+class Widget;
+class ImGuiRenderer;
+class EditorComponent;
+class UiManager;
+struct CVar;
+struct CameraSettings;
+class Selection;
+struct EditorRendererSettings;
+class EditorWorld;
+class Settings;
+class PropertyPanel;
+class SceneImporter;
+struct ThumbmailData;
 struct IdBufferPass;
-class ThumbmailRenderer;
-struct Entry;
-class CameraController;
+struct Msg;
+class ImageImporter;
 struct DebugSettings;
+struct WidgetIdStack;
+class ImGuiPlatform;
+struct EditorRenderer;
+class EditorResources;
+class ThumbmailRenderer;
+class HoudiniCameraController;
+class SettingsPanel;
+class CameraDebug;
+class PlotData;
+struct PickingResult;
+class CVarConsole;
+class FunctionWidget;
+class FPSCameraController;
+class EditorApplication;
+class CameraController;
+class AssetSelector;
+class FileRenamer;
+struct EditorAction;
+struct Entry;
+class FileSystemView;
+class EngineView;
+class Gizmo;
 }
 
 
 namespace editor::import {
-struct SkeletonData;
 struct SubMeshData;
-struct SceneData;
-struct MaterialData;
 struct PrefabData;
+struct MaterialData;
+struct SkeletonData;
+struct SceneData;
 }
 
 

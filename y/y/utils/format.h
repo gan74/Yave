@@ -168,7 +168,9 @@ std::string_view fmt_into(core::String& out, const char* fmt_str, Args&&... args
 
 template<typename... Args>
 const char* fmt_c_str(const char* fmt_str, Args&&... args) {
-    return fmt(fmt_str, y_fwd(args)...).data();
+    const std::string_view str = fmt(fmt_str, y_fwd(args)...);
+    y_debug_assert(*(str.data() + str.size()) == '\0');
+    return str.data();
 }
 
 }

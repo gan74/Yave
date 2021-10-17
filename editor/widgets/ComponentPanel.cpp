@@ -1,0 +1,104 @@
+/*******************************
+Copyright (c) 2016-2021 Grégoire Angerand
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+**********************************/
+
+#include "ComponentPanel.h"
+
+#include <editor/Selection.h>
+#include <editor/EditorWorld.h>
+#include <editor/utils/ui.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
+#include <external/imgui/yave_imgui.h>
+
+namespace editor {
+
+ComponentPanelWidgetBase::Link* ComponentPanelWidgetBase::_first_link = nullptr;
+
+void ComponentPanelWidgetBase::register_link(Link* link) {
+    link->next = _first_link;
+    _first_link = link;
+}
+
+
+ComponentPanel::ComponentPanel() : Widget(ICON_FA_WRENCH " Components") {
+    for(auto* link = ComponentPanelWidgetBase::_first_link; link; link = link->next) {
+        _widgets.emplace_back(link->create());
+        log_msg(fmt("Registered component widget for %", _widgets.last()->runtime_info().type_name), Log::Debug);
+    }
+}
+
+void ComponentPanel::on_gui() {
+
+    if(!selection().has_selected_entity()) {
+        return;
+    }
+
+    EditorWorld& world = current_world();
+    const ecs::EntityId id = selection().selected_entity();
+
+
+    {
+        const ImGuiTableFlags table_flags =
+                ImGuiTableFlags_BordersInnerV |
+                ImGuiTableFlags_BordersInnerH |
+                ImGuiTableFlags_Resizable |
+                ImGuiTableFlags_RowBg;
+
+
+        for(auto& widget : _widgets) {
+            const ecs::ComponentRuntimeInfo rt_info = widget->runtime_info();
+            if(!world.has(id, rt_info.type_id)) {
+                continue;
+            }
+
+            const char* type_name = fmt_c_str(ICON_FA_PUZZLE_PIECE " %", rt_info.clean_component_name());
+            if(ImGui::CollapsingHeader(type_name)) {
+                if(ImGui::BeginTable("#components", 2, table_flags)) {
+                    imgui::table_begin_next_row();
+                    widget->process_entity(current_world(), id);
+                    ImGui::EndTable();
+                }
+            }
+        }
+    }
+
+    ImGui::Separator();
+
+    if(ImGui::Button("Add component")) {
+        ImGui::OpenPopup("##addcomponentmenu");
+    }
+
+    if(ImGui::BeginPopup("##addcomponentmenu")) {
+        for(const auto& [name, info] : EditorWorld::component_types()) {
+            const bool enabled = !name.is_empty() && !world.has(id, info.type_id) && info.add_component;
+            if(ImGui::MenuItem(fmt_c_str(ICON_FA_PUZZLE_PIECE " %", name), nullptr, nullptr, enabled) && enabled) {
+                info.add_component(world, id);
+            }
+        }
+        ImGui::EndPopup();
+    }
+}
+
+}
+

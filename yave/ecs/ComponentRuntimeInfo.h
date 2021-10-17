@@ -45,6 +45,25 @@ struct ComponentRuntimeInfo {
     std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
     void (*add_component)(EntityWorld&, EntityId) = nullptr;
 
+    std::string_view clean_component_name() const {
+        return clean_component_name(type_name);
+    }
+
+    static std::string_view clean_component_name(std::string_view name) {
+        usize start = 0;
+        for(usize i = 0; i != name.size(); ++i) {
+            switch(name[i]) {
+                case ':':
+                    start = i + 1;
+                break;
+
+                default:
+                break;
+            }
+        }
+
+        return name.substr(start);
+    }
 
     template<typename T>
     static ComponentRuntimeInfo create() {
@@ -55,6 +74,7 @@ struct ComponentRuntimeInfo {
             create_component<T>
         };
     }
+
 
     y_no_serde3()
 };

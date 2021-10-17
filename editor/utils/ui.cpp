@@ -328,6 +328,12 @@ bool suggestion_item(const char* name) {
     return activated;
 }
 
+
+void table_begin_next_row(int row_index) {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(row_index);
+}
+
 }
 }
 

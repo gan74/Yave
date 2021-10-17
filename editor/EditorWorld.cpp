@@ -41,24 +41,6 @@ SOFTWARE.
 
 namespace editor {
 
-
-std::string_view clean_component_name(std::string_view name) {
-    usize start = 0;
-    for(usize i = 0; i != name.size(); ++i) {
-        switch(name[i]) {
-            case ':':
-                start = i + 1;
-            break;
-
-            default:
-            break;
-        }
-    }
-
-    return name.substr(start);
-}
-
-
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_required_component<EditorComponent>();
     add_system<AssetLoaderSystem>(loader);
@@ -121,7 +103,7 @@ core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::comp
         for(const auto* poly_base = ecs::ComponentContainerBase::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
             if(const auto container = poly_base->create()) {
                 const ecs::ComponentRuntimeInfo info = container->runtime_info();
-                types.emplace_back(clean_component_name(info.type_name), info);
+                types.emplace_back(info.clean_component_name(), info);
             }
         }
         init = true;

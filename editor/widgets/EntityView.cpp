@@ -165,18 +165,6 @@ void EntityView::on_gui() {
         }
 
         if(ImGui::BeginPopup("##contextmenu")) {
-            if(ImGui::BeginMenu(ICON_FA_PLUS " Add component")) {
-
-                for(const auto& [name, info] : EditorWorld::component_types()) {
-                    const bool enabled = !name.is_empty() && !world.has(_hovered, info.type_id) && info.add_component;
-                    if(ImGui::MenuItem(fmt_c_str(ICON_FA_PUZZLE_PIECE " %", name), nullptr, nullptr, enabled) && enabled) {
-                        info.add_component(world, _hovered);
-                    }
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::Separator();
             if(ImGui::Selectable(ICON_FA_TRASH " Delete")) {
                 world.remove_entity(_hovered);
                 // we don't unselect the ID to make sure that we can handle case where the id is invalid
