@@ -70,12 +70,14 @@ class DeviceResources final : NonMovable {
             BloomCombineFrag,
             HBlurFrag,
             VBlurFrag,
+            WireFrameFrag,
 
             DeferredPointVert,
             DeferredSpotVert,
             BasicVert,
             SkinnedVert,
             ScreenVert,
+            WireFrameVert,
 
             MaxSpirV
         };
@@ -121,6 +123,8 @@ class DeviceResources final : NonMovable {
 
             HBlurMaterialTemplate,
             VBlurMaterialTemplate,
+
+            WireFrameMaterialTemplate,
 
             MaxMaterialTemplates
         };

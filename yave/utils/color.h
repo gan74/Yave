@@ -126,6 +126,24 @@ inline math::Vec3 identifying_color(usize index, float s = 0.5f, float v = 1.0f)
     return hsv_to_rgb(std::fmod(index * 0.618033988749895f, 1.0f), s, v);
 }
 
+inline u32 pack_to_u32(const math::Vec4& color) {
+    auto to_u8 = [](float x) -> u32 { return u32(std::clamp(std::round(x * 255.0f), 0.0f, 255.0f)); };
+    return
+        (to_u8(color.x()) << 0) |
+        (to_u8(color.y()) << 8) |
+        (to_u8(color.z()) << 16) |
+        (to_u8(color.w()) << 24);
+}
+
+inline math::Vec4 pack_from_u32(u32 packed) {
+    return math::Vec4(
+        (packed >> 0) & 0xFF,
+        (packed >> 8) & 0xFF,
+        (packed >> 16) & 0xFF,
+        (packed >> 24) & 0xFF
+    ) / 255.0;
+}
+
 }
 
 #endif // YAVE_UTILS_COLOR_H

@@ -34,6 +34,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/ecs/ecs.h>
 #include <yave/components/TransformableComponent.h>
@@ -41,7 +42,6 @@ SOFTWARE.
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/systems/OctreeSystem.h>
-
 
 #include <yave/utils/DirectDraw.h>
 #include <yave/utils/entities.h>
@@ -80,101 +80,7 @@ static std::pair<math::Vec2, math::Vec2> compute_uv_size(const char* c) {
     return {uv, size};
 }
 
-static void render_selection(RenderPassRecorder& recorder,
-                             const FrameGraphPass* pass,
-                             const SceneView& scene_view) {
 
-    const ecs::EntityWorld& world = scene_view.world();
-    const ecs::EntityId selected = selection().selected_entity();
-
-    const TransformableComponent* tr = world.component<TransformableComponent>(selected);
-    if(!tr) {
-        return;
-    }
-
-    constexpr bool draw_enclosing_sphere = false;
-    const bool draw_bbox = app_settings().debug.display_selected_bbox;
-
-    DirectDrawPrimitive primtitive;
-
-    {
-        const math::Vec3 z = tr->up();
-        const math::Vec3 y = tr->right();
-        const math::Vec3 x = tr->forward();
-        if(const auto* l = world.component<PointLightComponent>(selected)) {
-            primtitive.add_circle(tr->position(), x, y, l->radius());
-            primtitive.add_circle(tr->position(), y, z, l->radius());
-            primtitive.add_circle(tr->position(), z, x, l->radius());
-        }
-
-        if(const auto* l = world.component<SpotLightComponent>(selected)) {
-            primtitive.add_cone(tr->position(), x, y, l->radius(), l->half_angle());
-
-            if(draw_enclosing_sphere) {
-                const auto enclosing = l->enclosing_sphere();
-                const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center;
-                primtitive.add_circle(center, x, y, enclosing.radius);
-                primtitive.add_circle(center, y, z, enclosing.radius);
-                primtitive.add_circle(center, z, x, enclosing.radius);
-            }
-        }
-
-        if(const auto* m = world.component<StaticMeshComponent>(selected)) {
-            if(draw_bbox) {
-                primtitive.add_box(m->aabb(), tr->transform());
-                primtitive.add_box(tr->to_global(m->aabb()));
-            }
-        }
-    }
-
-    const auto points = primtitive.points();
-    if(!points.is_empty()) {
-        TypedAttribBuffer<math::Vec3, MemoryType::CpuVisible> vertices(points.size());
-        TypedMapping<math::Vec3> mapping(vertices);
-        std::copy(points.begin(), points.end(), mapping.begin());
-
-        const auto* material = resources()[EditorResources::WireFrameMaterialTemplate];
-        recorder.bind_material(material, {pass->descriptor_sets()[0]});
-        recorder.bind_attrib_buffers(vertices);
-        recorder.draw_array(points.size());
-    }
-}
-
-static void visit_octree(DirectDrawPrimitive& primitive, const OctreeNode& node) {
-    if(node.is_empty()) {
-        return;
-    }
-
-    primitive.add_box(node.strict_aabb());
-
-    for(const OctreeNode& c : node.children()) {
-        visit_octree(primitive, c);
-    }
-}
-
-static void render_octree(RenderPassRecorder& recorder,
-                          const FrameGraphPass* pass,
-                          const SceneView& scene_view) {
-
-    const ecs::EntityWorld& world = scene_view.world();
-    const OctreeSystem* octree = world.find_system<OctreeSystem>();
-
-    DirectDrawPrimitive primtitive;
-
-    visit_octree(primtitive, octree->root());
-
-    const auto points = primtitive.points();
-    if(!points.is_empty()) {
-        TypedAttribBuffer<math::Vec3, MemoryType::CpuVisible> vertices(points.size());
-        TypedMapping<math::Vec3> mapping(vertices);
-        std::copy(points.begin(), points.end(), mapping.begin());
-
-        const auto* material = resources()[EditorResources::WireFrameMaterialTemplate];
-        recorder.bind_material(material, {pass->descriptor_sets()[0]});
-        recorder.bind_attrib_buffers(vertices);
-        recorder.draw_array(points.size());
-    }
-}
 
 
 static void render_editor_entities(RenderPassRecorder& recorder, const FrameGraphPass* pass,
@@ -237,14 +143,84 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
     }
 }
 
+
+
+
+
+static void render_selection(DirectDrawPrimitive* primitive, const SceneView& scene_view) {
+
+    const ecs::EntityWorld& world = scene_view.world();
+    const ecs::EntityId selected = selection().selected_entity();
+
+    const TransformableComponent* tr = world.component<TransformableComponent>(selected);
+    if(!tr) {
+        return;
+    }
+
+    constexpr bool draw_enclosing_sphere = false;
+    const bool draw_bbox = app_settings().debug.display_selected_bbox;
+
+    {
+        const math::Vec3 z = tr->up();
+        const math::Vec3 y = tr->right();
+        const math::Vec3 x = tr->forward();
+        if(const auto* l = world.component<PointLightComponent>(selected)) {
+            primitive->add_circle(tr->position(), x, y, l->radius());
+            primitive->add_circle(tr->position(), y, z, l->radius());
+            primitive->add_circle(tr->position(), z, x, l->radius());
+        }
+
+        if(const auto* l = world.component<SpotLightComponent>(selected)) {
+            primitive->add_cone(tr->position(), x, y, l->radius(), l->half_angle());
+
+            if(draw_enclosing_sphere) {
+                const auto enclosing = l->enclosing_sphere();
+                const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center;
+                primitive->add_circle(center, x, y, enclosing.radius);
+                primitive->add_circle(center, y, z, enclosing.radius);
+                primitive->add_circle(center, z, x, enclosing.radius);
+            }
+        }
+
+        if(const auto* m = world.component<StaticMeshComponent>(selected)) {
+            if(draw_bbox) {
+                primitive->add_box(m->aabb(), tr->transform());
+                primitive->add_box(tr->to_global(m->aabb()));
+            }
+        }
+    }
+
+}
+
+static void visit_octree(DirectDrawPrimitive* primitive, const OctreeNode& node) {
+    if(node.is_empty()) {
+        return;
+    }
+
+    primitive->add_box(node.strict_aabb());
+
+    for(const OctreeNode& c : node.children()) {
+        visit_octree(primitive, c);
+    }
+}
+
+static void render_octree(DirectDrawPrimitive* primitive,
+                          const SceneView& scene_view) {
+
+    const ecs::EntityWorld& world = scene_view.world();
+    const OctreeSystem* octree = world.find_system<OctreeSystem>();
+
+    visit_octree(primitive, octree->root());
+}
+
+
+
 static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, FrameGraphImageId in, ImageFormat format, const math::Vec2ui& size) {
     if(in.is_valid()) {
         return builder.declare_copy(in);
     }
     return builder.declare_image(format, size);
 }
-
-
 
 EditorPass EditorPass::create( FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id) {
     const math::Vec2ui size = framegraph.image_size(in_depth);
@@ -272,13 +248,18 @@ EditorPass EditorPass::create( FrameGraph& framegraph, const SceneView& view, Fr
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer);
 
-            if(selection().has_selected_entity()) {
-                render_selection(render_pass, self, view);
-            }
 
-            if(app_settings().debug.display_octree) {
-                render_octree(render_pass, self, view);
+            DirectDraw direct;
+            {
+                if(selection().has_selected_entity()) {
+                    render_selection(direct.add_primitive(), view);
+                }
+
+                if(app_settings().debug.display_octree) {
+                    render_octree(direct.add_primitive(), view);
+                }
             }
+            direct.render(render_pass, view.camera().viewproj_matrix());
         });
 
     EditorPass pass;

@@ -56,6 +56,7 @@ struct DeviceMaterialData {
     const BlendMode blend_mode;
     const CullMode cull_mode;
     const bool depth_write;
+    const PrimitiveType primitive_type = PrimitiveType::Triangles;
 
     static constexpr DeviceMaterialData screen(SpirV frag, bool blended = false) {
         return DeviceMaterialData{frag, SpirV::ScreenVert, DepthTestMode::None, blended ? BlendMode::Add : BlendMode::None, CullMode::None, false};
@@ -67,6 +68,10 @@ struct DeviceMaterialData {
 
     static constexpr DeviceMaterialData skinned(SpirV frag) {
         return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true};
+    }
+
+    static constexpr DeviceMaterialData wire(SpirV frag) {
+        return DeviceMaterialData{frag, SpirV::WireFrameVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines};
     }
 };
 
@@ -88,6 +93,7 @@ static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::screen(SpirV::BloomCombineFrag),
         DeviceMaterialData::screen(SpirV::HBlurFrag, true),
         DeviceMaterialData::screen(SpirV::VBlurFrag, true),
+        DeviceMaterialData::wire(SpirV::WireFrameFrag),
     };
 
 static constexpr const char* spirv_names[] = {
@@ -121,12 +127,14 @@ static constexpr const char* spirv_names[] = {
         "bloom_combine.frag",
         "hblur.frag",
         "vblur.frag",
+        "wireframe.frag",
 
         "deferred_point.vert",
         "deferred_spot.vert",
         "basic.vert",
         "skinned.vert",
         "screen.vert",
+        "wireframe.vert",
     };
 
 // ABGR
@@ -229,7 +237,8 @@ DeviceResources::DeviceResources() {
                 .set_depth_mode(data.depth_test)
                 .set_cull_mode(data.cull_mode)
                 .set_blend_mode(data.blend_mode)
-                .set_depth_write(data.depth_write);
+                .set_depth_write(data.depth_write)
+                .set_primitive_type(data.primitive_type);
             ;
         _material_templates[i] = MaterialTemplate(std::move(template_data));
         _material_templates[i].set_name(spirv_names[data.frag]);

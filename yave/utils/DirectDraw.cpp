@@ -22,6 +22,13 @@ SOFTWARE.
 
 #include "DirectDraw.h"
 
+#include <yave/graphics/descriptors/DescriptorSet.h>
+#include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/device/DeviceResources.h>
+
+#include <yave/utils/color.h>
+
 namespace yave {
 
 void DirectDrawPrimitive::add_circle(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius, usize divs) {
@@ -78,13 +85,50 @@ DirectDrawPrimitive* DirectDraw::add_primitive(const math::Vec3& color) {
     _primitives.emplace_back(std::make_unique<DirectDrawPrimitive>());
 
     DirectDrawPrimitive* prim = _primitives.last().get();
-    prim->_color = color;
+    prim->_color = pack_to_u32(math::Vec4(color, 1.0f));
 
     return prim;
 }
 
 core::Span<std::unique_ptr<DirectDrawPrimitive>> DirectDraw::primtitives() const {
     return _primitives;
+}
+
+void DirectDraw::render(RenderPassRecorder& recorder, const math::Matrix4<>& view_proj) const {
+    usize point_count = 0;
+    for(const auto& prim : _primitives) {
+        point_count += prim->_points.size();
+    }
+
+    if(!point_count) {
+        return;
+    }
+
+    struct DirectVertex {
+        math::Vec3 pos;
+        u32 color;
+    };
+
+    TypedAttribBuffer<DirectVertex, MemoryType::CpuVisible> vertices(point_count);
+    TypedMapping mapping(vertices);
+
+    {
+        usize offset = 0;
+        for(const auto& prim : _primitives) {
+            for(const math::Vec3& p : prim->_points) {
+                mapping[offset++] = {
+                    p,
+                    prim->_color
+                };
+            }
+        }
+
+    }
+
+    const auto* material = device_resources()[DeviceResources::WireFrameMaterialTemplate];
+    recorder.bind_material(material, {DescriptorSet({InlineDescriptor(view_proj)})});
+    recorder.bind_attrib_buffers(vertices);
+    recorder.draw_array(point_count);
 }
 
 }

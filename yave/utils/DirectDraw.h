@@ -43,7 +43,7 @@ class DirectDrawPrimitive {
     private:
         friend class DirectDraw;
 
-        math::Vec3 _color = math::Vec3(0, 0, 1);
+        u32 _color = 0xFFFF00FF;
         core::Vector<math::Vec3> _points;
 };
 
@@ -53,6 +53,8 @@ class DirectDraw : NonCopyable {
         DirectDrawPrimitive* add_primitive(const math::Vec3& color = math::Vec3(0, 0, 1));
 
         core::Span<std::unique_ptr<DirectDrawPrimitive>> primtitives() const;
+
+        void render(RenderPassRecorder& recorder, const math::Matrix4<>& view_proj) const;
 
     private:
         core::Vector<std::unique_ptr<DirectDrawPrimitive>> _primitives;

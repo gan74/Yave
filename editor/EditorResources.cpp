@@ -46,13 +46,11 @@ static constexpr const char* spirv_names[] = {
         "clear_id.frag",
         "engine_view.frag",
         "selection.frag",
-        "wireframe.frag",
 
         "screen.vert",
         "imgui.vert",
         "imgui_billboard.vert",
         "id.vert",
-        "wireframe.vert",
 
         "imgui_billboard.geom",
     };
@@ -74,7 +72,6 @@ static constexpr DeviceMaterialData material_datas[] = {
         {SpirV::IdFrag,             SpirV::IdVert,              SpirV::MaxSpirV,            true,   true,   false,  PrimitiveType::Triangles},
         {SpirV::EngineViewFrag,     SpirV::ScreenVert,          SpirV::MaxSpirV,            false,  false,  false,  PrimitiveType::Triangles},
         {SpirV::SelectionFrag,      SpirV::ScreenVert,          SpirV::MaxSpirV,            false,  false,  true,   PrimitiveType::Triangles},
-        {SpirV::WireFrameFrag,      SpirV::WireFrameVert,       SpirV::MaxSpirV,            true,   false,  false,  PrimitiveType::Lines},
     };
 
 
