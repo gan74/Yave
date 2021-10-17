@@ -158,7 +158,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
             sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, camera), uv_mul, allocator));
         }
 
-        const math::Vec3 cam_pos; // = scene.camera().position();
+        const math::Vec3 cam_pos = scene.camera().position();
         for(auto light : world.view<DirectionalLightComponent>()) {
             auto [l] = light.components();
             if(!l.cast_shadow()) {
