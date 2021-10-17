@@ -60,14 +60,14 @@ void AssetStringifier::on_gui() {
     _selector.draw_gui_inside();
 
     if(_selected != AssetId::invalid_id()) {
-        ImGui::Text("Vertex data:");
+        ImGui::TextUnformatted("Vertex data:");
         ImGui::SameLine();
         ImGui::Spacing();
         if(ImGui::Button("Copy to clipboard##vertices")) {
             ImGui::SetClipboardText(_vertices.data());
         }
 
-        ImGui::Text("Triangle data:");
+        ImGui::TextUnformatted("Triangle data:");
         ImGui::SameLine();
         ImGui::Spacing();
         if(ImGui::Button("Copy to clipboard##triangles")) {

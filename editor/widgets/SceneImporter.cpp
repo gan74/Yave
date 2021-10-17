@@ -78,7 +78,7 @@ void SceneImporter::on_gui() {
             }
             close();
         } else {
-            ImGui::Text("Loading...");
+            ImGui::TextUnformatted("Loading...");
         }
     }
 }

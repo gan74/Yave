@@ -179,7 +179,7 @@ void MaterialEditor::on_gui() {
     if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Emissive])) {
         texture_selector(SimpleMaterialData::Emissive);
         if(data.textures()[SimpleMaterialData::Emissive].is_empty()) {
-            ImGui::Text("Emissive");
+            ImGui::TextUnformatted("Emissive");
             ImGui::SameLine();
             math::Vec3& color = data.constants().emissive_mul;
             if(color_picker("Emissive##picker", &color)) {

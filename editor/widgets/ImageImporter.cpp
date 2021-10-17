@@ -61,7 +61,7 @@ void ImageImporter::on_gui()  {
             }
             close();
         } else {
-            ImGui::Text("Loading...");
+            ImGui::TextUnformatted("Loading...");
         }
     } else {
         _browser.draw_gui_inside();

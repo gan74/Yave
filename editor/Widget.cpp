@@ -59,7 +59,7 @@ void Widget::refresh_all() {
 }
 
 void Widget::on_gui() {
-    ImGui::Text("Empty widget");
+    ImGui::TextUnformatted("Empty widget");
 }
 
 bool Widget::before_gui() {
