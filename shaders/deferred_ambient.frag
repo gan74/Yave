@@ -83,7 +83,7 @@ void main() {
             if(att > 0.0) {
                 const vec3 light_dir = light.direction; // assume normalized
 
-                const vec3 radiance = light.color;
+                const vec3 radiance = light.color * att;
                 irradiance += radiance * L0(light_dir, view_dir, gbuffer);
             }
         }

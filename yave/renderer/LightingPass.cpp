@@ -95,10 +95,19 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         u32 light_count = 0;
         TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
-        for(auto [l] : scene.world().view<DirectionalLightComponent>().components()) {
+        for(auto light : scene.world().view<DirectionalLightComponent>()) {
+            const auto& [l] = light.components();
+
+            u32 shadow_index = u32(-1);
+            if(l.cast_shadow()) {
+                if(const auto it = shadow_pass.shadow_indexes->find(light.id().as_u64()); it != shadow_pass.shadow_indexes->end()) {
+                    shadow_index = it->second;
+                }
+            }
+
             mapping[light_count++] = {
                     -l.direction().normalized(),
-                    0,
+                    shadow_index,
                     l.color() * l.intensity(),
                     0
                 };
@@ -152,7 +161,7 @@ static u32 fill_spot_light_buffer(
 
     u32 count = 0;
     for(auto spot : scene.world().view<TransformableComponent, SpotLightComponent>()) {
-        auto [t, l] = spot.components();
+        const auto& [t, l] = spot.components();
 
         const auto enclosing_sphere = l.enclosing_sphere();
         const math::Vec3 encl_sphere_center = t.forward() * enclosing_sphere.dist_to_center + t.position();
