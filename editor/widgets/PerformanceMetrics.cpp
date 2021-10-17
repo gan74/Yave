@@ -140,11 +140,11 @@ void PerformanceMetrics::draw_timings() {
     ImGui::Text("Max time: %.2fms", _average.max());
     ImGui::Text("Average time: %.2fms", _frames.average());
     ImGui::SetNextItemWidth(-1);
-    ImGui::PlotLines("##averages", _average.values().data(), int(_average.values().size()), int(_average.next_index()), "", 0.0f, _average.max(), ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
+    ImGui::PlotLines("##averages", _average.values().data(), int(_average.values().size()), int(_average.next_index()), "", 0.0f, _average.max(), ImVec2(ImGui::GetContentRegionAvail().x, 80));
 
     ImGui::Text("Frame time: %.2fms", ms);
     ImGui::SetNextItemWidth(-1);
-    ImGui::PlotLines("##frames", _frames.values().data(), int(_frames.values().size()), int(_frames.next_index()), "", 0.0f, _average.max(), ImVec2(ImGui::GetWindowContentRegionWidth(), 80));
+    ImGui::PlotLines("##frames", _frames.values().data(), int(_frames.values().size()), int(_frames.next_index()), "", 0.0f, _average.max(), ImVec2(ImGui::GetContentRegionAvail().x, 80));
 
     ImGui::Text("%.3u resources waiting deletion", unsigned(lifetime_manager().pending_deletions()));
     ImGui::Text("%.3u active command buffers", unsigned(lifetime_manager().pending_cmd_buffers()));

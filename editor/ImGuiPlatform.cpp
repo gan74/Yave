@@ -259,6 +259,9 @@ static void setup_config_files(ImGuiIO& io) {
 }
 
 static void setup_backend_flags(ImGuiIO& io, bool multi_viewport) {
+    io.BackendPlatformName = "Yave ImGuiPlatform";
+    io.BackendRendererName = "Yave";
+
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigDockingWithShift = false;
 
