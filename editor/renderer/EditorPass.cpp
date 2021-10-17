@@ -42,9 +42,11 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/systems/OctreeSystem.h>
 
-#include <external/imgui/yave_imgui.h>
 
+#include <yave/utils/DirectDraw.h>
 #include <yave/utils/entities.h>
+
+#include <external/imgui/yave_imgui.h>
 
 // we actually need this to index utf-8 chars from the imgui font (defined in imgui_internal)
 IMGUI_API int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, const char* in_text_end);
@@ -78,52 +80,6 @@ static std::pair<math::Vec2, math::Vec2> compute_uv_size(const char* c) {
     return {uv, size};
 }
 
-
-static void add_circle(core::Vector<math::Vec3>& points, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius = 1.0f, usize divs = 64) {
-    x *= radius;
-    y *= radius;
-    const float seg_ang_size = (1.0f / divs) * 2.0f * math::pi<float>;
-
-    math::Vec3 last = position + y;
-    for(usize i = 1; i != divs + 1; ++i) {
-        const math::Vec2 c(std::sin(i * seg_ang_size), std::cos(i * seg_ang_size));
-        points << last;
-        last = (position + (x * c.x()) + (y * c.y()));
-        points << last;
-    }
-}
-
-static void add_cone(core::Vector<math::Vec3>& points, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs = 8, usize circle_subdivs = 8) {
-    const math::Vec3 z = x.cross(y).normalized();
-
-    const usize beg = points.size();
-    add_circle(points, position + x * (std::cos(angle) * len), y, z, std::sin(angle) * len, circle_subdivs * divs);
-
-    for(usize i = 0; i != divs; ++i) {
-        points << points[beg + (i * 2) * circle_subdivs];
-        points << position;
-    }
-}
-
-static void add_box(core::Vector<math::Vec3>& points, const math::Transform<>& transform, const AABB& aabb) {
-    const math::Vec3 size = aabb.half_extent();
-    const std::array corners = {
-        size,
-        math::Vec3(-size.x(), -size.y(), size.z()),
-        math::Vec3(size.x(), -size.y(), -size.z()),
-        math::Vec3(-size.x(), size.y(), -size.z()),
-    };
-    const math::Vec3 center = aabb.center();
-    for(const math::Vec3 a : corners) {
-        for(usize i = 0; i != 3; ++i) {
-            math::Vec3 b = a;
-            b[i] *= -1.0f;
-            points << transform.to_global(center + a) << transform.to_global(center + b);
-        }
-    }
-}
-
-
 static void render_selection(RenderPassRecorder& recorder,
                              const FrameGraphPass* pass,
                              const SceneView& scene_view) {
@@ -139,37 +95,39 @@ static void render_selection(RenderPassRecorder& recorder,
     constexpr bool draw_enclosing_sphere = false;
     const bool draw_bbox = app_settings().debug.display_selected_bbox;
 
-    core::Vector<math::Vec3> points;
+    DirectDrawPrimitive primtitive;
+
     {
         const math::Vec3 z = tr->up();
         const math::Vec3 y = tr->right();
         const math::Vec3 x = tr->forward();
         if(const auto* l = world.component<PointLightComponent>(selected)) {
-            add_circle(points, tr->position(), x, y, l->radius());
-            add_circle(points, tr->position(), y, z, l->radius());
-            add_circle(points, tr->position(), z, x, l->radius());
+            primtitive.add_circle(tr->position(), x, y, l->radius());
+            primtitive.add_circle(tr->position(), y, z, l->radius());
+            primtitive.add_circle(tr->position(), z, x, l->radius());
         }
 
         if(const auto* l = world.component<SpotLightComponent>(selected)) {
-            add_cone(points, tr->position(), x, y, l->radius(), l->half_angle());
+            primtitive.add_cone(tr->position(), x, y, l->radius(), l->half_angle());
 
             if(draw_enclosing_sphere) {
                 const auto enclosing = l->enclosing_sphere();
                 const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center;
-                add_circle(points, center, x, y, enclosing.radius);
-                add_circle(points, center, y, z, enclosing.radius);
-                add_circle(points, center, z, x, enclosing.radius);
+                primtitive.add_circle(center, x, y, enclosing.radius);
+                primtitive.add_circle(center, y, z, enclosing.radius);
+                primtitive.add_circle(center, z, x, enclosing.radius);
             }
         }
 
         if(const auto* m = world.component<StaticMeshComponent>(selected)) {
             if(draw_bbox) {
-                add_box(points, tr->transform(), m->aabb());
-                add_box(points, math::Transform<>(), tr->to_global(m->aabb()));
+                primtitive.add_box(m->aabb(), tr->transform());
+                primtitive.add_box(tr->to_global(m->aabb()));
             }
         }
     }
 
+    const auto points = primtitive.points();
     if(!points.is_empty()) {
         TypedAttribBuffer<math::Vec3, MemoryType::CpuVisible> vertices(points.size());
         TypedMapping<math::Vec3> mapping(vertices);
@@ -182,15 +140,15 @@ static void render_selection(RenderPassRecorder& recorder,
     }
 }
 
-static void visit_octree(const OctreeNode& node, core::Vector<math::Vec3>& points) {
+static void visit_octree(DirectDrawPrimitive& primitive, const OctreeNode& node) {
     if(node.is_empty()) {
         return;
     }
 
-    add_box(points, math::Transform<>(), node.strict_aabb());
+    primitive.add_box(node.strict_aabb());
 
     for(const OctreeNode& c : node.children()) {
-        visit_octree(c, points);
+        visit_octree(primitive, c);
     }
 }
 
@@ -201,9 +159,11 @@ static void render_octree(RenderPassRecorder& recorder,
     const ecs::EntityWorld& world = scene_view.world();
     const OctreeSystem* octree = world.find_system<OctreeSystem>();
 
-    core::Vector<math::Vec3> points;
-    visit_octree(octree->root(), points);
+    DirectDrawPrimitive primtitive;
 
+    visit_octree(primtitive, octree->root());
+
+    const auto points = primtitive.points();
     if(!points.is_empty()) {
         TypedAttribBuffer<math::Vec3, MemoryType::CpuVisible> vertices(points.size());
         TypedMapping<math::Vec3> mapping(vertices);
