@@ -11,8 +11,8 @@
 #define GEN_FWIDTH(type)                                                \
 type quad_fwidth(type x) {                                              \
     const type dx = abs(x - subgroupQuadSwapHorizontal(x));             \
-    const type dy = abs(x - subgroupQuadSwapHorizontal(x));             \
-    return dx + dy;                                                     \
+    const type dy = abs(x - subgroupQuadSwapVertical(x));               \
+    return (dx + dy);                                                   \
 }
 
 GEN_FWIDTH(float)

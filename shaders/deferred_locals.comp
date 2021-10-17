@@ -45,7 +45,6 @@ layout(rgba16f, set = 0, binding = 8) uniform image2D out_color;
 layout(push_constant) uniform PushConstants {
     uint point_count;
     uint spot_count;
-    uint shadow_count;
 };
 
 

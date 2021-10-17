@@ -91,6 +91,27 @@ struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
             ImGui::DragFloat("##intensity", &light->intensity(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
         }
     }
+
+    static void shadow_properties(T* light) {
+
+        {
+            ImGui::TextUnformatted("Cast shadows");
+            ImGui::TableNextColumn();
+            ImGui::Checkbox("##shadows", &light->cast_shadow());
+        }
+
+        imgui::table_begin_next_row();
+
+        {
+            ImGui::TextUnformatted("Shadow LoD");
+            ImGui::TableNextColumn();
+
+            int lod = light->shadow_lod();
+            if(ImGui::DragInt("LoD", &lod, 1.0f / 8.0f, 0, 8)) {
+                light->shadow_lod() = lod;
+            }
+        }
+    }
 };
 
 struct PointLightComponentWidget : public LightComponentWidget<PointLightComponentWidget, PointLightComponent> {
@@ -146,6 +167,19 @@ struct DirectionalLightComponentWidget : public LightComponentWidget<Directional
                 light->direction() = new_dir;
             }
         }
+
+        imgui::table_begin_next_row();
+
+        shadow_properties(light);
+
+        imgui::table_begin_next_row();
+
+        {
+            ImGui::TextUnformatted("Shadow size");
+            ImGui::TableNextColumn();
+            ImGui::DragFloat("##size", &light->shadow_size(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
+        }
+
     }
 };
 
@@ -190,23 +224,7 @@ struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponent
 
         imgui::table_begin_next_row();
 
-        {
-            ImGui::TextUnformatted("Cast shadows");
-            ImGui::TableNextColumn();
-            ImGui::Checkbox("##shadows", &light->cast_shadow());
-        }
-
-        imgui::table_begin_next_row();
-
-        {
-            ImGui::TextUnformatted("Shadow LoD");
-            ImGui::TableNextColumn();
-
-            int lod = light->shadow_lod();
-            if(ImGui::DragInt("LoD", &lod, 1.0f / 8.0f, 0, 8)) {
-                light->shadow_lod() = lod;
-            }
-        }
+        shadow_properties(light);
     }
 };
 

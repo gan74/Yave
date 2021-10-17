@@ -107,9 +107,9 @@ auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up)
     const Vec<3, T> x(y.cross(z));
 
     return Matrix4<T>(y, -y.dot(eye),
-                     x, -x.dot(eye),
-                     z, -z.dot(eye),
-                     0, 0, 0, 1);
+                      x, -x.dot(eye),
+                      z, -z.dot(eye),
+                      0, 0, 0, 1);
 
 }
 

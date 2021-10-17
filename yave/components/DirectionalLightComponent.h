@@ -37,15 +37,32 @@ class DirectionalLightComponent final {
         math::Vec3& direction();
         const math::Vec3& direction() const;
 
+        math::Vec3 up() const;
+
         float& intensity();
         float intensity() const;
 
-        y_reflect(_color, _direction, _intensity)
+        bool& cast_shadow();
+        bool cast_shadow() const;
+
+        u32& shadow_lod();
+        u32 shadow_lod() const;
+
+        float& shadow_size();
+        float shadow_size() const;
+
+        math::Matrix4<> shadow_projection() const;
+
+        y_reflect(_color, _direction, _intensity, _cast_shadow, _shadow_lod, _shadow_size)
 
     private:
         math::Vec3 _color = math::Vec3{1.0f};
         math::Vec3 _direction = math::Vec3{0.0f, 0.0f, -1.0f};
         float _intensity = 1.0f;
+
+        bool _cast_shadow = false;
+        u32 _shadow_lod = 0;
+        float _shadow_size = 64.0f;
 };
 }
 

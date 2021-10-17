@@ -95,6 +95,8 @@ core::Span<std::unique_ptr<DirectDrawPrimitive>> DirectDraw::primtitives() const
 }
 
 void DirectDraw::render(RenderPassRecorder& recorder, const math::Matrix4<>& view_proj) const {
+    y_profile();
+
     usize point_count = 0;
     for(const auto& prim : _primitives) {
         point_count += prim->_points.size();

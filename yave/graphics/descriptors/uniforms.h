@@ -52,7 +52,7 @@ static_assert(sizeof(Camera) % 16 == 0);
 
 struct DirectionalLight {
     math::Vec3 direction;
-    u32 padding_0 = 0;
+    u32 shadow_index = u32(-1);
 
     math::Vec3 color;
     u32 padding_1 = 0;

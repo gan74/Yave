@@ -34,22 +34,10 @@ struct ShadowMapSettings {
 };
 
 struct ShadowMapPass {
-    using ShadowData = uniform::ShadowMapParams;
-
-    struct SubPass {
-        SceneRenderSubPass scene_pass;
-        math::Vec2ui viewport_offset;
-        u32 viewport_size;
-    };
-
-    struct SubPassData {
-        core::Vector<SubPass> passes;
-        core::ExternalHashMap<u64, ShadowData> lights;
-    };
-
     FrameGraphImageId shadow_map;
+    FrameGraphTypedBufferId<uniform::ShadowMapParams> shadow_params;
 
-    std::shared_ptr<SubPassData> sub_passes;
+    std::shared_ptr<core::ExternalHashMap<u64, u32>> shadow_indexes;
 
     static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings = ShadowMapSettings());
 };

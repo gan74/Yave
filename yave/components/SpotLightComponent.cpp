@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "SpotLightComponent.h"
 
+#include <yave/camera/Camera.h>
+
 namespace yave {
 
 SpotLightComponent::EnclosingSphere SpotLightComponent::enclosing_sphere() const {
@@ -98,6 +100,10 @@ u32& SpotLightComponent::shadow_lod() {
 
 u32 SpotLightComponent::shadow_lod() const {
     return _shadow_lod;
+}
+
+math::Matrix4<> SpotLightComponent::shadow_projection() const {
+    return math::perspective(half_angle() * 2.0f, 1.0f, 0.1f);
 }
 
 }

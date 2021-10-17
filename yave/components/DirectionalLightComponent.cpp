@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "DirectionalLightComponent.h"
 
+#include <yave/camera/Camera.h>
+
 namespace yave {
 
 math::Vec3& DirectionalLightComponent::color() {
@@ -40,12 +42,50 @@ const math::Vec3& DirectionalLightComponent::direction() const {
     return _direction;
 }
 
+math::Vec3 DirectionalLightComponent::up() const {
+    math::Vec3 side(1.0f, 0.0f, 0.0f);
+    if(_direction.x() > 0.9f) {
+        side = math::Vec3(0.0f, 1.0f, 0.0f);
+    }
+    return side.cross(_direction);
+}
+
 float& DirectionalLightComponent::intensity() {
     return _intensity;
 }
 
 float DirectionalLightComponent::intensity() const {
     return _intensity;
+}
+
+bool& DirectionalLightComponent::cast_shadow() {
+    return _cast_shadow;
+}
+
+bool DirectionalLightComponent::cast_shadow() const {
+    return _cast_shadow;
+}
+
+u32& DirectionalLightComponent::shadow_lod() {
+    return _shadow_lod;
+}
+
+u32 DirectionalLightComponent::shadow_lod() const {
+    return _shadow_lod;
+}
+
+math::Matrix4<> DirectionalLightComponent::shadow_projection() const {
+    const float frustum_size = _shadow_size * 0.5f;
+    return math::ortho(-frustum_size, frustum_size, -frustum_size, frustum_size, 0.0f, -frustum_size);
+}
+
+
+float& DirectionalLightComponent::shadow_size() {
+    return _shadow_size;
+}
+
+float DirectionalLightComponent::shadow_size() const {
+    return _shadow_size;
 }
 
 }

@@ -38,9 +38,7 @@ class SpotLightComponent final : public ecs::RequiredComponents<TransformableCom
 
         SpotLightComponent() = default;
 
-
         EnclosingSphere enclosing_sphere() const;
-
 
 
         math::Vec3& color();
@@ -66,6 +64,8 @@ class SpotLightComponent final : public ecs::RequiredComponents<TransformableCom
 
         u32& shadow_lod();
         u32 shadow_lod() const;
+
+        math::Matrix4<> shadow_projection() const;
 
         y_reflect(_color, _intensity, _radius, _falloff, _half_angle, _angle_exp, _cast_shadow, _shadow_lod)
 

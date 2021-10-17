@@ -33,7 +33,7 @@ struct Camera {
 
 struct DirectionalLight {
     vec3 direction;
-    uint padding_0;
+    uint shadow_map_index;
 
     vec3 color;
     uint padding_1;

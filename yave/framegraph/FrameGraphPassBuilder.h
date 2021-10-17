@@ -50,7 +50,7 @@ class FrameGraphPassBuilder {
 
         template<typename T>
         FrameGraphMutableTypedBufferId<T> declare_typed_buffer(usize size = 1) {
-            return FrameGraphMutableTypedBufferId<T>::from_untyped(declare_buffer(sizeof(T) * size));
+            return FrameGraphMutableTypedBufferId<T>::from_untyped(declare_buffer(sizeof(T) * std::max(usize(1u), size)));
         }
 
         void add_image_input_usage(FrameGraphImageId res, ImageUsage usage);
