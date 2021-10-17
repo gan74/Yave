@@ -26,68 +26,70 @@ SOFTWARE.
 // TODO: Nested classes will not be declared correctly
 
 namespace editor {
-struct UiSettings;
-class Preview;
-struct EditorPass;
-class FileBrowser;
-struct PerfSettings;
-struct EditorSettings;
+class AssetSelector;
 class AssetStringifier;
+class CVarConsole;
+class CameraController;
+class CameraDebug;
 class ComponentPanel;
-class MaterialEditor;
-struct Picker;
-struct PlatformWindow;
-class EntityView;
-class PerformanceMetrics;
-class ResourceBrowser;
-class Widget;
-class ImGuiRenderer;
+class ComponentPanelWidgetBase;
+class EditorApplication;
 class EditorComponent;
+class EditorResources;
+class EditorWorld;
+class EngineView;
+class EntityView;
+class FPSCameraController;
+class FileBrowser;
+class FileRenamer;
+class FileSystemView;
+class FunctionWidget;
+class Gizmo;
+class HoudiniCameraController;
+class ImGuiPlatform;
+class ImGuiRenderer;
+class ImageImporter;
+class MaterialEditor;
+class PerformanceMetrics;
+class PlotData;
+class Preview;
+class ResourceBrowser;
+class SceneImporter;
+class Selection;
+class Settings;
+class SettingsPanel;
+class ThumbmailRenderer;
 class UiManager;
+class Widget;
 struct CVar;
 struct CameraSettings;
-class Selection;
-struct EditorRendererSettings;
-class EditorWorld;
-class Settings;
-class PropertyPanel;
-class SceneImporter;
-struct ThumbmailData;
-struct IdBufferPass;
-struct Msg;
-class ImageImporter;
 struct DebugSettings;
-struct WidgetIdStack;
-class ImGuiPlatform;
-struct EditorRenderer;
-class EditorResources;
-class ThumbmailRenderer;
-class HoudiniCameraController;
-class SettingsPanel;
-class CameraDebug;
-class PlotData;
-struct PickingResult;
-class CVarConsole;
-class FunctionWidget;
-class FPSCameraController;
-class EditorApplication;
-class CameraController;
-class AssetSelector;
-class FileRenamer;
 struct EditorAction;
+struct EditorPass;
+struct EditorRenderer;
+struct EditorRendererSettings;
+struct EditorSettings;
 struct Entry;
-class FileSystemView;
-class EngineView;
-class Gizmo;
+struct IdBufferPass;
+struct Link;
+struct Msg;
+struct PerfSettings;
+struct Picker;
+struct PickingResult;
+struct PlatformWindow;
+struct Registerer;
+struct ThumbmailData;
+struct UiSettings;
+struct WidgetIdStack;
 }
 
 
 namespace editor::import {
-struct SubMeshData;
-struct PrefabData;
 struct MaterialData;
-struct SkeletonData;
+struct PrefabData;
 struct SceneData;
+struct SkeletonData;
+struct SubMeshData;
 }
 
 

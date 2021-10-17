@@ -135,7 +135,7 @@ def process_project(projects):
                     continue
                     
                 f.write("\n\nnamespace " + namespace + " {\n");
-                for cl in classes:
+                for cl in sorted(classes):
                     f.write(cl + ";\n")
                 f.write("}\n")
             
