@@ -6,11 +6,6 @@ float sample_shadow(sampler2DShadow shadow_map, vec2 uv, float proj_z, float bia
     // const float bias = fwidth(proj_z) * bias_scale;
     const float bias = 0.0;
     const vec3 proj = vec3(uv, proj_z + bias);
-
-    if(saturate(proj) != proj) {
-        return 1.0;
-    }
-
     return texture(shadow_map, proj).x;
 }
 
@@ -26,6 +21,11 @@ vec2 atlas_uv(ShadowMapParams params, vec2 uv) {
 
 float compute_shadow_hard(sampler2DShadow shadow_map, ShadowMapParams params, vec3 world_pos) {
     const vec3 proj = project(world_pos, params.view_proj);
+
+    if(saturate(proj) != proj) {
+        return 1.0;
+    }
+
     const vec2 uv = atlas_uv(params, proj.xy);
 
     const float bias_scale = compute_bias_scale(params, uv);
@@ -34,6 +34,11 @@ float compute_shadow_hard(sampler2DShadow shadow_map, ShadowMapParams params, ve
 
 float compute_shadow_pcf(sampler2DShadow shadow_map, ShadowMapParams params, vec3 world_pos) {
     const vec3 proj = project(world_pos, params.view_proj);
+
+    if(saturate(proj) != proj) {
+        return 1.0;
+    }
+
     const float bias_scale = compute_bias_scale(params, atlas_uv(params, proj.xy));
 
     const vec2 offset = vec2(0.5);

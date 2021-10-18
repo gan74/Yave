@@ -55,6 +55,7 @@ ThumbmailRenderer& thumbmail_renderer();
 EditorWorld& current_world();
 const SceneView& scene_view();
 
+DirectDraw& debug_drawer();
 
 const EditorResources& resources();
 UiManager& ui();

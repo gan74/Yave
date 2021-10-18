@@ -131,5 +131,5 @@ SOFTWARE.
 
 #endif // YAVE_PROFILING
 
-#endif // YAVE_PROFILING
+#endif // YAVE_UTILS_PROFILE_H
 

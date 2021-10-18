@@ -33,6 +33,8 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 
+#include <limits>
+
 namespace yave {
 
 struct SubAtlas {
@@ -116,6 +118,61 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
     };
 }
 
+
+
+static Camera spotlight_camera(const TransformableComponent& tr, const SpotLightComponent& light) {
+    const float z_near = 0.1f;
+
+    Camera camera;
+    camera.set_view(math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()));
+    camera.set_proj(math::perspective(light.half_angle() * 2.0f, 1.0f, z_near));
+    return camera;
+}
+
+static Camera directional_camera(const Camera& cam, const DirectionalLightComponent& light) {
+    const math::Vec3 cam_fwd = cam.forward();
+    const math::Matrix4<> inv_matrix = cam.inverse_matrix();
+
+    std::array<math::Vec3, 8> corners;
+    for(usize i = 0; i != 8; ++i) {
+        const math::Vec3 ndc = math::Vec3((i / 4), (i / 2) % 2, i % 2) * 2.0f - 1.0f;
+        const math::Vec4 pos = inv_matrix * math::Vec4(ndc, 1.0f);
+        corners[i] = pos.to<3>() / pos.w();
+    }
+
+    math::Vec3 center;
+    for(usize i = 0; i != 4; ++i) {
+        math::Vec3& a = corners[i * 2];
+        const math::Vec3 b = corners[i * 2 + 1];
+        a = b - (a - b).normalized() * light.cascade_distance();
+        center += a + b;
+    }
+    center /= 8.0f;
+
+    const math::Vec3 up = light.direction().cross(cam_fwd);
+    const math::Matrix4<> view = math::look_at(center, center - light.direction(), up);
+
+    math::Vec3 max(-std::numeric_limits<float>::max());
+    math::Vec3 min(std::numeric_limits<float>::max());
+    for(const math::Vec3 c : corners) {
+        const math::Vec4 light_space = view * math::Vec4(c, 1.0f);
+        for(usize i = 0; i != 3; ++i) {
+            max[i] = std::max(max[i], light_space[i]);
+            min[i] = std::min(min[i], light_space[i]);
+        }
+    }
+
+    const float z_factor = 1000.0f;
+    const float inv_z_factor = 1.0f / z_factor;
+    max.z() *= max.z() < 0.0f ? inv_z_factor : z_factor;
+    min.z() *= min.z() > 0.0f ? inv_z_factor : z_factor;
+
+    Camera camera;
+    camera.set_view(view);
+    camera.set_proj(math::ortho(min.x(), max.x(), min.y(), max.y(), min.z(), max.z()));
+    return camera;
+}
+
 ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings) {
     const auto region = framegraph.region("Shadows");
 
@@ -144,6 +201,18 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
     {
         SubAtlasAllocator allocator(first_level_size);
+
+        for(auto light : world.view<DirectionalLightComponent>()) {
+            auto [l] = light.components();
+            if(!l.cast_shadow()) {
+                continue;
+            }
+
+            (*pass.shadow_indexes)[light.id().as_u64()] = u32(sub_passes.size());
+
+            sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, directional_camera(scene.camera(), l)), uv_mul, allocator));
+        }
+
         for(auto light : world.view<TransformableComponent, SpotLightComponent>()) {
             auto [t, l] = light.components();
             if(!l.cast_shadow()) {
@@ -152,27 +221,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
             (*pass.shadow_indexes)[light.id().as_u64()] = u32(sub_passes.size());
 
-            Camera camera;
-            camera.set_view(math::look_at(t.position(), t.position() + t.forward(), t.up()));
-            camera.set_proj(l.shadow_projection());
-            sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, camera), uv_mul, allocator));
-        }
-
-        const math::Vec3 cam_pos = scene.camera().position();
-        for(auto light : world.view<DirectionalLightComponent>()) {
-            auto [l] = light.components();
-            if(!l.cast_shadow()) {
-                continue;
-
-            }
-
-            (*pass.shadow_indexes)[light.id().as_u64()] = u32(sub_passes.size());
-
-            Camera camera;
-            const math::Vec3 dir = l.direction() * l.shadow_size() * 0.25f;
-            camera.set_view(math::look_at(cam_pos + dir, cam_pos - dir, l.up()));
-            camera.set_proj(l.shadow_projection());
-            sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, camera), uv_mul, allocator));
+            sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, spotlight_camera(t, l)), uv_mul, allocator));
         }
     }
 

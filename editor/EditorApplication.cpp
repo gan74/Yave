@@ -31,6 +31,7 @@ SOFTWARE.
 
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
+#include <yave/utils/DirectDraw.h>
 
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
@@ -71,6 +72,7 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : _platform(platfo
     _thumbmail_renderer = std::make_unique<ThumbmailRenderer>(*_loader);
 
     _world = std::make_unique<EditorWorld>(*_loader);
+    _debug_drawer = std::make_unique<DirectDraw>();
 
     _default_scene_view = SceneView(_world.get());
     _scene_view = &_default_scene_view;

@@ -69,6 +69,10 @@ class EditorApplication : NonMovable {
             return *_world;
         }
 
+        DirectDraw& debug_drawer() {
+            return *_debug_drawer;
+        }
+
         const EditorResources& resources() const {
             return *_resources;
         }
@@ -99,7 +103,7 @@ class EditorApplication : NonMovable {
         std::unique_ptr<ThumbmailRenderer> _thumbmail_renderer;
 
         std::unique_ptr<EditorWorld> _world;
-
+        std::unique_ptr<DirectDraw> _debug_drawer;
 
         std::unique_ptr<UiManager> _ui;
 

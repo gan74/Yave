@@ -31,6 +31,11 @@ SOFTWARE.
 
 namespace yave {
 
+void DirectDrawPrimitive::add_line(const math::Vec3 &a, const math::Vec3 &b) {
+    _points << a;
+    _points << b;
+}
+
 void DirectDrawPrimitive::add_circle(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius, usize divs) {
     x *= radius;
     y *= radius;
@@ -75,11 +80,26 @@ void DirectDrawPrimitive::add_box(const AABB& aabb, const math::Transform<>& tra
     }
 }
 
+void DirectDrawPrimitive::add_marker(const math::Vec3& position, float size) {
+    for(usize i = 0; i != 3; ++i) {
+        math::Vec3 dir;
+        dir[i] = size;
+        add_line(position + dir, position - dir);
+    }
+}
+
+
+
 core::Span<math::Vec3> DirectDrawPrimitive::points() const {
     return _points;
 }
 
 
+
+
+void DirectDraw::clear() {
+    _primitives.clear();
+}
 
 DirectDrawPrimitive* DirectDraw::add_primitive(const math::Vec3& color) {
     _primitives.emplace_back(std::make_unique<DirectDrawPrimitive>());

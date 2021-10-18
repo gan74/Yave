@@ -175,9 +175,9 @@ struct DirectionalLightComponentWidget : public LightComponentWidget<Directional
         imgui::table_begin_next_row();
 
         {
-            ImGui::TextUnformatted("Shadow size");
+            ImGui::TextUnformatted("Cascade distance");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##size", &light->shadow_size(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
+            ImGui::DragFloat("##dist", &light->cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
         }
 
     }

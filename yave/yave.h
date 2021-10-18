@@ -43,5 +43,11 @@ using ThreadDevicePtr = const ThreadLocalDevice*;
 
 }
 
+// Hack to get drawer from the editor
+namespace editor {
+using namespace yave;
+DirectDraw& debug_drawer();
+}
+
 #endif // YAVE_YAVE_H
 

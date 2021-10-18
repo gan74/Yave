@@ -79,8 +79,9 @@ struct DebugSettings {
     bool display_octree = false;
     bool display_selected_bbox = false;
     bool display_hidden_entities = false;
+    bool display_debug_drawer = true;
 
-    y_reflect(entity_count, display_octree, display_selected_bbox, display_hidden_entities)
+    y_reflect(entity_count, display_octree, display_selected_bbox, display_hidden_entities, display_debug_drawer)
 };
 
 

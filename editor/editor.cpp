@@ -62,7 +62,6 @@ ThumbmailRenderer& thumbmail_renderer() {
     return application()->thumbmail_renderer();
 }
 
-
 EditorWorld& current_world() {
     return application()->world();
 }
@@ -71,6 +70,9 @@ const SceneView& scene_view() {
     return application()->scene_view();
 }
 
+DirectDraw& debug_drawer() {
+    return application()->debug_drawer();
+}
 
 const EditorResources& resources() {
     return application()->resources();
@@ -79,7 +81,6 @@ const EditorResources& resources() {
 UiManager& ui() {
     return application()->ui();
 }
-
 
 Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {
     return ui().add_widget(std::move(widget), auto_parent);

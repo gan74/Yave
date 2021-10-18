@@ -93,10 +93,13 @@ auto perspective(T fovy, T aspect, T z_near) {
 // https://github.com/g-truc/glm/blob/1498e094b95d1d89164c6442c632d775a2a1bab5/glm/ext/matrix_clip_space.inl
 template<typename T>
 auto ortho(T left, T right, T bottom, T top, T z_near, T z_far) {
-    const Matrix4<T> m(T(2) / (right - left), 0, 0, 0,
-                 0, T(2) / (top - bottom), 0, 0,
-                 0, 0, T(1) / (z_far - z_near), 0,
-                 -(right + left) / (right - left), -(top + bottom) / (top - bottom), -z_near / (z_far - z_near), 1);
+    math::Matrix4<T> m = math::identity();
+    m[0][0] = T(2) / (right - left);
+    m[1][1] = T(2) / (top - bottom);
+    m[2][2] = -T(1) / (z_far - z_near);
+    m[3][0] = -(right + left) / (right - left);
+    m[3][1] = -(top + bottom) / (top - bottom);
+    m[3][2] = -z_near / (z_far - z_near);
     return m;
 }
 
@@ -104,7 +107,7 @@ template<typename T>
 auto look_at(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up) {
     const Vec<3, T> z((eye - center).normalized());
     const Vec<3, T> y(up.cross(z).normalized());
-    const Vec<3, T> x(y.cross(z));
+    const Vec<3, T> x(y.cross(z).normalized());
 
     return Matrix4<T>(y, -y.dot(eye),
                       x, -x.dot(eye),

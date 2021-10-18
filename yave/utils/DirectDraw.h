@@ -34,9 +34,12 @@ namespace yave {
 
 class DirectDrawPrimitive {
     public:
+        void add_line(const math::Vec3& a, const math::Vec3& b);
         void add_circle(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius = 1.0f, usize divs = 64);
         void add_cone(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs = 8, usize circle_subdivs = 8);
         void add_box(const AABB& aabb, const math::Transform<>& transform = {});
+
+        void add_marker(const math::Vec3& position, float size = 1.0f);
 
         core::Span<math::Vec3> points() const;
 
@@ -50,11 +53,14 @@ class DirectDrawPrimitive {
 class DirectDraw : NonCopyable {
 
     public:
+        void clear();
+
         DirectDrawPrimitive* add_primitive(const math::Vec3& color = math::Vec3(0, 0, 1));
 
         core::Span<std::unique_ptr<DirectDrawPrimitive>> primtitives() const;
 
         void render(RenderPassRecorder& recorder, const math::Matrix4<>& view_proj) const;
+
 
     private:
         core::Vector<std::unique_ptr<DirectDrawPrimitive>> _primitives;
