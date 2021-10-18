@@ -1,16 +1,17 @@
 #ifndef SHADOW_GLSL
 #define SHADOW_GLSL
 
-float sample_shadow(sampler2DShadow shadow_map, vec2 uvs, float proj_z, float bias_scale) {
-    if(saturate(uvs) != uvs) {
+float sample_shadow(sampler2DShadow shadow_map, vec2 uv, float proj_z, float bias_scale) {
+    // Using derivatives cause artefacting around big depth discontinuities
+    // const float bias = fwidth(proj_z) * bias_scale;
+    const float bias = 0.0;
+    const vec3 proj = vec3(uv, proj_z + bias);
+
+    if(saturate(proj) != proj) {
         return 1.0;
     }
 
-    // Using derivatives cause artefacting around big depth discontinuities
-    // const float bias = fwidth(proj_z) * bias_scale;
-
-    const float bias = 0.0;
-    return texture(shadow_map, vec3(uvs, proj_z + bias)).x;
+    return texture(shadow_map, proj).x;
 }
 
 float compute_bias_scale(ShadowMapParams params, vec2 uvs) {
