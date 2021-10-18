@@ -93,7 +93,7 @@ class AssetLoaderSystem : public ecs::System {
         static void update_loading_status(ecs::EntityWorld& world, core::Vector<ecs::EntityId>& ids) {
             for(usize i = 0; i != ids.size(); ++i) {
                 T* component = world.component<T>(ids[i]);
-                if(component->update_asset_loading_status()) {
+                if(!component || component->update_asset_loading_status()) {
                     ids.erase_unordered(ids.begin() + i);
                     --i;
                 }
