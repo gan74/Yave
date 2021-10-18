@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/DeviceResources.h>
 
+#include <y/core/ScratchPad.h>
 #include <y/core/Chrono.h>
 
 namespace yave {
@@ -97,8 +98,8 @@ static const ComputeProgram& convolution_program(const Texture&) {
 
 template<ImageType T>
 static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::TextureBit, T>& texture) {
-    auto descriptor_sets = core::vector_with_capacity<DescriptorSet>(views.size());
-    std::transform(views.begin(), views.end(), std::back_inserter(descriptor_sets), [&](const CubemapStorageView& view) {
+    auto descriptor_sets = core::ScratchPad<DescriptorSet>(views.size());
+    std::transform(views.begin(), views.end(), descriptor_sets.begin(), [&](const CubemapStorageView& view) {
             return DescriptorSet({Descriptor(texture, SamplerType::LinearClamp), Descriptor(view)});
         });
 
@@ -131,9 +132,9 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
         y_fatal("IBL probe is too small.");
     }
 
-    auto mip_views = core::vector_with_capacity<ViewBase>(probe.mipmaps());
+    auto mip_views = core::ScratchPad<ViewBase>(probe.mipmaps());
     for(usize i = 0; i != probe.mipmaps(); ++i) {
-        mip_views << ProbeBaseView(probe, i);
+        mip_views[i] = ProbeBaseView(probe, i);
     }
 
     fill_probe(mip_views, texture);

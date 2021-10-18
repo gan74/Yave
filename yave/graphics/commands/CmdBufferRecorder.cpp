@@ -32,6 +32,8 @@ SOFTWARE.
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
 
+#include <y/core/ScratchPad.h>
+
 namespace yave {
 
 #define YAVE_VK_CMD
@@ -154,16 +156,16 @@ void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::Attrib
         const bool has_per_vertex = !per_vertex.is_null();
         const u32 attrib_count = u32(per_instance.size()) + has_per_vertex;
 
-        auto offsets = core::vector_with_capacity<VkDeviceSize>(attrib_count);
-        auto buffers = core::vector_with_capacity<VkBuffer>(attrib_count);
+        auto offsets = core::ScratchPad<VkDeviceSize>(attrib_count);
+        auto buffers = core::ScratchPad<VkBuffer>(attrib_count);
 
         if(has_per_vertex) {
-            offsets << per_vertex.byte_offset();
-            buffers << per_vertex.vk_buffer();
+            offsets[0] = per_vertex.byte_offset();
+            buffers[0] = per_vertex.vk_buffer();
         }
 
-        std::transform(per_instance.begin(), per_instance.end(), std::back_inserter(offsets), [](const auto& buffer) { return buffer.byte_offset(); });
-        std::transform(per_instance.begin(), per_instance.end(), std::back_inserter(buffers), [](const auto& buffer) { return buffer.vk_buffer(); });
+        std::transform(per_instance.begin(), per_instance.end(), offsets.begin() + has_per_vertex, [](const auto& buffer) { return buffer.byte_offset(); });
+        std::transform(per_instance.begin(), per_instance.end(), buffers.begin() + has_per_vertex, [](const auto& buffer) { return buffer.vk_buffer(); });
 
         vkCmdBindVertexBuffers(vk_cmd_buffer(), u32(!has_per_vertex), attrib_count, buffers.data(), offsets.data());
     }
@@ -243,15 +245,15 @@ CmdBufferRegion CmdBufferRecorder::region(const char* name, const math::Vec4& co
 RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
     check_no_renderpass();
 
-    auto clear_values = core::vector_with_capacity<VkClearValue>(framebuffer.attachment_count() + 1);
+    auto clear_values = core::ScratchPad<VkClearValue>(framebuffer.attachment_count() + 1);
     for(usize i = 0; i != framebuffer.attachment_count(); ++i) {
-        clear_values << VkClearValue{};
+        clear_values[i] = VkClearValue{};
     }
 
     {
         VkClearValue depth_clear_value = {};
         depth_clear_value.depthStencil = VkClearDepthStencilValue{0.0f, 0}; // reversed Z
-        clear_values << depth_clear_value;
+        clear_values.last() = depth_clear_value;
     }
 
     VkRenderPassBeginInfo begin_info = vk_struct();
@@ -315,11 +317,11 @@ void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<I
         return;
     }
 
-    auto image_barriers = core::vector_with_capacity<VkImageMemoryBarrier>(images.size());
-    std::transform(images.begin(), images.end(), std::back_inserter(image_barriers), [](const auto& b) { return b.vk_barrier(); });
+    auto image_barriers = core::ScratchPad<VkImageMemoryBarrier>(images.size());
+    std::transform(images.begin(), images.end(), image_barriers.begin(), [](const auto& b) { return b.vk_barrier(); });
 
-    auto buffer_barriers = core::vector_with_capacity<VkBufferMemoryBarrier>(buffers.size());
-    std::transform(buffers.begin(), buffers.end(), std::back_inserter(buffer_barriers), [](const auto& b) { return b.vk_barrier(); });
+    auto buffer_barriers = core::ScratchPad<VkBufferMemoryBarrier>(buffers.size());
+    std::transform(buffers.begin(), buffers.end(), buffer_barriers.begin(), [](const auto& b) { return b.vk_barrier(); });
 
     PipelineStage src_mask = PipelineStage::None;
     PipelineStage dst_mask = PipelineStage::None;

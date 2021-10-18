@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceProperties.h>
 
 #include <y/core/Range.h>
+#include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -244,13 +245,14 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
     }
 
     usize inline_buffer_offset = 0;
-    auto writes = core::vector_with_capacity<VkWriteDescriptorSet>(descriptors.size());
-    for(const auto& desc : descriptors) {
+    auto writes = core::ScratchPad<VkWriteDescriptorSet>(descriptors.size());
+    for(usize i = 0; i != descriptors.size(); ++i) {
+        const auto& desc = descriptors[i];
         const u32 descriptor_count = desc.descriptor_set_layout_binding(0).descriptorCount;
         VkWriteDescriptorSet write = vk_struct();
         {
             write.dstSet = _sets[id];
-            write.dstBinding = u32(writes.size());
+            write.dstBinding = u32(i);
             write.dstArrayElement = 0;
             write.descriptorCount = descriptor_count;
             write.descriptorType = desc.vk_descriptor_type();
@@ -290,7 +292,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
             y_fatal("Unknown descriptor type.");
         }
 
-        writes << write;
+        writes[i] = write;
     }
 
     vkUpdateDescriptorSets(vk_device(), u32(writes.size()), writes.data(), 0, nullptr);

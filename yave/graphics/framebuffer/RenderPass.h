@@ -41,9 +41,9 @@ class RenderPass {
         };
 
         struct AttachmentData {
-            const ImageFormat format;
-            const ImageUsage usage = ImageUsage::None;
-            const LoadOp load_op = LoadOp::Clear;
+            ImageFormat format;
+            ImageUsage usage = ImageUsage::None;
+            LoadOp load_op = LoadOp::Clear;
 
             AttachmentData() = default;
 

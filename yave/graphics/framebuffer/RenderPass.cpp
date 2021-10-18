@@ -24,6 +24,7 @@ SOFTWARE.
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/graphics.h>
 
+#include <y/core/ScratchPad.h>
 #include <y/utils/hash.h>
 
 namespace yave {
@@ -106,12 +107,12 @@ static VkRenderPass create_renderpass(RenderPass::AttachmentData depth, core::Sp
     const bool has_depth = depth.usage != ImageUsage::None;
     const bool has_color = !colors.is_empty();
 
-    auto attachments = core::vector_with_capacity<VkAttachmentDescription>(colors.size() + 1);
-    std::transform(colors.begin(), colors.end(), std::back_inserter(attachments), [=](const auto& color) { return create_attachment(color); });
+    auto attachments = core::ScratchPad<VkAttachmentDescription>(colors.size() + has_depth);
+    std::transform(colors.begin(), colors.end(), attachments.begin(), [=](const auto& color) { return create_attachment(color); });
 
-    auto color_refs = core::vector_with_capacity<VkAttachmentReference>(colors.size());
+    auto color_refs = core::ScratchPad<VkAttachmentReference>(colors.size());
     for(usize i = 0; i != colors.size(); ++i) {
-        color_refs << create_attachment_reference(ImageUsage::ColorBit, i);
+        color_refs[i] = create_attachment_reference(ImageUsage::ColorBit, i);
     }
 
     VkSubpassDescription subpass = {};
@@ -123,7 +124,7 @@ static VkRenderPass create_renderpass(RenderPass::AttachmentData depth, core::Sp
 
     VkAttachmentReference depth_ref = {};
     if(has_depth) {
-        attachments << create_attachment(depth);
+        attachments.last() = create_attachment(depth);
         depth_ref = create_attachment_reference(ImageUsage::DepthBit, color_refs.size());
         subpass.pDepthStencilAttachment = &depth_ref;
     }

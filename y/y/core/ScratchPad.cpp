@@ -59,10 +59,14 @@ void free_scratchpad(void* ptr, usize size) {
 
     const usize aligned_size = memory::align_up_to_max(size);
 
-    const u8* alloc_end = static_cast<u8*>(ptr) + aligned_size;
+    u8* alloc_end = static_cast<u8*>(ptr) + aligned_size;
     y_debug_assert(alloc_end == begin);
 
     begin = static_cast<u8*>(ptr);
+
+#ifdef Y_DEBUG
+    std::fill(begin, alloc_end, 0xFE);
+#endif
 }
 
 }

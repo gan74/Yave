@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
 
+#include <y/core/ScratchPad.h>
+
 namespace yave {
 
 FrameGraphPass::FrameGraphPass(std::string_view name, FrameGraph* parent, usize index) : _name(name), _parent(parent), _index(index) {
@@ -74,12 +76,12 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
             }
 #endif
         }
-        auto colors = core::vector_with_capacity<Framebuffer::ColorAttachment>(_colors.size());
-        for(auto&& color : _colors) {
-            colors << Framebuffer::ColorAttachment(resources.image<ImageUsage::ColorBit>(color.image), declared_here(color.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
+        auto colors = core::ScratchPad<Framebuffer::ColorAttachment>(_colors.size());
+        for(usize i = 0; i != _colors.size(); ++i) {
+            colors[i] = Framebuffer::ColorAttachment(resources.image<ImageUsage::ColorBit>(_colors[i].image), declared_here(_colors[i].image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
 
 #ifdef Y_DEBUG
-            const auto& img = resources.image_base(color.image);
+            const auto& img = resources.image_base(_colors[i].image);
             if(const auto* debug = debug_utils()) {
                 const core::String name = (_name + " RT") + colors.size();
                 debug->set_resource_name(img.vk_image(), name.data());
@@ -99,8 +101,11 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
 }
 
 void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resources) {
+    core::Vector<Descriptor> bindings;
     for(const auto& set : _bindings) {
-        auto bindings = core::vector_with_capacity<Descriptor>(set.size());
+        bindings.make_empty();
+        bindings.set_min_capacity(set.size());
+
         std::transform(set.begin(), set.end(), std::back_inserter(bindings), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });
         _descriptor_sets << DescriptorSet(bindings);
 
