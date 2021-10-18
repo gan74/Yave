@@ -60,9 +60,6 @@ class SceneImporter final : public Widget {
         core::String _import_path;
         core::String _filename;
 
-        usize _forward_axis = 2;
-        usize _up_axis = 4;
-
         bool _import_meshes = true;
         bool _import_anims = true;
         bool _import_images = true;

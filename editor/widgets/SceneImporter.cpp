@@ -130,36 +130,15 @@ void SceneImporter::paint_import_settings() {
         ImGui::Checkbox("Import animations", &_import_anims);
         ImGui::Checkbox("Import images", &_import_images);
         ImGui::Checkbox("Import materials", &_import_materials);
+
         ImGui::Separator();
 
-        const char* axes[] = {"+X", "-X", "+Y", "-Y", "+Z", "-Z"};
-        if(ImGui::BeginCombo("Forward", axes[_forward_axis])) {
-            for(usize i = 0; i != 6; ++i) {
-                if(ImGui::Selectable(axes[i])) {
-                    _forward_axis = i;
-                    if(_forward_axis / 2 == _up_axis / 2) {
-                        _up_axis = (_up_axis + 4) % 6;
-                    }
-                }
-            }
-            ImGui::EndCombo();
-        }
-        if(ImGui::BeginCombo("Up", axes[_up_axis])) {
-            for(usize i = 0; i != 6; ++i) {
-                if(ImGui::Selectable(axes[i])) {
-                    _up_axis = i;
-                    if(_forward_axis / 2 == _up_axis / 2) {
-                        _forward_axis = (_forward_axis + 4) % 6;
-                    }
-                }
-            }
-            ImGui::EndCombo();
-        }
-
         ImGui::Checkbox("Flip UVs", &_flip_uvs);
+
         ImGui::Separator();
 
         ImGui::DragFloat("Scale", &_scale);
+
         ImGui::Separator();
 
         // Update state
@@ -218,16 +197,9 @@ void SceneImporter::import(import::SceneData scene) {
         };
 
 
-    Y_TODO(try to auto detect handedness)
-    if(_forward_axis != 0 || _up_axis != 4 || _scale != 1.0f) {
-        const math::Vec3 axes[] = {
-                {1.0f, 0.0f, 0.0f}, {-1.0f,  0.0f,  0.0f},
-                {0.0f, 1.0f, 0.0f}, { 0.0f, -1.0f,  0.0f},
-                {0.0f, 0.0f, 1.0f}, { 0.0f,  0.0f, -1.0f}
-            };
-
-        const math::Vec3 forward = axes[_forward_axis];
-        const math::Vec3 up = axes[_up_axis];
+    {
+        const math::Vec3 forward = math::Vec3(0.0f, 0.0f, 1.0f);
+        const math::Vec3 up = math::Vec3(0.0f, 1.0f, 0.0f);
 
         math::Transform<> transform;
         transform.set_basis(forward * _scale, forward.cross(up) * _scale, up * _scale);
