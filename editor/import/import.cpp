@@ -131,7 +131,7 @@ core::String supported_image_extensions() {
 template<typename T>
 static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, const tinygltf::BufferView& buffer, T* vertex_elems, int type, bool normalize) {
     using value_type = typename T::value_type;
-    const usize size = T::size();
+    static constexpr usize size = T::size();
     const usize components = type;
 
     const usize min_size = std::min(size, components);
@@ -141,7 +141,11 @@ static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, 
             vec[i] = reinterpret_cast<const value_type*>(data)[i];
         }
         if(normalize) {
-            vec.normalize();
+            if constexpr(size == 4) {
+                vec.to<3>().normalize();
+            } else {
+                vec.normalize();
+            }
         }
         return vec;
     };
@@ -165,6 +169,7 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
         y_throw_msg(fmt_c_str("Unsupported component type (%) for \"%\"", accessor.componentType, std::string_view(name)));
     }
 
+    math::Vec4* vec4_elems = nullptr;
     math::Vec3* vec3_elems = nullptr;
     math::Vec2* vec2_elems = nullptr;
     if(name == "POSITION") {
@@ -172,12 +177,16 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
     } else if(name == "NORMAL") {
         vec3_elems = &vertices[0].normal;
     } else if(name == "TANGENT") {
-        vec3_elems = &vertices[0].tangent;
+        vec4_elems = &vertices[0].tangent;
     } else if(name == "TEXCOORD_0") {
         vec2_elems = &vertices[0].uv;
     } else {
         log_msg(fmt("Attribute \"%\" is not supported", std::string_view(name)), Log::Warning);
         return;
+    }
+
+    if(vec4_elems) {
+        decode_attrib_buffer_convert_internal(model, buffer, vec4_elems, accessor.type, accessor.normalized);
     }
 
     if(vec3_elems) {

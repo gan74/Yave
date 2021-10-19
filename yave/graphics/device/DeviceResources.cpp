@@ -161,8 +161,6 @@ MeshData cube_mesh_data();
 MeshData sphere_mesh_data();
 MeshData simple_sphere_mesh_data();
 MeshData cone_mesh_data();
-MeshData sweep_mesh_data();
-
 
 static Texture create_brdf_lut(const ComputeProgram& brdf_integrator, usize size = 512) {
     y_profile();
@@ -255,7 +253,6 @@ DeviceResources::DeviceResources() {
         _meshes[1] = make_asset<StaticMesh>(sphere_mesh_data());
         _meshes[2] = make_asset<StaticMesh>(simple_sphere_mesh_data());
         _meshes[3] = make_asset<StaticMesh>(cone_mesh_data());
-        _meshes[4] = make_asset<StaticMesh>(sweep_mesh_data());
     }
 
 

@@ -31,9 +31,62 @@ namespace yave {
 struct Vertex {
     math::Vec3 position;
     math::Vec3 normal;
-    math::Vec3 tangent;
+    math::Vec4 tangent;
     math::Vec2 uv;
 };
+
+struct PackedVertex {
+    math::Vec3 position;
+    u32 packed_normal = 0;
+    u32 packed_tangent_sign = 0;
+    math::Vec2 uv;
+};
+
+
+
+inline u32 pack_2_10_10_10(math::Vec3 v, bool sign = false) {
+    v = v * 0.5f + 0.5f;
+    const float norm = float(0x03FF);
+    const u32 packed =
+        (u32(v.x() * norm) << 20) |
+        (u32(v.y() * norm) << 10) |
+        (u32(v.z() * norm) <<  0) |
+        (sign ? (1 << 31) : 0);
+    return packed;
+}
+
+inline math::Vec4 unpack_2_10_10_10(u32 packed) {
+    return math::Vec4(
+        (math::Vec3(
+            (packed >> 20) & 0x03FF,
+            (packed >> 10) & 0x03FF,
+            (packed >>  0) & 0x03FF
+        ) / float(0x03FF)) * 2.0f - 1.0f,
+        (packed >> 30 == 0) ? 1.0f : -1.0f
+    );
+}
+
+inline PackedVertex pack_vertex(const Vertex& v) {
+    return PackedVertex {
+        v.position,
+        pack_2_10_10_10(v.normal),
+        pack_2_10_10_10(v.tangent.to<3>(), v.tangent.w() < 0.0f),
+        v.uv
+    };
+}
+
+inline Vertex unpack_vertex(const PackedVertex& v) {
+    return Vertex {
+        v.position,
+        unpack_2_10_10_10(v.packed_normal).to<3>(),
+        unpack_2_10_10_10(v.packed_tangent_sign),
+        v.uv
+    };
+}
+
+
+
+
 
 using IndexedTriangle = std::array<u32, 3>;
 
@@ -47,7 +100,7 @@ struct SkinWeights {
 };
 
 struct SkinnedVertex {
-    Vertex vertex;
+    PackedVertex vertex;
     SkinWeights weights;
 };
 

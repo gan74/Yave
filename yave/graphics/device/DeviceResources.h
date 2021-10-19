@@ -153,7 +153,6 @@ class DeviceResources final : NonMovable {
             SphereMesh,
             SimpleSphereMesh,
             ConeMesh,
-            SweepMesh,
 
             MaxMeshes
         };

@@ -53,7 +53,7 @@ template<MemoryType Memory = prefered_memory_type(BufferUsage::IndexBit)>
 using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit | BufferUsage::TransferDstBit, Memory>;
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
-using VertexBuffer = TypedBuffer<Vertex, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;
+using VertexBuffer = TypedBuffer<PackedVertex, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using SkinnedVertexBuffer = TypedBuffer<SkinnedVertex, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;

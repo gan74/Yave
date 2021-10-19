@@ -11,8 +11,8 @@ layout(set = 1, binding = 0) uniform Bones {
 };
 
 layout(location = 0) in vec3 in_position;
-layout(location = 1) in vec3 in_normal;
-layout(location = 2) in vec3 in_tangent;
+layout(location = 1) in uint in_packed_normal;
+layout(location = 2) in uint in_packed_tangent_sign;
 layout(location = 3) in vec2 in_uv;
 
 layout(location = 4) in uvec4 in_skin_indexes;
@@ -32,9 +32,14 @@ void main() {
                              in_skin_weights.w * bone_transforms[in_skin_indexes.w];
 
     out_uv = in_uv;
+
+    const vec3 in_normal = unpack_2_10_10_10(in_packed_normal).xyz;
+    const vec4 in_tangent_sign = unpack_2_10_10_10(in_packed_tangent_sign);
+
     out_normal = mat3(in_model) * mat3(bone_matrix) * in_normal;
-    out_normal = mat3(in_model) * mat3(bone_matrix) * in_tangent;
-    out_bitangent = cross(out_tangent, out_normal);
+    out_tangent = mat3(in_model) * mat3(bone_matrix) * in_tangent_sign.xyz;
+    out_bitangent = cross(out_tangent, out_normal) * in_tangent_sign.w;
+
     gl_Position = camera.view_proj * in_model * bone_matrix * vec4(in_position, 1.0);
 }
 

@@ -52,7 +52,7 @@ class TypedWrapper final : public Buff {
 
         TypedWrapper() = default;
 
-        TypedWrapper(usize elem_count) : Buff(elem_count * sizeof(value_type)) {
+        TypedWrapper(usize elem_count) : Buff(std::max(usize(1), elem_count) * sizeof(value_type)) {
         }
 
         template<BufferUsage U, MemoryType M>

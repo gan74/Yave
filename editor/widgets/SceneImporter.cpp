@@ -209,12 +209,6 @@ void SceneImporter::import(import::SceneData scene) {
         }
     }
 
-    // Apparently Assimp can't do this properly...
-    for(auto& mesh : scene.meshes) {
-        mesh = import::compute_tangents(mesh.obj());
-    }
-
-
     {
         const bool separate_folders =
             (scene.meshes.is_empty() ? 0 : 1) +

@@ -32,6 +32,16 @@ SOFTWARE.
 
 #include <external/imgui/yave_imgui.h>
 
+namespace yave {
+
+// implemented in DeviceResourcesData.cpp
+MeshData cube_mesh_data();
+MeshData sphere_mesh_data();
+MeshData simple_sphere_mesh_data();
+MeshData cone_mesh_data();
+
+}
+
 namespace editor {
 
 AssetStringifier::AssetStringifier() :
@@ -59,16 +69,44 @@ void AssetStringifier::on_gui() {
 
     _selector.draw_gui_inside();
 
-    if(_selected != AssetId::invalid_id()) {
-        ImGui::TextUnformatted("Vertex data:");
+    if(!_selector.is_visible()) {
+        if(ImGui::Button("Cube")) {
+            stringify(cube_mesh_data());
+        }
+
         ImGui::SameLine();
+
+        if(ImGui::Button("Sphere")) {
+            stringify(sphere_mesh_data());
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Simple sphere")) {
+            stringify(simple_sphere_mesh_data());
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Cone")) {
+            stringify(cone_mesh_data());
+        }
+    }
+
+    ImGui::Separator();
+
+    {
+        ImGui::Text("Vertex data: %u bytes", u32(_vertices.size()));
         ImGui::Spacing();
         if(ImGui::Button("Copy to clipboard##vertices")) {
             ImGui::SetClipboardText(_vertices.data());
         }
+    {
 
-        ImGui::TextUnformatted("Triangle data:");
-        ImGui::SameLine();
+    ImGui::Separator();
+
+    }
+        ImGui::Text("Triangle data: %u bytes", u32(_triangles.size()));
         ImGui::Spacing();
         if(ImGui::Button("Copy to clipboard##triangles")) {
             ImGui::SetClipboardText(_triangles.data());
@@ -95,18 +133,23 @@ void AssetStringifier::stringify(AssetId id) {
     }
 
     _selected = id;
+    stringify(mesh);
+}
+
+
+void AssetStringifier::stringify(const MeshData& mesh) {
     _vertices.make_empty();
     _triangles.make_empty();
 
     const int prec = 3;
 
     auto vertices = core::vector_with_capacity<core::String>(mesh.vertices().size());
-    for(const Vertex& v : mesh.vertices()) {
+    for(const PackedVertex& v : mesh.vertices()) {
         std::array<char, 1024> buffer;
-        std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff, %.*ff}, {%.*ff, %.*ff}}",
+        std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, 0x%x, 0x%x, {%.*ff, %.*ff}}",
                       prec, v.position.x(), prec, v.position.y(), prec, v.position.z(),
-                      prec, v.normal.x(), prec, v.normal.y(), prec, v.normal.z(),
-                      prec, v.tangent.x(), prec, v.tangent.y(), prec, v.tangent.z(),
+                      v.packed_normal,
+                      v.packed_tangent_sign,
                       prec, v.uv.x(), prec, v.uv.y());
         vertices.emplace_back(buffer.data());
     };

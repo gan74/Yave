@@ -32,15 +32,15 @@ SOFTWARE.
 namespace yave {
 
 class MeshData {
-
     public:
         MeshData() = default;
         MeshData(core::Vector<Vertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin = {}, core::Vector<Bone> bones = {});
+        MeshData(core::Vector<PackedVertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin = {}, core::Vector<Bone> bones = {});
 
         float radius() const;
         const AABB& aabb() const;
 
-        core::Span<Vertex> vertices() const;
+        core::Span<PackedVertex> vertices() const;
         core::Span<IndexedTriangle> triangles() const;
 
         core::Span<Bone> bones() const;
@@ -61,7 +61,7 @@ class MeshData {
 
         AABB _aabb;
 
-        core::Vector<Vertex> _vertices;
+        core::Vector<PackedVertex> _vertices;
         core::Vector<IndexedTriangle> _triangles;
 
         std::unique_ptr<SkeletonData> _skeleton;

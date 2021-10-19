@@ -68,7 +68,11 @@ const void* Mapping::data() const {
 void Mapping::stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data) {
     const StagingBuffer buffer(dst.byte_size());
     Mapping map(buffer);
-    std::memcpy(map.data(), data, dst.byte_size());
+    if(data) {
+        std::memcpy(map.data(), data, dst.byte_size());
+    } else {
+        std::memset(map.data(), 0, dst.byte_size());
+    }
     recorder.copy(buffer, dst);
 }
 

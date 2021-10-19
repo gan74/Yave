@@ -26,7 +26,19 @@ SOFTWARE.
 
 namespace yave {
 
+static core::Vector<PackedVertex> pack_vertices(const core::Vector<Vertex>& vertices) {
+    auto packed = core::vector_with_capacity<PackedVertex>(vertices.size());
+    for(const Vertex& v : vertices) {
+        packed << pack_vertex(v);
+    }
+    return packed;
+}
+
 MeshData::MeshData(core::Vector<Vertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin, core::Vector<Bone> bones) :
+        MeshData(pack_vertices(vertices), std::move(triangles), std::move(skin), std::move(bones)) {
+}
+
+MeshData::MeshData(core::Vector<PackedVertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin, core::Vector<Bone> bones) :
         _vertices(std::move(vertices)),
         _triangles(std::move(triangles)) {
 
@@ -39,7 +51,7 @@ MeshData::MeshData(core::Vector<Vertex> vertices, core::Vector<IndexedTriangle> 
 
     math::Vec3 max(-std::numeric_limits<float>::max());
     math::Vec3 min(std::numeric_limits<float>::max());
-    std::for_each(_vertices.begin(), _vertices.end(), [&](const Vertex& v) {
+    std::for_each(_vertices.begin(), _vertices.end(), [&](const PackedVertex& v) {
         max = max.max(v.position);
         min = min.min(v.position);
     });
@@ -58,7 +70,7 @@ const AABB& MeshData::aabb() const {
     return _aabb;
 }
 
-core::Span<Vertex> MeshData::vertices() const {
+core::Span<PackedVertex> MeshData::vertices() const {
     return _vertices;
 }
 

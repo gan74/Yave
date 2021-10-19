@@ -47,11 +47,15 @@ static math::Vec3 transform(const math::Vec3& v, const math::Transform<>& tr) {
 
 static Vertex transform(const Vertex& v, const math::Transform<>& tr) {
     return Vertex {
-            h_transform(v.position, tr),
-            transform(v.normal, tr).normalized(),
-            transform(v.tangent, tr).normalized(),
-            v.uv
-        };
+        h_transform(v.position, tr),
+        transform(v.normal, tr).normalized(),
+        math::Vec4(transform(v.tangent.to<3>(), tr).normalized(), v.tangent.w()),
+        v.uv
+    };
+}
+static PackedVertex transform(const PackedVertex& v, const math::Transform<>& tr) {
+    return pack_vertex(transform(unpack_vertex(v), tr));
+
 }
 
 static BoneTransform transform(const BoneTransform& bone, const math::Transform<>& tr) {
@@ -66,7 +70,7 @@ static BoneTransform transform(const BoneTransform& bone, const math::Transform<
 
 MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
     y_profile();
-    auto vertices = core::vector_with_capacity<Vertex>(mesh.vertices().size());
+    auto vertices = core::vector_with_capacity<PackedVertex>(mesh.vertices().size());
     std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const auto& vert) { return transform(vert, tr); });
 
     if(mesh.has_skeleton()) {
@@ -78,29 +82,31 @@ MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
         return MeshData(std::move(vertices), copy(mesh.triangles()), copy(mesh.skin()), std::move(bones));
     }
 
-    return MeshData(std::move(vertices), copy(mesh.triangles()));
+    return MeshData(std::move(vertices), copy(mesh.triangles()), copy(mesh.skin()), copy(mesh.bones()));
 }
 
 MeshData compute_tangents(const MeshData& mesh) {
     y_profile();
-    core::Vector<Vertex> vertices = copy(mesh.vertices());
-    core::Vector<IndexedTriangle> triangles = copy(mesh.triangles());
 
-    for(IndexedTriangle tri : triangles) {
+    auto vertices = copy(mesh.vertices());
+
+    core::FixedArray<math::Vec3> tangents(vertices.size());
+    for(IndexedTriangle tri : mesh.triangles()) {
         const math::Vec3 edges[] = {vertices[tri[1]].position - vertices[tri[0]].position, vertices[tri[2]].position - vertices[tri[0]].position};
         const math::Vec2 uvs[] = {vertices[tri[0]].uv, vertices[tri[1]].uv, vertices[tri[2]].uv};
         const float dt[] = {uvs[1].y() - uvs[0].y(), uvs[2].y() - uvs[0].y()};
         math::Vec3 ta = -((edges[0] * dt[1]) - (edges[1] * dt[0])).normalized();
-        vertices[tri[0]].tangent += ta;
-        vertices[tri[1]].tangent += ta;
-        vertices[tri[2]].tangent += ta;
+        tangents[tri[0]] += ta;
+        tangents[tri[1]] += ta;
+        tangents[tri[2]] += ta;
     }
 
-    for(Vertex& v : vertices) {
-        v.tangent.normalize();
+    for(usize i = 0; i != tangents.size(); ++i) {
+        Y_TODO(Compute bitangent too)
+        vertices[i].packed_tangent_sign = pack_2_10_10_10(tangents[i].normalized());
     }
 
-    return MeshData(std::move(vertices), std::move(triangles), copy(mesh.skin()), copy(mesh.bones()));
+    return MeshData(std::move(vertices), copy(mesh.triangles()), copy(mesh.skin()), copy(mesh.bones()));
 }
 
 

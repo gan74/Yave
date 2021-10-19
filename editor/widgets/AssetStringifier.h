@@ -40,6 +40,7 @@ class AssetStringifier : public Widget {
 
     private:
         void stringify(AssetId id);
+        void stringify(const MeshData& mesh);
 
         AssetSelector _selector;
 

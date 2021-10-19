@@ -266,6 +266,17 @@ vec4 unpack_color(uint packed) {
     ) / 255.0;
 }
 
+vec4 unpack_2_10_10_10(uint packed) {
+    return vec4(
+        (vec3(
+            (packed >> 20) & 0x03FF,
+            (packed >> 10) & 0x03FF,
+            (packed >>  0) & 0x03FF
+        ) / float(0x03FF)) * 2.0 - 1.0,
+        (packed >> 30 == 0) ? 1.0 : -1.0
+    );
+}
+
 // -------------------------------- sRGB --------------------------------
 
 float sRGB_to_linear(float x) {
