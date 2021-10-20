@@ -25,6 +25,7 @@ SOFTWARE.
 #include "traits.h"
 
 #include <y/utils.h>
+#include <y/utils/hash.h>
 #include <y/utils/recmacros.h>
 
 #include <tuple>
@@ -35,16 +36,18 @@ SOFTWARE.
 namespace y {
 namespace reflect {
 
+
 template<typename T>
 struct NamedObject {
     T& object;
     const std::string_view name;
+    const u32 name_hash;
 
-    inline constexpr NamedObject(T& t, std::string_view n) : object(t), name(n) {
+    inline constexpr NamedObject(T& t, std::string_view n, u32 h) : object(t), name(n), name_hash(h) {
     }
 
     inline constexpr NamedObject<const T> make_const_ref() const {
-        return NamedObject<const T>(object, name);
+        return NamedObject<const T>(object, name, name_hash);
     }
 };
 
@@ -123,7 +126,9 @@ inline void explore_members(T&& t, F&& func) {
 Y_TODO(manage inherited objects)
 // https://godbolt.org/z/b6j3Ts
 
-#define y_reflect_create_item(object) y::reflect::NamedObject{object, #object},
+#define y_reflect_create_item_name_hash(name) y::force_ct<y::ct_str_hash(name)>()
+
+#define y_reflect_create_item(object) y::reflect::NamedObject{object, #object, y_reflect_create_item_name_hash(#object)},
 
 #define y_reflect_refl_qual(qual, ...) template<typename = void> auto _y_reflect() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_item, __VA_ARGS__))}; }
 

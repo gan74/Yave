@@ -23,6 +23,7 @@ SOFTWARE.
 #define Y_SERDE3_ARCHIVES_H
 
 #include <y/core/Vector.h>
+#include <y/core/FixedArray.h>
 
 #include "traits.h"
 #include "headers.h"
@@ -32,10 +33,6 @@ SOFTWARE.
 #include <y/io2/io.h>
 
 #define Y_SERDE3_BUFFER
-
-#ifdef Y_SERDE3_BUFFER
-#include <y/io2/Buffer.h>
-#endif
 
 //#define Y_NO_ARCHIVES
 //#define Y_NO_SAFE_DESER
@@ -49,6 +46,8 @@ SOFTWARE.
         }                                                                                       \
     } while(false)
 
+
+#define y_create_named_object(t, name) NamedObject{t, name, y_reflect_create_item_name_hash(name)}
 
 namespace y {
 namespace serde3 {
@@ -111,7 +110,7 @@ class WritableArchive final {
 
         ~WritableArchive() {
 #ifdef Y_SERDE3_BUFFER
-            y_debug_assert(!_buffer.tell());
+            y_debug_assert(!_buffer_size);
 #endif
             y_debug_assert(_patches.is_empty());
         }
@@ -123,7 +122,7 @@ class WritableArchive final {
             y_fatal("Y_NO_ARCHIVES has been defined");
 #else
             y_try(write_serde_header());
-            y_try(serialize_one(NamedObject{t, detail::version_string}));
+            y_try(serialize_one(y_create_named_object(t, detail::version_string)));
             return finalize();
 #endif
         }
@@ -138,12 +137,11 @@ class WritableArchive final {
         Result flush() {
             y_try(finalize_in_buffer());
 #ifdef Y_SERDE3_BUFFER
-            usize buffer_size = _buffer.tell();
-            if(buffer_size) {
-                if(!_file.write(_buffer.data(), buffer_size)) {
+            if(_buffer_size) {
+                if(!_file.write(_buffer.data(), _buffer_size)) {
                     return core::Err(Error(ErrorType::IOError));
                 }
-                _buffer.clear();
+                _buffer_size = 0;
             }
             _cached_file_size = _file.tell();
 #endif
@@ -158,13 +156,11 @@ class WritableArchive final {
                 if(p.index <= _cached_file_size) {
                     break;
                 }
-                _buffer.seek(p.index - _cached_file_size);
-                if(!_buffer.write_one(p.size)) {
-                    return core::Err(Error(ErrorType::IOError));
-                }
+                y_debug_assert(p.index - _cached_file_size < _buffer_size);
+                u8* offset = _buffer.data() + (p.index - _cached_file_size);
+                std::memcpy(offset, &p.size, sizeof(p.size));
                 _patches.pop();
             }
-            _buffer.seek_end();
 #endif
             return core::Ok(Success::Full);
         }
@@ -230,7 +226,7 @@ class WritableArchive final {
 
             {
                 y_try(write_one(u8(1)));
-                y_try(serialize_one(NamedObject{*object.object, detail::ptr_version_string}));
+                y_try(serialize_one(y_create_named_object(*object.object, detail::ptr_version_string)));
             }
 
             return core::Ok(Success::Full);
@@ -251,7 +247,7 @@ class WritableArchive final {
             if constexpr(detail::use_collection_fast_path<remove_cvref_t<T>>) {
                 y_try(write_one(size_type(object.object.size())));
                 if(object.object.size()) {
-                    const auto header = detail::build_header(NamedObject{*object.object.begin(), detail::collection_version_string});
+                    const auto header = detail::build_header(y_create_named_object(*object.object.begin(), detail::collection_version_string));
                     y_try(write_one(header));
                     y_try(write_array(object.object.begin(), object.object.size()));
                 }
@@ -260,7 +256,7 @@ class WritableArchive final {
                 SizePatch size_patch{tell(), 0};
                 y_try(write_one(size_type(0)));
                 for(const auto& item : object.object) {
-                    y_try(serialize_one(NamedObject{item, detail::collection_version_string}));
+                    y_try(serialize_one(y_create_named_object(item, detail::collection_version_string)));
                     ++size_patch.size;
                 }
                 push_patch(size_patch);
@@ -379,7 +375,7 @@ class WritableArchive final {
         inline Result serialize_tuple_members(const Tpl& object) {
             unused(object);
             if constexpr(I < std::tuple_size_v<Tpl>) {
-                y_try(serialize_one(NamedObject{std::get<I>(object), detail::tuple_version_string}));
+                y_try(serialize_one(y_create_named_object(std::get<I>(object), detail::tuple_version_string)));
                 return serialize_tuple_members<I + 1>(object);
             }
             return core::Ok(Success::Full);
@@ -396,12 +392,15 @@ class WritableArchive final {
         template<typename T>
         inline Result write_one(const T& t) {
 #ifdef Y_SERDE3_BUFFER
-            if(_buffer.size() + sizeof(T) > buffer_size) {
+            if(_buffer_size + sizeof(T) > buffer_size) {
                 y_try(flush());
             }
-            if(!_buffer.write_one(t)) {
-                return core::Err(Error(ErrorType::IOError));
-            }
+
+            static_assert(std::is_trivially_copyable_v<T>);
+
+            u8* offset = _buffer.data() + _buffer_size;
+            std::memcpy(offset, &t, sizeof(T));
+            _buffer_size += sizeof(T);
 #else
             _cached_file_size += sizeof(T);
             y_try_discard(_file.write_one(t));
@@ -412,15 +411,17 @@ class WritableArchive final {
         template<typename T>
         inline Result write_array(const T* t, usize size) {
 #ifdef Y_SERDE3_BUFFER
-            if(_buffer.size() + (sizeof(T) * size) > buffer_size) {
+            if(_buffer_size + (sizeof(T) * size) > buffer_size) {
                 if(!flush()) {
                     return core::Err(Error(ErrorType::IOError));
                 }
             }
 
-            if(!_buffer.write_array(t, size)) {
-                return core::Err(Error(ErrorType::IOError));
-            }
+            static_assert(std::is_trivially_copyable_v<T>);
+
+            u8* offset = _buffer.data() + _buffer_size;
+            std::memcpy(offset, t, sizeof(T) * size);
+            _buffer_size += sizeof(T) * size;
 #else
             _cached_file_size += sizeof(T) * size;
             y_try_discard(_file.write_array(t, size));
@@ -430,7 +431,7 @@ class WritableArchive final {
 
         usize tell() const {
 #ifdef Y_SERDE3_BUFFER
-            return _cached_file_size + _buffer.tell();
+            return _cached_file_size + _buffer_size;
 #else
             return _cached_file_size;
 #endif
@@ -447,7 +448,8 @@ class WritableArchive final {
         File& _file;
 
 #ifdef Y_SERDE3_BUFFER
-        io2::Buffer _buffer;
+        core::FixedArray<u8> _buffer;
+        usize _buffer_size = 0;
 #endif
         usize _cached_file_size = 0;
         core::Vector<SizePatch> _patches;
@@ -492,7 +494,7 @@ class ReadableArchive final {
             y_fatal("Y_NO_ARCHIVES has been defined");
 #else
             y_try(read_serde_header());
-            auto res = deserialize_one(NamedObject{t, detail::version_string});
+            auto res = deserialize_one(y_create_named_object(t, detail::version_string));
             return res;
 #endif
         }
@@ -556,7 +558,7 @@ class ReadableArchive final {
         inline Result deserialize_property(NamedObject<T> object) {
             using inner = typename T::value_type;
             inner i;
-            y_try(deserialize_one(NamedObject<inner>{i, object.name}));
+            y_try(deserialize_one(NamedObject<inner>{i, object.name, object.name_hash.hash}));
             object.object.set(std::move(i));
             return core::Ok(Success::Full);
         }
@@ -573,7 +575,7 @@ class ReadableArchive final {
 
             if(non_null) {
                 object.object = make_std_ptr<T>();
-                return deserialize_one(NamedObject{*object.object, detail::ptr_version_string});
+                return deserialize_one(y_create_named_object(*object.object, detail::ptr_version_string));
             }
 
             object.object = nullptr;
@@ -615,7 +617,7 @@ class ReadableArchive final {
             try {
                 if constexpr(detail::use_collection_fast_path<T>) {
                     if(collection_size) {
-                        y_try(check_header(NamedObject{*object.object.begin(), detail::collection_version_string}));
+                        y_try(check_header(y_create_named_object(*object.object.begin(), detail::collection_version_string)));
                         if constexpr(!IsRange) {
                             if constexpr(has_resize_v<T>) {
                                 object.object.resize(collection_size);
@@ -641,23 +643,23 @@ class ReadableArchive final {
                     if constexpr(has_emplace_back_v<T>) {
                         for(size_type i = 0; i != collection_size; ++i) {
                             object.object.emplace_back();
-                            y_try(deserialize_one(NamedObject{object.object.last(), detail::collection_version_string}));
+                            y_try(deserialize_one(y_create_named_object(object.object.last(), detail::collection_version_string)));
                         }
                     } else if constexpr(has_resize_v<T>) {
                         object.object.resize(collection_size);
                         for(size_type i = 0; i != collection_size; ++i) {
-                            y_try(deserialize_one(NamedObject{object.object[usize(i)], detail::collection_version_string}));
+                            y_try(deserialize_one(y_create_named_object(object.object[usize(i)], detail::collection_version_string)));
                         }
                     } else {
                         if constexpr(is_array_v<T> || IsRange) {
                             for(size_type i = 0; i != collection_size; ++i) {
-                                y_try(deserialize_one(NamedObject{object.object[i], detail::collection_version_string}));
+                                y_try(deserialize_one(y_create_named_object(object.object[i], detail::collection_version_string)));
                             }
                         } else {
                             using value_type = deconst_t<typename T::value_type>;
                             for(size_type i = 0; i != collection_size; ++i) {
                                 value_type value;
-                                y_try(deserialize_one(NamedObject{value, detail::collection_version_string}));
+                                y_try(deserialize_one(y_create_named_object(value, detail::collection_version_string)));
                                 object.object.insert(std::move(value));
                             }
                         }
@@ -862,7 +864,7 @@ class ReadableArchive final {
         inline Result deserialize_tuple_members(Tpl& object) {
             unused(object);
             if constexpr(I < std::tuple_size_v<Tpl>) {
-                y_try(deserialize_one(NamedObject{std::get<I>(object), detail::tuple_version_string}));
+                y_try(deserialize_one(y_create_named_object(std::get<I>(object), detail::tuple_version_string)));
                 return deserialize_tuple_members<I + 1>(object);
             }
             return core::Ok(Success::Full);
@@ -961,6 +963,7 @@ Result deserialize_one(ReadableArchive& arc, T& t) {
 }
 }
 
+#undef y_create_named_object
 #undef y_try_status
 
 

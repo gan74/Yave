@@ -118,15 +118,6 @@ struct ObjectHeader {
 static_assert(sizeof(TypeHeader) == sizeof(u64));
 static_assert(sizeof(MembersHeader) == sizeof(u64));
 
-
-constexpr u32 ct_str_hash(std::string_view str) {
-    u32 hash = 0xec81fb49;
-    for(char c : str) {
-        hash_combine(hash, u32(c));
-    }
-    return hash;
-}
-
 template<typename T>
 constexpr u32 header_type_hash() {
     using naked = deconst_t<T>;
@@ -151,8 +142,8 @@ constexpr u32 header_type_hash() {
 template<typename T>
 constexpr TypeHeader build_type_header(NamedObject<T> obj) {
     return TypeHeader {
-        ct_str_hash(obj.name),
-        header_type_hash<T>()
+        obj.name_hash,
+        force_ct<header_type_hash<T>()>()
     };
 }
 

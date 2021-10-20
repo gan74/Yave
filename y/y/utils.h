@@ -54,7 +54,10 @@ inline constexpr bool is_32_bits() {
     return sizeof(void*) == 4;
 }
 
-
+template<auto T>
+inline constexpr auto force_ct() {
+    return T;
+}
 
 
 namespace detail {

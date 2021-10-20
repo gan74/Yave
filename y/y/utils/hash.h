@@ -46,6 +46,13 @@ inline constexpr u64 ct_type_hash() {
     return hash;
 }
 
+inline constexpr u32 ct_str_hash(std::string_view str) {
+    u32 hash = 0xec81fb49;
+    for(char c : str) {
+        hash_combine(hash, u32(c));
+    }
+    return hash;
+}
 
 template<typename T>
 inline auto hash(const T& t) {
