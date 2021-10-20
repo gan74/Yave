@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "ComponentPanel.h"
+#include "ComponentPanelWidgets.h"
 
 #include <editor/Selection.h>
 #include <editor/EditorWorld.h>
@@ -32,13 +33,6 @@ SOFTWARE.
 #include <external/imgui/yave_imgui.h>
 
 namespace editor {
-
-ComponentPanelWidgetBase::Link* ComponentPanelWidgetBase::_first_link = nullptr;
-
-void ComponentPanelWidgetBase::register_link(Link* link) {
-    link->next = _first_link;
-    _first_link = link;
-}
 
 
 ComponentPanel::ComponentPanel() : Widget(ICON_FA_WRENCH " Components") {

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "ComponentPanel.h"
+#include "ComponentPanelWidgets.h"
 #include "AssetSelector.h"
 
 #include <editor/Selection.h>
@@ -51,6 +51,15 @@ SOFTWARE.
 #include <cinttypes>
 
 namespace editor {
+
+ComponentPanelWidgetBase::Link* ComponentPanelWidgetBase::_first_link = nullptr;
+
+void ComponentPanelWidgetBase::register_link(Link* link) {
+    link->next = _first_link;
+    _first_link = link;
+}
+
+
 
 template<typename CRTP, typename T>
 struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
