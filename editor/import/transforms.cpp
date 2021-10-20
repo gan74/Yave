@@ -28,6 +28,16 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 
+
+#if __has_include(<immintrin.h>) &&__has_include(<xmmintrin.h>) && __has_include(<emmintrin.h>) && __has_include(<smmintrin.h>)
+#define USE_SIMD
+#include <immintrin.h>
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#include <smmintrin.h>
+#endif
+
+
 namespace editor {
 namespace import {
 
@@ -134,6 +144,7 @@ Animation set_speed(const Animation& anim, float speed) {
 
 
 static void unpack_with_gamma(const u8* in, usize size, float* out) {
+    y_profile();
     float gamma_lut[256];
     for(usize i = 0; i != 256; ++i) {
         gamma_lut[i] = std::pow(i / 255.0f, 2.2f);
@@ -145,12 +156,14 @@ static void unpack_with_gamma(const u8* in, usize size, float* out) {
 }
 
 static void unpack(const u8* in, usize size, float* out) {
+    y_profile();
     for(usize i = 0; i != size; ++i) {
         out[i] = in[i] / 255.0f;
     }
 }
 
 static void pack_with_gamma(const float* in, usize size, u8* out) {
+    y_profile();
     const usize lut_size = 1 << 12;
     const float lut_factor = float(lut_size - 1);
     const float inv_lut_factor = 1.0f / lut_factor;
@@ -160,20 +173,54 @@ static void pack_with_gamma(const float* in, usize size, u8* out) {
     for(usize i = 0; i != lut_size; ++i) {
         const float with_gamma = std::pow(i * inv_lut_factor, inv_gamma);
         y_debug_assert(with_gamma <= 1.0f);
-        gamma_lut[i] = u8(std::round(with_gamma * 255.0f));
+        gamma_lut[i] = u8(with_gamma * 255.0f);
     }
 
+#ifdef USE_SIMD
+    const __m128 norm = _mm_set1_ps(lut_factor);
+
+    y_always_assert(size % 4 == 0, "Size should be a multiple of 4");
+    for(usize i = 0; i != size; i += 4) {
+        const __m128 a = _mm_loadu_ps(in + i);
+        const __m128 b = _mm_mul_ps(a, norm);
+        const __m128 c = _mm_round_ps(b, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);    // round
+        const __m128i d = _mm_cvtps_epi32(c);           // to int
+        const u32* indexes = reinterpret_cast<const u32*>(&d);
+        for(usize c = 0; c != 4; ++c) {
+            out[i + c] = gamma_lut[indexes[c]];
+        }
+    }
+#else
     for(usize i = 0; i != size; ++i) {
         const usize lut_index = usize(std::round(in[i] * lut_factor));
         y_debug_assert(lut_index < lut_size);
         out[i] = gamma_lut[lut_index];
     }
+#endif
 }
 
 static void pack(const float* in, usize size, u8* out) {
-    for(usize i = 0; i != size; ++i) {
+    y_profile();
+
+#ifdef USE_SIMD
+    const char n = 15;
+    const __m128 norm = _mm_set1_ps(255.0f);
+    const __m128i mask = _mm_set_epi8(n, n, n, n, n, n, n, n, n, n, n, n, 12, 8, 4, 0);
+
+    y_always_assert(size % 4 == 0, "Size should be a multiple of 4");
+    for(usize i = 0; i != size; i += 4) {
+        const __m128 a = _mm_loadu_ps(in + i);
+        const __m128 b = _mm_mul_ps(a, norm);
+        const __m128 c = _mm_round_ps(b, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);    // round
+        const __m128i d = _mm_cvtps_epi32(c);           // to int
+        const __m128i e = _mm_shuffle_epi8(d, mask);    // extract bytes
+        _mm_storeu_si32(out + i, e);                    // store
+    }
+#else
+    for(; i < size; ++i) {
         out[i] = u8(std::round(in[i] * 255.0f));
     }
+#endif
 }
 
 core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, const math::Vec2ui& size, usize mip_count) {
@@ -188,6 +235,8 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
     core::FixedArray<float> output(output_size);
     {
         const auto compute_mip = [&](const float* image_data, float* out, const math::Vec2ui& orig_size) -> usize {
+            y_profile();
+
             usize cursor = 0;
             const math::Vec2ui mip_size = {std::max(1u, orig_size.x() / 2),
                                            std::max(1u, orig_size.y() / 2)};
