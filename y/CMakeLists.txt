@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 17)
 if(MSVC)
     # https://docs.microsoft.com/en-us/cpp/build/reference/zc-conformance?view=msvc-160
     # https://docs.microsoft.com/en-us/cpp/build/reference/zm-specify-precompiled-header-memory-allocation-limit?view=msvc-160
-    set(Y_COMPILE_OPTIONS /permissive- /W3 /WX)
+    set(Y_COMPILE_OPTIONS /permissive- /W3 /WX /fp:fast)
     set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} -D_CRT_SECURE_NO_DEPRECATE)
     set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} /Zc:preprocessor)
 
