@@ -391,40 +391,60 @@ class WritableArchive final {
 
         template<typename T>
         inline Result write_one(const T& t) {
+            static_assert(std::is_trivially_copyable_v<T>);
+            const usize total_size = sizeof(T);
+
 #ifdef Y_SERDE3_BUFFER
-            if(_buffer_size + sizeof(T) > buffer_size) {
+            y_debug_assert(_buffer_size <= _buffer.size());
+            if(_buffer_size + total_size > _buffer.size()) {
                 y_try(flush());
             }
 
-            static_assert(std::is_trivially_copyable_v<T>);
-
-            u8* offset = _buffer.data() + _buffer_size;
-            std::memcpy(offset, &t, sizeof(T));
-            _buffer_size += sizeof(T);
+            if(total_size >= _buffer.size()) {
+                _cached_file_size += total_size;
+                if(!_file.write_one(t)) {
+                    return core::Err(Error(ErrorType::IOError));
+                }
+            } else {
+                u8* offset = _buffer.data() + _buffer_size;
+                std::memcpy(offset, &t, total_size);
+                _buffer_size += total_size;
+            }
 #else
-            _cached_file_size += sizeof(T);
-            y_try_discard(_file.write_one(t));
+            _cached_file_size += total_size;
+            if(!_file.write_one(t)) {
+                return core::Err(Error(ErrorType::IOError));
+            }
 #endif
             return core::Ok(Success::Full);
         }
 
         template<typename T>
         inline Result write_array(const T* t, usize size) {
+            static_assert(std::is_trivially_copyable_v<T>);
+            const usize total_size = sizeof(T) * size;
+
 #ifdef Y_SERDE3_BUFFER
-            if(_buffer_size + (sizeof(T) * size) > buffer_size) {
-                if(!flush()) {
-                    return core::Err(Error(ErrorType::IOError));
-                }
+            y_debug_assert(_buffer_size <= _buffer.size());
+            if(_buffer_size + total_size > _buffer.size()) {
+                y_try(flush());
             }
 
-            static_assert(std::is_trivially_copyable_v<T>);
-
-            u8* offset = _buffer.data() + _buffer_size;
-            std::memcpy(offset, t, sizeof(T) * size);
-            _buffer_size += sizeof(T) * size;
+            if(total_size >= _buffer.size()) {
+                _cached_file_size += total_size;
+                if(!_file.write_array(t, size)) {
+                    return core::Err(Error(ErrorType::IOError));
+                }
+            } else {
+                u8* offset = _buffer.data() + _buffer_size;
+                std::memcpy(offset, t, total_size);
+                _buffer_size += total_size;
+            }
 #else
-            _cached_file_size += sizeof(T) * size;
-            y_try_discard(_file.write_array(t, size));
+            _cached_file_size += total_size;
+            if(!_file.write_array(t, size)) {
+                return core::Err(Error(ErrorType::IOError));
+            }
 #endif
             return core::Ok(Success::Full);
         }
