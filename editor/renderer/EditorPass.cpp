@@ -252,11 +252,11 @@ EditorPass EditorPass::create( FrameGraph& framegraph, const SceneView& view, Fr
             DirectDraw direct;
             {
                 if(selection().has_selected_entity()) {
-                    render_selection(direct.add_primitive(), view);
+                    render_selection(direct.add_primitive("selection"), view);
                 }
 
                 if(app_settings().debug.display_octree) {
-                    render_octree(direct.add_primitive(), view);
+                    render_octree(direct.add_primitive("octree"), view);
                 }
             }
             direct.render(render_pass, view.camera().viewproj_matrix());

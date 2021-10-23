@@ -27,13 +27,27 @@ SOFTWARE.
 #include <yave/meshes/AABB.h>
 
 #include <y/core/Vector.h>
+#include <y/core/String.h>
 
+#include <string_view>
 #include <memory>
 
 namespace yave {
 
+struct DirectVertex {
+    math::Vec3 pos;
+    u32 color;
+};
+
 class DirectDrawPrimitive {
     public:
+        const u32 default_color = 0xFFFF00FF;
+
+        DirectDrawPrimitive(std::string_view name);
+
+        void set_color(const math::Vec3& color);
+        void set_color(u32 color);
+
         void add_line(const math::Vec3& a, const math::Vec3& b);
         void add_circle(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius = 1.0f, usize divs = 64);
         void add_cone(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs = 8, usize circle_subdivs = 8);
@@ -41,13 +55,17 @@ class DirectDrawPrimitive {
 
         void add_marker(const math::Vec3& position, float size = 1.0f);
 
-        core::Span<math::Vec3> points() const;
+        core::Span<DirectVertex> vertices() const;
 
     private:
         friend class DirectDraw;
 
-        u32 _color = 0xFFFF00FF;
-        core::Vector<math::Vec3> _points;
+        void push_vertex(const math::Vec3& v);
+
+        u32 _color = default_color;
+
+        core::Vector<DirectVertex> _vertices;
+        core::String _name;
 };
 
 class DirectDraw : NonCopyable {
@@ -55,7 +73,7 @@ class DirectDraw : NonCopyable {
     public:
         void clear();
 
-        DirectDrawPrimitive* add_primitive(const math::Vec3& color = math::Vec3(0, 0, 1));
+        DirectDrawPrimitive* add_primitive(std::string_view name, const math::Vec3& color = math::Vec3(0, 0, 1));
 
         core::Span<std::unique_ptr<DirectDrawPrimitive>> primtitives() const;
 

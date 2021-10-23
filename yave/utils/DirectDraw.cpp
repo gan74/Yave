@@ -31,9 +31,25 @@ SOFTWARE.
 
 namespace yave {
 
+
+DirectDrawPrimitive::DirectDrawPrimitive(std::string_view name) : _name(name) {
+}
+
+void DirectDrawPrimitive::set_color(const math::Vec3& color) {
+    set_color(pack_to_u32(math::Vec4(color, 1.0f)));
+}
+
+void DirectDrawPrimitive::set_color(u32 color) {
+    _color = color;
+}
+
+void DirectDrawPrimitive::push_vertex(const math::Vec3& v) {
+    _vertices << DirectVertex{v, _color};
+}
+
 void DirectDrawPrimitive::add_line(const math::Vec3 &a, const math::Vec3 &b) {
-    _points << a;
-    _points << b;
+    push_vertex(a);
+    push_vertex(b);
 }
 
 void DirectDrawPrimitive::add_circle(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius, usize divs) {
@@ -44,21 +60,21 @@ void DirectDrawPrimitive::add_circle(const math::Vec3& position, math::Vec3 x, m
     math::Vec3 last = position + y;
     for(usize i = 1; i != divs + 1; ++i) {
         const math::Vec2 c(std::sin(i * seg_ang_size), std::cos(i * seg_ang_size));
-        _points << last;
+        push_vertex(last);
         last = (position + (x * c.x()) + (y * c.y()));
-        _points << last;
+        push_vertex(last);
     }
 }
 
 void DirectDrawPrimitive::add_cone(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs, usize circle_subdivs) {
     const math::Vec3 z = x.cross(y).normalized();
 
-    const usize beg = _points.size();
+    const usize beg = _vertices.size();
     add_circle(position + x * (std::cos(angle) * len), y, z, std::sin(angle) * len, circle_subdivs * divs);
 
     for(usize i = 0; i != divs; ++i) {
-        _points << _points[beg + (i * 2) * circle_subdivs];
-        _points << position;
+        push_vertex(_vertices[beg + (i * 2) * circle_subdivs].pos);
+        push_vertex(position);
     }
 }
 
@@ -75,7 +91,8 @@ void DirectDrawPrimitive::add_box(const AABB& aabb, const math::Transform<>& tra
         for(usize i = 0; i != 3; ++i) {
             math::Vec3 b = a;
             b[i] *= -1.0f;
-            _points << transform.to_global(center + a) << transform.to_global(center + b);
+            push_vertex(transform.to_global(center + a));
+            push_vertex(transform.to_global(center + b));
         }
     }
 }
@@ -88,10 +105,8 @@ void DirectDrawPrimitive::add_marker(const math::Vec3& position, float size) {
     }
 }
 
-
-
-core::Span<math::Vec3> DirectDrawPrimitive::points() const {
-    return _points;
+core::Span<DirectVertex> DirectDrawPrimitive::vertices() const {
+    return _vertices;
 }
 
 
@@ -101,13 +116,11 @@ void DirectDraw::clear() {
     _primitives.clear();
 }
 
-DirectDrawPrimitive* DirectDraw::add_primitive(const math::Vec3& color) {
-    _primitives.emplace_back(std::make_unique<DirectDrawPrimitive>());
+DirectDrawPrimitive* DirectDraw::add_primitive(std::string_view name, const math::Vec3& color) {
+    auto& prim = _primitives.emplace_back(std::make_unique<DirectDrawPrimitive>(name));
+    prim->set_color(color);
 
-    DirectDrawPrimitive* prim = _primitives.last().get();
-    prim->_color = pack_to_u32(math::Vec4(color, 1.0f));
-
-    return prim;
+    return prim.get();
 }
 
 core::Span<std::unique_ptr<DirectDrawPrimitive>> DirectDraw::primtitives() const {
@@ -117,32 +130,24 @@ core::Span<std::unique_ptr<DirectDrawPrimitive>> DirectDraw::primtitives() const
 void DirectDraw::render(RenderPassRecorder& recorder, const math::Matrix4<>& view_proj) const {
     y_profile();
 
-    usize point_count = 0;
+    usize vertex_count = 0;
     for(const auto& prim : _primitives) {
-        point_count += prim->_points.size();
+        vertex_count += prim->_vertices.size();
     }
 
-    if(!point_count) {
+    if(!vertex_count) {
         return;
     }
 
-    struct DirectVertex {
-        math::Vec3 pos;
-        u32 color;
-    };
-
-    TypedAttribBuffer<DirectVertex, MemoryType::CpuVisible> vertices(point_count);
+    TypedAttribBuffer<DirectVertex, MemoryType::CpuVisible> vertices(vertex_count);
     TypedMapping mapping(vertices);
 
     {
         usize offset = 0;
         for(const auto& prim : _primitives) {
-            for(const math::Vec3& p : prim->_points) {
-                mapping[offset++] = {
-                    p,
-                    prim->_color
-                };
-            }
+            const core::Span<DirectVertex> verts = prim->vertices();
+            std::copy(verts.begin(), verts.end(), mapping.data() + offset);
+            offset += verts.size();
         }
 
     }
@@ -150,7 +155,7 @@ void DirectDraw::render(RenderPassRecorder& recorder, const math::Matrix4<>& vie
     const auto* material = device_resources()[DeviceResources::WireFrameMaterialTemplate];
     recorder.bind_material(material, {DescriptorSet({InlineDescriptor(view_proj)})});
     recorder.bind_attrib_buffers(vertices);
-    recorder.draw_array(point_count);
+    recorder.draw_array(vertex_count);
 }
 
 }
