@@ -19,46 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-
-#include "TimeQuery.h"
-#include "CmdBufferRecorder.h"
+#ifndef YAVE_DEVICE_THREADLOCALLIFETIMEMANAGER_H
+#define YAVE_DEVICE_THREADLOCALLIFETIMEMANAGER_H
 
 #include <yave/graphics/graphics.h>
 
 namespace yave {
 
-static VkQueryPool create_query_pool() {
-    VkQueryPoolCreateInfo create_info = vk_struct();
-    {
-        create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-        create_info.queryCount = 2;
-    }
+class ThreadLocalLifetimeManager : NonMovable {
 
-    VkQueryPool pool = {};
-    vk_check(vkCreateQueryPool(vk_device(), &create_info, vk_allocation_callbacks(), &pool));
-    return pool;
-}
+    public:
+        ThreadLocalLifetimeManager(ThreadDevicePtr dptr);
+        ~ThreadLocalLifetimeManager();
 
-TimeQuery::TimeQuery() : _pool(create_query_pool()) {
-}
 
-TimeQuery::~TimeQuery() {
-    device_destroy(_pool);
-}
-
-void TimeQuery::start(CmdBufferRecorder& recorder) {
-    vkCmdWriteTimestamp(recorder.vk_cmd_buffer(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, _pool, 0);
-}
-
-void TimeQuery::stop(CmdBufferRecorder& recorder) {
-    vkCmdWriteTimestamp(recorder.vk_cmd_buffer(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, _pool, 1);
-}
-
-core::Duration TimeQuery::get() {
-    std::array<u64, 2> results;
-    vk_check(vkGetQueryPoolResults(vk_device(), _pool, 0, 2, 2 * sizeof(u64), results.data(), 0, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
-    return core::Duration::nanoseconds(results[1] - results[0]);
-}
+    private:
+        ThreadDevicePtr _device;
+};
 
 }
+
+#endif // YAVE_DEVICE_THREADLOCALLIFETIMEMANAGER_H
 

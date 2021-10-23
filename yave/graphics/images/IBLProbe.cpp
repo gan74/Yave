@@ -121,7 +121,7 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
     }
 
     // use sync compute to avoid having to sync later
-    std::move(recorder).submit<SyncPolicy::Sync>();
+    std::move(recorder).submit<SyncPolicy::Wait>();
 }
 
 template<ImageType T>

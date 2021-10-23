@@ -253,7 +253,7 @@ bool Swapchain::build_swapchain() {
     for(auto& i : _images) {
         recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
     }
-    std::move(recorder).submit<SyncPolicy::Sync>();
+    std::move(recorder).submit<SyncPolicy::Wait>();
 
     return true;
 }

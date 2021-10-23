@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
+#include "Device.h"
 #include "Queue.h"
 
 namespace yave {
@@ -31,7 +32,7 @@ namespace yave {
 Queue::Queue(u32 family_index, VkQueue queue) :
         _queue(queue),
         _family_index(family_index),
-        _lock(std::make_unique<std::mutex>()){
+        _lock(std::make_unique<std::mutex>()) {
 }
 
 Queue::~Queue() {
@@ -61,13 +62,33 @@ void Queue::submit(CmdBufferRecorder& rec) const {
 
     const VkCommandBuffer cmd = rec.vk_cmd_buffer();
 
+    const u64 timeline = main_device()->next_timeline_value();
+    const u64 prev = timeline - 1;
+
+    const VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    const VkSemaphore timeline_semaphore = main_device()->vk_timeline_semaphore();
+
     {
         const auto lock = y_profile_unique_lock(*_lock);
+
+        VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
+        {
+            timeline_info.waitSemaphoreValueCount = 1;
+            timeline_info.pWaitSemaphoreValues = &prev;
+            timeline_info.signalSemaphoreValueCount = 1;
+            timeline_info.pSignalSemaphoreValues = &timeline;
+        }
 
         VkSubmitInfo submit_info = vk_struct();
         {
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &cmd;
+            submit_info.pNext = &timeline_info;
+            submit_info.pWaitDstStageMask = &pipe_stage_flags;
+            submit_info.waitSemaphoreCount = 1;
+            submit_info.pWaitSemaphores = &timeline_semaphore;
+            submit_info.signalSemaphoreCount = 1;
+            submit_info.pSignalSemaphores = &timeline_semaphore;
         }
 
         vk_check(vkQueueSubmit(_queue, 1, &submit_info, rec.vk_fence()));

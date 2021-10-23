@@ -41,7 +41,7 @@ SkinnedMesh::SkinnedMesh(const MeshData& mesh_data) :
     CmdBufferRecorder recorder(create_disposable_cmd_buffer());
     Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
     Mapping::stage(_vertex_buffer, recorder, mesh_data.skinned_vertices().data());
-    std::move(recorder).submit<SyncPolicy::Sync>();
+    std::move(recorder).submit<SyncPolicy::Wait>();
 }
 
 const TriangleBuffer<>& SkinnedMesh::triangle_buffer() const {

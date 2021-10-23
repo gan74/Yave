@@ -75,7 +75,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     std::move(framegraph).render(recorder);
-    std::move(recorder).submit<SyncPolicy::Sync>();
+    std::move(recorder).submit<SyncPolicy::Wait>();
 
     const ReadBackData read_back = TypedMapping(buffer)[0];
     const float depth = read_back.depth;

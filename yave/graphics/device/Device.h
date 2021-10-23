@@ -78,6 +78,9 @@ class Device : NonMovable {
 
         const DeviceProperties& device_properties() const;
 
+        u64 next_timeline_value() const;
+        VkSemaphore vk_timeline_semaphore() const;
+
         static VkPhysicalDeviceFeatures required_device_features();
         static VkPhysicalDeviceVulkan11Features required_device_features_1_1();
         static VkPhysicalDeviceVulkan12Features required_device_features_1_2();
@@ -117,7 +120,11 @@ class Device : NonMovable {
         Instance& _instance;
         std::unique_ptr<PhysicalDevice> _physical;
 
+        VkSemaphore _timeline_semaphore;
+        mutable std::atomic<u64> _timeline_value = 0;
+
         DeviceProperties _properties = {};
+
 };
 
 }

@@ -227,6 +227,24 @@ Device::Device(Instance& instance, PhysicalDevice device) :
     _allocator.init();
     _descriptor_set_allocator.init();
 
+
+    {
+        VkSemaphoreTypeCreateInfo type_create_info = vk_struct();
+        type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+
+        VkSemaphoreCreateInfo create_info = vk_struct();
+        create_info.pNext = &type_create_info;
+
+        vk_check(vkCreateSemaphore(_device, &create_info, vk_allocation_callbacks(), &_timeline_semaphore));
+
+        VkSemaphoreSignalInfo signal_info = vk_struct();
+        signal_info.semaphore = _timeline_semaphore;
+        signal_info.value = next_timeline_value();
+
+        vk_check(vkSignalSemaphore(_device, &signal_info));
+    }
+
+
     {
         y_profile_zone("loading resources");
         _resources.init();
@@ -240,6 +258,8 @@ Device::~Device() {
 
     wait_all_queues();
 
+    device_destroy(_timeline_semaphore);
+
     {
         y_profile_zone("clearing resources");
         _resources.destroy();
@@ -247,7 +267,7 @@ Device::~Device() {
 
     {
         y_profile_zone("flushing command pools");
-        CmdBufferRecorder(CmdBufferPool().create_buffer()).submit<SyncPolicy::Sync>();
+        CmdBufferRecorder(CmdBufferPool(thread_device()).create_buffer()).submit<SyncPolicy::Wait>();
         lifetime_manager().wait_cmd_buffers();
     }
 
@@ -432,6 +452,9 @@ ThreadDevicePtr Device::thread_device() const {
     if(!thread_device) {
         create_thread_device(&thread_device);
     }
+
+    y_always_assert(thread_device->parent() == this, "Thread device has different parent");
+
     return thread_device;
 }
 
@@ -474,6 +497,14 @@ const DebugUtils* Device::debug_utils() const {
 
 const RayTracing* Device::ray_tracing() const {
     return nullptr;
+}
+
+u64 Device::next_timeline_value() const {
+    return ++_timeline_value;
+}
+
+VkSemaphore Device::vk_timeline_semaphore() const {
+    return _timeline_semaphore;
 }
 
 }

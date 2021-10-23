@@ -88,7 +88,7 @@ static Texture render_world(const ecs::EntityWorld& world) {
 
         std::move(graph).render(recorder);
     }
-    std::move(recorder).submit<SyncPolicy::Sync>();
+    std::move(recorder).submit<SyncPolicy::Wait>();
     return out;
 }
 
@@ -179,7 +179,7 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
         const DescriptorSet set = DescriptorSet({Descriptor(*tex, SamplerType::LinearClamp), Descriptor(StorageView(out))});
         recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), {set});
     }
-    std::move(recorder).submit<SyncPolicy::Sync>();
+    std::move(recorder).submit<SyncPolicy::Wait>();
     return out;
 }
 

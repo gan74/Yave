@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-class LifetimeManager {
+class LifetimeManager : NonMovable {
 
     struct EmptyResource {};
 

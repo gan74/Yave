@@ -45,13 +45,14 @@ static VkCommandPool create_pool() {
 }
 
 
-CmdBufferPool::CmdBufferPool() :
+CmdBufferPool::CmdBufferPool(ThreadDevicePtr dptr) :
         _pool(create_pool()),
-        _thread_id(concurrent::thread_id()) {
+        _device(dptr) {
 }
 
 CmdBufferPool::~CmdBufferPool() {
     join_all();
+    lifetime_manager().poll_cmd_buffers();
 
     y_debug_assert(_cmd_buffers.size() == _released.size());
 
@@ -90,7 +91,7 @@ void CmdBufferPool::release(CmdBufferData* data) {
 
 CmdBufferData* CmdBufferPool::alloc() {
     y_profile();
-    y_debug_assert(concurrent::thread_id() == _thread_id);
+    y_debug_assert(thread_device() == _device);
 
     CmdBufferData* ready = nullptr;
 
@@ -129,7 +130,6 @@ CmdBufferData* CmdBufferPool::create_data() {
     _fences << fence;
     return _cmd_buffers.emplace_back(std::make_unique<CmdBufferData>(buffer, fence, this)).get();
 }
-
 
 CmdBuffer CmdBufferPool::create_buffer() {
     return CmdBuffer(alloc());

@@ -508,7 +508,7 @@ void CmdBufferRecorder::submit(const Queue& queue, SyncPolicy policy) {
             // nothing
         break;
 
-        case SyncPolicy::Sync: {
+        case SyncPolicy::Wait: {
             wait();
         } break;
     }

@@ -40,7 +40,7 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
     Y_TODO(change to implicit staging?)
     Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
     Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
-    std::move(recorder).submit<SyncPolicy::Sync>();
+    std::move(recorder).submit<SyncPolicy::Wait>();
 }
 
 bool StaticMesh::is_null() const {

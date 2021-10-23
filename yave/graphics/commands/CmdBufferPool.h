@@ -35,7 +35,7 @@ namespace yave {
 class CmdBufferPool : NonMovable {
 
     public:
-        CmdBufferPool();
+        CmdBufferPool(ThreadDevicePtr dptr);
 
         ~CmdBufferPool();
 
@@ -63,7 +63,7 @@ class CmdBufferPool : NonMovable {
         std::mutex _release_lock;
         core::Vector<CmdBufferData*> _released;
 
-        const u32 _thread_id;
+        ThreadDevicePtr _device = nullptr;
 };
 
 }

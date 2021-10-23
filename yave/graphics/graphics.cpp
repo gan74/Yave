@@ -83,6 +83,10 @@ LifetimeManager& lifetime_manager() {
     return main_device()->lifetime_manager();
 }
 
+ThreadLocalLifetimeManager& thread_local_lifetime_manager() {
+    return thread_device()->lifetime_manager();
+}
+
 const VkAllocationCallbacks* vk_allocation_callbacks() {
     return main_device()->vk_allocation_callbacks();
 }

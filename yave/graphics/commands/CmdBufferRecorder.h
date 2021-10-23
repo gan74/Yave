@@ -32,7 +32,7 @@ namespace yave {
 
 enum class SyncPolicy {
     Async,
-    Sync
+    Wait
 };
 
 namespace detail {

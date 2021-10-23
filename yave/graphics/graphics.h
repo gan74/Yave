@@ -47,6 +47,7 @@ const Queue& loading_queue();
 const DeviceResources& device_resources();
 const DeviceProperties& device_properties();
 LifetimeManager& lifetime_manager();
+ThreadLocalLifetimeManager& thread_local_lifetime_manager();
 
 const VkAllocationCallbacks* vk_allocation_callbacks();
 VkSampler vk_sampler(SamplerType type);

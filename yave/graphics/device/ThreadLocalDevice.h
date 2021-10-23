@@ -22,7 +22,8 @@ SOFTWARE.
 #ifndef YAVE_DEVICE_THREADLOCALDEVICE_H
 #define YAVE_DEVICE_THREADLOCALDEVICE_H
 
-#include <yave/graphics/graphics.h>
+#include "ThreadLocalLifetimeManager.h"
+
 #include <yave/graphics/commands/CmdBufferPool.h>
 
 namespace yave {
@@ -35,11 +36,13 @@ class ThreadLocalDevice : NonMovable {
         DevicePtr parent() const;
 
         CmdBuffer create_disposable_cmd_buffer() const;
+        ThreadLocalLifetimeManager& lifetime_manager() const;
 
     private:
         DevicePtr _parent = nullptr;
 
         mutable CmdBufferPool _disposable_cmd_pool;
+        mutable ThreadLocalLifetimeManager _lifetime_manager;
 };
 
 }

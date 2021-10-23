@@ -19,32 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_COMMANDS_TIMEQUERY_H
-#define YAVE_GRAPHICS_COMMANDS_TIMEQUERY_H
 
-#include <yave/yave.h>
+#include "ThreadLocalLifetimeManager.h"
+
 #include <yave/graphics/graphics.h>
-
-#include <y/core/Chrono.h>
 
 namespace yave {
 
-class TimeQuery {
 
-    public:
-        TimeQuery();
-        ~TimeQuery();
-
-        void start(CmdBufferRecorder& recorder);
-        void stop(CmdBufferRecorder& recorder);
-
-        core::Duration get();
-
-    private:
-        VkHandle<VkQueryPool> _pool;
-};
-
+ThreadLocalLifetimeManager::ThreadLocalLifetimeManager(ThreadDevicePtr dptr) : _device(dptr) {
 }
 
-#endif // YAVE_GRAPHICS_COMMANDS_TIMEQUERY_H
+ThreadLocalLifetimeManager::~ThreadLocalLifetimeManager() {
+}
+
+
+}
 
