@@ -44,6 +44,7 @@ class Queue : NonCopyable {
 
         void wait() const;
 
+        Y_TODO(Remove)
         std::mutex& lock() const {
             y_debug_assert(_lock);
             return *_lock;
@@ -52,10 +53,11 @@ class Queue : NonCopyable {
     private:
         friend class Device;
         friend class CmdBufferRecorder;
+        friend class Swapchain;
 
         Queue(u32 family_index, VkQueue queue);
 
-        void submit(CmdBufferRecorder& rec) const;
+        void end_and_submit(CmdBufferRecorder& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}) const;
 
         VkQueue _queue = {};
         u32 _family_index = u32(-1);

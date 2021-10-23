@@ -78,8 +78,7 @@ class Device : NonMovable {
 
         const DeviceProperties& device_properties() const;
 
-        u64 next_timeline_value() const;
-        VkSemaphore vk_timeline_semaphore() const;
+        QueueFence create_fence() const;
 
         static VkPhysicalDeviceFeatures required_device_features();
         static VkPhysicalDeviceVulkan11Features required_device_features_1_1();

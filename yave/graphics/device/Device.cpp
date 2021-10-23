@@ -239,7 +239,7 @@ Device::Device(Instance& instance, PhysicalDevice device) :
 
         VkSemaphoreSignalInfo signal_info = vk_struct();
         signal_info.semaphore = _timeline_semaphore;
-        signal_info.value = next_timeline_value();
+        signal_info.value = create_fence()._value;
 
         vk_check(vkSignalSemaphore(_device, &signal_info));
     }
@@ -499,13 +499,11 @@ const RayTracing* Device::ray_tracing() const {
     return nullptr;
 }
 
-u64 Device::next_timeline_value() const {
-    return ++_timeline_value;
+QueueFence Device::create_fence() const {
+    return QueueFence(++_timeline_value, _timeline_semaphore);
 }
 
-VkSemaphore Device::vk_timeline_semaphore() const {
-    return _timeline_semaphore;
-}
+
 
 }
 

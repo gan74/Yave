@@ -57,7 +57,6 @@ class CmdBufferPool : NonMovable {
 
         std::mutex _pool_lock;
         VkHandle<VkCommandPool> _pool;
-        core::Vector<VkFence> _fences;
         core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
 
         std::mutex _release_lock;

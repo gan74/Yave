@@ -107,7 +107,7 @@ void LifetimeManager::poll_cmd_buffers() {
                 break;
             }
 
-            if(data->poll_and_signal()) {
+            if(data->poll()) {
                 _in_flight.pop_front();
                 ++next;
 

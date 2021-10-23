@@ -313,46 +313,26 @@ FrameToken Swapchain::next_frame() {
 void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, const Queue& queue) {
     y_profile();
 
-    const CmdBuffer cmd_buffer = std::move(recorder).finish();
-
-    const VkCommandBuffer vk_buffer = cmd_buffer.vk_cmd_buffer();
-    const VkQueue vk_queue = queue.vk_queue();
-
     const usize semaphore_index = token.id % image_count();
     const Semaphores& frame_semaphores = _semaphores[semaphore_index];
 
-    const VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-
     {
-        y_profile_zone("queue present");
+        queue.end_and_submit(recorder, frame_semaphores.image_aquired, frame_semaphores.render_complete);
 
         const auto lock = y_profile_unique_lock(queue.lock());
-
-        VkSubmitInfo submit_info = vk_struct();
-        {
-            submit_info.waitSemaphoreCount = 1;
-            submit_info.pWaitSemaphores = &frame_semaphores.image_aquired;
-            submit_info.pWaitDstStageMask = &pipe_stage_flags;
-            submit_info.commandBufferCount = 1;
-            submit_info.pCommandBuffers = &vk_buffer;
-            submit_info.signalSemaphoreCount = 1;
-            submit_info.pSignalSemaphores = &frame_semaphores.render_complete;
-        }
-
-        vk_check(vkQueueSubmit(vk_queue, 1, &submit_info, cmd_buffer.vk_fence()));
 
         y_profile_zone("present");
 
         VkPresentInfoKHR present_info = vk_struct();
         {
             present_info.swapchainCount = 1;
-            present_info.pSwapchains = reinterpret_cast<VkSwapchainKHR*>(&_swapchain);
+            present_info.pSwapchains = &_swapchain.get();
             present_info.pImageIndices = &token.image_index;
             present_info.waitSemaphoreCount = 1;
             present_info.pWaitSemaphores = &frame_semaphores.render_complete;
         }
 
-        if(vk_swapchain_out_of_date(vkQueuePresentKHR(vk_queue, &present_info))) {
+        if(vk_swapchain_out_of_date(vkQueuePresentKHR(queue.vk_queue(), &present_info))) {
             // Nothing ?
         }
     }

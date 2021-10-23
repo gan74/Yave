@@ -56,9 +56,6 @@ CmdBufferPool::~CmdBufferPool() {
 
     y_debug_assert(_cmd_buffers.size() == _released.size());
 
-    for(const VkFence fence : _fences) {
-        device_destroy(fence);
-    }
     device_destroy(_pool);
 }
 
@@ -79,7 +76,7 @@ void CmdBufferPool::release(CmdBufferData* data) {
     y_profile();
 
     y_debug_assert(data->pool() == this);
-    y_debug_assert(data->is_signaled());
+    y_debug_assert(data->poll());
 
     data->recycle_resources();
 
@@ -114,7 +111,6 @@ CmdBufferData* CmdBufferPool::alloc() {
 CmdBufferData* CmdBufferPool::create_data() {
     const auto lock = y_profile_unique_lock(_pool_lock);
 
-    const VkFenceCreateInfo fence_create_info = vk_struct();
     VkCommandBufferAllocateInfo allocate_info = vk_struct();
     {
         allocate_info.commandBufferCount = 1;
@@ -123,12 +119,9 @@ CmdBufferData* CmdBufferPool::create_data() {
     }
 
     VkCommandBuffer buffer = {};
-    VkFence fence = {};
     vk_check(vkAllocateCommandBuffers(vk_device(), &allocate_info, &buffer));
-    vk_check(vkCreateFence(vk_device(), &fence_create_info, vk_allocation_callbacks(), &fence));
 
-    _fences << fence;
-    return _cmd_buffers.emplace_back(std::make_unique<CmdBufferData>(buffer, fence, this)).get();
+    return _cmd_buffers.emplace_back(std::make_unique<CmdBufferData>(buffer, this)).get();
 }
 
 CmdBuffer CmdBufferPool::create_buffer() {

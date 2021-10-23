@@ -173,9 +173,6 @@ class CmdBufferRecorder final : public CmdBuffer {
         // never use directly, needed for internal work
         void transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst);
 
-        Y_TODO(Remove)
-        CmdBuffer finish() &&;
-
         template<SyncPolicy Policy = SyncPolicy::Async>
         void submit() && {
             submit(Policy);

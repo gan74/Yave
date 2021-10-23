@@ -27,8 +27,8 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
-#include <memory>
 #include <atomic>
+#include <memory>
 
 namespace yave {
 
@@ -36,39 +36,39 @@ class ResourceFence {
     public:
         ResourceFence() = default;
 
-        bool operator==(const ResourceFence& other) const {
-            return _value == other._value;
-        }
+        bool operator==(const ResourceFence& other) const;
+        bool operator!=(const ResourceFence& other) const;
 
-        bool operator!=(const ResourceFence& other) const {
-            return _value != other._value;
-        }
-
-
-        bool operator<(const ResourceFence& other) const {
-            return _value < other._value;
-        }
-
-        bool operator<=(const ResourceFence& other) const {
-            return _value <= other._value;
-        }
-
-
-        bool operator>(const ResourceFence& other) const {
-            return _value > other._value;
-        }
-
-        bool operator>=(const ResourceFence& other) const {
-            return _value >= other._value;
-        }
+        bool operator<(const ResourceFence& other) const;
+        bool operator<=(const ResourceFence& other) const;
 
     private:
         friend class LifetimeManager;
 
-        ResourceFence(u64 v) : _value(v) {
-        }
+        ResourceFence(u64 v);
 
         u64 _value = 0;
+};
+
+class QueueFence {
+    public:
+        QueueFence() = default;
+
+        bool is_null() const;
+
+        VkSemaphoreWaitInfo vk_wait_info() const;
+
+        bool operator==(const QueueFence& other) const;
+        bool operator!=(const QueueFence& other) const;
+    private:
+        friend class Device;
+        friend class Queue;
+
+        QueueFence(u64 v, VkSemaphore s) : _value(v), _semaphore(s) {
+        }
+
+        u64 _value = u64(-1);
+        VkSemaphore _semaphore = {};
 };
 
 
@@ -79,21 +79,20 @@ class CmdBufferData final : NonMovable {
     };
 
     public:
-        CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p);
+        CmdBufferData(VkCommandBuffer buf, CmdBufferPool* p);
         ~CmdBufferData();
 
         bool is_null() const;
 
-        bool is_signaled() const;
-
         CmdBufferPool* pool() const;
+
         ResourceFence resource_fence() const;
+        QueueFence queue_fence() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
-        VkFence vk_fence() const;
 
         void wait();
-        bool poll_and_signal();
+        bool poll();
 
         template<typename T>
         void keep_alive(T&& t) {
@@ -107,6 +106,7 @@ class CmdBufferData final : NonMovable {
 
     private:
         friend class CmdBufferPool;
+        friend class Queue;
 
         void set_signaled();
 
@@ -116,19 +116,14 @@ class CmdBufferData final : NonMovable {
 
         // These are owned by the command pool
         VkCommandBuffer _cmd_buffer;
-        VkFence _fence;
 
         core::Vector<std::unique_ptr<KeepAlive>> _keep_alive;
         CmdBufferPool* _pool = nullptr;
 
         ResourceFence _resource_fence;
+        QueueFence _queue_fence;
 
         std::atomic<bool> _signaled = false;
-
-#ifdef Y_DEBUG
-        std::atomic<bool> _lock = false;
-#endif
-
 };
 
 }

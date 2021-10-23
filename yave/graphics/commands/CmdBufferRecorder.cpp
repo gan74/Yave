@@ -499,9 +499,8 @@ void CmdBufferRecorder::submit(SyncPolicy policy) {
 
 void CmdBufferRecorder::submit(const Queue& queue, SyncPolicy policy) {
     check_no_renderpass();
-    vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
 
-    queue.submit(*this);
+    queue.end_and_submit(*this);
 
     switch(policy) {
         case SyncPolicy::Async:
@@ -512,13 +511,6 @@ void CmdBufferRecorder::submit(const Queue& queue, SyncPolicy policy) {
             wait();
         } break;
     }
-}
-
-CmdBuffer CmdBufferRecorder::finish() && {
-    Y_TODO(This is super sketchy, it needs to be removed ASAP)
-    check_no_renderpass();
-    vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
-    return std::move(*this); // uuuh ?
 }
 
 #undef YAVE_VK_CMD

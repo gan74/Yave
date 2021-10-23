@@ -55,43 +55,51 @@ void Queue::wait() const {
     vk_check(vkQueueWaitIdle(_queue));
 }
 
-void Queue::submit(CmdBufferRecorder& rec) const {
+void Queue::end_and_submit(CmdBufferRecorder& recorder, VkSemaphore wait, VkSemaphore signal) const {
     y_profile();
 
-    y_debug_assert(vkGetFenceStatus(vk_device(), rec.vk_fence()) == VK_NOT_READY);
+    const QueueFence fence = main_device()->create_fence();
+    const u64 prev_value = fence._value - 1;
 
-    const VkCommandBuffer cmd = rec.vk_cmd_buffer();
+    const VkCommandBuffer cmd_buffer = recorder.vk_cmd_buffer();
+    vk_check(vkEndCommandBuffer(cmd_buffer));
 
-    const u64 timeline = main_device()->next_timeline_value();
-    const u64 prev = timeline - 1;
+    recorder._data->_queue_fence = fence;
 
-    const VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    const VkSemaphore timeline_semaphore = main_device()->vk_timeline_semaphore();
+    const std::array<VkSemaphore, 2> wait_semaphores = {fence._semaphore, wait};
+    const std::array<VkSemaphore, 2> signal_semaphores = {fence._semaphore, signal};
+
+    const std::array<u64, 2> wait_values = {prev_value, 0};
+    const std::array<u64, 2> signal_values = {fence._value, 0};
+
+    const std::array<VkPipelineStageFlags, 2> pipe_stage_flags = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
+    const u32 wait_count = wait_semaphores[1] ? 2 : 1;
+    const u32 signal_count = signal_semaphores[1] ? 2 : 1;
 
     {
         const auto lock = y_profile_unique_lock(*_lock);
 
         VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
         {
-            timeline_info.waitSemaphoreValueCount = 1;
-            timeline_info.pWaitSemaphoreValues = &prev;
-            timeline_info.signalSemaphoreValueCount = 1;
-            timeline_info.pSignalSemaphoreValues = &timeline;
+            timeline_info.waitSemaphoreValueCount = wait_count;
+            timeline_info.pWaitSemaphoreValues = wait_values.data();
+            timeline_info.signalSemaphoreValueCount = signal_count;
+            timeline_info.pSignalSemaphoreValues = signal_values.data();
         }
 
         VkSubmitInfo submit_info = vk_struct();
         {
             submit_info.commandBufferCount = 1;
-            submit_info.pCommandBuffers = &cmd;
+            submit_info.pCommandBuffers = &cmd_buffer;
             submit_info.pNext = &timeline_info;
-            submit_info.pWaitDstStageMask = &pipe_stage_flags;
-            submit_info.waitSemaphoreCount = 1;
-            submit_info.pWaitSemaphores = &timeline_semaphore;
-            submit_info.signalSemaphoreCount = 1;
-            submit_info.pSignalSemaphores = &timeline_semaphore;
+            submit_info.pWaitDstStageMask = pipe_stage_flags.data();
+            submit_info.waitSemaphoreCount = wait_count;
+            submit_info.pWaitSemaphores = wait_semaphores.data();
+            submit_info.signalSemaphoreCount = signal_count;
+            submit_info.pSignalSemaphores = signal_semaphores.data();
         }
 
-        vk_check(vkQueueSubmit(_queue, 1, &submit_info, rec.vk_fence()));
+        vk_check(vkQueueSubmit(_queue, 1, &submit_info, {}));
     }
 }
 

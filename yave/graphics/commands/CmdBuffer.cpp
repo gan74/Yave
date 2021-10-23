@@ -55,11 +55,6 @@ VkCommandBuffer CmdBuffer::vk_cmd_buffer() const {
     return _data->vk_cmd_buffer();
 }
 
-VkFence CmdBuffer::vk_fence() const {
-    y_debug_assert(_data);
-    return  _data->vk_fence();
-}
-
 ResourceFence CmdBuffer::resource_fence() const {
     y_debug_assert(_data);
     return _data->resource_fence();

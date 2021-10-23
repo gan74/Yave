@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 // https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkPipelineStageFlagBits.html
-enum class PipelineStage : u32{
+enum class PipelineStage : u32 {
     None = 0,
 
     BeginOfPipe     = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,

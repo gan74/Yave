@@ -26,31 +26,65 @@ SOFTWARE.
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/graphics.h>
 
-#ifdef Y_DEBUG
-#define YAVE_CMD_CHECK_LOCK()                                                           \
-    y_debug_assert(_lock.exchange(true, std::memory_order_acquire) == false);           \
-    y_defer(y_debug_assert(_lock.exchange(false, std::memory_order_acquire) == true))
-#else
-#define YAVE_CMD_CHECK_LOCK()   do {} while(false)
-#endif
-
 namespace yave {
 
-CmdBufferData::CmdBufferData(VkCommandBuffer buf, VkFence fen, CmdBufferPool* p) :
-        _cmd_buffer(buf), _fence(fen), _pool(p), _resource_fence(lifetime_manager().create_fence()) {
+
+bool ResourceFence::operator==(const ResourceFence& other) const {
+    return _value == other._value;
+}
+
+bool ResourceFence::operator!=(const ResourceFence& other) const {
+    return _value != other._value;
+}
+
+
+bool ResourceFence::operator<(const ResourceFence& other) const {
+    return _value < other._value;
+}
+
+bool ResourceFence::operator<=(const ResourceFence& other) const {
+    return _value <= other._value;
+}
+
+ResourceFence::ResourceFence(u64 v) : _value(v) {
+}
+
+bool QueueFence::is_null() const {
+    return !_semaphore;
+}
+
+VkSemaphoreWaitInfo QueueFence::vk_wait_info() const {
+    y_debug_assert(!is_null());
+
+    VkSemaphoreWaitInfo wait_info = vk_struct();
+    {
+        wait_info.pSemaphores = &_semaphore;
+        wait_info.pValues = &_value;
+        wait_info.semaphoreCount = 1;
+    }
+    return wait_info;
+}
+
+bool QueueFence::operator==(const QueueFence& other) const {
+    return _value == other._value;
+}
+
+bool QueueFence::operator!=(const QueueFence& other) const {
+    return _value != other._value;
+}
+
+
+
+CmdBufferData::CmdBufferData(VkCommandBuffer buf, CmdBufferPool* p) :
+        _cmd_buffer(buf), _pool(p), _resource_fence(lifetime_manager().create_fence()) {
 }
 
 CmdBufferData::~CmdBufferData() {
-    YAVE_CMD_CHECK_LOCK();
-    y_debug_assert(!_pool || vkGetFenceStatus(vk_device(), _fence) == VK_SUCCESS);
+    y_debug_assert(!_pool || poll());
 }
 
 bool CmdBufferData::is_null() const {
     return !_cmd_buffer;
-}
-
-bool CmdBufferData::is_signaled() const {
-    return _signaled;
 }
 
 CmdBufferPool* CmdBufferData::pool() const {
@@ -61,27 +95,30 @@ VkCommandBuffer CmdBufferData::vk_cmd_buffer() const {
     return _cmd_buffer;
 }
 
-VkFence CmdBufferData::vk_fence() const {
-    return _fence;
-}
-
 ResourceFence CmdBufferData::resource_fence() const {
     return _resource_fence;
 }
 
+QueueFence CmdBufferData::queue_fence() const {
+    return _queue_fence;
+}
+
 void CmdBufferData::wait() {
     y_profile();
-    if(!is_signaled()) {
-        vk_check(vkWaitForFences(vk_device(), 1, &_fence, true, u64(-1)));
+    if(!_signaled) {
+        VkSemaphoreWaitInfo wait_info = _queue_fence.vk_wait_info();
+        vk_check(vkWaitSemaphores(vk_device(), &wait_info, u64(-1)));
         set_signaled();
     }
 }
 
-bool CmdBufferData::poll_and_signal() {
-    if(is_signaled()) {
+bool CmdBufferData::poll() {
+    if(_signaled) {
         return true;
     }
-    if(vkGetFenceStatus(vk_device(), _fence) == VK_SUCCESS) {
+
+    VkSemaphoreWaitInfo wait_info = _queue_fence.vk_wait_info();
+    if(vkWaitSemaphores(vk_device(), &wait_info, u64(0)) == VK_SUCCESS) {
         set_signaled();
         return true;
     }
@@ -89,25 +126,23 @@ bool CmdBufferData::poll_and_signal() {
 }
 
 void CmdBufferData::begin() {
-    YAVE_CMD_CHECK_LOCK();
     y_profile();
 
-
-    y_debug_assert(is_signaled());
+    y_debug_assert(_signaled);
     y_debug_assert(_keep_alive.is_empty());
 
-    vk_check(vkResetFences(vk_device(), 1, &_fence));
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 
+    _queue_fence = {};
     _resource_fence = lifetime_manager().create_fence();
     _signaled = false;
 }
 
 void CmdBufferData::recycle_resources() {
-    YAVE_CMD_CHECK_LOCK();
     y_profile();
 
-    y_debug_assert(is_signaled());
+    y_debug_assert(_signaled);
+
     _keep_alive.clear();
 }
 
@@ -117,5 +152,4 @@ void CmdBufferData::set_signaled() {
 
 }
 
-#undef YAVE_CMD_CHECK_LOCK
 
