@@ -108,48 +108,29 @@ QueueFence CmdBufferData::queue_fence() const {
 
 void CmdBufferData::wait() {
     y_profile();
-    if(!_signaled) {
-        main_device()->wait_for_fence(_queue_fence);
-        set_signaled();
-    }
+    main_device()->wait_for_fence(_queue_fence);
 }
 
 bool CmdBufferData::poll() {
-    if(_signaled) {
-        return true;
-    }
-
-    if(main_device()->poll_fence(_queue_fence)) {
-        set_signaled();
-        return true;
-    }
-    return false;
+    return main_device()->poll_fence(_queue_fence);
 }
 
 void CmdBufferData::begin() {
     y_profile();
 
-    y_debug_assert(_signaled);
     y_debug_assert(_keep_alive.is_empty());
 
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 
-    _queue_fence = {};
     _resource_fence = lifetime_manager().create_fence();
-    _signaled = false;
 }
 
 void CmdBufferData::recycle_resources() {
     y_profile();
 
-    y_debug_assert(_signaled);
-
     _keep_alive.clear();
 }
 
-void CmdBufferData::set_signaled() {
-    _signaled.exchange(true, std::memory_order_acquire);
-}
 
 }
 

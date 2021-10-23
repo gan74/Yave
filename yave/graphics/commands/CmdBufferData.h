@@ -108,8 +108,6 @@ class CmdBufferData final : NonMovable {
         friend class CmdBufferPool;
         friend class Queue;
 
-        void set_signaled();
-
         void begin();
         void recycle_resources(); // This can not be called while pool's _pending_lock is locked
 
@@ -122,8 +120,6 @@ class CmdBufferData final : NonMovable {
 
         ResourceFence _resource_fence;
         QueueFence _queue_fence;
-
-        std::atomic<bool> _signaled = false;
 };
 
 }
