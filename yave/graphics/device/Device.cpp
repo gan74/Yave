@@ -361,7 +361,7 @@ VkPhysicalDeviceVulkan12Features Device::required_device_features_1_2() {
     VkPhysicalDeviceVulkan12Features required = vk_struct();
 
     {
-        //required.timelineSemaphore = true;
+        required.timelineSemaphore = true;
     }
 
     return required;
