@@ -23,8 +23,7 @@ SOFTWARE.
 #include "CmdBufferData.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
-#include <yave/graphics/device/LifetimeManager.h>
-#include <yave/graphics/graphics.h>
+#include <yave/graphics/device/Device.h>
 
 namespace yave {
 
@@ -37,7 +36,6 @@ bool ResourceFence::operator!=(const ResourceFence& other) const {
     return _value != other._value;
 }
 
-
 bool ResourceFence::operator<(const ResourceFence& other) const {
     return _value < other._value;
 }
@@ -49,20 +47,11 @@ bool ResourceFence::operator<=(const ResourceFence& other) const {
 ResourceFence::ResourceFence(u64 v) : _value(v) {
 }
 
-bool QueueFence::is_null() const {
-    return !_semaphore;
-}
 
-VkSemaphoreWaitInfo QueueFence::vk_wait_info() const {
-    y_debug_assert(!is_null());
 
-    VkSemaphoreWaitInfo wait_info = vk_struct();
-    {
-        wait_info.pSemaphores = &_semaphore;
-        wait_info.pValues = &_value;
-        wait_info.semaphoreCount = 1;
-    }
-    return wait_info;
+
+u64 QueueFence::value() const {
+    return _value;
 }
 
 bool QueueFence::operator==(const QueueFence& other) const {
@@ -73,10 +62,24 @@ bool QueueFence::operator!=(const QueueFence& other) const {
     return _value != other._value;
 }
 
+bool QueueFence::operator<(const QueueFence& other) const {
+    return _value < other._value;
+}
+
+bool QueueFence::operator<=(const QueueFence& other) const {
+    return _value <= other._value;
+}
+
+QueueFence::QueueFence(u64 v) : _value(v) {
+}
+
+
 
 
 CmdBufferData::CmdBufferData(VkCommandBuffer buf, CmdBufferPool* p) :
-        _cmd_buffer(buf), _pool(p), _resource_fence(lifetime_manager().create_fence()) {
+        _cmd_buffer(buf),
+        _pool(p),
+        _resource_fence(lifetime_manager().create_fence()) {
 }
 
 CmdBufferData::~CmdBufferData() {
@@ -106,8 +109,7 @@ QueueFence CmdBufferData::queue_fence() const {
 void CmdBufferData::wait() {
     y_profile();
     if(!_signaled) {
-        VkSemaphoreWaitInfo wait_info = _queue_fence.vk_wait_info();
-        vk_check(vkWaitSemaphores(vk_device(), &wait_info, u64(-1)));
+        main_device()->wait_for_fence(_queue_fence);
         set_signaled();
     }
 }
@@ -117,8 +119,7 @@ bool CmdBufferData::poll() {
         return true;
     }
 
-    VkSemaphoreWaitInfo wait_info = _queue_fence.vk_wait_info();
-    if(vkWaitSemaphores(vk_device(), &wait_info, u64(0)) == VK_SUCCESS) {
+    if(main_device()->poll_fence(_queue_fence)) {
         set_signaled();
         return true;
     }

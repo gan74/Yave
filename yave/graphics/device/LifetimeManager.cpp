@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-static bool compare_cmd_buffers(CmdBufferData* a, CmdBufferData* b) {
+static bool compare_cmd_buffers(const CmdBufferData* a, const CmdBufferData* b) {
     return a->resource_fence() < b->resource_fence();
 }
 

@@ -66,8 +66,10 @@ void Queue::end_and_submit(CmdBufferRecorder& recorder, VkSemaphore wait, VkSema
 
     recorder._data->_queue_fence = fence;
 
-    const std::array<VkSemaphore, 2> wait_semaphores = {fence._semaphore, wait};
-    const std::array<VkSemaphore, 2> signal_semaphores = {fence._semaphore, signal};
+    const VkSemaphore timeline_semaphore = main_device()->vk_timeline_semaphore();
+
+    const std::array<VkSemaphore, 2> wait_semaphores = {timeline_semaphore, wait};
+    const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
 
     const std::array<u64, 2> wait_values = {prev_value, 0};
     const std::array<u64, 2> signal_values = {fence._value, 0};

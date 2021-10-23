@@ -36,6 +36,14 @@ namespace yave {
 
 Device* Device::_main_device = nullptr;
 
+// https://stackoverflow.com/questions/16190078/how-to-atomically-update-a-maximum-value
+template<typename T>
+static void update_maximum(std::atomic<T>& maximum_value, const T& value) noexcept {
+    T prev_value = maximum_value;
+    while(prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value)) {
+    }
+}
+
 static float device_score(const PhysicalDevice& device) {
     if(!Device::has_required_features(device)) {
         return -std::numeric_limits<float>::max();
@@ -499,11 +507,40 @@ const RayTracing* Device::ray_tracing() const {
     return nullptr;
 }
 
-QueueFence Device::create_fence() const {
-    return QueueFence(++_timeline_value, _timeline_semaphore);
+VkSemaphore Device::vk_timeline_semaphore() const {
+    return _timeline_semaphore;
 }
 
+QueueFence Device::create_fence() const {
+    return QueueFence(++_timeline_fence);
+}
 
+bool Device::poll_fence(const QueueFence& fence) const {
+    if(_last_polled >= fence.value()) {
+        return true;
+    }
+
+    u64 value = 0;
+    vk_check(vkGetSemaphoreCounterValue(_device, _timeline_semaphore, &value));
+    update_maximum(_last_polled, value);
+
+    return _last_polled >= fence.value();
+}
+
+void Device::wait_for_fence(const QueueFence& fence) const {
+    if(_last_polled >= fence.value()) {
+        return;
+    }
+
+    VkSemaphoreWaitInfo wait_info = vk_struct();
+    {
+        wait_info.pSemaphores = &_timeline_semaphore;
+        wait_info.pValues = &fence._value;
+        wait_info.semaphoreCount = 1;
+    }
+    vk_check(vkWaitSemaphores(_device, &wait_info, u64(-1)));
+    update_maximum(_last_polled, fence._value);
+}
 
 }
 

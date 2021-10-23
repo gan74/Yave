@@ -78,7 +78,11 @@ class Device : NonMovable {
 
         const DeviceProperties& device_properties() const;
 
+        VkSemaphore vk_timeline_semaphore() const;
+
         QueueFence create_fence() const;
+        bool poll_fence(const QueueFence& fence) const;
+        void wait_for_fence(const QueueFence& fence) const;
 
         static VkPhysicalDeviceFeatures required_device_features();
         static VkPhysicalDeviceVulkan11Features required_device_features_1_1();
@@ -120,7 +124,9 @@ class Device : NonMovable {
         std::unique_ptr<PhysicalDevice> _physical;
 
         VkSemaphore _timeline_semaphore;
-        mutable std::atomic<u64> _timeline_value = 0;
+        mutable std::atomic<u64> _timeline_fence = 0;
+        mutable std::atomic<u64> _last_polled = 0;
+
 
         DeviceProperties _properties = {};
 

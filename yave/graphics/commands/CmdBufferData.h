@@ -54,21 +54,21 @@ class QueueFence {
     public:
         QueueFence() = default;
 
-        bool is_null() const;
-
-        VkSemaphoreWaitInfo vk_wait_info() const;
+        u64 value() const;
 
         bool operator==(const QueueFence& other) const;
         bool operator!=(const QueueFence& other) const;
+
+        bool operator<(const QueueFence& other) const;
+        bool operator<=(const QueueFence& other) const;
+
     private:
         friend class Device;
         friend class Queue;
 
-        QueueFence(u64 v, VkSemaphore s) : _value(v), _semaphore(s) {
-        }
+        QueueFence(u64 v);
 
         u64 _value = u64(-1);
-        VkSemaphore _semaphore = {};
 };
 
 
