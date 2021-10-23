@@ -30,6 +30,7 @@ SOFTWARE.
 #include <charconv>
 #include <cinttypes>
 #include <cstdio>
+#include <ctime>
 
 namespace yave {
 
@@ -335,7 +336,6 @@ FolderAssetStore::FolderAssetStore(const core::String& root) : _root(FileSystemM
 }
 
 FolderAssetStore::~FolderAssetStore() {
-    save_next_id().unwrap();
 }
 
 core::String FolderAssetStore::asset_data_file_name(AssetId id) const {
@@ -719,42 +719,10 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
     return core::Ok();
 }
 
-FolderAssetStore::Result<> FolderAssetStore::load_next_id() {
-    y_profile();
-
-    core::Vector<u8> data;
-    if(auto file = io2::File::open(next_id_file_name());
-        file.is_error() || file.unwrap().read_all(data).is_error()) {
-
-        return core::Err(ErrorType::FilesytemError);
-    }
-
-    const core::String str_data(data.begin(), data.end());
-    const std::string_view trimmed = core::trim(str_data);
-
-    u64 next_id = 0;
-    if(std::from_chars(trimmed.data(), trimmed.data() + trimmed.size(), next_id).ec == std::errc()) {
-        _next_id = next_id;
-    }
-
-    return core::Ok();
-}
-
-FolderAssetStore::Result<> FolderAssetStore::save_next_id() const {
-    y_profile();
-
-    const std::string_view data = fmt("%", _next_id);
-    if(auto file = io2::File::create(next_id_file_name()); file.is_error() || file.unwrap().write_array(data.data(), data.size()).is_error()) {
-        return core::Err(ErrorType::FilesytemError);
-    }
-
-    return core::Ok();
-}
-
 FolderAssetStore::Result<> FolderAssetStore::reload_all() {
     y_profile();
 
-    load_next_id().ignore();
+    _next_id = u64(std::time(nullptr));
     load_tree().unwrap();
     load_assets().unwrap();
 

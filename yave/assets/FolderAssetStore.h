@@ -115,9 +115,6 @@ class FolderAssetStore final : NonMovable, public AssetStore {
 
         Result<> load_assets();
 
-        Result<> load_next_id();
-        Result<> save_next_id() const;
-
         Result<> reload_all();
 
         core::String _root;
