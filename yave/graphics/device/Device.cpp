@@ -547,7 +547,12 @@ void Device::wait_for_fence(const QueueFence& fence) const {
         wait_info.pValues = &fence._value;
         wait_info.semaphoreCount = 1;
     }
-    vk_check(vkWaitSemaphores(_device, &wait_info, u64(-1)));
+
+    static constexpr u64 timeout_ns = 10'000'000'000llu; // 10s
+    if(vkWaitSemaphores(_device, &wait_info, timeout_ns) != VK_SUCCESS) {
+        y_fatal("Semaphore timeout expired");
+    }
+
     update_maximum(_last_polled, fence._value);
 }
 
