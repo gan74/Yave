@@ -175,7 +175,7 @@ Device::Device(Instance& instance, PhysicalDevice device) :
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
 
-    try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical_device());
+    const bool inline_uniform_blocks = try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical_device());
 
     const auto required_features = Device::required_device_features();
     auto required_features_1_1 = Device::required_device_features_1_1();
@@ -197,11 +197,20 @@ Device::Device(Instance& instance, PhysicalDevice device) :
         queue_create_info.queueCount = u32(queue_priorityies.size());
     }
 
+    VkPhysicalDeviceInlineUniformBlockFeaturesEXT uniform_block_features = vk_struct();
+    {
+        uniform_block_features.inlineUniformBlock = true;
+    }
+
     VkPhysicalDeviceFeatures2 features = vk_struct();
     {
         features.features = required_features;
         features.pNext = &required_features_1_1;
         required_features_1_1.pNext = &required_features_1_2;
+
+        if(inline_uniform_blocks) {
+            required_features_1_2.pNext = &uniform_block_features;
+        }
     }
 
     VkDeviceCreateInfo create_info = vk_struct();
