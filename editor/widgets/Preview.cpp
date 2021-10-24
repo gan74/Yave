@@ -138,9 +138,9 @@ void Preview::reset_world() {
     }
 
     {
-        const  math::Transform<> box_transform(math::Vec3(), math::Quaternion<>(), math::Vec3(_cam_distance * 1.25f));
+        const math::Transform<> box_transform(math::Vec3(), math::Quaternion<>(), math::Vec3(_cam_distance * -1.25f));
         const ecs::EntityId box_id = _world->create_entity<StaticMeshComponent>();
-        *_world->component<StaticMeshComponent>(box_id) = StaticMeshComponent(device_resources()[DeviceResources::SphereMesh], _material);
+        *_world->component<StaticMeshComponent>(box_id) = StaticMeshComponent(device_resources()[DeviceResources::SphereMesh], device_resources()[DeviceResources::EmptyMaterial]);
         _world->component<TransformableComponent>(box_id)->set_transform(box_transform);
     }
 }
@@ -175,8 +175,12 @@ void Preview::on_gui() {
     TextureView* output = nullptr;
 
     {
+        RendererSettings settings;
+        settings.ssao.method = SSAOSettings::SSAOMethod::None;
+        settings.tone_mapping.exposure = 2.0f;
+
         FrameGraph graph(_resource_pool);
-        const DefaultRenderer renderer = DefaultRenderer::create(graph, _view, content_size());
+        const DefaultRenderer renderer = DefaultRenderer::create(graph, _view, content_size(), settings);
 
         FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 
