@@ -392,6 +392,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
                 last.textures[SimpleMaterialData::Emissive] = tex_name(material.emissiveTexture.index);
                 last.metallic = float(pbr.metallicFactor);
                 last.roughness = float(pbr.roughnessFactor);
+                last.alpha_test = (material.alphaMode == "MASK");
 
                 for(usize i = 0; i != 3; ++i) {
                     last.emissive[i] = float(material.emissiveFactor[0]);

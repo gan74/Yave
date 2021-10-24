@@ -46,6 +46,7 @@ struct MaterialData {
     float metallic = 0.0f;
     float roughness = 1.0f;
     math::Vec3 emissive;
+    bool alpha_test = false;
 };
 
 struct SubMeshData {

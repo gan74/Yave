@@ -600,6 +600,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_tree() {
     core::Vector<u8> tree_data;
     if(auto file = io2::File::open(tree_file_name()); file.is_error() || file.unwrap().read_all(tree_data).is_error()) {
         log_msg("Unable to open folder index", Log::Error);
+        return core::Ok(); // ????
     }
 
     // Folders
