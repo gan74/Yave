@@ -67,8 +67,9 @@ struct UiSettings {
     Key change_gizmo_mode = Key::R;
     Key change_gizmo_space = Key::Q;
 
+    bool draw_fps_counter = true;
 
-    y_reflect(change_gizmo_mode, change_gizmo_space)
+    y_reflect(change_gizmo_mode, change_gizmo_space, draw_fps_counter)
 };
 
 struct PerfSettings {

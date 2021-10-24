@@ -46,6 +46,8 @@ SOFTWARE.
 namespace editor {
 
 static void add_debug_entities() {
+    y_profile();
+
     EditorWorld& world = current_world();
 
     const auto mesh = device_resources()[DeviceResources::CubeMesh];

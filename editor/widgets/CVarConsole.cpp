@@ -110,11 +110,13 @@ static void explore(C& vars, const core::String& parent, std::string_view name, 
     });
 }
 
+
+
+
 CVarConsole::CVarConsole() : Widget(ICON_FA_STREAM " CVars") {
     explore(_cvars, "", "settings", app_settings);
     set_pattern("");
 }
-
 
 void CVarConsole::set_pattern(std::string_view str) {
     _search_pattern = str;

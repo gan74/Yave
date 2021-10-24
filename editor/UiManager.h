@@ -27,6 +27,7 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
 #include <y/core/FixedArray.h>
+#include <y/core/Chrono.h>
 
 #include <typeindex>
 #include <memory>
@@ -55,6 +56,8 @@ class UiManager : NonMovable {
         // y_reflect(_widgets);
 
     private:
+        void update_fps_counter();
+        void draw_fps_counter();
         void draw_menu_bar();
         void set_widget_id(Widget* widget);
 
@@ -66,6 +69,11 @@ class UiManager : NonMovable {
         core::Vector<const EditorAction*> _actions;
 
         core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
+
+        core::Chrono _timer;
+        core::FixedArray<float> _frame_times = core::FixedArray<float>(60);
+        float _total_time = 0.0f;
+        u64 _frame_number = 0;
 };
 
 

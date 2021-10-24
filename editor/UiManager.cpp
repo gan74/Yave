@@ -22,12 +22,9 @@ SOFTWARE.
 
 #include "UiManager.h"
 
+#include <editor/Settings.h>
 #include <editor/utils/ui.h>
-#include <editor/widgets/EngineView.h>
-#include <editor/widgets/ResourceBrowser.h>
-#include <editor/widgets/FileBrowser.h>
-
-#include <yave/utils/FileSystemModel.h>
+#include <editor/widgets/PerformanceMetrics.h>
 
 #include <y/core/HashMap.h>
 
@@ -37,7 +34,6 @@ SOFTWARE.
 #include <tuple>
 
 namespace editor {
-
 
 UiManager::UiManager() {
     for(const EditorAction* action = all_actions(); action; action = action->next) {
@@ -53,6 +49,7 @@ UiManager::~UiManager() {
 }
 
 void UiManager::on_gui() {
+    update_fps_counter();
     draw_menu_bar();
 
     core::ExternalHashMap<Widget*, int> to_destroy;
@@ -69,7 +66,6 @@ void UiManager::on_gui() {
     }
 
     _auto_parent = nullptr;
-
 
    if(!to_destroy.is_empty()) {
         for(usize i = 0;  i != _widgets.size(); ++i) {
@@ -88,9 +84,24 @@ void UiManager::on_gui() {
     }
 }
 
+void UiManager::update_fps_counter() {
+    float& current_frame = _frame_times[_frame_number++ % _frame_times.size()];
+    _total_time -= current_frame;
+    current_frame = float(_timer.reset().to_millis());
+    _total_time += current_frame;
+}
+
+void UiManager::draw_fps_counter() {
+    const float avg_time = _total_time / std::min(u64(_frame_times.size()), _frame_number);
+    char buffer[64] = {};
+    std::snprintf(buffer, sizeof(buffer), "FPS: %.01f (%.01f ms)", 1000.0f / avg_time, avg_time);
+    if(ImGui::MenuItem(buffer)) {
+        add_widget(std::make_unique<PerformanceMetrics>());
+    }
+}
+
 void UiManager::draw_menu_bar() {
     if(ImGui::BeginMainMenuBar()) {
-
         if(ImGui::BeginMenu("File")) {
             ImGui::EndMenu();
         }
@@ -98,6 +109,10 @@ void UiManager::draw_menu_bar() {
             ImGui::EndMenu();
         }
 
+        if(app_settings().ui.draw_fps_counter) {
+            ImGui::Separator();
+            draw_fps_counter();
+        }
 
         for(const EditorAction* action : _actions) {
             if(!action->menu.size()) {
