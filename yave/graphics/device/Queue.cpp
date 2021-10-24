@@ -58,28 +58,34 @@ void Queue::wait() const {
 void Queue::end_and_submit(CmdBufferRecorder& recorder, VkSemaphore wait, VkSemaphore signal) const {
     y_profile();
 
-    const QueueFence fence = main_device()->create_fence();
-    const u64 prev_value = fence._value - 1;
-
     const VkCommandBuffer cmd_buffer = recorder.vk_cmd_buffer();
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
-    recorder._data->_queue_fence = fence;
-
-    const VkSemaphore timeline_semaphore = main_device()->vk_timeline_semaphore();
-
-    const std::array<VkSemaphore, 2> wait_semaphores = {timeline_semaphore, wait};
-    const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
-
-    const std::array<u64, 2> wait_values = {prev_value, 0};
-    const std::array<u64, 2> signal_values = {fence._value, 0};
-
-    const std::array<VkPipelineStageFlags, 2> pipe_stage_flags = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
-    const u32 wait_count = wait_semaphores[1] ? 2 : 1;
-    const u32 signal_count = signal_semaphores[1] ? 2 : 1;
-
     {
         const auto lock = y_profile_unique_lock(*_lock);
+
+        // This needs to be inside the lock
+        const QueueFence fence = main_device()->create_fence();
+        const u64 prev_value = fence._value - 1;
+
+#ifdef YAVE_CHECK_QUEUE_SYNC
+        y_always_assert(_last_fence < fence.value(), "Deadlock!");
+        _last_fence = fence.value();
+#endif
+
+        recorder._data->_queue_fence = fence;
+
+        const VkSemaphore timeline_semaphore = main_device()->vk_timeline_semaphore();
+
+        const std::array<VkSemaphore, 2> wait_semaphores = {timeline_semaphore, wait};
+        const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
+
+        const std::array<u64, 2> wait_values = {prev_value, 0};
+        const std::array<u64, 2> signal_values = {fence._value, 0};
+
+        const std::array<VkPipelineStageFlags, 2> pipe_stage_flags = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
+        const u32 wait_count = wait_semaphores[1] ? 2 : 1;
+        const u32 signal_count = signal_semaphores[1] ? 2 : 1;
 
         VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
         {

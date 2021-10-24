@@ -28,6 +28,10 @@ SOFTWARE.
 #include <shared_mutex>
 #include <memory>
 
+#ifdef Y_DEBUG
+#define YAVE_CHECK_QUEUE_SYNC
+#endif
+
 namespace yave {
 
 class Queue : NonCopyable {
@@ -62,6 +66,10 @@ class Queue : NonCopyable {
         VkQueue _queue = {};
         u32 _family_index = u32(-1);
         std::unique_ptr<std::mutex> _lock;
+
+#ifdef YAVE_CHECK_QUEUE_SYNC
+        mutable u64 _last_fence = 0;
+#endif
 };
 
 }
