@@ -43,11 +43,6 @@ static double to_mb(usize b) {
     return to_mb(double(b));
 }
 
-static const char* memory_type_name(MemoryType type) {
-    const char* names[] = {"Generic", "Device local", "Host visible", "Staging"};
-    return names[usize(type)];
-}
-
 PerformanceMetrics::PlotData::PlotData(core::Duration total_duration, usize size) : _data(size), _duration(total_duration.to_secs() / size) {
     std::fill_n(_data.data(), size, 0.0f);
 }

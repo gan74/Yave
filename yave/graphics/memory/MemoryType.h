@@ -45,6 +45,11 @@ inline constexpr bool is_memory_type_compatible(MemoryType from, MemoryType to) 
     return to == MemoryType::DontCare || from == to || (is_cpu_visible(from) && is_cpu_visible(to));
 }
 
+inline const char* memory_type_name(MemoryType type) {
+    static constexpr const char* names[] = {"Generic", "Device local", "Host visible", "Staging"};
+    return names[usize(type)];
+}
+
 }
 
 #endif // YAVE_GRAPHICS_MEMORY_MEMORYTYPE_H

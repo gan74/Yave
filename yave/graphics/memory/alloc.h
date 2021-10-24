@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include "MemoryType.h"
 
+#include <y/utils/log.h>
 #include <y/utils/format.h>
 
 // THIS FILE SHOULD NOT BE INCLUDED OUTSIDE OF MEMORY'S CPPs !!!
@@ -66,7 +67,6 @@ static const VkMemoryPropertyFlags* memory_type_flags[] = {
 };
 
 
-
 // https://en.wikipedia.org/wiki/Hamming_weight
 static inline u32 popcnt_32(u32 x) {
     x -= (x >> 1) & 0x55555555;
@@ -75,7 +75,10 @@ static inline u32 popcnt_32(u32 x) {
     return (x * 0x01010101) >> 24;
 }
 
-inline u32 get_memory_type(const VkPhysicalDeviceMemoryProperties& properties, u32 type_filter, MemoryType type) {
+inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
+    y_profile();
+
+    const VkPhysicalDeviceMemoryProperties& properties = physical_device().vk_memory_properties();
     for(const VkMemoryPropertyFlags* type_flags = memory_type_flags[uenum(type)]; *type_flags; ++type_flags) {
         const VkMemoryPropertyFlags flags = *type_flags;
 
@@ -83,12 +86,14 @@ inline u32 get_memory_type(const VkPhysicalDeviceMemoryProperties& properties, u
         u32 best_pop = u32(-1);
 
         for(u32 i = 0; i != properties.memoryTypeCount; ++i) {
-            if((type_filter & (1 << i)) == 0) {
+            if((type_bits & (1 << i)) == 0) {
                 continue;
             }
-            const auto memory_type = properties.memoryTypes[i];
+
+            const VkMemoryType memory_type = properties.memoryTypes[i];
             if(memory_type.propertyFlags == flags) {
-                return i;
+                best_index = i;
+                break;
             } else if((memory_type.propertyFlags & flags) == flags) {
                 const u32 pop = popcnt_32(memory_type.propertyFlags);
                 if(pop < best_pop) {
@@ -99,28 +104,25 @@ inline u32 get_memory_type(const VkPhysicalDeviceMemoryProperties& properties, u
         }
 
         if(best_index != u32(-1)) {
-            return best_index;
+            VkMemoryAllocateInfo allocate_info = vk_struct();
+            {
+                allocate_info.allocationSize = size;
+                allocate_info.memoryTypeIndex = best_index;
+            }
+            VkDeviceMemory memory = {};
+            const VkResult result = vkAllocateMemory(vk_device(), &allocate_info, vk_allocation_callbacks(), &memory);
+            if(is_error(result)) {
+                if(result == VK_ERROR_OUT_OF_DEVICE_MEMORY) {
+                    log_msg(fmt("% heap out of memory", memory_type_name(type)), Log::Warning);
+                    continue;
+                }
+                y_fatal("Failed to allocate memory: %", vk_result_str(result));
+            }
+            return memory;
         }
     }
 
-     y_fatal("Unable to allocate device memory.");
-}
-
-
-
-inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
-    y_profile();
-    VkMemoryAllocateInfo allocate_info = vk_struct();
-    {
-        allocate_info.allocationSize = size;
-        allocate_info.memoryTypeIndex = get_memory_type(physical_device().vk_memory_properties(), type_bits, type);
-    }
-    VkDeviceMemory memory = {};
-    const VkResult result = vkAllocateMemory(vk_device(), &allocate_info, vk_allocation_callbacks(), &memory);
-    if(is_error(result)) {
-        y_fatal("Failed to allocate memory: %", vk_result_str(result));
-    }
-    return memory;
+    y_fatal("Failed to allocate memory: out of memory");
 }
 
 inline VkDeviceMemory alloc_memory(VkMemoryRequirements reqs, MemoryType type) {
