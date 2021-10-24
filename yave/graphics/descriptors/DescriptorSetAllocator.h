@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <y/utils/hash.h>
 #include <y/core/Vector.h>
+#include <y/core/HashMap.h>
 #include <y/concurrent/SpinLock.h>
 
 #include <mutex>
@@ -36,6 +37,7 @@ SOFTWARE.
 #include <memory>
 #include <algorithm>
 #include <memory>
+#include <unordered_map>
 
 namespace std {
 template<>

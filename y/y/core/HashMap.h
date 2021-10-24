@@ -628,6 +628,13 @@ class ExternalHashMap : Hasher {
             set_min_capacity(cap);
         }
 
+        inline void erase(const key_type& key) {
+            if(const auto it = find(key); it != end()) {
+                erase(it);
+            }
+
+        }
+
         inline void erase(const iterator& it) {
             const usize index = it._index;
 
