@@ -14,12 +14,11 @@ Serialization format is compiler dependent!
 
 Currently a mess, should smooth out as I am learning Vulkan.
 
-The project is in its very early stages.
-For now I am focussing on creating a decent Vulkan wrapper/interface and a small scene editor before moving to the real engine work.
+The project is in its  early stages.
 
 ![Current status](https://i.imgur.com/fLydq3W.png)
+![Current status](https://i.imgur.com/ulnz4Rs.jpeg)
 ![Current status](https://i.imgur.com/TaJzCya.gif)
-![Current status](https://i.imgur.com/NsngKS3.png)
 ![Current status](https://i.imgur.com/fYBbB80.png)
 
 ## Project structure
@@ -112,7 +111,6 @@ MIT
 - [X] Prefabs
 - [ ] Better save system
 - [ ] Undo/redo
-- [ ] Integrated profiler
 - [ ] Edit shaders?
 - [ ] Edit or create meshes?
 
