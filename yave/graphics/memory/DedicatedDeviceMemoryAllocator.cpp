@@ -55,7 +55,7 @@ void DedicatedDeviceMemoryAllocator::unmap(const DeviceMemoryView& view) {
     vkUnmapMemory(vk_device(), view.vk_memory());
 }
 
-usize DedicatedDeviceMemoryAllocator::allocated_size() const {
+u64 DedicatedDeviceMemoryAllocator::allocated_size() const {
     return _size;
 }
 

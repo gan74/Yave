@@ -35,15 +35,6 @@ namespace yave {
 
 static constexpr usize inline_block_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1;
 
-static core::Vector<VkDescriptorSetLayoutBinding> create_layout_bindings(core::Span<Descriptor> descriptors) {
-    auto layout_bindings = core::vector_with_capacity<VkDescriptorSetLayoutBinding>(descriptors.size());
-    for(const Descriptor& d : descriptors) {
-        layout_bindings << d.descriptor_set_layout_binding(u32(layout_bindings.size()));
-    }
-    return layout_bindings;
-}
-
-
 static usize descriptor_type_index(VkDescriptorType type) {
     if(type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
         y_debug_assert(inline_block_index < DescriptorSetLayout::descriptor_type_count);
@@ -211,7 +202,7 @@ DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
 
     const auto lock = y_profile_unique_lock(_lock);
     if(is_full() || _taken[_first_free]) {
-        y_fatal("DescriptorSetPoolPage is full.");
+        y_fatal("DescriptorSetPoolPage is full");
     }
     const u32 id = _first_free;
 
@@ -289,7 +280,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
             }
 
         } else {
-            y_fatal("Unknown descriptor type.");
+            y_fatal("Unknown descriptor type");
         }
 
         writes[i] = write;
@@ -341,11 +332,15 @@ DescriptorSetAllocator::DescriptorSetAllocator() {
 
 
 DescriptorSetData DescriptorSetAllocator::create_descritptor_set(core::Span<Descriptor> descriptors) {
+    core::Vector<VkDescriptorSetLayoutBinding> layout_bindings(descriptors.size(), VkDescriptorSetLayoutBinding{});
+    for(usize i = 0; i != descriptors.size(); ++i) {
+        layout_bindings[i] = descriptors[i].descriptor_set_layout_binding(u32(i));
+    }
+
     const auto lock = y_profile_unique_lock(_lock);
 
     Y_TODO(get rid of layout binding stuff, we shouldnt need the extra alloc)
-    const auto bindings = create_layout_bindings(descriptors);
-    auto& pool = layout(bindings);
+    auto& pool = layout(layout_bindings);
 
     const auto reversed = core::Range(std::make_reverse_iterator(pool.pools.end()),
                                       std::make_reverse_iterator(pool.pools.begin()));

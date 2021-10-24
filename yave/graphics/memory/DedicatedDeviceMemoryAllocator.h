@@ -39,12 +39,12 @@ class DedicatedDeviceMemoryAllocator : public DeviceMemoryHeapBase {
         void* map(const DeviceMemoryView& view) override;
         void unmap(const DeviceMemoryView& view) override;
 
-        usize allocated_size() const;
+        u64 allocated_size() const;
 
     private:
         MemoryType _type;
 
-        usize _size = 0;
+        u64 _size = 0;
 };
 
 }

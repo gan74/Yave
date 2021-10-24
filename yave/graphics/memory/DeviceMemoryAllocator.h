@@ -38,7 +38,7 @@ class DeviceMemoryAllocator {
 
     using HeapType = std::pair<u32, MemoryType>;
 
-    static constexpr usize default_heap_size = 128 * 1024 * 1024;
+    static constexpr u64 default_heap_size = 128 * 1024 * 1024;
 
     public:
         DeviceMemoryAllocator();
@@ -56,8 +56,8 @@ class DeviceMemoryAllocator {
         }
 
     private:
-        static usize heap_size_for_type(MemoryType type);
-        static usize dedicated_threshold_for_type(MemoryType type);
+        static u64 heap_size_for_type(MemoryType type);
+        static u64 dedicated_threshold_for_type(MemoryType type);
 
         DeviceMemory dedicated_alloc(VkMemoryRequirements reqs, MemoryType type);
 

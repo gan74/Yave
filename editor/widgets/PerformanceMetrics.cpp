@@ -39,7 +39,7 @@ static double to_mb(double b) {
     return b / (1024 * 1024);
 }
 
-static double to_mb(usize b) {
+static double to_mb(u64 b) {
     return to_mb(double(b));
 }
 
@@ -146,55 +146,45 @@ void PerformanceMetrics::draw_timings() {
 }
 
 void PerformanceMetrics::draw_memory() {
-    static constexpr bool show_heaps = false;
-
-    double total_used = 0;
-    double total_allocated = 0;
+    double used_per_type_mb[4] = {};
+    double allocated_per_type_mb[4] = {};
     for(auto&& [type, heaps] : device_allocator().heaps()) {
-        if(show_heaps) {
-            ImGui::Bullet();
-            ImGui::TextUnformatted(fmt_c_str("Heap [%]", memory_type_name(type.second)));
-            ImGui::Indent();
-        }
         for(const auto& heap : heaps) {
-            usize free = heap->available();
-            const usize used = heap->size() - free;
-            total_used += to_mb(used);
-            total_allocated += to_mb(heap->size());
-
-            if(show_heaps) {
-                ImGui::ProgressBar(used / float(heap->size()), ImVec2(0, 0), fmt_c_str("%KB / %KB", to_kb(used), to_kb(heap->size())));
-                ImGui::Text("Free blocks: %u", unsigned(heap->free_blocks()));
-                ImGui::Spacing();
-            }
-        }
-
-        if(show_heaps) {
-            ImGui::Unindent();
+            u64 free = heap->available();
+            const u64 used = heap->size() - free;
+            used_per_type_mb[uenum(type.second)] += to_mb(used);
+            allocated_per_type_mb[uenum(type.second)] += to_mb(heap->size());
         }
     }
 
-    if(show_heaps) {
-        ImGui::Spacing();
-        ImGui::Separator();
-    }
-
-    double dedicated = 0;
+    double dedicated_mb = 0.0;
     for(auto&& [type, heap] : device_allocator().dedicated_heaps()) {
-        unused(type);
-        dedicated += to_mb(heap->allocated_size());
+        const double mb = to_mb(heap->allocated_size());
+        dedicated_mb += mb;
+        used_per_type_mb[uenum(type)] += mb;
+        allocated_per_type_mb[uenum(type)] += mb;
     }
-    total_used += dedicated;
-    total_allocated += dedicated;
 
-    _memory.push(float(total_used));
+    auto progress_bar = [](double used, double allocated) {
+        ImGui::ProgressBar(float(used / allocated), ImVec2(0, 0), fmt_c_str("%MB / %MB", u64(used), u64(allocated)));
+    };
+
+
+    double total_used_mb = 0.0;
+    double total_allocated_mb = 0.0;
+    for(usize i = 0; i != 4; ++i) {
+        total_used_mb += used_per_type_mb[i];
+        total_allocated_mb += allocated_per_type_mb[i];
+    }
+
+    _memory.push(float(total_used_mb));
 
     {
-        ImGui::Text("Total used: %.1lfMB", total_used);
-        ImGui::Text("Dedicated allocations size: %.1lfMB", dedicated);
-        ImGui::Text("Total allocated: %.1lfMB", total_allocated);
+        ImGui::Text("Total used: %.1lfMB", total_used_mb);
+        ImGui::Text("Dedicated allocations size: %.1lfMB", dedicated_mb);
+        ImGui::Text("Total allocated: %.1lfMB", total_allocated_mb);
         ImGui::SetNextItemWidth(-1);
-        ImGui::ProgressBar(float(total_used / total_allocated), ImVec2(0, 0), fmt_c_str("%MB / %MB", usize(total_used), usize(total_allocated)));
+        progress_bar(total_used_mb, total_allocated_mb);
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -218,6 +208,24 @@ void PerformanceMetrics::draw_memory() {
         ImGui::Text("Descriptor set pools: %u", u32(pools));
 
         ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt_c_str("% / % sets", used_sets, total_sets));
+    }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Checkbox("Show heaps", &_show_heaps);
+
+    if(_show_heaps) {
+        ImGui::Indent();
+        for(usize i = 0; i != 4; ++i) {
+            if(!allocated_per_type_mb[i]) {
+                continue;
+            }
+            ImGui::Bullet();
+            ImGui::TextUnformatted(memory_type_name(MemoryType(i)));
+            progress_bar(used_per_type_mb[i], allocated_per_type_mb[i]);
+
+        }
+        ImGui::Unindent();
     }
 }
 

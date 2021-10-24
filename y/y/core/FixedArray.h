@@ -56,13 +56,22 @@ class FixedArray {
         inline FixedArray& operator=(FixedArray&&) = default;
 
 
-        inline bool operator==(const FixedArray<value_type>& v) const {
+        inline bool operator==(Span<value_type> v) const {
             return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
+        }
+
+        inline bool operator!=(Span<value_type> v) const {
+            return !operator==(v);
+        }
+
+        inline bool operator==(const FixedArray<value_type>& v) const {
+            return operator==(Span<value_type>(v));
         }
 
         inline bool operator!=(const FixedArray<value_type>& v) const {
             return !operator==(v);
         }
+
 
         inline void swap(FixedArray& v) {
             if(&v != this) {

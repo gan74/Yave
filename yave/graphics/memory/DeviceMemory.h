@@ -33,8 +33,8 @@ class DeviceMemory {
     public:
         DeviceMemory() = default;
 
-        DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, usize offset, usize size);
-        DeviceMemory(VkDeviceMemory memory, usize offset, usize size);
+        DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, u64 offset, u64 size);
+        DeviceMemory(VkDeviceMemory memory, u64 offset, u64 size);
 
         ~DeviceMemory();
 
@@ -44,8 +44,8 @@ class DeviceMemory {
         bool is_null() const;
 
         VkDeviceMemory vk_memory() const;
-        usize vk_offset() const;
-        usize vk_size() const;
+        u64 vk_offset() const;
+        u64 vk_size() const;
 
         DeviceMemoryHeapBase* heap() const;
 
@@ -59,8 +59,8 @@ class DeviceMemory {
 
         DeviceMemoryHeapBase* _heap = nullptr;
         VkDeviceMemory _memory = {};
-        usize _offset = 0;
-        usize _size = 0;
+        u64 _offset = 0;
+        u64 _size = 0;
 };
 
 }

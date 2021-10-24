@@ -28,11 +28,11 @@ SOFTWARE.
 
 namespace yave {
 
-static usize align_size(usize total_byte_size, usize alignent) {
+static u64 align_size(u64 total_byte_size, u64 alignent) {
     return (total_byte_size + alignent - 1) & ~(alignent - 1);
 }
 
-usize DeviceMemoryHeap::FreeBlock::end_offset() const {
+u64 DeviceMemoryHeap::FreeBlock::end_offset() const {
     return offset + size;
 }
 
@@ -46,7 +46,7 @@ void DeviceMemoryHeap::FreeBlock::merge(const FreeBlock& block) {
 }
 
 
-DeviceMemoryHeap::DeviceMemoryHeap(u32 type_bits, MemoryType type, usize heap_size) :
+DeviceMemoryHeap::DeviceMemoryHeap(u32 type_bits, MemoryType type, u64 heap_size) :
         _memory(alloc_memory(heap_size, type_bits, type)),
         _heap_size(heap_size),
         _blocks({FreeBlock{0, heap_size}}),
@@ -75,28 +75,28 @@ DeviceMemoryHeap::~DeviceMemoryHeap() {
     vkFreeMemory(vk_device(), _memory, vk_allocation_callbacks());
 }
 
-DeviceMemory DeviceMemoryHeap::create(usize offset, usize size) {
+DeviceMemory DeviceMemoryHeap::create(u64 offset, u64 size) {
     y_profile();
     return DeviceMemory(this, _memory, offset, size);
 }
 
 core::Result<DeviceMemory> DeviceMemoryHeap::alloc(VkMemoryRequirements reqs) {
     y_profile();
-    const usize size = align_size(reqs.size, alignment);
+    const u64 size = align_size(reqs.size, alignment);
 
     const auto lock = y_profile_unique_lock(_lock);
     for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
-        const usize full_size = it->size;
+        const u64 full_size = it->size;
 
         if(full_size < size) {
             continue;
         }
 
-        const usize offset = it->offset;
+        const u64 offset = it->offset;
 
-        const usize aligned_offset = align_size(offset, reqs.alignment);
-        const usize align_correction = aligned_offset - offset;
-        const usize aligned_size = full_size - align_correction;
+        const u64 aligned_offset = align_size(offset, reqs.alignment);
+        const u64 align_correction = aligned_offset - offset;
+        const u64 aligned_size = full_size - align_correction;
 
         y_debug_assert(aligned_size % alignment == 0);
         y_debug_assert(aligned_offset % alignment == 0);
@@ -109,7 +109,7 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(VkMemoryRequirements reqs) {
             }
             return core::Ok(create(aligned_offset, size));
         } else if(aligned_size > size) {
-            const usize end = offset + full_size;
+            const u64 end = offset + full_size;
             it->size = end - (it->offset = aligned_offset + size);
             if(align_correction) {
                 _blocks << FreeBlock{offset, align_correction};
@@ -160,13 +160,13 @@ void* DeviceMemoryHeap::map(const DeviceMemoryView& view) {
 void DeviceMemoryHeap::unmap(const DeviceMemoryView&) {
 }
 
-usize DeviceMemoryHeap::size() const {
+u64 DeviceMemoryHeap::size() const {
     return _heap_size;
 }
 
-usize DeviceMemoryHeap::available() const {
+u64 DeviceMemoryHeap::available() const {
     const auto lock = y_profile_unique_lock(_lock);
-    usize tot = 0;
+    u64 tot = 0;
     for(const auto& b : _blocks) {
         tot += b.size;
     }

@@ -32,15 +32,15 @@ namespace yave {
 Y_TODO(DeviceAllocator should track allocation count)
 
 
-usize DeviceMemoryAllocator::heap_size_for_type(MemoryType type) {
+u64 DeviceMemoryAllocator::heap_size_for_type(MemoryType type) {
     if(type == MemoryType::Staging) {
         return default_heap_size / 8;
     }
     return default_heap_size;
 }
 
-usize DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
-    return heap_size_for_type(type) / 2;
+u64 DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
+    return heap_size_for_type(type) / 4;
 }
 
 

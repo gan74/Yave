@@ -80,6 +80,8 @@ class PerformanceMetrics : public Widget {
         PlotData _frames;
         PlotData _average;
         PlotData _memory;
+
+        bool _show_heaps = false;
 };
 
 }

@@ -34,19 +34,19 @@ namespace yave {
 class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 
     struct FreeBlock {
-        usize offset;
-        usize size;
+        u64 offset;
+        u64 size;
 
-        usize end_offset() const;
+        u64 end_offset() const;
         bool contiguous(const FreeBlock& blck) const;
         void merge(const FreeBlock& block);
     };
 
     public:
-        static constexpr usize alignment = 256;
+        static constexpr u64 alignment = 256;
 
 
-        DeviceMemoryHeap(u32 type_bits, MemoryType type, usize heap_size);
+        DeviceMemoryHeap(u32 type_bits, MemoryType type, u64 heap_size);
         ~DeviceMemoryHeap() override;
 
         core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) override;
@@ -55,8 +55,8 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
         void* map(const DeviceMemoryView& view) override;
         void unmap(const DeviceMemoryView&) override;
 
-        usize size() const;
-        usize available() const; // slow!
+        u64 size() const;
+        u64 available() const; // slow!
         usize free_blocks() const;
 
         bool mapped() const;
@@ -64,12 +64,12 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
     private:
         void swap(DeviceMemoryHeap& other);
 
-        DeviceMemory create(usize offset, usize size);
+        DeviceMemory create(u64 offset, u64 size);
         void free(const FreeBlock& block);
         void compact_block(FreeBlock block);
 
         VkDeviceMemory _memory = {};
-        usize _heap_size = 0;
+        u64 _heap_size = 0;
         core::Vector<FreeBlock> _blocks;
         void* _mapping = nullptr;
 
