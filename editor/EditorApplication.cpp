@@ -102,7 +102,7 @@ void EditorApplication::exec() {
 }
 
 void EditorApplication::flush_reload() {
-
+    log_msg("flush_reload not implemented", Log::Warning);
 }
 
 void EditorApplication::set_scene_view(SceneView* scene) {

@@ -55,7 +55,7 @@ namespace editor {
 
 
 Preview::Preview() :
-        Widget(ICON_FA_BRUSH " Material Preview", ImGuiWindowFlags_NoScrollbar),
+        Widget(ICON_FA_BRUSH " Material Preview", ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse),
         _resource_pool(std::make_shared<FrameGraphResourcePool>()) {
 
     set_object(PreviewObject::Sphere);
@@ -135,6 +135,13 @@ void Preview::reset_world() {
 
         const float radius = _mesh->radius();
         _cam_distance = std::sqrt(3.0f * radius * radius) * 1.5f;
+    }
+
+    {
+        const  math::Transform<> box_transform(math::Vec3(), math::Quaternion<>(), math::Vec3(_cam_distance * 1.25f));
+        const ecs::EntityId box_id = _world->create_entity<StaticMeshComponent>();
+        *_world->component<StaticMeshComponent>(box_id) = StaticMeshComponent(device_resources()[DeviceResources::SphereMesh], _material);
+        _world->component<TransformableComponent>(box_id)->set_transform(box_transform);
     }
 }
 

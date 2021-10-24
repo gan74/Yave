@@ -30,7 +30,7 @@ namespace editor {
 
 class MaterialEditor final : public Widget {
 
-    editor_widget(MaterialEditor, "View")
+    editor_widget_open(MaterialEditor, "View")
 
     public:
         MaterialEditor();
