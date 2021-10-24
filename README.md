@@ -16,10 +16,7 @@ Currently a mess, should smooth out as I am learning Vulkan.
 
 The project is in its  early stages.
 
-![Current status](https://i.imgur.com/fLydq3W.png)
 ![Current status](https://i.imgur.com/ulnz4Rs.jpeg)
-![Current status](https://i.imgur.com/TaJzCya.gif)
-![Current status](https://i.imgur.com/fYBbB80.png)
 
 ## Project structure
 
@@ -58,7 +55,7 @@ Implemented features:
    * Basic scenes
  * Meshes
    * Static
-   * [Skeletal](https://im3.ezgif.com/tmp/ezgif-3-fd5d083cba.gif) 
+   * [Skeletal](https://i.imgur.com/TaJzCya.gif) 
 
 
 ### Licence:
