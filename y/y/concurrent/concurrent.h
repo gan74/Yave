@@ -34,8 +34,7 @@ StaticThreadPool& default_thread_pool();
 u32 thread_id();
 
 
-// Names must have static storage
-const char* set_thread_name(const char* thread_name);
+void set_thread_name(const char* thread_name);
 const char* thread_name();
 
 }

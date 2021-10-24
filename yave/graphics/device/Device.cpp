@@ -26,7 +26,6 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/concurrent/concurrent.h>
-
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -151,11 +150,13 @@ static void print_properties(const DeviceProperties& properties) {
 
 
 
+
+
+
 static const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
 
 Device::Device(Instance& instance) : Device(instance, find_best_device(instance.physical_devices())) {
 }
-
 
 Device::Device(Instance& instance, PhysicalDevice device) :
         _instance(instance),
@@ -252,7 +253,6 @@ Device::Device(Instance& instance, PhysicalDevice device) :
         vk_check(vkSignalSemaphore(_device, &signal_info));
     }
 
-
     {
         y_profile_zone("loading resources");
         _resources.init();
@@ -262,11 +262,9 @@ Device::Device(Instance& instance, PhysicalDevice device) :
 Device::~Device() {
     y_profile();
 
-    y_always_assert(_main_device == this, "Device does not exist.");
+    y_always_assert(_main_device == this, "Device does not exist");
 
     wait_all_queues();
-
-    device_destroy(_timeline_semaphore);
 
     {
         y_profile_zone("clearing resources");
@@ -291,6 +289,8 @@ Device::~Device() {
     for(auto& sampler : _samplers) {
         sampler.destroy();
     }
+
+    device_destroy(_timeline_semaphore);
 
     _descriptor_set_allocator.destroy();
     _lifetime_manager.destroy();

@@ -36,9 +36,6 @@ SOFTWARE.
 
 namespace yave {
 
-#define YAVE_VK_CMD
-
-
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
 CmdBufferRegion::~CmdBufferRegion() {
@@ -76,8 +73,6 @@ void RenderPassRecorder::bind_material(const MaterialTemplate* material, Descrip
 }
 
 void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets) {
-    YAVE_VK_CMD;
-
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
 
     if(!descriptor_sets.is_empty()) {
@@ -94,8 +89,6 @@ void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, Descript
 
 
 void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {
-    YAVE_VK_CMD;
-
     vkCmdDrawIndexed(vk_cmd_buffer(),
         indirect.indexCount,
         indirect.instanceCount,
@@ -106,8 +99,6 @@ void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {
 }
 
 void RenderPassRecorder::draw(const VkDrawIndirectCommand& indirect) {
-    YAVE_VK_CMD;
-
     vkCmdDraw(vk_cmd_buffer(),
         indirect.vertexCount,
         indirect.instanceCount,
@@ -133,21 +124,16 @@ void RenderPassRecorder::draw_array(usize vertex_count) {
 void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices,
                                       const SubBuffer<BufferUsage::AttributeBit>& per_vertex,
                                       core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
-    YAVE_VK_CMD;
 
     bind_index_buffer(indices);
     bind_attrib_buffers(per_vertex, per_instance);
 }
 
 void RenderPassRecorder::bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices) {
-    YAVE_VK_CMD;
-
     vkCmdBindIndexBuffer(vk_cmd_buffer(), indices.vk_buffer(), indices.byte_offset(), VK_INDEX_TYPE_UINT32);
 }
 
 void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
-    YAVE_VK_CMD;
-
     if(per_instance.is_empty()) {
         const VkDeviceSize offset = per_vertex.byte_offset();
         const VkBuffer buffer = per_vertex.vk_buffer();
@@ -185,8 +171,6 @@ const Viewport& RenderPassRecorder::viewport() const {
 }
 
 void RenderPassRecorder::set_viewport(const Viewport& vp) {
-    YAVE_VK_CMD;
-
     y_debug_assert(vp.offset.x() >= 0.0f);
     y_debug_assert(vp.offset.y() >= 0.0f);
 
@@ -200,8 +184,6 @@ void RenderPassRecorder::set_viewport(const Viewport& vp) {
 }
 
 void RenderPassRecorder::set_scissor(const math::Vec2i& offset, const math::Vec2ui& size) {
-    YAVE_VK_CMD;
-
     y_debug_assert(offset.x() >= 0.0f);
     y_debug_assert(offset.y() >= 0.0f);
 
@@ -224,6 +206,10 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& base) : CmdBuffer(std::move(bas
 
 CmdBufferRecorder::~CmdBufferRecorder() {
     check_no_renderpass();
+}
+
+bool CmdBufferRecorder::is_inside_renderpass() const {
+    return _render_pass;
 }
 
 void CmdBufferRecorder::end_renderpass() {
@@ -273,8 +259,6 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 }
 
 void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
-    YAVE_VK_CMD;
-
     check_no_renderpass();
 
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
@@ -309,8 +293,6 @@ void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math:
 }
 
 void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
-    YAVE_VK_CMD;
-
     check_no_renderpass();
 
     if(buffers.is_empty() && images.is_empty()) {
@@ -403,8 +385,6 @@ void CmdBufferRecorder::full_barrier() {
 }
 
 void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
-    YAVE_VK_CMD;
-
     {
         const std::array image_barriers = {
                 ImageBarrier::transition_to_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
@@ -441,8 +421,6 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
 }
 
 void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst) {
-    YAVE_VK_CMD;
-
     y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match.");
 
     VkBufferCopy copy = {};
@@ -455,29 +433,7 @@ void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst)
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
 }
 
-/*void CmdBufferRecorder::copy(const SrcCopyImage& src, const DstCopyImage& dst) {
-    YAVE_VK_CMD;
-
-    y_always_assert(src.size() == dst.size(), "Image size do not match.");
-
-    VkImageCopy copy = {};
-    {
-        copy.extent = {src.size().x(), src.size().y(), 1};
-        copy.srcSubresource.aspectMask = src.format().vk_aspect();
-        copy.srcSubresource.layerCount = 1;
-        copy.dstSubresource.aspectMask = dst.format().vk_aspect();
-        copy.dstSubresource.layerCount = 1;
-    }
-
-    vkCmdCopyImage(vk_cmd_buffer(),
-                   src.vk_image(), vk_image_layout(src.usage()),
-                   dst.vk_image(), vk_image_layout(dst.usage()),
-                   1, &copy);
-}*/
-
 void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
-    YAVE_VK_CMD;
-
     VkImageBlit blit = {};
     {
         blit.srcSubresource.aspectMask = src.format().vk_aspect();
@@ -512,8 +468,6 @@ void CmdBufferRecorder::submit(const Queue& queue, SyncPolicy policy) {
         } break;
     }
 }
-
-#undef YAVE_VK_CMD
 
 }
 

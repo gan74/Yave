@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/graphics/barriers/Barrier.h>
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/utils/gpuprofile.h>
 
 #include <y/utils/log.h>
 

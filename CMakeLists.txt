@@ -134,7 +134,7 @@ if(YAVE_BUILD_YAVE)
 
     if(YAVE_TRACY_PROFILING)
         add_library(tracy STATIC ${TRACY_FILES})
-        target_link_libraries(tracy ws2_32 dbghelp)
+        target_link_libraries(tracy ws2_32 dbghelp advapi32 user32)
         target_compile_options(tracy PUBLIC "-DTRACY_ENABLE")
         target_link_libraries(yave tracy)
     endif()

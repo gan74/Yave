@@ -148,6 +148,8 @@ class CmdBufferRecorder final : public CmdBuffer {
 
         ~CmdBufferRecorder();
 
+        bool is_inside_renderpass() const;
+
         CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
 
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);

@@ -24,6 +24,7 @@ SOFTWARE.
 #include "concurrent.h"
 
 #include <y/core/Chrono.h>
+#include <y/utils/format.h>
 
 namespace y {
 namespace concurrent {
@@ -66,10 +67,10 @@ StaticThreadPool::FuncData::FuncData(Func func, DependencyGroup wait, Dependency
         on_done(std::move(done)) {
 }
 
-StaticThreadPool::StaticThreadPool(usize thread_count, const char* thread_names) {
+StaticThreadPool::StaticThreadPool(usize thread_count) {
     for(usize i = 0; i != thread_count; ++i) {
-        _threads.emplace_back([thread_names, this] {
-            concurrent::set_thread_name(thread_names);
+        _threads.emplace_back([this, i] {
+            concurrent::set_thread_name(fmt_c_str("Worker thread #%", i));
             worker();
         });
     }

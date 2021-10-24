@@ -79,9 +79,7 @@ class StaticThreadPool : NonMovable {
         };
 
     public:
-
-        // Thread names must have static storage
-        StaticThreadPool(usize thread_count = std::max(4u, std::thread::hardware_concurrency()), const char* thread_names = nullptr);
+        StaticThreadPool(usize thread_count = std::max(4u, std::thread::hardware_concurrency()));
         ~StaticThreadPool();
 
         usize concurency() const;
@@ -110,7 +108,7 @@ class StaticThreadPool : NonMovable {
 
 class WorkerThread : public StaticThreadPool {
     public:
-        WorkerThread(const char* thread_name = nullptr) : StaticThreadPool(1, thread_name) {
+        WorkerThread() : StaticThreadPool(1) {
         }
 };
 

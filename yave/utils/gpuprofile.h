@@ -19,50 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "concurrent.h"
+#ifndef YAVE_UTILS_GPUPROFILE_H
+#define YAVE_UTILS_GPUPROFILE_H
 
-#include "StaticThreadPool.h"
+#include <yave/yave.h>
 
-#ifdef Y_OS_WIN
-#include <windows.h>
-#endif
-
-namespace y {
-namespace concurrent {
-namespace detail {
-static thread_local char thread_name[64] = {};
-}
-
-StaticThreadPool& default_thread_pool() {
-    static StaticThreadPool _pool;
-    return _pool;
-}
-
-u32 thread_id() {
-    static std::atomic<u32> id = 0;
-    static thread_local u32 tid = ++id;
-    return tid;
-}
-
-void set_thread_name(const char* thread_name) {
-    // Force to generate id
-    thread_id();
-
-    usize len = std::max(std::strlen(thread_name), sizeof(detail::thread_name));
-    std::copy_n(thread_name, len, detail::thread_name);
+#include <string_view>
 
 #if 0
-    // Not always available, doesn't register in tracy
-    wchar_t w_thread_name[sizeof(detail::thread_name)] = {};
-    std::copy_n(thread_name, len, w_thread_name);
-    ::SetThreadDescription(::GetCurrentThread(), w_thread_name);
-#endif
+
+namespace yave {
+
+void init_gpu_profiling_ctx(const Queue& queue);
+void deinit_gpu_profiling_ctx();
+
+void push_gpu_profiling_zone(void* cmd_buffer, std::string_view name, std::string_view file, std::string_view function, u32 line);
+void pop_gpu_profiling_zone();
+void collect_gpu_events(const Queue& queue);
+
 }
 
-const char* thread_name() {
-    return detail::thread_name;
-}
+#endif // YAVE_PROFILING
 
-}
-}
+
+#endif // YAVE_UTILS_GPUPROFILE_H
 
