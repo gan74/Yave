@@ -90,6 +90,14 @@ bool& SimpleMaterialData::alpha_tested() {
     return _alpha_tested;
 }
 
+bool SimpleMaterialData::double_sided() const {
+    return _double_sided;
+}
+
+bool& SimpleMaterialData::double_sided() {
+    return _double_sided;
+}
+
 bool SimpleMaterialData::has_emissive() const {
     return !_textures[Textures::Emissive].is_empty() || !_constants.emissive_mul.is_zero();
 }

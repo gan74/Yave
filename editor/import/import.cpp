@@ -393,6 +393,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
                 last.metallic = float(pbr.metallicFactor);
                 last.roughness = float(pbr.roughnessFactor);
                 last.alpha_test = (material.alphaMode == "MASK");
+                last.double_sided = material.doubleSided;
 
                 for(usize i = 0; i != 3; ++i) {
                     last.emissive[i] = float(material.emissiveFactor[0]);

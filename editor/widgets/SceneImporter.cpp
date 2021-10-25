@@ -234,6 +234,7 @@ void SceneImporter::import(import::SceneData scene) {
                 SimpleMaterialData material;
                 material.constants() = {data.emissive, data.roughness, data.metallic};
                 material.alpha_tested() = data.alpha_test;
+                material.double_sided() = data.double_sided;
                 for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
                     if(!data.textures[i].is_empty()) {
                         const core::String tex_full_name = make_full_name(image_import_path, data.textures[i]);

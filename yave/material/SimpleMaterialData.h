@@ -66,6 +66,10 @@ class SimpleMaterialData {
         bool alpha_tested() const;
         bool& alpha_tested();
 
+        Y_TODO(Not used!)
+        bool double_sided() const;
+        bool& double_sided();
+
         bool has_emissive() const;
 
         y_reflect(_textures, _constants, _alpha_tested)
@@ -76,6 +80,7 @@ class SimpleMaterialData {
         std::array<AssetPtr<Texture>, texture_count> _textures;
         Contants _constants;
         bool _alpha_tested = false;
+        bool _double_sided = false;
 };
 
 }
