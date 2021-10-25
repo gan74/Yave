@@ -144,7 +144,7 @@ static constexpr std::array<u32, 6> texture_colors[] = {
         {0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F},
         {0xFF0000FF, 0xFF0000FF, 0xFF0000FF, 0xFF0000FF},
         {0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F},
-        {0xFFEBCE87, 0xFFEBCE87, 0xFF272E3A, 0xFF272E3A}
+        {0xFFFFE5A6, 0xFFFFE5A6, 0xFF475163, 0xFF475163}
     };
 
 static constexpr usize spirv_count = usize(SpirV::MaxSpirV);

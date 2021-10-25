@@ -55,7 +55,7 @@ namespace editor {
 
 
 Preview::Preview() :
-        Widget(ICON_FA_BRUSH " Material Preview", ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse),
+        Widget(ICON_FA_BRUSH " Material Preview", ImGuiWindowFlags_NoScrollbar),
         _resource_pool(std::make_shared<FrameGraphResourcePool>()) {
 
     set_object(PreviewObject::Sphere);

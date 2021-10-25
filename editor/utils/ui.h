@@ -41,7 +41,7 @@ bool path_selector(const char* text, const core::String& path);
 void alternating_rows_background(float line_height = -1.0f, const math::Vec4& color = math::Vec4(20.0f, 20.0f, 20.0f, 48.0f) / 255.0f);
 
 
-bool search_bar(char* buffer, usize buffer_size);
+bool search_bar(const char* text, char* buffer, usize buffer_size);
 
 bool begin_suggestion_popup();
 void end_suggestion_popup();

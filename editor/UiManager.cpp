@@ -101,6 +101,7 @@ void UiManager::draw_fps_counter() {
 }
 
 void UiManager::draw_menu_bar() {
+    ImGui::PushID("##mainmenubar");
     if(ImGui::BeginMainMenuBar()) {
         if(ImGui::BeginMenu("File")) {
             ImGui::EndMenu();
@@ -147,7 +148,7 @@ void UiManager::draw_menu_bar() {
                 ImGui::Indent(offset);
                 ImGui::SetNextItemWidth(-margin);
 
-                imgui::search_bar(_search_pattern.data(), _search_pattern.size());
+                imgui::search_bar(ICON_FA_SEARCH "##searchbar", _search_pattern.data(), _search_pattern.size());
 
                 if(imgui::begin_suggestion_popup()) {
                     const std::regex regex(_search_pattern.data(), std::regex::icase);
@@ -173,6 +174,7 @@ void UiManager::draw_menu_bar() {
 
         ImGui::EndMainMenuBar();
     }
+    ImGui::PopID();
 }
 
 Widget* UiManager::add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {

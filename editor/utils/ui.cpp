@@ -194,76 +194,96 @@ void alternating_rows_background(float line_height, const math::Vec4& color) {
 }
 
 
-
-
-static int history_callback(ImGuiInputTextCallbackData* data) {
-    int& selection = *static_cast<int*>(data->UserData);
-    switch(data->EventKey) {
-        case ImGuiKey_UpArrow:
-            --selection;
-        break;
-
-        case ImGuiKey_DownArrow:
-            ++selection;
-        break;
-
-        default:
-        break;
-    }
-    return 0;
-}
-
-
 static struct SearchBarState {
-        SearchBarState(ImGuiID i) : id(i) {}
-        ImGuiID id = 0;
-        int selection_index = -1;
-        int item_count = 1;
-        ImVec2 popup_pos;
-        float popup_width = 0.0f;
-        bool open_popup = false;
-        bool keep_open = false;
-        bool enter_pressed = false;
-    } search_bar_state(0);
+    SearchBarState(ImGuiID i) : id(i) {}
+    ImGuiID id = 0;
+    int selection_index = -1;
+    int item_count = 1;
+    ImVec2 popup_pos;
+    float popup_width = 0.0f;
+    bool open_popup = false;
+    bool keep_open = false;
+    bool activated = false;
+    bool was_activated = false;
+    bool focussed = false;
+} search_bar_state(0);
 
 
-bool search_bar(char* buffer, usize buffer_size) {
-    ImGuiInputTextState* imgui_state = ImGui::GetInputTextState(ImGui::GetID(ICON_FA_SEARCH));
 
-    if(imgui_state) {
-        if(search_bar_state.id != imgui_state->ID) {
-            search_bar_state = SearchBarState(imgui_state->ID);
+bool search_bar(const char* text, char* buffer, usize buffer_size) {
+    // Position
+    {
+        const float text_width = ImGui::CalcTextSize(text, nullptr, true).x + 8.0f;
+        ImGui::SetNextItemWidth(-text_width);
+        search_bar_state.popup_pos = math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetCursorPos());
+    }
+
+    ImGuiInputTextState* imgui_state = ImGui::GetInputTextState(ImGui::GetID(text));
+    search_bar_state.focussed = imgui_state;
+
+
+    if(!search_bar_state.focussed) {
+        ImGui::InputText(text, buffer, buffer_size);
+        return false;
+    }
+
+    if(search_bar_state.id != imgui_state->ID) {
+        search_bar_state = SearchBarState(imgui_state->ID);
+    }
+
+
+    const bool was_activated_last_frame = search_bar_state.was_activated;
+    search_bar_state.was_activated = search_bar_state.activated;
+    if(search_bar_state.was_activated) {
+        ImGui::SetKeyboardFocusHere();
+    }
+
+    // Input handling
+    {
+        auto call_back = [](ImGuiInputTextCallbackData* data) {
+            SearchBarState& state = *static_cast<SearchBarState*>(data->UserData);
+            if(data->EventKey == ImGuiKey_UpArrow) {
+                --state.selection_index;
+            } else if(data->EventKey == ImGuiKey_DownArrow) {
+                ++state.selection_index;
+            }
+            return 0;
+        };
+
+        search_bar_state.activated = ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory, call_back, &search_bar_state);
+    }
+
+    if(was_activated_last_frame) {
+        imgui_state->SelectAll();
+    }
+
+
+    // Popup position
+    {
+        const ImVec2 rect = ImGui::GetItemRectSize();
+        search_bar_state.popup_pos.y += rect.y + 1.0f;
+        search_bar_state.popup_width = rect.x;
+    }
+
+    // Popup open status
+    {
+        search_bar_state.open_popup = search_bar_state.keep_open || ImGui::GetFocusID() == search_bar_state.id;
+        if(!buffer_size || !imgui_state) {
+            search_bar_state.open_popup = false;
         }
+
+        if(!buffer[0] && search_bar_state.selection_index < 0) {
+            search_bar_state.open_popup = false;
+        }
+
+        search_bar_state.keep_open = false;
     }
 
-    ImGui::SetNextItemWidth(-24.0f);
-
-    search_bar_state.popup_pos = math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetCursorPos());
-
-    const int flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory;
-    search_bar_state.enter_pressed = ImGui::InputText(ICON_FA_SEARCH, buffer, buffer_size, flags, history_callback, &search_bar_state.selection_index);
-
-
-    const ImVec2 rect = ImGui::GetItemRectSize();
-    search_bar_state.popup_pos.y += rect.y + 1.0f;
-    search_bar_state.popup_width = rect.x;
-
-    search_bar_state.open_popup = search_bar_state.keep_open || ImGui::GetFocusID() == search_bar_state.id;
-    if(!buffer_size || !imgui_state) {
-        search_bar_state.open_popup = false;
-    }
-
-    if(!buffer[0] && search_bar_state.selection_index < 0) {
-        search_bar_state.open_popup = false;
-    }
-
-    search_bar_state.keep_open = false;
-
-    return search_bar_state.enter_pressed && search_bar_state.selection_index < 0;
+    return search_bar_state.activated && search_bar_state.selection_index < 0;
 }
 
 bool begin_suggestion_popup() {
-    if(!search_bar_state.open_popup) {
+    if(!search_bar_state.focussed || !search_bar_state.open_popup) {
         return false;
     }
 
@@ -293,6 +313,8 @@ bool begin_suggestion_popup() {
 }
 
 void end_suggestion_popup() {
+    y_debug_assert(search_bar_state.focussed);
+
     if(search_bar_state.open_popup && !search_bar_state.item_count)  {
         ImGui::Selectable("no result", false, ImGuiSelectableFlags_Disabled);
     }
@@ -304,27 +326,29 @@ void end_suggestion_popup() {
 }
 
 bool suggestion_item(const char* name) {
+    y_debug_assert(search_bar_state.focussed);
     y_debug_assert(search_bar_state.open_popup);
 
     bool selected = search_bar_state.item_count == search_bar_state.selection_index;
-    bool activated = ImGui::Selectable(name, &selected);
-
+    bool activated = ImGui::Selectable(name, &selected) || ImGui::IsItemActivated();
     const bool hovered = ImGui::IsItemHovered();
+
     search_bar_state.keep_open |= hovered;
 
-    if(selected && search_bar_state.enter_pressed) {
+    if(selected && search_bar_state.activated) {
         activated = true;
     }
 
     if(selected || hovered) {
         search_bar_state.selection_index = search_bar_state.item_count;
     }
+
     if(activated) {
         search_bar_state.selection_index = -1;
+        search_bar_state.activated = true;
     }
 
     ++search_bar_state.item_count;
-
     return activated;
 }
 

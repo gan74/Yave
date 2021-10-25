@@ -140,7 +140,7 @@ void CVarConsole::on_gui() {
     }
     ImGui::EndChild();
 
-    if(imgui::search_bar(_search_pattern.data(), _search_pattern.size())) {
+    if(imgui::search_bar("##commandline", _search_pattern.data(), _search_pattern.size())) {
         process_command(_search_pattern.data());
         _search_pattern[0] = 0;
     }
@@ -151,7 +151,7 @@ void CVarConsole::on_gui() {
             if(var.full_name.find(pattern) != var.full_name.end()) {
                 const char* name = fmt_c_str("% = %", var.full_name, var.to_string());
                 if(imgui::suggestion_item(name)) {
-                    set_pattern(var.full_name);
+                    set_pattern(name);
                 }
             }
         }
