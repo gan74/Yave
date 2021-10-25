@@ -160,17 +160,11 @@ FileSystemModel::Result<> LocalFileSystemModel::create_directory(std::string_vie
 }
 
 FileSystemModel::Result<> LocalFileSystemModel::remove(std::string_view path) const {
-#ifdef Y_OS_WIN
-    if(::DeleteFile(core::String(path).data())) {
-        return core::Ok();
-    }
-#else
     try {
         fs::remove_all(fs::path(path));
         return core::Ok();
     } catch(...) {
     }
-#endif
     return core::Err();
 }
 
