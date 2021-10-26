@@ -164,6 +164,7 @@ MeshData cone_mesh_data();
 
 static Texture create_brdf_lut(const ComputeProgram& brdf_integrator, usize size = 512) {
     y_profile();
+
     core::DebugTimer _("create_ibl_lut()");
 
     StorageTexture image(ImageFormat(VK_FORMAT_R16G16_UNORM), {size, size});
@@ -182,6 +183,7 @@ static Texture create_brdf_lut(const ComputeProgram& brdf_integrator, usize size
 
 static Texture create_white_noise(usize size = 256) {
     y_profile();
+
     core::DebugTimer _("create_white_noise()");
 
     std::unique_ptr<u32[]> data = std::make_unique<u32[]>(size * size);
@@ -208,46 +210,56 @@ DeviceResources::DeviceResources() {
         }
     };
 
-    // Load textures here because they won't change and might get packed into descriptor sets that won't be reloaded (in the case of material defaults)
-    for(usize i = 0; i != texture_count; ++i) {
-        const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
-        _textures[i] = make_asset<Texture>(ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
+    {
+        y_profile_zone("Images");
+        for(usize i = 0; i != texture_count; ++i) {
+            const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
+            _textures[i] = make_asset<Texture>(ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
 
-        set_name(_textures[i]->vk_image(), "Resource Image");
-        set_name(_textures[i]->vk_view(), "Resource Image View");
-    }
-
-    for(usize i = 0; i != spirv_count; ++i) {
-        const auto file_name = fmt("%.spv", spirv_names[i]);
-        _spirv[i] = SpirVData::deserialized(io2::File::open(file_name).expected(fmt_c_str("Unable to open SPIR-V file (%).", file_name)));
-    }
-
-    for(usize i = 0; i != compute_count; ++i) {
-        _computes[i] = ComputeProgram(ComputeShader(_spirv[i]));
-        set_name(_computes[i].vk_pipeline(), spirv_names[i]);
-    }
-
-    for(usize i = 0; i != template_count; ++i) {
-        const auto& data = material_datas[i];
-        auto template_data = MaterialTemplateData()
-                .set_frag_data(_spirv[data.frag])
-                .set_vert_data(_spirv[data.vert])
-                .set_depth_mode(data.depth_test)
-                .set_cull_mode(data.cull_mode)
-                .set_blend_mode(data.blend_mode)
-                .set_depth_write(data.depth_write)
-                .set_primitive_type(data.primitive_type);
-            ;
-        _material_templates[i] = MaterialTemplate(std::move(template_data));
-        _material_templates[i].set_name(spirv_names[data.frag]);
+            set_name(_textures[i]->vk_image(), "Resource Image");
+            set_name(_textures[i]->vk_view(), "Resource Image View");
+        }
     }
 
     {
+        y_profile_zone("Shaders");
+        for(usize i = 0; i != spirv_count; ++i) {
+            const auto file_name = fmt("%.spv", spirv_names[i]);
+            _spirv[i] = SpirVData::deserialized(io2::File::open(file_name).expected(fmt_c_str("Unable to open SPIR-V file (%).", file_name)));
+        }
+
+        for(usize i = 0; i != compute_count; ++i) {
+            _computes[i] = ComputeProgram(ComputeShader(_spirv[i]));
+            set_name(_computes[i].vk_pipeline(), spirv_names[i]);
+        }
+    }
+
+    {
+        y_profile_zone("Material templates");
+        for(usize i = 0; i != template_count; ++i) {
+            const auto& data = material_datas[i];
+            auto template_data = MaterialTemplateData()
+                    .set_frag_data(_spirv[data.frag])
+                    .set_vert_data(_spirv[data.vert])
+                    .set_depth_mode(data.depth_test)
+                    .set_cull_mode(data.cull_mode)
+                    .set_blend_mode(data.blend_mode)
+                    .set_depth_write(data.depth_write)
+                    .set_primitive_type(data.primitive_type);
+                ;
+            _material_templates[i] = MaterialTemplate(std::move(template_data));
+            _material_templates[i].set_name(spirv_names[data.frag]);
+        }
+    }
+
+    {
+        y_profile_zone("Materials");
         _materials = std::make_unique<AssetPtr<Material>[]>(usize(MaxMaterials));
         _materials[0] = make_asset<Material>(&_material_templates[usize(TexturedMaterialTemplate)]);
     }
 
     {
+        y_profile_zone("Meshes");
         _meshes = std::make_unique<AssetPtr<StaticMesh>[]>(usize(MaxMeshes));
         _meshes[0] = make_asset<StaticMesh>(cube_mesh_data());
         _meshes[1] = make_asset<StaticMesh>(sphere_mesh_data());
@@ -255,22 +267,27 @@ DeviceResources::DeviceResources() {
         _meshes[3] = make_asset<StaticMesh>(cone_mesh_data());
     }
 
+    {
+        y_profile_zone("Procedurals");
+        _brdf_lut = create_brdf_lut(operator[](BRDFIntegratorProgram));
+        set_name(_brdf_lut.vk_image(), "BRDF LUT");
+        set_name(_brdf_lut.vk_view(), "BRDF LUT View");
 
-    _brdf_lut = create_brdf_lut(operator[](BRDFIntegratorProgram));
-    set_name(_brdf_lut.vk_image(), "BRDF LUT");
-    set_name(_brdf_lut.vk_view(), "BRDF LUT View");
+        _white_noise = create_white_noise();
+        set_name(_white_noise.vk_image(), "White Noise");
+        set_name(_white_noise.vk_view(), "White Noise View");
+    }
 
-    _white_noise = create_white_noise();
-    set_name(_white_noise.vk_image(), "White Noise");
-    set_name(_white_noise.vk_view(), "White Noise View");
+    {
+        y_profile_zone("Probes");
+        _probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
+        set_name(_probe->vk_image(), "Default Probe");
+        set_name(_probe->vk_view(), "Default Probe");
 
-    _probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](SkyIBLTexture)));
-    set_name(_probe->vk_image(), "Default Probe");
-    set_name(_probe->vk_view(), "Default Probe");
-
-    _empty_probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
-    set_name(_empty_probe->vk_image(), "Empty Probe");
-    set_name(_empty_probe->vk_view(), "Empty Probe");
+        _empty_probe = make_asset<IBLProbe>(IBLProbe::from_equirec(*operator[](BlackTexture)));
+        set_name(_empty_probe->vk_image(), "Empty Probe");
+        set_name(_empty_probe->vk_view(), "Empty Probe");
+    }
 }
 
 

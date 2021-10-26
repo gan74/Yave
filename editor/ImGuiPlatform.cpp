@@ -273,6 +273,8 @@ static void setup_backend_flags(ImGuiIO& io, bool multi_viewport) {
 }
 
 static void discover_monitors(ImGuiPlatformIO& platform) {
+    y_profile();
+
     platform.Monitors.clear();
 
     auto monitors = Monitor::monitors();

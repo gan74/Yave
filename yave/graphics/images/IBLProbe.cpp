@@ -164,7 +164,7 @@ IBLProbe::IBLProbe(const ImageData& data) {
 
 
 IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
-    core::DebugTimer _("IBLProbe::from_cubemap()");
+    y_profile();
 
     ProbeBase probe(probe_size(cube), cube.format());
     compute_probe(probe, cube);
@@ -175,7 +175,7 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 }
 
 IBLProbe IBLProbe::from_equirec(const Texture& equirec) {
-    core::DebugTimer _("IBLProbe::from_equirec()");
+    y_profile();
 
     ProbeBase probe(probe_size(equirec), equirec.format());
     compute_probe(probe, equirec);

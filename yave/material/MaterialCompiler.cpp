@@ -98,6 +98,7 @@ static GeometryShader create_geometry_shader(const SpirVData& geom) {
 
 GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, const RenderPass& render_pass) {
     y_profile();
+
     core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
     Y_TODO(move program creation programs can be reused)
 
