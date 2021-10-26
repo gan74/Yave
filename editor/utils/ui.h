@@ -29,6 +29,8 @@ SOFTWARE.
 namespace editor {
 namespace imgui {
 
+static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";
+
 bool should_open_context_menu();
 
 math::Vec2 client_window_pos();

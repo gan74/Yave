@@ -25,7 +25,9 @@ SOFTWARE.
 #include <editor/components/EditorComponent.h>
 
 #include <yave/ecs/EntityPrefab.h>
-#include <yave/ecs/EntityPrefab.h>
+#include <yave/assets/AssetLoader.h>
+#include <yave/utils/FileSystemModel.h>
+
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/PointLightComponent.h>
@@ -36,6 +38,7 @@ SOFTWARE.
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/OctreeSystem.h>
 
+#include <y/utils/format.h>
 
 #include <external/imgui/IconsFontAwesome5.h>
 
@@ -93,6 +96,25 @@ std::string_view EditorWorld::entity_icon(ecs::EntityId id) const {
     }
 
     return ICON_FA_DATABASE;
+}
+
+ecs::EntityId EditorWorld::add_prefab(std::string_view name) {
+    if(const auto id = asset_store().id(name)) {
+        return add_prefab(id.unwrap());
+    }
+    return ecs::EntityId();
+}
+
+ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
+    if(const auto prefab = asset_loader().load_res<ecs::EntityPrefab>(asset)) {
+        const ecs::EntityId id = create_entity(*prefab.unwrap());
+
+        if(const auto name = asset_store().name(asset)) {
+            set_entity_name(id, fmt("% (Prefab)", asset_store().filesystem()->filename(name.unwrap())));
+        }
+        return id;
+    }
+    return ecs::EntityId();
 }
 
 core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::component_types() {

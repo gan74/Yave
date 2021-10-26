@@ -35,7 +35,9 @@ struct EditorSettings {
     core::String world_file = "../world.yw3";
     core::String asset_store = "../store";
 
-    y_reflect(world_file, asset_store)
+    float max_fps = 60.0f;
+
+    y_reflect(world_file, asset_store, max_fps)
 };
 
 struct CameraSettings {

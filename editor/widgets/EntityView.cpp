@@ -121,15 +121,9 @@ void EntityView::on_gui() {
         if(ImGui::MenuItem("Add prefab")) {
             add_detached_widget<AssetSelector>(AssetType::Prefab)->set_selected_callback(
                 [](AssetId asset) {
-                    if(const auto prefab = asset_loader().load_res<ecs::EntityPrefab>(asset)) {
-                        const ecs::EntityId id = current_world().create_entity(*prefab.unwrap());
-                        selection().set_selected(id);
-
-                        if(const auto name = asset_store().name(asset)) {
-                            current_world().set_entity_name(id, fmt("% (Prefab)", asset_store().filesystem()->filename(name.unwrap())));
-                        }
-                    }
-                    return true;
+                    const ecs::EntityId id = current_world().add_prefab(asset);
+                    selection().set_selected(id);
+                    return id.is_valid();
                 });
         }
 

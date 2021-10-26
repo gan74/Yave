@@ -36,8 +36,6 @@ SOFTWARE.
 
 namespace editor {
 
-static constexpr const char* drag_drop_id = "YAVE_DRAG_DROP_PATH";
-
 FileSystemView::FileSystemView(const FileSystemModel* fs, std::string_view name) : Widget(name) {
     set_filesystem(fs);
 }
@@ -199,7 +197,7 @@ void FileSystemView::on_gui() {
                     const core::String full_name = entry_full_name(_entries[i]);
                     make_drop_target(full_name);
                     if(ImGui::BeginDragDropSource()) {
-                        ImGui::SetDragDropPayload(drag_drop_id, full_name.data(), full_name.size() + 1);
+                        ImGui::SetDragDropPayload(imgui::drag_drop_path_id, full_name.data(), full_name.size() + 1);
                         ImGui::EndDragDropSource();
                     }
                 }
@@ -263,7 +261,7 @@ void FileSystemView::draw_context_menu() {
 
 void FileSystemView::make_drop_target(std::string_view drop_path) {
     if(ImGui::BeginDragDropTarget()) {
-        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(drag_drop_id)) {
+        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
             const std::string_view original_name = reinterpret_cast<const char*>(payload->Data);
             const FileSystemModel* fs = filesystem();
             const core::String target_name = fs->join(drop_path, fs->filename(original_name));

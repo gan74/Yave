@@ -66,7 +66,7 @@ class ImGuiPlatform : NonMovable {
 
         Window* main_window();
 
-        bool exec(OnGuiFunc func = nullptr, bool once = false);
+        void exec(OnGuiFunc func = nullptr, bool once = false);
 
         void show_demo();
 

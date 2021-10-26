@@ -29,6 +29,7 @@ SOFTWARE.
 #include <editor/EditorResources.h>
 #include <editor/EditorApplication.h>
 #include <editor/utils/CameraController.h>
+#include <editor/utils/ui.h>
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -163,11 +164,9 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         std::move(graph).render(recorder);
     }
 
+
     if(output) {
-        const math::Vec2 position = ImGui::GetWindowPos();
-        ImGui::GetWindowDrawList()->AddImage(output,
-            position + math::Vec2(ImGui::GetWindowContentRegionMin()),
-            position + math::Vec2(ImGui::GetWindowContentRegionMax()));
+        ImGui::Image(output, content_size());
     }
 
 }
@@ -178,7 +177,10 @@ void EngineView::on_gui() {
     update_proj();
 
     draw_menu_bar();
+
     draw(application()->recorder());
+    make_drop_target();
+
     _gizmo.draw();
 
     update();
@@ -460,6 +462,16 @@ void EngineView::update_picking() {
             ecs::EntityId picked_id = picking_data.hit() ? current_world().id_from_index(picking_data.entity_index) : ecs::EntityId();
             selection().set_selected(picked_id);
         }
+    }
+}
+
+void EngineView::make_drop_target() {
+    if(ImGui::BeginDragDropTarget()) {
+        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
+            const std::string_view name = reinterpret_cast<const char*>(payload->Data);
+            selection().set_selected(current_world().add_prefab(name));
+        }
+        ImGui::EndDragDropTarget();
     }
 }
 

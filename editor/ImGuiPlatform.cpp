@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "ImGuiPlatform.h"
+#include "Settings.h"
 
 #include <editor/utils/ui.h>
 
@@ -334,6 +335,8 @@ ImGuiPlatform* ImGuiPlatform::instance() {
 }
 
 ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
+    y_profile();
+
     y_always_assert(_instance == nullptr, "ImGuiPlatform instance already exists.");
     _instance = this;
 
@@ -400,8 +403,16 @@ Window* ImGuiPlatform::main_window() {
     return &_main_window->window;
 }
 
-bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
-    while(_main_window->window.update()) {
+void ImGuiPlatform::exec(OnGuiFunc func, bool once) {
+    do {
+
+        const float max_fps = app_settings().editor.max_fps;
+        do {
+            if(!_main_window->window.update()) {
+                return;
+            }
+        } while(max_fps > 0.0f && _frame_timer.elapsed().to_secs() < 1.0f / max_fps);
+
         y_profile_zone("exec once");
 
         ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
@@ -443,13 +454,7 @@ bool ImGuiPlatform::exec(OnGuiFunc func, bool once) {
 
             _main_window->swapchain.present(frame, std::move(recorder), graphic_queue());
         }
-
-        if(once) {
-            return true;
-        }
-    }
-
-    return false;
+    } while(!once);
 }
 
 

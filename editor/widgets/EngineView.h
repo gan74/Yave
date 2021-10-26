@@ -72,6 +72,8 @@ class EngineView final : public Widget {
         bool is_mouse_inside() const;
         bool is_focussed() const;
 
+        void make_drop_target();
+
         RenderView _view = RenderView::Lit;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
