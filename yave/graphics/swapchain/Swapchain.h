@@ -76,13 +76,12 @@ class Swapchain : NonMovable {
             return _images;
         }
 
-        bool is_valid() const;
-
-        FrameToken next_frame();
+        core::Result<FrameToken> next_frame();
         void present(const FrameToken& token, CmdBufferRecorder&& recorder, const Queue& queue);
 
     private:
-        void reset();
+        bool is_valid() const;
+        [[nodiscard]] bool reset();
 
         bool build_swapchain();
         void build_semaphores();
@@ -98,6 +97,8 @@ class Swapchain : NonMovable {
 
         VkHandle<VkSurfaceKHR> _surface;
         VkHandle<VkSwapchainKHR> _swapchain;
+
+        u32 _image_count = 0;
 
 
 };

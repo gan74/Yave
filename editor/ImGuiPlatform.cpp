@@ -310,8 +310,8 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
         return false;
     }
 
-    if(swapchain.is_valid()) {
-        const FrameToken token = swapchain.next_frame();
+    if(const auto r = swapchain.next_frame()) {
+        const FrameToken& token = r.unwrap();
         CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
         {
@@ -407,21 +407,24 @@ Window* ImGuiPlatform::main_window() {
 
 void ImGuiPlatform::exec(OnGuiFunc func, bool once) {
     do {
+        if(!_main_window->window.update()) {
+            return;
+        }
 
-        const float max_fps = app_settings().editor.max_fps;
-        do {
-            if(!_main_window->window.update()) {
-                return;
-            }
-        } while(max_fps > 0.0f && _frame_timer.elapsed().to_secs() < 1.0f / max_fps);
+        // const float max_fps = app_settings().editor.max_fps;
+        // do {
+        //     if(!_main_window->window.update()) {
+        //         return;
+        //     }
+        // } while(max_fps > 0.0f && _frame_timer.elapsed().to_secs() < 1.0f / max_fps);
 
         y_profile_zone("exec once");
 
         ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
         ImGui::GetIO().DisplaySize = _main_window->window.size();
 
-        if(_main_window->swapchain.is_valid()) {
-            const FrameToken frame = _main_window->swapchain.next_frame();
+        if(const auto r = _main_window->swapchain.next_frame()) {
+            const FrameToken& token = r.unwrap();
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
             {
@@ -443,7 +446,7 @@ void ImGuiPlatform::exec(OnGuiFunc func, bool once) {
 
             {
                 y_profile_zone("main window");
-                Framebuffer framebuffer(frame.image_view);
+                Framebuffer framebuffer(token.image_view);
                 RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
                 _renderer->render(ImGui::GetDrawData(), pass);
             }
@@ -454,7 +457,7 @@ void ImGuiPlatform::exec(OnGuiFunc func, bool once) {
                 ImGui::RenderPlatformWindowsDefault();
             }
 
-            _main_window->swapchain.present(frame, std::move(recorder), graphic_queue());
+            _main_window->swapchain.present(token, std::move(recorder), graphic_queue());
         }
     } while(!once);
 }

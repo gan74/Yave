@@ -32,6 +32,7 @@ SOFTWARE.
 #include <yave/graphics/device/extensions/DebugUtils.h>
 #include <yave/utils/gpuprofile.h>
 
+#include <y/core/FixedArray.h>
 #include <y/utils/log.h>
 
 namespace yave {
@@ -141,17 +142,15 @@ static VkSurfaceKHR create_surface(Window* window) {
 Swapchain::Swapchain(Window* window) : Swapchain(create_surface(window)) {
 }
 
-Swapchain::Swapchain(VkSurfaceKHR surface) : _surface(surface) {
+Swapchain::Swapchain(VkSurfaceKHR surface) :
+    _surface(surface),
+    _image_count(compute_image_count(compute_capabilities(surface))) {
+
     build_swapchain();
     build_semaphores();
-    y_debug_assert(_images.size() == _semaphores.size());
 }
 
-bool Swapchain::is_valid() const {
-    return _size.x() > 0 && _size.y() > 0 && !_images.is_empty();
-}
-
-void Swapchain::reset() {
+bool Swapchain::reset() {
     wait_all_queues();
 
     _images.clear();
@@ -160,7 +159,10 @@ void Swapchain::reset() {
 
     if(build_swapchain()) {
         device_destroy(old);
+        return true;
     }
+
+    return false;
 }
 
 Swapchain::~Swapchain() {
@@ -173,20 +175,19 @@ Swapchain::~Swapchain() {
 }
 
 bool Swapchain::build_swapchain() {
-
     const VkSurfaceCapabilitiesKHR capabilities = compute_capabilities(_surface);
+    _size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
+
+    if(!_size.x() || !_size.y()) {
+        return false;
+    }
+
     const VkSurfaceFormatKHR format = surface_format(_surface);
+    _color_format = VkFormat(format.format);
 
     const VkImageUsageFlagBits image_usage_flags = VkImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
     if((capabilities.supportedUsageFlags & image_usage_flags) != image_usage_flags) {
         y_fatal("Swapchain does not support required usage flags.");
-    }
-
-    _size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
-    _color_format = VkFormat(format.format);
-
-    if(!_size.x() || !_size.y()) {
-        return false;
     }
 
     {
@@ -203,7 +204,7 @@ bool Swapchain::build_swapchain() {
             create_info.imageFormat = format.format;
             create_info.imageColorSpace = format.colorSpace;
             create_info.imageExtent = capabilities.currentExtent;
-            create_info.minImageCount = compute_image_count(capabilities);
+            create_info.minImageCount = _image_count;
             create_info.presentMode = present_mode(_surface);
             create_info.oldSwapchain = _swapchain;
         }
@@ -212,13 +213,10 @@ bool Swapchain::build_swapchain() {
 
     y_profile_zone("image setup");
 
-    core::Vector<VkImage> images;
-    {
-        u32 count = 0;
-        vk_check(vkGetSwapchainImagesKHR(vk_device(), _swapchain, &count, nullptr));
-        images = core::Vector<VkImage>(count, VkImage{});
-        vk_check(vkGetSwapchainImagesKHR(vk_device(), _swapchain, &count, images.data()));
-    }
+    u32 image_count = _image_count;
+    core::FixedArray<VkImage> images(image_count);
+    vk_check(vkGetSwapchainImagesKHR(vk_device(), _swapchain, &image_count, images.data()));
+    y_always_assert(_image_count == image_count, "Unable to get swapchain images");
 
     for(auto image : images) {
         const VkImageView view = create_image_view(image, _color_format.vk_format());
@@ -250,6 +248,8 @@ bool Swapchain::build_swapchain() {
         _images << std::move(swapchain_image);
     }
 
+    y_debug_assert(_image_count == _images.size());
+
     CmdBufferRecorder recorder(create_disposable_cmd_buffer());
     for(auto& i : _images) {
         recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
@@ -263,14 +263,14 @@ void Swapchain::build_semaphores() {
     const VkFenceCreateInfo fence_create_info = vk_struct();
     const VkSemaphoreCreateInfo semaphore_create_info = vk_struct();
 
-    for(usize i = 0; i != _images.size(); ++i) {
+    for(usize i = 0; i != _image_count; ++i) {
         auto& semaphores = _semaphores.emplace_back();
         vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &semaphores.render_complete));
         vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &semaphores.image_aquired));
         vk_check(vkCreateFence(vk_device(), &fence_create_info, vk_allocation_callbacks(), &semaphores.fence));
     }
 
-    y_debug_assert(_images.size() == _semaphores.size());
+    y_debug_assert(_image_count == _semaphores.size());
 }
 
 void Swapchain::destroy_semaphores() {
@@ -282,19 +282,19 @@ void Swapchain::destroy_semaphores() {
     _semaphores.clear();
 }
 
-FrameToken Swapchain::next_frame() {
+core::Result<FrameToken> Swapchain::next_frame() {
     y_profile();
 
     y_debug_assert(_semaphores.size());
-    y_debug_assert(is_valid());
 
-    ++_frame_id;
-    const usize semaphore_index = _frame_id % image_count();
+    const usize semaphore_index = ++_frame_id % image_count();
     const Semaphores& frame_semaphores = _semaphores[semaphore_index];
 
     u32 image_index = 0;
     while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index))) {
-        reset();
+        if(!reset()) {
+            return core::Err();
+        }
     }
 
     {
@@ -303,12 +303,12 @@ FrameToken Swapchain::next_frame() {
         vk_check(vkResetFences(vk_device(), 1, &frame_semaphores.fence));
     }
 
-    return FrameToken {
-            _frame_id,
-            image_index,
-            u32(image_count()),
-            SwapchainImageView(_images[image_index]),
-        };
+    return core::Ok(FrameToken {
+        _frame_id,
+        image_index,
+        u32(image_count()),
+        SwapchainImageView(_images[image_index]),
+    });
 }
 
 void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, const Queue& queue) {
@@ -350,7 +350,8 @@ const math::Vec2ui& Swapchain::size() const {
 }
 
 usize Swapchain::image_count() const {
-    return _images.size();
+    y_debug_assert(_image_count);
+    return _image_count;
 }
 
 ImageFormat Swapchain::color_format() const {
