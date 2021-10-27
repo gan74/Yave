@@ -73,69 +73,6 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
 
 
 
-FPSCameraController::FPSCameraController() : CameraController() {
-}
-
-void FPSCameraController::update_camera(Camera& camera, const math::Vec2ui& viewport_size) {
-    const CameraSettings& settings = app_settings().camera;
-    math::Vec3 cam_pos = camera.position();
-    math::Vec3 cam_fwd = camera.forward();
-    math::Vec3 cam_rht = camera.right();
-
-    if(ImGui::IsWindowFocused()) {
-        const float cam_speed = 500.0f;
-        const float dt = cam_speed / ImGui::GetIO().Framerate;
-
-        if(ImGui::IsKeyDown(int(settings.move_forward))) {
-            cam_pos += cam_fwd * dt;
-        }
-        if(ImGui::IsKeyDown(int(settings.move_backward))) {
-            cam_pos -= cam_fwd * dt;
-        }
-        if(ImGui::IsKeyDown(int(settings.move_left))) {
-            cam_pos -= cam_rht * dt;
-        }
-        if(ImGui::IsKeyDown(int(settings.move_right))) {
-            cam_pos += cam_rht * dt;
-        }
-
-        if(ImGui::IsMouseDown(1)) {
-            auto delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(viewport_size);
-            delta *= settings.fps_sensitivity;
-
-            {
-                const auto pitch = math::Quaternion<>::from_axis_angle(cam_rht, delta.y());
-                cam_fwd = pitch(cam_fwd);
-            }
-            {
-                const auto yaw = math::Quaternion<>::from_axis_angle(cam_fwd.cross(cam_rht), -delta.x());
-                cam_fwd = yaw(cam_fwd);
-                cam_rht = yaw(cam_rht);
-            }
-
-            auto euler = math::Quaternion<>::from_base(cam_fwd, cam_rht, cam_fwd.cross(cam_rht)).to_euler();
-            const bool upside_down = cam_fwd.cross(cam_rht).z() < 0.0f;
-            euler[math::Quaternion<>::RollIndex] = upside_down ? -math::pi<float> : 0.0f;
-            const auto rotation = math::Quaternion<>::from_euler(euler);
-            cam_fwd = rotation({1.0f, 0.0f, 0.0f});
-            cam_rht = rotation({0.0f, 1.0f, 0.0f});
-        }
-
-
-        if(ImGui::IsMouseDown(2)) {
-            const auto delta = ImGui::GetIO().MouseDelta;
-            cam_pos -= (delta.y * cam_fwd.cross(cam_rht) + delta.x * cam_rht);
-        }
-    }
-
-    const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_rht));
-    if(fully_finite(view)) {
-        camera.set_view(view);
-    }
-}
-
-
-
 HoudiniCameraController::HoudiniCameraController() {
 }
 

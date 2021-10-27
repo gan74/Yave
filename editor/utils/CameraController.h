@@ -44,13 +44,6 @@ class CameraController : NonMovable {
 
 };
 
-class FPSCameraController final : public CameraController {
-    public:
-        FPSCameraController();
-
-        void update_camera(Camera& camera, const math::Vec2ui& viewport_size) override;
-};
-
 class HoudiniCameraController final : public CameraController {
     public:
         HoudiniCameraController();

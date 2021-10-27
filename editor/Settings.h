@@ -44,13 +44,6 @@ struct CameraSettings {
     float z_near = 1.0f;
     float fov = 60.0f;
 
-    // FPS
-    Key move_forward = Key::W;
-    Key move_backward = Key::S;
-    Key move_right = Key::D;
-    Key move_left = Key::A;
-    float fps_sensitivity = 4.0f;
-
     // Houdini
     float trackball_sensitivity = 6.0f;
     float dolly_sensitivity = 2.5f;
@@ -58,9 +51,7 @@ struct CameraSettings {
     // Other camera
     Key center_on_obj = Key::H;
 
-    y_reflect(z_near, fov,
-              move_forward, move_backward, move_right, move_left,
-              fps_sensitivity, trackball_sensitivity, dolly_sensitivity,
+    y_reflect(trackball_sensitivity, dolly_sensitivity,
               center_on_obj)
 
 };

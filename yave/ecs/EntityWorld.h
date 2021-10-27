@@ -131,15 +131,6 @@ class EntityWorld {
             }
         }
 
-        template<typename First, typename... Args>
-        void add_or_replace_components(EntityId id) {
-            y_debug_assert(exists(id));
-            add_component<First>(id);
-            if constexpr(sizeof...(Args)) {
-                add_or_replace_components<Args...>(id);
-            }
-        }
-
 
 
         auto ids() const {

@@ -46,6 +46,7 @@ EditorApplication* application();
 
 Settings& app_settings();
 Selection& selection();
+UndoStack& undo_stack();
 
 
 AssetStore& asset_store();

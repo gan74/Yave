@@ -22,6 +22,7 @@ SOFTWARE.
 #include "Gizmo.h"
 
 #include <editor/Selection.h>
+#include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
 
 #include <yave/scene/SceneView.h>
@@ -159,19 +160,6 @@ void Gizmo::draw() {
     if(!selection().has_selected_entity()) {
         return;
     }
-
-    // y_defer(ImGui::EndChild());
-    // ImGui::SetNextWindowBgAlpha(0.0f);
-    // if(!ImGui::BeginChild("##gizmo", ImVec2(0, 0), false, gizmo_flags)) {
-    //     return;
-    // }
-
-    /*if(ImGui::IsKeyReleased(int(Key::R))) {
-        _mode = Mode(!usize(_mode));
-    }
-    if(ImGui::IsKeyReleased(int(Key::A))) {
-        _space = Space(!usize(_space));
-    }*/
 
     TransformableComponent* transformable = current_world().component<TransformableComponent>(selection().selected_entity());
     if(!transformable) {
@@ -321,6 +309,9 @@ void Gizmo::draw() {
                 _dragging_mask = hover_mask;
                 _dragging_offset = obj_pos - projected_mouse;
             } else if(!ImGui::IsMouseDown(0)) {
+                if(_dragging_mask) {
+                    undo_stack().done_editing();
+                }
                 _dragging_mask = 0;
             }
         }
@@ -334,6 +325,8 @@ void Gizmo::draw() {
                 if(_dragging_mask & (1 << i)) {
                     const math::Vec3 offset = basis[i] * vec.dot(basis[i]);
                     transformable->set_position(orig_pos + math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z())));
+
+                    undo_stack().make_dirty();
                 }
             }
         }
@@ -418,6 +411,9 @@ void Gizmo::draw() {
             _rotation_axis = rotation_axis;
             _rotation_offset = compute_angle(_rotation_axis);
         } if(!ImGui::IsMouseDown(0)) {
+            if(_rotation_axis != usize(-1)) {
+                undo_stack().done_editing();
+            }
             _rotation_axis = usize(-1);
         }
 
@@ -429,6 +425,8 @@ void Gizmo::draw() {
             tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
             transformable->set_transform(tr);
             _rotation_offset += angle_offset;
+
+            undo_stack().make_dirty();
         }
     }
 }

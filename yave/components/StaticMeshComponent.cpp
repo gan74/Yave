@@ -117,20 +117,23 @@ AABB StaticMeshComponent::compute_aabb() const {
     }
 
     for(i += 1; i < _sub_meshes.size(); ++i) {
-        aabb = aabb.merged(_sub_meshes[i].mesh->aabb());
+        if(_sub_meshes[i].mesh) {
+            aabb = aabb.merged(_sub_meshes[i].mesh->aabb());
+        }
     }
 
     return aabb;
 }
 
 bool StaticMeshComponent::update_asset_loading_status() {
+    _aabb = compute_aabb();
+
     for(const SubMesh& sub : _sub_meshes) {
        if(!sub.mesh.is_loaded() || !sub.material.is_loaded()) {
            return false;
        }
     }
 
-    _aabb = compute_aabb();
     return true;
 }
 

@@ -19,28 +19,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_SETTINGSPANEL_H
-#define EDITOR_WIDGETS_SETTINGSPANEL_H
+#ifndef EDITOR_UNDOSTACK_H
+#define EDITOR_UNDOSTACK_H
 
-#include <editor/Widget.h>
+#include <editor/editor.h>
+
+#include <yave/ecs/EntityPrefab.h>
+
+#include <y/io2/Buffer.h>
 
 namespace editor {
 
-class SettingsPanel : public Widget {
+class UndoStack : NonMovable {
 
-    editor_widget(SettingsPanel)
+    struct StackItem {
+        ecs::EntityId id;
+        ecs::EntityPrefab prefab;
+    };
 
     public:
-        SettingsPanel();
+        UndoStack();
 
-    protected:
-        void on_gui() override;
+        void set_editing_entity(ecs::EntityId id);
+
+        void done_editing();
+        void make_dirty();
+
+        void undo();
+        void redo();
+
+
+        UndoStack& operator<<(bool dirty) {
+            if(dirty) {
+                make_dirty();
+            }
+            return *this;
+        }
 
     private:
-        usize _category = 0;
+        void restore_entity();
+
+        ecs::EntityId _id;
+        ecs::EntityPrefab _prefab;
+
+        bool _pushed = false;
+
+        core::Vector<StackItem> _stack;
+        usize _cursor = 0;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_SETTINGSPANEL_H
+#endif // EDITOR_UNDOSTACK_H
 

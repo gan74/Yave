@@ -28,6 +28,7 @@ SOFTWARE.
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
 #include "ThumbmailRenderer.h"
+#include "UndoStack.h"
 
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
@@ -73,6 +74,8 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : _platform(platfo
 
     _world = std::make_unique<EditorWorld>(*_loader);
     _debug_drawer = std::make_unique<DirectDraw>();
+
+    _undo_stack = std::make_unique<UndoStack>();
 
     _default_scene_view = SceneView(_world.get());
     _scene_view = &_default_scene_view;

@@ -27,8 +27,13 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/utils/ui.h>
 
+#include <yave/ecs/EntityPrefab.h>
+
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+
+#include <y/io2/Buffer.h>
+#include <y/serde3/archives.h>
 
 #include <external/imgui/yave_imgui.h>
 
@@ -43,14 +48,13 @@ ComponentPanel::ComponentPanel() : Widget(ICON_FA_WRENCH " Components") {
 }
 
 void ComponentPanel::on_gui() {
+    const ecs::EntityId id = selection().selected_entity();
 
-    if(!selection().has_selected_entity()) {
+    if(!id.is_valid()) {
         return;
     }
 
     EditorWorld& world = current_world();
-    const ecs::EntityId id = selection().selected_entity();
-
 
     {
         const ImGuiTableFlags table_flags =

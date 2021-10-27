@@ -19,28 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_SELECTION_H
-#define EDITOR_SELECTION_H
 
-#include <editor/editor.h>
+#include "Selection.h"
 
-#include <yave/ecs/ecs.h>
+#include "UndoStack.h"
 
 namespace editor {
 
-class Selection {
-    public:
-        bool has_selected_entity() const;
-
-        ecs::EntityId selected_entity() const;
-
-        void set_selected(ecs::EntityId id);
-
-    private:
-        ecs::EntityId _id;
-};
-
+bool Selection::has_selected_entity() const {
+    return _id.is_valid();
 }
 
-#endif // EDITOR_CONTEXT_SELECTION_H
+ecs::EntityId Selection::selected_entity() const {
+    return _id;
+}
+
+void Selection::set_selected(ecs::EntityId id) {
+    if(_id != id) {
+        _id = id;
+        undo_stack().set_editing_entity(id);
+    }
+}
+
+}
 

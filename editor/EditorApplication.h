@@ -61,6 +61,10 @@ class EditorApplication : NonMovable {
             return *_loader;
         }
 
+        UndoStack& undo_stack() {
+            return *_undo_stack;
+        }
+
         ThumbmailRenderer& thumbmail_renderer() {
             return *_thumbmail_renderer;
         }
@@ -106,6 +110,8 @@ class EditorApplication : NonMovable {
         std::unique_ptr<DirectDraw> _debug_drawer;
 
         std::unique_ptr<UiManager> _ui;
+
+        std::unique_ptr<UndoStack> _undo_stack;
 
         CmdBufferRecorder* _recorder = nullptr;
 
