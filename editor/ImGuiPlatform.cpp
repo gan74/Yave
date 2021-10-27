@@ -40,74 +40,8 @@ ImGuiPlatform* imgui_platform() {
     return ImGuiPlatform::instance();
 }
 
-struct ImGuiEventHandler : EventHandler {
-    Window* window = nullptr;
 
-    ImGuiEventHandler(Window* win) : window(win) {
-    }
-
-    void mouse_moved(const math::Vec2i& pos) override {
-        // We can't use imgui::from_client_pos here since the ImGui window isn't set
-        ImGui::GetIO().MousePos = ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable
-            ? pos + window->position() : pos;
-    }
-
-    void mouse_pressed(const math::Vec2i& pos, MouseButton button) override {
-        mouse_moved(pos);
-        ImGui::GetIO().MouseDown[usize(button)] = true;
-    }
-
-    void mouse_released(const math::Vec2i& pos, MouseButton button) override {
-        mouse_moved(pos);
-        ImGui::GetIO().MouseDown[usize(button)] = false;
-    }
-
-    void mouse_wheel(i32 vdelta, i32 hdelta) override {
-        ImGui::GetIO().MouseWheel += vdelta;
-        ImGui::GetIO().MouseWheelH += hdelta;
-    }
-
-    void char_input(u32 character) override {
-        ImGui::GetIO().AddInputCharacter(ImWchar(character));
-    }
-
-    void key_pressed(Key key) override {
-        key_event(key, true);
-    }
-
-    void key_released(Key key) override {
-        key_event(key, false);
-    }
-
-
-    void key_event(Key key, bool pressed) {
-        auto& io = ImGui::GetIO();
-
-        io.KeysDown[u32(key)] = pressed;
-
-        switch(key) {
-            case Key::Ctrl:
-                io.KeyCtrl = pressed;
-            break;
-
-            case Key::Alt:
-                io.KeyAlt = pressed;
-            break;
-
-            default:
-            break;
-        }
-
-        const std::array shortcuts = {Key::A, Key::C, Key::V, Key::X, Key::Y, Key::Z};
-        for(usize i = 0; i != shortcuts.size(); ++i) {
-            bool& down = io.KeysDown[io.KeyMap[ImGuiKey_A + i]];
-            if(shortcuts[i] == key) {
-                down = pressed;
-            }
-            down &= io.KeyCtrl;
-        }
-    }
-};
+// ---------------------------------------------- SETUP HELPERS ----------------------------------------------
 
 static void setup_style(bool is_3D = true) {
     const float darkening = 1.0f;
@@ -290,6 +224,124 @@ static void discover_monitors(ImGuiPlatformIO& platform) {
 }
 
 
+// ---------------------------------------------- EVENT HANDLER ----------------------------------------------
+
+class ImGuiEventHandler : public EventHandler {
+    struct IOState {
+        math::Vec2i mouse_pos;
+        math::Vec2 mouse_wheel;
+
+        core::Vector<u32> char_inputs;
+
+        std::array<bool, usize(Key::Max)> keys = {};
+        std::array<bool, usize(MouseButton::Max)> mouse_buttons = {};
+
+        void clear() {
+            char_inputs.clear();
+        }
+    };
+
+    public:
+        ImGuiEventHandler() {
+            _states.emplace_back();
+        }
+
+        void mouse_moved(const math::Vec2i& pos) override {
+            current_state().mouse_pos = pos;
+        }
+
+        void mouse_pressed(const math::Vec2i& pos, MouseButton button) override {
+            push_state();
+            mouse_moved(pos);
+            current_state().mouse_buttons[usize(button)] = true;
+        }
+
+        void mouse_released(const math::Vec2i& pos, MouseButton button) override {
+            push_state();
+            mouse_moved(pos);
+            current_state().mouse_buttons[usize(button)] = false;
+        }
+
+        void mouse_wheel(i32 vdelta, i32 hdelta) override {
+            current_state().mouse_wheel += math::Vec2i(hdelta, vdelta);
+        }
+
+        void char_input(u32 character) override {
+            current_state().char_inputs << character;
+        }
+
+        void key_pressed(Key key) override {
+            key_event(key, true);
+        }
+
+        void key_released(Key key) override {
+            key_event(key, false);
+        }
+
+        void key_event(Key key, bool pressed) {
+            const usize index = usize(key);
+
+            if(!is_character_key(key)) {
+                if(current_state().keys[index] != pressed) {
+                    push_state();
+                }
+            }
+
+            current_state().keys[index] = pressed;
+        }
+
+        void to_imgui(ImGuiIO& io) {
+            IOState& state = _states.first();
+
+            for(usize button = 0; button != usize(MouseButton::Max); ++button) {
+                io.MouseDown[button] = state.mouse_buttons[button];
+            }
+
+            io.MousePos = state.mouse_pos;
+            io.MouseWheel = state.mouse_wheel.y();
+            io.MouseWheelH = state.mouse_wheel.x();
+
+            for(u32 c : state.char_inputs) {
+                io.AddInputCharacter(ImWchar(c));
+            }
+
+            for(usize key = 0; key != usize(Key::Max); ++key) {
+                const bool key_down = state.keys[key];
+                io.KeysDown[key] = key_down;
+            }
+
+            io.KeyCtrl = state.keys[usize(Key::Ctrl)];
+            io.KeyAlt = state.keys[usize(Key::Alt)];
+
+            if(io.KeyCtrl) {
+                for(usize i = 0; i != ctrl_shortcuts.size(); ++i) {
+                    const bool key_down = state.keys[usize(ctrl_shortcuts[i])];
+                    io.KeysDown[io.KeyMap[ImGuiKey_A + i]] = key_down;
+                }
+            }
+
+            if(_states.size() == 1) {
+                state.clear();
+            } else {
+                _states.erase(_states.begin());
+            }
+        }
+
+    private:
+        IOState& current_state() {
+            return _states.last();
+        }
+
+        void push_state() {
+            IOState& state = _states.emplace_back(current_state());
+            state.clear();
+        }
+
+        core::Vector<IOState> _states;
+
+        static constexpr std::array ctrl_shortcuts = {Key::A, Key::C, Key::V, Key::X, Key::Y, Key::Z};
+};
+
 
 // ---------------------------------------------- PLATFORM WINDOW ----------------------------------------------
 
@@ -297,7 +349,7 @@ ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent, Window::Fla
         platform(parent),
         window({1280, 768}, "Window", flags),
         swapchain(&window),
-        event_handler(std::make_unique<ImGuiEventHandler>(&window)) {
+        event_handler(std::make_unique<ImGuiEventHandler>()) {
 
     window.set_event_handler(event_handler.get());
     window.show();
@@ -309,6 +361,8 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
     if(!window.update()) {
         return false;
     }
+
+    event_handler->to_imgui(ImGui::GetIO());
 
     if(const auto r = swapchain.next_frame()) {
         const FrameToken& token = r.unwrap();
@@ -420,6 +474,8 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
         }
 
         y_profile_zone("exec once");
+
+        _main_window->event_handler->to_imgui(ImGui::GetIO());
 
         ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
         ImGui::GetIO().DisplaySize = _main_window->window.size();

@@ -38,6 +38,9 @@ struct ImGuiViewport;
 
 namespace editor {
 
+class ImGuiEventHandler;
+
+
 ImGuiPlatform* imgui_platform();
 
 class ImGuiPlatform : NonMovable {
@@ -51,7 +54,7 @@ class ImGuiPlatform : NonMovable {
 
         Window window;
         Swapchain swapchain;
-        std::unique_ptr<EventHandler> event_handler;
+        std::unique_ptr<ImGuiEventHandler> event_handler;
     };
 
     public:

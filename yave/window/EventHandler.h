@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-enum class Key {
+enum class Key : u32 {
     Unknown,
     Tab,
     Clear,
@@ -54,10 +54,22 @@ enum class Key {
 
 static_assert(char(Key::Z) == 'Z');
 
+const char* key_name(Key key);
+
+inline bool is_character_key(Key key) {
+    return u32(key) >= u32(Key::A) && u32(key) <= u32(Key::Z);
+}
+
+
+
+
+
 enum class MouseButton {
     LeftButton,
     RightButton,
-    MiddleButton
+    MiddleButton,
+
+    Max
 };
 
 class EventHandler {
