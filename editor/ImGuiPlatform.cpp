@@ -405,18 +405,19 @@ Window* ImGuiPlatform::main_window() {
     return &_main_window->window;
 }
 
-void ImGuiPlatform::exec(OnGuiFunc func, bool once) {
-    do {
-        if(!_main_window->window.update()) {
-            return;
-        }
+void ImGuiPlatform::exec(OnGuiFunc func) {
+    for(;;) {
 
-        // const float max_fps = app_settings().editor.max_fps;
-        // do {
-        //     if(!_main_window->window.update()) {
-        //         return;
-        //     }
-        // } while(max_fps > 0.0f && _frame_timer.elapsed().to_secs() < 1.0f / max_fps);
+        {
+            y_profile_zone("frame rate cap");
+            const float max_fps = app_settings().editor.max_fps;
+            do {
+
+                if(!_main_window->window.update()) {
+                    return;
+                }
+            } while(max_fps > 0.0f && _frame_timer.elapsed().to_secs() < 1.0f / max_fps);
+        }
 
         y_profile_zone("exec once");
 
@@ -459,7 +460,7 @@ void ImGuiPlatform::exec(OnGuiFunc func, bool once) {
 
             _main_window->swapchain.present(token, std::move(recorder), graphic_queue());
         }
-    } while(!once);
+    }
 }
 
 
