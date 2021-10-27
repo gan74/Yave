@@ -34,6 +34,8 @@ SOFTWARE.
 
 #include <external/imgui/yave_imgui.h>
 
+#include <deque>
+
 namespace editor {
 
 ImGuiPlatform* imgui_platform() {
@@ -227,47 +229,70 @@ static void discover_monitors(ImGuiPlatformIO& platform) {
 // ---------------------------------------------- EVENT HANDLER ----------------------------------------------
 
 class ImGuiEventHandler : public EventHandler {
-    struct IOState {
-        math::Vec2i mouse_pos;
-        math::Vec2 mouse_wheel;
 
-        core::Vector<u32> char_inputs;
-
-        std::array<bool, usize(Key::Max)> keys = {};
-        std::array<bool, usize(MouseButton::Max)> mouse_buttons = {};
-
-        void clear() {
-            char_inputs.clear();
-        }
+    enum class EventType {
+        None,
+        MouseMove,
+        MouseButton,
+        MouseWheel,
+        Input,
+        Key
     };
 
+    struct Event {
+        EventType type;
+
+        math::Vec2i pos;
+
+        u32 input;
+        bool pressed;
+
+        Key key;
+        MouseButton mouse_button;
+    };
+
+    static constexpr std::array ctrl_shortcuts = {Key::A, Key::C, Key::V, Key::X, Key::Y, Key::Z};
+
     public:
-        ImGuiEventHandler() {
-            _states.emplace_back();
+        ImGuiEventHandler(Window* window) : _window(window) {
         }
 
         void mouse_moved(const math::Vec2i& pos) override {
-            current_state().mouse_pos = pos;
+            if(_events.empty() || _events.back().type != EventType::MouseMove) {
+                _events.emplace_back(Event{});
+            }
+
+            Event& event = _events.back();
+            {
+                event.type = EventType::MouseMove;
+                event.pos = to_window(pos);
+            }
         }
 
         void mouse_pressed(const math::Vec2i& pos, MouseButton button) override {
-            push_state();
-            mouse_moved(pos);
-            current_state().mouse_buttons[usize(button)] = true;
+            mouse_event(pos, button, true);
         }
 
         void mouse_released(const math::Vec2i& pos, MouseButton button) override {
-            push_state();
-            mouse_moved(pos);
-            current_state().mouse_buttons[usize(button)] = false;
+            mouse_event(pos, button, false);
         }
 
         void mouse_wheel(i32 vdelta, i32 hdelta) override {
-            current_state().mouse_wheel += math::Vec2i(hdelta, vdelta);
+            Event event = {};
+            {
+                event.type = EventType::MouseWheel;
+                event.pos = math::Vec2i(vdelta, hdelta);
+            }
+            _events.emplace_back(event);
         }
 
         void char_input(u32 character) override {
-            current_state().char_inputs << character;
+            Event event = {};
+            {
+                event.type = EventType::Input;
+                event.input = character;
+            }
+            _events.emplace_back(event);
         }
 
         void key_pressed(Key key) override {
@@ -278,68 +303,114 @@ class ImGuiEventHandler : public EventHandler {
             key_event(key, false);
         }
 
-        void key_event(Key key, bool pressed) {
-            const usize index = usize(key);
-
-            if(!is_character_key(key)) {
-                if(current_state().keys[index] != pressed) {
-                    push_state();
-                }
-            }
-
-            current_state().keys[index] = pressed;
-        }
-
         void to_imgui(ImGuiIO& io) {
-            IOState& state = _states.first();
+            bool mouse_moved = false;
+            bool mouse_button = false;
+            std::array<bool, usize(Key::Max)> state_changed = {};
 
-            for(usize button = 0; button != usize(MouseButton::Max); ++button) {
-                io.MouseDown[button] = state.mouse_buttons[button];
-            }
+            while(!_events.empty()) {
+                const Event event = _events.front();
+                _events.pop_front();
 
-            io.MousePos = state.mouse_pos;
-            io.MouseWheel = state.mouse_wheel.y();
-            io.MouseWheelH = state.mouse_wheel.x();
+                switch(event.type) {
+                    case EventType::MouseMove:
+                        if(mouse_button) {
+                            _events.push_front(event);
+                            return;
+                        }
+                        mouse_moved = true;
+                        io.MousePos = event.pos;
+                    break;
 
-            for(u32 c : state.char_inputs) {
-                io.AddInputCharacter(ImWchar(c));
-            }
+                    case EventType::MouseButton:
+                        if(mouse_moved) {
+                            _events.push_front(event);
+                            return;
+                        }
+                        mouse_button = true;
+                        io.MousePos = event.pos;
+                        io.MouseDown[usize(event.mouse_button)] = event.pressed;
+                    return; // ------------------------------------------------------------
 
-            for(usize key = 0; key != usize(Key::Max); ++key) {
-                const bool key_down = state.keys[key];
-                io.KeysDown[key] = key_down;
-            }
+                    case EventType::MouseWheel:
+                        io.MouseWheel += event.pos.x();
+                        io.MouseWheelH += event.pos.y();
+                    break;
 
-            io.KeyCtrl = state.keys[usize(Key::Ctrl)];
-            io.KeyAlt = state.keys[usize(Key::Alt)];
+                    case EventType::Input:
+                        io.AddInputCharacter(event.input);
+                    break;
 
-            if(io.KeyCtrl) {
-                for(usize i = 0; i != ctrl_shortcuts.size(); ++i) {
-                    const bool key_down = state.keys[usize(ctrl_shortcuts[i])];
-                    io.KeysDown[io.KeyMap[ImGuiKey_A + i]] = key_down;
+                    case EventType::Key: {
+                        const usize index = usize(event.key);
+
+                        const bool change = (event.pressed != io.KeysDown[index]);
+                        if(!change) {
+                            continue;
+                        }
+
+                        if(state_changed[index]) {
+                            _events.push_front(event);
+                            return;
+                        }
+
+                        state_changed[index] = true;
+                        io.KeysDown[index] = event.pressed;
+
+                        if(!is_character_key(event.key)) {
+                            if(event.key == Key::Ctrl) {
+                                io.KeyCtrl = event.pressed;
+                            } else if(event.key == Key::Alt) {
+                                io.KeyAlt = event.pressed;
+                            }
+                            return;
+                        } else {
+                            if(io.KeyCtrl) {
+                                for(usize i = 0; i != ctrl_shortcuts.size(); ++i) {
+                                    if(event.key == ctrl_shortcuts[i]) {
+                                        io.KeysDown[io.KeyMap[ImGuiKey_A + i]] = event.pressed;
+                                    }
+                                }
+                            }
+                        }
+                    } break;
+
+                    default:
+                        y_fatal("Unknown event type");
                 }
-            }
-
-            if(_states.size() == 1) {
-                state.clear();
-            } else {
-                _states.erase(_states.begin());
             }
         }
 
     private:
-        IOState& current_state() {
-            return _states.last();
+        math::Vec2i to_window(const math::Vec2i& pos) const {
+            return ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable
+                ? pos + _window->position() : pos;
         }
 
-        void push_state() {
-            IOState& state = _states.emplace_back(current_state());
-            state.clear();
+        void mouse_event(const math::Vec2i& pos, MouseButton button, bool pressed) {
+            Event event = {};
+            {
+                event.type = EventType::MouseButton;
+                event.mouse_button = button;
+                event.pos = to_window(pos);
+                event.pressed = pressed;
+            }
+            _events.emplace_back(event);
         }
 
-        core::Vector<IOState> _states;
+        void key_event(Key key, bool pressed) {
+            Event event = {};
+            {
+                event.type = EventType::Key;
+                event.key = key;
+                event.pressed = pressed;
+            }
+            _events.emplace_back(event);
+        }
 
-        static constexpr std::array ctrl_shortcuts = {Key::A, Key::C, Key::V, Key::X, Key::Y, Key::Z};
+
+        Window* _window = nullptr;
+        std::deque<Event> _events;
 };
 
 
@@ -349,7 +420,7 @@ ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent, Window::Fla
         platform(parent),
         window({1280, 768}, "Window", flags),
         swapchain(&window),
-        event_handler(std::make_unique<ImGuiEventHandler>()) {
+        event_handler(std::make_unique<ImGuiEventHandler>(&window)) {
 
     window.set_event_handler(event_handler.get());
     window.show();
@@ -466,7 +537,6 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
             y_profile_zone("frame rate cap");
             const float max_fps = app_settings().editor.max_fps;
             do {
-
                 if(!_main_window->window.update()) {
                     return;
                 }
@@ -508,7 +578,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 _renderer->render(ImGui::GetDrawData(), pass);
             }
 
-            if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+            if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
                 y_profile_zone("secondary windows");
                 ImGui::UpdatePlatformWindows();
                 ImGui::RenderPlatformWindowsDefault();
