@@ -30,7 +30,6 @@ SOFTWARE.
 
 #include <external/imgui/yave_imgui.h>
 
-
 namespace editor {
 
 static constexpr  u32 gizmo_hover_color = 0x001A80FF;
@@ -321,14 +320,15 @@ void Gizmo::draw() {
             const math::Vec3 orig_pos = transformable->position();
             const math::Vec3 new_pos = projected_mouse + _dragging_offset;
             const math::Vec3 vec = new_pos - orig_pos;
+
+            math::Vec3 offset;
             for(usize i = 0; i != 3; ++i) {
                 if(_dragging_mask & (1 << i)) {
-                    const math::Vec3 offset = basis[i] * vec.dot(basis[i]);
-                    transformable->set_position(orig_pos + math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z())));
-
-                    undo_stack().make_dirty();
+                    offset += basis[i] * vec.dot(basis[i]);
                 }
             }
+            transformable->set_position(orig_pos + math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z())));
+            undo_stack().make_dirty();
         }
     } else if(_mode == Rotate) {
         const usize segment_count = 64;
