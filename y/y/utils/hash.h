@@ -75,16 +75,14 @@ inline auto hash_range(const C& c) {
 
 }
 
-namespace std {
 template<typename A, typename B>
-struct hash<std::pair<A, B>> : hash<A>, hash<B> {
+struct std::hash<std::pair<A, B>> : hash<A>, hash<B> {
     auto operator()(const std::pair<A, B>& p) const {
         auto a = hash<A>::operator()(p.first);
         y::hash_combine(a, hash<B>::operator()(p.second));
         return a;
     }
 };
-}
 
 #endif // Y_UTILS_HASH_H
 

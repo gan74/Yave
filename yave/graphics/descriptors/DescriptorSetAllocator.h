@@ -39,9 +39,9 @@ SOFTWARE.
 #include <memory>
 #include <unordered_map>
 
-namespace std {
+
 template<>
-struct hash<VkDescriptorSetLayoutBinding> {
+struct std::hash<VkDescriptorSetLayoutBinding> {
     auto operator()(const VkDescriptorSetLayoutBinding& l) const {
         const char* data = reinterpret_cast<const char*>(&l);
         return y::hash_range(data, data + sizeof(l));
@@ -49,12 +49,11 @@ struct hash<VkDescriptorSetLayoutBinding> {
 };
 
 template<>
-struct hash<y::core::Vector<VkDescriptorSetLayoutBinding>> {
+struct std::hash<y::core::Vector<VkDescriptorSetLayoutBinding>> {
     auto operator()(const y::core::Vector<VkDescriptorSetLayoutBinding>& k) const {
         return y::hash_range(k);
     }
 };
-}
 
 namespace yave {
 

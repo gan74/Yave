@@ -279,14 +279,12 @@ inline core::String operator "" _s(const char* c_str, usize size) {
 }
 
 
-namespace std {
 template<>
-struct hash<y::core::String> : private std::hash<std::string_view> {
+struct std::hash<y::core::String> : private std::hash<std::string_view> {
     auto operator()(const y::core::String& str) const {
         return std::hash<std::string_view>::operator()(str);
     }
 };
-}
 
 #endif // Y_CORE_STRING_H
 
