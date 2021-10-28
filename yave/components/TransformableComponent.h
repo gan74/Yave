@@ -31,6 +31,11 @@ namespace yave {
 
 class TransformableComponent final {
     public:
+        TransformableComponent() = default;
+
+        TransformableComponent(const TransformableComponent& other);
+        TransformableComponent& operator=(const TransformableComponent& other);
+
         void set_transform(const math::Transform<>& tr);
         void set_position(const math::Vec3& pos);
 
