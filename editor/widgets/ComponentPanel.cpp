@@ -24,6 +24,7 @@ SOFTWARE.
 #include "ComponentPanelWidgets.h"
 
 #include <editor/Selection.h>
+#include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
 #include <editor/utils/ui.h>
 
@@ -31,9 +32,6 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
-
-#include <y/io2/Buffer.h>
-#include <y/serde3/archives.h>
 
 #include <external/imgui/yave_imgui.h>
 
@@ -55,6 +53,8 @@ void ComponentPanel::on_gui() {
     }
 
     EditorWorld& world = current_world();
+
+
 
     {
         const ImGuiTableFlags table_flags =
@@ -80,6 +80,14 @@ void ComponentPanel::on_gui() {
             }
         }
     }
+
+
+    const bool editing = ImGui::IsWindowFocused() && ImGui::IsAnyItemActive();
+    if(!editing && _editing) {
+        undo_stack().done_editing();
+    }
+    _editing = editing;
+
 
     ImGui::Separator();
 

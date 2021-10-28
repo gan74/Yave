@@ -23,7 +23,7 @@ SOFTWARE.
 #include "ComponentPanelWidgets.h"
 #include "AssetSelector.h"
 
-#include <editor/Selection.h>
+#include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
 #include <editor/utils/ui.h>
@@ -81,11 +81,12 @@ struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
             }
 
             if(ImGui::BeginPopup("##color")) {
-                ImGui::ColorPicker3("##lightpicker", light->color().begin(), color_flags);
+                undo_stack() << ImGui::ColorPicker3("##lightpicker", light->color().begin(), color_flags);
 
                 float kelvin = std::clamp(rgb_to_k(light->color()), 1000.0f, 12000.0f);
                 if(ImGui::SliderFloat("##temperature", &kelvin, 1000.0f, 12000.0f, "%.0f°K")) {
                     light->color() = k_to_rbg(kelvin);
+                    undo_stack().make_dirty();
                 }
 
                 ImGui::EndPopup();
@@ -97,7 +98,7 @@ struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
         {
             ImGui::TextUnformatted("Intensity");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##intensity", &light->intensity(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+            undo_stack() << ImGui::DragFloat("##intensity", &light->intensity(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
         }
     }
 
@@ -106,7 +107,7 @@ struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
         {
             ImGui::TextUnformatted("Cast shadows");
             ImGui::TableNextColumn();
-            ImGui::Checkbox("##shadows", &light->cast_shadow());
+            undo_stack() << ImGui::Checkbox("##shadows", &light->cast_shadow());
         }
 
         imgui::table_begin_next_row();
@@ -116,8 +117,9 @@ struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
             ImGui::TableNextColumn();
 
             int lod = light->shadow_lod();
-            if(ImGui::DragInt("LoD", &lod, 1.0f / 8.0f, 0, 8)) {
+            if(ImGui::DragInt("##lod", &lod, 1.0f / 8.0f, 0, 8)) {
                 light->shadow_lod() = lod;
+                undo_stack().make_dirty();
             }
         }
     }
@@ -132,7 +134,7 @@ struct PointLightComponentWidget : public LightComponentWidget<PointLightCompone
         {
             ImGui::TextUnformatted("Radius");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+            undo_stack() << ImGui::DragFloat("##radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
         }
 
         imgui::table_begin_next_row();
@@ -140,7 +142,7 @@ struct PointLightComponentWidget : public LightComponentWidget<PointLightCompone
         {
             ImGui::TextUnformatted("Falloff");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+            undo_stack() << ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
         }
     }
 };
@@ -174,6 +176,8 @@ struct DirectionalLightComponentWidget : public LightComponentWidget<Directional
                 new_dir.to<2>() = math::Vec2(std::cos(azimuth), std::sin(azimuth)) * std::cos(elevation);
 
                 light->direction() = new_dir;
+
+                undo_stack().make_dirty();
             }
         }
 
@@ -186,7 +190,7 @@ struct DirectionalLightComponentWidget : public LightComponentWidget<Directional
         {
             ImGui::TextUnformatted("Cascade distance");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##dist", &light->cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
+            undo_stack() << ImGui::DragFloat("##dist", &light->cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
         }
 
     }
@@ -201,7 +205,7 @@ struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponent
         {
             ImGui::TextUnformatted("Radius");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+            undo_stack() << ImGui::DragFloat("##radius", &light->radius(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
         }
 
         imgui::table_begin_next_row();
@@ -209,7 +213,7 @@ struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponent
         {
             ImGui::TextUnformatted("Falloff");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+            undo_stack() << ImGui::DragFloat("##falloff", &light->falloff(), 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
         }
 
         imgui::table_begin_next_row();
@@ -220,6 +224,7 @@ struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponent
             float angle = math::to_deg(light->half_angle() * 2.0f);
             if(ImGui::DragFloat("##angle", &angle, 0.1f, 0.0f, 360.0f, "%.2f°")) {
                 light->half_angle() = math::to_rad(angle * 0.5f);
+                undo_stack().make_dirty();
             }
         }
 
@@ -228,7 +233,7 @@ struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponent
         {
             ImGui::TextUnformatted("Exponent");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##exponent", &light->angle_exponent(), 0.1f, 0.0f, 10.0f, "%.2f");
+            undo_stack() << ImGui::DragFloat("##exponent", &light->angle_exponent(), 0.1f, 0.0f, 10.0f, "%.2f");
         }
 
         imgui::table_begin_next_row();
@@ -242,12 +247,14 @@ struct SkyLightComponentWidget : public ComponentPanelWidget<SkyLightComponentWi
 
         ImGui::TextUnformatted("Envmap");
         ImGui::TableNextColumn();
+
         bool clear = false;
         if(imgui::asset_selector(sky->probe().id(), AssetType::Image, "Envmap", &clear)) {
             add_child_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
                 [=](AssetId asset) {
                     if(const auto probe = asset_loader().load_res<IBLProbe>(asset)) {
                         if(SkyLightComponent* sky = current_world().component<SkyLightComponent>(id)) {
+                            undo_stack().push_before_dirty(id);
                             sky->probe() = probe.unwrap();
                         }
                     }
@@ -255,6 +262,7 @@ struct SkyLightComponentWidget : public ComponentPanelWidget<SkyLightComponentWi
                 });
         } else if(clear) {
             sky->probe() = AssetPtr<IBLProbe>();
+            undo_stack().make_dirty();
         }
     }
 };
@@ -286,6 +294,7 @@ struct StaticMeshComponentWidget : public ComponentPanelWidget<StaticMeshCompone
                         [=](AssetId asset) {
                             if(const auto material = asset_loader().load_res<Material>(asset)) {
                                 if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {
+                                    undo_stack().push_before_dirty(id);
                                     sub->material = material.unwrap();
                                 }
                             }
@@ -293,6 +302,7 @@ struct StaticMeshComponentWidget : public ComponentPanelWidget<StaticMeshCompone
                         });
                 } else if(clear) {
                     sub_mesh.material = AssetPtr<Material>();
+                    undo_stack().make_dirty();
                 }
             }
 
@@ -308,6 +318,7 @@ struct StaticMeshComponentWidget : public ComponentPanelWidget<StaticMeshCompone
                         [=](AssetId asset) {
                             if(const auto mesh = asset_loader().load_res<StaticMesh>(asset)) {
                                 if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {
+                                    undo_stack().push_before_dirty(id);
                                     sub->mesh = mesh.unwrap();
                                 }
                             }
@@ -315,6 +326,7 @@ struct StaticMeshComponentWidget : public ComponentPanelWidget<StaticMeshCompone
                         });
                 } else if(clear) {
                     sub_mesh.mesh = AssetPtr<StaticMesh>();
+                    undo_stack().make_dirty();
                 }
             }
         }
@@ -323,6 +335,7 @@ struct StaticMeshComponentWidget : public ComponentPanelWidget<StaticMeshCompone
 
         if(ImGui::Button("Add sub mesh")) {
             static_mesh->sub_meshes().emplace_back();
+            undo_stack().make_dirty();
         }
     }
 };
@@ -332,25 +345,25 @@ struct AtmosphereComponentWidget : public ComponentPanelWidget<AtmosphereCompone
 
         ImGui::TextUnformatted("Planet radius");
         ImGui::TableNextColumn();
-        ImGui::InputFloat("##radius", &component->planet_radius, 0.0f, 0.0f, "%.6f km");
+        undo_stack() << ImGui::InputFloat("##radius", &component->planet_radius, 0.0f, 0.0f, "%.6f km");
 
         imgui::table_begin_next_row();
 
         ImGui::TextUnformatted("Atmosphere height");
         ImGui::TableNextColumn();
-        ImGui::InputFloat("##height", &component->planet_radius, 0.0f, 0.0f, "%.6f km");
+       undo_stack() <<  ImGui::InputFloat("##height", &component->planet_radius, 0.0f, 0.0f, "%.6f km");
 
         imgui::table_begin_next_row();
 
         ImGui::TextUnformatted("Density falloff");
         ImGui::TableNextColumn();
-        ImGui::InputFloat("##density", &component->planet_radius, 0.0f, 0.0f, "%.6f km");
+        undo_stack() << ImGui::InputFloat("##density", &component->planet_radius, 0.0f, 0.0f, "%.6f km");
 
         imgui::table_begin_next_row();
 
         ImGui::TextUnformatted("Scaterring strength");
         ImGui::TableNextColumn();
-        ImGui::InputFloat("##strength", &component->planet_radius, 0.0f, 0.0f, "%.6f km");
+        undo_stack() << ImGui::InputFloat("##strength", &component->planet_radius, 0.0f, 0.0f, "%.6f km");
     }
 };
 
@@ -363,9 +376,9 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
             ImGui::TextUnformatted("Position");
             ImGui::TableNextColumn();
 
-            ImGui::InputFloat("##x", &pos.x(), 0.0f, 0.0f, "%.2f");
-            ImGui::InputFloat("##y", &pos.y(), 0.0f, 0.0f, "%.2f");
-            ImGui::InputFloat("##z", &pos.z(), 0.0f, 0.0f, "%.2f");
+            undo_stack() << ImGui::InputFloat("##x", &pos.x(), 0.0f, 0.0f, "%.2f");
+            undo_stack() << ImGui::InputFloat("##y", &pos.y(), 0.0f, 0.0f, "%.2f");
+            undo_stack() << ImGui::InputFloat("##z", &pos.z(), 0.0f, 0.0f, "%.2f");
         }
 
         imgui::table_begin_next_row();
@@ -404,6 +417,7 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
                 if(ImGui::DragFloat(names[i], &angle, 1.0, -180.0f, 180.0f, "%.2f")) {
                     euler[indexes[i]] = math::to_rad(angle);
                     rot = math::Quaternion<>::from_euler(euler);
+                    undo_stack().make_dirty();
                 }
             }
         }
@@ -425,6 +439,7 @@ struct EditorComponentWidget : public ComponentPanelWidget<EditorComponentWidget
 
             if(ImGui::InputText("##name", buffer.data(), buffer.size())) {
                 component->set_name(buffer.data());
+                undo_stack().make_dirty();
             }
         }
 

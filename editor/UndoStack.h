@@ -30,6 +30,8 @@ SOFTWARE.
 
 namespace editor {
 
+class UndoStackWidget;
+
 class UndoStack : NonMovable {
 
     struct StackItem {
@@ -45,7 +47,14 @@ class UndoStack : NonMovable {
         void done_editing();
         void make_dirty();
 
+        bool is_entity_dirty() const;
+
+        void push_before_dirty(ecs::EntityId id);
+
+        bool can_undo() const;
         void undo();
+
+        bool can_redo() const;
         void redo();
 
 
@@ -57,15 +66,15 @@ class UndoStack : NonMovable {
         }
 
     private:
+        friend class UndoStackWidget;
         void restore_entity();
 
         ecs::EntityId _id;
-        ecs::EntityPrefab _prefab;
 
-        bool _pushed = false;
+        bool _dirty = false;
 
         core::Vector<StackItem> _stack;
-        usize _cursor = 0;
+        usize _cursor = 0; // from the end of the stack
 };
 
 }

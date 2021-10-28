@@ -107,7 +107,7 @@ MIT
 - [ ] Edit materials
 - [X] Prefabs
 - [ ] Better save system
-- [ ] Undo/redo
+- [X] Undo/redo
 - [ ] Edit shaders?
 - [ ] Edit or create meshes?
 

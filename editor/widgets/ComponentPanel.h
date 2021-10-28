@@ -40,6 +40,7 @@ class ComponentPanel final : public Widget {
 
     private:
         core::Vector<std::unique_ptr<ComponentPanelWidgetBase>> _widgets;
+        bool _editing = false;
 };
 
 }
