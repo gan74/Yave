@@ -42,7 +42,8 @@ static u32 is_ascii(WPARAM w_param, LPARAM l_param) {
 
 static Key to_key(WPARAM w_param, LPARAM l_param) {
     if(!std::iscntrl(int(w_param)) && is_ascii(w_param, l_param)) {
-        return Key(std::toupper(int(w_param)));
+        const Key key = Key(std::toupper(int(w_param)));
+        return is_character_key(key) ? key : Key::Unknown;
     }
     switch(w_param) {
         case VK_TAB:        return Key::Tab;

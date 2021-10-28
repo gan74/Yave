@@ -20,78 +20,148 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-
 #include "EventHandler.h"
+
+#include <array>
 
 namespace yave {
 
+#define YAVE_KEYS(X_MACRO)              \
+    X_MACRO(Key::Unknown)               \
+    X_MACRO(Key::Tab)                   \
+    X_MACRO(Key::Clear)                 \
+    X_MACRO(Key::Backspace)             \
+    X_MACRO(Key::Enter)                 \
+    X_MACRO(Key::Escape)                \
+    X_MACRO(Key::PageUp)                \
+    X_MACRO(Key::PageDown)              \
+    X_MACRO(Key::End)                   \
+    X_MACRO(Key::Home)                  \
+    X_MACRO(Key::Left)                  \
+    X_MACRO(Key::Up)                    \
+    X_MACRO(Key::Right)                 \
+    X_MACRO(Key::Down)                  \
+    X_MACRO(Key::Insert)                \
+    X_MACRO(Key::Delete)                \
+    X_MACRO(Key::Alt)                   \
+    X_MACRO(Key::Ctrl)                  \
+    X_MACRO(Key::F1)                    \
+    X_MACRO(Key::F2)                    \
+    X_MACRO(Key::F3)                    \
+    X_MACRO(Key::F4)                    \
+    X_MACRO(Key::F5)                    \
+    X_MACRO(Key::F6)                    \
+    X_MACRO(Key::F7)                    \
+    X_MACRO(Key::F8)                    \
+    X_MACRO(Key::F9)                    \
+    X_MACRO(Key::F10_Reserved)          \
+    X_MACRO(Key::F11)                   \
+    X_MACRO(Key::F12)                   \
+    X_MACRO(Key::Space)                 \
+    X_MACRO(Key::A)                     \
+    X_MACRO(Key::B)                     \
+    X_MACRO(Key::C)                     \
+    X_MACRO(Key::D)                     \
+    X_MACRO(Key::E)                     \
+    X_MACRO(Key::F)                     \
+    X_MACRO(Key::G)                     \
+    X_MACRO(Key::H)                     \
+    X_MACRO(Key::I)                     \
+    X_MACRO(Key::J)                     \
+    X_MACRO(Key::K)                     \
+    X_MACRO(Key::L)                     \
+    X_MACRO(Key::M)                     \
+    X_MACRO(Key::N)                     \
+    X_MACRO(Key::O)                     \
+    X_MACRO(Key::P)                     \
+    X_MACRO(Key::Q)                     \
+    X_MACRO(Key::R)                     \
+    X_MACRO(Key::S)                     \
+    X_MACRO(Key::T)                     \
+    X_MACRO(Key::U)                     \
+    X_MACRO(Key::V)                     \
+    X_MACRO(Key::W)                     \
+    X_MACRO(Key::X)                     \
+    X_MACRO(Key::Y)                     \
+    X_MACRO(Key::Z)
+
+
 const char* key_name(Key key) {
-#define CASE_KEY(key) case Key::key: return #key;
     switch(key) {
-        CASE_KEY(Unknown)
-        CASE_KEY(Tab)
-        CASE_KEY(Clear)
-        CASE_KEY(Backspace)
-        CASE_KEY(Enter)
-        CASE_KEY(Escape)
-        CASE_KEY(PageUp)
-        CASE_KEY(PageDown)
-        CASE_KEY(End)
-        CASE_KEY(Home)
-        CASE_KEY(Left)
-        CASE_KEY(Up)
-        CASE_KEY(Right)
-        CASE_KEY(Down)
-        CASE_KEY(Insert)
-        CASE_KEY(Delete)
-        CASE_KEY(Space)
-        CASE_KEY(A)
-        CASE_KEY(B)
-        CASE_KEY(C)
-        CASE_KEY(D)
-        CASE_KEY(E)
-        CASE_KEY(F)
-        CASE_KEY(G)
-        CASE_KEY(H)
-        CASE_KEY(I)
-        CASE_KEY(J)
-        CASE_KEY(K)
-        CASE_KEY(L)
-        CASE_KEY(M)
-        CASE_KEY(N)
-        CASE_KEY(O)
-        CASE_KEY(P)
-        CASE_KEY(Q)
-        CASE_KEY(R)
-        CASE_KEY(S)
-        CASE_KEY(T)
-        CASE_KEY(U)
-        CASE_KEY(V)
-        CASE_KEY(W)
-        CASE_KEY(X)
-        CASE_KEY(Y)
-        CASE_KEY(Z)
-        CASE_KEY(F1)
-        CASE_KEY(F2)
-        CASE_KEY(F3)
-        CASE_KEY(F4)
-        CASE_KEY(F5)
-        CASE_KEY(F6)
-        CASE_KEY(F7)
-        CASE_KEY(F8)
-        CASE_KEY(F9)
-        CASE_KEY(F10_Reserved)
-        CASE_KEY(F11)
-        CASE_KEY(F12)
-        CASE_KEY(Alt)
-        CASE_KEY(Ctrl)
+
+#define CASE_KEY(key) case key: return (#key) + 5;
+YAVE_KEYS(CASE_KEY)
+#undef CASE_KEY
 
         default:
         break;
     }
-#undef CASE_KEY
     return "";
 }
+
+core::Span<Key> all_keys() {
+    static const std::array keys = {
+
+#define KEY(key) key,
+YAVE_KEYS(KEY)
+#undef KEY
+
+    };
+    return keys;
+}
+
+bool is_character_key(Key key) {
+    return (u32(key) >= u32(Key::A) && u32(key) <= u32(Key::Z)) || key == Key::Space;
+}
+
+
+
+
+static constexpr u32 packed_key_index(Key key) {
+    if(u32(key) < u32(Key::MaxNonChar)) {
+       return u32(key);
+    }
+    if(key == Key::Space) {
+        return u32(Key::MaxNonChar);
+    }
+    return u32(Key::MaxNonChar) + 1 + u32(key) - u32(Key::A);
+}
+
+static_assert(packed_key_index(Key::Max) < 64);
+
+
+
+KeyCombination::KeyCombination(Key key) {
+    operator+=(key);
+}
+
+KeyCombination& KeyCombination::operator+=(Key key) {
+    _bits |= u64(1) << packed_key_index(key);
+    return *this;
+}
+
+bool KeyCombination::contains(KeyCombination keys) const {
+    return (_bits & keys._bits) == keys._bits;
+}
+
+bool KeyCombination::contains(Key key) const {
+    return ((u64(1) << packed_key_index(key)) & _bits) != 0;
+}
+
+bool KeyCombination::is_empty() const {
+    return !_bits;
+}
+
+KeyCombination operator+(Key a, Key b) {
+    return KeyCombination(a) += b;
+}
+
+KeyCombination operator+(KeyCombination a, Key b) {
+    return a += b;
+
+}
+
+#undef YAVE_KEYS
 
 }
 

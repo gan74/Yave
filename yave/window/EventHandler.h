@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 #include <y/math/Vec.h>
+#include <y/core/Span.h>
 
 namespace yave {
 
@@ -44,22 +45,44 @@ enum class Key : u32 {
     Down,
     Insert,
     Delete,
-    Space = ' ',
-    A = 'A', B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+    Alt,
+    Ctrl,
     F1, F2, F3, F4, F5, F6, F7, F8, F9, F10_Reserved, F11, F12,
-    Alt, Ctrl,
 
-    Max
+    MaxNonChar,
+
+    A = 'A', B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+    Space = ' ',
+
+    Max = u32(Z) + 1
 };
 
 static_assert(char(Key::Z) == 'Z');
 
+
+
 const char* key_name(Key key);
+core::Span<Key> all_keys();
+bool is_character_key(Key key);
 
-inline bool is_character_key(Key key) {
-    return u32(key) >= u32(Key::A) && u32(key) <= u32(Key::Z);
-}
 
+class KeyCombination {
+    public:
+        KeyCombination() = default;
+        KeyCombination(Key key);
+
+        bool contains(KeyCombination keys) const;
+        bool contains(Key key) const;
+        bool is_empty() const;
+
+        KeyCombination& operator+=(Key key);
+
+    private:
+        u64 _bits = 0;
+};
+
+KeyCombination operator+(Key a, Key b);
+KeyCombination operator+(KeyCombination a, Key b);
 
 
 

@@ -58,6 +58,7 @@ class UiManager : NonMovable {
     private:
         void update_fps_counter();
         void draw_fps_counter();
+        void update_shortcuts();
         void draw_menu_bar();
         void set_widget_id(Widget* widget);
 
@@ -67,6 +68,7 @@ class UiManager : NonMovable {
         Widget* _auto_parent = nullptr;
 
         core::Vector<const EditorAction*> _actions;
+        core::Vector<std::pair<const EditorAction*, bool>> _shortcuts;
 
         core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
 

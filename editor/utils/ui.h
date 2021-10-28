@@ -48,7 +48,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size);
 bool begin_suggestion_popup();
 void end_suggestion_popup();
 
-bool suggestion_item(const char* name);
+bool suggestion_item(const char* name, const char* shortcut = nullptr);
 
 void table_begin_next_row(int row_index = 0);
 

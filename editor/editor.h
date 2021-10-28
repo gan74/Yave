@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef EDITOR_EDITOR_H
 #define EDITOR_EDITOR_H
 
-#include <yave/yave.h>
+#include <yave/window/EventHandler.h>
 
 #include <editor/utils/forward.h>
 
@@ -79,12 +79,13 @@ T* add_detached_widget(Args&&... args) {
 
 struct EditorAction {
     enum Flags : u32 {
-        CallOnStartUp = 0x01,
+        CallOnStartUp           = 0x01,
     };
 
     std::string_view name;
     std::string_view description;
     u32 flags = 0;
+    KeyCombination shortcut;
     void (*function)() = nullptr;
     core::Span<std::string_view> menu;
     EditorAction const* next = nullptr;
@@ -99,13 +100,13 @@ void register_action(EditorAction* action);
 }
 
 
-#define editor_action_(name, desc, flags, func, ...)                                                    \
+#define editor_action_(name, desc, flags, shortcut, func, ...)                                          \
     struct y_create_name_with_prefix(trigger_t) {                                                       \
         inline static struct action_register_t {                                                        \
             action_register_t() {                                                                       \
                 static constexpr std::string_view names[] = { name, __VA_ARGS__ };                      \
                 static editor::EditorAction action = {                                                  \
-                    names[0], desc, (flags), []{ func(); },                                             \
+                    names[0], desc, (flags), yave::KeyCombination(shortcut), []{ func(); },             \
                     y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr           \
                 };                                                                                      \
                 editor::detail::register_action(&action);                                               \
@@ -116,7 +117,8 @@ void register_action(EditorAction* action);
     };
 
 
-#define editor_action_desc(name, desc, func, ...) editor_action_(name, desc, 0, func, __VA_ARGS__)
+#define editor_action_shortcut(name, shortcut, func, ...) editor_action_(name, "", 0, shortcut, func, __VA_ARGS__)
+#define editor_action_desc(name, desc, func, ...) editor_action_(name, desc, 0, /* no shortcut */, func, __VA_ARGS__)
 #define editor_action(name, func, ...) editor_action_desc(name, "", func, __VA_ARGS__)
 
 

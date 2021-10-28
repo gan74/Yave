@@ -325,13 +325,18 @@ void end_suggestion_popup() {
     ImGui::PopStyleVar(1);
 }
 
-bool suggestion_item(const char* name) {
+bool suggestion_item(const char* name, const char* shortcut) {
     y_debug_assert(search_bar_state.focussed);
     y_debug_assert(search_bar_state.open_popup);
 
     bool selected = search_bar_state.item_count == search_bar_state.selection_index;
     bool activated = ImGui::Selectable(name, &selected) || ImGui::IsItemActivated();
     const bool hovered = ImGui::IsItemHovered();
+
+    if(shortcut) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", shortcut);
+    }
 
     search_bar_state.keep_open |= hovered;
 

@@ -35,9 +35,30 @@ SOFTWARE.
 
 namespace editor {
 
+static core::String shortcut_text(KeyCombination shortcut) {
+    core::String text;
+    if(!shortcut.is_empty()) {
+        for(const Key k : all_keys()) {
+            if(shortcut.contains(k)) {
+                if(!text.is_empty()) {
+                    text.push_back('+');
+                }
+                text += key_name(k);
+            }
+        }
+    }
+    return text;
+}
+
+
+
+
 UiManager::UiManager() {
     for(const EditorAction* action = all_actions(); action; action = action->next) {
         _actions << action;
+        if(!action->shortcut.is_empty()) {
+            _shortcuts << std::make_pair(action, false);
+        }
     }
 
     std::sort(_actions.begin(), _actions.end(), [](const EditorAction* a, const EditorAction* b) {
@@ -49,7 +70,10 @@ UiManager::~UiManager() {
 }
 
 void UiManager::on_gui() {
+    y_profile();
+
     update_fps_counter();
+    update_shortcuts();
     draw_menu_bar();
 
     core::ExternalHashMap<Widget*, int> to_destroy;
@@ -100,6 +124,33 @@ void UiManager::draw_fps_counter() {
     }
 }
 
+void UiManager::update_shortcuts() {
+    y_profile();
+
+    const auto& io = ImGui::GetIO();
+    if(io.WantCaptureKeyboard) {
+        return;
+    }
+
+    KeyCombination keys;
+    for(const Key k : all_keys()) {
+        if(io.KeysDown[u32(k)]) {
+            keys += k;
+        }
+    }
+
+    for(auto&& action : _shortcuts) {
+        if(keys.contains(action.first->shortcut)) {
+            if(!action.second) {
+                action.first->function();
+                action.second = true;
+            }
+        } else {
+            action.second = false;
+        }
+    }
+}
+
 void UiManager::draw_menu_bar() {
     ImGui::PushID("##mainmenubar");
     if(ImGui::BeginMainMenuBar()) {
@@ -132,7 +183,8 @@ void UiManager::draw_menu_bar() {
             }
 
             if(stack_size == action->menu.size()) {
-                if(ImGui::MenuItem(action->name.data())) {
+                const core::String shortcut = shortcut_text(action->shortcut);
+                if(ImGui::MenuItem(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
                     action->function();
                 }
             }
@@ -157,7 +209,8 @@ void UiManager::draw_menu_bar() {
                     const std::regex regex(_search_pattern.data(), std::regex::icase);
                     for(const EditorAction* action : _actions) {
                         if(std::regex_search(action->name.data(), regex)) {
-                            if(imgui::suggestion_item(action->name.data())) {
+                            const core::String shortcut = shortcut_text(action->shortcut);
+                            if(imgui::suggestion_item(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
                                 action->function();
                                 _search_pattern[0] = 0;
                             }
