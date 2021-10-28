@@ -30,7 +30,7 @@ namespace editor {
 
 class AssetSelector final : public ResourceBrowser {
     public:
-        AssetSelector(AssetType filter);
+        AssetSelector(AssetType filter, const char* name = nullptr);
 
         template<typename F>
         void set_selected_callback(F&& func) {

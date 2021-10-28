@@ -26,8 +26,8 @@ SOFTWARE.
 
 namespace editor {
 
-AssetSelector::AssetSelector(AssetType filter) :
-        ResourceBrowser(fmt("% Asset selector", asset_type_icon(filter))),
+AssetSelector::AssetSelector(AssetType filter, const char* name) :
+        ResourceBrowser(name ? std::string_view(name) : fmt("Select %", asset_type_name(filter))),
         _filter(filter) {
 }
 

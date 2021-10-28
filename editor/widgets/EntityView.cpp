@@ -66,7 +66,18 @@ static void add_debug_entities() {
     }
 }
 
+static void add_prefab() {
+    add_detached_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
+        [](AssetId asset) {
+            const ecs::EntityId id = current_world().add_prefab(asset);
+            selection().set_selected(id);
+            return id.is_valid();
+        });
+}
+
+
 editor_action("Add debug entities", add_debug_entities)
+editor_action("Add prefab", add_prefab)
 
 
 
@@ -119,12 +130,7 @@ void EntityView::on_gui() {
         ImGui::Separator();
 
         if(ImGui::MenuItem("Add prefab")) {
-            add_detached_widget<AssetSelector>(AssetType::Prefab)->set_selected_callback(
-                [](AssetId asset) {
-                    const ecs::EntityId id = current_world().add_prefab(asset);
-                    selection().set_selected(id);
-                    return id.is_valid();
-                });
+            add_prefab();
         }
 
 
