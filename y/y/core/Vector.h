@@ -147,8 +147,8 @@ class Vector : ResizePolicy, Allocator {
             return *this;
         }
 
-        inline bool operator==(Span<value_type> v) const {
-            return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
+        inline bool operator==(Span<value_type> other) const {
+            return size() == other.size() && std::equal(begin(), end(), other.begin(), other.end());
         }
 
         inline bool operator!=(Span<value_type> v) const {

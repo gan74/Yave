@@ -123,7 +123,7 @@ class MutableSpan {
         }
 
         bool operator==(const MutableSpan& other) const {
-            return _data == other._data && _size == other._size;
+            return size() == other.size() && std::equal(begin(), end(), other.begin(), other.end());
         }
 
         bool operator!=(const MutableSpan& other) const {
