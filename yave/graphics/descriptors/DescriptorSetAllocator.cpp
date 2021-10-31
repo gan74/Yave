@@ -221,22 +221,23 @@ DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
 }
 
 void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
+    y_profile();
+
     const usize max_inline_uniform_size = device_properties().max_inline_uniform_size;
     const bool inline_uniform_supported = max_inline_uniform_size != 0;
     const usize block_buffer_alignment = inline_sub_buffer_alignment();
 
-    core::Vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_blocks;
-    core::Vector<VkDescriptorBufferInfo> inline_blocks_buffer_infos;
+    const usize descriptor_count = descriptors.size();
 
-    if(_inline_blocks) {
-        inline_blocks.set_min_capacity(descriptors.size());
-    }
-    if(!_inline_buffer.is_null()) {
-        inline_blocks_buffer_infos.set_min_capacity(descriptors.size());
-    }
+    usize inline_block_count = 0;
+    core::ScratchPad<VkWriteDescriptorSetInlineUniformBlockEXT> inline_blocks(_inline_blocks ? descriptor_count : 0);
+
+    usize inline_block_buffer_count = 0;
+    core::ScratchPad<VkDescriptorBufferInfo> inline_blocks_buffer_infos(!_inline_buffer.is_null() ? descriptor_count : 0);
+
 
     usize inline_buffer_offset = 0;
-    auto writes = core::ScratchPad<VkWriteDescriptorSet>(descriptors.size());
+    auto writes = core::ScratchPad<VkWriteDescriptorSet>(descriptor_count);
     for(usize i = 0; i != descriptors.size(); ++i) {
         const auto& desc = descriptors[i];
         const u32 descriptor_count = desc.descriptor_set_layout_binding(0).descriptorCount;
@@ -266,25 +267,28 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
                     std::memcpy(mapping.data(), block.data, block.size);
                 }
 
-                write.pBufferInfo = &inline_blocks_buffer_infos.emplace_back(block_buffer.descriptor_info());
+                write.pBufferInfo = &(inline_blocks_buffer_infos[inline_block_buffer_count++] = block_buffer.descriptor_info());
                 write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 write.descriptorCount = 1;
 
                 inline_buffer_offset += aligned_block_size;
             } else {
-                VkWriteDescriptorSetInlineUniformBlockEXT& inline_block = inline_blocks.emplace_back(VkWriteDescriptorSetInlineUniformBlockEXT(vk_struct()));
+                VkWriteDescriptorSetInlineUniformBlockEXT& inline_block = (inline_blocks[inline_block_count++] = vk_struct());
                 inline_block.pData = block.data;
                 inline_block.dataSize = u32(block.size);
                 write.pNext = &inline_block;
                 y_debug_assert(inline_block.dataSize % 4 == 0);
             }
-
         } else {
             y_fatal("Unknown descriptor type");
         }
 
+        y_debug_assert(inline_block_count <= inline_blocks.size());
+        y_debug_assert(inline_block_buffer_count <= inline_blocks_buffer_infos.size());
+
         writes[i] = write;
     }
+
 
     vkUpdateDescriptorSets(vk_device(), u32(writes.size()), writes.data(), 0, nullptr);
 }

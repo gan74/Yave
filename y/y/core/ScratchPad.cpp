@@ -35,6 +35,10 @@ static thread_local FixedArray<u8> scratch_buffer;
 static thread_local u8* scratch_begin = nullptr;
 
 void* alloc_scratchpad(usize size) {
+    if(!size) {
+        return nullptr;
+    }
+
     auto& scratch = scratch_buffer;
     auto& begin = scratch_begin;
 
@@ -54,6 +58,10 @@ void* alloc_scratchpad(usize size) {
 
 
 void free_scratchpad(void* ptr, usize size) {
+    if(!size) {
+        return;
+    }
+
     auto& begin = scratch_begin;
     y_debug_assert(begin);
 

@@ -83,8 +83,8 @@ class ScratchPad : NonCopyable {
             clear();
         }
 
-        inline bool operator==(const ScratchPad<value_type>& v) const {
-            return size() == v.size() ? std::equal(begin(), end(), v.begin(), v.end()) : false;
+        inline bool operator==(const ScratchPad<value_type>& other) const {
+            return _size == other._size && std::equal(begin(), end(), other.begin(), other.end());
         }
 
         inline bool operator!=(const ScratchPad<value_type>& v) const {
