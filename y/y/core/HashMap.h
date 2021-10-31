@@ -28,6 +28,9 @@ SOFTWARE.
 
 #include <y/utils/traits.h>
 
+#include <functional>
+
+
 namespace y {
 namespace core {
 
@@ -84,8 +87,8 @@ inline constexpr usize probing_offset(usize i) {
 
 
 namespace external {
-template<typename Key, typename Value, typename Hasher = std::hash<Key>, bool StoreHash = false>
-class ExternalHashMap : Hasher {
+template<typename Key, typename Value, typename Hasher = std::hash<Key>, typename Equal = std::equal_to<Key>, bool StoreHash = false>
+class ExternalHashMap : Hasher, Equal {
     public:
         using key_type = remove_cvref_t<Key>;
         using mapped_type = remove_cvref_t<Value>;
@@ -374,6 +377,10 @@ class ExternalHashMap : Hasher {
             return Hasher::operator()(key);
         }
 
+        inline bool equal(const key_type& a, const key_type& b) const {
+            return Equal::operator()(a, b);
+        }
+
         inline Bucket find_bucket_for_insert(const key_type& key) {
             const usize h = hash(key);
             return find_bucket_for_insert(key, h);
@@ -395,7 +402,7 @@ class ExternalHashMap : Hasher {
                         if(state.is_empty_strict()) {
                             return {best_index, h};
                         }
-                    } else if(state.is_hash(h) && _entries[index].key() == key) {
+                    } else if(state.is_hash(h) && equal(_entries[index].key(), key)) {
                         return {index, h};
                     }
                 }
@@ -427,7 +434,7 @@ class ExternalHashMap : Hasher {
                 const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
                 const State& state = _states[index];
                 if(state.is_hash(h)) {
-                    if(_entries[index].key() == key) {
+                    if(equal(_entries[index].key(), key)) {
                         return index;
                     }
                 } else if(state.is_empty_strict()) {
