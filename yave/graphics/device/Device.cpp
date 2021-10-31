@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "Device.h"
+#include "deviceutils.h"
 #include "PhysicalDevice.h"
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
@@ -33,131 +34,6 @@ SOFTWARE.
 
 namespace yave {
 
-Device* Device::_main_device = nullptr;
-
-// https://stackoverflow.com/questions/16190078/how-to-atomically-update-a-maximum-value
-template<typename T>
-static void update_maximum(std::atomic<T>& maximum_value, const T& value) noexcept {
-    T prev_value = maximum_value;
-    while(prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value)) {
-    }
-}
-
-static float device_score(const PhysicalDevice& device) {
-    if(!Device::has_required_features(device)) {
-        return -std::numeric_limits<float>::max();
-    }
-
-    if(!Device::has_required_properties(device)) {
-        return -std::numeric_limits<float>::max();
-    }
-
-    const usize heap_size = device.total_device_memory() / (1024 * 1024);
-    const float heap_score = float(heap_size) / float(heap_size + 8 * 1024);
-    const float type_score = device.is_discrete() ? 1.0f : 0.0f;
-    return heap_score + type_score;
-}
-
-static const PhysicalDevice& find_best_device(core::Span<PhysicalDevice> devices) {
-    float best_score = -std::numeric_limits<float>::max();
-    usize device_index = usize(-1);
-
-    for(usize i = 0; i != devices.size(); ++i) {
-        const float dev_score = device_score(devices[i]);
-        if(dev_score > best_score) {
-            best_score = dev_score;
-            device_index = i;
-        }
-    }
-
-    y_always_assert(device_index != usize(-1), "No compatible device found");
-
-    return devices[device_index];
-}
-
-
-static bool try_enable_extension(core::Vector<const char*>& exts, const char* name, const PhysicalDevice& device) {
-    if(device.is_extension_supported(name)) {
-        exts << name;
-        return true;
-    }
-    log_msg(fmt("% not supported", name), Log::Warning);
-    return false;
-}
-
-static std::array<Sampler, 5> create_samplers() {
-    std::array<Sampler, 5> samplers = {
-        SamplerType::LinearRepeat,
-        SamplerType::LinearClamp,
-        SamplerType::PointRepeat,
-        SamplerType::PointClamp,
-        SamplerType::Shadow,
-    };
-    return samplers;
-}
-
-static core::Vector<VkQueueFamilyProperties> enumerate_family_properties(VkPhysicalDevice device) {
-    core::Vector<VkQueueFamilyProperties> families;
-    {
-        u32 count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &count, nullptr);
-        families = core::Vector<VkQueueFamilyProperties>(count, VkQueueFamilyProperties{});
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &count, families.data());
-    }
-    return families;
-}
-
-static u32 queue_family_index(core::Span<VkQueueFamilyProperties> families, VkQueueFlags flags) {
-    for(usize i = 0; i != families.size(); ++i) {
-        if(families[i].queueCount && (families[i].queueFlags & flags) == flags) {
-            return u32(i);
-        }
-    }
-    y_fatal("No queue available for given flag set");
-}
-
-static VkQueue create_queue(u32 family_index, u32 index) {
-    VkQueue q = {};
-    vkGetDeviceQueue(vk_device(), family_index, index, &q);
-    return q;
-}
-
-static void print_physical_properties(const VkPhysicalDeviceProperties& properties) {
-    struct Version {
-        const u32 patch : 12;
-        const u32 minor : 10;
-        const u32 major : 10;
-    };
-
-    const auto& v_ref = properties.apiVersion;
-    const auto version = reinterpret_cast<const Version&>(v_ref);
-    log_msg(fmt("Running Vulkan (%.%.%) % bits on % (%)", u32(version.major), u32(version.minor), u32(version.patch),
-            is_64_bits() ? 64 : 32, properties.deviceName, (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")));
-    log_msg(fmt("sizeof(PhysicalDevice) = %", sizeof(PhysicalDevice)));
-}
-
-static void print_enabled_extensions(core::Span<const char*> extensions) {
-    for(const char* ext : extensions) {
-        log_msg(fmt("% enabled", ext), Log::Debug);
-    }
-}
-
-static void print_properties(const DeviceProperties& properties) {
-    log_msg(fmt("max_memory_allocations = %", properties.max_memory_allocations), Log::Debug);
-    log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size), Log::Debug);
-    log_msg(fmt("max_uniform_buffer_size = %", properties.max_uniform_buffer_size), Log::Debug);
-}
-
-
-
-
-
-
-static const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
-
-Device::Device(Instance& instance) : Device(instance, find_best_device(instance.physical_devices())) {
-}
-
 Device::Device(Instance& instance, PhysicalDevice device) :
         _instance(instance),
         _physical(std::make_unique<PhysicalDevice>(device)),
@@ -168,6 +44,8 @@ Device::Device(Instance& instance, PhysicalDevice device) :
     const DebugParams& debug = _instance.debug_params();
 
     const core::Vector<VkQueueFamilyProperties> queue_families = enumerate_family_properties(vk_physical_device());
+
+    const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
     _main_queue_index = queue_family_index(queue_families, graphic_queue_flags);
 
     auto extensions = core::vector_with_capacity<const char*>(4);
@@ -231,18 +109,15 @@ Device::Device(Instance& instance, PhysicalDevice device) :
 
     print_properties(_properties);
 
-    y_always_assert(_main_device == nullptr, "Device already exists.");
-    _main_device = this;
-
-    _graphic_queue = Queue(_main_queue_index, create_queue(_main_queue_index, 0));
-    _loading_queue = Queue(_main_queue_index, create_queue(_main_queue_index, 1));
+    _graphic_queue = Queue(_main_queue_index, create_queue(_device, _main_queue_index, 0));
+    _loading_queue = Queue(_main_queue_index, create_queue(_device, _main_queue_index, 1));
 
     for(usize i = 0; i != _samplers.size(); ++i) {
-        _samplers[i].init(SamplerType(i));
+        _samplers[i].init(create_sampler(this, SamplerType(i)));
     }
 
     _lifetime_manager.init();
-    _allocator.init();
+    _allocator.init(device_properties());
     _descriptor_set_allocator.init();
 
 
@@ -261,17 +136,15 @@ Device::Device(Instance& instance, PhysicalDevice device) :
 
         vk_check(vkSignalSemaphore(_device, &signal_info));
     }
+}
 
-    {
-        y_profile_zone("loading resources");
-        _resources.init();
-    }
+void Device::late_init() {
+    y_profile_zone("loading resources");
+    _resources.init();
 }
 
 Device::~Device() {
     y_profile();
-
-    y_always_assert(_main_device == this, "Device does not exist");
 
     wait_all_queues();
 
@@ -313,10 +186,7 @@ Device::~Device() {
         vkDestroyDevice(_device, nullptr);
         _device = {};
     }
-
-    _main_device = nullptr;
 }
-
 
 void Device::create_thread_device(ThreadDevicePtr* dptr) const {
     y_debug_assert(dptr && *dptr == nullptr);
@@ -341,6 +211,24 @@ void Device::destroy_thread_device(ThreadDevicePtr device) const {
     _thread_devices.erase_unordered(it);
 }
 
+PhysicalDevice Device::find_best_device(const Instance& instance) {
+    const auto devices = instance.physical_devices();
+
+    float best_score = -std::numeric_limits<float>::max();
+    usize device_index = usize(-1);
+
+    for(usize i = 0; i != devices.size(); ++i) {
+        const float dev_score = device_score(devices[i]);
+        if(dev_score > best_score) {
+            best_score = dev_score;
+            device_index = i;
+        }
+    }
+
+    y_always_assert(device_index != usize(-1), "No compatible device found");
+
+    return devices[device_index];
+}
 
 VkPhysicalDeviceFeatures Device::required_device_features() {
     VkPhysicalDeviceFeatures required = {};
@@ -409,12 +297,6 @@ bool Device::has_required_properties(const PhysicalDevice &physical) {
 
     return ok;
 }
-
-DevicePtr Device::main_device() {
-    y_debug_assert(_main_device);
-    return _main_device;
-}
-
 
 const PhysicalDevice& Device::physical_device() const {
     return *_physical;

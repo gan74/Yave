@@ -42,16 +42,11 @@ SOFTWARE.
 
 namespace yave {
 
-Y_TODO(const corrrectness?)
+Y_TODO(const correctness?)
 class Device : NonMovable {
 
     public:
-        explicit Device(Instance& instance);
-
-        Device(Instance& instance, PhysicalDevice device);
         ~Device();
-
-        static DevicePtr main_device();
 
         void wait_all_queues() const;
         concurrent::VectorLock<std::mutex> lock_all_queues_and_wait() const;
@@ -95,12 +90,17 @@ class Device : NonMovable {
         const DebugUtils* debug_utils() const;
         const RayTracing* ray_tracing() const;
 
+        static PhysicalDevice find_best_device(const Instance& instance);
+
+    private:
+        friend DevicePtr init_device(Instance& instance, PhysicalDevice device);
+
+        Device(Instance& instance, PhysicalDevice device);
+        void late_init();
+
     private:
         void create_thread_device(ThreadDevicePtr* dptr) const;
         void destroy_thread_device(ThreadDevicePtr device) const;
-
-        static Device* _main_device;
-
 
         VkDevice _device = {};
 

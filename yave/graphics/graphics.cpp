@@ -27,13 +27,52 @@ SOFTWARE.
 
 namespace yave {
 
+static struct MainDevice {
+    union DeviceStorage {
+        DeviceStorage() {}
+        ~DeviceStorage() {}
+
+        Device device;
+    } _storage;
+
+    bool _is_init = false;
+} _main_device;
+
+DevicePtr init_device(Instance& instance) {
+    return init_device(instance, Device::find_best_device(instance));
+}
+
+DevicePtr init_device(Instance& instance, PhysicalDevice device) {
+    y_always_assert(!_main_device._is_init, "Device already initialized");
+
+    ::new(&_main_device._storage.device) Device(instance, device);
+    _main_device._is_init = true;
+    _main_device._storage.device.late_init();
+
+    return main_device();
+}
+
+void destroy_device() {
+    y_always_assert(_main_device._is_init, "Device not initialized");
+
+    _main_device._storage.device.~Device();
+    _main_device._is_init = false;
+}
+
 DevicePtr main_device() {
-    return Device::main_device();
+    y_debug_assert(_main_device._is_init);
+
+    return &_main_device._storage.device;
 }
 
 ThreadDevicePtr thread_device() {
     return main_device()->thread_device();
 }
+
+
+
+
+
 
 VkDevice vk_device() {
     return main_device()->vk_device();

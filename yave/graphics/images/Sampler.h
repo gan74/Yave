@@ -31,7 +31,7 @@ namespace yave {
 Y_TODO(move to device)
 class Sampler final {
     public:
-        Sampler(SamplerType type = SamplerType::LinearRepeat);
+        Sampler(VkSampler sampler);
         ~Sampler();
 
         Sampler(Sampler&&) = default;

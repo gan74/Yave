@@ -30,6 +30,11 @@ SOFTWARE.
 
 namespace yave {
 
+DevicePtr init_device(Instance& instance);
+DevicePtr init_device(Instance& instance, PhysicalDevice device);
+
+void destroy_device();
+
 DevicePtr main_device();
 ThreadDevicePtr thread_device();
 

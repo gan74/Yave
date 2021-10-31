@@ -97,7 +97,9 @@ int main(int argc, char** argv) {
     }
 
     Instance instance = create_instance();
-    Device device(instance);
+
+    init_device(instance);
+    y_defer(destroy_device());
 
     ImGuiPlatform platform(multi_viewport);
     EditorApplication editor(&platform);

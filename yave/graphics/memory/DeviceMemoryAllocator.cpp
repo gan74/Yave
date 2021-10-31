@@ -44,8 +44,7 @@ u64 DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
 }
 
 
-DeviceMemoryAllocator::DeviceMemoryAllocator() :
-        _max_allocs(device_properties().max_memory_allocations) {
+DeviceMemoryAllocator::DeviceMemoryAllocator(const DeviceProperties& properties) : _max_allocs(properties.max_memory_allocations) {
 }
 
 DeviceMemory DeviceMemoryAllocator::dedicated_alloc(VkMemoryRequirements reqs, MemoryType type) {
