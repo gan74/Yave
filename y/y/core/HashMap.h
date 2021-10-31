@@ -184,11 +184,13 @@ class ExternalHashMap : Hasher, Equal {
         static_assert(sizeof(StateHash) == sizeof(usize));
         static_assert(sizeof(SimpleState) == sizeof(u8));
 
-        inline usize retrieve_hash(const key_type&, const StateHash& state) const {
+        template<typename K>
+        inline usize retrieve_hash(const K&, const StateHash& state) const {
             return state.hash();
         }
 
-        inline usize retrieve_hash(const key_type& key, const SimpleState&) const {
+        template<typename K>
+        inline usize retrieve_hash(const K& key, const SimpleState&) const {
             return hash(key);
         }
 
@@ -207,8 +209,8 @@ class ExternalHashMap : Hasher, Equal {
                 checked_set_full();
             }
 
-
-            inline void set_empty(const key_type& k) {
+            template<typename K>
+            inline void set_empty(const K& k) {
                 checked_set_full();
                 ::new(&key_value) pair_type{k, mapped_type{}};
             }
@@ -373,20 +375,24 @@ class ExternalHashMap : Hasher, Equal {
             return bucket_count() * max_load_factor <= _size;
         }
 
-        inline usize hash(const key_type& key) const {
+        template<typename K>
+        inline usize hash(const K& key) const {
             return Hasher::operator()(key);
         }
 
-        inline bool equal(const key_type& a, const key_type& b) const {
+        template<typename K>
+        inline bool equal(const key_type& a, const K& b) const {
             return Equal::operator()(a, b);
         }
 
-        inline Bucket find_bucket_for_insert(const key_type& key) {
+        template<typename K>
+        inline Bucket find_bucket_for_insert(const K& key) {
             const usize h = hash(key);
             return find_bucket_for_insert(key, h);
         }
 
-        Bucket find_bucket_for_insert(const key_type& key, usize h) {
+        template<typename K>
+        Bucket find_bucket_for_insert(const K& key, usize h) {
             const usize buckets = bucket_count();
             const usize hash_mask = buckets - 1;
             usize probes = 0;
@@ -423,7 +429,8 @@ class ExternalHashMap : Hasher, Equal {
             y_fatal("Internal error: unable to find empty bucket");
         }
 
-        usize find_bucket(const key_type& key) const {
+        template<typename K>
+        usize find_bucket(const K& key) const {
             if(is_empty()) {
                 return invalid_index;
             }
@@ -600,11 +607,13 @@ class ExternalHashMap : Hasher, Equal {
             return double(_size) / double(_states.size());
         }
 
-        inline bool contains(const key_type& key) const {
+        template<typename K>
+        inline bool contains(const K& key) const {
             return find_bucket(key) != invalid_index;
         }
 
-        inline iterator find(const key_type& key) {
+        template<typename K>
+        inline iterator find(const K& key) {
             const usize index = find_bucket(key);
             if(index != invalid_index) {
                 return iterator(this, index);
@@ -612,7 +621,8 @@ class ExternalHashMap : Hasher, Equal {
             return end();
         }
 
-        inline const_iterator find(const key_type& key) const {
+        template<typename K>
+        inline const_iterator find(const K& key) const {
             const usize index = find_bucket(key);
             if(index != invalid_index) {
                 return const_iterator(this, index);
@@ -635,7 +645,8 @@ class ExternalHashMap : Hasher, Equal {
             set_min_capacity(cap);
         }
 
-        inline void erase(const key_type& key) {
+        template<typename K>
+        inline void erase(const K& key) {
             if(const auto it = find(key); it != end()) {
                 erase(it);
             }
@@ -655,8 +666,8 @@ class ExternalHashMap : Hasher, Equal {
             --_size;
         }
 
-        template<typename... Args>
-        inline std::pair<iterator, bool> emplace(const key_type& key, Args&&... args) {
+        template<typename K, typename... Args>
+        inline std::pair<iterator, bool> emplace(const K& key, Args&&... args) {
             return insert(pair_type{key, mapped_type{y_fwd(args)...}});
         }
 
@@ -689,7 +700,8 @@ class ExternalHashMap : Hasher, Equal {
             }
         }
 
-        inline mapped_type& operator[](const key_type& key) {
+        template<typename K>
+        inline mapped_type& operator[](const K& key) {
             if(should_expand()) {
                 expand();
             }
