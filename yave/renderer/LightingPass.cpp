@@ -130,6 +130,9 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
 
 static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView& scene) {
+    y_profile();
+
+    Y_TODO(Use octree)
     const Frustum frustum = scene.camera().frustum();
 
     u32 count = 0;
@@ -155,8 +158,11 @@ static u32 fill_spot_light_buffer(
         const SceneView& scene, bool render_shadows,
         const ShadowMapPass& shadow_pass) {
 
+    y_profile();
+
     y_debug_assert(Transforms == !!transforms);
 
+    Y_TODO(Use octree)
     const Frustum frustum = scene.camera().frustum();
 
     u32 count = 0;

@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
+#include <yave/systems/OctreeSystem.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/ecs/EntityWorld.h>
@@ -51,11 +52,14 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, co
     return pass;
 }
 
+
 static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder& recorder, const FrameGraphPass* pass, usize index = 0) {
     y_profile();
+
     const auto region = recorder.region("Scene");
 
     const ecs::EntityWorld& world = sub_pass->scene_view.world();
+    const Camera& camera = sub_pass->scene_view.camera();
 
     auto transform_mapping = pass->resources().mapped_buffer(sub_pass->transform_buffer);
     const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
@@ -63,9 +67,18 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 
     recorder.bind_attrib_buffers({}, {transforms});
 
-    for(const auto& [tr, me] : world.view<TransformableComponent, StaticMeshComponent>().components()) {
+    core::Vector<ecs::EntityId> visible;
+    const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
+    if(octree_system) {
+        visible = octree_system->octree().find_entities(camera.frustum());
+    }
+    const auto entities = octree_system
+        ? world.view<TransformableComponent, StaticMeshComponent>(visible)
+        : world.view<TransformableComponent, StaticMeshComponent>();
+
+    for(const auto& [tr, mesh] : entities.components()) {
         transform_mapping[index] = tr.transform();
-        me.render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
+        mesh.render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
         ++index;
     }
 

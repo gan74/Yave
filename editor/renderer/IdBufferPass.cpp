@@ -32,6 +32,7 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
+#include <yave/systems/OctreeSystem.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/meshes/StaticMesh.h>
@@ -46,16 +47,13 @@ namespace editor {
 
 static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pass,
                           const SceneView& scene_view,
-                          const FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer,
                           const FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer,
                           const FrameGraphMutableTypedBufferId<u32> id_buffer,
                           usize index = 0) {
     y_profile();
 
     const ecs::EntityWorld& world = scene_view.world();
-
-    auto camera_mapping = pass->resources().mapped_buffer(camera_buffer);
-    camera_mapping[0] = scene_view.camera();
+    const Camera& camera = scene_view.camera();
 
     auto transform_mapping = pass->resources().mapped_buffer(transform_buffer);
     const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
@@ -66,7 +64,16 @@ static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pa
     recorder.bind_attrib_buffers({}, {transforms, ids});
     recorder.bind_material(resources()[EditorResources::IdMaterialTemplate], {pass->descriptor_sets()[0]});
 
-    for(auto ent : world.view<TransformableComponent, StaticMeshComponent>()) {
+    core::Vector<ecs::EntityId> visible;
+    const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
+    if(octree_system) {
+        visible = octree_system->octree().find_entities(camera.frustum());
+    }
+    const auto entities = octree_system
+        ? world.view<TransformableComponent, StaticMeshComponent>(visible)
+        : world.view<TransformableComponent, StaticMeshComponent>();
+
+    for(auto ent : entities) {
         const auto& [tr, mesh] = ent.components();
         transform_mapping[index] = tr.transform();
         id_mapping[index] = ent.id().index();
@@ -83,7 +90,6 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view,
 
     FrameGraphPassBuilder builder = framegraph.add_pass("ID pass");
 
-    auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
     const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
     const auto id_buffer = builder.declare_typed_buffer<u32>(max_batch_size);
 
@@ -95,7 +101,7 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view,
     pass.depth = depth;
     pass.id = id;
 
-    builder.add_uniform_input(camera_buffer);
+    builder.add_inline_input(view.camera().viewproj_matrix());
     builder.add_attrib_input(transform_buffer);
     builder.add_attrib_input(id_buffer);
     builder.map_update(transform_buffer);
@@ -105,7 +111,7 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view,
     builder.add_color_output(id);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-        render_world(render_pass, self, view, camera_buffer, transform_buffer, id_buffer);
+        render_world(render_pass, self, view, transform_buffer, id_buffer);
     });
 
     return pass;

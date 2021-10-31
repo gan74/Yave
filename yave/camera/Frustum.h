@@ -22,10 +22,17 @@ SOFTWARE.
 #ifndef YAVE_CAMERA_FRUSTUM_H
 #define YAVE_CAMERA_FRUSTUM_H
 
-#include <yave/yave.h>
+#include <yave/meshes/AABB.h>
+
 #include <array>
 
 namespace yave {
+
+enum class Intersection {
+    Inside,
+    Intersects,
+    Outside
+};
 
 class Frustum {
 
@@ -35,11 +42,11 @@ class Frustum {
         Frustum(const std::array<math::Vec3, 4>& normals, const math::Vec3& pos, const math::Vec3& forward);
 
         bool is_inside(const math::Vec3& pos, float radius) const;
+        Intersection intersection(const AABB& aabb) const;
 
     private:
-        std::array<math::Vec3, 4> _normals;
+        std::array<math::Vec3, 5> _normals;
         math::Vec3 _pos;
-        math::Vec3 _forward;
 
 };
 

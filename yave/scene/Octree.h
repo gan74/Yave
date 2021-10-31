@@ -35,7 +35,7 @@ class Octree : NonMovable {
 
         const OctreeNode& root() const;
 
-        void flush_dirty();
+        core::Vector<ecs::EntityId> find_entities(const Frustum& frustum) const;
 
     //private:
         OctreeData _data;

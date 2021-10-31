@@ -1,6 +1,6 @@
 #version 450
 
-layout(set = 0, binding = 0) uniform ViewProj {
+layout(set = 0, binding = 0) uniform ViewProj_Inline {
     mat4 view_proj;
 };
 

@@ -22,12 +22,47 @@ SOFTWARE.
 
 #include "Octree.h"
 
+#include <yave/camera/Frustum.h>
+
 namespace yave {
+
+static void push_all_entities(core::Vector<ecs::EntityId>& entities, const OctreeNode& node) {
+    for(const ecs::EntityId id : node.entities()) {
+        entities << id;
+    }
+    for(const OctreeNode& child : node.children()) {
+        push_all_entities(entities, child);
+    }
+}
+
+static void visit_node(core::Vector<ecs::EntityId>& entities, const Frustum& frustum, const OctreeNode& node) {
+    switch(frustum.intersection(node.aabb())) {
+        case Intersection::Outside:
+        break;
+
+        case Intersection::Inside:
+            push_all_entities(entities, node);
+        break;
+
+        case Intersection::Intersects:
+            for(const ecs::EntityId id : node.entities()) {
+                entities << id;
+            }
+            for(const OctreeNode& child : node.children()) {
+                visit_node(entities, frustum, child);
+            }
+        break;
+    }
+}
+
+
 
 Octree::Octree() : _root({}, 1024.0, &_data) {
 }
 
 OctreeNode* Octree::insert(ecs::EntityId id, const AABB& bbox) {
+    y_profile();
+
     const math::Vec3 pos = bbox.center();
     while(!_root.contains(bbox)) {
         _root.into_parent(pos);
@@ -39,7 +74,12 @@ const OctreeNode& Octree::root() const {
     return _root;
 }
 
-void Octree::flush_dirty() {
+core::Vector<ecs::EntityId> Octree::find_entities(const Frustum& frustum) const {
+    y_profile();
+
+    core::Vector<ecs::EntityId> entities;
+    visit_node(entities, frustum, _root);
+    return entities;
 }
 
 }

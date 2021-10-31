@@ -96,6 +96,10 @@ core::Span<OctreeNode> OctreeNode::children() const {
     return has_children() ? core::Span<OctreeNode>(_children->data(), _children->size()) : core::Span<OctreeNode>();
 }
 
+core::Span<ecs::EntityId> OctreeNode::entities() const {
+    return _entities;
+}
+
 void OctreeNode::set_dirty(ecs::EntityId id) {
     y_debug_assert(_data);
     _data->_dirty.emplace_back(this, id);

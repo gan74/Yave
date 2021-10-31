@@ -53,6 +53,7 @@ static void add_debug_entities() {
     const auto mesh = device_resources()[DeviceResources::CubeMesh];
     const auto material = device_resources()[DeviceResources::EmptyMaterial];
 
+    const float spacing =  app_settings().debug.entity_spacing;
     const usize entity_count = app_settings().debug.entity_count;
     const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
     for(usize i = 0; i != entity_count; ++i) {
@@ -60,7 +61,7 @@ static void add_debug_entities() {
         world.set_entity_name(entity, "Debug entity");
 
         const math::Vec3 pos = math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
-        world.component<TransformableComponent>(entity)->set_position(pos * 10.0f);
+        world.component<TransformableComponent>(entity)->set_position(pos * spacing);
         *world.component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, material);
         world.component<EditorComponent>(entity)->set_hidden_in_editor(true);
     }

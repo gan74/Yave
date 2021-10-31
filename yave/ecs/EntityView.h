@@ -266,7 +266,7 @@ class EntityView {
             return id_components().end();
         }
 
-    private:
+    //private:
         set_tuple _sets;
         id_range _short;
 };

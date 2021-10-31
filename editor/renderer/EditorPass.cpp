@@ -192,15 +192,19 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
 
 }
 
-static void visit_octree(DirectDrawPrimitive* primitive, const OctreeNode& node) {
+static void visit_octree(DirectDrawPrimitive* primitive, const Frustum& frustum, const OctreeNode& node) {
     if(node.is_empty()) {
+        return;
+    }
+
+    if(frustum.intersection(node.aabb()) == Intersection::Outside) {
         return;
     }
 
     primitive->add_box(node.strict_aabb());
 
     for(const OctreeNode& c : node.children()) {
-        visit_octree(primitive, c);
+        visit_octree(primitive, frustum, c);
     }
 }
 
@@ -208,9 +212,9 @@ static void render_octree(DirectDrawPrimitive* primitive,
                           const SceneView& scene_view) {
 
     const ecs::EntityWorld& world = scene_view.world();
-    const OctreeSystem* octree = world.find_system<OctreeSystem>();
-
-    visit_octree(primitive, octree->root());
+    if(const OctreeSystem* octree = world.find_system<OctreeSystem>()) {
+        visit_octree(primitive, scene_view.camera().frustum(), octree->root());
+    }
 }
 
 

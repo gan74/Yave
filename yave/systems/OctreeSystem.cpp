@@ -23,7 +23,6 @@ SOFTWARE.
 #include "OctreeSystem.h"
 
 #include <yave/components/TransformableComponent.h>
-
 #include <yave/ecs/EntityWorld.h>
 
 #include <yave/utils/entities.h>
@@ -49,6 +48,7 @@ static AABB find_aabb(const ecs::EntityWorld& world, ecs::EntityId id, const mat
 }
 
 
+
 OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
 
@@ -66,6 +66,8 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     for(auto&& id_comp : world.view<TransformableComponent>(transformable_ids(world, only_recent)).id_components()) {
         const auto id = id_comp.id();
         auto& tr = id_comp.component<TransformableComponent>();
+
+        Y_TODO(AABB might change at runtime)
         const AABB bbox = find_aabb(world, id, tr.position());
 
         tr._id = id;
@@ -105,6 +107,10 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
 
 const OctreeNode& OctreeSystem::root() const {
     return _tree.root();
+}
+
+const Octree& OctreeSystem::octree() const {
+    return _tree;
 }
 
 }

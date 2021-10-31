@@ -61,6 +61,7 @@ class OctreeNode {
         bool is_empty() const;
 
         core::Span<OctreeNode> children() const;
+        core::Span<ecs::EntityId> entities() const;
 
         Y_TODO(Make thread safe)
         void set_dirty(ecs::EntityId id);

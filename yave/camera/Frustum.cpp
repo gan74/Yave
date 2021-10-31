@@ -24,20 +24,48 @@ SOFTWARE.
 
 namespace yave {
 
-Frustum::Frustum(const std::array<math::Vec3, 4>& normals, const math::Vec3& pos, const math::Vec3& forward) :
-        _normals(normals),
-        _pos(pos),
-        _forward(forward) {
+Frustum::Frustum(const std::array<math::Vec3, 4>& normals, const math::Vec3& pos, const math::Vec3& forward) : _pos(pos) {
+    _normals[0] = forward;
+    for(usize i = 0; i != normals.size(); ++i) {
+        _normals[i + 1] = normals[i];
+    }
 }
 
 bool Frustum::is_inside(const math::Vec3& pos, float radius) const {
     const math::Vec3 v = (pos - _pos);
-    const float z = v.dot(_forward);
-    return z + radius > 0.0f
-        && v.dot(_normals[0]) + radius > 0.0f
+    return v.dot(_normals[0]) + radius > 0.0f
         && v.dot(_normals[1]) + radius > 0.0f
         && v.dot(_normals[2]) + radius > 0.0f
-        && v.dot(_normals[3]) + radius > 0.0f;
+        && v.dot(_normals[3]) + radius > 0.0f
+        && v.dot(_normals[4]) + radius > 0.0f;
+}
+
+// https://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
+Intersection Frustum::intersection(const AABB &aabb) const {
+    Intersection inter = Intersection::Inside;
+
+    const math::Vec3 bbox_min = aabb.min() - _pos;
+    const math::Vec3 bbox_max = aabb.max() - _pos;
+
+    for(const math::Vec3& normal : _normals) {
+        math::Vec3 p = bbox_min;
+        math::Vec3 n = bbox_max;
+        for(usize c = 0; c != 3; ++c) {
+            if(normal[c] > 0.0f) {
+                p[c] = bbox_max[c];
+                n[c] = bbox_min[c];
+            }
+        }
+
+        if(normal.dot(p) < 0.0f) {
+            return Intersection::Outside;
+        }
+        if(normal.dot(n) < 0.0f) {
+            inter = Intersection::Intersects;
+        }
+    }
+
+    return inter;
 }
 
 }
