@@ -58,7 +58,8 @@ void* alloc_scratchpad(usize size) {
 
 
 void free_scratchpad(void* ptr, usize size) {
-    if(!size) {
+    y_debug_assert(!ptr == !size);
+    if(!ptr) {
         return;
     }
 

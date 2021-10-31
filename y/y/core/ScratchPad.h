@@ -25,29 +25,16 @@ SOFTWARE.
 #include "Span.h"
 
 #include <memory>
+#include <iterator>
+#include <algorithm>
 
 namespace y {
 namespace core {
 
-namespace detail {
-void* alloc_scratchpad(usize size);
-void free_scratchpad(void* ptr, usize size);
-
-template<typename T>
-T* alloc_typed_scratchpad(usize size) {
-    return static_cast<T*>(alloc_scratchpad(size * sizeof(T)));
-}
-
-template<typename T>
-void free_typed_scratchpad(T* ptr, usize size) {
-    free_scratchpad(ptr, size * sizeof(T));
-}
-}
-
 template<typename Elem>
-class ScratchPad : NonCopyable {
-
-    using data_type = typename std::remove_const<Elem>::type;
+class ScratchPadBase : NonMovable {
+    protected:
+        using data_type = typename std::remove_const<Elem>::type;
 
     public:
         using value_type = Elem;
@@ -62,53 +49,16 @@ class ScratchPad : NonCopyable {
         using iterator = Elem*;
         using const_iterator = Elem const*;
 
-        inline ScratchPad() = default;
-
-        inline ScratchPad(usize size) : _data(detail::alloc_typed_scratchpad<data_type>(size)), _size(size) {
-            for(usize i = 0; i != _size; ++i) {
-                new(_data + i) data_type();
-            }
-        }
-
-        inline ScratchPad(ScratchPad&& other) {
-            swap(other);
-        }
-
-        inline ScratchPad& operator=(ScratchPad&& other) {
-            swap(other);
-            return this;
-        }
-
-        inline ~ScratchPad() {
-            clear();
-        }
-
-        inline bool operator==(const ScratchPad<value_type>& other) const {
+        inline bool operator==(const ScratchPadBase<value_type>& other) const {
             return _size == other._size && std::equal(begin(), end(), other.begin(), other.end());
         }
 
-        inline bool operator!=(const ScratchPad<value_type>& v) const {
+        inline bool operator!=(const ScratchPadBase<value_type>& v) const {
             return !operator==(v);
         }
 
-        inline void swap(ScratchPad& v) {
-            if(&v != this) {
-                std::swap(_data, v._data);
-                std::swap(_size, v._size);
-            }
-        }
-
-        inline void clear() {
-            if(_data) {
-                for(usize i = 0; i != _size; ++i) {
-                    _data[i].~data_type();
-                }
-                detail::free_typed_scratchpad(_data, _size);
-            }
-        }
-
-        inline bool is_empty() const {
-            return !_size;
+        inline bool is_null() const {
+            return !_data;
         }
 
         inline usize size() const {
@@ -139,7 +89,6 @@ class ScratchPad : NonCopyable {
             return _data + _size;
         }
 
-
         inline data_type* data() {
             return _data;
         }
@@ -156,7 +105,6 @@ class ScratchPad : NonCopyable {
             return _data[_size - 1];
         }
 
-
         inline data_type& operator[](usize i) {
             y_debug_assert(i < _size);
             return _data[i];
@@ -167,10 +115,193 @@ class ScratchPad : NonCopyable {
             return _data[i];
         }
 
-    private:
+    protected:
+        inline ScratchPadBase() = default;
+
+        inline ScratchPadBase(data_type* data, usize size) : _data(data), _size(size) {
+        }
+
+        inline void swap(ScratchPadBase& other) {
+            std::swap(_data, other._data);
+            std::swap(_size, other._size);
+        }
+
+        inline void clear() {
+            for(usize i = 0; i != _size; ++i) {
+                _data[i].~data_type();
+            }
+        }
+
         data_type* _data = nullptr;
         usize _size = 0;
 };
+
+
+namespace detail {
+void* alloc_scratchpad(usize size);
+void free_scratchpad(void* ptr, usize size);
+
+template<typename T>
+T* alloc_typed_scratchpad(usize size) {
+    return static_cast<T*>(alloc_scratchpad(size * sizeof(T)));
+}
+
+template<typename T>
+void free_typed_scratchpad(T* ptr, usize size) {
+    free_scratchpad(ptr, size * sizeof(T));
+}
+}
+
+template<typename Elem>
+class ScratchPad : public ScratchPadBase<Elem> {
+    using data_type = typename ScratchPadBase<Elem>::data_type;
+
+    public:
+        using value_type = typename ScratchPadBase<Elem>::value_type;
+        using size_type = typename ScratchPadBase<Elem>::size_type;
+
+        using reference = typename ScratchPadBase<Elem>::reference;
+        using const_reference = typename ScratchPadBase<Elem>::const_reference;
+
+        using pointer = typename ScratchPadBase<Elem>::pointer;
+        using const_pointer = typename ScratchPadBase<Elem>::const_pointer;
+
+        using iterator = typename ScratchPadBase<Elem>::iterator;
+        using const_iterator = typename ScratchPadBase<Elem>::const_iterator;
+
+        inline ScratchPad() = default;
+
+        inline ScratchPad(usize size) : ScratchPadBase<Elem>(detail::alloc_typed_scratchpad<data_type>(size), size) {
+            for(usize i = 0; i != this->_size; ++i) {
+                new(this->_data + i) data_type();
+            }
+        }
+
+        inline explicit ScratchPad(Span<value_type> other) : ScratchPadBase<Elem>(detail::alloc_typed_scratchpad<data_type>(other.size()), other.size()) {
+            for(usize i = 0; i != this->_size; ++i) {
+                new(this->_data + i) data_type(other[i]);
+            }
+        }
+
+        inline ~ScratchPad() {
+            if(this->_data) {
+                this->clear();
+                detail::free_typed_scratchpad(this->_data, this->_size);
+            }
+        }
+
+        ScratchPad(ScratchPad&& other) {
+            this->swap(other);
+        }
+
+        ScratchPad& operator=(ScratchPad&& other) {
+            this->swap(other);
+            return *this;
+        }
+
+};
+
+template<typename Elem>
+class ScratchVector : public ScratchPadBase<Elem> {
+    using data_type = typename ScratchPadBase<Elem>::data_type;
+
+    public:
+        using value_type = typename ScratchPadBase<Elem>::value_type;
+        using size_type = typename ScratchPadBase<Elem>::size_type;
+
+        using reference = typename ScratchPadBase<Elem>::reference;
+        using const_reference = typename ScratchPadBase<Elem>::const_reference;
+
+        using pointer = typename ScratchPadBase<Elem>::pointer;
+        using const_pointer = typename ScratchPadBase<Elem>::const_pointer;
+
+        using iterator = typename ScratchPadBase<Elem>::iterator;
+        using const_iterator = typename ScratchPadBase<Elem>::const_iterator;
+
+        inline ScratchVector() = default;
+
+        inline ScratchVector(usize capacity) : ScratchPadBase<Elem>(detail::alloc_typed_scratchpad<data_type>(capacity), 0) {
+            _capacity = capacity;
+        }
+
+        inline ScratchVector(usize size, const value_type& elem) : ScratchVector(size) {
+            if(size) {
+                std::fill_n(std::back_inserter(*this), size, elem);
+            }
+        }
+
+        inline explicit ScratchVector(Span<value_type> other) : ScratchVector(other.size()) {
+            for(const auto& e : other) {
+                emplace_back(e);
+            }
+        }
+
+        inline ~ScratchVector() {
+            if(this->_data) {
+                this->clear();
+                detail::free_typed_scratchpad(this->_data, _capacity);
+            }
+        }
+
+        inline ScratchVector(ScratchVector&& other) {
+            this->swap(other);
+        }
+
+        inline ScratchVector& operator=(ScratchVector&& other) {
+            this->swap(other);
+            return *this;
+        }
+
+        inline bool is_full() const {
+            return this->_size == _capacity;
+        }
+
+        inline bool is_empty() const {
+            return !this->_size;
+        }
+
+        inline usize capacity() const {
+            return _capacity;
+        }
+
+        template<typename... Args>
+        inline reference push_back(value_type&& elem) {
+            y_debug_assert(!is_full());
+            return *(::new(this->_data + this->_size++) data_type{std::move(elem)});
+        }
+
+        template<typename... Args>
+        inline reference emplace_back(Args&&... args) {
+            y_debug_assert(!is_full());
+            return *(::new(this->_data + this->_size++) data_type{y_fwd(args)...});
+        }
+
+        inline value_type pop() {
+            y_debug_assert(!is_empty());
+            data_type r = std::move(this->last());
+            this->last().~data_type();
+            --this->_size;
+
+            return r;
+        }
+
+        inline void erase_unordered(iterator it) {
+            if(it != this->end() - 1) {
+                std::swap(*it, this->last());
+            }
+            pop();
+        }
+
+    private:
+        inline void swap(ScratchVector& other) {
+            ScratchPadBase<Elem>::swap(other);
+            std::swap(_capacity, other._capacity);
+        }
+
+        usize _capacity = 0;
+};
+
+
 
 }
 }
