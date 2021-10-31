@@ -332,7 +332,9 @@ DescriptorSetAllocator::DescriptorSetAllocator() {
 
 
 DescriptorSetData DescriptorSetAllocator::create_descritptor_set(core::Span<Descriptor> descriptors) {
-    core::Vector<VkDescriptorSetLayoutBinding> layout_bindings(descriptors.size(), VkDescriptorSetLayoutBinding{});
+    y_profile();
+
+    core::ScratchPad<VkDescriptorSetLayoutBinding> layout_bindings(descriptors.size());
     for(usize i = 0; i != descriptors.size(); ++i) {
         layout_bindings[i] = descriptors[i].descriptor_set_layout_binding(u32(i));
     }
@@ -354,12 +356,12 @@ DescriptorSetData DescriptorSetAllocator::create_descritptor_set(core::Span<Desc
     return pool.pools.last()->alloc(descriptors);
 }
 
-const DescriptorSetLayout& DescriptorSetAllocator::descriptor_set_layout(const Key& bindings) {
+const DescriptorSetLayout& DescriptorSetAllocator::descriptor_set_layout(LayoutKey bindings) {
     const auto lock = y_profile_unique_lock(_lock);
     return layout(bindings).layout;
 }
 
-DescriptorSetAllocator::LayoutPools& DescriptorSetAllocator::layout(const Key& bindings) {
+DescriptorSetAllocator::LayoutPools& DescriptorSetAllocator::layout(LayoutKey bindings) {
     auto& layout  = _layouts[bindings];
     if(layout.layout.is_null()) {
         layout.layout = DescriptorSetLayout(bindings);

@@ -37,21 +37,12 @@ SOFTWARE.
 #include <memory>
 #include <algorithm>
 #include <memory>
-#include <unordered_map>
-
 
 template<>
 struct std::hash<VkDescriptorSetLayoutBinding> {
-    auto operator()(const VkDescriptorSetLayoutBinding& l) const {
+    inline auto operator()(const VkDescriptorSetLayoutBinding& l) const {
         const char* data = reinterpret_cast<const char*>(&l);
         return y::hash_range(data, data + sizeof(l));
-    }
-};
-
-template<>
-struct std::hash<y::core::Vector<VkDescriptorSetLayoutBinding>> {
-    auto operator()(const y::core::Vector<VkDescriptorSetLayoutBinding>& k) const {
-        return y::hash_range(k);
     }
 };
 
@@ -131,10 +122,30 @@ class DescriptorSetPool : NonMovable {
 };
 
 class DescriptorSetAllocator {
+    using LayoutKey = core::Span<VkDescriptorSetLayoutBinding>;
 
-    using Key = core::Vector<VkDescriptorSetLayoutBinding>;
+    struct KeyEqual {
+        inline bool operator()(LayoutKey a, LayoutKey b) const {
+            return a == b;
+        }
 
-    struct LayoutPools : NonMovable {
+        inline bool operator()(const core::Vector<VkDescriptorSetLayoutBinding>& a, LayoutKey b) const {
+            return LayoutKey(a) == b;
+        }
+    };
+
+    struct KeyHash {
+        inline auto operator()(LayoutKey k) const {
+            return hash_range(k);
+        }
+
+        inline auto operator()(const core::Vector<VkDescriptorSetLayoutBinding>& k) const {
+            return operator()(LayoutKey(k));
+        }
+    };
+
+
+    struct LayoutPools {
         DescriptorSetLayout layout;
         core::Vector<std::unique_ptr<DescriptorSetPool>> pools;
     };
@@ -143,7 +154,7 @@ class DescriptorSetAllocator {
         DescriptorSetAllocator();
 
         DescriptorSetData create_descritptor_set(core::Span<Descriptor> descriptors);
-        const DescriptorSetLayout& descriptor_set_layout(const Key& bindings);
+        const DescriptorSetLayout& descriptor_set_layout(LayoutKey bindings);
 
         // Slow: for debug only
         usize layout_count() const;
@@ -152,9 +163,9 @@ class DescriptorSetAllocator {
         usize used_sets() const;
 
     private:
-        LayoutPools& layout(const Key& bindings);
+        LayoutPools& layout(LayoutKey bindings);
 
-        std::unordered_map<Key, LayoutPools> _layouts;
+        core::ExternalHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual> _layouts;
         mutable std::mutex _lock;
 };
 
