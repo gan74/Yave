@@ -77,6 +77,7 @@ void Queue::end_and_submit(CmdBufferRecorder& recorder, VkSemaphore wait, VkSema
 
         const VkSemaphore timeline_semaphore = main_device()->vk_timeline_semaphore();
 
+        Y_TODO(We do not need to wait on the timeline_semaphore if using SyncPolicy::Wait)
         const std::array<VkSemaphore, 2> wait_semaphores = {timeline_semaphore, wait};
         const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
 

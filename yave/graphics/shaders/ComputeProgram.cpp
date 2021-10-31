@@ -25,10 +25,11 @@ SOFTWARE.
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
-#include <numeric>
-
+#include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+
+#include <numeric>
 
 namespace yave {
 
@@ -37,7 +38,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 
     const u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
-    auto layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout());
+    core::ScratchPad<VkDescriptorSetLayout> layouts(max_set + 1);
     for(const auto& binding : bindings) {
         layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
     }

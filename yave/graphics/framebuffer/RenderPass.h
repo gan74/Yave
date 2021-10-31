@@ -70,7 +70,7 @@ class RenderPass {
 
             private:
                 ImageFormat _depth;
-                core::SmallVector<ImageFormat, 7> _colors;
+                std::array<ImageFormat, 8> _colors;
         };
 
         RenderPass() = default;

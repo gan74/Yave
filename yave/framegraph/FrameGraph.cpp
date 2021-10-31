@@ -27,6 +27,8 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/utils/color.h>
+
+#include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -183,7 +185,8 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
     };
 
     usize next_region_index = 0;
-    core::Vector<RuntimeRegion> regions;
+    core::ScratchVector<RuntimeRegion> regions(_passes.size());
+
     auto next_color = [id = 0]() mutable {
         return math::Vec4(identifying_color(id++), 1.0f);
     };
@@ -221,9 +224,6 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
     std::sort(_image_copies.begin(), _image_copies.end(), [&](const auto& a, const auto& b) { return a.pass_index < b.pass_index; });
 
     core::ExternalHashMap<FrameGraphResourceId, PipelineStage> to_barrier;
-    core::Vector<BufferBarrier> buffer_barriers;
-    core::Vector<ImageBarrier> image_barriers;
-
 
     {
         y_profile_zone("init");
@@ -251,8 +251,9 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 
             {
                 y_profile_zone("barriers");
-                buffer_barriers.make_empty();
-                image_barriers.make_empty();
+
+                core::ScratchVector<BufferBarrier> buffer_barriers(pass->_buffers.size());
+                core::ScratchVector<ImageBarrier> image_barriers(pass->_images.size());
                 build_barriers(pass->_buffers, buffer_barriers, to_barrier, *_resources);
                 build_barriers(pass->_images, image_barriers, to_barrier, *_resources);
                 recorder.barriers(buffer_barriers, image_barriers);

@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/graphics/graphics.h>
 
+#include <y/core/ScratchPad.h>
+
 #include <external/spirv_cross/spirv.hpp>
 #include <external/spirv_cross/spirv_cross.hpp>
 
@@ -149,33 +151,36 @@ static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseTy
         default:
             break;
     }
-    y_fatal("Unsupported attribute type.");
+    y_fatal("Unsupported attribute type");
 }
 
 template<typename R>
-static auto create_push_constants(const spirv_cross::Compiler& compiler, const R& resources, ShaderType shader_type) {
+static core::ScratchPad<VkPushConstantRange> create_push_constants(const spirv_cross::Compiler& compiler, const R& resources, ShaderType shader_type) {
     if(resources.size() > 1) {
-        y_fatal("Too many push constants.");
+        y_fatal("Too many push constants");
     }
 
-    core::Vector<VkPushConstantRange> push_constants;
+    usize push_constant_count = 0;
+    core::ScratchPad<VkPushConstantRange> push_constants(resources.size());
     for(const auto& r : resources) {
         const auto& type = compiler.get_type(r.type_id);
-        push_constants << VkPushConstantRange{VkShaderStageFlags(shader_type), 0, u32(compiler.get_declared_struct_size(type))};
+        push_constants[push_constant_count++] = VkPushConstantRange{VkShaderStageFlags(shader_type), 0, u32(compiler.get_declared_struct_size(type))};
     }
     return push_constants;
 }
 
 
 template<typename R>
-static auto create_attribs(const spirv_cross::Compiler& compiler, const R& resources) {
-    core::Vector<ShaderModuleBase::Attribute> attribs;
+static core::ScratchPad<ShaderModuleBase::Attribute> create_attribs(const spirv_cross::Compiler& compiler, const R& resources) {
     std::unordered_set<u32> locations;
+
+    usize attrib_count = 0;
+    core::ScratchPad<ShaderModuleBase::Attribute> attribs(resources.size());
     for(const auto& r : resources) {
         const auto location = compiler.get_decoration(r.id, spv::DecorationLocation);
         const auto& type = compiler.get_type(r.type_id);
 
-        attribs << ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype)};
+        attribs[attrib_count++] = ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype)};
 
         for(usize i = location; i != location + type.columns; ++i) {
             if(!locations.insert(u32(i)).second) {

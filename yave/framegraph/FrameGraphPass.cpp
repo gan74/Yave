@@ -101,10 +101,8 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
 }
 
 void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resources) {
-    core::Vector<Descriptor> bindings;
     for(const auto& set : _bindings) {
-        bindings.make_empty();
-        bindings.set_min_capacity(set.size());
+        core::ScratchVector<Descriptor> bindings(set.size());
 
         std::transform(set.begin(), set.end(), std::back_inserter(bindings), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });
         _descriptor_sets << DescriptorSet(bindings);

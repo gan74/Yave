@@ -37,11 +37,9 @@ MaterialTemplate::MaterialTemplate(MaterialTemplateData&& data) : _data(std::mov
 }
 
 const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) const {
-    y_profile();
-
     Y_TODO(make material compilation thread safe?)
     if(!render_pass.vk_render_pass()) {
-        y_fatal("Unable to compile material: null renderpass.");
+        y_fatal("Unable to compile material: null renderpass");
     }
 
     const auto& key = render_pass.layout();

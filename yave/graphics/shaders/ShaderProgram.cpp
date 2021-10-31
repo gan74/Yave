@@ -25,14 +25,15 @@ SOFTWARE.
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
-#include <numeric>
-
+#include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
 #include <external/spirv_cross/spirv.hpp>
 #include <external/spirv_cross/spirv_cross.hpp>
 #include <external/spirv_cross/spirv_glsl.hpp>
+
+#include <numeric>
 
 namespace yave {
 
@@ -159,7 +160,7 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
         }
     }
     {
-        auto vertex_attribs = vert.attributes();
+        auto vertex_attribs = core::ScratchPad<ShaderModuleBase::Attribute>(vert.attributes());
         std::sort(vertex_attribs.begin(), vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; });
         create_vertex_attribs(vertex_attribs, _vertex.bindings, _vertex.attribs);
     }

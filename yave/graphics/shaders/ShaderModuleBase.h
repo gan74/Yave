@@ -97,7 +97,7 @@ class ShaderModuleBase : NonMovable {
             return _bindings;
         }
 
-        const auto& attributes() const {
+        core::Span<Attribute> attributes() const {
             return _attribs;
         }
 
@@ -125,7 +125,7 @@ class ShaderModuleBase : NonMovable {
             return _spec_constants.is_empty() ? 0 : (_spec_constants.last().offset + _spec_constants.last().size);
         }
 
-        const auto& specialization_entries() const {
+        core::Span<VkSpecializationMapEntry> specialization_entries() const {
             return _spec_constants;
         }
 

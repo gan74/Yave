@@ -111,8 +111,8 @@ void CmdBufferData::wait() {
     main_device()->wait_for_fence(_queue_fence);
 }
 
-bool CmdBufferData::poll() {
-    return main_device()->poll_fence(_queue_fence);
+    bool CmdBufferData::poll() {
+        return main_device()->poll_fence(_queue_fence);
 }
 
 void CmdBufferData::begin() {

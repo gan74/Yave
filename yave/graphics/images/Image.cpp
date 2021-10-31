@@ -30,6 +30,8 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/graphics.h>
 
+#include <y/core/ScratchPad.h>
+
 namespace yave {
 
 static void bind_image_memory(VkImage image, const DeviceMemory& memory) {
@@ -59,9 +61,10 @@ static VkImage create_image(const math::Vec3ui& size, usize layers, usize mips, 
     return image;
 }
 
-static auto get_copy_regions(const ImageData& data) {
-    auto regions = core::vector_with_capacity<VkBufferImageCopy>(data.mipmaps() * data.layers());
+static core::ScratchPad<VkBufferImageCopy> get_copy_regions(const ImageData& data) {
+    core::ScratchPad<VkBufferImageCopy> regions(data.mipmaps() * data.layers());
 
+    usize index = 0;
     for(usize l = 0; l != data.layers(); ++l) {
         for(usize m = 0; m != data.mipmaps(); ++m) {
             const auto size = data.size(m);
@@ -74,7 +77,7 @@ static auto get_copy_regions(const ImageData& data) {
                 copy.imageSubresource.baseArrayLayer = u32(l);
                 copy.imageSubresource.layerCount = 1;
             }
-            regions << copy;
+            regions[index++] = copy;
         }
     }
 

@@ -147,8 +147,8 @@ static VkRenderPass create_renderpass(RenderPass::AttachmentData depth, core::Sp
 }
 
 RenderPass::Layout::Layout(AttachmentData depth, core::Span<AttachmentData> colors) : _depth(depth.format) {
-    _colors.reserve(colors.size());
-    std::transform(colors.begin(), colors.end(), std::back_inserter(_colors), [](const auto& e) { return e.format; });
+    y_always_assert(colors.size() <= _colors.size(), "Too many color attachments");
+    std::transform(colors.begin(), colors.end(), _colors.begin(), [](const auto& e) { return e.format; });
 }
 
 u64 RenderPass::Layout::hash() const {
@@ -160,7 +160,7 @@ u64 RenderPass::Layout::hash() const {
 }
 
 bool RenderPass::Layout::is_depth_only() const {
-    return _colors.is_empty();
+    return !_colors[0].is_valid();
 }
 
 bool RenderPass::Layout::operator==(const Layout& other) const {

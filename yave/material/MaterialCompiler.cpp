@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/meshes/Vertex.h>
 #include <yave/graphics/graphics.h>
 
+#include <y/core/ScratchPad.h>
 #include <y/core/Chrono.h>
 
 #include <y/utils/log.h>
@@ -34,7 +35,7 @@ SOFTWARE.
 
 namespace yave {
 
-static void depth_only_stages(core::Vector<VkPipelineShaderStageCreateInfo>& stages) {
+static void keep_depth_only_stages(core::ScratchVector<VkPipelineShaderStageCreateInfo>& stages) {
     const auto is_frag_stage = [](const VkPipelineShaderStageCreateInfo& s) { return s.stage == VK_SHADER_STAGE_FRAGMENT_BIT; };
     if(const auto it = std::find_if(stages.begin(), stages.end(), is_frag_stage); it != stages.end()) {
         stages.erase_unordered(it);
@@ -109,9 +110,9 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     const GeometryShader geom = create_geometry_shader(mat_data._geom);
     const ShaderProgram program(frag, vert, geom);
 
-    core::Vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages(program.vk_pipeline_stage_info());
+    core::ScratchVector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages(program.vk_pipeline_stage_info());
     if(render_pass.is_depth_only()) {
-        depth_only_stages(pipeline_shader_stages);
+        keep_depth_only_stages(pipeline_shader_stages);
     }
 
     auto attribute_bindings = program.vk_attribute_bindings();

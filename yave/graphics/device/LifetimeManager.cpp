@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/commands/CmdBufferPool.h>
 
+#include <y/core/ScratchPad.h>
 #include <y/utils/format.h>
 
 namespace yave {
@@ -93,12 +94,16 @@ void LifetimeManager::poll_cmd_buffers() {
     bool clear = false;
 
     // To ensure that CmdBufferData keep alives are freed outside the lock
-    core::Vector<CmdBufferData*> to_recycle;
+
+    core::ScratchVector<CmdBufferData*> to_recycle;
+
     {
         y_profile_zone("fence polling");
         const auto lock = y_profile_unique_lock(_cmd_lock);
 
         y_debug_assert(std::is_sorted(_in_flight.begin(), _in_flight.end(), compare_cmd_buffers));
+
+        to_recycle = core::ScratchVector<CmdBufferData*>(_in_flight.size());
 
         next = _next;
         while(!_in_flight.empty()) {
@@ -136,13 +141,15 @@ void LifetimeManager::poll_cmd_buffers() {
 void LifetimeManager::clear_resources(u64 up_to) {
     y_profile();
 
-    core::Vector<ManagedResource> to_delete;
+    core::ScratchVector<ManagedResource> to_delete;
 
     {
         y_profile_zone("collection");
         const auto lock = y_profile_unique_lock(_resources_lock);
+
+        to_delete = core::ScratchVector<ManagedResource>(_to_destroy.size());
         while(!_to_destroy.empty() && _to_destroy.front().first < up_to) {
-            to_delete << std::move(_to_destroy.front().second);
+            to_delete.push_back(std::move(_to_destroy.front().second));
             _to_destroy.pop_front();
         }
     }

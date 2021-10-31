@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
+#include <y/core/ScratchPad.h>
 
 namespace yave {
 
@@ -71,7 +72,7 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, con
     const FrameGraphImageId thresholded = threshold(framegraph, input, size, settings);
 
     const usize pyramid_count = std::max(settings.pyramids, usize(1));
-    auto pyramids = core::vector_with_capacity<FrameGraphImageId>(pyramid_count);
+    auto pyramids = core::ScratchVector<FrameGraphImageId>(pyramid_count);
 
     {
         const auto region = framegraph.region("Pyramid downsample");
