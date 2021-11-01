@@ -175,7 +175,6 @@ void SceneImporter::import(import::SceneData scene) {
         };
 
     auto import_asset = [&](const auto& asset, std::string_view name, AssetType type) {
-            log_msg(fmt("Saving asset as \"%\"", name));
             y_profile_zone("asset import");
             io2::Buffer buffer;
             serde3::WritableArchive arc(buffer);
@@ -183,9 +182,25 @@ void SceneImporter::import(import::SceneData scene) {
                 log_msg(fmt("Unable serialize \"%\": error %", name, sr.error().type), Log::Error);
             } else {
                 buffer.reset();
-                if(auto r = asset_store().import(buffer, name, type); r.is_error()) {
-                    log_msg(fmt("Unable to import \"%\": error %", name, r.error()), Log::Error);
+
+                usize emergency_id = 1;
+                core::String import_name = name;
+
+                for(;;) {
+                    const auto result = asset_store().import(buffer, import_name, type);
+                    if(result.is_error()) {
+                        if(result.error() == AssetStore::ErrorType::NameAlreadyExists) {
+                            import_name = fmt("%_(%)", name, emergency_id++);
+                            continue;
+                        }
+                        log_msg(fmt("Unable to import \"%\": error %", import_name, result.error()), Log::Error);
+                    } else {
+                        log_msg(fmt("Saved asset as \"%\"", import_name));
+                    }
+
+                    break;
                 }
+
             }
         };
 

@@ -36,7 +36,6 @@ class AssetStore : NonCopyable {
     public:
         enum class ErrorType {
             UnknownID,
-            IDAlreadyExists,
 
             InvalidName,
             NameAlreadyExists,

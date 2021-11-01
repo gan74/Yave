@@ -69,7 +69,7 @@ static bool is_strict_indirect_parent(std::string_view parent, std::string_view 
 }
 
 static bool is_valid_name_char(char c) {
-    return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == ' ';
+    return std::isprint(static_cast<unsigned char>(c)) && c != '\\';
 }
 
 static bool is_valid_path_char(char c) {
@@ -717,7 +717,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
                     log_msg(fmt("\"%\" already exists in asset database", desc.name), Log::Error);
 
                     {
-                        fmt_into(desc.name, "_%", emergency_id++);
+                        fmt_into(desc.name, "_(%)", emergency_id++);
                         _assets.emplace(desc.name, data);
                         save_desc(id, desc).ignore();
                     }
