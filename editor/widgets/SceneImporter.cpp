@@ -47,12 +47,12 @@ SOFTWARE.
 
 namespace editor {
 
-SceneImporter::SceneImporter() : SceneImporter(FileSystemModel::local_filesystem()->current_path().unwrap_or("")) {
+SceneImporter::SceneImporter() : SceneImporter(asset_store().filesystem()->current_path().unwrap_or(".")) {
 }
 
-SceneImporter::SceneImporter(const core::String& import_path) :
+SceneImporter::SceneImporter(const core::String& import_dst_path) :
         Widget("Mesh importer"),
-        _import_path(import_path) {
+        _import_path(import_dst_path) {
 
     _browser.set_selection_filter(false, import::supported_scene_extensions());
     _browser.set_canceled_callback([this] { close(); return true; });
@@ -211,6 +211,7 @@ void SceneImporter::import(import::SceneData scene) {
 
     {
         const bool separate_folders =
+            (scene.materials.is_empty() ? 0 : 1) +
             (scene.meshes.is_empty() ? 0 : 1) +
             (scene.animations.is_empty() ? 0 : 1) +
             (scene.images.is_empty() ? 0 : 1) > 1;
@@ -218,7 +219,7 @@ void SceneImporter::import(import::SceneData scene) {
         const core::String animations_import_path = separate_folders ? "Animations" : "";
         const core::String image_import_path = separate_folders ? "Textures" : "";
         const core::String material_import_path = separate_folders ? "Materials" : "";
-        const core::String prefab_import_path = separate_folders ? "Prefabs" : "";;
+        const core::String prefab_import_path = separate_folders ? "Prefabs" : "";
 
         {
             import_assets(scene.meshes, mesh_import_path, AssetType::Mesh);

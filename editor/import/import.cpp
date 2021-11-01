@@ -128,11 +128,33 @@ core::String supported_image_extensions() {
 }
 
 
+static usize component_count(int type) {
+    switch(type) {
+        case TINYGLTF_TYPE_SCALAR: return 1;
+        case TINYGLTF_TYPE_VEC2: return 2;
+        case TINYGLTF_TYPE_VEC3: return 3;
+        case TINYGLTF_TYPE_VEC4: return 4;
+        case TINYGLTF_TYPE_MAT2: return 4;
+        case TINYGLTF_TYPE_MAT3: return 9;
+        case TINYGLTF_TYPE_MAT4: return 16;
+        default:
+            y_throw_msg("Sparse accessors are not supported");
+    }
+}
+
 template<typename T>
-static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, const tinygltf::BufferView& buffer, T* vertex_elems, int type, bool normalize) {
+static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, const tinygltf::BufferView& buffer, const tinygltf::Accessor& accessor, T* vertex_elems, usize vertex_count) {
     using value_type = typename T::value_type;
     static constexpr usize size = T::size();
-    const usize components = type;
+
+    const usize components = component_count(accessor.type);
+    const bool normalize = accessor.normalized;
+
+    y_debug_assert(accessor.count == vertex_count);
+
+    if(components != size) {
+        log_msg(fmt("Expected VEC% attribute, got VEC%", size, components), Log::Warning);
+    }
 
     const usize min_size = std::min(size, components);
     auto convert = [=](const u8* data) {
@@ -151,18 +173,22 @@ static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, 
     };
 
     {
-        const usize elem_size = components * sizeof(value_type);
-        u8* vertex_data = reinterpret_cast<u8*>(vertex_elems);
-        const u8* data = model.buffers[buffer.buffer].data.data() + buffer.byteOffset;
-        const usize stride = buffer.byteStride ? buffer.byteStride : elem_size;
-        for(usize i = 0; i < buffer.byteLength; i += stride) {
-            *reinterpret_cast<T*>(vertex_data) = convert(data + i);
-            vertex_data += sizeof(Vertex);
+        u8* out_begin = reinterpret_cast<u8*>(vertex_elems);
+
+        const auto& in_buffer = model.buffers[buffer.buffer].data;
+        const u8* in_begin = in_buffer.data() + buffer.byteOffset + accessor.byteOffset;
+        const usize attrib_size = components * sizeof(value_type);
+        const usize input_stride = buffer.byteStride ? buffer.byteStride : attrib_size;
+
+        for(usize i = 0; i != accessor.count; ++i) {
+            const u8* attrib = in_begin + i * input_stride;
+            y_debug_assert(attrib < in_buffer.data() + in_buffer.size());
+            *reinterpret_cast<T*>(out_begin + i * sizeof(Vertex)) = convert(attrib);
         }
     }
 }
 
-static void decode_attrib_buffer(const tinygltf::Model& model, const std::string& name, const tinygltf::Accessor& accessor, Vertex* vertices) {
+static void decode_attrib_buffer(const tinygltf::Model& model, const std::string& name, const tinygltf::Accessor& accessor, core::MutableSpan<Vertex> vertices) {
     const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
 
     if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
@@ -186,15 +212,15 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
     }
 
     if(vec4_elems) {
-        decode_attrib_buffer_convert_internal(model, buffer, vec4_elems, accessor.type, accessor.normalized);
+        decode_attrib_buffer_convert_internal(model, buffer, accessor, vec4_elems, vertices.size());
     }
 
     if(vec3_elems) {
-        decode_attrib_buffer_convert_internal(model, buffer, vec3_elems, accessor.type, accessor.normalized);
+        decode_attrib_buffer_convert_internal(model, buffer, accessor, vec3_elems, vertices.size());
     }
 
     if(vec2_elems) {
-        decode_attrib_buffer_convert_internal(model, buffer, vec2_elems, accessor.type, accessor.normalized);
+        decode_attrib_buffer_convert_internal(model, buffer, accessor, vec2_elems, vertices.size());
     }
 }
 
@@ -206,37 +232,43 @@ static core::Vector<Vertex> import_vertices(const tinygltf::Model& model, const 
             continue;
         }
 
+        if(accessor.sparse.isSparse) {
+            y_throw_msg("Sparse accessors are not supported");
+        }
+
         if(!vertices.size()) {
             std::fill_n(std::back_inserter(vertices), accessor.count, Vertex());
         } else if(vertices.size() != accessor.count) {
             y_throw_msg("Invalid attribute count");
         }
 
-        if(accessor.normalized) {
-            y_throw_msg("Normalization not supported");
-        }
-
-        decode_attrib_buffer(model, name, accessor, vertices.data());
+        decode_attrib_buffer(model, name, accessor, vertices);
     }
     return vertices;
 }
 
 
 template<typename F>
-static void decode_index_buffer(const tinygltf::Model& model, const tinygltf::BufferView& buffer, IndexedTriangle* triangles, usize elem_size, F convert_index) {
-    u32* indices = reinterpret_cast<u32*>(triangles);
-    const u8* data = model.buffers[buffer.buffer].data.data() + buffer.byteOffset;
-    const usize stride = buffer.byteStride ? buffer.byteStride : elem_size;
-    for(usize i = 0; i < buffer.byteLength; i += stride) {
-        *indices = convert_index(data + i);
-        ++indices;
+static void decode_index_buffer(const tinygltf::Model& model, const tinygltf::BufferView& buffer, const tinygltf::Accessor& accessor, IndexedTriangle* triangles, usize elem_size, F convert_index) {
+    u32* out_buffer = reinterpret_cast<u32*>(triangles);
+
+    const u8* in_buffer = model.buffers[buffer.buffer].data.data() + buffer.byteOffset + accessor.byteOffset;
+    const usize input_stride = buffer.byteStride ? buffer.byteStride : elem_size;
+
+    for(usize i = 0; i != accessor.count; ++i) {
+        out_buffer[i] = convert_index(in_buffer + i * input_stride);
     }
 }
 
 static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& model, const tinygltf::Primitive& prim) {
     tinygltf::Accessor accessor = model.accessors[prim.indices];
+
     if(!accessor.count) {
         y_throw_msg("Non indexed primitives are not supported");
+    }
+
+    if(accessor.sparse.isSparse) {
+        y_throw_msg("Sparse accessors are not supported");
     }
 
     core::Vector<IndexedTriangle> triangles;
@@ -245,17 +277,17 @@ static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& mod
     switch(accessor.componentType) {
         case TINYGLTF_PARAMETER_TYPE_BYTE:
         case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE:
-            decode_index_buffer(model, buffer, triangles.data(), 1, [](const u8* data) -> u32 { return *data; });
+            decode_index_buffer(model, buffer, accessor, triangles.data(), 1, [](const u8* data) -> u32 { return *data; });
         break;
 
         case TINYGLTF_PARAMETER_TYPE_SHORT:
         case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT:
-            decode_index_buffer(model, buffer, triangles.data(), 2, [](const u8* data) -> u32 { return *reinterpret_cast<const u16*>(data); });
+            decode_index_buffer(model, buffer, accessor, triangles.data(), 2, [](const u8* data) -> u32 { return *reinterpret_cast<const u16*>(data); });
         break;
 
         case TINYGLTF_PARAMETER_TYPE_INT:
         case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT:
-            decode_index_buffer(model, buffer, triangles.data(), 4, [](const u8* data) -> u32 { return *reinterpret_cast<const u32*>(data); });
+            decode_index_buffer(model, buffer, accessor, triangles.data(), 4, [](const u8* data) -> u32 { return *reinterpret_cast<const u32*>(data); });
         break;
 
         default:
