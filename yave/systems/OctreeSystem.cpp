@@ -83,8 +83,8 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
                     entities.erase_unordered(it);
                 }
             }
-            {
-                TransformableComponent* tr = world.component<TransformableComponent>(id);
+
+            if(TransformableComponent* tr = world.component<TransformableComponent>(id)) {
                 const AABB bbox = find_aabb(world, id, tr->position());
 
                 y_debug_assert(tr->_id == id);

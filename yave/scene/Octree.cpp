@@ -46,6 +46,7 @@ static void visit_node(core::Vector<ecs::EntityId>& entities, const Frustum& fru
 
         case Intersection::Intersects:
             for(const ecs::EntityId id : node.entities()) {
+                Y_TODO(Check entity AABB against frustum)
                 entities << id;
             }
             for(const OctreeNode& child : node.children()) {
@@ -61,8 +62,6 @@ Octree::Octree() : _root({}, 1024.0, &_data) {
 }
 
 OctreeNode* Octree::insert(ecs::EntityId id, const AABB& bbox) {
-    y_profile();
-
     const math::Vec3 pos = bbox.center();
     while(!_root.contains(bbox)) {
         _root.into_parent(pos);
