@@ -241,7 +241,9 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
         for(const auto &[name, data] : _parent->_assets) {
             if(is_strict_indirect_parent(path, name) || name == path) {
                 const AssetId id = data.id;
-                if(auto r = FileSystemModel::local_filesystem()->remove(_parent->asset_desc_file_name(id)); !r) {
+                const core::String filename = _parent->asset_desc_file_name(id);
+                if(auto r = FileSystemModel::local_filesystem()->remove(filename); !r) {
+                    log_msg(fmt("Unable to remove %", filename), Log::Error);
                     _parent->reload_all().ignore();
                     return r;
                 }
@@ -252,6 +254,8 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
             }
         }
     }
+
+    log_msg(fmt("Removed % assets", _parent->_assets.size() - new_assets.size()));
 
     _parent->_ids = nullptr;
     std::swap(new_folders, _parent->_folders);
@@ -380,7 +384,6 @@ AssetStore::Result<FolderAssetStore::AssetDesc> FolderAssetStore::load_desc(Asse
             const core::String leftover(data.begin() + i + 1, data.end());
             const std::string_view trimmed = core::trim(leftover);
 
-
             u32 type = 0;
             if(std::from_chars(trimmed.data(), trimmed.data() + trimmed.size(), type).ec == std::errc()) {
                 desc.type = AssetType(type);
@@ -445,6 +448,10 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
 
     if(!_filesystem.create_directory(strict_parent_path(dst_name))) {
         return core::Err(ErrorType::FilesytemError);
+    }
+
+    if(_assets.find(dst_name) != _assets.end()) {
+        return core::Err(ErrorType::NameAlreadyExists);
     }
 
     const AssetId id = next_id();
@@ -680,6 +687,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
 
     _ids = nullptr;
     _assets.clear();
+    usize emergency_id = 1;
 
     const FileSystemModel* fs = FileSystemModel::local_filesystem();
     const auto result = fs->for_each(_root, [&](std::string_view name) {
@@ -702,13 +710,23 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
             const AssetId id = AssetId::from_id(uid);
             if(auto r = load_desc(id)) {
                 _next_id = std::max(u64(_next_id), uid + 1);
-                const AssetDesc desc = r.unwrap();
+                AssetDesc desc = r.unwrap();
                 const AssetData data = { id, desc.type };
 
-                _assets.emplace(desc.name, data);
+                if(!_assets.emplace(desc.name, data).second) {
+                    log_msg(fmt("\"%\" already exists in asset database", desc.name), Log::Error);
+
+                    {
+                        fmt_into(desc.name, "_%", emergency_id++);
+                        _assets.emplace(desc.name, data);
+                        save_desc(id, desc).ignore();
+                    }
+                }
 
                 if(auto parent = _filesystem.parent_path(desc.name); parent && !parent.unwrap().is_empty()) {
-                    _folders.insert(parent.unwrap());
+                    if(_folders.insert(parent.unwrap()).second) {
+                        log_msg(fmt("\"%\" was not found in folder database", parent.unwrap()), Log::Warning);
+                    }
                 }
             }
         }
