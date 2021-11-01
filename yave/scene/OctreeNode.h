@@ -65,6 +65,7 @@ class OctreeNode {
 
         Y_TODO(Make thread safe)
         void set_dirty(ecs::EntityId id);
+        void remove(ecs::EntityId id);
 
     private:
         friend class Octree;

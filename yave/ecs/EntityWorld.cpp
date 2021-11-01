@@ -36,6 +36,9 @@ EntityWorld::EntityWorld() {
 }
 
 EntityWorld::~EntityWorld() {
+    for(auto& system : _systems) {
+        system->destroy(*this);
+    }
 }
 
 EntityWorld::EntityWorld(EntityWorld&& other) {

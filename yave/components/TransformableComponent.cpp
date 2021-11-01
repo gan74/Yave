@@ -26,6 +26,13 @@ SOFTWARE.
 
 namespace yave {
 
+TransformableComponent::~TransformableComponent() {
+    if(_id.is_valid()) {
+        y_debug_assert(_node);
+        _node->remove(_id);
+    }
+}
+
 TransformableComponent::TransformableComponent(TransformableComponent&& other) {
     swap(other);
 }
@@ -48,6 +55,7 @@ void TransformableComponent::swap(TransformableComponent& other) {
     std::swap(_transform, other._transform);
     std::swap(_id, other._id);
     std::swap(_node, other._node);
+    std::swap(_dirty, other._dirty);
 }
 
 void TransformableComponent::set_transform(const math::Transform<>& tr) {
@@ -98,9 +106,9 @@ const OctreeNode* TransformableComponent::octree_node() const {
 }
 
 void TransformableComponent::update_node() {
-    if(_node) {
+    if(!_dirty && _node) {
         _node->set_dirty(_id);
-        _node = nullptr;
+        _dirty = true;
     }
 }
 

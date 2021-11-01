@@ -34,7 +34,8 @@ class OctreeSystem : public ecs::System {
     public:
         OctreeSystem();
 
-        void setup(ecs::EntityWorld&) override;
+        void destroy(ecs::EntityWorld& world) override;
+        void setup(ecs::EntityWorld& world) override;
         void tick(ecs::EntityWorld& world) override;
 
         const OctreeNode& root() const;

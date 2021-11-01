@@ -105,6 +105,12 @@ void OctreeNode::set_dirty(ecs::EntityId id) {
     _data->_dirty.emplace_back(this, id);
 }
 
+void OctreeNode::remove(ecs::EntityId id) {
+    const auto it = std::find(_entities.begin(), _entities.end(), id);
+    y_debug_assert(it != _entities.end());
+    _entities.erase_unordered(it);
+}
+
 void OctreeNode::into_parent(const math::Vec3& toward) {
     const usize index = children_index(toward);
     const math::Vec3 parent_offset = {

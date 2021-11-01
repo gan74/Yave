@@ -47,9 +47,14 @@ class System : NonCopyable {
             // nothing
         }
 
+        virtual void destroy(EntityWorld&) {
+            // nothing
+        }
+
         virtual void reset(EntityWorld& world) {
             setup(world);
         }
+
 
     private:
         core::String _name;

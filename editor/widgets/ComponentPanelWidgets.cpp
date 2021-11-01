@@ -458,10 +458,20 @@ struct EditorComponentWidget : public ComponentPanelWidget<EditorComponentWidget
             ImGui::TextUnformatted("Id");
             ImGui::TableNextColumn();
 
-            std::array<char, 16> buffer = {};
-            std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
+            std::array<char, 32> buffer = {};
 
+            std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
             ImGui::InputText("##id", buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+
+            ImGui::SameLine();
+
+            ImGui::TextDisabled("(?)");
+            if(ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("id: %08" PRIu32, id.index());
+                ImGui::Text("version: %08" PRIu32, id.version());
+                ImGui::EndTooltip();
+            }
         }
     }
 };

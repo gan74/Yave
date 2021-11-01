@@ -52,6 +52,13 @@ static AABB find_aabb(const ecs::EntityWorld& world, ecs::EntityId id, const mat
 OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
 
+void OctreeSystem::destroy(ecs::EntityWorld& world) {
+    for(auto&& [tr] : world.view<TransformableComponent>().components()) {
+        tr._id.invalidate();
+        tr._node = nullptr;
+    }
+}
+
 void OctreeSystem::setup(ecs::EntityWorld& world) {
     run_tick(world, false);
 }
@@ -88,7 +95,6 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
                 const AABB bbox = find_aabb(world, id, tr->position());
 
                 y_debug_assert(tr->_id == id);
-                y_debug_assert(!tr->_node);
                 tr->_node = _tree.insert(id, bbox);
             }
         }

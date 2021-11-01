@@ -32,6 +32,7 @@ namespace yave {
 class TransformableComponent final {
     public:
         TransformableComponent() = default;
+        ~TransformableComponent();
 
         TransformableComponent(TransformableComponent&& other);
         TransformableComponent& operator=(TransformableComponent&& other);
@@ -68,6 +69,7 @@ class TransformableComponent final {
 
         ecs::EntityId _id;
         OctreeNode* _node = nullptr;
+        bool _dirty = false;
 };
 
 }
