@@ -71,7 +71,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
         if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
             ret = ImGui::ImageButton(const_cast<TextureView*>(img), button_size);
         } else {
-            ret = ImGui::Button(ICON_FA_QUESTION, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
+            ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
         }
     } else {
         ret = ImGui::Button(ICON_FA_FOLDER_OPEN, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);

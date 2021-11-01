@@ -128,7 +128,6 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     FrameGraph graph(_resource_pool);
 
     const math::Vec2ui output_size = _resolution < 0 ? content_size() : standard_resolutions()[_resolution].second;
-
     const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, _settings);
 
     {
@@ -163,7 +162,6 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     if(!_disable_render) {
         std::move(graph).render(recorder);
     }
-
 
     if(output) {
         ImGui::Image(output, content_size());
@@ -344,6 +342,9 @@ void EngineView::draw_gizmo_tool_bar() {
             gizmo_mode = Gizmo::Rotate;
         }
     }
+
+    ImGui::Separator();
+
     {
         if(ImGui::MenuItem(ICON_FA_MOUNTAIN, nullptr, false, gizmo_space != Gizmo::World)) {
             gizmo_space = Gizmo::World;
@@ -352,8 +353,10 @@ void EngineView::draw_gizmo_tool_bar() {
             gizmo_space = Gizmo::Local;
         }
     }
+
+    ImGui::Separator();
+
     {
-        ImGui::Separator();
         if(ImGui::BeginMenu(ICON_FA_MAGNET)) {
             std::array<char, 16> buffer = {};
 
