@@ -141,19 +141,17 @@ void LifetimeManager::poll_cmd_buffers() {
 void LifetimeManager::clear_resources(u64 up_to) {
     y_profile();
 
-    core::ScratchVector<ManagedResource> to_delete;
+    core::Vector<ManagedResource> to_delete;
 
     {
         y_profile_zone("collection");
         const auto lock = y_profile_unique_lock(_resources_lock);
 
-        to_delete = core::ScratchVector<ManagedResource>(_to_destroy.size());
         while(!_to_destroy.empty() && _to_destroy.front().first < up_to) {
             to_delete.push_back(std::move(_to_destroy.front().second));
             _to_destroy.pop_front();
         }
     }
-
 
     y_profile_zone("clear");
     for(auto& res : to_delete) {

@@ -24,12 +24,13 @@ SOFTWARE.
 #include "FixedArray.h"
 
 #include <y/mem/memory.h>
+#include <y/utils/format.h>
 
 namespace y {
 namespace core {
 namespace detail {
 
-static constexpr usize scratch_buffer_size = 64 * 1024;
+static constexpr usize scratch_buffer_size = 32 * 1024;
 
 static thread_local FixedArray<u8> scratch_buffer;
 static thread_local u8* scratch_begin = nullptr;
@@ -51,7 +52,7 @@ void* alloc_scratchpad(usize size) {
     u8* data = begin;
     begin += aligned_size;
 
-    y_always_assert(begin <= scratch.end(), "Scratch pad full");
+    y_always_assert(begin <= scratch.end(), "Scratch pad full: trying to allocate % bytes", size);
 
     return data;
 }
