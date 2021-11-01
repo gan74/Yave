@@ -33,6 +33,9 @@ class TransformableComponent final {
     public:
         TransformableComponent() = default;
 
+        TransformableComponent(TransformableComponent&& other);
+        TransformableComponent& operator=(TransformableComponent&& other);
+
         TransformableComponent(const TransformableComponent& other);
         TransformableComponent& operator=(const TransformableComponent& other);
 
@@ -58,6 +61,7 @@ class TransformableComponent final {
         friend class Octree;
         friend class OctreeSystem;
 
+        void swap(TransformableComponent& other);
         void update_node();
 
         math::Transform<> _transform;

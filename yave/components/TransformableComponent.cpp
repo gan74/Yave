@@ -26,6 +26,15 @@ SOFTWARE.
 
 namespace yave {
 
+TransformableComponent::TransformableComponent(TransformableComponent&& other) {
+    swap(other);
+}
+
+TransformableComponent& TransformableComponent::operator=(TransformableComponent&& other) {
+    swap(other);
+    return *this;
+}
+
 TransformableComponent::TransformableComponent(const TransformableComponent& other) {
     set_transform(other.transform());
 }
@@ -33,6 +42,12 @@ TransformableComponent::TransformableComponent(const TransformableComponent& oth
 TransformableComponent& TransformableComponent::operator=(const TransformableComponent& other) {
     set_transform(other.transform());
     return *this;
+}
+
+void TransformableComponent::swap(TransformableComponent& other) {
+    std::swap(_transform, other._transform);
+    std::swap(_id, other._id);
+    std::swap(_node, other._node);
 }
 
 void TransformableComponent::set_transform(const math::Transform<>& tr) {
