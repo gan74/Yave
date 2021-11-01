@@ -3,7 +3,7 @@
 `TinyGLTF` is a header only C++11 glTF 2.0 https://github.com/KhronosGroup/glTF library.
 
 `TinyGLTF` uses Niels Lohmann's json library(https://github.com/nlohmann/json), so now it requires C++11 compiler.
-If you are looking for old, C++03 version, please use `devel-picojson` branch.
+If you are looking for old, C++03 version, please use `devel-picojson` branch(but not maintained anymore).
 
 ## Status
 
@@ -13,11 +13,17 @@ If you are looking for old, C++03 version, please use `devel-picojson` branch.
  - v2.1.0 release(Draco support)
  - v2.0.0 release(22 Aug, 2018)!
 
+### Branches
+
+* `sajson` : Use sajson to parse JSON. Parsing only but faster compile time(2x reduction compared to json.hpp and RapidJson)
+
 ## Builds
 
 [![Build Status](https://travis-ci.org/syoyo/tinygltf.svg?branch=devel)](https://travis-ci.org/syoyo/tinygltf)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/warngenu9wjjhlm8?svg=true)](https://ci.appveyor.com/project/syoyo/tinygltf)
+
+![C/C++ CI](https://github.com/syoyo/tinygltf/workflows/C/C++%20CI/badge.svg)
 
 ## Features
 
@@ -71,6 +77,7 @@ In extension(`ExtensionMap`), JSON number value is parsed as int or float(number
 * [glview](examples/glview) : Simple glTF geometry viewer.
 * [validator](examples/validator) : Simple glTF validator with JSON schema.
 * [basic](examples/basic) : Basic glTF viewer with texturing support.
+* [build-gltf](examples/build-gltf) : Build simple glTF scene from a scratch.
 
 ## Projects using TinyGLTF
 
@@ -83,6 +90,8 @@ In extension(`ExtensionMap`), JSON number value is parsed as int or float(number
 * [QuickLook GLTF](https://github.com/toshiks/glTF-quicklook) - quicklook plugin for macos. Also SceneKit wrapper for tinygltf.
 * [GlslViewer](https://github.com/patriciogonzalezvivo/glslViewer) - live GLSL coding for MacOS and Linux
 * [Vulkan-Samples](https://github.com/KhronosGroup/Vulkan-Samples) - The Vulkan Samples is collection of resources to help you develop optimized Vulkan applications.
+* [TDME2](https://github.com/andreasdr/tdme2) - TDME2 - ThreeDeeMiniEngine2 is a lightweight 3D engine including tools suited for 3D game development using C++11
+* [SanityEngine](https://github.com/DethRaid/SanityEngine) - A C++/D3D12 renderer focused on the personal and proessional development of its developer
 * Your projects here! (Please send PR)
 
 ## TODOs
@@ -148,6 +157,10 @@ if (!ret) {
 }
 ```
 
+#### Loader options
+
+* `TinyGLTF::SetPreserveimageChannels(bool onoff)`. `true` to preserve image channels as stored in image file for loaded image. `false` by default for backward compatibility(image channels are widen to `RGBA` 4 channels). Effective only when using builtin image loader(STB image loader).
+
 ## Compile options
 
 * `TINYGLTF_NOEXCEPTION` : Disable C++ exception in JSON parsing. You can use `-fno-exceptions` or by defining the symbol `JSON_NOEXCEPTION` and `TINYGLTF_NOEXCEPTION`  to fully remove C++ exception codes when compiling TinyGLTF.
@@ -157,10 +170,25 @@ if (!ret) {
 * `TINYGLTF_ANDROID_LOAD_FROM_ASSETS`: Load all files from packaged app assets instead of the regular file system. **Note:** You must pass a valid asset manager from your android app to `tinygltf::asset_manager` beforehand.
 * `TINYGLTF_ENABLE_DRACO`: Enable Draco compression. User must provide include path and link correspnding libraries in your project file.
 * `TINYGLTF_NO_INCLUDE_JSON `: Disable including `json.hpp` from within `tiny_gltf.h` because it has been already included before or you want to include it using custom path before including `tiny_gltf.h`.
+* `TINYGLTF_NO_INCLUDE_RAPIDJSON `: Disable including RapidJson's header files from within `tiny_gltf.h` because it has been already included before or you want to include it using custom path before including `tiny_gltf.h`.
 * `TINYGLTF_NO_INCLUDE_STB_IMAGE `: Disable including `stb_image.h` from within `tiny_gltf.h` because it has been already included before or you want to include it using custom path before including `tiny_gltf.h`.
 * `TINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE `: Disable including `stb_image_write.h` from within `tiny_gltf.h` because it has been already included before or you want to include it using custom path before including `tiny_gltf.h`.
 * `TINYGLTF_USE_RAPIDJSON` : Use RapidJSON as a JSON parser/serializer. RapidJSON files are not included in TinyGLTF repo. Please set an include path to RapidJSON if you enable this featrure.
 * `TINYGLTF_USE_CPP14` : Use C++14 feature(requires C++14 compiler). This may give better performance than C++11.
+
+## CMake options
+
+You can add tinygltf using `add_subdirectory` feature.
+If you add tinygltf to your project using `add_subdirectory`, it would be better to set `TINYGLTF_HEADER_ONLY` on(just add an include path to tinygltf) and `TINYGLTF_INSTALL` off(Which does not install tinygltf files).
+
+```
+// Your project's CMakeLists.txt
+...
+
+set(TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)
+set(TINYGLTF_INSTALL OFF CACHE INTERNAL "" FORCE)
+add_subdirectory(/path/to/tinygltf)
+```
 
 
 ### Saving gltTF 2.0 model
