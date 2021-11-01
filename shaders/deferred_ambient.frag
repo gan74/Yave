@@ -8,7 +8,6 @@
 // -------------------------------- DEFINES --------------------------------
 
 #define USE_IBL
-// #define IBL_BACKGROUND
 #define USE_AO
 
 // -------------------------------- I/O --------------------------------
@@ -34,8 +33,9 @@ layout(set = 0, binding = 9) readonly buffer Shadows {
     ShadowMapParams shadow_params[];
 };
 
-layout(set = 0, binding = 10) uniform LightCount {
+layout(set = 0, binding = 10) uniform Params {
     uint light_count;
+    uint ibl_sky;
 };
 
 layout(location = 0) in vec2 in_uv;
@@ -60,9 +60,11 @@ void main() {
     vec3 irradiance = vec3(0.0);
 
     if(is_OOB(depth)) {
-#if defined(USE_IBL) && defined(IBL_BACKGROUND)
-        const vec3 forward = normalize(unproject(in_uv, 1.0, camera.inv_view_proj) - camera.position);
-        irradiance = texture(in_envmap, forward).rgb;
+#if defined(USE_IBL)
+        if(ibl_sky != 0) {
+            const vec3 forward = normalize(unproject(in_uv, 1.0, camera.inv_view_proj) - camera.position);
+            irradiance = texture(in_envmap, forward).rgb;
+        }
 #endif
     } else {
         const GBufferData gbuffer = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));

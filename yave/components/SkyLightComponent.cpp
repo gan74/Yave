@@ -35,6 +35,14 @@ const AssetPtr<IBLProbe>& SkyLightComponent::probe() const {
     return _probe;
 }
 
+bool& SkyLightComponent::display_sky() {
+    return _display_sky;
+}
+
+bool SkyLightComponent::display_sky() const {
+    return _display_sky;
+}
+
 bool SkyLightComponent::update_asset_loading_status() {
     return true;
 }

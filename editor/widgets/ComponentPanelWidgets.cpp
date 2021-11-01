@@ -244,25 +244,34 @@ struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponent
 
 struct SkyLightComponentWidget : public ComponentPanelWidget<SkyLightComponentWidget, SkyLightComponent> {
     void on_gui(ecs::EntityId id, SkyLightComponent* sky) {
+        {
+            ImGui::TextUnformatted("Envmap");
+            ImGui::TableNextColumn();
 
-        ImGui::TextUnformatted("Envmap");
-        ImGui::TableNextColumn();
-
-        bool clear = false;
-        if(imgui::asset_selector(sky->probe().id(), AssetType::Image, "Envmap", &clear)) {
-            add_child_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
-                [=](AssetId asset) {
-                    if(const auto probe = asset_loader().load_res<IBLProbe>(asset)) {
-                        if(SkyLightComponent* sky = current_world().component<SkyLightComponent>(id)) {
-                            undo_stack().push_before_dirty(id);
-                            sky->probe() = probe.unwrap();
+            bool clear = false;
+            if(imgui::asset_selector(sky->probe().id(), AssetType::Image, "Envmap", &clear)) {
+                add_child_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
+                    [=](AssetId asset) {
+                        if(const auto probe = asset_loader().load_res<IBLProbe>(asset)) {
+                            if(SkyLightComponent* sky = current_world().component<SkyLightComponent>(id)) {
+                                undo_stack().push_before_dirty(id);
+                                sky->probe() = probe.unwrap();
+                            }
                         }
-                    }
-                    return true;
-                });
-        } else if(clear) {
-            sky->probe() = AssetPtr<IBLProbe>();
-            undo_stack().make_dirty();
+                        return true;
+                    });
+            } else if(clear) {
+                sky->probe() = AssetPtr<IBLProbe>();
+                undo_stack().make_dirty();
+            }
+        }
+
+        imgui::table_begin_next_row();
+
+        {
+            ImGui::TextUnformatted("Display sky");
+            ImGui::TableNextColumn();
+            undo_stack() << ImGui::Checkbox("##displaysky", &sky->display_sky());
         }
     }
 };

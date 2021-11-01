@@ -33,13 +33,17 @@ class SkyLightComponent final : public HasLoadableAssetsTag<SkyLightComponent> {
         AssetPtr<IBLProbe>& probe();
         const AssetPtr<IBLProbe>& probe() const;
 
+        bool& display_sky();
+        bool display_sky() const;
+
         bool update_asset_loading_status();
         void load_assets(AssetLoadingContext& loading_ctx);
 
-        y_reflect(_probe)
+        y_reflect(_probe, _display_sky)
 
     private:
         AssetPtr<IBLProbe> _probe;
+        bool _display_sky = false;
 };
 }
 

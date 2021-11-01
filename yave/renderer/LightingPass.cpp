@@ -50,15 +50,15 @@ static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
 
 
-static const IBLProbe* find_probe(const ecs::EntityWorld& world) {
+static std::pair<const IBLProbe*, bool> find_probe(const ecs::EntityWorld& world) {
     for(const SkyLightComponent& sky : world.components<SkyLightComponent>()) {
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
-            return probe;
+            return {probe, sky.display_sky()};
         }
     }
 
-    return device_resources().empty_probe().get();
+    return {device_resources().empty_probe().get(), true};
 }
 
 
@@ -68,7 +68,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              FrameGraphImageId ao) {
 
     const SceneView& scene = gbuffer.scene_pass.scene_view;
-    const IBLProbe* ibl_probe = find_probe(scene.world());
+    auto [ibl_probe, display_sky] = find_probe(scene.world());
     const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
@@ -76,7 +76,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     const auto lit = builder.declare_copy(gbuffer.emissive);
 
     const auto directional_buffer = builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_lights);
-    const auto light_count_buffer = builder.declare_typed_buffer<u32>(1);
+    const auto params_buffer = builder.declare_typed_buffer<u32>(2);
 
     builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
@@ -88,10 +88,10 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
     builder.add_storage_input(directional_buffer, 0, PipelineStage::FragmentBit);
     builder.add_storage_input(shadow_pass.shadow_params, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(light_count_buffer, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(params_buffer, 0, PipelineStage::FragmentBit);
     builder.add_color_output(lit);
     builder.map_update(directional_buffer);
-    builder.map_update(light_count_buffer);
+    builder.map_update(params_buffer);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         u32 light_count = 0;
         TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
@@ -112,7 +112,12 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                     0
                 };
         }
-        self->resources().mapped_buffer(light_count_buffer)[0] = light_count;
+
+        {
+            TypedMapping<u32> params = self->resources().mapped_buffer(params_buffer);
+            params[0] = light_count;
+            params[1] = display_sky ? 1 : 0;
+        }
 
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources()[DeviceResources::DeferredAmbientMaterialTemplate];
