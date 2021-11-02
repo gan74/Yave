@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "FrameGraphResourcePool.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 template<typename U>

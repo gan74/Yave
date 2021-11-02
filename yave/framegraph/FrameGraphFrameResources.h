@@ -32,7 +32,6 @@ SOFTWARE.
 #include <y/core/HashMap.h>
 
 #include <deque>
-#include <memory>
 
 namespace yave {
 

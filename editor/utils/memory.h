@@ -19,32 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_MEMORY_DEVICEMEMORYVIEW_H
-#define YAVE_GRAPHICS_MEMORY_DEVICEMEMORYVIEW_H
+#ifndef EDITOR_UTILS_MEMORY_H
+#define EDITOR_UTILS_MEMORY_H
 
-#include "DeviceMemory.h"
+#include <editor/editor.h>
 
-namespace yave {
-
-class DeviceMemoryView {
-    public:
-        DeviceMemoryView() = default;
-        DeviceMemoryView(const DeviceMemory& mem);
-
-        VkMappedMemoryRange vk_mapped_range(u64 size, u64 offset = 0) const;
-        VkDeviceMemory vk_memory() const;
-        u64 vk_offset() const;
-
-        void* map();
-        void unmap();
-
-    private:
-        DeviceMemoryHeapBase* _heap = nullptr;
-        VkDeviceMemory _memory = {};
-        u64 _offset;
-};
-
+namespace editor {
+namespace memory {
+usize live_allocations();
+u64 total_allocations();
+}
 }
 
-#endif // YAVE_GRAPHICS_MEMORY_DEVICEMEMORYVIEW_H
+#endif // EDITOR_UTILS_MEMORY_H
 

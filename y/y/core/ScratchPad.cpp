@@ -23,7 +23,6 @@ SOFTWARE.
 #include "ScratchPad.h"
 #include "FixedArray.h"
 
-#include <y/mem/memory.h>
 #include <y/utils/format.h>
 
 namespace y {
@@ -48,7 +47,7 @@ void* alloc_scratchpad(usize size) {
         begin = scratch.data();
     }
 
-    const usize aligned_size = memory::align_up_to_max(size);
+    const usize aligned_size = align_up_to_max(size);
     u8* data = begin;
     begin += aligned_size;
 
@@ -67,7 +66,7 @@ void free_scratchpad(void* ptr, usize size) {
     auto& begin = scratch_begin;
     y_debug_assert(begin);
 
-    const usize aligned_size = memory::align_up_to_max(size);
+    const usize aligned_size = align_up_to_max(size);
 
     u8* alloc_end = static_cast<u8*>(ptr) + aligned_size;
     y_debug_assert(alloc_end == begin);

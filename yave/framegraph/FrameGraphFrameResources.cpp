@@ -23,7 +23,6 @@ SOFTWARE.
 #include "FrameGraphFrameResources.h"
 #include "FrameGraphResourcePool.h"
 
-
 namespace yave {
 
 FrameGraphFrameResources::FrameGraphFrameResources(std::shared_ptr<FrameGraphResourcePool> pool) : _pool(pool) {
@@ -53,9 +52,8 @@ void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat f
     res.check_valid();
 
     auto& image = _images[res];
-    if(image) {
-        y_fatal("Buffer already exists.");
-    }
+    y_always_assert(!image, "Image already exists");
+
     _image_storage.emplace_back(_pool->create_image(format, size, usage));
     image = &_image_storage.back();
 }
@@ -64,9 +62,8 @@ void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, usize byte_
     res.check_valid();
 
     auto& buffer = _buffers[res];
-    if(buffer) {
-        y_fatal("Buffer already exists.");
-    }
+    y_always_assert(!buffer, "Buffer already exists");
+
     _buffer_storage.emplace_back(_pool->create_buffer(byte_size, usage, memory));
     buffer = &_buffer_storage.back();
 }
@@ -103,14 +100,10 @@ void FrameGraphFrameResources::create_alias(FrameGraphImageId dst, FrameGraphIma
     src.check_valid();
 
     const auto& orig = _images[src];
-    if(!orig) {
-        y_fatal("Source image doesn't exists.");
-    }
+    y_always_assert(orig, "Source image doesn't exists");
 
     auto& image = _images[dst];
-    if(image) {
-        y_fatal("Destination image already exists.");
-    }
+    y_always_assert(!image, "Destination image already exists");
 
     image = orig;
 }
@@ -126,24 +119,23 @@ bool FrameGraphFrameResources::are_aliased(FrameGraphImageId a, FrameGraphImageI
 
 
 const TransientImage<>& FrameGraphFrameResources::find(FrameGraphImageId res) const {
-    if(!res.is_valid()) {
-        y_fatal("Invalid image resource.");
-    }
+    y_always_assert(res.is_valid(), "Invalid image resource");
+
     if(const auto it = _images.find(res); it != _images.end()) {
         return *it->second;
     }
 
-    /*return*/ y_fatal("Image resource doesn't exist.");
+    y_fatal("Image resource doesn't exist");
 }
 
 const TransientBuffer& FrameGraphFrameResources::find(FrameGraphBufferId res) const {
-    if(!res.is_valid()) {
-        y_fatal("Invalid buffer resource.");
-    }
+    y_always_assert(res.is_valid(), "Invalid buffer resource");
+
     if(const auto it = _buffers.find(res); it != _buffers.end()) {
         return *it->second;
     }
-    /*return*/ y_fatal("Buffer resource doesn't exist.");
+
+    y_fatal("Buffer resource doesn't exist");
 }
 
 

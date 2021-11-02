@@ -31,6 +31,8 @@ SOFTWARE.
 #include <functional>
 
 
+Y_TODO("Implement trick from here: https://www.youtube.com/watch?v=ncHmEUmJZf4")
+
 namespace y {
 namespace core {
 

@@ -38,11 +38,11 @@ VkMappedMemoryRange DeviceMemoryView::vk_mapped_range(u64 size, u64 offset) cons
     const u64 atom_size = device_properties().non_coherent_atom_size;
 
     const u64 full_offset = _offset + offset;
-    const u64 aligned_offset = memory::align_down_to(full_offset, atom_size);
+    const u64 aligned_offset = align_down_to(full_offset, atom_size);
     y_debug_assert(aligned_offset <= full_offset);
     const u64 end = full_offset + size;
     y_debug_assert(end > aligned_offset);
-    const u64 aligned_size = memory::align_up_to(end - aligned_offset, atom_size);
+    const u64 aligned_size = align_up_to(end - aligned_offset, atom_size);
     y_debug_assert(end > full_offset);
 
     VkMappedMemoryRange range = vk_struct();

@@ -36,7 +36,7 @@ struct NonCopyable {
     NonCopyable& operator=(NonCopyable&&) = default;
 };
 
-struct NonMovable {
+struct NonMovable : NonCopyable {
     inline constexpr NonMovable() {}
     NonMovable(const NonMovable&) = delete;
     NonMovable& operator=(const NonMovable&) = delete;

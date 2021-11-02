@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 #include <editor/EditorWorld.h>
+#include <editor/utils/memory.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/systems/OctreeSystem.h>
@@ -107,6 +108,26 @@ class CullingDebug : public Widget {
         }
 };
 
+
+class MemoryDebug : public Widget {
+    editor_widget(MemoryDebug, "View", "Debug")
+
+    public:
+        MemoryDebug() : Widget("Memory debug", ImGuiWindowFlags_AlwaysAutoResize) {
+        }
+
+    protected:
+        void on_gui() override {
+            const u64 total_allocs = memory::total_allocations();
+            ImGui::TextUnformatted(fmt_c_str("% live allocations", memory::live_allocations()));
+            ImGui::TextUnformatted(fmt_c_str("% allocations per frame", total_allocs - _last_total));
+            _last_total = total_allocs;
+        }
+
+
+    private:
+        u64 _last_total = 0;
+};
 
 
 }

@@ -78,6 +78,28 @@ static_assert(is_little_endian() || is_big_endian(), "Endianness unknown");
 
 
 
+constexpr usize max_alignment = std::alignment_of<std::max_align_t>::value;
+
+constexpr usize align_up_to(usize value, usize alignment) {
+    y_debug_assert(alignment);
+    if(const usize diff = value % alignment) {
+        y_debug_assert(diff <= value + alignment);
+        return value + alignment - diff;
+    }
+    return value;
+}
+
+constexpr usize align_down_to(usize value, usize alignment) {
+    y_debug_assert(alignment);
+    const usize diff = value % alignment;
+    return value - diff;
+}
+
+constexpr usize align_up_to_max(usize size) {
+    return align_up_to(size, max_alignment);
+}
+
+
 
 template<typename T>
 class ScopeExit {

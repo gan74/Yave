@@ -180,7 +180,7 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
     if(!layout.inline_blocks_fallbacks().is_empty()) {
         const usize alignment = inline_sub_buffer_alignment();
         for(const auto& buffer : layout.inline_blocks_fallbacks()) {
-            _descriptor_buffer_size += memory::align_up_to(buffer.byte_size, alignment);
+            _descriptor_buffer_size += align_up_to(buffer.byte_size, alignment);
         }
         log_msg(fmt("Allocation % * % bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
         _inline_buffer = Buffer<BufferUsage::UniformBit>(_descriptor_buffer_size * pool_size);
@@ -253,7 +253,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
 
             const Descriptor::InlineBlock block = desc.descriptor_info().inline_block;
             if(!inline_uniform_supported || block.size > max_inline_uniform_size) {
-                const usize aligned_block_size = memory::align_up_to(block.size, block_buffer_alignment);
+                const usize aligned_block_size = align_up_to(block.size, block_buffer_alignment);
                 const usize buffer_start = id * _descriptor_buffer_size + inline_buffer_offset;
 
                 SubBuffer<BufferUsage::UniformBit, MemoryType::CpuVisible> block_buffer(_inline_buffer, aligned_block_size, buffer_start);
