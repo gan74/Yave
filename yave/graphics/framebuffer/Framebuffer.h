@@ -75,7 +75,7 @@ class Framebuffer final {
         math::Vec2ui _size;
         usize _attachment_count = 0;
 
-        std::unique_ptr<RenderPass> _render_pass;
+        RenderPass _render_pass;
         VkHandle<VkFramebuffer> _framebuffer;
 };
 

@@ -47,12 +47,12 @@ static core::ScratchPad<Framebuffer::ColorAttachment> color_attachments(core::Sp
     return colors;
 }
 
-static std::unique_ptr<RenderPass> create_render_pass(const Framebuffer::DepthAttachment& depth, core::Span<Framebuffer::ColorAttachment> colors) {
+static RenderPass create_render_pass(const Framebuffer::DepthAttachment& depth, core::Span<Framebuffer::ColorAttachment> colors) {
     auto color_vec = core::ScratchPad<RenderPass::AttachmentData>(colors.size());
     std::transform(colors.begin(), colors.end(), color_vec.begin(), [](const auto& c) { return RenderPass::AttachmentData(c.view, c.load_op); });
     return !depth.view.is_null()
-        ? std::make_unique<RenderPass>(RenderPass::AttachmentData(depth.view, depth.load_op), color_vec)
-        : std::make_unique<RenderPass>(color_vec);
+        ? RenderPass(RenderPass::AttachmentData(depth.view, depth.load_op), color_vec)
+        : RenderPass(color_vec);
 }
 
 Framebuffer::Framebuffer(const DepthAttachment& depth, core::Span<ColorAttachment> colors) :
@@ -71,7 +71,7 @@ Framebuffer::Framebuffer(const DepthAttachment& depth, core::Span<ColorAttachmen
 
     VkFramebufferCreateInfo create_info = vk_struct();
     {
-        create_info.renderPass = _render_pass->vk_render_pass();
+        create_info.renderPass = _render_pass.vk_render_pass();
         create_info.attachmentCount = u32(views.size());
         create_info.pAttachments = views.data();
         create_info.width = _size.x();
@@ -108,7 +108,7 @@ const math::Vec2ui& Framebuffer::size() const {
 }
 
 const RenderPass& Framebuffer::render_pass() const {
-    return *_render_pass;
+    return _render_pass;
 }
 
 usize Framebuffer::attachment_count() const {
