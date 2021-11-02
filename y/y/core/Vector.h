@@ -28,9 +28,6 @@ SOFTWARE.
 #include <algorithm>
 #include <iterator>
 
-#ifdef Y_DEBUG
-#define Y_VECTOR_ELECTRIC
-#endif
 
 #ifdef Y_VECTOR_ELECTRIC
 #define Y_CLEAR_ELECTRIC(ptr, size) do { std::memset(static_cast<void*>(ptr), 0xFE, (size) * sizeof(data_type)); } while(false)
