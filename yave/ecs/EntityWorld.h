@@ -309,7 +309,7 @@ class EntityWorld {
 
 
         Y_TODO(replace by vector)
-        core::ExternalHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> _containers;
+        core::FlatHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> _containers;
         EntityIdPool _entities;
 
         core::Vector<ComponentTypeIndex> _required_components;

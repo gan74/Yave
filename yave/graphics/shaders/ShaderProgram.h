@@ -47,7 +47,7 @@ class ShaderProgram final {
         core::Span<u32> fragment_outputs() const;
 
     private:
-        core::ExternalHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
+        core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
         core::Vector<VkPushConstantRange> _push_constants;
         core::Vector<VkDescriptorSetLayout> _layouts;
         core::Vector<VkPipelineShaderStageCreateInfo> _stages;

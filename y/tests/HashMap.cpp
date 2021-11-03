@@ -26,6 +26,7 @@ SOFTWARE.
 #include <y/core/HashMap.h>
 #include <y/core/String.h>
 
+#include <y/utils/log.h>
 #include <y/utils/format.h>
 
 #include <y/math/random.h>
@@ -38,8 +39,8 @@ namespace {
 using namespace y;
 using namespace y::core;
 
-template<typename K, typename V, typename H = std::hash<K>>
-using DefaultImpl = ExternalHashMap<K, V, H>;
+template<typename K, typename V, typename H = Hash<K>>
+using DefaultImpl = FlatHashMap<K, V, H>;
 
 struct RaiiCounter : NonCopyable {
     RaiiCounter(usize* ptr) : counter(ptr) {
@@ -77,7 +78,7 @@ template<usize B>
 struct BadHash {
     template<typename T>
     usize operator()(const T& k) const {
-        std::hash<T> hasher;
+        Hash<T> hasher;
         usize h = hasher(k);
         return h % B;
     }
@@ -185,8 +186,8 @@ y_test_func("HashMap fuzz") {
     const usize fuzz_count = 25000;
     const auto m0 = fuzz<std::unordered_map<i32, i32>>(fuzz_count, seed);
 
-    const auto m2 = fuzz<ExternalHashMap<i32, i32>>(fuzz_count, seed);
-    /*const auto m3 = fuzz<ExternalHashMap<i32, i32>>(fuzz_count, seed);
+    const auto m2 = fuzz<FlatHashMap<i32, i32>>(fuzz_count, seed);
+    /*const auto m3 = fuzz<FlatHashMap<i32, i32>>(fuzz_count, seed);
     const auto m4 = fuzz<HashMap<i32, i32>>(fuzz_count, seed);*/
 
     y_test_assert(to_vector(m0) == to_vector(m2));
@@ -217,8 +218,14 @@ y_test_func("HashMap strings") {
     for(int i = 0; i != max_key; ++i) {
         core::String str;
         fmt_into(str, "%", i);
-        map.insert({str, i});
+        y_test_assert(map.insert({str, i}).second);
+
+        for(int j = i; j >= 0; --j) {
+            y_test_assert(map.find(fmt("%", j))->second == j);
+        }
     }
+
+    y_test_assert(map.size() == max_key);
 
     map.erase(map.find("589"));
 
@@ -237,7 +244,8 @@ y_test_func("HashMap value dtors") {
     {
         DefaultImpl<int, RaiiCounter> map;
         for(int i = 0; i != max_key; ++i) {
-            map.insert({i, RaiiCounter(&counter)});
+            y_test_assert(map.insert({i, RaiiCounter(&counter)}).second);
+            y_test_assert(map.size() == usize(i) + 1);
         }
 
         y_test_assert(counter == 0);

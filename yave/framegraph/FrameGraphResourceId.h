@@ -129,9 +129,9 @@ struct FrameGraphMutableTypedBufferId : FrameGraphMutableResourceId {
 
 
 template<>
-struct std::hash<yave::FrameGraphResourceId> : hash<y::u32>{
+struct std::hash<yave::FrameGraphResourceId> : y::Hash<y::u32>{
     auto operator()(yave::FrameGraphResourceId r) const {
-        return hash<y::u32>::operator()(r.id());
+        return y::Hash<y::u32>::operator()(r.id());
     }
 };
 

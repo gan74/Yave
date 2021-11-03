@@ -37,7 +37,7 @@ struct ShadowMapPass {
     FrameGraphImageId shadow_map;
     FrameGraphTypedBufferId<uniform::ShadowMapParams> shadow_params;
 
-    std::shared_ptr<core::ExternalHashMap<u64, u32>> shadow_indexes;
+    std::shared_ptr<core::FlatHashMap<u64, u32>> shadow_indexes;
 
     static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings = ShadowMapSettings());
 };

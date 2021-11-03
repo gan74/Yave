@@ -190,7 +190,7 @@ void EntityWorld::check_exists(EntityId id) const {
 
 
 void EntityWorld::post_deserialize() {
-    core::ExternalHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> patched;
+    core::FlatHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> patched;
     for(auto& cont : _containers.values()) {
         if(cont) {
             patched[cont->type_id()] = std::move(cont);
