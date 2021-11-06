@@ -32,7 +32,7 @@ else()
             -Wredundant-decls
             -Wundef
         )
-    set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra -msse3
+    set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra
         ${Y_EXTRA_WARNINGS})
 
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
