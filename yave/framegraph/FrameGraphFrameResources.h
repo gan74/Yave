@@ -93,8 +93,8 @@ class FrameGraphFrameResources final : NonMovable {
 
         Y_TODO(replace by vector)
         using hash_t = std::hash<FrameGraphResourceId>;
-        core::ExternalHashMap<FrameGraphImageId, TransientImage<>*, hash_t> _images;
-        core::ExternalHashMap<FrameGraphBufferId, TransientBuffer*, hash_t> _buffers;
+        core::FlatHashMap<FrameGraphImageId, TransientImage<>*, hash_t> _images;
+        core::FlatHashMap<FrameGraphBufferId, TransientBuffer*, hash_t> _buffers;
 
         std::shared_ptr<FrameGraphResourcePool> _pool;
 

@@ -195,7 +195,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
     ShadowMapPass pass;
     pass.shadow_map = shadow_map;
-    pass.shadow_indexes = std::make_shared<core::ExternalHashMap<u64, u32>>();
+    pass.shadow_indexes = std::make_shared<core::FlatHashMap<u64, u32>>();
 
     core::Vector<SubPass> sub_passes;
 

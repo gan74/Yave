@@ -26,6 +26,7 @@ SOFTWARE.
 #include "Range.h"
 #include "FixedArray.h"
 
+#include <y/utils/hash.h>
 #include <y/utils/traits.h>
 
 #include <functional>
@@ -88,9 +89,9 @@ inline constexpr usize probing_offset(usize i) {
 }
 
 
-namespace external {
-template<typename Key, typename Value, typename Hasher = std::hash<Key>, typename Equal = std::equal_to<Key>, bool StoreHash = false>
-class ExternalHashMap : Hasher, Equal {
+namespace swiss {
+template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>, bool StoreHash = false>
+class FlatHashMap : Hasher, Equal {
     public:
         using key_type = remove_cvref_t<Key>;
         using mapped_type = remove_cvref_t<Value>;
@@ -288,7 +289,7 @@ class ExternalHashMap : Hasher, Equal {
         template<bool Const, typename Transform>
         class IteratorBase : Transform {
 
-            using parent_type = const_type_t<Const, ExternalHashMap>;
+            using parent_type = const_type_t<Const, FlatHashMap>;
 
             public:
                 inline IteratorBase() = default;
@@ -345,7 +346,7 @@ class ExternalHashMap : Hasher, Equal {
                 template<bool C, typename T>
                 friend class IteratorBase;
 
-                friend class ExternalHashMap;
+                friend class FlatHashMap;
 
                 inline IteratorBase(parent_type* parent, usize index) : _index(index), _parent(parent) {
                     find_next();
@@ -502,19 +503,19 @@ class ExternalHashMap : Hasher, Equal {
         static_assert(std::is_constructible_v<const_iterator, iterator>);
         static_assert(!std::is_constructible_v<iterator, const_iterator>);
 
-        inline ExternalHashMap() {
+        inline FlatHashMap() {
         }
 
-        inline ExternalHashMap(ExternalHashMap&& other) {
+        inline FlatHashMap(FlatHashMap&& other) {
             swap(other);
         }
 
-        inline ExternalHashMap& operator=(ExternalHashMap&& other) {
+        inline FlatHashMap& operator=(FlatHashMap&& other) {
             swap(other);
             return *this;
         }
 
-        inline void swap(ExternalHashMap& other) {
+        inline void swap(FlatHashMap& other) {
             if(&other != this) {
                 std::swap(_states, other._states);
                 std::swap(_entries, other._entries);
@@ -523,7 +524,7 @@ class ExternalHashMap : Hasher, Equal {
             }
         }
 
-        inline ~ExternalHashMap() {
+        inline ~FlatHashMap() {
             make_empty();
         }
 
@@ -606,7 +607,8 @@ class ExternalHashMap : Hasher, Equal {
         }
 
         inline double load_factor() const {
-            return double(_size) / double(_states.size());
+            const usize buckets = bucket_count();
+            return buckets ? double(_size) / double(buckets) : 0.0;
         }
 
         template<typename K>
@@ -723,7 +725,7 @@ class ExternalHashMap : Hasher, Equal {
 };
 }
 
-using namespace external;
+using namespace swiss;
 
 }
 }

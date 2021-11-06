@@ -107,9 +107,9 @@ class AssetIdFactory {
 
 
 template<>
-struct std::hash<yave::AssetId> : hash<yave::u64> {
+struct std::hash<yave::AssetId> : y::Hash<y::u64> {
     auto operator()(const yave::AssetId& id) const {
-        return hash<yave::u64>::operator()(id.id());
+        return y::Hash<y::u64>::operator()(id.id());
     }
 };
 

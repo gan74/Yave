@@ -40,7 +40,7 @@ class AssetLoaderSystem : public ecs::System {
         void run_tick(ecs::EntityWorld& world, bool only_recent);
         void post_load(ecs::EntityWorld& world);
 
-        core::ExternalHashMap<ecs::ComponentTypeIndex, core::Vector<ecs::EntityId>> _loading;
+        core::FlatHashMap<ecs::ComponentTypeIndex, core::Vector<ecs::EntityId>> _loading;
 
         AssetLoader* _loader = nullptr;
 

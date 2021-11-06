@@ -54,7 +54,7 @@ bool run_tests();
 #define Y_TEST_RUNNER y_create_name_with_prefix(runner)
 #define Y_TEST_FAILED y::test::detail::TestResult { false, __FILE__, __LINE__ }
 
-#define y_test_assert(t) do { if(!(t)) { _y_test_result = Y_TEST_FAILED; return; } } while(false)
+#define y_test_assert(t) do { if(!(t)) { _y_test_result = Y_TEST_FAILED; y_breakpoint; return; } } while(false)
 
 #define y_test_func(name)                                                                               \
 static void Y_TEST_FUNC(y::test::detail::TestResult&);                                                  \

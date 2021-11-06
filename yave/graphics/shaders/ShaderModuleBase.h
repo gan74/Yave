@@ -139,7 +139,7 @@ class ShaderModuleBase : NonMovable {
     private:
         VkHandle<VkShaderModule> _module;
         ShaderType _type = ShaderType::None;
-        core::ExternalHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
+        core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
         core::Vector<VkSpecializationMapEntry> _spec_constants;
         core::Vector<VkPushConstantRange> _push_constants;
         core::Vector<Attribute> _attribs;

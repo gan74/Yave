@@ -103,7 +103,7 @@ static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& 
 
 template<typename R>
 static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType, VkDescriptorType type) {
-    auto bindings = core::ExternalHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>>();
+    auto bindings = core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>>();
     for(const auto& res : resources) {
         const u32 set_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
         bindings[set_index] << create_binding(compiler, res, type);

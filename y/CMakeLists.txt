@@ -32,7 +32,8 @@ else()
             -Wredundant-decls
             -Wundef
         )
-    set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra ${Y_EXTRA_WARNINGS})
+    set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra -msse3
+        ${Y_EXTRA_WARNINGS})
 
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wodr")
@@ -59,9 +60,7 @@ target_compile_options(y PUBLIC ${Y_COMPILE_OPTIONS})
 option(Y_FORCE_ASSERTS "Build asserts even in release" OFF)
 if((Y_FORCE_ASSERTS) OR NOT (CMAKE_BUILD_TYPE STREQUAL Release))
     target_compile_options(y PUBLIC "-DY_DEBUG")
-endif()
-
-if((NOT Y_FORCE_ASSERTS) AND (CMAKE_BUILD_TYPE STREQUAL Release))
+else()
     target_compile_options(y PUBLIC "-DY_NO_DEBUG")
 endif()
 

@@ -46,7 +46,7 @@ class Archetype {
         y_no_serde3()
 
     private:
-        core::ExternalHashMap<ComponentTypeIndex, ComponentRuntimeInfo> _infos;
+        core::FlatHashMap<ComponentTypeIndex, ComponentRuntimeInfo> _infos;
 };
 
 }

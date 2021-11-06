@@ -31,11 +31,65 @@ SOFTWARE.
 
 namespace y {
 
+inline constexpr usize hash_u64(u64 x)  {
+    x ^= x >> 33u;
+    x *= UINT64_C(0xFF51AFD7ED558CCD);
+    x ^= x >> 33u;
+    return static_cast<usize>(x);
+}
+
+
+#ifdef Y_USE_STD_HASH
+template<typename T>
+using Hash = std::hash<T>;
+#else
+// Custom hash to avoid std::hash implementation that don't do anything for integers
+
+template<typename T>
+static constexpr bool use_custom_hash_v = std::is_integral_v<T> && sizeof(T) <= sizeof(u64);
+
+template<typename T>
+struct Hash : std::hash<T> {
+    usize operator()(const T& h) const {
+        if constexpr(use_custom_hash_v<T>) {
+            return hash_u64(static_cast<u64>(h));
+        } else {
+            return std::hash<T>::operator()(h);
+        }
+    }
+};
+#endif
+
+template<typename T>
+inline constexpr usize hash(const T& t) {
+    return Hash<T>()(t);
+}
+
+
+
 // from boost
 template<typename T>
 inline constexpr void hash_combine(T& seed, T value) {
     seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
+
+
+
+template<typename B, typename E>
+inline constexpr usize hash_range(B begin, const E& end) {
+    decltype(hash(*begin)) h = 0;
+    for(; begin != end; ++begin) {
+        hash_combine(h, hash(*begin));
+    }
+    return h;
+}
+
+template<typename C>
+inline constexpr usize hash_range(const C& c) {
+    return hash_range(std::begin(c), std::end(c));
+}
+
+
 
 template<typename T>
 inline constexpr u64 ct_type_hash() {
@@ -53,30 +107,10 @@ inline constexpr u32 ct_str_hash(std::string_view str) {
     }
     return hash;
 }
-
-template<typename T>
-inline auto hash(const T& t) {
-    return std::hash<T>()(t);
-}
-
-template<typename B, typename E>
-inline auto hash_range(B begin, const E& end) {
-    decltype(hash(*begin)) h = 0;
-    for(; begin != end; ++begin) {
-        hash_combine(h, hash(*begin));
-    }
-    return h;
-}
-
-template<typename C>
-inline auto hash_range(const C& c) {
-    return hash_range(std::begin(c), std::end(c));
-}
-
 }
 
 template<typename A, typename B>
-struct std::hash<std::pair<A, B>> : hash<A>, hash<B> {
+struct std::hash<std::pair<A, B>> : std::hash<A>, std::hash<B> {
     auto operator()(const std::pair<A, B>& p) const {
         auto a = hash<A>::operator()(p.first);
         y::hash_combine(a, hash<B>::operator()(p.second));

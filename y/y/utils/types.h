@@ -23,6 +23,8 @@ SOFTWARE.
 #define Y_UTILS_TYPES_H
 
 #include <cstdint>
+#include <cstddef>
+
 #include <utility>
 
 namespace y {

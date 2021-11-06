@@ -88,7 +88,7 @@ static auto&& check_exists(C& c, T t) {
 }
 
 template<typename C, typename B>
-static void build_barriers(const C& resources, B& barriers, core::ExternalHashMap<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphFrameResources& frame_res) {
+static void build_barriers(const C& resources, B& barriers, core::FlatHashMap<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphFrameResources& frame_res) {
     for(auto&& [res, info] : resources) {
         // barrier around attachments are handled by the renderpass
         const PipelineStage stage = info.stage & ~PipelineStage::AllAttachmentOutBit;
@@ -108,7 +108,7 @@ static void build_barriers(const C& resources, B& barriers, core::ExternalHashMa
 }
 
 static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, FrameGraphMutableImageId dst,
-                        core::ExternalHashMap<FrameGraphResourceId, PipelineStage>& to_barrier, const FrameGraphFrameResources& resources) {
+                        core::FlatHashMap<FrameGraphResourceId, PipelineStage>& to_barrier, const FrameGraphFrameResources& resources) {
 
     Y_TODO(We might end up barriering twice here)
     if(resources.are_aliased(src, dst)) {
@@ -125,7 +125,7 @@ static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, Frame
 
 [[maybe_unused]]
 static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> copies,
-                        core::ExternalHashMap<FrameGraphResourceId, PipelineStage>& to_barrier, const FrameGraphFrameResources& resources) {
+                        core::FlatHashMap<FrameGraphResourceId, PipelineStage>& to_barrier, const FrameGraphFrameResources& resources) {
 
     for(auto [src, dst] : copies) {
         copy_image(recorder, src, dst, to_barrier, resources);
@@ -223,7 +223,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
     usize copy_index = 0;
     std::sort(_image_copies.begin(), _image_copies.end(), [&](const auto& a, const auto& b) { return a.pass_index < b.pass_index; });
 
-    core::ExternalHashMap<FrameGraphResourceId, PipelineStage> to_barrier;
+    core::FlatHashMap<FrameGraphResourceId, PipelineStage> to_barrier;
 
     {
         y_profile_zone("init");

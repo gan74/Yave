@@ -57,7 +57,7 @@ class ThumbmailRenderer : NonMovable {
     private:
         void query(AssetId id, ThumbmailData& data);
 
-        core::ExternalHashMap<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
+        core::FlatHashMap<AssetId, std::unique_ptr<ThumbmailData>> _thumbmails;
         AssetLoader* _loader = nullptr;
 
         std::mutex _lock;

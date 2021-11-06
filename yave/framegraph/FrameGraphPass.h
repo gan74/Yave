@@ -72,8 +72,8 @@ class FrameGraphPass final : NonMovable {
         const usize _index;
 
         using hash_t = std::hash<FrameGraphResourceId>;
-        core::ExternalHashMap<FrameGraphImageId, ResourceUsageInfo, hash_t> _images;
-        core::ExternalHashMap<FrameGraphBufferId, ResourceUsageInfo, hash_t> _buffers;
+        core::FlatHashMap<FrameGraphImageId, ResourceUsageInfo, hash_t> _images;
+        core::FlatHashMap<FrameGraphBufferId, ResourceUsageInfo, hash_t> _buffers;
 
         core::Vector<core::Vector<FrameGraphDescriptorBinding>> _bindings;
         core::Vector<DescriptorSet> _descriptor_sets;

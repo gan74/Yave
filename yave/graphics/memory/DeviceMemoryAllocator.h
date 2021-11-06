@@ -61,8 +61,8 @@ class DeviceMemoryAllocator {
 
         DeviceMemory dedicated_alloc(VkMemoryRequirements reqs, MemoryType type);
 
-        core::ExternalHashMap<HeapType, core::Vector<std::unique_ptr<DeviceMemoryHeap>>> _heaps;
-        core::ExternalHashMap<MemoryType, std::unique_ptr<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
+        core::FlatHashMap<HeapType, core::Vector<std::unique_ptr<DeviceMemoryHeap>>> _heaps;
+        core::FlatHashMap<MemoryType, std::unique_ptr<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
 
         usize _max_allocs = 0;
         mutable std::mutex _lock;

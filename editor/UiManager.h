@@ -63,7 +63,7 @@ class UiManager : NonMovable {
         void set_widget_id(Widget* widget);
 
         core::Vector<std::unique_ptr<Widget>> _widgets;
-        core::ExternalHashMap<std::type_index, WidgetIdStack> _ids;
+        core::FlatHashMap<std::type_index, WidgetIdStack> _ids;
 
         Widget* _auto_parent = nullptr;
 

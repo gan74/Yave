@@ -60,7 +60,7 @@ static bool run_test(const detail::TestItem* test) {
         std::cout << ok << std::endl;
     } else {
         std::cout << failure << std::endl;
-        std::cerr << "\ty_test_assert failed: in file: " << res.file << " at line: "<< res.line << std::endl;;
+        std::cerr << "\ty_test_assert failed: in file: " << res.file << " at line: "<< res.line << std::endl;
     }
     return res.result;
 }

@@ -76,7 +76,7 @@ void UiManager::on_gui() {
     update_shortcuts();
     draw_menu_bar();
 
-    core::ExternalHashMap<Widget*, int> to_destroy;
+    core::FlatHashMap<Widget*, int> to_destroy;
 
     for(auto& widget : _widgets) {
         y_profile_dyn_zone(widget->_title_with_id.data());

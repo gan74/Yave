@@ -29,7 +29,7 @@ SOFTWARE.
 #include <y/utils/log.h>
 
 
-#if __has_include(<immintrin.h>) &&__has_include(<xmmintrin.h>) && __has_include(<emmintrin.h>) && __has_include(<smmintrin.h>)
+#if __has_include(<immintrin.h>) && __has_include(<xmmintrin.h>) && __has_include(<emmintrin.h>) && __has_include(<smmintrin.h>)
 #define USE_SIMD
 #include <immintrin.h>
 #include <xmmintrin.h>
