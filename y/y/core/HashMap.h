@@ -32,14 +32,7 @@ SOFTWARE.
 #include <functional>
 
 
-// https://www.youtube.com/watch?v=ncHmEUmJZf4
-#if __has_include(<emmintrin.h>) && __has_include(<immintrin.h>)
-#define USE_SIMD_SWISSTABLES
-#include <emmintrin.h>
-#include <immintrin.h>
-#endif
-
-
+Y_TODO("Implement trick from here: https://www.youtube.com/watch?v=ncHmEUmJZf4")
 
 namespace y {
 namespace core {
@@ -82,7 +75,7 @@ enum class ProbingStrategy {
     Quadratic
 };
 
-static constexpr ProbingStrategy default_hash_map_probing_strategy = ProbingStrategy::Linear;
+static constexpr ProbingStrategy default_hash_map_probing_strategy = ProbingStrategy::Quadratic;
 
 // http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
 template<ProbingStrategy Strategy = default_hash_map_probing_strategy>
@@ -110,20 +103,102 @@ class FlatHashMap : Hasher, Equal {
     private:
         using pair_type = std::pair<key_type, mapped_type>;
 
-        using state_storage = std::conditional_t<StoreHash, usize, u8>;
-
         static constexpr usize invalid_index = usize(-1);
-
-#ifdef USE_SIMD_SWISSTABLES
-        static constexpr bool use_simd_probing = std::is_same_v<state_storage, u8>;
-#else
-        static constexpr bool use_simd_probing = false;
-#endif
 
         struct Bucket {
             usize index;
             usize hash;
         };
+
+        struct StateHash {
+            static constexpr usize hash_bit = usize(1) << (8 * sizeof(usize) - 1);
+            static constexpr usize empty_states = 0;
+            static constexpr usize tombstone_states = 1;
+
+            usize bits = empty_states;
+
+            inline void set_hash(usize hash) {
+                y_debug_assert(!is_full());
+                bits = hash | hash_bit;
+            }
+
+            inline void make_empty() {
+                y_debug_assert(is_full());
+                bits = tombstone_states;
+            }
+
+            inline bool is_full() const {
+                return bits & hash_bit;
+            }
+
+            inline bool is_hash(usize hash) const {
+                return bits == (hash | hash_bit);
+            }
+
+            inline bool is_empty_strict() const {
+                return bits == empty_states;
+            }
+
+            inline bool is_tombstone() const {
+                return bits == tombstone_states;
+            }
+
+            inline usize hash() const {
+                y_debug_assert(is_full());
+                // we dont care about the last bit since we mask instead of %
+                return bits;
+            }
+        };
+
+        struct SimpleState {
+            enum State : u8 {
+                Empty,
+                Full,
+                Tombstone
+            } state = Empty;
+
+            inline void set_hash(usize) {
+                y_debug_assert(!is_full());
+                state = Full;
+            }
+
+            inline void make_empty() {
+                y_debug_assert(is_full());
+                state = Tombstone;
+            }
+
+            inline bool is_full() const {
+                return state == Full;
+            }
+
+            inline bool is_hash(usize) const {
+                return is_full();
+            }
+
+            inline bool is_empty_strict() const {
+                return state == Empty;
+            }
+
+            inline bool is_tombstone() const {
+                return state == Tombstone;
+            }
+        };
+
+        static_assert(sizeof(StateHash) == sizeof(usize));
+        static_assert(sizeof(SimpleState) == sizeof(u8));
+
+        template<typename K>
+        inline usize retrieve_hash(const K&, const StateHash& state) const {
+            return state.hash();
+        }
+
+        template<typename K>
+        inline usize retrieve_hash(const K& key, const SimpleState&) const {
+            return hash(key);
+        }
+
+
+        using State = std::conditional_t<StoreHash, StateHash, SimpleState>;
 
         struct Entry : NonMovable {
             union {
@@ -178,64 +253,6 @@ class FlatHashMap : Hasher, Equal {
             }
 #endif
         };
-
-
-        static constexpr state_storage hash_bit = state_storage(1) << (8 * sizeof(state_storage) - 1);
-        static constexpr state_storage empty_state = 0;
-        static constexpr state_storage tombstone_state = 1;
-
-        inline static state_storage make_hash_value(usize hash) {
-            return (state_storage(hash) | hash_bit);
-        }
-
-        struct State {
-            state_storage bits = empty_state;
-
-            inline void set_hash(usize hash) {
-                y_debug_assert(!is_full());
-                bits = make_hash_value(hash);
-            }
-
-            inline void make_empty() {
-                y_debug_assert(is_full());
-                bits = tombstone_state;
-            }
-
-            inline bool is_full() const {
-                return bits & hash_bit;
-            }
-
-            inline bool is_hash(usize hash) const {
-                return bits == make_hash_value(hash);
-            }
-
-            inline bool is_empty_strict() const {
-                return bits == empty_state;
-            }
-
-            inline bool is_tombstone() const {
-                return bits == tombstone_state;
-            }
-
-            inline usize hash() const {
-                y_debug_assert(is_full());
-                // we dont care about the last bit since we mask instead of %
-                return bits;
-            }
-        };
-
-        static_assert(sizeof(State) == sizeof(state_storage));
-
-        template<typename K>
-        inline usize retrieve_hash(const K& key, const State& state) const {
-            if constexpr(StoreHash) {
-                return state.hash();
-            } else {
-                unused(state);
-                return hash(key);
-            }
-        }
-
 
         struct KeyValueIt {
             using type = value_type;
@@ -384,68 +401,8 @@ class FlatHashMap : Hasher, Equal {
             usize probes = 0;
 
             y_debug_assert(buckets);
-            y_defer(y_debug_assert(_max_probe_len <= buckets));
-
-            usize best_index = invalid_index;
-
-            if constexpr(use_simd_probing) {
-#ifdef USE_SIMD_SWISSTABLES
-                y_debug_assert(bucket_count() % 16 == 0);
-
-                Y_TODO(We can do better by avoiding having redundant bits in needle)
-                const usize full_mask = hash_mask & ~0x0F;
-                const state_storage needle_value = make_hash_value(h);
-                const __m128i needle_mask = _mm_set1_epi8(char(needle_value));
-                const __m128i empty_mask = _mm_set1_epi8(char(empty_state));
-                const __m128i tombstone_mask = _mm_set1_epi8(char(tombstone_state));
-
-                for(; probes <= _max_probe_len; probes += 16) {
-                    const usize group_offset = (h + probes) & full_mask;
-                    const __m128i haystack = _mm_loadu_si128(reinterpret_cast<const __m128i*>(_states.data() + group_offset));
-
-                    if(i32 found = _mm_movemask_epi8(_mm_cmpeq_epi8(needle_mask, haystack))) {
-                        do {
-                            const i32 local_index = 31 - _lzcnt_u32(found);
-                            y_debug_assert(local_index < 16);
-                            const usize index = group_offset + local_index;
-                            y_debug_assert(_states[index].bits == needle_value);
-                            if(equal(_entries[index].key(), key)) {
-                                return {index, h};
-                            }
-                            found = found & ~(1 << local_index);
-                        } while(found);
-                    }
-
-                    if(const i32 empty = _mm_movemask_epi8(_mm_cmpeq_epi8(empty_mask, haystack))) {
-                        return {group_offset + (31 - _lzcnt_u32(empty)), h};
-                    }
-
-                    if(const i32 tombstone = _mm_movemask_epi8(_mm_cmpeq_epi8(tombstone_mask, haystack))) {
-                        best_index = group_offset + (31 - _lzcnt_u32(tombstone));
-                    }
-                }
-
-                if(best_index != invalid_index) {
-                    return {best_index, h};
-                }
-
-                for(; probes < buckets; probes += 16) {
-                    const usize group_offset = (h + probes) & full_mask;
-                    const __m128i haystack = _mm_loadu_si128(reinterpret_cast<const __m128i*>(_states.data() + group_offset));
-
-                    if(const i32 free = 0x0000FFFF ^ _mm_movemask_epi8(haystack)) {
-                        const i32 local_index = 31 - _lzcnt_u32(free);
-                        y_debug_assert(local_index < 16);
-                        const usize index = group_offset + local_index;
-                        y_debug_assert(!_states[index].is_full());
-
-                        _max_probe_len = probes;
-                        return {index, h};
-                    }
-
-                }
-#endif
-            } else {
+            {
+                usize best_index = invalid_index;
                 for(; probes <= _max_probe_len; ++probes) {
                     const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
                     const State& state = _states[index];
@@ -462,13 +419,13 @@ class FlatHashMap : Hasher, Equal {
                 if(best_index != invalid_index) {
                     return {best_index, h};
                 }
+            }
 
-                for(; probes < buckets; ++probes) {
-                    const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
-                    if(!_states[index].is_full()) {
-                        _max_probe_len = probes;
-                        return {index, h};
-                    }
+            for(; probes < buckets; ++probes) {
+                const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
+                if(!_states[index].is_full()) {
+                    _max_probe_len = probes;
+                    return {index, h};
                 }
             }
 
@@ -483,49 +440,15 @@ class FlatHashMap : Hasher, Equal {
 
             const usize h = hash(key);
             const usize hash_mask = bucket_count() - 1;
-
-            if constexpr(use_simd_probing) {
-#ifdef USE_SIMD_SWISSTABLES
-                y_debug_assert(bucket_count() % 16 == 0);
-
-                const usize full_mask = hash_mask & ~0x0F;
-                const state_storage needle_value = make_hash_value(h);
-                const __m128i needle_mask = _mm_set1_epi8(char(needle_value));
-                const __m128i empty_mask = _mm_set1_epi8(char(empty_state));
-
-                for(usize i = 0; i <= _max_probe_len; i += 16) {
-                    const usize group_offset = (h + i) & full_mask;
-                    const __m128i haystack = _mm_loadu_si128(reinterpret_cast<const __m128i*>(_states.data() + group_offset));
-
-                    if(i32 found = _mm_movemask_epi8(_mm_cmpeq_epi8(needle_mask, haystack))) {
-                        do {
-                            const i32 local_index = 31 - _lzcnt_u32(found);
-                            y_debug_assert(local_index < 16);
-                            const usize index = group_offset + local_index;
-                            y_debug_assert(_states[index].bits == needle_value);
-                            if(equal(_entries[index].key(), key)) {
-                                return index;
-                            }
-                            found = found & ~(1 << local_index);
-                        } while(found);
+            for(usize i = 0; i <= _max_probe_len; ++i) {
+                const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
+                const State& state = _states[index];
+                if(state.is_hash(h)) {
+                    if(equal(_entries[index].key(), key)) {
+                        return index;
                     }
-
-                    if(const int empty = _mm_movemask_epi8(_mm_cmpeq_epi8(empty_mask, haystack))) {
-                        return invalid_index;
-                    }
-                }
-#endif
-            } else {
-                for(usize i = 0; i <= _max_probe_len; ++i) {
-                    const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
-                    const State& state = _states[index];
-                    if(state.is_hash(h)) {
-                        if(equal(_entries[index].key(), key)) {
-                            return index;
-                        }
-                    } else if(state.is_empty_strict()) {
-                        return invalid_index;
-                    }
+                } else if(state.is_empty_strict()) {
+                    return invalid_index;
                 }
             }
             return invalid_index;
@@ -684,7 +607,8 @@ class FlatHashMap : Hasher, Equal {
         }
 
         inline double load_factor() const {
-            return double(_size) / double(_states.size());
+            const usize buckets = bucket_count();
+            return buckets ? double(_size) / double(buckets) : 0.0;
         }
 
         template<typename K>
