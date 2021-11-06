@@ -33,7 +33,7 @@ namespace y {
 
 inline constexpr usize hash_u64(u64 x)  {
     x ^= x >> 33u;
-    x *= 0xFF51AFD7ED558CCDui64;
+    x *= UINT64_C(0xFF51AFD7ED558CCD);
     x ^= x >> 33u;
     return static_cast<usize>(x);
 }
