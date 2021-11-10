@@ -42,6 +42,8 @@ class UndoStack : NonMovable {
     public:
         UndoStack();
 
+        void clear();
+
         void set_editing_entity(ecs::EntityId id);
 
         void done_editing();

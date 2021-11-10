@@ -71,6 +71,13 @@ class UndoStackWidget : public Widget {
                 ImGui::EndDisabled();
             }
 
+
+           ImGui::SameLine();
+
+           if(ImGui::Button(ICON_FA_TRASH " Clear")) {
+               undo_stack().clear();
+           }
+
             if(ImGui::BeginListBox("##undostack")) {
                 const auto& stack = undo_stack()._stack;
                 const usize cursor = stack.size() - undo_stack()._cursor - 1;
@@ -84,6 +91,13 @@ class UndoStackWidget : public Widget {
 
 
 UndoStack::UndoStack() {
+}
+
+void UndoStack::clear() {
+    _id = ecs::EntityId();
+    _stack.clear();
+    _cursor = 0;
+    _dirty =  false;
 }
 
 void UndoStack::set_editing_entity(ecs::EntityId id) {
