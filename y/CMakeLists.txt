@@ -55,14 +55,9 @@ add_library(y STATIC ${SOURCE_FILES})
 
 # compile options are exported, this is generally bad, but it makes stuff simpler
 target_compile_options(y PUBLIC ${Y_COMPILE_OPTIONS})
-
-
-option(Y_FORCE_ASSERTS "Build asserts even in release" OFF)
-if((Y_FORCE_ASSERTS) OR NOT (CMAKE_BUILD_TYPE STREQUAL Release))
-    target_compile_options(y PUBLIC "-DY_DEBUG")
-else()
-    target_compile_options(y PUBLIC "-DY_NO_DEBUG")
-endif()
+target_compile_options(y PUBLIC
+    $<$<CONFIG:RELEASE>:-DY_NO_DEBUG>
+    $<$<NOT:$<CONFIG:RELEASE>>:-DY_DEBUG>)
 
 
 option(Y_BUILD_TESTS "Build tests" ON)

@@ -117,12 +117,9 @@ file(GLOB_RECURSE SHADER_LIBS
     )
 
 
-
-
-if(CMAKE_BUILD_TYPE STREQUAL Release OR YAVE_UNITY_BUILD)
+if(YAVE_UNITY_BUILD)
     enable_unity_build(yave YAVE_FILES)
 endif()
-
 
 
 if(YAVE_BUILD_YAVE)
@@ -157,4 +154,3 @@ if(YAVE_BUILD_EDITOR)
 
     target_link_libraries(editor yave)
 endif()
-
