@@ -114,6 +114,13 @@ struct Transform : Matrix4<T> {
         this->column(2).template to<3>() *= scale;
     }
 
+    Vec<3, T> scale() const {
+        const auto& x = this->column(0).template to<3>();
+        const auto& y = this->column(1).template to<3>();
+        const auto& z = this->column(2).template to<3>();
+        return Vec<3, T>{x.length(), y.length(), z.length()};
+    }
+
     void set_basis(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
         this->column(0).template to<3>() = right;
         this->column(1).template to<3>() = forward;

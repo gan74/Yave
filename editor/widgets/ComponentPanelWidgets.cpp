@@ -431,6 +431,20 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
             }
         }
 
+        imgui::table_begin_next_row();
+
+        // scale
+        {
+            ImGui::TextUnformatted("Scale");
+            ImGui::TableNextColumn();
+
+            float scalar_scale = scale.dot(math::Vec3(1.0f / 3.0f));
+            if(ImGui::InputFloat("##scale", &scalar_scale, 0.0f, 0.0f, "%.3f")) {
+                scale = std::max(0.001f, scalar_scale);
+                undo_stack().make_dirty();
+            }
+        }
+
         component->set_transform(math::Transform<>(pos, rot, scale));
     }
 };
