@@ -385,9 +385,7 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
             ImGui::TextUnformatted("Position");
             ImGui::TableNextColumn();
 
-            undo_stack() << ImGui::InputFloat("##x", &pos.x(), 0.0f, 0.0f, "%.2f");
-            undo_stack() << ImGui::InputFloat("##y", &pos.y(), 0.0f, 0.0f, "%.2f");
-            undo_stack() << ImGui::InputFloat("##z", &pos.z(), 0.0f, 0.0f, "%.2f");
+            undo_stack() << imgui::position_input("##position", pos);
         }
 
         imgui::table_begin_next_row();
@@ -410,24 +408,46 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
                 return true;
             };
 
-
-            math::Vec3 actual_euler = rot.to_euler();
             auto& euler = current_world().component<EditorComponent>(id)->euler();
 
-            if(!is_same_angle(actual_euler, euler)) {
-                euler = actual_euler;
+            {
+                math::Vec3 actual_euler = rot.to_euler();
+                if(!is_same_angle(actual_euler, euler)) {
+                    log_msg(fmt("editor: %, entity: %", euler, actual_euler));
+                    euler = actual_euler;
+                }
             }
 
-            const std::array indexes = {math::Quaternion<>::YawIndex, math::Quaternion<>::PitchIndex, math::Quaternion<>::RollIndex};
-            const std::array names = {"Yaw", "Pitch", "Roll"};
-
-            for(usize i = 0; i != 3; ++i) {
-                float angle = math::to_deg(euler[indexes[i]]);
-                if(ImGui::DragFloat(names[i], &angle, 1.0, -180.0f, 180.0f, "%.2f")) {
-                    euler[indexes[i]] = math::to_rad(angle);
-                    rot = math::Quaternion<>::from_euler(euler);
-                    undo_stack().make_dirty();
+            auto to_deg = [](math::Vec3 angle) {
+                for(usize i = 0; i != 3; ++i) {
+                    float a = math::to_deg(angle[i]);
+                    if(a < 0.0f) {
+                        a += (std::round(a / -360.0f) + 1.0f) * 360.0f;
+                    }
+                    y_debug_assert(a >= 0.0f);
+                    a = std::fmod(a, 360.0f);
+                    y_debug_assert(a < 360.0f);
+                    if(a > 180.0f) {
+                        a -= 360.0f;
+                    }
+                    angle[i] = a;
                 }
+                return angle;
+            };
+
+            auto to_rad = [](math::Vec3 angle) {
+                for(usize i = 0; i != 3; ++i) {
+                    angle[i] = math::to_rad(angle[i]);
+                }
+                return angle;
+            };
+
+            math::Vec3 angle = to_deg(euler);
+            if(imgui::position_input("##rotation", angle)) {
+                angle = to_rad(angle);
+                euler = angle;
+                rot = math::Quaternion<>::from_euler(angle);
+                undo_stack().make_dirty();
             }
         }
 
@@ -439,7 +459,7 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
             ImGui::TableNextColumn();
 
             float scalar_scale = scale.dot(math::Vec3(1.0f / 3.0f));
-            if(ImGui::InputFloat("##scale", &scalar_scale, 0.0f, 0.0f, "%.3f")) {
+            if(ImGui::DragFloat("##scale", &scalar_scale, 0.1f, 0.0f, 0.0f, "%.3f")) {
                 scale = std::max(0.001f, scalar_scale);
                 undo_stack().make_dirty();
             }

@@ -26,8 +26,8 @@ void main() {
     const vec3 in_normal = unpack_2_10_10_10(in_packed_normal).xyz;
     const vec4 in_tangent_sign = unpack_2_10_10_10(in_packed_tangent_sign);
 
-    out_normal = model * in_normal;
-    out_tangent = model * in_tangent_sign.xyz;
+    out_normal = normalize(model * in_normal);
+    out_tangent = normalize(model * in_tangent_sign.xyz);
     out_bitangent = cross(out_tangent, out_normal) * in_tangent_sign.w;
 
     gl_Position = camera.view_proj * in_model * vec4(in_position, 1.0);

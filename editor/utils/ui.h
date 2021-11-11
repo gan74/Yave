@@ -36,6 +36,7 @@ bool should_open_context_menu();
 math::Vec2 client_window_pos();
 math::Vec2 from_client_pos(const math::Vec2& pos);
 
+bool position_input(const char* str_id, math::Vec3& position);
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear = nullptr);
 bool path_selector(const char* text, const core::String& path);

@@ -101,7 +101,7 @@ static void setup_style(bool is_3D = true) {
 
     style.WindowPadding     = ImVec2(4, 4);
     style.FramePadding      = ImVec2(6, 4);
-    style.ItemSpacing       = ImVec2(6, 2);
+    style.ItemSpacing       = ImVec2(4, 2);
 
     style.ScrollbarSize     = 18;
 
