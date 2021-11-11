@@ -165,7 +165,7 @@ class DescriptorSetAllocator {
     private:
         LayoutPools& layout(LayoutKey bindings);
 
-        core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual> _layouts;
+        core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual, true> _layouts;
         mutable std::mutex _lock;
 };
 
