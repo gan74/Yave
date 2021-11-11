@@ -77,13 +77,8 @@ class AssetLoaderSystem : public ecs::System {
         }
 
         template<typename T>
-        static auto view(ecs::EntityWorld& world, bool recent) {
-            return world.view<T>(ids<T>(world, recent));
-        }
-
-        template<typename T>
         static void start_loading_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, bool recent, core::Vector<ecs::EntityId>& out_ids) {
-            for(auto id_comp : view<T>(world, recent).id_components()) {
+            for(auto id_comp : world.query<ecs::Mutate<T>>(ids<T>(world, recent)).id_components()) {
                 id_comp.component<T>().load_assets(loading_ctx);
                 out_ids << id_comp.id();
             }

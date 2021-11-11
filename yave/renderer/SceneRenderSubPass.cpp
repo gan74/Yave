@@ -73,8 +73,8 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
         visible = octree_system->octree().find_entities(camera.frustum());
     }
     const auto entities = octree_system
-        ? world.view<TransformableComponent, StaticMeshComponent>(visible)
-        : world.view<TransformableComponent, StaticMeshComponent>();
+        ? world.query<TransformableComponent, StaticMeshComponent>(visible)
+        : world.query<TransformableComponent, StaticMeshComponent>();
 
     for(const auto& [tr, mesh] : entities.components()) {
         transform_mapping[index] = tr.transform();

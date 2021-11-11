@@ -53,7 +53,7 @@ OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
 
 void OctreeSystem::destroy(ecs::EntityWorld& world) {
-    for(auto&& [tr] : world.view<TransformableComponent>().components()) {
+    for(auto&& [tr] : world.query<ecs::Mutate<TransformableComponent>>().components()) {
         tr._id.invalidate();
         tr._node = nullptr;
     }
@@ -70,7 +70,7 @@ void OctreeSystem::tick(ecs::EntityWorld& world) {
 void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     y_profile();
 
-    for(auto&& id_comp : world.view<TransformableComponent>(transformable_ids(world, only_recent)).id_components()) {
+    for(auto&& id_comp : world.query<ecs::Mutate<TransformableComponent>>(transformable_ids(world, only_recent)).id_components()) {
         const auto id = id_comp.id();
         auto& tr = id_comp.component<TransformableComponent>();
 
@@ -102,7 +102,7 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
         _tree._data._dirty.clear();
     }
 
-    /*for(auto&& id_comp  : world.view<TransformableComponent>(transformable_ids(world, false)).id_components()) {
+    /*for(auto&& id_comp  : world.query<TransformableComponent>(transformable_ids(world, false)).id_components()) {
         const auto& tr = id_comp.component<TransformableComponent>();
         y_debug_assert(tr.octree_node());
 

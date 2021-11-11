@@ -95,7 +95,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         u32 light_count = 0;
         TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
-        for(auto light : scene.world().view<DirectionalLightComponent>()) {
+        for(auto light : scene.world().query<DirectionalLightComponent>()) {
             const auto& [l] = light.components();
 
             u32 shadow_index = u32(-1);
@@ -141,7 +141,7 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
     const Frustum frustum = scene.camera().frustum();
 
     u32 count = 0;
-    for(auto [t, l] : scene.world().view<TransformableComponent, PointLightComponent>().components()) {
+    for(auto [t, l] : scene.world().query<TransformableComponent, PointLightComponent>().components()) {
         if(!frustum.is_inside(t.position(), l.radius())) {
             continue;
         }
@@ -171,7 +171,7 @@ static u32 fill_spot_light_buffer(
     const Frustum frustum = scene.camera().frustum();
 
     u32 count = 0;
-    for(auto spot : scene.world().view<TransformableComponent, SpotLightComponent>()) {
+    for(auto spot : scene.world().query<TransformableComponent, SpotLightComponent>()) {
         const auto& [t, l] = spot.components();
 
         const auto enclosing_sphere = l.enclosing_sphere();

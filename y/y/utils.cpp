@@ -59,14 +59,14 @@ void break_in_debugger() {
 void fatal(const char* msg, const char* file, int line) {
     core::String msg_str(msg);
     if(file) {
-        msg_str += fmt(" in file \"%\"", file);
+        fmt_into(msg_str, " in file \"%\"", file);
     }
     if(line) {
-        msg_str += fmt(" at line %", line);
+        fmt_into(msg_str, " at line %", line);
     }
 
     if(const char* thread_name = concurrent::thread_name()) {
-        msg_str += fmt(" on thread \"%\"", thread_name);
+        fmt_into(msg_str, " on thread \"%\"", thread_name);
     }
 
     log_msg(msg_str, Log::Error);

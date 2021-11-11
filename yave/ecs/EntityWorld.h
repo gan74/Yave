@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_ECS_ENTITYWORLD_H
 
 #include "EntityIdPool.h"
-#include "EntityView.h"
+#include "Query.h"
 #include "Archetype.h"
 #include "EntityPrefab.h"
 #include "System.h"
@@ -200,42 +200,41 @@ class EntityWorld {
         }
 
 
-
         template<typename... Args>
-        EntityView<false, Args...> view() {
+        Query<Args...> query() {
             static_assert(sizeof...(Args));
-            return EntityView<false, Args...>(typed_component_sets<Args...>());
+            return Query<Args...>(typed_component_sets<Args...>());
         }
 
         template<typename... Args>
-        EntityView<true, Args...> view() const {
+        Query<Args...> query() const {
             static_assert(sizeof...(Args));
-            return EntityView<true, Args...>(typed_component_sets<Args...>());
+            static_assert((traits::is_component_const_v<Args> && ...));
+            return Query<Args...>(typed_component_sets<Args...>());
         }
 
         template<typename... Args>
-        EntityView<false, Args...> view(core::Span<EntityId> ids) {
+        Query<Args...> query(core::Span<EntityId> ids) {
             static_assert(sizeof...(Args));
-            return EntityView<false, Args...>(typed_component_sets<Args...>(), ids);
+            return Query<Args...>(typed_component_sets<Args...>(), ids);
         }
 
         template<typename... Args>
-        EntityView<true, Args...> view(core::Span<EntityId> ids) const {
+        Query<Args...> query(core::Span<EntityId> ids) const {
             static_assert(sizeof...(Args));
-            return EntityView<true, Args...>(typed_component_sets<Args...>(), ids);
+            static_assert((traits::is_component_const_v<Args> && ...));
+            return Query<Args...>(typed_component_sets<Args...>(), ids);
         }
 
         template<typename... Args>
-        auto view(StaticArchetype<Args...>) {
-            return view<Args...>();
+        Query<Args...> query(StaticArchetype<Args...>) {
+            return query<Args...>();
         }
 
         template<typename... Args>
-        auto view(StaticArchetype<Args...>) const {
-            return view<Args...>();
+        Query<Args...> query(StaticArchetype<Args...>) const {
+            return query<Args...>();
         }
-
-
 
 
 
@@ -285,18 +284,17 @@ class EntityWorld {
             return cont.get();
         }
 
-
-        // This is not const correct, but we don't expose it so it's fine
         template<typename T, typename... Args>
-        std::tuple<SparseComponentSet<T>*, SparseComponentSet<Args>*...> typed_component_sets() const {
+        auto typed_component_sets() const {
             if constexpr(sizeof...(Args)) {
                 return std::tuple_cat(typed_component_sets<T>(),
                                       typed_component_sets<Args...>());
             } else {
                 // We need non consts here and we want to avoir returning non const everywhere else
                 // This shouldn't be UB as component containers are never const
-                ComponentContainerBase* cont = const_cast<ComponentContainerBase*>(find_container<T>());
-                return cont ? &cont->component_set<T>() : nullptr;
+                using component_type = traits::component_raw_type_t<T>;
+                ComponentContainerBase* cont = const_cast<ComponentContainerBase*>(find_container<component_type>());
+                return std::tuple{cont ? &cont->component_set<component_type>() : nullptr};
             }
         }
 
