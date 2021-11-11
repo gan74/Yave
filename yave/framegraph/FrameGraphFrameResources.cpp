@@ -39,19 +39,25 @@ FrameGraphFrameResources::~FrameGraphFrameResources() {
     _pool->garbage_collect();
 }
 
-u32 FrameGraphFrameResources::create_resource_id() {
-    return _next_id++;
+u32 FrameGraphFrameResources::create_image_id() {
+    return _next_image_id++;
+}
+
+u32 FrameGraphFrameResources::create_buffer_id() {
+    return _next_buffer_id++;
 }
 
 void FrameGraphFrameResources::reserve(usize images, usize buffers) {
-    _images.reserve(images);
-    _buffers.reserve(buffers);
+    _images.set_min_capacity(images);
+    _buffers.set_min_capacity(buffers);
 }
 
 void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
     res.check_valid();
 
-    auto& image = _images[res];
+    _images.set_min_size(res.id() + 1);
+
+    auto& image = _images[res.id()];
     y_always_assert(!image, "Image already exists");
 
     _image_storage.emplace_back(_pool->create_image(format, size, usage));
@@ -61,7 +67,9 @@ void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat f
 void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory) {
     res.check_valid();
 
-    auto& buffer = _buffers[res];
+    _buffers.set_min_size(res.id() + 1);
+
+    auto& buffer = _buffers[res.id()];
     y_always_assert(!buffer, "Buffer already exists");
 
     _buffer_storage.emplace_back(_pool->create_buffer(byte_size, usage, memory));
@@ -69,21 +77,21 @@ void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, usize byte_
 }
 
 bool FrameGraphFrameResources::is_alive(FrameGraphImageId res) const {
-    return _images.find(res) != _images.end();
+    return res.id() < _images.size() && _images[res.id()] != nullptr;
 }
 
 bool FrameGraphFrameResources::is_alive(FrameGraphBufferId res) const {
-    return _buffers.find(res) != _buffers.end();
+    return res.id() < _buffers.size() && _buffers[res.id()] != nullptr;
 }
 
 ImageBarrier FrameGraphFrameResources::barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const {
     res.check_valid();
-    return ImageBarrier(*_images.find(res)->second, src, dst);
+    return ImageBarrier(*_images[res.id()], src, dst);
 }
 
 BufferBarrier FrameGraphFrameResources::barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const {
     res.check_valid();
-    return BufferBarrier(*_buffers.find(res)->second, src, dst);
+    return BufferBarrier(*_buffers[res.id()], src, dst);
 }
 
 const ImageBase& FrameGraphFrameResources::image_base(FrameGraphImageId res) const {
@@ -99,10 +107,12 @@ void FrameGraphFrameResources::create_alias(FrameGraphImageId dst, FrameGraphIma
     dst.check_valid();
     src.check_valid();
 
-    const auto& orig = _images[src];
+    TransientImage<>* orig = _images[src.id()];
     y_always_assert(orig, "Source image doesn't exists");
 
-    auto& image = _images[dst];
+    _images.set_min_size(dst.id() + 1);
+
+    TransientImage<>*& image = _images[dst.id()];
     y_always_assert(!image, "Destination image already exists");
 
     image = orig;
@@ -121,8 +131,8 @@ bool FrameGraphFrameResources::are_aliased(FrameGraphImageId a, FrameGraphImageI
 const TransientImage<>& FrameGraphFrameResources::find(FrameGraphImageId res) const {
     y_always_assert(res.is_valid(), "Invalid image resource");
 
-    if(const auto it = _images.find(res); it != _images.end()) {
-        return *it->second;
+    if(is_alive(res)) {
+        return *_images[res.id()];
     }
 
     y_fatal("Image resource doesn't exist");
@@ -131,8 +141,8 @@ const TransientImage<>& FrameGraphFrameResources::find(FrameGraphImageId res) co
 const TransientBuffer& FrameGraphFrameResources::find(FrameGraphBufferId res) const {
     y_always_assert(res.is_valid(), "Invalid buffer resource");
 
-    if(const auto it = _buffers.find(res); it != _buffers.end()) {
-        return *it->second;
+    if(is_alive(res)) {
+        return *_buffers[res.id()];
     }
 
     y_fatal("Buffer resource doesn't exist");

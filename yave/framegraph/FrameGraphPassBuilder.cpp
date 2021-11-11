@@ -212,9 +212,7 @@ void FrameGraphPassBuilder::add_to_pass(FrameGraphBufferId res, BufferUsage usag
 
 void FrameGraphPassBuilder::add_uniform(FrameGraphDescriptorBinding binding, usize ds_index) {
     auto& bindings = _pass->_bindings;
-    while(bindings.size() <= ds_index) {
-        bindings.emplace_back();
-    }
+    bindings.set_min_size(ds_index + 1);
     bindings[ds_index].push_back(binding);
 }
 

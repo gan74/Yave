@@ -80,11 +80,13 @@ static bool is_none(U u) {
 
 template<typename T, typename C>
 static auto&& check_exists(C& c, T t) {
-    const auto it = c.find(t);
-    if(it == c.end()) {
-        y_fatal("Resource doesn't exist");
+    if(t.id() < c.size()) {
+        auto&& [i, r] = c[t.id()];
+        if(i.is_valid()) {
+            return r;
+        }
     }
-    return it->second;
+    y_fatal("Resource doesn't exist");
 }
 
 template<typename C, typename B>
@@ -298,8 +300,8 @@ void FrameGraph::alloc_resources() {
         }
     }
 
-    auto images = core::vector_with_capacity<std::pair<FrameGraphImageId, ImageCreateInfo>>(_images.size());
-    std::copy(_images.begin(), _images.end(), std::back_inserter(images));
+    core::ScratchVector<std::pair<FrameGraphImageId, ImageCreateInfo>> images(_images.size());
+    std::copy_if(_images.begin(), _images.end(), std::back_inserter(images), [](const auto& p) { return p.first.is_valid(); });
     std::sort(images.begin(), images.end(), [](const auto& a, const auto& b) { return a.second.first_use < b.second.first_use; });
 
     _resources->reserve(_images.size(), _buffers.size());
@@ -322,6 +324,10 @@ void FrameGraph::alloc_resources() {
     }
 
     for(auto&& [res, info] : _buffers) {
+        if(!res.is_valid()) {
+            continue;
+        }
+
         if(info.last_read < info.last_write) {
             log_msg(fmt("Buffer written by % is never consumed", pass_name(info.last_write)), Log::Warning);
         }
@@ -344,21 +350,31 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
     y_debug_assert(size.x() > 0 && size.y() > 0);
-    FrameGraphMutableImageId res;
-    res._id = _resources->create_resource_id();
-    auto& r = _images[res];
+    const u32 id = _resources->create_image_id();
+
+    _images.set_min_size(id + 1);
+
+    auto& [i, r] = _images[id];
+    y_always_assert(!i.is_valid(), "Resource already exists");
+    i._id = id;
     r.size = size;
     r.format = format;
-    return res;
+
+    return i;
 }
 
 FrameGraphMutableBufferId FrameGraph::declare_buffer(usize byte_size) {
     y_debug_assert(byte_size > 0);
-    FrameGraphMutableBufferId res;
-    res._id = _resources->create_resource_id();
-    auto& r = _buffers[res];
+    const u32 id = _resources->create_buffer_id();
+
+    _buffers.set_min_size(id + 1);
+
+    auto& [i, r] = _buffers[id];
+    y_always_assert(!i.is_valid(), "Resource already exists");
+    i._id = id;
     r.byte_size = byte_size;
-    return res;
+
+    return i;
 }
 
 FrameGraphPassBuilder FrameGraph::add_pass(std::string_view name) {

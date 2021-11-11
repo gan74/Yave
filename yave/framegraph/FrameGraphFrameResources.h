@@ -42,7 +42,8 @@ class FrameGraphFrameResources final : NonMovable {
 
         void reserve(usize images, usize buffers);
 
-        u32 create_resource_id();
+        u32 create_image_id();
+        u32 create_buffer_id();
 
         void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
         void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
@@ -59,7 +60,6 @@ class FrameGraphFrameResources final : NonMovable {
 
         void create_alias(FrameGraphImageId dst, FrameGraphImageId src);
         bool are_aliased(FrameGraphImageId a, FrameGraphImageId b) const;
-
 
 
         template<ImageUsage Usage>
@@ -89,12 +89,12 @@ class FrameGraphFrameResources final : NonMovable {
         const TransientImage<>& find(FrameGraphImageId res) const;
         const TransientBuffer& find(FrameGraphBufferId res) const;
 
-        u32 _next_id = 0;
+        u32 _next_image_id = 0;
+        u32 _next_buffer_id = 0;
 
         Y_TODO(replace by vector)
-        using hash_t = std::hash<FrameGraphResourceId>;
-        core::FlatHashMap<FrameGraphImageId, TransientImage<>*, hash_t> _images;
-        core::FlatHashMap<FrameGraphBufferId, TransientBuffer*, hash_t> _buffers;
+        core::Vector<TransientImage<>*> _images;
+        core::Vector<TransientBuffer*> _buffers;
 
         std::shared_ptr<FrameGraphResourcePool> _pool;
 

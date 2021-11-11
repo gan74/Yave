@@ -264,7 +264,11 @@ class ScratchVector : public ScratchPadBase<Elem> {
             return _capacity;
         }
 
-        template<typename... Args>
+        inline reference push_back(const_reference elem) {
+            y_debug_assert(!is_full());
+            return *(::new(this->_data + this->_size++) data_type{elem});
+        }
+
         inline reference push_back(value_type&& elem) {
             y_debug_assert(!is_full());
             return *(::new(this->_data + this->_size++) data_type{std::move(elem)});

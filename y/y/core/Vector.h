@@ -340,6 +340,16 @@ class Vector : ResizePolicy, Allocator {
             }
         }
 
+        template<typename... Args>
+        inline void set_min_size(usize min_size, Args&&... args) {
+            if(min_size > size()) {
+                set_min_capacity(min_size);
+                while(size() < min_size) {
+                    emplace_back(y_fwd(args)...);
+                }
+            }
+        }
+
         inline void clear() {
             unsafe_set_capacity(0);
         }

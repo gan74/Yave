@@ -73,11 +73,7 @@ class SparseIdSet : NonCopyable {
 
     protected:
         void grow_sparse(index_type max_index) {
-            const usize target_size = usize(max_index + 1);
-            _sparse.set_min_capacity(target_size);
-            while(_sparse.size() < target_size) {
-                _sparse << invalid_index;
-            }
+            _sparse.set_min_size(usize(max_index + 1), invalid_index);
         }
 
         core::Vector<EntityId> _dense;
