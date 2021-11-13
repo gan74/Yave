@@ -31,6 +31,7 @@ SOFTWARE.
 
 #include <algorithm>
 #include <string>
+#include <regex>
 
 
 namespace editor {
@@ -73,17 +74,16 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
         vars.emplace_back(
             full_name,
             [=]{ return fmt("%", getter()); },
-            [=](std::string_view str) { return try_parse(str, getter()); }
+            [=](std::string_view str) { return try_parse(str, getter()); },
+            ct_type_name<T>(), "", false, false
         );
     } else if constexpr(is_iterable_v<T>) {
         if constexpr(is_printable_v<T::value_type>) {
             vars.emplace_back(
                 full_name,
                 [=]{ return fmt("%", getter()); },
-                [=](std::string_view) {
-                    /* not supported */
-                    return false;
-                }
+                [=](std::string_view) { /* not supported */ return false; },
+                ct_type_name<T>(), "", false, false
             );
         }
     }
@@ -115,78 +115,97 @@ static void explore(C& vars, const core::String& parent, std::string_view name, 
 
 CVarConsole::CVarConsole() : Widget(ICON_FA_STREAM " CVars") {
     explore(_cvars, "", "settings", app_settings);
-    set_pattern("");
-}
 
-void CVarConsole::set_pattern(std::string_view str) {
-    _search_pattern = str;
-    _search_pattern.grow(256, 0);
+    for(auto& var : _cvars) {
+        var.default_value = var.to_string();
+    }
 }
 
 void CVarConsole::on_gui() {
-    ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-    ImGui::TextUnformatted(ICON_FA_EXCLAMATION_TRIANGLE " Don't use this if you don't know what you are doing!");
-    ImGui::PopStyleColor();
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(ICON_FA_FILTER " ").x);
+    ImGui::InputText(ICON_FA_FILTER "##filter", _search_pattern.data(), _search_pattern.size());
+    const bool search_empty = !_search_pattern[0];
 
-    const float footer_height = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ChildBorderSize;
-    if(ImGui::BeginChild("##CVarConsole", ImVec2(0.0f, -footer_height), true)) {
+    const ImGuiTableFlags table_flags =
+            ImGuiTableFlags_SizingFixedFit |
+            ImGuiTableFlags_BordersInnerV |
+            ImGuiTableFlags_Resizable |
+            ImGuiTableFlags_RowBg;
 
-        for(const auto& msg : _msgs) {
-            ImGui::Text("# %s", msg.command.data());
-            ImGui::PushStyleColor(ImGuiCol_Text, msg.is_error ? 0xFF0000FF : 0xFFFF8000);
-            ImGui::TextUnformatted(msg.result.data());
-            ImGui::PopStyleColor();
+    if(ImGui::BeginChild("##entities", ImVec2(), true)) {
+        if(ImGui::BeginTable("##cvars", 3, table_flags)) {
+            ImGui::TableSetupColumn("##name");
+            ImGui::TableSetupColumn("##value", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("##restore", ImGuiTableColumnFlags_NoResize);
+
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.0f, 1.0f));
+            y_defer(ImGui::PopStyleVar());
+
+            const std::regex regex = search_empty ? std::regex() : std::regex(_search_pattern.data(), std::regex::icase);
+            int id = 0;
+            for(auto& var : _cvars) {
+                if(!search_empty && !std::regex_search(var.full_name.data(), regex)) {
+                    continue;
+                }
+                ImGui::PushID(id++);
+
+                imgui::table_begin_next_row();
+
+                {
+                    ImGui::TextUnformatted(var.full_name.data());
+                }
+
+                ImGui::TableSetColumnIndex(1);
+
+                {
+                    bool pop_color = false;
+                    if(var.error) {
+                        ImGui::PushStyleColor(ImGuiCol_Text, math::Vec4(1.0f, 0.3f, 0.3f, 1.0f));
+                        pop_color = true;
+                    } else if(var.modified) {
+                        ImGui::PushStyleColor(ImGuiCol_Text, math::Vec4(0.3f, 0.3f, 1.0f, 1.0f));
+                        pop_color = true;
+                    }
+
+                    const std::string_view view = var.to_string();
+                    std::copy_n(view.data(), std::max(view.size(), _value.size() - 1) + 1, _value.data());
+
+                    if(imgui::selectable_input("##value", false, _value.data(), _value.size())) {
+                        var.error = !var.from_string(_value.data());
+                        var.modified = true;
+                    }
+
+                    if(ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::TextUnformatted(var.type_name.data());
+                        ImGui::EndTooltip();
+                    }
+
+                    if(pop_color) {
+                        ImGui::PopStyleColor();
+                    }
+                }
+
+                ImGui::TableSetColumnIndex(2);
+
+                {
+                    if(var.modified) {
+                        if(ImGui::Selectable(ICON_FA_UNDO)) {
+                            y_always_assert(var.from_string(var.default_value), "Unable to reset value");
+                            var.error = false;
+                            var.modified = false;
+                        }
+                    }
+                }
+
+
+                ImGui::PopID();
+            }
+            ImGui::EndTable();
         }
     }
     ImGui::EndChild();
-
-    if(imgui::search_bar("##commandline", _search_pattern.data(), _search_pattern.size())) {
-        process_command(_search_pattern.data());
-        _search_pattern[0] = 0;
-    }
-
-    if(imgui::begin_suggestion_popup()) {
-        const std::string_view pattern = _search_pattern.data();
-        for(const auto& var : _cvars) {
-            if(var.full_name.find(pattern) != var.full_name.end()) {
-                const char* name = fmt_c_str("% = %", var.full_name, var.to_string());
-                if(imgui::suggestion_item(name)) {
-                    set_pattern(name);
-                }
-            }
-        }
-        imgui::end_suggestion_popup();
-    }
 }
-
-void CVarConsole::process_command(std::string_view command) {
-    command = core::trim(command);
-    const usize eq = command.find('=');
-
-    if(eq != std::string_view::npos) {
-        const std::string_view name = core::trim_right(command.substr(0, eq));
-        for(const auto& var : _cvars) {
-            if(var.full_name == name) {
-                const std::string_view value = core::trim_left(command.substr(eq + 1));
-                if(!var.from_string(value)) {
-                    _msgs.emplace_back(command, fmt("Unable to parse value '%'", value), true);
-                } else {
-                    _msgs.emplace_back(command, var.to_string(), false);
-                }
-                return;
-            }
-        }
-    } else {
-        for(const auto& var : _cvars) {
-            if(var.full_name == command) {
-                _msgs.emplace_back(command, var.to_string(), false);
-                return;
-            }
-        }
-    }
-    _msgs.emplace_back(command, fmt("\"%\" not found", command), true);
-}
-
 
 }
 

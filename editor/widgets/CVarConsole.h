@@ -35,16 +35,21 @@ class CVarConsole : public Widget {
 
     editor_widget(CVarConsole)
 
+    enum class Status {
+        None,
+        Error,
+        Modified
+    };
+
     struct CVar {
         core::String full_name;
         std::function<std::string_view()> to_string;
         std::function<bool(std::string_view)> from_string;
-    };
 
-    struct Msg {
-        core::String command;
-        core::String result;
-        bool is_error = false;
+        core::String type_name;
+        core::String default_value;
+        bool modified = false;
+        bool error = false;
     };
 
     public:
@@ -54,14 +59,10 @@ class CVarConsole : public Widget {
     protected:
         void on_gui() override;
 
-        void set_pattern(std::string_view str);
-        void process_command(std::string_view command);
-
     private:
-        core::String _search_pattern;
-
+        core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
+        core::FixedArray<char> _value = core::FixedArray<char>(256);
         core::Vector<CVar> _cvars;
-        core::Vector<Msg> _msgs;
 };
 
 }

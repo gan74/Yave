@@ -406,6 +406,44 @@ void table_begin_next_row(int row_index) {
     ImGui::TableSetColumnIndex(row_index);
 }
 
+
+
+// https://github.com/ocornut/imgui/issues/2718
+bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size) {
+    ImGuiContext& g = *GImGui;
+    ImGuiWindow* window = g.CurrentWindow;
+    const ImVec2 pos_before = window->DC.CursorPos;
+
+    ImGui::PushID(str_id);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(g.Style.ItemSpacing.x, g.Style.FramePadding.y * 2.0f));
+
+    const bool clicked = ImGui::Selectable("##Selectable", selected, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_AllowItemOverlap);
+
+    ImGui::PopStyleVar();
+
+
+    ImGuiID id = window->GetID("##Input");
+    const bool temp_input_is_active = ImGui::TempInputIsActive(id);
+    const bool temp_input_start = clicked ? ImGui::IsMouseDoubleClicked(0) : false;
+
+    if(temp_input_start) {
+        ImGui::SetActiveID(id, window);
+    }
+
+    bool ret = false;
+    if(temp_input_is_active || temp_input_start) {
+        ImVec2 pos_after = window->DC.CursorPos;
+        window->DC.CursorPos = pos_before;
+        ret = ImGui::TempInputText(g.LastItemData.Rect, id, "##Input", buf, int(buf_size), ImGuiInputTextFlags_EnterReturnsTrue);
+        window->DC.CursorPos = pos_after;
+    } else {
+        window->DrawList->AddText(pos_before, ImGui::GetColorU32(ImGuiCol_Text), buf);
+    }
+
+    ImGui::PopID();
+    return ret;
+}
+
 }
 }
 
