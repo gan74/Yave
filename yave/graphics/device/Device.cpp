@@ -116,11 +116,6 @@ Device::Device(Instance& instance, PhysicalDevice device) :
         _samplers[i].init(create_sampler(this, SamplerType(i)));
     }
 
-    _lifetime_manager.init();
-    _allocator.init(device_properties());
-    _descriptor_set_allocator.init();
-
-
     {
         VkSemaphoreTypeCreateInfo type_create_info = vk_struct();
         type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
@@ -139,6 +134,10 @@ Device::Device(Instance& instance, PhysicalDevice device) :
 }
 
 void Device::late_init() {
+    _lifetime_manager.init();
+    _allocator.init(device_properties());
+    _descriptor_set_allocator.init();
+
     y_profile_zone("loading resources");
     _resources.init();
 }
@@ -146,6 +145,7 @@ void Device::late_init() {
 Device::~Device() {
     y_profile();
 
+    lifetime_manager().shutdown_collector_thread();
     wait_all_queues();
 
     {
@@ -172,11 +172,11 @@ Device::~Device() {
         sampler.destroy();
     }
 
-    device_destroy(_timeline_semaphore);
-
     _descriptor_set_allocator.destroy();
     _lifetime_manager.destroy();
     _allocator.destroy();
+
+    vkDestroySemaphore(_device, _timeline_semaphore, vk_allocation_callbacks());
 
     _graphic_queue = {};
     _loading_queue = {};

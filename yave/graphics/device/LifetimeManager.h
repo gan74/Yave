@@ -30,6 +30,8 @@ SOFTWARE.
 #include <deque>
 #include <mutex>
 
+#define YAVE_MT_LIFETIME_MANAGER
+
 namespace yave {
 
 class LifetimeManager : NonMovable {
@@ -66,9 +68,13 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
 
     private:
+        friend class Device;
+
+        void shutdown_collector_thread();
+
+    private:
         void clear_resources(u64 up_to);
         void destroy_resource(ManagedResource& resource) const;
-
 
         std::deque<std::pair<u64, ManagedResource>> _to_destroy;
         std::deque<CmdBufferData*> _in_flight;
@@ -78,6 +84,11 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 
         std::atomic<u64> _create_counter = 0;
         u64 _next = 0; // Guarded by _cmd_lock
+
+#ifdef YAVE_MT_LIFETIME_MANAGER
+        std::thread _collector_thread;
+        std::atomic<bool> _run_thread = true;
+#endif
 
 };
 

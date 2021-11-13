@@ -21,12 +21,14 @@ SOFTWARE.
 **********************************/
 
 #include "LifetimeManager.h"
+#include "Device.h"
 #include "destroy.h"
 
 #include <yave/graphics/graphics.h>
 
 #include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/commands/CmdBufferPool.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/core/ScratchPad.h>
 #include <y/utils/format.h>
@@ -38,13 +40,35 @@ static bool compare_cmd_buffers(const CmdBufferData* a, const CmdBufferData* b) 
 }
 
 LifetimeManager::LifetimeManager() {
+#ifdef YAVE_MT_LIFETIME_MANAGER
+    _collector_thread = std::thread([this] {
+        const VkDevice device = vk_device();
+        const VkSemaphore timeline_semaphore = main_device()->vk_timeline_semaphore();
+
+        u64 semaphore_value = 0;
+        vk_check(vkGetSemaphoreCounterValue(device, timeline_semaphore, &semaphore_value));
+
+        while(_run_thread) {
+            ++semaphore_value;
+            VkSemaphoreWaitInfo wait_info = vk_struct();
+            {
+                wait_info.pSemaphores = &timeline_semaphore;
+                wait_info.pValues = &semaphore_value;
+                wait_info.semaphoreCount = 1;
+            }
+
+            vk_check(vkWaitSemaphores(device, &wait_info, u64(-1)));
+
+            poll_cmd_buffers();
+        }
+    });
+#endif
 }
 
 LifetimeManager::~LifetimeManager() {
+    poll_cmd_buffers();
+
     y_debug_assert(_create_counter == _next);
-
-    wait_cmd_buffers();
-
     y_always_assert(_in_flight.empty(), "CmdBuffer still in flight");
 
     for(auto& res : _to_destroy) {
@@ -53,38 +77,16 @@ LifetimeManager::~LifetimeManager() {
     }
 }
 
-void LifetimeManager::wait_cmd_buffers() {
+void LifetimeManager::shutdown_collector_thread() {
+#ifdef YAVE_MT_LIFETIME_MANAGER
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_cmd_lock);
+    y_always_assert(_run_thread, "Collector thread not running");
 
-    for(CmdBufferData* data : _in_flight) {
-        data->wait();
-    }
-
-    poll_cmd_buffers();
-}
-
-
-ResourceFence LifetimeManager::create_fence() {
-    return _create_counter++;
-}
-
-void LifetimeManager::register_for_polling(CmdBufferData* data) {
-    bool collect = false;
-
-    {
-        const auto lock = y_profile_unique_lock(_cmd_lock);
-
-        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), data, compare_cmd_buffers);
-        _in_flight.insert(it, data);
-
-        collect = (_in_flight.front()->resource_fence()._value == _next);
-    }
-
-    if(collect) {
-        poll_cmd_buffers();
-    }
+    _run_thread = false;
+    CmdBufferRecorder(create_disposable_cmd_buffer()).submit<SyncPolicy::Wait>();
+    _collector_thread.join();
+#endif
 }
 
 void LifetimeManager::poll_cmd_buffers() {
@@ -175,6 +177,46 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
         resource);
 }
 
+
+
+
+
+void LifetimeManager::wait_cmd_buffers() {
+    y_profile();
+
+    const auto lock = y_profile_unique_lock(_cmd_lock);
+    for(CmdBufferData* data : _in_flight) {
+        data->wait();
+    }
+
+    poll_cmd_buffers();
+
+    y_debug_assert(_in_flight.empty());
+}
+
+ResourceFence LifetimeManager::create_fence() {
+    return _create_counter++;
+}
+
+void LifetimeManager::register_for_polling(CmdBufferData* data) {
+    bool collect = false;
+
+    {
+        const auto lock = y_profile_unique_lock(_cmd_lock);
+
+        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), data, compare_cmd_buffers);
+        _in_flight.insert(it, data);
+
+        collect = (_in_flight.front()->resource_fence()._value == _next);
+    }
+
+#ifndef YAVE_MT_LIFETIME_MANAGER
+    if(collect) {
+        poll_cmd_buffers();
+    }
+#endif
+}
+
 usize LifetimeManager::pending_cmd_buffers() const {
     const auto lock = y_profile_unique_lock(_cmd_lock);
     return _in_flight.size();
@@ -184,7 +226,6 @@ usize LifetimeManager::pending_deletions() const {
     const auto lock = y_profile_unique_lock(_resources_lock);
     return _to_destroy.size();
 }
-
 
 }
 
