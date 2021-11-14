@@ -109,8 +109,7 @@ Device::Device(Instance& instance, PhysicalDevice device) :
 
     print_properties(_properties);
 
-    _graphic_queue = Queue(_main_queue_index, create_queue(_device, _main_queue_index, 0));
-    _loading_queue = Queue(_main_queue_index, create_queue(_device, _main_queue_index, 1));
+    _queue.init(_main_queue_index, create_queue(_device, _main_queue_index, 0));
 
     for(usize i = 0; i != _samplers.size(); ++i) {
         _samplers[i].init(create_sampler(this, SamplerType(i)));
@@ -155,7 +154,7 @@ Device::~Device() {
 
     {
         y_profile_zone("flushing command pools");
-        CmdBufferRecorder(CmdBufferPool(thread_device()).create_buffer()).submit<SyncPolicy::Wait>();
+        command_queue().submit(create_disposable_cmd_buffer()).wait();
         lifetime_manager().wait_cmd_buffers();
     }
 
@@ -178,8 +177,7 @@ Device::~Device() {
 
     vkDestroySemaphore(_device, _timeline_semaphore, vk_allocation_callbacks());
 
-    _graphic_queue = {};
-    _loading_queue = {};
+    _queue.destroy();
 
     {
         y_profile_zone("vkDestroyDevice");
@@ -314,30 +312,14 @@ DescriptorSetAllocator& Device::descriptor_set_allocator() const {
     return _descriptor_set_allocator.get();
 }
 
-const Queue& Device::graphic_queue() const {
-    return _graphic_queue;
-}
-
-const Queue& Device::loading_queue() const {
-    return _loading_queue;
+const CmdQueue& Device::command_queue() const {
+    return _queue.get();
 }
 
 void Device::wait_all_queues() const {
     Y_TODO(Remove and use lock_all_queues_and_wait everywhere)
-    lock_all_queues_and_wait();
-}
-
-concurrent::VectorLock<std::mutex> Device::lock_all_queues_and_wait() const {
-    y_profile();
-
-    auto lock = concurrent::VectorLock<std::mutex>({
-        _graphic_queue.lock(),
-        _loading_queue.lock()
-    });
-
+    const auto lock = y_profile_unique_lock(_queue.get()._lock);
     vk_check(vkDeviceWaitIdle(vk_device()));
-
-    return lock;
 }
 
 ThreadDevicePtr Device::thread_device() const {

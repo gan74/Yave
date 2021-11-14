@@ -24,8 +24,7 @@ SOFTWARE.
 
 #include <yave/window/Window.h>
 
-#include <yave/graphics/device/Queue.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 #include <yave/graphics/barriers/Barrier.h>
 
@@ -104,7 +103,7 @@ static VkImageView create_image_view(VkImage image, VkFormat format) {
 }
 
 static bool has_wsi_support(VkSurfaceKHR surface) {
-    const u32 index =  graphic_queue().family_index();
+    const u32 index =  command_queue().family_index();
     VkBool32 supported = false;
     vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(vk_physical_device(), index, surface, &supported));
     return supported;
@@ -254,7 +253,7 @@ bool Swapchain::build_swapchain() {
     for(auto& i : _images) {
         recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
     }
-    std::move(recorder).submit<SyncPolicy::Wait>();
+    command_queue().submit(std::move(recorder)).wait();
 
     return true;
 }
@@ -311,16 +310,16 @@ core::Result<FrameToken> Swapchain::next_frame() {
     });
 }
 
-void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, const Queue& queue) {
+void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, const CmdQueue& queue) {
     y_profile();
 
     const usize semaphore_index = token.id % image_count();
     const Semaphores& frame_semaphores = _semaphores[semaphore_index];
 
     {
-        queue.end_and_submit(recorder, frame_semaphores.image_aquired, frame_semaphores.render_complete);
+        queue.submit(std::move(recorder), frame_semaphores.image_aquired, frame_semaphores.render_complete);
 
-        const auto lock = y_profile_unique_lock(queue.lock());
+        const auto lock = y_profile_unique_lock(queue._lock);
 
         y_profile_zone("present");
 

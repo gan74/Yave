@@ -90,7 +90,7 @@ const PhysicalDevice& physical_device() {
     return main_device()->physical_device();
 }
 
-CmdBuffer create_disposable_cmd_buffer() {
+CmdBufferRecorder create_disposable_cmd_buffer() {
     return thread_device()->create_disposable_cmd_buffer();
 }
 
@@ -102,12 +102,8 @@ DescriptorSetAllocator& descriptor_set_allocator() {
     return main_device()->descriptor_set_allocator();
 }
 
-const Queue& graphic_queue() {
-    return main_device()->graphic_queue();
-}
-
-const Queue& loading_queue() {
-    return main_device()->loading_queue();
+const CmdQueue& command_queue() {
+    return main_device()->command_queue();
 }
 
 const DeviceResources& device_resources() {

@@ -84,7 +84,7 @@ void LifetimeManager::shutdown_collector_thread() {
     y_always_assert(_run_thread, "Collector thread not running");
 
     _run_thread = false;
-    CmdBufferRecorder(create_disposable_cmd_buffer()).submit<SyncPolicy::Wait>();
+    command_queue().submit(create_disposable_cmd_buffer()).wait();
     _collector_thread.join();
 #endif
 }

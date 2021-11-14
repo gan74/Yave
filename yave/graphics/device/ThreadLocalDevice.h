@@ -35,7 +35,7 @@ class ThreadLocalDevice : NonMovable {
 
         DevicePtr parent() const;
 
-        CmdBuffer create_disposable_cmd_buffer() const;
+        CmdBufferRecorder create_disposable_cmd_buffer() const;
         ThreadLocalLifetimeManager& lifetime_manager() const;
 
     private:

@@ -23,7 +23,7 @@ SOFTWARE.
 #include "MeshData.h"
 
 #include <yave/graphics/buffers/TypedWrapper.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/graphics.h>
 
 namespace yave {
@@ -40,7 +40,7 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
     Y_TODO(change to implicit staging?)
     Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
     Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
-    std::move(recorder).submit<SyncPolicy::Wait>();
+    command_queue().submit(std::move(recorder))/*.wait()*/;
 }
 
 bool StaticMesh::is_null() const {

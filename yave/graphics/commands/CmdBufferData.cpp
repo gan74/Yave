@@ -109,6 +109,7 @@ QueueFence CmdBufferData::queue_fence() const {
 void CmdBufferData::wait() {
     y_profile();
     main_device()->wait_for_fence(_queue_fence);
+    recycle_resources();
 }
 
 bool CmdBufferData::poll() {

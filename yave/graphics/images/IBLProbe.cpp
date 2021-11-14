@@ -25,8 +25,8 @@ SOFTWARE.
 
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/DeviceResources.h>
+#include <yave/graphics/commands/CmdQueue.h>
 
 #include <y/core/ScratchPad.h>
 #include <y/core/Chrono.h>
@@ -121,7 +121,7 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
     }
 
     // use sync compute to avoid having to sync later
-    std::move(recorder).submit<SyncPolicy::Wait>();
+    command_queue().submit(std::move(recorder)).wait();
 }
 
 template<ImageType T>

@@ -21,10 +21,10 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferPool.h"
-#include "CmdBuffer.h"
+#include "CmdBufferRecorder.h"
 
 #include <yave/graphics/graphics.h>
-#include <yave/graphics/device/Queue.h>
+#include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/device/LifetimeManager.h>
 
 #include <y/core/Chrono.h>
@@ -35,7 +35,7 @@ namespace yave {
 static VkCommandPool create_pool() {
     VkCommandPoolCreateInfo create_info = vk_struct();
     {
-        create_info.queueFamilyIndex = graphic_queue().family_index();
+        create_info.queueFamilyIndex = command_queue().family_index();
         create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     }
 
@@ -124,8 +124,8 @@ CmdBufferData* CmdBufferPool::create_data() {
     return _cmd_buffers.emplace_back(std::make_unique<CmdBufferData>(buffer, this)).get();
 }
 
-CmdBuffer CmdBufferPool::create_buffer() {
-    return CmdBuffer(alloc());
+CmdBufferRecorder CmdBufferPool::create_buffer() {
+    return CmdBufferRecorder(alloc());
 }
 
 }

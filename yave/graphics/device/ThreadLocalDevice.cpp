@@ -23,7 +23,7 @@ SOFTWARE.
 #include "ThreadLocalDevice.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
-#include <yave/graphics/commands/CmdBuffer.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 namespace yave {
 
@@ -40,7 +40,7 @@ DevicePtr ThreadLocalDevice::parent() const {
     return _parent;
 }
 
-CmdBuffer ThreadLocalDevice::create_disposable_cmd_buffer() const {
+CmdBufferRecorder ThreadLocalDevice::create_disposable_cmd_buffer() const {
     return _disposable_cmd_pool.create_buffer();
 }
 

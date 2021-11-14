@@ -445,7 +445,7 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
             platform->_renderer->render(viewport->DrawData, pass);
         }
 
-        swapchain.present(token, std::move(recorder), graphic_queue());
+        swapchain.present(token, std::move(recorder), command_queue());
     }
 
     return true;
@@ -584,7 +584,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 ImGui::RenderPlatformWindowsDefault();
             }
 
-            _main_window->swapchain.present(token, std::move(recorder), graphic_queue());
+            _main_window->swapchain.present(token, std::move(recorder), command_queue());
         }
     }
 }

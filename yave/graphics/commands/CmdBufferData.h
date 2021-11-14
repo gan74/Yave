@@ -64,7 +64,7 @@ class QueueFence {
 
     private:
         friend class Device;
-        friend class Queue;
+        friend class CmdQueue;
 
         QueueFence(u64 v);
 
@@ -106,7 +106,7 @@ class CmdBufferData final : NonMovable {
 
     private:
         friend class CmdBufferPool;
-        friend class Queue;
+        friend class CmdQueue;
 
         void begin();
         void recycle_resources(); // This can not be called while pool's _pending_lock is locked

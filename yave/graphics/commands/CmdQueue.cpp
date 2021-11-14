@@ -20,58 +20,54 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <yave/graphics/graphics.h>
+#include "CmdQueue.h"
 
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-
-#include "Device.h"
-#include "Queue.h"
+#include <yave/graphics/device/Device.h>
 
 namespace yave {
 
-Queue::Queue(u32 family_index, VkQueue queue) :
-        _queue(queue),
-        _family_index(family_index),
-        _lock(std::make_unique<std::mutex>()) {
+
+WaitToken::WaitToken(const QueueFence& fence) : _fence(fence) {
 }
 
-Queue::~Queue() {
-    if(_queue && _lock) {
-        wait();
-    }
+void WaitToken::wait() {
+    main_device()->wait_for_fence(_fence);
 }
 
-
-VkQueue Queue::vk_queue() const {
-    return _queue;
+CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _family_index(family_index), _queue(queue) {
 }
 
-u32 Queue::family_index() const {
+CmdQueue::~CmdQueue() {
+    wait();
+}
+
+u32 CmdQueue::family_index() const {
     return _family_index;
 }
 
-void Queue::wait() const {
-    const auto lock = y_profile_unique_lock(*_lock);
+VkQueue CmdQueue::vk_queue() const {
+    return _queue;
+}
+
+void CmdQueue::wait() const {
+    const auto lock = y_profile_unique_lock(_lock);
     vk_check(vkQueueWaitIdle(_queue));
 }
 
-void Queue::end_and_submit(CmdBufferRecorder& recorder, VkSemaphore wait, VkSemaphore signal) const {
+WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSemaphore signal) const {
     y_profile();
 
     const VkCommandBuffer cmd_buffer = recorder.vk_cmd_buffer();
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
+    QueueFence fence;
+
     {
-        const auto lock = y_profile_unique_lock(*_lock);
+        const auto lock = y_profile_unique_lock(_lock);
 
         // This needs to be inside the lock
-        const QueueFence fence = main_device()->create_fence();
+        fence = main_device()->create_fence();
         const u64 prev_value = fence._value - 1;
-
-#ifdef YAVE_CHECK_QUEUE_SYNC
-        y_always_assert(_last_fence < fence.value(), "Deadlock!");
-        _last_fence = fence.value();
-#endif
 
         recorder._data->_queue_fence = fence;
 
@@ -110,6 +106,10 @@ void Queue::end_and_submit(CmdBufferRecorder& recorder, VkSemaphore wait, VkSema
 
         vk_check(vkQueueSubmit(_queue, 1, &submit_info, {}));
     }
+
+    lifetime_manager().register_for_polling(std::exchange(recorder._data, nullptr));
+
+    return WaitToken(fence);
 }
 
 }

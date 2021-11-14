@@ -41,7 +41,7 @@ class CmdBufferPool : NonMovable {
 
         VkCommandPool vk_pool() const;
 
-        CmdBuffer create_buffer();
+        CmdBufferRecorder create_buffer();
 
     private:
         friend class LifetimeManager;

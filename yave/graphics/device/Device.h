@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include "Instance.h"
-#include "Queue.h"
 #include "DeviceProperties.h"
 #include "PhysicalDevice.h"
 #include "ThreadLocalDevice.h"
@@ -33,10 +32,9 @@ SOFTWARE.
 #include "LifetimeManager.h"
 
 #include <yave/graphics/images/Sampler.h>
+#include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
-
-#include <y/concurrent/VectorLock.h>
 
 #include <thread>
 
@@ -49,7 +47,6 @@ class Device : NonMovable {
         ~Device();
 
         void wait_all_queues() const;
-        concurrent::VectorLock<std::mutex> lock_all_queues_and_wait() const;
 
         const PhysicalDevice& physical_device() const;
         const Instance& instance() const;
@@ -65,8 +62,7 @@ class Device : NonMovable {
         DeviceMemoryAllocator& allocator() const;
         DescriptorSetAllocator& descriptor_set_allocator() const;
 
-        const Queue& graphic_queue() const;
-        const Queue& loading_queue() const;
+        const CmdQueue& command_queue() const;
 
         const DeviceResources& device_resources() const;
         DeviceResources& device_resources();
@@ -104,8 +100,7 @@ class Device : NonMovable {
 
         VkDevice _device = {};
 
-        Queue _graphic_queue;
-        Queue _loading_queue;
+        Uninitialized<CmdQueue> _queue;
 
         mutable Uninitialized<DeviceMemoryAllocator> _allocator;
         mutable Uninitialized<LifetimeManager> _lifetime_manager;

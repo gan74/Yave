@@ -22,18 +22,13 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_CMDBUFFERRECORDER_H
 #define YAVE_GRAPHICS_COMMANDS_CMDBUFFERRECORDER_H
 
+#include "CmdBufferData.h"
+
 #include <yave/graphics/framebuffer/Viewport.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/graphics/buffers/SubBuffer.h>
 
-#include "CmdBuffer.h"
-
 namespace yave {
-
-enum class SyncPolicy {
-    Async,
-    Wait
-};
 
 namespace detail {
 using DescriptorSetList = core::Span<DescriptorSetBase>;
@@ -133,7 +128,7 @@ class RenderPassRecorder final : NonMovable {
         Viewport _viewport;
 };
 
-class CmdBufferRecorder final : public CmdBuffer {
+class CmdBufferRecorder final : NonCopyable {
 
     using SrcCopyBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
     using DstCopyBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
@@ -143,27 +138,32 @@ class CmdBufferRecorder final : public CmdBuffer {
     public:
         using DescriptorSetList = detail::DescriptorSetList;
 
-        CmdBufferRecorder(CmdBuffer&& base);
-        CmdBufferRecorder(CmdBufferRecorder&&) = default;
+        CmdBufferRecorder(CmdBufferRecorder&& other);
+        CmdBufferRecorder& operator=(CmdBufferRecorder&& other);
 
         ~CmdBufferRecorder();
 
-        bool is_inside_renderpass() const;
+        VkCommandBuffer vk_cmd_buffer() const;
+        ResourceFence resource_fence() const;
 
         CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
 
+        bool is_inside_renderpass() const;
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
 
-        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
 
+        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
         void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
         void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
+
 
         void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);
         void barriers(core::Span<BufferBarrier> buffers);
         void barriers(core::Span<ImageBarrier> images);
 
         void full_barrier();
+
+
 
         Y_TODO(Const all this)
         void barriered_copy(const ImageBase& src,  const ImageBase& dst);
@@ -172,31 +172,31 @@ class CmdBufferRecorder final : public CmdBuffer {
         void blit(const SrcCopyImage& src,  const DstCopyImage& dst);
 
 
-        // never use directly, needed for internal work
+
+        template<typename T>
+        void keep_alive(T&& t) {
+            _data->keep_alive(y_fwd(t));
+        }
+
+    private:
+        friend class ImageBase;
+
         void transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst);
-
-        template<SyncPolicy Policy = SyncPolicy::Async>
-        void submit() && {
-            submit(Policy);
-        }
-
-        template<SyncPolicy Policy = SyncPolicy::Async>
-        void submit(const Queue& queue) && {
-            submit(queue, Policy);
-        }
-
 
     private:
         friend class RenderPassRecorder;
+        friend class CmdBufferPool;
+        friend class CmdQueue;
 
         CmdBufferRecorder() = default;
+        CmdBufferRecorder(CmdBufferData* data);
+
+        void swap(CmdBufferRecorder& other);
 
         void end_renderpass();
         void check_no_renderpass() const;
 
-        void submit(SyncPolicy policy);
-        void submit(const Queue& queue, SyncPolicy policy);
-
+        CmdBufferData* _data = nullptr;
         // this could be in RenderPassRecorder, but putting it here makes erroring easier
         const RenderPass* _render_pass = nullptr;
 };

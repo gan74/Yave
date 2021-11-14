@@ -64,6 +64,9 @@ void CmdBuffer::swap(CmdBuffer &other) {
     std::swap(_data, other._data);
 }
 
+bool CmdBuffer::is_null() const {
+    return !_data;
+}
 
 }
 

@@ -51,9 +51,11 @@ struct CmdBuffer : NonCopyable {
 
         void swap(CmdBuffer& other);
 
+        bool is_null() const;
+
     private:
         friend class CmdBufferPool;
-        friend class Queue;
+        friend class CmdQueue;
 
         CmdBufferData* _data = nullptr;
 

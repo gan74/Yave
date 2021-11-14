@@ -28,7 +28,6 @@ SOFTWARE.
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/barriers/Barrier.h>
-#include <yave/graphics/device/Queue.h>
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
 
@@ -194,8 +193,9 @@ void RenderPassRecorder::set_scissor(const math::Vec2i& offset, const math::Vec2
 
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
 
-CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& base) : CmdBuffer(std::move(base)) {
 
+
+CmdBufferRecorder::CmdBufferRecorder(CmdBufferData* data) : _data(data) {
     VkCommandBufferBeginInfo begin_info = vk_struct();
     {
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -206,6 +206,31 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBuffer&& base) : CmdBuffer(std::move(bas
 
 CmdBufferRecorder::~CmdBufferRecorder() {
     check_no_renderpass();
+    y_always_assert(!_data, "CmdBufferRecorder has not been submitted");
+}
+
+CmdBufferRecorder::CmdBufferRecorder(CmdBufferRecorder&& other) {
+    swap(other);
+}
+
+CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
+    swap(other);
+    return *this;
+}
+
+void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
+    std::swap(_data, other._data);
+    std::swap(_render_pass, other._render_pass);
+}
+
+VkCommandBuffer CmdBufferRecorder::vk_cmd_buffer() const {
+    y_debug_assert(_data);
+    return _data->vk_cmd_buffer();
+}
+
+ResourceFence CmdBufferRecorder::resource_fence() const {
+    y_debug_assert(_data);
+    return _data->resource_fence();
 }
 
 bool CmdBufferRecorder::is_inside_renderpass() const {
@@ -447,26 +472,6 @@ void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
 
 void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst) {
     barriers({ImageBarrier::transition_barrier(image, src, dst)});
-}
-
-void CmdBufferRecorder::submit(SyncPolicy policy) {
-    submit(graphic_queue(), policy);
-}
-
-void CmdBufferRecorder::submit(const Queue& queue, SyncPolicy policy) {
-    check_no_renderpass();
-
-    queue.end_and_submit(*this);
-
-    switch(policy) {
-        case SyncPolicy::Async:
-            // nothing
-        break;
-
-        case SyncPolicy::Wait: {
-            wait();
-        } break;
-    }
 }
 
 }

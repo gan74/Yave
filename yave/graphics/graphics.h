@@ -42,13 +42,12 @@ VkDevice vk_device();
 VkInstance vk_device_instance();
 VkPhysicalDevice vk_physical_device();
 
-CmdBuffer create_disposable_cmd_buffer();
+CmdBufferRecorder create_disposable_cmd_buffer();
 
 const PhysicalDevice& physical_device();
 DeviceMemoryAllocator& device_allocator();
 DescriptorSetAllocator& descriptor_set_allocator();
-const Queue& graphic_queue();
-const Queue& loading_queue();
+const CmdQueue& command_queue();
 const DeviceResources& device_resources();
 const DeviceProperties& device_properties();
 LifetimeManager& lifetime_manager();

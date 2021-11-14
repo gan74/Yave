@@ -19,60 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_DEVICE_QUEUE_H
-#define YAVE_GRAPHICS_DEVICE_QUEUE_H
+#ifndef YAVE_GRAPHICS_COMMANDS_CMDQUEUE_H
+#define YAVE_GRAPHICS_COMMANDS_CMDQUEUE_H
 
-#include <yave/graphics/graphics.h>
+#include "CmdBufferRecorder.h"
 
 #include <mutex>
-#include <shared_mutex>
 #include <memory>
-
-#ifdef Y_DEBUG
-#define YAVE_CHECK_QUEUE_SYNC
-#endif
 
 namespace yave {
 
-class Queue : NonCopyable {
-
+class WaitToken {
     public:
-        Queue() = default;
-        Queue(Queue&&) = default;
-        Queue& operator=(Queue&&) = default;
+        void wait();
 
-        ~Queue();
+    private:
+        friend class CmdQueue;
 
-        VkQueue vk_queue() const;
+        WaitToken(const QueueFence& fence);
+
+        QueueFence _fence;
+};
+
+class CmdQueue : NonMovable {
+    public:
+        CmdQueue(u32 family_index, VkQueue queue);
+        ~CmdQueue();
+
         u32 family_index() const;
+        VkQueue vk_queue() const;
 
         void wait() const;
 
-        Y_TODO(Remove)
-        std::mutex& lock() const {
-            y_debug_assert(_lock);
-            return *_lock;
-        }
+        WaitToken submit(CmdBufferRecorder&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}) const;
 
     private:
         friend class Device;
-        friend class CmdBufferRecorder;
         friend class Swapchain;
 
-        Queue(u32 family_index, VkQueue queue);
-
-        void end_and_submit(CmdBufferRecorder& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}) const;
-
-        VkQueue _queue = {};
         u32 _family_index = u32(-1);
-        std::unique_ptr<std::mutex> _lock;
+        VkQueue _queue = {};
 
-#ifdef YAVE_CHECK_QUEUE_SYNC
-        mutable u64 _last_fence = 0;
-#endif
+        mutable std::mutex _lock;
 };
 
 }
 
-#endif // YAVE_GRAPHICS_DEVICE_QUEUE_H
+#endif // YAVE_GRAPHICS_COMMANDS_CMDQUEUE_H
 

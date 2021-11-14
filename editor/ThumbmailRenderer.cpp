@@ -30,7 +30,7 @@ SOFTWARE.
 #include <yave/meshes/MeshData.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/graphics/device/DeviceResources.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <yave/renderer/DefaultRenderer.h>
@@ -88,7 +88,7 @@ static Texture render_world(const ecs::EntityWorld& world) {
 
         std::move(graph).render(recorder);
     }
-    std::move(recorder).submit<SyncPolicy::Wait>();
+    command_queue().submit(std::move(recorder)).wait();
     return out;
 }
 
@@ -179,7 +179,7 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
         const DescriptorSet set = DescriptorSet({Descriptor(*tex, SamplerType::LinearClamp), Descriptor(StorageView(out))});
         recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), {set});
     }
-    std::move(recorder).submit<SyncPolicy::Wait>();
+    command_queue().submit(std::move(recorder)).wait();
     return out;
 }
 

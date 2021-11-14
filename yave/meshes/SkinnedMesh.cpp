@@ -24,7 +24,7 @@ SOFTWARE.
 #include "MeshData.h"
 
 #include <yave/graphics/buffers/TypedWrapper.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/graphics.h>
 
 namespace yave {
@@ -41,7 +41,7 @@ SkinnedMesh::SkinnedMesh(const MeshData& mesh_data) :
     CmdBufferRecorder recorder(create_disposable_cmd_buffer());
     Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
     Mapping::stage(_vertex_buffer, recorder, mesh_data.skinned_vertices().data());
-    std::move(recorder).submit<SyncPolicy::Wait>();
+    command_queue().submit(std::move(recorder)).wait();
 }
 
 const TriangleBuffer<>& SkinnedMesh::triangle_buffer() const {
