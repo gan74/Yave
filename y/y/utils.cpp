@@ -23,10 +23,9 @@ SOFTWARE.
 #include "utils.h"
 
 #include <y/utils/log.h>
-#include <y/utils/format.h>
-#include <y/core/String.h>
-
 #include <y/concurrent/concurrent.h>
+
+#include <array>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
@@ -57,19 +56,25 @@ void break_in_debugger() {
 
 
 void fatal(const char* msg, const char* file, int line) {
-    core::String msg_str(msg);
+    // Don't use fmt since it can assert
+    std::array<char, 1024> buffer = {};
+    std::snprintf(buffer.data(), buffer.size(), "%s", msg);
+
     if(file) {
-        fmt_into(msg_str, " in file \"%\"", file);
+        const auto tmp_buffer = buffer;
+        std::snprintf(buffer.data(), buffer.size(), "%s in file \"%s\"", tmp_buffer.data(), file);
     }
     if(line) {
-        fmt_into(msg_str, " at line %", line);
+        const auto tmp_buffer = buffer;
+        std::snprintf(buffer.data(), buffer.size(), "%s at line %i", tmp_buffer.data(), line);
     }
 
     if(const char* thread_name = concurrent::thread_name()) {
-        fmt_into(msg_str, " on thread \"%\"", thread_name);
+        const auto tmp_buffer = buffer;
+        std::snprintf(buffer.data(), buffer.size(), "%s on thread \"%s\"", tmp_buffer.data(), thread_name);
     }
 
-    log_msg(msg_str, Log::Error);
+    log_msg(buffer.data(), Log::Error);
     y_breakpoint;
     std::abort();
 }
