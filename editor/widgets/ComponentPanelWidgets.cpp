@@ -413,7 +413,6 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
             {
                 math::Vec3 actual_euler = rot.to_euler();
                 if(!is_same_angle(actual_euler, euler)) {
-                    log_msg(fmt("editor: %, entity: %", euler, actual_euler));
                     euler = actual_euler;
                 }
             }

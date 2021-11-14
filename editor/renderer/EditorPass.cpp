@@ -161,24 +161,25 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
     const bool draw_bbox = app_settings().debug.display_selected_bbox;
 
     {
-        const math::Vec3 z = tr->up();
-        const math::Vec3 y = tr->right();
-        const math::Vec3 x = tr->forward();
+        const math::Vec3 z = tr->up().normalized();
+        const math::Vec3 y = tr->right().normalized();
+        const math::Vec3 x = tr->forward().normalized();
+        const float scale = tr->transform().scale().max_component();
         if(const auto* l = world.component<PointLightComponent>(selected)) {
-            primitive->add_circle(tr->position(), x, y, l->radius());
-            primitive->add_circle(tr->position(), y, z, l->radius());
-            primitive->add_circle(tr->position(), z, x, l->radius());
+            primitive->add_circle(tr->position(), x, y, l->radius() * scale);
+            primitive->add_circle(tr->position(), y, z, l->radius() * scale);
+            primitive->add_circle(tr->position(), z, x, l->radius() * scale);
         }
 
         if(const auto* l = world.component<SpotLightComponent>(selected)) {
-            primitive->add_cone(tr->position(), x, y, l->radius(), l->half_angle());
+            primitive->add_cone(tr->position(), x, y, l->radius() * scale, l->half_angle());
 
             if(draw_enclosing_sphere) {
                 const auto enclosing = l->enclosing_sphere();
-                const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center;
-                primitive->add_circle(center, x, y, enclosing.radius);
-                primitive->add_circle(center, y, z, enclosing.radius);
-                primitive->add_circle(center, z, x, enclosing.radius);
+                const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center * scale;
+                primitive->add_circle(center, x, y, enclosing.radius * scale);
+                primitive->add_circle(center, y, z, enclosing.radius * scale);
+                primitive->add_circle(center, z, x, enclosing.radius * scale);
             }
         }
 

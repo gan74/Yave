@@ -33,16 +33,23 @@ SOFTWARE.
 namespace yave {
 
 core::Result<float> entity_radius(const ecs::EntityWorld& world, ecs::EntityId id) {
+    auto apply_scale = [&](float radius) {
+        if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
+            return radius * tr->transform().scale().max_component();
+        }
+        return radius;
+    };
+
     if(const StaticMeshComponent* mesh = world.component<StaticMeshComponent>(id)) {
-        return core::Ok(mesh->aabb().origin_radius());
+        return core::Ok(apply_scale(mesh->aabb().origin_radius()));
     }
 
     if(const PointLightComponent* light = world.component<PointLightComponent>(id)) {
-        return core::Ok(light->radius());
+        return core::Ok(apply_scale(light->radius()));
     }
 
     if(const SpotLightComponent* light = world.component<SpotLightComponent>(id)) {
-        return core::Ok(light->radius());
+        return core::Ok(apply_scale(light->radius()));
     }
 
     return core::Err();

@@ -142,13 +142,14 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
 
     u32 count = 0;
     for(auto [t, l] : scene.world().query<TransformableComponent, PointLightComponent>().components()) {
-        if(!frustum.is_inside(t.position(), l.radius())) {
+        const float scaled_radius = l.radius() * t.transform().scale().max_component();
+        if(!frustum.is_inside(t.position(), scaled_radius)) {
             continue;
         }
 
         points[count++] = {
             t.position(),
-            l.radius(),
+            scaled_radius,
             l.color() * l.intensity(),
             std::max(math::epsilon<float>, l.falloff())
         };
@@ -174,8 +175,17 @@ static u32 fill_spot_light_buffer(
     for(auto spot : scene.world().query<TransformableComponent, SpotLightComponent>()) {
         const auto& [t, l] = spot.components();
 
-        const auto enclosing_sphere = l.enclosing_sphere();
-        const math::Vec3 encl_sphere_center = t.forward() * enclosing_sphere.dist_to_center + t.position();
+        const math::Vec3 forward = t.forward().normalized();
+        const float scale = t.transform().scale().max_component();
+        const float scaled_radius = l.radius() * scale;
+
+        auto enclosing_sphere = l.enclosing_sphere();
+        {
+            enclosing_sphere.dist_to_center *= scale;
+            enclosing_sphere.radius *= scale;
+        }
+
+        const math::Vec3 encl_sphere_center =  t.position() + forward * enclosing_sphere.dist_to_center;
         if(!frustum.is_inside(encl_sphere_center, enclosing_sphere.radius)) {
             continue;
         }
@@ -188,17 +198,17 @@ static u32 fill_spot_light_buffer(
         }
 
         if constexpr(Transforms) {
-            const float geom_radius = l.radius() * 1.1f;
+            const float geom_radius = scaled_radius * 1.1f;
             const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
             transforms[count] = t.transform().non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
         }
 
         spots[count++] = {
             t.position(),
-            l.radius(),
+            scaled_radius,
             l.color() * l.intensity(),
             std::max(math::epsilon<float>, l.falloff()),
-            t.forward(),
+            forward,
             std::cos(l.half_angle()),
             encl_sphere_center,
             enclosing_sphere.radius,

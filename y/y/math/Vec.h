@@ -177,6 +177,22 @@ class Vec
             return m;
         }
 
+        inline constexpr T max_component() const {
+            T m = _vec[0];
+            for(usize i = 1; i < N; ++i) {
+                m = std::max(_vec[i], m);
+            }
+            return m;
+        }
+
+        inline constexpr T min_component() const {
+            T m = _vec[0];
+            for(usize i = 1; i < N; ++i) {
+                m = std::min(_vec[i], m);
+            }
+            return m;
+        }
+
         inline constexpr T& x() {
             return _vec[0];
         }
