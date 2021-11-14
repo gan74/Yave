@@ -30,17 +30,13 @@ namespace yave {
 
 class ThreadLocalDevice : NonMovable {
     public:
-        ThreadLocalDevice(DevicePtr dptr);
+        ThreadLocalDevice();
         ~ThreadLocalDevice();
-
-        DevicePtr parent() const;
 
         CmdBufferRecorder create_disposable_cmd_buffer() const;
         ThreadLocalLifetimeManager& lifetime_manager() const;
 
     private:
-        DevicePtr _parent = nullptr;
-
         mutable CmdBufferPool _disposable_cmd_pool;
         mutable ThreadLocalLifetimeManager _lifetime_manager;
 };

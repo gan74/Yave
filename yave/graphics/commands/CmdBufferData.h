@@ -50,23 +50,21 @@ class ResourceFence {
         u64 _value = 0;
 };
 
-class QueueFence {
+class TimelineFence {
     public:
-        QueueFence() = default;
+        TimelineFence() = default;
+        TimelineFence(u64 v);
 
         u64 value() const;
 
-        bool operator==(const QueueFence& other) const;
-        bool operator!=(const QueueFence& other) const;
+        bool operator==(const TimelineFence& other) const;
+        bool operator!=(const TimelineFence& other) const;
 
-        bool operator<(const QueueFence& other) const;
-        bool operator<=(const QueueFence& other) const;
+        bool operator<(const TimelineFence& other) const;
+        bool operator<=(const TimelineFence& other) const;
 
     private:
-        friend class Device;
         friend class CmdQueue;
-
-        QueueFence(u64 v);
 
         u64 _value = u64(-1);
 };
@@ -87,7 +85,7 @@ class CmdBufferData final : NonMovable {
         CmdBufferPool* pool() const;
 
         ResourceFence resource_fence() const;
-        QueueFence queue_fence() const;
+        TimelineFence queue_fence() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
 
@@ -119,7 +117,7 @@ class CmdBufferData final : NonMovable {
         CmdBufferPool* _pool = nullptr;
 
         ResourceFence _resource_fence;
-        QueueFence _queue_fence;
+        TimelineFence _timeline_fence;
 };
 
 }

@@ -22,16 +22,16 @@ SOFTWARE.
 
 #include "CmdQueue.h"
 
-#include <yave/graphics/device/Device.h>
+#include <yave/graphics/device/LifetimeManager.h>
 
 namespace yave {
 
 
-WaitToken::WaitToken(const QueueFence& fence) : _fence(fence) {
+WaitToken::WaitToken(const TimelineFence& fence) : _fence(fence) {
 }
 
 void WaitToken::wait() {
-    main_device()->wait_for_fence(_fence);
+    wait_for_fence(_fence);
 }
 
 CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _family_index(family_index), _queue(queue) {
@@ -60,18 +60,18 @@ WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSem
     const VkCommandBuffer cmd_buffer = recorder.vk_cmd_buffer();
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
-    QueueFence fence;
+    TimelineFence fence;
 
     {
         const auto lock = y_profile_unique_lock(_lock);
 
         // This needs to be inside the lock
-        fence = main_device()->create_fence();
+        fence = create_timeline_fence();
         const u64 prev_value = fence._value - 1;
 
-        recorder._data->_queue_fence = fence;
+        recorder._data->_timeline_fence = fence;
 
-        const VkSemaphore timeline_semaphore = main_device()->vk_timeline_semaphore();
+        const VkSemaphore timeline_semaphore = vk_timeline_semaphore();
 
         Y_TODO(We do not need to wait on the timeline_semaphore if using SyncPolicy::Wait)
         const std::array<VkSemaphore, 2> wait_semaphores = {timeline_semaphore, wait};

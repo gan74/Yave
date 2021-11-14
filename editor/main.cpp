@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <editor/utils/crashhandler.h>
 
-#include <yave/graphics/device/Device.h>
+#include <yave/graphics/device/Instance.h>
 #include <y/concurrent/concurrent.h>
 
 #include <y/utils/log.h>

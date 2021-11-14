@@ -23,7 +23,7 @@ SOFTWARE.
 #include "CmdBufferData.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
-#include <yave/graphics/device/Device.h>
+#include <yave/graphics/device/LifetimeManager.h>
 
 namespace yave {
 
@@ -50,27 +50,27 @@ ResourceFence::ResourceFence(u64 v) : _value(v) {
 
 
 
-u64 QueueFence::value() const {
+u64 TimelineFence::value() const {
     return _value;
 }
 
-bool QueueFence::operator==(const QueueFence& other) const {
+bool TimelineFence::operator==(const TimelineFence& other) const {
     return _value == other._value;
 }
 
-bool QueueFence::operator!=(const QueueFence& other) const {
+bool TimelineFence::operator!=(const TimelineFence& other) const {
     return _value != other._value;
 }
 
-bool QueueFence::operator<(const QueueFence& other) const {
+bool TimelineFence::operator<(const TimelineFence& other) const {
     return _value < other._value;
 }
 
-bool QueueFence::operator<=(const QueueFence& other) const {
+bool TimelineFence::operator<=(const TimelineFence& other) const {
     return _value <= other._value;
 }
 
-QueueFence::QueueFence(u64 v) : _value(v) {
+TimelineFence::TimelineFence(u64 v) : _value(v) {
 }
 
 
@@ -102,18 +102,18 @@ ResourceFence CmdBufferData::resource_fence() const {
     return _resource_fence;
 }
 
-QueueFence CmdBufferData::queue_fence() const {
-    return _queue_fence;
+TimelineFence CmdBufferData::queue_fence() const {
+    return _timeline_fence;
 }
 
 void CmdBufferData::wait() {
     y_profile();
-    main_device()->wait_for_fence(_queue_fence);
+    wait_for_fence(_timeline_fence);
     recycle_resources();
 }
 
 bool CmdBufferData::poll() {
-    return main_device()->poll_fence(_queue_fence);
+    return poll_fence(_timeline_fence);
 }
 
 void CmdBufferData::begin() {

@@ -35,9 +35,6 @@ namespace yave {
 
 using namespace y;
 
-class Device;
-using DevicePtr = const Device*;
-
 class ThreadLocalDevice;
 using ThreadDevicePtr = const ThreadLocalDevice*;
 

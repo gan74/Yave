@@ -21,16 +21,16 @@ SOFTWARE.
 **********************************/
 
 #include "LifetimeManager.h"
-#include "Device.h"
 #include "destroy.h"
 
 #include <yave/graphics/graphics.h>
 
 #include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/commands/CmdBufferPool.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdQueue.h>
 
 #include <y/core/ScratchPad.h>
+#include <y/concurrent/concurrent.h>
 #include <y/utils/format.h>
 
 namespace yave {
@@ -42,8 +42,9 @@ static bool compare_cmd_buffers(const CmdBufferData* a, const CmdBufferData* b) 
 LifetimeManager::LifetimeManager() {
 #ifdef YAVE_MT_LIFETIME_MANAGER
     _collector_thread = std::thread([this] {
+        concurrent::set_thread_name("LifetimeManager collector thread");
         const VkDevice device = vk_device();
-        const VkSemaphore timeline_semaphore = main_device()->vk_timeline_semaphore();
+        const VkSemaphore timeline_semaphore = vk_timeline_semaphore();
 
         u64 semaphore_value = 0;
         vk_check(vkGetSemaphoreCounterValue(device, timeline_semaphore, &semaphore_value));

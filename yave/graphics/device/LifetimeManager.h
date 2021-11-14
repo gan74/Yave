@@ -50,6 +50,8 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
         LifetimeManager();
         ~LifetimeManager();
 
+        void shutdown_collector_thread();
+
         ResourceFence create_fence();
         void register_for_polling(CmdBufferData* data);
 
@@ -66,11 +68,6 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_RT_VARIANT)
         }
 YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
-
-    private:
-        friend class Device;
-
-        void shutdown_collector_thread();
 
     private:
         void clear_resources(u64 up_to);

@@ -27,17 +27,12 @@ SOFTWARE.
 
 namespace yave {
 
-ThreadLocalDevice::ThreadLocalDevice(DevicePtr dptr) :
-        _parent(dptr),
+ThreadLocalDevice::ThreadLocalDevice() :
         _disposable_cmd_pool(this),
         _lifetime_manager(this) {
 }
 
 ThreadLocalDevice::~ThreadLocalDevice() {
-}
-
-DevicePtr ThreadLocalDevice::parent() const {
-    return _parent;
 }
 
 CmdBufferRecorder ThreadLocalDevice::create_disposable_cmd_buffer() const {

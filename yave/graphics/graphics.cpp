@@ -22,72 +22,301 @@ SOFTWARE.
 
 #include "graphics.h"
 
-#include <yave/graphics/device/Device.h>
+#include <yave/graphics/device/deviceutils.h>
+#include <yave/graphics/device/ThreadLocalDevice.h>
+#include <yave/graphics/device/Instance.h>
+#include <yave/graphics/device/DeviceProperties.h>
+#include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/images/Sampler.h>
+#include <yave/graphics/commands/CmdQueue.h>
+#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
+#include <yave/graphics/memory/DeviceMemoryAllocator.h>
+#include <yave/graphics/device/LifetimeManager.h>
+
+#include <mutex>
 
 namespace yave {
+namespace device {
+Instance* instance = nullptr;
+std::unique_ptr<PhysicalDevice> physical_device;
 
-static struct MainDevice {
-    union DeviceStorage {
-        DeviceStorage() {}
-        ~DeviceStorage() {}
+DeviceProperties device_properties;
 
-        Device device;
-    } _storage;
+std::array<Uninitialized<Sampler>, 5> samplers;
 
-    bool _is_init = false;
-} _main_device;
+Uninitialized<DeviceMemoryAllocator> allocator;
+Uninitialized<LifetimeManager> lifetime_manager;
+Uninitialized<DescriptorSetAllocator> descriptor_set_allocator;
+Uninitialized<DeviceResources> resources;
 
-DevicePtr init_device(Instance& instance) {
-    return init_device(instance, Device::find_best_device(instance));
+VkDevice vk_device;
+
+Uninitialized<CmdQueue> queue;
+
+struct {
+    VkSemaphore semaphore = {};
+    std::atomic<u64> fence_value = 0;
+    std::atomic<u64> last_polled = 0;
+} timeline;
+
+
+std::mutex devices_lock;
+core::Vector<std::pair<std::unique_ptr<ThreadLocalDevice>, ThreadDevicePtr*>> thread_devices;
 }
 
-DevicePtr init_device(Instance& instance, PhysicalDevice device) {
-    y_always_assert(!_main_device._is_init, "Device already initialized");
 
-    ::new(&_main_device._storage.device) Device(instance, device);
-    _main_device._is_init = true;
-    _main_device._storage.device.late_init();
+static void init_timeline() {
+    VkSemaphoreTypeCreateInfo type_create_info = vk_struct();
+    type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
 
-    return main_device();
+    VkSemaphoreCreateInfo create_info = vk_struct();
+    create_info.pNext = &type_create_info;
+
+    vk_check(vkCreateSemaphore(device::vk_device, &create_info, vk_allocation_callbacks(), &device::timeline.semaphore));
+
+    VkSemaphoreSignalInfo signal_info = vk_struct();
+    signal_info.semaphore = device::timeline.semaphore;
+    signal_info.value = create_timeline_fence().value();
+
+    vk_check(vkSignalSemaphore(device::vk_device, &signal_info));
+}
+
+static void init_vk_device() {
+    y_profile();
+
+    const DebugParams& debug = device::instance->debug_params();
+
+    const core::Vector<VkQueueFamilyProperties> queue_families = enumerate_family_properties(vk_physical_device());
+
+    const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+    const u32 main_queue_index = queue_family_index(queue_families, graphic_queue_flags);
+
+    auto extensions = core::vector_with_capacity<const char*>(4);
+    extensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    };
+
+    const bool inline_uniform_blocks = try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical_device());
+
+    const auto required_features = required_device_features();
+    auto required_features_1_1 = required_device_features_1_1();
+    auto required_features_1_2 = required_device_features_1_2();
+
+    y_always_assert(has_required_features(physical_device()), "Device doesn't support required features");
+    y_always_assert(has_required_properties(physical_device()), "Device doesn't support required properties");
+
+    print_physical_properties(physical_device().vk_properties());
+    print_enabled_extensions(extensions);
+
+    const std::array queue_priorityies = {1.0f};
+
+    VkDeviceQueueCreateInfo queue_create_info = vk_struct();
+    {
+        queue_create_info.queueFamilyIndex = main_queue_index;
+        queue_create_info.pQueuePriorities = queue_priorityies.data();
+        queue_create_info.queueCount = u32(queue_priorityies.size());
+    }
+
+    VkPhysicalDeviceInlineUniformBlockFeaturesEXT uniform_block_features = vk_struct();
+    {
+        uniform_block_features.inlineUniformBlock = true;
+    }
+
+    VkPhysicalDeviceFeatures2 features = vk_struct();
+    {
+        features.features = required_features;
+        features.pNext = &required_features_1_1;
+        required_features_1_1.pNext = &required_features_1_2;
+
+        if(inline_uniform_blocks) {
+            required_features_1_2.pNext = &uniform_block_features;
+        }
+    }
+
+    VkDeviceCreateInfo create_info = vk_struct();
+    {
+        create_info.pNext = &features;
+        create_info.enabledExtensionCount = u32(extensions.size());
+        create_info.ppEnabledExtensionNames = extensions.data();
+        create_info.enabledLayerCount = u32(debug.device_layers().size());
+        create_info.ppEnabledLayerNames = debug.device_layers().data();
+        create_info.queueCreateInfoCount = 1;
+        create_info.pQueueCreateInfos = &queue_create_info;
+    }
+
+    {
+        y_profile_zone("vkCreateDevice");
+        vk_check(vkCreateDevice(physical_device().vk_physical_device(), &create_info, nullptr, &device::vk_device));
+    }
+
+    print_properties(device::device_properties);
+
+    device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
+}
+
+
+
+void init_device(Instance& instance) {
+    return init_device(instance, find_best_device(instance));
+}
+
+void init_device(Instance& instance, PhysicalDevice device) {
+    y_always_assert(!device::instance, "Device already initialized");
+
+    device::instance = &instance;
+    device::physical_device = std::make_unique<PhysicalDevice>(device);
+    device::device_properties = device::physical_device->device_properties();
+
+    init_vk_device();
+    init_timeline();
+
+    device::lifetime_manager.init();
+    device::allocator.init(device_properties());
+    device::descriptor_set_allocator.init();
+
+    for(usize i = 0; i != device::samplers.size(); ++i) {
+        device::samplers[i].init(create_sampler(SamplerType(i)));
+    }
+
+    y_profile_zone("loading resources");
+    device::resources.init();
 }
 
 void destroy_device() {
-    y_always_assert(_main_device._is_init, "Device not initialized");
+    lifetime_manager().shutdown_collector_thread();
+    wait_all_queues();
 
-    _main_device._storage.device.~Device();
-    _main_device._is_init = false;
+    device::resources.destroy();
+
+    command_queue().submit(create_disposable_cmd_buffer()).wait();
+    lifetime_manager().wait_cmd_buffers();
+
+    {
+        y_profile_zone("collecting thread devices");
+        const auto lock = y_profile_unique_lock(device::devices_lock);
+        for(const auto& p : device::thread_devices) {
+            *p.second = nullptr;
+        }
+        device::thread_devices.clear();
+    }
+
+    for(auto& sampler : device::samplers) {
+        sampler.destroy();
+    }
+
+    device::descriptor_set_allocator.destroy();
+    device::lifetime_manager.destroy();
+    device::allocator.destroy();
+
+    vkDestroySemaphore(device::vk_device, device::timeline.semaphore, vk_allocation_callbacks());
+
+    device::queue.destroy();
+
+    {
+        y_profile_zone("vkDestroyDevice");
+        vkDestroyDevice(device::vk_device, vk_allocation_callbacks());
+        device::vk_device = {};
+    }
+
+    device::instance = nullptr;
 }
 
-DevicePtr main_device() {
-    y_debug_assert(_main_device._is_init);
 
-    return &_main_device._storage.device;
-}
+
+
+
+
 
 ThreadDevicePtr thread_device() {
-    return main_device()->thread_device();
+    static thread_local ThreadDevicePtr thread_device = nullptr;
+    static thread_local y_defer({
+        if(auto* device = thread_device) {
+            const auto lock = y_profile_unique_lock(device::devices_lock);
+            const auto it = std::find_if(device::thread_devices.begin(), device::thread_devices.end(), [&](const auto& p) { return p.first.get() == device; });
+
+            y_always_assert(it != device::thread_devices.end(), "ThreadLocalDevice not found.");
+            y_debug_assert(*it->second == device);
+
+            *it->second = nullptr;
+            device::thread_devices.erase_unordered(it);
+        }
+    });
+
+    if(!thread_device) {
+        auto device = std::make_unique<ThreadLocalDevice>();
+        thread_device = device.get();
+
+        const auto lock = y_profile_unique_lock(device::devices_lock);
+        device::thread_devices.emplace_back(std::move(device), &thread_device);
+    }
+
+    return thread_device;
 }
 
+
+
+
+TimelineFence create_timeline_fence() {
+    return TimelineFence(++device::timeline.fence_value);
+}
+
+bool poll_fence(const TimelineFence& fence) {
+    if(device::timeline.last_polled >= fence.value()) {
+        return true;
+    }
+
+    u64 value = 0;
+    vk_check(vkGetSemaphoreCounterValue(device::vk_device, device::timeline.semaphore, &value));
+    update_maximum(device::timeline.last_polled, value);
+
+    return device::timeline.last_polled >= fence.value();
+
+}
+
+void wait_for_fence(const TimelineFence& fence) {
+    if(device::timeline.last_polled >= fence.value()) {
+        return;
+    }
+
+    u64 fence_value = fence.value();
+    VkSemaphoreWaitInfo wait_info = vk_struct();
+    {
+        wait_info.pSemaphores = &device::timeline.semaphore;
+        wait_info.pValues = &fence_value;
+        wait_info.semaphoreCount = 1;
+    }
+
+    static constexpr u64 timeout_ns = 10'000'000'000llu; // 10s
+    if(vkWaitSemaphores(device::vk_device, &wait_info, timeout_ns) != VK_SUCCESS) {
+        y_fatal("Semaphore timeout expired");
+    }
+
+    update_maximum(device::timeline.last_polled, fence_value);
+}
 
 
 
 
 
 VkDevice vk_device() {
-    return main_device()->vk_device();
+    return device::vk_device;
 }
 
 VkInstance vk_device_instance() {
-    return main_device()->instance().vk_instance();
+    return device::instance->vk_instance();
 }
 
 VkPhysicalDevice vk_physical_device() {
-    return main_device()->physical_device().vk_physical_device();
+    return physical_device().vk_physical_device();
+}
+
+VkSemaphore vk_timeline_semaphore() {
+    return device::timeline.semaphore;
 }
 
 const PhysicalDevice& physical_device() {
-    return main_device()->physical_device();
+    return *device::physical_device;
 }
 
 CmdBufferRecorder create_disposable_cmd_buffer() {
@@ -95,52 +324,52 @@ CmdBufferRecorder create_disposable_cmd_buffer() {
 }
 
 DeviceMemoryAllocator& device_allocator() {
-    return main_device()->allocator();
+    return device::allocator.get();
 }
 
 DescriptorSetAllocator& descriptor_set_allocator() {
-    return main_device()->descriptor_set_allocator();
+    return device::descriptor_set_allocator.get();
 }
 
 const CmdQueue& command_queue() {
-    return main_device()->command_queue();
+    return device::queue.get();
 }
 
 const DeviceResources& device_resources() {
-    return main_device()->device_resources();
+    return device::resources.get();
 }
 
 const DeviceProperties& device_properties() {
-    return main_device()->device_properties();
+    return device::device_properties;
 }
 
 LifetimeManager& lifetime_manager() {
-    return main_device()->lifetime_manager();
-}
-
-ThreadLocalLifetimeManager& thread_local_lifetime_manager() {
-    return thread_device()->lifetime_manager();
+    return device::lifetime_manager.get();
 }
 
 const VkAllocationCallbacks* vk_allocation_callbacks() {
-    return main_device()->vk_allocation_callbacks();
+    return nullptr;
 }
 
 VkSampler vk_sampler(SamplerType type) {
-    return main_device()->vk_sampler(type);
+    y_debug_assert(usize(type) < device::samplers.size());
+    return device::samplers[usize(type)].get().vk_sampler();
 }
 
 const DebugUtils* debug_utils() {
-    return main_device()->debug_utils();
+    return device::instance->debug_utils();
 }
 
 const RayTracing* ray_tracing() {
-    return main_device()->ray_tracing();
+    return nullptr;
 }
 
 void wait_all_queues() {
-    main_device()->wait_all_queues();
+    device::queue.get().wait();
 }
+
+
+
 
 
 #define YAVE_GENERATE_DESTROY_IMPL(T)                                                   \

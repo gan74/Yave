@@ -36,9 +36,9 @@ class WaitToken {
     private:
         friend class CmdQueue;
 
-        WaitToken(const QueueFence& fence);
+        WaitToken(const TimelineFence& fence);
 
-        QueueFence _fence;
+        TimelineFence _fence;
 };
 
 class CmdQueue : NonMovable {
@@ -54,7 +54,6 @@ class CmdQueue : NonMovable {
         WaitToken submit(CmdBufferRecorder&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}) const;
 
     private:
-        friend class Device;
         friend class Swapchain;
 
         u32 _family_index = u32(-1);
