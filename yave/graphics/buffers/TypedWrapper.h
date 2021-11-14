@@ -100,7 +100,7 @@ class TypedMapping : public Mapping {
 
         template<typename Buff>
         explicit TypedMapping(const TypedWrapper<Elem, Buff>& buffer) : Mapping(buffer) {
-            static_assert(Buff::memory_type == MemoryType::CpuVisible);
+            static_assert(is_cpu_visible(Buff::memory_type));
         }
 
         usize size() const {

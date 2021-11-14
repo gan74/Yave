@@ -93,7 +93,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
     const ecs::EntityWorld& world = scene_view.world();
 
     {
-        auto mapping = pass->resources().mapped_buffer(pass_buffer);
+        auto mapping = pass->resources().map_buffer(pass_buffer);
         mapping->view_proj = scene_view.camera().viewproj_matrix();
         mapping->viewport_size = pass->framebuffer().size();
         mapping->size = 64.0f;
@@ -114,7 +114,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         math::Vec2 size;
 
         usize index = 0;
-        auto vertex_mapping = pass->resources().mapped_buffer(vertex_buffer);
+        auto vertex_mapping = pass->resources().map_buffer(vertex_buffer);
 
         auto push_entity = [&](ecs::EntityId id) {
                 if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
@@ -243,8 +243,8 @@ EditorPass EditorPass::create( FrameGraph& framegraph, const SceneView& view, Fr
 
     builder.add_attrib_input(vertex_buffer);
 
-    builder.map_update(pass_buffer);
-    builder.map_update(vertex_buffer);
+    builder.map_buffer(pass_buffer);
+    builder.map_buffer(vertex_buffer);
 
     builder.add_depth_output(depth);
     builder.add_color_output(color);

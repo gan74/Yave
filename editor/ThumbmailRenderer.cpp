@@ -86,7 +86,7 @@ static Texture render_world(const ecs::EntityWorld& world) {
                 });
         }
 
-        std::move(graph).render(recorder);
+        graph.render(recorder);
     }
     command_queue().submit(std::move(recorder)).wait();
     return out;

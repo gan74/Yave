@@ -55,10 +55,10 @@ static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pa
     const ecs::EntityWorld& world = scene_view.world();
     const Camera& camera = scene_view.camera();
 
-    auto transform_mapping = pass->resources().mapped_buffer(transform_buffer);
+    auto transform_mapping = pass->resources().map_buffer(transform_buffer);
     const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
 
-    auto id_mapping = pass->resources().mapped_buffer(id_buffer);
+    auto id_mapping = pass->resources().map_buffer(id_buffer);
     const auto ids = pass->resources().buffer<BufferUsage::AttributeBit>(id_buffer);
 
     recorder.bind_attrib_buffers({}, {transforms, ids});
@@ -104,8 +104,8 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view,
     builder.add_inline_input(view.camera().viewproj_matrix());
     builder.add_attrib_input(transform_buffer);
     builder.add_attrib_input(id_buffer);
-    builder.map_update(transform_buffer);
-    builder.map_update(id_buffer);
+    builder.map_buffer(transform_buffer);
+    builder.map_buffer(id_buffer);
 
     builder.add_depth_output(depth);
     builder.add_color_output(id);

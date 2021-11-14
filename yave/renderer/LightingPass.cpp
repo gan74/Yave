@@ -90,11 +90,11 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_storage_input(shadow_pass.shadow_params, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(params_buffer, 0, PipelineStage::FragmentBit);
     builder.add_color_output(lit);
-    builder.map_update(directional_buffer);
-    builder.map_update(params_buffer);
+    builder.map_buffer(directional_buffer);
+    builder.map_buffer(params_buffer);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         u32 light_count = 0;
-        TypedMapping<uniform::DirectionalLight> mapping = self->resources().mapped_buffer(directional_buffer);
+        TypedMapping<uniform::DirectionalLight> mapping = self->resources().map_buffer(directional_buffer);
         for(auto light : scene.world().query<DirectionalLightComponent>()) {
             const auto& [l] = light.components();
 
@@ -114,7 +114,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         }
 
         {
-            TypedMapping<u32> params = self->resources().mapped_buffer(params_buffer);
+            TypedMapping<u32> params = self->resources().map_buffer(params_buffer);
             params[0] = light_count;
             params[1] = display_sky ? 1 : 0;
         }
@@ -245,11 +245,11 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
     builder.add_storage_input(spot_buffer, 0, PipelineStage::ComputeBit);
     builder.add_storage_input(shadow_pass.shadow_params, 0, PipelineStage::ComputeBit);
     builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
-    builder.map_update(point_buffer);
-    builder.map_update(spot_buffer);
+    builder.map_buffer(point_buffer);
+    builder.map_buffer(spot_buffer);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        TypedMapping<uniform::PointLight> points = self->resources().mapped_buffer(point_buffer);
-        TypedMapping<uniform::SpotLight> spots = self->resources().mapped_buffer(spot_buffer);
+        TypedMapping<uniform::PointLight> points = self->resources().map_buffer(point_buffer);
+        TypedMapping<uniform::SpotLight> spots = self->resources().map_buffer(spot_buffer);
 
         const u32 point_count = fill_point_light_buffer(points.data(), scene);
         const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), nullptr, scene, render_shadows, shadow_pass);
@@ -291,9 +291,9 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);
-        builder.map_update(point_buffer);
+        builder.map_buffer(point_buffer);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            TypedMapping<uniform::PointLight> points = self->resources().mapped_buffer(point_buffer);
+            TypedMapping<uniform::PointLight> points = self->resources().map_buffer(point_buffer);
             const u32 point_count = fill_point_light_buffer(points.data(), scene);
 
             if(!point_count) {
@@ -329,11 +329,11 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.add_attrib_input(transform_buffer);
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);
-        builder.map_update(spot_buffer);
-        builder.map_update(transform_buffer);
+        builder.map_buffer(spot_buffer);
+        builder.map_buffer(transform_buffer);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            TypedMapping<uniform::SpotLight> spots = self->resources().mapped_buffer(spot_buffer);
-            TypedMapping<math::Transform<>> transforms = self->resources().mapped_buffer(transform_buffer);
+            TypedMapping<uniform::SpotLight> spots = self->resources().map_buffer(spot_buffer);
+            TypedMapping<math::Transform<>> transforms = self->resources().map_buffer(transform_buffer);
 
             const u32 spot_count = fill_spot_light_buffer<true>(spots.data(), transforms.data(), scene, render_shadows, shadow_pass);
 

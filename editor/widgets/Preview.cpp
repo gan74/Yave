@@ -196,7 +196,7 @@ void Preview::on_gui() {
 
         CmdBufferRecorder& recorder = application()->recorder();
         const auto region = recorder.region("Peview render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
-        std::move(graph).render(recorder);
+        graph.render(recorder);
     }
 
     if(output) {

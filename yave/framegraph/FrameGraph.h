@@ -78,7 +78,7 @@ class FrameGraph : NonMovable {
     };
 
     struct BufferCreateInfo : ResourceCreateInfo {
-        usize byte_size;
+        usize byte_size = 0;
         BufferUsage usage = BufferUsage::None;
         MemoryType memory_type = MemoryType::DontCare;
     };
@@ -104,7 +104,7 @@ class FrameGraph : NonMovable {
 
         const FrameGraphFrameResources& resources() const;
 
-        void render(CmdBufferRecorder& recorder) &&;
+        void render(CmdBufferRecorder& recorder);
 
         FrameGraphPassBuilder add_pass(std::string_view name);
 
@@ -132,7 +132,7 @@ class FrameGraph : NonMovable {
 
         [[nodiscard]] InlineDescriptor copy_inline_descriptor(InlineDescriptor desc);
 
-        void set_cpu_visible(FrameGraphMutableBufferId res, const FrameGraphPass* pass);
+        void map_buffer(FrameGraphMutableBufferId res, const FrameGraphPass* pass);
 
         bool is_attachment(FrameGraphImageId res) const;
 

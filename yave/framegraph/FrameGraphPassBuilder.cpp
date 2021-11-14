@@ -216,8 +216,8 @@ void FrameGraphPassBuilder::add_uniform(FrameGraphDescriptorBinding binding, usi
     bindings[ds_index].push_back(binding);
 }
 
-void FrameGraphPassBuilder::set_cpu_visible(FrameGraphMutableBufferId res) {
-    parent()->set_cpu_visible(res, _pass);
+void FrameGraphPassBuilder::map_buffer_internal(FrameGraphMutableBufferId res) {
+    parent()->map_buffer(res, _pass);
 }
 
 FrameGraph* FrameGraphPassBuilder::parent() const {

@@ -74,7 +74,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
     }
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-    std::move(framegraph).render(recorder);
+    framegraph.render(recorder);
     command_queue().submit(std::move(recorder)).wait();
 
     const ReadBackData read_back = TypedMapping(buffer)[0];

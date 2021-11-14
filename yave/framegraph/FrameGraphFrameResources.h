@@ -27,6 +27,7 @@ SOFTWARE.
 #include "TransientBuffer.h"
 
 #include <yave/graphics/barriers/Barrier.h>
+#include <yave/graphics/buffers/buffers.h>
 
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
@@ -36,30 +37,22 @@ SOFTWARE.
 namespace yave {
 
 class FrameGraphFrameResources final : NonMovable {
+    struct Buffer {
+        TransientBuffer* buffer = nullptr;
+        TransientBuffer* staging = nullptr;
+    };
+
     public:
         FrameGraphFrameResources(std::shared_ptr<FrameGraphResourcePool> pool);
         ~FrameGraphFrameResources();
 
-        void reserve(usize images, usize buffers);
-
-        u32 create_image_id();
-        u32 create_buffer_id();
-
-        void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
-        void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
-
-        bool is_alive(FrameGraphImageId res) const;
-        bool is_alive(FrameGraphBufferId res) const;
+        bool are_aliased(FrameGraphImageId a, FrameGraphImageId b) const;
 
         ImageBarrier barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const;
         BufferBarrier barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const;
 
         const ImageBase& image_base(FrameGraphImageId res) const;
         const BufferBase& buffer_base(FrameGraphBufferId res) const;
-
-
-        void create_alias(FrameGraphImageId dst, FrameGraphImageId src);
-        bool are_aliased(FrameGraphImageId a, FrameGraphImageId b) const;
 
 
         template<ImageUsage Usage>
@@ -78,26 +71,45 @@ class FrameGraphFrameResources final : NonMovable {
         }
 
         template<typename T>
-        TypedMapping<T> mapped_buffer(FrameGraphMutableTypedBufferId<T> res) const {
-            constexpr BufferUsage usage = BufferUsage::None;
-            constexpr MemoryType memory = MemoryType::CpuVisible;
-            const TypedSubBuffer<T, usage, memory> subbuffer(TransientSubBuffer<usage, memory>(find(res)));
+        TypedMapping<T> map_buffer(FrameGraphMutableTypedBufferId<T> res) const {
+            constexpr BufferUsage usage = StagingBuffer::usage;
+            constexpr MemoryType memory = StagingBuffer::memory_type;
+            const TypedSubBuffer<T, usage, memory> subbuffer(TransientSubBuffer<usage, memory>(staging_buffer(res)));
             return TypedMapping<T>(subbuffer);
         }
 
     private:
+        friend class FrameGraph;
+
+        void reserve(usize images, usize buffers);
+
+        u32 create_image_id();
+        u32 create_buffer_id();
+
+        void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+        void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
+
+        bool is_alive(FrameGraphImageId res) const;
+        bool is_alive(FrameGraphBufferId res) const;
+
+        void create_alias(FrameGraphImageId dst, FrameGraphImageId src);
+
+        void flush_mapped_buffers(CmdBufferRecorder& recorder);
+
+    private:
         const TransientImage<>& find(FrameGraphImageId res) const;
         const TransientBuffer& find(FrameGraphBufferId res) const;
+        const TransientBuffer& staging_buffer(FrameGraphMutableBufferId res) const;
 
         u32 _next_image_id = 0;
         u32 _next_buffer_id = 0;
 
-        Y_TODO(replace by vector)
         core::Vector<TransientImage<>*> _images;
-        core::Vector<TransientBuffer*> _buffers;
+        core::Vector<Buffer> _buffers;
 
         std::shared_ptr<FrameGraphResourcePool> _pool;
 
+        // We need pointer stability
         std::deque<TransientImage<>> _image_storage;
         std::deque<TransientBuffer> _buffer_storage;
 };

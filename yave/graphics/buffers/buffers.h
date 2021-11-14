@@ -70,6 +70,8 @@ using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit>;
 using SkinnedVertexSubBuffer = TypedSubBuffer<SkinnedVertex, BufferUsage::AttributeBit>;
 using IndirectSubBuffer = TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
 
+using StagingSubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
+
 }
 
 #endif // YAVE_GRAPHICS_BUFFERS_BUFFERS_H

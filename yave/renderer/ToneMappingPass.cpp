@@ -90,7 +90,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 
     if(!settings.auto_exposure) {
         params = builder.declare_typed_buffer<uniform::ToneMappingParams>();
-        builder.map_update(params);
+        builder.map_buffer(params);
     }
 
     builder.add_color_output(tone_mapped);
@@ -99,7 +99,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     builder.add_inline_input(shader_settings, 0);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         if(!settings.auto_exposure) {
-            TypedMapping<uniform::ToneMappingParams> mapping = self->resources().mapped_buffer(params);
+            TypedMapping<uniform::ToneMappingParams> mapping = self->resources().map_buffer(params);
             mapping[0] = uniform::ToneMappingParams{};
         }
 

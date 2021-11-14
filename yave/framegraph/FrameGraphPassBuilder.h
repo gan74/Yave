@@ -75,8 +75,8 @@ class FrameGraphPassBuilder {
         void add_index_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
 
         template<typename T>
-        void map_update(FrameGraphMutableTypedBufferId<T> res) {
-            set_cpu_visible(res);
+        void map_buffer(FrameGraphMutableTypedBufferId<T> res) {
+            map_buffer_internal(res);
         }
 
         template<typename F>
@@ -99,7 +99,7 @@ class FrameGraphPassBuilder {
 
         void add_uniform(FrameGraphDescriptorBinding binding, usize ds_index);
 
-        void set_cpu_visible(FrameGraphMutableBufferId res);
+        void map_buffer_internal(FrameGraphMutableBufferId res);
 
         FrameGraph* parent() const;
 

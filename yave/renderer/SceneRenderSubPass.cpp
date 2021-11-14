@@ -46,8 +46,8 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, co
 
     builder.add_uniform_input(camera_buffer, pass.descriptor_set_index);
     builder.add_attrib_input(transform_buffer);
-    builder.map_update(camera_buffer);
-    builder.map_update(transform_buffer);
+    builder.map_buffer(camera_buffer);
+    builder.map_buffer(transform_buffer);
 
     return pass;
 }
@@ -61,7 +61,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
     const ecs::EntityWorld& world = sub_pass->scene_view.world();
     const Camera& camera = sub_pass->scene_view.camera();
 
-    auto transform_mapping = pass->resources().mapped_buffer(sub_pass->transform_buffer);
+    auto transform_mapping = pass->resources().map_buffer(sub_pass->transform_buffer);
     const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
     const auto& descriptor_set = pass->descriptor_sets()[sub_pass->descriptor_set_index];
 
@@ -87,7 +87,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 
 void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const {
     // fill render data
-    auto camera_mapping = pass->resources().mapped_buffer(camera_buffer);
+    auto camera_mapping = pass->resources().map_buffer(camera_buffer);
     camera_mapping[0] = scene_view.camera();
 
     usize index = 0;

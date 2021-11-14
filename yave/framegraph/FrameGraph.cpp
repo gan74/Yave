@@ -24,7 +24,7 @@ SOFTWARE.
 #include "FrameGraphPass.h"
 #include "FrameGraphFrameResources.h"
 
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdQueue.h>
 
 #include <yave/utils/color.h>
 
@@ -167,7 +167,7 @@ void FrameGraph::end_region(usize index) {
 
 
 
-void FrameGraph::render(CmdBufferRecorder& recorder) && {
+void FrameGraph::render(CmdBufferRecorder& recorder) {
     y_profile();
     Y_TODO(Pass culling)
     Y_TODO(Ensure that pass are always recorded in order)
@@ -265,12 +265,17 @@ void FrameGraph::render(CmdBufferRecorder& recorder) && {
 
             {
                 y_profile_zone("render");
-                std::move(*pass).render(recorder);
+                pass->render(recorder);
             }
 
             end_pass_region(*pass);
+
         }
     }
+
+    CmdBufferRecorder prepare = create_disposable_cmd_buffer();
+    _resources->flush_mapped_buffers(prepare);
+    command_queue().submit(std::move(prepare));
 
     Y_TODO(Only keep alive cpu mapped buffers)
     recorder.keep_alive(std::move(_resources));
@@ -483,9 +488,10 @@ InlineDescriptor FrameGraph::copy_inline_descriptor(InlineDescriptor desc) {
     return ret;
 }
 
-void FrameGraph::set_cpu_visible(FrameGraphMutableBufferId res, const FrameGraphPass* pass) {
+void FrameGraph::map_buffer(FrameGraphMutableBufferId res, const FrameGraphPass* pass) {
     auto& info = check_exists(_buffers, res);
-    info.memory_type = MemoryType::CpuVisible;
+    info.usage = info.usage | BufferUsage::TransferDstBit;
+    info.memory_type = MemoryType::Staging;
     info.register_use(pass->_index, true);
 }
 

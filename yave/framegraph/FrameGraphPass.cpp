@@ -52,7 +52,7 @@ core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
     return _descriptor_sets;
 }
 
-void FrameGraphPass::render(CmdBufferRecorder& recorder) && {
+void FrameGraphPass::render(CmdBufferRecorder& recorder) {
     _render(recorder, this);
 }
 

@@ -160,7 +160,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     }
 
     if(!_disable_render) {
-        std::move(graph).render(recorder);
+        graph.render(recorder);
     }
 
     if(output) {
