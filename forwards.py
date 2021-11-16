@@ -32,8 +32,8 @@ def remove_comments(content):
     return find_comments.sub("", find_ml_comments.sub("", content))
                 
 def find_classes(content):
-    find_class = re.compile(r"(.*)\s+class ([A-Za-z0-9_]+).*{")
-    find_struct = re.compile(r"(.*)\s+struct ([A-Za-z0-9_]+).*{")
+    find_class = re.compile(r"(.*)\s+class ([A-Za-z0-9_]+)\s")
+    find_struct = re.compile(r"(.*)\s+struct ([A-Za-z0-9_]+)\s")
     types = set()
     for c in find_class.findall(content):
         if "template" in c[0] or "enum" in c[0]:

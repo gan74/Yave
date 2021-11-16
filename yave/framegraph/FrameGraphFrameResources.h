@@ -37,7 +37,7 @@ SOFTWARE.
 namespace yave {
 
 class FrameGraphFrameResources final : NonMovable {
-    struct Buffer {
+    struct BufferData {
         TransientBuffer* buffer = nullptr;
         TransientBuffer* staging = nullptr;
     };
@@ -105,7 +105,7 @@ class FrameGraphFrameResources final : NonMovable {
         u32 _next_buffer_id = 0;
 
         core::Vector<TransientImage<>*> _images;
-        core::Vector<Buffer> _buffers;
+        core::Vector<BufferData> _buffers;
 
         std::shared_ptr<FrameGraphResourcePool> _pool;
 
