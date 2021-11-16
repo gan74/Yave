@@ -69,7 +69,7 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : _platform(platfo
     _ui = std::make_unique<UiManager>();
 
     _asset_store = std::make_shared<FolderAssetStore>(app_settings().editor.asset_store);
-    _loader = std::make_unique<AssetLoader>(_asset_store);
+    _loader = std::make_unique<AssetLoader>(_asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     _thumbmail_renderer = std::make_unique<ThumbmailRenderer>(*_loader);
 
     _world = std::make_unique<EditorWorld>(*_loader);

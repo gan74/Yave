@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "memory.h"
 
+#include <y/utils/memory.h>
+
 #include <atomic>
 #include <cstdlib>
 
@@ -66,6 +68,8 @@ static void* alloc_internal(usize size, usize alignment = max_alignment) {
     ++total_allocs;
     ++live_allocs;
 
+    y_profile_alloc(ptr, size);
+
     return ptr;
 
 }
@@ -74,6 +78,8 @@ static void free_internal(void* ptr) {
     if(ptr) {
         --live_allocs;
     }
+
+    y_profile_free(ptr);
 
 #ifdef Y_OS_WIN
     _aligned_free(ptr);

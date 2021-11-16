@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include <y/core/Range.h>
 #include <y/core/ScratchPad.h>
+#include <y/utils/memory.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 

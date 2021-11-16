@@ -23,6 +23,7 @@ SOFTWARE.
 #include "ScratchPad.h"
 #include "FixedArray.h"
 
+#include <y/utils/memory.h>
 #include <y/utils/format.h>
 
 namespace y {

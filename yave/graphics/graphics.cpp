@@ -147,7 +147,7 @@ static void init_vk_device() {
 
     {
         y_profile_zone("vkCreateDevice");
-        vk_check(vkCreateDevice(physical_device().vk_physical_device(), &create_info, nullptr, &device::vk_device));
+        vk_check(vkCreateDevice(physical_device().vk_physical_device(), &create_info, vk_allocation_callbacks(), &device::vk_device));
     }
 
     print_properties(device::device_properties);
@@ -348,7 +348,30 @@ LifetimeManager& lifetime_manager() {
 }
 
 const VkAllocationCallbacks* vk_allocation_callbacks() {
+#if 0
+    static VkAllocationCallbacks callbacks = {
+        nullptr,
+        [](void*, usize size, usize alignment, VkSystemAllocationScope) -> void* {
+            void* ptr = _aligned_malloc(size, alignment);;
+            y_profile_alloc(ptr, size);
+            return ptr;
+        },
+        [](void*, void* original, usize size, usize alignment, VkSystemAllocationScope) -> void* {
+            y_profile_free(original);
+            void* ptr = _aligned_realloc(original, size, alignment);
+            y_profile_alloc(ptr, size);
+            return ptr;
+        },
+        [](void*, void* ptr) {
+            y_profile_free(ptr);
+            _aligned_free(ptr);
+        },
+        nullptr, nullptr
+    };
+    return &callbacks;
+#else
     return nullptr;
+#endif
 }
 
 VkSampler vk_sampler(SamplerType type) {

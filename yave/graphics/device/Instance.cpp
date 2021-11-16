@@ -23,6 +23,8 @@ SOFTWARE.
 #include "Instance.h"
 #include "extensions/DebugUtils.h"
 
+#include <yave/graphics/graphics.h>
+
 #include <y/core/Span.h>
 #include <y/core/Vector.h>
 
@@ -81,7 +83,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
         create_info.pApplicationInfo = &app_info;
     }
 
-    vk_check(vkCreateInstance(&create_info, nullptr, &_instance));
+    vk_check(vkCreateInstance(&create_info, vk_allocation_callbacks(), &_instance));
 
     if(_debug_params.debug_features_enabled()) {
         log_msg("Vulkan debugging enabled");
@@ -92,7 +94,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 Instance::~Instance() {
     // destroy extensions to free everything before the instance gets destroyed
     _extensions = {};
-    vkDestroyInstance(_instance, nullptr);
+    vkDestroyInstance(_instance, vk_allocation_callbacks());
 }
 
 const DebugParams& Instance::debug_params() const {

@@ -96,6 +96,10 @@ SOFTWARE.
     y_profile_internal_set_arg(arg)
 
 
+#define y_profile_alloc(ptr, size) ___tracy_emit_memory_alloc(ptr, size, 0)
+#define y_profile_free(ptr) ___tracy_emit_memory_free(ptr, 0)
+
+
 
 #define y_profile_unique_lock(inner) [&]() {                            \
         std::unique_lock l(inner, std::defer_lock);                     \
@@ -125,6 +129,9 @@ SOFTWARE.
 #define y_profile_arg(arg)                  do {} while(false)
 #define y_profile_zone_arg(name, arg)       do {} while(false)
 #define y_profile_dyn_zone_arg(name, arg)   do {} while(false)
+
+#define y_profile_alloc(ptr, size)          do {} while(false)
+#define y_profile_free(ptr)                 do {} while(false)
 
 
 #define y_profile_unique_lock(lock)         std::unique_lock(lock)

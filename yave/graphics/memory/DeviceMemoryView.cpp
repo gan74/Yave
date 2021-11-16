@@ -26,6 +26,8 @@ SOFTWARE.
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/device/DeviceProperties.h>
 
+#include <y/utils/memory.h>
+
 namespace yave {
 
 DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
