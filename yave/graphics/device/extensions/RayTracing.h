@@ -43,6 +43,8 @@ class RayTracing {
 
                 ~AccelerationStructure();
 
+                static VkGeometryNV create_mesh_geometry(const StaticMesh& mesh);
+
             private:
                 DeviceMemory _memory;
                 VkHandle<VkAccelerationStructureNV> _acceleration_structure;

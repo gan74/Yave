@@ -19,54 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_SYSTEMS_ASUPDATESYSTEM_H
+#define YAVE_SYSTEMS_ASUPDATESYSTEM_H
 
-#include "CmdBuffer.h"
+#include <yave/ecs/System.h>
 
-#include <yave/graphics/commands/CmdBufferPool.h>
-#include <yave/graphics/device/LifetimeManager.h>
+#include <y/core/Vector.h>
 
 namespace yave {
 
-CmdBuffer::CmdBuffer(CmdBufferData* data) : _data(data)  {
-}
+class ASUpdateSystem : public ecs::System {
+    public:
+        ASUpdateSystem();
 
-CmdBuffer::CmdBuffer(CmdBuffer&& other) {
-    swap(other);
-}
+        void setup(ecs::EntityWorld& world) override;
+        void tick(ecs::EntityWorld& world) override;
 
-CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) {
-    swap(other);
-    return *this;
-}
 
-CmdBuffer::~CmdBuffer() {
-    if(_data) {
-        lifetime_manager().register_for_polling(_data);
-    }
-}
+    private:
+        void run_tick(ecs::EntityWorld& world, bool only_recent);
 
-void CmdBuffer::wait() const {
-    y_debug_assert(_data);
-    _data->wait();
-}
-
-VkCommandBuffer CmdBuffer::vk_cmd_buffer() const {
-    y_debug_assert(_data);
-    return _data->vk_cmd_buffer();
-}
-
-ResourceFence CmdBuffer::resource_fence() const {
-    y_debug_assert(_data);
-    return _data->resource_fence();
-}
-
-void CmdBuffer::swap(CmdBuffer &other) {
-    std::swap(_data, other._data);
-}
-
-bool CmdBuffer::is_null() const {
-    return !_data;
-}
+        core::Vector<ecs::EntityId> _to_update;
+};
 
 }
+
+#endif // YAVE_SYSTEMS_ASUPDATESYSTEM_H
 

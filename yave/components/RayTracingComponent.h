@@ -19,49 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_COMMANDS_CMDBUFFER_H
-#define YAVE_GRAPHICS_COMMANDS_CMDBUFFER_H
+#ifndef YAVE_COMPONENTS_RAYTRACINGCOMPONENT_H
+#define YAVE_COMPONENTS_RAYTRACINGCOMPONENT_H
 
-#include <yave/graphics/commands/CmdBufferData.h>
+#include <yave/graphics/device/extensions/RayTracing.h>
 
 namespace yave {
 
-struct CmdBuffer : NonCopyable {
+class RayTracingComponent final {
+
     public:
-        CmdBuffer() = default;
+        RayTracingComponent() = default;
 
-        CmdBuffer(CmdBuffer&& other);
-        CmdBuffer& operator=(CmdBuffer&& other);
-
-        ~CmdBuffer();
-
-        VkCommandBuffer vk_cmd_buffer() const;
-
-        ResourceFence resource_fence() const;
-
-        void wait() const;
-
-        template<typename T>
-        void keep_alive(T&& t) {
-            _data->keep_alive(y_fwd(t));
-        }
-
-    protected:
-        CmdBuffer(CmdBufferData* data);
-
-        void swap(CmdBuffer& other);
-
-        bool is_null() const;
+        RayTracingComponent(const StaticMesh& mesh);
+        RayTracingComponent(const StaticMeshComponent& mesh);
 
     private:
-        friend class CmdBufferPool;
-        friend class CmdQueue;
-
-        CmdBufferData* _data = nullptr;
+        RayTracing::AccelerationStructure _blas;
 
 };
 
 }
 
-#endif // YAVE_GRAPHICS_COMMANDS_CMDBUFFER_H
+#endif // YAVE_COMPONENTS_RAYTRACINGCOMPONENT_H
 

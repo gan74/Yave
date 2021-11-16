@@ -34,6 +34,8 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
 
+#include <yave/graphics/device/extensions/RayTracing.h>
+
 #include <mutex>
 
 namespace yave {
@@ -59,6 +61,10 @@ struct {
     std::atomic<u64> fence_value = 0;
     std::atomic<u64> last_polled = 0;
 } timeline;
+
+struct {
+    std::unique_ptr<RayTracing> ray_tracing;
+} extensions;
 
 
 std::mutex devices_lock;
@@ -98,6 +104,7 @@ static void init_vk_device() {
     };
 
     const bool inline_uniform_blocks = try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical_device());
+    const bool ray_tracing = try_enable_extension(extensions, RayTracing::extension_name(), physical_device());
 
     const auto required_features = required_device_features();
     auto required_features_1_1 = required_device_features_1_1();
@@ -153,6 +160,10 @@ static void init_vk_device() {
     print_properties(device::device_properties);
 
     device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
+
+    if(ray_tracing) {
+        device::extensions.ray_tracing = std::make_unique<RayTracing>();
+    }
 }
 
 
@@ -188,6 +199,8 @@ void destroy_device() {
     wait_all_queues();
 
     device::resources.destroy();
+
+    device::extensions = {};
 
     command_queue().submit(create_disposable_cmd_buffer()).wait();
     lifetime_manager().wait_cmd_buffers();
@@ -384,7 +397,7 @@ const DebugUtils* debug_utils() {
 }
 
 const RayTracing* ray_tracing() {
-    return nullptr;
+    return device::extensions.ray_tracing.get();
 }
 
 void wait_all_queues() {

@@ -29,35 +29,6 @@ SOFTWARE.
 
 namespace yave {
 
-static VkGeometryNV create_mesh_geometry(const StaticMesh& mesh) {
-    VkGeometryNV geometry = vk_struct();
-
-    geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
-
-    {
-        geometry.geometry.triangles = vk_struct();
-        geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-
-        geometry.geometry.triangles.vertexData = mesh.vertex_buffer().vk_buffer();
-        geometry.geometry.triangles.vertexOffset = 0;
-        geometry.geometry.triangles.vertexCount = u32(mesh.vertex_buffer().size());
-        geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-        geometry.geometry.triangles.vertexStride = sizeof(Vertex);
-
-        geometry.geometry.triangles.indexData = mesh.triangle_buffer().vk_buffer();
-        geometry.geometry.triangles.indexOffset = 0;
-        geometry.geometry.triangles.indexCount = u32(mesh.triangle_buffer().size() * 3);
-        geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
-    }
-    {
-        geometry.geometry.aabbs = vk_struct();
-    }
-
-    return geometry;
-}
-
-
 RayTracing::AccelerationStructure::AccelerationStructure(const StaticMesh& mesh) : AccelerationStructure(create_mesh_geometry(mesh)) {
 }
 
@@ -102,6 +73,34 @@ RayTracing::AccelerationStructure::~AccelerationStructure() {
     rt->_destroy_acceleration_structure(vk_device(), _acceleration_structure, vk_allocation_callbacks());
 
     device_destroy(std::move(_memory));
+}
+
+VkGeometryNV RayTracing::AccelerationStructure::create_mesh_geometry(const StaticMesh& mesh) {
+    VkGeometryNV geometry = vk_struct();
+
+    geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
+    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
+
+    {
+        geometry.geometry.triangles = vk_struct();
+        geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+
+        geometry.geometry.triangles.vertexData = mesh.vertex_buffer().vk_buffer();
+        geometry.geometry.triangles.vertexOffset = 0;
+        geometry.geometry.triangles.vertexCount = u32(mesh.vertex_buffer().size());
+        geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+        geometry.geometry.triangles.vertexStride = sizeof(Vertex);
+
+        geometry.geometry.triangles.indexData = mesh.triangle_buffer().vk_buffer();
+        geometry.geometry.triangles.indexOffset = 0;
+        geometry.geometry.triangles.indexCount = u32(mesh.triangle_buffer().size() * 3);
+        geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+    }
+    {
+        geometry.geometry.aabbs = vk_struct();
+    }
+
+    return geometry;
 }
 
 

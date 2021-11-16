@@ -27,6 +27,7 @@ SOFTWARE.
 
 namespace yave {
 class AABB;
+class ASUpdateSystem;
 class AccelerationStructure;
 class Animation;
 class AnimationChannel;
@@ -109,6 +110,7 @@ class PhysicalDevice;
 class PointLightComponent;
 class PushConstant;
 class RayTracing;
+class RayTracingComponent;
 class RenderPass;
 class RenderPassRecorder;
 class Renderable;
@@ -127,6 +129,7 @@ class SpecializationData;
 class SpirVData;
 class SpotLightComponent;
 class StaticMesh;
+class StaticMeshComponent;
 class SubBufferBase;
 class Swapchain;
 class SwapchainImage;
@@ -153,10 +156,9 @@ struct BoneKey;
 struct BoneTransform;
 struct Box;
 struct BufferCreateInfo;
-struct CmdBuffer;
+struct BufferData;
 struct Contants;
 struct DefaultRenderer;
-struct Device;
 struct DeviceProperties;
 struct DirectVertex;
 struct DownsamplePass;
