@@ -122,7 +122,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
     const DescriptorSetBase default_set = create_descriptor_set(&_font_view);
 
     const auto setup_state = [&](const void* tex) {
-        recorder.bind_material(&_material, {tex ? create_descriptor_set(tex) : default_set});
+        recorder.bind_material_template(&_material, tex ? create_descriptor_set(tex) : default_set);
     };
 
     usize index_offset = 0;

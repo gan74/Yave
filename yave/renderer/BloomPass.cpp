@@ -58,7 +58,7 @@ static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId inp
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources()[DeviceResources::BloomMaterialTemplate];
-        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
     });
 
@@ -107,7 +107,7 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, con
                     ? DeviceResources::BloomCombineMaterialTemplate
                     : DeviceResources::ScreenBlendPassthroughMaterialTemplate;
                 const auto* material = device_resources()[merge_mat];
-                render_pass.bind_material(material, {self->descriptor_sets()[0]});
+                render_pass.bind_material_template(material, self->descriptor_sets()[0]);
                 render_pass.draw_array(3);
             });
 

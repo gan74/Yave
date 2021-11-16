@@ -121,7 +121,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources()[DeviceResources::DeferredAmbientMaterialTemplate];
-        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
     });
 
@@ -302,7 +302,7 @@ static void local_lights_pass(FrameGraph& framegraph,
 
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             const auto* material = device_resources()[DeviceResources::DeferredPointLightMaterialTemplate];
-            render_pass.bind_material(material, {self->descriptor_sets()[0]});
+            render_pass.bind_material_template(material, self->descriptor_sets()[0]);
             {
                 const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
                 VkDrawIndexedIndirectCommand indirect = sphere.indirect_data();
@@ -343,7 +343,7 @@ static void local_lights_pass(FrameGraph& framegraph,
 
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             const auto* material = device_resources()[DeviceResources::DeferredSpotLightMaterialTemplate];
-            render_pass.bind_material(material, {self->descriptor_sets()[0]});
+            render_pass.bind_material_template(material, self->descriptor_sets()[0]);
 
             {
                 const auto transforms = self->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);

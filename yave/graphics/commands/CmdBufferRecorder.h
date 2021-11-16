@@ -27,12 +27,9 @@ SOFTWARE.
 #include <yave/graphics/framebuffer/Viewport.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/graphics/buffers/SubBuffer.h>
+#include <yave/graphics/descriptors/DescriptorSetBase.h>
 
 namespace yave {
-
-namespace detail {
-using DescriptorSetList = core::Span<DescriptorSetBase>;
-}
 
 class PushConstant : NonCopyable {
     public:
@@ -90,14 +87,14 @@ class CmdBufferRegion {
 
 class RenderPassRecorder final : NonMovable {
     public:
-        using DescriptorSetList = detail::DescriptorSetList;
-
         ~RenderPassRecorder();
 
         // specific
         void bind_material(const Material& material);
-        void bind_material(const MaterialTemplate* material, DescriptorSetList descriptor_sets = {});
-        void bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets);
+        void bind_material_template(const MaterialTemplate* material_template, DescriptorSetBase descriptor_set, u32 ds_offset = 0);
+        void bind_pipeline(const GraphicPipeline& pipeline, core::Span<DescriptorSetBase> descriptor_sets, u32 ds_offset = 0);
+
+        void set_main_descriptor_set(DescriptorSetBase ds_set);
 
         void draw(const VkDrawIndexedIndirectCommand& indirect);
         void draw(const VkDrawIndirectCommand& indirect);
@@ -126,6 +123,7 @@ class RenderPassRecorder final : NonMovable {
 
         CmdBufferRecorder& _cmd_buffer;
         Viewport _viewport;
+        DescriptorSetBase _main_descriptor_set;
 };
 
 class CmdBufferRecorder final : NonCopyable {
@@ -136,8 +134,6 @@ class CmdBufferRecorder final : NonCopyable {
     using DstCopyImage = ImageView<ImageUsage::TransferDstBit>;
 
     public:
-        using DescriptorSetList = detail::DescriptorSetList;
-
         CmdBufferRecorder(CmdBufferRecorder&& other);
         CmdBufferRecorder& operator=(CmdBufferRecorder&& other);
 
@@ -151,10 +147,9 @@ class CmdBufferRecorder final : NonCopyable {
         bool is_inside_renderpass() const;
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
 
-
-        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
-        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
-        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants = PushConstant());
+        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants = PushConstant());
+        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants = PushConstant());
+        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants = PushConstant());
 
 
         void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);

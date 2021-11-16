@@ -64,28 +64,47 @@ RenderPassRecorder::~RenderPassRecorder() {
 }
 
 void RenderPassRecorder::bind_material(const Material& material) {
-    bind_material(material.material_template(), {material.descriptor_set()});
+    bind_material_template(material.material_template(), material.descriptor_set(), 1);
 }
 
-void RenderPassRecorder::bind_material(const MaterialTemplate* material, DescriptorSetList descriptor_sets) {
-    bind_pipeline(material->compile(*_cmd_buffer._render_pass), descriptor_sets);
+void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, DescriptorSetBase descriptor_set, u32 ds_offset) {
+    core::Span<DescriptorSetBase> ds_sets;
+    if(!descriptor_set.is_null()) {
+        ds_sets = {descriptor_set};
+    }
+    bind_pipeline(material_template->compile(*_cmd_buffer._render_pass), ds_sets, ds_offset);
 }
 
-void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, DescriptorSetList descriptor_sets) {
+void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, core::Span<DescriptorSetBase> descriptor_sets, u32 ds_offset) {
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
 
-    if(!descriptor_sets.is_empty()) {
+    if(!_main_descriptor_set.is_null()) {
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             pipeline.vk_pipeline_layout(),
             0,
+            1, reinterpret_cast<const VkDescriptorSet*>(&_main_descriptor_set),
+            0, nullptr
+        );
+        _main_descriptor_set = {};
+    }
+    if(!descriptor_sets.is_empty()) {
+        vkCmdBindDescriptorSets(
+            vk_cmd_buffer(),
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipeline.vk_pipeline_layout(),
+            ds_offset,
             u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
             0, nullptr
         );
     }
 }
 
+
+void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
+    _main_descriptor_set = ds_set;
+}
 
 void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {
     vkCmdDrawIndexed(vk_cmd_buffer(),
@@ -252,7 +271,6 @@ CmdBufferRegion CmdBufferRecorder::region(const char* name, const math::Vec4& co
     return CmdBufferRegion(*this, name, color);
 }
 
-
 RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
     check_no_renderpass();
 
@@ -283,7 +301,7 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
     return RenderPassRecorder(*this, Viewport(framebuffer.size()));
 }
 
-void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
+void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants) {
     check_no_renderpass();
 
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
@@ -304,7 +322,7 @@ void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
 }
 
-void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
+void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants) {
     math::Vec3ui dispatch_size;
     const math::Vec3ui program_size = program.local_size();
     for(usize i = 0; i != 3; ++i) {
@@ -313,7 +331,7 @@ void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math:
     dispatch(program, dispatch_size, descriptor_sets, push_constants);
 }
 
-void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, DescriptorSetList descriptor_sets, const PushConstant& push_constants) {
+void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants) {
     dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets, push_constants);
 }
 

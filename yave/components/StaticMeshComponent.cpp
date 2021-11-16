@@ -45,11 +45,7 @@ void StaticMeshComponent::SubMesh::render(RenderPassRecorder& recorder, const Sc
     y_debug_assert(!material->is_null());
     y_debug_assert(!mesh->is_null());
 
-    if(material->descriptor_set().is_null()) {
-        recorder.bind_material(material->material_template(), {scene_data.descriptor_set});
-    } else {
-        recorder.bind_material(material->material_template(), {scene_data.descriptor_set, material->descriptor_set()});
-    }
+    recorder.bind_material(*material);
 
     render_mesh(recorder, scene_data.instance_index);
 }
@@ -125,9 +121,7 @@ AABB StaticMeshComponent::compute_aabb() const {
     return aabb;
 }
 
-bool StaticMeshComponent::update_asset_loading_status() {
-    _aabb = compute_aabb();
-
+bool StaticMeshComponent::is_fully_loaded() const {
     for(const SubMesh& sub : _sub_meshes) {
        if(!sub.mesh.is_loaded() || !sub.material.is_loaded()) {
            return false;
@@ -135,6 +129,11 @@ bool StaticMeshComponent::update_asset_loading_status() {
     }
 
     return true;
+}
+
+bool StaticMeshComponent::update_asset_loading_status() {
+    _aabb = compute_aabb();
+    return is_fully_loaded();
 }
 
 void StaticMeshComponent::load_assets(AssetLoadingContext& loading_ctx) {

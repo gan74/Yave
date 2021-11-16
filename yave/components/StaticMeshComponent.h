@@ -67,6 +67,9 @@ class StaticMeshComponent final :
 
         const AABB& aabb() const;
 
+
+        bool is_fully_loaded() const;
+
         bool update_asset_loading_status();
         void load_assets(AssetLoadingContext& loading_ctx);
 

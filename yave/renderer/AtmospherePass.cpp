@@ -87,7 +87,7 @@ static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const Atmo
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources()[DeviceResources::AtmosphereIntegrationMaterialTemplate];
-        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
     });
 
@@ -143,7 +143,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources()[DeviceResources::AtmosphereMaterialTemplate];
-        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
     });
 

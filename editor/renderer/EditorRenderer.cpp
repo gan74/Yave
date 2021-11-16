@@ -50,7 +50,7 @@ static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameG
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = resources()[EditorResources::SelectionMaterialTemplate];
-        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
     });
 

@@ -105,7 +105,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources()[DeviceResources::ToneMappingMaterialTemplate];
-        render_pass.bind_material(material, {self->descriptor_sets()[0]});
+        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
     });
 

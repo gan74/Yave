@@ -30,7 +30,6 @@ class Renderable {
 
     public:
         struct SceneData {
-            const DescriptorSetBase& descriptor_set;
             const u32 instance_index;
         };
 

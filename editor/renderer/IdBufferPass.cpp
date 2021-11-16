@@ -62,7 +62,7 @@ static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pa
     const auto ids = pass->resources().buffer<BufferUsage::AttributeBit>(id_buffer);
 
     recorder.bind_attrib_buffers({}, {transforms, ids});
-    recorder.bind_material(resources()[EditorResources::IdMaterialTemplate], {pass->descriptor_sets()[0]});
+    recorder.bind_material_template(resources()[EditorResources::IdMaterialTemplate], pass->descriptor_sets()[0]);
 
     core::Vector<ecs::EntityId> visible;
     const OctreeSystem* octree_system = world.find_system<OctreeSystem>();

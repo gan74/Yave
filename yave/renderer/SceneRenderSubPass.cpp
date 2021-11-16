@@ -65,6 +65,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
     const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
     const auto& descriptor_set = pass->descriptor_sets()[sub_pass->descriptor_set_index];
 
+    recorder.set_main_descriptor_set(descriptor_set);
     recorder.bind_attrib_buffers({}, {transforms});
 
     core::Vector<ecs::EntityId> visible;
@@ -78,7 +79,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 
     for(const auto& [tr, mesh] : entities.components()) {
         transform_mapping[index] = tr.transform();
-        mesh.render(recorder, Renderable::SceneData{descriptor_set, u32(index)});
+        mesh.render(recorder, Renderable::SceneData{u32(index)});
         ++index;
     }
 
