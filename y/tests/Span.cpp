@@ -47,8 +47,6 @@ static usize test_func_nc(Span<NonCopyable> a) {
 
 
 y_test_func("Span creation") {
-    y_test_assert(test_func({1, 2, 3}) == 3);
-
     const auto vec = Vector({1, 2, 3, 4});
     y_test_assert(test_func(vec) == 4);
 
@@ -70,7 +68,6 @@ y_test_func("Span creation") {
 
 y_test_func("Span of non-copyables") {
     y_test_assert(test_func_nc(NonCopyable()) == 1);
-    y_test_assert(test_func_nc({NonCopyable(), NonCopyable()}) == 2);
 
     /*NonCopyable nc;
     y_test_assert(test_func_nc({nc, NonCopyable()}) == 2);*/

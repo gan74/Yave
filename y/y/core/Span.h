@@ -26,10 +26,6 @@ SOFTWARE.
 
 #include <array>
 
-#ifdef Y_GCC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winit-list-lifetime"
-#endif
 
 namespace y {
 namespace core {
@@ -68,9 +64,6 @@ class MutableSpan {
 
         template<usize N>
         inline constexpr MutableSpan(std::array<T, N>& arr) : _data(arr.data()), _size(N) {
-        }
-
-        inline constexpr MutableSpan(std::initializer_list<T> l) : _data(l.begin()), _size(l.size()) {
         }
 
         template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
@@ -143,9 +136,6 @@ using Span = MutableSpan<const T>;
 }
 }
 
-#ifdef  Y_GCC
-#pragma GCC diagnostic pop
-#endif
 
 #endif // Y_CORE_SPAN_H
 

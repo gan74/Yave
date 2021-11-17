@@ -61,7 +61,7 @@ static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pa
     auto id_mapping = pass->resources().map_buffer(id_buffer);
     const auto ids = pass->resources().buffer<BufferUsage::AttributeBit>(id_buffer);
 
-    recorder.bind_attrib_buffers({}, {transforms, ids});
+    recorder.bind_attrib_buffers({}, std::array{transforms, ids});
     recorder.bind_material_template(resources()[EditorResources::IdMaterialTemplate], pass->descriptor_sets()[0]);
 
     core::Vector<ecs::EntityId> visible;

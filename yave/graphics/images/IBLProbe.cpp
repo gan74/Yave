@@ -100,7 +100,7 @@ template<ImageType T>
 static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::TextureBit, T>& texture) {
     auto descriptor_sets = core::ScratchPad<DescriptorSet>(views.size());
     std::transform(views.begin(), views.end(), descriptor_sets.begin(), [&](const CubemapStorageView& view) {
-            return DescriptorSet({Descriptor(texture, SamplerType::LinearClamp), Descriptor(view)});
+            return DescriptorSet(std::array{Descriptor(texture, SamplerType::LinearClamp), Descriptor(view)});
         });
 
 

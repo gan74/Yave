@@ -116,7 +116,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
 
     const auto create_descriptor_set = [&](const void* data) {
         const auto* tex = static_cast<const TextureView*>(data);
-        return DescriptorSet({Descriptor(*tex, SamplerType::LinearClamp), Descriptor(uniform_buffer)});
+        return DescriptorSet(std::array{Descriptor(*tex, SamplerType::LinearClamp), Descriptor(uniform_buffer)});
     };
 
     const DescriptorSetBase default_set = create_descriptor_set(&_font_view);
