@@ -4,7 +4,8 @@
 float sample_shadow(sampler2DShadow shadow_map, vec2 uv, float proj_z, float bias_scale) {
     // Using derivatives can cause artefacting around big depth discontinuities
     //const float bias = fwidth(proj_z) * bias_scale;
-    const float bias = bias_scale;
+    // const float bias = bias_scale;
+    const float bias = 0.0;
     const vec3 proj = vec3(uv, proj_z + bias);
     return texture(shadow_map, proj).x;
 }

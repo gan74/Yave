@@ -37,6 +37,7 @@ SOFTWARE.
 
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/OctreeSystem.h>
+#include <yave/systems/ASUpdateSystem.h>
 
 #include <y/utils/format.h>
 
@@ -48,9 +49,7 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
     add_required_component<EditorComponent>();
     add_system<AssetLoaderSystem>(loader);
     add_system<OctreeSystem>();
-
-    auto q = query<EditorComponent>();
-    auto f = query<ecs::Mutate<EditorComponent>>();
+    add_system<ASUpdateSystem>();
 }
 
 void EditorWorld::flush_reload() {

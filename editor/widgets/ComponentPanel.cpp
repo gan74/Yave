@@ -55,7 +55,6 @@ void ComponentPanel::on_gui() {
     EditorWorld& world = current_world();
 
 
-
     {
         const ImGuiTableFlags table_flags =
                 ImGuiTableFlags_BordersInnerV |
@@ -64,8 +63,11 @@ void ComponentPanel::on_gui() {
                 ImGuiTableFlags_RowBg;
 
 
+        core::FlatHashMap<ecs::ComponentTypeIndex, bool> has_widget;
         for(auto& widget : _widgets) {
             const ecs::ComponentRuntimeInfo rt_info = widget->runtime_info();
+            has_widget[rt_info.type_id] = true;
+
             if(!world.has(id, rt_info.type_id)) {
                 continue;
             }
@@ -76,6 +78,19 @@ void ComponentPanel::on_gui() {
                     imgui::table_begin_next_row();
                     widget->process_entity(current_world(), id);
                     ImGui::EndTable();
+                }
+            }
+        }
+
+        for(const auto& [name, info] : EditorWorld::component_types()) {
+            if(!has_widget.contains(info.type_id)) {
+                if(!world.has(id, info.type_id)) {
+                    continue;
+                }
+
+                const char* type_name = fmt_c_str(ICON_FA_PUZZLE_PIECE " %", info.clean_component_name());
+                if(ImGui::CollapsingHeader(type_name)) {
+                    ImGui::TextDisabled("Empty");
                 }
             }
         }

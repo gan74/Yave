@@ -104,7 +104,7 @@ static void init_vk_device() {
     };
 
     const bool inline_uniform_blocks = try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical_device());
-    const bool ray_tracing = try_enable_extension(extensions, RayTracing::extension_name(), physical_device());
+    const bool ray_tracing = false; //try_enable_extension(extensions, RayTracing::extension_name(), physical_device());
 
     const auto required_features = required_device_features();
     auto required_features_1_1 = required_device_features_1_1();

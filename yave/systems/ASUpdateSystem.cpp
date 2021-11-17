@@ -40,6 +40,8 @@ void ASUpdateSystem::tick(ecs::EntityWorld& world) {
 }
 
 void ASUpdateSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
+    y_profile();
+
     const RayTracing* rt = ray_tracing();
     if(!rt) {
         return;
@@ -63,7 +65,6 @@ void ASUpdateSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     }
 
     _to_update.swap(to_keep);
-
 }
 
 }

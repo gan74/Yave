@@ -265,6 +265,7 @@ class EntityWorld {
         const ComponentContainerBase* find_container() const {
             static const auto static_info = ComponentRuntimeInfo::create<T>();
             unused(static_info);
+
             return find_container(type_index<T>());
         }
 
@@ -272,11 +273,15 @@ class EntityWorld {
         ComponentContainerBase* find_container() {
             static const auto static_info = ComponentRuntimeInfo::create<T>();
             unused(static_info);
+
             return find_container(type_index<T>());
         }
 
         template<typename T>
         ComponentContainerBase* find_or_create_container() {
+            static const auto static_info = ComponentRuntimeInfo::create<T>();
+            unused(static_info);
+
             auto& cont = _containers[type_index<T>()];
             if(!cont) {
                 cont = std::make_unique<ComponentContainer<T>>();

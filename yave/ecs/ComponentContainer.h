@@ -228,7 +228,7 @@ class ComponentContainer final : public ComponentContainerBase {
             return nullptr;
         }
 
-        y_no_serde3_expr(serde3::has_no_serde3_v<T> || (!serde3::has_serde3_v<T> && !serde3::is_pod_v<T>))
+        y_no_serde3_expr(serde3::has_no_serde3_v<T>)
 
         y_reflect(_components)
         y_serde3_poly(ComponentContainer)

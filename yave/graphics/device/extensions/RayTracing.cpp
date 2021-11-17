@@ -33,6 +33,8 @@ RayTracing::AccelerationStructure::AccelerationStructure(const StaticMesh& mesh)
 }
 
 RayTracing::AccelerationStructure::AccelerationStructure(core::Span<VkGeometryNV> geometries) {
+    y_profile();
+
     const RayTracing* rt = ray_tracing();
     y_debug_assert(rt);
 

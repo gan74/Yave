@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/graphics/device/extensions/RayTracing.h>
 
+#include <y/reflect/reflect.h>
+
 namespace yave {
 
 class RayTracingComponent final {
@@ -34,8 +36,11 @@ class RayTracingComponent final {
         RayTracingComponent(const StaticMesh& mesh);
         RayTracingComponent(const StaticMeshComponent& mesh);
 
+        y_reflect(_dummy);
+
     private:
         RayTracing::AccelerationStructure _blas;
+        int _dummy;
 
 };
 

@@ -728,6 +728,8 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
                         log_msg(fmt("\"%\" was not found in folder database", parent.unwrap()), Log::Warning);
                     }
                 }
+            } else {
+                log_msg(fmt("% could not be read", name), Log::Error);
             }
         }
     });
