@@ -68,9 +68,9 @@ void RenderPassRecorder::bind_material(const Material& material) {
 }
 
 void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, DescriptorSetBase descriptor_set, u32 ds_offset) {
-    core::Span<DescriptorSetBase> ds_sets;
-    if(!descriptor_set.is_null()) {
-        ds_sets = {descriptor_set};
+    ore::Span<DescriptorSetBase> ds_sets = descriptor_set;
+    if(descriptor_set.is_null()) {
+        ds_sets = {};
     }
     bind_pipeline(material_template->compile(*_cmd_buffer._render_pass), ds_sets, ds_offset);
 }
