@@ -72,6 +72,10 @@ struct TypeHeader {
     constexpr bool operator==(const TypeHeader& other) const {
         return name_hash == other.name_hash && type_hash == other.type_hash;
     }
+
+    constexpr bool is_compatible(const TypeHeader& other) const {
+        return (type_hash & ~0x03) == (other.type_hash & ~0x03);
+    }
 };
 
 struct MembersHeader {
