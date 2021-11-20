@@ -22,41 +22,29 @@ SOFTWARE.
 #include "StaticMesh.h"
 #include "MeshData.h"
 
-#include <yave/graphics/buffers/TypedWrapper.h>
-#include <yave/graphics/commands/CmdQueue.h>
-#include <yave/graphics/graphics.h>
+#include <yave/graphics/device/MeshAllocator.h>
 
 namespace yave {
 
 StaticMesh::StaticMesh(const MeshData& mesh_data) :
-        _triangle_buffer(mesh_data.triangles().size()),
-        _vertex_buffer(mesh_data.vertices().size()),
-        _aabb(mesh_data.aabb()) {
-
-    _indirect_data.indexCount = u32(mesh_data.triangles().size() * 3);
-    _indirect_data.instanceCount = 1;
-
-    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
-    Y_TODO(change to implicit staging?)
-    Mapping::stage(_triangle_buffer, recorder, mesh_data.triangles().data());
-    Mapping::stage(_vertex_buffer, recorder, mesh_data.vertices().data());
-    command_queue().submit(std::move(recorder))/*.wait()*/;
+    _draw_data(mesh_allocator().alloc_mesh(mesh_data.vertices(), mesh_data.triangles())),
+    _aabb(mesh_data.aabb())  {
 }
 
 bool StaticMesh::is_null() const {
-    return _triangle_buffer.is_null();
+    return _draw_data.triangle_buffer.is_null();
 }
 
-const TriangleBuffer<>& StaticMesh::triangle_buffer() const {
-    return _triangle_buffer;
+TriangleSubBuffer StaticMesh::triangle_buffer() const {
+    return _draw_data.triangle_buffer;
 }
 
-const VertexBuffer<>& StaticMesh::vertex_buffer() const {
-    return _vertex_buffer;
+VertexSubBuffer StaticMesh::vertex_buffer() const {
+    return _draw_data.vertex_buffer;
 }
 
 const VkDrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
-    return _indirect_data;
+    return _draw_data.indirect_data;
 }
 
 float StaticMesh::radius() const {

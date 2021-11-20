@@ -105,7 +105,7 @@ class DescriptorSetPool : NonMovable {
     private:
         void update_set(u32 id, core::Span<Descriptor> descriptors);
 
-        usize inline_sub_buffer_alignment() const;
+        u64 inline_sub_buffer_alignment() const;
 
         std::bitset<pool_size> _taken;
         u32 _first_free = 0;

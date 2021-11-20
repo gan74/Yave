@@ -32,6 +32,7 @@ Mapping::Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buf
         _buffer(buffer),
         _mapping(static_cast<u8*>(_buffer.device_memory().map()) + buffer.byte_offset()) {
 
+    y_debug_assert(_buffer.byte_offset() % _buffer.host_side_alignment() == 0);
     y_debug_assert(_mapping);
 }
 

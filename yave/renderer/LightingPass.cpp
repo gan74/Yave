@@ -347,7 +347,7 @@ static void local_lights_pass(FrameGraph& framegraph,
 
             {
                 const auto transforms = self->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
-                render_pass.bind_attrib_buffers({}, {transforms});
+                render_pass.bind_per_instance_attrib_buffers(transforms);
 
                 const StaticMesh& cone = *device_resources()[DeviceResources::ConeMesh];
                 VkDrawIndexedIndirectCommand indirect = cone.indirect_data();

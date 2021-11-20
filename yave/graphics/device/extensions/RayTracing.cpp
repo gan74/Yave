@@ -91,7 +91,7 @@ VkGeometryNV RayTracing::AccelerationStructure::create_mesh_geometry(const Stati
         geometry.geometry.triangles.vertexOffset = 0;
         geometry.geometry.triangles.vertexCount = u32(mesh.vertex_buffer().size());
         geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-        geometry.geometry.triangles.vertexStride = sizeof(Vertex);
+        geometry.geometry.triangles.vertexStride = sizeof(PackedVertex);
 
         geometry.geometry.triangles.indexData = mesh.triangle_buffer().vk_buffer();
         geometry.geometry.triangles.indexOffset = 0;

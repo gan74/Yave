@@ -45,14 +45,14 @@ class TypedWrapper final : public Buff {
         using value_type = Elem;
 
 
-        static usize total_byte_size(usize size) {
+        static u64 total_byte_size(u64 size) {
             return size * sizeof(value_type);
         }
 
 
         TypedWrapper() = default;
 
-        TypedWrapper(usize elem_count) : Buff(std::max(usize(1), elem_count) * sizeof(value_type)) {
+        explicit TypedWrapper(usize elem_count) : Buff(std::max(usize(1), elem_count) * sizeof(value_type)) {
         }
 
         template<BufferUsage U, MemoryType M>
@@ -68,11 +68,11 @@ class TypedWrapper final : public Buff {
         }
 
 
-        usize size() const {
+        u64 size() const {
             return this->byte_size() / sizeof(value_type);
         }
 
-        usize offset() const {
+        u64 offset() const {
             if constexpr(is_sub) {
                 return this->byte_offset() / sizeof(value_type);
             } else {
@@ -103,7 +103,7 @@ class TypedMapping : public Mapping {
             static_assert(is_cpu_visible(Buff::memory_type));
         }
 
-        usize size() const {
+        u64 size() const {
             return this->byte_size() / sizeof(Elem);
         }
 

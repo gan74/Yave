@@ -30,8 +30,6 @@ namespace yave {
 
 using StagingBuffer = Buffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
 
-template<typename T>
-using TypedStagingBuffer = TypedBuffer<T, StagingBuffer::usage, StagingBuffer::memory_type>;
 
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
@@ -39,6 +37,7 @@ using AttribBuffer = Buffer<BufferUsage::AttributeBit, Memory>;
 
 template<typename T, MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using TypedAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, Memory>;
+
 
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::UniformBit)>
@@ -55,22 +54,15 @@ using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit | Buff
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using VertexBuffer = TypedBuffer<PackedVertex, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;
 
-template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
-using SkinnedVertexBuffer = TypedBuffer<SkinnedVertex, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;
 
-template<MemoryType Memory = prefered_memory_type(BufferUsage::IndirectBit)>
-using IndirectBuffer = TypedBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit | BufferUsage::TransferDstBit, Memory>;
-
-
-template<typename T>
-using AttribSubBuffer = TypedSubBuffer<T, BufferUsage::AttributeBit>;
 
 using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit>;
-using VertexSubBuffer = TypedSubBuffer<Vertex, BufferUsage::AttributeBit>;
-using SkinnedVertexSubBuffer = TypedSubBuffer<SkinnedVertex, BufferUsage::AttributeBit>;
-using IndirectSubBuffer = TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
+using VertexSubBuffer = TypedSubBuffer<PackedVertex, BufferUsage::AttributeBit>;
 
-using StagingSubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
+
+
+using AttribSubBuffer = SubBuffer<BufferUsage::AttributeBit>;
+using IndexSubBuffer = SubBuffer<BufferUsage::IndexBit>;
 
 }
 

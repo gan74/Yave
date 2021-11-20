@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-struct Vertex {
+struct FullVertex {
     math::Vec3 position;
     math::Vec3 normal;
     math::Vec4 tangent;
@@ -66,7 +66,7 @@ inline math::Vec4 unpack_2_10_10_10(u32 packed) {
     );
 }
 
-inline PackedVertex pack_vertex(const Vertex& v) {
+inline PackedVertex pack_vertex(const FullVertex& v) {
     return PackedVertex {
         v.position,
         pack_2_10_10_10(v.normal),
@@ -75,8 +75,8 @@ inline PackedVertex pack_vertex(const Vertex& v) {
     };
 }
 
-inline Vertex unpack_vertex(const PackedVertex& v) {
-    return Vertex {
+inline FullVertex unpack_vertex(const PackedVertex& v) {
+    return FullVertex {
         v.position,
         unpack_2_10_10_10(v.packed_normal).to<3>(),
         unpack_2_10_10_10(v.packed_tangent_sign),

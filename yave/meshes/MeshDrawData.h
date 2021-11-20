@@ -19,45 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHES_SKINNEDMESH_H
-#define YAVE_MESHES_SKINNEDMESH_H
+#ifndef YAVE_MESHES_MESH_DRAW_DATA_H
+#define YAVE_MESHES_MESH_DRAW_DATA_H
 
-#include "Skeleton.h"
+#include "Vertex.h"
 
 #include <yave/graphics/buffers/buffers.h>
 
-#include <yave/assets/AssetTraits.h>
-
 namespace yave {
 
-class SkinnedMesh : NonCopyable {
-
-    public:
-        SkinnedMesh() = default;
-
-        SkinnedMesh(const MeshData& mesh_data);
-
-        const TriangleBuffer<>& triangle_buffer() const;
-        const SkinnedVertexBuffer<>& vertex_buffer() const;
-
-        const VkDrawIndexedIndirectCommand& indirect_data() const;
-        const Skeleton& skeleton() const;
-
-        float radius() const;
-
-    private:
-        TriangleBuffer<> _triangle_buffer;
-        SkinnedVertexBuffer<> _vertex_buffer;
-        VkDrawIndexedIndirectCommand _indirect_data = {};
-
-        Skeleton _skeleton;
-
-        float _radius;
+struct MeshDrawData {
+    TriangleSubBuffer triangle_buffer;
+    VertexSubBuffer vertex_buffer;
+    VkDrawIndexedIndirectCommand indirect_data = {};
 };
-
-YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(SkinnedMesh, MeshData, AssetType::Mesh);
 
 }
 
-#endif // YAVE_MESHES_SKINNEDMESH_H
+#endif // YAVE_MESHES_MESH_DRAW_DATA_H
 

@@ -19,43 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHES_STATICMESH_H
-#define YAVE_MESHES_STATICMESH_H
+#ifndef YAVE_GRAPHICS_DEVICE_MESHALLOCATOR_H
+#define YAVE_GRAPHICS_DEVICE_MESHALLOCATOR_H
 
-#include "AABB.h"
-#include "MeshDrawData.h"
+#include <yave/graphics/buffers/buffers.h>
+#include <yave/meshes/MeshDrawData.h>
 
-#include <yave/graphics/device/extensions/RayTracing.h>
+#include <y/core/Span.h>
 
-#include <yave/assets/AssetTraits.h>
-
-Y_TODO(move into graphics?)
+#include <atomic>
 
 namespace yave {
 
-class StaticMesh : NonCopyable {
-
+class MeshAllocator : NonMovable {
     public:
-        StaticMesh() = default;
-        StaticMesh(const MeshData& mesh_data);
+        static const u64 default_vertex_count = 16 * 1024 * 1024;
+        static const u64 default_triangle_count = 16 * 1024 * 1024;
 
-        bool is_null() const;
+        MeshAllocator();
 
-        TriangleSubBuffer triangle_buffer() const;
-        VertexSubBuffer vertex_buffer() const;
-        const VkDrawIndexedIndirectCommand& indirect_data() const;
-
-        float radius() const;
-        const AABB& aabb() const;
+        MeshDrawData alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
 
     private:
-        MeshDrawData _draw_data = {};
-        AABB _aabb;
-};
+        VertexBuffer<> _vertex_buffer;
+        TriangleBuffer<> _triangle_buffer;
 
-YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
+        std::atomic<u64> _vertex_offset = 0;
+        std::atomic<u64> _triangle_offset = 0;
+};
 
 }
 
-#endif // YAVE_MESHES_STATICMESH_H
+#endif // YAVE_GRAPHICS_DEVICE_MESHALLOCATOR_H
 

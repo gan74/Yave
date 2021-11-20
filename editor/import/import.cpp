@@ -183,12 +183,12 @@ static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, 
         for(usize i = 0; i != accessor.count; ++i) {
             const u8* attrib = in_begin + i * input_stride;
             y_debug_assert(attrib < in_buffer.data() + in_buffer.size());
-            *reinterpret_cast<T*>(out_begin + i * sizeof(Vertex)) = convert(attrib);
+            *reinterpret_cast<T*>(out_begin + i * sizeof(FullVertex)) = convert(attrib);
         }
     }
 }
 
-static void decode_attrib_buffer(const tinygltf::Model& model, const std::string& name, const tinygltf::Accessor& accessor, core::MutableSpan<Vertex> vertices) {
+static void decode_attrib_buffer(const tinygltf::Model& model, const std::string& name, const tinygltf::Accessor& accessor, core::MutableSpan<FullVertex> vertices) {
     const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
 
     if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
@@ -224,8 +224,8 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
     }
 }
 
-static core::Vector<Vertex> import_vertices(const tinygltf::Model& model, const tinygltf::Primitive& prim) {
-    core::Vector<Vertex> vertices;
+static core::Vector<FullVertex> import_vertices(const tinygltf::Model& model, const tinygltf::Primitive& prim) {
+    core::Vector<FullVertex> vertices;
     for(auto [name, id] : prim.attributes) {
         tinygltf::Accessor accessor = model.accessors[id];
         if(!accessor.count) {
@@ -237,7 +237,7 @@ static core::Vector<Vertex> import_vertices(const tinygltf::Model& model, const 
         }
 
         if(!vertices.size()) {
-            std::fill_n(std::back_inserter(vertices), accessor.count, Vertex());
+            std::fill_n(std::back_inserter(vertices), accessor.count, FullVertex());
         } else if(vertices.size() != accessor.count) {
             y_throw_msg("Invalid attribute count");
         }
@@ -346,7 +346,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 
                 if((flags & SceneImportFlags::FlipUVs) == SceneImportFlags::FlipUVs) {
                     y_profile_zone("Flip UV");
-                    for(Vertex& v : vertices) {
+                    for(FullVertex& v : vertices) {
                         v.uv.y() = 1.0f - v.uv.y();
                     }
                 }

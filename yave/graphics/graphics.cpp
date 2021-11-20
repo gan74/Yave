@@ -33,6 +33,7 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
+#include <yave/graphics/device/MeshAllocator.h>
 
 #include <yave/graphics/device/extensions/RayTracing.h>
 
@@ -50,11 +51,13 @@ std::array<Uninitialized<Sampler>, 5> samplers;
 Uninitialized<DeviceMemoryAllocator> allocator;
 Uninitialized<LifetimeManager> lifetime_manager;
 Uninitialized<DescriptorSetAllocator> descriptor_set_allocator;
+Uninitialized<MeshAllocator> mesh_allocator;
 Uninitialized<DeviceResources> resources;
 
 VkDevice vk_device;
 
 Uninitialized<CmdQueue> queue;
+
 
 struct {
     VkSemaphore semaphore = {};
@@ -66,9 +69,11 @@ struct {
     std::unique_ptr<RayTracing> ray_tracing;
 } extensions;
 
+struct {
+    std::mutex lock;
+    core::Vector<std::pair<std::unique_ptr<ThreadLocalDevice>, ThreadDevicePtr*>> devices;
+} threads;
 
-std::mutex devices_lock;
-core::Vector<std::pair<std::unique_ptr<ThreadLocalDevice>, ThreadDevicePtr*>> thread_devices;
 }
 
 
@@ -185,6 +190,7 @@ void init_device(Instance& instance, PhysicalDevice device) {
     device::lifetime_manager.init();
     device::allocator.init(device_properties());
     device::descriptor_set_allocator.init();
+    device::mesh_allocator.init();
 
     for(usize i = 0; i != device::samplers.size(); ++i) {
         device::samplers[i].init(create_sampler(SamplerType(i)));
@@ -207,17 +213,18 @@ void destroy_device() {
 
     {
         y_profile_zone("collecting thread devices");
-        const auto lock = y_profile_unique_lock(device::devices_lock);
-        for(const auto& p : device::thread_devices) {
+        const auto lock = y_profile_unique_lock(device::threads.lock);
+        for(const auto& p : device::threads.devices) {
             *p.second = nullptr;
         }
-        device::thread_devices.clear();
+        device::threads.devices.clear();
     }
 
     for(auto& sampler : device::samplers) {
         sampler.destroy();
     }
 
+    device::mesh_allocator.destroy();
     device::descriptor_set_allocator.destroy();
     device::lifetime_manager.destroy();
     device::allocator.destroy();
@@ -245,14 +252,14 @@ ThreadDevicePtr thread_device() {
     static thread_local ThreadDevicePtr thread_device = nullptr;
     static thread_local y_defer({
         if(auto* device = thread_device) {
-            const auto lock = y_profile_unique_lock(device::devices_lock);
-            const auto it = std::find_if(device::thread_devices.begin(), device::thread_devices.end(), [&](const auto& p) { return p.first.get() == device; });
+            const auto lock = y_profile_unique_lock(device::threads.lock);
+            const auto it = std::find_if(device::threads.devices.begin(), device::threads.devices.end(), [&](const auto& p) { return p.first.get() == device; });
 
-            y_always_assert(it != device::thread_devices.end(), "ThreadLocalDevice not found.");
+            y_always_assert(it != device::threads.devices.end(), "ThreadLocalDevice not found.");
             y_debug_assert(*it->second == device);
 
             *it->second = nullptr;
-            device::thread_devices.erase_unordered(it);
+            device::threads.devices.erase_unordered(it);
         }
     });
 
@@ -260,8 +267,8 @@ ThreadDevicePtr thread_device() {
         auto device = std::make_unique<ThreadLocalDevice>();
         thread_device = device.get();
 
-        const auto lock = y_profile_unique_lock(device::devices_lock);
-        device::thread_devices.emplace_back(std::move(device), &thread_device);
+        const auto lock = y_profile_unique_lock(device::threads.lock);
+        device::threads.devices.emplace_back(std::move(device), &thread_device);
     }
 
     return thread_device;
@@ -342,6 +349,10 @@ DeviceMemoryAllocator& device_allocator() {
 
 DescriptorSetAllocator& descriptor_set_allocator() {
     return device::descriptor_set_allocator.get();
+}
+
+MeshAllocator& mesh_allocator() {
+    return device::mesh_allocator.get();
 }
 
 const CmdQueue& command_queue() {

@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-SubBufferBase::SubBufferBase(const BufferBase& base, usize byte_len, usize byte_off) :
+SubBufferBase::SubBufferBase(const BufferBase& base, u64 byte_len, u64 byte_off) :
         _size(byte_len),
         _offset(byte_off),
         _buffer(base.vk_buffer()),
@@ -43,23 +43,27 @@ bool SubBufferBase::is_null() const {
     return !_buffer;
 }
 
-usize SubBufferBase::alignment_for_usage(BufferUsage usage) {
+u64 SubBufferBase::host_side_alignment() {
+    return device_properties().non_coherent_atom_size;
+}
+
+u64 SubBufferBase::alignment_for_usage(BufferUsage usage) {
+    u64 align = 1;
     const auto& props = device_properties();
-    u64 align = props.non_coherent_atom_size;
     if((usage & BufferUsage::UniformBit) != BufferUsage::None) {
         align = std::max(props.uniform_buffer_alignment, align);
     }
     if((usage & BufferUsage::StorageBit) != BufferUsage::None) {
         align = std::max(props.storage_buffer_alignment, align);
     }
-    return usize(align);
+    return u64(align);
 }
 
-usize SubBufferBase::byte_size() const {
+u64 SubBufferBase::byte_size() const {
     return _size;
 }
 
-usize SubBufferBase::byte_offset() const {
+u64 SubBufferBase::byte_offset() const {
     return _offset;
 }
 
@@ -83,6 +87,15 @@ VkDescriptorBufferInfo SubBufferBase::descriptor_info() const {
 
 VkMappedMemoryRange SubBufferBase::vk_memory_range() const {
     return _memory.vk_mapped_range(_size, _offset);
+}
+
+
+bool SubBufferBase::operator==(const SubBufferBase& other) const {
+    return (_buffer == other._buffer) && (_offset == other._offset) && (_size == other._size);
+}
+
+bool SubBufferBase::operator!=(const SubBufferBase& other) const {
+    return !operator==(other);
 }
 
 }

@@ -34,7 +34,7 @@ namespace yave {
 class MeshData {
     public:
         MeshData() = default;
-        MeshData(core::Vector<Vertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin = {}, core::Vector<Bone> bones = {});
+        MeshData(core::Vector<FullVertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin = {}, core::Vector<Bone> bones = {});
         MeshData(core::Vector<PackedVertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin = {}, core::Vector<Bone> bones = {});
 
         float radius() const;

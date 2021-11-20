@@ -39,7 +39,7 @@ class BufferBase : NonCopyable {
         ~BufferBase();
 
         BufferUsage usage() const;
-        usize byte_size() const;
+        u64 byte_size() const;
         const DeviceMemory& device_memory() const;
 
         VkDescriptorBufferInfo descriptor_info() const;
@@ -53,10 +53,10 @@ class BufferBase : NonCopyable {
         BufferBase(BufferBase&&) = default;
         BufferBase& operator=(BufferBase&&) = default;
 
-        BufferBase(usize byte_size, BufferUsage usage, MemoryType type);
+        BufferBase(u64 byte_size, BufferUsage usage, MemoryType type);
 
     private:
-        usize _size = 0;
+        u64 _size = 0;
         BufferUsage _usage = BufferUsage::None;
 
         VkHandle<VkBuffer> _buffer;
@@ -86,7 +86,7 @@ class Buffer : public BufferBase {
         using base_buffer_type = Buffer<usage, memory_type>;
 
 
-        static usize total_byte_size(usize size) {
+        static u64 total_byte_size(u64 size) {
             return size;
         }
 
@@ -97,13 +97,13 @@ class Buffer : public BufferBase {
         // This is important: it prevent the ctor from being instanciated for Buffer specialisations that should not be created this way,
         // thus preventing static_assert from going off.
         template<typename = void>
-        Buffer(usize byte_size) : BufferBase(byte_size, Usage, Memory) {
+        explicit Buffer(u64 byte_size) : BufferBase(byte_size, Usage, Memory) {
             static_assert(Usage != BufferUsage::None, "Buffers should not have Usage == BufferUsage::None");
             static_assert(Memory != MemoryType::DontCare, "Buffers should not have Memory == MemoryType::DontCare");
         }
 
         template<BufferUsage U, MemoryType M>
-        Buffer(Buffer<U, M>&& other) {
+        explicit Buffer(Buffer<U, M>&& other) {
             static_assert(is_compatible(U, M));
             BufferBase::operator=(other);
         }
