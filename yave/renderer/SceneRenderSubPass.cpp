@@ -32,6 +32,8 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
+#include <y/utils/format.h>
+
 namespace yave {
 
 SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
@@ -71,7 +73,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
     core::Vector<ecs::EntityId> visible;
     const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
     if(octree_system) {
-        visible = octree_system->octree().find_entities(camera.frustum());
+        visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
     }
     const auto entities = octree_system
         ? world.query<TransformableComponent, StaticMeshComponent>(visible)
@@ -82,6 +84,8 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
         mesh.render(recorder, Renderable::SceneData{u32(index)});
         ++index;
     }
+
+    y_profile_msg(fmt_c_str("% meshes", index));
 
     return index;
 }

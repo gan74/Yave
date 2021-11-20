@@ -35,6 +35,8 @@ class Camera {
         void set_view(const math::Matrix4<>& view);
         void set_proj(const math::Matrix4<>& proj);
 
+        void set_far(float far_dist);
+
         const math::Matrix4<>& view_matrix() const;
         const math::Matrix4<>& proj_matrix() const;
 
@@ -44,6 +46,8 @@ class Camera {
 
         float aspect_ratio() const;
         float field_of_view() const;
+
+        float far_plane_dist() const;
 
         math::Vec3 position() const;
         math::Vec3 forward() const;
@@ -58,6 +62,8 @@ class Camera {
 
         math::Matrix4<> _view;
         math::Matrix4<> _proj;
+
+        float _far = -1.0f;
 
         Y_TODO(This is not thread safe)
         mutable math::Matrix4<> _viewproj;

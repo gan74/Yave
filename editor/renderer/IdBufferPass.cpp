@@ -67,7 +67,7 @@ static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pa
     core::Vector<ecs::EntityId> visible;
     const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
     if(octree_system) {
-        visible = octree_system->octree().find_entities(camera.frustum());
+        visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
     }
     const auto entities = octree_system
         ? world.query<TransformableComponent, StaticMeshComponent>(visible)

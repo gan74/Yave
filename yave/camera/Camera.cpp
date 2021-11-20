@@ -109,6 +109,10 @@ void Camera::update_viewproj() const {
     }
 }
 
+void Camera::set_far(float far_dist) {
+    _far = far_dist;
+}
+
 const math::Matrix4<>& Camera::view_matrix() const {
     return _view;
 }
@@ -132,6 +136,10 @@ float Camera::aspect_ratio() const {
 
 float Camera::field_of_view() const {
     return extract_fov(_proj);
+}
+
+float Camera::far_plane_dist() const {
+    return _far;
 }
 
 math::Vec3 Camera::position() const {

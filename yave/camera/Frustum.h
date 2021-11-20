@@ -42,7 +42,9 @@ class Frustum {
         Frustum(const std::array<math::Vec3, 4>& normals, const math::Vec3& pos, const math::Vec3& forward);
 
         bool is_inside(const math::Vec3& pos, float radius) const;
+
         Intersection intersection(const AABB& aabb) const;
+        Intersection intersection(const AABB& aabb, float far_dist) const;
 
     private:
         std::array<math::Vec3, 5> _normals;

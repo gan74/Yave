@@ -35,8 +35,8 @@ static void push_all_entities(core::Vector<ecs::EntityId>& entities, const Octre
     }
 }
 
-static void visit_node(core::Vector<ecs::EntityId>& entities, const Frustum& frustum, const OctreeNode& node) {
-    switch(frustum.intersection(node.aabb())) {
+static void visit_node(core::Vector<ecs::EntityId>& entities, const Frustum& frustum, float far_dist, const OctreeNode& node) {
+    switch(frustum.intersection(node.aabb(), far_dist)) {
         case Intersection::Outside:
         break;
 
@@ -50,7 +50,7 @@ static void visit_node(core::Vector<ecs::EntityId>& entities, const Frustum& fru
                 entities << id;
             }
             for(const OctreeNode& child : node.children()) {
-                visit_node(entities, frustum, child);
+                visit_node(entities, frustum, far_dist, child);
             }
         break;
     }
@@ -73,11 +73,11 @@ const OctreeNode& Octree::root() const {
     return _root;
 }
 
-core::Vector<ecs::EntityId> Octree::find_entities(const Frustum& frustum) const {
+core::Vector<ecs::EntityId> Octree::find_entities(const Frustum& frustum, float far_dist) const {
     y_profile();
 
     core::Vector<ecs::EntityId> entities;
-    visit_node(entities, frustum, _root);
+    visit_node(entities, frustum, far_dist, _root);
     return entities;
 }
 
