@@ -76,25 +76,26 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
         _cache.pipeline_layout = pipeline.vk_pipeline_layout();
     }
 
-    if(!_main_descriptor_set.is_null()) {
+    if(_main_descriptor_set) {
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             _cache.pipeline_layout,
             0,
-            1, reinterpret_cast<const VkDescriptorSet*>(&_main_descriptor_set),
+            1, &_main_descriptor_set,
             0, nullptr
         );
         _main_descriptor_set = {};
     }
 
     if(!descriptor_set.is_null()) {
+        const VkDescriptorSet vk_set = descriptor_set.vk_descriptor_set();
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             _cache.pipeline_layout,
             ds_offset,
-            1, reinterpret_cast<const VkDescriptorSet*>(&descriptor_set),
+            1, &vk_set,
             0, nullptr
         );
     }
@@ -104,7 +105,7 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
 
 
 void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
-    _main_descriptor_set = ds_set;
+    _main_descriptor_set = ds_set.vk_descriptor_set();
 }
 
 void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {

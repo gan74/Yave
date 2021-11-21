@@ -124,7 +124,7 @@ class RenderPassRecorder final : NonMovable {
 
         CmdBufferRecorder& _cmd_buffer;
         Viewport _viewport;
-        DescriptorSetBase _main_descriptor_set;
+        VkDescriptorSet _main_descriptor_set = {};
 
         struct {
             IndexSubBuffer index_buffer;
