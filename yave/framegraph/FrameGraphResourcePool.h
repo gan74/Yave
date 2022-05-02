@@ -28,6 +28,7 @@ SOFTWARE.
 #include <y/core/Vector.h>
 
 #include <mutex>
+#include <atomic>
 
 namespace yave {
 

@@ -89,8 +89,7 @@ class Matrix {
         using value_type = T;
 
         inline constexpr Matrix() = default;
-        inline constexpr Matrix(const Matrix&) = default;
-        inline constexpr Matrix& operator=(const Matrix&) = default;
+        //inline constexpr Matrix(const Matrix&) = default;
 
         template<typename U, typename... Args>
         inline constexpr explicit Matrix(U t, Args... args) {
@@ -266,7 +265,7 @@ class Matrix {
 
         template<typename U, usize P>
         inline constexpr Matrix& operator*=(const Matrix<M, P, U>& m) {
-            return operator=(*this * m);
+            return (*this = (*this * m));
         }
 
         inline constexpr Matrix& operator*=(const T& t) {

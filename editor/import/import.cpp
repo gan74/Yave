@@ -35,7 +35,7 @@ SOFTWARE.
 
 // -------------- STB --------------
 extern "C" {
-#ifdef __GNUC__
+#ifdef Y_GNU
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
@@ -43,13 +43,13 @@ extern "C" {
 #define STB_IMAGE_IMPLEMENTATION
 #include <external/stb/stb_image.h>
 
-#ifdef __GNUC__
+#ifdef Y_GNU
 #pragma GCC diagnostic pop
 #endif
 }
 
 // -------------- TINYGLTF --------------
-#ifdef __GNUC__
+#ifdef Y_GNU
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #endif
@@ -60,7 +60,7 @@ extern "C" {
 #define TINYGLTF_NOEXCEPTION
 #include <external/tinygltf/tiny_gltf.h>
 
-#ifdef __GNUC__
+#ifdef Y_GNU
 #pragma GCC diagnostic pop
 #endif
 
@@ -164,7 +164,7 @@ static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, 
         }
         if(normalize) {
             if constexpr(size == 4) {
-                vec.to<3>().normalize();
+                vec.template to<3>().normalize();
             } else {
                 vec.normalize();
             }

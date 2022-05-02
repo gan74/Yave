@@ -85,8 +85,6 @@ class EngineView final : public Widget {
 
         Gizmo _gizmo;
 
-        float _snapping = 0.0f;
-
         bool _disable_render = false;
         isize _resolution = -1;
 };

@@ -34,7 +34,7 @@ class ThreadLocalLifetimeManager : NonMovable {
 
 
     private:
-        ThreadDevicePtr _device;
+        [[maybe_unused]] ThreadDevicePtr _device;
 };
 
 }

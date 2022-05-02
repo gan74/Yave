@@ -1,5 +1,5 @@
 
 #include "imgui.h"
-#ifdef  __GNUC__
+#ifdef  Y_GCC
 #pragma GCC diagnostic pop
 #endif

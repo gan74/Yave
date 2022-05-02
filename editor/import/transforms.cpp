@@ -29,7 +29,7 @@ SOFTWARE.
 #include <y/utils/log.h>
 
 
-#if __has_include(<immintrin.h>) && __has_include(<xmmintrin.h>) && __has_include(<emmintrin.h>) && __has_include(<smmintrin.h>)
+#if defined(Y_MSVC) || defined(__SSE4_2__)
 #define USE_SIMD
 #include <immintrin.h>
 #include <xmmintrin.h>
@@ -63,12 +63,13 @@ static Vertex transform(const Vertex& v, const math::Transform<>& tr) {
         v.uv
     };
 }
-static PackedVertex transform(const PackedVertex& v, const math::Transform<>& tr) {
+
+[[maybe_unused]] static PackedVertex transform(const PackedVertex& v, const math::Transform<>& tr) {
     return pack_vertex(transform(unpack_vertex(v), tr));
 
 }
 
-static BoneTransform transform(const BoneTransform& bone, const math::Transform<>& tr) {
+[[maybe_unused]] static BoneTransform transform(const BoneTransform& bone, const math::Transform<>& tr) {
     auto [pos, rot, scale] = tr.decompose();
     return BoneTransform {
             bone.position + pos,
@@ -217,7 +218,7 @@ static void pack(const float* in, usize size, u8* out) {
         _mm_storeu_si32(out + i, e);                    // store
     }
 #else
-    for(; i < size; ++i) {
+    for(usize i = 0; i < size; ++i) {
         out[i] = u8(std::round(in[i] * 255.0f));
     }
 #endif

@@ -44,7 +44,6 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr ImageFormat lighting_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 static constexpr usize max_directional_lights = 16;
 static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
@@ -68,10 +67,12 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              FrameGraphImageId ao) {
 
     const SceneView& scene = gbuffer.scene_pass.scene_view;
-    auto [ibl_probe, display_sky] = find_probe(scene.world());
+    auto [ibl_probe, sky] = find_probe(scene.world());
     const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
+
+    const bool display_sky = sky;
 
     const auto lit = builder.declare_copy(gbuffer.emissive);
 

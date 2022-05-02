@@ -74,7 +74,7 @@ template<typename T>
 static constexpr bool component_required_v = component_type<T>::required;
 
 template<typename T>
-static constexpr bool is_component_const_v = std::is_const_v<component_type<T>::type> || !component_required_v<T>;
+static constexpr bool is_component_const_v = std::is_const_v<typename component_type<T>::type> || !component_required_v<T>;
 }
 
 }

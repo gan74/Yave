@@ -64,7 +64,7 @@ class DeviceMemoryAllocator {
         core::FlatHashMap<HeapType, core::Vector<std::unique_ptr<DeviceMemoryHeap>>> _heaps;
         core::FlatHashMap<MemoryType, std::unique_ptr<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
 
-        usize _max_allocs = 0;
+        [[maybe_unused]] usize _max_allocs = 0;
         mutable std::mutex _lock;
 };
 

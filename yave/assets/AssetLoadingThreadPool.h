@@ -81,7 +81,7 @@ class AssetLoadingThreadPool : NonMovable {
         core::Vector<std::thread> _threads;
         std::atomic<bool> _run = true;
 
-        AssetLoader* _parent = nullptr;
+        [[maybe_unused]] AssetLoader* _parent = nullptr;
 };
 
 }

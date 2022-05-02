@@ -12,7 +12,7 @@
 #include <y/math/Vec.h>
 #include "IconsFontAwesome5.h"
 
-#ifdef __GNUC__
+#ifdef Y_GCC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wold-style-cast"

@@ -56,12 +56,14 @@ class FrameGraphDescriptorBinding {
         FrameGraphDescriptorBinding(BindingType type, FrameGraphBufferId res);
         FrameGraphDescriptorBinding(BindingType type, FrameGraphImageId res, SamplerType sampler = SamplerType::LinearRepeat);
 
+        struct ImageSampler {
+            FrameGraphImageId image;
+            SamplerType sampler;
+        };
+
         BindingType _type = BindingType::None;
         union {
-            struct {
-                FrameGraphImageId image;
-                SamplerType sampler;
-            } _image;
+            ImageSampler _image;
             FrameGraphBufferId _buffer;
             Descriptor _external;
         };

@@ -78,7 +78,7 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
             ct_type_name<T>(), "", false, false
         );
     } else if constexpr(is_iterable_v<T>) {
-        if constexpr(is_printable_v<T::value_type>) {
+        if constexpr(is_printable_v<typename T::value_type>) {
             vars.emplace_back(
                 full_name,
                 [=]{ return fmt("%", getter()); },
@@ -98,7 +98,7 @@ static void explore(C& vars, const core::String& parent, std::string_view name, 
     auto& obj = getter();
     char* ptr = reinterpret_cast<char*>(&obj);
 
-    reflect::explore_members(obj, [=, full = parent + "." + name, &vars](std::string_view name, auto& e) {
+    reflect::explore_members(obj, [=, full = parent + "." + name, &vars](std::string_view name, auto& e) mutable {
         // This will break if we run into polymorphism or virtual bases, static_assert on that...
         using elem_type = remove_cvref_t<decltype(e)>;
         const usize offset = reinterpret_cast<char*>(&e) - ptr;

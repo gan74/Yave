@@ -31,10 +31,6 @@ SOFTWARE.
 
 namespace editor {
 
-static usize to_kb(usize b) {
-    return b / 1024;
-}
-
 static double to_mb(double b) {
     return b / (1024 * 1024);
 }
@@ -217,7 +213,7 @@ void PerformanceMetrics::draw_memory() {
     if(_show_heaps) {
         ImGui::Indent();
         for(usize i = 0; i != 4; ++i) {
-            if(!allocated_per_type_mb[i]) {
+            if(allocated_per_type_mb[i] == 0) {
                 continue;
             }
             ImGui::Bullet();

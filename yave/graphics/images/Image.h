@@ -119,7 +119,7 @@ class Image : public ImageBase {
         }
 
         const size_type& size() const {
-            return image_size().to<size_type::size()>();
+            return image_size().template to<size_type::size()>();
         }
 };
 

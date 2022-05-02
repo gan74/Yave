@@ -31,6 +31,7 @@ else()
             -Wlogical-op
             -Wredundant-decls
             -Wundef
+            -Wno-gnu-zero-variadic-macro-arguments
         )
     set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra
         ${Y_EXTRA_WARNINGS})

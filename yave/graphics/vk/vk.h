@@ -33,7 +33,7 @@ SOFTWARE.
 #if defined(Y_OS_WIN)
 #define VK_USE_PLATFORM_WIN32_KHR
 #elif defined(Y_OS_LINUX)
-#define VK_USE_PLATFORM_XLIB_KHR
+// ................. ???
 #else
 #error Unsupported platform
 #endif
@@ -63,10 +63,13 @@ inline constexpr void vk_init_struct_stype(Type& t) {       \
 }
 
 // Extensions
+#ifdef Y_OS_WIN
+VK_STRUCT_INIT(VkWin32SurfaceCreateInfoKHR,                         VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR)
+#endif
+
 VK_STRUCT_INIT(VkPresentInfoKHR,                                    VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
 
 VK_STRUCT_INIT(VkSwapchainCreateInfoKHR,                            VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
-VK_STRUCT_INIT(VkWin32SurfaceCreateInfoKHR,                         VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR)
 
 VK_STRUCT_INIT(VkWriteDescriptorSetInlineUniformBlockEXT,           VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT)
 VK_STRUCT_INIT(VkPhysicalDeviceInlineUniformBlockPropertiesEXT,     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_PROPERTIES_EXT)
@@ -299,7 +302,7 @@ inline void vk_check(VkResult result) {
     y_always_assert(!is_error(result), vk_result_str(result));
 }
 
-inline [[nodiscard]] bool vk_swapchain_out_of_date(VkResult result) {
+[[nodiscard]] inline bool vk_swapchain_out_of_date(VkResult result) {
     if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         return true;
     }

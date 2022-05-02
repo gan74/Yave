@@ -29,6 +29,7 @@ SOFTWARE.
 #include <variant>
 #include <deque>
 #include <mutex>
+#include <thread>
 
 #define YAVE_MT_LIFETIME_MANAGER
 

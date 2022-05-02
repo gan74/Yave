@@ -38,7 +38,6 @@ static constexpr float gizmo_hover_width = 7.5f;
 static constexpr float gizmo_width = 2.5f;
 static constexpr float gizmo_size = 0.25f;
 static constexpr float gizmo_radius = 1.0f;
-static constexpr float gizmo_pick_radius = 0.05f;
 static constexpr u32 gizmo_alpha = 0xD0000000;
 
 // stuff for the 2 axes selection
@@ -70,13 +69,6 @@ static math::Vec3 intersect(const math::Vec3& normal, const math::Vec3& center, 
     const float t = (center - start).dot(normal) / denom;
     return start + direction * t;
 }
-
-static const ImU32 gizmo_flags =
-        ImGuiWindowFlags_NoInputs |
-        ImGuiWindowFlags_NoFocusOnAppearing |
-        ImGuiWindowFlags_NoBringToFrontOnFocus;
-
-
 
 
 Gizmo::Gizmo(SceneView* view) : _scene_view(view) {
@@ -337,13 +329,13 @@ void Gizmo::draw() {
 
         usize rotation_axis = _rotation_axis;
 
-        auto cam_side = [&](math::Vec3 world_pos) {
+        auto cam_side = [&, &obj_pos = obj_pos](math::Vec3 world_pos) {
             const math::Vec3 local = world_pos - obj_pos;
             return local.normalized().dot((world_pos - cam_pos).normalized()) < 0.1f;
         };
 
 
-        auto next_point = [&](usize axis, usize i) -> std::pair<math::Vec2, bool> {
+        auto next_point = [&, &obj_pos = obj_pos](usize axis, usize i) -> std::pair<math::Vec2, bool> {
             const math::Vec3 radial = basis[axis] * std::sin(i * seg_ang_size) + basis[(axis + 1) % 3] * std::cos(i * seg_ang_size);
             return {to_window_pos(obj_pos + radial * gizmo_radius * perspective), cam_side(obj_pos + radial)};
         };
@@ -355,7 +347,8 @@ void Gizmo::draw() {
 
             math::Vec2 last_point = next_point(axis, 0).first;
             for(usize i = 1; i != segment_count + 1; ++i) {
-                const auto [next, visible] = next_point(axis, i);
+                const auto [next_pt, visible] = next_point(axis, i);
+                const auto next = next_pt;
                 y_defer(last_point = next);
 
                 if(!visible) {
@@ -384,7 +377,8 @@ void Gizmo::draw() {
 
             math::Vec2 last_point = next_point(axis, 0).first;
             for(usize i = 1; i != segment_count + 1; ++i) {
-                const auto [next, visible] = next_point(axis, i);
+                const auto [next_pt, visible] = next_point(axis, i);
+                const auto next = next_pt;
                 y_defer(last_point = next);
 
                 u32 alpha = gizmo_alpha;
@@ -398,7 +392,7 @@ void Gizmo::draw() {
             }
         }
 
-        auto compute_angle = [&](usize axis) {
+        auto compute_angle = [&, &obj_pos = obj_pos](usize axis) {
                 if(axis >= 3) {
                     return 0.0f;
                 }

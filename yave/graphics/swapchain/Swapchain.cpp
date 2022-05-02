@@ -133,6 +133,8 @@ static VkSurfaceKHR create_surface(Window* window) {
     y_profile();
 #ifdef Y_OS_WIN
     return create_surface(window->instance(), window->handle());
+#else
+    unused(window);
 #endif
     return vk_null();
 }

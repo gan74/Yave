@@ -201,6 +201,7 @@ ResourceFence LifetimeManager::create_fence() {
 
 void LifetimeManager::register_for_polling(CmdBufferData* data) {
     bool collect = false;
+    unused(collect);
 
     {
         const auto lock = y_profile_unique_lock(_cmd_lock);

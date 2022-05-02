@@ -26,15 +26,11 @@ SOFTWARE.
 #include <y/concurrent/concurrent.h>
 
 #include <array>
+#include <cstdio>
+#include <cstdlib>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
-#endif
-
-#ifdef Y_GCC
-#include <cstdlib>
-#include <memory>
-#include <cxxabi.h>
 #endif
 
 namespace y {

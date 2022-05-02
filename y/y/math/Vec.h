@@ -256,7 +256,7 @@ class Vec
 
         inline constexpr bool is_zero() const {
             for(usize i = 0; i != N; ++i) {
-                if(_vec[i]) {
+                if(_vec[i] != 0) {
                     return false;
                 }
             }

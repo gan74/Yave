@@ -96,7 +96,7 @@ AssetLoader::Loader<T>::Loader(AssetLoader* parent) : LoaderBase(parent) {
 }
 
 template<typename T>
-AssetLoader::Loader<T>::~Loader() {
+AssetLoader::Loader<T>::~Loader<T>() {
     y_profile();
     const auto lock = y_profile_unique_lock(_lock);
     for(auto&& [id, ptr] : _loaded) {
@@ -219,7 +219,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                 return core::Err();
             }
 
-            void finalize() {
+            void finalize() override {
                 if(_data->is_failed()) {
                     return;
                 }
@@ -230,7 +230,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                 y_profile_msg(fmt_c_str("finished loading %", asset_name()));
             }
 
-            void set_dependencies_failed() {
+            void set_dependencies_failed() override {
                 if(_data->is_failed()) {
                     return;
                 }

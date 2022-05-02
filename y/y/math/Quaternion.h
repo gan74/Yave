@@ -45,24 +45,15 @@ class Quaternion {
         inline constexpr Quaternion(detail::identity_t = identity()) : _quat(0, 0, 0, 1) {
         }
 
-        inline constexpr Quaternion(const Quaternion& q) = default;
+        inline constexpr Quaternion(const Quaternion&) = default;
+        inline constexpr Quaternion& operator=(const Quaternion&) = default;
 
         template<typename X>
         inline constexpr Quaternion(const Vec<4, X>& q) : _quat(q.normalized()) {
         }
 
-        template<typename X>
-        inline constexpr Quaternion(const Quaternion<X>& q) : _quat(q._quat) {
-        }
-
         template<typename... Args, typename = std::enable_if_t<std::is_constructible_v<Vec<4, T>, Args...>>>
         inline constexpr /*explicit*/ Quaternion(Args&&... args) : _quat(Vec<4, T>(y_fwd(args)...).normalized()) {
-        }
-
-        template<typename X>
-        inline constexpr Quaternion& operator=(const Quaternion<X>& q) {
-            _quat = q._quat;
-            return *this;
         }
 
         template<typename X>

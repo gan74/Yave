@@ -80,14 +80,15 @@ static constexpr bool is_debug_defined = false;
 #pragma warning(disable : 5105)
 #endif
 
-#ifdef __GNUC__
+#if defined(__clang__)
+#define Y_CLANG
+#elif defined(__GNUC__)
 #define Y_GCC
 #endif
 
-#ifdef __clang__
-#define Y_CLANG
+#ifdef __GNUC__
+#define Y_GNU
 #endif
-
 
 #ifdef Y_DEBUG
 #define y_breakpoint do { y::break_in_debugger(); } while(false)
