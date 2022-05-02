@@ -35,6 +35,11 @@ struct HINSTANCE__;
 struct HWND__;
 #endif
 
+#ifdef Y_OS_LINUX
+struct xcb_connection_t;
+#endif
+
+
 namespace yave {
 
 #ifdef Y_OS_WIN
@@ -88,6 +93,11 @@ class Window : NonMovable {
         HWND_ handle() const { return _hwnd; }
 #endif
 
+#ifdef Y_OS_LINUX
+        xcb_connection_t* instance() const { return _connection; }
+        u32 handle() const { return _window; }
+#endif
+
     protected:
         virtual void resized() {}
 
@@ -105,6 +115,13 @@ class Window : NonMovable {
         u32 _ex_style = 0;
 #endif
 
+
+#ifdef Y_OS_LINUX
+        xcb_connection_t* _connection = nullptr;
+        u32 _window = 0;
+
+        bool _run = true;
+#endif
 
         EventHandler* _event_handler = nullptr;
 };

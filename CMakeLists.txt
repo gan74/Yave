@@ -129,6 +129,10 @@ if(YAVE_BUILD_YAVE)
         add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
     endif()
 
+    if(UNIX)
+        target_link_libraries(yave xcb)
+    endif()
+
     if(YAVE_TRACY_PROFILING)
         add_library(tracy STATIC ${TRACY_FILES})
         if(WIN32)

@@ -63,6 +63,11 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
     extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 #endif
 
+#ifdef Y_OS_LINUX
+    extention_names << VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+#endif
+
+
     if(_debug_params.debug_features_enabled()) {
         _debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::extension_name()));
     }

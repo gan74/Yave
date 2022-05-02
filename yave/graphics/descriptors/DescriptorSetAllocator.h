@@ -50,7 +50,7 @@ namespace yave {
 
 class DescriptorSetLayout {
     public:
-        static constexpr usize descriptor_type_count = 12;
+        static constexpr usize descriptor_type_count = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 2;
 
         struct InlineBlock {
             u32 binding;

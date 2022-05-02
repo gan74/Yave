@@ -167,7 +167,7 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
     _inline_blocks(layout.inline_blocks()) {
 
     std::array<VkDescriptorSetLayout, pool_size> layouts;
-    std::fill_n(layouts.begin(), pool_size, layout.vk_descriptor_set_layout());
+    std::fill_n(layouts.begin(), pool_size, _layout);
 
     VkDescriptorSetAllocateInfo allocate_info = vk_struct();
     {

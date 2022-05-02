@@ -28,6 +28,7 @@ SOFTWARE.
 #include <array>
 #include <cstdio>
 #include <cstdlib>
+#include <csignal>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
@@ -46,6 +47,14 @@ void break_in_debugger() {
 #ifdef Y_OS_WIN
     if(IsDebuggerPresent()) {
         DebugBreak();
+    }
+#endif
+#ifdef Y_OS_LINUX
+    FILE* fd = fopen("/tmp", "r");
+    const bool debugger_present = fileno(fd) > 5;
+    fclose(fd);
+    if(debugger_present) {
+        std::raise(SIGTRAP);
     }
 #endif
 }

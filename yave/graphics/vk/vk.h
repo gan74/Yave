@@ -67,6 +67,10 @@ inline constexpr void vk_init_struct_stype(Type& t) {       \
 VK_STRUCT_INIT(VkWin32SurfaceCreateInfoKHR,                         VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR)
 #endif
 
+#ifdef Y_OS_LINUX
+VK_STRUCT_INIT(VkXcbSurfaceCreateInfoKHR,                           VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR)
+#endif
+
 VK_STRUCT_INIT(VkPresentInfoKHR,                                    VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
 
 VK_STRUCT_INIT(VkSwapchainCreateInfoKHR,                            VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)

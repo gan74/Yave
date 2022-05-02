@@ -66,7 +66,7 @@ static VkPresentModeKHR present_mode(VkSurfaceKHR surface) {
 
 static u32 compute_image_count(VkSurfaceCapabilitiesKHR capabilities) {
     const u32 ideal = 3;
-    if(capabilities.maxImageCount < ideal) {
+    if(capabilities.maxImageCount < ideal && capabilities.maxImageCount > capabilities.minImageCount) {
         return capabilities.maxImageCount;
     }
     if(capabilities.minImageCount > ideal) {
@@ -129,13 +129,34 @@ static VkSurfaceKHR create_surface(HINSTANCE_ instance, HWND_ handle) {
 }
 #endif
 
+#ifdef Y_OS_LINUX
+static VkSurfaceKHR create_surface(xcb_connection_t* connection, u32 window) {
+    VkXcbSurfaceCreateInfoKHR create_info = vk_struct();
+    {
+        create_info.connection = connection;
+        create_info.window = window;
+    }
+
+    VkSurfaceKHR surface = {};
+    vk_check(vkCreateXcbSurfaceKHR(vk_device_instance(), &create_info, vk_allocation_callbacks(), &surface));
+
+    if(!has_wsi_support(surface)) {
+        y_fatal("No WSI support.");
+    }
+    log_msg("Vulkan WSI supported!");
+
+    return surface;
+}
+#endif
+
 static VkSurfaceKHR create_surface(Window* window) {
     y_profile();
-#ifdef Y_OS_WIN
+
+#if defined(Y_OS_WIN) || defined(Y_OS_LINUX)
     return create_surface(window->instance(), window->handle());
-#else
-    unused(window);
 #endif
+
+    unused(window);
     return vk_null();
 }
 
