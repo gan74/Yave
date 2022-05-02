@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -338,4 +338,3 @@ static_assert(std::is_trivially_copyable_v<Matrix4<>>, "Matrix<T> should be triv
 }
 
 #endif // Y_MATH_MATRIX_H
-

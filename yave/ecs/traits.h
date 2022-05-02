@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Gr�goire Angerand
+Copyright (c) 2016-2022 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -81,4 +81,3 @@ static constexpr bool is_component_const_v = std::is_const_v<typename component_
 }
 
 #endif // YAVE_ECS_TRAITS_H
-

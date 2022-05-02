@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -137,4 +137,3 @@ YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Texture, ImageData, AssetType::Image);
 }
 
 #endif // YAVE_GRAPHICS_IMAGES_IMAGE_H
-

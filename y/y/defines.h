@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -117,4 +117,3 @@ static constexpr bool is_debug_defined = false;
 
 
 #endif // Y_DEFINES_H
-

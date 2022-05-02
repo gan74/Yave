@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,11 @@ const char* vk_result_str(VkResult result) {
         VK_RESULT_CASE(VK_ERROR_FORMAT_NOT_SUPPORTED)
         VK_RESULT_CASE(VK_ERROR_FRAGMENTED_POOL)
         VK_RESULT_CASE(VK_ERROR_UNKNOWN)
+        VK_RESULT_CASE(VK_ERROR_OUT_OF_POOL_MEMORY)
+        VK_RESULT_CASE(VK_ERROR_INVALID_EXTERNAL_HANDLE)
+        VK_RESULT_CASE(VK_ERROR_FRAGMENTATION)
+        VK_RESULT_CASE(VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS)
+        VK_RESULT_CASE(VK_PIPELINE_COMPILE_REQUIRED)
 
         default:
             break;

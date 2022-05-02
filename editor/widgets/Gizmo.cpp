@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -69,6 +69,8 @@ static math::Vec3 intersect(const math::Vec3& normal, const math::Vec3& center, 
     const float t = (center - start).dot(normal) / denom;
     return start + direction * t;
 }
+
+
 
 
 Gizmo::Gizmo(SceneView* view) : _scene_view(view) {
@@ -425,6 +427,4 @@ void Gizmo::draw() {
     }
 }
 
-
 }
-

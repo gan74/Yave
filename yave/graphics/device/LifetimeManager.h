@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -93,4 +93,3 @@ YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
 }
 
 #endif // YAVE_DEVICE_RESOURCELIFETIMEMANAGER_H
-

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -133,7 +133,7 @@ class Descriptor {
         }
 
         Descriptor(const void* data, usize size) :
-                _type(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT),
+                _type(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK),
                 _info(data, size) {
         }
 
@@ -188,7 +188,7 @@ class Descriptor {
 
         bool is_inline_block() const {
             switch(_type) {
-                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
                     return true;
                 default:
                     break;

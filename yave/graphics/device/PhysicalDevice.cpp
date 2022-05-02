@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -47,14 +47,15 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
     {
         _supported_features.pNext = &_supported_features_1_1;
         _supported_features_1_1.pNext = &_supported_features_1_2;
+        _supported_features_1_2.pNext = &_supported_features_1_3;
 
         vkGetPhysicalDeviceFeatures2(_device, &_supported_features);
     }
 
     {
-        _properties.pNext = &_uniform_blocks_properties;
-        _uniform_blocks_properties.pNext = &_properties_1_1;
+        _properties.pNext = &_properties_1_1;
         _properties_1_1.pNext = &_properties_1_2;
+        _properties_1_2.pNext = &_properties_1_3;
 
         vkGetPhysicalDeviceProperties2(_device, &_properties);
     }
@@ -72,34 +73,11 @@ DeviceProperties PhysicalDevice::device_properties() const {
 
     properties.max_memory_allocations = limits.maxMemoryAllocationCount;
 
-    properties.max_inline_uniform_size = vk_uniform_block_properties().maxInlineUniformBlockSize;
+    properties.max_inline_uniform_size = _properties_1_3.maxInlineUniformBlockSize;
 
     return properties;
 }
 
-VkPhysicalDevice PhysicalDevice::vk_physical_device() const {
-    return _device;
-}
-
-const VkPhysicalDeviceProperties& PhysicalDevice::vk_properties() const {
-    return _properties.properties;
-}
-
-const VkPhysicalDeviceVulkan11Properties& PhysicalDevice::vk_properties_1_1() const {
-    return _properties_1_1;
-}
-
-const VkPhysicalDeviceVulkan12Properties& PhysicalDevice::vk_properties_1_2() const {
-    return _properties_1_2;
-}
-
-const VkPhysicalDeviceInlineUniformBlockPropertiesEXT& PhysicalDevice::vk_uniform_block_properties() const {
-    return _uniform_blocks_properties;
-}
-
-const VkPhysicalDeviceMemoryProperties& PhysicalDevice::vk_memory_properties() const {
-    return _memory_properties;
-}
 
 bool PhysicalDevice::is_discrete() const {
     return vk_properties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -115,6 +93,30 @@ usize PhysicalDevice::total_device_memory() const {
     return total;
 }
 
+VkPhysicalDevice PhysicalDevice::vk_physical_device() const {
+    return _device;
+}
+
+const VkPhysicalDeviceMemoryProperties& PhysicalDevice::vk_memory_properties() const {
+    return _memory_properties;
+}
+
+const VkPhysicalDeviceProperties& PhysicalDevice::vk_properties() const {
+    return _properties.properties;
+}
+
+const VkPhysicalDeviceVulkan11Properties& PhysicalDevice::vk_properties_1_1() const {
+    return _properties_1_1;
+}
+
+const VkPhysicalDeviceVulkan12Properties& PhysicalDevice::vk_properties_1_2() const {
+    return _properties_1_2;
+}
+
+const VkPhysicalDeviceVulkan13Properties& PhysicalDevice::vk_properties_1_3() const {
+    return _properties_1_3;
+}
+
 bool PhysicalDevice::support_features(const VkPhysicalDeviceFeatures& features) const {
     return support_all_features(features, _supported_features.features);
 }
@@ -125,6 +127,10 @@ bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan11Features& fe
 
 bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan12Features& features) const {
     return support_all_features(features, _supported_features_1_2);
+}
+
+bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan13Features& features) const {
+    return support_all_features(features, _supported_features_1_3);
 }
 
 core::Vector<VkExtensionProperties> PhysicalDevice::supported_extensions() const {

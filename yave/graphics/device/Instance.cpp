@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 
     VkApplicationInfo app_info = vk_struct();
     {
-        app_info.apiVersion = VK_API_VERSION_1_2;
+        app_info.apiVersion = VK_API_VERSION_1_3;
         app_info.pApplicationName = "Yave";
         app_info.pEngineName = "Yave";
     }

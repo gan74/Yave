@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2021 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -210,6 +210,8 @@ VK_STRUCT_INIT(VkPhysicalDeviceVulkan11Features,                    VK_STRUCTURE
 VK_STRUCT_INIT(VkPhysicalDeviceVulkan11Properties,                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES)
 VK_STRUCT_INIT(VkPhysicalDeviceVulkan12Features,                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES)
 VK_STRUCT_INIT(VkPhysicalDeviceVulkan12Properties,                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES)
+VK_STRUCT_INIT(VkPhysicalDeviceVulkan13Features,                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES)
+VK_STRUCT_INIT(VkPhysicalDeviceVulkan13Properties,                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES)
 VK_STRUCT_INIT(VkImageFormatListCreateInfo,                         VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO)
 VK_STRUCT_INIT(VkAttachmentDescription2,                            VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2)
 VK_STRUCT_INIT(VkAttachmentReference2,                              VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2)
@@ -407,4 +409,3 @@ VK_STRUCT_OP_5(VkDescriptorSetLayoutBinding)
 #define YAVE_VK
 
 #endif // YAVE_GRAPHICS_VK_VK_H
-
