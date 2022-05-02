@@ -62,6 +62,7 @@ PhysicalDevice find_best_device(const Instance& instance);
 VkPhysicalDeviceFeatures required_device_features();
 VkPhysicalDeviceVulkan11Features required_device_features_1_1();
 VkPhysicalDeviceVulkan12Features required_device_features_1_2();
+VkPhysicalDeviceVulkan13Features required_device_features_1_3();
 
 bool has_required_features(const PhysicalDevice& physical);
 bool has_required_properties(const PhysicalDevice &physical);

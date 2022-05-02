@@ -242,6 +242,16 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
     return required;
 }
 
+VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
+    VkPhysicalDeviceVulkan13Features required = vk_struct();
+
+    {
+        // required.inlineUniformBlock = true; // Fallback
+    }
+
+    return required;
+}
+
 bool has_required_features(const PhysicalDevice& physical) {
     if(!physical.support_features(required_device_features())) {
         return false;
@@ -252,6 +262,10 @@ bool has_required_features(const PhysicalDevice& physical) {
     }
 
     if(!physical.support_features(required_device_features_1_2())) {
+        return false;
+    }
+
+    if(!physical.support_features(required_device_features_1_3())) {
         return false;
     }
 

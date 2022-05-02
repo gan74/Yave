@@ -207,6 +207,8 @@ VK_STRUCT_INIT(VkPhysicalDeviceVulkan11Features,                    VK_STRUCTURE
 VK_STRUCT_INIT(VkPhysicalDeviceVulkan11Properties,                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES)
 VK_STRUCT_INIT(VkPhysicalDeviceVulkan12Features,                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES)
 VK_STRUCT_INIT(VkPhysicalDeviceVulkan12Properties,                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES)
+VK_STRUCT_INIT(VkPhysicalDeviceVulkan13Features,                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES)
+VK_STRUCT_INIT(VkPhysicalDeviceVulkan13Properties,                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES)
 VK_STRUCT_INIT(VkImageFormatListCreateInfo,                         VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO)
 VK_STRUCT_INIT(VkAttachmentDescription2,                            VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2)
 VK_STRUCT_INIT(VkAttachmentReference2,                              VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2)

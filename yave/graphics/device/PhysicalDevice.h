@@ -38,20 +38,21 @@ class PhysicalDevice {
 
         DeviceProperties device_properties() const;
 
-        const VkPhysicalDeviceProperties& vk_properties() const;
-        const VkPhysicalDeviceVulkan11Properties& vk_properties_1_1() const;
-        const VkPhysicalDeviceVulkan12Properties& vk_properties_1_2() const;
-
-        const VkPhysicalDeviceInlineUniformBlockPropertiesEXT& vk_uniform_block_properties() const;
+        bool is_discrete() const;
+        usize total_device_memory() const;
 
         const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
 
-        bool is_discrete() const;
-        usize total_device_memory() const;
+        const VkPhysicalDeviceProperties& vk_properties() const;
+
+        const VkPhysicalDeviceVulkan11Properties& vk_properties_1_1() const;
+        const VkPhysicalDeviceVulkan12Properties& vk_properties_1_2() const;
+        const VkPhysicalDeviceVulkan13Properties& vk_properties_1_3() const;
 
         bool support_features(const VkPhysicalDeviceFeatures& features) const;
         bool support_features(const VkPhysicalDeviceVulkan11Features& features) const;
         bool support_features(const VkPhysicalDeviceVulkan12Features& features) const;
+        bool support_features(const VkPhysicalDeviceVulkan13Features& features) const;
 
         core::Vector<VkExtensionProperties> supported_extensions() const;
         bool is_extension_supported(std::string_view name) const;
@@ -67,12 +68,12 @@ class PhysicalDevice {
         VkPhysicalDeviceProperties2 _properties = vk_struct();
         VkPhysicalDeviceVulkan11Properties _properties_1_1 = vk_struct();
         VkPhysicalDeviceVulkan12Properties _properties_1_2 = vk_struct();
+        VkPhysicalDeviceVulkan13Properties _properties_1_3 = vk_struct();
 
         VkPhysicalDeviceFeatures2 _supported_features = vk_struct();
         VkPhysicalDeviceVulkan11Features _supported_features_1_1 = vk_struct();
         VkPhysicalDeviceVulkan12Features _supported_features_1_2 = vk_struct();
-
-        VkPhysicalDeviceInlineUniformBlockPropertiesEXT _uniform_blocks_properties = vk_struct();
+        VkPhysicalDeviceVulkan13Features _supported_features_1_3 = vk_struct();
 };
 
 }

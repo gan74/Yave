@@ -37,7 +37,7 @@ namespace yave {
 static constexpr usize inline_block_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1;
 
 static usize descriptor_type_index(VkDescriptorType type) {
-    if(type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+    if(type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
         y_debug_assert(inline_block_index < DescriptorSetLayout::descriptor_type_count);
         return inline_block_index;
     }
@@ -49,13 +49,13 @@ static usize descriptor_type_index(VkDescriptorType type) {
 static VkDescriptorType index_descriptor_type(usize index) {
     y_debug_assert(index <  DescriptorSetLayout::descriptor_type_count);
     if(index == inline_block_index) {
-        return VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+        return VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     }
     return VkDescriptorType(index);
 }
 
 static VkDescriptorSetLayoutBinding create_inline_uniform_binding_fallback(const VkDescriptorSetLayoutBinding& binding) {
-    if(binding.descriptorType != VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+    if(binding.descriptorType != VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
         return binding;
     }
 
@@ -72,7 +72,7 @@ DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding
     const usize max_inline_uniform_size = device_properties().max_inline_uniform_size;
     const bool inline_uniform_supported = max_inline_uniform_size != 0;
     const auto needs_fallback = [=](const VkDescriptorSetLayoutBinding& binding) {
-        return binding.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT && (!inline_uniform_supported || binding.descriptorCount > max_inline_uniform_size);
+        return binding.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && (!inline_uniform_supported || binding.descriptorCount > max_inline_uniform_size);
     };
 
     core::ScratchVector<VkDescriptorSetLayoutBinding> patched_bindings(bindings.size());
@@ -90,7 +90,7 @@ DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding
     }
 
     for(const auto& b : bindings) {
-        if(b.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+        if(b.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
             ++_inline_blocks;
         }
         _sizes[descriptor_type_index(b.descriptorType)] += b.descriptorCount;

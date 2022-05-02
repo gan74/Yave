@@ -40,6 +40,7 @@ SOFTWARE.
 
 namespace yave {
 namespace device {
+
 Instance* instance = nullptr;
 std::unique_ptr<PhysicalDevice> physical_device;
 
@@ -103,12 +104,16 @@ static void init_vk_device() {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
 
-    const bool inline_uniform_blocks = try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical_device());
     const bool ray_tracing = false; //try_enable_extension(extensions, RayTracing::extension_name(), physical_device());
 
     const auto required_features = required_device_features();
     auto required_features_1_1 = required_device_features_1_1();
     auto required_features_1_2 = required_device_features_1_2();
+    auto required_features_1_3 = required_device_features_1_3();
+
+    if(physical_device().vk_properties_1_3().maxInlineUniformBlockSize > 0) {
+        required_features_1_3.inlineUniformBlock = true;
+    }
 
     y_always_assert(has_required_features(physical_device()), "Device doesn't support required features");
     y_always_assert(has_required_properties(physical_device()), "Device doesn't support required properties");
@@ -125,20 +130,12 @@ static void init_vk_device() {
         queue_create_info.queueCount = u32(queue_priorityies.size());
     }
 
-    VkPhysicalDeviceInlineUniformBlockFeaturesEXT uniform_block_features = vk_struct();
-    {
-        uniform_block_features.inlineUniformBlock = true;
-    }
-
     VkPhysicalDeviceFeatures2 features = vk_struct();
     {
         features.features = required_features;
         features.pNext = &required_features_1_1;
         required_features_1_1.pNext = &required_features_1_2;
-
-        if(inline_uniform_blocks) {
-            required_features_1_2.pNext = &uniform_block_features;
-        }
+        required_features_1_2.pNext = &required_features_1_3;
     }
 
     VkDeviceCreateInfo create_info = vk_struct();

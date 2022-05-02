@@ -86,7 +86,7 @@ static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::
 static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res, VkDescriptorType type) {
     usize size = 1;
     if(is_inline(compiler, res)) {
-        type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+        type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
         size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
     }
     VkDescriptorSetLayoutBinding binding = {};
