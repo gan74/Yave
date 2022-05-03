@@ -338,7 +338,8 @@ math::Vec2i Window::position() const {
 void Window::set_size(const math::Vec2ui& size) {
     RECT rect = {0, 0, LONG(size.x()), LONG(size.y())};
     ::AdjustWindowRectEx(&rect, _style, false, _ex_style);
-    set_window_size(math::Vec2ui(u32(rect.right - rect.left), u32(rect.bottom - rect.top)));
+    const math::Vec2ui size(u32(rect.right - rect.left), u32(rect.bottom - rect.top));
+    ::SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
 }
 
 void Window::set_position(const math::Vec2i& pos) {
@@ -347,20 +348,10 @@ void Window::set_position(const math::Vec2i& pos) {
     set_window_position(math::Vec2i(rect.left, rect.top));
 }
 
-math::Vec2ui Window::window_size() const {
-    RECT rect = {};
-    ::GetWindowRect(_hwnd, &rect);
-    return math::Vec2ui(u32(rect.right - rect.left), u32(rect.bottom - rect.top));
-}
-
 math::Vec2i Window::window_position() const {
     RECT rect = {};
     ::GetWindowRect(_hwnd, &rect);
     return math::Vec2i(rect.left, rect.top);
-}
-
-void Window::set_window_size(const math::Vec2ui& size) {
-    ::SetWindowPos(_hwnd, nullptr, 0, 0, size.x(), size.y(), SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
 }
 
 void Window::set_window_position(const math::Vec2i &pos) {

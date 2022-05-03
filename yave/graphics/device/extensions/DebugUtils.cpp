@@ -38,9 +38,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
 
 
     {
-        constexpr std::string_view black_listed = "UNASSIGNED-CoreValidation-DrawState-VtxIndexOutOfBounds";
-        if(black_listed == callback_data->pMessageIdName) {
-            return false;
+        constexpr i32 black_listed[] = {
+            0x609a13b,          // UNASSIGNED-CoreValidation-Shader-OutputNotConsumed
+        };
+        for(const i32 id : black_listed) {
+            if(id == callback_data->messageIdNumber) {
+                return false;
+            }
         }
     }
 

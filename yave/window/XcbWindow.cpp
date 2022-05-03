@@ -61,7 +61,6 @@ static void dispatch_event(Window* window, const xcb_generic_event_t* event) {
             handler->mouse_released(math::Vec2i(release->event_x, release->event_y), to_mouse_button(release->detail));
         } break;
     }
-
 }
 
 Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) {
@@ -89,7 +88,7 @@ Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) {
                       screen->root_visual,
                       XCB_CW_EVENT_MASK, &event_mask);
 
-    xcb_map_window(_connection, _window);
+    set_title(title);
     xcb_flush(_connection);
 }
 
@@ -106,10 +105,15 @@ bool Window::update() {
         dispatch_event(this, event);
         std::free(event);
     }
+    if(xcb_connection_has_error(_connection)) {
+        close();
+    }
     return _run;
 }
 
 void Window::show() {
+    xcb_map_window(_connection, _window);
+    xcb_flush(_connection);
 }
 
 void Window::focus() {
@@ -123,47 +127,81 @@ bool Window::is_minimized() const {
     return false;
 }
 
+
+static xcb_get_geometry_reply_t window_geometry(xcb_connection_t* connection, u32 window) {
+    const xcb_get_geometry_cookie_t cookie = xcb_get_geometry(connection, window);
+    xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(connection, cookie, nullptr);
+    if(!reply) {
+        return {};
+    }
+    y_defer(std::free(reply));
+    return *reply;
+}
+
+static u32 find_parent(xcb_connection_t* connection, u32 window) {
+    const xcb_query_tree_cookie_t cookie = xcb_query_tree(connection, window);
+    xcb_query_tree_reply_t* tree = xcb_query_tree_reply(connection, cookie, nullptr);
+    if(!tree) {
+        return window;
+    }
+    y_defer(std::free(tree));
+    return tree->parent;
+}
+
+static u32 find_grandparent(xcb_connection_t* connection, u32 window) {
+    return find_parent(connection, find_parent(connection, window));
+}
+
 math::Vec2ui Window::size() const {
-    return window_size();
+    const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
+    return math::Vec2i(geom.width, geom.height);
 }
 
 math::Vec2i Window::position() const {
-    return window_position();
+    const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
+    const xcb_translate_coordinates_cookie_t cookie = xcb_translate_coordinates(_connection, _window, find_grandparent(_connection, _window), geom.x, geom.y);
+    xcb_translate_coordinates_reply_t* translate = xcb_translate_coordinates_reply(_connection, cookie, nullptr);
+    if (!translate) {
+        return {};
+    }
+    y_defer(std::free(translate));
+    return math::Vec2i(translate->dst_x, translate->dst_y);
 }
 
 void Window::set_size(const math::Vec2ui& size) {
+    xcb_configure_window(_connection, _window, XCB_CONFIG_WINDOW_WIDTH| XCB_CONFIG_WINDOW_HEIGHT, size.data());
 }
 
 void Window::set_position(const math::Vec2i& pos) {
-}
-
-math::Vec2ui Window::window_size() const {
-    xcb_get_geometry_cookie_t cookie = xcb_get_geometry(_connection, _window);
-    xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(_connection, cookie, nullptr);
-    if(!reply) {
-        return {};
-    }
-    y_defer(std::free(reply));
-    return math::Vec2ui(reply->width, reply->height);
+    const math::Vec2ui upos = pos;
+    xcb_configure_window(_connection, _window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, upos.data());
 }
 
 math::Vec2i Window::window_position() const {
-    xcb_get_geometry_cookie_t cookie = xcb_get_geometry(_connection, _window);
-    xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(_connection, cookie, nullptr);
-    if(!reply) {
+    const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
+    const xcb_translate_coordinates_cookie_t cookie = xcb_translate_coordinates(_connection, _window, find_grandparent(_connection, _window), geom.x, geom.y);
+    xcb_translate_coordinates_reply_t* translate = xcb_translate_coordinates_reply(_connection, cookie, nullptr);
+    if (!translate) {
         return {};
     }
-    y_defer(std::free(reply));
-    return math::Vec2i(reply->x, reply->y);
+    y_defer(std::free(translate));
+    return math::Vec2i(translate->dst_x - geom.x, translate->dst_y - geom.y);
 }
 
-void Window::set_window_size(const math::Vec2ui& size) {
-}
-
-void Window::set_window_position(const math::Vec2i &pos) {
+void Window::set_window_position(const math::Vec2i& pos) {
+    const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
+    set_position(pos + math::Vec2i(geom.x, geom.y));
 }
 
 void Window::set_title(std::string_view title) {
+    xcb_change_property(_connection,
+        XCB_PROP_MODE_REPLACE,
+        _window,
+        XCB_ATOM_WM_NAME,
+        XCB_ATOM_STRING,
+        8,
+        title.size(),
+        title.data());
 }
 
 }

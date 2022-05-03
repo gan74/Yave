@@ -76,14 +76,10 @@ class Window : NonMovable {
         void set_size(const math::Vec2ui& size);
         void set_position(const math::Vec2i& pos);
 
-        math::Vec2ui window_size() const;
         math::Vec2i window_position() const;
-
-        void set_window_size(const math::Vec2ui& size);
         void set_window_position(const math::Vec2i& pos);
 
         void set_title(std::string_view title);
-
 
         void set_event_handler(EventHandler* handler) { _event_handler = handler; }
         EventHandler* event_handler() const { return _event_handler; }
