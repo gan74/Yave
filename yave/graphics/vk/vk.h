@@ -132,6 +132,7 @@ VK_STRUCT_INIT(VkPipelineLayoutCreateInfo,                          VK_STRUCTURE
 VK_STRUCT_INIT(VkSamplerCreateInfo,                                 VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO)
 VK_STRUCT_INIT(VkDescriptorSetLayoutCreateInfo,                     VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO)
 VK_STRUCT_INIT(VkDescriptorPoolCreateInfo,                          VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO)
+VK_STRUCT_INIT(VkDescriptorPoolInlineUniformBlockCreateInfo,        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO)
 VK_STRUCT_INIT(VkDescriptorSetAllocateInfo,                         VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO)
 VK_STRUCT_INIT(VkWriteDescriptorSet,                                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)
 VK_STRUCT_INIT(VkCopyDescriptorSet,                                 VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET)

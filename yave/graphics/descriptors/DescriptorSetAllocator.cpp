@@ -1,4 +1,4 @@
-/*******************************
+﻿/*******************************
 Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -76,18 +76,16 @@ DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding
     };
 
     core::ScratchVector<VkDescriptorSetLayoutBinding> patched_bindings(bindings.size());
-    if(std::any_of(bindings.begin(), bindings.end(), needs_fallback)) {
-        for(const auto& b : bindings) {
-            if(needs_fallback(b)) {
-                log_msg(fmt("Inline uniform at binding % of size % requires fallback uniform buffer", b.binding, b.descriptorCount), Log::Warning);
-                patched_bindings.emplace_back(create_inline_uniform_binding_fallback(b));
-                _inline_blocks_fallbacks << InlineBlock{b.binding, b.descriptorCount};
-            } else {
-                patched_bindings.emplace_back(b);
-            }
+    for(const auto& b : bindings) {
+        if(needs_fallback(b)) {
+            log_msg(fmt("Inline uniform at binding % of size % requires fallback uniform buffer", b.binding, b.descriptorCount), Log::Warning);
+            patched_bindings.emplace_back(create_inline_uniform_binding_fallback(b));
+            _inline_blocks_fallbacks << InlineBlock{b.binding, b.descriptorCount};
+        } else {
+            patched_bindings.emplace_back(b);
         }
-        bindings = patched_bindings;
     }
+    bindings = patched_bindings;
 
     for(const auto& b : bindings) {
         if(b.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
@@ -154,6 +152,12 @@ static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout
         create_info.poolSizeCount = u32(sizes_count);
         create_info.pPoolSizes = sizes.data();
         create_info.maxSets = u32(set_count);
+    }
+
+    VkDescriptorPoolInlineUniformBlockCreateInfo inline_create_info = vk_struct();
+    if(const u32 inline_blocks = layout.inline_blocks()) {
+        inline_create_info.maxInlineUniformBlockBindings = inline_blocks * set_count;
+        create_info.pNext = &inline_create_info;
     }
 
     VkDescriptorPool pool = {};
