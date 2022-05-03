@@ -61,6 +61,16 @@ static void dispatch_event(Window* window, const xcb_generic_event_t* event) {
             handler->mouse_released(math::Vec2i(release->event_x, release->event_y), to_mouse_button(release->detail));
         } break;
     }
+}
+
+static xcb_get_geometry_reply_t window_geometry(xcb_connection_t* connection, u32 window) {
+    xcb_get_geometry_cookie_t cookie = xcb_get_geometry(connection, window);
+    xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(connection, cookie, nullptr);
+    if(!reply) {
+        return {};
+    }
+    y_defer(std::free(reply));
+    return *reply;
 
 }
 
@@ -89,7 +99,7 @@ Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) {
                       screen->root_visual,
                       XCB_CW_EVENT_MASK, &event_mask);
 
-    xcb_map_window(_connection, _window);
+    set_title(title);
     xcb_flush(_connection);
 }
 
@@ -106,10 +116,15 @@ bool Window::update() {
         dispatch_event(this, event);
         std::free(event);
     }
+    if(xcb_connection_has_error(_connection)) {
+        close();
+    }
     return _run;
 }
 
 void Window::show() {
+    xcb_map_window(_connection, _window);
+    xcb_flush(_connection);
 }
 
 void Window::focus() {
@@ -124,46 +139,51 @@ bool Window::is_minimized() const {
 }
 
 math::Vec2ui Window::size() const {
-    return window_size();
+    const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
+    return math::Vec2i(geom.width, geom.height);
 }
 
 math::Vec2i Window::position() const {
-    return window_position();
+    const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
+    return math::Vec2i(geom.x, geom.y);
 }
 
 void Window::set_size(const math::Vec2ui& size) {
+    set_window_size(size);
 }
 
 void Window::set_position(const math::Vec2i& pos) {
+    set_window_position(pos);
 }
 
 math::Vec2ui Window::window_size() const {
-    xcb_get_geometry_cookie_t cookie = xcb_get_geometry(_connection, _window);
-    xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(_connection, cookie, nullptr);
-    if(!reply) {
-        return {};
-    }
-    y_defer(std::free(reply));
-    return math::Vec2ui(reply->width, reply->height);
+    const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
+    return math::Vec2i(geom.width + geom.border_width, geom.height + geom.border_width);
 }
 
 math::Vec2i Window::window_position() const {
-    xcb_get_geometry_cookie_t cookie = xcb_get_geometry(_connection, _window);
-    xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(_connection, cookie, nullptr);
-    if(!reply) {
-        return {};
-    }
-    y_defer(std::free(reply));
-    return math::Vec2i(reply->x, reply->y);
+    const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
+    return math::Vec2i(geom.x - geom.border_width, geom.y - geom.border_width);
 }
 
 void Window::set_window_size(const math::Vec2ui& size) {
+    xcb_configure_window(_connection, _window, XCB_CONFIG_WINDOW_WIDTH| XCB_CONFIG_WINDOW_HEIGHT, size.data());
 }
 
-void Window::set_window_position(const math::Vec2i &pos) {
+void Window::set_window_position(const math::Vec2i& pos) {
+    const math::Vec2ui upos = pos;
+    xcb_configure_window(_connection, _window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, upos.data());
 }
 
 void Window::set_title(std::string_view title) {
+    xcb_change_property(_connection,
+        XCB_PROP_MODE_REPLACE,
+        _window,
+        XCB_ATOM_WM_NAME,
+        XCB_ATOM_STRING,
+        8,
+        title.size(),
+        title.data());
 }
 
 }

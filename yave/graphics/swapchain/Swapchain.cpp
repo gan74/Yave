@@ -38,7 +38,9 @@ namespace yave {
 
 static VkSurfaceCapabilitiesKHR compute_capabilities(VkSurfaceKHR surface) {
     VkSurfaceCapabilitiesKHR capabilities = {};
-    vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_physical_device(), surface, &capabilities));
+    if(is_error(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_physical_device(), surface, &capabilities))) {
+        return {};
+    }
     return capabilities;
 }
 
@@ -164,10 +166,7 @@ static VkSurfaceKHR create_surface(Window* window) {
 Swapchain::Swapchain(Window* window) : Swapchain(create_surface(window)) {
 }
 
-Swapchain::Swapchain(VkSurfaceKHR surface) :
-    _surface(surface),
-    _image_count(compute_image_count(compute_capabilities(surface))) {
-
+Swapchain::Swapchain(VkSurfaceKHR surface) : _surface(surface) {
     build_swapchain();
     build_semaphores();
 }
@@ -197,7 +196,10 @@ Swapchain::~Swapchain() {
 }
 
 bool Swapchain::build_swapchain() {
+    y_debug_assert(_images.is_empty());
+
     const VkSurfaceCapabilitiesKHR capabilities = compute_capabilities(_surface);
+
     _size = {capabilities.currentExtent.width, capabilities.currentExtent.height};
 
     if(!_size.x() || !_size.y()) {
@@ -226,7 +228,7 @@ bool Swapchain::build_swapchain() {
             create_info.imageFormat = format.format;
             create_info.imageColorSpace = format.colorSpace;
             create_info.imageExtent = capabilities.currentExtent;
-            create_info.minImageCount = _image_count;
+            create_info.minImageCount = compute_image_count(capabilities);
             create_info.presentMode = present_mode(_surface);
             create_info.oldSwapchain = _swapchain;
         }
@@ -235,10 +237,11 @@ bool Swapchain::build_swapchain() {
 
     y_profile_zone("image setup");
 
-    u32 image_count = _image_count;
+    u32 image_count = 0;
+    vk_check(vkGetSwapchainImagesKHR(vk_device(), _swapchain, &image_count, nullptr));
+
     core::FixedArray<VkImage> images(image_count);
     vk_check(vkGetSwapchainImagesKHR(vk_device(), _swapchain, &image_count, images.data()));
-    y_always_assert(_image_count == image_count, "Unable to get swapchain images");
 
     for(auto image : images) {
         const VkImageView view = create_image_view(image, _color_format.vk_format());
@@ -270,8 +273,6 @@ bool Swapchain::build_swapchain() {
         _images << std::move(swapchain_image);
     }
 
-    y_debug_assert(_image_count == _images.size());
-
     CmdBufferRecorder recorder(create_disposable_cmd_buffer());
     for(auto& i : _images) {
         recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
@@ -285,14 +286,14 @@ void Swapchain::build_semaphores() {
     const VkFenceCreateInfo fence_create_info = vk_struct();
     const VkSemaphoreCreateInfo semaphore_create_info = vk_struct();
 
-    for(usize i = 0; i != _image_count; ++i) {
+    for(usize i = 0; i != image_count(); ++i) {
         auto& semaphores = _semaphores.emplace_back();
         vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &semaphores.render_complete));
         vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &semaphores.image_aquired));
         vk_check(vkCreateFence(vk_device(), &fence_create_info, vk_allocation_callbacks(), &semaphores.fence));
     }
 
-    y_debug_assert(_image_count == _semaphores.size());
+    y_debug_assert(image_count() == _semaphores.size());
 }
 
 void Swapchain::destroy_semaphores() {
@@ -307,17 +308,30 @@ void Swapchain::destroy_semaphores() {
 core::Result<FrameToken> Swapchain::next_frame() {
     y_profile();
 
+    if(_images.is_empty()) {
+        return core::Err();
+    }
+
     y_debug_assert(_semaphores.size());
 
     const usize semaphore_index = ++_frame_id % image_count();
     const Semaphores& frame_semaphores = _semaphores[semaphore_index];
 
-    u32 image_index = 0;
+    u32 image_index = u32(-1);
     while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index))) {
         if(!reset()) {
             return core::Err();
         }
     }
+
+#ifdef Y_DEBUG
+    u32 images = 0;
+    vk_check(vkGetSwapchainImagesKHR(vk_device(), _swapchain, &images, nullptr));
+    y_debug_assert(images == _images.size());
+    y_debug_assert(image_index < images);
+#endif
+
+    y_debug_assert(image_index < _images.size());
 
     {
         y_profile_zone("image fence");
@@ -328,7 +342,7 @@ core::Result<FrameToken> Swapchain::next_frame() {
     return core::Ok(FrameToken {
         _frame_id,
         image_index,
-        u32(image_count()),
+        u32(_images.size()),
         SwapchainImageView(_images[image_index]),
     });
 }
@@ -372,8 +386,7 @@ const math::Vec2ui& Swapchain::size() const {
 }
 
 usize Swapchain::image_count() const {
-    y_debug_assert(_image_count);
-    return _image_count;
+    return _images.size();
 }
 
 ImageFormat Swapchain::color_format() const {

@@ -97,10 +97,6 @@ class Swapchain : NonMovable {
 
         VkHandle<VkSurfaceKHR> _surface;
         VkHandle<VkSwapchainKHR> _swapchain;
-
-        u32 _image_count = 0;
-
-
 };
 
 

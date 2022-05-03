@@ -34,6 +34,10 @@ SOFTWARE.
 #include <windows.h>
 #endif
 
+#ifdef Y_OS_LINUX
+#include <sys/ptrace.h>
+#endif
+
 namespace y {
 
 #ifdef Y_DEBUG
@@ -50,9 +54,12 @@ void break_in_debugger() {
     }
 #endif
 #ifdef Y_OS_LINUX
-    FILE* fd = fopen("/tmp", "r");
-    const bool debugger_present = fileno(fd) > 5;
-    fclose(fd);
+    bool debugger_present = false;
+    if(ptrace(PTRACE_TRACEME, 0, 1, 0) < 0) {
+        debugger_present = true;
+    } else {
+        ptrace(PTRACE_DETACH, 0, 1, 0);
+    }
     if(debugger_present) {
         std::raise(SIGTRAP);
     }
