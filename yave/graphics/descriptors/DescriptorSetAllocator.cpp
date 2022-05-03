@@ -155,8 +155,8 @@ static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout
     }
 
     VkDescriptorPoolInlineUniformBlockCreateInfo inline_create_info = vk_struct();
-    if(const u32 inline_blocks = layout.inline_blocks()) {
-        inline_create_info.maxInlineUniformBlockBindings = inline_blocks * set_count;
+    if(const u32 inline_blocks = u32(layout.inline_blocks())) {
+        inline_create_info.maxInlineUniformBlockBindings = inline_blocks * u32(set_count);
         create_info.pNext = &inline_create_info;
     }
 
