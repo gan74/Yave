@@ -68,7 +68,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
     const auto& descriptor_set = pass->descriptor_sets()[sub_pass->descriptor_set_index];
 
     recorder.set_main_descriptor_set(descriptor_set);
-    recorder.bind_attrib_buffers({}, {transforms});
+    recorder.bind_per_instance_attrib_buffers(transforms);
 
     core::Vector<ecs::EntityId> visible;
     const OctreeSystem* octree_system = world.find_system<OctreeSystem>();

@@ -55,8 +55,8 @@ static math::Vec3 transform(const math::Vec3& v, const math::Transform<>& tr) {
     return tr.to<3, 3>() * v;
 }
 
-static Vertex transform(const Vertex& v, const math::Transform<>& tr) {
-    return Vertex {
+static FullVertex transform(const FullVertex& v, const math::Transform<>& tr) {
+    return FullVertex {
         h_transform(v.position, tr),
         transform(v.normal, tr).normalized(),
         math::Vec4(transform(v.tangent.to<3>(), tr).normalized(), v.tangent.w()),

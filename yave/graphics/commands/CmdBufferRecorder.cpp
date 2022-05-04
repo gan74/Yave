@@ -68,42 +68,44 @@ void RenderPassRecorder::bind_material(const Material& material) {
 }
 
 void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, DescriptorSetBase descriptor_set, u32 ds_offset) {
-    core::Span<DescriptorSetBase> ds_sets = descriptor_set;
-    if(descriptor_set.is_null()) {
-        ds_sets = {};
+    if(material_template != _cache.material) {
+        const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
+        vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
+
+        _cache.material = material_template;
+        _cache.pipeline_layout = pipeline.vk_pipeline_layout();
     }
-    bind_pipeline(material_template->compile(*_cmd_buffer._render_pass), ds_sets, ds_offset);
-}
 
-void RenderPassRecorder::bind_pipeline(const GraphicPipeline& pipeline, core::Span<DescriptorSetBase> descriptor_sets, u32 ds_offset) {
-    vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
-
-    if(!_main_descriptor_set.is_null()) {
+    if(_main_descriptor_set) {
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipeline.vk_pipeline_layout(),
+            _cache.pipeline_layout,
             0,
-            1, reinterpret_cast<const VkDescriptorSet*>(&_main_descriptor_set),
+            1, &_main_descriptor_set,
             0, nullptr
         );
         _main_descriptor_set = {};
     }
-    if(!descriptor_sets.is_empty()) {
+
+    if(!descriptor_set.is_null()) {
+        const VkDescriptorSet vk_set = descriptor_set.vk_descriptor_set();
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipeline.vk_pipeline_layout(),
+            _cache.pipeline_layout,
             ds_offset,
-            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
+            1, &vk_set,
             0, nullptr
         );
     }
 }
 
 
+
+
 void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
-    _main_descriptor_set = ds_set;
+    _main_descriptor_set = ds_set.vk_descriptor_set();
 }
 
 void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {
@@ -139,41 +141,42 @@ void RenderPassRecorder::draw_array(usize vertex_count) {
     draw(command);
 }
 
-void RenderPassRecorder::bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices,
-                                      const SubBuffer<BufferUsage::AttributeBit>& per_vertex,
-                                      core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
-
+void RenderPassRecorder::bind_buffers(IndexSubBuffer indices, AttribSubBuffer attribs) {
     bind_index_buffer(indices);
-    bind_attrib_buffers(per_vertex, per_instance);
+    bind_attrib_buffer(attribs);
 }
 
-void RenderPassRecorder::bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices) {
+void RenderPassRecorder::bind_attrib_buffer(AttribSubBuffer attribs) {
+    Y_TODO(move caching to mesh renderer)
+    if(attribs == _cache.attrib_buffer) {
+        return;
+    }
+
+    _cache.attrib_buffer = attribs;
+    const VkDeviceSize offset = attribs.byte_offset();
+    const VkBuffer vk_buffer = attribs.vk_buffer();
+    vkCmdBindVertexBuffers(vk_cmd_buffer(), 0, 1, &vk_buffer, &offset);
+}
+
+void RenderPassRecorder::bind_index_buffer(IndexSubBuffer indices) {
+    if(indices == _cache.index_buffer) {
+        return;
+    }
+
+    _cache.index_buffer = indices;
     vkCmdBindIndexBuffer(vk_cmd_buffer(), indices.vk_buffer(), indices.byte_offset(), VK_INDEX_TYPE_UINT32);
 }
 
-void RenderPassRecorder::bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance) {
-    if(per_instance.is_empty()) {
-        const VkDeviceSize offset = per_vertex.byte_offset();
-        const VkBuffer buffer = per_vertex.vk_buffer();
-        vkCmdBindVertexBuffers(vk_cmd_buffer(), 0, 1, &buffer, &offset);
-    } else {
-        const bool has_per_vertex = !per_vertex.is_null();
-        const u32 attrib_count = u32(per_instance.size()) + has_per_vertex;
+void RenderPassRecorder::bind_per_instance_attrib_buffers(core::Span<AttribSubBuffer> per_instance) {
+    const u32 attrib_count = u32(per_instance.size()) ;
 
-        auto offsets = core::ScratchPad<VkDeviceSize>(attrib_count);
-        auto buffers = core::ScratchPad<VkBuffer>(attrib_count);
+    auto offsets = core::ScratchPad<VkDeviceSize>(attrib_count);
+    auto buffers = core::ScratchPad<VkBuffer>(attrib_count);
 
-        if(has_per_vertex) {
-            offsets[0] = per_vertex.byte_offset();
-            buffers[0] = per_vertex.vk_buffer();
-        }
+    std::transform(per_instance.begin(), per_instance.end(), offsets.begin(), [](const auto& buffer) { return buffer.byte_offset(); });
+    std::transform(per_instance.begin(), per_instance.end(), buffers.begin(), [](const auto& buffer) { return buffer.vk_buffer(); });
 
-        std::transform(per_instance.begin(), per_instance.end(), offsets.begin() + has_per_vertex, [](const auto& buffer) { return buffer.byte_offset(); });
-        std::transform(per_instance.begin(), per_instance.end(), buffers.begin() + has_per_vertex, [](const auto& buffer) { return buffer.vk_buffer(); });
-
-        vkCmdBindVertexBuffers(vk_cmd_buffer(), u32(!has_per_vertex), attrib_count, buffers.data(), offsets.data());
-    }
-
+    vkCmdBindVertexBuffers(vk_cmd_buffer(), 1, attrib_count, buffers.data(), offsets.data());
 }
 
 CmdBufferRegion RenderPassRecorder::region(const char* name, const math::Vec4& color) {

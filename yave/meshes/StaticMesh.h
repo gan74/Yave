@@ -23,8 +23,8 @@ SOFTWARE.
 #define YAVE_MESHES_STATICMESH_H
 
 #include "AABB.h"
+#include "MeshDrawData.h"
 
-#include <yave/graphics/buffers/buffers.h>
 #include <yave/graphics/device/extensions/RayTracing.h>
 
 #include <yave/assets/AssetTraits.h>
@@ -37,24 +37,19 @@ class StaticMesh : NonCopyable {
 
     public:
         StaticMesh() = default;
-
         StaticMesh(const MeshData& mesh_data);
 
         bool is_null() const;
 
-        const TriangleBuffer<>& triangle_buffer() const;
-        const VertexBuffer<>& vertex_buffer() const;
+        TriangleSubBuffer triangle_buffer() const;
+        VertexSubBuffer vertex_buffer() const;
         const VkDrawIndexedIndirectCommand& indirect_data() const;
 
         float radius() const;
         const AABB& aabb() const;
 
     private:
-        TriangleBuffer<> _triangle_buffer;
-        VertexBuffer<> _vertex_buffer;
-
-        VkDrawIndexedIndirectCommand _indirect_data = {};
-
+        MeshDrawData _draw_data = {};
         AABB _aabb;
 };
 

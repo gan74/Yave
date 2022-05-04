@@ -32,14 +32,14 @@ class SubBufferBase {
 
     public:
         SubBufferBase() = default;
-        SubBufferBase(const BufferBase& base, usize byte_len, usize byte_off);
+        SubBufferBase(const BufferBase& base, u64 byte_len, u64 byte_off);
 
         explicit SubBufferBase(const BufferBase& base);
 
         bool is_null() const;
 
-        usize byte_size() const;
-        usize byte_offset() const;
+        u64 byte_size() const;
+        u64 byte_offset() const;
 
         VkBuffer vk_buffer() const;
 
@@ -48,12 +48,17 @@ class SubBufferBase {
         VkDescriptorBufferInfo descriptor_info() const;
         VkMappedMemoryRange vk_memory_range() const;
 
+        bool operator==(const SubBufferBase& other) const;
+        bool operator!=(const SubBufferBase& other) const;
+
+        static u64 host_side_alignment();
+
     protected:
-        static usize alignment_for_usage(BufferUsage usage);
+        static u64 alignment_for_usage(BufferUsage usage);
 
     private:
-        usize _size = 0;
-        usize _offset = 0;
+        u64 _size = 0;
+        u64 _offset = 0;
         VkBuffer _buffer = {};
         DeviceMemoryView _memory;
 };
@@ -89,11 +94,11 @@ class SubBuffer : public SubBufferBase {
         using base_buffer_type = Buffer<Usage, memory_type>;
 
 
-        static usize alignment() {
+        static u64 byte_alignment() {
             return alignment_for_usage(Usage);
         }
 
-        static usize total_byte_size(usize size) {
+        static u64 total_byte_size(u64 size) {
             return size;
         }
 
@@ -113,9 +118,12 @@ class SubBuffer : public SubBufferBase {
         // todo find some way to make this better
 
         template<BufferUsage U, MemoryType M>
-        SubBuffer(const Buffer<U, M>& buffer, usize byte_len, usize byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
+        SubBuffer(const Buffer<U, M>& buffer, u64 byte_len, u64 byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
             static_assert(is_compatible(U, M));
-            y_debug_assert(byte_offset() % alignment() == 0);
+            y_debug_assert(byte_offset() % byte_alignment() == 0);
+            if constexpr(M == MemoryType::CpuVisible) {
+                y_debug_assert(byte_offset() % host_side_alignment() == 0);
+            }
         }
 };
 

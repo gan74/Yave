@@ -47,6 +47,7 @@ CmdBufferRecorder create_disposable_cmd_buffer();
 const PhysicalDevice& physical_device();
 DeviceMemoryAllocator& device_allocator();
 DescriptorSetAllocator& descriptor_set_allocator();
+MeshAllocator& mesh_allocator();
 const CmdQueue& command_queue();
 const DeviceResources& device_resources();
 const DeviceProperties& device_properties();

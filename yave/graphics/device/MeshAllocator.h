@@ -19,42 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "StaticMesh.h"
-#include "MeshData.h"
+#ifndef YAVE_GRAPHICS_DEVICE_MESHALLOCATOR_H
+#define YAVE_GRAPHICS_DEVICE_MESHALLOCATOR_H
 
-#include <yave/graphics/device/MeshAllocator.h>
+#include <yave/graphics/buffers/buffers.h>
+#include <yave/meshes/MeshDrawData.h>
+
+#include <y/core/Span.h>
+
+#include <atomic>
 
 namespace yave {
 
-StaticMesh::StaticMesh(const MeshData& mesh_data) :
-    _draw_data(mesh_allocator().alloc_mesh(mesh_data.vertices(), mesh_data.triangles())),
-    _aabb(mesh_data.aabb())  {
-}
+class MeshAllocator : NonMovable {
+    public:
+        static const u64 default_vertex_count = 16 * 1024 * 1024;
+        static const u64 default_triangle_count = 16 * 1024 * 1024;
 
-bool StaticMesh::is_null() const {
-    return _draw_data.triangle_buffer.is_null();
-}
+        MeshAllocator();
 
-TriangleSubBuffer StaticMesh::triangle_buffer() const {
-    return _draw_data.triangle_buffer;
-}
+        MeshDrawData alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
 
-VertexSubBuffer StaticMesh::vertex_buffer() const {
-    return _draw_data.vertex_buffer;
-}
+    private:
+#if 0
+        VertexBuffer<> _vertex_buffer;
+        TriangleBuffer<> _triangle_buffer;
 
-const VkDrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
-    return _draw_data.indirect_data;
-}
-
-float StaticMesh::radius() const {
-    return _aabb.origin_radius();
-}
-
-const AABB& StaticMesh::aabb() const {
-    return _aabb;
-}
-
+        std::atomic<u64> _vertex_offset = 0;
+        std::atomic<u64> _triangle_offset = 0;
+#endif
+};
 
 }
+
+#endif // YAVE_GRAPHICS_DEVICE_MESHALLOCATOR_H
 

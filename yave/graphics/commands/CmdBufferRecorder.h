@@ -26,8 +26,8 @@ SOFTWARE.
 
 #include <yave/graphics/framebuffer/Viewport.h>
 #include <yave/graphics/images/ImageView.h>
-#include <yave/graphics/buffers/SubBuffer.h>
 #include <yave/graphics/descriptors/DescriptorSetBase.h>
+#include <yave/graphics/buffers/buffers.h>
 
 namespace yave {
 
@@ -92,7 +92,6 @@ class RenderPassRecorder final : NonMovable {
         // specific
         void bind_material(const Material& material);
         void bind_material_template(const MaterialTemplate* material_template, DescriptorSetBase descriptor_set, u32 ds_offset = 0);
-        void bind_pipeline(const GraphicPipeline& pipeline, core::Span<DescriptorSetBase> descriptor_sets, u32 ds_offset = 0);
 
         void set_main_descriptor_set(DescriptorSetBase ds_set);
 
@@ -102,9 +101,11 @@ class RenderPassRecorder final : NonMovable {
         void draw_indexed(usize index_count);
         void draw_array(usize vertex_count);
 
-        void bind_buffers(const SubBuffer<BufferUsage::IndexBit>& indices, const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
-        void bind_index_buffer(const SubBuffer<BufferUsage::IndexBit>& indices);
-        void bind_attrib_buffers(const SubBuffer<BufferUsage::AttributeBit>& per_vertex, core::Span<SubBuffer<BufferUsage::AttributeBit>> per_instance = {});
+        void bind_buffers(IndexSubBuffer indices, AttribSubBuffer attribs);
+        void bind_attrib_buffer(AttribSubBuffer attribs);
+        void bind_index_buffer(IndexSubBuffer indices);
+
+        void bind_per_instance_attrib_buffers(core::Span<AttribSubBuffer> per_instance);
 
         // proxies from _cmd_buffer
         CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
@@ -123,7 +124,14 @@ class RenderPassRecorder final : NonMovable {
 
         CmdBufferRecorder& _cmd_buffer;
         Viewport _viewport;
-        DescriptorSetBase _main_descriptor_set;
+        VkDescriptorSet _main_descriptor_set = {};
+
+        struct {
+            IndexSubBuffer index_buffer;
+            AttribSubBuffer attrib_buffer;
+            const MaterialTemplate* material = nullptr;
+            VkPipelineLayout pipeline_layout = {};
+        } _cache;
 };
 
 class CmdBufferRecorder final : NonCopyable {

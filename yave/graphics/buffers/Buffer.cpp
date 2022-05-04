@@ -34,7 +34,7 @@ static void bind_buffer_memory(VkBuffer buffer, const DeviceMemory& memory) {
     vk_check(vkBindBufferMemory(vk_device(), buffer, memory.vk_memory(), memory.vk_offset()));
 }
 
-static VkBuffer create_buffer(usize byte_size, VkBufferUsageFlags usage) {
+static VkBuffer create_buffer(u64 byte_size, VkBufferUsageFlags usage) {
     y_debug_assert(byte_size);
     if(usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
         if(byte_size > device_properties().max_uniform_buffer_size) {
@@ -54,7 +54,7 @@ static VkBuffer create_buffer(usize byte_size, VkBufferUsageFlags usage) {
     return buffer;
 }
 
-static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(usize buffer_size, VkBufferUsageFlags usage, MemoryType type) {
+static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(u64 buffer_size, VkBufferUsageFlags usage, MemoryType type) {
     y_debug_assert(buffer_size);
 
     const auto buffer = create_buffer(buffer_size, usage);
@@ -66,7 +66,7 @@ static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(usize buffer_size, VkBuff
 
 
 
-BufferBase::BufferBase(usize byte_size, BufferUsage usage, MemoryType type) : _size(byte_size), _usage(usage) {
+BufferBase::BufferBase(u64 byte_size, BufferUsage usage, MemoryType type) : _size(byte_size), _usage(usage) {
     std::tie(_buffer, _memory) = alloc_buffer(byte_size, VkBufferUsageFlagBits(usage), type);
 }
 
@@ -79,7 +79,7 @@ BufferUsage BufferBase::usage() const {
     return _usage;
 }
 
-usize BufferBase::byte_size() const {
+u64 BufferBase::byte_size() const {
     return _size;
 }
 

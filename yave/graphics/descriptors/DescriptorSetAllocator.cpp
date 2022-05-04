@@ -197,8 +197,8 @@ DescriptorSetPool::~DescriptorSetPool() {
     device_destroy(_pool);
 }
 
-usize DescriptorSetPool::inline_sub_buffer_alignment() const {
-    return SubBuffer<BufferUsage::UniformBit>::alignment();
+u64 DescriptorSetPool::inline_sub_buffer_alignment() const {
+    return SubBuffer<BufferUsage::UniformBit>::byte_alignment();
 }
 
 DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {

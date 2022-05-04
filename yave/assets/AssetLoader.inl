@@ -211,8 +211,8 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                     });
 
                     return core::Ok();
-
                 }
+
                 _data->set_failed(ErrorType::InvalidID);
                 y_debug_assert(!_data->is_loading());
                 log_msg(fmt("Unable to load asset: invalid ID"), Log::Error);

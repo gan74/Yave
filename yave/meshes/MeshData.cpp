@@ -26,15 +26,15 @@ SOFTWARE.
 
 namespace yave {
 
-static core::Vector<PackedVertex> pack_vertices(const core::Vector<Vertex>& vertices) {
+static core::Vector<PackedVertex> pack_vertices(const core::Vector<FullVertex>& vertices) {
     auto packed = core::vector_with_capacity<PackedVertex>(vertices.size());
-    for(const Vertex& v : vertices) {
+    for(const FullVertex& v : vertices) {
         packed << pack_vertex(v);
     }
     return packed;
 }
 
-MeshData::MeshData(core::Vector<Vertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin, core::Vector<Bone> bones) :
+MeshData::MeshData(core::Vector<FullVertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin, core::Vector<Bone> bones) :
         MeshData(pack_vertices(vertices), std::move(triangles), std::move(skin), std::move(bones)) {
 }
 
