@@ -33,7 +33,8 @@ namespace yave {
 DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
         _heap(mem.heap()),
         _memory(mem.vk_memory()),
-        _offset(mem.vk_offset()) {
+        _offset(mem.vk_offset()),
+        _size(mem.vk_size()) {
 }
 
 VkMappedMemoryRange DeviceMemoryView::vk_mapped_range(u64 size, u64 offset) const {
@@ -51,7 +52,7 @@ VkMappedMemoryRange DeviceMemoryView::vk_mapped_range(u64 size, u64 offset) cons
     {
         range.memory = _memory;
         range.offset = aligned_offset;
-        range.size = aligned_size;
+        range.size = std::min(_size, aligned_size);
     }
     return range;
 }
@@ -62,6 +63,10 @@ VkDeviceMemory DeviceMemoryView::vk_memory() const {
 
 u64 DeviceMemoryView::vk_offset() const {
     return _offset;
+}
+
+u64 DeviceMemoryView::vk_size() const {
+    return _size;
 }
 
 void* DeviceMemoryView::map() {

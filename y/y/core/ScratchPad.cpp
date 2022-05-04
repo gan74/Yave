@@ -30,7 +30,7 @@ namespace y {
 namespace core {
 namespace detail {
 
-static constexpr usize scratch_buffer_size = 32 * 1024;
+static constexpr usize scratch_buffer_size = 64 * 1024;
 
 static thread_local FixedArray<u8> scratch_buffer;
 static thread_local u8* scratch_begin = nullptr;
@@ -43,6 +43,9 @@ void* alloc_scratchpad(usize size) {
     auto& scratch = scratch_buffer;
     auto& begin = scratch_begin;
 
+    y_debug_assert(begin >= scratch.begin());
+    y_debug_assert(begin <= scratch.end());
+
     if(!begin) {
         scratch = FixedArray<u8>(scratch_buffer_size);
         begin = scratch.data();
@@ -52,7 +55,7 @@ void* alloc_scratchpad(usize size) {
     u8* data = begin;
     begin += aligned_size;
 
-    y_always_assert(begin <= scratch.end(), "Scratch pad full: trying to allocate % bytes", size);
+    y_always_assert(begin <= scratch.end(), "Scratch pad full: trying to allocate % bytes (free space = %)", size, data - scratch.end());
 
     return data;
 }

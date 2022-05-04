@@ -34,6 +34,7 @@ class DeviceMemoryView {
         VkMappedMemoryRange vk_mapped_range(u64 size, u64 offset = 0) const;
         VkDeviceMemory vk_memory() const;
         u64 vk_offset() const;
+        u64 vk_size() const;
 
         void* map();
         void unmap();
@@ -41,7 +42,8 @@ class DeviceMemoryView {
     private:
         DeviceMemoryHeapBase* _heap = nullptr;
         VkDeviceMemory _memory = {};
-        u64 _offset;
+        u64 _offset = 0;
+        u64 _size = 0;
 };
 
 }
