@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
+#include <yave/graphics/shaders/ShaderProgram.h>
 #include <yave/graphics/barriers/Barrier.h>
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
@@ -141,21 +142,9 @@ void RenderPassRecorder::draw_array(usize vertex_count) {
     draw(command);
 }
 
-void RenderPassRecorder::bind_buffers(IndexSubBuffer indices, AttribSubBuffer attribs) {
+void RenderPassRecorder::bind_buffers(IndexSubBuffer indices, core::Span<AttribSubBuffer> attribs) {
     bind_index_buffer(indices);
-    bind_attrib_buffer(attribs);
-}
-
-void RenderPassRecorder::bind_attrib_buffer(AttribSubBuffer attribs) {
-    Y_TODO(move caching to mesh renderer)
-    if(attribs == _cache.attrib_buffer) {
-        return;
-    }
-
-    _cache.attrib_buffer = attribs;
-    const VkDeviceSize offset = attribs.byte_offset();
-    const VkBuffer vk_buffer = attribs.vk_buffer();
-    vkCmdBindVertexBuffers(vk_cmd_buffer(), 0, 1, &vk_buffer, &offset);
+    bind_attrib_buffers(attribs);
 }
 
 void RenderPassRecorder::bind_index_buffer(IndexSubBuffer indices) {
@@ -167,8 +156,19 @@ void RenderPassRecorder::bind_index_buffer(IndexSubBuffer indices) {
     vkCmdBindIndexBuffer(vk_cmd_buffer(), indices.vk_buffer(), indices.byte_offset(), VK_INDEX_TYPE_UINT32);
 }
 
+void RenderPassRecorder::bind_attrib_buffers(core::Span<AttribSubBuffer> attribs) {
+    const u32 attrib_count = u32(attribs.size());
+
+    auto offsets = core::ScratchPad<VkDeviceSize>(attrib_count);
+    auto buffers = core::ScratchPad<VkBuffer> (attrib_count);
+    std::transform(attribs.begin(), attribs.end(), offsets.begin(), [](const auto& attr) { return attr.byte_offset(); });
+    std::transform(attribs.begin(), attribs.end(), buffers.begin(), [](const auto& attr) { return attr.vk_buffer(); });
+
+    vkCmdBindVertexBuffers(vk_cmd_buffer(), 0, attrib_count, buffers.data(), offsets.data());
+}
+
 void RenderPassRecorder::bind_per_instance_attrib_buffers(core::Span<AttribSubBuffer> per_instance) {
-    const u32 attrib_count = u32(per_instance.size()) ;
+    const u32 attrib_count = u32(per_instance.size());
 
     auto offsets = core::ScratchPad<VkDeviceSize>(attrib_count);
     auto buffers = core::ScratchPad<VkBuffer>(attrib_count);
@@ -176,7 +176,7 @@ void RenderPassRecorder::bind_per_instance_attrib_buffers(core::Span<AttribSubBu
     std::transform(per_instance.begin(), per_instance.end(), offsets.begin(), [](const auto& buffer) { return buffer.byte_offset(); });
     std::transform(per_instance.begin(), per_instance.end(), buffers.begin(), [](const auto& buffer) { return buffer.vk_buffer(); });
 
-    vkCmdBindVertexBuffers(vk_cmd_buffer(), 1, attrib_count, buffers.data(), offsets.data());
+    vkCmdBindVertexBuffers(vk_cmd_buffer(), ShaderProgram::per_instance_binding, attrib_count, buffers.data(), offsets.data());
 }
 
 CmdBufferRegion RenderPassRecorder::region(const char* name, const math::Vec4& color) {

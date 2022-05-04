@@ -172,21 +172,15 @@ static core::ScratchPad<VkPushConstantRange> create_push_constants(const spirv_c
 
 template<typename R>
 static core::ScratchPad<ShaderModuleBase::Attribute> create_attribs(const spirv_cross::Compiler& compiler, const R& resources) {
-    std::unordered_set<u32> locations;
-
     usize attrib_count = 0;
     core::ScratchPad<ShaderModuleBase::Attribute> attribs(resources.size());
-    for(const auto& r : resources) {
-        const auto location = compiler.get_decoration(r.id, spv::DecorationLocation);
-        const auto& type = compiler.get_type(r.type_id);
+    for(const auto& res : resources) {
+        const auto location = compiler.get_decoration(res.id, spv::DecorationLocation);
+        const auto& type = compiler.get_type(res.type_id);
 
-        attribs[attrib_count++] = ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype)};
-
-        for(usize i = location; i != location + type.columns; ++i) {
-            if(!locations.insert(u32(i)).second) {
-                y_fatal("Duplicate or overlapping attribute locations.");
-            }
-        }
+        const std::string_view name = std::string_view(res.name);
+        const bool packed = (name.size() > 7 && name.substr(name.size() - 7) == "_Packed");
+        attribs[attrib_count++] = ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype), packed};
     }
     return attribs;
 }

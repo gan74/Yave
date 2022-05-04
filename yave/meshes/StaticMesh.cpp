@@ -43,6 +43,10 @@ VertexSubBuffer StaticMesh::vertex_buffer() const {
     return _draw_data.vertex_buffer;
 }
 
+const MeshDrawData& StaticMesh::draw_data() const {
+    return _draw_data;
+}
+
 const VkDrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
     return _draw_data.indirect_data;
 }

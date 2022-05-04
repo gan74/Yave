@@ -51,7 +51,7 @@ static void merge_push_constants(T& into, const S& o) {
 }
 
 
-static VkFormat vec_format(const ShaderModuleBase::Attribute& attr) {
+static VkFormat attrib_format(const ShaderModuleBase::Attribute& attr) {
     static_assert(VK_FORMAT_R32G32B32A32_SFLOAT == VK_FORMAT_R32G32B32A32_UINT + uenum(ShaderModuleBase::AttribType::Float));
 
     const usize type = usize(attr.type);
@@ -83,28 +83,6 @@ static auto create_stage_info(core::Vector<VkPipelineShaderStageCreateInfo>& sta
     }
 }
 
-// returns the NEXT binding index
-static u32 create_vertex_attribs(u32 binding,
-                                 VkVertexInputRate rate,
-                                 core::Span<ShaderModuleBase::Attribute> vertex_attribs,
-                                 Bindings& bindings,
-                                 Attribs& attribs) {
-
-    if(!vertex_attribs.is_empty()) {
-        u32 offset = 0;
-        for(const auto& attr : vertex_attribs) {
-            const auto format = vec_format(attr);
-            for(u32 i = 0; i != attr.columns; ++i) {
-                attribs << VkVertexInputAttributeDescription{attr.location + i, binding, format, offset};
-                offset += attr.vec_size * attr.component_size;
-            }
-        }
-        bindings << VkVertexInputBindingDescription{binding, offset, rate};
-        return binding + 1;
-    }
-    return binding;
-}
-
 // Takes a SORTED (by location) Attribute list
 static void create_vertex_attribs(core::Span<ShaderModuleBase::Attribute> vertex_attribs,
                                   Bindings& bindings,
@@ -112,19 +90,39 @@ static void create_vertex_attribs(core::Span<ShaderModuleBase::Attribute> vertex
 
     y_debug_assert(std::is_sorted(vertex_attribs.begin(), vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; }));
 
-    core::Vector<ShaderModuleBase::Attribute> v_attribs;
-    core::Vector<ShaderModuleBase::Attribute> i_attribs;
-
+    u32 offset = 0;
+    usize per_instance_offset = 0;
     for(const auto& attr : vertex_attribs) {
-        (attr.location < ShaderProgram::per_instance_location ? v_attribs : i_attribs) << attr;
-    }
+        const bool is_packed = attr.is_packed && !attribs.is_empty();
+        const bool per_instance = attr.location >= ShaderProgram::per_instance_location;
+        const VkVertexInputRate input_rate = per_instance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+        const auto format = attrib_format(attr);
 
-    u32 inst = create_vertex_attribs(0, VK_VERTEX_INPUT_RATE_VERTEX, v_attribs, bindings, attribs);
+        if(per_instance && !per_instance_offset) {
+            per_instance_offset = ShaderProgram::per_instance_binding - bindings.size();
+        }
 
-    for(const auto& attrib : i_attribs) {
-        inst = create_vertex_attribs(inst, VK_VERTEX_INPUT_RATE_INSTANCE, {attrib}, bindings, attribs);
+        u32 binding = u32(bindings.size() + per_instance_offset);
+        if(!is_packed) {
+            offset = 0;
+        } else {
+            --binding;
+        }
+
+        for(u32 i = 0; i != attr.columns; ++i) {
+            attribs << VkVertexInputAttributeDescription{attr.location + i, binding, format, offset};
+            offset += attr.vec_size * attr.component_size;
+        }
+
+        if(is_packed) {
+            bindings.last().stride = offset;
+        } else {
+            bindings << VkVertexInputBindingDescription{binding, offset, input_rate};
+        }
     }
 }
+
+
 
 static void validate_bindings(core::Span<VkDescriptorSetLayoutBinding> bindings) {
     u32 max = 0;

@@ -66,13 +66,26 @@ const void* Mapping::data() const {
     return _mapping;
 }
 
-void Mapping::stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data) {
+void Mapping::stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data, usize elem_size, usize stride) {
     const StagingBuffer buffer(dst.byte_size());
     Mapping map(buffer);
-    if(data) {
-        std::memcpy(map.data(), data, dst.byte_size());
-    } else {
+    if(!data) {
         std::memset(map.data(), 0, dst.byte_size());
+    } else {
+        if(!elem_size) {
+            std::memcpy(map.data(), data, dst.byte_size());
+        } else {
+            stride = std::max(stride, elem_size);
+            const usize elem_count = dst.byte_size() / elem_size;
+
+            u8* out_data = static_cast<u8*>(map.data());
+            const u8* input_data = static_cast<const u8*>(data);
+            for(usize i = 0; i != elem_count; ++i) {
+                std::memcpy(out_data, input_data, elem_size);
+                out_data += elem_size;
+                input_data += stride;
+            }
+        }
     }
     recorder.copy(buffer, dst);
 }

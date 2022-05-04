@@ -7,9 +7,8 @@ layout(set = 0, binding = 0) uniform CameraData {
 };
 
 layout(location = 0) in vec3 in_position;
-layout(location = 1) in uint in_packed_normal;
-layout(location = 2) in uint in_packed_tangent_sign;
-layout(location = 3) in vec2 in_uv;
+layout(location = 1) in uvec2 in_packed_normal_tangent_sign;
+layout(location = 2) in vec2 in_uv;
 
 layout(location = 8) in mat4 in_model;
 
@@ -23,8 +22,8 @@ void main() {
 
     const mat3 model = mat3(in_model);
 
-    const vec3 in_normal = unpack_2_10_10_10(in_packed_normal).xyz;
-    const vec4 in_tangent_sign = unpack_2_10_10_10(in_packed_tangent_sign);
+    const vec3 in_normal = unpack_2_10_10_10(in_packed_normal_tangent_sign.x).xyz;
+    const vec4 in_tangent_sign = unpack_2_10_10_10(in_packed_normal_tangent_sign.y);
 
     out_normal = normalize(model * in_normal);
     out_tangent = normalize(model * in_tangent_sign.xyz);

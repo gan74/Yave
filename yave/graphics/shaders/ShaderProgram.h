@@ -32,6 +32,7 @@ class ShaderProgram final {
 
     public:
         static constexpr u32 per_instance_location = 8;
+        static constexpr u32 per_instance_binding = per_instance_location;
 
         ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom);
 

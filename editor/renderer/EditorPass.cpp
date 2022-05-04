@@ -101,7 +101,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 
     {
         const auto vertices = pass->resources().buffer<BufferUsage::AttributeBit>(vertex_buffer);
-        recorder.bind_attrib_buffer(vertices);
+        recorder.bind_attrib_buffers(vertices);
     }
 
     {

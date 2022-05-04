@@ -5,9 +5,6 @@ layout(set = 0, binding = 0) uniform ViewProj_Inline {
 };
 
 layout(location = 0) in vec3 in_position;
-layout(location = 1) in uint in_packed_normal;
-layout(location = 2) in uint in_packed_tangent_sign;
-layout(location = 3) in vec2 in_uv;
 
 layout(location = 8) in mat4 in_model;
 layout(location = 12) in uint in_id;

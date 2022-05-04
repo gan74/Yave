@@ -34,27 +34,37 @@ MeshAllocator::MeshAllocator() {
 }
 
 MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
-    VkDrawIndexedIndirectCommand command = {};
-    {
-        command.instanceCount = 1;
-        command.indexCount = u32(triangles.size() * 3);
-    }
-    TriangleBuffer<> triangle_buffer(triangles.size());
-    VertexBuffer<> vertex_buffer(vertices.size());
+    MeshDrawData mesh_data = {};
+
+    mesh_data.indirect_data.instanceCount = 1;
+    mesh_data.indirect_data.indexCount = u32(triangles.size() * 3);
+
+
+#define INIT_BUFFER(buffer, size) buffer = decltype(buffer)(size)
+
+    INIT_BUFFER(mesh_data.triangle_buffer, triangles.size());
+    INIT_BUFFER(mesh_data.vertex_buffer, vertices.size());
+    INIT_BUFFER(mesh_data.separated_streams.positions, vertices.size());
+    INIT_BUFFER(mesh_data.separated_streams.normals_tangents, vertices.size());
+    INIT_BUFFER(mesh_data.separated_streams.uvs, vertices.size());
+
+#undef INIT_BUFFER
 
     {
         CmdBufferRecorder recorder(create_disposable_cmd_buffer());
         Y_TODO(change to implicit staging?)
-        Mapping::stage(triangle_buffer, recorder, triangles.data());
-        Mapping::stage(vertex_buffer, recorder, vertices.data());
+        Mapping::stage(mesh_data.triangle_buffer, recorder, triangles.data());
+        Mapping::stage(mesh_data.vertex_buffer, recorder, vertices.data());
+
+        Mapping::stage(mesh_data.separated_streams.positions,           recorder, &vertices.data()->position,       sizeof(math::Vec3),     sizeof(PackedVertex));
+        Mapping::stage(mesh_data.separated_streams.normals_tangents,    recorder, &vertices.data()->packed_normal,  sizeof(u32) * 2,        sizeof(PackedVertex));
+        Mapping::stage(mesh_data.separated_streams.uvs,                 recorder, &vertices.data()->uv,             sizeof(math::Vec2),     sizeof(PackedVertex));
+
         command_queue().submit(std::move(recorder));
     }
 
-    return MeshDrawData {
-        std::move(triangle_buffer),
-        std::move(vertex_buffer),
-        command
-    };
+
+    return mesh_data;
 }
 
 #else

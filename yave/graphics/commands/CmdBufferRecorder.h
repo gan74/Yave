@@ -101,9 +101,9 @@ class RenderPassRecorder final : NonMovable {
         void draw_indexed(usize index_count);
         void draw_array(usize vertex_count);
 
-        void bind_buffers(IndexSubBuffer indices, AttribSubBuffer attribs);
-        void bind_attrib_buffer(AttribSubBuffer attribs);
+        void bind_buffers(IndexSubBuffer indices, core::Span<AttribSubBuffer> attribs);
         void bind_index_buffer(IndexSubBuffer indices);
+        void bind_attrib_buffers(core::Span<AttribSubBuffer> attribs);
 
         void bind_per_instance_attrib_buffers(core::Span<AttribSubBuffer> per_instance);
 
@@ -128,7 +128,6 @@ class RenderPassRecorder final : NonMovable {
 
         struct {
             IndexSubBuffer index_buffer;
-            AttribSubBuffer attrib_buffer;
             const MaterialTemplate* material = nullptr;
             VkPipelineLayout pipeline_layout = {};
         } _cache;

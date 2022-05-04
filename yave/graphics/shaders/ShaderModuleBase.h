@@ -76,7 +76,7 @@ class SpecializationData : NonCopyable {
 class ShaderModuleBase : NonMovable {
 
     public:
-        enum class AttribType {
+        enum class AttribType : u16 {
             Uint = 0,
             Int = 1,
             Float = 2,
@@ -89,6 +89,7 @@ class ShaderModuleBase : NonMovable {
             u32 vec_size;
             u32 component_size;
             AttribType type;
+            bool is_packed;
         };
 
         ~ShaderModuleBase();
