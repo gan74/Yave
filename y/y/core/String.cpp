@@ -32,11 +32,8 @@ namespace core {
 String::LongData::LongData() : data(nullptr), capacity(0), length(0) {
 }
 
-String::LongData::LongData(const LongData& l) : LongData(l.data, l.length) {
-}
-
-String::LongData::LongData(LongData&& l) : data(l.data), capacity(l.capacity), length(l.length) {
-    l.data = nullptr;
+String::LongData::LongData(LongData&& other) : LongData() {
+    swap(other);
 }
 
 String::LongData::LongData(const char* str, usize len) : LongData(str, compute_capacity(len), len) {
@@ -49,6 +46,16 @@ String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_l
     *(data + len) = 0;
 }
 
+String::LongData& String::LongData::operator=(LongData&& other)  {
+    swap(other);
+    return *this;
+}
+
+void String::LongData::swap(LongData& other) {
+    std::swap(data, other.data);
+    std::swap(capacity, other.capacity);
+    std::swap(length, other.length);
+}
 
 // --------------------------------------------------- SHORT ---------------------------------------------------
 
@@ -104,7 +111,7 @@ String::String() : _s(ShortData()) {
 
 String::String(const String& str) {
     if(str.is_long()) {
-        ::new(&_l) LongData(str._l);
+        ::new(&_l) LongData(str._l.data, str._l.length);
     } else {
         ::new(&_s) ShortData(str._s);
     }
@@ -180,7 +187,9 @@ void String::clear() {
 void String::make_empty() {
     if(is_long()) {
         _l.length = 0;
-        _l.data[0] = 0;
+        if(_l.capacity) {
+            _l.data[0] = 0;
+        }
     } else {
         _s.length = 0;
         _s.data[0] = 0;
@@ -301,7 +310,7 @@ String& String::operator=(const String& str) {
         } else {
             free_data();
             if(str.is_long()) {
-                ::new(&_l) LongData(str._l);
+                ::new(&_l) LongData(str._l.data, str._l.length);
             } else {
                 ::new(&_s) ShortData(str._s);
             }

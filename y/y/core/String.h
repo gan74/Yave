@@ -69,15 +69,16 @@ class String {
         LongLenType length;
 
         LongData();
-        LongData(const LongData& _l);
-        LongData(LongData&& _l);
+        LongData(LongData&& other);
         LongData(const char* str, usize cap, usize len);
         LongData(const char* str, usize len);
 
         ~LongData() = default;
 
-        LongData& operator=(const LongData &) = delete;
-        LongData& operator=(LongData&& other) = default;
+        LongData& operator=(LongData&& other);
+        LongData& operator=(const LongData&) = delete;
+
+        void swap(LongData& other);
     };
 
     struct ShortData
@@ -271,9 +272,11 @@ inline core::String operator+(std::string_view l, const core::String& r) {
 
 } // core
 
-
-inline core::String operator "" _s(const char* c_str, usize size) {
-    return core::String(c_str, size);
+template<typename... Args>
+core::String fmt_to_owned(const char* fmt_str, Args&&... args) {
+    core::String owned;
+    fmt_into(owned, fmt_str, y_fwd(args)...);
+    return owned;
 }
 
 }
