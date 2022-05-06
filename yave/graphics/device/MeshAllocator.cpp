@@ -29,7 +29,6 @@ SOFTWARE.
 
 namespace yave {
 
-#if 1
 MeshAllocator::MeshAllocator() {
 }
 
@@ -39,26 +38,25 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
     mesh_data.indirect_data.instanceCount = 1;
     mesh_data.indirect_data.indexCount = u32(triangles.size() * 3);
 
-
+    {
 #define INIT_BUFFER(buffer, size) buffer = decltype(buffer)(size)
+        INIT_BUFFER(mesh_data.triangle_buffer, triangles.size());
 
-    INIT_BUFFER(mesh_data.triangle_buffer, triangles.size());
-    INIT_BUFFER(mesh_data.vertex_buffer, vertices.size());
-    INIT_BUFFER(mesh_data.separated_streams.positions, vertices.size());
-    INIT_BUFFER(mesh_data.separated_streams.normals_tangents, vertices.size());
-    INIT_BUFFER(mesh_data.separated_streams.uvs, vertices.size());
-
+        INIT_BUFFER(mesh_data.attrib_streams.positions, vertices.size());
+        INIT_BUFFER(mesh_data.attrib_streams.normals_tangents, vertices.size());
+        INIT_BUFFER(mesh_data.attrib_streams.uvs, vertices.size());
 #undef INIT_BUFFER
+    }
 
     {
         CmdBufferRecorder recorder(create_disposable_cmd_buffer());
         Y_TODO(change to implicit staging?)
         Mapping::stage(mesh_data.triangle_buffer, recorder, triangles.data());
-        Mapping::stage(mesh_data.vertex_buffer, recorder, vertices.data());
+        //Mapping::stage(mesh_data.vertex_buffer, recorder, vertices.data());
 
-        Mapping::stage(mesh_data.separated_streams.positions,           recorder, &vertices.data()->position,       sizeof(math::Vec3),     sizeof(PackedVertex));
-        Mapping::stage(mesh_data.separated_streams.normals_tangents,    recorder, &vertices.data()->packed_normal,  sizeof(u32) * 2,        sizeof(PackedVertex));
-        Mapping::stage(mesh_data.separated_streams.uvs,                 recorder, &vertices.data()->uv,             sizeof(math::Vec2),     sizeof(PackedVertex));
+        Mapping::stage(mesh_data.attrib_streams.positions,           recorder, &vertices.data()->position,       sizeof(math::Vec3),     sizeof(PackedVertex));
+        Mapping::stage(mesh_data.attrib_streams.normals_tangents,    recorder, &vertices.data()->packed_normal,  sizeof(u32) * 2,        sizeof(PackedVertex));
+        Mapping::stage(mesh_data.attrib_streams.uvs,                 recorder, &vertices.data()->uv,             sizeof(math::Vec2),     sizeof(PackedVertex));
 
         command_queue().submit(std::move(recorder));
     }
@@ -66,52 +64,6 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
 
     return mesh_data;
 }
-
-#else
-MeshAllocator::MeshAllocator() :
-        _vertex_buffer(default_vertex_count),
-        _triangle_buffer(default_triangle_count) {
-}
-
-MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
-    using MutableSubBuffer = SubBuffer<BufferUsage::TransferDstBit>;
-
-    const u64 vertices_size = vertices.size();
-    const u64 vertices_begin = _vertex_offset.fetch_add(vertices_size);
-    const u64 vertices_end = vertices_begin + vertices_size;
-
-    const u64 triangles_size = triangles.size();
-    const u64 triangles_begin = _triangle_offset.fetch_add(triangles_size);
-    const u64 triangles_end = triangles_begin + triangles_size;
-
-    y_always_assert(vertices_end <= _vertex_buffer.size(), "Vertex buffer pool is full");
-    y_always_assert(triangles_end <= _triangle_buffer.size(), "Triangle buffer pool is full");
-
-    {
-        MutableSubBuffer vertices_buffer(_vertex_buffer, vertices_size * sizeof(PackedVertex), vertices_begin * sizeof(PackedVertex));
-        MutableSubBuffer triangles_buffer(_triangle_buffer, triangles_size * sizeof(IndexedTriangle), triangles_begin * sizeof(IndexedTriangle));
-
-        CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-        Mapping::stage(vertices_buffer, recorder, vertices.data());
-        Mapping::stage(triangles_buffer, recorder, triangles.data());
-        command_queue().submit(std::move(recorder));
-    }
-
-    VkDrawIndexedIndirectCommand command = {};
-    {
-        command.instanceCount = 1;
-        command.indexCount = u32(triangles_size * 3);
-        command.firstIndex = u32(triangles_begin * 3);
-        command.vertexOffset = u32(vertices_begin);
-    }
-
-    return MeshDrawData {
-        _triangle_buffer,
-        _vertex_buffer,
-        command
-    };
-}
-#endif
 
 /*VertexSubBuffer MeshAllocator::alloc_vertices(CmdBufferRecorder& recorder, core::Span<PackedVertex> vertices) {
     using MutableSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;

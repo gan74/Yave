@@ -55,15 +55,7 @@ void StaticMeshComponent::SubMesh::render_mesh(RenderPassRecorder& recorder, u32
         return;
     }
 
-    std::array<AttribSubBuffer, 3> attribs = {
-        mesh->draw_data().separated_streams.positions,
-        mesh->draw_data().separated_streams.normals_tangents,
-        mesh->draw_data().separated_streams.uvs
-    };
-    recorder.bind_buffers(TriangleSubBuffer(mesh->triangle_buffer()), attribs);
-    VkDrawIndexedIndirectCommand indirect = mesh->indirect_data();
-    indirect.firstInstance = instance_index;
-    recorder.draw(indirect);
+    recorder.draw(mesh->draw_data(), 1, instance_index);
 }
 
 

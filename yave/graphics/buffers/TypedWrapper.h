@@ -72,6 +72,10 @@ class TypedWrapper final : public Buff {
             return this->byte_size() / sizeof(value_type);
         }
 
+        u64 element_size() const {
+            return sizeof(value_type);
+        }
+
         u64 offset() const {
             if constexpr(is_sub) {
                 return this->byte_offset() / sizeof(value_type);

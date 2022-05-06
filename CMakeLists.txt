@@ -150,8 +150,7 @@ if(YAVE_BUILD_YAVE)
     endif()
 
     add_custom_target(shaders COMMAND glslc -c --target-env=vulkan1.2 ${SHADER_FILES})
-    # optimizations disabled as, for some reasons, bindings aren't preserved
-    # optimize_shaders(shaders)
+    optimize_shaders(shaders)
 
     add_dependencies(yave shaders)
 endif()

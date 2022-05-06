@@ -306,10 +306,7 @@ static void local_lights_pass(FrameGraph& framegraph,
             render_pass.bind_material_template(material, self->descriptor_sets()[0]);
             {
                 const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
-                VkDrawIndexedIndirectCommand indirect = sphere.indirect_data();
-                indirect.instanceCount = point_count;
-                render_pass.bind_buffers(sphere.triangle_buffer(), sphere.vertex_buffer());
-                render_pass.draw(indirect);
+                render_pass.draw(sphere.draw_data(), point_count);
             }
         });
     }
@@ -351,10 +348,7 @@ static void local_lights_pass(FrameGraph& framegraph,
                 render_pass.bind_per_instance_attrib_buffers(transforms);
 
                 const StaticMesh& cone = *device_resources()[DeviceResources::ConeMesh];
-                VkDrawIndexedIndirectCommand indirect = cone.indirect_data();
-                indirect.instanceCount = spot_count;
-                render_pass.bind_buffers(cone.triangle_buffer(), cone.vertex_buffer());
-                render_pass.draw(indirect);
+                render_pass.draw(cone.draw_data(), spot_count);
             }
         });
     }

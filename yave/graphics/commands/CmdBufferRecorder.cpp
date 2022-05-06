@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/shaders/ShaderProgram.h>
 #include <yave/graphics/barriers/Barrier.h>
+#include <yave/meshes/MeshDrawData.h>
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
 
@@ -107,6 +108,22 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
 
 void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
     _main_descriptor_set = ds_set.vk_descriptor_set();
+}
+
+void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count, u32 instance_index) {
+    const std::array<AttribSubBuffer, 3> attribs = {
+        draw_data.attrib_streams.positions,
+        draw_data.attrib_streams.normals_tangents,
+        draw_data.attrib_streams.uvs
+    };
+
+    bind_buffers(draw_data.triangle_buffer, attribs);
+
+    VkDrawIndexedIndirectCommand indirect = draw_data.indirect_data;
+    indirect.instanceCount = instance_count;
+    indirect.firstInstance = instance_index;
+
+    draw(indirect);
 }
 
 void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {

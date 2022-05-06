@@ -28,22 +28,14 @@ SOFTWARE.
 
 namespace yave {
 
-
-
 struct MeshDrawData {
-#if 1
     TriangleBuffer<> triangle_buffer;
-    VertexBuffer<> vertex_buffer;
 
-    struct Streams {
+    struct {
         TypedBuffer<math::Vec3, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal> positions;
         TypedBuffer<math::Vec2ui, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal> normals_tangents;
         TypedBuffer<math::Vec2, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal> uvs;
-    } separated_streams;
-#else
-    TriangleSubBuffer triangle_buffer;
-    VertexSubBuffer vertex_buffer;
-#endif
+    } attrib_streams;
 
     VkDrawIndexedIndirectCommand indirect_data = {};
 };

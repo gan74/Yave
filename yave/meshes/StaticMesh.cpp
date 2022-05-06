@@ -35,14 +35,6 @@ bool StaticMesh::is_null() const {
     return _draw_data.triangle_buffer.is_null();
 }
 
-TriangleSubBuffer StaticMesh::triangle_buffer() const {
-    return _draw_data.triangle_buffer;
-}
-
-VertexSubBuffer StaticMesh::vertex_buffer() const {
-    return _draw_data.vertex_buffer;
-}
-
 const MeshDrawData& StaticMesh::draw_data() const {
     return _draw_data;
 }

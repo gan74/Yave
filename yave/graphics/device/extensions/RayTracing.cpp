@@ -87,15 +87,17 @@ VkGeometryNV RayTracing::AccelerationStructure::create_mesh_geometry(const Stati
         geometry.geometry.triangles = vk_struct();
         geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
 
-        geometry.geometry.triangles.vertexData = mesh.vertex_buffer().vk_buffer();
+        const auto& draw_data = mesh.draw_data();
+        const auto& position_buffer = draw_data.attrib_streams.positions;
+        geometry.geometry.triangles.vertexData = position_buffer.vk_buffer();
         geometry.geometry.triangles.vertexOffset = 0;
-        geometry.geometry.triangles.vertexCount = u32(mesh.vertex_buffer().size());
+        geometry.geometry.triangles.vertexCount = u32(position_buffer.size());
         geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-        geometry.geometry.triangles.vertexStride = sizeof(PackedVertex);
+        geometry.geometry.triangles.vertexStride = position_buffer.element_size();
 
-        geometry.geometry.triangles.indexData = mesh.triangle_buffer().vk_buffer();
+        geometry.geometry.triangles.indexData = draw_data.triangle_buffer.vk_buffer();
         geometry.geometry.triangles.indexOffset = 0;
-        geometry.geometry.triangles.indexCount = u32(mesh.triangle_buffer().size() * 3);
+        geometry.geometry.triangles.indexCount = u32(draw_data.triangle_buffer.size() * 3);
         geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
     }
     {

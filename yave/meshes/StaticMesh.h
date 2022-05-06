@@ -41,9 +41,6 @@ class StaticMesh : NonCopyable {
 
         bool is_null() const;
 
-        TriangleSubBuffer triangle_buffer() const;
-        VertexSubBuffer vertex_buffer() const;
-
         const MeshDrawData& draw_data() const;
         const VkDrawIndexedIndirectCommand& indirect_data() const;
 

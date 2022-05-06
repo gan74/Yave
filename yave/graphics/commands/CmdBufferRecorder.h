@@ -95,6 +95,8 @@ class RenderPassRecorder final : NonMovable {
 
         void set_main_descriptor_set(DescriptorSetBase ds_set);
 
+        void draw(const MeshDrawData& draw_data, u32 instance_count = 1, u32 instance_index = 0);
+
         void draw(const VkDrawIndexedIndirectCommand& indirect);
         void draw(const VkDrawIndirectCommand& indirect);
 
@@ -104,6 +106,7 @@ class RenderPassRecorder final : NonMovable {
         void bind_buffers(IndexSubBuffer indices, core::Span<AttribSubBuffer> attribs);
         void bind_index_buffer(IndexSubBuffer indices);
         void bind_attrib_buffers(core::Span<AttribSubBuffer> attribs);
+
 
         void bind_per_instance_attrib_buffers(core::Span<AttribSubBuffer> per_instance);
 
