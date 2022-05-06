@@ -53,6 +53,8 @@ class Widget : NonMovable {
 
         void set_parent(Widget* parent);
 
+        void set_modal(bool modal);
+
         virtual void refresh();
         virtual void refresh_all();
 
@@ -84,6 +86,7 @@ class Widget : NonMovable {
         u64 _id = 0;
 
         bool _visible = true;
+        bool _modal = false;
 
         Widget* _parent = nullptr;
         int _flags = 0;
