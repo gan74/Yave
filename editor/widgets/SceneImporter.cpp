@@ -50,7 +50,7 @@ namespace editor {
 SceneImporter::SceneImporter() : SceneImporter(asset_store().filesystem()->current_path().unwrap_or(".")) {
 }
 
-SceneImporter::SceneImporter(const core::String& import_dst_path) :
+SceneImporter::SceneImporter(std::string_view import_dst_path) :
         Widget("Mesh importer"),
         _import_path(import_dst_path) {
 

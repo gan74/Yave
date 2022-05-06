@@ -73,7 +73,7 @@ void Renamer::on_gui() {
 
 static bool rename_file(const FileSystemModel* fs, std::string_view old_name, std::string_view new_name) {
     const auto path = fs->parent_path(old_name);
-    const auto full_new_name = path.map([&](auto&& p) { return fs->join(p, old_name); });
+    const auto full_new_name = path.map([&](auto&& p) { return fs->join(p, new_name); });
     return full_new_name && fs->rename(old_name, full_new_name.unwrap());
 }
 

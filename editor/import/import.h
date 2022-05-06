@@ -33,6 +33,10 @@ SOFTWARE.
 #include <y/math/math.h>
 
 
+namespace tinygltf {
+class Model;
+}
+
 namespace editor {
 namespace import {
 
@@ -68,6 +72,46 @@ struct SceneData {
 };
 
 
+struct ParsedScene {
+    struct Asset {
+        bool is_error = false;
+        bool import = true;
+
+        core::String name = "unamed asset";
+
+        usize index = usize(-1);
+        AssetId asset_id;
+    };
+
+    struct SubMesh : Asset {
+    };
+
+    struct Mesh : Asset {
+        core::Vector<SubMesh> sub_meshes;
+    };
+
+    struct Image : Asset {
+       core::String path;
+       bool as_sRGB = false;
+       bool generate_mips = true;
+    };
+
+    struct Material : Asset {
+    };
+
+    bool is_error = true;
+    bool import_scene = true;
+
+    core::Vector<Mesh> meshes;
+    core::Vector<Material> materials;
+    core::Vector<Image> images;
+
+    std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
+
+    core::Vector<core::Result<MeshData> > build_mesh_data(usize index);
+    core::Result<ImageData> build_image_data(usize index);
+};
+
 // ----------------------------- UTILS -----------------------------
 core::String clean_asset_name(const core::String& name);
 
@@ -92,6 +136,7 @@ enum class SceneImportFlags {
 
 };
 
+ParsedScene parse_scene(const core::String& filename);
 SceneData import_scene(const core::String& filename, SceneImportFlags flags = SceneImportFlags::ImportAll);
 core::String supported_scene_extensions();
 

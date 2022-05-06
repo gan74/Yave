@@ -28,6 +28,8 @@ SOFTWARE.
 #include <yave/graphics/images/ImageData.h>
 #include <yave/utils/FileSystemModel.h>
 
+#include <y/core/Chrono.h>
+
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -297,6 +299,144 @@ static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& mod
     return triangles;
 }
 
+
+
+ParsedScene parse_scene(const core::String& filename) {
+    y_profile();
+
+    ParsedScene scene;
+    scene.is_error = false;
+    scene.gltf = decltype(scene.gltf)(new tinygltf::Model(), [](tinygltf::Model* ptr) { delete ptr; });
+
+    tinygltf::Model& model = *scene.gltf;
+
+    {
+        tinygltf::TinyGLTF ctx;
+
+        y_profile_zone("glTF import");
+        const bool is_ascii = filename.ends_with(".gltf");
+        const std::string file = filename.data();
+
+        std::string err;
+        std::string warn;
+        const bool ok = is_ascii
+                ? ctx.LoadASCIIFromFile(&model, &err, &warn, file)
+                : ctx.LoadBinaryFromFile(&model, &err, &warn, file);
+
+        if(!warn.empty()) {
+            log_msg(warn, Log::Warning);
+        }
+
+        if(!err.empty()) {
+            log_msg(err, Log::Error);
+        }
+
+        if(!ok) {
+            return ParsedScene();
+        }
+    }
+
+    for(usize i = 0; i != model.meshes.size(); ++i) {
+        const tinygltf::Mesh& mesh = model.meshes[i];
+
+        auto& parsed_mesh = scene.meshes.emplace_back();
+        parsed_mesh.name = mesh.name.empty() ? fmt_to_owned("unnamed_mesh_%", i) : clean_asset_name(mesh.name);
+        parsed_mesh.index = i;
+
+        for(usize j = 0; j != mesh.primitives.size(); ++j) {
+            const tinygltf::Primitive& prim = mesh.primitives[j];
+
+            auto& parsed_sub = parsed_mesh.sub_meshes.emplace_back();
+            parsed_sub.name = fmt("submesh_%", j);
+            parsed_sub.index = j;
+
+            if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
+                parsed_sub.is_error = true;
+                continue;
+            }
+        }
+    }
+
+    {
+        const FileSystemModel* fs = FileSystemModel::local_filesystem();
+        auto path = fs->parent_path(filename);
+
+        for(usize i = 0; i != model.images.size(); ++i) {
+            const tinygltf::Image& image = model.images[i];
+
+            core::String filename = fs->filename(image.uri);
+            filename = filename.sub_str(0, filename.size() - fs->extention(filename).size());
+
+            auto& parsed_image = scene.images.emplace_back();
+            parsed_image.name = image.name.empty() ? (filename.is_empty() ? fmt_to_owned("unnamed_image_%", i) : filename) : clean_asset_name(image.name);
+            parsed_image.index = i;
+
+            parsed_image.path = path ? fs->join(path.unwrap(), image.uri) : core::String(image.uri);
+            parsed_image.is_error |= !fs->exists(parsed_image.path).unwrap_or(false);
+        }
+    }
+
+    for(usize i = 0; i != model.materials.size(); ++i) {
+        const tinygltf::Material& material = model.materials[i];
+
+        auto& parsed_material = scene.materials.emplace_back();
+        parsed_material.name = material.name.empty() ? fmt_to_owned("unnamed_material_%", i) : clean_asset_name(material.name);
+        parsed_material.index = i;
+
+        if(material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
+            scene.images[material.pbrMetallicRoughness.baseColorTexture.index].as_sRGB = true;
+        }
+    }
+
+    return scene;
+}
+
+core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) {
+    const Mesh& parsed_mesh = meshes[index];
+    y_debug_assert(!parsed_mesh.is_error);
+
+    core::Vector<core::Result<MeshData>> sub_meshes;
+    for(const SubMesh& sub_mesh : parsed_mesh.sub_meshes) {
+        if(sub_mesh.import) {
+            y_debug_assert(!sub_mesh.is_error);
+            const tinygltf::Primitive& prim = gltf->meshes[parsed_mesh.index].primitives[sub_mesh.index];
+            try {
+                MeshData mesh(import_vertices(*gltf, prim), import_triangles(*gltf, prim));
+                if(mesh.vertices().size() && mesh.vertices()[0].packed_tangent_sign == pack_2_10_10_10(math::Vec3())) {
+                    mesh = compute_tangents(mesh);
+                }
+                sub_meshes.emplace_back(core::Ok(std::move(mesh)));
+            } catch(std::exception& e) {
+                log_msg(fmt("Unable to build mesh: %" , e.what()), Log::Error);
+                sub_meshes.emplace_back(core::Err());
+            }
+        }
+    }
+
+    return sub_meshes;
+}
+
+core::Result<ImageData> ParsedScene::build_image_data(usize index) {
+    const Image& parsed_image = images[index];
+    y_debug_assert(!parsed_image.is_error);
+
+    try {
+        ImageImportFlags flags = ImageImportFlags::None;
+        if(parsed_image.as_sRGB) {
+            flags = flags | ImageImportFlags::ImportAsSRGB;
+        }
+        if(parsed_image.generate_mips) {
+            flags = flags | ImageImportFlags::GenerateMipmaps;
+        }
+
+        return core::Ok(std::move(import_image(parsed_image.path, flags).obj()));
+    } catch(std::exception& e) {
+       log_msg(fmt("Unable to build image: %" , e.what()), Log::Error);
+       return core::Err();
+   }
+}
+
+
 SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
     y_profile();
 
@@ -402,7 +542,7 @@ SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
 
         for(usize i = 0; i != model.materials.size(); ++i) {
             const tinygltf::Material& material = model.materials[i];
-            const core::String name = material.name.empty() ? core::String(fmt("unnamed_material_%", i)) : clean_asset_name(material.name);
+            const core::String name = material.name.empty() ? fmt_to_owned("unnamed_material_%", i) : clean_asset_name(material.name);
 
             auto tex_name = [&](int index) {
                 if(index >= 0) {

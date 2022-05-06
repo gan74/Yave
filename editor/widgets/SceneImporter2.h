@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_SCENEIMPORTER_H
-#define EDITOR_WIDGETS_SCENEIMPORTER_H
+#ifndef EDITOR_WIDGETS_SCENEIMPORTER2_H
+#define EDITOR_WIDGETS_SCENEIMPORTER2_H
 
 #include "FileBrowser.h"
 
@@ -30,48 +30,35 @@ SOFTWARE.
 
 namespace editor {
 
-class SceneImporter final : public Widget {
+class SceneImporter2 final : public Widget {
 
     enum class State {
         Browsing,
+        Parsing,
         Settings,
-        Importing,
-        Done,
+        Importing
     };
 
     public:
-        SceneImporter();
-        SceneImporter(std::string_view import_dst_path);
+        SceneImporter2();
+        SceneImporter2(std::string_view import_dst_path);
 
     protected:
         void on_gui() override;
 
     private:
-        bool done_loading() const;
-        void paint_import_settings();
-        import::SceneImportFlags scene_import_flags() const;
-
-        void import(import::SceneData scene);
+        core::String _import_path;
 
         State _state = State::Browsing;
 
         FileBrowser _browser;
+        import::ParsedScene _parsed_scene;
 
-        core::String _import_path;
-        core::String _filename;
+        std::future<void> _future;
 
-        bool _import_meshes = true;
-        bool _import_anims = true;
-        bool _import_images = true;
-        bool _import_materials = true;
-        bool _flip_uvs = false;
-
-        float _scale = 1.0f;
-
-        std::future<void> _import_future;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_SCENEIMPORTER_H
+#endif // EDITOR_WIDGETS_SCENEIMPORTER2_H
 

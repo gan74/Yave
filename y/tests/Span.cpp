@@ -57,7 +57,7 @@ y_test_func("Span creation") {
     y_test_assert(test_func(std_vec) == 12);
 
     y_test_assert(test_func_c("12345") == 6);
-    y_test_assert(test_func_c("12345"_s) == 5);
+    y_test_assert(test_func_c(core::String("12345")) == 5);
 
     const int arr[] = {1, 7, 9};
     y_test_assert(test_func(arr) == 3);
