@@ -19,27 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_FILERENAMER_H
-#define EDITOR_WIDGETS_FILERENAMER_H
+#ifndef EDITOR_WIDGETS_RENAMER_H
+#define EDITOR_WIDGETS_RENAMER_H
 
 #include <editor/Widget.h>
 
+#include <y/core/FixedArray.h>
+
+#include <functional>
+
 namespace editor {
 
-class FileRenamer final : public Widget {
+class Renamer : public Widget {
     public:
-        FileRenamer(const FileSystemModel* fs, core::String filename);
+        Renamer(core::String name, std::function<bool(std::string_view)> callback);
+
+        const core::String& original_name() const;
 
     protected:
         void on_gui() override;
 
     private:
-        const FileSystemModel* _filesystem = nullptr;
-
-        core::String _filename;
         core::String _name;
-        std::array<char, 1024> _new_name;
+        core::FixedArray<char> _name_buffer;
 
+        std::function<bool(std::string_view)> _callback;
+};
+
+class FileRenamer final : public Renamer {
+    public:
+        FileRenamer(const FileSystemModel* fs, core::String filename);
 };
 
 }

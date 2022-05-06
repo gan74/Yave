@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "FileRenamer.h"
+#include "Renamer.h"
 
 #include <yave/utils/FileSystemModel.h>
 
@@ -38,27 +38,30 @@ namespace editor {
 }*/
 
 
-FileRenamer::FileRenamer(const FileSystemModel* fs, core::String filename) :
-        Widget("Rename", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
-        _filesystem(fs),
-        _filename(std::move(filename)),
-        _name(fs->filename(_filename)) {
 
-    const usize size = std::min(_new_name.size(), _name.size() + 1);
-    std::copy_n(_name.begin(), size, _new_name.begin());
+Renamer::Renamer(core::String name, std::function<bool(std::string_view)> callback) :
+        Widget("Rename", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
+        _name(std::move(name)),
+        _name_buffer(std::max(256_uu, _name.size() * 2)),
+        _callback(callback) {
+
+    set_modal(true);
+    std::copy_n(_name.begin(), _name.size() + 1, _name_buffer.begin());
 }
 
-void FileRenamer::on_gui() {
+const core::String& Renamer::original_name() const {
+    return _name;
+}
+
+void Renamer::on_gui() {
     ImGui::Text("Rename: \"%s\"", _name.data());
 
-    if(ImGui::InputText("", _new_name.data(), _new_name.size(), ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::Button("Ok")) {
-        const auto path = _filesystem->parent_path(_filename);
-        const auto full_new_name = path.map([this](auto&& p) { return _filesystem->join(p, _new_name.data()); });
-        if(full_new_name && _filesystem->rename(_filename, full_new_name.unwrap())) {
+    if(ImGui::InputText("", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::Button("Ok")) {
+        if(_callback(std::string_view(_name_buffer.data()))) {
             close();
             refresh_all();
         } else {
-            log_msg("Unable to rename file.", Log::Error);
+            log_msg("Unable to rename", Log::Error);
         }
     }
 
@@ -67,6 +70,17 @@ void FileRenamer::on_gui() {
         close();
     }
 }
+
+static bool rename_file(const FileSystemModel* fs, std::string_view old_name, std::string_view new_name) {
+    const auto path = fs->parent_path(old_name);
+    const auto full_new_name = path.map([&](auto&& p) { return fs->join(p, old_name); });
+    return full_new_name && fs->rename(old_name, full_new_name.unwrap());
+}
+
+FileRenamer::FileRenamer(const FileSystemModel* fs, core::String filename) :
+        Renamer(filename, [=](std::string_view new_name) { return rename_file(fs, filename, new_name); }) {
+}
+
 
 }
 

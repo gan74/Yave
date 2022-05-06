@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "FileSystemView.h"
-#include "FileRenamer.h"
+#include "Renamer.h"
 
 #include <editor/utils/ui.h>
 
