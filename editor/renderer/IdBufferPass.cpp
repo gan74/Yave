@@ -101,7 +101,7 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view,
     pass.depth = depth;
     pass.id = id;
 
-    builder.add_inline_input(view.camera().viewproj_matrix());
+    builder.add_inline_input(InlineDescriptor(view.camera().viewproj_matrix()));
     builder.add_attrib_input(transform_buffer);
     builder.add_attrib_input(id_buffer);
     builder.map_buffer(transform_buffer);

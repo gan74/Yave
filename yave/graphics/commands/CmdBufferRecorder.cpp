@@ -321,7 +321,7 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
     return RenderPassRecorder(*this, Viewport(framebuffer.size()));
 }
 
-void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants) {
+void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
     check_no_renderpass();
 
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
@@ -335,24 +335,20 @@ void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3
             0, nullptr);
     }
 
-    if(!push_constants.is_empty()) {
-        vkCmdPushConstants(vk_cmd_buffer(), program.vk_pipeline_layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0, u32(push_constants.size()), push_constants.data());
-    }
-
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
 }
 
-void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants) {
+void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
     math::Vec3ui dispatch_size;
     const math::Vec3ui program_size = program.local_size();
     for(usize i = 0; i != 3; ++i) {
         dispatch_size[i] = size[i] / program_size[i] + !!(size[i] % program_size[i]);
     }
-    dispatch(program, dispatch_size, descriptor_sets, push_constants);
+    dispatch(program, dispatch_size, descriptor_sets);
 }
 
-void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants) {
-    dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets, push_constants);
+void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
 }
 
 void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {

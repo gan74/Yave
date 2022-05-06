@@ -97,13 +97,7 @@ static const ComputeProgram& convolution_program(const Texture&) {
 
 
 template<ImageType T>
-static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::TextureBit, T>& texture) {
-    auto descriptor_sets = core::ScratchPad<DescriptorSet>(views.size());
-    std::transform(views.begin(), views.end(), descriptor_sets.begin(), [&](const CubemapStorageView& view) {
-            return DescriptorSet(std::array{Descriptor(texture, SamplerType::LinearClamp), Descriptor(view)});
-        });
-
-
+static void fill_probe(core::MutableSpan<ViewBase> views, const Image<ImageUsage::TextureBit, T>& texture) {
     const ComputeProgram& conv_program = convolution_program(texture);
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
@@ -113,8 +107,14 @@ static void fill_probe(core::Span<ViewBase> views, const Image<ImageUsage::Textu
     {
         const auto region = recorder.region("IBL probe generation");
         for(usize i = 0; i != views.size(); ++i) {
+            ImageView<ImageUsage::StorageBit, ImageType::Cube> z = views[i];
             const float roughness = (i * roughness_step);
-            recorder.dispatch_size(conv_program, size, {descriptor_sets[i]}, roughness);
+            const DescriptorSet descriptor_set(std::array{
+                Descriptor(texture, SamplerType::LinearClamp),
+                Descriptor(z),
+                Descriptor(InlineDescriptor(roughness))
+            });
+            recorder.dispatch_size(conv_program, size, {descriptor_set});
 
             size /= 2;
         }

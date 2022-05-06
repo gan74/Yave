@@ -45,10 +45,6 @@ static void merge_bindings(T& into, const S& o) {
     into.insert(o.begin(), o.end());
 }
 
-template<typename T, typename S>
-static void merge_push_constants(T& into, const S& o) {
-    into.push_back(o.begin(), o.end());
-}
 
 
 static VkFormat attrib_format(const ShaderModuleBase::Attribute& attr) {
@@ -143,10 +139,6 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
         create_stage_info(_stages, vert);
         create_stage_info(_stages, geom);
 
-        merge_push_constants(_push_constants, frag.vk_push_constants());
-        merge_push_constants(_push_constants, vert.vk_push_constants());
-        merge_push_constants(_push_constants, geom.vk_push_constants());
-
         const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
         if(!_bindings.is_empty()) {
@@ -182,10 +174,6 @@ core::Span<VkVertexInputBindingDescription> ShaderProgram::vk_attribute_bindings
 
 core::Span<VkVertexInputAttributeDescription> ShaderProgram::vk_attributes_descriptions() const {
     return _vertex.attribs;
-}
-
-core::Span<VkPushConstantRange> ShaderProgram::vk_push_constants() const {
-    return _push_constants;
 }
 
 core::Span<u32> ShaderProgram::fragment_outputs() const {

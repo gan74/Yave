@@ -114,10 +114,6 @@ class ShaderModuleBase : NonMovable {
             return _module;
         }
 
-        core::Span<VkPushConstantRange> vk_push_constants() const {
-            return _push_constants;
-        }
-
         core::Span<u32> stage_output() const {
             return _stage_output;
         }
@@ -142,7 +138,6 @@ class ShaderModuleBase : NonMovable {
         ShaderType _type = ShaderType::None;
         core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
         core::Vector<VkSpecializationMapEntry> _spec_constants;
-        core::Vector<VkPushConstantRange> _push_constants;
         core::Vector<Attribute> _attribs;
         core::Vector<u32> _stage_output;
         math::Vec3ui _local_size;

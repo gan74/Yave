@@ -161,7 +161,7 @@ static FrameGraphImageId upsample_mini_ao(FrameGraph& framegraph,
     builder.add_uniform_input(hi_ao, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(lo_depth, 0, PipelineStage::ComputeBit);
     builder.add_uniform_input(hi_depth, 0, PipelineStage::ComputeBit);
-    builder.add_inline_input(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance}, 0);
+    builder.add_inline_input(InlineDescriptor(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance}), 0);
     builder.add_storage_output(upsampled, 0, PipelineStage::ComputeBit);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
@@ -180,7 +180,7 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
     const auto ao = builder.declare_image(format, size);
 
     builder.add_uniform_input(linear_depth, 0, PipelineStage::ComputeBit);
-    builder.add_inline_input(compute_ao_params(tan_half_fov, size.x()), 0);
+    builder.add_inline_input(InlineDescriptor(compute_ao_params(tan_half_fov, size.x())), 0);
     builder.add_storage_output(ao, 0, PipelineStage::ComputeBit);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::SSAOProgram];

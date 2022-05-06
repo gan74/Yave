@@ -46,7 +46,7 @@ static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameG
 
     builder.add_color_output(selection);
     builder.add_uniform_input(id, 0, PipelineStage::FragmentBit);
-    builder.add_inline_input(selected.index(), 0);
+    builder.add_inline_input(InlineDescriptor(selected.index()), 0);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = resources()[EditorResources::SelectionMaterialTemplate];

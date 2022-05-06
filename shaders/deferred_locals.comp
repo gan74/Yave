@@ -38,11 +38,9 @@ layout(set = 0, binding = 7) readonly buffer Shadows {
     ShadowMapParams shadow_params[];
 };
 
-
 layout(rgba16f, set = 0, binding = 8) uniform image2D out_color;
 
-
-layout(push_constant) uniform PushConstants {
+layout(set = 1, binding = 0) uniform LightCount_Inline {
     uint point_count;
     uint spot_count;
 };

@@ -31,44 +31,6 @@ SOFTWARE.
 
 namespace yave {
 
-class PushConstant : NonCopyable {
-    public:
-        constexpr PushConstant() = default;
-
-        template<typename T>
-        constexpr PushConstant(const T& data) : _data(&data), _size(sizeof(T)) {
-            static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
-            static_assert(sizeof(T) <= 128, "PushConstant's size must be at most 128 bytes");
-            static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
-        }
-
-        template<typename T>
-        constexpr PushConstant(core::Span<T> arr) : _data(arr.data()), _size(arr.size() * sizeof(T)) {
-            static_assert(sizeof(T) % 4 == 0, "PushConstant's size must be a multiple of 4");
-            static_assert(sizeof(T) <= 128, "PushConstant's size must be at most 128 bytes");
-            static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
-        }
-
-        PushConstant(PushConstant&&) = delete;
-        PushConstant& operator=(PushConstant&&) = delete;
-
-        const void* data() const {
-            return _data;
-        }
-
-        usize size() const {
-            return _size;
-        }
-
-        bool is_empty() const {
-            return !_size;
-        }
-
-    private:
-        const void* _data = nullptr;
-        usize _size = 0;
-};
-
 class CmdBufferRegion {
     public:
         CmdBufferRegion() = default;
@@ -157,9 +119,9 @@ class CmdBufferRecorder final : NonCopyable {
         bool is_inside_renderpass() const;
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
 
-        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants = PushConstant());
-        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants = PushConstant());
-        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets, const PushConstant& push_constants = PushConstant());
+        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
 
 
         void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);

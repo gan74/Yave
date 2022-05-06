@@ -7,7 +7,7 @@ layout(local_size_x = 8, local_size_y = 8) in;
 layout(set = 0, binding = 0) uniform sampler2D in_envmap;
 layout(rgba8, set = 0, binding = 1) uniform writeonly imageCube out_image;
 
-layout(push_constant) uniform PushConstants {
+layout(set = 0, binding = 2) uniform Roughness_Inline {
     float roughness;
 };
 

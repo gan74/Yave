@@ -43,13 +43,11 @@ class ShaderProgram final {
         // should ALWAYS be sorted by location
         core::Span<VkVertexInputBindingDescription> vk_attribute_bindings() const;
         core::Span<VkVertexInputAttributeDescription> vk_attributes_descriptions() const;
-        core::Span<VkPushConstantRange> vk_push_constants() const;
 
         core::Span<u32> fragment_outputs() const;
 
     private:
         core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
-        core::Vector<VkPushConstantRange> _push_constants;
         core::Vector<VkDescriptorSetLayout> _layouts;
         core::Vector<VkPipelineShaderStageCreateInfo> _stages;
         core::Vector<u32> _fragment_outputs;

@@ -208,8 +208,6 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         VkPipelineLayoutCreateInfo create_info = vk_struct();
         create_info.setLayoutCount = u32(program.vk_descriptor_layouts().size());
         create_info.pSetLayouts = program.vk_descriptor_layouts().data();
-        create_info.pushConstantRangeCount = u32(program.vk_push_constants().size());
-        create_info.pPushConstantRanges = program.vk_push_constants().data();
         vk_check(vkCreatePipelineLayout(vk_device(), &create_info, vk_allocation_callbacks(), &pipeline_layout));
     }
 

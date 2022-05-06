@@ -140,7 +140,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         const auto gbuffer = renderer.renderer.gbuffer;
         builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
         builder.add_color_output(output_image);
-        builder.add_inline_input(u32(_view), 0);
+        builder.add_inline_input(InlineDescriptor(_view), 0);
         builder.add_uniform_input(renderer.final, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);

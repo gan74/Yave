@@ -36,7 +36,7 @@ class EngineView final : public Widget {
     editor_widget_open(EngineView, "View")
 
     public:
-        enum class RenderView {
+        enum class RenderView : u32 {
             Lit,
             Albedo,
             Normal,

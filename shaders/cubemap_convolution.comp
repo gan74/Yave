@@ -7,9 +7,10 @@ layout(local_size_x = 8, local_size_y = 8) in;
 layout(set = 0, binding = 0) uniform samplerCube in_envmap;
 layout(rgba8, set = 0, binding = 1) uniform writeonly imageCube out_image;
 
-layout(push_constant) uniform PushConstants {
+layout(set = 0, binding = 2) uniform Roughness_Inline {
     float roughness;
 };
+
 
 vec3 debug_cube(uint side) {
     if(side == 0) return vec3(1.0, 0.5, 0.5); // front

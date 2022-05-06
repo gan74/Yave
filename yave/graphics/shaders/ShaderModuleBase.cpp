@@ -155,22 +155,6 @@ static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseTy
 }
 
 template<typename R>
-static core::ScratchPad<VkPushConstantRange> create_push_constants(const spirv_cross::Compiler& compiler, const R& resources, ShaderType shader_type) {
-    if(resources.size() > 1) {
-        y_fatal("Too many push constants");
-    }
-
-    usize push_constant_count = 0;
-    core::ScratchPad<VkPushConstantRange> push_constants(resources.size());
-    for(const auto& r : resources) {
-        const auto& type = compiler.get_type(r.type_id);
-        push_constants[push_constant_count++] = VkPushConstantRange{VkShaderStageFlags(shader_type), 0, u32(compiler.get_declared_struct_size(type))};
-    }
-    return push_constants;
-}
-
-
-template<typename R>
 static core::ScratchPad<ShaderModuleBase::Attribute> create_attribs(const spirv_cross::Compiler& compiler, const R& resources) {
     usize attrib_count = 0;
     core::ScratchPad<ShaderModuleBase::Attribute> attribs(resources.size());
@@ -218,8 +202,6 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
 
     print_resources(resources.uniform_buffers);
     print_resources(resources.storage_buffers);*/
-
-    _push_constants = create_push_constants(compiler, resources.push_constant_buffers, _type);
 
     _attribs = create_attribs(compiler, resources.stage_inputs);
 

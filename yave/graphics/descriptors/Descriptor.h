@@ -36,7 +36,7 @@ class InlineDescriptor {
         constexpr InlineDescriptor() = default;
 
         template<typename T>
-        constexpr InlineDescriptor(const T& data) : _data(&data), _size(sizeof(T)) {
+        explicit constexpr InlineDescriptor(const T& data) : _data(&data), _size(sizeof(T)) {
             static_assert(sizeof(T) % 4 == 0, "InlineDescriptor's size must be a multiple of 4");
             static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
             static_assert(!std::is_pointer_v<T>, "T shouldn't be a pointer, use a span instead");
@@ -44,7 +44,7 @@ class InlineDescriptor {
         }
 
         template<typename T>
-        constexpr InlineDescriptor(core::Span<T> arr) : _data(arr.data()), _size(arr.size() * sizeof(T)) {
+        explicit constexpr InlineDescriptor(core::Span<T> arr) : _data(arr.data()), _size(arr.size() * sizeof(T)) {
             static_assert(sizeof(T) % 4 == 0, "InlineDescriptor's size must be a multiple of 4");
             static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
         }

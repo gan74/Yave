@@ -47,8 +47,6 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
     {
         layout_create_info.pSetLayouts = layouts.data();
         layout_create_info.setLayoutCount = u32(layouts.size());
-        layout_create_info.pushConstantRangeCount = u32(comp.vk_push_constants().size());
-        layout_create_info.pPushConstantRanges = comp.vk_push_constants().data();
     }
 
     vk_check(vkCreatePipelineLayout(vk_device(), &layout_create_info, vk_allocation_callbacks(), &_layout.get()));
