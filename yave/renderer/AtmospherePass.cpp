@@ -82,7 +82,7 @@ static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const Atmo
 
     const auto integrated = builder.declare_image(format, size);
 
-    builder.add_inline_input(atmosphere_data, 0);
+    builder.add_inline_input(InlineDescriptor(atmosphere_data), 0);
     builder.add_color_output(integrated);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -138,7 +138,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(integrated, SamplerType::LinearClamp, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
-    builder.add_inline_input(atmosphere_data, 0);
+    builder.add_inline_input(InlineDescriptor(atmosphere_data), 0);
     builder.add_color_output(atmo);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());

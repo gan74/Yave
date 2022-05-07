@@ -54,7 +54,7 @@ static FrameGraphImageId threshold(FrameGraph& framegraph, FrameGraphImageId inp
 
     builder.add_color_output(thresholded);
     builder.add_uniform_input(input);
-    builder.add_inline_input(compute_bloom_params(settings));
+    builder.add_inline_input(InlineDescriptor(compute_bloom_params(settings)));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources()[DeviceResources::BloomMaterialTemplate];
@@ -99,7 +99,7 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, con
             builder.add_uniform_input(bloomed);
             if(scatter) {
                 builder.add_uniform_input(input);
-                builder.add_inline_input(compute_bloom_params(settings));
+                builder.add_inline_input(InlineDescriptor(compute_bloom_params(settings)));
             }
             builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
