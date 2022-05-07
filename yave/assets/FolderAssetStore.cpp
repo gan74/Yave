@@ -224,8 +224,11 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
 
     const auto lock = y_profile_unique_lock(_parent->_lock);
 
+    core::Vector<core::String> files_to_delete;
+
     std::set<core::String> new_folders;
     {
+        y_profile_zone("folders");
         for(const core::String& folder : _parent->_folders) {
             if(is_strict_indirect_parent(path, folder) || folder == path) {
                 // Remove
@@ -238,6 +241,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
 
     std::map<core::String, AssetData> new_assets;
     {
+        y_profile_zone("assets");
         for(const auto &[name, data] : _parent->_assets) {
             if(is_strict_indirect_parent(path, name) || name == path) {
                 const AssetId id = data.id;
@@ -247,12 +251,21 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
                     _parent->reload_all().ignore();
                     return r;
                 }
-                FileSystemModel::local_filesystem()->remove(_parent->asset_data_file_name(id)).ignore();
+                files_to_delete << _parent->asset_data_file_name(id);
             } else {
                 y_debug_assert(!name.starts_with(path));
                 new_assets[name] = data;
             }
         }
+    }
+
+    if(!files_to_delete.is_empty()) {
+        y_profile_zone("cleaning files");
+        _parent->push_pending_op(std::async([to_del = std::move(files_to_delete)] {
+            for(const core::String& file : to_del) {
+                FileSystemModel::local_filesystem()->remove(file).ignore();
+            }
+        }));
     }
 
     log_msg(fmt("Removed % assets", _parent->_assets.size() - new_assets.size()));
@@ -340,6 +353,11 @@ FolderAssetStore::FolderAssetStore(const core::String& root) : _root(FileSystemM
 }
 
 FolderAssetStore::~FolderAssetStore() {
+    {
+        y_profile_zone("waiting for pending ops");
+        auto lock = y_profile_unique_lock(_ops_lock);
+        _pending_ops.clear();
+    }
 }
 
 core::String FolderAssetStore::asset_data_file_name(AssetId id) const {
@@ -457,8 +475,11 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
     const AssetId id = next_id();
     const core::String data_file_name = asset_data_file_name(id);
 
-    if(!io2::File::copy(data, data_file_name)) {
-        return core::Err(ErrorType::FilesytemError);
+    {
+        y_profile_zone("writing");
+        if(!io2::File::copy(data, data_file_name)) {
+            return core::Err(ErrorType::FilesytemError);
+        }
     }
 
     const AssetDesc desc = { dst_name, type };
@@ -750,6 +771,12 @@ FolderAssetStore::Result<> FolderAssetStore::reload_all() {
     rebuild_id_map();
 
     return core::Ok();
+}
+
+void FolderAssetStore::push_pending_op(std::future<void> future) {
+    auto lock = y_profile_unique_lock(_ops_lock);
+    Y_TODO(clean _pending_ops)
+    _pending_ops.emplace_back(std::move(future));
 }
 
 }

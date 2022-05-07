@@ -395,6 +395,8 @@ ParsedScene parse_scene(const core::String& filename) {
 }
 
 core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) const {
+    y_profile();
+
     const Mesh& parsed_mesh = meshes[index];
     y_debug_assert(!parsed_mesh.is_error);
 
@@ -439,6 +441,8 @@ core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) c
 }
 
 core::Result<ImageData> ParsedScene::build_image_data(usize index) const {
+    y_profile();
+
     const Image& parsed_image = images[index];
     y_debug_assert(!parsed_image.is_error);
 
@@ -454,6 +458,8 @@ core::Result<ImageData> ParsedScene::build_image_data(usize index) const {
 }
 
 core::Result<SimpleMaterialData> ParsedScene::build_material_data(usize index) const {
+    y_profile();
+
     const Material& parsed_material = materials[index];
     y_debug_assert(!parsed_material.is_error);
 

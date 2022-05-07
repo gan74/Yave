@@ -173,6 +173,7 @@ SceneImporter2::SceneImporter2(std::string_view import_dst_path) :
     _browser.set_canceled_callback([this] { close(); return true; });
     _browser.set_selected_callback([this](const auto& filename) {
         _future = std::async(std::launch::async, [=] {
+            y_profile_zone("parsing import");
             _parsed_scene = import::parse_scene(filename);
         });
         y_debug_assert(_state == State::Browsing);
@@ -213,8 +214,11 @@ static AssetId import_single_asset(const T& asset, std::string_view name, AssetT
 }
 
 void SceneImporter2::import_assets() {
+    y_profile();
+
     auto log_func = [this](std::string_view msg, Log type) {
-        auto lock = y_profile_unique_lock(_lock);
+        log_msg(msg, type);
+        const auto lock = y_profile_unique_lock(_lock);
         _logs.emplace_back(msg, type);
     };
 
@@ -305,7 +309,7 @@ void SceneImporter2::on_gui() {
         break;
 
         case State::Parsing:
-            ImGui::Text("Parsing scene...");
+            ImGui::Text("Parsing scene%s", imgui::ellipsis());
             if(_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 _future.get();
                 if(_parsed_scene.is_error) {
@@ -348,7 +352,7 @@ void SceneImporter2::on_gui() {
         } break;
 
         case State::Importing:
-            ImGui::Text("Importing assets...");
+            ImGui::Text("Importing assets%s", imgui::ellipsis());
             if(_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 _future.get();
                 refresh_all();
@@ -360,9 +364,24 @@ void SceneImporter2::on_gui() {
             if(ImGui::BeginChild("##logs", ImVec2(0, ImGui::GetContentRegionAvail().y - button_height), true)) {
                 imgui::alternating_rows_background();
 
-                auto lock = y_profile_unique_lock(_lock);
+                const auto lock = y_profile_unique_lock(_lock);
                 for(const auto& log : _logs) {
-                    ImGui::Selectable(log.first.data());
+                    switch(log.second) {
+                        case Log::Error:
+                            ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+                            ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_CIRCLE " %", log.first.data()));
+                            ImGui::PopStyleColor();
+                        break;
+
+                        case Log::Warning:
+                            ImGui::PushStyleColor(ImGuiCol_Text, imgui::warning_text_color);
+                            ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_TRIANGLE " %", log.first.data()));
+                            ImGui::PopStyleColor();
+                        break;
+
+                        default:
+                            ImGui::Selectable(fmt_c_str(ICON_FA_CHECK " %", log.first.data()));
+                    }
                 }
             }
             ImGui::EndChild();

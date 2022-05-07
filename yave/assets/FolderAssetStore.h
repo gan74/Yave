@@ -29,6 +29,7 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/core/HashMap.h>
 
+#include <future>
 #include <mutex>
 #include <set>
 #include <map>
@@ -117,6 +118,8 @@ class FolderAssetStore final : NonMovable, public AssetStore {
 
         Result<> reload_all();
 
+        void push_pending_op(std::future<void> future);
+
         core::String _root;
 
         std::atomic<u64> _next_id = 0;
@@ -128,6 +131,9 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         mutable std::recursive_mutex _lock;
 
         FolderFileSystemModel _filesystem;
+
+        std::mutex _ops_lock;
+        core::Vector<std::future<void>> _pending_ops;
 
 };
 }

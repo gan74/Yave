@@ -45,6 +45,7 @@ class EditorComponent {
         bool is_hidden_in_editor() const;
 
         void set_parent_prefab(AssetId id);
+        AssetId parent_prefab() const;
         bool is_prefab() const;
 
         y_reflect(_name, _hide_in_editor, _prefab)

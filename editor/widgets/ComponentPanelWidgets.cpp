@@ -506,6 +506,14 @@ struct EditorComponentWidget : public ComponentPanelWidget<EditorComponentWidget
                 ImGui::EndTooltip();
             }
         }
+
+        /*if(component->is_prefab()) {
+            imgui::table_begin_next_row();
+
+            ImGui::TextUnformatted("Parent Prefab");
+            ImGui::TableNextColumn();
+            imgui::asset_selector(component->parent_prefab(), AssetType::Prefab, "Parent Prefab");
+        }*/
     }
 };
 

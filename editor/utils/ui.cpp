@@ -458,6 +458,16 @@ bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_si
     return ret;
 }
 
+char spinner() {
+    // https://github.com/ocornut/imgui/issues/1901#issuecomment-400563921
+    return "|/-\\"[usize(ImGui::GetTime() / 0.05f) & 3];
+}
+
+const char* ellipsis() {
+    static const char* states[3] = { ".", "..", "..." };
+    return states[usize(ImGui::GetTime() / 0.5f) % 3];
+}
+
 }
 }
 

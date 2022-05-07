@@ -32,6 +32,7 @@ namespace imgui {
 
 static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";
 static constexpr math::Vec4 error_text_color = math::Vec4(1.0f, 0.3f, 0.3f, 1.0f);
+static constexpr math::Vec4 warning_text_color = math::Vec4(1.0f, 0.8f, 0.4f, 1.0f);
 
 bool should_open_context_menu();
 
@@ -57,6 +58,9 @@ void table_begin_next_row(int row_index = 0);
 
 
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
+
+char spinner();
+const char* ellipsis();
 
 }
 }
