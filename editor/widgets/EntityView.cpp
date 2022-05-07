@@ -79,7 +79,11 @@ static void add_prefab() {
 static void add_scene() {
     add_detached_widget<AssetSelector>(AssetType::Scene, "Add scene")->set_selected_callback(
         [](AssetId asset) {
-            current_world().add_scene(asset);
+            core::String name;
+            if(const auto res = asset_store().name(asset)) {
+                name = asset_store().filesystem()->filename(res.unwrap());
+            }
+            current_world().add_scene(asset, name);
             return true;
         });
 }
@@ -95,31 +99,86 @@ EntityView::EntityView() : Widget(ICON_FA_CUBES " Entities") {
 }
 
 void EntityView::paint_view() {
+    y_profile();
+
     EditorWorld& world = current_world();
+    auto& editor_components = world.component_set<EditorComponent>();
 
     const bool display_hidden = app_settings().debug.display_hidden_entities;
+    auto display_entity = [&](ecs::EntityId id) {
+        const EditorComponent* comp = editor_components.try_get(id);
+        if(!comp) {
+            log_msg(fmt("Entity with id % is missing EditorComponent", id.index()), Log::Warning);
+            return;
+        }
+
+        if(!display_hidden && comp->is_hidden_in_editor()) {
+            return;
+        }
+
+        const bool selected = selection().selected_entity() == id;
+        const std::string_view display_name = comp->is_prefab() ? fmt("% (Prefab)", comp->name()) : std::string_view(comp->name());
+        if(ImGui::Selectable(fmt_c_str("% %##%", world.entity_icon(id), display_name, id.index()), selected)) {
+             selection().set_selected(id);
+        }
+        if(ImGui::IsItemHovered()) {
+            _hovered = id;
+        }
+    };
+
+
 
     if(ImGui::BeginChild("##entities", ImVec2(), true)) {
         imgui::alternating_rows_background();
-        for(ecs::EntityId id : world.ids()) {
-            const EditorComponent* comp = world.component<EditorComponent>(id);
-            if(!comp) {
-                log_msg(fmt("Entity with id % is missing EditorComponent", id.index()), Log::Warning);
-                continue;
+
+        core::Vector<std::pair<std::string_view, ecs::EntityId>> tree;
+        core::Vector<ecs::EntityId> flat;
+
+        {
+            y_profile_zone("building tree");
+            for(auto&& [id, comp] : editor_components) {
+                if(comp.path().is_empty()) {
+                    flat.emplace_back(id);
+                } else {
+                    tree.emplace_back(comp.path(), id);
+                }
             }
 
-            if(!display_hidden && comp->is_hidden_in_editor()) {
-                continue;
-            }
+            std::sort(tree.begin(), tree.end());
+        }
 
-            const bool selected = selection().selected_entity() == id;
-            const std::string_view display_name = comp->is_prefab() ? fmt("% (Prefab)", comp->name()) : std::string_view(comp->name());
-            if(ImGui::Selectable(fmt_c_str("% %##%", world.entity_icon(id), display_name, id.index()), selected)) {
-                 selection().set_selected(id);
+        {
+            core::String prev;
+            bool open = false;
+            for(auto&& [path, id] : tree) {
+                core::String current = fmt_to_owned(ICON_FA_FOLDER " %", path.data());
+                if(current != prev) {
+                    if(open) {
+                        ImGui::Unindent();
+                        ImGui::TreePop();
+                    }
+                    if((open = ImGui::TreeNode(current.data()))) {
+                        ImGui::Indent();
+                    }
+                    prev = std::move(current);
+                }
+
+                if(open) {
+                    display_entity(id);
+                }
             }
-            if(ImGui::IsItemHovered()) {
-                _hovered = id;
+            if(open) {
+                ImGui::Unindent();
+                ImGui::TreePop();
             }
+        }
+
+        {
+            ImGui::Indent();
+            for(ecs::EntityId id : flat) {
+                display_entity(id);
+            }
+            ImGui::Unindent();
         }
     }
     ImGui::EndChild();
@@ -132,6 +191,8 @@ void EntityView::on_gui() {
         ImGui::OpenPopup("Add entity");
     }
 
+    ImGui::SameLine();
+    ImGui::Text("%u entities", u32(world.components<EditorComponent>().size()));
 
     if(ImGui::BeginPopup("Add entity")) {
         ecs::EntityId ent;

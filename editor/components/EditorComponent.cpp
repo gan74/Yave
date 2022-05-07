@@ -35,6 +35,14 @@ void EditorComponent::set_name(core::String name) {
     _name = std::move(name);
 }
 
+const core::String& EditorComponent::path() const {
+    return _path;
+}
+
+void EditorComponent::set_path(core::String path) {
+    _path = std::move(path);
+}
+
 math::Vec3& EditorComponent::euler() {
     return _euler;
 }

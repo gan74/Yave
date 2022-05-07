@@ -86,6 +86,10 @@ class EntityId {
             return !operator==(other);
         }
 
+        bool operator<(const EntityId& other) const {
+            return as_u64() < other.as_u64();
+        }
+
     private:
         static constexpr u32 invalid_index = u32(-1);
 

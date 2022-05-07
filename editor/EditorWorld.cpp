@@ -136,14 +136,16 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
 
 void EditorWorld::add_scene(std::string_view name) {
     if(const auto id = asset_store().id(name)) {
-        add_scene(id.unwrap());
+        add_scene(id.unwrap(), name);
     }
 }
 
-void EditorWorld::add_scene(AssetId asset) {
+void EditorWorld::add_scene(AssetId asset, std::string_view folder) {
     if(const auto scene = asset_loader().load_res<ecs::EntityScene>(asset)) {
+        auto& editor_components = component_set<EditorComponent>();
         for(const auto& prefab : scene.unwrap()->prefabs()) {
-            create_entity(prefab);
+            const ecs::EntityId id = create_entity(prefab);
+            editor_components.try_get(id)->set_path(folder);
         }
     }
 }

@@ -488,6 +488,21 @@ struct EditorComponentWidget : public ComponentPanelWidget<EditorComponentWidget
         imgui::table_begin_next_row();
 
         {
+            ImGui::TextUnformatted("Path");
+            ImGui::TableNextColumn();
+
+            std::array<char, 1024> buffer = {};
+            std::copy(component->path().begin(), component->path().end(), buffer.begin());
+
+            if(ImGui::InputText("##path", buffer.data(), buffer.size())) {
+                component->set_path(buffer.data());
+                undo_stack().make_dirty();
+            }
+        }
+
+        imgui::table_begin_next_row();
+
+        {
             ImGui::TextUnformatted("Id");
             ImGui::TableNextColumn();
 
