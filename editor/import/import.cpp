@@ -29,12 +29,30 @@ SOFTWARE.
 #include <yave/material/SimpleMaterialData.h>
 #include <yave/utils/FileSystemModel.h>
 
+#include <y/io2/File.h>
 #include <y/core/Chrono.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
 #include <y/serde3/archives.h>
+
+// -------------- TINYGLTF --------------
+#ifdef Y_GNU
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#endif
+
+#define TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_NO_STB_IMAGE
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#define TINYGLTF_NO_INCLUDE_STB_IMAGE
+#define TINYGLTF_NOEXCEPTION
+#include <external/tinygltf/tiny_gltf.h>
+
+#ifdef Y_GNU
+#pragma GCC diagnostic pop
+#endif
 
 // -------------- STB --------------
 extern "C" {
@@ -50,26 +68,6 @@ extern "C" {
 #pragma GCC diagnostic pop
 #endif
 }
-
-// -------------- TINYGLTF --------------
-#ifdef Y_GNU
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
-#endif
-
-#define TINYGLTF_IMPLEMENTATION
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-#define TINYGLTF_NO_INCLUDE_STB_IMAGE
-#define TINYGLTF_NOEXCEPTION
-#include <external/tinygltf/tiny_gltf.h>
-
-#ifdef Y_GNU
-#pragma GCC diagnostic pop
-#endif
-
-
-
-#include <unordered_set>
 
 
 namespace editor {
@@ -106,25 +104,51 @@ core::String clean_asset_name(const core::String& name) {
 }
 
 core::Result<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {
+    if(auto file = io2::File::open(filename)) {
+        core::Vector<u8> data;
+        if(!file.unwrap().read_all(data)) {
+            log_msg(fmt_c_str("Unable to read image \"%\".", filename), Log::Error);
+            return core::Err();
+        }
+
+        return import_image(data, flags);
+    }
+
+    log_msg(fmt_c_str("Unable to open image \"%\".", filename), Log::Error);
+    return core::Err();
+}
+
+core::Result<ImageData> import_image(core::Span<u8> image_data, ImageImportFlags flags) {
     y_profile();
 
-    int width, height, bpp;
-    u8* data = stbi_load(filename.data(), &width, &height, &bpp, 4);
-    y_defer(stbi_image_free(data));
+    const usize req_components = 4;
 
-    if(!data) {
-        log_msg(fmt_c_str("Unable to load image \"%\".", filename), Log::Error);
+    int width, height, bpp;
+    u8* stbi_data = stbi_load_from_memory(image_data.data(), int(image_data.size()), &width, &height, &bpp, req_components);
+    y_defer(stbi_image_free(stbi_data));
+
+    if(!stbi_data || width < 1 || height < 1) {
+        log_msg("Unable to load image", Log::Error);
         return core::Err();
     }
 
-    const VkFormat format = ((flags & ImageImportFlags::ImportAsSRGB) == ImageImportFlags::ImportAsSRGB)
-        ? VK_FORMAT_R8G8B8A8_SRGB
-        : VK_FORMAT_R8G8B8A8_UNORM;
+    ImageFormat format;
+    if((flags & ImageImportFlags::ImportAsSRGB) == ImageImportFlags::ImportAsSRGB) {
+        format = VK_FORMAT_R8G8B8A8_SRGB;
+    } else {
+        format = VK_FORMAT_R8G8B8A8_UNORM;
+    }
 
-    ImageData img(math::Vec2ui(width, height), data, format);
+    if(!format.is_valid()) {
+        log_msg("Invalid image format", Log::Error);
+        return core::Err();
+    }
+
+    ImageData img(math::Vec2ui(width, height), stbi_data, format);
     if((flags & ImageImportFlags::GenerateMipmaps) == ImageImportFlags::GenerateMipmaps) {
         img = compute_mipmaps(img);
     }
+
     return core::Ok(std::move(img));
 }
 
@@ -310,23 +334,26 @@ ParsedScene parse_scene(const core::String& filename) {
 
     ParsedScene scene;
     scene.is_error = false;
+    scene.filename = filename;
     scene.name = clean_asset_name(filename);
     scene.gltf = decltype(scene.gltf)(new tinygltf::Model(), [](tinygltf::Model* ptr) { delete ptr; });
 
-    tinygltf::Model& model = *scene.gltf;
-
     {
+        y_profile_zone("glTF import");
+
         tinygltf::TinyGLTF ctx;
 
-        y_profile_zone("glTF import");
+        // Set dummy loading function to avoid errors
+        ctx.SetImageLoader([](tinygltf::Image*, const int, std::string*, std::string*, int, int, const unsigned char*, int, void*) { return true; }, nullptr);
+
         const bool is_ascii = filename.ends_with(".gltf");
         const std::string file = filename.data();
 
         std::string err;
         std::string warn;
         const bool ok = is_ascii
-                ? ctx.LoadASCIIFromFile(&model, &err, &warn, file)
-                : ctx.LoadBinaryFromFile(&model, &err, &warn, file);
+                ? ctx.LoadASCIIFromFile(scene.gltf.get(), &err, &warn, file)
+                : ctx.LoadBinaryFromFile(scene.gltf.get(), &err, &warn, file);
 
         if(!warn.empty()) {
             log_msg(warn, Log::Warning);
@@ -341,20 +368,20 @@ ParsedScene parse_scene(const core::String& filename) {
         }
     }
 
-    for(usize i = 0; i != model.meshes.size(); ++i) {
-        const tinygltf::Mesh& mesh = model.meshes[i];
+    for(int i = 0; i != scene.gltf->meshes.size(); ++i) {
+        const tinygltf::Mesh& mesh = scene.gltf->meshes[i];
 
         auto& parsed_mesh = scene.meshes.emplace_back();
         parsed_mesh.name = mesh.name.empty() ? fmt_to_owned("unnamed_mesh_%", i) : clean_asset_name(mesh.name);
-        parsed_mesh.index = i;
+        parsed_mesh.gltf_index = i;
 
-        for(usize j = 0; j != mesh.primitives.size(); ++j) {
+        for(int j = 0; j != mesh.primitives.size(); ++j) {
             const tinygltf::Primitive& prim = mesh.primitives[j];
 
             auto& parsed_sub = parsed_mesh.sub_meshes.emplace_back();
             parsed_sub.name = fmt("submesh_%", j);
-            parsed_sub.index = j;
-            parsed_sub.material_index = prim.material;
+            parsed_sub.gltf_index = j;
+            parsed_sub.gltf_material_index = prim.material;
 
             if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
                 parsed_sub.is_error = true;
@@ -363,34 +390,25 @@ ParsedScene parse_scene(const core::String& filename) {
         }
     }
 
-    {
-        const FileSystemModel* fs = FileSystemModel::local_filesystem();
-        auto path = fs->parent_path(filename);
+    for(int i = 0; i != scene.gltf->images.size(); ++i) {
+        const tinygltf::Image& image = scene.gltf->images[i];
 
-        for(usize i = 0; i != model.images.size(); ++i) {
-            const tinygltf::Image& image = model.images[i];
-
-            core::String filename = fs->filename(image.uri);
-            filename = filename.sub_str(0, filename.size() - fs->extention(filename).size());
-
-            auto& parsed_image = scene.images.emplace_back();
-            parsed_image.name = image.name.empty() ? (filename.is_empty() ? fmt_to_owned("unnamed_image_%", i) : filename) : clean_asset_name(image.name);
-            parsed_image.index = i;
-
-            parsed_image.path = path ? fs->join(path.unwrap(), image.uri) : core::String(image.uri);
-            parsed_image.is_error |= !fs->exists(parsed_image.path).unwrap_or(false);
-        }
+        auto& parsed_image = scene.images.emplace_back();
+        parsed_image.name = image.name.empty() ? fmt_to_owned("unnamed_image_%", i) : clean_asset_name(image.name);
+        parsed_image.gltf_index = i;
     }
 
-    for(usize i = 0; i != model.materials.size(); ++i) {
-        const tinygltf::Material& material = model.materials[i];
+    for(int i = 0; i != scene.gltf->materials.size(); ++i) {
+        const tinygltf::Material& material = scene.gltf->materials[i];
 
         auto& parsed_material = scene.materials.emplace_back();
         parsed_material.name = material.name.empty() ? fmt_to_owned("unnamed_material_%", i) : clean_asset_name(material.name);
-        parsed_material.index = i;
+        parsed_material.gltf_index = i;
 
-        if(material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
-            scene.images[material.pbrMetallicRoughness.baseColorTexture.index].as_sRGB = true;
+        const int tex_index = material.pbrMetallicRoughness.baseColorTexture.index;
+        if(tex_index >= 0) {
+            const int image_index = scene.gltf->textures[tex_index].source;
+            scene.images[image_index].as_sRGB = true;
         }
     }
 
@@ -414,7 +432,7 @@ core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) c
     for(const SubMesh& sub_mesh : parsed_mesh.sub_meshes) {
         if(sub_mesh.import) {
             y_debug_assert(!sub_mesh.is_error);
-            const tinygltf::Primitive& prim = gltf->meshes[parsed_mesh.index].primitives[sub_mesh.index];
+            const tinygltf::Primitive& prim = gltf->meshes[parsed_mesh.gltf_index].primitives[sub_mesh.gltf_index];
             try {
                 auto vertices = import_vertices(*gltf, prim);
                 const bool recompute_tangents = vertices.size() && vertices[0].tangent.is_zero();
@@ -457,7 +475,17 @@ core::Result<ImageData> ParsedScene::build_image_data(usize index) const {
         flags = flags | ImageImportFlags::GenerateMipmaps;
     }
 
-    return import_image(parsed_image.path, flags);
+    const tinygltf::Image& image = gltf->images[parsed_image.gltf_index];
+    if(!image.uri.empty()) {
+        const FileSystemModel* fs = FileSystemModel::local_filesystem();
+        const auto path = fs->parent_path(filename);
+        const core::String image_path = path ? fs->join(path.unwrap(), image.uri) : core::String(image.uri);
+        return import_image(image_path, flags);
+    } else {
+        const tinygltf::BufferView& view = gltf->bufferViews[image.bufferView];
+        const tinygltf::Buffer& buffer = gltf->buffers[view.buffer];
+        return import_image(core::Span<u8>(buffer.data.data() + view.byteOffset, view.byteLength), flags);
+    }
 }
 
 core::Result<SimpleMaterialData> ParsedScene::build_material_data(usize index) const {
@@ -466,38 +494,41 @@ core::Result<SimpleMaterialData> ParsedScene::build_material_data(usize index) c
     const Material& parsed_material = materials[index];
     y_debug_assert(!parsed_material.is_error);
 
-    try {
-        const tinygltf::Material gltf_mat = gltf->materials[parsed_material.index];
-        const tinygltf::PbrMetallicRoughness& pbr = gltf_mat.pbrMetallicRoughness;
+    const tinygltf::Material gltf_mat = gltf->materials[parsed_material.gltf_index];
+    const tinygltf::PbrMetallicRoughness& pbr = gltf_mat.pbrMetallicRoughness;
 
-        auto find_texture = [this](int tex_index) -> AssetPtr<Texture> {
-            if(tex_index < 0) {
-                return {};
-            }
-            return make_asset_with_id<Texture>(images[tex_index].asset_id);
-        };
-
-        SimpleMaterialData data;
-        data.set_texture(SimpleMaterialData::Diffuse, find_texture(pbr.baseColorTexture.index));
-        data.set_texture(SimpleMaterialData::Normal, find_texture(gltf_mat.normalTexture.index));
-        data.set_texture(SimpleMaterialData::Roughness, find_texture(pbr.metallicRoughnessTexture.index));
-        data.set_texture(SimpleMaterialData::Metallic, find_texture(pbr.metallicRoughnessTexture.index));
-        data.set_texture(SimpleMaterialData::Emissive, find_texture(gltf_mat.emissiveTexture.index));
-
-        data.alpha_tested() = (gltf_mat.alphaMode == "MASK");
-        data.double_sided() = gltf_mat.doubleSided;
-
-        data.constants().metallic_mul = float(pbr.metallicFactor);
-        data.constants().roughness_mul = float(pbr.roughnessFactor);
-        for(usize i = 0; i != 3; ++i) {
-            data.constants().emissive_mul[i] = float(gltf_mat.emissiveFactor[0]);
+    auto find_texture = [this](int tex_index) -> AssetPtr<Texture> {
+        if(tex_index < 0) {
+            return {};
         }
 
-        return core::Ok(std::move(data));
-    } catch(std::exception& e) {
-        log_msg(fmt("Unable to build material: %" , e.what()), Log::Error);
-        return core::Err();
+        const int image_index = gltf->textures[tex_index].source;
+        const auto it = std::find_if(images.begin(), images.end(), [=](const auto& img) { return img.gltf_index == image_index; });
+        if(it == images.end()) {
+            return {};
+        }
+
+        y_debug_assert(it->gltf_index == image_index);
+        return make_asset_with_id<Texture>(it->asset_id);
+    };
+
+    SimpleMaterialData data;
+    data.set_texture(SimpleMaterialData::Diffuse, find_texture(pbr.baseColorTexture.index));
+    data.set_texture(SimpleMaterialData::Normal, find_texture(gltf_mat.normalTexture.index));
+    data.set_texture(SimpleMaterialData::Roughness, find_texture(pbr.metallicRoughnessTexture.index));
+    data.set_texture(SimpleMaterialData::Metallic, find_texture(pbr.metallicRoughnessTexture.index));
+    data.set_texture(SimpleMaterialData::Emissive, find_texture(gltf_mat.emissiveTexture.index));
+
+    data.alpha_tested() = (gltf_mat.alphaMode == "MASK");
+    data.double_sided() = gltf_mat.doubleSided;
+
+    data.constants().metallic_mul = float(pbr.metallicFactor);
+    data.constants().roughness_mul = float(pbr.roughnessFactor);
+    for(usize i = 0; i != 3; ++i) {
+        data.constants().emissive_mul[i] = float(gltf_mat.emissiveFactor[i]);
     }
+
+    return core::Ok(std::move(data));
 }
 
 core::String supported_scene_extensions() {

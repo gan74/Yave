@@ -224,10 +224,9 @@ static void pack(const float* in, usize size, u8* out) {
 #endif
 }
 
-core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, const math::Vec2ui& size, usize mip_count) {
+core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, const math::Vec2ui& size, usize components, usize mip_count) {
     y_profile();
 
-    const usize components = 4;
     y_debug_assert(size.x() * size.y() * components == input.size());
 
     const ImageFormat normalized_format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -278,16 +277,17 @@ ImageData compute_mipmaps(const ImageData& image) {
     y_profile();
 
     if(image.layers() != 1 || image.size().z() != 1) {
-        log_msg("Only one layer is supported.", Log::Error);
-        return copy(image);
-    }
-    const bool is_sRGB = image.format() == ImageFormat(VK_FORMAT_R8G8B8A8_SRGB);
-    if(image.format() != ImageFormat(VK_FORMAT_R8G8B8A8_UNORM) && !is_sRGB) {
-        log_msg("Only RGBA is supported.", Log::Error);
+        log_msg("Unable to generate mipmaps: only one layer is supported.", Log::Error);
         return copy(image);
     }
 
-    const usize components = 4;
+    if(image.format().is_block_format() || image.format().is_depth_format()) {
+        log_msg("Unable to generate mipmaps: format is not supported.", Log::Error);
+        return copy(image);
+    }
+
+    const bool is_sRGB = image.format().is_sRGB();
+    const usize components = image.format().components();
     const usize texels = image.size().x() * image.size().y();
     const usize mip_count = ImageData::mip_count(image.size());
 
@@ -295,13 +295,14 @@ ImageData compute_mipmaps(const ImageData& image) {
     {
         y_profile_zone("unpack");
         if(is_sRGB) {
+            Y_TODO(Alpha should not be gammaed)
             unpack_with_gamma(image.data(), input.size(), input.data());
         } else {
             unpack(image.data(), input.size(), input.data());
         }
     }
 
-    core::FixedArray<float> output = compute_mipmaps_internal(std::move(input), image.size().to<2>(), mip_count);
+    core::FixedArray<float> output = compute_mipmaps_internal(std::move(input), image.size().to<2>(), components, mip_count);
     core::FixedArray<u8> data(output.size());
     {
         y_profile_zone("pack");

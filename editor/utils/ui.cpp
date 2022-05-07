@@ -465,7 +465,7 @@ char spinner() {
 
 const char* ellipsis() {
     static const char* states[3] = { ".", "..", "..." };
-    return states[usize(ImGui::GetTime() / 0.5f) % 3];
+    return states[usize(ImGui::GetTime() / 0.3f) % 3];
 }
 
 }

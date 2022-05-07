@@ -34,6 +34,7 @@ class EditorWorld : public ecs::EntityWorld {
     public:
         EditorWorld(AssetLoader& loader);
 
+        void clear();
         void flush_reload();
 
         bool set_entity_name(ecs::EntityId id, std::string_view name);

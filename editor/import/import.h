@@ -54,12 +54,12 @@ struct ParsedScene {
 
         core::String name = "unamed asset";
 
-        usize index = usize(-1);
+        int gltf_index = -1;
         AssetId asset_id;
     };
 
     struct SubMesh : Asset {
-        int material_index = -1;
+        int gltf_material_index = -1;
     };
 
     struct Mesh : Asset {
@@ -67,7 +67,6 @@ struct ParsedScene {
     };
 
     struct Image : Asset {
-       core::String path;
        bool as_sRGB = false;
        bool generate_mips = true;
     };
@@ -79,6 +78,7 @@ struct ParsedScene {
     bool import_scene = true;
 
     core::String name;
+    core::String filename;
 
     core::Vector<Mesh> meshes;
     core::Vector<Material> materials;
@@ -108,6 +108,7 @@ enum class ImageImportFlags {
 };
 
 core::Result<ImageData> import_image(const core::String& filename, ImageImportFlags flags = ImageImportFlags::None);
+core::Result<ImageData> import_image(core::Span<u8> image_data, ImageImportFlags flags = ImageImportFlags::None);
 core::String supported_image_extensions();
 
 

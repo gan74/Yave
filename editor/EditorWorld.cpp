@@ -43,7 +43,11 @@ SOFTWARE.
 
 #include <external/imgui/IconsFontAwesome5.h>
 
+#include <algorithm>
+
 namespace editor {
+
+editor_action("Remove all entities", [] { current_world().clear(); })
 
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_required_component<EditorComponent>();
@@ -52,12 +56,20 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
     // add_system<ASUpdateSystem>();
 }
 
+void EditorWorld::clear() {
+    core::Vector<ecs::EntityId> all_entities;
+    for(const ecs::EntityId id : ids()) {
+        all_entities << id;
+    }
+    for(const ecs::EntityId id : all_entities) {
+        remove_entity(id);
+    }
+}
+
 void EditorWorld::flush_reload() {
     AssetLoaderSystem* system = find_system<AssetLoaderSystem>();
     system->reset(*this);
 }
-
-
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {
     if(EditorComponent* comp = component<EditorComponent>(id)) {
@@ -153,6 +165,7 @@ core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::comp
 
     return types;
 }
+
 
 
 }

@@ -786,6 +786,26 @@ usize ImageFormat::components() const {
     }
 }
 
+bool ImageFormat::is_sRGB() const {
+    switch(_format) {
+        case VK_FORMAT_R8_SRGB:
+        case VK_FORMAT_R8G8_SRGB:
+        case VK_FORMAT_R8G8B8_SRGB:
+        case VK_FORMAT_B8G8R8_SRGB:
+        case VK_FORMAT_R8G8B8A8_SRGB:
+        case VK_FORMAT_B8G8R8A8_SRGB:
+        case VK_FORMAT_BC1_RGB_SRGB_BLOCK:
+        case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
+        case VK_FORMAT_BC3_SRGB_BLOCK:
+        case VK_FORMAT_BC7_SRGB_BLOCK:
+        case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
 VkImageAspectFlags ImageFormat::vk_aspect() const {
     switch(_format) {
         case VK_FORMAT_D16_UNORM:
