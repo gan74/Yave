@@ -33,6 +33,7 @@ SOFTWARE.
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/EntityScene.h>
 
 #include <y/io2/Buffer.h>
 #include <editor/utils/ui.h>
@@ -174,7 +175,8 @@ SceneImporter2::SceneImporter2(std::string_view import_dst_path) :
     _browser.set_selected_callback([this](const auto& filename) {
         _future = std::async(std::launch::async, [=] {
             y_profile_zone("parsing import");
-            _parsed_scene = import::parse_scene(filename);
+            const auto kp = keep_alive();
+            _scene = import::parse_scene(filename);
         });
         y_debug_assert(_state == State::Browsing);
         _state = State::Parsing;
@@ -225,10 +227,10 @@ void SceneImporter2::import_assets() {
     // --------------------------------- Images ---------------------------------
     {
         const core::String image_import_path = asset_store().filesystem()->join(_import_path, "Textures");
-        for(usize i = 0; i != _parsed_scene.images.size(); ++i) {
-            auto& image = _parsed_scene.images[i];
+        for(usize i = 0; i != _scene.images.size(); ++i) {
+            auto& image = _scene.images[i];
             if(image.import) {
-                if(auto res = _parsed_scene.build_image_data(i)) {
+                if(auto res = _scene.build_image_data(i)) {
                     image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, log_func);
                 }
             }
@@ -238,10 +240,10 @@ void SceneImporter2::import_assets() {
     // --------------------------------- Meshes ---------------------------------
     {
         const core::String mesh_import_path = asset_store().filesystem()->join(_import_path, "Meshes");
-        for(usize i = 0; i != _parsed_scene.meshes.size(); ++i) {
-            auto& mesh = _parsed_scene.meshes[i];
+        for(usize i = 0; i != _scene.meshes.size(); ++i) {
+            auto& mesh = _scene.meshes[i];
             if(mesh.import) {
-                core::Vector<core::Result<MeshData>> sub_meshes = _parsed_scene.build_mesh_data(i);
+                core::Vector<core::Result<MeshData>> sub_meshes = _scene.build_mesh_data(i);
                 for(usize j = 0; j != sub_meshes.size(); ++j) {
                     if(auto& res = sub_meshes[j]) {
                         mesh.sub_meshes[j].asset_id = import_single_asset(std::move(res.unwrap()), asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.sub_meshes[j].name), AssetType::Mesh, log_func);
@@ -254,10 +256,10 @@ void SceneImporter2::import_assets() {
     // --------------------------------- Materials ---------------------------------
     {
         const core::String material_import_path = asset_store().filesystem()->join(_import_path, "Materials");
-        for(usize i = 0; i != _parsed_scene.materials.size(); ++i) {
-            auto& material = _parsed_scene.materials[i];
+        for(usize i = 0; i != _scene.materials.size(); ++i) {
+            auto& material = _scene.materials[i];
             if(material.import) {
-                if(auto res = _parsed_scene.build_material_data(i)) {
+                if(auto res = _scene.build_material_data(i)) {
                     material.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(material_import_path, material.name), AssetType::Material, log_func);
                 }
             }
@@ -267,7 +269,7 @@ void SceneImporter2::import_assets() {
     // --------------------------------- Prefabs ---------------------------------
     {
         const core::String prefab_import_path = asset_store().filesystem()->join(_import_path, "Prefabs");
-        for(const auto& mesh : _parsed_scene.meshes) {
+        for(auto& mesh : _scene.meshes) {
             auto sub_meshes = core::vector_with_capacity<StaticMeshComponent::SubMesh>(mesh.sub_meshes.size());
             for(const auto& sub_mesh : mesh.sub_meshes) {
                 if(sub_mesh.material_index < 0 || sub_mesh.asset_id == AssetId::invalid_id()) {
@@ -275,7 +277,7 @@ void SceneImporter2::import_assets() {
                 }
 
                 AssetId material_id;
-                for(const auto& mat : _parsed_scene.materials) {
+                for(const auto& mat : _scene.materials) {
                     if(mat.index == usize(sub_mesh.material_index)) {
                         material_id = mat.asset_id;
                         break;
@@ -293,10 +295,22 @@ void SceneImporter2::import_assets() {
                 ecs::EntityPrefab prefab;
                 prefab.add(TransformableComponent());
                 prefab.add(StaticMeshComponent(std::move(sub_meshes)));
-                import_single_asset(prefab, asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, log_func);
+                mesh.asset_id = import_single_asset(prefab, asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, log_func);
             }
-
         }
+    }
+
+
+    // --------------------------------- Scene ---------------------------------
+    if(_scene.import_scene) {
+        const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
+        auto prefabs = core::vector_with_capacity<AssetPtr<ecs::EntityPrefab>>(_scene.meshes.size());
+        for(const auto& mesh : _scene.meshes) {
+            if(mesh.asset_id != AssetId::invalid_id()) {
+                prefabs << make_asset_with_id<ecs::EntityPrefab>(mesh.asset_id);
+            }
+        }
+        import_single_asset(ecs::EntityScene(std::move(prefabs)), asset_store().filesystem()->join(scene_import_path, _scene.name), AssetType::Scene, log_func);
     }
 }
 
@@ -312,7 +326,7 @@ void SceneImporter2::on_gui() {
             ImGui::Text("Parsing scene%s", imgui::ellipsis());
             if(_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 _future.get();
-                if(_parsed_scene.is_error) {
+                if(_scene.is_error) {
                     _state = State::Browsing;
                 } else {
                     _state = State::Settings;
@@ -321,32 +335,52 @@ void SceneImporter2::on_gui() {
         break;
 
         case State::Settings: {
-            const usize total_errors =
-                count_errors(_parsed_scene.meshes) +
-                count_errors(_parsed_scene.materials) +
-                count_errors(_parsed_scene.images);
-
-            if(_parsed_scene.is_error) {
-                ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE " Error while parsing scene, some elements might be missing or broken");
-                ImGui::Separator();
-            } else if(total_errors) {
-                ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE " %u assets could not be parsed and won't be imported", u32(total_errors));
+            {
+                if(imgui::path_selector("Import path:", _import_path)) {
+                    FileBrowser* browser = add_child_widget<FileBrowser>(asset_store().filesystem());
+                    browser->set_selection_filter(true);
+                    browser->set_selected_callback([this](const auto& filename) {
+                            if(asset_store().filesystem()->is_directory(filename).unwrap_or(false)) {
+                                _import_path = filename;
+                                return true;
+                            }
+                            return false;
+                        });
+                }
                 ImGui::Separator();
             }
 
-            ImGui::Checkbox("Import as scene", &_parsed_scene.import_scene);
+            {
+                const usize total_errors =
+                    count_errors(_scene.meshes) +
+                    count_errors(_scene.materials) +
+                    count_errors(_scene.images);
+
+                if(_scene.is_error) {
+                    ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE " Error while parsing scene, some elements might be missing or broken");
+                    ImGui::Separator();
+                } else if(total_errors) {
+                    ImGui::TextColored(imgui::warning_text_color, ICON_FA_EXCLAMATION_TRIANGLE " %u assets could not be parsed and won't be imported", u32(total_errors));
+                    ImGui::Separator();
+                }
+            }
+
+            ImGui::Checkbox("Import as scene", &_scene.import_scene);
 
             ImGui::Separator();
 
             if(ImGui::BeginChild("##assets", ImVec2(0, ImGui::GetContentRegionAvail().y - button_height), true)) {
-                display_mesh_import_list(_parsed_scene);
-                display_material_import_list(_parsed_scene);
-                display_image_import_list(_parsed_scene);
+                display_mesh_import_list(_scene);
+                display_material_import_list(_scene);
+                display_image_import_list(_scene);
             }
             ImGui::EndChild();
 
             if(ImGui::Button(ICON_FA_CHECK " Import")) {
-                _future = std::async(std::launch::async, [this] { import_assets(); });
+                _future = std::async(std::launch::async, [this] {
+                    const auto kp = keep_alive();
+                    import_assets();
+                });
                 _state = State::Importing;
             }
         } break;
@@ -374,7 +408,7 @@ void SceneImporter2::on_gui() {
                         break;
 
                         case Log::Warning:
-                            ImGui::PushStyleColor(ImGuiCol_Text, imgui::warning_text_color);
+                            ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
                             ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_TRIANGLE " %", log.first.data()));
                             ImGui::PopStyleColor();
                         break;

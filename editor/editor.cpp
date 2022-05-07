@@ -77,6 +77,10 @@ DirectDraw& debug_drawer() {
     return application()->debug_drawer();
 }
 
+PendingOpsQueue& pending_ops_queue() {
+    return application()->pending_ops_queue();
+}
+
 const EditorResources& resources() {
     return application()->resources();
 }

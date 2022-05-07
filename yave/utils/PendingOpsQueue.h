@@ -19,42 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_IMAGEIMPORTER_H
-#define EDITOR_WIDGETS_IMAGEIMPORTER_H
 
-#include "FileBrowser.h"
+#ifndef YAVE_UTILS_PENDINGOPSQUEUE_H
+#define YAVE_UTILS_PENDINGOPSQUEUE_H
 
-#include <yave/graphics/images/ImageData.h>
+#include <yave/yave.h>
 
+#include <y/core/Vector.h>
+
+#include <mutex>
 #include <future>
 
-namespace editor {
+namespace yave {
 
-class ImageImporter final : public Widget {
-
+class PendingOpsQueue : NonMovable {
     public:
-        ImageImporter();
-        ImageImporter(std::string_view import_path);
+        PendingOpsQueue();
+        ~PendingOpsQueue();
 
-        ~ImageImporter();
+        void push(std::future<void> future);
 
-    protected:
-        void on_gui() override;
+        void garbage_collect();
 
     private:
-        void import(const core::String& filename);
-
-        bool done_loading() const;
-        bool is_loading() const;
-
-        FileBrowser _browser;
-
-        core::String _import_path;
-
-        std::future<void> _import_future;
+        std::mutex _lock;
+        core::Vector<std::future<void>> _pending_ops;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_IMAGEIMPORTER_H
+#endif // YAVE_UTILS_PENDINGOPSQUEUE_H
 

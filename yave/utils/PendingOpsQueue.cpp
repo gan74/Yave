@@ -19,42 +19,53 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_IMAGEIMPORTER_H
-#define EDITOR_WIDGETS_IMAGEIMPORTER_H
 
-#include "FileBrowser.h"
+#include "PendingOpsQueue.h"
 
-#include <yave/graphics/images/ImageData.h>
+namespace yave {
 
-#include <future>
-
-namespace editor {
-
-class ImageImporter final : public Widget {
-
-    public:
-        ImageImporter();
-        ImageImporter(std::string_view import_path);
-
-        ~ImageImporter();
-
-    protected:
-        void on_gui() override;
-
-    private:
-        void import(const core::String& filename);
-
-        bool done_loading() const;
-        bool is_loading() const;
-
-        FileBrowser _browser;
-
-        core::String _import_path;
-
-        std::future<void> _import_future;
-};
-
+static bool is_done(const std::future<void>& future) {
+     return future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
 
-#endif // EDITOR_WIDGETS_IMAGEIMPORTER_H
+PendingOpsQueue::PendingOpsQueue() {
+}
+
+PendingOpsQueue::~PendingOpsQueue() {
+    y_profile_zone("waiting for pending ops");
+    auto lock = y_profile_unique_lock(_lock);
+    _pending_ops.clear();
+}
+
+
+void PendingOpsQueue::garbage_collect() {
+    auto lock = y_profile_unique_lock(_lock);
+
+    auto pending = core::vector_with_capacity<std::future<void>>(_pending_ops.size());
+    for(auto& future : _pending_ops) {
+        if(is_done(future)) {
+            if(future.valid()) {
+                future.get();
+            }
+        } else {
+            pending.emplace_back(std::move(future));
+        }
+    }
+    _pending_ops.swap(pending);
+}
+
+void PendingOpsQueue::push(std::future<void> future) {
+    if(is_done(future)) {
+        if(future.valid()) {
+            future.get();
+        }
+        return;
+    }
+
+    auto lock = y_profile_unique_lock(_lock);
+    Y_TODO(clean _pending_ops)
+    _pending_ops.emplace_back(std::move(future));
+}
+
+}
 

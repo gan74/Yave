@@ -78,6 +78,8 @@ struct ParsedScene {
     bool is_error = true;
     bool import_scene = true;
 
+    core::String name;
+
     core::Vector<Mesh> meshes;
     core::Vector<Material> materials;
     core::Vector<Image> images;

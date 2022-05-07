@@ -306,8 +306,11 @@ static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& mod
 ParsedScene parse_scene(const core::String& filename) {
     y_profile();
 
+    core::DebugTimer timer("Parsing gltf");
+
     ParsedScene scene;
     scene.is_error = false;
+    scene.name = clean_asset_name(filename);
     scene.gltf = decltype(scene.gltf)(new tinygltf::Model(), [](tinygltf::Model* ptr) { delete ptr; });
 
     tinygltf::Model& model = *scene.gltf;

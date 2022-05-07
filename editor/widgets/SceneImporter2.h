@@ -55,7 +55,7 @@ class SceneImporter2 final : public Widget {
         State _state = State::Browsing;
 
         FileBrowser _browser;
-        import::ParsedScene _parsed_scene;
+        import::ParsedScene _scene;
 
         core::Vector<std::pair<core::String, Log>> _logs;
         std::mutex _lock;

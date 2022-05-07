@@ -33,6 +33,7 @@ SOFTWARE.
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/DirectDraw.h>
+#include <yave/utils/PendingOpsQueue.h>
 
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
@@ -76,6 +77,7 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : _platform(platfo
     _debug_drawer = std::make_unique<DirectDraw>();
 
     _undo_stack = std::make_unique<UndoStack>();
+    _pending_ops_queue = std::make_unique<PendingOpsQueue>();
 
     _default_scene_view = SceneView(_world.get());
     _scene_view = &_default_scene_view;
@@ -101,6 +103,7 @@ void EditorApplication::exec() {
         _ui->on_gui();
         process_deferred_actions();
         _recorder = nullptr;
+        _pending_ops_queue->garbage_collect();
     });
 }
 

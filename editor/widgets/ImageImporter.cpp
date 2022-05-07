@@ -30,11 +30,12 @@ SOFTWARE.
 #include <y/io2/Buffer.h>
 #include <y/serde3/archives.h>
 
-#include <y/utils/log.h>
+#include <yave/utils/PendingOpsQueue.h>
+#include <editor/utils/ui.h>
 #include <y/utils/format.h>
+#include <y/utils/log.h>
 
 #include <external/imgui/yave_imgui.h>
-
 
 namespace editor {
 
@@ -50,6 +51,10 @@ ImageImporter::ImageImporter(std::string_view import_path) :
     _browser.set_canceled_callback([this] { close(); return true; });
 }
 
+ImageImporter::~ImageImporter() {
+    pending_ops_queue().push(std::move(_import_future));
+}
+
 void ImageImporter::on_gui()  {
     if(is_loading()) {
         if(done_loading()) {
@@ -57,7 +62,7 @@ void ImageImporter::on_gui()  {
             close();
             refresh_all();
         } else {
-            ImGui::TextUnformatted("Loading...");
+            ImGui::Text("Loading%s", imgui::ellipsis());
         }
     } else {
         _browser.draw_gui_inside();

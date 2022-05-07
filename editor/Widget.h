@@ -29,9 +29,7 @@ SOFTWARE.
 #include <y/utils/log.h>
 
 #include <array>
-
-// #include <y/serde3/poly.h>
-
+#include <atomic>
 
 #define editor_widget(type, ...)  editor_action_(#type, "Open a new " #type, 0, /* no shortcut */, []{ editor::add_child_widget<type>(); }, __VA_ARGS__)
 
@@ -48,6 +46,7 @@ class Widget : NonMovable {
 
         void close();
         bool is_visible() const;
+        bool should_keep_alive() const;
 
         void set_visible(bool visible);
 
@@ -72,6 +71,12 @@ class Widget : NonMovable {
 
         void set_flags(int flags);
 
+        [[nodiscard]] auto keep_alive() {
+            y_debug_assert(_keep_alive >= 0);
+            ++_keep_alive;
+            return ScopeExit([this] { --_keep_alive; });
+        }
+
     private:
         friend class UiManager;
 
@@ -90,6 +95,8 @@ class Widget : NonMovable {
 
         Widget* _parent = nullptr;
         int _flags = 0;
+
+        std::atomic<i32> _keep_alive = 0;
 };
 }
 

@@ -31,6 +31,7 @@ Widget::Widget(std::string_view title, int flags) : _flags(flags) {
 }
 
 Widget::~Widget() {
+    y_debug_assert(!should_keep_alive());
 }
 
 void Widget::close() {
@@ -39,6 +40,10 @@ void Widget::close() {
 
 bool Widget::is_visible() const {
     return _visible;
+}
+
+bool Widget::should_keep_alive() const {
+    return _keep_alive;
 }
 
 void Widget::set_visible(bool visible) {

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2022 Grégoire Angerand
+Copyright (c) 2016-2022 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,42 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_IMAGEIMPORTER_H
-#define EDITOR_WIDGETS_IMAGEIMPORTER_H
+#ifndef YAVE_ECS_ENTITYSCENE_H
+#define YAVE_ECS_ENTITYSCENE_H
 
-#include "FileBrowser.h"
+#include "EntityPrefab.h"
 
-#include <yave/graphics/images/ImageData.h>
+#include <yave/assets/AssetPtr.h>
 
-#include <future>
+namespace yave {
+namespace ecs {
 
-namespace editor {
-
-class ImageImporter final : public Widget {
-
+class EntityScene {
     public:
-        ImageImporter();
-        ImageImporter(std::string_view import_path);
+        EntityScene() = default;
+        EntityScene(core::Vector<AssetPtr<EntityPrefab>> prefabs) : _prefabs(std::move(prefabs)) {
+        }
 
-        ~ImageImporter();
 
-    protected:
-        void on_gui() override;
-
+        y_reflect(_prefabs);
     private:
-        void import(const core::String& filename);
-
-        bool done_loading() const;
-        bool is_loading() const;
-
-        FileBrowser _browser;
-
-        core::String _import_path;
-
-        std::future<void> _import_future;
+        core::Vector<AssetPtr<EntityPrefab>> _prefabs;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_IMAGEIMPORTER_H
+YAVE_DECLARE_GENERIC_ASSET_TRAITS(ecs::EntityScene, AssetType::Scene);
+
+}
+
+#endif // YAVE_ECS_SCENE_H
 

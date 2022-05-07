@@ -261,7 +261,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
 
     if(!files_to_delete.is_empty()) {
         y_profile_zone("cleaning files");
-        _parent->push_pending_op(std::async([to_del = std::move(files_to_delete)] {
+        _parent->_pending_ops.push(std::async([to_del = std::move(files_to_delete)] {
             for(const core::String& file : to_del) {
                 FileSystemModel::local_filesystem()->remove(file).ignore();
             }
@@ -353,11 +353,6 @@ FolderAssetStore::FolderAssetStore(const core::String& root) : _root(FileSystemM
 }
 
 FolderAssetStore::~FolderAssetStore() {
-    {
-        y_profile_zone("waiting for pending ops");
-        auto lock = y_profile_unique_lock(_ops_lock);
-        _pending_ops.clear();
-    }
 }
 
 core::String FolderAssetStore::asset_data_file_name(AssetId id) const {
@@ -771,12 +766,6 @@ FolderAssetStore::Result<> FolderAssetStore::reload_all() {
     rebuild_id_map();
 
     return core::Ok();
-}
-
-void FolderAssetStore::push_pending_op(std::future<void> future) {
-    auto lock = y_profile_unique_lock(_ops_lock);
-    Y_TODO(clean _pending_ops)
-    _pending_ops.emplace_back(std::move(future));
 }
 
 }

@@ -84,7 +84,7 @@ void UiManager::on_gui() {
         _auto_parent = widget.get();
         widget->draw(false);
 
-        if(!widget->is_visible()) {
+        if(!widget->is_visible() && !widget->should_keep_alive()) {
             to_destroy[widget.get()];
         }
     }

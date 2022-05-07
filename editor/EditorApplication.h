@@ -77,6 +77,10 @@ class EditorApplication : NonMovable {
             return *_debug_drawer;
         }
 
+        PendingOpsQueue& pending_ops_queue() {
+            return *_pending_ops_queue;
+        }
+
         const EditorResources& resources() const {
             return *_resources;
         }
@@ -113,11 +117,12 @@ class EditorApplication : NonMovable {
 
         std::unique_ptr<UndoStack> _undo_stack;
 
+        std::unique_ptr<PendingOpsQueue> _pending_ops_queue;
+
         CmdBufferRecorder* _recorder = nullptr;
 
         SceneView _default_scene_view;
         SceneView* _scene_view = nullptr;
-
 
         enum DeferredActions : u32 {
             None = 0x00,

@@ -33,7 +33,6 @@ StaticThreadPool& default_thread_pool();
 
 u32 thread_id();
 
-
 void set_thread_name(const char* thread_name);
 const char* thread_name();
 

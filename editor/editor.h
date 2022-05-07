@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <yave/window/EventHandler.h>
 
+#include <yave/utils/forward.h>
 #include <editor/utils/forward.h>
 
 #include <y/core/Span.h>
@@ -57,6 +58,8 @@ EditorWorld& current_world();
 const SceneView& scene_view();
 
 DirectDraw& debug_drawer();
+
+PendingOpsQueue& pending_ops_queue();
 
 const EditorResources& resources();
 UiManager& ui();

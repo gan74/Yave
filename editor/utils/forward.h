@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2022 Grégoire Angerand
+Copyright (c) 2016-2021 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -51,8 +51,9 @@ class MaterialEditor;
 class PerformanceMetrics;
 class PlotData;
 class Preview;
+class Renamer;
 class ResourceBrowser;
-class SceneImporter;
+class SceneImporter2;
 class Selection;
 class Settings;
 class ThumbmailRenderer;
@@ -83,11 +84,12 @@ struct WidgetIdStack;
 
 
 namespace editor::import {
-struct MaterialData;
-struct PrefabData;
-struct SceneData;
-struct SkeletonData;
-struct SubMeshData;
+struct Asset;
+struct Image;
+struct Material;
+struct Mesh;
+struct ParsedScene;
+struct SubMesh;
 }
 
 
