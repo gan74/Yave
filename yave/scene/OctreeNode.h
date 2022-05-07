@@ -32,9 +32,7 @@ SOFTWARE.
 namespace yave {
 
 
-class OctreeNode {
-
-    using Children = std::array<OctreeNode, 8>;
+class OctreeNode : NonMovable {
 
     static constexpr bool split_small_object = false;
     static constexpr float min_object_size_ratio = 16.0f;
@@ -49,6 +47,8 @@ class OctreeNode {
         OctreeNode() = default;
         OctreeNode(const math::Vec3& center, float half_extent, OctreeData* data);
 
+        static std::unique_ptr<OctreeNode> create_parent_from_child(std::unique_ptr<OctreeNode> child, const math::Vec3& toward);
+
         OctreeNode* insert(ecs::EntityId id, const AABB& bbox);
 
         AABB aabb() const;
@@ -60,7 +60,7 @@ class OctreeNode {
         bool has_children() const;
         bool is_empty() const;
 
-        core::Span<OctreeNode> children() const;
+        core::Span<std::unique_ptr<OctreeNode>> children() const;
         core::Span<ecs::EntityId> entities() const;
 
         Y_TODO(Make thread safe)
@@ -69,22 +69,17 @@ class OctreeNode {
 
     private:
         friend class Octree;
-
-        // REMOVE
         friend class OctreeSystem;
 
-        void into_parent(const math::Vec3& toward);
-
     private:
-        void swap(OctreeNode& other);
-
         void build_children();
         usize children_index(const math::Vec3& pos);
 
         math::Vec3 _center;
         float _half_extent = -1.0f;
 
-        std::unique_ptr<Children> _children;
+        Y_TODO(pool allocs)
+        std::array<std::unique_ptr<OctreeNode>, 8> _children;
 
         core::Vector<ecs::EntityId> _entities;
 

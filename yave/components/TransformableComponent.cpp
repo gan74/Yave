@@ -108,8 +108,8 @@ const OctreeNode* TransformableComponent::octree_node() const {
 void TransformableComponent::update_node() {
     if(!_dirty && _node) {
         _node->set_dirty(_id);
-        _dirty = true;
     }
+    _dirty = true;
 }
 
 }

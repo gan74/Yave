@@ -30,8 +30,8 @@ static void push_all_entities(core::Vector<ecs::EntityId>& entities, const Octre
     for(const ecs::EntityId id : node.entities()) {
         entities << id;
     }
-    for(const OctreeNode& child : node.children()) {
-        push_all_entities(entities, child);
+    for(const auto& child : node.children()) {
+        push_all_entities(entities, *child);
     }
 }
 
@@ -49,8 +49,8 @@ static void visit_node(core::Vector<ecs::EntityId>& entities, const Frustum& fru
                 Y_TODO(Check entity AABB against frustum)
                 entities << id;
             }
-            for(const OctreeNode& child : node.children()) {
-                visit_node(entities, frustum, far_dist, child);
+            for(const auto& child : node.children()) {
+                visit_node(entities, frustum, far_dist, *child);
             }
         break;
     }
@@ -58,26 +58,26 @@ static void visit_node(core::Vector<ecs::EntityId>& entities, const Frustum& fru
 
 
 
-Octree::Octree() : _root({}, 1024.0, &_data) {
+Octree::Octree() : _root(std::make_unique<OctreeNode>(math::Vec3(), 1024.0f, &_data)) {
 }
 
 OctreeNode* Octree::insert(ecs::EntityId id, const AABB& bbox) {
     const math::Vec3 pos = bbox.center();
-    while(!_root.contains(bbox)) {
-        _root.into_parent(pos);
+    while(!_root->contains(bbox)) {
+        _root = OctreeNode::create_parent_from_child(std::move(_root), pos);
     }
-    return _root.insert(id, bbox);
+    return _root->insert(id, bbox);
 }
 
 const OctreeNode& Octree::root() const {
-    return _root;
+    return *_root;
 }
 
 core::Vector<ecs::EntityId> Octree::find_entities(const Frustum& frustum, float far_dist) const {
     y_profile();
 
     core::Vector<ecs::EntityId> entities;
-    visit_node(entities, frustum, far_dist, _root);
+    visit_node(entities, frustum, far_dist, *_root);
     return entities;
 }
 

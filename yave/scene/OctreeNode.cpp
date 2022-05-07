@@ -30,13 +30,25 @@ OctreeNode::OctreeNode(const math::Vec3& center, float half_extent, OctreeData* 
         _data(data) {
 }
 
-void OctreeNode::swap(OctreeNode& other) {
-    std::swap(other._center, _center);
-    std::swap(other._half_extent, _half_extent);
-    std::swap(other._children, _children);
-    std::swap(other._entities, _entities);
-    std::swap(other._data, _data);
+std::unique_ptr<OctreeNode> OctreeNode::create_parent_from_child(std::unique_ptr<OctreeNode> child, const math::Vec3& toward) {
+    const usize index = child->children_index(toward);
+    const float child_half_extent = child->_half_extent;
+    const math::Vec3 parent_offset = {
+        (index & 0x01 ? child_half_extent : -child_half_extent),
+        (index & 0x02 ? child_half_extent : -child_half_extent),
+        (index & 0x04 ? child_half_extent : -child_half_extent)
+    };
+
+    auto parent = std::make_unique<OctreeNode>(child->_center + parent_offset, child_half_extent * 2.0f, child->_data);
+    parent->build_children();
+
+    const usize self_index = 7 - index;
+    y_debug_assert(parent->children_index(child->_center) == self_index);
+
+    parent->_children[self_index] = std::move(child);
+    return parent;
 }
+
 
 OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
     y_debug_assert(contains(bbox));
@@ -49,8 +61,8 @@ OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
 
     if(has_children()) {
         const usize index = children_index(bbox.center());
-        if((*_children)[index].contains(bbox)) {
-            return (*_children)[index].insert(id, bbox);
+        if(_children[index]->contains(bbox)) {
+            return _children[index]->insert(id, bbox);
         }
     }
 
@@ -85,15 +97,17 @@ bool OctreeNode::contains(const math::Vec3& pos, float radius) const {
 }
 
 bool OctreeNode::has_children() const {
-    return _children != nullptr;
+    return _children[0] != nullptr;
 }
 
 bool OctreeNode::is_empty() const {
     return !has_children() && _entities.is_empty();
 }
 
-core::Span<OctreeNode> OctreeNode::children() const {
-    return has_children() ? core::Span<OctreeNode>(_children->data(), _children->size()) : core::Span<OctreeNode>();
+core::Span<std::unique_ptr<OctreeNode>> OctreeNode::children() const {
+    return has_children()
+        ? core::Span<std::unique_ptr<OctreeNode>>(_children.data(), _children.size())
+        : core::Span<std::unique_ptr<OctreeNode>>();
 }
 
 core::Span<ecs::EntityId> OctreeNode::entities() const {
@@ -111,28 +125,8 @@ void OctreeNode::remove(ecs::EntityId id) {
     _entities.erase_unordered(it);
 }
 
-void OctreeNode::into_parent(const math::Vec3& toward) {
-    const usize index = children_index(toward);
-    const math::Vec3 parent_offset = {
-        (index & 0x01 ? _half_extent : -_half_extent),
-        (index & 0x02 ? _half_extent : -_half_extent),
-        (index & 0x04 ? _half_extent : -_half_extent)
-    };
-
-    OctreeNode parent(_center + parent_offset, _half_extent * 2.0f, _data);
-    parent.build_children();
-
-    const usize self_index = 7 - index;
-    y_debug_assert(parent.children_index(_center) == self_index);
-
-    swap((*parent._children)[self_index]);
-    swap(parent);
-}
-
 void OctreeNode::build_children() {
     y_debug_assert(!has_children());
-
-    _children = std::make_unique<Children>();
 
     const float child_extent = _half_extent * 0.5f;
 
@@ -142,7 +136,8 @@ void OctreeNode::build_children() {
             (i & 0x02 ? child_extent : -child_extent),
             (i & 0x04 ? child_extent : -child_extent)
         };
-        (*_children)[i] = OctreeNode(_center + offset, child_extent, _data);
+
+        _children[i] = std::make_unique<OctreeNode>(_center + offset, child_extent, _data);
     }
 }
 

@@ -204,8 +204,8 @@ static void visit_octree(DirectDrawPrimitive* primitive, const Frustum& frustum,
 
     primitive->add_box(node.strict_aabb());
 
-    for(const OctreeNode& c : node.children()) {
-        visit_octree(primitive, frustum, c);
+    for(const auto& child : node.children()) {
+        visit_octree(primitive, frustum, *child);
     }
 }
 

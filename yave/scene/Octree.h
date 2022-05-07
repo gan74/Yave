@@ -41,7 +41,7 @@ class Octree : NonMovable {
         friend class OctreeSystem;
 
         OctreeData _data;
-        OctreeNode _root;
+        std::unique_ptr<OctreeNode> _root;
 };
 
 }
