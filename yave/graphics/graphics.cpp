@@ -37,6 +37,8 @@ SOFTWARE.
 
 #include <yave/graphics/device/extensions/RayTracing.h>
 
+#include <y/core/ScratchPad.h>
+
 #include <mutex>
 
 namespace yave {
@@ -57,8 +59,8 @@ Uninitialized<DeviceResources> resources;
 
 VkDevice vk_device;
 
-Uninitialized<CmdQueue> queue;
-Uninitialized<CmdQueue> loading_queue;
+core::FixedArray<std::unique_ptr<CmdQueue>> queues;
+
 
 
 struct {
@@ -105,6 +107,9 @@ static void init_vk_device() {
     const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
     const u32 main_queue_index = queue_family_index(queue_families, graphic_queue_flags);
 
+    const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
+    const usize queue_count = std::min(main_queue_family_properties.queueCount, 2u);
+
     auto extensions = core::vector_with_capacity<const char*>(4);
     extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -127,13 +132,15 @@ static void init_vk_device() {
     print_physical_properties(physical_device().vk_properties());
     print_enabled_extensions(extensions);
 
-    const std::array queue_priorityies = {1.0f, 1.0f};
+
+    core::ScratchPad<float> queue_priorities(queue_count);
+    std::fill_n(queue_priorities.data(), queue_priorities.size(), 1.0f);
 
     VkDeviceQueueCreateInfo queue_create_info = vk_struct();
     {
         queue_create_info.queueFamilyIndex = main_queue_index;
-        queue_create_info.pQueuePriorities = queue_priorityies.data();
-        queue_create_info.queueCount = u32(queue_priorityies.size());
+        queue_create_info.pQueuePriorities = queue_priorities.data();
+        queue_create_info.queueCount = u32(queue_priorities.size());
     }
 
     VkPhysicalDeviceFeatures2 features = vk_struct();
@@ -162,8 +169,10 @@ static void init_vk_device() {
 
     print_properties(device::device_properties);
 
-    device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
-    device::loading_queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 1));
+    device::queues = core::FixedArray<std::unique_ptr<CmdQueue>>(queue_count);
+    for(u32 i = 0; i != device::queues.size(); ++i) {
+        device::queues[i] = std::make_unique<CmdQueue>(main_queue_index, create_queue(device::vk_device, main_queue_index, i));
+    }
 
     if(ray_tracing) {
         device::extensions.ray_tracing = std::make_unique<RayTracing>();
@@ -230,8 +239,7 @@ void destroy_device() {
 
     vkDestroySemaphore(device::vk_device, device::timeline.semaphore, vk_allocation_callbacks());
 
-    device::loading_queue.destroy();
-    device::queue.destroy();
+    device::queues.clear();
 
     {
         y_profile_zone("vkDestroyDevice");
@@ -356,11 +364,11 @@ MeshAllocator& mesh_allocator() {
 }
 
 const CmdQueue& command_queue() {
-    return device::queue.get();
+    return *device::queues[0];
 }
 
 const CmdQueue& loading_command_queue() {
-    return device::loading_queue.get();
+    return *device::queues[device::queues.size() - 1];
 }
 
 const DeviceResources& device_resources() {
@@ -417,8 +425,9 @@ const RayTracing* ray_tracing() {
 
 void wait_all_queues() {
     Y_TODO(This is wrong)
-    device::queue.get().wait();
-    device::loading_queue.get().wait();
+    for(auto& queue : device::queues) {
+        queue->wait();
+    }
 }
 
 
