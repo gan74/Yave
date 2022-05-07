@@ -63,7 +63,7 @@ class TransformableComponent final {
         friend class OctreeSystem;
 
         void swap(TransformableComponent& other);
-        void update_node();
+        void dirty_node();
 
         math::Transform<> _transform;
 

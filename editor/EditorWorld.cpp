@@ -52,7 +52,7 @@ editor_action("Remove all entities", [] { current_world().clear(); })
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_required_component<EditorComponent>();
     add_system<AssetLoaderSystem>(loader);
-    // add_system<OctreeSystem>();
+    add_system<OctreeSystem>();
     // add_system<ASUpdateSystem>();
 }
 

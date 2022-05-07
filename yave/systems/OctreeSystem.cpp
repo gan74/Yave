@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "OctreeSystem.h"
+#include "AssetLoaderSystem.h"
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/ecs/EntityWorld.h>
@@ -70,18 +71,26 @@ void OctreeSystem::tick(ecs::EntityWorld& world) {
 void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     y_profile();
 
+    Y_TODO(notify system instead?)
+    if(const AssetLoaderSystem* asset_loader = world.find_system<AssetLoaderSystem>()) {
+        for(auto&& [tr] : world.query<ecs::Mutate<TransformableComponent>>(asset_loader->recently_loaded()).components()) {
+            tr.dirty_node();
+        }
+    }
+
     for(auto&& id_comp : world.query<ecs::Mutate<TransformableComponent>>(transformable_ids(world, only_recent)).id_components()) {
         const auto id = id_comp.id();
         auto& tr = id_comp.component<TransformableComponent>();
 
-        Y_TODO(AABB might change at runtime)
         const AABB bbox = find_aabb(world, id, tr.position());
 
         tr._id = id;
         tr._node = _tree.insert(id, bbox);
     }
 
+
     {
+        auto& transformables = world.component_set<TransformableComponent>();
         for(auto& [node, id] : _tree._data._dirty) {
             {
                 auto& entities = node->_entities;
@@ -91,9 +100,8 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
                 }
             }
 
-            if(TransformableComponent* tr = world.component<TransformableComponent>(id)) {
+            if(TransformableComponent* tr = transformables.try_get(id)) {
                 const AABB bbox = find_aabb(world, id, tr->position());
-
                 y_debug_assert(tr->_id == id);
                 tr->_node = _tree.insert(id, bbox);
             }
@@ -101,14 +109,6 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
 
         _tree._data._dirty.clear();
     }
-
-    /*for(auto&& id_comp  : world.query<TransformableComponent>(transformable_ids(world, false)).id_components()) {
-        const auto& tr = id_comp.component<TransformableComponent>();
-        y_debug_assert(tr.octree_node());
-
-        const AABB bbox = find_aabb(world, id_comp.id(), tr.position());
-        y_debug_assert(tr.octree_node()->contains(bbox));
-    }*/
 }
 
 const OctreeNode& OctreeSystem::root() const {

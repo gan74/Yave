@@ -60,12 +60,12 @@ void TransformableComponent::swap(TransformableComponent& other) {
 
 void TransformableComponent::set_transform(const math::Transform<>& tr) {
     _transform = tr;
-    update_node();
+    dirty_node();
 }
 
 void TransformableComponent::set_position(const math::Vec3& pos) {
     _transform.position() = pos;
-    update_node();
+    dirty_node();
 }
 
 const math::Transform<>& TransformableComponent::transform() const {
@@ -105,11 +105,11 @@ const OctreeNode* TransformableComponent::octree_node() const {
     return _node;
 }
 
-void TransformableComponent::update_node() {
+void TransformableComponent::dirty_node() {
     if(!_dirty && _node) {
         _node->set_dirty(_id);
+        _dirty = true;
     }
-    _dirty = true;
 }
 
 }

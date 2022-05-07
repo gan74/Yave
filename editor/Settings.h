@@ -73,10 +73,11 @@ struct DebugSettings {
     float entity_spacing = 10.0f;
     bool display_octree = false;
     bool display_selected_bbox = false;
+    bool display_selected_octree_node = false;
     bool display_hidden_entities = false;
     bool display_debug_drawer = true;
 
-    y_reflect(entity_count, entity_spacing, display_octree, display_selected_bbox, display_hidden_entities, display_debug_drawer)
+    y_reflect(entity_count, entity_spacing, display_octree, display_selected_bbox, display_selected_octree_node, display_hidden_entities, display_debug_drawer)
 };
 
 

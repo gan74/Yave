@@ -36,15 +36,16 @@ class AssetLoaderSystem : public ecs::System {
         void setup(ecs::EntityWorld& world) override;
         void tick(ecs::EntityWorld& world) override;
 
+        core::Span<ecs::EntityId> recently_loaded() const;
+
     private:
         void run_tick(ecs::EntityWorld& world, bool only_recent);
         void post_load(ecs::EntityWorld& world);
 
         core::FlatHashMap<ecs::ComponentTypeIndex, core::Vector<ecs::EntityId>> _loading;
+        core::Vector<ecs::EntityId> _recently_loaded;
 
         AssetLoader* _loader = nullptr;
-
-
 
 
     private:
@@ -53,7 +54,7 @@ class AssetLoaderSystem : public ecs::System {
 
         struct LoadableComponentTypeInfo {
             void (*start_loading)(ecs::EntityWorld&, AssetLoadingContext&, bool, core::Vector<ecs::EntityId>&) = nullptr;
-            void (*update_status)(ecs::EntityWorld&, core::Vector<ecs::EntityId>&) = nullptr;
+            void (*update_status)(ecs::EntityWorld&, core::Vector<ecs::EntityId>&, core::Vector<ecs::EntityId>&) = nullptr;
             ecs::ComponentTypeIndex type;
             LoadableComponentTypeInfo* next = nullptr;
         };
@@ -85,10 +86,11 @@ class AssetLoaderSystem : public ecs::System {
         }
 
         template<typename T>
-        static void update_loading_status(ecs::EntityWorld& world, core::Vector<ecs::EntityId>& ids) {
+        static void update_loading_status(ecs::EntityWorld& world, core::Vector<ecs::EntityId>& ids, core::Vector<ecs::EntityId>& done) {
             for(usize i = 0; i != ids.size(); ++i) {
                 T* component = world.component<T>(ids[i]);
                 if(!component || component->update_asset_loading_status()) {
+                    done.push_back(ids[i]);
                     ids.erase_unordered(ids.begin() + i);
                     --i;
                 }

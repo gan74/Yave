@@ -171,6 +171,20 @@ class EntityWorld {
             return cont ? cont->template component_ptr<T>(id) : nullptr;
         }
 
+        template<typename T>
+        SparseComponentSet<T>& component_set() {
+            ComponentContainerBase* cont = find_or_create_container<T>();
+            return cont->template component_set<T>();
+        }
+
+        template<typename T>
+        const SparseComponentSet<T>& component_set() const {
+            if(const ComponentContainerBase* cont = find_container<T>()) {
+                return cont->template component_set<T>();
+            }
+            static const SparseComponentSet<T> empty_set;
+            return empty_set;
+        }
 
 
 

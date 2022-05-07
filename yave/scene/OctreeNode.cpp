@@ -138,6 +138,7 @@ void OctreeNode::build_children() {
         };
 
         _children[i] = std::make_unique<OctreeNode>(_center + offset, child_extent, _data);
+        y_debug_assert(contains(_children[i]->aabb()));
     }
 }
 

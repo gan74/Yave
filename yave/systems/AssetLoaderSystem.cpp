@@ -57,10 +57,16 @@ void AssetLoaderSystem::post_load(ecs::EntityWorld& world) {
     y_profile();
 
     {
+        _recently_loaded.make_empty();
         for(const LoadableComponentTypeInfo* info = _first_info; info; info = info->next) {
-            info->update_status(world, _loading[info->type]);
+            info->update_status(world, _loading[info->type], _recently_loaded);
         }
     }
+}
+
+
+core::Span<ecs::EntityId> AssetLoaderSystem::recently_loaded() const {
+    return _recently_loaded;
 }
 
 
