@@ -32,11 +32,15 @@ DedicatedDeviceMemoryAllocator::~DedicatedDeviceMemoryAllocator() {
 }
 
 core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(VkMemoryRequirements reqs) {
+    y_profile();
+
     _size += reqs.size;
     return core::Ok(DeviceMemory(this, alloc_memory(reqs, _type), 0, reqs.size));
 }
 
 void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
+    y_profile();
+
     if(memory.vk_offset()) {
         y_fatal("Tried to free memory using non zero offset.");
     }

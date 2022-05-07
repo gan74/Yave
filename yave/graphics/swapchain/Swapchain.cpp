@@ -320,9 +320,12 @@ core::Result<FrameToken> Swapchain::next_frame() {
     const Semaphores& frame_semaphores = _semaphores[semaphore_index];
 
     u32 image_index = u32(-1);
-    while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index))) {
-        if(!reset()) {
-            return core::Err();
+    {
+        y_profile_zone("aquire");
+        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index))) {
+            if(!reset()) {
+                return core::Err();
+            }
         }
     }
 

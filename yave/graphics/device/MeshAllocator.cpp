@@ -58,7 +58,7 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
         Mapping::stage(mesh_data.attrib_streams.normals_tangents,    recorder, &vertices.data()->packed_normal,  sizeof(u32) * 2,        sizeof(PackedVertex));
         Mapping::stage(mesh_data.attrib_streams.uvs,                 recorder, &vertices.data()->uv,             sizeof(math::Vec2),     sizeof(PackedVertex));
 
-        command_queue().submit(std::move(recorder));
+        loading_command_queue().submit(std::move(recorder));
     }
 
 

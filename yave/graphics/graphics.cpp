@@ -58,6 +58,7 @@ Uninitialized<DeviceResources> resources;
 VkDevice vk_device;
 
 Uninitialized<CmdQueue> queue;
+Uninitialized<CmdQueue> loading_queue;
 
 
 struct {
@@ -126,7 +127,7 @@ static void init_vk_device() {
     print_physical_properties(physical_device().vk_properties());
     print_enabled_extensions(extensions);
 
-    const std::array queue_priorityies = {1.0f};
+    const std::array queue_priorityies = {1.0f, 1.0f};
 
     VkDeviceQueueCreateInfo queue_create_info = vk_struct();
     {
@@ -162,6 +163,7 @@ static void init_vk_device() {
     print_properties(device::device_properties);
 
     device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
+    device::loading_queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 1));
 
     if(ray_tracing) {
         device::extensions.ray_tracing = std::make_unique<RayTracing>();
@@ -228,6 +230,7 @@ void destroy_device() {
 
     vkDestroySemaphore(device::vk_device, device::timeline.semaphore, vk_allocation_callbacks());
 
+    device::loading_queue.destroy();
     device::queue.destroy();
 
     {
@@ -356,6 +359,10 @@ const CmdQueue& command_queue() {
     return device::queue.get();
 }
 
+const CmdQueue& loading_command_queue() {
+    return device::loading_queue.get();
+}
+
 const DeviceResources& device_resources() {
     return device::resources.get();
 }
@@ -409,7 +416,9 @@ const RayTracing* ray_tracing() {
 }
 
 void wait_all_queues() {
+    Y_TODO(This is wrong)
     device::queue.get().wait();
+    device::loading_queue.get().wait();
 }
 
 

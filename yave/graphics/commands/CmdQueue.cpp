@@ -104,6 +104,7 @@ WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSem
             submit_info.pSignalSemaphores = signal_semaphores.data();
         }
 
+        y_profile_zone("submit");
         vk_check(vkQueueSubmit(_queue, 1, &submit_info, {}));
     }
 
