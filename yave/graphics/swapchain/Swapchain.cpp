@@ -309,7 +309,9 @@ core::Result<FrameToken> Swapchain::next_frame() {
     y_profile();
 
     if(_images.is_empty()) {
-        return core::Err();
+        if(!reset()) {
+            return core::Err();
+        }
     }
 
     y_debug_assert(_semaphores.size());
