@@ -159,7 +159,6 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
 
     constexpr bool draw_enclosing_sphere = false;
     const bool draw_bbox = app_settings().debug.display_selected_bbox;
-    const bool draw_node = app_settings().debug.display_selected_octree_node;
 
     {
         const math::Vec3 z = tr->up().normalized();
@@ -184,23 +183,10 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
             }
         }
 
-        if(draw_bbox) {
-            if(const auto* m = world.component<StaticMeshComponent>(selected)) {
-                if(!tr->octree_node()) {
-                    primitive->set_color(0xFF0000FF);
-                }
+        if(const auto* m = world.component<StaticMeshComponent>(selected)) {
+            if(draw_bbox) {
+                primitive->add_box(m->aabb(), tr->transform());
                 primitive->add_box(tr->to_global(m->aabb()));
-            }
-        }
-
-
-        if(draw_node) {
-            if(const OctreeNode* node = tr->octree_node()) {
-                const AABB aabb = entity_aabb(world, selected).unwrap_or(AABB(tr->position(), tr->position()));
-                const AABB node_aabb = node->aabb();
-                primitive->set_color(0xFF0000FF);
-                primitive->add_box(node_aabb);
-                primitive->add_line(aabb.center(), node_aabb.center());
             }
         }
     }
