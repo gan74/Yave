@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/components/EditorComponent.h>
 
-#include <yave/ecs/EntityPrefab.h>
+#include <yave/ecs/EntityScene.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/FileSystemModel.h>
 
@@ -48,8 +48,8 @@ namespace editor {
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_required_component<EditorComponent>();
     add_system<AssetLoaderSystem>(loader);
-    add_system<OctreeSystem>();
-    add_system<ASUpdateSystem>();
+    // add_system<OctreeSystem>();
+    // add_system<ASUpdateSystem>();
 }
 
 void EditorWorld::flush_reload() {
@@ -121,6 +121,21 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
     }
     return ecs::EntityId();
 }
+
+void EditorWorld::add_scene(std::string_view name) {
+    if(const auto id = asset_store().id(name)) {
+        add_scene(id.unwrap());
+    }
+}
+
+void EditorWorld::add_scene(AssetId asset) {
+    if(const auto scene = asset_loader().load_res<ecs::EntityScene>(asset)) {
+        for(const auto& prefab : scene.unwrap()->prefabs()) {
+            create_entity(prefab);
+        }
+    }
+}
+
 
 core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::component_types() {
     static core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> types;

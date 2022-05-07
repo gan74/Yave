@@ -50,6 +50,9 @@ class EditorWorld : public ecs::EntityWorld {
         ecs::EntityId add_prefab(std::string_view name);
         ecs::EntityId add_prefab(AssetId asset);
 
+        void add_scene(std::string_view name);
+        void add_scene(AssetId asset);
+
         static core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> component_types();
 
     private:

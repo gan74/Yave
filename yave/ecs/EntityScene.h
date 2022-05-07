@@ -32,13 +32,17 @@ namespace ecs {
 class EntityScene {
     public:
         EntityScene() = default;
-        EntityScene(core::Vector<AssetPtr<EntityPrefab>> prefabs) : _prefabs(std::move(prefabs)) {
+        EntityScene(core::Vector<EntityPrefab> prefabs) : _prefabs(std::move(prefabs)) {
         }
 
+        core::Span<EntityPrefab> prefabs() const {
+            return _prefabs;
+        }
 
         y_reflect(_prefabs);
+
     private:
-        core::Vector<AssetPtr<EntityPrefab>> _prefabs;
+        core::Vector<EntityPrefab> _prefabs;
 };
 
 }

@@ -267,35 +267,39 @@ void SceneImporter2::import_assets() {
     }
 
     // --------------------------------- Prefabs ---------------------------------
+    auto build_prefab = [&](const import::ParsedScene::Mesh& mesh) {
+        auto sub_meshes = core::vector_with_capacity<StaticMeshComponent::SubMesh>(mesh.sub_meshes.size());
+        for(const auto& sub_mesh : mesh.sub_meshes) {
+            if(sub_mesh.material_index < 0 || sub_mesh.asset_id == AssetId::invalid_id()) {
+                continue;
+            }
+
+            AssetId material_id;
+            for(const auto& mat : _scene.materials) {
+                if(mat.index == usize(sub_mesh.material_index)) {
+                    material_id = mat.asset_id;
+                    break;
+                }
+            }
+
+            if(material_id == AssetId::invalid_id()) {
+                continue;
+            }
+
+            sub_meshes.emplace_back(make_asset_with_id<StaticMesh>(sub_mesh.asset_id), make_asset_with_id<Material>(material_id));
+        }
+
+        ecs::EntityPrefab prefab;
+        prefab.add(TransformableComponent());
+        prefab.add(StaticMeshComponent(std::move(sub_meshes)));
+        return prefab;
+    };
+
     {
         const core::String prefab_import_path = asset_store().filesystem()->join(_import_path, "Prefabs");
         for(auto& mesh : _scene.meshes) {
-            auto sub_meshes = core::vector_with_capacity<StaticMeshComponent::SubMesh>(mesh.sub_meshes.size());
-            for(const auto& sub_mesh : mesh.sub_meshes) {
-                if(sub_mesh.material_index < 0 || sub_mesh.asset_id == AssetId::invalid_id()) {
-                    continue;
-                }
-
-                AssetId material_id;
-                for(const auto& mat : _scene.materials) {
-                    if(mat.index == usize(sub_mesh.material_index)) {
-                        material_id = mat.asset_id;
-                        break;
-                    }
-                }
-
-                if(material_id == AssetId::invalid_id()) {
-                    continue;
-                }
-
-                sub_meshes.emplace_back(make_asset_with_id<StaticMesh>(sub_mesh.asset_id), make_asset_with_id<Material>(material_id));
-            }
-
-            {
-                ecs::EntityPrefab prefab;
-                prefab.add(TransformableComponent());
-                prefab.add(StaticMeshComponent(std::move(sub_meshes)));
-                mesh.asset_id = import_single_asset(prefab, asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, log_func);
+            if(mesh.import) {
+                mesh.asset_id = import_single_asset(build_prefab(mesh), asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, log_func);
             }
         }
     }
@@ -304,10 +308,10 @@ void SceneImporter2::import_assets() {
     // --------------------------------- Scene ---------------------------------
     if(_scene.import_scene) {
         const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
-        auto prefabs = core::vector_with_capacity<AssetPtr<ecs::EntityPrefab>>(_scene.meshes.size());
+        auto prefabs = core::vector_with_capacity<ecs::EntityPrefab>(_scene.meshes.size());
         for(const auto& mesh : _scene.meshes) {
             if(mesh.asset_id != AssetId::invalid_id()) {
-                prefabs << make_asset_with_id<ecs::EntityPrefab>(mesh.asset_id);
+                prefabs << build_prefab(mesh);
             }
         }
         import_single_asset(ecs::EntityScene(std::move(prefabs)), asset_store().filesystem()->join(scene_import_path, _scene.name), AssetType::Scene, log_func);
@@ -324,6 +328,7 @@ void SceneImporter2::on_gui() {
 
         case State::Parsing:
             ImGui::Text("Parsing scene%s", imgui::ellipsis());
+            ImGui::Checkbox("Import using default settings", &_import_with_default_settings);
             if(_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 _future.get();
                 if(_scene.is_error) {
@@ -376,8 +381,9 @@ void SceneImporter2::on_gui() {
             }
             ImGui::EndChild();
 
-            if(ImGui::Button(ICON_FA_CHECK " Import")) {
+            if(ImGui::Button(ICON_FA_CHECK " Import") || _import_with_default_settings) {
                 _future = std::async(std::launch::async, [this] {
+                    core::DebugTimer timer("Importing");
                     const auto kp = keep_alive();
                     import_assets();
                 });

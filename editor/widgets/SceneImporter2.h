@@ -52,6 +52,7 @@ class SceneImporter2 final : public Widget {
 
         core::String _import_path;
 
+        bool _import_with_default_settings = false;
         State _state = State::Browsing;
 
         FileBrowser _browser;

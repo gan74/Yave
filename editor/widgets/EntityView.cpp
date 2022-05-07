@@ -76,9 +76,18 @@ static void add_prefab() {
         });
 }
 
+static void add_scene() {
+    add_detached_widget<AssetSelector>(AssetType::Scene, "Add scene")->set_selected_callback(
+        [](AssetId asset) {
+            current_world().add_scene(asset);
+            return true;
+        });
+}
+
 
 editor_action("Add debug entities", add_debug_entities)
 editor_action("Add prefab", add_prefab)
+editor_action("Add scene", add_scene)
 
 
 
@@ -135,6 +144,9 @@ void EntityView::on_gui() {
             add_prefab();
         }
 
+        if(ImGui::MenuItem("Add scene")) {
+            add_scene();
+        }
 
         ImGui::Separator();
 
