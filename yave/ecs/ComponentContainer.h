@@ -94,9 +94,9 @@ class ComponentContainerBase : NonMovable {
         template<typename T, typename... Args>
         T& add(EntityWorld& world, EntityId id, Args&&... args) {
             auto& set = component_set_fast<T>();
+            _recently_added.emplace_back(id);
             if(!set.contains_index(id.index())) {
                 add_required_components<T>(world, id);
-                _recently_added.emplace_back(id);
                 return set.insert(id, y_fwd(args)...);
             } else {
                 if constexpr(sizeof...(Args)) {
