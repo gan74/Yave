@@ -104,7 +104,8 @@ void EntityView::paint_view() {
             }
 
             const bool selected = selection().selected_entity() == id;
-            if(ImGui::Selectable(fmt_c_str("% %##%", world.entity_icon(id), comp->name(), id.index()), selected)) {
+            const std::string_view display_name = comp->is_prefab() ? fmt("% (Prefab)", comp->name()) : std::string_view(comp->name());
+            if(ImGui::Selectable(fmt_c_str("% %##%", world.entity_icon(id), display_name, id.index()), selected)) {
                  selection().set_selected(id);
             }
             if(ImGui::IsItemHovered()) {

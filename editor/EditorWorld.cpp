@@ -111,8 +111,11 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
     if(const auto prefab = asset_loader().load_res<ecs::EntityPrefab>(asset)) {
         const ecs::EntityId id = create_entity(*prefab.unwrap());
 
+        if(EditorComponent* comp = component<EditorComponent>(id)) {
+            comp->set_parent_prefab(asset);
+        }
         if(const auto name = asset_store().name(asset)) {
-            set_entity_name(id, fmt("% (Prefab)", asset_store().filesystem()->filename(name.unwrap())));
+            set_entity_name(id, asset_store().filesystem()->filename(name.unwrap()));
         }
         return id;
     }

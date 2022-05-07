@@ -31,6 +31,7 @@ namespace editor {
 namespace imgui {
 
 static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";
+static constexpr math::Vec4 error_text_color = math::Vec4(1.0f, 0.3f, 0.3f, 1.0f);
 
 bool should_open_context_menu();
 

@@ -23,12 +23,19 @@ SOFTWARE.
 #include "SceneImporter2.h"
 #include "Renamer.h"
 
-#include <editor/utils/ui.h>
-
+#include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/meshes/StaticMesh.h>
+#include <yave/meshes/MeshData.h>
+#include <yave/animations/Animation.h>
+#include <yave/material/Material.h>
+#include <yave/graphics/images/ImageData.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/FileSystemModel.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <y/io2/Buffer.h>
+#include <editor/utils/ui.h>
 
 #include <external/imgui/yave_imgui.h>
 
@@ -76,7 +83,7 @@ static const char* make_display_name(const import::ParsedScene::Asset& asset) {
 static bool patch_import_error(import::ParsedScene::Asset& asset) {
     asset.import &= !asset.is_error;
     if(asset.is_error) {
-        ImGui::PushStyleColor(ImGuiCol_Text, math::Vec4(1.0f, 0.3f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
     }
     return asset.is_error;
 }
@@ -174,39 +181,124 @@ SceneImporter2::SceneImporter2(std::string_view import_dst_path) :
     });
 }
 
-template<typename T>
-static void import_single_asset(const T& asset, std::string_view name, AssetType type) {
+template<typename T, typename L = decltype(log_msg)>
+static AssetId import_single_asset(const T& asset, std::string_view name, AssetType type, L&& log_func = log_msg) {
     y_profile_zone("asset import");
 
     io2::Buffer buffer;
     serde3::WritableArchive arc(buffer);
     if(auto sr = arc.serialize(asset); sr.is_error()) {
-        log_msg(fmt("Unable serialize \"%\": error %", name, sr.error().type), Log::Error);
-    } else {
-        buffer.reset();
+        log_func(fmt("Unable serialize \"%\": error %", name, sr.error().type), Log::Error);
+        return {};
+    }
 
-        usize emergency_id = 1;
-        core::String import_name = name;
+    buffer.reset();
 
-        for(;;) {
-            const auto result = asset_store().import(buffer, import_name, type);
-            if(result.is_error()) {
-                if(result.error() == AssetStore::ErrorType::NameAlreadyExists) {
-                    import_name = fmt("%_(%)", name, emergency_id++);
+    usize emergency_id = 1;
+    core::String import_name = name;
+
+    for(;;) {
+        const auto result = asset_store().import(buffer, import_name, type);
+        if(result.is_error()) {
+            if(result.error() == AssetStore::ErrorType::NameAlreadyExists) {
+                import_name = fmt("%_(%)", name, emergency_id++);
+                continue;
+            }
+            log_func(fmt("Unable to import \"%\": error %", import_name, result.error()), Log::Error);
+        } else {
+            log_func(fmt("Saved asset as \"%\"", import_name), Log::Info);
+            return result.unwrap();
+        }
+    }
+}
+
+void SceneImporter2::import_assets() {
+    auto log_func = [this](std::string_view msg, Log type) {
+        auto lock = y_profile_unique_lock(_lock);
+        _logs.emplace_back(msg, type);
+    };
+
+    // --------------------------------- Images ---------------------------------
+    {
+        const core::String image_import_path = asset_store().filesystem()->join(_import_path, "Textures");
+        for(usize i = 0; i != _parsed_scene.images.size(); ++i) {
+            auto& image = _parsed_scene.images[i];
+            if(image.import) {
+                if(auto res = _parsed_scene.build_image_data(i)) {
+                    image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, log_func);
+                }
+            }
+        }
+    }
+
+    // --------------------------------- Meshes ---------------------------------
+    {
+        const core::String mesh_import_path = asset_store().filesystem()->join(_import_path, "Meshes");
+        for(usize i = 0; i != _parsed_scene.meshes.size(); ++i) {
+            auto& mesh = _parsed_scene.meshes[i];
+            if(mesh.import) {
+                core::Vector<core::Result<MeshData>> sub_meshes = _parsed_scene.build_mesh_data(i);
+                for(usize j = 0; j != sub_meshes.size(); ++j) {
+                    if(auto& res = sub_meshes[j]) {
+                        mesh.sub_meshes[j].asset_id = import_single_asset(std::move(res.unwrap()), asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.sub_meshes[j].name), AssetType::Mesh, log_func);
+                    }
+                }
+            }
+        }
+    }
+
+    // --------------------------------- Materials ---------------------------------
+    {
+        const core::String material_import_path = asset_store().filesystem()->join(_import_path, "Materials");
+        for(usize i = 0; i != _parsed_scene.materials.size(); ++i) {
+            auto& material = _parsed_scene.materials[i];
+            if(material.import) {
+                if(auto res = _parsed_scene.build_material_data(i)) {
+                    material.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(material_import_path, material.name), AssetType::Material, log_func);
+                }
+            }
+        }
+    }
+
+    // --------------------------------- Prefabs ---------------------------------
+    {
+        const core::String prefab_import_path = asset_store().filesystem()->join(_import_path, "Prefabs");
+        for(const auto& mesh : _parsed_scene.meshes) {
+            auto sub_meshes = core::vector_with_capacity<StaticMeshComponent::SubMesh>(mesh.sub_meshes.size());
+            for(const auto& sub_mesh : mesh.sub_meshes) {
+                if(sub_mesh.material_index < 0 || sub_mesh.asset_id == AssetId::invalid_id()) {
                     continue;
                 }
-                log_msg(fmt("Unable to import \"%\": error %", import_name, result.error()), Log::Error);
-            } else {
-                log_msg(fmt("Saved asset as \"%\"", import_name));
+
+                AssetId material_id;
+                for(const auto& mat : _parsed_scene.materials) {
+                    if(mat.index == usize(sub_mesh.material_index)) {
+                        material_id = mat.asset_id;
+                        break;
+                    }
+                }
+
+                if(material_id == AssetId::invalid_id()) {
+                    continue;
+                }
+
+                sub_meshes.emplace_back(make_asset_with_id<StaticMesh>(sub_mesh.asset_id), make_asset_with_id<Material>(material_id));
             }
 
-            break;
-        }
+            {
+                ecs::EntityPrefab prefab;
+                prefab.add(TransformableComponent());
+                prefab.add(StaticMeshComponent(std::move(sub_meshes)));
+                import_single_asset(prefab, asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, log_func);
+            }
 
+        }
     }
 }
 
 void SceneImporter2::on_gui() {
+    const float button_height = ImGui::GetFont()->FontSize + ImGui::GetStyle().FramePadding.y * 2.0f + 4.0f;
+
     switch(_state) {
         case State::Browsing:
             _browser.draw_gui_inside();
@@ -231,10 +323,10 @@ void SceneImporter2::on_gui() {
                 count_errors(_parsed_scene.images);
 
             if(_parsed_scene.is_error) {
-                ImGui::TextColored(math::Vec4(1.0f, 0.3f, 0.3f, 1.0f), ICON_FA_EXCLAMATION_TRIANGLE " Error while parsing scene, some elements might be missing or broken");
+                ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE " Error while parsing scene, some elements might be missing or broken");
                 ImGui::Separator();
             } else if(total_errors) {
-                ImGui::TextColored(math::Vec4(1.0f, 0.3f, 0.3f, 1.0f), ICON_FA_EXCLAMATION_TRIANGLE " %u assets could not be parsed and won't be imported", u32(total_errors));
+                ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE " %u assets could not be parsed and won't be imported", u32(total_errors));
                 ImGui::Separator();
             }
 
@@ -242,7 +334,6 @@ void SceneImporter2::on_gui() {
 
             ImGui::Separator();
 
-            const float button_height = ImGui::GetFont()->FontSize + ImGui::GetStyle().FramePadding.y * 2.0f + 4.0f;
             if(ImGui::BeginChild("##assets", ImVec2(0, ImGui::GetContentRegionAvail().y - button_height), true)) {
                 display_mesh_import_list(_parsed_scene);
                 display_material_import_list(_parsed_scene);
@@ -251,43 +342,32 @@ void SceneImporter2::on_gui() {
             ImGui::EndChild();
 
             if(ImGui::Button(ICON_FA_CHECK " Import")) {
-                _future = std::async(std::launch::async, [this] {
-
-                    {
-                        const core::String image_import_path = asset_store().filesystem()->join(_import_path, "Textures");
-                        for(usize i = 0; i != _parsed_scene.images.size(); ++i) {
-                            const auto& image = _parsed_scene.images[i];
-                            if(image.import) {
-                                if(auto res = _parsed_scene.build_image_data(i)) {
-                                    import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image);
-                                }
-                            }
-                        }
-                    }
-
-                    {
-                        const core::String mesh_import_path = asset_store().filesystem()->join(_import_path, "Meshes");
-                        for(usize i = 0; i != _parsed_scene.meshes.size(); ++i) {
-                            const auto& mesh = _parsed_scene.meshes[i];
-                            if(mesh.import) {
-                                core::Vector<core::Result<MeshData>> sub_meshes = _parsed_scene.build_mesh_data(i);
-                                for(usize j = 0; j != sub_meshes.size(); ++j) {
-                                    if(auto& res = sub_meshes[j]) {
-                                        import_single_asset(std::move(res.unwrap()), asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.sub_meshes[j].name), AssetType::Mesh);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+                _future = std::async(std::launch::async, [this] { import_assets(); });
                 _state = State::Importing;
             }
         } break;
 
-        case State::Importing: {
+        case State::Importing:
             ImGui::Text("Importing assets...");
             if(_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 _future.get();
+                refresh_all();
+                _state = State::Done;
+            }
+            [[fallthrough]];
+
+        case State::Done: {
+            if(ImGui::BeginChild("##logs", ImVec2(0, ImGui::GetContentRegionAvail().y - button_height), true)) {
+                imgui::alternating_rows_background();
+
+                auto lock = y_profile_unique_lock(_lock);
+                for(const auto& log : _logs) {
+                    ImGui::Selectable(log.first.data());
+                }
+            }
+            ImGui::EndChild();
+
+            if(ImGui::Button("Ok")) {
                 close();
             }
         } break;

@@ -89,14 +89,14 @@ const math::Vec3& TransformableComponent::position() const {
 }
 
 math::Vec3 TransformableComponent::to_global(const math::Vec3& pos) const {
-    return _transform.to_global(pos);
+    return _transform.transform_point(pos);
 }
 
 AABB TransformableComponent::to_global(const AABB& aabb) const {
     // https://zeux.io/2010/10/17/aabb-from-obb-with-component-wise-abs/
     const math::Transform<> abs_tr = _transform.abs();
-    const math::Vec3 center = transform().to_global(aabb.center());
-    const math::Vec3 half_extent = abs_tr.to_global_normal(aabb.half_extent());
+    const math::Vec3 center = transform().transform_point(aabb.center());
+    const math::Vec3 half_extent = abs_tr.transform_direction(aabb.half_extent());
 
     return AABB(center - half_extent, center + half_extent);
 }

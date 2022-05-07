@@ -46,20 +46,16 @@ ImageImporter::ImageImporter(std::string_view import_path) :
         _import_path(import_path) {
 
     _browser.set_selection_filter(false, import::supported_image_extensions());
-    _browser.set_selected_callback([this](const auto& filename) { import_async(filename); return true; });
+    _browser.set_selected_callback([this](const auto& filename) { import(filename); return true; });
     _browser.set_canceled_callback([this] { close(); return true; });
 }
 
 void ImageImporter::on_gui()  {
     if(is_loading()) {
         if(done_loading()) {
-            try {
-                const auto& imported = _import_future.get();
-                import(imported);
-            } catch(std::exception& e) {
-                log_msg(fmt("Unable to import scene: %" , e.what()), Log::Error);
-            }
+            _import_future.get();
             close();
+            refresh_all();
         } else {
             ImGui::TextUnformatted("Loading...");
         }
@@ -76,28 +72,31 @@ bool ImageImporter::done_loading() const {
     return _import_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
 
-void ImageImporter::import_async(const core::String& filename) {
+void ImageImporter::import(const core::String& filename) {
     _import_future = std::async(std::launch::async, [=] {
-        return import::import_image(filename, import::ImageImportFlags::GenerateMipmaps);
+        auto result = import::import_image(filename, import::ImageImportFlags::GenerateMipmaps);
+        if(result.is_error()) {
+            log_msg("Unable to import image", Log::Error);
+            return;
+        }
+
+
+        io2::Buffer buffer;
+        serde3::WritableArchive arc(buffer);
+        if(!arc.serialize(result.unwrap())) {
+            log_msg("Unable serialize image", Log::Error);
+            return;
+        }
+        buffer.reset();
+
+        const core::String full_name = asset_store().filesystem()->join(_import_path, import::clean_asset_name(filename));
+        if(!asset_store().import(buffer, full_name, AssetType::Image)) {
+            log_msg("Unable import image", Log::Error);
+        }
     });
 }
 
-void ImageImporter::import(const Named<ImageData>& asset) {
-    const core::String name = asset_store().filesystem()->join(_import_path, asset.name());
-    io2::Buffer buffer;
-    serde3::WritableArchive arc(buffer);
-    if(!arc.serialize(asset.obj())) {
-        log_msg(fmt("Unable serialize image"), Log::Error);
-        return;
-    }
-    buffer.reset();
-    if(!asset_store().import(buffer, name, AssetType::Image)) {
-        log_msg(fmt("Unable import image"), Log::Error);
-        // refresh anyway
-    }
 
-    refresh_all();
-}
 
 }
 

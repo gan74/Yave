@@ -47,5 +47,13 @@ bool EditorComponent::is_hidden_in_editor() const {
     return _hide_in_editor;
 }
 
+void EditorComponent::set_parent_prefab(AssetId id) {
+    _prefab = id;
+}
+
+bool EditorComponent::is_prefab() const {
+    return _prefab != AssetId::invalid_id();
+}
+
 }
 

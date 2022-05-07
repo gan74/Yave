@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/meshes/Vertex.h>
 #include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
+#include <yave/material/SimpleMaterialData.h>
 #include <yave/utils/FileSystemModel.h>
 
 #include <y/core/Chrono.h>
@@ -104,7 +105,7 @@ core::String clean_asset_name(const core::String& name) {
     return n.is_empty() ? core::String("unamed") : n;
 }
 
-Named<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {
+core::Result<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {
     y_profile();
 
     int width, height, bpp;
@@ -112,17 +113,19 @@ Named<ImageData> import_image(const core::String& filename, ImageImportFlags fla
     y_defer(stbi_image_free(data));
 
     if(!data) {
-        y_throw_msg(fmt_c_str("Unable to load image \"%\".", filename));
+        log_msg(fmt_c_str("Unable to load image \"%\".", filename), Log::Error);
+        return core::Err();
     }
 
     const VkFormat format = ((flags & ImageImportFlags::ImportAsSRGB) == ImageImportFlags::ImportAsSRGB)
         ? VK_FORMAT_R8G8B8A8_SRGB
         : VK_FORMAT_R8G8B8A8_UNORM;
+
     ImageData img(math::Vec2ui(width, height), data, format);
     if((flags & ImageImportFlags::GenerateMipmaps) == ImageImportFlags::GenerateMipmaps) {
         img = compute_mipmaps(img);
     }
-    return {clean_asset_name(filename), std::move(img)};
+    return core::Ok(std::move(img));
 }
 
 core::String supported_image_extensions() {
@@ -249,7 +252,6 @@ static core::Vector<FullVertex> import_vertices(const tinygltf::Model& model, co
     return vertices;
 }
 
-
 template<typename F>
 static void decode_index_buffer(const tinygltf::Model& model, const tinygltf::BufferView& buffer, const tinygltf::Accessor& accessor, IndexedTriangle* triangles, usize elem_size, F convert_index) {
     u32* out_buffer = reinterpret_cast<u32*>(triangles);
@@ -349,6 +351,7 @@ ParsedScene parse_scene(const core::String& filename) {
             auto& parsed_sub = parsed_mesh.sub_meshes.emplace_back();
             parsed_sub.name = fmt("submesh_%", j);
             parsed_sub.index = j;
+            parsed_sub.material_index = prim.material;
 
             if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
                 parsed_sub.is_error = true;
@@ -391,9 +394,16 @@ ParsedScene parse_scene(const core::String& filename) {
     return scene;
 }
 
-core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) {
+core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) const {
     const Mesh& parsed_mesh = meshes[index];
     y_debug_assert(!parsed_mesh.is_error);
+
+    /*const math::Vec3 forward = math::Vec3(0.0f, 0.0f, 1.0f);
+    const math::Vec3 up = math::Vec3(0.0f, 1.0f, 0.0f);
+
+    math::Transform<> transform;
+    transform.set_basis(forward, forward.cross(up), up);
+    transform = transform.transposed();*/
 
     core::Vector<core::Result<MeshData>> sub_meshes;
     for(const SubMesh& sub_mesh : parsed_mesh.sub_meshes) {
@@ -401,10 +411,22 @@ core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) {
             y_debug_assert(!sub_mesh.is_error);
             const tinygltf::Primitive& prim = gltf->meshes[parsed_mesh.index].primitives[sub_mesh.index];
             try {
-                MeshData mesh(import_vertices(*gltf, prim), import_triangles(*gltf, prim));
-                if(mesh.vertices().size() && mesh.vertices()[0].packed_tangent_sign == pack_2_10_10_10(math::Vec3())) {
+                auto vertices = import_vertices(*gltf, prim);
+                const bool recompute_tangents = vertices.size() && vertices[0].tangent.is_zero();
+
+                for(FullVertex& vertex : vertices) {
+                    auto transform = [](math::Vec3 v) { return math::Vec3(-v.x(), v.z(), v.y()); };
+                    vertex.position = transform(vertex.position);
+                    vertex.normal = transform(vertex.normal);
+                    vertex.tangent.to<3>() = transform(vertex.tangent.to<3>());
+                    Y_TODO(Do we need to fix the binormal sign ?)
+                }
+
+                MeshData mesh(std::move(vertices), import_triangles(*gltf, prim));
+                if(recompute_tangents) {
                     mesh = compute_tangents(mesh);
                 }
+
                 sub_meshes.emplace_back(core::Ok(std::move(mesh)));
             } catch(std::exception& e) {
                 log_msg(fmt("Unable to build mesh: %" , e.what()), Log::Error);
@@ -416,190 +438,57 @@ core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) {
     return sub_meshes;
 }
 
-core::Result<ImageData> ParsedScene::build_image_data(usize index) {
+core::Result<ImageData> ParsedScene::build_image_data(usize index) const {
     const Image& parsed_image = images[index];
     y_debug_assert(!parsed_image.is_error);
 
-    try {
-        ImageImportFlags flags = ImageImportFlags::None;
-        if(parsed_image.as_sRGB) {
-            flags = flags | ImageImportFlags::ImportAsSRGB;
-        }
-        if(parsed_image.generate_mips) {
-            flags = flags | ImageImportFlags::GenerateMipmaps;
-        }
+    ImageImportFlags flags = ImageImportFlags::None;
+    if(parsed_image.as_sRGB) {
+        flags = flags | ImageImportFlags::ImportAsSRGB;
+    }
+    if(parsed_image.generate_mips) {
+        flags = flags | ImageImportFlags::GenerateMipmaps;
+    }
 
-        return core::Ok(std::move(import_image(parsed_image.path, flags).obj()));
-    } catch(std::exception& e) {
-       log_msg(fmt("Unable to build image: %" , e.what()), Log::Error);
-       return core::Err();
-   }
+    return import_image(parsed_image.path, flags);
 }
 
+core::Result<SimpleMaterialData> ParsedScene::build_material_data(usize index) const {
+    const Material& parsed_material = materials[index];
+    y_debug_assert(!parsed_material.is_error);
 
-SceneData import_scene(const core::String& filename, SceneImportFlags flags) {
-    y_profile();
+    try {
+        const tinygltf::Material gltf_mat = gltf->materials[parsed_material.index];
+        const tinygltf::PbrMetallicRoughness& pbr = gltf_mat.pbrMetallicRoughness;
 
-    tinygltf::Model model;
-
-    {
-        tinygltf::TinyGLTF ctx;
-
-        y_profile_zone("glTF import");
-        const bool is_ascii = filename.ends_with(".gltf");
-        const std::string file = filename.data();
-
-        std::string err;
-        std::string warn;
-        const bool ok = is_ascii
-                ? ctx.LoadASCIIFromFile(&model, &err, &warn, file)
-                : ctx.LoadBinaryFromFile(&model, &err, &warn, file);
-
-        if(!warn.empty()) {
-            log_msg(warn, Log::Warning);
-        }
-        if(!ok) {
-            y_throw_msg(err);
-        }
-    }
-
-
-    SceneData scene;
-
-    if((flags & SceneImportFlags::ImportMeshes) == SceneImportFlags::ImportMeshes) {
-        y_profile_zone("Mesh import");
-
-        for(const tinygltf::Mesh& mesh : model.meshes) {
-            for(usize i = 0; i != mesh.primitives.size(); ++i) {
-                const tinygltf::Primitive& prim = mesh.primitives[i];
-
-                if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
-                    log_msg("Primitive is not a triangle", Log::Warning);
-                    continue;
-                }
-
-                const core::String name = mesh.name.empty()
-                    ? fmt("unnamed_mesh_%", i)
-                    : (i ? fmt("%_%", std::string_view(mesh.name), i) : std::string_view(mesh.name));
-
-                auto vertices = import_vertices(model, prim);
-
-                if((flags & SceneImportFlags::FlipUVs) == SceneImportFlags::FlipUVs) {
-                    y_profile_zone("Flip UV");
-                    for(FullVertex& v : vertices) {
-                        v.uv.y() = 1.0f - v.uv.y();
-                    }
-                }
-
-                MeshData mesh(std::move(vertices), import_triangles(model, prim));
-                if(vertices.size() && vertices[0].tangent.is_zero()) {
-                    mesh = compute_tangents(mesh);
-                }
-
-                scene.meshes.emplace_back(clean_asset_name(name), std::move(mesh));
+        auto find_texture = [this](int tex_index) -> AssetPtr<Texture> {
+            if(tex_index < 0) {
+                return {};
             }
+            return make_asset_with_id<Texture>(images[tex_index].asset_id);
+        };
+
+        SimpleMaterialData data;
+        data.set_texture(SimpleMaterialData::Diffuse, find_texture(pbr.baseColorTexture.index));
+        data.set_texture(SimpleMaterialData::Normal, find_texture(gltf_mat.normalTexture.index));
+        data.set_texture(SimpleMaterialData::Roughness, find_texture(pbr.metallicRoughnessTexture.index));
+        data.set_texture(SimpleMaterialData::Metallic, find_texture(pbr.metallicRoughnessTexture.index));
+        data.set_texture(SimpleMaterialData::Emissive, find_texture(gltf_mat.emissiveTexture.index));
+
+        data.alpha_tested() = (gltf_mat.alphaMode == "MASK");
+        data.double_sided() = gltf_mat.doubleSided;
+
+        data.constants().metallic_mul = float(pbr.metallicFactor);
+        data.constants().roughness_mul = float(pbr.roughnessFactor);
+        for(usize i = 0; i != 3; ++i) {
+            data.constants().emissive_mul[i] = float(gltf_mat.emissiveFactor[0]);
         }
+
+        return core::Ok(std::move(data));
+    } catch(std::exception& e) {
+        log_msg(fmt("Unable to build material: %" , e.what()), Log::Error);
+        return core::Err();
     }
-
-    std::unordered_set<int> diffuse_images;
-    const bool srgb_diffuse = (flags & SceneImportFlags::ImportDiffuseAsSRGB) == SceneImportFlags::ImportDiffuseAsSRGB;
-    if(srgb_diffuse) {
-        for(const tinygltf::Material& material : model.materials) {
-            const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
-            const int diffuse_index = pbr.baseColorTexture.index;
-            if(srgb_diffuse && diffuse_index >= 0) {
-                diffuse_images.insert(diffuse_index);
-            }
-        }
-    }
-
-    if((flags & SceneImportFlags::ImportImages) == SceneImportFlags::ImportImages) {
-        y_profile_zone("Image import");
-
-        const FileSystemModel* fs = FileSystemModel::local_filesystem();
-        auto path = fs->parent_path(filename);
-
-        for(usize i = 0; i != model.images.size(); ++i) {
-            const tinygltf::Image& image = model.images[i];
-            auto full_uri = path ? fs->join(path.unwrap(), image.uri) : core::String(image.uri);
-
-            ImageImportFlags flags = ImageImportFlags::GenerateMipmaps;
-            if(srgb_diffuse && diffuse_images.find(int(i)) != diffuse_images.end()) {
-                flags = flags | ImageImportFlags::ImportAsSRGB;
-            }
-
-            scene.images.emplace_back(import_image(full_uri, flags));
-
-            if(!image.name.empty()) {
-                auto& last = scene.images.last();
-                last  = Named<ImageData>(clean_asset_name(image.name), std::move(last.obj()));
-            }
-        }
-    }
-
-    if((flags & SceneImportFlags::ImportMaterials) == SceneImportFlags::ImportMaterials) {
-        y_profile_zone("Material import");
-
-        for(usize i = 0; i != model.materials.size(); ++i) {
-            const tinygltf::Material& material = model.materials[i];
-            const core::String name = material.name.empty() ? fmt_to_owned("unnamed_material_%", i) : clean_asset_name(material.name);
-
-            auto tex_name = [&](int index) {
-                if(index >= 0) {
-                    const tinygltf::Texture& tex = model.textures[index];
-                    if(tex.source >= 0 && usize(tex.source) < scene.images.size()) {
-                        return scene.images[tex.source].name();
-                    }
-                }
-                return core::String();
-            };
-
-            auto& last = scene.materials.emplace_back(name, MaterialData()).obj();
-            {
-                const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
-
-                last.textures[SimpleMaterialData::Normal] = tex_name(material.normalTexture.index);
-                last.textures[SimpleMaterialData::Diffuse] = tex_name(pbr.baseColorTexture.index);
-                last.textures[SimpleMaterialData::Metallic] = last.textures[SimpleMaterialData::Roughness] = tex_name(pbr.metallicRoughnessTexture.index);
-                last.textures[SimpleMaterialData::Emissive] = tex_name(material.emissiveTexture.index);
-                last.metallic = float(pbr.metallicFactor);
-                last.roughness = float(pbr.roughnessFactor);
-                last.alpha_test = (material.alphaMode == "MASK");
-                last.double_sided = material.doubleSided;
-
-                for(usize i = 0; i != 3; ++i) {
-                    last.emissive[i] = float(material.emissiveFactor[0]);
-                }
-            }
-        }
-    }
-
-    if((flags & SceneImportFlags::ImportPrefabs) == SceneImportFlags::ImportPrefabs) {
-        y_profile_zone("Prefab import");
-
-        PrefabData& prefab = scene.prefabs.emplace_back(clean_asset_name(filename), PrefabData{});
-        for(const tinygltf::Mesh& object : model.meshes) {
-            for(const tinygltf::Primitive& prim : object.primitives) {
-                if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
-                    continue;
-                }
-
-                if(usize(prim.material) < scene.materials.size()) {
-                    const core::String& mesh_name = scene.meshes[prefab.sub_meshes.size()].name();
-                    const core::String& mat_name = scene.materials[prim.material].name();
-
-                    prefab.sub_meshes.emplace_back(SubMeshData{mesh_name, mat_name});
-                }
-            }
-        }
-
-        if(prefab.sub_meshes.is_empty()) {
-            scene.prefabs.pop();
-        }
-    }
-
-
-    return scene;
 }
 
 core::String supported_scene_extensions() {

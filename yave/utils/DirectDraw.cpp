@@ -91,8 +91,8 @@ void DirectDrawPrimitive::add_box(const AABB& aabb, const math::Transform<>& tra
         for(usize i = 0; i != 3; ++i) {
             math::Vec3 b = a;
             b[i] *= -1.0f;
-            push_vertex(transform.to_global(center + a));
-            push_vertex(transform.to_global(center + b));
+            push_vertex(transform.transform_point(center + a));
+            push_vertex(transform.transform_point(center + b));
         }
     }
 }

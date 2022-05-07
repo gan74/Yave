@@ -29,11 +29,15 @@ SOFTWARE.
 
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
-// #include <y/utils/format.h>
 
 #include <external/imgui/imgui.h>
 #include <external/imgui/imgui_internal.h>
 #include <external/imgui/yave_imgui.h>
+
+#include <charconv>
+#include <cinttypes>
+#include <cstdio>
+#include <ctime>
 
 namespace editor {
 namespace imgui {
@@ -98,6 +102,7 @@ bool position_input(const char* str_id, math::Vec3& position) {
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear) {
     static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
+    const math::Vec2 padded_button_size =  button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f;
 
     ImGui::PushID(fmt_c_str("%_%_%", id.id(), uenum(type), text));
     ImGui::BeginGroup();
@@ -114,10 +119,19 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
         if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
             ret = ImGui::ImageButton(const_cast<TextureView*>(img), button_size);
         } else {
-            ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
+            ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
         }
     } else {
-        ret = ImGui::Button(ICON_FA_FOLDER_OPEN, button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f);
+        if(id == AssetId::invalid_id()) {
+            ret = ImGui::Button(ICON_FA_FOLDER_OPEN, padded_button_size);
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_Text, error_text_color);
+            ret = ImGui::Button(ICON_FA_EXCLAMATION_CIRCLE, padded_button_size);
+            ImGui::PopStyleColor();
+            if(ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Asset with id %016" PRIx64 " could not be loaded", id.id());
+            }
+        }
     }
 
 

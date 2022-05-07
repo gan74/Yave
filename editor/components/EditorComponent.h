@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
+#include <yave/assets/AssetId.h>
+
 #include <y/core/String.h>
 #include <y/reflect/reflect.h>
 
@@ -42,13 +44,18 @@ class EditorComponent {
         void set_hidden_in_editor(bool hide);
         bool is_hidden_in_editor() const;
 
-        y_reflect(_name, _hide_in_editor)
+        void set_parent_prefab(AssetId id);
+        bool is_prefab() const;
+
+        y_reflect(_name, _hide_in_editor, _prefab)
 
     private:
         core::String _name = "Unnamed entity";
         math::Vec3 _euler;
 
         bool _hide_in_editor = false;
+
+        AssetId _prefab;
 };
 
 }

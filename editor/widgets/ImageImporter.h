@@ -26,8 +26,6 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageData.h>
 
-#include <editor/utils/Named.h>
-
 #include <future>
 
 namespace editor {
@@ -42,8 +40,7 @@ class ImageImporter final : public Widget {
         void on_gui() override;
 
     private:
-        void import_async(const core::String& filename);
-        void import(const Named<ImageData>& asset);
+        void import(const core::String& filename);
 
         bool done_loading() const;
         bool is_loading() const;
@@ -52,7 +49,7 @@ class ImageImporter final : public Widget {
 
         core::String _import_path;
 
-        std::future<Named<ImageData>> _import_future;
+        std::future<void> _import_future;
 };
 
 }

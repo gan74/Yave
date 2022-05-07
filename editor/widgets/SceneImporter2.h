@@ -36,7 +36,8 @@ class SceneImporter2 final : public Widget {
         Browsing,
         Parsing,
         Settings,
-        Importing
+        Importing,
+        Done
     };
 
     public:
@@ -47,6 +48,8 @@ class SceneImporter2 final : public Widget {
         void on_gui() override;
 
     private:
+        void import_assets();
+
         core::String _import_path;
 
         State _state = State::Browsing;
@@ -54,8 +57,10 @@ class SceneImporter2 final : public Widget {
         FileBrowser _browser;
         import::ParsedScene _parsed_scene;
 
-        std::future<void> _future;
+        core::Vector<std::pair<core::String, Log>> _logs;
+        std::mutex _lock;
 
+        std::future<void> _future;
 };
 
 }
