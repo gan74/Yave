@@ -134,22 +134,42 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
     return ecs::EntityId();
 }
 
-void EditorWorld::add_scene(std::string_view name) {
+void EditorWorld::add_scene(std::string_view name, ecs::EntityId parent) {
     if(const auto id = asset_store().id(name)) {
-        add_scene(id.unwrap(), name);
+        add_scene(id.unwrap(), parent);
     }
 }
 
-void EditorWorld::add_scene(AssetId asset, std::string_view folder) {
+void EditorWorld::add_scene(AssetId asset, ecs::EntityId parent) {
     if(const auto scene = asset_loader().load_res<ecs::EntityScene>(asset)) {
-        auto& editor_components = component_set<EditorComponent>();
         for(const auto& prefab : scene.unwrap()->prefabs()) {
-            const ecs::EntityId id = create_entity(prefab);
-            editor_components.try_get(id)->set_path(folder);
+            set_parent(create_entity(prefab), parent);
+
         }
     }
 }
 
+void EditorWorld::set_parent(ecs::EntityId id, ecs::EntityId parent) {
+    if(EditorComponent* comp = component<EditorComponent>(id)) {
+        if(comp->_parent == parent) {
+            return;
+        }
+
+        if(comp->has_parent()) {
+            if(EditorComponent* current_parent = component<EditorComponent>(comp->_parent)) {
+                const auto it = std::find(current_parent->_children.begin(), current_parent->_children.end(), comp->_parent);
+                y_debug_assert(it != current_parent->_children.end());
+                current_parent->_children.erase_unordered(it);
+                comp->_parent = ecs::EntityId();
+            }
+        }
+
+        if(EditorComponent* new_parent = component<EditorComponent>(parent)) {
+            new_parent->_children << id;
+            comp->_parent = parent;
+        }
+    }
+}
 
 core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::component_types() {
     static core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> types;

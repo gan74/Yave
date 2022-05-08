@@ -83,7 +83,9 @@ static void add_scene() {
             if(const auto res = asset_store().name(asset)) {
                 name = asset_store().filesystem()->filename(res.unwrap());
             }
-            current_world().add_scene(asset, name);
+
+            EditorWorld& world = current_world();
+            world.add_scene(asset, world.create_named_entity(name));
             return true;
         });
 }
@@ -98,88 +100,52 @@ editor_action("Add scene", add_scene)
 EntityView::EntityView() : Widget(ICON_FA_CUBES " Entities") {
 }
 
-void EntityView::paint_view() {
-    y_profile();
-
-    EditorWorld& world = current_world();
-    auto& editor_components = world.component_set<EditorComponent>();
-
+void EntityView::display_entity(ecs::EntityId id, const EditorComponent* component) {
     const bool display_hidden = app_settings().debug.display_hidden_entities;
-    auto display_entity = [&](ecs::EntityId id) {
-        const EditorComponent* comp = editor_components.try_get(id);
-        if(!comp) {
-            log_msg(fmt("Entity with id % is missing EditorComponent", id.index()), Log::Warning);
-            return;
-        }
+    if(!component || (!display_hidden && component->is_hidden_in_editor())) {
+        return;
+    }
 
-        if(!display_hidden && comp->is_hidden_in_editor()) {
-            return;
-        }
-
+    const EditorWorld& world = current_world();
+    if(component->children().is_empty()) {
         const bool selected = selection().selected_entity() == id;
-        const std::string_view display_name = comp->is_prefab() ? fmt("% (Prefab)", comp->name()) : std::string_view(comp->name());
+        const std::string_view display_name = component->is_prefab() ? fmt("% (Prefab)", component->name()) : std::string_view(component->name());
         if(ImGui::Selectable(fmt_c_str("% %##%", world.entity_icon(id), display_name, id.index()), selected)) {
              selection().set_selected(id);
         }
+
         if(ImGui::IsItemHovered()) {
             _hovered = id;
         }
-    };
 
+        return;
+    }
+
+    if(ImGui::TreeNode(fmt_c_str(ICON_FA_FOLDER_OPEN " %", component->name()))) {
+        ImGui::Indent();
+        for(ecs::EntityId id : component->children()) {
+            display_entity(id, world.component<EditorComponent>(id));
+        }
+        ImGui::Unindent();
+        ImGui::TreePop();
+    }
+}
+
+void EntityView::paint_view() {
+    y_profile();
 
 
     if(ImGui::BeginChild("##entities", ImVec2(), true)) {
         imgui::alternating_rows_background();
 
-        core::Vector<std::pair<std::string_view, ecs::EntityId>> tree;
-        core::Vector<ecs::EntityId> flat;
 
-        {
-            y_profile_zone("building tree");
-            for(auto&& [id, comp] : editor_components) {
-                if(comp.path().is_empty()) {
-                    flat.emplace_back(id);
-                } else {
-                    tree.emplace_back(comp.path(), id);
-                }
-            }
-
-            std::sort(tree.begin(), tree.end());
-        }
-
-        {
-            core::String prev;
-            bool open = false;
-            for(auto&& [path, id] : tree) {
-                core::String current = fmt_to_owned(ICON_FA_FOLDER " %", path.data());
-                if(current != prev) {
-                    if(open) {
-                        ImGui::Unindent();
-                        ImGui::TreePop();
-                    }
-                    if((open = ImGui::TreeNode(current.data()))) {
-                        ImGui::Indent();
-                    }
-                    prev = std::move(current);
-                }
-
-                if(open) {
-                    display_entity(id);
-                }
-            }
-            if(open) {
-                ImGui::Unindent();
-                ImGui::TreePop();
+        const EditorWorld& world = current_world();
+        for(auto&& [id, comp] : world.component_set<EditorComponent>()) {
+            if(!comp.has_parent()) {
+                display_entity(id, &comp);
             }
         }
 
-        {
-            ImGui::Indent();
-            for(ecs::EntityId id : flat) {
-                display_entity(id);
-            }
-            ImGui::Unindent();
-        }
     }
     ImGui::EndChild();
 }

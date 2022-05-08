@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/ecs/ComponentRuntimeInfo.h>
 
+#include <y/core/Vector.h>
 
 namespace editor {
 
@@ -41,6 +42,7 @@ class EntityView final : public Widget {
 
     private:
         void paint_view();
+        void display_entity(ecs::EntityId id, const EditorComponent* component);
 
         ecs::EntityId _hovered;
 };

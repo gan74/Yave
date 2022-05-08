@@ -60,6 +60,11 @@ void ComponentPanelWidgetBase::register_link(Link* link) {
 }
 
 
+core::String ComponentPanelWidgetBase::component_name() const {
+    return runtime_info().clean_component_name();
+}
+
+
 
 template<typename CRTP, typename T>
 struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
@@ -477,6 +482,10 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
 };
 
 struct EditorComponentWidget : public ComponentPanelWidget<EditorComponentWidget, EditorComponent> {
+    core::String component_name() const override {
+        return "Entity";
+    }
+
     void on_gui(ecs::EntityId id, EditorComponent* component) {
         const core::String& name = component->name();
 
@@ -489,21 +498,6 @@ struct EditorComponentWidget : public ComponentPanelWidget<EditorComponentWidget
 
             if(ImGui::InputText("##name", buffer.data(), buffer.size())) {
                 component->set_name(buffer.data());
-                undo_stack().make_dirty();
-            }
-        }
-
-        imgui::table_begin_next_row();
-
-        {
-            ImGui::TextUnformatted("Path");
-            ImGui::TableNextColumn();
-
-            std::array<char, 1024> buffer = {};
-            std::copy(component->path().begin(), component->path().end(), buffer.begin());
-
-            if(ImGui::InputText("##path", buffer.data(), buffer.size())) {
-                component->set_path(buffer.data());
                 undo_stack().make_dirty();
             }
         }

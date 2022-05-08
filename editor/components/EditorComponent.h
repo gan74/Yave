@@ -25,8 +25,10 @@ SOFTWARE.
 #include <editor/editor.h>
 
 #include <yave/assets/AssetId.h>
+#include <yave/ecs/ecs.h>
 
 #include <y/core/String.h>
+#include <y/core/Vector.h>
 
 #include <y/reflect/reflect.h>
 
@@ -40,8 +42,8 @@ class EditorComponent {
         const core::String& name() const;
         void set_name(core::String name);
 
-        const core::String& path() const;
-        void set_path(core::String path);
+        bool has_parent() const;
+        core::Span<ecs::EntityId> children() const;
 
         math::Vec3& euler();
 
@@ -52,16 +54,20 @@ class EditorComponent {
         AssetId parent_prefab() const;
         bool is_prefab() const;
 
-        y_reflect(_name, _path, _prefab, _hide_in_editor)
+        y_reflect(_name, _prefab, _hide_in_editor, _parent, _children)
 
     private:
         core::String _name = "Unnamed entity";
-        core::String _path;
-
         AssetId _prefab;
 
         bool _hide_in_editor = false;
         math::Vec3 _euler;
+
+    private:
+        friend class EditorWorld;
+
+        ecs::EntityId _parent;
+        core::Vector<ecs::EntityId> _children;
 };
 
 }

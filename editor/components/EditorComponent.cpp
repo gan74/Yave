@@ -35,12 +35,12 @@ void EditorComponent::set_name(core::String name) {
     _name = std::move(name);
 }
 
-const core::String& EditorComponent::path() const {
-    return _path;
+bool EditorComponent::has_parent() const {
+    return _parent.is_valid();
 }
 
-void EditorComponent::set_path(core::String path) {
-    _path = std::move(path);
+core::Span<ecs::EntityId> EditorComponent::children() const {
+    return _children;
 }
 
 math::Vec3& EditorComponent::euler() {

@@ -35,6 +35,8 @@ class ComponentPanelWidgetBase : NonMovable {
         virtual void process_entity(ecs::EntityWorld& world, ecs::EntityId id) = 0;
         virtual ecs::ComponentRuntimeInfo runtime_info() const = 0;
 
+        virtual core::String component_name() const;
+
     protected:
         friend class ComponentPanel;
 

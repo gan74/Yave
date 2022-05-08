@@ -72,8 +72,8 @@ void ComponentPanel::on_gui() {
                 continue;
             }
 
-            const char* type_name = fmt_c_str(ICON_FA_PUZZLE_PIECE " %", rt_info.clean_component_name());
-            if(ImGui::CollapsingHeader(type_name)) {
+            const char* component_name = fmt_c_str(ICON_FA_PUZZLE_PIECE " %", widget->component_name());
+            if(ImGui::CollapsingHeader(component_name)) {
                 if(ImGui::BeginTable("#components", 2, table_flags)) {
                     imgui::table_begin_next_row();
                     widget->process_entity(current_world(), id);
