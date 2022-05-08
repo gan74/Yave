@@ -16,7 +16,8 @@ Currently a mess, should smooth out as I am learning Vulkan.
 
 The project is in its  early stages.
 
-![Current status](https://i.imgur.com/ulnz4Rs.jpeg)
+![Current status](https://i.imgur.com/Zmb7HrC.png)
+[Older UI](https://i.imgur.com/ulnz4Rs.jpeg)
 
 ## Project structure
 

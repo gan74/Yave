@@ -208,8 +208,8 @@ bool path_selector(const char* text, const core::String& path) {
 }
 
 // from https://github.com/ocornut/imgui/issues/2668
-void alternating_rows_background(float line_height, const math::Vec4& color) {
-    const u32 im_color = ImGui::GetColorU32(color);
+void alternating_rows_background(float line_height) {
+    const u32 im_color = ImGui::GetColorU32(ImGuiCol_TableRowBgAlt);
 
     auto* draw_list = ImGui::GetWindowDrawList();
     const auto& style = ImGui::GetStyle();
@@ -268,6 +268,14 @@ static struct SearchBarState {
 
 
 bool search_bar(const char* text, char* buffer, usize buffer_size) {
+    const float y_offset = 2.0f;
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, math::Vec2(ImGui::GetStyle().FramePadding) - math::Vec2(0.0f, y_offset));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_CheckMark));
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + y_offset);
+    y_defer({ ImGui::PopStyleVar(3); ImGui::PopStyleColor(); });
+
     // Position
     {
         const float text_width = ImGui::CalcTextSize(text, nullptr, true).x + 8.0f;
@@ -277,7 +285,6 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
 
     ImGuiInputTextState* imgui_state = ImGui::GetInputTextState(ImGui::GetID(text));
     search_bar_state.focussed = imgui_state;
-
 
     if(!search_bar_state.focussed) {
         ImGui::InputText(text, buffer, buffer_size);

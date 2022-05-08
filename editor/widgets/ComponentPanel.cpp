@@ -58,7 +58,7 @@ void ComponentPanel::on_gui() {
     {
         const ImGuiTableFlags table_flags =
                 ImGuiTableFlags_BordersInnerV |
-                ImGuiTableFlags_BordersInnerH |
+                // ImGuiTableFlags_BordersInnerH |
                 ImGuiTableFlags_Resizable |
                 ImGuiTableFlags_RowBg;
 

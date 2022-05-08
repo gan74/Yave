@@ -43,16 +43,27 @@ static ImageData load_font() {
     y_profile();
 
     ImFontAtlas* fonts = ImGui::GetIO().Fonts;
+
+    /*{
+        ImFontConfig config;
+        config.OversampleV *= 2;
+        config.OversampleH *= 2;
+        fonts->AddFontDefault(&config);
+    }*/
+
     fonts->AddFontDefault();
 
-    ImFontConfig config;
-    config.MergeMode = true;
-    config.PixelSnapH = true;
-    config.OversampleH = 1;
-    config.GlyphOffset.y = 1.7f;
+    {
+        ImFontConfig config;
+        config.MergeMode = true;
+        config.PixelSnapH = true;
+        config.OversampleV = 1;
+        config.OversampleH = 1;
+        config.GlyphOffset.y = 1.7f;
 
-    const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-    fonts->AddFontFromMemoryCompressedTTF(font_awesome_compressed_data, font_awesome_compressed_size, 13.0f, &config, icon_ranges);
+        const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+        fonts->AddFontFromMemoryCompressedTTF(font_awesome_compressed_data, font_awesome_compressed_size, 13.0f, &config, icon_ranges);
+    }
 
     u8* font_data = nullptr;
     int width = 0;
