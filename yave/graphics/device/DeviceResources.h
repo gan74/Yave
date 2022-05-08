@@ -63,7 +63,6 @@ class DeviceResources final : NonMovable {
             ToneMapFrag,
             TexturedFrag,
             TexturedAlphaFrag,
-            TexturedAlphaEmissiveFrag,
             PassthroughFrag,
             DownsampleFrag,
             BloomFrag,
@@ -103,7 +102,6 @@ class DeviceResources final : NonMovable {
         enum MaterialTemplates {
             TexturedMaterialTemplate,
             TexturedAlphaMaterialTemplate,
-            TexturedAlphaEmissiveMaterialTemplate,
             TexturedSkinnedMaterialTemplate,
 
             DeferredPointLightMaterialTemplate,

@@ -1,6 +1,8 @@
 #include "lib/utils.glsl"
 #include "lib/gbuffer.glsl"
 
+#define EMISSIVE
+
 layout(location = 0) out vec4 out_rt0;
 layout(location = 1) out vec4 out_rt1;
 

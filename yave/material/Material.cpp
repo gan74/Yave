@@ -49,15 +49,11 @@ static DescriptorSet create_descriptor_set(const SimpleMaterialData& data) {
 }
 
 static DeviceResources::MaterialTemplates material_template_for_data(const SimpleMaterialData& data) {
-    if(data.has_emissive()) {
-        return DeviceResources::TexturedAlphaEmissiveMaterialTemplate;
-    }
     if(data.alpha_tested()) {
        return DeviceResources::TexturedAlphaMaterialTemplate;
     }
     return DeviceResources::TexturedMaterialTemplate;
 }
-
 
 Material::Material(SimpleMaterialData&& data) :
         _template(device_resources()[material_template_for_data(data)]),
