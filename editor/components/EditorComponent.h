@@ -43,6 +43,8 @@ class EditorComponent {
         void set_name(core::String name);
 
         bool has_parent() const;
+        bool is_collection() const;
+        ecs::EntityId parent() const;
         core::Span<ecs::EntityId> children() const;
 
         math::Vec3& euler();
@@ -54,7 +56,7 @@ class EditorComponent {
         AssetId parent_prefab() const;
         bool is_prefab() const;
 
-        y_reflect(_name, _prefab, _hide_in_editor, _parent, _children)
+        y_reflect(_name, _prefab, _hide_in_editor, _parent, _children, _is_collection)
 
     private:
         core::String _name = "Unnamed entity";
@@ -68,6 +70,7 @@ class EditorComponent {
 
         ecs::EntityId _parent;
         core::Vector<ecs::EntityId> _children;
+        bool _is_collection = false;
 };
 
 }

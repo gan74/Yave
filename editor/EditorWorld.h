@@ -44,9 +44,11 @@ class EditorWorld : public ecs::EntityWorld {
         template<typename... Args>
         ecs::EntityId create_named_entity(std::string_view name, Args&&... args) {
             const ecs::EntityId id = create_entity(y_fwd(args)...);
-            y_always_assert(set_entity_name(id, name), "Unable to set entity name.");
+            y_always_assert(set_entity_name(id, name), "Unable to set entity name");
             return id;
         }
+
+        ecs::EntityId create_collection_entity(std::string_view name);
 
         ecs::EntityId add_prefab(std::string_view name);
         ecs::EntityId add_prefab(AssetId asset);

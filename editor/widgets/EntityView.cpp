@@ -25,7 +25,9 @@ SOFTWARE.
 #include <editor/Selection.h>
 #include <editor/EditorWorld.h>
 #include <editor/utils/ui.h>
+#include <editor/widgets/Renamer.h>
 #include <editor/widgets/AssetSelector.h>
+#include <editor/widgets/DeletionDialog.h>
 #include <editor/components/EditorComponent.h>
 
 #include <yave/components/TransformableComponent.h>
@@ -85,7 +87,7 @@ static void add_scene() {
             }
 
             EditorWorld& world = current_world();
-            world.add_scene(asset, world.create_named_entity(name));
+            world.add_scene(asset, world.create_collection_entity(name));
             return true;
         });
 }
@@ -95,135 +97,139 @@ editor_action("Add debug entities", add_debug_entities)
 editor_action("Add prefab", add_prefab)
 editor_action("Add scene", add_scene)
 
+static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::EntityId()) {
+    if(EditorComponent* component = world.component<EditorComponent>(id)) {
+        if(ImGui::Selectable("Rename")) {
+            add_child_widget<Renamer>(component->name(), [=](std::string_view new_name) { component->set_name(new_name); return true; });
+        }
 
+        if(ImGui::Selectable(ICON_FA_TRASH " Delete")) {
+            add_child_widget<DeletionDialog>(id);
+        }
 
-EntityView::EntityView() : Widget(ICON_FA_CUBES " Entities") {
+        ImGui::Separator();
+    }
+
+    if(ImGui::Selectable(ICON_FA_PLUS " New collection")) {
+        world.set_parent(world.create_collection_entity("New collection"), id);
+    }
+
+    ecs::EntityId new_entity;
+    if(ImGui::MenuItem(ICON_FA_PLUS " New empty entity")) {
+        new_entity = world.create_entity();
+    }
+
+    ImGui::Separator();
+
+    if(ImGui::MenuItem("Add prefab")) {
+        add_prefab();
+    }
+
+    if(ImGui::MenuItem("Add scene")) {
+        add_scene();
+    }
+
+    ImGui::Separator();
+
+    if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add Point light")) {
+        new_entity = world.create_named_entity("Point light", ecs::StaticArchetype<PointLightComponent>());
+    }
+
+    if(ImGui::MenuItem(ICON_FA_VIDEO " Add Spot light")) {
+        new_entity = world.create_named_entity("Spot light", ecs::StaticArchetype<SpotLightComponent>());
+    }
+
+    if(new_entity.is_valid()) {
+        world.set_parent(new_entity, id);
+        selection().set_selected(new_entity);
+    }
 }
 
-void EntityView::display_entity(ecs::EntityId id, const EditorComponent* component) {
+static void display_entity(ecs::EntityId id, EditorComponent* component, ecs::EntityId& hovered, ecs::EntityId& selected) {
     const bool display_hidden = app_settings().debug.display_hidden_entities;
     if(!component || (!display_hidden && component->is_hidden_in_editor())) {
         return;
     }
 
-    const EditorWorld& world = current_world();
-    if(component->children().is_empty()) {
-        const bool selected = selection().selected_entity() == id;
-        const std::string_view display_name = component->is_prefab() ? fmt("% (Prefab)", component->name()) : std::string_view(component->name());
-        if(ImGui::Selectable(fmt_c_str("% %##%", world.entity_icon(id), display_name, id.index()), selected)) {
-             selection().set_selected(id);
-        }
+    EditorWorld& world = current_world();
+    const bool is_selected = selected == id;
+    const int flags = ImGuiTreeNodeFlags_SpanAvailWidth | (is_selected ? ImGuiTreeNodeFlags_Selected : 0);
 
+    auto update_hover = [&] {
         if(ImGui::IsItemHovered()) {
-            _hovered = id;
+            hovered = id;
         }
+    };
 
-        return;
-    }
-
-    if(ImGui::TreeNode(fmt_c_str(ICON_FA_FOLDER_OPEN " %", component->name()))) {
-        ImGui::Indent();
-        for(ecs::EntityId id : component->children()) {
-            display_entity(id, world.component<EditorComponent>(id));
+    if(component->is_collection()) {
+        const char* full_display_name = fmt_c_str(ICON_FA_BOX_OPEN " %##%", component->name(), id.as_u64());
+        if(ImGui::TreeNodeEx(full_display_name, flags)) {
+            update_hover();
+            ImGui::Indent();
+            for(ecs::EntityId id : component->children()) {
+                display_entity(id, world.component<EditorComponent>(id), hovered, selected);
+            }
+            ImGui::Unindent();
+            ImGui::TreePop();
+        } else {
+            update_hover();
         }
-        ImGui::Unindent();
-        ImGui::TreePop();
+    } else {
+        const std::string_view display_name = component->is_prefab() ? fmt("% (Prefab)", component->name()) : std::string_view(component->name());
+        const char* full_display_name = fmt_c_str("% %##%", world.entity_icon(id), display_name, id.as_u64());
+        if(ImGui::TreeNodeEx(full_display_name, flags | ImGuiTreeNodeFlags_Leaf)) {
+            ImGui::TreePop();
+        }
+        update_hover();
+        if(ImGui::IsItemClicked()) {
+            selection().set_selected(id);
+            selected = id;
+        }
     }
 }
 
-void EntityView::paint_view() {
-    y_profile();
 
-
-    if(ImGui::BeginChild("##entities", ImVec2(), true)) {
-        imgui::alternating_rows_background();
-
-
-        const EditorWorld& world = current_world();
-        for(auto&& [id, comp] : world.component_set<EditorComponent>()) {
-            if(!comp.has_parent()) {
-                display_entity(id, &comp);
-            }
-        }
-
-    }
-    ImGui::EndChild();
+EntityView::EntityView() : Widget(ICON_FA_CUBES " Entities") {
 }
 
 void EntityView::on_gui() {
     EditorWorld& world = current_world();
 
     if(ImGui::Button(ICON_FA_PLUS, math::Vec2(24))) {
-        ImGui::OpenPopup("Add entity");
+        ImGui::OpenPopup("##entitymenu");
     }
 
-    ImGui::SameLine();
-    ImGui::Text("%u entities", u32(world.components<EditorComponent>().size()));
-
-    if(ImGui::BeginPopup("Add entity")) {
-        ecs::EntityId ent;
-        if(ImGui::MenuItem(ICON_FA_PLUS " Add empty entity")) {
-            ent = world.create_entity();
-        }
-        ImGui::Separator();
-
-        if(ImGui::MenuItem("Add prefab")) {
-            add_prefab();
-        }
-
-        if(ImGui::MenuItem("Add scene")) {
-            add_scene();
-        }
-
-        ImGui::Separator();
-
-        if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add Point light")) {
-            ent = world.create_named_entity("Point light", ecs::StaticArchetype<PointLightComponent>());
-        }
-
-        if(ImGui::MenuItem(ICON_FA_VIDEO " Add Spot light")) {
-            ent = world.create_named_entity("Spot light", ecs::StaticArchetype<SpotLightComponent>());
-        }
-
-        if(ent.is_valid()) {
-            selection().set_selected(ent);
-        }
-
-        y_debug_assert(!ent.is_valid() || world.has<EditorComponent>(ent));
-        y_debug_assert(world.required_components().size() > 0);
-
+    if(ImGui::BeginPopup("##entitymenu")) {
+        populate_context_menu(world);
         ImGui::EndPopup();
     }
 
+    ImGui::SameLine();
 
+    ImGui::Text("%u entities", u32(world.components<EditorComponent>().size()));
 
-    ImGui::Spacing();
-    paint_view();
+    ecs::EntityId hovered;
+    if(ImGui::BeginChild("##entities", ImVec2(), true)) {
+        imgui::alternating_rows_background();
 
+        EditorWorld& world = current_world();
+        for(auto&& [id, comp] : world.component_set<EditorComponent>()) {
+            if(!comp.has_parent()/* || !world.exists(comp.parent())*/) {
+                display_entity(id, &comp, hovered, _hovered);
+            }
+        }
 
-
-    if(_hovered.is_valid()) {
-        if(ImGui::IsMouseReleased(1)) {
+        if(imgui::should_open_context_menu()) {
             ImGui::OpenPopup("##contextmenu");
+            _hovered = hovered;
         }
 
         if(ImGui::BeginPopup("##contextmenu")) {
-            if(ImGui::Selectable(ICON_FA_TRASH " Delete")) {
-                world.remove_entity(_hovered);
-                // we don't unselect the ID to make sure that we can handle case where the id is invalid
-            }
-
-            if(ImGui::Selectable("Duplicate")) {
-                const ecs::EntityPrefab prefab = world.create_prefab(_hovered);
-                const ecs::EntityId copy = world.create_named_entity(core::String(world.entity_name(_hovered)) + " (Copy)", prefab);
-                selection().set_selected(copy);
-            }
-
+            populate_context_menu(world, _hovered);
             ImGui::EndPopup();
-        } else {
-            _hovered = ecs::EntityId();
         }
     }
+    ImGui::EndChild();
 }
 
 }

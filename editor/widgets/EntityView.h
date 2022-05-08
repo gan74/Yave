@@ -41,9 +41,6 @@ class EntityView final : public Widget {
         void on_gui() override;
 
     private:
-        void paint_view();
-        void display_entity(ecs::EntityId id, const EditorComponent* component);
-
         ecs::EntityId _hovered;
 };
 

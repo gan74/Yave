@@ -43,7 +43,7 @@ namespace editor {
 namespace imgui {
 
 bool should_open_context_menu() {
-    return ImGui::IsWindowHovered() && ImGui::IsMouseReleased(1);
+    return ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1);
 }
 
 math::Vec2 client_window_pos() {

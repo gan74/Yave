@@ -19,61 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_WIDGETS_DELETIONDIALOG_H
+#define EDITOR_WIDGETS_DELETIONDIALOG_H
 
-#include "EditorComponent.h"
+#include <editor/Widget.h>
+
+#include <yave/ecs/ecs.h>
 
 namespace editor {
 
-EditorComponent::EditorComponent(core::String name) : _name(std::move(name)) {
-}
+class DeletionDialog final : public Widget {
+    public:
+        DeletionDialog(ecs::EntityId id);
 
-const core::String& EditorComponent::name() const {
-    return _name;
-}
+    protected:
+        void on_gui() override;
 
-void EditorComponent::set_name(core::String name) {
-    _name = std::move(name);
-}
-
-bool EditorComponent::has_parent() const {
-    return _parent.is_valid();
-}
-
-bool EditorComponent::is_collection() const {
-    return _is_collection;
-}
-
-ecs::EntityId EditorComponent::parent() const {
-    return _parent;
-}
-
-core::Span<ecs::EntityId> EditorComponent::children() const {
-    return _is_collection ? _children : core::Span<ecs::EntityId>();
-}
-
-math::Vec3& EditorComponent::euler() {
-    return _euler;
-}
-
-void EditorComponent::set_hidden_in_editor(bool hide) {
-    _hide_in_editor = hide;
-}
-
-bool EditorComponent::is_hidden_in_editor() const {
-    return _hide_in_editor;
-}
-
-void EditorComponent::set_parent_prefab(AssetId id) {
-    _prefab = id;
-}
-
-AssetId EditorComponent::parent_prefab() const {
-    return _prefab;
-}
-
-bool EditorComponent::is_prefab() const {
-    return _prefab != AssetId::invalid_id();
-}
+    private:
+        ecs::EntityId _id;
+        bool _delete_children = false;
+};
 
 }
+
+#endif // EDITOR_WIDGETS_DELETIONDIALOG_H
 
