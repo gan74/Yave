@@ -32,6 +32,10 @@ SOFTWARE.
 namespace yave {
 
 class MeshAllocator : NonMovable {
+
+    using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
+    using MutableAttribSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;
+
     public:
         static const u64 default_vertex_count = 16 * 1024 * 1024;
         static const u64 default_triangle_count = 16 * 1024 * 1024;

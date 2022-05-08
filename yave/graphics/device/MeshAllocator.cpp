@@ -35,9 +35,6 @@ MeshAllocator::MeshAllocator() :
 }
 
 MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
-    using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
-    using MutableAttribSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;
-
     MeshDrawData mesh_data;
     mesh_data._indirect_data.instanceCount = 1;
     mesh_data._indirect_data.indexCount = u32(triangles.size() * 3);
@@ -68,36 +65,57 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
     {
         CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
-        MutableTriangleSubBuffer triangles_buffer(global_triangle_buffer, triangles_count * sizeof(IndexedTriangle), triangles_begin * sizeof(IndexedTriangle));
-        Mapping::stage(triangles_buffer, recorder, triangles.data());
-
-        const std::array attrib_descriprtors = {
-            AttribDescriptor{ sizeof(PackedVertex::position) },
-            AttribDescriptor{ sizeof(PackedVertex::packed_normal) + sizeof(PackedVertex::packed_tangent_sign) },
-            AttribDescriptor{ sizeof(PackedVertex::uv) },
-        };
-
-        std::array<MutableAttribSubBuffer, attrib_descriprtors.size()> attrib_buffers = {};
         {
-            u64 attrib_offset = 0;
-            const u8* vertex_data = static_cast<const u8*>(static_cast<const void*>(vertices.data()));
-            for(usize i = 0; i != attrib_descriprtors.size(); ++i) {
-                const u64 byte_len = vertices_count * attrib_descriprtors[i].size;
-                const u64 byte_offset = attrib_offset * vertex_capacity + vertices_begin * attrib_descriprtors[i].size;
-                attrib_buffers[i] = MutableAttribSubBuffer(global_attrib_buffer, byte_len, byte_offset);
-                Mapping::stage(attrib_buffers[i], recorder, vertex_data + attrib_offset, attrib_descriprtors[i].size, sizeof(PackedVertex));
-                attrib_offset += attrib_descriprtors[i].size;
+            MutableTriangleSubBuffer triangle_buffer(global_triangle_buffer, triangles_count * sizeof(IndexedTriangle), triangles_begin * sizeof(IndexedTriangle));
+            Mapping::stage(triangle_buffer, recorder, triangles.data());
+
+            mesh_data._triangle_buffer = global_triangle_buffer;
+            mesh_data._indirect_data.firstIndex = u32(triangles_begin * 3);
+        }
+
+        {
+            const std::array attrib_descriptors = {
+                AttribDescriptor{ sizeof(PackedVertex::position) },
+                AttribDescriptor{ sizeof(PackedVertex::packed_normal) + sizeof(PackedVertex::packed_tangent_sign) },
+                AttribDescriptor{ sizeof(PackedVertex::uv) },
+            };
+
+            std::array<MutableAttribSubBuffer, attrib_descriptors.size()> attrib_sub_buffers = {};
+            {
+                u64 attrib_offset = 0;
+                for(usize i = 0; i != attrib_descriptors.size(); ++i) {
+                    const u64 byte_len = vertex_capacity * attrib_descriptors[i].size;
+                    attrib_sub_buffers[i] = MutableAttribSubBuffer(global_attrib_buffer, byte_len, attrib_offset);
+                    attrib_offset += byte_len;
+                }
             }
+
+            {
+                usize offset = 0;
+                const u8* vertex_data = static_cast<const u8*>(static_cast<const void*>(vertices.data()));
+                for(usize i = 0; i != attrib_descriptors.size(); ++i) {
+                    const u64 byte_len = vertices_count * attrib_descriptors[i].size;
+                    const u64 byte_offset = vertices_begin * attrib_descriptors[i].size;
+                    Mapping::stage(
+                        MutableAttribSubBuffer(attrib_sub_buffers[i], byte_len, byte_offset),
+                        recorder,
+                        vertex_data + offset,       // data
+                        attrib_descriptors[i].size, // elem_size
+                        sizeof(PackedVertex)        // input_stride
+                    );
+                    offset += attrib_descriptors[i].size;
+                }
+            }
+
+            static_assert(attrib_sub_buffers.size() == 3);
+            mesh_data._attrib_buffers.positions             = attrib_sub_buffers[0];
+            mesh_data._attrib_buffers.normals_tangents      = attrib_sub_buffers[1];
+            mesh_data._attrib_buffers.uvs                   = attrib_sub_buffers[2];
+
+            mesh_data._indirect_data.vertexOffset = u32(vertices_begin);
         }
 
         loading_command_queue().submit(std::move(recorder));
-
-        mesh_data._triangle_buffer = triangles_buffer;
-
-        static_assert(attrib_descriprtors.size() == 3);
-        mesh_data._attrib_buffers.positions = attrib_buffers[0];
-        mesh_data._attrib_buffers.normals_tangents = attrib_buffers[1];
-        mesh_data._attrib_buffers.uvs = attrib_buffers[2];
     }
 
     return mesh_data;

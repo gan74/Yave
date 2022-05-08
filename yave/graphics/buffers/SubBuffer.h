@@ -33,6 +33,7 @@ class SubBufferBase {
     public:
         SubBufferBase() = default;
         SubBufferBase(const BufferBase& base, u64 byte_len, u64 byte_off);
+        SubBufferBase(const SubBufferBase& base, u64 byte_len, u64 byte_off);
 
         explicit SubBufferBase(const BufferBase& base);
 
@@ -114,17 +115,24 @@ class SubBuffer : public SubBufferBase {
             static_assert(is_compatible(U, M));
         }
 
-        // this is dangerous with typedwrapper as it's never clear what is in byte and what isn't.
+        // these are dangerous with typedwrapper as it's never clear what is in byte and what isn't.
         // todo find some way to make this better
 
         template<BufferUsage U, MemoryType M>
-        SubBuffer(const Buffer<U, M>& buffer, u64 byte_len, u64 byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
+        SubBuffer(const SubBuffer<U, M>& buffer, u64 byte_len, u64 byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
             static_assert(is_compatible(U, M));
+            y_debug_assert(buffer.byte_size() >= byte_len);
             y_debug_assert(byte_offset() % byte_alignment() == 0);
             if constexpr(M == MemoryType::CpuVisible) {
                 y_debug_assert(byte_offset() % host_side_alignment() == 0);
             }
         }
+
+        template<BufferUsage U, MemoryType M>
+        SubBuffer(const Buffer<U, M>& buffer, u64 byte_len, u64 byte_off) : SubBuffer(SubBuffer<U, M>(buffer), byte_len, byte_off) {
+        }
+
+
 };
 
 

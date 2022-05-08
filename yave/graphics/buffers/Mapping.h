@@ -39,7 +39,7 @@ class Mapping : NonMovable {
 
         Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer);
 
-        static void stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data, usize elem_size = 0, usize stride = 0);
+        static void stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data, usize elem_size = 0, usize input_stride = 0);
 
         ~Mapping();
 

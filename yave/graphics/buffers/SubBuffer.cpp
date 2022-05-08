@@ -33,7 +33,16 @@ SubBufferBase::SubBufferBase(const BufferBase& base, u64 byte_len, u64 byte_off)
         _buffer(base.vk_buffer()),
         _memory(base.device_memory()) {
 
-    y_debug_assert(base.byte_size() >= _size + _offset);
+    y_debug_assert(base.byte_size() >= byte_len + byte_off);
+}
+
+SubBufferBase::SubBufferBase(const SubBufferBase& base, u64 byte_len, u64 byte_off) :
+        _size(byte_len),
+        _offset(byte_off + base.byte_offset()),
+        _buffer(base.vk_buffer()),
+        _memory(base.device_memory()) {
+
+    y_debug_assert(base.byte_size() >= byte_len + byte_off);
 }
 
 SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, base.byte_size(), 0) {
