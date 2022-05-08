@@ -26,7 +26,8 @@ SOFTWARE.
 
 #include "EventHandler.h"
 
-#include <string_view>
+#include <y/core/String.h>
+
 #include <memory>
 
 
@@ -57,7 +58,7 @@ class Window : NonMovable {
         };
 
 
-        Window(const math::Vec2ui& size, std::string_view title, Flags flags = Resizable);
+        Window(const math::Vec2ui& size, const core::String& title, Flags flags = Resizable);
         virtual ~Window();
 
         void close();
@@ -79,7 +80,7 @@ class Window : NonMovable {
         math::Vec2i window_position() const;
         void set_window_position(const math::Vec2i& pos);
 
-        void set_title(std::string_view title);
+        void set_title(const core::String& title);
 
         void set_event_handler(EventHandler* handler) { _event_handler = handler; }
         EventHandler* event_handler() const { return _event_handler; }

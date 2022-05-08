@@ -63,7 +63,7 @@ static void dispatch_event(Window* window, const xcb_generic_event_t* event) {
     }
 }
 
-Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) {
+Window::Window(const math::Vec2ui& size, const core::String& title, Flags flags) {
     _connection = xcb_connect(nullptr, nullptr);
     _window = xcb_generate_id(_connection);
 
@@ -193,7 +193,7 @@ void Window::set_window_position(const math::Vec2i& pos) {
     set_position(pos + math::Vec2i(geom.x, geom.y));
 }
 
-void Window::set_title(std::string_view title) {
+void Window::set_title(const core::String& title) {
     xcb_change_property(_connection,
         XCB_PROP_MODE_REPLACE,
         _window,

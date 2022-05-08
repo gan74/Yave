@@ -445,7 +445,7 @@ class ImGuiEventHandler : public EventHandler {
 
 ImGuiPlatform::PlatformWindow::PlatformWindow(ImGuiPlatform* parent, Window::Flags flags) :
         platform(parent),
-        window({1280, 768}, "Window", flags),
+        window({1280, 768}, "Yave Editor", flags),
         swapchain(&window),
         event_handler(std::make_unique<ImGuiEventHandler>(&window)) {
 

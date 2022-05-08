@@ -261,7 +261,7 @@ static void register_window_class() {
 
 
 
-Window::Window(const math::Vec2ui& size, std::string_view title, Flags flags) {
+Window::Window(const math::Vec2ui& size, const core::String& title, Flags flags) {
     register_window_class();
 
     _hinstance = ::GetModuleHandle(nullptr);
@@ -357,7 +357,7 @@ void Window::set_window_position(const math::Vec2i &pos) {
     ::SetWindowPos(_hwnd, nullptr, pos.x(), pos.y(), 0, 0, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE);
 }
 
-void Window::set_title(std::string_view title) {
+void Window::set_title(const core::String& title) {
     ::SetWindowTextA(_hwnd, title.data());
 }
 
