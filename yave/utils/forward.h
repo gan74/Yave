@@ -189,6 +189,7 @@ struct LightingPass;
 struct LightingSettings;
 struct LoadableComponentRegister;
 struct LoadableComponentTypeInfo;
+struct MeshBufferData;
 struct Monitor;
 struct PackedVertex;
 struct Region;

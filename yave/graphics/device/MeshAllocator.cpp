@@ -32,35 +32,53 @@ namespace yave {
 MeshAllocator::MeshAllocator() :
         _attrib_buffer(default_vertex_count * sizeof(PackedVertex)),
         _triangle_buffer(default_triangle_count) {
+
+    _buffer_data = std::make_unique<MeshBufferData>();
+
+    _buffer_data->triangle_buffer = _triangle_buffer;
+
+    {
+        const std::array attrib_descriptors = {
+            AttribDescriptor{ sizeof(PackedVertex::position) },
+            AttribDescriptor{ sizeof(PackedVertex::packed_normal) + sizeof(PackedVertex::packed_tangent_sign) },
+            AttribDescriptor{ sizeof(PackedVertex::uv) },
+        };
+
+        const u64 vertex_capacity = _attrib_buffer.byte_size() / sizeof(PackedVertex);
+        std::array<MutableAttribSubBuffer, attrib_descriptors.size()> attrib_sub_buffers = {};
+        {
+            u64 attrib_offset = 0;
+            for(usize i = 0; i != attrib_descriptors.size(); ++i) {
+                const u64 byte_len = vertex_capacity * attrib_descriptors[i].size;
+                attrib_sub_buffers[i] = MutableAttribSubBuffer(_attrib_buffer, byte_len, attrib_offset);
+                attrib_offset += byte_len;
+            }
+        }
+
+        static_assert(attrib_sub_buffers.size() == 3);
+        _buffer_data->attrib_buffers.positions             = attrib_sub_buffers[0];
+        _buffer_data->attrib_buffers.normals_tangents      = attrib_sub_buffers[1];
+        _buffer_data->attrib_buffers.uvs                   = attrib_sub_buffers[2];
+    }
 }
 
 MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
     MeshDrawData mesh_data;
+    mesh_data._buffer_data = _buffer_data.get();
     mesh_data._indirect_data.instanceCount = 1;
     mesh_data._indirect_data.indexCount = u32(triangles.size() * 3);
 
     const u64 triangles_count = triangles.size();
     const u64 vertices_count = vertices.size();
 
-#if 0
     auto& global_triangle_buffer = _triangle_buffer;
     auto& global_attrib_buffer = _attrib_buffer;
 
     const u64 triangles_begin = _triangle_offset.fetch_add(triangles_count);
     const u64 vertices_begin = _vertex_offset.fetch_add(vertices_count);
-#else
-    mesh_data._owned = std::make_unique<MeshDrawData::OwnedBuffers>();
-    auto& global_triangle_buffer = (mesh_data._owned->triangle_buffer = TriangleBuffer<>(triangles.size()));
-    auto& global_attrib_buffer = (mesh_data._owned->attrib_buffer = AttribBuffer<>(vertices.size() * sizeof(PackedVertex)));
 
-    const u64 triangles_begin = 0;
-    const u64 vertices_begin = 0;
-#endif
-
-    const u64 triangle_capacity = global_triangle_buffer.size();
-    const u64 vertex_capacity = global_attrib_buffer.byte_size() / sizeof(PackedVertex);
-    y_always_assert(triangles_begin + triangles_count <= triangle_capacity, "Triangle buffer pool is full");
-    y_always_assert(vertices_begin + vertices_count <= vertex_capacity, "Vertex buffer pool is full");
+    y_always_assert(triangles_begin + triangles_count <= global_triangle_buffer.size(), "Triangle buffer pool is full");
+    y_always_assert(vertices_begin + vertices_count <= global_attrib_buffer.byte_size() / sizeof(PackedVertex), "Vertex buffer pool is full");
 
     {
         CmdBufferRecorder recorder = create_disposable_cmd_buffer();
@@ -68,49 +86,30 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
         {
             MutableTriangleSubBuffer triangle_buffer(global_triangle_buffer, triangles_count * sizeof(IndexedTriangle), triangles_begin * sizeof(IndexedTriangle));
             Mapping::stage(triangle_buffer, recorder, triangles.data());
-
-            mesh_data._triangle_buffer = global_triangle_buffer;
             mesh_data._indirect_data.firstIndex = u32(triangles_begin * 3);
         }
 
         {
-            const std::array attrib_descriptors = {
-                AttribDescriptor{ sizeof(PackedVertex::position) },
-                AttribDescriptor{ sizeof(PackedVertex::packed_normal) + sizeof(PackedVertex::packed_tangent_sign) },
-                AttribDescriptor{ sizeof(PackedVertex::uv) },
-            };
-
-            std::array<MutableAttribSubBuffer, attrib_descriptors.size()> attrib_sub_buffers = {};
+            const auto attribs_sub_buffers = _buffer_data->untyped_attrib_buffers();
+            const u64 buffer_elem_count = _buffer_data->attrib_buffer_elem_count();
             {
-                u64 attrib_offset = 0;
-                for(usize i = 0; i != attrib_descriptors.size(); ++i) {
-                    const u64 byte_len = vertex_capacity * attrib_descriptors[i].size;
-                    attrib_sub_buffers[i] = MutableAttribSubBuffer(global_attrib_buffer, byte_len, attrib_offset);
-                    attrib_offset += byte_len;
-                }
-            }
-
-            {
-                usize offset = 0;
                 const u8* vertex_data = static_cast<const u8*>(static_cast<const void*>(vertices.data()));
-                for(usize i = 0; i != attrib_descriptors.size(); ++i) {
-                    const u64 byte_len = vertices_count * attrib_descriptors[i].size;
-                    const u64 byte_offset = vertices_begin * attrib_descriptors[i].size;
+
+                u64 offset = 0;
+                for(const AttribSubBuffer& sub_buffer : attribs_sub_buffers) {
+                    const u64 elem_size = sub_buffer.byte_size() / buffer_elem_count;
+                    const u64 byte_len = vertices_count * elem_size;
+                    const u64 byte_offset = sub_buffer.byte_offset() + vertices_begin * elem_size;
                     Mapping::stage(
-                        MutableAttribSubBuffer(attrib_sub_buffers[i], byte_len, byte_offset),
+                        MutableAttribSubBuffer(global_attrib_buffer, byte_len, byte_offset),
                         recorder,
-                        vertex_data + offset,       // data
-                        attrib_descriptors[i].size, // elem_size
-                        sizeof(PackedVertex)        // input_stride
+                        vertex_data + offset,   // data
+                        elem_size,              // elem_size
+                        sizeof(PackedVertex)    // input_stride
                     );
-                    offset += attrib_descriptors[i].size;
+                    offset += elem_size;
                 }
             }
-
-            static_assert(attrib_sub_buffers.size() == 3);
-            mesh_data._attrib_buffers.positions             = attrib_sub_buffers[0];
-            mesh_data._attrib_buffers.normals_tangents      = attrib_sub_buffers[1];
-            mesh_data._attrib_buffers.uvs                   = attrib_sub_buffers[2];
 
             mesh_data._indirect_data.vertexOffset = u32(vertices_begin);
         }

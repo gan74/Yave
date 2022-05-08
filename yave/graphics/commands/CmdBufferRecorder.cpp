@@ -111,7 +111,7 @@ void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
 }
 
 void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count, u32 instance_index) {
-    bind_buffers(draw_data.triangle_buffer(), draw_data.attrib_buffers());
+    bind_mesh_buffers(draw_data.mesh_buffers());
 
     VkDrawIndexedIndirectCommand indirect = draw_data.indirect_data();
     indirect.instanceCount = instance_count;
@@ -153,21 +153,23 @@ void RenderPassRecorder::draw_array(usize vertex_count) {
     draw(command);
 }
 
-void RenderPassRecorder::bind_buffers(IndexSubBuffer indices, core::Span<AttribSubBuffer> attribs) {
-    bind_index_buffer(indices);
-    bind_attrib_buffers(attribs);
+void RenderPassRecorder::bind_mesh_buffers(const MeshBufferData& mesh_buffers) {
+    if(_cache.mesh_buffer_data != &mesh_buffers) {
+        bind_index_buffer(mesh_buffers.triangle_buffer);
+        bind_attrib_buffers(mesh_buffers.untyped_attrib_buffers());
+        _cache.mesh_buffer_data = &mesh_buffers;
+    }
 }
 
 void RenderPassRecorder::bind_index_buffer(IndexSubBuffer indices) {
-    if(indices == _cache.index_buffer) {
-        return;
-    }
+    _cache.mesh_buffer_data = nullptr;
 
-    _cache.index_buffer = indices;
     vkCmdBindIndexBuffer(vk_cmd_buffer(), indices.vk_buffer(), indices.byte_offset(), VK_INDEX_TYPE_UINT32);
 }
 
 void RenderPassRecorder::bind_attrib_buffers(core::Span<AttribSubBuffer> attribs) {
+    _cache.mesh_buffer_data = nullptr;
+
     const u32 attrib_count = u32(attribs.size());
 
     auto offsets = core::ScratchPad<VkDeviceSize>(attrib_count);

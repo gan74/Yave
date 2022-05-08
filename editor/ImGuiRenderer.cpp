@@ -129,7 +129,8 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
     usize vertex_offset = 0;
     const void* current_tex = nullptr;
 
-    recorder.bind_buffers(index_buffer, {vertex_buffer});
+    recorder.bind_index_buffer(index_buffer);
+    recorder.bind_attrib_buffers({vertex_buffer});
     for(auto c = 0; c != draw_data->CmdListsCount; ++c) {
         Y_TODO(Use vertex offsets so we can enable ImGuiBackendFlags_RendererHasVtxOffset)
 

@@ -32,7 +32,6 @@ SOFTWARE.
 namespace yave {
 
 class MeshAllocator : NonMovable {
-
     using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
     using MutableAttribSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;
 
@@ -50,6 +49,8 @@ class MeshAllocator : NonMovable {
 
         std::atomic<u64> _vertex_offset = 0;
         std::atomic<u64> _triangle_offset = 0;
+
+        std::unique_ptr<MeshBufferData> _buffer_data;
 };
 
 }

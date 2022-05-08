@@ -25,23 +25,22 @@ SOFTWARE.
 namespace yave {
 
 bool MeshDrawData::is_null() const {
-    return _triangle_buffer.is_null();
+    return !_buffer_data;
 }
 
 TriangleSubBuffer MeshDrawData::triangle_buffer() const {
-    return _triangle_buffer;
-}
-
-std::array<AttribSubBuffer, 3> MeshDrawData::attrib_buffers() const {
-    return std::array<AttribSubBuffer, 3> {
-        _attrib_buffers.positions,
-        _attrib_buffers.normals_tangents,
-        _attrib_buffers.uvs
-    };
+    y_debug_assert(_buffer_data);
+    return _buffer_data->triangle_buffer;
 }
 
 const TypedAttribSubBuffer<math::Vec3>& MeshDrawData::position_buffer() const {
-    return _attrib_buffers.positions;
+    y_debug_assert(_buffer_data);
+    return _buffer_data->attrib_buffers.positions;
+}
+
+const MeshBufferData& MeshDrawData::mesh_buffers() const {
+    y_debug_assert(_buffer_data);
+    return *_buffer_data;
 }
 
 const VkDrawIndexedIndirectCommand& MeshDrawData::indirect_data() const {

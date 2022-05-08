@@ -30,6 +30,31 @@ SOFTWARE.
 
 namespace yave {
 
+struct MeshBufferData : NonMovable {
+    TriangleSubBuffer triangle_buffer;
+
+    struct AttribBuffers {
+        TypedAttribSubBuffer<math::Vec3> positions;
+        TypedAttribSubBuffer<math::Vec2ui> normals_tangents;
+        TypedAttribSubBuffer<math::Vec2> uvs;
+    } attrib_buffers;
+
+    std::array<AttribSubBuffer, 3> untyped_attrib_buffers() const {
+        y_debug_assert(attrib_buffers.positions.size() == attrib_buffers.normals_tangents.size());
+        y_debug_assert(attrib_buffers.positions.size() == attrib_buffers.uvs.size());
+
+        return std::array<AttribSubBuffer, 3>{
+            attrib_buffers.positions,
+            attrib_buffers.normals_tangents,
+            attrib_buffers.uvs,
+        };
+    }
+
+    u64 attrib_buffer_elem_count() const {
+        return attrib_buffers.positions.size();
+    }
+};
+
 class MeshDrawData : NonCopyable {
     public:
         MeshDrawData() = default;
@@ -37,32 +62,20 @@ class MeshDrawData : NonCopyable {
         bool is_null() const;
 
         TriangleSubBuffer triangle_buffer() const;
-        std::array<AttribSubBuffer, 3> attrib_buffers() const;
-
         const TypedAttribSubBuffer<math::Vec3>& position_buffer() const;
+
+        const MeshBufferData& mesh_buffers() const;
 
         const VkDrawIndexedIndirectCommand& indirect_data() const;
 
     private:
         friend class MeshAllocator;
 
-        struct AttribBuffers {
-            TypedAttribSubBuffer<math::Vec3> positions;
-            TypedAttribSubBuffer<math::Vec2ui> normals_tangents;
-            TypedAttribSubBuffer<math::Vec2> uvs;
-        } _attrib_buffers;
-
-        TriangleSubBuffer _triangle_buffer;
-
         VkDrawIndexedIndirectCommand _indirect_data = {};
 
+        MeshBufferData* _buffer_data = nullptr;
 
-        struct OwnedBuffers {
-            TriangleBuffer<> triangle_buffer;
-            AttribBuffer<> attrib_buffer;
-        };
 
-        std::unique_ptr<OwnedBuffers> _owned;
 };
 
 }
