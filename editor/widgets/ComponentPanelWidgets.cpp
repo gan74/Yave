@@ -269,6 +269,14 @@ struct SkyLightComponentWidget : public ComponentPanelWidget<SkyLightComponentWi
         imgui::table_begin_next_row();
 
         {
+            ImGui::TextUnformatted("Intensity");
+            ImGui::TableNextColumn();
+            undo_stack() << ImGui::DragFloat("##intensity", &sky->intensity(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+        }
+
+        imgui::table_begin_next_row();
+
+        {
             ImGui::TextUnformatted("Display sky");
             ImGui::TableNextColumn();
             undo_stack() << ImGui::Checkbox("##displaysky", &sky->display_sky());

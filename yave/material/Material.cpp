@@ -30,11 +30,11 @@ namespace yave {
 static DescriptorSet create_descriptor_set(const SimpleMaterialData& data) {
 
     std::array<Descriptor, SimpleMaterialData::texture_count + 1> bindings = {
-            *device_resources()[DeviceResources::GreyTexture],
-            *device_resources()[DeviceResources::FlatNormalTexture],
-            *device_resources()[DeviceResources::WhiteTexture],
-            *device_resources()[DeviceResources::WhiteTexture],
-            *device_resources()[DeviceResources::WhiteTexture],
+            *device_resources()[DeviceResources::GreyTexture],          // Diffuse
+            *device_resources()[DeviceResources::FlatNormalTexture],    // Normal
+            *device_resources()[DeviceResources::WhiteTexture],         // Roughness
+            *device_resources()[DeviceResources::WhiteTexture],         // Metallic
+            *device_resources()[DeviceResources::WhiteTexture],         // Emissive
             InlineDescriptor(data.constants())
         };
 

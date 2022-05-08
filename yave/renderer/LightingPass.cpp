@@ -49,15 +49,15 @@ static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
 
 
-static std::pair<const IBLProbe*, bool> find_probe(const ecs::EntityWorld& world) {
+static std::tuple<const IBLProbe*, float, bool>  find_probe(const ecs::EntityWorld& world) {
     for(const SkyLightComponent& sky : world.components<SkyLightComponent>()) {
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
-            return {probe, sky.display_sky()};
+            return {probe, sky.intensity(), sky.display_sky()};
         }
     }
 
-    return {device_resources().empty_probe().get(), true};
+    return {device_resources().empty_probe().get(), 1.0f, true};
 }
 
 
@@ -67,17 +67,18 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              FrameGraphImageId ao) {
 
     const SceneView& scene = gbuffer.scene_pass.scene_view;
-    auto [ibl_probe, sky] = find_probe(scene.world());
+    auto [ibl_probe, intensity, sky] = find_probe(scene.world());
     const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
 
     const bool display_sky = sky;
+    const float ibl_intensity = intensity;
 
     const auto lit = builder.declare_copy(gbuffer.emissive);
 
     const auto directional_buffer = builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_lights);
-    const auto params_buffer = builder.declare_typed_buffer<u32>(2);
+    const auto params_buffer = builder.declare_typed_buffer<math::Vec4ui>();
 
     builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
     builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
@@ -115,9 +116,13 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         }
 
         {
-            TypedMapping<u32> params = self->resources().map_buffer(params_buffer);
-            params[0] = light_count;
-            params[1] = display_sky ? 1 : 0;
+            TypedMapping<math::Vec4ui> params = self->resources().map_buffer(params_buffer);
+            params[0] = {
+                light_count,
+                display_sky ? 1 : 0,
+                reinterpret_cast<const u32&>(ibl_intensity),
+                0
+            };
         }
 
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());

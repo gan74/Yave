@@ -35,7 +35,9 @@ layout(set = 0, binding = 9) readonly buffer Shadows {
 
 layout(set = 0, binding = 10) uniform Params {
     uint light_count;
-    uint ibl_sky;
+    uint display_sky;
+    float ibl_intensity;
+    float padding_;
 };
 
 layout(location = 0) in vec2 in_uv;
@@ -61,7 +63,7 @@ void main() {
 
     if(is_OOB(depth)) {
 #if defined(USE_IBL)
-        if(ibl_sky != 0) {
+        if(display_sky != 0) {
             const vec3 forward = normalize(unproject(in_uv, 1.0, camera.inv_view_proj) - camera.position);
             irradiance = texture(in_envmap, forward).rgb;
         }
@@ -91,7 +93,7 @@ void main() {
         }
 
 #ifdef USE_IBL
-        irradiance += eval_ibl(in_envmap, brdf_lut, view_dir, gbuffer) * ambient_occlusion();
+        irradiance += eval_ibl(in_envmap, brdf_lut, view_dir, gbuffer) * ambient_occlusion() * ibl_intensity;
 #endif
     }
 

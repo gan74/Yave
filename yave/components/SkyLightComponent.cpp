@@ -43,6 +43,14 @@ bool SkyLightComponent::display_sky() const {
     return _display_sky;
 }
 
+float& SkyLightComponent::intensity() {
+    return _intensity;
+}
+
+float SkyLightComponent::intensity() const {
+    return _intensity;
+}
+
 bool SkyLightComponent::update_asset_loading_status() {
     return true;
 }
@@ -50,6 +58,7 @@ bool SkyLightComponent::update_asset_loading_status() {
 void SkyLightComponent::load_assets(AssetLoadingContext& loading_ctx) {
     _probe.load(loading_ctx);
 }
+
 
 }
 
