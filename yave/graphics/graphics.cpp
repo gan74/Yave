@@ -60,6 +60,7 @@ Uninitialized<DeviceResources> resources;
 VkDevice vk_device;
 
 core::FixedArray<std::unique_ptr<CmdQueue>> queues;
+std::atomic<u64> next_loading_queue_index = 0;
 
 
 
@@ -108,7 +109,7 @@ static void init_vk_device() {
     const u32 main_queue_index = queue_family_index(queue_families, graphic_queue_flags);
 
     const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
-    const usize queue_count = std::min(main_queue_family_properties.queueCount, 2u);
+    const usize queue_count = std::min(main_queue_family_properties.queueCount, 5u);
 
     auto extensions = core::vector_with_capacity<const char*>(4);
     extensions = {
@@ -134,7 +135,8 @@ static void init_vk_device() {
 
 
     core::ScratchPad<float> queue_priorities(queue_count);
-    std::fill_n(queue_priorities.data(), queue_priorities.size(), 1.0f);
+    std::fill_n(queue_priorities.data(), queue_priorities.size(), 0.0f);
+    queue_priorities[0] = 1.0f;
 
     VkDeviceQueueCreateInfo queue_create_info = vk_struct();
     {
@@ -368,7 +370,10 @@ const CmdQueue& command_queue() {
 }
 
 const CmdQueue& loading_command_queue() {
-    return *device::queues[device::queues.size() - 1];
+    if(const usize loading_queue_count = device::queues.size() - 1) {
+        device::queues[++device::next_loading_queue_index % loading_queue_count];
+    }
+    return *device::queues[0];
 }
 
 const DeviceResources& device_resources() {

@@ -45,6 +45,8 @@ void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
         y_fatal("Tried to free memory using non zero offset.");
     }
     _size -= memory.vk_size();
+
+    Y_TODO(Pool freed memory to avoid having to free)
     vkFreeMemory(vk_device(), memory.vk_memory(), vk_allocation_callbacks());
 }
 

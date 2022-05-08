@@ -34,13 +34,14 @@ Y_TODO(DeviceAllocator should track allocation count)
 
 u64 DeviceMemoryAllocator::heap_size_for_type(MemoryType type) {
     if(type == MemoryType::Staging) {
-        return default_heap_size / 8;
+        return default_heap_size / 2;
     }
     return default_heap_size;
 }
 
 u64 DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
-    return heap_size_for_type(type) / 4;
+    const u64 heap_size = heap_size_for_type(type);
+    return type == MemoryType::Staging ? heap_size : (heap_size / 4);
 }
 
 
