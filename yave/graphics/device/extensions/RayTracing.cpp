@@ -88,16 +88,19 @@ VkGeometryNV RayTracing::AccelerationStructure::create_mesh_geometry(const Stati
         geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
 
         const auto& draw_data = mesh.draw_data();
-        const auto& position_buffer = draw_data.attrib_streams.positions;
+        const auto& indirect_data = draw_data.indirect_data();
+
+        const auto& position_buffer = draw_data.position_buffer();
         geometry.geometry.triangles.vertexData = position_buffer.vk_buffer();
-        geometry.geometry.triangles.vertexOffset = 0;
-        geometry.geometry.triangles.vertexCount = u32(position_buffer.size());
+        geometry.geometry.triangles.vertexOffset = indirect_data.vertexOffset;
+        geometry.geometry.triangles.vertexCount = u32(position_buffer.size()); Y_TODO(This is wrong!)
         geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
         geometry.geometry.triangles.vertexStride = position_buffer.element_size();
 
-        geometry.geometry.triangles.indexData = draw_data.triangle_buffer.vk_buffer();
-        geometry.geometry.triangles.indexOffset = 0;
-        geometry.geometry.triangles.indexCount = u32(draw_data.triangle_buffer.size() * 3);
+        const auto& triangle_buffer = draw_data.triangle_buffer();
+        geometry.geometry.triangles.indexData = triangle_buffer.vk_buffer();
+        geometry.geometry.triangles.indexOffset = indirect_data.firstIndex;
+        geometry.geometry.triangles.indexCount = indirect_data.indexCount;
         geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
     }
     {

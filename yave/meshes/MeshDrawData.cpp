@@ -19,53 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHES_MESH_DRAW_DATA_H
-#define YAVE_MESHES_MESH_DRAW_DATA_H
 
-#include "Vertex.h"
-
-#include <yave/graphics/buffers/buffers.h>
-
-#include <memory>
+#include "MeshDrawData.h"
 
 namespace yave {
 
-class MeshDrawData : NonCopyable {
-    public:
-        MeshDrawData() = default;
+bool MeshDrawData::is_null() const {
+    return _triangle_buffer.is_null();
+}
 
-        bool is_null() const;
+TriangleSubBuffer MeshDrawData::triangle_buffer() const {
+    return _triangle_buffer;
+}
 
-        TriangleSubBuffer triangle_buffer() const;
-        std::array<AttribSubBuffer, 3> attrib_buffers() const;
+std::array<AttribSubBuffer, 3> MeshDrawData::attrib_buffers() const {
+    return std::array<AttribSubBuffer, 3> {
+        _attrib_buffers.positions,
+        _attrib_buffers.normals_tangents,
+        _attrib_buffers.uvs
+    };
+}
 
-        const TypedAttribSubBuffer<math::Vec3>& position_buffer() const;
+const TypedAttribSubBuffer<math::Vec3>& MeshDrawData::position_buffer() const {
+    return _attrib_buffers.positions;
+}
 
-        const VkDrawIndexedIndirectCommand& indirect_data() const;
-
-    private:
-        friend class MeshAllocator;
-
-        struct AttribBuffers {
-            TypedAttribSubBuffer<math::Vec3> positions;
-            TypedAttribSubBuffer<math::Vec2ui> normals_tangents;
-            TypedAttribSubBuffer<math::Vec2> uvs;
-        } _attrib_buffers;
-
-        TriangleSubBuffer _triangle_buffer;
-
-        VkDrawIndexedIndirectCommand _indirect_data = {};
-
-
-        struct OwnedBuffers {
-            TriangleBuffer<> triangle_buffer;
-            AttribBuffer<> attrib_buffer;
-        };
-
-        std::unique_ptr<OwnedBuffers> _owned;
-};
+const VkDrawIndexedIndirectCommand& MeshDrawData::indirect_data() const {
+    return _indirect_data;
+}
 
 }
 
-#endif // YAVE_MESHES_MESH_DRAW_DATA_H
 

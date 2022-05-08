@@ -34,7 +34,6 @@ Y_TODO(move into graphics?)
 namespace yave {
 
 class StaticMesh : NonCopyable {
-
     public:
         StaticMesh() = default;
         StaticMesh(const MeshData& mesh_data);

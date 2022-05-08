@@ -111,15 +111,9 @@ void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
 }
 
 void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count, u32 instance_index) {
-    const std::array<AttribSubBuffer, 3> attribs = {
-        draw_data.attrib_streams.positions,
-        draw_data.attrib_streams.normals_tangents,
-        draw_data.attrib_streams.uvs
-    };
+    bind_buffers(draw_data.triangle_buffer(), draw_data.attrib_buffers());
 
-    bind_buffers(draw_data.triangle_buffer, attribs);
-
-    VkDrawIndexedIndirectCommand indirect = draw_data.indirect_data;
+    VkDrawIndexedIndirectCommand indirect = draw_data.indirect_data();
     indirect.instanceCount = instance_count;
     indirect.firstInstance = instance_index;
 

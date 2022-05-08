@@ -68,6 +68,7 @@ class EntityWorld {
 
 
 
+        // ---------------------------------------- Systems ----------------------------------------
 
         template<typename S, typename... Args>
         S* add_system(Args&&... args) {
@@ -104,6 +105,9 @@ class EntityWorld {
         }
 
 
+
+        // ---------------------------------------- Static Archetypes ----------------------------------------
+
         template<typename... Args>
         EntityId create_entity(StaticArchetype<Args...> = {}) {
             const EntityId id = create_entity();
@@ -113,6 +117,7 @@ class EntityWorld {
 
 
 
+        // ---------------------------------------- Components ----------------------------------------
 
         template<typename T, typename... Args>
         T* add_component(EntityId id, Args&&... args) {
@@ -133,6 +138,8 @@ class EntityWorld {
 
 
 
+        // ---------------------------------------- Enumerations ----------------------------------------
+
         auto ids() const {
             return _entities.ids();
         }
@@ -143,7 +150,13 @@ class EntityWorld {
                                _containers.values().end());
         }
 
+        core::Span<std::unique_ptr<System>> systems() const {
+           return _systems;
+        }
 
+
+
+        // ---------------------------------------- Component getters ----------------------------------------
 
         template<typename T>
         bool has(EntityId id) const {
@@ -156,9 +169,6 @@ class EntityWorld {
             return cont ? cont->contains(id) : false;
         }
 
-
-
-
         template<typename T>
         T* component(EntityId id) {
             ComponentContainerBase* cont = find_container<T>();
@@ -170,6 +180,10 @@ class EntityWorld {
             const ComponentContainerBase* cont = find_container<T>();
             return cont ? cont->template component_ptr<T>(id) : nullptr;
         }
+
+
+
+        // ---------------------------------------- Component sets ----------------------------------------
 
         template<typename T>
         SparseComponentSet<T>& component_set() {
@@ -185,8 +199,6 @@ class EntityWorld {
             static const SparseComponentSet<T> empty_set;
             return empty_set;
         }
-
-
 
         template<typename T>
         core::MutableSpan<T> components() {
@@ -205,14 +217,14 @@ class EntityWorld {
             return component_ids(type_index<T>());
         }
 
-
-
-
         template<typename T>
         core::Span<EntityId> recently_added() const {
             return recently_added(type_index<T>());
         }
 
+
+
+        // ---------------------------------------- Queries ----------------------------------------
 
         template<typename... Args>
         Query<Args...> query() {
@@ -251,6 +263,8 @@ class EntityWorld {
         }
 
 
+
+        // ---------------------------------------- Misc ----------------------------------------
 
         template<typename T>
         void add_required_component() {

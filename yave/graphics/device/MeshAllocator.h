@@ -41,13 +41,11 @@ class MeshAllocator : NonMovable {
         MeshDrawData alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
 
     private:
-#if 0
-        VertexBuffer<> _vertex_buffer;
+        AttribBuffer<> _attrib_buffer;
         TriangleBuffer<> _triangle_buffer;
 
         std::atomic<u64> _vertex_offset = 0;
         std::atomic<u64> _triangle_offset = 0;
-#endif
 };
 
 }

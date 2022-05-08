@@ -28,6 +28,11 @@ SOFTWARE.
 
 namespace yave {
 
+
+struct AttribDescriptor {
+    usize size;
+};
+
 struct FullVertex {
     math::Vec3 position;
     math::Vec3 normal;
@@ -41,6 +46,7 @@ struct PackedVertex {
     u32 packed_tangent_sign = 0;
     math::Vec2 uv;
 };
+
 
 
 

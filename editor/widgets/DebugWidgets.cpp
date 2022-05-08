@@ -27,6 +27,8 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/systems/OctreeSystem.h>
 
+#include <editor/utils/ui.h>
+
 #include <external/imgui/yave_imgui.h>
 
 namespace editor {
@@ -127,6 +129,34 @@ class MemoryDebug : public Widget {
 
     private:
         u64 _last_total = 0;
+};
+
+
+class EcsDebug : public Widget {
+    editor_widget(EcsDebug, "View", "Debug")
+
+    public:
+        EcsDebug() : Widget("ECS Debug") {
+        }
+
+    protected:
+        void on_gui() override {
+            const EditorWorld& world = current_world();
+
+            if(ImGui::CollapsingHeader("Systems")) {
+                ImGui::BeginChild("##systems", ImVec2(0, 0), true);
+                imgui::alternating_rows_background();
+
+                for(const auto& system : world.systems()) {
+                    ImGui::Selectable(system->name().data());
+                }
+
+                ImGui::EndChild();
+            }
+        }
+
+
+    private:
 };
 
 

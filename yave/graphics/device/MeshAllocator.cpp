@@ -29,74 +29,77 @@ SOFTWARE.
 
 namespace yave {
 
-MeshAllocator::MeshAllocator() {
+MeshAllocator::MeshAllocator() :
+        _attrib_buffer(default_vertex_count * sizeof(PackedVertex)),
+        _triangle_buffer(default_triangle_count) {
 }
 
 MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
-    MeshDrawData mesh_data = {};
+    using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
+    using MutableAttribSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;
 
-    mesh_data.indirect_data.instanceCount = 1;
-    mesh_data.indirect_data.indexCount = u32(triangles.size() * 3);
+    MeshDrawData mesh_data;
+    mesh_data._indirect_data.instanceCount = 1;
+    mesh_data._indirect_data.indexCount = u32(triangles.size() * 3);
+
+    const u64 triangles_count = triangles.size();
+    const u64 vertices_count = vertices.size();
+
+#if 0
+    auto& global_triangle_buffer = _triangle_buffer;
+    auto& global_attrib_buffer = _attrib_buffer;
+
+    const u64 triangles_begin = _triangle_offset.fetch_add(triangles_count);
+    const u64 vertices_begin = _vertex_offset.fetch_add(vertices_count);
+#else
+    mesh_data._owned = std::make_unique<MeshDrawData::OwnedBuffers>();
+    auto& global_triangle_buffer = (mesh_data._owned->triangle_buffer = TriangleBuffer<>(triangles.size()));
+    auto& global_attrib_buffer = (mesh_data._owned->attrib_buffer = AttribBuffer<>(vertices.size() * sizeof(PackedVertex)));
+
+    const u64 triangles_begin = 0;
+    const u64 vertices_begin = 0;
+#endif
+
+    const u64 triangle_capacity = global_triangle_buffer.size();
+    const u64 vertex_capacity = global_attrib_buffer.byte_size() / sizeof(PackedVertex);
+    y_always_assert(triangles_begin + triangles_count <= triangle_capacity, "Triangle buffer pool is full");
+    y_always_assert(vertices_begin + vertices_count <= vertex_capacity, "Vertex buffer pool is full");
 
     {
-#define INIT_BUFFER(buffer, size) buffer = decltype(buffer)(size)
-        INIT_BUFFER(mesh_data.triangle_buffer, triangles.size());
+        CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
-        INIT_BUFFER(mesh_data.attrib_streams.positions, vertices.size());
-        INIT_BUFFER(mesh_data.attrib_streams.normals_tangents, vertices.size());
-        INIT_BUFFER(mesh_data.attrib_streams.uvs, vertices.size());
-#undef INIT_BUFFER
-    }
+        MutableTriangleSubBuffer triangles_buffer(global_triangle_buffer, triangles_count * sizeof(IndexedTriangle), triangles_begin * sizeof(IndexedTriangle));
+        Mapping::stage(triangles_buffer, recorder, triangles.data());
 
-    {
-        CmdBufferRecorder recorder(create_disposable_cmd_buffer());
-        Y_TODO(change to implicit staging?)
-        Mapping::stage(mesh_data.triangle_buffer, recorder, triangles.data());
-        //Mapping::stage(mesh_data.vertex_buffer, recorder, vertices.data());
+        const std::array attrib_descriprtors = {
+            AttribDescriptor{ sizeof(PackedVertex::position) },
+            AttribDescriptor{ sizeof(PackedVertex::packed_normal) + sizeof(PackedVertex::packed_tangent_sign) },
+            AttribDescriptor{ sizeof(PackedVertex::uv) },
+        };
 
-        Mapping::stage(mesh_data.attrib_streams.positions,           recorder, &vertices.data()->position,       sizeof(math::Vec3),     sizeof(PackedVertex));
-        Mapping::stage(mesh_data.attrib_streams.normals_tangents,    recorder, &vertices.data()->packed_normal,  sizeof(u32) * 2,        sizeof(PackedVertex));
-        Mapping::stage(mesh_data.attrib_streams.uvs,                 recorder, &vertices.data()->uv,             sizeof(math::Vec2),     sizeof(PackedVertex));
+        std::array<MutableAttribSubBuffer, attrib_descriprtors.size()> attrib_buffers = {};
+        {
+            u64 attrib_offset = 0;
+            const u8* vertex_data = static_cast<const u8*>(static_cast<const void*>(vertices.data()));
+            for(usize i = 0; i != attrib_descriprtors.size(); ++i) {
+                const u64 byte_len = vertices_count * attrib_descriprtors[i].size;
+                const u64 byte_offset = attrib_offset * vertex_capacity + vertices_begin * attrib_descriprtors[i].size;
+                attrib_buffers[i] = MutableAttribSubBuffer(global_attrib_buffer, byte_len, byte_offset);
+                Mapping::stage(attrib_buffers[i], recorder, vertex_data + attrib_offset, attrib_descriprtors[i].size, sizeof(PackedVertex));
+                attrib_offset += attrib_descriprtors[i].size;
+            }
+        }
 
         loading_command_queue().submit(std::move(recorder));
-    }
 
+        mesh_data._triangle_buffer = triangles_buffer;
+
+        static_assert(attrib_descriprtors.size() == 3);
+        mesh_data._attrib_buffers.positions = attrib_buffers[0];
+        mesh_data._attrib_buffers.normals_tangents = attrib_buffers[1];
+        mesh_data._attrib_buffers.uvs = attrib_buffers[2];
+    }
 
     return mesh_data;
 }
-
-/*VertexSubBuffer MeshAllocator::alloc_vertices(CmdBufferRecorder& recorder, core::Span<PackedVertex> vertices) {
-    using MutableSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;
-
-    const auto lock = y_profile_unique_lock(_lock);
-
-    const u64 begin = align_up_to(_vertex_byte_offset, VertexSubBuffer::byte_alignment());
-    const u64 byte_size = vertices.size() * sizeof(PackedVertex);
-    const u64 end = begin + byte_size;
-    y_defer(_vertex_byte_offset = end);
-
-    y_always_assert(end <= _vertex_buffer.size(), "Vertex buffer pool is full");
-
-    MutableSubBuffer sub_buffer(_vertex_buffer, byte_size, begin);
-    Mapping::stage(sub_buffer, recorder, vertices.data());
-    return sub_buffer;
-}
-
-TriangleSubBuffer MeshAllocator::alloc_triangles(CmdBufferRecorder& recorder, core::Span<IndexedTriangle> triangles) {
-    using MutableSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
-
-    const auto lock = y_profile_unique_lock(_lock);
-
-    const u64 begin = align_up_to(_triangle_byte_offset, TriangleSubBuffer::byte_alignment());
-    const u64 byte_size = triangles.size() * sizeof(IndexedTriangle);
-    const u64 end = begin + byte_size;
-    y_defer(_triangle_byte_offset = end);
-
-    y_always_assert(end <= _triangle_buffer.size(), "Triangle buffer pool is full");
-
-    MutableSubBuffer sub_buffer(_triangle_buffer, byte_size, begin);
-    Mapping::stage(sub_buffer, recorder, triangles.data());
-    return sub_buffer;
-}*/
-
 }

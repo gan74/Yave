@@ -32,7 +32,7 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
 }
 
 bool StaticMesh::is_null() const {
-    return _draw_data.triangle_buffer.is_null();
+    return _draw_data.is_null();
 }
 
 const MeshDrawData& StaticMesh::draw_data() const {
@@ -40,7 +40,7 @@ const MeshDrawData& StaticMesh::draw_data() const {
 }
 
 const VkDrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
-    return _draw_data.indirect_data;
+    return _draw_data.indirect_data();
 }
 
 float StaticMesh::radius() const {

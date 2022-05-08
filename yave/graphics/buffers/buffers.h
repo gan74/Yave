@@ -33,7 +33,7 @@ using StagingBuffer = Buffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
 
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
-using AttribBuffer = Buffer<BufferUsage::AttributeBit, Memory>;
+using AttribBuffer = Buffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;
 
 template<typename T, MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
 using TypedAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, Memory>;
@@ -59,10 +59,11 @@ using VertexBuffer = TypedBuffer<PackedVertex, BufferUsage::AttributeBit | Buffe
 using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit>;
 using VertexSubBuffer = TypedSubBuffer<PackedVertex, BufferUsage::AttributeBit>;
 
-
-
 using AttribSubBuffer = SubBuffer<BufferUsage::AttributeBit>;
 using IndexSubBuffer = SubBuffer<BufferUsage::IndexBit>;
+
+template<typename T>
+using TypedAttribSubBuffer = TypedSubBuffer<T, BufferUsage::AttributeBit>;
 
 }
 
