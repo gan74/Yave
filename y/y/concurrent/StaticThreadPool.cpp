@@ -77,9 +77,9 @@ StaticThreadPool::StaticThreadPool(usize thread_count) {
 }
 
 StaticThreadPool::~StaticThreadPool() {
-    process_until_empty();
     _shared_data.run = false;
     _shared_data.condition.notify_all();
+    process_until_empty();
     for(auto& thread : _threads) {
         thread.join();
     }
@@ -96,6 +96,11 @@ bool StaticThreadPool::is_empty() const {
     return _shared_data.queue.empty() && !_shared_data.working;
 }
 
+void StaticThreadPool::cancel_pending_tasks() {
+    const std::unique_lock lock(_shared_data.lock);
+    _shared_data.queue.clear();
+}
+
 void StaticThreadPool::process_until_empty() {
     while(true) {
         std::unique_lock<std::mutex> lock(_shared_data.lock);
@@ -107,6 +112,8 @@ void StaticThreadPool::process_until_empty() {
 }
 
 void StaticThreadPool::schedule(Func&& func, DependencyGroup* on_done, DependencyGroup wait_for) {
+    y_debug_assert(_shared_data.run);
+    
     {
         const auto lock = std::unique_lock(_shared_data.lock);
         if(on_done) {

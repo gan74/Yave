@@ -61,7 +61,7 @@ class StaticThreadPool : NonMovable {
     private:
         using Func = std::function<void()>;
 
-        struct FuncData {
+        struct FuncData : NonCopyable {
             FuncData(Func func, DependencyGroup wait, DependencyGroup done = DependencyGroup());
 
             Func function;
@@ -84,9 +84,9 @@ class StaticThreadPool : NonMovable {
         ~StaticThreadPool();
 
         usize concurency() const;
-        usize pending_tasks() const;
-
         bool is_empty() const;
+        
+        void cancel_pending_tasks();
 
         // Empty means all tasks are scheduled, not done!
         void process_until_empty();

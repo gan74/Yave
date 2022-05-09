@@ -170,14 +170,14 @@ SceneImporter2::SceneImporter2() : SceneImporter2(asset_store().filesystem()->cu
 
 SceneImporter2::SceneImporter2(std::string_view import_dst_path) :
         Widget("Scene importer"),
-        _import_path(import_dst_path) {
+        _import_path(import_dst_path),
+        _thread_pool(4u) {
 
     _browser.set_selection_filter(false, import::supported_scene_extensions());
     _browser.set_canceled_callback([this] { close(); return true; });
     _browser.set_selected_callback([this](const auto& filename) {
         _thread_pool.schedule([=] {
             y_profile_zone("parsing import");
-            const auto kp = keep_alive();
             _scene = import::parse_scene(filename);
         });
         y_debug_assert(_state == State::Browsing);
@@ -186,27 +186,33 @@ SceneImporter2::SceneImporter2(std::string_view import_dst_path) :
     });
 }
 
+bool SceneImporter2::should_keep_alive() const {
+     return !_thread_pool.is_empty();
+}
+
 template<typename T, typename L = decltype(log_msg)>
-static AssetId import_single_asset(const T& asset, std::string_view name, AssetType type, L&& log_func = log_msg) {
-    y_profile_zone("asset import");
+static AssetId import_single_asset(const T& asset, std::string_view name, AssetType type, std::atomic<u32>& emergency_uid, L&& log_func = log_msg) {
+    y_profile();
 
     io2::Buffer buffer;
-    serde3::WritableArchive arc(buffer);
-    if(auto sr = arc.serialize(asset); sr.is_error()) {
-        log_func(fmt("Unable serialize \"%\": error %", name, sr.error().type), Log::Error);
-        return {};
+    {
+        y_profile_zone("serialize");
+        serde3::WritableArchive arc(buffer);
+        if(auto sr = arc.serialize(asset); sr.is_error()) {
+            log_func(fmt("Unable serialize \"%\": error %", name, sr.error().type), Log::Error);
+            return {};
+        }
     }
 
     buffer.reset();
 
-    usize emergency_id = 1;
     core::String import_name = name;
 
     for(;;) {
         const auto result = asset_store().import(buffer, import_name, type);
         if(result.is_error()) {
             if(result.error() == AssetStore::ErrorType::NameAlreadyExists) {
-                import_name = fmt("%_(%)", name, emergency_id++);
+                import_name = fmt("%_%", name, ++emergency_uid);
                 continue;
             }
             log_func(fmt("Unable to import \"%\": error %", import_name, result.error()), Log::Error);
@@ -238,7 +244,7 @@ void SceneImporter2::import_assets() {
                     auto& image = _scene.images[i];
                     y_debug_assert(image.asset_id == AssetId::invalid_id());
                     if(auto res = _scene.build_image_data(i)) {
-                        image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, log_func);
+                        image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, _emergency_uid, log_func);
                     }
                 }, &image_deps);
             }
@@ -257,7 +263,7 @@ void SceneImporter2::import_assets() {
                     for(usize j = 0; j != sub_meshes.size(); ++j) {
                         y_debug_assert(mesh.sub_meshes[j].asset_id == AssetId::invalid_id());
                         if(auto& res = sub_meshes[j]) {
-                            mesh.sub_meshes[j].asset_id = import_single_asset(std::move(res.unwrap()), asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.sub_meshes[j].name), AssetType::Mesh, log_func);
+                            mesh.sub_meshes[j].asset_id = import_single_asset(std::move(res.unwrap()), asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.sub_meshes[j].name), AssetType::Mesh, _emergency_uid, log_func);
                         }
                     }
                 }, &mesh_material_deps);
@@ -274,7 +280,7 @@ void SceneImporter2::import_assets() {
                     auto& material = _scene.materials[i];
                     y_debug_assert(material.asset_id == AssetId::invalid_id());
                     if(auto res = _scene.build_material_data(i)) {
-                        material.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(material_import_path, material.name), AssetType::Material, log_func);
+                        material.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(material_import_path, material.name), AssetType::Material, _emergency_uid, log_func);
                     }
                  }, &mesh_material_deps);
             }
@@ -317,7 +323,7 @@ void SceneImporter2::import_assets() {
                 _thread_pool.schedule([=] {
                     auto& mesh = _scene.meshes[i];
                     y_debug_assert(mesh.asset_id == AssetId::invalid_id());
-                    mesh.asset_id = import_single_asset(build_prefab(mesh), asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, log_func);
+                    mesh.asset_id = import_single_asset(build_prefab(mesh), asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, _emergency_uid, log_func);
                 }, nullptr, mesh_material_deps);
             }
         }
@@ -334,7 +340,7 @@ void SceneImporter2::import_assets() {
                     prefabs << build_prefab(mesh);
                 }
             }
-            import_single_asset(ecs::EntityScene(std::move(prefabs)), asset_store().filesystem()->join(scene_import_path, _scene.name), AssetType::Scene, log_func);
+            import_single_asset(ecs::EntityScene(std::move(prefabs)), asset_store().filesystem()->join(scene_import_path, _scene.name), AssetType::Scene, _emergency_uid, log_func);
         }, nullptr, mesh_material_deps);
     }
 }
@@ -356,6 +362,11 @@ void SceneImporter2::on_gui() {
                 } else {
                     _state = State::Settings;
                 }
+            }
+            
+            if(ImGui::Button("Cancel")) {
+                _thread_pool.cancel_pending_tasks();
+                close();
             }
         break;
 
@@ -440,9 +451,17 @@ void SceneImporter2::on_gui() {
                 }
             }
             ImGui::EndChild();
+            
 
             if(ImGui::Button("Ok")) {
                 close();
+            }
+            if(!_thread_pool.is_empty()) {
+                ImGui::SameLine();
+                if(ImGui::Button("Cancel")) {
+                    _thread_pool.cancel_pending_tasks();
+                    close();
+                }
             }
         } break;
     }

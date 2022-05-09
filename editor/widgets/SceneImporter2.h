@@ -46,6 +46,8 @@ class SceneImporter2 final : public Widget {
 
     protected:
         void on_gui() override;
+        
+        bool should_keep_alive() const override;
 
     private:
         void import_assets();
@@ -62,6 +64,7 @@ class SceneImporter2 final : public Widget {
         std::mutex _lock;
 
         concurrent::StaticThreadPool _thread_pool;
+        std::atomic<u32> _emergency_uid = 0;
 };
 
 }

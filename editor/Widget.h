@@ -46,7 +46,6 @@ class Widget : NonMovable {
 
         void close();
         bool is_visible() const;
-        bool should_keep_alive() const;
 
         void set_visible(bool visible);
 
@@ -67,15 +66,11 @@ class Widget : NonMovable {
         virtual bool before_gui();
         virtual void after_gui();
 
+        virtual bool should_keep_alive() const;
+        
         math::Vec2ui content_size() const;
 
         void set_flags(int flags);
-
-        [[nodiscard]] auto keep_alive() {
-            y_debug_assert(_keep_alive >= 0);
-            ++_keep_alive;
-            return ScopeExit([this] { --_keep_alive; });
-        }
 
     private:
         friend class UiManager;
@@ -95,8 +90,6 @@ class Widget : NonMovable {
 
         Widget* _parent = nullptr;
         int _flags = 0;
-
-        std::atomic<i32> _keep_alive = 0;
 };
 }
 

@@ -85,6 +85,12 @@ class ScopeExit {
 
         inline ScopeExit(ScopeExit&& other) : _ex(std::move(other._ex)) {
         }
+        
+        inline ScopeExit& operator=(ScopeExit&& other) {
+            std::swap(_ex, other.ex);
+            return *this;
+        }
+
 
         inline ~ScopeExit() {
             _ex();

@@ -42,10 +42,6 @@ bool Widget::is_visible() const {
     return _visible;
 }
 
-bool Widget::should_keep_alive() const {
-    return _keep_alive;
-}
-
 void Widget::set_visible(bool visible) {
     _visible = visible;
 }
@@ -82,6 +78,9 @@ void Widget::draw_gui_inside() {
     draw(true);
 }
 
+bool Widget::should_keep_alive() const {
+    return false;
+}
 
 void Widget::draw(bool inside) {
     if(!_visible || !before_gui()) {
