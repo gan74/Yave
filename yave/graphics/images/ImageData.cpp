@@ -28,7 +28,7 @@ namespace yave {
 
 usize ImageData::mip_count(const math::Vec3ui& size) {
     usize l = 0;
-    while(mip_size(size, l).min_component() != 1) {
+    while(mip_size(size, l).max_component() != 1) {
         ++l;
     }
     return l + 1;

@@ -244,19 +244,27 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
             y_profile();
 
             usize cursor = 0;
-            const math::Vec2ui mip_size = orig_size / 2;
-            y_debug_assert(mip_size.min_component() != 0);
+            const math::Vec2ui mip_size = {
+                std::max(1u, orig_size.x() / 2),
+                std::max(1u, orig_size.y() / 2),
+            };
 
-            const usize row_size = orig_size.x();
+            const math::Vec2 factors = math::Vec2(orig_size) / math::Vec2(mip_size);
+            const float texel_width = factors.x() * 0.5f;
+            const usize row_size = mip_size.y() > 1
+                ? std::min(orig_size.x(), u32(orig_size.x() * texel_width))
+                : 0u;
 
             for(usize y = 0; y != mip_size.y(); ++y) {
                 for(usize x = 0; x != mip_size.x(); ++x) {
-                    const usize orig = (x * 2 + y * 2 * row_size);
+                    const usize orig = (u32(x * factors.x()) + u32(y * factors.y()) * row_size);
+                    y_debug_assert(usize(orig + row_size + texel_width) < orig_size.x() * orig_size.y());
+
                     for(usize cc = 0; cc != components; ++cc) {
-                        const float a = image_data[components * (orig) + cc];
-                        const float b = image_data[components * (orig + 1) + cc];
-                        const float c = image_data[components * (orig + row_size) + cc];
-                        const float d = image_data[components * (orig + row_size + 1) + cc];
+                        const float a = image_data[components * usize(orig) + cc];
+                        const float b = image_data[components * usize(orig + texel_width) + cc];
+                        const float c = image_data[components * usize(orig + row_size) + cc];
+                        const float d = image_data[components * usize(orig + row_size + texel_width) + cc];
                         y_debug_assert((a + b + c + d) >= 0.0f);
                         out[cursor++] = std::min((a + b + c + d) * 0.25f, 1.0f);
                     }

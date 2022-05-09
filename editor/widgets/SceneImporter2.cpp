@@ -35,8 +35,10 @@ SOFTWARE.
 #include <yave/ecs/EntityWorld.h>
 #include <yave/ecs/EntityScene.h>
 
-#include <y/io2/Buffer.h>
 #include <editor/utils/ui.h>
+
+#include <y/concurrent/StaticThreadPool.h>
+#include <y/io2/Buffer.h>
 
 #include <external/imgui/yave_imgui.h>
 
@@ -226,15 +228,19 @@ void SceneImporter2::import_assets() {
 
     // --------------------------------- Images ---------------------------------
     {
+        concurrent::StaticThreadPool thread_pool;
+
         const core::String image_import_path = asset_store().filesystem()->join(_import_path, "Textures");
         for(usize i = 0; i != _scene.images.size(); ++i) {
-            auto& image = _scene.images[i];
-            if(image.import) {
-                y_debug_assert(image.asset_id == AssetId::invalid_id());
-                if(auto res = _scene.build_image_data(i)) {
-                    image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, log_func);
+            thread_pool.schedule([=] {
+                auto& image = _scene.images[i];
+                if (image.import) {
+                    y_debug_assert(image.asset_id == AssetId::invalid_id());
+                    if (auto res = _scene.build_image_data(i)) {
+                        image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, log_func);
+                    }
                 }
-            }
+            });
         }
     }
 

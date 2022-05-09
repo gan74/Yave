@@ -77,11 +77,14 @@ StaticThreadPool::StaticThreadPool(usize thread_count) {
 }
 
 StaticThreadPool::~StaticThreadPool() {
+    process_until_empty();
     _shared_data.run = false;
     _shared_data.condition.notify_all();
     for(auto& thread : _threads) {
         thread.join();
     }
+
+    y_debug_assert(!pending_tasks());
 }
 
 usize StaticThreadPool::concurency() const {
