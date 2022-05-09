@@ -153,6 +153,8 @@ static void unpack_with_gamma(const u8* in, usize size, float* out) {
 
     for(usize i = 0; i != size; ++i) {
         out[i] = gamma_lut[in[i]];
+        y_debug_assert(out[i] >= 0.0f);
+        y_debug_assert(out[i] <= 1.0f);
     }
 }
 
@@ -160,6 +162,8 @@ static void unpack(const u8* in, usize size, float* out) {
     y_profile();
     for(usize i = 0; i != size; ++i) {
         out[i] = in[i] / 255.0f;
+        y_debug_assert(out[i] >= 0.0f);
+        y_debug_assert(out[i] <= 1.0f);
     }
 }
 
@@ -219,6 +223,8 @@ static void pack(const float* in, usize size, u8* out) {
     }
 #else
     for(usize i = 0; i < size; ++i) {
+        y_debug_assert(in[i] >= 0.0f);
+        y_debug_assert(in[i] <= 1.0f);
         out[i] = u8(std::round(in[i] * 255.0f));
     }
 #endif
@@ -238,8 +244,8 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
             y_profile();
 
             usize cursor = 0;
-            const math::Vec2ui mip_size = {std::max(1u, orig_size.x() / 2),
-                                           std::max(1u, orig_size.y() / 2)};
+            const math::Vec2ui mip_size = orig_size / 2;
+            y_debug_assert(mip_size.min_component() != 0);
 
             const usize row_size = orig_size.x();
 
@@ -251,6 +257,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
                         const float b = image_data[components * (orig + 1) + cc];
                         const float c = image_data[components * (orig + row_size) + cc];
                         const float d = image_data[components * (orig + row_size + 1) + cc];
+                        y_debug_assert((a + b + c + d) >= 0.0f);
                         out[cursor++] = std::min((a + b + c + d) * 0.25f, 1.0f);
                     }
                 }
