@@ -175,7 +175,7 @@ SceneImporter2::SceneImporter2(std::string_view import_dst_path) :
     _browser.set_selection_filter(false, import::supported_scene_extensions());
     _browser.set_canceled_callback([this] { close(); return true; });
     _browser.set_selected_callback([this](const auto& filename) {
-        _future = std::async(std::launch::async, [=] {
+        _thread_pool.schedule([=] {
             y_profile_zone("parsing import");
             const auto kp = keep_alive();
             _scene = import::parse_scene(filename);
@@ -226,21 +226,22 @@ void SceneImporter2::import_assets() {
         _logs.emplace_back(msg, type);
     };
 
+    concurrent::DependencyGroup image_deps;
+    concurrent::DependencyGroup mesh_material_deps;
+
     // --------------------------------- Images ---------------------------------
     {
-        concurrent::StaticThreadPool thread_pool;
-
         const core::String image_import_path = asset_store().filesystem()->join(_import_path, "Textures");
         for(usize i = 0; i != _scene.images.size(); ++i) {
-            thread_pool.schedule([=] {
-                auto& image = _scene.images[i];
-                if (image.import) {
+            if(_scene.images[i].import) {
+                _thread_pool.schedule([=] {
+                    auto& image = _scene.images[i];
                     y_debug_assert(image.asset_id == AssetId::invalid_id());
-                    if (auto res = _scene.build_image_data(i)) {
+                    if(auto res = _scene.build_image_data(i)) {
                         image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, log_func);
                     }
-                }
-            });
+                }, &image_deps);
+            }
         }
     }
 
@@ -248,16 +249,18 @@ void SceneImporter2::import_assets() {
     {
         const core::String mesh_import_path = asset_store().filesystem()->join(_import_path, "Meshes");
         for(usize i = 0; i != _scene.meshes.size(); ++i) {
-            auto& mesh = _scene.meshes[i];
-            if(mesh.import) {
-                y_debug_assert(mesh.asset_id == AssetId::invalid_id());
-                core::Vector<core::Result<MeshData>> sub_meshes = _scene.build_mesh_data(i);
-                for(usize j = 0; j != sub_meshes.size(); ++j) {
-                    y_debug_assert(mesh.sub_meshes[j].asset_id == AssetId::invalid_id());
-                    if(auto& res = sub_meshes[j]) {
-                        mesh.sub_meshes[j].asset_id = import_single_asset(std::move(res.unwrap()), asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.sub_meshes[j].name), AssetType::Mesh, log_func);
+            if(_scene.meshes[i].import) {
+                _thread_pool.schedule([=] {
+                    auto& mesh = _scene.meshes[i];
+                    y_debug_assert(mesh.asset_id == AssetId::invalid_id());
+                    core::Vector<core::Result<MeshData>> sub_meshes = _scene.build_mesh_data(i);
+                    for(usize j = 0; j != sub_meshes.size(); ++j) {
+                        y_debug_assert(mesh.sub_meshes[j].asset_id == AssetId::invalid_id());
+                        if(auto& res = sub_meshes[j]) {
+                            mesh.sub_meshes[j].asset_id = import_single_asset(std::move(res.unwrap()), asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.sub_meshes[j].name), AssetType::Mesh, log_func);
+                        }
                     }
-                }
+                }, &mesh_material_deps);
             }
         }
     }
@@ -266,12 +269,14 @@ void SceneImporter2::import_assets() {
     {
         const core::String material_import_path = asset_store().filesystem()->join(_import_path, "Materials");
         for(usize i = 0; i != _scene.materials.size(); ++i) {
-            auto& material = _scene.materials[i];
-            if(material.import) {
-                y_debug_assert(material.asset_id == AssetId::invalid_id());
-                if(auto res = _scene.build_material_data(i)) {
-                    material.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(material_import_path, material.name), AssetType::Material, log_func);
-                }
+            if(_scene.materials[i].import) {
+                _thread_pool.schedule([=] {
+                    auto& material = _scene.materials[i];
+                    y_debug_assert(material.asset_id == AssetId::invalid_id());
+                    if(auto res = _scene.build_material_data(i)) {
+                        material.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(material_import_path, material.name), AssetType::Material, log_func);
+                    }
+                 }, &mesh_material_deps);
             }
         }
     }
@@ -307,10 +312,13 @@ void SceneImporter2::import_assets() {
 
     {
         const core::String prefab_import_path = asset_store().filesystem()->join(_import_path, "Prefabs");
-        for(auto& mesh : _scene.meshes) {
-            if(mesh.import) {
-                y_debug_assert(mesh.asset_id == AssetId::invalid_id());
-                mesh.asset_id = import_single_asset(build_prefab(mesh), asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, log_func);
+        for(usize i = 0; i != _scene.meshes.size(); ++i) {
+            if(_scene.meshes[i].import) {
+                _thread_pool.schedule([=] {
+                    auto& mesh = _scene.meshes[i];
+                    y_debug_assert(mesh.asset_id == AssetId::invalid_id());
+                    mesh.asset_id = import_single_asset(build_prefab(mesh), asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, log_func);
+                }, nullptr, mesh_material_deps);
             }
         }
     }
@@ -318,14 +326,16 @@ void SceneImporter2::import_assets() {
 
     // --------------------------------- Scene ---------------------------------
     if(_scene.import_scene) {
-        const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
-        auto prefabs = core::vector_with_capacity<ecs::EntityPrefab>(_scene.meshes.size());
-        for(const auto& mesh : _scene.meshes) {
-            if(mesh.asset_id != AssetId::invalid_id()) {
-                prefabs << build_prefab(mesh);
+        _thread_pool.schedule([=] {
+            const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
+            auto prefabs = core::vector_with_capacity<ecs::EntityPrefab>(_scene.meshes.size());
+            for(const auto& mesh : _scene.meshes) {
+                if(mesh.asset_id != AssetId::invalid_id()) {
+                    prefabs << build_prefab(mesh);
+                }
             }
-        }
-        import_single_asset(ecs::EntityScene(std::move(prefabs)), asset_store().filesystem()->join(scene_import_path, _scene.name), AssetType::Scene, log_func);
+            import_single_asset(ecs::EntityScene(std::move(prefabs)), asset_store().filesystem()->join(scene_import_path, _scene.name), AssetType::Scene, log_func);
+        }, nullptr, mesh_material_deps);
     }
 }
 
@@ -340,8 +350,7 @@ void SceneImporter2::on_gui() {
         case State::Parsing:
             ImGui::Text("Parsing scene%s", imgui::ellipsis());
             ImGui::Checkbox("Import using default settings", &_import_with_default_settings);
-            if(_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                _future.get();
+            if(_thread_pool.is_empty()) {
                 if(_scene.is_error) {
                     _state = State::Browsing;
                 } else {
@@ -393,19 +402,14 @@ void SceneImporter2::on_gui() {
             ImGui::EndChild();
 
             if(ImGui::Button(ICON_FA_CHECK " Import") || _import_with_default_settings) {
-                _future = std::async(std::launch::async, [this] {
-                    core::DebugTimer timer("Importing");
-                    const auto kp = keep_alive();
-                    import_assets();
-                });
+                import_assets();
                 _state = State::Importing;
             }
         } break;
 
         case State::Importing:
             ImGui::Text("Importing assets%s", imgui::ellipsis());
-            if(_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                _future.get();
+            if(_thread_pool.is_empty()) {
                 refresh_all();
                 _state = State::Done;
             }

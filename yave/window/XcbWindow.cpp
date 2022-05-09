@@ -161,7 +161,7 @@ math::Vec2i Window::position() const {
     const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
     const xcb_translate_coordinates_cookie_t cookie = xcb_translate_coordinates(_connection, _window, find_grandparent(_connection, _window), geom.x, geom.y);
     xcb_translate_coordinates_reply_t* translate = xcb_translate_coordinates_reply(_connection, cookie, nullptr);
-    if (!translate) {
+    if(!translate) {
         return {};
     }
     y_defer(std::free(translate));
@@ -181,7 +181,7 @@ math::Vec2i Window::window_position() const {
     const xcb_get_geometry_reply_t geom = window_geometry(_connection, _window);
     const xcb_translate_coordinates_cookie_t cookie = xcb_translate_coordinates(_connection, _window, find_grandparent(_connection, _window), geom.x, geom.y);
     xcb_translate_coordinates_reply_t* translate = xcb_translate_coordinates_reply(_connection, cookie, nullptr);
-    if (!translate) {
+    if(!translate) {
         return {};
     }
     y_defer(std::free(translate));

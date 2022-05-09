@@ -75,6 +75,7 @@ class StaticThreadPool : NonMovable {
 
             std::list<FuncData> queue;
 
+            std::atomic<u32> working = 0;
             std::atomic<bool> run = true;
         };
 
@@ -84,6 +85,8 @@ class StaticThreadPool : NonMovable {
 
         usize concurency() const;
         usize pending_tasks() const;
+
+        bool is_empty() const;
 
         // Empty means all tasks are scheduled, not done!
         void process_until_empty();

@@ -84,16 +84,16 @@ StaticThreadPool::~StaticThreadPool() {
         thread.join();
     }
 
-    y_debug_assert(!pending_tasks());
+    y_debug_assert(is_empty());
 }
 
 usize StaticThreadPool::concurency() const {
     return _threads.size();
 }
 
-usize StaticThreadPool::pending_tasks() const {
+bool StaticThreadPool::is_empty() const {
     const std::unique_lock lock(_shared_data.lock);
-    return _shared_data.queue.size();
+    return _shared_data.queue.empty() && !_shared_data.working;
 }
 
 void StaticThreadPool::process_until_empty() {
@@ -125,10 +125,14 @@ void StaticThreadPool::schedule(Func&& func, DependencyGroup* on_done, Dependenc
 }
 
 bool StaticThreadPool::process_one(std::unique_lock<std::mutex> lock) {
+    ++_shared_data.working;
+    y_defer(--_shared_data.working);
+
     for(auto it = _shared_data.queue.begin(); it != _shared_data.queue.end(); ++it) {
         if(it->wait_for.is_ready()) {
             auto f = std::move(*it);
             _shared_data.queue.erase(it);
+
             lock.unlock();
 
             f.function();

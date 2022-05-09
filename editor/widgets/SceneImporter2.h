@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <editor/import/import.h>
 
-#include <future>
+#include <y/concurrent/StaticThreadPool.h>
 
 namespace editor {
 
@@ -61,7 +61,7 @@ class SceneImporter2 final : public Widget {
         core::Vector<std::pair<core::String, Log>> _logs;
         std::mutex _lock;
 
-        std::future<void> _future;
+        concurrent::StaticThreadPool _thread_pool;
 };
 
 }
