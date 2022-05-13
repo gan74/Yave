@@ -33,7 +33,13 @@ namespace yave {
 
 class FileSystemModel : NonCopyable {
     public:
-        using for_each_f = std::function<void(std::string_view)>;
+        enum class EntryType {
+            File,
+            Directory,
+            Unknown
+        };
+        
+        using for_each_f = std::function<void(std::string_view, EntryType)>;
 
         template<typename T = void>
         using Result = core::Result<T>;
@@ -49,9 +55,11 @@ class FileSystemModel : NonCopyable {
         virtual core::String filename(std::string_view path) const = 0;
 
         virtual Result<bool> exists(std::string_view path) const = 0;
-        virtual Result<bool> is_directory(std::string_view path) const = 0;
-        virtual Result<bool> is_file(std::string_view path) const;
         virtual Result<bool> is_parent(std::string_view parent, std::string_view path) const;
+        
+        virtual Result<EntryType> entry_type(std::string_view path) const = 0;
+        virtual Result<bool> is_directory(std::string_view path) const;
+        virtual Result<bool> is_file(std::string_view path) const;
 
         virtual core::String extention(std::string_view path) const;
 
@@ -80,7 +88,7 @@ class LocalFileSystemModel : public FileSystemModel {
         Result<core::String> current_path() const override;
         core::String filename(std::string_view path) const override;
         Result<bool> exists(std::string_view path) const override;
-        Result<bool> is_directory(std::string_view path) const override;
+        Result<EntryType> entry_type(std::string_view path) const override;
         core::String join(std::string_view path, std::string_view name) const override;
         Result<core::String> absolute(std::string_view path) const override;
         Result<> for_each(std::string_view path, const for_each_f& func) const override;

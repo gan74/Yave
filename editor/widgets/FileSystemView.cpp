@@ -25,8 +25,6 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
-#include <yave/utils/FileSystemModel.h>
-
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -117,10 +115,8 @@ void FileSystemView::update() {
 
     const std::string_view path = _current_path;
     if(filesystem()->exists(path).unwrap_or(false)) {
-        filesystem()->for_each(path, [this, path](const auto& name) {
+        filesystem()->for_each(path, [this, path](const auto& name, auto type) {
                 const core::String full_name = filesystem()->join(path, name);
-                const bool is_dir = filesystem()->is_directory(full_name).unwrap_or(false);
-                const EntryType type = is_dir ? EntryType::Directory : EntryType::File;
                 if(auto icon = entry_icon(full_name, type)) {
                     _entries.emplace_back(Entry{name, type, std::move(icon.unwrap())});
                 }
@@ -146,9 +142,19 @@ void FileSystemView::update() {
 
 
 core::Result<core::String> FileSystemView::entry_icon(const core::String&, EntryType type) const {
-    return type == EntryType::Directory
-        ? core::Ok(core::String(ICON_FA_FOLDER))
-        : core::Ok(core::String(ICON_FA_FILE_ALT));
+    switch(type) {
+        case EntryType::Directory:
+            return core::Ok(core::String(ICON_FA_FOLDER));
+        
+        case EntryType::File:
+            core::Ok(core::String(ICON_FA_FILE_ALT));
+            
+        case EntryType::Unknown:
+            core::Ok(core::String(ICON_FA_QUESTION));
+            
+        default:
+            return core::Err();
+    }
 }
 
 void FileSystemView::entry_clicked(const Entry& entry) {

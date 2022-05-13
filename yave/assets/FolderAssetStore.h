@@ -49,7 +49,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
             Result<core::String> parent_path(std::string_view path) const override;
 
             Result<bool> exists(std::string_view path) const override;
-            Result<bool> is_directory(std::string_view path) const override;
+            Result<EntryType> entry_type(std::string_view path) const override;
 
             Result<core::String> absolute(std::string_view path) const override;
             Result<> for_each(std::string_view path, const for_each_f& func) const override;

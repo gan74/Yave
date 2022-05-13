@@ -149,15 +149,16 @@ FileSystemModel::Result<bool> FolderAssetStore::FolderFileSystemModel::exists(st
     return core::Ok(_parent->_folders.find(no_delim) != _parent->_folders.end() || (!has_delim && _parent->_assets.find(no_delim) != _parent->_assets.end()));
 }
 
-FileSystemModel::Result<bool> FolderAssetStore::FolderFileSystemModel::is_directory(std::string_view path) const {
+FileSystemModel::Result<FileSystemModel::EntryType> FolderAssetStore::FolderFileSystemModel::entry_type(std::string_view path) const {
     y_profile();
 
     if(path.empty()) {
-        return core::Ok(true);
+        return core::Ok(EntryType::Directory);
     }
 
     const auto lock = y_profile_unique_lock(_parent->_lock);
-    return core::Ok(_parent->_folders.find(strict_path(path)) != _parent->_folders.end());
+    const bool is_dir = _parent->_folders.find(strict_path(path)) != _parent->_folders.end();
+    return core::Ok(is_dir ? EntryType::Directory : EntryType::File);
 }
 
 FileSystemModel::Result<core::String> FolderAssetStore::FolderFileSystemModel::absolute(std::string_view path) const {
@@ -175,7 +176,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::for_each(std:
 
     for(auto it = _parent->_folders.lower_bound(path); it != _parent->_folders.end(); ++it) {
         if(is_strict_direct_parent(path, *it)) {
-            func(it->sub_str(path.size() + !is_root));
+            func(it->sub_str(path.size() + !is_root), EntryType::Directory);
         } else if(!it->starts_with(path)) {
             break;
         }
@@ -183,7 +184,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::for_each(std:
 
     for(auto it = _parent->_assets.lower_bound(path); it != _parent->_assets.end(); ++it) {
         if(is_strict_direct_parent(path, it->first)) {
-            func(it->first.sub_str(path.size() + !is_root));
+            func(it->first.sub_str(path.size() + !is_root), EntryType::File);
         } else if(!it->first.starts_with(path)) {
             break;
         }
@@ -706,7 +707,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
     usize emergency_id = 1;
 
     const FileSystemModel* fs = FileSystemModel::local_filesystem();
-    const auto result = fs->for_each(_root, [&](std::string_view name) {
+    const auto result = fs->for_each(_root, [&](std::string_view name, FileSystemModel::EntryType type) {
         const std::string_view ext = ".desc";
         if(name.size() < ext.size()) {
             return;
@@ -718,7 +719,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_assets() {
         }
 
         const auto full_name = fs->join(_root, name);
-        if(fs->is_file(full_name).unwrap_or(false)) {
+        if(type == FileSystemModel::EntryType::File) {
             u64 uid = 0;
             if(std::from_chars(name.data(), name.data() + size_without_ext, uid, 16).ec != std::errc()) {
                 return;

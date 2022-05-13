@@ -48,14 +48,12 @@ core::String FileSystemModel::extention(std::string_view path) const {
     return "";
 }
 
+FileSystemModel::Result<bool> FileSystemModel::is_directory(std::string_view path) const {
+    return entry_type(path).map([](EntryType type) { return type == EntryType::Directory; });
+}
+
 FileSystemModel::Result<bool> FileSystemModel::is_file(std::string_view path) const {
-    const auto ex = exists(path);
-    if(ex.is_error()) {
-        return core::Err();
-    } else if(!ex.unwrap()) {
-        return core::Ok(false);
-    }
-    return is_directory(path).map([](bool dir) { return !dir; });
+    return entry_type(path).map([](EntryType type) { return type == EntryType::File; });
 }
 
 FileSystemModel::Result<bool> FileSystemModel::is_parent(std::string_view parent, std::string_view path) const {
@@ -106,9 +104,23 @@ FileSystemModel::Result<bool> LocalFileSystemModel::exists(std::string_view path
     return core::Err();
 }
 
-FileSystemModel::Result<bool> LocalFileSystemModel::is_directory(std::string_view path) const {
+static FileSystemModel::EntryType entry_type_for_path(const fs::path path) {
+    const fs::file_status status = fs::status(path);
+    switch(status.type()) {
+        case fs::file_type::regular:
+            return FileSystemModel::EntryType::File;
+            
+        case fs::file_type::directory:
+            return FileSystemModel::EntryType::Directory;
+            
+        default:
+            return FileSystemModel:: EntryType::Unknown;
+    }
+}
+
+FileSystemModel::Result<FileSystemModel::EntryType> LocalFileSystemModel::entry_type(std::string_view path) const {
     try {
-        return core::Ok(fs::is_directory(path));
+        return core::Ok(entry_type_for_path(fs::path(path)));
     } catch(...) {
     }
     return core::Err();
@@ -139,10 +151,15 @@ FileSystemModel::Result<core::String> LocalFileSystemModel::absolute(std::string
 
 FileSystemModel::Result<> LocalFileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
     try {
+        core::String buffer;
         for(auto& dir : fs::directory_iterator(path)) {
-            fs::path p = dir.path().filename();
-            auto str = p.string();
-            func(str);
+            const fs::path p = dir.path().filename();
+            
+            Y_TODO(utf something?)
+            buffer.make_empty();
+            std::transform(p.native().begin(), p.native().end(), std::back_inserter(buffer), [](auto c) -> char { return static_cast<char>(c); });
+            
+            func(buffer, entry_type_for_path(dir.path()));
         }
         return core::Ok();
     } catch(...) {

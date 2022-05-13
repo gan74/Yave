@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 
+#include <yave/utils/FileSystemModel.h>
+
 #include <y/core/Chrono.h>
 #include <y/core/Vector.h>
 #include <y/core/Result.h>
@@ -40,10 +42,7 @@ class FileSystemView : public Widget {
         const core::String& path() const;
 
     protected:
-        enum class EntryType {
-            Directory,
-            File
-        };
+        using EntryType = FileSystemModel::EntryType;
 
         struct Entry {
             core::String name;
