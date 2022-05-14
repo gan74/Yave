@@ -43,8 +43,8 @@ void PendingOpsQueue::garbage_collect() {
 
     auto pending = core::vector_with_capacity<std::future<void>>(_pending_ops.size());
     for(auto& future : _pending_ops) {
-        if(is_done(future)) {
-            if(future.valid()) {
+        if(future.valid()) {
+            if(is_done(future)) {
                 future.get();
             }
         } else {
@@ -55,8 +55,8 @@ void PendingOpsQueue::garbage_collect() {
 }
 
 void PendingOpsQueue::push(std::future<void> future) {
-    if(is_done(future)) {
-        if(future.valid()) {
+    if(future.valid()) {
+        if(is_done(future)) {
             future.get();
         }
         return;
