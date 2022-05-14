@@ -70,6 +70,10 @@ void log_msg(std::string_view msg, Log type) {
 
     FILE* out_channel = type == Log::Error || type == Log::Warning ? stdout : stderr;
     std::fprintf(out_channel, "%s %.*s\n", log_type_str[usize(type)], int(msg.size()), msg.data());
+
+    if(out_channel == stderr) {
+        std::fflush(out_channel);
+    }
 }
 
 void set_log_callback(detail::log_callback func, void* user_data) {
