@@ -87,6 +87,7 @@ void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, usize byte_
 
 void FrameGraphFrameResources::flush_mapped_buffers(CmdBufferRecorder& recorder) {
     y_profile();
+    const auto region = recorder.region("Flush buffers");
 
     for(usize i = 0; i != _buffers.size(); ++i) {
         if(_buffers[i].buffer && _buffers[i].staging) {

@@ -275,8 +275,6 @@ void FrameGraph::render(CmdBufferRecorder& recorder) {
 
     {
         CmdBufferRecorder prepare = create_disposable_cmd_buffer();
-        const auto region = recorder.region("Framegraph prepare");
-
         _resources->flush_mapped_buffers(prepare);
         command_queue().submit(std::move(prepare));
 
