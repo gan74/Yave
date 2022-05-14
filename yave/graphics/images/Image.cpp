@@ -62,23 +62,21 @@ static VkImage create_image(const math::Vec3ui& size, usize layers, usize mips, 
 }
 
 static core::ScratchPad<VkBufferImageCopy> get_copy_regions(const ImageData& data) {
-    core::ScratchPad<VkBufferImageCopy> regions(data.mipmaps() * data.layers());
+    core::ScratchPad<VkBufferImageCopy> regions(data.mipmaps());
 
     usize index = 0;
-    for(usize l = 0; l != data.layers(); ++l) {
-        for(usize m = 0; m != data.mipmaps(); ++m) {
-            const auto size = data.size(m);
-            VkBufferImageCopy copy = {};
-            {
-                copy.bufferOffset = data.data_offset(l, m);
-                copy.imageExtent = {size.x(), size.y(), size.z()};
-                copy.imageSubresource.aspectMask = data.format().vk_aspect();
-                copy.imageSubresource.mipLevel = u32(m);
-                copy.imageSubresource.baseArrayLayer = u32(l);
-                copy.imageSubresource.layerCount = 1;
-            }
-            regions[index++] = copy;
+    for(usize m = 0; m != data.mipmaps(); ++m) {
+        const auto size = data.mip_size(m);
+        VkBufferImageCopy copy = {};
+        {
+            copy.bufferOffset = data.data_offset(m);
+            copy.imageExtent = {size.x(), size.y(), size.z()};
+            copy.imageSubresource.aspectMask = data.format().vk_aspect();
+            copy.imageSubresource.mipLevel = u32(m);
+            copy.imageSubresource.baseArrayLayer = 0;
+            copy.imageSubresource.layerCount = 1;
         }
+        regions[index++] = copy;
     }
 
     return regions;
@@ -123,7 +121,7 @@ static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(const math::Ve
 static void upload_data(ImageBase& image, const ImageData& data) {
     y_profile();
 
-    const auto staging_buffer = stage_data(data.combined_byte_size(), data.data());
+    const auto staging_buffer = stage_data(data.byte_size(), data.data());
     const auto regions = get_copy_regions(data);
 
     CmdBufferRecorder recorder(create_disposable_cmd_buffer());
@@ -178,7 +176,6 @@ ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& s
 
 ImageBase::ImageBase(ImageUsage usage, ImageType type, const ImageData& data) :
         _size(data.size()),
-        _layers(u32(data.layers())),
         _mips(u32(data.mipmaps())),
         _format(data.format()),
         _usage(usage | ImageUsage::TransferDstBit) {

@@ -33,38 +33,41 @@ namespace yave {
 class ImageData : NonCopyable {
 
     public:
+        struct Mip {
+            core::Span<u8> data;
+            math::Vec3ui size;
+        };
+
         ImageData() = default;
         ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, usize mips = 1);
 
-
         static usize mip_count(const math::Vec3ui& size);
         static math::Vec3ui mip_size(const math::Vec3ui& size, usize mip = 0);
-        static usize byte_size(const math::Vec3ui& size, ImageFormat format, usize mip = 0);
-        static usize layer_byte_size(const math::Vec3ui& size, ImageFormat format, usize mips = 1);
+        static usize mip_byte_size(const math::Vec3ui& size, ImageFormat format, usize mip = 0);
+        static usize byte_size(const math::Vec3ui& size, ImageFormat format, usize mips);
+        static math::Vec3ui with_block_size(math::Vec3ui size, ImageFormat format);
 
-        usize byte_size(usize mip = 0) const;
-        usize layer_byte_size() const;
-        usize combined_byte_size() const;
+        usize mip_byte_size(usize mip) const;
+        usize byte_size() const;
 
         const math::Vec3ui& size() const;
-        math::Vec3ui size(usize mip) const;
+        math::Vec3ui mip_size(usize mip) const;
 
         const ImageFormat& format() const;
 
-        usize layers() const;
         usize mipmaps() const;
 
-        usize data_offset(usize layer = 0, usize mip = 0) const;
-        const u8* data(usize layer = 0, usize mip = 0) const;
+        usize data_offset(usize mip = 0) const;
+        Mip mip_data(usize mip = 0) const;
 
+        const u8* data() const;
 
-        y_reflect(_size, _format, _layers, _mips, _data)
+        y_reflect(_size, _format, _mips, _data)
 
     private:
         math::Vec3ui _size = math::Vec3ui(0, 0, 1);
         ImageFormat _format;
 
-        u32 _layers = 1;
         u32 _mips = 1;
 
         core::FixedArray<u8> _data;

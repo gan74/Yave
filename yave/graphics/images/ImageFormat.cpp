@@ -68,6 +68,10 @@ bool ImageFormat::is_block_format() const {
     }
 }
 
+math::Vec3ui ImageFormat::block_size() const {
+    return is_block_format() ? math::Vec3ui(4, 4, 1) : math::Vec3ui(1);
+}
+
 bool ImageFormat::is_depth_format() const {
     switch(_format) {
         case VK_FORMAT_D16_UNORM:

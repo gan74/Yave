@@ -50,6 +50,7 @@ class ImageFormat {
         bool is_sRGB() const;
 
         ImageFormat non_depth() const;
+        math::Vec3ui block_size() const;
 
         std::string_view name() const;
 

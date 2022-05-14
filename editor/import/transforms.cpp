@@ -236,7 +236,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
     y_debug_assert(size.x() * size.y() * components == input.size());
 
     const ImageFormat normalized_format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    const usize output_size = ImageData::layer_byte_size(math::Vec3ui(size, 1), normalized_format, mip_count) / sizeof(float);
+    const usize output_size = ImageData::byte_size(math::Vec3ui(size, 1), normalized_format, mip_count) / sizeof(float);
 
     core::FixedArray<float> output(output_size);
     {
@@ -291,7 +291,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
 ImageData compute_mipmaps(const ImageData& image) {
     y_profile();
 
-    if(image.layers() != 1 || image.size().z() != 1) {
+    if(image.size().z() != 1) {
         log_msg("Unable to generate mipmaps: only one layer is supported.", Log::Error);
         return copy(image);
     }

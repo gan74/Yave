@@ -157,9 +157,7 @@ static usize probe_size(const Texture& tex) {
 
 
 IBLProbe::IBLProbe(const ImageData& data) {
-    *this = data.layers() == 6
-        ? from_cubemap(Cubemap(data))
-        : from_equirec(Texture(data));
+    *this = from_equirec(Texture(data));
 }
 
 

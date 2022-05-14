@@ -38,33 +38,35 @@ math::Vec3ui ImageData::mip_size(const math::Vec3ui& size, usize mip) {
     return {std::max(u32(1), size.x() >> mip), std::max(u32(1), size.y() >> mip), std::max(u32(1), size.z() >> mip)};
 }
 
-usize ImageData::byte_size(const math::Vec3ui& size, ImageFormat format, usize mip) {
-    const auto s = mip_size(size, mip);
+usize ImageData::mip_byte_size(const math::Vec3ui& size, ImageFormat format, usize mip) {
+    const math::Vec3ui s = with_block_size(mip_size(size, mip), format);
     return (s.x() * s.y() * s.z() * format.bit_per_pixel()) / 8;
 }
 
-usize ImageData::layer_byte_size(const math::Vec3ui& size, ImageFormat format, usize mips) {
+usize ImageData::byte_size(const math::Vec3ui& size, ImageFormat format, usize mips) {
     usize data_size = 0;
     for(usize i = 0; i != mips; ++i) {
-        data_size += byte_size(size, format, i);
+        data_size += mip_byte_size(size, format, i);
     }
     return data_size;
 }
 
-usize ImageData::byte_size(usize mip) const {
-    return byte_size(_size, _format, mip);
+math::Vec3ui ImageData::with_block_size(math::Vec3ui size, ImageFormat format) {
+    if(format.is_block_format()) {
+        const math::Vec3ui block_size = format.block_size();
+        for(usize i = 0; i != 3; ++i) {
+            size[i] += size[i] % block_size[i];
+        }
+    }
+    return size;
 }
 
-usize ImageData::layer_byte_size() const {
-    return layer_byte_size(_size, _format, _mips);
+usize ImageData::mip_byte_size(usize mip) const {
+    return mip_byte_size(_size, _format, mip);
 }
 
-usize ImageData::combined_byte_size() const {
-    return layer_byte_size() * _layers;
-}
-
-usize ImageData::layers() const {
-    return _layers;
+usize ImageData::byte_size() const {
+    return byte_size(_size, _format, _mips);
 }
 
 usize ImageData::mipmaps() const {
@@ -75,7 +77,7 @@ const math::Vec3ui& ImageData::size() const {
     return _size;
 }
 
-math::Vec3ui ImageData::size(usize mip) const {
+math::Vec3ui ImageData::mip_size(usize mip) const {
     return mip_size(_size, mip);
 }
 
@@ -83,25 +85,31 @@ const ImageFormat& ImageData::format() const {
     return _format;
 }
 
-usize ImageData::data_offset(usize layer, usize mip) const {
-    usize offset = layer ? layer_byte_size() * layer : 0;
+usize ImageData::data_offset(usize mip) const {
+    usize offset = 0;
     for(usize i = 0; i != mip; ++i) {
-        offset += byte_size(i);
+        offset += mip_byte_size(i);
     }
     return offset;
 }
 
-const u8* ImageData::data(usize layer, usize mip) const {
-    return _data.data() + data_offset(layer, mip);
+const u8* ImageData::data() const {
+    return _data.data();
+}
+
+ImageData::Mip ImageData::mip_data(usize mip) const {
+    return Mip {
+        core::Span<u8>(_data.data() + data_offset(mip), mip_byte_size(mip)),
+        mip_size(mip)
+    };
 }
 
 ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, usize mips) :
         _size(size, 1),
         _format(format),
-        _layers(1),
         _mips(u32(mips)) {
 
-    usize data_size = combined_byte_size();
+    const usize data_size = byte_size();
     _data = core::FixedArray<u8>(data_size);
     std::memcpy(_data.data(), data, data_size);
 }
