@@ -79,7 +79,7 @@ bool ImageImporter::done_loading() const {
 
 void ImageImporter::import(const core::String& filename) {
     _import_future = std::async(std::launch::async, [=] {
-        auto result = import::import_image(filename, import::ImageImportFlags::GenerateMipmaps);
+        auto result = import::import_image(filename, import::ImageImportFlags::GenerateMipmaps | import::ImageImportFlags::Compress);
         if(result.is_error()) {
             log_msg("Unable to import image", Log::Error);
             return;

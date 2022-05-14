@@ -34,11 +34,11 @@ namespace yave {
 class FileSystemModel : NonCopyable {
     public:
         enum class EntryType {
-            File,
             Directory,
+            File,
             Unknown
         };
-        
+
         using for_each_f = std::function<void(std::string_view, EntryType)>;
 
         template<typename T = void>
@@ -56,7 +56,7 @@ class FileSystemModel : NonCopyable {
 
         virtual Result<bool> exists(std::string_view path) const = 0;
         virtual Result<bool> is_parent(std::string_view parent, std::string_view path) const;
-        
+
         virtual Result<EntryType> entry_type(std::string_view path) const = 0;
         virtual Result<bool> is_directory(std::string_view path) const;
         virtual Result<bool> is_file(std::string_view path) const;

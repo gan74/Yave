@@ -40,7 +40,9 @@ math::Vec3ui ImageData::mip_size(const math::Vec3ui& size, usize mip) {
 
 usize ImageData::mip_byte_size(const math::Vec3ui& size, ImageFormat format, usize mip) {
     const math::Vec3ui s = with_block_size(mip_size(size, mip), format);
-    return (s.x() * s.y() * s.z() * format.bit_per_pixel()) / 8;
+    const usize bits = (s.x() * s.y() * s.z() * format.bit_per_pixel());
+    y_debug_assert(bits % 8 == 0);
+    return bits / 8;
 }
 
 usize ImageData::byte_size(const math::Vec3ui& size, ImageFormat format, usize mips) {
@@ -55,7 +57,8 @@ math::Vec3ui ImageData::with_block_size(math::Vec3ui size, ImageFormat format) {
     if(format.is_block_format()) {
         const math::Vec3ui block_size = format.block_size();
         for(usize i = 0; i != 3; ++i) {
-            size[i] += size[i] % block_size[i];
+            const u32 m = size[i] % block_size[i];
+            size[i] += m ? block_size[i] - m : 0u;
         }
     }
     return size;

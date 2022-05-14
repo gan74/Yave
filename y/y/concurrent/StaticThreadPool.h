@@ -85,7 +85,8 @@ class StaticThreadPool : NonMovable {
 
         usize concurency() const;
         bool is_empty() const;
-        
+        usize pending_tasks() const;
+
         void cancel_pending_tasks();
 
         // Empty means all tasks are scheduled, not done!

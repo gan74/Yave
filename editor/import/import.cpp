@@ -149,12 +149,33 @@ core::Result<ImageData> import_image(core::Span<u8> image_data, ImageImportFlags
         img = compute_mipmaps(img);
     }
 
+    if((flags & ImageImportFlags::Compress) == ImageImportFlags::Compress) {
+        switch(bpp) {
+            case 3:
+                img = compress_bc1(img);
+            break;
+
+            /* case 1:
+                img = compress_bc4(img);
+            break; */
+
+            default:
+                log_msg("Compression is not supported for the given image format", Log::Error);
+        }
+    }
+
     return core::Ok(std::move(img));
 }
 
 core::String supported_image_extensions() {
     return "*.jpg;*.jpeg;*.png;*.bmp;*.psd;*.tga;*.gif;*.hdr;*.pic;*.ppm;*.pgm";
 }
+
+
+
+
+
+
 
 
 static usize component_count(int type) {
@@ -467,7 +488,7 @@ core::Result<ImageData> ParsedScene::build_image_data(usize index) const {
     const Image& parsed_image = images[index];
     y_debug_assert(!parsed_image.is_error);
 
-    ImageImportFlags flags = ImageImportFlags::None;
+    ImageImportFlags flags = ImageImportFlags::Compress;
     if(parsed_image.as_sRGB) {
         flags = flags | ImageImportFlags::ImportAsSRGB;
     }

@@ -96,6 +96,11 @@ bool StaticThreadPool::is_empty() const {
     return _shared_data.queue.empty() && !_shared_data.working;
 }
 
+usize StaticThreadPool::pending_tasks() const {
+    const std::unique_lock lock(_shared_data.lock);
+    return _shared_data.queue.size() + _shared_data.working;
+}
+
 void StaticThreadPool::cancel_pending_tasks() {
     const std::unique_lock lock(_shared_data.lock);
     _shared_data.queue.clear();
@@ -113,7 +118,7 @@ void StaticThreadPool::process_until_empty() {
 
 void StaticThreadPool::schedule(Func&& func, DependencyGroup* on_done, DependencyGroup wait_for) {
     y_debug_assert(_shared_data.run);
-    
+
     {
         const auto lock = std::unique_lock(_shared_data.lock);
         if(on_done) {

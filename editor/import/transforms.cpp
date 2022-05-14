@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
 
+#include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
 
 
@@ -119,7 +120,6 @@ MeshData compute_tangents(const MeshData& mesh) {
 
     return MeshData(std::move(vertices), copy(mesh.triangles()), copy(mesh.skin()), copy(mesh.bones()));
 }
-
 
 static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
     y_profile();
@@ -241,7 +241,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
     core::FixedArray<float> output(output_size);
     {
         const auto compute_mip = [&](const float* image_data, float* out, const math::Vec2ui& orig_size) -> usize {
-            y_profile();
+            y_profile_zone("compute mip");
 
             usize cursor = 0;
             const math::Vec2ui mip_size = {
@@ -296,15 +296,15 @@ ImageData compute_mipmaps(const ImageData& image) {
         return copy(image);
     }
 
-    if(image.format().is_block_format() || image.format().is_depth_format()) {
-        log_msg("Unable to generate mipmaps: format is not supported.", Log::Error);
-        return copy(image);
-    }
-
     const bool is_sRGB = image.format().is_sRGB();
     const usize components = image.format().components();
     const usize texels = image.size().x() * image.size().y();
     const usize mip_count = ImageData::mip_count(image.size());
+
+    if(image.format().is_block_format() || image.format().is_depth_format() || image.format().bit_per_pixel() != 8 * components) {
+        log_msg("Unable to generate mipmaps: format is not supported.", Log::Error);
+        return copy(image);
+    }
 
     core::FixedArray<float> input(texels * components);
     {
@@ -331,6 +331,151 @@ ImageData compute_mipmaps(const ImageData& image) {
 
     y_profile_zone("building image");
     return ImageData(image.size().to<2>(), data.data(), image.format(), mip_count);
+}
+
+
+template<typename F>
+ImageData block_compress(const ImageData& image, ImageFormat compressed_format, F&& process_block) {
+    if(image.format().bit_per_pixel() == 32 && image.size().z() == 1) {
+        y_profile_zone("compress");
+
+        const usize mip_count = image.mipmaps();
+        const usize compressed_size = ImageData::byte_size(image.size(), compressed_format, mip_count);
+        core::FixedArray<u8> compressed_data(compressed_size);
+
+        const math::Vec3ui block_size = compressed_format.block_size();
+        y_debug_assert(block_size.z() == 1);
+
+        core::ScratchPad<u8> block(block_size.x() * block_size.y() * 4);
+
+        usize offset = 0;
+        for(usize i = 0; i != mip_count; ++i) {
+            const ImageData::Mip mip = image.mip_data(i);
+            const usize mip_texel_count = mip.size.x() * mip.size.y();
+
+            for(usize y = 0; y < mip.size.x(); y += block_size.y()) {
+                for(usize x = 0; x < mip.size.x(); x += block_size.x()) {
+
+                    usize block_index = 0;
+                    for(usize by = 0; by != block_size.y(); ++by) {
+                        for(usize bx = 0; bx != block_size.x(); ++bx) {
+                            const usize image_index = (y + by) * mip.size.x() + (x + bx);
+                            const bool is_oob = image_index >= mip_texel_count;
+                            for(usize c = 0; c != 4; ++c) {
+                                block[block_index++] = is_oob ? 0 : mip.data[image_index * 4 + c];
+                            }
+                        }
+                    }
+
+                    const auto compressed_block = process_block(block.data());
+                    std::memcpy(compressed_data.data() + offset, &compressed_block, sizeof(compressed_block));
+                    offset += sizeof(compressed_block);
+                }
+            }
+        }
+
+        y_debug_assert(offset == compressed_size);
+
+        return ImageData(image.size().to<2>(), compressed_data.data(), compressed_format, mip_count);
+    }
+
+    log_msg("Compression isn't supported for given image format", Log::Error);
+    return copy(image);
+}
+
+static inline u16 to_565(u8 r, u8 g, u8 b) {
+    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
+
+// Inspired by https://github.com/wolfpld/tracy/blame/master/client/TracyDxt1.cpp
+static inline u64 compress_block_bc1(const u8* src) {
+    u8 min[3] = {src[0], src[1], src[2]};
+    u8 max[3] = {src[0], src[1], src[2]};
+
+    {
+        const u8* next_px = src + 4;
+        for(usize i = 1; i != 16; ++i) {
+            for(usize c = 0; c != 3; ++c) {
+                min[c] = std::min(min[c], next_px[c]);
+                max[c] = std::max(max[c], next_px[c]);
+            }
+            next_px += 4;
+        }
+    }
+
+#if 0
+    for(usize c = 0; c != 3; ++c) {
+        const u8 inset = (max[c] - min[c]) >> 4;
+        min[c] += inset;
+        max[c] -= inset;
+        y_debug_assert(min[c] <= max[c]);
+    }
+#endif
+
+    const u64 endpoint_0 = u64(to_565(min[0], min[1], min[2]));
+    const u64 endpoint_1 = u64(to_565(max[0], max[1], max[2]));
+    y_debug_assert(endpoint_0 <= endpoint_1);
+    if(endpoint_0 == endpoint_1) {
+        return endpoint_0;
+    }
+
+    math::Vec3i c0(min[0] & 0xF8, min[1] & 0xFC, min[2] & 0xF8);
+    math::Vec3i c1(max[0] & 0xF8, max[1] & 0xFC, max[2] & 0xF8);
+    const math::Vec3i colors[] = { c1, c0, (c1 * 2 + c0) / 3, (c1 + c0 * 2) / 3  };
+
+    u32 idx_data = 0;
+    for(usize i = 0; i != 16; ++i) {
+        const math::Vec3i color(src[0] & 0xF8, src[1] & 0xFC, src[2] & 0xF8);
+        u32 idx = 0;
+        i32 best = (colors[0] - color).length2();
+        for(u32 c = 1; c != 4; ++c) {
+            i32 score = (colors[c] - color).length2();
+            if(score < best) {
+                best = score;
+                idx = c;
+            }
+        }
+        idx_data |= idx << (i * 2);
+        src += 4;
+    }
+
+    return (u64(idx_data) << 32) | (endpoint_0 << 16) | (endpoint_1);
+}
+
+static inline u64 compress_block_bc4(const u8* src) {
+    const usize stride = 4;
+    u8 min = src[0];
+    u8 max = src[0];
+
+    for(usize i = 1; i != 16; ++i) {
+        min = std::min(min, src[stride * i]);
+        max = std::max(max, src[stride * i]);
+    }
+
+    const u8 diff = max - min;
+
+    u64 idx_data = 0;
+    for(usize i = 0; i != 16; ++i) {
+        const u32 value = src[stride * i];
+        const u64 idx = (value - min) * 8 / (diff + 1);
+        y_debug_assert(idx < 8);
+        idx_data |= idx << (i * 3);
+        src += 4;
+    }
+
+    return (u64(idx_data) << 48) | (u64(min) << 8) | (u64(max));
+}
+
+ImageData compress_bc1(const ImageData& image) {
+    const ImageFormat compressed_format = image.format().is_sRGB()
+        ? VK_FORMAT_BC1_RGB_SRGB_BLOCK
+        : VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+
+    return block_compress(image, compressed_format, compress_block_bc1);
+}
+
+ImageData compress_bc4(const ImageData& image) {
+    return block_compress(image, VK_FORMAT_BC4_UNORM_BLOCK, compress_block_bc4);
 }
 
 }

@@ -223,7 +223,7 @@ static AssetId import_single_asset(const T& asset, std::string_view name, AssetT
     }
 }
 
-void SceneImporter2::import_assets() {
+usize SceneImporter2::import_assets() {
     y_profile();
 
     auto log_func = [this](std::string_view msg, Log type) {
@@ -234,12 +234,14 @@ void SceneImporter2::import_assets() {
 
     concurrent::DependencyGroup image_deps;
     concurrent::DependencyGroup mesh_material_deps;
+    usize to_import = 0;
 
     // --------------------------------- Images ---------------------------------
     {
         const core::String image_import_path = asset_store().filesystem()->join(_import_path, "Textures");
         for(usize i = 0; i != _scene.images.size(); ++i) {
             if(_scene.images[i].import) {
+                ++to_import;
                 _thread_pool.schedule([=] {
                     auto& image = _scene.images[i];
                     y_debug_assert(image.asset_id == AssetId::invalid_id());
@@ -256,6 +258,7 @@ void SceneImporter2::import_assets() {
         const core::String mesh_import_path = asset_store().filesystem()->join(_import_path, "Meshes");
         for(usize i = 0; i != _scene.meshes.size(); ++i) {
             if(_scene.meshes[i].import) {
+                ++to_import;
                 _thread_pool.schedule([=] {
                     auto& mesh = _scene.meshes[i];
                     y_debug_assert(mesh.asset_id == AssetId::invalid_id());
@@ -276,6 +279,7 @@ void SceneImporter2::import_assets() {
         const core::String material_import_path = asset_store().filesystem()->join(_import_path, "Materials");
         for(usize i = 0; i != _scene.materials.size(); ++i) {
             if(_scene.materials[i].import) {
+                ++to_import;
                 _thread_pool.schedule([=] {
                     auto& material = _scene.materials[i];
                     y_debug_assert(material.asset_id == AssetId::invalid_id());
@@ -320,6 +324,7 @@ void SceneImporter2::import_assets() {
         const core::String prefab_import_path = asset_store().filesystem()->join(_import_path, "Prefabs");
         for(usize i = 0; i != _scene.meshes.size(); ++i) {
             if(_scene.meshes[i].import) {
+                ++to_import;
                 _thread_pool.schedule([=] {
                     auto& mesh = _scene.meshes[i];
                     y_debug_assert(mesh.asset_id == AssetId::invalid_id());
@@ -332,6 +337,7 @@ void SceneImporter2::import_assets() {
 
     // --------------------------------- Scene ---------------------------------
     if(_scene.import_scene) {
+        ++to_import;
         _thread_pool.schedule([=] {
             const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
             auto prefabs = core::vector_with_capacity<ecs::EntityPrefab>(_scene.meshes.size());
@@ -343,6 +349,8 @@ void SceneImporter2::import_assets() {
             import_single_asset(ecs::EntityScene(std::move(prefabs)), asset_store().filesystem()->join(scene_import_path, _scene.name), AssetType::Scene, _emergency_uid, log_func);
         }, nullptr, mesh_material_deps);
     }
+
+    return to_import;
 }
 
 void SceneImporter2::on_gui() {
@@ -363,7 +371,7 @@ void SceneImporter2::on_gui() {
                     _state = State::Settings;
                 }
             }
-            
+
             if(ImGui::Button("Cancel")) {
                 _thread_pool.cancel_pending_tasks();
                 close();
@@ -413,13 +421,15 @@ void SceneImporter2::on_gui() {
             ImGui::EndChild();
 
             if(ImGui::Button(ICON_FA_CHECK " Import") || _import_with_default_settings) {
-                import_assets();
+                _to_import = import_assets();
                 _state = State::Importing;
             }
         } break;
 
         case State::Importing:
-            ImGui::Text("Importing assets%s", imgui::ellipsis());
+            ImGui::TextUnformatted("Importing assets:");
+            ImGui::SameLine();
+            ImGui::ProgressBar(1.0f - float(_thread_pool.pending_tasks()) / float(_to_import));
             if(_thread_pool.is_empty()) {
                 refresh_all();
                 _state = State::Done;
@@ -451,7 +461,7 @@ void SceneImporter2::on_gui() {
                 }
             }
             ImGui::EndChild();
-            
+
 
             if(ImGui::Button("Ok")) {
                 close();

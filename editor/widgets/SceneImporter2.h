@@ -46,15 +46,16 @@ class SceneImporter2 final : public Widget {
 
     protected:
         void on_gui() override;
-        
+
         bool should_keep_alive() const override;
 
     private:
-        void import_assets();
+        usize import_assets();
 
         core::String _import_path;
 
         bool _import_with_default_settings = false;
+        usize _to_import = 0;
         State _state = State::Browsing;
 
         FileBrowser _browser;

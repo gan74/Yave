@@ -105,6 +105,7 @@ enum class ImageImportFlags {
 
     GenerateMipmaps = 0x01,
     ImportAsSRGB    = 0x02,
+    Compress        = 0x04,
 };
 
 core::Result<ImageData> import_image(const core::String& filename, ImageImportFlags flags = ImageImportFlags::None);
