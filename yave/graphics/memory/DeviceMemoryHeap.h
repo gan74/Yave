@@ -36,10 +36,6 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
     struct FreeBlock {
         u64 offset;
         u64 size;
-
-        u64 end_offset() const;
-        bool contiguous(const FreeBlock& blck) const;
-        void merge(const FreeBlock& block);
     };
 
     public:
@@ -65,14 +61,14 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
         void swap(DeviceMemoryHeap& other);
 
         DeviceMemory create(u64 offset, u64 size);
-        void free(const FreeBlock& block);
-        void compact_block(FreeBlock block);
+        void sort_and_compact_blocks();
 
         VkDeviceMemory _memory = {};
         u64 _heap_size = 0;
-        core::Vector<FreeBlock> _blocks;
         void* _mapping = nullptr;
 
+        core::Vector<FreeBlock> _free_blocks;
+        bool _should_compact = false;
         mutable std::mutex _lock;
 };
 

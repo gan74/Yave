@@ -32,25 +32,12 @@ static u64 align_size(u64 total_byte_size, u64 alignent) {
     return (total_byte_size + alignent - 1) & ~(alignent - 1);
 }
 
-u64 DeviceMemoryHeap::FreeBlock::end_offset() const {
-    return offset + size;
-}
-
-bool DeviceMemoryHeap::FreeBlock::contiguous(const FreeBlock& blck) const {
-    return end_offset() == blck.offset || blck.end_offset() == offset;
-}
-
-void DeviceMemoryHeap::FreeBlock::merge(const FreeBlock& block) {
-    y_debug_assert(contiguous(block));
-    std::tie(offset, size) = std::tuple{std::min(offset, block.offset), size + block.size};
-}
-
-
 DeviceMemoryHeap::DeviceMemoryHeap(u32 type_bits, MemoryType type, u64 heap_size) :
         _memory(alloc_memory(heap_size, type_bits, type)),
         _heap_size(heap_size),
-        _blocks({FreeBlock{0, heap_size}}),
         _mapping(nullptr) {
+
+    _free_blocks << FreeBlock { 0, heap_size };
 
     if(is_cpu_visible(type)) {
         const VkMemoryMapFlags flags = {};
@@ -63,12 +50,13 @@ DeviceMemoryHeap::DeviceMemoryHeap(u32 type_bits, MemoryType type, u64 heap_size
 }
 
 DeviceMemoryHeap::~DeviceMemoryHeap() {
-    if(_blocks.size() != 1) {
-        y_fatal("Not all memory has been free: heap fragmented.");
-    }
-    if(_blocks[0].offset || _blocks[0].size != _heap_size) {
-        y_fatal("Not all memory has been freed.");
-    }
+    const auto lock = y_profile_unique_lock(_lock);
+
+    sort_and_compact_blocks();
+
+    y_always_assert(_free_blocks.size() == 1, "Not all memory has been released: heap fragmented");
+    y_always_assert(_free_blocks[0].offset == 0 && _free_blocks[0].size == _heap_size, "Not all memory has been freed");
+
     if(_mapping) {
         vkUnmapMemory(vk_device(), _memory);
     }
@@ -85,7 +73,10 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(VkMemoryRequirements reqs) {
     const u64 size = align_size(reqs.size, alignment);
 
     const auto lock = y_profile_unique_lock(_lock);
-    for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
+
+    sort_and_compact_blocks();
+
+    for(auto it = _free_blocks.begin(); it != _free_blocks.end(); ++it) {
         const u64 full_size = it->size;
 
         if(full_size < size) {
@@ -103,16 +94,16 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(VkMemoryRequirements reqs) {
         y_debug_assert(aligned_offset % reqs.alignment == 0);
 
         if(aligned_size == size) {
-            _blocks.erase_unordered(it);
+            _free_blocks.erase_unordered(it);
             if(align_correction) {
-                _blocks << FreeBlock{offset, align_correction};
+                _free_blocks << FreeBlock{offset, align_correction};
             }
             return core::Ok(create(aligned_offset, size));
         } else if(aligned_size > size) {
             const u64 end = offset + full_size;
             it->size = end - (it->offset = aligned_offset + size);
             if(align_correction) {
-                _blocks << FreeBlock{offset, align_correction};
+                _free_blocks << FreeBlock{offset, align_correction};
             }
             return core::Ok(create(aligned_offset, size));
         }
@@ -123,34 +114,49 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(VkMemoryRequirements reqs) {
 
 void DeviceMemoryHeap::free(const DeviceMemory& memory) {
     y_debug_assert(memory.vk_memory() == _memory);
-    free(FreeBlock {memory.vk_offset(), memory.vk_size()});
-}
 
-void DeviceMemoryHeap::free(const FreeBlock& block) {
-    y_profile();
-    y_debug_assert(block.end_offset() <= size());
-    compact_block(block);
-}
-
-void DeviceMemoryHeap::compact_block(FreeBlock block) {
-    y_profile();
-    // sort ?
     const auto lock = y_profile_unique_lock(_lock);
-    bool compacted = false;
-    do {
-        compacted = false;
-        for(auto it = _blocks.begin(); it != _blocks.end(); ++it) {
-            FreeBlock b = *it;
-            if(b.contiguous(block)) {
-                _blocks.erase_unordered(it);
-                b.merge(block);
-                block = b;
-                compacted = true;
-                break;
-            }
+
+    _free_blocks << FreeBlock {
+        memory.vk_offset(),
+        memory.vk_size()
+    };
+
+    _should_compact = true;
+}
+
+
+void DeviceMemoryHeap::sort_and_compact_blocks() {
+    y_profile();
+
+    y_debug_assert(!_lock.try_lock());
+
+    const usize block_count = _free_blocks.size();
+    if(!_should_compact || block_count < 2) {
+        return;
+    }
+
+    _should_compact = false;
+
+    std::sort(_free_blocks.begin(), _free_blocks.end(), [](const auto& a, const auto& b) {
+        return a.offset < b.offset;
+    });
+
+    usize dst = 0;
+    for(usize i = 1; i != block_count; ++i) {
+        const u64 dst_end = _free_blocks[dst].offset + _free_blocks[dst].size;
+        if(_free_blocks[i].offset == dst_end) {
+            _free_blocks[dst].size += _free_blocks[i].size;
+        } else {
+            y_debug_assert(_free_blocks[i].offset > dst_end);
+            ++dst;
+            _free_blocks[dst] = _free_blocks[i];
         }
-    } while(compacted);
-    _blocks << block;
+    }
+
+    while(_free_blocks.size() != dst + 1) {
+          _free_blocks.pop();
+    }
 }
 
 void* DeviceMemoryHeap::map(const DeviceMemoryView& view) {
@@ -167,7 +173,7 @@ u64 DeviceMemoryHeap::size() const {
 u64 DeviceMemoryHeap::available() const {
     const auto lock = y_profile_unique_lock(_lock);
     u64 tot = 0;
-    for(const auto& b : _blocks) {
+    for(const auto& b : _free_blocks) {
         tot += b.size;
     }
     return tot;
@@ -175,7 +181,7 @@ u64 DeviceMemoryHeap::available() const {
 
 usize DeviceMemoryHeap::free_blocks() const {
     const auto lock = y_profile_unique_lock(_lock);
-    return _blocks.size();
+    return _free_blocks.size();
 }
 
 }
