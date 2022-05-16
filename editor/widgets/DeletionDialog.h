@@ -37,7 +37,7 @@ class DeletionDialog final : public Widget {
 
     private:
         ecs::EntityId _id;
-        bool _delete_children = false;
+        bool _delete_children = true;
 };
 
 }
