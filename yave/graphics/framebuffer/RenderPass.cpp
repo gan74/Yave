@@ -179,7 +179,7 @@ RenderPass::RenderPass(core::Span<AttachmentData> colors) :
 }
 
 RenderPass::~RenderPass() {
-    device_destroy(_render_pass);
+    destroy_graphic_resource(_render_pass);
 }
 
 bool RenderPass::is_null() const {

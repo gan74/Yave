@@ -56,7 +56,7 @@ CmdBufferPool::~CmdBufferPool() {
 
     y_debug_assert(_cmd_buffers.size() == _released.size());
 
-    device_destroy(_pool);
+    destroy_graphic_resource(_pool);
 }
 
 VkCommandPool CmdBufferPool::vk_pool() const {

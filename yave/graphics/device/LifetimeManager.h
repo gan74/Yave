@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemory.h>
+#include <yave/meshes/MeshDrawData.h>
 
 #include <variant>
 #include <deque>

@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/scene/SceneView.h>
 #include <yave/systems/OctreeSystem.h>
+#include <yave/graphics/device/MeshAllocator.h>
 
 #include <editor/utils/ui.h>
 
@@ -126,7 +127,6 @@ class MemoryDebug : public Widget {
             _last_total = total_allocs;
         }
 
-
     private:
         u64 _last_total = 0;
 };
@@ -154,10 +154,35 @@ class EcsDebug : public Widget {
                 ImGui::EndChild();
             }
         }
-
-
-    private:
 };
 
+
+class MeshAllocatorDebug : public Widget {
+    editor_widget(MeshAllocatorDebug, "View", "Debug")
+
+    public:
+        MeshAllocatorDebug() : Widget("Mesh allocator debug") {
+        }
+
+    protected:
+        void on_gui() override {
+            auto [vert, tris] = mesh_allocator().allocated();
+
+            {
+                ImGui::TextUnformatted("Vertex buffer:");
+                ImGui::SameLine();
+                ImGui::ProgressBar(float(vert) / MeshAllocator::default_vertex_count, ImVec2(-1.0f, 0.0f),
+                    fmt_c_str("%k / %k", vert / 1000, MeshAllocator::default_vertex_count / 1000)
+                );
+            }
+            {
+                ImGui::TextUnformatted("Triangle buffer:");
+                ImGui::SameLine();
+                ImGui::ProgressBar(float(tris) / MeshAllocator::default_triangle_count, ImVec2(-1.0f, 0.0f),
+                    fmt_c_str("%k / %k", tris / 1000, MeshAllocator::default_triangle_count / 1000)
+                );
+            }
+        }
+};
 
 }

@@ -74,7 +74,7 @@ RayTracing::AccelerationStructure::~AccelerationStructure() {
 
     rt->_destroy_acceleration_structure(vk_device(), _acceleration_structure, vk_allocation_callbacks());
 
-    device_destroy(std::move(_memory));
+    destroy_graphic_resource(std::move(_memory));
 }
 
 VkGeometryNV RayTracing::AccelerationStructure::create_mesh_geometry(const StaticMesh& mesh) {

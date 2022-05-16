@@ -228,7 +228,7 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
 }
 
 ShaderModuleBase::~ShaderModuleBase() {
-    device_destroy(_module);
+    destroy_graphic_resource(_module);
 }
 
 }

@@ -22,7 +22,56 @@ SOFTWARE.
 
 #include "MeshDrawData.h"
 
+#include <yave/graphics/device/MeshAllocator.h>
+
 namespace yave {
+
+std::array<AttribSubBuffer, 3> MeshBufferData::untyped_attrib_buffers() const {
+    y_debug_assert(_attrib_buffers.positions.size() == _attrib_buffers.normals_tangents.size());
+    y_debug_assert(_attrib_buffers.positions.size() == _attrib_buffers.uvs.size());
+
+    return std::array<AttribSubBuffer, 3>{
+        _attrib_buffers.positions,
+        _attrib_buffers.normals_tangents,
+        _attrib_buffers.uvs,
+    };
+}
+
+u64 MeshBufferData::attrib_buffer_elem_count() const {
+    return _attrib_buffers.positions.size();
+}
+
+TriangleSubBuffer MeshBufferData::triangle_buffer() const {
+    return _triangle_buffer;
+}
+
+const TypedAttribSubBuffer<math::Vec3>& MeshBufferData::position_buffer() const {
+    return _attrib_buffers.positions;
+}
+
+MeshAllocator* MeshBufferData::parent() const {
+    return _parent;
+}
+
+
+
+MeshDrawData::MeshDrawData(MeshDrawData&& other) {
+    swap(other);
+}
+
+MeshDrawData& MeshDrawData::operator=(MeshDrawData&& other) {
+    swap(other);
+    return *this;
+}
+
+MeshDrawData::~MeshDrawData() {
+    y_debug_assert(is_null());
+}
+
+void MeshDrawData::recycle() {
+    y_debug_assert(_buffer_data);
+    _buffer_data->parent()->recycle(this);
+}
 
 bool MeshDrawData::is_null() const {
     return !_buffer_data;
@@ -30,12 +79,12 @@ bool MeshDrawData::is_null() const {
 
 TriangleSubBuffer MeshDrawData::triangle_buffer() const {
     y_debug_assert(_buffer_data);
-    return _buffer_data->triangle_buffer;
+    return _buffer_data->triangle_buffer();
 }
 
 const TypedAttribSubBuffer<math::Vec3>& MeshDrawData::position_buffer() const {
     y_debug_assert(_buffer_data);
-    return _buffer_data->attrib_buffers.positions;
+    return _buffer_data->position_buffer();
 }
 
 const MeshBufferData& MeshDrawData::mesh_buffers() const {
@@ -45,6 +94,12 @@ const MeshBufferData& MeshDrawData::mesh_buffers() const {
 
 const VkDrawIndexedIndirectCommand& MeshDrawData::indirect_data() const {
     return _indirect_data;
+}
+
+void MeshDrawData::swap(MeshDrawData& other) {
+    std::swap(_indirect_data, other._indirect_data);
+    std::swap(_buffer_data, other._buffer_data);
+    std::swap(_vertex_count, other._vertex_count);
 }
 
 }

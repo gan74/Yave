@@ -30,34 +30,39 @@ SOFTWARE.
 
 namespace yave {
 
-struct MeshBufferData : NonMovable {
-    TriangleSubBuffer triangle_buffer;
+class MeshBufferData : NonMovable {
+    public:
+        struct AttribBuffers {
+            TypedAttribSubBuffer<math::Vec3> positions;
+            TypedAttribSubBuffer<math::Vec2ui> normals_tangents;
+            TypedAttribSubBuffer<math::Vec2> uvs;
+        } ;
 
-    struct AttribBuffers {
-        TypedAttribSubBuffer<math::Vec3> positions;
-        TypedAttribSubBuffer<math::Vec2ui> normals_tangents;
-        TypedAttribSubBuffer<math::Vec2> uvs;
-    } attrib_buffers;
+        std::array<AttribSubBuffer, 3> untyped_attrib_buffers() const;
 
-    std::array<AttribSubBuffer, 3> untyped_attrib_buffers() const {
-        y_debug_assert(attrib_buffers.positions.size() == attrib_buffers.normals_tangents.size());
-        y_debug_assert(attrib_buffers.positions.size() == attrib_buffers.uvs.size());
+        u64 attrib_buffer_elem_count() const;
 
-        return std::array<AttribSubBuffer, 3>{
-            attrib_buffers.positions,
-            attrib_buffers.normals_tangents,
-            attrib_buffers.uvs,
-        };
-    }
+        TriangleSubBuffer triangle_buffer() const;
+        const TypedAttribSubBuffer<math::Vec3>& position_buffer() const;
 
-    u64 attrib_buffer_elem_count() const {
-        return attrib_buffers.positions.size();
-    }
+        MeshAllocator* parent() const;
+
+    private:
+        friend class MeshAllocator;
+
+        AttribBuffers _attrib_buffers;
+        TriangleSubBuffer _triangle_buffer;
+
+        MeshAllocator* _parent = nullptr;
 };
 
 class MeshDrawData : NonCopyable {
     public:
         MeshDrawData() = default;
+        MeshDrawData(MeshDrawData&& other);
+        MeshDrawData& operator=(MeshDrawData&& other);
+
+        ~MeshDrawData();
 
         bool is_null() const;
 
@@ -69,11 +74,17 @@ class MeshDrawData : NonCopyable {
         const VkDrawIndexedIndirectCommand& indirect_data() const;
 
     private:
+        friend class LifetimeManager;
         friend class MeshAllocator;
 
-        VkDrawIndexedIndirectCommand _indirect_data = {};
+        void recycle();
 
+    private:
+        void swap(MeshDrawData& other);
+
+        VkDrawIndexedIndirectCommand _indirect_data = {};
         MeshBufferData* _buffer_data = nullptr;
+        u64 _vertex_count = 0;
 
 
 };

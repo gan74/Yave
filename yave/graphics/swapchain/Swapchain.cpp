@@ -179,7 +179,7 @@ bool Swapchain::reset() {
     const VkSwapchainKHR old = _swapchain;
 
     if(build_swapchain()) {
-        device_destroy(old);
+        destroy_graphic_resource(old);
         return true;
     }
 
@@ -191,8 +191,8 @@ Swapchain::~Swapchain() {
 
     destroy_semaphores();
 
-    device_destroy(_swapchain);
-    device_destroy(_surface);
+    destroy_graphic_resource(_swapchain);
+    destroy_graphic_resource(_surface);
 }
 
 bool Swapchain::build_swapchain() {
@@ -298,9 +298,9 @@ void Swapchain::build_semaphores() {
 
 void Swapchain::destroy_semaphores() {
     for(const auto& semaphores : _semaphores) {
-        device_destroy(semaphores.render_complete);
-        device_destroy(semaphores.image_aquired);
-        device_destroy(semaphores.fence);
+        destroy_graphic_resource(semaphores.render_complete);
+        destroy_graphic_resource(semaphores.image_aquired);
+        destroy_graphic_resource(semaphores.fence);
     }
     _semaphores.clear();
 }

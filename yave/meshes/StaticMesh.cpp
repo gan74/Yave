@@ -31,6 +31,10 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
     _aabb(mesh_data.aabb())  {
 }
 
+StaticMesh::~StaticMesh() {
+    destroy_graphic_resource(std::move(_draw_data));
+}
+
 bool StaticMesh::is_null() const {
     return _draw_data.is_null();
 }

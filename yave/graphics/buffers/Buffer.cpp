@@ -71,8 +71,8 @@ BufferBase::BufferBase(u64 byte_size, BufferUsage usage, MemoryType type) : _siz
 }
 
 BufferBase::~BufferBase() {
-    device_destroy( _buffer);
-    device_destroy(std::move(_memory));
+    destroy_graphic_resource( _buffer);
+    destroy_graphic_resource(std::move(_memory));
 }
 
 BufferUsage BufferBase::usage() const {

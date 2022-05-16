@@ -83,8 +83,8 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 }
 
 ComputeProgram::~ComputeProgram() {
-    device_destroy(_layout);
-    device_destroy(_pipeline);
+    destroy_graphic_resource(_layout);
+    destroy_graphic_resource(_pipeline);
 }
 
 bool ComputeProgram::is_null() const {

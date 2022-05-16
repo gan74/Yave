@@ -440,7 +440,7 @@ void wait_all_queues() {
 
 
 #define YAVE_GENERATE_DESTROY_IMPL(T)                                                   \
-    void device_destroy(T t) {                                                          \
+    void destroy_graphic_resource(T t) {                                                \
         if(t) {                                                                         \
             lifetime_manager().destroy_later(std::move(t));                             \
         }                                                                               \
@@ -450,7 +450,7 @@ YAVE_VK_RESOURCE_TYPES(YAVE_GENERATE_DESTROY_IMPL)
 #undef YAVE_GENERATE_DESTROY_IMPL
 
 #define YAVE_GENERATE_DESTROY_IMPL(T)                                                   \
-    void device_destroy(T t) {                                                          \
+    void destroy_graphic_resource(T t) {                                                \
         if(!t.is_null()) {                                                              \
             lifetime_manager().destroy_later(std::move(t));                             \
         }                                                                               \

@@ -32,8 +32,8 @@ GraphicPipeline::GraphicPipeline(VkPipeline pipeline, VkPipelineLayout layout) :
 }
 
 GraphicPipeline::~GraphicPipeline() {
-    device_destroy(_pipeline);
-    device_destroy(_layout);
+    destroy_graphic_resource(_pipeline);
+    destroy_graphic_resource(_layout);
 }
 
 VkPipeline GraphicPipeline::vk_pipeline() const {

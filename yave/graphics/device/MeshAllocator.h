@@ -26,8 +26,10 @@ SOFTWARE.
 #include <yave/meshes/MeshDrawData.h>
 
 #include <y/core/Span.h>
+#include <y/core/Vector.h>
 
 #include <atomic>
+#include <mutex>
 
 namespace yave {
 
@@ -35,20 +37,41 @@ class MeshAllocator : NonMovable {
     using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
     using MutableAttribSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;
 
+    struct FreeBlock {
+        u64 vertex_offset;
+        u64 vertex_count;
+
+        u64 triangle_offset;
+        u64 triangle_count;
+    };
+
     public:
         static const u64 default_vertex_count = 16 * 1024 * 1024;
         static const u64 default_triangle_count = 16 * 1024 * 1024;
 
         MeshAllocator();
+        ~MeshAllocator();
 
         MeshDrawData alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
 
+        std::pair<u64, u64> available() const; // slow!
+        std::pair<u64, u64> allocated() const; // slow!
+        usize free_blocks() const;
+
     private:
+        friend class MeshDrawData;
+
+        std::pair<u64, u64> alloc_block(u64 vertex_count, u64 triangle_count);
+        void sort_and_compact_blocks();
+
+        void recycle(MeshDrawData* data);
+
         AttribBuffer<> _attrib_buffer;
         TriangleBuffer<> _triangle_buffer;
 
-        std::atomic<u64> _vertex_offset = 0;
-        std::atomic<u64> _triangle_offset = 0;
+        core::Vector<FreeBlock> _free_blocks;
+        bool _should_compact = false;
+        mutable std::mutex _lock;
 
         std::unique_ptr<MeshBufferData> _buffer_data;
 };

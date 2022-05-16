@@ -188,9 +188,9 @@ ImageBase::ImageBase(ImageUsage usage, ImageType type, const ImageData& data) :
 }
 
 ImageBase::~ImageBase() {
-    device_destroy(_view);
-    device_destroy(_image);
-    device_destroy(std::move(_memory));
+    destroy_graphic_resource(_view);
+    destroy_graphic_resource(_image);
+    destroy_graphic_resource(std::move(_memory));
 }
 
 bool ImageBase::is_null() const {

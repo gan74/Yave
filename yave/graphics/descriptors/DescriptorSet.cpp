@@ -36,7 +36,7 @@ DescriptorSet::DescriptorSet(core::Span<Descriptor> bindings) {
 }
 
 DescriptorSet::~DescriptorSet() {
-    device_destroy(std::move(_data));
+    destroy_graphic_resource(std::move(_data));
 }
 
 DescriptorSet::DescriptorSet(DescriptorSet&& other) {

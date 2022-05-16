@@ -30,7 +30,7 @@ Sampler::Sampler(VkSampler sampler) : _sampler(sampler) {
 }
 
 Sampler::~Sampler() {
-    device_destroy(_sampler);
+    destroy_graphic_resource(_sampler);
 }
 
 VkSampler Sampler::vk_sampler() const {

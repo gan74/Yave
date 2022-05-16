@@ -32,6 +32,7 @@ class CVarConsole;
 class CameraController;
 class ComponentPanel;
 class ComponentPanelWidgetBase;
+class DeletionDialog;
 class EditorApplication;
 class EditorComponent;
 class EditorResources;

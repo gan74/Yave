@@ -103,7 +103,7 @@ DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
-    device_destroy(_layout);
+    destroy_graphic_resource(_layout);
 }
 
 bool DescriptorSetLayout::is_null() const {
@@ -194,7 +194,7 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
 
 DescriptorSetPool::~DescriptorSetPool() {
     y_debug_assert(_taken.none());
-    device_destroy(_pool);
+    destroy_graphic_resource(_pool);
 }
 
 u64 DescriptorSetPool::inline_sub_buffer_alignment() const {

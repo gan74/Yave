@@ -38,6 +38,11 @@ class StaticMesh : NonCopyable {
         StaticMesh() = default;
         StaticMesh(const MeshData& mesh_data);
 
+        StaticMesh(StaticMesh&&) = default;
+        StaticMesh& operator=(StaticMesh&&) = default;
+
+        ~StaticMesh();
+
         bool is_null() const;
 
         const MeshDrawData& draw_data() const;

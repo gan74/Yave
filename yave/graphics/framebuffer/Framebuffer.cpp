@@ -91,7 +91,7 @@ Framebuffer::Framebuffer(const DepthAttachmentView& depth, core::Span<ColorAttac
 }
 
 Framebuffer::~Framebuffer() {
-    device_destroy(_framebuffer);
+    destroy_graphic_resource(_framebuffer);
 }
 
 bool Framebuffer::is_null() const {

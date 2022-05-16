@@ -155,7 +155,7 @@ void RenderPassRecorder::draw_array(usize vertex_count) {
 
 void RenderPassRecorder::bind_mesh_buffers(const MeshBufferData& mesh_buffers) {
     if(_cache.mesh_buffer_data != &mesh_buffers) {
-        bind_index_buffer(mesh_buffers.triangle_buffer);
+        bind_index_buffer(mesh_buffers.triangle_buffer());
         bind_attrib_buffers(mesh_buffers.untyped_attrib_buffers());
         _cache.mesh_buffer_data = &mesh_buffers;
     }

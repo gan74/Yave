@@ -171,6 +171,8 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
                 res.free();
             } else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
                 res.recycle();
+            } else if constexpr(std::is_same_v<decltype(res), MeshDrawData&>) {
+                res.recycle();
             } else {
                 vk_destroy(res);
             }

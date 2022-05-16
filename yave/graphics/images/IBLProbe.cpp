@@ -83,7 +83,7 @@ struct ProbeBaseView : NonMovable, ViewBase {
 
     ~ProbeBaseView() {
         // Unlike "normal" image views we own the vulkan object
-        device_destroy(vk_view());
+        destroy_graphic_resource(vk_view());
     }
 };
 
