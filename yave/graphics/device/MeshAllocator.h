@@ -46,8 +46,8 @@ class MeshAllocator : NonMovable {
     };
 
     public:
-        static const u64 default_vertex_count = 16 * 1024 * 1024;
-        static const u64 default_triangle_count = 16 * 1024 * 1024;
+        static const u64 default_vertex_count = 8 * 1024 * 1024;
+        static const u64 default_triangle_count = 8 * 1024 * 1024;
 
         MeshAllocator();
         ~MeshAllocator();
