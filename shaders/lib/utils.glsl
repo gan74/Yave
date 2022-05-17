@@ -5,6 +5,17 @@
 
 // -------------------------------- TYPES --------------------------------
 
+struct SurfaceInfo {
+    vec3 albedo;
+
+    float perceptual_roughness;
+    float roughness;
+    float metallic;
+
+    vec3 F0;
+
+    vec3 normal;
+};
 struct Frustum {
     vec4 planes[6];
 };
@@ -83,18 +94,6 @@ struct ToneMappingParams {
 
     uint padding_0;
 };
-
-struct Surfel {
-    vec3 position;
-    uint padding_0;
-
-    vec3 albedo;
-    uint padding_1;
-
-    vec3 normal;
-    uint padding_2;
-};
-
 
 // -------------------------------- UTILS --------------------------------
 
@@ -425,6 +424,12 @@ vec3 Yxy_to_RGB(vec3 Yxy) {
     return XYZ_to_RGB(Yxy_to_XYZ(Yxy));
 }
 
+
+// -------------------------------- GBUFFER --------------------------------
+
+vec3 approx_F0(float metallic, vec3 albedo) {
+    return mix(vec3(0.04), albedo, metallic);
+}
 
 #endif
 

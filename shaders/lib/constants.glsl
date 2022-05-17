@@ -2,6 +2,7 @@
 #define CONSTANTS_GLSL
 
 const float pi = 3.1415926535897932384626433832795;
+const float inv_pi = 1.0 / pi;
 const float euler = 2.7182818284590452353602874713526;
 const float epsilon = 0.0000001;
 

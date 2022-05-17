@@ -45,15 +45,15 @@ void main() {
                                normal.y * in_bitangent +
                                normal.z * in_normal;
 
-    GBufferData gbuffer;
-    gbuffer.albedo = color.rgb;
-    gbuffer.normal = mapped_normal;
+    SurfaceInfo surface;
+    surface.albedo = color.rgb;
+    surface.normal = mapped_normal;
 
     // We fetch Y so we can use either greyscale or RG metallic/roughness textures
-    gbuffer.roughness = texture(in_roughness, in_uv).GLTF_ROUGHNESS_CHANNEL * roughness_mul;
-    gbuffer.metallic = texture(in_metallic, in_uv).GLTF_METALLIC_CHANNEL * metallic_mul;
+    surface.perceptual_roughness = texture(in_roughness, in_uv).GLTF_ROUGHNESS_CHANNEL * roughness_mul;
+    surface.metallic = texture(in_metallic, in_uv).GLTF_METALLIC_CHANNEL * metallic_mul;
 
-    write_gbuffer(gbuffer, out_rt0, out_rt1);
+    write_gbuffer(surface, out_rt0, out_rt1);
 
 #ifdef EMISSIVE
     out_emissive = texture(in_emissive, in_uv) * vec4(emissive_mul, 1.0);

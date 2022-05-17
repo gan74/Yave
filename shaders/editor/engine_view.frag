@@ -22,19 +22,19 @@ layout(location = 0) out vec4 out_color;
 void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
 
-    const GBufferData gbuffer = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
+    const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
     const vec3 final = texelFetch(in_final, coord, 0).rgb;
 
     vec3 color = final;
 
     if(target_index == 1) {
-        color = gbuffer.albedo;
+        color = surface.albedo;
     } else if(target_index == 2) {
-        color = gbuffer.normal * 0.5 + 0.5;
+        color = surface.normal * 0.5 + 0.5;
     } else if(target_index == 3) {
-        color = vec3(gbuffer.metallic);
+        color = vec3(surface.metallic);
     } else if(target_index == 4) {
-        color = vec3(gbuffer.roughness);
+        color = vec3(surface.perceptual_roughness);
     } else if(target_index == 5) {
         const float depth = texelFetch(in_depth, coord, 0).r;
         color = vec3(pow(depth, 0.35));

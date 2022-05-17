@@ -35,9 +35,9 @@ void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
     const vec2 uv = gl_FragCoord.xy / vec2(textureSize(in_depth, 0).xy);
 
-    const GBufferData gbuffer = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
-
     const float depth = texelFetch(in_depth, coord, 0).x;
+
+    const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 
     const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
     const vec3 view_dir = normalize(camera.position - world_pos);
@@ -63,7 +63,7 @@ void main() {
 
         if(att > 0.0) {
             const vec3 radiance = light.color * att;
-            irradiance += radiance * L0(light_dir, view_dir, gbuffer);
+            irradiance += radiance * L0(light_dir, view_dir, surface);
         }
     }
 

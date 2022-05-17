@@ -139,19 +139,6 @@ struct SH {
 static_assert(sizeof(SH) % 16 == 0);
 
 
-struct Surfel {
-    math::Vec3 position;
-    u32 padding_0;
-
-    math::Vec3 albedo;
-    u32 padding_1;
-
-    math::Vec3 normal;
-    u32 padding_2;
-};
-
-static_assert(sizeof(Surfel) % 16 == 0);
-
 
 
 }

@@ -69,7 +69,7 @@ void main() {
         }
 #endif
     } else {
-        const GBufferData gbuffer = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
+        const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 
         const vec3 world_pos = unproject(in_uv, depth, camera.inv_view_proj);
         const vec3 view_dir = normalize(camera.position - world_pos);
@@ -88,12 +88,12 @@ void main() {
                 const vec3 light_dir = light.direction; // assume normalized
 
                 const vec3 radiance = light.color * att;
-                irradiance += radiance * L0(light_dir, view_dir, gbuffer);
+                irradiance += radiance * L0(light_dir, view_dir, surface);
             }
         }
 
 #ifdef USE_IBL
-        irradiance += eval_ibl(in_envmap, brdf_lut, view_dir, gbuffer) * ambient_occlusion() * ibl_intensity;
+        irradiance += eval_ibl(in_envmap, brdf_lut, view_dir, surface) * ambient_occlusion() * ibl_intensity;
 #endif
     }
 

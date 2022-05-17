@@ -4,69 +4,51 @@
 #include "lighting.glsl"
 #include "sh.glsl"
 
-// https://github.com/JoeyDeVries/LearnOpenGL/tree/master/src/6.pbr/2.2.1.ibl_specular
-// https://learnopengl.com/PBR/IBL/Specular-IBL
-// https://github.com/google/filament/blob/main/shaders/src/light_indirect.fs
-// https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
-// https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Shaders/Private/AmbientCubemapComposite.usf
 
 float roughness_to_mip(float roughness, uint mip) {
     return roughness * mip;
 }
 
-
-vec3 eval_ibl(samplerCube probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+vec3 eval_ibl(samplerCube probe, sampler2D brdf_lut, vec3 view_dir, SurfaceInfo surface) {
 
     const uint probe_mips = textureQueryLevels(probe);
 
-    const float NoV = max(0.0, dot(normal, view_dir));
-    const vec3 reflected = reflect(-view_dir, normal);
+    const float NoV = max(0.0, dot(surface.normal, view_dir));
+    const vec3 reflected = reflect(-view_dir, surface.normal);
 
-    const vec3 F0 = approx_F0(metallic, albedo);
-
-    const vec3 F = F_Schlick(NoV, F0, roughness);
+    const vec3 F = F_Schlick(NoV, surface.F0, surface.roughness);
 
     const vec3 kS = F;
-    const vec3 kD = (1.0 - kS) * (1.0 - metallic);
+    const vec3 kD = (1.0 - kS) * (1.0 - surface.metallic);
 
-    const vec3 irradiance = textureLod(probe, normal, probe_mips - 1).rgb;
-    const vec3 diffuse = kD * irradiance * albedo;
+    const vec3 irradiance = textureLod(probe, surface.normal, probe_mips - 1).rgb;
+    const vec3 diffuse = kD * irradiance * surface.albedo;
 
-    const vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy;
-    const vec3 prefiltered = textureLod(probe, reflected, roughness_to_mip(roughness, probe_mips - 1)).rgb;
+    const vec2 brdf = texture(brdf_lut, vec2(NoV, surface.roughness)).xy;
+    const vec3 prefiltered = textureLod(probe, reflected, roughness_to_mip(surface.perceptual_roughness, probe_mips - 1)).rgb;
     const vec3 specular = prefiltered * (kS * brdf.x + brdf.y);
 
     return diffuse + specular;
 }
 
-vec3 eval_ibl(SH probe, sampler2D brdf_lut, vec3 normal, vec3 view_dir, float roughness, float metallic, vec3 albedo) {
+vec3 eval_ibl(SH probe, sampler2D brdf_lut, vec3 view_dir, SurfaceInfo surface) {
 
-    const float NoV = max(0.0, dot(normal, view_dir));
-    const vec3 reflected = reflect(-view_dir, normal);
+    const float NoV = max(0.0, dot(surface.normal, view_dir));
+    const vec3 reflected = reflect(-view_dir, surface.normal);
 
-    const vec3 F0 = approx_F0(metallic, albedo);
-
-    const vec3 F = F_Schlick(NoV, F0, roughness);
+    const vec3 F = F_Schlick(NoV, surface.F0, surface.perceptual_roughness);
 
     const vec3 kS = F;
-    const vec3 kD = (1.0 - kS) * (1.0 - metallic);
+    const vec3 kD = (1.0 - kS) * (1.0 - surface.metallic);
 
-    const vec3 irradiance = eval_sh(probe, normal);
-    const vec3 diffuse = kD * irradiance * albedo;
+    const vec3 irradiance = eval_sh(probe, surface.normal);
+    const vec3 diffuse = kD * irradiance * surface.albedo;
 
-    const vec2 brdf = texture(brdf_lut, vec2(NoV, roughness)).xy;
+    const vec2 brdf = texture(brdf_lut, vec2(NoV, surface.perceptual_roughness)).xy;
     const vec3 prefiltered = eval_sh(probe, reflected);
     const vec3 specular = prefiltered * (kS * brdf.x + brdf.y);
 
     return diffuse + specular;
-}
-
-vec3 eval_ibl(samplerCube probe, sampler2D brdf_lut, vec3 view_dir, GBufferData gbuffer) {
-    return eval_ibl(probe, brdf_lut, gbuffer.normal, view_dir, gbuffer.roughness, gbuffer.metallic, gbuffer.albedo);
-}
-
-vec3 eval_ibl(SH probe, sampler2D brdf_lut, vec3 view_dir, GBufferData gbuffer) {
-    return eval_ibl(probe, brdf_lut, gbuffer.normal, view_dir, gbuffer.roughness, gbuffer.metallic, gbuffer.albedo);
 }
 
 
