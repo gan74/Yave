@@ -36,6 +36,7 @@ SOFTWARE.
 #include <yave/ecs/EntityScene.h>
 
 #include <editor/utils/ui.h>
+#include <editor/components/EditorComponent.h>
 
 #include <y/concurrent/StaticThreadPool.h>
 #include <y/io2/Buffer.h>
@@ -292,7 +293,7 @@ usize SceneImporter2::import_assets() {
     }
 
     // --------------------------------- Prefabs ---------------------------------
-    auto build_prefab = [&](const import::ParsedScene::Mesh& mesh) {
+    auto build_prefab = [&](const import::ParsedScene::Mesh& mesh, const math::Transform<>& transform = {}) {
         auto sub_meshes = core::vector_with_capacity<StaticMeshComponent::SubMesh>(mesh.sub_meshes.size());
         for(const auto& sub_mesh : mesh.sub_meshes) {
             if(sub_mesh.gltf_material_index < 0 || sub_mesh.asset_id == AssetId::invalid_id()) {
@@ -315,7 +316,7 @@ usize SceneImporter2::import_assets() {
         }
 
         ecs::EntityPrefab prefab;
-        prefab.add(TransformableComponent());
+        prefab.add(TransformableComponent(transform));
         prefab.add(StaticMeshComponent(std::move(sub_meshes)));
         return prefab;
     };
@@ -340,10 +341,12 @@ usize SceneImporter2::import_assets() {
         ++to_import;
         _thread_pool.schedule([=] {
             const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
-            auto prefabs = core::vector_with_capacity<ecs::EntityPrefab>(_scene.meshes.size());
-            for(const auto& mesh : _scene.meshes) {
-                if(mesh.asset_id != AssetId::invalid_id()) {
-                    prefabs << build_prefab(mesh);
+            auto prefabs = core::vector_with_capacity<ecs::EntityPrefab>(_scene.nodes.size());
+            for(const auto& node : _scene.nodes) {
+                const auto it = std::find_if(_scene.meshes.begin(), _scene.meshes.end(), [=](const auto& mesh) { return mesh.gltf_index == node.mesh_gltf_index; });
+                if(it != _scene.meshes.end()) {
+                    ecs::EntityPrefab& prefab = prefabs.emplace_back(build_prefab(*it, node.transform));
+                    prefab.add(EditorComponent(node.name));
                 }
             }
             import_single_asset(ecs::EntityScene(std::move(prefabs)), asset_store().filesystem()->join(scene_import_path, _scene.name), AssetType::Scene, _emergency_uid, log_func);

@@ -36,13 +36,13 @@ struct to_floating_point {
 };
 
 template<typename T>
-auto to_rad(T deg) {
+inline constexpr auto to_rad(T deg) {
     return deg * typename to_floating_point<T>::type(0.01745329251994329576923690768489);
 }
 
 
 template<typename T>
-auto to_deg(T rad) {
+inline constexpr auto to_deg(T rad) {
     static_assert(std::is_floating_point_v<T>, "to_deg only takes floating points arguments");
     return rad * T(57.295779513082320876798154814105);
 }

@@ -30,7 +30,7 @@ class AABB {
     public:
         AABB() = default;
 
-        AABB(const math::Vec3& min, const math::Vec3& max) : _min(min), _max(max) {
+        AABB(const math::Vec3& min, const math::Vec3& max) : _min(min.min(max)), _max(min.max(max)) {
             for(usize i = 0; i != 3; ++i) {
                 y_debug_assert(_min[i] <= _max[i]);
             }

@@ -470,10 +470,22 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
             ImGui::TextUnformatted("Scale");
             ImGui::TableNextColumn();
 
+
             float scalar_scale = scale.dot(math::Vec3(1.0f / 3.0f));
             if(ImGui::DragFloat("##scale", &scalar_scale, 0.1f, 0.0f, 0.0f, "%.3f")) {
                 scale = std::max(0.001f, scalar_scale);
                 undo_stack().make_dirty();
+            }
+
+            const bool is_uniform = (scale.max_component() - scale.min_component()) < math::epsilon<float>;
+            if(!is_uniform) {
+                ImGui::SameLine();
+                ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE);
+                if(ImGui::IsItemHovered()) {
+                    ImGui::BeginTooltip();
+                    ImGui::TextUnformatted(fmt_c_str("Scale is not uniform: %", scale));
+                    ImGui::EndTooltip();
+                }
             }
         }
 

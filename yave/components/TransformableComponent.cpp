@@ -26,6 +26,9 @@ SOFTWARE.
 
 namespace yave {
 
+TransformableComponent::TransformableComponent(const math::Transform<>& transform) : _transform(transform) {
+}
+
 TransformableComponent::~TransformableComponent() {
     if(_id.is_valid()) {
         y_debug_assert(_node);
