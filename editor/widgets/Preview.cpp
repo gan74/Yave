@@ -100,8 +100,9 @@ const AssetPtr<Material>& Preview::material() const {
 }
 
 void Preview::update_camera() {
+    const math::Vec2 size = content_size();
     if(ImGui::IsMouseDown(0) && /*is_mouse_inside()*/ ImGui::IsWindowHovered()) {
-        math::Vec2 delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(content_size());
+        math::Vec2 delta = math::Vec2(ImGui::GetIO().MouseDelta) / size;
         delta *= app_settings().camera.trackball_sensitivity;
 
         const float pi_2 = (math::pi<float> * 0.5f) - 0.001f;
@@ -113,7 +114,10 @@ void Preview::update_camera() {
         const float cos_y = std::cos(_angle.y());
         const math::Vec3 cam = math::Vec3(std::sin(_angle.x()) * cos_y, std::cos(_angle.x()) * cos_y, std::sin(_angle.y()));
 
+        const float ratio = size.x() / size.y();
+
         _view.camera().set_view(math::look_at(cam * _cam_distance, math::Vec3(), math::Vec3(0.0f, 0.0f, 1.0f)));
+        _view.camera().set_proj(math::perspective(math::to_rad(90.0f), ratio, _cam_distance * 0.1f));
     }
 }
 
@@ -124,9 +128,9 @@ void Preview::reset_world() {
 
     {
         const ecs::EntityId sky_id = _world->create_entity<SkyLightComponent>();
-        _world->component<SkyLightComponent>(sky_id)->probe() = _ibl_probe
-            ? _ibl_probe
-            : device_resources().ibl_probe();
+        SkyLightComponent* sky = _world->component<SkyLightComponent>(sky_id);
+        sky->probe() = _ibl_probe ? _ibl_probe : device_resources().ibl_probe();
+        sky->display_sky() = true;
     }
 
     if(!_mesh.is_empty() && !_material.is_empty()) {
@@ -134,15 +138,10 @@ void Preview::reset_world() {
         *_world->component<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
 
         const float radius = _mesh->radius();
-        _cam_distance = std::sqrt(3.0f * radius * radius) * 1.5f;
+        _cam_distance = radius * 1.5f;
     }
 
-    {
-        const math::Transform<> box_transform(math::Vec3(), math::Quaternion<>(), math::Vec3(_cam_distance * -1.25f));
-        const ecs::EntityId box_id = _world->create_entity<StaticMeshComponent>();
-        *_world->component<StaticMeshComponent>(box_id) = StaticMeshComponent(device_resources()[DeviceResources::SphereMesh], device_resources()[DeviceResources::EmptyMaterial]);
-        _world->component<TransformableComponent>(box_id)->set_transform(box_transform);
-    }
+    _world->tick();
 }
 
 void Preview::draw_mesh_menu() {
