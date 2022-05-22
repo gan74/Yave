@@ -105,11 +105,12 @@ static constexpr const char* spirv_names[] = {
         "ssao_upsample.comp",
         "ssao_upsample_merge.comp",
         "copy.comp",
-
         "histogram_clear.comp",
         "histogram.comp",
         "tonemap_params.comp",
         "depth_bounds.comp",
+        "generate_vpl.comp",
+        "vpl_lighting.comp",
 
         "deferred_point.frag",
         "deferred_spot.frag",

@@ -13,6 +13,7 @@ layout(set = 0, binding = 2) uniform sampler2D in_depth;
 layout(set = 0, binding = 3) uniform sampler2D in_rt0;
 layout(set = 0, binding = 4) uniform sampler2D in_rt1;
 layout(set = 0, binding = 5) uniform sampler2D in_ao;
+layout(set = 0, binding = 6) uniform sampler2D in_gi;
 
 
 layout(location = 0) in vec2 in_uv;
@@ -41,6 +42,8 @@ void main() {
     } else if(target_index == 6) {
         const float ao = texture(in_ao, in_uv).r;
         color = vec3(ao);
+    } else if(target_index == 7) {
+        color = texture(in_gi, in_uv).rgb;
     }
 
     out_color = vec4(color, 1.0);

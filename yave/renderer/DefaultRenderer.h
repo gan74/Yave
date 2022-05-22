@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_RENDERER_DEFAULTRENDERER_H
 
 #include "LightingPass.h"
+#include "VPLLightingPass.h"
 #include "AtmospherePass.h"
 #include "ToneMappingPass.h"
 #include "SSAOPass.h"
@@ -44,6 +45,12 @@ struct DefaultRenderer {
     BloomPass bloom;
     ToneMappingPass tone_mapping;
     SSAOPass ssao;
+
+    struct {
+        VPLGenerationPass generation;
+        VPLLightingPass lighting;
+    } vpl;
+
 
     FrameGraphImageId final;
     FrameGraphImageId depth;

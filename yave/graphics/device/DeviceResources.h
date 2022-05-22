@@ -54,6 +54,8 @@ class DeviceResources final : NonMovable {
             HistogramComp,
             ToneMapParamsComp,
             DepthBoundComp,
+            GenerateVPLComp,
+            VPLLightingComp,
 
             DeferredPointFrag,
             DeferredSpotFrag,
@@ -95,6 +97,8 @@ class DeviceResources final : NonMovable {
             HistogramProgram,
             ToneMapParamsProgram,
             DepthBoundProgram,
+            GenerateVPLProgram,
+            VPLLightingProgram,
 
             MaxComputePrograms
         };

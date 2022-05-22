@@ -132,6 +132,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
+        const Texture& black = *device_resources()[DeviceResources::BlackTexture];
 
         FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 
@@ -146,6 +147,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white), 0, PipelineStage::FragmentBit);
+        builder.add_uniform_input_with_default(renderer.renderer.vpl.lighting.lit, Descriptor(black), 0, PipelineStage::FragmentBit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
                 auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
                 output = out.get();
@@ -268,7 +270,7 @@ void EngineView::draw_menu_bar() {
             ImGui::Separator();
             {
                 const char* output_names[] = {
-                        "Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "AO"
+                        "Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "AO", "GI"
                     };
                 for(usize i = 0; i != usize(RenderView::MaxRenderViews); ++i) {
                     bool selected = usize(_view) == i;
