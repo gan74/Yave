@@ -74,6 +74,12 @@ struct ParsedScene {
     struct Material : Asset {
     };
 
+    struct Node {
+        core::String name = "unamed node";
+        math::Transform<> transform;
+        int mesh_gltf_index = -1;
+    };
+
     bool is_error = true;
     bool import_scene = true;
 
@@ -83,6 +89,8 @@ struct ParsedScene {
     core::Vector<Mesh> meshes;
     core::Vector<Material> materials;
     core::Vector<Image> images;
+
+    core::Vector<Node> nodes;
 
     std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
 

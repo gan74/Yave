@@ -39,8 +39,10 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.bloom          = BloomPass::create(framegraph, renderer.atmosphere.lit, settings.bloom);
     renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.bloom.bloomed, settings.tone_mapping);
 
-    renderer.vpl.generation = VPLGenerationPass::create(framegraph, view);
-    renderer.vpl.lighting = VPLLightingPass::create(framegraph, renderer.gbuffer, renderer.vpl.generation);
+    if(settings.gi.enable) {
+        renderer.vpl.generation = VPLGenerationPass::create(framegraph, view);
+        renderer.vpl.lighting = VPLLightingPass::create(framegraph, renderer.gbuffer, renderer.vpl.generation);
+    }
 
     renderer.final = renderer.tone_mapping.tone_mapped;
     renderer.depth = renderer.gbuffer.depth;

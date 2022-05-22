@@ -346,6 +346,56 @@ static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& mod
     return triangles;
 }
 
+static math::Transform<> build_base_change_transform() {
+    const math::Vec3 forward = math::Vec3(0.0f, 0.0f, 1.0f);
+    const math::Vec3 up = math::Vec3(0.0f, -1.0f, 0.0f);
+
+    math::Transform<> transform;
+    transform.set_basis(forward, forward.cross(up), up);
+    return transform.transposed();
+}
+
+static const math::Transform<> base_change_transform = build_base_change_transform();
+
+static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
+    math::Vec3 translation;
+    for(usize k = 0; k != node.translation.size(); ++k) {
+        translation[k] = float(node.translation[k]);
+    }
+
+    math::Vec3 scale(1.0f, 1.0f, 1.0f);
+    for(usize k = 0; k != node.scale.size(); ++k) {
+        scale[k] = float(node.scale[k]);
+    }
+
+    math::Vec4 rotation;
+    for(usize k = 0; k != node.rotation.size(); ++k) {
+        rotation[k] = float(node.rotation[k]);
+    }
+
+    // This doesn't appear to be correct....
+    rotation.to<3>() = base_change_transform.transform_direction(rotation.to<3>());
+
+    const math::Transform<> tr = base_change_transform * math::Transform<>(translation, rotation, scale);
+    y_debug_assert(std::all_of(tr.begin(), tr.end(), [](float f) { return std::isfinite(f); }));
+    return tr;
+}
+
+static ParsedScene::Node& parse_node(usize index, ParsedScene& scene) {
+    const auto& node = scene.gltf->nodes[index];
+
+    auto& parsed_node = scene.nodes.emplace_back();
+    parsed_node.name = node.name.empty() ? fmt_to_owned("unnamed_node_%", index) : clean_asset_name(node.name);
+    parsed_node.mesh_gltf_index = node.mesh;
+    parsed_node.transform = parse_node_transform(node);
+
+    for(auto& child : node.children) {
+        auto& parsed_child = parse_node(child, scene);
+        parsed_child.transform = parsed_node.transform * parsed_child.transform;
+    }
+
+    return parsed_node;
+}
 
 
 ParsedScene parse_scene(const core::String& filename) {
@@ -433,6 +483,14 @@ ParsedScene parse_scene(const core::String& filename) {
         }
     }
 
+
+    if(scene.gltf->defaultScene >= 0) {
+        const auto& gltf_scene = scene.gltf->scenes[scene.gltf->defaultScene];
+        for(int node : gltf_scene.nodes) {
+            parse_node(node, scene);
+        }
+    }
+
     return scene;
 }
 
@@ -459,10 +517,9 @@ core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) c
                 const bool recompute_tangents = vertices.size() && vertices[0].tangent.is_zero();
 
                 for(FullVertex& vertex : vertices) {
-                    auto transform = [](math::Vec3 v) { return math::Vec3(-v.x(), v.z(), v.y()); };
-                    vertex.position = transform(vertex.position);
-                    vertex.normal = transform(vertex.normal);
-                    vertex.tangent.to<3>() = transform(vertex.tangent.to<3>());
+                    vertex.position = base_change_transform.transform_point(vertex.position);
+                    vertex.normal = base_change_transform.transform_direction(vertex.normal);
+                    vertex.tangent.to<3>() = base_change_transform.transform_direction(vertex.tangent.to<3>());
                     Y_TODO(Do we need to fix the binormal sign ?)
                 }
 

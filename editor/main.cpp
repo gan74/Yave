@@ -38,16 +38,9 @@ SOFTWARE.
 
 using namespace editor;
 
-static bool display_console = is_debug_defined;
 static bool debug_instance = is_debug_defined;
 static bool multi_viewport = true;
 
-
-static void hide_console() {
-#ifdef Y_OS_WIN
-    ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
-#endif
-}
 
 static void parse_args(int argc, char** argv) {
     for(std::string_view arg : core::Span<const char*>(argv + 1, argc - 1)) {
@@ -55,8 +48,6 @@ static void parse_args(int argc, char** argv) {
             debug_instance = false;
         } else if(arg == "--debug") {
             debug_instance = true;
-        } else if(arg == "--console") {
-            display_console = true;
         } else if(arg == "--nomv") {
             multi_viewport = false;
         } else if(arg == "--errbreak") {
@@ -71,9 +62,6 @@ static void parse_args(int argc, char** argv) {
         }
     }
 
-    if(!display_console) {
-        hide_console();
-    }
     y_debug_assert([] { log_msg("Debug asserts enabled."); return true; }());
 }
 

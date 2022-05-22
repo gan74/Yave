@@ -31,7 +31,7 @@ namespace yave {
 
 class TransformableComponent final {
     public:
-        TransformableComponent() = default;
+        TransformableComponent(const math::Transform<>& transform = {});
         ~TransformableComponent();
 
         TransformableComponent(TransformableComponent&& other);

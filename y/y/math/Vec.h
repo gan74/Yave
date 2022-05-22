@@ -39,7 +39,7 @@ struct identity_t : NonCopyable {
 };
 }
 
-inline auto identity() {
+inline constexpr auto identity() {
     return detail::identity_t();
 }
 

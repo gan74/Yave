@@ -31,11 +31,16 @@ SOFTWARE.
 
 namespace yave {
 
+struct GISettings {
+    bool enable = false;
+};
+
 struct RendererSettings {
     ToneMappingSettings tone_mapping;
     LightingSettings lighting;
     SSAOSettings ssao;
     BloomSettings bloom;
+    GISettings gi;
 };
 
 struct DefaultRenderer {

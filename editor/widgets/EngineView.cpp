@@ -260,6 +260,14 @@ void EngineView::draw_settings_menu() {
 
         ImGui::EndMenu();
     }
+
+    if(ImGui::BeginMenu("GI")) {
+        GISettings& settings = _settings.renderer_settings.gi;
+
+        ImGui::Checkbox("Enable VPL GI", &settings.enable);
+
+        ImGui::EndMenu();
+    }
 }
 
 void EngineView::draw_menu_bar() {
