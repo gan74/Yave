@@ -93,13 +93,12 @@ auto perspective(T fovy, T aspect, T z_near) {
 // https://github.com/g-truc/glm/blob/1498e094b95d1d89164c6442c632d775a2a1bab5/glm/ext/matrix_clip_space.inl
 template<typename T>
 auto ortho(T left, T right, T bottom, T top, T z_near, T z_far) {
-    math::Matrix4<T> m = math::identity();
-    m[0][0] = T(2) / (right - left);
-    m[1][1] = T(2) / (top - bottom);
-    m[2][2] = -T(1) / (z_far - z_near);
-    m[3][0] = -(right + left) / (right - left);
-    m[3][1] = -(top + bottom) / (top - bottom);
-    m[3][2] = -z_near / (z_far - z_near);
+    math::Matrix4<T> m(
+        -T(2) / (right - left), 0, 0,    (left + right) / (left - right),
+        0, T(2) / (top - bottom), 0,    (bottom + top) / (bottom - top),
+        0, 0, T(1) / (z_near - z_far),  z_far / (z_far - z_near),
+        0, 0, 0, T(1)
+    );
     return m;
 }
 
