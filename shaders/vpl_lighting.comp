@@ -2,6 +2,7 @@
 
 #include "lib/gbuffer.glsl"
 #include "lib/vpl.glsl"
+#include "lib/noise.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
@@ -24,8 +25,7 @@ const uint sample_count = 256;
 
 void main() {
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-    const vec2 image_size = vec2(imageSize(out_color).xy);
-    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / image_size;
+    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(imageSize(out_color).xy);
 
     const float depth = texelFetch(in_depth, coord, 0).x;
     const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
@@ -34,10 +34,10 @@ void main() {
 
     vec3 irradiance = vec3(0.0);
 
-    uint offset = coord.y * uint(image_size.x) + coord.x;
+    float offset = hash_1_2(uv);
     for(uint i = 0; i != sample_count; ++i) {
-        offset = ((offset + 1) * 17) % vpl_count;
-        const VPL vpl = vpls[offset];
+        offset = hash_1_1(offset + i);
+        const VPL vpl = vpls[uint(offset * vpl_count)];
 
         vec3 light_dir = vpl.position - world_pos;
         const float distance = length(light_dir);
@@ -50,7 +50,9 @@ void main() {
         }
     }
 
-    imageStore(out_color, coord, vec4(irradiance * (vpl_count / float(sample_count)), 1.0));
+    const float norm_factor = float(vpl_count) / float(sample_count);
+
+    imageStore(out_color, coord, vec4(irradiance * norm_factor, 1.0));
 
 }
 
