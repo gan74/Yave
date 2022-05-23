@@ -71,7 +71,7 @@ static ShaderType module_type(const spirv_cross::Compiler& compiler) {
     y_fatal("Unknown shader execution model.");
 }
 
-
+Y_TODO(check if inline descriptors are always at the end)
 static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res) {
     if(compiler.get_type(res.type_id).storage != spv::StorageClass::StorageClassUniform) {
         return false;

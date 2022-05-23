@@ -56,6 +56,8 @@ class DeviceResources final : NonMovable {
             DepthBoundComp,
             GenerateVPLComp,
             VPLLightingComp,
+            ProbePlacementComp,
+            ProbeLightingComp,
 
             DeferredPointFrag,
             DeferredSpotFrag,
@@ -72,6 +74,7 @@ class DeviceResources final : NonMovable {
             HBlurFrag,
             VBlurFrag,
             WireFrameFrag,
+            VPLSplatFrag,
 
             DeferredPointVert,
             DeferredSpotVert,
@@ -79,6 +82,7 @@ class DeviceResources final : NonMovable {
             SkinnedVert,
             ScreenVert,
             WireFrameVert,
+            VPLSplatVert,
 
             MaxSpirV
         };
@@ -99,6 +103,8 @@ class DeviceResources final : NonMovable {
             DepthBoundProgram,
             GenerateVPLProgram,
             VPLLightingProgram,
+            ProbePlacementProgram,
+            ProbeLightingProgram,
 
             MaxComputePrograms
         };
@@ -127,6 +133,8 @@ class DeviceResources final : NonMovable {
             VBlurMaterialTemplate,
 
             WireFrameMaterialTemplate,
+
+            VPLSplatMaterialTemplate,
 
             MaxMaterialTemplates
         };

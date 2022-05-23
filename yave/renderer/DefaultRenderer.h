@@ -23,16 +23,18 @@ SOFTWARE.
 #define YAVE_RENDERER_DEFAULTRENDERER_H
 
 #include "LightingPass.h"
-#include "VPLLightingPass.h"
 #include "AtmospherePass.h"
 #include "ToneMappingPass.h"
 #include "SSAOPass.h"
 #include "BloomPass.h"
 
+#include "VPLLightingPass.h"
+#include "ProbeLightingPass.h"
+
 namespace yave {
 
 struct GISettings {
-    bool enable = false;
+    bool enable = true;
 };
 
 struct RendererSettings {
@@ -52,8 +54,11 @@ struct DefaultRenderer {
     SSAOPass ssao;
 
     struct {
-        VPLGenerationPass generation;
-        VPLLightingPass lighting;
+        VPLGenerationPass vpl_generation;
+        VPLLightingPass vpl_lighting;
+
+        ProbeGenerationPass probe_generation;
+        ProbeLightingPass probe_lighting;
     } vpl;
 
 

@@ -22,7 +22,6 @@ layout(set = 0, binding = 5) writeonly buffer VPLs {
 };
 
 
-
 void main() {
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
     const uvec2 size = gl_NumWorkGroups.xy * gl_WorkGroupSize.xy;
@@ -32,7 +31,7 @@ void main() {
     const float depth = texelFetch(in_depth, coord, 0).x;
     const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 
-    const float NoL = max(0.0, -dot(surface.normal, light.direction));
+    const float NoL = max(0.0, dot(surface.normal, light.direction));
     const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
 
     VPL vpl;

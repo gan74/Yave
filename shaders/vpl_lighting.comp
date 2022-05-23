@@ -25,7 +25,7 @@ const uint sample_count = 256;
 
 void main() {
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(imageSize(out_color).xy);
+    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 
     const float depth = texelFetch(in_depth, coord, 0).x;
     const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
@@ -53,6 +53,5 @@ void main() {
     const float norm_factor = float(vpl_count) / float(sample_count);
 
     imageStore(out_color, coord, vec4(irradiance * norm_factor, 1.0));
-
 }
 

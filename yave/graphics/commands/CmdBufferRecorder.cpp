@@ -78,7 +78,7 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
         _cache.pipeline_layout = pipeline.vk_pipeline_layout();
     }
 
-    if(_main_descriptor_set) {
+    if(_main_descriptor_set && ds_offset > 0) {
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -146,10 +146,10 @@ void RenderPassRecorder::draw_indexed(usize index_count) {
     draw(command);
 }
 
-void RenderPassRecorder::draw_array(usize vertex_count) {
+void RenderPassRecorder::draw_array(usize vertex_count, usize instance_count) {
     VkDrawIndirectCommand command = {};
     command.vertexCount = u32(vertex_count);
-    command.instanceCount = 1;
+    command.instanceCount = u32(instance_count);
     draw(command);
 }
 

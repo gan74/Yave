@@ -1,23 +1,15 @@
 #ifndef SHADOW_GLSL
 #define SHADOW_GLSL
 
-float sample_shadow(sampler2DShadow shadow_map, vec2 uv, float proj_z, float bias_scale) {
-    // Using derivatives can cause artefacting around big depth discontinuities
-    //const float bias = fwidth(proj_z) * bias_scale;
-    // const float bias = bias_scale;
-    const float bias = 0.0;
-    const vec3 proj = vec3(uv, proj_z + bias);
-    return texture(shadow_map, proj).x;
-}
-
-float compute_bias_scale(ShadowMapParams params, vec2 uvs) {
-    const float duv = min(fwidth(uvs.x), fwidth(uvs.y));
-    const float texel_size = params.uv_mul.x;
-    return params.texel_size / duv;
-}
-
 vec2 atlas_uv(ShadowMapParams params, vec2 uv) {
     return params.uv_offset + uv * params.uv_mul;
+}
+
+float sample_shadow(sampler2DShadow shadow_map, vec3 proj, ShadowMapParams params) {
+    const vec2 uv = atlas_uv(params, proj.xy);
+    // Using derivatives can cause artefacting around big depth discontinuities
+    const float bias = 0.0; // fwidth(proj.z) / max(fwidth(proj.x), fwidth(proj.y));
+    return texture(shadow_map, vec3(uv, proj.z + bias)).x;
 }
 
 float compute_shadow_hard(sampler2DShadow shadow_map, ShadowMapParams params, vec3 world_pos) {
@@ -27,10 +19,7 @@ float compute_shadow_hard(sampler2DShadow shadow_map, ShadowMapParams params, ve
         return 1.0;
     }
 
-    const vec2 uv = atlas_uv(params, proj.xy);
-
-    const float bias_scale = compute_bias_scale(params, uv);
-    return sample_shadow(shadow_map, uv, proj.z, bias_scale);
+    return sample_shadow(shadow_map, proj, params);
 }
 
 float compute_shadow_pcf(sampler2DShadow shadow_map, ShadowMapParams params, vec3 world_pos) {
@@ -39,8 +28,6 @@ float compute_shadow_pcf(sampler2DShadow shadow_map, ShadowMapParams params, vec
     if(saturate(proj) != proj) {
         return 1.0;
     }
-
-    const float bias_scale = compute_bias_scale(params, atlas_uv(params, proj.xy));
 
     const vec2 offset = vec2(0.5);
     const vec2 tx = proj.xy * params.size + offset;
@@ -55,10 +42,10 @@ float compute_shadow_pcf(sampler2DShadow shadow_map, ShadowMapParams params, vec
     const vec2 v = vec2((2.0 - st.y) / vw.x - 1.0, st.y / vw.y + 1.0) * params.texel_size;
 
     float sum = 0.0;
-    sum += uw.x * vw.x * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.x, v.x)), proj.z, bias_scale);
-    sum += uw.y * vw.x * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.y, v.x)), proj.z, bias_scale);
-    sum += uw.x * vw.y * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.x, v.y)), proj.z, bias_scale);
-    sum += uw.y * vw.y * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.y, v.y)), proj.z, bias_scale);
+    sum += uw.x * vw.x * sample_shadow(shadow_map, vec3(base + vec2(u.x, v.x), proj.z), params);
+    sum += uw.y * vw.x * sample_shadow(shadow_map, vec3(base + vec2(u.y, v.x), proj.z), params);
+    sum += uw.x * vw.y * sample_shadow(shadow_map, vec3(base + vec2(u.x, v.y), proj.z), params);
+    sum += uw.y * vw.y * sample_shadow(shadow_map, vec3(base + vec2(u.y, v.y), proj.z), params);
     return sum / 16.0;
 #else
     const vec3 uw = vec3(4.0 - 3.0 * st.x, 7.0, 1.0 + 3.0 * st.x);
@@ -68,15 +55,15 @@ float compute_shadow_pcf(sampler2DShadow shadow_map, ShadowMapParams params, vec
     const vec3 v = vec3((3.0 - 2.0 * st.y) / vw.x - 2.0, (3.0 + st.y) / vw.y, st.y / vw.z + 2.0) * params.texel_size;
 
     float sum = 0.0;
-    sum += uw.x * vw.x * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.x, v.x)), proj.z, bias_scale);
-    sum += uw.y * vw.x * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.y, v.x)), proj.z, bias_scale);
-    sum += uw.z * vw.x * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.z, v.x)), proj.z, bias_scale);
-    sum += uw.x * vw.y * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.x, v.y)), proj.z, bias_scale);
-    sum += uw.y * vw.y * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.y, v.y)), proj.z, bias_scale);
-    sum += uw.z * vw.y * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.z, v.y)), proj.z, bias_scale);
-    sum += uw.x * vw.z * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.x, v.z)), proj.z, bias_scale);
-    sum += uw.y * vw.z * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.y, v.z)), proj.z, bias_scale);
-    sum += uw.z * vw.z * sample_shadow(shadow_map, atlas_uv(params, base + vec2(u.z, v.z)), proj.z, bias_scale);
+    sum += uw.x * vw.x * sample_shadow(shadow_map, vec3(base + vec2(u.x, v.x), proj.z), params);
+    sum += uw.y * vw.x * sample_shadow(shadow_map, vec3(base + vec2(u.y, v.x), proj.z), params);
+    sum += uw.z * vw.x * sample_shadow(shadow_map, vec3(base + vec2(u.z, v.x), proj.z), params);
+    sum += uw.x * vw.y * sample_shadow(shadow_map, vec3(base + vec2(u.x, v.y), proj.z), params);
+    sum += uw.y * vw.y * sample_shadow(shadow_map, vec3(base + vec2(u.y, v.y), proj.z), params);
+    sum += uw.z * vw.y * sample_shadow(shadow_map, vec3(base + vec2(u.z, v.y), proj.z), params);
+    sum += uw.x * vw.z * sample_shadow(shadow_map, vec3(base + vec2(u.x, v.z), proj.z), params);
+    sum += uw.y * vw.z * sample_shadow(shadow_map, vec3(base + vec2(u.y, v.z), proj.z), params);
+    sum += uw.z * vw.z * sample_shadow(shadow_map, vec3(base + vec2(u.z, v.z), proj.z), params);
     return sum / 144.0;
 #endif
 }

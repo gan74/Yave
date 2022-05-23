@@ -63,7 +63,7 @@ class RenderPassRecorder final : NonMovable {
         void draw(const VkDrawIndirectCommand& indirect);
 
         void draw_indexed(usize index_count);
-        void draw_array(usize vertex_count);
+        void draw_array(usize vertex_count, usize instance_count = 1);
 
         void bind_mesh_buffers(const MeshBufferData& mesh_buffers);
         void bind_index_buffer(IndexSubBuffer indices);

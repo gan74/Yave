@@ -1,0 +1,65 @@
+#version 450
+
+#include "lib/gbuffer.glsl"
+#include "lib/screen_space.glsl"
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(rgba16f, set = 0, binding = 0) uniform image2D out_color;
+
+layout(set = 0, binding = 1) uniform sampler2D in_depth;
+layout(set = 0, binding = 2) uniform sampler2D in_rt0;
+layout(set = 0, binding = 3) uniform sampler2D in_rt1;
+
+layout(set = 0, binding = 4) uniform sampler2D in_probes;
+
+layout(set = 0, binding = 5) uniform CameraData {
+    Camera camera;
+};
+
+layout(set = 0, binding = 6) uniform Params_Inline {
+    uvec2 probe_count;
+    uvec2 probe_screen_size;
+};
+
+void main() {
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    const vec2 image_size = vec2(imageSize(out_color).xy);
+    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / image_size;
+
+
+    const float depth = texelFetch(in_depth, coord, 0).x;
+
+    if(is_OOB(depth)) {
+        return;
+    }
+
+    const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
+
+    const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
+    const vec3 view_dir = normalize(camera.position - world_pos);
+
+    // const vec3 reflected = reflect(view_dir, surface.normal);
+
+    const vec2 probe_atlas_size = vec2(probe_count * probe_screen_size);
+    const uvec2 probe_coord = coord / probe_count;
+    const vec2 uv_offset = (probe_coord * probe_screen_size) / probe_atlas_size;
+    const vec2 uv_mul = probe_screen_size / probe_atlas_size;
+
+    float weight = 0.0;
+    vec3 color = vec3(0.0);
+    for(uint i = 0; i != 64; ++i) {
+        vec3 sample_dir = sample_dirs[i];
+        if(dot(sample_dir, surface.normal) < 0) {
+            sample_dir = -sample_dir;
+        }
+
+        const float NoL = dot(sample_dir, surface.normal);
+        const vec2 uv = saturate(sample_dir.xy * 0.5 + 0.5);
+        color += texture(in_probes, uv_offset + uv * uv_mul).rgb * NoL;
+        weight += NoL;
+    }
+
+    imageStore(out_color, coord, vec4(color / weight, 1.0));
+}
+

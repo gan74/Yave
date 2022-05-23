@@ -36,7 +36,7 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr math::Vec2ui rsm_size = math::Vec2ui(256);
+static constexpr math::Vec2ui rsm_size = math::Vec2ui(64);
 
 static Camera rsm_directional_camera(const Camera& cam, const DirectionalLightComponent& light) {
     const float size = light.cascade_distance() * 0.5f;
@@ -94,7 +94,6 @@ VPLGenerationPass VPLGenerationPass::create(FrameGraph& framegraph, const SceneV
     const DirectionalLightComponent* directional = find_directional(scene);
     if(!directional) {
         return {};
-
     }
 
     const DirectionalLightComponent light = *directional;
@@ -126,7 +125,6 @@ VPLGenerationPass VPLGenerationPass::create(FrameGraph& framegraph, const SceneV
         const auto& program = device_resources()[DeviceResources::GenerateVPLProgram];
         recorder.dispatch_size(program, rsm_size, {self->descriptor_sets()[0]});
     });
-
 
     VPLGenerationPass pass;
     pass.vpl_buffer = vpl_buffer;
