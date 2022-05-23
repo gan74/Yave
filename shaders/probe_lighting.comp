@@ -2,8 +2,9 @@
 
 #include "lib/gbuffer.glsl"
 #include "lib/screen_space.glsl"
+#include "lib/noise.glsl"
 
-layout(local_size_x = 8, local_size_y = 8) in;
+layout(local_size_x = 16, local_size_y = 16) in;
 
 layout(rgba16f, set = 0, binding = 0) uniform image2D out_color;
 
@@ -27,7 +28,6 @@ void main() {
     const vec2 image_size = vec2(imageSize(out_color).xy);
     const vec2 uv = vec2(gl_GlobalInvocationID.xy) / image_size;
 
-
     const float depth = texelFetch(in_depth, coord, 0).x;
 
     if(is_OOB(depth)) {
@@ -41,9 +41,11 @@ void main() {
 
     // const vec3 reflected = reflect(view_dir, surface.normal);
 
+    const uint group_index = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+    const uvec2 probe_index = uvec2(group_index % probe_count.x, group_index / probe_count.x);
+
     const vec2 probe_atlas_size = vec2(probe_count * probe_screen_size);
-    const uvec2 probe_coord = coord / probe_count;
-    const vec2 uv_offset = (probe_coord * probe_screen_size) / probe_atlas_size;
+    const vec2 uv_offset = (probe_index * probe_screen_size) / probe_atlas_size;
     const vec2 uv_mul = probe_screen_size / probe_atlas_size;
 
     float weight = 0.0;
@@ -55,8 +57,8 @@ void main() {
         }
 
         const float NoL = dot(sample_dir, surface.normal);
-        const vec2 uv = saturate(sample_dir.xy * 0.5 + 0.5);
-        color += texture(in_probes, uv_offset + uv * uv_mul).rgb * NoL;
+        const vec2 probe_uv = saturate(sample_dir.xy * 0.5 + 0.5);
+        color += texture(in_probes, uv_offset + probe_uv * uv_mul).rgb * NoL;
         weight += NoL;
     }
 

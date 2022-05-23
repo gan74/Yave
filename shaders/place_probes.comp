@@ -11,19 +11,25 @@ layout(set = 0, binding = 1) uniform CameraData {
 };
 
 layout(set = 0, binding = 2) writeonly buffer Probes {
-    vec3 probe_positions[];
+    vec4 probe_positions[];
 };
 
 shared vec3 positions[16 * 16];
 
 void main() {
+    const uint group_index = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
     const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(textureSize(in_depth, 0).xy);
 
     const float depth = texelFetch(in_depth, coord, 0).x;
-
     const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
 
+#if 1
+    if(gl_LocalInvocationIndex == 16 * 8) {
+        probe_positions[group_index] = vec4(world_pos, 1.0);
+    }
+#else
     positions[gl_LocalInvocationIndex] = world_pos;
 
     barrier();
@@ -37,9 +43,8 @@ void main() {
         }
 
         const vec3 center = 0.5 * (min_p + max_p);
-
-        const uint group_index = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
         probe_positions[group_index] = center;
     }
+#endif
 }
 

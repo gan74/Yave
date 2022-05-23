@@ -50,15 +50,15 @@ ProbeGenerationPass ProbeGenerationPass::create(FrameGraph& framegraph, const GB
     const math::Vec2ui probe_count = compute_probe_count(gbuffer_size);
     const math::Vec2ui atlas_size = probe_size * probe_count;
 
-    FrameGraphMutableTypedBufferId<math::Vec3> probe_buffer;
+    FrameGraphMutableTypedBufferId<math::Vec4> probe_buffer;
 
     {
         FrameGraphPassBuilder builder = framegraph.add_pass("Probe placement pass");
 
-        probe_buffer = builder.declare_typed_buffer<math::Vec3>(probe_count.x() * probe_count.y());
+        probe_buffer = builder.declare_typed_buffer<math::Vec4>(probe_count.x() * probe_count.y());
 
         builder.add_uniform_input(gbuffer.depth);
-        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
+        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
         builder.add_storage_output(probe_buffer);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& program = device_resources()[DeviceResources::ProbePlacementProgram];

@@ -9,7 +9,7 @@ layout(set = 0, binding = 0) readonly buffer VPLs {
 };
 
 layout(set = 0, binding = 1) readonly buffer Probes {
-    vec3 probe_positions[];
+    vec4 probe_positions[];
 };
 
 layout(set = 0, binding = 2) uniform Params_Inline {
@@ -25,7 +25,8 @@ vec2 to_probe(vec2 clip) {
 void main() {
     const VPL vpl = vpls[gl_VertexIndex];
 
-    vec3 direction = (vpl.position - probe_positions[gl_InstanceIndex]);
+    const vec3 center = probe_positions[gl_InstanceIndex].xyz;
+    vec3 direction = (vpl.position - center);
     const float distance = length(direction);
     direction /= distance;
 
