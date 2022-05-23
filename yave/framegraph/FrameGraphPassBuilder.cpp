@@ -49,7 +49,7 @@ FrameGraphMutableImageId FrameGraphPassBuilder::declare_image(ImageFormat format
     return parent()->declare_image(format, size);
 }
 
-FrameGraphMutableBufferId FrameGraphPassBuilder::declare_buffer(usize byte_size) {
+FrameGraphMutableBufferId FrameGraphPassBuilder::declare_buffer(u64 byte_size) {
     return parent()->declare_buffer(byte_size);
 }
 

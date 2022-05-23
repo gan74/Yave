@@ -370,7 +370,7 @@ FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const mat
     return i;
 }
 
-FrameGraphMutableBufferId FrameGraph::declare_buffer(usize byte_size) {
+FrameGraphMutableBufferId FrameGraph::declare_buffer(u64 byte_size) {
     y_debug_assert(byte_size > 0);
     const u32 id = _resources->create_buffer_id();
 
@@ -510,6 +510,11 @@ math::Vec2ui FrameGraph::image_size(FrameGraphImageId res) const {
 ImageFormat FrameGraph::image_format(FrameGraphImageId res) const {
     const auto& info = check_exists(_images, res);
     return info.format;
+}
+
+u64 FrameGraph::buffer_byte_size(FrameGraphBufferId res) const {
+    const auto& info = check_exists(_buffers, res);
+    return info.byte_size;
 }
 
 }

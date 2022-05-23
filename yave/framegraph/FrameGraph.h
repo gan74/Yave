@@ -78,7 +78,7 @@ class FrameGraph : NonMovable {
     };
 
     struct BufferCreateInfo : ResourceCreateInfo {
-        usize byte_size = 0;
+        u64 byte_size = 0;
         BufferUsage usage = BufferUsage::None;
         MemoryType memory_type = MemoryType::DontCare;
     };
@@ -104,6 +104,8 @@ class FrameGraph : NonMovable {
 
         const FrameGraphFrameResources& resources() const;
 
+        FrameGraphRegion region(std::string_view name);
+
         void render(CmdBufferRecorder& recorder);
 
         FrameGraphPassBuilder add_pass(std::string_view name);
@@ -111,7 +113,12 @@ class FrameGraph : NonMovable {
         math::Vec2ui image_size(FrameGraphImageId res) const;
         ImageFormat image_format(FrameGraphImageId res) const;
 
-        FrameGraphRegion region(std::string_view name);
+        u64 buffer_byte_size(FrameGraphBufferId res) const;
+
+        template<typename T>
+        u64 buffer_size(FrameGraphTypedBufferId<T> res) const {
+            return buffer_byte_size(res) / sizeof(T);
+        }
 
     private:
         friend class FrameGraphPassBuilder;
@@ -121,7 +128,7 @@ class FrameGraph : NonMovable {
         void end_region(usize index);
 
         FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
-        FrameGraphMutableBufferId declare_buffer(usize byte_size);
+        FrameGraphMutableBufferId declare_buffer(u64 byte_size);
 
         const ImageCreateInfo& info(FrameGraphImageId res) const;
         const BufferCreateInfo& info(FrameGraphBufferId res) const;
