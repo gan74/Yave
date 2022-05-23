@@ -44,9 +44,7 @@ DeviceMemoryHeap::DeviceMemoryHeap(u32 type_bits, MemoryType type, u64 heap_size
         vk_check(vkMapMemory(vk_device(), _memory, 0, heap_size, flags, &_mapping));
     }
 
-    if(_heap_size % alignment) {
-        y_fatal("Heap size is not a multiple of alignment.");
-    }
+    y_always_assert(_heap_size % alignment == 0, "Heap size is not a multiple of alignment");
 }
 
 DeviceMemoryHeap::~DeviceMemoryHeap() {
@@ -70,42 +68,49 @@ DeviceMemory DeviceMemoryHeap::create(u64 offset, u64 size) {
 
 core::Result<DeviceMemory> DeviceMemoryHeap::alloc(VkMemoryRequirements reqs) {
     y_profile();
-    const u64 size = align_size(reqs.size, alignment);
+
+    y_debug_assert(reqs.alignment % DeviceMemoryHeap::alignment == 0 || DeviceMemoryHeap::alignment % reqs.alignment == 0);
 
     const auto lock = y_profile_unique_lock(_lock);
 
     sort_and_compact_blocks();
 
-    for(auto it = _free_blocks.begin(); it != _free_blocks.end(); ++it) {
-        const u64 full_size = it->size;
+    for(usize i = 0; i != _free_blocks.size(); ++i) {
+        auto& block = _free_blocks[i];
+        const u64 block_end = block.offset + block.size;
 
-        if(full_size < size) {
+        const u64 alloc_start = align_size(block.offset, reqs.alignment);
+        const u64 alloc_size = align_size(reqs.size, alignment);
+        const u64 alloc_end = alloc_start + alloc_size;
+
+        if(alloc_end > block_end) {
             continue;
         }
 
-        const u64 offset = it->offset;
+        y_debug_assert(alloc_start % alignment == 0);
+        y_debug_assert(alloc_size % alignment == 0);
 
-        const u64 aligned_offset = align_size(offset, reqs.alignment);
-        const u64 align_correction = aligned_offset - offset;
-        const u64 aligned_size = full_size - align_correction;
-
-        y_debug_assert(aligned_size % alignment == 0);
-        y_debug_assert(aligned_offset % alignment == 0);
-        y_debug_assert(aligned_offset % reqs.alignment == 0);
-
-        if(aligned_size == size) {
-            _free_blocks.erase_unordered(it);
-            if(align_correction) {
-                _free_blocks << FreeBlock{offset, align_correction};
+        {
+            if(block.offset != alloc_start) {
+                block.size = alloc_start - block.offset;
+                if(block_end != alloc_end) {
+                    _free_blocks << FreeBlock { alloc_end, block_end - alloc_end };
+                    _should_compact = true;
+                }
+            } else {
+                if(block_end != alloc_end) {
+                    block.offset = alloc_end;
+                    block.size = block_end - alloc_end;
+                } else {
+                    _free_blocks.erase_unordered(_free_blocks.begin() + i);
+                    _should_compact = true;
+                }
             }
-            return core::Ok(create(aligned_offset, size));
-        } else if(aligned_size > size) {
-            const u64 end = offset + full_size;
-            it->size = end - (it->offset = aligned_offset + size);
-            if(align_correction) {
-                _free_blocks << FreeBlock{offset, align_correction};
-            }
-            return core::Ok(create(aligned_offset, size));
+
+            y_debug_assert(alloc_start % reqs.alignment == 0);
+            y_debug_assert(alloc_size >= reqs.size);
+
+            return core::Ok(create(alloc_start, alloc_size));
         }
     }
 
