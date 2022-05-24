@@ -73,10 +73,6 @@ struct DeviceMaterialData {
     static constexpr DeviceMaterialData wire(SpirV frag) {
         return DeviceMaterialData{frag, SpirV::WireFrameVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines};
     }
-
-    static constexpr DeviceMaterialData splat(SpirV frag, SpirV vert) {
-        return DeviceMaterialData{frag, vert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Points};
-    }
 };
 
 static constexpr DeviceMaterialData material_datas[] = {
@@ -97,7 +93,6 @@ static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::screen(SpirV::HBlurFrag, true),
         DeviceMaterialData::screen(SpirV::VBlurFrag, true),
         DeviceMaterialData::wire(SpirV::WireFrameFrag),
-        DeviceMaterialData::splat(SpirV::VPLSplatFrag, SpirV::VPLSplatVert),
     };
 
 static constexpr const char* spirv_names[] = {
@@ -110,14 +105,11 @@ static constexpr const char* spirv_names[] = {
         "ssao_upsample.comp",
         "ssao_upsample_merge.comp",
         "copy.comp",
+
         "histogram_clear.comp",
         "histogram.comp",
         "tonemap_params.comp",
         "depth_bounds.comp",
-        "generate_vpl.comp",
-        "vpl_lighting.comp",
-        "place_probes.comp",
-        "probe_lighting.comp",
 
         "deferred_point.frag",
         "deferred_spot.frag",
@@ -134,7 +126,6 @@ static constexpr const char* spirv_names[] = {
         "hblur.frag",
         "vblur.frag",
         "wireframe.frag",
-        "vpl_splat.frag",
 
         "deferred_point.vert",
         "deferred_spot.vert",
@@ -142,7 +133,6 @@ static constexpr const char* spirv_names[] = {
         "skinned.vert",
         "screen.vert",
         "wireframe.vert",
-        "vpl_splat.vert",
     };
 
 // ABGR

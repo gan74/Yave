@@ -22,9 +22,6 @@ SOFTWARE.
 
 #include "DefaultRenderer.h"
 
-#include "VPLGenerationPass.h"
-#include "VPLLightingPass.h"
-
 namespace yave {
 
 DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const RendererSettings& settings) {
@@ -39,12 +36,6 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.bloom          = BloomPass::create(framegraph, renderer.atmosphere.lit, settings.bloom);
     renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.bloom.bloomed, settings.tone_mapping);
 
-    if(settings.gi.enable) {
-        renderer.vpl.vpl_generation = VPLGenerationPass::create(framegraph, view);
-        // renderer.vpl.vpl_lighting = VPLLightingPass::create(framegraph, renderer.gbuffer, renderer.vpl.vpl_generation);
-        renderer.vpl.probe_generation = ProbeGenerationPass::create(framegraph, renderer.gbuffer, renderer.vpl.vpl_generation);
-        renderer.vpl.probe_lighting = ProbeLightingPass::create(framegraph, renderer.vpl.probe_generation);
-    }
 
     renderer.final = renderer.tone_mapping.tone_mapped;
     renderer.depth = renderer.gbuffer.depth;

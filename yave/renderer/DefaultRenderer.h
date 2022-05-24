@@ -28,21 +28,13 @@ SOFTWARE.
 #include "SSAOPass.h"
 #include "BloomPass.h"
 
-#include "VPLLightingPass.h"
-#include "ProbeLightingPass.h"
-
 namespace yave {
-
-struct GISettings {
-    bool enable = true;
-};
 
 struct RendererSettings {
     ToneMappingSettings tone_mapping;
     LightingSettings lighting;
     SSAOSettings ssao;
     BloomSettings bloom;
-    GISettings gi;
 };
 
 struct DefaultRenderer {
@@ -52,15 +44,6 @@ struct DefaultRenderer {
     BloomPass bloom;
     ToneMappingPass tone_mapping;
     SSAOPass ssao;
-
-    struct {
-        VPLGenerationPass vpl_generation;
-        VPLLightingPass vpl_lighting;
-
-        ProbeGenerationPass probe_generation;
-        ProbeLightingPass probe_lighting;
-    } vpl;
-
 
     FrameGraphImageId final;
     FrameGraphImageId depth;
