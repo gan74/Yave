@@ -117,7 +117,7 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
                     const u64 byte_len = vertex_count * elem_size;
                     const u64 byte_offset = sub_buffer.byte_offset() + vertex_begin * elem_size;
                     Mapping::stage(
-                        MutableAttribSubBuffer(global_attrib_buffer, byte_len, byte_offset),
+                        SubBuffer<BufferUsage::TransferDstBit>(global_attrib_buffer, byte_len, byte_offset),
                         recorder,
                         vertex_data + offset,   // data
                         elem_size,              // elem_size
