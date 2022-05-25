@@ -25,11 +25,6 @@ void main() {
     const float depth = texelFetch(in_depth, coord, 0).x;
     const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
 
-#if 1
-    if(gl_LocalInvocationIndex == 16 * 8) {
-        probe_positions[group_index] = vec4(world_pos, 1.0);
-    }
-#else
     positions[gl_LocalInvocationIndex] = world_pos;
 
     barrier();
@@ -43,8 +38,7 @@ void main() {
         }
 
         const vec3 center = 0.5 * (min_p + max_p);
-        probe_positions[group_index] = center;
+        probe_positions[group_index] = vec4(center, 0.0);
     }
-#endif
 }
 

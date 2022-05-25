@@ -98,6 +98,7 @@ static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::screen(SpirV::VBlurFrag, true),
         DeviceMaterialData::wire(SpirV::WireFrameFrag),
         DeviceMaterialData::splat(SpirV::VPLSplatFrag, SpirV::VPLSplatVert),
+        DeviceMaterialData::splat(SpirV::VPLSplatFrag, SpirV::ISMSplatVert),
     };
 
 static constexpr const char* spirv_names[] = {
@@ -116,8 +117,10 @@ static constexpr const char* spirv_names[] = {
         "depth_bounds.comp",
         "generate_vpl.comp",
         "vpl_lighting.comp",
-        "place_probes.comp",
+        "generate_probes.comp",
         "probe_lighting.comp",
+        "generate_probe_id.comp",
+        "generate_ism.comp",
 
         "deferred_point.frag",
         "deferred_spot.frag",
@@ -143,6 +146,7 @@ static constexpr const char* spirv_names[] = {
         "screen.vert",
         "wireframe.vert",
         "vpl_splat.vert",
+        "ism_splat.vert",
     };
 
 // ABGR

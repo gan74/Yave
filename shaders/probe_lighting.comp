@@ -57,7 +57,7 @@ void main() {
         }
 
         const float NoL = dot(sample_dir, surface.normal);
-        const vec2 probe_uv = saturate(sample_dir.xy * 0.5 + 0.5);
+        const vec2 probe_uv = octahedron_encode(sample_dir);
         color += texture(in_probes, uv_offset + probe_uv * uv_mul).rgb * NoL;
         weight += NoL;
     }

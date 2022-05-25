@@ -16,9 +16,9 @@ layout(set = 0, binding = 2) uniform Params_Inline {
     uvec2 probe_count;
 };
 
-vec2 to_probe(vec2 clip) {
+vec2 to_probe(vec3 dir) {
     const vec2 probe_offset = vec2(gl_InstanceIndex % probe_count.x, gl_InstanceIndex / probe_count.x);
-    const vec2 h = clip * 0.5 + 0.5;
+    const vec2 h = octahedron_encode(dir);
     return ((h + probe_offset) / probe_count) * 2.0 - 1.0;
 }
 
@@ -31,8 +31,8 @@ void main() {
     direction /= distance;
 
     out_color = vpl.color;
-    gl_PointSize = 4.0;
-    gl_Position = vec4(to_probe(direction.xy), 1.0 / distance, 1.0);
+    gl_PointSize = 2.0;
+    gl_Position = vec4(to_probe(direction), 1.0 / distance, 1.0);
 
     if(dot(vpl.normal, direction) > 0.0) {
         gl_Position = vec4(uintBitsToFloat(0xFFFFFFFF));

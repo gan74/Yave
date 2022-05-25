@@ -30,13 +30,12 @@ SOFTWARE.
 
 namespace yave {
 
-ProbeLightingPass ProbeLightingPass::create(FrameGraph& framegraph, const ProbeGenerationPass& generation_pass) {
-    const GBufferPass& gbuffer = generation_pass.gbuffer;
+ProbeLightingPass ProbeLightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const ProbeFillingPass& generation_pass) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Probe lighting pass");
 
-    const auto lit = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, size);
+    /* const */ auto lit = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, size);
 
     builder.add_storage_output(lit);
     builder.add_uniform_input(gbuffer.depth);
@@ -44,11 +43,27 @@ ProbeLightingPass ProbeLightingPass::create(FrameGraph& framegraph, const ProbeG
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(generation_pass.probe_atlas);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
-    builder.add_inline_input(InlineDescriptor(math::Vec4ui(generation_pass.probe_count, generation_pass.probe_screen_size)));
+    builder.add_inline_input(InlineDescriptor(math::Vec4ui(generation_pass.probes.probe_count, generation_pass.probes.probe_screen_size)));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::ProbeLightingProgram];
         recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
     });
+
+#if 0
+    {
+        FrameGraphPassBuilder builder = framegraph.add_pass("Probe ID pass");
+
+        /* const */ lit = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, size);
+
+        builder.add_storage_output(lit);
+        builder.add_uniform_input(gbuffer.depth);
+        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            const auto& program = device_resources()[DeviceResources::GenerateProbeIdProgram];
+            recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
+        });
+    }
+#endif
 
     ProbeLightingPass pass;
     pass.lit = lit;

@@ -20,9 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "ProbeGenerationPass.h"
-
-#include "ShadowMapPass.h"
+#include "ProbeFillingPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -31,41 +29,38 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
 
-
 namespace yave {
 
-const math::Vec3ui screen_division = math::Vec3ui(16, 16, 1);
+ProbeFillingPass ProbeFillingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const VPLGenerationPass& vpls) {
+    const math::Vec2ui probe_size(32);
 
-static math::Vec2ui compute_probe_count(const math::Vec2ui& size) {
-    math::Vec2ui probe_count;
-    for(usize i = 0; i != 2; ++i) {
-        probe_count[i] = size[i] / screen_division[i] + !!(size[i] % screen_division[i]);
-    }
-    return probe_count;
-}
+    const ProbeGenerationPass probes = ProbeGenerationPass::create(framegraph, gbuffer);
 
-ProbeGenerationPass ProbeGenerationPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
-    const math::Vec2ui gbuffer_size = framegraph.image_size(gbuffer.depth);
-    const math::Vec2ui probe_count = compute_probe_count(gbuffer_size);
-    const usize total_probe_count = probe_count.x() * probe_count.y();
+    const math::Vec2ui atlas_size = probe_size * probes.probe_count;
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("Probe placement pass");
+    FrameGraphPassBuilder builder = framegraph.add_pass("Probe generation pass");
 
-    const auto probe_buffer = builder.declare_typed_buffer<math::Vec4>(total_probe_count);
+    const usize vpl_count = framegraph.buffer_size(vpls.vpl_buffer);
 
-    builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
-    builder.add_storage_output(probe_buffer);
+    const auto probe_depth_atlas = builder.declare_image(VK_FORMAT_D32_SFLOAT, atlas_size);
+    const auto probe_atlas = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, atlas_size);
+
+    builder.add_depth_output(probe_depth_atlas);
+    builder.add_color_output(probe_atlas);
+    builder.add_storage_input(vpls.vpl_buffer);
+    builder.add_storage_input(probes.probe_buffer);
+    builder.add_inline_input(InlineDescriptor(probes.probe_count));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::GenerateProbesProgram];
-        y_debug_assert(program.local_size() == screen_division);
-        recorder.dispatch(program, math::Vec3ui(probe_count, 1), {self->descriptor_sets()[0]});
+        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        const MaterialTemplate* material = device_resources()[DeviceResources::VPLSplatMaterialTemplate];
+        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+        render_pass.draw_array(vpl_count, probes.probe_count.x() * probes.probe_count.y());
     });
 
-    ProbeGenerationPass pass;
-    pass.probe_screen_size = screen_division.to<2>();
-    pass.probe_count = probe_count;
-    pass.probe_buffer = probe_buffer;
+
+    ProbeFillingPass pass;
+    pass.probes = probes;
+    pass.probe_atlas = probe_atlas;
     return pass;
 }
 

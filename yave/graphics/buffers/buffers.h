@@ -51,13 +51,8 @@ using TypedUniformBuffer = TypedBuffer<T, BufferUsage::UniformBit, Memory>;
 template<MemoryType Memory = prefered_memory_type(BufferUsage::IndexBit)>
 using TriangleBuffer = TypedBuffer<IndexedTriangle, BufferUsage::IndexBit | BufferUsage::TransferDstBit, Memory>;
 
-template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
-using VertexBuffer = TypedBuffer<PackedVertex, BufferUsage::AttributeBit | BufferUsage::TransferDstBit, Memory>;
-
-
 
 using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit>;
-using VertexSubBuffer = TypedSubBuffer<PackedVertex, BufferUsage::AttributeBit>;
 
 using AttribSubBuffer = SubBuffer<BufferUsage::AttributeBit>;
 using IndexSubBuffer = SubBuffer<BufferUsage::IndexBit>;

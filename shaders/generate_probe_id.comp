@@ -1,0 +1,35 @@
+#version 450
+
+#include "lib/gbuffer.glsl"
+#include "lib/noise.glsl"
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(rgba16f, set = 0, binding = 0) uniform image2D out_color;
+
+layout(set = 0, binding = 1) uniform sampler2D in_depth;
+
+layout(set = 0, binding = 2) uniform CameraData {
+    Camera camera;
+};
+
+
+void main() {
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    const vec2 image_size = vec2(imageSize(out_color).xy);
+    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / image_size;
+
+    const float depth = texelFetch(in_depth, coord, 0).x;
+
+    if(is_OOB(depth)) {
+        return;
+    }
+
+    const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
+
+    const float hashed = hash_1_3(round(world_pos * 0.2));
+    const vec3 color = HSV_to_RGB(hashed, 0.5, fract(hashed * 1000.0) * 0.5 + 0.4);
+
+    imageStore(out_color, coord, vec4(color, 1.0));
+}
+

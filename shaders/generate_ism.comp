@@ -1,0 +1,39 @@
+#version 450
+
+#include "lib/gbuffer.glsl"
+
+layout(local_size_z = 64) in;
+
+layout(r32ui, set = 0, binding = 0) uniform uimage2D out_depth;
+
+layout(set = 0, binding = 1) readonly buffer Probes {
+    vec4 probe_positions[];
+};
+
+layout(set = 0, binding = 2) readonly buffer VBO {
+    float positions[];
+};
+
+const uvec2 probe_size = uvec2(32, 32);
+
+void main() {
+    const uint vertex_index = gl_GlobalInvocationID.z * 3 * 64;
+    const uvec2 probe_index = gl_GlobalInvocationID.xy;
+
+    const vec3 pos = vec3(
+        positions[vertex_index + 0],
+        positions[vertex_index + 1],
+        positions[vertex_index + 2]
+    );
+
+    const uint probe_linear_index = probe_index.y * gl_NumWorkGroups.x + probe_index.x;
+    const vec3 center = probe_positions[probe_linear_index].xyz;
+    vec3 direction = pos - center;
+    const float distance = length(direction);
+    direction /= distance;
+
+    const ivec2 coord = ivec2(round(octahedron_encode(direction) * probe_size)) + ivec2(probe_index * probe_size);
+
+    imageAtomicMax(out_depth, coord, floatBitsToUint(1.0 / distance));
+}
+

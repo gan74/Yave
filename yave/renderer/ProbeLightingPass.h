@@ -22,14 +22,14 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_PROBELIGHTINGPASS_H
 #define YAVE_RENDERER_PROBELIGHTINGPASS_H
 
-#include "ProbeGenerationPass.h"
+#include "ProbeFillingPass.h"
 
 namespace yave {
 
 struct ProbeLightingPass {
     FrameGraphImageId lit;
 
-    static ProbeLightingPass create(FrameGraph& framegraph, const ProbeGenerationPass& generation_pass);
+    static ProbeLightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const ProbeFillingPass& generation_pass);
 };
 
 

@@ -28,8 +28,7 @@ SOFTWARE.
 #include "SSAOPass.h"
 #include "BloomPass.h"
 
-#include "VPLLightingPass.h"
-#include "ProbeLightingPass.h"
+#include "ISMTestPass.h"
 
 namespace yave {
 
@@ -54,12 +53,11 @@ struct DefaultRenderer {
     SSAOPass ssao;
 
     struct {
-        VPLGenerationPass vpl_generation;
-        VPLLightingPass vpl_lighting;
+        ProbeGenerationPass probe_gen;
+        ISMTestPass ism;
 
-        ProbeGenerationPass probe_generation;
-        ProbeLightingPass probe_lighting;
-    } vpl;
+        FrameGraphImageId final;
+    } gi;
 
 
     FrameGraphImageId final;

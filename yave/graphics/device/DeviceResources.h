@@ -56,8 +56,10 @@ class DeviceResources final : NonMovable {
             DepthBoundComp,
             GenerateVPLComp,
             VPLLightingComp,
-            ProbePlacementComp,
+            GenerateProbesComp,
             ProbeLightingComp,
+            GenerateProbeIdComp,
+            GenerateISMComp,
 
             DeferredPointFrag,
             DeferredSpotFrag,
@@ -83,6 +85,7 @@ class DeviceResources final : NonMovable {
             ScreenVert,
             WireFrameVert,
             VPLSplatVert,
+            ISMSplatVert,
 
             MaxSpirV
         };
@@ -103,8 +106,10 @@ class DeviceResources final : NonMovable {
             DepthBoundProgram,
             GenerateVPLProgram,
             VPLLightingProgram,
-            ProbePlacementProgram,
+            GenerateProbesProgram,
             ProbeLightingProgram,
+            GenerateProbeIdProgram,
+            GenerateISMProgram,
 
             MaxComputePrograms
         };
@@ -135,6 +140,7 @@ class DeviceResources final : NonMovable {
             WireFrameMaterialTemplate,
 
             VPLSplatMaterialTemplate,
+            ISMSplatMaterialTemplate,
 
             MaxMaterialTemplates
         };

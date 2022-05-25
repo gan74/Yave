@@ -19,22 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_PROBEGENERATIONPASS_H
-#define YAVE_RENDERER_PROBEGENERATIONPASS_H
+#ifndef YAVE_RENDERER_ISMTESTPASS_H
+#define YAVE_RENDERER_ISMTESTPASS_H
 
-#include "VPLGenerationPass.h"
+#include "ProbeGenerationPass.h"
 
 namespace yave {
 
-struct ProbeGenerationPass {
-    math::Vec2ui probe_count;
-    math::Vec2ui probe_screen_size;
-    FrameGraphTypedBufferId<math::Vec4> probe_buffer;
+struct ISMTestPass {
+    FrameGraphImageId ism;
 
-    static ProbeGenerationPass create(FrameGraph& framegraph, const GBufferPass& gbuffer);
+    static ISMTestPass create(FrameGraph& framegraph, const ProbeGenerationPass& probes);
 };
+
 
 }
 
-#endif // YAVE_RENDERER_PROBEGENERATIONPASS_H
+#endif // YAVE_RENDERER_ISMTESTPASS_H
 
