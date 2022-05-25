@@ -424,11 +424,53 @@ vec3 Yxy_to_RGB(vec3 Yxy) {
     return XYZ_to_RGB(Yxy_to_XYZ(Yxy));
 }
 
+vec3 HSV_to_RGB(float h, float s, float v) {
+    h = fract(h) * 6.0;
+    const int i = int(h);
+    const float f = h - float(i);
+    const float p = v * (1.0 - s);
+    const float q = v * (1.0 - s * f);
+    const float t = v * (1.0 - s * (1.0 - f));
+
+    switch(i) {
+        case 0: return vec3(v, t, p);
+        case 1: return vec3(q, v, p);
+        case 2: return vec3(p, v, t);
+        case 3: return vec3(p, q, v);
+        case 4: return vec3(t, p, v);
+
+        default:
+        break;
+    }
+    return vec3(v, p, q);
+}
+
 
 // -------------------------------- GBUFFER --------------------------------
 
 vec3 approx_F0(float metallic, vec3 albedo) {
     return mix(vec3(0.04), albedo, metallic);
+}
+
+// https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
+vec2 octahedron_wrap(vec2 v) {
+    return (vec2(1.0) - abs(v.yx)) * vec2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0);
+}
+
+vec2 octahedron_encode(vec3 n) {
+    n /= (abs(n.x) + abs(n.y) + abs(n.z));
+    n.xy = n.z >= 0.0 ? n.xy : octahedron_wrap(n.xy);
+    n.xy = n.xy * 0.5 + 0.5;
+    return n.xy;
+}
+
+vec3 octahedron_decode(vec2 f) {
+    f = f * 2.0 - 1.0;
+    // https://twitter.com/Stubbesaurus/status/937994790553227264
+    vec3 n = vec3(f.xy, 1.0 - abs(f.x) - abs(f.y));
+    const float t = saturate(-n.z);
+    n.xy += vec2(n.x >= 0.0 ? -t : t, n.y >= 0.0 ? -t : t);
+    return normalize(n);
 }
 
 #endif

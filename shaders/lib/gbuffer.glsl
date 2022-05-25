@@ -14,7 +14,8 @@ vec4 pack_color(vec3 color, float metallic) {
 }
 
 vec4 pack_normal(vec3 normal, float roughness) {
-    return vec4(normalize(normal) * 0.5 + vec3(0.5), roughness);
+    // return vec4(normalize(normal) * 0.5 + vec3(0.5), roughness);
+    return vec4(octahedron_encode(normal), roughness, 0.0);
 }
 
 void unpack_color(vec4 buff, out vec3 color, out float metallic) {
@@ -23,9 +24,12 @@ void unpack_color(vec4 buff, out vec3 color, out float metallic) {
 }
 
 void unpack_normal(vec4 buff, out vec3 normal, out float roughness) {
-    normal = normalize(buff.xyz * 2.0 - vec3(1.0));
-    roughness = max(0.05, buff.w);
+    // normal = normalize(buff.xyz * 2.0 - vec3(1.0));
+    normal = octahedron_decode(buff.xy);
+    roughness = max(0.05, buff.z);
 }
+
+
 
 
 
@@ -72,6 +76,7 @@ SurfaceInfo read_gbuffer(vec4 rt0, vec4 rt1) {
     read_gbuffer(raw, rt0, rt1);
     return decode_gbuffer(raw);
 }
+
 
 #endif
 
