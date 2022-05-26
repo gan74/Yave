@@ -60,6 +60,7 @@ class DeviceResources final : NonMovable {
             ProbeLightingComp,
             GenerateProbeIdComp,
             GenerateISMComp,
+            LightISMComp,
 
             DeferredPointFrag,
             DeferredSpotFrag,
@@ -110,6 +111,7 @@ class DeviceResources final : NonMovable {
             ProbeLightingProgram,
             GenerateProbeIdProgram,
             GenerateISMProgram,
+            LightISMProgram,
 
             MaxComputePrograms
         };

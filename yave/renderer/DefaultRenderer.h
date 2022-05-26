@@ -28,7 +28,7 @@ SOFTWARE.
 #include "SSAOPass.h"
 #include "BloomPass.h"
 
-#include "ISMTestPass.h"
+#include "LightISMPass.h"
 
 namespace yave {
 
@@ -55,6 +55,7 @@ struct DefaultRenderer {
     struct {
         ProbeGenerationPass probe_gen;
         ISMTestPass ism;
+        LightISMPass light_ism;
 
         FrameGraphImageId final;
     } gi;

@@ -121,6 +121,7 @@ static constexpr const char* spirv_names[] = {
         "probe_lighting.comp",
         "generate_probe_id.comp",
         "generate_ism.comp",
+        "light_ism.comp",
 
         "deferred_point.frag",
         "deferred_spot.frag",

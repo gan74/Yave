@@ -37,14 +37,16 @@ ISMTestPass ISMTestPass::create(FrameGraph& framegraph, const ProbeGenerationPas
     const math::Vec2ui ism_size(32);
     const math::Vec2ui ism_count = probes.probe_count;
 
-    FrameGraphMutableImageId ism;
+    y_debug_assert(framegraph.buffer_size(probes.probe_buffer) == ism_count.x() * ism_count.y());
+
+    FrameGraphMutableImageId ism_atlas;
 
     {
         FrameGraphPassBuilder builder = framegraph.add_pass("ISM clear pass");
 
-        ism = builder.declare_image(VK_FORMAT_R32_UINT, ism_size * ism_count);
+        ism_atlas = builder.declare_image(VK_FORMAT_R32_UINT, ism_size * ism_count);
 
-        builder.add_color_output(ism);
+        builder.add_color_output(ism_atlas);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             recorder.bind_framebuffer(self->framebuffer());
         });
@@ -53,12 +55,12 @@ ISMTestPass ISMTestPass::create(FrameGraph& framegraph, const ProbeGenerationPas
     {
         FrameGraphPassBuilder builder = framegraph.add_pass("ISM test pass");
 
-        builder.add_storage_output(ism);
+        builder.add_storage_output(ism_atlas);
         builder.add_storage_input(probes.probe_buffer);
         builder.add_external_input(SubBuffer<BufferUsage::StorageBit>(mesh_allocator().position_buffer()));
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& program = device_resources()[DeviceResources::GenerateISMProgram];
-            recorder.dispatch_size(program, math::Vec3ui(ism_count, 1024 * 4), {self->descriptor_sets()[0]});
+            recorder.dispatch_size(program, math::Vec3ui(ism_count, 1024 * 64), {self->descriptor_sets()[0]});
         });
     }
 
@@ -81,7 +83,9 @@ ISMTestPass ISMTestPass::create(FrameGraph& framegraph, const ProbeGenerationPas
 #endif
 
     ISMTestPass pass;
-    pass.ism = ism;
+    pass.ism_atlas = ism_atlas;
+    pass.ism_size = ism_size;
+    pass.ism_count = ism_count;
     return pass;
 }
 

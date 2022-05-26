@@ -39,8 +39,9 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     if(settings.gi.enable) {
         renderer.gi.probe_gen = ProbeGenerationPass::create(framegraph, renderer.gbuffer);
         renderer.gi.ism = ISMTestPass::create(framegraph, renderer.gi.probe_gen);
+        renderer.gi.light_ism = LightISMPass::create(framegraph, view, renderer.gi.probe_gen, renderer.gi.ism);
 
-        renderer.gi.final = renderer.gi.ism.ism;
+        renderer.gi.final = renderer.gi.light_ism.lit_ism;
     }
 
     renderer.final = renderer.tone_mapping.tone_mapped;

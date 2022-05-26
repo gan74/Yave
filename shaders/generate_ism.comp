@@ -17,8 +17,9 @@ layout(set = 0, binding = 2) readonly buffer VBO {
 const uvec2 probe_size = uvec2(32, 32);
 
 void main() {
-    const uint vertex_index = gl_GlobalInvocationID.z * 3 * 64;
+    const uint vertex_index = gl_GlobalInvocationID.z * 3 * 4;
     const uvec2 probe_index = gl_GlobalInvocationID.xy;
+    const uvec2 probe_count = gl_NumWorkGroups.xy;
 
     const vec3 pos = vec3(
         positions[vertex_index + 0],
@@ -26,8 +27,9 @@ void main() {
         positions[vertex_index + 2]
     );
 
-    const uint probe_linear_index = probe_index.y * gl_NumWorkGroups.x + probe_index.x;
+    const uint probe_linear_index = probe_index.y * probe_count.x + probe_index.x;
     const vec3 center = probe_positions[probe_linear_index].xyz;
+
     vec3 direction = pos - center;
     const float distance = length(direction);
     direction /= distance;
