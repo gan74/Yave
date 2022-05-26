@@ -132,7 +132,6 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
-        const Texture& black = *device_resources()[DeviceResources::BlackTexture];
 
         FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
 
@@ -147,7 +146,6 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
         builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white), 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input_with_default(renderer.renderer.vpl.probe_lighting.lit, Descriptor(black), 0, PipelineStage::FragmentBit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
                 auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
                 output = out.get();
@@ -257,14 +255,6 @@ void EngineView::draw_settings_menu() {
         LightingSettings& settings = _settings.renderer_settings.lighting;
 
         ImGui::Checkbox("Use compute", &settings.use_compute_for_locals);
-
-        ImGui::EndMenu();
-    }
-
-    if(ImGui::BeginMenu("GI")) {
-        GISettings& settings = _settings.renderer_settings.gi;
-
-        ImGui::Checkbox("Enable VPL GI", &settings.enable);
 
         ImGui::EndMenu();
     }
