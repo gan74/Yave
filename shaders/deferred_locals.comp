@@ -12,6 +12,7 @@
 
 #define POINT_LIGHTS
 #define SPOT_LIGHTS
+//#define DEBUG
 
 // -------------------------------- I/O --------------------------------
 
@@ -55,6 +56,8 @@ shared uint tile_spot_count;
 shared vec3 tile_dir;
 shared float tile_sin_alpha;
 
+shared uvec2 tile_dist_bounds;
+
 // -------------------------------- HELPERS --------------------------------
 
 uvec2 dispatch_range(uint num) {
@@ -66,7 +69,7 @@ uvec2 dispatch_range(uint num) {
 }
 
 
-// -------------------------------- CULLING --------------------------------
+// -------------------------------- TILE INFOS --------------------------------
 
 void compute_tile_culling_info(vec2 image_size) {
     const vec2 corner_uv = (gl_WorkGroupID.xy * gl_WorkGroupSize.xy) / image_size;
@@ -82,10 +85,38 @@ void compute_tile_culling_info(vec2 image_size) {
     tile_sin_alpha = sqrt(1.0 - sqr(tile_cos_alpha));
 }
 
+void compute_tile_infos(vec2 image_size, float view_dist, bool is_oob) {
+    if(gl_LocalInvocationIndex == 0) {
+        compute_tile_culling_info(image_size);
+        tile_point_count = 0;
+        tile_spot_count = 0;
+        tile_dist_bounds =  uvec2(floatBitsToUint(max_float), 0);
+    }
+
+    barrier();
+
+    if(!is_oob) {
+        const uint ui_dist = floatBitsToUint(view_dist);
+        atomicMin(tile_dist_bounds.x, ui_dist);
+        atomicMax(tile_dist_bounds.y, ui_dist);
+    }
+
+    barrier();
+}
+
+
+// -------------------------------- CULLING --------------------------------
+
 bool is_inside(vec3 light_pos, float radius) {
     // TODO precompute to_light?
     const vec3 to_light = light_pos - camera.position;
-    const float cos_alpha = dot(to_light, tile_dir);
+    const float cos_alpha = max(0.0, dot(to_light, tile_dir));
+
+    if(cos_alpha + radius < uintBitsToFloat(tile_dist_bounds.x) ||
+       cos_alpha - radius > uintBitsToFloat(tile_dist_bounds.y)) {
+        return false;
+    }
+
     const vec3 closest = camera.position + tile_dir * cos_alpha;
     const float tile_radius = cos_alpha * tile_sin_alpha;
     const vec3 light_to_closest = closest - light_pos;
@@ -120,15 +151,7 @@ void cull_spots() {
     }
 }
 
-void cull_lights(vec2 image_size) {
-    if(gl_LocalInvocationIndex == 0) {
-        compute_tile_culling_info(image_size);
-        tile_point_count = 0;
-        tile_spot_count = 0;
-    }
-
-    barrier();
-
+void cull_lights() {
 #ifdef POINT_LIGHTS
     cull_points();
     barrier();
@@ -148,9 +171,17 @@ void main() {
     const vec2 image_size = vec2(imageSize(out_color).xy);
     const vec2 uv = vec2(gl_GlobalInvocationID.xy) / image_size;
 
-    cull_lights(image_size);
-
     const float depth = texelFetch(in_depth, coord, 0).x;
+
+    const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
+
+    vec3 view_dir = (camera.position - world_pos);
+    const float view_dist = length(view_dir);
+    view_dir /= view_dist;
+
+    compute_tile_infos(image_size, view_dist, is_OOB(depth));
+
+    cull_lights();
 
     if(is_OOB(depth)) {
         return;
@@ -159,9 +190,6 @@ void main() {
     vec3 irradiance = imageLoad(out_color, coord).rgb;
 
     const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
-
-    const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
-    const vec3 view_dir = normalize(camera.position - world_pos);
 
 #ifdef POINT_LIGHTS
     // -------------------------------- POINTS --------------------------------
@@ -206,6 +234,13 @@ void main() {
             const vec3 radiance = light.color * att;
             irradiance += radiance * L0(light_dir, view_dir, surface);
         }
+    }
+#endif
+
+#ifdef DEBUG
+    {
+        const float total_lights = float(tile_point_count + tile_spot_count);
+        irradiance = heat_spectrum(total_lights / 16.0f);
     }
 #endif
 

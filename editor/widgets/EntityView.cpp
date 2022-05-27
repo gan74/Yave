@@ -39,6 +39,9 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/assets/AssetLoader.h>
+#include <yave/utils/color.h>
+
+#include <y/math/random.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -46,6 +49,28 @@ SOFTWARE.
 #include <external/imgui/yave_imgui.h>
 
 namespace editor {
+
+static void add_debug_lights() {
+    y_profile();
+
+    EditorWorld& world = current_world();
+
+    const float spacing =  app_settings().debug.entity_spacing;
+    const usize entity_count = app_settings().debug.entity_count;
+    const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
+    math::FastRandom rng;
+    for(usize i = 0; i != entity_count; ++i) {
+        const ecs::EntityId entity = world.create_entity<PointLightComponent>();
+        world.set_entity_name(entity, "Debug light");
+
+        const math::Vec3 pos = math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
+        world.component<TransformableComponent>(entity)->set_position(pos * spacing);
+        world.component<EditorComponent>(entity)->set_hidden_in_editor(true);
+        world.component<PointLightComponent>(entity)->radius() = spacing;
+        world.component<PointLightComponent>(entity)->intensity() = spacing * spacing;
+        world.component<PointLightComponent>(entity)->color() = identifying_color(rng());
+    }
+}
 
 static void add_debug_entities() {
     y_profile();
@@ -93,6 +118,7 @@ static void add_scene() {
 }
 
 
+editor_action("Add debug lights", add_debug_lights)
 editor_action("Add debug entities", add_debug_entities)
 editor_action("Add prefab", add_prefab)
 editor_action("Add scene", add_scene)

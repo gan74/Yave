@@ -7,6 +7,7 @@ const float euler = 2.7182818284590452353602874713526;
 const float epsilon = 0.0000001;
 
 const uint max_uint = uint(0xFFFFFFFF);
+const float max_float = 3.402823e+38;
 
 const uint max_bones = 256;
 const uint max_tile_lights = 256;

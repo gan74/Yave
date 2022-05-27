@@ -328,35 +328,6 @@ vec3 bloom_threshold(vec3 hdr, float power, float threshold) {
 }
 
 
-// -------------------------------- SPECTRUM --------------------------------
-
-vec3 spectrum(float x) {
-    x = x * 6.0;
-    if(x > 5.0) return vec3(1.0, 0.0, 6.0 - x);
-    if(x > 4.0) return vec3(x - 4.0, 0.0, 1.0);
-    if(x > 3.0) return vec3(0.0, 4.0 - x, 1.0);
-    if(x > 2.0) return vec3(0.0, 1.0, x - 2.0);
-    if(x > 1.0) return vec3(2.0 - x, 1.0, 0.0);
-    return vec3(1.0, x, 0.0);
-}
-
-vec3 load_spectrum(float x) {
-    x = (1.0 - x) * 4.0;
-    if(x > 3.0) return vec3(0.0, 4.0 - x, 1.0);
-    if(x > 2.0) return vec3(0.0, 1.0, x - 2.0);
-    if(x > 1.0) return vec3(2.0 - x, 1.0, 0.0);
-    return vec3(1.0, x, 0.0);
-}
-
-
-vec3 spectrum(uint x) {
-    x = (x % 6) + 1;
-    return vec3((x & 0x01) != 0 ? 1.0 : 0.0,
-                (x & 0x02) != 0 ? 1.0 : 0.0,
-                (x & 0x04) != 0 ? 1.0 : 0.0);
-}
-
-
 // -------------------------------- PROJECTION --------------------------------
 
 vec3 unproject_ndc(vec3 ndc, mat4 inv_matrix) {
@@ -443,6 +414,15 @@ vec3 HSV_to_RGB(float h, float s, float v) {
         break;
     }
     return vec3(v, p, q);
+}
+
+vec3 heat_spectrum(float x) {
+    x *= 4.0;
+    vec3 color = mix(vec3(0, 0, 1), vec3(0, 1, 0), saturate(x));
+    color = mix(color, vec3(1, 1, 0), saturate(x - 1.0));
+    color = mix(color, vec3(1, 0, 0), saturate(x - 2.0));
+    color = mix(color, vec3(1, 1, 1), saturate(x - 3.0));
+    return color / max(color.x, max(color.y, color.z));
 }
 
 
