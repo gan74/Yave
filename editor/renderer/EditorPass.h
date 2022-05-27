@@ -29,9 +29,6 @@ SOFTWARE.
 namespace editor {
 
 struct EditorPass {
-    Y_TODO(make dynamic)
-    static constexpr usize max_batch_size = 128 * 1024;
-
     FrameGraphImageId depth;
     FrameGraphImageId color;
     FrameGraphImageId id;

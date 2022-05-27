@@ -37,8 +37,10 @@ SOFTWARE.
 namespace yave {
 
 SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
+    const usize buffer_size = view.world().components<TransformableComponent>().size();
+
     auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
-    const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
+    const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(buffer_size);
 
     SceneRenderSubPass pass;
     pass.scene_view = view;

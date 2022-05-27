@@ -29,8 +29,6 @@ SOFTWARE.
 namespace editor {
 
 struct IdBufferPass {
-    static constexpr usize max_batch_size = 128 * 1024;
-
     SceneView scene_view;
 
     FrameGraphImageId depth;

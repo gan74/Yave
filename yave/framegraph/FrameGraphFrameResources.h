@@ -74,8 +74,8 @@ class FrameGraphFrameResources final : NonMovable {
         TypedMapping<T> map_buffer(FrameGraphMutableTypedBufferId<T> res) const {
             constexpr BufferUsage usage = StagingBuffer::usage;
             constexpr MemoryType memory = StagingBuffer::memory_type;
-            const TypedSubBuffer<T, usage, memory> subbuffer(TransientSubBuffer<usage, memory>(staging_buffer(res)));
-            return TypedMapping<T>(subbuffer);
+            const TypedSubBuffer<T, usage, memory> sub_buffer(TransientSubBuffer<usage, memory>(staging_buffer(res)));
+            return TypedMapping<T>(sub_buffer);
         }
 
     private:

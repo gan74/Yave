@@ -232,8 +232,10 @@ EditorPass EditorPass::create( FrameGraph& framegraph, const SceneView& view, Fr
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
+    const usize buffer_size = view.world().entity_count();
+
     auto pass_buffer = builder.declare_typed_buffer<EditorPassData>();
-    const auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(max_batch_size);
+    const auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(buffer_size);
     const auto depth = builder.declare_copy(in_depth);
     const auto color = copy_or_dummy(builder, in_color, VK_FORMAT_R8G8B8A8_UNORM, size);
     const auto id = copy_or_dummy(builder, in_id, VK_FORMAT_R32_UINT, size);
@@ -252,7 +254,6 @@ EditorPass EditorPass::create( FrameGraph& framegraph, const SceneView& view, Fr
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer);
-
 
             DirectDraw direct;
             {

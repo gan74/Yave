@@ -88,10 +88,12 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view,
     static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;
     static constexpr ImageFormat id_format = VK_FORMAT_R32_UINT;
 
+    const usize buffer_size = view.world().components<TransformableComponent>().size();
+
     FrameGraphPassBuilder builder = framegraph.add_pass("ID pass");
 
-    const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_batch_size);
-    const auto id_buffer = builder.declare_typed_buffer<u32>(max_batch_size);
+    const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(buffer_size);
+    const auto id_buffer = builder.declare_typed_buffer<u32>(buffer_size);
 
     const auto depth = builder.declare_image(depth_format, size);
     const auto id = builder.declare_image(id_format, size);
