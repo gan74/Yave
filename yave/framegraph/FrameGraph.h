@@ -58,8 +58,6 @@ class FrameGraph : NonMovable {
         usize last_write = 0;
         usize first_use = 0;
 
-        bool can_alias_on_last = false;
-
         usize last_use() const;
         void register_use(usize index, bool is_written);
     };
@@ -68,6 +66,7 @@ class FrameGraph : NonMovable {
         math::Vec2ui size;
         ImageFormat format;
         ImageUsage usage = ImageUsage::None;
+        ImageUsage last_usage = ImageUsage::None;
 
         FrameGraphImageId copy_src;
         FrameGraphImageId alias;

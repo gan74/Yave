@@ -299,7 +299,9 @@ void FrameGraph::alloc_resources() {
         }
 
         const usize src_last_use = src_info->last_use();
-        if(src_last_use < dst_info.first_use || (src_last_use == dst_info.first_use && src_info->can_alias_on_last)) {
+        // copies are done before the pass so we can alias even if the image is copied
+        const bool can_alias_on_last = src_info->last_usage == ImageUsage::TransferSrcBit;
+        if(src_last_use < dst_info.first_use || (src_last_use == dst_info.first_use && can_alias_on_last)) {
             src_info->register_alias(dst_info);
 
             dst_info.alias = dst_info.copy_src;
@@ -421,7 +423,7 @@ void FrameGraph::ImageCreateInfo::register_alias(const ImageCreateInfo& other) {
     last_write = std::max(last_write, other.last_write);
     last_read = std::max(last_read, other.last_read);
     usage = usage | other.usage;
-    can_alias_on_last = false;
+    last_usage = last_usage | other.last_usage;
 }
 
 bool FrameGraph::ImageCreateInfo::is_aliased() const {
@@ -437,15 +439,9 @@ void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is
     auto& info = check_exists(_images, res);
     info.usage = info.usage | usage;
 
-    const bool can_alias = allow_image_aliasing && (info.last_use() != pass->_index || info.can_alias_on_last);
+    const bool is_last = info.last_use() < pass->_index;
+    info.last_usage = is_last ? usage : (info.last_usage | usage);
     info.register_use(pass->_index, is_written);
-
-    // copies are done before the pass so we can alias even if the image is copied
-    if(can_alias && usage == ImageUsage::TransferSrcBit) {
-        info.can_alias_on_last = true;
-    } else if(usage != ImageUsage::TransferSrcBit) {
-        info.can_alias_on_last = false;
-    }
 }
 
 void FrameGraph::register_usage(FrameGraphBufferId res, BufferUsage usage, bool is_written, const FrameGraphPass* pass) {
