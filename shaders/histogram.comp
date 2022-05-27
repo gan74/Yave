@@ -3,8 +3,8 @@
 #include "lib/utils.glsl"
 
 const uint thread_count = 64;
-const uint bin_per_thread = 4;
-const uint histogram_size = bin_per_thread * thread_count;
+const uint histogram_size = 256;
+const uint bin_per_thread = histogram_size / thread_count;
 
 layout(local_size_x = thread_count) in;
 
@@ -21,13 +21,17 @@ uint lum_to_bin(float lum) {
     return min(thread_count - 1, uint(log_lum * lum_histogram_mul));
 }
 
+uint compute_index(uint i) {
+    return gl_LocalInvocationIndex * bin_per_thread + i;
+}
+
 // https://bruop.github.io/exposure/
 void main() {
     const uvec2 base_coord = uvec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y * thread_count);
     const uvec2 size = textureSize(in_color, 0);
 
     for(uint i = 0; i != bin_per_thread; ++i) {
-        histogram[gl_LocalInvocationIndex * bin_per_thread + i] = 0;
+        histogram[compute_index(i)] = 0;
     }
 
     barrier();
@@ -47,8 +51,10 @@ void main() {
     barrier();
 
     for(uint i = 0; i != bin_per_thread; ++i) {
-        const uint index = gl_LocalInvocationIndex * bin_per_thread + i;
-        imageAtomicAdd(out_histogram, ivec2(index, 0), histogram[index]);
+        const uint index = compute_index(i);
+        if(histogram[index] != 0) {
+            imageAtomicAdd(out_histogram, ivec2(index, 0), histogram[index]);
+        }
     }
 }
 
