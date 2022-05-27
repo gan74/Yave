@@ -59,8 +59,13 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
         histogram_builder.add_uniform_input(in_lit, 0, PipelineStage::ComputeBit);
         histogram_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& program = device_resources()[DeviceResources::HistogramProgram];
-            recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
-            y_debug_assert(program.thread_count() == histogram_size.x());
+            const u32 thread_count = program.local_size().x();
+            y_debug_assert(thread_count == program.thread_count());
+            math::Vec3ui groups(size / thread_count, 1);
+            for(usize i = 0; i != 2; ++i) {
+                groups[i] += groups[i] * thread_count < size[i] ? 1 : 0;
+            }
+            recorder.dispatch(program, groups, {self->descriptor_sets()[0]});
         });
 
         FrameGraphPassBuilder params_builder = framegraph.add_pass("Exposure compute pass");

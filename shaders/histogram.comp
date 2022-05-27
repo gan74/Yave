@@ -2,15 +2,16 @@
 
 #include "lib/utils.glsl"
 
-const uint group_size = 16;
-const uint thread_count = group_size * group_size;
+const uint thread_count = 64;
+const uint bin_per_thread = 4;
+const uint histogram_size = bin_per_thread * thread_count;
 
-layout(local_size_x = group_size, local_size_y = group_size) in;
+layout(local_size_x = thread_count) in;
 
 layout(r32ui, set = 0, binding = 0) uniform uimage2D out_histogram;
 layout(set = 0, binding = 1) uniform sampler2D in_color;
 
-shared uint histogram[thread_count];
+shared uint histogram[histogram_size];
 
 uint lum_to_bin(float lum) {
     const float log_lum = log2(lum) + lum_histogram_offset;
@@ -22,22 +23,32 @@ uint lum_to_bin(float lum) {
 
 // https://bruop.github.io/exposure/
 void main() {
-    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-    const ivec2 size = textureSize(in_color, 0);
+    const uvec2 base_coord = uvec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y * thread_count);
+    const uvec2 size = textureSize(in_color, 0);
 
-    const uint index = gl_LocalInvocationIndex;
-    histogram[index] = 0;
-
-    barrier();
-
-    if(coord.x < size.x && coord.y < size.y) {
-        const float lum = luminance(texelFetch(in_color, coord, 0).rgb);
-        const uint bin = lum_to_bin(lum);
-        atomicAdd(histogram[bin], 1);
+    for(uint i = 0; i != bin_per_thread; ++i) {
+        histogram[gl_LocalInvocationIndex * bin_per_thread + i] = 0;
     }
 
     barrier();
 
-    imageAtomicAdd(out_histogram, ivec2(index, 0), histogram[index]);
+    if(base_coord.x < size.x) {
+        for(uint i = 0; i != thread_count; ++i) {
+            const ivec2 coord = ivec2(base_coord.x, base_coord.y + i);
+            if(coord.y < size.y) {
+                const float lum = luminance(texelFetch(in_color, coord, 0).rgb);
+                const uint bin = lum_to_bin(lum);
+                atomicAdd(histogram[bin], 1);
+            }
+        }
+    }
+
+
+    barrier();
+
+    for(uint i = 0; i != bin_per_thread; ++i) {
+        const uint index = gl_LocalInvocationIndex * bin_per_thread + i;
+        imageAtomicAdd(out_histogram, ivec2(index, 0), histogram[index]);
+    }
 }
 
