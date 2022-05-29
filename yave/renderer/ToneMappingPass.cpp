@@ -31,71 +31,27 @@ SOFTWARE.
 
 namespace yave {
 
-ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings) {
-    const auto region = framegraph.region("Tone mapping");
-
+ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ExposurePass& exposure, const ToneMappingSettings& settings) {
     static constexpr ImageFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    static const math::Vec2ui histogram_size = math::Vec2ui(256, 1);
 
     const math::Vec2ui size = framegraph.image_size(in_lit);
-
-    FrameGraphMutableImageId histogram;
-    FrameGraphMutableTypedBufferId<uniform::ToneMappingParams> params;
-
-    if(settings.auto_exposure) {
-        FrameGraphPassBuilder clear_builder = framegraph.add_pass("Histogram clear pass");
-
-        histogram = clear_builder.declare_image(VK_FORMAT_R32_UINT, histogram_size);
-
-        clear_builder.add_storage_output(histogram, 0, PipelineStage::ComputeBit);
-        clear_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            const auto& program = device_resources()[DeviceResources::HistogramClearProgram];
-            recorder.dispatch_size(program, histogram_size, {self->descriptor_sets()[0]});
-        });
-
-        FrameGraphPassBuilder histogram_builder = framegraph.add_pass("Histogram gather pass");
-
-        histogram_builder.add_storage_output(histogram, 0, PipelineStage::ComputeBit);
-        histogram_builder.add_uniform_input(in_lit, 0, PipelineStage::ComputeBit);
-        histogram_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            const auto& program = device_resources()[DeviceResources::HistogramProgram];
-            const u32 thread_count = program.local_size().x();
-            y_debug_assert(thread_count == program.thread_count());
-            math::Vec3ui groups(size / thread_count, 1);
-            for(usize i = 0; i != 2; ++i) {
-                groups[i] += groups[i] * thread_count < size[i] ? 1 : 0;
-            }
-            recorder.dispatch(program, groups, {self->descriptor_sets()[0]});
-        });
-
-        FrameGraphPassBuilder params_builder = framegraph.add_pass("Exposure compute pass");
-
-        params = params_builder.declare_typed_buffer<uniform::ToneMappingParams>(1);
-
-        params_builder.add_storage_output(params, 0, PipelineStage::ComputeBit);
-        params_builder.add_uniform_input(histogram, 0, PipelineStage::ComputeBit);
-        params_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            const auto& program = device_resources()[DeviceResources::ToneMapParamsProgram];
-            recorder.dispatch(program, math::Vec3ui(1), {self->descriptor_sets()[0]});
-            y_debug_assert(program.thread_count() == histogram_size.x());
-        });
-    }
-
-
 
     struct ShaderSettings {
         float exposure;
         u32 tone_mapper;
     } shader_settings{settings.exposure, u32(settings.tone_mapper)};
 
-
     FrameGraphPassBuilder builder = framegraph.add_pass("Tone mapping pass");
 
     const auto tone_mapped = builder.declare_image(format, size);
 
+    auto params = exposure.params;
+
+    FrameGraphMutableTypedBufferId<uniform::ExposureParams> mut_params;
     if(!settings.auto_exposure) {
-        params = builder.declare_typed_buffer<uniform::ToneMappingParams>();
-        builder.map_buffer(params);
+        mut_params = builder.declare_typed_buffer<uniform::ExposureParams>();
+        builder.map_buffer(mut_params);
+        params = mut_params;
     }
 
     builder.add_color_output(tone_mapped);
@@ -104,8 +60,8 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     builder.add_inline_input(InlineDescriptor(shader_settings), 0);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         if(!settings.auto_exposure) {
-            TypedMapping<uniform::ToneMappingParams> mapping = self->resources().map_buffer(params);
-            mapping[0] = uniform::ToneMappingParams{};
+            TypedMapping<uniform::ExposureParams> mapping = self->resources().map_buffer(mut_params);
+            mapping[0] = uniform::ExposureParams{};
         }
 
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -117,9 +73,6 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 
     ToneMappingPass pass;
     pass.tone_mapped = tone_mapped;
-    pass.histogram = histogram;
-    pass.params = params;
-
     return pass;
 }
 

@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "LightingPass.h"
 #include "AtmospherePass.h"
+#include "ExposurePass.h"
 #include "ToneMappingPass.h"
 #include "SSAOPass.h"
 #include "BloomPass.h"
@@ -41,6 +42,7 @@ struct DefaultRenderer {
     GBufferPass gbuffer;
     LightingPass lighting;
     AtmospherePass atmosphere;
+    ExposurePass exposure;
     BloomPass bloom;
     ToneMappingPass tone_mapping;
     SSAOPass ssao;

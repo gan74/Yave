@@ -107,7 +107,7 @@ struct ShadowMapParams {
 static_assert(sizeof(ShadowMapParams) % 16 == 0);
 
 
-struct ToneMappingParams {
+struct ExposureParams {
     float exposure = 1.0f;
     float avg_luminance = 0.5f;
     float max_lum = 0.5f * 9.6f;
@@ -115,7 +115,7 @@ struct ToneMappingParams {
     u32 padding_0;
 };
 
-static_assert(sizeof(ToneMappingParams) % 16 == 0);
+static_assert(sizeof(ExposureParams) % 16 == 0);
 
 
 struct RayleighSky {

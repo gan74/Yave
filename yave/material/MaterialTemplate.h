@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <y/core/AssocVector.h>
+#include <y/core/String.h>
 
 #include "GraphicPipeline.h"
 #include "MaterialTemplateData.h"
@@ -56,7 +57,7 @@ class MaterialTemplate final {
         MaterialTemplateData _data;
 
 #ifdef Y_DEBUG
-        const char* _name = nullptr;
+        core::String _name;
 #endif
 };
 

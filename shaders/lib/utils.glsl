@@ -320,7 +320,7 @@ vec3 bloom_threshold(vec3 hdr, float power, float threshold, float rev_threshold
     const float thresholded = max(0.0, (lum - threshold) * rev_threshold);
     const float bloom_factor = pow(thresholded, power);
 
-    return hdr * bloom_factor * hdr_weight;
+    return hdr * bloom_factor;
 }
 
 vec3 bloom_threshold(vec3 hdr, float power, float threshold) {

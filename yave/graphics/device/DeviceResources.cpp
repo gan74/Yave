@@ -249,7 +249,7 @@ DeviceResources::DeviceResources() {
                     .set_primitive_type(data.primitive_type);
                 ;
             _material_templates[i] = MaterialTemplate(std::move(template_data));
-            _material_templates[i].set_name(spirv_names[data.frag]);
+            _material_templates[i].set_name(fmt_c_str("% | %", spirv_names[data.vert], spirv_names[data.frag]));
         }
     }
 

@@ -250,7 +250,7 @@ struct SH;
 struct ShadowMapParams;
 struct SpotLight;
 struct Surfel;
-struct ToneMappingParams;
+struct ExposureParams;
 }
 
 

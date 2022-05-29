@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_TONEMAPPINGPASS_H
 #define YAVE_RENDERER_TONEMAPPINGPASS_H
 
-#include "LightingPass.h"
+#include "ExposurePass.h"
 
 namespace yave {
 
@@ -41,10 +41,8 @@ struct ToneMappingSettings {
 
 struct ToneMappingPass {
     FrameGraphImageId tone_mapped;
-    FrameGraphImageId histogram;
-    FrameGraphTypedBufferId<uniform::ToneMappingParams> params;
 
-    static ToneMappingPass create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ToneMappingSettings& settings = ToneMappingSettings());
+    static ToneMappingPass create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ExposurePass& exposure, const ToneMappingSettings& settings = ToneMappingSettings());
 };
 
 
