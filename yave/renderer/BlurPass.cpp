@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr usize sample_count = 12;
+static constexpr usize sample_count = 8;
 
 static std::array<float, sample_count> compute_gaussian_weights(float sigma) {
     const float denom = 2.0f * sigma * sigma;
