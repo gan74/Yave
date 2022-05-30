@@ -43,10 +43,11 @@ void PendingOpsQueue::garbage_collect() {
 
     auto pending = core::vector_with_capacity<std::future<void>>(_pending_ops.size());
     for(auto& future : _pending_ops) {
-        if(future.valid()) {
-            if(is_done(future)) {
-                future.get();
-            }
+        if(!future.valid()) {
+            continue;
+        }
+        if(is_done(future)) {
+            future.get();
         } else {
             pending.emplace_back(std::move(future));
         }
@@ -55,16 +56,19 @@ void PendingOpsQueue::garbage_collect() {
 }
 
 void PendingOpsQueue::push(std::future<void> future) {
-    if(future.valid()) {
-        if(is_done(future)) {
-            future.get();
-        }
+    y_profile();
+    if(!future.valid()) {
+        return;
+    }
+
+    if(is_done(future)) {
+        future.get();
         return;
     }
 
     auto lock = y_profile_unique_lock(_lock);
     Y_TODO(clean _pending_ops)
-    _pending_ops.emplace_back(std::move(future));
+    _pending_ops.push_back(std::move(future));
 }
 
 }

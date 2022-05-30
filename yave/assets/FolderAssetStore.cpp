@@ -28,9 +28,6 @@ SOFTWARE.
 #include <y/serde3/archives.h>
 
 #include <charconv>
-#include <cinttypes>
-#include <cstdio>
-#include <ctime>
 
 namespace yave {
 
@@ -349,23 +346,34 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::rename(std::s
 
 
 FolderAssetStore::FolderAssetStore(const core::String& root) : _root(FileSystemModel::local_filesystem()->absolute(root).unwrap_or(root)), _filesystem(this) {
+    y_profile();
+
     FileSystemModel::local_filesystem()->create_directory(_root).unwrap();
+
+#if 1
+    auto started = std::make_shared<std::atomic<bool>>(false);
+    _pending_ops.push(std::async([this, started] {
+        *started = true;
+        reload_all().unwrap();
+    }));
+
+    while(!(*started)) {
+        std::this_thread::yield();
+    }
+#else
     reload_all().unwrap();
+#endif
 }
 
 FolderAssetStore::~FolderAssetStore() {
 }
 
 core::String FolderAssetStore::asset_data_file_name(AssetId id) const {
-    std::array<char, 32> buffer = {0};
-    std::snprintf(buffer.data(), buffer.size(), "%016" PRIx64 ".asset", id.id());
-    return _filesystem.join(_root, buffer.data());
+    return _filesystem.join(_root, fmt("%.asset", stringify_id(id)));
 }
 
 core::String FolderAssetStore::asset_desc_file_name(AssetId id) const {
-    std::array<char, 32> buffer = {0};
-    std::snprintf(buffer.data(), buffer.size(), "%016" PRIx64 ".desc", id.id());
-    return _filesystem.join(_root, buffer.data());
+    return _filesystem.join(_root, fmt("%.desc", stringify_id(id)));
 }
 
 
@@ -492,6 +500,10 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
 AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data) {
     y_profile();
 
+    if(id == AssetId::invalid_id()) {
+        return core::Err(ErrorType::UnknownID);
+    }
+
     const auto lock = y_profile_unique_lock(_lock);
 
     const core::String data_file_name = asset_data_file_name(id);
@@ -508,6 +520,10 @@ AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data) {
 
 AssetStore::Result<io2::ReaderPtr> FolderAssetStore::data(AssetId id) const {
     y_profile();
+
+    if(id == AssetId::invalid_id()) {
+        return core::Err(ErrorType::UnknownID);
+    }
 
     if(auto file = io2::File::open(asset_data_file_name(id))) {
         io2::ReaderPtr ptr = std::make_unique<io2::File>(std::move(file.unwrap()));
@@ -532,6 +548,10 @@ AssetStore::Result<AssetId> FolderAssetStore::id(std::string_view name) const {
 AssetStore::Result<core::String> FolderAssetStore::name(AssetId id) const {
     y_profile();
 
+    if(id == AssetId::invalid_id()) {
+        return core::Err(ErrorType::UnknownID);
+    }
+
     const auto lock = y_profile_unique_lock(_lock);
 
     rebuild_id_map();
@@ -544,6 +564,10 @@ AssetStore::Result<core::String> FolderAssetStore::name(AssetId id) const {
 
 AssetStore::Result<> FolderAssetStore::remove(AssetId id) {
     y_profile();
+
+    if(id == AssetId::invalid_id()) {
+        return core::Err(ErrorType::UnknownID);
+    }
 
     const auto lock = y_profile_unique_lock(_lock);
 
@@ -559,6 +583,10 @@ AssetStore::Result<> FolderAssetStore::remove(AssetId id) {
 
 AssetStore::Result<> FolderAssetStore::rename(AssetId id, std::string_view new_name) {
     y_profile();
+
+    if(id == AssetId::invalid_id()) {
+        return core::Err(ErrorType::UnknownID);
+    }
 
     const auto lock = y_profile_unique_lock(_lock);
 
@@ -590,6 +618,10 @@ AssetStore::Result<> FolderAssetStore::rename(std::string_view from, std::string
 
 AssetStore::Result<AssetType> FolderAssetStore::asset_type(AssetId id) const {
     y_profile();
+
+    if(id == AssetId::invalid_id()) {
+        return core::Err(ErrorType::UnknownID);
+    }
 
     const auto lock = y_profile_unique_lock(_lock);
 
@@ -697,7 +729,7 @@ FolderAssetStore::Result<> FolderAssetStore::save_or_restore_tree() {
     return core::Ok();
 }
 
-FolderAssetStore::Result<> FolderAssetStore::load_assets() {
+FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
     y_profile();
 
     const auto lock = y_profile_unique_lock(_lock);
@@ -762,7 +794,7 @@ FolderAssetStore::Result<> FolderAssetStore::reload_all() {
 
     _next_id = u64(std::time(nullptr));
     load_tree().unwrap();
-    load_assets().unwrap();
+    load_asset_descs().unwrap();
 
     rebuild_id_map();
 

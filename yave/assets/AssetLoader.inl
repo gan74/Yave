@@ -244,7 +244,8 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
             LoadFrom _load_from;
 
             core::String asset_name() const {
-                return AssetPtr<T>(_data).name().unwrap_or("asset");
+                return stringify_id(AssetPtr<T>(_data).id());
+                //return AssetPtr<T>(_data).name().unwrap_or("asset");
             }
     };
 

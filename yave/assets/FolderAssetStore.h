@@ -115,7 +115,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         Result<> load_tree();
         Result<> save_tree() const;
 
-        Result<> load_assets();
+        Result<> load_asset_descs();
 
         Result<> reload_all();
 
