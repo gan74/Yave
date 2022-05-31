@@ -52,7 +52,7 @@ class DeviceResources final : NonMovable {
             CopyComp,
             HistogramClearComp,
             HistogramComp,
-            ToneMapParamsComp,
+            ExposureParamsComp,
             DepthBoundComp,
 
             DeferredPointFrag,
@@ -93,7 +93,7 @@ class DeviceResources final : NonMovable {
             CopyProgram,
             HistogramClearProgram,
             HistogramProgram,
-            ToneMapParamsProgram,
+            ExposureParamsProgram,
             DepthBoundProgram,
 
             MaxComputePrograms

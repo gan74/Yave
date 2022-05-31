@@ -166,24 +166,10 @@ Camera::operator uniform::Camera() const {
     uniform::Camera camera_data = {};
     camera_data.view_proj = viewproj_matrix();
     camera_data.inv_view_proj = inverse_matrix();
+    camera_data.inv_proj = proj_matrix().inverse();
     camera_data.position = position();
     camera_data.forward = forward();
     camera_data.up = up();
-
-    {
-        const math::Vec4 proj_2 = _proj.row(2);
-        const float a = proj_2[2];
-        const float b = proj_2[3];
-        if(a == 0.0f) {
-            // far = inf
-            // Using FLT_MAX doesn't give enough precision for anything, so we just use a big number
-            camera_data.z_near = b;
-            camera_data.z_far = float(1 << 18);
-        } else {
-            camera_data.z_near = b / (a + 1.0f);
-            camera_data.z_far = b / a;
-        }
-    }
 
     return camera_data;
 }

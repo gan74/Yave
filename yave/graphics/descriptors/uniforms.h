@@ -32,6 +32,7 @@ namespace uniform {
 struct Camera {
     math::Matrix4<> view_proj;
     math::Matrix4<> inv_view_proj;
+    math::Matrix4<> inv_proj;
 
     math::Vec3 position;
     u32 padding_0 = 0;
@@ -41,10 +42,6 @@ struct Camera {
 
     math::Vec3 up;
     u32 padding_2 = 0;
-
-    float z_near;
-    float z_far;
-    math::Vec2ui padding_3;
 };
 
 static_assert(sizeof(Camera) % 16 == 0);

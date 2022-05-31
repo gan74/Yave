@@ -27,6 +27,7 @@ struct Frustum4 {
 struct Camera {
     mat4 view_proj;
     mat4 inv_view_proj;
+    mat4 inv_proj;
 
     vec3 position;
     uint padding_0;
@@ -36,10 +37,6 @@ struct Camera {
 
     vec3 up;
     uint padding_2;
-
-    float z_near;
-    float z_far;
-    uvec2 padding_3;
 };
 
 struct DirectionalLight {
@@ -87,7 +84,7 @@ struct ShadowMapParams {
     uvec2 padding_0;
 };
 
-struct ToneMappingParams {
+struct ExposureParams {
     float exposure;
     float avg_lum;
     float max_lum;
@@ -344,12 +341,6 @@ vec3 project(vec3 pos, mat4 proj_matrix) {
     const vec4 p = proj_matrix * vec4(pos, 1.0);
     const vec3 p3 = p.xyz / p.w;
     return vec3(p3.xy * 0.5 + vec2(0.5), p3.z);
-}
-
-float linearize(float depth, float near, float far) {
-    // https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/LinearizeDepthCS.hlsl
-    const float z_magic = (far - near) / near;
-    return saturate(1.0 / (z_magic * depth + 1.0));
 }
 
 

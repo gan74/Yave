@@ -17,7 +17,7 @@ void main() {
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 
     const float depth = texelFetch(in_depth, coord, 0).r;
-    const float linear_depth = linearize(depth, camera.z_near, camera.z_far);
+    const float linear_depth = -unproject(vec2(0.5), depth, camera.inv_proj).z;
 
     imageStore(out_depth, coord, vec4(linear_depth));
 }
