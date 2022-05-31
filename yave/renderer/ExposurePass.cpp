@@ -70,7 +70,7 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
     params_builder.add_storage_output(params, 0, PipelineStage::ComputeBit);
     params_builder.add_uniform_input(histogram, 0, PipelineStage::ComputeBit);
     params_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::ToneMapParamsProgram];
+        const auto& program = device_resources()[DeviceResources::ExposureParamsProgram];
         recorder.dispatch(program, math::Vec3ui(1), {self->descriptor_sets()[0]});
         y_debug_assert(program.thread_count() == histogram_size.x());
     });
