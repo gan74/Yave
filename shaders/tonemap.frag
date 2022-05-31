@@ -62,10 +62,11 @@ void main() {
 
 #ifdef DEBUG
     {
-        const vec2 font_size = vec2(8.0, 15.0);
-        out_color.rgb = mix(out_color.rgb, vec3(1.0), print_value(coord, vec2(0.0, 0.0), font_size, exposure * params.exposure, 4.0, 4.0));
-        out_color.rgb = mix(out_color.rgb, vec3(1.0), print_value(coord, vec2(0.0, 16.0), font_size, params.avg_lum, 4.0, 4.0));
-        out_color.rgb = mix(out_color.rgb, vec3(1.0), print_value(coord, vec2(0.0, 32.0), font_size, params.max_lum, 4.0, 4.0));
+        _coord = vec2(coord);
+        putc(CHAR_E, CHAR_X, CHAR_P, CHAR_COLON); putf(exposure * params.exposure, 2.0, 4.0); next_line();
+        putc(CHAR_A, CHAR_V, CHAR_G, CHAR_COLON); putf(params.avg_lum, 2.0, 4.0); next_line();
+        putc(CHAR_M, CHAR_A, CHAR_X, CHAR_COLON); putf(params.max_lum, 2.0, 4.0);
+        out_color.rgb = mix(out_color.rgb, vec3(1.0), print());
     }
 #endif
 }
