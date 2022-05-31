@@ -25,14 +25,15 @@ layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 out_color;
 
 
-/*
-enum class ToneMapper {
+/*enum class ToneMapper {
     ACES,
     Uncharted2
     Reinhard,
     None
-};
-*/
+};*/
+
+// #define DEBUG
+
 vec3 tone_map(vec3 hdr, float exposure, uint mode) {
     const float white = 10000.0;
 
@@ -57,5 +58,14 @@ void main() {
 
     const vec3 tone_mapped = tone_map(hdr, params.exposure * exposure, tone_mapper);
     out_color = vec4(linear_to_sRGB(tone_mapped), 1.0);
+
+#ifdef DEBUG
+    {
+        const vec2 font_size = vec2(8.0, 15.0);
+        out_color.rgb = mix(out_color.rgb, vec3(1.0), print_value(coord, vec2(0.0, 0.0), font_size, exposure * params.exposure, 4.0, 4.0));
+        out_color.rgb = mix(out_color.rgb, vec3(1.0), print_value(coord, vec2(0.0, 16.0), font_size, params.avg_lum, 4.0, 4.0));
+        out_color.rgb = mix(out_color.rgb, vec3(1.0), print_value(coord, vec2(0.0, 32.0), font_size, params.max_lum, 4.0, 4.0));
+    }
+#endif
 }
 
