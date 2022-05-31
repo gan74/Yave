@@ -40,19 +40,11 @@ float print_char(vec2 pos, uint char_bits) {
 
 
 uint digit_bits(int x) {
-    switch(x) {
-        case 0: return CHAR_0;
-        case 1: return CHAR_1;
-        case 2: return CHAR_2;
-        case 3: return CHAR_3;
-        case 4: return CHAR_4;
-        case 5: return CHAR_5;
-        case 6: return CHAR_6;
-        case 7: return CHAR_7;
-        case 8: return CHAR_8;
-        case 9: return CHAR_9;
-        default: return 0;
+    if(x < 0 || x > 9) {
+        return 0;
     }
+    const uint bits[10] = {CHAR_0, CHAR_1, CHAR_2, CHAR_3, CHAR_4, CHAR_5, CHAR_6, CHAR_7, CHAR_8, CHAR_9};
+    return bits[x];
 }
 
 float print_value(vec2 pos, float value, float max_digits, float decimals) {
