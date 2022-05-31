@@ -1,6 +1,7 @@
 #version 450
 
 #include "lib/hdr.glsl"
+#include "lib/debug.glsl"
 
 // https://64.github.io/tonemapping/
 // https://mynameismjp.wordpress.com/2010/04/30/a-closer-look-at-tone-mapping/

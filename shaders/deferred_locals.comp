@@ -4,8 +4,8 @@
 
 #include "lib/lighting.glsl"
 #include "lib/gbuffer.glsl"
-#include "lib/ibl.glsl"
 #include "lib/shadow.glsl"
+#include "lib/debug.glsl"
 
 
 // -------------------------------- DEFINES --------------------------------
@@ -13,6 +13,7 @@
 #define POINT_LIGHTS
 #define SPOT_LIGHTS
 //#define DEBUG
+
 
 // -------------------------------- I/O --------------------------------
 
