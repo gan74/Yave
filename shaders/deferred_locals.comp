@@ -241,6 +241,7 @@ void main() {
     {
         const float total_lights = float(tile_point_count + tile_spot_count);
         irradiance = heat_spectrum(total_lights / 16.0f);
+        irradiance = mix(irradiance, vec3(1.0) - irradiance, print_value(gl_LocalInvocationID.xy * 2.0, vec2(0.0), vec2(8.0, 15.0), total_lights, 2.0, 0.0));
     }
 #endif
 
