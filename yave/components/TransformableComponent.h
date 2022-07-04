@@ -64,6 +64,7 @@ class TransformableComponent final {
 
         void swap(TransformableComponent& other);
         void dirty_node();
+        void set_node(OctreeNode* node);
 
         math::Transform<> _transform;
 

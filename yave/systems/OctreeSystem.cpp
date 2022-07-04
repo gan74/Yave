@@ -85,7 +85,7 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
         const AABB bbox = find_aabb(world, id, tr.position());
 
         tr._id = id;
-        tr._node = _tree.insert(id, bbox);
+        tr.set_node(_tree.insert(id, bbox));
     }
 
 
@@ -103,7 +103,7 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
             if(TransformableComponent* tr = transformables.try_get(id)) {
                 const AABB bbox = find_aabb(world, id, tr->position());
                 y_debug_assert(tr->_id == id);
-                tr->_node = _tree.insert(id, bbox);
+                tr->set_node(_tree.insert(id, bbox));
             }
         }
 

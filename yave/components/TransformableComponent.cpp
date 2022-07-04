@@ -115,5 +115,10 @@ void TransformableComponent::dirty_node() {
     }
 }
 
+void TransformableComponent::set_node(OctreeNode* node) {
+    _node = node;
+    _dirty = false;
+}
+
 }
 
