@@ -111,7 +111,7 @@ static constexpr const char* spirv_names[] = {
         "copy.comp",
         "histogram_clear.comp",
         "histogram.comp",
-        "tonemap_params.comp",
+        "exposure_params.comp",
         "depth_bounds.comp",
 
         "deferred_point.frag",
