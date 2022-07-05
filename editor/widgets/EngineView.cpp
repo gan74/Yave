@@ -92,7 +92,8 @@ EngineView::EngineView() :
         _resource_pool(std::make_shared<FrameGraphResourcePool>()),
         _scene_view(&current_world()),
         _camera_controller(std::make_unique<HoudiniCameraController>()),
-        _gizmo(&_scene_view) {
+        _gizmo(&_scene_view),
+        _orientation_gizmo(&_scene_view) {
 }
 
 EngineView::~EngineView() {
@@ -179,6 +180,7 @@ void EngineView::on_gui() {
     make_drop_target();
 
     _gizmo.draw();
+    _orientation_gizmo.draw();
 
     update();
 }
@@ -421,7 +423,7 @@ void EngineView::update() {
         application()->set_scene_view(&_scene_view);
     }
 
-    if(hovered && !_gizmo.is_dragging() && _camera_controller) {
+    if(hovered && !_gizmo.is_dragging() && !_orientation_gizmo.is_dragging() && _camera_controller) {
         auto& camera = _scene_view.camera();
         _camera_controller->process_generic_shortcuts(camera);
         if(focussed) {
@@ -460,7 +462,7 @@ void EngineView::update_picking() {
     }
 
     if(ImGui::IsMouseClicked(0)) {
-        if(!_gizmo.is_dragging()) {
+        if(!_gizmo.is_dragging() && !_orientation_gizmo.is_dragging()) {
             ecs::EntityId picked_id = picking_data.hit() ? current_world().id_from_index(picking_data.entity_index) : ecs::EntityId();
             selection().set_selected(picked_id);
         }

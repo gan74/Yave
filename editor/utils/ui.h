@@ -34,6 +34,8 @@ static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";
 static constexpr math::Vec4 error_text_color = math::Vec4(1.0f, 0.3f, 0.3f, 1.0f);
 static constexpr math::Vec4 warning_text_color = math::Vec4(1.0f, 0.8f, 0.4f, 1.0f);
 
+u32 gizmo_color(usize axis);
+
 bool should_open_context_menu();
 
 math::Vec2 client_window_pos();

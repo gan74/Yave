@@ -135,7 +135,7 @@ inline u32 pack_to_u32(const math::Vec4& color) {
         (to_u8(color.w()) << 24);
 }
 
-inline math::Vec4 pack_from_u32(u32 packed) {
+inline math::Vec4 unpack_from_u32(u32 packed) {
     return math::Vec4(
         (packed >> 0) & 0xFF,
         (packed >> 8) & 0xFF,

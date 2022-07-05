@@ -23,6 +23,7 @@ SOFTWARE.
 #define EDITOR_WIDGETS_ENGINEVIEW_H
 
 #include "Gizmo.h"
+#include "OrientationGizmo.h"
 
 #include <editor/Widget.h>
 #include <editor/renderer/EditorRenderer.h>
@@ -84,6 +85,7 @@ class EngineView final : public Widget {
         std::unique_ptr<CameraController> _camera_controller;
 
         Gizmo _gizmo;
+        OrientationGizmo _orientation_gizmo;
 
         bool _disable_render = false;
         isize _resolution = -1;
