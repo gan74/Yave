@@ -34,7 +34,7 @@ SOFTWARE.
 
 namespace editor {
 
-static constexpr float orientation_gizmo_size = 45.0f;
+static constexpr float orientation_gizmo_size = 25.0f;
 static constexpr float orientation_gizmo_width = 2.5f;
 static constexpr float orientation_gizmo_end_point_width = 8.0f;
 
@@ -54,11 +54,11 @@ void OrientationGizmo::draw() {
 
     const math::Vec2 offset = ImGui::GetWindowPos();
     const math::Vec2 viewport = ImGui::GetWindowSize();
-    const math::Vec2 center = offset + viewport - orientation_gizmo_size;
+    const math::Vec2 center = offset + viewport - (orientation_gizmo_size * 2.0f);
     const auto view_proj = _scene_view->camera().viewproj_matrix();
     const auto view = _scene_view->camera().view_matrix();
 
-    const float ratio = viewport.y() / viewport.x();
+    const float ratio = viewport.x() / viewport.y();
 
     std::array<i32, 4> axes = {-1, 0, 1, 2};
     std::sort(axes.begin(), axes.end(), [&](i32 a, i32 b) {
@@ -83,7 +83,7 @@ void OrientationGizmo::draw() {
         math::Vec4 v;
         v[i] = orientation_gizmo_size + orientation_gizmo_end_point_width;
         const auto h_pos = view_proj * v;
-        const math::Vec2 axis = (h_pos.to<2>() * 0.5f + 0.5f) * math::Vec2(1.0f, ratio);
+        const math::Vec2 axis = (h_pos.to<2>() * 0.5f + 0.5f) * math::Vec2(ratio, 1.0f);
         const u32 color = orientation_gizmo_alpha | imgui::gizmo_color(i);
         const math::Vec2 end = center + axis;
         if(axis.length() > orientation_gizmo_end_point_width) {
@@ -98,7 +98,7 @@ void OrientationGizmo::draw() {
         ImGui::GetWindowDrawList()->AddText(end - text_offset * 0.5f, orientation_gizmo_alpha, axis_name[i]);
     }
 
-    const float gizmo_radius = orientation_gizmo_size - orientation_gizmo_end_point_width * 0.5f;
+    const float gizmo_radius = orientation_gizmo_size + orientation_gizmo_end_point_width * 2.0f;
     if(_dragging || (center - math::Vec2(ImGui::GetMousePos())).length2() < gizmo_radius * gizmo_radius) {
         ImGui::GetWindowDrawList()->AddCircle(center, gizmo_radius, orientation_gizmo_alpha | 0x00FFFFFF);
         if(ImGui::IsMouseClicked(0)) {
