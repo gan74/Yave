@@ -107,7 +107,7 @@ bool EngineView::is_mouse_inside() const {
 }
 
 bool EngineView::is_focussed() const {
-    return ImGui::IsWindowFocused();
+    return ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 }
 
 
