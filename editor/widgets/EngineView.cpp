@@ -174,7 +174,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 void EngineView::on_gui() {
     y_profile();
 
-    draw_menu_bar();
+    {
+        ImGui::PopStyleVar();
+        draw_menu_bar();
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2());
+    }
 
     if(ImGui::BeginChild("##view")) {
         update_proj();
