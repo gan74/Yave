@@ -22,9 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_RENDERER_EDITORPASS_H
 #define EDITOR_RENDERER_EDITORPASS_H
 
-#include <editor/editor.h>
-
-#include <yave/renderer/DefaultRenderer.h>
+#include "EditorRenderer.h"
 
 namespace editor {
 
@@ -33,7 +31,7 @@ struct EditorPass {
     FrameGraphImageId color;
     FrameGraphImageId id;
 
-    static EditorPass create(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id);
+    static EditorPass create(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id = {}, EditorPassFlags flags = EditorPassFlags::None);
 };
 
 }

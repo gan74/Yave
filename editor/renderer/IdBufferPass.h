@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_RENDERER_IDBUFFERPASS_H
 #define EDITOR_RENDERER_IDBUFFERPASS_H
 
-#include <editor/editor.h>
+#include "EditorRenderer.h"
 
 #include <yave/renderer/GBufferPass.h>
 
@@ -34,7 +34,7 @@ struct IdBufferPass {
     FrameGraphImageId depth;
     FrameGraphImageId id;
 
-    static IdBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
+    static IdBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, EditorPassFlags flags = EditorPassFlags::None);
 };
 
 }

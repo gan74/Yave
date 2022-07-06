@@ -86,7 +86,8 @@ static std::pair<math::Vec2, math::Vec2> compute_uv_size(const char* c) {
 static void render_editor_entities(RenderPassRecorder& recorder, const FrameGraphPass* pass,
                                    const SceneView& scene_view,
                                    const FrameGraphMutableTypedBufferId<EditorPassData> pass_buffer,
-                                   FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer) {
+                                   FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer,
+                                   EditorPassFlags flags) {
 
     y_profile();
 
@@ -116,12 +117,17 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         usize index = 0;
         auto vertex_mapping = pass->resources().map_buffer(vertex_buffer);
 
+        const ecs::EntityId selected = selection().selected_entity();
+
         auto push_entity = [&](ecs::EntityId id) {
-                if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
-                    vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size, id.index()};
-                    ++index;
-                }
-            };
+            if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly && id != selected) {
+                return;
+            }
+            if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
+                vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size, id.index()};
+                ++index;
+            }
+        };
 
         {
             std::tie(uv, size) = compute_uv_size(ICON_FA_LIGHTBULB);
@@ -227,7 +233,7 @@ static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, Fr
     return builder.declare_image(format, size);
 }
 
-EditorPass EditorPass::create( FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id) {
+EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id, EditorPassFlags flags) {
     const math::Vec2ui size = framegraph.image_size(in_depth);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
@@ -253,7 +259,11 @@ EditorPass EditorPass::create( FrameGraph& framegraph, const SceneView& view, Fr
     builder.add_color_output(id);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer);
+            render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer, flags);
+
+            if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
+                return;
+            }
 
             DirectDraw direct;
             {

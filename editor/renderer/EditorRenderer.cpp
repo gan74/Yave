@@ -34,7 +34,7 @@ SOFTWARE.
 
 namespace editor {
 
-static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameGraphImageId color, FrameGraphImageId id) {
+static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth) {
     const ecs::EntityId selected = selection().selected_entity();
     if(!selected.is_valid()) {
         return color;
@@ -45,8 +45,8 @@ static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameG
     const auto selection = builder.declare_copy(color);
 
     builder.add_color_output(selection);
-    builder.add_uniform_input(id, 0, PipelineStage::FragmentBit);
-    builder.add_inline_input(InlineDescriptor(selected.index()), 0);
+    builder.add_uniform_input(depth);
+    builder.add_uniform_input(selection_depth);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = resources()[EditorResources::SelectionMaterialTemplate];
@@ -68,17 +68,19 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
         renderer.depth = renderer.renderer.depth;
     }
 
-    renderer.id = IdBufferPass::create(framegraph, view, size).id;
-
     if(settings.show_editor_entities) {
-        const EditorPass ed = EditorPass::create(framegraph, view, renderer.depth, renderer.final, renderer.id);
+        const EditorPass ed = EditorPass::create(framegraph, view, renderer.depth, renderer.final);
         renderer.depth = ed.depth;
         renderer.final = ed.color;
-        renderer.id = ed.id;
     }
 
     if(settings.show_selection) {
-        renderer.final = render_selection_outline(framegraph, renderer.final, renderer.id);
+        const IdBufferPass id_pass = IdBufferPass::create(framegraph, view, size, EditorPassFlags::SelectionOnly);
+        const FrameGraphImageId depth = settings.show_editor_entities
+            ? EditorPass::create(framegraph, view, id_pass.depth, {}, {}, EditorPassFlags::SelectionOnly).depth
+            : id_pass.depth;
+
+        renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth);
     }
 
     return renderer;

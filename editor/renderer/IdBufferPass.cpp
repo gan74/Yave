@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "IdBufferPass.h"
 
+#include <editor/Selection.h>
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 
@@ -45,11 +46,11 @@ Y_TODO(merge with scene sub pass?)
 // mostly copied from SceneRednerSubPass and EditorPass
 namespace editor {
 
-static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pass,
+static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pass,
                           const SceneView& scene_view,
                           const FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer,
                           const FrameGraphMutableTypedBufferId<u32> id_buffer,
-                          usize index = 0) {
+                          EditorPassFlags flags) {
     y_profile();
 
     const ecs::EntityWorld& world = scene_view.world();
@@ -64,27 +65,37 @@ static usize render_world(RenderPassRecorder& recorder, const FrameGraphPass* pa
     recorder.bind_per_instance_attrib_buffers(std::array{transforms, ids});
     recorder.bind_material_template(resources()[EditorResources::IdMaterialTemplate], pass->descriptor_sets()[0]);
 
-    core::Vector<ecs::EntityId> visible;
-    const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
-    if(octree_system) {
-        visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+    bool use_entity_list = false;
+    core::Vector<ecs::EntityId> entities;
+
+    if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
+        if(selection().has_selected_entity()) {
+            entities << selection().selected_entity();
+            use_entity_list = true;
+        }
+    } else {
+        const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
+        if(octree_system) {
+            entities = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+            use_entity_list = true;
+        }
     }
-    const auto entities = octree_system
-        ? world.query<TransformableComponent, StaticMeshComponent>(visible)
+
+    const auto entity_query = use_entity_list
+        ? world.query<TransformableComponent, StaticMeshComponent>(entities)
         : world.query<TransformableComponent, StaticMeshComponent>();
 
-    for(auto ent : entities) {
+    usize index = 0;
+    for(auto ent : entity_query) {
         const auto& [tr, mesh] = ent.components();
         transform_mapping[index] = tr.transform();
         id_mapping[index] = ent.id().index();
         mesh.render_mesh(recorder, u32(index));
         ++index;
     }
-
-    return index;
 }
 
-IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
+IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, EditorPassFlags flags) {
     static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;
     static constexpr ImageFormat id_format = VK_FORMAT_R32_UINT;
 
@@ -113,7 +124,7 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view,
     builder.add_color_output(id);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-        render_world(render_pass, self, view, transform_buffer, id_buffer);
+        render_world(render_pass, self, view, transform_buffer, id_buffer, flags);
     });
 
     return pass;

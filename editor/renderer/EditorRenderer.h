@@ -28,6 +28,19 @@ SOFTWARE.
 
 namespace editor {
 
+enum class EditorPassFlags : u32 {
+    None                = 0x00,
+    SelectionOnly       = 0x01
+};
+
+constexpr EditorPassFlags operator|(EditorPassFlags a, EditorPassFlags b) {
+    return EditorPassFlags(u32(a) | u32(b));
+}
+
+constexpr EditorPassFlags operator&(EditorPassFlags a, EditorPassFlags b) {
+    return EditorPassFlags(u32(a) & u32(b));
+}
+
 struct EditorRendererSettings {
     RendererSettings renderer_settings;
 
@@ -40,7 +53,6 @@ struct EditorRendererSettings {
 struct EditorRenderer {
     DefaultRenderer renderer;
 
-    FrameGraphImageId id;
     FrameGraphImageId final;
     FrameGraphImageId depth;
 
