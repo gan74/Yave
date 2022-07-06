@@ -57,6 +57,9 @@ class Gizmo final {
         float rotation_snapping() const;
         void set_rotation_snapping(float snapping);
 
+        bool center_on_object() const;
+        void set_center_on_object(bool b);
+
     private:
         math::Vec3 to_screen_pos(const math::Vec3& world);
         math::Vec2 to_window_pos(const math::Vec3& world);
@@ -78,6 +81,8 @@ class Gizmo final {
 
         float _snapping = 0.0f;
         float _rot_snapping = 0.0f;
+
+        bool _center_on_object = true;
 };
 
 }

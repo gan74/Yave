@@ -28,6 +28,8 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/components/TransformableComponent.h>
 
+#include <yave/utils/entities.h>
+
 #include <editor/utils/ui.h>
 
 #include <external/imgui/yave_imgui.h>
@@ -119,6 +121,14 @@ void Gizmo::set_rotation_snapping(float snapping) {
     _rot_snapping = snapping;
 }
 
+bool Gizmo::center_on_object() const {
+    return _center_on_object;
+}
+
+void Gizmo::set_center_on_object(bool b) {
+    _center_on_object = b;
+}
+
 math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
     const auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
     return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
@@ -161,10 +171,22 @@ void Gizmo::draw() {
         return;
     }
 
+    math::Vec3 gizmo_offset;
+
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
     const math::Vec3 cam_pos = _scene_view->camera().position();
     const math::Matrix4<> view_proj = _scene_view->camera().viewproj_matrix();
     auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
+
+    const math::Vec3 orig_pos = obj_pos;
+
+    if((_mode == Translate) && _center_on_object) {
+        if(const auto aabb = entity_aabb(current_world(), selection().selected_entity())) {
+            const math::Vec3 center = aabb.unwrap().center();
+            gizmo_offset = center - obj_pos;
+            obj_pos = center;
+        }
+    }
 
     if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
         return;
@@ -311,8 +333,7 @@ void Gizmo::draw() {
 
         // drag
         if(_dragging_mask) {
-            const math::Vec3 orig_pos = transformable->position();
-            const math::Vec3 new_pos = projected_mouse + _dragging_offset;
+            const math::Vec3 new_pos = projected_mouse + _dragging_offset - gizmo_offset;
             const math::Vec3 vec = new_pos - orig_pos;
 
             math::Vec3 offset;

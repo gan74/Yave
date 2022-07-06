@@ -117,11 +117,14 @@ bool EngineView::before_gui() {
     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, math::Vec4(0.0f));
     ImGui::PushStyleColor(ImGuiCol_Border, math::Vec4(0.0f));
 
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2());
+
     return true;
 }
 
 void EngineView::after_gui() {
     ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar();
 }
 
 void EngineView::draw(CmdBufferRecorder& recorder) {
@@ -332,6 +335,7 @@ void EngineView::draw_gizmo_tool_bar() {
     auto gizmo_space = _gizmo.space();
     auto snapping = _gizmo.snapping();
     auto rot_snap = _gizmo.rotation_snapping();
+    bool center = _gizmo.center_on_object();
 
     {
         if(ImGui::MenuItem(ICON_FA_ARROWS_ALT, nullptr, false, gizmo_mode != Gizmo::Translate)) {
@@ -382,6 +386,12 @@ void EngineView::draw_gizmo_tool_bar() {
         }
     }
 
+    {
+        if(ImGui::MenuItem(ICON_FA_CROSSHAIRS, nullptr, center)) {
+            center = !center;
+        }
+    }
+
 
 
     if(is_focussed()) {
@@ -398,6 +408,7 @@ void EngineView::draw_gizmo_tool_bar() {
     _gizmo.set_space(gizmo_space);
     _gizmo.set_snapping(snapping);
     _gizmo.set_rotation_snapping(rot_snap);
+    _gizmo.set_center_on_object(center);
 }
 
 
