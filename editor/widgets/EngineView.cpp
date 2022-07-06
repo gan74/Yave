@@ -166,23 +166,25 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     if(output) {
         ImGui::Image(output, content_size());
     }
-
 }
 
 void EngineView::on_gui() {
     y_profile();
 
-    update_proj();
-
     draw_menu_bar();
 
-    draw(application()->recorder());
-    make_drop_target();
+    if(ImGui::BeginChild("##view")) {
+        update_proj();
+        draw(application()->recorder());
 
-    _gizmo.draw();
-    _orientation_gizmo.draw();
+        make_drop_target();
 
-    update();
+        _gizmo.draw();
+        _orientation_gizmo.draw();
+
+        update();
+    }
+    ImGui::EndChild();
 }
 
 void EngineView::draw_settings_menu() {
