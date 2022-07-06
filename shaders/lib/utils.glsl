@@ -306,25 +306,6 @@ vec4 linear_to_sRGB(vec4 v) {
 }
 
 
-// -------------------------------- BLOOM --------------------------------
-
-vec3 bloom_threshold(vec3 hdr, float power, float threshold, float rev_threshold) {
-    const float hdr_lum = luminance(hdr);
-
-    const float hdr_weight = 1.0 / (1.0 + hdr_lum);
-    const float lum = hdr_lum * hdr_weight;
-
-    const float thresholded = max(0.0, (lum - threshold) * rev_threshold);
-    const float bloom_factor = pow(thresholded, power);
-
-    return hdr * bloom_factor;
-}
-
-vec3 bloom_threshold(vec3 hdr, float power, float threshold) {
-    return bloom_threshold(hdr, power, threshold, 1.0 / (1.0 - threshold));
-}
-
-
 // -------------------------------- PROJECTION --------------------------------
 
 vec3 unproject_ndc(vec3 ndc, mat4 inv_matrix) {

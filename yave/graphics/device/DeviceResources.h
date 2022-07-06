@@ -65,8 +65,8 @@ class DeviceResources final : NonMovable {
             TexturedAlphaFrag,
             PassthroughFrag,
             DownsampleFrag,
-            BloomFrag,
-            BloomCombineFrag,
+            BloomUpscaleFrag,
+            BloomDownscaleFrag,
             HBlurFrag,
             VBlurFrag,
             WireFrameFrag,
@@ -116,8 +116,8 @@ class DeviceResources final : NonMovable {
 
             DownsampleMaterialTemplate,
 
-            BloomMaterialTemplate,
-            BloomCombineMaterialTemplate,
+            BloomUpscaleMaterialTemplate,
+            BloomDownscaleMaterialTemplate,
 
             HBlurMaterialTemplate,
             VBlurMaterialTemplate,

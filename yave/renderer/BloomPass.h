@@ -28,18 +28,9 @@ SOFTWARE.
 namespace yave {
 
 struct BloomSettings {
-    enum BloomType {
-        Additive,
-        Scattering,
-    };
-
-    BloomType type = Additive;
-    float power = 4.0f;
-    float threshold = 0.9f;
-    float scatter_intensity = 0.7f;
-    usize pyramids = 4;
-
-    BlurSettings blur = {};
+    float radius = 0.005f;
+    usize pyramids = 5;
+    float intensity = 0.1f;
 };
 
 struct BloomPass {
