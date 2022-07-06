@@ -59,7 +59,6 @@ class AssetLoader : NonMovable {
                 LoaderBase(AssetLoader* parent);
 
             private:
-
                 AssetLoader* _parent = nullptr;
         };
 
@@ -113,6 +112,7 @@ class AssetLoader : NonMovable {
         // This is dangerous: Do not call in loading threads!
         void wait_until_loaded(const GenericAssetPtr& ptr);
 
+        bool is_loading() const;
 
         template<typename T>
         inline Result<T> load_res(AssetId id);

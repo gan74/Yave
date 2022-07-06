@@ -86,9 +86,16 @@ void AssetLoadingThreadPool::add_loading_job(std::unique_ptr<LoadingJob> job) {
     _condition.notify_one();
 }
 
+bool AssetLoadingThreadPool::is_processing() const {
+    return _processing != 0;
+}
+
 void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
     y_profile();
     y_debug_assert(lock.owns_lock());
+
+    ++_processing;
+    y_defer(--_processing);
 
     {
         y_profile_zone("finalizing loop");

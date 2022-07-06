@@ -68,6 +68,8 @@ class AssetLoadingThreadPool : NonMovable {
 
         void add_loading_job(std::unique_ptr<LoadingJob> job);
 
+        bool is_processing() const;
+
     private:
         void process_one(std::unique_lock<std::mutex> lock);
         void worker();
@@ -75,11 +77,12 @@ class AssetLoadingThreadPool : NonMovable {
         std::deque<std::unique_ptr<LoadingJob>> _loading_jobs;
         std::list<std::unique_ptr<LoadingJob>> _finalize_jobs;
 
-        std::mutex _lock;
+        mutable std::mutex _lock;
         std::condition_variable _condition;
 
         core::Vector<std::thread> _threads;
         std::atomic<bool> _run = true;
+        std::atomic<u32> _processing = 0;
 
         [[maybe_unused]] AssetLoader* _parent = nullptr;
 };

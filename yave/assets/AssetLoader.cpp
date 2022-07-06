@@ -71,6 +71,10 @@ void AssetLoader::wait_until_loaded(const GenericAssetPtr& ptr) {
     y_debug_assert(!ptr.is_loading());
 }
 
+bool AssetLoader::is_loading() const {
+    return _thread_pool.is_processing();
+}
+
 core::Result<AssetId> AssetLoader::load_or_import(std::string_view name, std::string_view import_from, AssetType type) {
     if(auto id = _store->id(name)) {
         return id;

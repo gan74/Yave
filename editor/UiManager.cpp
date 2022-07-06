@@ -26,6 +26,7 @@ SOFTWARE.
 #include <editor/utils/ui.h>
 #include <editor/widgets/PerformanceMetrics.h>
 
+#include <yave/assets/AssetLoader.h>
 #include <y/core/HashMap.h>
 
 #include <external/imgui/yave_imgui.h>
@@ -162,6 +163,16 @@ void UiManager::draw_menu_bar() {
         }
         if(ImGui::BeginMenu("View")) {
             ImGui::EndMenu();
+        }
+
+        if(asset_loader().is_loading()) {
+            ImGui::Separator();
+            ImGui::TextUnformatted(ICON_FA_DATABASE);
+            if(ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("Assets are loading%s", imgui::ellipsis());
+                ImGui::EndTooltip();
+            }
         }
 
         if(app_settings().ui.draw_fps_counter) {
