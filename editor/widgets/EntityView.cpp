@@ -35,10 +35,12 @@ SOFTWARE.
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
+#include <yave/scene/SceneView.h>
 
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/assets/AssetLoader.h>
+#include <yave/utils/entities.h>
 #include <yave/utils/color.h>
 
 #include <y/math/random.h>
@@ -50,6 +52,22 @@ SOFTWARE.
 
 namespace editor {
 
+static math::Vec3 new_entity_pos(float size) {
+    const Camera& camera = scene_view().camera();
+    return camera.position() + camera.forward() * size;
+}
+
+static void set_new_entity_pos(ecs::EntityId id) {
+    if(!id.is_valid()) {
+        return;
+    }
+    EditorWorld& world = current_world();
+    if(TransformableComponent* transformable = world.component<TransformableComponent>(id)) {
+        const float size = entity_radius(world, id).unwrap_or(5.0f);
+        transformable->set_position(new_entity_pos(std::min(100.0f, size * 2.0f)));
+    }
+}
+
 static void add_debug_lights() {
     y_profile();
 
@@ -58,12 +76,15 @@ static void add_debug_lights() {
     const float spacing =  app_settings().debug.entity_spacing;
     const usize entity_count = app_settings().debug.entity_count;
     const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
+
+    const math::Vec3 center = new_entity_pos(side * 1.5f);
+
     math::FastRandom rng;
     for(usize i = 0; i != entity_count; ++i) {
         const ecs::EntityId entity = world.create_entity<PointLightComponent>();
         world.set_entity_name(entity, "Debug light");
 
-        const math::Vec3 pos = math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
+        const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.component<TransformableComponent>(entity)->set_position(pos * spacing);
         world.component<EditorComponent>(entity)->set_hidden_in_editor(true);
         world.component<PointLightComponent>(entity)->radius() = spacing;
@@ -83,11 +104,14 @@ static void add_debug_entities() {
     const float spacing =  app_settings().debug.entity_spacing;
     const usize entity_count = app_settings().debug.entity_count;
     const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
+
+    const math::Vec3 center = new_entity_pos(side * 1.5f);
+
     for(usize i = 0; i != entity_count; ++i) {
         const ecs::EntityId entity = world.create_entity<StaticMeshComponent>();
         world.set_entity_name(entity, "Debug entity");
 
-        const math::Vec3 pos = math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
+        const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.component<TransformableComponent>(entity)->set_position(pos * spacing);
         *world.component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, material);
         world.component<EditorComponent>(entity)->set_hidden_in_editor(true);
@@ -99,6 +123,7 @@ static void add_prefab() {
         [](AssetId asset) {
             const ecs::EntityId id = current_world().add_prefab(asset);
             selection().set_selected(id);
+            set_new_entity_pos(id);
             return id.is_valid();
         });
 }
@@ -168,6 +193,7 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
     if(new_entity.is_valid()) {
         world.set_parent(new_entity, id);
         selection().set_selected(new_entity);
+        set_new_entity_pos(new_entity);
     }
 }
 
