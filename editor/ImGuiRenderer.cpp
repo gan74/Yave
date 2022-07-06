@@ -36,6 +36,7 @@ SOFTWARE.
 
 #include <external/imgui/yave_imgui.h>
 #include <external/imgui/fa-solid-900.h>
+#include <external/imgui/jetbrains_mono.h>
 
 namespace editor {
 
@@ -44,14 +45,9 @@ static ImageData load_font() {
 
     ImFontAtlas* fonts = ImGui::GetIO().Fonts;
 
-    /*{
-        ImFontConfig config;
-        config.OversampleV *= 2;
-        config.OversampleH *= 2;
-        fonts->AddFontDefault(&config);
-    }*/
-
-    fonts->AddFontDefault();
+    {
+        fonts->AddFontFromMemoryCompressedTTF(jetbrains_mono_compressed_data, font_awesome_compressed_size, 15.0f);
+    }
 
     {
         ImFontConfig config;
@@ -59,7 +55,6 @@ static ImageData load_font() {
         config.PixelSnapH = true;
         config.OversampleV = 1;
         config.OversampleH = 1;
-        config.GlyphOffset.y = 1.7f;
 
         const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
         fonts->AddFontFromMemoryCompressedTTF(font_awesome_compressed_data, font_awesome_compressed_size, 13.0f, &config, icon_ranges);
