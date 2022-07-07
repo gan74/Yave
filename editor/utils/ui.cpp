@@ -477,6 +477,37 @@ bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_si
     return ret;
 }
 
+// https://github.com/ocornut/imgui/issues/5370#issuecomment-1145917633
+void indeterminate_progress_bar(const math::Vec2& size_arg, float speed) {
+    using namespace ImGui;
+
+    ImGuiContext& g = *GImGui;
+    ImGuiWindow* window = GetCurrentWindow();
+    if(window->SkipItems) {
+        return;
+    }
+
+    ImGuiStyle& style = g.Style;
+    const ImVec2 size = CalcItemSize(size_arg, CalcItemWidth(), g.FontSize + style.FramePadding.y * 2.0f);
+    const ImVec2 pos = window->DC.CursorPos;
+    ImRect bb(pos.x, pos.y, pos.x + size.x, pos.y + size.y);
+    ItemSize(size);
+
+    if(!ItemAdd(bb, 0)) {
+        return;
+    }
+
+    speed *= g.FontSize * 0.05f;
+    const float phase = ImFmod((float)g.Time * speed, 1.0f);
+    const float width_normalized = 0.2f;
+    float t0 = phase * (1.0f + width_normalized) - width_normalized;
+    float t1 = t0 + width_normalized;
+
+    RenderFrame(bb.Min, bb.Max, GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
+    bb.Expand(ImVec2(-style.FrameBorderSize, -style.FrameBorderSize));
+    RenderRectFilledRangeH(window->DrawList, bb, GetColorU32(ImGuiCol_PlotHistogram), t0, t1, style.FrameRounding);
+}
+
 char spinner() {
     // https://github.com/ocornut/imgui/issues/1901#issuecomment-400563921
     return "|/-\\"[usize(ImGui::GetTime() / 0.05f) & 3];

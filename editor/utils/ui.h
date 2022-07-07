@@ -61,6 +61,9 @@ void table_begin_next_row(int row_index = 0);
 
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
 
+
+void indeterminate_progress_bar(const math::Vec2& size_arg = {}, float speed = 1.0f);
+
 char spinner();
 const char* ellipsis();
 
