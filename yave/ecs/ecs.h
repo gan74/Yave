@@ -121,9 +121,15 @@ struct RequiredComponents {
 };
 
 
+}
+}
 
-}
-}
+template<>
+struct std::hash<yave::ecs::EntityId> : std::hash<y::u64> {
+    auto operator()(const yave::ecs::EntityId& id) const {
+        return hash<y::u64>::operator()(id.as_u64());
+    }
+};
 
 #endif // YAVE_ECS_ECS_H
 

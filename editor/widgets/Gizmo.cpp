@@ -162,7 +162,7 @@ float Gizmo::snap_rot(float x) const {
 void Gizmo::draw() {
     y_profile();
 
-    if(!selection().has_selected_entity()) {
+    if(!selection().selected_entity().is_valid()) {
         return;
     }
 

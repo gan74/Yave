@@ -52,15 +52,24 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
 
     const CameraSettings& settings = app_settings().camera;
     math::Vec3 cam_pos = camera.position();
-    math::Vec3 cam_fwd = camera.forward();
-    math::Vec3 cam_rht = camera.right();
+    const math::Vec3 cam_fwd = camera.forward();
+    const math::Vec3 cam_rht = camera.right();
 
     if(ImGui::IsKeyDown(int(settings.center_on_obj))) {
-        auto id = selection().selected_entity();
-        if(id.is_valid()) {
-            if(const auto pos = entity_position(current_world(), id)) {
-                const float radius = entity_radius(current_world(), id).unwrap_or(10.0f);
-                cam_pos = pos.unwrap() - cam_fwd * (radius * 1.5f);
+        if(selection().selected_entities_count()) {
+            core::Result<AABB> aabb = core::Err();
+            for(const ecs::EntityId id : selection().selected_entities()) {
+                if(const auto bbox = entity_aabb(current_world(), id)) {
+                    if(!aabb) {
+                        aabb = core::Ok(bbox.unwrap());
+                    } else {
+                        aabb = core::Ok(aabb.unwrap().merged(bbox.unwrap()));
+                    }
+                }
+            }
+
+            if(aabb) {
+                cam_pos = aabb.unwrap().center() - cam_fwd * (aabb.unwrap().radius() * 1.5f);
             }
         }
     }

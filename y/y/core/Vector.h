@@ -165,13 +165,16 @@ class Vector : ResizePolicy, Allocator {
 
         template<typename It>
         inline void assign(It beg_it, It end_it) {
-            if(contains_it(beg_it)) {
-                Vector other(beg_it, end_it);
-                swap(other);
-            } else {
-                make_empty();
-                push_back(beg_it, end_it);
+            if constexpr(std::is_pointer_v<It>) {
+                if(contains_it(beg_it)) {
+                    Vector other(beg_it, end_it);
+                    swap(other);
+                    return;
+                }
             }
+
+            make_empty();
+            push_back(beg_it, end_it);
         }
 
         inline void swap(Vector& v) {

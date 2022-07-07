@@ -69,10 +69,9 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
     core::Vector<ecs::EntityId> entities;
 
     if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
-        if(selection().has_selected_entity()) {
-            entities << selection().selected_entity();
-            use_entity_list = true;
-        }
+        const auto selected = selection().selected_entities();
+        entities.assign(selected.begin(), selected.end());
+        use_entity_list = true;
     } else {
         const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
         if(octree_system) {

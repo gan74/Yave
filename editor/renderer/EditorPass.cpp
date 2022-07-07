@@ -117,10 +117,8 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         usize index = 0;
         auto vertex_mapping = pass->resources().map_buffer(vertex_buffer);
 
-        const ecs::EntityId selected = selection().selected_entity();
-
         auto push_entity = [&](ecs::EntityId id) {
-            if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly && id != selected) {
+            if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly && !selection().is_selected(id)) {
                 return;
             }
             if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
@@ -154,7 +152,6 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 
 
 static void render_selection(DirectDrawPrimitive* primitive, const SceneView& scene_view) {
-
     const ecs::EntityWorld& world = scene_view.world();
     const ecs::EntityId selected = selection().selected_entity();
 
@@ -267,7 +264,7 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, Fra
 
             DirectDraw direct;
             {
-                if(selection().has_selected_entity()) {
+                if(selection().selected_entity().is_valid()) {
                     render_selection(direct.add_primitive("selection"), view);
                 }
 

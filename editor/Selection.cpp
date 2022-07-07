@@ -26,19 +26,54 @@ SOFTWARE.
 
 namespace editor {
 
-bool Selection::has_selected_entity() const {
-    return _id.is_valid();
+ecs::EntityId Selection::selected_entity() const {
+    if(_ids.size() != 1) {
+        return ecs::EntityId();
+    }
+    return _ids.begin()->first;
 }
 
-ecs::EntityId Selection::selected_entity() const {
-    return _id;
+bool Selection::is_selected(ecs::EntityId id) const {
+    return _ids.find(id) != _ids.end();
+}
+
+void Selection::add_or_remove(ecs::EntityId id, bool set) {
+    if(!id.is_valid() || selected_entity() == id) {
+        return;
+    }
+
+    if(const auto it = _ids.find(id); it != _ids.end()) {
+        if(set) {
+            set_selected(id);
+        } else {
+            _ids.erase(it);
+        }
+    } else {
+        if(set) {
+            _ids.clear();
+        }
+        _ids.insert(std::pair{id, 0});
+    }
 }
 
 void Selection::set_selected(ecs::EntityId id) {
-    if(_id != id) {
-        _id = id;
-        undo_stack().set_editing_entity(id);
+    _ids.clear();
+    if(id.is_valid()) {
+        _ids.insert(std::pair{id, 0});
     }
+}
+
+void Selection::set_selected(core::Span<ecs::EntityId> ids) {
+    _ids.clear();
+    for(const ecs::EntityId id : ids) {
+        if(id.is_valid()) {
+            _ids.insert(std::pair{id, 0});
+        }
+    }
+}
+
+void Selection::clear_selection() {
+    _ids.clear();
 }
 
 }

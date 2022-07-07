@@ -34,9 +34,8 @@ SOFTWARE.
 
 namespace editor {
 
-static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth) {
-    const ecs::EntityId selected = selection().selected_entity();
-    if(!selected.is_valid()) {
+static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth, FrameGraphImageId selection_id) {
+    if(!selection().selected_entities_count()) {
         return color;
     }
 
@@ -47,6 +46,7 @@ static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameG
     builder.add_color_output(selection);
     builder.add_uniform_input(depth);
     builder.add_uniform_input(selection_depth);
+    builder.add_uniform_input(selection_id);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = resources()[EditorResources::SelectionMaterialTemplate];
@@ -75,12 +75,13 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
     }
 
     if(settings.show_selection) {
+        auto id_and_depth = [](const auto& pass) { return std::pair{pass.id, pass.depth}; };
         const IdBufferPass id_pass = IdBufferPass::create(framegraph, view, size, EditorPassFlags::SelectionOnly);
-        const FrameGraphImageId depth = settings.show_editor_entities
-            ? EditorPass::create(framegraph, view, id_pass.depth, {}, {}, EditorPassFlags::SelectionOnly).depth
-            : id_pass.depth;
+        const auto [id, depth] = settings.show_editor_entities
+            ? id_and_depth(EditorPass::create(framegraph, view, id_pass.depth, {}, id_pass.id, EditorPassFlags::SelectionOnly))
+            : id_and_depth(id_pass);
 
-        renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth);
+        renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth, id);
     }
 
     return renderer;

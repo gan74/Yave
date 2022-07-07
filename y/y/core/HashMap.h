@@ -308,11 +308,11 @@ class FlatHashMap : Hasher, Equal {
                     return *this;
                 }
 
-                inline auto& operator*() const {
+                inline decltype(auto) operator*() const {
                     return Transform::operator()(_parent->_entries[_index]);
                 }
 
-                inline auto* operator->() const {
+                inline decltype(auto) operator->() const {
                     return &Transform::operator()(_parent->_entries[_index]);
                 }
 

@@ -476,8 +476,8 @@ void EngineView::update_picking() {
 
     if(ImGui::IsMouseClicked(0)) {
         if(!_gizmo.is_dragging() && !_orientation_gizmo.is_dragging()) {
-            ecs::EntityId picked_id = picking_data.hit() ? current_world().id_from_index(picking_data.entity_index) : ecs::EntityId();
-            selection().set_selected(picked_id);
+            const ecs::EntityId picked_id = picking_data.hit() ? current_world().id_from_index(picking_data.entity_index) : ecs::EntityId();
+            selection().add_or_remove(picked_id, !ImGui::GetIO().KeyCtrl);
         }
     }
 }

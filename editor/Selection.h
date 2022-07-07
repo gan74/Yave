@@ -26,18 +26,34 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
+#include <y/core/HashMap.h>
+
 namespace editor {
 
 class Selection {
     public:
-        bool has_selected_entity() const;
+        usize selected_entities_count() const {
+            return _ids.size();
+        }
+
+        auto selected_entities() const {
+            return _ids.keys();
+        }
 
         ecs::EntityId selected_entity() const;
 
+        bool is_selected(ecs::EntityId id) const;
+
+        void add_or_remove(ecs::EntityId id, bool set = false);
+
         void set_selected(ecs::EntityId id);
+        void set_selected(core::Span<ecs::EntityId> id);
+
+        void clear_selection();
+
 
     private:
-        ecs::EntityId _id;
+        core::FlatHashMap<ecs::EntityId, int> _ids;
 };
 
 }
