@@ -234,7 +234,7 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
     }
 }
 
-static void display_entity(ecs::EntityId id, ecs::SparseComponentSet<EditorComponent>& component_set, ecs::EntityId& context_menu_entity) {
+static void display_entity(ecs::EntityId id, EditorWorld& world, ecs::SparseComponentSet<EditorComponent>& component_set, ecs::EntityId& context_menu_entity) {
     EditorComponent* component = component_set.try_get(id);
 
     const bool display_hidden = app_settings().debug.display_hidden_entities;
@@ -261,7 +261,7 @@ static void display_entity(ecs::EntityId id, ecs::SparseComponentSet<EditorCompo
             update_selection();
             ImGui::Indent();
             for(ecs::EntityId id : component->children()) {
-                display_entity(id, component_set, context_menu_entity);
+                display_entity(id, world, component_set, context_menu_entity);
             }
             ImGui::Unindent();
             ImGui::TreePop();
@@ -270,7 +270,7 @@ static void display_entity(ecs::EntityId id, ecs::SparseComponentSet<EditorCompo
         }
     } else {
         const std::string_view display_name = component->is_prefab() ? fmt("% (Prefab)", component->name()) : std::string_view(component->name());
-        const char* full_display_name = fmt_c_str("% %##%", ICON_FA_CUBE, display_name, id.as_u64());
+        const char* full_display_name = fmt_c_str("% %##%", world.entity_icon(id), display_name, id.as_u64());
         if(ImGui::TreeNodeEx(full_display_name, flags | ImGuiTreeNodeFlags_Leaf)) {
             ImGui::TreePop();
         }
@@ -306,7 +306,7 @@ void EntityView::on_gui() {
         auto& editor_components = world.component_set<EditorComponent>();
         for(auto&& [id, comp] : editor_components) {
             if(!comp.has_parent()/* || !world.exists(comp.parent())*/) {
-                display_entity(id, editor_components, _context_menu_entity);
+                display_entity(id, world, editor_components, _context_menu_entity);
             }
         }
 
