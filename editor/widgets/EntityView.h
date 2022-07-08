@@ -41,7 +41,7 @@ class EntityView final : public Widget {
         void on_gui() override;
 
     private:
-        ecs::EntityId _hovered;
+        ecs::EntityId _context_menu_entity;
 };
 
 }

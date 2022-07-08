@@ -148,8 +148,35 @@ editor_action("Add debug entities", add_debug_entities)
 editor_action("Add prefab", add_prefab)
 editor_action("Add scene", add_scene)
 
+
+static void collect_all_descendants(core::Vector<ecs::EntityId>& descendants, EditorWorld& world, ecs::EntityId id) {
+    if(EditorComponent* component = world.component<EditorComponent>(id)) {
+        for(const ecs::EntityId child : component->children()) {
+            descendants << child;
+            collect_all_descendants(descendants, world, child);
+        }
+    }
+}
+
 static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::EntityId()) {
     if(EditorComponent* component = world.component<EditorComponent>(id)) {
+        ImGui::Selectable(component->name().data(), false, ImGuiSelectableFlags_Disabled);
+
+        ImGui::Separator();
+
+        if(component->is_collection()) {
+            if(ImGui::Selectable("Select immediate children")) {
+                selection().set_selected(component->children());
+            }
+            if(ImGui::Selectable("Select all descendants")) {
+                y_profile_zone("collect all descendants");
+                auto descendants = core::vector_with_capacity<ecs::EntityId>(component->children().size() * 2);
+                collect_all_descendants(descendants, world, id);
+                selection().set_selected(descendants);
+            }
+            ImGui::Separator();
+        }
+
         if(ImGui::Selectable("Rename")) {
             add_child_widget<Renamer>(component->name(), [=](std::string_view new_name) { component->set_name(new_name); return true; });
         }
@@ -197,34 +224,38 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
     }
 }
 
-static void display_entity(ecs::EntityId id, EditorComponent* component, ecs::EntityId& hovered, ecs::EntityId& selected) {
+static void display_entity(ecs::EntityId id, EditorComponent* component, ecs::EntityId& context_menu_entity) {
     const bool display_hidden = app_settings().debug.display_hidden_entities;
     if(!component || (!display_hidden && component->is_hidden_in_editor())) {
         return;
     }
 
     EditorWorld& world = current_world();
-    const bool is_selected = selected == id;
-    const int flags = ImGuiTreeNodeFlags_SpanAvailWidth | (is_selected ? ImGuiTreeNodeFlags_Selected : 0);
+    const bool is_selected = context_menu_entity == id || selection().is_selected(id);
+    const int flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | (is_selected ? ImGuiTreeNodeFlags_Selected : 0);
 
-    auto update_hover = [&] {
-        if(ImGui::IsItemHovered()) {
-            hovered = id;
+    auto update_selection = [&]() {
+        if(ImGui::IsItemClicked()) {
+            selection().add_or_remove(id, !ImGui::GetIO().KeyCtrl);
+        }
+
+        if(ImGui::IsItemClicked(1)) {
+            context_menu_entity = id;
         }
     };
 
     if(component->is_collection()) {
         const char* full_display_name = fmt_c_str(ICON_FA_BOX_OPEN " %##%", component->name(), id.as_u64());
         if(ImGui::TreeNodeEx(full_display_name, flags)) {
-            update_hover();
+            update_selection();
             ImGui::Indent();
             for(ecs::EntityId id : component->children()) {
-                display_entity(id, world.component<EditorComponent>(id), hovered, selected);
+                display_entity(id, world.component<EditorComponent>(id), context_menu_entity);
             }
             ImGui::Unindent();
             ImGui::TreePop();
         } else {
-            update_hover();
+            update_selection();
         }
     } else {
         const std::string_view display_name = component->is_prefab() ? fmt("% (Prefab)", component->name()) : std::string_view(component->name());
@@ -232,11 +263,7 @@ static void display_entity(ecs::EntityId id, EditorComponent* component, ecs::En
         if(ImGui::TreeNodeEx(full_display_name, flags | ImGuiTreeNodeFlags_Leaf)) {
             ImGui::TreePop();
         }
-        update_hover();
-        if(ImGui::IsItemClicked()) {
-            selection().set_selected(id);
-            selected = id;
-        }
+        update_selection();
     }
 }
 
@@ -260,24 +287,25 @@ void EntityView::on_gui() {
 
     ImGui::Text("%u entities", u32(world.components<EditorComponent>().size()));
 
-    ecs::EntityId hovered;
     if(ImGui::BeginChild("##entities", ImVec2(), true)) {
         imgui::alternating_rows_background();
 
         EditorWorld& world = current_world();
         for(auto&& [id, comp] : world.component_set<EditorComponent>()) {
             if(!comp.has_parent()/* || !world.exists(comp.parent())*/) {
-                display_entity(id, &comp, hovered, _hovered);
+                display_entity(id, &comp, _context_menu_entity);
             }
         }
 
         if(imgui::should_open_context_menu()) {
             ImGui::OpenPopup("##contextmenu");
-            _hovered = hovered;
+            if(!ImGui::IsAnyItemHovered()) {
+                _context_menu_entity = ecs::EntityId();
+            }
         }
 
         if(ImGui::BeginPopup("##contextmenu")) {
-            populate_context_menu(world, _hovered);
+            populate_context_menu(world, _context_menu_entity);
             ImGui::EndPopup();
         }
     }
