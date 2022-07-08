@@ -70,13 +70,6 @@ class UndoStack : NonMovable {
     private:
         friend class UndoStackWidget;
         void restore_entity();
-
-        ecs::EntityId _id;
-
-        bool _dirty = false;
-
-        core::Vector<StackItem> _stack;
-        usize _cursor = 0; // from the end of the stack
 };
 
 }

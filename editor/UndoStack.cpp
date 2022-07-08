@@ -79,11 +79,11 @@ class UndoStackWidget : public Widget {
            }
 
             if(ImGui::BeginListBox("##undostack")) {
-                const auto& stack = undo_stack()._stack;
-                const usize cursor = stack.size() - undo_stack()._cursor - 1;
-                for(usize i = 0; i != stack.size(); ++i) {
-                    ImGui::Selectable(fmt_c_str("Entity #%", stack[i].id.index()), i == cursor);
-                }
+                //const auto& stack = undo_stack()._stack;
+                //const usize cursor = stack.size() - undo_stack()._cursor - 1;
+                //for(usize i = 0; i != stack.size(); ++i) {
+                //    ImGui::Selectable(fmt_c_str("Entity #%", stack[i].id.index()), i == cursor);
+                //}
                 ImGui::EndListBox();
             }
         }
@@ -94,105 +94,42 @@ UndoStack::UndoStack() {
 }
 
 void UndoStack::clear() {
-    _id = ecs::EntityId();
-    _stack.clear();
-    _cursor = 0;
-    _dirty =  false;
 }
 
 void UndoStack::set_editing_entity(ecs::EntityId id) {
     y_profile();
 
-    if(_id == id) {
-        return;
-    }
-
-    _id = id;
-    _dirty = false;
-    if(_id.is_valid()) {
-        _stack.emplace_back(StackItem{_id, current_world().create_prefab(_id)});
-    }
 }
 
 void UndoStack::done_editing() {
-    if(_dirty && _id.is_valid()) {
-        _stack.emplace_back(StackItem{_id, current_world().create_prefab(_id)});
-        _dirty = false;
-    }
 }
 
 bool UndoStack::is_entity_dirty() const {
-    return _dirty;
+    return false;
 }
 
 void UndoStack::push_before_dirty(ecs::EntityId id) {
-    if(id == _id) {
-        make_dirty();
-    } else {
-        while(_cursor) {
-            _stack.pop();
-            --_cursor;
-        }
-        _stack.emplace_back(StackItem{_id, current_world().create_prefab(_id)});
-    }
 }
 
 void UndoStack::make_dirty() {
-    y_profile();
-
-    if(!_dirty && _id.is_valid()) {
-        while(_cursor) {
-            _stack.pop();
-            --_cursor;
-        }
-
-        _dirty = true;
-    }
 }
 
 
 bool UndoStack::can_undo() const {
-    return !(_cursor + 1 >= _stack.size());
+    return false;
 }
 
 void UndoStack::undo() {
-    y_profile();
-
-    if(!can_undo()) {
-        log_msg("Nothing to undo");
-        return;
-    }
-
-    ++_cursor;
-    restore_entity();
 }
 
 bool UndoStack::can_redo() const {
-    return _cursor;
+    return false;
 }
 
 void UndoStack::redo() {
-    y_profile();
-
-    if(!can_redo()) {
-        log_msg("Nothing to redo");
-        return;
-    }
-
-    --_cursor;
-    restore_entity();
 }
 
 void UndoStack::restore_entity() {
-    y_profile();
-
-    const StackItem& item = _stack[_stack.size() - (_cursor + 1)];
-    ecs::EntityWorld& world = current_world();
-    for(const auto& comp : item.prefab.components()) {
-        if(comp) {
-            comp->add_to(world, item.id);
-        }
-    }
 }
 
 }
