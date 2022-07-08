@@ -77,12 +77,17 @@ static void add_debug_lights() {
     const usize entity_count = app_settings().debug.entity_count;
     const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
 
+    const ecs::EntityId parent = world.create_collection_entity("Debug lights");
+    world.component<EditorComponent>(parent)->set_hidden_in_editor(true);
+
     const math::Vec3 center = new_entity_pos(side * 1.5f);
 
     math::FastRandom rng;
     for(usize i = 0; i != entity_count; ++i) {
         const ecs::EntityId entity = world.create_entity<PointLightComponent>();
+
         world.set_entity_name(entity, "Debug light");
+        world.set_parent(entity, parent);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.component<TransformableComponent>(entity)->set_position(pos * spacing);
@@ -105,11 +110,16 @@ static void add_debug_entities() {
     const usize entity_count = app_settings().debug.entity_count;
     const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
 
+    const ecs::EntityId parent = world.create_collection_entity("Debug entities");
+    world.component<EditorComponent>(parent)->set_hidden_in_editor(true);
+
     const math::Vec3 center = new_entity_pos(side * 1.5f);
 
     for(usize i = 0; i != entity_count; ++i) {
         const ecs::EntityId entity = world.create_entity<StaticMeshComponent>();
+
         world.set_entity_name(entity, "Debug entity");
+        world.set_parent(entity, parent);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.component<TransformableComponent>(entity)->set_position(pos * spacing);
@@ -224,13 +234,14 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
     }
 }
 
-static void display_entity(ecs::EntityId id, EditorComponent* component, ecs::EntityId& context_menu_entity) {
+static void display_entity(ecs::EntityId id, ecs::SparseComponentSet<EditorComponent>& component_set, ecs::EntityId& context_menu_entity) {
+    EditorComponent* component = component_set.try_get(id);
+
     const bool display_hidden = app_settings().debug.display_hidden_entities;
     if(!component || (!display_hidden && component->is_hidden_in_editor())) {
         return;
     }
 
-    EditorWorld& world = current_world();
     const bool is_selected = context_menu_entity == id || selection().is_selected(id);
     const int flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | (is_selected ? ImGuiTreeNodeFlags_Selected : 0);
 
@@ -250,7 +261,7 @@ static void display_entity(ecs::EntityId id, EditorComponent* component, ecs::En
             update_selection();
             ImGui::Indent();
             for(ecs::EntityId id : component->children()) {
-                display_entity(id, world.component<EditorComponent>(id), context_menu_entity);
+                display_entity(id, component_set, context_menu_entity);
             }
             ImGui::Unindent();
             ImGui::TreePop();
@@ -259,7 +270,7 @@ static void display_entity(ecs::EntityId id, EditorComponent* component, ecs::En
         }
     } else {
         const std::string_view display_name = component->is_prefab() ? fmt("% (Prefab)", component->name()) : std::string_view(component->name());
-        const char* full_display_name = fmt_c_str("% %##%", world.entity_icon(id), display_name, id.as_u64());
+        const char* full_display_name = fmt_c_str("% %##%", ICON_FA_CUBE, display_name, id.as_u64());
         if(ImGui::TreeNodeEx(full_display_name, flags | ImGuiTreeNodeFlags_Leaf)) {
             ImGui::TreePop();
         }
@@ -288,12 +299,14 @@ void EntityView::on_gui() {
     ImGui::Text("%u entities", u32(world.components<EditorComponent>().size()));
 
     if(ImGui::BeginChild("##entities", ImVec2(), true)) {
+        y_profile_zone("fill entity panel");
+
         imgui::alternating_rows_background();
 
-        EditorWorld& world = current_world();
-        for(auto&& [id, comp] : world.component_set<EditorComponent>()) {
+        auto& editor_components = world.component_set<EditorComponent>();
+        for(auto&& [id, comp] : editor_components) {
             if(!comp.has_parent()/* || !world.exists(comp.parent())*/) {
-                display_entity(id, &comp, _context_menu_entity);
+                display_entity(id, editor_components, _context_menu_entity);
             }
         }
 

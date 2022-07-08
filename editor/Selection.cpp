@@ -27,22 +27,23 @@ SOFTWARE.
 namespace editor {
 
 bool Selection::has_selected_entities() const {
-    return !_ids.is_empty();
+    return !_unordered.is_empty();
 }
 
-core::Span<ecs::EntityId> Selection::selected_entities() const {
-    return _ids;
+usize Selection::selected_entity_count() const {
+    return _unordered.size();
 }
 
 ecs::EntityId Selection::selected_entity() const {
-    if(_ids.size() != 1) {
+    if(_unordered.size() != 1) {
         return ecs::EntityId();
     }
-    return _ids.first();
+    return _unordered.first();
 }
 
 bool Selection::is_selected(ecs::EntityId id) const {
-    return std::find(_ids.begin(), _ids.end(), id) != _ids.end();
+    const auto it = std::lower_bound(_ordered.begin(), _ordered.end(), id);
+    return it != _ordered.end() && it->id == id;
 }
 
 void Selection::add_or_remove(ecs::EntityId id, bool set) {
@@ -50,38 +51,58 @@ void Selection::add_or_remove(ecs::EntityId id, bool set) {
         return;
     }
 
-    if(const auto it = std::find(_ids.begin(), _ids.end(), id); it != _ids.end()) {
+    if(const auto it = std::lower_bound(_ordered.begin(), _ordered.end(), id); it != _ordered.end() && it->id == id) {
         if(set) {
             set_selected(id);
         } else {
-            _ids.erase(it);
+            const u32 index = it->index;
+            _unordered.erase(_unordered.begin() + index);
+            _ordered.erase(it);
+            for(auto& p : _ordered) {
+                if(p.index > index) {
+                    --p.index;
+                }
+            }
         }
     } else {
         if(set) {
-            _ids.clear();
+            clear_selection();
         }
-        _ids << id;
+        add(id);
     }
 }
 
+void Selection::add(ecs::EntityId id) {
+    const auto it = std::lower_bound(_ordered.begin(), _ordered.end(), id);
+    _ordered.insert(it, id, u32(_unordered.size()));
+    _unordered.push_back(id);
+
+    y_debug_assert(std::is_sorted(_ordered.begin(), _ordered.end()));
+    y_debug_assert(std::all_of(_ordered.begin(), _ordered.end(), [this](const auto& p) { return _unordered[p.index] == p.id; }));
+    y_debug_assert(_ordered.size() == _unordered.size());
+}
+
 void Selection::set_selected(ecs::EntityId id) {
-    _ids.clear();
+    clear_selection();
     if(id.is_valid()) {
-        _ids << id;
+        add(id);
     }
 }
 
 void Selection::set_selected(core::Span<ecs::EntityId> ids) {
-    _ids.clear();
+    clear_selection();
     for(const ecs::EntityId id : ids) {
         if(id.is_valid()) {
-            _ids << id;
+            _ordered.emplace_back(id, u32(_unordered.size()));
+            _unordered.push_back(id);
         }
     }
+    std::sort(_ordered.begin(), _ordered.end());
 }
 
 void Selection::clear_selection() {
-    _ids.clear();
+   _ordered.clear();
+   _unordered.clear();
 }
 
 }

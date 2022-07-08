@@ -33,13 +33,18 @@ namespace editor {
 class Selection {
     public:
         bool has_selected_entities() const;
-        core::Span<ecs::EntityId> selected_entities() const;
+        usize selected_entity_count() const;
+
+        core::Span<ecs::EntityId> selected_entities() const {
+            return _unordered;
+        }
 
         ecs::EntityId selected_entity() const;
 
         bool is_selected(ecs::EntityId id) const;
 
         void add_or_remove(ecs::EntityId id, bool set = false);
+        void add(ecs::EntityId id);
 
         void set_selected(ecs::EntityId id);
         void set_selected(core::Span<ecs::EntityId> id);
@@ -47,7 +52,21 @@ class Selection {
         void clear_selection();
 
     private:
-        core::Vector<ecs::EntityId> _ids;
+        struct Pair {
+            ecs::EntityId id;
+            u32 index;
+
+            bool operator<(const Pair& other) const {
+                return id < other.id;
+            }
+
+            bool operator<(ecs::EntityId i) const {
+                return id < i;
+            }
+        };
+
+        core::Vector<Pair> _ordered;
+        core::Vector<ecs::EntityId> _unordered;
 };
 
 }

@@ -49,7 +49,7 @@ void ComponentPanel::on_gui() {
     const ecs::EntityId id = selection().selected_entity();
 
     if(!id.is_valid()) {
-        if(const usize selected_count = selection().selected_entities().size(); selected_count > 1) {
+        if(const usize selected_count = selection().selected_entity_count(); selected_count > 1) {
             ImGui::Text("%u selected entities", u32(selected_count));
         }
         return;
