@@ -229,6 +229,29 @@ class Vector : ResizePolicy, Allocator {
             std::copy(beg_it, end_it, std::back_inserter(*this));
         }
 
+        template<typename... Args>
+        inline void insert(const_iterator it, Args&&... args) {
+            const usize index = it - _data;
+            if(index == size()) {
+                emplace_back(y_fwd(args)...);
+                return;
+            }
+
+            if(is_full()) {
+                expend();
+            }
+
+            usize i = size() - 1;
+            ::new(_data_end++) data_type{std::move(_data[i])};
+            while(i > index) {
+                 _data[i] = std::move(_data[i - 1]);
+                 --i;
+            }
+
+            _data[index] = data_type{y_fwd(args)...};
+
+        }
+
         inline value_type pop() {
             y_debug_assert(!is_empty());
             --_data_end;
