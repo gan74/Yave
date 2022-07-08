@@ -159,6 +159,11 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
             l.color() * l.intensity(),
             std::max(math::epsilon<float>, l.falloff())
         };
+
+        if(count == max_point_lights) {
+            log_msg("Too many point lights, discarding...", Log::Warning);
+            break;
+        }
     }
     return count;
 }
@@ -222,6 +227,11 @@ static u32 fill_spot_light_buffer(
             shadow_index,
             {}
         };
+
+        if(count == max_spot_lights) {
+            log_msg("Too many spot lights, discarding...", Log::Warning);
+            break;
+        }
     }
 
     return count;
