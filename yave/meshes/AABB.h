@@ -37,7 +37,7 @@ class AABB {
         }
 
         static AABB from_center_extent(const math::Vec3& center, const math::Vec3& extent) {
-            const math::Vec3 half_extent =  extent * 0.5f;
+            const math::Vec3 half_extent = extent * 0.5f;
             return AABB(center - half_extent, center + half_extent);
         }
 
