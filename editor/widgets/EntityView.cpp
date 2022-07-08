@@ -235,6 +235,10 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
 }
 
 static void display_entity(ecs::EntityId id, EditorWorld& world, ecs::SparseComponentSet<EditorComponent>& component_set, ecs::EntityId& context_menu_entity) {
+    const float bottom = ImGui::GetScrollY() + ImGui::GetWindowHeight();
+    const float top = ImGui::GetScrollY() - ImGui::GetTextLineHeightWithSpacing();
+    const bool clipped = ImGui::GetCursorPosY() < top || ImGui::GetCursorPosY() > bottom;
+
     EditorComponent* component = component_set.try_get(id);
 
     const bool display_hidden = app_settings().debug.display_hidden_entities;
@@ -242,7 +246,7 @@ static void display_entity(ecs::EntityId id, EditorWorld& world, ecs::SparseComp
         return;
     }
 
-    const bool is_selected = context_menu_entity == id || selection().is_selected(id);
+    const bool is_selected = !clipped && (context_menu_entity == id || selection().is_selected(id));
     const int flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | (is_selected ? ImGuiTreeNodeFlags_Selected : 0);
 
     auto update_selection = [&]() {
@@ -256,7 +260,7 @@ static void display_entity(ecs::EntityId id, EditorWorld& world, ecs::SparseComp
     };
 
     if(component->is_collection()) {
-        const char* full_display_name = fmt_c_str(ICON_FA_BOX_OPEN " %##%", component->name(), id.as_u64());
+        const char* full_display_name = clipped ? fmt_c_str("###%", id.as_u64()) : fmt_c_str(ICON_FA_BOX_OPEN " %###%", component->name(), id.as_u64());
         if(ImGui::TreeNodeEx(full_display_name, flags)) {
             update_selection();
             ImGui::Indent();
@@ -269,8 +273,14 @@ static void display_entity(ecs::EntityId id, EditorWorld& world, ecs::SparseComp
             update_selection();
         }
     } else {
-        const std::string_view display_name = component->is_prefab() ? fmt("% (Prefab)", component->name()) : std::string_view(component->name());
-        const char* full_display_name = fmt_c_str("% %##%", world.entity_icon(id), display_name, id.as_u64());
+        const char* full_display_name;
+        if(clipped) {
+            full_display_name = fmt_c_str("###%", id.as_u64());
+        } else {
+            const std::string_view display_name = component->is_prefab() ? fmt("% (Prefab)", component->name()) : std::string_view(component->name());
+            full_display_name = fmt_c_str("% %###%", world.entity_icon(id), display_name, id.as_u64());
+        }
+
         if(ImGui::TreeNodeEx(full_display_name, flags | ImGuiTreeNodeFlags_Leaf)) {
             ImGui::TreePop();
         }

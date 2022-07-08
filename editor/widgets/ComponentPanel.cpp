@@ -27,6 +27,7 @@ SOFTWARE.
 #include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
 #include <editor/utils/ui.h>
+#include <editor/components/EditorComponent.h>
 
 #include <yave/ecs/EntityPrefab.h>
 
@@ -57,6 +58,11 @@ void ComponentPanel::on_gui() {
 
     EditorWorld& world = current_world();
 
+    if(EditorComponent* component = world.component<EditorComponent>(id)) {
+        if(component->is_collection()) {
+            return;
+        }
+    }
 
     {
         const ImGuiTableFlags table_flags =
