@@ -129,12 +129,12 @@ void Gizmo::set_center_on_object(bool b) {
     _center_on_object = b;
 }
 
-math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) {
+math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) const {
     const auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
     return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
 }
 
-math::Vec2 Gizmo::to_window_pos(const math::Vec3& world) {
+math::Vec2 Gizmo::to_window_pos(const math::Vec3& world) const {
     const math::Vec2 viewport = ImGui::GetWindowSize();
     const math::Vec2 offset = ImGui::GetWindowPos();
 
@@ -159,292 +159,327 @@ float Gizmo::snap_rot(float x) const {
         : std::round(x / _rot_snapping) * _rot_snapping;
 }
 
-void Gizmo::draw() {
-    y_profile();
-
-    if(!selection().selected_entity().is_valid()) {
-        return;
+bool Gizmo::compute_gizmo_data(GizmoData &data) const {
+    const auto selected = selection().selected_entities();
+    for(usize i = 0; i != selected.size(); ++i) {
+        const ecs::EntityId id = selected[selected.size() - i - 1];
+        if(TransformableComponent* transformable = current_world().component<TransformableComponent>(id)) {
+            data.ref_entity_id = id;
+            data.ref_transformable = transformable;
+            break;
+        }
     }
 
-    TransformableComponent* transformable = current_world().component<TransformableComponent>(selection().selected_entity());
-    if(!transformable) {
-        return;
+    if(!data.ref_transformable) {
+        return false;
     }
 
-    math::Vec3 gizmo_offset;
-
+    data.cam_pos = _scene_view->camera().position();
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
-    const math::Vec3 cam_pos = _scene_view->camera().position();
     const math::Matrix4<> view_proj = _scene_view->camera().viewproj_matrix();
-    auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
-
-    const math::Vec3 orig_pos = obj_pos;
+    auto [obj_pos, obj_rot, obj_scale] = data.ref_transformable->transform().decompose();
 
     if((_mode == Translate) && _center_on_object) {
-        if(const auto aabb = entity_aabb(current_world(), selection().selected_entity())) {
+        if(const auto aabb = entity_aabb(current_world(), data.ref_entity_id)) {
             const math::Vec3 center = aabb.unwrap().center();
-            gizmo_offset = center - obj_pos;
+            data.gizmo_offset = center - obj_pos;
             obj_pos = center;
         }
     }
 
-    if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
-        return;
+    data.ref_position = obj_pos;
+
+    if(cam_fwd.dot(obj_pos - data.cam_pos) < 0.0f) {
+        return false;
     }
 
     const math::Vec4 projected = (view_proj * math::Vec4(obj_pos, 1.0f));
-    const float perspective = gizmo_size * projected.w();
+    data.perspective_w = gizmo_size * projected.w();
 
-    const math::Vec2 mouse = math::Vec2(ImGui::GetIO().MousePos);
+    data.mouse_pos = math::Vec2(ImGui::GetIO().MousePos);
     const math::Vec2 viewport = ImGui::GetWindowSize();
     const math::Vec2 offset = ImGui::GetWindowPos();
 
     const auto inv_matrix = _scene_view->camera().inverse_matrix();
-    const math::Vec2 ndc = ((mouse - offset) / viewport) * 2.0f - 1.0f;
+    const math::Vec2 ndc = ((data.mouse_pos - offset) / viewport) * 2.0f - 1.0f;
     const math::Vec4 h_world = inv_matrix * math::Vec4(ndc, 0.5f, 1.0f);
     const math::Vec3 world = h_world.to<3>() / h_world.w();
-    const math::Vec3 ray = (world - cam_pos).normalized();
-    const float dist = (obj_pos - cam_pos).length();
-    const math::Vec3 projected_mouse = cam_pos + ray * dist;
+    const math::Vec3 ray = (world - data.cam_pos).normalized();
+    const float dist = (obj_pos - data.cam_pos).length();
 
-    const math::Vec2 center = to_window_pos(obj_pos);
+    data.projected_mouse = data.cam_pos + ray * dist;
+    data.gizmo_center = to_window_pos(obj_pos);
 
-
-    std::array<math::Vec3, 3> basis = {
+    data.basis = {
         math::Vec3{1.0f, 0.0f, 0.0f},
         math::Vec3{0.0f, 1.0f, 0.0f},
         math::Vec3{0.0f, 0.0f, 1.0f}
     };
 
+    if(_space == Local) {
+        for(math::Vec3& a : data.basis) {
+            a = obj_rot(a);
+        }
+    }
 
-    {
-        if(_space == Local) {
-            for(math::Vec3& a : basis) {
-                a = obj_rot(a);
+    for(math::Vec3& a : data.basis) {
+        if(cam_fwd.dot(a) > 0.0f) {
+            a = -a;
+        }
+    }
+
+    for(usize i = 0; i != data.axes.size(); ++i) {
+         data.axes[i] = {to_window_pos(obj_pos + data.basis[i] * data.perspective_w), i};
+    };
+
+    // depth sort axes front to back
+    std::sort(std::begin(data.axes), std::end(data.axes), [&](const auto& a, const auto& b) {
+        return data.basis[a.index].dot(cam_fwd) < data.basis[b.index].dot(cam_fwd);
+    });
+
+    return true;
+}
+
+void Gizmo::translate_gizmo() {
+    y_profile();
+
+    y_debug_assert(_mode == Translate);
+
+    GizmoData data;
+    if(!compute_gizmo_data(data)) {
+        return;
+    }
+
+    // compute hover
+    u32 hover_mask = _dragging_mask;
+    if(!hover_mask) {
+        for(usize k = 0; k != 3; ++k) {
+            const usize i = 2 - k;
+            const usize index = data.axes[i].index;
+            const math::Vec3 proj = intersect(data.basis[index], data.ref_position, data.cam_pos, data.projected_mouse) - data.ref_position;
+            const float da = proj.dot(data.basis[(index + 1) % 3]);
+            const float db = proj.dot(data.basis[(index + 2) % 3]);
+
+            const float min_len = gizmo_quad_offset * data.perspective_w;
+            const float max_len = (gizmo_quad_size + gizmo_quad_offset) * data.perspective_w;
+            if(da > min_len && db > min_len && da < max_len && db < max_len) {
+                hover_mask = data.axes[(i + 1) % 3].mask() | data.axes[(i + 2) % 3].mask();
+                break;
             }
         }
 
-        if(_mode == Translate) {
-            for(math::Vec3& a : basis) {
-                if(cam_fwd.dot(a) > 0.0f) {
-                    a = -a;
+        // axes
+        if(!hover_mask) {
+            const math::Vec2 cursor = data.mouse_pos - data.gizmo_center;
+            for(usize i = 0; i != 3; ++i) {
+                if(is_clicking(cursor, data.axes[i].vec - data.gizmo_center)) {
+                    hover_mask = data.axes[i].mask();
+                    break;
                 }
             }
         }
     }
 
+    // draw
+    {
+        // quads
+        for(usize i = 0; i != 3; ++i) {
+            /*if(std::abs(basis[i].dot(cam_fwd)) < 0.25f) {
+                continue;
+            }*/
 
-    if(_mode == Translate) {
-        struct Axis {
-            math::Vec2 vec;
-            usize index;
-            u32 mask() const { return 1 << index; }
-        };
+            const usize a = (i + 1) % 3;
+            const usize b = (i + 2) % 3;
+            const u32 mask = data.axes[a].mask() | data.axes[b].mask();
+            const bool hovered = (hover_mask & mask) == mask;
+            const u32 color = hovered ? gizmo_hover_color : imgui::gizmo_color(data.axes[i].index);
+            const math::Vec2 quad_offset = ((data.axes[a].vec - data.gizmo_center)  + (data.axes[b].vec - data.gizmo_center)) * gizmo_quad_offset;
 
-        Axis axes[] = {
-            {to_window_pos(obj_pos + basis[0] * perspective), 0},
-            {to_window_pos(obj_pos + basis[1] * perspective), 1},
-            {to_window_pos(obj_pos + basis[2] * perspective), 2}
-        };
-
-        // depth sort axes front to back
-        std::sort(std::begin(axes), std::end(axes), [&](const Axis& a, const Axis& b) {
-            return basis[a.index].dot(cam_fwd) < basis[b.index].dot(cam_fwd);
-        });
-
-        // compute hover
-        u32 hover_mask = _dragging_mask;
-        if(!hover_mask) {
-            for(usize k = 0; k != 3; ++k) {
-                const usize i = 2 - k;
-                const usize index = axes[i].index;
-                const math::Vec3 proj = intersect(basis[index], obj_pos, cam_pos, projected_mouse) - obj_pos;
-                const float da = proj.dot(basis[(index + 1) % 3]);
-                const float db = proj.dot(basis[(index + 2) % 3]);
-
-                const float min_len = gizmo_quad_offset * perspective;
-                const float max_len = (gizmo_quad_size + gizmo_quad_offset) * perspective;
-                if(da > min_len && db > min_len && da < max_len && db < max_len) {
-                    hover_mask = axes[(i + 1) % 3].mask() | axes[(i + 2) % 3].mask();
-                    break;
-                }
-            }
-
-            // axes
-            if(!hover_mask) {
-                const math::Vec2 cursor = math::Vec2(ImGui::GetIO().MousePos) - center;
-                for(usize i = 0; i != 3; ++i) {
-                    if(is_clicking(cursor, axes[i].vec - center)) {
-                        hover_mask = axes[i].mask();
-                        break;
-                    }
-                }
-            }
+            const auto smaller = [&] (const math::Vec2& v) { return (v - data.gizmo_center) * gizmo_quad_size + data.gizmo_center; };
+            const ImVec2 pts[] = {
+                    quad_offset + data.gizmo_center,
+                    quad_offset + smaller(data.axes[a].vec),
+                    quad_offset + smaller(data.axes[a].vec + data.axes[b].vec - data.gizmo_center),
+                    quad_offset + smaller(data.axes[b].vec)
+                };
+            ImGui::GetWindowDrawList()->AddConvexPolyFilled(pts, 4, gizmo_quad_alpha | color);
         }
 
-        // draw
-        {
-            // quads
-            for(usize i = 0; i != 3; ++i) {
-                /*if(std::abs(basis[i].dot(cam_fwd)) < 0.25f) {
-                    continue;
-                }*/
-
-                const usize a = (i + 1) % 3;
-                const usize b = (i + 2) % 3;
-                const u32 mask = axes[a].mask() | axes[b].mask();
-                const bool hovered = (hover_mask & mask) == mask;
-                const u32 color = hovered ? gizmo_hover_color : imgui::gizmo_color(axes[i].index);
-                const math::Vec2 quad_offset = ((axes[a].vec - center)  + (axes[b].vec - center)) * gizmo_quad_offset;
-
-                const auto smaller = [&] (const math::Vec2& v) { return (v - center) * gizmo_quad_size + center; };
-                const ImVec2 pts[] = {
-                        quad_offset + center,
-                        quad_offset + smaller(axes[a].vec),
-                        quad_offset + smaller(axes[a].vec + axes[b].vec - center),
-                        quad_offset + smaller(axes[b].vec)
-                    };
-                ImGui::GetWindowDrawList()->AddConvexPolyFilled(pts, 4, gizmo_quad_alpha | color);
-            }
-
-            // axes
-            for(usize k = 0; k != 3; ++k) {
-                const usize i = 2 - k;
-                const bool hovered = hover_mask & axes[i].mask();
-                const u32 color = hovered ? gizmo_hover_color : imgui::gizmo_color(axes[i].index);
-                ImGui::GetWindowDrawList()->AddLine(center, axes[i].vec, gizmo_alpha | color, gizmo_width);
-            }
-            ImGui::GetWindowDrawList()->AddCircleFilled(center, 1.5f * gizmo_width, 0xFFFFFFFF);
+        // axes
+        for(usize k = 0; k != 3; ++k) {
+            const usize i = 2 - k;
+            const bool hovered = hover_mask & data.axes[i].mask();
+            const u32 color = hovered ? gizmo_hover_color : imgui::gizmo_color(data.axes[i].index);
+            ImGui::GetWindowDrawList()->AddLine(data.gizmo_center, data.axes[i].vec, gizmo_alpha | color, gizmo_width);
         }
+        ImGui::GetWindowDrawList()->AddCircleFilled(data.gizmo_center, 1.5f * gizmo_width, 0xFFFFFFFF);
+    }
 
 
-        // click
-        {
-            if(is_clicked(_allow_drag)) {
-                _dragging_mask = hover_mask;
-                _dragging_offset = obj_pos - projected_mouse;
-            } else if(!ImGui::IsMouseDown(0)) {
-                if(_dragging_mask) {
-                    undo_stack().done_editing();
-                }
-                _dragging_mask = 0;
-            }
-        }
-
-        // drag
-        if(_dragging_mask) {
-            const math::Vec3 new_pos = projected_mouse + _dragging_offset - gizmo_offset;
-            const math::Vec3 vec = new_pos - orig_pos;
-
-            math::Vec3 offset;
-            for(usize i = 0; i != 3; ++i) {
-                if(_dragging_mask & (1 << i)) {
-                    offset += basis[i] * vec.dot(basis[i]);
-                }
-            }
-            transformable->set_position(orig_pos + math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z())));
-            undo_stack().make_dirty();
-        }
-    } else if(_mode == Rotate) {
-        const usize segment_count = 64;
-        const float inv_segment_count = 1.0f / segment_count;
-        const float seg_ang_size = inv_segment_count * 2.0f * math::pi<float>;
-
-        usize rotation_axis = _rotation_axis;
-
-        auto cam_side = [&, &obj_pos = obj_pos](math::Vec3 world_pos) {
-            const math::Vec3 local = world_pos - obj_pos;
-            return local.normalized().dot((world_pos - cam_pos).normalized()) < 0.1f;
-        };
-
-
-        auto next_point = [&, &obj_pos = obj_pos](usize axis, usize i) -> std::pair<math::Vec2, bool> {
-            const math::Vec3 radial = basis[axis] * std::sin(i * seg_ang_size) + basis[(axis + 1) % 3] * std::cos(i * seg_ang_size);
-            return {to_window_pos(obj_pos + radial * gizmo_radius * perspective), cam_side(obj_pos + radial)};
-        };
-
-        // compute hover
-        bool hovered = false;
-        for(usize axis = 0; !hovered && axis != 3; ++axis) {
-            const usize rot_axis = (axis + 2) % 3;
-
-            math::Vec2 last_point = next_point(axis, 0).first;
-            for(usize i = 1; i != segment_count + 1; ++i) {
-                const auto [next_pt, visible] = next_point(axis, i);
-                const auto next = next_pt;
-                y_defer(last_point = next);
-
-                if(!visible) {
-                    continue;
-                }
-                const math::Vec2 vec = next - last_point;
-                if(vec.dot(next - mouse) < 0.0f || vec.dot(last_point - mouse) > 0.0f) {
-                    continue;
-                }
-                const math::Vec2 ortho = math::Vec2(-vec.y(), vec.x()).normalized();
-                if(std::abs(ortho.dot(next - mouse)) > 5.0f) {
-                    continue;
-                }
-                rotation_axis = rot_axis;
-                hovered = true;
-                break;
-            }
-        }
-
-        // draw
-        const usize current_axis = (_rotation_axis == usize(-1) ? rotation_axis : _rotation_axis);
-        for(usize axis = 0; axis != 3; ++axis) {
-            const usize rot_axis = (axis + 2) % 3;
-            const bool is_current_axis = rot_axis == current_axis;
-            const u32 color = is_current_axis ? gizmo_hover_color : imgui::gizmo_color(rot_axis);
-
-            math::Vec2 last_point = next_point(axis, 0).first;
-            for(usize i = 1; i != segment_count + 1; ++i) {
-                const auto [next_pt, visible] = next_point(axis, i);
-                const auto next = next_pt;
-                y_defer(last_point = next);
-
-                u32 alpha = gizmo_alpha;
-                if(!visible) {
-                    if(!is_current_axis || i % 2) {
-                        continue;
-                    }
-                    alpha /= 2;
-                }
-                ImGui::GetWindowDrawList()->AddLine(last_point, next, alpha | color, gizmo_width);
-            }
-        }
-
-        auto compute_angle = [&, &obj_pos = obj_pos](usize axis) {
-                if(axis >= 3) {
-                    return 0.0f;
-                }
-                const math::Vec3 proj = intersect(basis[axis], obj_pos, cam_pos, projected_mouse);
-                const math::Vec3 vec = (proj - obj_pos).normalized();
-                return std::copysign(std::acos(vec[(axis + 1) % 3]), vec[(axis + 2) % 3]);
-            };
-
+    // click
+    {
         if(is_clicked(_allow_drag)) {
-            _rotation_axis = rotation_axis;
-            _rotation_offset = compute_angle(_rotation_axis);
-        } if(!ImGui::IsMouseDown(0)) {
-            if(_rotation_axis != usize(-1)) {
+            _dragging_mask = hover_mask;
+            _dragging_offset = data.ref_position - data.projected_mouse;
+        } else if(!ImGui::IsMouseDown(0)) {
+            if(_dragging_mask) {
                 undo_stack().done_editing();
             }
-            _rotation_axis = usize(-1);
+            _dragging_mask = 0;
+        }
+    }
+
+    // drag
+    if(_dragging_mask) {
+        const math::Vec3 new_pos = data.projected_mouse + _dragging_offset;
+        const math::Vec3 vec = new_pos - data.ref_position;
+
+        math::Vec3 offset;
+        for(usize i = 0; i != 3; ++i) {
+            if(_dragging_mask & (1 << i)) {
+                offset += data.basis[i] * vec.dot(data.basis[i]);
+            }
+        }
+        offset = math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z()));
+
+        for(auto&& [transformable] : current_world().query<ecs::Mutate<TransformableComponent>>(selection().selected_entities()).components()) {
+            transformable.set_position(transformable.position() + offset);
         }
 
+        undo_stack().make_dirty();
+    }
+}
+
+void Gizmo::rotate_gizmo() {
+    y_profile();
+
+    y_debug_assert(_mode == Rotate);
+
+    GizmoData data;
+    if(!compute_gizmo_data(data)) {
+        return;
+    }
+
+    const usize segment_count = 64;
+    const float inv_segment_count = 1.0f / segment_count;
+    const float seg_ang_size = inv_segment_count * 2.0f * math::pi<float>;
+
+    usize rotation_axis = _rotation_axis;
+
+    auto cam_side = [&, &obj_pos = data.ref_position](math::Vec3 world_pos) {
+        const math::Vec3 local = world_pos - obj_pos;
+        return local.normalized().dot((world_pos - data.cam_pos).normalized()) < 0.1f;
+    };
+
+
+    auto next_point = [&, &obj_pos = data.ref_position](usize axis, usize i) -> std::pair<math::Vec2, bool> {
+        const math::Vec3 radial = data.basis[axis] * std::sin(i * seg_ang_size) + data.basis[(axis + 1) % 3] * std::cos(i * seg_ang_size);
+        return {to_window_pos(obj_pos + radial * gizmo_radius * data.perspective_w), cam_side(obj_pos + radial)};
+    };
+
+    // compute hover
+    bool hovered = false;
+    for(usize axis = 0; !hovered && axis != 3; ++axis) {
+        const usize rot_axis = (axis + 2) % 3;
+
+        math::Vec2 last_point = next_point(axis, 0).first;
+        for(usize i = 1; i != segment_count + 1; ++i) {
+            const auto [next_pt, visible] = next_point(axis, i);
+            const auto next = next_pt;
+            y_defer(last_point = next);
+
+            if(!visible) {
+                continue;
+            }
+            const math::Vec2 vec = next - last_point;
+            if(vec.dot(next - data.mouse_pos) < 0.0f || vec.dot(last_point - data.mouse_pos) > 0.0f) {
+                continue;
+            }
+            const math::Vec2 ortho = math::Vec2(-vec.y(), vec.x()).normalized();
+            if(std::abs(ortho.dot(next - data.mouse_pos )) > 5.0f) {
+                continue;
+            }
+            rotation_axis = rot_axis;
+            hovered = true;
+            break;
+        }
+    }
+
+    // draw
+    const usize current_axis = (_rotation_axis == usize(-1) ? rotation_axis : _rotation_axis);
+    for(usize axis = 0; axis != 3; ++axis) {
+        const usize rot_axis = (axis + 2) % 3;
+        const bool is_current_axis = rot_axis == current_axis;
+        const u32 color = is_current_axis ? gizmo_hover_color : imgui::gizmo_color(rot_axis);
+
+        math::Vec2 last_point = next_point(axis, 0).first;
+        for(usize i = 1; i != segment_count + 1; ++i) {
+            const auto [next_pt, visible] = next_point(axis, i);
+            const auto next = next_pt;
+            y_defer(last_point = next);
+
+            u32 alpha = gizmo_alpha;
+            if(!visible) {
+                if(!is_current_axis || i % 2) {
+                    continue;
+                }
+                alpha /= 2;
+            }
+            ImGui::GetWindowDrawList()->AddLine(last_point, next, alpha | color, gizmo_width);
+        }
+    }
+
+    auto compute_angle = [&, &obj_pos = data.ref_position](usize axis) {
+            if(axis >= 3) {
+                return 0.0f;
+            }
+            const math::Vec3 proj = intersect(data.basis[axis], obj_pos, data.cam_pos, data.projected_mouse);
+            const math::Vec3 vec = (proj - obj_pos).normalized();
+            return std::copysign(std::acos(vec[(axis + 1) % 3]), vec[(axis + 2) % 3]);
+        };
+
+    if(is_clicked(_allow_drag)) {
+        _rotation_axis = rotation_axis;
+        _rotation_offset = compute_angle(_rotation_axis);
+    } if(!ImGui::IsMouseDown(0)) {
         if(_rotation_axis != usize(-1)) {
-            const float angle = compute_angle(_rotation_axis);
-            const float angle_offset = snap_rot(angle - _rotation_offset);
-            const math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(basis[_rotation_axis], angle_offset);
-            math::Transform<> tr = transformable->transform();
-            tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
-            transformable->set_transform(tr);
-            _rotation_offset += angle_offset;
-
-            undo_stack().make_dirty();
+            undo_stack().done_editing();
         }
+        _rotation_axis = usize(-1);
+    }
+
+    if(_rotation_axis != usize(-1)) {
+        const float angle = compute_angle(_rotation_axis);
+        const float angle_offset = snap_rot(angle - _rotation_offset);
+        const math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(data.basis[_rotation_axis], angle_offset);
+
+        for(auto&& [transformable] : current_world().query<ecs::Mutate<TransformableComponent>>(selection().selected_entities()).components()) {
+            math::Transform<> tr = transformable.transform();
+            tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
+            transformable.set_transform(tr);
+        }
+
+        _rotation_offset += angle_offset;
+
+        undo_stack().make_dirty();
+    }
+}
+
+void Gizmo::draw() {
+    y_profile();
+
+    if(!selection().has_selected_entities()) {
+        return;
+    }
+
+    switch(_mode) {
+        case Translate:
+            translate_gizmo();
+        break;
+
+        case Rotate:
+            rotate_gizmo();
+        break;
     }
 }
 

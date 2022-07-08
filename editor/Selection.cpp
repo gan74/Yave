@@ -26,15 +26,23 @@ SOFTWARE.
 
 namespace editor {
 
+bool Selection::has_selected_entities() const {
+    return !_ids.is_empty();
+}
+
+core::Span<ecs::EntityId> Selection::selected_entities() const {
+    return _ids;
+}
+
 ecs::EntityId Selection::selected_entity() const {
     if(_ids.size() != 1) {
         return ecs::EntityId();
     }
-    return _ids.begin()->first;
+    return _ids.first();
 }
 
 bool Selection::is_selected(ecs::EntityId id) const {
-    return _ids.find(id) != _ids.end();
+    return std::find(_ids.begin(), _ids.end(), id) != _ids.end();
 }
 
 void Selection::add_or_remove(ecs::EntityId id, bool set) {
@@ -42,7 +50,7 @@ void Selection::add_or_remove(ecs::EntityId id, bool set) {
         return;
     }
 
-    if(const auto it = _ids.find(id); it != _ids.end()) {
+    if(const auto it = std::find(_ids.begin(), _ids.end(), id); it != _ids.end()) {
         if(set) {
             set_selected(id);
         } else {
@@ -52,14 +60,14 @@ void Selection::add_or_remove(ecs::EntityId id, bool set) {
         if(set) {
             _ids.clear();
         }
-        _ids.insert(std::pair{id, 0});
+        _ids << id;
     }
 }
 
 void Selection::set_selected(ecs::EntityId id) {
     _ids.clear();
     if(id.is_valid()) {
-        _ids.insert(std::pair{id, 0});
+        _ids << id;
     }
 }
 
@@ -67,7 +75,7 @@ void Selection::set_selected(core::Span<ecs::EntityId> ids) {
     _ids.clear();
     for(const ecs::EntityId id : ids) {
         if(id.is_valid()) {
-            _ids.insert(std::pair{id, 0});
+            _ids << id;
         }
     }
 }

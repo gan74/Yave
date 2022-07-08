@@ -56,7 +56,7 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
     const math::Vec3 cam_rht = camera.right();
 
     if(ImGui::IsKeyDown(int(settings.center_on_obj))) {
-        if(selection().selected_entities_count()) {
+        if(selection().has_selected_entities()) {
             core::Result<AABB> aabb = core::Err();
             for(const ecs::EntityId id : selection().selected_entities()) {
                 if(const auto bbox = entity_aabb(current_world(), id)) {

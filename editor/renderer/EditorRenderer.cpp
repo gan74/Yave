@@ -35,7 +35,7 @@ SOFTWARE.
 namespace editor {
 
 static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth, FrameGraphImageId selection_id) {
-    if(!selection().selected_entities_count()) {
+    if(!selection().has_selected_entities()) {
         return color;
     }
 

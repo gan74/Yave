@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
+#include <yave/ecs/ecs.h>
+
 namespace editor {
 
 class Gizmo final {
@@ -61,11 +63,43 @@ class Gizmo final {
         void set_center_on_object(bool b);
 
     private:
-        math::Vec3 to_screen_pos(const math::Vec3& world);
-        math::Vec2 to_window_pos(const math::Vec3& world);
+        struct GizmoData {
+            struct Axis {
+                math::Vec2 vec;
+                usize index;
+                u32 mask() const { return 1 << index; }
+            };
+
+            GizmoData() = default;
+
+           ecs::EntityId ref_entity_id;
+           const TransformableComponent* ref_transformable = nullptr;
+
+           math::Vec3 ref_position;
+           math::Vec3 gizmo_offset;
+
+           std::array<Axis, 3> axes;
+           std::array<math::Vec3, 3> basis;
+
+           math::Vec3 cam_pos;
+           math::Vec2 gizmo_center;
+
+           math::Vec2 mouse_pos;
+           math::Vec3 projected_mouse;
+
+           float perspective_w = 0.0;
+        };
+
+        math::Vec3 to_screen_pos(const math::Vec3& world) const;
+        math::Vec2 to_window_pos(const math::Vec3& world) const;
 
         float snap(float x) const;
         float snap_rot(float x) const;
+
+        bool compute_gizmo_data(GizmoData& data) const;
+
+        void translate_gizmo();
+        void rotate_gizmo();
 
         SceneView* _scene_view = nullptr;
 

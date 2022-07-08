@@ -26,19 +26,14 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
-#include <y/core/HashMap.h>
+#include <y/core/Vector.h>
 
 namespace editor {
 
 class Selection {
     public:
-        usize selected_entities_count() const {
-            return _ids.size();
-        }
-
-        auto selected_entities() const {
-            return _ids.keys();
-        }
+        bool has_selected_entities() const;
+        core::Span<ecs::EntityId> selected_entities() const;
 
         ecs::EntityId selected_entity() const;
 
@@ -51,9 +46,8 @@ class Selection {
 
         void clear_selection();
 
-
     private:
-        core::FlatHashMap<ecs::EntityId, int> _ids;
+        core::Vector<ecs::EntityId> _ids;
 };
 
 }
