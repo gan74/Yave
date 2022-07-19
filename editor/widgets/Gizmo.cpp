@@ -311,6 +311,16 @@ void Gizmo::translate_gizmo() {
             const u32 color = hovered ? gizmo_hover_color : imgui::gizmo_color(data.axes[i].index);
             ImGui::GetWindowDrawList()->AddLine(data.gizmo_center, data.axes[i].vec, gizmo_alpha | color, gizmo_width);
         }
+
+        if(_dragging_mask) {
+            const math::Vec2 start_pos = to_window_pos(_drag_start_pos);
+            ImGui::GetWindowDrawList()->AddLine(start_pos, data.gizmo_center, 0x80FFFFFF, 0.5f * gizmo_width);
+            ImGui::GetWindowDrawList()->AddCircle(start_pos, 1.5f * gizmo_width, 0x80FFFFFF);
+
+            // const math::Vec3 move = data.ref_position - _drag_start_pos;
+            // ImGui::GetWindowDrawList()->AddText(start_pos, 0xFFFFFFFF, fmt_c_str("X: %\n Y: %\n Z: %", move.x(), move.y(), move.z()));
+        }
+
         ImGui::GetWindowDrawList()->AddCircleFilled(data.gizmo_center, 1.5f * gizmo_width, 0xFFFFFFFF);
     }
 
@@ -320,6 +330,7 @@ void Gizmo::translate_gizmo() {
         if(is_clicked(_allow_drag)) {
             _dragging_mask = hover_mask;
             _dragging_offset = data.ref_position - data.projected_mouse;
+            _drag_start_pos = data.ref_position;
         } else if(!ImGui::IsMouseDown(0)) {
             if(_dragging_mask) {
                 undo_stack().done_editing();

@@ -106,6 +106,8 @@ class Gizmo final {
         usize _rotation_axis = usize(-1);
         float _rotation_offset;
 
+        math::Vec3 _drag_start_pos;
+
         math::Vec3 _dragging_offset;
         u32 _dragging_mask = 0;
 
