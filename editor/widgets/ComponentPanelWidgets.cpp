@@ -65,6 +65,11 @@ core::String ComponentPanelWidgetBase::component_name() const {
 }
 
 
+const ImGuiTableFlags table_flags =
+        ImGuiTableFlags_BordersInnerV |
+        // ImGuiTableFlags_BordersInnerH |
+        ImGuiTableFlags_Resizable |
+        ImGuiTableFlags_RowBg;
 
 template<typename CRTP, typename T>
 struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
@@ -132,6 +137,12 @@ struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
 
 struct PointLightComponentWidget : public LightComponentWidget<PointLightComponentWidget, PointLightComponent> {
     void on_gui(ecs::EntityId, PointLightComponent* light) {
+        if(!ImGui::BeginTable("#properties", 2, table_flags)) {
+            return;
+        }
+        imgui::table_begin_next_row();
+        y_defer(ImGui::EndTable());
+
         basic_properties(light);
 
         imgui::table_begin_next_row();
@@ -154,6 +165,12 @@ struct PointLightComponentWidget : public LightComponentWidget<PointLightCompone
 
 struct DirectionalLightComponentWidget : public LightComponentWidget<DirectionalLightComponentWidget, DirectionalLightComponent> {
     void on_gui(ecs::EntityId, DirectionalLightComponent* light) {
+        if(!ImGui::BeginTable("#properties", 2, table_flags)) {
+            return;
+        }
+        imgui::table_begin_next_row();
+        y_defer(ImGui::EndTable());
+
         basic_properties(light);
 
         imgui::table_begin_next_row();
@@ -203,6 +220,12 @@ struct DirectionalLightComponentWidget : public LightComponentWidget<Directional
 
 struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponentWidget, SpotLightComponent> {
     void on_gui(ecs::EntityId, SpotLightComponent* light) {
+        if(!ImGui::BeginTable("#properties", 2, table_flags)) {
+            return;
+        }
+        imgui::table_begin_next_row();
+        y_defer(ImGui::EndTable());
+
         basic_properties(light);
 
         imgui::table_begin_next_row();
@@ -249,6 +272,12 @@ struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponent
 
 struct SkyLightComponentWidget : public ComponentPanelWidget<SkyLightComponentWidget, SkyLightComponent> {
     void on_gui(ecs::EntityId id, SkyLightComponent* sky) {
+        if(!ImGui::BeginTable("#properties", 2, table_flags)) {
+            return;
+        }
+        imgui::table_begin_next_row();
+        y_defer(ImGui::EndTable());
+
         {
             ImGui::TextUnformatted("Envmap");
             ImGui::TableNextColumn();
@@ -291,79 +320,96 @@ struct SkyLightComponentWidget : public ComponentPanelWidget<SkyLightComponentWi
 
 struct StaticMeshComponentWidget : public ComponentPanelWidget<StaticMeshComponentWidget, StaticMeshComponent> {
     void on_gui(ecs::EntityId id, StaticMeshComponent* static_mesh) {
-        for(usize i = 0; i != static_mesh->sub_meshes().size(); ++i) {
-            StaticMeshComponent::SubMesh& sub_mesh = static_mesh->sub_meshes()[i];
+        if(ImGui::CollapsingHeader("Sub meshes")) {
+            ImGui::Indent();
 
-            auto find_sub_mesh = [id, i, sub = sub_mesh]() -> StaticMeshComponent::SubMesh* {
-                static_assert(!std::is_reference_v<decltype(sub)>);
-                if(StaticMeshComponent* comp = current_world().component<StaticMeshComponent>(id)) {
-                    if(comp->sub_meshes().size() > i && comp->sub_meshes()[i] == sub) {
-                        return &comp->sub_meshes()[i];
+            if(ImGui::BeginTable("#submeshes", 2, table_flags)) {
+                imgui::table_begin_next_row();
+
+                for(usize i = 0; i != static_mesh->sub_meshes().size(); ++i) {
+                    StaticMeshComponent::SubMesh& sub_mesh = static_mesh->sub_meshes()[i];
+
+                    auto find_sub_mesh = [id, i, sub = sub_mesh]() -> StaticMeshComponent::SubMesh* {
+                        static_assert(!std::is_reference_v<decltype(sub)>);
+                        if(StaticMeshComponent* comp = current_world().component<StaticMeshComponent>(id)) {
+                            if(comp->sub_meshes().size() > i && comp->sub_meshes()[i] == sub) {
+                                return &comp->sub_meshes()[i];
+                            }
+                        }
+                        return nullptr;
+                    };
+
+                    imgui::table_begin_next_row();
+
+                    {
+                        ImGui::TextUnformatted("Material");
+                        ImGui::TableNextColumn();
+
+                        bool clear = false;
+                        if(imgui::asset_selector(sub_mesh.material.id(), AssetType::Material, "Material", &clear)) {
+                            add_child_widget<AssetSelector>(AssetType::Material)->set_selected_callback(
+                                [=](AssetId asset) {
+                                    if(const auto material = asset_loader().load_res<Material>(asset)) {
+                                        if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {
+                                            undo_stack().push_before_dirty(id);
+                                            sub->material = material.unwrap();
+                                        }
+                                    }
+                                    return true;
+                                });
+                        } else if(clear) {
+                            sub_mesh.material = AssetPtr<Material>();
+                            undo_stack().make_dirty();
+                        }
+                    }
+
+                    imgui::table_begin_next_row();
+
+                    {
+                        ImGui::TextUnformatted("Mesh");
+                        ImGui::TableNextColumn();
+
+                        bool clear = false;
+                        if(imgui::asset_selector(sub_mesh.mesh.id(), AssetType::Mesh, "Mesh", &clear)) {
+                            add_child_widget<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+                                [=](AssetId asset) {
+                                    if(const auto mesh = asset_loader().load_res<StaticMesh>(asset)) {
+                                        if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {
+                                            undo_stack().push_before_dirty(id);
+                                            sub->mesh = mesh.unwrap();
+                                        }
+                                    }
+                                    return true;
+                                });
+                        } else if(clear) {
+                            sub_mesh.mesh = AssetPtr<StaticMesh>();
+                            undo_stack().make_dirty();
+                        }
                     }
                 }
-                return nullptr;
-            };
 
-            imgui::table_begin_next_row();
+                imgui::table_begin_next_row(1);
 
-            {
-                ImGui::TextUnformatted("Material");
-                ImGui::TableNextColumn();
-
-                bool clear = false;
-                if(imgui::asset_selector(sub_mesh.material.id(), AssetType::Material, "Material", &clear)) {
-                    add_child_widget<AssetSelector>(AssetType::Material)->set_selected_callback(
-                        [=](AssetId asset) {
-                            if(const auto material = asset_loader().load_res<Material>(asset)) {
-                                if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {
-                                    undo_stack().push_before_dirty(id);
-                                    sub->material = material.unwrap();
-                                }
-                            }
-                            return true;
-                        });
-                } else if(clear) {
-                    sub_mesh.material = AssetPtr<Material>();
+                if(ImGui::Button("Add sub mesh")) {
+                    static_mesh->sub_meshes().emplace_back();
                     undo_stack().make_dirty();
                 }
+
+                ImGui::EndTable();
             }
 
-            imgui::table_begin_next_row();
-
-            {
-                ImGui::TextUnformatted("Mesh");
-                ImGui::TableNextColumn();
-
-                bool clear = false;
-                if(imgui::asset_selector(sub_mesh.mesh.id(), AssetType::Mesh, "Mesh", &clear)) {
-                    add_child_widget<AssetSelector>(AssetType::Mesh)->set_selected_callback(
-                        [=](AssetId asset) {
-                            if(const auto mesh = asset_loader().load_res<StaticMesh>(asset)) {
-                                if(StaticMeshComponent::SubMesh* sub = find_sub_mesh()) {
-                                    undo_stack().push_before_dirty(id);
-                                    sub->mesh = mesh.unwrap();
-                                }
-                            }
-                            return true;
-                        });
-                } else if(clear) {
-                    sub_mesh.mesh = AssetPtr<StaticMesh>();
-                    undo_stack().make_dirty();
-                }
-            }
-        }
-
-        imgui::table_begin_next_row(1);
-
-        if(ImGui::Button("Add sub mesh")) {
-            static_mesh->sub_meshes().emplace_back();
-            undo_stack().make_dirty();
+            ImGui::Unindent();
         }
     }
 };
 
 struct AtmosphereComponentWidget : public ComponentPanelWidget<AtmosphereComponentWidget, AtmosphereComponent> {
     void on_gui(ecs::EntityId , AtmosphereComponent* component) {
+        if(!ImGui::BeginTable("#properties", 2, table_flags)) {
+            return;
+        }
+        imgui::table_begin_next_row();
+        y_defer(ImGui::EndTable());
 
         ImGui::TextUnformatted("Planet radius");
         ImGui::TableNextColumn();
@@ -391,6 +437,12 @@ struct AtmosphereComponentWidget : public ComponentPanelWidget<AtmosphereCompone
 
 struct TransformableComponentWidget : public ComponentPanelWidget<TransformableComponentWidget, TransformableComponent> {
     void on_gui(ecs::EntityId id, TransformableComponent* component) {
+        if(!ImGui::BeginTable("#properties", 2, table_flags)) {
+            return;
+        }
+        imgui::table_begin_next_row();
+        y_defer(ImGui::EndTable());
+
         auto [pos, rot, scale] = component->transform().decompose();
 
         // position
@@ -477,7 +529,7 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
                 undo_stack().make_dirty();
             }
 
-            const bool is_uniform = (scale.max_component() - scale.min_component()) < math::epsilon<float>;
+            const bool is_uniform = (scale.max_component() - scale.min_component()) <= 2 * math::epsilon<float>;
             if(!is_uniform) {
                 ImGui::SameLine();
                 ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE);
@@ -499,6 +551,12 @@ struct EditorComponentWidget : public ComponentPanelWidget<EditorComponentWidget
     }
 
     void on_gui(ecs::EntityId id, EditorComponent* component) {
+        if(!ImGui::BeginTable("#properties", 2, table_flags)) {
+            return;
+        }
+        imgui::table_begin_next_row();
+        y_defer(ImGui::EndTable());
+
         const core::String& name = component->name();
 
         {

@@ -65,13 +65,6 @@ void ComponentPanel::on_gui() {
     }
 
     {
-        const ImGuiTableFlags table_flags =
-                ImGuiTableFlags_BordersInnerV |
-                // ImGuiTableFlags_BordersInnerH |
-                ImGuiTableFlags_Resizable |
-                ImGuiTableFlags_RowBg;
-
-
         core::FlatHashMap<ecs::ComponentTypeIndex, bool> has_widget;
         for(auto& widget : _widgets) {
             const ecs::ComponentRuntimeInfo rt_info = widget->runtime_info();
@@ -83,11 +76,9 @@ void ComponentPanel::on_gui() {
 
             const char* component_name = fmt_c_str(ICON_FA_PUZZLE_PIECE " %", widget->component_name());
             if(ImGui::CollapsingHeader(component_name)) {
-                if(ImGui::BeginTable("#components", 2, table_flags)) {
-                    imgui::table_begin_next_row();
-                    widget->process_entity(current_world(), id);
-                    ImGui::EndTable();
-                }
+                ImGui::Indent();
+                widget->process_entity(current_world(), id);
+                ImGui::Unindent();
             }
         }
 
