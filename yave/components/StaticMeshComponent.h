@@ -22,12 +22,13 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 #define YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 
-#include "HasLoadableAssetsTag.h"
-
+#include "SystemLinkedComponent.h"
 #include "TransformableComponent.h"
 
-#include <yave/scene/Renderable.h>
 #include <yave/meshes/AABB.h>
+#include <yave/assets/AssetPtr.h>
+#include <yave/scene/Renderable.h>
+#include <yave/systems/AssetLoaderSystem.h>
 
 #include <y/core/Vector.h>
 
@@ -36,7 +37,7 @@ namespace yave {
 class StaticMeshComponent final :
         public Renderable,
         public ecs::RequiredComponents<TransformableComponent>,
-        public HasLoadableAssetsTag<StaticMeshComponent> {
+        public SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem> {
 
     public:
         struct SubMesh {

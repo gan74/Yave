@@ -34,15 +34,6 @@ class Renderable {
         };
 
         using CameraData = uniform::Camera;
-
-        /*virtual ~Renderable() {
-        }
-
-        virtual void render(RenderPassRecorder&, const SceneData&) const = 0;
-
-        virtual void flush_reload() {
-        }*/
-
 };
 
 }

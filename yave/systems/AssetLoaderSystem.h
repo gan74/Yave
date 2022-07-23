@@ -38,6 +38,18 @@ class AssetLoaderSystem : public ecs::System {
 
         core::Span<ecs::EntityId> recently_loaded() const;
 
+
+        template<typename T>
+        static void register_component_type() {
+            static LoadableComponentTypeInfo info = LoadableComponentTypeInfo {
+                &start_loading_components<T>,
+                &update_loading_status<T>,
+                ecs::type_index<T>(),
+                _first_info
+            };
+            _first_info = &info;
+        }
+
     private:
         void run_tick(ecs::EntityWorld& world, bool only_recent);
         void post_load(ecs::EntityWorld& world);
@@ -47,28 +59,13 @@ class AssetLoaderSystem : public ecs::System {
 
         AssetLoader* _loader = nullptr;
 
-
     private:
-        template<typename CRTP>
-        friend class HasLoadableAssetsTag;
-
         struct LoadableComponentTypeInfo {
             void (*start_loading)(ecs::EntityWorld&, AssetLoadingContext&, bool, core::Vector<ecs::EntityId>&) = nullptr;
             void (*update_status)(ecs::EntityWorld&, core::Vector<ecs::EntityId>&, core::Vector<ecs::EntityId>&) = nullptr;
             ecs::ComponentTypeIndex type;
             LoadableComponentTypeInfo* next = nullptr;
         };
-
-        template<typename T>
-        static void register_loadable_component_type() {
-            static LoadableComponentTypeInfo info = LoadableComponentTypeInfo {
-                &start_loading_components<T>,
-                &update_loading_status<T>,
-                ecs::type_index<T>(),
-                _first_info
-            };
-            _first_info = &info;
-        }
 
         template<typename T>
         static core::Span<ecs::EntityId> ids(ecs::EntityWorld& world, bool recent) {
