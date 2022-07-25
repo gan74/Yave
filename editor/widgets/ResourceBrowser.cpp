@@ -143,9 +143,9 @@ void ResourceBrowser::draw_top_bar() {
             const core::String menu_name = fmt("##jumpmenu_%", i);
             if(ImGui::Button(fmt_c_str(ICON_FA_ANGLE_RIGHT "##%", i))) {
                 _jump_menu.make_empty();
-                filesystem()->for_each(full_path(), [&, this](std::string_view f, EntryType type) {
-                        if(type == EntryType::Directory) {
-                            _jump_menu << f;
+                filesystem()->for_each(full_path(), [&, this](const auto& info) {
+                        if(info.type == EntryType::Directory) {
+                            _jump_menu << info.name;
                         }
                     }).ignore();
 
@@ -306,7 +306,12 @@ void ResourceBrowser::update_search() {
                 const bool is_dir = filesystem()->is_directory(full_name).unwrap_or(false);
                 const EntryType type = is_dir ? EntryType::Directory : EntryType::File;
                 if(auto icon = entry_icon(full_name, type)) {
-                    _search_results->emplace_back(Entry{full_name, type, std::move(icon.unwrap())});
+                    _search_results->emplace_back(Entry {
+                        full_name,
+                        type,
+                        std::move(icon.unwrap()),
+                        usize(0)
+                    });
                 }
             }
         } else {

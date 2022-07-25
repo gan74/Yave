@@ -70,6 +70,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
     struct AssetData {
         AssetId id;
         AssetType type;
+        usize file_size;
     };
 
     struct AssetDesc {

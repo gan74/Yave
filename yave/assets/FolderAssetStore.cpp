@@ -173,7 +173,12 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::for_each(std:
 
     for(auto it = _parent->_folders.lower_bound(path); it != _parent->_folders.end(); ++it) {
         if(is_strict_direct_parent(path, *it)) {
-            func(it->sub_str(path.size() + !is_root), EntryType::Directory);
+            const EntryInfo info = {
+                EntryType::Directory,
+                it->sub_str(path.size() + !is_root),
+                0
+            };
+            func(info);
         } else if(!it->starts_with(path)) {
             break;
         }
@@ -181,7 +186,12 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::for_each(std:
 
     for(auto it = _parent->_assets.lower_bound(path); it != _parent->_assets.end(); ++it) {
         if(is_strict_direct_parent(path, it->first)) {
-            func(it->first.sub_str(path.size() + !is_root), EntryType::File);
+            const EntryInfo info = {
+                EntryType::File,
+                it->first.sub_str(path.size() + !is_root),
+                it->second.file_size
+            };
+            func(info);
         } else if(!it->first.starts_with(path)) {
             break;
         }
@@ -739,28 +749,35 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
     usize emergency_id = 1;
 
     const FileSystemModel* fs = FileSystemModel::local_filesystem();
-    const auto result = fs->for_each(_root, [&](std::string_view name, FileSystemModel::EntryType type) {
+    const auto result = fs->for_each(_root, [&](const FileSystemModel::EntryInfo& info) {
         const std::string_view ext = ".desc";
-        if(name.size() < ext.size()) {
+        if(info.name.size() < ext.size()) {
             return;
         }
 
-        const usize size_without_ext = name.size() - ext.size();
-        if(name.substr(size_without_ext) != ext) {
+        const usize size_without_ext = info.name.size() - ext.size();
+        if(info.name.sub_str(size_without_ext) != ext) {
             return;
         }
 
-        const auto full_name = fs->join(_root, name);
-        if(type == FileSystemModel::EntryType::File) {
+        const auto full_name = fs->join(_root, info.name);
+        if(info.type == FileSystemModel::EntryType::File) {
             u64 uid = 0;
-            if(std::from_chars(name.data(), name.data() + size_without_ext, uid, 16).ec != std::errc()) {
+            if(std::from_chars(info.name.data(), info.name.data() + size_without_ext, uid, 16).ec != std::errc()) {
                 return;
             }
             const AssetId id = AssetId::from_id(uid);
             if(auto r = load_desc(id)) {
                 _next_id = std::max(u64(_next_id), uid + 1);
                 AssetDesc desc = r.unwrap();
-                const AssetData data = { id, desc.type };
+                AssetData data = { id, desc.type, 0 };
+
+                if(auto file = io2::File::open(asset_data_file_name(id))) {
+                    data.file_size = file.unwrap().size();
+                } else {
+                    log_msg(fmt("\"%\" has no asset file", desc.name), Log::Error);
+                    return;
+                }
 
                 if(!_assets.emplace(desc.name, data).second) {
                     log_msg(fmt("\"%\" already exists in asset database", desc.name), Log::Error);
@@ -778,7 +795,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
                     }
                 }
             } else {
-                log_msg(fmt("% could not be read", name), Log::Error);
+                log_msg(fmt("% could not be read", info.name), Log::Error);
             }
         }
     });

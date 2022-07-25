@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <y/core/String.h>
 #include <y/core/Vector.h>
 #include <y/core/Result.h>
 
@@ -39,7 +40,13 @@ class FileSystemModel : NonCopyable {
             Unknown
         };
 
-        using for_each_f = std::function<void(std::string_view, EntryType)>;
+        struct EntryInfo {
+            EntryType type = EntryType::Unknown;
+            core::String name;
+            usize file_size = 0;
+        };
+
+        using for_each_f = std::function<void(const EntryInfo&)>;
 
         template<typename T = void>
         using Result = core::Result<T>;

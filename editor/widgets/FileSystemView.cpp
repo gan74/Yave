@@ -99,9 +99,6 @@ core::String FileSystemView::entry_full_name(const Entry& entry) const {
     return filesystem()->join(path(), entry.name);
 }
 
-
-
-
 void FileSystemView::update() {
     y_profile();
 
@@ -115,10 +112,15 @@ void FileSystemView::update() {
 
     const std::string_view path = _current_path;
     if(filesystem()->exists(path).unwrap_or(false)) {
-        filesystem()->for_each(path, [this, path](const auto& name, auto type) {
-                const core::String full_name = filesystem()->join(path, name);
-                if(auto icon = entry_icon(full_name, type)) {
-                    _entries.emplace_back(Entry{name, type, std::move(icon.unwrap())});
+        filesystem()->for_each(path, [this, path](const auto& info) {
+                const core::String full_name = filesystem()->join(path, info.name);
+                if(auto icon = entry_icon(full_name, info.type)) {
+                    _entries.emplace_back(Entry {
+                        info.name,
+                        info.type,
+                        std::move(icon.unwrap()),
+                        info.file_size
+                    });
                 }
             }).ignore();
         std::sort(_entries.begin(), _entries.end());
@@ -139,19 +141,17 @@ void FileSystemView::update() {
     _refresh = false;
 }
 
-
-
 core::Result<core::String> FileSystemView::entry_icon(const core::String&, EntryType type) const {
     switch(type) {
         case EntryType::Directory:
             return core::Ok(core::String(ICON_FA_FOLDER));
-        
+
         case EntryType::File:
             core::Ok(core::String(ICON_FA_FILE_ALT));
-            
+
         case EntryType::Unknown:
             core::Ok(core::String(ICON_FA_QUESTION));
-            
+
         default:
             return core::Err();
     }
@@ -177,40 +177,52 @@ void FileSystemView::on_gui() {
     const bool modify = allow_modify();
     ImGui::BeginChild("##fileentries", ImVec2(), true);
     {
+        const float width = ImGui::GetContentRegionAvail().x;
+        const float size_col_size = ImGui::CalcTextSize("0").x * 16.0f;
+        const float size_col_offset = width > size_col_size + 50.0f ? width - size_col_size : 0.0f;
+
         imgui::alternating_rows_background();
         usize hovered = usize(-1);
-        {
-            const auto parent_path = filesystem()->parent_path(path());
-            if(!_at_root) {
-                if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
-                    if(parent_path) {
-                        set_path(parent_path.unwrap());
-                    }
+
+        const auto parent_path = filesystem()->parent_path(path());
+
+        if(!_at_root) {
+            if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
+                if(parent_path) {
+                    set_path(parent_path.unwrap());
                 }
-                if(modify && parent_path) {
-                    make_drop_target(parent_path.unwrap());
+            }
+            if(modify && parent_path) {
+                make_drop_target(parent_path.unwrap());
+            }
+        }
+
+        for(usize i = 0; i != _entries.size(); ++i) {
+            if(ImGui::Selectable(fmt_c_str("% %##%", _entries[i].icon, _entries[i].name, i), _hovered == i)) {
+                entry_clicked(_entries[i]);
+                break; // break because we might update inside entry_clicked
+            }
+
+            if(modify) {
+                // Is this slow?
+                const core::String full_name = entry_full_name(_entries[i]);
+                make_drop_target(full_name);
+                if(ImGui::BeginDragDropSource()) {
+                    ImGui::SetDragDropPayload(imgui::drag_drop_path_id, full_name.data(), full_name.size() + 1);
+                    ImGui::EndDragDropSource();
                 }
             }
 
-            for(usize i = 0; i != _entries.size(); ++i) {
-                if(ImGui::Selectable(fmt_c_str("% %", _entries[i].icon, _entries[i].name), _hovered == i)) {
-                    entry_clicked(_entries[i]);
-                    break; // break because we might update inside entry_clicked
-                }
+            if(ImGui::IsItemHovered()) {
+                hovered = i;
+            }
 
-                if(modify) {
-                    // Is this slow?
-                    const core::String full_name = entry_full_name(_entries[i]);
-                    make_drop_target(full_name);
-                    if(ImGui::BeginDragDropSource()) {
-                        ImGui::SetDragDropPayload(imgui::drag_drop_path_id, full_name.data(), full_name.size() + 1);
-                        ImGui::EndDragDropSource();
-                    }
+            if(_entries[i].type == EntryType::File) {
+                ImGui::SameLine();
+                if(ImGui::GetCursorPosX() < size_col_offset) {
+                    ImGui::SameLine(size_col_offset);
                 }
-
-                if(ImGui::IsItemHovered()) {
-                    hovered = i;
-                }
+                ImGui::TextUnformatted(fmt_c_str("% KB", (_entries[i].file_size + 1023) / 1024, i));
             }
         }
 

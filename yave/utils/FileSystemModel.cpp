@@ -104,15 +104,14 @@ FileSystemModel::Result<bool> LocalFileSystemModel::exists(std::string_view path
     return core::Err();
 }
 
-static FileSystemModel::EntryType entry_type_for_path(const fs::path path) {
-    const fs::file_status status = fs::status(path);
+static FileSystemModel::EntryType entry_type_for_status(fs::file_status status) {
     switch(status.type()) {
         case fs::file_type::regular:
             return FileSystemModel::EntryType::File;
-            
+
         case fs::file_type::directory:
             return FileSystemModel::EntryType::Directory;
-            
+
         default:
             return FileSystemModel:: EntryType::Unknown;
     }
@@ -120,7 +119,7 @@ static FileSystemModel::EntryType entry_type_for_path(const fs::path path) {
 
 FileSystemModel::Result<FileSystemModel::EntryType> LocalFileSystemModel::entry_type(std::string_view path) const {
     try {
-        return core::Ok(entry_type_for_path(fs::path(path)));
+        return core::Ok(entry_type_for_status(fs::status(fs::path(path))));
     } catch(...) {
     }
     return core::Err();
@@ -151,15 +150,19 @@ FileSystemModel::Result<core::String> LocalFileSystemModel::absolute(std::string
 
 FileSystemModel::Result<> LocalFileSystemModel::for_each(std::string_view path, const for_each_f& func) const {
     try {
-        core::String buffer;
-        for(auto& dir : fs::directory_iterator(path)) {
+        EntryInfo info = {};
+        for(auto&& dir : fs::directory_iterator(path)) {
             const fs::path p = dir.path().filename();
-            
+
             Y_TODO(utf something?)
-            buffer.make_empty();
-            std::transform(p.native().begin(), p.native().end(), std::back_inserter(buffer), [](auto c) -> char { return static_cast<char>(c); });
-            
-            func(buffer, entry_type_for_path(dir.path()));
+            info.name.make_empty();
+            std::transform(p.native().begin(), p.native().end(), std::back_inserter(info.name), [](auto c) -> char { return static_cast<char>(c); });
+
+            info.type = entry_type_for_status(dir.status());
+
+            info.file_size = info.type == EntryType::File ? dir.file_size() : 0;
+
+            func(info);
         }
         return core::Ok();
     } catch(...) {

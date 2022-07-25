@@ -49,6 +49,8 @@ class FileSystemView : public Widget {
             EntryType type;
             core::String icon;
 
+            usize file_size;
+
             bool operator<(const Entry& other) const {
                 return std::tie(type, name) < std::tie(other.type, other.name);
             }
