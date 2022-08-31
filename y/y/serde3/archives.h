@@ -931,9 +931,7 @@ class ReadableArchive final {
                 return core::Err(Error(ErrorType::IOError));
             }
             bool read_members = true;
-#ifdef Y_SLIM_POD_HEADER
             read_members = header.type.has_serde();
-#endif
             if(read_members) {
                 if(!_file.read_one(header.members)) {
                     return core::Err(Error(ErrorType::IOError));
