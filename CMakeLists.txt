@@ -36,7 +36,6 @@ endfunction(optimize_shaders)
 option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
 option(YAVE_TRACY_PROFILING "Use Tracy profiling" ON)
-option(YAVE_BUILD_SHARED "Build as shared library" OFF)
 option(YAVE_UNITY_BUILD "Force unity build" OFF)
 
 
@@ -45,22 +44,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 # See note in y
 # set(CMAKE_CXX_EXTENSIONS OFF)
-
-
-
-
-#Compiler specific stuff
-# Shitty hack to use lld when using MinGW to avoid long link times
-if(MINGW)
-    option(YAVE_USE_LLD "Use LLD" OFF)
-    if(YAVE_USE_LLD)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=lld")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fuse-ld=lld")
-        message("Using LLD instead of MinGW linker")
-    endif()
-endif()
-
-
 
 
 
@@ -122,12 +105,46 @@ if(YAVE_UNITY_BUILD)
 endif()
 
 
-if(YAVE_BUILD_YAVE)
-    if(YAVE_BUILD_SHARED)
-        add_library(yave SHARED ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
-    else()
-        add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
+
+# ---------------------------------- LuaJIT ----------------------------------
+set(LUA_DIR ${CMAKE_SOURCE_DIR}/external/LuaJIT)
+set(LUA_SOURCE_DIR ${LUA_DIR}/src)
+
+if(WIN32)
+    set(LUA_SHARED_OBJECT ${LUA_SOURCE_DIR}/lua51.dll)
+else()
+    set(LUA_SHARED_OBJECT ${LUA_SOURCE_DIR}/lua51.so)
+endif()
+
+set(LUA_LIB_FILE ${LUA_SHARED_OBJECT})
+
+if(MSVC)
+    add_custom_command(OUTPUT build-luajit COMMAND cmd /c ${LUA_SOURCE_DIR}/msvcbuild.bat WORKING_DIRECTORY ${LUA_SOURCE_DIR})
+    set(LUA_LIB_FILE ${LUA_SOURCE_DIR}/lua51.lib)
+else()
+    set(MAKE_CMD make)
+    if(MINGW)
+        set(MAKE_CMD mingw32-make)
     endif()
+    add_custom_command(OUTPUT build-luajit COMMAND ${MAKE_CMD} WORKING_DIRECTORY ${LUA_DIR})
+endif()
+
+add_custom_target(build-luajit-target DEPENDS build-luajit)
+add_custom_command( TARGET build-luajit-target POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${LUA_SHARED_OBJECT} ${CMAKE_CURRENT_BINARY_DIR})
+
+add_library(luajit STATIC IMPORTED GLOBAL)
+add_dependencies(luajit build-luajit-target)
+set_target_properties(luajit PROPERTIES IMPORTED_LOCATION ${LUA_LIB_FILE})
+
+add_executable(lua-test "test.cpp")
+target_link_libraries(lua-test luajit)
+
+
+
+# ---------------------------------- Yave ----------------------------------
+
+if(YAVE_BUILD_YAVE)
+    add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
 
     if(UNIX)
         target_link_libraries(yave xcb)
@@ -148,6 +165,8 @@ if(YAVE_BUILD_YAVE)
     if(NOT MSVC)
         target_link_libraries(yave stdc++fs)
     endif()
+
+    target_link_libraries(yave luajit)
 
     add_custom_target(shaders COMMAND glslc -c --target-env=vulkan1.2 ${SHADER_FILES})
     optimize_shaders(shaders)
