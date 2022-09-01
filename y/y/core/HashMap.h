@@ -407,9 +407,11 @@ class FlatHashMap : Hasher, Equal {
                     const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
                     const State& state = _states[index];
                     if(!state.is_full()) {
-                        best_index = index;
                         if(state.is_empty_strict()) {
-                            return {best_index, h};
+                            return {index, h};
+                        }
+                        if(best_index == invalid_index) {
+                            best_index = index;
                         }
                     } else if(state.is_hash(h) && equal(_entries[index].key(), key)) {
                         return {index, h};
