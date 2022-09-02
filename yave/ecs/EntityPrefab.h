@@ -44,7 +44,7 @@ class EntityPrefab {
             return _components;
         }
 
-        y_reflect(_components)
+        y_reflect(EntityPrefab, _components)
 
     private:
         core::Vector<std::unique_ptr<ComponentBoxBase>> _components;

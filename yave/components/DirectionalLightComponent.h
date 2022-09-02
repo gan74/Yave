@@ -49,7 +49,7 @@ class DirectionalLightComponent final {
         float& cascade_distance();
         float cascade_distance() const;
 
-        y_reflect(_color, _direction, _intensity, _cast_shadow, _shadow_lod, _cascade_distance)
+        y_reflect(DirectionalLightComponent, _color, _direction, _intensity, _cast_shadow, _shadow_lod, _cascade_distance)
 
     private:
         math::Vec3 _color = math::Vec3{1.0f};

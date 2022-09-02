@@ -62,7 +62,7 @@ class ImageData : NonCopyable {
 
         const u8* data() const;
 
-        y_reflect(_size, _format, _mips, _data)
+        y_reflect(ImageData, _size, _format, _mips, _data)
 
     private:
         math::Vec3ui _size = math::Vec3ui(0, 0, 1);

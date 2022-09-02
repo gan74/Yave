@@ -47,7 +47,7 @@ SOFTWARE.
     } while(false)
 
 
-#define y_create_named_object(t, name) NamedObject{t, name, y_reflect_create_item_name_hash(name)}
+#define y_create_named_object(t, name) NamedObject{t, name, y_reflect_name_hash(name)}
 
 namespace y {
 namespace serde3 {

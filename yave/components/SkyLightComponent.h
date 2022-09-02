@@ -44,7 +44,7 @@ class SkyLightComponent final : public SystemLinkedComponent<SkyLightComponent, 
         bool update_asset_loading_status();
         void load_assets(AssetLoadingContext& loading_ctx);
 
-        y_reflect(_probe, _intensity, _display_sky)
+        y_reflect(SkyLightComponent, _probe, _intensity, _display_sky)
 
     private:
         AssetPtr<IBLProbe> _probe;

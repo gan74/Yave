@@ -72,7 +72,7 @@ class SimpleMaterialData {
 
         bool has_emissive() const;
 
-        y_reflect(_textures, _constants, _alpha_tested)
+        y_reflect(SimpleMaterialData, _textures, _constants, _alpha_tested)
 
     private:
         std::array<AssetId, texture_count> texture_ids() const;

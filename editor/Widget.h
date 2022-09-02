@@ -58,16 +58,13 @@ class Widget : NonMovable {
 
         void draw_gui_inside();
 
-        // y_reflect(_title_with_id, _title, _id)
-        // y_serde3_poly_base(Widget)
-
     protected:
         virtual void on_gui();
         virtual bool before_gui();
         virtual void after_gui();
 
         virtual bool should_keep_alive() const;
-        
+
         math::Vec2ui content_size() const;
 
         void set_flags(int flags);

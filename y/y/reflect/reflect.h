@@ -36,7 +36,6 @@ SOFTWARE.
 namespace y {
 namespace reflect {
 
-
 template<typename T>
 struct NamedObject {
     T& object;
@@ -51,17 +50,38 @@ struct NamedObject {
     }
 };
 
+template<typename T, typename M>
+struct NamedMember {
+    M T::* member;
+    const std::string_view name;
+    const u32 name_hash;
+
+    inline constexpr NamedMember(M T::* m, std::string_view n, u32 h) : member(m), name(n), name_hash(h) {
+    }
+
+    inline constexpr const M& get(const T& obj) const {
+        return obj.*member;
+    }
+
+    inline constexpr M& get(T& obj) const {
+        return obj.*member;
+    }
+
+    inline constexpr NamedObject<M> make_obj(T& obj) const {
+        return NamedObject<M>(obj.*member, name, name_hash);
+    }
+};
+
 namespace detail {
 
 template<usize I, typename Tpl, typename F>
 inline void explore_member(Tpl&& tpl, F&& func) {
     if constexpr(I < std::tuple_size_v<std::decay_t<Tpl>>) {
         auto&& elem = std::get<I>(tpl);
-        func(elem.name, elem.object);
+        func(elem.name, elem.member);
         explore_member<I + 1>(tpl, func);
     }
 }
-
 
 template<typename T, typename F>
 void explore_one(T&& t, F&& func);
@@ -81,19 +101,19 @@ inline void explore_tuple(Tpl&& tpl, F&& func) {
     }
 }
 
-template<usize I, typename Tpl, typename F>
-inline void explore_named_tuple(Tpl&& tpl, F&& func) {
+template<usize I, typename T, typename Tpl, typename F>
+inline void explore_named_tuple(T&& t, Tpl&& tpl, F&& func) {
     if constexpr(I < std::tuple_size_v<std::decay_t<Tpl>>) {
-        explore_one(std::get<I>(tpl).object, func);
-        explore_named_tuple<I + 1>(tpl, func);
+        explore_one(std::get<I>(tpl).get(t), func);
+        explore_named_tuple<I + 1>(t, tpl, func);
     }
 }
 
 template<typename T, typename F>
 void explore_one(T&& t, F&& func) {
     if constexpr(has_reflect_v<T>) {
-        auto elems = t._y_reflect();
-        explore_named_tuple<0>(elems, func);
+        auto elems = t._y_reflect_static();
+        explore_named_tuple<0>(t, elems, func);
     } else if constexpr(is_tuple_v<T>) {
         explore_tuple<0>(t);
     } else if constexpr(is_std_ptr_v<T> || std::is_pointer_v<T>) {
@@ -113,11 +133,10 @@ inline void explore_recursive(T&& t, F&& func) {
     detail::explore_one(t, func);
 }
 
-
 template<typename T, typename F>
-inline void explore_members(T&& t, F&& func) {
+inline void explore_members(F&& func) {
     if constexpr(has_reflect_v<T>) {
-        auto elems = t._y_reflect();
+        auto elems = T::_y_reflect_static();
         detail::explore_member<0>(elems, func);
     }
 }
@@ -126,17 +145,26 @@ inline void explore_members(T&& t, F&& func) {
 Y_TODO(manage inherited objects)
 // https://godbolt.org/z/b6j3Ts
 
-#define y_reflect_create_item_name_hash(name) y::force_ct<y::ct_str_hash(name)>()
+#define y_reflect_name_hash(name) y::force_ct<y::ct_str_hash(name)>()
+#define y_reflect_create_member(member) y::reflect::NamedMember{&_y_refl_self_type::member, #member,  y_reflect_name_hash(#member)},
 
-#define y_reflect_create_item(object) y::reflect::NamedObject{object, #object, y_reflect_create_item_name_hash(#object)},
+#define y_reflect_empty() template<typename = void> auto _y_reflect_static() const { return std::tuple<>{}; }
 
+#define y_reflect_static(Type, ...) template<typename = void> static auto _y_reflect_static() {     \
+    using _y_refl_self_type = Type;                                                                 \
+    return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_member, __VA_ARGS__))};              \
+}
+
+
+Y_TODO(get rid of this)
+#define y_reflect_create_item(object) y::reflect::NamedObject{object, #object, y_reflect_name_hash(#object)},
 #define y_reflect_refl_qual(qual, ...) template<typename = void> auto _y_reflect() qual { return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_item, __VA_ARGS__))}; }
 
-#define y_reflect_empty() template<typename = void> auto _y_reflect() const { return std::tuple<>{}; }
-
-#define y_reflect(...)                              \
-    y_reflect_refl_qual(/* */, __VA_ARGS__)         \
+#define y_reflect(Type, ...)                    \
+    y_reflect_static(Type, __VA_ARGS__)         \
+    y_reflect_refl_qual(/* */, __VA_ARGS__)     \
     y_reflect_refl_qual(const, __VA_ARGS__)
+
 
 
 }

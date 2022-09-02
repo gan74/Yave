@@ -49,14 +49,14 @@ class MeshData {
 
         bool has_skeleton() const;
 
-        y_reflect(_aabb, _vertices, _triangles, _skeleton)
+        y_reflect(MeshData, _aabb, _vertices, _triangles, _skeleton)
 
     private:
         struct SkeletonData {
             core::Vector<SkinWeights> skin;
             core::Vector<Bone> bones;
 
-            y_reflect(skin, bones)
+            y_reflect(SkeletonData, skin, bones)
         };
 
         AABB _aabb;

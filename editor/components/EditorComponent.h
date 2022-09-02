@@ -56,7 +56,7 @@ class EditorComponent {
         AssetId parent_prefab() const;
         bool is_prefab() const;
 
-        y_reflect(_name, _prefab, _hide_in_editor, _parent, _children, _is_collection)
+        y_reflect(EditorComponent, _name, _prefab, _hide_in_editor, _parent, _children, _is_collection)
 
     private:
         core::String _name = "Unnamed entity";

@@ -37,7 +37,7 @@ struct EditorSettings {
 
     float max_fps = 60.0f;
 
-    y_reflect(world_file, asset_store, max_fps)
+    y_reflect(EditorSettings, world_file, asset_store, max_fps)
 };
 
 struct CameraSettings {
@@ -51,7 +51,7 @@ struct CameraSettings {
     // Other camera
     Key center_on_obj = Key::H;
 
-    y_reflect(trackball_sensitivity, dolly_sensitivity,
+    y_reflect(CameraSettings, trackball_sensitivity, dolly_sensitivity,
               center_on_obj)
 
 };
@@ -62,7 +62,7 @@ struct UiSettings {
 
     bool draw_fps_counter = true;
 
-    y_reflect(change_gizmo_mode, change_gizmo_space, draw_fps_counter)
+    y_reflect(UiSettings, change_gizmo_mode, change_gizmo_space, draw_fps_counter)
 };
 
 struct PerfSettings {
@@ -76,7 +76,7 @@ struct DebugSettings {
     bool display_hidden_entities = false;
     bool display_debug_drawer = true;
 
-    y_reflect(entity_count, entity_spacing, display_octree, display_selected_bbox, display_hidden_entities, display_debug_drawer)
+    y_reflect(DebugSettings, entity_count, entity_spacing, display_octree, display_selected_bbox, display_hidden_entities, display_debug_drawer)
 };
 
 
@@ -91,7 +91,7 @@ class Settings {
         PerfSettings perf;
         DebugSettings debug;
 
-        y_reflect(editor, camera, ui, perf, debug)
+        y_reflect(Settings, editor, camera, ui, perf, debug)
 };
 
 }

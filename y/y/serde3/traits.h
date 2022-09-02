@@ -79,7 +79,7 @@ static constexpr bool has_serde3_ptr_poly_v = is_detected_v<detail::has_serde3_p
 template<typename T>
 constexpr auto members(T&& t) {
     if constexpr(has_serde3_v<T>) {
-        return t._y_reflect();
+        return t._y_reflect_static();
     } else {
         return std::tuple<>{};
     }

@@ -39,7 +39,7 @@ class EntityScene {
             return _prefabs;
         }
 
-        y_reflect(_prefabs);
+        y_reflect(EntityScene, _prefabs);
 
     private:
         core::Vector<EntityPrefab> _prefabs;

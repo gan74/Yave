@@ -53,8 +53,6 @@ class UiManager : NonMovable {
 
         void close_all();
 
-        // y_reflect(_widgets);
-
     private:
         void update_fps_counter();
         void draw_fps_counter();

@@ -133,7 +133,7 @@ file(GLOB_RECURSE SHADER_LIBS
 build_luajit(luajit)
 
 add_executable(lua-test "test.cpp")
-target_link_libraries(lua-test luajit)
+target_link_libraries(lua-test luajit y)
 
 
 if(YAVE_UNITY_BUILD)

@@ -56,7 +56,7 @@ class TransformableComponent final {
 
         const OctreeNode* octree_node() const;
 
-        y_reflect(_transform)
+        y_reflect(TransformableComponent, _transform)
 
     private:
         friend class Octree;

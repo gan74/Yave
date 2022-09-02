@@ -36,7 +36,7 @@ class RayTracingComponent final {
         RayTracingComponent(const StaticMesh& mesh);
         RayTracingComponent(const StaticMeshComponent& mesh);
 
-        y_reflect(_dummy);
+        y_reflect(RayTracingComponent, _dummy);
 
     private:
         RayTracing::AccelerationStructure _blas;
