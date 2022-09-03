@@ -134,7 +134,7 @@ constexpr u32 header_type_hash() {
         return hash | 0x02;
     }
 
-    u32 hash = u32(ct_type_hash<naked>());
+    u32 hash = u32(ct_type_hash_v<naked>);
     if constexpr(has_serde3_v<T>) {
         hash |= 0x01;
     } else {
@@ -166,9 +166,9 @@ constexpr void hash_members(u32& hash, const std::tuple<NamedMember<T, Args>...>
 }
 
 template<typename T>
-constexpr MembersHeader build_members_header(NamedObject<T> obj) {
+constexpr MembersHeader build_members_header() {
     u32 member_hash = 0xafbbc3d1;
-    hash_members<0>(member_hash, members(obj.object));
+    hash_members<0>(member_hash, list_members<T>());
     return MembersHeader {
         member_hash,
         u32(member_count<T>()),
@@ -181,7 +181,7 @@ constexpr auto build_header(NamedObject<T> obj) {
     if constexpr(has_serde3_v<T>) {
         return ObjectHeader {
             build_type_header(obj),
-            build_members_header(obj)
+            build_members_header<T>()
         };
     } else {
         return TrivialHeader {

@@ -107,6 +107,10 @@ inline constexpr u32 ct_str_hash(std::string_view str) {
     }
     return hash;
 }
+
+template<typename T>
+static constexpr u64 ct_type_hash_v = ct_type_hash<T>();
+
 }
 
 template<typename A, typename B>

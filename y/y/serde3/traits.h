@@ -76,23 +76,6 @@ template<typename T>
 static constexpr bool has_serde3_ptr_poly_v = is_detected_v<detail::has_serde3_ptr_poly_t, T>;
 
 
-template<typename T>
-constexpr auto members(T&& t) {
-    if constexpr(has_serde3_v<T>) {
-        return t._y_reflect_static();
-    } else {
-        return std::tuple<>{};
-    }
-}
-
-template<typename T>
-constexpr usize member_count() {
-    return std::tuple_size_v<decltype(members(std::declval<T&>()))>;
-}
-
-
-
-
 
 namespace detail {
 
