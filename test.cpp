@@ -7,10 +7,8 @@
 #include <y/utils/log.h>
 
 
-
 using namespace y;
 using namespace yave::script;
-
 
 struct MetaTest {
     int foo = 4;
@@ -20,6 +18,9 @@ struct MetaTest {
     y_reflect(MetaTest, foo, blap, name);
 };
 
+core::String floop(int z, float x) {
+    return fmt("a returned string (%, %)", z, x);
+}
 
 int main(int, char**) {
     VM vm = VM::create();
@@ -27,6 +28,7 @@ int main(int, char**) {
     vm.bind_type<MetaTest>();
     lua_register(vm.state(), "new", lua::create_object<MetaTest>);
 
+    vm.set_global("globo", lua::bound_function<floop>);
 
     const char* code = R"#(
         local obj = new()
@@ -34,10 +36,13 @@ int main(int, char**) {
         print(obj.blap)
         obj.blap = 123;
         print(obj.blap)
+        print(obj[2345])
 
         print(obj.name)
         obj.name = 'new name'
         print(obj.name)
+
+        print(globo(999, 3.24))
     )#";
 
     if(auto r = vm.run(code); r.is_error()) {

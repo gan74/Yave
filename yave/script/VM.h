@@ -43,9 +43,17 @@ class VM : NonCopyable {
         VM(VM&& other);
         VM& operator=(VM&& other);
 
+
         static VM create();
 
+
         core::Result<void, Error> run(const char* code);
+
+        template<typename T>
+        void set_global(const char* name, const T& value) {
+            lua::push_value(_l, value);
+            lua_setglobal(_l, name);
+        }
 
         template<typename T>
         void bind_type() {
@@ -53,6 +61,8 @@ class VM : NonCopyable {
         }
 
 
+
+    public:
         lua_State* state() {
             return _l;
         }

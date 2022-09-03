@@ -30,83 +30,110 @@ SOFTWARE.
 
 #include <external/LuaJIT/src/lua.hpp>
 
+
 namespace yave {
 namespace script {
 namespace lua {
 
+namespace detail {
+static inline std::string_view check_string_view(lua_State* l, int idx) {
+    usize len = 0;
+    const char* name_ptr = luaL_checklstring(l, idx, &len);
+    return std::string_view(name_ptr, len);
+}
+
 template<typename T>
-static inline void push_value(lua_State* l, const T& value) {
-    if constexpr(std::is_same_v<T, const char*>) {
+static inline void get_arg_value(lua_State* l, T& value, int idx = -1) {
+    if constexpr(std::is_same_v<T, core::String>) {
+        value = check_string_view(l, idx);
+    } else if constexpr(std::is_floating_point_v<T>) {
+        value = T(luaL_checknumber(l, idx));
+    } else {
+        static_assert(std::is_integral_v<T>, "Unable to get value");
+        value = T(luaL_checkinteger(l, idx));
+    }
+}
+
+template<int I, typename Tpl>
+static inline void collect_args_internal(lua_State* l, Tpl& args) {
+    if constexpr(I < std::tuple_size_v<Tpl>) {
+        get_arg_value(l, std::get<I>(args), I + 1);
+        collect_args_internal<I + 1>(l, args);
+    }
+}
+
+template<typename Tpl>
+Tpl collect_args(lua_State* l) {
+    Tpl args = {};
+    collect_args_internal<0>(l, args);
+    return args;
+}
+}
+
+
+
+template<typename T>
+void push_value(lua_State* l, const T& value) {
+    if constexpr(std::is_trivially_constructible_v<const char*, T>) {
         lua_pushstring(l, value);
+    } else if constexpr(std::is_convertible_v<T, lua_CFunction>) {
+        lua_pushcfunction(l, value);
     } else if constexpr(std::is_same_v<T, core::String>) {
         lua_pushstring(l, value.data());
     } else if constexpr(std::is_floating_point_v<T>) {
         lua_pushnumber(l, lua_Number(value));
-    } else if constexpr(std::is_integral_v<T>) {
+    } else {
+        static_assert(std::is_integral_v<T>, "Unable to push value");
         lua_pushinteger(l, lua_Integer(value));
-    } else {
-        y_fatal("Unable to push value");
     }
 }
 
 template<typename T>
-static inline void pop_value(lua_State* l, T& value) {
-    if constexpr(std::is_same_v<T, core::String>) {
-        value = lua_tostring(l, -1);
-    } else if constexpr(std::is_floating_point_v<T>) {
-        value = T(lua_tonumber(l, -1));
-    } else if constexpr(std::is_integral_v<T>) {
-        value = T(lua_tointeger(l, -1));
-    } else {
-        y_fatal("Unable to pop value");
-    }
-}
-
-template<typename T>
-int get_member(lua_State* l) {
-    const std::string_view name = lua_tostring(l, -1);
-    const T* ptr = static_cast<const T*>(lua_touserdata(l, -2));
-
-    int ret = 0;
-    reflect::explore_members<T>([&](std::string_view member_name, auto member) {
-        if(member_name == name) {
-            y_debug_assert(!ret);
-            ret = 1;
-            push_value(l, ptr->*member);
-        }
-    });
-
-    return ret;
-}
-
-template<typename T>
-int set_member(lua_State* l) {
-    const std::string_view name = lua_tostring(l, -2);
-    T* ptr = static_cast<T*>(lua_touserdata(l, -3));
-
-    reflect::explore_members<T>([&](std::string_view member_name, auto member) {
-        if(member_name == name) {
-            pop_value(l, ptr->*member);
-        }
-    });
-
-    return 0;
-}
-
-template<typename T>
-void* registry_id() {
-    return reinterpret_cast<void*>(&registry_id<T>);
-}
-
-template<typename T>
-static inline void create_type_metatable(lua_State* l) {
+void create_type_metatable(lua_State* l) {
     static_assert(reflect::has_reflect_v<T>);
 
+    auto get = [](lua_State* l) -> int {
+        const std::string_view name = detail::check_string_view(l, -1);
+        const T* ptr = static_cast<const T*>(lua_touserdata(l, -2));
+
+        if(!ptr) {
+            return 0;
+        }
+
+        int ret = 0;
+        reflect::explore_members<T>([&](std::string_view member_name, auto member) {
+            if(member_name == name) {
+                y_debug_assert(!ret);
+                ret = 1;
+                push_value(l, ptr->*member);
+            }
+        });
+
+        return ret;
+    };
+
+    auto set = [](lua_State* l) -> int {
+        const std::string_view name = detail::check_string_view(l, -2);
+        T* ptr = static_cast<T*>(lua_touserdata(l, -3));
+
+        if(!ptr) {
+            return 0;
+        }
+
+        reflect::explore_members<T>([&](std::string_view member_name, auto member) {
+            if(member_name == name) {
+                detail::get_arg_value(l, ptr->*member);
+            }
+        });
+
+        return 0;
+    };
+
     lua_createtable(l, 0, 2);
-    lua_pushcfunction(l, get_member<T>);
+    lua_pushcfunction(l, get);
     lua_setfield(l, -2, "__index");
 
-    lua_pushcfunction(l, set_member<T>);
+    lua_pushcfunction(l, set);
     lua_setfield(l, -2, "__newindex");
 
     lua_pushstring(l, T::_y_reflect_type_name);
@@ -115,7 +142,7 @@ static inline void create_type_metatable(lua_State* l) {
     lua_pushvalue(l, -2);
     lua_setfield(l, -2, "__metatable");
 
-    lua_pushlightuserdata(l, registry_id<T>());
+    lua_pushlightuserdata(l, create_type_metatable<T>);
     lua_pushvalue(l, -2);
     lua_rawset(l, LUA_REGISTRYINDEX);
 }
@@ -126,12 +153,25 @@ int create_object(lua_State* l) {
     void* ptr = static_cast<void*>(new T());
     lua_pushlightuserdata(l, ptr);
 
-    lua_pushlightuserdata(l, registry_id<T>());
+    lua_pushlightuserdata(l, create_type_metatable<T>);
     lua_rawget(l, LUA_REGISTRYINDEX);
     y_debug_assert(lua_istable(l, -1));
 
     lua_setmetatable(l, -2);
     return 1;
+}
+
+template<auto F>
+int bound_function(lua_State* l) {
+    using traits = function_traits<decltype(F)>;
+    auto args = detail::collect_args<traits::argument_pack>(l);
+    if constexpr(std::is_void_v<typename traits::return_type>) {
+        std::apply(F, std::move(args));
+        return 0;
+    } else {
+        push_value(l, std::apply(F, std::move(args)));
+        return 1;
+    }
 }
 
 }
