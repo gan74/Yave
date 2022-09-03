@@ -150,7 +150,9 @@ Y_TODO(manage inherited objects)
 
 #define y_reflect_empty() template<typename = void> auto _y_reflect_static() const { return std::tuple<>{}; }
 
-#define y_reflect_static(Type, ...) template<typename = void> static auto _y_reflect_static() {     \
+#define y_reflect_static(Type, ...)                                                                 \
+static constexpr const char* _y_reflect_type_name = #Type;                                          \
+template<typename = void> static auto _y_reflect_static() {                                         \
     using _y_refl_self_type = Type;                                                                 \
     return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_member, __VA_ARGS__))};              \
 }
