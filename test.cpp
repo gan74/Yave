@@ -10,12 +10,18 @@
 using namespace y;
 using namespace yave::script;
 
+struct Floop {
+
+};
+
 struct MetaTest {
     int foo = 4;
     int blap = 904;
+    Floop fl;
     core::String name = "test obj";
+    bool b = false;
 
-    y_reflect(MetaTest, foo, blap, name);
+    y_reflect(MetaTest, foo, blap, fl, name, b);
 };
 
 core::String floop(int z, float x) {
@@ -31,13 +37,15 @@ int main(int, char**) {
 
     const char* code = R"#(
         local obj = MetaTest.new(1)
-
         print(obj)
+        local copy = obj
+        print(copy)
         assert(obj.blap == 904)
         assert(obj.name == "test obj")
         obj.name = "newname"
         assert(obj.name == "newname")
         assert(obj.doesntexist == nil)
+        print(obj.b)
 
         print(globo(999, 3.24))
     )#";

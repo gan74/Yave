@@ -35,6 +35,44 @@ namespace yave {
 namespace script {
 namespace lua {
 
+template<typename T>
+static constexpr bool can_push_value_v =
+        std::is_same_v<T, bool> ||
+        std::is_trivially_constructible_v<const char*, T> ||
+        std::is_convertible_v<T, lua_CFunction> ||
+        std::is_same_v<T, core::String> ||
+        std::is_floating_point_v<T> ||
+        std::is_integral_v<T>;
+
+template<typename T>
+static constexpr bool can_get_value_v =
+        std::is_same_v<T, core::String> ||
+        std::is_floating_point_v<T> ||
+        std::is_integral_v<T>;
+
+template<typename T>
+void push_value(lua_State* l, const T& value) {
+    static_assert(can_push_value_v<T>, "Unable to push value");
+
+    if constexpr(std::is_same_v<T, bool>) {
+        lua_pushboolean(l, value ? 1 : 0);
+    } else if constexpr(std::is_trivially_constructible_v<const char*, T>) {
+        lua_pushstring(l, value);
+    } else if constexpr(std::is_convertible_v<T, lua_CFunction>) {
+        lua_pushcfunction(l, value);
+    } else if constexpr(std::is_same_v<T, core::String>) {
+        lua_pushstring(l, value.data());
+    } else if constexpr(std::is_floating_point_v<T>) {
+        lua_pushnumber(l, lua_Number(value));
+    } else {
+        static_assert(std::is_integral_v<T>);
+        lua_pushinteger(l, lua_Integer(value));
+    }
+}
+
+
+
+
 namespace detail {
 
 template<typename T>
@@ -57,12 +95,14 @@ static inline std::string_view check_string_view(lua_State* l, int idx) {
 
 template<typename T>
 static inline void get_arg_value(lua_State* l, T& value, int idx = -1) {
+    static_assert(can_get_value_v<T>, "Unable to get value");
+
     if constexpr(std::is_same_v<T, core::String>) {
         value = check_string_view(l, idx);
     } else if constexpr(std::is_floating_point_v<T>) {
         value = T(luaL_checknumber(l, idx));
     } else {
-        static_assert(std::is_integral_v<T>, "Unable to get value");
+        static_assert(std::is_integral_v<T>);
         value = T(luaL_checkinteger(l, idx));
     }
 }
@@ -95,24 +135,10 @@ template<typename T>
 void reg_create_func_for_type() {}
 }
 
-template<typename T>
-using CreateObjectFunc = T (*)(lua_State*);
+
 
 template<typename T>
-void push_value(lua_State* l, const T& value) {
-    if constexpr(std::is_trivially_constructible_v<const char*, T>) {
-        lua_pushstring(l, value);
-    } else if constexpr(std::is_convertible_v<T, lua_CFunction>) {
-        lua_pushcfunction(l, value);
-    } else if constexpr(std::is_same_v<T, core::String>) {
-        lua_pushstring(l, value.data());
-    } else if constexpr(std::is_floating_point_v<T>) {
-        lua_pushnumber(l, lua_Number(value));
-    } else {
-        static_assert(std::is_integral_v<T>, "Unable to push value");
-        lua_pushinteger(l, lua_Integer(value));
-    }
-}
+using CreateObjectFunc = T (*)(lua_State*);
 
 template<auto F>
 int bind_function(lua_State* l) {
@@ -143,10 +169,12 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
 
         int ret = 0;
         reflect::explore_members<T>([&](std::string_view member_name, auto member) {
-            if(member_name == name) {
-                y_debug_assert(!ret);
-                ret = 1;
-                push_value(l, ptr->*member);
+            if constexpr(can_push_value_v<remove_cvref_t<decltype(ptr->*member)>>) {
+                if(member_name == name) {
+                    y_debug_assert(!ret);
+                    ret = 1;
+                    push_value(l, ptr->*member);
+                }
             }
         });
 
@@ -162,8 +190,10 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
         }
 
         reflect::explore_members<T>([&](std::string_view member_name, auto member) {
-            if(member_name == name) {
-                detail::get_arg_value(l, ptr->*member);
+            if constexpr(can_get_value_v<remove_cvref_t<decltype(ptr->*member)>>) {
+                if(member_name == name) {
+                    detail::get_arg_value(l, ptr->*member);
+                }
             }
         });
 
