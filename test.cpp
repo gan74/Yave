@@ -33,11 +33,11 @@ int main(int, char**) {
         local obj = MetaTest.new(1)
 
         print(obj)
-        print(obj.blap)
-        print(obj.name)
+        assert(obj.blap == 904)
+        assert(obj.name == "test obj")
         obj.name = "newname"
-        print(obj.name)
-        print(obj.doesntexist)
+        assert(obj.name == "newname")
+        assert(obj.doesntexist == nil)
 
         print(globo(999, 3.24))
     )#";
