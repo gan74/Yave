@@ -38,7 +38,9 @@ VM VM::create() {
 
     VM vm;
 
-    vm._l = lua_open();
+    vm._l = luaL_newstate();
+    // vm._l = lua_newstate(nullptr, nullptr);
+
     luaL_openlibs(vm._l);
 
     return vm;

@@ -36,12 +36,11 @@ namespace script {
 namespace lua {
 
 namespace detail {
-struct no_reload_tag {};
 
 template<typename T>
 struct UData {
-    // T* ptr = nullptr;
-    T obj = {};
+    //T* ptr = nullptr;
+    T obj;
 };
 
 static inline std::string_view check_string_view(lua_State* l, int idx) {
@@ -76,9 +75,16 @@ Tpl collect_args(lua_State* l) {
     collect_args_internal<0>(l, args);
     return args;
 }
+
+template<typename T>
+void reg_metatable_for_type() {}
+
+template<typename T>
+void reg_create_func_for_type() {}
 }
 
-
+template<typename T>
+using CreateObjectFunc = T (*)(lua_State*);
 
 template<typename T>
 void push_value(lua_State* l, const T& value) {
@@ -96,10 +102,22 @@ void push_value(lua_State* l, const T& value) {
     }
 }
 
-template<typename T, typename F = detail::no_reload_tag>
-void create_type_metatable(lua_State* l, F&& reload = F{}) {
+template<auto F>
+int bind_function(lua_State* l) {
+    using traits = function_traits<decltype(F)>;
+    auto args = detail::collect_args<traits::argument_pack>(l);
+    if constexpr(std::is_void_v<typename traits::return_type>) {
+        std::apply(F, std::move(args));
+        return 0;
+    } else {
+        push_value(l, std::apply(F, std::move(args)));
+        return 1;
+    }
+}
+
+template<typename T>
+void create_type_metatable(lua_State* l, CreateObjectFunc<T> create_func = nullptr) {
     static_assert(reflect::has_reflect_v<T>);
-    static_assert(std::is_same_v<F, detail::no_reload_tag>);
 
     using UData = detail::UData<T>;
 
@@ -141,10 +159,17 @@ void create_type_metatable(lua_State* l, F&& reload = F{}) {
     };
 
     auto create = [](lua_State* l) -> int {
-        void* mem = lua_newuserdata(l, sizeof(UData));
-        UData* udata = new(mem) UData();
+        lua_pushlightuserdata(l, detail::reg_create_func_for_type<T>);
+        lua_rawget(l, LUA_REGISTRYINDEX);
+        y_debug_assert(lua_isuserdata(l, -1));
 
-        lua_pushlightuserdata(l, create_type_metatable<T>);
+        CreateObjectFunc<T> create_func = static_cast<CreateObjectFunc<T>>(lua_touserdata(l, -1));
+        y_debug_assert(create_func);
+
+        void* mem = lua_newuserdata(l, sizeof(UData));
+        UData* udata = new(mem) UData{create_func(l)};
+
+        lua_pushlightuserdata(l, detail::reg_metatable_for_type<T>);
         lua_rawget(l, LUA_REGISTRYINDEX);
         y_debug_assert(lua_istable(l, -1));
 
@@ -172,20 +197,21 @@ void create_type_metatable(lua_State* l, F&& reload = F{}) {
     lua_pushcfunction(l, destroy);
     lua_setfield(l, -2, "__gc");
 
-    lua_pushcfunction(l, create);
-    lua_setfield(l, -2, "__create");
-
     lua_pushstring(l, T::_y_reflect_type_name);
     lua_setfield(l, -2, "__typename");
 
     lua_pushvalue(l, -2);
     lua_setfield(l, -2, "__metatable");
 
-    lua_pushlightuserdata(l, create_type_metatable<T>);
+    lua_pushlightuserdata(l, detail::reg_metatable_for_type<T>);
     lua_pushvalue(l, -2);
     lua_rawset(l, LUA_REGISTRYINDEX);
 
-    {
+    if(create_func) {
+        lua_pushlightuserdata(l, detail::reg_create_func_for_type<T>);
+        lua_pushlightuserdata(l, create_func);
+        lua_rawset(l, LUA_REGISTRYINDEX);
+
         lua_createtable(l, 0, 1);
         lua_pushcfunction(l, create);
         lua_setfield(l, -2, "new");
@@ -194,17 +220,12 @@ void create_type_metatable(lua_State* l, F&& reload = F{}) {
     }
 }
 
-template<auto F>
-int bind_function(lua_State* l) {
-    using traits = function_traits<decltype(F)>;
-    auto args = detail::collect_args<traits::argument_pack>(l);
-    if constexpr(std::is_void_v<typename traits::return_type>) {
-        std::apply(F, std::move(args));
-        return 0;
-    } else {
-        push_value(l, std::apply(F, std::move(args)));
-        return 1;
-    }
+template<typename T, auto Ctor>
+void create_type_metatable_ctor(lua_State* l) {
+    create_type_metatable<T>(l, [](lua_State* l) {
+        using traits = function_traits<decltype(Ctor)>;
+        return std::apply(Ctor, detail::collect_args<traits::argument_pack>(l));
+    });
 }
 
 }

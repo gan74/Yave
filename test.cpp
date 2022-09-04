@@ -30,7 +30,7 @@ int main(int, char**) {
     vm.set_global("globo", lua::bind_function<floop>);
 
     const char* code = R"#(
-        local obj = MetaTest:new()
+        local obj = MetaTest.new(1)
 
         print(obj)
         print(obj.blap)
