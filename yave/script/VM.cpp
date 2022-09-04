@@ -63,6 +63,10 @@ void VM::swap(VM& other) {
     std::swap(_l, other._l);
 }
 
+void VM::gc() {
+    lua_gc(_l, LUA_GCCOLLECT, 0);
+}
+
 core::Result<void, VM::Error> VM::run(const char* code) {
     y_defer(lua_pop(_l, lua_gettop(_l)));
 

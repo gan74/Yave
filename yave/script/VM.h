@@ -46,8 +46,11 @@ class VM : NonCopyable {
 
         static VM create();
 
+        void gc();
 
         core::Result<void, Error> run(const char* code);
+
+
 
         template<typename T>
         void set_global(const char* name, const T& value) {
@@ -59,7 +62,6 @@ class VM : NonCopyable {
         void bind_type() {
             lua::create_type_metatable<T>(_l);
         }
-
 
 
     public:

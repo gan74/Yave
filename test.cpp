@@ -26,21 +26,18 @@ int main(int, char**) {
     VM vm = VM::create();
 
     vm.bind_type<MetaTest>();
-    lua_register(vm.state(), "new", lua::create_object<MetaTest>);
 
-    vm.set_global("globo", lua::bound_function<floop>);
+    vm.set_global("globo", lua::bind_function<floop>);
 
     const char* code = R"#(
-        local obj = new()
+        local obj = MetaTest:new()
 
+        print(obj)
         print(obj.blap)
-        obj.blap = 123;
-        print(obj.blap)
-        print(obj[2345])
-
         print(obj.name)
-        obj.name = 'new name'
+        obj.name = "newname"
         print(obj.name)
+        print(obj.doesntexist)
 
         print(globo(999, 3.24))
     )#";
@@ -48,6 +45,7 @@ int main(int, char**) {
     if(auto r = vm.run(code); r.is_error()) {
         log_msg(r.error().msg, Log::Error);
     }
+
 
     return 0;
 }
