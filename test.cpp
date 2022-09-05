@@ -36,17 +36,22 @@ int main(int, char**) {
     vm.set_global("globo", lua::bind_function<floop>);
 
     const char* code = R"#(
-        local obj = MetaTest.new(1)
-        print(obj)
-        local copy = obj
-        print(copy)
-        assert(obj.blap == 904)
-        assert(obj.name == "test obj")
-        obj.name = "newname"
-        assert(obj.name == "newname")
-        assert(obj.doesntexist == nil)
-        print(obj.b)
 
+        local sum = 0;
+        for i = 1, 10000000 do
+            local obj = MetaTest.new(1)
+            -- print(obj)
+            local copy = obj
+            -- print(copy)
+            assert(obj == copy)
+            assert(obj.blap == 904)
+            assert(obj.name == "test obj")
+            obj.name = "newname"
+            assert(obj.name == "newname")
+            assert(obj.doesntexist == nil)
+            sum = sum + obj.foo
+        end
+        print(sum)
         print(globo(999, 3.24))
     )#";
 

@@ -79,7 +79,7 @@ struct NamedMember {
 namespace detail {
 
 template<usize I, typename Tpl, typename F>
-inline void explore_member(Tpl&& tpl, F&& func) {
+inline constexpr void explore_member(Tpl&& tpl, F&& func) {
     if constexpr(I < std::tuple_size_v<std::decay_t<Tpl>>) {
         auto&& elem = std::get<I>(tpl);
         func(elem.name, elem.member);
@@ -138,9 +138,9 @@ inline void explore_recursive(T&& t, F&& func) {
 }
 
 template<typename T, typename F>
-inline void explore_members(F&& func) {
+inline constexpr void explore_members(F&& func) {
     if constexpr(has_reflect_v<T>) {
-        auto elems = T::_y_reflect_static();
+        constexpr auto elems = T::_y_reflect_static();
         detail::explore_member<0>(elems, func);
     }
 }
@@ -166,18 +166,18 @@ Y_TODO(manage inherited objects)
 #define y_reflect_name_hash(name) y::force_ct<y::ct_str_hash(name)>()
 #define y_reflect_create_member(member) y::reflect::NamedMember{&_y_refl_self_type::member, #member,  y_reflect_name_hash(#member)},
 
-#define y_reflect_base(Type)                                                                        \
-static constexpr const char* _y_reflect_type_name = #Type;                                          \
+#define y_reflect_base(Type)                                                                                \
+static constexpr const char* _y_reflect_type_name = #Type;                                                  \
 
-#define y_reflect_empty(Type)                                                                       \
-y_reflect_base(Type)                                                                                \
-template<typename = void> auto _y_reflect_static() const { return std::tuple<>{}; }
+#define y_reflect_empty(Type)                                                                               \
+y_reflect_base(Type)                                                                                        \
+template<typename = void> static inline constexpr auto _y_reflect_static() const { return std::tuple<>{}; }
 
-#define y_reflect_static(Type, ...)                                                                 \
-y_reflect_base(Type);                                                                               \
-template<typename = void> static auto _y_reflect_static() {                                         \
-    using _y_refl_self_type = Type;                                                                 \
-    return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_member, __VA_ARGS__))};              \
+#define y_reflect_static(Type, ...)                                                                         \
+y_reflect_base(Type);                                                                                       \
+template<typename = void> static inline constexpr auto _y_reflect_static() {                                \
+    using _y_refl_self_type = Type;                                                                         \
+    return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_member, __VA_ARGS__))};                      \
 }
 
 
