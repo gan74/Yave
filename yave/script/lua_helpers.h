@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <y/core/String.h>
+#include <y/core/Vector.h>
 
 #include <y/reflect/reflect.h>
 
@@ -51,7 +52,7 @@ static constexpr bool can_get_value_v =
         std::is_integral_v<T>;
 
 template<typename T>
-void push_value(lua_State* l, const T& value) {
+static inline void push_value(lua_State* l, const T& value) {
     static_assert(can_push_value_v<T>, "Unable to push value");
 
     if constexpr(std::is_same_v<T, bool>) {
@@ -71,9 +72,12 @@ void push_value(lua_State* l, const T& value) {
 }
 
 
-
-
 namespace detail {
+
+std::string_view check_string_view(lua_State* l, int idx);
+
+core::Vector<void**>& all_external_objects(lua_State* l);
+
 
 template<typename T>
 struct UData : NonMovable {
@@ -87,14 +91,13 @@ struct UData : NonMovable {
 
 static_assert(offsetof(UData<int>, ptr) == 0);
 
-static inline std::string_view check_string_view(lua_State* l, int idx) {
-    usize len = 0;
-    const char* name_ptr = luaL_checklstring(l, idx, &len);
-    return std::string_view(name_ptr, len);
+template<typename T>
+static inline UData<T>* check_udata(lua_State* l, int idx) {
+    return static_cast<UData<T>*>(luaL_checkudata(l, idx, T::_y_reflect_type_name));
 }
 
 template<typename T>
-static inline void get_arg_value(lua_State* l, T& value, int idx = -1) {
+static inline void get_arg_value(lua_State* l, T& value, int idx) {
     static_assert(can_get_value_v<T>, "Unable to get value");
 
     if constexpr(std::is_same_v<T, core::String>) {
@@ -116,25 +119,23 @@ static inline void collect_args_internal(lua_State* l, Tpl& args) {
 }
 
 template<typename Tpl>
-Tpl collect_args(lua_State* l) {
+static inline Tpl collect_args(lua_State* l) {
     Tpl args = {};
     collect_args_internal<0>(l, args);
     return args;
 }
 
-
 template<typename T>
-T default_ctor() {
+static inline T default_ctor() {
     return T{};
 }
-
-template<typename T>
-void reg_metatable_for_type() {}
 
 template<typename T>
 void reg_create_func_for_type() {}
 }
 
+
+void clean_external_objects(lua_State* l);
 
 
 template<typename T>
@@ -161,7 +162,7 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
 
     auto get = [](lua_State* l) -> int {
         const std::string_view name = detail::check_string_view(l, -1);
-        const T* ptr = static_cast<const UData*>(lua_touserdata(l, -2))->ptr;
+        const T* ptr = detail::check_udata<T>(l, -2)->ptr;
 
         if(!ptr) {
             return 0;
@@ -183,7 +184,7 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
 
     auto set = [](lua_State* l) -> int {
         const std::string_view name = detail::check_string_view(l, -2);
-        T* ptr = static_cast<UData*>(lua_touserdata(l, -3))->ptr;
+        T* ptr = detail::check_udata<T>(l, -3)->ptr;
 
         if(!ptr) {
             return 0;
@@ -192,7 +193,7 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
         reflect::explore_members<T>([&](std::string_view member_name, auto member) {
             if constexpr(can_get_value_v<remove_cvref_t<decltype(ptr->*member)>>) {
                 if(member_name == name) {
-                    detail::get_arg_value(l, ptr->*member);
+                    detail::get_arg_value(l, ptr->*member, -1);
                 }
             }
         });
@@ -213,8 +214,7 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
         udata->storage = std::make_unique<T>(create_func(l));
         udata->ptr = udata->storage.get();
 
-        lua_pushlightuserdata(l, detail::reg_metatable_for_type<T>);
-        lua_rawget(l, LUA_REGISTRYINDEX);
+        luaL_getmetatable(l, T::_y_reflect_type_name);
         y_debug_assert(lua_istable(l, -1));
 
         lua_setmetatable(l, -2);
@@ -223,21 +223,38 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
     };
 
     auto destroy = [](lua_State* l) -> int {
-        const UData* udata = static_cast<const UData*>(lua_touserdata(l, -1));
+        UData* udata = detail::check_udata<T>(l, -1);
         y_debug_assert(udata);
+
+        if(udata->ptr && !udata->is_owner()) {
+            auto& externals = detail::all_external_objects(l);
+            const auto it = std::find(externals.begin(), externals.end(), reinterpret_cast<void**>(&udata->ptr));
+            y_debug_assert(it != externals.end());
+            externals.erase_unordered(it);
+        }
 
         std::destroy_at(udata);
 
         return 0;
     };
 
+    auto is_stale = [](lua_State* l) -> int {
+        const UData* udata = detail::check_udata<T>(l, -1);
+        lua_pushboolean(l, !udata || !udata->ptr);
+        return 1;
+    };
+
     auto to_string = [](lua_State* l) -> int {
-        const UData* udata = static_cast<const UData*>(lua_touserdata(l, -1));
+        const UData* udata = detail::check_udata<T>(l, -1);
         lua_pushfstring(l, "%s: %c%p", T::_y_reflect_type_name, udata->is_owner() ? '#' : '@', udata->ptr);
         return 1;
     };
 
-    lua_createtable(l, 0, 6);
+    luaL_newmetatable(l, T::_y_reflect_type_name);
+
+    lua_pushvalue(l, -1);
+    lua_setglobal(l, T::_y_reflect_type_name);
+
     lua_pushcfunction(l, get);
     lua_setfield(l, -2, "__index");
 
@@ -250,26 +267,22 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
     lua_pushcfunction(l, to_string);
     lua_setfield(l, -2, "__tostring");
 
+    lua_pushcfunction(l, is_stale);
+    lua_setfield(l, -2, "is_stale");
+
     lua_pushstring(l, T::_y_reflect_type_name);
     lua_setfield(l, -2, "__typename");
 
     lua_pushvalue(l, -2);
     lua_setfield(l, -2, "__metatable");
 
-    lua_pushlightuserdata(l, detail::reg_metatable_for_type<T>);
-    lua_pushvalue(l, -2);
-    lua_rawset(l, LUA_REGISTRYINDEX);
-
     if(create_func) {
         lua_pushlightuserdata(l, detail::reg_create_func_for_type<T>);
         lua_pushlightuserdata(l, create_func);
         lua_rawset(l, LUA_REGISTRYINDEX);
 
-        lua_createtable(l, 0, 1);
         lua_pushcfunction(l, create);
         lua_setfield(l, -2, "new");
-
-        lua_setglobal(l, T::_y_reflect_type_name);
     }
 }
 
@@ -279,6 +292,21 @@ void create_type_metatable(lua_State* l) {
         using traits = function_traits<decltype(Ctor)>;
         return std::apply(Ctor, detail::collect_args<traits::argument_pack>(l));
     });
+}
+
+template<typename T>
+void push_object_ptr(lua_State* l, T* object) {
+    using UData = detail::UData<T>;
+    void* mem = lua_newuserdata(l, sizeof(UData));
+    UData* udata = new(mem) UData();
+    udata->ptr = object;
+
+    detail::all_external_objects(l).push_back(reinterpret_cast<void**>(&udata->ptr));
+
+    luaL_getmetatable(l, T::_y_reflect_type_name);
+    y_always_assert(lua_istable(l, -1), "Object type has not be registered");
+
+    lua_setmetatable(l, -2);
 }
 
 }

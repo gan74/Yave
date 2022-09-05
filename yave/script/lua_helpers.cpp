@@ -19,69 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCRIPT_VM_H
-#define YAVE_SCRIPT_VM_H
-
-#include <yave/yave.h>
-
-#include <y/core/Result.h>
 
 #include "lua_helpers.h"
 
 namespace yave {
 namespace script {
+namespace lua {
 
-class VM : NonCopyable {
-    public:
-        struct Error {
-            core::String msg;
-        };
+namespace detail {
 
-        VM() = default;
-        ~VM();
+std::string_view check_string_view(lua_State* l, int idx) {
+    usize len = 0;
+    const char* name_ptr = luaL_checklstring(l, idx, &len);
+    return std::string_view(name_ptr, len);
+}
 
-        VM(VM&& other);
-        VM& operator=(VM&& other);
+core::Vector<void**>& all_external_objects(lua_State* l) {
+    void* key = static_cast<void*>(all_external_objects);
+    lua_pushlightuserdata(l, key);
+    lua_rawget(l, LUA_REGISTRYINDEX);
 
+    using T = core::Vector<void**>;
+    T* ptr =  static_cast<T*>(lua_touserdata(l, -1));
+    lua_pop(l, 1);
 
-        static VM create();
+    if(!ptr) {
+        lua_pushlightuserdata(l, key);
 
-        void gc();
+        ptr = static_cast<T*>(lua_newuserdata(l, sizeof(T)));
+        new(ptr) T();
 
-        core::Result<void, Error> run(const char* code);
+        lua_rawset(l, LUA_REGISTRYINDEX);
+    }
 
-
-
-        template<typename T>
-        void set_global(const char* name, const T& value) {
-            lua::push_value(_l, value);
-            lua_setglobal(_l, name);
-        }
-
-        template<typename T>
-        void set_global_object(const char* name, T* ptr) {
-            lua::push_object_ptr(_l, ptr);
-            lua_setglobal(_l, name);
-        }
-
-        template<typename T>
-        void bind_type() {
-            lua::create_type_metatable<T>(_l);
-        }
-
-
-    public:
-        lua_State* state() {
-            return _l;
-        }
-
-    private:
-        void swap(VM& other);
-
-        lua_State* _l = nullptr;
-};
-
+    return *ptr;
 }
 }
 
-#endif // YAVE_SCRIPT_VM_H
+void clean_external_objects(lua_State* l) {
+    auto& externals = detail::all_external_objects(l);
+    for(void** ptr : externals) {
+        *ptr = nullptr;
+    }
+    externals.clear();
+}
+
+}
+}
+}
