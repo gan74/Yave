@@ -48,7 +48,8 @@ int main(int, char**) {
     });
 
     MetaTest meta_test;
-    vm.set_global_object("external", &meta_test);
+
+    vm.set_global("external", &meta_test);
 
     const char* code = R"#(
         local sum = 0;

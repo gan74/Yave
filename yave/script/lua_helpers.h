@@ -43,6 +43,7 @@ static constexpr bool can_push_value_v =
         std::is_convertible_v<T, lua_CFunction> ||
         std::is_same_v<T, core::String> ||
         std::is_floating_point_v<T> ||
+        std::is_pointer_v<T> ||
         std::is_integral_v<T>;
 
 template<typename T>
@@ -51,25 +52,6 @@ static constexpr bool can_get_value_v =
         std::is_floating_point_v<T> ||
         std::is_integral_v<T>;
 
-template<typename T>
-static inline void push_value(lua_State* l, const T& value) {
-    static_assert(can_push_value_v<T>, "Unable to push value");
-
-    if constexpr(std::is_same_v<T, bool>) {
-        lua_pushboolean(l, value ? 1 : 0);
-    } else if constexpr(std::is_trivially_constructible_v<const char*, T>) {
-        lua_pushstring(l, value);
-    } else if constexpr(std::is_convertible_v<T, lua_CFunction>) {
-        lua_pushcfunction(l, value);
-    } else if constexpr(std::is_same_v<T, core::String>) {
-        lua_pushstring(l, value.data());
-    } else if constexpr(std::is_floating_point_v<T>) {
-        lua_pushnumber(l, lua_Number(value));
-    } else {
-        static_assert(std::is_integral_v<T>);
-        lua_pushinteger(l, lua_Integer(value));
-    }
-}
 
 
 namespace detail {
@@ -129,9 +111,6 @@ template<typename T>
 static inline T default_ctor() {
     return T{};
 }
-
-template<typename T>
-void reg_create_func_for_type() {}
 }
 
 
@@ -140,6 +119,45 @@ void clean_external_objects(lua_State* l);
 
 template<typename T>
 using CreateObjectFunc = T (*)(lua_State*);
+
+
+
+template<typename T>
+static inline void push_object_ptr(lua_State* l, T* object) {
+    using UData = detail::UData<T>;
+    void* mem = lua_newuserdata(l, sizeof(UData));
+    UData* udata = new(mem) UData();
+    udata->ptr = object;
+
+    detail::all_external_objects(l).push_back(reinterpret_cast<void**>(&udata->ptr));
+
+    luaL_getmetatable(l, T::_y_reflect_type_name);
+    y_always_assert(lua_istable(l, -1), "Object type has not be registered");
+
+    lua_setmetatable(l, -2);
+}
+
+template<typename T>
+static inline void push_value(lua_State* l, const T& value) {
+    static_assert(can_push_value_v<T>, "Unable to push value");
+
+    if constexpr(std::is_same_v<T, bool>) {
+        lua_pushboolean(l, value ? 1 : 0);
+    } else if constexpr(std::is_trivially_constructible_v<const char*, T>) {
+        lua_pushstring(l, value);
+    } else if constexpr(std::is_convertible_v<T, lua_CFunction>) {
+        lua_pushcfunction(l, value);
+    } else if constexpr(std::is_same_v<T, core::String>) {
+        lua_pushstring(l, value.data());
+    } else if constexpr(std::is_floating_point_v<T>) {
+        lua_pushnumber(l, lua_Number(value));
+    } else if constexpr(std::is_pointer_v<T>) {
+        push_object_ptr(l, value);
+    } else {
+        static_assert(std::is_integral_v<T>);
+        lua_pushinteger(l, lua_Integer(value));
+    }
+}
 
 template<auto F>
 int bind_function(lua_State* l) {
@@ -209,11 +227,8 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
     };
 
     auto create = [](lua_State* l) -> int {
-        lua_pushlightuserdata(l, detail::reg_create_func_for_type<T>);
-        lua_rawget(l, LUA_REGISTRYINDEX);
-        y_debug_assert(lua_isuserdata(l, -1));
-
-        CreateObjectFunc<T> create_func = static_cast<CreateObjectFunc<T>>(lua_touserdata(l, -1));
+        y_debug_assert(lua_isuserdata(l, lua_upvalueindex(1)));
+        CreateObjectFunc<T> create_func = static_cast<CreateObjectFunc<T>>(lua_touserdata(l, lua_upvalueindex(1)));
         y_debug_assert(create_func);
 
         void* mem = lua_newuserdata(l, sizeof(UData));
@@ -281,11 +296,8 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
     lua_setfield(l, -2, "__typename");
 
     if(create_func) {
-        lua_pushlightuserdata(l, detail::reg_create_func_for_type<T>);
         lua_pushlightuserdata(l, create_func);
-        lua_rawset(l, LUA_REGISTRYINDEX);
-
-        lua_pushcfunction(l, create);
+        lua_pushcclosure(l, create, 1);
         lua_setfield(l, -2, "new");
     }
 }
@@ -296,21 +308,6 @@ void create_type_metatable(lua_State* l) {
         using traits = function_traits<decltype(Ctor)>;
         return std::apply(Ctor, detail::collect_args<traits::argument_pack>(l));
     });
-}
-
-template<typename T>
-void push_object_ptr(lua_State* l, T* object) {
-    using UData = detail::UData<T>;
-    void* mem = lua_newuserdata(l, sizeof(UData));
-    UData* udata = new(mem) UData();
-    udata->ptr = object;
-
-    detail::all_external_objects(l).push_back(reinterpret_cast<void**>(&udata->ptr));
-
-    luaL_getmetatable(l, T::_y_reflect_type_name);
-    y_always_assert(lua_istable(l, -1), "Object type has not be registered");
-
-    lua_setmetatable(l, -2);
 }
 
 }

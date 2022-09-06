@@ -59,12 +59,6 @@ class VM : NonCopyable {
         }
 
         template<typename T>
-        void set_global_object(const char* name, T* ptr) {
-            lua::push_object_ptr(_l, ptr);
-            lua_setglobal(_l, name);
-        }
-
-        template<typename T>
         void bind_type() {
             lua::create_type_metatable<T>(_l);
         }
