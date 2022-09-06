@@ -71,7 +71,7 @@ int main(int, char**) {
         end
         print(sum)
         external.blap = sum;
-        assert(not MetaTest.is_stale(external))
+        assert(not external:is_stale())
 print(external)
         clear_external()
 print(external)

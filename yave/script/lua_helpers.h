@@ -179,6 +179,13 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
             }
         });
 
+        if(!ret) {
+            lua_getmetatable(l, -2);
+            lua_pushstring(l, name.data());
+            lua_rawget(l, -2);
+            return 1;
+        }
+
         return ret;
     };
 
@@ -272,9 +279,6 @@ void create_type_metatable_internal(lua_State* l, CreateObjectFunc<T> create_fun
 
     lua_pushstring(l, T::_y_reflect_type_name);
     lua_setfield(l, -2, "__typename");
-
-    lua_pushvalue(l, -2);
-    lua_setfield(l, -2, "__metatable");
 
     if(create_func) {
         lua_pushlightuserdata(l, detail::reg_create_func_for_type<T>);
