@@ -21,60 +21,23 @@ SOFTWARE.
 **********************************/
 #include "VM.h"
 
-#include <y/core/HashMap.h>
 #include <y/core/String.h>
 
 #include <y/reflect/reflect.h>
 
-#include <y/utils.h>
-#include <y/utils/format.h>
-#include <y/utils/log.h>
 
 namespace yave {
 namespace script {
 
-VM VM::create() {
-    y_profile();
-
-    VM vm;
-
-    vm._l = luaL_newstate();
-    // vm._l = lua_newstate(nullptr, nullptr);
-
-    luaL_openlibs(vm._l);
-
-    return vm;
-}
-
-VM::~VM() {
-    if(_l) {
-        lua_close(_l);
-    }
-}
-
-VM::VM(VM&& other) {
-    swap(other);
-}
-
-VM& VM::operator=(VM&& other) {
-    swap(other);
-    return *this;
-}
-
-void VM::swap(VM& other) {
-    std::swap(_l, other._l);
-}
-
-void VM::gc() {
-    lua_gc(_l, LUA_GCCOLLECT, 0);
+VM::VM() {
+    _state.open_libraries();
 }
 
 core::Result<void, VM::Error> VM::run(const char* code) {
-    y_defer(lua_pop(_l, lua_gettop(_l)));
-
-    if(luaL_dostring(_l, code) != LUA_OK) {
-        return core::Err(Error{core::String(lua_tostring(_l, lua_gettop(_l)))});
+    if(auto r = _state.script(code); !r.valid()) {
+        return core::Err(Error{"Unknown Error"});
     }
+
     return core::Ok();
 }
 

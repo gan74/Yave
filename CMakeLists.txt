@@ -87,6 +87,8 @@ add_subdirectory(external/spirv_cross)
 include_directories(${y_SOURCE_DIR})
 include_directories(${yave_SOURCE_DIR})
 include_directories(${Vulkan_INCLUDE_DIRS})
+include_directories(external/sol/include)
+include_directories(external/LuaJIT/src)
 
 
 

@@ -24,12 +24,30 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <y/reflect/reflect.h>
+
+#include <y/core/String.h>
 #include <y/core/Result.h>
 
-#include "lua_helpers.h"
+#define SOL_ALL_SAFETIES_ON 1
+#include <sol/sol.hpp>
 
 namespace yave {
 namespace script {
+
+namespace detail {
+template<typename T, typename M>
+auto property(M T::* member) {
+    if constexpr(std::is_same_v<M, core::String>) {
+        return sol::property(
+            [=](T* obj, std::string_view view) { (obj->*member) = view; },
+            [=](T* obj) { return (obj->*member).view(); }
+        );
+    } else {
+        return member;
+    }
+}
+}
 
 class VM : NonCopyable {
     public:
@@ -37,42 +55,30 @@ class VM : NonCopyable {
             core::String msg;
         };
 
-        VM() = default;
-        ~VM();
-
-        VM(VM&& other);
-        VM& operator=(VM&& other);
-
-
-        static VM create();
-
-        void gc();
+        VM();
 
         core::Result<void, Error> run(const char* code);
 
 
-
         template<typename T>
         void set_global(const char* name, const T& value) {
-            lua::push_value(_l, value);
-            lua_setglobal(_l, name);
+            if constexpr(std::is_same_v<T, core::String>) {
+                _state[name] = value.view();
+            } else {
+                _state[name] = value;
+            }
         }
 
         template<typename T>
         void bind_type() {
-            lua::create_type_metatable<T>(_l);
-        }
-
-
-    public:
-        lua_State* state() {
-            return _l;
+            sol::usertype<T> type = _state.new_usertype<T>(T::_y_reflect_type_name);
+            reflect::explore_members<T>([&](std::string_view name, auto member) {
+                type[name] = detail::property(member);
+            });
         }
 
     private:
-        void swap(VM& other);
-
-        lua_State* _l = nullptr;
+        sol::state _state;
 };
 
 }

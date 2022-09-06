@@ -35,26 +35,19 @@ core::String floop(int z, float x) {
 int main(int, char**) {
     const i64 iterations = is_debug_defined ? 100000 : 1000000;
 
-    VM vm = VM::create();
+    VM vm;
 
+    vm.set_global("max", iterations);
     vm.bind_type<MetaTest>();
 
-    vm.set_global("globo", lua::bind_function<floop>);
-    vm.set_global("max", iterations);
-
-    vm.set_global("clear_external", [](lua_State* l) -> int {
-        lua::clean_external_objects(l);
-        return 0;
-    });
-
     MetaTest meta_test;
-
     vm.set_global("external", &meta_test);
+    vm.set_global("globo", floop);
 
     const char* code = R"#(
         local sum = 0;
         for i = 1, max do
-            local obj = MetaTest.new(1)
+            local obj = MetaTest.new()
             -- print(obj)
             local copy = obj
             -- print(copy)
@@ -72,12 +65,6 @@ int main(int, char**) {
         end
         print(sum)
         external.blap = sum;
-        assert(not external:is_stale())
-print(external)
-        clear_external()
-print(external)
-        assert(MetaTest.is_stale(external))
-        assert(external.blap == nil)
         print(globo(999, 3.24))
     )#";
 
