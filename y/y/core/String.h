@@ -123,6 +123,10 @@ class String {
             std::copy(beg_it, end_it, begin());
         }
 
+
+        String(nullptr_t) = delete;
+
+
         ~String();
 
         void set_min_capacity(usize cap);

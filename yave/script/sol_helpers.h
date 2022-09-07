@@ -19,50 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCRIPT_VM_H
-#define YAVE_SCRIPT_VM_H
+#ifndef YAVE_SCRIPT_SOL_HELPERS_H
+#define YAVE_SCRIPT_SOL_HELPERS_H
 
 #include <yave/yave.h>
-
-#include <y/reflect/reflect.h>
 
 #include <y/core/String.h>
 #include <y/core/Result.h>
 
-#include "sol_helpers.h"
+#define SOL_ALL_SAFETIES_ON 1
+#include <sol/sol.hpp>
+
 
 namespace yave {
 namespace script {
+namespace detail {
 
-class VM : NonCopyable {
-    public:
-        struct Error {
-            core::String msg;
-        };
-
-        VM();
-
-        core::Result<void, Error> run(std::string_view code);
-
-
-        template<typename T>
-        void set_global(const char* name, const T& value) {
-            _state[name] = value;
-        }
-
-        template<typename T>
-        void bind_type() {
-            sol::usertype<T> type = _state.new_usertype<T>(T::_y_reflect_type_name);
-            reflect::explore_members<T>([&](std::string_view name, auto member) {
-                type[name] = detail::property(member);
-            });
-        }
-
-    private:
-        sol::state _state;
-};
+template<typename T, typename M>
+auto property(M T::* member) {
+    if constexpr(std::is_same_v<M, core::String>) {
+        return sol::property(
+            [=](T* obj, std::string_view view) { (obj->*member) = view; },
+            [=](T* obj) { return (obj->*member).view(); }
+        );
+    } else {
+        return member;
+    }
+}
 
 }
 }
+}
 
-#endif // YAVE_SCRIPT_VM_H
+inline int sol_lua_push(sol::types<y::core::String>, lua_State* l, const y::core::String& str) {
+    return sol::stack::push(l, str.view());
+}
+
+inline y::core::String sol_lua_get(sol::types<y::core::String>, lua_State* l, int index, sol::stack::record& tracking) {
+    return y::core::String(sol::stack::get<std::string_view>(l, lua_absindex(l, index)));
+}
+
+template <typename Handler>
+inline bool sol_lua_check(sol::types<y::core::String>, lua_State* l, int index, Handler&& handler, sol::stack::record& tracking) {
+    tracking.use(1);
+    return sol::stack::check<std::string_view>(l, lua_absindex(l, index), handler);
+}
+
+#endif // YAVE_SCRIPT_SOL_HELPERS_H

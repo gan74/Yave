@@ -21,11 +21,6 @@ SOFTWARE.
 **********************************/
 #include "VM.h"
 
-#include <y/core/String.h>
-
-#include <y/reflect/reflect.h>
-
-
 namespace yave {
 namespace script {
 
@@ -33,9 +28,9 @@ VM::VM() {
     _state.open_libraries();
 }
 
-core::Result<void, VM::Error> VM::run(const char* code) {
-    if(auto r = _state.script(code); !r.valid()) {
-        return core::Err(Error{"Unknown Error"});
+core::Result<void, VM::Error> VM::run(std::string_view code) {
+    if(auto r = _state.safe_script(code); !r.valid()) {
+        return core::Err(Error{core::String("Unknown Error")});
     }
 
     return core::Ok();

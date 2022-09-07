@@ -18,7 +18,7 @@ struct MetaTest {
     int foo = 4;
     int blap = 904;
     Floop fl;
-    core::String name = "test obj";
+    core::String name = core::String("test obj");
     bool deleted = false;
 
     ~MetaTest() {
@@ -28,8 +28,8 @@ struct MetaTest {
     y_reflect(MetaTest, foo, blap, fl, name, deleted);
 };
 
-core::String floop(int z, float x) {
-    return fmt("a returned string (%, %)", z, x);
+core::String floop(int z, float x, core::String s) {
+    return fmt_to_owned("a returned string (%, %) %", z, x, s);
 }
 
 int main(int, char**) {
@@ -65,7 +65,7 @@ int main(int, char**) {
         end
         print(sum)
         external.blap = sum;
-        print(globo(999, 3.24))
+        print(globo(999, 3.24, "oof"))
     )#";
 
     if(auto r = vm.run(code); r.is_error()) {
