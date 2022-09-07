@@ -556,7 +556,7 @@ struct ScriptComponentWidget : public ComponentPanelWidget<ScriptComponentWidget
             browser->set_selection_filter(false, "*.lua");
             browser->set_selected_callback([=](const core::String& file) {
                 if(auto code = io2::File::read_text_file(file)) {
-                    component->code = std::move(code.unwrap());
+                    component->set_code(std::move(code.unwrap()));
                     return true;
                 }
                 return false;
@@ -564,7 +564,7 @@ struct ScriptComponentWidget : public ComponentPanelWidget<ScriptComponentWidget
         }
         ImGui::SameLine();
         if(ImGui::Button(ICON_FA_TRASH " Clear")) {
-            component->code = "";
+            component->set_code("");
         }
     }
 };

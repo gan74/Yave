@@ -19,13 +19,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCRIPT_SOL_HELPERS_H
-#define YAVE_SCRIPT_SOL_HELPERS_H
+#ifndef YAVE_SCRIPT_SCRIPT_H
+#define YAVE_SCRIPT_SCRIPT_H
 
 #include <yave/yave.h>
 
 #include <y/core/String.h>
-#include <y/core/Result.h>
+#include <y/reflect/reflect.h>
 
 #define SOL_ALL_SAFETIES_ON 1
 #include <sol/sol.hpp>
@@ -54,6 +54,8 @@ struct CollectionData {
 CollectionData& get_collection_data(lua_State* l);
 }
 
+void clear_weak_refs(lua_State* l);
+
 
 template<typename T>
 struct Weak {
@@ -67,7 +69,13 @@ struct Weak {
     }
 };
 
-void clear_weak_refs(lua_State* l);
+template<typename T>
+void bind_type(sol::state& state) {
+    sol::usertype<T> type = state.new_usertype<T>(T::_y_reflect_type_name);
+    reflect::explore_members<T>([&](std::string_view name, auto member) {
+        type[name] = detail::property(member);
+    });
+}
 
 }
 }
@@ -115,4 +123,4 @@ inline bool sol_lua_check(sol::types<y::core::String>, lua_State* l, int index, 
     return sol::stack::check<std::string_view>(l, lua_absindex(l, index), handler);
 }
 
-#endif // YAVE_SCRIPT_SOL_HELPERS_H
+#endif // YAVE_SCRIPT_SCRIPT_H

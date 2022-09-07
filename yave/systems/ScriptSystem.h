@@ -24,20 +24,15 @@ SOFTWARE.
 
 #include <yave/ecs/System.h>
 
-#include <memory>
+#include <yave/script/script.h>
 
 namespace yave {
 
 class ScriptSystem : public ecs::System {
     public:
         ScriptSystem();
-        ~ScriptSystem();
 
         void update(ecs::EntityWorld& world, float dt) override;
-
-
-    private:
-        std::unique_ptr<script::VM> _vm;
 };
 
 }

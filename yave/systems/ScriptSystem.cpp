@@ -25,20 +25,19 @@ SOFTWARE.
 #include <yave/components/ScriptComponent.h>
 
 #include <yave/ecs/EntityWorld.h>
-#include <yave/script/VM.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
-ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem"), _vm(std::make_unique<script::VM>()) {
-}
-
-ScriptSystem::~ScriptSystem() {
+ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
 }
 
 void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
-    for(auto&& [script] : world.query<ScriptComponent>().components()) {
-        if(!script.code.is_empty()) {
-            _vm->run(script.code).ignore();
+    for(auto&& [script] : world.query<ecs::Mutate<ScriptComponent>>().components()) {
+        if(script.start()) {
+            script.state()["update"](dt);
         }
     }
 }

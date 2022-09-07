@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2022 Grégoire Angerand
+Copyright (c) 2016-2022 Gr�goire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,41 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMPONENTS_SCRIPTCOMPONENT_H
-#define YAVE_COMPONENTS_SCRIPTCOMPONENT_H
 
-#include <yave/yave.h>
+#include "ScriptComponent.h"
 
-#include <yave/script/script.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
-class ScriptComponent final {
-    public:
-        enum class Status {
-            Uninitialized,
-            Started,
 
-            Error
-        };
-
-        void set_code(core::String code);
-
-        bool start();
-
-        sol::state& state();
-
-        y_reflect(ScriptComponent, _code)
-
-    private:
-        core::String _code;
-        sol::state _state;
-
-        Status _status = Status::Uninitialized;
-
-};
-
+void ScriptComponent::set_code(core::String code) {
+    _code = std::move(code);
+    _status = Status::Uninitialized;
+    _state = sol::state();
+    _state.open_libraries();
 }
 
-#endif // YAVE_COMPONENTS_STATICMESHCOMPONENT_H
+bool ScriptComponent::start() {
+    if(_status == Status::Uninitialized) {
+        if(auto result = _state.safe_script(_code); !result.valid()) {
+            log_msg(fmt("Lua error: %", std::string_view(sol::to_string(result.status()))), Log::Error);
+            _status = Status::Error;
+            return false;
+        }
+        _status = Status::Started;
+    }
+    return _status == Status::Started;
+}
+
+sol::state& ScriptComponent::state() {
+    y_debug_assert(_status == Status::Started);
+    return _state;
+}
+
+}
 

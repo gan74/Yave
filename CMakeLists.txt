@@ -175,7 +175,3 @@ if(YAVE_BUILD_EDITOR)
     target_link_libraries(editor yave)
 endif()
 
-
-
-add_executable(lua-test "test.cpp")
-target_link_libraries(lua-test yave)

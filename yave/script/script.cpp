@@ -19,50 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCRIPT_VM_H
-#define YAVE_SCRIPT_VM_H
 
-#include <yave/yave.h>
-
-#include <y/reflect/reflect.h>
-
-#include <y/core/String.h>
-#include <y/core/Result.h>
-
-#include "sol_helpers.h"
+#include "script.h"
 
 namespace yave {
 namespace script {
 
-class VM : NonCopyable {
-    public:
-        struct Error {
-            core::String msg;
-        };
+namespace detail {
+CollectionData& get_collection_data(lua_State* l) {
+    static int key = 0;
+    auto proxy = sol::state_view(l).registry()[static_cast<void*>(&key)];
+    if(!proxy.valid()) {
+        proxy = CollectionData{};
+    }
+    return proxy.get<CollectionData>();
+}
+}
 
-        VM();
 
-        core::Result<void, Error> run(std::string_view code);
-
-
-        template<typename T>
-        void set_global(const char* name, const T& value) {
-            _state[name] = value;
-        }
-
-        template<typename T>
-        void bind_type() {
-            sol::usertype<T> type = _state.new_usertype<T>(T::_y_reflect_type_name);
-            reflect::explore_members<T>([&](std::string_view name, auto member) {
-                type[name] = detail::property(member);
-            });
-        }
-
-    private:
-        sol::state _state;
-};
+void clear_weak_refs(lua_State* l) {
+    ++detail::get_collection_data(l).id;
+}
 
 }
 }
 
-#endif // YAVE_SCRIPT_VM_H
+
