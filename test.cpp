@@ -32,6 +32,12 @@ core::String floop(int z, float x, core::String s) {
     return fmt_to_owned("a returned string (%, %) %", z, x, s);
 }
 
+Weak<MetaTest> weak() {
+    static MetaTest weak;
+    return &weak;
+}
+
+
 int main(int, char**) {
     const i64 iterations = is_debug_defined ? 100000 : 1000000;
 
@@ -42,7 +48,9 @@ int main(int, char**) {
 
     MetaTest meta_test;
     vm.set_global("external", &meta_test);
+    vm.set_global("weak", weak);
     vm.set_global("globo", floop);
+    vm.set_global("collect", [](lua_State* l) -> int { yave::script::detail::get_collection_data(l).inc(); return 0; });
 
     const char* code = R"#(
         local sum = 0;
@@ -53,7 +61,7 @@ int main(int, char**) {
             -- print(copy)
             assert(obj == copy)
             assert(obj ~= external)
-            assert(obj.blap == 904)
+            -- assert(obj.blap == weak().blap)
             assert(obj.name == "test obj")
             obj.name = "newname"
             assert(obj.name == "newname")
@@ -63,9 +71,16 @@ int main(int, char**) {
             assert(external.deleted == false)
             assert(external.foo == 4)
         end
+        
         print(sum)
         external.blap = sum;
         print(globo(999, 3.24, "oof"))
+        
+        print(weak().blap)
+        weak().blap = -607;
+        print(weak().blap)
+        collect()
+        assert(not weak())
     )#";
 
     if(auto r = vm.run(code); r.is_error()) {

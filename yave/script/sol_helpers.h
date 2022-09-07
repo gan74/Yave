@@ -33,8 +33,8 @@ SOFTWARE.
 
 namespace yave {
 namespace script {
+    
 namespace detail {
-
 template<typename T, typename M>
 auto property(M T::* member) {
     if constexpr(std::is_same_v<M, core::String>) {
@@ -47,9 +47,62 @@ auto property(M T::* member) {
     }
 }
 
+struct CollectionData {
+    u64 id = 0;
+    
+    void inc() {
+        ++id;
+    }
+};
+
+CollectionData& get_collection_data(lua_State* l);
+}
+
+
+template<typename T>
+struct Weak {
+    T* ptr = nullptr;
+    u64 collection_id = 0;
+    mutable detail::CollectionData* collection_data = nullptr;
+    
+    Weak() = default;
+    
+    Weak(T* p) : ptr(p) {
+    }
+};
+
 }
 }
+
+
+
+namespace sol {
+template<typename T>
+struct unique_usertype_traits<yave::script::Weak<T>> {
+    using type = T;
+    using actual_type = yave::script::Weak<T>;
+    static const bool value = true;
+
+    static bool is_null(lua_State*l, const actual_type& ptr) {
+        if(!ptr.ptr) {
+            return true;
+        }
+        
+        if(!ptr.collection_data) {
+            ptr.collection_data = &yave::script::detail::get_collection_data(l);
+        }
+        
+        return ptr.collection_id < ptr.collection_data->id;
+    }
+
+    static type* get(const actual_type& ptr) {
+            printf("get \n");
+        return ptr.ptr;
+    }
+};
 }
+
+
 
 inline int sol_lua_push(sol::types<y::core::String>, lua_State* l, const y::core::String& str) {
     return sol::stack::push(l, str.view());
