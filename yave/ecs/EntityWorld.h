@@ -44,6 +44,7 @@ class EntityWorld {
         void swap(EntityWorld& other);
 
         void tick();
+        void update(float dt);
 
         usize entity_count() const;
         bool exists(EntityId id) const;

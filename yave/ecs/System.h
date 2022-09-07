@@ -40,8 +40,13 @@ class System : NonCopyable {
             return _name;
         }
 
+        virtual void tick(EntityWorld& world) {
+            // nothing
+        }
 
-        virtual void tick(EntityWorld& world) = 0;
+        virtual void update(EntityWorld& world, float dt) {
+            // nothing
+        }
 
         virtual void setup(EntityWorld&) {
             // nothing

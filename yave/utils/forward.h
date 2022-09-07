@@ -120,6 +120,8 @@ class Renderable;
 class ResourceFence;
 class Sampler;
 class SceneView;
+class ScriptComponent;
+class ScriptSystem;
 class SearchableFileSystemModel;
 class ShaderModuleBase;
 class ShaderProgram;
@@ -168,6 +170,8 @@ struct DirectVertex;
 struct DownsamplePass;
 struct EmptyResource;
 struct EnclosingSphere;
+struct EntryInfo;
+struct ExposurePass;
 struct FrameGraphBufferId;
 struct FrameGraphImageId;
 struct FrameGraphMutableBufferId;
@@ -188,7 +192,6 @@ struct KeyHash;
 struct LayoutPools;
 struct LightingPass;
 struct LightingSettings;
-struct LoadableComponentRegister;
 struct LoadableComponentTypeInfo;
 struct Mip;
 struct Monitor;
@@ -209,6 +212,7 @@ struct SkeletonData;
 struct SkinWeights;
 struct SkinnedVertex;
 struct SubMesh;
+struct SystemRegister;
 struct ToneMappingPass;
 struct ToneMappingSettings;
 struct Viewport;
@@ -244,13 +248,24 @@ struct IdReturnPolicy;
 namespace yave::uniform {
 struct Camera;
 struct DirectionalLight;
+struct ExposureParams;
 struct PointLight;
 struct RayleighSky;
 struct SH;
 struct ShadowMapParams;
 struct SpotLight;
-struct Surfel;
-struct ExposureParams;
+struct VPL;
+}
+
+
+namespace yave::script {
+class VM;
+struct Error;
+}
+
+
+namespace yave::script::detail {
+struct CollectionData;
 }
 
 

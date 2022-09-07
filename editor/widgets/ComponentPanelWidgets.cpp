@@ -27,6 +27,7 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
 #include <editor/utils/ui.h>
+#include <editor/widgets/FileBrowser.h>
 
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
@@ -35,6 +36,7 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/AtmosphereComponent.h>
+#include <yave/components/ScriptComponent.h>
 
 #include <yave/utils/color.h>
 #include <yave/assets/AssetLoader.h>
@@ -42,6 +44,8 @@ SOFTWARE.
 #include <yave/material/Material.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
+
+#include <y/io2/File.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -542,6 +546,26 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
         }
 
         component->set_transform(math::Transform<>(pos, rot, scale));
+    }
+};
+
+struct ScriptComponentWidget : public ComponentPanelWidget<ScriptComponentWidget, ScriptComponent> {
+    void on_gui(ecs::EntityId id, ScriptComponent* component) {
+        if(ImGui::Button(ICON_FA_FOLDER_OPEN " Load Script")) {
+            FileBrowser* browser = add_child_widget<FileBrowser>(FileSystemModel::local_filesystem());
+            browser->set_selection_filter(false, "*.lua");
+            browser->set_selected_callback([=](const core::String& file) {
+                if(auto code = io2::File::read_text_file(file)) {
+                    component->code = std::move(code.unwrap());
+                    return true;
+                }
+                return false;
+            });
+        }
+        ImGui::SameLine();
+        if(ImGui::Button(ICON_FA_TRASH " Clear")) {
+            component->code = "";
+        }
     }
 };
 

@@ -86,6 +86,17 @@ core::Result<File> File::open(const core::String& name) {
     return core::Err();
 }
 
+
+core::Result<core::String> File::read_text_file(const core::String& name) {
+    auto r = File::open(name);
+    y_try(r);
+    File& file = r.unwrap();
+    core::String buffer;
+    buffer.resize(file.size(), '\0');
+    y_try_discard(file.read(buffer.data(), buffer.size()));
+    return core::Ok(std::move(buffer));
+}
+
 core::Result<void> File::copy(Reader& src, const core::String& dst) {
     auto f = create(dst);
     if(!f) {

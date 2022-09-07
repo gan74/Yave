@@ -100,6 +100,7 @@ void EditorApplication::exec() {
         y_debug_assert(!_recorder);
         _recorder = &rec;
         _world->tick();
+        _world->update(float(_update_timer.reset().to_secs()));
         _ui->on_gui();
         process_deferred_actions();
         _recorder = nullptr;

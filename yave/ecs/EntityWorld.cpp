@@ -74,6 +74,14 @@ void EntityWorld::tick() {
     }
 }
 
+void EntityWorld::update(float dt) {
+    y_profile();
+    for(auto& system : _systems) {
+        y_profile_dyn_zone(system->name().data());
+        system->update(*this, dt);
+    }
+}
+
 usize EntityWorld::entity_count() const {
     return _entities.size();
 }

@@ -29,8 +29,12 @@ VM::VM() {
 }
 
 core::Result<void, VM::Error> VM::run(std::string_view code) {
-    if(auto r = _state.safe_script(code); !r.valid()) {
-        return core::Err(Error{core::String("Unknown Error")});
+    try {
+        if(auto r = _state.safe_script(code); !r.valid()) {
+            return core::Err(Error{"Unknown Error"});
+        }
+    } catch(std::exception& e) {
+        return core::Err(Error{core::String("Exception: ") + e.what()});
     }
 
     return core::Ok();
