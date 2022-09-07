@@ -25,21 +25,23 @@ SOFTWARE.
 
 namespace yave {
 namespace script {
+
 namespace detail {
-
-void reg_collection_id() {
-}
-
 CollectionData& get_collection_data(lua_State* l) {
-    void* key = reg_collection_id;
-    auto proxy = sol::state_view(l).registry()[key];
+    static int key = 0;
+    auto proxy = sol::state_view(l).registry()[static_cast<void*>(&key)];
     if(!proxy.valid()) {
         proxy = CollectionData{};
     }
     return proxy.get<CollectionData>();
 }
-
 }
+
+
+void clear_weak_refs(lua_State* l) {
+    ++detail::get_collection_data(l).id;
+}
+
 }
 }
 

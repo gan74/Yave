@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 namespace script {
-    
+
 namespace detail {
 template<typename T, typename M>
 auto property(M T::* member) {
@@ -49,10 +49,6 @@ auto property(M T::* member) {
 
 struct CollectionData {
     u64 id = 0;
-    
-    void inc() {
-        ++id;
-    }
 };
 
 CollectionData& get_collection_data(lua_State* l);
@@ -64,12 +60,14 @@ struct Weak {
     T* ptr = nullptr;
     u64 collection_id = 0;
     mutable detail::CollectionData* collection_data = nullptr;
-    
+
     Weak() = default;
-    
+
     Weak(T* p) : ptr(p) {
     }
 };
+
+void clear_weak_refs(lua_State* l);
 
 }
 }
@@ -87,16 +85,15 @@ struct unique_usertype_traits<yave::script::Weak<T>> {
         if(!ptr.ptr) {
             return true;
         }
-        
+
         if(!ptr.collection_data) {
             ptr.collection_data = &yave::script::detail::get_collection_data(l);
         }
-        
+
         return ptr.collection_id < ptr.collection_data->id;
     }
 
     static type* get(const actual_type& ptr) {
-            printf("get \n");
         return ptr.ptr;
     }
 };

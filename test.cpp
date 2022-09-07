@@ -50,7 +50,7 @@ int main(int, char**) {
     vm.set_global("external", &meta_test);
     vm.set_global("weak", weak);
     vm.set_global("globo", floop);
-    vm.set_global("collect", [](lua_State* l) -> int { yave::script::detail::get_collection_data(l).inc(); return 0; });
+    vm.set_global("collect", [](lua_State* l) -> int { yave::script::clear_weak_refs(l); return 0; });
 
     const char* code = R"#(
         local sum = 0;
@@ -71,11 +71,11 @@ int main(int, char**) {
             assert(external.deleted == false)
             assert(external.foo == 4)
         end
-        
+
         print(sum)
         external.blap = sum;
         print(globo(999, 3.24, "oof"))
-        
+
         print(weak().blap)
         weak().blap = -607;
         print(weak().blap)
