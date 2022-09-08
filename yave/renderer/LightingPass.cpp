@@ -147,7 +147,9 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
     const Frustum frustum = scene.camera().frustum();
 
     u32 count = 0;
-    for(auto [t, l] : scene.world().query<TransformableComponent, PointLightComponent>().components()) {
+    for(auto point : scene.world().query<TransformableComponent, PointLightComponent>()) {
+        const auto& [t, l] = point.components();
+
         const float scaled_radius = l.radius() * t.transform().scale().max_component();
         if(!frustum.is_inside(t.position(), scaled_radius)) {
             continue;

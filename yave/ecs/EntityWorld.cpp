@@ -54,6 +54,7 @@ EntityWorld& EntityWorld::operator=(EntityWorld&& other) {
 void EntityWorld::swap(EntityWorld& other) {
     if(this != &other) {
         std::swap(_containers, other._containers);
+        std::swap(_tags, other._tags);
         std::swap(_entities, other._entities);
         std::swap(_required_components, other._required_components);
         std::swap(_systems, other._systems);
@@ -71,7 +72,9 @@ void EntityWorld::tick() {
         system->tick(*this);
     }
     for(auto& container : _containers) {
-        container.second->clear_recent();
+        if(container) {
+            container->clear_recent();
+        }
     }
 }
 
@@ -124,8 +127,10 @@ EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
 
 void EntityWorld::remove_entity(EntityId id) {
     check_exists(id);
-    for(auto& cont : _containers.values()) {
-        cont->remove(id);
+    for(auto& container : _containers) {
+        if(container) {
+            container->remove(id);
+        }
     }
     _entities.recycle(id);
 }
@@ -137,15 +142,17 @@ EntityId EntityWorld::id_from_index(u32 index) const {
 EntityPrefab EntityWorld::create_prefab(EntityId id) const {
     check_exists(id);
     EntityPrefab prefab;
-    for(auto& cont : _containers.values()) {
-        if(!cont->contains(id)) {
-            continue;
+    for(auto& container : _containers) {
+        if(container) {
+            if(!container->contains(id)) {
+                continue;
+            }
+            auto box = container->create_box(id);
+            if(!box) {
+                log_msg(fmt("% is not copyable and was excluded from prefab", container->runtime_info().type_name), Log::Warning);
+            }
+            prefab.add(std::move(box));
         }
-        auto box = cont->create_box(id);
-        if(!box) {
-            log_msg(fmt("% is not copyable and was excluded from prefab", cont->runtime_info().type_name), Log::Warning);
-        }
-        prefab.add(std::move(box));
     }
     return prefab;
 }
@@ -160,6 +167,18 @@ core::Span<EntityId> EntityWorld::recently_added(ComponentTypeIndex type_id) con
     return cont ? cont->recently_added() : core::Span<EntityId>();
 }
 
+core::Span<EntityId> EntityWorld::with_tag(const core::String& tag) const {
+    const SparseIdSet* set = tag_set(tag);
+    return set ? set->ids() : core::Span<EntityId>();
+}
+
+const SparseIdSet* EntityWorld::tag_set(const core::String& tag) const {
+    if(const auto it = _tags.find(tag); it != _tags.end()) {
+        return &it->second;
+    }
+    return nullptr;
+}
+
 core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
     return _required_components;
 }
@@ -170,17 +189,11 @@ std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) co
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
-    if(const auto it = _containers.find(type_id); it != _containers.end()) {
-        return it->second.get();
-    }
-    return nullptr;
+    return _containers.size() <= type_id ? nullptr : _containers[type_id].get();
 }
 
 ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) {
-    if(const auto it = _containers.find(type_id); it != _containers.end()) {
-        return it->second.get();
-    }
-    return nullptr;
+    return _containers.size() <= type_id ? nullptr : _containers[type_id].get();
 }
 
 ComponentContainerBase* EntityWorld::find_or_create_container(const ComponentRuntimeInfo& info) {
@@ -199,10 +212,12 @@ void EntityWorld::check_exists(EntityId id) const {
 
 
 void EntityWorld::post_deserialize() {
-    core::FlatHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> patched;
-    for(auto& cont : _containers.values()) {
-        if(cont) {
-            patched[cont->type_id()] = std::move(cont);
+    core::Vector<std::unique_ptr<ComponentContainerBase>> patched;
+    for(auto& container : _containers) {
+        if(container) {
+            const ComponentTypeIndex id = container->type_id();
+            patched.set_min_size(id + 1);
+            patched[id] = std::move(container);
         }
     }
     _containers = std::move(patched);

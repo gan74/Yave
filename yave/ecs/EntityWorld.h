@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include "ComponentContainer.h"
 
+#include <y/core/ScratchPad.h>
+
 namespace yave {
 namespace ecs {
 
@@ -62,6 +64,8 @@ class EntityWorld {
         core::Span<EntityId> component_ids(ComponentTypeIndex type_id) const;
         core::Span<EntityId> recently_added(ComponentTypeIndex type_id) const;
 
+        core::Span<EntityId> with_tag(const core::String& tag) const;
+        const SparseIdSet* tag_set(const core::String& tag) const;
 
         core::Span<ComponentTypeIndex> required_components() const;
 
@@ -139,6 +143,26 @@ class EntityWorld {
 
 
 
+        // ---------------------------------------- Components ----------------------------------------
+
+        void add_tag(EntityId id, const core::String& tag) {
+            check_exists(id);
+            _tags[tag].insert(id);
+        }
+
+        void remove_tag(EntityId id, const core::String& tag) {
+            check_exists(id);
+            _tags[tag].erase(id);
+        }
+
+        bool has_tag(EntityId id, const core::String& tag) const {
+            check_exists(id);
+            const SparseIdSet* set = tag_set(tag);
+            return set ? set->contains(id) : false;
+        }
+
+
+
         // ---------------------------------------- Enumerations ----------------------------------------
 
         auto ids() const {
@@ -147,8 +171,11 @@ class EntityWorld {
 
         auto component_types() const {
             auto tr = [](const std::unique_ptr<ComponentContainerBase>& cont) { return cont->type_id(); };
-            return core::Range(TransformIterator(_containers.values().begin(), tr),
-                               _containers.values().end());
+            return core::Range(TransformIterator(_containers.begin(), tr), _containers.end());
+        }
+
+        auto tags() const {
+            return _tags.keys();
         }
 
         core::Span<std::unique_ptr<System>> systems() const {
@@ -228,38 +255,36 @@ class EntityWorld {
         // ---------------------------------------- Queries ----------------------------------------
 
         template<typename... Args>
-        Query<Args...> query() {
-            static_assert(sizeof...(Args));
-            return Query<Args...>(typed_component_sets<Args...>());
+        auto query(core::Span<core::String> tags = {}) {
+            const auto sets = typed_component_sets<Args...>();
+            return Query<Args...>(sets, build_id_sets_for_query(sets, tags));
         }
 
         template<typename... Args>
-        Query<Args...> query() const {
-            static_assert(sizeof...(Args));
+        auto query(core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
-            return Query<Args...>(typed_component_sets<Args...>());
+            const auto sets = typed_component_sets<Args...>();
+            return Query<Args...>(sets, build_id_sets_for_query(sets, tags));
         }
 
         template<typename... Args>
-        Query<Args...> query(core::Span<EntityId> ids) {
-            static_assert(sizeof...(Args));
+        auto query(core::Span<EntityId> ids) {
             return Query<Args...>(typed_component_sets<Args...>(), ids);
         }
 
         template<typename... Args>
-        Query<Args...> query(core::Span<EntityId> ids) const {
-            static_assert(sizeof...(Args));
+        auto query(core::Span<EntityId> ids) const {
             static_assert((traits::is_component_const_v<Args> && ...));
             return Query<Args...>(typed_component_sets<Args...>(), ids);
         }
 
         template<typename... Args>
-        Query<Args...> query(StaticArchetype<Args...>) {
+        auto query(StaticArchetype<Args...>) {
             return query<Args...>();
         }
 
         template<typename... Args>
-        Query<Args...> query(StaticArchetype<Args...>) const {
+        auto query(StaticArchetype<Args...>) const {
             return query<Args...>();
         }
 
@@ -283,7 +308,7 @@ class EntityWorld {
 
         void post_deserialize();
 
-        y_reflect(EntityWorld, _entities, _containers)
+        y_reflect(EntityWorld, _entities, _containers, _tags)
 
     private:
         template<typename T>
@@ -311,6 +336,7 @@ class EntityWorld {
             static const auto static_info = ComponentRuntimeInfo::create<T>();
             unused(static_info);
 
+            _containers.set_min_size(type_index<T>() + 1);
             auto& cont = _containers[type_index<T>()];
             if(!cont) {
                 cont = std::make_unique<ComponentContainer<T>>();
@@ -332,6 +358,16 @@ class EntityWorld {
             }
         }
 
+        template<typename T>
+        auto build_id_sets_for_query(const T& sets, core::Span<core::String> tags) const {
+            const usize set_count = std::tuple_size_v<T>;
+            core::ScratchPad<const SparseIdSetBase*> id_sets(set_count + tags.size());
+            QueryUtils::fill_set_ids(id_sets, sets);
+            for(usize i = 0; i != tags.size(); ++i) {
+                id_sets[set_count + i] = tag_set(tags[i]);
+            }
+            return id_sets;
+        }
 
         const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
         ComponentContainerBase* find_container(ComponentTypeIndex type_id);
@@ -340,8 +376,8 @@ class EntityWorld {
         void check_exists(EntityId id) const;
 
 
-        Y_TODO(replace by vector)
-        core::FlatHashMap<ComponentTypeIndex, std::unique_ptr<ComponentContainerBase>> _containers;
+        core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
+        core::FlatHashMap<core::String, SparseIdSet> _tags;
         EntityIdPool _entities;
 
         core::Vector<ComponentTypeIndex> _required_components;

@@ -19,41 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMPONENTS_SCRIPTCOMPONENT_H
-#define YAVE_COMPONENTS_SCRIPTCOMPONENT_H
 
-#include <yave/yave.h>
+#include "Query.h"
 
-#include <yave/script/script.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
+namespace ecs {
 
-class ScriptComponent final {
-    public:
-        enum class Status {
-            Uninitialized,
-            Started,
+core::Vector<EntityId> QueryUtils::matching(core::Span<const SparseIdSetBase*> sets, core::Span<EntityId> ids) {
+    y_profile();
 
-            Error
-        };
+    auto match = core::vector_with_capacity<EntityId>(ids.size());
+    for(EntityId id : ids) {
+        bool contains = true;
+        for(usize i = 0; contains && i != sets.size(); ++i) {
+            y_debug_assert(sets[i]);
+            contains &= sets[i]->contains(id);
+        }
 
-        void set_code(core::String code);
+        if(contains) {
+            match.push_back(id);
+        }
+    }
 
-        bool start();
-
-        sol::state& state();
-
-        y_reflect(ScriptComponent, _code)
-
-    private:
-        core::String _code;
-        sol::state _state;
-
-        Status _status = Status::Uninitialized;
-
-};
-
+    return match;
 }
 
-#endif // YAVE_COMPONENTS_STATICMESHCOMPONENT_H
+}
+}
 

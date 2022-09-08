@@ -35,7 +35,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class SparseIdSet : NonCopyable {
+class SparseIdSetBase : NonCopyable {
 
     public:
         using index_type = u32;
@@ -71,6 +71,10 @@ class SparseIdSet : NonCopyable {
             return index < _sparse.size() ? _sparse[index] : invalid_index;
         }
 
+        const SparseIdSetBase& smallest(const SparseIdSetBase& other) const {
+            return size() < other.size() ? *this : other;
+        }
+
     protected:
         void grow_sparse(index_type max_index) {
             _sparse.set_min_size(usize(max_index + 1), invalid_index);
@@ -81,8 +85,44 @@ class SparseIdSet : NonCopyable {
 };
 
 
+class SparseIdSet : public SparseIdSetBase {
+    public:
+        void insert(EntityId id) {
+            y_debug_assert(!contains(id));
+
+            const index_type index = id.index();
+            grow_sparse(index);
+
+            _sparse[index] = index_type(_dense.size());
+            _dense.emplace_back(id);
+        }
+
+        void erase(EntityId id) {
+            y_debug_assert(contains(id));
+
+            const index_type index = id.index();
+            const index_type dense_index = _sparse[index];
+            const index_type last_dense_index = index_type(_dense.size() - 1);
+            const EntityId last = _dense[last_dense_index];
+
+            y_debug_assert(_dense[dense_index] == id);
+
+            std::swap(_dense[dense_index], _dense[last_dense_index]);
+
+            _dense.pop();
+
+            const index_type last_sparse_index = last.index();
+            _sparse[last_sparse_index] = dense_index;
+            _sparse[index] = invalid_index;
+
+
+            y_debug_assert(!contains(id));
+        }
+};
+
+
 template<typename Elem>
-class SparseComponentSetBase : public SparseIdSet {
+class SparseComponentSetBase : public SparseIdSetBase {
 
     public:
         using element_type = std::remove_cv_t<Elem>;

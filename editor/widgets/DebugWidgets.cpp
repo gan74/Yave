@@ -96,8 +96,7 @@ class CullingDebug : public Widget {
             const Camera& camera = scene_view().camera();
 
             core::Vector<ecs::EntityId> visible;
-            const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
-            if(octree_system) {
+            if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
                 visible = octree_system->octree().find_entities(camera.frustum());
             }
 

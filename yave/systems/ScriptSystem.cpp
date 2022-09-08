@@ -22,8 +22,6 @@ SOFTWARE.
 
 #include "ScriptSystem.h"
 
-#include <yave/components/ScriptComponent.h>
-
 #include <yave/ecs/EntityWorld.h>
 
 #include <y/utils/log.h>
@@ -35,11 +33,11 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
 }
 
 void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
-    for(auto&& [script] : world.query<ecs::Mutate<ScriptComponent>>().components()) {
+    /*for(auto&& [script] : world.query<ecs::Mutate<ScriptComponent>>().components()) {
         if(script.start()) {
             script.state()["update"](dt);
         }
-    }
+    }*/
 }
 
 }

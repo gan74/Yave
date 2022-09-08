@@ -176,7 +176,7 @@ class ComponentContainerBase : NonMovable {
     private:
         // hacky but avoids a bunch of dynamic casts and virtual calls
         void* _sparse = nullptr;
-        SparseIdSet* _ids = nullptr;
+        SparseIdSetBase* _ids = nullptr;
 
         const ComponentTypeIndex _type_id;
 

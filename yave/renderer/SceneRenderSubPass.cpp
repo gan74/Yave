@@ -72,19 +72,19 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
     recorder.set_main_descriptor_set(descriptor_set);
     recorder.bind_per_instance_attrib_buffers(transforms);
 
-    core::Vector<ecs::EntityId> visible;
-    const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
-    if(octree_system) {
-        visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
-    }
-    const auto entities = octree_system
-        ? world.query<TransformableComponent, StaticMeshComponent>(visible)
-        : world.query<TransformableComponent, StaticMeshComponent>();
+    auto render_query = [&](auto query) {
+        for(const auto& [tr, mesh] : query.components()) {
+            transform_mapping[index] = tr.transform();
+            mesh.render(recorder, Renderable::SceneData{u32(index)});
+            ++index;
+        }
+    };
 
-    for(const auto& [tr, mesh] : entities.components()) {
-        transform_mapping[index] = tr.transform();
-        mesh.render(recorder, Renderable::SceneData{u32(index)});
-        ++index;
+    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
+        const core::Vector<ecs::EntityId> visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+        render_query(world.query<TransformableComponent, StaticMeshComponent>(visible));
+    } else {
+        render_query(world.query<TransformableComponent, StaticMeshComponent>());
     }
 
     y_profile_msg(fmt_c_str("% meshes", index));
