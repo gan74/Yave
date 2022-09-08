@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <y/core/Vector.h>
 #include <y/core/String.h>
 #include <y/reflect/reflect.h>
 
@@ -33,6 +34,8 @@ SOFTWARE.
 
 namespace yave {
 namespace script {
+
+static_assert(sol::is_container_v<core::Vector<int>>);
 
 namespace detail {
 template<typename T, typename M>
@@ -54,7 +57,7 @@ struct CollectionData {
 CollectionData& get_collection_data(lua_State* l);
 }
 
-void clear_weak_refs(lua_State* l);
+void clear_weak_refs(sol::state& l);
 
 
 template<typename T>

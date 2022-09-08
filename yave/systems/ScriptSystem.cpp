@@ -30,14 +30,40 @@ SOFTWARE.
 namespace yave {
 
 ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
+    _state.open_libraries();
+
+    {
+        auto type = _state.new_usertype<ecs::EntityWorld>("World");
+
+        type["query"] = [](const ecs::EntityWorld& world, sol::variadic_args va) -> core::Vector<ecs::EntityId> {
+            core::ScratchVector<core::String> tags(va.size());
+            for(auto v : va) {
+                tags.emplace_back(v.as<std::string_view>());
+            }
+            return world.query<>(tags).ids();
+        };
+    }
+
+    {
+        auto type = _state.new_usertype<ecs::EntityId>("EntityId");
+
+        type["__tostring"] = [](ecs::EntityId id) { return fmt("[%; %]", id.index(), id.version()); };
+    }
 }
 
 void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
-    /*for(auto&& [script] : world.query<ecs::Mutate<ScriptComponent>>().components()) {
-        if(script.start()) {
-            script.state()["update"](dt);
-        }
-    }*/
+    _state["world"] = &world;
+
+    try {
+        _state.safe_script(R"#(
+            local tagged = world:query("tag #1")
+            for i = 1, #tagged do
+                print(tagged[i])
+            end
+        )#");
+    } catch(std::exception& e) {
+        log_msg(fmt("Lua error: %", e.what()), Log::Error);
+    }
 }
 
 }

@@ -65,10 +65,12 @@ struct QueryUtils {
 
 template<typename... Args>
 class Query : NonCopyable {
+
     using set_tuple = std::tuple<SparseComponentSet<traits::component_raw_type_t<Args>>*...>;
     using all_components = std::tuple<traits::component_type_t<Args>...>;
 
-    static constexpr std::array component_required = {traits::component_required_v<Args>...};
+    static constexpr bool is_empty = sizeof...(Args) == 0;
+    static constexpr std::array component_required = {traits::component_required_v<Args>..., false};
 
     template<usize I = 0>
     static auto make_component_tuple(const set_tuple& sets, EntityId id) {
@@ -201,11 +203,15 @@ class Query : NonCopyable {
             return _ids;
         }
 
+        core::Vector<EntityId> ids() && {
+            return std::move(_ids);
+        }
+
     private:
         friend class EntityWorld;
 
         Query(const set_tuple& sets, core::MutableSpan<const SparseIdSetBase*> id_sets) : _sets(sets) {
-            if(std::all_of(id_sets.begin(), id_sets.end(), [](auto ptr) { return !!ptr; })) {
+            if(!id_sets.is_empty() && std::all_of(id_sets.begin(), id_sets.end(), [](auto ptr) { return !!ptr; })) {
                 std::sort(id_sets.begin(), id_sets.end(), [](const auto& a, const auto& b) { return a->size() < b->size(); });
                 _ids = QueryUtils::matching(core::Span<const SparseIdSetBase*>(id_sets.begin() + 1, id_sets.size() - 1), id_sets[0]->ids());
             }

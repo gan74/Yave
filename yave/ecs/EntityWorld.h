@@ -256,14 +256,14 @@ class EntityWorld {
 
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) {
-            const auto sets = typed_component_sets<Args...>();
+            const auto sets = typed_component_sets_or_none<Args...>();
             return Query<Args...>(sets, build_id_sets_for_query(sets, tags));
         }
 
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
-            const auto sets = typed_component_sets<Args...>();
+            const auto sets = typed_component_sets_or_none<Args...>();
             return Query<Args...>(sets, build_id_sets_for_query(sets, tags));
         }
 
@@ -346,7 +346,7 @@ class EntityWorld {
 
         template<typename T, typename... Args>
         auto typed_component_sets() const {
-            if constexpr(sizeof...(Args)) {
+            if constexpr(sizeof...(Args) != 0) {
                 return std::tuple_cat(typed_component_sets<T>(),
                                       typed_component_sets<Args...>());
             } else {
@@ -355,6 +355,15 @@ class EntityWorld {
                 using component_type = traits::component_raw_type_t<T>;
                 ComponentContainerBase* cont = const_cast<ComponentContainerBase*>(find_container<component_type>());
                 return std::tuple{cont ? &cont->component_set<component_type>() : nullptr};
+            }
+        }
+
+        template<typename... Args>
+        auto typed_component_sets_or_none() const {
+            if constexpr(sizeof...(Args) != 0) {
+                return typed_component_sets<Args...>();
+            } else {
+                return std::tuple<>{};
             }
         }
 

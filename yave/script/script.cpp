@@ -37,8 +37,8 @@ CollectionData& get_collection_data(lua_State* l) {
 }
 
 
-void clear_weak_refs(lua_State* l) {
-    ++detail::get_collection_data(l).id;
+void clear_weak_refs(sol::state& l) {
+    ++detail::get_collection_data(l.lua_state()).id;
 }
 
 }
