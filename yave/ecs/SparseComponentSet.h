@@ -87,14 +87,14 @@ class SparseIdSetBase : NonCopyable {
 
 class SparseIdSet : public SparseIdSetBase {
     public:
-        void insert(EntityId id) {
-            y_debug_assert(!contains(id));
+        void set(EntityId id) {
+            if(!contains(id)) {
+                const index_type index = id.index();
+                grow_sparse(index);
 
-            const index_type index = id.index();
-            grow_sparse(index);
-
-            _sparse[index] = index_type(_dense.size());
-            _dense.emplace_back(id);
+                _sparse[index] = index_type(_dense.size());
+                _dense.emplace_back(id);
+            }
         }
 
         void erase(EntityId id) {

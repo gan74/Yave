@@ -147,7 +147,7 @@ class EntityWorld {
 
         void add_tag(EntityId id, const core::String& tag) {
             check_exists(id);
-            _tags[tag].insert(id);
+            _tags[tag].set(id);
         }
 
         void remove_tag(EntityId id, const core::String& tag) {

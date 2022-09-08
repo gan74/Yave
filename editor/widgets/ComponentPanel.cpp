@@ -96,6 +96,20 @@ void ComponentPanel::on_gui() {
         }
     }
 
+    if(ImGui::CollapsingHeader(ICON_FA_TAGS " Tags")) {
+        ImGui::Indent();
+        for(const core::String& tag : world.tags()) {
+            if(world.has_tag(id, tag)) {
+                ImGui::TextUnformatted(tag.data());
+            }
+        }
+        if(ImGui::Button(ICON_FA_PLUS " Add tag")) {
+            auto all = world.tags();
+            world.add_tag(id, fmt("tag #%", std::distance(all.begin(), all.end()) + 1));
+        }
+        ImGui::Unindent();
+    }
+
 
     const bool editing = ImGui::IsWindowFocused() && ImGui::IsAnyItemActive();
     if(!editing && _editing) {
@@ -106,7 +120,7 @@ void ComponentPanel::on_gui() {
 
     ImGui::Separator();
 
-    if(ImGui::Button("Add component")) {
+    if(ImGui::Button(ICON_FA_PLUS " Add component")) {
         ImGui::OpenPopup("##addcomponentmenu");
     }
 
