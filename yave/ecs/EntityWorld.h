@@ -65,7 +65,7 @@ class EntityWorld {
         core::Span<EntityId> recently_added(ComponentTypeIndex type_id) const;
 
         core::Span<EntityId> with_tag(const core::String& tag) const;
-        const SparseIdSet* tag_set(const core::String& tag) const;
+        const SparseIdSetBase* tag_set(const core::String& tag) const;
 
         core::Span<ComponentTypeIndex> required_components() const;
 
@@ -145,22 +145,13 @@ class EntityWorld {
 
         // ---------------------------------------- Components ----------------------------------------
 
-        void add_tag(EntityId id, const core::String& tag) {
-            check_exists(id);
-            _tags[tag].set(id);
-        }
+        void add_tag(EntityId id, const core::String& tag);
 
-        void remove_tag(EntityId id, const core::String& tag) {
-            check_exists(id);
-            _tags[tag].erase(id);
-        }
+        void remove_tag(EntityId id, const core::String& tag);
 
-        bool has_tag(EntityId id, const core::String& tag) const {
-            check_exists(id);
-            const SparseIdSet* set = tag_set(tag);
-            return set ? set->contains(id) : false;
-        }
+        bool has_tag(EntityId id, const core::String& tag) const;
 
+        static bool is_tag_implicit(std::string_view tag);
 
 
         // ---------------------------------------- Enumerations ----------------------------------------
@@ -377,6 +368,9 @@ class EntityWorld {
             }
             return id_sets;
         }
+
+
+        const SparseIdSet* raw_tag_set(const core::String& tag) const;
 
         const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
         ComponentContainerBase* find_container(ComponentTypeIndex type_id);

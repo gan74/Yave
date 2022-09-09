@@ -80,6 +80,8 @@ class ComponentContainerBase : NonMovable {
         bool contains(EntityId id) const;
         core::Span<EntityId> ids() const;
 
+        const SparseIdSetBase& id_set() const;
+
         ComponentTypeIndex type_id() const;
 
         virtual ComponentRuntimeInfo runtime_info() const = 0;

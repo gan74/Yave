@@ -42,6 +42,14 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
             }
             return world.query<>(tags).ids();
         };
+
+        type["component_type_names"] = [](const ecs::EntityWorld& world) -> core::Vector<std::string_view> {
+            core::Vector<std::string_view> type_names;
+            for(ecs::ComponentTypeIndex t : world.component_types()) {
+                type_names.emplace_back(world.component_type_name(t));
+            }
+            return type_names;
+        };
     }
 
     {
@@ -60,6 +68,11 @@ void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
             for i = 1, #tagged do
                 print(tagged[i])
             end
+            local names = world:component_type_names()
+            for i = 1, #names do
+                print(names[i])
+            end
+            -- print(#world:query("#"))
         )#");
     } catch(std::exception& e) {
         log_msg(fmt("Lua error: %", e.what()), Log::Error);

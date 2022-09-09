@@ -168,15 +168,58 @@ core::Span<EntityId> EntityWorld::recently_added(ComponentTypeIndex type_id) con
 }
 
 core::Span<EntityId> EntityWorld::with_tag(const core::String& tag) const {
-    const SparseIdSet* set = tag_set(tag);
+    const SparseIdSetBase* set = tag_set(tag);
     return set ? set->ids() : core::Span<EntityId>();
 }
 
-const SparseIdSet* EntityWorld::tag_set(const core::String& tag) const {
+const SparseIdSet* EntityWorld::raw_tag_set(const core::String& tag) const {
     if(const auto it = _tags.find(tag); it != _tags.end()) {
         return &it->second;
     }
     return nullptr;
+}
+
+const SparseIdSetBase* EntityWorld::tag_set(const core::String& tag) const {
+    if(tag.is_empty()) {
+        return nullptr;
+    }
+
+    if(tag.starts_with("#")) {
+        for(const auto& container : _containers) {
+            if(container->runtime_info().type_name == tag.sub_str(1)) {
+                return &container->id_set();
+            }
+        }
+        return nullptr;
+    }
+
+    if(tag.starts_with("#")) {
+        y_fatal("Not supported");
+    }
+
+    return raw_tag_set(tag);
+}
+
+void EntityWorld::add_tag(EntityId id, const core::String& tag) {
+    check_exists(id);
+    y_always_assert(!is_tag_implicit(tag), "Implicit tags can't be added directly");
+    _tags[tag].set(id);
+}
+
+void EntityWorld::remove_tag(EntityId id, const core::String& tag) {
+    check_exists(id);
+    y_always_assert(!is_tag_implicit(tag), "Implicit tags can't be removed directly");
+    _tags[tag].erase(id);
+}
+
+bool EntityWorld::has_tag(EntityId id, const core::String& tag) const {
+    check_exists(id);
+    const SparseIdSetBase* set = tag_set(tag);
+    return set ? set->contains(id) : false;
+}
+
+bool EntityWorld::is_tag_implicit(std::string_view tag) {
+    return !tag.empty() && (tag[0] == '!' || tag[0] == '#');
 }
 
 core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
