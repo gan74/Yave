@@ -606,6 +606,10 @@ class FlatHashMap : Hasher, Equal {
             return _size;
         }
 
+        static inline constexpr usize max_size() {
+            return decltype(_states)::max_size();
+        }
+
         inline double load_factor() const {
             const usize buckets = bucket_count();
             return buckets ? double(_size) / double(buckets) : 0.0;

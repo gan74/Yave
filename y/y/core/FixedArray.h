@@ -145,6 +145,10 @@ class FixedArray {
             return _data[i];
         }
 
+        static inline constexpr usize max_size() {
+            return usize(-1);
+        }
+
     private:
         std::unique_ptr<data_type[]> _data;
         usize _size = 0;

@@ -46,6 +46,10 @@ class String {
         operator usize() const {
             return _len;
         }
+
+        static constexpr usize max_length() {
+            return (1_uu << (8 * sizeof(usize) - 1)) - 2;
+        }
     };
 
     struct ShortLenType
@@ -222,6 +226,10 @@ class String {
 
         const_iterator cend() const {
             return data() + size();
+        }
+
+        static constexpr usize max_size() {
+            return LongLenType::max_length();
         }
 
     private:

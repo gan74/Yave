@@ -24,8 +24,11 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+// #include <y/math/Transform.h>
+
 #include <y/core/Vector.h>
 #include <y/core/String.h>
+
 #include <y/reflect/reflect.h>
 
 #define SOL_ALL_SAFETIES_ON 1
@@ -73,11 +76,12 @@ struct Weak {
 };
 
 template<typename T>
-void bind_type(sol::state& state) {
+auto bind_type(sol::state& state) {
     sol::usertype<T> type = state.new_usertype<T>(T::_y_reflect_type_name);
     reflect::explore_members<T>([&](std::string_view name, auto member) {
         type[name] = detail::property(member);
     });
+    return type;
 }
 
 }
@@ -86,6 +90,9 @@ void bind_type(sol::state& state) {
 
 
 namespace sol {
+// template<>
+// struct is_container<y::math::Transform<>> : std::false_type {};
+
 template<typename T>
 struct unique_usertype_traits<yave::script::Weak<T>> {
     using type = T;

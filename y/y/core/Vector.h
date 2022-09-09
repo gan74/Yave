@@ -389,6 +389,10 @@ class Vector : ResizePolicy, Allocator {
             _data_end = _data;
         }
 
+        static inline constexpr usize max_size() {
+            return usize(-1);
+        }
+
     private:
         static constexpr bool is_data_trivial = std::is_trivial_v<data_type>;
 

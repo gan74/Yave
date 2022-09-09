@@ -23,6 +23,8 @@ SOFTWARE.
 #include "ScriptSystem.h"
 
 #include <yave/ecs/EntityWorld.h>
+#include <yave/components/TransformableComponent.h>
+
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -57,6 +59,14 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
 
         type["__tostring"] = [](ecs::EntityId id) { return fmt("[%; %]", id.index(), id.version()); };
     }
+
+    {
+        using Transform = math::Transform<>;
+        auto type = _state.new_usertype<Transform>("Transform");
+        type["position"] = [](const Transform& tr) { return tr.position(); };
+    }
+
+    script::bind_type<TransformableComponent>(_state);
 }
 
 void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
@@ -68,8 +78,11 @@ void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
             for i = 1, #tagged do
                 print(tagged[i])
             end
-            local names = world:component_type_names()
-            -- print(#world:query("#TransformableComponent"))
+            local tr = world:query("#TransformableComponent")
+            for i = 1, #tr do
+                local id = tr[i]
+                print(id)
+            end
         )#");
     } catch(std::exception& e) {
         log_msg(fmt("Lua error: %", e.what()), Log::Error);

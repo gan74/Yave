@@ -307,6 +307,10 @@ class Vec
             return N;
         }
 
+        inline static constexpr usize max_size() {
+            return N;
+        }
+
         template<usize I>
         inline constexpr const T& get() const {
             static_assert(I < N, "Accessing out of bound member");
