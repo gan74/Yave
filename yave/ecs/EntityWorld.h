@@ -28,6 +28,7 @@ SOFTWARE.
 #include "EntityPrefab.h"
 #include "System.h"
 
+#include "WorldComponentContainer.h"
 #include "ComponentContainer.h"
 
 #include <y/core/ScratchPad.h>
@@ -154,6 +155,7 @@ class EntityWorld {
         static bool is_tag_implicit(std::string_view tag);
 
 
+
         // ---------------------------------------- Enumerations ----------------------------------------
 
         auto ids() const {
@@ -198,6 +200,41 @@ class EntityWorld {
         const T* component(EntityId id) const {
             const ComponentContainerBase* cont = find_container<T>();
             return cont ? cont->template component_ptr<T>(id) : nullptr;
+        }
+
+
+
+        // ---------------------------------------- World Components ----------------------------------------
+
+        template<typename T, typename... Args>
+        T* get_or_add_world_component(Args&&... args) {
+            for(auto& container : _world_components) {
+                if(auto* t = container->try_get<T>()) {
+                    return t;
+                }
+            }
+            auto& ptr = _world_components.emplace_back(std::make_unique<WorldComponentContainer<T>>(y_fwd(args)...));
+            return ptr->template try_get<T>();
+        }
+
+        template<typename T>
+        T* world_component() {
+            for(auto& container : _world_components) {
+                if(auto* t = container->try_get<T>()) {
+                    return t;
+                }
+            }
+            return nullptr;
+        }
+
+        template<typename T>
+        const T* world_component() const {
+            for(auto& container : _world_components) {
+                if(auto* t = container->try_get<T>()) {
+                    return t;
+                }
+            }
+            return nullptr;
         }
 
 
@@ -299,7 +336,7 @@ class EntityWorld {
 
         void post_deserialize();
 
-        y_reflect(EntityWorld, _entities, _containers, _tags)
+        y_reflect(EntityWorld, _entities, _containers, _tags, _world_components)
 
     private:
         template<typename T>
@@ -386,6 +423,7 @@ class EntityWorld {
         core::Vector<ComponentTypeIndex> _required_components;
 
         core::Vector<std::unique_ptr<System>> _systems;
+        core::Vector<std::unique_ptr<WorldComponentContainerBase>> _world_components;
 };
 
 }

@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/ScriptWorldComponent.h>
 
 
 #include <y/utils/log.h>
@@ -70,22 +71,16 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
 }
 
 void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
+    const ScriptWorldComponent* scripts_comp = world.get_or_add_world_component<ScriptWorldComponent>();
+
     _state["world"] = &world;
 
-    try {
-        _state.safe_script(R"#(
-            local tagged = world:query("tag #1")
-            for i = 1, #tagged do
-                print(tagged[i])
-            end
-            local tr = world:query("#TransformableComponent")
-            for i = 1, #tr do
-                local id = tr[i]
-                print(id)
-            end
-        )#");
-    } catch(std::exception& e) {
-        log_msg(fmt("Lua error: %", e.what()), Log::Error);
+    for(const core::String& script : scripts_comp->scripts()) {
+        try {
+            _state.safe_script(script);
+        } catch(std::exception& e) {
+            log_msg(fmt("Lua error: %", e.what()), Log::Error);
+        }
     }
 }
 

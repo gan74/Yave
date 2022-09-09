@@ -58,6 +58,7 @@ void EntityWorld::swap(EntityWorld& other) {
         std::swap(_entities, other._entities);
         std::swap(_required_components, other._required_components);
         std::swap(_systems, other._systems);
+        std::swap(_world_components, other._world_components);
     }
     for(const ComponentTypeIndex c : _required_components) {
         unused(c);
