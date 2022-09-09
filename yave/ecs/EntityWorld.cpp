@@ -185,7 +185,7 @@ const SparseIdSetBase* EntityWorld::tag_set(const core::String& tag) const {
         return nullptr;
     }
 
-    if(tag.starts_with("#")) {
+    if(tag[0] == '@') {
         for(const auto& container : _containers) {
             if(container->runtime_info().clean_component_name() == tag.sub_str(1)) {
                 return &container->id_set();
@@ -194,7 +194,7 @@ const SparseIdSetBase* EntityWorld::tag_set(const core::String& tag) const {
         return nullptr;
     }
 
-    if(tag.starts_with("#")) {
+    if(tag[0] == '!') {
         y_fatal("Not supported");
     }
 
@@ -220,7 +220,7 @@ bool EntityWorld::has_tag(EntityId id, const core::String& tag) const {
 }
 
 bool EntityWorld::is_tag_implicit(std::string_view tag) {
-    return !tag.empty() && (tag[0] == '!' || tag[0] == '#');
+    return !tag.empty() && (tag[0] == '@' || tag[0] == '@');
 }
 
 core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
