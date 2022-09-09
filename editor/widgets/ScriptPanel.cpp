@@ -41,14 +41,25 @@ ScriptPanel::ScriptPanel() : Widget(ICON_FA_CODE " Scripts") {
 void ScriptPanel::on_gui() {
     ScriptWorldComponent* scripts = current_world().get_or_add_world_component<ScriptWorldComponent>();
 
-    ImGui::Text("%u scripts", u32(scripts->scripts().size()));
+    if(ImGui::CollapsingHeader(fmt_c_str("% scripts", scripts->scripts().size()))) {
+        for(const auto& script : scripts->scripts()) {
+            ImGui::TextUnformatted(fmt_c_str("% (% bytes)", script.name, script.code.size()));
+        }
+    }
 
     if(ImGui::Button(ICON_FA_PLUS " Add")) {
         FileBrowser* browser = add_child_widget<FileBrowser>(FileSystemModel::local_filesystem());
         browser->set_selection_filter(false, "*.lua");
         browser->set_selected_callback([](const auto& filename) {
             if(auto r = io2::File::read_text_file(filename)) {
-                current_world().get_or_add_world_component<ScriptWorldComponent>()->scripts().emplace_back(std::move(r.unwrap()));
+                const core::String name = FileSystemModel::local_filesystem()->filename(filename);
+                auto& scripts = current_world().get_or_add_world_component<ScriptWorldComponent>()->scripts();
+                scripts.emplace_back(ScriptWorldComponent::Script{
+                    name.sub_str(0, name.size() - 4),
+                    std::move(r.unwrap())
+                });
+            } else {
+                log_msg("Unable to read file", Log::Error);
             }
             return true;
         });

@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 #include <yave/components/TransformableComponent.h>
-#include <yave/components/ScriptWorldComponent.h>
-
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -71,15 +69,31 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
 }
 
 void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
-    const ScriptWorldComponent* scripts_comp = world.get_or_add_world_component<ScriptWorldComponent>();
+    ScriptWorldComponent* scripts_comp = world.get_or_add_world_component<ScriptWorldComponent>();
 
     _state["world"] = &world;
 
-    for(const core::String& script : scripts_comp->scripts()) {
+    for(auto& script : scripts_comp->scripts()) {
+        y_profile_dyn_zone(script.name.data());
         try {
-            _state.safe_script(script);
+            if(auto compiled = script.compiled.lock()) {
+                compiled->run();
+                continue;
+            }
+
+            log_msg(fmt("Compiling %", script.name));
+            auto& compiled = _compiled.emplace_back(std::make_shared<CompiledScript>());
+            compiled->compiled = _state.load(script.code);
+            script.compiled = compiled;
+
+            if(!compiled->compiled.valid()) {
+                log_msg(fmt("Unable to compile %: %", script.name, std::string_view(sol::to_string(compiled->compiled.status()))), Log::Error);
+            } else {
+                compiled->run();
+            }
+
         } catch(std::exception& e) {
-            log_msg(fmt("Lua error: %", e.what()), Log::Error);
+            log_msg(fmt("Lua error in %: %", script.name, e.what()), Log::Error);
         }
     }
 }

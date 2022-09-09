@@ -28,13 +28,27 @@ SOFTWARE.
 #include <y/core/String.h>
 
 #include <y/reflect/reflect.h>
-#include <y/utils/log.h>
-#include <y/utils/format.h>
 
 namespace yave {
 
 class ScriptWorldComponent final {
     public:
+        struct CompiledScript {
+            virtual ~CompiledScript() {
+            }
+
+            virtual void run() = 0;
+        };
+
+        struct Script {
+            core::String name;
+            core::String code;
+
+            std::weak_ptr<CompiledScript> compiled;
+
+            y_reflect(Script, name, code);
+        };
+
         const auto& scripts() const {
             return _scripts;
         }
@@ -46,7 +60,7 @@ class ScriptWorldComponent final {
         y_reflect(ScriptWorldComponent, _scripts)
 
     private:
-        core::Vector<core::String> _scripts;
+        core::Vector<Script> _scripts;
 };
 
 }
