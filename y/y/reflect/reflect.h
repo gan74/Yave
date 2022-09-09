@@ -167,7 +167,7 @@ Y_TODO(manage inherited objects)
 #define y_reflect_create_member(member) y::reflect::NamedMember{&_y_refl_self_type::member, #member,  y_reflect_name_hash(#member)},
 
 #define y_reflect_base(Type)                                                                                \
-static constexpr const char* _y_reflect_type_name = #Type;                                                  \
+static constexpr std::string_view _y_reflect_type_name = #Type;                                             \
 
 #define y_reflect_empty(Type)                                                                               \
 y_reflect_base(Type)                                                                                        \
