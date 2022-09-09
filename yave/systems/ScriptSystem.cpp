@@ -69,10 +69,7 @@ void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
                 print(tagged[i])
             end
             local names = world:component_type_names()
-            for i = 1, #names do
-                print(names[i])
-            end
-            -- print(#world:query("#"))
+            -- print(#world:query("#TransformableComponent"))
         )#");
     } catch(std::exception& e) {
         log_msg(fmt("Lua error: %", e.what()), Log::Error);

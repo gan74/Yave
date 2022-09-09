@@ -186,7 +186,7 @@ const SparseIdSetBase* EntityWorld::tag_set(const core::String& tag) const {
 
     if(tag.starts_with("#")) {
         for(const auto& container : _containers) {
-            if(container->runtime_info().type_name == tag.sub_str(1)) {
+            if(container->runtime_info().clean_component_name() == tag.sub_str(1)) {
                 return &container->id_set();
             }
         }
@@ -228,7 +228,7 @@ core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
 
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
     const ComponentContainerBase* cont = find_container(type_id);
-    return cont ? cont->runtime_info().type_name : "";
+    return cont ? cont->runtime_info().clean_component_name() : "";
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
