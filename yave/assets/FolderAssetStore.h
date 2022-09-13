@@ -122,7 +122,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
 
         core::String _root;
 
-        std::atomic<u64> _next_id = 0;
+        u64 _next_id = 0;
         std::set<core::String> _folders;
         std::map<core::String, AssetData> _assets;
 

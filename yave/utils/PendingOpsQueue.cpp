@@ -33,8 +33,12 @@ PendingOpsQueue::PendingOpsQueue() {
 
 PendingOpsQueue::~PendingOpsQueue() {
     y_profile_zone("waiting for pending ops");
-    auto lock = y_profile_unique_lock(_lock);
-    _pending_ops.clear();
+
+    {
+        core::Vector<std::future<void>> remaining;
+        auto lock = y_profile_unique_lock(_lock);
+        remaining.swap(_pending_ops);
+    }
 }
 
 
