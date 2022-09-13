@@ -32,7 +32,6 @@ class AccelerationStructure;
 class Animation;
 class AnimationChannel;
 class AssetDependencies;
-class AssetIdFactory;
 class AssetLoader;
 class AssetLoaderSystem;
 class AssetLoadingContext;
@@ -120,8 +119,8 @@ class Renderable;
 class ResourceFence;
 class Sampler;
 class SceneView;
-class ScriptComponent;
 class ScriptSystem;
+class ScriptWorldComponent;
 class SearchableFileSystemModel;
 class ShaderModuleBase;
 class ShaderProgram;
@@ -163,6 +162,7 @@ struct BoneTransform;
 struct Box;
 struct BufferCreateInfo;
 struct BufferData;
+struct CompiledScript;
 struct Contants;
 struct DefaultRenderer;
 struct DeviceProperties;
@@ -205,6 +205,7 @@ struct SSAOPass;
 struct SSAOSettings;
 struct SceneData;
 struct SceneRenderSubPass;
+struct Script;
 struct Semaphores;
 struct ShadowMapPass;
 struct ShadowMapSettings;
@@ -237,11 +238,13 @@ class EntityScene;
 class EntityWorld;
 class IdComponents;
 class SparseIdSet;
+class SparseIdSetBase;
 class System;
+class WorldComponentContainerBase;
 struct ComponentRuntimeInfo;
 struct ComponentsReturnPolicy;
 struct IdComponentsReturnPolicy;
-struct IdReturnPolicy;
+struct QueryUtils;
 }
 
 
@@ -255,12 +258,6 @@ struct SH;
 struct ShadowMapParams;
 struct SpotLight;
 struct VPL;
-}
-
-
-namespace yave::script {
-class VM;
-struct Error;
 }
 
 

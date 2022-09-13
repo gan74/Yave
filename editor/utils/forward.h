@@ -56,6 +56,7 @@ class Preview;
 class Renamer;
 class ResourceBrowser;
 class SceneImporter2;
+class ScriptPanel;
 class Selection;
 class Settings;
 class ThumbmailRenderer;
