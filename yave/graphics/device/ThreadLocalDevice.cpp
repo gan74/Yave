@@ -26,13 +26,19 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 namespace yave {
+namespace device {
+extern std::atomic<u64> active_pools;
+}
 
 ThreadLocalDevice::ThreadLocalDevice() :
         _disposable_cmd_pool(this),
         _lifetime_manager(this) {
+
+    ++device::active_pools;
 }
 
 ThreadLocalDevice::~ThreadLocalDevice() {
+    --device::active_pools;
 }
 
 CmdBufferRecorder ThreadLocalDevice::create_disposable_cmd_buffer() const {

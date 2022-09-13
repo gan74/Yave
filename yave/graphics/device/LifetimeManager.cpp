@@ -64,7 +64,9 @@ LifetimeManager::LifetimeManager() {
 
             if(result == VK_TIMEOUT) {
                 --semaphore_value;
-                log_msg("Semaphore was not signaled after 100ms", Log::Warning);
+                if(_run_thread) {
+                    log_msg("Semaphore was not signaled after 100ms", Log::Warning);
+                }
             } else {
                 poll_cmd_buffers();
             }

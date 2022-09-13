@@ -95,8 +95,9 @@ class Uninitialized : NonMovable {
         }
 
         void destroy() {
-            y_debug_assert(!(_is_init = !_is_init));
+            y_debug_assert(_is_init);
             _storage.obj.~T();
+            y_debug_assert(!(_is_init = !_is_init));
         }
 
         T& get() {

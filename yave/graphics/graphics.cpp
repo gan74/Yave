@@ -62,7 +62,11 @@ VkDevice vk_device;
 core::FixedArray<std::unique_ptr<CmdQueue>> queues;
 std::atomic<u64> next_loading_queue_index = 0;
 
+std::atomic<u64> active_pools = 0;
 
+#ifdef Y_DEBUG
+std::atomic<bool> destroying = false;
+#endif
 
 struct {
     VkSemaphore semaphore = {};
@@ -215,6 +219,11 @@ void destroy_device() {
     lifetime_manager().shutdown_collector_thread();
     wait_all_queues();
 
+#ifdef Y_DEBUG
+    device::destroying = true;
+    y_defer(device::destroying = false);
+#endif
+
     device::resources.destroy();
 
     device::extensions = {};
@@ -222,6 +231,7 @@ void destroy_device() {
     command_queue().submit(create_disposable_cmd_buffer()).wait();
     lifetime_manager().wait_cmd_buffers();
 
+    y_always_assert(device::active_pools == 1, "Not all pools have been destroyed");
     {
         y_profile_zone("collecting thread devices");
         const auto lock = y_profile_unique_lock(device::threads.lock);
@@ -230,6 +240,7 @@ void destroy_device() {
         }
         device::threads.devices.clear();
     }
+    y_always_assert(device::active_pools == 0, "Not all pools have been destroyed");
 
     for(auto& sampler : device::samplers) {
         sampler.destroy();
@@ -271,10 +282,12 @@ ThreadDevicePtr thread_device() {
 
             *it->second = nullptr;
             device::threads.devices.erase_unordered(it);
+            y_always_assert(device::active_pools == device::threads.devices.size(), "Invalid number of pools");
         }
     });
 
     if(!thread_device) {
+        y_debug_assert(!device::destroying);
         auto device = std::make_unique<ThreadLocalDevice>();
         thread_device = device.get();
 
