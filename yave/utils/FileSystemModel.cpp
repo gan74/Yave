@@ -69,16 +69,11 @@ FileSystemModel::Result<bool> FileSystemModel::is_parent(std::string_view parent
 }
 
 const FileSystemModel* FileSystemModel::local_filesystem() {
-#ifndef YAVE_NO_STDFS
     static LocalFileSystemModel filesystem;
     return &filesystem;
-#else
-    /*return*/ y_fatal("FileSystemModel::local_filesystem() is not supported");
-#endif
 }
 
 
-#ifndef YAVE_NO_STDFS
 
 FileSystemModel::Result<core::String> LocalFileSystemModel::current_path() const {
     try {
@@ -221,8 +216,6 @@ bool LocalFileSystemModel::is_canonical(std::string_view path) const {
     fs::path p(path.data());
     return p == p.lexically_normal();
 }
-
-#endif
 
 }
 
