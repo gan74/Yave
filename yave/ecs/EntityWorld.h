@@ -398,12 +398,16 @@ class EntityWorld {
         template<typename T>
         auto build_id_sets_for_query(const T& sets, core::Span<core::String> tags) const {
             const usize set_count = std::tuple_size_v<T>;
-            core::ScratchPad<const SparseIdSetBase*> id_sets(set_count + tags.size());
-            QueryUtils::fill_set_ids(id_sets, sets);
+            core::ScratchPad<QueryUtils::SetMatch> matches(set_count + tags.size());
+            QueryUtils::fill_match_array(matches, sets);
             for(usize i = 0; i != tags.size(); ++i) {
-                id_sets[set_count + i] = tag_set(tags[i]);
+                const bool is_neg = tags[i].starts_with("!");
+                matches[set_count + i] = {
+                    tag_set(is_neg ? core::String(tags[i].sub_str(1)) : tags[i]),
+                    !is_neg
+                };
             }
-            return id_sets;
+            return matches;
         }
 
 

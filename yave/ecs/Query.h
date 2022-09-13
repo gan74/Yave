@@ -44,21 +44,29 @@ static constexpr usize tuple_index(const std::tuple<U, Args...>*) {
 
 
 struct QueryUtils {
-    static core::Vector<EntityId> matching(core::Span<const SparseIdSetBase*> sets, core::Span<EntityId> ids);
+    struct SetMatch {
+        const SparseIdSetBase* set = nullptr;
+        bool include = true;
+    };
+
+    static core::Vector<EntityId> matching(core::Span<SetMatch> matches, core::Span<EntityId> ids);
 
     template<usize I = 0, typename T>
-    static void fill_set_ids(core::MutableSpan<const SparseIdSetBase*> ids, const T& sets) {
+    static void fill_match_array(core::MutableSpan<SetMatch> matches, const T& sets) {
         if constexpr(I < std::tuple_size_v<T>) {
-            ids[I] = std::get<I>(sets);
-            fill_set_ids<I + 1>(ids, sets);
+            matches[I] = {
+                std::get<I>(sets),
+                traits::component_required_v<std::tuple_element_t<I, T>>
+            };
+            fill_match_array<I + 1>(matches, sets);
         }
     }
 
     template<typename T>
-    static auto create_set_array(const T& sets) {
-        std::array<const SparseIdSetBase*, std::tuple_size_v<T>> ids = {};
-        fill_set_ids(ids, sets);
-        return ids;
+    static auto create_match_array(const T& sets) {
+        std::array<SetMatch, std::tuple_size_v<T>> matches = {};
+        fill_match_array(matches, sets);
+        return matches;
     }
 };
 
@@ -70,11 +78,11 @@ class Query : NonCopyable {
     using all_components = std::tuple<traits::component_type_t<Args>...>;
 
     static constexpr bool is_empty = sizeof...(Args) == 0;
-    static constexpr std::array component_required = {traits::component_required_v<Args>..., false};
+    static constexpr std::array component_included = {traits::component_required_v<Args>..., false};
 
     template<usize I = 0>
     static auto make_component_tuple(const set_tuple& sets, EntityId id) {
-        if constexpr(!component_required[I]) {
+        if constexpr(!component_included[I]) {
             return std::tie();
         } else {
             y_debug_assert(std::get<I>(sets));
@@ -209,24 +217,24 @@ class Query : NonCopyable {
     private:
         friend class EntityWorld;
 
-        Query(const set_tuple& sets, core::MutableSpan<const SparseIdSetBase*> id_sets) : _sets(sets) {
-            if(!id_sets.is_empty() && std::all_of(id_sets.begin(), id_sets.end(), [](auto ptr) { return !!ptr; })) {
-                std::sort(id_sets.begin(), id_sets.end(), [](const auto& a, const auto& b) { return a->size() < b->size(); });
-                _ids = QueryUtils::matching(core::Span<const SparseIdSetBase*>(id_sets.begin() + 1, id_sets.size() - 1), id_sets[0]->ids());
+        Query(const set_tuple& sets, core::MutableSpan<QueryUtils::SetMatch> matches) : _sets(sets) {
+            if(!matches.is_empty() && std::all_of(matches.begin(), matches.end(), [](auto match) { return match.set != nullptr; })) {
+                std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.set->size() < b.set->size(); });
+                _ids = QueryUtils::matching(core::Span<QueryUtils::SetMatch>(matches.begin() + 1, matches.size() - 1), matches[0].set->ids());
             }
         }
 
-        Query(const set_tuple& sets, core::MutableSpan<const SparseIdSetBase*> id_sets, core::Span<EntityId> range)  : _sets(sets) {
-            if(std::all_of(id_sets.begin(), id_sets.end(), [](auto ptr) { return !!ptr; })) {
-                std::sort(id_sets.begin(), id_sets.end(), [](const auto& a, const auto& b) { return a->size() < b->size(); });
-                _ids = QueryUtils::matching(id_sets, range);
+        Query(const set_tuple& sets, core::MutableSpan<QueryUtils::SetMatch> matches, core::Span<EntityId> range)  : _sets(sets) {
+            if(std::all_of(matches.begin(), matches.end(), [](auto match) { return match.set != nullptr; })) {
+                std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.set->size() < b.set->size(); });
+                _ids = QueryUtils::matching(matches, range);
             }
         }
 
-        Query(const set_tuple& sets) : Query(sets, QueryUtils::create_set_array(sets)) {
+        Query(const set_tuple& sets) : Query(sets, QueryUtils::create_match_array(sets)) {
         }
 
-        Query(const set_tuple& sets, core::Span<EntityId> range) : Query(sets, QueryUtils::create_set_array(sets), range) {
+        Query(const set_tuple& sets, core::Span<EntityId> range) : Query(sets, QueryUtils::create_match_array(sets), range) {
         }
 
     private:

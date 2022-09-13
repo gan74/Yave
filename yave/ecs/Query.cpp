@@ -28,18 +28,18 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-core::Vector<EntityId> QueryUtils::matching(core::Span<const SparseIdSetBase*> sets, core::Span<EntityId> ids) {
+core::Vector<EntityId> QueryUtils::matching(core::Span<SetMatch> matches, core::Span<EntityId> ids) {
     y_profile();
 
     auto match = core::vector_with_capacity<EntityId>(ids.size());
     for(EntityId id : ids) {
-        bool contains = true;
-        for(usize i = 0; contains && i != sets.size(); ++i) {
-            y_debug_assert(sets[i]);
-            contains &= sets[i]->contains(id);
+        bool matched = true;
+        for(usize i = 0; matched && i != matches.size(); ++i) {
+            y_debug_assert(matches[i].set);
+            matched &= (matches[i].set->contains(id) == matches[i].include);
         }
 
-        if(contains) {
+        if(matched) {
             match.push_back(id);
         }
     }

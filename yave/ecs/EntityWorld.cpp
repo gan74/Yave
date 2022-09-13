@@ -195,7 +195,7 @@ const SparseIdSetBase* EntityWorld::tag_set(const core::String& tag) const {
     }
 
     if(tag[0] == '!') {
-        y_fatal("Not supported");
+        y_fatal("'!' tags can't have a set, use queries instead");
     }
 
     return raw_tag_set(tag);
