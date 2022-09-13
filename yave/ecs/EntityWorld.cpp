@@ -220,7 +220,7 @@ bool EntityWorld::has_tag(EntityId id, const core::String& tag) const {
 }
 
 bool EntityWorld::is_tag_implicit(std::string_view tag) {
-    return !tag.empty() && (tag[0] == '@' || tag[0] == '@');
+    return !tag.empty() && (tag[0] == '@' || tag[0] == '!');
 }
 
 core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
