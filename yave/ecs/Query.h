@@ -172,7 +172,6 @@ class Query : NonCopyable {
         using const_iterator = Iterator<IdComponentsReturnPolicy>;
 
         using const_component_iterator = Iterator<ComponentsReturnPolicy>;
-        using const_id_iterator = Iterator<IdReturnPolicy>;
 
         const_iterator begin() const {
             return const_iterator(_ids.begin(), _sets);
