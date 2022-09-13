@@ -36,16 +36,16 @@ SOFTWARE.
 
 namespace editor {
 
-static void edit_script(const core::String& name, core::String& code) {
+static void edit_script(ScriptWorldComponent::Script& script) {
     const core::String temp_dir = core::String(std::tmpnam(nullptr)) + "/";
-    const core::String file_name = temp_dir + name + ".lua";
+    const core::String file_name = temp_dir + script.name + ".lua";
 
     const FileSystemModel* fs = FileSystemModel::local_filesystem();
     fs->create_directory(temp_dir).ignore();
 
     auto fill_file = [&] {
         if(auto r = io2::File::create(file_name)) {
-            if(r.unwrap().write(code.data(), code.size())) {
+            if(r.unwrap().write(script.code.data(), script.code.size())) {
                 return true;
             }
         }
@@ -54,7 +54,7 @@ static void edit_script(const core::String& name, core::String& code) {
 
     auto read_file = [&] {
         if(auto r = io2::File::read_text_file(file_name)) {
-            std::swap(code, r.unwrap());
+            std::swap(script.code, r.unwrap());
             return true;
         }
         return false;
@@ -73,6 +73,9 @@ static void edit_script(const core::String& name, core::String& code) {
         log_msg("Unable to read script file", Log::Error);
         return;
     }
+
+    script.compiled.reset();
+    log_msg("Script reloaded");
 }
 
 ScriptPanel::ScriptPanel() : Widget(ICON_FA_CODE " Scripts") {
@@ -84,7 +87,7 @@ void ScriptPanel::on_gui() {
 
     for(usize i = 0; i != scripts.size(); ++i) {
         if(ImGui::Button(fmt_c_str(ICON_FA_EDIT "##%", i))) {
-            edit_script(scripts[i].name, scripts[i].code);
+            edit_script(scripts[i]);
         }
         ImGui::SameLine();
         if(ImGui::Button(fmt_c_str(ICON_FA_TRASH "##%", i))) {
