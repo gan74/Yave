@@ -64,9 +64,10 @@ LifetimeManager::LifetimeManager() {
 
             if(result == VK_TIMEOUT) {
                 --semaphore_value;
-                if(_run_thread) {
+                // Very spammy, especially if the window is hidden
+                /*if(_run_thread) {
                     log_msg("Semaphore was not signaled after 100ms", Log::Warning);
-                }
+                }*/
             } else {
                 poll_cmd_buffers();
             }
