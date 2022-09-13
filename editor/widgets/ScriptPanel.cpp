@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <editor/EditorWorld.h>
 #include <editor/widgets/FileBrowser.h>
+#include <editor/utils/ui.h>
 
 #include <yave/components/ScriptWorldComponent.h>
 
@@ -35,16 +36,63 @@ SOFTWARE.
 
 namespace editor {
 
+static void edit_script(const core::String& name, core::String& code) {
+    const core::String temp_dir = core::String(std::tmpnam(nullptr)) + "/";
+    const core::String file_name = temp_dir + name + ".lua";
+
+    const FileSystemModel* fs = FileSystemModel::local_filesystem();
+    fs->create_directory(temp_dir).ignore();
+
+    auto fill_file = [&] {
+        if(auto r = io2::File::create(file_name)) {
+            if(r.unwrap().write(code.data(), code.size())) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    auto read_file = [&] {
+        if(auto r = io2::File::read_text_file(file_name)) {
+            std::swap(code, r.unwrap());
+            return true;
+        }
+        return false;
+    };
+
+    if(!fill_file()) {
+        log_msg("Unable to create script file", Log::Error);
+        return;
+    }
+
+    y_defer(fs->remove(file_name).ignore());
+
+    std::system(file_name.data());
+
+    if(!read_file()) {
+        log_msg("Unable to read script file", Log::Error);
+        return;
+    }
+}
+
 ScriptPanel::ScriptPanel() : Widget(ICON_FA_CODE " Scripts") {
 }
 
 void ScriptPanel::on_gui() {
-    ScriptWorldComponent* scripts = current_world().get_or_add_world_component<ScriptWorldComponent>();
+    ScriptWorldComponent* script_component = current_world().get_or_add_world_component<ScriptWorldComponent>();
+    auto& scripts = script_component->scripts();
 
-    if(ImGui::CollapsingHeader(fmt_c_str("% scripts", scripts->scripts().size()))) {
-        for(const auto& script : scripts->scripts()) {
-            ImGui::TextUnformatted(fmt_c_str("% (% bytes)", script.name, script.code.size()));
+    for(usize i = 0; i != scripts.size(); ++i) {
+        if(ImGui::Button(fmt_c_str(ICON_FA_EDIT "##%", i))) {
+            edit_script(scripts[i].name, scripts[i].code);
         }
+        ImGui::SameLine();
+        if(ImGui::Button(fmt_c_str(ICON_FA_TRASH "##%", i))) {
+            scripts.erase(scripts.begin() + i);
+            --i;
+        }
+        ImGui::SameLine();
+        ImGui::TextUnformatted(scripts[i].name.data());
     }
 
     if(ImGui::Button(ICON_FA_PLUS " Add")) {
@@ -63,12 +111,6 @@ void ScriptPanel::on_gui() {
             }
             return true;
         });
-    }
-
-    ImGui::SameLine();
-
-    if(ImGui::Button(ICON_FA_TRASH " Clear")) {
-        scripts->scripts().clear();
     }
 }
 
