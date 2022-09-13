@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 #include <editor/EditorWorld.h>
+#include <editor/Selection.h>
 #include <editor/utils/memory.h>
 
 #include <yave/scene/SceneView.h>
@@ -31,6 +32,10 @@ SOFTWARE.
 #include <editor/utils/ui.h>
 
 #include <external/imgui/yave_imgui.h>
+
+#include <y/utils/format.h>
+
+#include <cinttypes>
 
 namespace editor {
 
@@ -180,6 +185,29 @@ class MeshAllocatorDebug : public Widget {
                 ImGui::ProgressBar(float(tris) / MeshAllocator::default_triangle_count, ImVec2(-1.0f, 0.0f),
                     fmt_c_str("%k / %k", tris / 1000, MeshAllocator::default_triangle_count / 1000)
                 );
+            }
+        }
+};
+
+
+class SelectionDebug : public Widget {
+    editor_widget(SelectionDebug, "View", "Debug")
+
+    public:
+        SelectionDebug() : Widget("Selection debug") {
+        }
+
+    protected:
+        void on_gui() override {
+            if(ImGui::CollapsingHeader(fmt_c_str("% entity selected###header", selection().selected_entities().size()))) {
+                for(const ecs::EntityId id : selection().selected_entities()) {
+                    std::array<char, 32> buffer = {};
+                    std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
+                    ImGui::InputText(fmt_c_str("##%", id.index()), buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+                    ImGui::SameLine();
+                    const auto name = current_world().entity_name(id);
+                    ImGui::TextUnformatted(name.data(), name.data() + name.size());
+                }
             }
         }
 };
