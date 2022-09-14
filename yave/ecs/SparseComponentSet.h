@@ -28,6 +28,7 @@ SOFTWARE.
 #include <y/core/Range.h>
 
 #include <tuple>
+#include <iterator>
 
 // #define YAVE_ECS_COMPONENT_SET_AUDIT
 
@@ -140,8 +141,15 @@ class SparseComponentSetBase : public SparseIdSetBase {
         template<bool Const>
         class PairIterator {
             using pointer_t = std::conditional_t<Const, const_pointer, pointer>;
+            using reference_t = std::conditional_t<Const, const_reference, reference>;
 
             public:
+                using difference_type = usize;
+                using value_type = SparseComponentSetBase::value_type;
+                using pointer = pointer_t;
+                using reference = std::tuple<const EntityId&, reference_t>;
+                using iterator_category = std::forward_iterator_tag;
+
                 inline PairIterator() = default;
 
                 inline auto operator*() const {
@@ -350,6 +358,8 @@ class SparseComponentSet : public SparseComponentSetBase<Elem> {
 
 }
 }
+
+static_assert(std::is_same_v<std::iterator_traits<yave::ecs::SparseComponentSetBase<int>::iterator>::iterator_category, std::forward_iterator_tag>);
 
 #endif // YAVE_ECS_SPARSECOMPONENTSET_H
 
