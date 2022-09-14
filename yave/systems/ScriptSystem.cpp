@@ -30,11 +30,80 @@ SOFTWARE.
 
 namespace yave {
 
-ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
-    _state.open_libraries();
+template<typename T>
+struct LuaComponentSet {
+    ecs::SparseComponentSet<T>* ptr = nullptr;
+};
+
+static core::FlatHashMap<core::String, lua_CFunction>& cast_functions(sol::state_view s) {
+    return s.registry()["component_set_casts"];
+}
+
+template<typename T>
+static void register_component_type(sol::state& state) {
+    script::bind_type<T>(state);
+
+    const core::String type_name = T::_y_reflect_type_name;
+    auto type = state.new_usertype<LuaComponentSet<T>>(type_name + "Set");
+
+    type["__index"] = [](const LuaComponentSet<T>& set, ecs::EntityId id) {
+        y_debug_assert(set.ptr);
+        return set.ptr->try_get(id);
+    };
+    type["__len"] = [](const LuaComponentSet<T>& set) {
+        y_debug_assert(set.ptr);
+        return set.ptr->size();
+    };
+
+    cast_functions(state)[type_name] = [](lua_State* l) -> int {
+        if(sol::stack::check_usertype<ecs::EntityWorld>(l)) {
+            auto& world = sol::stack::get_usertype<ecs::EntityWorld>(l);
+            if(auto* typed_set = dynamic_cast<ecs::SparseComponentSet<T>*>(&world.component_set<T>())) {
+                sol::stack::push<LuaComponentSet<T>>(l, LuaComponentSet<T>{typed_set});
+                return 1;
+            }
+        }
+
+        sol::stack::push(l, sol::nil);
+        return 1;
+    };
+}
+
+static void register_math_types(sol::state& state) {
+    {
+        using Transform = math::Transform<>;
+        auto type = state.new_usertype<Transform>("Transform");
+        type["position"] = [](const Transform& tr) { return tr.position(); };
+    }
 
     {
-        auto type = _state.new_usertype<ecs::EntityWorld>("World");
+        auto type = state.new_usertype<math::Vec3>("Vec3");
+        type["__tostring"] = [](math::Vec3 v) { return fmt("%", v); };
+    }
+}
+
+static void register_user_types(sol::state& state) {
+    register_math_types(state);
+
+    {
+        auto type = state.new_usertype<ecs::EntityId>("EntityId");
+
+        type["__tostring"] = [](ecs::EntityId id) { return fmt("[%; %]", id.index(), id.version()); };
+    }
+
+    {
+        auto type = state.new_usertype<ecs::EntityWorld>("World");
+
+        type["set"] = [](lua_State* l) -> int {
+            if(!sol::stack::check<std::string_view>(l)) {
+                sol::stack::push(l, sol::nil);
+                return 0;
+            }
+            const core::String type_name = sol::stack::pop<std::string_view>(l);
+            lua_CFunction cast_func = cast_functions(l)[type_name.view()];
+            y_debug_assert(cast_func);
+            return cast_func(l);
+        };
 
         type["query"] = [](const ecs::EntityWorld& world, sol::variadic_args va) -> core::Vector<ecs::EntityId> {
             core::ScratchVector<core::String> tags(va.size());
@@ -53,19 +122,19 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
         };
     }
 
-    {
-        auto type = _state.new_usertype<ecs::EntityId>("EntityId");
+    state.registry()["component_set_casts"] = std::make_unique<core::FlatHashMap<core::String, lua_CFunction>>();
+    register_component_type<TransformableComponent>(state);
+}
 
-        type["__tostring"] = [](ecs::EntityId id) { return fmt("[%; %]", id.index(), id.version()); };
-    }
 
-    {
-        using Transform = math::Transform<>;
-        auto type = _state.new_usertype<Transform>("Transform");
-        type["position"] = [](const Transform& tr) { return tr.position(); };
-    }
 
-    script::bind_type<TransformableComponent>(_state);
+
+
+
+ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
+    _state.open_libraries();
+
+    register_user_types(_state);
 }
 
 void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
