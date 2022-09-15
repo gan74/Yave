@@ -70,6 +70,7 @@ void EntityWorld::tick() {
     y_profile();
     for(auto& system : _systems) {
         y_profile_dyn_zone(system->name().data());
+        system->setup_if_needed(*this);
         system->tick(*this);
     }
     for(auto& container : _containers) {
@@ -83,6 +84,7 @@ void EntityWorld::update(float dt) {
     y_profile();
     for(auto& system : _systems) {
         y_profile_dyn_zone(system->name().data());
+        system->setup_if_needed(*this);
         system->update(*this, dt);
     }
 }
@@ -268,6 +270,7 @@ void EntityWorld::post_deserialize() {
 
     for(auto& system : _systems) {
         y_debug_assert(system);
+        system->setup_if_needed(*this); // ???
         system->reset(*this);
     }
 

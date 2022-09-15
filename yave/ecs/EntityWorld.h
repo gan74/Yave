@@ -81,7 +81,6 @@ class EntityWorld {
             auto s = std::make_unique<S>(y_fwd(args)...);
             S* system = s.get();
             _systems.emplace_back(std::move(s));
-            system->setup(*this);
             return system;
         }
 

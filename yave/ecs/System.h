@@ -62,7 +62,18 @@ class System : NonCopyable {
 
 
     private:
+        friend class EntityWorld;
+
+        void setup_if_needed(EntityWorld& world) {
+            if(!_setup) {
+                _setup = true;
+                setup(world);
+            }
+        }
+
+    private:
         core::String _name;
+        bool _setup = false;
 };
 
 template<typename F>
