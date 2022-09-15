@@ -96,6 +96,16 @@ static constexpr bool is_debug_defined = false;
 #define y_breakpoint do {} while(false)
 #endif
 
+
+#ifdef Y_MSVC
+#define Y_DLL_EXPORT __declspec(dllexport)
+#define Y_DLL_IMPORT __declspec(dllimport)
+#else
+#define Y_DLL_EXPORT
+#define Y_DLL_IMPORT
+#endif
+
+
 /****************** UTILS DEFINE ******************/
 
 #define Y_CREATE_NAME_LINE_HELPER(prefix, LINE) _generated_ ## prefix ## _at_ ## LINE
