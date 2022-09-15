@@ -22,23 +22,107 @@ SOFTWARE.
 
 #include "script.h"
 
+#include <yave/ecs/EntityWorld.h>
+
+#include <y/utils/format.h>
+#include <y/utils/log.h>
+
+extern "C" {
+Y_DLL_EXPORT void yave_ffi_example() {
+    y::log_msg("ffi example", y::Log::Debug);
+}
+}
+
 namespace yave {
 namespace script {
 
-namespace detail {
-CollectionData& get_collection_data(lua_State* l) {
-    static int key = 0;
-    auto proxy = sol::state_view(l).registry()[static_cast<void*>(&key)];
-    if(!proxy.valid()) {
-        proxy = CollectionData{};
+void bind_math_types(sol::state_view state) {
+    state.script("ffi = require('ffi')");
+
+    state.script(R"#(
+        ffi.cdef[[ typedef struct { float x, y, z; } vec3_t; ]]
+        ffi.cdef[[ void yave_ffi_example(); ]]
+
+        yave = ffi.C
+
+        Vec3 = ffi.metatype('vec3_t', {
+            __add = function(a, b) return vec3_t(a.x +b.x, a.y + b.y, a.z + b.z) end,
+            __len = function(a) return math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z) end,
+            __tostring = function(a) return '[' .. tostring(a.x) .. ', ' .. tostring(a.y) .. ', ' .. tostring(a.z) .. ']' end,
+            __index = {
+
+            },
+        })
+
+        ffi.cdef[[ typedef struct { float colums[4][4]; } transform_t; ]]
+        Transform = ffi.metatype('transform_t', {
+            __index = {
+                identity = function()
+                    local t = ffi.new('transform_t')
+                    t.colums[0][0] = 1.0
+                    t.colums[1][1] = 1.0
+                    t.colums[2][2] = 1.0
+                    t.colums[3][3] = 1.0
+                    return t;
+                end,
+
+                position = function(t)
+                    return Vec3(t.colums[3][0], t.colums[3][1], t.colums[3][2])
+                end,
+
+                set_position = function(t, p)
+                    t.colums[3][0] = p.x
+                    t.colums[3][1] = p.y
+                    t.colums[3][2] = p.z
+                end,
+            },
+        })
+    )#");
+}
+
+static core::FlatHashMap<core::String, lua_CFunction>& component_set_casts(sol::state_view s) {
+    return s.registry()["component_set_casts"];
+}
+
+void bind_ecs_types(sol::state_view state) {
+    state.registry()["component_set_casts"] = std::make_unique<core::FlatHashMap<core::String, lua_CFunction>>();
+
+    {
+        auto type = state.new_usertype<ecs::EntityId>("EntityId");
+
+        type["__tostring"] = [](ecs::EntityId id) { return fmt("[%; %]", id.index(), id.version()); };
     }
-    return proxy.get<CollectionData>();
-}
-}
 
+    {
+        auto type = state.new_usertype<ecs::EntityWorld>("World");
 
-void clear_weak_refs(sol::state& l) {
-    ++detail::get_collection_data(l.lua_state()).id;
+        type["set"] = [](lua_State* l) -> int {
+            if(sol::stack::check<std::string_view>(l)) {
+                const core::String type_name = sol::stack::pop<std::string_view>(l);
+                if(lua_CFunction cast_func = component_set_casts(l)[type_name.view()]) {
+                    return cast_func(l);
+                }
+            }
+            sol::stack::push(l, sol::nil);
+            return 1;
+        };
+
+        type["query"] = [](const ecs::EntityWorld& world, sol::variadic_args va) -> core::Vector<ecs::EntityId> {
+            core::ScratchVector<core::String> tags(va.size());
+            for(auto v : va) {
+                tags.emplace_back(v.as<std::string_view>());
+            }
+            return world.query<>(tags).ids();
+        };
+
+        type["component_type_names"] = [](const ecs::EntityWorld& world) -> core::Vector<std::string_view> {
+            core::Vector<std::string_view> type_names;
+            for(ecs::ComponentTypeIndex t : world.component_types()) {
+                type_names.emplace_back(world.component_type_name(t));
+            }
+            return type_names;
+        };
+    }
 }
 
 }

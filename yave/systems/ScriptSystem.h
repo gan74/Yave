@@ -31,15 +31,6 @@ SOFTWARE.
 namespace yave {
 
 class ScriptSystem : public ecs::System {
-    struct CompiledScript : ScriptWorldComponent::CompiledScript {
-        sol::load_result compiled;
-
-        void run() override {
-            if(compiled.valid()) {
-                compiled();
-            }
-        }
-    };
 
     public:
         ScriptSystem();
@@ -48,8 +39,6 @@ class ScriptSystem : public ecs::System {
 
     private:
         sol::state _state;
-
-        core::Vector<std::shared_ptr<CompiledScript>> _compiled;
 };
 
 }

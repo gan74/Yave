@@ -33,18 +33,9 @@ namespace yave {
 
 class ScriptWorldComponent final {
     public:
-        struct CompiledScript {
-            virtual ~CompiledScript() {
-            }
-
-            virtual void run() = 0;
-        };
-
         struct Script {
             core::String name;
             core::String code;
-
-            std::weak_ptr<CompiledScript> compiled;
 
             y_reflect(Script, name, code);
         };

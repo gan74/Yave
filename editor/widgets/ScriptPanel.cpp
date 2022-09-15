@@ -74,7 +74,6 @@ static void edit_script(ScriptWorldComponent::Script& script) {
         return;
     }
 
-    script.compiled.reset();
     log_msg("Script reloaded");
 }
 

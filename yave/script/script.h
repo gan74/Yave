@@ -40,9 +40,8 @@ namespace script {
 
 static_assert(sol::is_container_v<core::Vector<int>>);
 
-namespace detail {
 template<typename T, typename M>
-auto property(M T::* member) {
+auto to_property(M T::* member) {
     if constexpr(std::is_same_v<M, core::String>) {
         return sol::property(
             [=](T* obj, std::string_view view) { (obj->*member) = view; },
@@ -53,68 +52,11 @@ auto property(M T::* member) {
     }
 }
 
-struct CollectionData {
-    u64 id = 0;
-};
 
-CollectionData& get_collection_data(lua_State* l);
-}
-
-void clear_weak_refs(sol::state& l);
-
-
-template<typename T>
-struct Weak {
-    T* ptr = nullptr;
-    u64 collection_id = 0;
-    mutable detail::CollectionData* collection_data = nullptr;
-
-    Weak() = default;
-
-    Weak(T* p) : ptr(p) {
-    }
-};
-
-template<typename T>
-auto bind_type(sol::state& state) {
-    sol::usertype<T> type = state.new_usertype<T>(T::_y_reflect_type_name);
-    reflect::explore_members<T>([&](std::string_view name, auto member) {
-        type[name] = detail::property(member);
-    });
-    return type;
-}
+void bind_math_types(sol::state_view state);
+void bind_ecs_types(sol::state_view state);
 
 }
-}
-
-
-
-namespace sol {
-// template<>
-// struct is_container<y::math::Transform<>> : std::false_type {};
-
-template<typename T>
-struct unique_usertype_traits<yave::script::Weak<T>> {
-    using type = T;
-    using actual_type = yave::script::Weak<T>;
-    static const bool value = true;
-
-    static bool is_null(lua_State*l, const actual_type& ptr) {
-        if(!ptr.ptr) {
-            return true;
-        }
-
-        if(!ptr.collection_data) {
-            ptr.collection_data = &yave::script::detail::get_collection_data(l);
-        }
-
-        return ptr.collection_id < ptr.collection_data->id;
-    }
-
-    static type* get(const actual_type& ptr) {
-        return ptr.ptr;
-    }
-};
 }
 
 
