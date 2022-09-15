@@ -92,7 +92,7 @@ void ScriptPanel::on_gui() {
         ImGui::SameLine();
         if(ImGui::Button(fmt_c_str(ICON_FA_TRASH "##%", i))) {
             scripts.erase(scripts.begin() + i);
-            --i;
+            break;
         }
         ImGui::SameLine();
         ImGui::TextUnformatted(scripts[i].name.data());
