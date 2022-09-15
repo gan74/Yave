@@ -35,6 +35,8 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
 
     script::bind_math_types(_state);
     script::bind_ecs_types(_state);
+
+    script::bind_component_type<TransformableComponent>(_state);
 }
 
 void ScriptSystem::update(ecs::EntityWorld& world, float dt) {

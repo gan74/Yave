@@ -22,8 +22,6 @@ SOFTWARE.
 
 #include "script.h"
 
-#include <yave/ecs/EntityWorld.h>
-
 #include <y/utils/format.h>
 #include <y/utils/log.h>
 
@@ -35,6 +33,12 @@ Y_DLL_EXPORT void yave_ffi_example() {
 
 namespace yave {
 namespace script {
+
+namespace detail {
+core::FlatHashMap<core::String, lua_CFunction>& component_set_casts(sol::state_view s) {
+    return s.registry()["component_set_casts"];
+}
+}
 
 void bind_math_types(sol::state_view state) {
     state.script("ffi = require('ffi')");
@@ -80,10 +84,6 @@ void bind_math_types(sol::state_view state) {
     )#");
 }
 
-static core::FlatHashMap<core::String, lua_CFunction>& component_set_casts(sol::state_view s) {
-    return s.registry()["component_set_casts"];
-}
-
 void bind_ecs_types(sol::state_view state) {
     state.registry()["component_set_casts"] = std::make_unique<core::FlatHashMap<core::String, lua_CFunction>>();
 
@@ -99,7 +99,7 @@ void bind_ecs_types(sol::state_view state) {
         type["set"] = [](lua_State* l) -> int {
             if(sol::stack::check<std::string_view>(l)) {
                 const core::String type_name = sol::stack::pop<std::string_view>(l);
-                if(lua_CFunction cast_func = component_set_casts(l)[type_name.view()]) {
+                if(lua_CFunction cast_func = detail::component_set_casts(l)[type_name.view()]) {
                     return cast_func(l);
                 }
             }

@@ -24,10 +24,11 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-// #include <y/math/Transform.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <y/core/Vector.h>
 #include <y/core/String.h>
+#include <y/core/HashMap.h>
 
 #include <y/reflect/reflect.h>
 
@@ -37,6 +38,10 @@ SOFTWARE.
 
 namespace yave {
 namespace script {
+
+namespace detail {
+core::FlatHashMap<core::String, lua_CFunction>& component_set_casts(sol::state_view s);
+}
 
 static_assert(sol::is_container_v<core::Vector<int>>);
 
@@ -56,9 +61,47 @@ auto to_property(M T::* member) {
 void bind_math_types(sol::state_view state);
 void bind_ecs_types(sol::state_view state);
 
+
+
+template<typename T>
+void bind_component_type(sol::state_view state) {
+    using LuaComponentSet = ecs::SparseComponentSet<T>;
+
+    const core::String type_name = T::_y_reflect_type_name;
+    auto type = state.new_usertype<LuaComponentSet>(type_name + "Set");
+
+    type["__index"] = [](const LuaComponentSet* set, ecs::EntityId id) {
+        y_debug_assert(set);
+        return set->try_get(id);
+    };
+
+    type["__len"] = [](const LuaComponentSet* set) {
+        y_debug_assert(set);
+        return set->size();
+    };
+
+    detail::component_set_casts(state)[type_name] = [](lua_State* l) -> int {
+        if(sol::stack::check_usertype<ecs::EntityWorld>(l)) {
+            auto& world = sol::stack::get_usertype<ecs::EntityWorld>(l);
+            if(auto* typed_set = dynamic_cast<LuaComponentSet*>(&world.component_set<T>())) {
+                sol::stack::push<LuaComponentSet*>(l, typed_set);
+                return 1;
+            }
+        }
+
+        sol::stack::push(l, sol::nil);
+        return 1;
+    };
+}
+
 }
 }
 
+
+namespace sol {
+template<typename T>
+struct is_container<yave::ecs::SparseComponentSet<T>> : std::false_type {};
+}
 
 
 inline int sol_lua_push(sol::types<y::core::String>, lua_State* l, const y::core::String& str) {
