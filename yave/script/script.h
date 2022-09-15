@@ -46,7 +46,7 @@ core::FlatHashMap<core::String, lua_CFunction>& component_set_casts(sol::state_v
 static_assert(sol::is_container_v<core::Vector<int>>);
 
 template<typename T, typename M>
-auto to_property(M T::* member) {
+auto to_property(sol::state_view state, M T::* member) {
     if constexpr(std::is_same_v<M, core::String>) {
         return sol::property(
             [=](T* obj, std::string_view view) { (obj->*member) = view; },
@@ -65,33 +65,42 @@ void bind_ecs_types(sol::state_view state);
 
 template<typename T>
 void bind_component_type(sol::state_view state) {
-    using LuaComponentSet = ecs::SparseComponentSet<T>;
+    {
+        sol::usertype<T> type = state.new_usertype<T>(T::_y_reflect_type_name);
+        reflect::explore_members<T>([&](std::string_view name, auto member) {
+            type[name] = to_property(state, member);
+        });
+    }
 
-    const core::String type_name = T::_y_reflect_type_name;
-    auto type = state.new_usertype<LuaComponentSet>(type_name + "Set");
+    {
+        using LuaComponentSet = ecs::SparseComponentSet<T>;
 
-    type["__index"] = [](const LuaComponentSet* set, ecs::EntityId id) {
-        y_debug_assert(set);
-        return set->try_get(id);
-    };
+        const core::String type_name = T::_y_reflect_type_name;
+        auto type = state.new_usertype<LuaComponentSet>(type_name + "Set");
 
-    type["__len"] = [](const LuaComponentSet* set) {
-        y_debug_assert(set);
-        return set->size();
-    };
+        type["__index"] = [](const LuaComponentSet* set, ecs::EntityId id) {
+            y_debug_assert(set);
+            return set->try_get(id);
+        };
 
-    detail::component_set_casts(state)[type_name] = [](lua_State* l) -> int {
-        if(sol::stack::check_usertype<ecs::EntityWorld>(l)) {
-            auto& world = sol::stack::get_usertype<ecs::EntityWorld>(l);
-            if(auto* typed_set = dynamic_cast<LuaComponentSet*>(&world.component_set<T>())) {
-                sol::stack::push<LuaComponentSet*>(l, typed_set);
-                return 1;
+        type["__len"] = [](const LuaComponentSet* set) {
+            y_debug_assert(set);
+            return set->size();
+        };
+
+        detail::component_set_casts(state)[type_name] = [](lua_State* l) -> int {
+            if(sol::stack::check_usertype<ecs::EntityWorld>(l)) {
+                auto& world = sol::stack::get_usertype<ecs::EntityWorld>(l);
+                if(auto* typed_set = dynamic_cast<LuaComponentSet*>(&world.component_set<T>())) {
+                    sol::stack::push<LuaComponentSet*>(l, typed_set);
+                    return 1;
+                }
             }
-        }
 
-        sol::stack::push(l, sol::nil);
-        return 1;
-    };
+            sol::stack::push(l, sol::nil);
+            return 1;
+        };
+    }
 }
 
 }
@@ -101,6 +110,8 @@ void bind_component_type(sol::state_view state) {
 namespace sol {
 template<typename T>
 struct is_container<yave::ecs::SparseComponentSet<T>> : std::false_type {};
+template<size_t N, typename T>
+struct is_container<y::math::Vec<N, T>> : std::false_type {};
 }
 
 

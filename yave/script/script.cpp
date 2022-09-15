@@ -26,10 +26,17 @@ SOFTWARE.
 #include <y/utils/log.h>
 
 extern "C" {
+struct vec3_t { float x, y, z; };
+
 Y_DLL_EXPORT void yave_ffi_example() {
     y::log_msg("ffi example", y::Log::Debug);
 }
+
+Y_DLL_EXPORT void* yave_ffi_get_ptr(void* ptr) {
+    return *static_cast<void**>(ptr);
 }
+}
+
 
 namespace yave {
 namespace script {
@@ -44,25 +51,34 @@ void bind_math_types(sol::state_view state) {
     state.script("ffi = require('ffi')");
 
     state.script(R"#(
-        ffi.cdef[[ typedef struct { float x, y, z; } vec3_t; ]]
-        ffi.cdef[[ void yave_ffi_example(); ]]
+        ffi.cdef[[
+            typedef struct { float x, y, z; } vec3_t;
+            typedef struct { float colums[4][4]; } transform_t;
+
+            void yave_ffi_example();
+            vec3_t yave_ffi_to_vec3_t(void*);
+            void* yave_ffi_get_ptr(void*);
+        ]]
 
         yave = ffi.C
 
         Vec3 = ffi.metatype('vec3_t', {
-            __add = function(a, b) return vec3_t(a.x +b.x, a.y + b.y, a.z + b.z) end,
+            __add = function(a, b) return Vec3(a.x + b.x, a.y + b.y, a.z + b.z) end,
             __len = function(a) return math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z) end,
             __tostring = function(a) return '[' .. tostring(a.x) .. ', ' .. tostring(a.y) .. ', ' .. tostring(a.z) .. ']' end,
             __index = {
-
+                from_yave = function(a)
+                    local v = Vec3()
+                    ffi.copy(v, yave.yave_ffi_get_ptr(a), ffi.sizeof('vec3_t'))
+                    return v
+                end,
             },
         })
 
-        ffi.cdef[[ typedef struct { float colums[4][4]; } transform_t; ]]
         Transform = ffi.metatype('transform_t', {
             __index = {
                 identity = function()
-                    local t = ffi.new('transform_t')
+                    local t = Transform()
                     t.colums[0][0] = 1.0
                     t.colums[1][1] = 1.0
                     t.colums[2][2] = 1.0
@@ -78,6 +94,12 @@ void bind_math_types(sol::state_view state) {
                     t.colums[3][0] = p.x
                     t.colums[3][1] = p.y
                     t.colums[3][2] = p.z
+                end,
+
+                from_yave = function(a)
+                    local t = Transform()
+                    ffi.copy(v, yave.yave_ffi_get_ptr(a), ffi.sizeof('transform_t'))
+                    return v
                 end,
             },
         })
