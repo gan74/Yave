@@ -72,27 +72,30 @@ void OctreeSystem::tick(ecs::EntityWorld& world) {
 void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     y_profile();
 
-    y_debug_assert(world.component_set<TransformableComponent>().size() <= world.entity_count());
-
     Y_TODO(notify system instead?)
     if(const AssetLoaderSystem* asset_loader = world.find_system<AssetLoaderSystem>()) {
+        y_profile_zone("asset AABB update");
         auto query = world.query<ecs::Mutate<TransformableComponent>>(asset_loader->recently_loaded());
         for(auto&& [tr] : query.components()) {
             tr.dirty_node();
         }
     }
 
-    for(auto&& id_comp : world.query<ecs::Mutate<TransformableComponent>>(transformable_ids(world, only_recent))) {
-        const auto id = id_comp.id();
-        auto& tr = id_comp.component<TransformableComponent>();
+    {
+        y_profile_zone("recent transformables insert");
+        for(auto&& id_comp : world.query<ecs::Mutate<TransformableComponent>>(transformable_ids(world, only_recent))) {
+            const auto id = id_comp.id();
+            auto& tr = id_comp.component<TransformableComponent>();
 
-        const AABB bbox = find_aabb(world, id, tr.position());
+            const AABB bbox = find_aabb(world, id, tr.position());
 
-        tr._id = id;
-        tr.set_node(_tree.insert(id, bbox));
+            tr._id = id;
+            tr.set_node(_tree.insert(id, bbox));
+        }
     }
 
     {
+        y_profile_zone("dirty transformables udpate");
         auto& transformables = world.component_set<TransformableComponent>();
         for(auto& [node, id] : _tree._data._dirty) {
             {
