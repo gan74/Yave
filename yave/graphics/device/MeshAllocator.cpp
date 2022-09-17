@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/graphics.h>
 
+#include <y/core/FixedArray.h>
 #include <y/utils/memory.h>
 
 namespace yave {
@@ -32,6 +33,18 @@ namespace yave {
 MeshAllocator::MeshAllocator() :
         _attrib_buffer(default_vertex_count * sizeof(PackedVertex)),
         _triangle_buffer(default_triangle_count) {
+
+#ifdef Y_DEBUG
+    /*{
+        y_profile_zone("clearing vertex buffers");
+        CmdBufferRecorder recorder = create_disposable_cmd_buffer();
+        core::FixedArray<u8> buffer(std::max(_triangle_buffer.byte_size(), _attrib_buffer.byte_size()));
+        std::fill(buffer.begin(), buffer.end(), 0xCD);
+        Mapping::stage(_attrib_buffer, recorder, buffer.data());
+        Mapping::stage(_triangle_buffer, recorder, buffer.data());
+        loading_command_queue().submit(std::move(recorder)).wait();
+    }*/
+#endif
 
     _free_blocks << FreeBlock {
         0, default_vertex_count,
@@ -115,6 +128,7 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
                 for(const AttribSubBuffer& sub_buffer : attribs_sub_buffers) {
                     const u64 elem_size = sub_buffer.byte_size() / buffer_elem_count;
                     const u64 byte_len = vertex_count * elem_size;
+                    y_debug_assert(sub_buffer.byte_offset() % elem_size == 0);
                     const u64 byte_offset = sub_buffer.byte_offset() + vertex_begin * elem_size;
                     Mapping::stage(
                         SubBuffer<BufferUsage::TransferDstBit>(global_attrib_buffer, byte_len, byte_offset),
@@ -125,6 +139,7 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
                     );
                     offset += elem_size;
                 }
+                y_debug_assert(offset == sizeof(PackedVertex));
             }
 
             mesh_data._indirect_data.vertexOffset = u32(vertex_begin);

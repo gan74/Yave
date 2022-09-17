@@ -32,11 +32,6 @@ namespace yave {
 
 class MeshBufferData : NonMovable {
     public:
-        struct AttribBuffers {
-            TypedAttribSubBuffer<math::Vec3> positions;
-            TypedAttribSubBuffer<math::Vec2ui> normals_tangents;
-            TypedAttribSubBuffer<math::Vec2> uvs;
-        } ;
 
         std::array<AttribSubBuffer, 3> untyped_attrib_buffers() const;
 
@@ -50,7 +45,12 @@ class MeshBufferData : NonMovable {
     private:
         friend class MeshAllocator;
 
-        AttribBuffers _attrib_buffers;
+        struct AttribBuffers {
+            TypedAttribSubBuffer<math::Vec3> positions;
+            TypedAttribSubBuffer<math::Vec2ui> normals_tangents;
+            TypedAttribSubBuffer<math::Vec2> uvs;
+        } _attrib_buffers;
+
         TriangleSubBuffer _triangle_buffer;
 
         MeshAllocator* _parent = nullptr;
