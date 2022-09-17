@@ -206,7 +206,7 @@ const SparseIdSetBase* EntityWorld::tag_set(const core::String& tag) const {
 void EntityWorld::add_tag(EntityId id, const core::String& tag) {
     check_exists(id);
     y_always_assert(!is_tag_implicit(tag), "Implicit tags can't be added directly");
-    _tags[tag].set(id);
+    _tags[tag].insert(id);
 }
 
 void EntityWorld::remove_tag(EntityId id, const core::String& tag) {

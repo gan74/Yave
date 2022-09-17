@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 #include <y/core/Range.h>
+#include <y/utils/traits.h>
 
 #include <tuple>
 #include <iterator>
@@ -88,7 +89,9 @@ class SparseIdSetBase : NonCopyable {
 
 class SparseIdSet : public SparseIdSetBase {
     public:
-        void set(EntityId id) {
+        using value_type = ecs::EntityId;
+
+        void insert(EntityId id) {
             if(!contains(id)) {
                 const index_type index = id.index();
                 grow_sparse(index);
@@ -119,7 +122,25 @@ class SparseIdSet : public SparseIdSetBase {
 
             y_debug_assert(!contains(id));
         }
+
+        auto begin() const {
+            return ids().begin();
+        }
+
+        auto begin() {
+            return ids().begin();
+        }
+
+        auto end() const {
+            return ids().end();
+        }
+
+        auto end() {
+            return ids().end();
+        }
 };
+
+static_assert(is_iterable_v<SparseIdSet>);
 
 
 template<typename Elem>
