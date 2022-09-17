@@ -41,7 +41,6 @@ class OctreeSystem : public ecs::System {
         const OctreeNode& root() const;
         const Octree& octree() const;
 
-
     private:
         void run_tick(ecs::EntityWorld& world, bool only_recent);
 

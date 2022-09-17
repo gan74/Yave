@@ -323,6 +323,8 @@ void wait_for_fence(const TimelineFence& fence) {
         return;
     }
 
+    y_profile();
+
     u64 fence_value = fence.value();
     VkSemaphoreWaitInfo wait_info = vk_struct();
     {

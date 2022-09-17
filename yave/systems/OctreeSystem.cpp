@@ -72,6 +72,8 @@ void OctreeSystem::tick(ecs::EntityWorld& world) {
 void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     y_profile();
 
+    y_debug_assert(world.component_set<TransformableComponent>().size() <= world.entity_count());
+
     Y_TODO(notify system instead?)
     if(const AssetLoaderSystem* asset_loader = world.find_system<AssetLoaderSystem>()) {
         auto query = world.query<ecs::Mutate<TransformableComponent>>(asset_loader->recently_loaded());
@@ -89,7 +91,6 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
         tr._id = id;
         tr.set_node(_tree.insert(id, bbox));
     }
-
 
     {
         auto& transformables = world.component_set<TransformableComponent>();
@@ -111,6 +112,8 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
 
         _tree._data._dirty.clear();
     }
+
+    _tree.audit();
 }
 
 const OctreeNode& OctreeSystem::root() const {

@@ -53,6 +53,8 @@ std::unique_ptr<OctreeNode> OctreeNode::create_parent_from_child(std::unique_ptr
 OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
     y_debug_assert(contains(bbox));
 
+    y_debug_assert(std::find(_entities.begin(), _entities.end(), id) == _entities.end());
+
     const bool split_small = split_small_object && bbox.half_extent().length() < _half_extent / min_object_size_ratio;
     const bool should_insert_into_children = _entities.size() >= max_entities_per_node || split_small;
     if(!has_children() && should_insert_into_children && _half_extent * 2.0f > min_node_extent) {
@@ -150,6 +152,14 @@ usize OctreeNode::children_index(const math::Vec3& pos) {
         }
     }
     return index;
+}
+
+usize OctreeNode::entity_count() const {
+    usize count = _entities.size();
+    for(const auto& child : children()) {
+        count += child->entity_count();
+    }
+    return count;
 }
 
 }

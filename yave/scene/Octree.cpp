@@ -56,8 +56,6 @@ static void visit_node(core::Vector<ecs::EntityId>& entities, const Frustum& fru
     }
 }
 
-
-
 Octree::Octree() : _root(std::make_unique<OctreeNode>(math::Vec3(), 1024.0f, &_data)) {
 }
 
@@ -79,6 +77,18 @@ core::Vector<ecs::EntityId> Octree::find_entities(const Frustum& frustum, float 
     core::Vector<ecs::EntityId> entities;
     visit_node(entities, frustum, far_dist, *_root);
     return entities;
+}
+
+void Octree::audit() const {
+#ifdef Y_DEBUG
+    core::Vector<ecs::EntityId> all;
+    push_all_entities(all, *_root);
+
+    y_debug_assert(_root->entity_count() == all.size());
+
+    std::sort(all.begin(), all.end());
+    y_debug_assert(std::unique(all.begin(), all.end()) == all.end());
+#endif
 }
 
 }

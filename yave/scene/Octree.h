@@ -42,6 +42,8 @@ class Octree : NonMovable {
 
         OctreeData _data;
         std::unique_ptr<OctreeNode> _root;
+
+        void audit() const;
 };
 
 }

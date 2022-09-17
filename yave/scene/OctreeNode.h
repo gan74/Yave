@@ -71,6 +71,9 @@ class OctreeNode : NonMovable {
         friend class Octree;
         friend class OctreeSystem;
 
+        usize entity_count() const; // debug
+
+
     private:
         void build_children();
         usize children_index(const math::Vec3& pos);
