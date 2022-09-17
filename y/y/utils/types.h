@@ -31,6 +31,7 @@ namespace y {
 
 struct NonCopyable {
     inline constexpr NonCopyable() {}
+
     NonCopyable(const NonCopyable&) = delete;
     NonCopyable& operator=(const NonCopyable&) = delete;
 
@@ -40,10 +41,9 @@ struct NonCopyable {
 
 struct NonMovable : NonCopyable {
     inline constexpr NonMovable() {}
-    NonMovable(const NonMovable&) = delete;
-    NonMovable& operator=(const NonMovable&) = delete;
 
     NonMovable(NonMovable&&) = delete;
+    NonMovable& operator=(NonMovable&&) = delete;
 };
 
 using u8 = uint8_t;

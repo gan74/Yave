@@ -132,9 +132,9 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
         y_fatal("IBL probe is too small.");
     }
 
-    auto mip_views = core::ScratchPad<ViewBase>(probe.mipmaps());
+    auto mip_views = core::ScratchVector<ProbeBaseView>(probe.mipmaps());
     for(usize i = 0; i != probe.mipmaps(); ++i) {
-        mip_views[i] = ProbeBaseView(probe, i);
+        mip_views.emplace_back(probe, i);
     }
 
     fill_probe(mip_views, texture);
