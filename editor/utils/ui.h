@@ -26,7 +26,6 @@ SOFTWARE.
 
 #include <yave/assets/AssetId.h>
 
-
 namespace editor {
 namespace imgui {
 
@@ -40,6 +39,8 @@ bool should_open_context_menu();
 
 math::Vec2 client_window_pos();
 math::Vec2 from_client_pos(const math::Vec2& pos);
+
+float button_height();
 
 bool position_input(const char* str_id, math::Vec3& position);
 

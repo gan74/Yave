@@ -69,6 +69,9 @@ math::Vec2 from_client_pos(const math::Vec2& pos) {
     return client_window_pos() + pos;
 }
 
+float button_height() {
+    return ImGui::GetFont()->FontSize + ImGui::GetStyle().FramePadding.y * 2.0f + 4.0f;
+}
 
 bool position_input(const char* str_id, math::Vec3& position) {
     ImGui::PushID(str_id);

@@ -357,7 +357,7 @@ usize SceneImporter2::import_assets() {
 }
 
 void SceneImporter2::on_gui() {
-    const float button_height = ImGui::GetFont()->FontSize + ImGui::GetStyle().FramePadding.y * 2.0f + 4.0f;
+    const float button_height = imgui::button_height();
 
     switch(_state) {
         case State::Browsing:

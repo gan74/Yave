@@ -44,6 +44,14 @@ void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
 
     _state["world"] = &world;
 
+
+    for(auto& one_shot : scripts_comp->one_shot()) {
+        if(!one_shot.done) {
+            one_shot.done = true;
+            _state.safe_script(one_shot.code);
+        }
+    }
+
     for(auto& script : scripts_comp->scripts()) {
         y_profile_dyn_zone(script.name.data());
         try {

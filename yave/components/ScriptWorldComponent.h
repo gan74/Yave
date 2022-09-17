@@ -40,18 +40,26 @@ class ScriptWorldComponent final {
             y_reflect(Script, name, code);
         };
 
-        const auto& scripts() const {
-            return _scripts;
-        }
+        struct OneShotScript {
+            core::String code;
+            bool done = false;
+
+            y_reflect(OneShotScript, code);
+        };
 
         auto& scripts() {
             return _scripts;
         }
 
-        y_reflect(ScriptWorldComponent, _scripts)
+        auto& one_shot() {
+            return _one_shot;
+        }
+
+        y_reflect(ScriptWorldComponent, _scripts, _one_shot)
 
     private:
         core::Vector<Script> _scripts;
+        core::Vector<OneShotScript> _one_shot;
 };
 
 }

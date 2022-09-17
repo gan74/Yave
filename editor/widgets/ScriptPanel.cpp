@@ -114,6 +114,20 @@ void ScriptPanel::on_gui() {
             return true;
         });
     }
+
+    {
+        if(script_component->one_shot().is_empty()) {
+            script_component->one_shot().emplace_back();
+        }
+
+        auto& console = script_component->one_shot().first();
+        core::FixedArray<char> buffer(32 * 1024);
+        std::copy_n(console.code.begin(), std::min(console.code.size(), buffer.size() - 1), buffer.begin());
+        if(ImGui::InputTextMultiline("##console", buffer.data(), buffer.size(), math::Vec2(ImGui::GetContentRegionAvail()) - math::Vec2(0.0f, imgui::button_height()))) {
+            console.code = core::String(buffer.data());
+        }
+        console.done |= !ImGui::Button("Run");
+    }
 }
 
 }
