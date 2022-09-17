@@ -47,6 +47,26 @@ struct QueryUtils {
     struct SetMatch {
         const SparseIdSetBase* set = nullptr;
         bool include = true;
+
+        inline core::Span<EntityId> ids() const {
+            return set ? set->ids() : core::Span<EntityId>{};
+        }
+
+        inline isize signed_size() const {
+            return set ? set->size() : 0;
+        }
+
+        inline usize sorting_key() const {
+            return usize(include ? signed_size() : -(signed_size() + 1));
+        }
+
+        inline bool is_empty() const {
+            return set ? set->size() == 0 : include;
+        }
+
+        inline bool contains(EntityId id) const {
+            return (set ? set->contains(id) : false) == include;
+        }
     };
 
     static core::Vector<EntityId> matching(core::Span<SetMatch> matches, core::Span<EntityId> ids);
@@ -218,15 +238,16 @@ class Query : NonCopyable {
         friend class EntityWorld;
 
         Query(const set_tuple& sets, core::MutableSpan<QueryUtils::SetMatch> matches) : _sets(sets) {
-            if(!matches.is_empty() && std::all_of(matches.begin(), matches.end(), [](auto match) { return match.set != nullptr; })) {
-                std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.set->size() < b.set->size(); });
-                _ids = QueryUtils::matching(core::Span<QueryUtils::SetMatch>(matches.begin() + 1, matches.size() - 1), matches[0].set->ids());
+            if(!matches.is_empty() && std::all_of(matches.begin(), matches.end(), [](auto match) { return !match.is_empty(); })) {
+                std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.sorting_key() < b.sorting_key(); });
+                y_always_assert(matches[0].include, "Query needs at least one inclusive matching rule");
+                _ids = QueryUtils::matching(core::Span<QueryUtils::SetMatch>(matches.begin() + 1, matches.size() - 1), matches[0].ids());
             }
         }
 
         Query(const set_tuple& sets, core::MutableSpan<QueryUtils::SetMatch> matches, core::Span<EntityId> range)  : _sets(sets) {
-            if(std::all_of(matches.begin(), matches.end(), [](auto match) { return match.set != nullptr; })) {
-                std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.set->size() < b.set->size(); });
+            if(std::all_of(matches.begin(), matches.end(), [](auto match) { return !match.is_empty(); })) {
+                std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.sorting_key() < b.sorting_key(); });
                 _ids = QueryUtils::matching(matches, range);
             }
         }

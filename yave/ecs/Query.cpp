@@ -35,8 +35,7 @@ core::Vector<EntityId> QueryUtils::matching(core::Span<SetMatch> matches, core::
     for(EntityId id : ids) {
         bool matched = true;
         for(usize i = 0; matched && i != matches.size(); ++i) {
-            y_debug_assert(matches[i].set);
-            matched &= (matches[i].set->contains(id) == matches[i].include);
+            matched &= matches[i].contains(id);
         }
 
         if(matched) {

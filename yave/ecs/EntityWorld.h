@@ -298,14 +298,16 @@ class EntityWorld {
         }
 
         template<typename... Args>
-        auto query(core::Span<EntityId> ids) {
-            return Query<Args...>(typed_component_sets<Args...>(), ids);
+        auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) {
+            const auto sets = typed_component_sets_or_none<Args...>();
+            return Query<Args...>(sets, build_id_sets_for_query(sets, tags), ids);
         }
 
         template<typename... Args>
-        auto query(core::Span<EntityId> ids) const {
+        auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
-            return Query<Args...>(typed_component_sets<Args...>(), ids);
+            const auto sets = typed_component_sets_or_none<Args...>();
+            return Query<Args...>(sets, build_id_sets_for_query(sets, tags), ids);
         }
 
         template<typename... Args>
