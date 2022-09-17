@@ -175,19 +175,19 @@ void FileSystemView::on_gui() {
     }
 
     const bool modify = allow_modify();
-    ImGui::BeginChild("##fileentries", ImVec2(), true);
-    {
-        const float width = ImGui::GetContentRegionAvail().x;
-        const float size_col_size = ImGui::CalcTextSize("0").x * 16.0f;
-        const float size_col_offset = width > size_col_size + 50.0f ? width - size_col_size : 0.0f;
 
-        imgui::alternating_rows_background();
+    const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+    if(ImGui::BeginTable("##fileentries", 2, table_flags)) {
+        ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("##size", ImGuiTableColumnFlags_WidthFixed);
+
         usize hovered = usize(-1);
 
         const auto parent_path = filesystem()->parent_path(path());
 
         if(!_at_root) {
-            if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..")) {
+            imgui::table_begin_next_row();
+            if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..", false, ImGuiSelectableFlags_SpanAllColumns)) {
                 if(parent_path) {
                     set_path(parent_path.unwrap());
                 }
@@ -198,7 +198,8 @@ void FileSystemView::on_gui() {
         }
 
         for(usize i = 0; i != _entries.size(); ++i) {
-            if(ImGui::Selectable(fmt_c_str("% %##%", _entries[i].icon, _entries[i].name, i), _hovered == i)) {
+            imgui::table_begin_next_row();
+            if(ImGui::Selectable(fmt_c_str("% %##%", _entries[i].icon, _entries[i].name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
                 entry_clicked(_entries[i]);
                 break; // break because we might update inside entry_clicked
             }
@@ -218,10 +219,7 @@ void FileSystemView::on_gui() {
             }
 
             if(_entries[i].type == EntryType::File) {
-                ImGui::SameLine();
-                if(ImGui::GetCursorPosX() < size_col_offset) {
-                    ImGui::SameLine(size_col_offset);
-                }
+                ImGui::TableNextColumn();
                 ImGui::TextUnformatted(fmt_c_str("% KB", (_entries[i].file_size + 1023) / 1024, i));
             }
         }
@@ -231,8 +229,9 @@ void FileSystemView::on_gui() {
             entry_hoverred(entry(hovered));
             _hovered = hovered;
         }
+
+        ImGui::EndTable();
     }
-    ImGui::EndChild();
 }
 
 bool FileSystemView::process_context_menu() {

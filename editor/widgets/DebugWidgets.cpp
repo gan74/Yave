@@ -145,10 +145,9 @@ class EcsDebug : public Widget {
 
     protected:
         void on_gui() override {
-            const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
-
             EditorWorld& world = current_world();
 
+            const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
             if(ImGui::CollapsingHeader("Systems")) {
                 if(ImGui::BeginTable("##systems", 1, table_flags)) {
                     for(const auto& system : world.systems()) {

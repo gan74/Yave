@@ -47,9 +47,6 @@ bool position_input(const char* str_id, math::Vec3& position);
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear = nullptr);
 bool path_selector(const char* text, const core::String& path);
 
-void alternating_rows_background(float line_height = -1.0f);
-
-
 bool search_bar(const char* text, char* buffer, usize buffer_size);
 
 bool begin_suggestion_popup();
