@@ -145,17 +145,38 @@ class EcsDebug : public Widget {
 
     protected:
         void on_gui() override {
-            const EditorWorld& world = current_world();
+            const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+
+            EditorWorld& world = current_world();
 
             if(ImGui::CollapsingHeader("Systems")) {
-                ImGui::BeginChild("##systems", ImVec2(0, 0), true);
-                imgui::alternating_rows_background();
-
-                for(const auto& system : world.systems()) {
-                    ImGui::Selectable(system->name().data());
+                if(ImGui::BeginTable("##systems", 1, table_flags)) {
+                    for(const auto& system : world.systems()) {
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted(system->name().data());
+                    }
+                    ImGui::EndTable();
                 }
+            }
 
-                ImGui::EndChild();
+            if(ImGui::CollapsingHeader("Tags")) {
+                if(ImGui::BeginTable("##tags", 3, table_flags)) {
+                    ImGui::TableSetupColumn("##tag", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("##entities", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableSetupColumn("##actions",ImGuiTableColumnFlags_WidthFixed);
+
+                    for(const core::String& tag : world.tags()) {
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted(tag.data());
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted(fmt_c_str("% entities", world.tag_set(tag)->size()));
+                        ImGui::TableNextColumn();
+                        if(ImGui::SmallButton(ICON_FA_TRASH)) {
+                            world.remove_tag(tag);
+                        }
+                    }
+                    ImGui::EndTable();
+                }
             }
         }
 };

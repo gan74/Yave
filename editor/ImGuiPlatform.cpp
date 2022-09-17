@@ -396,6 +396,8 @@ class ImGuiEventHandler : public EventHandler {
                                 for(usize i = 0; i != ctrl_shortcuts.size(); ++i) {
                                     if(event.key == ctrl_shortcuts[i]) {
                                         io.KeysDown[io.KeyMap[ImGuiKey_A + i]] = event.pressed;
+                                    } else {
+                                        io.KeysDown[io.KeyMap[ImGuiKey_A + i]] = false; // ????
                                     }
                                 }
                             }

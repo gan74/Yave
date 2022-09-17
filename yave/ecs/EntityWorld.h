@@ -149,6 +149,8 @@ class EntityWorld {
 
         void remove_tag(EntityId id, const core::String& tag);
 
+        void remove_tag(const core::String& tag);
+
         bool has_tag(EntityId id, const core::String& tag) const;
 
         static bool is_tag_implicit(std::string_view tag);

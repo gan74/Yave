@@ -215,6 +215,11 @@ void EntityWorld::remove_tag(EntityId id, const core::String& tag) {
     _tags[tag].erase(id);
 }
 
+void EntityWorld::remove_tag(const core::String& tag) {
+    y_always_assert(!is_tag_implicit(tag), "Implicit tags can't be removed directly");
+    _tags.erase(tag);
+}
+
 bool EntityWorld::has_tag(EntityId id, const core::String& tag) const {
     check_exists(id);
     const SparseIdSetBase* set = tag_set(tag);
