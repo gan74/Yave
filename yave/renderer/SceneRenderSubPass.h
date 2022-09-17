@@ -30,8 +30,6 @@ SOFTWARE.
 namespace yave {
 
 struct SceneRenderSubPass {
-    static constexpr usize max_batch_size = 128 * 1024;
-
     SceneView scene_view;
     usize descriptor_set_index = 0;
 
@@ -41,7 +39,6 @@ struct SceneRenderSubPass {
 
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& view);
     void render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const;
-
 };
 
 

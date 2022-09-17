@@ -203,7 +203,8 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
     {
         SubAtlasAllocator allocator(first_level_size);
 
-        for(auto light : world.query<DirectionalLightComponent>()) {
+        const std::array tags = {core::String("!hidden")};
+        for(auto light : world.query<DirectionalLightComponent>(tags)) {
             const auto& [l] = light.components();
             if(!l.cast_shadow()) {
                 continue;
@@ -214,7 +215,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
             sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, directional_camera(scene.camera(), l)), uv_mul, allocator));
         }
 
-        for(auto light : world.query<TransformableComponent, SpotLightComponent>()) {
+        for(auto light : world.query<TransformableComponent, SpotLightComponent>(tags)) {
             const auto& [t, l] = light.components();
             if(!l.cast_shadow()) {
                 continue;

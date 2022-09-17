@@ -42,6 +42,8 @@ class EntityView final : public Widget {
 
     private:
         ecs::EntityId _context_menu_entity;
+
+        core::Vector<std::pair<const char*, core::String>> _tag_buttons;
 };
 
 }

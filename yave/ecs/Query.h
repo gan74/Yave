@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <y/utils/iter.h>
 
+#include <y/utils/log.h>
+
 namespace yave {
 namespace ecs {
 
@@ -61,7 +63,10 @@ struct QueryUtils {
         }
 
         inline bool is_empty() const {
-            return set ? set->size() == 0 : include;
+            if(!include) {
+                return false;
+            }
+            return set ? set->is_empty() : true;
         }
 
         inline bool contains(EntityId id) const {

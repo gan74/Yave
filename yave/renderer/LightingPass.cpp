@@ -50,7 +50,9 @@ static constexpr usize max_spot_lights = 1024;
 
 
 static std::tuple<const IBLProbe*, float, bool>  find_probe(const ecs::EntityWorld& world) {
-    for(const SkyLightComponent& sky : world.components<SkyLightComponent>()) {
+    const std::array tags = {core::String("!hidden")};
+    for(auto id_comp : world.query<SkyLightComponent>(tags)) {
+        const SkyLightComponent& sky = id_comp.component<SkyLightComponent>();
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
             return {probe, sky.intensity(), sky.display_sky()};
@@ -97,7 +99,9 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         u32 light_count = 0;
         TypedMapping<uniform::DirectionalLight> mapping = self->resources().map_buffer(directional_buffer);
-        for(auto light : scene.world().query<DirectionalLightComponent>()) {
+
+        const std::array tags = {core::String("!hidden")};
+        for(auto light : scene.world().query<DirectionalLightComponent>(tags)) {
             const auto& [l] = light.components();
 
             u32 shadow_index = u32(-1);
@@ -147,7 +151,9 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
     const Frustum frustum = scene.camera().frustum();
 
     u32 count = 0;
-    for(auto point : scene.world().query<TransformableComponent, PointLightComponent>()) {
+
+    const std::array tags = {core::String("!hidden")};
+    for(auto point : scene.world().query<TransformableComponent, PointLightComponent>(tags)) {
         const auto& [t, l] = point.components();
 
         const float scaled_radius = l.radius() * t.transform().scale().max_component();
@@ -185,7 +191,9 @@ static u32 fill_spot_light_buffer(
     const Frustum frustum = scene.camera().frustum();
 
     u32 count = 0;
-    for(auto spot : scene.world().query<TransformableComponent, SpotLightComponent>()) {
+
+    const std::array tags = {core::String("!hidden")};
+    for(auto spot : scene.world().query<TransformableComponent, SpotLightComponent>(tags)) {
         const auto& [t, l] = spot.components();
 
         const math::Vec3 forward = t.forward().normalized();

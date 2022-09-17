@@ -80,11 +80,12 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
         }
     };
 
+    const std::array tags = {core::String("!hidden")};
     if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
         const core::Vector<ecs::EntityId> visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
-        render_query(world.query<TransformableComponent, StaticMeshComponent>(visible));
+        render_query(world.query<TransformableComponent, StaticMeshComponent>(visible, tags));
     } else {
-        render_query(world.query<TransformableComponent, StaticMeshComponent>());
+        render_query(world.query<TransformableComponent, StaticMeshComponent>(tags));
     }
 
     y_profile_msg(fmt_c_str("% meshes", index));

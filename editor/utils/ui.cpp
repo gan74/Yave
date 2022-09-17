@@ -162,7 +162,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
 
         if(is_empty) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
         }
 
         const bool combo = ImGui::BeginCombo("##combo", item_name);
