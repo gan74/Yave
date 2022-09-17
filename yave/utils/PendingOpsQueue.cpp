@@ -35,9 +35,12 @@ PendingOpsQueue::~PendingOpsQueue() {
     y_profile_zone("waiting for pending ops");
 
     {
-        core::Vector<std::future<void>> remaining;
         auto lock = y_profile_unique_lock(_lock);
-        remaining.swap(_pending_ops);
+        while(!_pending_ops.is_empty()) {
+            if(_pending_ops.pop().wait_for(std::chrono::seconds(1)) == std::future_status::timeout) {
+                y_fatal("Was not able to complete future");
+            }
+        }
     }
 }
 

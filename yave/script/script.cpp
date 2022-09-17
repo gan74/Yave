@@ -26,8 +26,6 @@ SOFTWARE.
 #include <y/utils/log.h>
 
 extern "C" {
-struct vec3_t { float x, y, z; };
-
 Y_DLL_EXPORT void yave_ffi_example() {
     y::log_msg("ffi example", y::Log::Debug);
 }
@@ -56,7 +54,6 @@ void bind_math_types(sol::state_view state) {
             typedef struct { float colums[4][4]; } transform_t;
 
             void yave_ffi_example();
-            vec3_t yave_ffi_to_vec3_t(void*);
             void* yave_ffi_get_ptr(void*);
         ]]
 
