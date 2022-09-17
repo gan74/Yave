@@ -90,6 +90,10 @@ inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
                 continue;
             }
 
+            if(properties.memoryHeaps[properties.memoryTypes[i].heapIndex].size <= size) {
+                continue;
+            }
+
             const VkMemoryType memory_type = properties.memoryTypes[i];
             if(memory_type.propertyFlags == flags) {
                 best_index = i;
