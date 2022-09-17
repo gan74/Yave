@@ -48,7 +48,11 @@ void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
     for(auto& one_shot : scripts_comp->one_shot()) {
         if(!one_shot.done) {
             one_shot.done = true;
-            _state.safe_script(one_shot.code);
+            try {
+                _state.safe_script(one_shot.code);
+            } catch(std::exception& e) {
+                log_msg(fmt("Lua error in one shot: %", e.what()), Log::Error);
+            }
         }
     }
 

@@ -126,7 +126,7 @@ void ScriptPanel::on_gui() {
         if(ImGui::InputTextMultiline("##console", buffer.data(), buffer.size(), math::Vec2(ImGui::GetContentRegionAvail()) - math::Vec2(0.0f, imgui::button_height()))) {
             console.code = core::String(buffer.data());
         }
-        console.done |= !ImGui::Button("Run");
+        console.done &= !ImGui::Button(ICON_FA_PLAY " Run");
     }
 }
 
