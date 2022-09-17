@@ -32,6 +32,7 @@ SOFTWARE.
 #include <y/core/ScratchPad.h>
 #include <y/concurrent/concurrent.h>
 #include <y/utils/format.h>
+#include <y/utils/log.h>
 
 namespace yave {
 
@@ -58,9 +59,18 @@ LifetimeManager::LifetimeManager() {
                 wait_info.semaphoreCount = 1;
             }
 
-            vk_check(vkWaitSemaphores(device, &wait_info, u64(-1)));
+            const VkResult result = vkWaitSemaphores(device, &wait_info, u64(100'000'000)); // 100ms
+            vk_check(result);
 
-            poll_cmd_buffers();
+            if(result == VK_TIMEOUT) {
+                --semaphore_value;
+                // Very spammy, especially if the window is hidden
+                /*if(_run_thread) {
+                    log_msg("Semaphore was not signaled after 100ms", Log::Warning);
+                }*/
+            } else {
+                poll_cmd_buffers();
+            }
         }
     });
 #endif

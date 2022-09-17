@@ -1,4 +1,4 @@
-/*******************************
+﻿/*******************************
 Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -52,7 +52,6 @@ CmdBufferPool::CmdBufferPool(ThreadDevicePtr dptr) :
 
 CmdBufferPool::~CmdBufferPool() {
     join_all();
-    lifetime_manager().poll_cmd_buffers();
 
     y_debug_assert(_cmd_buffers.size() == _released.size());
 
@@ -66,9 +65,18 @@ VkCommandPool CmdBufferPool::vk_pool() const {
 void CmdBufferPool::join_all() {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_pool_lock);
-    for(auto& data : _cmd_buffers) {
-        data->wait();
+    for(;;) {
+        const auto p_lock = y_profile_unique_lock(_pool_lock);
+        for(auto& data : _cmd_buffers) {
+            data->wait();
+        }
+
+        lifetime_manager().poll_cmd_buffers();
+
+        const auto r_lock = y_profile_unique_lock(_release_lock);
+        if(_cmd_buffers.size() == _released.size()) {
+            break;
+        }
     }
 }
 

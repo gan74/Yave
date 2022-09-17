@@ -47,7 +47,7 @@ SOFTWARE.
     } while(false)
 
 
-#define y_create_named_object(t, name) NamedObject{t, name, y_reflect_create_item_name_hash(name)}
+#define y_create_named_object(t, name) NamedObject{t, name, y_reflect_name_hash(name)}
 
 namespace y {
 namespace serde3 {
@@ -333,26 +333,28 @@ class WritableArchive final {
 
         template<typename T>
         inline Result serialize_members(const T& object) {
-            return serialize_members_internal<0>(object._y_reflect());
+            return serialize_members_internal<0>(object);
         }
 
-        template<usize I, typename... Args>
-        inline Result serialize_members_internal(const std::tuple<NamedObject<Args>...>& objects) {
-            unused(objects);
-            if constexpr(I < sizeof...(Args)) {
+        template<usize I, typename T>
+        inline Result serialize_members_internal(const T& object) {
+            unused(object);
+
+            const auto members = list_members<T>();
+            if constexpr(I < std::tuple_size_v<decltype(members)>) {
                 {
                     Y_TODO(RAII this?)
                     SizePatch patch{tell(), 0};
                     y_try(write_one(size_type(-1)));
 
-                    y_try(serialize_one(std::get<I>(objects)));
+                    y_try(serialize_one(std::get<I>(members).materialize(object)));
 
                     patch.size = (size_type(tell()) - size_type(patch.index)) - sizeof(size_type);
                     push_patch(patch);
                 }
 
                 //y_try(serialize_one(std::get<I>(objects)));
-                y_try(serialize_members_internal<I + 1>(objects));
+                y_try(serialize_members_internal<I + 1>(object));
             }
             return core::Ok(Success::Full);
         }
@@ -816,19 +818,21 @@ class ReadableArchive final {
             }
 
             y_defer(if constexpr(Safe) { seek(data.end_offset); });
-            return deserialize_members_internal<Safe, 0>(object._y_reflect(), data);
+            return deserialize_members_internal<Safe, 0>(object, data);
         }
 
-        template<bool Safe, usize I, typename... Args>
-        inline Result deserialize_members_internal(const std::tuple<NamedObject<Args>...>& members,
+        template<bool Safe, usize I, typename T>
+        inline Result deserialize_members_internal(T& object,
                                             ObjectData& object_data) {
-            unused(object_data);
+            unused(object, object_data);
 
 #ifdef Y_NO_SAFE_DESER
             static_assert(!Safe);
 #endif
-            if constexpr(I < sizeof...(Args)) {
-                const auto& member = std::get<I>(members);
+
+            const auto members = list_members<T>();
+            if constexpr(I < std::tuple_size_v<decltype(members)>) {
+                auto member = std::get<I>(members).materialize(object);
 
                 if constexpr(Safe) {
                     auto& offsets = object_data.members_offsets;
@@ -868,7 +872,7 @@ class ReadableArchive final {
                     }
                 }
 
-                return deserialize_members_internal<Safe, I + 1>(members, object_data);
+                return deserialize_members_internal<Safe, I + 1>(object, object_data);
             }
 
             return core::Ok(object_data.success_state);

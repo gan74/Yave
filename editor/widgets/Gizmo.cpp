@@ -352,7 +352,8 @@ void Gizmo::translate_gizmo() {
         }
         offset = math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z()));
 
-        for(auto&& [transformable] : current_world().query<ecs::Mutate<TransformableComponent>>(selection().selected_entities()).components()) {
+        auto query = current_world().query<ecs::Mutate<TransformableComponent>>(selection().selected_entities());
+        for(auto&& [transformable] : query.components()) {
             transformable.set_position(transformable.position() + offset);
         }
 
@@ -463,7 +464,8 @@ void Gizmo::rotate_gizmo() {
         const float angle_offset = snap_rot(angle - _rotation_offset);
         const math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(data.basis[_rotation_axis], angle_offset);
 
-        for(auto&& [transformable] : current_world().query<ecs::Mutate<TransformableComponent>>(selection().selected_entities()).components()) {
+        auto query = current_world().query<ecs::Mutate<TransformableComponent>>(selection().selected_entities());
+        for(auto&& [transformable] : query.components()) {
             math::Transform<> tr = transformable.transform();
             tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
             transformable.set_transform(tr);

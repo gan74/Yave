@@ -87,9 +87,6 @@ class SearchableFileSystemModel : public FileSystemModel {
 };
 
 
-
-#ifndef YAVE_NO_STDFS
-
 class LocalFileSystemModel : public FileSystemModel {
     public:
         Result<core::String> current_path() const override;
@@ -107,8 +104,6 @@ class LocalFileSystemModel : public FileSystemModel {
         core::String canonicalize(std::string_view path) const;
         bool is_canonical(std::string_view path) const;
 };
-
-#endif
 
 }
 

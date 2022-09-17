@@ -26,8 +26,10 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 #include <y/core/Range.h>
+#include <y/utils/traits.h>
 
 #include <tuple>
+#include <iterator>
 
 // #define YAVE_ECS_COMPONENT_SET_AUDIT
 
@@ -35,7 +37,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class SparseIdSet : NonCopyable {
+class SparseIdSetBase : NonCopyable {
 
     public:
         using index_type = u32;
@@ -71,6 +73,10 @@ class SparseIdSet : NonCopyable {
             return index < _sparse.size() ? _sparse[index] : invalid_index;
         }
 
+        const SparseIdSetBase& smallest(const SparseIdSetBase& other) const {
+            return size() < other.size() ? *this : other;
+        }
+
     protected:
         void grow_sparse(index_type max_index) {
             _sparse.set_min_size(usize(max_index + 1), invalid_index);
@@ -81,8 +87,64 @@ class SparseIdSet : NonCopyable {
 };
 
 
+class SparseIdSet : public SparseIdSetBase {
+    public:
+        using value_type = ecs::EntityId;
+
+        void insert(EntityId id) {
+            if(!contains(id)) {
+                const index_type index = id.index();
+                grow_sparse(index);
+
+                _sparse[index] = index_type(_dense.size());
+                _dense.emplace_back(id);
+            }
+        }
+
+        void erase(EntityId id) {
+            y_debug_assert(contains(id));
+
+            const index_type index = id.index();
+            const index_type dense_index = _sparse[index];
+            const index_type last_dense_index = index_type(_dense.size() - 1);
+            const EntityId last = _dense[last_dense_index];
+
+            y_debug_assert(_dense[dense_index] == id);
+
+            std::swap(_dense[dense_index], _dense[last_dense_index]);
+
+            _dense.pop();
+
+            const index_type last_sparse_index = last.index();
+            _sparse[last_sparse_index] = dense_index;
+            _sparse[index] = invalid_index;
+
+
+            y_debug_assert(!contains(id));
+        }
+
+        auto begin() const {
+            return ids().begin();
+        }
+
+        auto begin() {
+            return ids().begin();
+        }
+
+        auto end() const {
+            return ids().end();
+        }
+
+        auto end() {
+            return ids().end();
+        }
+};
+
+static_assert(is_iterable_v<SparseIdSet>);
+
+
 template<typename Elem>
-class SparseComponentSetBase : public SparseIdSet {
+class SparseComponentSetBase : public SparseIdSetBase {
 
     public:
         using element_type = std::remove_cv_t<Elem>;
@@ -100,8 +162,15 @@ class SparseComponentSetBase : public SparseIdSet {
         template<bool Const>
         class PairIterator {
             using pointer_t = std::conditional_t<Const, const_pointer, pointer>;
+            using reference_t = std::conditional_t<Const, const_reference, reference>;
 
             public:
+                using difference_type = usize;
+                using value_type = SparseComponentSetBase::value_type;
+                using pointer = pointer_t;
+                using reference = std::tuple<const EntityId&, reference_t>;
+                using iterator_category = std::forward_iterator_tag;
+
                 inline PairIterator() = default;
 
                 inline auto operator*() const {
@@ -310,6 +379,8 @@ class SparseComponentSet : public SparseComponentSetBase<Elem> {
 
 }
 }
+
+static_assert(std::is_same_v<std::iterator_traits<yave::ecs::SparseComponentSetBase<int>::iterator>::iterator_category, std::forward_iterator_tag>);
 
 #endif // YAVE_ECS_SPARSECOMPONENTSET_H
 

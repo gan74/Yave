@@ -264,6 +264,10 @@ class ScratchVector : public ScratchPadBase<Elem> {
             return _capacity;
         }
 
+        inline usize max_size() const {
+            return _capacity;
+        }
+
         inline reference push_back(const_reference elem) {
             y_debug_assert(!is_full());
             return *(::new(this->_data + this->_size++) data_type{elem});

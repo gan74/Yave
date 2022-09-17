@@ -236,7 +236,11 @@ class Matrix {
             return (&_vecs[0][0]) + (M * N);
         }
 
-        inline constexpr usize size() const {
+        static inline constexpr usize size() {
+            return N * M;
+        }
+
+        static inline constexpr usize max_size() {
             return N * M;
         }
 

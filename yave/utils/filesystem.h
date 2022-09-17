@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <y/defines.h>
 
-#ifndef YAVE_NO_STDFS
 #if __has_include(<filesystem>)
 #define YAVE_STDFS_NAMESPACE std::filesystem
 #include <filesystem>
@@ -32,7 +31,6 @@ SOFTWARE.
 #define YAVE_STDFS_NAMESPACE std::experimental::filesystem
 #include <experimental/filesystem>
 #endif
-#endif // YAVE_NO_STDFS
 
 // fs::copy and fs::copy_file will mess up binary files by replacing '\n' by "\r\n" on windows.
 #ifdef Y_OS_WIN
@@ -42,11 +40,8 @@ SOFTWARE.
 namespace yave {
 
 namespace fs {
-#ifndef YAVE_NO_STDFS
 using namespace YAVE_STDFS_NAMESPACE;
-#endif
 }
-
 
 }
 

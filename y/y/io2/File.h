@@ -42,6 +42,7 @@ class File final : public Reader, public Writer {
 
         static core::Result<File> create(const core::String& name);
         static core::Result<File> open(const core::String& name);
+        static core::Result<core::String> read_text_file(const core::String& name);
 
         static  core::Result<void> copy(Reader& src, const core::String& dst);
 

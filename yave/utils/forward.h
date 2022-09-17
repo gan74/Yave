@@ -32,7 +32,6 @@ class AccelerationStructure;
 class Animation;
 class AnimationChannel;
 class AssetDependencies;
-class AssetIdFactory;
 class AssetLoader;
 class AssetLoaderSystem;
 class AssetLoadingContext;
@@ -120,6 +119,8 @@ class Renderable;
 class ResourceFence;
 class Sampler;
 class SceneView;
+class ScriptSystem;
+class ScriptWorldComponent;
 class SearchableFileSystemModel;
 class ShaderModuleBase;
 class ShaderProgram;
@@ -161,6 +162,7 @@ struct BoneTransform;
 struct Box;
 struct BufferCreateInfo;
 struct BufferData;
+struct CompiledScript;
 struct Contants;
 struct DefaultRenderer;
 struct DeviceProperties;
@@ -168,6 +170,8 @@ struct DirectVertex;
 struct DownsamplePass;
 struct EmptyResource;
 struct EnclosingSphere;
+struct EntryInfo;
+struct ExposurePass;
 struct FrameGraphBufferId;
 struct FrameGraphImageId;
 struct FrameGraphMutableBufferId;
@@ -188,7 +192,6 @@ struct KeyHash;
 struct LayoutPools;
 struct LightingPass;
 struct LightingSettings;
-struct LoadableComponentRegister;
 struct LoadableComponentTypeInfo;
 struct Mip;
 struct Monitor;
@@ -202,6 +205,7 @@ struct SSAOPass;
 struct SSAOSettings;
 struct SceneData;
 struct SceneRenderSubPass;
+struct Script;
 struct Semaphores;
 struct ShadowMapPass;
 struct ShadowMapSettings;
@@ -209,6 +213,7 @@ struct SkeletonData;
 struct SkinWeights;
 struct SkinnedVertex;
 struct SubMesh;
+struct SystemRegister;
 struct ToneMappingPass;
 struct ToneMappingSettings;
 struct Viewport;
@@ -233,24 +238,31 @@ class EntityScene;
 class EntityWorld;
 class IdComponents;
 class SparseIdSet;
+class SparseIdSetBase;
 class System;
+class WorldComponentContainerBase;
 struct ComponentRuntimeInfo;
 struct ComponentsReturnPolicy;
 struct IdComponentsReturnPolicy;
-struct IdReturnPolicy;
+struct QueryUtils;
 }
 
 
 namespace yave::uniform {
 struct Camera;
 struct DirectionalLight;
+struct ExposureParams;
 struct PointLight;
 struct RayleighSky;
 struct SH;
 struct ShadowMapParams;
 struct SpotLight;
-struct Surfel;
-struct ExposureParams;
+struct VPL;
+}
+
+
+namespace yave::script::detail {
+struct CollectionData;
 }
 
 

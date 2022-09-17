@@ -85,25 +85,6 @@ static_assert(sizeof(AssetId) == sizeof(i64));
 static_assert(AssetId() == AssetId::invalid_id());
 static_assert(std::is_trivially_copyable_v<AssetId>);
 
-class AssetIdFactory {
-    public:
-        static AssetIdFactory create(u64 first) {
-            if(AssetId(first) == AssetId::invalid_id()) {
-                y_fatal("Invalid first ID");
-            }
-            AssetIdFactory factory;
-            factory._next_id = first;
-            return factory;
-        }
-
-        AssetId create_id() {
-            return AssetId(_next_id++);
-        }
-
-    private:
-        u64 _next_id = 0;
-};
-
 }
 
 

@@ -40,7 +40,7 @@ class Animation {
         std::optional<math::Transform<>> bone_transform(const core::String& name, float time) const;
 
 
-        y_reflect(_duration, _channels)
+        y_reflect(Animation, _duration, _channels)
 
     private:
         float _duration = 0.0f;

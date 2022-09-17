@@ -53,7 +53,7 @@ class StaticMeshComponent final :
             bool operator==(const SubMesh& other) const;
             bool operator!=(const SubMesh& other) const;
 
-            y_reflect(mesh, material)
+            y_reflect(SubMesh, mesh, material)
         };
 
         StaticMeshComponent() = default;
@@ -74,7 +74,7 @@ class StaticMeshComponent final :
         bool update_asset_loading_status();
         void load_assets(AssetLoadingContext& loading_ctx);
 
-        y_reflect(_sub_meshes)
+        y_reflect(StaticMeshComponent, _sub_meshes)
 
     private:
         AABB compute_aabb() const;

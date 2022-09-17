@@ -27,6 +27,7 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
 #include <editor/utils/ui.h>
+#include <editor/widgets/FileBrowser.h>
 
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
@@ -42,6 +43,8 @@ SOFTWARE.
 #include <yave/material/Material.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
+
+#include <y/io2/File.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>

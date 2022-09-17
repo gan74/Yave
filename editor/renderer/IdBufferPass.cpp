@@ -73,24 +73,27 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
         entities.assign(selected.begin(), selected.end());
         use_entity_list = true;
     } else {
-        const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
-        if(octree_system) {
+        if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
             entities = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
             use_entity_list = true;
         }
     }
 
-    const auto entity_query = use_entity_list
-        ? world.query<TransformableComponent, StaticMeshComponent>(entities)
-        : world.query<TransformableComponent, StaticMeshComponent>();
+    auto render_query = [&](auto query) {
+        usize index = 0;
+        for(auto ent : query) {
+            const auto& [tr, mesh] = ent.components();
+            transform_mapping[index] = tr.transform();
+            id_mapping[index] = ent.id().index();
+            mesh.render_mesh(recorder, u32(index));
+            ++index;
+        }
+    };
 
-    usize index = 0;
-    for(auto ent : entity_query) {
-        const auto& [tr, mesh] = ent.components();
-        transform_mapping[index] = tr.transform();
-        id_mapping[index] = ent.id().index();
-        mesh.render_mesh(recorder, u32(index));
-        ++index;
+    if(use_entity_list) {
+        render_query(world.query<TransformableComponent, StaticMeshComponent>(entities));
+    } else {
+        render_query(world.query<TransformableComponent, StaticMeshComponent>());
     }
 }
 

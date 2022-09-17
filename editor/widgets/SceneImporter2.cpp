@@ -357,7 +357,7 @@ usize SceneImporter2::import_assets() {
 }
 
 void SceneImporter2::on_gui() {
-    const float button_height = ImGui::GetFont()->FontSize + ImGui::GetStyle().FramePadding.y * 2.0f + 4.0f;
+    const float button_height = imgui::button_height();
 
     switch(_state) {
         case State::Browsing:
@@ -440,11 +440,10 @@ void SceneImporter2::on_gui() {
             [[fallthrough]];
 
         case State::Done: {
-            if(ImGui::BeginChild("##logs", ImVec2(0, ImGui::GetContentRegionAvail().y - button_height), true)) {
-                imgui::alternating_rows_background();
-
+            if(ImGui::BeginTable("##logs", 1, ImGuiTableFlags_RowBg, ImVec2(0, ImGui::GetContentRegionAvail().y - button_height))) {
                 const auto lock = y_profile_unique_lock(_lock);
                 for(const auto& log : _logs) {
+                    imgui::table_begin_next_row();
                     switch(log.second) {
                         case Log::Error:
                             ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
@@ -463,7 +462,7 @@ void SceneImporter2::on_gui() {
                     }
                 }
             }
-            ImGui::EndChild();
+            ImGui::EndTable();
 
 
             if(ImGui::Button("Ok")) {

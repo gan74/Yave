@@ -96,17 +96,10 @@ static void explore(C& vars, const core::String& parent, std::string_view name, 
 
     collect_var<result_type>(vars, parent, name, getter);
 
-    auto& obj = getter();
-    char* ptr = reinterpret_cast<char*>(&obj);
-
-    reflect::explore_members(obj, [=, full = parent + "." + name, &vars](std::string_view name, auto& e) mutable {
-        // This will break if we run into polymorphism or virtual bases, static_assert on that...
-        using elem_type = remove_cvref_t<decltype(e)>;
-        const usize offset = reinterpret_cast<char*>(&e) - ptr;
-        explore(vars, full, name, [=]() -> elem_type& {
-            auto&& p = getter();
-            char* base_ptr = reinterpret_cast<char*>(&p);
-            return *reinterpret_cast<elem_type*>(base_ptr + offset);
+    reflect::explore_members<result_type>([&, full = parent + "." + name](std::string_view name, auto member) mutable {
+        using member_type = remove_cvref_t<decltype(std::declval<result_type>().*member)>;
+        explore(vars, full, name, [getter, member]() -> member_type& {
+            return getter().*member;
         });
     });
 }

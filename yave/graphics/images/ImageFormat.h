@@ -57,7 +57,7 @@ class ImageFormat {
         bool operator==(const ImageFormat& other) const;
         bool operator!=(const ImageFormat& other) const;
 
-        y_reflect(_format)
+        y_reflect(ImageFormat, _format)
 
     private:
         VkFormat _format;

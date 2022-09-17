@@ -54,7 +54,8 @@ OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
 
 void OctreeSystem::destroy(ecs::EntityWorld& world) {
-    for(auto&& [tr] : world.query<ecs::Mutate<TransformableComponent>>().components()) {
+    auto query = world.query<ecs::Mutate<TransformableComponent>>();
+    for(auto&& [tr] : query.components()) {
         tr._id.invalidate();
         tr._node = nullptr;
     }
@@ -73,12 +74,13 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
 
     Y_TODO(notify system instead?)
     if(const AssetLoaderSystem* asset_loader = world.find_system<AssetLoaderSystem>()) {
-        for(auto&& [tr] : world.query<ecs::Mutate<TransformableComponent>>(asset_loader->recently_loaded()).components()) {
+        auto query = world.query<ecs::Mutate<TransformableComponent>>(asset_loader->recently_loaded());
+        for(auto&& [tr] : query.components()) {
             tr.dirty_node();
         }
     }
 
-    for(auto&& id_comp : world.query<ecs::Mutate<TransformableComponent>>(transformable_ids(world, only_recent)).id_components()) {
+    for(auto&& id_comp : world.query<ecs::Mutate<TransformableComponent>>(transformable_ids(world, only_recent))) {
         const auto id = id_comp.id();
         auto& tr = id_comp.component<TransformableComponent>();
 

@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 #include <editor/EditorWorld.h>
+#include <editor/Selection.h>
 #include <editor/utils/memory.h>
 
 #include <yave/scene/SceneView.h>
@@ -31,6 +32,10 @@ SOFTWARE.
 #include <editor/utils/ui.h>
 
 #include <external/imgui/yave_imgui.h>
+
+#include <y/utils/format.h>
+
+#include <cinttypes>
 
 namespace editor {
 
@@ -96,8 +101,7 @@ class CullingDebug : public Widget {
             const Camera& camera = scene_view().camera();
 
             core::Vector<ecs::EntityId> visible;
-            const OctreeSystem* octree_system = world.find_system<OctreeSystem>();
-            if(octree_system) {
+            if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
                 visible = octree_system->octree().find_entities(camera.frustum());
             }
 
@@ -141,17 +145,37 @@ class EcsDebug : public Widget {
 
     protected:
         void on_gui() override {
-            const EditorWorld& world = current_world();
+            EditorWorld& world = current_world();
 
+            const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
             if(ImGui::CollapsingHeader("Systems")) {
-                ImGui::BeginChild("##systems", ImVec2(0, 0), true);
-                imgui::alternating_rows_background();
-
-                for(const auto& system : world.systems()) {
-                    ImGui::Selectable(system->name().data());
+                if(ImGui::BeginTable("##systems", 1, table_flags)) {
+                    for(const auto& system : world.systems()) {
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted(system->name().data());
+                    }
+                    ImGui::EndTable();
                 }
+            }
 
-                ImGui::EndChild();
+            if(ImGui::CollapsingHeader("Tags")) {
+                if(ImGui::BeginTable("##tags", 3, table_flags)) {
+                    ImGui::TableSetupColumn("##tag", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("##entities", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableSetupColumn("##actions",ImGuiTableColumnFlags_WidthFixed);
+
+                    for(const core::String& tag : world.tags()) {
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted(tag.data());
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted(fmt_c_str("% entities", world.tag_set(tag)->size()));
+                        ImGui::TableNextColumn();
+                        if(ImGui::SmallButton(ICON_FA_TRASH)) {
+                            world.remove_tag(tag);
+                        }
+                    }
+                    ImGui::EndTable();
+                }
             }
         }
 };
@@ -181,6 +205,29 @@ class MeshAllocatorDebug : public Widget {
                 ImGui::ProgressBar(float(tris) / MeshAllocator::default_triangle_count, ImVec2(-1.0f, 0.0f),
                     fmt_c_str("%k / %k", tris / 1000, MeshAllocator::default_triangle_count / 1000)
                 );
+            }
+        }
+};
+
+
+class SelectionDebug : public Widget {
+    editor_widget(SelectionDebug, "View", "Debug")
+
+    public:
+        SelectionDebug() : Widget("Selection debug") {
+        }
+
+    protected:
+        void on_gui() override {
+            if(ImGui::CollapsingHeader(fmt_c_str("% entity selected###header", selection().selected_entities().size()))) {
+                for(const ecs::EntityId id : selection().selected_entities()) {
+                    std::array<char, 32> buffer = {};
+                    std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
+                    ImGui::InputText(fmt_c_str("##%", id.index()), buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+                    ImGui::SameLine();
+                    const auto name = current_world().entity_name(id);
+                    ImGui::TextUnformatted(name.data(), name.data() + name.size());
+                }
             }
         }
 };

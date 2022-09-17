@@ -28,6 +28,8 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/graphics.h>
 
+#include <y/core/Chrono.h>
+
 namespace editor {
 
 class EditorApplication : NonMovable {
@@ -131,6 +133,8 @@ class EditorApplication : NonMovable {
         };
 
         u32 _deferred_actions = None;
+
+        core::Chrono _update_timer;
 };
 
 }

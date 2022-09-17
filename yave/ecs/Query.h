@@ -43,20 +43,46 @@ static constexpr usize tuple_index(const std::tuple<U, Args...>*) {
 }
 
 
+struct QueryUtils {
+    struct SetMatch {
+        const SparseIdSetBase* set = nullptr;
+        bool include = true;
+    };
+
+    static core::Vector<EntityId> matching(core::Span<SetMatch> matches, core::Span<EntityId> ids);
+
+    template<usize I = 0, typename T>
+    static void fill_match_array(core::MutableSpan<SetMatch> matches, const T& sets) {
+        if constexpr(I < std::tuple_size_v<T>) {
+            matches[I] = {
+                std::get<I>(sets),
+                traits::component_required_v<std::tuple_element_t<I, T>>
+            };
+            fill_match_array<I + 1>(matches, sets);
+        }
+    }
+
+    template<typename T>
+    static auto create_match_array(const T& sets) {
+        std::array<SetMatch, std::tuple_size_v<T>> matches = {};
+        fill_match_array(matches, sets);
+        return matches;
+    }
+};
+
+
 template<typename... Args>
-class Query {
+class Query : NonCopyable {
 
     using set_tuple = std::tuple<SparseComponentSet<traits::component_raw_type_t<Args>>*...>;
     using all_components = std::tuple<traits::component_type_t<Args>...>;
 
-    static constexpr std::array component_required = {traits::component_required_v<Args>...};
-
-    using id_range = core::Span<EntityId>;
-
+    static constexpr bool is_empty = sizeof...(Args) == 0;
+    static constexpr std::array component_included = {traits::component_required_v<Args>..., false};
 
     template<usize I = 0>
     static auto make_component_tuple(const set_tuple& sets, EntityId id) {
-        if constexpr(!component_required[I]) {
+        if constexpr(!component_included[I]) {
             return std::tie();
         } else {
             y_debug_assert(std::get<I>(sets));
@@ -69,45 +95,6 @@ class Query {
             }
         }
     }
-
-    template<usize I = 0>
-    id_range shortest_range(const set_tuple& sets) {
-        const auto* s = std::get<I>(sets);
-        if(!s) {
-            return id_range();
-        }
-
-        if constexpr(I + 1 == sizeof...(Args)) {
-            return s->ids();
-        } else {
-            const id_range a = shortest_range<I + 1>(sets);
-            const id_range b = s->ids();
-            return a.size() < b.size() ? a : b;
-        }
-    }
-
-    template<usize I = 0>
-    static bool matches(const set_tuple& sets, EntityId id) {
-        if constexpr(I < sizeof...(Args)) {
-            const auto* s = std::get<I>(sets);
-            y_debug_assert(s);
-            return (component_required[I] == s->contains_index(id.index())) && matches<I + 1>(sets, id);
-        }
-        return true;
-    }
-
-    template<usize I = 0>
-    static bool has_null_sets(const set_tuple& sets) {
-        if constexpr(I < sizeof...(Args)) {
-            if(!std::get<I>(sets)) {
-                return true;
-            }
-            return has_null_sets<I + 1>(sets);
-        }
-        return false;
-    }
-
-
     public:
         using component_tuple = decltype(make_component_tuple(set_tuple{}, EntityId{}));
 
@@ -136,17 +123,10 @@ class Query {
                 component_tuple _components;
         };
 
-
     private:
         struct IdComponentsReturnPolicy {
             inline static decltype(auto) make(EntityId id, const set_tuple& sets) {
                 return IdComponents(id, make_component_tuple(sets, id));
-            }
-        };
-
-        struct IdReturnPolicy {
-            inline static EntityId make(EntityId id, const set_tuple&) {
-                return id;
             }
         };
 
@@ -161,61 +141,37 @@ class Query {
             public:
                 inline Iterator() = default;
 
-                inline bool at_end() const {
-                    return _range.is_empty();
-                }
-
                 inline Iterator& operator++() {
-                    advance();
+                    ++_it;
                     return *this;
                 }
 
                 inline Iterator operator++(int) {
                     const Iterator it = *this;
-                    advance();
+                    ++_it;
                     return it;
                 }
 
                 inline bool operator==(const Iterator& other) const {
-                    return _range == other._range;
+                    return _it == other._it;
                 }
 
                 inline bool operator!=(const Iterator& other) const {
-                    return _range != other._range;
+                    return _it != other._it;
                 }
 
                 inline auto operator*() const {
-                    return ReturnPolicy::make(_range[0], _sets);
+                    y_debug_assert(_it && _it->is_valid());
+                    return ReturnPolicy::make(*_it, _sets);
                 }
 
             private:
                 friend class Query;
 
-                inline Iterator(id_range range, const set_tuple& sets) : _range(range), _sets(sets) {
-                    find_next_valid();
+                inline Iterator(const EntityId* it, const set_tuple& sets) : _it(it), _sets(sets) {
                 }
 
-                inline void advance() {
-                    y_debug_assert(!at_end());
-                    move_one();
-                    find_next_valid();
-                }
-
-                inline void find_next_valid() {
-                    while(!at_end()) {
-                        if(matches(_sets, _range[0])) {
-                            break;
-                        }
-                        move_one();
-                    }
-                }
-
-                inline void move_one() {
-                    y_debug_assert(!_range.is_empty());
-                    _range = id_range(_range.begin() + 1, _range.size() - 1);
-                }
-
-                id_range _range;
+                const EntityId* _it = nullptr;
                 set_tuple _sets;
         };
 
@@ -224,45 +180,68 @@ class Query {
         using const_iterator = Iterator<IdComponentsReturnPolicy>;
 
         using const_component_iterator = Iterator<ComponentsReturnPolicy>;
-        using const_id_iterator = Iterator<IdReturnPolicy>;
 
-        using const_end_iterator = EndIterator;
-
-
-        Query(const set_tuple& sets) : Query(sets, shortest_range(sets)) {
+        const_iterator begin() const {
+            return const_iterator(_ids.begin(), _sets);
         }
 
-        Query(const set_tuple& sets, id_range ids) : _sets(sets), _shortest(ids) {
-            if(has_null_sets(_sets)) {
-                _shortest = {};
+        const_iterator end() const {
+            return const_iterator(_ids.end(), _sets);
+        }
+
+        usize size() const {
+            return _ids.size();
+        }
+
+        // These have lifetime problems when writing:
+        // for(auto id : world.query<A>().ids()) { /* ... */ }
+        // "world.query<A>().ids()" is what gets bound, so the Query gets destroyed before the loop is even entered...
+        // We can kinda work around this using ref-qualifiers to make sure the Query is an lvalue.
+        // const& doesn't work here sadly (because it makes query<A>().ids() valid again)
+        core::Range<const_iterator> id_components() & {
+            return {const_iterator(_ids.begin(), _sets), const_iterator(_ids.end(), _sets)};
+        }
+
+        core::Range<const_component_iterator> components() & {
+            return {const_component_iterator(_ids.begin(), _sets), const_component_iterator(_ids.end(), _sets)};
+        }
+
+        core::Span<EntityId> ids() & {
+            return _ids;
+        }
+
+        core::Vector<EntityId> ids() && {
+            return std::move(_ids);
+        }
+
+    private:
+        friend class EntityWorld;
+
+        Query(const set_tuple& sets, core::MutableSpan<QueryUtils::SetMatch> matches) : _sets(sets) {
+            if(!matches.is_empty() && std::all_of(matches.begin(), matches.end(), [](auto match) { return match.set != nullptr; })) {
+                std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.set->size() < b.set->size(); });
+                _ids = QueryUtils::matching(core::Span<QueryUtils::SetMatch>(matches.begin() + 1, matches.size() - 1), matches[0].set->ids());
             }
         }
 
-
-        core::Range<const_iterator, const_end_iterator> id_components() const {
-            return {const_iterator(_shortest, _sets), const_end_iterator{}};
+        Query(const set_tuple& sets, core::MutableSpan<QueryUtils::SetMatch> matches, core::Span<EntityId> range)  : _sets(sets) {
+            if(std::all_of(matches.begin(), matches.end(), [](auto match) { return match.set != nullptr; })) {
+                std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.set->size() < b.set->size(); });
+                _ids = QueryUtils::matching(matches, range);
+            }
         }
 
-        core::Range<const_component_iterator, const_end_iterator> components() const {
-            return {const_component_iterator(_shortest, _sets), const_end_iterator{}};
+        Query(const set_tuple& sets) : Query(sets, QueryUtils::create_match_array(sets)) {
         }
 
-        core::Range<const_id_iterator, const_end_iterator> ids() const {
-            return {const_id_iterator(_shortest, _sets), const_end_iterator{}};
+        Query(const set_tuple& sets, core::Span<EntityId> range) : Query(sets, QueryUtils::create_match_array(sets), range) {
         }
-
-        const_iterator begin() const {
-            return id_components().begin();
-        }
-
-        const_end_iterator end() const {
-            return id_components().end();
-        }
-
 
     private:
         set_tuple _sets;
-        id_range _shortest;
+
+        core::Vector<EntityId> _ids;
+
 
 };
 

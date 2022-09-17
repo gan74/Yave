@@ -62,7 +62,7 @@ struct Bone {
         return local_transform.to_transform();
     }
 
-    y_reflect(name, parent, local_transform)
+    y_reflect(Bone, name, parent, local_transform)
 };
 
 

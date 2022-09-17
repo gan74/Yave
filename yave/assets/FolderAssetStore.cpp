@@ -645,7 +645,7 @@ AssetStore::Result<AssetType> FolderAssetStore::asset_type(AssetId id) const {
 
 
 AssetId FolderAssetStore::next_id() {
-    y_profile();
+    const auto lock = y_profile_unique_lock(_lock);
 
     return AssetId::from_id(_next_id++);
 }
@@ -808,6 +808,8 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
 
 FolderAssetStore::Result<> FolderAssetStore::reload_all() {
     y_profile();
+
+    const auto lock = y_profile_unique_lock(_lock);
 
     _next_id = u64(std::time(nullptr));
     load_tree().unwrap();

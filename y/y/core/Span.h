@@ -86,6 +86,11 @@ class MutableSpan {
             return _data;
         }
 
+        [[nodiscard]] inline constexpr MutableSpan take(usize i) const {
+            y_debug_assert(i <= _size);
+            return MutableSpan(_data + i, _size - i);
+        }
+
         inline constexpr iterator begin() {
             return _data;
         }

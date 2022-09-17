@@ -54,7 +54,7 @@ void ASUpdateSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     _to_update.push_back(rt_ids.begin(), rt_ids.end());
 
     auto to_keep = core::vector_with_capacity<ecs::EntityId>(_to_update.size());
-    for(auto&& id_comp : world.query<ecs::Mutate<RayTracingComponent>, StaticMeshComponent>(_to_update).id_components()) {
+    for(auto&& id_comp : world.query<ecs::Mutate<RayTracingComponent>, StaticMeshComponent>(_to_update)) {
         const StaticMeshComponent& mesh = id_comp.component<StaticMeshComponent>();
         if(!mesh.is_fully_loaded()) {
             to_keep << id_comp.id();

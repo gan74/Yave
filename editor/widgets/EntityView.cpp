@@ -246,6 +246,8 @@ static void display_entity(ecs::EntityId id, EditorWorld& world, ecs::SparseComp
         return;
     }
 
+    imgui::table_begin_next_row();
+
     const bool is_selected = !clipped && (context_menu_entity == id || selection().is_selected(id));
     const int flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | (is_selected ? ImGuiTreeNodeFlags_Selected : 0);
 
@@ -308,10 +310,9 @@ void EntityView::on_gui() {
 
     ImGui::Text("%u entities", u32(world.components<EditorComponent>().size()));
 
-    if(ImGui::BeginChild("##entities", ImVec2(), true)) {
+    const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+    if(ImGui::BeginTable("##entities", 1, table_flags)) {
         y_profile_zone("fill entity panel");
-
-        imgui::alternating_rows_background();
 
         auto& editor_components = world.component_set<EditorComponent>();
         for(auto&& [id, comp] : editor_components) {
@@ -331,8 +332,8 @@ void EntityView::on_gui() {
             populate_context_menu(world, _context_menu_entity);
             ImGui::EndPopup();
         }
+        ImGui::EndTable();
     }
-    ImGui::EndChild();
 }
 
 }

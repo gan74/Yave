@@ -64,7 +64,7 @@ class ComponentBox final : public ComponentBoxBase {
             return _component;
         }
 
-        y_reflect(_component)
+        y_reflect(ComponentBox, _component)
         y_serde3_poly(ComponentBox)
 
     private:
@@ -79,6 +79,8 @@ class ComponentContainerBase : NonMovable {
 
         bool contains(EntityId id) const;
         core::Span<EntityId> ids() const;
+
+        const SparseIdSetBase& id_set() const;
 
         ComponentTypeIndex type_id() const;
 
@@ -176,7 +178,7 @@ class ComponentContainerBase : NonMovable {
     private:
         // hacky but avoids a bunch of dynamic casts and virtual calls
         void* _sparse = nullptr;
-        SparseIdSet* _ids = nullptr;
+        SparseIdSetBase* _ids = nullptr;
 
         const ComponentTypeIndex _type_id;
 
@@ -230,7 +232,7 @@ class ComponentContainer final : public ComponentContainerBase {
 
         y_no_serde3_expr(serde3::has_no_serde3_v<T>)
 
-        y_reflect(_components)
+        y_reflect(ComponentContainer, _components)
         y_serde3_poly(ComponentContainer)
 
 

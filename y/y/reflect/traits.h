@@ -35,12 +35,11 @@ namespace reflect {
 
 namespace detail {
 template<typename T>
-using has_reflect_t = decltype(std::declval<T>()._y_reflect());
+using has_reflect_static_t = decltype(std::declval<T>()._y_reflect_static());
 }
 
 template<typename T>
-static constexpr bool has_reflect_v = is_detected_v<detail::has_reflect_t, T>;
-
+static constexpr bool has_reflect_v = is_detected_v<detail::has_reflect_static_t, T>;
 
 
 namespace detail {

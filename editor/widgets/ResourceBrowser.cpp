@@ -201,10 +201,11 @@ void ResourceBrowser::draw_search_results() {
     Y_TODO(Replace by table when available)
 
     _preview_id = AssetId::invalid_id();
-    ImGui::BeginChild("##searchresults", ImVec2(0, 0), true);
-    {
-        imgui::alternating_rows_background();
+
+    const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+    if(ImGui::BeginTable("##searchresults", 1, table_flags)) {
         for(const Entry& entry : *_search_results) {
+            imgui::table_begin_next_row();
             if(ImGui::Selectable(fmt_c_str("% %", entry.icon, entry.name))) {
                 if(const AssetId id = asset_id(entry.name); id != AssetId::invalid_id()) {
                     asset_selected(id);
@@ -220,10 +221,12 @@ void ResourceBrowser::draw_search_results() {
         }
 
         if(_search_results->is_empty()) {
+            imgui::table_begin_next_row();
             ImGui::Selectable("No results", false, ImGuiSelectableFlags_Disabled);
         }
+
+        ImGui::EndTable();
     }
-    ImGui::EndChild();
 }
 
 

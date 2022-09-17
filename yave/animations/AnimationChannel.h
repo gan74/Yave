@@ -44,7 +44,7 @@ class AnimationChannel {
         core::Span<BoneKey> keys() const;
 
 
-        y_reflect(_name, _keys)
+        y_reflect(AnimationChannel, _name, _keys)
 
     private:
         core::String _name;

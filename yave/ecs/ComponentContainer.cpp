@@ -28,7 +28,6 @@ namespace ecs {
 ComponentBoxBase::~ComponentBoxBase() {
 }
 
-
 ComponentContainerBase::~ComponentContainerBase() {
 }
 
@@ -38,6 +37,10 @@ bool ComponentContainerBase::contains(EntityId id) const {
 
 core::Span<EntityId> ComponentContainerBase::ids() const {
     return _ids->ids();
+}
+
+const SparseIdSetBase& ComponentContainerBase::id_set() const {
+    return *_ids;
 }
 
 ComponentTypeIndex ComponentContainerBase::type_id() const {
