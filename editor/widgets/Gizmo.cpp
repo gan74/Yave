@@ -51,7 +51,7 @@ static constexpr u32 gizmo_quad_alpha = 0xB0000000;
 
 
 static bool is_clicked(bool allow_drag) {
-    return allow_drag && ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
+    return allow_drag && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
 }
 
 static bool is_clicking(math::Vec2 cursor, const math::Vec2& vec) {

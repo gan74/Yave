@@ -8337,7 +8337,7 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
 
     // Select with right mouse button. This is so the common idiom for context menu automatically highlight the current widget.
     const bool hovered_unblocked = IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
-    if (hovered_unblocked && (IsMouseClicked(1) || IsMouseReleased(1)))
+    if (hovered_unblocked && (ImGui::IsMouseClicked(1) || IsMouseReleased(1)))
         if (!is_tab_button)
             tab_bar->NextSelectedTabId = id;
 

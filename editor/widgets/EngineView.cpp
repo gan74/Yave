@@ -70,7 +70,7 @@ static auto snapping_angles() {
 }
 
 static bool is_clicked() {
-    return ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1) || ImGui::IsMouseClicked(2);
+    return ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
 }
 
 static auto standard_resolutions() {
@@ -474,7 +474,7 @@ void EngineView::update_picking() {
         return;
     }
 
-    if(ImGui::IsMouseClicked(0)) {
+    if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         if(!_gizmo.is_dragging() && !_orientation_gizmo.is_dragging()) {
             const ecs::EntityId picked_id = picking_data.hit() ? current_world().id_from_index(picking_data.entity_index) : ecs::EntityId();
             selection().add_or_remove(picked_id, !ImGui::GetIO().KeyCtrl);

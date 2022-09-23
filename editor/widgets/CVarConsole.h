@@ -60,8 +60,8 @@ class CVarConsole : public Widget {
         void on_gui() override;
 
     private:
-        core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
-        core::FixedArray<char> _value = core::FixedArray<char>(256);
+        core::FixedArray<char> _search_pattern = core::FixedArray<char>(512);
+        core::FixedArray<char> _value = core::FixedArray<char>(512);
         core::Vector<CVar> _cvars;
 };
 

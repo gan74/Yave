@@ -15750,7 +15750,7 @@ static void ImGui::DockNodeUpdateTabBar(ImGuiDockNode* node, ImGuiWindow* host_w
         }
         if (held)
         {
-            if (IsMouseClicked(0))
+            if (ImGui::IsMouseClicked(0))
                 focus_tab_id = tab_bar->SelectedTabId;
 
             // Forward moving request to selected window

@@ -124,7 +124,7 @@ u32 gizmo_color(usize axis) {
 }
 
 bool should_open_context_menu() {
-    return ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1);
+    return ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
 }
 
 math::Vec2 client_window_pos() {
@@ -479,14 +479,13 @@ bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_si
     ImGui::PushID(str_id);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(g.Style.ItemSpacing.x, g.Style.FramePadding.y * 2.0f));
 
-    const bool clicked = ImGui::Selectable("##Selectable", selected, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_AllowItemOverlap);
+    const bool clicked = ImGui::Selectable("##selectable", selected, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_AllowItemOverlap);
 
     ImGui::PopStyleVar();
 
-
-    ImGuiID id = window->GetID("##Input");
+    const ImGuiID id = window->GetID("##input");
     const bool temp_input_is_active = ImGui::TempInputIsActive(id);
-    const bool temp_input_start = clicked ? ImGui::IsMouseDoubleClicked(0) : false;
+    const bool temp_input_start = clicked ? ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) : false;
 
     if(temp_input_start) {
         ImGui::SetActiveID(id, window);
@@ -494,9 +493,10 @@ bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_si
 
     bool ret = false;
     if(temp_input_is_active || temp_input_start) {
+        ImGui::KeepAliveID(id);
         ImVec2 pos_after = window->DC.CursorPos;
         window->DC.CursorPos = pos_before;
-        ret = ImGui::TempInputText(g.LastItemData.Rect, id, "##Input", buf, int(buf_size), ImGuiInputTextFlags_EnterReturnsTrue);
+        ret = ImGui::TempInputText(g.LastItemData.Rect, id, "##input", buf, int(buf_size), ImGuiInputTextFlags_EnterReturnsTrue);
         window->DC.CursorPos = pos_after;
     } else {
         window->DrawList->AddText(pos_before, ImGui::GetColorU32(ImGuiCol_Text), buf);

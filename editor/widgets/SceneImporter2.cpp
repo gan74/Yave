@@ -103,7 +103,7 @@ static void display_asset(T& asset) {
         ImGui::Selectable(make_display_name(asset));
 
         if(!is_error) {
-            if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+            if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                 add_child_widget<Renamer>(asset.name, [&](std::string_view new_name) { asset.name = new_name; return true; });
             }
         } else {
