@@ -213,32 +213,37 @@ void FileSystemView::on_gui() {
             }
         }
 
-        for(usize i = 0; i != _entries.size(); ++i) {
-            imgui::table_begin_next_row();
-            if(ImGui::Selectable(fmt_c_str("% %##%", _entries[i].icon, _entries[i].name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
-                entry_clicked(_entries[i]);
-                break; // break because we might update inside entry_clicked
-            }
 
-            if(modify) {
-                if(ImGui::BeginDragDropTarget()) {
-                    const core::String full_name = entry_full_name(_entries[i]);
-                    make_drop_target(full_name);
-                    ImGui::EndDragDropTarget();
-                } else if(ImGui::BeginDragDropSource()) {
-                    const core::String full_name = entry_full_name(_entries[i]);
-                    ImGui::SetDragDropPayload(imgui::drag_drop_path_id, full_name.data(), full_name.size() + 1);
-                    ImGui::EndDragDropSource();
+        ImGuiListClipper clipper;
+        clipper.Begin(int(_entries.size()));
+        while(clipper.Step()) {
+            for(int i = clipper.DisplayStart; i < clipper.DisplayEnd && i < _entries.size(); ++i) {
+                imgui::table_begin_next_row();
+                if(ImGui::Selectable(fmt_c_str("% %##%", _entries[i].icon, _entries[i].name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
+                    entry_clicked(_entries[i]);
+                    break; // break because we might update inside entry_clicked
                 }
-            }
 
-            if(ImGui::IsItemHovered()) {
-                hovered = i;
-            }
+                if(modify) {
+                    if(ImGui::BeginDragDropTarget()) {
+                        const core::String full_name = entry_full_name(_entries[i]);
+                        make_drop_target(full_name);
+                        ImGui::EndDragDropTarget();
+                    } else if(ImGui::BeginDragDropSource()) {
+                        const core::String full_name = entry_full_name(_entries[i]);
+                        ImGui::SetDragDropPayload(imgui::drag_drop_path_id, full_name.data(), full_name.size() + 1);
+                        ImGui::EndDragDropSource();
+                    }
+                }
 
-            if(_entries[i].type == EntryType::File) {
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted(fmt_c_str("% KB", (_entries[i].file_size + 1023) / 1024, i));
+                if(ImGui::IsItemHovered()) {
+                    hovered = i;
+                }
+
+                if(_entries[i].type == EntryType::File) {
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(fmt_c_str("% KB", (_entries[i].file_size + 1023) / 1024, i));
+                }
             }
         }
 
