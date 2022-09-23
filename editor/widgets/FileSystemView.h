@@ -78,7 +78,6 @@ class FileSystemView : public Widget {
 
     private:
         bool process_context_menu();
-        void make_drop_target(std::string_view drop_path);
 
         const FileSystemModel* _filesystem = nullptr;
 
