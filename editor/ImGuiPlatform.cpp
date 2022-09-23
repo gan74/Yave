@@ -141,7 +141,7 @@ static void setup_style() {
 
     style.IndentSpacing     = 12;
 
-    style.WindowBorderSize  = 0;
+    style.WindowBorderSize  = 1;
     style.ChildBorderSize   = 0;
     style.PopupBorderSize   = 0;
     style.FrameBorderSize   = 0;
