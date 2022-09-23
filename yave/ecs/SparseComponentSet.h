@@ -165,11 +165,11 @@ class SparseComponentSetBase : public SparseIdSetBase {
             using reference_t = std::conditional_t<Const, const_reference, reference>;
 
             public:
-                using difference_type = usize;
+                using difference_type = std::ptrdiff_t;
                 using value_type = SparseComponentSetBase::value_type;
                 using pointer = pointer_t;
                 using reference = std::tuple<const EntityId&, reference_t>;
-                using iterator_category = std::forward_iterator_tag;
+                using iterator_category = std::random_access_iterator_tag;
 
                 inline PairIterator() = default;
 
@@ -187,6 +187,31 @@ class SparseComponentSetBase : public SparseIdSetBase {
                     const PairIterator it = *this;
                     operator++();
                     return it;
+                }
+
+                inline PairIterator& operator+=(difference_type index) {
+                    _id += index;
+                    _value += index;
+                    return *this;
+                }
+
+                inline PairIterator operator+(difference_type index) const {
+                    auto it = *this;
+                    it += index;
+                    return it;
+                }
+
+                inline PairIterator& operator-=(difference_type index) {
+                    return operator+=(-index);
+                }
+
+                inline PairIterator operator-(difference_type index) const {
+                    return operator+(-index);
+                }
+
+                inline difference_type operator-(const PairIterator& other) const {
+                    y_debug_assert(_id - other._id == _value - other._value);
+                    return _id - other._id;
                 }
 
                 inline bool operator==(const PairIterator& other) const {
@@ -380,7 +405,6 @@ class SparseComponentSet : public SparseComponentSetBase<Elem> {
 }
 }
 
-static_assert(std::is_same_v<std::iterator_traits<yave::ecs::SparseComponentSetBase<int>::iterator>::iterator_category, std::forward_iterator_tag>);
 
 #endif // YAVE_ECS_SPARSECOMPONENTSET_H
 

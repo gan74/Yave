@@ -27,6 +27,8 @@ SOFTWARE.
 #include <yave/ecs/ComponentRuntimeInfo.h>
 
 #include <y/core/Vector.h>
+#include <y/core/HashMap.h>
+
 
 namespace editor {
 
@@ -44,6 +46,7 @@ class EntityView final : public Widget {
         ecs::EntityId _context_menu_entity;
 
         core::Vector<std::pair<const char*, core::String>> _tag_buttons;
+        core::FlatHashMap<ecs::EntityId, bool> _open_nodes;
 };
 
 }

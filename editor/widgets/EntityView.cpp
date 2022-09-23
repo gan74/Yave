@@ -159,13 +159,18 @@ editor_action("Add prefab", add_prefab)
 editor_action("Add scene", add_scene)
 
 
-static void collect_all_descendants(core::Vector<ecs::EntityId>& descendants, EditorWorld& world, ecs::EntityId id) {
-    if(EditorComponent* component = world.component<EditorComponent>(id)) {
-        for(const ecs::EntityId child : component->children()) {
-            descendants << child;
-            collect_all_descendants(descendants, world, child);
+static void collect_all_descendants(core::Vector<ecs::EntityId>& descendants, ecs::EntityId id, const ecs::SparseComponentSet<EditorComponent>& component_set) {
+    if(const EditorComponent* component = component_set.try_get(id)) {
+        if(component->is_collection()) {
+            for(ecs::EntityId id : component->children()) {
+                collect_all_descendants(descendants, id, component_set);
+            }
         }
     }
+}
+
+static void collect_all_descendants(core::Vector<ecs::EntityId>& descendants, ecs::EntityId id, EditorWorld& world) {
+    collect_all_descendants(descendants, id, world.component_set<EditorComponent>());
 }
 
 static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::EntityId()) {
@@ -181,7 +186,7 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
             if(ImGui::Selectable("Select all descendants")) {
                 y_profile_zone("collect all descendants");
                 auto descendants = core::vector_with_capacity<ecs::EntityId>(component->children().size() * 2);
-                collect_all_descendants(descendants, world, id);
+                collect_all_descendants(descendants, id, world);
                 selection().set_selected(descendants);
             }
             ImGui::Separator();
@@ -234,68 +239,46 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
     }
 }
 
-static void display_entity(ecs::EntityId id, EditorWorld& world, ecs::SparseComponentSet<EditorComponent>& component_set, ecs::EntityId& context_menu_entity, core::Span<std::pair<const char*, core::String>> tag_buttons) {
-    EditorComponent* component = component_set.try_get(id);
+static void display_tag_buttons(ecs::EntityId id, EditorWorld& world, core::Span<std::pair<const char*, core::String>> tag_buttons) {
+    for(const auto& [icon, tag] : tag_buttons) {
+        const bool tagged = world.has_tag(id, tag);
+        if(tagged) {
+            ImGui::TextDisabled("%s", icon);
+        } else {
+            ImGui::TextUnformatted(icon);
+        }
 
-    const bool display_hidden = app_settings().debug.display_hidden_entities;
-    if(!component || (!display_hidden && component->is_hidden_in_editor())) {
-        return;
-    }
-
-    imgui::table_begin_next_row();
-
-    const bool is_selected = context_menu_entity == id || selection().is_selected(id);
-    const int flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | (is_selected ? ImGuiTreeNodeFlags_Selected : 0);
-
-    auto update_selection = [&]() {
         if(ImGui::IsItemClicked()) {
-            selection().add_or_remove(id, !ImGui::GetIO().KeyCtrl);
-        }
-
-        if(ImGui::IsItemClicked(1)) {
-            context_menu_entity = id;
-        }
-    };
-
-    if(component->is_collection()) {
-        const bool open = ImGui::TreeNodeEx(fmt_c_str(ICON_FA_BOX_OPEN " %###%", component->name(), id.as_u64()), flags);
-        update_selection();
-        if(open) {
-            ImGui::Indent();
-            for(ecs::EntityId id : component->children()) {
-                display_entity(id, world, component_set, context_menu_entity, tag_buttons);
-            }
-            ImGui::Unindent();
-            ImGui::TreePop();
-        }
-    } else {
-        const std::string_view display_name = component->is_prefab() ? fmt("% (Prefab)", component->name()) : std::string_view(component->name());
-        ImGui::TreeNodeEx(fmt_c_str("% %###%", world.entity_icon(id), display_name, id.as_u64()), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-
-        update_selection();
-
-        ImGui::TableNextColumn();
-
-        for(const auto& [icon, tag] : tag_buttons) {
-            const bool tagged = world.has_tag(id, tag);
-
             if(tagged) {
-                ImGui::TextDisabled(icon);
-
+                world.remove_tag(id, tag);
             } else {
-                ImGui::TextUnformatted(icon);
-            }
-
-            if(ImGui::IsItemClicked()) {
-                if(tagged) {
-                    world.remove_tag(id, tag);
-                } else {
-                    world.add_tag(id, tag);
-                }
+                world.add_tag(id, tag);
             }
         }
     }
 }
+
+
+struct EntityTreeItem {
+    const EditorComponent* component = nullptr;
+    ecs::EntityId id;
+    usize depth = 0;
+};
+
+
+static void build_tree(core::Vector<EntityTreeItem>& tree, ecs::EntityId id, const ecs::SparseComponentSet<EditorComponent>& component_set, core::FlatHashMap<ecs::EntityId, bool>& open, usize depth = 0) {
+    if(const EditorComponent* component = component_set.try_get(id)) {
+        tree << EntityTreeItem{component, id, depth};
+        if(component->is_collection() && open[id]) {
+            for(ecs::EntityId id : component->children()) {
+                build_tree(tree, id, component_set, open, depth + 1);
+            }
+        }
+    }
+}
+
+
+
 
 
 EntityView::EntityView() : Widget(ICON_FA_CUBES " Entities") {
@@ -324,15 +307,87 @@ void EntityView::on_gui() {
     if(ImGui::BeginTable("##entities", 2, table_flags)) {
         y_profile_zone("fill entity panel");
 
+        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 24);
+        y_defer(ImGui::PopStyleVar());
+
         ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("##tagbuttons",ImGuiTableColumnFlags_WidthFixed);
 
         auto& editor_components = world.component_set<EditorComponent>();
-        for(auto&& [id, comp] : editor_components) {
-            if(!comp.has_parent()/* || !world.exists(comp.parent())*/) {
-                display_entity(id, world, editor_components, _context_menu_entity, _tag_buttons);
+
+        auto tree = core::vector_with_capacity<EntityTreeItem>(editor_components.size());
+        {
+            y_profile_zone("Building tree");
+            for(auto&& [id, comp] : editor_components) {
+                if(!comp.has_parent()) {
+                    build_tree(tree, id, editor_components, _open_nodes);
+                }
             }
         }
+
+
+        ImGuiListClipper clipper;
+        clipper.Begin(int(tree.size()));
+        while(clipper.Step()) {
+            for(u32 u = 0; u != tree[clipper.DisplayStart].depth; ++u) {
+                ImGui::Indent();
+            }
+
+
+            usize tree_depth = 0;
+            for(int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+                const EntityTreeItem item = tree[i];
+                const usize prev_depth = i ? tree[i - 1].depth : 0;
+
+                auto update_selection = [&]() {
+                    if(ImGui::IsItemClicked()) {
+                        selection().add_or_remove(item.id, !ImGui::GetIO().KeyCtrl);
+                    }
+
+                    if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                        _context_menu_entity = item.id;
+                    }
+                };
+
+                if(prev_depth > item.depth) {
+                    if(tree_depth) {
+                        ImGui::TreePop();
+                        --tree_depth;
+                    } else {
+                        ImGui::Unindent();
+                    }
+                }
+
+                const bool is_selected = _context_menu_entity == item.id || selection().is_selected(item.id);
+                const int flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | (is_selected ? ImGuiTreeNodeFlags_Selected : 0);
+
+                imgui::table_begin_next_row();
+                if(item.component->is_collection()) {
+                    const bool open = ImGui::TreeNodeEx(fmt_c_str(ICON_FA_BOX_OPEN " %###%", item.component->name(), item.id.as_u64()), flags);
+                    _open_nodes[item.id] = open;
+                    update_selection();
+                    if(open) {
+                        ++tree_depth;
+                    }
+                } else {
+                    const std::string_view display_name = item.component->is_prefab() ? fmt("% (Prefab)", item.component->name()) : std::string_view(item.component->name());
+                    ImGui::TreeNodeEx(fmt_c_str("% %###%", world.entity_icon(item.id), display_name, item.id.as_u64()), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                    update_selection();
+                    ImGui::TableNextColumn();
+                    display_tag_buttons(item.id, world, _tag_buttons);
+                }
+            }
+
+            for(usize u = 0; u != tree_depth; ++u) {
+                ImGui::TreePop();
+            }
+
+            /*for(u32 u = 0; u != tree[clipper.DisplayEnd - 1].depth; ++u) {
+                ImGui::Unindent();
+            }*/
+        }
+
+
 
         if(imgui::should_open_context_menu()) {
             ImGui::OpenPopup("##contextmenu");
