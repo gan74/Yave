@@ -27,6 +27,10 @@ SOFTWARE.
 #include <yave/assets/AssetId.h>
 
 namespace editor {
+
+int to_imgui_key(Key k);
+int to_imgui_button(MouseButton b);
+
 namespace imgui {
 
 static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";

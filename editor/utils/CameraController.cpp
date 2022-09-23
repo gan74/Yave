@@ -27,6 +27,8 @@ SOFTWARE.
 #include <editor/Selection.h>
 #include <editor/EditorWorld.h>
 
+#include <editor/utils/ui.h>
+
 #include <yave/camera/Camera.h>
 #include <yave/utils/entities.h>
 
@@ -55,7 +57,7 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
     const math::Vec3 cam_fwd = camera.forward();
     const math::Vec3 cam_rht = camera.right();
 
-    if(ImGui::IsKeyDown(int(settings.center_on_obj))) {
+    if(ImGui::IsKeyDown(to_imgui_key(settings.center_on_obj))) {
         if(selection().has_selected_entities()) {
             core::Result<AABB> aabb = core::Err();
             for(const ecs::EntityId id : selection().selected_entities()) {
@@ -84,12 +86,8 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
 HoudiniCameraController::HoudiniCameraController() {
 }
 
-int HoudiniCameraController::camera_key() const {
-    return int(Key::Alt);
-}
-
 bool HoudiniCameraController::viewport_clicked(const PickingResult& point) {
-    if(ImGui::IsKeyDown(camera_key())) {
+    if(ImGui::IsKeyDown(ImGuiKey_ModAlt)) {
         _picked_pos = point.world_pos;
         _picking_uvs = point.uv;
         _picking_depth = point.depth;
@@ -101,7 +99,7 @@ bool HoudiniCameraController::viewport_clicked(const PickingResult& point) {
 }
 
 void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& viewport_size) {
-    const bool cam_key_down = ImGui::IsKeyDown(camera_key());
+    const bool cam_key_down = ImGui::IsKeyDown(ImGuiKey_ModAlt);
 
     const CameraSettings& settings = app_settings().camera;
     math::Vec3 cam_pos = camera.position();

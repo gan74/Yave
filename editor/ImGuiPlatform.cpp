@@ -42,7 +42,6 @@ ImGuiPlatform* imgui_platform() {
     return ImGuiPlatform::instance();
 }
 
-
 // ---------------------------------------------- SETUP HELPERS ----------------------------------------------
 
 static void setup_style() {
@@ -162,28 +161,6 @@ static void setup_style() {
     }
 }
 
-static void setup_key_bindings(ImGuiIO& io) {
-    io.KeyMap[ImGuiKey_Tab]         = int(Key::Tab);
-    io.KeyMap[ImGuiKey_LeftArrow]   = int(Key::Left);
-    io.KeyMap[ImGuiKey_RightArrow]  = int(Key::Right);
-    io.KeyMap[ImGuiKey_UpArrow]     = int(Key::Up);
-    io.KeyMap[ImGuiKey_DownArrow]   = int(Key::Down);
-    io.KeyMap[ImGuiKey_PageUp]      = int(Key::PageUp);
-    io.KeyMap[ImGuiKey_PageDown]    = int(Key::PageDown);
-    io.KeyMap[ImGuiKey_Home]        = int(Key::Home);
-    io.KeyMap[ImGuiKey_End]         = int(Key::End);
-    io.KeyMap[ImGuiKey_Delete]      = int(Key::Delete);
-    io.KeyMap[ImGuiKey_Backspace]   = int(Key::Backspace);
-    io.KeyMap[ImGuiKey_Enter]       = int(Key::Enter);
-    io.KeyMap[ImGuiKey_Escape]      = int(Key::Escape);
-
-    io.KeyMap[ImGuiKey_A]           = int(Key::Max);
-    io.KeyMap[ImGuiKey_C]           = io.KeyMap[ImGuiKey_A] + 1;
-    io.KeyMap[ImGuiKey_V]           = io.KeyMap[ImGuiKey_A] + 2;
-    io.KeyMap[ImGuiKey_X]           = io.KeyMap[ImGuiKey_A] + 3;
-    io.KeyMap[ImGuiKey_Y]           = io.KeyMap[ImGuiKey_A] + 4;
-    io.KeyMap[ImGuiKey_Z]           = io.KeyMap[ImGuiKey_A] + 5;
-}
 
 static void setup_imgui_dockspace() {
     const ImGuiWindowFlags main_window_flags =
@@ -257,158 +234,41 @@ static void discover_monitors(ImGuiPlatformIO& platform) {
 
 class ImGuiEventHandler : public EventHandler {
 
-    enum class EventType {
-        None,
-        MouseMove,
-        MouseButton,
-        MouseWheel,
-        Input,
-        Key
-    };
-
-    struct Event {
-        EventType type;
-
-        math::Vec2i pos;
-
-        u32 input;
-        bool pressed;
-
-        Key key;
-        MouseButton mouse_button;
-    };
-
-    static constexpr std::array ctrl_shortcuts = {Key::A, Key::C, Key::V, Key::X, Key::Y, Key::Z};
-
     public:
         ImGuiEventHandler(Window* window) : _window(window) {
         }
 
         void mouse_moved(const math::Vec2i& pos) override {
-            if(_events.empty() || _events.back().type != EventType::MouseMove) {
-                _events.emplace_back(Event{});
-            }
-
-            Event& event = _events.back();
-            {
-                event.type = EventType::MouseMove;
-                event.pos = to_window(pos);
-            }
+            const math::Vec2 win_pos = to_window(pos);
+            ImGui::GetIO().AddMousePosEvent(win_pos.x(), win_pos.y());
         }
 
         void mouse_pressed(const math::Vec2i& pos, MouseButton button) override {
-            mouse_event(pos, button, true);
+            mouse_moved(pos);
+            ImGui::GetIO().AddMouseButtonEvent(to_imgui_button(button), true);
         }
 
         void mouse_released(const math::Vec2i& pos, MouseButton button) override {
-            mouse_event(pos, button, false);
+            mouse_moved(pos);
+            ImGui::GetIO().AddMouseButtonEvent(to_imgui_button(button), false);
         }
 
         void mouse_wheel(i32 vdelta, i32 hdelta) override {
-            Event event = {};
-            {
-                event.type = EventType::MouseWheel;
-                event.pos = math::Vec2i(vdelta, hdelta);
-            }
-            _events.emplace_back(event);
+            ImGui::GetIO().AddMouseWheelEvent(float(hdelta), float(vdelta));
         }
 
         void char_input(u32 character) override {
-            Event event = {};
-            {
-                event.type = EventType::Input;
-                event.input = character;
-            }
-            _events.emplace_back(event);
+            ImGui::GetIO().AddInputCharacter(character);
         }
 
         void key_pressed(Key key) override {
-            key_event(key, true);
+            ImGui::GetIO().AddKeyEvent(to_imgui_key(key), true);
         }
 
         void key_released(Key key) override {
-            key_event(key, false);
+            ImGui::GetIO().AddKeyEvent(to_imgui_key(key), false);
         }
 
-        void to_imgui(ImGuiIO& io) {
-            bool mouse_moved = false;
-            bool mouse_button = false;
-            std::array<bool, usize(Key::Max)> state_changed = {};
-
-            while(!_events.empty()) {
-                const Event event = _events.front();
-                _events.pop_front();
-
-                switch(event.type) {
-                    case EventType::MouseMove:
-                        if(mouse_button) {
-                            _events.push_front(event);
-                            return;
-                        }
-                        mouse_moved = true;
-                        io.MousePos = event.pos;
-                    break;
-
-                    case EventType::MouseButton:
-                        if(mouse_moved) {
-                            _events.push_front(event);
-                            return;
-                        }
-                        mouse_button = true;
-                        io.MousePos = event.pos;
-                        io.MouseDown[usize(event.mouse_button)] = event.pressed;
-                    return; // ------------------------------------------------------------
-
-                    case EventType::MouseWheel:
-                        io.MouseWheel += event.pos.x();
-                        io.MouseWheelH += event.pos.y();
-                    break;
-
-                    case EventType::Input:
-                        io.AddInputCharacter(event.input);
-                    break;
-
-                    case EventType::Key: {
-                        const usize index = usize(event.key);
-
-                        const bool change = (event.pressed != io.KeysDown[index]);
-                        if(!change) {
-                            continue;
-                        }
-
-                        if(state_changed[index]) {
-                            _events.push_front(event);
-                            return;
-                        }
-
-                        state_changed[index] = true;
-                        io.KeysDown[index] = event.pressed;
-
-                        if(!is_character_key(event.key)) {
-                            if(event.key == Key::Ctrl) {
-                                io.KeyCtrl = event.pressed;
-                            } else if(event.key == Key::Alt) {
-                                io.KeyAlt = event.pressed;
-                            }
-                            return;
-                        } else {
-                            if(io.KeyCtrl) {
-                                for(usize i = 0; i != ctrl_shortcuts.size(); ++i) {
-                                    if(event.key == ctrl_shortcuts[i]) {
-                                        io.KeysDown[io.KeyMap[ImGuiKey_A + i]] = event.pressed;
-                                    } else {
-                                        io.KeysDown[io.KeyMap[ImGuiKey_A + i]] = false; // ????
-                                    }
-                                }
-                            }
-                        }
-                    } break;
-
-                    default:
-                        y_fatal("Unknown event type");
-                }
-            }
-        }
 
     private:
         math::Vec2i to_window(const math::Vec2i& pos) const {
@@ -416,30 +276,7 @@ class ImGuiEventHandler : public EventHandler {
                 ? pos + _window->position() : pos;
         }
 
-        void mouse_event(const math::Vec2i& pos, MouseButton button, bool pressed) {
-            Event event = {};
-            {
-                event.type = EventType::MouseButton;
-                event.mouse_button = button;
-                event.pos = to_window(pos);
-                event.pressed = pressed;
-            }
-            _events.emplace_back(event);
-        }
-
-        void key_event(Key key, bool pressed) {
-            Event event = {};
-            {
-                event.type = EventType::Key;
-                event.key = key;
-                event.pressed = pressed;
-            }
-            _events.emplace_back(event);
-        }
-
-
         Window* _window = nullptr;
-        std::deque<Event> _events;
 };
 
 
@@ -461,8 +298,6 @@ bool ImGuiPlatform::PlatformWindow::render(ImGuiViewport* viewport) {
     if(!window.update()) {
         return false;
     }
-
-    event_handler->to_imgui(ImGui::GetIO());
 
     if(const auto r = swapchain.next_frame()) {
         const FrameToken& token = r.unwrap();
@@ -505,7 +340,6 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
     io.BackendPlatformUserData = this;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
-    setup_key_bindings(io);
     setup_config_files(io);
     setup_backend_flags(io, multi_viewport);
 
@@ -561,6 +395,8 @@ Window* ImGuiPlatform::main_window() {
 
 void ImGuiPlatform::exec(OnGuiFunc func) {
     for(;;) {
+        ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
+        ImGui::GetIO().DisplaySize = _main_window->window.size();
 
         {
             y_profile_zone("frame rate cap");
@@ -574,10 +410,6 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
 
         y_profile_zone("exec once");
 
-        _main_window->event_handler->to_imgui(ImGui::GetIO());
-
-        ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
-        ImGui::GetIO().DisplaySize = _main_window->window.size();
 
         if(const auto r = _main_window->swapchain.next_frame()) {
             const FrameToken& token = r.unwrap();

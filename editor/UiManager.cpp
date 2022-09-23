@@ -135,7 +135,7 @@ void UiManager::update_shortcuts() {
 
     KeyCombination keys;
     for(const Key k : all_keys()) {
-        if(ImGui::IsKeyDown(u32(k))) {
+        if(ImGui::IsKeyDown(to_imgui_key(k))) {
             keys += k;
         }
     }

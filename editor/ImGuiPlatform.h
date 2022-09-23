@@ -40,7 +40,6 @@ namespace editor {
 
 class ImGuiEventHandler;
 
-
 ImGuiPlatform* imgui_platform();
 
 class ImGuiPlatform : NonMovable {

@@ -41,6 +41,75 @@ SOFTWARE.
 #include <ctime>
 
 namespace editor {
+
+int to_imgui_key(Key k) {
+
+    if(u32(k) >= u32(Key::A) && u32(k) <= u32(Key::Z)) {
+        return ImGuiKey_A + (u32(k) - u32(Key::A));
+    } else if(u32(k) >= u32(Key::F1) && u32(k) <= u32(Key::F12)) {
+        return ImGuiKey_F1 + (u32(k) - u32(Key::F1));
+    }
+
+    switch(k) {
+        case Key::Tab:
+            return ImGuiKey_Tab;
+        case Key::Backspace:
+            return ImGuiKey_Backspace;
+        case Key::Enter:
+            return ImGuiKey_Enter;
+        case Key::Escape:
+            return ImGuiKey_Escape;
+        case Key::PageUp:
+            return ImGuiKey_PageUp;
+        case Key::PageDown:
+            return ImGuiKey_PageDown;
+        case Key::End:
+            return ImGuiKey_End;
+        case Key::Home:
+            return ImGuiKey_Home;
+        case Key::Left:
+            return ImGuiKey_LeftArrow;
+        case Key::Up:
+            return ImGuiKey_UpArrow;
+        case Key::Right:
+            return ImGuiKey_RightArrow;
+        case Key::Down:
+            return ImGuiKey_DownArrow;
+        case Key::Insert:
+            return ImGuiKey_Insert;
+        case Key::Delete:
+            return ImGuiKey_Delete;
+        case Key::Alt:
+            return ImGuiKey_ModAlt;
+        case Key::Ctrl:
+            return ImGuiKey_ModCtrl;
+        case Key::Space:
+            return ImGuiKey_Space;
+
+        default:
+        break;
+    }
+
+    //log_msg(fmt("Unknown key pressed: %", key_name(k)), Log::Warning);
+    return ImGuiKey_None;
+}
+
+int to_imgui_button(MouseButton b) {
+    switch(b) {
+        case MouseButton::LeftButton:
+            return ImGuiMouseButton_Left;
+        case MouseButton::RightButton:
+            return ImGuiMouseButton_Right;
+        case MouseButton::MiddleButton:
+            return ImGuiMouseButton_Middle;
+
+        default:
+        break;
+    }
+    y_fatal("Unknown mouse button");
+}
+
+
 namespace imgui {
 
 u32 gizmo_color(usize axis) {
@@ -132,7 +201,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     bool ret = false;
     if(is_valid) {
         if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
-            ret = ImGui::ImageButton(const_cast<TextureView*>(img), button_size);
+            ret = ImGui::ImageButton("##tex", const_cast<TextureView*>(img), button_size);
         } else {
             ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
         }
