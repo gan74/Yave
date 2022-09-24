@@ -350,6 +350,7 @@ ImageData block_compress(const ImageData& image, ImageFormat compressed_format, 
 
         usize offset = 0;
         for(usize i = 0; i != mip_count; ++i) {
+            y_profile_zone("compress mip");
             const ImageData::Mip mip = image.mip_data(i);
             const usize mip_texel_count = mip.size.x() * mip.size.y();
             unused(mip_texel_count);

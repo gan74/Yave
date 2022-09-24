@@ -395,9 +395,6 @@ Window* ImGuiPlatform::main_window() {
 
 void ImGuiPlatform::exec(OnGuiFunc func) {
     for(;;) {
-        ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
-        ImGui::GetIO().DisplaySize = _main_window->window.size();
-
         {
             y_profile_zone("frame rate cap");
             const float max_fps = app_settings().editor.max_fps;
@@ -410,6 +407,8 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
 
         y_profile_zone("exec once");
 
+        ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
+        ImGui::GetIO().DisplaySize = _main_window->window.size();
 
         if(const auto r = _main_window->swapchain.next_frame()) {
             const FrameToken& token = r.unwrap();
