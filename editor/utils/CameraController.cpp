@@ -38,11 +38,6 @@ SOFTWARE.
 
 namespace editor {
 
-template<typename T>
-static bool fully_finite(const T& t) {
-    return std::all_of(t.begin(), t.end(), [](float x) { return std::isfinite(x); });
-}
-
 CameraController::CameraController() {
 }
 
@@ -76,7 +71,7 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
     }
 
     const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_rht));
-    if(fully_finite(view)) {
+    if(math::fully_finite(view)) {
         camera.set_view(view);
     }
 }

@@ -377,24 +377,29 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
     rotation.to<3>() = base_change_transform.transform_direction(rotation.to<3>());
 
     const math::Transform<> tr = base_change_transform * math::Transform<>(translation, rotation, scale);
-    y_debug_assert(std::all_of(tr.begin(), tr.end(), [](float f) { return std::isfinite(f); }));
+    y_debug_assert(math::fully_finite(tr));
+    y_debug_assert(tr[3][3] == 1.0f);
     return tr;
 }
 
 static ParsedScene::Node& parse_node(usize index, ParsedScene& scene) {
     const auto& node = scene.gltf->nodes[index];
 
-    auto& parsed_node = scene.nodes.emplace_back();
-    parsed_node.name = node.name.empty() ? fmt_to_owned("unnamed_node_%", index) : clean_asset_name(node.name);
-    parsed_node.mesh_gltf_index = node.mesh;
-    parsed_node.transform = parse_node_transform(node);
+    const math::Transform<> transform = parse_node_transform(node);
+
+    const usize node_index = scene.nodes.size();
+    scene.nodes.emplace_back(
+        node.name.empty() ? fmt_to_owned("unnamed_node_%", index) : clean_asset_name(node.name),
+        transform,
+        node.mesh
+    );
 
     for(auto& child : node.children) {
         auto& parsed_child = parse_node(child, scene);
-        parsed_child.transform = parsed_node.transform * parsed_child.transform;
+        parsed_child.transform = transform * parsed_child.transform;
     }
 
-    return parsed_node;
+    return scene.nodes[node_index];
 }
 
 

@@ -103,8 +103,8 @@ bool StaticMeshComponent::is_fully_loaded() const {
         return false;
     }
 
-    for(usize i = 0; i != _materials.size(); ++i) {
-        if(_materials[i].is_loading()) {
+    for(const auto& mat : _materials) {
+        if(mat.is_loading()) {
             return false;
         }
     }
@@ -113,7 +113,7 @@ bool StaticMeshComponent::is_fully_loaded() const {
 }
 
 bool StaticMeshComponent::update_asset_loading_status() {
-    if(_mesh.is_loaded())  {
+    if(_mesh)  {
         _aabb = _mesh->aabb();
     }
     return is_fully_loaded();

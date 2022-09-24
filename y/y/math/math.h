@@ -152,6 +152,11 @@ T sign(T t) {
     return t > 0.0 ? T(1) : T(-1);
 }
 
+template<typename T>
+static bool fully_finite(const T& t) {
+    return std::all_of(t.begin(), t.end(), [](auto x) { return std::isfinite(x); });
+}
+
 }
 }
 

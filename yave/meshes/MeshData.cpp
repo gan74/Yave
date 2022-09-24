@@ -47,6 +47,9 @@ void MeshData::add_sub_mesh(core::Span<FullVertex> vertices, core::Span<IndexedT
 }
 
 void MeshData::add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
+    y_debug_assert(!vertices.is_empty());
+    y_debug_assert(!triangles.is_empty());
+
     const u32 vertex_offset = u32(_vertices.size());
     const u32 first_triangle = u32(_triangles.size());
 
@@ -71,6 +74,9 @@ void MeshData::add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<Indexe
         });
 
         _aabb = _sub_meshes.is_empty() ? AABB(min, max) : _aabb.merged(AABB(min, max));
+
+        y_debug_assert(math::fully_finite(_aabb.min()));
+        y_debug_assert(math::fully_finite(_aabb.max()));
     }
 
     _sub_meshes << SubMesh{u32(triangles.size()), first_triangle};

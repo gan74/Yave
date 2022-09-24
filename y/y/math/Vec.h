@@ -415,7 +415,7 @@ class Vec
         template<usize M, typename U>
         friend class Vec;
 
-        T _vec[N] = {T(0)};
+        T _vec[N] = {};
 
 };
 

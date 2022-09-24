@@ -264,7 +264,6 @@ usize SceneImporter2::import_assets() {
                     auto& mesh = _scene.mesh_prefabs[i];
                     y_debug_assert(mesh.mesh_asset_id == AssetId::invalid_id());
                     if(auto res = _scene.build_mesh_data(i)) {
-                        log_msg(fmt("floop : %", res.unwrap().sub_meshes().size()));
                         mesh.mesh_asset_id = import_single_asset(
                             std::move(res.unwrap()),
                             asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.name),
@@ -313,11 +312,11 @@ usize SceneImporter2::import_assets() {
                 continue;
             }
 
-            log_msg(fmt("% = %", i, asset_store().name(material_id).unwrap_or(core::String("?"))));
             materials[i] = make_asset_with_id<Material>(material_id);
         }
 
         ecs::EntityPrefab prefab;
+        y_debug_assert(transform[3][3] == 1.0f);
         prefab.add(TransformableComponent(transform));
         prefab.add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.mesh_asset_id), std::move(materials)));
         return prefab;
