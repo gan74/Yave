@@ -47,7 +47,12 @@ class StaticMeshComponent final :
         void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
         void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
+        AssetPtr<StaticMesh>& mesh();
         const AssetPtr<StaticMesh>& mesh() const;
+
+        core::MutableSpan<AssetPtr<Material>> materials();
+        core::Span<AssetPtr<Material>> materials() const;
+
         const AABB& aabb() const;
 
         bool is_fully_loaded() const;

@@ -324,6 +324,65 @@ struct SkyLightComponentWidget : public ComponentPanelWidget<SkyLightComponentWi
 struct StaticMeshComponentWidget : public ComponentPanelWidget<StaticMeshComponentWidget, StaticMeshComponent> {
     void on_gui(ecs::EntityId id, StaticMeshComponent* static_mesh) {
 
+
+        if(ImGui::BeginTable("#mesh", 2, table_flags)) {
+            imgui::table_begin_next_row();
+
+            ImGui::TextUnformatted("Mesh");
+            ImGui::TableNextColumn();
+
+            bool clear = false;
+            if(imgui::asset_selector(static_mesh->mesh().id(), AssetType::Mesh, "Mesh", &clear)) {
+                add_child_widget<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+                    [=](AssetId asset) {
+                        if(const auto mesh = asset_loader().load_res<StaticMesh>(asset)) {
+                            if(StaticMeshComponent* static_mesh = current_world().component<StaticMeshComponent>(id)) {
+                                undo_stack().push_before_dirty(id);
+                                static_mesh->mesh() = mesh.unwrap();
+                            }
+                        }
+                        return true;
+                    });
+            } else if(clear) {
+                static_mesh->mesh() = AssetPtr<StaticMesh>();
+                undo_stack().make_dirty();
+            }
+
+            ImGui::EndTable();
+        }
+
+        if(ImGui::CollapsingHeader("Materials")) {
+            if(ImGui::BeginTable("#materials", 2, table_flags)) {
+                const auto materials = static_mesh->materials();
+                for(usize i = 0; i != materials.size(); ++i) {
+                    imgui::table_begin_next_row();
+
+                    const char* name = fmt_c_str("Material #%", i);
+
+                    ImGui::TextUnformatted(name);
+                    ImGui::TableNextColumn();
+
+                    bool clear = false;
+                    if(imgui::asset_selector(materials[i].id(), AssetType::Material, name, &clear)) {
+                        add_child_widget<AssetSelector>(AssetType::Material)->set_selected_callback(
+                            [=](AssetId asset) {
+                                if(const auto mat = asset_loader().load_res<Material>(asset)) {
+                                    if(StaticMeshComponent* static_mesh = current_world().component<StaticMeshComponent>(id)) {
+                                        undo_stack().push_before_dirty(id);
+                                        static_mesh->materials()[i] = mat.unwrap();
+                                    }
+                                }
+                                return true;
+                            });
+                    } else if(clear) {
+                        materials[i] = AssetPtr<Material>();
+                        undo_stack().make_dirty();
+                    }
+                }
+
+                ImGui::EndTable();
+            }
+        }
     }
 };
 

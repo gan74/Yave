@@ -78,6 +78,22 @@ const AABB& StaticMeshComponent::aabb() const {
     return _aabb;
 }
 
+AssetPtr<StaticMesh>& StaticMeshComponent::mesh() {
+    return _mesh;
+}
+
+const AssetPtr<StaticMesh>& StaticMeshComponent::mesh() const {
+    return _mesh;
+}
+
+core::MutableSpan<AssetPtr<Material>> StaticMeshComponent::materials() {
+    return _materials.is_empty() ? core::MutableSpan<AssetPtr<Material>>(_material) : _materials;
+}
+
+core::Span<AssetPtr<Material>> StaticMeshComponent::materials() const {
+    return _materials.is_empty() ? core::Span<AssetPtr<Material>>(_material) : _materials;
+}
+
 bool StaticMeshComponent::is_fully_loaded() const {
     if(_mesh.is_loading()) {
         return false;
