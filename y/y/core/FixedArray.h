@@ -52,6 +52,10 @@ class FixedArray {
         inline FixedArray(usize size) : _data(std::make_unique<data_type[]>(size)), _size(size) {
         }
 
+        inline FixedArray(Span<value_type> v) : FixedArray(v.size()) {
+            std::copy_n(v.begin(), v.size(), begin());
+        }
+
         inline FixedArray(FixedArray&&) = default;
         inline FixedArray& operator=(FixedArray&&) = default;
 
