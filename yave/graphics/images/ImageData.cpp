@@ -59,6 +59,7 @@ math::Vec3ui ImageData::with_block_size(math::Vec3ui size, ImageFormat format) {
         for(usize i = 0; i != 3; ++i) {
             const u32 m = size[i] % block_size[i];
             size[i] += m ? block_size[i] - m : 0u;
+            y_debug_assert(size[i] % block_size[i] == 0);
         }
     }
     return size;

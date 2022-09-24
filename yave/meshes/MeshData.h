@@ -33,15 +33,25 @@ namespace yave {
 
 class MeshData {
     public:
+        struct SubMesh {
+            u32 triangle_count = 0;
+            u32 first_triangle = 0;
+        };
+
         MeshData() = default;
-        MeshData(core::Vector<FullVertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin = {}, core::Vector<Bone> bones = {});
-        MeshData(core::Vector<PackedVertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin = {}, core::Vector<Bone> bones = {});
+
+        MeshData(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles);
+        MeshData(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
+
+        void add_sub_mesh(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles);
+        void add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
 
         float radius() const;
         const AABB& aabb() const;
 
         core::Span<PackedVertex> vertices() const;
         core::Span<IndexedTriangle> triangles() const;
+        core::Span<SubMesh> sub_meshes() const;
 
         core::Span<Bone> bones() const;
         core::Span<SkinWeights> skin() const;
@@ -49,7 +59,7 @@ class MeshData {
 
         bool has_skeleton() const;
 
-        y_reflect(MeshData, _aabb, _vertices, _triangles, _skeleton)
+        y_reflect(MeshData, _aabb, _vertices, _triangles, _sub_meshes, _skeleton)
 
     private:
         struct SkeletonData {
@@ -63,6 +73,7 @@ class MeshData {
 
         core::Vector<PackedVertex> _vertices;
         core::Vector<IndexedTriangle> _triangles;
+        core::Vector<SubMesh> _sub_meshes;
 
         std::unique_ptr<SkeletonData> _skeleton;
 };

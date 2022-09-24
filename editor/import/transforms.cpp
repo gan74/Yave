@@ -91,10 +91,10 @@ MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
                 return bone.has_parent() ? bone : Bone{bone.name, bone.parent, transform(bone.local_transform, tr)};
             });
 
-        return MeshData(std::move(vertices), copy(mesh.triangles()), copy(mesh.skin()), std::move(bones));
+        return MeshData(vertices, mesh.triangles()/*, copy(mesh.skin()), std::move(bones)*/);
     }
 
-    return MeshData(std::move(vertices), copy(mesh.triangles()), copy(mesh.skin()), copy(mesh.bones()));
+    return MeshData(vertices, mesh.triangles()/*, copy(mesh.skin()), copy(mesh.bones())*/);
 }
 
 MeshData compute_tangents(const MeshData& mesh) {
@@ -118,15 +118,15 @@ MeshData compute_tangents(const MeshData& mesh) {
         vertices[i].packed_tangent_sign = pack_2_10_10_10(tangents[i].normalized());
     }
 
-    return MeshData(std::move(vertices), copy(mesh.triangles()), copy(mesh.skin()), copy(mesh.bones()));
+    return MeshData(vertices, mesh.triangles()/*, copy(mesh.skin()), copy(mesh.bones())*/);
 }
 
 static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
     y_profile();
     auto keys = core::vector_with_capacity<AnimationChannel::BoneKey>(anim.keys().size());
     std::transform(anim.keys().begin(), anim.keys().end(), std::back_inserter(keys), [=](const auto& key){
-            return AnimationChannel::BoneKey{key.time / speed, key.local_transform};
-        });
+        return AnimationChannel::BoneKey{key.time / speed, key.local_transform};
+    });
 
     return AnimationChannel(anim.name(), std::move(keys));
 }
@@ -352,22 +352,25 @@ ImageData block_compress(const ImageData& image, ImageFormat compressed_format, 
         for(usize i = 0; i != mip_count; ++i) {
             const ImageData::Mip mip = image.mip_data(i);
             const usize mip_texel_count = mip.size.x() * mip.size.y();
+            unused(mip_texel_count);
 
-            for(usize y = 0; y < mip.size.x(); y += block_size.y()) {
+            for(usize y = 0; y < mip.size.y(); y += block_size.y()) {
                 for(usize x = 0; x < mip.size.x(); x += block_size.x()) {
 
                     usize block_index = 0;
                     for(usize by = 0; by != block_size.y(); ++by) {
                         for(usize bx = 0; bx != block_size.x(); ++bx) {
-                            const usize image_index = (y + by) * mip.size.x() + (x + bx);
-                            const bool is_oob = image_index >= mip_texel_count;
+                            const math::Vec2ui coord = math::Vec2ui(x + bx, y + by).min(mip.size.to<2>() - math::Vec2ui(1, 1));
+                            const usize image_index = coord.y() * mip.size.x() + coord.x();
+                            y_debug_assert(image_index < mip_texel_count);
                             for(usize c = 0; c != 4; ++c) {
-                                block[block_index++] = is_oob ? 0 : mip.data[image_index * 4 + c];
+                                block[block_index++] = mip.data[image_index * 4 + c];
                             }
                         }
                     }
 
                     const auto compressed_block = process_block(block.data());
+                    y_debug_assert(offset + sizeof(compressed_block) <= compressed_data.size());
                     std::memcpy(compressed_data.data() + offset, &compressed_block, sizeof(compressed_block));
                     offset += sizeof(compressed_block);
                 }

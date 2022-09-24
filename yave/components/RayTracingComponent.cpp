@@ -35,12 +35,7 @@ RayTracingComponent::RayTracingComponent(const StaticMesh& mesh) : _blas(mesh) {
 RayTracingComponent::RayTracingComponent(const StaticMeshComponent& mesh) {
     y_debug_assert(mesh.is_fully_loaded());
 
-    core::ScratchPad<VkGeometryNV> geometries(mesh.sub_meshes().size());
-    for(usize i = 0; i != mesh.sub_meshes().size(); ++i) {
-        geometries[i] = RayTracing::AccelerationStructure::create_mesh_geometry(*mesh.sub_meshes()[i].mesh);
-    }
-
-    _blas = RayTracing::AccelerationStructure(geometries);
+    _blas = RayTracing::AccelerationStructure(*mesh.mesh());
 }
 
 }

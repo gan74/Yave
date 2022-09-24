@@ -34,109 +34,81 @@ SOFTWARE.
 
 namespace yave {
 
-StaticMeshComponent::SubMesh::SubMesh(const AssetPtr<StaticMesh>& me, const AssetPtr<Material>& ma) : mesh(me), material(ma) {
+StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :
+        _mesh(mesh), _material(material) {
 }
 
-void StaticMeshComponent::SubMesh::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-    if(!material || !mesh) {
-        return;
-    }
-
-    y_debug_assert(!material->is_null());
-    y_debug_assert(!mesh->is_null());
-
-    recorder.bind_material(*material);
-
-    render_mesh(recorder, scene_data.instance_index);
+StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, core::Vector<AssetPtr<Material>> materials) :
+        _mesh(mesh), _materials(std::move(materials)) {
 }
 
-void StaticMeshComponent::SubMesh::render_mesh(RenderPassRecorder& recorder, u32 instance_index) const {
+void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
+    const StaticMesh* mesh = _mesh.get();
     if(!mesh) {
         return;
     }
 
-    recorder.draw(mesh->draw_data(), 1, instance_index);
-}
+    recorder.bind_mesh_buffers(mesh->draw_data().mesh_buffers());
 
-
-bool StaticMeshComponent::SubMesh::operator==(const SubMesh& other) const {
-    return mesh == other.mesh && material == other.material;
-}
-
-bool StaticMeshComponent::SubMesh::operator!=(const SubMesh& other) const {
-    return !operator==(other);
-}
-
-
-StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) {
-    _sub_meshes.emplace_back(mesh, material);
-}
-
-StaticMeshComponent::StaticMeshComponent(core::Vector<SubMesh> sub_meshes) : _sub_meshes(std::move(sub_meshes)) {
-}
-
-void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& scene_data) const {
-    for(const SubMesh& sub : _sub_meshes) {
-        sub.render(recorder, scene_data);
+    if(!_materials.is_empty()) {
+        y_debug_assert(mesh->sub_meshes().size() == _materials.size());
+        for(usize i = 0; i != _materials.size(); ++i) {
+            if(const Material* mat = _materials[i].get()) {
+                recorder.bind_material(*mat);
+                recorder.draw(mesh->sub_meshes()[i].vk_indirect_data(scene_data.instance_index));
+            }
+        }
+    } else if(const Material* mat = _material.get()) {
+        recorder.bind_material(*mat);
+        recorder.draw(mesh->draw_data(), 1, scene_data.instance_index);
     }
 }
 
 void StaticMeshComponent::render_mesh(RenderPassRecorder& recorder, u32 instance_index) const {
-    for(const SubMesh& sub : _sub_meshes) {
-        sub.render_mesh(recorder, instance_index);
+    const StaticMesh* mesh = _mesh.get();
+    if(!mesh) {
+        return;
     }
-}
 
-const core::Vector<StaticMeshComponent::SubMesh>& StaticMeshComponent::sub_meshes() const {
-    return _sub_meshes;
-}
-
-core::Vector<StaticMeshComponent::SubMesh>& StaticMeshComponent::sub_meshes() {
-    return _sub_meshes;
+    recorder.bind_mesh_buffers(mesh->draw_data().mesh_buffers());
+    recorder.draw(mesh->draw_data(), 1, instance_index);
 }
 
 const AABB& StaticMeshComponent::aabb() const {
     return _aabb;
 }
 
-AABB StaticMeshComponent::compute_aabb() const {
-    AABB aabb;
-    usize i = 0;
-    for(i = 0; i != _sub_meshes.size(); ++i) {
-        if(_sub_meshes[i].mesh) {
-            aabb = _sub_meshes[i].mesh->aabb();
-            break;
-        }
-    }
-
-    for(i += 1; i < _sub_meshes.size(); ++i) {
-        if(_sub_meshes[i].mesh) {
-            aabb = aabb.merged(_sub_meshes[i].mesh->aabb());
-        }
-    }
-
-    return aabb;
-}
-
 bool StaticMeshComponent::is_fully_loaded() const {
-    for(const SubMesh& sub : _sub_meshes) {
-       if(!sub.mesh.is_loaded() || !sub.material.is_loaded()) {
-           return false;
-       }
+    if(_mesh.is_loading()) {
+        return false;
+    }
+
+    if(_material.is_loading()) {
+        return false;
+    }
+
+    for(usize i = 0; i != _materials.size(); ++i) {
+        if(_materials[i].is_loading()) {
+            return false;
+        }
     }
 
     return true;
 }
 
 bool StaticMeshComponent::update_asset_loading_status() {
-    _aabb = compute_aabb();
+    if(_mesh.is_loaded())  {
+        _aabb = _mesh->aabb();
+    }
     return is_fully_loaded();
 }
 
 void StaticMeshComponent::load_assets(AssetLoadingContext& loading_ctx) {
-    for(auto& sub : _sub_meshes) {
-        sub.mesh.load(loading_ctx);
-        sub.material.load(loading_ctx);
+    _mesh.load(loading_ctx);
+    _material.load(loading_ctx);
+
+    for(auto& material : _materials) {
+        material.load(loading_ctx);
     }
 }
 

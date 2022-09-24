@@ -58,12 +58,14 @@ struct ParsedScene {
         AssetId asset_id;
     };
 
-    struct SubMesh : Asset {
+    struct MaterialGroup {
+        int primitive_index = -1;
         int gltf_material_index = -1;
     };
 
-    struct Mesh : Asset {
-        core::Vector<SubMesh> sub_meshes;
+    struct MeshPrefab : Asset {
+        AssetId mesh_asset_id;
+        core::Vector<MaterialGroup> materials;
     };
 
     struct Image : Asset {
@@ -86,7 +88,7 @@ struct ParsedScene {
     core::String name;
     core::String filename;
 
-    core::Vector<Mesh> meshes;
+    core::Vector<MeshPrefab> mesh_prefabs;
     core::Vector<Material> materials;
     core::Vector<Image> images;
 
@@ -94,7 +96,7 @@ struct ParsedScene {
 
     std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
 
-    core::Vector<core::Result<MeshData>> build_mesh_data(usize index) const;
+    core::Result<MeshData> build_mesh_data(usize index) const;
     core::Result<ImageData> build_image_data(usize index) const;
     core::Result<SimpleMaterialData> build_material_data(usize index) const;
 };

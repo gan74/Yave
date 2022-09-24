@@ -40,46 +40,29 @@ class StaticMeshComponent final :
         public SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem> {
 
     public:
-        struct SubMesh {
-            AssetPtr<StaticMesh> mesh;
-            AssetPtr<Material> material;
-
-            SubMesh() = default;
-            SubMesh(const AssetPtr<StaticMesh>& me, const AssetPtr<Material>& ma);
-
-            void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
-            void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
-
-            bool operator==(const SubMesh& other) const;
-            bool operator!=(const SubMesh& other) const;
-
-            y_reflect(SubMesh, mesh, material)
-        };
-
         StaticMeshComponent() = default;
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
-        StaticMeshComponent(core::Vector<SubMesh> sub_meshes);
+        StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, core::Vector<AssetPtr<Material>> materials);
 
         void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
         void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
-        const core::Vector<SubMesh>& sub_meshes() const;
-        core::Vector<SubMesh>& sub_meshes();
-
+        const AssetPtr<StaticMesh>& mesh() const;
         const AABB& aabb() const;
-
 
         bool is_fully_loaded() const;
 
         bool update_asset_loading_status();
         void load_assets(AssetLoadingContext& loading_ctx);
 
-        y_reflect(StaticMeshComponent, _sub_meshes)
+        y_reflect(StaticMeshComponent, _mesh, _materials, _materials)
 
     private:
-        AABB compute_aabb() const;
+        AssetPtr<StaticMesh> _mesh;
+        AssetPtr<Material> _material;
 
-        core::Vector<SubMesh> _sub_meshes;
+        core::Vector<AssetPtr<Material>> _materials;
+
         AABB _aabb;
 
 };

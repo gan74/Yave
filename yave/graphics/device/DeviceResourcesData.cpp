@@ -27,7 +27,7 @@ namespace yave {
 MeshData cube_mesh_data() {
     core::Vector<PackedVertex> vertices = {{{1.000f, -1.000f, 1.000f}, 0x1ff001ff, 0x1ff7ffff, {1.000f, 0.000f}}, {{-1.000f, -1.000f, -1.000f}, 0x1ff001ff, 0x1ff7ffff, {0.000f, 1.000f}}, {{1.000f, -1.000f, -1.000f}, 0x1ff001ff, 0x1ff7ffff, {0.000f, 0.000f}}, {{-1.000f, 1.000f, -1.000f}, 0x1ffffdff, 0x7fdff, {1.000f, 0.000f}}, {{1.000f, 1.000f, 1.000f}, 0x1ffffdff, 0x7fdff, {0.000f, 1.000f}}, {{1.000f, 1.000f, -1.000f}, 0x1ffffdff, 0x7fdff, {0.000f, 0.000f}}, {{1.000f, 1.000f, -1.000f}, 0x3ff7fdff, 0x1ffffdff, {1.000f, 0.000f}}, {{1.000f, -1.000f, 1.000f}, 0x3ff7fdff, 0x1ffffdff, {0.000f, 1.000f}}, {{1.000f, -1.000f, -1.000f}, 0x3ff7fdff, 0x1ffffdff, {0.000f, 0.000f}}, {{1.000f, 1.000f, 1.000f}, 0x1ff7ffff, 0x1ffffdff, {1.000f, 0.000f}}, {{-1.000f, -1.000f, 1.000f}, 0x1ff7ffff, 0x1ffffdff, {0.000f, 1.000f}}, {{1.000f, -1.000f, 1.000f}, 0x1ff7ffff, 0x1ffffdff, {0.000f, 0.000f}}, {{-1.000f, 1.000f, 1.000f}, 0x7fdff, 0x1ffffdff, {1.000f, 0.000f}}, {{-1.000f, -1.000f, -1.000f}, 0x7fdff, 0x1ffffdff, {0.000f, 1.000f}}, {{-1.000f, -1.000f, 1.000f}, 0x7fdff, 0x1ffffdff, {0.000f, 0.000f}}, {{1.000f, -1.000f, -1.000f}, 0x1ff7fc00, 0x1ff001ff, {1.000f, 0.000f}}, {{-1.000f, 1.000f, -1.000f}, 0x1ff7fc00, 0x1ff001ff, {0.000f, 1.000f}}, {{1.000f, 1.000f, -1.000f}, 0x1ff7fc00, 0x1ff001ff, {0.000f, 0.000f}}, {{-1.000f, -1.000f, 1.000f}, 0x1ff001ff, 0x1ff7ffff, {1.000f, 1.000f}}, {{-1.000f, 1.000f, 1.000f}, 0x1ffffdff, 0x7fdff, {1.000f, 1.000f}}, {{1.000f, 1.000f, 1.000f}, 0x3ff7fdff, 0x1ffffdff, {1.000f, 1.000f}}, {{-1.000f, 1.000f, 1.000f}, 0x1ff7ffff, 0x1ffffdff, {1.000f, 1.000f}}, {{-1.000f, 1.000f, -1.000f}, 0x7fdff, 0x1ffffdff, {1.000f, 1.000f}}, {{-1.000f, -1.000f, -1.000f}, 0x1ff7fc00, 0x1ff001ff, {1.000f, 1.000f}}};
     core::Vector<IndexedTriangle> triangles = {{0, 1, 2}, {0, 18, 1}, {3, 4, 5}, {3, 19, 4}, {6, 7, 8}, {6, 20, 7}, {9, 10, 11}, {9, 21, 10}, {12, 13, 14}, {12, 22, 13}, {15, 16, 17}, {15, 23, 16}};
-    return MeshData(std::move(vertices), std::move(triangles));
+    return MeshData(vertices, triangles);
 }
 
 MeshData cone_mesh_data() {
@@ -43,7 +43,7 @@ MeshData cone_mesh_data() {
                                                {91, 109, 110}, {91, 110, 111}, {91, 111, 112}, {91, 112, 113}, {91, 113, 114}, {91, 114, 115},
                                                {91, 115, 116}, {91, 116, 117}, {91, 117, 118}, {91, 118, 119}, {91, 119, 120}, {91, 120, 121},
                                                {91, 121, 122}, {91, 122, 90}};
-    return MeshData(std::move(vertices), std::move(triangles));
+    return MeshData(vertices, triangles);
 }
 
 MeshData simple_sphere_mesh_data() {
@@ -60,7 +60,7 @@ MeshData simple_sphere_mesh_data() {
                                                {44, 50, 51}, {46, 42, 48}, {45, 46, 47}, {47, 46, 48}, {47, 48, 49}, {34, 45, 57}, {33, 34, 35},
                                                {35, 34, 57}, {35, 57, 58}, {37, 33, 55}, {18, 33, 37}, {36, 37, 38}, {38, 37, 55}, {29, 37, 36},
                                                {29, 18, 37}, {38, 55, 56}, {16, 18, 29}};
-    return MeshData(std::move(vertices), std::move(triangles));
+    return MeshData(vertices, triangles);
 }
 
 MeshData sphere_mesh_data() {
@@ -119,7 +119,7 @@ MeshData sphere_mesh_data() {
                                                {37, 93, 89}, {38, 89, 87}, {87, 89, 88}, {89, 91, 88}, {89, 93, 91}, {87, 88, 84},
                                                {84, 88, 85}, {88, 90, 85}, {88, 91, 90}, {91, 92, 90}, {93, 94, 91}, {91, 94, 92},
                                                {94, 95, 92}, {84, 85, 86}};
-    return MeshData(std::move(vertices), std::move(triangles));
+    return MeshData(vertices, triangles);
 }
 
 }

@@ -29,6 +29,16 @@ namespace yave {
 StaticMesh::StaticMesh(const MeshData& mesh_data) :
     _draw_data(mesh_allocator().alloc_mesh(mesh_data.vertices(), mesh_data.triangles())),
     _aabb(mesh_data.aabb())  {
+
+    const auto sub_meshes = mesh_data.sub_meshes();
+    _sub_meshes = core::FixedArray<MeshDrawCommand>(sub_meshes.size());
+    std::transform(sub_meshes.begin(), sub_meshes.end(), _sub_meshes.begin(), [cmd = _draw_data.draw_command()](auto sub_mesh) {
+        return MeshDrawCommand {
+            sub_mesh.triangle_count * 3,
+            sub_mesh.first_triangle * 3 + cmd.first_index,
+            cmd.vertex_offset
+        };
+    });
 }
 
 StaticMesh::~StaticMesh() {
@@ -45,6 +55,10 @@ const MeshDrawData& StaticMesh::draw_data() const {
 
 const MeshDrawCommand& StaticMesh::draw_command() const {
     return _draw_data.draw_command();
+}
+
+const core::Span<MeshDrawCommand> StaticMesh::sub_meshes() const {
+    return _sub_meshes;
 }
 
 float StaticMesh::radius() const {

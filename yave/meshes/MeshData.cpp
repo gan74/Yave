@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-static core::Vector<PackedVertex> pack_vertices(const core::Vector<FullVertex>& vertices) {
+static core::Vector<PackedVertex> pack_vertices(core::Span<FullVertex> vertices) {
     auto packed = core::vector_with_capacity<PackedVertex>(vertices.size());
     for(const FullVertex& v : vertices) {
         packed << pack_vertex(v);
@@ -34,32 +34,46 @@ static core::Vector<PackedVertex> pack_vertices(const core::Vector<FullVertex>& 
     return packed;
 }
 
-MeshData::MeshData(core::Vector<FullVertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin, core::Vector<Bone> bones) :
-        MeshData(pack_vertices(vertices), std::move(triangles), std::move(skin), std::move(bones)) {
+MeshData::MeshData(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles) {
+    add_sub_mesh(vertices, triangles);
 }
 
-MeshData::MeshData(core::Vector<PackedVertex> vertices, core::Vector<IndexedTriangle> triangles, core::Vector<SkinWeights> skin, core::Vector<Bone> bones) :
-        _vertices(std::move(vertices)),
-        _triangles(std::move(triangles)) {
+MeshData::MeshData(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
+    add_sub_mesh(vertices, triangles);
+}
 
-    if(bones.is_empty() != skin.is_empty()) {
-        y_fatal("Invalid skeleton.");
-    }
-    if((!skin.is_empty() && skin.size() != _vertices.size())) {
-        y_fatal("Invalid skin data.");
-    }
+void MeshData::add_sub_mesh(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles) {
+    add_sub_mesh(pack_vertices(vertices), triangles);
+}
 
-    math::Vec3 max(-std::numeric_limits<float>::max());
-    math::Vec3 min(std::numeric_limits<float>::max());
-    std::for_each(_vertices.begin(), _vertices.end(), [&](const PackedVertex& v) {
-        max = max.max(v.position);
-        min = min.min(v.position);
+void MeshData::add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
+    const u32 vertex_offset = u32(_vertices.size());
+    const u32 first_triangle = u32(_triangles.size());
+
+    _vertices.set_min_capacity(_vertices.size() + vertices.size());
+    _triangles.set_min_capacity(_triangles.size() + triangles.size());
+
+    std::copy(vertices.begin(), vertices.end(), std::back_inserter(_vertices));
+    std::transform(triangles.begin(), triangles.end(), std::back_inserter(_triangles), [=](IndexedTriangle tri) {
+        return IndexedTriangle {
+            tri[0] + vertex_offset,
+            tri[1] + vertex_offset,
+            tri[2] + vertex_offset,
+        };
     });
-    _aabb = AABB(min, max);
 
-    if(!skin.is_empty()) {
-        _skeleton = std::make_unique<SkeletonData>(SkeletonData{std::move(skin), std::move(bones)});
+    {
+        math::Vec3 max(-std::numeric_limits<float>::max());
+        math::Vec3 min(std::numeric_limits<float>::max());
+        std::for_each(vertices.begin(), vertices.end(), [&](const PackedVertex& v) {
+            max = max.max(v.position);
+            min = min.min(v.position);
+        });
+
+        _aabb = _sub_meshes.is_empty() ? AABB(min, max) : _aabb.merged(AABB(min, max));
     }
+
+    _sub_meshes << SubMesh{u32(triangles.size()), first_triangle};
 }
 
 float MeshData::radius() const {
@@ -76,6 +90,10 @@ core::Span<PackedVertex> MeshData::vertices() const {
 
 core::Span<IndexedTriangle> MeshData::triangles() const {
     return _triangles;
+}
+
+core::Span<MeshData::SubMesh> MeshData::sub_meshes() const {
+    return _sub_meshes;
 }
 
 core::Span<Bone> MeshData::bones() const {

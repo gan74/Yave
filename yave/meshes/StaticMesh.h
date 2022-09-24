@@ -47,13 +47,14 @@ class StaticMesh : NonCopyable {
 
         const MeshDrawData& draw_data() const;
         const MeshDrawCommand& draw_command() const;
+        const core::Span<MeshDrawCommand> sub_meshes() const;
 
         float radius() const;
         const AABB& aabb() const;
 
     private:
         MeshDrawData _draw_data = {};
-        //core::FixedArray<>
+        core::FixedArray<MeshDrawCommand> _sub_meshes;
         AABB _aabb;
 };
 

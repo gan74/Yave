@@ -442,22 +442,21 @@ ParsedScene parse_scene(const core::String& filename) {
     for(int i = 0; i != scene.gltf->meshes.size(); ++i) {
         const tinygltf::Mesh& mesh = scene.gltf->meshes[i];
 
-        auto& parsed_mesh = scene.meshes.emplace_back();
+        auto& parsed_mesh = scene.mesh_prefabs.emplace_back();
         parsed_mesh.name = mesh.name.empty() ? fmt_to_owned("unnamed_mesh_%", i) : clean_asset_name(mesh.name);
         parsed_mesh.gltf_index = i;
 
         for(int j = 0; j != mesh.primitives.size(); ++j) {
             const tinygltf::Primitive& prim = mesh.primitives[j];
 
-            auto& parsed_sub = parsed_mesh.sub_meshes.emplace_back();
-            parsed_sub.name = fmt("submesh_%", j);
-            parsed_sub.gltf_index = j;
-            parsed_sub.gltf_material_index = prim.material;
-
             if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
-                parsed_sub.is_error = true;
                 continue;
             }
+
+            auto& group = parsed_mesh.materials.emplace_back();
+            group.primitive_index = j;
+            group.gltf_material_index = prim.material;
+
         }
     }
 
@@ -494,10 +493,10 @@ ParsedScene parse_scene(const core::String& filename) {
     return scene;
 }
 
-core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) const {
+core::Result<MeshData> ParsedScene::build_mesh_data(usize index) const {
     y_profile();
 
-    const Mesh& parsed_mesh = meshes[index];
+    const MeshPrefab& parsed_mesh = mesh_prefabs[index];
     y_debug_assert(!parsed_mesh.is_error);
 
     /*const math::Vec3 forward = math::Vec3(0.0f, 0.0f, 1.0f);
@@ -507,36 +506,36 @@ core::Vector<core::Result<MeshData>> ParsedScene::build_mesh_data(usize index) c
     transform.set_basis(forward, forward.cross(up), up);
     transform = transform.transposed();*/
 
-    core::Vector<core::Result<MeshData>> sub_meshes;
-    for(const SubMesh& sub_mesh : parsed_mesh.sub_meshes) {
-        if(sub_mesh.import) {
-            y_debug_assert(!sub_mesh.is_error);
-            const tinygltf::Primitive& prim = gltf->meshes[parsed_mesh.gltf_index].primitives[sub_mesh.gltf_index];
-            try {
-                auto vertices = import_vertices(*gltf, prim);
-                const bool recompute_tangents = vertices.size() && vertices[0].tangent.is_zero();
+    MeshData mesh_data;
+    for(const MaterialGroup& group : parsed_mesh.materials) {
+        y_debug_assert(group.gltf_material_index >= 0);
+        y_debug_assert(group.primitive_index >= 0);
 
-                for(FullVertex& vertex : vertices) {
-                    vertex.position = base_change_transform.transform_point(vertex.position);
-                    vertex.normal = base_change_transform.transform_direction(vertex.normal);
-                    vertex.tangent.to<3>() = base_change_transform.transform_direction(vertex.tangent.to<3>());
-                    Y_TODO(Do we need to fix the binormal sign ?)
-                }
+        const tinygltf::Primitive& prim = gltf->meshes[parsed_mesh.gltf_index].primitives[group.primitive_index];
 
-                MeshData mesh(std::move(vertices), import_triangles(*gltf, prim));
-                if(recompute_tangents) {
-                    mesh = compute_tangents(mesh);
-                }
+        try {
+            auto vertices = import_vertices(*gltf, prim);
+            const bool recompute_tangents = vertices.size() && vertices[0].tangent.is_zero();
 
-                sub_meshes.emplace_back(core::Ok(std::move(mesh)));
-            } catch(std::exception& e) {
-                log_msg(fmt("Unable to build mesh: %" , e.what()), Log::Error);
-                sub_meshes.emplace_back(core::Err());
+            for(FullVertex& vertex : vertices) {
+                vertex.position = base_change_transform.transform_point(vertex.position);
+                vertex.normal = base_change_transform.transform_direction(vertex.normal);
+                vertex.tangent.to<3>() = base_change_transform.transform_direction(vertex.tangent.to<3>());
+                Y_TODO(Do we need to fix the binormal sign ?)
             }
+
+            MeshData mesh(vertices, import_triangles(*gltf, prim));
+            if(recompute_tangents) {
+                mesh = compute_tangents(mesh);
+            }
+
+            mesh_data.add_sub_mesh(mesh.vertices(), mesh.triangles());
+        } catch(std::exception& e) {
+            log_msg(fmt("Unable to build mesh: %" , e.what()), Log::Error);
         }
     }
 
-    return sub_meshes;
+    return core::Ok(std::move(mesh_data));
 }
 
 core::Result<ImageData> ParsedScene::build_image_data(usize index) const {

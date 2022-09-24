@@ -117,13 +117,13 @@ static void display_asset(T& asset) {
 }
 
 static void display_mesh_import_list(import::ParsedScene& scene) {
-    set_global_import_flag(scene.meshes);
+    set_global_import_flag(scene.mesh_prefabs);
     ImGui::SameLine();
 
-    if(ImGui::TreeNode(fmt_c_str("% Meshes", scene.meshes.size()))) {
+    if(ImGui::TreeNode(fmt_c_str("% Meshes", scene.mesh_prefabs.size()))) {
         ImGui::Indent();
 
-        for(auto& mesh : scene.meshes) {
+        for(auto& mesh : scene.mesh_prefabs) {
             display_asset(mesh);
         }
 
@@ -257,18 +257,19 @@ usize SceneImporter2::import_assets() {
     // --------------------------------- Meshes ---------------------------------
     {
         const core::String mesh_import_path = asset_store().filesystem()->join(_import_path, "Meshes");
-        for(usize i = 0; i != _scene.meshes.size(); ++i) {
-            if(_scene.meshes[i].import) {
+        for(usize i = 0; i != _scene.mesh_prefabs.size(); ++i) {
+            if(_scene.mesh_prefabs[i].import) {
                 ++to_import;
                 _thread_pool.schedule([=] {
-                    auto& mesh = _scene.meshes[i];
-                    y_debug_assert(mesh.asset_id == AssetId::invalid_id());
-                    core::Vector<core::Result<MeshData>> sub_meshes = _scene.build_mesh_data(i);
-                    for(usize j = 0; j != sub_meshes.size(); ++j) {
-                        y_debug_assert(mesh.sub_meshes[j].asset_id == AssetId::invalid_id());
-                        if(auto& res = sub_meshes[j]) {
-                            mesh.sub_meshes[j].asset_id = import_single_asset(std::move(res.unwrap()), asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.sub_meshes[j].name), AssetType::Mesh, _emergency_uid, log_func);
-                        }
+                    auto& mesh = _scene.mesh_prefabs[i];
+                    y_debug_assert(mesh.mesh_asset_id == AssetId::invalid_id());
+                    if(auto res = _scene.build_mesh_data(i)) {
+                        log_msg(fmt("floop : %", res.unwrap().sub_meshes().size()));
+                        mesh.mesh_asset_id = import_single_asset(
+                            std::move(res.unwrap()),
+                            asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.name),
+                            AssetType::Mesh, _emergency_uid, log_func
+                        );
                     }
                 }, &mesh_material_deps);
             }
@@ -293,16 +294,16 @@ usize SceneImporter2::import_assets() {
     }
 
     // --------------------------------- Prefabs ---------------------------------
-    auto build_prefab = [&](const import::ParsedScene::Mesh& mesh, const math::Transform<>& transform = {}) {
-        auto sub_meshes = core::vector_with_capacity<StaticMeshComponent::SubMesh>(mesh.sub_meshes.size());
-        for(const auto& sub_mesh : mesh.sub_meshes) {
-            if(sub_mesh.gltf_material_index < 0 || sub_mesh.asset_id == AssetId::invalid_id()) {
+    auto build_prefab = [&](const import::ParsedScene::MeshPrefab& mesh, const math::Transform<>& transform = {}) {
+        core::Vector<AssetPtr<Material>> materials(mesh.materials.size(), AssetPtr<Material>());
+        for(usize i = 0; i != materials.size(); ++i) {
+            if(mesh.materials[i].gltf_material_index < 0) {
                 continue;
             }
 
             AssetId material_id;
             for(const auto& mat : _scene.materials) {
-                if(mat.gltf_index == sub_mesh.gltf_material_index) {
+                if(mat.gltf_index == mesh.materials[i].gltf_material_index) {
                     material_id = mat.asset_id;
                     break;
                 }
@@ -312,22 +313,23 @@ usize SceneImporter2::import_assets() {
                 continue;
             }
 
-            sub_meshes.emplace_back(make_asset_with_id<StaticMesh>(sub_mesh.asset_id), make_asset_with_id<Material>(material_id));
+            log_msg(fmt("% = %", i, asset_store().name(material_id).unwrap_or(core::String("?"))));
+            materials[i] = make_asset_with_id<Material>(material_id);
         }
 
         ecs::EntityPrefab prefab;
         prefab.add(TransformableComponent(transform));
-        prefab.add(StaticMeshComponent(std::move(sub_meshes)));
+        prefab.add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.mesh_asset_id), std::move(materials)));
         return prefab;
     };
 
     {
         const core::String prefab_import_path = asset_store().filesystem()->join(_import_path, "Prefabs");
-        for(usize i = 0; i != _scene.meshes.size(); ++i) {
-            if(_scene.meshes[i].import) {
+        for(usize i = 0; i != _scene.mesh_prefabs.size(); ++i) {
+            if(_scene.mesh_prefabs[i].import) {
                 ++to_import;
                 _thread_pool.schedule([=] {
-                    auto& mesh = _scene.meshes[i];
+                    auto& mesh = _scene.mesh_prefabs[i];
                     y_debug_assert(mesh.asset_id == AssetId::invalid_id());
                     mesh.asset_id = import_single_asset(build_prefab(mesh), asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, _emergency_uid, log_func);
                 }, nullptr, mesh_material_deps);
@@ -343,8 +345,8 @@ usize SceneImporter2::import_assets() {
             const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
             auto prefabs = core::vector_with_capacity<ecs::EntityPrefab>(_scene.nodes.size());
             for(const auto& node : _scene.nodes) {
-                const auto it = std::find_if(_scene.meshes.begin(), _scene.meshes.end(), [=](const auto& mesh) { return mesh.gltf_index == node.mesh_gltf_index; });
-                if(it != _scene.meshes.end()) {
+                const auto it = std::find_if(_scene.mesh_prefabs.begin(), _scene.mesh_prefabs.end(), [=](const auto& mesh) { return mesh.gltf_index == node.mesh_gltf_index; });
+                if(it != _scene.mesh_prefabs.end()) {
                     ecs::EntityPrefab& prefab = prefabs.emplace_back(build_prefab(*it, node.transform));
                     prefab.add(EditorComponent(node.name));
                 }
@@ -399,7 +401,7 @@ void SceneImporter2::on_gui() {
 
             {
                 const usize total_errors =
-                    count_errors(_scene.meshes) +
+                    count_errors(_scene.mesh_prefabs) +
                     count_errors(_scene.materials) +
                     count_errors(_scene.images);
 
