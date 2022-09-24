@@ -56,7 +56,7 @@ const core::String& Renamer::original_name() const {
 void Renamer::on_gui() {
     ImGui::Text("Rename: \"%s\"", _name.data());
 
-    if(ImGui::InputText("", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::Button("Ok")) {
+    if(ImGui::InputText("##name", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::Button("Ok")) {
         if(_callback(std::string_view(_name_buffer.data()))) {
             close();
             refresh_all();

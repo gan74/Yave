@@ -68,6 +68,7 @@ static void setup_style() {
     colors[ImGuiCol_Tab]                    = none;
     colors[ImGuiCol_TabUnfocused]           = none;
     colors[ImGuiCol_DockingEmptyBg]         = none;
+    colors[ImGuiCol_ModalWindowDimBg]       = none;
 
     colors[ImGuiCol_Text]                   = grey(180);
     colors[ImGuiCol_TextDisabled]           = grey(90);
@@ -89,7 +90,6 @@ static void setup_style() {
     colors[ImGuiCol_TableRowBgAlt]          = grey(20, 0.25f);
 
     colors[ImGuiCol_NavWindowingDimBg]      = grey(128, 0.75f);
-    colors[ImGuiCol_ModalWindowDimBg]       = grey(128, 0.75f);
     colors[ImGuiCol_DockingPreview]         = grey(128, 0.25f);
     colors[ImGuiCol_FrameBgHovered]         = grey(128, 0.25f);
     colors[ImGuiCol_TextSelectedBg]         = grey(128, 0.25f);
