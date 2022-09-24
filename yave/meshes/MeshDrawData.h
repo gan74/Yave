@@ -30,6 +30,22 @@ SOFTWARE.
 
 namespace yave {
 
+struct MeshDrawCommand {
+    u32 index_count = 0;
+    u32 first_index = 0;
+    i32 vertex_offset = 0;
+
+    VkDrawIndexedIndirectCommand vk_indirect_data(u32 instance_index = 0, u32 instance_count = 1) const {
+        return VkDrawIndexedIndirectCommand {
+            index_count,
+            instance_count,
+            first_index,
+            vertex_offset,
+            instance_index
+        };
+    }
+};
+
 class MeshBufferData : NonMovable {
     public:
 
@@ -71,7 +87,7 @@ class MeshDrawData : NonCopyable {
 
         const MeshBufferData& mesh_buffers() const;
 
-        const VkDrawIndexedIndirectCommand& indirect_data() const;
+        const MeshDrawCommand& draw_command() const;
 
     private:
         friend class LifetimeManager;
@@ -82,9 +98,10 @@ class MeshDrawData : NonCopyable {
     private:
         void swap(MeshDrawData& other);
 
-        VkDrawIndexedIndirectCommand _indirect_data = {};
+        MeshDrawCommand _command = {};
+        u32 _vertex_count = 0;
+
         MeshBufferData* _buffer_data = nullptr;
-        u64 _vertex_count = 0;
 
 
 };

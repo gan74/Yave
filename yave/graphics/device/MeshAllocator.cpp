@@ -97,9 +97,8 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
 
     MeshDrawData mesh_data;
     mesh_data._buffer_data = _buffer_data.get();
-    mesh_data._vertex_count = vertex_count;
-    mesh_data._indirect_data.instanceCount = 1;
-    mesh_data._indirect_data.indexCount = u32(triangles.size() * 3);
+    mesh_data._vertex_count = u32(vertex_count);
+    mesh_data._command.index_count = u32(triangles.size() * 3);
 
     auto& global_triangle_buffer = _triangle_buffer;
     auto& global_attrib_buffer = _attrib_buffer;
@@ -115,7 +114,7 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
         {
             MutableTriangleSubBuffer triangle_buffer(global_triangle_buffer, triangle_count * sizeof(IndexedTriangle), triangle_begin * sizeof(IndexedTriangle));
             Mapping::stage(triangle_buffer, recorder, triangles.data());
-            mesh_data._indirect_data.firstIndex = u32(triangle_begin * 3);
+            mesh_data._command.first_index = u32(triangle_begin * 3);
         }
 
         {
@@ -142,7 +141,7 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
                 y_debug_assert(offset == sizeof(PackedVertex));
             }
 
-            mesh_data._indirect_data.vertexOffset = u32(vertex_begin);
+            mesh_data._command.vertex_offset = i32(vertex_begin);
         }
 
         loading_command_queue().submit(std::move(recorder));
@@ -155,13 +154,13 @@ void MeshAllocator::recycle(MeshDrawData* data) {
     const auto lock = y_profile_unique_lock(_lock);
 
     _free_blocks << FreeBlock {
-        u64(data->_indirect_data.vertexOffset),
+        u64(data->_command.vertex_offset),
         data->_vertex_count,
-        u64(data->_indirect_data.firstIndex) / 3,
-        u64(data->_indirect_data.indexCount) / 3,
+        u64(data->_command.first_index) / 3,
+        u64(data->_command.index_count) / 3,
     };
 
-    data->_indirect_data = {};
+    data->_command = {};
     data->_buffer_data = nullptr;
 
     _should_compact = true;

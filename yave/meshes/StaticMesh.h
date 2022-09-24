@@ -25,9 +25,9 @@ SOFTWARE.
 #include "AABB.h"
 #include "MeshDrawData.h"
 
-#include <yave/graphics/device/extensions/RayTracing.h>
-
 #include <yave/assets/AssetTraits.h>
+
+#include <y/core/FixedArray.h>
 
 Y_TODO(move into graphics?)
 
@@ -46,13 +46,14 @@ class StaticMesh : NonCopyable {
         bool is_null() const;
 
         const MeshDrawData& draw_data() const;
-        const VkDrawIndexedIndirectCommand& indirect_data() const;
+        const MeshDrawCommand& draw_command() const;
 
         float radius() const;
         const AABB& aabb() const;
 
     private:
         MeshDrawData _draw_data = {};
+        //core::FixedArray<>
         AABB _aabb;
 };
 

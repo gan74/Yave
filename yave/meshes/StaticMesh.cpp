@@ -43,8 +43,8 @@ const MeshDrawData& StaticMesh::draw_data() const {
     return _draw_data;
 }
 
-const VkDrawIndexedIndirectCommand& StaticMesh::indirect_data() const {
-    return _draw_data.indirect_data();
+const MeshDrawCommand& StaticMesh::draw_command() const {
+    return _draw_data.draw_command();
 }
 
 float StaticMesh::radius() const {

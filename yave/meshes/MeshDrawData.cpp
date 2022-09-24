@@ -92,14 +92,14 @@ const MeshBufferData& MeshDrawData::mesh_buffers() const {
     return *_buffer_data;
 }
 
-const VkDrawIndexedIndirectCommand& MeshDrawData::indirect_data() const {
-    return _indirect_data;
+const MeshDrawCommand& MeshDrawData::draw_command() const {
+    return _command;
 }
 
 void MeshDrawData::swap(MeshDrawData& other) {
-    std::swap(_indirect_data, other._indirect_data);
-    std::swap(_buffer_data, other._buffer_data);
+    std::swap(_command, other._command);
     std::swap(_vertex_count, other._vertex_count);
+    std::swap(_buffer_data, other._buffer_data);
 }
 
 }

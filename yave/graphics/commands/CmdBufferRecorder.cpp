@@ -113,11 +113,7 @@ void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
 void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count, u32 instance_index) {
     bind_mesh_buffers(draw_data.mesh_buffers());
 
-    VkDrawIndexedIndirectCommand indirect = draw_data.indirect_data();
-    indirect.instanceCount = instance_count;
-    indirect.firstInstance = instance_index;
-
-    draw(indirect);
+    draw(draw_data.draw_command().vk_indirect_data(instance_index, instance_count));
 }
 
 void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {
