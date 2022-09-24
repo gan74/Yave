@@ -151,9 +151,11 @@ static usize probe_size(const Texture& tex) {
     return std::max(min_face_size * 2, usize(1) << usize(std::ceil(std::log2(std::sqrt(face)))));
 }
 
-
-
-
+static ImageFormat probe_format(const ImageFormat& input_format) {
+    return input_format.is_sRGB()
+        ? VK_FORMAT_R8G8B8A8_SRGB
+        : VK_FORMAT_R8G8B8A8_UNORM;
+}
 
 
 IBLProbe::IBLProbe(const ImageData& data) {
@@ -164,7 +166,7 @@ IBLProbe::IBLProbe(const ImageData& data) {
 IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
     y_profile();
 
-    ProbeBase probe(probe_size(cube), cube.format());
+    ProbeBase probe(probe_size(cube), probe_format(cube.format()));
     compute_probe(probe, cube);
 
     IBLProbe final;
@@ -175,7 +177,7 @@ IBLProbe IBLProbe::from_cubemap(const Cubemap& cube) {
 IBLProbe IBLProbe::from_equirec(const Texture& equirec) {
     y_profile();
 
-    ProbeBase probe(probe_size(equirec), equirec.format());
+    ProbeBase probe(probe_size(equirec), probe_format(equirec.format()));
     compute_probe(probe, equirec);
 
     IBLProbe final;
