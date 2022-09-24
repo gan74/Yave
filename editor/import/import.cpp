@@ -597,7 +597,7 @@ core::Result<SimpleMaterialData> ParsedScene::build_material_data(usize index) c
     data.set_texture(SimpleMaterialData::Metallic, find_texture(pbr.metallicRoughnessTexture.index));
     data.set_texture(SimpleMaterialData::Emissive, find_texture(gltf_mat.emissiveTexture.index));
 
-    data.alpha_tested() = (gltf_mat.alphaMode == "MASK");
+    data.alpha_tested() = (gltf_mat.alphaMode != "OPAQUE");
     data.double_sided() = gltf_mat.doubleSided;
 
     data.constants().metallic_mul = float(pbr.metallicFactor);
