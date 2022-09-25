@@ -194,11 +194,11 @@ ReadUpToResult File::read_up_to(void* data, usize max_bytes) {
     return core::Ok(r);
 }
 
-ReadUpToResult File::read_all(core::Vector<u8>& data) {
-    usize left = remaining();
-    usize size = data.size();
+ReadUpToResult File::read_all(core::Vector<byte>& data) {
+    const usize left = remaining();
+    const usize size = data.size();
     data.set_min_capacity(left + size);
-    std::fill_n(std::back_inserter(data), left, 0);
+    std::fill_n(std::back_inserter(data), left, byte{});
     return read_up_to(data.begin() + size, left);
 }
 

@@ -44,17 +44,17 @@ class Buffer final : public Reader, public Writer {
 
         ReadResult read(void* data, usize bytes) override;
         ReadUpToResult read_up_to(void* data, usize max_bytes) override;
-        ReadUpToResult read_all(core::Vector<u8>& data) override;
+        ReadUpToResult read_all(core::Vector<byte>& data) override;
 
         WriteResult write(const void* data, usize bytes) override;
 
         FlushResult flush() override;
 
-        const u8* data() const;
+        const byte* data() const;
         usize size() const;
 
     private:
-        core::Vector<u8> _buffer;
+        core::Vector<byte> _buffer;
         usize _cursor = 0;
 
 };

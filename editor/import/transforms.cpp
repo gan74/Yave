@@ -311,9 +311,9 @@ ImageData compute_mipmaps(const ImageData& image) {
         y_profile_zone("unpack");
         if(is_sRGB) {
             Y_TODO(Alpha should not be gammaed)
-            unpack_with_gamma(image.data(), input.size(), input.data());
+            unpack_with_gamma(to_u8(image.data()), input.size(), input.data());
         } else {
-            unpack(image.data(), input.size(), input.data());
+            unpack(to_u8(image.data()), input.size(), input.data());
         }
     }
 
@@ -341,7 +341,7 @@ ImageData block_compress(const ImageData& image, ImageFormat compressed_format, 
 
         const usize mip_count = image.mipmaps();
         const usize compressed_size = ImageData::byte_size(image.size(), compressed_format, mip_count);
-        core::FixedArray<u8> compressed_data(compressed_size);
+        core::FixedArray<byte> compressed_data(compressed_size);
 
         const math::Vec3ui block_size = compressed_format.block_size();
         y_debug_assert(block_size.z() == 1);
@@ -365,7 +365,7 @@ ImageData block_compress(const ImageData& image, ImageFormat compressed_format, 
                             const usize image_index = coord.y() * mip.size.x() + coord.x();
                             y_debug_assert(image_index < mip_texel_count);
                             for(usize c = 0; c != 4; ++c) {
-                                block[block_index++] = mip.data[image_index * 4 + c];
+                                block[block_index++] = u8(mip.data[image_index * 4 + c]);
                             }
                         }
                     }

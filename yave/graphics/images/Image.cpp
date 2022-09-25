@@ -84,11 +84,14 @@ static core::ScratchPad<VkBufferImageCopy> get_copy_regions(const ImageData& dat
 
 static auto stage_data(usize byte_size, const void* data) {
     y_profile();
-    y_debug_assert(data);
     auto staging_buffer = StagingBuffer(byte_size);
     {
         y_profile_zone("copy");
-        std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
+        if(data) {
+            std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
+        } else {
+            std::memset(Mapping(staging_buffer).data(), 0, byte_size);
+        }
     }
     return staging_buffer;
 }
