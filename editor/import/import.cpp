@@ -374,7 +374,7 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
     }
 
     // This doesn't appear to be correct....
-    rotation.to<3>() = base_change_transform.transform_direction(rotation.to<3>());
+    // rotation.to<3>() = base_change_transform.transform_direction(rotation.to<3>());
 
     const math::Transform<> tr = base_change_transform * math::Transform<>(translation, rotation, scale);
     y_debug_assert(math::fully_finite(tr));

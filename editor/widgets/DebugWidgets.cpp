@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 #include <editor/EditorWorld.h>
-#include <editor/Selection.h>
 #include <editor/utils/memory.h>
 
 #include <yave/scene/SceneView.h>
@@ -219,8 +218,8 @@ class SelectionDebug : public Widget {
 
     protected:
         void on_gui() override {
-            if(ImGui::CollapsingHeader(fmt_c_str("% entity selected###header", selection().selected_entities().size()))) {
-                for(const ecs::EntityId id : selection().selected_entities()) {
+            if(ImGui::CollapsingHeader(fmt_c_str("% entity selected###header", current_world().selected_entities().size()))) {
+                for(const ecs::EntityId id : current_world().selected_entities()) {
                     std::array<char, 32> buffer = {};
                     std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
                     ImGui::InputText(fmt_c_str("##%", id.index()), buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);

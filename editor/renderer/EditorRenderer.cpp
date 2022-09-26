@@ -24,7 +24,7 @@ SOFTWARE.
 #include "IdBufferPass.h"
 #include "EditorPass.h"
 
-#include <editor/Selection.h>
+#include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 
 #include <yave/framegraph/FrameGraph.h>
@@ -35,7 +35,7 @@ SOFTWARE.
 namespace editor {
 
 static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth, FrameGraphImageId selection_id) {
-    if(!selection().has_selected_entities()) {
+    if(!current_world().has_selected_entities()) {
         return color;
     }
 

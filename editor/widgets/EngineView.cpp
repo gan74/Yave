@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <editor/Picker.h>
 #include <editor/Settings.h>
-#include <editor/Selection.h>
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 #include <editor/EditorApplication.h>
@@ -477,7 +476,7 @@ void EngineView::update_picking() {
     if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         if(!_gizmo.is_dragging() && !_orientation_gizmo.is_dragging()) {
             const ecs::EntityId picked_id = picking_data.hit() ? current_world().id_from_index(picking_data.entity_index) : ecs::EntityId();
-            selection().add_or_remove(picked_id, !ImGui::GetIO().KeyCtrl);
+            current_world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
         }
     }
 }
@@ -486,7 +485,7 @@ void EngineView::make_drop_target() {
     if(ImGui::BeginDragDropTarget()) {
         if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
             const std::string_view name = reinterpret_cast<const char*>(payload->Data);
-            selection().set_selected(current_world().add_prefab(name));
+            current_world().set_selected(current_world().add_prefab(name));
         }
         ImGui::EndDragDropTarget();
     }

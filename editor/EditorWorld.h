@@ -58,6 +58,19 @@ class EditorWorld : public ecs::EntityWorld {
 
         void set_parent(ecs::EntityId id, ecs::EntityId parent);
 
+
+        bool has_selected_entities() const;
+        usize selected_entity_count() const;
+        ecs::EntityId selected_entity() const;
+        core::Span<ecs::EntityId> selected_entities() const;
+        bool is_selected(ecs::EntityId id) const;
+
+        void set_selected(ecs::EntityId id);
+        void toggle_selected(ecs::EntityId id, bool set);
+        void set_selection(core::Span<ecs::EntityId> selection);
+        void clear_selection();
+
+
         static core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> component_types();
 
     private:

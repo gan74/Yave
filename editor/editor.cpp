@@ -26,7 +26,6 @@ SOFTWARE.
 #include "UiManager.h"
 
 #include "Settings.h"
-#include "Selection.h"
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -42,11 +41,6 @@ EditorApplication* application() {
 Settings& app_settings() {
     static Settings settings;
     return settings;
-}
-
-Selection& selection() {
-    static Selection select;
-    return select;
 }
 
 UndoStack& undo_stack() {

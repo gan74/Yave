@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 #include "Gizmo.h"
 
-#include <editor/Selection.h>
 #include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
 
@@ -160,7 +159,7 @@ float Gizmo::snap_rot(float x) const {
 }
 
 bool Gizmo::compute_gizmo_data(GizmoData &data) const {
-    const auto selected = selection().selected_entities();
+    const auto selected = current_world().selected_entities();
     for(const ecs::EntityId id : core::Range(std::make_reverse_iterator(selected.end()), std::make_reverse_iterator(selected.begin()))) {
         if(TransformableComponent* transformable = current_world().component<TransformableComponent>(id)) {
             data.ref_entity_id = id;
@@ -352,7 +351,7 @@ void Gizmo::translate_gizmo() {
         }
         offset = math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z()));
 
-        auto query = current_world().query<ecs::Mutate<TransformableComponent>>(selection().selected_entities());
+        auto query = current_world().query<ecs::Mutate<TransformableComponent>>(current_world().selected_entities());
         for(auto&& [transformable] : query.components()) {
             transformable.set_position(transformable.position() + offset);
         }
@@ -464,7 +463,7 @@ void Gizmo::rotate_gizmo() {
         const float angle_offset = snap_rot(angle - _rotation_offset);
         const math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(data.basis[_rotation_axis], angle_offset);
 
-        auto query = current_world().query<ecs::Mutate<TransformableComponent>>(selection().selected_entities());
+        auto query = current_world().query<ecs::Mutate<TransformableComponent>>(current_world().selected_entities());
         for(auto&& [transformable] : query.components()) {
             math::Transform<> tr = transformable.transform();
             tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
@@ -480,7 +479,7 @@ void Gizmo::rotate_gizmo() {
 void Gizmo::draw() {
     y_profile();
 
-    if(!selection().has_selected_entities()) {
+    if(!current_world().has_selected_entities()) {
         return;
     }
 

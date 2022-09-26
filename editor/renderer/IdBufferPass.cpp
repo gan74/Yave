@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "IdBufferPass.h"
 
-#include <editor/Selection.h>
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 
@@ -53,7 +52,9 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
                           EditorPassFlags flags) {
     y_profile();
 
-    const ecs::EntityWorld& world = scene_view.world();
+    const EditorWorld& world = current_world();
+    y_debug_assert(&world == &scene_view.world());
+
     const Camera& camera = scene_view.camera();
 
     auto transform_mapping = pass->resources().map_buffer(transform_buffer);
@@ -69,7 +70,7 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
     core::Vector<ecs::EntityId> entities;
 
     if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
-        const auto selected = selection().selected_entities();
+        const auto selected = world.selected_entities();
         entities.assign(selected.begin(), selected.end());
         use_entity_list = true;
     } else {

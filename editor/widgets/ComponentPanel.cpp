@@ -23,7 +23,6 @@ SOFTWARE.
 #include "ComponentPanel.h"
 #include "ComponentPanelWidgets.h"
 
-#include <editor/Selection.h>
 #include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
 #include <editor/utils/ui.h>
@@ -47,10 +46,10 @@ ComponentPanel::ComponentPanel() : Widget(ICON_FA_WRENCH " Components") {
 }
 
 void ComponentPanel::on_gui() {
-    const ecs::EntityId id = selection().selected_entity();
+    const ecs::EntityId id = current_world().selected_entity();
 
     if(!id.is_valid()) {
-        if(const usize selected_count = selection().selected_entity_count(); selected_count > 1) {
+        if(const usize selected_count = current_world().selected_entity_count(); selected_count > 1) {
             ImGui::Text("%u selected entities", u32(selected_count));
         }
         return;

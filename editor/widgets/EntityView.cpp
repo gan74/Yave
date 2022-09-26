@@ -22,7 +22,6 @@ SOFTWARE.
 #include "EntityView.h"
 
 #include <editor/Settings.h>
-#include <editor/Selection.h>
 #include <editor/EditorWorld.h>
 #include <editor/utils/ui.h>
 #include <editor/widgets/Renamer.h>
@@ -132,7 +131,7 @@ static void add_prefab() {
     add_detached_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
         [](AssetId asset) {
             const ecs::EntityId id = current_world().add_prefab(asset);
-            selection().set_selected(id);
+            current_world().set_selected(id);
             set_new_entity_pos(id);
             return id.is_valid();
         });
@@ -181,13 +180,13 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
 
         if(component->is_collection()) {
             if(ImGui::Selectable("Select immediate children")) {
-                selection().set_selected(component->children());
+                world.set_selection(component->children());
             }
             if(ImGui::Selectable("Select all descendants")) {
                 y_profile_zone("collect all descendants");
                 auto descendants = core::vector_with_capacity<ecs::EntityId>(component->children().size() * 2);
                 collect_all_descendants(descendants, id, world);
-                selection().set_selected(descendants);
+                world.set_selection(descendants);
             }
             ImGui::Separator();
         }
@@ -234,7 +233,7 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
 
     if(new_entity.is_valid()) {
         world.set_parent(new_entity, id);
-        selection().set_selected(new_entity);
+        world.set_selected(new_entity);
         set_new_entity_pos(new_entity);
     }
 }
@@ -283,7 +282,7 @@ static void build_tree(core::Vector<EntityTreeItem>& tree, ecs::EntityId id, con
 
 EntityView::EntityView() : Widget(ICON_FA_CUBES " Entities") {
     _tag_buttons << std::pair{
-        ICON_FA_EYE, core::String("hidden")
+        ICON_FA_EYE, ecs::tags::hidden
     };
 }
 
@@ -341,7 +340,7 @@ void EntityView::on_gui() {
 
                 auto update_selection = [&]() {
                     if(ImGui::IsItemClicked()) {
-                        selection().add_or_remove(item.id, !ImGui::GetIO().KeyCtrl);
+                        world.toggle_selected(item.id, !ImGui::GetIO().KeyCtrl);
                     }
 
                     if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
@@ -358,7 +357,7 @@ void EntityView::on_gui() {
                     }
                 }
 
-                const bool is_selected = _context_menu_entity == item.id || selection().is_selected(item.id);
+                const bool is_selected = _context_menu_entity == item.id || world.is_selected(item.id);
                 const int flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | (is_selected ? ImGuiTreeNodeFlags_Selected : 0);
 
                 imgui::table_begin_next_row();

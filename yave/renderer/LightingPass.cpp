@@ -50,7 +50,7 @@ static constexpr usize max_spot_lights = 1024;
 
 
 static std::tuple<const IBLProbe*, float, bool>  find_probe(const ecs::EntityWorld& world) {
-    const std::array tags = {core::String("!hidden")};
+    const std::array tags = {ecs::tags::not_hidden};
     for(auto id_comp : world.query<SkyLightComponent>(tags)) {
         const SkyLightComponent& sky = id_comp.component<SkyLightComponent>();
         if(const IBLProbe* probe = sky.probe().get()) {
@@ -100,7 +100,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         u32 light_count = 0;
         TypedMapping<uniform::DirectionalLight> mapping = self->resources().map_buffer(directional_buffer);
 
-        const std::array tags = {core::String("!hidden")};
+        const std::array tags = {ecs::tags::not_hidden};
         for(auto light : scene.world().query<DirectionalLightComponent>(tags)) {
             const auto& [l] = light.components();
 
@@ -152,7 +152,7 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
 
     u32 count = 0;
 
-    const std::array tags = {core::String("!hidden")};
+    const std::array tags = {ecs::tags::not_hidden};
     for(auto point : scene.world().query<TransformableComponent, PointLightComponent>(tags)) {
         const auto& [t, l] = point.components();
 
@@ -192,7 +192,7 @@ static u32 fill_spot_light_buffer(
 
     u32 count = 0;
 
-    const std::array tags = {core::String("!hidden")};
+    const std::array tags = {ecs::tags::not_hidden};
     for(auto spot : scene.world().query<TransformableComponent, SpotLightComponent>(tags)) {
         const auto& [t, l] = spot.components();
 

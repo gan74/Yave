@@ -199,6 +199,63 @@ void EditorWorld::set_parent(ecs::EntityId id, ecs::EntityId parent) {
     }
 }
 
+bool EditorWorld::has_selected_entities() const {
+    return !selected_entities().is_empty();
+}
+
+usize EditorWorld::selected_entity_count() const {
+    return selected_entities().size();
+}
+
+core::Span<ecs::EntityId> EditorWorld::selected_entities() const {
+    return with_tag(ecs::tags::selected);
+}
+
+bool EditorWorld::is_selected(ecs::EntityId id) const {
+    return has_tag(id, ecs::tags::selected);
+}
+
+ecs::EntityId EditorWorld::selected_entity() const {
+    const auto selected = selected_entities();
+    return selected.size() == 1 ? selected[0] : ecs::EntityId();
+}
+
+void EditorWorld::set_selected(ecs::EntityId id) {
+    clear_selection();
+    add_tag(id, ecs::tags::selected);
+}
+
+void EditorWorld::toggle_selected(ecs::EntityId id, bool set) {
+    if(!id.is_valid() || selected_entity() == id) {
+        return;
+    }
+
+    if(has_tag(id, ecs::tags::selected)) {
+        if(set) {
+            set_selected(id);
+        } else {
+            remove_tag(id, ecs::tags::selected);
+        }
+    } else {
+        if(set) {
+            clear_selection();
+        }
+        add_tag(id, ecs::tags::selected);
+    }
+}
+
+void EditorWorld::set_selection(core::Span<ecs::EntityId> selection) {
+    clear_selection();
+    for(const ecs::EntityId id : selection) {
+        add_tag(id, ecs::tags::selected);
+    }
+}
+
+void EditorWorld::clear_selection() {
+    y_profile();
+    remove_tag(ecs::tags::selected);
+}
+
 core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::component_types() {
     static core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> types;
     static bool init = false;

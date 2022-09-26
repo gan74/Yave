@@ -23,7 +23,6 @@ SOFTWARE.
 #include "EditorPass.h"
 
 #include <editor/Settings.h>
-#include <editor/Selection.h>
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 #include <editor/ImGuiPlatform.h>
@@ -91,7 +90,8 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 
     y_profile();
 
-    const ecs::EntityWorld& world = scene_view.world();
+    const EditorWorld& world = current_world();
+    y_debug_assert(&world == &scene_view.world());
 
     {
         auto mapping = pass->resources().map_buffer(pass_buffer);
@@ -118,7 +118,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         auto vertex_mapping = pass->resources().map_buffer(vertex_buffer);
 
         auto push_entity = [&](ecs::EntityId id) {
-            if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly && !selection().is_selected(id)) {
+            if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly && !world.is_selected(id)) {
                 return;
             }
             if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
@@ -152,8 +152,10 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 
 
 static void render_selection(DirectDrawPrimitive* primitive, const SceneView& scene_view) {
-    const ecs::EntityWorld& world = scene_view.world();
-    const ecs::EntityId selected = selection().selected_entity();
+    const EditorWorld& world = current_world();
+    const ecs::EntityId selected = world.selected_entity();
+
+    y_debug_assert(&scene_view.world() == &world);
 
     const TransformableComponent* tr = world.component<TransformableComponent>(selected);
     if(!tr) {
@@ -264,7 +266,7 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, Fra
 
             DirectDraw direct;
             {
-                if(selection().selected_entity().is_valid()) {
+                if(current_world().selected_entity().is_valid()) {
                     render_selection(direct.add_primitive("selection"), view);
                 }
 

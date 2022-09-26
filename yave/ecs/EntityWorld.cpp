@@ -133,6 +133,10 @@ void EntityWorld::remove_entity(EntityId id) {
             container->remove(id);
         }
     }
+    for(auto& [tag, container] : _tags) {
+        unused(tag);
+        container.erase(id);
+    }
     _entities.recycle(id);
 }
 

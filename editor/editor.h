@@ -46,7 +46,6 @@ using namespace yave;
 EditorApplication* application();
 
 Settings& app_settings();
-Selection& selection();
 UndoStack& undo_stack();
 
 

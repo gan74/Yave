@@ -203,7 +203,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
     {
         SubAtlasAllocator allocator(first_level_size);
 
-        const std::array tags = {core::String("!hidden")};
+        const std::array tags = {ecs::tags::not_hidden};
         for(auto light : world.query<DirectionalLightComponent>(tags)) {
             const auto& [l] = light.components();
             if(!l.cast_shadow()) {
