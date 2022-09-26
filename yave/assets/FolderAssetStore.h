@@ -23,14 +23,12 @@ SOFTWARE.
 #define YAVE_ASSETS_FOLDERASSETSTORE_H
 
 #include <yave/utils/FileSystemModel.h>
-#include <yave/utils/PendingOpsQueue.h>
 
 #include "AssetStore.h"
 
 #include <y/core/String.h>
 #include <y/core/HashMap.h>
 
-#include <future>
 #include <mutex>
 #include <set>
 #include <map>
@@ -131,8 +129,6 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         mutable std::recursive_mutex _lock;
 
         FolderFileSystemModel _filesystem;
-
-        PendingOpsQueue _pending_ops;
 };
 }
 

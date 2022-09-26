@@ -269,11 +269,9 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
 
     if(!files_to_delete.is_empty()) {
         y_profile_zone("cleaning files");
-        _parent->_pending_ops.push(std::async([to_del = std::move(files_to_delete)] {
-            for(const core::String& file : to_del) {
-                FileSystemModel::local_filesystem()->remove(file).ignore();
-            }
-        }));
+        for(const core::String& file : files_to_delete) {
+            FileSystemModel::local_filesystem()->remove(file).ignore();
+        }
     }
 
     log_msg(fmt("Removed % assets", _parent->_assets.size() - new_assets.size()));
@@ -360,19 +358,7 @@ FolderAssetStore::FolderAssetStore(const core::String& root) : _root(FileSystemM
 
     FileSystemModel::local_filesystem()->create_directory(_root).unwrap();
 
-#if 1
-    auto started = std::make_shared<std::atomic<bool>>(false);
-    _pending_ops.push(std::async([this, started] {
-        *started = true;
-        reload_all().unwrap();
-    }));
-
-    while(!(*started)) {
-        std::this_thread::yield();
-    }
-#else
     reload_all().unwrap();
-#endif
 }
 
 FolderAssetStore::~FolderAssetStore() {
