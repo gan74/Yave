@@ -105,7 +105,7 @@ core::String clean_asset_name(const core::String& name) {
 
 core::Result<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {
     if(auto file = io2::File::open(filename)) {
-        core::Vector<u8> data;
+        core::Vector<byte> data;
         if(!file.unwrap().read_all(data)) {
             log_msg(fmt_c_str("Unable to read image \"%\".", filename), Log::Error);
             return core::Err();
@@ -118,13 +118,13 @@ core::Result<ImageData> import_image(const core::String& filename, ImageImportFl
     return core::Err();
 }
 
-core::Result<ImageData> import_image(core::Span<u8> image_data, ImageImportFlags flags) {
+core::Result<ImageData> import_image(core::Span<byte> image_data, ImageImportFlags flags) {
     y_profile();
 
     const usize req_components = 4;
 
     int width, height, bpp;
-    u8* stbi_data = stbi_load_from_memory(image_data.data(), int(image_data.size()), &width, &height, &bpp, req_components);
+    u8* stbi_data = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(image_data.data()), int(image_data.size()), &width, &height, &bpp, req_components);
     y_defer(stbi_image_free(stbi_data));
 
     if(!stbi_data || width < 1 || height < 1) {
@@ -566,7 +566,7 @@ core::Result<ImageData> ParsedScene::build_image_data(usize index) const {
     } else {
         const tinygltf::BufferView& view = gltf->bufferViews[image.bufferView];
         const tinygltf::Buffer& buffer = gltf->buffers[view.buffer];
-        return import_image(core::Span<u8>(buffer.data.data() + view.byteOffset, view.byteLength), flags);
+        return import_image(core::Span<byte>(to_bytes(buffer.data.data()) + view.byteOffset, view.byteLength), flags);
     }
 }
 

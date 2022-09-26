@@ -386,20 +386,22 @@ core::String FolderAssetStore::next_id_file_name() const {
 AssetStore::Result<FolderAssetStore::AssetDesc> FolderAssetStore::load_desc(AssetId id) const {
     y_profile();
 
-    core::Vector<u8> data;
+    core::Vector<byte> buffer;
     if(auto file = io2::File::open(asset_desc_file_name(id));
-        file.is_error() || file.unwrap().read_all(data).is_error()) {
+        file.is_error() || file.unwrap().read_all(buffer).is_error()) {
 
         return core::Err(ErrorType::UnknownID);
     }
 
     AssetDesc desc;
-    for(usize i = 0; i != data.size(); ++i) {
+
+    const char* data = reinterpret_cast<const char*>(buffer.data());
+    for(usize i = 0; i != buffer.size(); ++i) {
         const char c = data[i];
         if(c != '\n') {
             desc.name.push_back(c);
         } else {
-            const core::String leftover(data.begin() + i + 1, data.end());
+            const core::String leftover(data + i + 1, data + buffer.size());
             const std::string_view trimmed = core::trim(leftover);
 
             u32 type = 0;
@@ -649,7 +651,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_tree() {
 
     _folders.clear();
 
-    core::Vector<u8> tree_data;
+    core::Vector<byte> tree_data;
     if(auto file = io2::File::open(tree_file_name()); file.is_error() || file.unwrap().read_all(tree_data).is_error()) {
         log_msg("Unable to open folder index", Log::Error);
         return core::Ok(); // ????
@@ -665,7 +667,8 @@ FolderAssetStore::Result<> FolderAssetStore::load_tree() {
                 line.make_empty();
             }
         };
-        for(u8 c : tree_data) {
+        for(byte b : tree_data) {
+            const char c = char(b);
             if(c == '\n') {
                 push_folder();
             } else {

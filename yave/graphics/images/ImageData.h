@@ -34,12 +34,12 @@ class ImageData : NonCopyable {
 
     public:
         struct Mip {
-            core::Span<u8> data;
+            core::Span<byte> data;
             math::Vec3ui size;
         };
 
         ImageData() = default;
-        ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, usize mips = 1);
+        ImageData(const math::Vec2ui& size, const void* data, ImageFormat format, usize mips = 1);
 
         static usize mip_count(const math::Vec3ui& size);
         static math::Vec3ui mip_size(const math::Vec3ui& size, usize mip = 0);
@@ -60,7 +60,7 @@ class ImageData : NonCopyable {
         usize data_offset(usize mip = 0) const;
         Mip mip_data(usize mip = 0) const;
 
-        const u8* data() const;
+        const byte* data() const;
 
         y_reflect(ImageData, _size, _format, _mips, _data)
 
@@ -70,7 +70,7 @@ class ImageData : NonCopyable {
 
         u32 _mips = 1;
 
-        core::FixedArray<u8> _data;
+        core::FixedArray<byte> _data;
 };
 
 }

@@ -48,7 +48,7 @@ class Reader : NonCopyable {
 
         virtual ReadResult read(void* data, usize bytes) = 0;
         virtual ReadUpToResult read_up_to(void* data, usize max_bytes) = 0;
-        virtual ReadUpToResult read_all(core::Vector<u8>& data) = 0;
+        virtual ReadUpToResult read_all(core::Vector<byte>& data) = 0;
 
         virtual void seek(usize byte) = 0;
         virtual usize tell() const = 0;
@@ -56,7 +56,7 @@ class Reader : NonCopyable {
         template<typename T>
         ReadResult read_one(T& t) {
             static_assert(std::is_trivially_copyable_v<T>);
-            return read(reinterpret_cast<u8*>(&t), sizeof(T));
+            return read(&t, sizeof(T));
         }
 
         template<typename T>
@@ -90,7 +90,7 @@ class Writer : NonCopyable {
         template<typename T>
         WriteResult write_one(const T& t) {
             static_assert(std::is_trivially_copyable_v<T>);
-            return write(reinterpret_cast<const void*>(&t), sizeof(T));
+            return write(&t, sizeof(T));
         }
 
         template<typename T>

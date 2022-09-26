@@ -38,8 +38,8 @@ MeshAllocator::MeshAllocator() :
     /*{
         y_profile_zone("clearing vertex buffers");
         CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-        core::FixedArray<u8> buffer(std::max(_triangle_buffer.byte_size(), _attrib_buffer.byte_size()));
-        std::fill(buffer.begin(), buffer.end(), 0xCD);
+        core::FixedArray<byte> buffer(std::max(_triangle_buffer.byte_size(), _attrib_buffer.byte_size()));
+        std::fill(buffer.begin(), buffer.end(), byte(0xCD));
         Mapping::stage(_attrib_buffer, recorder, buffer.data());
         Mapping::stage(_triangle_buffer, recorder, buffer.data());
         loading_command_queue().submit(std::move(recorder)).wait();

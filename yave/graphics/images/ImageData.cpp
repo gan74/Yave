@@ -97,24 +97,24 @@ usize ImageData::data_offset(usize mip) const {
     return offset;
 }
 
-const u8* ImageData::data() const {
+const byte* ImageData::data() const {
     return _data.data();
 }
 
 ImageData::Mip ImageData::mip_data(usize mip) const {
     return Mip {
-        core::Span<u8>(_data.data() + data_offset(mip), mip_byte_size(mip)),
+        core::Span<byte>(_data.data() + data_offset(mip), mip_byte_size(mip)),
         mip_size(mip)
     };
 }
 
-ImageData::ImageData(const math::Vec2ui& size, const u8* data, ImageFormat format, usize mips) :
+ImageData::ImageData(const math::Vec2ui& size, const void* data, ImageFormat format, usize mips) :
         _size(size, 1),
         _format(format),
         _mips(u32(mips)) {
 
     const usize data_size = byte_size();
-    _data = core::FixedArray<u8>(data_size);
+    _data = core::FixedArray<byte>(data_size);
     std::memcpy(_data.data(), data, data_size);
 }
 

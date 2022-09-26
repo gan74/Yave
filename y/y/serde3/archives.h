@@ -157,7 +157,7 @@ class WritableArchive final {
                     break;
                 }
                 y_debug_assert(p.index - _cached_file_size < _buffer_size);
-                u8* offset = _buffer.data() + (p.index - _cached_file_size);
+                byte* offset = _buffer.data() + (p.index - _cached_file_size);
                 std::memcpy(offset, &p.size, sizeof(p.size));
                 _patches.pop();
             }
@@ -409,7 +409,7 @@ class WritableArchive final {
                     return core::Err(Error(ErrorType::IOError));
                 }
             } else {
-                u8* offset = _buffer.data() + _buffer_size;
+                byte* offset = _buffer.data() + _buffer_size;
                 std::memcpy(offset, &t, total_size);
                 _buffer_size += total_size;
             }
@@ -439,7 +439,7 @@ class WritableArchive final {
                     return core::Err(Error(ErrorType::IOError));
                 }
             } else {
-                u8* offset = _buffer.data() + _buffer_size;
+                byte* offset = _buffer.data() + _buffer_size;
                 std::memcpy(offset, t, total_size);
                 _buffer_size += total_size;
             }
@@ -471,7 +471,7 @@ class WritableArchive final {
         File& _file;
 
 #ifdef Y_SERDE3_BUFFER
-        core::FixedArray<u8> _buffer;
+        core::FixedArray<byte> _buffer;
         usize _buffer_size = 0;
 #endif
         usize _cached_file_size = 0;
