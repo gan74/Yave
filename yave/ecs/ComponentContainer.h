@@ -187,6 +187,7 @@ class ComponentContainerBase : NonMovable {
         core::Vector<EntityId> _recently_added;
 
 
+        // Filthy hack to avoid having to cast to ComponentContainer<T> when we already know T
         template<typename T>
         inline auto& component_set_fast() {
             y_debug_assert(type_index<T>() == _type_id);
