@@ -130,7 +130,7 @@ class EntityWorld {
         template<typename T, typename... Args>
         T* add_component(EntityId id, Args&&... args) {
             check_exists(id);
-            return &find_or_create_container<T>()->template add<T>(*this, id, y_fwd(args)...);
+            return &find_container<T>()->template add<T>(*this, id, y_fwd(args)...);
         }
 
         template<typename First, typename... Args>
@@ -152,7 +152,7 @@ class EntityWorld {
 
         void remove_tag(EntityId id, const core::String& tag);
 
-        void remove_tag(const core::String& tag);
+        void clear_tag(const core::String& tag);
 
         bool has_tag(EntityId id, const core::String& tag) const;
 
@@ -183,25 +183,21 @@ class EntityWorld {
 
         template<typename T>
         bool has(EntityId id) const {
-            const ComponentContainerBase* cont = find_container<T>();
-            return cont ? cont->contains(id) : false;
+            return find_container<T>()->contains(id);
         }
 
         bool has(EntityId id, ComponentTypeIndex type_id) const {
-            const ComponentContainerBase* cont = find_container(type_id);
-            return cont ? cont->contains(id) : false;
+            return find_container(type_id)->contains(id);
         }
 
         template<typename T>
         T* component(EntityId id) {
-            ComponentContainerBase* cont = find_container<T>();
-            return cont ? cont->template component_ptr<T>(id) : nullptr;
+            return find_container<T>()->template component_ptr<T>(id);
         }
 
         template<typename T>
         const T* component(EntityId id) const {
-            const ComponentContainerBase* cont = find_container<T>();
-            return cont ? cont->template component_ptr<T>(id) : nullptr;
+            return find_container<T>()->template component_ptr<T>(id);
         }
 
 
@@ -245,29 +241,22 @@ class EntityWorld {
 
         template<typename T>
         SparseComponentSet<T>& component_set() {
-            ComponentContainerBase* cont = find_or_create_container<T>();
-            return cont->template component_set<T>();
+            return find_container<T>()->template component_set<T>();
         }
 
         template<typename T>
         const SparseComponentSet<T>& component_set() const {
-            if(const ComponentContainerBase* cont = find_container<T>()) {
-                return cont->template component_set<T>();
-            }
-            static const SparseComponentSet<T> empty_set;
-            return empty_set;
+            return find_container<T>()->template component_set<T>();
         }
 
         template<typename T>
         core::MutableSpan<T> components() {
-            ComponentContainerBase* cont = find_container<T>();
-            return cont ? cont->components<T>() : decltype(cont->components<T>())();
+            return find_container<T>()->template components<T>();
         }
 
         template<typename T>
         core::Span<T> components() const {
-            const ComponentContainerBase* cont = find_container<T>();
-            return cont ? cont->components<T>() : decltype(cont->components<T>())();
+            return find_container<T>()->template components<T>();
         }
 
         template<typename T>
@@ -328,7 +317,7 @@ class EntityWorld {
         void add_required_component() {
             static_assert(std::is_default_constructible_v<T>);
             Y_TODO(check for duplicates)
-            _required_components << find_or_create_container<T>()->type_id();
+            _required_components << find_container<T>()->type_id();
             for(const ComponentTypeIndex c : _required_components) {
                 unused(c);
                 y_debug_assert(find_container(c)->type_id() == c);
@@ -363,19 +352,6 @@ class EntityWorld {
             return find_container(type_index<T>());
         }
 
-        template<typename T>
-        ComponentContainerBase* find_or_create_container() {
-            static const auto static_info = ComponentRuntimeInfo::create<T>();
-            unused(static_info);
-
-            _containers.set_min_size(type_index<T>() + 1);
-            auto& cont = _containers[type_index<T>()];
-            if(!cont) {
-                cont = std::make_unique<ComponentContainer<T>>();
-            }
-            return cont.get();
-        }
-
         template<typename T, typename... Args>
         auto typed_component_sets() const {
             if constexpr(sizeof...(Args) != 0) {
@@ -385,8 +361,9 @@ class EntityWorld {
                 // We need non consts here and we want to avoir returning non const everywhere else
                 // This shouldn't be UB as component containers are never const
                 using component_type = traits::component_raw_type_t<T>;
-                ComponentContainerBase* cont = const_cast<ComponentContainerBase*>(find_container<component_type>());
-                return std::tuple{cont ? &cont->component_set<component_type>() : nullptr};
+                ComponentContainerBase* container = const_cast<ComponentContainerBase*>(find_container<component_type>());
+                y_debug_assert(container);
+                return std::tuple{&container->component_set<component_type>()};
             }
         }
 
@@ -419,7 +396,6 @@ class EntityWorld {
 
         const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
         ComponentContainerBase* find_container(ComponentTypeIndex type_id);
-        ComponentContainerBase* find_or_create_container(const ComponentRuntimeInfo& info);
 
         void check_exists(EntityId id) const;
 

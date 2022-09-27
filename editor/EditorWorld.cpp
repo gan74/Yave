@@ -253,7 +253,7 @@ void EditorWorld::set_selection(core::Span<ecs::EntityId> selection) {
 
 void EditorWorld::clear_selection() {
     y_profile();
-    remove_tag(ecs::tags::selected);
+    clear_tag(ecs::tags::selected);
 }
 
 core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::component_types() {

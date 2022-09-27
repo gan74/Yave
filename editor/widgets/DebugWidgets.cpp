@@ -170,7 +170,7 @@ class EcsDebug : public Widget {
                         ImGui::TextUnformatted(fmt_c_str("% entities", world.tag_set(tag)->size()));
                         ImGui::TableNextColumn();
                         if(ImGui::SmallButton(ICON_FA_TRASH)) {
-                            world.remove_tag(tag);
+                            world.clear_tag(tag);
                         }
                     }
                     ImGui::EndTable();

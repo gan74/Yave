@@ -32,7 +32,22 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-EntityWorld::EntityWorld() {
+static auto create_component_containers() {
+    core::Vector<std::unique_ptr<ComponentContainerBase>> containers;
+    for(const auto* poly_base = ComponentContainerBase::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
+        if(poly_base->create) {
+            std::unique_ptr<ComponentContainerBase> container = poly_base->create();
+            y_debug_assert(container);
+
+            const ComponentTypeIndex id = container->type_id();
+            containers.set_min_size(id + 1);
+            containers[id] = std::move(container);
+        }
+    }
+    return containers;
+}
+
+EntityWorld::EntityWorld() : _containers(create_component_containers()) {
 }
 
 EntityWorld::~EntityWorld() {
@@ -108,8 +123,9 @@ EntityId EntityWorld::create_entity() {
 EntityId EntityWorld::create_entity(const Archetype& archetype) {
     const EntityId id = create_entity();
     for(const auto& info : archetype.component_infos()) {
-        ComponentContainerBase* cont = find_or_create_container(info);
-        cont->add(*this, id);
+        ComponentContainerBase* container = find_container(info.type_id);
+        y_debug_assert(container);
+        container->add(*this, id);
     }
     return id;
 }
@@ -163,13 +179,11 @@ EntityPrefab EntityWorld::create_prefab(EntityId id) const {
 }
 
 core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) const {
-    const ComponentContainerBase* cont = find_container(type_id);
-    return cont ? cont->ids() : core::Span<EntityId>();
+    return find_container(type_id)->ids();
 }
 
 core::Span<EntityId> EntityWorld::recently_added(ComponentTypeIndex type_id) const {
-    const ComponentContainerBase* cont = find_container(type_id);
-    return cont ? cont->recently_added() : core::Span<EntityId>();
+    return find_container(type_id)->recently_added();
 }
 
 core::Span<EntityId> EntityWorld::with_tag(const core::String& tag) const {
@@ -217,7 +231,7 @@ void EntityWorld::remove_tag(EntityId id, const core::String& tag) {
     _tags[tag].erase(id);
 }
 
-void EntityWorld::remove_tag(const core::String& tag) {
+void EntityWorld::clear_tag(const core::String& tag) {
     y_always_assert(!is_tag_implicit(tag), "Implicit tags can't be removed directly");
     _tags.erase(tag);
 }
@@ -237,26 +251,19 @@ core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
 }
 
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
-    const ComponentContainerBase* cont = find_container(type_id);
-    return cont ? cont->runtime_info().clean_component_name() : "";
+    return find_container(type_id)->runtime_info().clean_component_name();
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
-    return _containers.size() <= type_id ? nullptr : _containers[type_id].get();
+    y_debug_assert(_containers.size() > type_id);
+    y_debug_assert(_containers[type_id] != nullptr);
+    return _containers[type_id].get();
 }
 
 ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) {
-    return _containers.size() <= type_id ? nullptr : _containers[type_id].get();
-}
-
-ComponentContainerBase* EntityWorld::find_or_create_container(const ComponentRuntimeInfo& info) {
-    auto& cont = _containers[info.type_id];
-    if(!cont) {
-        cont = info.create_type_container();
-    }
-    y_debug_assert(cont);
-    y_debug_assert(cont->type_id() == info.type_id);
-    return cont.get();
+    y_debug_assert(_containers.size() > type_id);
+    y_debug_assert(_containers[type_id] != nullptr);
+    return _containers[type_id].get();
 }
 
 void EntityWorld::check_exists(EntityId id) const {
@@ -265,7 +272,7 @@ void EntityWorld::check_exists(EntityId id) const {
 
 
 void EntityWorld::post_deserialize() {
-    core::Vector<std::unique_ptr<ComponentContainerBase>> patched;
+    auto patched = create_component_containers();
     for(auto& container : _containers) {
         if(container) {
             const ComponentTypeIndex id = container->type_id();
@@ -283,7 +290,7 @@ void EntityWorld::post_deserialize() {
 
     for(const ComponentTypeIndex c : _required_components) {
         unused(c);
-        y_debug_assert(find_container(c));
+        y_always_assert(find_container(c), "Required component container not found");
     }
 }
 

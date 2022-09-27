@@ -141,6 +141,9 @@ void bind_ecs_types(sol::state_view state) {
             }
             return type_names;
         };
+
+        type["add_tag"] = &ecs::EntityWorld::add_tag;
+        type["remove_tag"] = &ecs::EntityWorld::remove_tag;
     }
 }
 
