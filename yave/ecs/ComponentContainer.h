@@ -77,13 +77,6 @@ class ComponentContainerBase : NonMovable {
     public:
         virtual ~ComponentContainerBase();
 
-        bool contains(EntityId id) const;
-        core::Span<EntityId> ids() const;
-
-        const SparseIdSetBase& id_set() const;
-
-        ComponentTypeIndex type_id() const;
-
         virtual ComponentRuntimeInfo runtime_info() const = 0;
 
         virtual void add(EntityWorld& world, EntityId id) = 0;
@@ -92,9 +85,29 @@ class ComponentContainerBase : NonMovable {
         virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
 
 
+        inline bool contains(EntityId id) const {
+            return id_set().contains(id);
+        }
+
+        inline core::Span<EntityId> ids() const {
+            return id_set().ids();
+        }
+
+        inline ComponentTypeIndex type_id() const {
+            return _type_id;
+        }
+
+        inline const SparseIdSetBase& id_set() const {
+            return *reinterpret_cast<const SparseIdSetBase*>(this + 1);
+        }
+
+        inline core::Span<EntityId> recently_added() const {
+            return _recently_added;
+        }
+
 
         template<typename T, typename... Args>
-        T& add(EntityWorld& world, EntityId id, Args&&... args) {
+        inline T& add(EntityWorld& world, EntityId id, Args&&... args) {
             auto& set = component_set_fast<T>();
             _recently_added.emplace_back(id);
             if(!set.contains_index(id.index())) {
@@ -110,60 +123,52 @@ class ComponentContainerBase : NonMovable {
         }
 
         template<typename T>
-        T& component(EntityId id) {
+        inline T& component(EntityId id) {
             return component_set_fast<T>()[id];
         }
 
         template<typename T>
-        const T& component(EntityId id) const {
+        inline const T& component(EntityId id) const {
             return component_set_fast<T>()[id];
         }
 
         template<typename T>
-        T* component_ptr(EntityId id) {
+        inline T* component_ptr(EntityId id) {
             return component_set_fast<T>().try_get(id);
         }
 
         template<typename T>
-        const T* component_ptr(EntityId id) const {
+        inline const T* component_ptr(EntityId id) const {
             return component_set_fast<T>().try_get(id);
         }
 
         template<typename T>
-        core::MutableSpan<T> components() {
+        inline core::MutableSpan<T> components() {
             return component_set_fast<T>().values();
         }
 
         template<typename T>
-        core::Span<T> components() const {
+        inline core::Span<T> components() const {
             return component_set_fast<T>().values();
         }
 
         template<typename T>
-        SparseComponentSet<T>& component_set() {
+        inline SparseComponentSet<T>& component_set() {
             return component_set_fast<T>();
         }
 
         template<typename T>
-        const SparseComponentSet<T>& component_set() const {
+        inline const SparseComponentSet<T>& component_set() const {
             return component_set_fast<T>();
-        }
-
-        core::Span<EntityId> recently_added() const {
-            return _recently_added;
         }
 
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
 
-    protected:
-        template<typename T>
-        ComponentContainerBase(SparseComponentSet<T>& sparse) :
-                _sparse(&sparse),
-                _ids(&sparse),
-                _type_id(type_index<T>()) {
-        }
 
+    protected:
+        ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
+        }
 
         template<typename T>
         void add_required_components(EntityWorld& world, EntityId id);
@@ -176,10 +181,6 @@ class ComponentContainerBase : NonMovable {
         }
 
     private:
-        // hacky but avoids a bunch of dynamic casts and virtual calls
-        void* _sparse = nullptr;
-        SparseIdSetBase* _ids = nullptr;
-
         const ComponentTypeIndex _type_id;
 
         Y_TODO(make better version of this)
@@ -187,17 +188,15 @@ class ComponentContainerBase : NonMovable {
 
 
         template<typename T>
-        auto& component_set_fast() {
-            y_debug_assert(_sparse);
+        inline auto& component_set_fast() {
             y_debug_assert(type_index<T>() == _type_id);
-            return *static_cast<SparseComponentSet<T>*>(_sparse);
+            return *reinterpret_cast<SparseComponentSet<T>*>(this + 1);
         }
 
         template<typename T>
-        const auto& component_set_fast() const {
-            y_debug_assert(_sparse);
+        inline const auto& component_set_fast() const {
             y_debug_assert(type_index<T>() == _type_id);
-            return *static_cast<const SparseComponentSet<T>*>(_sparse);
+            return *reinterpret_cast<const SparseComponentSet<T>*>(this + 1);
         }
 };
 
@@ -205,7 +204,8 @@ class ComponentContainerBase : NonMovable {
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
     public:
-        ComponentContainer() : ComponentContainerBase(_components) {
+        ComponentContainer() : ComponentContainerBase(type_index<T>()) {
+            static_assert(sizeof(*this) == sizeof(ComponentContainerBase) + sizeof(_components));
         }
 
         ComponentRuntimeInfo runtime_info() const override {
@@ -229,6 +229,7 @@ class ComponentContainer final : public ComponentContainerBase {
             }
             return nullptr;
         }
+
 
         y_no_serde3_expr(serde3::has_no_serde3_v<T>)
 

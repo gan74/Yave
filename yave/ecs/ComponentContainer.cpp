@@ -31,22 +31,6 @@ ComponentBoxBase::~ComponentBoxBase() {
 ComponentContainerBase::~ComponentContainerBase() {
 }
 
-bool ComponentContainerBase::contains(EntityId id) const {
-    return _ids->contains(id);
-}
-
-core::Span<EntityId> ComponentContainerBase::ids() const {
-    return _ids->ids();
-}
-
-const SparseIdSetBase& ComponentContainerBase::id_set() const {
-    return *_ids;
-}
-
-ComponentTypeIndex ComponentContainerBase::type_id() const {
-    return _type_id;
-}
-
 }
 }
 
