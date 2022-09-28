@@ -87,11 +87,6 @@ class EntityWorld {
             return system;
         }
 
-        template<typename F>
-        System* add_function_system(F&& func) {
-           return add_system<FunctorSystem<F>>(y_fwd(func));
-        }
-
         template<typename S>
         const S* find_system() const {
             for(auto& system : _systems) {

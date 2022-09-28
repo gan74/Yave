@@ -33,6 +33,8 @@ namespace yave {
 namespace ecs {
 
 static auto create_component_containers() {
+    y_profile();
+
     core::Vector<std::unique_ptr<ComponentContainerBase>> containers;
     for(const auto* poly_base = ComponentContainerBase::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
         if(poly_base->create) {
@@ -99,6 +101,7 @@ void EntityWorld::update(float dt) {
     for(auto& system : _systems) {
         y_profile_dyn_zone(system->name().data());
         system->update(*this, dt);
+        system->schedule_fixed_update(*this, dt);
     }
 }
 

@@ -31,7 +31,7 @@ namespace ecs {
 
 class System : NonCopyable {
     public:
-        System(core::String name) : _name(std::move(name)) {
+        System(core::String name, float fixed_update_time = 0.0f) : _name(std::move(name)), _fixed_update_time(fixed_update_time) {
         }
 
         virtual ~System() = default;
@@ -48,6 +48,10 @@ class System : NonCopyable {
             // nothing
         }
 
+        virtual void fixed_update(EntityWorld& world, float dt) {
+            // nothing
+        }
+
         virtual void setup(EntityWorld&) {
             // nothing
         }
@@ -61,23 +65,29 @@ class System : NonCopyable {
             setup(world);
         }
 
+        float fixed_update_time() const {
+            return _fixed_update_time;
+        }
+
+        void schedule_fixed_update(EntityWorld& world, float dt) {
+            if(_fixed_update_time <= 0.0f) {
+                if(_fixed_update_time > -1.0f) {
+                    fixed_update(world, dt);
+                }
+                return;
+            }
+
+            _fixed_update_acc += dt;
+            while(_fixed_update_acc > _fixed_update_time) {
+                fixed_update(world, _fixed_update_time);
+                _fixed_update_acc -= _fixed_update_time;
+            }
+        }
 
     private:
         core::String _name;
-};
-
-template<typename F>
-class FunctorSystem : public System {
-    public:
-        FunctorSystem(F&& f) : System("FunctorSystem"), _func(std::move(f)) {
-        }
-
-        void tick(EntityWorld& world) override {
-            _func(world);
-        }
-
-    private:
-        F _func;
+        float _fixed_update_time = 0.0f;
+        float _fixed_update_acc = 0.0f;
 };
 
 }
