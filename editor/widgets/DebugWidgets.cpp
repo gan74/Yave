@@ -23,6 +23,7 @@ SOFTWARE.
 #include <editor/Widget.h>
 #include <editor/EditorWorld.h>
 #include <editor/utils/memory.h>
+#include <editor/ThumbmailRenderer.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/systems/OctreeSystem.h>
@@ -148,10 +149,16 @@ class EcsDebug : public Widget {
 
             const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
             if(ImGui::CollapsingHeader("Systems")) {
-                if(ImGui::BeginTable("##systems", 1, table_flags)) {
+                if(ImGui::BeginTable("##systems", 2, table_flags | ImGuiTableFlags_BordersInnerV)) {
+                    ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("Fixed update", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableHeadersRow();
+
                     for(const auto& system : world.systems()) {
                         imgui::table_begin_next_row();
                         ImGui::TextUnformatted(system->name().data());
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%.1fms", system->fixed_update_time() * 1000.0f);
                     }
                     ImGui::EndTable();
                 }
@@ -230,5 +237,20 @@ class SelectionDebug : public Widget {
             }
         }
 };
+
+
+class UiDebug : public Widget {
+    editor_widget(UiDebug, "View", "Debug")
+
+    public:
+        UiDebug() : Widget("UI debug") {
+        }
+
+    protected:
+        void on_gui() override {
+            ImGui::Text("%u cached thumbmails", u32(thumbmail_renderer().cached_thumbmails()));
+        }
+};
+
 
 }

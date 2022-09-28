@@ -93,7 +93,7 @@ static Texture render_world(const ecs::EntityWorld& world) {
 }
 
 static void fill_world(ecs::EntityWorld& world) {
-    const float intensity = 1.0f;
+    const float intensity = 0.25f;
 
     {
         const ecs::EntityId light_id = world.create_entity<DirectionalLightComponent>();
@@ -122,7 +122,9 @@ static void fill_world(ecs::EntityWorld& world) {
 
     {
         const ecs::EntityId sky_id = world.create_entity<SkyLightComponent>();
-        world.component<SkyLightComponent>(sky_id)->probe() = device_resources().ibl_probe();
+        SkyLightComponent* sky = world.component<SkyLightComponent>(sky_id);
+        sky->probe() = device_resources().ibl_probe();
+        sky->intensity() = intensity;
     }
 
 }
@@ -224,6 +226,10 @@ const TextureView* ThumbmailRenderer::thumbmail(AssetId id) {
     return nullptr;
 }
 
+usize ThumbmailRenderer::cached_thumbmails()  {
+    const auto lock = y_profile_unique_lock(_lock);
+    return _thumbmails.size();
+}
 
 void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
     const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);

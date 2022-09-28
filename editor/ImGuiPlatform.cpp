@@ -112,6 +112,7 @@ static void setup_style() {
     colors[ImGuiCol_Header]                 = grey(47);
     colors[ImGuiCol_HeaderHovered]          = grey(47);
     colors[ImGuiCol_HeaderActive]           = grey(47);
+    colors[ImGuiCol_TableHeaderBg]          = grey(47);
     colors[ImGuiCol_SeparatorActive]        = grey(47);
     colors[ImGuiCol_SeparatorHovered]       = grey(47);
     colors[ImGuiCol_TabHovered]             = grey(47);

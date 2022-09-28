@@ -54,6 +54,8 @@ class ThumbmailRenderer : NonMovable {
 
         const TextureView* thumbmail(AssetId id);
 
+        usize cached_thumbmails();
+
     private:
         void query(AssetId id, ThumbmailData& data);
 
