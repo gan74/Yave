@@ -231,7 +231,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
 
         if(is_empty) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
         }
 
         const bool combo = ImGui::BeginCombo("##combo", item_name);
@@ -313,7 +313,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, math::Vec2(ImGui::GetStyle().FramePadding) - math::Vec2(0.0f, y_offset));
-    ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_CheckMark));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetStyleColorVec4(ImGuiCol_CheckMark));
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + y_offset);
     y_defer({ ImGui::PopStyleVar(3); ImGui::PopStyleColor(); });
 

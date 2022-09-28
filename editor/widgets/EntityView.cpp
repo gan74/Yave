@@ -302,6 +302,7 @@ void EntityView::on_gui() {
 
     ImGui::Text("%u entities", u32(world.components<EditorComponent>().size()));
 
+    ImGui::BeginChild("##entitypanel");
     const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
     if(ImGui::BeginTable("##entities", 2, table_flags)) {
         y_profile_zone("fill entity panel");
@@ -401,6 +402,7 @@ void EntityView::on_gui() {
         }
         ImGui::EndTable();
     }
+    ImGui::EndChild();
 }
 
 }

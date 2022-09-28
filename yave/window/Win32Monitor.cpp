@@ -34,7 +34,7 @@ core::Vector<Monitor> Monitor::monitors() {
     const MONITORENUMPROC discover_monitor = [](HMONITOR monitor_handle, HDC, LPRECT, LPARAM monitors_ptr) -> int {
         MONITORINFO info = {};
         info.cbSize = sizeof(MONITORINFO);
-        if(!GetMonitorInfo(monitor_handle, &info)) {
+        if(!::GetMonitorInfo(monitor_handle, &info)) {
             return false;
         }
 

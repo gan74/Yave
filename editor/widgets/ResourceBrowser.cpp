@@ -239,18 +239,7 @@ void ResourceBrowser::on_gui() {
     if(is_searching()) {
         draw_search_results();
     } else {
-        ImGui::BeginChild("##assets");
         FileSystemView::on_gui();
-        ImGui::EndChild();
-
-        /*if(const auto* e = entry(hoverred_index())) {
-            if(const auto r = asset_store().id(entry_full_name(*e))) {
-                if(const TextureView* img = thumbmail_renderer().thumbmail(r.unwrap())) {
-                    const math::Vec2 cursor = math::Vec2(200.0f, 250.0f); // = ImGui::GetCursorPos();
-                    ImGui::GetWindowDrawList()->AddImage(const_cast<TextureView*>(img), cursor, cursor + math::Vec2(200.0f, 200.0f));
-                }
-            }
-        }*/
     }
 
     if(_set_path_deferred != path()) {

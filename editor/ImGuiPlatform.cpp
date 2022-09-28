@@ -62,13 +62,14 @@ static void setup_style() {
         colors[i] = rgb(255, 0, 0);
     }
 
-    colors[ImGuiCol_ChildBg]                = none;
+
     colors[ImGuiCol_BorderShadow]           = none;
     colors[ImGuiCol_FrameBgActive]          = none;
     colors[ImGuiCol_Tab]                    = none;
     colors[ImGuiCol_TabUnfocused]           = none;
     colors[ImGuiCol_DockingEmptyBg]         = none;
     colors[ImGuiCol_ModalWindowDimBg]       = none;
+    colors[ImGuiCol_TableRowBg]             = none;
 
     colors[ImGuiCol_Text]                   = grey(180);
     colors[ImGuiCol_TextDisabled]           = grey(90);
@@ -87,12 +88,12 @@ static void setup_style() {
     colors[ImGuiCol_Border]                 = grey(21, 0.75f);
     colors[ImGuiCol_PopupBg]                = grey(21, 0.9f);
     colors[ImGuiCol_FrameBg]                = grey(15, 0.5f);
-    colors[ImGuiCol_TableRowBgAlt]          = grey(20, 0.25f);
 
     colors[ImGuiCol_NavWindowingDimBg]      = grey(128, 0.75f);
     colors[ImGuiCol_DockingPreview]         = grey(128, 0.25f);
     colors[ImGuiCol_FrameBgHovered]         = grey(128, 0.25f);
     colors[ImGuiCol_TextSelectedBg]         = grey(128, 0.25f);
+    colors[ImGuiCol_TableRowBgAlt]          = grey(128, 0.05f);
 
     colors[ImGuiCol_SliderGrabActive]       = grey(128);
     colors[ImGuiCol_ScrollbarGrabActive]    = grey(128);
@@ -118,7 +119,8 @@ static void setup_style() {
     colors[ImGuiCol_WindowBg]               = grey(36);
     colors[ImGuiCol_TabActive]              = grey(36);
     colors[ImGuiCol_TabUnfocusedActive]     = grey(36);
-    colors[ImGuiCol_TableRowBg]             = grey(36);
+
+    colors[ImGuiCol_ChildBg]                = grey(28);
 
     colors[ImGuiCol_Separator]              = grey(26);
     colors[ImGuiCol_TableBorderLight]       = grey(26);

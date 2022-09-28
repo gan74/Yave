@@ -189,6 +189,7 @@ void FileSystemView::on_gui() {
 
     const bool modify = allow_modify();
 
+    ImGui::BeginChild("##fileentriespanel");
     const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
     if(ImGui::BeginTable("##fileentries", 2, table_flags)) {
         ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
@@ -255,6 +256,7 @@ void FileSystemView::on_gui() {
 
         ImGui::EndTable();
     }
+    ImGui::EndChild();
 }
 
 bool FileSystemView::process_context_menu() {
