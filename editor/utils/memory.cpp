@@ -46,7 +46,9 @@ u64 total_allocations() {
 
 
 static void* alloc_internal(usize size, usize alignment = max_alignment) {
-    size = size ? size : 1;
+    if(!size) {
+        return nullptr;
+    }
 
     auto try_alloc = [=] {
         #ifdef Y_OS_WIN
