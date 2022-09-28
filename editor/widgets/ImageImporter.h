@@ -26,11 +26,17 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageData.h>
 
-#include <future>
+#include <y/concurrent/StaticThreadPool.h>
 
 namespace editor {
 
 class ImageImporter final : public Widget {
+
+    enum class State {
+        Browsing,
+        Importing,
+        Done
+    };
 
     public:
         ImageImporter();
@@ -41,17 +47,17 @@ class ImageImporter final : public Widget {
     protected:
         void on_gui() override;
 
+        bool should_keep_alive() const override;
+
     private:
         void import(const core::String& filename);
-
-        bool done_loading() const;
-        bool is_loading() const;
 
         FileBrowser _browser;
 
         core::String _import_path;
 
-        std::future<void> _import_future;
+        State _state = State::Browsing;
+        concurrent::WorkerThread _thread_pool;
 };
 
 }

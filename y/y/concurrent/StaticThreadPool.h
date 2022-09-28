@@ -89,9 +89,6 @@ class StaticThreadPool : NonMovable {
 
         void cancel_pending_tasks();
 
-        // Empty means all tasks are scheduled, not done!
-        void process_until_empty();
-
         void schedule(Func&& func, DependencyGroup* on_done = nullptr, DependencyGroup wait_for = DependencyGroup());
 
         template<typename F, typename R = decltype(std::declval<F>()())>
@@ -103,6 +100,8 @@ class StaticThreadPool : NonMovable {
         }
 
     private:
+        // Empty means all tasks are scheduled, not done!
+        void process_until_empty();
         bool process_one(std::unique_lock<std::mutex> lock);
         void worker();
 

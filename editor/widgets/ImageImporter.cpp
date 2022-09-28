@@ -52,33 +52,37 @@ ImageImporter::ImageImporter(std::string_view import_path) :
 }
 
 ImageImporter::~ImageImporter() {
-    pending_ops_queue().push(std::move(_import_future));
 }
 
 void ImageImporter::on_gui()  {
-    if(is_loading()) {
-        if(done_loading()) {
-            _import_future.get();
+    switch(_state) {
+        case State::Browsing:
+            _browser.draw_gui_inside();
+        break;
+
+        case State::Importing:
+            ImGui::Text("Loading%s", imgui::ellipsis());
+            if(_thread_pool.is_empty()) {
+                _state = State::Done;
+            }
+        break;
+
+        case State::Done:
             close();
             refresh_all();
-        } else {
-            ImGui::Text("Loading%s", imgui::ellipsis());
-        }
-    } else {
-        _browser.draw_gui_inside();
+        break;
     }
 }
 
-bool ImageImporter::is_loading() const {
-    return _import_future.valid();
-}
-
-bool ImageImporter::done_loading() const {
-    return _import_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+bool ImageImporter::should_keep_alive() const {
+     return !_thread_pool.is_empty();
 }
 
 void ImageImporter::import(const core::String& filename) {
-    _import_future = std::async(std::launch::async, [=] {
+    y_debug_assert(_state == State::Browsing);
+    _state = State::Importing;
+
+    _thread_pool.schedule([=] {
         auto result = import::import_image(filename, import::ImageImportFlags::GenerateMipmaps | import::ImageImportFlags::Compress);
         if(result.is_error()) {
             log_msg("Unable to import image", Log::Error);
