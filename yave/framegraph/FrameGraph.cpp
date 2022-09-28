@@ -226,6 +226,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) {
     std::sort(_image_copies.begin(), _image_copies.end(), [&](const auto& a, const auto& b) { return a.pass_index < b.pass_index; });
 
     core::FlatHashMap<FrameGraphResourceId, PipelineStage> to_barrier;
+    to_barrier.set_min_capacity(_images.size() + _buffers.size());
 
     {
         y_profile_zone("init");
