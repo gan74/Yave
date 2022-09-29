@@ -165,19 +165,18 @@ void print_physical_properties(const VkPhysicalDeviceProperties& properties) {
     const auto version = reinterpret_cast<const Version&>(v_ref);
     log_msg(fmt("Running Vulkan (%.%.%) % bits on % (%)", u32(version.major), u32(version.minor), u32(version.patch),
             is_64_bits() ? 64 : 32, properties.deviceName, (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")));
-    log_msg(fmt("sizeof(PhysicalDevice) = %", sizeof(PhysicalDevice)));
 }
 
 void print_enabled_extensions(core::Span<const char*> extensions) {
     for(const char* ext : extensions) {
-        log_msg(fmt("% enabled", ext), Log::Debug);
+        log_msg(fmt("% enabled", ext));
     }
 }
 
 void print_properties(const DeviceProperties& properties) {
-    log_msg(fmt("max_memory_allocations = %", properties.max_memory_allocations), Log::Debug);
-    log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size), Log::Debug);
-    log_msg(fmt("max_uniform_buffer_size = %", properties.max_uniform_buffer_size), Log::Debug);
+    log_msg(fmt("max_memory_allocations = %", properties.max_memory_allocations));
+    log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size));
+    log_msg(fmt("max_uniform_buffer_size = %", properties.max_uniform_buffer_size));
 }
 
 

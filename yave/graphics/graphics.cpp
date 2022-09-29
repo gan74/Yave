@@ -129,7 +129,6 @@ static void init_vk_device() {
 
     if(physical_device().vk_properties_1_3().maxInlineUniformBlockSize > 0) {
         required_features_1_3.inlineUniformBlock = true;
-        try_enable_extension(extensions, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, physical_device());
     }
 
     y_always_assert(has_required_features(physical_device()), "Device doesn't support required features");
