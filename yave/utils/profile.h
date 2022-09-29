@@ -37,7 +37,7 @@ SOFTWARE.
 #ifdef YAVE_PROFILING
 
 
-#include <external/tracy/TracyC.h>
+#include <external/tracy/public/tracy/TracyC.h>
 
 
 #define y_profile_internal_capturing() (true)

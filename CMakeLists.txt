@@ -99,8 +99,8 @@ file(GLOB_RECURSE YAVE_FILES
     )
 
 set(TRACY_FILES
-        "external/tracy/TracyClient.cpp"
-        "external/tracy/Tracy.hpp"
+        "external/tracy/public/TracyClient.cpp"
+        "external/tracy/public/tracy/Tracy.hpp"
     )
 
 # Editor files
