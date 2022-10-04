@@ -154,7 +154,9 @@ void EntityWorld::remove_entity(EntityId id) {
     }
     for(auto& [tag, container] : _tags) {
         unused(tag);
-        container.erase(id);
+        if(container.contains(id)) {
+            container.erase(id);
+        }
     }
     _entities.recycle(id);
 }
@@ -231,7 +233,10 @@ void EntityWorld::add_tag(EntityId id, const core::String& tag) {
 void EntityWorld::remove_tag(EntityId id, const core::String& tag) {
     check_exists(id);
     y_always_assert(!is_tag_implicit(tag), "Implicit tags can't be removed directly");
-    _tags[tag].erase(id);
+    auto& tag_set = _tags[tag];
+    if(tag_set.contains(id)) {
+        tag_set.erase(id);
+    }
 }
 
 void EntityWorld::clear_tag(const core::String& tag) {
