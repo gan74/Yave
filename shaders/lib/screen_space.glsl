@@ -104,34 +104,6 @@ vec3 sample_dir(vec3 normal, uint i) {
     return dot(normal, s) < 0.0 ? -s : s;
 }
 
-vec3 bent_normal(sampler2D in_depth, vec3 normal, vec2 uv, float radius, vec3 world_pos, mat4 matrix, uint samples) {
-    vec3 bent = normal;
-    for(uint i = 0; i != samples; ++i) {
-        const float n = noise(uv + vec2(i, 0.0));
-        const vec3 s = sample_dir(normal, i) * radius * n;
-        const vec3 proj = project(world_pos + s, matrix);
-        const float d = texture(in_depth, bounce_uv(proj.xy)).x;
-        if(proj.z < d) {
-            bent += normalize(s);
-        }
-    }
-    return normalize(bent);
-}
-
-float ambient_occlusion(sampler2D in_depth, vec3 normal, vec2 uv, float radius, vec3 world_pos, mat4 matrix, uint samples) {
-    float occlusion = 0.0;
-    for(uint i = 0; i != samples; ++i) {
-        const float n = noise(uv + vec2(i, 0.0));
-        const vec3 s = sample_dir(normal, i) * radius * n;
-        const vec3 proj = project(world_pos + s, matrix);
-        const float d = texture(in_depth, bounce_uv(proj.xy)).x;
-
-        if(proj.z < d) {
-            occlusion += 1.0;
-        }
-    }
-    return occlusion / samples;
-}
 
 #endif
 

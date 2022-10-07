@@ -30,11 +30,13 @@ namespace yave {
 
 struct SSAOSettings {
     enum class SSAOMethod {
-        None,
         MiniEngine,
+        CryEngine,
+
+        None,
     };
 
-    SSAOMethod method = SSAOMethod::MiniEngine;
+    SSAOMethod method = SSAOMethod::CryEngine;
 
     usize level_count = 3;
 
@@ -44,8 +46,6 @@ struct SSAOSettings {
 };
 
 struct SSAOPass {
-    FrameGraphImageId linear_depth;
-
     FrameGraphImageId ao;
 
     static SSAOPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& settings = SSAOSettings());

@@ -131,7 +131,7 @@ static FrameGraphImageId compute_linear_depth(FrameGraph& framegraph, const GBuf
     return linear_depth;
 }
 
-static FrameGraphImageId upsample_mini_ao(FrameGraph& framegraph,
+static FrameGraphMutableImageId upsample_mini_ao(FrameGraph& framegraph,
                                      u32 final_size_x,
                                      const math::Vec2ui& output_size,
                                      const SSAOSettings& settings,
@@ -191,16 +191,38 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
 }
 
 
+static FrameGraphImageId cry_engine_ao(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size) {
+    static constexpr ImageFormat format = VK_FORMAT_R8_UNORM;
+
+    FrameGraphPassBuilder builder = framegraph.add_pass("SSAO pass");
+
+    const auto ao = builder.declare_image(format, size);
+
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.normal);
+    builder.add_external_input(device_resources().white_noise());
+    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_color_output(ao);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        const auto* material = device_resources()[DeviceResources::SSAOMaterialTemplate];
+        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+        render_pass.draw_array(3);
+    });
+
+    return ao;
+}
+
 SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& settings) {
     const auto region = framegraph.region("SSAO");
 
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
-    const FrameGraphImageId linear_depth = compute_linear_depth(framegraph, gbuffer, size);
 
     FrameGraphImageId ao;
     switch(settings.method) {
         case SSAOSettings::SSAOMethod::MiniEngine: {
             y_always_assert(settings.level_count > 1, "SSAOSettings::level_count needs to be at least 2");
+            const FrameGraphImageId linear_depth = compute_linear_depth(framegraph, gbuffer, size);
             const DownsamplePass downsample = DownsamplePass::create(framegraph, linear_depth, settings.level_count, DownsamplePass::Filter::BestMatch);
             const float tan_half_fov = compute_tan_half_fov(gbuffer);
             for(usize i = downsample.mips.size() - 1; i > 0; --i) {
@@ -210,12 +232,15 @@ SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
             }
         } break;
 
+        case SSAOSettings::SSAOMethod::CryEngine: {
+            ao = cry_engine_ao(framegraph, gbuffer, size);
+        } break;
+
         default:
         break;
     }
 
     SSAOPass pass;
-    pass.linear_depth = linear_depth;
     pass.ao = ao;
     return pass;
 }

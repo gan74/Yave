@@ -224,18 +224,24 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("SSAO")) {
         SSAOSettings& settings = _settings.renderer_settings.ssao;
 
-        bool enabled = settings.method != SSAOSettings::SSAOMethod::None;
-        ImGui::Checkbox("Enabled", &enabled);
+        const char* methods[] = {"MiniEngine", "CryEngine", "None"};
+        if(ImGui::BeginCombo("SSAO", methods[usize(settings.method)])) {
+            for(usize i = 0; i != sizeof(methods) / sizeof(methods[0]); ++i) {
+                const bool selected = usize(settings.method) == i;
+                if(ImGui::Selectable(methods[i], selected)) {
+                    settings.method = SSAOSettings::SSAOMethod(i);
+                }
+            }
+            ImGui::EndCombo();
+        }
 
         int levels = int(settings.level_count);
-
         ImGui::SliderInt("Levels", &levels, 2, 8);
         ImGui::SliderFloat("Blur tolerance", &settings.blur_tolerance, 1.0f, 8.0f);
         ImGui::SliderFloat("Upsample tolerance", &settings.upsample_tolerance, 1.0f, 12.0f);
         ImGui::SliderFloat("Noise filter", &settings.noise_filter_tolerance, 0.0f, 8.0f);
 
         settings.level_count = levels;
-        settings.method = enabled ? SSAOSettings::SSAOMethod::MiniEngine : SSAOSettings::SSAOMethod::None;
 
         ImGui::EndMenu();
     }
