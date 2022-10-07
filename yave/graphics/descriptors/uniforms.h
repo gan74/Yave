@@ -32,7 +32,12 @@ namespace uniform {
 struct Camera {
     math::Matrix4<> view_proj;
     math::Matrix4<> inv_view_proj;
+
+    math::Matrix4<> proj;
     math::Matrix4<> inv_proj;
+
+    math::Matrix4<> view;
+    math::Matrix4<> inv_view;
 
     math::Vec3 position;
     u32 padding_0 = 0;

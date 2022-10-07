@@ -166,7 +166,13 @@ Camera::operator uniform::Camera() const {
     uniform::Camera camera_data = {};
     camera_data.view_proj = viewproj_matrix();
     camera_data.inv_view_proj = inverse_matrix();
+
+    camera_data.proj = proj_matrix();
     camera_data.inv_proj = proj_matrix().inverse();
+
+    camera_data.view = view_matrix();
+    camera_data.inv_view = view_matrix().inverse();
+
     camera_data.position = position();
     camera_data.forward = forward();
     camera_data.up = up();

@@ -27,7 +27,12 @@ struct Frustum4 {
 struct Camera {
     mat4 view_proj;
     mat4 inv_view_proj;
+
+    mat4 proj;
     mat4 inv_proj;
+
+    mat4 view;
+    mat4 inv_view;
 
     vec3 position;
     uint padding_0;
