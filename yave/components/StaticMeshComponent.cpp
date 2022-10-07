@@ -30,9 +30,13 @@ SOFTWARE.
 
 #include <yave/meshes/MeshData.h>
 #include <yave/graphics/images/ImageData.h>
+#include <yave/graphics/device/DeviceResources.h>
 #include <yave/assets/AssetLoader.h>
 
 namespace yave {
+
+static constexpr bool display_empty_material = true;
+
 
 StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :
         _mesh(mesh), _material(material) {
@@ -50,15 +54,22 @@ void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& 
 
     recorder.bind_mesh_buffers(mesh->draw_data().mesh_buffers());
 
+    auto get_material = [&](const AssetPtr<Material>& mat) {
+        if constexpr(display_empty_material) {
+            return mat.is_empty() ? device_resources()[DeviceResources::EmptyMaterial].get() : mat.get();
+        }
+        return mat.get();
+    };
+
     if(!_materials.is_empty()) {
         y_debug_assert(mesh->sub_meshes().size() == _materials.size());
         for(usize i = 0; i != _materials.size(); ++i) {
-            if(const Material* mat = _materials[i].get()) {
+            if(const Material* mat = get_material(_materials[i])) {
                 recorder.bind_material(*mat);
                 recorder.draw(mesh->sub_meshes()[i].vk_indirect_data(scene_data.instance_index));
             }
         }
-    } else if(const Material* mat = _material.get()) {
+    } else if(const Material* mat = get_material(_material)) {
         recorder.bind_material(*mat);
         recorder.draw(mesh->draw_data(), 1, scene_data.instance_index);
     }
