@@ -35,7 +35,6 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-#include <y/serde3/archives.h>
 
 // -------------- TINYGLTF --------------
 #ifdef Y_GNU
@@ -245,32 +244,17 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
         y_throw_msg(fmt_c_str("Unsupported component type (%) for \"%\"", accessor.componentType, std::string_view(name)));
     }
 
-    math::Vec4* vec4_elems = nullptr;
-    math::Vec3* vec3_elems = nullptr;
-    math::Vec2* vec2_elems = nullptr;
     if(name == "POSITION") {
-        vec3_elems = &vertices[0].position;
+        decode_attrib_buffer_convert_internal(model, buffer, accessor, &vertices[0].position, vertices.size());
     } else if(name == "NORMAL") {
-        vec3_elems = &vertices[0].normal;
+        decode_attrib_buffer_convert_internal(model, buffer, accessor, &vertices[0].normal, vertices.size());
     } else if(name == "TANGENT") {
-        vec4_elems = &vertices[0].tangent;
+        decode_attrib_buffer_convert_internal(model, buffer, accessor, &vertices[0].tangent, vertices.size());
     } else if(name == "TEXCOORD_0") {
-        vec2_elems = &vertices[0].uv;
+        decode_attrib_buffer_convert_internal(model, buffer, accessor, &vertices[0].uv, vertices.size());
     } else {
         log_msg(fmt("Attribute \"%\" is not supported", std::string_view(name)), Log::Warning);
         return;
-    }
-
-    if(vec4_elems) {
-        decode_attrib_buffer_convert_internal(model, buffer, accessor, vec4_elems, vertices.size());
-    }
-
-    if(vec3_elems) {
-        decode_attrib_buffer_convert_internal(model, buffer, accessor, vec3_elems, vertices.size());
-    }
-
-    if(vec2_elems) {
-        decode_attrib_buffer_convert_internal(model, buffer, accessor, vec2_elems, vertices.size());
     }
 }
 
@@ -347,12 +331,13 @@ static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& mod
 }
 
 static math::Transform<> build_base_change_transform() {
-    const math::Vec3 forward = math::Vec3(0.0f, 0.0f, 1.0f);
-    const math::Vec3 up = math::Vec3(0.0f, -1.0f, 0.0f);
+    const math::Vec3 forward = math::Vec3(1.0f, 0.0f, 0.0f);
+    const math::Vec3 right = math::Vec3(0.0f, 0.0f, 1.0f);
+    const math::Vec3 up = math::Vec3(0.0f, 1.0f, 0.0f);
 
     math::Transform<> transform;
-    transform.set_basis(forward, forward.cross(up), up);
-    return transform.transposed();
+    transform.set_basis(forward, right, up);
+    return transform.inverse();
 }
 
 static const math::Transform<> base_change_transform = build_base_change_transform();
@@ -373,10 +358,11 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
         rotation[k] = float(node.rotation[k]);
     }
 
-    // This doesn't appear to be correct....
-    // rotation.to<3>() = base_change_transform.transform_direction(rotation.to<3>());
+    rotation.to<3>() = base_change_transform.transform_direction(rotation.to<3>());
+    translation = base_change_transform.transform_direction(translation);
+    scale = base_change_transform.transform_direction(scale);
 
-    const math::Transform<> tr = base_change_transform * math::Transform<>(translation, rotation, scale);
+    const math::Transform<> tr = math::Transform<>(translation, rotation, scale);
     y_debug_assert(math::fully_finite(tr));
     y_debug_assert(tr[3][3] == 1.0f);
     return tr;
