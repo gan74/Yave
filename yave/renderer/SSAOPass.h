@@ -36,7 +36,7 @@ struct SSAOSettings {
         None,
     };
 
-    SSAOMethod method = SSAOMethod::CryEngine;
+    SSAOMethod method = SSAOMethod::MiniEngine;
 
     usize level_count = 3;
 

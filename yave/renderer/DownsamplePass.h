@@ -36,7 +36,7 @@ struct DownsamplePass {
 
     core::Vector<FrameGraphImageId> mips;
 
-    static DownsamplePass create(FrameGraph& framegraph, FrameGraphImageId orig, usize mip_count = usize(-1), Filter filter = Filter::Average);
+    static DownsamplePass create(FrameGraph& framegraph, FrameGraphImageId orig, usize mip_count = usize(-1), Filter filter = Filter::Average, bool round_up = false);
 };
 
 }

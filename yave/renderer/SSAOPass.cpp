@@ -223,7 +223,7 @@ SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
         case SSAOSettings::SSAOMethod::MiniEngine: {
             y_always_assert(settings.level_count > 1, "SSAOSettings::level_count needs to be at least 2");
             const FrameGraphImageId linear_depth = compute_linear_depth(framegraph, gbuffer, size);
-            const DownsamplePass downsample = DownsamplePass::create(framegraph, linear_depth, settings.level_count, DownsamplePass::Filter::BestMatch);
+            const DownsamplePass downsample = DownsamplePass::create(framegraph, linear_depth, settings.level_count, DownsamplePass::Filter::Average, true);
             const float tan_half_fov = compute_tan_half_fov(gbuffer);
             for(usize i = downsample.mips.size() - 1; i > 0; --i) {
                 const math::Vec2ui output_size = framegraph.image_size(downsample.mips[i - 1]);

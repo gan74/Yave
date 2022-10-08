@@ -5,18 +5,11 @@
 
 #include "lib/utils.glsl"
 
-//#define WIDE_SAMPLING
-#ifdef WIDE_SAMPLING
-// 32x32 cache size:  the 16x16 in the center forms the area of focus with the 8-pixel perimeter used for wide gathering.
-#define THREAD_COUNT 16
-#define CENTER_OFFSET 7
-#define COORDS_MUL 2
-#else
+
 // 16x16 cache size:  the 8x8 in the center forms the area of focus with the 4-pixel perimeter used for gathering.
 #define THREAD_COUNT 8
-#define CENTER_OFFSET 3
+#define CENTER_OFFSET 4
 #define COORDS_MUL 1
-#endif
 
 #define TILE_DIM (THREAD_COUNT * 2)
 
