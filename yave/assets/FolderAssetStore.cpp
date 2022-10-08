@@ -23,6 +23,7 @@ SOFTWARE.
 #include "FolderAssetStore.h"
 
 #include <y/io2/File.h>
+#include <y/concurrent/StaticThreadPool.h>
 
 #include <y/utils/log.h>
 #include <y/serde3/archives.h>
@@ -735,46 +736,84 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
 
     _ids = nullptr;
     _assets.clear();
-    usize emergency_id = 1;
+
+    core::Vector<u64> desc_ids;
 
     const FileSystemModel* fs = FileSystemModel::local_filesystem();
-    const auto result = fs->for_each(_root, [&](const FileSystemModel::EntryInfo& info) {
-        const std::string_view ext = ".desc";
-        if(info.name.size() < ext.size()) {
-            return;
-        }
 
-        const usize size_without_ext = info.name.size() - ext.size();
-        if(info.name.sub_str(size_without_ext) != ext) {
-            return;
-        }
-
-        const auto full_name = fs->join(_root, info.name);
-        if(info.type == FileSystemModel::EntryType::File) {
-            u64 uid = 0;
-            if(std::from_chars(info.name.data(), info.name.data() + size_without_ext, uid, 16).ec != std::errc()) {
+    {
+        y_profile_zone("Enumerating descs");
+        const auto result = fs->for_each(_root, [&](const FileSystemModel::EntryInfo& info) {
+            const std::string_view ext = ".desc";
+            if(info.name.size() < ext.size()) {
                 return;
             }
-            const AssetId id = AssetId::from_id(uid);
-            if(auto r = load_desc(id)) {
-                _next_id = std::max(u64(_next_id), uid + 1);
-                AssetDesc desc = r.unwrap();
-                AssetData data = { id, desc.type, 0 };
 
-                if(auto file = io2::File::open(asset_data_file_name(id))) {
-                    data.file_size = file.unwrap().size();
-                } else {
-                    log_msg(fmt("\"%\" has no asset file", desc.name), Log::Error);
+            const usize size_without_ext = info.name.size() - ext.size();
+            if(info.name.sub_str(size_without_ext) != ext) {
+                return;
+            }
+
+            if(info.type == FileSystemModel::EntryType::File) {
+                u64 uid = 0;
+                if(std::from_chars(info.name.data(), info.name.data() + size_without_ext, uid, 16).ec != std::errc()) {
                     return;
                 }
+                desc_ids << uid;
+            }
+        });
+    }
 
+
+    core::Vector<core::Vector<std::pair<AssetDesc, AssetData>>> assets;
+    {
+        y_profile_zone("Reading descs");
+        concurrent::StaticThreadPool thread_pool;
+
+        y_profile_zone("schedule");
+        const usize split = desc_ids.size() / (thread_pool.concurency() * 8);
+        for(usize i = 0; i < desc_ids.size(); i += split) {
+            const core::Range range(desc_ids.begin() + i, desc_ids.begin() + std::min(desc_ids.size(), i + split));
+
+            const usize index = assets.size();
+            assets.emplace_back();
+
+            thread_pool.schedule([this, range, index, &assets] {
+                y_profile_zone("Reading descs internal");
+                for(const u64 uid : range) {
+                    const AssetId id = AssetId::from_id(uid);
+                    if(auto r = load_desc(id)) {
+                        AssetDesc desc = r.unwrap();
+                        AssetData data = { id, desc.type, 0 };
+
+                        if(auto file = io2::File::open(asset_data_file_name(id))) {
+                            data.file_size = file.unwrap().size();
+                        } else {
+                            log_msg(fmt("\"%\" has no asset file", desc.name), Log::Error);
+                            continue;
+                        }
+
+                        assets[index].emplace_back(std::move(desc), std::move(data));
+                    } else {
+                        log_msg(fmt("%.desc could not be read", uid), Log::Error);
+                    }
+                }
+            });
+        }
+    }
+
+    {
+        y_profile_zone("Merging descs");
+        usize emergency_id = 1;
+        for(auto& a : assets) {
+            for(auto& [desc, data] : a) {
                 if(!_assets.emplace(desc.name, data).second) {
                     log_msg(fmt("\"%\" already exists in asset database", desc.name), Log::Error);
 
                     {
                         fmt_into(desc.name, "_(%)", emergency_id++);
                         _assets.emplace(desc.name, data);
-                        save_desc(id, desc).ignore();
+                        save_desc(data.id, desc).ignore();
                     }
                 }
 
@@ -783,15 +822,10 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
                         log_msg(fmt("\"%\" was not found in folder database", parent.unwrap()), Log::Warning);
                     }
                 }
-            } else {
-                log_msg(fmt("% could not be read", info.name), Log::Error);
             }
         }
-    });
-
-    if(result.is_error()) {
-        core::Err(ErrorType::FilesytemError);
     }
+
     return core::Ok();
 }
 
