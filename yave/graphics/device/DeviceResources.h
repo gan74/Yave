@@ -70,7 +70,6 @@ class DeviceResources final : NonMovable {
             HBlurFrag,
             VBlurFrag,
             WireFrameFrag,
-            SSAOFrag,
 
             DeferredPointVert,
             DeferredSpotVert,
@@ -122,8 +121,6 @@ class DeviceResources final : NonMovable {
 
             HBlurMaterialTemplate,
             VBlurMaterialTemplate,
-
-            SSAOMaterialTemplate,
 
             WireFrameMaterialTemplate,
 
