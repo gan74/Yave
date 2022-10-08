@@ -263,7 +263,9 @@ void destroy_device() {
     device::instance = nullptr;
 }
 
-
+bool device_initialized() {
+    return device::instance != nullptr;
+}
 
 
 
@@ -273,6 +275,7 @@ ThreadDevicePtr thread_device() {
     static thread_local ThreadDevicePtr thread_device = nullptr;
     static thread_local y_defer({
         if(auto* device = thread_device) {
+            y_debug_assert(device_initialized());
             const auto lock = y_profile_unique_lock(device::threads.lock);
             const auto it = std::find_if(device::threads.devices.begin(), device::threads.devices.end(), [&](const auto& p) { return p.first.get() == device; });
 
@@ -285,6 +288,7 @@ ThreadDevicePtr thread_device() {
         }
     });
 
+    y_debug_assert(device_initialized());
     if(!thread_device) {
         y_debug_assert(!device::destroying);
         auto device = std::make_unique<ThreadLocalDevice>();

@@ -35,6 +35,8 @@ void init_device(Instance& instance, PhysicalDevice device);
 
 void destroy_device();
 
+bool device_initialized();
+
 ThreadDevicePtr thread_device();
 
 VkDevice vk_device();

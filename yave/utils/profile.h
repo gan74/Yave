@@ -40,12 +40,14 @@ SOFTWARE.
 #include <external/tracy/TracyC.h>
 
 
+#if 0
 namespace yave {
 namespace profile {
+namespace detail {
+static thread_local bool thread_name_set = false;
 static inline void set_thread_name() {
-    static thread_local bool name_set = false;
-    if(!name_set) {
-        name_set = true;
+    if(!thread_name_set) {
+        thread_name_set = true;
         if(const char* name = y::concurrent::thread_name()) {
             ___tracy_set_thread_name(name);
         }
@@ -53,12 +55,12 @@ static inline void set_thread_name() {
 }
 }
 }
-
+}
+#endif
 
 #define y_profile_internal_capturing() (true)
 
 #define y_profile_internal(name)                                                                                                                \
-    yave::profile::set_thread_name();                                                                                                           \
     static constexpr const char* y_create_name_with_prefix(static_name) = (name);                                                               \
     static constexpr auto y_create_name_with_prefix(sloc) = ___tracy_source_location_data {                                                     \
         y_create_name_with_prefix(static_name), __FUNCTION__, __FILE__, __LINE__, 0};                                                           \

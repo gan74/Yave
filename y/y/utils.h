@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <y/utils/types.h>
 
-#define y_defer(expr) auto y_create_name_with_prefix(defer) = y::ScopeExit([&]() { expr; })
+#define y_defer(expr) auto y_create_name_with_prefix(defer) = y::ScopeGuard([&]() { expr; })
 
 namespace y {
 
@@ -78,21 +78,21 @@ static_assert(is_little_endian() || is_big_endian(), "Endianness unknown");
 
 
 template<typename T>
-class ScopeExit {
+class ScopeGuard {
     public:
-        inline ScopeExit(T&& t) : _ex(y_fwd(t)) {
+        inline ScopeGuard(T&& t) : _ex(y_fwd(t)) {
         }
 
-        inline ScopeExit(ScopeExit&& other) : _ex(std::move(other._ex)) {
+        inline ScopeGuard(ScopeGuard&& other) : _ex(std::move(other._ex)) {
         }
-        
-        inline ScopeExit& operator=(ScopeExit&& other) {
+
+        inline ScopeGuard& operator=(ScopeGuard&& other) {
             std::swap(_ex, other.ex);
             return *this;
         }
 
 
-        inline ~ScopeExit() {
+        inline ~ScopeGuard() {
             _ex();
         }
 

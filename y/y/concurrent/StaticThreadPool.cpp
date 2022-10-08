@@ -78,8 +78,13 @@ StaticThreadPool::StaticThreadPool(usize thread_count) {
 
 StaticThreadPool::~StaticThreadPool() {
     process_until_empty();
-    _shared_data.run = false;
-    _shared_data.condition.notify_all();
+
+    {
+        _shared_data.run = false;
+        const std::unique_lock<std::mutex> lock(_shared_data.lock);
+        _shared_data.condition.notify_all();
+    }
+
     for(auto& thread : _threads) {
         thread.join();
     }

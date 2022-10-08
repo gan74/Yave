@@ -61,10 +61,10 @@ AssetLoadingThreadPool::AssetLoadingThreadPool(AssetLoader* parent, usize concur
 
 AssetLoadingThreadPool::~AssetLoadingThreadPool() {
     {
-        const auto lock = y_profile_unique_lock(_lock);
         _run = false;
+        const auto lock = y_profile_unique_lock(_lock);
+        _condition.notify_all();
     }
-    _condition.notify_all();
 
     for(auto& thread : _threads) {
         thread.join();
