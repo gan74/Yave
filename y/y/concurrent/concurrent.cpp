@@ -33,11 +33,6 @@ namespace detail {
 static thread_local char thread_name[64] = {};
 }
 
-StaticThreadPool& default_thread_pool() {
-    static StaticThreadPool _pool;
-    return _pool;
-}
-
 u32 thread_id() {
     static std::atomic<u32> id = 0;
     static thread_local u32 tid = ++id;
