@@ -224,7 +224,7 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("SSAO")) {
         SSAOSettings& settings = _settings.renderer_settings.ssao;
 
-        const char* methods[] = {"MiniEngine", "CryEngine", "None"};
+        const char* methods[] = {"MiniEngine", "None"};
         if(ImGui::BeginCombo("SSAO", methods[usize(settings.method)])) {
             for(usize i = 0; i != sizeof(methods) / sizeof(methods[0]); ++i) {
                 const bool selected = usize(settings.method) == i;

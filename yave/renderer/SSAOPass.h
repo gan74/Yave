@@ -31,7 +31,6 @@ namespace yave {
 struct SSAOSettings {
     enum class SSAOMethod {
         MiniEngine,
-        CryEngine,
 
         None,
     };

@@ -190,29 +190,6 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
     return ao;
 }
 
-
-static FrameGraphImageId cry_engine_ao(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size) {
-    static constexpr ImageFormat format = VK_FORMAT_R8_UNORM;
-
-    FrameGraphPassBuilder builder = framegraph.add_pass("SSAO pass");
-
-    const auto ao = builder.declare_image(format, size);
-
-    builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(gbuffer.normal);
-    builder.add_external_input(device_resources().white_noise());
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
-    builder.add_color_output(ao);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-        const auto* material = device_resources()[DeviceResources::SSAOMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
-        render_pass.draw_array(3);
-    });
-
-    return ao;
-}
-
 SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const SSAOSettings& settings) {
     const auto region = framegraph.region("SSAO");
 
@@ -230,10 +207,6 @@ SSAOPass SSAOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
                 const FrameGraphImageId hi = compute_mini_ao(framegraph, downsample.mips[i], tan_half_fov);
                 ao = upsample_mini_ao(framegraph, size.x(), output_size, settings, downsample.mips[i - 1], downsample.mips[i], hi, ao);
             }
-        } break;
-
-        case SSAOSettings::SSAOMethod::CryEngine: {
-            ao = cry_engine_ao(framegraph, gbuffer, size);
         } break;
 
         default:
