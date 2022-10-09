@@ -151,7 +151,6 @@ static FrameGraphMutableImageId upsample_mini_ao(FrameGraph& framegraph,
     const float upsample_tolerance = std::pow(10.0f, -settings.upsample_tolerance);
     const float noise_filter_weight = 1.0f / (std::pow(10.0f, -settings.noise_filter_tolerance) + upsample_tolerance);
 
-
     FrameGraphPassBuilder builder = framegraph.add_pass("SSAO upsample pass");
 
     const auto upsampled = builder.declare_image(format, output_size);
@@ -165,7 +164,7 @@ static FrameGraphMutableImageId upsample_mini_ao(FrameGraph& framegraph,
     builder.add_storage_output(upsampled, 0, PipelineStage::ComputeBit);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
-        recorder.dispatch_size(program, output_size + math::Vec2ui(2), {self->descriptor_sets()[0]});
+        recorder.dispatch_size(program, lo_size + math::Vec2ui(2), {self->descriptor_sets()[0]});
     });
 
     return upsampled;
