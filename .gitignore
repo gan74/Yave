@@ -1,6 +1,7 @@
 /build/
 /old/
 /assets/
+/store/
 *.user
 *.spv
 /sponza/
