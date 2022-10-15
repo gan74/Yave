@@ -111,6 +111,8 @@ VkSampler create_sampler(SamplerType type) {
         const VkFilter filter = vk_filter(type);
         const VkSamplerMipmapMode mip_filter = vk_mip_filter(type);
 
+        const float anisotropy = 1.0f;
+
         create_info.addressModeU = address_mode;
         create_info.addressModeV = address_mode;
         create_info.addressModeW = address_mode;
@@ -118,7 +120,8 @@ VkSampler create_sampler(SamplerType type) {
         create_info.minFilter = filter;
         create_info.mipmapMode = mip_filter;
         create_info.maxLod = 1000.0f;
-        create_info.maxAnisotropy = 1.0f;
+        create_info.anisotropyEnable = anisotropy > 1.0f;
+        create_info.maxAnisotropy = anisotropy;
         create_info.compareEnable = type == SamplerType::Shadow;
         create_info.compareOp = VK_COMPARE_OP_GREATER;
     }
@@ -216,6 +219,7 @@ VkPhysicalDeviceFeatures required_device_features() {
         required.fragmentStoresAndAtomics = true;
         required.robustBufferAccess = true;
         required.independentBlend = true;
+        required.samplerAnisotropy = true;
     }
 
     return required;
