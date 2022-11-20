@@ -79,7 +79,7 @@ static void add_debug_lights() {
     const ecs::EntityId parent = world.create_collection_entity("Debug lights");
     world.component<EditorComponent>(parent)->set_hidden_in_editor(true);
 
-    const math::Vec3 center = new_entity_pos(side * 1.5f);
+    const math::Vec3 center; //new_entity_pos(side * 1.5f);
 
     math::FastRandom rng;
     for(usize i = 0; i != entity_count; ++i) {
