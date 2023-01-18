@@ -34,8 +34,6 @@ namespace yave {
 
 class ScriptWorldComponent final {
 
-
-
     public:
         struct Script {
             core::String name;
@@ -77,6 +75,7 @@ class ScriptWorldComponent final {
             once.result = std::make_shared<RunOnceResult>();
             return once.result;
         }
+
 
         y_reflect(ScriptWorldComponent, _scripts, _one_shot)
 

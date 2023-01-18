@@ -78,10 +78,17 @@ void bind_component_type(sol::state_view state) {
         const core::String type_name = T::_y_reflect_type_name;
         auto type = state.new_usertype<LuaComponentSet>(type_name + "Set");
 
-        type["__index"] = [](const LuaComponentSet* set, ecs::EntityId id) {
-            y_debug_assert(set);
-            return set->try_get(id);
-        };
+        type["__index"] = sol::overload(
+            [](const LuaComponentSet* set, ecs::EntityId id) -> const T* {
+                y_debug_assert(set);
+                return set->try_get(id);
+            },
+            [](const LuaComponentSet* set, usize index) -> const T* {
+                y_debug_assert(set);
+                index = index - 1; // Lua 1 indexing
+                return index < set->size() ? &set->values()[index] : nullptr;
+            }
+        );
 
         type["__len"] = [](const LuaComponentSet* set) {
             y_debug_assert(set);

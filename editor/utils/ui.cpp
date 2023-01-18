@@ -43,7 +43,6 @@ SOFTWARE.
 namespace editor {
 
 int to_imgui_key(Key k) {
-
     if(u32(k) >= u32(Key::A) && u32(k) <= u32(Key::Z)) {
         return ImGuiKey_A + (u32(k) - u32(Key::A));
     } else if(u32(k) >= u32(Key::F1) && u32(k) <= u32(Key::F12)) {
@@ -140,6 +139,18 @@ math::Vec2 from_client_pos(const math::Vec2& pos) {
 
 float button_height() {
     return ImGui::GetFont()->FontSize + ImGui::GetStyle().FramePadding.y * 2.0f + 4.0f;
+}
+
+usize text_line_count(std::string_view text) {
+    if(text.empty()) {
+        return 0;
+    }
+
+    usize lines = 1;
+    for(const char c : text) {
+        lines += (c == '\n');
+    }
+    return lines;
 }
 
 bool position_input(const char* str_id, math::Vec3& position) {

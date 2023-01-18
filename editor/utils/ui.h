@@ -45,6 +45,7 @@ math::Vec2 client_window_pos();
 math::Vec2 from_client_pos(const math::Vec2& pos);
 
 float button_height();
+usize text_line_count(std::string_view text);
 
 bool position_input(const char* str_id, math::Vec3& position);
 

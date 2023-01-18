@@ -77,6 +77,7 @@ static void edit_script(ScriptWorldComponent::Script& script) {
     log_msg("Script reloaded");
 }
 
+
 ScriptPanel::ScriptPanel() : Widget(ICON_FA_CODE " Scripts"), _buffer(32 * 1024) {
 }
 
@@ -116,8 +117,6 @@ void ScriptPanel::on_gui() {
     }
 
 
-
-
     {
         if(_result && _result->done) {
             if(_result->result.is_error()) {
@@ -127,16 +126,14 @@ void ScriptPanel::on_gui() {
             _result = nullptr;
         }
 
-        const bool display_error = !_error.is_empty();
 
-        math::Vec2 avail_size = math::Vec2(ImGui::GetContentRegionAvail());
-        avail_size.y() -= (display_error ? 2.0f : 1.0f) * imgui::button_height();
+        const float text_height = imgui::text_line_count(_error) * imgui::button_height();
+        const math::Vec2 avail_size = math::Vec2(ImGui::GetContentRegionAvail()) - math::Vec2(0.0f, imgui::button_height() + text_height);
         ImGui::InputTextMultiline("##console", _buffer.data(), _buffer.size(), avail_size);
 
-        if(display_error) {
+        if(!_error.is_empty()) {
             ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-            ImGui::SetNextItemWidth(avail_size.x());
-            ImGui::InputText("###error", _error.data(), _error.size(), ImGuiInputTextFlags_ReadOnly);
+            ImGui::InputTextMultiline("###error", _error.data(), _error.size(), math::Vec2(avail_size.x(), text_height), ImGuiInputTextFlags_ReadOnly);
             ImGui::PopStyleColor();
         }
 

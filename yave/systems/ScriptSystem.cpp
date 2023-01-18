@@ -23,7 +23,9 @@ SOFTWARE.
 #include "ScriptSystem.h"
 
 #include <yave/ecs/EntityWorld.h>
+
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/PointLightComponent.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -37,6 +39,7 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
     script::bind_ecs_types(_state);
 
     script::bind_component_type<TransformableComponent>(_state);
+    script::bind_component_type<PointLightComponent>(_state);
 }
 
 void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
