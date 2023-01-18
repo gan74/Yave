@@ -22,9 +22,11 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_SCRIPTPANEL_H
 #define EDITOR_WIDGETS_SCRIPTPANEL_H
 
-#include <editor/editor.h>
-
 #include <editor/Widget.h>
+
+#include <yave/components/ScriptWorldComponent.h>
+
+#include <y/core/FixedArray.h>
 
 namespace editor {
 
@@ -37,6 +39,12 @@ class ScriptPanel final : public Widget {
 
     protected:
         void on_gui() override;
+
+    private:
+        core::FixedArray<char> _buffer;
+
+        core::String _error;
+        std::shared_ptr<ScriptWorldComponent::RunOnceResult> _result;
 };
 
 }

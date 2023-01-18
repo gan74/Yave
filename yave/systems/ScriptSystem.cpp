@@ -44,8 +44,7 @@ void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
 
     _state["world"] = &world;
 
-
-    for(auto& one_shot : scripts_comp->one_shot()) {
+    for(auto& one_shot : scripts_comp->_one_shot) {
         if(!one_shot.done) {
             one_shot.done = true;
             try {
@@ -56,7 +55,7 @@ void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
         }
     }
 
-    for(auto& script : scripts_comp->scripts()) {
+    for(auto& script : scripts_comp->_scripts) {
         y_profile_dyn_zone(script.name.data());
         try {
             _state.safe_script(script.code);
@@ -64,6 +63,16 @@ void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
             log_msg(fmt("Lua error in %: %", script.name, e.what()), Log::Error);
         }
     }
+
+    for(auto& once : scripts_comp->_once) {
+        try {
+            _state.safe_script(once.code);
+        } catch(std::exception& e) {
+            once.result->result = core::Err(core::String(e.what()));
+        }
+        once.result->done = true;
+    }
+    scripts_comp->_once.clear();
 }
 
 }

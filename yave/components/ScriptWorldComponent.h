@@ -26,12 +26,16 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 #include <y/core/String.h>
+#include <y/core/Result.h>
 
 #include <y/reflect/reflect.h>
 
 namespace yave {
 
 class ScriptWorldComponent final {
+
+
+
     public:
         struct Script {
             core::String name;
@@ -47,6 +51,7 @@ class ScriptWorldComponent final {
             y_reflect(OneShotScript, code);
         };
 
+
         auto& scripts() {
             return _scripts;
         }
@@ -55,11 +60,32 @@ class ScriptWorldComponent final {
             return _one_shot;
         }
 
+
+        struct RunOnceResult {
+            bool done = false;
+            core::Result<void, core::String> result = core::Ok();
+        };
+
+        struct RunOnce {
+            core::String code;
+            std::shared_ptr<RunOnceResult> result;
+        };
+
+        const std::shared_ptr<RunOnceResult>& run_once(core::String code) {
+            auto& once = _once.emplace_back();
+            once.code = std::move(code);
+            once.result = std::make_shared<RunOnceResult>();
+            return once.result;
+        }
+
         y_reflect(ScriptWorldComponent, _scripts, _one_shot)
 
     private:
+        friend class ScriptSystem;
+
         core::Vector<Script> _scripts;
         core::Vector<OneShotScript> _one_shot;
+        core::Vector<RunOnce> _once;
 };
 
 }

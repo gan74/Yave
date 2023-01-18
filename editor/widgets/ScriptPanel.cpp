@@ -77,7 +77,7 @@ static void edit_script(ScriptWorldComponent::Script& script) {
     log_msg("Script reloaded");
 }
 
-ScriptPanel::ScriptPanel() : Widget(ICON_FA_CODE " Scripts") {
+ScriptPanel::ScriptPanel() : Widget(ICON_FA_CODE " Scripts"), _buffer(32 * 1024) {
 }
 
 void ScriptPanel::on_gui() {
@@ -115,18 +115,35 @@ void ScriptPanel::on_gui() {
         });
     }
 
+
+
+
     {
-        if(script_component->one_shot().is_empty()) {
-            script_component->one_shot().emplace_back();
+        if(_result && _result->done) {
+            if(_result->result.is_error()) {
+                log_msg(fmt("Lua error: %", _result->result.error()), Log::Error);
+                _error = _result->result.error();
+            }
+            _result = nullptr;
         }
 
-        auto& console = script_component->one_shot().first();
-        core::FixedArray<char> buffer(32 * 1024);
-        std::copy_n(console.code.begin(), std::min(console.code.size(), buffer.size() - 1), buffer.begin());
-        if(ImGui::InputTextMultiline("##console", buffer.data(), buffer.size(), math::Vec2(ImGui::GetContentRegionAvail()) - math::Vec2(0.0f, imgui::button_height()))) {
-            console.code = core::String(buffer.data());
+        const bool display_error = !_error.is_empty();
+
+        math::Vec2 avail_size = math::Vec2(ImGui::GetContentRegionAvail());
+        avail_size.y() -= (display_error ? 2.0f : 1.0f) * imgui::button_height();
+        ImGui::InputTextMultiline("##console", _buffer.data(), _buffer.size(), avail_size);
+
+        if(display_error) {
+            ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+            ImGui::SetNextItemWidth(avail_size.x());
+            ImGui::InputText("###error", _error.data(), _error.size(), ImGuiInputTextFlags_ReadOnly);
+            ImGui::PopStyleColor();
         }
-        console.done &= !ImGui::Button(ICON_FA_PLAY " Run");
+
+        if(ImGui::Button(ICON_FA_PLAY " Run")) {
+            _error.make_empty();
+            _result = script_component->run_once(_buffer.data());
+        }
     }
 }
 
