@@ -72,21 +72,22 @@ void main() {
         const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 
         const vec3 world_pos = unproject(in_uv, depth, camera.inv_view_proj);
+        const vec3 depth_normal = compute_depth_normal(world_pos, surface);
         const vec3 view_dir = normalize(camera.position - world_pos);
 
         // directional lights
         for(uint i = 0; i != light_count; ++i) {
             const DirectionalLight light = lights[i];
+            const vec3 light_dir = light.direction; // assume normalized
 
             float att = 1.0;
             if(light.shadow_map_index < 0xFFFFFFFF) {
                 const ShadowMapParams params = shadow_params[light.shadow_map_index];
-                att = compute_shadow_pcf(in_shadows, params, world_pos);
+                const float bias = compute_automatic_bias(params, depth_normal, light_dir);
+                att = compute_shadow_pcf(in_shadows, params, world_pos, bias);
             }
 
             if(att > 0.0) {
-                const vec3 light_dir = light.direction; // assume normalized
-
                 const vec3 radiance = light.color * att;
                 irradiance += radiance * L0(light_dir, view_dir, surface);
             }

@@ -86,7 +86,8 @@ struct ShadowMapParams {
 
     float size;
     float texel_size;
-    uvec2 padding_0;
+    float base_bias;
+    uint padding_0;
 };
 
 struct ExposureParams {

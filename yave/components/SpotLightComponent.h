@@ -65,7 +65,10 @@ class SpotLightComponent final : public ecs::RequiredComponents<TransformableCom
         u32& shadow_lod();
         u32 shadow_lod() const;
 
-        y_reflect(SpotLightComponent, _color, _intensity, _radius, _falloff, _half_angle, _angle_exp, _cast_shadow, _shadow_lod)
+        float& shadow_base_bias();
+        float shadow_base_bias() const;
+
+        y_reflect(SpotLightComponent, _color, _intensity, _radius, _falloff, _half_angle, _angle_exp, _cast_shadow, _shadow_lod, _shadow_base_bias)
 
     private:
         math::Vec3 _color = math::Vec3{1.0f};
@@ -77,6 +80,7 @@ class SpotLightComponent final : public ecs::RequiredComponents<TransformableCom
 
         bool _cast_shadow = false;
         u32 _shadow_lod = 0;
+        float _shadow_base_bias = 0.025f;
 };
 
 }

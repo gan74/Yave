@@ -108,7 +108,8 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
         uv_mul * size_f,
         size_f,
         1.0f / size_f,
-        {},
+        light.shadow_base_bias(),
+        0,
     };
 
     return SubPass{

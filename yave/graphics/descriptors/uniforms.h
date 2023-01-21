@@ -103,7 +103,8 @@ struct ShadowMapParams {
 
     float size;
     float texel_size;
-    math::Vec2ui padding_0;
+    float base_bias;
+    u32 padding_0;
 };
 
 static_assert(sizeof(ShadowMapParams) % 16 == 0);
