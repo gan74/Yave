@@ -18,12 +18,6 @@ if(MSVC)
 
     # Allow some inlining in debug to make stepping easier
     # string(REPLACE "/Ob0" "/Ob1" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-
-    option(Y_USE_ASAN "Enable ASAN" OFF)
-
-    if(Y_USE_ASAN)
-        set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} /fsanitize=address)
-    endif()
 else()
     # -Wsign-conversion -Wshadow
     set(Y_EXTRA_WARNINGS
