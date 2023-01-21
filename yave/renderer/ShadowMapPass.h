@@ -28,16 +28,22 @@ SOFTWARE.
 
 namespace yave {
 
+enum class ShadowMapSpillPolicy {
+    DownSample,
+    Discard,
+};
+
 struct ShadowMapSettings {
-    u32 shadow_map_size = 1024;
-    usize shadow_atlas_size = 8;
+    u32 shadow_map_size = 2048;
+    usize shadow_atlas_size = 4;
+    ShadowMapSpillPolicy spill_policy = ShadowMapSpillPolicy::DownSample;
 };
 
 struct ShadowMapPass {
     FrameGraphImageId shadow_map;
     FrameGraphTypedBufferId<uniform::ShadowMapParams> shadow_params;
 
-    std::shared_ptr<core::FlatHashMap<u64, math::Vec4ui>> shadow_indexes;
+    std::shared_ptr<core::FlatHashMap<u64, math::Vec4ui>> shadow_indices;
 
     static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings = ShadowMapSettings());
 };

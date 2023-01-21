@@ -89,12 +89,13 @@ struct SubPass {
 template<typename T>
 static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
                             const T& light,
+                            u32 lod_offset,
                             const SceneView& light_view,
                             const math::Vec2& uv_mul,
                             SubAtlasAllocator& allocator) {
     y_profile();
 
-    const u32 level = light.shadow_lod();
+    const u32 level = light.shadow_lod() + lod_offset;
     const auto [offset, size] = allocator.alloc(level);
 
     if(!size) {
@@ -176,13 +177,66 @@ static Camera directional_camera(const Camera& cam, const DirectionalLightCompon
 }
 
 
+
+struct ShadowCastingLights {
+    core::Vector<std::tuple<ecs::EntityId, const DirectionalLightComponent*>> directionals;
+    core::Vector<std::tuple<ecs::EntityId, const TransformableComponent*, const SpotLightComponent*>> spots;
+};
+
+static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene) {
+    const std::array tags = {ecs::tags::not_hidden};
+    const ecs::EntityWorld& world = scene.world();
+
+    ShadowCastingLights shadow_casters;
+
+    shadow_casters.directionals.set_min_capacity(world.components<DirectionalLightComponent>().size());
+    for(auto&& light : world.query<const DirectionalLightComponent>(tags)) {
+        const auto& [l] = light.components();
+        if(!l.cast_shadow()) {
+            continue;
+        }
+        shadow_casters.directionals.push_back({light.id(), &l});
+    }
+
+    shadow_casters.spots.set_min_capacity(world.components<SpotLightComponent>().size());
+    for(auto&& light : world.query<const TransformableComponent, const SpotLightComponent>(tags)) {
+        const auto& [t, l] = light.components();
+        if(!l.cast_shadow()) {
+            continue;
+        }
+        shadow_casters.spots.push_back({light.id(), &t, &l});
+    }
+
+    return shadow_casters;
+}
+
+static float total_occupancy(const ShadowCastingLights& lights) {
+    auto occupancy = [](u32 lod) {
+        return 1.0f / (1 << lod);
+    };
+
+    float total = 0.0f;
+    for(auto&& [id, light] : lights.directionals) {
+        unused(id);
+        total += occupancy(light->shadow_lod()) * light->cascades();
+    }
+
+    for(auto&& [id, transform, light] : lights.spots) {
+        unused(id, transform);
+        total += occupancy(light->shadow_lod());
+    }
+    return total;
+}
+
+
+
 ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings) {
     const auto region = framegraph.region("Shadows");
 
     static constexpr ImageFormat shadow_format = VK_FORMAT_D32_SFLOAT;
-    const ecs::EntityWorld& world = scene.world();
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Shadow pass");
+    const ecs::EntityWorld& world = scene.world();
 
     const u32 shadow_map_log_size = log2ui(settings.shadow_map_size);
     const u32 first_level_size = 1 << shadow_map_log_size;
@@ -190,56 +244,50 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
         log_msg("Shadow map size is not a power of two", Log::Warning);
     }
 
-
     const math::Vec2ui shadow_map_size = math::Vec2ui(1, settings.shadow_atlas_size) * first_level_size;
     const math::Vec2 uv_mul = 1.0f / math::Vec2(shadow_map_size);
 
     const auto shadow_map = builder.declare_image(shadow_format, shadow_map_size);
 
+    const ShadowCastingLights lights = collect_shadow_casting_lights(scene);
+
+    const float downsample_factor = settings.spill_policy == ShadowMapSpillPolicy::DownSample
+        ? total_occupancy(lights) / settings.shadow_atlas_size
+        : 1.0f;
+    const u32 lod_offset = log2ui(u32(std::ceil(downsample_factor)));
+
     ShadowMapPass pass;
     pass.shadow_map = shadow_map;
-    pass.shadow_indexes = std::make_shared<core::FlatHashMap<u64, math::Vec4ui>>();
+    pass.shadow_indices = std::make_shared<core::FlatHashMap<u64, math::Vec4ui>>();
 
     core::Vector<SubPass> sub_passes;
-
     {
         SubAtlasAllocator allocator(first_level_size);
 
-        const std::array tags = {ecs::tags::not_hidden};
-        for(auto light : world.query<DirectionalLightComponent>(tags)) {
-            const auto& [l] = light.components();
-            if(!l.cast_shadow()) {
-                continue;
-            }
-
-            auto& indices = (*pass.shadow_indexes)[light.id().as_u64()];
+        for(auto&& [id, light] : lights.directionals) {
+            auto& indices = (*pass.shadow_indices)[id.as_u64()];
             indices = math::Vec4ui(u32(-1));
 
-            const usize cascades = indices.size();
-            const float cascade_ratio = std::max(2.0f, l.last_cascade_distance() / l.first_cascade_distance());
+            const usize cascades = light->cascades();
+            const float cascade_ratio = std::max(2.0f, light->last_cascade_distance() / light->first_cascade_distance());
             const float cascade_dist_mul = cascades > 1 ? std::exp(std::log(cascade_ratio) / (cascades - 1)) : 1.0f;
 
             float dist_mul = 1.0f;
             for(usize i = 0; i != cascades; ++i) {
-                const float cascade_distance = l.first_cascade_distance() * dist_mul;
+                const float cascade_distance = light->first_cascade_distance() * dist_mul;
                 dist_mul *= cascade_dist_mul;
 
                 indices[i] = u32(sub_passes.size());
-                sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, directional_camera(scene.camera(), l, cascade_distance)), uv_mul, allocator));
+                sub_passes.emplace_back(create_sub_pass(builder, *light, lod_offset, SceneView(&world, directional_camera(scene.camera(), *light, cascade_distance)), uv_mul, allocator));
             }
         }
 
-        for(auto light : world.query<TransformableComponent, SpotLightComponent>(tags)) {
-            const auto& [t, l] = light.components();
-            if(!l.cast_shadow()) {
-                continue;
-            }
-
-            auto& indices = (*pass.shadow_indexes)[light.id().as_u64()];
+        for(auto&& [id, transform, light] : lights.spots) {
+            auto& indices = (*pass.shadow_indices)[id.as_u64()];
             indices = math::Vec4ui(u32(-1));
             indices[0] = u32(sub_passes.size());
 
-            sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, spotlight_camera(t, l)), uv_mul, allocator));
+            sub_passes.emplace_back(create_sub_pass(builder, *light, lod_offset, SceneView(&world, spotlight_camera(*transform, *light)), uv_mul, allocator));
         }
     }
 
