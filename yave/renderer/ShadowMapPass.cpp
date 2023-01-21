@@ -131,7 +131,7 @@ static Camera spotlight_camera(const TransformableComponent& tr, const SpotLight
     return camera;
 }
 
-static Camera directional_camera(const Camera& cam, const DirectionalLightComponent& light) {
+static Camera directional_camera(const Camera& cam, const DirectionalLightComponent& light, float cascade_dist_multipler = 1.0f) {
     const math::Vec3 cam_fwd = cam.forward();
     const math::Matrix4<> inv_matrix = cam.inverse_matrix();
 
@@ -146,7 +146,7 @@ static Camera directional_camera(const Camera& cam, const DirectionalLightCompon
     for(usize i = 0; i != 4; ++i) {
         math::Vec3& a = corners[i * 2];
         const math::Vec3 b = corners[i * 2 + 1];
-        a = b - (a - b).normalized() * light.cascade_distance();
+        a = b - (a - b).normalized() * light.cascade_distance() * cascade_dist_multipler;
         center += a + b;
     }
     center /= 8.0f;
@@ -175,6 +175,7 @@ static Camera directional_camera(const Camera& cam, const DirectionalLightCompon
     return camera;
 }
 
+
 ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings) {
     const auto region = framegraph.region("Shadows");
 
@@ -197,7 +198,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
     ShadowMapPass pass;
     pass.shadow_map = shadow_map;
-    pass.shadow_indexes = std::make_shared<core::FlatHashMap<u64, u32>>();
+    pass.shadow_indexes = std::make_shared<core::FlatHashMap<u64, math::Vec4ui>>();
 
     core::Vector<SubPass> sub_passes;
 
@@ -211,9 +212,15 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
                 continue;
             }
 
-            (*pass.shadow_indexes)[light.id().as_u64()] = u32(sub_passes.size());
+            auto& indices = (*pass.shadow_indexes)[light.id().as_u64()];
+            indices = math::Vec4ui(u32(-1));
 
-            sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, directional_camera(scene.camera(), l)), uv_mul, allocator));
+            const usize cascades = indices.size();
+            for(usize i = 0; i != cascades; ++i) {
+                indices[i] = u32(sub_passes.size());
+                const float dist_mul = float(1 << i);
+                sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, directional_camera(scene.camera(), l, dist_mul)), uv_mul, allocator));
+            }
         }
 
         for(auto light : world.query<TransformableComponent, SpotLightComponent>(tags)) {
@@ -222,7 +229,9 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
                 continue;
             }
 
-            (*pass.shadow_indexes)[light.id().as_u64()] = u32(sub_passes.size());
+            auto& indices = (*pass.shadow_indexes)[light.id().as_u64()];
+            indices = math::Vec4ui(u32(-1));
+            indices[0] = u32(sub_passes.size());
 
             sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, spotlight_camera(t, l)), uv_mul, allocator));
         }

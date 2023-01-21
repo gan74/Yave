@@ -104,19 +104,20 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         for(auto light : scene.world().query<DirectionalLightComponent>(tags)) {
             const auto& [l] = light.components();
 
-            u32 shadow_index = u32(-1);
+            auto shadow_indices = math::Vec4ui(u32(-1));
             if(l.cast_shadow()) {
                 if(const auto it = shadow_pass.shadow_indexes->find(light.id().as_u64()); it != shadow_pass.shadow_indexes->end()) {
-                    shadow_index = it->second;
+                    shadow_indices = it->second;
                 }
             }
 
             mapping[light_count++] = {
-                    -l.direction().normalized(),
-                    shadow_index,
-                    l.color() * l.intensity(),
-                    0
-                };
+                -l.direction().normalized(),
+                0,
+                l.color() * l.intensity(),
+                0,
+                shadow_indices
+            };
         }
 
         {
@@ -211,10 +212,10 @@ static u32 fill_spot_light_buffer(
             continue;
         }
 
-        u32 shadow_index = u32(-1);
+        auto shadow_indices = math::Vec4ui(u32(-1));
         if(l.cast_shadow() && render_shadows) {
             if(const auto it = shadow_pass.shadow_indexes->find(spot.id().as_u64()); it != shadow_pass.shadow_indexes->end()) {
-                shadow_index = it->second;
+                shadow_indices = it->second;
             }
         }
 
@@ -234,7 +235,7 @@ static u32 fill_spot_light_buffer(
             encl_sphere_center,
             enclosing_sphere.radius,
             std::max(math::epsilon<float>, l.angle_exponent()),
-            shadow_index,
+            shadow_indices[0],
             {}
         };
 

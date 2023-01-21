@@ -10,6 +10,8 @@
 #define USE_IBL
 #define USE_AO
 
+#define DEBUG_CASCADES
+
 // -------------------------------- I/O --------------------------------
 
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
@@ -45,7 +47,7 @@ layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 out_color;
 
 
-// -------------------------------- MAIN --------------------------------
+// -------------------------------- HELPERS --------------------------------
 
 float ambient_occlusion() {
 #ifdef USE_AO
@@ -54,6 +56,48 @@ float ambient_occlusion() {
     return 1.0;
 #endif
 }
+
+
+uint shadow_cascade_index(uvec4 indices, vec3 world_pos) {
+    for(uint i = 0; i != 4; ++i) {
+        const uint index = indices[i];
+        if(index >= 0xFFFFFFFF) {
+            break;
+        }
+
+        const ShadowMapParams params = shadow_params[index];
+        const vec2 coords = project(world_pos, params.view_proj).xy;
+        if(saturate(coords) == coords) {
+            return index;
+        }
+    }
+
+    return 0xFFFFFFFF;
+}
+
+vec4 cascade_debug_color(vec3 world_pos) {
+    if(light_count > 0) {
+        const float alpha = 0.05;
+        const uvec4 indices = lights[0].shadow_map_indices;
+        const uint shadow_map_index = shadow_cascade_index(indices, world_pos);
+        if(shadow_map_index < 0xFFFFFFFF) {
+            if(shadow_map_index == indices[0]) {
+                return vec4(0.0, 0.0, 1.0, alpha);
+            }
+            if(shadow_map_index == indices[1]) {
+                return vec4(0.0, 1.0, 0.0, alpha);
+            }
+            if(shadow_map_index == indices[2]) {
+                return vec4(1.0, 1.0, 0.0, alpha);
+            }
+            return vec4(1.0, 0.0, 0.0, alpha);
+        }
+    }
+    return vec4(0.0);
+}
+
+
+// -------------------------------- MAIN --------------------------------
 
 void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
@@ -81,8 +125,10 @@ void main() {
             const vec3 light_dir = light.direction; // assume normalized
 
             float att = 1.0;
-            if(light.shadow_map_index < 0xFFFFFFFF) {
-                const ShadowMapParams params = shadow_params[light.shadow_map_index];
+
+            const uint shadow_map_index = shadow_cascade_index(light.shadow_map_indices, world_pos);
+            if(shadow_map_index < 0xFFFFFFFF) {
+                const ShadowMapParams params = shadow_params[shadow_map_index];
                 const float bias = compute_automatic_bias(params, depth_normal, light_dir);
                 att = compute_shadow_pcf(in_shadows, params, world_pos, bias);
             }
@@ -95,6 +141,11 @@ void main() {
 
 #ifdef USE_IBL
         irradiance += eval_ibl(in_envmap, brdf_lut, view_dir, surface) * ambient_occlusion() * ibl_intensity;
+#endif
+
+#if defined(DEBUG_CASCADES)
+        const vec4 debug_color = cascade_debug_color(world_pos);
+        irradiance = mix(irradiance, debug_color.rgb, debug_color.a);
 #endif
     }
 
