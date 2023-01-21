@@ -131,7 +131,7 @@ static Camera spotlight_camera(const TransformableComponent& tr, const SpotLight
     return camera;
 }
 
-static Camera directional_camera(const Camera& cam, const DirectionalLightComponent& light, float cascade_dist_multipler = 1.0f) {
+static Camera directional_camera(const Camera& cam, const DirectionalLightComponent& light, float cascade_distance) {
     const math::Vec3 cam_fwd = cam.forward();
     const math::Matrix4<> inv_matrix = cam.inverse_matrix();
 
@@ -146,7 +146,7 @@ static Camera directional_camera(const Camera& cam, const DirectionalLightCompon
     for(usize i = 0; i != 4; ++i) {
         math::Vec3& a = corners[i * 2];
         const math::Vec3 b = corners[i * 2 + 1];
-        a = b - (a - b).normalized() * light.cascade_distance() * cascade_dist_multipler;
+        a = b - (a - b).normalized() * cascade_distance;
         center += a + b;
     }
     center /= 8.0f;
@@ -216,10 +216,16 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
             indices = math::Vec4ui(u32(-1));
 
             const usize cascades = indices.size();
+            const float cascade_ratio = std::max(2.0f, l.last_cascade_distance() / l.first_cascade_distance());
+            const float cascade_dist_mul = cascades > 1 ? std::exp(std::log(cascade_ratio) / (cascades - 1)) : 1.0f;
+
+            float dist_mul = 1.0f;
             for(usize i = 0; i != cascades; ++i) {
+                const float cascade_distance = l.first_cascade_distance() * dist_mul;
+                dist_mul *= cascade_dist_mul;
+
                 indices[i] = u32(sub_passes.size());
-                const float dist_mul = float(1 << i);
-                sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, directional_camera(scene.camera(), l, dist_mul)), uv_mul, allocator));
+                sub_passes.emplace_back(create_sub_pass(builder, l, SceneView(&world, directional_camera(scene.camera(), l, cascade_distance)), uv_mul, allocator));
             }
         }
 

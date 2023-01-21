@@ -46,13 +46,16 @@ class DirectionalLightComponent final {
         u32& shadow_lod();
         u32 shadow_lod() const;
 
-        float& cascade_distance();
-        float cascade_distance() const;
+        float& first_cascade_distance();
+        float first_cascade_distance() const;
+
+        float& last_cascade_distance();
+        float last_cascade_distance() const;
 
         float& shadow_base_bias();
         float shadow_base_bias() const;
 
-        y_reflect(DirectionalLightComponent, _color, _direction, _intensity, _cast_shadow, _shadow_lod, _cascade_distance, _shadow_base_bias)
+        y_reflect(DirectionalLightComponent, _color, _direction, _intensity, _cast_shadow, _shadow_lod, _first_cascade_distance, _last_cascade_distance, _shadow_base_bias)
 
     private:
         math::Vec3 _color = math::Vec3{1.0f};
@@ -61,7 +64,8 @@ class DirectionalLightComponent final {
 
         bool _cast_shadow = false;
         u32 _shadow_lod = 0;
-        float _cascade_distance = 64.0f;
+        float _first_cascade_distance = 64.0f;
+        float _last_cascade_distance = 1024.0f;
         float _shadow_base_bias = 0.025f;
 };
 }

@@ -66,12 +66,20 @@ u32 DirectionalLightComponent::shadow_lod() const {
     return _shadow_lod;
 }
 
-float& DirectionalLightComponent::cascade_distance() {
-    return _cascade_distance;
+float& DirectionalLightComponent::first_cascade_distance() {
+    return _first_cascade_distance;
 }
 
-float DirectionalLightComponent::cascade_distance() const {
-    return _cascade_distance;
+float DirectionalLightComponent::first_cascade_distance() const {
+    return _first_cascade_distance;
+}
+
+float& DirectionalLightComponent::last_cascade_distance() {
+    return _last_cascade_distance;
+}
+
+float DirectionalLightComponent::last_cascade_distance() const {
+    return _last_cascade_distance;
 }
 
 float& DirectionalLightComponent::shadow_base_bias() {

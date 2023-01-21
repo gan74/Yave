@@ -222,9 +222,17 @@ struct DirectionalLightComponentWidget : public LightComponentWidget<Directional
         imgui::table_begin_next_row();
 
         {
-            ImGui::TextUnformatted("Cascade distance");
+            ImGui::TextUnformatted("First cascade distance");
             ImGui::TableNextColumn();
-            undo_stack() << ImGui::DragFloat("##dist", &light->cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
+            undo_stack() << ImGui::DragFloat("##firstdist", &light->first_cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
+        }
+
+        imgui::table_begin_next_row();
+
+        {
+            ImGui::TextUnformatted("Last cascade distance");
+            ImGui::TableNextColumn();
+            undo_stack() << ImGui::DragFloat("##lastdist", &light->last_cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
         }
 
     }

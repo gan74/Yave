@@ -10,7 +10,7 @@
 #define USE_IBL
 #define USE_AO
 
-#define DEBUG_CASCADES
+// #define DEBUG_CASCADES
 
 // -------------------------------- I/O --------------------------------
 
@@ -77,10 +77,12 @@ uint shadow_cascade_index(uvec4 indices, vec3 world_pos) {
 
 vec4 cascade_debug_color(vec3 world_pos) {
     if(light_count > 0) {
-        const float alpha = 0.05;
         const uvec4 indices = lights[0].shadow_map_indices;
         const uint shadow_map_index = shadow_cascade_index(indices, world_pos);
+
         if(shadow_map_index < 0xFFFFFFFF) {
+            const vec2 coords = abs(project(world_pos, shadow_params[shadow_map_index].view_proj).xy * 2.0 - 1.0);
+            const float alpha = mix(0.05, 0.25, pow(1.0 - max(coords.x, coords.y), 4.0));
             if(shadow_map_index == indices[0]) {
                 return vec4(0.0, 0.0, 1.0, alpha);
             }
