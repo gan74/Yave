@@ -40,7 +40,7 @@ class FrameGraphResourcePool : NonMovable {
 
 
         TransientImage<> create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
-        TransientBuffer create_buffer(usize byte_size, BufferUsage usage, MemoryType memory);
+        TransientBuffer create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory);
 
         void release(TransientImage<> image);
         void release(TransientBuffer buffer);

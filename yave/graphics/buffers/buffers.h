@@ -29,6 +29,7 @@ SOFTWARE.
 namespace yave {
 
 using StagingBuffer = Buffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
+using StagingSubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
 
 
 

@@ -115,8 +115,8 @@ class FrameGraph : NonMovable {
         u64 buffer_byte_size(FrameGraphBufferId res) const;
 
         template<typename T>
-        u64 buffer_size(FrameGraphTypedBufferId<T> res) const {
-            return buffer_byte_size(res) / sizeof(T);
+        usize buffer_size(FrameGraphTypedBufferId<T> res) const {
+            return usize(buffer_byte_size(res) / sizeof(T));
         }
 
     private:

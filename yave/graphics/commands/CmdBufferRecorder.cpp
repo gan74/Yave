@@ -470,7 +470,7 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
     }
 }
 
-void CmdBufferRecorder::copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst) {
+void CmdBufferRecorder::copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
     y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match.");
 
     VkBufferCopy copy = {};

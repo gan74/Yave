@@ -353,6 +353,8 @@ void FrameGraph::alloc_resources() {
         }
         _resources->create_buffer(res, info.byte_size, info.usage, info.memory_type);
     }
+
+    _resources->init_staging_buffer();
 }
 
 const core::String& FrameGraph::pass_name(usize pass_index) const {

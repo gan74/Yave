@@ -28,23 +28,26 @@ namespace y {
 
 constexpr usize max_alignment = std::alignment_of<std::max_align_t>::value;
 
-constexpr usize align_up_to(usize value, usize alignment) {
+template<typename U>
+constexpr U align_up_to(U value, U alignment) {
     y_debug_assert(alignment);
-    if(const usize diff = value % alignment) {
+    if(const U diff = value % alignment) {
         y_debug_assert(diff <= value + alignment);
         return value + alignment - diff;
     }
     return value;
 }
 
-constexpr usize align_down_to(usize value, usize alignment) {
+template<typename U>
+constexpr U align_down_to(U value, U alignment) {
     y_debug_assert(alignment);
-    const usize diff = value % alignment;
+    const U diff = value % alignment;
     return value - diff;
 }
 
-constexpr usize align_up_to_max(usize size) {
-    return align_up_to(size, max_alignment);
+template<typename U>
+constexpr U align_up_to_max(U size) {
+    return align_up_to(size, U(max_alignment));
 }
 
 }

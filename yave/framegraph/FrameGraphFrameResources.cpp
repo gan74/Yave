@@ -25,6 +25,9 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/device/DeviceProperties.h>
+
+#include <y/utils/memory.h>
 
 
 namespace yave {
@@ -56,6 +59,12 @@ void FrameGraphFrameResources::reserve(usize images, usize buffers) {
     _buffers.set_min_capacity(buffers);
 }
 
+void FrameGraphFrameResources::init_staging_buffer() {
+    if(_staging_buffer_len) {
+        _staging_buffer = StagingBuffer(_staging_buffer_len);
+    }
+}
+
 void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
     res.check_valid();
 
@@ -68,7 +77,7 @@ void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat f
     image = &_image_storage.back();
 }
 
-void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory) {
+void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory) {
     res.check_valid();
 
     _buffers.set_min_size(res.id() + 1);
@@ -77,8 +86,10 @@ void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, usize byte_
     y_always_assert(!buffer.buffer, "Buffer already exists");
 
     if(is_cpu_visible(memory)) {
-        _buffer_storage.emplace_back(_pool->create_buffer(byte_size, StagingBuffer::usage, StagingBuffer::memory_type));
-        buffer.staging = &_buffer_storage.back();
+        y_debug_assert(_staging_buffer.is_null());
+        buffer.staging_buffer_offset = _staging_buffer_len;
+        _staging_buffer_len += align_up_to(byte_size, device_properties().non_coherent_atom_size);
+
     }
 
     _buffer_storage.emplace_back(_pool->create_buffer(byte_size, usage, MemoryType::DeviceLocal));
@@ -89,12 +100,9 @@ void FrameGraphFrameResources::flush_mapped_buffers(CmdBufferRecorder& recorder)
     y_profile();
     const auto region = recorder.region("Flush buffers");
 
-    for(usize i = 0; i != _buffers.size(); ++i) {
-        if(_buffers[i].buffer && _buffers[i].staging) {
-            recorder.copy(
-                TransientSubBuffer<BufferUsage::TransferSrcBit>(*_buffers[i].staging),
-                TransientSubBuffer<BufferUsage::TransferDstBit>(*_buffers[i].buffer)
-            );
+    for(const auto& buffer : _buffers) {
+        if(buffer.buffer && buffer.is_mapped()) {
+            recorder.copy(staging_buffer(buffer), TransientSubBuffer<BufferUsage::TransferDstBit>(*buffer.buffer) );
         }
     }
 }
@@ -154,34 +162,43 @@ bool FrameGraphFrameResources::are_aliased(FrameGraphImageId a, FrameGraphImageI
 const TransientImage<>& FrameGraphFrameResources::find(FrameGraphImageId res) const {
     y_always_assert(res.is_valid(), "Invalid image resource");
 
-    if(is_alive(res)) {
-        return *_images[res.id()];
+    if(!is_alive(res)) {
+        y_fatal("Image resource doesn't exist");
     }
 
-    y_fatal("Image resource doesn't exist");
+    return *_images[res.id()];
 }
 
 const TransientBuffer& FrameGraphFrameResources::find(FrameGraphBufferId res) const {
     y_always_assert(res.is_valid(), "Invalid buffer resource");
 
-    if(is_alive(res)) {
-        return *_buffers[res.id()].buffer;
+    if(!is_alive(res)) {
+        y_fatal("Buffer resource doesn't exist");
     }
 
-    y_fatal("Buffer resource doesn't exist");
+    return *_buffers[res.id()].buffer;
 }
 
-const TransientBuffer& FrameGraphFrameResources::staging_buffer(FrameGraphMutableBufferId res) const {
+StagingSubBuffer FrameGraphFrameResources::staging_buffer(FrameGraphMutableBufferId res) const {
     y_always_assert(res.is_valid(), "Invalid buffer resource");
+    y_always_assert(!_staging_buffer.is_null(), "Staging buffer has not been initialized");
 
-    if(is_alive(res)) {
-        if(_buffers[res.id()].staging) {
-            return *_buffers[res.id()].staging;
-        }
+    if(!is_alive(res)) {
+        y_fatal("Buffer resource doesn't exist");
+    }
+
+    const auto buffer = _buffers[res.id()];
+    if(!buffer.is_mapped()) {
         y_fatal("Buffer has not been mapped");
     }
 
-    y_fatal("Buffer resource doesn't exist");
+    return staging_buffer(buffer);
+}
+
+
+StagingSubBuffer FrameGraphFrameResources::staging_buffer(const BufferData& buffer) const {
+    y_debug_assert(buffer.is_mapped());
+    return StagingSubBuffer(_staging_buffer, buffer.buffer->byte_size(), buffer.staging_buffer_offset);
 }
 
 

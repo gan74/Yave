@@ -117,7 +117,7 @@ class DescriptorSetPool : NonMovable {
         VkHandle<VkDescriptorSetLayout> _layout;
 
         usize _inline_blocks = 0;
-        usize _descriptor_buffer_size = 0;
+        u64 _descriptor_buffer_size = 0;
         Buffer<BufferUsage::UniformBit> _inline_buffer;
 };
 

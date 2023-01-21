@@ -100,8 +100,8 @@ class RenderPassRecorder final : NonMovable {
 
 class CmdBufferRecorder final : NonCopyable {
 
-    using SrcCopyBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
-    using DstCopyBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
+    using SrcCopySubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
+    using DstCopySubBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
     using SrcCopyImage = ImageView<ImageUsage::TransferSrcBit>;
     using DstCopyImage = ImageView<ImageUsage::TransferDstBit>;
 
@@ -134,7 +134,7 @@ class CmdBufferRecorder final : NonCopyable {
 
         Y_TODO(Const all this)
         void barriered_copy(const ImageBase& src,  const ImageBase& dst);
-        void copy(const SrcCopyBuffer& src, const DstCopyBuffer& dst);
+        void copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
         //void copy(const SrcCopyImage& src,  const DstCopyImage& dst);
         void blit(const SrcCopyImage& src,  const DstCopyImage& dst);
 

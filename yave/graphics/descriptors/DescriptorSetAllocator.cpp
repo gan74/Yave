@@ -183,9 +183,9 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
     vk_check(vkAllocateDescriptorSets(vk_device(), &allocate_info, _sets.data()));
 
     if(!layout.inline_blocks_fallbacks().is_empty()) {
-        const usize alignment = inline_sub_buffer_alignment();
+        const u64 alignment = inline_sub_buffer_alignment();
         for(const auto& buffer : layout.inline_blocks_fallbacks()) {
-            _descriptor_buffer_size += align_up_to(buffer.byte_size, alignment);
+            _descriptor_buffer_size += align_up_to(u64(buffer.byte_size), alignment);
         }
         log_msg(fmt("Allocating % * % bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
         _inline_buffer = Buffer<BufferUsage::UniformBit>(_descriptor_buffer_size * pool_size);

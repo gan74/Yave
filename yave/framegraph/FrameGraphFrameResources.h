@@ -39,7 +39,11 @@ namespace yave {
 class FrameGraphFrameResources final : NonMovable {
     struct BufferData {
         TransientBuffer* buffer = nullptr;
-        TransientBuffer* staging = nullptr;
+        u64 staging_buffer_offset = u64(-1);
+
+        bool is_mapped() const {
+            return staging_buffer_offset != u64(-1);
+        }
     };
 
     public:
@@ -74,7 +78,7 @@ class FrameGraphFrameResources final : NonMovable {
         TypedMapping<T> map_buffer(FrameGraphMutableTypedBufferId<T> res) const {
             constexpr BufferUsage usage = StagingBuffer::usage;
             constexpr MemoryType memory = StagingBuffer::memory_type;
-            const TypedSubBuffer<T, usage, memory> sub_buffer(TransientSubBuffer<usage, memory>(staging_buffer(res)));
+            const TypedSubBuffer<T, usage, memory> sub_buffer(staging_buffer(res));
             return TypedMapping<T>(sub_buffer);
         }
 
@@ -82,12 +86,13 @@ class FrameGraphFrameResources final : NonMovable {
         friend class FrameGraph;
 
         void reserve(usize images, usize buffers);
+        void init_staging_buffer();
 
         u32 create_image_id();
         u32 create_buffer_id();
 
         void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
-        void create_buffer(FrameGraphBufferId res, usize byte_size, BufferUsage usage, MemoryType memory);
+        void create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory);
 
         bool is_alive(FrameGraphImageId res) const;
         bool is_alive(FrameGraphBufferId res) const;
@@ -99,7 +104,9 @@ class FrameGraphFrameResources final : NonMovable {
     private:
         const TransientImage<>& find(FrameGraphImageId res) const;
         const TransientBuffer& find(FrameGraphBufferId res) const;
-        const TransientBuffer& staging_buffer(FrameGraphMutableBufferId res) const;
+
+        StagingSubBuffer staging_buffer(FrameGraphMutableBufferId res) const;
+        StagingSubBuffer staging_buffer(const BufferData& buffer) const;
 
         u32 _next_image_id = 0;
         u32 _next_buffer_id = 0;
@@ -112,6 +119,9 @@ class FrameGraphFrameResources final : NonMovable {
         // We need pointer stability
         std::deque<TransientImage<>> _image_storage;
         std::deque<TransientBuffer> _buffer_storage;
+
+        StagingBuffer _staging_buffer;
+        u64 _staging_buffer_len = 0;
 };
 
 }
