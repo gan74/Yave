@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 
+#include <yave/systems/OctreeSystem.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
@@ -198,13 +199,23 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene)
         shadow_casters.directionals.push_back({light.id(), &l});
     }
 
-    shadow_casters.spots.set_min_capacity(world.components<SpotLightComponent>().size());
-    for(auto&& light : world.query<const TransformableComponent, const SpotLightComponent>(tags)) {
-        const auto& [t, l] = light.components();
-        if(!l.cast_shadow()) {
-            continue;
+    auto collect_spots = [&](auto&& query) {
+        shadow_casters.spots.set_min_capacity(query.size());
+        for(auto&& light : query) {
+            const auto& [t, l] = light.components();
+            if(!l.cast_shadow()) {
+                continue;
+            }
+            shadow_casters.spots.push_back({light.id(), &t, &l});
         }
-        shadow_casters.spots.push_back({light.id(), &t, &l});
+    };
+
+    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
+        const Camera& camera = scene.camera();
+        const core::Vector<ecs::EntityId> visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+        collect_spots(world.query<TransformableComponent, SpotLightComponent>(visible, tags));
+    } else {
+        collect_spots(world.query<TransformableComponent, SpotLightComponent>(tags));
     }
 
     return shadow_casters;
