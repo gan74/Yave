@@ -90,5 +90,9 @@ float DirectionalLightComponent::shadow_base_bias() const {
     return _shadow_base_bias;
 }
 
+usize DirectionalLightComponent::cascades() const {
+    return 4;
+}
+
 }
 

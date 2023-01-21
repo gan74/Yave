@@ -92,7 +92,7 @@ const Texture& ImGuiRenderer::font_texture() const {
 }
 
 void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) {
-    static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indexes not supported");
+    static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indices not supported");
 
     y_profile();
 
@@ -113,7 +113,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
     const TypedBuffer<ImDrawVert, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(imgui_vertex_buffer_size);
     const TypedUniformBuffer<math::Vec2> uniform_buffer(2);
 
-    auto indexes = TypedMapping(index_buffer);
+    auto indices = TypedMapping(index_buffer);
     auto vertices = TypedMapping(vertex_buffer);
 
     auto uniform = TypedMapping(uniform_buffer);
@@ -150,7 +150,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
             y_fatal("Vertex buffer overflow.");
         }
 
-        std::copy(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Data + cmd_list->IdxBuffer.Size, &indexes[index_offset]);
+        std::copy(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Data + cmd_list->IdxBuffer.Size, &indices[index_offset]);
         std::copy(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Data + cmd_list->VtxBuffer.Size, &vertices[vertex_offset]);
 
         usize drawn_index_offset = index_offset;

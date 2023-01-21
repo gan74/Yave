@@ -106,7 +106,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
             auto shadow_indices = math::Vec4ui(u32(-1));
             if(l.cast_shadow()) {
-                if(const auto it = shadow_pass.shadow_indexes->find(light.id().as_u64()); it != shadow_pass.shadow_indexes->end()) {
+                if(const auto it = shadow_pass.shadow_indices->find(light.id().as_u64()); it != shadow_pass.shadow_indices->end()) {
                     shadow_indices = it->second;
                 }
             }
@@ -214,7 +214,7 @@ static u32 fill_spot_light_buffer(
 
         auto shadow_indices = math::Vec4ui(u32(-1));
         if(l.cast_shadow() && render_shadows) {
-            if(const auto it = shadow_pass.shadow_indexes->find(spot.id().as_u64()); it != shadow_pass.shadow_indexes->end()) {
+            if(const auto it = shadow_pass.shadow_indices->find(spot.id().as_u64()); it != shadow_pass.shadow_indices->end()) {
                 shadow_indices = it->second;
             }
         }

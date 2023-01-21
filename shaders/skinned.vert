@@ -14,7 +14,7 @@ layout(location = 0) in vec3 in_position;
 layout(location = 1) in uvec2 in_packed_normal_tangent_sign;
 layout(location = 2) in vec2 in_uv;
 
-layout(location = 3) in uvec4 in_skin_indexes;
+layout(location = 3) in uvec4 in_skin_indices;
 layout(location = 4) in vec4 in_skin_weights_Packed;
 
 layout(location = 8) in mat4 in_model;
@@ -25,10 +25,10 @@ layout(location = 2) out vec3 out_bitangent;
 layout(location = 3) out vec2 out_uv;
 
 void main() {
-    const mat4 bone_matrix = in_skin_weights_Packed.x * bone_transforms[in_skin_indexes.x] +
-                             in_skin_weights_Packed.y * bone_transforms[in_skin_indexes.y] +
-                             in_skin_weights_Packed.z * bone_transforms[in_skin_indexes.z] +
-                             in_skin_weights_Packed.w * bone_transforms[in_skin_indexes.w];
+    const mat4 bone_matrix = in_skin_weights_Packed.x * bone_transforms[in_skin_indices.x] +
+                             in_skin_weights_Packed.y * bone_transforms[in_skin_indices.y] +
+                             in_skin_weights_Packed.z * bone_transforms[in_skin_indices.z] +
+                             in_skin_weights_Packed.w * bone_transforms[in_skin_indices.w];
 
     out_uv = in_uv;
 

@@ -55,6 +55,8 @@ class DirectionalLightComponent final {
         float& shadow_base_bias();
         float shadow_base_bias() const;
 
+        usize cascades() const;
+
         y_reflect(DirectionalLightComponent, _color, _direction, _intensity, _cast_shadow, _shadow_lod, _first_cascade_distance, _last_cascade_distance, _shadow_base_bias)
 
     private:

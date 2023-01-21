@@ -50,7 +50,7 @@ layout(set = 1, binding = 0) uniform LightCount_Inline {
 
 // -------------------------------- SHARED --------------------------------
 
-shared uint light_indexes[max_tile_lights];
+shared uint light_indices[max_tile_lights];
 shared uint tile_point_count;
 shared uint tile_spot_count;
 
@@ -133,7 +133,7 @@ void cull_points() {
             if(light_index >= max_tile_lights) {
                 break;
             }
-            light_indexes[light_index] = i;
+            light_indices[light_index] = i;
         }
     }
 }
@@ -147,7 +147,7 @@ void cull_spots() {
             if(light_index >= max_tile_lights) {
                 break;
             }
-            light_indexes[light_index] = i;
+            light_indices[light_index] = i;
         }
     }
 }
@@ -199,7 +199,7 @@ void main() {
     const uint point_begin = 0;
     const uint point_end = min(max_tile_lights, tile_point_count);
     for(uint i = point_begin; i != point_end; ++i) {
-        const PointLight light = point_lights[light_indexes[i]];
+        const PointLight light = point_lights[light_indices[i]];
 
         vec3 light_dir = light.position - world_pos;
         const float distance = length(light_dir);
@@ -218,7 +218,7 @@ void main() {
     const uint spot_begin = tile_point_count;
     const uint spot_end = min(max_tile_lights, spot_begin + tile_spot_count);
     for(uint i = spot_begin; i != spot_end; ++i) {
-        const SpotLight light = spot_lights[light_indexes[i]];
+        const SpotLight light = spot_lights[light_indices[i]];
 
         vec3 light_dir = light.position - world_pos;
         const float distance = length(light_dir);
