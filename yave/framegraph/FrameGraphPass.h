@@ -65,6 +65,9 @@ class FrameGraphPass final : NonMovable {
         void init_framebuffer(const FrameGraphFrameResources& resources);
         void init_descriptor_sets(const FrameGraphFrameResources& resources);
 
+        ResourceUsageInfo& info(FrameGraphImageId res);
+        ResourceUsageInfo& info(FrameGraphBufferId res);
+
         render_func _render = [](CmdBufferRecorder&, const FrameGraphPass*) {};
         core::String _name;
 

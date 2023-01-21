@@ -116,5 +116,15 @@ void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resour
     }
 }
 
+FrameGraphPass::ResourceUsageInfo& FrameGraphPass::info(FrameGraphImageId res) {
+    y_debug_assert(_parent->info(res).first_use <= _index);
+    return _images[res];
+}
+
+FrameGraphPass::ResourceUsageInfo& FrameGraphPass::info(FrameGraphBufferId res) {
+    y_debug_assert(_parent->info(res).first_use <= _index);
+    return _buffers[res];
+}
+
 }
 

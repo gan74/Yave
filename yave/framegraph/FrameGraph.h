@@ -152,7 +152,6 @@ class FrameGraph : NonMovable {
 
         core::Vector<std::unique_ptr<FrameGraphPass>> _passes;
 
-        using hash_t = std::hash<FrameGraphResourceId>;
         core::Vector<std::pair<FrameGraphMutableImageId, ImageCreateInfo>> _images;
         core::Vector<std::pair<FrameGraphMutableBufferId, BufferCreateInfo>> _buffers;
 

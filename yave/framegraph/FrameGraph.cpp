@@ -89,8 +89,8 @@ static auto&& check_exists(C& c, T t) {
     y_fatal("Resource doesn't exist");
 }
 
-template<typename C, typename B>
-static void build_barriers(const C& resources, B& barriers, core::FlatHashMap<FrameGraphResourceId, PipelineStage>& to_barrier, FrameGraphFrameResources& frame_res) {
+template<typename C, typename B, typename H>
+static void build_barriers(const C& resources, B& barriers, H& to_barrier, FrameGraphFrameResources& frame_res) {
     for(auto&& [res, info] : resources) {
         // barrier around attachments are handled by the renderpass
         const PipelineStage stage = info.stage & ~PipelineStage::AllAttachmentOutBit;
@@ -109,8 +109,9 @@ static void build_barriers(const C& resources, B& barriers, core::FlatHashMap<Fr
     }
 }
 
+template<typename H>
 static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, FrameGraphMutableImageId dst,
-                        core::FlatHashMap<FrameGraphResourceId, PipelineStage>& to_barrier, const FrameGraphFrameResources& resources) {
+                        H& to_barrier, const FrameGraphFrameResources& resources) {
 
     Y_TODO(We might end up barriering twice here)
     if(resources.are_aliased(src, dst)) {
@@ -125,9 +126,9 @@ static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, Frame
     }
 }
 
-[[maybe_unused]]
-static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> copies,
-                        core::FlatHashMap<FrameGraphResourceId, PipelineStage>& to_barrier, const FrameGraphFrameResources& resources) {
+template<typename H>
+[[maybe_unused]] static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> copies,
+                        H& to_barrier, const FrameGraphFrameResources& resources) {
 
     for(auto [src, dst] : copies) {
         copy_image(recorder, src, dst, to_barrier, resources);
@@ -225,8 +226,11 @@ void FrameGraph::render(CmdBufferRecorder& recorder) {
     usize copy_index = 0;
     std::sort(_image_copies.begin(), _image_copies.end(), [&](const auto& a, const auto& b) { return a.pass_index < b.pass_index; });
 
-    core::FlatHashMap<FrameGraphResourceId, PipelineStage> to_barrier;
-    to_barrier.set_min_capacity(_images.size() + _buffers.size());
+    using hash_t = std::hash<FrameGraphResourceId>;
+    core::FlatHashMap<FrameGraphBufferId, PipelineStage, hash_t> buffers_to_barrier;
+    core::FlatHashMap<FrameGraphImageId, PipelineStage, hash_t> images_to_barrier;
+    buffers_to_barrier.set_min_capacity(_buffers.size());
+    images_to_barrier.set_min_capacity(_images.size());
 
     {
         y_profile_zone("init");
@@ -247,7 +251,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) {
                 y_profile_zone("prepare");
                 while(copy_index < _image_copies.size() && _image_copies[copy_index].pass_index == pass->_index) {
                     // copie_image will not do anything if the two are aliased
-                    copy_image(recorder, _image_copies[copy_index].src, _image_copies[copy_index].dst, to_barrier, *_resources);
+                    copy_image(recorder, _image_copies[copy_index].src, _image_copies[copy_index].dst, images_to_barrier, *_resources);
                     ++copy_index;
                 }
             }
@@ -257,8 +261,8 @@ void FrameGraph::render(CmdBufferRecorder& recorder) {
 
                 core::ScratchVector<BufferBarrier> buffer_barriers(pass->_buffers.size());
                 core::ScratchVector<ImageBarrier> image_barriers(pass->_images.size());
-                build_barriers(pass->_buffers, buffer_barriers, to_barrier, *_resources);
-                build_barriers(pass->_images, image_barriers, to_barrier, *_resources);
+                build_barriers(pass->_buffers, buffer_barriers, buffers_to_barrier, *_resources);
+                build_barriers(pass->_images, image_barriers, images_to_barrier, *_resources);
                 recorder.barriers(buffer_barriers, image_barriers);
 
                 //recorder.full_barrier();
@@ -289,24 +293,26 @@ void FrameGraph::render(CmdBufferRecorder& recorder) {
 void FrameGraph::alloc_resources() {
     y_profile();
 
-    for(const auto& cpy : _image_copies) {
-        y_debug_assert(cpy.pass_index <= check_exists(_images, cpy.dst).first_use);
+    if constexpr(allow_image_aliasing) {
+        for(const auto& cpy : _image_copies) {
+            y_debug_assert(cpy.pass_index <= check_exists(_images, cpy.dst).first_use);
 
-        auto& dst_info = check_exists(_images, cpy.dst);
-        auto* src_info = &check_exists(_images, cpy.src);
+            auto& dst_info = check_exists(_images, cpy.dst);
+            auto* src_info = &check_exists(_images, cpy.src);
 
-        while(src_info->alias.is_valid()) {
-            src_info = &check_exists(_images, src_info->alias);
-        }
+            while(src_info->alias.is_valid()) {
+                src_info = &check_exists(_images, src_info->alias);
+            }
 
-        const usize src_last_use = src_info->last_use();
-        // copies are done before the pass so we can alias even if the image is copied
-        const bool can_alias_on_last = src_info->last_usage == ImageUsage::TransferSrcBit;
-        if(src_last_use < dst_info.first_use || (src_last_use == dst_info.first_use && can_alias_on_last)) {
-            src_info->register_alias(dst_info);
+            const usize src_last_use = src_info->last_use();
+            // copies are done before the pass so we can alias even if the image is copied
+            const bool can_alias_on_last = src_info->last_usage == ImageUsage::TransferSrcBit;
+            if(src_last_use < dst_info.first_use || (src_last_use == dst_info.first_use && can_alias_on_last)) {
+                src_info->register_alias(dst_info);
 
-            dst_info.alias = dst_info.copy_src;
-            dst_info.copy_src = FrameGraphImageId();
+                dst_info.alias = dst_info.copy_src;
+                dst_info.copy_src = FrameGraphImageId();
+            }
         }
     }
 

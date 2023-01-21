@@ -74,6 +74,9 @@ static VkAccessFlags vk_dst_access_flags(PipelineStage dst) {
         case PipelineStage::HostBit:
             return VK_ACCESS_HOST_READ_BIT;
 
+        /*case PipelineStage::VertexInputBit:
+            return VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;*/
+
         case PipelineStage::BeginOfPipe:
         case PipelineStage::EndOfPipe:
             return VK_ACCESS_MEMORY_READ_BIT;
