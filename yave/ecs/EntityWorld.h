@@ -268,27 +268,35 @@ class EntityWorld {
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) {
             const auto sets = typed_component_sets_or_none<Args...>();
-            return Query<Args...>(sets, build_id_sets_for_query(sets, tags));
+            auto q = Query<Args...>(sets, build_id_sets_for_query(sets, tags));
+            dirty_mutated_containers<Args...>(q.ids());
+            return q;
         }
 
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
             const auto sets = typed_component_sets_or_none<Args...>();
-            return Query<Args...>(sets, build_id_sets_for_query(sets, tags));
+            auto q = Query<Args...>(sets, build_id_sets_for_query(sets, tags));
+
+            return q;
         }
 
         template<typename... Args>
         auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) {
             const auto sets = typed_component_sets_or_none<Args...>();
-            return Query<Args...>(sets, build_id_sets_for_query(sets, tags), ids);
+            auto q = Query<Args...>(sets, build_id_sets_for_query(sets, tags), ids);
+            dirty_mutated_containers<Args...>(q.ids());
+            return q;
         }
 
         template<typename... Args>
         auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
             const auto sets = typed_component_sets_or_none<Args...>();
-            return Query<Args...>(sets, build_id_sets_for_query(sets, tags), ids);
+            auto q = Query<Args...>(sets, build_id_sets_for_query(sets, tags), ids);
+
+            return q;
         }
 
         template<typename... Args>
@@ -384,6 +392,26 @@ class EntityWorld {
             }
             return matches;
         }
+
+
+        template<typename T, typename... Args>
+        void dirty_mutated_containers(core::Span<EntityId> mutated) {
+            if(mutated.is_empty()) {
+                return;
+            }
+            if constexpr(sizeof...(Args) != 0) {
+                dirty_mutated_containers<T>(mutated);
+                dirty_mutated_containers<Args...>(mutated);
+            } else {
+                if constexpr(traits::is_component_mutable_v<T>) {
+                    ComponentContainerBase* container = find_container<T>();
+                    for(const EntityId id : mutated) {
+                        container->set_dirty(id);
+                    }
+                }
+            }
+        }
+
 
 
         const SparseIdSet* raw_tag_set(const core::String& tag) const;
