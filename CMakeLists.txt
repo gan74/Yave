@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.24)
 project(yave)
 
 function(build_luajit LUAJIT_TARGET)
@@ -78,6 +78,14 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(Vulkan REQUIRED)
 
+if(NOT Vulkan_FOUND)
+    message(FATAL_ERROR "Vulkan SDK not found")
+endif()
+if(NOT Vulkan_glslc_FOUND)
+    message(FATAL_ERROR "glslc not found in Vulkan SDK")
+endif()
+
+
 # add y subtree
 add_subdirectory(y)
 
@@ -89,7 +97,6 @@ include_directories(${yave_SOURCE_DIR})
 include_directories(${Vulkan_INCLUDE_DIRS})
 include_directories(external/sol/include)
 include_directories(external/LuaJIT/src)
-
 
 
 # Yave's core file
@@ -165,7 +172,7 @@ if(YAVE_BUILD_YAVE)
 
     target_link_libraries(yave luajit)
 
-    add_custom_target(shaders COMMAND glslc -c --target-env=vulkan1.2 ${SHADER_FILES})
+    add_custom_target(shaders COMMAND ${Vulkan_GLSLC_EXECUTABLE} -c --target-env=vulkan1.2 ${SHADER_FILES})
     optimize_shaders(shaders)
 
     add_dependencies(yave shaders)
