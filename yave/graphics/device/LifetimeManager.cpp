@@ -213,7 +213,6 @@ ResourceFence LifetimeManager::create_fence() {
 
 void LifetimeManager::register_for_polling(CmdBufferData* data) {
     bool collect = false;
-    unused(collect);
 
     {
         const auto lock = y_profile_unique_lock(_cmd_lock);
@@ -224,6 +223,7 @@ void LifetimeManager::register_for_polling(CmdBufferData* data) {
         collect = (_in_flight.front()->resource_fence()._value == _next);
     }
 
+    unused(collect);
 #ifndef YAVE_MT_LIFETIME_MANAGER
     if(collect) {
         poll_cmd_buffers();
