@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 
+#define USE_LAZY_QUERY
+
 namespace yave {
 namespace ecs {
 
@@ -150,61 +152,102 @@ class Query : NonCopyable {
 
     private:
         struct IdComponentsReturnPolicy {
-            inline static decltype(auto) make(EntityId id, const set_tuple& sets) {
-                return IdComponents(id, make_component_tuple(sets, id));
+            inline static decltype(auto) make(EntityId id, const component_tuple& comps) {
+                return IdComponents(id, comps);
             }
         };
 
         struct ComponentsReturnPolicy {
-            inline static component_tuple make(EntityId id, const set_tuple& sets) {
-                return make_component_tuple(sets, id);
+            inline static component_tuple make(EntityId id, const component_tuple& comps) {
+                return comps;
             }
         };
 
         template<typename ReturnPolicy>
-        class Iterator {
+        class LazyIterator {
             public:
-                inline Iterator() = default;
+                inline LazyIterator() = default;
 
-                inline Iterator& operator++() {
+                inline LazyIterator& operator++() {
                     ++_it;
                     return *this;
                 }
 
-                inline Iterator operator++(int) {
-                    const Iterator it = *this;
+                inline LazyIterator operator++(int) {
+                    const LazyIterator it = *this;
                     ++_it;
                     return it;
                 }
 
-                inline bool operator==(const Iterator& other) const {
+                inline bool operator==(const LazyIterator& other) const {
                     return _it == other._it;
                 }
 
-                inline bool operator!=(const Iterator& other) const {
+                inline bool operator!=(const LazyIterator& other) const {
                     return _it != other._it;
                 }
 
                 inline auto operator*() const {
                     y_debug_assert(_it && _it->is_valid());
-                    return ReturnPolicy::make(*_it, _sets);
+                    return ReturnPolicy::make(*_it, make_component_tuple(_sets, *_it));
                 }
 
             private:
                 friend class Query;
 
-                inline Iterator(const EntityId* it, const set_tuple& sets) : _it(it), _sets(sets) {
+                inline LazyIterator(const EntityId* it, const set_tuple& sets) : _it(it), _sets(sets) {
                 }
 
                 const EntityId* _it = nullptr;
                 set_tuple _sets;
         };
 
+        template<typename ReturnPolicy>
+        class VecIterator {
+            public:
+                inline VecIterator() = default;
+
+                inline VecIterator& operator++() {
+                    ++_index;
+                    return *this;
+                }
+
+                inline VecIterator operator++(int) {
+                    const VecIterator it = *this;
+                    ++_index;
+                    return it;
+                }
+
+                inline bool operator==(const VecIterator& other) const {
+                    y_debug_assert(_ids == other._ids);
+                    return _index == other._index;
+                }
+
+                inline bool operator!=(const VecIterator& other) const {
+                    y_debug_assert(_ids == other._ids);
+                    return _index != other._index;
+                }
+
+                inline auto operator*() const {
+                    return ReturnPolicy::make(_ids[_index], _components[_index]);
+                }
+
+            private:
+                friend class Query;
+
+                inline VecIterator(usize index, const EntityId* ids, const component_tuple* components) : _index(index), _ids(ids), _components(components){
+                }
+
+                usize _index = 0;
+                const EntityId* _ids = nullptr;
+                const component_tuple* _components = nullptr;
+
+        };
 
     public:
-        using const_iterator = Iterator<IdComponentsReturnPolicy>;
-
-        using const_component_iterator = Iterator<ComponentsReturnPolicy>;
+#if defined(USE_LAZY_QUERY)
+        using const_iterator = LazyIterator<IdComponentsReturnPolicy>;
+        using const_component_iterator = LazyIterator<ComponentsReturnPolicy>;
 
         const_iterator begin() const {
             return const_iterator(_ids.begin(), _sets);
@@ -213,6 +256,36 @@ class Query : NonCopyable {
         const_iterator end() const {
             return const_iterator(_ids.end(), _sets);
         }
+
+        const_component_iterator components_begin() const {
+            return const_component_iterator(_ids.begin(), _sets);
+        }
+
+        const_component_iterator components_end() const {
+            return const_component_iterator(_ids.end(), _sets);
+        }
+#else
+        using const_iterator = VecIterator<IdComponentsReturnPolicy>;
+        using const_component_iterator = typename core::Vector<component_tuple>::const_iterator;
+
+        const_iterator begin() const {
+            return const_iterator(0, _ids.data(), _components.data());
+        }
+
+        const_iterator end() const {
+            return const_iterator(_ids.size(), _ids.data(), _components.data());
+        }
+
+        const_component_iterator components_begin() const {
+            return _components.begin();
+        }
+
+        const_component_iterator components_end() const {
+            return _components.end();
+        }
+#endif
+
+
 
         usize size() const {
             return _ids.size();
@@ -224,11 +297,11 @@ class Query : NonCopyable {
         // We can kinda work around this using ref-qualifiers to make sure the Query is an lvalue.
         // const& doesn't work here sadly (because it makes query<A>().ids() valid again)
         core::Range<const_iterator> id_components() & {
-            return {const_iterator(_ids.begin(), _sets), const_iterator(_ids.end(), _sets)};
+            return {begin(), end()};
         }
 
         core::Range<const_component_iterator> components() & {
-            return {const_component_iterator(_ids.begin(), _sets), const_component_iterator(_ids.end(), _sets)};
+            return {components_begin(), components_end()};
         }
 
         core::Span<EntityId> ids() & {
@@ -248,6 +321,7 @@ class Query : NonCopyable {
                 y_always_assert(matches[0].include, "Query needs at least one inclusive matching rule");
                 _ids = QueryUtils::matching(core::Span<QueryUtils::SetMatch>(matches.begin() + 1, matches.size() - 1), matches[0].ids());
             }
+            fill_components_array();
         }
 
         Query(const set_tuple& sets, core::MutableSpan<QueryUtils::SetMatch> matches, core::Span<EntityId> range)  : _sets(sets) {
@@ -255,15 +329,35 @@ class Query : NonCopyable {
                 std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.sorting_key() < b.sorting_key(); });
                 _ids = QueryUtils::matching(matches, range);
             }
+            fill_components_array();
         }
 
         Query(const set_tuple& sets) : Query(sets, QueryUtils::create_match_array(sets)) {
+            fill_components_array();
         }
 
         Query(const set_tuple& sets, core::Span<EntityId> range) : Query(sets, QueryUtils::create_match_array(sets), range) {
+            fill_components_array();
         }
 
     private:
+#if defined(USE_LAZY_QUERY)
+        void fill_components_array() {}
+#else
+        void fill_components_array() {
+            y_profile();
+            _components.set_min_capacity(_ids.size());
+
+            using iterator_t = LazyIterator<ComponentsReturnPolicy>;
+            const auto lazy_components = core::Range<iterator_t>(iterator_t(_ids.begin(), _sets), iterator_t(_ids.end(), _sets));
+            for(auto&& comps : lazy_components) {
+                _components.emplace_back(comps);
+            }
+        }
+
+        core::Vector<component_tuple> _components;
+#endif
+
         set_tuple _sets;
 
         core::Vector<EntityId> _ids;
