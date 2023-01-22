@@ -144,17 +144,16 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
         builder.add_color_output(output_image);
         builder.add_inline_input(InlineDescriptor(_view), 0);
-        builder.add_uniform_input(renderer.final, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white), 0, PipelineStage::FragmentBit);
-        builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        builder.add_uniform_input(renderer.final);
+        builder.add_uniform_input(gbuffer.depth);
+        builder.add_uniform_input(gbuffer.color);
+        builder.add_uniform_input(gbuffer.normal);
+        builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white));
+        builder.set_render_func([=, &output](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
                 auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
                 output = out.get();
-                recorder.keep_alive(std::move(out));
+                render_pass.keep_alive(std::move(out));
 
-                auto render_pass = recorder.bind_framebuffer(self->framebuffer());
                 const MaterialTemplate* material = resources()[EditorResources::EngineViewMaterialTemplate];
                 render_pass.bind_material_template(material, self->descriptor_sets()[0]);
                 render_pass.draw_array(3);

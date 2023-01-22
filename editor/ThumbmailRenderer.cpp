@@ -77,7 +77,7 @@ static Texture render_world(const ecs::EntityWorld& world) {
 
         const FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
         {
-            FrameGraphPassBuilder builder = graph.add_pass("Thumbmail copy pass");
+            FrameGraphComputePassBuilder builder = graph.add_compute_pass("Thumbmail copy pass");
             builder.add_uniform_input(output_image);
             builder.add_uniform_input(renderer.gbuffer.depth);
             builder.add_external_input(StorageView(out));

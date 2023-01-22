@@ -25,6 +25,7 @@ SOFTWARE.
 #include "FrameGraph.h"
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/core/ScratchPad.h>
 
@@ -53,7 +54,14 @@ core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
 }
 
 void FrameGraphPass::render(CmdBufferRecorder& recorder) {
-    _render(recorder, this);
+    if(_framebuffer.is_null()) {
+        y_debug_assert(_compute_render != nullptr);
+        _compute_render(recorder, this);
+    } else {
+        y_debug_assert(_compute_render == nullptr);
+        RenderPassRecorder render_pass = recorder.bind_framebuffer(_framebuffer);
+        _render(render_pass, this);
+    }
 }
 
 void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources) {

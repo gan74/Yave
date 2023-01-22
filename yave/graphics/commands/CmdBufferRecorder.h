@@ -82,6 +82,10 @@ class RenderPassRecorder final : NonMovable {
         void set_viewport(const Viewport& vp);
         void set_scissor(const math::Vec2i& offset, const math::Vec2ui& size);
 
+
+        template<typename T>
+        void keep_alive(T&& t);
+
     private:
         friend class CmdBufferRecorder;
 
@@ -167,6 +171,12 @@ class CmdBufferRecorder final : NonCopyable {
         // this could be in RenderPassRecorder, but putting it here makes erroring easier
         const RenderPass* _render_pass = nullptr;
 };
+
+
+template<typename T>
+void RenderPassRecorder::keep_alive(T&& t) {
+   _cmd_buffer.keep_alive(y_fwd(t));
+}
 
 }
 

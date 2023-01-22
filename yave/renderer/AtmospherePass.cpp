@@ -84,8 +84,7 @@ static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const Atmo
 
     builder.add_inline_input(InlineDescriptor(atmosphere_data), 0);
     builder.add_color_output(integrated);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::AtmosphereIntegrationMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
@@ -135,13 +134,12 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
 
     const auto atmo = builder.declare_copy(lit);
 
-    builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(integrated, SamplerType::LinearClamp, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(integrated, SamplerType::LinearClamp);
+    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
     builder.add_inline_input(InlineDescriptor(atmosphere_data), 0);
     builder.add_color_output(atmo);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::AtmosphereMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);

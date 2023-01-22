@@ -57,7 +57,6 @@ class Renamer;
 class ResourceBrowser;
 class SceneImporter2;
 class ScriptPanel;
-class Selection;
 class Settings;
 class ThumbmailRenderer;
 class UiManager;
@@ -76,7 +75,6 @@ struct Entry;
 struct GizmoData;
 struct IdBufferPass;
 struct Link;
-struct Pair;
 struct PerfSettings;
 struct Picker;
 struct PickingResult;
@@ -93,10 +91,10 @@ namespace editor::import {
 struct Asset;
 struct Image;
 struct Material;
-struct Mesh;
+struct MaterialGroup;
+struct MeshPrefab;
 struct Node;
 struct ParsedScene;
-struct SubMesh;
 }
 
 

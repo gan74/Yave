@@ -75,6 +75,7 @@ class FrameGraphDescriptorBinding;
 class FrameGraphFrameResources;
 class FrameGraphPass;
 class FrameGraphPassBuilder;
+class FrameGraphPassBuilderBase;
 class FrameGraphRegion;
 class FrameGraphResourceId;
 class FrameGraphResourcePool;
@@ -162,7 +163,6 @@ struct BoneTransform;
 struct Box;
 struct BufferCreateInfo;
 struct BufferData;
-struct CompiledScript;
 struct Contants;
 struct DefaultRenderer;
 struct DeviceProperties;
@@ -193,14 +193,18 @@ struct LayoutPools;
 struct LightingPass;
 struct LightingSettings;
 struct LoadableComponentTypeInfo;
+struct MeshDrawCommand;
 struct Mip;
 struct Monitor;
+struct OneShotScript;
 struct PackedVertex;
 struct Region;
 struct Registerer;
 struct RendererSettings;
 struct ResourceCreateInfo;
 struct ResourceUsageInfo;
+struct RunOnce;
+struct RunOnceResult;
 struct SSAOPass;
 struct SSAOSettings;
 struct SceneData;
@@ -245,6 +249,7 @@ struct ComponentRuntimeInfo;
 struct ComponentsReturnPolicy;
 struct IdComponentsReturnPolicy;
 struct QueryUtils;
+struct SetMatch;
 }
 
 
@@ -258,11 +263,6 @@ struct SH;
 struct ShadowMapParams;
 struct SpotLight;
 struct VPL;
-}
-
-
-namespace yave::script::detail {
-struct CollectionData;
 }
 
 

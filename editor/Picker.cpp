@@ -60,7 +60,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
     const EditorPass entity_pass = EditorPass::create(framegraph, scene_view, scene_pass.depth, FrameGraphImageId(), scene_pass.id);
 
     {
-        FrameGraphPassBuilder builder = framegraph.add_pass("Picking readback pass");
+        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Picking readback pass");
 
         builder.add_uniform_input(entity_pass.depth);
         builder.add_uniform_input(entity_pass.id);

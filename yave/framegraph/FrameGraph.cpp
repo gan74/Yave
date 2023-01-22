@@ -395,11 +395,19 @@ FrameGraphMutableBufferId FrameGraph::declare_buffer(u64 byte_size) {
     return i;
 }
 
-FrameGraphPassBuilder FrameGraph::add_pass(std::string_view name) {
+FrameGraphPass* FrameGraph::create_pass(std::string_view name) {
     auto pass = std::make_unique<FrameGraphPass>(name, this, ++_pass_index);
     FrameGraphPass* ptr = pass.get();
      _passes << std::move(pass);
-    return FrameGraphPassBuilder(ptr);
+     return ptr;
+}
+
+FrameGraphPassBuilder FrameGraph::add_pass(std::string_view name) {
+    return FrameGraphPassBuilder(create_pass(name));
+}
+
+FrameGraphComputePassBuilder FrameGraph::add_compute_pass(std::string_view name) {
+     return FrameGraphComputePassBuilder(create_pass(name));
 }
 
 const FrameGraph::ImageCreateInfo& FrameGraph::info(FrameGraphImageId res) const {

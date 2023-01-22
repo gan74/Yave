@@ -65,8 +65,7 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, con
         builder.add_color_output(downscaled);
         builder.add_uniform_input(mips.last(), SamplerType::LinearClamp);
         builder.add_inline_input(InlineDescriptor(u32(i - 1)));
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             const auto* material = device_resources()[DeviceResources::BloomDownscaleMaterialTemplate];
             render_pass.bind_material_template(material, self->descriptor_sets()[0]);
             render_pass.draw_array(3);
@@ -86,8 +85,7 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, con
         builder.add_color_output(upscaled);
         builder.add_uniform_input(mips[i], SamplerType::LinearClamp);
         builder.add_inline_input(InlineDescriptor(params));
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             const auto* material = device_resources()[DeviceResources::BloomUpscaleMaterialTemplate];
             render_pass.bind_material_template(material, self->descriptor_sets()[0]);
             render_pass.draw_array(3);

@@ -178,16 +178,16 @@ void Preview::on_gui() {
         FrameGraph graph(_resource_pool);
         const DefaultRenderer renderer = DefaultRenderer::create(graph, _view, content_size(), settings);
 
-        FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
+        FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_copy(renderer.lighting.lit);
         Y_TODO(This is not enough to properly sync)
         builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-                auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
-                output = out.get();
-                recorder.keep_alive(std::move(out));
-            });
+            auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
+            output = out.get();
+            recorder.keep_alive(std::move(out));
+        });
 
 
         CmdBufferRecorder& recorder = application()->recorder();

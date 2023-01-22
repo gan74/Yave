@@ -82,21 +82,21 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     const auto directional_buffer = builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_lights);
     const auto params_buffer = builder.declare_typed_buffer<math::Vec4ui>();
 
-    builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input_with_default(ao, Descriptor(white), 0, PipelineStage::FragmentBit);
-    builder.add_external_input(*ibl_probe, 0, PipelineStage::FragmentBit);
-    builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp), 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::FragmentBit);
-    builder.add_storage_input(directional_buffer, 0, PipelineStage::FragmentBit);
-    builder.add_storage_input(shadow_pass.shadow_params, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(params_buffer, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.color);
+    builder.add_uniform_input(gbuffer.normal);
+    builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
+    builder.add_uniform_input_with_default(ao, Descriptor(white));
+    builder.add_external_input(*ibl_probe);
+    builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp));
+    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_storage_input(directional_buffer);
+    builder.add_storage_input(shadow_pass.shadow_params);
+    builder.add_uniform_input(params_buffer);
     builder.add_color_output(lit);
     builder.map_buffer(directional_buffer);
     builder.map_buffer(params_buffer);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         u32 light_count = 0;
         TypedMapping<uniform::DirectionalLight> mapping = self->resources().map_buffer(directional_buffer);
 
@@ -130,7 +130,6 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
             };
         }
 
-        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources()[DeviceResources::DeferredAmbientMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
@@ -258,20 +257,20 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
     const math::Vec2ui size = framegraph.image_size(lit);
     const SceneView& scene = gbuffer.scene_pass.scene_view;
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("Lighting pass");
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Lighting pass");
 
     const auto point_buffer = builder.declare_typed_buffer<uniform::PointLight>(max_point_lights);
     const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
 
-    builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(gbuffer.color, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow, 0, PipelineStage::ComputeBit);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::ComputeBit);
-    builder.add_storage_input(point_buffer, 0, PipelineStage::ComputeBit);
-    builder.add_storage_input(spot_buffer, 0, PipelineStage::ComputeBit);
-    builder.add_storage_input(shadow_pass.shadow_params, 0, PipelineStage::ComputeBit);
-    builder.add_storage_output(lit, 0, PipelineStage::ComputeBit);
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.color);
+    builder.add_uniform_input(gbuffer.normal);
+    builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
+    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_storage_input(point_buffer);
+    builder.add_storage_input(spot_buffer);
+    builder.add_storage_input(shadow_pass.shadow_params);
+    builder.add_storage_output(lit);
     builder.map_buffer(point_buffer);
     builder.map_buffer(spot_buffer);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -312,13 +311,13 @@ static void local_lights_pass(FrameGraph& framegraph,
 
         builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::VertexBit);
         builder.add_storage_input(point_buffer, 0, PipelineStage::VertexBit);
-        builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
+        builder.add_uniform_input(gbuffer.depth);
+        builder.add_uniform_input(gbuffer.color);
+        builder.add_uniform_input(gbuffer.normal);
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);
         builder.map_buffer(point_buffer);
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             TypedMapping<uniform::PointLight> points = self->resources().map_buffer(point_buffer);
             const u32 point_count = fill_point_light_buffer(points.data(), scene);
 
@@ -326,7 +325,6 @@ static void local_lights_pass(FrameGraph& framegraph,
                 return;
             }
 
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             const auto* material = device_resources()[DeviceResources::DeferredPointLightMaterialTemplate];
             render_pass.bind_material_template(material, self->descriptor_sets()[0]);
             {
@@ -344,17 +342,17 @@ static void local_lights_pass(FrameGraph& framegraph,
 
         builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::VertexBit);
         builder.add_storage_input(spot_buffer, 0, PipelineStage::VertexBit);
-        builder.add_uniform_input(gbuffer.depth, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(gbuffer.color, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(gbuffer.normal, 0, PipelineStage::FragmentBit);
-        builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow, 0, PipelineStage::FragmentBit);
-        builder.add_storage_input(shadow_pass.shadow_params, 0, PipelineStage::ComputeBit);
+        builder.add_uniform_input(gbuffer.depth);
+        builder.add_uniform_input(gbuffer.color);
+        builder.add_uniform_input(gbuffer.normal);
+        builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
+        builder.add_storage_input(shadow_pass.shadow_params);
         builder.add_attrib_input(transform_buffer);
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);
         builder.map_buffer(spot_buffer);
         builder.map_buffer(transform_buffer);
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             TypedMapping<uniform::SpotLight> spots = self->resources().map_buffer(spot_buffer);
             TypedMapping<math::Transform<>> transforms = self->resources().map_buffer(transform_buffer);
 
@@ -364,7 +362,6 @@ static void local_lights_pass(FrameGraph& framegraph,
                 return;
             }
 
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
             const auto* material = device_resources()[DeviceResources::DeferredSpotLightMaterialTemplate];
             render_pass.bind_material_template(material, self->descriptor_sets()[0]);
 

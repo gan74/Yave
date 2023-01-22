@@ -46,7 +46,8 @@ class FrameGraphPass final : NonMovable {
             bool written_to = false;
         };
 
-        using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
+        using render_func = std::function<void(RenderPassRecorder&, const FrameGraphPass*)>;
+        using compute_render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
         FrameGraphPass(std::string_view name, FrameGraph* parent, usize index);
 
@@ -60,7 +61,7 @@ class FrameGraphPass final : NonMovable {
 
     private:
         friend class FrameGraph;
-        friend class FrameGraphPassBuilder;
+        friend class FrameGraphPassBuilderBase;
 
         void init_framebuffer(const FrameGraphFrameResources& resources);
         void init_descriptor_sets(const FrameGraphFrameResources& resources);
@@ -68,7 +69,9 @@ class FrameGraphPass final : NonMovable {
         ResourceUsageInfo& info(FrameGraphImageId res);
         ResourceUsageInfo& info(FrameGraphBufferId res);
 
-        render_func _render = [](CmdBufferRecorder&, const FrameGraphPass*) {};
+        render_func _render = nullptr;
+        compute_render_func _compute_render = nullptr;
+
         core::String _name;
 
         FrameGraph* _parent = nullptr;

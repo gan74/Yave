@@ -38,20 +38,20 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
 
     const math::Vec2ui size = framegraph.image_size(in_lit);
 
-    FrameGraphPassBuilder clear_builder = framegraph.add_pass("Histogram clear pass");
+    FrameGraphComputePassBuilder clear_builder = framegraph.add_compute_pass("Histogram clear pass");
 
     const auto histogram = clear_builder.declare_image(VK_FORMAT_R32_UINT, histogram_size);
 
-    clear_builder.add_storage_output(histogram, 0, PipelineStage::ComputeBit);
+    clear_builder.add_storage_output(histogram);
     clear_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::HistogramClearProgram];
         recorder.dispatch_size(program, histogram_size, {self->descriptor_sets()[0]});
     });
 
-    FrameGraphPassBuilder histogram_builder = framegraph.add_pass("Histogram gather pass");
+    FrameGraphComputePassBuilder histogram_builder = framegraph.add_compute_pass("Histogram gather pass");
 
-    histogram_builder.add_storage_output(histogram, 0, PipelineStage::ComputeBit);
-    histogram_builder.add_uniform_input(in_lit, 0, PipelineStage::ComputeBit);
+    histogram_builder.add_storage_output(histogram);
+    histogram_builder.add_uniform_input(in_lit);
     histogram_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::HistogramProgram];
         const u32 thread_count = program.local_size().x();
@@ -63,12 +63,12 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
         recorder.dispatch(program, groups, {self->descriptor_sets()[0]});
     });
 
-    FrameGraphPassBuilder params_builder = framegraph.add_pass("Exposure compute pass");
+    FrameGraphComputePassBuilder params_builder = framegraph.add_compute_pass("Exposure compute pass");
 
     const auto params = params_builder.declare_typed_buffer<uniform::ExposureParams>(1);
 
-    params_builder.add_storage_output(params, 0, PipelineStage::ComputeBit);
-    params_builder.add_uniform_input(histogram, 0, PipelineStage::ComputeBit);
+    params_builder.add_storage_output(params);
+    params_builder.add_uniform_input(histogram);
     params_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::ExposureParamsProgram];
         recorder.dispatch(program, math::Vec3ui(1), {self->descriptor_sets()[0]});

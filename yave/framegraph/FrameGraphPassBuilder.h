@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHPASSBUILDER_H
-#define YAVE_FRAMEGRAPH_FRAMEGRAPHPASSBUILDER_H
+#ifndef YAVE_FRAMEGRAPH_FrameGraphPassBuilderBase_H
+#define YAVE_FRAMEGRAPH_FrameGraphPassBuilderBase_H
 
 #include "FrameGraphResourceId.h"
 
@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-class FrameGraphPassBuilder {
+class FrameGraphPassBuilderBase {
     public:
         // We are using screen textures 90% of the time, so clamp makes sense as a default
         const SamplerType default_samplers[2] = {
@@ -40,7 +40,8 @@ class FrameGraphPassBuilder {
             SamplerType::LinearClamp,
         };
 
-        using render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
+        using render_func = std::function<void(RenderPassRecorder&, const FrameGraphPass*)>;
+        using compute_render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
         FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
         FrameGraphMutableBufferId declare_buffer(u64 byte_size);
@@ -58,18 +59,18 @@ class FrameGraphPassBuilder {
         void add_depth_output(FrameGraphMutableImageId res);
         void add_color_output(FrameGraphMutableImageId res);
 
-        void add_storage_output(FrameGraphMutableImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
-        void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::ComputeBit);
+        void add_storage_output(FrameGraphMutableImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
 
-        void add_storage_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
-        void add_storage_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
-        void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
-        void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
-        void add_uniform_input(FrameGraphImageId res, SamplerType sampler, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
-        void add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
+        void add_storage_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_storage_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_uniform_input(FrameGraphImageId res, SamplerType sampler, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
 
         void add_inline_input(InlineDescriptor desc, usize ds_index = 0);
-        void add_external_input(Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::AllShadersBit);
+        void add_external_input(Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
 
         void add_attrib_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
         void add_index_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
@@ -79,21 +80,16 @@ class FrameGraphPassBuilder {
             map_buffer_internal(res);
         }
 
-        template<typename F>
-        void set_render_func(F&& func) {
-            set_render_func(render_func(std::move(func)));
-        }
-
-        void set_render_func(render_func&& func);
-
         void add_descriptor_binding(Descriptor bind, usize ds_index = 0);
         usize next_descriptor_set_index();
 
+    protected:
+        FrameGraphPassBuilderBase(FrameGraphPass* pass, PipelineStage default_stage = PipelineStage::AllShadersBit);
+
+        void set_render_func(render_func&& func);
+        void set_compute_render_func(compute_render_func&& func);
+
     private:
-        friend class FrameGraph;
-
-        FrameGraphPassBuilder(FrameGraphPass* pass);
-
         void add_to_pass(FrameGraphImageId res, ImageUsage usage, bool is_written, PipelineStage stage);
         void add_to_pass(FrameGraphBufferId res, BufferUsage usage, bool is_written, PipelineStage stage);
 
@@ -101,9 +97,41 @@ class FrameGraphPassBuilder {
 
         void map_buffer_internal(FrameGraphMutableBufferId res);
 
+        PipelineStage or_default(PipelineStage stage) const;
+
         FrameGraph* parent() const;
 
         FrameGraphPass* _pass = nullptr;
+        PipelineStage _default_stage = PipelineStage::AllShadersBit;
+};
+
+
+class FrameGraphPassBuilder : public FrameGraphPassBuilderBase {
+    public:
+        template<typename F>
+        void set_render_func(F&& func) {
+            FrameGraphPassBuilderBase::set_render_func(render_func(std::move(func)));
+        }
+
+    private:
+        friend class FrameGraph;
+
+        FrameGraphPassBuilder(FrameGraphPass* pass) : FrameGraphPassBuilderBase(pass, PipelineStage::FragmentBit) {
+        }
+};
+
+class FrameGraphComputePassBuilder : public FrameGraphPassBuilderBase {
+    public:
+        template<typename F>
+        void set_render_func(F&& func) {
+            FrameGraphPassBuilderBase::set_compute_render_func(compute_render_func(std::move(func)));
+        }
+
+    private:
+        friend class FrameGraph;
+
+        FrameGraphComputePassBuilder(FrameGraphPass* pass) : FrameGraphPassBuilderBase(pass, PipelineStage::ComputeBit) {
+        }
 };
 
 }

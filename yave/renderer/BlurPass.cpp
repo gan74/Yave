@@ -60,8 +60,7 @@ static BlurPass create_blur(FrameGraph& framegraph, FrameGraphImageId in_image, 
         builder.add_color_output(blurred);
         builder.add_uniform_input(in);
         builder.add_inline_input(InlineDescriptor(weights));
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             const auto* material = device_resources()[mat];
             render_pass.bind_material_template(material, self->descriptor_sets()[0]);
             render_pass.draw_array(3);

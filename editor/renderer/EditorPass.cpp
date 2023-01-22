@@ -256,8 +256,7 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, Fra
     builder.add_depth_output(depth);
     builder.add_color_output(color);
     builder.add_color_output(id);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer, flags);
 
             if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {

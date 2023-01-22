@@ -108,6 +108,7 @@ class FrameGraph : NonMovable {
         void render(CmdBufferRecorder& recorder);
 
         FrameGraphPassBuilder add_pass(std::string_view name);
+        FrameGraphComputePassBuilder add_compute_pass(std::string_view name);
 
         math::Vec2ui image_size(FrameGraphImageId res) const;
         ImageFormat image_format(FrameGraphImageId res) const;
@@ -120,7 +121,7 @@ class FrameGraph : NonMovable {
         }
 
     private:
-        friend class FrameGraphPassBuilder;
+        friend class FrameGraphPassBuilderBase;
         friend class FrameGraphPass;
         friend class FrameGraphRegion;
 
@@ -144,6 +145,8 @@ class FrameGraph : NonMovable {
 
     private:
         const core::String& pass_name(usize pass_index) const;
+
+        FrameGraphPass* create_pass(std::string_view name);
 
         void alloc_resources();
         void alloc_image(FrameGraphImageId res, const ImageCreateInfo& info) const;

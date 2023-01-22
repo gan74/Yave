@@ -54,8 +54,7 @@ GBufferPass GBufferPass::create(FrameGraph& framegraph, const SceneView& view, c
     builder.add_color_output(normal);
     builder.add_color_output(emissive);
 
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         pass.scene_pass.render(render_pass, self);
     });
 

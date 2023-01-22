@@ -55,16 +55,15 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     }
 
     builder.add_color_output(tone_mapped);
-    builder.add_uniform_input(in_lit, 0, PipelineStage::FragmentBit);
-    builder.add_uniform_input(params, 0, PipelineStage::FragmentBit);
+    builder.add_uniform_input(in_lit);
+    builder.add_uniform_input(params);
     builder.add_inline_input(InlineDescriptor(shader_settings), 0);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         if(!settings.auto_exposure) {
             TypedMapping<uniform::ExposureParams> mapping = self->resources().map_buffer(mut_params);
             mapping[0] = uniform::ExposureParams{};
         }
 
-        auto render_pass = recorder.bind_framebuffer(self->framebuffer());
         const auto* material = device_resources()[DeviceResources::ToneMappingMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
