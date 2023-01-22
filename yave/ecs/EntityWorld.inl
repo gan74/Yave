@@ -35,7 +35,7 @@ namespace ecs {
 
 template<typename T>
 std::unique_ptr<ComponentContainerBase> create_container() {
-    return std::make_unique<ComponentContainer<T>>();
+    return std::make_unique<ComponentContainer<traits::component_raw_type_t<T>>>();
 }
 
 template<typename T>

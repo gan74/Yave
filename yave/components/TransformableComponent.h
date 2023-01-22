@@ -63,14 +63,15 @@ class TransformableComponent final {
         friend class OctreeSystem;
 
         void swap(TransformableComponent& other);
-        void dirty_node();
-        void set_node(OctreeNode* node);
+
+        void dirty_node() const;
+        void set_node(OctreeNode* node) const;
 
         math::Transform<> _transform;
 
-        ecs::EntityId _id;
-        OctreeNode* _node = nullptr;
-        bool _dirty = false;
+        mutable ecs::EntityId _id;
+        mutable OctreeNode* _node = nullptr;
+        mutable bool _dirty = false;
 };
 
 }

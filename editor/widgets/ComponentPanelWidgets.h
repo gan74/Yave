@@ -59,7 +59,7 @@ class ComponentPanelWidget : public ComponentPanelWidgetBase {
         }
 
         void process_entity(ecs::EntityWorld& world, ecs::EntityId id) override {
-            if(T* component = world.component<T>(id)) {
+            if(T* component = world.component_mut<T>(id)) {
                 static_cast<CRTP*>(this)->on_gui(id, component);
             }
         }

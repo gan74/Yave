@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+#include <y/utils/memory.h>
 
 // THIS FILE SHOULD NOT BE INCLUDED OUTSIDE OF MEMORY'S CPPs !!!
 
@@ -66,14 +67,6 @@ static const VkMemoryPropertyFlags* memory_type_flags[] = {
     staging_flags       // Staging
 };
 
-
-// https://en.wikipedia.org/wiki/Hamming_weight
-static inline u32 popcnt_32(u32 x) {
-    x -= (x >> 1) & 0x55555555;
-    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-    x = (x + (x >> 4)) & 0x0f0f0f0f;
-    return (x * 0x01010101) >> 24;
-}
 
 inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
     y_profile();

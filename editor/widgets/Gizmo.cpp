@@ -161,7 +161,7 @@ float Gizmo::snap_rot(float x) const {
 bool Gizmo::compute_gizmo_data(GizmoData &data) const {
     const auto selected = current_world().selected_entities();
     for(const ecs::EntityId id : core::Range(std::make_reverse_iterator(selected.end()), std::make_reverse_iterator(selected.begin()))) {
-        if(TransformableComponent* transformable = current_world().component<TransformableComponent>(id)) {
+        if(const TransformableComponent* transformable = current_world().component<TransformableComponent>(id)) {
             data.ref_entity_id = id;
             data.ref_transformable = transformable;
             break;

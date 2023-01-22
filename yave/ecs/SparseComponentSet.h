@@ -123,6 +123,16 @@ class SparseIdSet : public SparseIdSetBase {
             y_debug_assert(!contains(id));
         }
 
+        void clear() {
+            _sparse.clear();
+            _dense.clear();
+        }
+
+        void make_empty() {
+            _sparse.make_empty();
+            _dense.make_empty();
+        }
+
         auto begin() const {
             return ids().begin();
         }

@@ -70,11 +70,15 @@ using component_raw_type_t = typename component_type<T>::raw_type;
 template<typename T>
 using component_type_t = typename component_type<T>::type;
 
+
 template<typename T>
 static constexpr bool component_required_v = component_type<T>::required;
 
 template<typename T>
 static constexpr bool is_component_const_v = std::is_const_v<typename component_type<T>::type> || !component_required_v<T>;
+
+template<typename T>
+static constexpr bool is_component_mutable_v = !is_component_const_v<T>;
 }
 
 }

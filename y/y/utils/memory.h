@@ -50,6 +50,26 @@ constexpr U align_up_to_max(U size) {
     return align_up_to(size, U(max_alignment));
 }
 
+// https://en.wikipedia.org/wiki/Hamming_weight
+static inline u32 popcnt_32(u32 x) {
+    x -= (x >> 1) & 0x55555555;
+    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+    x = (x + (x >> 4)) & 0x0f0f0f0f;
+    return (x * 0x01010101) >> 24;
+}
+
+static inline u64 popcnt_64(u64 x) {
+    const u64 m1  = 0x5555555555555555;
+    const u64 m2  = 0x3333333333333333;
+    const u64 m4  = 0x0f0f0f0f0f0f0f0f;
+    const u64 h01 = 0x0101010101010101;
+    x -= (x >> 1) & m1;
+    x = (x & m2) + ((x >> 2) & m2);
+    x = (x + (x >> 4)) & m4;
+    return (x * h01) >> 56;
+}
+
+
 }
 
 #endif // Y_UTILS_MEMORY_H

@@ -22,11 +22,13 @@ SOFTWARE.
 
 #include "EntityWorld.h"
 
-
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+#include <y/utils/memory.h>
 
 #include <yave/assets/AssetLoadingContext.h>
+
+#include <numeric>
 
 
 namespace yave {
@@ -91,7 +93,10 @@ void EntityWorld::tick() {
     }
     for(auto& container : _containers) {
         if(container) {
-            container->clear_recent();
+            if(const usize mutated = container->_mutated.size()) {
+                log_msg(fmt("%: %", container->runtime_info().type_name, mutated));
+            }
+            container->clean_after_tick();
         }
     }
 }

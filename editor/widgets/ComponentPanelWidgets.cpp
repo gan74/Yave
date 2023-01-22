@@ -307,7 +307,7 @@ struct SkyLightComponentWidget : public ComponentPanelWidget<SkyLightComponentWi
                 add_child_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
                     [=](AssetId asset) {
                         if(const auto probe = asset_loader().load_res<IBLProbe>(asset)) {
-                            if(SkyLightComponent* sky = current_world().component<SkyLightComponent>(id)) {
+                            if(SkyLightComponent* sky = current_world().component_mut<SkyLightComponent>(id)) {
                                 undo_stack().push_before_dirty(id);
                                 sky->probe() = probe.unwrap();
                             }
@@ -353,7 +353,7 @@ struct StaticMeshComponentWidget : public ComponentPanelWidget<StaticMeshCompone
                 add_child_widget<AssetSelector>(AssetType::Mesh)->set_selected_callback(
                     [=](AssetId asset) {
                         if(const auto mesh = asset_loader().load_res<StaticMesh>(asset)) {
-                            if(StaticMeshComponent* static_mesh = current_world().component<StaticMeshComponent>(id)) {
+                            if(StaticMeshComponent* static_mesh = current_world().component_mut<StaticMeshComponent>(id)) {
                                 undo_stack().push_before_dirty(id);
                                 static_mesh->mesh() = mesh.unwrap();
                             }
@@ -384,7 +384,7 @@ struct StaticMeshComponentWidget : public ComponentPanelWidget<StaticMeshCompone
                         add_child_widget<AssetSelector>(AssetType::Material)->set_selected_callback(
                             [=](AssetId asset) {
                                 if(const auto mat = asset_loader().load_res<Material>(asset)) {
-                                    if(StaticMeshComponent* static_mesh = current_world().component<StaticMeshComponent>(id)) {
+                                    if(StaticMeshComponent* static_mesh = current_world().component_mut<StaticMeshComponent>(id)) {
                                         undo_stack().push_before_dirty(id);
                                         static_mesh->materials()[i] = mat.unwrap();
                                     }
@@ -473,7 +473,7 @@ struct TransformableComponentWidget : public ComponentPanelWidget<TransformableC
                 return true;
             };
 
-            auto& euler = current_world().component<EditorComponent>(id)->euler();
+            auto& euler = current_world().component_mut<EditorComponent>(id)->euler();
 
             {
                 math::Vec3 actual_euler = rot.to_euler();

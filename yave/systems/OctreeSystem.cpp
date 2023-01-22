@@ -49,6 +49,20 @@ static AABB find_aabb(const ecs::EntityWorld& world, ecs::EntityId id, const mat
 }
 
 
+[[maybe_unused]]
+static void world_test(ecs::EntityWorld& world) {
+    using T = TransformableComponent;
+
+    const ecs::EntityWorld& const_world = world;
+    ecs::EntityId id;
+
+    static_assert(std::is_same_v<const T*, decltype(world.component<T>(id))>);
+    static_assert(std::is_same_v<const T*, decltype(const_world.component<T>(id))>);
+    static_assert(std::is_same_v<T*, decltype(world.component<ecs::Mutate<T>>(id))>);
+    //static_assert(std::is_same_v<T*, decltype(const_world.component<ecs::Mutate<T>>(id))>);
+    //const_world.component<ecs::Mutate<T>>(id);
+}
+
 
 OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
@@ -106,7 +120,7 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
                 }
             }
 
-            if(TransformableComponent* tr = transformables.try_get(id)) {
+            if(const TransformableComponent* tr = transformables.try_get(id)) {
                 const AABB bbox = find_aabb(world, id, tr->position());
                 y_debug_assert(tr->_id == id);
                 tr->set_node(_tree.insert(id, bbox));

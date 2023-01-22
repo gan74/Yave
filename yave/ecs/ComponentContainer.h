@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_ECS_COMPONENTCONTAINER_H
 
 #include "ecs.h"
+#include "traits.h"
 #include "SparseComponentSet.h"
 #include "ComponentRuntimeInfo.h"
 
@@ -108,8 +109,9 @@ class ComponentContainerBase : NonMovable {
 
         template<typename T, typename... Args>
         inline T& add(EntityWorld& world, EntityId id, Args&&... args) {
-            auto& set = component_set_fast<T>();
             _recently_added.emplace_back(id);
+
+            auto& set = component_set<T>();
             if(!set.contains_index(id.index())) {
                 add_required_components<T>(world, id);
                 return set.insert(id, y_fwd(args)...);
@@ -122,45 +124,27 @@ class ComponentContainerBase : NonMovable {
             }
         }
 
+
         template<typename T>
-        inline T& component(EntityId id) {
-            return component_set_fast<T>()[id];
+        inline auto* component_ptr(EntityId id) {
+            if constexpr(traits::is_component_mutable_v<T>) {
+                set_dirty(id);
+                return component_set<T>().try_get(id);
+            } else {
+                return const_component_set<T>().try_get(id);
+            }
         }
 
         template<typename T>
-        inline const T& component(EntityId id) const {
-            return component_set_fast<T>()[id];
-        }
-
-        template<typename T>
-        inline T* component_ptr(EntityId id) {
-            return component_set_fast<T>().try_get(id);
-        }
-
-        template<typename T>
-        inline const T* component_ptr(EntityId id) const {
-            return component_set_fast<T>().try_get(id);
-        }
-
-        template<typename T>
-        inline core::MutableSpan<T> components() {
-            return component_set_fast<T>().values();
+        inline const auto* component_ptr(EntityId id) const {
+            return component_set<T>().try_get(id);
         }
 
         template<typename T>
         inline core::Span<T> components() const {
-            return component_set_fast<T>().values();
+            return component_set<T>().values();
         }
 
-        template<typename T>
-        inline SparseComponentSet<T>& component_set() {
-            return component_set_fast<T>();
-        }
-
-        template<typename T>
-        inline const SparseComponentSet<T>& component_set() const {
-            return component_set_fast<T>();
-        }
 
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
@@ -176,8 +160,29 @@ class ComponentContainerBase : NonMovable {
     private:
         friend class EntityWorld;
 
-        void clear_recent() {
-            return _recently_added.make_empty();
+        void clean_after_tick() {
+            _mutated.make_empty();
+            _recently_added.make_empty();
+        }
+
+        inline void set_dirty(ecs::EntityId id) {
+            _mutated.insert(id);
+        }
+
+        // Filthy hack to avoid having to cast to ComponentContainer<T> when we already know T
+        template<typename T>
+        inline auto& component_set() {
+            return component_set_fast<traits::component_raw_type_t<T>>();
+        }
+
+        template<typename T>
+        inline const auto& component_set() const {
+            return component_set_fast<traits::component_raw_type_t<T>>();
+        }
+
+        template<typename T>
+        inline const auto& const_component_set() const {
+            return component_set_fast<traits::component_raw_type_t<T>>();
         }
 
     private:
@@ -185,6 +190,8 @@ class ComponentContainerBase : NonMovable {
 
         Y_TODO(make better version of this)
         core::Vector<EntityId> _recently_added;
+
+        SparseIdSet _mutated;
 
 
         // Filthy hack to avoid having to cast to ComponentContainer<T> when we already know T
@@ -206,6 +213,7 @@ template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
     public:
         ComponentContainer() : ComponentContainerBase(type_index<T>()) {
+            static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
             static_assert(sizeof(*this) == sizeof(ComponentContainerBase) + sizeof(_components));
         }
 

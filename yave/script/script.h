@@ -98,8 +98,8 @@ void bind_component_type(sol::state_view state) {
         detail::component_set_casts(state)[type_name] = [](lua_State* l) -> int {
             if(sol::stack::check_usertype<ecs::EntityWorld>(l)) {
                 auto& world = sol::stack::get_usertype<ecs::EntityWorld>(l);
-                if(auto* typed_set = dynamic_cast<LuaComponentSet*>(&world.component_set<T>())) {
-                    sol::stack::push<LuaComponentSet*>(l, typed_set);
+                if(const auto* typed_set = dynamic_cast<const LuaComponentSet*>(&world.component_set<T>())) {
+                    sol::stack::push<const LuaComponentSet*>(l, typed_set);
                     return 1;
                 }
             }

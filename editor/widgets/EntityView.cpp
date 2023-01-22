@@ -61,7 +61,7 @@ static void set_new_entity_pos(ecs::EntityId id) {
         return;
     }
     EditorWorld& world = current_world();
-    if(TransformableComponent* transformable = world.component<TransformableComponent>(id)) {
+    if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
         const float size = entity_radius(world, id).unwrap_or(5.0f);
         transformable->set_position(new_entity_pos(std::min(100.0f, size * 2.0f)));
     }
@@ -77,7 +77,7 @@ static void add_debug_lights() {
     const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
 
     const ecs::EntityId parent = world.create_collection_entity("Debug lights");
-    world.component<EditorComponent>(parent)->set_hidden_in_editor(true);
+    world.component_mut<EditorComponent>(parent)->set_hidden_in_editor(true);
 
     const math::Vec3 center; //new_entity_pos(side * 1.5f);
 
@@ -89,11 +89,11 @@ static void add_debug_lights() {
         world.set_parent(entity, parent);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
-        world.component<TransformableComponent>(entity)->set_position(pos * spacing);
-        world.component<EditorComponent>(entity)->set_hidden_in_editor(true);
-        world.component<PointLightComponent>(entity)->radius() = spacing;
-        world.component<PointLightComponent>(entity)->intensity() = spacing * spacing;
-        world.component<PointLightComponent>(entity)->color() = identifying_color(rng());
+        world.component_mut<TransformableComponent>(entity)->set_position(pos * spacing);
+        world.component_mut<EditorComponent>(entity)->set_hidden_in_editor(true);
+        world.component_mut<PointLightComponent>(entity)->radius() = spacing;
+        world.component_mut<PointLightComponent>(entity)->intensity() = spacing * spacing;
+        world.component_mut<PointLightComponent>(entity)->color() = identifying_color(rng());
     }
 }
 
@@ -110,7 +110,7 @@ static void add_debug_entities() {
     const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
 
     const ecs::EntityId parent = world.create_collection_entity("Debug entities");
-    world.component<EditorComponent>(parent)->set_hidden_in_editor(true);
+    world.component_mut<EditorComponent>(parent)->set_hidden_in_editor(true);
 
     const math::Vec3 center = new_entity_pos(side * 1.5f);
 
@@ -121,9 +121,9 @@ static void add_debug_entities() {
         world.set_parent(entity, parent);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
-        world.component<TransformableComponent>(entity)->set_position(pos * spacing);
-        *world.component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, material);
-        world.component<EditorComponent>(entity)->set_hidden_in_editor(true);
+        world.component_mut<TransformableComponent>(entity)->set_position(pos * spacing);
+        *world.component_mut<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, material);
+        world.component_mut<EditorComponent>(entity)->set_hidden_in_editor(true);
     }
 }
 
@@ -173,7 +173,7 @@ static void collect_all_descendants(core::Vector<ecs::EntityId>& descendants, ec
 }
 
 static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::EntityId()) {
-    if(EditorComponent* component = world.component<EditorComponent>(id)) {
+    if(EditorComponent* component = world.component_mut<EditorComponent>(id)) {
         ImGui::Selectable(component->name().data(), false, ImGuiSelectableFlags_Disabled);
 
         ImGui::Separator();

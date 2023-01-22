@@ -153,6 +153,8 @@ class EntityWorld {
 
         static bool is_tag_implicit(std::string_view tag);
 
+
+
         // ---------------------------------------- Enumerations ----------------------------------------
 
         auto ids() const {
@@ -186,12 +188,17 @@ class EntityWorld {
         }
 
         template<typename T>
-        T* component(EntityId id) {
+        auto* component(EntityId id) {
             return find_container<T>()->template component_ptr<T>(id);
         }
 
         template<typename T>
-        const T* component(EntityId id) const {
+        auto* component_mut(EntityId id) {
+            return component<Mutate<T>>(id);
+        }
+
+        template<typename T>
+        const auto* component(EntityId id) const {
             return find_container<T>()->template component_ptr<T>(id);
         }
 
@@ -235,18 +242,8 @@ class EntityWorld {
         // ---------------------------------------- Component sets ----------------------------------------
 
         template<typename T>
-        SparseComponentSet<T>& component_set() {
-            return find_container<T>()->template component_set<T>();
-        }
-
-        template<typename T>
         const SparseComponentSet<T>& component_set() const {
             return find_container<T>()->template component_set<T>();
-        }
-
-        template<typename T>
-        core::MutableSpan<T> components() {
-            return find_container<T>()->template components<T>();
         }
 
         template<typename T>
@@ -333,18 +330,20 @@ class EntityWorld {
 
         template<typename T>
         const ComponentContainerBase* find_container() const {
-            static const auto static_info = ComponentRuntimeInfo::create<T>();
-            unused(static_info);
+            using component_type = traits::component_raw_type_t<T>;
 
-            return find_container(type_index<T>());
+            static const auto static_info = ComponentRuntimeInfo::create<component_type>();
+            unused(static_info);
+            return find_container(type_index<component_type>());
         }
 
         template<typename T>
         ComponentContainerBase* find_container() {
-            static const auto static_info = ComponentRuntimeInfo::create<T>();
-            unused(static_info);
+            using component_type = traits::component_raw_type_t<T>;
 
-            return find_container(type_index<T>());
+            static const auto static_info = ComponentRuntimeInfo::create<component_type>();
+            unused(static_info);
+            return find_container(type_index<component_type>());
         }
 
         template<typename T, typename... Args>

@@ -85,7 +85,7 @@ class AssetLoaderSystem : public ecs::System {
         template<typename T>
         static void update_loading_status(ecs::EntityWorld& world, core::Vector<ecs::EntityId>& ids, core::Vector<ecs::EntityId>& done) {
             for(usize i = 0; i != ids.size(); ++i) {
-                T* component = world.component<T>(ids[i]);
+                T* component = world.component_mut<T>(ids[i]);
                 if(!component || component->update_asset_loading_status()) {
                     done.push_back(ids[i]);
                     ids.erase_unordered(ids.begin() + i);

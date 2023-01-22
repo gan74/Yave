@@ -57,7 +57,7 @@ void ComponentPanel::on_gui() {
 
     EditorWorld& world = current_world();
 
-    if(EditorComponent* component = world.component<EditorComponent>(id)) {
+    if(const EditorComponent* component = world.component<EditorComponent>(id)) {
         if(component->is_collection()) {
             return;
         }

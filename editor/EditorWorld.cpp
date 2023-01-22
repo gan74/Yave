@@ -74,7 +74,7 @@ void EditorWorld::flush_reload() {
 }
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {
-    if(EditorComponent* comp = component<EditorComponent>(id)) {
+    if(EditorComponent* comp = component_mut<EditorComponent>(id)) {
         comp->set_name(name);
         return true;
     }
@@ -123,7 +123,7 @@ std::string_view EditorWorld::entity_icon(ecs::EntityId id) const {
 
 ecs::EntityId EditorWorld::create_collection_entity(std::string_view name) {
     const ecs::EntityId id = create_entity();
-    EditorComponent* comp = component<EditorComponent>(id);
+    EditorComponent* comp = component_mut<EditorComponent>(id);
     y_always_assert(comp, "Unable to create entity name");
     comp->set_name(name);
     comp->_is_collection = true;
@@ -143,7 +143,7 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
     if(const auto prefab = asset_loader().load_res<ecs::EntityPrefab>(asset)) {
         const ecs::EntityId id = create_entity(*prefab.unwrap());
 
-        if(EditorComponent* comp = component<EditorComponent>(id)) {
+        if(EditorComponent* comp = component_mut<EditorComponent>(id)) {
             comp->set_parent_prefab(asset);
         }
         if(const auto name = asset_store().name(asset)) {
@@ -173,13 +173,13 @@ void EditorWorld::add_scene(AssetId asset, ecs::EntityId parent) {
 void EditorWorld::set_parent(ecs::EntityId id, ecs::EntityId parent) {
     y_profile();
 
-    if(EditorComponent* comp = component<EditorComponent>(id)) {
+    if(EditorComponent* comp = component_mut<EditorComponent>(id)) {
         if(comp->_parent == parent) {
             return;
         }
 
         if(comp->has_parent()) {
-            if(EditorComponent* current_parent = component<EditorComponent>(comp->_parent)) {
+            if(EditorComponent* current_parent = component_mut<EditorComponent>(comp->_parent)) {
                 if(current_parent->_is_collection) {
                     const auto it = std::find(current_parent->_children.begin(), current_parent->_children.end(), comp->_parent);
                     if(it != current_parent->_children.end()) {
@@ -190,7 +190,7 @@ void EditorWorld::set_parent(ecs::EntityId id, ecs::EntityId parent) {
             }
         }
 
-        if(EditorComponent* new_parent = component<EditorComponent>(parent)) {
+        if(EditorComponent* new_parent = component_mut<EditorComponent>(parent)) {
             if(new_parent->_is_collection) {
                 new_parent->_children.push_back(id);
                 comp->_parent = parent;
