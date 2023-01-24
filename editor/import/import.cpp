@@ -499,13 +499,18 @@ core::Result<MeshData> ParsedScene::build_mesh_data(usize index) const {
 
     MeshData mesh_data;
     for(const MaterialGroup& group : parsed_mesh.materials) {
-        y_debug_assert(group.gltf_material_index >= 0);
-        y_debug_assert(group.primitive_index >= 0);
+        if(group.gltf_material_index < 0 || group.primitive_index < 0) {
+            continue;
+        }
 
         const tinygltf::Primitive& prim = gltf->meshes[parsed_mesh.gltf_index].primitives[group.primitive_index];
 
         try {
             auto vertices = import_vertices(*gltf, prim);
+            if(vertices.is_empty()) {
+                continue;
+            }
+
             const bool recompute_tangents = vertices.size() && vertices[0].tangent.is_zero();
 
             for(FullVertex& vertex : vertices) {
@@ -516,6 +521,7 @@ core::Result<MeshData> ParsedScene::build_mesh_data(usize index) const {
             }
 
             MeshData mesh(vertices, import_triangles(*gltf, prim));
+
             if(recompute_tangents) {
                 mesh = compute_tangents(mesh);
             }
@@ -524,6 +530,11 @@ core::Result<MeshData> ParsedScene::build_mesh_data(usize index) const {
         } catch(std::exception& e) {
             log_msg(fmt("Unable to build mesh: %" , e.what()), Log::Error);
         }
+    }
+
+    if(mesh_data.is_empty()) {
+        log_msg("Mesh is empty, skipping" , Log::Warning);
+        return core::Err();
     }
 
     return core::Ok(std::move(mesh_data));

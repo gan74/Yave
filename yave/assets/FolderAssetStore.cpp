@@ -242,7 +242,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
             if(is_strict_indirect_parent(path, folder) || folder == path) {
                 // Remove
             } else {
-                y_debug_assert(!folder.starts_with(path));
+                y_debug_assert(!is_strict_direct_parent(path, folder));
                 new_folders.insert(folder);
             }
         }
@@ -262,7 +262,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
                 }
                 files_to_delete << _parent->asset_data_file_name(id);
             } else {
-                y_debug_assert(!name.starts_with(path));
+                y_debug_assert(!is_strict_direct_parent(path, name));
                 new_assets[name] = data;
             }
         }
@@ -317,7 +317,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::rename(std::s
                 _parent->reload_all().ignore();
                 return core::Err();
             } else {
-                y_debug_assert(!name.starts_with(from));
+                y_debug_assert(!is_strict_direct_parent(from, name));
                 new_assets[name] = data;
             }
         }

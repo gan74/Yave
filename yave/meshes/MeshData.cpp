@@ -132,5 +132,9 @@ bool MeshData::has_skeleton() const {
     return bool(_skeleton);
 }
 
+bool MeshData::is_empty() const {
+    return _vertices.is_empty() || _triangles.is_empty() || _sub_meshes.is_empty();
+}
+
 }
 
