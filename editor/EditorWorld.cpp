@@ -38,7 +38,6 @@ SOFTWARE.
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/OctreeSystem.h>
 #include <yave/systems/ScriptSystem.h>
-#include <yave/systems/ASUpdateSystem.h>
 
 #include <y/utils/format.h>
 

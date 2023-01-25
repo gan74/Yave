@@ -64,7 +64,6 @@ bool poll_fence(const TimelineFence& fence);
 void wait_for_fence(const TimelineFence& fence);
 
 const DebugUtils* debug_utils();
-const RayTracing* ray_tracing();
 
 void wait_all_queues();
 

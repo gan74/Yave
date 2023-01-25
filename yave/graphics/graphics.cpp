@@ -35,8 +35,6 @@ SOFTWARE.
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/device/MeshAllocator.h>
 
-#include <yave/graphics/device/extensions/RayTracing.h>
-
 #include <y/core/ScratchPad.h>
 
 #include <mutex>
@@ -75,7 +73,6 @@ struct {
 } timeline;
 
 struct {
-    std::unique_ptr<RayTracing> ray_tracing;
 } extensions;
 
 struct {
@@ -120,7 +117,6 @@ static void init_vk_device() {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
 
-    const bool ray_tracing = false; //try_enable_extension(extensions, RayTracing::extension_name(), physical_device());
 
     const auto required_features = required_device_features();
     auto required_features_1_1 = required_device_features_1_1();
@@ -178,10 +174,6 @@ static void init_vk_device() {
     device::queues = core::FixedArray<std::unique_ptr<CmdQueue>>(queue_count);
     for(u32 i = 0; i != device::queues.size(); ++i) {
         device::queues[i] = std::make_unique<CmdQueue>(main_queue_index, create_queue(device::vk_device, main_queue_index, i));
-    }
-
-    if(ray_tracing) {
-        device::extensions.ray_tracing = std::make_unique<RayTracing>();
     }
 }
 
@@ -441,10 +433,6 @@ VkSampler vk_sampler(SamplerType type) {
 
 const DebugUtils* debug_utils() {
     return device::instance->debug_utils();
-}
-
-const RayTracing* ray_tracing() {
-    return device::extensions.ray_tracing.get();
 }
 
 void wait_all_queues() {
