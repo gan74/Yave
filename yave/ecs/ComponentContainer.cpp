@@ -34,6 +34,7 @@ ComponentContainerBase::~ComponentContainerBase() {
 
 void ComponentContainerBase::clean_after_tick() {
     _mutated.make_empty();
+    _to_remove.clear();
 }
 
 void ComponentContainerBase::prepare_for_tick() {

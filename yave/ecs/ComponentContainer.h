@@ -85,7 +85,6 @@ class ComponentContainerBase : NonMovable {
         virtual ComponentRuntimeInfo runtime_info() const = 0;
 
         virtual void add(EntityWorld& world, EntityId id) = 0;
-        virtual void remove(EntityId id) = 0;
 
         virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
 
@@ -110,6 +109,16 @@ class ComponentContainerBase : NonMovable {
             return _mutated;
         }
 
+        inline core::Span<EntityId> to_be_removed() const {
+            return _to_remove;
+        }
+
+
+        void remove(EntityId id) {
+            if(contains(id)) {
+                _to_remove << id;
+            }
+        }
 
         template<typename T, typename... Args>
         inline T& add(EntityWorld& world, EntityId id, Args&&... args) {
@@ -153,21 +162,25 @@ class ComponentContainerBase : NonMovable {
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
 
+    private:
+        friend class EntityWorld;
+
+        const ComponentTypeIndex _type_id;
+        core::Vector<EntityId> _mutated;
+        core::Vector<EntityId> _to_remove;
 
     protected:
         ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
         }
 
+        virtual void clean_after_tick();
+        virtual void prepare_for_tick();
+
         template<typename T>
         void add_required_components(EntityWorld& world, EntityId id);
 
+
     private:
-        friend class EntityWorld;
-
-        void clean_after_tick();
-        void prepare_for_tick();
-
-        // Filthy hack to avoid having to cast to ComponentContainer<T> when we already know T
         template<typename T>
         inline auto& component_set() {
             return component_set_fast<traits::component_raw_type_t<T>>();
@@ -182,12 +195,6 @@ class ComponentContainerBase : NonMovable {
         inline const auto& const_component_set() const {
             return component_set_fast<traits::component_raw_type_t<T>>();
         }
-
-    private:
-        const ComponentTypeIndex _type_id;
-
-        core::Vector<EntityId> _mutated;
-
 
         // Filthy hack to avoid having to cast to ComponentContainer<T> when we already know T
         template<typename T>
@@ -227,12 +234,6 @@ class ComponentContainer final : public ComponentContainerBase {
             ComponentContainerBase::add<T>(world, id);
         }
 
-        void remove(EntityId id) override {
-            if(_components.contains(id)) {
-                _components.erase(id);
-            }
-        }
-
         std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const override {
             unused(id);
             if constexpr(std::is_copy_constructible_v<T>) {
@@ -247,6 +248,14 @@ class ComponentContainer final : public ComponentContainerBase {
         y_reflect(ComponentContainer, _components)
         y_serde3_poly(ComponentContainer)
 
+    protected:
+        void clean_after_tick() override {
+            y_profile();
+            for(const EntityId id : to_be_removed()) {
+                _components.erase(id);
+            }
+            ComponentContainerBase::clean_after_tick();
+        }
 
     private:
         SparseComponentSet<T> _components;

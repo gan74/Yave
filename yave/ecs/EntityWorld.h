@@ -65,6 +65,7 @@ class EntityWorld {
 
         core::Span<EntityId> component_ids(ComponentTypeIndex type_id) const;
         core::Span<EntityId> recently_mutated(ComponentTypeIndex type_id) const;
+        core::Span<EntityId> to_be_removed(ComponentTypeIndex type_id) const;
 
         core::Span<EntityId> with_tag(const core::String& tag) const;
 
@@ -262,6 +263,11 @@ class EntityWorld {
         template<typename T>
         core::Span<EntityId> recently_mutated() const {
             return recently_mutated(type_index<T>());
+        }
+
+        template<typename T>
+        core::Span<EntityId> to_be_removed() const {
+            return to_be_removed(type_index<T>());
         }
 
 

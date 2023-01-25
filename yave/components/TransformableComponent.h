@@ -35,7 +35,6 @@ namespace yave {
 class TransformableComponent final {
     public:
         TransformableComponent(const math::Transform<>& transform = {});
-        ~TransformableComponent();
 
         TransformableComponent(TransformableComponent&& other);
         TransformableComponent& operator=(TransformableComponent&& other);
@@ -74,8 +73,6 @@ class TransformableComponent final {
         math::Transform<> _transform;
         AABB _aabb;
 
-
-        mutable ecs::EntityId _id;
         mutable OctreeNode* _node = nullptr;
 };
 

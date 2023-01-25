@@ -46,7 +46,6 @@ OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 void OctreeSystem::destroy(ecs::EntityWorld& world) {
     auto query = world.query<ecs::Mutate<TransformableComponent>>();
     for(auto&& [tr] : query.components()) {
-        tr._id.invalidate();
         tr._node = nullptr;
     }
 }
@@ -71,11 +70,20 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
             if(tr._node->contains(aabb)) {
                 continue;
             }
-            tr._node->remove(tr._id);
+            tr._node->remove(id);
         }
 
         tr._node = _tree.insert(id, aabb);
-        tr._id = id;
+    }
+
+    if(only_recent) {
+        for(auto&& [id, comp] : world.query<TransformableComponent>(world.to_be_removed<TransformableComponent>())) {
+            auto&& [tr] = comp;
+
+            if(tr._node) {
+                tr._node->remove(id);
+            }
+        }
     }
 
     _tree.audit();

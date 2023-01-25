@@ -29,13 +29,6 @@ namespace yave {
 TransformableComponent::TransformableComponent(const math::Transform<>& transform) : _transform(transform) {
 }
 
-TransformableComponent::~TransformableComponent() {
-    if(_id.is_valid()) {
-        y_debug_assert(_node);
-        _node->remove(_id);
-    }
-}
-
 TransformableComponent::TransformableComponent(TransformableComponent&& other) {
     swap(other);
 }
@@ -57,7 +50,6 @@ TransformableComponent& TransformableComponent::operator=(const TransformableCom
 void TransformableComponent::swap(TransformableComponent& other) {
     std::swap(_transform, other._transform);
     std::swap(_aabb, other._aabb);
-    std::swap(_id, other._id);
     std::swap(_node, other._node);
 }
 
