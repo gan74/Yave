@@ -50,11 +50,19 @@ void RequiredComponents<Args...>::add_required_components(EntityWorld& world, En
 }
 
 
-template<typename Component, typename SystemType>
-void SystemLinkedComponent<Component, SystemType>::register_component_type(System* system) {
+template<typename Component, typename SystemType, typename... Tail>
+static inline void register_component_type_rec(System* system) {
     if(SystemType* s = dynamic_cast<SystemType*>(system)) {
         s->template register_component_type<Component>();
     }
+    if constexpr(sizeof...(Tail)) {
+        register_component_type_rec<Component, Tail...>(system);
+    }
+}
+
+template<typename Component, typename... SystemTypes>
+void SystemLinkedComponent<Component, SystemTypes...>::register_component_type(System* system) {
+    register_component_type_rec<Component, SystemTypes...>(system);
 }
 
 

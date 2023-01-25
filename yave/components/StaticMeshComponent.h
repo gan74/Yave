@@ -24,9 +24,9 @@ SOFTWARE.
 
 #include "TransformableComponent.h"
 
-#include <yave/meshes/AABB.h>
 #include <yave/assets/AssetPtr.h>
 #include <yave/scene/Renderable.h>
+#include <yave/systems/AABBUpdateSystem.h>
 #include <yave/systems/AssetLoaderSystem.h>
 
 #include <y/core/Vector.h>
@@ -36,7 +36,7 @@ namespace yave {
 class StaticMeshComponent final :
         public Renderable,
         public ecs::RequiredComponents<TransformableComponent>,
-        public ecs::SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem> {
+        public ecs::SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem, AABBUpdateSystem> {
 
     public:
         StaticMeshComponent() = default;

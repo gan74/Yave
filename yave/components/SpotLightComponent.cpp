@@ -102,5 +102,10 @@ u32 SpotLightComponent::shadow_lod() const {
     return _shadow_lod;
 }
 
+AABB SpotLightComponent::aabb() const {
+    const auto sphere = enclosing_sphere();
+    return AABB::from_center_extent(math::Vec3(0.0f, sphere.dist_to_center, 0.0f), math::Vec3(sphere.radius));
+}
+
 }
 

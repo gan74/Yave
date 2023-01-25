@@ -22,10 +22,11 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 #define YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 
+#include <yave/systems/AABBUpdateSystem.h>
+
 #include <yave/scene/OctreeData.h>
 #include <yave/meshes/AABB.h>
 
-#include <yave/systems/AABBUpdateSystem.h>
 
 #include <y/reflect/reflect.h>
 
@@ -56,6 +57,10 @@ class TransformableComponent final {
         math::Vec3 to_global(const math::Vec3& pos) const;
         AABB to_global(const AABB& aabb) const;
 
+        void set_aabb(const AABB& aabb);
+        const AABB& local_aabb() const;
+        AABB global_aabb() const;
+
         const OctreeNode* octree_node() const;
 
         y_reflect(TransformableComponent, _transform)
@@ -66,19 +71,12 @@ class TransformableComponent final {
 
         void swap(TransformableComponent& other);
 
-        void dirty_node() const;
-        void set_node(OctreeNode* node) const;
-
         math::Transform<> _transform;
+        AABB _aabb;
+
 
         mutable ecs::EntityId _id;
         mutable OctreeNode* _node = nullptr;
-        mutable bool _dirty = false;
-};
-
-struct TransformableLinkedComponent :
-        public ecs::RequiredComponents<TransformableComponent>/*,
-        public ecs::SystemLinkedComponent<StaticMeshComponent, AABBUpdateSystem>*/ {
 };
 
 }

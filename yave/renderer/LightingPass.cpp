@@ -101,12 +101,12 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         TypedMapping<uniform::DirectionalLight> mapping = self->resources().map_buffer(directional_buffer);
 
         const std::array tags = {ecs::tags::not_hidden};
-        for(auto light : scene.world().query<DirectionalLightComponent>(tags)) {
-            const auto& [l] = light.components();
+        for(auto&& [id, components] : scene.world().query<DirectionalLightComponent>(tags)) {
+            const auto& [l] = components;
 
             auto shadow_indices = math::Vec4ui(u32(-1));
             if(l.cast_shadow()) {
-                if(const auto it = shadow_pass.shadow_indices->find(light.id().as_u64()); it != shadow_pass.shadow_indices->end()) {
+                if(const auto it = shadow_pass.shadow_indices->find(id.as_u64()); it != shadow_pass.shadow_indices->end()) {
                     shadow_indices = it->second;
                 }
             }
@@ -154,7 +154,7 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
 
     const std::array tags = {ecs::tags::not_hidden};
     for(auto point : scene.world().query<TransformableComponent, PointLightComponent>(tags)) {
-        const auto& [t, l] = point.components();
+        const auto& [t, l] = point.components;
 
         const float scaled_radius = l.radius() * t.transform().scale().max_component();
         if(!frustum.is_inside(t.position(), scaled_radius)) {
@@ -193,8 +193,8 @@ static u32 fill_spot_light_buffer(
     u32 count = 0;
 
     const std::array tags = {ecs::tags::not_hidden};
-    for(auto spot : scene.world().query<TransformableComponent, SpotLightComponent>(tags)) {
-        const auto& [t, l] = spot.components();
+    for(auto&& [id, comp] : scene.world().query<TransformableComponent, SpotLightComponent>(tags)) {
+        const auto& [t, l] = comp;
 
         const math::Vec3 forward = t.forward().normalized();
         const float scale = t.transform().scale().max_component();
@@ -213,7 +213,7 @@ static u32 fill_spot_light_buffer(
 
         auto shadow_indices = math::Vec4ui(u32(-1));
         if(l.cast_shadow() && render_shadows) {
-            if(const auto it = shadow_pass.shadow_indices->find(spot.id().as_u64()); it != shadow_pass.shadow_indices->end()) {
+            if(const auto it = shadow_pass.shadow_indices->find(id.as_u64()); it != shadow_pass.shadow_indices->end()) {
                 shadow_indices = it->second;
             }
         }

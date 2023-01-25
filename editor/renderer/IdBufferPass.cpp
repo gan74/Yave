@@ -82,10 +82,10 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
 
     auto render_query = [&](auto query) {
         usize index = 0;
-        for(auto ent : query) {
-            const auto& [tr, mesh] = ent.components();
+        for(auto&& [id, comp] : query) {
+            const auto& [tr, mesh] = comp;
             transform_mapping[index] = tr.transform();
-            id_mapping[index] = ent.id().index();
+            id_mapping[index] = id.index();
             mesh.render_mesh(recorder, u32(index));
             ++index;
         }

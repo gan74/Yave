@@ -87,16 +87,30 @@ void EntityWorld::swap(EntityWorld& other) {
 
 void EntityWorld::tick() {
     y_profile();
-    for(auto& system : _systems) {
-        y_profile_dyn_zone(system->name().data());
-        system->tick(*this);
-    }
-    for(auto& container : _containers) {
-        if(container) {
-            if(const usize mutated = container->_mutated.size()) {
-                log_msg(fmt("%: %", container->runtime_info().type_name, mutated));
+
+    {
+        y_profile_zone("prepare tick");
+        for(auto& container : _containers) {
+            if(container) {
+                container->prepare_for_tick();
             }
-            container->clean_after_tick();
+        }
+    }
+
+    {
+        y_profile_zone("tick");
+        for(auto& system : _systems) {
+            y_profile_dyn_zone(system->name().data());
+            system->tick(*this);
+        }
+    }
+
+    {
+        y_profile_zone("clean after tick");
+        for(auto& container : _containers) {
+            if(container) {
+                container->clean_after_tick();
+            }
         }
     }
 }
@@ -192,8 +206,8 @@ core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) cons
     return find_container(type_id)->ids();
 }
 
-core::Span<EntityId> EntityWorld::recently_added(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->recently_added();
+core::Span<EntityId> EntityWorld::recently_mutated(ComponentTypeIndex type_id) const {
+    return find_container(type_id)->recently_mutated();
 }
 
 core::Span<EntityId> EntityWorld::with_tag(const core::String& tag) const {
@@ -265,6 +279,14 @@ core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
 
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
     return find_container(type_id)->runtime_info().clean_component_name();
+}
+
+void EntityWorld::make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> ids) {
+    auto& mutated = find_container(type_id)->_mutated;
+    mutated.set_min_capacity(mutated.size() + ids.size());
+    for(const EntityId id : ids) {
+        mutated << id;
+    }
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {

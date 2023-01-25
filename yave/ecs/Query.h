@@ -125,29 +125,20 @@ class Query : NonCopyable {
     public:
         using component_tuple = decltype(make_component_tuple(set_tuple{}, EntityId{}));
 
-        class IdComponents {
-            public:
-                inline auto id() const {
-                    return _id;
-                }
+        struct IdComponents {
+            EntityId id;
+            component_tuple components;
 
-                inline component_tuple components() const {
-                    return _components;
-                }
+            template<typename T>
+            inline decltype(auto) component() const {
+                constexpr component_tuple* p = nullptr;
+                constexpr usize index = detail::tuple_index<T>(p);
+                return std::get<index>(components);
+            }
 
-                template<typename T>
-                inline decltype(auto) component() const {
-                    constexpr component_tuple* p = nullptr;
-                    constexpr usize index = detail::tuple_index<T>(p);
-                    return std::get<index>(components());
-                }
+            inline IdComponents(EntityId i, component_tuple c) : id(i), components(c) {
+            }
 
-                inline IdComponents(EntityId id, component_tuple components) : _id(id), _components(components) {
-                }
-
-            private:
-                EntityId _id;
-                component_tuple _components;
         };
 
     private:
@@ -367,6 +358,8 @@ class Query : NonCopyable {
 
 }
 }
+
+
 
 #endif // YAVE_ECS_QUERY_H
 

@@ -52,11 +52,9 @@ void AssetLoaderSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
 void AssetLoaderSystem::post_load(ecs::EntityWorld& world) {
     y_profile();
 
-    {
-        _recently_loaded.make_empty();
-        for(const LoadableComponentTypeInfo& info : _infos) {
-            info.update_status(world, _loading[info.type], _recently_loaded);
-        }
+    _recently_loaded.make_empty();
+    for(const LoadableComponentTypeInfo& info : _infos) {
+        info.update_status(world, _loading[info.type], _recently_loaded);
     }
 }
 

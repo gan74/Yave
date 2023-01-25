@@ -56,19 +56,17 @@ TransformableComponent& TransformableComponent::operator=(const TransformableCom
 
 void TransformableComponent::swap(TransformableComponent& other) {
     std::swap(_transform, other._transform);
+    std::swap(_aabb, other._aabb);
     std::swap(_id, other._id);
     std::swap(_node, other._node);
-    std::swap(_dirty, other._dirty);
 }
 
 void TransformableComponent::set_transform(const math::Transform<>& tr) {
     _transform = tr;
-    dirty_node();
 }
 
 void TransformableComponent::set_position(const math::Vec3& pos) {
     _transform.position() = pos;
-    dirty_node();
 }
 
 const math::Transform<>& TransformableComponent::transform() const {
@@ -104,20 +102,20 @@ AABB TransformableComponent::to_global(const AABB& aabb) const {
     return AABB(center - half_extent, center + half_extent);
 }
 
+void TransformableComponent::set_aabb(const AABB& aabb) {
+    _aabb = aabb;
+}
+
+const AABB& TransformableComponent::local_aabb() const {
+    return _aabb;
+}
+
+AABB TransformableComponent::global_aabb() const {
+    return to_global(_aabb);
+}
+
 const OctreeNode* TransformableComponent::octree_node() const {
     return _node;
-}
-
-void TransformableComponent::dirty_node() const {
-    if(!_dirty && _node) {
-        _node->set_dirty(_id);
-        _dirty = true;
-    }
-}
-
-void TransformableComponent::set_node(OctreeNode* node) const {
-    _node = node;
-    _dirty = false;
 }
 
 }

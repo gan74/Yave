@@ -106,14 +106,14 @@ class ComponentContainerBase : NonMovable {
             return *reinterpret_cast<const SparseIdSetBase*>(this + 1);
         }
 
-        inline core::Span<EntityId> recently_added() const {
-            return _recently_added;
+        inline core::Span<EntityId> recently_mutated() const {
+            return _mutated;
         }
 
 
         template<typename T, typename... Args>
         inline T& add(EntityWorld& world, EntityId id, Args&&... args) {
-            _recently_added.emplace_back(id);
+            _mutated << id;
 
             auto& set = component_set<T>();
             if(!set.contains_index(id.index())) {
@@ -132,7 +132,7 @@ class ComponentContainerBase : NonMovable {
         template<typename T>
         inline auto* component_ptr(EntityId id) {
             if constexpr(traits::is_component_mutable_v<T>) {
-                set_dirty(id);
+                _mutated << id;
                 return component_set<T>().try_get(id);
             } else {
                 return const_component_set<T>().try_get(id);
@@ -164,14 +164,8 @@ class ComponentContainerBase : NonMovable {
     private:
         friend class EntityWorld;
 
-        void clean_after_tick() {
-            _mutated.make_empty();
-            _recently_added.make_empty();
-        }
-
-        inline void set_dirty(ecs::EntityId id) {
-            _mutated.insert(id);
-        }
+        void clean_after_tick();
+        void prepare_for_tick();
 
         // Filthy hack to avoid having to cast to ComponentContainer<T> when we already know T
         template<typename T>
@@ -192,10 +186,7 @@ class ComponentContainerBase : NonMovable {
     private:
         const ComponentTypeIndex _type_id;
 
-        Y_TODO(make better version of this)
-        core::Vector<EntityId> _recently_added;
-
-        SparseIdSet _mutated;
+        core::Vector<EntityId> _mutated;
 
 
         // Filthy hack to avoid having to cast to ComponentContainer<T> when we already know T

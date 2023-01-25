@@ -376,6 +376,15 @@ class Vector : ResizePolicy, Allocator {
             }
         }
 
+        inline void shrink_to(usize max_size) {
+            if(size() > max_size) {
+                data_type* end = _data + max_size;
+                clear(end, _data_end);
+                _data_end = end;
+                y_debug_assert(size() == max_size);
+            }
+        }
+
         inline void clear() {
             unsafe_set_capacity(0);
         }

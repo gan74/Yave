@@ -33,8 +33,6 @@ namespace yave {
 class OctreeData : NonMovable {
     public:
 
-    //private:
-        core::Vector<std::pair<OctreeNode*, ecs::EntityId>> _dirty;
 };
 
 

@@ -29,7 +29,9 @@ SOFTWARE.
 
 namespace yave {
 
-class PointLightComponent final : public TransformableLinkedComponent {
+class PointLightComponent final :
+        public ecs::RequiredComponents<TransformableComponent>,
+        public ecs::SystemLinkedComponent<PointLightComponent, AABBUpdateSystem> {
 
     public:
         PointLightComponent() = default;
@@ -45,6 +47,8 @@ class PointLightComponent final : public TransformableLinkedComponent {
 
         float& falloff();
         float falloff() const;
+
+        AABB aabb() const;
 
         y_reflect(PointLightComponent, _color, _intensity, _radius, _falloff)
 

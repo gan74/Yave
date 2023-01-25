@@ -27,31 +27,39 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
 
 namespace yave {
 
 class AABBUpdateSystem : public ecs::System {
     public:
-        AABBUpdateSystem() : ecs::System("AABBUpdateSystem") {}
+        AABBUpdateSystem();
 
-        void setup(ecs::EntityWorld& world) override {}
-        void tick(ecs::EntityWorld& world) override {}
+        void setup(ecs::EntityWorld& world) override;
+        void tick(ecs::EntityWorld& world) override;
 
         template<typename T>
         void register_component_type() {
-            log_msg(fmt("register %", ct_type_name<T>()));
-            // _aabb_funcs.emplace_back([](const ecs::EntityWorld& world, ecs::EntityId id) -> AABB {
-            //     if(const T* comp = world.component<T>(id)) {
-            //         return comp->aabb();
-            //     }
-            //     return AABB();
-            // });
+            _infos << AABBTypeInfo {
+                [](const ecs::EntityWorld& world, ecs::EntityId id) -> AABB {
+                    if(const T* comp = world.component<T>(id)) {
+                        return comp->aabb();
+                    }
+                    return AABB();
+                },
+                ecs::type_index<T>(),
+            };
         }
 
     private:
-        core::Vector<std::function<AABB(const ecs::EntityWorld&, ecs::EntityId)>> _aabb_funcs;
+        struct AABBTypeInfo {
+            AABB (*get_aabb)(const ecs::EntityWorld&, ecs::EntityId);
+            ecs::ComponentTypeIndex type;
+        };
+
+        AABB compute_aabb(const ecs::EntityWorld&world, ecs::EntityId id) const;
+
+
+        core::Vector<AABBTypeInfo> _infos;
 };
 
 }

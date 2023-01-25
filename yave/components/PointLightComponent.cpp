@@ -56,6 +56,10 @@ float PointLightComponent::falloff() const {
     return _falloff;
 }
 
+AABB PointLightComponent::aabb() const {
+    return AABB::from_center_extent({}, math::Vec3(_radius));
+}
+
 
 }
 

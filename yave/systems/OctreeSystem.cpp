@@ -34,34 +34,10 @@ namespace yave {
 
 static core::Span<ecs::EntityId> transformable_ids(ecs::EntityWorld& world, bool recent) {
     return recent
-        ? world.recently_added<TransformableComponent>()
+        ? world.recently_mutated<TransformableComponent>()
         : world.component_ids<TransformableComponent>();
 }
 
-static AABB find_aabb(const ecs::EntityWorld& world, ecs::EntityId id, const math::Vec3& pos) {
-    const auto aabb = entity_aabb(world, id);
-    if(aabb) {
-        return aabb.unwrap();
-    }
-
-    const float radius = entity_radius(world, id).unwrap_or(1.0f);
-    return AABB::from_center_extent(pos, math::Vec3(radius * 2.0f));
-}
-
-
-[[maybe_unused]]
-static void world_test(ecs::EntityWorld& world) {
-    using T = TransformableComponent;
-
-    const ecs::EntityWorld& const_world = world;
-    ecs::EntityId id;
-
-    static_assert(std::is_same_v<const T*, decltype(world.component<T>(id))>);
-    static_assert(std::is_same_v<const T*, decltype(const_world.component<T>(id))>);
-    static_assert(std::is_same_v<T*, decltype(world.component<ecs::Mutate<T>>(id))>);
-    //static_assert(std::is_same_v<T*, decltype(const_world.component<ecs::Mutate<T>>(id))>);
-    //const_world.component<ecs::Mutate<T>>(id);
-}
 
 
 OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
@@ -86,48 +62,20 @@ void OctreeSystem::tick(ecs::EntityWorld& world) {
 void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     y_profile();
 
-    Y_TODO(notify system instead?)
-    if(const AssetLoaderSystem* asset_loader = world.find_system<AssetLoaderSystem>()) {
-        y_profile_zone("asset AABB update");
-        auto query = world.query<ecs::Mutate<TransformableComponent>>(asset_loader->recently_loaded());
-        for(auto&& [tr] : query.components()) {
-            tr.dirty_node();
-        }
-    }
+    for(auto&& [id, comp] : world.query<TransformableComponent>(transformable_ids(world, only_recent))) {
+        auto&& [tr] = comp;
 
-    {
-        y_profile_zone("recent transformables insert");
-        for(auto&& id_comp : world.query<ecs::Mutate<TransformableComponent>>(transformable_ids(world, only_recent))) {
-            const auto id = id_comp.id();
-            auto& tr = id_comp.component<TransformableComponent>();
+        const AABB aabb = tr.global_aabb();
 
-            const AABB bbox = find_aabb(world, id, tr.position());
-
-            tr._id = id;
-            tr.set_node(_tree.insert(id, bbox));
-        }
-    }
-
-    {
-        y_profile_zone("dirty transformables udpate");
-        auto& transformables = world.component_set<TransformableComponent>();
-        for(auto& [node, id] : _tree._data._dirty) {
-            {
-                auto& entities = node->_entities;
-                const auto it = std::find(entities.begin(), entities.end(), id);
-                if(it != entities.end()) {
-                    entities.erase_unordered(it);
-                }
+        if(tr._node) {
+            if(tr._node->contains(aabb)) {
+                continue;
             }
-
-            if(const TransformableComponent* tr = transformables.try_get(id)) {
-                const AABB bbox = find_aabb(world, id, tr->position());
-                y_debug_assert(tr->_id == id);
-                tr->set_node(_tree.insert(id, bbox));
-            }
+            tr._node->remove(tr._id);
         }
 
-        _tree._data._dirty.clear();
+        tr._node = _tree.insert(id, aabb);
+        tr._id = id;
     }
 
     _tree.audit();

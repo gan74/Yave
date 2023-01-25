@@ -120,7 +120,7 @@ struct RequiredComponents {
 
 };
 
-template<typename Component, typename SystemType>
+template<typename Component, typename... SystemTypes>
 struct SystemLinkedComponent {
     // EntityWorld.inl
     static inline void register_component_type(System*);

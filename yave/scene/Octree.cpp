@@ -60,6 +60,8 @@ Octree::Octree() : _root(std::make_unique<OctreeNode>(math::Vec3(), 1024.0f, &_d
 }
 
 OctreeNode* Octree::insert(ecs::EntityId id, const AABB& bbox) {
+    y_debug_assert(id.is_valid());
+
     while(!_root->contains(bbox)) {
         const math::Vec3 pos = bbox.center();
         _root = OctreeNode::create_parent_from_child(std::move(_root), pos);

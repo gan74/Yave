@@ -29,7 +29,9 @@ SOFTWARE.
 
 namespace yave {
 
-class SpotLightComponent final : public TransformableLinkedComponent {
+class SpotLightComponent final :
+        public ecs::RequiredComponents<TransformableComponent>,
+        public ecs::SystemLinkedComponent<SpotLightComponent, AABBUpdateSystem> {
 
     public:
         struct EnclosingSphere {
@@ -65,6 +67,8 @@ class SpotLightComponent final : public TransformableLinkedComponent {
 
         u32& shadow_lod();
         u32 shadow_lod() const;
+
+        AABB aabb() const;
 
         y_reflect(SpotLightComponent, _color, _intensity, _radius, _falloff, _half_angle, _angle_exp, _cast_shadow, _shadow_lod)
 

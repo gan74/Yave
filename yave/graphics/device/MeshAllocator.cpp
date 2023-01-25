@@ -220,9 +220,7 @@ void MeshAllocator::sort_and_compact_blocks() {
         }
     }
 
-    while(_free_blocks.size() != dst + 1) {
-          _free_blocks.pop();
-    }
+    _free_blocks.shrink_to(dst + 1);
 }
 
 

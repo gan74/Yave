@@ -67,7 +67,7 @@ class AssetLoaderSystem : public ecs::System {
         template<typename T>
         static core::Span<ecs::EntityId> ids(ecs::EntityWorld& world, bool recent) {
             return recent
-                ? world.recently_added<T>()
+                ? world.recently_mutated<T>()
                 : world.component_ids<T>();
         }
 
@@ -75,7 +75,7 @@ class AssetLoaderSystem : public ecs::System {
         static void start_loading_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, bool recent, core::Vector<ecs::EntityId>& out_ids) {
             for(auto id_comp : world.query<ecs::Mutate<T>>(ids<T>(world, recent))) {
                 id_comp.template component<T>().load_assets(loading_ctx);
-                out_ids << id_comp.id();
+                out_ids << id_comp.id;
             }
         }
 

@@ -51,6 +51,7 @@ std::unique_ptr<OctreeNode> OctreeNode::create_parent_from_child(std::unique_ptr
 
 
 OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
+    y_debug_assert(id.is_valid());
     y_debug_assert(contains(bbox));
 
     y_debug_assert(std::find(_entities.begin(), _entities.end(), id) == _entities.end());
@@ -116,12 +117,8 @@ core::Span<ecs::EntityId> OctreeNode::entities() const {
     return _entities;
 }
 
-void OctreeNode::set_dirty(ecs::EntityId id) {
-    y_debug_assert(_data);
-    _data->_dirty.emplace_back(this, id);
-}
-
 void OctreeNode::remove(ecs::EntityId id) {
+    y_debug_assert(id.is_valid());
     const auto it = std::find(_entities.begin(), _entities.end(), id);
     y_debug_assert(it != _entities.end());
     _entities.erase_unordered(it);

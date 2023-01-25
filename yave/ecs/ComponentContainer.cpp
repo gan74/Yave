@@ -31,6 +31,18 @@ ComponentBoxBase::~ComponentBoxBase() {
 ComponentContainerBase::~ComponentContainerBase() {
 }
 
+
+void ComponentContainerBase::clean_after_tick() {
+    _mutated.make_empty();
+}
+
+void ComponentContainerBase::prepare_for_tick() {
+    y_profile();
+
+    std::sort(_mutated.begin(), _mutated.end());
+    _mutated.shrink_to(std::unique(_mutated.begin(), _mutated.end()) - _mutated.begin());
+}
+
 }
 }
 

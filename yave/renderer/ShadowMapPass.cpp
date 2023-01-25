@@ -188,22 +188,22 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene)
     ShadowCastingLights shadow_casters;
 
     shadow_casters.directionals.set_min_capacity(world.components<DirectionalLightComponent>().size());
-    for(auto&& light : world.query<DirectionalLightComponent>(tags)) {
-        const auto& [l] = light.components();
+    for(auto&& [id, comp] : world.query<DirectionalLightComponent>(tags)) {
+        const auto& [l] = comp;
         if(!l.cast_shadow()) {
             continue;
         }
-        shadow_casters.directionals.push_back({light.id(), &l});
+        shadow_casters.directionals.push_back({id, &l});
     }
 
     auto collect_spots = [&](auto&& query) {
         shadow_casters.spots.set_min_capacity(query.size());
-        for(auto&& light : query) {
-            const auto& [t, l] = light.components();
+        for(auto&& [id, comp] : query) {
+            const auto& [t, l] = comp;
             if(!l.cast_shadow()) {
                 continue;
             }
-            shadow_casters.spots.push_back({light.id(), &t, &l});
+            shadow_casters.spots.push_back({id, &t, &l});
         }
     };
 

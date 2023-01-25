@@ -64,7 +64,7 @@ class EntityWorld {
         EntityPrefab create_prefab(EntityId id) const;
 
         core::Span<EntityId> component_ids(ComponentTypeIndex type_id) const;
-        core::Span<EntityId> recently_added(ComponentTypeIndex type_id) const;
+        core::Span<EntityId> recently_mutated(ComponentTypeIndex type_id) const;
 
         core::Span<EntityId> with_tag(const core::String& tag) const;
 
@@ -73,6 +73,8 @@ class EntityWorld {
         core::Span<ComponentTypeIndex> required_components() const;
 
         std::string_view component_type_name(ComponentTypeIndex type_id) const;
+
+        void make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> ids);
 
 
 
@@ -258,8 +260,8 @@ class EntityWorld {
         }
 
         template<typename T>
-        core::Span<EntityId> recently_added() const {
-            return recently_added(type_index<T>());
+        core::Span<EntityId> recently_mutated() const {
+            return recently_mutated(type_index<T>());
         }
 
 
@@ -313,6 +315,11 @@ class EntityWorld {
 
 
         // ---------------------------------------- Misc ----------------------------------------
+
+        template<typename T>
+        void make_mutated(core::Span<EntityId> ids) {
+            make_mutated(type_index<T>(), ids);
+        }
 
         template<typename T>
         void add_required_component() {
@@ -405,10 +412,8 @@ class EntityWorld {
                 dirty_mutated_containers<Args...>(mutated);
             } else {
                 if constexpr(traits::is_component_mutable_v<T>) {
-                    ComponentContainerBase* container = find_container<T>();
-                    for(const EntityId id : mutated) {
-                        container->set_dirty(id);
-                    }
+                    using component_type = traits::component_raw_type_t<T>;
+                    make_mutated<component_type>(mutated);
                 }
             }
         }

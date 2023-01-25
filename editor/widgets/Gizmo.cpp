@@ -178,8 +178,9 @@ bool Gizmo::compute_gizmo_data(GizmoData &data) const {
     auto [obj_pos, obj_rot, obj_scale] = data.ref_transformable->transform().decompose();
 
     if((_mode == Translate) && _center_on_object) {
-        if(const auto aabb = entity_aabb(current_world(), data.ref_entity_id)) {
-            const math::Vec3 center = aabb.unwrap().center();
+        if(const TransformableComponent* transformable = current_world().component<TransformableComponent>(data.ref_entity_id)) {
+            const math::Vec3 center = transformable->global_aabb().center();
+            log_msg(fmt("center = %, pos = %", center, obj_pos));
             data.gizmo_offset = center - obj_pos;
             obj_pos = center;
         }

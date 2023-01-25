@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
+#include <yave/components/TransformableComponent.h>
+
 #include <yave/camera/Camera.h>
 #include <yave/utils/entities.h>
 
@@ -55,11 +57,8 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
         if(current_world().has_selected_entities()) {
             core::Result<AABB> aabb = core::Err();
             for(const ecs::EntityId id : current_world().selected_entities()) {
-                if(const auto radius = entity_radius(current_world(), id)) {
-                    if(const auto pos = entity_position(current_world(), id)) {
-                        const AABB bbox = AABB::from_center_extent(pos.unwrap(), math::Vec3(radius.unwrap() * 2.0f));
-                        aabb = aabb ? core::Ok(aabb.unwrap().merged(bbox)) : core::Ok(bbox);
-                    }
+                if(const TransformableComponent* tr = current_world().component<TransformableComponent>(id)) {
+                    aabb = core::Ok(tr->global_aabb());
                 }
             }
 
