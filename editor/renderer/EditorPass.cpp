@@ -190,8 +190,11 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
 
         if(const auto* m = world.component<StaticMeshComponent>(selected)) {
             if(draw_bbox) {
-                primitive->add_box(m->aabb(), tr->transform());
-                primitive->add_box(tr->to_global(m->aabb()));
+                const u32 color = primitive->color();
+                y_defer(primitive->set_color(color));
+
+                primitive->set_color(math::Vec3(1, 1, 0));
+                primitive->add_box(tr->global_aabb());
             }
         }
     }

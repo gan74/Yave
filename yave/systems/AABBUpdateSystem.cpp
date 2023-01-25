@@ -49,12 +49,13 @@ AABB AABBUpdateSystem::compute_aabb(const ecs::EntityWorld& world, ecs::EntityId
     AABB aabb;
     bool init = false;
     for(const AABBTypeInfo& info : _infos) {
-        const AABB component_aabb = info.get_aabb(world, id);
-        if(!init) {
-            init = true;
-            aabb = component_aabb;
-        } else {
-            aabb = aabb.merged(component_aabb);
+        if(const auto res = info.get_aabb(world, id)) {
+            if(!init) {
+                init = true;
+                aabb = res.unwrap();
+            } else {
+                aabb = aabb.merged(res.unwrap());
+            }
         }
     }
 

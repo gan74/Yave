@@ -43,6 +43,10 @@ void DirectDrawPrimitive::set_color(u32 color) {
     _color = color;
 }
 
+u32 DirectDrawPrimitive::color() const {
+    return _color;
+}
+
 void DirectDrawPrimitive::push_vertex(const math::Vec3& v) {
     _vertices << DirectVertex{v, _color};
 }

@@ -40,11 +40,11 @@ class AABBUpdateSystem : public ecs::System {
         template<typename T>
         void register_component_type() {
             _infos << AABBTypeInfo {
-                [](const ecs::EntityWorld& world, ecs::EntityId id) -> AABB {
+                [](const ecs::EntityWorld& world, ecs::EntityId id) -> core::Result<AABB> {
                     if(const T* comp = world.component<T>(id)) {
-                        return comp->aabb();
+                        return core::Ok(comp->aabb());
                     }
-                    return AABB();
+                    return core::Err();
                 },
                 ecs::type_index<T>(),
             };
@@ -52,7 +52,7 @@ class AABBUpdateSystem : public ecs::System {
 
     private:
         struct AABBTypeInfo {
-            AABB (*get_aabb)(const ecs::EntityWorld&, ecs::EntityId);
+            core::Result<AABB> (*get_aabb)(const ecs::EntityWorld&, ecs::EntityId);
             ecs::ComponentTypeIndex type;
         };
 

@@ -48,6 +48,8 @@ class DirectDrawPrimitive {
         void set_color(const math::Vec3& color);
         void set_color(u32 color);
 
+        u32 color() const;
+
         void add_line(const math::Vec3& a, const math::Vec3& b);
         void add_circle(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius = 1.0f, usize divs = 64);
         void add_cone(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs = 8, usize circle_subdivs = 8);
