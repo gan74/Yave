@@ -51,8 +51,7 @@ inline constexpr auto to_deg(T rad) {
 template<typename T>
 static constexpr T epsilon = std::numeric_limits<T>::epsilon();
 
-template<typename T = double>
-
+template<typename T>
 static constexpr T pi = T(3.1415926535897932384626433832795);
 
 
@@ -69,11 +68,6 @@ auto perspective(T fovy, T aspect, T z_near, T z_far) {
                  0, 0, -T(1) - (z_far / span), -(z_far * z_near) / span,
                  0, 0, -T(1), 0);
 
-    /*auto span = z_far - z_near;
-    const Matrix4<T> m(f / aspect, 0, 0, 0,
-                 0, f, 0, 0,
-                 0, 0, -(z_far + z_near) /span, -(z_far * z_near) / span,
-                 0, 0, -T(1), 0);*/
     return m;
 }
 
@@ -94,9 +88,9 @@ auto perspective(T fovy, T aspect, T z_near) {
 template<typename T>
 auto ortho(T left, T right, T bottom, T top, T z_near, T z_far) {
     math::Matrix4<T> m(
-        -T(2) / (right - left), 0, 0,    (left + right) / (left - right),
-        0, T(2) / (top - bottom), 0,    (bottom + top) / (bottom - top),
-        0, 0, T(1) / (z_near - z_far),  z_far / (z_far - z_near),
+        T(2) / (right - left), 0, 0, -(right + left) / (right - left),
+        0, T(2) / (top - bottom), 0, -(top + bottom) / (top - bottom),
+        0, 0, -T(1) / (z_far - z_near), -z_near / (z_far - z_near),
         0, 0, 0, T(1)
     );
     return m;

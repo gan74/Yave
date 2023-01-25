@@ -30,12 +30,23 @@ namespace yave {
 class Camera {
 
     public:
+        static bool is_proj_orthographic(const math::Matrix4<>& proj);
+        static float fov_from_proj(const math::Matrix4<>& proj);
+        static float ratio_from_proj(const math::Matrix4<>& proj);
+
+        static math::Vec3 forward_from_view(const math::Matrix4<>& view);
+        static math::Vec3 right_from_view(const math::Matrix4<>& view);
+        static math::Vec3 up_from_view(const math::Matrix4<>& view);
+        static math::Vec3 position_from_view(const math::Matrix4<>& view);
+
+
         Camera();
 
         void set_view(const math::Matrix4<>& view);
         void set_proj(const math::Matrix4<>& proj);
 
         void set_far(float far_dist);
+
 
         const math::Matrix4<>& view_matrix() const;
         const math::Matrix4<>& proj_matrix() const;
@@ -46,6 +57,8 @@ class Camera {
 
         float aspect_ratio() const;
         float field_of_view() const;
+
+        bool is_orthographic() const;
 
         float far_plane_dist() const;
 

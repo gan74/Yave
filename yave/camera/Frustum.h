@@ -35,19 +35,37 @@ enum class Intersection {
 };
 
 class Frustum {
-
     public:
+        struct Plane {
+            math::Vec3 normal;
+            float offset = 0.0f;
+        };
+
+        enum Planes : usize {
+            Near,
+            Top,
+            Bottom,
+            Right,
+            Left,
+        };
+
+        static Frustum from_view_proj(const math::Matrix4<>& view, const math::Matrix4<>& proj);
+        static Frustum from_ortho_view_proj(const math::Matrix4<>& view, const math::Matrix4<>& proj);
+
+
         Frustum() = default;
 
-        Frustum(const std::array<math::Vec3, 4>& normals, const math::Vec3& pos, const math::Vec3& forward);
+        const math::Vec3& forward() const;
+        const math::Vec3& position() const;
+
+        const std::array<Plane, 5>& planes() const;
 
         bool is_inside(const math::Vec3& pos, float radius) const;
 
         Intersection intersection(const AABB& aabb) const;
         Intersection intersection(const AABB& aabb, float far_dist) const;
-
     private:
-        std::array<math::Vec3, 5> _normals;
+        std::array<Plane, 5> _planes;
         math::Vec3 _pos;
 
 };

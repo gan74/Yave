@@ -24,66 +24,39 @@ SOFTWARE.
 
 namespace yave {
 
-
-static float extract_ratio(const math::Matrix4<>& proj) {
-    const float f = proj[1][1];
-    return 1.0f / (proj[0][0] / f);
+bool Camera::is_proj_orthographic(const math::Matrix4<>& proj) {
+    return proj[3][3] == 1.0f;
 }
 
-static float extract_fov(const math::Matrix4<>& proj) {
+float Camera::ratio_from_proj(const math::Matrix4<>& proj) {
+    const float f = proj[1][1];
+    return std::abs(1.0f / (proj[0][0] / f));
+}
+
+float Camera::fov_from_proj(const math::Matrix4<>& proj) {
     const float f = proj[1][1];
     return 2.0f * std::atan(1.0f / f);
 }
 
+math::Vec3 Camera::forward_from_view(const math::Matrix4<>& view) {
+    return -view.row(2).to<3>().normalized();
+}
 
-static math::Vec3 extract_position(const math::Matrix4<>& view) {
+math::Vec3 Camera::right_from_view(const math::Matrix4<>& view) {
+    return -view.row(0).to<3>().normalized();
+}
+
+math::Vec3 Camera::up_from_view(const math::Matrix4<>& view) {
+    return -view.row(1).to<3>().normalized();
+}
+
+math::Vec3 Camera::position_from_view(const math::Matrix4<>& view) {
     math::Vec3 pos;
     for(usize i = 0; i != 3; ++i) {
         const auto v = view.row(i);
         pos -= v.to<3>() * v.w();
     }
     return pos;
-}
-
-static math::Vec3 extract_forward(const math::Matrix4<>& view) {
-    return -view.row(2).to<3>().normalized();
-}
-
-static math::Vec3 extract_right(const math::Matrix4<>& view) {
-    return -view.row(0).to<3>().normalized();
-}
-
-static math::Vec3 extract_up(const math::Matrix4<>& view) {
-    return -view.row(1).to<3>().normalized();
-}
-
-
-static Frustum extract_frustum(const math::Matrix4<>& view, const math::Matrix4<>& proj) {
-    const float fov = extract_fov(proj);
-    const float ratio = extract_ratio(proj);
-    const math::Vec3 forward = extract_forward(view);
-    const math::Vec3 up = extract_up(view);
-    const math::Vec3 right = extract_right(view);
-    const math::Vec3 pos = extract_position(view);
-
-    const float half_fov = fov * 0.5f;
-    const float half_fov_v = std::atan(std::tan(half_fov) * ratio);
-
-    std::array<math::Vec3, 4> normals;
-    {
-        const float c = std::cos(half_fov);
-        const float s = std::sin(half_fov);
-        normals[0] = forward * s + up * c;
-        normals[1] = forward * s - up * c;
-    }
-    {
-        const float c = std::cos(half_fov_v);
-        const float s = std::sin(half_fov_v);
-        normals[2] = forward * s + right * c;
-        normals[3] = forward * s - right * c;
-    }
-
-    return Frustum(normals, pos, forward);
 }
 
 Camera::Camera() {
@@ -131,11 +104,15 @@ math::Matrix4<> Camera::inverse_matrix() const {
 }
 
 float Camera::aspect_ratio() const {
-    return extract_ratio(_proj);
+    return ratio_from_proj(_proj);
 }
 
 float Camera::field_of_view() const {
-    return extract_fov(_proj);
+    return fov_from_proj(_proj);
+}
+
+bool Camera::is_orthographic() const {
+    return is_proj_orthographic(_proj);
 }
 
 float Camera::far_plane_dist() const {
@@ -143,23 +120,25 @@ float Camera::far_plane_dist() const {
 }
 
 math::Vec3 Camera::position() const {
-    return extract_position(_view);
+    return position_from_view(_view);
 }
 
 math::Vec3 Camera::forward() const {
-    return extract_forward(_view);
+    return forward_from_view(_view);
 }
 
 math::Vec3 Camera::right() const {
-    return extract_right(_view);
+    return right_from_view(_view);
 }
 
 math::Vec3 Camera::up() const {
-    return extract_up(_view);
+    return up_from_view(_view);
 }
 
 Frustum Camera::frustum() const {
-    return extract_frustum(view_matrix(), proj_matrix());
+    return is_orthographic()
+        ? Frustum::from_ortho_view_proj(view_matrix(), proj_matrix())
+        : Frustum::from_view_proj(view_matrix(), proj_matrix());
 }
 
 Camera::operator uniform::Camera() const {
