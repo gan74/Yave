@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 #define YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 
-#include "SystemLinkedComponent.h"
 #include "TransformableComponent.h"
 
 #include <yave/meshes/AABB.h>
@@ -37,7 +36,7 @@ namespace yave {
 class StaticMeshComponent final :
         public Renderable,
         public ecs::RequiredComponents<TransformableComponent>,
-        public SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem> {
+        public ecs::SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem> {
 
     public:
         StaticMeshComponent() = default;

@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/scene/OctreeData.h>
 #include <yave/meshes/AABB.h>
 
+#include <yave/systems/AABBUpdateSystem.h>
+
 #include <y/reflect/reflect.h>
 
 namespace yave {
@@ -72,6 +74,11 @@ class TransformableComponent final {
         mutable ecs::EntityId _id;
         mutable OctreeNode* _node = nullptr;
         mutable bool _dirty = false;
+};
+
+struct TransformableLinkedComponent :
+        public ecs::RequiredComponents<TransformableComponent>/*,
+        public ecs::SystemLinkedComponent<StaticMeshComponent, AABBUpdateSystem>*/ {
 };
 
 }

@@ -83,6 +83,7 @@ class EntityWorld {
             auto s = std::make_unique<S>(y_fwd(args)...);
             S* system = s.get();
             _systems.emplace_back(std::move(s));
+            register_component_types(system);
             system->setup(*this);
             return system;
         }
@@ -418,6 +419,8 @@ class EntityWorld {
 
         const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
         ComponentContainerBase* find_container(ComponentTypeIndex type_id);
+
+        void register_component_types(System* system) const;
 
         void check_exists(EntityId id) const;
 

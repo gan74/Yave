@@ -40,14 +40,12 @@ class AssetLoaderSystem : public ecs::System {
 
 
         template<typename T>
-        static void register_component_type() {
-            static LoadableComponentTypeInfo info = LoadableComponentTypeInfo {
+        void register_component_type() {
+            _infos << LoadableComponentTypeInfo {
                 &start_loading_components<T>,
                 &update_loading_status<T>,
-                ecs::type_index<T>(),
-                _first_info
+                ecs::type_index<T>()
             };
-            _first_info = &info;
         }
 
     private:
@@ -64,7 +62,6 @@ class AssetLoaderSystem : public ecs::System {
             void (*start_loading)(ecs::EntityWorld&, AssetLoadingContext&, bool, core::Vector<ecs::EntityId>&) = nullptr;
             void (*update_status)(ecs::EntityWorld&, core::Vector<ecs::EntityId>&, core::Vector<ecs::EntityId>&) = nullptr;
             ecs::ComponentTypeIndex type;
-            LoadableComponentTypeInfo* next = nullptr;
         };
 
         template<typename T>
@@ -94,7 +91,7 @@ class AssetLoaderSystem : public ecs::System {
             }
         }
 
-        static LoadableComponentTypeInfo* _first_info;
+        core::Vector<LoadableComponentTypeInfo> _infos;
 };
 
 }

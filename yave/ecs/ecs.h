@@ -115,10 +115,17 @@ struct RequiredComponents {
         return StaticArchetype<Args...>{};
     }
 
-    // EntityWorld.h
+    // EntityWorld.inl
     static inline void add_required_components(EntityWorld& world, EntityId id);
 
 };
+
+template<typename Component, typename SystemType>
+struct SystemLinkedComponent {
+    // EntityWorld.inl
+    static inline void register_component_type(System*);
+};
+
 
 
 }

@@ -36,6 +36,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 
 #include <yave/systems/AssetLoaderSystem.h>
+#include <yave/systems/AABBUpdateSystem.h>
 #include <yave/systems/OctreeSystem.h>
 #include <yave/systems/ScriptSystem.h>
 
@@ -52,6 +53,7 @@ editor_action("Remove all entities", [] { current_world().clear(); })
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_required_component<EditorComponent>();
     add_system<AssetLoaderSystem>(loader);
+    add_system<AABBUpdateSystem>();
     add_system<OctreeSystem>();
     add_system<ScriptSystem>();
     // add_system<ASUpdateSystem>();

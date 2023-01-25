@@ -36,6 +36,8 @@ namespace ecs {
 namespace detail {
 template<typename T>
 using has_required_components_t = decltype(std::declval<T>().required_components_archetype());
+template<typename T>
+using has_register_component_type_t = decltype(std::declval<T>().register_component_type(std::declval<System*>()));
 }
 
 
@@ -77,6 +79,8 @@ class ComponentBox final : public ComponentBoxBase {
 class ComponentContainerBase : NonMovable {
     public:
         virtual ~ComponentContainerBase();
+
+        virtual void register_component_type(System* system) const  = 0;
 
         virtual ComponentRuntimeInfo runtime_info() const = 0;
 
@@ -215,6 +219,13 @@ class ComponentContainer final : public ComponentContainerBase {
         ComponentContainer() : ComponentContainerBase(type_index<T>()) {
             static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
             static_assert(sizeof(*this) == sizeof(ComponentContainerBase) + sizeof(_components));
+        }
+
+        void register_component_type(System* system) const override {
+            unused(system);
+            if constexpr(is_detected_v<detail::has_register_component_type_t, T>) {
+                T::register_component_type(system);
+            }
         }
 
         ComponentRuntimeInfo runtime_info() const override {

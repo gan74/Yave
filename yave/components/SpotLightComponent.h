@@ -29,7 +29,8 @@ SOFTWARE.
 
 namespace yave {
 
-class SpotLightComponent final : public ecs::RequiredComponents<TransformableComponent> {
+class SpotLightComponent final : public TransformableLinkedComponent {
+
     public:
         struct EnclosingSphere {
             float dist_to_center;

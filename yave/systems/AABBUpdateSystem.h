@@ -19,35 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMPONENTS_SYSTEMLINKEDCOMPONENT_H
-#define YAVE_COMPONENTS_SYSTEMLINKEDCOMPONENT_H
+#ifndef YAVE_SYSTEMS_AABBUPDATESYSTEM_H
+#define YAVE_SYSTEMS_AABBUPDATESYSTEM_H
+
+#include <yave/ecs/EntityWorld.h>
+#include <yave/meshes/AABB.h>
+
+#include <y/core/Vector.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
-template<typename Component, typename System>
-class SystemLinkedComponent {
+class AABBUpdateSystem : public ecs::System {
     public:
-        SystemLinkedComponent() {
-            SystemRegister().trigger();
+        AABBUpdateSystem() : ecs::System("AABBUpdateSystem") {}
+
+        void setup(ecs::EntityWorld& world) override {}
+        void tick(ecs::EntityWorld& world) override {}
+
+        template<typename T>
+        void register_component_type() {
+            log_msg(fmt("register %", ct_type_name<T>()));
+            // _aabb_funcs.emplace_back([](const ecs::EntityWorld& world, ecs::EntityId id) -> AABB {
+            //     if(const T* comp = world.component<T>(id)) {
+            //         return comp->aabb();
+            //     }
+            //     return AABB();
+            // });
         }
 
     private:
-        struct SystemRegister {
-            inline static struct Registerer {
-                Registerer() {
-                    System::template register_component_type<Component>();
-                }
-                void trigger() {
-                }
-            } system_registerer;
-
-            void trigger() {
-                system_registerer.trigger();
-            }
-        };
+        core::Vector<std::function<AABB(const ecs::EntityWorld&, ecs::EntityId)>> _aabb_funcs;
 };
 
 }
 
-#endif // YAVE_COMPONENTS_SYSTEMLINKEDCOMPONENT_H
+#endif // YAVE_SYSTEMS_AABBUPDATESYSTEM_H
 

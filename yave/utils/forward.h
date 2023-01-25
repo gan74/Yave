@@ -27,8 +27,8 @@ SOFTWARE.
 
 namespace yave {
 class AABB;
-class ASUpdateSystem;
-class AccelerationStructure;
+class AABBComponent;
+class AABBUpdateSystem;
 class Animation;
 class AnimationChannel;
 class AssetDependencies;
@@ -71,6 +71,7 @@ class FileSystemModel;
 class FolderAssetStore;
 class FolderFileSystemModel;
 class FrameGraph;
+class FrameGraphComputePassBuilder;
 class FrameGraphDescriptorBinding;
 class FrameGraphFrameResources;
 class FrameGraphPass;
@@ -112,8 +113,6 @@ class OctreeSystem;
 class PendingOpsQueue;
 class PhysicalDevice;
 class PointLightComponent;
-class RayTracing;
-class RayTracingComponent;
 class RenderPass;
 class RenderPassRecorder;
 class Renderable;
@@ -198,6 +197,7 @@ struct Mip;
 struct Monitor;
 struct OneShotScript;
 struct PackedVertex;
+struct Plane;
 struct Region;
 struct Registerer;
 struct RendererSettings;

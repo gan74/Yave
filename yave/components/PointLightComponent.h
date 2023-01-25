@@ -29,7 +29,8 @@ SOFTWARE.
 
 namespace yave {
 
-class PointLightComponent final : public ecs::RequiredComponents<TransformableComponent> {
+class PointLightComponent final : public TransformableLinkedComponent {
+
     public:
         PointLightComponent() = default;
 

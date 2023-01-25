@@ -279,6 +279,14 @@ ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) 
     return _containers[type_id].get();
 }
 
+void EntityWorld::register_component_types(System* system) const {
+    for(auto& container : _containers) {
+        if(container) {
+            container->register_component_type(system);
+        }
+    }
+}
+
 void EntityWorld::check_exists(EntityId id) const {
     y_always_assert(exists(id), "Entity doesn't exists");
 }

@@ -22,15 +22,13 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_SKYLIGHTCOMPONENT_H
 #define YAVE_COMPONENTS_SKYLIGHTCOMPONENT_H
 
-#include "SystemLinkedComponent.h"
-
 #include <yave/assets/AssetPtr.h>
 #include <yave/graphics/images/IBLProbe.h>
 #include <yave/systems/AssetLoaderSystem.h>
 
 namespace yave {
 
-class SkyLightComponent final : public SystemLinkedComponent<SkyLightComponent, AssetLoaderSystem> {
+class SkyLightComponent final : public ecs::SystemLinkedComponent<SkyLightComponent, AssetLoaderSystem> {
     public:
         AssetPtr<IBLProbe>& probe();
         const AssetPtr<IBLProbe>& probe() const;

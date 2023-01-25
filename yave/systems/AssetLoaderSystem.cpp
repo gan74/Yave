@@ -26,8 +26,6 @@ SOFTWARE.
 
 namespace yave {
 
-AssetLoaderSystem::LoadableComponentTypeInfo* AssetLoaderSystem::_first_info = nullptr;
-
 AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs::System("AssetLoaderSystem"), _loader(&loader) {
 }
 
@@ -44,10 +42,8 @@ void AssetLoaderSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
 
     AssetLoadingContext loading_ctx(_loader);
 
-    {
-        for(const LoadableComponentTypeInfo* info = _first_info; info; info = info->next) {
-            info->start_loading(world, loading_ctx, only_recent, _loading[info->type]);
-        }
+    for(const LoadableComponentTypeInfo& info : _infos) {
+        info.start_loading(world, loading_ctx, only_recent, _loading[info.type]);
     }
 
     post_load(world);
@@ -58,12 +54,11 @@ void AssetLoaderSystem::post_load(ecs::EntityWorld& world) {
 
     {
         _recently_loaded.make_empty();
-        for(const LoadableComponentTypeInfo* info = _first_info; info; info = info->next) {
-            info->update_status(world, _loading[info->type], _recently_loaded);
+        for(const LoadableComponentTypeInfo& info : _infos) {
+            info.update_status(world, _loading[info.type], _recently_loaded);
         }
     }
 }
-
 
 core::Span<ecs::EntityId> AssetLoaderSystem::recently_loaded() const {
     return _recently_loaded;
