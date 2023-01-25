@@ -71,6 +71,14 @@ const OctreeNode& Octree::root() const {
     return *_root;
 }
 
+core::Vector<ecs::EntityId> Octree::all_entities() const {
+    y_profile();
+
+    auto entities = core::vector_with_capacity<ecs::EntityId>(1024 * 8);
+    push_all_entities(entities, *_root);
+    return entities;
+}
+
 core::Vector<ecs::EntityId> Octree::find_entities(const Frustum& frustum, float far_dist) const {
     y_profile();
 
@@ -82,8 +90,7 @@ core::Vector<ecs::EntityId> Octree::find_entities(const Frustum& frustum, float 
 void Octree::audit() const {
 #ifdef Y_DEBUG
     y_profile();
-    core::Vector<ecs::EntityId> all;
-    push_all_entities(all, *_root);
+    core::Vector<ecs::EntityId> all = all_entities();
     std::sort(all.begin(), all.end());
     y_debug_assert(_root->entity_count() == all.size());
     y_debug_assert(std::unique(all.begin(), all.end()) == all.end());

@@ -82,14 +82,6 @@ float DirectionalLightComponent::last_cascade_distance() const {
     return _last_cascade_distance;
 }
 
-float& DirectionalLightComponent::shadow_base_bias() {
-    return _shadow_base_bias;
-}
-
-float DirectionalLightComponent::shadow_base_bias() const {
-    return _shadow_base_bias;
-}
-
 usize DirectionalLightComponent::cascades() const {
     return 4;
 }

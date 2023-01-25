@@ -66,13 +66,26 @@ uint shadow_cascade_index(uvec4 indices, vec3 world_pos) {
         }
 
         const ShadowMapParams params = shadow_params[index];
-        const vec2 coords = project(world_pos, params.view_proj).xy;
-        if(saturate(coords) == coords) {
+        const vec2 coords = abs(project(world_pos, params.view_proj).xy * 2.0 - 1.0);
+        if(max(coords.x, coords.y) < 1.0 - (params.texel_size * 4.0)) {
             return index;
         }
     }
 
     return 0xFFFFFFFF;
+}
+
+vec3 cascade_debug_color(uint shadow_map_index, uvec4 indices) {
+    if(shadow_map_index == indices[0]) {
+        return vec3(0.0, 0.0, 1.0);
+    }
+    if(shadow_map_index == indices[1]) {
+        return vec3(0.0, 1.0, 0.0);
+    }
+    if(shadow_map_index == indices[2]) {
+        return vec3(1.0, 1.0, 0.0);
+    }
+    return vec3(1.0, 0.0, 0.0);
 }
 
 vec4 cascade_debug_color(vec3 world_pos) {
@@ -81,22 +94,16 @@ vec4 cascade_debug_color(vec3 world_pos) {
         const uint shadow_map_index = shadow_cascade_index(indices, world_pos);
 
         if(shadow_map_index < 0xFFFFFFFF) {
-            const vec2 coords = abs(project(world_pos, shadow_params[shadow_map_index].view_proj).xy * 2.0 - 1.0);
-            const float alpha = mix(0.05, 0.25, pow(1.0 - max(coords.x, coords.y), 4.0));
-            if(shadow_map_index == indices[0]) {
-                return vec4(0.0, 0.0, 1.0, alpha);
-            }
-            if(shadow_map_index == indices[1]) {
-                return vec4(0.0, 1.0, 0.0, alpha);
-            }
-            if(shadow_map_index == indices[2]) {
-                return vec4(1.0, 1.0, 0.0, alpha);
-            }
-            return vec4(1.0, 0.0, 0.0, alpha);
+            const ShadowMapParams params = shadow_params[shadow_map_index];
+            const vec3 proj = project(world_pos, params.view_proj);
+            const vec2 texel = floor(atlas_uv(params, proj.xy) * params.size);
+            const vec3 color = mix(uv_debug_color(texel), cascade_debug_color(shadow_map_index, indices), 0.25);
+            return vec4(color, 1.0);
         }
     }
     return vec4(0.0);
 }
+
 
 
 // -------------------------------- MAIN --------------------------------
@@ -118,7 +125,6 @@ void main() {
         const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 
         const vec3 world_pos = unproject(in_uv, depth, camera.inv_view_proj);
-        const vec3 depth_normal = compute_depth_normal(world_pos, surface);
         const vec3 view_dir = normalize(camera.position - world_pos);
 
         // directional lights
@@ -131,8 +137,7 @@ void main() {
             const uint shadow_map_index = shadow_cascade_index(light.shadow_map_indices, world_pos);
             if(shadow_map_index < 0xFFFFFFFF) {
                 const ShadowMapParams params = shadow_params[shadow_map_index];
-                const float bias = compute_automatic_bias(params, depth_normal, light_dir);
-                att = compute_shadow_pcf(in_shadows, params, world_pos, bias);
+                att = compute_shadow_pcf(in_shadows, params, world_pos);
             }
 
             if(att > 0.0) {

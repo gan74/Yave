@@ -1,6 +1,7 @@
 #ifndef SHADOW_GLSL
 #define SHADOW_GLSL
 
+#if 0
 vec3 compute_depth_normal(vec3 world_pos, SurfaceInfo surface) {
     const vec3 dx = dFdx(world_pos);
     const vec3 dy = dFdy(world_pos);
@@ -14,7 +15,7 @@ float compute_automatic_bias(ShadowMapParams params, vec3 depth_normal, vec3 lig
     const float bias = max(params.base_bias * (1.0 - NoL), params.base_bias * 0.1);
     return bias * params.texel_size;
 }
-
+#endif
 
 
 vec2 atlas_uv(ShadowMapParams params, vec2 uv) {
@@ -23,8 +24,6 @@ vec2 atlas_uv(ShadowMapParams params, vec2 uv) {
 
 float sample_shadow(sampler2DShadow shadow_map, vec3 proj, ShadowMapParams params, float bias) {
     const vec2 uv = atlas_uv(params, proj.xy);
-    // Using derivatives can cause artefacting around big depth discontinuities
-    // const float bias = fwidth(proj.z) / max(fwidth(proj.x), fwidth(proj.y));
     return texture(shadow_map, vec3(uv, proj.z + bias)).x;
 }
 

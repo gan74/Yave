@@ -135,15 +135,6 @@ struct LightComponentWidget : public ComponentPanelWidget<CRTP, T> {
                 undo_stack().make_dirty();
             }
         }
-
-        imgui::table_begin_next_row();
-
-        {
-            ImGui::TextUnformatted("Shadow bias");
-            ImGui::TableNextColumn();
-
-            undo_stack() << ImGui::DragFloat("##bias", &light->shadow_base_bias(), 0.0001f, 0.0001f, 0.1f, "%.4f");
-        }
     }
 };
 

@@ -98,9 +98,8 @@ void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPa
     auto camera_mapping = pass->resources().map_buffer(camera_buffer);
     camera_mapping[0] = scene_view.camera();
 
-    usize index = 0;
     if(scene_view.has_world()) {
-        index = render_world(this, recorder, pass, index);
+        render_world(this, recorder, pass, 0);
     }
 }
 

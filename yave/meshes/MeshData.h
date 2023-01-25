@@ -59,6 +59,8 @@ class MeshData {
 
         bool has_skeleton() const;
 
+        bool is_empty() const;
+
         y_reflect(MeshData, _aabb, _vertices, _triangles, _sub_meshes, _skeleton)
 
     private:
