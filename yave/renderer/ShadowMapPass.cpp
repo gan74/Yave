@@ -90,14 +90,12 @@ struct SubPass {
 template<typename T>
 static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
                             const T& light,
-                            u32 lod_offset,
+                            // u32 lod_offset,
+                            math::Vec2ui offset, u32 size, // from allocator
                             const SceneView& light_view,
                             const math::Vec2& uv_mul,
                             SubAtlasAllocator& allocator) {
     y_profile();
-
-    const u32 level = light.shadow_lod() + lod_offset;
-    const auto [offset, size] = allocator.alloc(level);
 
     if(!size) {
         log_msg("Unable to allocate shadow altas: too many shadow casters", Log::Warning);
@@ -110,8 +108,7 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
         uv_mul * size_f,
         size_f,
         1.0f / size_f,
-        light.shadow_base_bias(),
-        0,
+        0, 0,
     };
 
     return SubPass{
@@ -121,6 +118,11 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
     };
 }
 
+static math::Matrix4<> flip_for_backfaces(math::Matrix4<> proj) {
+    proj[0] = -proj[0];
+    return proj;
+}
+
 
 
 static Camera spotlight_camera(const TransformableComponent& tr, const SpotLightComponent& light) {
@@ -128,52 +130,47 @@ static Camera spotlight_camera(const TransformableComponent& tr, const SpotLight
 
     Camera camera;
     camera.set_view(math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()));
-    camera.set_proj(math::perspective(light.half_angle() * 2.0f, 1.0f, z_near));
+    camera.set_proj(flip_for_backfaces(math::perspective(light.half_angle() * 2.0f, 1.0f, z_near)));
     camera.set_far(light.radius());
+    y_debug_assert(!camera.is_orthographic());
     return camera;
 }
 
-static Camera directional_camera(const Camera& cam, const DirectionalLightComponent& light, float cascade_distance) {
+static Camera directional_camera(const Camera& cam, const DirectionalLightComponent& light, u32 size, float near_dist, float far_dist) {
+    y_debug_assert(near_dist < far_dist && near_dist >= 0.0f);
+
+    const Frustum frustum = cam.frustum();
     const math::Vec3 cam_fwd = cam.forward();
-    const math::Matrix4<> inv_matrix = cam.inverse_matrix();
+    const math::Vec3 cam_pos = cam.position();
 
-    std::array<math::Vec3, 8> corners;
-    for(usize i = 0; i != 8; ++i) {
-        const math::Vec3 ndc = math::Vec3((i / 4), (i / 2) % 2, i % 2) * 2.0f - 1.0f;
-        const math::Vec4 pos = inv_matrix * math::Vec4(ndc, 1.0f);
-        corners[i] = pos.to<3>() / pos.w();
+    const auto& planes = frustum.planes();
+
+    const math::Vec3 top_left = planes[Frustum::Left].normal.cross(planes[Frustum::Top].normal).normalized();
+    const float top_left_dist = far_dist / top_left.dot(cam_fwd);
+    const math::Vec3 top_left_far = cam_pos + top_left_dist * top_left;
+
+    const math::Vec3 center = cam_pos + cam_fwd * (near_dist + (far_dist - near_dist) * 0.5f);
+    const float radius = (center - top_left_far).length();
+
+    const math::Vec3 light_dir = light.direction();
+    const math::Vec3 light_side = std::abs(light_dir.x()) < std::abs(light_dir.y()) ? math::Vec3(1.0f, 0.0f, 0.0f) : math::Vec3(0.0f, 1.0f, 0.0f);
+    const math::Vec3 light_up = light_dir.cross(light_side).normalized();
+
+    const float texel_world_size = (radius * 16.0f) / size; // Why 16 ?
+
+    const math::Matrix3<> light_view = math::look_at(math::Vec3(), light_dir, light_up).to<3, 3>();
+    math::Vec3 view_center = light_view * center;
+    for(float& c : view_center) {
+        c = std::floor(c / texel_world_size) * texel_world_size;
     }
+    const math::Vec3 snapped = light_view.inverse() * view_center;
 
-    math::Vec3 center;
-    for(usize i = 0; i != 4; ++i) {
-        math::Vec3& a = corners[i * 2];
-        const math::Vec3 b = corners[i * 2 + 1];
-        a = b - (a - b).normalized() * cascade_distance;
-        center += a + b;
-    }
-    center /= 8.0f;
-
-    const math::Vec3 up = light.direction().cross(cam_fwd);
-    const math::Matrix4<> view = math::look_at(center, center - light.direction(), up);
-
-    math::Vec3 max(-std::numeric_limits<float>::max());
-    math::Vec3 min(std::numeric_limits<float>::max());
-    for(const math::Vec3 c : corners) {
-        const math::Vec4 light_space = view * math::Vec4(c, 1.0f);
-        for(usize i = 0; i != 3; ++i) {
-            max[i] = std::max(max[i], light_space[i]);
-            min[i] = std::min(min[i], light_space[i]);
-        }
-    }
-
-    const float z_factor = 1000.0f;
-    const float inv_z_factor = 1.0f / z_factor;
-    max.z() *= max.z() < 0.0f ? inv_z_factor : z_factor;
-    min.z() *= min.z() > 0.0f ? inv_z_factor : z_factor;
+    const float z_bound = 1000.0f;
 
     Camera camera;
-    camera.set_view(view);
-    camera.set_proj(math::ortho(min.x(), max.x(), min.y(), max.y(), min.z(), max.z()));
+    camera.set_view(math::look_at(snapped, snapped + light_dir, light_up));
+    camera.set_proj(flip_for_backfaces(math::ortho(-radius, radius, -radius, radius, z_bound, -z_bound)));
+    y_debug_assert(camera.is_orthographic());
     return camera;
 }
 
@@ -284,21 +281,31 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
             const float cascade_dist_mul = cascades > 1 ? std::exp(std::log(cascade_ratio) / (cascades - 1)) : 1.0f;
 
             float dist_mul = 1.0f;
+            float near_dist = 0.0f;
             for(usize i = 0; i != cascades; ++i) {
-                const float cascade_distance = light->first_cascade_distance() * dist_mul;
+                const float cascade_dist = light->first_cascade_distance() * dist_mul;
                 dist_mul *= cascade_dist_mul;
 
+                const u32 level = light->shadow_lod() + lod_offset;
+                const auto [offset, size] = allocator.alloc(level);
+
                 indices[i] = u32(sub_passes.size());
-                sub_passes.emplace_back(create_sub_pass(builder, *light, lod_offset, SceneView(&world, directional_camera(scene.camera(), *light, cascade_distance)), uv_mul, allocator));
+                const Camera light_cam = directional_camera(scene.camera(), *light, size, near_dist, cascade_dist);
+                sub_passes.emplace_back(create_sub_pass(builder, *light, offset, size, SceneView(&world, light_cam), uv_mul, allocator));
+
+                near_dist = cascade_dist;
             }
         }
 
         for(auto&& [id, transform, light] : lights.spots) {
             auto& indices = (*pass.shadow_indices)[id.as_u64()];
             indices = math::Vec4ui(u32(-1));
-            indices[0] = u32(sub_passes.size());
 
-            sub_passes.emplace_back(create_sub_pass(builder, *light, lod_offset, SceneView(&world, spotlight_camera(*transform, *light)), uv_mul, allocator));
+            const u32 level = light->shadow_lod() + lod_offset;
+            const auto [offset, size] = allocator.alloc(level);
+
+            indices[0] = u32(sub_passes.size());
+            sub_passes.emplace_back(create_sub_pass(builder, *light, offset, size, SceneView(&world, spotlight_camera(*transform, *light)), uv_mul, allocator));
         }
     }
 

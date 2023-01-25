@@ -40,7 +40,6 @@ void main() {
     const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 
     const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
-    const vec3 depth_normal = compute_depth_normal(world_pos, surface);
     const vec3 view_dir = normalize(camera.position - world_pos);
 
     vec3 irradiance = vec3(0.0);
@@ -58,8 +57,7 @@ void main() {
 
         if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
             const ShadowMapParams params = shadow_params[light.shadow_map_index];
-            const float bias = compute_automatic_bias(params, depth_normal, light_dir);
-            att = compute_shadow_pcf(in_shadows, params, world_pos, bias);
+            att = compute_shadow_pcf(in_shadows, params, world_pos);
         }
 #endif
 

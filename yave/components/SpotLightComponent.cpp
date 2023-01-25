@@ -102,13 +102,5 @@ u32 SpotLightComponent::shadow_lod() const {
     return _shadow_lod;
 }
 
-float& SpotLightComponent::shadow_base_bias() {
-    return _shadow_base_bias;
-}
-
-float SpotLightComponent::shadow_base_bias() const {
-    return _shadow_base_bias;
-}
-
 }
 

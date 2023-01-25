@@ -88,8 +88,8 @@ struct ShadowMapParams {
 
     float size;
     float texel_size;
-    float base_bias;
     uint padding_0;
+    uint padding_1;
 };
 
 struct ExposureParams {
@@ -405,6 +405,11 @@ vec3 heat_spectrum(float x) {
     return color / max(color.x, max(color.y, color.z));
 }
 
+vec3 uv_debug_color(vec2 p) {
+    vec3 p3 = fract(p.xyx * vec3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yxz + 33.33);
+    return fract((p3.xxy + p3.yzz) * p3.zyx);
+}
 
 // -------------------------------- GBUFFER --------------------------------
 

@@ -105,8 +105,8 @@ struct ShadowMapParams {
 
     float size;
     float texel_size;
-    float base_bias;
     u32 padding_0;
+    u32 padding_1;
 };
 
 static_assert(sizeof(ShadowMapParams) % 16 == 0);
