@@ -61,19 +61,31 @@ void OctreeSystem::tick(ecs::EntityWorld& world) {
 void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     y_profile();
 
-    for(auto&& [id, comp] : world.query<TransformableComponent>(transformable_ids(world, only_recent))) {
-        auto&& [tr] = comp;
+    {
+        y_profile_zone("updating moved objects");
+        usize insertions = 0;
+        for(auto&& [id, comp] : world.query<TransformableComponent>(transformable_ids(world, only_recent))) {
+            auto&& [tr] = comp;
 
-        const AABB aabb = tr.global_aabb();
-
-        if(tr._node) {
-            if(tr._node->contains(aabb)) {
+            if(tr.local_aabb().is_empty()) {
                 continue;
             }
-            tr._node->remove(id);
+
+            const AABB aabb = tr.global_aabb();
+
+            if(tr._node) {
+                if(tr._node->contains(aabb)) {
+                    continue;
+                }
+                tr._node->remove(id);
+            }
+
+            tr._node = _tree.insert(id, aabb);
+            ++insertions;
         }
 
-        tr._node = _tree.insert(id, aabb);
+        unused(insertions);
+        y_profile_msg(fmt_c_str("%/% objects reinserted", insertions, transformable_ids(world, only_recent).size()));
     }
 
     if(only_recent) {

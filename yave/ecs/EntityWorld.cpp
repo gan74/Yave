@@ -287,9 +287,8 @@ std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) co
 
 void EntityWorld::make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> ids) {
     auto& mutated = find_container(type_id)->_mutated;
-    mutated.set_min_capacity(mutated.size() + ids.size());
     for(const EntityId id : ids) {
-        mutated << id;
+        mutated.insert(id);
     }
 }
 

@@ -106,7 +106,7 @@ class ComponentContainerBase : NonMovable {
         }
 
         inline core::Span<EntityId> recently_mutated() const {
-            return _mutated;
+            return _mutated.ids();
         }
 
         inline core::Span<EntityId> to_be_removed() const {
@@ -122,7 +122,7 @@ class ComponentContainerBase : NonMovable {
 
         template<typename T, typename... Args>
         inline T& add(EntityWorld& world, EntityId id, Args&&... args) {
-            _mutated << id;
+            _mutated.insert(id);
 
             auto& set = component_set<T>();
             if(!set.contains_index(id.index())) {
@@ -141,7 +141,7 @@ class ComponentContainerBase : NonMovable {
         template<typename T>
         inline auto* component_ptr(EntityId id) {
             if constexpr(traits::is_component_mutable_v<T>) {
-                _mutated << id;
+                _mutated.insert(id);
                 return component_set<T>().try_get(id);
             } else {
                 return const_component_set<T>().try_get(id);
@@ -166,7 +166,7 @@ class ComponentContainerBase : NonMovable {
         friend class EntityWorld;
 
         const ComponentTypeIndex _type_id;
-        core::Vector<EntityId> _mutated;
+        SparseIdSet _mutated;
         core::Vector<EntityId> _to_remove;
 
     protected:

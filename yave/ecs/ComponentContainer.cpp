@@ -40,8 +40,11 @@ void ComponentContainerBase::clean_after_tick() {
 void ComponentContainerBase::prepare_for_tick() {
     y_profile();
 
-    std::sort(_mutated.begin(), _mutated.end());
-    _mutated.shrink_to(std::unique(_mutated.begin(), _mutated.end()) - _mutated.begin());
+    for(const EntityId id : _to_remove) {
+        if(_mutated.contains(id)) {
+            _mutated.erase(id);
+        }
+    }
 }
 
 }

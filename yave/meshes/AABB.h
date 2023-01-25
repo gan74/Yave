@@ -69,6 +69,10 @@ class AABB {
             return _max;
         }
 
+        bool is_empty() const {
+            return extent().is_zero();
+        }
+
         AABB merged(const AABB& other) const {
             return AABB(_min.min(other._min), _max.max(other._max));
         }
