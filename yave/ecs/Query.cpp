@@ -43,6 +43,8 @@ core::Vector<EntityId> QueryUtils::matching(core::Span<SetMatch> matches, core::
         }
     }
 
+    y_profile_msg(fmt_c_str("% id matched", match.size()));
+
     return match;
 }
 

@@ -26,7 +26,7 @@ SOFTWARE.
 #include <yave/meshes/AABB.h>
 
 #include <y/core/Vector.h>
-
+#include <y/core/HashMap.h>
 
 namespace yave {
 
@@ -40,11 +40,15 @@ class AABBUpdateSystem : public ecs::System {
         template<typename T>
         void register_component_type() {
             _infos << AABBTypeInfo {
-                [](const ecs::EntityWorld& world, ecs::EntityId id) -> core::Result<AABB> {
-                    if(const T* comp = world.component<T>(id)) {
-                        return core::Ok(comp->aabb());
+                [](const ecs::EntityWorld& world, core::Span<ecs::EntityId> ids, ecs::SparseComponentSet<AABB>& aabbs) {
+                    for(auto&& [id, comp] : world.query<T>(ids)) {
+                        auto&& [c] = comp;
+                        if(AABB* aabb = aabbs.try_get(id)) {
+                            *aabb = aabb->merged(c.aabb());
+                        } else {
+                            aabbs.insert(id, c.aabb());
+                        }
                     }
-                    return core::Err();
                 },
                 ecs::type_index<T>(),
             };
@@ -52,12 +56,9 @@ class AABBUpdateSystem : public ecs::System {
 
     private:
         struct AABBTypeInfo {
-            core::Result<AABB> (*get_aabb)(const ecs::EntityWorld&, ecs::EntityId);
+            void (*collect_aabbs)(const ecs::EntityWorld&, core::Span<ecs::EntityId>, ecs::SparseComponentSet<AABB>&);
             ecs::ComponentTypeIndex type;
         };
-
-        AABB compute_aabb(const ecs::EntityWorld&world, ecs::EntityId id) const;
-
 
         core::Vector<AABBTypeInfo> _infos;
 };

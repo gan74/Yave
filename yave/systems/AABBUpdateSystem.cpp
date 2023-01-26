@@ -37,29 +37,15 @@ void AABBUpdateSystem::setup(ecs::EntityWorld& world) {
 }
 
 void AABBUpdateSystem::tick(ecs::EntityWorld& world) {
+    ecs::SparseComponentSet<AABB> aabbs;
     for(const AABBTypeInfo& info : _infos) {
-        for(auto&& [id, comp] : world.query<ecs::Mutate<TransformableComponent>>(world.recently_mutated(info.type))) {
-            auto&& [tr] = comp;
-            tr.set_aabb(compute_aabb(world, id));
-        }
-    }
-}
-
-AABB AABBUpdateSystem::compute_aabb(const ecs::EntityWorld& world, ecs::EntityId id) const {
-    AABB aabb;
-    bool init = false;
-    for(const AABBTypeInfo& info : _infos) {
-        if(const auto res = info.get_aabb(world, id)) {
-            if(!init) {
-                init = true;
-                aabb = res.unwrap();
-            } else {
-                aabb = aabb.merged(res.unwrap());
-            }
-        }
+        info.collect_aabbs(world, world.recently_mutated(info.type), aabbs);
     }
 
-    return aabb;
+    for(auto&& [id, comp] : world.query<ecs::Mutate<TransformableComponent>>(aabbs.ids())) {
+        auto&& [tr] = comp;
+        tr.set_aabb(aabbs[id]);
+    }
 }
 
 }
