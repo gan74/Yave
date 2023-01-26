@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/camera/Frustum.h>
 
+#include <y/utils/format.h>
+
 namespace yave {
 
 static void push_all_entities(core::Vector<ecs::EntityId>& entities, const OctreeNode& node) {
@@ -93,6 +95,7 @@ void Octree::audit() const {
 #ifdef Y_DEBUG
     y_profile();
     core::Vector<ecs::EntityId> all = all_entities();
+    y_profile_dyn_zone(fmt_c_str("auditing % entities", all.size()));
     std::sort(all.begin(), all.end());
     y_debug_assert(_root->entity_count() == all.size());
     y_debug_assert(std::unique(all.begin(), all.end()) == all.end());

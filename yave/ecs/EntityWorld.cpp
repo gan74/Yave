@@ -286,6 +286,7 @@ std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) co
 }
 
 void EntityWorld::make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> ids) {
+    y_profile();
     auto& mutated = find_container(type_id)->_mutated;
     for(const EntityId id : ids) {
         mutated.insert(id);

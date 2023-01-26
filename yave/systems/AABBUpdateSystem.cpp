@@ -39,7 +39,9 @@ void AABBUpdateSystem::setup(ecs::EntityWorld& world) {
 void AABBUpdateSystem::tick(ecs::EntityWorld& world) {
     ecs::SparseComponentSet<AABB> aabbs;
     for(const AABBTypeInfo& info : _infos) {
-        info.collect_aabbs(world, world.recently_mutated(info.type), aabbs);
+        const core::Span<ecs::EntityId> ids = world.recently_mutated(info.type);
+        y_profile_dyn_zone(fmt_c_str("collecting % %", ids.size(), world.component_type_name(info.type)));
+        info.collect_aabbs(world, ids, aabbs);
     }
 
     for(auto&& [id, comp] : world.query<ecs::Mutate<TransformableComponent>>(aabbs.ids())) {
