@@ -36,6 +36,8 @@ struct Mutate {};
 template<typename T>
 struct Not {};
 
+template<typename T>
+struct Changed {};
 
 
 namespace traits {
@@ -44,14 +46,16 @@ struct component_type {
     using raw_type = remove_cvref_t<T>;
     using type = const raw_type;
     static constexpr bool required = true;
-};
+    static constexpr bool changed = false;
 
+};
 
 template<typename T>
 struct component_type<Mutate<T>> {
     using raw_type = typename component_type<T>::raw_type;
     using type = std::remove_const_t<typename component_type<T>::type>;
     static constexpr bool required = component_type<T>::required;
+    static constexpr bool changed = component_type<T>::changed;
 };
 
 template<typename T>
@@ -59,8 +63,18 @@ struct component_type<Not<T>> {
     using raw_type = typename component_type<T>::raw_type;
     using type = typename component_type<T>::type;
     static constexpr bool required = !component_type<T>::required;
+    static constexpr bool changed = component_type<T>::changed;
 };
 
+template<typename T>
+struct component_type<Changed<T>> {
+    static_assert(component_type<T>::required, "Changed<Not<T>> is not a valid query, try Not<Changed<T>>");
+
+    using raw_type = typename component_type<T>::raw_type;
+    using type = typename component_type<T>::type;
+    static constexpr bool required = true;
+    static constexpr bool changed = true;
+};
 
 
 
@@ -75,10 +89,14 @@ template<typename T>
 static constexpr bool component_required_v = component_type<T>::required;
 
 template<typename T>
+static constexpr bool component_changed_v = component_type<T>::changed;
+
+template<typename T>
 static constexpr bool is_component_const_v = std::is_const_v<typename component_type<T>::type> || !component_required_v<T>;
 
 template<typename T>
 static constexpr bool is_component_mutable_v = !is_component_const_v<T>;
+
 }
 
 }

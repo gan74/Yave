@@ -105,8 +105,8 @@ class ComponentContainerBase : NonMovable {
             return *reinterpret_cast<const SparseIdSetBase*>(this + 1);
         }
 
-        inline core::Span<EntityId> recently_mutated() const {
-            return _mutated.ids();
+        inline const SparseIdSetBase& recently_mutated() const {
+            return _mutated;
         }
 
         inline core::Span<EntityId> to_be_removed() const {

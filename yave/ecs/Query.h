@@ -79,16 +79,19 @@ struct QueryUtils {
     static core::Vector<EntityId> matching(core::Span<SetMatch> matches, core::Span<EntityId> ids);
 
     template<usize I = 0, typename... Args>
-    static void fill_match_array(core::MutableSpan<SetMatch> matches, const std::array<const ComponentContainerBase*, sizeof...(Args)>& containers) {
+    static void fill_match_array(core::MutableSpan<SetMatch> matches, const std::array<const ComponentContainerBase*, sizeof...(Args)>& containers, bool only_changed = true) {
         if constexpr(I < sizeof...(Args)) {
             using component_type = std::tuple_element_t<I, std::tuple<Args...>>;
             static constexpr bool required = traits::component_required_v<component_type>;
+            static constexpr bool changed = traits::component_changed_v<component_type>;
 
             const ComponentContainerBase* container = containers[I];
             y_debug_assert(!container || type_index<traits::component_raw_type_t<component_type>>() == container->type_id());
 
             matches[I] = {
-                container ? &container->id_set() : nullptr,
+                container ?
+                    (changed && only_changed) ? &container->recently_mutated() : &container->id_set()
+                    : nullptr,
                 required,
             };
             fill_match_array<I + 1, Args...>(matches, containers);

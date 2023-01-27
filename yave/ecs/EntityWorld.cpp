@@ -207,7 +207,7 @@ core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) cons
 }
 
 core::Span<EntityId> EntityWorld::recently_mutated(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->recently_mutated();
+    return find_container(type_id)->recently_mutated().ids();
 }
 
 core::Span<EntityId> EntityWorld::to_be_removed(ComponentTypeIndex type_id) const {
