@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_ECS_QUERY_H
 
 #include "traits.h"
-#include "SparseComponentSet.h"
+#include "ComponentContainer.h"
 
 #include <y/utils/iter.h>
 
@@ -78,22 +78,21 @@ struct QueryUtils {
 
     static core::Vector<EntityId> matching(core::Span<SetMatch> matches, core::Span<EntityId> ids);
 
-    template<usize I = 0, typename T>
-    static void fill_match_array(core::MutableSpan<SetMatch> matches, const T& sets) {
-        if constexpr(I < std::tuple_size_v<T>) {
-            matches[I] = {
-                std::get<I>(sets),
-                traits::component_required_v<std::tuple_element_t<I, T>>
-            };
-            fill_match_array<I + 1>(matches, sets);
-        }
-    }
+    template<usize I = 0, typename... Args>
+    static void fill_match_array(core::MutableSpan<SetMatch> matches, const std::array<const ComponentContainerBase*, sizeof...(Args)>& containers) {
+        if constexpr(I < sizeof...(Args)) {
+            using component_type = std::tuple_element_t<I, std::tuple<Args...>>;
+            static constexpr bool required = traits::component_required_v<component_type>;
 
-    template<typename T>
-    static auto create_match_array(const T& sets) {
-        std::array<SetMatch, std::tuple_size_v<T>> matches = {};
-        fill_match_array(matches, sets);
-        return matches;
+            const ComponentContainerBase* container = containers[I];
+            y_debug_assert(!container || type_index<traits::component_raw_type_t<component_type>>() == container->type_id());
+
+            matches[I] = {
+                container ? &container->id_set() : nullptr,
+                required,
+            };
+            fill_match_array<I + 1, Args...>(matches, containers);
+        }
     }
 };
 
@@ -109,17 +108,21 @@ class Query : NonCopyable {
 
     template<usize I = 0>
     static auto make_component_tuple(const set_tuple& sets, EntityId id) {
-        if constexpr(!component_included[I]) {
-            return std::tie();
-        } else {
-            y_debug_assert(std::get<I>(sets));
-            auto&& s = *std::get<I>(sets);
-            std::tuple<std::tuple_element_t<I, all_components>&> tpl = std::tie(s[id]);
-            if constexpr(I + 1 == sizeof...(Args)) {
-                return tpl;
+        if constexpr(I < std::tuple_size_v<set_tuple>) {
+            if constexpr(!component_included[I]) {
+                return make_component_tuple<I + 1>(sets, id);
             } else {
-                return std::tuple_cat(tpl, make_component_tuple<I + 1>(sets, id));
+                y_debug_assert(std::get<I>(sets));
+                auto&& s = *std::get<I>(sets);
+                std::tuple<std::tuple_element_t<I, all_components>&> tpl = std::tie(s[id]);
+                if constexpr(I + 1 == sizeof...(Args)) {
+                    return tpl;
+                } else {
+                    return std::tuple_cat(tpl, make_component_tuple<I + 1>(sets, id));
+                }
             }
+        } else {
+            return std::tie();
         }
     }
     public:
@@ -320,14 +323,6 @@ class Query : NonCopyable {
                 std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) { return a.sorting_key() < b.sorting_key(); });
                 _ids = QueryUtils::matching(matches, range);
             }
-            fill_components_array();
-        }
-
-        Query(const set_tuple& sets) : Query(sets, QueryUtils::create_match_array(sets)) {
-            fill_components_array();
-        }
-
-        Query(const set_tuple& sets, core::Span<EntityId> range) : Query(sets, QueryUtils::create_match_array(sets), range) {
             fill_components_array();
         }
 

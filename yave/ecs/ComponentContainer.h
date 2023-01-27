@@ -214,6 +214,8 @@ class ComponentContainerBase : NonMovable {
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
     public:
+        using component_type = T;
+
         ComponentContainer() : ComponentContainerBase(type_index<T>()) {
             static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
             static_assert(sizeof(*this) == sizeof(ComponentContainerBase) + sizeof(_components));

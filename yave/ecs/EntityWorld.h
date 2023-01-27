@@ -276,8 +276,7 @@ class EntityWorld {
 
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) {
-            const auto sets = typed_component_sets_or_none<Args...>();
-            auto q = Query<Args...>(sets, build_id_sets_for_query(sets, tags));
+            auto q = Query<Args...>(typed_component_sets_or_none<Args...>(), build_matches_for_query<Args...>(tags));
             dirty_mutated_containers<Args...>(q.ids());
             return q;
         }
@@ -285,16 +284,14 @@ class EntityWorld {
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
-            const auto sets = typed_component_sets_or_none<Args...>();
-            auto q = Query<Args...>(sets, build_id_sets_for_query(sets, tags));
+            auto q = Query<Args...>(typed_component_sets_or_none<Args...>(), build_matches_for_query<Args...>(tags));
 
             return q;
         }
 
         template<typename... Args>
         auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) {
-            const auto sets = typed_component_sets_or_none<Args...>();
-            auto q = Query<Args...>(sets, build_id_sets_for_query(sets, tags), ids);
+            auto q = Query<Args...>(typed_component_sets_or_none<Args...>(), build_matches_for_query<Args...>(tags), ids);
             dirty_mutated_containers<Args...>(q.ids());
             return q;
         }
@@ -302,8 +299,7 @@ class EntityWorld {
         template<typename... Args>
         auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
-            const auto sets = typed_component_sets_or_none<Args...>();
-            auto q = Query<Args...>(sets, build_id_sets_for_query(sets, tags), ids);
+            auto q = Query<Args...>(typed_component_sets_or_none<Args...>(), build_matches_for_query<Args...>(tags), ids);
 
             return q;
         }
@@ -392,18 +388,33 @@ class EntityWorld {
             }
         }
 
-        template<typename T>
-        auto build_id_sets_for_query(const T& sets, core::Span<core::String> tags) const {
-            const usize set_count = std::tuple_size_v<T>;
-            core::ScratchPad<QueryUtils::SetMatch> matches(set_count + tags.size());
-            QueryUtils::fill_match_array(matches, sets);
+        template<usize I = 0, typename... Args>
+        auto fill_container_array(std::array<const ComponentContainerBase*, sizeof...(Args)>& containers) const {
+            if constexpr(I < sizeof...(Args)) {
+                using component_type = typename traits::component_raw_type_t<std::tuple_element_t<I, std::tuple<Args...>>>;
+                containers[I] = find_container<component_type>();
+                fill_container_array<I + 1, Args...>(containers);
+            }
+        }
+
+        template<typename... Args>
+        auto build_matches_for_query(core::Span<core::String> tags) const {
+            constexpr usize container_count = sizeof...(Args);
+
+            std::array<const ComponentContainerBase*, container_count> containers;
+            fill_container_array<0, Args...>(containers);
+
+            core::ScratchPad<QueryUtils::SetMatch> matches(container_count + tags.size());
+            QueryUtils::fill_match_array<0, Args...>(matches, containers);
+
             for(usize i = 0; i != tags.size(); ++i) {
                 const bool is_neg = tags[i].starts_with("!");
-                matches[set_count + i] = {
+                matches[container_count + i] = {
                     tag_set(is_neg ? core::String(tags[i].sub_str(1)) : tags[i]),
                     !is_neg
                 };
             }
+
             return matches;
         }
 
