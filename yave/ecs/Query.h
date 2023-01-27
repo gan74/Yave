@@ -84,14 +84,24 @@ struct QueryUtils {
             using component_type = std::tuple_element_t<I, std::tuple<Args...>>;
             static constexpr bool required = traits::component_required_v<component_type>;
             static constexpr bool changed = traits::component_changed_v<component_type>;
+            static constexpr bool removed = traits::component_removed_v<component_type>;
 
-            const ComponentContainerBase* container = containers[I];
-            y_debug_assert(!container || type_index<traits::component_raw_type_t<component_type>>() == container->type_id());
+            const SparseIdSetBase* set = nullptr;
+            if(const ComponentContainerBase* container = containers[I]) {
+
+                y_debug_assert(type_index<traits::component_raw_type_t<component_type>>() == container->type_id());
+
+                if(removed) {
+                    set = &container->to_be_removed();
+                } else if(changed && only_changed) {
+                    set = &container->recently_mutated();
+                } else {
+                    set = &container->id_set();
+                }
+            }
 
             matches[I] = {
-                container ?
-                    (changed && only_changed) ? &container->recently_mutated() : &container->id_set()
-                    : nullptr,
+                set,
                 required,
             };
             fill_match_array<I + 1, Args...>(matches, containers);
