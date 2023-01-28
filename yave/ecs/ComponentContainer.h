@@ -105,18 +105,18 @@ class ComponentContainerBase : NonMovable {
             return *reinterpret_cast<const SparseIdSetBase*>(this + 1);
         }
 
-        inline const SparseIdSetBase& recently_mutated() const {
+        inline const SparseIdSet& recently_mutated() const {
             return _mutated;
         }
 
-        inline core::Span<EntityId> to_be_removed() const {
+        inline const SparseIdSet& to_be_removed() const {
             return _to_remove;
         }
 
 
         void remove(EntityId id) {
             if(contains(id)) {
-                _to_remove << id;
+                _to_remove.insert(id);
             }
         }
 
@@ -167,7 +167,7 @@ class ComponentContainerBase : NonMovable {
 
         const ComponentTypeIndex _type_id;
         SparseIdSet _mutated;
-        core::Vector<EntityId> _to_remove;
+        SparseIdSet _to_remove;
 
     protected:
         ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
