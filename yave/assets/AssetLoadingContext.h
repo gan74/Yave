@@ -46,7 +46,7 @@ class AssetLoadingContext {
 
         friend class AssetLoader;
 
-        AssetLoader* _parent;
+        AssetLoader* _parent = nullptr;
         AssetDependencies _dependencies;
 };
 

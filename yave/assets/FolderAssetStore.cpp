@@ -738,29 +738,39 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
     _assets.clear();
 
     core::Vector<u64> desc_ids;
+    core::FlatHashMap<u64, usize> asset_sizes;
 
     const FileSystemModel* fs = FileSystemModel::local_filesystem();
 
     {
         y_profile_zone("Enumerating descs");
         const auto result = fs->for_each(_root, [&](const FileSystemModel::EntryInfo& info) {
-            const std::string_view ext = ".desc";
-            if(info.name.size() < ext.size()) {
+            if(info.type != FileSystemModel::EntryType::File) {
                 return;
             }
 
-            const usize size_without_ext = info.name.size() - ext.size();
-            if(info.name.sub_str(size_without_ext) != ext) {
-                return;
-            }
-
-            if(info.type == FileSystemModel::EntryType::File) {
-                u64 uid = 0;
-                if(std::from_chars(info.name.data(), info.name.data() + size_without_ext, uid, 16).ec != std::errc()) {
-                    return;
+            auto uid_from_name = [](std::string_view name, std::string_view ext, u64& uid) {
+                const usize size_without_ext = name.size() - ext.size();
+                if(std::from_chars(name.data(), name.data() + size_without_ext, uid, 16).ec != std::errc()) {
+                    return false;
                 }
-                desc_ids << uid;
+                return true;
+            };
+
+            if(info.name.ends_with(".desc")) {
+                u64 uid = 0;
+                if(uid_from_name(info.name, ".desc", uid)) {
+                    desc_ids << uid;
+                }
             }
+
+            if(info.name.ends_with(".asset")) {
+                u64 uid = 0;
+                if(uid_from_name(info.name, ".asset", uid)) {
+                    asset_sizes[uid] = info.file_size;
+                }
+            }
+
         });
     }
 
@@ -778,7 +788,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
             const usize index = assets.size();
             assets.emplace_back();
 
-            thread_pool.schedule([this, range, index, &assets] {
+            thread_pool.schedule([this, range, index, &assets, &asset_sizes] {
                 y_profile_zone("Reading descs internal");
                 for(const u64 uid : range) {
                     const AssetId id = AssetId::from_id(uid);
@@ -786,8 +796,8 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
                         AssetDesc desc = r.unwrap();
                         AssetData data = { id, desc.type, 0 };
 
-                        if(auto file = io2::File::open(asset_data_file_name(id))) {
-                            data.file_size = file.unwrap().size();
+                        if(const auto it = asset_sizes.find(uid); it != asset_sizes.end()) {
+                            data.file_size = it->second;
                         } else {
                             log_msg(fmt("\"%\" has no asset file", desc.name), Log::Error);
                             continue;
