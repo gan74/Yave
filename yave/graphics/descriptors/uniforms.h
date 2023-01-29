@@ -87,15 +87,14 @@ struct SpotLight {
     float falloff = 1.0f;
 
     math::Vec3 forward;
-    float cos_angle = 0.5f;
+    float min_radius = 0.01f;
+
+    math::Vec2 att_scale_offset;
+    u32 padding_0 = 0;
+    u32 shadow_map_index = u32(-1);
 
     math::Vec3 encl_sphere_center;
     float encl_sphere_radius;
-
-    float angle_exp;
-    u32 shadow_map_index = u32(-1);
-    float min_radius = 0.01f;
-    u32 padding_0 = 0;
 };
 
 static_assert(sizeof(SpotLight) % 16 == 0);

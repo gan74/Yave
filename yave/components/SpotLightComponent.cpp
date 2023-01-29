@@ -46,12 +46,12 @@ float SpotLightComponent::half_angle() const {
     return _half_angle;
 }
 
-float& SpotLightComponent::angle_exponent() {
-    return _angle_exp;
+float SpotLightComponent::half_inner_angle() const {
+    return _half_inner_angle;
 }
 
-float SpotLightComponent::angle_exponent() const {
-    return _angle_exp;
+float& SpotLightComponent::half_inner_angle() {
+    return _half_inner_angle;
 }
 
 bool& SpotLightComponent::cast_shadow() {
@@ -74,6 +74,14 @@ AABB SpotLightComponent::aabb() const {
     const auto sphere = enclosing_sphere();
     return AABB::from_center_extent(math::Vec3(0.0f, sphere.dist_to_center, 0.0f), math::Vec3(sphere.radius));
 }
+
+math::Vec2 SpotLightComponent::attenuation_scale_offset() const {
+    const float cos_outer = std::cos(_half_angle);
+    const float cos_inner = std::cos(_half_inner_angle);
+    const float scale = 1.0f / std::max(0.001f, cos_inner - cos_outer);
+    return math::Vec2(scale, -cos_outer * scale);
+}
+
 
 }
 

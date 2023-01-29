@@ -49,8 +49,8 @@ class SpotLightComponent final :
         float& half_angle();
         float half_angle() const;
 
-        float& angle_exponent();
-        float angle_exponent() const;
+        float& half_inner_angle();
+        float half_inner_angle() const;
 
         bool& cast_shadow();
         bool cast_shadow() const;
@@ -60,14 +60,16 @@ class SpotLightComponent final :
 
         AABB aabb() const;
 
+        math::Vec2 attenuation_scale_offset() const;
+
         y_reflect(SpotLightComponent,
             _color, _intensity, _range, _min_radius, _falloff,
-            _half_angle, _angle_exp, _cast_shadow, _shadow_lod
+            _half_angle, _half_inner_angle, _cast_shadow, _shadow_lod
         )
 
     private:
         float _half_angle = math::to_rad(45.0f);
-        float _angle_exp = 2.0f;
+        float _half_inner_angle = math::to_rad(30.0f);
 
         bool _cast_shadow = false;
         u32 _shadow_lod = 0;

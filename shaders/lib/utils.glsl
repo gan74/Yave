@@ -73,16 +73,14 @@ struct SpotLight {
     float falloff;
 
     vec3 forward;
-    float cos_angle;
+    float min_radius;
+
+    vec2 att_scale_offset;
+    uint padding_0;
+    uint shadow_map_index;
 
     vec3 encl_sphere_center;
     float encl_sphere_radius;
-
-    float angle_exp;
-    uint shadow_map_index;
-
-    float min_radius;
-    uint padding_0;
 };
 
 struct ShadowMapParams {

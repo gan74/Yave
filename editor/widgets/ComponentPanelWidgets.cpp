@@ -158,7 +158,7 @@ struct PointLightComponentWidget : public LightComponentWidget<PointLightCompone
         {
             ImGui::TextUnformatted("Range");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##range", &light->range(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+            ImGui::DragFloat("##range", &light->range(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f m");
         }
 
         imgui::table_begin_next_row();
@@ -218,7 +218,7 @@ struct DirectionalLightComponentWidget : public LightComponentWidget<Directional
         {
             ImGui::TextUnformatted("First cascade distance");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##firstdist", &light->first_cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
+            ImGui::DragFloat("##firstdist", &light->first_cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f m");
         }
 
         imgui::table_begin_next_row();
@@ -226,7 +226,7 @@ struct DirectionalLightComponentWidget : public LightComponentWidget<Directional
         {
             ImGui::TextUnformatted("Last cascade distance");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##lastdist", &light->last_cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f");
+            ImGui::DragFloat("##lastdist", &light->last_cascade_distance(), 1.0f, 10.0f, std::numeric_limits<float>::max(), "%.2f m");
         }
 
     }
@@ -247,7 +247,7 @@ struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponent
         {
             ImGui::TextUnformatted("Range");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##range", &light->range(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f");
+            ImGui::DragFloat("##range", &light->range(), 1.0f, 0.0f, std::numeric_limits<float>::max(), "%.2f m");
         }
 
         imgui::table_begin_next_row();
@@ -261,20 +261,25 @@ struct SpotLightComponentWidget : public LightComponentWidget<SpotLightComponent
         imgui::table_begin_next_row();
 
         {
-            ImGui::TextUnformatted("Angle");
+            ImGui::TextUnformatted("Outer angle");
             ImGui::TableNextColumn();
             float angle = math::to_deg(light->half_angle() * 2.0f);
-            if(ImGui::DragFloat("##angle", &angle, 0.1f, 0.0f, 360.0f, "%.2f°")) {
+            if(ImGui::DragFloat("##outer_angle", &angle, 0.1f, 0.0f, 360.0f, "%.2f°")) {
                 light->half_angle() = math::to_rad(angle * 0.5f);
+                // light->half_inner_angle() = std::min(light->half_inner_angle(), light->half_angle());
             }
         }
 
         imgui::table_begin_next_row();
 
         {
-            ImGui::TextUnformatted("Exponent");
+            ImGui::TextUnformatted("Inner angle");
             ImGui::TableNextColumn();
-            ImGui::DragFloat("##exponent", &light->angle_exponent(), 0.1f, 0.0f, 10.0f, "%.2f");
+            float angle = math::to_deg(light->half_inner_angle() * 2.0f);
+            if(ImGui::DragFloat("##inner_angle", &angle, 0.1f, 0.0f, 360.0f, "%.2f°", ImGuiSliderFlags_AlwaysClamp)) {
+                light->half_inner_angle() = math::to_rad(angle * 0.5f);
+                // light->half_angle() = std::max(light->half_inner_angle(), light->half_angle());
+            }
         }
 
         imgui::table_begin_next_row();

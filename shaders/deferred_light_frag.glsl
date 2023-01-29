@@ -52,8 +52,8 @@ void main() {
         float att = attenuation(distance * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 
 #ifdef SPOT_LIGHT
-        const float spot_cos_alpha = -dot(light_dir, light.forward);
-        att *= pow(max(0.0, (spot_cos_alpha - light.cos_angle) / (1.0 - light.cos_angle)), light.angle_exp);
+        const float spot_cos_alpha = max(0.0, -dot(light_dir, light.forward));
+        att *= spot_attenuation(spot_cos_alpha, light.att_scale_offset);
 
         if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
             const ShadowMapParams params = shadow_params[light.shadow_map_index];

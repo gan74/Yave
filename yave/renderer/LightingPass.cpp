@@ -164,8 +164,10 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
         points[count++] = {
             t.position(),
             scaled_range,
+
             l.color() * l.intensity(),
             std::max(math::epsilon<float>, l.falloff()),
+
             {},
             l.min_radius(),
         };
@@ -229,16 +231,19 @@ static u32 fill_spot_light_buffer(
         spots[count++] = {
             t.position(),
             scaled_range,
+
             l.color() * l.intensity(),
             std::max(math::epsilon<float>, l.falloff()),
+
             forward,
-            std::cos(l.half_angle()),
+            l.min_radius(),
+
+            l.attenuation_scale_offset(),
+            0,
+            shadow_indices[0],
+
             encl_sphere_center,
             enclosing_sphere.radius,
-            std::max(math::epsilon<float>, l.angle_exponent()),
-            shadow_indices[0],
-            l.min_radius(),
-            0
         };
 
         if(count == max_spot_lights) {

@@ -10,10 +10,10 @@ float attenuation(float distance, float range, float light_radius) {
     return sqr(num / max(distance, light_radius));
 }
 
-/*float attenuation(float distance, float range) {
-    const float x = min(distance, range);
-    return sqr(1.0 - sqr(sqr(x / range))) / (sqr(x) + 1.0);
-}*/
+float spot_attenuation(float cos_angle, vec2 scale_offset) {
+    const float att = saturate(cos_angle * scale_offset.x + scale_offset.y);
+    return sqr(att);
+}
 
 
 
