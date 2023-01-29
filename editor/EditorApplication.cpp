@@ -38,6 +38,7 @@ SOFTWARE.
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
 #include <y/utils/log.h>
+#include <y/test/test.h>
 
 #include <external/imgui/IconsFontAwesome5.h>
 
@@ -54,6 +55,14 @@ editor_action("Show ImGui demo", []{ imgui_platform()->show_demo(); })
 editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, []{ application()->save_world(); }, "File")
 editor_action(ICON_FA_FOLDER " Load", []{ application()->load_world(); }, "File")
 
+editor_action("Run tests", [] {
+    log_msg(fmt("Running % tests", test::test_count()));
+    if(test::run_tests()) {
+        log_msg("All tests ok");
+    } else {
+        log_msg("Tests failed", Log::Error);
+    }
+})
 
 EditorApplication* EditorApplication::_instance = nullptr;
 

@@ -43,6 +43,7 @@ struct TestItem {
 void register_test(TestItem* test);
 }
 
+usize test_count();
 bool run_tests();
 
 }
@@ -72,7 +73,7 @@ void Y_TEST_FUNC(y::test::detail::TestResult& _y_test_result)
 
 #else
 
-#define y_test_assert(t) do { y::unused(t) } while(false)
+#define y_test_assert(t) do { y::unused(t); } while(false)
 
 #define y_test_func(name)                                                                               \
 static void Y_TEST_FUNC(y::test::detail::TestResult& _y_test_result)

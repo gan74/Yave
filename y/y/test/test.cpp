@@ -67,6 +67,15 @@ static bool run_test(const detail::TestItem* test) {
 
 }
 
+
+usize test_count() {
+    usize count = 0;
+    for(detail::TestItem* test = detail::first_test; test; test = test->next) {
+        ++count;
+    }
+    return count;
+}
+
 bool run_tests() {
     bool all_ok = true;
     for(detail::TestItem* test = detail::first_test; test; test = test->next) {

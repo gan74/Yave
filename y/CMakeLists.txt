@@ -60,10 +60,8 @@ target_compile_options(y PUBLIC
 
 option(Y_BUILD_TESTS "Build tests" ON)
 if(Y_BUILD_TESTS)
-    #enable_testing()
     add_executable(tests ${TEST_FILES} "tests.cpp")
     target_compile_definitions(tests PRIVATE "-DY_BUILD_TESTS")
     target_link_libraries(tests y)
-    #add_test(Test tests)
 endif()
 
