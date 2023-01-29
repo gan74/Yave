@@ -25,7 +25,7 @@ void main() {
     gl_Position = camera.view_proj * in_spot * vec4(in_position, 1.0);
 #else
     Light light = lights[gl_InstanceIndex];
-    const float scale = light.radius * 1.1;
+    const float scale = light.range * 1.1;
     gl_Position = camera.view_proj * vec4(in_position * scale + light.position, 1.0);
 #endif
 

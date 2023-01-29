@@ -31,8 +31,8 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [] { undo_stack().undo(); }, "Edit")
-editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [] { undo_stack().redo(); }, "Edit")
+// editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [] { undo_stack().undo(); }, "Edit")
+// editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [] { undo_stack().redo(); }, "Edit")
 
 
 /*void print_pos(const ecs::EntityPrefab& prefab) {
@@ -53,6 +53,7 @@ class UndoStackWidget : public Widget {
         }
 
         void on_gui() override {
+#if 0
             {
                 ImGui::BeginDisabled(!undo_stack().can_undo());
                 if(ImGui::Button(ICON_FA_UNDO " Undo")) {
@@ -86,6 +87,7 @@ class UndoStackWidget : public Widget {
                 //}
                 ImGui::EndListBox();
             }
+#endif
         }
 };
 

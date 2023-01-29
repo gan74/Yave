@@ -5,14 +5,17 @@
 #include "gbuffer.glsl"
 
 
-float attenuation(float distance, float radius) {
-    const float x = min(distance, radius);
-    return sqr(1.0 - sqr(sqr(x / radius))) / (sqr(x) + 1.0);
+float attenuation(float distance, float range, float light_radius) {
+    const float num = max(0.0, 1.0 - sqr(sqr(distance / range)));
+    return sqr(num / max(distance, light_radius));
 }
 
-float attenuation(float distance, float radius, float falloff) {
-    return attenuation(distance * falloff, radius * falloff);
-}
+/*float attenuation(float distance, float range) {
+    const float x = min(distance, range);
+    return sqr(1.0 - sqr(sqr(x / range))) / (sqr(x) + 1.0);
+}*/
+
+
 
 vec3 L0(vec3 light_dir, vec3 view_dir, SurfaceInfo surface) {
     const vec3 half_vec = normalize(light_dir + view_dir);

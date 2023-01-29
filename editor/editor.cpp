@@ -43,9 +43,6 @@ Settings& app_settings() {
     return settings;
 }
 
-UndoStack& undo_stack() {
-    return application()->undo_stack();
-}
 
 AssetStore& asset_store() {
     return application()->asset_store();

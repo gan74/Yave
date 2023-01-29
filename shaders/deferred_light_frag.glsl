@@ -49,7 +49,7 @@ void main() {
         vec3 light_dir = light.position - world_pos;
         const float distance = length(light_dir);
         light_dir /= distance;
-        float att = attenuation(distance, light.radius, light.falloff);
+        float att = attenuation(distance * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 
 #ifdef SPOT_LIGHT
         const float spot_cos_alpha = -dot(light_dir, light.forward);

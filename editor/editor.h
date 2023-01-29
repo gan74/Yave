@@ -46,8 +46,6 @@ using namespace yave;
 EditorApplication* application();
 
 Settings& app_settings();
-UndoStack& undo_stack();
-
 
 AssetStore& asset_store();
 AssetLoader& asset_loader();

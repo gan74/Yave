@@ -111,9 +111,6 @@ void ComponentPanel::on_gui() {
 
 
     const bool editing = ImGui::IsWindowFocused() && ImGui::IsAnyItemActive();
-    if(!editing && _editing) {
-        undo_stack().done_editing();
-    }
     _editing = editing;
 
 

@@ -153,7 +153,7 @@ constexpr TypeHeader build_type_header(NamedMember<T, M> mem) {
     return TypeHeader { mem.name_hash, force_ct<header_type_hash<M>()>() };
 }
 
-template<usize I, typename T, typename... Args>
+template<usize I, typename... T, typename... Args>
 constexpr void hash_members(u32& hash, const std::tuple<NamedMember<T, Args>...>& members) {
     unused(hash, members);
     if constexpr(I < sizeof...(Args)) {

@@ -171,13 +171,13 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
         const math::Vec3 x = tr->forward().normalized();
         const float scale = tr->transform().scale().max_component();
         if(const auto* l = world.component<PointLightComponent>(selected)) {
-            primitive->add_circle(tr->position(), x, y, l->radius() * scale);
-            primitive->add_circle(tr->position(), y, z, l->radius() * scale);
-            primitive->add_circle(tr->position(), z, x, l->radius() * scale);
+            primitive->add_circle(tr->position(), x, y, l->range() * scale);
+            primitive->add_circle(tr->position(), y, z, l->range() * scale);
+            primitive->add_circle(tr->position(), z, x, l->range() * scale);
         }
 
         if(const auto* l = world.component<SpotLightComponent>(selected)) {
-            primitive->add_cone(tr->position(), x, y, l->radius() * scale, l->half_angle());
+            primitive->add_cone(tr->position(), x, y, l->range() * scale, l->half_angle());
 
             if(draw_enclosing_sphere) {
                 const auto enclosing = l->enclosing_sphere();

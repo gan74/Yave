@@ -128,7 +128,7 @@ void cull_points() {
     const uvec2 range = dispatch_range(point_count);
 
     for(uint i = range.x; i != range.y; ++i) {
-        if(is_inside(point_lights[i].position, point_lights[i].radius)) {
+        if(is_inside(point_lights[i].position, point_lights[i].range)) {
             uint light_index = atomicAdd(tile_point_count, 1);
             if(light_index >= max_tile_lights) {
                 break;
@@ -203,7 +203,7 @@ void main() {
         vec3 light_dir = light.position - world_pos;
         const float distance = length(light_dir);
         light_dir /= distance;
-        const float att = attenuation(distance, light.radius, light.falloff);
+        const float att = attenuation(distance * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 
         if(att > 0.0) {
             const vec3 radiance = light.color * att;
@@ -225,7 +225,7 @@ void main() {
 
         const float spot_cos_alpha = -dot(light_dir, light.forward);
         const float spot = pow(max(0.0, (spot_cos_alpha - light.cos_angle) / (1.0 - light.cos_angle)), light.angle_exp);
-        float att = spot * attenuation(distance, light.radius, light.falloff);
+        float att = spot * attenuation(distance * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 
         if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
             const ShadowMapParams params = shadow_params[light.shadow_map_index];

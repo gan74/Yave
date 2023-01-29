@@ -24,42 +24,9 @@ SOFTWARE.
 
 namespace yave {
 
-math::Vec3& PointLightComponent::color() {
-    return _color;
-}
-
-const math::Vec3& PointLightComponent::color() const {
-    return _color;
-}
-
-float& PointLightComponent::intensity() {
-    return _intensity;
-}
-
-float PointLightComponent::intensity() const {
-    return _intensity;
-}
-
-float& PointLightComponent::radius() {
-    return _radius;
-}
-
-float PointLightComponent::radius() const {
-    return _radius;
-}
-
-float& PointLightComponent::falloff() {
-    return _falloff;
-}
-
-float PointLightComponent::falloff() const {
-    return _falloff;
-}
-
 AABB PointLightComponent::aabb() const {
-    return AABB::from_center_extent({}, math::Vec3(_radius));
+    return AABB::from_center_extent({}, math::Vec3(_range));
 }
-
 
 }
 

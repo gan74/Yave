@@ -56,15 +56,18 @@ struct DirectionalLight {
 
 struct PointLight {
     vec3 position;
-    float radius;
+    float range;
 
     vec3 color;
     float falloff;
+
+    vec3 padding_0;
+    float min_radius;
 };
 
 struct SpotLight {
     vec3 position;
-    float radius;
+    float range;
 
     vec3 color;
     float falloff;
@@ -78,7 +81,8 @@ struct SpotLight {
     float angle_exp;
     uint shadow_map_index;
 
-    uvec2 padding_0;
+    float min_radius;
+    uint padding_0;
 };
 
 struct ShadowMapParams {

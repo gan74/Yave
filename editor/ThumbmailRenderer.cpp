@@ -108,7 +108,7 @@ static void fill_world(ecs::EntityWorld& world) {
         light->color() = k_to_rbg(2500.0f);
         light->intensity() = 1.5f * intensity;
         light->falloff() = 0.5f;
-        light->radius() = 2.0f;
+        light->range() = 2.0f;
     }
     {
         const ecs::EntityId light_id = world.create_entity<PointLightComponent>();
@@ -117,7 +117,7 @@ static void fill_world(ecs::EntityWorld& world) {
         light->color() = k_to_rbg(10000.0f);
         light->intensity() = 1.5f * intensity;
         light->falloff() = 0.5f;
-        light->radius() = 2.0f;
+        light->range() = 2.0f;
     }
 
     {

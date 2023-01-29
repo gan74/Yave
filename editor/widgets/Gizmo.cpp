@@ -331,9 +331,6 @@ void Gizmo::translate_gizmo() {
             _dragging_offset = data.ref_position - data.projected_mouse;
             _drag_start_pos = data.ref_position;
         } else if(!ImGui::IsMouseDown(0)) {
-            if(_dragging_mask) {
-                undo_stack().done_editing();
-            }
             _dragging_mask = 0;
         }
     }
@@ -355,8 +352,6 @@ void Gizmo::translate_gizmo() {
         for(auto&& [transformable] : query.components()) {
             transformable.set_position(transformable.position() + offset);
         }
-
-        undo_stack().make_dirty();
     }
 }
 
@@ -452,9 +447,6 @@ void Gizmo::rotate_gizmo() {
         _rotation_axis = rotation_axis;
         _rotation_offset = compute_angle(_rotation_axis);
     } if(!ImGui::IsMouseDown(0)) {
-        if(_rotation_axis != usize(-1)) {
-            undo_stack().done_editing();
-        }
         _rotation_axis = usize(-1);
     }
 
@@ -471,8 +463,6 @@ void Gizmo::rotate_gizmo() {
         }
 
         _rotation_offset += angle_offset;
-
-        undo_stack().make_dirty();
     }
 }
 

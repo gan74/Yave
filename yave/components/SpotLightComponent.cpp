@@ -29,45 +29,13 @@ namespace yave {
 SpotLightComponent::EnclosingSphere SpotLightComponent::enclosing_sphere() const {
     if(_half_angle > math::pi<float> * 0.25f) {
         return {
-            std::cos(_half_angle) * _radius,
-            std::sin(_half_angle) * _radius
+            std::cos(_half_angle) * _range,
+            std::sin(_half_angle) * _range
         };
     }
-    const float half_radius = _radius * 0.5f;
+    const float half_radius = _range * 0.5f;
     const float dist = half_radius / std::cos(_half_angle);
     return {dist, dist};
-}
-
-math::Vec3& SpotLightComponent::color() {
-    return _color;
-}
-
-const math::Vec3& SpotLightComponent::color() const {
-    return _color;
-}
-
-float& SpotLightComponent::intensity() {
-    return _intensity;
-}
-
-float SpotLightComponent::intensity() const {
-    return _intensity;
-}
-
-float& SpotLightComponent::radius() {
-    return _radius;
-}
-
-float SpotLightComponent::radius() const {
-    return _radius;
-}
-
-float& SpotLightComponent::falloff() {
-    return _falloff;
-}
-
-float SpotLightComponent::falloff() const {
-    return _falloff;
 }
 
 float& SpotLightComponent::half_angle() {

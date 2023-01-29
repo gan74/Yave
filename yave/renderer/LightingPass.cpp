@@ -156,16 +156,18 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
     for(auto point : scene.world().query<TransformableComponent, PointLightComponent>(tags)) {
         const auto& [t, l] = point.components;
 
-        const float scaled_radius = l.radius() * t.transform().scale().max_component();
-        if(!frustum.is_inside(t.position(), scaled_radius)) {
+        const float scaled_range = l.range() * t.transform().scale().max_component();
+        if(!frustum.is_inside(t.position(), scaled_range)) {
             continue;
         }
 
         points[count++] = {
             t.position(),
-            scaled_radius,
+            scaled_range,
             l.color() * l.intensity(),
-            std::max(math::epsilon<float>, l.falloff())
+            std::max(math::epsilon<float>, l.falloff()),
+            {},
+            l.min_radius(),
         };
 
         if(count == max_point_lights) {
@@ -198,7 +200,7 @@ static u32 fill_spot_light_buffer(
 
         const math::Vec3 forward = t.forward().normalized();
         const float scale = t.transform().scale().max_component();
-        const float scaled_radius = l.radius() * scale;
+        const float scaled_range = l.range() * scale;
 
         auto enclosing_sphere = l.enclosing_sphere();
         {
@@ -219,14 +221,14 @@ static u32 fill_spot_light_buffer(
         }
 
         if constexpr(Transforms) {
-            const float geom_radius = scaled_radius * 1.1f;
+            const float geom_radius = scaled_range * 1.1f;
             const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
             transforms[count] = t.transform().non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
         }
 
         spots[count++] = {
             t.position(),
-            scaled_radius,
+            scaled_range,
             l.color() * l.intensity(),
             std::max(math::epsilon<float>, l.falloff()),
             forward,
@@ -235,7 +237,8 @@ static u32 fill_spot_light_buffer(
             enclosing_sphere.radius,
             std::max(math::epsilon<float>, l.angle_exponent()),
             shadow_indices[0],
-            {}
+            l.min_radius(),
+            0
         };
 
         if(count == max_spot_lights) {

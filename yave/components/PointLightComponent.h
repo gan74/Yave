@@ -23,40 +23,28 @@ SOFTWARE.
 #define YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
 
 #include <yave/ecs/ecs.h>
+#include <yave/utils/pbr.h>
+
 #include <y/reflect/reflect.h>
 
+#include "LocalLightBase.h"
 #include "TransformableComponent.h"
 
 namespace yave {
 
 class PointLightComponent final :
+        public LocalLightBase,
         public ecs::RequiredComponents<TransformableComponent>,
         public ecs::SystemLinkedComponent<PointLightComponent, AABBUpdateSystem> {
 
     public:
         PointLightComponent() = default;
 
-        math::Vec3& color();
-        const math::Vec3& color() const;
-
-        float& intensity();
-        float intensity() const;
-
-        float& radius();
-        float radius() const;
-
-        float& falloff();
-        float falloff() const;
-
         AABB aabb() const;
 
-        y_reflect(PointLightComponent, _color, _intensity, _radius, _falloff)
+        y_reflect(PointLightComponent, _color, _intensity, _range, _min_radius, _falloff)
 
     private:
-        math::Vec3 _color = math::Vec3{1.0f};
-        float _intensity = 1.0f;
-        float _radius = 10.0f;
-        float _falloff = 1.0f;
 };
 
 }

@@ -131,7 +131,7 @@ static Camera spotlight_camera(const TransformableComponent& tr, const SpotLight
     Camera camera;
     camera.set_view(math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()));
     camera.set_proj(flip_for_backfaces(math::perspective(light.half_angle() * 2.0f, 1.0f, z_near)));
-    camera.set_far(light.radius());
+    camera.set_far(light.range() * tr.transform().scale().max_component());
     y_debug_assert(!camera.is_orthographic());
     return camera;
 }

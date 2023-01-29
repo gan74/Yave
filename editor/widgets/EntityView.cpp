@@ -91,7 +91,7 @@ static void add_debug_lights() {
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.component_mut<TransformableComponent>(entity)->set_position(pos * spacing);
         world.component_mut<EditorComponent>(entity)->set_hidden_in_editor(true);
-        world.component_mut<PointLightComponent>(entity)->radius() = spacing;
+        world.component_mut<PointLightComponent>(entity)->range() = spacing;
         world.component_mut<PointLightComponent>(entity)->intensity() = spacing * spacing;
         world.component_mut<PointLightComponent>(entity)->color() = identifying_color(rng());
     }

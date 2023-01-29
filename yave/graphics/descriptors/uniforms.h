@@ -67,10 +67,13 @@ static_assert(sizeof(DirectionalLight) % 16 == 0);
 
 struct PointLight {
     math::Vec3 position;
-    float radius = 1.0f;
+    float range = 1.0f;
 
     math::Vec3 color;
     float falloff = 1.0f;
+
+    math::Vec3 padding_0 = {};
+    float min_radius = 0.01f;
 };
 
 static_assert(sizeof(PointLight) % 16 == 0);
@@ -78,7 +81,7 @@ static_assert(sizeof(PointLight) % 16 == 0);
 
 struct SpotLight {
     math::Vec3 position;
-    float radius = 1.0f;
+    float range = 1.0f;
 
     math::Vec3 color;
     float falloff = 1.0f;
@@ -91,8 +94,8 @@ struct SpotLight {
 
     float angle_exp;
     u32 shadow_map_index = u32(-1);
-
-    math::Vec2ui padding_0;
+    float min_radius = 0.01f;
+    u32 padding_0 = 0;
 };
 
 static_assert(sizeof(SpotLight) % 16 == 0);
