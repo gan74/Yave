@@ -52,6 +52,8 @@ editor_action_desc("Debug assert", "Calls assert(false) and crashes the program"
 editor_action("Quit", [] { imgui_platform()->main_window()->close(); })
 editor_action("Show ImGui demo", []{ imgui_platform()->show_demo(); })
 
+editor_action_desc("Lag", "Pause execution for 1s to simulate load", [] { core::Duration::sleep(core::Duration::seconds(1)); });
+
 editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, []{ application()->save_world(); }, "File")
 editor_action(ICON_FA_FOLDER " Load", []{ application()->load_world(); }, "File")
 

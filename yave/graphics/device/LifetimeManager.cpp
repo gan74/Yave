@@ -103,12 +103,9 @@ void LifetimeManager::shutdown_collector_thread() {
 void LifetimeManager::poll_cmd_buffers() {
     y_profile();
 
-    u64 next = 0;
-    bool clear = false;
-
     // To ensure that CmdBufferData keep alives are freed outside the lock
-
     core::ScratchVector<CmdBufferData*> to_recycle;
+    u64 next = 0;
 
     {
         y_profile_zone("fence polling");
@@ -135,8 +132,11 @@ void LifetimeManager::poll_cmd_buffers() {
             }
         }
 
-        clear = next != _next;
         _next = next;
+    }
+
+    if(!to_recycle.is_empty()) {
+        clear_resources(next);
     }
 
     {
@@ -144,10 +144,6 @@ void LifetimeManager::poll_cmd_buffers() {
         for(CmdBufferData* data : to_recycle) {
             data->pool()->release(data);
         }
-    }
-
-    if(clear) {
-        clear_resources(next);
     }
 }
 
@@ -160,7 +156,8 @@ void LifetimeManager::clear_resources(u64 up_to) {
         y_profile_zone("collection");
         const auto lock = y_profile_unique_lock(_resources_lock);
 
-        while(!_to_destroy.empty() && _to_destroy.front().first < up_to) {
+        y_debug_assert(std::is_sorted(_to_destroy.begin(), _to_destroy.end(), [](const auto& a, const auto& b) { return a.first < b.first; }));
+        while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
             to_delete.push_back(std::move(_to_destroy.front().second));
             _to_destroy.pop_front();
         }
@@ -184,6 +181,7 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
             } else if constexpr(std::is_same_v<decltype(res), MeshDrawData&>) {
                 res.recycle();
             } else {
+                // log_msg(fmt("destroying % %", ct_type_name<decltype(res)>(), (void*)res));
                 vk_destroy(res);
             }
         },
@@ -216,6 +214,8 @@ void LifetimeManager::register_for_polling(CmdBufferData* data) {
 
     {
         const auto lock = y_profile_unique_lock(_cmd_lock);
+
+        y_debug_assert(std::find(_in_flight.begin(), _in_flight.end(), data) == _in_flight.end());
 
         const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), data, compare_cmd_buffers);
         _in_flight.insert(it, data);

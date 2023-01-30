@@ -320,7 +320,7 @@ void wait_for_fence(const TimelineFence& fence) {
 
     y_profile();
 
-    u64 fence_value = fence.value();
+    const u64 fence_value = fence.value();
     VkSemaphoreWaitInfo wait_info = vk_struct();
     {
         wait_info.pSemaphores = &device::timeline.semaphore;
