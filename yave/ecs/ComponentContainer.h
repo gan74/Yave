@@ -129,7 +129,7 @@ class ComponentContainerBase : NonMovable {
                 add_required_components<T>(world, id);
                 return set.insert(id, y_fwd(args)...);
             } else {
-                if constexpr(sizeof...(Args)) {
+                if constexpr(sizeof...(Args) != 0) {
                     return set[id] = T{y_fwd(args)...};
                 } else {
                     return set[id] = T();

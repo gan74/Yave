@@ -138,7 +138,7 @@ class EntityWorld {
             if(!has<First>(id)) {
                 add_component<First>(id);
             }
-            if constexpr(sizeof...(Args)) {
+            if constexpr(sizeof...(Args) != 0) {
                 add_components<Args...>(id);
             }
         }
