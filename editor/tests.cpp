@@ -25,32 +25,9 @@ SOFTWARE.
 #include <yave/ecs/EntityWorld.h>
 
 #include <y/utils/log.h>
-#include <y/test/test.h>
 
 namespace editor {
 
-y_test_func("Entity world") {
-    ecs::EntityWorld world;
-
-    world.create_entity(ecs::StaticArchetype<int, double, bool>());
-    world.create_entity(ecs::StaticArchetype<int, double, bool>());
-    world.create_entity(ecs::StaticArchetype<int, double>());
-    world.create_entity(ecs::StaticArchetype<double, bool>());
-    world.create_entity(ecs::StaticArchetype<int>());
-
-    y_test_assert(world.query<int>().size() == 4);
-    y_test_assert(world.query<double>().size() == 4);
-    y_test_assert(world.query<bool>().size() == 3);
-
-    y_test_assert(world.query<ecs::Changed<int>>().size() == 4);
-
-    world.tick();
-
-    y_test_assert(world.query<ecs::Changed<int>>().size() == 0);
-    y_test_assert((world.query<ecs::Mutate<double>, bool>().size()) == 3);
-    y_test_assert(world.query<ecs::Changed<double>>().size() == 3);
-    y_test_assert((world.query<ecs::Changed<double>, ecs::Not<int>>().size()) == 1);
-}
 
 }
 

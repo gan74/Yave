@@ -76,6 +76,7 @@ void Y_TEST_FUNC(y::test::detail::TestResult& _y_test_result)
 #define y_test_assert(t) do { y::unused(t); } while(false)
 
 #define y_test_func(name)                                                                               \
+[[maybe_unused]]                                                                                        \
 static void Y_TEST_FUNC(y::test::detail::TestResult& _y_test_result)
 
 #endif
