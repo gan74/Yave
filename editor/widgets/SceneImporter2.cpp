@@ -41,7 +41,7 @@ SOFTWARE.
 #include <y/concurrent/StaticThreadPool.h>
 #include <y/io2/Buffer.h>
 
-#include <external/imgui/yave_imgui.h>
+
 
 namespace editor {
 

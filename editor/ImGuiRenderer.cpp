@@ -34,9 +34,10 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-#include <external/imgui/yave_imgui.h>
 #include <external/imgui/fa-solid-900.h>
 #include <external/imgui/jetbrains_mono.h>
+
+#include <editor/utils/ui.h>
 
 namespace editor {
 

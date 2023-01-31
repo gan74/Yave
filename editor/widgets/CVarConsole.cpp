@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include <y/utils/name.h>
 
-#include <external/imgui/yave_imgui.h>
+
 
 #include <algorithm>
 #include <string>

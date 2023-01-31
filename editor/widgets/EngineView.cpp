@@ -39,8 +39,7 @@ SOFTWARE.
 
 #include <yave/utils/color.h>
 
-#include <external/imgui/yave_imgui.h>
-
+#include <editor/utils/ui.h>
 
 namespace editor {
 
@@ -404,10 +403,10 @@ void EngineView::draw_gizmo_tool_bar() {
 
     if(is_focussed()) {
         const UiSettings& settings = app_settings().ui;
-        if(ImGui::IsKeyReleased(int(settings.change_gizmo_mode))) {
+        if(ImGui::IsKeyReleased(to_imgui_key(settings.change_gizmo_mode))) {
             gizmo_mode = Gizmo::Mode(!usize(gizmo_mode));
         }
-        if(ImGui::IsKeyReleased(int(settings.change_gizmo_space))) {
+        if(ImGui::IsKeyReleased(to_imgui_key(settings.change_gizmo_space))) {
             gizmo_space = Gizmo::Space(!usize(gizmo_space));
         }
     }

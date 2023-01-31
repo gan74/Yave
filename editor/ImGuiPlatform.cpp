@@ -32,7 +32,6 @@ SOFTWARE.
 #include <y/io2/File.h>
 #include <y/utils/log.h>
 
-#include <external/imgui/yave_imgui.h>
 
 #include <deque>
 

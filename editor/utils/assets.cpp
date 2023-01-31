@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <y/utils/format.h>
 
-#include <external/imgui/yave_imgui.h>
+#include <editor/utils/ui.h>
 
 namespace editor {
 namespace detail {

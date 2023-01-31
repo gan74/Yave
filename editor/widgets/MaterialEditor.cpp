@@ -34,7 +34,7 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 
-#include <external/imgui/yave_imgui.h>
+
 
 namespace editor {
 

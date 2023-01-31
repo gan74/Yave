@@ -33,7 +33,7 @@ SOFTWARE.
 
 #include <external/imgui/imgui.h>
 #include <external/imgui/imgui_internal.h>
-#include <external/imgui/yave_imgui.h>
+
 
 #include <charconv>
 #include <cinttypes>
@@ -42,11 +42,11 @@ SOFTWARE.
 
 namespace editor {
 
-int to_imgui_key(Key k) {
+ImGuiKey to_imgui_key(Key k) {
     if(u32(k) >= u32(Key::A) && u32(k) <= u32(Key::Z)) {
-        return ImGuiKey_A + (u32(k) - u32(Key::A));
+        return ImGuiKey(ImGuiKey_A + (u32(k) - u32(Key::A)));
     } else if(u32(k) >= u32(Key::F1) && u32(k) <= u32(Key::F12)) {
-        return ImGuiKey_F1 + (u32(k) - u32(Key::F1));
+        return ImGuiKey(ImGuiKey_F1 + (u32(k) - u32(Key::F1)));
     }
 
     switch(k) {
@@ -79,9 +79,9 @@ int to_imgui_key(Key k) {
         case Key::Delete:
             return ImGuiKey_Delete;
         case Key::Alt:
-            return ImGuiKey_ModAlt;
+            return ImGuiKey_LeftAlt;
         case Key::Ctrl:
-            return ImGuiKey_ModCtrl;
+            return ImGuiKey_LeftCtrl;
         case Key::Space:
             return ImGuiKey_Space;
 

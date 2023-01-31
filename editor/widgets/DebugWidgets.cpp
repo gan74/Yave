@@ -31,7 +31,7 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
-#include <external/imgui/yave_imgui.h>
+
 
 #include <y/utils/format.h>
 

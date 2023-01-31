@@ -49,7 +49,7 @@ SOFTWARE.
 #include <yave/utils/color.h>
 
 
-#include <external/imgui/yave_imgui.h>
+
 
 namespace editor {
 

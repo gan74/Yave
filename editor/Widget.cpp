@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "Widget.h"
 
-#include <external/imgui/yave_imgui.h>
+#include <editor/utils/ui.h>
 
 namespace editor {
 

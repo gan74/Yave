@@ -29,7 +29,7 @@ SOFTWARE.
 #include <yave/assets/AssetLoader.h>
 #include <y/core/HashMap.h>
 
-#include <external/imgui/yave_imgui.h>
+
 
 #include <regex>
 #include <tuple>

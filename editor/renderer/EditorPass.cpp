@@ -45,7 +45,7 @@ SOFTWARE.
 #include <yave/utils/DirectDraw.h>
 #include <yave/utils/entities.h>
 
-#include <external/imgui/yave_imgui.h>
+#include <editor/utils/ui.h>
 
 // we actually need this to index utf-8 chars from the imgui font (defined in imgui_internal)
 IMGUI_API int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, const char* in_text_end);

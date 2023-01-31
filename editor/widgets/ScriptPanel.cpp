@@ -30,7 +30,7 @@ SOFTWARE.
 
 #include <yave/utils/FileSystemModel.h>
 
-#include <external/imgui/yave_imgui.h>
+
 
 #include <y/io2/File.h>
 

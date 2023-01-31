@@ -28,7 +28,7 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-#include <external/imgui/yave_imgui.h>
+
 
 #include <algorithm>
 

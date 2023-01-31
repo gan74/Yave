@@ -33,7 +33,7 @@ SOFTWARE.
 #include <yave/camera/Camera.h>
 #include <yave/utils/entities.h>
 
-#include <external/imgui/yave_imgui.h>
+
 
 #include <algorithm>
 
@@ -80,7 +80,7 @@ HoudiniCameraController::HoudiniCameraController() {
 }
 
 bool HoudiniCameraController::viewport_clicked(const PickingResult& point) {
-    if(ImGui::IsKeyDown(ImGuiKey_ModAlt)) {
+    if(ImGui::IsKeyDown(ImGuiKey_LeftAlt)) {
         _picked_pos = point.world_pos;
         _picking_uvs = point.uv;
         _picking_depth = point.depth;
@@ -92,7 +92,7 @@ bool HoudiniCameraController::viewport_clicked(const PickingResult& point) {
 }
 
 void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& viewport_size) {
-    const bool cam_key_down = ImGui::IsKeyDown(ImGuiKey_ModAlt);
+    const bool cam_key_down = ImGui::IsKeyDown(ImGuiKey_LeftAlt);
 
     const CameraSettings& settings = app_settings().camera;
     math::Vec3 cam_pos = camera.position();

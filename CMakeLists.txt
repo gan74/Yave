@@ -181,6 +181,7 @@ endif()
 if(YAVE_BUILD_EDITOR)
     add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
     target_compile_definitions(editor PRIVATE "-DY_BUILD_TESTS")
+    # target_compile_definitions(editor PRIVATE "-DIMGUI_ENABLE_TEST_ENGINE")
 
     target_link_libraries(editor yave)
 endif()

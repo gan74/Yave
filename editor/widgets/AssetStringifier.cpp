@@ -30,7 +30,7 @@ SOFTWARE.
 #include <y/utils/format.h>
 #include <y/serde3/archives.h>
 
-#include <external/imgui/yave_imgui.h>
+#include <editor/utils/ui.h>
 
 namespace yave {
 

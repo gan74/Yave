@@ -24,11 +24,13 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <yave/assets/AssetId.h>
+#include <yave/assets/AssetType.h>
+
+#include <external/imgui/yave_imgui.h>
 
 namespace editor {
 
-int to_imgui_key(Key k);
+ImGuiKey to_imgui_key(Key k);
 int to_imgui_button(MouseButton b);
 
 namespace imgui {
