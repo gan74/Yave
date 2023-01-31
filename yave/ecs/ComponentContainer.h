@@ -122,6 +122,8 @@ class ComponentContainerBase : NonMovable {
 
         template<typename T, typename... Args>
         inline T& add(EntityWorld& world, EntityId id, Args&&... args) {
+            y_debug_assert(id.is_valid());
+
             _mutated.insert(id);
 
             auto& set = component_set<T>();
@@ -141,8 +143,11 @@ class ComponentContainerBase : NonMovable {
         template<typename T>
         inline auto* component_ptr(EntityId id) {
             if constexpr(traits::is_component_mutable_v<T>) {
-                _mutated.insert(id);
-                return component_set<T>().try_get(id);
+                auto* ptr = component_set<T>().try_get(id);
+                if(ptr) {
+                    _mutated.insert(id);
+                }
+                return ptr;
             } else {
                 return const_component_set<T>().try_get(id);
             }

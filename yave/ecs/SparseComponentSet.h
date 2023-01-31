@@ -92,6 +92,7 @@ class SparseIdSet : public SparseIdSetBase {
         using value_type = ecs::EntityId;
 
         void insert(EntityId id) {
+            y_debug_assert(id.is_valid());
             if(!contains(id)) {
                 const index_type index = id.index();
                 grow_sparse(index);
