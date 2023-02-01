@@ -30,13 +30,31 @@ SOFTWARE.
 
 namespace editor {
 
+static core::Vector<core::String> window_names() {
+    core::Vector<core::String> names;
+    const auto& windows = ImGui::GetCurrentContext()->Windows;
+    std::transform(windows.begin(), windows.end(), std::back_inserter(names), [](const ImGuiWindow* w) { return w->Name; });
+    return names;
+}
+
 void register_editor_tests(ImGuiTestEngine* engine) {
     log_msg("Registering ImGui tests", Log::Debug);
 
-    IM_REGISTER_TEST(engine, "tests", "new scene")->TestFunc = [](ImGuiTestContext* ctx)
-    {
+    IM_REGISTER_TEST(engine, "tests", "new scene")->TestFunc = [](ImGuiTestContext* ctx) {
         ctx->SetRef("##MainMenuBar");
         ctx->MenuClick("File/New");
+    };
+
+    IM_REGISTER_TEST(engine, "tests", "close all")->TestFunc = [](ImGuiTestContext* ctx) {
+        for(const auto& name : window_names()) {
+            if(ImGuiWindow* window = ctx->GetWindowByRef(name.data())) {
+                if(window->HasCloseButton) {
+                    ctx->UndockWindow(name.data());
+                    ctx->WindowClose(name.data());
+                }
+            }
+
+        }
     };
 }
 

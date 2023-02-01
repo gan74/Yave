@@ -51,9 +51,10 @@ extern void register_editor_tests(ImGuiTestEngine*);
 static ImGuiTestEngine* init_test_engine() {
     ImGuiTestEngine* engine = ImGuiTestEngine_CreateContext();
     ImGuiTestEngineIO& test_io = ImGuiTestEngine_GetIO(engine);
+    test_io.ConfigSavedSettings = false;
     test_io.ConfigVerboseLevel = ImGuiTestVerboseLevel_Info;
     test_io.ConfigVerboseLevelOnError = ImGuiTestVerboseLevel_Debug;
-    test_io.ConfigRunSpeed = ImGuiTestRunSpeed_Cinematic;
+    test_io.ConfigRunSpeed = ImGuiTestRunSpeed_Normal;
 
     // Optional: save test output in junit-compatible XML format.
     //test_io.ExportResultsFile = "./results.xml";
