@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "ImGuiPlatform.h"
 #include "EditorApplication.h"
-#include "UiManager.h"
 
 #include <editor/utils/crashhandler.h>
 
@@ -40,6 +39,7 @@ using namespace editor;
 
 static bool debug_instance = is_debug_defined;
 static bool multi_viewport = true;
+static bool run_tests = false;
 
 
 static void parse_args(int argc, char** argv) {
@@ -50,6 +50,8 @@ static void parse_args(int argc, char** argv) {
             debug_instance = true;
         } else if(arg == "--nomv") {
             multi_viewport = false;
+        } else if(arg == "--run-tests") {
+            run_tests = true;
         } else if(arg == "--errbreak") {
 #ifdef Y_DEBUG
                 core::result::break_on_error = true;
@@ -73,8 +75,6 @@ static Instance create_instance() {
     return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
 }
 
-
-
 int main(int argc, char** argv) {
     concurrent::set_thread_name("Main thread");
 
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     init_device(instance);
     y_defer(destroy_device());
 
-    ImGuiPlatform platform(multi_viewport);
+    ImGuiPlatform platform(multi_viewport, run_tests);
     EditorApplication editor(&platform);
 
     for(const EditorAction* action = all_actions(); action; action = action->next) {

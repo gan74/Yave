@@ -24,10 +24,20 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
+#include <external/imgui_test_engine/imgui_te_context.h>
+
 #include <y/utils/log.h>
 
 namespace editor {
 
+void register_editor_tests(ImGuiTestEngine* engine) {
+    log_msg("Registering ImGui tests", Log::Debug);
 
+    IM_REGISTER_TEST(engine, "tests", "new scene")->TestFunc = [](ImGuiTestContext* ctx)
+    {
+        ctx->SetRef("##MainMenuBar");
+        ctx->MenuClick("File/New");
+    };
 }
 
+}

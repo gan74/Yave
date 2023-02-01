@@ -56,15 +56,8 @@ editor_action_desc("Lag", "Pause execution for 1s to simulate load", [] { core::
 
 editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, []{ application()->save_world(); }, "File")
 editor_action(ICON_FA_FOLDER " Load", []{ application()->load_world(); }, "File")
+editor_action_shortcut("New", Key::Ctrl + Key::N, []{ application()->new_world(); }, "File")
 
-editor_action("Run tests", [] {
-    log_msg(fmt("Running % tests", test::test_count()));
-    if(test::run_tests()) {
-        log_msg("All tests ok");
-    } else {
-        log_msg("Tests failed", Log::Error);
-    }
-})
 
 EditorApplication* EditorApplication::_instance = nullptr;
 
@@ -146,6 +139,10 @@ void EditorApplication::load_world() {
     _deferred_actions |= Load;
 }
 
+void EditorApplication::new_world() {
+    _deferred_actions |= New;
+}
+
 void EditorApplication::process_deferred_actions() {
 
     if(_deferred_actions & Save) {
@@ -153,6 +150,10 @@ void EditorApplication::process_deferred_actions() {
     }
     if(_deferred_actions & Load) {
         load_world_deferred();
+    }
+    if(_deferred_actions & New) {
+        EditorWorld world(*_loader);
+        *_world = std::move(world);
     }
 
     _deferred_actions = None;

@@ -35,6 +35,7 @@ SOFTWARE.
 #include <functional>
 
 struct ImGuiViewport;
+struct ImGuiTestEngine;
 
 namespace editor {
 
@@ -59,7 +60,7 @@ class ImGuiPlatform : NonMovable {
     public:
         using OnGuiFunc = std::function<void(CmdBufferRecorder&)>;
 
-        ImGuiPlatform(bool multi_viewport = true);
+        ImGuiPlatform(bool multi_viewport = true, bool run_tests = false);
         ~ImGuiPlatform();
 
         static ImGuiPlatform* instance();
@@ -92,6 +93,8 @@ class ImGuiPlatform : NonMovable {
         core::Chrono _frame_timer;
 
         bool _demo_window = is_debug_defined;
+
+        ImGuiTestEngine* _test_engine = nullptr;
 };
 
 }

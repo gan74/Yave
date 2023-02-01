@@ -32,6 +32,8 @@ SOFTWARE.
 #include <y/io2/File.h>
 #include <y/utils/log.h>
 
+#include <external/imgui_test_engine/imgui_te_context.h>
+#include <external/imgui_test_engine/imgui_te_exporters.h>
 
 #include <deque>
 
@@ -40,6 +42,34 @@ namespace editor {
 ImGuiPlatform* imgui_platform() {
     return ImGuiPlatform::instance();
 }
+
+
+// ---------------------------------------------- TEST ENGINE ----------------------------------------------
+
+extern void register_editor_tests(ImGuiTestEngine*);
+
+static ImGuiTestEngine* init_test_engine() {
+    ImGuiTestEngine* engine = ImGuiTestEngine_CreateContext();
+    ImGuiTestEngineIO& test_io = ImGuiTestEngine_GetIO(engine);
+    test_io.ConfigVerboseLevel = ImGuiTestVerboseLevel_Info;
+    test_io.ConfigVerboseLevelOnError = ImGuiTestVerboseLevel_Debug;
+    test_io.ConfigRunSpeed = ImGuiTestRunSpeed_Cinematic;
+
+    // Optional: save test output in junit-compatible XML format.
+    //test_io.ExportResultsFile = "./results.xml";
+    //test_io.ExportResultsFormat = ImGuiTestEngineExportFormat_JUnitXml;
+
+    register_editor_tests(engine);
+
+    // Start test engine
+    ImGuiTestEngine_Start(engine, ImGui::GetCurrentContext());
+    ImGuiTestEngine_InstallDefaultCrashHandler();
+
+    ImGuiTestEngine_QueueTests(engine, ImGuiTestGroup_Tests, "tests");
+
+    return engine;
+}
+
 
 // ---------------------------------------------- SETUP HELPERS ----------------------------------------------
 
@@ -163,12 +193,10 @@ static void setup_style() {
     }
 }
 
-
 static void setup_imgui_dockspace() {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::DockSpaceOverViewport(viewport);
 }
-
 
 static void setup_config_files(ImGuiIO& io) {
     io.IniFilename = "editor.ini";
@@ -304,7 +332,7 @@ ImGuiPlatform* ImGuiPlatform::instance() {
     return _instance;
 }
 
-ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
+ImGuiPlatform::ImGuiPlatform(bool multi_viewport, bool run_tests) {
     y_profile();
 
     y_always_assert(_instance == nullptr, "ImGuiPlatform instance already exists.");
@@ -356,6 +384,10 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     viewport->PlatformHandle = _main_window.get();
 
+    if(run_tests) {
+        _test_engine = init_test_engine();
+    }
+
 }
 
 ImGuiPlatform::~ImGuiPlatform() {
@@ -380,6 +412,9 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
             do {
                 if(!_main_window->window.update()) {
                     return;
+                }
+                if(_test_engine && ImGuiTestEngine_GetIO(_test_engine).IsRequestingMaxAppSpeed) {
+                    break;
                 }
             } while(max_fps > 0.0f && _frame_timer.elapsed().to_secs() < 1.0f / max_fps);
         }
@@ -424,6 +459,20 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
             }
 
             _main_window->swapchain.present(token, std::move(recorder), command_queue());
+
+            if(_test_engine) {
+                ImGuiTestEngine_PostSwap(_test_engine);
+            }
+
+            if(_test_engine && ImGuiTestEngine_IsTestQueueEmpty(_test_engine)) {
+                int tested = 0;
+                int success = 0;
+                ImGuiTestEngine_GetResult(_test_engine, tested, success);
+                ImGuiTestEngine_PrintResultSummary(_test_engine);
+
+                log_msg(fmt("%/% test passed", success, tested), success == tested ? Log::Debug : Log::Error);
+                _test_engine = nullptr;
+            }
         }
     }
 }

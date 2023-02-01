@@ -49,6 +49,7 @@ class EditorApplication : NonMovable {
 
         void save_world();
         void load_world();
+        void new_world();
 
 
         SceneView& scene_view() {
@@ -127,9 +128,10 @@ class EditorApplication : NonMovable {
         SceneView* _scene_view = nullptr;
 
         enum DeferredActions : u32 {
-            None = 0x00,
-            Save = 0x01,
-            Load = 0x02,
+            None    = 0x00,
+            Save    = 0x01,
+            Load    = 0x02,
+            New     = 0x04,
         };
 
         u32 _deferred_actions = None;
