@@ -53,8 +53,16 @@ void register_editor_tests(ImGuiTestEngine* engine) {
                     ctx->WindowClose(name.data());
                 }
             }
-
         }
+    };
+
+    IM_REGISTER_TEST(engine, "tests", "open component panel")->TestFunc = [](ImGuiTestContext* ctx) {
+        ctx->ItemClick("**/" ICON_FA_SEARCH "##searchbar");
+        ctx->KeyChars("comp");
+        ctx->KeyPress(ImGuiKey_DownArrow);
+        ctx->KeyPress(ImGuiKey_Enter);
+        ctx->SetRef(ICON_FA_WRENCH " Components##1");
+        //ctx->ItemOpen(ICON_FA_PUZZLE_PIECE " Entity");
     };
 }
 

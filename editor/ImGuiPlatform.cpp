@@ -54,7 +54,13 @@ static ImGuiTestEngine* init_test_engine() {
     test_io.ConfigSavedSettings = false;
     test_io.ConfigVerboseLevel = ImGuiTestVerboseLevel_Info;
     test_io.ConfigVerboseLevelOnError = ImGuiTestVerboseLevel_Debug;
+    test_io.ConfigBreakOnError = true;
+
     test_io.ConfigRunSpeed = ImGuiTestRunSpeed_Normal;
+    test_io.MouseSpeed *= 2.0f;
+    test_io.TypingSpeed *= 2.0f;
+    test_io.ActionDelayShort *= 0.5f;
+    test_io.ActionDelayStandard *= 0.5f;
 
     // Optional: save test output in junit-compatible XML format.
     //test_io.ExportResultsFile = "./results.xml";
