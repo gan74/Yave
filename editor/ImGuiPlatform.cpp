@@ -57,10 +57,12 @@ static ImGuiTestEngine* init_test_engine() {
     test_io.ConfigBreakOnError = true;
 
     test_io.ConfigRunSpeed = ImGuiTestRunSpeed_Normal;
-    test_io.MouseSpeed *= 2.0f;
-    test_io.TypingSpeed *= 2.0f;
-    test_io.ActionDelayShort *= 0.5f;
-    test_io.ActionDelayStandard *= 0.5f;
+
+    const float speed_scale = 2.0f;
+    test_io.MouseSpeed *= speed_scale;
+    test_io.TypingSpeed *= speed_scale;
+    test_io.ActionDelayShort /= speed_scale;
+    test_io.ActionDelayStandard /= speed_scale;
 
     // Optional: save test output in junit-compatible XML format.
     //test_io.ExportResultsFile = "./results.xml";
