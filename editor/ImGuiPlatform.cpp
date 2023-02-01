@@ -72,8 +72,6 @@ static ImGuiTestEngine* init_test_engine() {
     ImGuiTestEngine_Start(engine, ImGui::GetCurrentContext());
     ImGuiTestEngine_InstallDefaultCrashHandler();
 
-    ImGuiTestEngine_QueueTests(engine, ImGuiTestGroup_Tests, "tests");
-
     return engine;
 }
 
@@ -391,8 +389,13 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport, bool run_tests) {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     viewport->PlatformHandle = _main_window.get();
 
+    _test_engine = init_test_engine();
+
     if(run_tests) {
-        _test_engine = init_test_engine();
+        log_msg("Running ImGui tests", Log::Debug);
+        io.IniFilename = "tests.ini";
+        ImGuiTestEngine_QueueTests(_test_engine, ImGuiTestGroup_Tests, "tests");
+        _running_tests = true;
     }
 
 }
@@ -420,7 +423,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 if(!_main_window->window.update()) {
                     return;
                 }
-                if(_test_engine && ImGuiTestEngine_GetIO(_test_engine).IsRequestingMaxAppSpeed) {
+                if(_running_tests && ImGuiTestEngine_GetIO(_test_engine).IsRequestingMaxAppSpeed) {
                     break;
                 }
             } while(max_fps > 0.0f && _frame_timer.elapsed().to_secs() < 1.0f / max_fps);
@@ -466,19 +469,16 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
             }
 
             _main_window->swapchain.present(token, std::move(recorder), command_queue());
+            ImGuiTestEngine_PostSwap(_test_engine);
 
-            if(_test_engine) {
-                ImGuiTestEngine_PostSwap(_test_engine);
-            }
-
-            if(_test_engine && ImGuiTestEngine_IsTestQueueEmpty(_test_engine)) {
+            if(_running_tests && ImGuiTestEngine_IsTestQueueEmpty(_test_engine)) {
                 int tested = 0;
                 int success = 0;
                 ImGuiTestEngine_GetResult(_test_engine, tested, success);
                 ImGuiTestEngine_PrintResultSummary(_test_engine);
 
                 log_msg(fmt("%/% test passed", success, tested), success == tested ? Log::Debug : Log::Error);
-                _test_engine = nullptr;
+                _running_tests = false;
             }
         }
     }
