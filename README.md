@@ -31,7 +31,7 @@ The project is in its  early stages.
 
 ## Building
 You need:
- * CMake (3.18)
+ * CMake (3.24)
  * A C++17 compiler
  * [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
 
@@ -61,55 +61,3 @@ Implemented features:
 
 ### Licence:
 MIT
-
-## To Do
-
-
-### Y
-- [X] Log callbacks
-- [ ] Finish allocators
-- [ ] Rewrite SmallVector (with new allocators)
-- [X] Rename ArrayView to Span and MutableSpan
-- [X] HashMap
-- [X] Basic reflection
-- [X] More robust serialization
-
-### Framegraph
-- [X] Barriers
-- [X] Reuse resources over frames
-- [X] Resource aliasing to avoid copies
-- [ ] Merge mapped buffers
-- [ ] Better usage of render passes
-
-### Engine
-- [X] Asset saving and loading
-- [X] Integrate ECS
-- [X] Switch to VK_EXT_debug_utils
-- [ ] Sky
-- [ ] Make assets easily serializable
-- [ ] Culling
-- [ ] Batching system
-- [ ] Streaming
-- [ ] Proper material system
-- [X] Shadows
-- [ ] GI
-- [ ] Post processes
-- [X] Spot lights
-- [X] Actual tone mapping
-
-### Editor
-- [X] Integrate ECS
-- [X] Open several views
-- [X] Rotation 
-- [X] Create materials 
-- [X] Editor only entities 
-- [ ] Save open widgets
-- [ ] Scale 
-- [ ] Edit materials
-- [X] Prefabs
-- [ ] Better save system
-- [X] Undo/redo
-- [ ] Edit shaders?
-- [ ] Edit or create meshes?
-
-
