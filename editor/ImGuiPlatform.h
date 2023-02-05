@@ -66,8 +66,7 @@ class ImGuiPlatform : NonMovable {
         static ImGuiPlatform* instance();
 
         const ImGuiRenderer* renderer() const;
-
-        const ImGuiTestEngine* test_engine() const;
+        bool is_running_tests() const;
 
         Window* main_window();
 
@@ -97,7 +96,6 @@ class ImGuiPlatform : NonMovable {
         bool _demo_window = is_debug_defined;
 
         ImGuiTestEngine* _test_engine = nullptr;
-        bool _running_tests = false;
 };
 
 }

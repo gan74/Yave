@@ -41,14 +41,6 @@ SOFTWARE.
 
 
 
-// ---------------------------------------------- TEST HACKS ----------------------------------------------
-
-bool imgui_test_engine_running() {
-    const auto* platform = editor::ImGuiPlatform::instance();
-    return platform && platform->test_engine() && platform->test_engine()->TestContext;
-}
-
-
 
 namespace editor {
 
@@ -404,13 +396,12 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport, bool run_tests) {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     viewport->PlatformHandle = _main_window.get();
 
-    _test_engine = init_test_engine();
-
     if(run_tests) {
+        _test_engine = init_test_engine();
+
         log_msg("Running ImGui tests", Log::Debug);
         io.IniFilename = "tests.ini";
         ImGuiTestEngine_QueueTests(_test_engine, ImGuiTestGroup_Tests, "tests");
-        _running_tests = true;
     }
 
 }
@@ -420,7 +411,6 @@ ImGuiPlatform::~ImGuiPlatform() {
     _instance = nullptr;
 }
 
-
 const ImGuiRenderer* ImGuiPlatform::renderer() const {
     return _renderer.get();
 }
@@ -429,7 +419,7 @@ Window* ImGuiPlatform::main_window() {
     return &_main_window->window;
 }
 
-const ImGuiTestEngine* ImGuiPlatform::test_engine() const {
+bool ImGuiPlatform::is_running_tests() const {
     return _test_engine;
 }
 
@@ -442,7 +432,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 if(!_main_window->window.update()) {
                     return;
                 }
-                if(_running_tests && ImGuiTestEngine_GetIO(_test_engine).IsRequestingMaxAppSpeed) {
+                if(_test_engine && ImGuiTestEngine_GetIO(_test_engine).IsRequestingMaxAppSpeed) {
                     break;
                 }
             } while(max_fps > 0.0f && _frame_timer.elapsed().to_secs() < 1.0f / max_fps);
@@ -463,7 +453,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
 
                 setup_imgui_dockspace();
 
-                if(_demo_window && !_running_tests) {
+                if(_demo_window && !_test_engine) {
                     ImGui::ShowDemoWindow(&_demo_window);
                 }
 
@@ -488,21 +478,22 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
             }
 
             _main_window->swapchain.present(token, std::move(recorder), command_queue());
-            ImGuiTestEngine_PostSwap(_test_engine);
 
-            if(_running_tests && ImGuiTestEngine_IsTestQueueEmpty(_test_engine)) {
-                int tested = 0;
-                int success = 0;
-                ImGuiTestEngine_GetResult(_test_engine, tested, success);
-                ImGuiTestEngine_PrintResultSummary(_test_engine);
+            if(_test_engine) {
+                ImGuiTestEngine_PostSwap(_test_engine);
+                if(ImGuiTestEngine_IsTestQueueEmpty(_test_engine)) {
+                    int tested = 0;
+                    int success = 0;
+                    ImGuiTestEngine_GetResult(_test_engine, tested, success);
+                    ImGuiTestEngine_PrintResultSummary(_test_engine);
 
-                log_msg(fmt("%/% test passed", success, tested), success == tested ? Log::Debug : Log::Error);
-                _running_tests = false;
+                    log_msg(fmt("%/% tests passed", success, tested), success == tested ? Log::Debug : Log::Error);
+                    _test_engine = nullptr;
+                }
             }
         }
     }
 }
-
 
 void ImGuiPlatform::close_window(PlatformWindow* window) {
     window->window.close();
@@ -519,7 +510,6 @@ void ImGuiPlatform::close_window(PlatformWindow* window) {
 
     y_fatal("Window not found.");
 }
-
 
 ImGuiPlatform* ImGuiPlatform::get_platform() {
     y_debug_assert(ImGui::GetIO().BackendPlatformUserData);
