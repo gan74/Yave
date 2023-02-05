@@ -33,7 +33,6 @@ SOFTWARE.
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/DirectDraw.h>
-#include <yave/utils/PendingOpsQueue.h>
 
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
@@ -71,10 +70,20 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : _platform(platfo
     y_always_assert(_instance == nullptr, "Editor instance already exists.");
     _instance = this;
 
+
+    const bool running_tests = platform->is_running_tests();
+    const auto& store_dir = running_tests
+        ? app_settings().editor.test_asset_store
+        : app_settings().editor.asset_store;
+
+    _world_file = running_tests
+        ? app_settings().editor.test_world_file
+        : app_settings().editor.world_file;
+
     _resources = std::make_unique<EditorResources>();
     _ui = std::make_unique<UiManager>();
 
-    _asset_store = std::make_shared<FolderAssetStore>(app_settings().editor.asset_store);
+    _asset_store = std::make_shared<FolderAssetStore>(store_dir);
     _loader = std::make_unique<AssetLoader>(_asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     _thumbmail_renderer = std::make_unique<ThumbmailRenderer>(*_loader);
 
@@ -82,7 +91,6 @@ EditorApplication::EditorApplication(ImGuiPlatform* platform) : _platform(platfo
     _debug_drawer = std::make_unique<DirectDraw>();
 
     _undo_stack = std::make_unique<UndoStack>();
-    _pending_ops_queue = std::make_unique<PendingOpsQueue>();
 
     _default_scene_view = SceneView(_world.get());
     _scene_view = &_default_scene_view;
@@ -109,7 +117,6 @@ void EditorApplication::exec() {
         _ui->on_gui();
         process_deferred_actions();
         _recorder = nullptr;
-        _pending_ops_queue->garbage_collect();
     });
 }
 
@@ -163,7 +170,7 @@ void EditorApplication::process_deferred_actions() {
 void EditorApplication::save_world_deferred() const {
     y_profile();
 
-    auto file = io2::File::create(app_settings().editor.world_file);
+    auto file = io2::File::create(_world_file);
     if(!file) {
         log_msg("Unable to open file", Log::Error);
         return;
@@ -177,7 +184,7 @@ void EditorApplication::save_world_deferred() const {
 void EditorApplication::load_world_deferred() {
     y_profile();
 
-    auto file = io2::File::open(app_settings().editor.world_file);
+    auto file = io2::File::open(_world_file);
     if(!file) {
         log_msg("Unable to open file", Log::Error);
         return;

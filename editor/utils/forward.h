@@ -71,6 +71,7 @@ struct EditorPass;
 struct EditorRenderer;
 struct EditorRendererSettings;
 struct EditorSettings;
+struct EditorWidget;
 struct Entry;
 struct GizmoData;
 struct IdBufferPass;

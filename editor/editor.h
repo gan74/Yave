@@ -56,8 +56,6 @@ const SceneView& scene_view();
 
 DirectDraw& debug_drawer();
 
-PendingOpsQueue& pending_ops_queue();
-
 const EditorResources& resources();
 UiManager& ui();
 

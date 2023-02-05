@@ -30,7 +30,6 @@ SOFTWARE.
 #include <y/io2/Buffer.h>
 #include <y/serde3/archives.h>
 
-#include <yave/utils/PendingOpsQueue.h>
 #include <editor/utils/ui.h>
 #include <y/utils/format.h>
 #include <y/utils/log.h>
