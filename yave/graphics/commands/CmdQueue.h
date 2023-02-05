@@ -51,7 +51,7 @@ class CmdQueue : NonMovable {
 
         void wait() const;
 
-        WaitToken submit(CmdBufferRecorder&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}) const;
+        WaitToken submit(CmdBufferRecorder&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {}) const;
 
     private:
         friend class Swapchain;

@@ -32,6 +32,7 @@ SOFTWARE.
 #include <yave/utils/gpuprofile.h>
 
 #include <y/core/FixedArray.h>
+#include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
 
 namespace yave {
@@ -168,7 +169,7 @@ Swapchain::Swapchain(Window* window) : Swapchain(create_surface(window)) {
 
 Swapchain::Swapchain(VkSurfaceKHR surface) : _surface(surface) {
     build_swapchain();
-    build_semaphores();
+    build_sync_objects();
 }
 
 bool Swapchain::reset() {
@@ -189,7 +190,7 @@ bool Swapchain::reset() {
 Swapchain::~Swapchain() {
     _images.clear();
 
-    destroy_semaphores();
+    destroy_sync_objects();
 
     destroy_graphic_resource(_swapchain);
     destroy_graphic_resource(_surface);
@@ -259,7 +260,6 @@ bool Swapchain::build_swapchain() {
         swapchain_image._format = _color_format;
         swapchain_image._usage = SwapchainImageUsage;
 
-        // prevent the images to delete their handles: the swapchain already does that.
         swapchain_image._image = image;
         swapchain_image._view = view;
 
@@ -282,27 +282,38 @@ bool Swapchain::build_swapchain() {
     return true;
 }
 
-void Swapchain::build_semaphores() {
-    const VkFenceCreateInfo fence_create_info = vk_struct();
+void Swapchain::build_sync_objects() {
+    y_debug_assert(_sync_objects.is_empty());
+    y_debug_assert(_image_fences.is_empty());
+
     const VkSemaphoreCreateInfo semaphore_create_info = vk_struct();
+    VkFenceCreateInfo fence_create_info = vk_struct();
+    fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     for(usize i = 0; i != image_count(); ++i) {
-        auto& semaphores = _semaphores.emplace_back();
-        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &semaphores.render_complete));
-        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &semaphores.image_aquired));
-        vk_check(vkCreateFence(vk_device(), &fence_create_info, vk_allocation_callbacks(), &semaphores.fence));
+        auto& sync = _sync_objects.emplace_back();
+        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &sync.render_complete));
+        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &sync.image_available));
+        vk_check(vkCreateFence(vk_device(), &fence_create_info, vk_allocation_callbacks(), &sync.fence));
+
+        _image_fences.emplace_back();
     }
 
-    y_debug_assert(image_count() == _semaphores.size());
+    y_debug_assert(image_count() == _sync_objects.size());
+    y_debug_assert(image_count() == _image_fences.size());
 }
 
-void Swapchain::destroy_semaphores() {
-    for(const auto& semaphores : _semaphores) {
-        destroy_graphic_resource(semaphores.render_complete);
-        destroy_graphic_resource(semaphores.image_aquired);
-        destroy_graphic_resource(semaphores.fence);
+void Swapchain::destroy_sync_objects() {
+    for(const auto& sync : _sync_objects) {
+        vk_check(vkWaitForFences(vk_device(), 1, &sync.fence, true, u64(-1)));
+
+        destroy_graphic_resource(sync.render_complete);
+        destroy_graphic_resource(sync.image_available);
+        destroy_graphic_resource(sync.fence);
     }
-    _semaphores.clear();
+
+    _sync_objects.clear();
+    _image_fences.clear();
 }
 
 core::Result<FrameToken> Swapchain::next_frame() {
@@ -314,15 +325,17 @@ core::Result<FrameToken> Swapchain::next_frame() {
         }
     }
 
-    y_debug_assert(_semaphores.size());
+    y_debug_assert(_sync_objects.size());
 
-    const usize semaphore_index = ++_frame_id % image_count();
-    const Semaphores& frame_semaphores = _semaphores[semaphore_index];
+    const usize current_frame_index = _frame_id % image_count();
+    FrameSyncObjects& current_frame_sync = _sync_objects[current_frame_index];
+
+    vk_check(vkWaitForFences(vk_device(), 1, &current_frame_sync.fence, true, u64(-1)));
 
     u32 image_index = u32(-1);
     {
         y_profile_zone("aquire");
-        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), frame_semaphores.image_aquired, frame_semaphores.fence, &image_index))) {
+        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_frame_sync.image_available, vk_null(), &image_index))) {
             if(!reset()) {
                 return core::Err();
             }
@@ -330,12 +343,6 @@ core::Result<FrameToken> Swapchain::next_frame() {
     }
 
     y_debug_assert(image_index < _images.size());
-
-    {
-        y_profile_zone("image fence");
-        vk_check(vkWaitForFences(vk_device(), 1, &frame_semaphores.fence, true, u64(-1)));
-        vk_check(vkResetFences(vk_device(), 1, &frame_semaphores.fence));
-    }
 
     return core::Ok(FrameToken {
         _frame_id,
@@ -348,29 +355,38 @@ core::Result<FrameToken> Swapchain::next_frame() {
 void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, const CmdQueue& queue) {
     y_profile();
 
-    const usize semaphore_index = token.id % image_count();
-    const Semaphores& frame_semaphores = _semaphores[semaphore_index];
+    const usize frame_index = token.id % image_count();
+    if(_image_fences[frame_index]) {
+        vk_check(vkWaitForFences(vk_device(), 1, &_image_fences[frame_index], true, u64(-1)));
+    }
+
+    const usize current_frame_index = _frame_id % image_count();
+    FrameSyncObjects& current_frame_sync = _sync_objects[current_frame_index];
+
+    _image_fences[frame_index] = current_frame_sync.fence;
+    vk_check(vkResetFences(vk_device(), 1, &current_frame_sync.fence));
+
+    queue.submit(std::move(recorder), current_frame_sync.image_available, current_frame_sync.render_complete, current_frame_sync.fence);
 
     {
-        queue.submit(std::move(recorder), frame_semaphores.image_aquired, frame_semaphores.render_complete);
-
         const auto lock = y_profile_unique_lock(queue._lock);
 
         y_profile_zone("present");
-
         VkPresentInfoKHR present_info = vk_struct();
         {
             present_info.swapchainCount = 1;
             present_info.pSwapchains = &_swapchain.get();
             present_info.pImageIndices = &token.image_index;
             present_info.waitSemaphoreCount = 1;
-            present_info.pWaitSemaphores = &frame_semaphores.render_complete;
+            present_info.pWaitSemaphores = &current_frame_sync.render_complete;
         }
 
         if(vk_swapchain_out_of_date(vkQueuePresentKHR(queue.vk_queue(), &present_info))) {
             // Nothing ?
         }
     }
+
+    ++_frame_id;
 
     y_profile_frame_end();
 }

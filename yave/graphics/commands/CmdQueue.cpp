@@ -54,22 +54,22 @@ void CmdQueue::wait() const {
     vk_check(vkQueueWaitIdle(_queue));
 }
 
-WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSemaphore signal) const {
+WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSemaphore signal, VkFence fence) const {
     y_profile();
 
     const VkCommandBuffer cmd_buffer = recorder.vk_cmd_buffer();
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
-    TimelineFence fence;
+    TimelineFence timeline_fence;
 
     {
         const auto lock = y_profile_unique_lock(_lock);
 
         // This needs to be inside the lock
-        fence = create_timeline_fence();
-        const u64 prev_value = fence._value - 1;
+        timeline_fence = create_timeline_fence();
+        const u64 prev_value = timeline_fence._value - 1;
 
-        recorder._data->_timeline_fence = fence;
+        recorder._data->_timeline_fence = timeline_fence;
 
         const VkSemaphore timeline_semaphore = vk_timeline_semaphore();
 
@@ -78,7 +78,7 @@ WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSem
         const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
 
         const std::array<u64, 2> wait_values = {prev_value, 0};
-        const std::array<u64, 2> signal_values = {fence._value, 0};
+        const std::array<u64, 2> signal_values = {timeline_fence._value, 0};
 
         const std::array<VkPipelineStageFlags, 2> pipe_stage_flags = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
         const u32 wait_count = wait_semaphores[1] ? 2 : 1;
@@ -105,12 +105,12 @@ WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSem
         }
 
         y_profile_zone("submit");
-        vk_check(vkQueueSubmit(_queue, 1, &submit_info, {}));
+        vk_check(vkQueueSubmit(_queue, 1, &submit_info, fence));
     }
 
     lifetime_manager().register_for_polling(std::exchange(recorder._data, nullptr));
 
-    return WaitToken(fence);
+    return WaitToken(timeline_fence);
 }
 
 }
