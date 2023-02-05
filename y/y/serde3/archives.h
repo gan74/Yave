@@ -721,14 +721,13 @@ class ReadableArchive final {
 
                     using element_type = typename T::element_type;
                     const auto* poly_type = element_type::_y_serde3_poly_base.find_id(type_id);
-                    if(!poly_type || !poly_type->create) {
-                        return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
+                    if(poly_type && poly_type->create) {
+                        object.object = poly_type->create();
+                        if(object.object) {
+                            return object.object->_y_serde3_poly_deserialize(*this);
+                        }
                     }
 
-                    object.object = poly_type->create();
-                    if(object.object) {
-                        return object.object->_y_serde3_poly_deserialize(*this);
-                    }
                     return core::Ok(Success::Partial);
                 } else {
                     static_assert(has_serde3_poly_v<T>);
