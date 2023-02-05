@@ -34,8 +34,12 @@ namespace editor {
 
 static core::Vector<core::String> window_names() {
     core::Vector<core::String> names;
-    const auto& windows = ImGui::GetCurrentContext()->Windows;
-    std::transform(windows.begin(), windows.end(), std::back_inserter(names), [](const ImGuiWindow* w) { return w->Name; });
+    for(const ImGuiWindow* w : ImGui::GetCurrentContext()->Windows) {
+        if(w->Hidden || !w->WasActive) {
+            continue;
+        }
+        names.emplace_back(w->Name);
+    }
     return names;
 }
 
@@ -66,17 +70,16 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->SetRef(ICON_FA_WRENCH " Components##1");
     };
 
-
-    IM_REGISTER_TEST(engine, "tests", "restore default layout")->TestFunc = [](ImGuiTestContext* ctx) {
+    IM_REGISTER_TEST(engine, "tests", "restore default layout")->TestFunc = [=](ImGuiTestContext* ctx) {
         ctx->ItemClick("**/" ICON_FA_SEARCH "##searchbar");
-        ctx->KeyChars("restore layo");
+        ctx->KeyChars("restore d");
 
         ImGuiTestItemList items;
         ctx->GatherItems(&items, "##suggestionpopup");
-
         IM_CHECK_EQ(items.size(), 1);
 
-        ctx->ItemClick(items[0]->ID);
+        ctx->MouseMoveToPos(items[0]->RectClipped.GetCenter());
+        ctx->MouseClick();
     };
 }
 

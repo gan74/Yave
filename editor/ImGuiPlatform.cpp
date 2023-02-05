@@ -463,7 +463,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
 
                 setup_imgui_dockspace();
 
-                if(_demo_window) {
+                if(_demo_window && !_running_tests) {
                     ImGui::ShowDemoWindow(&_demo_window);
                 }
 

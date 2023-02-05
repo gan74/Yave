@@ -39,6 +39,8 @@ extern void ImGuiTestEngine_Assert(const char* expr, const char* file, const cha
 
 
 // Bind Main Assert macro
+
+#if 0
 #ifdef IM_ASSERT
 #undef IM_ASSERT
 #endif
@@ -51,3 +53,4 @@ extern bool imgui_test_engine_running();
         IM_Y_ASSERT(_EXPR);                     \
     }                                           \
 } while(false)
+#endif
