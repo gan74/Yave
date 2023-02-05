@@ -29,8 +29,6 @@ SOFTWARE.
 #include <yave/assets/AssetLoader.h>
 #include <y/core/HashMap.h>
 
-
-
 #include <regex>
 #include <tuple>
 
@@ -50,8 +48,6 @@ static core::String shortcut_text(KeyCombination shortcut) {
     }
     return text;
 }
-
-
 
 
 UiManager::UiManager() {
@@ -74,11 +70,7 @@ void UiManager::on_gui() {
     y_profile();
 
     if(!_frame_number) {
-        for(const EditorWidget* widget = all_widgets(); widget; widget = widget->next) {
-            if(widget->open_on_startup) {
-                widget->create();
-            }
-        }
+        open_default_widgets();
     }
 
     update_fps_counter();
@@ -263,6 +255,19 @@ Widget* UiManager::add_widget(std::unique_ptr<Widget> widget, bool auto_parent) 
     _widgets << std::move(widget);
 
     return wid;
+}
+
+void UiManager::restore_default_layout() {
+    close_all();
+    open_default_widgets();
+}
+
+void UiManager::open_default_widgets() {
+    for(const EditorWidget* widget = all_widgets(); widget; widget = widget->next) {
+        if(widget->open_on_startup) {
+            widget->create();
+        }
+    }
 }
 
 void UiManager::close_all() {

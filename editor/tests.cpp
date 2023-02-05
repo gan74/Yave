@@ -22,11 +22,13 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <editor/UiManager.h>
+
+#include <y/utils/log.h>
 
 #include <external/imgui_test_engine/imgui_te_context.h>
 
-#include <y/utils/log.h>
+#include <iterator>
 
 namespace editor {
 
@@ -62,7 +64,19 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->KeyPress(ImGuiKey_DownArrow);
         ctx->KeyPress(ImGuiKey_Enter);
         ctx->SetRef(ICON_FA_WRENCH " Components##1");
-        //ctx->ItemOpen(ICON_FA_PUZZLE_PIECE " Entity");
+    };
+
+
+    IM_REGISTER_TEST(engine, "tests", "restore default layout")->TestFunc = [](ImGuiTestContext* ctx) {
+        ctx->ItemClick("**/" ICON_FA_SEARCH "##searchbar");
+        ctx->KeyChars("restore layo");
+
+        ImGuiTestItemList items;
+        ctx->GatherItems(&items, "##suggestionpopup");
+
+        IM_CHECK_EQ(items.size(), 1);
+
+        ctx->ItemClick(items[0]->ID);
     };
 }
 
