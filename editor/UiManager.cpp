@@ -73,6 +73,14 @@ UiManager::~UiManager() {
 void UiManager::on_gui() {
     y_profile();
 
+    if(!_frame_number) {
+        for(const EditorWidget* widget = all_widgets(); widget; widget = widget->next) {
+            if(widget->open_on_startup) {
+                widget->create();
+            }
+        }
+    }
+
     update_fps_counter();
     update_shortcuts();
     draw_menu_bar();

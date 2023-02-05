@@ -92,12 +92,6 @@ int main(int argc, char** argv) {
     ImGuiPlatform platform(multi_viewport, run_tests);
     EditorApplication editor(&platform);
 
-    for(const EditorAction* action = all_actions(); action; action = action->next) {
-        if(action->flags & EditorAction::CallOnStartUp) {
-            action->function();
-        }
-    }
-
     editor.exec();
 
     log_msg("exiting...");

@@ -26,6 +26,20 @@ SOFTWARE.
 
 namespace editor {
 
+namespace detail {
+EditorWidget* first_widget = nullptr;
+void register_widget(EditorWidget* widget) {
+    log_msg(fmt("Registering widget \"%\"", widget->name), Log::Debug);
+    widget->next = first_widget;
+    first_widget = widget;
+}
+}
+
+const EditorWidget* all_widgets() {
+    return detail::first_widget;
+}
+
+
 Widget::Widget(std::string_view title, int flags) : _flags(flags) {
     set_title(title);
 }

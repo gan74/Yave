@@ -78,10 +78,6 @@ T* add_detached_widget(Args&&... args) {
 
 
 struct EditorAction {
-    enum Flags : u32 {
-        CallOnStartUp           = 0x01,
-    };
-
     std::string_view name;
     std::string_view description;
     u32 flags = 0;
@@ -101,7 +97,7 @@ void register_action(EditorAction* action);
 
 
 #define editor_action_(name, desc, flags, shortcut, func, ...)                                          \
-    struct y_create_name_with_prefix(trigger_t) {                                                       \
+    struct y_create_name_with_prefix(action_trigger_t) {                                                \
         inline static struct action_register_t {                                                        \
             action_register_t() {                                                                       \
                 static constexpr std::string_view names[] = { name, __VA_ARGS__ };                      \
