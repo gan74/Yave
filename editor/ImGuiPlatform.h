@@ -67,6 +67,8 @@ class ImGuiPlatform : NonMovable {
 
         const ImGuiRenderer* renderer() const;
 
+        const ImGuiTestEngine* test_engine() const;
+
         Window* main_window();
 
         void exec(OnGuiFunc func = nullptr);

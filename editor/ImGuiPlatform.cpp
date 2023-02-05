@@ -34,8 +34,21 @@ SOFTWARE.
 
 #include <external/imgui_test_engine/imgui_te_context.h>
 #include <external/imgui_test_engine/imgui_te_exporters.h>
+#include <external/imgui_test_engine/imgui_te_internal.h>
 
 #include <deque>
+
+
+
+
+// ---------------------------------------------- TEST HACKS ----------------------------------------------
+
+bool imgui_test_engine_running() {
+    const auto* platform = editor::ImGuiPlatform::instance();
+    return platform && platform->test_engine() && platform->test_engine()->TestContext;
+}
+
+
 
 namespace editor {
 
@@ -416,6 +429,10 @@ Window* ImGuiPlatform::main_window() {
     return &_main_window->window;
 }
 
+const ImGuiTestEngine* ImGuiPlatform::test_engine() const {
+    return _test_engine;
+}
+
 void ImGuiPlatform::exec(OnGuiFunc func) {
     for(;;) {
         {
@@ -523,4 +540,6 @@ void ImGuiPlatform::show_demo() {
 }
 
 }
+
+
 
