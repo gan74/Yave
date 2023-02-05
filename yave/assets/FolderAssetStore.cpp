@@ -780,13 +780,14 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
         y_profile_zone("Reading descs");
         concurrent::StaticThreadPool thread_pool;
 
+        const usize tasks = thread_pool.concurency() * 8 + 1;
+        assets.set_min_size(tasks);
+
         y_profile_zone("schedule");
-        const usize split = desc_ids.size() / (thread_pool.concurency() * 8);
+        usize index = 0;
+        const usize split = (desc_ids.size() / (thread_pool.concurency() * 8)) + 1;
         for(usize i = 0; i < desc_ids.size(); i += split) {
             const core::Range range(desc_ids.begin() + i, desc_ids.begin() + std::min(desc_ids.size(), i + split));
-
-            const usize index = assets.size();
-            assets.emplace_back();
 
             thread_pool.schedule([this, range, index, &assets, &asset_sizes] {
                 y_profile_zone("Reading descs internal");
@@ -809,6 +810,8 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
                     }
                 }
             });
+
+            ++index;
         }
     }
 
