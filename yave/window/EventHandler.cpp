@@ -124,7 +124,9 @@ static constexpr u32 packed_key_index(Key key) {
     if(key == Key::Space) {
         return u32(Key::MaxNonChar);
     }
-    return u32(Key::MaxNonChar) + 1 + u32(key) - u32(Key::A);
+    const u32 packed = u32(Key::MaxNonChar) + 1 + u32(key) - u32(Key::A);
+    y_debug_assert(packed < 64);
+    return packed;
 }
 
 static_assert(packed_key_index(Key::Max) < 64);

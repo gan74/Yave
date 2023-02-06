@@ -31,7 +31,7 @@ SOFTWARE.
 namespace editor {
 
 ImGuiKey to_imgui_key(Key k);
-int to_imgui_button(MouseButton b);
+ImGuiMouseButton to_imgui_button(MouseButton b);
 
 namespace imgui {
 

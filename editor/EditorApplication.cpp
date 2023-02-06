@@ -162,6 +162,7 @@ void EditorApplication::process_deferred_actions() {
     if(_deferred_actions & New) {
         EditorWorld world(*_loader);
         *_world = std::move(world);
+        log_msg("New world");
     }
 
     _deferred_actions = None;
@@ -179,6 +180,8 @@ void EditorApplication::save_world_deferred() const {
     if(auto r = arc.serialize(*_world); !r) {
         log_msg(fmt("Unable to save world: %", serde3::error_msg(r.error())), Log::Error);
     }
+
+    log_msg("World saved");
 }
 
 void EditorApplication::load_world_deferred() {
@@ -204,6 +207,7 @@ void EditorApplication::load_world_deferred() {
     }
 
     *_world = std::move(world);
+    log_msg("World loaded");
 }
 
 }

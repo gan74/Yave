@@ -93,7 +93,7 @@ ImGuiKey to_imgui_key(Key k) {
     return ImGuiKey_None;
 }
 
-int to_imgui_button(MouseButton b) {
+ImGuiMouseButton to_imgui_button(MouseButton b) {
     switch(b) {
         case MouseButton::LeftButton:
             return ImGuiMouseButton_Left;
