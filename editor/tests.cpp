@@ -64,18 +64,8 @@ void register_editor_tests(ImGuiTestEngine* engine) {
     IM_REGISTER_TEST(engine, "tests", "new scene")->TestFunc = [](ImGuiTestContext* ctx) {
         ctx->SetRef("##MainMenuBar");
         ctx->MenuClick("File/New");
-        y_debug_assert(!entity_count());
+        IM_CHECK_EQ(entity_count(), 0);
     };
-
-#if 0
-    IM_REGISTER_TEST(engine, "tests", "open component panel")->TestFunc = [](ImGuiTestContext* ctx) {
-        ctx->ItemClick("**/" ICON_FA_SEARCH "##searchbar");
-        ctx->KeyChars("comp");
-        ctx->KeyPress(ImGuiKey_DownArrow);
-        ctx->KeyPress(ImGuiKey_Enter);
-        ctx->SetRef(ICON_FA_WRENCH " Components##1");
-    };
-#endif
 
     IM_REGISTER_TEST(engine, "tests", "close all")->TestFunc = [](ImGuiTestContext* ctx) {
         for(const auto& name : window_names()) {
@@ -110,9 +100,10 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
     IM_REGISTER_TEST(engine, "tests", "rename entity")->TestFunc = [=](ImGuiTestContext* ctx) {
         const auto ids = all_ids();
-        y_debug_assert(!ids.is_empty());
+        IM_CHECK_NE(ids.size(), 0);
+        const ecs::EntityId id = ids[ids.size() / 2];
 
-        ctx->ItemClick(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###%", ids[ids.size() / 2].as_u64()), ImGuiMouseButton_Right);
+        ctx->ItemClick(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###%", id.as_u64()), ImGuiMouseButton_Right);
         ctx->ItemClick("**/Rename");
 
         ctx->SetRef("//Rename##1");
@@ -120,17 +111,18 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->KeyChars("flubudu");
         ctx->ItemClick("Ok");
 
-        const core::String label = ctx->ItemInfo(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###%", ids[ids.size() / 2].as_u64()))->DebugLabel;
-        y_debug_assert(label.starts_with(ICON_FA_DATABASE " flubudu"));
+        const core::String label = ctx->ItemInfo(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###%", id.as_u64()))->DebugLabel;
+        IM_CHECK_EQ(label.starts_with(ICON_FA_DATABASE " flubudu"), true);
     };
 
     IM_REGISTER_TEST(engine, "tests", "remove entity")->TestFunc = [=](ImGuiTestContext* ctx) {
         const auto ids = all_ids();
-        y_debug_assert(!ids.is_empty());
+        IM_CHECK_NE(ids.size(), 0);
+        const ecs::EntityId id = ids[ids.size() / 3];
 
         {
             ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
-            ctx->ItemClick(fmt_c_str("**/###%", ids[ids.size() / 3].as_u64()), ImGuiMouseButton_Right);
+            ctx->ItemClick(fmt_c_str("**/###%", id.as_u64()), ImGuiMouseButton_Right);
             ctx->ItemClick("**/" ICON_FA_TRASH " Delete");
             ctx->ItemClick("//Confirm##1/Cancel");
         }
@@ -139,12 +131,12 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
         {
             ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
-            ctx->ItemClick(fmt_c_str("**/###%", ids[ids.size() / 3].as_u64()), ImGuiMouseButton_Right);
+            ctx->ItemClick(fmt_c_str("**/###%", id.as_u64()), ImGuiMouseButton_Right);
             ctx->ItemClick("**/" ICON_FA_TRASH " Delete");
             ctx->ItemClick("//Confirm##1/Ok");
         }
 
-        y_debug_assert(entity_count() == ids.size() - 1);
+        IM_CHECK_EQ(entity_count(), ids.size() - 1);
     };
 
     IM_REGISTER_TEST(engine, "tests", "save scene")->TestFunc = [](ImGuiTestContext* ctx) {
@@ -156,10 +148,59 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->SetRef("##MainMenuBar");
 
         ctx->MenuClick("File/New");
-        y_debug_assert(!entity_count());
+        IM_CHECK_EQ(entity_count(), 0);
 
         ctx->MenuClick("File/" ICON_FA_FOLDER " Load");
-        y_debug_assert(entity_count() == 3);
+        IM_CHECK_EQ(entity_count(), 3);
+    };
+
+    IM_REGISTER_TEST(engine, "tests", "add static mesh")->TestFunc = [](ImGuiTestContext* ctx) {
+        const auto ids = all_ids();
+        IM_CHECK_NE(ids.size(), 0);
+        const ecs::EntityId id = ids[0];
+
+        {
+            ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
+            ctx->ItemClick(fmt_c_str("**/###%", id.as_u64()));
+        }
+
+        ctx->Yield();
+
+        {
+            ctx->SetRef("//" ICON_FA_WRENCH " Components##1");
+
+            {
+                ctx->ItemOpen("**/" ICON_FA_PUZZLE_PIECE " Entity");
+                ctx->ItemInputValue("**/##name", "shalg");
+                ctx->ItemClose("**/" ICON_FA_PUZZLE_PIECE " Entity");
+            }
+
+            ctx->ItemClick("**/" ICON_FA_PLUS " Add component");
+            ctx->ItemClick("**/" ICON_FA_PUZZLE_PIECE " StaticMeshComponent");
+
+            {
+                ctx->ItemOpen("**/" ICON_FA_PUZZLE_PIECE " TransformableComponent");
+                ctx->ItemInputValue("**/##position/##x", 1.0f);
+                ctx->ItemInputValue("**/##position/##z", 2.0f);
+                ctx->ItemClose("**/" ICON_FA_PUZZLE_PIECE " TransformableComponent");
+            }
+
+            {
+                ctx->ItemOpen("**/" ICON_FA_PUZZLE_PIECE " StaticMeshComponent");
+                IM_CHECK_NE(ctx->ItemInfoOpenFullPath("**/" ICON_FA_FOLDER_OPEN)->ID, 0);
+                ctx->ItemClose("**/" ICON_FA_PUZZLE_PIECE " StaticMeshComponent");
+            }
+        }
+
+        ctx->Yield();
+
+        {
+            ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
+            const ImGuiTestItemInfo* info = ctx->ItemInfoOpenFullPath(fmt_c_str("**/###%", id.as_u64()));
+            IM_CHECK_NE(info->ID, 0);
+            IM_CHECK_STR_EQ(info->DebugLabel, fmt_c_str(ICON_FA_CUBE " shalg###%", id.as_u64()));
+        }
+
     };
 }
 
