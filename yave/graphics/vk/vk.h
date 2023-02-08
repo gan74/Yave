@@ -322,19 +322,12 @@ inline void vk_check_or_incomplete(VkResult result) {
 }
 
 
-enum class VkHandleFlags {
-    Ctor,
-};
-
 template<typename T>
 class VkHandle {
     public:
         static_assert(std::is_trivially_copyable_v<T>);
 
         VkHandle() = default;
-
-        VkHandle(T t, VkHandleFlags) : _t(t) {
-        }
 
         VkHandle(VkHandle&& other) {
             swap(other);
