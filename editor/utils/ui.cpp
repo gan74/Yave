@@ -474,9 +474,9 @@ bool suggestion_item(const char* name, const char* shortcut) {
 }
 
 
-void table_begin_next_row(int row_index) {
+void table_begin_next_row(int col_index) {
     ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(row_index);
+    ImGui::TableSetColumnIndex(col_index);
 }
 
 

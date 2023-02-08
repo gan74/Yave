@@ -61,7 +61,7 @@ void end_suggestion_popup();
 
 bool suggestion_item(const char* name, const char* shortcut = nullptr);
 
-void table_begin_next_row(int row_index = 0);
+void table_begin_next_row(int col_index = 0);
 
 
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
