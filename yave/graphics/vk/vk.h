@@ -322,49 +322,79 @@ inline void vk_check_or_incomplete(VkResult result) {
 }
 
 
+enum class VkHandleFlags {
+    Ctor,
+};
 
 template<typename T>
 class VkHandle {
     public:
+        static_assert(std::is_trivially_copyable_v<T>);
+
         VkHandle() = default;
 
-        VkHandle(T t) : _t(t) {
+        VkHandle(T t, VkHandleFlags) : _t(t) {
         }
 
         VkHandle(VkHandle&& other) {
-            std::swap(_t, other._t);
+            swap(other);
+        }
+
+        ~VkHandle() {
+            y_debug_assert(!_t || _consumed);
         }
 
         VkHandle& operator=(VkHandle&& other) {
-            std::swap(_t, other._t);
-            return *this;
-        }
-
-        VkHandle& operator=(T other) {
-            _t = other;
+            swap(other);
             return *this;
         }
 
         void swap(VkHandle& other) {
             std::swap(_t, other._t);
+#ifdef Y_DEBUG
+            std::swap(_consumed, other._consumed);
+#endif
         }
 
         operator T() const {
+            y_debug_assert(!_consumed);
             return _t;
         }
 
-        T& get() {
-            return _t;
+        T* get_ptr_for_init() {
+            y_debug_assert(!_t || _consumed);
+#ifdef Y_DEBUG
+            _t = {};
+            _consumed = false;
+#endif
+            return &_t;
         }
 
         const T& get() const {
+            y_debug_assert(!_consumed);
             return _t;
+        }
+
+        T consume() {
+#ifdef Y_DEBUG
+            y_debug_assert(!std::exchange(_consumed, true));
+            return _t;
+#else
+            return std::exchange(_t, T{});
+#endif
+        }
+
+        bool is_null() const {
+            return !_t;
         }
 
     private:
         T _t = {};
-};
 
+#ifdef Y_DEBUG
+        bool _consumed = false;
+#endif
+};
 
 }
 

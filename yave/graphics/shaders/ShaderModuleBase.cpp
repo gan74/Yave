@@ -38,8 +38,8 @@ static void merge(M& into, const M& o) {
     }
 }
 
-static VkShaderModule create_shader_module(const SpirVData& data) {
-    VkShaderModule shader = vk_null();
+static VkHandle<VkShaderModule> create_shader_module(const SpirVData& data) {
+    VkHandle<VkShaderModule> shader;
     if(data.is_empty()) {
         return shader;
     }
@@ -50,7 +50,7 @@ static VkShaderModule create_shader_module(const SpirVData& data) {
         create_info.pCode = data.data();
     }
 
-    vk_check(vkCreateShaderModule(vk_device(), &create_info, vk_allocation_callbacks(), &shader));
+    vk_check(vkCreateShaderModule(vk_device(), &create_info, vk_allocation_callbacks(), shader.get_ptr_for_init()));
     return shader;
 }
 
@@ -228,7 +228,7 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
 }
 
 ShaderModuleBase::~ShaderModuleBase() {
-    destroy_graphic_resource(_module);
+    destroy_graphic_resource(std::move(_module));
 }
 
 }

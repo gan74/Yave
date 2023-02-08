@@ -67,8 +67,8 @@ const DebugUtils* debug_utils();
 
 void wait_all_queues();
 
-#define YAVE_GENERATE_DESTROY(T) void destroy_graphic_resource(T t);
-YAVE_GRAPHIC_RESOURCE_TYPES(YAVE_GENERATE_DESTROY)
+#define YAVE_GENERATE_DESTROY(T) void destroy_graphic_resource(T&& t);
+YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
 
 }

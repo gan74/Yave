@@ -27,14 +27,20 @@ SOFTWARE.
 #include <yave/graphics/vk/vk.h>
 
 namespace yave {
-class DescriptorSetData {
+class DescriptorSetData : NonCopyable {
     public:
         DescriptorSetData() = default;
+
+        DescriptorSetData(DescriptorSetData&& other);
+        DescriptorSetData& operator=(DescriptorSetData&& other);
+
+        void swap(DescriptorSetData& other);
 
         bool is_null() const;
 
         VkDescriptorSetLayout vk_descriptor_set_layout() const;
         VkDescriptorSet vk_descriptor_set() const;
+
 
     private:
         friend class LifetimeManager;

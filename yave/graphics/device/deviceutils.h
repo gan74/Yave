@@ -47,7 +47,7 @@ VkSamplerAddressMode vk_address_mode(SamplerType type);
 VkFilter vk_filter(SamplerType type);
 VkSamplerMipmapMode vk_mip_filter(SamplerType type);
 
-VkSampler create_sampler(SamplerType type);
+VkHandle<VkSampler> create_sampler(SamplerType type);
 
 core::Vector<VkQueueFamilyProperties> enumerate_family_properties(VkPhysicalDevice device);
 u32 queue_family_index(core::Span<VkQueueFamilyProperties> families, VkQueueFlags flags);

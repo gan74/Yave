@@ -90,6 +90,7 @@ class ImageView {
                 _format(format),
                 _view(view),
                 _image(image) {
+            y_debug_assert(_view && _image);
         }
 
 

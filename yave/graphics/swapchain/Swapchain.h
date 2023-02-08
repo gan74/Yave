@@ -45,7 +45,8 @@ class Swapchain : NonMovable {
 
             ~SwapchainImage() {
                 // prevents images to delete their VkImage, this is already done by the swapchain
-                _image = {};
+                VkHandle<VkImage> drop = std::move(_image);
+                drop.consume();
             }
 
         private:
@@ -55,13 +56,13 @@ class Swapchain : NonMovable {
     };
 
     struct FrameSyncObjects {
-        VkSemaphore image_available = vk_null();
-        VkSemaphore render_complete = vk_null();
-        VkFence fence = vk_null();
+        VkHandle<VkSemaphore> image_available;
+        VkHandle<VkSemaphore> render_complete;
+        VkHandle<VkFence> fence;
     };
 
     public:
-        Swapchain(VkSurfaceKHR surface);
+        Swapchain(VkHandle<VkSurfaceKHR> surface);
         Swapchain(Window* window);
         ~Swapchain();
 

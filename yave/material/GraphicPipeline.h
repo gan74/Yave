@@ -32,7 +32,7 @@ class GraphicPipeline {
 
     public:
         GraphicPipeline() = default;
-        GraphicPipeline(VkPipeline pipeline, VkPipelineLayout layout);
+        GraphicPipeline(VkHandle<VkPipeline> pipeline, VkHandle<VkPipelineLayout> layout);
 
         ~GraphicPipeline();
 

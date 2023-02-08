@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-static VkImageView create_view(VkImage image, ImageFormat format, usize start_mip) {
+static VkHandle<VkImageView> create_view(VkImage image, ImageFormat format, usize start_mip) {
     VkImageViewCreateInfo create_info = vk_struct();
     {
         create_info.image = image;
@@ -45,8 +45,8 @@ static VkImageView create_view(VkImage image, ImageFormat format, usize start_mi
         create_info.subresourceRange.levelCount = 1;
     }
 
-    VkImageView view = {};
-    vk_check(vkCreateImageView(vk_device(), &create_info, vk_allocation_callbacks(), &view));
+    VkHandle<VkImageView> view;
+    vk_check(vkCreateImageView(vk_device(), &create_info, vk_allocation_callbacks(), view.get_ptr_for_init()));
     return view;
 }
 
@@ -72,18 +72,29 @@ struct ProbeBase : ImageBase {
     }
 };
 
-struct ProbeBaseView : NonMovable, ViewBase {
+class ViewContainer : NonMovable {
+    public:
+        ViewContainer(ProbeBase& base, usize mip) : _view_handle(create_view(base.vk_image(), base.format(), mip)) {
+        }
+
+    protected:
+        VkHandle<VkImageView> _view_handle;
+};
+
+struct ProbeBaseView : ViewContainer, ViewBase {
     ProbeBaseView(ProbeBase& base, usize mip) :
+            ViewContainer(base, mip),
             ViewBase(base.image_size().to<2>() / (1 << mip),
                      base.usage(),
                      base.format(),
-                     create_view(base.vk_image(), base.format(), mip),
+                     _view_handle,
                      base.vk_image()) {
     }
 
     ~ProbeBaseView() {
         // Unlike "normal" image views we own the vulkan object
-        destroy_graphic_resource(vk_view());
+        y_debug_assert(_view_handle == vk_view());
+        destroy_graphic_resource(std::move(_view_handle));
     }
 };
 
@@ -97,7 +108,7 @@ static const ComputeProgram& convolution_program(const Texture&) {
 
 
 template<ImageType T>
-static void fill_probe(core::MutableSpan<ViewBase> views, const Image<ImageUsage::TextureBit, T>& texture) {
+static void fill_probe(core::MutableSpan<ProbeBaseView> views, const Image<ImageUsage::TextureBit, T>& texture) {
     const ComputeProgram& conv_program = convolution_program(texture);
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 

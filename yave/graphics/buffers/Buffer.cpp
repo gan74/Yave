@@ -67,11 +67,11 @@ static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(u64 buffer_size, VkBuffer
 
 
 BufferBase::BufferBase(u64 byte_size, BufferUsage usage, MemoryType type) : _size(byte_size), _usage(usage) {
-    std::tie(_buffer, _memory) = alloc_buffer(byte_size, VkBufferUsageFlagBits(usage), type);
+    std::tie(*_buffer.get_ptr_for_init(), _memory) = alloc_buffer(byte_size, VkBufferUsageFlagBits(usage), type);
 }
 
 BufferBase::~BufferBase() {
-    destroy_graphic_resource( _buffer);
+    destroy_graphic_resource(std::move(_buffer));
     destroy_graphic_resource(std::move(_memory));
 }
 

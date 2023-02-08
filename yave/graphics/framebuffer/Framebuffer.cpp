@@ -79,7 +79,7 @@ Framebuffer::Framebuffer(const DepthAttachment& depth, core::Span<ColorAttachmen
         create_info.layers = 1;
     }
 
-    vk_check(vkCreateFramebuffer(vk_device(), &create_info, vk_allocation_callbacks(), &_framebuffer.get()));
+    vk_check(vkCreateFramebuffer(vk_device(), &create_info, vk_allocation_callbacks(), _framebuffer.get_ptr_for_init()));
 }
 
 Framebuffer::Framebuffer(core::Span<ColorAttachmentView> colors, LoadOp load_op) :
@@ -91,7 +91,7 @@ Framebuffer::Framebuffer(const DepthAttachmentView& depth, core::Span<ColorAttac
 }
 
 Framebuffer::~Framebuffer() {
-    destroy_graphic_resource(_framebuffer);
+    destroy_graphic_resource(std::move(_framebuffer));
 }
 
 bool Framebuffer::is_null() const {

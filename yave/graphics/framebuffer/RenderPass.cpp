@@ -103,7 +103,7 @@ static VkAttachmentReference create_attachment_reference(ImageUsage usage, usize
     return VkAttachmentReference{u32(index), vk_initial_image_layout(usage)};
 }
 
-static VkRenderPass create_renderpass(RenderPass::AttachmentData depth, core::Span<RenderPass::AttachmentData> colors) {
+static VkHandle<VkRenderPass> create_renderpass(RenderPass::AttachmentData depth, core::Span<RenderPass::AttachmentData> colors) {
     const bool has_depth = depth.usage != ImageUsage::None;
     const bool has_color = !colors.is_empty();
 
@@ -141,10 +141,11 @@ static VkRenderPass create_renderpass(RenderPass::AttachmentData depth, core::Sp
         create_info.pDependencies = dependencies.data();
     }
 
-    VkRenderPass renderpass = {};
-    vk_check(vkCreateRenderPass(vk_device(), &create_info, vk_allocation_callbacks(), &renderpass));
+    VkHandle<VkRenderPass> renderpass;
+    vk_check(vkCreateRenderPass(vk_device(), &create_info, vk_allocation_callbacks(), renderpass.get_ptr_for_init()));
     return renderpass;
 }
+
 
 RenderPass::Layout::Layout(AttachmentData depth, core::Span<AttachmentData> colors) : _depth(depth.format) {
     y_always_assert(colors.size() <= _colors.size(), "Too many color attachments");
@@ -179,7 +180,7 @@ RenderPass::RenderPass(core::Span<AttachmentData> colors) :
 }
 
 RenderPass::~RenderPass() {
-    destroy_graphic_resource(_render_pass);
+    destroy_graphic_resource(std::move(_render_pass));
 }
 
 bool RenderPass::is_null() const {

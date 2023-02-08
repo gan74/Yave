@@ -49,7 +49,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
         layout_create_info.setLayoutCount = u32(layouts.size());
     }
 
-    vk_check(vkCreatePipelineLayout(vk_device(), &layout_create_info, vk_allocation_callbacks(), &_layout.get()));
+    vk_check(vkCreatePipelineLayout(vk_device(), &layout_create_info, vk_allocation_callbacks(), _layout.get_ptr_for_init()));
 
     if(data.size() && data.size() != comp.specialization_data_size()) {
         y_fatal("Incompatible specialization data.");
@@ -79,12 +79,12 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
         create_info.stage = stage;
     }
 
-    vk_check(vkCreateComputePipelines(vk_device(), vk_null(), 1, &create_info, vk_allocation_callbacks(), &_pipeline.get()));
+    vk_check(vkCreateComputePipelines(vk_device(), vk_null(), 1, &create_info, vk_allocation_callbacks(), _pipeline.get_ptr_for_init()));
 }
 
 ComputeProgram::~ComputeProgram() {
-    destroy_graphic_resource(_layout);
-    destroy_graphic_resource(_pipeline);
+    destroy_graphic_resource(std::move(_layout));
+    destroy_graphic_resource(std::move(_pipeline));
 }
 
 bool ComputeProgram::is_null() const {

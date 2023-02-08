@@ -103,7 +103,7 @@ VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
     }
 }
 
-VkSampler create_sampler(SamplerType type) {
+VkHandle<VkSampler> create_sampler(SamplerType type) {
 
     VkSamplerCreateInfo create_info = vk_struct();
     {
@@ -126,8 +126,8 @@ VkSampler create_sampler(SamplerType type) {
         create_info.compareOp = VK_COMPARE_OP_GREATER;
     }
 
-    VkSampler sampler = {};
-    vk_check(vkCreateSampler(vk_device(), &create_info, vk_allocation_callbacks(), &sampler));
+    VkHandle<VkSampler> sampler;
+    vk_check(vkCreateSampler(vk_device(), &create_info, vk_allocation_callbacks(), sampler.get_ptr_for_init()));
     return sampler;
 }
 

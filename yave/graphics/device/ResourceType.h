@@ -47,6 +47,26 @@ namespace yave {
     X(VkEvent)                              \
     X(VkSurfaceKHR)
 
+#define YAVE_VK_HANDLES_TYPES(X)            \
+    X(VkHandle<VkBuffer>)                   \
+    X(VkHandle<VkImage>)                    \
+    X(VkHandle<VkImageView>)                \
+    X(VkHandle<VkRenderPass>)               \
+    X(VkHandle<VkFramebuffer>)              \
+    X(VkHandle<VkPipeline>)                 \
+    X(VkHandle<VkPipelineLayout>)           \
+    X(VkHandle<VkShaderModule>)             \
+    X(VkHandle<VkSampler>)                  \
+    X(VkHandle<VkSwapchainKHR>)             \
+    X(VkHandle<VkCommandPool>)              \
+    X(VkHandle<VkFence>)                    \
+    X(VkHandle<VkDescriptorPool>)           \
+    X(VkHandle<VkDescriptorSetLayout>)      \
+    X(VkHandle<VkSemaphore>)                \
+    X(VkHandle<VkQueryPool>)                \
+    X(VkHandle<VkEvent>)                    \
+    X(VkHandle<VkSurfaceKHR>)
+
 #define YAVE_YAVE_RESOURCE_TYPES(X)         \
     X(DeviceMemory)                         \
     X(DescriptorSetData)                    \
@@ -55,6 +75,11 @@ namespace yave {
 #define YAVE_GRAPHIC_RESOURCE_TYPES(X)      \
     YAVE_YAVE_RESOURCE_TYPES(X)             \
     YAVE_VK_RESOURCE_TYPES(X)
+
+#define YAVE_GRAPHIC_HANDLE_TYPES(X)        \
+    YAVE_YAVE_RESOURCE_TYPES(X)             \
+    YAVE_VK_HANDLES_TYPES(X)
+
 
 
 }

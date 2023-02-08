@@ -182,7 +182,7 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
                 res.recycle();
             } else {
                 // log_msg(fmt("destroying % %", ct_type_name<decltype(res)>(), (void*)res));
-                vk_destroy(res);
+                vk_destroy(res.consume());
             }
         },
         resource);

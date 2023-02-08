@@ -38,7 +38,7 @@ static void bind_image_memory(VkImage image, const DeviceMemory& memory) {
     vk_check(vkBindImageMemory(vk_device(), image, memory.vk_memory(), memory.vk_offset()));
 }
 
-static VkImage create_image(const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static VkHandle<VkImage> create_image(const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
     y_debug_assert(usage != ImageUsage::TransferDstBit);
 
     VkImageCreateInfo create_info = vk_struct();
@@ -56,8 +56,8 @@ static VkImage create_image(const math::Vec3ui& size, usize layers, usize mips, 
         create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     }
 
-    VkImage image = {};
-    vk_check(vkCreateImage(vk_device(), &create_info, vk_allocation_callbacks(), &image));
+    VkHandle<VkImage> image;
+    vk_check(vkCreateImage(vk_device(), &create_info, vk_allocation_callbacks(), image.get_ptr_for_init()));
     return image;
 }
 
@@ -96,7 +96,7 @@ static auto stage_data(usize byte_size, const void* data) {
     return staging_buffer;
 }
 
-static VkImageView create_view(VkImage image, ImageFormat format, u32 layers, u32 mips, ImageType type) {
+static VkHandle<VkImageView> create_view(VkImage image, ImageFormat format, u32 layers, u32 mips, ImageType type) {
     VkImageViewCreateInfo create_info = vk_struct();
     {
         create_info.image = image;
@@ -107,18 +107,18 @@ static VkImageView create_view(VkImage image, ImageFormat format, u32 layers, u3
         create_info.subresourceRange.levelCount = mips;
     }
 
-    VkImageView view = {};
-    vk_check(vkCreateImageView(vk_device(), &create_info, vk_allocation_callbacks(), &view));
+    VkHandle<VkImageView> view;
+    vk_check(vkCreateImageView(vk_device(), &create_info, vk_allocation_callbacks(), view.get_ptr_for_init()));
     return view;
 }
 
-static std::tuple<VkImage, DeviceMemory, VkImageView> alloc_image(const math::Vec3ui& size, u32 layers, u32 mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_image(const math::Vec3ui& size, u32 layers, u32 mips, ImageFormat format, ImageUsage usage, ImageType type) {
     y_profile();
-    const auto image = create_image(size, layers, mips, format, usage, type);
+    auto image = create_image(size, layers, mips, format, usage, type);
     auto memory = device_allocator().alloc(image);
     bind_image_memory(image, memory);
 
-    return {image, std::move(memory), create_view(image, format, layers, mips, type)};
+    return {std::move(image), std::move(memory), create_view(image, format, layers, mips, type)};
 }
 
 static void upload_data(ImageBase& image, const ImageData& data) {
@@ -191,8 +191,8 @@ ImageBase::ImageBase(ImageUsage usage, ImageType type, const ImageData& data) :
 }
 
 ImageBase::~ImageBase() {
-    destroy_graphic_resource(_view);
-    destroy_graphic_resource(_image);
+    destroy_graphic_resource(std::move(_view));
+    destroy_graphic_resource(std::move(_image));
     destroy_graphic_resource(std::move(_memory));
 }
 

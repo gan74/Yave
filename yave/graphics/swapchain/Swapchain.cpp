@@ -78,7 +78,7 @@ static u32 compute_image_count(VkSurfaceCapabilitiesKHR capabilities) {
     return ideal;
 }
 
-static VkImageView create_image_view(VkImage image, VkFormat format) {
+static VkHandle<VkImageView> create_image_view(VkImage image, VkFormat format) {
     const VkComponentMapping mapping = {
         VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
         VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY
@@ -100,8 +100,8 @@ static VkImageView create_image_view(VkImage image, VkFormat format) {
         create_info.subresourceRange = subrange;
     }
 
-    VkImageView view = {};
-    vk_check(vkCreateImageView(vk_device(), &create_info, vk_allocation_callbacks(), &view));
+    VkHandle<VkImageView> view;
+    vk_check(vkCreateImageView(vk_device(), &create_info, vk_allocation_callbacks(), view.get_ptr_for_init()));
     return view;
 }
 
@@ -113,15 +113,15 @@ static bool has_wsi_support(VkSurfaceKHR surface) {
 }
 
 #ifdef Y_OS_WIN
-static VkSurfaceKHR create_surface(HINSTANCE_ instance, HWND_ handle) {
+static VkHandle<VkSurfaceKHR> create_surface(HINSTANCE_ instance, HWND_ handle) {
     VkWin32SurfaceCreateInfoKHR create_info = vk_struct();
     {
         create_info.hinstance = instance;
         create_info.hwnd = handle;
     }
 
-    VkSurfaceKHR surface = {};
-    vk_check(vkCreateWin32SurfaceKHR(vk_device_instance(), &create_info, vk_allocation_callbacks(), &surface));
+    VkHandle<VkSurfaceKHR> surface;
+    vk_check(vkCreateWin32SurfaceKHR(vk_device_instance(), &create_info, vk_allocation_callbacks(), surface.get_ptr_for_init()));
 
     if(!has_wsi_support(surface)) {
         y_fatal("No WSI support.");
@@ -152,7 +152,7 @@ static VkSurfaceKHR create_surface(xcb_connection_t* connection, u32 window) {
 }
 #endif
 
-static VkSurfaceKHR create_surface(Window* window) {
+static VkHandle<VkSurfaceKHR> create_surface(Window* window) {
     y_profile();
 
 #if defined(Y_OS_WIN) || defined(Y_OS_LINUX)
@@ -167,7 +167,7 @@ static VkSurfaceKHR create_surface(Window* window) {
 Swapchain::Swapchain(Window* window) : Swapchain(create_surface(window)) {
 }
 
-Swapchain::Swapchain(VkSurfaceKHR surface) : _surface(surface) {
+Swapchain::Swapchain(VkHandle<VkSurfaceKHR> surface) : _surface(std::move(surface)) {
     build_swapchain();
     build_sync_objects();
 }
@@ -177,10 +177,11 @@ bool Swapchain::reset() {
 
     _images.clear();
 
-    const VkSwapchainKHR old = _swapchain;
+    VkHandle<VkSwapchainKHR> old;
+    *old.get_ptr_for_init() = _swapchain;
 
     if(build_swapchain()) {
-        destroy_graphic_resource(old);
+        destroy_graphic_resource(std::move(old));
         return true;
     }
 
@@ -192,8 +193,8 @@ Swapchain::~Swapchain() {
 
     destroy_sync_objects();
 
-    destroy_graphic_resource(_swapchain);
-    destroy_graphic_resource(_surface);
+    destroy_graphic_resource(std::move(_swapchain));
+    destroy_graphic_resource(std::move(_surface));
 }
 
 bool Swapchain::build_swapchain() {
@@ -231,9 +232,9 @@ bool Swapchain::build_swapchain() {
             create_info.imageExtent = capabilities.currentExtent;
             create_info.minImageCount = compute_image_count(capabilities);
             create_info.presentMode = present_mode(_surface);
-            create_info.oldSwapchain = _swapchain;
+            create_info.oldSwapchain = _swapchain.consume();
         }
-        vk_check(vkCreateSwapchainKHR(vk_device(), &create_info, vk_allocation_callbacks(), &_swapchain.get()));
+        vk_check(vkCreateSwapchainKHR(vk_device(), &create_info, vk_allocation_callbacks(), _swapchain.get_ptr_for_init()));
     }
 
     y_profile_zone("image setup");
@@ -244,24 +245,8 @@ bool Swapchain::build_swapchain() {
     core::FixedArray<VkImage> images(image_count);
     vk_check(vkGetSwapchainImagesKHR(vk_device(), _swapchain, &image_count, images.data()));
 
-    for(auto image : images) {
-        const VkImageView view = create_image_view(image, _color_format.vk_format());
-
-        struct SwapchainImageMemory : DeviceMemory {
-            SwapchainImageMemory() : DeviceMemory(vk_null(), 0, 0) {
-            }
-        };
-
-        auto swapchain_image = SwapchainImage();
-
-        swapchain_image._memory = SwapchainImageMemory();
-
-        swapchain_image._size = math::Vec3ui(_size, 1);
-        swapchain_image._format = _color_format;
-        swapchain_image._usage = SwapchainImageUsage;
-
-        swapchain_image._image = image;
-        swapchain_image._view = view;
+    for(const VkImage image : images) {
+        auto view = create_image_view(image, _color_format.vk_format());
 
 #ifdef Y_DEBUG
         if(const auto* debug = debug_utils()) {
@@ -269,6 +254,22 @@ bool Swapchain::build_swapchain() {
             debug->set_resource_name(view, "Swapchain Image View");
         }
 #endif
+
+        struct SwapchainImageMemory : DeviceMemory {
+            SwapchainImageMemory() : DeviceMemory(vk_null(), 0, 0) {
+            }
+        };
+
+        VkHandle<VkImage> image_handle;
+        *image_handle.get_ptr_for_init() = image;
+
+        auto swapchain_image = SwapchainImage();
+        swapchain_image._memory = SwapchainImageMemory();
+        swapchain_image._size = math::Vec3ui(_size, 1);
+        swapchain_image._format = _color_format;
+        swapchain_image._usage = SwapchainImageUsage;
+        swapchain_image._image = std::move(image_handle);
+        swapchain_image._view = std::move(view);
 
         _images << std::move(swapchain_image);
     }
@@ -292,9 +293,9 @@ void Swapchain::build_sync_objects() {
 
     for(usize i = 0; i != image_count(); ++i) {
         auto& sync = _sync_objects.emplace_back();
-        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &sync.render_complete));
-        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), &sync.image_available));
-        vk_check(vkCreateFence(vk_device(), &fence_create_info, vk_allocation_callbacks(), &sync.fence));
+        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), sync.render_complete.get_ptr_for_init()));
+        vk_check(vkCreateSemaphore(vk_device(), &semaphore_create_info, vk_allocation_callbacks(), sync.image_available.get_ptr_for_init()));
+        vk_check(vkCreateFence(vk_device(), &fence_create_info, vk_allocation_callbacks(), sync.fence.get_ptr_for_init()));
 
         _image_fences.emplace_back();
     }
@@ -304,12 +305,12 @@ void Swapchain::build_sync_objects() {
 }
 
 void Swapchain::destroy_sync_objects() {
-    for(const auto& sync : _sync_objects) {
-        vk_check(vkWaitForFences(vk_device(), 1, &sync.fence, true, u64(-1)));
+    for(auto& sync : _sync_objects) {
+        vk_check(vkWaitForFences(vk_device(), 1, &sync.fence.get(), true, u64(-1)));
 
-        destroy_graphic_resource(sync.render_complete);
-        destroy_graphic_resource(sync.image_available);
-        destroy_graphic_resource(sync.fence);
+        destroy_graphic_resource(std::move(sync.render_complete));
+        destroy_graphic_resource(std::move(sync.image_available));
+        destroy_graphic_resource(std::move(sync.fence));
     }
 
     _sync_objects.clear();
@@ -330,7 +331,7 @@ core::Result<FrameToken> Swapchain::next_frame() {
     const usize current_frame_index = _frame_id % image_count();
     FrameSyncObjects& current_frame_sync = _sync_objects[current_frame_index];
 
-    vk_check(vkWaitForFences(vk_device(), 1, &current_frame_sync.fence, true, u64(-1)));
+    vk_check(vkWaitForFences(vk_device(), 1, &current_frame_sync.fence.get(), true, u64(-1)));
 
     u32 image_index = u32(-1);
     {
@@ -364,7 +365,7 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, c
     FrameSyncObjects& current_frame_sync = _sync_objects[current_frame_index];
 
     _image_fences[frame_index] = current_frame_sync.fence;
-    vk_check(vkResetFences(vk_device(), 1, &current_frame_sync.fence));
+    vk_check(vkResetFences(vk_device(), 1, &current_frame_sync.fence.get()));
 
     queue.submit(std::move(recorder), current_frame_sync.image_available, current_frame_sync.render_complete, current_frame_sync.fence);
 
@@ -378,7 +379,7 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, c
             present_info.pSwapchains = &_swapchain.get();
             present_info.pImageIndices = &token.image_index;
             present_info.waitSemaphoreCount = 1;
-            present_info.pWaitSemaphores = &current_frame_sync.render_complete;
+            present_info.pWaitSemaphores = &current_frame_sync.render_complete.get();
         }
 
         if(vk_swapchain_out_of_date(vkQueuePresentKHR(queue.vk_queue(), &present_info))) {

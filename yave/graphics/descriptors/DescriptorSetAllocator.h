@@ -114,7 +114,7 @@ class DescriptorSetPool : NonMovable {
 
         std::array<VkDescriptorSet, pool_size> _sets;
         VkHandle<VkDescriptorPool> _pool;
-        VkHandle<VkDescriptorSetLayout> _layout;
+        NotOwner<VkDescriptorSetLayout> _layout;
 
         usize _inline_blocks = 0;
         u64 _descriptor_buffer_size = 0;

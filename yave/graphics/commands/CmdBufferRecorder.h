@@ -31,20 +31,26 @@ SOFTWARE.
 
 namespace yave {
 
-class CmdBufferRegion {
+class CmdBufferRegion : NonCopyable {
     public:
         CmdBufferRegion() = default;
-        CmdBufferRegion(CmdBufferRegion&&) = default;
-        CmdBufferRegion& operator=(CmdBufferRegion&&) = default;
-
         ~CmdBufferRegion();
+
+        CmdBufferRegion(CmdBufferRegion&& other) {
+            std::swap(_buffer, other._buffer);
+        }
+
+        CmdBufferRegion& operator=(CmdBufferRegion&& other) {
+            std::swap(_buffer, other._buffer);
+            return *this;
+        }
 
     private:
         friend class CmdBufferRecorder;
 
         CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color);
 
-        VkHandle<VkCommandBuffer> _buffer = {};
+        VkCommandBuffer _buffer = {};
 };
 
 class RenderPassRecorder final : NonMovable {

@@ -117,12 +117,12 @@ DebugUtils::DebugUtils(VkInstance instance) : _instance(instance) {
         create_info.pfnUserCallback = vulkan_message_callback;
     }
 
-    vk_check(create_messenger(_instance, &create_info, vk_allocation_callbacks(), &_messenger.get()));
+    vk_check(create_messenger(_instance, &create_info, vk_allocation_callbacks(), _messenger.get_ptr_for_init()));
 }
 
 DebugUtils::~DebugUtils() {
     const auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(_instance, "vkDestroyDebugUtilsMessengerEXT"));
-    destroy_messenger(_instance, _messenger, vk_allocation_callbacks());
+    destroy_messenger(_instance, _messenger.consume(), vk_allocation_callbacks());
 }
 
 void DebugUtils::begin_region(VkCommandBuffer buffer, const char* name, const math::Vec4& color) const {
@@ -145,6 +145,7 @@ void DebugUtils::set_name(u64 resource, VkObjectType type, const char *name) con
     name_info.objectHandle = resource;
     name_info.pObjectName = name;
 
+    y_debug_assert(resource);
     y_debug_assert(_set_object_name);
     vk_check(_set_object_name(vk_device(), &name_info));
 }

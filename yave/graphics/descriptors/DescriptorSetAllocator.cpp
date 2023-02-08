@@ -99,11 +99,11 @@ DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding
         create_info.bindingCount = u32(bindings.size());
         create_info.pBindings = bindings.data();
     }
-    vk_check(vkCreateDescriptorSetLayout(vk_device(), &create_info, vk_allocation_callbacks(), &_layout.get()));
+    vk_check(vkCreateDescriptorSetLayout(vk_device(), &create_info, vk_allocation_callbacks(), _layout.get_ptr_for_init()));
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
-    destroy_graphic_resource(_layout);
+    destroy_graphic_resource(std::move(_layout));
 }
 
 bool DescriptorSetLayout::is_null() const {
@@ -128,7 +128,7 @@ VkDescriptorSetLayout DescriptorSetLayout::vk_descriptor_set_layout() const {
 
 
 
-static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout, usize set_count) {
+static VkHandle<VkDescriptorPool> create_descriptor_pool(const DescriptorSetLayout& layout, usize set_count) {
     y_profile();
 
     usize sizes_count = 0;
@@ -160,8 +160,8 @@ static VkDescriptorPool create_descriptor_pool(const DescriptorSetLayout& layout
         create_info.pNext = &inline_create_info;
     }
 
-    VkDescriptorPool pool = {};
-    vk_check(vkCreateDescriptorPool(vk_device(), &create_info, vk_allocation_callbacks(), &pool));
+    VkHandle<VkDescriptorPool> pool;
+    vk_check(vkCreateDescriptorPool(vk_device(), &create_info, vk_allocation_callbacks(), pool.get_ptr_for_init()));
     return pool;
 }
 
@@ -194,7 +194,7 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
 
 DescriptorSetPool::~DescriptorSetPool() {
     y_debug_assert(_taken.none());
-    destroy_graphic_resource(_pool);
+    destroy_graphic_resource(std::move(_pool));
 }
 
 u64 DescriptorSetPool::inline_sub_buffer_alignment() const {

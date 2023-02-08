@@ -203,12 +203,12 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         depth_testing.depthCompareOp = depth_mode(mat_data._depth_mode);
     }
 
-    VkPipelineLayout pipeline_layout = {};
+    VkHandle<VkPipelineLayout> pipeline_layout;
     {
         VkPipelineLayoutCreateInfo create_info = vk_struct();
         create_info.setLayoutCount = u32(program.vk_descriptor_layouts().size());
         create_info.pSetLayouts = program.vk_descriptor_layouts().data();
-        vk_check(vkCreatePipelineLayout(vk_device(), &create_info, vk_allocation_callbacks(), &pipeline_layout));
+        vk_check(vkCreatePipelineLayout(vk_device(), &create_info, vk_allocation_callbacks(), pipeline_layout.get_ptr_for_init()));
     }
 
     const std::array dynamics = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
@@ -236,9 +236,9 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         create_info.basePipelineIndex = -1;
     }
 
-    VkPipeline pipeline = {};
-    vk_check(vkCreateGraphicsPipelines(vk_device(), vk_null(), 1, &create_info, vk_allocation_callbacks(), &pipeline));
-    return GraphicPipeline(pipeline, pipeline_layout);
+    VkHandle<VkPipeline> pipeline;
+    vk_check(vkCreateGraphicsPipelines(vk_device(), vk_null(), 1, &create_info, vk_allocation_callbacks(), pipeline.get_ptr_for_init()));
+    return GraphicPipeline(std::move(pipeline), std::move(pipeline_layout));
 }
 
 }
