@@ -61,7 +61,6 @@ static core::Vector<ecs::EntityId> all_ids(const EditorWorld& world = current_wo
 void register_editor_tests(ImGuiTestEngine* engine) {
     log_msg("Registering ImGui tests", Log::Debug);
 
-#if 0
     IM_REGISTER_TEST(engine, "tests", "new scene")->TestFunc = [](ImGuiTestContext* ctx) {
         ctx->SetRef("##MainMenuBar");
         ctx->MenuClick("File/New");
@@ -154,7 +153,8 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->MenuClick("File/" ICON_FA_FOLDER " Load");
         IM_CHECK_EQ(entity_count(), 3);
     };
-#endif
+
+#if 0
     IM_REGISTER_TEST(engine, "tests", "clear resources")->TestFunc = [](ImGuiTestContext* ctx) {
         ctx->SetRef("##MainMenuBar");
         ctx->MenuClick("View/ResourceBrowser");
@@ -191,8 +191,8 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
         ctx->WindowClose("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
     };
+#endif
 
-#if 0
     IM_REGISTER_TEST(engine, "tests", "add static mesh")->TestFunc = [](ImGuiTestContext* ctx) {
         const auto ids = all_ids();
         IM_CHECK_NE(ids.size(), 0);
@@ -240,7 +240,6 @@ void register_editor_tests(ImGuiTestEngine* engine) {
             IM_CHECK_STR_EQ(info->DebugLabel, fmt_c_str(ICON_FA_CUBE " shalg###%", id.as_u64()));
         }
     };
-#endif
 }
 
 }
