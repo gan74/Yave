@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2023 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ class CmdBufferPool;
 class CmdBufferRecorder;
 class CmdBufferRegion;
 class CmdQueue;
+class CmdTimingRecorder;
 class ComputeProgram;
 class DebugParams;
 class DebugUtils;
@@ -137,6 +138,9 @@ class Swapchain;
 class SwapchainImage;
 class ThreadLocalDevice;
 class ThreadLocalLifetimeManager;
+class TimeQuery;
+class TimeQueryPool;
+class TimeQueryPoolData;
 class TimelineFence;
 class TransformableComponent;
 class TransientBuffer;
@@ -159,7 +163,6 @@ struct BlurSettings;
 struct Bone;
 struct BoneKey;
 struct BoneTransform;
-struct Box;
 struct BufferCreateInfo;
 struct BufferData;
 struct Contants;
@@ -170,6 +173,7 @@ struct DownsamplePass;
 struct EmptyResource;
 struct EnclosingSphere;
 struct EntryInfo;
+struct Event;
 struct ExposurePass;
 struct FrameGraphBufferId;
 struct FrameGraphImageId;
@@ -186,7 +190,6 @@ struct ImageCreateInfo;
 struct ImageSampler;
 struct InlineBlock;
 struct InlineStorage;
-struct KeepAlive;
 struct KeyEqual;
 struct KeyHash;
 struct LayoutPools;
@@ -199,6 +202,7 @@ struct Monitor;
 struct OneShotScript;
 struct PackedVertex;
 struct Plane;
+struct Pool;
 struct Region;
 struct RendererSettings;
 struct ResourceCreateInfo;

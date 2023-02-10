@@ -75,6 +75,8 @@ DeviceProperties PhysicalDevice::device_properties() const {
 
     properties.max_inline_uniform_size = _properties_1_3.maxInlineUniformBlockSize;
 
+    properties.timestamp_period = limits.timestampPeriod;
+
     return properties;
 }
 

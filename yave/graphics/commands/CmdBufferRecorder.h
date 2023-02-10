@@ -36,21 +36,18 @@ class CmdBufferRegion : NonCopyable {
         CmdBufferRegion() = default;
         ~CmdBufferRegion();
 
-        CmdBufferRegion(CmdBufferRegion&& other) {
-            std::swap(_buffer, other._buffer);
-        }
+        CmdBufferRegion(CmdBufferRegion&& other);
+        CmdBufferRegion& operator=(CmdBufferRegion&& other);
 
-        CmdBufferRegion& operator=(CmdBufferRegion&& other) {
-            std::swap(_buffer, other._buffer);
-            return *this;
-        }
+        void swap(CmdBufferRegion& other);
 
     private:
         friend class CmdBufferRecorder;
 
-        CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color);
+        CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color);
 
         VkCommandBuffer _buffer = {};
+        CmdTimingRecorder* _time_recorder = nullptr;
 };
 
 class RenderPassRecorder final : NonMovable {
@@ -79,7 +76,7 @@ class RenderPassRecorder final : NonMovable {
         void bind_per_instance_attrib_buffers(core::Span<AttribSubBuffer> per_instance);
 
         // proxies from _cmd_buffer
-        CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
+        CmdBufferRegion region(const char* name, CmdTimingRecorder* time_rec = nullptr, const math::Vec4& color = math::Vec4());
 
         VkCommandBuffer vk_cmd_buffer() const;
 
@@ -120,7 +117,7 @@ class CmdBufferRecorder final : NonCopyable {
         VkCommandBuffer vk_cmd_buffer() const;
         ResourceFence resource_fence() const;
 
-        CmdBufferRegion region(const char* name, const math::Vec4& color = math::Vec4());
+        CmdBufferRegion region(const char* name, CmdTimingRecorder* time_rec = nullptr, const math::Vec4& color = math::Vec4());
 
         bool is_inside_renderpass() const;
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);

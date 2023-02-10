@@ -31,6 +31,8 @@ SOFTWARE.
 #include <yave/graphics/images/ImageView.h>
 #include <yave/scene/SceneView.h>
 
+#include <deque>
+
 namespace editor {
 
 class EngineView final : public Widget {
@@ -54,6 +56,8 @@ class EngineView final : public Widget {
 
         EngineView();
         ~EngineView() override;
+
+        CmdTimingRecorder* timing_recorder() const;
 
     protected:
         void on_gui() override;
@@ -79,7 +83,7 @@ class EngineView final : public Widget {
         RenderView _view = RenderView::Lit;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
-        TextureView _output_view;
+        std::deque<std::unique_ptr<CmdTimingRecorder>> _time_recs;
 
         EditorRendererSettings _settings;
 

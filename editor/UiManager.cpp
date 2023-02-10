@@ -275,6 +275,10 @@ void UiManager::close_all() {
     _ids.clear();
 }
 
+core::Span<std::unique_ptr<Widget>> UiManager::widgets() const {
+    return _widgets;
+}
+
 void UiManager::set_widget_id(Widget* widget) {
     WidgetIdStack& ids = _ids[typeid(*widget)];
     if(!ids.released.is_empty()) {

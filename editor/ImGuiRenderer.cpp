@@ -99,7 +99,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
         return;
     }
 
-    const auto region = recorder.region("ImGui render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+    const auto region = recorder.region("ImGui render", nullptr, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
 
     const auto next_power_of_2 = [](usize size) { return 2 << log2ui(size); };
     const usize imgui_index_buffer_size = next_power_of_2(draw_data->TotalIdxCount);

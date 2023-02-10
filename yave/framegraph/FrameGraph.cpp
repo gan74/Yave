@@ -168,13 +168,13 @@ void FrameGraph::end_region(usize index) {
 
 
 
-void FrameGraph::render(CmdBufferRecorder& recorder) {
+void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec) {
     y_profile();
     Y_TODO(Pass culling)
     Y_TODO(Ensure that pass are always recorded in order)
 
     // -------------------- region stuff --------------------
-    const auto frame_region = recorder.region("Framegraph render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+    const auto frame_region = recorder.region("Framegraph render", time_rec, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
 
     struct RuntimeRegion {
         Region region;
@@ -198,7 +198,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) {
         while(true) {
             if(next_region_index < _regions.size() && _regions[next_region_index].begin_pass == pass._index) {
                 const math::Vec4 color = next_color();
-                regions.emplace_back(RuntimeRegion{_regions[next_region_index], recorder.region(_regions[next_region_index].name.data(), color), color});
+                regions.emplace_back(RuntimeRegion{_regions[next_region_index], recorder.region(_regions[next_region_index].name.data(), time_rec, color), color});
                 ++next_region_index;
             } else {
                 break;
@@ -206,7 +206,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder) {
         }
 
         const math::Vec4 color = regions.is_empty() ? next_color() : regions.last().next_color();
-        return recorder.region(pass.name().data(), color);
+        return recorder.region(pass.name().data(), time_rec, color);
     };
 
     auto end_pass_region = [&](const FrameGraphPass& pass) {

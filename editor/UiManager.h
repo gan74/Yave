@@ -55,6 +55,8 @@ class UiManager : NonMovable {
         void open_default_widgets();
         void close_all();
 
+        core::Span<std::unique_ptr<Widget>> widgets() const;
+
     private:
         void update_fps_counter();
         void draw_fps_counter();

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2023 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,7 @@ class FileRenamer;
 class FileSystemView;
 class FunctionWidget;
 class Gizmo;
+class GpuProfiler;
 class HoudiniCameraController;
 class ImGuiPlatform;
 class ImGuiRenderer;
@@ -60,11 +61,13 @@ class ScriptPanel;
 class Settings;
 class ThumbmailRenderer;
 class UiManager;
+class UiTexture;
 class UndoStack;
 class Widget;
 struct Axis;
 struct CVar;
 struct CameraSettings;
+struct Data;
 struct DebugSettings;
 struct EditorAction;
 struct EditorPass;

@@ -35,6 +35,8 @@ struct DeviceProperties {
     u32 max_memory_allocations;
 
     u32 max_inline_uniform_size;
+
+    float timestamp_period;
 };
 
 }

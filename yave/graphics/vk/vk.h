@@ -381,6 +381,14 @@ class VkHandle {
             return !_t;
         }
 
+        bool operator==(const VkHandle& other) const {
+            return _t == other._t;
+        }
+
+        bool operator!=(const VkHandle& other) const {
+            return !operator==(other);
+        }
+
     private:
         T _t = {};
 

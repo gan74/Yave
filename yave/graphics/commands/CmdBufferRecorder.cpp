@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferRecorder.h"
+#include "CmdTimingRecorder.h"
 
 #include <yave/material/Material.h>
 #include <yave/material/MaterialTemplate.h>
@@ -44,13 +45,39 @@ CmdBufferRegion::~CmdBufferRegion() {
         if(const DebugUtils* debug = debug_utils()) {
             debug->end_region(_buffer);
         }
+        if(_time_recorder) {
+            y_debug_assert(_time_recorder->vk_cmd_buffer() == _buffer);
+            _time_recorder->end_zone();
+        }
     }
 }
 
-CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, const char* name, const math::Vec4& color) : _buffer(cmd_buffer.vk_cmd_buffer()) {
+CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color) :
+        _buffer(cmd_buffer.vk_cmd_buffer()),
+        _time_recorder(time_rec) {
+
     if(const DebugUtils* debug = debug_utils()) {
         debug->begin_region(_buffer, name, color);
     }
+
+    if(_time_recorder) {
+        y_debug_assert(_time_recorder->vk_cmd_buffer() == _buffer);
+        _time_recorder->begin_zone(name);
+    }
+}
+
+CmdBufferRegion::CmdBufferRegion(CmdBufferRegion&& other) {
+    swap(other);
+}
+
+CmdBufferRegion& CmdBufferRegion::operator=(CmdBufferRegion&& other) {
+    swap(other);
+    return *this;
+}
+
+void CmdBufferRegion::swap(CmdBufferRegion& other) {
+    std::swap(_buffer, other._buffer);
+    std::swap(_time_recorder, other._time_recorder);
 }
 
 
@@ -187,8 +214,8 @@ void RenderPassRecorder::bind_per_instance_attrib_buffers(core::Span<AttribSubBu
     vkCmdBindVertexBuffers(vk_cmd_buffer(), ShaderProgram::per_instance_binding, attrib_count, buffers.data(), offsets.data());
 }
 
-CmdBufferRegion RenderPassRecorder::region(const char* name, const math::Vec4& color) {
-    return _cmd_buffer.region(name, color);
+CmdBufferRegion RenderPassRecorder::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
+    return _cmd_buffer.region(name, time_rec, color);
 }
 
 VkCommandBuffer RenderPassRecorder::vk_cmd_buffer() const {
@@ -278,8 +305,8 @@ void CmdBufferRecorder::check_no_renderpass() const {
     y_always_assert(!_render_pass, "Command can not be used or destoryed while it has a RenderPassRecorder.");
 }
 
-CmdBufferRegion CmdBufferRecorder::region(const char* name, const math::Vec4& color) {
-    return CmdBufferRegion(*this, name, color);
+CmdBufferRegion CmdBufferRecorder::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
+    return CmdBufferRegion(*this, time_rec, name, color);
 }
 
 RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {

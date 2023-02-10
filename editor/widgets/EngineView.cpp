@@ -35,6 +35,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdTimingRecorder.h>
 #include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/utils/color.h>
@@ -98,6 +99,13 @@ EngineView::~EngineView() {
     application()->unset_scene_view(&_scene_view);
 }
 
+CmdTimingRecorder* EngineView::timing_recorder() const {
+    if(!_time_recs.empty() && _time_recs.front()->is_data_ready()) {
+        return _time_recs.front().get();
+    }
+    return nullptr;
+}
+
 bool EngineView::is_mouse_inside() const {
     const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos) - math::Vec2(ImGui::GetWindowPos());
     const auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
@@ -126,10 +134,17 @@ void EngineView::after_gui() {
 }
 
 void EngineView::draw(CmdBufferRecorder& recorder) {
-    UiTexture output;
+    while(_time_recs.size() >= 2) {
+        if(_time_recs[0] ->is_data_ready() && _time_recs[1] ->is_data_ready()) {
+            _time_recs.pop_front();
+        } else {
+            break;
+        }
+    }
 
     const math::Vec2ui output_size = _resolution < 0 ? content_size() : standard_resolutions()[_resolution].second;
 
+    UiTexture output;
     FrameGraph graph(_resource_pool);
     const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, _settings);
     {
@@ -162,7 +177,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     }
 
     if(!_disable_render) {
-        graph.render(recorder);
+        CmdTimingRecorder* time_rec = _time_recs.emplace_back(std::make_unique<CmdTimingRecorder>(recorder)).get();
+        graph.render(recorder, time_rec);
     }
 
     if(output) {

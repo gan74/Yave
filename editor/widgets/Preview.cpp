@@ -189,7 +189,7 @@ void Preview::on_gui() {
 
 
         CmdBufferRecorder& recorder = application()->recorder();
-        const auto region = recorder.region("Peview render", math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+        const auto region = recorder.region("Peview render", nullptr, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
         graph.render(recorder);
     }
 

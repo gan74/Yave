@@ -105,7 +105,7 @@ class FrameGraph : NonMovable {
 
         FrameGraphRegion region(std::string_view name);
 
-        void render(CmdBufferRecorder& recorder);
+        void render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec = nullptr);
 
         FrameGraphPassBuilder add_pass(std::string_view name);
         FrameGraphComputePassBuilder add_compute_pass(std::string_view name);
