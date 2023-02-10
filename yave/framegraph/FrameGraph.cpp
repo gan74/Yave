@@ -282,9 +282,6 @@ void FrameGraph::render(CmdBufferRecorder& recorder) {
         CmdBufferRecorder prepare = create_disposable_cmd_buffer();
         _resources->flush_mapped_buffers(prepare);
         command_queue().submit(std::move(prepare));
-
-        Y_TODO(Only keep alive cpu mapped buffers)
-        recorder.keep_alive(std::move(_resources));
     }
 
     Y_TODO(Put resource barriers at the end of the graph to prevent clash with whatever comes after)

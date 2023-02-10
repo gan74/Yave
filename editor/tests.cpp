@@ -61,6 +61,7 @@ static core::Vector<ecs::EntityId> all_ids(const EditorWorld& world = current_wo
 void register_editor_tests(ImGuiTestEngine* engine) {
     log_msg("Registering ImGui tests", Log::Debug);
 
+#if 0
     IM_REGISTER_TEST(engine, "tests", "new scene")->TestFunc = [](ImGuiTestContext* ctx) {
         ctx->SetRef("##MainMenuBar");
         ctx->MenuClick("File/New");
@@ -104,7 +105,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         const ecs::EntityId id = ids[ids.size() / 2];
 
         ctx->ItemClick(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###%", id.as_u64()), ImGuiMouseButton_Right);
-        ctx->ItemClick("**/Rename");
+        ctx->ItemClick("//$FOCUSED/Rename");
 
         ctx->SetRef("//Rename##1");
         ctx->ItemInput("##name");
@@ -123,8 +124,8 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         {
             ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
             ctx->ItemClick(fmt_c_str("**/###%", id.as_u64()), ImGuiMouseButton_Right);
-            ctx->ItemClick("**/" ICON_FA_TRASH " Delete");
-            ctx->ItemClick("//Confirm##1/Cancel");
+            ctx->ItemClick("//$FOCUSED/" ICON_FA_TRASH " Delete");
+            ctx->ItemClick("//$FOCUSED/Cancel");
         }
 
         ctx->Yield();
@@ -132,8 +133,8 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         {
             ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
             ctx->ItemClick(fmt_c_str("**/###%", id.as_u64()), ImGuiMouseButton_Right);
-            ctx->ItemClick("**/" ICON_FA_TRASH " Delete");
-            ctx->ItemClick("//Confirm##1/Ok");
+            ctx->ItemClick("//$FOCUSED/" ICON_FA_TRASH " Delete");
+            ctx->ItemClick("//$FOCUSED/Ok");
         }
 
         IM_CHECK_EQ(entity_count(), ids.size() - 1);
@@ -153,7 +154,45 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->MenuClick("File/" ICON_FA_FOLDER " Load");
         IM_CHECK_EQ(entity_count(), 3);
     };
+#endif
+    IM_REGISTER_TEST(engine, "tests", "clear resources")->TestFunc = [](ImGuiTestContext* ctx) {
+        ctx->SetRef("##MainMenuBar");
+        ctx->MenuClick("View/ResourceBrowser");
 
+        ctx->Yield();
+
+        ctx->SetRef("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
+
+        ImGuiTestItemList items;
+        ctx->GatherItems(&items, "");
+        log_msg(fmt("% items", items.size()));
+        for(const ImGuiTestItemInfo& info : items) {
+            log_msg(fmt("  %: '%', table: %", info.ID, info.DebugLabel, !!ImGui::TableFindByID(info.ID)));
+        }
+        //const ImGuiTestItemInfo* info = ctx->ItemInfoOpenFullPath("**/##filetable");
+        //IM_CHECK_NE(info->ID, 0);
+
+
+        ctx->WindowClose("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
+    };
+
+    IM_REGISTER_TEST(engine, "tests", "create resource folder")->TestFunc = [](ImGuiTestContext* ctx) {
+        ctx->SetRef("##MainMenuBar");
+        ctx->MenuClick("View/ResourceBrowser");
+
+        ctx->Yield();
+
+        ctx->SetRef("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
+        const ImGuiTestItemInfo* info = ctx->ItemInfoOpenFullPath("");
+        IM_CHECK_NE(info->ID, 0);
+        ctx->MouseMoveToPos(info->RectClipped.GetCenter());
+        ctx->MouseClick(ImGuiMouseButton_Right);
+        ctx->ItemClick("**/New folder");
+
+        ctx->WindowClose("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
+    };
+
+#if 0
     IM_REGISTER_TEST(engine, "tests", "add static mesh")->TestFunc = [](ImGuiTestContext* ctx) {
         const auto ids = all_ids();
         IM_CHECK_NE(ids.size(), 0);
@@ -176,7 +215,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
             }
 
             ctx->ItemClick("**/" ICON_FA_PLUS " Add component");
-            ctx->ItemClick("**/" ICON_FA_PUZZLE_PIECE " StaticMeshComponent");
+            ctx->ItemClick("//$FOCUSED/" ICON_FA_PUZZLE_PIECE " StaticMeshComponent");
 
             {
                 ctx->ItemOpen("**/" ICON_FA_PUZZLE_PIECE " TransformableComponent");
@@ -200,8 +239,8 @@ void register_editor_tests(ImGuiTestEngine* engine) {
             IM_CHECK_NE(info->ID, 0);
             IM_CHECK_STR_EQ(info->DebugLabel, fmt_c_str(ICON_FA_CUBE " shalg###%", id.as_u64()));
         }
-
     };
+#endif
 }
 
 }

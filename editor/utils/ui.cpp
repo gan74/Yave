@@ -42,6 +42,8 @@ SOFTWARE.
 
 namespace editor {
 
+core::Vector<std::unique_ptr<UiTexture::Data>> UiTexture::_all_textures = {};
+
 ImGuiKey to_imgui_key(Key k) {
     if(u32(k) >= u32(Key::A) && u32(k) <= u32(Key::Z)) {
         return ImGuiKey(ImGuiKey_A + (u32(k) - u32(Key::A)));
@@ -212,7 +214,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     bool ret = false;
     if(is_valid) {
         if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
-            ret = ImGui::ImageButton("##tex", const_cast<TextureView*>(img), button_size);
+            ret = ImGui::ImageButton("##tex", UiTexture(*img).to_imgui(), button_size);
         } else {
             ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
         }

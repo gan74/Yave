@@ -435,11 +435,14 @@ void CmdBufferRecorder::full_barrier() {
 }
 
 void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
+    y_always_assert((src.usage() & ImageUsage::TransferSrcBit) == ImageUsage::TransferSrcBit, "src should have TransferSrcBit usage");
+    y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
+
     {
         const std::array image_barriers = {
-                ImageBarrier::transition_to_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
-                ImageBarrier::transition_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL),
-            };
+            ImageBarrier::transition_to_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
+            ImageBarrier::transition_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL),
+        };
         barriers(image_barriers);
     }
 
@@ -463,9 +466,9 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
 
     {
         const std::array image_barriers = {
-                ImageBarrier::transition_from_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
-                ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-            };
+            ImageBarrier::transition_from_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
+            ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        };
         barriers(image_barriers);
     }
 }
@@ -481,18 +484,6 @@ void CmdBufferRecorder::copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
     }
 
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
-}
-
-void CmdBufferRecorder::blit(const SrcCopyImage& src, const DstCopyImage& dst) {
-    VkImageBlit blit = {};
-    {
-        blit.srcSubresource.aspectMask = src.format().vk_aspect();
-        blit.srcSubresource.layerCount = 1;
-        blit.dstSubresource.aspectMask = dst.format().vk_aspect();
-        blit.dstSubresource.layerCount = 1;
-    }
-
-    vkCmdBlitImage(vk_cmd_buffer(), src.vk_image(), vk_image_layout(src.usage()), dst.vk_image(), vk_image_layout(dst.usage()), 1, &blit, VK_FILTER_LINEAR);
 }
 
 void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst) {

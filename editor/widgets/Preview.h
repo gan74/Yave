@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 
+#include <yave/graphics/images/ImageView.h>
 #include <yave/assets/AssetPtr.h>
 #include <yave/scene/SceneView.h>
 

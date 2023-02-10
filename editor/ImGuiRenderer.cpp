@@ -83,8 +83,6 @@ ImGuiRenderer::ImGuiRenderer() :
         _font(load_font()),
         _font_view(_font),
         _material(create_imgui_material_data()) {
-
-    ImGui::GetIO().Fonts->TexID = &_font_view;
 }
 
 
@@ -121,20 +119,21 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
     uniform[0] = viewport_size;
     uniform[1] = viewport_offset;
 
-    const auto create_descriptor_set = [&](const void* data) {
-        const auto* tex = static_cast<const TextureView*>(data);
+    const auto create_descriptor_set = [&](const TextureView* tex) {
         return DescriptorSet(std::array{Descriptor(*tex, SamplerType::LinearClamp), Descriptor(uniform_buffer)});
     };
 
     const DescriptorSetBase default_set = create_descriptor_set(&_font_view);
 
-    const auto setup_state = [&](const void* tex) {
+    const auto setup_state = [&](const TextureView* tex) {
         recorder.bind_material_template(&_material, tex ? create_descriptor_set(tex) : default_set);
     };
 
     usize index_offset = 0;
     usize vertex_offset = 0;
-    const void* current_tex = nullptr;
+    ImTextureID current_tex = 0;
+
+    setup_state(nullptr);
 
     recorder.bind_index_buffer(index_buffer);
     recorder.bind_attrib_buffers({vertex_buffer});
@@ -162,15 +161,12 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
             const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
             recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
 
-            // if(cmd.UserCallback) {
-            //     cmd.UserCallback(recorder, cmd.UserCallbackData);
-            //     current_tex = nullptr;
-            // }
-            y_debug_assert(!cmd.UserCallback);
+            y_always_assert(!cmd.UserCallback, "User callback not supported");
 
             if(cmd.ElemCount) {
                 if(current_tex != cmd.TextureId) {
-                    setup_state(current_tex = cmd.TextureId);
+                    current_tex = cmd.TextureId;
+                    setup_state(UiTexture::view(current_tex));
                 }
 
                 VkDrawIndexedIndirectCommand command = {};

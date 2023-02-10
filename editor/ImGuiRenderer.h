@@ -44,7 +44,7 @@ class ImGuiRenderer {
         Texture _font;
         TextureView _font_view;
 
-        // We could go through the editor resources,
+        // We could go through the editor resources
         MaterialTemplate _material;
 };
 

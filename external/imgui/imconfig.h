@@ -85,7 +85,11 @@
 
 #define IM_DEBUG_BREAK() y_breakpoint
 
-//#define ImTextureID const void*
+
+
+
+
+#define ImTextureID y::u64
 
 
 #define IMGUI_TEST_ENGINE_ENABLE_STD_FUNCTION 1

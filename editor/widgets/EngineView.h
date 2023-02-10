@@ -28,6 +28,7 @@ SOFTWARE.
 #include <editor/Widget.h>
 #include <editor/renderer/EditorRenderer.h>
 
+#include <yave/graphics/images/ImageView.h>
 #include <yave/scene/SceneView.h>
 
 namespace editor {
@@ -78,6 +79,7 @@ class EngineView final : public Widget {
         RenderView _view = RenderView::Lit;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+        TextureView _output_view;
 
         EditorRendererSettings _settings;
 

@@ -53,7 +53,7 @@ TransientImage<> FrameGraphResourcePool::create_image(ImageFormat format, const 
     }
 
     y_profile_zone("create image");
-    return TransientImage<>(format, usage, size);;
+    return TransientImage<>(format, usage, size);
 }
 
 TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory) {

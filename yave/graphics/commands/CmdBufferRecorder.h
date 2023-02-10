@@ -88,10 +88,6 @@ class RenderPassRecorder final : NonMovable {
         void set_viewport(const Viewport& vp);
         void set_scissor(const math::Vec2i& offset, const math::Vec2ui& size);
 
-
-        template<typename T>
-        void keep_alive(T&& t);
-
     private:
         friend class CmdBufferRecorder;
 
@@ -141,19 +137,10 @@ class CmdBufferRecorder final : NonCopyable {
         void full_barrier();
 
 
-
         Y_TODO(Const all this)
         void barriered_copy(const ImageBase& src,  const ImageBase& dst);
         void copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
-        //void copy(const SrcCopyImage& src,  const DstCopyImage& dst);
-        void blit(const SrcCopyImage& src,  const DstCopyImage& dst);
 
-
-
-        template<typename T>
-        void keep_alive(T&& t) {
-            _data->keep_alive(y_fwd(t));
-        }
 
     private:
         friend class ImageBase;
@@ -177,12 +164,6 @@ class CmdBufferRecorder final : NonCopyable {
         // this could be in RenderPassRecorder, but putting it here makes erroring easier
         const RenderPass* _render_pass = nullptr;
 };
-
-
-template<typename T>
-void RenderPassRecorder::keep_alive(T&& t) {
-   _cmd_buffer.keep_alive(y_fwd(t));
-}
 
 }
 

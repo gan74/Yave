@@ -168,8 +168,7 @@ void Preview::on_gui() {
 
     update_camera();
 
-    TextureView* output = nullptr;
-
+    UiTexture output;
     {
         RendererSettings settings;
         settings.ssao.method = SSAOSettings::SSAOMethod::None;
@@ -181,12 +180,11 @@ void Preview::on_gui() {
         FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_copy(renderer.lighting.lit);
-        Y_TODO(This is not enough to properly sync)
-        builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
+        builder.add_image_input_usage(output_image, ImageUsage::TransferSrcBit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
-            output = out.get();
-            recorder.keep_alive(std::move(out));
+            const auto& src = self->resources().image_base(output_image);
+            output = UiTexture(src.format(), src.image_size().to<2>());
+            recorder.barriered_copy(src, output.texture());
         });
 
 
@@ -198,7 +196,9 @@ void Preview::on_gui() {
     if(output) {
         const math::Vec2 top_left = ImGui::GetCursorPos();
         const float width = ImGui::GetContentRegionAvail().x;
-        ImGui::Image(output, ImVec2(width, width));
+
+        ImGui::Image(output.to_imgui(), ImVec2(width, width));
+
         const math::Vec2 bottom = ImGui::GetCursorPos();
 
         ImGui::SetCursorPos(top_left + math::Vec2(4.0f));

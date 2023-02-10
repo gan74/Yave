@@ -126,21 +126,21 @@ void EngineView::after_gui() {
 }
 
 void EngineView::draw(CmdBufferRecorder& recorder) {
-    TextureView* output = nullptr;
-    FrameGraph graph(_resource_pool);
+    UiTexture output;
 
     const math::Vec2ui output_size = _resolution < 0 ? content_size() : standard_resolutions()[_resolution].second;
-    const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, _settings);
 
+    FrameGraph graph(_resource_pool);
+    const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, _settings);
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
-        FrameGraphPassBuilder builder = graph.add_pass("ImGui texture pass");
+        FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, output_size);
 
         const auto gbuffer = renderer.renderer.gbuffer;
-        builder.add_image_input_usage(output_image, ImageUsage::TextureBit);
+        builder.add_image_input_usage(output_image, ImageUsage::TransferSrcBit);
         builder.add_color_output(output_image);
         builder.add_inline_input(InlineDescriptor(_view), 0);
         builder.add_uniform_input(renderer.final);
@@ -148,15 +148,17 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white));
-        builder.set_render_func([=, &output](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-                auto out = std::make_unique<TextureView>(self->resources().image<ImageUsage::TextureBit>(output_image));
-                output = out.get();
-                render_pass.keep_alive(std::move(out));
-
+        builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            {
+                auto render_pass = recorder.bind_framebuffer(self->framebuffer());
                 const MaterialTemplate* material = resources()[EditorResources::EngineViewMaterialTemplate];
                 render_pass.bind_material_template(material, self->descriptor_sets()[0]);
                 render_pass.draw_array(3);
-            });
+            }
+            const auto& src = self->resources().image_base(output_image);
+            output = UiTexture(src.format(), src.image_size().to<2>());
+            recorder.barriered_copy(src, output.texture());
+        });
     }
 
     if(!_disable_render) {
@@ -164,7 +166,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     }
 
     if(output) {
-        ImGui::Image(output, content_size());
+        ImGui::Image(output.to_imgui(), content_size());
     }
 }
 

@@ -89,10 +89,12 @@ int main(int argc, char** argv) {
     init_device(instance);
     y_defer(destroy_device());
 
-    ImGuiPlatform platform(multi_viewport, run_tests);
-    EditorApplication editor(&platform);
 
-    editor.exec();
+    {
+        ImGuiPlatform platform(multi_viewport, run_tests);
+        EditorApplication editor(&platform);
+        editor.exec();
+    }
 
     log_msg("exiting...");
 

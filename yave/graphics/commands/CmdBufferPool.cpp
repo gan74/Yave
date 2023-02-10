@@ -86,8 +86,6 @@ void CmdBufferPool::release(CmdBufferData* data) {
     y_debug_assert(data->pool() == this);
     y_debug_assert(data->poll());
 
-    data->recycle_resources();
-
     {
         const auto lock = y_profile_unique_lock(_release_lock);
         _released << data;

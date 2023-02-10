@@ -409,6 +409,8 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport, bool run_tests) {
 ImGuiPlatform::~ImGuiPlatform() {
     y_always_assert(_instance == this, "ImGuiPlatform instance has already been deleted.");
     _instance = nullptr;
+
+    ImGui::DestroyContext();
 }
 
 const ImGuiRenderer* ImGuiPlatform::renderer() const {
@@ -478,6 +480,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
             }
 
             _main_window->swapchain.present(token, std::move(recorder), command_queue());
+            UiTexture::clear_all();
 
             if(_test_engine) {
                 ImGuiTestEngine_PostSwap(_test_engine);
