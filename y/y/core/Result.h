@@ -390,7 +390,8 @@ class [[nodiscard]] Result : NonCopyable {
 
         template<typename A, typename B>
         inline void move(Result<A, B>& other) {
-            if((_is_ok = other.is_ok())) {
+            _is_ok = other.is_ok();
+            if(_is_ok) {
                 if constexpr(!std::is_void_v<decltype(other._value)>) {
                     ::new(&_value) ok_type(std::move(other._value));
                 } else {

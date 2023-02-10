@@ -26,7 +26,8 @@ SOFTWARE.
 
 #include <y/utils/types.h>
 
-#define y_defer(expr) auto y_create_name_with_prefix(defer) = y::ScopeGuard([&]() { expr; })
+#define y_defer_named(expr, name)   auto y_create_name_with_prefix(defer_ ## name) = y::ScopeGuard([&]() { expr; })
+#define y_defer(expr)               auto y_create_name_with_prefix(defer)          = y::ScopeGuard([&]() { expr; })
 
 namespace y {
 

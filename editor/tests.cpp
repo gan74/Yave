@@ -50,7 +50,7 @@ static usize entity_count(const EditorWorld& world = current_world()) {
 
 static core::Vector<ecs::EntityId> all_ids(const EditorWorld& world = current_world()) {
     core::Vector<ecs::EntityId> entities;
-    for(const ecs::EntityId id : current_world().ids()) {
+    for(const ecs::EntityId id : world.ids()) {
         entities << id;
     }
     return entities;
@@ -64,7 +64,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
     IM_REGISTER_TEST(engine, "tests", "new scene")->TestFunc = [](ImGuiTestContext* ctx) {
         ctx->SetRef("##MainMenuBar");
         ctx->MenuClick("File/New");
-        IM_CHECK_EQ(entity_count(), 0);
+        IM_CHECK_EQ(entity_count(), 0_uu);
     };
 
     IM_REGISTER_TEST(engine, "tests", "close all")->TestFunc = [](ImGuiTestContext* ctx) {
@@ -84,7 +84,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
         ImGuiTestItemList items;
         ctx->GatherItems(&items, "##suggestionpopup");
-        IM_CHECK_EQ(items.size(), 1);
+        IM_CHECK_EQ(items.size(), 1_uu);
 
         ctx->MouseMoveToPos(items[0]->RectClipped.GetCenter());
         ctx->MouseClick();
@@ -100,7 +100,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
     IM_REGISTER_TEST(engine, "tests", "rename entity")->TestFunc = [=](ImGuiTestContext* ctx) {
         const auto ids = all_ids();
-        IM_CHECK_NE(ids.size(), 0);
+        IM_CHECK_NE(ids.size(), 0_uu);
         const ecs::EntityId id = ids[ids.size() / 2];
 
         ctx->ItemClick(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###%", id.as_u64()), ImGuiMouseButton_Right);
@@ -117,7 +117,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
     IM_REGISTER_TEST(engine, "tests", "remove entity")->TestFunc = [=](ImGuiTestContext* ctx) {
         const auto ids = all_ids();
-        IM_CHECK_NE(ids.size(), 0);
+        IM_CHECK_NE(ids.size(), 0_uu);
         const ecs::EntityId id = ids[ids.size() / 3];
 
         {
@@ -148,10 +148,10 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->SetRef("##MainMenuBar");
 
         ctx->MenuClick("File/New");
-        IM_CHECK_EQ(entity_count(), 0);
+        IM_CHECK_EQ(entity_count(), 0_uu);
 
         ctx->MenuClick("File/" ICON_FA_FOLDER " Load");
-        IM_CHECK_EQ(entity_count(), 3);
+        IM_CHECK_EQ(entity_count(), 3_uu);
     };
 
 #if 0
@@ -195,7 +195,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
     IM_REGISTER_TEST(engine, "tests", "add static mesh")->TestFunc = [](ImGuiTestContext* ctx) {
         const auto ids = all_ids();
-        IM_CHECK_NE(ids.size(), 0);
+        IM_CHECK_NE(ids.size(), 0_uu);
         const ecs::EntityId id = ids[0];
 
         {
@@ -226,7 +226,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
             {
                 ctx->ItemOpen("**/" ICON_FA_PUZZLE_PIECE " StaticMeshComponent");
-                IM_CHECK_NE(ctx->ItemInfoOpenFullPath("**/" ICON_FA_FOLDER_OPEN)->ID, 0);
+                IM_CHECK_NE(ctx->ItemInfoOpenFullPath("**/" ICON_FA_FOLDER_OPEN)->ID, 0u);
                 ctx->ItemClose("**/" ICON_FA_PUZZLE_PIECE " StaticMeshComponent");
             }
         }
@@ -236,7 +236,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         {
             ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
             const ImGuiTestItemInfo* info = ctx->ItemInfoOpenFullPath(fmt_c_str("**/###%", id.as_u64()));
-            IM_CHECK_NE(info->ID, 0);
+            IM_CHECK_NE(info->ID, 0u);
             IM_CHECK_STR_EQ(info->DebugLabel, fmt_c_str(ICON_FA_CUBE " shalg###%", id.as_u64()));
         }
     };

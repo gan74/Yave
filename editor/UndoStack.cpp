@@ -98,7 +98,7 @@ UndoStack::UndoStack() {
 void UndoStack::clear() {
 }
 
-void UndoStack::set_editing_entity(ecs::EntityId id) {
+void UndoStack::set_editing_entity(ecs::EntityId) {
     y_profile();
 
 }
@@ -110,7 +110,7 @@ bool UndoStack::is_entity_dirty() const {
     return false;
 }
 
-void UndoStack::push_before_dirty(ecs::EntityId id) {
+void UndoStack::push_before_dirty(ecs::EntityId) {
 }
 
 void UndoStack::make_dirty() {

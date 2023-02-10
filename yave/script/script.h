@@ -46,7 +46,7 @@ core::FlatHashMap<core::String, lua_CFunction>& component_set_casts(sol::state_v
 static_assert(sol::is_container_v<core::Vector<int>>);
 
 template<typename T, typename M>
-auto to_property(sol::state_view state, M T::* member) {
+auto to_property(sol::state_view, M T::* member) {
     if constexpr(std::is_same_v<M, core::String>) {
         return sol::property(
             [=](T* obj, std::string_view view) { (obj->*member) = view; },
@@ -126,7 +126,7 @@ inline int sol_lua_push(sol::types<y::core::String>, lua_State* l, const y::core
     return sol::stack::push(l, str.view());
 }
 
-inline y::core::String sol_lua_get(sol::types<y::core::String>, lua_State* l, int index, sol::stack::record& tracking) {
+inline y::core::String sol_lua_get(sol::types<y::core::String>, lua_State* l, int index, sol::stack::record&) {
     return y::core::String(sol::stack::get<std::string_view>(l, lua_absindex(l, index)));
 }
 

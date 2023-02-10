@@ -38,7 +38,7 @@ static constexpr usize inline_block_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT 
 
 static usize descriptor_type_index(VkDescriptorType type) {
     if(type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-        y_debug_assert(inline_block_index < DescriptorSetLayout::descriptor_type_count);
+        static_assert(inline_block_index < DescriptorSetLayout::descriptor_type_count);
         return inline_block_index;
     }
 
@@ -240,13 +240,13 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
     auto writes = core::ScratchPad<VkWriteDescriptorSet>(descriptor_count);
     for(usize i = 0; i != descriptor_count; ++i) {
         const auto& desc = descriptors[i];
-        const u32 descriptor_count = desc.descriptor_set_layout_binding(0).descriptorCount;
+        const u32 count = desc.descriptor_set_layout_binding(0).descriptorCount;
         VkWriteDescriptorSet write = vk_struct();
         {
             write.dstSet = _sets[id];
             write.dstBinding = u32(i);
             write.dstArrayElement = 0;
-            write.descriptorCount = descriptor_count;
+            write.descriptorCount = count;
             write.descriptorType = desc.vk_descriptor_type();
         }
 

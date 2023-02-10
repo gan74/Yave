@@ -72,7 +72,7 @@ static std::pair<math::Vec2, math::Vec2> compute_uv_size(const char* c) {
 
     unsigned u = 0;
     ImTextCharFromUtf8(&u, c, c + std::strlen(c));
-    if(const ImFontGlyph* glyph = ImGui::GetFont()->FindGlyph(u)) {
+    if(const ImFontGlyph* glyph = ImGui::GetFont()->FindGlyph(ImWchar(u))) {
         uv = math::Vec2{glyph->U0, glyph->V0};
         size = math::Vec2{glyph->U1, glyph->V1} - uv;
     }

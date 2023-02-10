@@ -191,8 +191,8 @@ static void pack_with_gamma(const float* in, usize size, u8* out) {
         const __m128 c = _mm_round_ps(b, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);    // round
         const __m128i d = _mm_cvtps_epi32(c);           // to int
         const u32* indices = reinterpret_cast<const u32*>(&d);
-        for(usize c = 0; c != 4; ++c) {
-            out[i + c] = gamma_lut[indices[c]];
+        for(usize comp = 0; comp != 4; ++comp) {
+            out[i + comp] = gamma_lut[indices[comp]];
         }
     }
 #else

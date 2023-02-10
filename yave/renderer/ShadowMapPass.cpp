@@ -87,14 +87,10 @@ struct SubPass {
     uniform::ShadowMapParams params;
 };
 
-template<typename T>
 static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
-                            const T& light,
-                            // u32 lod_offset,
                             math::Vec2ui offset, u32 size, // from allocator
                             const SceneView& light_view,
-                            const math::Vec2& uv_mul,
-                            SubAtlasAllocator& allocator) {
+                            const math::Vec2& uv_mul) {
     y_profile();
 
     if(!size) {
@@ -291,7 +287,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
                 indices[i] = u32(sub_passes.size());
                 const Camera light_cam = directional_camera(scene.camera(), *light, size, near_dist, cascade_dist);
-                sub_passes.emplace_back(create_sub_pass(builder, *light, offset, size, SceneView(&world, light_cam), uv_mul, allocator));
+                sub_passes.emplace_back(create_sub_pass(builder, offset, size, SceneView(&world, light_cam), uv_mul));
 
                 near_dist = cascade_dist;
             }
@@ -305,7 +301,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
             const auto [offset, size] = allocator.alloc(level);
 
             indices[0] = u32(sub_passes.size());
-            sub_passes.emplace_back(create_sub_pass(builder, *light, offset, size, SceneView(&world, spotlight_camera(*transform, *light)), uv_mul, allocator));
+            sub_passes.emplace_back(create_sub_pass(builder, offset, size, SceneView(&world, spotlight_camera(*transform, *light)), uv_mul));
         }
     }
 

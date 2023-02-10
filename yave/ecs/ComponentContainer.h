@@ -245,8 +245,9 @@ class ComponentContainer final : public ComponentContainerBase {
             unused(id);
             if constexpr(std::is_copy_constructible_v<T>) {
                 return std::make_unique<ComponentBox<T>>(_components[id]);
+            } else {
+                return nullptr;
             }
-            return nullptr;
         }
 
 

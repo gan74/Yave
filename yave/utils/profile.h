@@ -65,7 +65,7 @@ static inline void set_thread_name() {
     static constexpr auto y_create_name_with_prefix(sloc) = ___tracy_source_location_data {                                                     \
         y_create_name_with_prefix(static_name), __FUNCTION__, __FILE__, __LINE__, 0};                                                           \
     const auto y_create_name_with_prefix(ctx) = ___tracy_emit_zone_begin(&y_create_name_with_prefix(sloc), y_profile_internal_capturing());     \
-    y_defer(___tracy_emit_zone_end(y_create_name_with_prefix(ctx)))
+    y_defer_named(___tracy_emit_zone_end(y_create_name_with_prefix(ctx)), profile_end)
 
 #define y_profile_internal_set_name(name)                                                                                                       \
     const char* y_create_name_with_prefix(zone) = (name);                                                                                       \

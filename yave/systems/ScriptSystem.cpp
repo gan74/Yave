@@ -42,7 +42,7 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
     script::bind_component_type<PointLightComponent>(_state);
 }
 
-void ScriptSystem::update(ecs::EntityWorld& world, float dt) {
+void ScriptSystem::update(ecs::EntityWorld& world, float) {
     ScriptWorldComponent* scripts_comp = world.get_or_add_world_component<ScriptWorldComponent>();
 
     _state["world"] = &world;

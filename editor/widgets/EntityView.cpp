@@ -161,8 +161,8 @@ editor_action("Add scene", add_scene)
 static void collect_all_descendants(core::Vector<ecs::EntityId>& descendants, ecs::EntityId id, const ecs::SparseComponentSet<EditorComponent>& component_set) {
     if(const EditorComponent* component = component_set.try_get(id)) {
         if(component->is_collection()) {
-            for(ecs::EntityId id : component->children()) {
-                collect_all_descendants(descendants, id, component_set);
+            for(ecs::EntityId child : component->children()) {
+                collect_all_descendants(descendants, child, component_set);
             }
         }
     }
@@ -269,8 +269,8 @@ static void build_tree(core::Vector<EntityTreeItem>& tree, ecs::EntityId id, con
     if(const EditorComponent* component = component_set.try_get(id)) {
         tree << EntityTreeItem{component, id, depth};
         if(component->is_collection() && open[id]) {
-            for(ecs::EntityId id : component->children()) {
-                build_tree(tree, id, component_set, open, depth + 1);
+            for(ecs::EntityId child : component->children()) {
+                build_tree(tree, child, component_set, open, depth + 1);
             }
         }
     }
