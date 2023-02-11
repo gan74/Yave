@@ -140,12 +140,26 @@ static void display_zone(
             imgui::table_begin_next_row(1);
             draw_bg(float(gpu_ms / gpu_total_ms));
             ImGui::Text("%.2f ms", gpu_ms);
+
+            if(ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("avg: %.2f ms", zone_history.gpu_ms_sum / zone_history.sample_count);
+                ImGui::Text("max: %.2f ms", zone_history.gpu_ms_max);
+                ImGui::EndTooltip();
+            }
         }
 
         {
             ImGui::TableSetColumnIndex(2);
             draw_bg(float(cpu_ms / cpu_total_ms));
             ImGui::Text("%.2f ms", cpu_ms);
+
+            if(ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("avg: %.2f ms", zone_history.cpu_ms_sum / zone_history.sample_count);
+                ImGui::Text("max: %.2f ms", zone_history.cpu_ms_max);
+                ImGui::EndTooltip();
+            }
         }
 
         ImGui::TableSetColumnIndex(0);
