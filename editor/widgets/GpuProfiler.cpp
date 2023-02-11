@@ -33,24 +33,83 @@ SOFTWARE.
 
 namespace editor {
 
-static EngineView* current_view() {
-    for(const auto& widget : ui().widgets()) {
-        if(EngineView* view = dynamic_cast<EngineView*>(widget.get())) {
-            return view;
-        }
-    }
-    return nullptr;
-}
-
-
 static const double ns_to_ms = 1.0 / 1'000'000.0;
 
-static bool display_event(const CmdTimingRecorder::Event& start, const CmdTimingRecorder::Event& end, double gpu_total, double cpu_total, ImGuiTreeNodeFlags flags) {
-    imgui::table_begin_next_row(1);
+
+
+static void display_zone(core::Span<CmdTimingRecorder::Event> events, double gpu_total_ms, double cpu_total_ms, bool first = false) {
+    if(events.is_empty()) {
+        return;
+    }
+
+    struct Zone {
+        usize start = 0;
+        usize end = 0;
+        const char* name = nullptr;
+        double gpu_ms = 0.0;
+        double cpu_ms = 0.0;
+    };
+
+    core::Vector<Zone> zones;
+
+    {
+        const double tick_to_ms = device_properties().timestamp_period * ns_to_ms;
+
+        usize start = 0;
+        usize depth = 0;
+        for(usize i = 0; i != events.size(); ++i) {
+            switch(events[i].type) {
+                case CmdTimingRecorder::EventType::BeginZone:
+                    if(!depth) {
+                        start = i;
+                    }
+                    ++depth;
+                break;
+
+                case CmdTimingRecorder::EventType::EndZone:
+                    if(!depth) {
+                        return; // for safety
+                    }
+                    if(--depth == 0) {
+                        auto& zone = zones.emplace_back();
+                        zone.start = start;
+                        zone.end = i;
+                        zone.name = events[zone.start].name.data();
+                        zone.cpu_ms = (events[zone.end].cpu_nanos - events[zone.start].cpu_nanos) * ns_to_ms;
+                        zone.gpu_ms = (events[zone.end].gpu_timestamp.timestamp() - events[zone.start].gpu_timestamp.timestamp()) * tick_to_ms;
+                    }
+                break;
+            }
+        }
+    }
+
+    if(ImGuiTableSortSpecs* sort_specs = ImGui::TableGetSortSpecs()) {
+        if(sort_specs->SpecsCount > 0) {
+            const ImGuiTableColumnSortSpecs& spec = sort_specs->Specs[0];
+            if(spec.SortDirection != ImGuiSortDirection_None) {
+                auto cmp = [=](double a, double b) {
+                    return spec.SortDirection == ImGuiSortDirection_Ascending
+                        ? (a > b) : (a < b);
+                };
+                switch(spec.ColumnIndex) {
+                    case 1: // GPU
+                        std::sort(zones.begin(), zones.end(), [=](const Zone& a, const Zone& b) { return cmp(a.gpu_ms, b.gpu_ms); });
+                    break;
+
+                    case 2: // CPU
+                        std::sort(zones.begin(), zones.end(), [=](const Zone& a, const Zone& b) { return cmp(a.cpu_ms, b.cpu_ms); });
+                    break;
+
+                    default:
+                    break;
+                }
+            }
+        }
+    }
+
 
     const math::Vec4 color = math::Vec4(ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram)) * math::Vec4(1.0f, 1.0f, 1.0f, 0.5f);
     const u32 color_u32 = ImGui::GetColorU32(color);
-
     auto draw_bg = [=](float ratio) {
         const float width = ImGui::GetContentRegionAvail().x * std::min(1.0f, ratio);
         if(width <= 0.5f) {
@@ -61,66 +120,47 @@ static bool display_event(const CmdTimingRecorder::Event& start, const CmdTiming
         ImGui::GetWindowDrawList()->AddRectFilled(pos, pos + size, color_u32);
     };
 
-    {
-        const double tick_to_ms = device_properties().timestamp_period * ns_to_ms;
-        const double gpu = (end.gpu_ticks.timestamp() - start.gpu_ticks.timestamp()) * tick_to_ms;
-        draw_bg(float(gpu / gpu_total));
-        ImGui::Text("%.2f ms", gpu);
-    }
+    const int flags = first ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+    for(const Zone& zone : zones) {
+        ImGui::PushID(int(zone.start));
+        y_defer(ImGui::PopID());
 
-    ImGui::TableSetColumnIndex(2);
+        const bool is_leaf = zone.start + 1 == zone.end;
 
-    {
-        const double cpu = (end.cpu_nanos - start.cpu_nanos) * ns_to_ms;
-        draw_bg(float(cpu / cpu_total));
-        ImGui::Text("%.2f ms", cpu);
-    }
+        {
+            imgui::table_begin_next_row(1);
+            draw_bg(float(zone.gpu_ms / gpu_total_ms));
+            ImGui::Text("%.2f ms", zone.gpu_ms);
+        }
 
-    ImGui::TableSetColumnIndex(0);
 
-    return ImGui::TreeNodeEx(start.name.data(), flags, "%s", start.name.data());
-}
+        {
+            ImGui::TableSetColumnIndex(2);
+            draw_bg(float(zone.cpu_ms / cpu_total_ms));
+            ImGui::Text("%.2f ms", zone.cpu_ms);
+        }
 
-static void display_zone(core::Span<CmdTimingRecorder::Event> events, double gpu_total, double cpu_total, bool first = false) {
-    if(events.is_empty()) {
-        return;
-    }
-
-    usize start = 0;
-    usize depth = 0;
-    for(usize i = 0; i != events.size(); ++i) {
-        switch(events[i].type) {
-            case CmdTimingRecorder::EventType::BeginZone:
-                if(!depth) {
-                    start = i;
-                }
-                ++depth;
-            break;
-
-            case CmdTimingRecorder::EventType::EndZone:
-                if(!depth) {
-                    return; // for safety
-                }
-                if(--depth == 0) {
-                    ImGui::PushID(int(start));
-
-                    int flags = 0;
-                    {
-                        flags |= start + 1 == i ? ImGuiTreeNodeFlags_Leaf : 0;
-                        flags |= first ? ImGuiTreeNodeFlags_DefaultOpen : 0;
-                    }
-                    if(display_event(events[start], events[i], gpu_total, cpu_total, flags)) {
-                        display_zone(core::Span<CmdTimingRecorder::Event>(events.data() + start + 1, i - start - 1), gpu_total, cpu_total);
-                        ImGui::TreePop();
-                    }
-                    ImGui::PopID();
-                }
-            break;
+        ImGui::TableSetColumnIndex(0);
+        if(ImGui::TreeNodeEx(zone.name, (is_leaf ? ImGuiTreeNodeFlags_Leaf : 0) | flags, "%s", zone.name)) {
+            const core::Span<CmdTimingRecorder::Event> inner(events.data() + zone.start + 1, zone.end - zone.start - 1);
+            display_zone(inner, gpu_total_ms, cpu_total_ms);
+            ImGui::TreePop();
         }
     }
 }
 
 
+
+
+
+static EngineView* current_view() {
+    for(const auto& widget : ui().widgets()) {
+        if(EngineView* view = dynamic_cast<EngineView*>(widget.get())) {
+            return view;
+        }
+    }
+    return nullptr;
+}
 
 GpuProfiler::GpuProfiler() :Widget(ICON_FA_CLOCK " GPU Profiler") {
 }
@@ -141,22 +181,24 @@ void GpuProfiler::on_gui() {
     const auto events = time_rec->events();
 
     const double tick_to_ms = device_properties().timestamp_period * ns_to_ms;
-    const double gpu_total = (events[events.size() - 1].gpu_ticks.timestamp() - events[0].gpu_ticks.timestamp()) * tick_to_ms;
+    const double gpu_total = (events[events.size() - 1].gpu_timestamp.timestamp() - events[0].gpu_timestamp.timestamp()) * tick_to_ms;
     const double cpu_total = (events[events.size() - 1].cpu_nanos - events[0].cpu_nanos) * ns_to_ms;
     ImGui::Text("Total GPU: %.2f ms", gpu_total);
     ImGui::Text("Total CPU: %.2f ms", cpu_total);
 
     if(ImGui::BeginChild("##tree")) {
         const ImGuiTableFlags table_flags =
+                ImGuiTableFlags_Sortable |
+                ImGuiTableFlags_SortTristate |
                 ImGuiTableFlags_SizingFixedFit |
                 ImGuiTableFlags_BordersInnerV |
                 ImGuiTableFlags_Resizable |
                 ImGuiTableFlags_RowBg;
 
         if(ImGui::BeginTable("##timetable", 3, table_flags)) {
-            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("GPU", ImGuiTableColumnFlags_NoResize);
-            ImGui::TableSetupColumn("CPU", ImGuiTableColumnFlags_NoResize);
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
+            ImGui::TableSetupColumn("GPU", ImGuiTableColumnFlags_NoResize, 100.0f);
+            ImGui::TableSetupColumn("CPU", ImGuiTableColumnFlags_NoResize, 100.0f);
             ImGui::TableHeadersRow();
 
             display_zone(events, gpu_total, cpu_total, true);
