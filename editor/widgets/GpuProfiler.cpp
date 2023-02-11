@@ -41,7 +41,7 @@ static void display_zone(
         core::Span<CmdTimingRecorder::Event> events,
         core::FlatHashMap<i64, T>& history,
         double gpu_total_ms, double cpu_total_ms,
-        bool first = false) {
+        bool tree, bool first = false) {
 
     if(events.is_empty()) {
         return;
@@ -55,11 +55,20 @@ static void display_zone(
         double cpu_ms = 0.0;
     };
 
+    const double tick_to_ms = device_properties().timestamp_period * ns_to_ms;
+
     core::Vector<Zone> zones;
 
-    {
-        const double tick_to_ms = device_properties().timestamp_period * ns_to_ms;
+    auto push_zone = [&](usize start, usize end) {
+        auto& zone = zones.emplace_back();
+        zone.start = start;
+        zone.end = end;
+        zone.name = events[zone.start].name.data();
+        zone.cpu_ms = (events[zone.end].cpu_nanos - events[zone.start].cpu_nanos) * ns_to_ms;
+        zone.gpu_ms = (events[zone.end].gpu_timestamp.timestamp() - events[zone.start].gpu_timestamp.timestamp()) * tick_to_ms;
+    };
 
+    if(tree) {
         usize start = 0;
         usize depth = 0;
         for(usize i = 0; i != events.size(); ++i) {
@@ -76,15 +85,30 @@ static void display_zone(
                         return; // for safety
                     }
                     if(--depth == 0) {
-                        auto& zone = zones.emplace_back();
-                        zone.start = start;
-                        zone.end = i;
-                        zone.name = events[zone.start].name.data();
-                        zone.cpu_ms = (events[zone.end].cpu_nanos - events[zone.start].cpu_nanos) * ns_to_ms;
-                        zone.gpu_ms = (events[zone.end].gpu_timestamp.timestamp() - events[zone.start].gpu_timestamp.timestamp()) * tick_to_ms;
+                        push_zone(start, i);
                     }
                 break;
             }
+        }
+    } else {
+        core::Vector<usize> starts;
+        for(usize i = 0; i != events.size(); ++i) {
+            switch(events[i].type) {
+                case CmdTimingRecorder::EventType::BeginZone:
+                    starts << i;
+                break;
+
+                case CmdTimingRecorder::EventType::EndZone:
+                    if(!starts.is_empty()) {
+                        push_zone(starts.pop(), i);
+                    }
+                break;
+            }
+        }
+
+        if(first && !zones.is_empty()) {
+            gpu_total_ms = zones.last().gpu_ms;
+            cpu_total_ms = zones.last().cpu_ms;
         }
     }
 
@@ -164,14 +188,18 @@ static void display_zone(
 
         ImGui::TableSetColumnIndex(0);
         const bool is_leaf = zone.start + 1 == zone.end;
-        if(ImGui::TreeNodeEx(zone.name, (is_leaf ? ImGuiTreeNodeFlags_Leaf : 0) | flags, "%s", zone.name)) {
-            if(first) {
-                gpu_total_ms = gpu_ms;
-                cpu_total_ms = cpu_ms;
+        if(tree) {
+            if(ImGui::TreeNodeEx(zone.name, (is_leaf ? ImGuiTreeNodeFlags_Leaf : 0) | flags, "%s", zone.name)) {
+                if(first) {
+                    gpu_total_ms = gpu_ms;
+                    cpu_total_ms = cpu_ms;
+                }
+                const core::Span<CmdTimingRecorder::Event> inner(events.data() + zone.start + 1, zone.end - zone.start - 1);
+                display_zone(inner, history, gpu_total_ms, cpu_total_ms, tree);
+                ImGui::TreePop();
             }
-            const core::Span<CmdTimingRecorder::Event> inner(events.data() + zone.start + 1, zone.end - zone.start - 1);
-            display_zone(inner, history, gpu_total_ms, cpu_total_ms);
-            ImGui::TreePop();
+        } else {
+            ImGui::Text("%s%s", zone.name, is_leaf ? "" : "  *");
         }
     }
 }
@@ -205,16 +233,11 @@ void GpuProfiler::on_gui() {
         return;
     }
 
-    /*const char* display_types[] = {
-        "Current time",
-        "Average time",
-        "Maximum time",
-    };
-    ImGui::Combo("Display", reinterpret_cast<int*>(&_display_type), display_types, 3);
-
-    ImGui::SameLine();*/
-
     if(ImGui::Button("Clear history")) {
+        _history.clear();
+    }
+
+    if(ImGui::Checkbox("Display as tree", &_tree)) {
         _history.clear();
     }
 
@@ -234,7 +257,7 @@ void GpuProfiler::on_gui() {
             ImGui::TableSetupColumn("CPU", ImGuiTableColumnFlags_NoResize, 100.0f);
             ImGui::TableHeadersRow();
 
-            display_zone(time_rec->events(), _history, 0.0, 0.0, true);
+            display_zone(time_rec->events(), _history, 0.0, 0.0, _tree, true);
 
             ImGui::EndTable();
         }
