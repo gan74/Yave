@@ -45,7 +45,7 @@ class TimeQueryPoolData : NonMovable {
         std::pair<u32, u32> alloc_query();
         void alloc_pool();
 
-        u32 _remaining = 0;
+        u32 _next_query = pool_size;
         core::Vector<VkHandle<VkQueryPool>> _pools;
         VkCommandBuffer _cmd_buffer = {};
 

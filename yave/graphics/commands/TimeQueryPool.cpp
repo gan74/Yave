@@ -33,7 +33,7 @@ TimeQueryPoolData::~TimeQueryPoolData() {
     for(auto& pool : _pools) {
         const bool is_last = pool == _pools.last();
         u32 data[pool_size] = {};
-        vk_check(vkGetQueryPoolResults(vk_device(), pool, is_last ? _remaining : 0, is_last ? (pool_size - _remaining) : pool_size, sizeof(data), data, sizeof(data[0]), VK_QUERY_RESULT_WAIT_BIT));
+        vk_check(vkGetQueryPoolResults(vk_device(), pool, 0, is_last ? _next_query : pool_size, sizeof(data), data, sizeof(data[0]), VK_QUERY_RESULT_WAIT_BIT));
 
         destroy_graphic_resource(std::move(pool));
     }
@@ -49,16 +49,15 @@ void TimeQueryPoolData::alloc_pool() {
     auto& pool = _pools.emplace_back();
     vk_check(vkCreateQueryPool(vk_device(), &create_info, vk_allocation_callbacks(), pool.get_ptr_for_init()));
     vkCmdResetQueryPool(_cmd_buffer, pool, 0, pool_size);
-    _remaining = pool_size;
+    _next_query = 0;
 }
 
 std::pair<u32, u32> TimeQueryPoolData::alloc_query() {
-    if(!_remaining) {
+    if(_next_query == pool_size) {
         alloc_pool();
     }
 
-    y_debug_assert(_remaining);
-    return {u32(_pools.size() - 1), --_remaining};
+    return {u32(_pools.size() - 1), _next_query++};
 }
 
 
