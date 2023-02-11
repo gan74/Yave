@@ -442,12 +442,16 @@ void EngineView::draw_gizmo_tool_bar() {
 // ---------------------------------------------- UPDATE ----------------------------------------------
 
 void EngineView::update() {
+    const bool hovered = ImGui::IsWindowHovered() && is_mouse_inside();
+    if(!hovered) {
+        _gizmo.set_allow_drag(false);
+        return;
+    }
+
     _gizmo.set_allow_drag(true);
 
-    const bool hovered = ImGui::IsWindowHovered() && is_mouse_inside();
-
     bool focussed = ImGui::IsWindowFocused();
-    if(hovered && is_clicked()) {
+    if(is_clicked()) {
         ImGui::SetWindowFocus();
         update_picking();
         focussed = true;
@@ -457,7 +461,7 @@ void EngineView::update() {
         application()->set_scene_view(&_scene_view);
     }
 
-    if(hovered && !_gizmo.is_dragging() && !_orientation_gizmo.is_dragging() && _camera_controller) {
+    if(!_gizmo.is_dragging() && !_orientation_gizmo.is_dragging() && _camera_controller) {
         auto& camera = _scene_view.camera();
         _camera_controller->process_generic_shortcuts(camera);
         if(focussed) {
