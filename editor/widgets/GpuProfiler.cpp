@@ -36,8 +36,13 @@ namespace editor {
 static const double ns_to_ms = 1.0 / 1'000'000.0;
 
 
+template<typename T>
+static void display_zone(
+        core::Span<CmdTimingRecorder::Event> events,
+        core::FlatHashMap<i64, T>& history,
+        double gpu_total_ms, double cpu_total_ms,
+        bool first = false) {
 
-static void display_zone(core::Span<CmdTimingRecorder::Event> events, double gpu_total_ms, double cpu_total_ms, bool first = false) {
     if(events.is_empty()) {
         return;
     }
@@ -107,7 +112,6 @@ static void display_zone(core::Span<CmdTimingRecorder::Event> events, double gpu
         }
     }
 
-
     const math::Vec4 color = math::Vec4(ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram)) * math::Vec4(1.0f, 1.0f, 1.0f, 0.5f);
     const u32 color_u32 = ImGui::GetColorU32(color);
     auto draw_bg = [=](float ratio) {
@@ -125,25 +129,34 @@ static void display_zone(core::Span<CmdTimingRecorder::Event> events, double gpu
         ImGui::PushID(int(zone.start));
         y_defer(ImGui::PopID());
 
-        const bool is_leaf = zone.start + 1 == zone.end;
+        const i64 id = i64(ImGui::GetID("zone"));
+        auto& zone_history = history[id];
+        zone_history.update(zone.gpu_ms, zone.cpu_ms);
+
+        const double gpu_ms = zone.gpu_ms;
+        const double cpu_ms = zone.cpu_ms;
 
         {
             imgui::table_begin_next_row(1);
-            draw_bg(float(zone.gpu_ms / gpu_total_ms));
-            ImGui::Text("%.2f ms", zone.gpu_ms);
+            draw_bg(float(gpu_ms / gpu_total_ms));
+            ImGui::Text("%.2f ms", gpu_ms);
         }
-
 
         {
             ImGui::TableSetColumnIndex(2);
-            draw_bg(float(zone.cpu_ms / cpu_total_ms));
-            ImGui::Text("%.2f ms", zone.cpu_ms);
+            draw_bg(float(cpu_ms / cpu_total_ms));
+            ImGui::Text("%.2f ms", cpu_ms);
         }
 
         ImGui::TableSetColumnIndex(0);
+        const bool is_leaf = zone.start + 1 == zone.end;
         if(ImGui::TreeNodeEx(zone.name, (is_leaf ? ImGuiTreeNodeFlags_Leaf : 0) | flags, "%s", zone.name)) {
+            if(first) {
+                gpu_total_ms = gpu_ms;
+                cpu_total_ms = cpu_ms;
+            }
             const core::Span<CmdTimingRecorder::Event> inner(events.data() + zone.start + 1, zone.end - zone.start - 1);
-            display_zone(inner, gpu_total_ms, cpu_total_ms);
+            display_zone(inner, history, gpu_total_ms, cpu_total_ms);
             ImGui::TreePop();
         }
     }
@@ -178,18 +191,24 @@ void GpuProfiler::on_gui() {
         return;
     }
 
-    const auto events = time_rec->events();
+    /*const char* display_types[] = {
+        "Current time",
+        "Average time",
+        "Maximum time",
+    };
+    ImGui::Combo("Display", reinterpret_cast<int*>(&_display_type), display_types, 3);
 
-    const double tick_to_ms = device_properties().timestamp_period * ns_to_ms;
-    const double gpu_total = (events[events.size() - 1].gpu_timestamp.timestamp() - events[0].gpu_timestamp.timestamp()) * tick_to_ms;
-    const double cpu_total = (events[events.size() - 1].cpu_nanos - events[0].cpu_nanos) * ns_to_ms;
-    ImGui::Text("Total GPU: %.2f ms", gpu_total);
-    ImGui::Text("Total CPU: %.2f ms", cpu_total);
+    ImGui::SameLine();*/
+
+    if(ImGui::Button("Clear history")) {
+        _history.clear();
+    }
 
     if(ImGui::BeginChild("##tree")) {
         const ImGuiTableFlags table_flags =
                 ImGuiTableFlags_Sortable |
                 ImGuiTableFlags_SortTristate |
+                ImGuiTableFlags_NoSavedSettings |
                 ImGuiTableFlags_SizingFixedFit |
                 ImGuiTableFlags_BordersInnerV |
                 ImGuiTableFlags_Resizable |
@@ -201,7 +220,7 @@ void GpuProfiler::on_gui() {
             ImGui::TableSetupColumn("CPU", ImGuiTableColumnFlags_NoResize, 100.0f);
             ImGui::TableHeadersRow();
 
-            display_zone(events, gpu_total, cpu_total, true);
+            display_zone(time_rec->events(), _history, 0.0, 0.0, true);
 
             ImGui::EndTable();
         }
