@@ -40,7 +40,7 @@ class TimeQueryPoolData : NonMovable {
 
     private:
         friend class TimeQueryPool;
-        friend class TimeQuery;
+        friend class TimestampQuery;
 
         std::pair<u32, u32> alloc_query();
         void alloc_pool();
@@ -51,20 +51,20 @@ class TimeQueryPoolData : NonMovable {
 
 };
 
-class TimeQuery {
+class TimestampQuery {
     public:
-        TimeQuery() = default;
+        TimestampQuery() = default;
 
         bool is_null() const;
 
         bool is_ready() const;
 
-        u64 get() const; // Needs to be multiplied by device_properties().timestamp_period !!!
+        u64 get_ticks() const; // Needs to be multiplied by device_properties().timestamp_period !!!
 
     private:
         friend class TimeQueryPool;
 
-        TimeQuery(const std::shared_ptr<TimeQueryPoolData>& data, u32 pool, u32 query);
+        TimestampQuery(const std::shared_ptr<TimeQueryPoolData>& data, u32 pool, u32 query);
 
         mutable u64 _result = 0;
         mutable bool _has_result = false;
@@ -78,7 +78,7 @@ class TimeQueryPool : NonMovable {
     public:
         TimeQueryPool(VkCommandBuffer cmd_buffer);
 
-        TimeQuery query(PipelineStage stage);
+        TimestampQuery query(PipelineStage stage);
 
         VkCommandBuffer vk_cmd_buffer() const;
 

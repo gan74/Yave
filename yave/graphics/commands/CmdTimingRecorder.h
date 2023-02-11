@@ -39,10 +39,10 @@ class CmdTimingRecorder : NonMovable {
         struct Event {
             EventType type;
             core::String name;
-            TimeQuery query;
+            TimestampQuery gpu_ticks;
             u64 cpu_nanos;
 
-            Event(EventType t, const char* n, TimeQuery&& q, u64 c) : type(t), name(n), query(q), cpu_nanos(c) {
+            Event(EventType t, const char* n, TimestampQuery&& q, u64 c) : type(t), name(n), gpu_ticks(q), cpu_nanos(c) {
             }
         };
 

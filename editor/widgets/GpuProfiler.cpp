@@ -47,13 +47,20 @@ static EngineView* current_view() {
 
 static bool display_event(const CmdTimingRecorder::Event& start, const CmdTimingRecorder::Event& end, bool leaf) {
     const double period = device_properties().timestamp_period;
-    const double ms = core::Duration::nanoseconds(end.query.get() - start.query.get()).to_millis() * period;
+    const double ms = core::Duration::nanoseconds(end.gpu_ticks.get_ticks() - start.gpu_ticks.get_ticks()).to_millis() * period;
 
     int flags = 0;
     if(leaf) {
         flags |= ImGuiTreeNodeFlags_Leaf;
     }
-    return ImGui::TreeNodeEx(start.name.data(), flags, "%s (%.2f ms)", start.name.data(), ms);
+
+    imgui::table_begin_next_row(1);
+    ImGui::Text("%.2f ms", ms);
+    ImGui::TableSetColumnIndex(2);
+    ImGui::Text("%.2f ms", core::Duration::nanoseconds(end.cpu_nanos - start.cpu_nanos).to_millis());
+    ImGui::TableSetColumnIndex(0);
+
+    return ImGui::TreeNodeEx(start.name.data(), flags, start.name.data());
 }
 
 static void display_zone(core::Span<CmdTimingRecorder::Event> events) {
@@ -87,8 +94,9 @@ static void display_zone(core::Span<CmdTimingRecorder::Event> events) {
             break;
         }
     }
-
 }
+
+
 
 GpuProfiler::GpuProfiler() :Widget(ICON_FA_CLOCK " GPU Profiler") {
 }
@@ -109,13 +117,31 @@ void GpuProfiler::on_gui() {
     const auto events = time_rec->events();
 
     {
-        const u64 start = events[0].query.get();
-        const u64 end = events[events.size() - 1].query.get();
+        const u64 start = events[0].gpu_ticks.get_ticks();
+        const u64 end = events[events.size() - 1].gpu_ticks.get_ticks();
         const float period = device_properties().timestamp_period;
         ImGui::Text("Total: %.2f ms", float(core::Duration::nanoseconds(end - start).to_millis() * period));
     }
 
-    display_zone(events);
+    if(ImGui::BeginChild("##tree")) {
+        const ImGuiTableFlags table_flags =
+                ImGuiTableFlags_SizingFixedFit |
+                ImGuiTableFlags_BordersInnerV |
+                ImGuiTableFlags_Resizable |
+                ImGuiTableFlags_RowBg;
+
+        if(ImGui::BeginTable("##timetable", 3, table_flags)) {
+            ImGui::TableSetupColumn("Name");
+            ImGui::TableSetupColumn("GPU", ImGuiTableColumnFlags_NoResize);
+            ImGui::TableSetupColumn("CPU", ImGuiTableColumnFlags_NoResize);
+            ImGui::TableHeadersRow();
+
+            display_zone(events);
+
+            ImGui::EndTable();
+        }
+    }
+    ImGui::EndChild();
 
 }
 

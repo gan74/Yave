@@ -63,15 +63,15 @@ std::pair<u32, u32> TimeQueryPoolData::alloc_query() {
 
 
 
-TimeQuery::TimeQuery(const std::shared_ptr<TimeQueryPoolData>& data, u32 pool, u32 query) :
+TimestampQuery::TimestampQuery(const std::shared_ptr<TimeQueryPoolData>& data, u32 pool, u32 query) :
     _data(data), _pool(pool), _query(query) {
 }
 
-bool TimeQuery::is_null() const {
+bool TimestampQuery::is_null() const {
     return !_data && !_has_result;
 }
 
-bool TimeQuery::is_ready() const {
+bool TimestampQuery::is_ready() const {
     if(_has_result) {
         return true;
     }
@@ -87,7 +87,7 @@ bool TimeQuery::is_ready() const {
     return _has_result;
 }
 
-u64 TimeQuery::get() const {
+u64 TimestampQuery::get_ticks() const {
     if(_has_result) {
         return _result;
     }
@@ -108,10 +108,10 @@ VkCommandBuffer TimeQueryPool::vk_cmd_buffer() const {
     return _data->_cmd_buffer;
 }
 
-TimeQuery TimeQueryPool::query(PipelineStage stage) {
+TimestampQuery TimeQueryPool::query(PipelineStage stage) {
     const auto [pool, query] = _data->alloc_query();
     vkCmdWriteTimestamp(_data->_cmd_buffer, VkPipelineStageFlagBits(stage), _data->_pools[pool], query);
-    return TimeQuery(_data, pool, query);
+    return TimestampQuery(_data, pool, query);
 }
 
 
