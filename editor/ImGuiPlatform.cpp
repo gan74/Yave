@@ -402,6 +402,9 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport, bool run_tests) {
         log_msg("Running ImGui tests", Log::Debug);
         io.IniFilename = "tests.ini";
         ImGuiTestEngine_QueueTests(_test_engine, ImGuiTestGroup_Tests, "tests");
+    } else {
+        // Still create test engine to avoid crashes in imgui
+        init_test_engine();
     }
 
 }
