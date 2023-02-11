@@ -139,10 +139,6 @@ math::Vec2 from_client_pos(const math::Vec2& pos) {
     return client_window_pos() + pos;
 }
 
-float button_height() {
-    return ImGui::GetFont()->FontSize + ImGui::GetStyle().FramePadding.y * 2.0f + 4.0f;
-}
-
 usize text_line_count(std::string_view text) {
     if(text.empty()) {
         return 0;

@@ -45,28 +45,34 @@ static EngineView* current_view() {
 
 static const double ns_to_ms = 1.0 / 1'000'000.0;
 
-static bool display_event(const CmdTimingRecorder::Event& start, const CmdTimingRecorder::Event& end, bool leaf, double gpu_total, double cpu_total) {
-    int flags = 0;
-    if(leaf) {
-        flags |= ImGuiTreeNodeFlags_Leaf;
-    }
-
+static bool display_event(const CmdTimingRecorder::Event& start, const CmdTimingRecorder::Event& end, double gpu_total, double cpu_total, ImGuiTreeNodeFlags flags) {
     imgui::table_begin_next_row(1);
 
+    const math::Vec4 color = math::Vec4(ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram)) * math::Vec4(1.0f, 1.0f, 1.0f, 0.5f);
+    const u32 color_u32 = ImGui::GetColorU32(color);
+
+    auto draw_bg = [=](float ratio) {
+        const float width = ImGui::GetContentRegionAvail().x * std::min(1.0f, ratio);
+        if(width <= 0.5f) {
+            return;
+        }
+        const math::Vec2 size(width, ImGui::GetTextLineHeight());
+        const math::Vec2 pos = ImGui::GetCursorScreenPos();
+        ImGui::GetWindowDrawList()->AddRectFilled(pos, pos + size, color_u32);
+    };
+
     {
-        unused(gpu_total);
         const double tick_to_ms = device_properties().timestamp_period * ns_to_ms;
         const double gpu = (end.gpu_ticks.timestamp() - start.gpu_ticks.timestamp()) * tick_to_ms;
-        //ImGui::ProgressBar(float(gpu / gpu_total), ImVec2(0.0f, 0.0f), fmt_c_str("% ms", std::round(gpu * 100.0) / 100.0));
+        draw_bg(float(gpu / gpu_total));
         ImGui::Text("%.2f ms", gpu);
     }
 
     ImGui::TableSetColumnIndex(2);
 
     {
-        unused(cpu_total);
         const double cpu = (end.cpu_nanos - start.cpu_nanos) * ns_to_ms;
-        //ImGui::ProgressBar(float(cpu / cpu_total), ImVec2(0.0f, 0.0f), fmt_c_str("% ms", std::round(cpu * 100.0) / 100.0));
+        draw_bg(float(cpu / cpu_total));
         ImGui::Text("%.2f ms", cpu);
     }
 
@@ -75,7 +81,7 @@ static bool display_event(const CmdTimingRecorder::Event& start, const CmdTiming
     return ImGui::TreeNodeEx(start.name.data(), flags, "%s", start.name.data());
 }
 
-static void display_zone(core::Span<CmdTimingRecorder::Event> events, double gpu_total, double cpu_total) {
+static void display_zone(core::Span<CmdTimingRecorder::Event> events, double gpu_total, double cpu_total, bool first = false) {
     if(events.is_empty()) {
         return;
     }
@@ -97,7 +103,13 @@ static void display_zone(core::Span<CmdTimingRecorder::Event> events, double gpu
                 }
                 if(--depth == 0) {
                     ImGui::PushID(int(start));
-                    if(display_event(events[start], events[i], start + 1 == i, gpu_total, cpu_total)) {
+
+                    int flags = 0;
+                    {
+                        flags |= start + 1 == i ? ImGuiTreeNodeFlags_Leaf : 0;
+                        flags |= first ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+                    }
+                    if(display_event(events[start], events[i], gpu_total, cpu_total, flags)) {
                         display_zone(core::Span<CmdTimingRecorder::Event>(events.data() + start + 1, i - start - 1), gpu_total, cpu_total);
                         ImGui::TreePop();
                     }
@@ -147,7 +159,7 @@ void GpuProfiler::on_gui() {
             ImGui::TableSetupColumn("CPU", ImGuiTableColumnFlags_NoResize);
             ImGui::TableHeadersRow();
 
-            display_zone(events, gpu_total, cpu_total);
+            display_zone(events, gpu_total, cpu_total, true);
 
             ImGui::EndTable();
         }
