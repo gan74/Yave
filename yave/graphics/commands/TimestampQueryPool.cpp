@@ -20,31 +20,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "TimeQueryPool.h"
+#include "TimestampQueryPool.h"
 
 
 namespace yave {
 
-TimeQueryPoolData::TimeQueryPoolData(VkCommandBuffer cmd_buffer) : _cmd_buffer(cmd_buffer) {
+TimestampQueryPoolData::TimestampQueryPoolData(VkCommandBuffer cmd_buffer) : _cmd_buffer(cmd_buffer) {
     y_debug_assert(_cmd_buffer);
 }
 
-TimeQueryPoolData::~TimeQueryPoolData() {
+TimestampQueryPoolData::~TimestampQueryPoolData() {
     for(auto& pool : _pools) {
         const bool is_last = pool == _pools.last();
         u32 data[pool_size] = {};
-        vk_check(vkGetQueryPoolResults(vk_device(), pool, 0, is_last ? _next_query : pool_size, sizeof(data), data, sizeof(data[0]), VK_QUERY_RESULT_WAIT_BIT));
+        while(true) {
+            const VkResult result = vkGetQueryPoolResults(vk_device(), pool, 0, is_last ? _next_query : pool_size, sizeof(data), data, sizeof(data[0]), VK_QUERY_RESULT_WAIT_BIT);
+            vk_check(result);
+            if(result == VK_SUCCESS) {
+                break;
+            }
+        }
 
         destroy_graphic_resource(std::move(pool));
     }
+    _cmd_buffer = {};
 }
 
-void TimeQueryPoolData::alloc_pool() {
+void TimestampQueryPoolData::alloc_pool() {
     VkQueryPoolCreateInfo create_info = vk_struct();
     {
         create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
         create_info.queryCount = pool_size;
     }
+
+    y_debug_assert(_cmd_buffer);
 
     auto& pool = _pools.emplace_back();
     vk_check(vkCreateQueryPool(vk_device(), &create_info, vk_allocation_callbacks(), pool.get_ptr_for_init()));
@@ -52,7 +61,7 @@ void TimeQueryPoolData::alloc_pool() {
     _next_query = 0;
 }
 
-std::pair<u32, u32> TimeQueryPoolData::alloc_query() {
+std::pair<u32, u32> TimestampQueryPoolData::alloc_query() {
     if(_next_query == pool_size) {
         alloc_pool();
     }
@@ -63,7 +72,7 @@ std::pair<u32, u32> TimeQueryPoolData::alloc_query() {
 
 
 
-TimestampQuery::TimestampQuery(const std::shared_ptr<TimeQueryPoolData>& data, u32 pool, u32 query) :
+TimestampQuery::TimestampQuery(const std::shared_ptr<TimestampQueryPoolData>& data, u32 pool, u32 query) :
     _data(data), _pool(pool), _query(query) {
 }
 
@@ -87,7 +96,7 @@ bool TimestampQuery::is_ready() const {
     return _has_result;
 }
 
-u64 TimestampQuery::get_ticks() const {
+u64 TimestampQuery::timestamp() const {
     if(_has_result) {
         return _result;
     }
@@ -101,14 +110,14 @@ u64 TimestampQuery::get_ticks() const {
 }
 
 
-TimeQueryPool::TimeQueryPool(VkCommandBuffer cmd_buffer) : _data(std::make_shared<TimeQueryPoolData>(cmd_buffer)) {
+TimestampQueryPool::TimestampQueryPool(VkCommandBuffer cmd_buffer) : _data(std::make_shared<TimestampQueryPoolData>(cmd_buffer)) {
 }
 
-VkCommandBuffer TimeQueryPool::vk_cmd_buffer() const {
+VkCommandBuffer TimestampQueryPool::vk_cmd_buffer() const {
     return _data->_cmd_buffer;
 }
 
-TimestampQuery TimeQueryPool::query(PipelineStage stage) {
+TimestampQuery TimestampQueryPool::query(PipelineStage stage) {
     const auto [pool, query] = _data->alloc_query();
     vkCmdWriteTimestamp(_data->_cmd_buffer, VkPipelineStageFlagBits(stage), _data->_pools[pool], query);
     return TimestampQuery(_data, pool, query);

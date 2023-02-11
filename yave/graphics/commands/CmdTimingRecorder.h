@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_CMDTIMINGRECORDER_H
 #define YAVE_GRAPHICS_COMMANDS_CMDTIMINGRECORDER_H
 
-#include "TimeQueryPool.h"
+#include "TimestampQueryPool.h"
 
 #include <y/core/Chrono.h>
 #include <y/core/String.h>
@@ -62,7 +62,7 @@ class CmdTimingRecorder : NonMovable {
 
     private:
         core::Vector<Event> _events;
-        TimeQueryPool _query_pool;
+        TimestampQueryPool _query_pool;
         core::Chrono _cpu;
 };
 

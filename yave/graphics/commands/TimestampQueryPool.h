@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_COMMANDS_TIMEQUERYPOOL_H
-#define YAVE_GRAPHICS_COMMANDS_TIMEQUERYPOOL_H
+#ifndef YAVE_GRAPHICS_COMMANDS_TIMESTAMPQUERYPOOL_H
+#define YAVE_GRAPHICS_COMMANDS_TIMESTAMPQUERYPOOL_H
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/barriers/PipelineStage.h>
@@ -31,15 +31,15 @@ SOFTWARE.
 
 namespace yave {
 
-class TimeQueryPoolData : NonMovable {
+class TimestampQueryPoolData : NonMovable {
     static constexpr u32 pool_size = 64;
 
     public:
-        TimeQueryPoolData(VkCommandBuffer cmd_buffer);
-        ~TimeQueryPoolData();
+        TimestampQueryPoolData(VkCommandBuffer cmd_buffer);
+        ~TimestampQueryPoolData();
 
     private:
-        friend class TimeQueryPool;
+        friend class TimestampQueryPool;
         friend class TimestampQuery;
 
         std::pair<u32, u32> alloc_query();
@@ -59,34 +59,34 @@ class TimestampQuery {
 
         bool is_ready() const;
 
-        u64 get_ticks() const; // Needs to be multiplied by device_properties().timestamp_period !!!
+        u64 timestamp() const; // Needs to be multiplied by device_properties().timestamp_period !!!
 
     private:
-        friend class TimeQueryPool;
+        friend class TimestampQueryPool;
 
-        TimestampQuery(const std::shared_ptr<TimeQueryPoolData>& data, u32 pool, u32 query);
+        TimestampQuery(const std::shared_ptr<TimestampQueryPoolData>& data, u32 pool, u32 query);
 
         mutable u64 _result = 0;
         mutable bool _has_result = false;
-        mutable std::shared_ptr<TimeQueryPoolData> _data;
+        mutable std::shared_ptr<TimestampQueryPoolData> _data;
 
         u32 _pool = 0;
         u32 _query = 0;
 };
 
-class TimeQueryPool : NonMovable {
+class TimestampQueryPool : NonMovable {
     public:
-        TimeQueryPool(VkCommandBuffer cmd_buffer);
+        TimestampQueryPool(VkCommandBuffer cmd_buffer);
 
         TimestampQuery query(PipelineStage stage);
 
         VkCommandBuffer vk_cmd_buffer() const;
 
     private:
-        std::shared_ptr<TimeQueryPoolData> _data;
+        std::shared_ptr<TimestampQueryPoolData> _data;
 };
 
 }
 
-#endif // YAVE_GRAPHICS_COMMANDS_TIMEQUERYPOOL_H
+#endif // YAVE_GRAPHICS_COMMANDS_TIMESTAMPQUERYPOOL_H
 
