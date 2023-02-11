@@ -34,19 +34,28 @@ namespace yave {
 class TimestampQueryPoolData : NonMovable {
     static constexpr u32 pool_size = 64;
 
+    struct Pool {
+        VkHandle<VkQueryPool> pool;
+        mutable bool all_ready = false;
+    };
+
     public:
         TimestampQueryPoolData(VkCommandBuffer cmd_buffer);
         ~TimestampQueryPoolData();
+
+        bool all_ready() const;
 
     private:
         friend class TimestampQueryPool;
         friend class TimestampQuery;
 
+        bool update_ready(const Pool& pool) const;
+
         std::pair<u32, u32> alloc_query();
         void alloc_pool();
 
         u32 _next_query = pool_size;
-        core::Vector<VkHandle<VkQueryPool>> _pools;
+        core::Vector<Pool> _pools;
         VkCommandBuffer _cmd_buffer = {};
 
 };
@@ -79,6 +88,8 @@ class TimestampQueryPool : NonMovable {
         TimestampQueryPool(VkCommandBuffer cmd_buffer);
 
         TimestampQuery query(PipelineStage stage);
+
+        bool all_query_ready() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
 

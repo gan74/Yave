@@ -29,7 +29,7 @@ SOFTWARE.
 namespace editor {
 
 class GpuProfiler final : public Widget {
-    editor_widget_open(GpuProfiler, "View")
+    editor_widget(GpuProfiler, "View")
 
     struct ZoneHistory {
         usize sample_count = 0;

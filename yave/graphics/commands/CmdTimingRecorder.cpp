@@ -34,7 +34,7 @@ VkCommandBuffer CmdTimingRecorder::vk_cmd_buffer() const {
 }
 
 bool CmdTimingRecorder::is_data_ready() const {
-    return _events.is_empty() || _events.last().gpu_timestamp.is_ready();
+    return _query_pool.all_query_ready();
 }
 
 core::Span<CmdTimingRecorder::Event> CmdTimingRecorder::events() const {

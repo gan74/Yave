@@ -117,6 +117,16 @@ bool EngineView::is_focussed() const {
 }
 
 
+bool EngineView::should_keep_alive() const {
+    for(const auto& t : _time_recs) {
+        if(!t->is_data_ready()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 // ---------------------------------------------- DRAW ----------------------------------------------
 
 bool EngineView::before_gui() {
@@ -135,7 +145,7 @@ void EngineView::after_gui() {
 
 void EngineView::draw(CmdBufferRecorder& recorder) {
     while(_time_recs.size() >= 2) {
-        if(_time_recs[0] ->is_data_ready() && _time_recs[1] ->is_data_ready()) {
+        if(_time_recs[0]->is_data_ready() && _time_recs[1]->is_data_ready()) {
             _time_recs.pop_front();
         } else {
             break;

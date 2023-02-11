@@ -31,19 +31,35 @@ TimestampQueryPoolData::TimestampQueryPoolData(VkCommandBuffer cmd_buffer) : _cm
 
 TimestampQueryPoolData::~TimestampQueryPoolData() {
     for(auto& pool : _pools) {
-        const bool is_last = pool == _pools.last();
-        u32 data[pool_size] = {};
-        while(true) {
-            const VkResult result = vkGetQueryPoolResults(vk_device(), pool, 0, is_last ? _next_query : pool_size, sizeof(data), data, sizeof(data[0]), VK_QUERY_RESULT_WAIT_BIT);
-            vk_check(result);
-            if(result == VK_SUCCESS) {
-                break;
-            }
+        while(!update_ready(pool)) {
+            // nothing
         }
 
-        destroy_graphic_resource(std::move(pool));
+        destroy_graphic_resource(std::move(pool.pool));
     }
     _cmd_buffer = {};
+}
+
+bool TimestampQueryPoolData::all_ready() const {
+    for(const auto& pool : _pools) {
+        if(!update_ready(pool)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool TimestampQueryPoolData::update_ready(const Pool& pool) const {
+    if(!pool.all_ready) {
+        const bool is_last = pool.pool == _pools.last().pool;
+
+        u32 data[pool_size] = {};
+        const VkResult result = vkGetQueryPoolResults(vk_device(), pool.pool, 0, is_last ? _next_query : pool_size, sizeof(data), data, sizeof(data[0]), 0);
+        vk_check(result);
+
+        pool.all_ready = result == VK_SUCCESS;
+    }
+    return pool.all_ready;
 }
 
 void TimestampQueryPoolData::alloc_pool() {
@@ -56,8 +72,8 @@ void TimestampQueryPoolData::alloc_pool() {
     y_debug_assert(_cmd_buffer);
 
     auto& pool = _pools.emplace_back();
-    vk_check(vkCreateQueryPool(vk_device(), &create_info, vk_allocation_callbacks(), pool.get_ptr_for_init()));
-    vkCmdResetQueryPool(_cmd_buffer, pool, 0, pool_size);
+    vk_check(vkCreateQueryPool(vk_device(), &create_info, vk_allocation_callbacks(), pool.pool.get_ptr_for_init()));
+    vkCmdResetQueryPool(_cmd_buffer, pool.pool, 0, pool_size);
     _next_query = 0;
 }
 
@@ -66,6 +82,7 @@ std::pair<u32, u32> TimestampQueryPoolData::alloc_query() {
         alloc_pool();
     }
 
+    _pools.last().all_ready = false;
     return {u32(_pools.size() - 1), _next_query++};
 }
 
@@ -85,9 +102,8 @@ bool TimestampQuery::is_ready() const {
         return true;
     }
 
-    const VkResult result = vkGetQueryPoolResults(vk_device(), _data->_pools[_pool], _query, 1, sizeof(u64), &_result, sizeof(u64), VK_QUERY_RESULT_64_BIT);
+    const VkResult result = vkGetQueryPoolResults(vk_device(), _data->_pools[_pool].pool, _query, 1, sizeof(u64), &_result, sizeof(u64), VK_QUERY_RESULT_64_BIT);
     vk_check(result);
-
     if(result == VK_SUCCESS) {
         _has_result = true;
         _data = nullptr;
@@ -102,7 +118,7 @@ u64 TimestampQuery::timestamp() const {
     }
 
     y_debug_assert(_data);
-    vk_check(vkGetQueryPoolResults(vk_device(), _data->_pools[_pool], _query, 1, sizeof(u64), &_result, sizeof(u64), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
+    vk_check(vkGetQueryPoolResults(vk_device(), _data->_pools[_pool].pool, _query, 1, sizeof(u64), &_result, sizeof(u64), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
     _has_result = true;
     _data = nullptr;
 
@@ -119,10 +135,13 @@ VkCommandBuffer TimestampQueryPool::vk_cmd_buffer() const {
 
 TimestampQuery TimestampQueryPool::query(PipelineStage stage) {
     const auto [pool, query] = _data->alloc_query();
-    vkCmdWriteTimestamp(_data->_cmd_buffer, VkPipelineStageFlagBits(stage), _data->_pools[pool], query);
+    vkCmdWriteTimestamp(_data->_cmd_buffer, VkPipelineStageFlagBits(stage), _data->_pools[pool].pool, query);
     return TimestampQuery(_data, pool, query);
 }
 
+bool TimestampQueryPool::all_query_ready() const {
+    return !_data || _data->all_ready();
+}
 
 }
 

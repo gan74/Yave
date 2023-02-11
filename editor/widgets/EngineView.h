@@ -65,6 +65,8 @@ class EngineView final : public Widget {
         bool before_gui() override;
         void after_gui() override;
 
+        bool should_keep_alive() const override;
+
     private:
         void draw(CmdBufferRecorder& recorder);
         void draw_menu_bar();
