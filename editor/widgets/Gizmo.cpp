@@ -87,7 +87,6 @@ void Gizmo::set_allow_drag(bool allow) {
     _allow_drag = allow;
 }
 
-
 Gizmo::Mode Gizmo::mode() const {
     return _mode;
 }
@@ -312,27 +311,29 @@ void Gizmo::translate_gizmo() {
         }
 
         if(_dragging_mask) {
-            const math::Vec2 start_pos = to_window_pos(_drag_start_pos);
-            ImGui::GetWindowDrawList()->AddLine(start_pos, data.gizmo_center, 0x80FFFFFF, 0.5f * gizmo_width);
-            ImGui::GetWindowDrawList()->AddCircle(start_pos, 1.5f * gizmo_width, 0x80FFFFFF);
-
-            // const math::Vec3 move = data.ref_position - _drag_start_pos;
-            // ImGui::GetWindowDrawList()->AddText(start_pos, 0xFFFFFFFF, fmt_c_str("X: %\n Y: %\n Z: %", move.x(), move.y(), move.z()));
+            math::Vec3 current_pos = _drag_start_pos;
+            for(usize k = 0; k != 3; ++k) {
+                const math::Vec3 axis = data.basis[k];
+                const float proj = axis.dot(current_pos - data.ref_position);
+                const math::Vec3 next_pos = current_pos - axis * proj;
+                ImGui::GetWindowDrawList()->AddLine(to_window_pos(current_pos), to_window_pos(next_pos), 0x80FFFFFF, 0.5f * gizmo_width);
+                current_pos = next_pos;
+            }
+            ImGui::GetWindowDrawList()->AddCircle(to_window_pos(_drag_start_pos), 1.5f * gizmo_width, 0x80FFFFFF);
         }
 
         ImGui::GetWindowDrawList()->AddCircleFilled(data.gizmo_center, 1.5f * gizmo_width, 0xFFFFFFFF);
     }
 
-
     // click
-    {
-        if(is_clicked(_allow_drag)) {
-            _dragging_mask = hover_mask;
-            _dragging_offset = data.ref_position - data.projected_mouse;
-            _drag_start_pos = data.ref_position;
-        } else if(!ImGui::IsMouseDown(0)) {
-            _dragging_mask = 0;
-        }
+    if(is_clicked(_allow_drag)) {
+        _dragging_mask = hover_mask;
+        _dragging_offset = data.ref_position - data.projected_mouse;
+        _drag_start_pos = data.ref_position;
+    }
+
+    if(!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        _dragging_mask = 0;
     }
 
     // drag
