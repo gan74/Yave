@@ -54,117 +54,6 @@ static usize count_errors(const core::Vector<T>& assets) {
     return errors;
 }
 
-template<typename T>
-static void set_global_import_flag(core::Vector<T>& assets) {
-    ImGui::PushID(&assets);
-
-    bool import = false;
-    for(const T& asset : assets) {
-        if(asset.import && !asset.is_error) {
-            import = true;
-            break;
-        }
-    }
-
-    if(ImGui::Checkbox("##import", &import)) {
-        for(T& asset : assets) {
-            if(!asset.is_error) {
-                asset.import = import;
-            }
-        }
-    }
-
-    ImGui::PopID();
-}
-
-
-static const char* make_display_name(const import::ParsedScene::Asset& asset) {
-    return asset.is_error
-        ? fmt_c_str(ICON_FA_EXCLAMATION_TRIANGLE " %", asset.name)
-        : asset.name.data();
-}
-
-static bool patch_import_error(import::ParsedScene::Asset& asset) {
-    asset.import &= !asset.is_error;
-    if(asset.is_error) {
-        ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-    }
-    return asset.is_error;
-}
-
-template<typename T>
-static void display_asset(T& asset) {
-    ImGui::PushID(&asset);
-    {
-        const bool is_error = patch_import_error(asset);
-
-        ImGui::Checkbox("##import", &asset.import);
-        ImGui::SameLine();
-        ImGui::Selectable(make_display_name(asset));
-
-        if(!is_error) {
-            if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                add_child_widget<Renamer>(asset.name, [&](std::string_view new_name) { asset.name = new_name; return true; });
-            }
-        } else {
-            ImGui::PopStyleColor();
-            if(ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Asset \"%s\" could not be parsed and won't be imported", asset.name.data());
-            }
-        }
-    }
-    ImGui::PopID();
-}
-
-static void display_mesh_import_list(import::ParsedScene& scene) {
-    set_global_import_flag(scene.mesh_prefabs);
-    ImGui::SameLine();
-
-    if(ImGui::TreeNode(fmt_c_str("% Meshes", scene.mesh_prefabs.size()))) {
-        ImGui::Indent();
-
-        for(auto& mesh : scene.mesh_prefabs) {
-            display_asset(mesh);
-        }
-
-        ImGui::Unindent();
-        ImGui::TreePop();
-    }
-}
-
-static void display_material_import_list(import::ParsedScene& scene) {
-    set_global_import_flag(scene.materials);
-    ImGui::SameLine();
-
-    if(ImGui::TreeNode(fmt_c_str("% Materials", scene.materials.size()))) {
-        ImGui::Indent();
-
-        for(auto& material : scene.materials) {
-            display_asset(material);
-        }
-
-        ImGui::Unindent();
-        ImGui::TreePop();
-    }
-}
-
-static void display_image_import_list(import::ParsedScene& scene) {
-    set_global_import_flag(scene.images);
-    ImGui::SameLine();
-
-    if(ImGui::TreeNode(fmt_c_str("% Textures", scene.images.size()))) {
-        ImGui::Indent();
-
-        for(auto& image : scene.images) {
-            display_asset(image);
-        }
-
-        ImGui::Unindent();
-        ImGui::TreePop();
-    }
-}
-
-
 
 SceneImporter2::SceneImporter2() : SceneImporter2(asset_store().filesystem()->current_path().unwrap_or(".")) {
 }
@@ -238,57 +127,60 @@ usize SceneImporter2::import_assets() {
     usize to_import = 0;
 
     // --------------------------------- Images ---------------------------------
-    {
+    if(_import_options.import_textures) {
         const core::String image_import_path = asset_store().filesystem()->join(_import_path, "Textures");
         for(usize i = 0; i != _scene.images.size(); ++i) {
-            if(_scene.images[i].import) {
-                ++to_import;
-                _thread_pool.schedule([=] {
-                    auto& image = _scene.images[i];
-                    y_debug_assert(image.asset_id == AssetId::invalid_id());
-                    if(auto res = _scene.build_image_data(i)) {
-                        image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, _emergency_uid, log_func);
-                    }
-                }, &image_deps);
-            }
+            ++to_import;
+            _thread_pool.schedule([=] {
+                auto& image = _scene.images[i];
+                y_debug_assert(image.asset_id == AssetId::invalid_id());
+                if(image.is_error) {
+                    return;
+                }
+                if(auto res = _scene.build_image_data(i)) {
+                    image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, _emergency_uid, log_func);
+                }
+            }, &image_deps);
         }
     }
 
     // --------------------------------- Meshes ---------------------------------
-    {
+    if(_import_options.import_meshes) {
         const core::String mesh_import_path = asset_store().filesystem()->join(_import_path, "Meshes");
         for(usize i = 0; i != _scene.mesh_prefabs.size(); ++i) {
-            if(_scene.mesh_prefabs[i].import) {
-                ++to_import;
-                _thread_pool.schedule([=] {
-                    auto& mesh = _scene.mesh_prefabs[i];
-                    y_debug_assert(mesh.mesh_asset_id == AssetId::invalid_id());
-                    if(auto res = _scene.build_mesh_data(i)) {
-                        mesh.mesh_asset_id = import_single_asset(
-                            std::move(res.unwrap()),
-                            asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.name),
-                            AssetType::Mesh, _emergency_uid, log_func
-                        );
-                    }
-                }, &mesh_material_deps);
-            }
+            ++to_import;
+            _thread_pool.schedule([=] {
+                auto& mesh = _scene.mesh_prefabs[i];
+                y_debug_assert(mesh.mesh_asset_id == AssetId::invalid_id());
+                if(mesh.is_error) {
+                    return;
+                }
+                if(auto res = _scene.build_mesh_data(i)) {
+                    mesh.mesh_asset_id = import_single_asset(
+                        std::move(res.unwrap()),
+                        asset_store().filesystem()->join(mesh_import_path, mesh.name + "_" + mesh.name),
+                        AssetType::Mesh, _emergency_uid, log_func
+                    );
+                }
+            }, &mesh_material_deps);
         }
     }
 
     // --------------------------------- Materials ---------------------------------
-    {
+    if(_import_options.import_materials) {
         const core::String material_import_path = asset_store().filesystem()->join(_import_path, "Materials");
         for(usize i = 0; i != _scene.materials.size(); ++i) {
-            if(_scene.materials[i].import) {
-                ++to_import;
-                _thread_pool.schedule([=] {
-                    auto& material = _scene.materials[i];
-                    y_debug_assert(material.asset_id == AssetId::invalid_id());
-                    if(auto res = _scene.build_material_data(i)) {
-                        material.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(material_import_path, material.name), AssetType::Material, _emergency_uid, log_func);
-                    }
-                 }, &mesh_material_deps);
-            }
+            ++to_import;
+            _thread_pool.schedule([=] {
+                auto& material = _scene.materials[i];
+                y_debug_assert(material.asset_id == AssetId::invalid_id());
+                if(material.is_error) {
+                    return;
+                }
+                if(auto res = _scene.build_material_data(i)) {
+                    material.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(material_import_path, material.name), AssetType::Material, _emergency_uid, log_func);
+                }
+             }, &mesh_material_deps);
         }
     }
 
@@ -322,23 +214,24 @@ usize SceneImporter2::import_assets() {
         return prefab;
     };
 
-    {
+    if(_import_options.import_prefabs) {
         const core::String prefab_import_path = asset_store().filesystem()->join(_import_path, "Prefabs");
         for(usize i = 0; i != _scene.mesh_prefabs.size(); ++i) {
-            if(_scene.mesh_prefabs[i].import) {
-                ++to_import;
-                _thread_pool.schedule([=] {
-                    auto& mesh = _scene.mesh_prefabs[i];
-                    y_debug_assert(mesh.asset_id == AssetId::invalid_id());
-                    mesh.asset_id = import_single_asset(build_prefab(mesh), asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, _emergency_uid, log_func);
-                }, nullptr, mesh_material_deps);
-            }
+            ++to_import;
+            _thread_pool.schedule([=] {
+                auto& mesh = _scene.mesh_prefabs[i];
+                y_debug_assert(mesh.asset_id == AssetId::invalid_id());
+                if(mesh.is_error) {
+                    return;
+                }
+                mesh.asset_id = import_single_asset(build_prefab(mesh), asset_store().filesystem()->join(prefab_import_path, mesh.name), AssetType::Prefab, _emergency_uid, log_func);
+            }, nullptr, mesh_material_deps);
         }
     }
 
 
     // --------------------------------- Scene ---------------------------------
-    if(_scene.import_scene) {
+    if(_import_options.import_scene) {
         ++to_import;
         _thread_pool.schedule([=] {
             const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
@@ -413,16 +306,12 @@ void SceneImporter2::on_gui() {
                 }
             }
 
-            ImGui::Checkbox("Import as scene", &_scene.import_scene);
-
-            ImGui::Separator();
-
-            if(ImGui::BeginChild("##assets", ImVec2(0, ImGui::GetContentRegionAvail().y - button_height), true)) {
-                display_mesh_import_list(_scene);
-                display_material_import_list(_scene);
-                display_image_import_list(_scene);
-            }
-            ImGui::EndChild();
+            ImGui::Checkbox("Import as scene", &_import_options.import_scene);
+            ImGui::Checkbox(fmt_c_str("Import % prefabs", _scene.mesh_prefabs.size()), &_import_options.import_prefabs);
+            ImGui::Checkbox(fmt_c_str("Import % meshes", _scene.mesh_prefabs.size()), &_import_options.import_meshes);
+            ImGui::Checkbox(fmt_c_str("Import % materials", _scene.materials.size()), &_import_options.import_materials);
+            ImGui::Checkbox(fmt_c_str("Import % textures", _scene.images.size()), &_import_options.import_textures);
+            _import_options.update_flags();
 
             if(ImGui::Button(ICON_FA_CHECK " Import") || _import_with_default_settings) {
                 _to_import = import_assets();
@@ -430,41 +319,43 @@ void SceneImporter2::on_gui() {
             }
         } break;
 
-        case State::Importing:
+        case State::Importing: {
             ImGui::TextUnformatted("Importing assets:");
             ImGui::SameLine();
-            ImGui::ProgressBar(1.0f - float(_thread_pool.pending_tasks()) / float(_to_import));
+            const usize imported = _to_import - _thread_pool.pending_tasks();
+            ImGui::ProgressBar(float(imported) / float(_to_import), ImVec2(-1.0f, 0.0f), fmt_c_str("% / % assets imported", imported, _to_import));
             if(_thread_pool.is_empty()) {
                 refresh_all();
                 _state = State::Done;
             }
-            [[fallthrough]];
+        } [[fallthrough]];
 
         case State::Done: {
-            if(ImGui::BeginTable("##logs", 1, ImGuiTableFlags_RowBg, ImVec2(0, ImGui::GetContentRegionAvail().y - button_height))) {
-                const auto lock = y_profile_unique_lock(_lock);
-                for(const auto& log : _logs) {
-                    imgui::table_begin_next_row();
-                    switch(log.second) {
-                        case Log::Error:
-                            ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-                            ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_CIRCLE " %", log.first.data()));
-                            ImGui::PopStyleColor();
-                        break;
+            if(ImGui::CollapsingHeader("Details")) {
+                if(ImGui::BeginTable("##logs", 1, ImGuiTableFlags_RowBg, ImVec2(0, ImGui::GetContentRegionAvail().y - button_height))) {
+                    const auto lock = y_profile_unique_lock(_lock);
+                    for(const auto& log : _logs) {
+                        imgui::table_begin_next_row();
+                        switch(log.second) {
+                            case Log::Error:
+                                ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+                                ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_CIRCLE " %", log.first.data()));
+                                ImGui::PopStyleColor();
+                            break;
 
-                        case Log::Warning:
-                            ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-                            ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_TRIANGLE " %", log.first.data()));
-                            ImGui::PopStyleColor();
-                        break;
+                            case Log::Warning:
+                                ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+                                ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_TRIANGLE " %", log.first.data()));
+                                ImGui::PopStyleColor();
+                            break;
 
-                        default:
-                            ImGui::Selectable(fmt_c_str(ICON_FA_CHECK " %", log.first.data()));
+                            default:
+                                ImGui::Selectable(fmt_c_str(ICON_FA_CHECK " %", log.first.data()));
+                        }
                     }
                 }
+                ImGui::EndTable();
             }
-            ImGui::EndTable();
-
 
             if(ImGui::Button("Ok")) {
                 close();

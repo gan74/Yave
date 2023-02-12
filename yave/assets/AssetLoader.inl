@@ -215,7 +215,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 
                 _data->set_failed(ErrorType::InvalidID);
                 y_debug_assert(!_data->is_loading());
-                log_msg(fmt("Unable to load asset: invalid ID"), Log::Error);
+                log_msg(fmt("Unable to load % %: invalid ID", asset_type_name(asset_type()), asset_name()), Log::Error);
                 return core::Err();
             }
 
@@ -246,6 +246,10 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
             core::String asset_name() const {
                 return stringify_id(AssetPtr<T>(_data).id());
                 //return AssetPtr<T>(_data).name().unwrap_or("asset");
+            }
+
+            AssetType asset_type() const {
+                return AssetLoader::Loader<T>::traits::type;
             }
     };
 

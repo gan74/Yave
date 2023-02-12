@@ -383,7 +383,7 @@ ImageData block_compress(const ImageData& image, ImageFormat compressed_format, 
         return ImageData(image.size().to<2>(), compressed_data.data(), compressed_format, mip_count);
     }
 
-    log_msg("Compression isn't supported for given image format", Log::Error);
+    log_msg("Compression isn't supported for given image format", Log::Warning);
     return copy(image);
 }
 

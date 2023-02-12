@@ -66,6 +66,20 @@ class SceneImporter2 final : public Widget {
 
         concurrent::StaticThreadPool _thread_pool;
         std::atomic<u32> _emergency_uid = 0;
+
+        struct {
+            bool import_scene = true;
+            bool import_prefabs = true;
+            bool import_meshes = true;
+            bool import_materials = true;
+            bool import_textures = true;
+
+            void update_flags() {
+                import_materials &= import_textures;
+                import_prefabs &= import_meshes;
+                import_prefabs &= import_materials;
+            }
+        } _import_options;
 };
 
 }

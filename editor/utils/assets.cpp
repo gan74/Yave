@@ -26,42 +26,14 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
+#include <cctype>
+
 namespace editor {
-namespace detail {
-std::array<std::string_view, 2> asset_type_names(AssetType type) {
-    switch(type) {
-        case AssetType::Mesh:
-            return {"Mesh", "mesh"};
-
-        case AssetType::Image:
-            return {"Image", "image"};
-
-        case AssetType::Animation:
-            return {"Animation", "animation"};
-
-        case AssetType::Font:
-            return {"Font", "font"};
-
-        case AssetType::Scene:
-            return {"Scene", "scene"};
-
-        case AssetType::Material:
-            return {"Material", "material"};
-
-        case AssetType::Prefab:
-            return {"Prefab", "prefab"};
-
-        default:
-            break;
-    }
-    return {"Asset", "asset"};
-}
-}
 
 std::string_view asset_type_name(AssetType type, bool plural, bool lowercase) {
-    std::string_view name = detail::asset_type_names(type)[lowercase];
+    std::string_view name = asset_type_name(type);
     if(plural) {
-        return fmt("%%", name, name[name.size() - 1] == 'h' ? "es" : "s");
+        return fmt("%%%", lowercase ? name[0] : std::toupper(name[0]), name.substr(1), name[name.size() - 1] == 'h' ? "es" : "s");
     }
     return name;
 }

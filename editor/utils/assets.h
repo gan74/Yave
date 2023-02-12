@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace editor {
 
-std::string_view asset_type_name(AssetType type, bool plural = false, bool lowercase = false);
+std::string_view asset_type_name(AssetType type, bool plural, bool lowercase);
 std::string_view asset_type_icon(AssetType type);
 
 }

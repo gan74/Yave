@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <string_view>
+
 namespace yave {
 
 enum class AssetType : u32 {
@@ -37,6 +39,8 @@ enum class AssetType : u32 {
 
     Unknown = u32(-1)
 };
+
+std::string_view asset_type_name(AssetType type);
 
 }
 
