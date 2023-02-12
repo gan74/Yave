@@ -97,7 +97,7 @@ bool FileBrowser::has_valid_extension(std::string_view filename) const {
 bool FileBrowser::done(const core::String& filename) {
     y_profile();
     const bool valid_dir = filesystem()->is_directory(filename).unwrap_or(false);
-    const bool valid_file = has_valid_extension(filename) && filesystem()->is_file(filename).unwrap_or(false);
+    const bool valid_file = /*has_valid_extension(filename) &&*/ filesystem()->is_file(filename).unwrap_or(false);
 
     bool changed = true;
     if((valid_dir && _dirs) || valid_file) {

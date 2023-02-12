@@ -25,6 +25,9 @@ SOFTWARE.
 
 #include <editor/UiManager.h>
 
+#include <yave/utils/FileSystemModel.h>
+
+#include <y/io2/File.h>
 #include <y/utils/log.h>
 
 #include <external/imgui_test_engine/imgui_te_context.h>
@@ -57,10 +60,13 @@ static core::Vector<ecs::EntityId> all_ids(const EditorWorld& world = current_wo
 }
 
 
+static constexpr std::string_view cube_gltf = R"#({"asset":{"generator":"Khronos glTF Blender I/O v3.4.50","version":"2.0"},"scene":0,"scenes":[{"name":"Scene","nodes":[0]}],"nodes":[{"mesh":0,"name":"Cube"}],"materials":[{"doubleSided":true,"name":"Material","pbrMetallicRoughness":{"baseColorFactor":[0.800000011920929,0.800000011920929,0.800000011920929,1],"metallicFactor":0,"roughnessFactor":0.5}}],"meshes":[{"name":"Cube","primitives":[{"attributes":{"POSITION":0,"TEXCOORD_0":1,"NORMAL":2},"indices":3,"material":0}]}],"accessors":[{"bufferView":0,"componentType":5126,"count":24,"max":[1,1,1],"min":[-1,-1,-1],"type":"VEC3"},{"bufferView":1,"componentType":5126,"count":24,"type":"VEC2"},{"bufferView":2,"componentType":5126,"count":24,"type":"VEC3"},{"bufferView":3,"componentType":5123,"count":36,"type":"SCALAR"}],"bufferViews":[{"buffer":0,"byteLength":288,"byteOffset":0,"target":34962},{"buffer":0,"byteLength":192,"byteOffset":288,"target":34962},{"buffer":0,"byteLength":288,"byteOffset":480,"target":34962},{"buffer":0,"byteLength":72,"byteOffset":768,"target":34963}],"buffers":[{"byteLength":840,"uri":"data:application/octet-stream;base64,AACAPwAAgD8AAIC/AACAPwAAgD8AAIC/AACAPwAAgD8AAIC/AACAPwAAgL8AAIC/AACAPwAAgL8AAIC/AACAPwAAgL8AAIC/AACAPwAAgD8AAIA/AACAPwAAgD8AAIA/AACAPwAAgD8AAIA/AACAPwAAgL8AAIA/AACAPwAAgL8AAIA/AACAPwAAgL8AAIA/AACAvwAAgD8AAIC/AACAvwAAgD8AAIC/AACAvwAAgD8AAIC/AACAvwAAgL8AAIC/AACAvwAAgL8AAIC/AACAvwAAgL8AAIC/AACAvwAAgD8AAIA/AACAvwAAgD8AAIA/AACAvwAAgD8AAIA/AACAvwAAgL8AAIA/AACAvwAAgL8AAIA/AACAvwAAgL8AAIA/AAAgPwAAAD8AACA/AAAAPwAAID8AAAA/AADAPgAAAD8AAMA+AAAAPwAAwD4AAAA/AAAgPwAAgD4AACA/AACAPgAAID8AAIA+AADAPgAAgD4AAMA+AACAPgAAwD4AAIA+AAAgPwAAQD8AACA/AABAPwAAYD8AAAA/AAAAPgAAAD8AAMA+AABAPwAAwD4AAEA/AAAgPwAAAAAAACA/AACAPwAAYD8AAIA+AAAAPgAAgD4AAMA+AAAAAAAAwD4AAIA/AAAAAAAAAAAAAIC/AAAAAAAAgD8AAACAAACAPwAAAAAAAACAAAAAAAAAgL8AAACAAAAAAAAAAAAAAIC/AACAPwAAAAAAAACAAAAAAAAAAAAAAIA/AAAAAAAAgD8AAACAAACAPwAAAAAAAACAAAAAAAAAgL8AAACAAAAAAAAAAAAAAIA/AACAPwAAAAAAAACAAACAvwAAAAAAAACAAAAAAAAAAAAAAIC/AAAAAAAAgD8AAACAAAAAAAAAgL8AAACAAACAvwAAAAAAAACAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIA/AACAvwAAAAAAAACAAAAAAAAAgD8AAACAAAAAAAAAgL8AAACAAAAAAAAAAAAAAIA/AACAvwAAAAAAAACAAQAOABQAAQAUAAcACgAGABIACgASABYAFwATAAwAFwAMABAADwADAAkADwAJABUABQACAAgABQAIAAsAEQANAAAAEQAAAAQA"}]})#";
+
 // https://github.com/ocornut/imgui_test_engine/wiki/Named-References
 void register_editor_tests(ImGuiTestEngine* engine) {
     log_msg("Registering ImGui tests", Log::Debug);
 
+#if 1
     IM_REGISTER_TEST(engine, "tests", "new scene")->TestFunc = [](ImGuiTestContext* ctx) {
         ctx->SetRef("##MainMenuBar");
         ctx->MenuClick("File/New");
@@ -240,6 +246,82 @@ void register_editor_tests(ImGuiTestEngine* engine) {
             IM_CHECK_STR_EQ(info->DebugLabel, fmt_c_str(ICON_FA_CUBE " shalg###%", id.as_u64()));
         }
     };
+
+    IM_REGISTER_TEST(engine, "tests", "import gltf")->TestFunc = [](ImGuiTestContext* ctx) {
+        const core::String temp_file = core::String(std::tmpnam(nullptr)) + ".gltf";
+        const auto path = FileSystemModel::local_filesystem()->parent_path(temp_file);
+        IM_CHECK_EQ(path.is_error(), false);
+
+        {
+            auto file = io2::File::create(temp_file);
+            IM_CHECK_EQ(file.is_error(), false);
+            IM_CHECK_EQ(file.unwrap().write(cube_gltf.data(), cube_gltf.size()).is_error(), false);
+        }
+
+        ctx->SetRef("##MainMenuBar");
+        ctx->MenuClick("View/ResourceBrowser");
+
+        ctx->Yield();
+
+        ctx->SetRef("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
+        ctx->ItemClick("**/" ICON_FA_PLUS " Import");
+        ctx->ItemClick("//$FOCUSED/Import objects");
+
+        IM_CHECK_EQ(FileSystemModel::local_filesystem()->exists(temp_file).unwrap_or(false), true);
+
+        ctx->SetRef("//Scene importer##1");
+        ctx->ItemInputValue("**/##path", path.unwrap().data());
+        ctx->ItemInputValue("**/##filename", temp_file.sub_str(path.unwrap().size() + 1).data());
+
+        for(usize i = 0; !ctx->ItemInfoOpenFullPath("**/" ICON_FA_CHECK " Import", ImGuiTestOpFlags_NoError)->ID; ++i) {
+            ctx->Yield();
+            IM_CHECK_NE(i, 1000_uu);
+        }
+
+        {
+            ctx->ItemClick("**/" ICON_FA_FOLDER_OPEN);
+
+            ctx->SetRef("//File browser##1");
+            const ImGuiTestItemInfo* info = ctx->ItemInfoOpenFullPath("");
+            IM_CHECK_NE(info->ID, 0u);
+            log_msg(info->DebugLabel);
+            ctx->MouseMoveToPos(info->RectClipped.GetCenter());
+            ctx->MouseClick(ImGuiMouseButton_Right);
+            ctx->ItemClick("//$FOCUSED/New folder");
+            ctx->ItemInputValue("**/##path", "new folder");
+            ctx->ItemClick("**/Ok");
+        }
+
+
+        ctx->SetRef("//Scene importer##1");
+        ctx->ItemClick("**/" ICON_FA_CHECK " Import");
+
+        for(usize i = 0; !ctx->ItemInfoOpenFullPath("**/Ok", ImGuiTestOpFlags_NoError)->ID; ++i) {
+            ctx->Yield();
+            IM_CHECK_NE(i, 1000_uu);
+        }
+
+        ctx->ItemClick("**/Ok");
+
+        ctx->Yield();
+
+        ctx->WindowClose("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
+    };
+
+
+    IM_REGISTER_TEST(engine, "tests", "delete resource folder")->TestFunc = [](ImGuiTestContext* ctx) {
+        ctx->SetRef("##MainMenuBar");
+        ctx->MenuClick("View/ResourceBrowser");
+
+        ctx->Yield();
+
+        ctx->SetRef("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
+        ctx->ItemClick("**/" ICON_FA_FOLDER " new folder##0", ImGuiMouseButton_Right);
+        ctx->ItemClick("//$FOCUSED/Delete");
+
+        ctx->WindowClose("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
+    };
+#endif
 }
 
 }
