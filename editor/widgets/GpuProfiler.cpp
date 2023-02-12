@@ -237,7 +237,7 @@ void GpuProfiler::on_gui() {
         _history.clear();
     }
 
-    if(ImGui::Checkbox("Display as tree", &_tree)) {
+    if(ImGui::Checkbox("Display hierarchy", &_tree)) {
         _history.clear();
     }
 
