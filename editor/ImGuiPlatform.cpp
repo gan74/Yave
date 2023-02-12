@@ -411,9 +411,9 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport, bool run_tests) {
 
 ImGuiPlatform::~ImGuiPlatform() {
     y_always_assert(_instance == this, "ImGuiPlatform instance has already been deleted.");
-    _instance = nullptr;
 
     ImGui::DestroyContext();
+    _instance = nullptr;
 }
 
 const ImGuiRenderer* ImGuiPlatform::renderer() const {
@@ -514,7 +514,9 @@ void ImGuiPlatform::close_window(PlatformWindow* window) {
         }
     }
 
-    y_fatal("Window not found.");
+    if(window != _main_window.get()) {
+        y_fatal("Window not found.");
+    }
 }
 
 ImGuiPlatform* ImGuiPlatform::get_platform() {
