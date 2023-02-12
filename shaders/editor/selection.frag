@@ -20,25 +20,30 @@ void main() {
     const uint base_id = texelFetch(in_seletion_id, coords, 0).r;
 
     float min_depth = 1.0;
-    float sum = 0.0;
-    float total = 0.0;
-    for(int i = -size; i <= size; ++i) {
-        for(int j = -size; j <= size; ++j) {
-            const uint id = texelFetch(in_seletion_id, coords + ivec2(i, j), 0).r;
-            const float w = dot(vec2(i, j), vec2(i, j));
-            if(id != base_id) {
-                min_depth = min(min_depth, texelFetch(in_seletion_depth, coords + ivec2(i, j), 0).r);
-                sum += w;
+    if(base_id != 0) {
+        min_depth = texelFetch(in_seletion_depth, coords, 0).r;
+        out_color.a = max(0.0, sin(dot(vec2(1.0, 1.0), gl_FragCoord.xy)) * 0.5);
+    } else {
+        float sum = 0.0;
+        float total = 0.0;
+        for(int i = -size; i <= size; ++i) {
+            for(int j = -size; j <= size; ++j) {
+                const uint id = texelFetch(in_seletion_id, coords + ivec2(i, j), 0).r;
+                const float w = dot(vec2(i, j), vec2(i, j));
+                if(id != base_id) {
+                    min_depth = min(min_depth, texelFetch(in_seletion_depth, coords + ivec2(i, j), 0).r);
+                    sum += w;
+                }
+                total += w;
             }
-            total += w;
+        }
+        if(sum > 0.0) {
+            out_color.a = saturate(sum / total * 8.0);
         }
     }
 
-    if(sum > 0.0) {
-        out_color.a = saturate(sum / total * 4.0);
-        if(texelFetch(in_depth, coords, 0).r > min_depth) {
-            out_color.a *= 0.5;
-        }
+    if(texelFetch(in_depth, coords, 0).r > min_depth) {
+        out_color.a *= 0.35;
     }
 }
 
