@@ -26,6 +26,12 @@ SOFTWARE.
 
 namespace yave {
 
+enum class MappingAccess {
+    WriteOnly,
+    ReadOnly,
+    ReadWrite
+};
+
 class DeviceMemoryView {
     public:
         DeviceMemoryView() = default;
@@ -36,8 +42,7 @@ class DeviceMemoryView {
         u64 vk_offset() const;
         u64 vk_size() const;
 
-        void* map();
-        void unmap();
+        DeviceMemoryHeapBase* heap();
 
     private:
         DeviceMemoryHeapBase* _heap = nullptr;

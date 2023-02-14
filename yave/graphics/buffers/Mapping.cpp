@@ -25,29 +25,25 @@ SOFTWARE.
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 
 namespace yave {
 
-Mapping::Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer) :
+Mapping::Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer, MappingAccess access) :
         _buffer(buffer),
-        _mapping(static_cast<u8*>(_buffer.device_memory().map()) + buffer.byte_offset()) {
+        _mapping(static_cast<u8*>(_buffer.device_memory().heap()->map(_buffer.vk_memory_range(), access))),
+        _access(access) {
 
     y_debug_assert(_buffer.byte_offset() % _buffer.host_side_alignment() == 0);
     y_debug_assert(_mapping);
 }
 
 Mapping::~Mapping() {
-    flush();
-}
-
-void Mapping::flush() {
     if(_mapping) {
-        const VkMappedMemoryRange range = _buffer.vk_memory_range();
-        Y_TODO(Maybe merge flush & unmap)
-        vk_check(vkFlushMappedMemoryRanges(vk_device(), 1, &range));
-        _buffer.device_memory().unmap();
+        _buffer.device_memory().heap()->unmap(_buffer.vk_memory_range(), _access);
     }
 }
+
 
 usize Mapping::byte_size() const {
     return _buffer.byte_size();
@@ -56,6 +52,7 @@ usize Mapping::byte_size() const {
 void Mapping::swap(Mapping& other) {
     std::swap(_mapping, other._mapping);
     std::swap(_buffer, other._buffer);
+    std::swap(_access, other._access);
 }
 
 void* Mapping::data() {

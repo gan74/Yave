@@ -48,8 +48,8 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
         core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) override;
         void free(const DeviceMemory& memory) override;
 
-        void* map(const DeviceMemoryView& view) override;
-        void unmap(const DeviceMemoryView&) override;
+        void* map(const VkMappedMemoryRange& range, MappingAccess access) override;
+        void unmap(const VkMappedMemoryRange& range, MappingAccess access) override;
 
         u64 size() const;
         u64 available() const; // slow!

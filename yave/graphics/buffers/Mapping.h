@@ -34,17 +34,15 @@ class Mapping : NonMovable {
         Mapping() = default;
 
         template<BufferUsage Usage>
-        Mapping(const Buffer<Usage, MemoryType::CpuVisible>& buffer) : Mapping(SubBuffer<BufferUsage::None, MemoryType::CpuVisible>(buffer)) {
+        Mapping(const Buffer<Usage, MemoryType::CpuVisible>& buffer, MappingAccess access = MappingAccess::WriteOnly) : Mapping(SubBuffer<BufferUsage::None, MemoryType::CpuVisible>(buffer), access) {
         }
 
-        Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer);
+        Mapping(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer, MappingAccess access = MappingAccess::WriteOnly);
 
         static void stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data, usize elem_size = 0, usize input_stride = 0);
 
         ~Mapping();
 
-        // No need to barrier after flush
-        void flush();
 
         void* data();
         const void* data() const;
@@ -57,6 +55,7 @@ class Mapping : NonMovable {
     private:
         SubBufferBase _buffer;
         void* _mapping = nullptr;
+        MappingAccess _access = MappingAccess::ReadWrite;
 };
 
 }

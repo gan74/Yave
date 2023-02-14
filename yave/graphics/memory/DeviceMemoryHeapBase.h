@@ -26,9 +26,9 @@ SOFTWARE.
 
 #include <y/core/Result.h>
 
+#include "MemoryType.h"
 #include "DeviceMemory.h"
 #include "DeviceMemoryView.h"
-#include "MemoryType.h"
 
 namespace yave {
 
@@ -40,8 +40,8 @@ class DeviceMemoryHeapBase : NonMovable {
         virtual core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) = 0;
         virtual void free(const DeviceMemory& memory) = 0;
 
-        virtual void* map(const DeviceMemoryView& view) = 0;
-        virtual void unmap(const DeviceMemoryView& view) = 0;
+        virtual void* map(const VkMappedMemoryRange& range, MappingAccess access) = 0;
+        virtual void unmap(const VkMappedMemoryRange& range, MappingAccess access) = 0;
 
     protected:
         DeviceMemoryHeapBase() = default;

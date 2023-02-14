@@ -36,8 +36,8 @@ class DedicatedDeviceMemoryAllocator : public DeviceMemoryHeapBase {
         core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) override;
         void free(const DeviceMemory& memory) override;
 
-        void* map(const DeviceMemoryView& view) override;
-        void unmap(const DeviceMemoryView& view) override;
+        void* map(const VkMappedMemoryRange& range, MappingAccess) override;
+        void unmap(const VkMappedMemoryRange& range, MappingAccess) override;
 
         u64 allocated_size() const;
 

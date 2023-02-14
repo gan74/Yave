@@ -50,15 +50,15 @@ void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
     vkFreeMemory(vk_device(), memory.vk_memory(), vk_allocation_callbacks());
 }
 
-void* DedicatedDeviceMemoryAllocator::map(const DeviceMemoryView& view) {
+void* DedicatedDeviceMemoryAllocator::map(const VkMappedMemoryRange& range, MappingAccess) {
     void* mapping = nullptr;
     const VkMemoryMapFlags flags = {};
-    vk_check(vkMapMemory(vk_device(), view.vk_memory(), view.vk_offset(), VK_WHOLE_SIZE, flags, &mapping));
+    vk_check(vkMapMemory(vk_device(), range.memory, 0, VK_WHOLE_SIZE, flags, &mapping));
     return mapping;
 }
 
-void DedicatedDeviceMemoryAllocator::unmap(const DeviceMemoryView& view) {
-    vkUnmapMemory(vk_device(), view.vk_memory());
+void DedicatedDeviceMemoryAllocator::unmap(const VkMappedMemoryRange& range, MappingAccess) {
+    vkUnmapMemory(vk_device(), range.memory);
 }
 
 u64 DedicatedDeviceMemoryAllocator::allocated_size() const {

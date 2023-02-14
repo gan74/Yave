@@ -69,13 +69,10 @@ u64 DeviceMemoryView::vk_size() const {
     return _size;
 }
 
-void* DeviceMemoryView::map() {
-    return _heap->map(*this);
+DeviceMemoryHeapBase* DeviceMemoryView::heap() {
+    return _heap;
 }
 
-void DeviceMemoryView::unmap() {
-    _heap->unmap(*this);
-}
 
 }
 

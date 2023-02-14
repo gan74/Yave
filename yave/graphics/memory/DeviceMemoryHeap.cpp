@@ -162,11 +162,30 @@ void DeviceMemoryHeap::sort_and_compact_blocks() {
     _free_blocks.shrink_to(dst + 1);
 }
 
-void* DeviceMemoryHeap::map(const DeviceMemoryView& view) {
-    return static_cast<u8*>(_mapping) + view.vk_offset();
+void* DeviceMemoryHeap::map(const VkMappedMemoryRange& range, MappingAccess access) {
+    switch(access) {
+        case MappingAccess::ReadOnly:
+        case MappingAccess::ReadWrite:
+            vk_check(vkInvalidateMappedMemoryRanges(vk_device(), 1, &range));
+        break;
+
+        case MappingAccess::WriteOnly:
+        break;
+    }
+
+    return static_cast<u8*>(_mapping) + range.offset;
 }
 
-void DeviceMemoryHeap::unmap(const DeviceMemoryView&) {
+void DeviceMemoryHeap::unmap(const VkMappedMemoryRange& range, MappingAccess access) {
+    switch(access) {
+        case MappingAccess::WriteOnly:
+        case MappingAccess::ReadWrite:
+            vk_check(vkFlushMappedMemoryRanges(vk_device(), 1, &range));
+        break;
+
+        case MappingAccess::ReadOnly:
+        break;
+    }
 }
 
 u64 DeviceMemoryHeap::size() const {

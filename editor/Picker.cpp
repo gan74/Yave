@@ -79,7 +79,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
     framegraph.render(recorder);
     command_queue().submit(std::move(recorder)).wait();
 
-    const ReadBackData read_back = TypedMapping(buffer)[0];
+    const ReadBackData read_back = TypedMapping(buffer, MappingAccess::ReadOnly)[0];
     const float depth = read_back.depth;
 
     auto inv_matrix = scene_view.camera().inverse_matrix();
