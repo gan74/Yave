@@ -262,6 +262,9 @@ bool device_initialized() {
 
 
 
+const DebugParams& debug_params() {
+    return device::instance->debug_params();
+}
 
 ThreadDevicePtr thread_device() {
     static thread_local ThreadDevicePtr thread_device = nullptr;

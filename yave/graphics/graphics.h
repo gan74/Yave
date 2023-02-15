@@ -37,6 +37,7 @@ void destroy_device();
 
 bool device_initialized();
 
+const DebugParams& debug_params();
 ThreadDevicePtr thread_device();
 
 VkDevice vk_device();

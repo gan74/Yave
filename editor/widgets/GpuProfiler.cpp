@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdTimingRecorder.h>
 #include <yave/graphics/device/DeviceProperties.h>
+#include <yave/graphics/device/DebugParams.h>
 
 #include <editor/UiManager.h>
 
@@ -237,11 +238,16 @@ void GpuProfiler::on_gui() {
         _history.clear();
     }
 
+    if(debug_params().debug_features_enabled()) {
+        ImGui::SameLine();
+        ImGui::TextColored(imgui::error_text_color, "(Debug layers enabled)");
+    }
+
     if(ImGui::Checkbox("Display hierarchy", &_tree)) {
         _history.clear();
     }
 
-    if(ImGui::BeginChild("##tree")) {
+    if(ImGui::BeginChild("##hierarchy")) {
         const ImGuiTableFlags table_flags =
                 ImGuiTableFlags_Sortable |
                 ImGuiTableFlags_SortTristate |
