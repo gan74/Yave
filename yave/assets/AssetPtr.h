@@ -76,8 +76,20 @@ AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args);
 
 namespace detail {
 
+template<typename T>
+AssetType asset_type() {
+    using traits = AssetTraits<T>;
+    if constexpr(traits::is_asset) {
+        return traits::type;
+    }
+    return AssetType::Unknown;
+}
+
+
 class AssetPtrDataBase : NonMovable {
     public:
+        virtual ~AssetPtrDataBase();
+
         const AssetId id;
 
         inline void set_failed(AssetLoadingErrorType error);
@@ -133,6 +145,8 @@ class AssetPtr {
         inline bool has_loader() const;
         inline AssetLoader* loader() const;
 
+        inline AssetType type() const;
+
         inline bool is_loaded() const;
         inline bool is_loading() const;
         inline bool is_failed() const;
@@ -182,7 +196,7 @@ class GenericAssetPtr {
         GenericAssetPtr() = default;
 
         template<typename T>
-        GenericAssetPtr(const AssetPtr<T>& ptr) : _data(ptr._data, ptr._data ? ptr._data.get() : nullptr) {
+        GenericAssetPtr(const AssetPtr<T>& ptr) : _data(ptr._data, ptr._data ? ptr._data.get() : nullptr), _type(ptr.type()) {
         }
 
         bool is_empty() const {
@@ -210,11 +224,27 @@ class GenericAssetPtr {
             return _data->error();
         }
 
+        AssetType type() const {
+            return _type;
+        }
+
+        template<typename T>
+        AssetPtr<T> to() const {
+            if(_data) {
+                using Data = detail::AssetPtrData<T>;
+                if(auto* data = dynamic_cast<Data*>(_data.get())) {
+                    return AssetPtr<T>(std::shared_ptr<Data>(_data, data));
+                }
+            }
+            return {};
+        }
+
     private:
         friend class AssetLoader;
         friend class AssetLoadingThreadPool;
 
         std::shared_ptr<detail::AssetPtrDataBase> _data;
+        AssetType _type = AssetType::Unknown;
 };
 
 

@@ -62,6 +62,8 @@ class SpotLightComponent final :
 
         math::Vec2 attenuation_scale_offset() const;
 
+        void inspect(ecs::ComponentInspector* inspector);
+
         y_reflect(SpotLightComponent,
             _color, _intensity, _range, _min_radius, _falloff,
             _half_angle, _half_inner_angle, _cast_shadow, _shadow_lod

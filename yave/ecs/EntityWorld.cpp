@@ -315,6 +315,13 @@ void EntityWorld::check_exists(EntityId id) const {
     y_always_assert(exists(id), "Entity doesn't exists");
 }
 
+void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector) {
+    for(auto& container : _containers) {
+        if(container) {
+            container->inspect_component(id, inspector);
+        }
+    }
+}
 
 void EntityWorld::post_deserialize() {
     y_profile();

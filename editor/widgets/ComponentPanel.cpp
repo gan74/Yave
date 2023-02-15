@@ -21,28 +21,478 @@ SOFTWARE.
 **********************************/
 
 #include "ComponentPanel.h"
-#include "ComponentPanelWidgets.h"
 
-#include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
+#include <editor/widgets/AssetSelector.h>
 #include <editor/utils/ui.h>
 #include <editor/components/EditorComponent.h>
+#include <editor/utils/assets.h>
 
-#include <yave/ecs/EntityPrefab.h>
+#include <yave/ecs/ComponentInspector.h>
+#include <yave/assets/AssetLoader.h>
+#include <yave/graphics/images/ImageData.h>
+#include <yave/material/Material.h>
+#include <yave/meshes/StaticMesh.h>
+#include <yave/meshes/MeshData.h>
+
+#include <yave/utils/color.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-
+#include <cinttypes>
 
 namespace editor {
 
+template<typename T>
+static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, ecs::EntityId id, ecs::ComponentTypeIndex comp_type) {
+    class AssetSetterInspector : public ecs::ComponentInspector {
+        public:
+            AssetSetterInspector(const AssetPtr<T>& ptr, const core::String& name, ecs::ComponentTypeIndex type) :
+                    _ptr(ptr),
+                    _name(name),
+                    _type(type) {
+            }
+
+            bool inspect_component_type(ecs::ComponentRuntimeInfo info, bool) override {
+                return _is_type = (info.type_id == _type);
+            }
+
+            void inspect(const core::String& name, GenericAssetPtr& p) override {
+                if(_is_type && name == _name) {
+                    p = _ptr;
+                }
+            }
+
+            void inspect(const core::String&, math::Transform<>&)               override {};
+            void inspect(const core::String&, math::Vec3&, Vec3Role)            override {};
+            void inspect(const core::String&, float&, FloatRole)                override {};
+            void inspect(const core::String&, float&, float, float, FloatRole)  override {};
+            void inspect(const core::String&, u32&, u32)                        override {};
+            void inspect(const core::String&, bool&)                            override {}
+
+        private:
+            AssetPtr<T> _ptr;
+            core::String _name;
+            ecs::ComponentTypeIndex _type = {};
+            bool _is_type = false;
+    };
+
+    bool clear = false;
+    const AssetType type = ptr.type();
+    if(imgui::asset_selector(ptr.id(), type, asset_type_name(type, false, false), &clear)) {
+        add_child_widget<AssetSelector>(type)->set_selected_callback(
+            [=](AssetId asset) {
+                if(const auto loaded = asset_loader().load_res<T>(asset)) {
+                    AssetSetterInspector setter(loaded.unwrap(), name, comp_type);
+                    current_world().inspect_components(id, &setter);
+                }
+                return true;
+            });
+    } else if(clear) {
+        ptr = {};
+    }
+}
+
+static const ImGuiTableFlags table_flags =
+    ImGuiTableFlags_BordersInnerV |
+    // ImGuiTableFlags_BordersInnerH |
+    ImGuiTableFlags_Resizable |
+    ImGuiTableFlags_RowBg;
+
+
+static const ImGuiColorEditFlags color_flags =
+    ImGuiColorEditFlags_NoSidePreview |
+    // ImGuiColorEditFlags_NoSmallPreview |
+    ImGuiColorEditFlags_NoAlpha |
+    ImGuiColorEditFlags_Float |
+    ImGuiColorEditFlags_InputRGB;
+
+class ComponentPanelInspector : public ecs::ComponentInspector {
+    public:
+        ComponentPanelInspector(ecs::EntityId id, EditorComponent* editor) :
+                _id(id),
+                _editor(editor) {
+        }
+
+        ~ComponentPanelInspector() {
+            end_table();
+        }
+
+        void end_table() {
+            if(_in_table) {
+                ImGui::Unindent();
+                ImGui::EndTable();
+            }
+            _in_table = false;
+        }
+
+        bool begin_table() {
+            y_debug_assert(!_in_table);
+            if(ImGui::BeginTable("#properties", 2, table_flags)) {
+                _in_table = true;
+                ImGui::Indent();
+            }
+            return _in_table;
+        }
+
+        bool inspect_component_type(ecs::ComponentRuntimeInfo info, bool has_inspect) override {
+            end_table();
+
+            if(info.type_id == ecs::type_index<EditorComponent>()) {
+                return false;
+            }
+
+            _type = info.type_id;
+
+            if(ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " %", info.clean_component_name()))) {
+                if(has_inspect) {
+                    begin_table();
+                } else {
+                    ImGui::Indent();
+                    ImGui::TextDisabled("Component is missing inspect()");
+                    ImGui::Unindent();
+                }
+            }
+
+            return _in_table;
+        }
+
+        void inspect(const core::String& name, math::Transform<>& tr) override {
+            ImGui::PushID(name.data());
+            y_defer(ImGui::PopID());
+
+            imgui::table_begin_next_row();
+
+            auto [pos, rot, scale] = tr.decompose();
+
+            // position
+            {
+                ImGui::TextUnformatted("Position");
+                ImGui::TableNextColumn();
+
+                imgui::position_input("##position", pos);
+            }
+
+            imgui::table_begin_next_row();
+
+            // rotation
+            {
+                ImGui::TextUnformatted("Rotation");
+                ImGui::TableNextColumn();
+
+                auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
+                    const auto qa = math::Quaternion<>::from_euler(a);
+                    const auto qb = math::Quaternion<>::from_euler(b);
+                    for(usize i = 0; i != 3; ++i) {
+                        math::Vec3 v;
+                        v[i] = 1.0f;
+                        if((qa(v) - qb(v)).length2() > 0.001f) {
+                            return false;
+                        }
+                    }
+                    return true;
+                };
+
+                auto& euler = _editor->euler();
+
+                {
+                    math::Vec3 actual_euler = rot.to_euler();
+                    if(!is_same_angle(actual_euler, euler)) {
+                        euler = actual_euler;
+                    }
+                }
+
+                auto to_deg = [](math::Vec3 angle) {
+                    for(usize i = 0; i != 3; ++i) {
+                        float a = math::to_deg(angle[i]);
+                        if(a < 0.0f) {
+                            a += (std::round(a / -360.0f) + 1.0f) * 360.0f;
+                        }
+                        y_debug_assert(a >= 0.0f);
+                        a = std::fmod(a, 360.0f);
+                        y_debug_assert(a < 360.0f);
+                        if(a > 180.0f) {
+                            a -= 360.0f;
+                        }
+                        angle[i] = a;
+                    }
+                    return angle;
+                };
+
+                auto to_rad = [](math::Vec3 angle) {
+                    for(usize i = 0; i != 3; ++i) {
+                        angle[i] = math::to_rad(angle[i]);
+                    }
+                    return angle;
+                };
+
+                math::Vec3 angle = to_deg(euler);
+                if(imgui::position_input("##rotation", angle)) {
+                    angle = to_rad(angle);
+                    euler = angle;
+                    rot = math::Quaternion<>::from_euler(angle);
+                }
+            }
+
+            imgui::table_begin_next_row();
+
+            // scale
+            {
+                ImGui::TextUnformatted("Scale");
+                ImGui::TableNextColumn();
+
+                float scalar_scale = scale.dot(math::Vec3(1.0f / 3.0f));
+                if(ImGui::DragFloat("##scale", &scalar_scale, 0.1f, 0.0f, 0.0f, "%.3f")) {
+                    scale = std::max(0.001f, scalar_scale);
+                }
+
+                const bool is_uniform = (scale.max_component() - scale.min_component()) <= 2 * math::epsilon<float>;
+                if(!is_uniform) {
+                    ImGui::SameLine();
+                    ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE);
+                    if(ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::TextUnformatted(fmt_c_str("Scale is not uniform: %", scale));
+                        ImGui::EndTooltip();
+                    }
+                }
+            }
+
+            tr = math::Transform<>(pos, rot, scale);
+        }
+
+        void inspect(const core::String& name, math::Vec3& v, Vec3Role role) override {
+            ImGui::PushID(name.data());
+            y_defer(ImGui::PopID());
+
+            imgui::table_begin_next_row();
+            ImGui::TextUnformatted(name.data());
+            ImGui::TableNextColumn();
+
+            switch(role) {
+
+                case Vec3Role::Position:
+                    imgui::position_input("##position", v);
+                break;
+
+                case Vec3Role::Direction: {
+                    float elevation = -math::to_deg(std::asin(v.z()));
+                    const math::Vec2 dir_2d = v.to<2>().normalized();
+                    float azimuth = math::to_deg(std::copysign(std::acos(dir_2d.x()), std::asin(dir_2d.y())));
+
+                    bool changed = false;
+                    changed |= ImGui::DragFloat("Azimuth", &azimuth, 1.0, -180.0f, 180.0f, "%.2f°");
+                    changed |= ImGui::DragFloat("Elevation", &elevation, 1.0, -90.0f, 90.0f, "%.2f°");
+
+                    if(changed) {
+                        elevation = -math::to_rad(elevation);
+                        azimuth = math::to_rad(azimuth);
+                        v = math::Vec3(math::Vec2(std::cos(azimuth), std::sin(azimuth)) * std::cos(elevation), std::sin(elevation));
+                    }
+                } break;
+
+                case Vec3Role::Color: {
+                    if(ImGui::ColorButton("Color", math::Vec4(v, 1.0f), color_flags)) {
+                        ImGui::OpenPopup("##color");
+                    }
+
+                    if(ImGui::BeginPopup("##color")) {
+                        ImGui::ColorPicker3("##picker", v.begin(), color_flags);
+
+                        float kelvin = std::clamp(rgb_to_k(v), 1000.0f, 12000.0f);
+                        if(ImGui::SliderFloat("##temperature", &kelvin, 1000.0f, 12000.0f, "%.0f°K")) {
+                            v = k_to_rbg(kelvin);
+                        }
+
+                        ImGui::EndPopup();
+                    }
+                } break;
+
+                case Vec3Role::None:
+                break;
+            }
+
+        }
+
+        void inspect(const core::String& name, float& f, float min, float max, FloatRole role) override {
+            ImGui::PushID(name.data());
+            y_defer(ImGui::PopID());
+
+            imgui::table_begin_next_row();
+            ImGui::TextUnformatted(name.data());
+            ImGui::TableNextColumn();
+
+            float factor = 1.0f;
+            const char* format = "%.2f";
+            switch(role) {
+                case FloatRole::HalfAngle:
+                    factor = math::to_deg(2.0f);
+                    format = "%.2f °";
+                break;
+
+                case FloatRole::Angle:
+                    factor = math::to_deg(1.0f);
+                    format = "%.2f °";
+                break;
+
+                case FloatRole::Distance:
+                    format = "%.2f m";
+                break;
+
+                case FloatRole::NormalizedLumFlux:
+                    factor = 4.0f * math::pi<float>;
+                    format = "%.2f lm";
+                break;
+
+                case FloatRole::Illuminance:
+                    format = "%.2f lm/m²";
+                break;
+
+                case FloatRole::None:
+                break;
+            }
+
+            float value = f * factor;
+            if(ImGui::DragFloat("##drag", &value, 1.0f, min * factor, max * factor, format)) {
+                f = value / factor;
+            }
+        }
+
+        void inspect(const core::String& name, u32& u, u32 max) override {
+            ImGui::PushID(name.data());
+            y_defer(ImGui::PopID());
+
+            imgui::table_begin_next_row();
+            ImGui::TextUnformatted(name.data());
+            ImGui::TableNextColumn();
+
+            if(max >= u32(std::numeric_limits<int>::max())) {
+                int value = int(u);
+                if(ImGui::DragInt("##drag", &value, 1.0f, 0)) {
+                    u = u32(value);
+                }
+            } else {
+                int value = int(u);
+                if(ImGui::DragInt("##drag", &value, 1.0f / float(max), 0, int(max))) {
+                    u = u32(value);
+                }
+            }
+        }
+
+        void inspect(const core::String& name, bool& b) override {
+            ImGui::PushID(name.data());
+            y_defer(ImGui::PopID());
+
+            imgui::table_begin_next_row();
+            ImGui::TextUnformatted(name.data());
+            ImGui::TableNextColumn();
+            ImGui::Checkbox("##checkbox", &b);
+        }
+
+        void inspect(const core::String& name, GenericAssetPtr& p) override {
+            ImGui::PushID(name.data());
+            y_defer(ImGui::PopID());
+
+            imgui::table_begin_next_row();
+            ImGui::TextUnformatted(name.data());
+            ImGui::TableNextColumn();
+
+            //const bool editing = _asset_editor->type == _type && _asset_editor->name == name;
+
+            switch(p.type()) {
+                case AssetType::Mesh:
+                    asset_ptr_selector<StaticMesh>(p, name, _id, _type);
+                break;
+
+                case AssetType::Image:
+                    asset_ptr_selector<Texture>(p, name, _id, _type);
+                break;
+
+                case AssetType::Material:
+                    asset_ptr_selector<Material>(p, name, _id, _type);
+                break;
+
+                default:
+                    ImGui::TextDisabled("Unknown asset type");
+                break;
+            }
+        }
+
+    protected:
+        core::String begin_collection(const core::String& name) override {
+            end_table();
+
+            ImGui::Indent();
+            if(ImGui::CollapsingHeader(name.data())) {
+                if(begin_table()) {
+                    return name + " [%]";
+                }
+            }
+
+            ImGui::Unindent();
+            return "";
+        }
+
+        void end_collection() override {
+            ImGui::Unindent();
+        }
+
+    private:
+        bool _in_table = false;
+        ecs::EntityId _id;
+        EditorComponent* _editor = nullptr;
+        ecs::ComponentTypeIndex _type = {};
+};
+
+
+static void entity_properties(ecs::EntityId id, EditorComponent* component) {
+    if(!ImGui::CollapsingHeader(ICON_FA_PUZZLE_PIECE " Entity")) {
+        return;
+    }
+
+    if(!ImGui::BeginTable("#properties", 2, table_flags)) {
+        return;
+    }
+
+    y_defer(ImGui::EndTable());
+
+    imgui::table_begin_next_row();
+
+    {
+        const core::String& name = component->name();
+        ImGui::TextUnformatted("Name");
+        ImGui::TableNextColumn();
+        std::array<char, 1024> buffer = {};
+        std::copy(name.begin(), name.end(), buffer.begin());
+        if(ImGui::InputText("##name", buffer.data(), buffer.size())) {
+            component->set_name(buffer.data());
+        }
+    }
+
+    imgui::table_begin_next_row();
+
+    {
+        ImGui::TextUnformatted("Id");
+        ImGui::TableNextColumn();
+        std::array<char, 32> buffer = {};
+        std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
+        ImGui::InputText("##id", buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if(ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::Text("id: %08" PRIu32, id.index());
+            ImGui::Text("version: %08" PRIu32, id.version());
+            ImGui::EndTooltip();
+        }
+    }
+}
+
+
+
 
 ComponentPanel::ComponentPanel() : Widget(ICON_FA_WRENCH " Components") {
-    for(auto* link = ComponentPanelWidgetBase::_first_link; link; link = link->next) {
-        _widgets.emplace_back(link->create());
-        log_msg(fmt("Registered component widget for %", _widgets.last()->runtime_info().type_name), Log::Debug);
-    }
 }
 
 void ComponentPanel::on_gui() {
@@ -59,43 +509,18 @@ void ComponentPanel::on_gui() {
 
     EditorWorld& world = current_world();
 
-    if(const EditorComponent* component = world.component<EditorComponent>(id)) {
+    if(EditorComponent* component = world.component_mut<EditorComponent>(id)) {
         if(component->is_collection()) {
             return;
         }
+
+        entity_properties(id, component);
+
+        ComponentPanelInspector inspector(id, component);
+        world.inspect_components(id, &inspector);
     }
 
-    {
-        core::FlatHashMap<ecs::ComponentTypeIndex, bool> has_widget;
-        for(auto& widget : _widgets) {
-            const ecs::ComponentRuntimeInfo rt_info = widget->runtime_info();
-            has_widget[rt_info.type_id] = true;
 
-            if(!world.has(id, rt_info.type_id)) {
-                continue;
-            }
-
-            const char* component_name = fmt_c_str(ICON_FA_PUZZLE_PIECE " %", widget->component_name());
-            if(ImGui::CollapsingHeader(component_name)) {
-                ImGui::Indent();
-                widget->process_entity(current_world(), id);
-                ImGui::Unindent();
-            }
-        }
-
-        for(const auto& [name, info] : EditorWorld::component_types()) {
-            if(!has_widget.contains(info.type_id)) {
-                if(!world.has(id, info.type_id)) {
-                    continue;
-                }
-
-                const char* type_name = fmt_c_str(ICON_FA_PUZZLE_PIECE " %", info.clean_component_name());
-                if(ImGui::CollapsingHeader(type_name)) {
-                    ImGui::TextDisabled("Empty");
-                }
-            }
-        }
-    }
 
     if(ImGui::CollapsingHeader(ICON_FA_TAGS " Tags")) {
         ImGui::Indent();
@@ -110,11 +535,6 @@ void ComponentPanel::on_gui() {
         }
         ImGui::Unindent();
     }
-
-
-    const bool editing = ImGui::IsWindowFocused() && ImGui::IsAnyItemActive();
-    _editing = editing;
-
 
     ImGui::Separator();
 

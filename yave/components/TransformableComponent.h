@@ -62,6 +62,8 @@ class TransformableComponent final {
 
         const OctreeNode* octree_node() const;
 
+        void inspect(ecs::ComponentInspector* inspector);
+
         y_reflect(TransformableComponent, _transform)
 
     private:

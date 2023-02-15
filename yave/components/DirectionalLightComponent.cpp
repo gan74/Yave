@@ -23,6 +23,7 @@ SOFTWARE.
 #include "DirectionalLightComponent.h"
 
 #include <yave/camera/Camera.h>
+#include <yave/ecs/ComponentInspector.h>
 
 namespace yave {
 
@@ -85,6 +86,19 @@ float DirectionalLightComponent::last_cascade_distance() const {
 usize DirectionalLightComponent::cascades() const {
     return 4;
 }
+
+void DirectionalLightComponent::inspect(ecs::ComponentInspector* inspector) {
+    inspector->inspect("Color", _color, ecs::ComponentInspector::Vec3Role::Color);
+    inspector->inspect("Intensity", _intensity, ecs::ComponentInspector::FloatRole::Illuminance);
+
+    inspector->inspect("Direction", _direction, ecs::ComponentInspector::Vec3Role::Direction);
+
+    inspector->inspect("Cast shadow", _cast_shadow);
+    inspector->inspect("Shadow LoD", _shadow_lod, 8);
+    inspector->inspect("First cascade distance", _first_cascade_distance, 10.0f, std::numeric_limits<float>::max(), ecs::ComponentInspector::FloatRole::Distance);
+    inspector->inspect("Last cascade distance", _last_cascade_distance,   10.0f, std::numeric_limits<float>::max(), ecs::ComponentInspector::FloatRole::Distance);
+}
+
 
 }
 

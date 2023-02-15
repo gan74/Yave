@@ -148,6 +148,11 @@ AssetLoader* AssetPtr<T>::loader() const {
     return _data ? _data->loader() : nullptr;
 }
 
+template<typename T>
+AssetType AssetPtr<T>::type() const {
+    return detail::asset_type<T>();
+}
+
 
 template<typename T>
 bool AssetPtr<T>::is_loaded() const {

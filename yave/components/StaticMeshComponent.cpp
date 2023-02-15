@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2022 Grégoire Angerand
+Copyright (c) 2016-2023 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,9 @@ static constexpr bool display_empty_material = true;
 
 
 StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :
-        _mesh(mesh), _material(material) {
+        _mesh(mesh) {
+
+    _materials << material;
 }
 
 StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, core::Vector<AssetPtr<Material>> materials) :
@@ -61,7 +63,7 @@ void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& 
         return mat.get();
     };
 
-    if(!_materials.is_empty()) {
+    if(_materials.size() > 1) {
         y_debug_assert(mesh->sub_meshes().size() == _materials.size());
         for(usize i = 0; i != _materials.size(); ++i) {
             if(const Material* mat = get_material(_materials[i])) {
@@ -69,7 +71,7 @@ void StaticMeshComponent::render(RenderPassRecorder& recorder, const SceneData& 
                 recorder.draw(mesh->sub_meshes()[i].vk_indirect_data(scene_data.instance_index));
             }
         }
-    } else if(const Material* mat = get_material(_material)) {
+    } else if(const Material* mat = get_material(_materials.is_empty() ? AssetPtr<Material>() : _materials.first())) {
         recorder.bind_material(*mat);
         recorder.draw(mesh->draw_data(), 1, scene_data.instance_index);
     }
@@ -98,19 +100,15 @@ const AssetPtr<StaticMesh>& StaticMeshComponent::mesh() const {
 }
 
 core::MutableSpan<AssetPtr<Material>> StaticMeshComponent::materials() {
-    return _materials.is_empty() ? core::MutableSpan<AssetPtr<Material>>(_material) : _materials;
+    return _materials;
 }
 
 core::Span<AssetPtr<Material>> StaticMeshComponent::materials() const {
-    return _materials.is_empty() ? core::Span<AssetPtr<Material>>(_material) : _materials;
+    return _materials;
 }
 
 bool StaticMeshComponent::is_fully_loaded() const {
     if(_mesh.is_loading()) {
-        return false;
-    }
-
-    if(_material.is_loading()) {
         return false;
     }
 
@@ -132,10 +130,21 @@ bool StaticMeshComponent::update_asset_loading_status() {
 
 void StaticMeshComponent::load_assets(AssetLoadingContext& loading_ctx) {
     _mesh.load(loading_ctx);
-    _material.load(loading_ctx);
 
     for(auto& material : _materials) {
         material.load(loading_ctx);
+    }
+}
+
+void StaticMeshComponent::inspect(ecs::ComponentInspector* inspector) {
+    inspector->inspect("Mesh", _mesh);
+    inspector->inspect("Materials", core::MutableSpan<AssetPtr<Material>>(_materials));
+
+    if(_mesh) {
+        const usize slots = _mesh->sub_meshes().size();
+        if(slots != _materials.size()) {
+            _materials = core::Vector<AssetPtr<Material>>(slots, AssetPtr<Material>());
+        }
     }
 }
 

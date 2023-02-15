@@ -23,6 +23,7 @@ SOFTWARE.
 #include "SpotLightComponent.h"
 
 #include <yave/camera/Camera.h>
+#include <yave/ecs/ComponentInspector.h>
 
 namespace yave {
 
@@ -80,6 +81,14 @@ math::Vec2 SpotLightComponent::attenuation_scale_offset() const {
     const float cos_inner = std::cos(_half_inner_angle);
     const float scale = 1.0f / std::max(0.001f, cos_inner - cos_outer);
     return math::Vec2(scale, -cos_outer * scale);
+}
+
+void SpotLightComponent::inspect(ecs::ComponentInspector* inspector) {
+    LocalLightBase::inspect(inspector);
+    inspector->inspect("Outer angle", _half_angle,          0.0f, math::to_rad(90.0f), ecs::ComponentInspector::FloatRole::HalfAngle);
+    inspector->inspect("Inner angle", _half_inner_angle,    0.0f, math::to_rad(90.0f), ecs::ComponentInspector::FloatRole::HalfAngle);
+    inspector->inspect("Cast shadow", _cast_shadow);
+    inspector->inspect("Shadow LoD", _shadow_lod, 8);
 }
 
 

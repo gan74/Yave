@@ -54,6 +54,8 @@ class DirectionalLightComponent final {
 
         usize cascades() const;
 
+        void inspect(ecs::ComponentInspector* inspector);
+
         y_reflect(DirectionalLightComponent, _color, _direction, _intensity, _cast_shadow, _shadow_lod, _first_cascade_distance, _last_cascade_distance)
 
     private:

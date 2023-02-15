@@ -42,6 +42,8 @@ class SkyLightComponent final : public ecs::SystemLinkedComponent<SkyLightCompon
         bool update_asset_loading_status();
         void load_assets(AssetLoadingContext& loading_ctx);
 
+        void inspect(ecs::ComponentInspector* inspector);
+
         y_reflect(SkyLightComponent, _probe, _intensity, _display_sky)
 
     private:

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2022 Grégoire Angerand
+Copyright (c) 2016-2023 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -59,12 +59,12 @@ class StaticMeshComponent final :
         bool update_asset_loading_status();
         void load_assets(AssetLoadingContext& loading_ctx);
 
-        y_reflect(StaticMeshComponent, _mesh, _materials, _materials)
+        void inspect(ecs::ComponentInspector* inspector);
+
+        y_reflect(StaticMeshComponent, _mesh, _materials)
 
     private:
         AssetPtr<StaticMesh> _mesh;
-        AssetPtr<Material> _material;
-
         core::Vector<AssetPtr<Material>> _materials;
 
         AABB _aabb;

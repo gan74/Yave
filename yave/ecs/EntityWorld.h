@@ -337,7 +337,10 @@ class EntityWorld {
             }
         }
 
+        void inspect_components(EntityId id, ComponentInspector* inspector);
+
         void post_deserialize();
+
 
         y_reflect(EntityWorld, _entities, _containers, _tags, _world_components)
 

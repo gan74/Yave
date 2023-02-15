@@ -26,6 +26,7 @@ SOFTWARE.
 #include "traits.h"
 #include "SparseComponentSet.h"
 #include "ComponentRuntimeInfo.h"
+#include "ComponentInspector.h"
 
 Y_TODO(try replacing this?)
 #include <y/serde3/archives.h>
@@ -38,6 +39,8 @@ template<typename T>
 using has_required_components_t = decltype(std::declval<T>().required_components_archetype());
 template<typename T>
 using has_register_component_type_t = decltype(std::declval<T>().register_component_type(std::declval<System*>()));
+template<typename T>
+using has_inspect_t = decltype(std::declval<T>().inspect(std::declval<ComponentInspector*>()));
 }
 
 
@@ -88,6 +91,8 @@ class ComponentContainerBase : NonMovable {
 
         virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
 
+        virtual void inspect_component(EntityId id, ComponentInspector* inspector) = 0;
+
 
         inline bool contains(EntityId id) const {
             return id_set().contains(id);
@@ -132,9 +137,9 @@ class ComponentContainerBase : NonMovable {
                 return set.insert(id, y_fwd(args)...);
             } else {
                 if constexpr(sizeof...(Args) != 0) {
-                    return set[id] = T{y_fwd(args)...};
+                    return set[id] = std::move(T{y_fwd(args)...});
                 } else {
-                    return set[id] = T();
+                    return set[id] = std::move(T());
                 }
             }
         }
@@ -247,6 +252,20 @@ class ComponentContainer final : public ComponentContainerBase {
                 return std::make_unique<ComponentBox<T>>(_components[id]);
             } else {
                 return nullptr;
+            }
+        }
+
+        void inspect_component(EntityId id, ComponentInspector* inspector) override {
+            if constexpr(is_detected_v<detail::has_inspect_t, T>) {
+                if(T* comp = component_ptr<ecs::Mutate<T>>(id)) {
+                    if(inspector->inspect_component_type(runtime_info(), true)) {
+                        comp->inspect(inspector);
+                    }
+                }
+            } else {
+                if(contains(id)) {
+                    inspector->inspect_component_type(runtime_info(), false);
+                }
             }
         }
 

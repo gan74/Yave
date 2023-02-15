@@ -70,6 +70,9 @@ class LocalLightBase  {
             return _falloff;
         }
 
+
+        void inspect(ecs::ComponentInspector* inspector);
+
     protected:
         math::Vec3 _color = math::Vec3{1.0f};
         float _intensity = 1.0f;

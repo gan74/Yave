@@ -59,6 +59,12 @@ void SkyLightComponent::load_assets(AssetLoadingContext& loading_ctx) {
     _probe.load(loading_ctx);
 }
 
+void SkyLightComponent::inspect(ecs::ComponentInspector* inspector) {
+    inspector->inspect("Envmap", _probe);
+    inspector->inspect("Intensity", _intensity, 0.0f);
+    inspector->inspect("Display sky", _display_sky);
+}
+
 
 }
 
