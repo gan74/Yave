@@ -106,14 +106,14 @@ class Uninitialized : NonMovable {
 
         template<typename... Args>
         T& init(Args&&... args) {
-            y_debug_assert((_is_init = !_is_init));
+            y_debug_assert(toggle_init());
             return *(new(&_storage.obj) T(y_fwd(args)...));
         }
 
         void destroy() {
             y_debug_assert(_is_init);
             _storage.obj.~T();
-            y_debug_assert(!(_is_init = !_is_init));
+            y_debug_assert(!toggle_init());
         }
 
         T& get() {
@@ -139,6 +139,9 @@ class Uninitialized : NonMovable {
 
 #ifdef Y_DEBUG
         bool _is_init = false;
+        bool toggle_init() {
+            return _is_init = !_is_init;
+        }
 #endif
 };
 
