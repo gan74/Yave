@@ -88,6 +88,7 @@ struct StackItem;
 struct ThumbmailData;
 struct UiSettings;
 struct WidgetIdStack;
+struct ZoneHistory;
 }
 
 

@@ -34,6 +34,7 @@ SOFTWARE.
 #include <yave/components/SkyLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/AtmosphereComponent.h>
 
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/AABBUpdateSystem.h>
@@ -109,6 +110,10 @@ std::string_view EditorWorld::entity_icon(ecs::EntityId id) const {
     }
 
     if(has<SkyLightComponent>(id)) {
+        return ICON_FA_CLOUD_SUN;
+    }
+
+    if(has<AtmosphereComponent>(id)) {
         return ICON_FA_CLOUD;
     }
 

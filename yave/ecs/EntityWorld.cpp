@@ -317,13 +317,23 @@ void EntityWorld::check_exists(EntityId id) const {
 
 
 void EntityWorld::post_deserialize() {
+    y_profile();
+
     auto patched = create_component_containers();
     for(auto& container : _containers) {
-        if(container) {
-            const ComponentTypeIndex id = container->type_id();
-            patched.set_min_size(id + 1);
-            patched[id] = std::move(container);
+        if(!container) {
+            continue;
         }
+
+        container->_to_remove.clear();
+        container->_mutated.clear();
+        for(const EntityId id : container->ids()) {
+            container->_mutated.insert(id);
+        }
+
+        const ComponentTypeIndex id = container->type_id();
+        patched.set_min_size(id + 1);
+        patched[id] = std::move(container);
     }
     _containers = std::move(patched);
 

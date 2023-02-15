@@ -52,7 +52,8 @@ struct AtmosphereData {
 };
 
 static const DirectionalLightComponent* find_sun(const SceneView& scene) {
-    for(const auto& sun : scene.world().components<DirectionalLightComponent>()) {
+    for(const auto& [id, comp] : scene.world().query<DirectionalLightComponent>(ecs::tags::not_hidden)) {
+        const auto& [sun] = comp;
         return &sun;
     }
 
@@ -60,7 +61,8 @@ static const DirectionalLightComponent* find_sun(const SceneView& scene) {
 }
 
 static const AtmosphereComponent* find_atmosphere_component(const SceneView& scene) {
-    for(const auto& atmo : scene.world().components<AtmosphereComponent>()) {
+    for(const auto& [id, comp] : scene.world().query<AtmosphereComponent>(ecs::tags::not_hidden)) {
+        const auto& [atmo] = comp;
         return &atmo;
     }
 

@@ -39,7 +39,6 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/assets/AssetLoader.h>
-#include <yave/utils/entities.h>
 #include <yave/utils/color.h>
 
 #include <y/math/random.h>

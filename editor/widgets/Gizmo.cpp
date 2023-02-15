@@ -27,10 +27,7 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/components/TransformableComponent.h>
 
-#include <yave/utils/entities.h>
-
 #include <editor/utils/ui.h>
-
 
 
 namespace editor {

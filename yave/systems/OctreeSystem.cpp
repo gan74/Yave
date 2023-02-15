@@ -26,8 +26,6 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
-#include <yave/utils/entities.h>
-
 #include <y/core/Chrono.h>
 
 namespace yave {

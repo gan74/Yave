@@ -43,7 +43,6 @@ SOFTWARE.
 #include <yave/systems/OctreeSystem.h>
 
 #include <yave/utils/DirectDraw.h>
-#include <yave/utils/entities.h>
 
 #include <editor/utils/ui.h>
 
@@ -127,16 +126,18 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
             }
         };
 
+        const std::array tags = {ecs::tags::not_hidden};
+
         {
             std::tie(uv, size) = compute_uv_size(ICON_FA_LIGHTBULB);
-            for(ecs::EntityId id : world.component_ids<PointLightComponent>()) {
+            for(ecs::EntityId id : world.query<PointLightComponent>(tags).ids()) {
                 push_entity(id);
             }
         }
 
         {
             std::tie(uv, size) = compute_uv_size(ICON_FA_VIDEO);
-            for(ecs::EntityId id : world.component_ids<SpotLightComponent>()) {
+            for(ecs::EntityId id : world.query<SpotLightComponent>(tags).ids()) {
                 push_entity(id);
             }
         }

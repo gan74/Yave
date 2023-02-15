@@ -31,9 +31,6 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 
 #include <yave/camera/Camera.h>
-#include <yave/utils/entities.h>
-
-
 
 #include <algorithm>
 
