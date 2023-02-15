@@ -311,7 +311,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
     builder.map_buffer(shadow_buffer);
     builder.add_depth_output(shadow_map);
     builder.set_render_func([=, passes = std::move(sub_passes)](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        TypedMapping<uniform::ShadowMapParams> shadow_params = self->resources().map_buffer(shadow_buffer);
+        auto shadow_params = self->resources().map_buffer(shadow_buffer);
 
         for(usize i = 0; i != passes.size(); ++i) {
             const auto& pass = passes[i];

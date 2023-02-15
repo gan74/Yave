@@ -60,7 +60,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     builder.add_inline_input(InlineDescriptor(shader_settings), 0);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         if(!settings.auto_exposure) {
-            TypedMapping<uniform::ExposureParams> mapping = self->resources().map_buffer(mut_params);
+            auto mapping = self->resources().map_buffer(mut_params);
             mapping[0] = uniform::ExposureParams{};
         }
 

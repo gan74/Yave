@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/images/SamplerType.h>
 #include <yave/graphics/images/ImageView.h>
-#include <yave/graphics/buffers/TypedWrapper.h>
+#include <yave/graphics/buffers/Buffer.h>
 
 #include <y/core/Span.h>
 

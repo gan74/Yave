@@ -23,7 +23,6 @@ SOFTWARE.
 #define YAVE_FRAMEGRAPH_TRANSIENTBUFFER_H
 
 #include <yave/graphics/buffers/Buffer.h>
-#include <yave/graphics/buffers/TypedWrapper.h>
 
 namespace yave {
 

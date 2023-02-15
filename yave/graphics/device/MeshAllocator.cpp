@@ -113,7 +113,7 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
 
         {
             MutableTriangleSubBuffer triangle_buffer(global_triangle_buffer, triangle_count * sizeof(IndexedTriangle), triangle_begin * sizeof(IndexedTriangle));
-            Mapping::stage(triangle_buffer, recorder, triangles.data());
+            BufferMappingBase::stage(triangle_buffer, recorder, triangles.data());
             mesh_data._command.first_index = u32(triangle_begin * 3);
         }
 
@@ -129,7 +129,7 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
                     const u64 byte_len = vertex_count * elem_size;
                     y_debug_assert(sub_buffer.byte_offset() % elem_size == 0);
                     const u64 byte_offset = sub_buffer.byte_offset() + vertex_begin * elem_size;
-                    Mapping::stage(
+                    BufferMappingBase::stage(
                         SubBuffer<BufferUsage::TransferDstBit>(global_attrib_buffer, byte_len, byte_offset),
                         recorder,
                         vertex_data + offset,   // data

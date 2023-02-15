@@ -23,8 +23,7 @@ SOFTWARE.
 #include "Image.h"
 #include "ImageData.h"
 
-#include <yave/graphics/buffers/buffers.h>
-#include <yave/graphics/buffers/Mapping.h>
+#include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/barriers/Barrier.h>
 #include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
@@ -88,9 +87,9 @@ static auto stage_data(usize byte_size, const void* data) {
     {
         y_profile_zone("copy");
         if(data) {
-            std::memcpy(Mapping(staging_buffer).data(), data, byte_size);
+            std::memcpy(staging_buffer.map_bytes(MappingAccess::WriteOnly).data(), data, byte_size);
         } else {
-            std::memset(Mapping(staging_buffer).data(), 0, byte_size);
+            std::memset(staging_buffer.map_bytes(MappingAccess::WriteOnly).data(), 0, byte_size);
         }
     }
     return staging_buffer;

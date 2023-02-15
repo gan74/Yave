@@ -27,7 +27,7 @@ SOFTWARE.
 #include <editor/EditorResources.h>
 #include <editor/ImGuiPlatform.h>
 
-#include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/buffers/buffer.h>
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>

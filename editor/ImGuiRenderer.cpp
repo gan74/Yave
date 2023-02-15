@@ -23,9 +23,8 @@ SOFTWARE.
 #include "ImGuiRenderer.h"
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/buffers/TypedWrapper.h>
 #include <yave/graphics/images/ImageData.h>
-#include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/buffers/Buffer.h>
 #include <yave/material/Material.h>
 
 #include <y/core/Chrono.h>
@@ -112,10 +111,10 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
     const TypedBuffer<ImDrawVert, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(imgui_vertex_buffer_size);
     const TypedUniformBuffer<math::Vec2> uniform_buffer(2);
 
-    auto indices = TypedMapping(index_buffer);
-    auto vertices = TypedMapping(vertex_buffer);
+    auto indices = index_buffer.map(MappingAccess::WriteOnly);
+    auto vertices = vertex_buffer.map(MappingAccess::WriteOnly);
+    auto uniform = uniform_buffer.map(MappingAccess::WriteOnly);
 
-    auto uniform = TypedMapping(uniform_buffer);
     uniform[0] = viewport_size;
     uniform[1] = viewport_offset;
 

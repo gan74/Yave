@@ -26,7 +26,6 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageView.h>
 #include <yave/graphics/buffers/Buffer.h>
-#include <yave/graphics/buffers/SubBuffer.h>
 
 #include <y/core/Result.h>
 

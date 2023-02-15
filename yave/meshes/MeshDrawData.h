@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "Vertex.h"
 
-#include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/buffers/Buffer.h>
 
 #include <memory>
 

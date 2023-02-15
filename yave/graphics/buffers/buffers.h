@@ -23,10 +23,31 @@ SOFTWARE.
 #define YAVE_GRAPHICS_BUFFERS_BUFFERS_H
 
 #include <yave/meshes/Vertex.h>
+#include <yave/graphics/memory/MemoryType.h>
 
-#include "TypedWrapper.h"
+#include "BufferUsage.h"
 
 namespace yave {
+
+template<BufferUsage Usage = BufferUsage::None, MemoryType Memory = MemoryType::DontCare>
+class SubBuffer;
+
+template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage)>
+class Buffer;
+
+template<typename Elem, typename Buff>
+class TypedWrapper;
+
+template<typename Elem, BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage)>
+using TypedBuffer = TypedWrapper<Elem, Buffer<Usage, Memory>>;
+
+template<typename Elem, BufferUsage Usage = BufferUsage::None, MemoryType Memory = MemoryType::DontCare>
+using TypedSubBuffer = TypedWrapper<Elem, SubBuffer<Usage, Memory>>;
+
+
+
+
+
 
 using StagingBuffer = Buffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
 using StagingSubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;

@@ -22,52 +22,15 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_BUFFERS_BUFFER_H
 #define YAVE_GRAPHICS_BUFFERS_BUFFER_H
 
-#include <yave/graphics/memory/DeviceMemory.h>
-
-#include "BufferUsage.h"
+#include "BufferBase.h"
+#include "BufferMapping.h"
 
 #include <yave/utils/traits.h>
 
 namespace yave {
 
 template<BufferUsage Usage, MemoryType Memory>
-class SubBuffer;
-
-class BufferBase : NonCopyable {
-
-    public:
-        ~BufferBase();
-
-        BufferUsage usage() const;
-        u64 byte_size() const;
-        const DeviceMemory& device_memory() const;
-
-        VkDescriptorBufferInfo descriptor_info() const;
-
-        bool is_null() const;
-
-        VkBuffer vk_buffer() const;
-
-    protected:
-        BufferBase() = default;
-        BufferBase(BufferBase&&) = default;
-        BufferBase& operator=(BufferBase&&) = default;
-
-        BufferBase(u64 byte_size, BufferUsage usage, MemoryType type);
-
-    private:
-        u64 _size = 0;
-        BufferUsage _usage = BufferUsage::None;
-
-        VkHandle<VkBuffer> _buffer;
-        DeviceMemory _memory;
-};
-
-static_assert(is_safe_base<BufferBase>::value);
-
-template<BufferUsage Usage, MemoryType Memory = prefered_memory_type(Usage)>
 class Buffer : public BufferBase {
-
     protected:
         template<typename T>
         static constexpr bool has(T a, T b) {
@@ -113,6 +76,153 @@ class Buffer : public BufferBase {
             static_assert(is_compatible(U, M));
             BufferBase::operator=(other);
             return *this;
+        }
+
+
+        template<typename = void>
+        BufferMapping<u8> map_bytes(MappingAccess access) const {
+            static_assert(is_cpu_visible(memory_type));
+            return BufferMapping<u8>(*this, access);
+        }
+};
+
+template<BufferUsage Usage, MemoryType Memory>
+class SubBuffer : public SubBufferBase {
+    protected:
+        template<typename T>
+        static constexpr bool has(T a, T b) {
+            return (uenum(a) & uenum(b)) == uenum(b);
+        }
+
+        static constexpr bool is_compatible(BufferUsage U, MemoryType M) {
+            return has(U, Usage) && is_memory_type_compatible(M, Memory);
+        }
+
+        static_assert(!has(BufferUsage::UniformBit, BufferUsage::UniformBit | BufferUsage::IndirectBit));
+        static_assert(has(BufferUsage::UniformBit | BufferUsage::IndirectBit, BufferUsage::UniformBit));
+
+        explicit SubBuffer(const BufferBase& buffer) : SubBufferBase(buffer) {
+        }
+
+    public:
+        static constexpr BufferUsage usage = Usage;
+        static constexpr MemoryType memory_type = Memory;
+
+        using sub_buffer_type = SubBuffer<Usage, memory_type>;
+        using base_buffer_type = Buffer<Usage, memory_type>;
+
+
+        static u64 byte_alignment() {
+            return alignment_for_usage(Usage);
+        }
+
+
+        SubBuffer() = default;
+
+        template<BufferUsage U, MemoryType M>
+        SubBuffer(const SubBuffer<U, M>& buffer) : SubBufferBase(buffer) {
+            static_assert(is_compatible(U, M));
+        }
+
+        template<BufferUsage U, MemoryType M>
+        SubBuffer(const Buffer<U, M>& buffer) : SubBufferBase(buffer, buffer.byte_size(), 0) {
+            static_assert(is_compatible(U, M));
+        }
+
+        // these are dangerous with typedwrapper as it's never clear what is in byte and what isn't.
+        // todo find some way to make this better
+
+        template<BufferUsage U, MemoryType M>
+        SubBuffer(const SubBuffer<U, M>& buffer, u64 byte_len, u64 byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
+            static_assert(is_compatible(U, M));
+            y_debug_assert(buffer.byte_size() >= byte_len);
+            y_debug_assert(byte_offset() % byte_alignment() == 0);
+            if constexpr(M == MemoryType::CpuVisible) {
+                y_debug_assert(byte_offset() % host_side_alignment() == 0);
+            }
+        }
+
+        template<BufferUsage U, MemoryType M>
+        SubBuffer(const Buffer<U, M>& buffer, u64 byte_len, u64 byte_off) : SubBuffer(SubBuffer<U, M>(buffer), byte_len, byte_off) {
+        }
+
+
+        template<typename = void>
+        BufferMapping<u8> map_bytes(MappingAccess access) const {
+            static_assert(is_cpu_visible(memory_type));
+            return BufferMapping<u8>(*this, access);
+        }
+};
+
+
+template<BufferUsage U, MemoryType M>
+SubBuffer(const Buffer<U, M>&) -> SubBuffer<U, M>;
+
+
+
+
+
+
+template<typename Elem, typename Buff>
+class TypedWrapper final : public Buff {
+
+    static constexpr bool is_sub = std::is_base_of_v<SubBufferBase, Buff>;
+    static constexpr bool is_buf = std::is_base_of_v<BufferBase, Buff>;
+    static_assert(is_buf || is_sub);
+
+    public:
+        using Buff::usage;
+        using Buff::memory_type;
+
+        using sub_buffer_type = TypedWrapper<Elem, typename Buff::sub_buffer_type>;
+        using base_buffer_type = Buffer<usage, memory_type>;
+
+        using value_type = Elem;
+
+
+        static u64 total_byte_size(u64 size) {
+            return size * sizeof(value_type);
+        }
+
+
+        TypedWrapper() = default;
+
+        explicit TypedWrapper(usize elem_count) : Buff(std::max(usize(1), elem_count) * sizeof(value_type)) {
+        }
+
+        template<BufferUsage U, MemoryType M>
+        TypedWrapper(const Buffer<U, M>& buffer) : Buff(buffer) {
+        }
+
+        template<BufferUsage U, MemoryType M>
+        TypedWrapper(const SubBuffer<U, M>& buffer) : Buff(buffer) {
+        }
+
+        template<BufferUsage U, MemoryType M>
+        TypedWrapper(const Buffer<U, M>& buffer, usize size, usize byte_offset) : Buff(buffer, size * sizeof(value_type), byte_offset) {
+        }
+
+
+        u64 size() const {
+            return this->byte_size() / sizeof(value_type);
+        }
+
+        u64 element_size() const {
+            return sizeof(value_type);
+        }
+
+        u64 offset() const {
+            if constexpr(is_sub) {
+                return this->byte_offset() / sizeof(value_type);
+            } else {
+                return 0;
+            }
+        }
+
+        template<typename = void>
+        BufferMapping<Elem> map(MappingAccess access) const {
+            static_assert(is_cpu_visible(memory_type));
+            return BufferMapping<Elem>(*this, access);
         }
 };
 

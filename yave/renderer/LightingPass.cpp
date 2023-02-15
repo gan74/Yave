@@ -98,7 +98,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.map_buffer(params_buffer);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         u32 light_count = 0;
-        TypedMapping<uniform::DirectionalLight> mapping = self->resources().map_buffer(directional_buffer);
+        auto mapping = self->resources().map_buffer(directional_buffer);
 
         const std::array tags = {ecs::tags::not_hidden};
         for(auto&& [id, components] : scene.world().query<DirectionalLightComponent>(tags)) {
@@ -121,7 +121,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         }
 
         {
-            TypedMapping<math::Vec4ui> params = self->resources().map_buffer(params_buffer);
+            auto params = self->resources().map_buffer(params_buffer);
             params[0] = {
                 light_count,
                 display_sky ? 1 : 0,
@@ -282,8 +282,8 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
     builder.map_buffer(point_buffer);
     builder.map_buffer(spot_buffer);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        TypedMapping<uniform::PointLight> points = self->resources().map_buffer(point_buffer);
-        TypedMapping<uniform::SpotLight> spots = self->resources().map_buffer(spot_buffer);
+        auto points = self->resources().map_buffer(point_buffer);
+        auto spots = self->resources().map_buffer(spot_buffer);
 
         const u32 point_count = fill_point_light_buffer(points.data(), scene);
         const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), nullptr, scene, render_shadows, shadow_pass);
@@ -326,7 +326,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.add_color_output(lit);
         builder.map_buffer(point_buffer);
         builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-            TypedMapping<uniform::PointLight> points = self->resources().map_buffer(point_buffer);
+            auto points = self->resources().map_buffer(point_buffer);
             const u32 point_count = fill_point_light_buffer(points.data(), scene);
 
             if(!point_count) {
@@ -361,8 +361,8 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.map_buffer(spot_buffer);
         builder.map_buffer(transform_buffer);
         builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-            TypedMapping<uniform::SpotLight> spots = self->resources().map_buffer(spot_buffer);
-            TypedMapping<math::Transform<>> transforms = self->resources().map_buffer(transform_buffer);
+            auto spots = self->resources().map_buffer(spot_buffer);
+            auto transforms = self->resources().map_buffer(transform_buffer);
 
             const u32 spot_count = fill_spot_light_buffer<true>(spots.data(), transforms.data(), scene, render_shadows, shadow_pass);
 

@@ -263,8 +263,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
 
                 SubBuffer<BufferUsage::UniformBit, MemoryType::CpuVisible> block_buffer(_inline_buffer, aligned_block_size, buffer_start);
                 {
-                    Mapping mapping(block_buffer);
-                    std::memcpy(mapping.data(), block.data, block.size);
+                    std::memcpy(block_buffer.map_bytes(MappingAccess::WriteOnly).data(), block.data, block.size);
                 }
 
                 write.pBufferInfo = &inline_blocks_buffer_infos.emplace_back(block_buffer.descriptor_info());

@@ -27,7 +27,7 @@ SOFTWARE.
 #include "TransientBuffer.h"
 
 #include <yave/graphics/barriers/Barrier.h>
-#include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/buffers/buffer.h>
 
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
@@ -75,11 +75,9 @@ class FrameGraphFrameResources final : NonMovable {
         }
 
         template<typename T>
-        TypedMapping<T> map_buffer(FrameGraphMutableTypedBufferId<T> res) const {
-            constexpr BufferUsage usage = StagingBuffer::usage;
-            constexpr MemoryType memory = StagingBuffer::memory_type;
-            const TypedSubBuffer<T, usage, memory> sub_buffer(staging_buffer(res));
-            return TypedMapping<T>(sub_buffer);
+        BufferMapping<T> map_buffer(FrameGraphMutableTypedBufferId<T> res, MappingAccess access = MappingAccess::WriteOnly) const {
+            const TypedSubBuffer<T, StagingBuffer::usage, StagingBuffer::memory_type> sub_buffer(staging_buffer(res));
+            return sub_buffer.map(access);
         }
 
     private:

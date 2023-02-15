@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "Buffer.h"
+#include "BufferBase.h"
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/device/DeviceProperties.h>
@@ -64,6 +64,88 @@ static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(u64 buffer_size, VkBuffer
     return {buffer, std::move(memory)};
 }
 
+
+
+
+SubBufferBase::SubBufferBase(const BufferBase& base, u64 byte_len, u64 byte_off) :
+        _size(byte_len),
+        _offset(byte_off),
+        _buffer(base.vk_buffer()),
+        _memory(base.device_memory()) {
+
+    y_debug_assert(base.byte_size() >= byte_len + byte_off);
+}
+
+SubBufferBase::SubBufferBase(const SubBufferBase& base, u64 byte_len, u64 byte_off) :
+        _size(byte_len),
+        _offset(byte_off + base.byte_offset()),
+        _buffer(base.vk_buffer()),
+        _memory(base.device_memory()) {
+
+    y_debug_assert(base.byte_size() >= byte_len + byte_off);
+}
+
+SubBufferBase::SubBufferBase(const BufferBase& base) : SubBufferBase(base, base.byte_size(), 0) {
+}
+
+bool SubBufferBase::is_null() const {
+    return !_buffer;
+}
+
+u64 SubBufferBase::host_side_alignment() {
+    return device_properties().non_coherent_atom_size;
+}
+
+u64 SubBufferBase::alignment_for_usage(BufferUsage usage) {
+    u64 align = 1;
+    const auto& props = device_properties();
+    if((usage & BufferUsage::UniformBit) != BufferUsage::None) {
+        align = std::max(props.uniform_buffer_alignment, align);
+    }
+    if((usage & BufferUsage::StorageBit) != BufferUsage::None) {
+        align = std::max(props.storage_buffer_alignment, align);
+    }
+    return u64(align);
+}
+
+u64 SubBufferBase::byte_size() const {
+    return _size;
+}
+
+u64 SubBufferBase::byte_offset() const {
+    return _offset;
+}
+
+VkBuffer SubBufferBase::vk_buffer() const {
+    return _buffer;
+}
+
+DeviceMemoryView SubBufferBase::device_memory() const {
+    return _memory;
+}
+
+VkDescriptorBufferInfo SubBufferBase::descriptor_info() const {
+    VkDescriptorBufferInfo info = {};
+    {
+        info.buffer = _buffer;
+        info.offset = _offset;
+        info.range = _size;
+    }
+    return info;
+}
+
+VkMappedMemoryRange SubBufferBase::vk_memory_range() const {
+    return _memory.vk_mapped_range(_size, _offset);
+}
+
+
+bool SubBufferBase::operator==(const SubBufferBase& other) const {
+    return (_buffer == other._buffer) && (_offset == other._offset) && (_size == other._size);
+}
+
+bool SubBufferBase::operator!=(const SubBufferBase& other) const {
+    return !operator==(other);
+}
 
 
 BufferBase::BufferBase(u64 byte_size, BufferUsage usage, MemoryType type) : _size(byte_size), _usage(usage) {

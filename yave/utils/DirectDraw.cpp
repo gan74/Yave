@@ -23,7 +23,7 @@ SOFTWARE.
 #include "DirectDraw.h"
 
 #include <yave/graphics/descriptors/DescriptorSet.h>
-#include <yave/graphics/buffers/buffers.h>
+#include <yave/graphics/buffers/buffer.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/DeviceResources.h>
 
@@ -144,7 +144,7 @@ void DirectDraw::render(RenderPassRecorder& recorder, const math::Matrix4<>& vie
     }
 
     TypedAttribBuffer<DirectVertex, MemoryType::CpuVisible> vertices(vertex_count);
-    TypedMapping mapping(vertices);
+    auto mapping = vertices.map(MappingAccess::WriteOnly);
 
     {
         usize offset = 0;

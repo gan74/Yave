@@ -67,7 +67,7 @@ void SkeletonInstance::update() {
 }
 
 void SkeletonInstance::flush_data() {
-    auto map = TypedMapping(_bone_transform_buffer);
+    auto map = _bone_transform_buffer.map(MappingAccess::WriteOnly);
     std::copy(_bone_transforms->begin(), _bone_transforms->end(), map.begin());
 }
 
