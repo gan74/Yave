@@ -398,8 +398,6 @@ class ComponentPanelInspector : public ecs::ComponentInspector {
             ImGui::TextUnformatted(name.data());
             ImGui::TableNextColumn();
 
-            //const bool editing = _asset_editor->type == _type && _asset_editor->name == name;
-
             switch(p.type()) {
                 case AssetType::Mesh:
                     asset_ptr_selector<StaticMesh>(p, name, _id, _type);
@@ -420,18 +418,18 @@ class ComponentPanelInspector : public ecs::ComponentInspector {
         }
 
     protected:
-        core::String begin_collection(const core::String& name) override {
+        bool begin_collection(const core::String& name) override {
             end_table();
 
             ImGui::Indent();
             if(ImGui::CollapsingHeader(name.data())) {
                 if(begin_table()) {
-                    return name + " [%]";
+                    return true;
                 }
             }
 
             ImGui::Unindent();
-            return "";
+            return false;
         }
 
         void end_collection() override {

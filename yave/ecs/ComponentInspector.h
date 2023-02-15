@@ -72,10 +72,9 @@ class ComponentInspector : NonCopyable {
 
         template<typename T, typename... Args>
         void inspect(const core::String& name, core::MutableSpan<T> items, Args&&... args) {
-            const core::String n = begin_collection(name);
-            if(!n.is_empty()) {
+            if(begin_collection(name)) {
                 for(usize i = 0; i != items.size(); ++i) {
-                    inspect(fmt(n.data(), i), items[i], y_fwd(args)...);
+                    inspect(fmt("%[%]", name, i), items[i], y_fwd(args)...);
                 }
                 end_collection();
             }
@@ -90,8 +89,8 @@ class ComponentInspector : NonCopyable {
 
 
     protected:
-        virtual core::String begin_collection(const core::String& name) {
-            return name + "[%]";
+        virtual bool begin_collection(const core::String&) {
+            return true;
         }
 
         virtual void end_collection() {
