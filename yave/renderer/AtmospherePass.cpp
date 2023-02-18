@@ -98,17 +98,17 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     };
 
     const uniform::AtmosphereParams params {
-        math::Vec3(0.0f, 0.0f, -atmosphere->planet_radius),
-        atmosphere->planet_radius,
+        math::Vec3(0.0f, 0.0f, -atmosphere->planet_radius()),
+        atmosphere->planet_radius(),
 
-        rayleigh(atmosphere->scattering_strength),
-        atmosphere->atmosphere_height,
+        rayleigh(atmosphere->scattering_strength()),
+        atmosphere->atmosphere_height(),
 
         -sun->direction().normalized(),
-        atmosphere->planet_radius + atmosphere->atmosphere_height,
+        atmosphere->planet_radius() + atmosphere->atmosphere_height(),
 
         sun->color() * sun->intensity(),
-        atmosphere->density_falloff,
+        atmosphere->density_falloff(),
     };
 
 

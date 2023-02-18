@@ -30,15 +30,21 @@ namespace yave {
 
 class AtmosphereComponent final {
     public:
-        float planet_radius = 6400.0f;
-        float atmosphere_height = 100.0f;
-
-        float density_falloff = 1.0f;
-        float scattering_strength = 0.01f;
-
-        math::Vec3 wavelengths = {}; // obsolete ?
+        float planet_radius() const;
+        float atmosphere_height() const;
+        float density_falloff() const;
+        float scattering_strength() const;
 
         void inspect(ecs::ComponentInspector* inspector);
+
+        y_reflect(AtmosphereComponent, _planet_radius, _atmosphere_height, _density_falloff, _scattering_strength)
+
+    private:
+        float _planet_radius = 6400.0f;
+        float _atmosphere_height = 100.0f;
+
+        float _density_falloff = 1.0f;
+        float _scattering_strength = 0.01f;
 };
 
 }

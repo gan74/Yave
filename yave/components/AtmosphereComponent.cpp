@@ -26,11 +26,28 @@ SOFTWARE.
 
 namespace yave {
 
+
+float AtmosphereComponent::planet_radius() const {
+    return _planet_radius;
+}
+
+float AtmosphereComponent::atmosphere_height() const {
+    return _atmosphere_height;
+}
+
+float AtmosphereComponent::density_falloff() const {
+    return _density_falloff;
+}
+
+float AtmosphereComponent::scattering_strength() const {
+    return _scattering_strength;
+}
+
 void AtmosphereComponent::inspect(ecs::ComponentInspector* inspector) {
-    inspector->inspect("Planet radius", planet_radius, ecs::ComponentInspector::FloatRole::DistanceKilometers);
-    inspector->inspect("Atmosphere height", atmosphere_height, ecs::ComponentInspector::FloatRole::DistanceKilometers);
-    inspector->inspect("Density falloff", density_falloff, 0.0f);
-    inspector->inspect("Scattering strengh", scattering_strength, 0.0f);
+    inspector->inspect("Planet radius", _planet_radius, ecs::ComponentInspector::FloatRole::DistanceKilometers);
+    inspector->inspect("Atmosphere height", _atmosphere_height, ecs::ComponentInspector::FloatRole::DistanceKilometers);
+    inspector->inspect("Density falloff", _density_falloff, 0.0f);
+    inspector->inspect("Scattering strengh", _scattering_strength, 0.0f);
 }
 
 }
