@@ -81,9 +81,9 @@ ImGuiKey to_imgui_key(Key k) {
         case Key::Delete:
             return ImGuiKey_Delete;
         case Key::Alt:
-            return ImGuiKey_LeftAlt;
+            return ImGuiMod_Alt;
         case Key::Ctrl:
-            return ImGuiKey_LeftCtrl;
+            return ImGuiMod_Ctrl;
         case Key::Space:
             return ImGuiKey_Space;
 
