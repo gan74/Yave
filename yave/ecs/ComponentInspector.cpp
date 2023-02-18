@@ -31,10 +31,10 @@ ComponentInspector::~ComponentInspector() {
 void ComponentInspector::inspect(const core::String& name, float& f, FloatRole role) {
     switch(role) {
         case FloatRole::Distance:
+        case FloatRole::DistanceKilometers:
         case FloatRole::NormalizedLumFlux:
             inspect(name, f, 0.0, -std::numeric_limits<float>::max(), role);
         break;
-
 
         case FloatRole::Angle:
             inspect(name, f, 0.0, math::to_rad(360.0f), role);

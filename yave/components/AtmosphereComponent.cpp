@@ -22,8 +22,16 @@ SOFTWARE.
 
 #include "AtmosphereComponent.h"
 
+#include <yave/ecs/ComponentInspector.h>
+
 namespace yave {
 
+void AtmosphereComponent::inspect(ecs::ComponentInspector* inspector) {
+    inspector->inspect("Planet radius", planet_radius, ecs::ComponentInspector::FloatRole::DistanceKilometers);
+    inspector->inspect("Atmosphere height", atmosphere_height, ecs::ComponentInspector::FloatRole::DistanceKilometers);
+    inspector->inspect("Density falloff", density_falloff, 0.0f);
+    inspector->inspect("Scattering strengh", scattering_strength, 0.0f);
+}
 
 }
 

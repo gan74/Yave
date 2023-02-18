@@ -45,6 +45,24 @@ SOFTWARE.
 
 namespace editor {
 
+[[maybe_unused]]
+static core::String clean_type_name(std::string_view name) {
+    core::String cleaned;
+    cleaned.set_min_capacity(name.size() * 2);
+    for(usize i = 0; i != name.size(); ++i) {
+        const char c = name[i];
+        if(!i) {
+            cleaned.push_back(char(std::toupper(c)));
+        } else if(std::isupper(c)) {
+            cleaned.push_back(' ');
+            cleaned.push_back(char(std::tolower(c)));
+        } else {
+            cleaned.push_back(c);
+        }
+    }
+    return cleaned;
+}
+
 template<typename T>
 static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, ecs::EntityId id, ecs::ComponentTypeIndex comp_type) {
     class AssetSetterInspector : public ecs::ComponentInspector {
@@ -65,11 +83,11 @@ static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, e
                 }
             }
 
-            void inspect(const core::String&, math::Transform<>&)               override {};
-            void inspect(const core::String&, math::Vec3&, Vec3Role)            override {};
-            void inspect(const core::String&, float&, FloatRole)                override {};
-            void inspect(const core::String&, float&, float, float, FloatRole)  override {};
-            void inspect(const core::String&, u32&, u32)                        override {};
+            void inspect(const core::String&, math::Transform<>&)               override {}
+            void inspect(const core::String&, math::Vec3&, Vec3Role)            override {}
+            void inspect(const core::String&, float&, FloatRole)                override {}
+            void inspect(const core::String&, float&, float, float, FloatRole)  override {}
+            void inspect(const core::String&, u32&, u32)                        override {}
             void inspect(const core::String&, bool&)                            override {}
 
         private:
@@ -79,7 +97,7 @@ static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, e
             bool _is_type = false;
     };
 
-    y_always_assert(ptr.matches<T>(), "AssetPtr doesn't match giben type");
+    y_always_assert(ptr.matches<T>(), "AssetPtr doesn't match given type");
 
     bool clear = false;
     const AssetType type = ptr.type();
@@ -343,6 +361,10 @@ class ComponentPanelInspector : public ecs::ComponentInspector {
                     format = "%.2f m";
                 break;
 
+                case FloatRole::DistanceKilometers:
+                    format = "%.3f km";
+                break;
+
                 case FloatRole::NormalizedLumFlux:
                     factor = 4.0f * math::pi<float>;
                     format = "%.2f lm";
@@ -556,6 +578,11 @@ void ComponentPanel::on_gui() {
         }
         ImGui::EndPopup();
     }
+
+    auto callback = [](ImGuiInputTextCallbackData* data) -> int {
+        log_msg(fmt("edit: '%'", data->Buf));
+        return 1;
+    };
 }
 
 }

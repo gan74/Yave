@@ -37,6 +37,8 @@ class AtmosphereComponent final {
         float scattering_strength = 400.0f;
 
         math::Vec3 wavelengths = math::Vec3(700.0f, 530.0f, 440.0f);
+
+        void inspect(ecs::ComponentInspector* inspector);
 };
 
 }
