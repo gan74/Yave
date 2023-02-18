@@ -64,9 +64,8 @@ class FileBrowser final : public FileSystemView {
 
         core::Vector<core::String> _extensions;
 
-        static constexpr usize buffer_capacity = 1024;
-        std::array<char, buffer_capacity> _path_buffer = {};
-        std::array<char, buffer_capacity> _name_buffer = {};
+        core::String _path_buffer;
+        core::String _name_buffer;
 
         struct {
             std::function<bool(const core::String&)> selected = [](const auto&) { return false; };

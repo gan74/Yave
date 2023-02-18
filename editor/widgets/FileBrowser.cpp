@@ -35,13 +35,6 @@ SOFTWARE.
 
 namespace editor {
 
-template<usize N>
-static void to_buffer(std::array<char, N>& buffer, std::string_view str) {
-    const usize len = std::min(buffer.size() - 1, str.size());
-    std::copy_n(str.begin(), len, buffer.data());
-    buffer[len] = 0;
-}
-
 FileBrowser::FileBrowser(const FileSystemModel* fs) : FileSystemView(fs) {
     path_changed();
 }
@@ -61,7 +54,7 @@ void FileBrowser::set_selection_filter(bool dirs, std::string_view exts) {
 
 
 void FileBrowser::path_changed() {
-    to_buffer(_path_buffer, path());
+    _path_buffer = path();
 }
 
 core::Result<core::String> FileBrowser::entry_icon(const core::String& name, EntryType type) const {
@@ -127,8 +120,8 @@ void FileBrowser::on_gui() {
         const float button_inner_width = button_width - (ImGui::GetStyle().FramePadding.x * 2.0f);
         const float buttons_size = _extensions.is_empty() ? (button_width * 2) : button_width;
         ImGui::SetNextItemWidth(-buttons_size);
-        if(ImGui::InputText("##path", _path_buffer.data(), _path_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-            set_path(_path_buffer.data());
+        if(imgui::text_input("##path", _path_buffer, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            set_path(_path_buffer);
         }
 
         ImGui::SameLine();
@@ -138,9 +131,9 @@ void FileBrowser::on_gui() {
 
         if(!_extensions.is_empty()) {
             ImGui::SetNextItemWidth(-button_width);
-            if(ImGui::InputText("##filename", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+            if(imgui::text_input("##filename", _name_buffer, ImGuiInputTextFlags_EnterReturnsTrue)) {
                 if(done(full_path())) {
-                    _name_buffer[0] = 0;
+                    _name_buffer.make_empty();
                 }
             }
         }

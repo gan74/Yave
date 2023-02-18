@@ -64,7 +64,7 @@ void AssetStringifier::on_gui() {
         core::String name = asset_store().name(_selected).map(clean_name).unwrap_or(core::String("No mesh"));
 
         ImGui::SetNextItemWidth(-1);
-        ImGui::InputText("", name.data(), name.size(), ImGuiInputTextFlags_ReadOnly);
+        imgui::text_read_only("", name);
     }
 
     _selector.draw_gui_inside();

@@ -42,7 +42,6 @@ namespace editor {
 Renamer::Renamer(core::String name, std::function<bool(std::string_view)> callback) :
         Widget("Rename", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
         _name(std::move(name)),
-        _name_buffer(std::max(256_uu, _name.size() * 2)),
         _callback(callback) {
 
     set_modal(true);
@@ -56,7 +55,7 @@ const core::String& Renamer::original_name() const {
 void Renamer::on_gui() {
     ImGui::Text("Rename: \"%s\"", _name.data());
 
-    if(ImGui::InputText("##name", _name_buffer.data(), _name_buffer.size(), ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::Button("Ok")) {
+    if(imgui::text_input("##name", _name_buffer, ImGuiInputTextFlags_EnterReturnsTrue) || ImGui::Button("Ok")) {
         if(_callback(std::string_view(_name_buffer.data()))) {
             close();
             refresh_all();

@@ -151,6 +151,26 @@ usize text_line_count(std::string_view text) {
     return lines;
 }
 
+bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags) {
+    const usize capacity = std::min(str.size() * 2, 512_uu);
+    str.resize(capacity, '\0');
+    const bool modified = ImGui::InputText(name, str.data(), str.size(), flags);
+    str.resize(std::strlen(str.data()));
+    return modified;
+}
+
+bool text_input_multiline(const char* name, core::String& str) {
+    const usize capacity = std::min(str.size() * 2, 512_uu);
+    str.resize(capacity, '\0');
+    const bool modified = ImGui::InputTextMultiline(name, str.data(), str.size());
+    str.resize(std::strlen(str.data()));
+    return modified;
+}
+
+void text_read_only(const char* name, std::string_view str) {
+    ImGui::InputText(name, const_cast<char*>(str.data()), str.size(), ImGuiInputTextFlags_ReadOnly);
+}
+
 bool position_input(const char* str_id, math::Vec3& position) {
     ImGui::PushID(str_id);
     y_defer(ImGui::PopID());

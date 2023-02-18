@@ -180,7 +180,7 @@ void ResourceBrowser::draw_top_bar() {
         if(has_seach_bar) {
             ImGui::SameLine(ImGui::GetContentRegionMax().x - (search_bar_size + margin));
             ImGui::SetNextItemWidth(search_bar_size);
-            if(ImGui::InputText(ICON_FA_SEARCH, _search_pattern.data(), _search_pattern.size())) {
+            if(imgui::text_input(ICON_FA_SEARCH, _search_pattern)) {
                 update_search();
             }
         } else {
@@ -188,7 +188,7 @@ void ResourceBrowser::draw_top_bar() {
         }
 
 
-        if(!has_seach_bar || !_search_pattern[0]) {
+        if(!has_seach_bar || _search_pattern.is_empty()) {
             _search_results = nullptr;
         }
     }

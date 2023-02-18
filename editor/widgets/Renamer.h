@@ -41,7 +41,7 @@ class Renamer : public Widget {
 
     private:
         core::String _name;
-        core::FixedArray<char> _name_buffer;
+        core::String _name_buffer;
 
         std::function<bool(std::string_view)> _callback;
 };

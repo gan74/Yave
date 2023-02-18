@@ -487,13 +487,11 @@ static void entity_properties(ecs::EntityId id, EditorComponent* component) {
     imgui::table_begin_next_row();
 
     {
-        const core::String& name = component->name();
+        core::String name = component->name();
         ImGui::TextUnformatted("Name");
         ImGui::TableNextColumn();
-        std::array<char, 1024> buffer = {};
-        std::copy(name.begin(), name.end(), buffer.begin());
-        if(ImGui::InputText("##name", buffer.data(), buffer.size())) {
-            component->set_name(buffer.data());
+        if(imgui::text_input("##name", name)) {
+            component->set_name(name);
         }
     }
 
@@ -504,7 +502,7 @@ static void entity_properties(ecs::EntityId id, EditorComponent* component) {
         ImGui::TableNextColumn();
         std::array<char, 32> buffer = {};
         std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
-        ImGui::InputText("##id", buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+        imgui::text_read_only("##id", buffer.data());
         ImGui::SameLine();
         ImGui::TextDisabled("(?)");
         if(ImGui::IsItemHovered()) {
@@ -578,11 +576,6 @@ void ComponentPanel::on_gui() {
         }
         ImGui::EndPopup();
     }
-
-    auto callback = [](ImGuiInputTextCallbackData* data) -> int {
-        log_msg(fmt("edit: '%'", data->Buf));
-        return 1;
-    };
 }
 
 }

@@ -71,7 +71,7 @@ class ResourceBrowser : public FileSystemView {
         core::Vector<core::String> _jump_menu;
 
         std::unique_ptr<core::Vector<Entry>> _search_results;
-        core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
+        core::String _search_pattern;
 
         core::String _set_path_deferred;
         AssetId _preview_id;

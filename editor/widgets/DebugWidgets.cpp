@@ -229,7 +229,7 @@ class SelectionDebug : public Widget {
                 for(const ecs::EntityId id : current_world().selected_entities()) {
                     std::array<char, 32> buffer = {};
                     std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
-                    ImGui::InputText(fmt_c_str("##%", id.index()), buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+                    imgui::text_read_only(fmt_c_str("##%", id.index()), buffer.data());
                     ImGui::SameLine();
                     const auto name = current_world().entity_name(id);
                     ImGui::TextUnformatted(name.data(), name.data() + name.size());

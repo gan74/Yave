@@ -107,6 +107,10 @@ math::Vec2 from_client_pos(const math::Vec2& pos);
 
 usize text_line_count(std::string_view text);
 
+bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags = 0);
+bool text_input_multiline(const char* name, core::String& str);
+void text_read_only(const char* name, std::string_view str);
+
 bool position_input(const char* str_id, math::Vec3& position);
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear = nullptr);
