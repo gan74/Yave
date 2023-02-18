@@ -40,6 +40,9 @@ void AABBUpdateSystem::tick(ecs::EntityWorld& world) {
     ecs::SparseComponentSet<AABB> aabbs;
     for(const AABBTypeInfo& info : _infos) {
         const core::Span<ecs::EntityId> ids = world.recently_mutated(info.type);
+        if(ids.is_empty()) {
+            continue;
+        }
         y_profile_dyn_zone(fmt_c_str("collecting % %", ids.size(), world.component_type_name(info.type)));
         info.collect_aabbs(world, ids, aabbs);
     }

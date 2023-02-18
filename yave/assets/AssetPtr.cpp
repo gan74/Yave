@@ -25,6 +25,12 @@ SOFTWARE.
 namespace yave {
 namespace detail {
 
+u32 next_asset_type_index() {
+    static std::atomic<u32> global_type_index = 0;
+    return global_type_index++;
+}
+
+
 AssetPtrDataBase::~AssetPtrDataBase() {
 }
 

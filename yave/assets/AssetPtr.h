@@ -75,6 +75,14 @@ AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args);
 
 
 namespace detail {
+u32 next_asset_type_index();
+
+template<typename T>
+u32 asset_type_index() {
+    static u32 index = next_asset_type_index();
+    return index;
+}
+
 
 template<typename T>
 AssetType asset_type() {
@@ -196,36 +204,56 @@ class GenericAssetPtr {
         GenericAssetPtr() = default;
 
         template<typename T>
-        GenericAssetPtr(const AssetPtr<T>& ptr) : _data(ptr._data, ptr._data ? ptr._data.get() : nullptr), _type(ptr.type()) {
+        GenericAssetPtr(const AssetPtr<T>& ptr) :
+                _data(ptr._data, ptr._data ? ptr._data.get() : nullptr),
+                _type(ptr.type()),
+                _type_index(detail::asset_type_index<T>()) {
         }
 
-        bool is_empty() const {
+        inline bool is_empty() const {
             return !_data;
         }
 
-        bool is_loaded() const {
+        inline bool is_loaded() const {
             return is_empty() || _data->is_loaded();
         }
 
-        bool is_loading() const {
+        inline bool is_loading() const {
             return !is_empty() && _data->is_loading();
         }
 
-        bool is_failed() const {
+        inline bool is_failed() const {
             return !is_empty() && _data->is_failed();
         }
 
-        AssetId id() const {
+        inline AssetId id() const {
             return is_empty() ? AssetId::invalid_id() : _data->id;
         }
 
-        AssetLoadingErrorType error() const {
+        inline AssetLoadingErrorType error() const {
             y_debug_assert(is_failed());
             return _data->error();
         }
 
-        AssetType type() const {
+        inline AssetType type() const {
             return _type;
+        }
+
+        inline bool operator==(const GenericAssetPtr& other) const {
+            return _data == other._data;
+        }
+
+        inline bool operator!=(const GenericAssetPtr& other) const {
+            return !operator==(other);
+        }
+
+        inline operator bool() const {
+            return _data != nullptr;
+        }
+
+        template<typename T>
+        bool matches() const {
+            return detail::asset_type_index<T>() == _type_index;
         }
 
         template<typename T>
@@ -245,6 +273,7 @@ class GenericAssetPtr {
 
         std::shared_ptr<detail::AssetPtrDataBase> _data;
         AssetType _type = AssetType::Unknown;
+        u32 _type_index = u32(-1);
 };
 
 

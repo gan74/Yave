@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include <yave/ecs/ComponentInspector.h>
 #include <yave/assets/AssetLoader.h>
+#include <yave/graphics/images/IBLProbe.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/material/Material.h>
 #include <yave/meshes/StaticMesh.h>
@@ -77,6 +78,8 @@ static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, e
             ecs::ComponentTypeIndex _type = {};
             bool _is_type = false;
     };
+
+    y_always_assert(ptr.matches<T>(), "AssetPtr doesn't match giben type");
 
     bool clear = false;
     const AssetType type = ptr.type();
@@ -404,7 +407,11 @@ class ComponentPanelInspector : public ecs::ComponentInspector {
                 break;
 
                 case AssetType::Image:
-                    asset_ptr_selector<Texture>(p, name, _id, _type);
+                    if(p.matches<Texture>()) {
+                        asset_ptr_selector<Texture>(p, name, _id, _type);
+                    } else if(p.matches<IBLProbe>()) {
+                        asset_ptr_selector<IBLProbe>(p, name, _id, _type);
+                    }
                 break;
 
                 case AssetType::Material:

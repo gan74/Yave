@@ -85,6 +85,7 @@ class ComponentInspector : NonCopyable {
             GenericAssetPtr gen(ptr);
             inspect(name, gen);
             ptr = gen.to<T>();
+            y_debug_assert(gen == ptr);
         }
 
 
