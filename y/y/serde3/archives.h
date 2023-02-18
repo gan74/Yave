@@ -486,6 +486,19 @@ class WritableArchive final {
 
 
 
+enum class DeserializationFlags : u32 {
+    None                            = 0x00,
+    DontPropagatePolyFailure        = 0x01,
+};
+
+constexpr DeserializationFlags operator|(DeserializationFlags a, DeserializationFlags b) {
+    return DeserializationFlags(u32(a) | u32(b));
+}
+
+constexpr DeserializationFlags operator&(DeserializationFlags a, DeserializationFlags b) {
+    return DeserializationFlags(u32(a) & u32(b));
+}
+
 
 class ReadableArchive final {
 
@@ -503,10 +516,10 @@ class ReadableArchive final {
     };
 
     public:
-        ReadableArchive(File& file) : _file(file) {
+        ReadableArchive(File& file, DeserializationFlags flags = DeserializationFlags::None) : _file(file), _flags(flags) {
         }
 
-        ReadableArchive(std::unique_ptr<File> file) : ReadableArchive(*file) {
+        ReadableArchive(std::unique_ptr<File> file, DeserializationFlags flags = DeserializationFlags::None) : ReadableArchive(*file, flags) {
             _storage = std::move(file);
         }
 
@@ -724,7 +737,11 @@ class ReadableArchive final {
                     if(poly_type && poly_type->create) {
                         object.object = poly_type->create();
                         if(object.object) {
-                            return object.object->_y_serde3_poly_deserialize(*this);
+                            auto r = object.object->_y_serde3_poly_deserialize(*this);
+                            if(r.is_ok() || (_flags & DeserializationFlags::DontPropagatePolyFailure) == DeserializationFlags::None) {
+                                return r;
+                            }
+                            object.object = nullptr;
                         }
                     }
 
@@ -955,6 +972,7 @@ class ReadableArchive final {
     private:
         File& _file;
         std::unique_ptr<File> _storage;
+        DeserializationFlags _flags = DeserializationFlags::None;
 };
 
 

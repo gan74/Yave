@@ -195,7 +195,7 @@ void EditorApplication::load_world_deferred() {
 
     EditorWorld world(*_loader);
 
-    serde3::ReadableArchive arc(file.unwrap());
+    serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
     const auto status = arc.deserialize(world);
     if(status.is_error()) {
         log_msg(fmt("Unable to load world: % (for %)", serde3::error_msg(status.error()), status.error().member), Log::Error);
