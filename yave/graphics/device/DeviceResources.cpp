@@ -86,7 +86,7 @@ static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData{SpirV::DeferredPointFrag, SpirV::DeferredPointVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
         DeviceMaterialData{SpirV::DeferredSpotFrag, SpirV::DeferredSpotVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
         DeviceMaterialData::screen(SpirV::DeferredAmbientFrag, true),
-        DeviceMaterialData::screen(SpirV::AtmosphereFrag, true),
+        DeviceMaterialData::screen(SpirV::AtmosphereFrag, false),
         DeviceMaterialData::screen(SpirV::AtmosphereIntegrationFrag),
         DeviceMaterialData::screen(SpirV::ToneMapFrag),
         DeviceMaterialData::screen(SpirV::PassthroughFrag),

@@ -37,20 +37,6 @@ SOFTWARE.
 
 namespace yave {
 
-struct AtmosphereData {
-    math::Vec3 center;
-    float planet_radius;
-
-    math::Vec3 rayleigh;
-    float atmosphere_height;
-
-    math::Vec3 light_dir;
-    float radius;
-
-    math::Vec3 light_color;
-    float density_falloff;
-};
-
 static const DirectionalLightComponent* find_sun(const SceneView& scene) {
     for(const auto& [id, comp] : scene.world().query<DirectionalLightComponent>(ecs::tags::not_hidden)) {
         const auto& [sun] = comp;
@@ -69,22 +55,17 @@ static const AtmosphereComponent* find_atmosphere_component(const SceneView& sce
     return nullptr;
 }
 
-static FrameGraphImageId integrate_atmosphere(FrameGraph& framegraph, const AtmosphereComponent* atmosphere) {
-    const math::Vec2ui size = math::Vec2ui(64, 64);
-    const ImageFormat format = VK_FORMAT_R16_SFLOAT;
 
-    const math::Vec4 atmosphere_data = {
-        atmosphere->density_falloff,
-        atmosphere->planet_radius,
-        atmosphere->atmosphere_height,
-        atmosphere->planet_radius + atmosphere->atmosphere_height,
-    };
+static FrameGraphImageId integrate_optical_depth(FrameGraph& framegraph, const uniform::AtmosphereParams& params) {
+    const math::Vec2ui size = math::Vec2ui(128, 128);
+    const ImageFormat format = VK_FORMAT_R32_SFLOAT;
+
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere integration pass");
 
     const auto integrated = builder.declare_image(format, size);
 
-    builder.add_inline_input(InlineDescriptor(atmosphere_data), 0);
+    builder.add_inline_input(InlineDescriptor(params));
     builder.add_color_output(integrated);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::AtmosphereIntegrationMaterialTemplate];
@@ -107,20 +88,21 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
 
     const auto region = framegraph.region("Atmosphere");
 
-    auto rayleigh = [](math::Vec3 v, float scattering_strength) {
+    static constexpr math::Vec3 wavelengths(700.0f, 530.0f, 440.0f);
+    auto rayleigh = [](float scattering_strength) {
+        math::Vec3 v = wavelengths;
         for(auto& x : v) {
-            x = std::pow(scattering_strength / x, 4.0f);
+            x = std::pow(400.0f / x, 4.0f) * scattering_strength;
         }
         return v;
     };
 
-    const AtmosphereData atmosphere_data {
+    const uniform::AtmosphereParams params {
         math::Vec3(0.0f, 0.0f, -atmosphere->planet_radius),
         atmosphere->planet_radius,
 
-        rayleigh(atmosphere->wavelengths, atmosphere->scattering_strength),
+        rayleigh(atmosphere->scattering_strength),
         atmosphere->atmosphere_height,
-
 
         -sun->direction().normalized(),
         atmosphere->planet_radius + atmosphere->atmosphere_height,
@@ -130,16 +112,18 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     };
 
 
-    const FrameGraphImageId integrated = integrate_atmosphere(framegraph, atmosphere);
+    const FrameGraphImageId optical_depth_lut = integrate_optical_depth(framegraph, params);
+
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere pass");
 
     const auto atmo = builder.declare_copy(lit);
 
     builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(integrated, SamplerType::LinearClamp);
+    builder.add_uniform_input(lit);
+    builder.add_uniform_input(optical_depth_lut);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
-    builder.add_inline_input(InlineDescriptor(atmosphere_data), 0);
+    builder.add_inline_input(InlineDescriptor(params), 0);
     builder.add_color_output(atmo);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::AtmosphereMaterialTemplate];

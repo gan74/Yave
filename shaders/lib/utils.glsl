@@ -236,7 +236,7 @@ vec2 intersect_sphere(vec3 center, float radius, vec3 origin, vec3 dir) {
         const float far = (-b + s) / two_a;
 
         if(far >= 0.0) {
-            return vec2(near, far - near);
+            return vec2(near, far);
         }
     }
     return vec2(-1.0, 0.0);

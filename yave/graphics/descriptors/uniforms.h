@@ -125,40 +125,23 @@ struct ExposureParams {
 static_assert(sizeof(ExposureParams) % 16 == 0);
 
 
-struct RayleighSky {
-    math::Vec3 sun_direction;
-    float origin_height;
+struct AtmosphereParams {
+    math::Vec3 center;
+    float planet_radius;
 
-    math::Vec3 sun_color;
-    float planet_height;
+    math::Vec3 scattering_coeffs;
+    float atmosphere_height;
 
-    math::Vec3 beta_rayleigh;
-    float atmo_height;
+    math::Vec3 light_dir;
+    float radius; // planet_radius + atmosphere_height
+
+    math::Vec3 light_color;
+    float density_falloff;
 };
 
-static_assert(sizeof(RayleighSky) % 16 == 0);
+static_assert(sizeof(AtmosphereParams) % 16 == 0);
 
 
-struct SH {
-    math::Vec4 value[9];
-};
-
-static_assert(sizeof(SH) % 16 == 0);
-
-
-struct VPL {
-    math::Vec3 position;
-    u32 padding_0;
-
-    math::Vec3 color;
-    u32 padding_1;
-
-    math::Vec3 normal;
-    u32 padding_2;
-
-};
-
-static_assert(sizeof(VPL) % 16 == 0);
 
 }
 }

@@ -345,7 +345,7 @@ class ComponentPanelInspector : public ecs::ComponentInspector {
             ImGui::TableNextColumn();
 
             float factor = 1.0f;
-            const char* format = "%.2f";
+            const char* format = "%.4f";
             switch(role) {
                 case FloatRole::HalfAngle:
                     factor = math::to_deg(2.0f);
