@@ -42,11 +42,11 @@ core::Span<CmdTimingRecorder::Event> CmdTimingRecorder::events() const {
 }
 
 void CmdTimingRecorder::begin_zone(const char* name) {
-    _events.emplace_back(EventType::BeginZone, name, _query_pool.query(PipelineStage::EndOfPipe), _cpu.elapsed().to_nanos());
+    _events.emplace_back(EventType::BeginZone, name, _query_pool.query(PipelineStage::BeginOfPipe), _cpu.elapsed().to_nanos());
 }
 
 void CmdTimingRecorder::end_zone() {
-    _events.emplace_back(EventType::EndZone, "", _query_pool.query(PipelineStage::BeginOfPipe), _cpu.elapsed().to_nanos());
+    _events.emplace_back(EventType::EndZone, "", _query_pool.query(PipelineStage::EndOfPipe), _cpu.elapsed().to_nanos());
 }
 
 }
