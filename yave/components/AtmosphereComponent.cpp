@@ -43,9 +43,14 @@ float AtmosphereComponent::scattering_strength() const {
     return _scattering_strength;
 }
 
+float AtmosphereComponent::zero_altitude() const {
+    return _zero_altitude;
+}
+
 void AtmosphereComponent::inspect(ecs::ComponentInspector* inspector) {
     inspector->inspect("Planet radius", _planet_radius, ecs::ComponentInspector::FloatRole::DistanceKilometers);
     inspector->inspect("Atmosphere height", _atmosphere_height, ecs::ComponentInspector::FloatRole::DistanceKilometers);
+    inspector->inspect("Sea level altitude", _zero_altitude, ecs::ComponentInspector::FloatRole::DistanceKilometers);
     inspector->inspect("Density falloff", _density_falloff, 0.0f);
     inspector->inspect("Scattering strengh", _scattering_strength, 0.0f);
 }

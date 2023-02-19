@@ -34,17 +34,20 @@ class AtmosphereComponent final {
         float atmosphere_height() const;
         float density_falloff() const;
         float scattering_strength() const;
+        float zero_altitude() const;
 
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect(AtmosphereComponent, _planet_radius, _atmosphere_height, _density_falloff, _scattering_strength)
+        y_reflect(AtmosphereComponent, _planet_radius, _atmosphere_height, _zero_altitude, _density_falloff, _scattering_strength)
 
     private:
         float _planet_radius = 6400.0f;
         float _atmosphere_height = 100.0f;
+        float _zero_altitude = 0.00f;
 
         float _density_falloff = 1.0f;
         float _scattering_strength = 0.01f;
+
 };
 
 }

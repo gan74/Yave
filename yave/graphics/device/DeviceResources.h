@@ -54,12 +54,12 @@ class DeviceResources final : NonMovable {
             HistogramComp,
             ExposureParamsComp,
             DepthBoundComp,
+            AtmosphereIntergratorComp,
 
             DeferredPointFrag,
             DeferredSpotFrag,
             DeferredAmbientFrag,
             AtmosphereFrag,
-            AtmosphereIntegrationFrag,
             ToneMapFrag,
             TexturedFrag,
             TexturedAlphaFrag,
@@ -95,6 +95,7 @@ class DeviceResources final : NonMovable {
             HistogramProgram,
             ExposureParamsProgram,
             DepthBoundProgram,
+            AtmosphereIntergratorProgram,
 
             MaxComputePrograms
         };
@@ -108,7 +109,6 @@ class DeviceResources final : NonMovable {
             DeferredSpotLightMaterialTemplate,
             DeferredAmbientMaterialTemplate,
             AtmosphereMaterialTemplate,
-            AtmosphereIntegrationMaterialTemplate,
             ToneMappingMaterialTemplate,
 
             ScreenPassthroughMaterialTemplate,

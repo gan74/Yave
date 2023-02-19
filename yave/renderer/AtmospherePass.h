@@ -26,10 +26,14 @@ SOFTWARE.
 
 namespace yave {
 
+struct AtmosphereSettings {
+    math::Vec3ui lut_size = math::Vec3ui(64, 64, 16);
+};
+
 struct AtmospherePass {
     FrameGraphImageId lit;
 
-    static AtmospherePass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit);
+    static AtmospherePass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AtmosphereSettings& settings = {});
 };
 
 

@@ -56,27 +56,27 @@ static const AtmosphereComponent* find_atmosphere_component(const SceneView& sce
 }
 
 
-static FrameGraphImageId integrate_optical_depth(FrameGraph& framegraph, const uniform::AtmosphereParams& params) {
-    const math::Vec2ui size = math::Vec2ui(128, 128);
-    const ImageFormat format = VK_FORMAT_R32_SFLOAT;
+static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const uniform::AtmosphereParams& params, const GBufferPass& gbuffer, const AtmosphereSettings& settings) {
+    const math::Vec3ui size = settings.lut_size;
+    const ImageFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    //const ImageFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
 
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Atmosphere integration pass");
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere integration pass");
+    const FrameGraphMutableVolumeId scattering = builder.declare_volume(format, size);
 
-    const auto integrated = builder.declare_image(format, size);
-
+    builder.add_storage_output(scattering);
+    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
     builder.add_inline_input(InlineDescriptor(params));
-    builder.add_color_output(integrated);
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const auto* material = device_resources()[DeviceResources::AtmosphereIntegrationMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
-        render_pass.draw_array(3);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const auto& program = device_resources()[DeviceResources::AtmosphereIntergratorProgram];
+        recorder.dispatch_size(program, size.to<2>(), self->descriptor_sets());
     });
 
-    return integrated;
+    return scattering;
 }
 
-AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
+AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AtmosphereSettings& settings) {
     const AtmosphereComponent* atmosphere = find_atmosphere_component(gbuffer.scene_pass.scene_view);
     const DirectionalLightComponent* sun = find_sun(gbuffer.scene_pass.scene_view);
 
@@ -98,7 +98,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     };
 
     const uniform::AtmosphereParams params {
-        math::Vec3(0.0f, 0.0f, -atmosphere->planet_radius()),
+        math::Vec3(0.0f, 0.0f, -atmosphere->zero_altitude()),
         atmosphere->planet_radius(),
 
         rayleigh(atmosphere->scattering_strength()),
@@ -112,8 +112,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     };
 
 
-    const FrameGraphImageId optical_depth_lut = integrate_optical_depth(framegraph, params);
-
+    const auto scattering = integrate_atmosphere(framegraph, params, gbuffer, settings);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere pass");
 
@@ -121,7 +120,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
 
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(lit);
-    builder.add_uniform_input(optical_depth_lut);
+    builder.add_uniform_input(scattering, SamplerType::LinearClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
     builder.add_inline_input(InlineDescriptor(params), 0);
     builder.add_color_output(atmo);
@@ -130,7 +129,6 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
         render_pass.bind_material_template(material, self->descriptor_sets()[0]);
         render_pass.draw_array(3);
     });
-
 
     AtmospherePass pass;
     pass.lit = atmo;
