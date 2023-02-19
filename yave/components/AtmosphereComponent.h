@@ -43,10 +43,10 @@ class AtmosphereComponent final {
     private:
         float _planet_radius = 6400.0f;
         float _atmosphere_height = 100.0f;
-        float _zero_altitude = 0.00f;
+        float _zero_altitude = 6400.0f;
 
-        float _density_falloff = 1.0f;
-        float _scattering_strength = 0.01f;
+        float _density_falloff = 5.0f;
+        float _scattering_strength = 0.1f;
 
 };
 
