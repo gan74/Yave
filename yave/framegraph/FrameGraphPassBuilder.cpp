@@ -139,7 +139,8 @@ void FrameGraphPassBuilderBase::add_storage_input(FrameGraphBufferId res, usize 
 }
 
 void FrameGraphPassBuilderBase::add_storage_input(FrameGraphVolumeId res, usize ds_index, PipelineStage stage) {
-    y_fatal("todo");
+    add_to_pass(res, ImageUsage::StorageBit, false, or_default(stage));
+    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
 void FrameGraphPassBuilderBase::add_storage_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
