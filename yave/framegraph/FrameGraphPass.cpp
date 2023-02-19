@@ -129,6 +129,11 @@ FrameGraphPass::ResourceUsageInfo& FrameGraphPass::info(FrameGraphImageId res) {
     return _images[res];
 }
 
+FrameGraphPass::ResourceUsageInfo& FrameGraphPass::info(FrameGraphVolumeId res) {
+    y_debug_assert(_parent->info(res).first_use <= _index);
+    return _volumes[res];
+}
+
 FrameGraphPass::ResourceUsageInfo& FrameGraphPass::info(FrameGraphBufferId res) {
     y_debug_assert(_parent->info(res).first_use <= _index);
     return _buffers[res];

@@ -228,8 +228,10 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
 
     using hash_t = std::hash<FrameGraphResourceId>;
     core::FlatHashMap<FrameGraphBufferId, PipelineStage, hash_t> buffers_to_barrier;
+    core::FlatHashMap<FrameGraphVolumeId, PipelineStage, hash_t> volumes_to_barrier;
     core::FlatHashMap<FrameGraphImageId, PipelineStage, hash_t> images_to_barrier;
     buffers_to_barrier.set_min_capacity(_buffers.size());
+    volumes_to_barrier.set_min_capacity(_volumes.size());
     images_to_barrier.set_min_capacity(_images.size());
 
     {
@@ -260,8 +262,10 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
                 y_profile_zone("barriers");
 
                 core::ScratchVector<BufferBarrier> buffer_barriers(pass->_buffers.size());
+                core::ScratchVector<ImageBarrier> volume_barriers(pass->_volumes.size());
                 core::ScratchVector<ImageBarrier> image_barriers(pass->_images.size());
                 build_barriers(pass->_buffers, buffer_barriers, buffers_to_barrier, *_resources);
+                build_barriers(pass->_volumes, volume_barriers, volumes_to_barrier, *_resources);
                 build_barriers(pass->_images, image_barriers, images_to_barrier, *_resources);
                 recorder.barriers(buffer_barriers, image_barriers);
 
@@ -317,7 +321,7 @@ void FrameGraph::alloc_resources() {
     std::copy_if(_images.begin(), _images.end(), std::back_inserter(images), [](const auto& p) { return p.first.is_valid(); });
     std::sort(images.begin(), images.end(), [](const auto& a, const auto& b) { return a.second.first_use < b.second.first_use; });
 
-    _resources->reserve(_images.size(), _buffers.size());
+    _resources->reserve(_images.size(), _volumes.size(), _buffers.size());
 
     for(auto&& [res, info] : images) {
         /*if(info.last_read < info.last_write && (info.usage & ImageUsage::Attachment) == ImageUsage::None) {
@@ -332,8 +336,18 @@ void FrameGraph::alloc_resources() {
                 // All images should support texturing, hopefully
                 info.usage = info.usage | ImageUsage::TextureBit;
             }
-            _resources->create_image(res, info.format, info.size, info.usage);
+            _resources->create_image(res, info.format, info.size.to<2>(), info.usage);
         }
+    }
+
+    for(auto&& [res, info] : _volumes) {
+        y_always_assert(!info.alias.is_valid(), "Volume aliasing not supported");
+        if(!info.has_usage()) {
+            log_msg(fmt("Volume declared by % has no usage", pass_name(info.first_use)), Log::Warning);
+            // All images should support texturing, hopefully
+            info.usage = info.usage | ImageUsage::TextureBit;
+        }
+        _resources->create_volume(res, info.format, info.size, info.usage);
     }
 
     for(auto&& [res, info] : _buffers) {
@@ -370,6 +384,21 @@ FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const mat
     _images.set_min_size(id + 1);
 
     auto& [i, r] = _images[id];
+    y_always_assert(!i.is_valid(), "Resource already exists");
+    i._id = id;
+    r.size.to<2>() = size;
+    r.format = format;
+
+    return i;
+}
+
+FrameGraphMutableVolumeId FrameGraph::declare_volume(ImageFormat format, const math::Vec3ui& size) {
+    y_debug_assert(size.x() > 0 && size.y() > 0 && size.z() > 0);
+    const u32 id = _resources->create_volume_id();
+
+    _volumes.set_min_size(id + 1);
+
+    auto& [i, r] = _volumes[id];
     y_always_assert(!i.is_valid(), "Resource already exists");
     i._id = id;
     r.size = size;
@@ -409,6 +438,10 @@ FrameGraphComputePassBuilder FrameGraph::add_compute_pass(std::string_view name)
 
 const FrameGraph::ImageCreateInfo& FrameGraph::info(FrameGraphImageId res) const {
     return check_exists(_images, res);
+}
+
+const FrameGraph::ImageCreateInfo& FrameGraph::info(FrameGraphVolumeId res) const {
+    return check_exists(_volumes, res);
 }
 
 const FrameGraph::BufferCreateInfo& FrameGraph::info(FrameGraphBufferId res) const {
@@ -451,6 +484,16 @@ bool FrameGraph::ImageCreateInfo::has_usage() const {
 void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass) {
     check_usage_io(usage, is_written);
     auto& info = check_exists(_images, res);
+    info.usage = info.usage | usage;
+
+    const bool is_last = info.last_use() < pass->_index;
+    info.last_usage = is_last ? usage : (info.last_usage | usage);
+    info.register_use(pass->_index, is_written);
+}
+
+void FrameGraph::register_usage(FrameGraphVolumeId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass) {
+    check_usage_io(usage, is_written);
+    auto& info = check_exists(_volumes, res);
     info.usage = info.usage | usage;
 
     const bool is_last = info.last_use() < pass->_index;
@@ -514,11 +557,21 @@ bool FrameGraph::is_attachment(FrameGraphImageId res) const {
 
 math::Vec2ui FrameGraph::image_size(FrameGraphImageId res) const {
     const auto& info = check_exists(_images, res);
+    return info.size.to<2>();
+}
+
+math::Vec3ui FrameGraph::volume_size(FrameGraphVolumeId res) const {
+    const auto& info = check_exists(_volumes, res);
     return info.size;
 }
 
 ImageFormat FrameGraph::image_format(FrameGraphImageId res) const {
     const auto& info = check_exists(_images, res);
+    return info.format;
+}
+
+ImageFormat FrameGraph::volume_format(FrameGraphVolumeId res) const {
+    const auto& info = check_exists(_volumes, res);
     return info.format;
 }
 

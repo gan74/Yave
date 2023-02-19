@@ -67,6 +67,7 @@ class FrameGraphPass final : NonMovable {
         void init_descriptor_sets(const FrameGraphFrameResources& resources);
 
         ResourceUsageInfo& info(FrameGraphImageId res);
+        ResourceUsageInfo& info(FrameGraphVolumeId res);
         ResourceUsageInfo& info(FrameGraphBufferId res);
 
         render_func _render = nullptr;
@@ -79,6 +80,7 @@ class FrameGraphPass final : NonMovable {
 
         using hash_t = std::hash<FrameGraphResourceId>;
         core::FlatHashMap<FrameGraphImageId, ResourceUsageInfo, hash_t> _images;
+        core::FlatHashMap<FrameGraphVolumeId, ResourceUsageInfo, hash_t> _volumes;
         core::FlatHashMap<FrameGraphBufferId, ResourceUsageInfo, hash_t> _buffers;
 
         core::Vector<core::Vector<FrameGraphDescriptorBinding>> _bindings;

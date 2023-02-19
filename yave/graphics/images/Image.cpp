@@ -47,7 +47,7 @@ static VkHandle<VkImage> create_image(const math::Vec3ui& size, usize layers, us
         create_info.arrayLayers = u32(layers);
         create_info.extent = {size.x(), size.y(), size.z()};
         create_info.format = format.vk_format();
-        create_info.imageType = VK_IMAGE_TYPE_2D;
+        create_info.imageType = type == ImageType::ThreeD ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
         create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
         create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         create_info.mipLevels = u32(mips);

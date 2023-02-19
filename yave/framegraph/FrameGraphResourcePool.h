@@ -39,25 +39,30 @@ class FrameGraphResourcePool : NonMovable {
         ~FrameGraphResourcePool();
 
 
-        TransientImage<> create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+        TransientImage create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+        TransientVolume create_volume(ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         TransientBuffer create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory);
 
-        void release(TransientImage<> image);
+        void release(TransientImage image);
+        void release(TransientVolume volume);
         void release(TransientBuffer buffer);
 
         void garbage_collect();
 
     private:
-        bool create_image_from_pool(TransientImage<>& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+        bool create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+        bool create_volume_from_pool(TransientVolume& res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory);
 
-        core::Vector<std::pair<TransientImage<>, u64>> _images;
+        core::Vector<std::pair<TransientImage, u64>> _images;
+        core::Vector<std::pair<TransientVolume, u64>> _volumes;
         core::Vector<std::pair<TransientBuffer, u64>> _buffers;
 
         std::atomic<u64> _collection_id = 0;
 
         Y_TODO(Find a way to not lock on every method call)
         std::recursive_mutex _image_lock;
+        std::recursive_mutex _volume_lock;
         std::recursive_mutex _buffer_lock;
 };
 

@@ -63,7 +63,7 @@ class FrameGraph : NonMovable {
     };
 
     struct ImageCreateInfo : ResourceCreateInfo {
-        math::Vec2ui size;
+        math::Vec3ui size;
         ImageFormat format;
         ImageUsage usage = ImageUsage::None;
         ImageUsage last_usage = ImageUsage::None;
@@ -111,7 +111,10 @@ class FrameGraph : NonMovable {
         FrameGraphComputePassBuilder add_compute_pass(std::string_view name);
 
         math::Vec2ui image_size(FrameGraphImageId res) const;
+        math::Vec3ui volume_size(FrameGraphVolumeId res) const;
+
         ImageFormat image_format(FrameGraphImageId res) const;
+        ImageFormat volume_format(FrameGraphVolumeId res) const;
 
         u64 buffer_byte_size(FrameGraphBufferId res) const;
 
@@ -128,12 +131,15 @@ class FrameGraph : NonMovable {
         void end_region(usize index);
 
         FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
+        FrameGraphMutableVolumeId declare_volume(ImageFormat format, const math::Vec3ui& size);
         FrameGraphMutableBufferId declare_buffer(u64 byte_size);
 
         const ImageCreateInfo& info(FrameGraphImageId res) const;
+        const ImageCreateInfo& info(FrameGraphVolumeId res) const;
         const BufferCreateInfo& info(FrameGraphBufferId res) const;
 
         void register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass);
+        void register_usage(FrameGraphVolumeId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass);
         void register_usage(FrameGraphBufferId res, BufferUsage usage, bool is_written, const FrameGraphPass* pass);
         void register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass);
 
@@ -156,6 +162,7 @@ class FrameGraph : NonMovable {
         core::Vector<std::unique_ptr<FrameGraphPass>> _passes;
 
         core::Vector<std::pair<FrameGraphMutableImageId, ImageCreateInfo>> _images;
+        core::Vector<std::pair<FrameGraphMutableVolumeId, ImageCreateInfo>> _volumes;
         core::Vector<std::pair<FrameGraphMutableBufferId, BufferCreateInfo>> _buffers;
 
         core::Vector<ImageCopyInfo> _image_copies;

@@ -30,15 +30,26 @@ FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(const Descriptor& desc)
 
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(BindingType type, FrameGraphBufferId res) :
         _type(type), _buffer(res) {
+    y_debug_assert(type == BindingType::InputBuffer || type == BindingType::StorageBuffer);
+}
+
+FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(BindingType type, FrameGraphVolumeId res, SamplerType sampler) :
+        _type(type), _volume({res, sampler}) {
+    y_debug_assert(type == BindingType::InputVolume || type == BindingType::StorageVolume);
 }
 
 FrameGraphDescriptorBinding::FrameGraphDescriptorBinding(BindingType type, FrameGraphImageId res, SamplerType sampler) :
         _type(type), _image({res, sampler}) {
+    y_debug_assert(type == BindingType::InputImage || type == BindingType::StorageImage);
 }
 
 
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_storage_binding(FrameGraphBufferId res) {
     return FrameGraphDescriptorBinding(BindingType::StorageBuffer, res);
+}
+
+FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_storage_binding(FrameGraphVolumeId res) {
+    return FrameGraphDescriptorBinding(BindingType::StorageVolume, res);
 }
 
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_storage_binding(FrameGraphImageId res) {
@@ -49,6 +60,10 @@ FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(
     return FrameGraphDescriptorBinding(BindingType::InputBuffer, res);
 }
 
+FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(FrameGraphVolumeId res, SamplerType sampler) {
+    return FrameGraphDescriptorBinding(BindingType::InputVolume, res, sampler);
+}
+
 FrameGraphDescriptorBinding FrameGraphDescriptorBinding::create_uniform_binding(FrameGraphImageId res, SamplerType sampler) {
     return FrameGraphDescriptorBinding(BindingType::InputImage, res, sampler);
 }
@@ -57,10 +72,17 @@ Descriptor FrameGraphDescriptorBinding::create_descriptor(const FrameGraphFrameR
     switch(_type) {
         case BindingType::External:
             return _external;
+
         case BindingType::InputImage:
             return Descriptor(resources.image<ImageUsage::TextureBit>(_image.image), _image.sampler);
         case BindingType::StorageImage:
             return resources.image<ImageUsage::StorageBit>(_image.image);
+
+        case BindingType::InputVolume:
+            return Descriptor(resources.volume<ImageUsage::TextureBit>(_volume.volume), _volume.sampler);
+        case BindingType::StorageVolume:
+            return resources.volume<ImageUsage::StorageBit>(_volume.volume);
+
         case BindingType::InputBuffer:
             return resources.buffer<BufferUsage::UniformBit>(_buffer);
         case BindingType::StorageBuffer:

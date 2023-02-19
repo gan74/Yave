@@ -35,6 +35,13 @@ static bool is_sampler_compatible(FrameGraph* framegraph, FrameGraphImageId img,
     return !is_linear(sampler) || framegraph->image_format(img).supports_filtering();
 }
 
+[[maybe_unused]]
+static bool is_sampler_compatible(FrameGraph* framegraph, FrameGraphVolumeId img, SamplerType sampler) {
+    y_debug_assert(framegraph);
+    y_debug_assert(img.is_valid());
+    return !is_linear(sampler) || framegraph->volume_format(img).supports_filtering();
+}
+
 FrameGraphPassBuilderBase::FrameGraphPassBuilderBase(FrameGraphPass* pass, PipelineStage default_stage) : _pass(pass), _default_stage(default_stage) {
 }
 
@@ -59,13 +66,17 @@ FrameGraphMutableImageId FrameGraphPassBuilderBase::declare_image(ImageFormat fo
     return parent()->declare_image(format, size);
 }
 
+FrameGraphMutableVolumeId FrameGraphPassBuilderBase::declare_volume(ImageFormat format, const math::Vec3ui& size) {
+    return parent()->declare_volume(format, size);
+}
+
 FrameGraphMutableBufferId FrameGraphPassBuilderBase::declare_buffer(u64 byte_size) {
     return parent()->declare_buffer(byte_size);
 }
 
 FrameGraphMutableImageId FrameGraphPassBuilderBase::declare_copy(FrameGraphImageId src) {
     const auto src_info = parent()->info(src); // Not a ref: declare_image invalidates ImageCreateInfo references
-    const auto res = declare_image(src_info.format, src_info.size);
+    const auto res = declare_image(src_info.format, src_info.size.to<2>());
 
     // copies are done before the pass proper so we don't set the stage
     add_to_pass(src, ImageUsage::TransferSrcBit, false, PipelineStage::None);
@@ -109,6 +120,11 @@ void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableImageId res,
     add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
+void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableVolumeId res, usize ds_index, PipelineStage stage) {
+    add_to_pass(res, ImageUsage::StorageBit, true, or_default(stage));
+    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+}
+
 void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableBufferId res, usize ds_index, PipelineStage stage) {
     add_to_pass(res, BufferUsage::StorageBit, true, or_default(stage));
     add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
@@ -120,6 +136,10 @@ void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableBufferId res
 void FrameGraphPassBuilderBase::add_storage_input(FrameGraphBufferId res, usize ds_index, PipelineStage stage) {
     add_to_pass(res, BufferUsage::StorageBit, false, or_default(stage));
     add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+}
+
+void FrameGraphPassBuilderBase::add_storage_input(FrameGraphVolumeId res, usize ds_index, PipelineStage stage) {
+    y_fatal("todo");
 }
 
 void FrameGraphPassBuilderBase::add_storage_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
@@ -135,10 +155,23 @@ void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphBufferId res, usize 
     add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
 }
 
+void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphVolumeId res, usize ds_index, PipelineStage stage) {
+    Y_TODO(optimize?)
+    const bool filter = parent()->volume_format(res).supports_filtering();
+    add_uniform_input(res, default_samplers[filter], ds_index, stage);
+}
+
 void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
     Y_TODO(optimize?)
     const bool filter = parent()->image_format(res).supports_filtering();
     add_uniform_input(res, default_samplers[filter], ds_index, stage);
+}
+
+void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphVolumeId res, SamplerType sampler, usize ds_index, PipelineStage stage) {
+    y_debug_assert(is_sampler_compatible(parent(), res, sampler));
+
+    add_to_pass(res, ImageUsage::TextureBit, false, or_default(stage));
+    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res, sampler), ds_index);
 }
 
 void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphImageId res, SamplerType sampler, usize ds_index, PipelineStage stage) {
@@ -205,6 +238,14 @@ void set_stage(const FrameGraphPass* pass, T& info, PipelineStage stage) {
 }
 
 void FrameGraphPassBuilderBase::add_to_pass(FrameGraphImageId res, ImageUsage usage, bool is_written, PipelineStage stage) {
+    res.check_valid();
+    auto& info = _pass->info(res);
+    info.written_to |= is_written;
+    set_stage(_pass, info, stage);
+    parent()->register_usage(res, usage, is_written, _pass);
+}
+
+void FrameGraphPassBuilderBase::add_to_pass(FrameGraphVolumeId res, ImageUsage usage, bool is_written, PipelineStage stage) {
     res.check_valid();
     auto& info = _pass->info(res);
     info.written_to |= is_written;

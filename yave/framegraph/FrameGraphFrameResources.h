@@ -53,15 +53,22 @@ class FrameGraphFrameResources final : NonMovable {
         bool are_aliased(FrameGraphImageId a, FrameGraphImageId b) const;
 
         ImageBarrier barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const;
+        ImageBarrier barrier(FrameGraphVolumeId res, PipelineStage src, PipelineStage dst) const;
         BufferBarrier barrier(FrameGraphBufferId res, PipelineStage src, PipelineStage dst) const;
 
         const ImageBase& image_base(FrameGraphImageId res) const;
+        const ImageBase& volume_base(FrameGraphVolumeId res) const;
         const BufferBase& buffer_base(FrameGraphBufferId res) const;
 
 
         template<ImageUsage Usage>
         ImageView<Usage> image(FrameGraphImageId res) const {
             return TransientImageView<Usage>(find(res));
+        }
+
+        template<ImageUsage Usage>
+        ImageView<Usage, ImageType::ThreeD> volume(FrameGraphVolumeId res) const {
+            return TransientImageView<Usage, ImageType::ThreeD>(find(res));
         }
 
         template<BufferUsage Usage>
@@ -83,16 +90,19 @@ class FrameGraphFrameResources final : NonMovable {
     private:
         friend class FrameGraph;
 
-        void reserve(usize images, usize buffers);
+        void reserve(usize images, usize volumes, usize buffers);
         void init_staging_buffer();
 
         u32 create_image_id();
+        u32 create_volume_id();
         u32 create_buffer_id();
 
         void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+        void create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         void create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory);
 
         bool is_alive(FrameGraphImageId res) const;
+        bool is_alive(FrameGraphVolumeId res) const;
         bool is_alive(FrameGraphBufferId res) const;
 
         void create_alias(FrameGraphImageId dst, FrameGraphImageId src);
@@ -100,22 +110,26 @@ class FrameGraphFrameResources final : NonMovable {
         void flush_mapped_buffers(CmdBufferRecorder& recorder);
 
     private:
-        const TransientImage<>& find(FrameGraphImageId res) const;
+        const TransientImage& find(FrameGraphImageId res) const;
+        const TransientVolume& find(FrameGraphVolumeId res) const;
         const TransientBuffer& find(FrameGraphBufferId res) const;
 
         StagingSubBuffer staging_buffer(FrameGraphMutableBufferId res) const;
         StagingSubBuffer staging_buffer(const BufferData& buffer) const;
 
         u32 _next_image_id = 0;
+        u32 _next_volume_id = 0;
         u32 _next_buffer_id = 0;
 
-        core::Vector<TransientImage<>*> _images;
+        core::Vector<TransientImage*> _images;
+        core::Vector<TransientVolume*> _volumes;
         core::Vector<BufferData> _buffers;
 
         std::shared_ptr<FrameGraphResourcePool> _pool;
 
         // We need pointer stability
-        std::deque<TransientImage<>> _image_storage;
+        std::deque<TransientImage> _image_storage;
+        std::deque<TransientVolume> _volume_storage;
         std::deque<TransientBuffer> _buffer_storage;
 
         StagingBuffer _staging_buffer;

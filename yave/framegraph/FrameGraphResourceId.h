@@ -83,6 +83,19 @@ struct FrameGraphMutableImageId : FrameGraphMutableResourceId {
 
 
 
+// ---------------------------- Volumes ----------------------------
+struct FrameGraphVolumeId : FrameGraphResourceId {
+};
+
+struct FrameGraphMutableVolumeId : FrameGraphMutableResourceId {
+    constexpr operator FrameGraphVolumeId() const {
+        return convert<FrameGraphVolumeId>();
+    }
+};
+
+
+
+
 // ---------------------------- buffers ----------------------------
 struct FrameGraphBufferId : FrameGraphResourceId {
 };

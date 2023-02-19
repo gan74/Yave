@@ -44,6 +44,7 @@ class FrameGraphPassBuilderBase {
         using compute_render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
         FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
+        FrameGraphMutableVolumeId declare_volume(ImageFormat format, const math::Vec3ui& size);
         FrameGraphMutableBufferId declare_buffer(u64 byte_size);
 
         FrameGraphMutableImageId declare_copy(FrameGraphImageId src);
@@ -60,13 +61,20 @@ class FrameGraphPassBuilderBase {
         void add_color_output(FrameGraphMutableImageId res);
 
         void add_storage_output(FrameGraphMutableImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_storage_output(FrameGraphMutableVolumeId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
         void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
 
         void add_storage_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_storage_input(FrameGraphVolumeId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
         void add_storage_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+
         void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_uniform_input(FrameGraphVolumeId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
         void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+
+        void add_uniform_input(FrameGraphVolumeId res, SamplerType sampler, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
         void add_uniform_input(FrameGraphImageId res, SamplerType sampler, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+
         void add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
 
         void add_inline_input(InlineDescriptor desc, usize ds_index = 0);
@@ -91,6 +99,7 @@ class FrameGraphPassBuilderBase {
 
     private:
         void add_to_pass(FrameGraphImageId res, ImageUsage usage, bool is_written, PipelineStage stage);
+        void add_to_pass(FrameGraphVolumeId res, ImageUsage usage, bool is_written, PipelineStage stage);
         void add_to_pass(FrameGraphBufferId res, BufferUsage usage, bool is_written, PipelineStage stage);
 
         void add_uniform(FrameGraphDescriptorBinding binding, usize ds_index);

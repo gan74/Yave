@@ -27,8 +27,8 @@ SOFTWARE.
 
 namespace yave {
 
-template<ImageType Type = ImageType::TwoD>
-class TransientImage final : public ImageBase {
+template<ImageType Type>
+class TransientImageBase final : public ImageBase {
     static constexpr bool is_3d = Type == ImageType::ThreeD;
 
     template<typename T>
@@ -41,21 +41,21 @@ class TransientImage final : public ImageBase {
     public:
         using size_type = std::conditional_t<is_3d, math::Vec3ui, math::Vec2ui>;
 
-        TransientImage() = default;
+        TransientImageBase() = default;
 
-        TransientImage(ImageFormat format, ImageUsage usage, const size_type& image_size) : ImageBase(format, usage, to_3d_size(image_size)) {
+        TransientImageBase(ImageFormat format, ImageUsage usage, const size_type& image_size) : ImageBase(format, usage, to_3d_size(image_size), Type) {
         }
 
-        TransientImage(TransientImage&&) = default;
-        TransientImage& operator=(TransientImage&&) = default;
+        TransientImageBase(TransientImageBase&&) = default;
+        TransientImageBase& operator=(TransientImageBase&&) = default;
 
         template<ImageUsage U>
-        TransientImage(Image<U, Type>&& other) {
+        TransientImageBase(Image<U, Type>&& other) {
             ImageBase::operator=(other);
         }
 
         template<ImageUsage U>
-        TransientImage& operator=(Image<U, Type>&& other) {
+        TransientImageBase& operator=(Image<U, Type>&& other) {
             ImageBase::operator=(other);
             return *this;
         }
@@ -68,7 +68,7 @@ class TransientImage final : public ImageBase {
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class TransientImageView final : public ImageView<Usage, Type> {
     public:
-        TransientImageView(const TransientImage<Type>& image) :
+        TransientImageView(const TransientImageBase<Type>& image) :
                 ImageView<Usage, Type>(image.size(), image.usage(), image.format(), image.vk_view(), image.vk_image()) {
 
             if(!ImageView<Usage, Type>::is_compatible(image.usage())) {
@@ -76,6 +76,9 @@ class TransientImageView final : public ImageView<Usage, Type> {
             }
         }
 };
+
+using TransientImage = TransientImageBase<ImageType::TwoD>;
+using TransientVolume = TransientImageBase<ImageType::ThreeD>;
 
 }
 
