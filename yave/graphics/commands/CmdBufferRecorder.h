@@ -27,7 +27,7 @@ SOFTWARE.
 #include <yave/graphics/framebuffer/Viewport.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/graphics/descriptors/DescriptorSetBase.h>
-#include <yave/graphics/buffers/buffer.h>
+#include <yave/graphics/buffers/Buffer.h>
 
 namespace yave {
 

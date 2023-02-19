@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_DEVICE_MESHALLOCATOR_H
 #define YAVE_GRAPHICS_DEVICE_MESHALLOCATOR_H
 
-#include <yave/graphics/buffers/buffer.h>
+#include <yave/graphics/buffers/Buffer.h>
 #include <yave/meshes/MeshDrawData.h>
 
 #include <y/core/Span.h>

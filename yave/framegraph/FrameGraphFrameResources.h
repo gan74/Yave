@@ -27,7 +27,7 @@ SOFTWARE.
 #include "TransientBuffer.h"
 
 #include <yave/graphics/barriers/Barrier.h>
-#include <yave/graphics/buffers/buffer.h>
+#include <yave/graphics/buffers/Buffer.h>
 
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>

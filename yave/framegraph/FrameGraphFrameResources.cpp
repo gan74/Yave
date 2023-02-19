@@ -24,7 +24,7 @@ SOFTWARE.
 #include "FrameGraphResourcePool.h"
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/buffers/buffer.h>
+#include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/device/DeviceProperties.h>
 
 #include <y/utils/memory.h>
