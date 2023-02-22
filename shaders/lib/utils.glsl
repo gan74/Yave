@@ -46,7 +46,7 @@ struct Camera {
 
 struct DirectionalLight {
     vec3 direction;
-    uint padding_0;
+    float cos_disk;
 
     vec3 color;
     uint padding_1;
@@ -334,6 +334,9 @@ vec3 project(vec3 pos, mat4 proj_matrix) {
     return vec3(p3.xy * 0.5 + vec2(0.5), p3.z);
 }
 
+vec3 view_direction(Camera camera, vec2 uv) {
+    return normalize(camera.position - unproject(uv, 0.5, camera.inv_view_proj));
+}
 
 // -------------------------------- COLOR --------------------------------
 

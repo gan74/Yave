@@ -56,12 +56,14 @@ void compute_atmospheric_scattering_iter(AtmosphereParams params, vec3 orig, vec
 
     vec3 pos = orig;
     for(uint i = 0; i != step_count; ++i) {
-        const float sun_dist = intersect_sphere(params.center, params.radius, pos, params.sun_dir).y;
-        const float sun_optical_depth = optical_depth(params, pos, params.sun_dir, sun_dist, optical_depth_step_count);
-        ray_optical_depth = optical_depth(params, pos, -dir, step_size * i, optical_depth_step_count);
+        ray_optical_depth += optical_depth(params, pos, -dir, step_size * i, optical_depth_step_count);
 
-        const vec3 transmittance = exp(params.scattering_coeffs * -(sun_optical_depth + ray_optical_depth));
-        in_scattered += atmosphere_density(params, pos) * transmittance * params.scattering_coeffs * step_size;
+        if(intersect_sphere(params.center, params.planet_radius, pos, params.sun_dir).x < 0.0) {
+            const float sun_dist = intersect_sphere(params.center, params.radius, pos, params.sun_dir).y;
+            const float sun_optical_depth = optical_depth(params, pos, params.sun_dir, sun_dist, optical_depth_step_count);
+            const vec3 transmittance = exp(params.scattering_coeffs * -(sun_optical_depth + ray_optical_depth));
+            in_scattered += atmosphere_density(params, pos) * transmittance * params.scattering_coeffs * step_size;
+        }
         pos += step;
     }
 

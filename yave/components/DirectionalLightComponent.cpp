@@ -51,6 +51,14 @@ float DirectionalLightComponent::intensity() const {
     return _intensity;
 }
 
+float& DirectionalLightComponent::disk_size() {
+    return _disk_size;
+}
+
+float DirectionalLightComponent::disk_size() const {
+    return _disk_size;
+}
+
 bool& DirectionalLightComponent::cast_shadow() {
     return _cast_shadow;
 }
@@ -90,6 +98,7 @@ usize DirectionalLightComponent::cascades() const {
 void DirectionalLightComponent::inspect(ecs::ComponentInspector* inspector) {
     inspector->inspect("Color", _color, ecs::ComponentInspector::Vec3Role::Color);
     inspector->inspect("Intensity", _intensity, ecs::ComponentInspector::FloatRole::Illuminance);
+    inspector->inspect("Disk size", _disk_size, ecs::ComponentInspector::FloatRole::Angle);
 
     inspector->inspect("Direction", _direction, ecs::ComponentInspector::Vec3Role::Direction);
 

@@ -26,12 +26,13 @@ void main() {
     const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(size.xy);
     const uint iterations = size.z;
 
-    const vec3 view_dir = normalize(unproject(uv, 0.5, camera.inv_view_proj) - camera.position);
+    const vec3 view_dir = -view_direction(camera, uv);
     const vec3 cam_pos = camera.position / km;
 
     const vec2 intersection = intersect_sphere(atmos.center, atmos.radius, cam_pos, view_dir);
+    const vec2 planet_intersection = intersect_sphere(atmos.center, atmos.planet_radius, cam_pos, view_dir);
     const float near = intersection.x;
-    const float far = intersection.y;
+    const float far = max(intersection.y, planet_intersection.y);
 
     vec3 scattering = vec3(0.0);
     float ray_optical_depth = 0.0;

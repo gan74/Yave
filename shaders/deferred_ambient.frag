@@ -115,12 +115,20 @@ void main() {
     vec3 irradiance = vec3(0.0);
 
     if(is_OOB(depth)) {
+        const vec3 view_dir = -view_direction(camera, in_uv);
+
 #if defined(USE_IBL)
         if(display_sky != 0) {
-            const vec3 forward = normalize(unproject(in_uv, 1.0, camera.inv_view_proj) - camera.position);
-            irradiance = texture(in_envmap, forward).rgb;
+            irradiance = texture(in_envmap, view_dir).rgb;
         }
 #endif
+
+        for(uint i = 0; i != light_count; ++i) {
+            const DirectionalLight light = lights[i];
+            if(dot(view_dir, light.direction) > light.cos_disk) {
+                irradiance = light.color;
+            }
+        }
     } else {
         const SurfaceInfo surface = read_gbuffer(texelFetch(in_rt0, coord, 0), texelFetch(in_rt1, coord, 0));
 

@@ -97,7 +97,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.map_buffer(directional_buffer);
     builder.map_buffer(params_buffer);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        u32 light_count = 0;
+        u32 count = 0;
         auto mapping = self->resources().map_buffer(directional_buffer);
 
         const std::array tags = {ecs::tags::not_hidden};
@@ -111,19 +111,24 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                 }
             }
 
-            mapping[light_count++] = {
+            mapping[count++] = {
                 -l.direction().normalized(),
-                0,
+                std::cos(l.disk_size()),
                 l.color() * l.intensity(),
                 0,
                 shadow_indices
             };
+
+            if(count == mapping.size()) {
+                log_msg("Too many directional lights, discarding...", Log::Warning);
+                break;
+            }
         }
 
         {
             auto params = self->resources().map_buffer(params_buffer);
             params[0] = {
-                light_count,
+                count,
                 display_sky ? 1 : 0,
                 reinterpret_cast<const u32&>(ibl_intensity),
                 0

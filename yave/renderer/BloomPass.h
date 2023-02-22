@@ -29,7 +29,7 @@ namespace yave {
 
 struct BloomSettings {
     float radius = 0.005f;
-    usize pyramids = 5;
+    usize pyramids = 4;
     float intensity = 0.1f;
 };
 
