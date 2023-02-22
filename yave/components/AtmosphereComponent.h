@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <yave/graphics/images/IBLProbe.h>
 
+#include <yave/ecs/ecs.h>
+
 namespace yave {
 
 class AtmosphereComponent final {
@@ -36,9 +38,11 @@ class AtmosphereComponent final {
         float scattering_strength() const;
         float zero_altitude() const;
 
+        ecs::EntityId sun() const;
+
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect(AtmosphereComponent, _planet_radius, _atmosphere_height, _zero_altitude, _density_falloff, _scattering_strength)
+        y_reflect(AtmosphereComponent, _planet_radius, _atmosphere_height, _zero_altitude, _density_falloff, _scattering_strength, _sun)
 
     private:
         float _planet_radius = 6400.0f;
@@ -47,6 +51,8 @@ class AtmosphereComponent final {
 
         float _density_falloff = 5.0f;
         float _scattering_strength = 0.1f;
+
+        ecs::EntityId _sun;
 
 };
 

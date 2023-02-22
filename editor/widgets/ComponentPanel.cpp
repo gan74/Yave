@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <editor/EditorWorld.h>
 #include <editor/widgets/AssetSelector.h>
+#include <editor/widgets/EntitySelector.h>
 #include <editor/utils/ui.h>
 #include <editor/components/EditorComponent.h>
 #include <editor/utils/assets.h>
@@ -63,38 +64,83 @@ static core::String clean_type_name(std::string_view name) {
     return cleaned;
 }
 
-template<typename T>
-static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, ecs::EntityId id, ecs::ComponentTypeIndex comp_type) {
-    class AssetSetterInspector : public ecs::ComponentInspector {
+class SetterInspectorBase : public ecs::ComponentInspector {
+    public:
+        SetterInspectorBase(const core::String& name, ecs::ComponentTypeIndex type) :
+                _name(name),
+                _type(type) {
+        }
+
+        bool inspect_component_type(ecs::ComponentRuntimeInfo info, bool) override {
+            return _is_type = (info.type_id == _type);
+        }
+
+        void inspect(const core::String&, math::Transform<>&)                           override {}
+        void inspect(const core::String&, math::Vec3&, Vec3Role)                        override {}
+        void inspect(const core::String&, float&, FloatRole)                            override {}
+        void inspect(const core::String&, float&, float, float, FloatRole)              override {}
+        void inspect(const core::String&, u32&, u32)                                    override {}
+        void inspect(const core::String&, bool&)                                        override {}
+        void inspect(const core::String&, GenericAssetPtr&)                             override {}
+        void inspect(const core::String&, ecs::EntityId&, ecs::ComponentTypeIndex)      override {}
+
+    protected:
+        bool is_property(const core::String& name) const {
+            return _is_type && name == _name;
+        }
+
+    private:
+        core::String _name;
+        ecs::ComponentTypeIndex _type = {};
+        bool _is_type = false;
+};
+
+static void id_selector(ecs::EntityId& property_id, const core::String& name, ecs::EntityId entity_id, ecs::ComponentTypeIndex comp_type, ecs::ComponentTypeIndex target_type) {
+    class IdSetterInspector : public SetterInspectorBase {
         public:
-            AssetSetterInspector(const AssetPtr<T>& ptr, const core::String& name, ecs::ComponentTypeIndex type) :
-                    _ptr(ptr),
-                    _name(name),
-                    _type(type) {
+            IdSetterInspector(ecs::EntityId id, const core::String& name, ecs::ComponentTypeIndex type) :
+                    SetterInspectorBase(name, type), _id(id) {
             }
 
-            bool inspect_component_type(ecs::ComponentRuntimeInfo info, bool) override {
-                return _is_type = (info.type_id == _type);
+            void inspect(const core::String& name, ecs::EntityId& id, ecs::ComponentTypeIndex) override {
+                if(is_property(name)) {
+                    id = _id;
+                }
+            }
+
+        private:
+            ecs::EntityId _id;
+    };
+
+    bool clear = false;
+    if(imgui::id_selector(property_id, current_world(), &clear)) {
+        add_child_widget<EntitySelector>(target_type)->set_selected_callback(
+            [=](ecs::EntityId new_id) {
+                IdSetterInspector setter(new_id, name, comp_type);
+                current_world().inspect_components(entity_id, &setter);
+                return true;
+            });
+    } else if(clear) {
+        property_id = ecs::EntityId();
+    }
+}
+
+template<typename T>
+static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, ecs::EntityId id, ecs::ComponentTypeIndex comp_type) {
+    class AssetSetterInspector : public SetterInspectorBase {
+        public:
+            AssetSetterInspector(const AssetPtr<T>& ptr, const core::String& name, ecs::ComponentTypeIndex type) :
+                    SetterInspectorBase(name, type), _ptr(ptr) {
             }
 
             void inspect(const core::String& name, GenericAssetPtr& p) override {
-                if(_is_type && name == _name) {
+                if(is_property(name)) {
                     p = _ptr;
                 }
             }
 
-            void inspect(const core::String&, math::Transform<>&)               override {}
-            void inspect(const core::String&, math::Vec3&, Vec3Role)            override {}
-            void inspect(const core::String&, float&, FloatRole)                override {}
-            void inspect(const core::String&, float&, float, float, FloatRole)  override {}
-            void inspect(const core::String&, u32&, u32)                        override {}
-            void inspect(const core::String&, bool&)                            override {}
-
         private:
             AssetPtr<T> _ptr;
-            core::String _name;
-            ecs::ComponentTypeIndex _type = {};
-            bool _is_type = false;
     };
 
     y_always_assert(ptr.matches<T>(), "AssetPtr doesn't match given type");
@@ -413,6 +459,16 @@ class ComponentPanelInspector : public ecs::ComponentInspector {
             ImGui::TextUnformatted(name.data());
             ImGui::TableNextColumn();
             ImGui::Checkbox("##checkbox", &b);
+        }
+
+        void inspect(const core::String& name, ecs::EntityId& id, ecs::ComponentTypeIndex type) override {
+            ImGui::PushID(name.data());
+            y_defer(ImGui::PopID());
+
+            imgui::table_begin_next_row();
+            ImGui::TextUnformatted(name.data());
+            ImGui::TableNextColumn();
+            id_selector(id, name, _id, _type, type);
         }
 
         void inspect(const core::String& name, GenericAssetPtr& p) override {

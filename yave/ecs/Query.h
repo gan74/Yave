@@ -116,7 +116,7 @@ class Query : NonCopyable {
     using set_tuple = std::tuple<SparseComponentSet<traits::component_raw_type_t<Args>>*...>;
     using all_components = std::tuple<traits::component_type_t<Args>...>;
 
-    static constexpr bool is_empty = sizeof...(Args) == 0;
+    // static constexpr bool tuple_is_empty = sizeof...(Args) == 0;
     static constexpr std::array component_included = {traits::component_required_v<Args>..., false};
 
     template<usize I = 0>
@@ -296,6 +296,10 @@ class Query : NonCopyable {
 
         usize size() const {
             return _ids.size();
+        }
+
+        bool is_empty() const {
+            return _ids.is_empty();
         }
 
         // These have lifetime problems when writing:

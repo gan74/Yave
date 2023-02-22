@@ -24,6 +24,7 @@ SOFTWARE.
 #include "assets.h"
 
 #include <editor/ThumbmailRenderer.h>
+#include <editor/EditorWorld.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/FileBrowser.h>
 
@@ -33,7 +34,6 @@ SOFTWARE.
 
 #include <external/imgui/imgui.h>
 #include <external/imgui/imgui_internal.h>
-
 
 #include <charconv>
 #include <cinttypes>
@@ -317,6 +317,46 @@ bool path_selector(const char* text, const core::String& path) {
 
     ImGui::EndGroup();
     ImGui::PopID();
+    return ret;
+}
+
+bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear) {
+    bool ret = false;
+
+    ImGui::BeginGroup();
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
+
+    if(!id.is_valid()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    }
+
+    const core::String name = id.is_valid() ? fmt("% %", world.entity_icon(id), world.entity_name(id)) : "No entity";
+    const bool combo = ImGui::BeginCombo("##combo", name.data());
+
+    if(!id.is_valid()) {
+        ImGui::PopStyleColor();
+    }
+
+    if(combo) {
+        ImGui::Selectable(name.data(), false, ImGuiSelectableFlags_Disabled);
+
+        ImGui::Separator();
+        if(ImGui::Selectable(ICON_FA_FOLDER_OPEN " Browse")) {
+            ret = true;
+        }
+
+        if(id.is_valid() && clear) {
+            ImGui::Separator();
+            if(ImGui::Selectable(ICON_FA_TRASH " Clear")) {
+                *clear = true;
+            }
+        }
+
+        ImGui::EndCombo();
+    }
+
+    ImGui::EndGroup();
+
     return ret;
 }
 

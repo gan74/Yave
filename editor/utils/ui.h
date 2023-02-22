@@ -115,6 +115,7 @@ bool position_input(const char* str_id, math::Vec3& position);
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear = nullptr);
 bool path_selector(const char* text, const core::String& path);
+bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear = nullptr);
 
 bool search_bar(const char* text, char* buffer, usize buffer_size);
 

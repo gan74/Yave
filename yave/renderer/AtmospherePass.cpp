@@ -37,14 +37,7 @@ SOFTWARE.
 
 namespace yave {
 
-static const DirectionalLightComponent* find_sun(const SceneView& scene) {
-    for(const auto& [id, comp] : scene.world().query<DirectionalLightComponent>(ecs::tags::not_hidden)) {
-        const auto& [sun] = comp;
-        return &sun;
-    }
 
-    return nullptr;
-}
 
 static const AtmosphereComponent* find_atmosphere_component(const SceneView& scene) {
     for(const auto& [id, comp] : scene.world().query<AtmosphereComponent>(ecs::tags::not_hidden)) {
@@ -54,7 +47,6 @@ static const AtmosphereComponent* find_atmosphere_component(const SceneView& sce
 
     return nullptr;
 }
-
 
 static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const uniform::AtmosphereParams& params, const GBufferPass& gbuffer, const AtmosphereSettings& settings) {
     const math::Vec3ui size = settings.lut_size;
@@ -77,8 +69,11 @@ static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const uni
 }
 
 AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AtmosphereSettings& settings) {
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
     const AtmosphereComponent* atmosphere = find_atmosphere_component(gbuffer.scene_pass.scene_view);
-    const DirectionalLightComponent* sun = find_sun(gbuffer.scene_pass.scene_view);
+    const DirectionalLightComponent* sun = atmosphere
+        ? scene_view.world().component<DirectionalLightComponent>(atmosphere->sun())
+        : nullptr;
 
     if(!atmosphere || !sun) {
         AtmospherePass pass;

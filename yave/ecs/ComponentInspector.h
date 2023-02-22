@@ -70,6 +70,7 @@ class ComponentInspector : NonCopyable {
 
         virtual void inspect(const core::String& name, GenericAssetPtr& p) = 0;
 
+        virtual void inspect(const core::String& name, EntityId& id, ComponentTypeIndex type) = 0;
 
         template<typename T, typename... Args>
         void inspect(const core::String& name, core::MutableSpan<T> items, Args&&... args) {

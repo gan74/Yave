@@ -37,9 +37,6 @@ class ComponentPanel final : public Widget {
 
     protected:
         void on_gui() override;
-
-    private:
-        friend class ComponentPanelInspector;
 };
 
 }
