@@ -322,8 +322,8 @@ static void local_lights_pass(FrameGraph& framegraph,
         // Moving this down causes a reused resource assert
         copied_depth = builder.declare_copy(gbuffer.depth); // extra copy for nothing =(
 
-        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::VertexBit);
-        builder.add_storage_input(point_buffer, 0, PipelineStage::VertexBit);
+        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, PipelineStage::VertexBit);
+        builder.add_storage_input(point_buffer, PipelineStage::VertexBit);
         builder.add_uniform_input(gbuffer.depth);
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
@@ -353,8 +353,8 @@ static void local_lights_pass(FrameGraph& framegraph,
         const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
         const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_spot_lights);
 
-        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, 0, PipelineStage::VertexBit);
-        builder.add_storage_input(spot_buffer, 0, PipelineStage::VertexBit);
+        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, PipelineStage::VertexBit);
+        builder.add_storage_input(spot_buffer, PipelineStage::VertexBit);
         builder.add_uniform_input(gbuffer.depth);
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);

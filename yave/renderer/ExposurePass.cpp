@@ -45,7 +45,7 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
     clear_builder.add_storage_output(histogram);
     clear_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::HistogramClearProgram];
-        recorder.dispatch_size(program, histogram_size, {self->descriptor_sets()[0]});
+        recorder.dispatch_size(program, histogram_size, self->descriptor_sets());
     });
 
     FrameGraphComputePassBuilder histogram_builder = framegraph.add_compute_pass("Histogram gather pass");
@@ -60,7 +60,7 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
         for(usize i = 0; i != 2; ++i) {
             groups[i] += groups[i] * thread_count < size[i] ? 1 : 0;
         }
-        recorder.dispatch(program, groups, {self->descriptor_sets()[0]});
+        recorder.dispatch(program, groups, self->descriptor_sets());
     });
 
     FrameGraphComputePassBuilder params_builder = framegraph.add_compute_pass("Exposure compute pass");
@@ -71,7 +71,7 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
     params_builder.add_uniform_input(histogram);
     params_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::ExposureParamsProgram];
-        recorder.dispatch(program, math::Vec3ui(1), {self->descriptor_sets()[0]});
+        recorder.dispatch(program, math::Vec3ui(1), self->descriptor_sets());
         y_debug_assert(program.thread_count() == histogram_size.x());
     });
 

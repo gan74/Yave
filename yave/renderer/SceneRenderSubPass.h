@@ -31,7 +31,7 @@ namespace yave {
 
 struct SceneRenderSubPass {
     SceneView scene_view;
-    usize descriptor_set_index = 0;
+    i32 descriptor_set_index = -1;
 
     Y_TODO(remove mutable)
     FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer;

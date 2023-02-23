@@ -60,25 +60,25 @@ class FrameGraphPassBuilderBase {
         void add_depth_output(FrameGraphMutableImageId res);
         void add_color_output(FrameGraphMutableImageId res);
 
-        void add_storage_output(FrameGraphMutableImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
-        void add_storage_output(FrameGraphMutableVolumeId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
-        void add_storage_output(FrameGraphMutableBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_storage_output(FrameGraphMutableImageId res,   PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
+        void add_storage_output(FrameGraphMutableVolumeId res,  PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
+        void add_storage_output(FrameGraphMutableBufferId res,  PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
 
-        void add_storage_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
-        void add_storage_input(FrameGraphVolumeId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
-        void add_storage_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_storage_input(FrameGraphBufferId res,      PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
+        void add_storage_input(FrameGraphVolumeId res,      PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
+        void add_storage_input(FrameGraphImageId res,       PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
 
-        void add_uniform_input(FrameGraphBufferId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
-        void add_uniform_input(FrameGraphVolumeId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
-        void add_uniform_input(FrameGraphImageId res, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_uniform_input(FrameGraphBufferId res,      PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
+        void add_uniform_input(FrameGraphVolumeId res,      PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
+        void add_uniform_input(FrameGraphImageId res,       PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
 
-        void add_uniform_input(FrameGraphVolumeId res, SamplerType sampler, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
-        void add_uniform_input(FrameGraphImageId res, SamplerType sampler, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_uniform_input(FrameGraphVolumeId res,  SamplerType sampler, PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
+        void add_uniform_input(FrameGraphImageId res,   SamplerType sampler, PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
 
-        void add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
 
-        void add_inline_input(InlineDescriptor desc, usize ds_index = 0);
-        void add_external_input(Descriptor desc, usize ds_index = 0, PipelineStage stage = PipelineStage::None);
+        void add_inline_input(InlineDescriptor desc, i32 ds_index = -1);
+        void add_external_input(Descriptor desc, PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
 
         void add_attrib_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
         void add_index_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
@@ -88,8 +88,8 @@ class FrameGraphPassBuilderBase {
             map_buffer_internal(res);
         }
 
-        void add_descriptor_binding(Descriptor bind, usize ds_index = 0);
-        usize next_descriptor_set_index();
+        void add_descriptor_binding(Descriptor desc, i32 ds_index = -1);
+        i32 next_descriptor_set_index() const;
 
     protected:
         FrameGraphPassBuilderBase(FrameGraphPass* pass, PipelineStage default_stage = PipelineStage::AllShadersBit);
@@ -102,7 +102,7 @@ class FrameGraphPassBuilderBase {
         void add_to_pass(FrameGraphVolumeId res, ImageUsage usage, bool is_written, PipelineStage stage);
         void add_to_pass(FrameGraphBufferId res, BufferUsage usage, bool is_written, PipelineStage stage);
 
-        void add_uniform(FrameGraphDescriptorBinding binding, usize ds_index);
+        void add_descriptor_binding(FrameGraphDescriptorBinding binding, i32 ds_index);
 
         void map_buffer_internal(FrameGraphMutableBufferId res);
 

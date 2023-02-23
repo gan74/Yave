@@ -48,7 +48,7 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, co
     pass.camera_buffer = camera_buffer;
     pass.transform_buffer = transform_buffer;
 
-    builder.add_uniform_input(camera_buffer, pass.descriptor_set_index);
+    builder.add_uniform_input(camera_buffer, PipelineStage::None, pass.descriptor_set_index);
     builder.add_attrib_input(transform_buffer);
     builder.map_buffer(camera_buffer);
     builder.map_buffer(transform_buffer);

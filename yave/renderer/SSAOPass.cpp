@@ -125,7 +125,7 @@ static FrameGraphImageId compute_linear_depth(FrameGraph& framegraph, const GBuf
     builder.add_storage_output(linear_depth);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::LinearizeDepthProgram];
-        recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
+        recorder.dispatch_size(program, size, self->descriptor_sets());
     });
 
     return linear_depth;
@@ -160,11 +160,11 @@ static FrameGraphMutableImageId upsample_mini_ao(FrameGraph& framegraph,
     builder.add_uniform_input(hi_ao);
     builder.add_uniform_input(lo_depth);
     builder.add_uniform_input(hi_depth);
-    builder.add_inline_input(InlineDescriptor(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance}), 0);
+    builder.add_inline_input(InlineDescriptor(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance}));
     builder.add_storage_output(upsampled);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
-        recorder.dispatch_size(program, lo_size + math::Vec2ui(2), {self->descriptor_sets()[0]});
+        recorder.dispatch_size(program, lo_size + math::Vec2ui(2), self->descriptor_sets());
     });
 
     return upsampled;
@@ -179,11 +179,11 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
     const auto ao = builder.declare_image(format, size);
 
     builder.add_uniform_input(linear_depth);
-    builder.add_inline_input(InlineDescriptor(compute_ao_params(tan_half_fov, size.x())), 0);
+    builder.add_inline_input(InlineDescriptor(compute_ao_params(tan_half_fov, size.x())));
     builder.add_storage_output(ao);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::SSAOProgram];
-        recorder.dispatch_size(program, size, {self->descriptor_sets()[0]});
+        recorder.dispatch_size(program, size, self->descriptor_sets());
     });
 
     return ao;

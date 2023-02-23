@@ -117,7 +117,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(lit);
     builder.add_uniform_input(scattering, SamplerType::LinearClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
-    builder.add_inline_input(InlineDescriptor(params), 0);
+    builder.add_inline_input(InlineDescriptor(params));
     builder.add_color_output(atmo);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::AtmosphereMaterialTemplate];

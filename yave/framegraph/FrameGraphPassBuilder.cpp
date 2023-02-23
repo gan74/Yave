@@ -115,94 +115,94 @@ void FrameGraphPassBuilderBase::add_color_output(FrameGraphMutableImageId res) {
 
 // --------------------------------- Storage output ---------------------------------
 
-void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableImageId res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableImageId res, PipelineStage stage, i32 ds_index) {
     add_to_pass(res, ImageUsage::StorageBit, true, or_default(stage));
-    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_descriptor_binding(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
-void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableVolumeId res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableVolumeId res, PipelineStage stage, i32 ds_index) {
     add_to_pass(res, ImageUsage::StorageBit, true, or_default(stage));
-    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_descriptor_binding(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
-void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableBufferId res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableBufferId res, PipelineStage stage, i32 ds_index) {
     add_to_pass(res, BufferUsage::StorageBit, true, or_default(stage));
-    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_descriptor_binding(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
 
 // --------------------------------- Storage intput ---------------------------------
 
-void FrameGraphPassBuilderBase::add_storage_input(FrameGraphBufferId res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_storage_input(FrameGraphBufferId res, PipelineStage stage, i32 ds_index) {
     add_to_pass(res, BufferUsage::StorageBit, false, or_default(stage));
-    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_descriptor_binding(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
-void FrameGraphPassBuilderBase::add_storage_input(FrameGraphVolumeId res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_storage_input(FrameGraphVolumeId res, PipelineStage stage, i32 ds_index) {
     add_to_pass(res, ImageUsage::StorageBit, false, or_default(stage));
-    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_descriptor_binding(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
-void FrameGraphPassBuilderBase::add_storage_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_storage_input(FrameGraphImageId res, PipelineStage stage, i32 ds_index) {
     add_to_pass(res, ImageUsage::StorageBit, false, or_default(stage));
-    add_uniform(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
+    add_descriptor_binding(FrameGraphDescriptorBinding::create_storage_binding(res), ds_index);
 }
 
 
 // --------------------------------- Uniform input ---------------------------------
 
-void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphBufferId res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphBufferId res, PipelineStage stage, i32 ds_index) {
     add_to_pass(res, BufferUsage::UniformBit, false, or_default(stage));
-    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
+    add_descriptor_binding(FrameGraphDescriptorBinding::create_uniform_binding(res), ds_index);
 }
 
-void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphVolumeId res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphVolumeId res, PipelineStage stage, i32 ds_index) {
     Y_TODO(optimize?)
     const bool filter = parent()->volume_format(res).supports_filtering();
-    add_uniform_input(res, default_samplers[filter], ds_index, stage);
+    add_uniform_input(res, default_samplers[filter], stage, ds_index);
 }
 
-void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphImageId res, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphImageId res, PipelineStage stage, i32 ds_index) {
     Y_TODO(optimize?)
     const bool filter = parent()->image_format(res).supports_filtering();
-    add_uniform_input(res, default_samplers[filter], ds_index, stage);
+    add_uniform_input(res, default_samplers[filter], stage, ds_index);
 }
 
-void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphVolumeId res, SamplerType sampler, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphVolumeId res, SamplerType sampler, PipelineStage stage, i32 ds_index) {
     y_debug_assert(is_sampler_compatible(parent(), res, sampler));
 
     add_to_pass(res, ImageUsage::TextureBit, false, or_default(stage));
-    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res, sampler), ds_index);
+    add_descriptor_binding(FrameGraphDescriptorBinding::create_uniform_binding(res, sampler), ds_index);
 }
 
-void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphImageId res, SamplerType sampler, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_uniform_input(FrameGraphImageId res, SamplerType sampler, PipelineStage stage, i32 ds_index) {
     y_debug_assert(is_sampler_compatible(parent(), res, sampler));
 
     add_to_pass(res, ImageUsage::TextureBit, false, or_default(stage));
-    add_uniform(FrameGraphDescriptorBinding::create_uniform_binding(res, sampler), ds_index);
+    add_descriptor_binding(FrameGraphDescriptorBinding::create_uniform_binding(res, sampler), ds_index);
 }
 
-void FrameGraphPassBuilderBase::add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, usize ds_index, PipelineStage stage) {
+void FrameGraphPassBuilderBase::add_uniform_input_with_default(FrameGraphImageId res, Descriptor desc, PipelineStage stage, i32 ds_index) {
     y_debug_assert(!desc.is_inline_block());
     if(res.is_valid()) {
-        add_uniform_input(res, ds_index, stage);
+        add_uniform_input(res, stage, ds_index);
     } else {
-        add_external_input(desc, ds_index, stage);
+        add_external_input(desc, stage, ds_index);
     }
 }
 
 // --------------------------------- Inline ---------------------------------
 
-void FrameGraphPassBuilderBase::add_inline_input(InlineDescriptor desc, usize ds_index) {
-    add_uniform(Descriptor(parent()->copy_inline_descriptor(desc)), ds_index);
+void FrameGraphPassBuilderBase::add_inline_input(InlineDescriptor desc, i32 ds_index) {
+    add_descriptor_binding(Descriptor(parent()->copy_inline_descriptor(desc)), ds_index);
 }
 
 // --------------------------------- External ---------------------------------
 
 Y_TODO(external framegraph resources are not synchronized)
-void FrameGraphPassBuilderBase::add_external_input(Descriptor desc, usize ds_index, PipelineStage) {
+void FrameGraphPassBuilderBase::add_external_input(Descriptor desc, PipelineStage, i32 ds_index) {
     y_debug_assert(!desc.is_inline_block());
-    add_uniform(desc, ds_index);
+    add_descriptor_binding(desc, ds_index);
 }
 
 // --------------------------------- Attribs ---------------------------------
@@ -216,17 +216,16 @@ void FrameGraphPassBuilderBase::add_index_input(FrameGraphBufferId res, Pipeline
 }
 
 
-// --------------------------------- stuff ---------------------------------
+// --------------------------------- Stuff ---------------------------------
 
-void FrameGraphPassBuilderBase::add_descriptor_binding(Descriptor bind, usize ds_index) {
-    add_uniform(bind, ds_index);
+void FrameGraphPassBuilderBase::add_descriptor_binding(Descriptor desc, i32 ds_index) {
+    add_descriptor_binding(FrameGraphDescriptorBinding(desc), ds_index);
 }
 
 
-usize FrameGraphPassBuilderBase::next_descriptor_set_index() {
-    auto& bindings = _pass->_bindings;
-    bindings.emplace_back();
-    return bindings.size() - 1;
+i32 FrameGraphPassBuilderBase::next_descriptor_set_index() const {
+    const auto& bindings = _pass->_bindings;
+    return i32(bindings.size());
 }
 
 template<typename T>
@@ -262,10 +261,15 @@ void FrameGraphPassBuilderBase::add_to_pass(FrameGraphBufferId res, BufferUsage 
     parent()->register_usage(res, usage, is_written, _pass);
 }
 
-void FrameGraphPassBuilderBase::add_uniform(FrameGraphDescriptorBinding binding, usize ds_index) {
+void FrameGraphPassBuilderBase::add_descriptor_binding(FrameGraphDescriptorBinding binding, i32 ds_index) {
     auto& bindings = _pass->_bindings;
-    bindings.set_min_size(ds_index + 1);
-    bindings[ds_index].push_back(binding);
+    if(ds_index < 0) {
+        bindings.set_min_size(-ds_index);
+        bindings[bindings.size() + ds_index].push_back(binding);
+    } else {
+        bindings.set_min_size(ds_index + 1);
+        bindings[ds_index].push_back(binding);
+    }
 }
 
 void FrameGraphPassBuilderBase::map_buffer_internal(FrameGraphMutableBufferId res) {
