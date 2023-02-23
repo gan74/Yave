@@ -226,7 +226,11 @@ void String::grow(usize new_size, char c) {
 }
 
 void String::resize(usize new_size, char c) {
-    grow(new_size, c);
+    if(new_size < size()) {
+        shrink(new_size);
+    } else {
+        grow(new_size, c);
+    }
 }
 
 

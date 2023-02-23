@@ -151,17 +151,22 @@ usize text_line_count(std::string_view text) {
     return lines;
 }
 
+static usize str_buffer_capacity(const core::String& str) {
+    if(str.size() < 512) {
+        return 512;
+    }
+    return str.size() * 2;
+}
+
 bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags) {
-    const usize capacity = std::min(str.size() * 2, 512_uu);
-    str.resize(capacity, '\0');
+    str.resize(str_buffer_capacity(str), '\0');
     const bool modified = ImGui::InputText(name, str.data(), str.size(), flags);
     str.resize(std::strlen(str.data()));
     return modified;
 }
 
 bool text_input_multiline(const char* name, core::String& str) {
-    const usize capacity = std::min(str.size() * 2, 512_uu);
-    str.resize(capacity, '\0');
+    str.resize(str_buffer_capacity(str), '\0');
     const bool modified = ImGui::InputTextMultiline(name, str.data(), str.size());
     str.resize(std::strlen(str.data()));
     return modified;
