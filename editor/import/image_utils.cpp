@@ -20,15 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "transforms.h"
+#include "image_utils.h"
 
-#include <yave/meshes/MeshData.h>
-#include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
 
 #include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
-
 
 #if defined(Y_MSVC) || defined(__SSE4_2__)
 #define USE_SIMD
@@ -38,111 +35,12 @@ SOFTWARE.
 #include <smmintrin.h>
 #endif
 
-
 namespace editor {
 namespace import {
-
-template<typename T>
-static core::Vector<T> copy(core::Span<T> t) {
-    return core::Vector<T>(t);
-}
-
-static math::Vec3 h_transform(const math::Vec3& v, const math::Transform<>& tr) {
-    const auto h = tr * math::Vec4(v, 1.0f);
-    return h.to<3>() / h.w();
-}
-
-static math::Vec3 transform(const math::Vec3& v, const math::Transform<>& tr) {
-    return tr.to<3, 3>() * v;
-}
-
-static FullVertex transform(const FullVertex& v, const math::Transform<>& tr) {
-    return FullVertex {
-        h_transform(v.position, tr),
-        transform(v.normal, tr).normalized(),
-        math::Vec4(transform(v.tangent.to<3>(), tr).normalized(), v.tangent.w()),
-        v.uv
-    };
-}
-
-[[maybe_unused]] static PackedVertex transform(const PackedVertex& v, const math::Transform<>& tr) {
-    return pack_vertex(transform(unpack_vertex(v), tr));
-
-}
-
-[[maybe_unused]] static BoneTransform transform(const BoneTransform& bone, const math::Transform<>& tr) {
-    auto [pos, rot, scale] = tr.decompose();
-    return BoneTransform {
-            bone.position + pos,
-            bone.scale * scale,
-            bone.rotation * rot
-        };
-}
-
-
-MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
-    y_profile();
-    auto vertices = core::vector_with_capacity<PackedVertex>(mesh.vertices().size());
-    std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const auto& vert) { return transform(vert, tr); });
-
-    if(mesh.has_skeleton()) {
-        auto bones = core::vector_with_capacity<Bone>(mesh.bones().size());
-        std::transform(mesh.bones().begin(), mesh.bones().end(), std::back_inserter(bones), [=](const auto& bone) {
-                return bone.has_parent() ? bone : Bone{bone.name, bone.parent, transform(bone.local_transform, tr)};
-            });
-
-        return MeshData(vertices, mesh.triangles()/*, copy(mesh.skin()), std::move(bones)*/);
-    }
-
-    return MeshData(vertices, mesh.triangles()/*, copy(mesh.skin()), copy(mesh.bones())*/);
-}
-
-MeshData compute_tangents(const MeshData& mesh) {
-    y_profile();
-
-    auto vertices = copy(mesh.vertices());
-
-    core::FixedArray<math::Vec3> tangents(vertices.size());
-    for(IndexedTriangle tri : mesh.triangles()) {
-        const math::Vec3 edges[] = {vertices[tri[1]].position - vertices[tri[0]].position, vertices[tri[2]].position - vertices[tri[0]].position};
-        const math::Vec2 uvs[] = {vertices[tri[0]].uv, vertices[tri[1]].uv, vertices[tri[2]].uv};
-        const float dt[] = {uvs[1].y() - uvs[0].y(), uvs[2].y() - uvs[0].y()};
-        math::Vec3 ta = -((edges[0] * dt[1]) - (edges[1] * dt[0])).normalized();
-        tangents[tri[0]] += ta;
-        tangents[tri[1]] += ta;
-        tangents[tri[2]] += ta;
-    }
-
-    for(usize i = 0; i != tangents.size(); ++i) {
-        Y_TODO(Compute bitangent too)
-        vertices[i].packed_tangent_sign = pack_2_10_10_10(tangents[i].normalized());
-    }
-
-    return MeshData(vertices, mesh.triangles()/*, copy(mesh.skin()), copy(mesh.bones())*/);
-}
-
-static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
-    y_profile();
-    auto keys = core::vector_with_capacity<AnimationChannel::BoneKey>(anim.keys().size());
-    std::transform(anim.keys().begin(), anim.keys().end(), std::back_inserter(keys), [=](const auto& key){
-        return AnimationChannel::BoneKey{key.time / speed, key.local_transform};
-    });
-
-    return AnimationChannel(anim.name(), std::move(keys));
-}
 
 static ImageData copy(const ImageData& image) {
     return ImageData(image.size().to<2>(), image.data(), image.format(), image.mipmaps());
 }
-
-Animation set_speed(const Animation& anim, float speed) {
-    y_profile();
-    auto channels = core::vector_with_capacity<AnimationChannel>(anim.channels().size());
-    std::transform(anim.channels().begin(), anim.channels().end(), std::back_inserter(channels), [=](const auto& channel){ return set_speed(channel, speed); });
-
-    return Animation(anim.duration() / speed, std::move(channels));
-}
-
 
 static void unpack_with_gamma(const u8* in, usize size, float* out) {
     y_profile();

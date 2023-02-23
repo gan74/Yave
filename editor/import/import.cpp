@@ -21,7 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "import.h"
-#include "transforms.h"
+#include "image_utils.h"
+#include "mesh_utils.h"
 
 #include <yave/meshes/Vertex.h>
 #include <yave/animations/Animation.h>
