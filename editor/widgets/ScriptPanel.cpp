@@ -100,7 +100,7 @@ void ScriptPanel::on_gui() {
 
     if(ImGui::Button(ICON_FA_PLUS " Add")) {
         FileBrowser* browser = add_child_widget<FileBrowser>(FileSystemModel::local_filesystem());
-        browser->set_selection_filter(false, "*.lua");
+        browser->set_selection_filter("*.lua");
         browser->set_selected_callback([](const auto& filename) {
             if(auto r = io2::File::read_text_file(filename)) {
                 const core::String name = FileSystemModel::local_filesystem()->filename(filename);

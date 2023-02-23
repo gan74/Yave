@@ -39,8 +39,10 @@ FileBrowser::FileBrowser(const FileSystemModel* fs) : FileSystemView(fs) {
     path_changed();
 }
 
-void FileBrowser::set_selection_filter(bool dirs, std::string_view exts) {
-    _dirs = dirs;
+void FileBrowser::set_selection_filter(std::string_view exts, FilterFlags flags) {
+    _dirs = (flags & FilterFlags::IncludeDirs) == FilterFlags::IncludeDirs;
+    _allow_new = (flags & FilterFlags::AllowNewFiles) == FilterFlags::AllowNewFiles;
+
     for(char c : exts) {
         if(c == ';' || _extensions.is_empty()) {
             _extensions.emplace_back();
@@ -90,7 +92,7 @@ bool FileBrowser::has_valid_extension(std::string_view filename) const {
 bool FileBrowser::done(const core::String& filename) {
     y_profile();
     const bool valid_dir = filesystem()->is_directory(filename).unwrap_or(false);
-    const bool valid_file = /*has_valid_extension(filename) &&*/ filesystem()->is_file(filename).unwrap_or(false);
+    const bool valid_file = /*has_valid_extension(filename) &&*/ (_allow_new || filesystem()->is_file(filename).unwrap_or(false));
 
     bool changed = true;
     if((valid_dir && _dirs) || valid_file) {

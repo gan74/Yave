@@ -30,6 +30,13 @@ namespace editor {
 
 class FileBrowser final : public FileSystemView {
     public:
+        enum class FilterFlags : u32 {
+            None            = 0x00,
+            IncludeDirs     = 0x01,
+            AllowNewFiles   = 0x02,
+        };
+
+
         FileBrowser(const FileSystemModel* filesystem = nullptr);
 
         template<typename F>
@@ -42,7 +49,7 @@ class FileBrowser final : public FileSystemView {
             _callbacks.canceled = y_fwd(func);
         }
 
-        void set_selection_filter(bool dirs, std::string_view exts = "");
+        void set_selection_filter(std::string_view exts = "", FilterFlags flags = FilterFlags::None);
 
     protected:
         void on_gui() override;
@@ -61,6 +68,7 @@ class FileBrowser final : public FileSystemView {
         const FileSystemModel* _filesystem = nullptr;
 
         bool _dirs = false;
+        bool _allow_new = false;
 
         core::Vector<core::String> _extensions;
 
@@ -72,6 +80,14 @@ class FileBrowser final : public FileSystemView {
             std::function<bool()> canceled = [] { return true; };
         } _callbacks;
 };
+
+inline constexpr FileBrowser::FilterFlags operator|(FileBrowser::FilterFlags l, FileBrowser::FilterFlags r) {
+    return FileBrowser::FilterFlags(u32(l) | u32(r));
+}
+
+inline constexpr FileBrowser::FilterFlags operator&(FileBrowser::FilterFlags l, FileBrowser::FilterFlags r) {
+    return FileBrowser::FilterFlags(u32(l) & u32(r));
+}
 
 }
 

@@ -63,7 +63,7 @@ SceneImporter2::SceneImporter2(std::string_view import_dst_path) :
         _import_path(import_dst_path),
         _thread_pool(4u) {
 
-    _browser.set_selection_filter(false, import::supported_scene_extensions());
+    _browser.set_selection_filter(import::supported_scene_extensions());
     _browser.set_canceled_callback([this] { close(); return true; });
     _browser.set_selected_callback([this](const auto& filename) {
         _thread_pool.schedule([=] {
@@ -279,7 +279,7 @@ void SceneImporter2::on_gui() {
             {
                 if(imgui::path_selector("Import path:", _import_path)) {
                     FileBrowser* browser = add_child_widget<FileBrowser>(asset_store().filesystem());
-                    browser->set_selection_filter(true);
+                    browser->set_selection_filter("", FileBrowser::FilterFlags::IncludeDirs);
                     browser->set_selected_callback([this](const auto& filename) {
                             if(asset_store().filesystem()->is_directory(filename).unwrap_or(false)) {
                                 _import_path = filename;

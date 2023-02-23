@@ -32,6 +32,7 @@ class AssetStringifier : public Widget {
 
     public:
         AssetStringifier();
+        ~AssetStringifier();
 
         void clear();
 
@@ -40,13 +41,15 @@ class AssetStringifier : public Widget {
 
     private:
         void stringify(AssetId id);
-        void stringify(const MeshData& mesh);
+        void stringify(MeshData mesh);
 
         AssetSelector _selector;
 
         AssetId _selected;
         core::String _vertices;
         core::String _triangles;
+
+        std::shared_ptr<MeshData> _mesh;
 };
 
 }

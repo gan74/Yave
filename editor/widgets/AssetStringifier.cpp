@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "AssetStringifier.h"
+#include "FileBrowser.h"
 
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
@@ -29,7 +30,9 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 #include <y/serde3/archives.h>
+#include <y/io2/File.h>
 
+#include <editor/import/mesh_utils.h>
 #include <editor/utils/ui.h>
 
 namespace yave {
@@ -52,6 +55,9 @@ AssetStringifier::AssetStringifier() :
     _selector.set_selected_callback([this](AssetId id) { stringify(id); return true; });
 }
 
+AssetStringifier::~AssetStringifier() {
+}
+
 void AssetStringifier::on_gui() {
     {
         if(ImGui::Button(ICON_FA_FOLDER_OPEN)) {
@@ -64,7 +70,7 @@ void AssetStringifier::on_gui() {
         core::String name = asset_store().name(_selected).map(clean_name).unwrap_or(core::String("No mesh"));
 
         ImGui::SetNextItemWidth(-1);
-        imgui::text_read_only("", name);
+        imgui::text_read_only("##name", name);
     }
 
     _selector.draw_gui_inside();
@@ -101,15 +107,35 @@ void AssetStringifier::on_gui() {
         if(ImGui::Button("Copy to clipboard##vertices")) {
             ImGui::SetClipboardText(_vertices.data());
         }
-    {
+    }
 
     ImGui::Separator();
 
-    }
+    {
         ImGui::Text("Triangle data: %u bytes", u32(_triangles.size()));
         ImGui::Spacing();
         if(ImGui::Button("Copy to clipboard##triangles")) {
             ImGui::SetClipboardText(_triangles.data());
+        }
+    }
+
+    if(_mesh) {
+        ImGui::Separator();
+        if(ImGui::Button("Export to OBJ")) {
+            FileBrowser* browser = add_detached_widget<FileBrowser>();
+            browser->set_selection_filter("*.obj", FileBrowser::FilterFlags::AllowNewFiles);
+            browser->set_selected_callback([mesh = _mesh](const auto& filename) {
+                if(auto res = io2::File::create(filename)) {
+                    if(import::export_to_obj(*mesh, res.unwrap()).is_ok()) {
+                        log_msg(fmt("Exported as %", filename));
+                    } else {
+                        log_msg("Export failed", Log::Error);
+                    }
+                } else {
+                    log_msg(fmt("Unable to create file %", filename), Log::Error);
+                }
+                return true;
+            });
         }
     }
 }
@@ -133,11 +159,11 @@ void AssetStringifier::stringify(AssetId id) {
     }
 
     _selected = id;
-    stringify(mesh);
+    stringify(std::move(mesh));
 }
 
 
-void AssetStringifier::stringify(const MeshData& mesh) {
+void AssetStringifier::stringify(MeshData mesh) {
     _vertices.make_empty();
     _triangles.make_empty();
 
@@ -172,6 +198,8 @@ void AssetStringifier::stringify(const MeshData& mesh) {
     for(char& c : _triangles) {
         fix_brackets(c);
     }
+
+    _mesh = std::make_shared<MeshData>(std::move(mesh));
 }
 
 

@@ -45,7 +45,7 @@ ImageImporter::ImageImporter(std::string_view import_path) :
         Widget("Image importer"),
         _import_path(import_path) {
 
-    _browser.set_selection_filter(false, import::supported_image_extensions());
+    _browser.set_selection_filter(import::supported_image_extensions());
     _browser.set_selected_callback([this](const auto& filename) { import(filename); return true; });
     _browser.set_canceled_callback([this] { close(); return true; });
 }
