@@ -87,10 +87,12 @@ class BufferMapping final : public BufferMappingBase {
         }
 
         value_type& operator[](usize i) {
+            y_debug_assert(i < size());
             return begin()[i];
         }
 
         const value_type& operator[](usize i) const{
+            y_debug_assert(i < size());
             return begin()[i];
         }
 

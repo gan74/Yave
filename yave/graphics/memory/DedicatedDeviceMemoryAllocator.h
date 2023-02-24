@@ -24,6 +24,10 @@ SOFTWARE.
 
 #include "DeviceMemoryHeapBase.h"
 
+#include <y/core/HashMap.h>
+
+#include <mutex>
+
 namespace yave {
 
 // Allocator disgased as a heap
@@ -36,15 +40,17 @@ class DedicatedDeviceMemoryAllocator : public DeviceMemoryHeapBase {
         core::Result<DeviceMemory> alloc(VkMemoryRequirements reqs) override;
         void free(const DeviceMemory& memory) override;
 
-        void* map(const VkMappedMemoryRange& range, MappingAccess) override;
-        void unmap(const VkMappedMemoryRange& range, MappingAccess) override;
+        void* map(const VkMappedMemoryRange& range, MappingAccess access) override;
+        void unmap(const VkMappedMemoryRange& range, MappingAccess access) override;
 
         u64 allocated_size() const;
 
     private:
         MemoryType _type;
-
         u64 _size = 0;
+
+        std::mutex _mapping_lock;
+        core::FlatHashMap<VkDeviceMemory, void*> _mappings;
 };
 
 }

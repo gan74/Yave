@@ -35,7 +35,18 @@ core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(VkMemoryRequire
     y_profile();
 
     _size += reqs.size;
-    return core::Ok(DeviceMemory(this, alloc_memory(reqs, _type), 0, reqs.size));
+
+    const VkDeviceMemory allocated = alloc_memory(reqs, _type);
+
+    if(is_cpu_visible(_type)) {
+        void* mapping = nullptr;
+        const VkMemoryMapFlags flags = {};
+        vk_check(vkMapMemory(vk_device(), allocated, 0, VK_WHOLE_SIZE, flags, &mapping));
+       const auto lock = y_profile_unique_lock(_mapping_lock);
+       _mappings[allocated] = mapping;
+    }
+
+    return core::Ok(DeviceMemory(this, allocated, 0, reqs.size));
 }
 
 void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
@@ -46,19 +57,29 @@ void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
     }
     _size -= memory.vk_size();
 
+    if(is_cpu_visible(_type)) {
+        {
+            const auto lock = y_profile_unique_lock(_mapping_lock);
+            _mappings[memory.vk_memory()] = nullptr;
+        }
+        vkUnmapMemory(vk_device(), memory.vk_memory());
+    }
+
     Y_TODO(Pool freed memory to avoid having to free)
     vkFreeMemory(vk_device(), memory.vk_memory(), vk_allocation_callbacks());
 }
 
-void* DedicatedDeviceMemoryAllocator::map(const VkMappedMemoryRange& range, MappingAccess) {
-    void* mapping = nullptr;
-    const VkMemoryMapFlags flags = {};
-    vk_check(vkMapMemory(vk_device(), range.memory, 0, VK_WHOLE_SIZE, flags, &mapping));
-    return mapping;
+void* DedicatedDeviceMemoryAllocator::map(const VkMappedMemoryRange& range, MappingAccess access) {
+    invalidate_for_map(range, access);
+    if(is_cpu_visible(_type)) {
+        const auto lock = y_profile_unique_lock(_mapping_lock);
+        return static_cast<u8*>(_mappings[range.memory]) + range.offset;
+    }
+    return nullptr;
 }
 
-void DedicatedDeviceMemoryAllocator::unmap(const VkMappedMemoryRange& range, MappingAccess) {
-    vkUnmapMemory(vk_device(), range.memory);
+void DedicatedDeviceMemoryAllocator::unmap(const VkMappedMemoryRange& range, MappingAccess access) {
+    flush_for_unmap(range, access);
 }
 
 u64 DedicatedDeviceMemoryAllocator::allocated_size() const {

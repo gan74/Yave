@@ -45,6 +45,9 @@ class DeviceMemoryHeapBase : NonMovable {
 
     protected:
         DeviceMemoryHeapBase() = default;
+
+        void invalidate_for_map(const VkMappedMemoryRange& range, MappingAccess access);
+        void flush_for_unmap(const VkMappedMemoryRange& range, MappingAccess access);
 };
 
 }
