@@ -93,7 +93,7 @@ struct QueryUtils {
 
                 if constexpr(removed) {
                     set = &container->to_be_removed();
-                } else if constexpr(changed && only_changed) {
+                } else if(changed && only_changed) {
                     set = &container->recently_mutated();
                 } else {
                     set = &container->id_set();

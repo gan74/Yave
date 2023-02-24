@@ -15,7 +15,8 @@ if(MSVC)
 
     # Disabled warnings:
     # C4702 unreachable code
-    set(Y_COMPILE_OPTIONS /permissive- /fp:fast /W4 /wd4702)
+    # C4127 conditional expression is constant, does wierd things w/ constexpr
+    set(Y_COMPILE_OPTIONS /permissive- /fp:fast /W4 /wd4702 /wd4127)
 
     set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} -D_CRT_SECURE_NO_DEPRECATE)
     set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} /Zc:preprocessor)
