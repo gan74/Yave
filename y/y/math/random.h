@@ -27,23 +27,9 @@ SOFTWARE.
 namespace y {
 namespace math {
 
+
+
 #if 0
-class FastRandom {
-    public:
-        FastRandom(u64 seed = 0xdeadbeef) {
-        }
-
-        u32 operator()() {
-            return (_seed += _seed * _seed | 5) >> 32;
-        }
-
-    private:
-        u64 _seed;
-};
-#endif
-
-
-#if 1
 class FastRandom {
     public:
         using result_type = u32;
@@ -82,6 +68,46 @@ class FastRandom {
         u32 _d;
 };
 #endif
+
+// Xoroshiro128
+class FastRandom {
+    // Based on https://github.com/astocko/xorshift/blob/master/src/xoroshiro128.rs
+
+    public:
+        using result_type = u32;
+
+        constexpr FastRandom(u64 s0 = 0xBEAC0467EBA5FACBllu, u64 s1 = 0xD86B048B86AA9922llu) {
+            _state[0] = s0;
+            _state[1] = s1;
+        }
+
+        constexpr u32 operator()() {
+            const u64 s0 = _state[0];
+            u64 s1 = _state[1];
+            const u64 r = s0 + s1;
+
+            s1 ^= s0;
+            _state[0] = rotl(s0, 55) ^ s1 ^ (s1 << 14);
+            _state[1] = rotl(s1, 36);
+
+            return u32(r);
+        }
+
+        static constexpr u32 max() {
+            return u32(-1);
+        }
+
+        static constexpr u32 min() {
+            return 0;
+        }
+
+    private:
+        static constexpr inline u64 rotl(u64 x, i32 k) {
+            return (x << k) | (x >> (64 - k));
+        }
+
+        u64 _state[2] = {};
+};
 
 }
 }
