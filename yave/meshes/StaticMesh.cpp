@@ -24,6 +24,9 @@ SOFTWARE.
 
 #include <yave/graphics/device/MeshAllocator.h>
 
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/commands/CmdQueue.h>
+
 namespace yave {
 
 StaticMesh::StaticMesh(const MeshData& mesh_data) :
@@ -39,6 +42,22 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
             cmd.vertex_offset
         };
     });
+
+    {
+        _surfels = mesh_data.generate_surfels();
+
+        static_assert(sizeof(Surfel) == 8 * sizeof(float));
+        _surfel_buffer = TypedBuffer<Surfel, BufferUsage::StorageBit | BufferUsage::TransferDstBit>(_surfels.size());
+
+        CmdBufferRecorder recorder = create_disposable_cmd_buffer();
+        BufferMappingBase::stage(_surfel_buffer, recorder, _surfels.data());
+        loading_command_queue().submit(std::move(recorder));
+        const std::array<Descriptor, 2> descriptors = {
+            InlineDescriptor(u32(_surfels.size())),
+            _surfel_buffer,
+        };
+        _surfel_set = DescriptorSet(descriptors);
+    }
 }
 
 StaticMesh::~StaticMesh() {

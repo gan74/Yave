@@ -1,0 +1,82 @@
+#version 450
+
+#include "lib/compute_derivatives.glsl"
+
+#include "lib/lighting.glsl"
+#include "lib/gbuffer.glsl"
+#include "lib/shadow.glsl"
+#include "lib/debug.glsl"
+
+
+// -------------------------------- STUFF --------------------------------
+
+struct SurfelData {
+    vec4 a;
+    vec4 b;
+};
+
+struct Surfel {
+    vec3 pos;
+    vec3 norm;
+};
+
+struct InstanceData {
+    uint surfel_count;
+    uint surfel_offset;
+};
+
+
+Surfel to_surfel(SurfelData data) {
+    Surfel surf;
+    surf.pos = data.a.xyz;
+    surf.norm = vec3(data.a.w, data.b.xy);
+    return surf;
+}
+
+
+// -------------------------------- I/O --------------------------------
+
+layout(local_size_x = 64) in;
+
+layout(r32ui, set = 0, binding = 0) uniform uimage2D out_depth;
+
+layout(set = 0, binding = 1) uniform CameraData {
+    Camera camera;
+};
+
+layout(set = 0, binding = 2) readonly buffer Surfels {
+    SurfelData surfels[];
+};
+
+layout(set = 0, binding = 3) readonly buffer Instances {
+    InstanceData instances[];
+};
+
+
+// -------------------------------- MAIN --------------------------------
+
+void main() {
+    const vec2 image_size = vec2(imageSize(out_depth).xy);
+    const Surfel surfel = to_surfel(surfels[gl_GlobalInvocationID.x]);
+
+    const vec3 to_cam = (camera.position - surfel.pos);
+    const float cam_dist = length(to_cam);
+    const vec3 view_dir = to_cam / cam_dist;
+
+    if(dot(surfel.norm, to_cam) < 0.0) {
+        return;
+    }
+
+    /*const vec2 uv = octahedron_encode(view_dir);
+    const vec2 coord = round(saturate(uv) * image_size);
+    imageAtomicMax(out_depth, ivec2(coord), floatBitsToUint(cam_dist));*/
+
+    const vec3 proj = project(surfel.pos, camera.view_proj);
+    if(proj.xy != saturate(proj.xy) || proj.z < 0.0) {
+        return;
+    }
+
+    const vec2 coord = round(proj.xy * image_size);
+    imageAtomicMax(out_depth, ivec2(coord), floatBitsToUint(proj.z));
+}
+

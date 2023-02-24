@@ -47,6 +47,11 @@ struct PackedVertex {
     math::Vec2 uv;
 };
 
+struct Surfel {
+    math::Vec3 position;
+    math::Vec3 normal;
+    math::Vec2 uv;
+};
 
 
 
@@ -90,8 +95,43 @@ inline FullVertex unpack_vertex(const PackedVertex& v) {
     };
 }
 
+inline Surfel to_surfel(const PackedVertex& v) {
+    return Surfel {
+        v.position,
+        unpack_2_10_10_10(v.packed_normal).to<3>(),
+        v.uv
+    };
+}
 
 
+inline float triangle_area(const std::array<math::Vec3, 3>& triangle) {
+    const math::Vec3 edge_0 = triangle[1] - triangle[0];
+    const math::Vec3 edge_1 = triangle[2] - triangle[0];
+    const float l_0 = edge_0.length();
+    const float l_1 = edge_1.length();
+
+    if(l_0 <= math::epsilon<float> || l_1 <= math::epsilon<float>) {
+        return 0.0f;
+    }
+
+    const float cos_theta = std::clamp((edge_0 / l_0).dot(edge_1 / l_1), 0.0f, 1.0f);
+    return  0.5f * l_0 * l_1 * std::sqrt(1.0f - cos_theta * cos_theta);
+}
+
+inline math::Vec3 barycentric(const std::array<math::Vec3, 3>& triangle, const math::Vec3& p) {
+    const math::Vec3 v0 = triangle[1] - triangle[0];
+    const math::Vec3 v1 = triangle[2] - triangle[0];
+    const math::Vec3 v2 = p - triangle[0];
+    const float d00 = v0.dot(v0);
+    const float d01 = v0.dot(v1);
+    const float d11 = v1.dot(v1);
+    const float d20 = v2.dot(v0);
+    const float d21 = v2.dot(v1);
+    const float denom = d00 * d11 - d01 * d01;
+    const float v = (d11 * d20 - d01 * d21) / denom;
+    const float w = (d00 * d21 - d01 * d20) / denom;
+    return {1.0f - v - w, v, w};
+}
 
 
 using IndexedTriangle = std::array<u32, 3>;

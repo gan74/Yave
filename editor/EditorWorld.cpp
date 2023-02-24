@@ -39,6 +39,7 @@ SOFTWARE.
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/AABBUpdateSystem.h>
 #include <yave/systems/OctreeSystem.h>
+#include <yave/systems/SurfelCacheSystem.h>
 #include <yave/systems/ScriptSystem.h>
 
 #include <y/utils/format.h>
@@ -56,6 +57,7 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<AssetLoaderSystem>(loader);
     add_system<AABBUpdateSystem>();
     add_system<OctreeSystem>();
+    add_system<SurfelCacheSystem>();
     add_system<ScriptSystem>();
     // add_system<ASUpdateSystem>();
 }

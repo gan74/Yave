@@ -126,7 +126,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
     const auto staging_buffer = stage_data(data.byte_size(), data.data());
     const auto regions = get_copy_regions(data);
 
-    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
+    CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
     {
         const auto region = recorder.region("Image upload");

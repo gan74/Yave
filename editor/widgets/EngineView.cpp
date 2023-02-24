@@ -173,6 +173,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white));
+        builder.add_uniform_input(renderer.renderer.ism.ism, SamplerType::PointClamp);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -306,8 +307,8 @@ void EngineView::draw_menu_bar() {
             ImGui::Separator();
             {
                 const char* output_names[] = {
-                        "Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "AO",
-                    };
+                    "Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "AO", "ISM Splat"
+                };
                 for(usize i = 0; i != usize(RenderView::MaxRenderViews); ++i) {
                     bool selected = usize(_view) == i;
                     ImGui::MenuItem(output_names[i], nullptr, &selected);

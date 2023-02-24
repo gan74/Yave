@@ -175,6 +175,10 @@ class DeviceResources final : NonMovable {
         const AssetPtr<Material>& operator[](Materials i) const;
         const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
+#ifdef Y_DEBUG
+        const ComputeProgram& from_file(const core::String& filename) const;
+#endif
+
     private:
         std::unique_ptr<SpirVData[]> _spirv;
         std::unique_ptr<ComputeProgram[]> _computes;
@@ -189,6 +193,11 @@ class DeviceResources final : NonMovable {
 
         Texture _brdf_lut;
         Texture _white_noise;
+
+#ifdef Y_DEBUG
+        struct ComputeShaderCache;
+        std::unique_ptr<ComputeShaderCache> _compute_shaders;
+#endif
 };
 }
 

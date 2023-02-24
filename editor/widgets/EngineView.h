@@ -50,6 +50,7 @@ class EngineView final : public Widget {
             Depth,
 
             SSAO,
+            ISMSplat,
 
             MaxRenderViews
         };

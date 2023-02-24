@@ -19,55 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHES_STATICMESH_H
-#define YAVE_MESHES_STATICMESH_H
+#ifndef YAVE_SYSTEMS_SURFELCACHESYSTEM_H
+#define YAVE_SYSTEMS_SURFELCACHESYSTEM_H
 
-#include "AABB.h"
-#include "MeshDrawData.h"
+#include <yave/ecs/System.h>
 
-#include <yave/assets/AssetTraits.h>
-
-#include <y/core/FixedArray.h>
-#include <y/core/Vector.h>
-
-#include <yave/graphics/descriptors/DescriptorSet.h>
-
-Y_TODO(move into graphics?)
+#include <yave/graphics/buffers/Buffer.h>
+#include <yave/meshes/Vertex.h>
 
 namespace yave {
 
-class StaticMesh : NonCopyable {
+class SurfelCacheSystem : public ecs::System {
     public:
-        StaticMesh() = default;
-        StaticMesh(const MeshData& mesh_data);
+        struct InstanceData {
+            u32 surfel_count;
+            u32 surfel_offset;
+        };
 
-        StaticMesh(StaticMesh&&) = default;
-        StaticMesh& operator=(StaticMesh&&) = default;
+        SurfelCacheSystem();
 
-        ~StaticMesh();
+        void tick(ecs::EntityWorld& world) override;
 
-        bool is_null() const;
+        u32 surfel_count() const;
+        u32 instance_count() const;
 
-        const MeshDrawData& draw_data() const;
-        const MeshDrawCommand& draw_command() const;
-        const core::Span<MeshDrawCommand> sub_meshes() const;
-
-        float radius() const;
-        const AABB& aabb() const;
-
-        core::Vector<Surfel> _surfels;
-        TypedBuffer<Surfel, BufferUsage::StorageBit | BufferUsage::TransferDstBit> _surfel_buffer;
-        DescriptorSet _surfel_set;
+        const TypedBuffer<Surfel, BufferUsage::StorageBit>& surfel_buffer() const;
+        const TypedBuffer<InstanceData, BufferUsage::StorageBit>& instance_buffer() const;
 
     private:
-        MeshDrawData _draw_data = {};
-        core::FixedArray<MeshDrawCommand> _sub_meshes;
-        AABB _aabb;
+        TypedBuffer<Surfel, BufferUsage::StorageBit> _surfels;
+        TypedBuffer<InstanceData, BufferUsage::StorageBit> _instances;
+        u32 _allocated_surfels = 0;
+        u32 _allocated_instances = 0;
 };
-
-YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
 
 }
 
-#endif // YAVE_MESHES_STATICMESH_H
+#endif // YAVE_SYSTEMS_SURFELCACHESYSTEM_H
 

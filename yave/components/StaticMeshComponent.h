@@ -61,6 +61,10 @@ class StaticMeshComponent final :
 
         void inspect(ecs::ComponentInspector* inspector);
 
+
+        mutable u32 _surfels_offset = u32(-1);
+        mutable u32 _instance_index = u32(-1);
+
         y_reflect(StaticMeshComponent, _mesh, _materials)
 
     private:

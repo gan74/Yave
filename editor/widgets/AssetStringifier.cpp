@@ -126,7 +126,8 @@ void AssetStringifier::on_gui() {
             browser->set_selection_filter("*.obj", FileBrowser::FilterFlags::AllowNewFiles);
             browser->set_selected_callback([mesh = _mesh](const auto& filename) {
                 if(auto res = io2::File::create(filename)) {
-                    if(import::export_to_obj(*mesh, res.unwrap()).is_ok()) {
+                    const MeshData centered = import::transform(*mesh, math::Transform<>(-mesh->aabb().center()));
+                    if(import::export_to_obj(centered, res.unwrap())) {
                         log_msg(fmt("Exported as %", filename));
                     } else {
                         log_msg("Export failed", Log::Error);

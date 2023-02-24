@@ -22,17 +22,26 @@ SOFTWARE.
 
 #include "MeshData.h"
 
+#include <y/core/FixedArray.h>
 #include <y/core/Chrono.h>
+
+#include <y/math/random.h>
+
+#include <random>
 
 namespace yave {
 
 static core::Vector<PackedVertex> pack_vertices(core::Span<FullVertex> vertices) {
+    y_profile();
+
     auto packed = core::vector_with_capacity<PackedVertex>(vertices.size());
     for(const FullVertex& v : vertices) {
         packed << pack_vertex(v);
     }
     return packed;
 }
+
+
 
 MeshData::MeshData(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles) {
     add_sub_mesh(vertices, triangles);
@@ -134,6 +143,72 @@ bool MeshData::has_skeleton() const {
 
 bool MeshData::is_empty() const {
     return _vertices.is_empty() || _triangles.is_empty() || _sub_meshes.is_empty();
+}
+
+
+core::Vector<Surfel> MeshData::generate_surfels(float per_surf_area, usize max) const {
+    y_profile();
+
+    float total_area = 0.0f;
+    core::FixedArray<float> triangle_cumul_areas(_triangles.size() + 1);
+    for(usize i = 0; i != _triangles.size(); ++i) {
+        const std::array tri = {
+            _vertices[_triangles[i][0]].position,
+            _vertices[_triangles[i][1]].position,
+            _vertices[_triangles[i][2]].position,
+        };
+
+        const float area = triangle_area(tri);
+        y_debug_assert(std::isfinite(area));
+
+        triangle_cumul_areas[i] = total_area;
+        total_area += area;
+    }
+
+    triangle_cumul_areas[_triangles.size()] = total_area;
+    y_debug_assert(std::isfinite(total_area));
+
+    const usize count = per_surf_area > 0.0f ? std::min(max, usize(std::ceil(total_area / per_surf_area))) : max;
+    const float min_tri_area = (total_area / count) * 0.001f;
+
+    math::FastRandom rng;
+    std::uniform_real_distribution<float> distrib(0.0f, 1.0f);
+
+    auto pts = core::vector_with_capacity<Surfel>(count);
+    while(pts.size() < count) {
+        const float r = distrib(rng) * total_area;
+        const auto* t = std::upper_bound(triangle_cumul_areas.data(), triangle_cumul_areas.data() + triangle_cumul_areas.size(), r);
+        const usize index = (t - triangle_cumul_areas.data()) - 1;
+        y_debug_assert(index < _triangles.size());
+
+        const float tri_area = triangle_cumul_areas[index + 1] - triangle_cumul_areas[index];
+        if(tri_area < min_tri_area) {
+            continue;
+        }
+
+        const std::array tri = {
+            to_surfel(_vertices[_triangles[index][0]]),
+            to_surfel(_vertices[_triangles[index][1]]),
+            to_surfel(_vertices[_triangles[index][2]]),
+        };
+
+        const std::array tri_pos = {tri[0].position, tri[1].position, tri[2].position};
+
+        // https://math.stackexchange.com/questions/538458/how-to-sample-points-on-a-triangle-surface-in-3d
+        const float a = distrib(rng);
+        const float b = distrib(rng);
+        const float sqrt_a = std::sqrt(a);
+        const math::Vec3 pos = tri_pos[0] * (1.0f - sqrt_a) + tri_pos[1] * ((1.0f - b) * sqrt_a) + tri_pos[2] * (b * sqrt_a);
+
+        const math::Vec3 bary = barycentric(tri_pos, pos).saturated();
+        pts << Surfel {
+            pos,
+            ((tri[0].normal * bary[0]) + (tri[1].normal * bary[1]) + (tri[2].normal * bary[2])).normalized(),
+            ((tri[0].uv * bary[0]) + (tri[1].uv * bary[1]) + (tri[2].uv * bary[2])),
+        };
+    }
+
+    return pts;
 }
 
 }

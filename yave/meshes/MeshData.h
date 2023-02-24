@@ -57,6 +57,8 @@ class MeshData {
         core::Span<SkinWeights> skin() const;
         core::Vector<SkinnedVertex> skinned_vertices() const;
 
+        core::Vector<Surfel> generate_surfels(float per_surf_area = 1.0f, usize max = 4096) const;
+
         bool has_skeleton() const;
 
         bool is_empty() const;

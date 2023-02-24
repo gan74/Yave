@@ -288,6 +288,10 @@ DeviceResources::DeviceResources() {
         set_name(_empty_probe->vk_image(), "Empty Probe");
         set_name(_empty_probe->vk_view(), "Empty Probe");
     }
+
+#ifdef Y_DEBUG
+    _compute_shaders = std::make_unique<ComputeShaderCache>();
+#endif
 }
 
 
@@ -339,6 +343,23 @@ const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
     y_debug_assert(usize(i) < usize(MaxMeshes));
     return _meshes[usize(i)];
 }
+
+#ifdef Y_DEBUG
+struct DeviceResources::ComputeShaderCache {
+    core::FlatHashMap<core::String, ComputeProgram> cache;
+    std::mutex lock;
+};
+
+const ComputeProgram& DeviceResources::from_file(const core::String& filename) const {
+    const auto lock = y_profile_unique_lock(_compute_shaders->lock);
+    auto& program = _compute_shaders->cache[filename];
+    if(program.is_null()) {
+        const auto spirv = SpirVData::deserialized(io2::File::open(filename).expected(fmt_c_str("Unable to open SPIR-V file (%).", filename)));
+        program = ComputeProgram(ComputeShader(spirv));
+    }
+    return program;
+}
+#endif
 
 }
 

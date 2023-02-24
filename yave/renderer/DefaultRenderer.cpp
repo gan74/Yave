@@ -37,6 +37,8 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.exposure       = ExposurePass::create(framegraph, renderer.bloom.bloomed);
     renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.bloom.bloomed, renderer.exposure, settings.tone_mapping);
 
+    renderer.ism            = ISMPass::create(framegraph, renderer.gbuffer);
+
     renderer.final = renderer.tone_mapping.tone_mapped;
     renderer.depth = renderer.gbuffer.depth;
 
