@@ -48,8 +48,8 @@ constexpr BufferUsage operator&(BufferUsage a, BufferUsage b) {
     return BufferUsage(u32(a) & u32(b));
 }
 
-inline constexpr MemoryType prefered_memory_type(BufferUsage usage) {
-    return ((usage & (BufferUsage::UniformBit | BufferUsage::StorageBit)) != BufferUsage::None) ? MemoryType::CpuVisible : MemoryType::DeviceLocal;
+inline constexpr MemoryType prefered_memory_type(BufferUsage) {
+    return MemoryType::DeviceLocal;
 }
 
 inline constexpr BufferUsage buffer_transfer_usage(MemoryType flags) {

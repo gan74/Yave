@@ -188,7 +188,7 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
             _descriptor_buffer_size += align_up_to(u64(buffer.byte_size), alignment);
         }
         log_msg(fmt("Allocating % * % bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
-        _inline_buffer = Buffer<BufferUsage::UniformBit>(_descriptor_buffer_size * pool_size);
+        _inline_buffer = Buffer<BufferUsage::UniformBit, MemoryType::CpuVisible>(_descriptor_buffer_size * pool_size);
     }
 }
 

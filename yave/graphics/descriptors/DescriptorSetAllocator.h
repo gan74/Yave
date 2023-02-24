@@ -118,7 +118,7 @@ class DescriptorSetPool : NonMovable {
 
         usize _inline_blocks = 0;
         u64 _descriptor_buffer_size = 0;
-        Buffer<BufferUsage::UniformBit> _inline_buffer;
+        Buffer<BufferUsage::UniformBit, MemoryType::CpuVisible> _inline_buffer;
 };
 
 class DescriptorSetAllocator {
