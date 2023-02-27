@@ -27,7 +27,8 @@ SOFTWARE.
 namespace yave {
 
 struct ISMPass {
-    FrameGraphImageId ism;
+    FrameGraphVolumeId ism;
+    FrameGraphTypedBufferId<math::Vec4> probes;
 
     static ISMPass create(FrameGraph& framegraph, const GBufferPass& gbuffer);
 };

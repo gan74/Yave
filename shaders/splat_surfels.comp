@@ -1,44 +1,15 @@
 #version 450
 
-#include "lib/compute_derivatives.glsl"
 
-#include "lib/lighting.glsl"
-#include "lib/gbuffer.glsl"
-#include "lib/shadow.glsl"
-#include "lib/debug.glsl"
-
-
-// -------------------------------- STUFF --------------------------------
-
-struct SurfelData {
-    vec4 a;
-    vec4 b;
-};
-
-struct Surfel {
-    vec3 pos;
-    vec3 norm;
-};
-
-struct InstanceData {
-    uint surfel_count;
-    uint surfel_offset;
-};
-
-
-Surfel to_surfel(SurfelData data) {
-    Surfel surf;
-    surf.pos = data.a.xyz;
-    surf.norm = vec3(data.a.w, data.b.xy);
-    return surf;
-}
+#include "lib/utils.glsl"
+#include "lib/surfels.glsl"
 
 
 // -------------------------------- I/O --------------------------------
 
 layout(local_size_x = 64) in;
 
-layout(r32ui, set = 0, binding = 0) uniform uimage2D out_depth;
+layout(r32ui, set = 0, binding = 0) uniform uimage3D out_probes;
 
 layout(set = 0, binding = 1) uniform CameraData {
     Camera camera;
@@ -52,35 +23,53 @@ layout(set = 0, binding = 3) readonly buffer Instances {
     InstanceData instances[];
 };
 
+layout(set = 0, binding = 4) readonly buffer Probes {
+    vec4 probe_positions[];
+};
+
+
 
 // -------------------------------- MAIN --------------------------------
 
+// https://math.stackexchange.com/questions/73238/calculating-solid-angle-for-a-sphere-in-space
+float compute_screen_fraction(InstanceData instance, vec3 position) {
+    const vec3 to_center = position - instance.center;
+    const float dist_sq = dot(to_center, to_center);
+    const float radius_sq = sqr(instance.radius);
+    if(dist_sq <= radius_sq) {
+        return 1.0;
+    }
+    return 0.5 * (1.0 - sqrt(dist_sq - radius_sq) / sqrt(dist_sq));
+}
+
+
 void main() {
-    const vec2 image_size = vec2(imageSize(out_depth).xy);
+    const vec4 probe_data = probe_positions[gl_GlobalInvocationID.y];
+    if(probe_data.w > 0.0) {
+        return;
+    }
 
     const InstanceData instance = instances[gl_WorkGroupID.x];
 
-    for(uint i = gl_LocalInvocationID.x; i < instance.surfel_count; i += gl_WorkGroupSize.x) {
+    const float fraction = compute_screen_fraction(instance, probe_data.xyz) * 2.0;
+    const vec2 image_size = vec2(imageSize(out_probes).xy);
+    const float screen_size_px = (image_size.x * image_size.y) * fraction;
+
+    const uint splats = min(instance.surfel_count, uint(screen_size_px + 1.0));
+    for(uint i = gl_LocalInvocationIndex ; i < splats; i += gl_WorkGroupSize.x) {
         const Surfel surfel = to_surfel(surfels[instance.surfel_offset + i]);
 
-        const vec3 to_cam = (camera.position - surfel.pos);
-        const float cam_dist = length(to_cam);
-        const vec3 view_dir = to_cam / cam_dist;
+        const vec3 to_probe = (probe_data.xyz - surfel.pos);
+        const float probe_dist = length(to_probe);
+        const vec3 view_dir = to_probe / probe_dist;
 
-        if(dot(surfel.norm, to_cam) < 0.0) {
+        if(dot(surfel.norm, to_probe) < 0.0) {
             continue;
         }
 
-        /*const vec2 uv = octahedron_encode(view_dir);
+        const vec2 uv = octahedron_encode(view_dir);
         const vec2 coord = round(saturate(uv) * image_size);
-        imageAtomicMax(out_depth, ivec2(coord), floatBitsToUint(cam_dist));*/
-
-        const vec3 proj = project(surfel.pos, camera.view_proj);
-        if(proj.xy != saturate(proj.xy) || proj.z < 0.0) {
-            continue;
-        }
-        const vec2 coord = round(proj.xy * image_size);
-        imageAtomicMax(out_depth, ivec2(coord), floatBitsToUint(proj.z));
+        imageAtomicMax(out_probes, ivec3(coord, gl_GlobalInvocationID.y), floatBitsToUint(probe_dist));
     }
 }
 

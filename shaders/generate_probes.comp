@@ -1,0 +1,76 @@
+#version 450
+
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#include "lib/utils.glsl"
+
+layout(local_size_x = 32, local_size_y = 32) in;
+
+layout(set = 0, binding = 0) uniform sampler2D in_depth;
+
+layout(set = 0, binding = 1) uniform CameraData {
+    Camera camera;
+};
+
+layout(set = 0, binding = 2) writeonly buffer Probes {
+    vec4 probe_positions[];
+};
+
+// Should be gl_NumSubgroups, do we just set 64 and pray?
+shared vec4 sub_max[64];
+shared vec4 sub_min[64];
+
+void main() {
+    const uint group_index = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    const ivec2 input_size = ivec2(textureSize(in_depth, 0).xy);
+    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(input_size);
+
+    const float depth = texelFetch(in_depth, coord, 0).x;
+    const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
+
+    const bool in_bounds = !(is_OOB(depth) || any(greaterThan(coord, input_size)) || any(lessThan(coord, ivec2(0))));
+
+    if(subgroupElect()) {
+        sub_max[gl_SubgroupID] = vec4(0.0);
+        sub_min[gl_SubgroupID] = vec4(0.0);
+    }
+
+    subgroupBarrier();
+
+    if(in_bounds) {
+        const vec3 p_min = subgroupMin(world_pos);
+        const vec3 p_max = subgroupMax(world_pos);
+        if(subgroupElect()) {
+            sub_max[gl_SubgroupID] = vec4(p_max, 1.0);
+            sub_min[gl_SubgroupID] = vec4(p_min, 1.0);
+        }
+    }
+
+    barrier();
+
+    if(gl_LocalInvocationIndex == 0) {
+        bool inside = false;
+        vec3 p_max = vec3(0.0);
+        vec3 p_min = vec3(0.0);
+        for(uint i = 0; i != gl_NumSubgroups; ++i) {
+            const vec4 ma = sub_max[i];
+            const vec4 mi = sub_min[i];
+            if(ma.w > 0.0) {
+                if(!inside) {
+                    inside = true;
+                    p_max = ma.xyz;
+                    p_min = mi.xyz;
+                } else {
+                    p_max = max(p_max, ma.xyz);
+                    p_min = min(p_min, mi.xyz);
+                }
+            }
+        }
+
+        const vec3 center = 0.5 * (p_max + p_min);
+        probe_positions[group_index] = vec4(center, inside ? 0.0 : 1.0);
+    }
+}
+

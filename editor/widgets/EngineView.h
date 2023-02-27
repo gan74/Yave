@@ -51,6 +51,7 @@ class EngineView final : public Widget {
 
             SSAO,
             ISMSplat,
+            GIProbes,
 
             MaxRenderViews
         };

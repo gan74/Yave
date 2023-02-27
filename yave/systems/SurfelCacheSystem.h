@@ -32,8 +32,15 @@ namespace yave {
 class SurfelCacheSystem : public ecs::System {
     public:
         struct InstanceData {
+            math::Transform<> model;
+
+            math::Vec3 center;
+            float radius;
+
+            math::Vec2 padding_0;
             u32 surfel_count;
             u32 surfel_offset;
+
         };
 
         SurfelCacheSystem();

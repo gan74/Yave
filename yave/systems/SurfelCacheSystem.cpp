@@ -89,15 +89,20 @@ void SurfelCacheSystem::tick(ecs::EntityWorld& world) {
                 _allocated_instances += 1;
             }
 
+            const AABB aabb = tr.to_global(m.aabb());
+
             const struct Params {
-                math::Transform<> tr;
-                u32 surfel_count;
-                u32 output_offset;
+                InstanceData instance;
                 u32 instance_index;
             } params = {
-                tr.transform(),
-                surfel_count,
-                m._surfels_offset,
+                {
+                    tr.transform(),
+                    aabb.center(),
+                    aabb.radius(),
+                    {}, // padding
+                    surfel_count,
+                    m._surfels_offset,
+                },
                 m._instance_index,
             };
 

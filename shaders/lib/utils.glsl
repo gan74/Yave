@@ -16,6 +16,7 @@ struct SurfaceInfo {
 
     vec3 normal;
 };
+
 struct Frustum {
     vec4 planes[6];
 };

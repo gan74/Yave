@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/shaders/ComputeProgram.h>
 
 #include <yave/systems/SurfelCacheSystem.h>
 
@@ -41,6 +42,18 @@ SOFTWARE.
 
 namespace yave {
 
+
+const math::Vec3ui screen_division = math::Vec3ui(32, 32, 1);
+
+static math::Vec2ui compute_probe_count(const math::Vec2ui& size) {
+    math::Vec2ui probe_count;
+    for(usize i = 0; i != 2; ++i) {
+        probe_count[i] = size[i] / screen_division[i] + !!(size[i] % screen_division[i]);
+    }
+    return probe_count;
+}
+
+
 ISMPass ISMPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
     const SurfelCacheSystem* cache = gbuffer.scene_pass.scene_view.world().find_system<SurfelCacheSystem>();
     if(!cache) {
@@ -49,39 +62,61 @@ ISMPass ISMPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
 
     const auto region = framegraph.region("ISM");
 
-    FrameGraphPassBuilder clear_builder = framegraph.add_pass("ISM clear pass");
-
-    const math::Vec2ui size = math::Vec2ui(128, 128);
-    const auto ism = clear_builder.declare_image(VK_FORMAT_R32_UINT, size);
-
-    clear_builder.add_color_output(ism);
-    clear_builder.set_render_func([=](RenderPassRecorder&, const FrameGraphPass*) {
-    });
-
-
-    const u32 surfel_count = cache->surfel_count();
     const u32 instance_count = cache->instance_count();
 
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ISM pass");
+    const math::Vec2ui gbuffer_size = framegraph.image_size(gbuffer.depth);
+    const math::Vec2ui probe_count = compute_probe_count(gbuffer_size);
+    const usize total_probe_count = probe_count.x() * probe_count.y();
 
-    builder.add_storage_output(ism);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
-    builder.add_external_input(cache->surfel_buffer());
-    builder.add_external_input(cache->instance_buffer());
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        log_msg(fmt("Splatting % surfels for % instances", surfel_count, instance_count));
+    FrameGraphMutableVolumeId ism;
+    FrameGraphMutableTypedBufferId<math::Vec4> probes;
 
-        if(false) {
-            const ComputeProgram& program = device_resources().from_file("ism_splat.comp.spv");
-            recorder.dispatch_size(program, math::Vec2ui(surfel_count, 1), self->descriptor_sets());
-        } else {
+
+    {
+        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe gen pass");
+
+        probes = builder.declare_typed_buffer<math::Vec4>(total_probe_count);
+
+        builder.add_uniform_input(gbuffer.depth);
+        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+        builder.add_storage_output(probes);
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            const ComputeProgram& program = device_resources().from_file("generate_probes.comp.spv");
+            y_debug_assert(program.local_size() == screen_division);
+            recorder.dispatch(program, math::Vec3ui(probe_count, 1), self->descriptor_sets());
+        });
+    }
+
+    {
+        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ISM clear pass");
+
+        const math::Vec2ui probe_size = math::Vec2ui(32, 32);
+        ism = builder.declare_volume(VK_FORMAT_R32_UINT, math::Vec3ui(probe_size, total_probe_count));
+
+        builder.add_storage_output(ism);
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            const ComputeProgram& program = device_resources().from_file("clear_probes.comp.spv");
+            recorder.dispatch_size(program, math::Vec3ui(probe_size, total_probe_count), self->descriptor_sets());
+        });
+    }
+
+    {
+        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ISM pass");
+
+        builder.add_storage_output(ism);
+        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+        builder.add_external_input(cache->surfel_buffer());
+        builder.add_external_input(cache->instance_buffer());
+        builder.add_storage_input(probes);
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const ComputeProgram& program = device_resources().from_file("splat_surfels.comp.spv");
-            recorder.dispatch(program, math::Vec3ui(instance_count, 1, 1), self->descriptor_sets());
-        }
-    });
+            recorder.dispatch(program, math::Vec3ui(instance_count, total_probe_count, 1), self->descriptor_sets());
+        });
+    }
 
     ISMPass pass;
     pass.ism = ism;
+    pass.probes = probes;
     return pass;
 }
 

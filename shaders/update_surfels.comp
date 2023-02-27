@@ -1,34 +1,13 @@
 #version 450
 
-#include "lib/compute_derivatives.glsl"
-
-#include "lib/lighting.glsl"
-#include "lib/gbuffer.glsl"
-#include "lib/shadow.glsl"
-#include "lib/debug.glsl"
-
-
-// -------------------------------- STUFF --------------------------------
-
-struct SurfelData {
-    vec4 a;
-    vec4 b;
-};
-
-struct InstanceData {
-    uint surfel_count;
-    uint surfel_offset;
-};
-
+#include "lib/surfels.glsl"
 
 // -------------------------------- I/O --------------------------------
 
 layout(local_size_x = 64) in;
 
 layout(set = 0, binding = 0) uniform Model_Inline {
-    mat4 model;
-    uint surfel_count;
-    uint output_offset;
+    InstanceData instance;
     uint instance_index;
 };
 
@@ -47,19 +26,16 @@ layout(set = 0, binding = 3) writeonly buffer OutInstances {
 // -------------------------------- MAIN --------------------------------
 
 void main() {
-    if(gl_GlobalInvocationID.x >= surfel_count) {
+    if(gl_GlobalInvocationID.x >= instance.surfel_count) {
         return;
     }
 
     SurfelData surfel = surfels[gl_GlobalInvocationID.x];
-    surfel.a.xyz = (model * vec4(surfel.a.xyz, 1.0)).xyz;
-    out_surfels[gl_GlobalInvocationID.x + output_offset] = surfel;
+    surfel.a.xyz = (instance.model * vec4(surfel.a.xyz, 1.0)).xyz;
+    out_surfels[gl_GlobalInvocationID.x + instance.surfel_offset] = surfel;
 
     if(gl_GlobalInvocationID.x == 0) {
-        InstanceData data;
-        data.surfel_count = surfel_count;
-        data.surfel_offset = output_offset;
-        out_instances[instance_index] =  data;
+        out_instances[instance_index] = instance;
     }
 }
 

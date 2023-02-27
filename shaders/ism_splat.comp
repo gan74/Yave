@@ -1,37 +1,7 @@
 #version 450
 
-#include "lib/compute_derivatives.glsl"
-
-#include "lib/lighting.glsl"
-#include "lib/gbuffer.glsl"
-#include "lib/shadow.glsl"
-#include "lib/debug.glsl"
-
-
-// -------------------------------- STUFF --------------------------------
-
-struct SurfelData {
-    vec4 a;
-    vec4 b;
-};
-
-struct Surfel {
-    vec3 pos;
-    vec3 norm;
-};
-
-struct InstanceData {
-    uint surfel_count;
-    uint surfel_offset;
-};
-
-
-Surfel to_surfel(SurfelData data) {
-    Surfel surf;
-    surf.pos = data.a.xyz;
-    surf.norm = vec3(data.a.w, data.b.xy);
-    return surf;
-}
+#include "lib/utils.glsl"
+#include "lib/surfels.glsl"
 
 
 // -------------------------------- I/O --------------------------------
