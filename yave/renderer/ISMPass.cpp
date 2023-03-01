@@ -78,6 +78,8 @@ ISMPass ISMPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
         probes = builder.declare_typed_buffer<math::Vec4>(total_probe_count);
 
         builder.add_uniform_input(gbuffer.depth);
+        builder.add_uniform_input(gbuffer.color);
+        builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
         builder.add_storage_output(probes);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -91,7 +93,7 @@ ISMPass ISMPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
         FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ISM clear pass");
 
         const math::Vec2ui probe_size = math::Vec2ui(32, 32);
-        ism = builder.declare_volume(VK_FORMAT_R32_UINT, math::Vec3ui(probe_size, total_probe_count));
+        ism = builder.declare_volume(VK_FORMAT_R64_UINT, math::Vec3ui(probe_size, total_probe_count));
 
         builder.add_storage_output(ism);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -111,6 +113,16 @@ ISMPass ISMPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const ComputeProgram& program = device_resources().from_file("splat_surfels.comp.spv");
             recorder.dispatch(program, math::Vec3ui(instance_count, total_probe_count, 1), self->descriptor_sets());
+        });
+    }
+
+    {
+        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ISM filling pass");
+
+        builder.add_storage_output(ism);
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            const ComputeProgram& program = device_resources().from_file("fill_probes.comp.spv");
+            recorder.dispatch(program, math::Vec3ui(1, 1, total_probe_count), self->descriptor_sets());
         });
     }
 

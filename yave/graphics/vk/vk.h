@@ -97,6 +97,9 @@ VK_STRUCT_INIT(VkAccelerationStructureMemoryRequirementsInfoNV,     VK_STRUCTURE
 VK_STRUCT_INIT(VkPhysicalDeviceRayTracingPropertiesNV,              VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV)
 
 
+VK_STRUCT_INIT(VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT,   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT)
+
+
 // Core
 VK_STRUCT_INIT(VkApplicationInfo,                                   VK_STRUCTURE_TYPE_APPLICATION_INFO)
 VK_STRUCT_INIT(VkInstanceCreateInfo,                                VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)

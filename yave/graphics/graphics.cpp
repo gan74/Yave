@@ -115,6 +115,7 @@ static void init_vk_device() {
     auto extensions = core::vector_with_capacity<const char*>(4);
     extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        "VK_EXT_shader_image_atomic_int64",
     };
 
 
@@ -122,6 +123,11 @@ static void init_vk_device() {
     auto required_features_1_1 = required_device_features_1_1();
     auto required_features_1_2 = required_device_features_1_2();
     auto required_features_1_3 = required_device_features_1_3();
+
+
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT required_features_int64 = vk_struct();
+    required_features_int64.shaderImageInt64Atomics = true;
+
 
     if(physical_device().vk_properties_1_3().maxInlineUniformBlockSize > 0) {
         required_features_1_3.inlineUniformBlock = true;
@@ -138,6 +144,8 @@ static void init_vk_device() {
     std::fill_n(queue_priorities.data(), queue_priorities.size(), 0.0f);
     queue_priorities[0] = 1.0f;
 
+
+
     VkDeviceQueueCreateInfo queue_create_info = vk_struct();
     {
         queue_create_info.queueFamilyIndex = main_queue_index;
@@ -151,6 +159,7 @@ static void init_vk_device() {
         features.pNext = &required_features_1_1;
         required_features_1_1.pNext = &required_features_1_2;
         required_features_1_2.pNext = &required_features_1_3;
+        required_features_1_3.pNext = &required_features_int64;
     }
 
     VkDeviceCreateInfo create_info = vk_struct();

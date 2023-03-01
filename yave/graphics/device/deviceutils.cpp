@@ -220,6 +220,7 @@ VkPhysicalDeviceFeatures required_device_features() {
         required.robustBufferAccess = true;
         required.independentBlend = true;
         required.samplerAnisotropy = true;
+        required.shaderInt64 = true;
     }
 
     return required;

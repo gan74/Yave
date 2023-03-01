@@ -125,8 +125,7 @@ static void validate_bindings(core::Span<VkDescriptorSetLayoutBinding> bindings)
     for(u32 i = 0; i != bindings.size(); ++i) {
         max = std::max(max, bindings[i].binding + 1);
     }
-    unused(max);
-    y_debug_assert(max == bindings.size());
+    y_always_assert(max == bindings.size(), "Bindings are not continuous");
 }
 
 ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) {

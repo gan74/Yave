@@ -44,7 +44,10 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
     });
 
     {
-        _surfels = mesh_data.generate_surfels();
+        auto [area, surfs] = mesh_data.generate_surfels();
+
+        _surfels = std::move(surfs);
+        _total_area = area;
 
         static_assert(sizeof(Surfel) == 8 * sizeof(float));
         _surfel_buffer = TypedBuffer<Surfel, BufferUsage::StorageBit | BufferUsage::TransferDstBit>(_surfels.size());
@@ -52,11 +55,6 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
         CmdBufferRecorder recorder = create_disposable_cmd_buffer();
         BufferMappingBase::stage(_surfel_buffer, recorder, _surfels.data());
         loading_command_queue().submit(std::move(recorder));
-        const std::array<Descriptor, 2> descriptors = {
-            InlineDescriptor(u32(_surfels.size())),
-            _surfel_buffer,
-        };
-        _surfel_set = DescriptorSet(descriptors);
     }
 }
 

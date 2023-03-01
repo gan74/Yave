@@ -1,0 +1,41 @@
+#version 450
+
+#extension GL_EXT_shader_image_int64 : enable
+
+#include "lib/utils.glsl"
+#include "lib/surfels.glsl"
+
+
+// -------------------------------- I/O --------------------------------
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(r64ui, set = 0, binding = 0) uniform u64image3D inout_probes;
+
+
+void main() {
+    const uint probe_size = imageSize(inout_probes).x;
+
+    const uint texel_per_threads = probe_size / gl_WorkGroupSize.x;
+    const uvec2 start = gl_LocalInvocationID.xy * texel_per_threads;
+
+    /*float min_depth = 1e37;
+    for(uint x = 0; x != texel_per_threads; ++x) {
+        for(uint y = 0; y != texel_per_threads; ++y) {
+            const uvec2 coords = start + uvec2(x, y);
+            const float depth = uintBitsToFloat(imageLoad(inout_probes, ivec3(coords, gl_GlobalInvocationID.z)).r);
+            min_depth = min(depth, min_depth);
+        }
+    }
+
+    if(min_depth < 1e37) {
+        const uint value = floatBitsToUint(min_depth);
+        for(uint x = 0; x != texel_per_threads; ++x) {
+            for(uint y = 0; y != texel_per_threads; ++y) {
+                const uvec2 coords = start + uvec2(x, y);
+                imageStore(inout_probes, ivec3(coords, gl_GlobalInvocationID.z), uvec4(value));
+            }
+        }
+    }*/
+}
+

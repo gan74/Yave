@@ -56,8 +56,9 @@ class StaticMesh : NonCopyable {
         const AABB& aabb() const;
 
         core::Vector<Surfel> _surfels;
+        float _total_area = 0.0f;
         TypedBuffer<Surfel, BufferUsage::StorageBit | BufferUsage::TransferDstBit> _surfel_buffer;
-        DescriptorSet _surfel_set;
+
 
     private:
         MeshDrawData _draw_data = {};

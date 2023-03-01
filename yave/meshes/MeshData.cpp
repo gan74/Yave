@@ -146,7 +146,7 @@ bool MeshData::is_empty() const {
 }
 
 
-core::Vector<Surfel> MeshData::generate_surfels(float per_surf_area, usize max) const {
+std::pair<float, core::Vector<Surfel> > MeshData::generate_surfels(float per_surf_area, usize max) const {
     y_profile();
 
     float total_area = 0.0f;
@@ -208,7 +208,7 @@ core::Vector<Surfel> MeshData::generate_surfels(float per_surf_area, usize max) 
         };
     }
 
-    return pts;
+    return {total_area, pts};
 }
 
 }

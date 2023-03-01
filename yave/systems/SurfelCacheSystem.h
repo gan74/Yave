@@ -37,7 +37,8 @@ class SurfelCacheSystem : public ecs::System {
             math::Vec3 center;
             float radius;
 
-            math::Vec2 padding_0;
+            float padding_0;
+            float surfel_area;
             u32 surfel_count;
             u32 surfel_offset;
 

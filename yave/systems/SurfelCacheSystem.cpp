@@ -99,7 +99,8 @@ void SurfelCacheSystem::tick(ecs::EntityWorld& world) {
                     tr.transform(),
                     aabb.center(),
                     aabb.radius(),
-                    {}, // padding
+                    0.0f, // padding
+                    mesh._total_area / surfel_count,
                     surfel_count,
                     m._surfels_offset,
                 },
