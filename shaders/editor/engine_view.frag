@@ -1,7 +1,5 @@
 #version 450
 
-#extension GL_EXT_shader_image_int64 : enable
-
 #include "../lib/surfels.glsl"
 #include "../lib/gbuffer.glsl"
 

@@ -90,6 +90,7 @@ void SurfelCacheSystem::tick(ecs::EntityWorld& world) {
             }
 
             const AABB aabb = tr.to_global(m.aabb());
+            const float scale = tr.transform().scale().max_component();
 
             const struct Params {
                 InstanceData instance;
@@ -99,7 +100,7 @@ void SurfelCacheSystem::tick(ecs::EntityWorld& world) {
                     tr.transform(),
                     aabb.center(),
                     aabb.radius(),
-                    0.0f, // padding
+                    scale,
                     mesh._total_area / surfel_count,
                     surfel_count,
                     m._surfels_offset,

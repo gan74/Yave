@@ -49,7 +49,6 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
         _surfels = std::move(surfs);
         _total_area = area;
 
-        static_assert(sizeof(Surfel) == 8 * sizeof(float));
         _surfel_buffer = TypedBuffer<Surfel, BufferUsage::StorageBit | BufferUsage::TransferDstBit>(_surfels.size());
 
         CmdBufferRecorder recorder = create_disposable_cmd_buffer();

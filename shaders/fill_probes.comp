@@ -1,10 +1,6 @@
 #version 450
 
-#extension GL_EXT_shader_image_int64 : enable
-
-#include "lib/utils.glsl"
 #include "lib/surfels.glsl"
-
 
 // -------------------------------- I/O --------------------------------
 
@@ -12,30 +8,52 @@ layout(local_size_x = 8, local_size_y = 8) in;
 
 layout(r64ui, set = 0, binding = 0) uniform u64image3D inout_probes;
 
+layout(set = 0, binding = 1) readonly buffer Surfels {
+    Surfel surfels[];
+};
+
+layout(set = 0, binding = 2) readonly buffer Probes {
+    vec4 probe_positions[];
+};
+
 
 void main() {
-    const uint probe_size = imageSize(inout_probes).x;
+    const vec4 probe_data = probe_positions[gl_GlobalInvocationID.z];
+    if(probe_data.w > 0.0) {
+        return;
+    }
 
-    const uint texel_per_threads = probe_size / gl_WorkGroupSize.x;
-    const uvec2 start = gl_LocalInvocationID.xy * texel_per_threads;
+    const uvec2 content = unpack_64(imageLoad(inout_probes, ivec3(gl_GlobalInvocationID)).x);
+    if(content.y == max_uint) {
+        return;
+    }
 
-    /*float min_depth = 1e37;
-    for(uint x = 0; x != texel_per_threads; ++x) {
-        for(uint y = 0; y != texel_per_threads; ++y) {
-            const uvec2 coords = start + uvec2(x, y);
-            const float depth = uintBitsToFloat(imageLoad(inout_probes, ivec3(coords, gl_GlobalInvocationID.z)).r);
-            min_depth = min(depth, min_depth);
+    const uint surfel_index = content.y;
+    const Surfel surfel = surfels[surfel_index];
+
+    const vec3 tangent = build_tangent(surfel.norm);
+    const vec3 binormal = cross(tangent, surfel.norm);
+
+    const vec2 image_size = vec2(imageSize(inout_probes).xy);
+
+    const int kernel_size = 4;
+    for(int x = -kernel_size; x <= kernel_size; ++x) {
+        for(int y = -kernel_size; y <= kernel_size; ++y) {
+            const ivec2 coord = ivec2(gl_GlobalInvocationID.xy) + ivec2(x, y);
+            const vec3 dir = normalize(octahedron_decode(coord / image_size));
+
+            const float d = dot(surfel.pos - probe_data.xyz, surfel.norm) / dot(dir, surfel.norm);
+            const vec3 proj = probe_data.xyz + dir * d;
+            const vec3 to_proj = surfel.pos - proj;
+            /*if(dot(to_proj, to_proj) < 1.0)*/ {
+                imageAtomicMin(inout_probes, ivec3(coord, gl_GlobalInvocationID.z), pack_64(uvec2(floatBitsToUint(d), 2)));
+            }
         }
     }
 
-    if(min_depth < 1e37) {
-        const uint value = floatBitsToUint(min_depth);
-        for(uint x = 0; x != texel_per_threads; ++x) {
-            for(uint y = 0; y != texel_per_threads; ++y) {
-                const uvec2 coords = start + uvec2(x, y);
-                imageStore(inout_probes, ivec3(coords, gl_GlobalInvocationID.z), uvec4(value));
-            }
-        }
-    }*/
+    const vec3 proj = project_surfel(surfel, probe_data.xyz);
+    vec2 coord = round(saturate(proj.xy) * image_size);
+    imageStore(inout_probes, ivec3(coord, gl_GlobalInvocationID.z), pack_64(uvec2(0, 1)).xxxx);
+
 }
 

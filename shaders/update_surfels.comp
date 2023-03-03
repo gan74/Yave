@@ -12,11 +12,11 @@ layout(set = 0, binding = 0) uniform Model_Inline {
 };
 
 layout(set = 0, binding = 1) readonly buffer InSurfels {
-    SurfelData surfels[];
+    Surfel surfels[];
 };
 
 layout(set = 0, binding = 2) writeonly buffer OutSurfels {
-    SurfelData out_surfels[];
+    Surfel out_surfels[];
 };
 
 layout(set = 0, binding = 3) writeonly buffer OutInstances {
@@ -30,8 +30,9 @@ void main() {
         return;
     }
 
-    SurfelData surfel = surfels[gl_GlobalInvocationID.x];
-    surfel.a.xyz = (instance.model * vec4(surfel.a.xyz, 1.0)).xyz;
+    Surfel surfel = surfels[gl_GlobalInvocationID.x];
+    surfel.pos = (instance.model * vec4(surfel.pos.xyz, 1.0)).xyz;
+    surfel.area *= sqr(instance.scale);
     out_surfels[gl_GlobalInvocationID.x + instance.surfel_offset] = surfel;
 
     if(gl_GlobalInvocationID.x == 0) {

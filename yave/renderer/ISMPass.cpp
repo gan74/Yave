@@ -60,6 +60,8 @@ ISMPass ISMPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
         return {};
     }
 
+    const math::Vec2ui probe_size = math::Vec2ui(32, 32);
+
     const auto region = framegraph.region("ISM");
 
     const u32 instance_count = cache->instance_count();
@@ -92,7 +94,6 @@ ISMPass ISMPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
     {
         FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ISM clear pass");
 
-        const math::Vec2ui probe_size = math::Vec2ui(32, 32);
         ism = builder.declare_volume(VK_FORMAT_R64_UINT, math::Vec3ui(probe_size, total_probe_count));
 
         builder.add_storage_output(ism);
@@ -120,9 +121,11 @@ ISMPass ISMPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
         FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ISM filling pass");
 
         builder.add_storage_output(ism);
+        builder.add_external_input(cache->surfel_buffer());
+        builder.add_storage_input(probes);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const ComputeProgram& program = device_resources().from_file("fill_probes.comp.spv");
-            recorder.dispatch(program, math::Vec3ui(1, 1, total_probe_count), self->descriptor_sets());
+            recorder.dispatch_size(program, math::Vec3ui(probe_size, total_probe_count), self->descriptor_sets());
         });
     }
 

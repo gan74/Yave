@@ -212,6 +212,11 @@ vec4 plane(vec3 p0, vec3 p1, vec3 p2) {
     return vec4(-n, dot(n, p1));
 }
 
+
+vec4 plane(vec3 p, vec3 n) {
+    return vec4(n, dot(n, p));
+}
+
 bool is_inside(Frustum4 frustum, vec3 pos, float radius) {
     // This is far from optimal, but it will do for now
     for(uint i = 0; i != 4; ++i) {

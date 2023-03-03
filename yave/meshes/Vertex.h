@@ -51,7 +51,11 @@ struct Surfel {
     math::Vec3 position;
     math::Vec3 normal;
     math::Vec2 uv;
+    math::Vec3 padding;
+    float area;
 };
+
+static_assert(sizeof(Surfel) == 48);
 
 
 

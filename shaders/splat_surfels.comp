@@ -1,9 +1,5 @@
 #version 450
 
-#extension GL_EXT_shader_image_int64 : enable
-#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
-
-#include "lib/utils.glsl"
 #include "lib/surfels.glsl"
 
 
@@ -18,7 +14,7 @@ layout(set = 0, binding = 1) uniform CameraData {
 };
 
 layout(set = 0, binding = 2) readonly buffer Surfels {
-    SurfelData surfels[];
+    Surfel surfels[];
 };
 
 layout(set = 0, binding = 3) readonly buffer Instances {
@@ -61,19 +57,12 @@ void main() {
     const uint splats = min(instance.surfel_count, uint(screen_size_px + 1.0));
     for(uint i = gl_LocalInvocationIndex ; i < splats; i += gl_WorkGroupSize.x) {
         const uint surfel_index = instance.surfel_offset + i;
-        const Surfel surfel = to_surfel(surfels[surfel_index]);
+        const Surfel surfel = surfels[surfel_index];
 
-        const vec3 to_probe = (probe_data.xyz - surfel.pos);
-        const float probe_dist = length(to_probe);
-        const vec3 probe_dir = to_probe / probe_dist;
+        const vec3 proj = project_surfel(surfel, probe_data.xyz);
 
-        /*if(dot(surfel.norm, to_probe) > 0.0) {
-            continue;
-        }*/
-
-        const vec2 uv = octahedron_encode(probe_dir);
-        const vec2 coord = round(saturate(uv) * image_size);
-        const uint depth_val = floatBitsToUint(probe_dist);
+        const vec2 coord = round(saturate(proj.xy) * image_size);
+        const uint depth_val = floatBitsToUint(proj.z);
         imageAtomicMin(out_probes, ivec3(coord, gl_GlobalInvocationID.y), pack_64(uvec2(depth_val, surfel_index)));
     }
 }

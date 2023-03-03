@@ -146,7 +146,7 @@ bool MeshData::is_empty() const {
 }
 
 
-std::pair<float, core::Vector<Surfel> > MeshData::generate_surfels(float per_surf_area, usize max) const {
+std::pair<float, core::Vector<Surfel>> MeshData::generate_surfels(usize max) const {
     y_profile();
 
     float total_area = 0.0f;
@@ -168,7 +168,8 @@ std::pair<float, core::Vector<Surfel> > MeshData::generate_surfels(float per_sur
     triangle_cumul_areas[_triangles.size()] = total_area;
     y_debug_assert(std::isfinite(total_area));
 
-    const usize count = per_surf_area > 0.0f ? std::min(max, usize(std::ceil(total_area / per_surf_area))) : max;
+    const usize count = max;
+    const float surfel_area = total_area / count;
     const float min_tri_area = (total_area / count) * 0.001f;
 
     math::FastRandom rng;
@@ -205,6 +206,8 @@ std::pair<float, core::Vector<Surfel> > MeshData::generate_surfels(float per_sur
             pos,
             ((tri[0].normal * bary[0]) + (tri[1].normal * bary[1]) + (tri[2].normal * bary[2])).normalized(),
             ((tri[0].uv * bary[0]) + (tri[1].uv * bary[1]) + (tri[2].uv * bary[2])),
+            {},
+            surfel_area,
         };
     }
 

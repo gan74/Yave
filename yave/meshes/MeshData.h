@@ -57,7 +57,7 @@ class MeshData {
         core::Span<SkinWeights> skin() const;
         core::Vector<SkinnedVertex> skinned_vertices() const;
 
-        std::pair<float, core::Vector<Surfel>> generate_surfels(float per_surf_area = 1.0f, usize max = 1024 * 4) const;
+        std::pair<float, core::Vector<Surfel>> generate_surfels(usize max = 1024 * 4) const;
 
         bool has_skeleton() const;
 

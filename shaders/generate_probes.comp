@@ -1,7 +1,6 @@
 #version 450
 
 #extension GL_KHR_shader_subgroup_arithmetic : enable
-#extension GL_EXT_shader_image_int64 : enable
 
 #include "lib/utils.glsl"
 #include "lib/gbuffer.glsl"
