@@ -36,7 +36,7 @@ struct BloomSettings {
 struct BloomPass {
     FrameGraphImageId bloomed;
 
-    static BloomPass create(FrameGraph& framegraph, FrameGraphImageId input, const BloomSettings& settings = BloomSettings());
+    static BloomPass create(FrameGraph& framegraph, FrameGraphImageId input, FrameGraphTypedBufferId<uniform::ExposureParams> exposure, const BloomSettings& settings = BloomSettings());
 };
 
 }

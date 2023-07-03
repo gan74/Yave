@@ -1,25 +1,17 @@
 #version 450
 
-#include "lib/utils.glsl"
+#include "lib/hdr.glsl"
 
 const uint thread_count = 64;
-const uint histogram_size = 256;
-const uint bin_per_thread = histogram_size / thread_count;
+const uint bin_per_thread = lum_histogram_size / thread_count;
 
 layout(local_size_x = thread_count) in;
 
 layout(r32ui, set = 0, binding = 0) uniform uimage2D out_histogram;
 layout(set = 0, binding = 1) uniform sampler2D in_color;
 
-shared uint histogram[histogram_size];
+shared uint histogram[lum_histogram_size];
 
-uint lum_to_bin(float lum) {
-    const float log_lum = log2(lum) + lum_histogram_offset;
-    if(log_lum <= 0.0) {
-        return 0;
-    }
-    return min(thread_count - 1, uint(log_lum * lum_histogram_mul));
-}
 
 uint compute_index(uint i) {
     return gl_LocalInvocationIndex * bin_per_thread + i;
@@ -41,7 +33,7 @@ void main() {
             const ivec2 coord = ivec2(base_coord.x, base_coord.y + i);
             if(coord.y < size.y) {
                 const float lum = luminance(texelFetch(in_color, coord, 0).rgb);
-                const uint bin = lum_to_bin(lum);
+                const uint bin = lum_to_histogram_bin(lum);
                 atomicAdd(histogram[bin], 1);
             }
         }

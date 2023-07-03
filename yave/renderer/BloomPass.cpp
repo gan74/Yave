@@ -34,7 +34,7 @@ SOFTWARE.
 
 namespace yave {
 
-BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, const BloomSettings& settings) {
+BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, FrameGraphTypedBufferId<uniform::ExposureParams> exposure, const BloomSettings& settings) {
     const auto region = framegraph.region("Bloom");
 
     if(settings.intensity <= 0.0f) {
@@ -64,6 +64,7 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, con
 
         builder.add_color_output(downscaled);
         builder.add_uniform_input(mips.last(), SamplerType::LinearClamp);
+        builder.add_uniform_input(exposure);
         builder.add_inline_input(InlineDescriptor(u32(i - 1)));
         builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             const auto* material = device_resources()[DeviceResources::BloomDownscaleMaterialTemplate];

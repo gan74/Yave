@@ -59,6 +59,7 @@ shared float tile_sin_alpha;
 
 shared uvec2 tile_dist_bounds;
 
+
 // -------------------------------- HELPERS --------------------------------
 
 uvec2 dispatch_range(uint num) {

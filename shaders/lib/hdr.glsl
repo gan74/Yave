@@ -63,5 +63,20 @@ vec3 reinhard(vec3 x) {
     return vec3(reinhard(x.x), reinhard(x.y), reinhard(x.z));
 }
 
+
+
+uint lum_to_histogram_bin(float lum) {
+    const float log_lum = log2(lum) + lum_histogram_offset;
+    if(log_lum <= 0.0) {
+        return 0;
+    }
+    return min(lum_histogram_size - 1, uint(log_lum * lum_histogram_mul));
+}
+
+float histogram_bin_to_lum(uint bin) {
+    const float log_lum = bin / lum_histogram_mul - lum_histogram_offset;
+    return exp2(log_lum);
+}
+
 #endif // HDR_GLSL
 

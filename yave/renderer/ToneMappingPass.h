@@ -37,6 +37,8 @@ struct ToneMappingSettings {
     bool auto_exposure = true;
     float exposure = 1.0f;
     ToneMapper tone_mapper = ToneMapper::ACES;
+
+    bool debug_exposure = false;
 };
 
 struct ToneMappingPass {

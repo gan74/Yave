@@ -14,6 +14,7 @@ const uint max_tile_lights = 256;
 
 const float lum_histogram_offset = 8.0;
 const float lum_histogram_mul = 8.0;
+const uint lum_histogram_size = 256;
 
 #endif
 

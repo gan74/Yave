@@ -70,6 +70,19 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     });
 
 
+    if(settings.debug_exposure) {
+        FrameGraphComputePassBuilder debug_builder = framegraph.add_compute_pass("Exposure debug pass");
+
+        debug_builder.add_storage_output(tone_mapped);
+        debug_builder.add_uniform_input(exposure.histogram);
+        debug_builder.add_uniform_input(params);
+        debug_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            const auto& program = device_resources()[DeviceResources::ExposureDebugProgram];
+            recorder.dispatch(program, math::Vec3ui(1), self->descriptor_sets());
+        });
+    }
+
+
     ToneMappingPass pass;
     pass.tone_mapped = tone_mapped;
     return pass;

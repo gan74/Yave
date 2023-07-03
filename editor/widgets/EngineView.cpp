@@ -222,7 +222,7 @@ void EngineView::on_gui() {
 void EngineView::draw_settings_menu() {
      if(ImGui::BeginMenu("Tone mapping")) {
         ToneMappingSettings& settings = _settings.renderer_settings.tone_mapping;
-        ImGui::MenuItem("Auto exposure", nullptr, &settings.auto_exposure);
+        ImGui::Checkbox("Auto exposure", &settings.auto_exposure);
 
         // https://docs.unrealengine.com/en-US/Engine/Rendering/PostProcessEffects/AutomaticExposure/index.html
         float ev = exposure_to_EV100(settings.exposure);
@@ -244,6 +244,11 @@ void EngineView::draw_settings_menu() {
             }
             ImGui::EndCombo();
         }
+
+        ImGui::Separator();
+
+        ImGui::Checkbox("Show histogram", &settings.debug_exposure);
+
         ImGui::EndMenu();
     }
 

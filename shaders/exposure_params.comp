@@ -2,8 +2,7 @@
 
 #include "lib/hdr.glsl"
 
-const uint thread_count = 256;
-layout(local_size_x = thread_count, local_size_y = 1) in;
+layout(local_size_x = lum_histogram_size, local_size_y = 1) in;
 
 layout(set = 0, binding = 0) writeonly buffer Exposure {
     ExposureParams params;
@@ -11,8 +10,9 @@ layout(set = 0, binding = 0) writeonly buffer Exposure {
 
 layout(set = 0, binding = 1) uniform usampler2D in_histogram;
 
-shared uint histogram[thread_count];
+shared uint histogram[lum_histogram_size];
 shared uint total;
+shared uint max_bin;
 
 // https://bruop.github.io/exposure/
 void main() {
@@ -23,14 +23,19 @@ void main() {
 
     if(index == 0) {
         total = 0;
+        max_bin = 0;
     }
 
     barrier();
 
     atomicAdd(total, bin_size);
 
-    for(uint i = 1; i < thread_count; i <<= 1) {
-        if(index + i < thread_count) {
+    if(bin_size > 0) {
+        atomicMax(max_bin, index);
+    }
+
+    for(uint i = 1; i < lum_histogram_size; i <<= 1) {
+        if(index + i < lum_histogram_size) {
             histogram[index] += histogram[index + i];
         }
         barrier();

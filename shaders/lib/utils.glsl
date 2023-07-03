@@ -315,7 +315,6 @@ vec4 linear_to_sRGB(vec4 v) {
     return vec4(linear_to_sRGB(v.rgb), v.a);
 }
 
-
 // -------------------------------- PROJECTION --------------------------------
 
 vec3 unproject_ndc(vec3 ndc, mat4 inv_matrix) {

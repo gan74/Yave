@@ -5,7 +5,12 @@
 layout(location = 0) out vec4 out_color;
 
 layout(set = 0, binding = 0) uniform sampler2D in_color;
-layout(set = 0, binding = 1) uniform BloomParams_Inline {
+
+layout(set = 0, binding = 1) uniform Params {
+    ExposureParams params;
+};
+
+layout(set = 0, binding = 2) uniform BloomParams_Inline {
     uint pass;
 };
 
@@ -42,7 +47,8 @@ void main() {
         const vec3 g2 = (d + e + g + h) * 0.125 * 0.25;
         const vec3 g3 = (e + f + h + i) * 0.125 * 0.25;
         const vec3 g4 = (j + k + l + m) * 0.5 * 0.25;
-        out_color.rgb = karis(g0) + karis(g1) + karis(g2) + karis(g3) + karis(g4);
+        const vec3 filtered = karis(g0) + karis(g1) + karis(g2) + karis(g3) + karis(g4);
+        out_color.rgb = max(vec3(0.0), filtered - vec3(params.max_lum));
     } else {
         out_color.rgb =
             (e * 0.125) +

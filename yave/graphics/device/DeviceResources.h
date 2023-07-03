@@ -53,6 +53,7 @@ class DeviceResources final : NonMovable {
             HistogramClearComp,
             HistogramComp,
             ExposureParamsComp,
+            ExposureDebugComp,
             DepthBoundComp,
             AtmosphereIntergratorComp,
 
@@ -94,6 +95,7 @@ class DeviceResources final : NonMovable {
             HistogramClearProgram,
             HistogramProgram,
             ExposureParamsProgram,
+            ExposureDebugProgram,
             DepthBoundProgram,
             AtmosphereIntergratorProgram,
 
