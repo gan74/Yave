@@ -94,12 +94,10 @@ const char* DebugUtils::extension_name() {
 }
 
 DebugUtils::DebugUtils(VkInstance instance) : _instance(instance) {
-
-    _begin_label = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetInstanceProcAddr(_instance, "vkCmdBeginDebugUtilsLabelEXT"));
-    _end_label = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetInstanceProcAddr(_instance, "vkCmdEndDebugUtilsLabelEXT"));
-    _set_object_name = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetInstanceProcAddr(_instance, "vkSetDebugUtilsObjectNameEXT"));
-
-    const auto create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(_instance, "vkCreateDebugUtilsMessengerEXT"));
+    y_always_assert(vkCmdBeginDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME " not loaded");
+    y_always_assert(vkCmdEndDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME " not loaded");
+    y_always_assert(vkSetDebugUtilsObjectNameEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME " not loaded");
+    y_always_assert(vkCmdBeginDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME " not loaded");
 
     VkDebugUtilsMessengerCreateInfoEXT create_info = vk_struct();
     {
@@ -117,12 +115,11 @@ DebugUtils::DebugUtils(VkInstance instance) : _instance(instance) {
         create_info.pfnUserCallback = vulkan_message_callback;
     }
 
-    vk_check(create_messenger(_instance, &create_info, vk_allocation_callbacks(), _messenger.get_ptr_for_init()));
+    vk_check(vkCreateDebugUtilsMessengerEXT(_instance, &create_info, vk_allocation_callbacks(), _messenger.get_ptr_for_init()));
 }
 
 DebugUtils::~DebugUtils() {
-    const auto destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(_instance, "vkDestroyDebugUtilsMessengerEXT"));
-    destroy_messenger(_instance, _messenger.consume(), vk_allocation_callbacks());
+    vkDestroyDebugUtilsMessengerEXT(_instance, _messenger.consume(), vk_allocation_callbacks());
 }
 
 void DebugUtils::begin_region(VkCommandBuffer buffer, const char* name, const math::Vec4& color) const {
@@ -132,11 +129,11 @@ void DebugUtils::begin_region(VkCommandBuffer buffer, const char* name, const ma
         label.color[i] = color[i];
     }
 
-    _begin_label(buffer, &label);
+    vkCmdBeginDebugUtilsLabelEXT(buffer, &label);
 }
 
 void DebugUtils::end_region(VkCommandBuffer buffer) const {
-    _end_label(buffer);
+    vkCmdEndDebugUtilsLabelEXT(buffer);
 }
 
 void DebugUtils::set_name(u64 resource, VkObjectType type, const char *name) const {
@@ -146,8 +143,7 @@ void DebugUtils::set_name(u64 resource, VkObjectType type, const char *name) con
     name_info.pObjectName = name;
 
     y_debug_assert(resource);
-    y_debug_assert(_set_object_name);
-    vk_check(_set_object_name(vk_device(), &name_info));
+    vk_check(vkSetDebugUtilsObjectNameEXT(vk_device(), &name_info));
 }
 
 }

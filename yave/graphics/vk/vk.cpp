@@ -20,9 +20,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
+#define VOLK_IMPLEMENTATION
 #include "vk.h"
 
 namespace yave {
+
+void initialize_volk() {
+    static bool volk_init = false;
+    if(!volk_init) {
+        vk_check(volkInitialize());
+        volk_init = true;
+    }
+}
 
 const char* vk_result_str(VkResult result) {
 #define VK_RESULT_CASE(fmt) case fmt: return #fmt;

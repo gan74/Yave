@@ -52,9 +52,15 @@ in order to get warning on missed returned results
 
 **********************************/
 
+#define VK_NO_PROTOTYPES
+
+#include <Volk/volk.h>
 #include <vulkan/vulkan.h>
 
 namespace yave {
+
+void initialize_volk();
+
 namespace detail {
 
 #define VK_STRUCT_INIT(Type, SType)                         \

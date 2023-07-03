@@ -54,6 +54,8 @@ static bool try_enable_extension(core::Vector<const char*>& exts, const char* na
 }
 
 Instance::Instance(DebugParams debug) : _debug_params(debug) {
+    initialize_volk();
+
     auto extention_names = core::vector_with_capacity<const char*>(4);
     extention_names = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -89,6 +91,8 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
     }
 
     vk_check(vkCreateInstance(&create_info, vk_allocation_callbacks(), &_instance));
+
+    volkLoadInstance(_instance);
 
     if(_debug_params.debug_features_enabled()) {
         log_msg("Vulkan debugging enabled");

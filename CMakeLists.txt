@@ -166,7 +166,6 @@ if(YAVE_BUILD_YAVE)
         target_link_libraries(yave tracy)
     endif()
 
-    target_link_libraries(yave ${Vulkan_LIBRARY})
     target_link_libraries(yave y spirv-cross-core)
 
     if(NOT MSVC)

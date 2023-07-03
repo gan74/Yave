@@ -167,6 +167,7 @@ static void init_vk_device() {
     {
         y_profile_zone("vkCreateDevice");
         vk_check(vkCreateDevice(physical_device().vk_physical_device(), &create_info, vk_allocation_callbacks(), &device::vk_device));
+        volkLoadDevice(device::vk_device);
     }
 
     print_properties(device::device_properties);
