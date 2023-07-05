@@ -1768,12 +1768,7 @@ void ImGuiPerfTool::_AddSettingsHandler()
     ini_handler.ApplyAllFn = PerflogSettingsHandler_ApplyAll;
     ini_handler.WriteAllFn = PerflogSettingsHandler_WriteAll;
     ini_handler.UserData = this;
-#if IMGUI_VERSION_NUM >= 18710
     ImGui::AddSettingsHandler(&ini_handler);
-#else
-    ImGuiContext& g = *GImGui;
-    g.SettingsHandlers.push_back(ini_handler);
-#endif
 }
 
 void ImGuiPerfTool::_UnpackSortedKey(ImU64 key, int* batch_index, int* entry_index, int* monotonic_index)
@@ -1794,17 +1789,17 @@ void ImGuiPerfTool::_UnpackSortedKey(ImU64 key, int* batch_index, int* entry_ind
 static bool SetPerfToolWindowOpen(ImGuiTestContext* ctx, bool is_open)
 {
     ctx->MenuClick("//Dear ImGui Test Engine/Tools");
-    bool was_open = (ctx->ItemInfo("//##Menu_00/Perf Tool")->StatusFlags & ImGuiItemStatusFlags_Checked) != 0;
+    bool was_open = ctx->ItemIsChecked("//##Menu_00/Perf Tool");
     ctx->MenuAction(is_open ? ImGuiTestAction_Check : ImGuiTestAction_Uncheck, "//Dear ImGui Test Engine/Tools/Perf Tool");
     return was_open;
 }
 
-void RegisterTests_PerfTool(ImGuiTestEngine* e)
+void RegisterTests_TestEnginePerfTool(ImGuiTestEngine* e)
 {
     ImGuiTest* t = NULL;
 
     // ## Flex perf tool code.
-    t = IM_REGISTER_TEST(e, "misc", "misc_cov_perf_tool");
+    t = IM_REGISTER_TEST(e, "testengine", "testengine_cov_perftool");
     t->GuiFunc = [](ImGuiTestContext* ctx)
     {
         IM_UNUSED(ctx);
@@ -1846,7 +1841,6 @@ void RegisterTests_PerfTool(ImGuiTestEngine* e)
         ctx->SetRef(window);
         ctx->WindowMove("", ImVec2(50, 50));
         ctx->WindowResize("", ImVec2(1400, 900));
-        ctx->WindowBringToFront("");
 #if IMGUI_TEST_ENGINE_ENABLE_IMPLOT
         ImGuiWindow* plot_child = ctx->WindowInfo("plot/PerfTool")->Window;
         IM_CHECK(plot_child != NULL);
@@ -1912,7 +1906,6 @@ void RegisterTests_PerfTool(ImGuiTestEngine* e)
         ctx->SetRef(window);
         ctx->WindowMove("", ImVec2(50, 50));
         ctx->WindowResize("", ImVec2(1400, 900));
-        ctx->WindowBringToFront("");
 #if IMGUI_TEST_ENGINE_ENABLE_IMPLOT
         ctx->ItemDoubleClick("splitter");   // Hide info table
 

@@ -90,7 +90,7 @@ enum ImGuiTestGroup : int
 enum ImGuiTestFlags_
 {
     ImGuiTestFlags_None                 = 0,
-    ImGuiTestFlags_NoWarmUp             = 1 << 0,   // Disable running the GUI func for 2 frames before starting test code. For tests which absolutely need to start before GuiFunc.
+    ImGuiTestFlags_NoGuiWarmUp          = 1 << 0,   // Disable running the GUI func for 2 frames before starting test code. For tests which absolutely need to start before GuiFunc.
     ImGuiTestFlags_NoAutoFinish         = 1 << 1,   // By default, tests with no TestFunc (only a GuiFunc) will end after warmup. Setting this require test to call ctx->Finish().
     ImGuiTestFlags_NoRecoveryWarnings   = 1 << 2    // Disable state recovery warnings (missing End/Pop calls etc.) for tests which may rely on those.
     //ImGuiTestFlags_RequireViewports   = 1 << 10
@@ -127,8 +127,11 @@ enum ImGuiTestRunFlags_
 // Functions
 //-------------------------------------------------------------------------
 
-// Hooks for core imgui/ library (don't call directly)
+// Hooks for core imgui/ library (generally called via macros)
+extern void         ImGuiTestEngineHook_ItemAdd(ImGuiContext* ui_ctx, ImGuiID id, const ImRect& bb, const ImGuiLastItemData* item_data);
+#if IMGUI_VERSION_NUM < 18934
 extern void         ImGuiTestEngineHook_ItemAdd(ImGuiContext* ui_ctx, const ImRect& bb, ImGuiID id);
+#endif
 #ifdef IMGUI_HAS_IMSTR
 extern void         ImGuiTestEngineHook_ItemInfo(ImGuiContext* ui_ctx, ImGuiID id, ImStrv label, ImGuiItemStatusFlags flags);
 #else
@@ -139,9 +142,9 @@ extern const char*  ImGuiTestEngine_FindItemDebugLabel(ImGuiContext* ui_ctx, ImG
 
 // Functions (generally called via IM_CHECK() macros)
 IMGUI_API bool      ImGuiTestEngine_Check(const char* file, const char* func, int line, ImGuiTestCheckFlags flags, bool result, const char* expr);
-IMGUI_API bool      ImGuiTestEngine_CheckStrOp(const char* file, const char* func, int line, ImGuiTestCheckFlags flags, const char* op, const char* lhs_var, const char* lhs_value, const char* rhs_var, const char* rhs_value);
+IMGUI_API bool      ImGuiTestEngine_CheckStrOp(const char* file, const char* func, int line, ImGuiTestCheckFlags flags, const char* op, const char* lhs_var, const char* lhs_value, const char* rhs_var, const char* rhs_value, bool* out_result);
 IMGUI_API bool      ImGuiTestEngine_Error(const char* file, const char* func, int line, ImGuiTestCheckFlags flags, const char* fmt, ...);
-IMGUI_API void      ImGuiTestEngine_Assert(const char* expr, const char* file, const char* function, int line);
+IMGUI_API void      ImGuiTestEngine_AssertLog(const char* expr, const char* file, const char* function, int line);
 
 //-------------------------------------------------------------------------
 // ImGuiTestEngine API
@@ -202,7 +205,7 @@ struct IMGUI_API ImGuiTestEngineIO
     bool                        ConfigSavedSettings = true;                     // Load/Save settings in main context .ini file.
     ImGuiTestRunSpeed           ConfigRunSpeed = ImGuiTestRunSpeed_Fast;        // Run tests in fast/normal/cinematic mode
     bool                        ConfigStopOnError = false;                      // Stop queued tests on test error
-    bool                        ConfigBreakOnError = false;                     // Break debugger on test error
+    bool                        ConfigBreakOnError = false;                     // Break debugger on test error by calling IM_DEBUG_BREAK()
     bool                        ConfigKeepGuiFunc = false;                      // Keep test GUI running at the end of the test
     ImGuiTestVerboseLevel       ConfigVerboseLevel = ImGuiTestVerboseLevel_Warning;
     ImGuiTestVerboseLevel       ConfigVerboseLevelOnError = ImGuiTestVerboseLevel_Info;
@@ -269,6 +272,7 @@ struct ImGuiTestItemInfo
     ImGuiWindow*                Window = NULL;              // Item Window
     ImRect                      RectFull = ImRect();        // Item Rectangle
     ImRect                      RectClipped = ImRect();     // Item Rectangle (clipped with window->ClipRect at time of item submission)
+    ImGuiItemFlags              InFlags = 0;                // Item flags
     ImGuiItemStatusFlags        StatusFlags = 0;            // Item Status flags (fully updated for some items only, compare TimestampStatus to FrameCount)
     char                        DebugLabel[32] = {};        // Shortened label for debugging purpose
 

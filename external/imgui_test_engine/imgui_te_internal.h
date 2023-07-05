@@ -35,11 +35,14 @@ struct ImGuiTestGatherTask
 {
     // Input
     ImGuiID                 InParentID = 0;
-    int                     InDepth = 0;
+    int                     InMaxDepth = 0;
+    short                   InLayerMask = 0;
 
     // Output/Temp
     ImGuiTestItemList*      OutList = NULL;
     ImGuiTestItemInfo*      LastItemInfo = NULL;
+
+    void Clear() { memset(this, 0, sizeof(*this)); }
 };
 
 // Find item ID given a label and a parent id
@@ -69,7 +72,9 @@ enum ImGuiTestInputType
 {
     ImGuiTestInputType_None,
     ImGuiTestInputType_Key,
-    ImGuiTestInputType_Char
+    ImGuiTestInputType_Char,
+    ImGuiTestInputType_ViewportFocus,
+    ImGuiTestInputType_ViewportClose
 };
 
 // FIXME: May want to strip further now that core imgui is using its own input queue
@@ -79,8 +84,9 @@ struct ImGuiTestInput
     ImGuiKeyChord           KeyChord = ImGuiKey_None;
     ImWchar                 Char = 0;
     bool                    Down = false;
+    ImGuiID                 ViewportId = 0;
 
-    static ImGuiTestInput   FromKeyChord(ImGuiKeyChord key_chord, bool down)
+    static ImGuiTestInput   ForKeyChord(ImGuiKeyChord key_chord, bool down)
     {
         ImGuiTestInput inp;
         inp.Type = ImGuiTestInputType_Key;
@@ -89,11 +95,27 @@ struct ImGuiTestInput
         return inp;
     }
 
-    static ImGuiTestInput   FromChar(ImWchar v)
+    static ImGuiTestInput   ForChar(ImWchar v)
     {
         ImGuiTestInput inp;
         inp.Type = ImGuiTestInputType_Char;
         inp.Char = v;
+        return inp;
+    }
+
+    static ImGuiTestInput   ForViewportFocus(ImGuiID viewport_id)
+    {
+        ImGuiTestInput inp;
+        inp.Type = ImGuiTestInputType_ViewportFocus;
+        inp.ViewportId = viewport_id;
+        return inp;
+    }
+
+    static ImGuiTestInput   ForViewportClose(ImGuiID viewport_id)
+    {
+        ImGuiTestInput inp;
+        inp.Type = ImGuiTestInputType_ViewportClose;
+        inp.ViewportId = viewport_id;
         return inp;
     }
 };
@@ -117,8 +139,8 @@ struct ImGuiTestEngine
     ImGuiContext*               UiContextActive = NULL;         // imgui context for testing == UiContextTarget or NULL
 
     bool                        Started = false;
-    ImU64                       StartTime = 0;
-    ImU64                       EndTime = 0;
+    ImU64                       BatchStartTime = 0;
+    ImU64                       BatchEndTime = 0;
     int                         FrameCount = 0;
     float                       OverrideDeltaTime = -1.0f;      // Inject custom delta time into imgui context to simulate clock passing faster than wall clock time.
     ImVector<ImGuiTest*>        TestsAll;

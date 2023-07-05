@@ -16,15 +16,18 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-#include <shellapi.h>
+#include <shellapi.h>   // ShellExecuteA()
 #include <stdio.h>
 #else
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
 #endif
-#if defined(__linux) || defined(__linux__) || defined(__MACH__) || defined(__MSL__)
+#ifndef _MSC_VER
+#include <sys/types.h>
+#include <sys/stat.h>   // stat()
+#endif
+
+#if defined(__linux) || defined(__linux__) || defined(__MACH__) || defined(__MSL__) || defined(__MINGW32__)
 #include <pthread.h>    // pthread_setname_np()
 #endif
 #include <chrono>       // high_resolution_clock::now()
@@ -679,7 +682,7 @@ void ImThreadSleepInMilliseconds(int ms)
     this_thread::sleep_for(chrono::milliseconds(ms));
 }
 
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 // Helper function for setting thread name on Win32
 // This is a separate function because __try cannot coexist with local objects that need destructors called on stack unwind
 static void ImThreadSetCurrentThreadDescriptionWin32OldStyle(const char* description)
@@ -718,26 +721,25 @@ static void ImThreadSetCurrentThreadDescriptionWin32OldStyle(const char* descrip
 // Set the description (name) of the current thread for debugging purposes
 void ImThreadSetCurrentThreadDescription(const char* description)
 {
-#if defined(_WIN32) // Windows
+#if defined(_MSC_VER) // Windows + Visual Studio
     // New-style thread name setting
     // Only supported from Win 10 version 1607/Server 2016 onwards, hence the need for dynamic linking
 
     typedef HRESULT(WINAPI* SetThreadDescriptionFunc)(HANDLE hThread, PCWSTR lpThreadDescription);
 
-    SetThreadDescriptionFunc set_thread_description = (SetThreadDescriptionFunc)GetProcAddress(GetModuleHandleA("Kernel32.dll"), "SetThreadDescription");
-
+    SetThreadDescriptionFunc set_thread_description = (SetThreadDescriptionFunc)::GetProcAddress(GetModuleHandleA("Kernel32.dll"), "SetThreadDescription");
     if (set_thread_description)
     {
         ImVector<ImWchar> buf;
         const int description_wsize = ImTextCountCharsFromUtf8(description, NULL) + 1;
         buf.resize(description_wsize);
         ImTextStrFromUtf8(&buf[0], description_wsize, description, NULL);
-        set_thread_description(GetCurrentThread(), (wchar_t*)&buf[0]);
+        set_thread_description(::GetCurrentThread(), (wchar_t*)&buf[0]);
     }
 
     // Also do the old-style method too even if the new-style one worked, as the two work in slightly different sets of circumstances
     ImThreadSetCurrentThreadDescriptionWin32OldStyle(description);
-#elif defined(__linux) || defined(__linux__) // Linux
+#elif defined(__linux) || defined(__linux__) || defined(__MINGW32__) // Linux or MingW
     pthread_setname_np(pthread_self(), description);
 #elif defined(__MACH__) || defined(__MSL__) // OSX
     pthread_setname_np(description);
@@ -1154,6 +1156,13 @@ const char* ImGui::TabBarGetTabName(ImGuiTabBar* tab_bar, ImGuiTabItem* tab)
 }
 #endif
 
+#if IMGUI_VERSION_NUM < 18927
+ImGuiID ImGui::TableGetInstanceID(ImGuiTable* table, int instance_no)
+{
+    // Changed in #6140
+    return table->ID + instance_no;
+}
+#endif
 
 ImGuiID TableGetHeaderID(ImGuiTable* table, const char* column, int instance_no)
 {
@@ -1163,16 +1172,21 @@ ImGuiID TableGetHeaderID(ImGuiTable* table, const char* column, int instance_no)
         if (strcmp(ImGui::TableGetColumnName(table, n), column) == 0)
             column_n = n;
     IM_ASSERT(column_n != -1);
-    int column_id = instance_no * table->ColumnsCount + column_n;
-    return ImHashData(column, strlen(column), ImHashData(&column_id, sizeof(column_id), table->ID + instance_no));
+    return TableGetHeaderID(table, column_n, instance_no);
 }
 
 ImGuiID TableGetHeaderID(ImGuiTable* table, int column_n, int instance_no)
 {
     IM_ASSERT(column_n >= 0 && column_n < table->ColumnsCount);
-    int column_id = instance_no * table->ColumnsCount + column_n;
+    const ImGuiID table_instance_id = ImGui::TableGetInstanceID(table, instance_no);
     const char* column_name = ImGui::TableGetColumnName(table, column_n);
-    return ImHashData(column_name, strlen(column_name), ImHashData(&column_id, sizeof(column_id), table->ID + instance_no));
+#if IMGUI_VERSION_NUM >= 18927
+    const int column_id_differencier = column_n;
+#else
+    const int column_id_differencier = instance_no * table->ColumnsCount + column_n;
+#endif
+    const int column_id = ImHashData(&column_id_differencier, sizeof(column_id_differencier), table_instance_id);
+    return ImHashData(column_name, strlen(column_name), column_id);
 }
 
 // FIXME: Could be moved to core as an internal function?

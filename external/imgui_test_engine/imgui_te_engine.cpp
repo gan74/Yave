@@ -192,7 +192,6 @@ static void    ImGuiTestEngine_UnbindImGuiContext(ImGuiTestEngine* engine, ImGui
 
     ImGuiTestEngine_CoroutineStopAndJoin(engine);
 
-#if IMGUI_VERSION_NUM >= 17701
     IM_ASSERT(ui_ctx->TestEngine == engine);
     ui_ctx->TestEngine = NULL;
 
@@ -200,17 +199,9 @@ static void    ImGuiTestEngine_UnbindImGuiContext(ImGuiTestEngine* engine, ImGui
     IM_ASSERT(GImGui == ui_ctx);
     if (engine->IO.ConfigSavedSettings)
     {
-#if IMGUI_VERSION_NUM >= 18710
         ImGui::RemoveSettingsHandler("TestEngine");
         ImGui::RemoveSettingsHandler("TestEnginePerfTool");
-#else
-        if (ImGuiSettingsHandler* ini_handler = ImGui::FindSettingsHandler("TestEngine"))
-            ui_ctx->SettingsHandlers.erase(ui_ctx->SettingsHandlers.Data + ui_ctx->SettingsHandlers.index_from_ptr(ini_handler));
-        if (ImGuiSettingsHandler* ini_handler = ImGui::FindSettingsHandler("TestEnginePerfTool"))
-            ui_ctx->SettingsHandlers.erase(ui_ctx->SettingsHandlers.Data + ui_ctx->SettingsHandlers.index_from_ptr(ini_handler));
-#endif
     }
-#endif
 
     // Remove hook
     if (GImGuiTestEngine == engine)
@@ -531,13 +522,9 @@ void ImGuiTestEngine_ApplyInputToImGuiContext(ImGuiTestEngine* engine)
 
     const int input_event_count_prev = g.InputEventsQueue.Size;
 
-    // Apply mouse
-    io.AddMousePosEvent(engine->Inputs.MousePosValue.x, engine->Inputs.MousePosValue.y);
-    for (int n = 0; n < ImGuiMouseButton_COUNT; n++)
-        io.AddMouseButtonEvent(n, (engine->Inputs.MouseButtonsValue & (1 << n)) != 0);
-
     // Apply mouse viewport
 #ifdef IMGUI_HAS_VIEWPORT
+    ImGuiPlatformIO& platform_io = g.PlatformIO;
     ImGuiViewport* mouse_hovered_viewport;
     if (engine->Inputs.MouseHoveredViewport != 0)
         mouse_hovered_viewport = ImGui::FindViewportByID(engine->Inputs.MouseHoveredViewport); // Common case
@@ -545,8 +532,30 @@ void ImGuiTestEngine_ApplyInputToImGuiContext(ImGuiTestEngine* engine)
         mouse_hovered_viewport = ImGui::FindHoveredViewportFromPlatformWindowStack(engine->Inputs.MousePosValue); // Rarely used, some tests rely on this (e.g. "docking_dockspace_passthru_hover") may make it a opt-in feature instead?
     if (mouse_hovered_viewport && (mouse_hovered_viewport->Flags & ImGuiViewportFlags_NoInputs))
         mouse_hovered_viewport = NULL;
-    io.MouseHoveredViewport = mouse_hovered_viewport ? mouse_hovered_viewport->ID : 0;
+    //if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        if (io.BackendFlags & ImGuiBackendFlags_HasMouseHoveredViewport)
+            io.AddMouseViewportEvent(mouse_hovered_viewport ? mouse_hovered_viewport->ID : 0);
+    bool mouse_hovered_viewport_focused = mouse_hovered_viewport && (mouse_hovered_viewport->Flags & ImGuiViewportFlags_IsFocused) != 0;
 #endif
+
+    // Apply mouse
+    io.AddMousePosEvent(engine->Inputs.MousePosValue.x, engine->Inputs.MousePosValue.y);
+    for (int n = 0; n < ImGuiMouseButton_COUNT; n++)
+    {
+        bool down = (engine->Inputs.MouseButtonsValue & (1 << n)) != 0;
+        io.AddMouseButtonEvent(n, down);
+
+        // A click simulate platform focus on the viewport.
+#ifdef IMGUI_HAS_VIEWPORT
+        if (down && mouse_hovered_viewport && !mouse_hovered_viewport_focused)
+            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+            {
+                mouse_hovered_viewport_focused = true;
+                engine->Inputs.Queue.push_back(ImGuiTestInput::ForViewportFocus(mouse_hovered_viewport->ID));
+            }
+#endif
+    }
+
     // Apply mouse wheel
     // [OSX] Simulate OSX behavior of automatically swapping mouse wheel axis when SHIFT is held.
     // This is working in conjonction with the fact that ImGuiTestContext::MouseWheel() assume Windows-style behavior.
@@ -571,7 +580,6 @@ void ImGuiTestEngine_ApplyInputToImGuiContext(ImGuiTestEngine* engine)
                 const ImGuiKeyChord mods = (input.KeyChord & ImGuiMod_Mask_);
                 if (mods != 0x00)
                 {
-#if IMGUI_VERSION_NUM >= 18614
                     if (mods & ImGuiMod_Ctrl)
                         io.AddKeyEvent(ImGuiMod_Ctrl, input.Down);
                     if (mods & ImGuiMod_Shift)
@@ -584,13 +592,6 @@ void ImGuiTestEngine_ApplyInputToImGuiContext(ImGuiTestEngine* engine)
                     if (mods & ImGuiMod_Shortcut)
                         io.AddKeyEvent(io.ConfigMacOSXBehaviors ? ImGuiMod_Super : ImGuiMod_Ctrl, input.Down);
 #endif
-#else
-                    if (input.Down)
-                        engine->Inputs.KeyMods |= mods;
-                    else
-                        engine->Inputs.KeyMods &= ~mods;
-                    io.AddKeyModsEvent(engine->Inputs.KeyMods);
-#endif
                 }
 
                 if (key != ImGuiKey_None)
@@ -601,6 +602,39 @@ void ImGuiTestEngine_ApplyInputToImGuiContext(ImGuiTestEngine* engine)
             {
                 IM_ASSERT(input.Char != 0);
                 io.AddInputCharacter(input.Char);
+                break;
+            }
+            case ImGuiTestInputType_ViewportFocus:
+            {
+#ifdef IMGUI_HAS_VIEWPORT
+                if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+                {
+                    IM_ASSERT(engine->TestContext != NULL);
+                    ImGuiViewport* viewport = ImGui::FindViewportByID(input.ViewportId);
+                    if (viewport == NULL)
+                        engine->TestContext->LogError("ViewportPlatform_SetWindowFocus(%08X): cannot find viewport anymore!", input.ViewportId);
+                    else if (platform_io.Platform_SetWindowSize == NULL)
+                        engine->TestContext->LogError("ViewportPlatform_SetWindowFocus(%08X): backend's Platform_SetWindowSize() is not set", input.ViewportId);
+                    else
+                        platform_io.Platform_SetWindowFocus(viewport);
+                }
+#endif
+                break;
+            }
+            case ImGuiTestInputType_ViewportClose:
+            {
+#ifdef IMGUI_HAS_VIEWPORT
+                if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+                {
+                    IM_ASSERT(engine->TestContext != NULL);
+                    ImGuiViewport* viewport = ImGui::FindViewportByID(input.ViewportId);
+                    if (viewport == NULL)
+                        engine->TestContext->LogError("ViewportPlatform_CloseWindow(%08X): cannot find viewport anymore!", input.ViewportId);
+                    else
+                        viewport->PlatformRequestClose = true;
+                    // FIXME: doesn't apply to actual backend
+                }
+#endif
                 break;
             }
             case ImGuiTestInputType_None:
@@ -978,7 +1012,7 @@ static void ImGuiTestEngine_ProcessTestQueue(ImGuiTestEngine* engine)
     const char* settings_ini_backup = io.IniFilename;
     io.IniFilename = NULL;
 
-    engine->StartTime = ImTimeGetInMicroseconds();
+    engine->BatchStartTime = ImTimeGetInMicroseconds();
     int ran_tests = 0;
     engine->IO.IsRunningTests = true;
     for (int n = 0; n < engine->TestsQueue.Size; n++)
@@ -1008,12 +1042,10 @@ static void ImGuiTestEngine_ProcessTestQueue(ImGuiTestEngine* engine)
         ctx.Engine = engine;
         ctx.EngineIO = &engine->IO;
         ctx.Inputs = &engine->Inputs;
-        ctx.GatherTask = &engine->GatherTask;
         ctx.UserVars = NULL;
         ctx.UiContext = engine->UiContextActive;
         ctx.PerfStressAmount = engine->IO.PerfStressAmount;
         ctx.RunFlags = run_task->RunFlags;
-        ctx.BatchStartTime = engine->StartTime;
 #ifdef IMGUI_HAS_DOCK
         ctx.HasDock = true;
 #else
@@ -1067,7 +1099,7 @@ static void ImGuiTestEngine_ProcessTestQueue(ImGuiTestEngine* engine)
         //        engine->UiSelectedTest = test;
     }
     engine->IO.IsRunningTests = false;
-    engine->EndTime = ImTimeGetInMicroseconds();
+    engine->BatchEndTime = ImTimeGetInMicroseconds();
 
     engine->Abort = false;
     engine->TestsQueue.clear();
@@ -1341,6 +1373,9 @@ static void ImGuiTestEngine_RunTest(ImGuiTestEngine* engine, ImGuiTestContext* c
     ImGuiIO backup_io = ctx->UiContext->IO;
     ImGuiStyle backup_style = ctx->UiContext->Style;
     ImGuiDebugLogFlags backup_debug_log_flags = ctx->UiContext->DebugLogFlags;
+    ImGuiKeyChord backup_nav_windowing_key_next = ctx->UiContext->ConfigNavWindowingKeyNext;
+    ImGuiKeyChord backup_nav_windowing_key_prev = ctx->UiContext->ConfigNavWindowingKeyPrev;
+
     memset(backup_io.MouseDown, 0, sizeof(backup_io.MouseDown));
     for (int n = 0; n < IM_ARRAYSIZE(backup_io.KeysData); n++)
         backup_io.KeysData[n].Down = false;
@@ -1352,7 +1387,11 @@ static void ImGuiTestEngine_RunTest(ImGuiTestEngine* engine, ImGuiTestContext* c
 #ifdef IMGUI_HAS_VIEWPORT
     // We always fill io.MouseHoveredViewport manually (maintained in ImGuiTestInputs::SimulatedIO)
     // so ensure we don't leave a chance to Dear ImGui to interpret things differently.
-    io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport;
+    // FIXME: As written, this would prevent tests from toggling ImGuiConfigFlags_ViewportsEnable and have correct value for ImGuiBackendFlags_HasMouseHoveredViewport
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport;
+    else
+        io.BackendFlags &= ~ImGuiBackendFlags_HasMouseHoveredViewport;
 #endif
 
     // Setup IO: override clipboard
@@ -1379,7 +1418,7 @@ static void ImGuiTestEngine_RunTest(ImGuiTestEngine* engine, ImGuiTestContext* c
     // - We need one mandatory frame running GuiFunc before running TestFunc
     // - We add a second frame, to avoid running tests while e.g. windows are typically appearing for the first time, hidden,
     // measuring their initial size. Most tests are going to be more meaningful with this stabilized base.
-    if (!(test->Flags & ImGuiTestFlags_NoWarmUp))
+    if (!(test->Flags & ImGuiTestFlags_NoGuiWarmUp))
     {
         ctx->FrameCount -= 2;
         ctx->Yield();
@@ -1398,7 +1437,7 @@ static void ImGuiTestEngine_RunTest(ImGuiTestEngine* engine, ImGuiTestContext* c
     else
     {
         // Sanity check
-        if (test->GuiFunc)
+        if (test->GuiFunc && !(test->Flags & ImGuiTestFlags_NoGuiWarmUp))
             IM_ASSERT(test->GuiFuncLastFrame == ctx->UiContext->FrameCount);
 
         if (test->TestFunc)
@@ -1461,11 +1500,15 @@ static void ImGuiTestEngine_RunTest(ImGuiTestEngine* engine, ImGuiTestContext* c
 
         // Keep GuiFunc spinning
         // FIXME-TESTS: after an error, this is not visible in the UI because status is not _Running anymore...
-        while (engine->IO.ConfigKeepGuiFunc && !engine->Abort)
-        {
-            ctx->RunFlags |= ImGuiTestRunFlags_GuiFuncOnly;
-            ctx->Yield();
-        }
+        if (engine->IO.ConfigKeepGuiFunc)
+            if (engine->TestsQueue.Size == 1 || test->Status == ImGuiTestStatus_Error)
+            {
+                while (engine->IO.ConfigKeepGuiFunc && !engine->Abort)
+                {
+                    ctx->RunFlags |= ImGuiTestRunFlags_GuiFuncOnly;
+                    ctx->Yield();
+                }
+            }
     }
 
     IM_ASSERT(engine->CaptureCurrentArgs == NULL && "Active capture was not terminated in the test code.");
@@ -1502,6 +1545,8 @@ static void ImGuiTestEngine_RunTest(ImGuiTestEngine* engine, ImGuiTestContext* c
     ctx->UiContext->IO = backup_io;
     ctx->UiContext->Style = backup_style;
     ctx->UiContext->DebugLogFlags = backup_debug_log_flags;
+    ctx->UiContext->ConfigNavWindowingKeyNext = backup_nav_windowing_key_next;
+    ctx->UiContext->ConfigNavWindowingKeyPrev = backup_nav_windowing_key_prev;
 }
 
 //-------------------------------------------------------------------------
@@ -1522,14 +1567,14 @@ void ImGuiTestEngine_CrashHandler()
     ImGuiTestEngine* engine = (ImGuiTestEngine*)g.TestEngine;
 
     // Write stop times, because thread executing tests will no longer run.
-    engine->EndTime = ImTimeGetInMicroseconds();
+    engine->BatchEndTime = ImTimeGetInMicroseconds();
     for (int i = 0; i < engine->TestsAll.Size; i++)
     {
         ImGuiTest* test = engine->TestsAll[i];
         if (test->Status == ImGuiTestStatus_Running)
         {
             test->Status = ImGuiTestStatus_Error;
-            test->EndTime = engine->EndTime;
+            test->EndTime = engine->BatchEndTime;
             break;
         }
     }
@@ -1576,28 +1621,65 @@ void ImGuiTestEngine_InstallDefaultCrashHandler()
 // [SECTION] HOOKS FOR CORE LIBRARY
 //-------------------------------------------------------------------------
 // - ImGuiTestEngineHook_ItemAdd()
+// - ImGuiTestEngineHook_ItemAdd_GatherTask()
 // - ImGuiTestEngineHook_ItemInfo()
 // - ImGuiTestEngineHook_ItemInfo_ResolveFindByLabel()
 // - ImGuiTestEngineHook_Log()
 // - ImGuiTestEngineHook_AssertFunc()
 //-------------------------------------------------------------------------
 
-void ImGuiTestEngineHook_ItemAdd(ImGuiContext* ui_ctx, const ImRect& bb, ImGuiID id)
+// This is rather slow at it runs on all items but only during a GatherItems() operations.
+static void ImGuiTestEngineHook_ItemAdd_GatherTask(ImGuiContext* ui_ctx, ImGuiTestEngine* engine, ImGuiID id, const ImRect& bb, const ImGuiLastItemData* item_data)
 {
-    ImGuiTestEngine* engine = (ImGuiTestEngine*)ui_ctx->TestEngine;
-
-    IM_ASSERT(id != 0);
     ImGuiContext& g = *ui_ctx;
     ImGuiWindow* window = g.CurrentWindow;
+    ImGuiTestGatherTask* task = &engine->GatherTask;
+
+    if ((task->InLayerMask & (1 << window->DC.NavLayerCurrent)) == 0)
+        return;
+
     const ImGuiID parent_id = window->IDStack.Size ? window->IDStack.back() : 0;
-
-    // FIXME-OPT: Early out if there are no active Info/Gather tasks.
-
-    // Info Tasks
-    if (ImGuiTestInfoTask* task = ImGuiTestEngine_FindInfoTask(engine, id))
+    const ImGuiID gather_parent_id = task->InParentID;
+    int result_depth = -1;
+    if (gather_parent_id == parent_id)
     {
-        ImGuiTestItemInfo* item = &task->Result;
-        item->TimestampMain = g.FrameCount;
+        result_depth = 0;
+    }
+    else
+    {
+        const int max_depth = task->InMaxDepth;
+
+        // When using a 'PushID(label); Widget(""); PopID();` pattern flatten as 1 deep instead of 2 for simplicity.
+        // We do this by offsetting our depth level.
+        int curr_depth = (id == parent_id) ? -1 : 0;
+
+        ImGuiWindow* curr_window = window;
+        while (result_depth == -1 && curr_window != NULL)
+        {
+            const int id_stack_size = curr_window->IDStack.Size;
+            for (ImGuiID* p_id_stack = curr_window->IDStack.Data + id_stack_size - 1; p_id_stack >= curr_window->IDStack.Data; p_id_stack--, curr_depth++)
+            {
+                if (curr_depth >= max_depth)
+                    break;
+                if (*p_id_stack == gather_parent_id)
+                {
+                    result_depth = curr_depth;
+                    break;
+                }
+            }
+
+            // Recurse in child (could be policy/option in GatherTask)
+            if (curr_window->Flags & ImGuiWindowFlags_ChildWindow)
+                curr_window = curr_window->ParentWindow;
+            else
+                curr_window = NULL;
+        }
+    }
+
+    if (result_depth != -1)
+    {
+        ImGuiTestItemInfo* item = task->OutList->Pool.GetOrAddByKey(id); // Add
+        item->TimestampMain = engine->FrameCount;
         item->ID = id;
         item->ParentID = parent_id;
         item->Window = window;
@@ -1605,45 +1687,51 @@ void ImGuiTestEngineHook_ItemAdd(ImGuiContext* ui_ctx, const ImRect& bb, ImGuiID
         item->RectClipped.ClipWithFull(window->ClipRect);      // This two step clipping is important, we want RectClipped to stays within RectFull
         item->RectClipped.ClipWithFull(item->RectFull);
         item->NavLayer = window->DC.NavLayerCurrent;
+        item->Depth = result_depth;
+        item->InFlags = item_data ? item_data->InFlags : ImGuiItemFlags_None;
+        item->StatusFlags = item_data ? item_data->StatusFlags : ImGuiItemStatusFlags_None;
+        task->LastItemInfo = item;
+    }
+}
+
+void ImGuiTestEngineHook_ItemAdd(ImGuiContext* ui_ctx, ImGuiID id, const ImRect& bb, const ImGuiLastItemData* item_data)
+{
+    ImGuiTestEngine* engine = (ImGuiTestEngine*)ui_ctx->TestEngine;
+
+    IM_ASSERT(id != 0);
+    ImGuiContext& g = *ui_ctx;
+    ImGuiWindow* window = g.CurrentWindow;
+
+    // FIXME-OPT: Early out if there are no active Info/Gather tasks.
+
+    // Info Tasks
+    if (ImGuiTestInfoTask* task = ImGuiTestEngine_FindInfoTask(engine, id))
+    {
+        ImGuiTestItemInfo* item = &task->Result;
+        item->TimestampMain = engine->FrameCount;
+        item->ID = id;
+        item->ParentID = window->IDStack.Size ? window->IDStack.back() : 0;
+        item->Window = window;
+        item->RectFull = item->RectClipped = bb;
+        item->RectClipped.ClipWithFull(window->ClipRect);      // This two step clipping is important, we want RectClipped to stays within RectFull
+        item->RectClipped.ClipWithFull(item->RectFull);
+        item->NavLayer = window->DC.NavLayerCurrent;
         item->Depth = 0;
-        item->StatusFlags = (g.LastItemData.ID == id) ? g.LastItemData.StatusFlags : ImGuiItemStatusFlags_None;
+        item->InFlags = item_data ? item_data->InFlags : ImGuiItemFlags_None;
+        item->StatusFlags = item_data ? item_data->StatusFlags : ImGuiItemStatusFlags_None;
     }
 
     // Gather Task (only 1 can be active)
-    if (engine->GatherTask.InParentID != 0 && window->DC.NavLayerCurrent == ImGuiNavLayer_Main) // FIXME: Layer filter?
-    {
-        const ImGuiID gather_parent_id = engine->GatherTask.InParentID;
-        int depth = -1;
-        if (gather_parent_id == parent_id)
-        {
-            depth = 0;
-        }
-        else
-        {
-            int max_depth = ImMin(window->IDStack.Size, engine->GatherTask.InDepth + ((id == parent_id) ? 1 : 0));
-            for (int n_depth = 1; n_depth < max_depth; n_depth++)
-                if (window->IDStack[window->IDStack.Size - 1 - n_depth] == gather_parent_id)
-                {
-                    depth = n_depth;
-                    break;
-                }
-        }
-        if (depth != -1)
-        {
-            ImGuiTestItemInfo* item = engine->GatherTask.OutList->Pool.GetOrAddByKey(id);
-            item->TimestampMain = engine->FrameCount;
-            item->ID = id;
-            item->ParentID = window->IDStack.back();
-            item->Window = window;
-            item->RectFull = item->RectClipped = bb;
-            item->RectClipped.ClipWithFull(window->ClipRect);      // This two step clipping is important, we want RectClipped to stays within RectFull
-            item->RectClipped.ClipWithFull(item->RectFull);
-            item->NavLayer = window->DC.NavLayerCurrent;
-            item->Depth = depth;
-            engine->GatherTask.LastItemInfo = item;
-        }
-    }
+    if (engine->GatherTask.InParentID != 0)
+        ImGuiTestEngineHook_ItemAdd_GatherTask(ui_ctx, engine, id, bb, item_data);
 }
+
+#if IMGUI_VERSION_NUM < 18934
+void    ImGuiTestEngineHook_ItemAdd(ImGuiContext* ui_ctx, const ImRect& bb, ImGuiID id)
+{
+    ImGuiTestEngineHook_ItemAdd(ui_ctx, id, bb, NULL);
+}
+#endif
 
 // Task is submitted in TestFunc by ItemInfo() -> ItemInfoHandleWildcardSearch()
 #ifdef IMGUI_HAS_IMSTR
@@ -1772,6 +1860,7 @@ void ImGuiTestEngineHook_ItemInfo(ImGuiContext* ui_ctx, ImGuiID id, const char* 
 }
 
 // Forward core/user-land text to test log
+// This is called via the user-land IMGUI_TEST_ENGINE_LOG() macro.
 void ImGuiTestEngineHook_Log(ImGuiContext* ui_ctx, const char* fmt, ...)
 {
     ImGuiTestEngine* engine = (ImGuiTestEngine*)ui_ctx->TestEngine;
@@ -1782,7 +1871,9 @@ void ImGuiTestEngineHook_Log(ImGuiContext* ui_ctx, const char* fmt, ...)
     va_end(args);
 }
 
-void ImGuiTestEngine_Assert(const char* expr, const char* file, const char* function, int line)
+// Helper to output extra information (e.g. current test) during an assert.
+// Your custom assert code may optionally want to call this.
+void ImGuiTestEngine_AssertLog(const char* expr, const char* file, const char* function, int line)
 {
     ImGuiTestEngine* engine = GImGuiTestEngine;
     if (ImGuiTestContext* ctx = engine->TestContext)
@@ -1849,16 +1940,14 @@ bool ImGuiTestEngine_Check(const char* file, const char* func, int line, ImGuiTe
     }
 
     if (result == false && engine->IO.ConfigStopOnError && !engine->Abort)
-        engine->Abort = true;
-        //ImGuiTestEngine_Abort(engine);
-
+        engine->Abort = true; //ImGuiTestEngine_Abort(engine);
     if (result == false && engine->IO.ConfigBreakOnError && !engine->Abort)
         return true;
 
     return false;
 }
 
-bool ImGuiTestEngine_CheckStrOp(const char* file, const char* func, int line, ImGuiTestCheckFlags flags, const char* op, const char* lhs_var, const char* lhs_value, const char* rhs_var, const char* rhs_value)
+bool ImGuiTestEngine_CheckStrOp(const char* file, const char* func, int line, ImGuiTestCheckFlags flags, const char* op, const char* lhs_var, const char* lhs_value, const char* rhs_var, const char* rhs_value, bool* out_res)
 {
     int res_strcmp = strcmp(lhs_value, rhs_value);
     bool res = 0;
@@ -1868,6 +1957,7 @@ bool ImGuiTestEngine_CheckStrOp(const char* file, const char* func, int line, Im
         res = (res_strcmp != 0);
     else
         IM_ASSERT(0);
+    *out_res = res;
 
     ImGuiTextBuffer buf; // FIXME-OPT: Now we can probably remove that allocation
 

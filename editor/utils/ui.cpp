@@ -553,7 +553,7 @@ bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_si
     ImGui::PushID(str_id);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(g.Style.ItemSpacing.x, g.Style.FramePadding.y * 2.0f));
 
-    const bool clicked = ImGui::Selectable("##selectable", selected, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_AllowItemOverlap);
+    const bool clicked = ImGui::Selectable("##selectable", selected, ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_AllowOverlap);
 
     ImGui::PopStyleVar();
 
