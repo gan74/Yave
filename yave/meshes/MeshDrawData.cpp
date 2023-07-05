@@ -26,30 +26,19 @@ SOFTWARE.
 
 namespace yave {
 
-std::array<AttribSubBuffer, 3> MeshBufferData::untyped_attrib_buffers() const {
-    y_debug_assert(_attrib_buffers.positions.size() == _attrib_buffers.normals_tangents.size());
-    y_debug_assert(_attrib_buffers.positions.size() == _attrib_buffers.uvs.size());
-
-    return std::array<AttribSubBuffer, 3>{
-        _attrib_buffers.positions,
-        _attrib_buffers.normals_tangents,
-        _attrib_buffers.uvs,
-    };
+core::Span<AttribSubBuffer> MeshDrawBuffers::attrib_buffers() const {
+    return _attrib_buffers;
 }
 
-u64 MeshBufferData::attrib_buffer_elem_count() const {
-    return _attrib_buffers.positions.size();
+usize MeshDrawBuffers::vertex_count() const {
+    return _vertex_count;
 }
 
-TriangleSubBuffer MeshBufferData::triangle_buffer() const {
+TriangleSubBuffer MeshDrawBuffers::triangle_buffer() const {
     return _triangle_buffer;
 }
 
-const TypedAttribSubBuffer<math::Vec3>& MeshBufferData::position_buffer() const {
-    return _attrib_buffers.positions;
-}
-
-MeshAllocator* MeshBufferData::parent() const {
+MeshAllocator* MeshDrawBuffers::parent() const {
     return _parent;
 }
 
@@ -69,27 +58,22 @@ MeshDrawData::~MeshDrawData() {
 }
 
 void MeshDrawData::recycle() {
-    y_debug_assert(_buffer_data);
-    _buffer_data->parent()->recycle(this);
+    y_debug_assert(_mesh_buffers);
+    _mesh_buffers->parent()->recycle(this);
 }
 
 bool MeshDrawData::is_null() const {
-    return !_buffer_data;
+    return !_mesh_buffers;
 }
 
 TriangleSubBuffer MeshDrawData::triangle_buffer() const {
-    y_debug_assert(_buffer_data);
-    return _buffer_data->triangle_buffer();
+    y_debug_assert(_mesh_buffers);
+    return _mesh_buffers->triangle_buffer();
 }
 
-const TypedAttribSubBuffer<math::Vec3>& MeshDrawData::position_buffer() const {
-    y_debug_assert(_buffer_data);
-    return _buffer_data->position_buffer();
-}
-
-const MeshBufferData& MeshDrawData::mesh_buffers() const {
-    y_debug_assert(_buffer_data);
-    return *_buffer_data;
+const MeshDrawBuffers& MeshDrawData::mesh_buffers() const {
+    y_debug_assert(_mesh_buffers);
+    return *_mesh_buffers;
 }
 
 const MeshDrawCommand& MeshDrawData::draw_command() const {
@@ -99,7 +83,7 @@ const MeshDrawCommand& MeshDrawData::draw_command() const {
 void MeshDrawData::swap(MeshDrawData& other) {
     std::swap(_command, other._command);
     std::swap(_vertex_count, other._vertex_count);
-    std::swap(_buffer_data, other._buffer_data);
+    std::swap(_mesh_buffers, other._mesh_buffers);
 }
 
 }

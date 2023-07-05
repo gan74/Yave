@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_MESHES_MESH_DRAW_DATA_H
 #define YAVE_MESHES_MESH_DRAW_DATA_H
 
-#include "Vertex.h"
+#include "MeshVertexStreams.h"
 
 #include <yave/graphics/buffers/Buffer.h>
 
@@ -46,27 +46,24 @@ struct MeshDrawCommand {
     }
 };
 
-class MeshBufferData : NonMovable {
+class MeshDrawBuffers : NonMovable {
     public:
+        static constexpr usize vertex_stream_count = MeshVertexStreams::stream_count;
 
-        std::array<AttribSubBuffer, 3> untyped_attrib_buffers() const;
+        MeshDrawBuffers() = default;
 
-        u64 attrib_buffer_elem_count() const;
-
+        core::Span<AttribSubBuffer> attrib_buffers() const;
         TriangleSubBuffer triangle_buffer() const;
-        const TypedAttribSubBuffer<math::Vec3>& position_buffer() const;
+
+        usize vertex_count() const;
 
         MeshAllocator* parent() const;
 
     private:
         friend class MeshAllocator;
 
-        struct AttribBuffers {
-            TypedAttribSubBuffer<math::Vec3> positions;
-            TypedAttribSubBuffer<math::Vec2ui> normals_tangents;
-            TypedAttribSubBuffer<math::Vec2> uvs;
-        } _attrib_buffers;
-
+        usize _vertex_count = 0;
+        std::array<AttribSubBuffer, vertex_stream_count> _attrib_buffers;
         TriangleSubBuffer _triangle_buffer;
 
         MeshAllocator* _parent = nullptr;
@@ -82,10 +79,8 @@ class MeshDrawData : NonCopyable {
 
         bool is_null() const;
 
+        const MeshDrawBuffers& mesh_buffers() const;
         TriangleSubBuffer triangle_buffer() const;
-        const TypedAttribSubBuffer<math::Vec3>& position_buffer() const;
-
-        const MeshBufferData& mesh_buffers() const;
 
         const MeshDrawCommand& draw_command() const;
 
@@ -101,9 +96,7 @@ class MeshDrawData : NonCopyable {
         MeshDrawCommand _command = {};
         u32 _vertex_count = 0;
 
-        MeshBufferData* _buffer_data = nullptr;
-
-
+        MeshDrawBuffers* _mesh_buffers = nullptr;
 };
 
 }

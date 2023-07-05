@@ -33,7 +33,7 @@ class BufferMappingBase : NonMovable {
         BufferMappingBase() = default;
         ~BufferMappingBase();
 
-        static void stage(const SubBuffer<BufferUsage::TransferDstBit>& dst, CmdBufferRecorder& recorder, const void* data, usize elem_size = 0, usize input_stride = 0);
+        static void stage(CmdBufferRecorder& recorder, const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data);
 
         usize byte_size() const;
 

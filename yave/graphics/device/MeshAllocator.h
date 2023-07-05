@@ -52,7 +52,7 @@ class MeshAllocator : NonMovable {
         MeshAllocator();
         ~MeshAllocator();
 
-        MeshDrawData alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
+        MeshDrawData alloc_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles);
 
         std::pair<u64, u64> available() const; // slow!
         std::pair<u64, u64> allocated() const; // slow!
@@ -73,7 +73,7 @@ class MeshAllocator : NonMovable {
         bool _should_compact = false;
         mutable std::mutex _lock;
 
-        std::unique_ptr<MeshBufferData> _buffer_data;
+        std::unique_ptr<MeshDrawBuffers> _mesh_buffers;
 };
 
 }

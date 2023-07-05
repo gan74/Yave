@@ -68,7 +68,7 @@ class RenderPassRecorder final : NonMovable {
         void draw_indexed(usize index_count);
         void draw_array(usize vertex_count, usize instance_count = 1);
 
-        void bind_mesh_buffers(const MeshBufferData& mesh_buffers);
+        void bind_mesh_buffers(const MeshDrawBuffers& mesh_buffers);
         void bind_index_buffer(IndexSubBuffer indices);
         void bind_attrib_buffers(core::Span<AttribSubBuffer> attribs);
 
@@ -95,7 +95,7 @@ class RenderPassRecorder final : NonMovable {
         VkDescriptorSet _main_descriptor_set = {};
 
         struct {
-            const MeshBufferData* mesh_buffer_data = nullptr;
+            const MeshDrawBuffers* mesh_buffers = nullptr;
             const MaterialTemplate* material = nullptr;
             VkPipelineLayout pipeline_layout = {};
         } _cache;

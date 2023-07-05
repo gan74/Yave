@@ -31,53 +31,30 @@ SOFTWARE.
 namespace yave {
 
 MeshAllocator::MeshAllocator() :
-        _attrib_buffer(default_vertex_count * sizeof(PackedVertex)),
+        _attrib_buffer(default_vertex_count * MeshVertexStreams::total_vertex_size),
         _triangle_buffer(default_triangle_count) {
 
-#ifdef Y_DEBUG
-    /*{
-        y_profile_zone("clearing vertex buffers");
-        CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-        core::FixedArray<byte> buffer(std::max(_triangle_buffer.byte_size(), _attrib_buffer.byte_size()));
-        std::fill(buffer.begin(), buffer.end(), byte(0xCD));
-        Mapping::stage(_attrib_buffer, recorder, buffer.data());
-        Mapping::stage(_triangle_buffer, recorder, buffer.data());
-        loading_command_queue().submit(std::move(recorder)).wait();
-    }*/
-#endif
 
     _free_blocks << FreeBlock {
         0, default_vertex_count,
         0, default_triangle_count
     };
 
-    _buffer_data = std::make_unique<MeshBufferData>();
+    const u64 vertex_capacity = _attrib_buffer.byte_size() / u64(MeshVertexStreams::total_vertex_size);
 
-    _buffer_data->_parent = this;
-    _buffer_data->_triangle_buffer = _triangle_buffer;
+    _mesh_buffers = std::make_unique<MeshDrawBuffers>();
+
+    _mesh_buffers->_parent = this;
+    _mesh_buffers->_triangle_buffer = _triangle_buffer;
+    _mesh_buffers->_vertex_count = usize(vertex_capacity);
 
     {
-        const std::array attrib_descriptors = {
-            AttribDescriptor{ sizeof(PackedVertex::position) },
-            AttribDescriptor{ sizeof(PackedVertex::packed_normal) + sizeof(PackedVertex::packed_tangent_sign) },
-            AttribDescriptor{ sizeof(PackedVertex::uv) },
-        };
-
-        const u64 vertex_capacity = _attrib_buffer.byte_size() / sizeof(PackedVertex);
-        std::array<MutableAttribSubBuffer, attrib_descriptors.size()> attrib_sub_buffers = {};
-        {
-            u64 attrib_offset = 0;
-            for(usize i = 0; i != attrib_descriptors.size(); ++i) {
-                const u64 byte_len = vertex_capacity * attrib_descriptors[i].size;
-                attrib_sub_buffers[i] = MutableAttribSubBuffer(_attrib_buffer, byte_len, attrib_offset);
-                attrib_offset += byte_len;
-            }
+        u64 attrib_offset = 0;
+        for(usize i = 0; i != MeshDrawBuffers::vertex_stream_count; ++i) {
+            const u64 byte_len = vertex_capacity * vertex_stream_element_size(VertexStreamType(i));
+            _mesh_buffers->_attrib_buffers[i] = MutableAttribSubBuffer(_attrib_buffer, byte_len, attrib_offset);
+            attrib_offset += byte_len;
         }
-
-        static_assert(attrib_sub_buffers.size() == 3);
-        _buffer_data->_attrib_buffers.positions             = attrib_sub_buffers[0];
-        _buffer_data->_attrib_buffers.normals_tangents      = attrib_sub_buffers[1];
-        _buffer_data->_attrib_buffers.uvs                   = attrib_sub_buffers[2];
     }
 }
 
@@ -89,14 +66,14 @@ MeshAllocator::~MeshAllocator() {
     y_always_assert(_free_blocks.size() == 1, "Not all mesh memory has been released: mesh heap fragmented");
 }
 
-MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
+MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles) {
     y_profile();
 
     const u64 triangle_count = triangles.size();
-    const u64 vertex_count = vertices.size();
+    const u64 vertex_count = streams.vertex_count();
 
     MeshDrawData mesh_data;
-    mesh_data._buffer_data = _buffer_data.get();
+    mesh_data._mesh_buffers = _mesh_buffers.get();
     mesh_data._vertex_count = u32(vertex_count);
     mesh_data._command.index_count = u32(triangles.size() * 3);
 
@@ -113,32 +90,28 @@ MeshDrawData MeshAllocator::alloc_mesh(core::Span<PackedVertex> vertices, core::
 
         {
             MutableTriangleSubBuffer triangle_buffer(global_triangle_buffer, triangle_count * sizeof(IndexedTriangle), triangle_begin * sizeof(IndexedTriangle));
-            BufferMappingBase::stage(triangle_buffer, recorder, triangles.data());
+            BufferMappingBase::stage(recorder, triangle_buffer, triangles.data());
             mesh_data._command.first_index = u32(triangle_begin * 3);
         }
 
         {
-            const auto attribs_sub_buffers = _buffer_data->untyped_attrib_buffers();
-            const u64 buffer_elem_count = _buffer_data->attrib_buffer_elem_count();
+            const auto attribs_sub_buffers = _mesh_buffers->_attrib_buffers;
+            const u64 buffer_elem_count = u64(_mesh_buffers->_vertex_count);
             {
-                const u8* vertex_data = static_cast<const u8*>(static_cast<const void*>(vertices.data()));
-
-                u64 offset = 0;
-                for(const AttribSubBuffer& sub_buffer : attribs_sub_buffers) {
+                y_debug_assert(buffer_elem_count);
+                for(usize i = 0; i != attribs_sub_buffers.size(); ++i) {
+                    const AttribSubBuffer& sub_buffer = attribs_sub_buffers[i];
                     const u64 elem_size = sub_buffer.byte_size() / buffer_elem_count;
                     const u64 byte_len = vertex_count * elem_size;
                     y_debug_assert(sub_buffer.byte_offset() % elem_size == 0);
                     const u64 byte_offset = sub_buffer.byte_offset() + vertex_begin * elem_size;
+
                     BufferMappingBase::stage(
-                        SubBuffer<BufferUsage::TransferDstBit>(global_attrib_buffer, byte_len, byte_offset),
                         recorder,
-                        vertex_data + offset,   // data
-                        elem_size,              // elem_size
-                        sizeof(PackedVertex)    // input_stride
+                        SubBuffer<BufferUsage::TransferDstBit>(global_attrib_buffer, byte_len, byte_offset),
+                        streams.data(VertexStreamType(i))
                     );
-                    offset += elem_size;
                 }
-                y_debug_assert(offset == sizeof(PackedVertex));
             }
 
             mesh_data._command.vertex_offset = i32(vertex_begin);
@@ -161,7 +134,7 @@ void MeshAllocator::recycle(MeshDrawData* data) {
     };
 
     data->_command = {};
-    data->_buffer_data = nullptr;
+    data->_mesh_buffers = nullptr;
 
     _should_compact = true;
 }

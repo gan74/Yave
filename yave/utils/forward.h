@@ -104,9 +104,10 @@ class MaterialCompiler;
 class MaterialTemplate;
 class MaterialTemplateData;
 class MeshAllocator;
-class MeshBufferData;
 class MeshData;
+class MeshDrawBuffers;
 class MeshDrawData;
+class MeshVertexStreams;
 class Octree;
 class OctreeData;
 class OctreeNode;
@@ -151,9 +152,9 @@ struct AssetData;
 struct AssetDesc;
 struct AssetId;
 struct AtmospherePass;
+struct AtmosphereSettings;
 struct Attachment;
 struct AttachmentData;
-struct AttribBuffers;
 struct AttribDescriptor;
 struct Attribute;
 struct BloomPass;
@@ -180,6 +181,8 @@ struct FrameGraphImageId;
 struct FrameGraphMutableBufferId;
 struct FrameGraphMutableImageId;
 struct FrameGraphMutableResourceId;
+struct FrameGraphMutableVolumeId;
+struct FrameGraphVolumeId;
 struct FrameSyncObjects;
 struct FrameToken;
 struct FreeBlock;
@@ -223,6 +226,7 @@ struct SubMesh;
 struct ToneMappingPass;
 struct ToneMappingSettings;
 struct Viewport;
+struct VolumeSampler;
 }
 
 
@@ -257,15 +261,13 @@ struct SetMatch;
 
 
 namespace yave::uniform {
+struct AtmosphereParams;
 struct Camera;
 struct DirectionalLight;
 struct ExposureParams;
 struct PointLight;
-struct RayleighSky;
-struct SH;
 struct ShadowMapParams;
 struct SpotLight;
-struct VPL;
 }
 
 

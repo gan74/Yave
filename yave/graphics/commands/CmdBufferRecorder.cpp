@@ -175,22 +175,22 @@ void RenderPassRecorder::draw_array(usize vertex_count, usize instance_count) {
     draw(command);
 }
 
-void RenderPassRecorder::bind_mesh_buffers(const MeshBufferData& mesh_buffers) {
-    if(_cache.mesh_buffer_data != &mesh_buffers) {
+void RenderPassRecorder::bind_mesh_buffers(const MeshDrawBuffers& mesh_buffers) {
+    if(_cache.mesh_buffers != &mesh_buffers) {
         bind_index_buffer(mesh_buffers.triangle_buffer());
-        bind_attrib_buffers(mesh_buffers.untyped_attrib_buffers());
-        _cache.mesh_buffer_data = &mesh_buffers;
+        bind_attrib_buffers(mesh_buffers.attrib_buffers());
+        _cache.mesh_buffers = &mesh_buffers;
     }
 }
 
 void RenderPassRecorder::bind_index_buffer(IndexSubBuffer indices) {
-    _cache.mesh_buffer_data = nullptr;
+    _cache.mesh_buffers = nullptr;
 
     vkCmdBindIndexBuffer(vk_cmd_buffer(), indices.vk_buffer(), indices.byte_offset(), VK_INDEX_TYPE_UINT32);
 }
 
 void RenderPassRecorder::bind_attrib_buffers(core::Span<AttribSubBuffer> attribs) {
-    _cache.mesh_buffer_data = nullptr;
+    _cache.mesh_buffers = nullptr;
 
     const u32 attrib_count = u32(attribs.size());
 
