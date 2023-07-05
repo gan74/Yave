@@ -42,35 +42,23 @@ MeshData::MeshData(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle
     add_sub_mesh(vertices, triangles);
 }
 
-void MeshData::add_sub_mesh(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles) {
-    add_sub_mesh(pack_vertices(vertices), triangles);
+MeshData::MeshData(MeshVertexStreams streams, core::Span<IndexedTriangle> triangles) {
+    add_sub_mesh(streams, triangles);
 }
 
-void MeshData::add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
-    y_debug_assert(!vertices.is_empty());
+void MeshData::add_sub_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles) {
+    y_debug_assert(!streams.is_empty());
     y_debug_assert(!triangles.is_empty());
 
-    const u32 vertex_offset = u32(_vertices.size());
-    const u32 first_triangle = u32(_triangles.size());
-
-    _vertices.set_min_capacity(_vertices.size() + vertices.size());
-    _triangles.set_min_capacity(_triangles.size() + triangles.size());
-
-    std::copy(vertices.begin(), vertices.end(), std::back_inserter(_vertices));
-    std::transform(triangles.begin(), triangles.end(), std::back_inserter(_triangles), [=](IndexedTriangle tri) {
-        return IndexedTriangle {
-            tri[0] + vertex_offset,
-            tri[1] + vertex_offset,
-            tri[2] + vertex_offset,
-        };
-    });
-
+    // AABB
     {
         math::Vec3 max(-std::numeric_limits<float>::max());
         math::Vec3 min(std::numeric_limits<float>::max());
-        std::for_each(vertices.begin(), vertices.end(), [&](const PackedVertex& v) {
-            max = max.max(v.position);
-            min = min.min(v.position);
+
+        const core::Span<math::Vec3> positions = streams.stream<VertexStreamType::Position>();
+        std::for_each(positions.begin(), positions.end(), [&](const math::Vec3& p) {
+            max = max.max(p);
+            min = min.min(p);
         });
 
         _aabb = _sub_meshes.is_empty() ? AABB(min, max) : _aabb.merged(AABB(min, max));
@@ -79,7 +67,32 @@ void MeshData::add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<Indexe
         y_debug_assert(math::fully_finite(_aabb.max()));
     }
 
+
+    // Streams
+    const u32 vertex_offset = u32(_vertex_streams.vertex_count());
+    _vertex_streams = _vertex_streams.merged(streams);
+
+    // Triangles
+    const u32 first_triangle = u32(_triangles.size());
+    _triangles.set_min_capacity(_triangles.size() + triangles.size());
+    std::transform(triangles.begin(), triangles.end(), std::back_inserter(_triangles), [=](IndexedTriangle tri) {
+        return IndexedTriangle {
+            tri[0] + vertex_offset,
+            tri[1] + vertex_offset,
+            tri[2] + vertex_offset,
+        };
+    });
+
+    // Sub-meshes
     _sub_meshes << SubMesh{u32(triangles.size()), first_triangle};
+}
+
+void MeshData::add_sub_mesh(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles) {
+    add_sub_mesh(pack_vertices(vertices), triangles);
+}
+
+void MeshData::add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles) {
+    add_sub_mesh(MeshVertexStreams(vertices), triangles);
 }
 
 float MeshData::radius() const {
@@ -90,8 +103,8 @@ const AABB& MeshData::aabb() const {
     return _aabb;
 }
 
-core::Span<PackedVertex> MeshData::vertices() const {
-    return _vertices;
+const MeshVertexStreams& MeshData::vertex_streams() const {
+    return _vertex_streams;
 }
 
 core::Span<IndexedTriangle> MeshData::triangles() const {
@@ -116,24 +129,12 @@ core::Span<SkinWeights> MeshData::skin() const {
     return _skeleton->skin;
 }
 
-core::Vector<SkinnedVertex> MeshData::skinned_vertices() const {
-    if(!_skeleton) {
-        return {};
-    }
-
-    auto verts = core::vector_with_capacity<SkinnedVertex>(_vertices.size());
-    for(usize i = 0; i != _vertices.size(); ++i) {
-        verts << SkinnedVertex{_vertices[i], _skeleton->skin[i]};
-    }
-    return verts;
-}
-
 bool MeshData::has_skeleton() const {
     return bool(_skeleton);
 }
 
 bool MeshData::is_empty() const {
-    return _vertices.is_empty() || _triangles.is_empty() || _sub_meshes.is_empty();
+    return _vertex_streams.is_empty() || _triangles.is_empty() || _sub_meshes.is_empty();
 }
 
 }

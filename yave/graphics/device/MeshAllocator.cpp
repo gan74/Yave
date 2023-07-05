@@ -72,6 +72,9 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
     const u64 triangle_count = triangles.size();
     const u64 vertex_count = streams.vertex_count();
 
+    y_debug_assert(triangle_count);
+    y_debug_assert(vertex_count);
+
     MeshDrawData mesh_data;
     mesh_data._mesh_buffers = _mesh_buffers.get();
     mesh_data._vertex_count = u32(vertex_count);

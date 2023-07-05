@@ -525,7 +525,7 @@ void EngineView::update_picking() {
 void EngineView::make_drop_target() {
     if(ImGui::BeginDragDropTarget()) {
         if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
-            const std::string_view name = reinterpret_cast<const char*>(payload->Data);
+            const std::string_view name = static_cast<const char*>(payload->Data);
             current_world().set_selected(current_world().add_prefab(name));
         }
         ImGui::EndDragDropTarget();

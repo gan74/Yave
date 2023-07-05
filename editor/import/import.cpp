@@ -527,7 +527,7 @@ core::Result<MeshData> ParsedScene::build_mesh_data(usize index) const {
                 mesh = compute_tangents(mesh);
             }
 
-            mesh_data.add_sub_mesh(mesh.vertices(), mesh.triangles());
+            mesh_data.add_sub_mesh(mesh.vertex_streams(), mesh.triangles());
         } catch(std::exception& e) {
             log_msg(fmt("Unable to build mesh: %" , e.what()), Log::Error);
         }

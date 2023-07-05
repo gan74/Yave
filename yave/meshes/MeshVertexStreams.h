@@ -26,13 +26,13 @@ SOFTWARE.
 
 #include <y/core/FixedArray.h>
 #include <y/core/Span.h>
+
+#include <y/reflect/reflect.h>
+
 #include <memory>
 
 namespace yave {
 
-struct AttribDescriptor {
-    usize size;
-};
 
 enum class VertexStreamType : u32 {
     Position = 0,
@@ -42,23 +42,29 @@ enum class VertexStreamType : u32 {
     Max
 };
 
-constexpr usize vertex_stream_element_size(VertexStreamType type) {
+template<VertexStreamType Type>
+struct VertexStreamInfo {};
+
+#define DECLARE_STREAM_INFOS(VST, Type) template<> struct VertexStreamInfo<VertexStreamType::VST> {  using type = Type; }
+    DECLARE_STREAM_INFOS(Position, math::Vec3);
+    DECLARE_STREAM_INFOS(NormalTangent, math::Vec2ui);
+    DECLARE_STREAM_INFOS(Uv, math::Vec2);
+#undef DECLARE_STREAM_INFOS
+
+
+inline constexpr usize vertex_stream_element_size(VertexStreamType type) {
+#define STREAM_CASE(Type) case VertexStreamType::Type: return sizeof(VertexStreamInfo<VertexStreamType::Type>::type)
     switch(type) {
-        case VertexStreamType::Position:
-            return sizeof(PackedVertex::position);
-
-        case VertexStreamType::NormalTangent:
-            return sizeof(PackedVertex::packed_normal) + sizeof(PackedVertex::packed_tangent_sign);
-
-        case VertexStreamType::Uv:
-            return sizeof(PackedVertex::uv);
-
+        STREAM_CASE(Position);
+        STREAM_CASE(NormalTangent);
+        STREAM_CASE(Uv);
         default:
-            y_fatal("Unknown vertex stream type");
+            y_fatal("Unknown stream type");
     }
+#undef STREAM_CASE
 }
 
-constexpr usize compute_total_vertex_streams_size() {
+inline constexpr usize compute_total_vertex_streams_size() {
     usize total_size = 0;
     for(usize i = 0; i != usize(VertexStreamType::Max); ++i) {
         total_size += vertex_stream_element_size(VertexStreamType(i));
@@ -69,40 +75,51 @@ constexpr usize compute_total_vertex_streams_size() {
 class MeshVertexStreams {
     public:
         static constexpr usize stream_count = usize(VertexStreamType::Max);
-        static constexpr usize total_vertex_size = compute_total_vertex_streams_size();  Y_TODO(rename)
+        static constexpr usize total_vertex_size = compute_total_vertex_streams_size();
 
         MeshVertexStreams() = default;
 
-        MeshVertexStreams(core::Span<PackedVertex> vertices) : _vertex_count(vertices.size()) {
-            usize offset = 0;
-            for(usize i = 0; i != stream_count; ++i) {
-                const usize stream_elem_size = vertex_stream_element_size(VertexStreamType(i));
-                const usize stream_byte_size = _vertex_count * stream_elem_size;
-                _streams[i] = core::FixedArray<u8>(stream_byte_size);
+        MeshVertexStreams(usize vertices);
+        MeshVertexStreams(core::Span<PackedVertex> vertices);
 
-                u8* stream_data = _streams[i].data();
-                for(usize k = 0; k != _vertex_count; ++k) {
-                    const u8* vertex = static_cast<const u8*>(static_cast<const void*>(&vertices[k]));
-                    std::memcpy(stream_data + k * stream_elem_size, vertex + offset, stream_elem_size);
-                }
+        MeshVertexStreams merged(const MeshVertexStreams& other) const;
 
-                offset += stream_elem_size;
-            }
+        usize vertex_count() const;
+
+        bool has_stream(VertexStreamType type) const;
+        bool is_empty() const;
+
+        u8* data(VertexStreamType type);
+        const u8* data(VertexStreamType type) const;
+
+        PackedVertex operator[](usize index) const;
+
+        template<VertexStreamType Type>
+        inline auto stream() {
+            using T = typename VertexStreamInfo<Type>::type;
+            return core::MutableSpan<T>(reinterpret_cast<T*>(data(Type)), _vertex_count);
         }
 
-        bool has_stream(VertexStreamType type) const {
-            return !_streams[usize(type)].is_empty();
+        template<VertexStreamType Type>
+        inline auto stream() const {
+            using T = typename VertexStreamInfo<Type>::type;
+            return core::Span<T>(reinterpret_cast<const T*>(data(Type)), _vertex_count);
         }
 
-        usize vertex_count() const {
-            return _vertex_count;
+        inline void* vertex_stream_data(VertexStreamType type, usize index) {
+            return _streams[usize(type)].data() + index * vertex_stream_element_size(type);
         }
 
-        const u8* data(VertexStreamType type) const {
-            return _streams[usize(type)].data();
+        inline const void* vertex_stream_data(VertexStreamType type, usize index) const {
+            return _streams[usize(type)].data() + index * vertex_stream_element_size(type);
         }
+
+
+        y_reflect(MeshVertexStreams, _vertex_count, _streams);
 
     private:
+        void set_vertex(usize index, PackedVertex vertex);
+
         usize _vertex_count = 0;
         std::array<core::FixedArray<u8>, stream_count> _streams;
 

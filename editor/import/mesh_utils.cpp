@@ -32,25 +32,24 @@ SOFTWARE.
 namespace editor {
 namespace import {
 
-template<typename T>
-static core::Vector<T> copy(core::Span<T> t) {
-    return core::Vector<T>(t);
+static MeshVertexStreams copy(const MeshVertexStreams& streams) {
+    return streams.merged(MeshVertexStreams());
 }
 
-static math::Vec3 h_transform(const math::Vec3& v, const math::Transform<>& tr) {
+static math::Vec3 transform_position(const math::Vec3& v, const math::Transform<>& tr) {
     const auto h = tr * math::Vec4(v, 1.0f);
     return h.to<3>() / h.w();
 }
 
-static math::Vec3 transform(const math::Vec3& v, const math::Transform<>& tr) {
+static math::Vec3 transform_direction(const math::Vec3& v, const math::Transform<>& tr) {
     return tr.to<3, 3>() * v;
 }
 
-static FullVertex transform(const FullVertex& v, const math::Transform<>& tr) {
+[[maybe_unused]] static FullVertex transform(const FullVertex& v, const math::Transform<>& tr) {
     return FullVertex {
-        h_transform(v.position, tr),
-        transform(v.normal, tr).normalized(),
-        math::Vec4(transform(v.tangent.to<3>(), tr).normalized(), v.tangent.w()),
+        transform_position(v.position, tr),
+        transform_direction(v.normal, tr).normalized(),
+        math::Vec4(transform_direction(v.tangent.to<3>(), tr).normalized(), v.tangent.w()),
         v.uv
     };
 }
@@ -72,8 +71,19 @@ static FullVertex transform(const FullVertex& v, const math::Transform<>& tr) {
 
 MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
     y_profile();
-    auto vertices = core::vector_with_capacity<PackedVertex>(mesh.vertices().size());
-    std::transform(mesh.vertices().begin(), mesh.vertices().end(), std::back_inserter(vertices), [=](const auto& vert) { return transform(vert, tr); });
+
+    MeshVertexStreams vertex_streams = copy(mesh.vertex_streams());
+    for(auto& pos : vertex_streams.stream<VertexStreamType::Position>()) {
+        pos = transform_position(pos, tr);
+    }
+    for(auto& packed : vertex_streams.stream<VertexStreamType::NormalTangent>()) {
+        PackedVertex vert = {};
+        vert.packed_normal = packed.x();
+        vert.packed_tangent_sign = packed.y();
+        const PackedVertex transformed = transform(vert, tr);
+        packed.x() = transformed.packed_normal;
+        packed.y() = transformed.packed_tangent_sign;
+    }
 
     if(mesh.has_skeleton()) {
         auto bones = core::vector_with_capacity<Bone>(mesh.bones().size());
@@ -81,21 +91,23 @@ MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
                 return bone.has_parent() ? bone : Bone{bone.name, bone.parent, transform(bone.local_transform, tr)};
             });
 
-        return MeshData(vertices, mesh.triangles()/*, copy(mesh.skin()), std::move(bones)*/);
+        return MeshData(std::move(vertex_streams), mesh.triangles());
     }
 
-    return MeshData(vertices, mesh.triangles()/*, copy(mesh.skin()), copy(mesh.bones())*/);
+    return MeshData(std::move(vertex_streams), mesh.triangles());
 }
 
 MeshData compute_tangents(const MeshData& mesh) {
     y_profile();
 
-    auto vertices = copy(mesh.vertices());
+    auto vertex_streams = copy(mesh.vertex_streams());
+    const auto positions = vertex_streams.stream<VertexStreamType::Position>();
+    const auto tex_coords = vertex_streams.stream<VertexStreamType::Uv>();
 
-    core::FixedArray<math::Vec3> tangents(vertices.size());
+    core::FixedArray<math::Vec3> tangents(vertex_streams.vertex_count());
     for(IndexedTriangle tri : mesh.triangles()) {
-        const math::Vec3 edges[] = {vertices[tri[1]].position - vertices[tri[0]].position, vertices[tri[2]].position - vertices[tri[0]].position};
-        const math::Vec2 uvs[] = {vertices[tri[0]].uv, vertices[tri[1]].uv, vertices[tri[2]].uv};
+        const math::Vec3 edges[] = {positions[tri[1]] - positions[tri[0]], positions[tri[2]] - positions[tri[0]]};
+        const math::Vec2 uvs[] = {tex_coords[tri[0]], tex_coords[tri[1]], tex_coords[tri[2]]};
         const float dt[] = {uvs[1].y() - uvs[0].y(), uvs[2].y() - uvs[0].y()};
         math::Vec3 ta = -((edges[0] * dt[1]) - (edges[1] * dt[0])).normalized();
         tangents[tri[0]] += ta;
@@ -103,12 +115,13 @@ MeshData compute_tangents(const MeshData& mesh) {
         tangents[tri[2]] += ta;
     }
 
+    auto packed = vertex_streams.stream<VertexStreamType::NormalTangent>();
     for(usize i = 0; i != tangents.size(); ++i) {
         Y_TODO(Compute bitangent too)
-        vertices[i].packed_tangent_sign = pack_2_10_10_10(tangents[i].normalized());
+        packed[i].y() = pack_2_10_10_10(tangents[i].normalized());
     }
 
-    return MeshData(vertices, mesh.triangles()/*, copy(mesh.skin()), copy(mesh.bones())*/);
+    return MeshData(std::move(vertex_streams), mesh.triangles());
 }
 
 static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
@@ -137,8 +150,9 @@ core::Result<void> export_to_obj(const MeshData& mesh, io2::Writer& writer) {
     y_try_discard(write("# Yave OBJ export\n"));
     y_try_discard(write("o Mesh\n"));
 
-    for(const PackedVertex& vertex : mesh.vertices()) {
-        const FullVertex v = unpack_vertex(vertex);
+    const usize vertex_count = mesh.vertex_streams().vertex_count();
+    for(usize i = 0; i != vertex_count; ++i) {
+        const FullVertex v = unpack_vertex(mesh.vertex_streams()[i]);
         y_try_discard(write(fmt("v % % %\nvn % % %\nvt % %\n",
             v.position.x(),
             v.position.y(),

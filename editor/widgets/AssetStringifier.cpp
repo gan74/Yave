@@ -169,14 +169,19 @@ void AssetStringifier::stringify(MeshData mesh) {
 
     const int prec = 3;
 
-    auto vertices = core::vector_with_capacity<core::String>(mesh.vertices().size());
-    for(const PackedVertex& v : mesh.vertices()) {
+    const usize vertex_count = mesh.vertex_streams().vertex_count();
+    const auto positions = mesh.vertex_streams().stream<VertexStreamType::Position>();
+    const auto normal_tangent = mesh.vertex_streams().stream<VertexStreamType::NormalTangent>();
+    const auto uvs = mesh.vertex_streams().stream<VertexStreamType::Uv>();
+
+    auto vertices = core::vector_with_capacity<core::String>(vertex_count);
+    for(usize i = 0; i != vertex_count; ++i) {
         std::array<char, 1024> buffer;
         std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, 0x%x, 0x%x, {%.*ff, %.*ff}}",
-                      prec, v.position.x(), prec, v.position.y(), prec, v.position.z(),
-                      v.packed_normal,
-                      v.packed_tangent_sign,
-                      prec, v.uv.x(), prec, v.uv.y());
+                      prec, positions[i].x(), prec, positions[i].y(), prec, positions[i].z(),
+                      normal_tangent[i].x(),
+                      normal_tangent[i].y(),
+                      prec, uvs[i].x(), prec, uvs[i].y());
         vertices.emplace_back(buffer.data());
     };
 

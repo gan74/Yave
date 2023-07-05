@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 StaticMesh::StaticMesh(const MeshData& mesh_data) :
-    _draw_data(mesh_allocator().alloc_mesh(mesh_data.vertices(), mesh_data.triangles())),
+    _draw_data(mesh_allocator().alloc_mesh(mesh_data.vertex_streams(), mesh_data.triangles())),
     _aabb(mesh_data.aabb())  {
 
     const auto sub_meshes = mesh_data.sub_meshes();

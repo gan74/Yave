@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_MESHES_MESHDATA_H
 
 #include "Skeleton.h"
+#include "MeshVertexStreams.h"
 #include "AABB.h"
 
 #include <y/reflect/reflect.h>
@@ -42,26 +43,27 @@ class MeshData {
 
         MeshData(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles);
         MeshData(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
+        MeshData(MeshVertexStreams streams, core::Span<IndexedTriangle> triangles);
 
+        void add_sub_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles);
         void add_sub_mesh(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles);
         void add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
 
         float radius() const;
         const AABB& aabb() const;
 
-        core::Span<PackedVertex> vertices() const;
+        const MeshVertexStreams& vertex_streams() const;
         core::Span<IndexedTriangle> triangles() const;
         core::Span<SubMesh> sub_meshes() const;
 
         core::Span<Bone> bones() const;
         core::Span<SkinWeights> skin() const;
-        core::Vector<SkinnedVertex> skinned_vertices() const;
 
         bool has_skeleton() const;
 
         bool is_empty() const;
 
-        y_reflect(MeshData, _aabb, _vertices, _triangles, _sub_meshes, _skeleton)
+        y_reflect(MeshData, _aabb, _vertex_streams, _triangles, _sub_meshes, _skeleton)
 
     private:
         struct SkeletonData {
@@ -73,7 +75,7 @@ class MeshData {
 
         AABB _aabb;
 
-        core::Vector<PackedVertex> _vertices;
+        MeshVertexStreams _vertex_streams;
         core::Vector<IndexedTriangle> _triangles;
         core::Vector<SubMesh> _sub_meshes;
 

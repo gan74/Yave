@@ -176,7 +176,7 @@ void FileSystemView::on_gui() {
 
     auto make_drop_target = [this](const core::String& drop_path) {
         if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
-            const std::string_view original_name = reinterpret_cast<const char*>(payload->Data);
+            const std::string_view original_name = static_cast<const char*>(payload->Data);
             const FileSystemModel* fs = filesystem();
             const core::String target_name = fs->join(drop_path, fs->filename(original_name));
             if(!fs->rename(original_name, target_name)) {
