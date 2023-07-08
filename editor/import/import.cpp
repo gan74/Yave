@@ -514,6 +514,7 @@ core::Result<MeshData> ParsedScene::build_mesh_data(usize index) const {
 
             const bool recompute_tangents = vertices.size() && vertices[0].tangent.is_zero();
 
+            Y_TODO(Make faster by using vertex streams)
             for(FullVertex& vertex : vertices) {
                 vertex.position = base_change_transform.transform_point(vertex.position);
                 vertex.normal = base_change_transform.transform_direction(vertex.normal);
