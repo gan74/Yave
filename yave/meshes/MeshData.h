@@ -49,6 +49,9 @@ class MeshData {
         void add_sub_mesh(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles);
         void add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
 
+        u32 add_vertices_from_streams(const MeshVertexStreams& streams);
+        void add_sub_mesh(core::Span<IndexedTriangle> triangles, u32 vertex_offset);
+
         float radius() const;
         const AABB& aabb() const;
 

@@ -47,8 +47,11 @@ MeshData::MeshData(MeshVertexStreams streams, core::Span<IndexedTriangle> triang
 }
 
 void MeshData::add_sub_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles) {
+    add_sub_mesh(triangles, add_vertices_from_streams(streams));
+}
+
+u32 MeshData::add_vertices_from_streams(const MeshVertexStreams& streams) {
     y_debug_assert(!streams.is_empty());
-    y_debug_assert(!triangles.is_empty());
 
     // AABB
     {
@@ -72,7 +75,12 @@ void MeshData::add_sub_mesh(const MeshVertexStreams& streams, core::Span<Indexed
     const u32 vertex_offset = u32(_vertex_streams.vertex_count());
     _vertex_streams = _vertex_streams.merged(streams);
 
-    // Triangles
+    return vertex_offset;
+}
+
+void MeshData::add_sub_mesh(core::Span<IndexedTriangle> triangles, u32 vertex_offset) {
+    y_debug_assert(!triangles.is_empty());
+
     const u32 first_triangle = u32(_triangles.size());
     _triangles.set_min_capacity(_triangles.size() + triangles.size());
     std::transform(triangles.begin(), triangles.end(), std::back_inserter(_triangles), [=](IndexedTriangle tri) {

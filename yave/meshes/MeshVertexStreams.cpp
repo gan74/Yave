@@ -26,11 +26,14 @@ SOFTWARE.
 namespace yave {
 
 MeshVertexStreams::MeshVertexStreams(usize vertices) : _vertex_count(vertices) {
+    usize offset = 0;
     for(usize i = 0; i != stream_count; ++i) {
         const usize stream_elem_size = vertex_stream_element_size(VertexStreamType(i));
         const usize stream_byte_size = _vertex_count * stream_elem_size;
-        _streams[i] = core::FixedArray<u8>(stream_byte_size);
+        _stream_offsets[i] = offset;
+        offset += stream_byte_size;
     }
+    _storage = core::FixedArray<u8>(offset);
 }
 
 MeshVertexStreams::MeshVertexStreams(core::Span<PackedVertex> vertices) : MeshVertexStreams(vertices.size()) {
@@ -47,8 +50,8 @@ MeshVertexStreams MeshVertexStreams::merged(const MeshVertexStreams& other) cons
         const usize stream_elem_size = vertex_stream_element_size(type);
 
         const usize stream_total_size = vertex_count() * stream_elem_size;
-        std::memcpy(str._streams[i].data(), data(type), stream_total_size);
-        std::memcpy(str._streams[i].data() + stream_total_size, other.data(type), other.vertex_count() * stream_elem_size);
+        std::memcpy(str.data(type), data(type), stream_total_size);
+        std::memcpy(str.data(type) + stream_total_size, other.data(type), other.vertex_count() * stream_elem_size);
     }
 
     return str;
@@ -98,11 +101,13 @@ bool MeshVertexStreams::has_stream(VertexStreamType type) const {
 }
 
 u8* MeshVertexStreams::data(VertexStreamType type) {
-    return _streams[usize(type)].data();
+    const usize offset = _stream_offsets[usize(type)];
+    return _storage.data() + offset;
 }
 
 const u8* MeshVertexStreams::data(VertexStreamType type) const {
-    return _streams[usize(type)].data();
+    const usize offset = _stream_offsets[usize(type)];
+    return _storage.data() + offset;
 }
 
 }

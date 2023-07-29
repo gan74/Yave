@@ -107,21 +107,22 @@ class MeshVertexStreams {
         }
 
         inline void* vertex_stream_data(VertexStreamType type, usize index) {
-            return _streams[usize(type)].data() + index * vertex_stream_element_size(type);
+            return data(type) + index * vertex_stream_element_size(type);
         }
 
         inline const void* vertex_stream_data(VertexStreamType type, usize index) const {
-            return _streams[usize(type)].data() + index * vertex_stream_element_size(type);
+            return data(type) + index * vertex_stream_element_size(type);
         }
 
 
-        y_reflect(MeshVertexStreams, _vertex_count, _streams);
+        y_reflect(MeshVertexStreams, _vertex_count, _stream_offsets, _storage);
 
     private:
         void set_vertex(usize index, PackedVertex vertex);
 
         usize _vertex_count = 0;
-        std::array<core::FixedArray<u8>, stream_count> _streams;
+        std::array<usize, stream_count> _stream_offsets;
+        core::FixedArray<u8> _storage;
 
 };
 
