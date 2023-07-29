@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/device/DeviceResources.h>
+#include <yave/graphics/images/TextureLibrary.h>
 
 namespace yave {
 
@@ -42,6 +43,21 @@ static DescriptorSet create_descriptor_set(const SimpleMaterialData& data) {
         y_debug_assert(!data.textures()[i].is_loading());
         if(const auto* tex = data.textures()[i].get()) {
             bindings[i] = *tex;
+        }
+    }
+
+    {
+        TextureLibrary lib;
+        for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
+            if(const auto* tex = data.textures()[i].get()) {
+                lib.add_texture(*tex);
+            }
+        }
+
+        for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
+            if(const auto* tex = data.textures()[i].get()) {
+                lib.remove_texture(*tex);
+            }
         }
     }
 

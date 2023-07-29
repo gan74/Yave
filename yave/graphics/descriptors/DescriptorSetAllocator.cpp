@@ -285,7 +285,6 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
         writes[i] = write;
     }
 
-
     vkUpdateDescriptorSets(vk_device(), u32(writes.size()), writes.data(), 0, nullptr);
 }
 

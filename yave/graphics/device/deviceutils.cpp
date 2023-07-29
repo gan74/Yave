@@ -240,6 +240,8 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
 
     {
         required.timelineSemaphore = true;
+        required.runtimeDescriptorArray = true;
+        required.descriptorIndexing = true;
     }
 
     return required;
