@@ -74,6 +74,8 @@ class SceneImporter2 final : public Widget {
             bool import_materials = true;
             bool import_textures = true;
 
+            bool compress_textues = true;
+
             void update_flags() {
                 import_materials &= import_textures;
                 import_prefabs &= import_meshes;

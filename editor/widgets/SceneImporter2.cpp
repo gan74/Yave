@@ -137,7 +137,7 @@ usize SceneImporter2::import_assets() {
                 if(image.is_error) {
                     return;
                 }
-                if(auto res = _scene.build_image_data(i)) {
+                if(auto res = _scene.build_image_data(i, _import_options.compress_textues)) {
                     image.asset_id = import_single_asset(res.unwrap(), asset_store().filesystem()->join(image_import_path, image.name), AssetType::Image, _emergency_uid, log_func);
                 }
             }, &image_deps);
@@ -311,6 +311,11 @@ void SceneImporter2::on_gui() {
             ImGui::Checkbox(fmt_c_str("Import % meshes", _scene.mesh_prefabs.size()), &_import_options.import_meshes);
             ImGui::Checkbox(fmt_c_str("Import % materials", _scene.materials.size()), &_import_options.import_materials);
             ImGui::Checkbox(fmt_c_str("Import % textures", _scene.images.size()), &_import_options.import_textures);
+
+            ImGui::Separator();
+
+            ImGui::Checkbox("Compress textures", &_import_options.compress_textues);
+
             _import_options.update_flags();
 
             if(ImGui::Button(ICON_FA_CHECK " Import") || _import_with_default_settings) {

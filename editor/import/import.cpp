@@ -542,13 +542,13 @@ core::Result<MeshData> ParsedScene::build_mesh_data(usize index) const {
     return core::Ok(std::move(mesh_data));
 }
 
-core::Result<ImageData> ParsedScene::build_image_data(usize index) const {
+core::Result<ImageData> ParsedScene::build_image_data(usize index, bool compress) const {
     y_profile();
 
     const Image& parsed_image = images[index];
     y_debug_assert(!parsed_image.is_error);
 
-    ImageImportFlags flags = ImageImportFlags::Compress;
+    ImageImportFlags flags = compress ? ImageImportFlags::Compress : ImageImportFlags::None;
     if(parsed_image.as_sRGB) {
         flags = flags | ImageImportFlags::ImportAsSRGB;
     }

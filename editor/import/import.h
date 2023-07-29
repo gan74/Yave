@@ -95,7 +95,7 @@ struct ParsedScene {
     std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
 
     core::Result<MeshData> build_mesh_data(usize index) const;
-    core::Result<ImageData> build_image_data(usize index) const;
+    core::Result<ImageData> build_image_data(usize index, bool compress = true) const;
     core::Result<SimpleMaterialData> build_material_data(usize index) const;
 };
 
