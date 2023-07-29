@@ -21,8 +21,15 @@ SOFTWARE.
 **********************************/
 
 #include "MeshData.h"
+#include "Meshlet.h"
 
+#include <y/core/HashMap.h>
 #include <y/core/Chrono.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
+#include <mutex>
 
 namespace yave {
 
@@ -32,6 +39,52 @@ static core::Vector<PackedVertex> pack_vertices(core::Span<FullVertex> vertices)
         packed << pack_vertex(v);
     }
     return packed;
+}
+
+void MeshData::meshletify() const {
+    usize i = 0;
+    usize m = 0;
+
+    core::Vector<IndexedTriangle> sorted(_triangles);
+    std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b) { return a[0] < b[0]; });
+
+    while(i != _triangles.size()) {
+        core::FlatHashMap<u32, u8> vertex_mapping;
+        usize tris = 0;
+        while(tris < Meshlet::max_triangles && i != _triangles.size()) {
+            const IndexedTriangle tri = _triangles[i];
+
+            bool inserted = true;
+            for(usize k = 0; k != 3; ++k) {
+                if(vertex_mapping.size() == Meshlet::max_vertices) {
+                    inserted = false;
+                    break;
+                }
+                if(!vertex_mapping.contains(tri[k])) {
+                    vertex_mapping[tri[k]] = u8(vertex_mapping.size());
+                }
+            }
+
+            if(inserted) {
+                ++tris;
+                ++i;
+            } else {
+                tris = Meshlet::max_triangles;
+            }
+        }
+        ++m;
+    }
+
+    y_debug_assert(i == _triangles.size());
+    const usize min_meshlets_v = vertex_streams().vertex_count() / Meshlet::max_vertices + (vertex_streams().vertex_count() % Meshlet::max_vertices ? 1 : 0);
+    const usize min_meshlets_t = _triangles.size() / Meshlet::max_triangles + (_triangles.size() % Meshlet::max_triangles ? 1 : 0);
+
+    static std::mutex lock;
+
+    const auto l = y_profile_unique_lock(lock);
+    log_msg(fmt("% meshlets (% min)", m, std::min(min_meshlets_v, min_meshlets_t)));
+    log_msg(fmt("    % triangles -> % triangles", i, m * Meshlet::max_triangles));
+    log_msg(fmt("    % vertices -> % vertices", vertex_streams().vertex_count(), m * Meshlet::max_vertices));
 }
 
 MeshData::MeshData(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles) {

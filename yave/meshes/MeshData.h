@@ -66,6 +66,8 @@ class MeshData {
 
         bool is_empty() const;
 
+        void meshletify() const;
+
         y_reflect(MeshData, _aabb, _vertex_streams, _triangles, _sub_meshes, _skeleton)
 
     private:

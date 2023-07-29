@@ -30,6 +30,8 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
     _draw_data(mesh_allocator().alloc_mesh(mesh_data.vertex_streams(), mesh_data.triangles())),
     _aabb(mesh_data.aabb())  {
 
+    mesh_data.meshletify();
+
     const auto sub_meshes = mesh_data.sub_meshes();
     _sub_meshes = core::FixedArray<MeshDrawCommand>(sub_meshes.size());
     std::transform(sub_meshes.begin(), sub_meshes.end(), _sub_meshes.begin(), [cmd = _draw_data.draw_command()](auto sub_mesh) {
