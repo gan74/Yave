@@ -49,7 +49,6 @@ class Material final : NonCopyable {
 
     private:
         const MaterialTemplate* _template = nullptr;
-
         DescriptorSet _set;
 
         SimpleMaterialData _data;

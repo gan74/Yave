@@ -46,7 +46,11 @@ static VkHandle<VkDescriptorPool> create_libray_pool(u32 desc_count) {
 }
 
 static VkHandle<VkDescriptorSetLayout> create_libray_layout(u32 desc_count) {
-    const VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    const VkDescriptorBindingFlags binding_flags =
+            VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+            VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+            VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo flags = vk_struct();
     {

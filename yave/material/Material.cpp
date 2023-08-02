@@ -28,9 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-static DescriptorSet create_descriptor_set(const SimpleMaterialData& data) {
-
-
+static auto material_texture_views(const SimpleMaterialData& data) {
     std::array<TextureView, SimpleMaterialData::texture_count> textures = {
         *device_resources()[DeviceResources::GreyTexture],          // Diffuse
         *device_resources()[DeviceResources::FlatNormalTexture],    // Normal
@@ -46,8 +44,14 @@ static DescriptorSet create_descriptor_set(const SimpleMaterialData& data) {
         }
     }
 
-    std::array<u32, SimpleMaterialData::texture_count> texture_indices = {};
-    for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
+    return textures;
+}
+
+static DescriptorSet create_descriptor_set(const SimpleMaterialData& data) {
+    const auto textures = material_texture_views(data);
+
+    std::array<u32, textures.size()> texture_indices = {};
+    for(usize i = 0; i != textures.size(); ++i) {
         texture_indices[i] = texture_library().add_texture(textures[i]);
     }
 
@@ -65,6 +69,8 @@ static DeviceResources::MaterialTemplates material_template_for_data(const Simpl
     return DeviceResources::TexturedMaterialTemplate;
 }
 
+
+
 Material::Material(SimpleMaterialData&& data) :
         _template(device_resources()[material_template_for_data(data)]),
         _set(create_descriptor_set(data)),
@@ -78,9 +84,10 @@ Material::Material(const MaterialTemplate* tmp, SimpleMaterialData&& data) :
 }
 
 Material::~Material() {
-    for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
-        if(const auto* tex = _data.textures()[i].get()) {
-            texture_library().remove_texture(*tex);
+    if(!is_null()) {
+        // Todo, textures might still be used by command buffer
+        for(const TextureView& tex : material_texture_views(_data)) {
+            texture_library().remove_texture(tex);
         }
     }
 }
@@ -98,7 +105,7 @@ const MaterialTemplate* Material::material_template() const {
 }
 
 bool Material::is_null() const {
-    return !_template;
+    return _set.is_null();
 }
 
 }
