@@ -36,18 +36,7 @@ layout(location = 3) in vec2 in_uv;
 #define GLTF_METALLIC_CHANNEL b
 
 vec4 tex_from_index(uint index, vec2 uv) {
-    if(index == diffuse_index) {
-        return vec4(1, 0, 1, 1);
-    }
-    if(index == normal_index) {
-        return vec4(0, 0, 1, 0);
-    }
-    if(index == roughness_index) {
-        return vec4(0.5);
-    }
-    return vec4(0);
-    // sampler2D tex = all_textures[nonuniformEXT(index)];
-    // return texture(tex, uv);
+    return texture(all_textures_Variable[nonuniformEXT(index)], uv);
 }
 
 void main() {
