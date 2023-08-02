@@ -154,11 +154,12 @@ static VkHandle<VkDescriptorPool> create_descriptor_pool(const DescriptorSetLayo
         create_info.maxSets = u32(set_count);
     }
 
-    VkDescriptorPoolInlineUniformBlockCreateInfo inline_create_info = vk_struct();
+    // This is apparently optional: see https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDescriptorPoolInlineUniformBlockCreateInfo.html
+    /*VkDescriptorPoolInlineUniformBlockCreateInfo inline_create_info = vk_struct();
     if(const u32 inline_blocks = u32(layout.inline_blocks())) {
         inline_create_info.maxInlineUniformBlockBindings = inline_blocks * u32(set_count);
         create_info.pNext = &inline_create_info;
-    }
+    }*/
 
     VkHandle<VkDescriptorPool> pool;
     vk_check(vkCreateDescriptorPool(vk_device(), &create_info, vk_allocation_callbacks(), pool.get_ptr_for_init()));
@@ -233,7 +234,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
 
     const usize descriptor_count = descriptors.size();
 
-    core::ScratchVector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_blocks(_inline_blocks ? descriptor_count : 0);
+    core::ScratchVector<VkWriteDescriptorSetInlineUniformBlock> inline_blocks(_inline_blocks ? descriptor_count : 0);
     core::ScratchVector<VkDescriptorBufferInfo> inline_blocks_buffer_infos(!_inline_buffer.is_null() ? descriptor_count : 0);
 
     usize inline_buffer_offset = 0;
@@ -272,7 +273,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
 
                 inline_buffer_offset += aligned_block_size;
             } else {
-                VkWriteDescriptorSetInlineUniformBlockEXT& inline_block = inline_blocks.emplace_back(VkWriteDescriptorSetInlineUniformBlockEXT(vk_struct()));
+                VkWriteDescriptorSetInlineUniformBlock& inline_block = inline_blocks.emplace_back(VkWriteDescriptorSetInlineUniformBlock(vk_struct()));
                 inline_block.pData = block.data;
                 inline_block.dataSize = u32(block.size);
                 write.pNext = &inline_block;
