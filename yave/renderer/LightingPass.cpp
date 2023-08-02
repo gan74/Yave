@@ -136,7 +136,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         }
 
         const auto* material = device_resources()[DeviceResources::DeferredAmbientMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+        render_pass.bind_material_template(material, self->descriptor_sets());
         render_pass.draw_array(3);
     });
 
@@ -339,7 +339,7 @@ static void local_lights_pass(FrameGraph& framegraph,
             }
 
             const auto* material = device_resources()[DeviceResources::DeferredPointLightMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+            render_pass.bind_material_template(material, self->descriptor_sets());
             {
                 const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
                 render_pass.draw(sphere.draw_data(), point_count);
@@ -376,7 +376,7 @@ static void local_lights_pass(FrameGraph& framegraph,
             }
 
             const auto* material = device_resources()[DeviceResources::DeferredSpotLightMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+            render_pass.bind_material_template(material, self->descriptor_sets());
 
             {
                 render_pass.bind_per_instance_attrib_buffers(self->resources().buffer<BufferUsage::AttributeBit>(transform_buffer));

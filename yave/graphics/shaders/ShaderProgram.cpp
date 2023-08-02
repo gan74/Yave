@@ -147,6 +147,14 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
                 validate_bindings(binding.second);
                 _layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
             }
+            if(_bindings.size() != _layouts.size()) {
+                for(auto& layout : _layouts) {
+                    if(!layout) {
+                        log_msg("Empty descriptor set layout", Log::Warning);
+                        layout = descriptor_set_allocator().descriptor_set_layout({}).vk_descriptor_set_layout();
+                    }
+                }
+            }
         }
     }
     {

@@ -46,7 +46,7 @@ static VkHandle<VkDescriptorPool> create_libray_pool(u32 desc_count) {
 }
 
 static VkHandle<VkDescriptorSetLayout> create_libray_layout(u32 desc_count) {
-    const VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
+    const VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo flags = vk_struct();
     {
@@ -97,7 +97,7 @@ TextureLibrary::TextureLibrary() : _pool(create_libray_pool(_max_desc_count)), _
 TextureLibrary::~TextureLibrary() {
     {
         const auto lock = y_profile_unique_lock(_map_lock);
-        y_always_assert(_textures.is_empty(), "Some textures have not been released");
+        y_always_assert(_textures.is_empty(), "Some textures have not been released"); // Do we care?
     }
     destroy_graphic_resource(std::move(_pool));
     destroy_graphic_resource(std::move(_layout));
@@ -155,6 +155,15 @@ void TextureLibrary::add_texture_to_set(const TextureView& tex, u32 index) {
     }
 
     vkUpdateDescriptorSets(vk_device(), 1, &write, 0, nullptr);
+}
+
+usize TextureLibrary::texture_count() const {
+    const auto lock = y_profile_unique_lock(_map_lock);
+    return _textures.size();
+}
+
+DescriptorSetBase TextureLibrary::descriptor_set() const {
+    return _set;
 }
 
 

@@ -106,7 +106,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 
     {
         const auto* material = resources()[EditorResources::ImGuiBillBoardMaterialTemplate];
-        recorder.bind_material_template(material, pass->descriptor_sets()[0]);
+        recorder.bind_material_template(material, pass->descriptor_sets());
     }
 
     {

@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <yave/material/Material.h>
 #include <yave/material/MaterialTemplate.h>
+#include <yave/graphics/images/TextureLibrary.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
@@ -93,10 +94,11 @@ RenderPassRecorder::~RenderPassRecorder() {
 }
 
 void RenderPassRecorder::bind_material(const Material& material) {
-    bind_material_template(material.material_template(), material.descriptor_set(), 1);
+    const std::array<DescriptorSetBase, 2> sets = {texture_library().descriptor_set(), material.descriptor_set()};
+    bind_material_template(material.material_template(), sets, true);
 }
 
-void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, DescriptorSetBase descriptor_set, u32 ds_offset) {
+void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> sets, bool bind_main_ds) {
     if(material_template != _cache.material) {
         const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
         vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
@@ -105,7 +107,7 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
         _cache.pipeline_layout = pipeline.vk_pipeline_layout();
     }
 
-    if(_main_descriptor_set && ds_offset > 0) {
+    if(_main_descriptor_set && bind_main_ds) {
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -117,14 +119,13 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
         _main_descriptor_set = {};
     }
 
-    if(!descriptor_set.is_null()) {
-        const VkDescriptorSet vk_set = descriptor_set.vk_descriptor_set();
+    if(!sets.is_empty()) {
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             _cache.pipeline_layout,
-            ds_offset,
-            1, &vk_set,
+            bind_main_ds ? 1 : 0,
+            u32(sets.size()), reinterpret_cast<const VkDescriptorSet*>(sets.data()),
             0, nullptr
         );
     }

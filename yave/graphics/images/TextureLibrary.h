@@ -50,6 +50,10 @@ class TextureLibrary final : NonMovable {
         u32 add_texture(const TextureView& tex);
         void remove_texture(const TextureView& tex);
 
+        usize texture_count() const;
+
+        DescriptorSetBase descriptor_set() const;
+
     private:
         void add_texture_to_set(const TextureView& tex, u32 index);
 
@@ -62,12 +66,12 @@ class TextureLibrary final : NonMovable {
         VkHandle<VkDescriptorSetLayout> _layout;
         LibrarySet _set;
 
-        std::mutex _map_lock;
-        std::mutex _set_lock;
+        mutable std::mutex _map_lock;
+        mutable std::mutex _set_lock;
 };
 
 }
 
 
-#endif // YAVE_GRAPHICS_IMAGES__TEXTURELIBRARY_H
+#endif // YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
 

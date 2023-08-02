@@ -71,6 +71,14 @@ static ShaderType module_type(const spirv_cross::Compiler& compiler) {
     y_fatal("Unknown shader execution model.");
 }
 
+static bool is_variable(const spirv_cross::Resource& res) {
+    const std::string_view name = std::string_view(res.name);
+    if(name.size() > 9 && name.substr(name.size() - 9) == "_Variable") {
+        return true;
+    }
+    return false;
+}
+
 Y_TODO(check if inline descriptors are always at the end)
 static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res) {
     if(compiler.get_type(res.type_id).storage != spv::StorageClass::StorageClassUniform) {

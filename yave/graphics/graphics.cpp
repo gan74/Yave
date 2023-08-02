@@ -34,6 +34,7 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/device/MeshAllocator.h>
+#include <yave/graphics/images/TextureLibrary.h>
 
 #include <y/core/ScratchPad.h>
 
@@ -53,6 +54,7 @@ Uninitialized<DeviceMemoryAllocator> allocator;
 Uninitialized<LifetimeManager> lifetime_manager;
 Uninitialized<DescriptorSetAllocator> descriptor_set_allocator;
 Uninitialized<MeshAllocator> mesh_allocator;
+Uninitialized<TextureLibrary> texture_library;
 Uninitialized<DeviceResources> resources;
 
 VkDevice vk_device;
@@ -198,6 +200,7 @@ void init_device(Instance& instance, PhysicalDevice device) {
     device::allocator.init(device_properties());
     device::descriptor_set_allocator.init();
     device::mesh_allocator.init();
+    device::texture_library.init();
 
     for(usize i = 0; i != device::samplers.size(); ++i) {
         device::samplers[i].init(create_sampler(SamplerType(i)));
@@ -238,6 +241,7 @@ void destroy_device() {
         sampler.destroy();
     }
 
+    device::texture_library.destroy();
     device::mesh_allocator.destroy();
     device::descriptor_set_allocator.destroy();
     device::lifetime_manager.destroy();
@@ -378,6 +382,10 @@ DescriptorSetAllocator& descriptor_set_allocator() {
 
 MeshAllocator& mesh_allocator() {
     return device::mesh_allocator.get();
+}
+
+TextureLibrary& texture_library() {
+    return device::texture_library.get();
 }
 
 const CmdQueue& command_queue() {

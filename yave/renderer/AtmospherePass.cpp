@@ -121,7 +121,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     builder.add_color_output(atmo);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::AtmosphereMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+        render_pass.bind_material_template(material, self->descriptor_sets());
         render_pass.draw_array(3);
     });
 

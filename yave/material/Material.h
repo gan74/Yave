@@ -35,12 +35,17 @@ class Material final : NonCopyable {
         Material(SimpleMaterialData&& data);
         Material(const MaterialTemplate* tmp, SimpleMaterialData&& data = SimpleMaterialData());
 
+        Material(Material&&) = default;
+        Material& operator=(Material&&) = default;
+
+        ~Material();
+
         bool is_null() const;
 
         const MaterialTemplate* material_template() const;
 
         const SimpleMaterialData& data() const;
-        const DescriptorSetBase& descriptor_set() const;
+        DescriptorSetBase descriptor_set() const;
 
     private:
         const MaterialTemplate* _template = nullptr;

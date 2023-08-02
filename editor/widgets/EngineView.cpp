@@ -177,7 +177,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
                 const MaterialTemplate* material = resources()[EditorResources::EngineViewMaterialTemplate];
-                render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+                render_pass.bind_material_template(material, self->descriptor_sets());
                 render_pass.draw_array(3);
             }
             const auto& src = self->resources().image_base(output_image);
