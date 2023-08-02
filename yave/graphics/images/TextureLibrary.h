@@ -22,54 +22,19 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
 #define YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
 
-#include <yave/graphics/descriptors/DescriptorSetBase.h>
+#include <yave/graphics/descriptors/DescriptorArray.h>
 
 #include "ImageView.h"
 
-#include <y/core/HashMap.h>
-
-#include <mutex>
 
 namespace yave {
 
-class TextureLibrary final : NonMovable {
-    struct Entry {
-        u32 index = 0;
-        u32 ref_count = 0;
-    };
-
-    class LibrarySet : public DescriptorSetBase {
-        public:
-            LibrarySet(VkDescriptorPool pool, VkDescriptorSetLayout layout, u32 desc_count);
-    };
-
+class TextureLibrary final : public DescriptorArray {
     public:
         TextureLibrary();
-        ~TextureLibrary();
 
         u32 add_texture(const TextureView& tex);
         void remove_texture(const TextureView& tex);
-
-        usize texture_count() const;
-
-        DescriptorSetBase descriptor_set() const;
-
-        VkDescriptorSetLayout descriptor_set_layout() const;
-
-    private:
-        void add_texture_to_set(const TextureView& tex, u32 index);
-
-        core::FlatHashMap<VkImageView, Entry> _textures;
-        core::Vector<u32> _free;
-
-        u32 _max_desc_count = 1024;
-
-        VkHandle<VkDescriptorPool> _pool;
-        VkHandle<VkDescriptorSetLayout> _layout;
-        LibrarySet _set;
-
-        mutable std::mutex _map_lock;
-        mutable std::mutex _set_lock;
 };
 
 }
