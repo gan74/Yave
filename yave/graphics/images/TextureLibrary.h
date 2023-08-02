@@ -54,6 +54,8 @@ class TextureLibrary final : NonMovable {
 
         DescriptorSetBase descriptor_set() const;
 
+        VkDescriptorSetLayout descriptor_set_layout() const;
+
     private:
         void add_texture_to_set(const TextureView& tex, u32 index);
 

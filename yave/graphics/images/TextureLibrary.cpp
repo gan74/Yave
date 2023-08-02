@@ -66,6 +66,7 @@ static VkHandle<VkDescriptorSetLayout> create_libray_layout(u32 desc_count) {
         create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
         create_info.pBindings = &binding;
         create_info.bindingCount = 1;
+        create_info.pNext = &flags;
     }
 
     VkHandle<VkDescriptorSetLayout> layout;
@@ -164,6 +165,10 @@ usize TextureLibrary::texture_count() const {
 
 DescriptorSetBase TextureLibrary::descriptor_set() const {
     return _set;
+}
+
+VkDescriptorSetLayout TextureLibrary::descriptor_set_layout() const {
+    return _layout;
 }
 
 

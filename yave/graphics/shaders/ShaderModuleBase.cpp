@@ -29,11 +29,12 @@ SOFTWARE.
 #include <external/spirv_cross/spirv.hpp>
 #include <external/spirv_cross/spirv_cross.hpp>
 
+
 namespace yave {
 
 template<typename M>
-static void merge(M& into, const M& o) {
-    for(const auto& p : o) {
+static void merge(M& into, const M& other) {
+    for(const auto& p : other) {
         into[p.first].push_back(p.second.begin(), p.second.end());
     }
 }
@@ -97,6 +98,7 @@ static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& 
         type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
         size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
     }
+
     VkDescriptorSetLayoutBinding binding = {};
     {
         binding.binding = compiler.get_decoration(res.id, spv::DecorationBinding);
@@ -111,12 +113,25 @@ static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& 
 
 template<typename R>
 static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType, VkDescriptorType type) {
-    auto bindings = core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>>();
+    core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> bindings;
     for(const auto& res : resources) {
         const u32 set_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
         bindings[set_index] << create_binding(compiler, res, type);
     }
     return bindings;
+}
+
+template<typename R>
+static auto find_variable_size_bindings(const spirv_cross::Compiler& compiler, const R& resources) {
+    core::Vector<u32> variable_bindings;
+    for(const auto& res : resources) {
+        if(is_variable(res)) {
+            const u32 set_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
+            //const u32 binding_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
+            variable_bindings << set_index;
+        }
+    }
+    return variable_bindings;
 }
 
 template<typename R>
@@ -193,6 +208,8 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
     merge(_bindings, create_bindings(compiler, resources.storage_buffers, _type, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
     merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
     merge(_bindings, create_bindings(compiler, resources.storage_images, _type, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE));
+
+    _variable_size_bindings = find_variable_size_bindings(compiler, resources.sampled_images);
 
     /*auto print_resources = [&](auto resources) {
         for(const auto& buffer : resources) {

@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
+#include <yave/graphics/images/TextureLibrary.h>
 
 #include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
@@ -41,11 +42,16 @@ using Attribs = core::Vector<VkVertexInputAttributeDescription>;
 using Bindings = core::Vector<VkVertexInputBindingDescription>;
 
 template<typename T, typename S>
-static void merge_bindings(T& into, const S& o) {
-    into.insert(o.begin(), o.end());
+static void merge_bindings(T& into, const S& other) {
+    into.insert(other.begin(), other.end());
 }
 
-
+template<typename T, typename S>
+static void merge(T& into, const S& other) {
+    for(const auto& e : other) {
+        into.push_back(e);
+    }
+}
 
 static VkFormat attrib_format(const ShaderModuleBase::Attribute& attr) {
     static_assert(VK_FORMAT_R32G32B32A32_SFLOAT == VK_FORMAT_R32G32B32A32_UINT + uenum(ShaderModuleBase::AttribType::Float));
@@ -141,18 +147,25 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
 
         const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
+
+        const usize max_variable_binding = frag.variable_size_bindings().size() + vert.variable_size_bindings().size() + geom.variable_size_bindings().size();
+        core::ScratchVector<u32> variable_bindings(max_variable_binding);
+        merge(variable_bindings, frag.variable_size_bindings());
+        merge(variable_bindings, vert.variable_size_bindings());
+        merge(variable_bindings, geom.variable_size_bindings());
+        std::sort(variable_bindings.begin(), variable_bindings.end());
+        const auto variable_bindings_end = std::unique(variable_bindings.begin(), variable_bindings.end());
+
+
         if(!_bindings.is_empty()) {
             _layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
             for(const auto& binding : _bindings) {
                 validate_bindings(binding.second);
-                _layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
-            }
-            if(_bindings.size() != _layouts.size()) {
-                for(auto& layout : _layouts) {
-                    if(!layout) {
-                        log_msg("Empty descriptor set layout", Log::Warning);
-                        layout = descriptor_set_allocator().descriptor_set_layout({}).vk_descriptor_set_layout();
-                    }
+                if(std::find(variable_bindings.begin(), variable_bindings_end, binding.first) != variable_bindings_end) {
+                    y_always_assert(binding.second.size() == 1, "Variable size descriptor bindings must be alone in descriptor set");
+                    _layouts[binding.first] = texture_library().descriptor_set_layout();
+                } else {
+                    _layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
                 }
             }
         }

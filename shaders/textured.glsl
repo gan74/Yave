@@ -12,7 +12,7 @@ layout(location = 1) out vec4 out_rt1;
 layout(location = 2) out vec4 out_emissive;
 #endif
 
-// layout(set = 1, binding = 0) uniform sampler2D all_textures[];
+layout(set = 1, binding = 0) uniform sampler2D all_textures_Variable[];
 
 layout(set = 2, binding = 0) uniform MaterialData_Inline {
     vec3 emissive_mul;
