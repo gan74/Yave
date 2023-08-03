@@ -155,11 +155,12 @@ static VkHandle<VkDescriptorPool> create_descriptor_pool(const DescriptorSetLayo
     }
 
     // This is apparently optional: see https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDescriptorPoolInlineUniformBlockCreateInfo.html
-    /*VkDescriptorPoolInlineUniformBlockCreateInfo inline_create_info = vk_struct();
+    // Or not? Causes out of pool memory on Intel
+    VkDescriptorPoolInlineUniformBlockCreateInfo inline_create_info = vk_struct();
     if(const u32 inline_blocks = u32(layout.inline_blocks())) {
         inline_create_info.maxInlineUniformBlockBindings = inline_blocks * u32(set_count);
         create_info.pNext = &inline_create_info;
-    }*/
+    }
 
     VkHandle<VkDescriptorPool> pool;
     vk_check(vkCreateDescriptorPool(vk_device(), &create_info, vk_allocation_callbacks(), pool.get_ptr_for_init()));
