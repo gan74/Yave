@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/core/ScratchPad.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
@@ -71,31 +72,27 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
             return info.first_use == _index && !info.is_aliased();
         };
 
-        Framebuffer::DepthAttachment depth;
-        if(_depth.image.is_valid()) {
-            depth = Framebuffer::DepthAttachment(resources.image<ImageUsage::DepthBit>(_depth.image), declared_here(_depth.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
-
+        auto set_image_name = [&](FrameGraphImageId id, const char* suffix) {
+            unused(id, suffix);
 #ifdef Y_DEBUG
-            const auto& img = resources.image_base(_depth.image);
-            if(const auto* debug = debug_utils()) {
-                const core::String name = _name + " depth";
+            if(const auto* debug = debug_utils(); debug && declared_here(id)) {
+                const auto& img = resources.image_base(id);
+                const std::string_view name = fmt("% %", _name, suffix);
                 debug->set_resource_name(img.vk_image(), name.data());
                 debug->set_resource_name(img.vk_view(), name.data());
             }
 #endif
+        };
+
+        Framebuffer::DepthAttachment depth;
+        if(_depth.image.is_valid()) {
+            depth = Framebuffer::DepthAttachment(resources.image<ImageUsage::DepthBit>(_depth.image), declared_here(_depth.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
+            set_image_name(_depth.image, "Depth");
         }
         auto colors = core::ScratchPad<Framebuffer::ColorAttachment>(_colors.size());
         for(usize i = 0; i != _colors.size(); ++i) {
             colors[i] = Framebuffer::ColorAttachment(resources.image<ImageUsage::ColorBit>(_colors[i].image), declared_here(_colors[i].image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
-
-#ifdef Y_DEBUG
-            const auto& img = resources.image_base(_colors[i].image);
-            if(const auto* debug = debug_utils()) {
-                const core::String name = (_name + " RT") + colors.size();
-                debug->set_resource_name(img.vk_image(), name.data());
-                debug->set_resource_name(img.vk_view(), name.data());
-            }
-#endif
+            set_image_name(_colors[i].image, "RT");
         }
         _framebuffer = Framebuffer(depth, colors);
 

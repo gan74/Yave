@@ -34,6 +34,7 @@ You need:
  * CMake (3.24)
  * A C++17 compiler
  * [Vulkan SDK](https://lunarg.com/vulkan-sdk/)
+   * With Volk
 
 
 Implemented features:
