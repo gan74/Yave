@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/graphics/images/ImageData.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/animations/Animation.h>
-#include <yave/material/SimpleMaterialData.h>
+#include <yave/material/MaterialData.h>
 
 #include <y/core/Result.h>
 #include <y/core/Vector.h>
@@ -96,7 +96,7 @@ struct ParsedScene {
 
     core::Result<MeshData> build_mesh_data(usize index) const;
     core::Result<ImageData> build_image_data(usize index, bool compress = true) const;
-    core::Result<SimpleMaterialData> build_material_data(usize index) const;
+    core::Result<MaterialData> build_material_data(usize index) const;
 };
 
 

@@ -63,7 +63,7 @@ static bool color_picker(const char* name, math::Vec3* color) {
     return changed;
 }
 
-static void save(SimpleMaterialData data, AssetPtr<Material>& material) {
+static void save(MaterialData data, AssetPtr<Material>& material) {
     io2::Buffer buffer;
     serde3::WritableArchive arc(buffer);
     if(!arc.serialize(data)) {
@@ -84,7 +84,7 @@ static void save(SimpleMaterialData data, AssetPtr<Material>& material) {
     }
 }
 
-static void set_tex_and_save(AssetPtr<Material>& material, SimpleMaterialData::Textures index, AssetId id) {
+static void set_tex_and_save(AssetPtr<Material>& material, MaterialData::Textures index, AssetId id) {
     y_profile();
     const auto tex = asset_loader().load_res<Texture>(id);
     if(!tex || tex.unwrap().is_failed()) {
@@ -92,8 +92,8 @@ static void set_tex_and_save(AssetPtr<Material>& material, SimpleMaterialData::T
         return;
     }
 
-    SimpleMaterialData data = material->data();
-    data.set_texture_reset_constants(index, std::move(tex.unwrap()));
+    MaterialData data = material->data();
+    data.set_texture(index, std::move(tex.unwrap()));
 
     save(std::move(data), material);
 }
@@ -130,10 +130,10 @@ void MaterialEditor::on_gui() {
         return;
     }
 
-    SimpleMaterialData data = _material->data();
+    MaterialData data = _material->data();
 
-    const std::array<const char*, SimpleMaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic", "Emissive"};
-    auto texture_selector = [&](SimpleMaterialData::Textures tex) {
+    const std::array<const char*, MaterialData::texture_count> texture_names = {"Diffuse", "Normal", "Roughness", "Metallic", "Emissive"};
+    auto texture_selector = [&](MaterialData::Textures tex) {
         bool clear = false;
         if(imgui::asset_selector(data.textures()[tex].id(), AssetType::Image, texture_names[tex], &clear)) {
             add_child_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
@@ -147,17 +147,17 @@ void MaterialEditor::on_gui() {
         }
     };
 
-    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Diffuse])) {
-        texture_selector(SimpleMaterialData::Diffuse);
+    if(ImGui::CollapsingHeader(texture_names[MaterialData::Diffuse])) {
+        texture_selector(MaterialData::Diffuse);
     }
 
-    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Normal])) {
-        texture_selector(SimpleMaterialData::Normal);
+    if(ImGui::CollapsingHeader(texture_names[MaterialData::Normal])) {
+        texture_selector(MaterialData::Normal);
     }
 
-    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Roughness])) {
-        texture_selector(SimpleMaterialData::Roughness);
-        if(data.textures()[SimpleMaterialData::Roughness].is_empty()) {
+    if(ImGui::CollapsingHeader(texture_names[MaterialData::Roughness])) {
+        texture_selector(MaterialData::Roughness);
+        if(data.textures()[MaterialData::Roughness].is_empty()) {
             float& roughness = data.constants().roughness_mul;
             if(ImGui::SliderFloat("Roughness##slider", &roughness, 0.0f, 1.0f)) {
                 save(data, _material);
@@ -165,9 +165,9 @@ void MaterialEditor::on_gui() {
         }
     }
 
-    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Metallic])) {
-        texture_selector(SimpleMaterialData::Metallic);
-        if(data.textures()[SimpleMaterialData::Metallic].is_empty()) {
+    if(ImGui::CollapsingHeader(texture_names[MaterialData::Metallic])) {
+        texture_selector(MaterialData::Metallic);
+        if(data.textures()[MaterialData::Metallic].is_empty()) {
             bool metallic = data.constants().metallic_mul > 0.5f;
             if(ImGui::Checkbox("Metallic##box", &metallic)) {
                 data.constants().metallic_mul = metallic ? 1.0f : 0.0f;
@@ -176,9 +176,9 @@ void MaterialEditor::on_gui() {
         }
     }
 
-    if(ImGui::CollapsingHeader(texture_names[SimpleMaterialData::Emissive])) {
-        texture_selector(SimpleMaterialData::Emissive);
-        if(data.textures()[SimpleMaterialData::Emissive].is_empty()) {
+    if(ImGui::CollapsingHeader(texture_names[MaterialData::Emissive])) {
+        texture_selector(MaterialData::Emissive);
+        if(data.textures()[MaterialData::Emissive].is_empty()) {
             ImGui::TextUnformatted("Emissive");
             ImGui::SameLine();
             math::Vec3& color = data.constants().emissive_mul;

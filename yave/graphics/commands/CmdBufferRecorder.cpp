@@ -94,7 +94,8 @@ RenderPassRecorder::~RenderPassRecorder() {
 }
 
 void RenderPassRecorder::bind_material(const Material& material) {
-    const std::array<DescriptorSetBase, 2> sets = {texture_library().descriptor_set(), material.descriptor_set()};
+    DescriptorSet set({InlineDescriptor(material.shader_data())});
+   const std::array<DescriptorSetBase, 2> sets = {texture_library().descriptor_set(), set};
     bind_material_template(material.material_template(), sets, true);
 }
 

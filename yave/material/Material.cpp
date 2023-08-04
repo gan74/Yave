@@ -28,8 +28,8 @@ SOFTWARE.
 
 namespace yave {
 
-static auto material_texture_views(const SimpleMaterialData& data) {
-    std::array<TextureView, SimpleMaterialData::texture_count> textures = {
+static auto material_texture_views(const MaterialData& data) {
+    std::array<TextureView, MaterialData::texture_count> textures = {
         *device_resources()[DeviceResources::GreyTexture],          // Diffuse
         *device_resources()[DeviceResources::FlatNormalTexture],    // Normal
         *device_resources()[DeviceResources::WhiteTexture],         // Roughness
@@ -37,7 +37,7 @@ static auto material_texture_views(const SimpleMaterialData& data) {
         *device_resources()[DeviceResources::WhiteTexture],         // Emissive
     };
 
-    for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
+    for(usize i = 0; i != MaterialData::texture_count; ++i) {
         y_debug_assert(!data.textures()[i].is_loading());
         if(const auto* tex = data.textures()[i].get()) {
             textures[i] = *tex;
@@ -47,22 +47,7 @@ static auto material_texture_views(const SimpleMaterialData& data) {
     return textures;
 }
 
-static DescriptorSet create_descriptor_set(const SimpleMaterialData& data) {
-    const auto textures = material_texture_views(data);
-
-    std::array<u32, textures.size()> texture_indices = {};
-    for(usize i = 0; i != textures.size(); ++i) {
-        texture_indices[i] = texture_library().add_texture(textures[i]);
-    }
-
-    std::array<u8, sizeof(texture_indices) + sizeof(data.constants())> bytes;
-    std::memcpy(bytes.data(), &data.constants(), sizeof(data.constants()));
-    std::memcpy(bytes.data()+ sizeof(data.constants()), texture_indices.data(), sizeof(texture_indices));
-
-    return DescriptorSet({InlineDescriptor(bytes)});
-}
-
-static DeviceResources::MaterialTemplates material_template_for_data(const SimpleMaterialData& data) {
+static DeviceResources::MaterialTemplates material_template_for_data(const MaterialData& data) {
     if(data.alpha_tested()) {
        return DeviceResources::TexturedAlphaMaterialTemplate;
     }
@@ -71,16 +56,17 @@ static DeviceResources::MaterialTemplates material_template_for_data(const Simpl
 
 
 
-Material::Material(SimpleMaterialData&& data) :
-        _template(device_resources()[material_template_for_data(data)]),
-        _set(create_descriptor_set(data)),
-        _data(std::move(data)) {
+Material::Material(MaterialData&& data) : Material(device_resources()[material_template_for_data(data)], std::move(data)) {
 }
 
-Material::Material(const MaterialTemplate* tmp, SimpleMaterialData&& data) :
-        _template(tmp),
-        _set(create_descriptor_set(data)),
-        _data(std::move(data)) {
+Material::Material(const MaterialTemplate* tmp, MaterialData&& data) : _template(tmp), _data(std::move(data)) {
+    if(!is_null()) {
+        const auto textures = material_texture_views(_data);
+        _shader_data.constants = _data.constants();
+        for(usize i = 0; i != textures.size(); ++i) {
+            _shader_data.textures_indices[i] = texture_library().add_texture(textures[i]);
+        }
+    }
 }
 
 Material::~Material() {
@@ -92,20 +78,35 @@ Material::~Material() {
     }
 }
 
-const SimpleMaterialData& Material::data() const {
-    return _data;
+Material::Material(Material&& other) {
+    swap(other);
 }
 
-DescriptorSetBase Material::descriptor_set() const {
-    return _set;
+Material& Material::operator=(Material&& other) {
+    swap(other);
+    return *this;
+}
+
+void Material::swap(Material& other) {
+    std::swap(_template, other._template);
+    std::swap(_shader_data, other._shader_data);
+    std::swap(_data, other._data);
+}
+
+const MaterialData& Material::data() const {
+    return _data;
 }
 
 const MaterialTemplate* Material::material_template() const {
     return _template;
 }
 
+const Material::ShaderData& Material::shader_data() const {
+    return _shader_data;
+}
+
 bool Material::is_null() const {
-    return _set.is_null();
+    return _template == nullptr;
 }
 
 }

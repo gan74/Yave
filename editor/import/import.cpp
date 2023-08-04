@@ -27,7 +27,7 @@ SOFTWARE.
 #include <yave/meshes/Vertex.h>
 #include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
-#include <yave/material/SimpleMaterialData.h>
+#include <yave/material/MaterialData.h>
 #include <yave/utils/FileSystemModel.h>
 
 #include <y/io2/File.h>
@@ -569,7 +569,7 @@ core::Result<ImageData> ParsedScene::build_image_data(usize index, bool compress
     }
 }
 
-core::Result<SimpleMaterialData> ParsedScene::build_material_data(usize index) const {
+core::Result<MaterialData> ParsedScene::build_material_data(usize index) const {
     y_profile();
 
     const Material& parsed_material = materials[index];
@@ -593,12 +593,12 @@ core::Result<SimpleMaterialData> ParsedScene::build_material_data(usize index) c
         return make_asset_with_id<Texture>(it->asset_id);
     };
 
-    SimpleMaterialData data;
-    data.set_texture(SimpleMaterialData::Diffuse, find_texture(pbr.baseColorTexture.index));
-    data.set_texture(SimpleMaterialData::Normal, find_texture(gltf_mat.normalTexture.index));
-    data.set_texture(SimpleMaterialData::Roughness, find_texture(pbr.metallicRoughnessTexture.index));
-    data.set_texture(SimpleMaterialData::Metallic, find_texture(pbr.metallicRoughnessTexture.index));
-    data.set_texture(SimpleMaterialData::Emissive, find_texture(gltf_mat.emissiveTexture.index));
+    MaterialData data;
+    data.set_texture(MaterialData::Diffuse, find_texture(pbr.baseColorTexture.index));
+    data.set_texture(MaterialData::Normal, find_texture(gltf_mat.normalTexture.index));
+    data.set_texture(MaterialData::Roughness, find_texture(pbr.metallicRoughnessTexture.index));
+    data.set_texture(MaterialData::Metallic, find_texture(pbr.metallicRoughnessTexture.index));
+    data.set_texture(MaterialData::Emissive, find_texture(gltf_mat.emissiveTexture.index));
 
     data.alpha_tested() = (gltf_mat.alphaMode != "OPAQUE");
     data.double_sided() = gltf_mat.doubleSided;

@@ -126,7 +126,7 @@ class ScriptWorldComponent;
 class SearchableFileSystemModel;
 class ShaderModuleBase;
 class ShaderProgram;
-class SimpleMaterialData;
+class MaterialData;
 class Skeleton;
 class SkeletonInstance;
 class SkyLightComponent;

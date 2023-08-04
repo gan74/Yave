@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetLoader.h>
 #include <yave/material/Material.h>
-#include <yave/material/SimpleMaterialData.h>
+#include <yave/material/MaterialData.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/graphics/images/ImageData.h>

@@ -32,7 +32,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
-#include <yave/material/SimpleMaterialData.h>
+#include <yave/material/MaterialData.h>
 
 #include <y/io2/Buffer.h>
 #include <y/utils/log.h>
@@ -86,7 +86,7 @@ void ResourceBrowser::draw_context_menu() {
     ImGui::Separator();
 
     if(ImGui::Selectable("Create material")) {
-        const SimpleMaterialData material;
+        const MaterialData material;
         io2::Buffer buffer;
         serde3::WritableArchive arc(buffer);
         if(arc.serialize(material)) {

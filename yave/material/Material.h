@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_MATERIAL_MATERIAL_H
 #define YAVE_MATERIAL_MATERIAL_H
 
-#include "SimpleMaterialData.h"
+#include "MaterialData.h"
 
 #include <yave/graphics/descriptors/DescriptorSet.h>
 
@@ -31,30 +31,37 @@ namespace yave {
 class Material final : NonCopyable {
 
     public:
-        Material() = default;
-        Material(SimpleMaterialData&& data);
-        Material(const MaterialTemplate* tmp, SimpleMaterialData&& data = SimpleMaterialData());
+        struct ShaderData {
+            MaterialData::Contants constants;
+            u32 textures_indices[MaterialData::texture_count];
+        };
 
-        Material(Material&&) = default;
-        Material& operator=(Material&&) = default;
+        Material() = default;
+        Material(MaterialData&& data);
+        Material(const MaterialTemplate* tmp, MaterialData&& data = MaterialData());
+
+        Material(Material&& other);
+        Material& operator=(Material&& other);
 
         ~Material();
+
+        void swap(Material& other);
 
         bool is_null() const;
 
         const MaterialTemplate* material_template() const;
+        const ShaderData& shader_data() const;
 
-        const SimpleMaterialData& data() const;
-        DescriptorSetBase descriptor_set() const;
+        const MaterialData& data() const;
 
     private:
         const MaterialTemplate* _template = nullptr;
-        DescriptorSet _set;
+        ShaderData _shader_data = {};
 
-        SimpleMaterialData _data;
+        MaterialData _data;
 };
 
-YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Material, SimpleMaterialData, AssetType::Material);
+YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Material, MaterialData, AssetType::Material);
 
 }
 
