@@ -115,8 +115,8 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         keep_depth_only_stages(pipeline_shader_stages);
     }
 
-    auto attribute_bindings = program.vk_attribute_bindings();
-    auto attribute_descriptions = program.vk_attributes_descriptions();
+    const auto attribute_bindings = program.vk_attribute_bindings();
+    const auto attribute_descriptions = program.vk_attributes_descriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input = vk_struct();
     {

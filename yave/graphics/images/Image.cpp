@@ -148,16 +148,16 @@ static void transition_image(ImageBase& image) {
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {
     if(type == ImageType::TwoD && layers > 1) {
-        y_fatal("Invalid layer count.");
+        y_fatal("Invalid layer count");
     }
     if(type == ImageType::Cube && layers != 6) {
-        y_fatal("Invalid layer count.");
+        y_fatal("Invalid layer count");
     }
     if(size.z() == 0) {
-        y_fatal("Invalid size.");
+        y_fatal("Invalid size");
     }
     if(size.z() != 1 && type != ImageType::ThreeD) {
-        y_fatal("Invalid size.");
+        y_fatal("Invalid size");
     }
 }
 
