@@ -166,7 +166,7 @@ static VkHandle<VkSurfaceKHR> create_surface(Window* window) {
 #endif
 
     unused(window);
-    return vk_null();
+    return {};
 }
 
 
@@ -262,7 +262,7 @@ bool Swapchain::build_swapchain() {
 #endif
 
         struct SwapchainImageMemory : DeviceMemory {
-            SwapchainImageMemory() : DeviceMemory(vk_null(), 0, 0) {
+            SwapchainImageMemory() : DeviceMemory({}, 0, 0) {
             }
         };
 
@@ -342,7 +342,7 @@ core::Result<FrameToken> Swapchain::next_frame() {
     u32 image_index = u32(-1);
     {
         y_profile_zone("aquire");
-        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_frame_sync.image_available, vk_null(), &image_index))) {
+        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_frame_sync.image_available, {}, &image_index))) {
             if(!reset()) {
                 return core::Err();
             }
