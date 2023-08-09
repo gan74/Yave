@@ -183,12 +183,17 @@ bool Swapchain::reset() {
 
     _images.clear();
 
+    destroy_sync_objects();
+    y_defer(build_sync_objects());
+
     VkHandle<VkSwapchainKHR> old;
-    *old.get_ptr_for_init() = _swapchain;
+    *old.get_ptr_for_init() = _swapchain.get();
 
     if(build_swapchain()) {
         destroy_graphic_resource(std::move(old));
         return true;
+    } else {
+        old.consume();
     }
 
     return false;
@@ -335,14 +340,15 @@ core::Result<FrameToken> Swapchain::next_frame() {
     y_debug_assert(_sync_objects.size());
 
     const usize current_frame_index = _frame_id % image_count();
-    FrameSyncObjects& current_frame_sync = _sync_objects[current_frame_index];
+    // we need to do the lookup every time, in case _sync_objects gets rebuild
+    auto current_sync = [=]() -> FrameSyncObjects& { return _sync_objects[current_frame_index]; };
 
-    vk_check(vkWaitForFences(vk_device(), 1, &current_frame_sync.fence.get(), true, u64(-1)));
+    vk_check(vkWaitForFences(vk_device(), 1, &current_sync().fence.get(), true, u64(-1)));
 
     u32 image_index = u32(-1);
     {
         y_profile_zone("aquire");
-        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_frame_sync.image_available, {}, &image_index))) {
+        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_sync().image_available, {}, &image_index))) {
             if(!reset()) {
                 return core::Err();
             }
