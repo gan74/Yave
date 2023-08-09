@@ -45,12 +45,18 @@ static VkSurfaceCapabilitiesKHR compute_capabilities(VkSurfaceKHR surface) {
 }
 
 static VkSurfaceFormatKHR surface_format(VkSurfaceKHR surface) {
-    Y_TODO(Find best format instead of always returning first)
-    u32 format_count = 1;
-    VkSurfaceFormatKHR format = {};
-    vk_check_or_incomplete(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_physical_device(), surface, &format_count, &format));
-    y_always_assert(format_count, "No swapchain format supported");
-    return format;
+    std::array<VkSurfaceFormatKHR, 16> formats = {};
+    u32 format_count = u32(formats.size());
+    vk_check_or_incomplete(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_physical_device(), surface, &format_count, formats.data()));
+    y_always_assert(format_count, "No surface format supported");
+
+    for(u32 i = 0; i != format_count; ++i) {
+        if(formats[i].format == VK_FORMAT_R8G8B8A8_SRGB) {
+            return formats[i];
+        }
+    }
+
+    return formats[0];
 }
 
 static VkPresentModeKHR present_mode(VkSurfaceKHR surface) {
@@ -58,6 +64,7 @@ static VkPresentModeKHR present_mode(VkSurfaceKHR surface) {
     u32 mode_count = u32(modes.size());
     vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_physical_device(), surface, &mode_count, modes.data()));
     y_always_assert(mode_count, "No presentation mode supported");
+
     for(u32 i = 0; i != mode_count; ++i) {
         if(modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
             return VK_PRESENT_MODE_MAILBOX_KHR;
