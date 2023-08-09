@@ -297,7 +297,7 @@ inline constexpr auto vk_struct() {
 
 
 template<typename T, typename R>
-inline constexpr T* vk_find_pnext(R&& r) {
+inline constexpr T* vk_find_pnext(const R& r) {
     void* next = r.pNext;
     while(next) {
         T* t = static_cast<T*>(next);
