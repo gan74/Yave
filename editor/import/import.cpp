@@ -200,7 +200,7 @@ static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, 
     const usize components = component_count(accessor.type);
     const bool normalize = accessor.normalized;
 
-    y_debug_assert(accessor.count == vertex_count);
+    y_always_assert(accessor.count == vertex_count, "Invalid accesors");
 
     if(components != size) {
         log_msg(fmt("Expected VEC% attribute, got VEC%", size, components), Log::Warning);
@@ -431,14 +431,14 @@ ParsedScene parse_scene(const core::String& filename) {
         }
     }
 
-    for(int i = 0; i != scene.gltf->meshes.size(); ++i) {
+    for(usize i = 0; i != scene.gltf->meshes.size(); ++i) {
         const tinygltf::Mesh& mesh = scene.gltf->meshes[i];
 
         auto& parsed_mesh = scene.mesh_prefabs.emplace_back();
         parsed_mesh.name = mesh.name.empty() ? fmt_to_owned("unnamed_mesh_%", i) : clean_asset_name(mesh.name);
-        parsed_mesh.gltf_index = i;
+        parsed_mesh.gltf_index = int(i);
 
-        for(int j = 0; j != mesh.primitives.size(); ++j) {
+        for(usize j = 0; j != mesh.primitives.size(); ++j) {
             const tinygltf::Primitive& prim = mesh.primitives[j];
 
             if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
@@ -446,26 +446,26 @@ ParsedScene parse_scene(const core::String& filename) {
             }
 
             auto& group = parsed_mesh.materials.emplace_back();
-            group.primitive_index = j;
+            group.primitive_index = int(j);
             group.gltf_material_index = prim.material;
 
         }
     }
 
-    for(int i = 0; i != scene.gltf->images.size(); ++i) {
+    for(usize i = 0; i != scene.gltf->images.size(); ++i) {
         const tinygltf::Image& image = scene.gltf->images[i];
 
         auto& parsed_image = scene.images.emplace_back();
         parsed_image.name = image.name.empty() ? fmt_to_owned("unnamed_image_%", i) : clean_asset_name(image.name);
-        parsed_image.gltf_index = i;
+        parsed_image.gltf_index = int(i);
     }
 
-    for(int i = 0; i != scene.gltf->materials.size(); ++i) {
+    for(usize i = 0; i != scene.gltf->materials.size(); ++i) {
         const tinygltf::Material& material = scene.gltf->materials[i];
 
         auto& parsed_material = scene.materials.emplace_back();
         parsed_material.name = material.name.empty() ? fmt_to_owned("unnamed_material_%", i) : clean_asset_name(material.name);
-        parsed_material.gltf_index = i;
+        parsed_material.gltf_index = int(i);
 
         const int tex_index = material.pbrMetallicRoughness.baseColorTexture.index;
         if(tex_index >= 0) {

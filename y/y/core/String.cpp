@@ -91,6 +91,7 @@ void String::free_long(LongData& d) {
 }
 
 void String::free_short(ShortData& d) {
+    unused(d);
 #ifdef Y_DEBUG
     std::memset(d.data, 0xFE, d.length + 1);
 #endif
