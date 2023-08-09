@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageView.h>
 #include <yave/assets/AssetType.h>
+#include <yave/utils/color.h>
 
 #include <y/core/Vector.h>
 
@@ -95,8 +96,8 @@ ImGuiMouseButton to_imgui_button(MouseButton b);
 namespace imgui {
 
 static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";
-static constexpr math::Vec4 error_text_color = math::Vec4(1.0f, 0.3f, 0.3f, 1.0f);
-static constexpr math::Vec4 warning_text_color = math::Vec4(1.0f, 0.8f, 0.4f, 1.0f);
+static const math::Vec4 error_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.3f, 0.3f)), 1.0f);
+static const math::Vec4 warning_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.8f, 0.4f)), 1.0f);
 
 u32 gizmo_color(usize axis);
 

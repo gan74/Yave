@@ -130,8 +130,8 @@ bool EngineView::should_keep_alive() const {
 // ---------------------------------------------- DRAW ----------------------------------------------
 
 bool EngineView::before_gui() {
-    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, math::Vec4(0.0f));
-    ImGui::PushStyleColor(ImGuiCol_Border, math::Vec4(0.0f));
+    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, 0);
+    ImGui::PushStyleColor(ImGuiCol_Border, 0);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2());
 

@@ -30,7 +30,6 @@ SOFTWARE.
 
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
-#include <yave/utils/color.h>
 
 #include <external/imgui/imgui.h>
 #include <external/imgui/imgui_internal.h>
@@ -478,7 +477,7 @@ bool begin_suggestion_popup() {
             ImGuiWindowFlags_NoSavedSettings;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, math::Vec4(40.0f, 40.0f, 40.0f, 220.0f) / 255.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, math::Vec4(sRGB_to_linear(math::Vec3(20.0f / 255.0f)), 0.95f));
 
     ImGui::SetNextWindowPos(search_bar_state.popup_pos);
     ImGui::SetNextWindowSize(ImVec2(search_bar_state.popup_width, 0.0f));
