@@ -73,7 +73,6 @@ WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSem
 
         const VkSemaphore timeline_semaphore = vk_timeline_semaphore();
 
-        Y_TODO(We do not need to wait on the timeline_semaphore if using SyncPolicy::Wait)
         const std::array<VkSemaphore, 2> wait_semaphores = {timeline_semaphore, wait};
         const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
 

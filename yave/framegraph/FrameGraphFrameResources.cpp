@@ -36,7 +36,6 @@ FrameGraphFrameResources::FrameGraphFrameResources(std::shared_ptr<FrameGraphRes
 }
 
 FrameGraphFrameResources::~FrameGraphFrameResources() {
-    Y_TODO(release images before the cmd buffer is recycled)
     for(auto&& res : _image_storage) {
         _pool->release(std::move(res));
     }
