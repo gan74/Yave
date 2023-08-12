@@ -34,7 +34,7 @@ SOFTWARE.
 #include <yave/ecs/ecs.h>
 
 #include <yave/systems/OctreeSystem.h>
-#include <yave/systems/StaticMeshManagerSystem.h>
+#include <yave/systems/StaticMeshRendererSystem.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/meshes/StaticMesh.h>
@@ -67,7 +67,7 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
     }
 
 
-    const StaticMeshManagerSystem* static_meshes = world.find_system<StaticMeshManagerSystem>();
+    const StaticMeshRendererSystem* static_meshes = world.find_system<StaticMeshRendererSystem>();
     const auto render_list = static_meshes->create_render_list(visible);
     const auto batches = render_list.batches();
 
@@ -106,7 +106,7 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, SceneView view, const 
     const auto depth = builder.declare_image(depth_format, size);
     const auto id = builder.declare_image(id_format, size);
 
-    const auto id_buffer = builder.declare_typed_buffer<u32>(StaticMeshManagerSystem::max_transforms);
+    const auto id_buffer = builder.declare_typed_buffer<u32>(StaticMeshRendererSystem::max_transforms);
     const auto camera_buffer = builder.declare_typed_buffer<uniform::Camera>(1);
 
     IdBufferPass pass;

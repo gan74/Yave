@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SYSTEMS_STATICMESHMANAGERSYSTEM_H
-#define YAVE_SYSTEMS_STATICMESHMANAGERSYSTEM_H
+#ifndef YAVE_SYSTEMS_STATICMESHRENDERERSYSTEM_H
+#define YAVE_SYSTEMS_STATICMESHRENDERERSYSTEM_H
 
 #include <yave/ecs/System.h>
 
@@ -32,7 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-class StaticMeshManagerSystem : public ecs::System {
+class StaticMeshRendererSystem : public ecs::System {
     public:
         static constexpr usize max_transforms = 2 * 1024;
 
@@ -52,15 +52,15 @@ class StaticMeshManagerSystem : public ecs::System {
                 core::Span<Batch> batches() const;
 
             private:
-                friend class StaticMeshManagerSystem;
+                friend class StaticMeshRendererSystem;
 
                 core::Vector<Batch> _batches;
-                const StaticMeshManagerSystem* _parent = nullptr;
+                const StaticMeshRendererSystem* _parent = nullptr;
         };
 
 
 
-        StaticMeshManagerSystem();
+        StaticMeshRendererSystem();
 
         RenderList create_render_list(core::Span<ecs::EntityId> ids) const;
 
@@ -83,5 +83,5 @@ class StaticMeshManagerSystem : public ecs::System {
 
 }
 
-#endif // YAVE_SYSTEMS_STATICMESHMANAGERSYSTEM_H
+#endif // YAVE_SYSTEMS_STATICMESHRENDERERSYSTEM_H
 

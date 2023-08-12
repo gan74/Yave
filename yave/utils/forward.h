@@ -138,7 +138,7 @@ class SpirVData;
 class SpotLightComponent;
 class StaticMesh;
 class StaticMeshComponent;
-class StaticMeshManagerSystem;
+class StaticMeshRendererSystem;
 class SubBufferBase;
 class Swapchain;
 class SwapchainImage;

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "StaticMeshManagerSystem.h"
+#include "StaticMeshRendererSystem.h"
 
 #include <yave/ecs/EntityWorld.h>
 
@@ -40,12 +40,12 @@ SOFTWARE.
 namespace yave {
 
 
-StaticMeshManagerSystem::StaticMeshManagerSystem() : ecs::System("StaticMeshManagerSystem"), _transforms(max_transforms) {
+StaticMeshRendererSystem::StaticMeshRendererSystem() : ecs::System("StaticMeshRendererSystem"), _transforms(max_transforms) {
     _free.set_min_size(_transforms.size());
     std::iota(_free.begin(), _free.end(), 0);
 }
 
-void StaticMeshManagerSystem::destroy() {
+void StaticMeshRendererSystem::destroy() {
     auto query = world().query<StaticMeshComponent>();
     for(auto&& [mesh] : query.components()) {
         if(mesh.has_instance_index()) {
@@ -57,15 +57,15 @@ void StaticMeshManagerSystem::destroy() {
     y_debug_assert(_free.size() == _transforms.size());
 }
 
-void StaticMeshManagerSystem::setup() {
+void StaticMeshRendererSystem::setup() {
     run_tick(false);
 }
 
-void StaticMeshManagerSystem::tick() {
+void StaticMeshRendererSystem::tick() {
     run_tick(true);
 }
 
-void StaticMeshManagerSystem::run_tick(bool only_recent) {
+void StaticMeshRendererSystem::run_tick(bool only_recent) {
     auto moved_query = [&](auto query) {
         if(!query.size()) {
             return;
@@ -98,7 +98,7 @@ void StaticMeshManagerSystem::run_tick(bool only_recent) {
     }
 }
 
-StaticMeshManagerSystem::RenderList StaticMeshManagerSystem::create_render_list(core::Span<ecs::EntityId> ids) const {
+StaticMeshRendererSystem::RenderList StaticMeshRendererSystem::create_render_list(core::Span<ecs::EntityId> ids) const {
     auto query = world().query<StaticMeshComponent>(ids);
     if(query.is_empty()) {
         return {};
@@ -151,7 +151,7 @@ StaticMeshManagerSystem::RenderList StaticMeshManagerSystem::create_render_list(
 }
 
 
-void StaticMeshManagerSystem::RenderList::draw(RenderPassRecorder& recorder) const {
+void StaticMeshRendererSystem::RenderList::draw(RenderPassRecorder& recorder) const {
     if(_batches.is_empty() || !_parent) {
         return;
     }
@@ -188,7 +188,7 @@ void StaticMeshManagerSystem::RenderList::draw(RenderPassRecorder& recorder) con
     }
 }
 
-core::Span<StaticMeshManagerSystem::Batch> StaticMeshManagerSystem::RenderList::batches() const {
+core::Span<StaticMeshRendererSystem::Batch> StaticMeshRendererSystem::RenderList::batches() const {
     return _batches;
 }
 

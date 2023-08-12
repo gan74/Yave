@@ -67,7 +67,7 @@ class StaticMeshComponent final :
 
         AABB _aabb;
 
-        friend class StaticMeshManagerSystem;
+        friend class StaticMeshRendererSystem;
         mutable u32 _instance_index = u32(-1);
 
 };

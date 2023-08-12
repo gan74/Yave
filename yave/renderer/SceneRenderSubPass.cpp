@@ -28,7 +28,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/systems/OctreeSystem.h>
-#include <yave/systems/StaticMeshManagerSystem.h>
+#include <yave/systems/StaticMeshRendererSystem.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/ecs/EntityWorld.h>
@@ -68,7 +68,7 @@ void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPa
         visible = world.component_ids<StaticMeshComponent>();
     }
 
-    const StaticMeshManagerSystem* static_meshes = world.find_system<StaticMeshManagerSystem>();
+    const StaticMeshRendererSystem* static_meshes = world.find_system<StaticMeshRendererSystem>();
     const auto render_list = static_meshes->create_render_list(visible);
 
     recorder.set_main_descriptor_set(pass->descriptor_sets()[0]);
