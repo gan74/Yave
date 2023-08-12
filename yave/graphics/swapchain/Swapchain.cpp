@@ -51,8 +51,13 @@ static VkSurfaceFormatKHR surface_format(VkSurfaceKHR surface) {
     y_always_assert(format_count, "No surface format supported");
 
     for(u32 i = 0; i != format_count; ++i) {
-        if(formats[i].format == VK_FORMAT_R8G8B8A8_SRGB) {
-            return formats[i];
+        switch(formats[i].format) {
+            case VK_FORMAT_R8G8B8A8_SRGB:
+            case VK_FORMAT_B8G8R8A8_SRGB:
+                return formats[i];
+
+            default:
+            break;
         }
     }
 
