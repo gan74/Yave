@@ -49,7 +49,6 @@ class StaticMeshManagerSystem : public ecs::System {
             public:
                 void draw(RenderPassRecorder& recorder) const;
 
-                const StaticMeshManagerSystem* parent() const;
                 core::Span<Batch> batches() const;
 
             private:

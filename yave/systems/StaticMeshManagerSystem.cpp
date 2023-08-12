@@ -152,6 +152,10 @@ StaticMeshManagerSystem::RenderList StaticMeshManagerSystem::create_render_list(
 
 
 void StaticMeshManagerSystem::RenderList::draw(RenderPassRecorder& recorder) const {
+    if(_batches.is_empty() || !_parent) {
+        return;
+    }
+
     TypedBuffer<math::Vec2ui, BufferUsage::StorageBit, MemoryType::CpuVisible> indices(_batches.size());
 
     {
@@ -182,10 +186,6 @@ void StaticMeshManagerSystem::RenderList::draw(RenderPassRecorder& recorder) con
 
         recorder.draw(batch.draw_cmd.vk_indirect_data(u32(i)));
     }
-}
-
-const StaticMeshManagerSystem* StaticMeshManagerSystem::RenderList::parent() const {
-    return _parent;
 }
 
 core::Span<StaticMeshManagerSystem::Batch> StaticMeshManagerSystem::RenderList::batches() const {
