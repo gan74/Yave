@@ -6,11 +6,11 @@ layout(set = 0, binding = 0) uniform CameraData {
     Camera camera;
 };
 
-layout(set = 0, binding = 1) readonly buffer Transforms {
+layout(set = 1, binding = 0) readonly buffer Transforms {
     mat4 transforms[];
 };
 
-layout(set = 0, binding = 2) readonly buffer Indices {
+layout(set = 1, binding = 1) readonly buffer Indices {
     uvec2 mesh_indices[];
 };
 

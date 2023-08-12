@@ -98,16 +98,13 @@ void StaticMeshManagerSystem::run_tick(bool only_recent) {
     }
 }
 
-void StaticMeshManagerSystem::render(RenderPassRecorder& recorder, TypedSubBuffer<uniform::Camera, BufferUsage::UniformBit> camera, core::Span<ecs::EntityId> ids) const {
+StaticMeshManagerSystem::RenderList StaticMeshManagerSystem::create_render_list(core::Span<ecs::EntityId> ids) const {
     auto query = world().query<StaticMeshComponent>(ids);
     if(query.is_empty()) {
-        return;
+        return {};
     }
 
-    auto mesh_indices = core::vector_with_capacity<math::Vec2ui>(query.size() * 8);
-    auto material_templates = core::vector_with_capacity<const MaterialTemplate*>(query.size() * 8);
-    auto mesh_draw_cmds = core::vector_with_capacity<MeshDrawCommand>(query.size() * 8);
-
+    auto batches = core::vector_with_capacity<Batch>(query.size());
     for(const auto& [mesh] : query.components()) {
         if(!mesh.mesh()) {
             continue;
@@ -115,56 +112,70 @@ void StaticMeshManagerSystem::render(RenderPassRecorder& recorder, TypedSubBuffe
 
         y_debug_assert(mesh.has_instance_index());
 
-        auto push_material = [&](const StaticMeshComponent& mesh, const AssetPtr<Material>& material) {
+        auto push_material = [](const AssetPtr<Material>& material, Batch& batch) {
             if(material) {
-                mesh_indices.emplace_back(mesh.instance_index(), material->draw_data().index());
-                material_templates.emplace_back(material->material_template());
+                batch.material_index = material->draw_data().index();
+                batch.material_template = material->material_template();
                 return true;
             }
             return false;
         };
 
         if(mesh.materials().size() == 1) {
-            if(push_material(mesh, mesh.materials()[0])) {
-                mesh_draw_cmds.emplace_back(mesh.mesh()->draw_command());
+            Batch batch;
+            if(push_material(mesh.materials()[0], batch)) {
+                batch.transform_index = mesh.instance_index();
+                batch.draw_cmd = mesh.mesh()->draw_command();
+                batches << batch;
             }
         } else {
             for(usize i = 0; i != mesh.materials().size(); ++i) {
-                if(push_material(mesh, mesh.materials()[i])) {
-                    mesh_draw_cmds.emplace_back(mesh.mesh()->sub_meshes()[i]);
+                Batch batch;
+                if(push_material(mesh.materials()[i], batch)) {
+                    batch.transform_index = mesh.instance_index();
+                    batch.draw_cmd = mesh.mesh()->sub_meshes()[i];
+                    batches << batch;
                 }
             }
         }
+
     }
 
-    y_debug_assert(mesh_draw_cmds.size() == mesh_indices.size());
-    y_debug_assert(mesh_draw_cmds.size() == material_templates.size());
+    RenderList list;
+    list._parent = this;
+    list._batches = std::move(batches);
+    return list;
+}
 
-    if(mesh_draw_cmds.is_empty()) {
-        return;
-    }
 
-    TypedBuffer<math::Vec2ui, BufferUsage::StorageBit | BufferUsage::TransferDstBit> indices(mesh_indices.size());
+void StaticMeshManagerSystem::RenderList::draw(RenderPassRecorder& recorder) const {
+    TypedBuffer<math::Vec2ui, BufferUsage::StorageBit, MemoryType::CpuVisible> indices(_batches.size());
+
     {
-        CmdBufferRecorder staging_recorder = create_disposable_cmd_buffer();
-        BufferMappingBase::stage(staging_recorder, indices, mesh_indices.data());
-        command_queue().submit(std::move(staging_recorder));
+        auto mapping = indices.map(MappingAccess::WriteOnly);
+        for(usize i = 0; i != _batches.size(); ++i) {
+            mapping[i] = math::Vec2ui(_batches[i].transform_index, _batches[i].material_index);
+        }
     }
 
     DescriptorSet set(std::array{
-        Descriptor(camera),
-        Descriptor(_transforms),
+        Descriptor(_parent->transform_buffer()),
         Descriptor(indices),
         Descriptor(material_allocator().material_buffer()),
     });
 
     recorder.bind_mesh_buffers(mesh_allocator().mesh_buffers());
-    for(usize i = 0; i != mesh_draw_cmds.size(); ++i) {
-        if(!i || material_templates[i] != material_templates[i - 1]) {
+
+    const MaterialTemplate* previous = nullptr;
+    for(usize i = 0; i != _batches.size(); ++i) {
+        const auto& batch = _batches[i];
+        y_debug_assert(batch.material_template);
+        if(batch.material_template != previous) {
+            previous = batch.material_template;
             std::array<DescriptorSetBase, 2> sets = {set, texture_library().descriptor_set()};
-            recorder.bind_material_template(material_templates[i], sets);
+            recorder.bind_material_template(_batches[i].material_template, sets, true);
         }
-        recorder.draw(mesh_draw_cmds[i].vk_indirect_data(u32(i)));
+        recorder.draw(batch.draw_cmd.vk_indirect_data(u32(i)));
     }
 }
 

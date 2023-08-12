@@ -69,7 +69,10 @@ void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPa
     }
 
     const StaticMeshManagerSystem* static_meshes = world.find_system<StaticMeshManagerSystem>();
-    static_meshes->render(recorder, pass->resources().buffer<BufferUsage::UniformBit>(camera_buffer), visible);
+    const auto render_list = static_meshes->create_render_list(visible);
+
+    recorder.set_main_descriptor_set(pass->descriptor_sets()[0]);
+    render_list.draw(recorder);
 }
 
 }

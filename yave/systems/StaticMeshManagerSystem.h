@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/buffers/buffers.h>
+#include <yave/meshes/MeshDrawData.h>
 
 #include <y/core/Vector.h>
 
@@ -35,9 +36,28 @@ class StaticMeshManagerSystem : public ecs::System {
     public:
         static constexpr usize max_transforms = 2 * 1024;
 
+        struct Batch {
+            const MaterialTemplate* material_template = nullptr;
+            u32 material_index = u32(-1);
+            u32 transform_index = u32(-1);
+            MeshDrawCommand draw_cmd = {};
+        };
+
+        class RenderList : NonCopyable {
+            public:
+                void draw(RenderPassRecorder& recorder) const;
+
+            private:
+                friend class StaticMeshManagerSystem;
+                core::Vector<Batch> _batches;
+                const StaticMeshManagerSystem* _parent = nullptr;
+        };
+
+
+
         StaticMeshManagerSystem();
 
-        void render(RenderPassRecorder& recorder, TypedSubBuffer<uniform::Camera, BufferUsage::UniformBit> camera, core::Span<ecs::EntityId> ids) const;
+        RenderList create_render_list(core::Span<ecs::EntityId> ids) const;
 
         void destroy() override;
         void setup() override;

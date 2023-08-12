@@ -52,6 +52,7 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
                           EditorPassFlags flags) {
     y_profile();
 
+
 #if 0
     const EditorWorld& world = current_world();
     y_debug_assert(&world == &scene_view.world());

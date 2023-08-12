@@ -13,11 +13,11 @@ layout(location = 2) out vec4 out_emissive;
 #endif
 
 
-layout(set = 0, binding = 3) readonly buffer Materials {
+layout(set = 1, binding = 2) readonly buffer Materials {
     MaterialData materials[];
 };
 
-layout(set = 1, binding = 0) uniform sampler2D all_textures_Variable[];
+layout(set = 2, binding = 0) uniform sampler2D all_textures_Variable[];
 
 layout(location = 0) in vec3 in_normal;
 layout(location = 1) in vec3 in_tangent;

@@ -29,7 +29,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class System : NonCopyable {
+class System : public NonMovable {
     public:
         System(core::String name, float fixed_update_time = 0.0f) : _name(std::move(name)), _fixed_update_time(fixed_update_time) {
         }
