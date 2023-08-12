@@ -38,7 +38,7 @@ SOFTWARE.
 namespace yave {
 
 SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
-    auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
+    auto camera_buffer = builder.declare_typed_buffer<uniform::Camera>();
 
     SceneRenderSubPass pass;
     pass.scene_view = view;

@@ -105,7 +105,8 @@ StaticMeshManagerSystem::RenderList StaticMeshManagerSystem::create_render_list(
     }
 
     auto batches = core::vector_with_capacity<Batch>(query.size());
-    for(const auto& [mesh] : query.components()) {
+    for(const auto& [id, comp] : query.id_components()) {
+        const auto [mesh] = comp;
         if(!mesh.mesh()) {
             continue;
         }
@@ -126,6 +127,7 @@ StaticMeshManagerSystem::RenderList StaticMeshManagerSystem::create_render_list(
             if(push_material(mesh.materials()[0], batch)) {
                 batch.transform_index = mesh.instance_index();
                 batch.draw_cmd = mesh.mesh()->draw_command();
+                batch.id = id;
                 batches << batch;
             }
         } else {
@@ -134,6 +136,7 @@ StaticMeshManagerSystem::RenderList StaticMeshManagerSystem::create_render_list(
                 if(push_material(mesh.materials()[i], batch)) {
                     batch.transform_index = mesh.instance_index();
                     batch.draw_cmd = mesh.mesh()->sub_meshes()[i];
+                    batch.id = id;
                     batches << batch;
                 }
             }
@@ -170,13 +173,23 @@ void StaticMeshManagerSystem::RenderList::draw(RenderPassRecorder& recorder) con
     for(usize i = 0; i != _batches.size(); ++i) {
         const auto& batch = _batches[i];
         y_debug_assert(batch.material_template);
+
         if(batch.material_template != previous) {
             previous = batch.material_template;
             std::array<DescriptorSetBase, 2> sets = {set, texture_library().descriptor_set()};
             recorder.bind_material_template(_batches[i].material_template, sets, true);
         }
+
         recorder.draw(batch.draw_cmd.vk_indirect_data(u32(i)));
     }
+}
+
+const StaticMeshManagerSystem* StaticMeshManagerSystem::RenderList::parent() const {
+    return _parent;
+}
+
+core::Span<StaticMeshManagerSystem::Batch> StaticMeshManagerSystem::RenderList::batches() const {
+    return _batches;
 }
 
 }

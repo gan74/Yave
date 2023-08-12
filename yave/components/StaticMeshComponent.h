@@ -25,7 +25,6 @@ SOFTWARE.
 #include "TransformableComponent.h"
 
 #include <yave/assets/AssetPtr.h>
-#include <yave/scene/Renderable.h>
 #include <yave/systems/AABBUpdateSystem.h>
 #include <yave/systems/AssetLoaderSystem.h>
 

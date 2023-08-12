@@ -34,7 +34,7 @@ struct IdBufferPass {
     FrameGraphImageId depth;
     FrameGraphImageId id;
 
-    static IdBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, EditorPassFlags flags = EditorPassFlags::None);
+    static IdBufferPass create(FrameGraph& framegraph, SceneView view, const math::Vec2ui& size, EditorPassFlags flags = EditorPassFlags::None);
 };
 
 }

@@ -12,6 +12,9 @@ layout(location = 1) out vec4 out_rt1;
 layout(location = 2) out vec4 out_emissive;
 #endif
 
+layout(set = 1, binding = 1) readonly buffer Indices {
+    uvec2 mesh_indices[];
+};
 
 layout(set = 1, binding = 2) readonly buffer Materials {
     MaterialData materials[];
@@ -23,7 +26,7 @@ layout(location = 0) in vec3 in_normal;
 layout(location = 1) in vec3 in_tangent;
 layout(location = 2) in vec3 in_bitangent;
 layout(location = 3) in vec2 in_uv;
-layout(location = 4) in flat uint in_material_index;
+layout(location = 4) in flat uint in_instance_index;
 
 
 
@@ -37,7 +40,7 @@ vec4 tex_from_index(MaterialData material, uint index, vec2 uv) {
 }
 
 void main() {
-    const MaterialData material = materials[in_material_index];
+    const MaterialData material = materials[mesh_indices[in_instance_index].y];
 
     const vec4 color = tex_from_index(material, diffuse_texture_index, in_uv);
 

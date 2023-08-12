@@ -22,18 +22,16 @@ layout(location = 0) out vec3 out_normal;
 layout(location = 1) out vec3 out_tangent;
 layout(location = 2) out vec3 out_bitangent;
 layout(location = 3) out vec2 out_uv;
-layout(location = 4) out flat uint out_material_index;
+layout(location = 4) out flat uint out_instance_index;
 
 void main() {
+    out_instance_index = gl_InstanceIndex;
     out_uv = in_uv;
 
     const vec3 in_normal = unpack_2_10_10_10(in_packed_normal_tangent_sign.x).xyz;
     const vec4 in_tangent_sign = unpack_2_10_10_10(in_packed_normal_tangent_sign.y);
 
-    const uvec2 indices = mesh_indices[gl_InstanceIndex];
-    out_material_index = indices.y;
-
-    const mat4 transform = transforms[indices.x];
+    const mat4 transform = transforms[mesh_indices[gl_InstanceIndex].x];
 
     const mat3 model = mat3(transform);
     out_normal = normalize(model * in_normal);

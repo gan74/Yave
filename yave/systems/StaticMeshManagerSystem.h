@@ -41,14 +41,20 @@ class StaticMeshManagerSystem : public ecs::System {
             u32 material_index = u32(-1);
             u32 transform_index = u32(-1);
             MeshDrawCommand draw_cmd = {};
+            ecs::EntityId id;
         };
+
 
         class RenderList : NonCopyable {
             public:
                 void draw(RenderPassRecorder& recorder) const;
 
+                const StaticMeshManagerSystem* parent() const;
+                core::Span<Batch> batches() const;
+
             private:
                 friend class StaticMeshManagerSystem;
+
                 core::Vector<Batch> _batches;
                 const StaticMeshManagerSystem* _parent = nullptr;
         };
