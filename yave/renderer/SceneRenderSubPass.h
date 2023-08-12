@@ -35,7 +35,6 @@ struct SceneRenderSubPass {
 
     Y_TODO(remove mutable)
     FrameGraphMutableTypedBufferId<Renderable::CameraData> camera_buffer;
-    FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer;
 
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& view);
     void render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const;

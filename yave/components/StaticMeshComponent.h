@@ -34,7 +34,6 @@ SOFTWARE.
 namespace yave {
 
 class StaticMeshComponent final :
-        public Renderable,
         public ecs::RequiredComponents<TransformableComponent>,
         public ecs::SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem, AABBUpdateSystem> {
 
@@ -43,8 +42,8 @@ class StaticMeshComponent final :
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, core::Vector<AssetPtr<Material>> materials);
 
-        void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
-        void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
+        void render(RenderPassRecorder& recorder) const;
+        void render_mesh(RenderPassRecorder& recorder) const;
 
         AssetPtr<StaticMesh>& mesh();
         const AssetPtr<StaticMesh>& mesh() const;
@@ -53,6 +52,9 @@ class StaticMeshComponent final :
         core::Span<AssetPtr<Material>> materials() const;
 
         const AABB& aabb() const;
+
+        u32 instance_index() const;
+        bool has_instance_index() const;
 
         bool is_fully_loaded() const;
 
@@ -68,6 +70,9 @@ class StaticMeshComponent final :
         core::Vector<AssetPtr<Material>> _materials;
 
         AABB _aabb;
+
+        friend class StaticMeshManagerSystem;
+        mutable u32 _instance_index = u32(-1);
 
 };
 

@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/systems/OctreeSystem.h>
+#include <yave/systems/StaticMeshManagerSystem.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/ecs/EntityWorld.h>
@@ -37,21 +38,15 @@ SOFTWARE.
 namespace yave {
 
 SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
-    const usize buffer_size = view.world().components<TransformableComponent>().size();
-
     auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
-    const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(buffer_size);
 
     SceneRenderSubPass pass;
     pass.scene_view = view;
     pass.descriptor_set_index = builder.next_descriptor_set_index();
     pass.camera_buffer = camera_buffer;
-    pass.transform_buffer = transform_buffer;
 
     builder.add_uniform_input(camera_buffer, PipelineStage::None, pass.descriptor_set_index);
-    builder.add_attrib_input(transform_buffer);
     builder.map_buffer(camera_buffer);
-    builder.map_buffer(transform_buffer);
 
     return pass;
 }
@@ -65,27 +60,24 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
     const ecs::EntityWorld& world = sub_pass->scene_view.world();
     const Camera& camera = sub_pass->scene_view.camera();
 
-    auto transform_mapping = pass->resources().map_buffer(sub_pass->transform_buffer);
-    const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
     const auto& descriptor_set = pass->descriptor_sets()[sub_pass->descriptor_set_index];
-
     recorder.set_main_descriptor_set(descriptor_set);
-    recorder.bind_per_instance_attrib_buffers(transforms);
+
+    const StaticMeshManagerSystem* manager = world.find_system<StaticMeshManagerSystem>();
+    recorder.bind_per_instance_attrib_buffers(manager->transform_buffer());
 
     auto render_query = [&](auto query) {
-        for(const auto& [tr, mesh] : query.components()) {
-            transform_mapping[index] = tr.transform();
-            mesh.render(recorder, Renderable::SceneData{u32(index)});
-            ++index;
+        for(const auto& [mesh] : query.components()) {
+            mesh.render(recorder);
         }
     };
 
     const std::array tags = {ecs::tags::not_hidden};
     if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
         const core::Vector<ecs::EntityId> visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
-        render_query(world.query<TransformableComponent, StaticMeshComponent>(visible, tags));
+        render_query(world.query<StaticMeshComponent>(visible, tags));
     } else {
-        render_query(world.query<TransformableComponent, StaticMeshComponent>(tags));
+        render_query(world.query<StaticMeshComponent>(tags));
     }
 
     y_profile_msg(fmt_c_str("% meshes", index));
