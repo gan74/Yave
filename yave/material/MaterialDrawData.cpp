@@ -19,28 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
-#define YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
 
-#include <yave/graphics/descriptors/DescriptorArray.h>
+#include "MaterialDrawData.h"
 
-#include "ImageView.h"
-
+#include <yave/graphics/device/MaterialAllocator.h>
 
 namespace yave {
 
-class TextureLibrary final : public DescriptorArray {
-    public:
-        TextureLibrary();
-
-        u32 add_texture(const TextureView& tex);
-        void remove_texture(const TextureView& tex);
-
-        mutable std::mutex _big_lock;
-};
-
+MaterialDrawData::MaterialDrawData(MaterialDrawData&& other) {
+    swap(other);
 }
 
+MaterialDrawData& MaterialDrawData::operator=(MaterialDrawData&& other) {
+    swap(other);
+    return *this;
+}
 
-#endif // YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
+MaterialDrawData::~MaterialDrawData() {
+    y_debug_assert(is_null());
+}
 
+void MaterialDrawData::swap(MaterialDrawData& other) {
+    std::swap(_index, other._index);
+    std::swap(_textures, other._textures);
+    std::swap(_parent, other._parent);
+}
+
+bool MaterialDrawData::is_null() const {
+    return _index == u32(-1);
+}
+
+u32 MaterialDrawData::index() const {
+    return _index;
+}
+
+void MaterialDrawData::recycle() {
+    _parent->recycle(this);
+}
+
+}

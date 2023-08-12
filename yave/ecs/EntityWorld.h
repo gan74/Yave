@@ -87,7 +87,8 @@ class EntityWorld {
             S* system = s.get();
             _systems.emplace_back(std::move(s));
             register_component_types(system);
-            system->setup(*this);
+            system->_world = this;
+            system->setup();
             return system;
         }
 

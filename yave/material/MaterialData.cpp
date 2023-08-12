@@ -37,15 +37,15 @@ MaterialData& MaterialData::set_texture(Textures type, AssetPtr<Texture> tex) {
 MaterialData& MaterialData::set_texture_reset_constants(Textures type, AssetPtr<Texture> tex) {
     switch(type) {
         case Roughness:
-            _constants.roughness_mul = 1.0f;
+            _roughness_mul = 1.0f;
         break;
 
         case Metallic:
-            _constants.metallic_mul = 1.0f;
+            _metallic_mul = 1.0f;
         break;
 
         case Emissive:
-            _constants.emissive_mul = tex.is_empty() ? 0.0f : 1.0f;
+            _emissive_mul = tex.is_empty() ? 0.0f : 1.0f;
         break;
 
         default:
@@ -73,13 +73,28 @@ std::array<AssetId, MaterialData::texture_count> MaterialData::texture_ids() con
     return ids;
 }
 
-
-const MaterialData::Contants& MaterialData::constants() const {
-    return _constants;
+math::Vec3 MaterialData::emissive_mul() const {
+    return _emissive_mul;
 }
 
-MaterialData::Contants& MaterialData::constants() {
-    return _constants;
+math::Vec3& MaterialData::emissive_mul() {
+    return _emissive_mul;
+}
+
+float MaterialData::roughness_mul() const {
+    return _roughness_mul;
+}
+
+float& MaterialData::roughness_mul() {
+    return _roughness_mul;
+}
+
+float MaterialData::metallic_mul() const {
+    return _metallic_mul;
+}
+
+float& MaterialData::metallic_mul() {
+    return _metallic_mul;
 }
 
 bool MaterialData::alpha_tested() const {
@@ -99,7 +114,7 @@ bool& MaterialData::double_sided() {
 }
 
 bool MaterialData::has_emissive() const {
-    return !_textures[Textures::Emissive].is_empty() || !_constants.emissive_mul.is_zero();
+    return !_textures[Textures::Emissive].is_empty() || !_emissive_mul.is_zero();
 }
 
 }

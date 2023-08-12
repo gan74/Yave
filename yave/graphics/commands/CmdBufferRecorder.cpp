@@ -93,12 +93,6 @@ RenderPassRecorder::~RenderPassRecorder() {
     _cmd_buffer.end_renderpass();
 }
 
-void RenderPassRecorder::bind_material(const Material& material) {
-    DescriptorSet set({InlineDescriptor(material.shader_data())});
-   const std::array<DescriptorSetBase, 2> sets = {texture_library().descriptor_set(), set};
-    bind_material_template(material.material_template(), sets, true);
-}
-
 void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> sets, bool bind_main_ds) {
     if(material_template != _cache.material) {
         const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);

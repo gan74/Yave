@@ -29,32 +29,32 @@ namespace yave {
 AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs::System("AssetLoaderSystem"), _loader(&loader) {
 }
 
-void AssetLoaderSystem::setup(ecs::EntityWorld& world) {
-    run_tick(world, false);
+void AssetLoaderSystem::setup() {
+    run_tick(false);
 }
 
-void AssetLoaderSystem::tick(ecs::EntityWorld& world) {
-    run_tick(world, true);
+void AssetLoaderSystem::tick() {
+    run_tick(true);
 }
 
-void AssetLoaderSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
+void AssetLoaderSystem::run_tick(bool only_recent) {
     y_profile();
 
     AssetLoadingContext loading_ctx(_loader);
 
     for(const LoadableComponentTypeInfo& info : _infos) {
-        info.start_loading(world, loading_ctx, only_recent, _loading[info.type]);
+        info.start_loading(world(), loading_ctx, only_recent, _loading[info.type]);
     }
 
-    post_load(world);
+    post_load();
 }
 
-void AssetLoaderSystem::post_load(ecs::EntityWorld& world) {
+void AssetLoaderSystem::post_load() {
     y_profile();
 
     _recently_loaded.make_empty();
     for(const LoadableComponentTypeInfo& info : _infos) {
-        info.update_status(world, _loading[info.type], _recently_loaded);
+        info.update_status(world(), _loading[info.type], _recently_loaded);
     }
 }
 

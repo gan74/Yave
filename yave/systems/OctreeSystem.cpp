@@ -41,28 +41,28 @@ static core::Span<ecs::EntityId> transformable_ids(ecs::EntityWorld& world, bool
 OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
 
-void OctreeSystem::destroy(ecs::EntityWorld& world) {
-    auto query = world.query<ecs::Mutate<TransformableComponent>>();
+void OctreeSystem::destroy() {
+    auto query = world().query<ecs::Mutate<TransformableComponent>>();
     for(auto&& [tr] : query.components()) {
         tr._node = nullptr;
     }
 }
 
-void OctreeSystem::setup(ecs::EntityWorld& world) {
-    run_tick(world, false);
+void OctreeSystem::setup() {
+    run_tick(false);
 }
 
-void OctreeSystem::tick(ecs::EntityWorld& world) {
-    run_tick(world, true);
+void OctreeSystem::tick() {
+    run_tick(true);
 }
 
-void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
+void OctreeSystem::run_tick(bool only_recent) {
     y_profile();
 
     {
         y_profile_zone("updating moved objects");
         usize insertions = 0;
-        for(auto&& [id, comp] : world.query<TransformableComponent>(transformable_ids(world, only_recent))) {
+        for(auto&& [id, comp] : world().query<TransformableComponent>(transformable_ids(world(), only_recent))) {
             auto&& [tr] = comp;
 
             if(tr.local_aabb().is_empty()) {
@@ -83,11 +83,11 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
         }
 
         unused(insertions);
-        y_profile_msg(fmt_c_str("%/% objects reinserted", insertions, transformable_ids(world, only_recent).size()));
+        y_profile_msg(fmt_c_str("%/% objects reinserted", insertions, transformable_ids(world(), only_recent).size()));
     }
 
     if(only_recent) {
-        for(auto&& [id, comp] : world.query<TransformableComponent>(world.to_be_removed<TransformableComponent>())) {
+        for(auto&& [id, comp] : world().query<ecs::Removed<TransformableComponent>>()) {
             auto&& [tr] = comp;
 
             if(tr._node) {

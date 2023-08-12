@@ -44,6 +44,21 @@ struct Camera {
     uint padding_2;
 };
 
+const uint diffuse_texture_index = 0;
+const uint normal_texture_index = 1;
+const uint roughness_texture_index = 2;
+const uint metallic_texture_index = 3;
+const uint emissive_texture_index = 4;
+
+struct MaterialData {
+    vec3 emissive_mul;
+    float roughness_mul;
+
+    float metallic_mul;
+
+    uint texture_indices[7];
+};
+
 struct DirectionalLight {
     vec3 direction;
     float cos_disk;

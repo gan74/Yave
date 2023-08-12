@@ -19,28 +19,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
-#define YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
+#ifndef YAVE_GRAPHICS_DEVICE_MATERIALALLOCATOR_H
+#define YAVE_GRAPHICS_DEVICE_MATERIALALLOCATOR_H
 
-#include <yave/graphics/descriptors/DescriptorArray.h>
+#include <yave/material/MaterialDrawData.h>
 
-#include "ImageView.h"
+#include <yave/graphics/buffers/Buffer.h>
+#include <yave/graphics/buffers/buffers.h>
 
+#include <yave/graphics/descriptors/uniforms.h>
+
+#include <y/core/Vector.h>
+
+#include <mutex>
 
 namespace yave {
 
-class TextureLibrary final : public DescriptorArray {
+class MaterialAllocator : NonMovable {
     public:
-        TextureLibrary();
+        static constexpr usize max_materials = 2 * 1024;
 
-        u32 add_texture(const TextureView& tex);
-        void remove_texture(const TextureView& tex);
+        MaterialAllocator();
+        ~MaterialAllocator();
 
-        mutable std::mutex _big_lock;
+        MaterialDrawData allocate_material(const MaterialData& material);
+
+        TypedSubBuffer<uniform::MaterialData, BufferUsage::StorageBit> material_buffer() const {
+            return _materials;
+        }
+
+    private:
+        friend class MaterialDrawData;
+
+        void recycle(MaterialDrawData* data);
+
+        TypedBuffer<uniform::MaterialData, BufferUsage::StorageBit, MemoryType::CpuVisible> _materials;
+        core::Vector<u32> _free;
+
+        mutable std::mutex _lock;
 };
 
 }
 
-
-#endif // YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
+#endif // YAVE_GRAPHICS_DEVICE_MATERIALALLOCATOR_H
 

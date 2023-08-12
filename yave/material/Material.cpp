@@ -24,28 +24,9 @@ SOFTWARE.
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/device/DeviceResources.h>
-#include <yave/graphics/images/TextureLibrary.h>
+#include <yave/graphics/device/MaterialAllocator.h>
 
 namespace yave {
-
-static auto material_texture_views(const MaterialData& data) {
-    std::array<TextureView, MaterialData::texture_count> textures = {
-        *device_resources()[DeviceResources::GreyTexture],          // Diffuse
-        *device_resources()[DeviceResources::FlatNormalTexture],    // Normal
-        *device_resources()[DeviceResources::WhiteTexture],         // Roughness
-        *device_resources()[DeviceResources::WhiteTexture],         // Metallic
-        *device_resources()[DeviceResources::WhiteTexture],         // Emissive
-    };
-
-    for(usize i = 0; i != MaterialData::texture_count; ++i) {
-        y_debug_assert(!data.textures()[i].is_loading());
-        if(const auto* tex = data.textures()[i].get()) {
-            textures[i] = *tex;
-        }
-    }
-
-    return textures;
-}
 
 static DeviceResources::MaterialTemplates material_template_for_data(const MaterialData& data) {
     if(data.alpha_tested()) {
@@ -55,26 +36,18 @@ static DeviceResources::MaterialTemplates material_template_for_data(const Mater
 }
 
 
-
 Material::Material(MaterialData&& data) : Material(device_resources()[material_template_for_data(data)], std::move(data)) {
 }
 
-Material::Material(const MaterialTemplate* tmp, MaterialData&& data) : _template(tmp), _data(std::move(data)) {
-    if(!is_null()) {
-        const auto textures = material_texture_views(_data);
-        _shader_data.constants = _data.constants();
-        for(usize i = 0; i != textures.size(); ++i) {
-            _shader_data.textures_indices[i] = texture_library().add_texture(textures[i]);
-        }
-    }
+Material::Material(const MaterialTemplate* tmp, MaterialData&& data) :
+        _template(tmp),
+        _draw_data(material_allocator().allocate_material(data)),
+        _data(std::move(data)) {
 }
 
 Material::~Material() {
     if(!is_null()) {
-        // Todo, textures might still be used by command buffer
-        for(const TextureView& tex : material_texture_views(_data)) {
-            texture_library().remove_texture(tex);
-        }
+        destroy_graphic_resource(std::move(_draw_data));
     }
 }
 
@@ -89,25 +62,20 @@ Material& Material::operator=(Material&& other) {
 
 void Material::swap(Material& other) {
     std::swap(_template, other._template);
-    std::swap(_shader_data, other._shader_data);
+    std::swap(_draw_data, other._draw_data);
     std::swap(_data, other._data);
-}
-
-const MaterialData& Material::data() const {
-    return _data;
-}
-
-const MaterialTemplate* Material::material_template() const {
-    return _template;
-}
-
-const Material::ShaderData& Material::shader_data() const {
-    return _shader_data;
 }
 
 bool Material::is_null() const {
     return _template == nullptr;
 }
 
+const MaterialTemplate* Material::material_template() const {
+    return _template;
 }
 
+const MaterialDrawData& Material::draw_data() const {
+    return _draw_data;
+}
+
+}

@@ -127,6 +127,8 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
 }
 
 void MeshAllocator::recycle(MeshDrawData* data) {
+    y_debug_assert(data->_mesh_buffers == _mesh_buffers.get());
+
     const auto lock = y_profile_unique_lock(_lock);
 
     _free_blocks << FreeBlock {
@@ -219,6 +221,10 @@ std::pair<u64, u64> MeshAllocator::allocated() const {
 usize MeshAllocator::free_blocks() const {
     const auto lock = y_profile_unique_lock(_lock);
     return _free_blocks.size();
+}
+
+const MeshDrawBuffers& MeshAllocator::mesh_buffers() const {
+    return *_mesh_buffers;
 }
 
 }

@@ -56,7 +56,8 @@ EntityWorld::EntityWorld() : _containers(create_component_containers()) {
 
 EntityWorld::~EntityWorld() {
     for(auto& system : _systems) {
-        system->destroy(*this);
+        y_debug_assert(system->_world == this);
+        system->destroy();
     }
     _containers.clear();
 }
@@ -78,6 +79,16 @@ void EntityWorld::swap(EntityWorld& other) {
         std::swap(_required_components, other._required_components);
         std::swap(_systems, other._systems);
         std::swap(_world_components, other._world_components);
+
+        for(auto& system : _systems) {
+            y_debug_assert(system->_world == &other);
+            system->_world = this;
+        }
+
+        for(auto& system : other._systems) {
+            y_debug_assert(system->_world == this);
+            system->_world = &other;
+        }
     }
     for(const ComponentTypeIndex c : _required_components) {
         unused(c);
@@ -101,7 +112,8 @@ void EntityWorld::tick() {
         y_profile_zone("tick");
         for(auto& system : _systems) {
             y_profile_dyn_zone(system->name().data());
-            system->tick(*this);
+            y_debug_assert(system->_world == this);
+            system->tick();
         }
     }
 
@@ -119,8 +131,9 @@ void EntityWorld::update(float dt) {
     y_profile();
     for(auto& system : _systems) {
         y_profile_dyn_zone(system->name().data());
-        system->update(*this, dt);
-        system->schedule_fixed_update(*this, dt);
+        y_debug_assert(system->_world == this);
+        system->update(dt);
+        system->schedule_fixed_update(dt);
     }
 }
 
@@ -346,7 +359,8 @@ void EntityWorld::post_deserialize() {
 
     for(auto& system : _systems) {
         y_debug_assert(system);
-        system->reset(*this);
+        y_debug_assert(system->_world == this);
+        system->reset();
     }
 
 

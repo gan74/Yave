@@ -32,22 +32,22 @@ namespace yave {
 AABBUpdateSystem::AABBUpdateSystem() : ecs::System("AABBUpdateSystem") {
 }
 
-void AABBUpdateSystem::setup(ecs::EntityWorld& world) {
-    world.make_mutated<TransformableComponent>(world.component_ids<TransformableComponent>());
+void AABBUpdateSystem::setup() {
+    world().make_mutated<TransformableComponent>(world().component_ids<TransformableComponent>());
 }
 
-void AABBUpdateSystem::tick(ecs::EntityWorld& world) {
+void AABBUpdateSystem::tick() {
     ecs::SparseComponentSet<AABB> aabbs;
     for(const AABBTypeInfo& info : _infos) {
-        const core::Span<ecs::EntityId> ids = world.recently_mutated(info.type);
+        const core::Span<ecs::EntityId> ids = world().recently_mutated(info.type);
         if(ids.is_empty()) {
             continue;
         }
-        y_profile_dyn_zone(fmt_c_str("collecting % %", ids.size(), world.component_type_name(info.type)));
-        info.collect_aabbs(world, ids, aabbs);
+        y_profile_dyn_zone(fmt_c_str("collecting % %", ids.size(), world().component_type_name(info.type)));
+        info.collect_aabbs(world(), ids, aabbs);
     }
 
-    for(auto&& [id, comp] : world.query<ecs::Mutate<TransformableComponent>>(aabbs.ids())) {
+    for(auto&& [id, comp] : world().query<ecs::Mutate<TransformableComponent>>(aabbs.ids())) {
         auto&& [tr] = comp;
         tr.set_aabb(aabbs[id]);
     }

@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "DeviceResources.h"
+#include "LifetimeManager.h"
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
 #include <yave/graphics/shaders/SpirVData.h>
@@ -293,6 +294,8 @@ DeviceResources::DeviceResources() {
 
 
 DeviceResources::~DeviceResources() {
+    // _materials = {};
+    // lifetime_manager().wait_cmd_buffers();
 }
 
 TextureView DeviceResources::brdf_lut() const {

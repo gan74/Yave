@@ -43,7 +43,9 @@ using Bindings = core::Vector<VkVertexInputBindingDescription>;
 
 template<typename T, typename S>
 static void merge_bindings(T& into, const S& other) {
-    into.insert(other.begin(), other.end());
+    for(const auto& [k, v] : other) {
+        into[k].push_back(v.begin(), v.end());
+    }
 }
 
 template<typename T, typename S>
@@ -145,8 +147,13 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
         create_stage_info(_stages, vert);
         create_stage_info(_stages, geom);
 
-        const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
+        for(auto& [set, bindings] : _bindings) {
+            std::sort(bindings.begin(), bindings.end(), [](const auto& a, const auto& b) { return a.binding < b.binding; });
+            const usize new_size = std::unique(bindings.begin(), bindings.end()) - bindings.begin();
+            bindings.shrink_to(new_size);
+        }
 
+        const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
         const usize max_variable_binding = frag.variable_size_bindings().size() + vert.variable_size_bindings().size() + geom.variable_size_bindings().size();
         core::ScratchVector<u32> variable_bindings(max_variable_binding);

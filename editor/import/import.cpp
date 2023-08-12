@@ -603,10 +603,10 @@ core::Result<MaterialData> ParsedScene::build_material_data(usize index) const {
     data.alpha_tested() = (gltf_mat.alphaMode != "OPAQUE");
     data.double_sided() = gltf_mat.doubleSided;
 
-    data.constants().metallic_mul = float(pbr.metallicFactor);
-    data.constants().roughness_mul = float(pbr.roughnessFactor);
+    data.metallic_mul() = float(pbr.metallicFactor);
+    data.roughness_mul() = float(pbr.roughnessFactor);
     for(usize i = 0; i != 3; ++i) {
-        data.constants().emissive_mul[i] = float(gltf_mat.emissiveFactor[i]);
+        data.emissive_mul()[i] = float(gltf_mat.emissiveFactor[i]);
     }
 
     return core::Ok(std::move(data));

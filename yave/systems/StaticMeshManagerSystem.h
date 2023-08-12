@@ -37,18 +37,22 @@ class StaticMeshManagerSystem : public ecs::System {
 
         StaticMeshManagerSystem();
 
-        void destroy(ecs::EntityWorld& world) override;
-        void setup(ecs::EntityWorld& world) override;
-        void tick(ecs::EntityWorld& world) override;
+        void render(RenderPassRecorder& recorder, TypedSubBuffer<uniform::Camera, BufferUsage::UniformBit> camera, core::Span<ecs::EntityId> ids) const;
 
-        TypedSubBuffer<math::Transform<>, BufferUsage::AttributeBit> transform_buffer() const {
+        void destroy() override;
+        void setup() override;
+        void tick() override;
+
+        TypedSubBuffer<math::Transform<>, BufferUsage::StorageBit> transform_buffer() const {
             return _transforms;
         }
 
-    private:
-        void run_tick(ecs::EntityWorld& world, bool only_recent);
 
-        TypedBuffer<math::Transform<>, BufferUsage::AttributeBit, MemoryType::CpuVisible> _transforms;
+    private:
+        void run_tick(bool only_recent);
+
+        TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible> _transforms;
+
         core::Vector<u32> _free;
 };
 

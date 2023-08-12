@@ -51,6 +51,7 @@ const PhysicalDevice& physical_device();
 DeviceMemoryAllocator& device_allocator();
 DescriptorSetAllocator& descriptor_set_allocator();
 MeshAllocator& mesh_allocator();
+MaterialAllocator& material_allocator();
 TextureLibrary& texture_library();
 const CmdQueue& command_queue();
 const CmdQueue& loading_command_queue();

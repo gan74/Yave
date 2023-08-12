@@ -42,9 +42,6 @@ class StaticMeshComponent final :
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, core::Vector<AssetPtr<Material>> materials);
 
-        void render(RenderPassRecorder& recorder) const;
-        void render_mesh(RenderPassRecorder& recorder) const;
-
         AssetPtr<StaticMesh>& mesh();
         const AssetPtr<StaticMesh>& mesh() const;
 

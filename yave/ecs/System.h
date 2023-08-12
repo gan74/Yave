@@ -40,51 +40,66 @@ class System : NonCopyable {
             return _name;
         }
 
-        virtual void tick(EntityWorld&) {
+        virtual void tick() {
             // nothing
         }
 
-        virtual void update(EntityWorld&, float dt) {
+        virtual void update(float dt) {
             unused(dt);
             // nothing
         }
 
-        virtual void fixed_update(EntityWorld&, float dt) {
+        virtual void fixed_update(float dt) {
             unused(dt);
             // nothing
         }
 
-        virtual void setup(EntityWorld&) {
+        virtual void setup() {
             // nothing
         }
 
-        virtual void destroy(EntityWorld&) {
+        virtual void destroy() {
             // nothing
         }
 
-        virtual void reset(EntityWorld& world) {
-            destroy(world);
-            setup(world);
+        virtual void reset() {
+            destroy();
+            setup();
         }
 
         float fixed_update_time() const {
             return _fixed_update_time;
         }
 
-        void schedule_fixed_update(EntityWorld& world, float dt) {
+        void schedule_fixed_update(float dt) {
             if(_fixed_update_time <= 0.0f) {
                 if(_fixed_update_time > -1.0f) {
-                    fixed_update(world, dt);
+                    fixed_update(dt);
                 }
                 return;
             }
 
             _fixed_update_acc += dt;
             while(_fixed_update_acc > _fixed_update_time) {
-                fixed_update(world, _fixed_update_time);
+                fixed_update(_fixed_update_time);
                 _fixed_update_acc -= _fixed_update_time;
             }
         }
+
+        EntityWorld& world() {
+            y_debug_assert(_world);
+            return *_world;
+        }
+
+        const EntityWorld& world() const {
+            y_debug_assert(_world);
+            return *_world;
+        }
+
+    private:
+        friend class EntityWorld;
+
+        EntityWorld* _world = nullptr;
 
     private:
         core::String _name;

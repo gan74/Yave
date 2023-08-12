@@ -48,45 +48,6 @@ StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, core:
         _mesh(mesh), _materials(std::move(materials)) {
 }
 
-void StaticMeshComponent::render(RenderPassRecorder& recorder) const {
-    const StaticMesh* mesh = _mesh.get();
-    if(!mesh || !has_instance_index()) {
-        return;
-    }
-
-    recorder.bind_mesh_buffers(mesh->draw_data().mesh_buffers());
-
-    auto get_material = [&](const AssetPtr<Material>& mat) {
-        if constexpr(display_empty_material) {
-            return mat.is_empty() ? device_resources()[DeviceResources::EmptyMaterial].get() : mat.get();
-        }
-        return mat.get();
-    };
-
-    if(_materials.size() > 1) {
-        y_debug_assert(mesh->sub_meshes().size() == _materials.size());
-        for(usize i = 0; i != _materials.size(); ++i) {
-            if(const Material* mat = get_material(_materials[i])) {
-                recorder.bind_material(*mat);
-                recorder.draw(mesh->sub_meshes()[i].vk_indirect_data(_instance_index));
-            }
-        }
-    } else if(const Material* mat = get_material(_materials.is_empty() ? AssetPtr<Material>() : _materials.first())) {
-        recorder.bind_material(*mat);
-        recorder.draw(mesh->draw_data(), 1, _instance_index);
-    }
-}
-
-void StaticMeshComponent::render_mesh(RenderPassRecorder& recorder) const {
-    const StaticMesh* mesh = _mesh.get();
-    if(!mesh || !has_instance_index()) {
-        return;
-    }
-
-    recorder.bind_mesh_buffers(mesh->draw_data().mesh_buffers());
-    recorder.draw(mesh->draw_data(), 1, _instance_index);
-}
-
 const AABB& StaticMeshComponent::aabb() const {
     return _aabb;
 }

@@ -180,6 +180,8 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
                 res.recycle();
             } else if constexpr(std::is_same_v<decltype(res), MeshDrawData&>) {
                 res.recycle();
+            } else if constexpr(std::is_same_v<decltype(res), MaterialDrawData&>) {
+                res.recycle();
             } else {
                 // log_msg(fmt("destroying % %", ct_type_name<decltype(res)>(), (void*)res));
                 vk_destroy(res.consume());
@@ -195,13 +197,14 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 void LifetimeManager::wait_cmd_buffers() {
     y_profile();
 
+    command_queue().submit(create_disposable_cmd_buffer()).wait();
+
     const auto lock = y_profile_unique_lock(_cmd_lock);
     for(CmdBufferData* data : _in_flight) {
         data->wait();
     }
 
     poll_cmd_buffers();
-
     y_debug_assert(_in_flight.empty());
 }
 

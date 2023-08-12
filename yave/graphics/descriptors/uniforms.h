@@ -52,6 +52,20 @@ struct Camera {
 static_assert(sizeof(Camera) % 16 == 0);
 
 
+struct MaterialData {
+    static constexpr usize texture_count = 7;
+
+    math::Vec3 emissive_mul;
+    float roughness_mul = 1.0f;
+
+    float metallic_mul = 0.0f;
+
+    u32 texture_indices[texture_count];
+};
+
+static_assert(sizeof(MaterialData) % 16 == 0);
+
+
 struct DirectionalLight {
     math::Vec3 direction;
     float cos_disk = 0.0f;
@@ -140,7 +154,6 @@ struct AtmosphereParams {
 };
 
 static_assert(sizeof(AtmosphereParams) % 16 == 0);
-
 
 
 }

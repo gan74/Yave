@@ -55,7 +55,6 @@ class RenderPassRecorder final : NonMovable {
         ~RenderPassRecorder();
 
         // specific
-        void bind_material(const Material& material);
         void bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> sets, bool bind_main_ds = false);
 
         void set_main_descriptor_set(DescriptorSetBase ds_set);

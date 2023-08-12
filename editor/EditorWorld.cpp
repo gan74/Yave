@@ -73,7 +73,7 @@ void EditorWorld::clear() {
 
 void EditorWorld::flush_reload() {
     AssetLoaderSystem* system = find_system<AssetLoaderSystem>();
-    system->reset(*this);
+    system->reset();
 }
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {

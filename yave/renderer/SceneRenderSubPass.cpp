@@ -51,48 +51,25 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, co
     return pass;
 }
 
-
-static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder& recorder, const FrameGraphPass* pass, usize index = 0) {
-    y_profile();
-
-    const auto region = recorder.region("Scene");
-
-    const ecs::EntityWorld& world = sub_pass->scene_view.world();
-    const Camera& camera = sub_pass->scene_view.camera();
-
-    const auto& descriptor_set = pass->descriptor_sets()[sub_pass->descriptor_set_index];
-    recorder.set_main_descriptor_set(descriptor_set);
-
-    const StaticMeshManagerSystem* manager = world.find_system<StaticMeshManagerSystem>();
-    recorder.bind_per_instance_attrib_buffers(manager->transform_buffer());
-
-    auto render_query = [&](auto query) {
-        for(const auto& [mesh] : query.components()) {
-            mesh.render(recorder);
-        }
-    };
-
-    const std::array tags = {ecs::tags::not_hidden};
-    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-        const core::Vector<ecs::EntityId> visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
-        render_query(world.query<StaticMeshComponent>(visible, tags));
-    } else {
-        render_query(world.query<StaticMeshComponent>(tags));
-    }
-
-    y_profile_msg(fmt_c_str("% meshes", index));
-
-    return index;
-}
-
 void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const {
-    // fill render data
-    auto camera_mapping = pass->resources().map_buffer(camera_buffer);
-    camera_mapping[0] = scene_view.camera();
+    const Camera& camera = scene_view.camera();
 
-    if(scene_view.has_world()) {
-        render_world(this, recorder, pass, 0);
+    {
+        auto camera_mapping = pass->resources().map_buffer(camera_buffer);
+        camera_mapping[0] = camera;
     }
+
+    const ecs::EntityWorld& world = scene_view.world();
+
+    core::Vector<ecs::EntityId> visible;
+    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
+        visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+    } else {
+        visible = world.component_ids<StaticMeshComponent>();
+    }
+
+    const StaticMeshManagerSystem* static_meshes = world.find_system<StaticMeshManagerSystem>();
+    static_meshes->render(recorder, pass->resources().buffer<BufferUsage::UniformBit>(camera_buffer), visible);
 }
 
 }

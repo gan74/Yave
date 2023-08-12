@@ -52,6 +52,7 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
                           EditorPassFlags flags) {
     y_profile();
 
+#if 0
     const EditorWorld& world = current_world();
     y_debug_assert(&world == &scene_view.world());
 
@@ -96,6 +97,8 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
     } else {
         render_query(world.query<StaticMeshComponent>());
     }
+#endif
+    //y_fatal("TODO");
 }
 
 IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, EditorPassFlags flags) {

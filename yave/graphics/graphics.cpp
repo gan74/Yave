@@ -34,6 +34,7 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/device/MeshAllocator.h>
+#include <yave/graphics/device/MaterialAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
 
 #include <y/core/ScratchPad.h>
@@ -54,6 +55,7 @@ Uninitialized<DeviceMemoryAllocator> allocator;
 Uninitialized<LifetimeManager> lifetime_manager;
 Uninitialized<DescriptorSetAllocator> descriptor_set_allocator;
 Uninitialized<MeshAllocator> mesh_allocator;
+Uninitialized<MaterialAllocator> material_allocator;
 Uninitialized<TextureLibrary> texture_library;
 Uninitialized<DeviceResources> resources;
 
@@ -200,6 +202,7 @@ void init_device(Instance& instance, PhysicalDevice device) {
     device::allocator.init(device_properties());
     device::descriptor_set_allocator.init();
     device::mesh_allocator.init();
+    device::material_allocator.init();
     device::texture_library.init();
 
     for(usize i = 0; i != device::samplers.size(); ++i) {
@@ -223,7 +226,6 @@ void destroy_device() {
 
     device::extensions = {};
 
-    command_queue().submit(create_disposable_cmd_buffer()).wait();
     lifetime_manager().wait_cmd_buffers();
 
     y_always_assert(device::active_pools == 1, "Not all pools have been destroyed");
@@ -242,6 +244,7 @@ void destroy_device() {
     }
 
     device::texture_library.destroy();
+    device::material_allocator.destroy();
     device::mesh_allocator.destroy();
     device::descriptor_set_allocator.destroy();
     device::lifetime_manager.destroy();
@@ -382,6 +385,10 @@ DescriptorSetAllocator& descriptor_set_allocator() {
 
 MeshAllocator& mesh_allocator() {
     return device::mesh_allocator.get();
+}
+
+MaterialAllocator& material_allocator() {
+    return device::material_allocator.get();
 }
 
 TextureLibrary& texture_library() {

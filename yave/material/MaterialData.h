@@ -41,13 +41,6 @@ class MaterialData {
 
         static constexpr usize texture_count = usize(Textures::Max);
 
-        struct Contants {
-            math::Vec3 emissive_mul;
-            float roughness_mul = 1.0f;
-            float metallic_mul = 0.0f;
-        };
-
-
         MaterialData() = default;
         MaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
 
@@ -59,8 +52,14 @@ class MaterialData {
         const AssetPtr<Texture>& operator[](Textures tex) const;
         const std::array<AssetPtr<Texture>, texture_count>& textures() const;
 
-        const Contants& constants() const;
-        Contants& constants();
+        math::Vec3 emissive_mul() const;
+        math::Vec3& emissive_mul();
+
+        float roughness_mul() const;
+        float& roughness_mul();
+
+        float metallic_mul() const;
+        float& metallic_mul();
 
         bool alpha_tested() const;
         bool& alpha_tested();
@@ -71,14 +70,21 @@ class MaterialData {
 
         bool has_emissive() const;
 
-        y_reflect(MaterialData, _textures, _constants, _alpha_tested)
+        y_reflect(MaterialData,
+              _textures,
+              _emissive_mul, _roughness_mul, _metallic_mul,
+              _alpha_tested, _double_sided
+        )
 
     private:
         std::array<AssetId, texture_count> texture_ids() const;
 
         std::array<AssetPtr<Texture>, texture_count> _textures;
 
-        Contants _constants;
+        math::Vec3 _emissive_mul;
+        float _roughness_mul = 1.0f;
+        float _metallic_mul = 0.0f;
+
         bool _alpha_tested = false;
         bool _double_sided = false;
 };

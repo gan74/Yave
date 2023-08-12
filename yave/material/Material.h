@@ -22,20 +22,15 @@ SOFTWARE.
 #ifndef YAVE_MATERIAL_MATERIAL_H
 #define YAVE_MATERIAL_MATERIAL_H
 
-#include "MaterialData.h"
+#include "MaterialDrawData.h"
 
-#include <yave/graphics/descriptors/DescriptorSet.h>
+#include <yave/graphics/descriptors/uniforms.h>
 
 namespace yave {
 
 class Material final : NonCopyable {
 
     public:
-        struct ShaderData {
-            MaterialData::Contants constants;
-            u32 textures_indices[MaterialData::texture_count];
-        };
-
         Material() = default;
         Material(MaterialData&& data);
         Material(const MaterialTemplate* tmp, MaterialData&& data = MaterialData());
@@ -50,14 +45,12 @@ class Material final : NonCopyable {
         bool is_null() const;
 
         const MaterialTemplate* material_template() const;
-        const ShaderData& shader_data() const;
-
-        const MaterialData& data() const;
+        const MaterialDrawData& draw_data() const;
 
     private:
         const MaterialTemplate* _template = nullptr;
-        ShaderData _shader_data = {};
 
+        MaterialDrawData _draw_data;
         MaterialData _data;
 };
 

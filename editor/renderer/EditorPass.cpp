@@ -87,6 +87,8 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
                                    FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer,
                                    EditorPassFlags flags) {
 
+    return;
+
     y_profile();
 
     const EditorWorld& world = current_world();

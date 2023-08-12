@@ -19,28 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
-#define YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
+#ifndef YAVE_MATERIAL_MATERIALDRAWDATA_H
+#define YAVE_MATERIAL_MATERIALDRAWDATA_H
 
-#include <yave/graphics/descriptors/DescriptorArray.h>
+#include "MaterialData.h"
 
-#include "ImageView.h"
-
+#include <yave/graphics/images/ImageView.h>
 
 namespace yave {
 
-class TextureLibrary final : public DescriptorArray {
+class MaterialDrawData : NonCopyable {
     public:
-        TextureLibrary();
+        MaterialDrawData() = default;
 
-        u32 add_texture(const TextureView& tex);
-        void remove_texture(const TextureView& tex);
+        MaterialDrawData(MaterialDrawData&& other);
+        MaterialDrawData& operator=(MaterialDrawData&& other);
 
-        mutable std::mutex _big_lock;
+        ~MaterialDrawData();
+
+        bool is_null() const;
+        u32 index() const;
+
+    private:
+        friend class LifetimeManager;
+        friend class MaterialAllocator;
+
+        void recycle();
+
+    private:
+        void swap(MaterialDrawData& other);
+
+        u32 _index = u32(-1);
+
+        std::array<TextureView, MaterialData::texture_count> _textures;
+        MaterialAllocator* _parent = nullptr;
 };
 
 }
 
-
-#endif // YAVE_GRAPHICS_IMAGES_TEXTURELIBRARY_H
+#endif // YAVE_MATERIAL_MATERIALDRAWDATA_H
 
