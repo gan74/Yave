@@ -35,13 +35,15 @@ StaticMeshManagerSystem::StaticMeshManagerSystem() : ecs::System("StaticMeshMana
 }
 
 void StaticMeshManagerSystem::destroy(ecs::EntityWorld& world) {
-    auto query = world.query<ecs::Mutate<StaticMeshComponent>>();
+    auto query = world.query<StaticMeshComponent>();
     for(auto&& [mesh] : query.components()) {
         if(mesh.has_instance_index()) {
             _free.push_back(mesh._instance_index);
             mesh._instance_index = u32(-1);
         }
     }
+
+    y_debug_assert(_free.size() == _transforms.size());
 }
 
 void StaticMeshManagerSystem::setup(ecs::EntityWorld& world) {
@@ -74,6 +76,14 @@ void StaticMeshManagerSystem::run_tick(ecs::EntityWorld& world, bool only_recent
         moved_query(world.query<StaticMeshComponent, ecs::Changed<TransformableComponent>>());
     } else {
         moved_query(world.query<StaticMeshComponent, TransformableComponent>());
+    }
+
+    auto removed = world.query<ecs::Removed<StaticMeshComponent>>();
+    for(const auto& [mesh] : removed.components()) {
+        if(mesh.has_instance_index()) {
+            _free.push_back(mesh._instance_index);
+            mesh._instance_index = u32(-1);
+        }
     }
 }
 
