@@ -45,7 +45,7 @@ class DeviceMemoryAllocator {
 
         DeviceMemory alloc(VkImage image);
         DeviceMemory alloc(VkBuffer buffer, MemoryType type);
-        DeviceMemory alloc(VkMemoryRequirements reqs, MemoryType type);
+        DeviceMemory alloc(VkMemoryRequirements2 reqs, MemoryType type);
 
         auto heaps() const {
             return core::Range(_heaps.begin(), _heaps.end());

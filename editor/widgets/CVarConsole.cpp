@@ -26,9 +26,9 @@ SOFTWARE.
 #include <editor/utils/ui.h>
 #include <editor/Settings.h>
 
+#include <yave/utils/color.h>
+
 #include <y/utils/name.h>
-
-
 
 #include <algorithm>
 #include <string>
@@ -157,7 +157,7 @@ void CVarConsole::on_gui() {
                         ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
                         pop_color = true;
                     } else if(var.modified) {
-                        ImGui::PushStyleColor(ImGuiCol_Text, math::Vec4(0.3f, 0.3f, 1.0f, 1.0f));
+                        ImGui::PushStyleColor(ImGuiCol_Text, math::Vec4(sRGB_to_linear(math::Vec3(0.3f, 0.3f, 1.0f)), 1.0f));
                         pop_color = true;
                     }
 

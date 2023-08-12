@@ -39,7 +39,7 @@ class PhysicalDevice {
         DeviceProperties device_properties() const;
 
         bool is_discrete() const;
-        usize total_device_memory() const;
+        u64 total_device_memory() const;
 
         const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
 

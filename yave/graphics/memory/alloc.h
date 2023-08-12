@@ -119,7 +119,7 @@ inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
         }
     }
 
-    y_fatal("Failed to allocate memory: out of memory");
+    y_fatal("Failed to allocate memory: no suitable heap found (out of memory?)");
 }
 
 inline VkDeviceMemory alloc_memory(VkMemoryRequirements reqs, MemoryType type) {

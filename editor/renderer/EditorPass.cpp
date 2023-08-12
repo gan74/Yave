@@ -159,6 +159,7 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
     const ecs::EntityId selected = world.selected_entity();
 
     y_debug_assert(&scene_view.world() == &world);
+    unused(scene_view);
 
     const TransformableComponent* tr = world.component<TransformableComponent>(selected);
     if(!tr) {
@@ -201,7 +202,6 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
             }
         }
     }
-
 }
 
 static void visit_octree(DirectDrawPrimitive* primitive, const Frustum& frustum, const OctreeNode& node) {

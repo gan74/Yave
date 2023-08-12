@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "DeviceMemoryAllocator.h"
-#include "alloc.h"
 
 #include <yave/graphics/device/DeviceProperties.h>
 
@@ -39,12 +38,6 @@ u64 DeviceMemoryAllocator::heap_size_for_type(MemoryType type) {
     return default_heap_size;
 }
 
-u64 DeviceMemoryAllocator::dedicated_threshold_for_type(MemoryType type) {
-    const u64 heap_size = heap_size_for_type(type);
-    return type == MemoryType::Staging ? heap_size : (heap_size / 4);
-}
-
-
 DeviceMemoryAllocator::DeviceMemoryAllocator(const DeviceProperties& properties) : _max_allocs(properties.max_memory_allocations) {
 }
 
@@ -57,30 +50,37 @@ DeviceMemory DeviceMemoryAllocator::dedicated_alloc(VkMemoryRequirements reqs, M
     return std::move(heap->alloc(reqs).unwrap());
 }
 
-DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements reqs, MemoryType type) {
+DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements2 reqs, MemoryType type) {
     y_profile();
+
+    const VkMemoryRequirements& mem_reqs = reqs.memoryRequirements;
+    const VkMemoryDedicatedRequirements* dedicated_reqs = vk_find_pnext<VkMemoryDedicatedRequirements>(reqs);
+
+    const bool use_dedicated_alloc =
+        (mem_reqs.size >= heap_size_for_type(type)) ||
+        (dedicated_reqs && dedicated_reqs->prefersDedicatedAllocation);
 
     Y_TODO(We are double locking here, each heap will lock internally)
     const auto lock = y_profile_unique_lock(_lock);
 
-    if(reqs.size >= dedicated_threshold_for_type(type)) {
-        return dedicated_alloc(reqs, type);
+    if(use_dedicated_alloc) {
+        return dedicated_alloc(mem_reqs, type);
     }
 
-    if(reqs.alignment % DeviceMemoryHeap::alignment && DeviceMemoryHeap::alignment % reqs.alignment) {
-        log_msg("Failed to align memory: defaulting to dedicated allocation.", Log::Warning);
-        return dedicated_alloc(reqs, type);
+    if(mem_reqs.alignment % DeviceMemoryHeap::alignment && DeviceMemoryHeap::alignment % mem_reqs.alignment) {
+        log_msg("Failed to align memory: defaulting to dedicated allocation", Log::Warning);
+        return dedicated_alloc(mem_reqs, type);
     }
 
-    auto& heaps =_heaps[HeapType{reqs.memoryTypeBits, type}];
+    auto& heaps =_heaps[HeapType{mem_reqs.memoryTypeBits, type}];
     for(auto& heap : heaps) {
-        if(auto r = heap->alloc(reqs)) {
+        if(auto r = heap->alloc(mem_reqs)) {
             return std::move(r.unwrap());
         }
     }
 
-    auto heap = std::make_unique<DeviceMemoryHeap>(reqs.memoryTypeBits, type, heap_size_for_type(type));
-    auto alloc = std::move(heap->alloc(reqs).unwrap());
+    auto heap = std::make_unique<DeviceMemoryHeap>(mem_reqs.memoryTypeBits, type, heap_size_for_type(type));
+    auto alloc = std::move(heap->alloc(mem_reqs).unwrap());
 
     heaps.push_back(std::move(heap));
 
@@ -88,14 +88,26 @@ DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements reqs, MemoryType 
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(VkImage image) {
-    VkMemoryRequirements reqs = {};
-    vkGetImageMemoryRequirements(vk_device(), image, &reqs);
+    VkImageMemoryRequirementsInfo2 infos = vk_struct();
+    infos.image = image;
+
+    VkMemoryDedicatedRequirements dedicated = vk_struct();
+    VkMemoryRequirements2 reqs = vk_struct();
+    reqs.pNext = &dedicated;
+
+    vkGetImageMemoryRequirements2(vk_device(), &infos, &reqs);
     return alloc(reqs, MemoryType::DeviceLocal);
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(VkBuffer buffer, MemoryType type) {
-    VkMemoryRequirements reqs = {};
-    vkGetBufferMemoryRequirements(vk_device(), buffer, &reqs);
+    VkBufferMemoryRequirementsInfo2 infos = vk_struct();
+    infos.buffer = buffer;
+
+    VkMemoryDedicatedRequirements dedicated = vk_struct();
+    VkMemoryRequirements2 reqs = vk_struct();
+    reqs.pNext = &dedicated;
+
+    vkGetBufferMemoryRequirements2(vk_device(), &infos, &reqs);
     return alloc(reqs, type);
 }
 

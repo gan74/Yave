@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/window/Monitor.h>
+#include <yave/utils/color.h>
 
 #include <y/io2/File.h>
 #include <y/utils/log.h>
@@ -37,7 +38,6 @@ SOFTWARE.
 #include <external/imgui_test_engine/imgui_te_internal.h>
 
 #include <deque>
-
 
 
 
@@ -93,10 +93,12 @@ static void setup_style() {
 
     const float lightness = 1.0f;
     auto rgb = [=](u8 r, u8 g, u8 b, float alpha = 1.0f) {
-          return math::Vec4(math::Vec3(r, g, b) / 255.0f * lightness, alpha).min(math::Vec4(1.0f));
+        const math::Vec3 linear = (math::Vec3(r, g, b) / 255.0f * lightness).min(math::Vec3(1.0f));
+        return math::Vec4(sRGB_to_linear(linear), alpha);
     };
+
     auto grey = [=](u8 g, float alpha = 1.0f) {
-          return rgb(g, g, g, alpha);
+        return rgb(g, g, g, alpha);
     };
 
     for(usize i = 0; i != ImGuiCol_COUNT; ++i) {

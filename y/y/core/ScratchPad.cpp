@@ -73,6 +73,7 @@ void free_scratchpad(void* ptr, usize size) {
     const usize aligned_size = align_up_to_max(size);
 
     byte* alloc_end = static_cast<byte*>(ptr) + aligned_size;
+    unused(alloc_end);
     y_debug_assert(alloc_end == begin);
 
     begin = static_cast<byte*>(ptr);

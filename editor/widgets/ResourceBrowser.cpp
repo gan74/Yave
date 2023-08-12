@@ -198,8 +198,6 @@ void ResourceBrowser::draw_top_bar() {
 }
 
 void ResourceBrowser::draw_search_results() {
-    Y_TODO(Replace by table when available)
-
     _preview_id = AssetId::invalid_id();
 
     const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;

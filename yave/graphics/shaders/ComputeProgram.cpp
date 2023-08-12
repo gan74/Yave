@@ -79,7 +79,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
         create_info.stage = stage;
     }
 
-    vk_check(vkCreateComputePipelines(vk_device(), vk_null(), 1, &create_info, vk_allocation_callbacks(), _pipeline.get_ptr_for_init()));
+    vk_check(vkCreateComputePipelines(vk_device(), {}, 1, &create_info, vk_allocation_callbacks(), _pipeline.get_ptr_for_init()));
 }
 
 ComputeProgram::~ComputeProgram() {

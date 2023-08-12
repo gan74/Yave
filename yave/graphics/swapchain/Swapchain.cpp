@@ -45,12 +45,18 @@ static VkSurfaceCapabilitiesKHR compute_capabilities(VkSurfaceKHR surface) {
 }
 
 static VkSurfaceFormatKHR surface_format(VkSurfaceKHR surface) {
-    Y_TODO(Find best format instead of always returning first)
-    u32 format_count = 1;
-    VkSurfaceFormatKHR format = {};
-    vk_check_or_incomplete(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_physical_device(), surface, &format_count, &format));
-    y_always_assert(format_count, "No swapchain format supported");
-    return format;
+    std::array<VkSurfaceFormatKHR, 16> formats = {};
+    u32 format_count = u32(formats.size());
+    vk_check_or_incomplete(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_physical_device(), surface, &format_count, formats.data()));
+    y_always_assert(format_count, "No surface format supported");
+
+    for(u32 i = 0; i != format_count; ++i) {
+        if(formats[i].format == VK_FORMAT_R8G8B8A8_SRGB) {
+            return formats[i];
+        }
+    }
+
+    return formats[0];
 }
 
 static VkPresentModeKHR present_mode(VkSurfaceKHR surface) {
@@ -58,6 +64,7 @@ static VkPresentModeKHR present_mode(VkSurfaceKHR surface) {
     u32 mode_count = u32(modes.size());
     vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_physical_device(), surface, &mode_count, modes.data()));
     y_always_assert(mode_count, "No presentation mode supported");
+
     for(u32 i = 0; i != mode_count; ++i) {
         if(modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
             return VK_PRESENT_MODE_MAILBOX_KHR;
@@ -159,7 +166,7 @@ static VkHandle<VkSurfaceKHR> create_surface(Window* window) {
 #endif
 
     unused(window);
-    return vk_null();
+    return {};
 }
 
 
@@ -176,12 +183,17 @@ bool Swapchain::reset() {
 
     _images.clear();
 
+    destroy_sync_objects();
+    y_defer(build_sync_objects());
+
     VkHandle<VkSwapchainKHR> old;
-    *old.get_ptr_for_init() = _swapchain;
+    *old.get_ptr_for_init() = _swapchain.get();
 
     if(build_swapchain()) {
         destroy_graphic_resource(std::move(old));
         return true;
+    } else {
+        old.consume();
     }
 
     return false;
@@ -255,7 +267,7 @@ bool Swapchain::build_swapchain() {
 #endif
 
         struct SwapchainImageMemory : DeviceMemory {
-            SwapchainImageMemory() : DeviceMemory(vk_null(), 0, 0) {
+            SwapchainImageMemory() : DeviceMemory({}, 0, 0) {
             }
         };
 
@@ -328,14 +340,15 @@ core::Result<FrameToken> Swapchain::next_frame() {
     y_debug_assert(_sync_objects.size());
 
     const usize current_frame_index = _frame_id % image_count();
-    FrameSyncObjects& current_frame_sync = _sync_objects[current_frame_index];
+    // we need to do the lookup every time, in case _sync_objects gets rebuild
+    auto current_sync = [=]() -> FrameSyncObjects& { return _sync_objects[current_frame_index]; };
 
-    vk_check(vkWaitForFences(vk_device(), 1, &current_frame_sync.fence.get(), true, u64(-1)));
+    vk_check(vkWaitForFences(vk_device(), 1, &current_sync().fence.get(), true, u64(-1)));
 
     u32 image_index = u32(-1);
     {
         y_profile_zone("aquire");
-        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_frame_sync.image_available, vk_null(), &image_index))) {
+        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_sync().image_available, {}, &image_index))) {
             if(!reset()) {
                 return core::Err();
             }
