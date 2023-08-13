@@ -100,9 +100,7 @@ AssetLoader::Loader<T>::~Loader<T>() {
     y_profile();
     const auto lock = y_profile_unique_lock(_lock);
     for(auto&& [id, ptr] : _loaded) {
-        if(!ptr.expired()) {
-            y_fatal("Asset is still live.");
-        }
+        y_always_assert(ptr.expired(), "Asset is still live.");
     }
 }
 
@@ -244,8 +242,10 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
             LoadFrom _load_from;
 
             core::String asset_name() const {
-                return stringify_id(AssetPtr<T>(_data).id());
-                //return AssetPtr<T>(_data).name().unwrap_or("asset");
+                if(auto res = AssetPtr<T>(_data).name(); res.is_ok()) {
+                    return res.unwrap();
+                }
+                return stringify_id(_data->id);
             }
 
             AssetType asset_type() const {
