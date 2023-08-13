@@ -54,10 +54,12 @@ static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view)
 SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
     auto camera_buffer = builder.declare_typed_buffer<uniform::Camera>();
 
+    const std::array tags = {ecs::tags::not_hidden};
+
     SceneRenderSubPass pass;
     pass.scene_view = view;
     pass.camera_buffer = camera_buffer;
-    pass.static_meshes_sub_pass = StaticMeshRenderSubPass::create(builder, view, visible_entities<StaticMeshComponent>(view));
+    pass.static_meshes_sub_pass = StaticMeshRenderSubPass::create(builder, view, visible_entities<StaticMeshComponent>(view), tags);
     pass.main_descriptor_set_index = builder.next_descriptor_set_index();
 
     builder.add_uniform_input(camera_buffer, PipelineStage::None, pass.main_descriptor_set_index);

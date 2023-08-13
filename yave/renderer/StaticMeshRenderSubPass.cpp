@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-StaticMeshRenderSubPass StaticMeshRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view, core::Vector<ecs::EntityId>&& ids) {
+StaticMeshRenderSubPass StaticMeshRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view, core::Vector<ecs::EntityId>&& ids, core::Span<core::String> tags) {
     y_profile();
 
     const ecs::EntityWorld& world = view.world();
@@ -38,7 +38,7 @@ StaticMeshRenderSubPass StaticMeshRenderSubPass::create(FrameGraphPassBuilder& b
     {
         y_profile_zone("counting material");
         Y_TODO(optimize?)
-        auto query = world.query<StaticMeshComponent>(ids);
+        auto query = world.query<StaticMeshComponent>(ids, tags);
         for(const auto& [mesh] : query.components()) {
             batch_count += mesh.materials().size();
         }
@@ -58,6 +58,7 @@ StaticMeshRenderSubPass StaticMeshRenderSubPass::create(FrameGraphPassBuilder& b
     StaticMeshRenderSubPass pass;
     pass.scene_view = view;
     pass.ids = std::move(ids);
+    pass.tags = tags;
     pass.indices_buffer = indices_buffer;
     pass.descriptor_set_index = descriptor_set_index;
     return pass;

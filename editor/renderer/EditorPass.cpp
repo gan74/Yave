@@ -159,7 +159,7 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
     unused(scene_view);
 
     const TransformableComponent* tr = world.component<TransformableComponent>(selected);
-    if(!tr) {
+    if(!tr || world.has_tag(selected, ecs::tags::hidden)) {
         return;
     }
 

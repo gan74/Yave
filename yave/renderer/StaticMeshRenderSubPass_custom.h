@@ -51,7 +51,7 @@ void StaticMeshRenderSubPass::render_custom(RenderPassRecorder& render_pass, con
     }
 
     const ecs::EntityWorld& world = scene_view.world();
-    auto query = world.query<StaticMeshComponent>(ids);
+    auto query = world.query<StaticMeshComponent>(ids, tags);
     if(query.is_empty()) {
         return;
     }

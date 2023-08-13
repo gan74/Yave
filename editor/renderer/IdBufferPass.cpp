@@ -65,7 +65,8 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view,
 
     FrameGraphPassBuilder builder = framegraph.add_pass("ID pass");
 
-    auto static_mesh_sub_pass = StaticMeshRenderSubPass::create(builder, view, visible_entities<StaticMeshComponent>(view, flags));
+    const std::array tags = {ecs::tags::not_hidden};
+    auto static_mesh_sub_pass = StaticMeshRenderSubPass::create(builder, view, visible_entities<StaticMeshComponent>(view, flags), tags);
     const usize buffer_size = static_mesh_sub_pass.indices_buffer.is_valid() ? framegraph.buffer_size(static_mesh_sub_pass.indices_buffer) : 1;
 
     static const PipelineStage stage = PipelineStage::VertexBit | PipelineStage::FragmentBit;

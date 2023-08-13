@@ -34,11 +34,12 @@ namespace yave {
 struct StaticMeshRenderSubPass {
     SceneView scene_view;
     core::Vector<ecs::EntityId> ids;
+    core::Vector<core::String> tags;
 
     FrameGraphMutableTypedBufferId<math::Vec2ui> indices_buffer;
     i32 descriptor_set_index = -1;
 
-    static StaticMeshRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& view, core::Vector<ecs::EntityId>&& ids);
+    static StaticMeshRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& view, core::Vector<ecs::EntityId>&& ids, core::Span<core::String> tags = {});
 
     void render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const;
 
