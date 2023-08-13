@@ -39,10 +39,11 @@ namespace yave {
 
 template<typename T>
 static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view) {
-    const Camera& camera = scene_view.camera();
     const ecs::EntityWorld& world = scene_view.world();
 
     if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
+        const Camera& camera = scene_view.camera();
+        Y_TODO(camera far does not work properly)
         return octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
     }
 
