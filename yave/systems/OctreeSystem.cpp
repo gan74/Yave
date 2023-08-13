@@ -30,19 +30,12 @@ SOFTWARE.
 
 namespace yave {
 
-static core::Span<ecs::EntityId> transformable_ids(ecs::EntityWorld& world, bool recent) {
-    return recent
-        ? world.recently_mutated<TransformableComponent>()
-        : world.component_ids<TransformableComponent>();
-}
-
-
 
 OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
 
 void OctreeSystem::destroy(ecs::EntityWorld& world) {
-    auto query = world.query<ecs::Mutate<TransformableComponent>>();
+    auto query = world.query<TransformableComponent>();
     for(auto&& [tr] : query.components()) {
         tr._node = nullptr;
     }
@@ -59,10 +52,9 @@ void OctreeSystem::tick(ecs::EntityWorld& world) {
 void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
     y_profile();
 
-    {
-        y_profile_zone("updating moved objects");
+    auto process_moved_query = [&](auto query) {
         usize insertions = 0;
-        for(auto&& [id, comp] : world.query<TransformableComponent>(transformable_ids(world, only_recent))) {
+        for(auto&& [id, comp] : query) {
             auto&& [tr] = comp;
 
             if(tr.local_aabb().is_empty()) {
@@ -83,17 +75,21 @@ void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
         }
 
         unused(insertions);
-        y_profile_msg(fmt_c_str("%/% objects reinserted", insertions, transformable_ids(world, only_recent).size()));
-    }
+        y_profile_msg(fmt_c_str("%/% objects inserted", insertions, query.size()));
+    };
 
     if(only_recent) {
-        for(auto&& [id, comp] : world.query<TransformableComponent>(world.to_be_removed<TransformableComponent>())) {
+        process_moved_query(world.query<ecs::Changed<TransformableComponent>>());
+
+        for(auto&& [id, comp] : world.query<ecs::Removed<TransformableComponent>>()) {
             auto&& [tr] = comp;
 
             if(tr._node) {
                 tr._node->remove(id);
             }
         }
+    } else {
+        process_moved_query(world.query<TransformableComponent>());
     }
 
     _tree.audit();
