@@ -56,8 +56,6 @@ using i16 = int16_t;
 using i32 = int32_t;
 using i64 = int64_t;
 
-using byte = std::byte;
-
 using usize = std::make_unsigned_t<std::size_t>;
 using isize = std::make_signed_t<std::size_t>;
 
@@ -78,21 +76,6 @@ using uenum = std::underlying_type<detail::Enum>::type;
 inline constexpr usize operator"" _uu(unsigned long long int t) {
     return usize(t);
 }
-
-static_assert(sizeof(byte) == sizeof(char));
-static_assert(sizeof(byte) == sizeof(u8));
-
-inline const byte* to_bytes(const char* ptr)            { return reinterpret_cast<const byte*>(ptr); }
-inline const byte* to_bytes(const signed char* ptr)     { return reinterpret_cast<const byte*>(ptr); }
-inline const byte* to_bytes(const unsigned char* ptr)   { return reinterpret_cast<const byte*>(ptr); }
-
-inline byte* to_bytes(char* ptr)            { return reinterpret_cast<byte*>(ptr); }
-inline byte* to_bytes(signed char* ptr)     { return reinterpret_cast<byte*>(ptr); }
-inline byte* to_bytes(unsigned char* ptr)   { return reinterpret_cast<byte*>(ptr); }
-
-
-inline const u8* to_u8(const byte* ptr) { return reinterpret_cast<const u8*>(ptr); }
-inline u8* to_u8(byte* ptr)             { return reinterpret_cast<u8*>(ptr); }
 
 
 template<typename T>

@@ -387,7 +387,7 @@ core::String FolderAssetStore::next_id_file_name() const {
 AssetStore::Result<FolderAssetStore::AssetDesc> FolderAssetStore::load_desc(AssetId id) const {
     y_profile();
 
-    core::Vector<byte> buffer;
+    core::Vector<u8> buffer;
     if(auto file = io2::File::open(asset_desc_file_name(id));
         file.is_error() || file.unwrap().read_all(buffer).is_error()) {
 
@@ -652,7 +652,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_tree() {
 
     _folders.clear();
 
-    core::Vector<byte> tree_data;
+    core::Vector<u8> tree_data;
     if(auto file = io2::File::open(tree_file_name()); file.is_error() || file.unwrap().read_all(tree_data).is_error()) {
         log_msg("Unable to open folder index", Log::Error);
         return core::Ok(); // ????
@@ -668,7 +668,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_tree() {
                 line.make_empty();
             }
         };
-        for(byte b : tree_data) {
+        for(u8 b : tree_data) {
             const char c = char(b);
             if(c == '\n') {
                 push_folder();

@@ -117,7 +117,7 @@ enum class ImageImportFlags {
 };
 
 core::Result<ImageData> import_image(const core::String& filename, ImageImportFlags flags = ImageImportFlags::None);
-core::Result<ImageData> import_image(core::Span<byte> image_data, ImageImportFlags flags = ImageImportFlags::None);
+core::Result<ImageData> import_image(core::Span<u8> image_data, ImageImportFlags flags = ImageImportFlags::None);
 core::String supported_image_extensions();
 
 
