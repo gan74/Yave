@@ -86,9 +86,6 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
                                    const FrameGraphMutableTypedBufferId<EditorPassData> pass_buffer,
                                    FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer,
                                    EditorPassFlags flags) {
-
-    return;
-
     y_profile();
 
     const EditorWorld& world = current_world();
@@ -263,29 +260,29 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, Fra
     builder.add_color_output(color);
     builder.add_color_output(id);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-            render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer, flags);
+        render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer, flags);
 
-            if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
-                return;
+        if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
+            return;
+        }
+
+        DirectDraw direct;
+        {
+            if(current_world().selected_entity().is_valid()) {
+                render_selection(direct.add_primitive("selection"), view);
             }
 
-            DirectDraw direct;
-            {
-                if(current_world().selected_entity().is_valid()) {
-                    render_selection(direct.add_primitive("selection"), view);
-                }
-
-                if(app_settings().debug.display_octree) {
-                    render_octree(direct.add_primitive("octree"), view);
-                }
+            if(app_settings().debug.display_octree) {
+                render_octree(direct.add_primitive("octree"), view);
             }
-            direct.render(render_pass, view.camera().viewproj_matrix());
+        }
+        direct.render(render_pass, view.camera().viewproj_matrix());
 
-            if(app_settings().debug.display_debug_drawer) {
-                debug_drawer().render(render_pass, view.camera().viewproj_matrix());
-            }
-            debug_drawer().clear();
-        });
+        if(app_settings().debug.display_debug_drawer) {
+            debug_drawer().render(render_pass, view.camera().viewproj_matrix());
+        }
+        debug_drawer().clear();
+    });
 
     EditorPass pass;
     pass.depth = depth;
