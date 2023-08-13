@@ -37,42 +37,42 @@ SOFTWARE.
 
 namespace yave {
 
+template<typename T>
+static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view) {
+    const Camera& camera = scene_view.camera();
+    const ecs::EntityWorld& world = scene_view.world();
+
+    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
+        return octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+    }
+
+    return core::Vector<ecs::EntityId>(world.component_ids<T>());
+}
+
+
 SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
     auto camera_buffer = builder.declare_typed_buffer<uniform::Camera>();
 
     SceneRenderSubPass pass;
     pass.scene_view = view;
-    pass.descriptor_set_index = builder.next_descriptor_set_index();
     pass.camera_buffer = camera_buffer;
+    pass.static_meshes_sub_pass = StaticMeshRenderSubPass::create(builder, view, visible_entities<StaticMeshComponent>(view));
+    pass.main_descriptor_set_index = builder.next_descriptor_set_index();
 
-    builder.add_uniform_input(camera_buffer, PipelineStage::None, pass.descriptor_set_index);
+    builder.add_uniform_input(camera_buffer, PipelineStage::None, pass.main_descriptor_set_index);
     builder.map_buffer(camera_buffer);
 
     return pass;
 }
 
-void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const {
-    const Camera& camera = scene_view.camera();
-
+void SceneRenderSubPass::render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const {
     {
         auto camera_mapping = pass->resources().map_buffer(camera_buffer);
-        camera_mapping[0] = camera;
+        camera_mapping[0] = scene_view.camera();
     }
 
-    const ecs::EntityWorld& world = scene_view.world();
-
-    core::Vector<ecs::EntityId> visible;
-    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-        visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
-    } else {
-        visible = world.component_ids<StaticMeshComponent>();
-    }
-
-    const StaticMeshRendererSystem* static_meshes = world.find_system<StaticMeshRendererSystem>();
-    const auto render_list = static_meshes->create_render_list(visible);
-
-    recorder.set_main_descriptor_set(pass->descriptor_sets()[descriptor_set_index]);
-    render_list.draw(recorder);
+    render_pass.set_main_descriptor_set(pass->descriptor_sets()[main_descriptor_set_index]);
+    static_meshes_sub_pass.render(render_pass, pass);
 }
 
 }

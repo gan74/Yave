@@ -123,6 +123,11 @@ class FrameGraph : NonMovable {
             return usize(buffer_byte_size(res) / sizeof(T));
         }
 
+        template<typename T>
+        usize buffer_size(FrameGraphMutableTypedBufferId<T> res) const {
+            return usize(buffer_byte_size(res) / sizeof(T));
+        }
+
     private:
         friend class FrameGraphPassBuilderBase;
         friend class FrameGraphPass;

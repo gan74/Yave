@@ -12,13 +12,14 @@ layout(location = 1) out vec4 out_rt1;
 layout(location = 2) out vec4 out_emissive;
 #endif
 
-layout(set = 1, binding = 1) readonly buffer Indices {
+layout(set = 1, binding = 1) readonly buffer Materials {
+    MaterialData materials[];
+};
+
+layout(set = 1, binding = 2) readonly buffer Indices {
     uvec2 mesh_indices[];
 };
 
-layout(set = 1, binding = 2) readonly buffer Materials {
-    MaterialData materials[];
-};
 
 layout(set = 2, binding = 0) uniform sampler2D all_textures_Variable[];
 

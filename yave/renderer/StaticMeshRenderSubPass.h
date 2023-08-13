@@ -19,45 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SYSTEMS_STATICMESHRENDERERSYSTEM_H
-#define YAVE_SYSTEMS_STATICMESHRENDERERSYSTEM_H
+#ifndef YAVE_RENDERER_STATICMESHRENDERSUBPASS_H
+#define YAVE_RENDERER_STATICMESHRENDERSUBPASS_H
 
-#include <yave/ecs/System.h>
+#include <yave/scene/SceneView.h>
+#include <yave/framegraph/FrameGraphPass.h>
 
-#include <yave/graphics/buffers/Buffer.h>
-#include <yave/graphics/buffers/buffers.h>
-#include <yave/meshes/MeshDrawData.h>
 
 #include <y/core/Vector.h>
 
-#include <yave/framegraph/FrameGraphResourceId.h>
 
 namespace yave {
 
-class StaticMeshRendererSystem : public ecs::System {
-    public:
-        static constexpr usize max_transforms = 2 * 1024;
+struct StaticMeshRenderSubPass {
+    SceneView scene_view;
+    core::Vector<ecs::EntityId> ids;
 
-        StaticMeshRendererSystem();
+    FrameGraphMutableTypedBufferId<math::Vec2ui> indices_buffer;
+    i32 descriptor_set_index = -1;
 
-        void destroy() override;
-        void setup() override;
-        void tick() override;
+    static StaticMeshRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& view, core::Vector<ecs::EntityId>&& ids);
 
-        TypedSubBuffer<math::Transform<>, BufferUsage::StorageBit> transform_buffer() const {
-            return _transforms;
-        }
+    void render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const;
 
-
-    private:
-        void run_tick(bool only_recent);
-
-        TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible> _transforms;
-
-        core::Vector<u32> _free;
+    template<typename RenderFunc>
+    void render_custom(RenderPassRecorder& render_pass, const FrameGraphPass* pass, RenderFunc&& render_func) const;
 };
+
 
 }
 
-#endif // YAVE_SYSTEMS_STATICMESHRENDERERSYSTEM_H
+#endif // YAVE_RENDERER_STATICMESHRENDERSUBPASS_H
 
