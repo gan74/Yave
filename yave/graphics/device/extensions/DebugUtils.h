@@ -33,6 +33,10 @@ class DebugUtils : NonCopyable {
         DebugUtils(VkInstance instance);
         ~DebugUtils();
 
+        void set_resource_name(VkBuffer res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_BUFFER, name);
+        }
+
         void set_resource_name(VkImage res, const char* name) const {
             set_name(u64(res), VK_OBJECT_TYPE_IMAGE, name);
         }

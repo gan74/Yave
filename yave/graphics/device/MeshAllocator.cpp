@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/graphics.h>
 
+#include <yave/graphics/device/extensions/DebugUtils.h>
+
 #include <y/core/FixedArray.h>
 #include <y/utils/memory.h>
 
@@ -56,6 +58,13 @@ MeshAllocator::MeshAllocator() :
             attrib_offset += byte_len;
         }
     }
+
+#ifdef Y_DEBUG
+    if(const auto* debug = debug_utils()) {
+        debug->set_resource_name(_triangle_buffer.vk_buffer(), "Mesh allocator triangle buffer");
+        debug->set_resource_name(_attrib_buffer.vk_buffer(), "Mesh allocator attrib buffer");
+    }
+#endif
 }
 
 MeshAllocator::~MeshAllocator() {

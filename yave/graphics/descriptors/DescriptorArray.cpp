@@ -22,6 +22,10 @@ SOFTWARE.
 
 #include "DescriptorArray.h"
 
+#include <yave/graphics/device/extensions/DebugUtils.h>
+
+#include <y/utils/format.h>
+
 namespace yave {
 
 static VkHandle<VkDescriptorPool> create_libray_pool(u32 desc_count, VkDescriptorType type) {
@@ -104,6 +108,12 @@ DescriptorArray::DescriptorArray(VkDescriptorType type, u32 max_desc) :
         _set(_pool, _layout, max_desc),
         _max_descriptors(max_desc),
         _type(type) {
+
+#ifdef Y_DEBUG
+    if(const auto* debug = debug_utils()) {
+        debug->set_resource_name(_set.vk_descriptor_set(), fmt_c_str("Descriptor Array [%]", _type));
+    }
+#endif
 }
 
 DescriptorArray::~DescriptorArray() {

@@ -264,12 +264,10 @@ bool Swapchain::build_swapchain() {
     for(const VkImage image : images) {
         auto view = create_image_view(image, _color_format.vk_format());
 
-#ifdef Y_DEBUG
         if(const auto* debug = debug_utils()) {
             debug->set_resource_name(image, "Swapchain Image");
             debug->set_resource_name(view, "Swapchain Image View");
         }
-#endif
 
         struct SwapchainImageMemory : DeviceMemory {
             SwapchainImageMemory() : DeviceMemory({}, 0, 0) {

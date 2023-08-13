@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <yave/material/MaterialData.h>
 
+#include <yave/graphics/device/extensions/DebugUtils.h>
+
 #include <numeric>
 
 #include <y/utils/log.h>
@@ -57,6 +59,12 @@ static std::array<TextureView, MaterialData::texture_count> material_texture_vie
 MaterialAllocator::MaterialAllocator() : _materials(max_materials) {
     _free.set_min_size(_materials.size());
     std::iota(_free.begin(), _free.end(), 0);
+
+#ifdef Y_DEBUG
+    if(const auto* debug = debug_utils()) {
+        debug->set_resource_name(_materials.vk_buffer(), "Material allocator material buffer");
+    }
+#endif
 }
 
 MaterialAllocator::~MaterialAllocator() {

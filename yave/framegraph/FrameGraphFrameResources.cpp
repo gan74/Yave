@@ -108,7 +108,6 @@ void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_si
         y_debug_assert(_staging_buffer.is_null());
         buffer.staging_buffer_offset = _staging_buffer_len;
         _staging_buffer_len += align_up_to(byte_size, device_properties().non_coherent_atom_size);
-
     }
 
     _buffer_storage.emplace_back(_pool->create_buffer(byte_size, usage, MemoryType::DeviceLocal));
