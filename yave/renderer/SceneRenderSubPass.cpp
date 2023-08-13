@@ -71,7 +71,7 @@ void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPa
     const StaticMeshRendererSystem* static_meshes = world.find_system<StaticMeshRendererSystem>();
     const auto render_list = static_meshes->create_render_list(visible);
 
-    recorder.set_main_descriptor_set(pass->descriptor_sets()[0]);
+    recorder.set_main_descriptor_set(pass->descriptor_sets()[descriptor_set_index]);
     render_list.draw(recorder);
 }
 
