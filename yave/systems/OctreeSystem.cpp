@@ -24,6 +24,8 @@ SOFTWARE.
 #include "AssetLoaderSystem.h"
 
 #include <yave/components/TransformableComponent.h>
+#include <yave/camera/Camera.h>
+
 #include <yave/ecs/EntityWorld.h>
 
 #include <y/core/Chrono.h>
@@ -99,9 +101,19 @@ const OctreeNode& OctreeSystem::root() const {
     return _tree.root();
 }
 
-const Octree& OctreeSystem::octree() const {
-    return _tree;
+core::Vector<ecs::EntityId> OctreeSystem::find_entities(const Camera& camera) const {
+    auto visible = _tree.find_entities(camera.frustum(), camera.far_plane_dist());
+
+    core::Vector<ecs::EntityId> entities;
+    entities.swap(visible.inside);
+
+    Y_TODO(do intersection tests)
+    entities.push_back(visible.intersect.begin(), visible.intersect.end());
+
+    return entities;
 }
+
+
 
 }
 

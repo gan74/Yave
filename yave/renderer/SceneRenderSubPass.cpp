@@ -63,7 +63,6 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
     const auto region = recorder.region("Scene");
 
     const ecs::EntityWorld& world = sub_pass->scene_view.world();
-    const Camera& camera = sub_pass->scene_view.camera();
 
     auto transform_mapping = pass->resources().map_buffer(sub_pass->transform_buffer);
     const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
@@ -82,7 +81,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
 
     const std::array tags = {ecs::tags::not_hidden};
     if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-        const core::Vector<ecs::EntityId> visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+        const core::Vector<ecs::EntityId> visible = octree_system->find_entities(sub_pass->scene_view.camera());
         render_query(world.query<TransformableComponent, StaticMeshComponent>(visible, tags));
     } else {
         render_query(world.query<TransformableComponent, StaticMeshComponent>(tags));

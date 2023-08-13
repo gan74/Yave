@@ -55,8 +55,6 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
     const EditorWorld& world = current_world();
     y_debug_assert(&world == &scene_view.world());
 
-    const Camera& camera = scene_view.camera();
-
     auto transform_mapping = pass->resources().map_buffer(transform_buffer);
     const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
 
@@ -75,7 +73,7 @@ static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pas
         use_entity_list = true;
     } else {
         if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-            entities = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+            entities = octree_system->find_entities(scene_view.camera());
             use_entity_list = true;
         }
     }
