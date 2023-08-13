@@ -116,9 +116,9 @@ u32 gizmo_color(usize axis) {
     //return (0xFF << (axis * 8));
     // Values to match Blender
     const u32 colors[] = {
-        0x005236F6,
-        0x001BA56F,
-        0x00E3832F,
+        pack_to_u32(sRGB_to_linear(unpack_from_u32(0x005236F6))),
+        pack_to_u32(sRGB_to_linear(unpack_from_u32(0x001BA56F))),
+        pack_to_u32(sRGB_to_linear(unpack_from_u32(0x00E3832F))),
     };
     return colors[axis];
 }
