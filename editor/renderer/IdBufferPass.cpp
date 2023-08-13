@@ -52,8 +52,7 @@ static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view,
     if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
         return core::Vector<ecs::EntityId>(world.selected_entities());
     } else if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-        const Camera& camera = scene_view.camera();
-        return octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+        return octree_system->find_entities(scene_view.camera());
     }
 
     return core::Vector<ecs::EntityId>(world.component_ids<T>());

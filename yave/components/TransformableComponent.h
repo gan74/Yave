@@ -67,14 +67,13 @@ class TransformableComponent final {
         y_reflect(TransformableComponent, _transform)
 
     private:
-        friend class Octree;
-        friend class OctreeSystem;
-
         void swap(TransformableComponent& other);
 
         math::Transform<> _transform;
         AABB _aabb;
 
+        friend class Octree;
+        friend class OctreeSystem;
         mutable OctreeNode* _node = nullptr;
 };
 

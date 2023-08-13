@@ -98,11 +98,10 @@ class CullingDebug : public Widget {
     protected:
         void on_gui() override {
             const EditorWorld& world = current_world();
-            const Camera& camera = scene_view().camera();
 
             core::Vector<ecs::EntityId> visible;
             if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-                visible = octree_system->octree().find_entities(camera.frustum());
+                visible = octree_system->find_entities(scene_view().camera());
             }
 
             const usize in_frustum = visible.size();
@@ -111,7 +110,6 @@ class CullingDebug : public Widget {
             ImGui::Text("%u entities in octree", u32(total));
             ImGui::Text("%u entities in frustum", u32(in_frustum));
             ImGui::Text("%u%% culled", u32(float(total - in_frustum) / float(total) * 100.0f));
-
         }
 };
 

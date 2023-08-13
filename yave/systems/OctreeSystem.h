@@ -38,8 +38,9 @@ class OctreeSystem : public ecs::System {
         void setup() override;
         void tick() override;
 
+        core::Vector<ecs::EntityId> find_entities(const Camera& camera) const;
+
         const OctreeNode& root() const;
-        const Octree& octree() const;
 
     private:
         void run_tick(bool only_recent);

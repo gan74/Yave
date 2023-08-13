@@ -37,22 +37,21 @@ static void push_all_entities(core::Vector<ecs::EntityId>& entities, const Octre
     }
 }
 
-static void visit_node(core::Vector<ecs::EntityId>& entities, const Frustum& frustum, float far_dist, const OctreeNode& node) {
+static void visit_node(Octree::QueryResult& query, const Frustum& frustum, float far_dist, const OctreeNode& node) {
     switch(frustum.intersection(node.aabb(), far_dist)) {
         case Intersection::Outside:
         break;
 
         case Intersection::Inside:
-            push_all_entities(entities, node);
+            push_all_entities(query.inside, node);
         break;
 
         case Intersection::Intersects:
             for(const ecs::EntityId id : node.entities()) {
-                Y_TODO(Check entity AABB against frustum)
-                entities << id;
+                query.intersect << id;
             }
             for(const auto& child : node.children()) {
-                visit_node(entities, frustum, far_dist, *child);
+                visit_node(query, frustum, far_dist, *child);
             }
         break;
     }
@@ -83,12 +82,14 @@ core::Vector<ecs::EntityId> Octree::all_entities() const {
     return entities;
 }
 
-core::Vector<ecs::EntityId> Octree::find_entities(const Frustum& frustum, float far_dist) const {
+Octree::QueryResult Octree::find_entities(const Frustum& frustum, float far_dist) const {
     y_profile();
 
-    auto entities = core::vector_with_capacity<ecs::EntityId>(1024);
-    visit_node(entities, frustum, far_dist, *_root);
-    return entities;
+    QueryResult query = {};
+    query.inside.set_min_capacity(1024);
+    query.intersect.set_min_capacity(1024);
+    visit_node(query, frustum, far_dist, *_root);
+    return query;
 }
 
 void Octree::audit() const {

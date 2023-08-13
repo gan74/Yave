@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-SpirVData::SpirVData(core::Span<byte> data) {
+SpirVData::SpirVData(core::Span<u8> data) {
     if(data.size() % 4) {
         y_fatal("Invalid SPIR-V data.");
     }
@@ -40,7 +40,7 @@ SpirVData::SpirVData(core::Span<u32> data) : _data(data) {
 }
 
 SpirVData SpirVData::deserialized(io2::Reader& reader) {
-    core::Vector<byte> data;
+    core::Vector<u8> data;
     reader.read_all(data).unwrap();
     return SpirVData(data);
 }

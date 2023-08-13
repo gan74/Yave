@@ -34,7 +34,7 @@ class ImageData : NonCopyable {
 
     public:
         struct Mip {
-            core::Span<byte> data;
+            core::Span<u8> data;
             math::Vec3ui size;
         };
 
@@ -60,7 +60,7 @@ class ImageData : NonCopyable {
         usize data_offset(usize mip = 0) const;
         Mip mip_data(usize mip = 0) const;
 
-        const byte* data() const;
+        const u8* data() const;
 
         y_reflect(ImageData, _size, _format, _mips, _data)
 
@@ -70,7 +70,7 @@ class ImageData : NonCopyable {
 
         u32 _mips = 1;
 
-        core::FixedArray<byte> _data;
+        core::FixedArray<u8> _data;
 };
 
 }
