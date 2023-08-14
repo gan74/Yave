@@ -67,10 +67,6 @@ struct DeviceMaterialData {
         return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None,  CullMode::Back, true};
     }
 
-    static constexpr DeviceMaterialData skinned(SpirV frag) {
-        return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true};
-    }
-
     static constexpr DeviceMaterialData wire(SpirV frag) {
         return DeviceMaterialData{frag, SpirV::WireFrameVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines};
     }
@@ -83,7 +79,6 @@ struct DeviceMaterialData {
 static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::basic(SpirV::TexturedFrag),
         DeviceMaterialData::basic(SpirV::TexturedAlphaFrag),
-        DeviceMaterialData::skinned(SpirV::TexturedFrag),
         DeviceMaterialData{SpirV::DeferredPointFrag, SpirV::DeferredPointVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
         DeviceMaterialData{SpirV::DeferredSpotFrag, SpirV::DeferredSpotVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
         DeviceMaterialData::screen(SpirV::DeferredAmbientFrag, true),
@@ -134,7 +129,6 @@ static constexpr const char* spirv_names[] = {
         "deferred_point.vert",
         "deferred_spot.vert",
         "basic.vert",
-        "skinned.vert",
         "screen.vert",
         "wireframe.vert",
     };

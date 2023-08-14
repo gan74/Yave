@@ -75,7 +75,6 @@ class DeviceResources final : NonMovable {
             DeferredPointVert,
             DeferredSpotVert,
             BasicVert,
-            SkinnedVert,
             ScreenVert,
             WireFrameVert,
 
@@ -105,7 +104,6 @@ class DeviceResources final : NonMovable {
         enum MaterialTemplates {
             TexturedMaterialTemplate,
             TexturedAlphaMaterialTemplate,
-            TexturedSkinnedMaterialTemplate,
 
             DeferredPointLightMaterialTemplate,
             DeferredSpotLightMaterialTemplate,
