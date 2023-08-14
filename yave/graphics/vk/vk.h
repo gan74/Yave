@@ -54,6 +54,10 @@ in order to get warning on missed returned results
 
 #define VK_NO_PROTOTYPES
 
+#ifdef YAVE_UNITY_BUILD
+#define VOLK_IMPLEMENTATION
+#endif
+
 #include <Volk/volk.h>
 #include <vulkan/vulkan.h>
 
