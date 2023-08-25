@@ -17,9 +17,7 @@ shared uint max_bin;
 // https://bruop.github.io/exposure/
 void main() {
     const uint index = gl_LocalInvocationIndex;
-    const uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
-
-    histogram[index] = bin_size * index;
+    uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
 
     if(index == 0) {
         total = 0;
@@ -29,16 +27,43 @@ void main() {
     barrier();
 
     atomicAdd(total, bin_size);
+    histogram[index] = bin_size;
+
+    barrier();
+
+    for(uint i = 1; i < lum_histogram_size; i <<= 1) {
+        if(index >= i) {
+            histogram[index] += histogram[index - i];
+        }
+        barrier();
+     }
+
+    barrier();
+
+    const uint cutoff = uint(total * 0.95); // Kill the top 5% of brightest pixels
+    const uint less_eq = histogram[index];
+    const uint less_than_bin = less_eq - bin_size;
+    if(less_eq > cutoff && cutoff > less_than_bin) {
+        bin_size = cutoff - min(cutoff, less_than_bin);
+    }
+
+    barrier();
+
+    histogram[index] = bin_size * index;
+
+    barrier();
+
+    for(uint i = 1; i < lum_histogram_size; i <<= 1) {
+       if(index + i < lum_histogram_size) {
+           histogram[index] += histogram[index + i];
+       }
+       barrier();
+    }
+
+    barrier();
 
     if(bin_size > 0) {
         atomicMax(max_bin, index);
-    }
-
-    for(uint i = 1; i < lum_histogram_size; i <<= 1) {
-        if(index + i < lum_histogram_size) {
-            histogram[index] += histogram[index + i];
-        }
-        barrier();
     }
 
     if(index == 0) {
