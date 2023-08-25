@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include <yave/utils/traits.h>
 
-#include <mutex>
+#include <y/concurrent/Mutexed.h>
 
 namespace yave {
 
@@ -55,12 +55,10 @@ class CmdBufferPool : NonMovable {
     private:
         CmdBufferData* create_data();
 
-        std::mutex _pool_lock;
-        VkHandle<VkCommandPool> _pool;
-        core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
+        concurrent::Mutexed<core::Vector<std::unique_ptr<CmdBufferData>>> _cmd_buffers;
+        VkHandle<VkCommandPool> _pool; // Synced through _cmd_buffers
 
-        std::mutex _release_lock;
-        core::Vector<CmdBufferData*> _released;
+        concurrent::Mutexed<core::Vector<CmdBufferData*>> _released;
 
         ThreadDevicePtr _device = nullptr;
 };

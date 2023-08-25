@@ -24,7 +24,8 @@ SOFTWARE.
 
 #include "CmdBufferRecorder.h"
 
-#include <mutex>
+#include <y/concurrent/Mutexed.h>
+
 #include <memory>
 
 namespace yave {
@@ -56,10 +57,8 @@ class CmdQueue : NonMovable {
     private:
         friend class Swapchain;
 
-        u32 _family_index = u32(-1);
-        VkQueue _queue = {};
-
-        mutable std::mutex _lock;
+        const u32 _family_index = u32(-1);
+        concurrent::Mutexed<VkQueue> _queue = {};
 };
 
 }

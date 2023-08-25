@@ -118,8 +118,7 @@ usize SceneImporter2::import_assets() {
 
     auto log_func = [this](std::string_view msg, Log type) {
         log_msg(msg, type);
-        const auto lock = y_profile_unique_lock(_lock);
-        _logs.emplace_back(msg, type);
+        _logs.locked([&](auto&& logs) { logs.emplace_back(msg, type); });
     };
 
     concurrent::DependencyGroup image_deps;
@@ -338,26 +337,27 @@ void SceneImporter2::on_gui() {
         case State::Done: {
             if(ImGui::CollapsingHeader("Details")) {
                 if(ImGui::BeginTable("##logs", 1, ImGuiTableFlags_RowBg, ImVec2(0, ImGui::GetContentRegionAvail().y - button_height))) {
-                    const auto lock = y_profile_unique_lock(_lock);
-                    for(const auto& log : _logs) {
-                        imgui::table_begin_next_row();
-                        switch(log.second) {
-                            case Log::Error:
-                                ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-                                ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_CIRCLE " %", log.first.data()));
-                                ImGui::PopStyleColor();
-                            break;
+                    _logs.locked([&](auto&& logs) {
+                        for(const auto& log : logs) {
+                            imgui::table_begin_next_row();
+                            switch(log.second) {
+                                case Log::Error:
+                                    ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+                                    ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_CIRCLE " %", log.first.data()));
+                                    ImGui::PopStyleColor();
+                                break;
 
-                            case Log::Warning:
-                                ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-                                ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_TRIANGLE " %", log.first.data()));
-                                ImGui::PopStyleColor();
-                            break;
+                                case Log::Warning:
+                                    ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+                                    ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_TRIANGLE " %", log.first.data()));
+                                    ImGui::PopStyleColor();
+                                break;
 
-                            default:
-                                ImGui::Selectable(fmt_c_str(ICON_FA_CHECK " %", log.first.data()));
+                                default:
+                                    ImGui::Selectable(fmt_c_str(ICON_FA_CHECK " %", log.first.data()));
+                            }
                         }
-                    }
+                    });
                 }
                 ImGui::EndTable();
             }

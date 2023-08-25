@@ -42,8 +42,9 @@ core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(VkMemoryRequire
         void* mapping = nullptr;
         const VkMemoryMapFlags flags = {};
         vk_check(vkMapMemory(vk_device(), allocated, 0, VK_WHOLE_SIZE, flags, &mapping));
-       const auto lock = y_profile_unique_lock(_mapping_lock);
-       _mappings[allocated] = mapping;
+        _mappings.locked([&](auto&& mappings) {
+            mappings[allocated] = mapping;
+        });
     }
 
     return core::Ok(DeviceMemory(this, allocated, 0, reqs.size));
@@ -58,10 +59,10 @@ void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
     _size -= memory.vk_size();
 
     if(is_cpu_visible(_type)) {
-        {
-            const auto lock = y_profile_unique_lock(_mapping_lock);
-            _mappings[memory.vk_memory()] = nullptr;
-        }
+        _mappings.locked([&](auto&& mappings) {
+            mappings[memory.vk_memory()] = nullptr;
+        });
+
         vkUnmapMemory(vk_device(), memory.vk_memory());
     }
 
@@ -71,8 +72,9 @@ void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
 void* DedicatedDeviceMemoryAllocator::map(const VkMappedMemoryRange& range, MappingAccess access) {
     invalidate_for_map(range, access);
     if(is_cpu_visible(_type)) {
-        const auto lock = y_profile_unique_lock(_mapping_lock);
-        return static_cast<u8*>(_mappings[range.memory]) + range.offset;
+        return _mappings.locked([&](auto&& mappings) {
+            return static_cast<u8*>(mappings[range.memory]) + range.offset;
+        });
     }
     return nullptr;
 }

@@ -46,12 +46,13 @@ u32 CmdQueue::family_index() const {
 }
 
 VkQueue CmdQueue::vk_queue() const {
-    return _queue;
+    return _queue.get();
 }
 
 void CmdQueue::wait() const {
-    const auto lock = y_profile_unique_lock(_lock);
-    vk_check(vkQueueWaitIdle(_queue));
+    _queue.locked([](auto&& queue) {
+        vk_check(vkQueueWaitIdle(queue));
+    });
 }
 
 WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSemaphore signal, VkFence fence) const {
@@ -62,9 +63,7 @@ WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSem
 
     TimelineFence timeline_fence;
 
-    {
-        const auto lock = y_profile_unique_lock(_lock);
-
+    _queue.locked([&](auto&& queue) {
         // This needs to be inside the lock
         timeline_fence = create_timeline_fence();
         const u64 prev_value = timeline_fence._value - 1;
@@ -104,8 +103,8 @@ WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSem
         }
 
         y_profile_zone("submit");
-        vk_check(vkQueueSubmit(_queue, 1, &submit_info, fence));
-    }
+        vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
+    });
 
     lifetime_manager().register_for_polling(std::exchange(recorder._data, nullptr));
 

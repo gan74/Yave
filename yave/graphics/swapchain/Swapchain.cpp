@@ -386,9 +386,7 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, c
 
     queue.submit(std::move(recorder), current_frame_sync.image_available, current_frame_sync.render_complete, current_frame_sync.fence);
 
-    {
-        const auto lock = y_profile_unique_lock(queue._lock);
-
+    queue._queue.locked([&](auto&& vk_queue) {
         y_profile_zone("present");
         VkPresentInfoKHR present_info = vk_struct();
         {
@@ -399,10 +397,10 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, c
             present_info.pWaitSemaphores = &current_frame_sync.render_complete.get();
         }
 
-        if(vk_swapchain_out_of_date(vkQueuePresentKHR(queue.vk_queue(), &present_info))) {
+        if(vk_swapchain_out_of_date(vkQueuePresentKHR(vk_queue, &present_info))) {
             // Nothing ?
         }
-    }
+    });
 
     ++_frame_id;
 
