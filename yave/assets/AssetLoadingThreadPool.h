@@ -24,12 +24,11 @@ SOFTWARE.
 
 #include "AssetLoadingContext.h"
 
-#include <y/core/Vector.h>
+#include <y/core/RingQueue.h>
 
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <deque>
 #include <list>
 #include <functional>
 
@@ -74,7 +73,7 @@ class AssetLoadingThreadPool : NonMovable {
         void process_one(std::unique_lock<std::mutex> lock);
         void worker();
 
-        std::deque<std::unique_ptr<LoadingJob>> _loading_jobs;
+        core::RingQueue<std::unique_ptr<LoadingJob>> _loading_jobs;
         std::list<std::unique_ptr<LoadingJob>> _finalize_jobs;
 
         mutable std::mutex _lock;

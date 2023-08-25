@@ -80,7 +80,7 @@ LifetimeManager::~LifetimeManager() {
     poll_cmd_buffers();
 
     y_debug_assert(_create_counter == _next);
-    y_always_assert(_in_flight.locked([](auto&& in_flight) { return in_flight.empty(); }), "CmdBuffer still in flight");
+    y_always_assert(_in_flight.locked([](auto&& in_flight) { return in_flight.is_empty(); }), "CmdBuffer still in flight");
 
     _to_destroy.locked([&](auto&& to_destroy) {
         for(auto& res : to_destroy) {
@@ -117,8 +117,8 @@ void LifetimeManager::poll_cmd_buffers() {
             to_recycle = core::ScratchVector<CmdBufferData*>(in_flight.size());
 
             next = _next;
-            while(!in_flight.empty()) {
-                CmdBufferData* data = in_flight.front();
+            while(!in_flight.is_empty()) {
+                CmdBufferData* data = in_flight.first();
                 if(data->resource_fence()._value != next) {
                     break;
                 }
@@ -158,8 +158,8 @@ void LifetimeManager::clear_resources(u64 up_to) {
         y_profile_zone("collection");
         _to_destroy.locked([&](auto&& to_destroy) {
             y_debug_assert(std::is_sorted(to_destroy.begin(), to_destroy.end(), [](const auto& a, const auto& b) { return a.first < b.first; }));
-            while(!to_destroy.empty() && to_destroy.front().first <= up_to) {
-                to_delete.push_back(std::move(to_destroy.front().second));
+            while(!to_destroy.is_empty() && to_destroy.first().first <= up_to) {
+                to_delete.push_back(std::move(to_destroy.first().second));
                 to_destroy.pop_front();
             }
         });
@@ -204,7 +204,7 @@ void LifetimeManager::wait_cmd_buffers() {
 
         poll_cmd_buffers();
 
-        y_debug_assert(in_flight.empty());
+        y_debug_assert(in_flight.is_empty());
     });
 }
 
@@ -221,7 +221,7 @@ void LifetimeManager::register_for_polling(CmdBufferData* data) {
         const auto it = std::lower_bound(in_flight.begin(), in_flight.end(), data, compare_cmd_buffers);
         in_flight.insert(it, data);
 
-        collect = (in_flight.front()->resource_fence()._value == _next);
+        collect = (in_flight.first()->resource_fence()._value == _next);
     });
 
     unused(collect);

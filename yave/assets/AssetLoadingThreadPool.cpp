@@ -119,9 +119,9 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
 
     y_debug_assert(lock.owns_lock());
 
-    if(!_loading_jobs.empty()) {
+    if(!_loading_jobs.is_empty()) {
         y_profile_zone("load one");
-        auto job = std::move(_loading_jobs.front());
+        auto job = std::move(_loading_jobs.first());
         _loading_jobs.pop_front();
         lock.unlock();
 
@@ -147,7 +147,7 @@ void AssetLoadingThreadPool::worker() {
     while(_run) {
         auto lock = y_profile_unique_lock(_lock);
         _condition.wait(lock, [this] {
-            return !_loading_jobs.empty() || !_finalize_jobs.empty() ||  !_run;
+            return !_loading_jobs.is_empty() || !_finalize_jobs.empty() ||  !_run;
         });
         process_one(std::move(lock));
     }

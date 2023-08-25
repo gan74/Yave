@@ -31,7 +31,7 @@ SOFTWARE.
 #include <yave/graphics/images/ImageView.h>
 #include <yave/scene/SceneView.h>
 
-#include <deque>
+#include <y/core/RingQueue.h>
 
 namespace editor {
 
@@ -85,7 +85,7 @@ class EngineView final : public Widget {
         RenderView _view = RenderView::Lit;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
-        std::deque<std::unique_ptr<CmdTimingRecorder>> _time_recs;
+        core::RingQueue<std::unique_ptr<CmdTimingRecorder>> _time_recs;
 
         EditorRendererSettings _settings;
 
