@@ -89,5 +89,25 @@ y_test_func("RingQueue full") {
     }
 }
 
+y_test_func("RingQueue insert") {
+    RingQueue<int> q;
+    for(usize k = 0; k != 70; ++k) {
+        q.push_back(0);
+        q.push_back(1);
+        q.push_back(2);
+        q.push_back(4);
+        q.push_back(5);
+        q.push_back(6);
+
+        const auto it = std::find(q.begin(), q.end(), 4);
+        y_test_assert(*it == 4);
+        q.insert(it, 3);
+
+        for(int i = 0; !q.is_empty(); ++i) {
+            y_test_assert(q.pop_front() == i);
+        }
+    }
+}
+
 }
 

@@ -326,5 +326,25 @@ y_test_func("SmallVector move") {
         y_test_assert(rc.use_count() == 1);
     }
 }
+
+y_test_func("Vector insert") {
+    core::Vector<int> v;
+    v.push_back(0);
+    v.push_back(1);
+    v.push_back(2);
+    v.push_back(4);
+    v.push_back(5);
+    v.push_back(6);
+
+    const auto it = std::find(v.begin(), v.end(), 4);
+    y_test_assert(*it == 4);
+    v.insert(it, 3);
+
+    for(int i = 0; i != int(v.size()); ++i) {
+        y_test_assert(v[i] == i);
+    }
+}
+
+
 }
 

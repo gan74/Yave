@@ -249,7 +249,6 @@ class Vector : Allocator {
             }
 
             _data[index] = data_type{y_fwd(args)...};
-
         }
 
         inline value_type pop() {

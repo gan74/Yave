@@ -74,7 +74,7 @@ class RingQueue : NonCopyable, Allocator {
             }
 
             inline bool operator!=(const Iterator& other) const {
-                return _index == other._index;
+                return _index != other._index;
             }
 
             inline reference operator*() const {
@@ -87,8 +87,13 @@ class RingQueue : NonCopyable, Allocator {
                 return &_parent->operator[](_index);
             }
 
+            operator Iterator<true>() const {
+                return Iterator<true>(_parent, _index);
+            }
+
         private:
             friend class RingQueue;
+            friend class Iterator<!Const>;
 
             using parent_t = std::conditional_t<Const, const RingQueue, RingQueue>;
 
@@ -179,6 +184,28 @@ class RingQueue : NonCopyable, Allocator {
             auto& ref = *(::new(_data + next_index()) data_type(y_fwd(args)...));
             ++_size;
             return ref;
+        }
+
+        template<typename... Args>
+        inline void insert(const_iterator it, Args&&... args) {
+            const usize index = it._index;
+            if(index == size()) {
+                emplace_back(y_fwd(args)...);
+                return;
+            }
+
+            if(is_full()) {
+                expand();
+            }
+
+            usize i = size() - 1;
+            emplace_back(std::move(operator[](i)));
+            while(i > index) {
+                 operator[](i) = std::move(operator[](i - 1));
+                 --i;
+            }
+
+            operator[](index) = data_type{y_fwd(args)...};
         }
 
         inline value_type pop_back() {
@@ -286,8 +313,7 @@ class RingQueue : NonCopyable, Allocator {
         }
 
         inline usize last_index() const {
-            usize end = next_index();
-            return (end ? end : _capacity) - 1;
+            return wrap(_beg_index + _size - 1);
         }
 
         inline void increment_begin() {
