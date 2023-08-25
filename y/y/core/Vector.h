@@ -64,7 +64,7 @@ struct DefaultVectorResizePolicy {
 
 
 template<typename Elem, typename ResizePolicy = DefaultVectorResizePolicy, typename Allocator = std::allocator<Elem>>
-class Vector : ResizePolicy, Allocator {
+class Vector : Allocator {
 
     using data_type = typename std::remove_const<Elem>::type;
 
@@ -194,7 +194,7 @@ class Vector : ResizePolicy, Allocator {
 
         inline void push_back(const_reference elem) {
             if(is_full()) {
-                expend();
+                expand();
             }
 
             Y_CHECK_ELECTRIC(_data_end, 1);
@@ -204,7 +204,7 @@ class Vector : ResizePolicy, Allocator {
 
         inline void push_back(value_type&& elem) {
             if(is_full()) {
-                expend();
+                expand();
             }
 
             Y_CHECK_ELECTRIC(_data_end, 1);
@@ -215,7 +215,7 @@ class Vector : ResizePolicy, Allocator {
         template<typename... Args>
         inline reference emplace_back(Args&&... args) {
             if(is_full()) {
-                expend();
+                expand();
             }
 
             Y_CHECK_ELECTRIC(_data_end, 1);
@@ -238,7 +238,7 @@ class Vector : ResizePolicy, Allocator {
             }
 
             if(is_full()) {
-                expend();
+                expand();
             }
 
             usize i = size() - 1;
@@ -434,13 +434,13 @@ class Vector : ResizePolicy, Allocator {
             Y_CLEAR_ELECTRIC(beg, en - beg);
         }
 
-        inline void expend() {
-            unsafe_set_capacity(this->ideal_capacity(size() + 1));
+        inline void expand() {
+            unsafe_set_capacity(ResizePolicy::ideal_capacity(size() + 1));
         }
 
         inline void shrink() {
-            usize current = size();
-            usize cap = capacity();
+            const usize current = size();
+            const usize cap = capacity();
             if(current < cap && ResizePolicy::shrink(current, cap)) {
                 unsafe_set_capacity(ResizePolicy::ideal_capacity(current));
             }
