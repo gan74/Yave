@@ -343,7 +343,28 @@ static math::Transform<> build_base_change_transform() {
 
 static const math::Transform<> base_change_transform = build_base_change_transform();
 
+static math::Transform<> parse_node_transform_matrix(const tinygltf::Node& node) {
+    y_debug_assert(node.matrix.size() == 16);
+
+    math::Matrix4<> mat;
+    std::transform(node.matrix.begin(), node.matrix.end(), mat.begin(), [](double f) {
+        return float(f);
+    });
+
+    const math::Transform<> tr(mat);
+    y_debug_assert(math::fully_finite(tr));
+    y_debug_assert(tr[3][3] == 1.0f);
+    log_msg(fmt("oof %", mat), Log::Debug);
+    return tr;
+}
+
 static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
+    if(node.matrix.size() == 16) {
+        return parse_node_transform_matrix(node);
+    }
+
+    y_debug_assert(node.matrix.empty());
+
     math::Vec3 translation;
     for(usize k = 0; k != node.translation.size(); ++k) {
         translation[k] = float(node.translation[k]);
@@ -354,7 +375,7 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
         scale[k] = float(node.scale[k]);
     }
 
-    math::Vec4 rotation;
+    math::Vec4 rotation(0.0f, 0.0f, 0.0f, 1.0f);
     for(usize k = 0; k != node.rotation.size(); ++k) {
         rotation[k] = float(node.rotation[k]);
     }
