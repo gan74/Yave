@@ -9,7 +9,6 @@ struct SurfaceInfo {
     vec3 albedo;
 
     float perceptual_roughness;
-    float roughness;
     float metallic;
 
     vec3 F0;

@@ -48,6 +48,9 @@ SurfaceInfo decode_gbuffer(RawGBuffer raw) {
     unpack_color(raw.rt0, surface.albedo, surface.metallic);
     unpack_normal(raw.rt1, surface.normal, surface.perceptual_roughness);
 
+    // https://blender.stackexchange.com/a/93792
+    // surface.roughness = sqr(surface.perceptual_roughness);
+
     surface.F0 = mix(vec3(0.04), surface.albedo, surface.metallic);
 
     return surface;
