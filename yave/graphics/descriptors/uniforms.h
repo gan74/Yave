@@ -90,7 +90,7 @@ struct SpotLight {
     float min_radius = 0.01f;
 
     math::Vec2 att_scale_offset;
-    u32 padding_0 = 0;
+    float sin_angle = 0.0f;
     u32 shadow_map_index = u32(-1);
 
     math::Vec3 encl_sphere_center;

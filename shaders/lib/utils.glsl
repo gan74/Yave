@@ -76,7 +76,7 @@ struct SpotLight {
     float min_radius;
 
     vec2 att_scale_offset;
-    uint padding_0;
+    float sin_angle;
     uint shadow_map_index;
 
     vec3 encl_sphere_center;
@@ -187,22 +187,19 @@ float luminance(vec3 rgb) {
     return dot(rgb, vec3(0.2126, 0.7152, 0.0722));
 }
 
-bool intersect_ray_sphere(vec3 origin, vec3 dir, float radius, out vec2 intersections) {
-    const float a = dot(dir, dir);
-    const float b = 2.0 * dot(dir, origin);
-    const float c = dot(origin, origin) - sqr(radius);
-    const float d = sqr(b) - 4.0 * a * c;
-
-    if (d < 0.0) {
-        intersections = vec2(1e5, -1e5);
+// https://iquilezles.org/articles/intersectors/
+bool intersect_ray_sphere(vec3 ray_origin, vec3 dir, vec3 pos, float radius, out vec2 intersections) {
+    const vec3 oc = ray_origin - pos;
+    const float b = -dot(oc, dir);
+    const float c = dot(oc, oc) - sqr(radius);
+    float h = sqr(b) - c;
+    if(h < 0.0) {
+        intersections = vec2(0.0);
         return false;
     }
 
-    intersections = vec2(
-            (-b - sqrt(d)) / (2.0 * a),
-            (-b + sqrt(d)) / (2.0 * a)
-        );
-
+    h = sqrt(h);
+    intersections = vec2(b - h, b + h);
     return true;
 }
 

@@ -244,7 +244,7 @@ static u32 fill_spot_light_buffer(
             l.min_radius(),
 
             l.attenuation_scale_offset(),
-            0,
+            std::sin(l.half_angle()),
             shadow_indices[0],
 
             encl_sphere_center,
