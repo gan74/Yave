@@ -102,6 +102,7 @@ static_assert(sizeof(SpotLight) % 16 == 0);
 
 struct ShadowMapParams {
     math::Matrix4<> view_proj;
+
     math::Vec2 uv_offset;
     math::Vec2 uv_mul;
 

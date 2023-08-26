@@ -58,6 +58,7 @@ void compute_atmospheric_scattering_iter(AtmosphereParams params, vec3 orig, vec
     for(uint i = 0; i != step_count; ++i) {
         ray_optical_depth += optical_depth(params, pos, -dir, step_size * i, optical_depth_step_count);
 
+        // replace by intersect_ray_sphere
         if(intersect_sphere(params.center, params.planet_radius, pos, params.sun_dir).x < 0.0) {
             const float sun_dist = intersect_sphere(params.center, params.radius, pos, params.sun_dir).y;
             const float sun_optical_depth = optical_depth(params, pos, params.sun_dir, sun_dist, optical_depth_step_count);

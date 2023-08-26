@@ -30,6 +30,7 @@ void LocalLightBase::inspect(ecs::ComponentInspector* inspector) {
     inspector->inspect("Color", _color, ecs::ComponentInspector::Vec3Role::Color);
     inspector->inspect("Intensity", _intensity, ecs::ComponentInspector::FloatRole::NormalizedLumFlux);
     inspector->inspect("Range", _range, ecs::ComponentInspector::FloatRole::Distance);
+    inspector->inspect("Source radius", _min_radius, ecs::ComponentInspector::FloatRole::Distance);
     inspector->inspect("Falloff", _falloff, 0.0f);
 }
 

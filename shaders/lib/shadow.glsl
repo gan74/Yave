@@ -1,22 +1,6 @@
 #ifndef SHADOW_GLSL
 #define SHADOW_GLSL
 
-#if 0
-vec3 compute_depth_normal(vec3 world_pos, SurfaceInfo surface) {
-    const vec3 dx = dFdx(world_pos);
-    const vec3 dy = dFdy(world_pos);
-    const vec3 depth_normal = normalize(cross(dy, dx));
-    return dot(depth_normal, surface.normal) > epsilon ? depth_normal : surface.normal;
-}
-
-
-float compute_automatic_bias(ShadowMapParams params, vec3 depth_normal, vec3 light_direction) {
-    const float NoL = max(0.0, dot(depth_normal, light_direction));
-    const float bias = max(params.base_bias * (1.0 - NoL), params.base_bias * 0.1);
-    return bias * params.texel_size;
-}
-#endif
-
 
 vec2 atlas_uv(ShadowMapParams params, vec2 uv) {
     return params.uv_offset + uv * params.uv_mul;
