@@ -57,7 +57,7 @@ void main() {
 
         if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
             const ShadowMapParams params = shadow_params[light.shadow_map_index];
-            att = compute_shadow_pcf(in_shadows, params, world_pos);
+            att *= compute_shadow_pcf(in_shadows, params, world_pos);
         }
 #endif
 
