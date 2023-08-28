@@ -77,7 +77,7 @@ static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::
         return false;
     }
     const std::string_view name = std::string_view(res.name);
-    if(name.size() > 7 && name.substr(name.size() - 7) == "_Inline") {
+    if(name.ends_with("_Inline")) {
         return true;
     }
     return false;
@@ -163,7 +163,7 @@ static core::ScratchPad<ShaderModuleBase::Attribute> create_attribs(const spirv_
         const auto& type = compiler.get_type(res.type_id);
 
         const std::string_view name = std::string_view(res.name);
-        const bool packed = (name.size() > 7 && name.substr(name.size() - 7) == "_Packed");
+        const bool packed = name.ends_with("_Packed");
         attribs[attrib_count++] = ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype), packed};
     }
     return attribs;

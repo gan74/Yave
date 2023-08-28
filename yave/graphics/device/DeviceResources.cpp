@@ -187,7 +187,7 @@ static Texture create_white_noise(usize size = 256) {
 
     core::DebugTimer _("create_white_noise()");
 
-    std::unique_ptr<u32[]> data = std::make_unique<u32[]>(size * size);
+    auto data = std::make_unique_for_overwrite<u32[]>(size * size);
 
     math::FastRandom rng;
     std::generate_n(data.get(), size * size, rng);

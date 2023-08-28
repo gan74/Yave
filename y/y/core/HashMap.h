@@ -468,7 +468,7 @@ class FlatHashMap : Hasher, Equal {
             }
 
             auto old_states = std::exchange(_states, FixedArray<State>(new_size));
-            auto old_entries = std::exchange(_entries, std::make_unique<Entry[]>(new_size));
+            auto old_entries = std::exchange(_entries, std::make_unique_for_overwrite<Entry[]>(new_size));
             _max_probe_len = 0;
 
             if(_size) {
