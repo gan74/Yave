@@ -217,7 +217,6 @@ VkPhysicalDeviceFeatures required_device_features() {
         required.shaderStorageBufferArrayDynamicIndexing = true;
         required.shaderStorageImageArrayDynamicIndexing = true;
         required.fragmentStoresAndAtomics = true;
-        required.robustBufferAccess = true;
         required.independentBlend = true;
         required.samplerAnisotropy = true;
     }
