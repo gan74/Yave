@@ -36,7 +36,7 @@ static VkHandle<VkCommandPool> create_pool() {
     VkCommandPoolCreateInfo create_info = vk_struct();
     {
         create_info.queueFamilyIndex = command_queue().family_index();
-        create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     }
 
     VkHandle<VkCommandPool> pool;
