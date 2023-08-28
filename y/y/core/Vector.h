@@ -40,19 +40,25 @@ SOFTWARE.
 namespace y {
 namespace core {
 
-struct DefaultVectorResizePolicy {
-    static constexpr usize minimum = 16;
-    static constexpr usize delta = 16;
+template<usize Minimum>
+struct SmallVectorResizePolicy {
+    static_assert(Minimum > 0);
 
+    static constexpr usize minimum = Minimum;
+    static constexpr usize delta = 16;
+    static constexpr usize offset_to_pow_2 = 8;
+
+    // Start around x3.5, asymptotically goes to x2
+    // For minimum of 16 (default): 16, 56, 120, 248, 504, 1016 , 2040, 4088, ...,  2^n-8
     static usize ideal_capacity(usize size) {
         if(!size) {
             return 0;
         }
-        if(size < minimum) {
+        if(size <= minimum) {
             return minimum;
         }
         const usize l = log2ui(size + delta);
-        return (4 << l) - (1 << l) - delta;
+        return (2_uu << l) - offset_to_pow_2;
     }
 
     static bool shrink(usize size, usize capacity) {
@@ -61,6 +67,8 @@ struct DefaultVectorResizePolicy {
         //return !size || (capacity - size) > 2 * step;
     }
 };
+
+using DefaultVectorResizePolicy = SmallVectorResizePolicy<16>;
 
 
 template<typename Elem, typename ResizePolicy = DefaultVectorResizePolicy, typename Allocator = std::allocator<Elem>>
@@ -491,8 +499,52 @@ inline Vector<Args...> operator+(Vector<Args...> vec, T&& t) {
     return vec;
 }
 
-template<typename T, usize = 0, typename... Args>
-using SmallVector = Vector<T, Args...>; // for now...
+
+
+// Never, EVER use outside of vector
+template<typename Elem, usize Capacity, typename Allocator = std::allocator<Elem>>
+class SmallVectorAllocator : private Allocator {
+    public:
+        using Allocator::value_type;
+        using Allocator::size_type;
+        using Allocator::difference_type;
+        using Allocator::propagate_on_container_move_assignment; // Elements should be copied by the container
+
+        Elem* allocate(usize size) {
+            y_debug_assert(size >= Capacity);
+            if(size == Capacity) {
+                return &_storage.elems[0];
+            }
+            return Allocator::allocate(size);
+        }
+
+        void deallocate(Elem* ptr, usize size) {
+            y_debug_assert(size >= Capacity);
+            if(size > Capacity) {
+                Allocator::deallocate(ptr, size);
+            }
+        }
+
+    private:
+        union Storage {
+            Storage() {}
+            ~Storage() {}
+
+            Storage(const Storage&) {}
+            Storage& operator=(const Storage&) {
+                return *this;
+            }
+
+
+            Elem elems[Capacity];
+        } _storage;
+
+        static_assert(sizeof(Storage) == sizeof(Elem) * Capacity);
+};
+
+
+template<typename Elem, usize Capacity = 16, typename InnerAllocator = std::allocator<Elem>>
+using SmallVector = Vector<Elem, SmallVectorResizePolicy<Capacity>, SmallVectorAllocator<Elem, Capacity, InnerAllocator>>;
 
 }
 }

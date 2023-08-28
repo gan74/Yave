@@ -72,6 +72,8 @@ struct RaiiCounter : NonCopyable {
 template<typename T>
 struct FakeAllocator {
     using value_type = T;
+    using size_type = usize;
+    using difference_type = std::ptrdiff_t;
     using propagate_on_container_move_assignment = std::false_type;
 
     template<typename... Args>
@@ -87,7 +89,7 @@ struct FakeAllocator {
 
 
 template<typename T, usize Size = 8>
-using SmallVec = SmallVector<T, Size, DefaultVectorResizePolicy/*, FakeAllocator<T>*/>;
+using SmallVec = SmallVector<T, Size, FakeAllocator<T>>;
 
 static_assert(std::is_same_v<std::common_type<MoreDerived, Derived>::type, Derived>, "std::common_type failure");
 static_assert(std::is_polymorphic_v<Polymorphic>, "std::is_polymorphic failure");
@@ -270,8 +272,8 @@ y_test_func("Vector dtors") {
 }
 
 y_test_func("SmallVector allocation") {
-    SmallVec<int, 4> vec = Vector({1, 2, 3, 4});
-    //y_test_assert(vec.capacity() == 4);
+    SmallVec<int, 4> vec = {1, 2, 3, 4};
+    y_test_assert(vec.capacity() == 4);
     y_test_assert(vec == Vector({1, 2, 3, 4}));
 }
 
