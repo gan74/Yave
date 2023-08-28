@@ -86,7 +86,7 @@ MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
     }
 
     if(mesh.has_skeleton()) {
-        auto bones = core::vector_with_capacity<Bone>(mesh.bones().size());
+        auto bones = core::Vector<Bone>::with_capacity(mesh.bones().size());
         std::transform(mesh.bones().begin(), mesh.bones().end(), std::back_inserter(bones), [=](const auto& bone) {
                 return bone.has_parent() ? bone : Bone{bone.name, bone.parent, transform(bone.local_transform, tr)};
             });
@@ -126,7 +126,7 @@ MeshData compute_tangents(const MeshData& mesh) {
 
 static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
     y_profile();
-    auto keys = core::vector_with_capacity<AnimationChannel::BoneKey>(anim.keys().size());
+    auto keys = core::Vector<AnimationChannel::BoneKey>::with_capacity(anim.keys().size());
     std::transform(anim.keys().begin(), anim.keys().end(), std::back_inserter(keys), [=](const auto& key){
         return AnimationChannel::BoneKey{key.time / speed, key.local_transform};
     });
@@ -136,7 +136,7 @@ static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
 
 Animation set_speed(const Animation& anim, float speed) {
     y_profile();
-    auto channels = core::vector_with_capacity<AnimationChannel>(anim.channels().size());
+    auto channels = core::Vector<AnimationChannel>::with_capacity(anim.channels().size());
     std::transform(anim.channels().begin(), anim.channels().end(), std::back_inserter(channels), [=](const auto& channel){ return set_speed(channel, speed); });
 
     return Animation(anim.duration() / speed, std::move(channels));

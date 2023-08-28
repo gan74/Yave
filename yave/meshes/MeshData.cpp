@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 static core::Vector<PackedVertex> pack_vertices(core::Span<FullVertex> vertices) {
-    auto packed = core::vector_with_capacity<PackedVertex>(vertices.size());
+    auto packed = core::Vector<PackedVertex>::with_capacity(vertices.size());
     for(const FullVertex& v : vertices) {
         packed << pack_vertex(v);
     }

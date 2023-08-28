@@ -174,7 +174,7 @@ void AssetStringifier::stringify(MeshData mesh) {
     const auto normal_tangent = mesh.vertex_streams().stream<VertexStreamType::NormalTangent>();
     const auto uvs = mesh.vertex_streams().stream<VertexStreamType::Uv>();
 
-    auto vertices = core::vector_with_capacity<core::String>(vertex_count);
+    auto vertices = core::Vector<core::String>::with_capacity(vertex_count);
     for(usize i = 0; i != vertex_count; ++i) {
         std::array<char, 1024> buffer;
         std::snprintf(buffer.data(), buffer.size(), "{{%.*ff, %.*ff, %.*ff}, 0x%x, 0x%x, {%.*ff, %.*ff}}",

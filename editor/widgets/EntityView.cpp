@@ -183,7 +183,7 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
             }
             if(ImGui::Selectable("Select all descendants")) {
                 y_profile_zone("collect all descendants");
-                auto descendants = core::vector_with_capacity<ecs::EntityId>(component->children().size() * 2);
+                auto descendants = core::Vector<ecs::EntityId>::with_capacity(component->children().size() * 2);
                 collect_all_descendants(descendants, id, world);
                 world.set_selection(descendants);
             }
@@ -314,7 +314,7 @@ void EntityView::on_gui() {
 
         auto& editor_components = world.component_set<EditorComponent>();
 
-        auto tree = core::vector_with_capacity<EntityTreeItem>(editor_components.size());
+        auto tree = core::Vector<EntityTreeItem>::with_capacity(editor_components.size());
         {
             y_profile_zone("Building tree");
             for(auto&& [id, comp] : editor_components) {

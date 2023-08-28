@@ -252,7 +252,7 @@ y_test_func("Vector vector(...)") {
 y_test_func("Vector dtors") {
     usize counter = 0;
     auto vec = Vector<RaiiCounter>();
-    vec.push_back(std::move(RaiiCounter(&counter)));
+    vec.push_back(RaiiCounter(&counter));
 
     y_test_assert(counter == 0);
 
@@ -283,7 +283,7 @@ y_test_func("SmallVector size") {
 y_test_func("SmallVector copy") {
     {
         const SmallVector<int, 8> vec = {1, 2, 3, 4};
-        const SmallVector<int, 8> cpy = vec;
+        const SmallVector<int, 8> cpy(vec);
         y_test_assert(cpy.size() == 4);
         y_test_assert(cpy[0] == 1);
         y_test_assert(cpy[1] == 2);
@@ -297,7 +297,7 @@ y_test_func("SmallVector copy") {
         vec.push_back(rc);
         y_test_assert(rc.use_count() == 2);
         {
-            const SmallVector<std::shared_ptr<int>, 8> cpy = vec;
+            const SmallVector<std::shared_ptr<int>, 8> cpy(vec);
             y_test_assert(rc.use_count() == 3);
         }
         y_test_assert(rc.use_count() == 2);

@@ -77,7 +77,7 @@ const OctreeNode& Octree::root() const {
 core::Vector<ecs::EntityId> Octree::all_entities() const {
     y_profile();
 
-    auto entities = core::vector_with_capacity<ecs::EntityId>(1024 * 8);
+    auto entities = core::Vector<ecs::EntityId>::with_capacity(1024 * 8);
     push_all_entities(entities, *_root);
     return entities;
 }

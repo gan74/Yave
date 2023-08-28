@@ -234,7 +234,7 @@ usize SceneImporter2::import_assets() {
         ++to_import;
         _thread_pool.schedule([=] {
             const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
-            auto prefabs = core::vector_with_capacity<ecs::EntityPrefab>(_scene.nodes.size());
+            auto prefabs = core::Vector<ecs::EntityPrefab>::with_capacity(_scene.nodes.size());
             for(const auto& node : _scene.nodes) {
                 const auto it = std::find_if(_scene.mesh_prefabs.begin(), _scene.mesh_prefabs.end(), [=](const auto& mesh) { return mesh.gltf_index == node.mesh_gltf_index; });
                 if(it != _scene.mesh_prefabs.end()) {

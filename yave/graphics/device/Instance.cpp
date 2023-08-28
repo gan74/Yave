@@ -56,7 +56,7 @@ static bool try_enable_extension(core::Vector<const char*>& exts, const char* na
 Instance::Instance(DebugParams debug) : _debug_params(debug) {
     initialize_volk();
 
-    auto extention_names = core::vector_with_capacity<const char*>(4);
+    auto extention_names = core::Vector<const char*>::with_capacity(4);
     extention_names = {
         VK_KHR_SURFACE_EXTENSION_NAME,
     };
@@ -128,7 +128,7 @@ core::Vector<PhysicalDevice> Instance::physical_devices() const {
         vk_check(vkEnumeratePhysicalDevices(_instance, &count, vk_devices.data()));
     }
 
-    auto devices = core::vector_with_capacity<PhysicalDevice>(vk_devices.size());
+    auto devices = core::Vector<PhysicalDevice>::with_capacity(vk_devices.size());
     std::transform(vk_devices.begin(), vk_devices.end(), std::back_inserter(devices), [](VkPhysicalDevice d) { return PhysicalDevice(d); });
     return devices;
 }

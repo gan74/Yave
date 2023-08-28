@@ -681,7 +681,7 @@ class FlatHashMap : Hasher, Equal {
             return insert(pair_type{key, mapped_type{y_fwd(args)...}});
         }
 
-        inline std::pair<iterator, bool> insert(pair_type p) {
+        inline std::pair<iterator, bool> insert(value_type p) {
             if(should_expand()) {
                 expand();
             }

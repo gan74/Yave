@@ -86,6 +86,12 @@ class Vector : Allocator {
         inline explicit Vector(const Vector& other) : Vector(other.begin(), other.end()) {
         }
 
+        inline explicit Vector(Span<value_type> other) : Vector(other.begin(), other.end()) {
+        }
+
+        inline Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
+        }
+
         inline Vector(usize size, const value_type& elem) {
             if(size) {
                 set_min_capacity(size);
@@ -102,15 +108,6 @@ class Vector : Allocator {
             swap(other);
         }
 
-        inline Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
-        }
-
-        inline explicit Vector(Span<value_type> other) : Vector(other.begin(), other.end()) {
-        }
-
-        template<typename... Args>
-        inline Vector(const Vector<Elem, Args...>& other) : Vector(other.begin(), other.end()) {
-        }
 
         inline Vector& operator=(Vector&& other) {
             swap(other);
@@ -128,49 +125,40 @@ class Vector : Allocator {
             return *this;
         }
 
-        inline Vector& operator=(std::initializer_list<value_type> l) {
-            assign(l.begin(), l.end());
+        inline Vector& operator=(Span<value_type> other) {
+            assign(other.begin(), other.end());
             return *this;
         }
 
-        inline Vector& operator=(Span<value_type> l) {
-            assign(l.begin(), l.end());
+        inline Vector& operator=(std::initializer_list<value_type> other) {
+            assign(other.begin(), other.end());
             return *this;
         }
 
-        template<typename... Args>
-        inline Vector& operator=(const Vector<Elem, Args...>& l) {
-            assign(l.begin(), l.end());
-            return *this;
-        }
 
         inline bool operator==(Span<value_type> other) const {
             return size() == other.size() && std::equal(begin(), end(), other.begin(), other.end());
         }
 
-        inline bool operator!=(Span<value_type> v) const {
-            return !operator==(v);
+        inline bool operator!=(Span<value_type> other) const {
+            return !operator==(other);
         }
 
         template<typename... Args>
-        inline bool operator==(const Vector<Elem, Args...>& v) const {
-            return operator==(Span<value_type>(v));
+        inline bool operator==(const Vector<Elem, Args...>& other) const {
+            return operator==(Span<value_type>(other));
         }
 
         template<typename... Args>
-        inline bool operator!=(const Vector<Elem, Args...>& v) const {
-            return operator!=(Span<value_type>(v));
+        inline bool operator!=(const Vector<Elem, Args...>& other) const {
+            return operator!=(Span<value_type>(other));
         }
 
 
         template<typename It>
         inline void assign(It beg_it, It end_it) {
             if constexpr(std::is_pointer_v<It>) {
-                if(contains_it(beg_it)) {
-                    Vector other(beg_it, end_it);
-                    swap(other);
-                    return;
-                }
+                y_debug_assert(!contains_it(beg_it));
             }
 
             make_empty();
@@ -397,6 +385,12 @@ class Vector : Allocator {
             _data_end = _data;
         }
 
+        static inline Vector with_capacity(usize cap) {
+            Vector v;
+            v.set_min_capacity(cap);
+            return v;
+        }
+
         static inline constexpr usize max_size() {
             return usize(-1);
         }
@@ -477,15 +471,6 @@ class Vector : Allocator {
         data_type* _data_end = nullptr;
         data_type* _alloc_end = nullptr;
 };
-
-template<typename T>
-inline auto vector_with_capacity(usize cap) {
-    auto vec = Vector<T>();
-    vec.set_min_capacity(cap);
-    return vec;
-}
-
-
 
 
 template<typename... Args, typename T>

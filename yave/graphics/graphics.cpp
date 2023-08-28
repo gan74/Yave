@@ -112,7 +112,7 @@ static void init_vk_device() {
     const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
     const usize queue_count = std::min(main_queue_family_properties.queueCount, 5u);
 
-    auto extensions = core::vector_with_capacity<const char*>(4);
+    auto extensions = core::Vector<const char*>::with_capacity(4);
     extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
