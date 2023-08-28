@@ -284,7 +284,7 @@ class FilterIterator : private Filter {
 class IndexIterator {
     public:
         using value_type = usize;
-        using difference_type = usize;
+        using difference_type = std::ptrdiff_t;
         using iterator_category = std::random_access_iterator_tag;
         using reference = value_type&;
         using pointer = value_type*;
@@ -383,7 +383,7 @@ template<typename T>
 class ScalarIterator {
     public:
         using value_type = T;
-        using difference_type = usize;
+        using difference_type = std::ptrdiff_t;
         using iterator_category = std::random_access_iterator_tag;
         using reference = value_type&;
         using pointer = value_type*;

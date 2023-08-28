@@ -43,7 +43,7 @@ class RingQueue : NonCopyable, Allocator {
             using pointer = value_type*;
 
             using iterator_category = std::bidirectional_iterator_tag;
-            using difference_type = int;
+            using difference_type = std::ptrdiff_t;
 
             Iterator() = default;
 

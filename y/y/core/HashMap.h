@@ -64,7 +64,8 @@ inline std::pair<const K, V>& map_entry_to_value_type(std::pair<K, V>& p) {
 }
 
 inline constexpr usize ceil_next_power_of_2(usize k) {
-    return 1_uu << log2ui(k + 1);
+    const usize l = log2ui(k);
+    return (k == (1_uu << l)) ? k : (2_uu << l);
 }
 
 
@@ -367,7 +368,7 @@ class FlatHashMap : Hasher, Equal {
 
             public:
                 using iterator_category = std::forward_iterator_tag;
-                using difference_type = usize;
+                using difference_type = std::ptrdiff_t;
 
                 using value_type = const_type_t<Const, typename Transform::type>;
                 using reference = value_type&;
@@ -459,6 +460,8 @@ class FlatHashMap : Hasher, Equal {
         void expand(usize new_bucket_count) {
             const usize pow_2 = detail::ceil_next_power_of_2(new_bucket_count);
             const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
+
+            y_debug_assert(pow_2 >= new_bucket_count);
 
             if(new_size <= bucket_count()) {
                 return;
