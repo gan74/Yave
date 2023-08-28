@@ -43,12 +43,24 @@ SOFTWARE.
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #endif
 
+#ifdef Y_MSVC
+#pragma warning(push)
+#pragma warning(disable:4018) // signed/unsigned mismatch
+#pragma warning(disable:4267) // conversion from 'size_t' to 'int', possible loss of data
+#endif
+
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
 #define TINYGLTF_NOEXCEPTION
 #include <external/tinygltf/tiny_gltf.h>
+
+
+#ifdef Y_MSVC
+#pragma warning(pop)
+#endif
 
 #ifdef Y_GNU
 #pragma GCC diagnostic pop
