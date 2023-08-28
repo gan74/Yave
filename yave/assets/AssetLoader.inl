@@ -98,10 +98,11 @@ AssetLoader::Loader<T>::Loader(AssetLoader* parent) : LoaderBase(parent) {
 template<typename T>
 AssetLoader::Loader<T>::~Loader<T>() {
     y_profile();
-    const auto lock = y_profile_unique_lock(_lock);
-    for(auto&& [id, ptr] : _loaded) {
-        y_always_assert(ptr.expired(), "Asset is still live.");
-    }
+     _loaded.locked([&](auto&& loaded) {
+        for(auto&& [id, ptr] : loaded) {
+            y_always_assert(ptr.expired(), "Asset is still live.");
+        }
+     });
 }
 
 template<typename T>
@@ -111,14 +112,15 @@ bool AssetLoader::Loader<T>::find_ptr(AssetPtr<T>& ptr) {
         return true;
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
-    auto& weak = _loaded[id];
-    ptr = weak.lock();
-    if(ptr._data) {
-        return true;
-    }
-    weak = (ptr = std::make_shared<Data>(id, parent()))._data;
-    return false;
+    return _loaded.locked([&](auto&& loaded) {
+        auto& weak = loaded[id];
+        ptr = weak.lock();
+        if(ptr._data) {
+            return true;
+        }
+        weak = (ptr = std::make_shared<Data>(id, parent()))._data;
+        return false;
+    });
 }
 
 
@@ -160,14 +162,13 @@ AssetPtr<T> AssetLoader::Loader<T>::reload(const AssetPtr<T>& ptr) {
         y_debug_assert(!reloaded.is_loading());
     }
 
-    {
-        const auto lock = y_profile_unique_lock(_lock);
-        auto& weak = _loaded[id];
+    _loaded.locked([&](auto&& loaded) {
+        auto& weak = loaded[id];
         if(auto orig = weak.lock()) {
             orig->set_reloaded(reloaded._data);
         }
         weak = reloaded._data;
-    }
+    });
     return reloaded;
 }
 
@@ -311,12 +312,13 @@ AssetLoader::Result<T> AssetLoader::load(core::Result<AssetId, E> id) {
 
 template<typename T>
 AssetLoader::Loader<T>& AssetLoader::loader_for_type() {
-    const auto lock = y_profile_unique_lock(_lock);
-    auto& loader = _loaders[typeid(T)];
-    if(!loader) {
-        loader = std::make_unique<Loader<T>>(this);
-    }
-    return *dynamic_cast<Loader<T>*>(loader.get());
+    return _loaders.locked([&](auto&& loaders) -> Loader<T>& {
+        auto& loader = loaders[typeid(T)];
+        if(!loader) {
+            loader = std::make_unique<Loader<T>>(this);
+        }
+        return *dynamic_cast<Loader<T>*>(loader.get());
+    });
 }
 
 

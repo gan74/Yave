@@ -26,8 +26,8 @@ SOFTWARE.
 #include "TransientImage.h"
 
 #include <y/core/Vector.h>
+#include <y/concurrent/Mutexed.h>
 
-#include <mutex>
 #include <atomic>
 
 namespace yave {
@@ -54,16 +54,12 @@ class FrameGraphResourcePool : NonMovable {
         bool create_volume_from_pool(TransientVolume& res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory);
 
-        core::Vector<std::pair<TransientImage, u64>> _images;
-        core::Vector<std::pair<TransientVolume, u64>> _volumes;
-        core::Vector<std::pair<TransientBuffer, u64>> _buffers;
+        // That's a lot of locking....
+        concurrent::Mutexed<core::Vector<std::pair<TransientImage, u64>>, std::recursive_mutex> _images;
+        concurrent::Mutexed<core::Vector<std::pair<TransientVolume, u64>>, std::recursive_mutex> _volumes;
+        concurrent::Mutexed<core::Vector<std::pair<TransientBuffer, u64>>, std::recursive_mutex> _buffers;
 
         std::atomic<u64> _collection_id = 0;
-
-        Y_TODO(Find a way to not lock on every method call)
-        std::recursive_mutex _image_lock;
-        std::recursive_mutex _volume_lock;
-        std::recursive_mutex _buffer_lock;
 };
 
 }

@@ -38,9 +38,6 @@ FrameGraphResourcePool::FrameGraphResourcePool() {
 }
 
 FrameGraphResourcePool::~FrameGraphResourcePool() {
-    const auto image_lock = y_profile_unique_lock(_image_lock);
-    const auto bolume_lock = y_profile_unique_lock(_volume_lock);
-    const auto buffer_lock = y_profile_unique_lock(_buffer_lock);
 }
 
 TransientImage FrameGraphResourcePool::create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
@@ -90,84 +87,78 @@ TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage
 }
 
 bool FrameGraphResourcePool::create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
-    const auto lock = y_profile_unique_lock(_image_lock);
+    return _images.locked([&](auto&& images) {
+        for(auto it = images.begin(); it != images.end(); ++it) {
+            auto& img = it->first;
 
-    for(auto it = _images.begin(); it != _images.end(); ++it) {
-        auto& img = it->first;
+            if(img.format() == format && img.size() == size && img.usage() == usage) {
 
-        if(img.format() == format && img.size() == size && img.usage() == usage) {
+                res = std::move(img);
+                images.erase(it);
 
-            res = std::move(img);
-            _images.erase(it);
+                y_debug_assert(!res.is_null());
 
-            y_debug_assert(!res.is_null());
-
-            return true;
+                return true;
+            }
         }
-    }
-    return false;
+        return false;
+    });
 }
 
 bool FrameGraphResourcePool::create_volume_from_pool(TransientVolume& res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage) {
-    const auto lock = y_profile_unique_lock(_volume_lock);
+    return _volumes.locked([&](auto&& volumes) {
+        for(auto it = volumes.begin(); it != volumes.end(); ++it) {
+            auto& vol = it->first;
 
-    for(auto it = _volumes.begin(); it != _volumes.end(); ++it) {
-        auto& vol = it->first;
+            if(vol.format() == format && vol.size() == size && vol.usage() == usage) {
 
-        if(vol.format() == format && vol.size() == size && vol.usage() == usage) {
+                res = std::move(vol);
+                volumes.erase(it);
 
-            res = std::move(vol);
-            _volumes.erase(it);
+                y_debug_assert(!res.is_null());
 
-            y_debug_assert(!res.is_null());
-
-            return true;
+                return true;
+            }
         }
-    }
-    return false;
+        return false;
+    });
 }
 
 bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory) {
-    const auto lock = y_profile_unique_lock(_buffer_lock);
+    return _buffers.locked([&](auto&& buffers) {
+        for(auto it = buffers.begin(); it != buffers.end(); ++it) {
+            auto& buffer = it->first;
 
-    for(auto it = _buffers.begin(); it != _buffers.end(); ++it) {
-        auto& buffer = it->first;
+            if(buffer.byte_size() == byte_size &&
+               buffer.usage() == usage &&
+               (buffer.memory_type() == memory || memory == MemoryType::DontCare)) {
 
-        if(buffer.byte_size() == byte_size &&
-           buffer.usage() == usage &&
-           (buffer.memory_type() == memory || memory == MemoryType::DontCare)) {
+                res = std::move(buffer);
+                buffers.erase(it);
 
-            res = std::move(buffer);
-            _buffers.erase(it);
+                y_debug_assert(!res.is_null());
 
-            y_debug_assert(!res.is_null());
-
-            return true;
+                return true;
+            }
         }
-    }
-    return false;
+        return false;
+    });
 }
 
 
 void FrameGraphResourcePool::release(TransientImage image) {
-    const auto lock = y_profile_unique_lock(_image_lock);
-
     y_debug_assert(!image.is_null());
-    _images.emplace_back(std::move(image), _collection_id);
+    _images.locked([&](auto&& images) { images.emplace_back(std::move(image), _collection_id); });
 }
 
 void FrameGraphResourcePool::release(TransientVolume volume) {
-    const auto lock = y_profile_unique_lock(_volume_lock);
-
     y_debug_assert(!volume.is_null());
-    _volumes.emplace_back(std::move(volume), _collection_id);
+    _volumes.locked([&](auto&& volumes) { volumes.emplace_back(std::move(volume), _collection_id); });
 }
 
 void FrameGraphResourcePool::release(TransientBuffer buffer) {
-    const auto lock = y_profile_unique_lock(_buffer_lock);
-
     y_debug_assert(!buffer.is_null());
-    _buffers.emplace_back(std::move(buffer), _collection_id);
+    _buffers.locked([&](auto&& buffers) { buffers.emplace_back(std::move(buffer), _collection_id); });
 }
 
 void FrameGraphResourcePool::garbage_collect() {
@@ -176,35 +167,32 @@ void FrameGraphResourcePool::garbage_collect() {
     const u64 max_col_count = 6;
     const u64 collect_id = _collection_id++;
 
-    {
-        const auto lock = y_profile_unique_lock(_image_lock);
-        for(usize i = 0; i < _images.size(); ++i) {
-            if(_images[i].second + max_col_count < collect_id) {
-                _images.erase(_images.begin() + i);
+    _images.locked([&](auto&& images) {
+        for(usize i = 0; i < images.size(); ++i) {
+            if(images[i].second + max_col_count < collect_id) {
+                images.erase(images.begin() + i);
                 --i;
             }
         }
-    }
+    });
 
-    {
-        const auto lock = y_profile_unique_lock(_volume_lock);
-        for(usize i = 0; i < _volumes.size(); ++i) {
-            if(_volumes[i].second + max_col_count < collect_id) {
-                _volumes.erase(_volumes.begin() + i);
+    _volumes.locked([&](auto&& volumes) {
+        for(usize i = 0; i < volumes.size(); ++i) {
+            if(volumes[i].second + max_col_count < collect_id) {
+                volumes.erase(volumes.begin() + i);
                 --i;
             }
         }
-    }
+    });
 
-    {
-        const auto lock = y_profile_unique_lock(_buffer_lock);
-        for(usize i = 0; i < _buffers.size(); ++i) {
-            if(_buffers[i].second + max_col_count < collect_id) {
-                _buffers.erase(_buffers.begin() + i);
+    _buffers.locked([&](auto&& buffers) {
+        for(usize i = 0; i < buffers.size(); ++i) {
+            if(buffers[i].second + max_col_count < collect_id) {
+                buffers.erase(buffers.begin() + i);
                 --i;
             }
         }
-    }
+    });
 }
 
 
