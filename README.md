@@ -1,12 +1,12 @@
 # Yave
-Yet another C++17 Vulkan engine.
+Yet another C++20 Vulkan engine.
 
 ## Disclaimer
 This is a pet/learning project, it's not meant to be a serious engine and should not be used for anything beside playing with Vulkan.
 
 Currently only supports Windows
- * With GCC 9+ through MSYS2
- * With MSVC 16.9+
+ * With GCC 12+ through MSYS2
+ * With MSVC 19.28+
 
 Serialization format is compiler dependent!
 

@@ -92,7 +92,7 @@ inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
                 best_index = i;
                 break;
             } else if((memory_type.propertyFlags & flags) == flags) {
-                const u32 pop = popcnt_32(memory_type.propertyFlags);
+                const u32 pop = std::popcount(memory_type.propertyFlags);
                 if(pop < best_pop) {
                     best_pop = pop;
                     best_index = i;

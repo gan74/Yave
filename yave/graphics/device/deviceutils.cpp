@@ -28,6 +28,8 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
+#include <bit>
+
 namespace yave {
 
 float device_score(const PhysicalDevice& device) {
@@ -164,8 +166,7 @@ void print_physical_properties(const VkPhysicalDeviceProperties& properties) {
         const u32 major : 10;
     };
 
-    const auto& v_ref = properties.apiVersion;
-    const auto version = reinterpret_cast<const Version&>(v_ref);
+    const Version version = std::bit_cast<Version>(properties.apiVersion);
     log_msg(fmt("Running Vulkan (%.%.%) % bits on % (%)", u32(version.major), u32(version.minor), u32(version.patch),
             is_64_bits() ? 64 : 32, properties.deviceName, (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")));
 }

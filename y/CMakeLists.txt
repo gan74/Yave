@@ -3,7 +3,7 @@ project(y)
 
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # This causes recursive macros to generate a bunch of warnings, solved by C++20
 # set(CMAKE_CXX_EXTENSIONS OFF)

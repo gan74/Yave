@@ -111,16 +111,16 @@ struct IsArray<std::array<T, N>> {
 
 
 template<typename T>
-static constexpr bool is_range_v = detail::IsRange<remove_cvref_t<T>>::value;
+static constexpr bool is_range_v = detail::IsRange<std::remove_cvref_t<T>>::value;
 
 template<typename T>
-static constexpr bool is_tuple_v = detail::IsTuple<remove_cvref_t<T>>::value;
+static constexpr bool is_tuple_v = detail::IsTuple<std::remove_cvref_t<T>>::value;
 
 template<typename T>
-static constexpr bool is_std_ptr_v = detail::StdPtr<remove_cvref_t<T>>::is_std_ptr;
+static constexpr bool is_std_ptr_v = detail::StdPtr<std::remove_cvref_t<T>>::is_std_ptr;
 
 template<typename T>
-static constexpr bool is_array_v = detail::IsArray<remove_cvref_t<T>>::value;
+static constexpr bool is_array_v = detail::IsArray<std::remove_cvref_t<T>>::value;
 
 template<typename T>
 auto make_std_ptr() {

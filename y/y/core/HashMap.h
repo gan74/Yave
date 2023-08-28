@@ -94,8 +94,8 @@ namespace swiss {
 template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>, bool StoreHash = false>
 class FlatHashMap : Hasher, Equal {
     public:
-        using key_type = remove_cvref_t<Key>;
-        using mapped_type = remove_cvref_t<Value>;
+        using key_type = std::remove_cvref_t<Key>;
+        using mapped_type = std::remove_cvref_t<Value>;
         using value_type = std::pair<const key_type, mapped_type>;
 
         static constexpr double max_load_factor = detail::default_hash_map_max_load_factor;

@@ -41,6 +41,8 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
+#include <bit>
+
 
 namespace yave {
 
@@ -130,7 +132,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
             params[0] = {
                 count,
                 display_sky ? 1 : 0,
-                reinterpret_cast<const u32&>(ibl_intensity),
+                std::bit_cast<u32>(ibl_intensity),
                 0
             };
         }

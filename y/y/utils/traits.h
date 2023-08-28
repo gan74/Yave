@@ -115,13 +115,6 @@ using is_iterable = bool_type<
 template<typename T>
 static constexpr bool is_iterable_v = is_iterable<T>::value;
 
-template<typename T>
-using remove_cvref = std::remove_cv<std::remove_reference_t<T>>;
-
-template<typename T>
-using remove_cvref_t = typename remove_cvref<T>::type;
-
-
 
 namespace detail {
 template<typename T>

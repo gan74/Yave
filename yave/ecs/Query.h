@@ -37,7 +37,7 @@ namespace ecs {
 namespace detail {
 template<typename T, typename U, typename... Args>
 static constexpr usize tuple_index(const std::tuple<U, Args...>*) {
-    if constexpr(std::is_same_v<T, remove_cvref_t<U>>) {
+    if constexpr(std::is_same_v<T, std::remove_cvref_t<U>>) {
         return 0;
     } else {
         const std::tuple<Args...>* p = nullptr;

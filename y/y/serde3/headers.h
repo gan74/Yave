@@ -37,22 +37,22 @@ namespace serde3 {
 namespace detail {
 template<typename T>
 struct Deconst {
-    using type = remove_cvref_t<T>;
+    using type = std::remove_cvref_t<T>;
 };
 
 template<typename... Args>
 struct Deconst<std::tuple<Args...>> {
-    using type = std::tuple<remove_cvref_t<Args>...>;
+    using type = std::tuple<std::remove_cvref_t<Args>...>;
 };
 
 template<typename A, typename B>
 struct Deconst<std::pair<A, B>> {
-    using type = std::pair<remove_cvref_t<A>, remove_cvref_t<B>>;
+    using type = std::pair<std::remove_cvref_t<A>, std::remove_cvref_t<B>>;
 };
 }
 
 template<typename T>
-using deconst_t = typename detail::Deconst<remove_cvref_t<T>>::type;
+using deconst_t = typename detail::Deconst<std::remove_cvref_t<T>>::type;
 
 
 namespace detail {
@@ -123,7 +123,7 @@ static_assert(sizeof(TypeHeader) == sizeof(u64));
 static_assert(sizeof(MembersHeader) == sizeof(u64));
 
 template<typename T>
-constexpr u32 header_type_hash() {
+consteval u32 header_type_hash() {
     using naked = deconst_t<T>;
 
     if constexpr(is_range_v<T>) {
@@ -154,7 +154,7 @@ constexpr TypeHeader build_type_header(NamedMember<T, M> mem) {
 }
 
 template<usize I, typename... T, typename... Args>
-constexpr void hash_members(u32& hash, const std::tuple<NamedMember<T, Args>...>& members) {
+consteval void hash_members(u32& hash, const std::tuple<NamedMember<T, Args>...>& members) {
     unused(hash, members);
     if constexpr(I < sizeof...(Args)) {
         const TypeHeader tpe = build_type_header(std::get<I>(members));
@@ -166,7 +166,7 @@ constexpr void hash_members(u32& hash, const std::tuple<NamedMember<T, Args>...>
 }
 
 template<typename T>
-constexpr MembersHeader build_members_header() {
+consteval MembersHeader build_members_header() {
     u32 member_hash = 0xafbbc3d1;
     hash_members<0>(member_hash, list_members<T>());
     return MembersHeader {

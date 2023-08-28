@@ -69,7 +69,7 @@ option(YAVE_UNITY_BUILD "Force unity build" OFF)
 
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # See note in y
 # set(CMAKE_CXX_EXTENSIONS OFF)

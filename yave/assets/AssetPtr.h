@@ -120,7 +120,7 @@ template<typename T>
 class AssetPtrData final : public AssetPtrDataBase {
     public:
         T asset;
-        std::shared_ptr<AssetPtrData<T>> reloaded;
+        std::atomic<std::shared_ptr<AssetPtrData<T>>> reloaded;
 
         inline AssetPtrData(AssetId id, AssetLoader* loader);
         inline AssetPtrData(AssetId id, AssetLoader* loader, T t);

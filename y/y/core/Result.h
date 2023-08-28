@@ -140,13 +140,13 @@ inline auto Err() {
 
 template<typename T>
 inline auto Ok(T&& t) {
-    return detail::Ok<remove_cvref_t<T>>(y_fwd(t));
+    return detail::Ok<std::remove_cvref_t<T>>(y_fwd(t));
 }
 
 template<typename T>
 inline auto Err(T&& e) {
     result::err_break();
-    return detail::Err<remove_cvref_t<T>>(y_fwd(e));
+    return detail::Err<std::remove_cvref_t<T>>(y_fwd(e));
 }
 
 
