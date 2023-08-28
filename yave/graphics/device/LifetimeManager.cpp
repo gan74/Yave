@@ -152,7 +152,7 @@ void LifetimeManager::poll_cmd_buffers() {
 void LifetimeManager::clear_resources(u64 up_to) {
     y_profile();
 
-    core::Vector<ManagedResource> to_delete;
+    core::SmallVector<ManagedResource, 64> to_delete;
 
     {
         y_profile_zone("collection");

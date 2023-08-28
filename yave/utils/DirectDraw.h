@@ -83,7 +83,7 @@ class DirectDraw : NonCopyable {
 
 
     private:
-        core::Vector<std::unique_ptr<DirectDrawPrimitive>> _primitives;
+        core::SmallVector<std::unique_ptr<DirectDrawPrimitive>, 16> _primitives;
 
 
 };
