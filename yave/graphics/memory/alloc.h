@@ -110,10 +110,10 @@ inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
             const VkResult result = vkAllocateMemory(vk_device(), &allocate_info, vk_allocation_callbacks(), &memory);
             if(is_error(result)) {
                 if(result == VK_ERROR_OUT_OF_DEVICE_MEMORY) {
-                    log_msg(fmt("% heap out of memory", memory_type_name(type)), Log::Warning);
+                    log_msg(fmt("{} heap out of memory", memory_type_name(type)), Log::Warning);
                     continue;
                 }
-                y_fatal("Failed to allocate memory: %", vk_result_str(result));
+                y_fatal("Failed to allocate memory: {}", vk_result_str(result));
             }
             return memory;
         }

@@ -494,7 +494,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                     ImGuiTestEngine_GetResult(_test_engine, tested, success);
                     ImGuiTestEngine_PrintResultSummary(_test_engine);
 
-                    log_msg(fmt("%/% tests passed", success, tested), success == tested ? Log::Debug : Log::Error);
+                    log_msg(fmt("{}/{} tests passed", success, tested), success == tested ? Log::Debug : Log::Error);
                     _test_engine = nullptr;
                 }
             }

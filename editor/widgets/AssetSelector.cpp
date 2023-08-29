@@ -29,7 +29,7 @@ SOFTWARE.
 namespace editor {
 
 AssetSelector::AssetSelector(AssetType filter, const char* name) :
-        ResourceBrowser(name ? std::string_view(name) : fmt("Select %", asset_type_name(filter, false, true))),
+        ResourceBrowser(name ? std::string_view(name) : fmt("Select {}", asset_type_name(filter, false, true))),
         _filter(filter) {
     set_modal(true);
 }

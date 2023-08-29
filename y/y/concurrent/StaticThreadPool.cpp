@@ -70,7 +70,7 @@ StaticThreadPool::FuncData::FuncData(Func func, DependencyGroup wait, Dependency
 StaticThreadPool::StaticThreadPool(usize thread_count) {
     for(usize i = 0; i != thread_count; ++i) {
         _threads.emplace_back([this, i] {
-            concurrent::set_thread_name(fmt_c_str("Worker thread #%", i));
+            concurrent::set_thread_name(fmt_c_str("Worker thread #{}", i));
             worker();
         });
     }

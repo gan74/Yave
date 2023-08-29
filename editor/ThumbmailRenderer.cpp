@@ -260,7 +260,7 @@ void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
 
         default:
             data.failed = true;
-            log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
+            log_msg(fmt("Unknown asset type {} for {}", asset_type, id.id()), Log::Error);
         break;
     }
 }

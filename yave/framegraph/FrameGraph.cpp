@@ -325,14 +325,14 @@ void FrameGraph::alloc_resources() {
 
     for(auto&& [res, info] : images) {
         /*if(info.last_read < info.last_write && (info.usage & ImageUsage::Attachment) == ImageUsage::None) {
-            log_msg(fmt("Image written by % is never consumed", pass_name(info.last_write)), Log::Warning);
+            log_msg(fmt("Image written by {} is never consumed", pass_name(info.last_write)), Log::Warning);
         }*/
         if(info.alias.is_valid()) {
             y_debug_assert(allow_image_aliasing);
             _resources->create_alias(res, info.alias);
         } else {
             if(!info.has_usage()) {
-                log_msg(fmt("Image declared by % has no usage", pass_name(info.first_use)), Log::Warning);
+                log_msg(fmt("Image declared by {} has no usage", pass_name(info.first_use)), Log::Warning);
                 // All images should support texturing, hopefully
                 info.usage = info.usage | ImageUsage::TextureBit;
             }
@@ -343,7 +343,7 @@ void FrameGraph::alloc_resources() {
     for(auto&& [res, info] : _volumes) {
         y_always_assert(!info.alias.is_valid(), "Volume aliasing not supported");
         if(!info.has_usage()) {
-            log_msg(fmt("Volume declared by % has no usage", pass_name(info.first_use)), Log::Warning);
+            log_msg(fmt("Volume declared by {} has no usage", pass_name(info.first_use)), Log::Warning);
             // All images should support texturing, hopefully
             info.usage = info.usage | ImageUsage::TextureBit;
         }
@@ -356,7 +356,7 @@ void FrameGraph::alloc_resources() {
         }
 
         if(info.last_read < info.last_write) {
-            log_msg(fmt("Buffer written by % is never consumed", pass_name(info.last_write)), Log::Warning);
+            log_msg(fmt("Buffer written by {} is never consumed", pass_name(info.last_write)), Log::Warning);
         }
         if(is_none(info.usage)) {
             log_msg("Unused frame graph buffer resource", Log::Warning);
@@ -374,7 +374,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
             return pass->name();
         }
     }
-    y_fatal("Pass index out of bounds (%)", pass_index);
+    y_fatal("Pass index out of bounds ({})", pass_index);
 }
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {

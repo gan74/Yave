@@ -92,7 +92,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
             read_back.id
         };
 
-    //log_msg(fmt("picked: % (depth: %, id: %)", result.world_pos, result.depth, result.entity_index));
+    //log_msg(fmt("picked: {} (depth: {}, id: {})", result.world_pos, result.depth, result.entity_index));
     return result;
 }
 

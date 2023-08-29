@@ -43,7 +43,7 @@ void DeletionDialog::on_gui() {
     ImGui::Text("Delete %s?", component->name().data());
 
     if(!component->children().is_empty()) {
-        ImGui::Checkbox(fmt_c_str("Delete % children", component->children().size()), &_delete_children);
+        ImGui::Checkbox(fmt_c_str("Delete {} children", component->children().size()), &_delete_children);
     }
 
     if(ImGui::Button("Ok")) {

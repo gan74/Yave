@@ -78,7 +78,7 @@ DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding
     core::ScratchVector<VkDescriptorSetLayoutBinding> patched_bindings(bindings.size());
     for(const auto& b : bindings) {
         if(needs_fallback(b)) {
-            // log_msg(fmt("Inline uniform at binding % of size % requires fallback uniform buffer", b.binding, b.descriptorCount), Log::Warning);
+            // log_msg(fmt("Inline uniform at binding {} of size {} requires fallback uniform buffer", b.binding, b.descriptorCount), Log::Warning);
             patched_bindings.emplace_back(create_inline_uniform_binding_fallback(b));
             _inline_blocks_fallbacks << InlineBlock{b.binding, b.descriptorCount};
         } else {
@@ -189,7 +189,7 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
         for(const auto& buffer : layout.inline_blocks_fallbacks()) {
             _descriptor_buffer_size += align_up_to(u64(buffer.byte_size), alignment);
         }
-        log_msg(fmt("Allocating % * % bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
+        log_msg(fmt("Allocating {} * {} bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
         _inline_buffer = Buffer<BufferUsage::UniformBit, MemoryType::CpuVisible>(_descriptor_buffer_size * pool_size);
     }
 }

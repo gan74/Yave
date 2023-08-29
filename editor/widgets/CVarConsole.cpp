@@ -75,7 +75,7 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
     if constexpr(is_printable_v<T>) {
         vars.emplace_back(
             full_name,
-            [=]{ return fmt("%", getter()); },
+            [=]{ return fmt("{}", getter()); },
             [=](std::string_view str) { return try_parse(str, getter()); },
             ct_type_name<T>(), "", false, false
         );
@@ -83,7 +83,7 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
         if constexpr(is_printable_v<typename T::value_type>) {
             vars.emplace_back(
                 full_name,
-                [=]{ return fmt("%", getter()); },
+                [=]{ return fmt("{}", getter()); },
                 [=](std::string_view) { /* not supported */ return false; },
                 ct_type_name<T>(), "", false, false
             );

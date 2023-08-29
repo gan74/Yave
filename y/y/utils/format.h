@@ -51,10 +51,8 @@ std::string_view fmt(std::string_view fmt_str, Args&&... args) {
         return fmt_str;
     }
     try {
-        const core::String fmt_str_fixup = core::String::replaced(fmt_str, "%", "{}");
-
         auto buffer = detail::alloc_fmt_buffer();
-        char* end = std::vformat_to(buffer.data(), fmt_str_fixup, std::make_format_args(y_fwd(args)...));
+        char* end = std::vformat_to(buffer.data(), fmt_str, std::make_format_args(y_fwd(args)...));
         y_always_assert(usize(end - buffer.data()) < buffer.size(), "fmt buffer exhausted");
         *end = 0;
         return std::string_view(buffer.data(), end - buffer.data());
@@ -71,10 +69,8 @@ const char* fmt_c_str(std::string_view fmt_str, Args&&... args) {
 template<typename... Args>
 std::string_view fmt_into(core::String& out, std::string_view fmt_str, Args&&... args) {
     try {
-        const core::String fmt_str_fixup = core::String::replaced(fmt_str, "%", "{}");
-
         const usize start = out.size();
-        std::vformat_to(std::back_inserter(out), fmt_str_fixup, std::make_format_args(y_fwd(args)...));
+        std::vformat_to(std::back_inserter(out), fmt_str, std::make_format_args(y_fwd(args)...));
         return out.sub_str(start, out.size() - start);
     } catch(std::exception& e) {
         y_fatal("fmt failed: {}", e.what());

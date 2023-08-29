@@ -194,7 +194,7 @@ EntityPrefab EntityWorld::create_prefab(EntityId id) const {
             }
             auto box = container->create_box(id);
             if(!box) {
-                log_msg(fmt("% is not copyable and was excluded from prefab", container->runtime_info().type_name), Log::Warning);
+                log_msg(fmt("{} is not copyable and was excluded from prefab", container->runtime_info().type_name), Log::Warning);
             }
             prefab.add(std::move(box));
         }

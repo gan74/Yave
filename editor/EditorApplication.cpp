@@ -178,7 +178,7 @@ void EditorApplication::save_world_deferred() const {
     }
     serde3::WritableArchive arc(file.unwrap());
     if(auto r = arc.serialize(*_world); !r) {
-        log_msg(fmt("Unable to save world: %", serde3::error_msg(r.error())), Log::Error);
+        log_msg(fmt("Unable to save world: {}", serde3::error_msg(r.error())), Log::Error);
     }
 
     log_msg("World saved");
@@ -198,7 +198,7 @@ void EditorApplication::load_world_deferred() {
     serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
     const auto status = arc.deserialize(world);
     if(status.is_error()) {
-        log_msg(fmt("Unable to load world: % (for %)", serde3::error_msg(status.error()), status.error().member), Log::Error);
+        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(status.error()), status.error().member), Log::Error);
         return;
     }
 

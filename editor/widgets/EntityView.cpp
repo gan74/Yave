@@ -362,15 +362,15 @@ void EntityView::on_gui() {
 
                 imgui::table_begin_next_row();
                 if(item.component->is_collection()) {
-                    const bool open = ImGui::TreeNodeEx(fmt_c_str(ICON_FA_BOX_OPEN " %###%", item.component->name(), item.id.as_u64()), flags);
+                    const bool open = ImGui::TreeNodeEx(fmt_c_str(ICON_FA_BOX_OPEN " {}###{}", item.component->name(), item.id.as_u64()), flags);
                     _open_nodes[item.id] = open;
                     update_selection();
                     if(open) {
                         ++tree_depth;
                     }
                 } else {
-                    const std::string_view display_name = item.component->is_prefab() ? fmt("% (Prefab)", item.component->name()) : std::string_view(item.component->name());
-                    ImGui::TreeNodeEx(fmt_c_str("% %###%", world.entity_icon(item.id), display_name, item.id.as_u64()), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                    const std::string_view display_name = item.component->is_prefab() ? fmt("{} (Prefab)", item.component->name()) : std::string_view(item.component->name());
+                    ImGui::TreeNodeEx(fmt_c_str("{} {}###{}", world.entity_icon(item.id), display_name, item.id.as_u64()), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
                     update_selection();
                     ImGui::TableNextColumn();
                     display_tag_buttons(item.id, world, _tag_buttons);

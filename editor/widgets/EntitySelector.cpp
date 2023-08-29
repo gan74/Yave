@@ -34,7 +34,7 @@ EntitySelector::EntitySelector() : Widget("Select an entity") {
 }
 
 EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter) :
-        Widget(fmt("Select a %", current_world().component_type_name(filter))),
+        Widget(fmt("Select a {}", current_world().component_type_name(filter))),
         _filter(filter),
         _has_filter(true) {
     set_modal(true);
@@ -57,7 +57,7 @@ void EntitySelector::on_gui() {
     if(ImGui::BeginChild("##entities")) {
         for(auto&& [id, comp] : query) {
             const auto& [c] = comp;
-            if(ImGui::Selectable(fmt_c_str("% %", world.entity_icon(id), c.name().data()))) {
+            if(ImGui::Selectable(fmt_c_str("{} {}", world.entity_icon(id), c.name().data()))) {
                 if(_selected(id)) {
                     close();
                     return;

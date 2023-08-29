@@ -87,7 +87,7 @@ static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder
         render_query(world.query<TransformableComponent, StaticMeshComponent>(tags));
     }
 
-    y_profile_msg(fmt_c_str("% meshes", index));
+    y_profile_msg(fmt_c_str("{} meshes", index));
 
     return index;
 }

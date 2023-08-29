@@ -164,7 +164,7 @@ void PerformanceMetrics::draw_memory() {
     }
 
     auto progress_bar = [](double used, double allocated) {
-        ImGui::ProgressBar(float(used / allocated), ImVec2(0, 0), fmt_c_str("%MB / %MB", u64(used), u64(allocated)));
+        ImGui::ProgressBar(float(used / allocated), ImVec2(0, 0), fmt_c_str("{}MB / {}MB", u64(used), u64(allocated)));
     };
 
 
@@ -205,7 +205,7 @@ void PerformanceMetrics::draw_memory() {
         ImGui::Text("Descriptor set layouts: %u", u32(alloc.layout_count()));
         ImGui::Text("Descriptor set pools: %u", u32(pools));
 
-        ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt_c_str("% / % sets", used_sets, total_sets));
+        ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt_c_str("{} / {} sets", used_sets, total_sets));
     }
 
     ImGui::Spacing();

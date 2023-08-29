@@ -178,11 +178,11 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
         public:
             Job(AssetLoader* loader, std::shared_ptr<Data> data) : LoadingJob(loader), _data(std::move(data)) {
                 y_always_assert(_data, "Invalid asset");
-                y_profile_msg(fmt_c_str("Adding loading request for %", asset_name()));
+                y_profile_msg(fmt_c_str("Adding loading request for {}", asset_name()));
             }
 
             core::Result<void> read() override {
-                y_profile_zone_arg("loading", fmt_c_str("%", asset_name()));
+                y_profile_zone_arg("loading", fmt_c_str("{}", asset_name()));
 
                 const AssetId id = _data->id;
 
@@ -197,10 +197,10 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 
                     if(res.is_error() || (fail_on_partial_deser && res.unwrap() == serde3::Success::Partial)) {
                         _data->set_failed(ErrorType::InvalidData);
-                        log_msg(fmt("Unable to load %, invalid data: %", asset_name(), serde3::error_msg(res)), Log::Error);
+                        log_msg(fmt("Unable to load {}, invalid data: {}", asset_name(), serde3::error_msg(res)), Log::Error);
                         return core::Err();
                     } else if(res.unwrap() == serde3::Success::Partial) {
-                        log_msg(fmt("% was only partially deserialized", asset_name()), Log::Warning);
+                        log_msg(fmt("{} was only partially deserialized", asset_name()), Log::Warning);
                     }
 
                     reflect::explore_recursive(_load_from, [this](auto& m) {
@@ -214,7 +214,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 
                 _data->set_failed(ErrorType::InvalidID);
                 y_debug_assert(!_data->is_loading());
-                log_msg(fmt("Unable to load % %: invalid ID", asset_type_name(asset_type()), asset_name()), Log::Error);
+                log_msg(fmt("Unable to load {} {}: invalid ID", asset_type_name(asset_type()), asset_name()), Log::Error);
                 return core::Err();
             }
 
@@ -223,10 +223,10 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                     return;
                 }
 
-                y_profile_zone_arg("finalizing", fmt_c_str("%", asset_name()));
+                y_profile_zone_arg("finalizing", fmt_c_str("{}", asset_name()));
                 y_debug_assert(_data->is_loading());
                 _data->finalize_loading(std::move(_load_from));
-                y_profile_msg(fmt_c_str("finished loading %", asset_name()));
+                y_profile_msg(fmt_c_str("finished loading {}", asset_name()));
             }
 
             void set_dependencies_failed() override {
@@ -235,7 +235,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                 }
 
                 _data->set_failed(AssetLoadingErrorType::FailedDependency);
-                log_msg(fmt("Unable to load %: failed to load dependency", asset_name()), Log::Error);
+                log_msg(fmt("Unable to load {}: failed to load dependency", asset_name()), Log::Error);
             }
 
         private:

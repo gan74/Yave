@@ -189,13 +189,13 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
     /*auto print_resources = [&](auto resources) {
         for(const auto& buffer : resources) {
             const auto& type = compiler.get_type(buffer.base_type_id);
-            log_msg(fmt("%:", buffer.name.data()), Log::Warning);
-            log_msg(fmt("   storage: %", compiler.get_storage_class(buffer.id)), Log::Warning);
-            log_msg(fmt("   type base: %", type.basetype), Log::Warning);
-            log_msg(fmt("   type storage: %", type.storage), Log::Warning);
+            log_msg(fmt("{}:", buffer.name.data()), Log::Warning);
+            log_msg(fmt("   storage: {}", compiler.get_storage_class(buffer.id)), Log::Warning);
+            log_msg(fmt("   type base: {}", type.basetype), Log::Warning);
+            log_msg(fmt("   type storage: {}", type.storage), Log::Warning);
             const auto& bitset = compiler.get_decoration_bitset(buffer.id);
             bitset.for_each_bit([](u32 bit) {
-                log_msg(fmt("   decoration: %", bit), Log::Warning);
+                log_msg(fmt("   decoration: {}", bit), Log::Warning);
             });
         }
     };

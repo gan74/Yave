@@ -60,7 +60,7 @@ DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId 
             break;
         }
 
-        FrameGraphPassBuilder builder = framegraph.add_pass(fmt("Downsample pass x%", 1 << m));
+        FrameGraphPassBuilder builder = framegraph.add_pass(fmt("Downsample pass x{}", 1 << m));
 
         const auto mip = builder.declare_image(format, mip_size);
 

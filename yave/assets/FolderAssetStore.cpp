@@ -220,7 +220,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::create_direct
     }
 
     if(_parent->_folders.emplace(path).second) {
-        log_msg(fmt("Folder created: %", path));
+        log_msg(fmt("Folder created: {}", path));
         return _parent->save_or_restore_tree();
     }
 
@@ -257,7 +257,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
                 const AssetId id = data.id;
                 const core::String filename = _parent->asset_desc_file_name(id);
                 if(auto r = FileSystemModel::local_filesystem()->remove(filename); !r) {
-                    log_msg(fmt("Unable to remove %", filename), Log::Error);
+                    log_msg(fmt("Unable to remove {}", filename), Log::Error);
                     _parent->reload_all().ignore();
                     return r;
                 }
@@ -276,7 +276,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
         }
     }
 
-    log_msg(fmt("Removed % assets", _parent->_assets.size() - new_assets.size()));
+    log_msg(fmt("Removed {} assets", _parent->_assets.size() - new_assets.size()));
 
     _parent->_ids = nullptr;
     std::swap(new_folders, _parent->_folders);
@@ -367,11 +367,11 @@ FolderAssetStore::~FolderAssetStore() {
 }
 
 core::String FolderAssetStore::asset_data_file_name(AssetId id) const {
-    return _filesystem.join(_root, fmt("%.asset", stringify_id(id)));
+    return _filesystem.join(_root, fmt("{}.asset", stringify_id(id)));
 }
 
 core::String FolderAssetStore::asset_desc_file_name(AssetId id) const {
-    return _filesystem.join(_root, fmt("%.desc", stringify_id(id)));
+    return _filesystem.join(_root, fmt("{}.desc", stringify_id(id)));
 }
 
 
@@ -422,7 +422,7 @@ AssetStore::Result<FolderAssetStore::AssetDesc> FolderAssetStore::load_desc(Asse
 AssetStore::Result<> FolderAssetStore::save_desc(AssetId id, const AssetDesc& desc) const {
     y_profile();
 
-    const std::string_view data = fmt("%\n%\n", desc.name, desc.type);
+    const std::string_view data = fmt("{}\n{}\n", desc.name, desc.type);
 
     const core::String file_name = asset_desc_file_name(id);
     const core::String tmp_file = file_name + "_";
@@ -801,13 +801,13 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
                         if(const auto it = asset_sizes.find(uid); it != asset_sizes.end()) {
                             data.file_size = it->second;
                         } else {
-                            log_msg(fmt("\"%\" has no asset file", desc.name), Log::Error);
+                            log_msg(fmt("\"{}\" has no asset file", desc.name), Log::Error);
                             continue;
                         }
 
                         assets[index].emplace_back(std::move(desc), std::move(data));
                     } else {
-                        log_msg(fmt("%.desc could not be read", uid), Log::Error);
+                        log_msg(fmt("{}.desc could not be read", uid), Log::Error);
                     }
                 }
             });
@@ -822,10 +822,10 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
         for(auto& a : assets) {
             for(auto& [desc, data] : a) {
                 if(!_assets.emplace(desc.name, data).second) {
-                    log_msg(fmt("\"%\" already exists in asset database", desc.name), Log::Error);
+                    log_msg(fmt("\"{}\" already exists in asset database", desc.name), Log::Error);
 
                     {
-                        fmt_into(desc.name, "_(%)", emergency_id++);
+                        fmt_into(desc.name, "_({})", emergency_id++);
                         _assets.emplace(desc.name, data);
                         save_desc(data.id, desc).ignore();
                     }
@@ -833,7 +833,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
 
                 if(auto parent = _filesystem.parent_path(desc.name); parent && !parent.unwrap().is_empty()) {
                     if(_folders.insert(parent.unwrap()).second) {
-                        log_msg(fmt("\"%\" was not found in folder database", parent.unwrap()), Log::Warning);
+                        log_msg(fmt("\"{}\" was not found in folder database", parent.unwrap()), Log::Warning);
                     }
                 }
             }

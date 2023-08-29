@@ -49,7 +49,7 @@ static bool try_enable_extension(core::Vector<const char*>& exts, const char* na
             return true;
         }
     }
-    log_msg(fmt("% not supported", name_view), Log::Warning);
+    log_msg(fmt("{} not supported", name_view), Log::Warning);
     return false;
 }
 

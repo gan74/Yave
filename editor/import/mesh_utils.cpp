@@ -155,7 +155,7 @@ core::Result<void> export_to_obj(const MeshData& mesh, io2::Writer& writer) {
     const usize vertex_count = mesh.vertex_streams().vertex_count();
     for(usize i = 0; i != vertex_count; ++i) {
         const FullVertex v = unpack_vertex(mesh.vertex_streams()[i]);
-        y_try_discard(write(fmt("v % % %\nvn % % %\nvt % %\n",
+        y_try_discard(write(fmt("v {} {} {}\nvn {} {} {}\nvt {} {}\n",
             v.position.x(),
             v.position.y(),
             v.position.z(),
@@ -171,7 +171,7 @@ core::Result<void> export_to_obj(const MeshData& mesh, io2::Writer& writer) {
 
     for(const IndexedTriangle& triangle : mesh.triangles()) {
         const IndexedTriangle tri = {triangle[0] + 1, triangle[1] + 1, triangle[2] + 1};
-        y_try_discard(write(fmt("f %/%/% %/%/% %/%/%\n",
+        y_try_discard(write(fmt("f {}/{}/{} {}/{}/{} {}/{}/{}\n",
             tri[0], tri[0], tri[0],
             tri[1], tri[1], tri[1],
             tri[2], tri[2], tri[2]

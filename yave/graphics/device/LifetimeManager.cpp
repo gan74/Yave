@@ -183,7 +183,7 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
             } else if constexpr(std::is_same_v<decltype(res), MeshDrawData&>) {
                 res.recycle();
             } else {
-                // log_msg(fmt("destroying % %", ct_type_name<decltype(res)>(), (void*)res));
+                // log_msg(fmt("destroying {} {}", ct_type_name<decltype(res)>(), (void*)res));
                 vk_destroy(res.consume());
             }
         },

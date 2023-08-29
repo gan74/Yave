@@ -217,11 +217,11 @@ y_test_func("HashMap strings") {
     DefaultImpl<core::String, int> map;
     for(int i = 0; i != max_key; ++i) {
         core::String str;
-        fmt_into(str, "%", i);
+        fmt_into(str, "{}", i);
         y_test_assert(map.insert({str, i}).second);
 
         for(int j = i; j >= 0; --j) {
-            y_test_assert(map.find(fmt("%", j))->second == j);
+            y_test_assert(map.find(fmt("{}", j))->second == j);
         }
     }
 

@@ -77,7 +77,7 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
 #ifdef Y_DEBUG
             if(const auto* debug = debug_utils(); debug && declared_here(id)) {
                 const auto& img = resources.image_base(id);
-                const std::string_view name = fmt("% %", _name, suffix);
+                const std::string_view name = fmt("{} {}", _name, suffix);
                 debug->set_resource_name(img.vk_image(), name.data());
                 debug->set_resource_name(img.vk_view(), name.data());
             }

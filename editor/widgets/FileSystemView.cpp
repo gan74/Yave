@@ -180,7 +180,7 @@ void FileSystemView::on_gui() {
             const FileSystemModel* fs = filesystem();
             const core::String target_name = fs->join(drop_path, fs->filename(original_name));
             if(!fs->rename(original_name, target_name)) {
-                log_msg(fmt("Unable to move \"%\" to \"%\"", original_name, drop_path), Log::Error);
+                log_msg(fmt("Unable to move \"{}\" to \"{}\"", original_name, drop_path), Log::Error);
             }
             refresh_all();
         }
@@ -220,7 +220,7 @@ void FileSystemView::on_gui() {
         while(clipper.Step()) {
             for(int i = clipper.DisplayStart; i < clipper.DisplayEnd && i < _entries.size(); ++i) {
                 imgui::table_begin_next_row();
-                if(ImGui::Selectable(fmt_c_str("% %##%", _entries[i].icon, _entries[i].name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
+                if(ImGui::Selectable(fmt_c_str("{} {}##{}", _entries[i].icon, _entries[i].name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
                     entry_clicked(_entries[i]);
                     break; // break because we might update inside entry_clicked
                 }
@@ -243,7 +243,7 @@ void FileSystemView::on_gui() {
 
                 if(_entries[i].type == EntryType::File) {
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(fmt_c_str("% KB", (_entries[i].file_size + 1023) / 1024, i));
+                    ImGui::TextUnformatted(fmt_c_str("{} KB", (_entries[i].file_size + 1023) / 1024, i));
                 }
             }
         }
@@ -294,7 +294,7 @@ void FileSystemView::draw_context_menu() {
 
         if(ImGui::MenuItem("Delete")) {
             if(!filesystem()->remove(full_name)) {
-                log_msg(fmt("Unable to delete %", full_name), Log::Error);
+                log_msg(fmt("Unable to delete {}", full_name), Log::Error);
             }
             refresh_all();
         }

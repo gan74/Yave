@@ -127,12 +127,12 @@ void AssetStringifier::on_gui() {
             browser->set_selected_callback([mesh = _mesh](const auto& filename) {
                 if(auto res = io2::File::create(filename)) {
                     if(import::export_to_obj(*mesh, res.unwrap()).is_ok()) {
-                        log_msg(fmt("Exported as %", filename));
+                        log_msg(fmt("Exported as {}", filename));
                     } else {
                         log_msg("Export failed", Log::Error);
                     }
                 } else {
-                    log_msg(fmt("Unable to create file %", filename), Log::Error);
+                    log_msg(fmt("Unable to create file {}", filename), Log::Error);
                 }
                 return true;
             });
@@ -185,8 +185,8 @@ void AssetStringifier::stringify(MeshData mesh) {
         vertices.emplace_back(buffer.data());
     };
 
-    fmt_into(_vertices, "%", vertices);
-    fmt_into(_triangles, "%", mesh.triangles());
+    fmt_into(_vertices, "{}", vertices);
+    fmt_into(_triangles, "{}", mesh.triangles());
 
     auto fix_brackets = [](char& c) {
             if(c == '[') {

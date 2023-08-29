@@ -53,7 +53,7 @@ bool try_enable_extension(core::Vector<const char*>& exts, const char* name, con
         exts << name;
         return true;
     }
-    log_msg(fmt("% not supported", name), Log::Warning);
+    log_msg(fmt("{} not supported", name), Log::Warning);
     return false;
 }
 
@@ -167,20 +167,20 @@ void print_physical_properties(const VkPhysicalDeviceProperties& properties) {
     };
 
     const Version version = std::bit_cast<Version>(properties.apiVersion);
-    log_msg(fmt("Running Vulkan (%.%.%) % bits on % (%)", u32(version.major), u32(version.minor), u32(version.patch),
+    log_msg(fmt("Running Vulkan ({}.{}.{}) {} bits on {} ({})", u32(version.major), u32(version.minor), u32(version.patch),
             is_64_bits() ? 64 : 32, properties.deviceName, (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")));
 }
 
 void print_enabled_extensions(core::Span<const char*> extensions) {
     for(const char* ext : extensions) {
-        log_msg(fmt("% enabled", ext));
+        log_msg(fmt("{} enabled", ext));
     }
 }
 
 void print_properties(const DeviceProperties& properties) {
-    log_msg(fmt("max_memory_allocations = %", properties.max_memory_allocations));
-    log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size));
-    log_msg(fmt("max_uniform_buffer_size = %", properties.max_uniform_buffer_size));
+    log_msg(fmt("max_memory_allocations = {}", properties.max_memory_allocations));
+    log_msg(fmt("max_inline_uniform_size = {}", properties.max_inline_uniform_size));
+    log_msg(fmt("max_uniform_buffer_size = {}", properties.max_uniform_buffer_size));
 }
 
 

@@ -85,7 +85,7 @@ namespace detail {
 EditorAction* first_action = nullptr;
 
 void register_action(EditorAction* action) {
-    log_msg(fmt("Registering action \"%\"", action->name), Log::Debug);
+    log_msg(fmt("Registering action \"{}\"", action->name), Log::Debug);
     action->next = first_action;
     first_action = action;
 }
