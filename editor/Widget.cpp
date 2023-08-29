@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 namespace detail {

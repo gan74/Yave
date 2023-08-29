@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include <y/io2/File.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 using SpirV = EditorResources::SpirV;

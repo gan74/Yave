@@ -27,6 +27,8 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
+#include <y/utils/format.h>
+
 namespace yave {
 
 static DeviceResources::MaterialTemplates material_template(DownsamplePass::Filter filter) {

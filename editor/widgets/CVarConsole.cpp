@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/utils/color.h>
 
 #include <y/utils/name.h>
+#include <y/utils/format.h>
 
 #include <algorithm>
 #include <string>

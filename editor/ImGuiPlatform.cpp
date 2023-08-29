@@ -32,14 +32,13 @@ SOFTWARE.
 
 #include <y/io2/File.h>
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <external/imgui_test_engine/imgui_te_context.h>
 #include <external/imgui_test_engine/imgui_te_exporters.h>
 #include <external/imgui_test_engine/imgui_te_internal.h>
 
 #include <deque>
-
-
 
 
 namespace editor {

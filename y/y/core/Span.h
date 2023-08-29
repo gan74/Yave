@@ -78,6 +78,7 @@ class MutableSpan {
             return !_size;
         }
 
+        // const or not const ???
         inline constexpr T* data() {
             return _data;
         }

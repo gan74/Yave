@@ -20,26 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#if 1
-
-#include <y/utils/log.h>
-#include <y/utils/name.h>
-
-using namespace y;
-
-
-int main() {
-    log_msg(ct_type_name<std::string_view>());
-}
-
-#else
 #include <y/test/test.h>
 #include <y/utils/log.h>
 
 using namespace y;
 
 int main() {
-
     const bool ok = test::run_tests();
 
     if(ok) {
@@ -50,6 +36,4 @@ int main() {
 
     return ok ? 0 : 1;
 }
-
-#endif
 

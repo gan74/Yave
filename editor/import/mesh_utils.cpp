@@ -26,7 +26,9 @@ SOFTWARE.
 #include <yave/animations/Animation.h>
 
 #include <y/core/ScratchPad.h>
+
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 
 namespace editor {

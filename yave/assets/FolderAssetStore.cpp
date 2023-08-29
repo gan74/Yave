@@ -26,6 +26,7 @@ SOFTWARE.
 #include <y/concurrent/StaticThreadPool.h>
 
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 #include <y/serde3/archives.h>
 
 #include <charconv>

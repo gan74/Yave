@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/utils/assets.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 AssetSelector::AssetSelector(AssetType filter, const char* name) :

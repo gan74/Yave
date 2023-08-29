@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 static double to_mb(double b) {
