@@ -235,6 +235,30 @@ void String::resize(usize new_size, char c) {
 }
 
 
+String String::replaced(std::string_view str, std::string_view from, std::string_view to) {
+    String repl;
+    repl.set_min_capacity(str.size() + to.size() * 2);
+
+    usize beg = 0;
+    for(;;) {
+        const std::string_view remaining = str.substr(beg);
+        const auto it = remaining.find(from);
+        if(it == std::string_view::npos) {
+            repl += remaining;
+            break;
+        } else {
+            repl += str.substr(beg, it);
+            repl += to;
+            beg += it + from.size();
+        }
+    }
+    return repl;
+}
+
+String String::replaced(std::string_view from, std::string_view to) const {
+    return replaced(view(), from, to);
+}
+
 char* String::data() {
     return is_long() ? _l.data : _s.data;
 }
