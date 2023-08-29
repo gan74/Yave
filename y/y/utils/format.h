@@ -52,10 +52,52 @@ std::string_view fmt(std::string_view fmt_str, Args&&... args) {
     }
     try {
         auto buffer = detail::alloc_fmt_buffer();
-        char* end = std::vformat_to(buffer.data(), fmt_str, std::make_format_args(y_fwd(args)...));
-        y_always_assert(usize(end - buffer.data()) < buffer.size(), "fmt buffer exhausted");
-        *end = 0;
-        return std::string_view(buffer.data(), end - buffer.data());
+
+        struct Iterator {
+            using iterator_category = std::forward_iterator_tag;
+            using difference_type = std::ptrdiff_t;
+
+            using value_type = char;
+            using reference = char&;
+            using pointer = char*;
+
+            inline Iterator& operator++() {
+                ++index;
+                return *this;
+            }
+
+            inline Iterator operator++(int) {
+                auto it = *this;
+                ++index;
+                return it;
+            }
+
+            inline char& operator*() const {
+                return index < buffer_size ? buffer[index] : overflow;
+            }
+
+            char* buffer = nullptr;
+            usize buffer_size = 0;
+            usize index = 0;
+            mutable char overflow = 0;
+        } it {
+            buffer.data(), buffer.size() - 1,
+            0, 0
+        };
+
+        static_assert(std::output_iterator<Iterator, const char&>);
+
+        it = std::vformat_to(it, fmt_str, std::make_format_args(y_fwd(args)...));
+
+        if(it.index > it.buffer_size) {
+            Y_TODO(find something better)
+            y_breakpoint;
+            it.index = it.buffer_size;
+            it.buffer[it.index - 1] = it.buffer[it.index - 2] = it.buffer[it.index - 3] = '.';
+        }
+
+        it.buffer[it.index] = 0;
+        return std::string_view(it.buffer, it.index);
     } catch(std::exception& e) {
         y_fatal("fmt failed: {}", e.what());
     }
