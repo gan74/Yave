@@ -145,12 +145,27 @@ core::Vector<VkQueueFamilyProperties> enumerate_family_properties(VkPhysicalDevi
 }
 
 u32 queue_family_index(core::Span<VkQueueFamilyProperties> families, VkQueueFlags flags) {
+    int most_bits = -1;
+    usize best_family_index = 0;
+
     for(usize i = 0; i != families.size(); ++i) {
-        if(families[i].queueCount && (families[i].queueFlags & flags) == flags) {
-            return u32(i);
+        if(!families[i].queueCount) {
+            continue;
+        }
+
+        if((families[i].queueFlags & flags) != flags) {
+            continue;
+        }
+
+        const int bits = std::popcount(families[i].queueFlags);
+        if(most_bits < 0 || bits < most_bits) {
+            most_bits = bits;
+            best_family_index = i;
         }
     }
-    y_fatal("No queue available for given flag set");
+
+    y_always_assert(most_bits >= 0, "No queue available for given flag set");
+    return u32(best_family_index);
 }
 
 VkQueue create_queue(VkDevice device, u32 family_index, u32 index) {

@@ -89,13 +89,11 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
     y_always_assert(vertex_begin + vertex_count <= global_attrib_buffer.byte_size() / sizeof(PackedVertex), "Vertex buffer pool is full");
 
     {
-        CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-        recorder._unsynced_start = true;
+        TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
 
         auto stage_copy = [&](const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
             y_debug_assert(data);
             const u64 dst_size = dst.byte_size();
-
             const StagingBuffer buffer(dst_size);
             std::memcpy(buffer.map_bytes(MappingAccess::WriteOnly).raw_data(), data, dst_size);
             recorder.unbarriered_copy(buffer, dst);
@@ -129,7 +127,7 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
             mesh_data._command.vertex_offset = i32(vertex_begin);
         }
 
-        loading_command_queue().submit(std::move(recorder));
+        loading_command_queue().submit_async_start(std::move(recorder));
     }
 
     return mesh_data;

@@ -52,7 +52,7 @@ CmdBufferRegion::~CmdBufferRegion() {
     }
 }
 
-CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color) :
+CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color) :
         _buffer(cmd_buffer.vk_cmd_buffer()),
         _time_recorder(time_rec) {
 
@@ -248,11 +248,10 @@ void RenderPassRecorder::set_scissor(const math::Vec2i& offset, const math::Vec2
 }
 
 
-// -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
 
+// -------------------------------------------------- CmdBufferRecorderBase --------------------------------------------------
 
-
-CmdBufferRecorder::CmdBufferRecorder(CmdBufferData* data) : _data(data) {
+CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferData* data) : _data(data) {
     VkCommandBufferBeginInfo begin_info = vk_struct();
     {
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -261,9 +260,209 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBufferData* data) : _data(data) {
     vk_check(vkBeginCommandBuffer(vk_cmd_buffer(), &begin_info));
 }
 
-CmdBufferRecorder::~CmdBufferRecorder() {
+CmdBufferRecorderBase::~CmdBufferRecorderBase() {
     check_no_renderpass();
     y_always_assert(!_data, "CmdBufferRecorder has not been submitted");
+}
+
+void CmdBufferRecorderBase::swap(CmdBufferRecorderBase& other) {
+    std::swap(_data, other._data);
+    std::swap(_render_pass, other._render_pass);
+}
+
+VkCommandBuffer CmdBufferRecorderBase::vk_cmd_buffer() const {
+    y_debug_assert(_data);
+    return _data->vk_cmd_buffer();
+}
+
+ResourceFence CmdBufferRecorderBase::resource_fence() const {
+    y_debug_assert(_data);
+    return _data->resource_fence();
+}
+
+bool CmdBufferRecorderBase::is_inside_renderpass() const {
+    return _render_pass;
+}
+
+CmdBufferRegion CmdBufferRecorderBase::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
+    return CmdBufferRegion(*this, time_rec, name, color);
+}
+
+void CmdBufferRecorderBase::end_renderpass() {
+    y_debug_assert(_render_pass);
+
+    vkCmdEndRenderPass(vk_cmd_buffer());
+    _render_pass = nullptr;
+}
+
+void CmdBufferRecorderBase::check_no_renderpass() const {
+    y_always_assert(!_render_pass, "Command can not be used or destoryed while it has a RenderPassRecorder.");
+}
+
+void CmdBufferRecorderBase::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
+    check_no_renderpass();
+
+    if(buffers.is_empty() && images.is_empty()) {
+        return;
+    }
+
+    auto image_barriers = core::ScratchPad<VkImageMemoryBarrier>(images.size());
+    std::transform(images.begin(), images.end(), image_barriers.begin(), [](const auto& b) { return b.vk_barrier(); });
+
+    auto buffer_barriers = core::ScratchPad<VkBufferMemoryBarrier>(buffers.size());
+    std::transform(buffers.begin(), buffers.end(), buffer_barriers.begin(), [](const auto& b) { return b.vk_barrier(); });
+
+    PipelineStage src_mask = PipelineStage::None;
+    PipelineStage dst_mask = PipelineStage::None;
+
+    for(const auto& b : buffers) {
+        src_mask = src_mask | b.src_stage();
+        dst_mask = dst_mask | b.dst_stage();
+    }
+
+    for(const auto& b : images) {
+        src_mask = src_mask | b.src_stage();
+        dst_mask = dst_mask | b.dst_stage();
+    }
+
+    vkCmdPipelineBarrier(
+        vk_cmd_buffer(),
+        VkPipelineStageFlags(src_mask),
+        VkPipelineStageFlags(dst_mask),
+        VK_DEPENDENCY_BY_REGION_BIT,
+        0, nullptr,
+        u32(buffer_barriers.size()), buffer_barriers.data(),
+        u32(image_barriers.size()), image_barriers.data()
+    );
+}
+
+void CmdBufferRecorderBase::barriers(core::Span<BufferBarrier> buffers) {
+    barriers(buffers, {});
+}
+
+void CmdBufferRecorderBase::barriers(core::Span<ImageBarrier> images) {
+    barriers({}, images);
+}
+
+void CmdBufferRecorderBase::full_barrier() {
+    VkMemoryBarrier barrier = vk_struct();
+    barrier.srcAccessMask =
+        VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+        VK_ACCESS_INDEX_READ_BIT |
+        VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+        VK_ACCESS_UNIFORM_READ_BIT |
+        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+        VK_ACCESS_SHADER_READ_BIT |
+        VK_ACCESS_SHADER_WRITE_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_TRANSFER_READ_BIT |
+        VK_ACCESS_TRANSFER_WRITE_BIT |
+        VK_ACCESS_HOST_READ_BIT |
+        VK_ACCESS_HOST_WRITE_BIT
+    ;
+    barrier.dstAccessMask =
+        VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+        VK_ACCESS_INDEX_READ_BIT |
+        VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+        VK_ACCESS_UNIFORM_READ_BIT |
+        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+        VK_ACCESS_SHADER_READ_BIT |
+        VK_ACCESS_SHADER_WRITE_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_TRANSFER_READ_BIT |
+        VK_ACCESS_TRANSFER_WRITE_BIT |
+        VK_ACCESS_HOST_READ_BIT |
+        VK_ACCESS_HOST_WRITE_BIT
+    ;
+    vkCmdPipelineBarrier(
+        vk_cmd_buffer(),
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_DEPENDENCY_BY_REGION_BIT,
+        1, &barrier,
+        0, nullptr,
+        0, nullptr
+    );
+}
+
+void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
+    y_always_assert((src.usage() & ImageUsage::TransferSrcBit) == ImageUsage::TransferSrcBit, "src should have TransferSrcBit usage");
+    y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
+
+    {
+        const std::array image_barriers = {
+            ImageBarrier::transition_to_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
+            ImageBarrier::transition_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL),
+        };
+        barriers(image_barriers);
+    }
+
+    {
+        y_always_assert(src.image_size() == dst.image_size(), "Image size do not match.");
+
+        VkImageCopy copy = {};
+        {
+            copy.extent = {src.image_size().x(), src.image_size().y(), src.image_size().z()};
+            copy.srcSubresource.aspectMask = src.format().vk_aspect();
+            copy.srcSubresource.layerCount = u32(src.layers());
+            copy.dstSubresource.aspectMask = dst.format().vk_aspect();
+            copy.dstSubresource.layerCount = u32(dst.layers());
+        }
+
+        vkCmdCopyImage(vk_cmd_buffer(),
+                       src.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1, &copy);
+    }
+
+    {
+        const std::array image_barriers = {
+            ImageBarrier::transition_from_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
+            ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        };
+        barriers(image_barriers);
+    }
+}
+
+void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
+    y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match.");
+
+    VkBufferCopy copy = {};
+    {
+        copy.size = src.byte_size();
+        copy.srcOffset = src.byte_offset();
+        copy.dstOffset = dst.byte_offset();
+    }
+
+    vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
+}
+
+
+
+// -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
+
+TransferCmdBufferRecorder::TransferCmdBufferRecorder(CmdBufferData* data) : CmdBufferRecorderBase(data) {
+}
+
+TransferCmdBufferRecorder::TransferCmdBufferRecorder(TransferCmdBufferRecorder&& other) {
+    swap(other);
+}
+
+TransferCmdBufferRecorder& TransferCmdBufferRecorder::operator=(TransferCmdBufferRecorder&& other) {
+    swap(other);
+    return *this;
+}
+
+
+// -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
+
+CmdBufferRecorder::CmdBufferRecorder(CmdBufferData* data) : CmdBufferRecorderBase(data) {
 }
 
 CmdBufferRecorder::CmdBufferRecorder(CmdBufferRecorder&& other) {
@@ -273,40 +472,6 @@ CmdBufferRecorder::CmdBufferRecorder(CmdBufferRecorder&& other) {
 CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
     swap(other);
     return *this;
-}
-
-void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
-    std::swap(_data, other._data);
-    std::swap(_render_pass, other._render_pass);
-}
-
-VkCommandBuffer CmdBufferRecorder::vk_cmd_buffer() const {
-    y_debug_assert(_data);
-    return _data->vk_cmd_buffer();
-}
-
-ResourceFence CmdBufferRecorder::resource_fence() const {
-    y_debug_assert(_data);
-    return _data->resource_fence();
-}
-
-bool CmdBufferRecorder::is_inside_renderpass() const {
-    return _render_pass;
-}
-
-void CmdBufferRecorder::end_renderpass() {
-    y_always_assert(_render_pass, "CmdBufferRecorder has no render pass");
-
-    vkCmdEndRenderPass(vk_cmd_buffer());
-    _render_pass = nullptr;
-}
-
-void CmdBufferRecorder::check_no_renderpass() const {
-    y_always_assert(!_render_pass, "Command can not be used or destoryed while it has a RenderPassRecorder.");
-}
-
-CmdBufferRegion CmdBufferRecorder::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
-    return CmdBufferRegion(*this, time_rec, name, color);
 }
 
 RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
@@ -367,154 +532,6 @@ void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math:
 
 void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
     dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
-}
-
-void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
-    check_no_renderpass();
-
-    if(buffers.is_empty() && images.is_empty()) {
-        return;
-    }
-
-    auto image_barriers = core::ScratchPad<VkImageMemoryBarrier>(images.size());
-    std::transform(images.begin(), images.end(), image_barriers.begin(), [](const auto& b) { return b.vk_barrier(); });
-
-    auto buffer_barriers = core::ScratchPad<VkBufferMemoryBarrier>(buffers.size());
-    std::transform(buffers.begin(), buffers.end(), buffer_barriers.begin(), [](const auto& b) { return b.vk_barrier(); });
-
-    PipelineStage src_mask = PipelineStage::None;
-    PipelineStage dst_mask = PipelineStage::None;
-
-    for(const auto& b : buffers) {
-        src_mask = src_mask | b.src_stage();
-        dst_mask = dst_mask | b.dst_stage();
-    }
-
-    for(const auto& b : images) {
-        src_mask = src_mask | b.src_stage();
-        dst_mask = dst_mask | b.dst_stage();
-    }
-
-    vkCmdPipelineBarrier(
-        vk_cmd_buffer(),
-        VkPipelineStageFlags(src_mask),
-        VkPipelineStageFlags(dst_mask),
-        VK_DEPENDENCY_BY_REGION_BIT,
-        0, nullptr,
-        u32(buffer_barriers.size()), buffer_barriers.data(),
-        u32(image_barriers.size()), image_barriers.data()
-    );
-}
-
-void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers) {
-    barriers(buffers, {});
-}
-
-void CmdBufferRecorder::barriers(core::Span<ImageBarrier> images) {
-    barriers({}, images);
-}
-
-void CmdBufferRecorder::full_barrier() {
-    VkMemoryBarrier barrier = vk_struct();
-    barrier.srcAccessMask =
-        VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
-        VK_ACCESS_INDEX_READ_BIT |
-        VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
-        VK_ACCESS_UNIFORM_READ_BIT |
-        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
-        VK_ACCESS_SHADER_READ_BIT |
-        VK_ACCESS_SHADER_WRITE_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_TRANSFER_READ_BIT |
-        VK_ACCESS_TRANSFER_WRITE_BIT |
-        VK_ACCESS_HOST_READ_BIT |
-        VK_ACCESS_HOST_WRITE_BIT
-    ;
-    barrier.dstAccessMask =
-        VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
-        VK_ACCESS_INDEX_READ_BIT |
-        VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
-        VK_ACCESS_UNIFORM_READ_BIT |
-        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
-        VK_ACCESS_SHADER_READ_BIT |
-        VK_ACCESS_SHADER_WRITE_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_TRANSFER_READ_BIT |
-        VK_ACCESS_TRANSFER_WRITE_BIT |
-        VK_ACCESS_HOST_READ_BIT |
-        VK_ACCESS_HOST_WRITE_BIT
-    ;
-    vkCmdPipelineBarrier(
-        vk_cmd_buffer(),
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_DEPENDENCY_BY_REGION_BIT,
-        1, &barrier,
-        0, nullptr,
-        0, nullptr
-    );
-}
-
-void CmdBufferRecorder::copy(const ImageBase& src,  const ImageBase& dst) {
-    y_always_assert((src.usage() & ImageUsage::TransferSrcBit) == ImageUsage::TransferSrcBit, "src should have TransferSrcBit usage");
-    y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
-
-    {
-        const std::array image_barriers = {
-            ImageBarrier::transition_to_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
-            ImageBarrier::transition_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL),
-        };
-        barriers(image_barriers);
-    }
-
-    {
-        y_always_assert(src.image_size() == dst.image_size(), "Image size do not match.");
-
-        VkImageCopy copy = {};
-        {
-            copy.extent = {src.image_size().x(), src.image_size().y(), src.image_size().z()};
-            copy.srcSubresource.aspectMask = src.format().vk_aspect();
-            copy.srcSubresource.layerCount = u32(src.layers());
-            copy.dstSubresource.aspectMask = dst.format().vk_aspect();
-            copy.dstSubresource.layerCount = u32(dst.layers());
-        }
-
-        vkCmdCopyImage(vk_cmd_buffer(),
-                       src.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                       dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                       1, &copy);
-    }
-
-    {
-        const std::array image_barriers = {
-            ImageBarrier::transition_from_barrier(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
-            ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-        };
-        barriers(image_barriers);
-    }
-}
-
-void CmdBufferRecorder::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
-    y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match.");
-
-    VkBufferCopy copy = {};
-    {
-        copy.size = src.byte_size();
-        copy.srcOffset = src.byte_offset();
-        copy.dstOffset = dst.byte_offset();
-    }
-
-    vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
-}
-
-void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst) {
-    barriers({ImageBarrier::transition_barrier(image, src, dst)});
 }
 
 }

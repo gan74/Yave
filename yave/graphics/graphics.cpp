@@ -110,7 +110,7 @@ static void init_vk_device() {
     const u32 main_queue_index = queue_family_index(queue_families, graphic_queue_flags);
 
     const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
-    const usize queue_count = std::min(main_queue_family_properties.queueCount, 5u);
+    const usize queue_count = std::min(main_queue_family_properties.queueCount, 5u); // 1 main + 4 loading
 
     auto extensions = core::Vector<const char*>::with_capacity(4);
     extensions = {
@@ -366,6 +366,10 @@ const PhysicalDevice& physical_device() {
 
 CmdBufferRecorder create_disposable_cmd_buffer() {
     return thread_device()->create_disposable_cmd_buffer();
+}
+
+TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer() {
+    return thread_device()->create_disposable_transfer_cmd_buffer();
 }
 
 DeviceMemoryAllocator& device_allocator() {

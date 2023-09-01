@@ -134,5 +134,10 @@ CmdBufferRecorder CmdBufferPool::create_buffer() {
     return CmdBufferRecorder(alloc());
 }
 
+TransferCmdBufferRecorder CmdBufferPool::create_transfer_buffer() {
+    return TransferCmdBufferRecorder(alloc());
+}
+
+
 }
 

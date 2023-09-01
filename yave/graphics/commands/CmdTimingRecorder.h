@@ -46,7 +46,7 @@ class CmdTimingRecorder : NonMovable {
             }
         };
 
-        CmdTimingRecorder(const CmdBufferRecorder& recorder);
+        CmdTimingRecorder(const CmdBufferRecorderBase& recorder);
 
         VkCommandBuffer vk_cmd_buffer() const;
 

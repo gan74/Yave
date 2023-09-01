@@ -51,7 +51,7 @@ class Mutexed : NonCopyable {
 
     private:
         T _obj;
-        mutable Lock _lock;
+        [[no_unique_address]] mutable Lock _lock;
 };
 
 

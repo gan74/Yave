@@ -64,7 +64,7 @@ class TimelineFence {
         bool operator<=(const TimelineFence& other) const;
 
     private:
-        friend class CmdQueue;
+        friend class CmdQueueBase;
 
         u64 _value = u64(-1);
 };
@@ -90,7 +90,7 @@ class CmdBufferData final : NonMovable {
 
     private:
         friend class CmdBufferPool;
-        friend class CmdQueue;
+        friend class CmdQueueBase;
 
         void begin();
 

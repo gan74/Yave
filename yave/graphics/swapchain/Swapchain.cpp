@@ -384,7 +384,8 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, c
     _image_fences[frame_index] = current_frame_sync.fence;
     vk_check(vkResetFences(vk_device(), 1, &current_frame_sync.fence.get()));
 
-    queue.submit(std::move(recorder), current_frame_sync.image_available, current_frame_sync.render_complete, current_frame_sync.fence);
+    // This sucks
+    queue.CmdQueueBase::submit(std::move(recorder), current_frame_sync.image_available, current_frame_sync.render_complete, current_frame_sync.fence);
 
     queue._queue.locked([&](auto&& vk_queue) {
         y_profile_zone("present");
