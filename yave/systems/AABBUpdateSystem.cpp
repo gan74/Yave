@@ -43,7 +43,7 @@ void AABBUpdateSystem::tick() {
         if(ids.is_empty()) {
             continue;
         }
-        y_profile_dyn_zone(fmt_c_str("collecting % %", ids.size(), world().component_type_name(info.type)));
+        y_profile_dyn_zone(fmt_c_str("collecting {} {}", ids.size(), world().component_type_name(info.type)));
         info.collect_aabbs(world(), ids, aabbs);
     }
 

@@ -138,103 +138,11 @@ y_test_func("String find") {
     y_test_assert(end == s.end());
 }
 
-y_test_func("fmt empty") {
-    const char* base_str = "blah blah blah % blah";
-    const char* f = fmt(base_str).data();
-
-    y_test_assert(!std::strcmp(base_str, f));
+y_test_func("String replace") {
+    y_test_assert(core::String::replaced("abdaddaaaabdadad", "a", "x") == "xbdxddxxxxbdxdxd");
+    y_test_assert(core::String::replaced("xyuyyyxyxyxyx", "a", "k") == "xyuyyyxyxyxyx");
+    y_test_assert(core::String::replaced("", "a", "b") == "");
 }
 
-y_test_func("fmt simple") {
-    const char* f = fmt("blah blah blah % blah", 57).data();
-
-    y_test_assert(!std::strcmp("blah blah blah 57 blah", f));
-}
-
-y_test_func("fmt at end") {
-    const char* f = fmt("some string%", 42).data();
-
-    y_test_assert(!std::strcmp("some string42", f));
-}
-
-y_test_func("fmt multi") {
-    const char* f = fmt("% % % %", usize(9), -1, "pwet", String("flubudu")).data();
-
-    y_test_assert(!std::strcmp("9 -1 pwet flubudu", f));
-}
-
-y_test_func("fmt vec") {
-    const char* f = fmt("% %", math::Vec3ui(1, 2, 3), "pwet").data();
-
-    y_test_assert(!std::strcmp("[1, 2, 3] pwet", f));
-}
-
-y_test_func("fmt vector") {
-    const Vector<int> a = {1, 2, 3};
-    const Vector<int> b;
-    const char* f = fmt("% %", a, b).data();
-
-    y_test_assert(!std::strcmp("[1, 2, 3] []", f));
-}
-
-y_test_func("fmt long") {
-    for(usize i = 0; i != 64; ++i) {
-        const usize size = 16 * fmt_max_size;
-        const auto long_str = std::make_unique<char[]>(size + 1);
-        std::memset(long_str.get(), 'a', size);
-        long_str[size] = 0;
-
-        const char* f = fmt("%", long_str.get()).data();
-
-        const usize f_len = std::strlen(f);
-        y_test_assert(f_len > 0 && f_len < size);
-        y_test_assert(f_len == fmt_max_size);
-        y_test_assert(!std::memcmp(f, long_str.get(), f_len));
-    }
-}
-
-y_test_func("fmt_into simple") {
-    String s = "some core::String";
-    const char* f = fmt_into(s, " % % %", 1, "more str", -7).data();
-
-    y_test_assert(s == "some core::String 1 more str -7");
-    y_test_assert(!std::strcmp(f, " 1 more str -7"));
-}
-
-y_test_func("fmt twice") {
-    const char* f1 = fmt("%%", 7, 'a').data();
-    const char* f2 = fmt("fmt_twice % %", "pls").data();
-
-    y_test_assert(!std::strcmp(f1, "7a"));
-    y_test_assert(!std::strcmp(f2, "fmt_twice pls %"));
-}
-
-y_test_func("fmt empty") {
-    const char* f = fmt("% %", 19, "").data();
-    y_test_assert(!std::strcmp(f, "19 "));
-}
-
-y_test_func("fmt smalls") {
-    for(usize j = 0; j != 97; ++j) {
-        for(usize i = 0; i != 1037; ++i) {
-            char c = i % 26 + 'a';
-            switch(i % 3) {
-                case 0:
-                    fmt("0");
-                break;
-
-                case 1:
-                    fmt("1%", c);
-                break;
-
-                case 2:
-                    fmt("% %", c, char(std::toupper(c)));
-                break;
-
-            }
-        }
-    }
-    y_test_assert(true);
-}
 }
 

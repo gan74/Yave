@@ -81,7 +81,7 @@ static core::ScratchPad<VkBufferImageCopy> get_copy_regions(const ImageData& dat
     return regions;
 }
 
-static auto stage_data(usize byte_size, const void* data) {
+static auto create_stagin_buffer(usize byte_size, const void* data) {
     y_profile();
     auto staging_buffer = StagingBuffer(byte_size);
     {
@@ -123,10 +123,10 @@ static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_
 static void upload_data(ImageBase& image, const ImageData& data) {
     y_profile();
 
-    const auto staging_buffer = stage_data(data.byte_size(), data.data());
+    const auto staging_buffer = create_stagin_buffer(data.byte_size(), data.data());
     const auto regions = get_copy_regions(data);
 
-    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
+    TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
 
     {
         const auto region = recorder.region("Image upload");
@@ -135,15 +135,15 @@ static void upload_data(ImageBase& image, const ImageData& data) {
         recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_image_layout(image.usage()))});
     }
 
-    loading_command_queue().submit(std::move(recorder));
+    loading_command_queue().submit_async_start(std::move(recorder));
 }
 
 static void transition_image(ImageBase& image) {
     y_profile();
 
-    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
+    TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
     recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, vk_image_layout(image.usage()))});
-    loading_command_queue().submit(std::move(recorder));
+    loading_command_queue().submit_async_start(std::move(recorder));
 }
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {

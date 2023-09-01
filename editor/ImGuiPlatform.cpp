@@ -32,14 +32,13 @@ SOFTWARE.
 
 #include <y/io2/File.h>
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <external/imgui_test_engine/imgui_te_context.h>
 #include <external/imgui_test_engine/imgui_te_exporters.h>
 #include <external/imgui_test_engine/imgui_te_internal.h>
 
 #include <deque>
-
-
 
 
 namespace editor {
@@ -495,7 +494,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                     ImGuiTestEngine_GetResult(_test_engine, tested, success);
                     ImGuiTestEngine_PrintResultSummary(_test_engine);
 
-                    log_msg(fmt("%/% tests passed", success, tested), success == tested ? Log::Debug : Log::Error);
+                    log_msg(fmt("{}/{} tests passed", success, tested), success == tested ? Log::Debug : Log::Error);
                     _test_engine = nullptr;
                 }
             }

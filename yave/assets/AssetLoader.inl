@@ -30,9 +30,9 @@ SOFTWARE.
 #endif
 
 #include <y/serde3/archives.h>
-#include <y/utils/log.h>
 
-#include <y/core/Chrono.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
@@ -98,10 +98,11 @@ AssetLoader::Loader<T>::Loader(AssetLoader* parent) : LoaderBase(parent) {
 template<typename T>
 AssetLoader::Loader<T>::~Loader<T>() {
     y_profile();
-    const auto lock = y_profile_unique_lock(_lock);
-    for(auto&& [id, ptr] : _loaded) {
-        y_always_assert(ptr.expired(), "Asset is still live.");
-    }
+     _loaded.locked([&](auto&& loaded) {
+        for(auto&& [id, ptr] : loaded) {
+            y_always_assert(ptr.expired(), "Asset is still live.");
+        }
+     });
 }
 
 template<typename T>
@@ -111,14 +112,15 @@ bool AssetLoader::Loader<T>::find_ptr(AssetPtr<T>& ptr) {
         return true;
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
-    auto& weak = _loaded[id];
-    ptr = weak.lock();
-    if(ptr._data) {
-        return true;
-    }
-    weak = (ptr = std::make_shared<Data>(id, parent()))._data;
-    return false;
+    return _loaded.locked([&](auto&& loaded) {
+        auto& weak = loaded[id];
+        ptr = weak.lock();
+        if(ptr._data) {
+            return true;
+        }
+        weak = (ptr = std::make_shared<Data>(id, parent()))._data;
+        return false;
+    });
 }
 
 
@@ -160,14 +162,13 @@ AssetPtr<T> AssetLoader::Loader<T>::reload(const AssetPtr<T>& ptr) {
         y_debug_assert(!reloaded.is_loading());
     }
 
-    {
-        const auto lock = y_profile_unique_lock(_lock);
-        auto& weak = _loaded[id];
+    _loaded.locked([&](auto&& loaded) {
+        auto& weak = loaded[id];
         if(auto orig = weak.lock()) {
             orig->set_reloaded(reloaded._data);
         }
         weak = reloaded._data;
-    }
+    });
     return reloaded;
 }
 
@@ -177,11 +178,11 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
         public:
             Job(AssetLoader* loader, std::shared_ptr<Data> data) : LoadingJob(loader), _data(std::move(data)) {
                 y_always_assert(_data, "Invalid asset");
-                y_profile_msg(fmt_c_str("Adding loading request for %", asset_name()));
+                y_profile_msg(fmt_c_str("Adding loading request for {}", asset_name()));
             }
 
             core::Result<void> read() override {
-                y_profile_zone_arg("loading", fmt_c_str("%", asset_name()));
+                y_profile_zone_arg("loading", fmt_c_str("{}", asset_name()));
 
                 const AssetId id = _data->id;
 
@@ -196,14 +197,14 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 
                     if(res.is_error() || (fail_on_partial_deser && res.unwrap() == serde3::Success::Partial)) {
                         _data->set_failed(ErrorType::InvalidData);
-                        log_msg(fmt("Unable to load %, invalid data: %", asset_name(), serde3::error_msg(res)), Log::Error);
+                        log_msg(fmt("Unable to load {}, invalid data: {}", asset_name(), serde3::error_msg(res)), Log::Error);
                         return core::Err();
                     } else if(res.unwrap() == serde3::Success::Partial) {
-                        log_msg(fmt("% was only partially deserialized", asset_name()), Log::Warning);
+                        log_msg(fmt("{} was only partially deserialized", asset_name()), Log::Warning);
                     }
 
                     reflect::explore_recursive(_load_from, [this](auto& m) {
-                        if constexpr(is_asset_ptr_v<remove_cvref_t<decltype(m)>>) {
+                        if constexpr(is_asset_ptr_v<std::remove_cvref_t<decltype(m)>>) {
                             m.load(loading_context());
                         }
                     });
@@ -213,7 +214,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
 
                 _data->set_failed(ErrorType::InvalidID);
                 y_debug_assert(!_data->is_loading());
-                log_msg(fmt("Unable to load % %: invalid ID", asset_type_name(asset_type()), asset_name()), Log::Error);
+                log_msg(fmt("Unable to load {} {}: invalid ID", asset_type_name(asset_type()), asset_name()), Log::Error);
                 return core::Err();
             }
 
@@ -222,10 +223,10 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                     return;
                 }
 
-                y_profile_zone_arg("finalizing", fmt_c_str("%", asset_name()));
+                y_profile_zone_arg("finalizing", fmt_c_str("{}", asset_name()));
                 y_debug_assert(_data->is_loading());
                 _data->finalize_loading(std::move(_load_from));
-                y_profile_msg(fmt_c_str("finished loading %", asset_name()));
+                y_profile_msg(fmt_c_str("finished loading {}", asset_name()));
             }
 
             void set_dependencies_failed() override {
@@ -234,7 +235,7 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                 }
 
                 _data->set_failed(AssetLoadingErrorType::FailedDependency);
-                log_msg(fmt("Unable to load %: failed to load dependency", asset_name()), Log::Error);
+                log_msg(fmt("Unable to load {}: failed to load dependency", asset_name()), Log::Error);
             }
 
         private:
@@ -311,12 +312,13 @@ AssetLoader::Result<T> AssetLoader::load(core::Result<AssetId, E> id) {
 
 template<typename T>
 AssetLoader::Loader<T>& AssetLoader::loader_for_type() {
-    const auto lock = y_profile_unique_lock(_lock);
-    auto& loader = _loaders[typeid(T)];
-    if(!loader) {
-        loader = std::make_unique<Loader<T>>(this);
-    }
-    return *dynamic_cast<Loader<T>*>(loader.get());
+    return _loaders.locked([&](auto&& loaders) -> Loader<T>& {
+        auto& loader = loaders[typeid(T)];
+        if(!loader) {
+            loader = std::make_unique<Loader<T>>(this);
+        }
+        return *dynamic_cast<Loader<T>*>(loader.get());
+    });
 }
 
 

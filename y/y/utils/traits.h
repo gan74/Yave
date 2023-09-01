@@ -115,13 +115,8 @@ using is_iterable = bool_type<
 template<typename T>
 static constexpr bool is_iterable_v = is_iterable<T>::value;
 
-template<typename T>
-using remove_cvref = std::remove_cv<std::remove_reference_t<T>>;
-
-template<typename T>
-using remove_cvref_t = typename remove_cvref<T>::type;
-
-
+template<typename T> requires(is_iterable_v<T>)
+using element_type_t = std::remove_cvref_t<decltype(*std::declval<T>().begin())>;
 
 namespace detail {
 template<typename T>
@@ -138,6 +133,9 @@ template<typename T>
 using has_clear_t = decltype(std::declval<T&>().clear());
 template<typename T>
 using has_make_empty_t = decltype(std::declval<T&>().make_empty());
+
+template<typename T, typename U>
+using has_append_t = decltype(std::declval<T&>().append(std::declval<U>()));
 }
 
 template<typename T>
@@ -154,6 +152,9 @@ template<typename T>
 static constexpr bool has_clear_v = is_detected_v<detail::has_clear_t, T>;
 template<typename T>
 static constexpr bool has_make_empty_v = is_detected_v<detail::has_make_empty_t, T>;
+
+template<typename T, typename U>
+static constexpr bool has_append_v = is_detected_v<detail::has_append_t, T, U>;
 }
 
 

@@ -49,14 +49,14 @@ editor_action_desc("Debug assert", "Calls assert(false) and crashes the program"
 #endif
 
 editor_action("Quit", [] { imgui_platform()->main_window()->close(); })
-editor_action("Show ImGui demo", []{ imgui_platform()->show_demo(); })
+editor_action("Show ImGui demo", [] { imgui_platform()->show_demo(); })
 editor_action("Restore default layout", [] { ui().restore_default_layout(); });
 
 editor_action_desc("Lag", "Pause execution for 1s to simulate load", [] { core::Duration::sleep(core::Duration::seconds(1)); });
 
-editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, []{ application()->save_world(); }, "File")
-editor_action(ICON_FA_FOLDER " Load", []{ application()->load_world(); }, "File")
-editor_action_shortcut("New", Key::Ctrl + Key::N, []{ application()->new_world(); }, "File")
+editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, [] { application()->save_world(); }, "File")
+editor_action(ICON_FA_FOLDER " Load", [] { application()->load_world(); }, "File")
+editor_action_shortcut("New", Key::Ctrl + Key::N, [] { application()->new_world(); }, "File")
 
 
 EditorApplication* EditorApplication::_instance = nullptr;
@@ -178,7 +178,7 @@ void EditorApplication::save_world_deferred() const {
     }
     serde3::WritableArchive arc(file.unwrap());
     if(auto r = arc.serialize(*_world); !r) {
-        log_msg(fmt("Unable to save world: %", serde3::error_msg(r.error())), Log::Error);
+        log_msg(fmt("Unable to save world: {}", serde3::error_msg(r.error())), Log::Error);
     }
 
     log_msg("World saved");
@@ -198,7 +198,7 @@ void EditorApplication::load_world_deferred() {
     serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
     const auto status = arc.deserialize(world);
     if(status.is_error()) {
-        log_msg(fmt("Unable to load world: % (for %)", serde3::error_msg(status.error()), status.error().member), Log::Error);
+        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(status.error()), status.error().member), Log::Error);
         return;
     }
 

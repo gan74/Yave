@@ -32,12 +32,12 @@ SOFTWARE.
 
 
 #define editor_widget_(type, on_startup, ...)                                                                                   \
-    editor_action_(#type, "Open a new " #type, 0, /* no shortcut */, []{ editor::add_detached_widget<type>(); }, __VA_ARGS__)   \
+    editor_action_(#type, "Open a new " #type, 0, /* no shortcut */, [] { editor::add_detached_widget<type>(); }, __VA_ARGS__)   \
     struct y_create_name_with_prefix(widget_trigger_t) {                                                                        \
         inline static struct widget_register_t {                                                                                \
             widget_register_t() {                                                                                               \
                 static editor::EditorWidget widget = {                                                                          \
-                    #type, (on_startup), []{ editor::add_detached_widget<type>(); }, nullptr                                    \
+                    #type, (on_startup), [] { editor::add_detached_widget<type>(); }, nullptr                                    \
                 };                                                                                                              \
                 editor::detail::register_widget(&widget);                                                                       \
             }                                                                                                                   \

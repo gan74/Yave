@@ -28,8 +28,10 @@ SOFTWARE.
 #include <yave/meshes/MeshDrawData.h>
 #include <yave/material/MaterialDrawData.h>
 
+#include <y/concurrent/Mutexed.h>
+#include <y/core/RingQueue.h>
+
 #include <variant>
-#include <deque>
 #include <mutex>
 #include <thread>
 
@@ -64,10 +66,11 @@ YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_RT_VARIANT)
         void poll_cmd_buffers();
         void wait_cmd_buffers();
 
-#define YAVE_GENERATE_DESTROY(T)                                                    \
-        void destroy_later(T&& t) {                                                 \
-            const auto lock = y_profile_unique_lock(_resources_lock);               \
-            _to_destroy.emplace_back(_create_counter, ManagedResource(y_fwd(t)));   \
+#define YAVE_GENERATE_DESTROY(T)                                                        \
+        void destroy_later(T&& t) {                                                     \
+            _to_destroy.locked([&](auto& to_destroy) {                                  \
+                to_destroy.emplace_back(_create_counter, ManagedResource(y_fwd(t)));    \
+            });                                                                         \
         }
 YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
@@ -76,14 +79,11 @@ YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_DESTROY)
         void clear_resources(u64 up_to);
         void destroy_resource(ManagedResource& resource) const;
 
-        std::deque<std::pair<u64, ManagedResource>> _to_destroy;
-        std::deque<CmdBufferData*> _in_flight;
-
-        mutable std::mutex _resources_lock;
-        mutable std::recursive_mutex _cmd_lock;
+        concurrent::Mutexed<core::RingQueue<std::pair<u64, ManagedResource>>> _to_destroy;
+        concurrent::Mutexed<core::RingQueue<CmdBufferData*>, std::recursive_mutex> _in_flight;
 
         std::atomic<u64> _create_counter = 0;
-        u64 _next = 0; // Guarded by _cmd_lock
+        u64 _next = 0; // Guarded by _in_flight
 
 #ifdef YAVE_MT_LIFETIME_MANAGER
         std::thread _collector_thread;

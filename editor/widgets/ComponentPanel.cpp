@@ -212,7 +212,7 @@ class ComponentPanelInspector : public ecs::ComponentInspector {
 
             _type = info.type_id;
 
-            if(ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " %", info.clean_component_name()))) {
+            if(ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", info.clean_component_name()))) {
                 if(has_inspect) {
                     begin_table();
                 } else {
@@ -320,7 +320,7 @@ class ComponentPanelInspector : public ecs::ComponentInspector {
                     ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE);
                     if(ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
-                        ImGui::TextUnformatted(fmt_c_str("Scale is not uniform: %", scale));
+                        ImGui::TextUnformatted(fmt_c_str("Scale is not uniform: {}", scale));
                         ImGui::EndTooltip();
                     }
                 }
@@ -563,8 +563,8 @@ static void entity_properties(ecs::EntityId id, EditorComponent* component) {
         ImGui::TextDisabled("(?)");
         if(ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
-            ImGui::Text("id: %08" PRIu32, id.index());
-            ImGui::Text("version: %08" PRIu32, id.version());
+            ImGui::TextUnformatted(fmt_c_str("id: {:#08x}", id.index()));
+            ImGui::TextUnformatted(fmt_c_str("version: {:#08x}", id.version()));
             ImGui::EndTooltip();
         }
     }
@@ -612,7 +612,7 @@ void ComponentPanel::on_gui() {
         }
         if(ImGui::Button(ICON_FA_PLUS " Add tag")) {
             auto all = world.tags();
-            world.add_tag(id, fmt("tag #%", std::distance(all.begin(), all.end()) + 1));
+            world.add_tag(id, fmt("tag #{}", std::distance(all.begin(), all.end()) + 1));
         }
         ImGui::Unindent();
     }
@@ -626,7 +626,7 @@ void ComponentPanel::on_gui() {
     if(ImGui::BeginPopup("##addcomponentmenu")) {
         for(const auto& [name, info] : EditorWorld::component_types()) {
             const bool enabled = !name.is_empty() && !world.has(id, info.type_id) && info.add_component;
-            if(ImGui::MenuItem(fmt_c_str(ICON_FA_PUZZLE_PIECE " %", name), nullptr, nullptr, enabled) && enabled) {
+            if(ImGui::MenuItem(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", name), nullptr, nullptr, enabled) && enabled) {
                 info.add_component(world, id);
             }
         }

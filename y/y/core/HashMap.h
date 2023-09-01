@@ -64,7 +64,8 @@ inline std::pair<const K, V>& map_entry_to_value_type(std::pair<K, V>& p) {
 }
 
 inline constexpr usize ceil_next_power_of_2(usize k) {
-    return 1_uu << log2ui(k + 1);
+    const usize l = log2ui(k);
+    return (k == (1_uu << l)) ? k : (2_uu << l);
 }
 
 
@@ -93,8 +94,8 @@ namespace swiss {
 template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>, bool StoreHash = false>
 class FlatHashMap : Hasher, Equal {
     public:
-        using key_type = remove_cvref_t<Key>;
-        using mapped_type = remove_cvref_t<Value>;
+        using key_type = std::remove_cvref_t<Key>;
+        using mapped_type = std::remove_cvref_t<Value>;
         using value_type = std::pair<const key_type, mapped_type>;
 
         static constexpr double max_load_factor = detail::default_hash_map_max_load_factor;
@@ -367,7 +368,7 @@ class FlatHashMap : Hasher, Equal {
 
             public:
                 using iterator_category = std::forward_iterator_tag;
-                using difference_type = usize;
+                using difference_type = std::ptrdiff_t;
 
                 using value_type = const_type_t<Const, typename Transform::type>;
                 using reference = value_type&;
@@ -460,12 +461,14 @@ class FlatHashMap : Hasher, Equal {
             const usize pow_2 = detail::ceil_next_power_of_2(new_bucket_count);
             const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
 
+            y_debug_assert(pow_2 >= new_bucket_count);
+
             if(new_size <= bucket_count()) {
                 return;
             }
 
             auto old_states = std::exchange(_states, FixedArray<State>(new_size));
-            auto old_entries = std::exchange(_entries, std::make_unique<Entry[]>(new_size));
+            auto old_entries = std::exchange(_entries, std::make_unique_for_overwrite<Entry[]>(new_size));
             _max_probe_len = 0;
 
             if(_size) {
@@ -681,7 +684,7 @@ class FlatHashMap : Hasher, Equal {
             return insert(pair_type{key, mapped_type{y_fwd(args)...}});
         }
 
-        inline std::pair<iterator, bool> insert(pair_type p) {
+        inline std::pair<iterator, bool> insert(value_type p) {
             if(should_expand()) {
                 expand();
             }

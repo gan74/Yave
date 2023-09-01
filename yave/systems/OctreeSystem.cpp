@@ -77,7 +77,7 @@ void OctreeSystem::run_tick(bool only_recent) {
         }
 
         unused(insertions);
-        y_profile_msg(fmt_c_str("%/% objects inserted", insertions, query.size()));
+        y_profile_msg(fmt_c_str("{}/{} objects inserted", insertions, query.size()));
     };
 
     if(only_recent) {

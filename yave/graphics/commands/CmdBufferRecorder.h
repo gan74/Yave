@@ -42,9 +42,9 @@ class CmdBufferRegion : NonCopyable {
         void swap(CmdBufferRegion& other);
 
     private:
-        friend class CmdBufferRecorder;
+        friend class CmdBufferRecorderBase;
 
-        CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color);
+        CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color);
 
         VkCommandBuffer _buffer = {};
         CmdTimingRecorder* _time_recorder = nullptr;
@@ -100,31 +100,22 @@ class RenderPassRecorder final : NonMovable {
         } _cache;
 };
 
-class CmdBufferRecorder final : NonCopyable {
 
-    using SrcCopySubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
-    using DstCopySubBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
-    using SrcCopyImage = ImageView<ImageUsage::TransferSrcBit>;
-    using DstCopyImage = ImageView<ImageUsage::TransferDstBit>;
-
+class CmdBufferRecorderBase : NonMovable {
     public:
-        CmdBufferRecorder(CmdBufferRecorder&& other);
-        CmdBufferRecorder& operator=(CmdBufferRecorder&& other);
+        using SrcCopySubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
+        using DstCopySubBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
+        using SrcCopyImage = ImageView<ImageUsage::TransferSrcBit>;
+        using DstCopyImage = ImageView<ImageUsage::TransferDstBit>;
 
-        ~CmdBufferRecorder();
+        ~CmdBufferRecorderBase();
 
         VkCommandBuffer vk_cmd_buffer() const;
         ResourceFence resource_fence() const;
 
-        CmdBufferRegion region(const char* name, CmdTimingRecorder* time_rec = nullptr, const math::Vec4& color = math::Vec4());
-
         bool is_inside_renderpass() const;
-        RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
 
-        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-
+        CmdBufferRegion region(const char* name, CmdTimingRecorder* time_rec = nullptr, const math::Vec4& color = math::Vec4());
 
         void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);
         void barriers(core::Span<BufferBarrier> buffers);
@@ -132,33 +123,61 @@ class CmdBufferRecorder final : NonCopyable {
 
         void full_barrier();
 
+        void copy(const ImageBase& src,  const ImageBase& dst);
 
-        Y_TODO(Const all this)
-        void barriered_copy(const ImageBase& src,  const ImageBase& dst);
-        void copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
+        void unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
 
-
-    private:
-        friend class ImageBase;
-
-        void transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst);
-
-    private:
-        friend class RenderPassRecorder;
+    protected:
         friend class CmdBufferPool;
-        friend class CmdQueue;
+        friend class CmdQueueBase;
 
-        CmdBufferRecorder() = default;
-        CmdBufferRecorder(CmdBufferData* data);
+        CmdBufferRecorderBase() = default;
+        CmdBufferRecorderBase(CmdBufferData* data);
 
-        void swap(CmdBufferRecorder& other);
+        void swap(CmdBufferRecorderBase& other);
 
         void end_renderpass();
         void check_no_renderpass() const;
 
+
         CmdBufferData* _data = nullptr;
         // this could be in RenderPassRecorder, but putting it here makes erroring easier
         const RenderPass* _render_pass = nullptr;
+};
+
+
+
+
+class TransferCmdBufferRecorder final : public CmdBufferRecorderBase {
+    public:
+        TransferCmdBufferRecorder(TransferCmdBufferRecorder&& other);
+        TransferCmdBufferRecorder& operator=(TransferCmdBufferRecorder&& other);
+
+    private:
+        friend class CmdBufferPool;
+        friend class RenderPassRecorder;
+
+        TransferCmdBufferRecorder() = default;
+        TransferCmdBufferRecorder(CmdBufferData* data);
+};
+
+class CmdBufferRecorder final : public CmdBufferRecorderBase {
+    public:
+        CmdBufferRecorder(CmdBufferRecorder&& other);
+        CmdBufferRecorder& operator=(CmdBufferRecorder&& other);
+
+        RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
+
+        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+
+    private:
+        friend class CmdBufferPool;
+        friend class RenderPassRecorder;
+
+        CmdBufferRecorder() = default;
+        CmdBufferRecorder(CmdBufferData* data);
 };
 
 }

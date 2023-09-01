@@ -40,19 +40,25 @@ SOFTWARE.
 namespace y {
 namespace core {
 
-struct DefaultVectorResizePolicy {
-    static constexpr usize minimum = 16;
-    static constexpr usize delta = 16;
+template<usize Minimum>
+struct SmallVectorResizePolicy {
+    static_assert(Minimum > 0);
 
+    static constexpr usize minimum = Minimum;
+    static constexpr usize delta = 16;
+    static constexpr usize offset_to_pow_2 = 8;
+
+    // Start around x3.5, asymptotically goes to x2
+    // For minimum of 16 (default): 16, 56, 120, 248, 504, 1016 , 2040, 4088, ...,  2^n-8
     static usize ideal_capacity(usize size) {
         if(!size) {
             return 0;
         }
-        if(size < minimum) {
+        if(size <= minimum) {
             return minimum;
         }
         const usize l = log2ui(size + delta);
-        return (4 << l) - (1 << l) - delta;
+        return (2_uu << l) - offset_to_pow_2;
     }
 
     static bool shrink(usize size, usize capacity) {
@@ -62,9 +68,11 @@ struct DefaultVectorResizePolicy {
     }
 };
 
+using DefaultVectorResizePolicy = SmallVectorResizePolicy<16>;
+
 
 template<typename Elem, typename ResizePolicy = DefaultVectorResizePolicy, typename Allocator = std::allocator<Elem>>
-class Vector : ResizePolicy, Allocator {
+class Vector : Allocator {
 
     using data_type = typename std::remove_const<Elem>::type;
 
@@ -86,6 +94,12 @@ class Vector : ResizePolicy, Allocator {
         inline explicit Vector(const Vector& other) : Vector(other.begin(), other.end()) {
         }
 
+        inline explicit Vector(Span<value_type> other) : Vector(other.begin(), other.end()) {
+        }
+
+        inline Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
+        }
+
         inline Vector(usize size, const value_type& elem) {
             if(size) {
                 set_min_capacity(size);
@@ -102,15 +116,6 @@ class Vector : ResizePolicy, Allocator {
             swap(other);
         }
 
-        inline Vector(std::initializer_list<value_type> other) : Vector(other.begin(), other.end()) {
-        }
-
-        inline explicit Vector(Span<value_type> other) : Vector(other.begin(), other.end()) {
-        }
-
-        template<typename... Args>
-        inline Vector(const Vector<Elem, Args...>& other) : Vector(other.begin(), other.end()) {
-        }
 
         inline Vector& operator=(Vector&& other) {
             swap(other);
@@ -128,49 +133,40 @@ class Vector : ResizePolicy, Allocator {
             return *this;
         }
 
-        inline Vector& operator=(std::initializer_list<value_type> l) {
-            assign(l.begin(), l.end());
+        inline Vector& operator=(Span<value_type> other) {
+            assign(other.begin(), other.end());
             return *this;
         }
 
-        inline Vector& operator=(Span<value_type> l) {
-            assign(l.begin(), l.end());
+        inline Vector& operator=(std::initializer_list<value_type> other) {
+            assign(other.begin(), other.end());
             return *this;
         }
 
-        template<typename... Args>
-        inline Vector& operator=(const Vector<Elem, Args...>& l) {
-            assign(l.begin(), l.end());
-            return *this;
-        }
 
         inline bool operator==(Span<value_type> other) const {
             return size() == other.size() && std::equal(begin(), end(), other.begin(), other.end());
         }
 
-        inline bool operator!=(Span<value_type> v) const {
-            return !operator==(v);
+        inline bool operator!=(Span<value_type> other) const {
+            return !operator==(other);
         }
 
         template<typename... Args>
-        inline bool operator==(const Vector<Elem, Args...>& v) const {
-            return operator==(Span<value_type>(v));
+        inline bool operator==(const Vector<Elem, Args...>& other) const {
+            return operator==(Span<value_type>(other));
         }
 
         template<typename... Args>
-        inline bool operator!=(const Vector<Elem, Args...>& v) const {
-            return operator!=(Span<value_type>(v));
+        inline bool operator!=(const Vector<Elem, Args...>& other) const {
+            return operator!=(Span<value_type>(other));
         }
 
 
         template<typename It>
         inline void assign(It beg_it, It end_it) {
             if constexpr(std::is_pointer_v<It>) {
-                if(contains_it(beg_it)) {
-                    Vector other(beg_it, end_it);
-                    swap(other);
-                    return;
-                }
+                y_debug_assert(!contains_it(beg_it));
             }
 
             make_empty();
@@ -194,7 +190,7 @@ class Vector : ResizePolicy, Allocator {
 
         inline void push_back(const_reference elem) {
             if(is_full()) {
-                expend();
+                expand();
             }
 
             Y_CHECK_ELECTRIC(_data_end, 1);
@@ -204,7 +200,7 @@ class Vector : ResizePolicy, Allocator {
 
         inline void push_back(value_type&& elem) {
             if(is_full()) {
-                expend();
+                expand();
             }
 
             Y_CHECK_ELECTRIC(_data_end, 1);
@@ -215,7 +211,7 @@ class Vector : ResizePolicy, Allocator {
         template<typename... Args>
         inline reference emplace_back(Args&&... args) {
             if(is_full()) {
-                expend();
+                expand();
             }
 
             Y_CHECK_ELECTRIC(_data_end, 1);
@@ -238,7 +234,7 @@ class Vector : ResizePolicy, Allocator {
             }
 
             if(is_full()) {
-                expend();
+                expand();
             }
 
             usize i = size() - 1;
@@ -249,7 +245,6 @@ class Vector : ResizePolicy, Allocator {
             }
 
             _data[index] = data_type{y_fwd(args)...};
-
         }
 
         inline value_type pop() {
@@ -398,6 +393,12 @@ class Vector : ResizePolicy, Allocator {
             _data_end = _data;
         }
 
+        static inline Vector with_capacity(usize cap) {
+            Vector v;
+            v.set_min_capacity(cap);
+            return v;
+        }
+
         static inline constexpr usize max_size() {
             return usize(-1);
         }
@@ -434,13 +435,13 @@ class Vector : ResizePolicy, Allocator {
             Y_CLEAR_ELECTRIC(beg, en - beg);
         }
 
-        inline void expend() {
-            unsafe_set_capacity(this->ideal_capacity(size() + 1));
+        inline void expand() {
+            unsafe_set_capacity(ResizePolicy::ideal_capacity(size() + 1));
         }
 
         inline void shrink() {
-            usize current = size();
-            usize cap = capacity();
+            const usize current = size();
+            const usize cap = capacity();
             if(current < cap && ResizePolicy::shrink(current, cap)) {
                 unsafe_set_capacity(ResizePolicy::ideal_capacity(current));
             }
@@ -479,15 +480,6 @@ class Vector : ResizePolicy, Allocator {
         data_type* _alloc_end = nullptr;
 };
 
-template<typename T>
-inline auto vector_with_capacity(usize cap) {
-    auto vec = Vector<T>();
-    vec.set_min_capacity(cap);
-    return vec;
-}
-
-
-
 
 template<typename... Args, typename T>
 inline Vector<Args...>& operator<<(Vector<Args...>& vec, T&& t) {
@@ -507,8 +499,52 @@ inline Vector<Args...> operator+(Vector<Args...> vec, T&& t) {
     return vec;
 }
 
-template<typename T, usize = 0, typename... Args>
-using SmallVector = Vector<T, Args...>; // for now...
+
+
+// Never, EVER use outside of vector
+template<typename Elem, usize Capacity, typename Allocator = std::allocator<Elem>>
+class SmallVectorAllocator : private Allocator {
+    public:
+        using Allocator::value_type;
+        using Allocator::size_type;
+        using Allocator::difference_type;
+        using Allocator::propagate_on_container_move_assignment; // Elements should be copied by the container
+
+        Elem* allocate(usize size) {
+            y_debug_assert(size >= Capacity);
+            if(size == Capacity) {
+                return &_storage.elems[0];
+            }
+            return Allocator::allocate(size);
+        }
+
+        void deallocate(Elem* ptr, usize size) {
+            y_debug_assert(size >= Capacity);
+            if(size > Capacity) {
+                Allocator::deallocate(ptr, size);
+            }
+        }
+
+    private:
+        union Storage {
+            Storage() {}
+            ~Storage() {}
+
+            Storage(const Storage&) {}
+            Storage& operator=(const Storage&) {
+                return *this;
+            }
+
+
+            Elem elems[Capacity];
+        } _storage;
+
+        static_assert(sizeof(Storage) == sizeof(Elem) * Capacity);
+};
+
+
+template<typename Elem, usize Capacity = 16, typename InnerAllocator = std::allocator<Elem>>
+using SmallVector = Vector<Elem, SmallVectorResizePolicy<Capacity>, SmallVectorAllocator<Elem, Capacity, InnerAllocator>>;
 
 }
 }

@@ -24,12 +24,14 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 namespace detail {
 EditorWidget* first_widget = nullptr;
 void register_widget(EditorWidget* widget) {
-    log_msg(fmt("Registering widget \"%\"", widget->name), Log::Debug);
+    log_msg(fmt("Registering widget \"{}\"", widget->name), Log::Debug);
     widget->next = first_widget;
     first_widget = widget;
 }
@@ -147,7 +149,7 @@ void Widget::set_id(u64 id) {
 }
 
 void Widget::set_title(std::string_view title) {
-    _title_with_id = fmt("%##%", title, _id);
+    _title_with_id = fmt("{}##{}", title, _id);
     _title = std::string_view(_title_with_id.begin(), title.size());
 }
 

@@ -27,6 +27,8 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
+#include <y/utils/format.h>
+
 namespace yave {
 
 static DeviceResources::MaterialTemplates material_template(DownsamplePass::Filter filter) {
@@ -58,7 +60,7 @@ DownsamplePass DownsamplePass::create(FrameGraph& framegraph, FrameGraphImageId 
             break;
         }
 
-        FrameGraphPassBuilder builder = framegraph.add_pass(fmt("Downsample pass x%", 1 << m));
+        FrameGraphPassBuilder builder = framegraph.add_pass(fmt("Downsample pass x{}", 1 << m));
 
         const auto mip = builder.declare_image(format, mip_size);
 

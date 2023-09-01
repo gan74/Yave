@@ -131,8 +131,7 @@ static void fill_probe(core::MutableSpan<ProbeBaseView> views, const Image<Image
         }
     }
 
-    // use sync compute to avoid having to sync later
-    loading_command_queue().submit(std::move(recorder)).wait();
+    command_queue().submit(std::move(recorder));
 }
 
 template<ImageType T>
@@ -153,13 +152,13 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
 
 
 static usize probe_size(const Cubemap& cube) {
-    return std::max(min_face_size * 2, usize(1) << log2ui(cube.size().x()));
+    return std::max(min_face_size * 2, 1_uu << log2ui(cube.size().x()));
 }
 
 static usize probe_size(const Texture& tex) {
     const auto& size = tex.size();
     const usize face = (size.x() * size.y()) / 6;
-    return std::max(min_face_size * 2, usize(1) << usize(std::ceil(std::log2(std::sqrt(face)))));
+    return std::max(min_face_size * 2, 1_uu << usize(std::ceil(std::log2(std::sqrt(face)))));
 }
 
 static ImageFormat probe_format(const ImageFormat& input_format) {

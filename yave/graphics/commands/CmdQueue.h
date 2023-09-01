@@ -24,7 +24,8 @@ SOFTWARE.
 
 #include "CmdBufferRecorder.h"
 
-#include <mutex>
+#include <y/concurrent/Mutexed.h>
+
 #include <memory>
 
 namespace yave {
@@ -34,32 +35,46 @@ class WaitToken {
         void wait();
 
     private:
-        friend class CmdQueue;
+        friend class CmdQueueBase;
 
         WaitToken(const TimelineFence& fence);
 
         TimelineFence _fence;
 };
 
-class CmdQueue : NonMovable {
+
+class CmdQueueBase : NonMovable {
     public:
-        CmdQueue(u32 family_index, VkQueue queue);
-        ~CmdQueue();
+        ~CmdQueueBase();
 
         u32 family_index() const;
         VkQueue vk_queue() const;
 
         void wait() const;
 
-        WaitToken submit(CmdBufferRecorder&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {}) const;
-
-    private:
+    protected:
         friend class Swapchain;
 
-        u32 _family_index = u32(-1);
-        VkQueue _queue = {};
+        CmdQueueBase(u32 family_index, VkQueue queue, bool is_async);
 
-        mutable std::mutex _lock;
+        WaitToken submit(CmdBufferRecorderBase&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {}, bool async_start = false) const;
+
+    private:
+        concurrent::Mutexed<VkQueue> _queue = {};
+        const u32 _family_index = u32(-1);
+        const bool _is_async_queue;
+
+};
+
+class CmdQueue final : public CmdQueueBase {
+    public:
+        CmdQueue(u32 family_index, VkQueue queue);
+
+        // Does not wait for the completion of previous commands before starting
+        WaitToken submit_async_start(TransferCmdBufferRecorder&& recorder) const;
+
+        WaitToken submit(TransferCmdBufferRecorder&& recorder) const;
+        WaitToken submit(CmdBufferRecorder&& recorder) const;
 };
 
 }

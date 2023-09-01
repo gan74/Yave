@@ -22,8 +22,7 @@ SOFTWARE.
 #ifndef Y_CORE_RINGQUEUE_H
 #define Y_CORE_RINGQUEUE_H
 
-#include <y/utils.h>
-#include <memory>
+#include "Vector.h"
 
 namespace y {
 namespace core {
@@ -31,6 +30,79 @@ namespace core {
 template<typename Elem, typename Allocator = std::allocator<Elem>>
 class RingQueue : NonCopyable, Allocator {
     using data_type = typename std::remove_const<Elem>::type;
+
+    using ResizePolicy = DefaultVectorResizePolicy;
+
+    template<bool Const>
+    class Iterator {
+        public:
+            using value_type = std::conditional_t<Const, const Elem, Elem>;
+            using size_type = usize;
+
+            using reference = value_type&;
+            using pointer = value_type*;
+
+            using iterator_category = std::bidirectional_iterator_tag;
+            using difference_type = std::ptrdiff_t;
+
+            Iterator() = default;
+
+            inline Iterator& operator++() {
+                ++_index;
+                return *this;
+            }
+
+            inline Iterator operator++(int) {
+                const Iterator it = *this;
+                ++_index;
+                return it;
+            }
+
+            inline Iterator& operator--() {
+                --_index;
+                return *this;
+            }
+
+            inline Iterator operator--(int) {
+                const Iterator it = *this;
+                --_index;
+                return it;
+            }
+
+            inline bool operator==(const Iterator& other) const {
+                return _index == other._index;
+            }
+
+            inline bool operator!=(const Iterator& other) const {
+                return _index != other._index;
+            }
+
+            inline reference operator*() const {
+                y_debug_assert(_parent);
+                return _parent->operator[](_index);
+            }
+
+            inline pointer operator->() const {
+                y_debug_assert(_parent);
+                return &_parent->operator[](_index);
+            }
+
+            operator Iterator<true>() const {
+                return Iterator<true>(_parent, _index);
+            }
+
+        private:
+            friend class RingQueue;
+            friend class Iterator<!Const>;
+
+            using parent_t = std::conditional_t<Const, const RingQueue, RingQueue>;
+
+            Iterator(parent_t* parent, usize index) : _parent(parent), _index(index) {
+            }
+
+            parent_t* _parent = nullptr;
+            usize _index = 0;
+    };
 
     public:
         using value_type = Elem;
@@ -42,12 +114,11 @@ class RingQueue : NonCopyable, Allocator {
         using pointer = value_type*;
         using const_pointer = const value_type*;
 
-        RingQueue() = default;
+        using iterator = Iterator<false>;
+        using const_iterator = Iterator<true>;
 
-        RingQueue(usize capacity) : 
-                _data(Allocator::allocate(capacity)),
-                _capacity(capacity) {
-        }
+
+        RingQueue() = default;
 
         RingQueue(const RingQueue& other) = delete;
         RingQueue& operator=(const RingQueue& other) = delete;
@@ -68,30 +139,6 @@ class RingQueue : NonCopyable, Allocator {
             }
         }
 
-        void push(const_reference elem) {
-            ::new(_data + next_index()) data_type(elem);
-            ++_size;
-        }
-
-        void push(value_type&& elem) {
-            ::new(_data + next_index()) data_type(std::move(elem));
-            ++_size;
-        }
-
-        template<typename... Args>
-        reference emplace(Args&&... args) {
-            const auto& ref = *(::new(_data + next_index()) data_type(y_fwd(args)...));
-            ++_size;
-            return ref;
-        }
-
-        value_type pop() {
-            y_debug_assert(!is_empty());
-            const data_type r = std::move(_data[_beg_index]);
-            _data[_beg_index].~data_type();
-            increment_begin();
-            return r;
-        }
 
         void make_empty() {
             for(usize i = 0; i != _size; ++i) {
@@ -113,75 +160,196 @@ class RingQueue : NonCopyable, Allocator {
             }
         }
 
-        const_reference operator[](usize i) const {
+        inline void push_back(const_reference elem) {
+            if(is_full()) {
+                expand();
+            }
+            ::new(_data + next_index()) data_type(elem);
+            ++_size;
+        }
+
+        inline void push_back(value_type&& elem) {
+            if(is_full()) {
+                expand();
+            }
+            ::new(_data + next_index()) data_type(std::move(elem));
+            ++_size;
+        }
+
+        template<typename... Args>
+        inline reference emplace_back(Args&&... args) {
+            if(is_full()) {
+                expand();
+            }
+            auto& ref = *(::new(_data + next_index()) data_type(y_fwd(args)...));
+            ++_size;
+            return ref;
+        }
+
+        template<typename... Args>
+        inline void insert(const_iterator it, Args&&... args) {
+            const usize index = it._index;
+            if(index == size()) {
+                emplace_back(y_fwd(args)...);
+                return;
+            }
+
+            if(is_full()) {
+                expand();
+            }
+
+            usize i = size() - 1;
+            emplace_back(std::move(operator[](i)));
+            while(i > index) {
+                 operator[](i) = std::move(operator[](i - 1));
+                 --i;
+            }
+
+            operator[](index) = data_type{y_fwd(args)...};
+        }
+
+        inline value_type pop_back() {
+            y_debug_assert(!is_empty());
+            const usize index = last_index();
+            data_type r = std::move(_data[index]);
+            _data[index].~data_type();
+            --_size;
+            return r;
+        }
+
+        inline value_type pop_front() {
+            y_debug_assert(!is_empty());
+            data_type r = std::move(_data[_beg_index]);
+            _data[_beg_index].~data_type();
+            increment_begin();
+            return r;
+        }
+
+        inline const_reference operator[](usize i) const {
             y_debug_assert(i < size());
             return _data[wrap(i + _beg_index)];
         }
 
-        reference operator[](usize i) {
+        inline reference operator[](usize i) {
             y_debug_assert(i < size());
             return _data[wrap(i + _beg_index)];
         }
 
-        const_reference first() const {
+        inline const_reference first() const {
             y_debug_assert(!is_empty());
             return _data[_beg_index];
         }
 
-        reference first() {
+        inline reference first() {
             y_debug_assert(!is_empty());
             return _data[_beg_index];
         }
 
-        const_reference last() const {
+        inline const_reference last() const {
             y_debug_assert(!is_empty());
             return _data[last_index()];
         }
 
-        reference last() {
+        inline reference last() {
             y_debug_assert(!is_empty());
             return _data[last_index()];
         }
 
+        inline const_iterator begin() const {
+            return const_iterator(this, 0);
+        }
 
-        usize size() const {
+        inline const_iterator end() const {
+            return const_iterator(this, size());
+        }
+
+        inline const_iterator cbegin() const {
+            return begin();
+        }
+
+        inline const_iterator cend() const {
+            return end();
+        }
+
+        inline iterator begin() {
+            return iterator(this, 0);
+        }
+
+        inline iterator end() {
+            return iterator(this, size());
+        }
+
+
+        inline usize size() const {
             return _size;
         }
 
-        usize capacity() const {
+        inline usize capacity() const {
             return _capacity;
         }
 
-        bool is_empty() const {
+        inline bool is_empty() const {
             return _size ==  0;
         }
 
-        bool is_full() const {
-            return size() == _capacity;
+        inline void set_min_capacity(usize min_cap) {
+            if(capacity() < min_cap) {
+                unsafe_set_capacity(ResizePolicy::ideal_capacity(min_cap));
+            }
         }
 
     private:
-        usize wrap(usize i) const {
-            y_debug_assert(i < _capacity * 2);
+        inline bool is_full() const {
+            return _size == _capacity;
+        }
+
+        inline usize wrap(usize i) const {
+            y_debug_assert(_capacity == 0 || i < _capacity * 2);
             return i >= _capacity ? i - _capacity : i;
         }
 
-        usize next_index() const {
+        inline usize next_index() const {
             return wrap(_beg_index + _size);
         }
 
-        usize last_index() const {
-            usize end = next_index();
-            return (end ? end : _capacity) - 1;
+        inline usize last_index() const {
+            return wrap(_beg_index + _size - 1);
         }
 
-        void increment_begin() {
+        inline void increment_begin() {
             y_debug_assert(!is_empty());
             ++_beg_index;
             if(_beg_index >= _capacity) {
                 _beg_index = 0;
             }
             --_size;
+        }
+
+        inline void expand() {
+            unsafe_set_capacity(ResizePolicy::ideal_capacity(size() + 1));
+        }
+
+        inline void unsafe_set_capacity(usize new_cap) {
+            if(new_cap <= capacity()) {
+                return;
+            }
+
+            y_debug_assert(new_cap > _size);
+            data_type* new_data = Allocator::allocate(new_cap);
+
+            if(_data) {
+                for(usize i = 0; i != _size; ++i) {
+                    auto& elem = operator[](i);
+                    new(new_data + i) data_type(std::move(elem));
+                    elem.~data_type();
+                }
+
+                Allocator::deallocate(_data, capacity());
+            }
+
+            _data = new_data;
+            _capacity = new_cap;
+            _beg_index = 0;
         }
 
         Owner<data_type*> _data = nullptr;

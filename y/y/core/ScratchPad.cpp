@@ -55,7 +55,7 @@ void* alloc_scratchpad(usize size) {
     u8* data = begin;
     begin += aligned_size;
 
-    y_always_assert(begin <= scratch.end(), "Scratch pad full: trying to allocate % bytes (free space = %)", size, data - scratch.end());
+    y_always_assert(begin <= scratch.end(), "Scratch pad full: trying to allocate {} bytes (free space = {})", size, data - scratch.end());
 
     return data;
 }

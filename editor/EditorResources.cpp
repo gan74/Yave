@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include <y/io2/File.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 using SpirV = EditorResources::SpirV;
@@ -96,7 +98,7 @@ EditorResources::~EditorResources() {
 
 void EditorResources::load_resources() {
     for(usize i = 0; i != spirv_count; ++i) {
-        _spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
+        _spirv[i] = SpirVData::deserialized(io2::File::open(fmt("{}.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
     }
 
     for(usize i = 0; i != compute_count; ++i) {

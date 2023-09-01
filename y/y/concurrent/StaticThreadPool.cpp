@@ -70,7 +70,7 @@ StaticThreadPool::FuncData::FuncData(Func func, DependencyGroup wait, Dependency
 StaticThreadPool::StaticThreadPool(usize thread_count) {
     for(usize i = 0; i != thread_count; ++i) {
         _threads.emplace_back([this, i] {
-            concurrent::set_thread_name(fmt_c_str("Worker thread #%", i));
+            concurrent::set_thread_name(fmt_c_str("Worker thread #{}", i));
             worker();
         });
     }
@@ -81,7 +81,7 @@ StaticThreadPool::~StaticThreadPool() {
 
     {
         _shared_data.run = false;
-        const std::unique_lock<std::mutex> lock(_shared_data.lock);
+        const std::unique_lock lock(_shared_data.lock);
         _shared_data.condition.notify_all();
     }
 
@@ -113,7 +113,7 @@ void StaticThreadPool::cancel_pending_tasks() {
 
 void StaticThreadPool::process_until_empty() {
     while(true) {
-        std::unique_lock<std::mutex> lock(_shared_data.lock);
+        std::unique_lock lock(_shared_data.lock);
         if(!process_one(std::move(lock))) {
             break;
         }
@@ -125,7 +125,7 @@ void StaticThreadPool::schedule(Func&& func, DependencyGroup* on_done, Dependenc
     y_debug_assert(_shared_data.run);
 
     {
-        const auto lock = std::unique_lock(_shared_data.lock);
+        const std::unique_lock lock(_shared_data.lock);
         if(on_done) {
             on_done->add_dependency();
             _shared_data.queue.emplace_back(std::move(func), std::move(wait_for), *on_done);
@@ -169,7 +169,7 @@ bool StaticThreadPool::process_one(std::unique_lock<std::mutex> lock) {
 
 void StaticThreadPool::worker() {
     while(_shared_data.run) {
-        std::unique_lock<std::mutex> lock(_shared_data.lock);
+        std::unique_lock lock(_shared_data.lock);
         _shared_data.condition.wait(lock, [&] { return !_shared_data.queue.empty() || !_shared_data.run; });
         process_one(std::move(lock));
     }

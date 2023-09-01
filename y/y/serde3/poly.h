@@ -47,8 +47,8 @@ Result deserialize_one(ReadableArchive& arc, T& t);
 
 
 template<typename T>
-constexpr TypeId poly_type_id() {
-    using naked = remove_cvref_t<T>;
+consteval TypeId poly_type_id() {
+    using naked = std::remove_cvref_t<T>;
     return TypeId(ct_type_hash_v<naked>);
 }
 
@@ -120,7 +120,7 @@ struct PolyType {
         void used() {}                                                                                              \
     } _y_register;                                                                                                  \
     virt y::serde3::TypeId _y_serde3_poly_type_id() const over {                                                    \
-        return y::serde3::detail::poly_type_id<y::remove_cvref_t<decltype(*this)>>();                               \
+        return y::serde3::detail::poly_type_id<std::remove_cvref_t<decltype(*this)>>();                             \
     }                                                                                                               \
     virt y::serde3::Result _y_serde3_poly_serialize(y::serde3::WritableArchive& arc) const over {                   \
         _y_register.used();                                                                                         \

@@ -45,8 +45,10 @@ class Camera;
 class CmdBufferData;
 class CmdBufferPool;
 class CmdBufferRecorder;
+class CmdBufferRecorderBase;
 class CmdBufferRegion;
 class CmdQueue;
+class CmdQueueBase;
 class CmdTimingRecorder;
 class ComputeProgram;
 class DebugParams;
@@ -149,6 +151,8 @@ class TimelineFence;
 class TimestampQuery;
 class TimestampQueryPool;
 class TimestampQueryPoolData;
+class TransferCmdBufferRecorder;
+class TransferCmdQueue;
 class TransformableComponent;
 class TransientBuffer;
 class WaitToken;
@@ -212,6 +216,7 @@ struct OneShotScript;
 struct PackedVertex;
 struct Plane;
 struct Pool;
+struct QueryResult;
 struct Region;
 struct RendererSettings;
 struct ResourceCreateInfo;
@@ -238,7 +243,6 @@ struct VolumeSampler;
 
 namespace yave::detail {
 class AssetPtrDataBase;
-struct VkNull;
 struct VkStructInitializer;
 }
 

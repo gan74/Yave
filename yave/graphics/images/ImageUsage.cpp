@@ -73,7 +73,7 @@ VkImageLayout vk_image_layout(ImageUsage usage) {
         return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
     
-    y_fatal("Unsupported image usage (%)", usage);
+    y_fatal("Unsupported image usage ({})", usage);
 }
 
 }

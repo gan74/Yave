@@ -26,7 +26,9 @@ SOFTWARE.
 #include <yave/animations/Animation.h>
 
 #include <y/core/ScratchPad.h>
+
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 
 namespace editor {
@@ -86,7 +88,7 @@ MeshData transform(const MeshData& mesh, const math::Transform<>& tr) {
     }
 
     if(mesh.has_skeleton()) {
-        auto bones = core::vector_with_capacity<Bone>(mesh.bones().size());
+        auto bones = core::Vector<Bone>::with_capacity(mesh.bones().size());
         std::transform(mesh.bones().begin(), mesh.bones().end(), std::back_inserter(bones), [=](const auto& bone) {
                 return bone.has_parent() ? bone : Bone{bone.name, bone.parent, transform(bone.local_transform, tr)};
             });
@@ -126,7 +128,7 @@ MeshData compute_tangents(const MeshData& mesh) {
 
 static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
     y_profile();
-    auto keys = core::vector_with_capacity<AnimationChannel::BoneKey>(anim.keys().size());
+    auto keys = core::Vector<AnimationChannel::BoneKey>::with_capacity(anim.keys().size());
     std::transform(anim.keys().begin(), anim.keys().end(), std::back_inserter(keys), [=](const auto& key){
         return AnimationChannel::BoneKey{key.time / speed, key.local_transform};
     });
@@ -136,7 +138,7 @@ static AnimationChannel set_speed(const AnimationChannel& anim, float speed) {
 
 Animation set_speed(const Animation& anim, float speed) {
     y_profile();
-    auto channels = core::vector_with_capacity<AnimationChannel>(anim.channels().size());
+    auto channels = core::Vector<AnimationChannel>::with_capacity(anim.channels().size());
     std::transform(anim.channels().begin(), anim.channels().end(), std::back_inserter(channels), [=](const auto& channel){ return set_speed(channel, speed); });
 
     return Animation(anim.duration() / speed, std::move(channels));
@@ -153,7 +155,7 @@ core::Result<void> export_to_obj(const MeshData& mesh, io2::Writer& writer) {
     const usize vertex_count = mesh.vertex_streams().vertex_count();
     for(usize i = 0; i != vertex_count; ++i) {
         const FullVertex v = unpack_vertex(mesh.vertex_streams()[i]);
-        y_try_discard(write(fmt("v % % %\nvn % % %\nvt % %\n",
+        y_try_discard(write(fmt("v {} {} {}\nvn {} {} {}\nvt {} {}\n",
             v.position.x(),
             v.position.y(),
             v.position.z(),
@@ -169,7 +171,7 @@ core::Result<void> export_to_obj(const MeshData& mesh, io2::Writer& writer) {
 
     for(const IndexedTriangle& triangle : mesh.triangles()) {
         const IndexedTriangle tri = {triangle[0] + 1, triangle[1] + 1, triangle[2] + 1};
-        y_try_discard(write(fmt("f %/%/% %/%/% %/%/%\n",
+        y_try_discard(write(fmt("f {}/{}/{} {}/{}/{} {}/{}/{}\n",
             tri[0], tri[0], tri[0],
             tri[1], tri[1], tri[1],
             tri[2], tri[2], tri[2]

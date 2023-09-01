@@ -171,21 +171,26 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
         const math::Vec3 y = tr->right().normalized();
         const math::Vec3 x = tr->forward().normalized();
         const float scale = tr->transform().scale().max_component();
+
+        auto add_sphere = [&](const math::Vec3& pos, float radius) {
+            primitive->add_circle(pos, x, y, radius);
+            primitive->add_circle(pos, y, z, radius);
+            primitive->add_circle(pos, z, x, radius);
+        };
+
         if(const auto* l = world.component<PointLightComponent>(selected)) {
-            primitive->add_circle(tr->position(), x, y, l->range() * scale);
-            primitive->add_circle(tr->position(), y, z, l->range() * scale);
-            primitive->add_circle(tr->position(), z, x, l->range() * scale);
+            add_sphere(tr->position(), l->range() * scale);
+            add_sphere(tr->position(), l->min_radius() * scale);
         }
 
         if(const auto* l = world.component<SpotLightComponent>(selected)) {
             primitive->add_cone(tr->position(), x, y, l->range() * scale, l->half_angle());
+            add_sphere(tr->position(), l->min_radius() * scale);
 
             if(draw_enclosing_sphere) {
                 const auto enclosing = l->enclosing_sphere();
                 const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center * scale;
-                primitive->add_circle(center, x, y, enclosing.radius * scale);
-                primitive->add_circle(center, y, z, enclosing.radius * scale);
-                primitive->add_circle(center, z, x, enclosing.radius * scale);
+                add_sphere(center, enclosing.radius * scale);
             }
         }
 

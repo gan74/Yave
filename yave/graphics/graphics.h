@@ -46,6 +46,7 @@ VkPhysicalDevice vk_physical_device();
 VkSemaphore vk_timeline_semaphore();
 
 CmdBufferRecorder create_disposable_cmd_buffer();
+TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer();
 
 const PhysicalDevice& physical_device();
 DeviceMemoryAllocator& device_allocator();

@@ -31,7 +31,7 @@ namespace ecs {
 core::Vector<EntityId> QueryUtils::matching(core::Span<SetMatch> matches, core::Span<EntityId> ids) {
     y_profile();
 
-    auto match = core::vector_with_capacity<EntityId>(ids.size());
+    auto match = core::Vector<EntityId>::with_capacity(ids.size());
     for(EntityId id : ids) {
         bool matched = true;
         for(usize i = 0; matched && i != matches.size(); ++i) {
@@ -43,7 +43,7 @@ core::Vector<EntityId> QueryUtils::matching(core::Span<SetMatch> matches, core::
         }
     }
 
-    y_profile_msg(fmt_c_str("% id matched", match.size()));
+    y_profile_msg(fmt_c_str("{} id matched", match.size()));
 
     return match;
 }

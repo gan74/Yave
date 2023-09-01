@@ -118,9 +118,7 @@ void UiManager::update_fps_counter() {
 
 void UiManager::draw_fps_counter() {
     const float avg_time = _total_time / std::min(u64(_frame_times.size()), _frame_number);
-    char buffer[64] = {};
-    std::snprintf(buffer, sizeof(buffer), "FPS: %.01f (%.01f ms)", 1000.0f / avg_time, avg_time);
-    if(ImGui::MenuItem(buffer)) {
+    if(ImGui::MenuItem(fmt_c_str("FPS: {:.1f} {:.01f} ms", 1000.0f / avg_time, avg_time))) {
         add_widget(std::make_unique<PerformanceMetrics>());
     }
 }

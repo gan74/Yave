@@ -19,45 +19,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SYSTEMS_STATICMESHRENDERERSYSTEM_H
-#define YAVE_SYSTEMS_STATICMESHRENDERERSYSTEM_H
 
-#include <yave/ecs/System.h>
+#ifndef Y_CONCURRENT_MUTEXED_H
+#define Y_CONCURRENT_MUTEXED_H
 
-#include <yave/graphics/buffers/Buffer.h>
-#include <yave/graphics/buffers/buffers.h>
-#include <yave/meshes/MeshDrawData.h>
+#include <y/utils.h>
 
-#include <y/core/Vector.h>
+#include <mutex>
 
-#include <yave/framegraph/FrameGraphResourceId.h>
+namespace y {
+namespace concurrent {
 
-namespace yave {
-
-class StaticMeshRendererSystem : public ecs::System {
+template<typename T, typename Lock = std::mutex>
+class Mutexed : NonCopyable {
     public:
-        static constexpr usize max_transforms = 8 * 1024;
-
-        StaticMeshRendererSystem();
-
-        void destroy() override;
-        void setup() override;
-        void tick() override;
-
-        TypedSubBuffer<math::Transform<>, BufferUsage::StorageBit> transform_buffer() const {
-            return _transforms;
+        template<typename... Args>
+        Mutexed(Args&&... args) : _obj(y_fwd(args)...) {
         }
 
+        template<typename F>
+        inline decltype(auto) locked(F&& func) {
+            const std::unique_lock lock(_lock);
+            return func(_obj);
+        }
+
+        template<typename F>
+        inline decltype(auto) locked(F&& func) const {
+            const std::unique_lock lock(_lock);
+            return func(_obj);
+        }
 
     private:
-        void run_tick(bool only_recent);
-
-        TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible> _transforms;
-
-        core::Vector<u32> _free;
+        T _obj;
+        [[no_unique_address]] mutable Lock _lock;
 };
 
+
+}
 }
 
-#endif // YAVE_SYSTEMS_STATICMESHRENDERERSYSTEM_H
+#endif // Y_CONCURRENT_MUTEXED_H
 

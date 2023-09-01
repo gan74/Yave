@@ -33,7 +33,7 @@ class Property {
     public:
         static constexpr bool return_ref = std::is_reference_v<G>;
 
-        using value_type = remove_cvref_t<G>;
+        using value_type = std::remove_cvref_t<G>;
 
         ~Property() {
         }

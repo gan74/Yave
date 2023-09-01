@@ -43,12 +43,24 @@ SOFTWARE.
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
 #endif
 
+#ifdef Y_MSVC
+#pragma warning(push)
+#pragma warning(disable:4018) // signed/unsigned mismatch
+#pragma warning(disable:4267) // conversion from 'size_t' to 'int', possible loss of data
+#endif
+
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
 #define TINYGLTF_NOEXCEPTION
 #include <external/tinygltf/tiny_gltf.h>
+
+
+#ifdef Y_MSVC
+#pragma warning(pop)
+#endif
 
 #ifdef Y_GNU
 #pragma GCC diagnostic pop
@@ -107,14 +119,14 @@ core::Result<ImageData> import_image(const core::String& filename, ImageImportFl
     if(auto file = io2::File::open(filename)) {
         core::Vector<u8> data;
         if(!file.unwrap().read_all(data)) {
-            log_msg(fmt_c_str("Unable to read image \"%\".", filename), Log::Error);
+            log_msg(fmt_c_str("Unable to read image \"{}\".", filename), Log::Error);
             return core::Err();
         }
 
         return import_image(data, flags);
     }
 
-    log_msg(fmt_c_str("Unable to open image \"%\".", filename), Log::Error);
+    log_msg(fmt_c_str("Unable to open image \"{}\".", filename), Log::Error);
     return core::Err();
 }
 
@@ -203,7 +215,7 @@ static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, 
     y_always_assert(accessor.count == vertex_count, "Invalid accesors");
 
     if(components != size) {
-        log_msg(fmt("Expected VEC% attribute, got VEC%", size, components), Log::Warning);
+        log_msg(fmt("Expected VEC{} attribute, got VEC{}", size, components), Log::Warning);
     }
 
     const usize min_size = std::min(size, components);
@@ -242,7 +254,7 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
     const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
 
     if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
-        y_throw_msg(fmt_c_str("Unsupported component type (%) for \"%\"", accessor.componentType, std::string_view(name)));
+        y_throw_msg(fmt_c_str("Unsupported component type ({}) for \"{}\"", accessor.componentType, std::string_view(name)));
     }
 
     if(name == "POSITION") {
@@ -254,7 +266,7 @@ static void decode_attrib_buffer(const tinygltf::Model& model, const std::string
     } else if(name == "TEXCOORD_0") {
         decode_attrib_buffer_convert_internal(model, buffer, accessor, &vertices[0].uv, vertices.size());
     } else {
-        log_msg(fmt("Attribute \"%\" is not supported", std::string_view(name)), Log::Warning);
+        log_msg(fmt("Attribute \"{}\" is not supported", std::string_view(name)), Log::Warning);
         return;
     }
 }
@@ -343,7 +355,27 @@ static math::Transform<> build_base_change_transform() {
 
 static const math::Transform<> base_change_transform = build_base_change_transform();
 
+static math::Transform<> parse_node_transform_matrix(const tinygltf::Node& node) {
+    y_debug_assert(node.matrix.size() == 16);
+
+    math::Matrix4<> mat;
+    std::transform(node.matrix.begin(), node.matrix.end(), mat.begin(), [](double f) {
+        return float(f);
+    });
+
+    const math::Transform<> tr(mat);
+    y_debug_assert(math::fully_finite(tr));
+    y_debug_assert(tr[3][3] == 1.0f);
+    return tr;
+}
+
 static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
+    if(node.matrix.size() == 16) {
+        return parse_node_transform_matrix(node);
+    }
+
+    y_debug_assert(node.matrix.empty());
+
     math::Vec3 translation;
     for(usize k = 0; k != node.translation.size(); ++k) {
         translation[k] = float(node.translation[k]);
@@ -354,7 +386,7 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
         scale[k] = float(node.scale[k]);
     }
 
-    math::Vec4 rotation;
+    math::Vec4 rotation(0.0f, 0.0f, 0.0f, 1.0f);
     for(usize k = 0; k != node.rotation.size(); ++k) {
         rotation[k] = float(node.rotation[k]);
     }
@@ -376,7 +408,7 @@ static ParsedScene::Node& parse_node(usize index, ParsedScene& scene) {
 
     const usize node_index = scene.nodes.size();
     scene.nodes.emplace_back(
-        node.name.empty() ? fmt_to_owned("unnamed_node_%", index) : clean_asset_name(node.name),
+        node.name.empty() ? fmt_to_owned("unnamed_node_{}", index) : clean_asset_name(node.name),
         transform,
         node.mesh
     );
@@ -435,7 +467,7 @@ ParsedScene parse_scene(const core::String& filename) {
         const tinygltf::Mesh& mesh = scene.gltf->meshes[i];
 
         auto& parsed_mesh = scene.mesh_prefabs.emplace_back();
-        parsed_mesh.name = mesh.name.empty() ? fmt_to_owned("unnamed_mesh_%", i) : clean_asset_name(mesh.name);
+        parsed_mesh.name = mesh.name.empty() ? fmt_to_owned("unnamed_mesh_{}", i) : clean_asset_name(mesh.name);
         parsed_mesh.gltf_index = int(i);
 
         for(usize j = 0; j != mesh.primitives.size(); ++j) {
@@ -456,7 +488,7 @@ ParsedScene parse_scene(const core::String& filename) {
         const tinygltf::Image& image = scene.gltf->images[i];
 
         auto& parsed_image = scene.images.emplace_back();
-        parsed_image.name = image.name.empty() ? fmt_to_owned("unnamed_image_%", i) : clean_asset_name(image.name);
+        parsed_image.name = image.name.empty() ? fmt_to_owned("unnamed_image_{}", i) : clean_asset_name(image.name);
         parsed_image.gltf_index = int(i);
     }
 
@@ -464,7 +496,7 @@ ParsedScene parse_scene(const core::String& filename) {
         const tinygltf::Material& material = scene.gltf->materials[i];
 
         auto& parsed_material = scene.materials.emplace_back();
-        parsed_material.name = material.name.empty() ? fmt_to_owned("unnamed_material_%", i) : clean_asset_name(material.name);
+        parsed_material.name = material.name.empty() ? fmt_to_owned("unnamed_material_{}", i) : clean_asset_name(material.name);
         parsed_material.gltf_index = int(i);
 
         const int tex_index = material.pbrMetallicRoughness.baseColorTexture.index;
@@ -530,7 +562,7 @@ core::Result<MeshData> ParsedScene::build_mesh_data(usize index) const {
 
             mesh_data.add_sub_mesh(mesh.vertex_streams(), mesh.triangles());
         } catch(std::exception& e) {
-            log_msg(fmt("Unable to build mesh: %" , e.what()), Log::Error);
+            log_msg(fmt("Unable to build mesh: {}" , e.what()), Log::Error);
         }
     }
 

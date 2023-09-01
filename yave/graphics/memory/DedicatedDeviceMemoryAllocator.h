@@ -25,8 +25,7 @@ SOFTWARE.
 #include "DeviceMemoryHeapBase.h"
 
 #include <y/core/HashMap.h>
-
-#include <mutex>
+#include <y/concurrent/Mutexed.h>
 
 namespace yave {
 
@@ -49,8 +48,7 @@ class DedicatedDeviceMemoryAllocator : public DeviceMemoryHeapBase {
         MemoryType _type;
         u64 _size = 0;
 
-        std::mutex _mapping_lock;
-        core::FlatHashMap<VkDeviceMemory, void*> _mappings;
+        concurrent::Mutexed<core::FlatHashMap<VkDeviceMemory, void*>> _mappings;
 };
 
 }

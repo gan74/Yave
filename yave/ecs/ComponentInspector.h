@@ -76,7 +76,7 @@ class ComponentInspector : NonCopyable {
         void inspect(const core::String& name, core::MutableSpan<T> items, Args&&... args) {
             if(begin_collection(name)) {
                 for(usize i = 0; i != items.size(); ++i) {
-                    inspect(fmt("%[%]", name, i), items[i], y_fwd(args)...);
+                    inspect(fmt("{}[{}]", name, i), items[i], y_fwd(args)...);
                 }
                 end_collection();
             }

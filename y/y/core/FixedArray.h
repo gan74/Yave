@@ -47,7 +47,7 @@ class FixedArray {
         using iterator = Elem*;
         using const_iterator = Elem const*;
 
-        inline FixedArray() = default;
+        inline constexpr FixedArray() = default;
 
         inline FixedArray(usize size) : _data(std::make_unique<data_type[]>(size)), _size(size) {
         }

@@ -98,11 +98,19 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
     y_always_assert(vertex_begin + vertex_count <= global_attrib_buffer.byte_size() / sizeof(PackedVertex), "Vertex buffer pool is full");
 
     {
-        CmdBufferRecorder recorder = create_disposable_cmd_buffer();
+        TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
+
+        auto stage_copy = [&](const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
+            y_debug_assert(data);
+            const u64 dst_size = dst.byte_size();
+            const StagingBuffer buffer(dst_size);
+            std::memcpy(buffer.map_bytes(MappingAccess::WriteOnly).raw_data(), data, dst_size);
+            recorder.unbarriered_copy(buffer, dst);
+        };
 
         {
             MutableTriangleSubBuffer triangle_buffer(global_triangle_buffer, triangle_count * sizeof(IndexedTriangle), triangle_begin * sizeof(IndexedTriangle));
-            BufferMappingBase::stage(recorder, triangle_buffer, triangles.data());
+            stage_copy(triangle_buffer, triangles.data());
             mesh_data._command.first_index = u32(triangle_begin * 3);
         }
 
@@ -118,8 +126,7 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
                     y_debug_assert(sub_buffer.byte_offset() % elem_size == 0);
                     const u64 byte_offset = sub_buffer.byte_offset() + vertex_begin * elem_size;
 
-                    BufferMappingBase::stage(
-                        recorder,
+                    stage_copy(
                         SubBuffer<BufferUsage::TransferDstBit>(global_attrib_buffer, byte_len, byte_offset),
                         streams.data(VertexStreamType(i))
                     );
@@ -129,7 +136,7 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
             mesh_data._command.vertex_offset = i32(vertex_begin);
         }
 
-        loading_command_queue().submit(std::move(recorder));
+        loading_command_queue().submit_async_start(std::move(recorder));
     }
 
     return mesh_data;

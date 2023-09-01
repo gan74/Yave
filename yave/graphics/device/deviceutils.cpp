@@ -28,6 +28,8 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
+#include <bit>
+
 namespace yave {
 
 float device_score(const PhysicalDevice& device) {
@@ -51,7 +53,7 @@ bool try_enable_extension(core::Vector<const char*>& exts, const char* name, con
         exts << name;
         return true;
     }
-    log_msg(fmt("% not supported", name), Log::Warning);
+    log_msg(fmt("{} not supported", name), Log::Warning);
     return false;
 }
 
@@ -143,12 +145,27 @@ core::Vector<VkQueueFamilyProperties> enumerate_family_properties(VkPhysicalDevi
 }
 
 u32 queue_family_index(core::Span<VkQueueFamilyProperties> families, VkQueueFlags flags) {
+    int most_bits = -1;
+    usize best_family_index = 0;
+
     for(usize i = 0; i != families.size(); ++i) {
-        if(families[i].queueCount && (families[i].queueFlags & flags) == flags) {
-            return u32(i);
+        if(!families[i].queueCount) {
+            continue;
+        }
+
+        if((families[i].queueFlags & flags) != flags) {
+            continue;
+        }
+
+        const int bits = std::popcount(families[i].queueFlags);
+        if(most_bits < 0 || bits < most_bits) {
+            most_bits = bits;
+            best_family_index = i;
         }
     }
-    y_fatal("No queue available for given flag set");
+
+    y_always_assert(most_bits >= 0, "No queue available for given flag set");
+    return u32(best_family_index);
 }
 
 VkQueue create_queue(VkDevice device, u32 family_index, u32 index) {
@@ -164,22 +181,21 @@ void print_physical_properties(const VkPhysicalDeviceProperties& properties) {
         const u32 major : 10;
     };
 
-    const auto& v_ref = properties.apiVersion;
-    const auto version = reinterpret_cast<const Version&>(v_ref);
-    log_msg(fmt("Running Vulkan (%.%.%) % bits on % (%)", u32(version.major), u32(version.minor), u32(version.patch),
+    const Version version = std::bit_cast<Version>(properties.apiVersion);
+    log_msg(fmt("Running Vulkan ({}.{}.{}) {} bits on {} ({})", u32(version.major), u32(version.minor), u32(version.patch),
             is_64_bits() ? 64 : 32, properties.deviceName, (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")));
 }
 
 void print_enabled_extensions(core::Span<const char*> extensions) {
     for(const char* ext : extensions) {
-        log_msg(fmt("% enabled", ext));
+        log_msg(fmt("{} enabled", ext));
     }
 }
 
 void print_properties(const DeviceProperties& properties) {
-    log_msg(fmt("max_memory_allocations = %", properties.max_memory_allocations));
-    log_msg(fmt("max_inline_uniform_size = %", properties.max_inline_uniform_size));
-    log_msg(fmt("max_uniform_buffer_size = %", properties.max_uniform_buffer_size));
+    log_msg(fmt("max_memory_allocations = {}", properties.max_memory_allocations));
+    log_msg(fmt("max_inline_uniform_size = {}", properties.max_inline_uniform_size));
+    log_msg(fmt("max_uniform_buffer_size = {}", properties.max_uniform_buffer_size));
 }
 
 
@@ -217,7 +233,6 @@ VkPhysicalDeviceFeatures required_device_features() {
         required.shaderStorageBufferArrayDynamicIndexing = true;
         required.shaderStorageImageArrayDynamicIndexing = true;
         required.fragmentStoresAndAtomics = true;
-        required.robustBufferAccess = true;
         required.independentBlend = true;
         required.samplerAnisotropy = true;
     }

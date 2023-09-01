@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/utils/color.h>
 
 #include <y/utils/name.h>
+#include <y/utils/format.h>
 
 #include <algorithm>
 #include <string>
@@ -74,7 +75,7 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
     if constexpr(is_printable_v<T>) {
         vars.emplace_back(
             full_name,
-            [=]{ return fmt("%", getter()); },
+            [=]{ return fmt("{}", getter()); },
             [=](std::string_view str) { return try_parse(str, getter()); },
             ct_type_name<T>(), "", false, false
         );
@@ -82,7 +83,7 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
         if constexpr(is_printable_v<typename T::value_type>) {
             vars.emplace_back(
                 full_name,
-                [=]{ return fmt("%", getter()); },
+                [=]{ return fmt("{}", getter()); },
                 [=](std::string_view) { /* not supported */ return false; },
                 ct_type_name<T>(), "", false, false
             );
@@ -92,12 +93,12 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
 
 template<typename C, typename F>
 static void explore(C& vars, const core::String& parent, std::string_view name, F&& getter) {
-    using result_type = remove_cvref_t<decltype(getter())>;
+    using result_type = std::remove_cvref_t<decltype(getter())>;
 
     collect_var<result_type>(vars, parent, name, getter);
 
     reflect::explore_members<result_type>([&, full = parent + "." + name](std::string_view name, auto member) mutable {
-        using member_type = remove_cvref_t<decltype(std::declval<result_type>().*member)>;
+        using member_type = std::remove_cvref_t<decltype(std::declval<result_type>().*member)>;
         explore(vars, full, name, [getter, member]() -> member_type& {
             return getter().*member;
         });

@@ -77,7 +77,7 @@ const OctreeNode& Octree::root() const {
 core::Vector<ecs::EntityId> Octree::all_entities() const {
     y_profile();
 
-    auto entities = core::vector_with_capacity<ecs::EntityId>(1024 * 8);
+    auto entities = core::Vector<ecs::EntityId>::with_capacity(1024 * 8);
     push_all_entities(entities, *_root);
     return entities;
 }
@@ -96,7 +96,7 @@ void Octree::audit() const {
 #ifdef Y_DEBUG
     y_profile();
     core::Vector<ecs::EntityId> all = all_entities();
-    y_profile_dyn_zone(fmt_c_str("auditing % entities", all.size()));
+    y_profile_dyn_zone(fmt_c_str("auditing {} entities", all.size()));
     std::sort(all.begin(), all.end());
     y_debug_assert(_root->entity_count() == all.size());
     y_debug_assert(std::unique(all.begin(), all.end()) == all.end());

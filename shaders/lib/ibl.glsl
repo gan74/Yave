@@ -10,13 +10,12 @@ float roughness_to_mip(float roughness, uint mip) {
 }
 
 vec3 eval_ibl(samplerCube probe, sampler2D brdf_lut, vec3 view_dir, SurfaceInfo surface) {
-
     const uint probe_mips = textureQueryLevels(probe);
 
     const float NoV = max(0.0, dot(surface.normal, view_dir));
     const vec3 reflected = reflect(-view_dir, surface.normal);
 
-    const vec3 F = F_Schlick(NoV, surface.F0, surface.roughness);
+    const vec3 F = F_Schlick(NoV, surface.F0, surface.perceptual_roughness);
 
     const vec3 kS = F;
     const vec3 kD = (1.0 - kS) * (1.0 - surface.metallic);
@@ -24,7 +23,7 @@ vec3 eval_ibl(samplerCube probe, sampler2D brdf_lut, vec3 view_dir, SurfaceInfo 
     const vec3 irradiance = textureLod(probe, surface.normal, probe_mips - 1).rgb;
     const vec3 diffuse = kD * irradiance * surface.albedo;
 
-    const vec2 brdf = texture(brdf_lut, vec2(NoV, surface.roughness)).xy;
+    const vec2 brdf = texture(brdf_lut, vec2(NoV, surface.perceptual_roughness)).xy;
     const vec3 prefiltered = textureLod(probe, reflected, roughness_to_mip(surface.perceptual_roughness, probe_mips - 1)).rgb;
     const vec3 specular = prefiltered * (kS * brdf.x + brdf.y);
 

@@ -31,8 +31,8 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
 #include <y/concurrent/SpinLock.h>
+#include <y/concurrent/Mutexed.h>
 
-#include <mutex>
 #include <bitset>
 #include <memory>
 #include <algorithm>
@@ -145,7 +145,7 @@ class DescriptorSetAllocator {
     };
 
 
-    struct LayoutPools {
+    struct LayoutPools : NonCopyable {
         DescriptorSetLayout layout;
         core::Vector<std::unique_ptr<DescriptorSetPool>> pools;
     };
@@ -163,10 +163,11 @@ class DescriptorSetAllocator {
         usize used_sets() const;
 
     private:
-        LayoutPools& layout(LayoutKey bindings);
+        using LayoutMap = core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual, true>;
 
-        core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual, true> _layouts;
-        mutable std::mutex _lock;
+        static LayoutPools& layout_pool(LayoutMap& layouts, LayoutKey bindings);
+
+        concurrent::Mutexed<LayoutMap> _layouts;
 };
 
 }

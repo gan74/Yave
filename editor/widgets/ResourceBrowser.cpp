@@ -35,9 +35,11 @@ SOFTWARE.
 #include <yave/material/MaterialData.h>
 
 #include <y/io2/Buffer.h>
-#include <y/utils/log.h>
-#include <y/serde3/archives.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
+#include <y/serde3/archives.h>
 
 
 
@@ -135,13 +137,13 @@ void ResourceBrowser::draw_top_bar() {
             };
 
             ImGui::SameLine();
-            if(ImGui::Button(fmt_c_str("%##%", piece.is_empty() ? "/" : piece, i))) {
+            if(ImGui::Button(fmt_c_str("{}##{}", piece.is_empty() ? "/" : piece, i))) {
                 _set_path_deferred = full_path();
             }
 
             ImGui::SameLine();
-            const core::String menu_name = fmt("##jumpmenu_%", i);
-            if(ImGui::Button(fmt_c_str(ICON_FA_ANGLE_RIGHT "##%", i))) {
+            const core::String menu_name = fmt("##jumpmenu_{}", i);
+            if(ImGui::Button(fmt_c_str(ICON_FA_ANGLE_RIGHT "##{}", i))) {
                 _jump_menu.make_empty();
                 filesystem()->for_each(full_path(), [&, this](const auto& info) {
                         if(info.type == EntryType::Directory) {
@@ -154,7 +156,7 @@ void ResourceBrowser::draw_top_bar() {
 
             if(ImGui::BeginPopup(menu_name.data())) {
                 for(const core::String& dir : _jump_menu) {
-                    if(ImGui::Selectable(fmt_c_str(ICON_FA_FOLDER " %", dir))) {
+                    if(ImGui::Selectable(fmt_c_str(ICON_FA_FOLDER " {}", dir))) {
                         _set_path_deferred = full_name(dir);
                     }
                 }
@@ -204,7 +206,7 @@ void ResourceBrowser::draw_search_results() {
     if(ImGui::BeginTable("##searchresults", 1, table_flags)) {
         for(const Entry& entry : *_search_results) {
             imgui::table_begin_next_row();
-            if(ImGui::Selectable(fmt_c_str("% %", entry.icon, entry.name))) {
+            if(ImGui::Selectable(fmt_c_str("{} {}", entry.icon, entry.name))) {
                 if(const AssetId id = asset_id(entry.name); id != AssetId::invalid_id()) {
                     asset_selected(id);
                 }
@@ -286,7 +288,7 @@ void ResourceBrowser::update_search() {
 
     if(const auto* searchable = dynamic_cast<const SearchableFileSystemModel*>(filesystem())) {
         std::string_view pattern = std::string_view(_search_pattern.data());
-        const core::String full_pattern = fmt("%%%%", path(), "%", pattern, "%");
+        const core::String full_pattern = fmt("{}%{}%", path(), pattern);
 
         if(auto result = searchable->search(full_pattern)) {
             _search_results = std::make_unique<core::Vector<Entry>>();

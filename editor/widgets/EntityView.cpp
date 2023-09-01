@@ -183,7 +183,7 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
             }
             if(ImGui::Selectable("Select all descendants")) {
                 y_profile_zone("collect all descendants");
-                auto descendants = core::vector_with_capacity<ecs::EntityId>(component->children().size() * 2);
+                auto descendants = core::Vector<ecs::EntityId>::with_capacity(component->children().size() * 2);
                 collect_all_descendants(descendants, id, world);
                 world.set_selection(descendants);
             }
@@ -314,7 +314,7 @@ void EntityView::on_gui() {
 
         auto& editor_components = world.component_set<EditorComponent>();
 
-        auto tree = core::vector_with_capacity<EntityTreeItem>(editor_components.size());
+        auto tree = core::Vector<EntityTreeItem>::with_capacity(editor_components.size());
         {
             y_profile_zone("Building tree");
             for(auto&& [id, comp] : editor_components) {
@@ -362,15 +362,15 @@ void EntityView::on_gui() {
 
                 imgui::table_begin_next_row();
                 if(item.component->is_collection()) {
-                    const bool open = ImGui::TreeNodeEx(fmt_c_str(ICON_FA_BOX_OPEN " %###%", item.component->name(), item.id.as_u64()), flags);
+                    const bool open = ImGui::TreeNodeEx(fmt_c_str(ICON_FA_BOX_OPEN " {}###{}", item.component->name(), item.id.as_u64()), flags);
                     _open_nodes[item.id] = open;
                     update_selection();
                     if(open) {
                         ++tree_depth;
                     }
                 } else {
-                    const std::string_view display_name = item.component->is_prefab() ? fmt("% (Prefab)", item.component->name()) : std::string_view(item.component->name());
-                    ImGui::TreeNodeEx(fmt_c_str("% %###%", world.entity_icon(item.id), display_name, item.id.as_u64()), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                    const std::string_view display_name = item.component->is_prefab() ? fmt("{} (Prefab)", item.component->name()) : std::string_view(item.component->name());
+                    ImGui::TreeNodeEx(fmt_c_str("{} {}###{}", world.entity_icon(item.id), display_name, item.id.as_u64()), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
                     update_selection();
                     ImGui::TableNextColumn();
                     display_tag_buttons(item.id, world, _tag_buttons);

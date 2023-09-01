@@ -27,6 +27,7 @@ SOFTWARE.
 #include <editor/import/import.h>
 
 #include <y/concurrent/StaticThreadPool.h>
+#include <y/concurrent/Mutexed.h>
 
 namespace editor {
 
@@ -61,8 +62,7 @@ class SceneImporter2 final : public Widget {
         FileBrowser _browser;
         import::ParsedScene _scene;
 
-        core::Vector<std::pair<core::String, Log>> _logs;
-        std::mutex _lock;
+        concurrent::Mutexed<core::Vector<std::pair<core::String, Log>>> _logs;
 
         concurrent::StaticThreadPool _thread_pool;
         std::atomic<u32> _emergency_uid = 0;

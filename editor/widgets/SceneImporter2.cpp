@@ -89,7 +89,7 @@ static AssetId import_single_asset(const T& asset, std::string_view name, AssetT
         y_profile_zone("serialize");
         serde3::WritableArchive arc(buffer);
         if(auto sr = arc.serialize(asset); sr.is_error()) {
-            log_func(fmt("Unable serialize \"%\": error %", name, sr.error().type), Log::Error);
+            log_func(fmt("Unable serialize \"{}\": error {}", name, sr.error().type), Log::Error);
             return {};
         }
     }
@@ -102,12 +102,12 @@ static AssetId import_single_asset(const T& asset, std::string_view name, AssetT
         const auto result = asset_store().import(buffer, import_name, type);
         if(result.is_error()) {
             if(result.error() == AssetStore::ErrorType::NameAlreadyExists) {
-                import_name = fmt("%_%", name, ++emergency_uid);
+                import_name = fmt("{}_{}", name, ++emergency_uid);
                 continue;
             }
-            log_func(fmt("Unable to import \"%\": error %", import_name, result.error()), Log::Error);
+            log_func(fmt("Unable to import \"{}\": error {}", import_name, result.error()), Log::Error);
         } else {
-            log_func(fmt("Saved asset as \"%\"", import_name), Log::Info);
+            log_func(fmt("Saved asset as \"{}\"", import_name), Log::Info);
             return result.unwrap();
         }
     }
@@ -118,8 +118,7 @@ usize SceneImporter2::import_assets() {
 
     auto log_func = [this](std::string_view msg, Log type) {
         log_msg(msg, type);
-        const auto lock = y_profile_unique_lock(_lock);
-        _logs.emplace_back(msg, type);
+        _logs.locked([&](auto&& logs) { logs.emplace_back(msg, type); });
     };
 
     concurrent::DependencyGroup image_deps;
@@ -235,7 +234,7 @@ usize SceneImporter2::import_assets() {
         ++to_import;
         _thread_pool.schedule([=] {
             const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
-            auto prefabs = core::vector_with_capacity<ecs::EntityPrefab>(_scene.nodes.size());
+            auto prefabs = core::Vector<ecs::EntityPrefab>::with_capacity(_scene.nodes.size());
             for(const auto& node : _scene.nodes) {
                 const auto it = std::find_if(_scene.mesh_prefabs.begin(), _scene.mesh_prefabs.end(), [=](const auto& mesh) { return mesh.gltf_index == node.mesh_gltf_index; });
                 if(it != _scene.mesh_prefabs.end()) {
@@ -307,10 +306,10 @@ void SceneImporter2::on_gui() {
             }
 
             ImGui::Checkbox("Import as scene", &_import_options.import_scene);
-            ImGui::Checkbox(fmt_c_str("Import % prefabs", _scene.mesh_prefabs.size()), &_import_options.import_prefabs);
-            ImGui::Checkbox(fmt_c_str("Import % meshes", _scene.mesh_prefabs.size()), &_import_options.import_meshes);
-            ImGui::Checkbox(fmt_c_str("Import % materials", _scene.materials.size()), &_import_options.import_materials);
-            ImGui::Checkbox(fmt_c_str("Import % textures", _scene.images.size()), &_import_options.import_textures);
+            ImGui::Checkbox(fmt_c_str("Import {} prefabs", _scene.mesh_prefabs.size()), &_import_options.import_prefabs);
+            ImGui::Checkbox(fmt_c_str("Import {} meshes", _scene.mesh_prefabs.size()), &_import_options.import_meshes);
+            ImGui::Checkbox(fmt_c_str("Import {} materials", _scene.materials.size()), &_import_options.import_materials);
+            ImGui::Checkbox(fmt_c_str("Import {} textures", _scene.images.size()), &_import_options.import_textures);
 
             ImGui::Separator();
 
@@ -328,7 +327,7 @@ void SceneImporter2::on_gui() {
             ImGui::TextUnformatted("Importing assets:");
             ImGui::SameLine();
             const usize imported = _to_import - _thread_pool.pending_tasks();
-            ImGui::ProgressBar(float(imported) / float(_to_import), ImVec2(-1.0f, 0.0f), fmt_c_str("% / % assets imported", imported, _to_import));
+            ImGui::ProgressBar(float(imported) / float(_to_import), ImVec2(-1.0f, 0.0f), fmt_c_str("{} / {} assets imported", imported, _to_import));
             if(_thread_pool.is_empty()) {
                 refresh_all();
                 _state = State::Done;
@@ -338,26 +337,27 @@ void SceneImporter2::on_gui() {
         case State::Done: {
             if(ImGui::CollapsingHeader("Details")) {
                 if(ImGui::BeginTable("##logs", 1, ImGuiTableFlags_RowBg, ImVec2(0, ImGui::GetContentRegionAvail().y - button_height))) {
-                    const auto lock = y_profile_unique_lock(_lock);
-                    for(const auto& log : _logs) {
-                        imgui::table_begin_next_row();
-                        switch(log.second) {
-                            case Log::Error:
-                                ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-                                ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_CIRCLE " %", log.first.data()));
-                                ImGui::PopStyleColor();
-                            break;
+                    _logs.locked([&](auto&& logs) {
+                        for(const auto& log : logs) {
+                            imgui::table_begin_next_row();
+                            switch(log.second) {
+                                case Log::Error:
+                                    ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+                                    ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_CIRCLE " {}", log.first.data()));
+                                    ImGui::PopStyleColor();
+                                break;
 
-                            case Log::Warning:
-                                ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-                                ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_TRIANGLE " %", log.first.data()));
-                                ImGui::PopStyleColor();
-                            break;
+                                case Log::Warning:
+                                    ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+                                    ImGui::Selectable(fmt_c_str(ICON_FA_EXCLAMATION_TRIANGLE " {}", log.first.data()));
+                                    ImGui::PopStyleColor();
+                                break;
 
-                            default:
-                                ImGui::Selectable(fmt_c_str(ICON_FA_CHECK " %", log.first.data()));
+                                default:
+                                    ImGui::Selectable(fmt_c_str(ICON_FA_CHECK " {}", log.first.data()));
+                            }
                         }
-                    }
+                    });
                 }
                 ImGui::EndTable();
             }

@@ -197,38 +197,37 @@ const TextureView* ThumbmailRenderer::thumbmail(AssetId id) {
         return nullptr;
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
+    return _thumbmails.locked([&](auto&& thumbmails) -> const TextureView* {
+        auto& data = thumbmails[id];
 
-    auto& data = _thumbmails[id];
-
-    if(!data) {
-        data = std::make_unique<ThumbmailData>();
-        query(id, *data);
-        return nullptr;
-    }
-
-    if(data->failed) {
-        return nullptr;
-    } else if(data->asset_ptr.is_loaded()) {
-        if(data->done.is_empty()) {
-            y_profile_zone("schedule render");
-            _render_thread.schedule([d = data.get()]() {
-                d->texture = d->render();
-                if(!(d->failed = d->texture.is_null())) {
-                    d->view = d->texture;
-                }
-            }, &data->done);
-        } else if(data->done.is_ready() && !data->failed) {
-            return &data->view;
+        if(!data) {
+            data = std::make_unique<ThumbmailData>();
+            query(id, *data);
+            return nullptr;
         }
-    }
 
-    return nullptr;
+        if(data->failed) {
+            return nullptr;
+        } else if(data->asset_ptr.is_loaded()) {
+            if(data->done.is_empty()) {
+                y_profile_zone("schedule render");
+                _render_thread.schedule([d = data.get()]() {
+                    d->texture = d->render();
+                    if(!(d->failed = d->texture.is_null())) {
+                        d->view = d->texture;
+                    }
+                }, &data->done);
+            } else if(data->done.is_ready() && !data->failed) {
+                return &data->view;
+            }
+        }
+
+        return nullptr;
+    });
 }
 
 usize ThumbmailRenderer::cached_thumbmails()  {
-    const auto lock = y_profile_unique_lock(_lock);
-    return _thumbmails.size();
+    return _thumbmails.locked([&](auto&& thumbmails) { return thumbmails.size(); });
 }
 
 void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
@@ -261,7 +260,7 @@ void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
 
         default:
             data.failed = true;
-            log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
+            log_msg(fmt("Unknown asset type {} for {}", asset_type, id.id()), Log::Error);
         break;
     }
 }

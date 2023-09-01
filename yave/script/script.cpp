@@ -109,7 +109,7 @@ void bind_ecs_types(sol::state_view state) {
     {
         auto type = state.new_usertype<ecs::EntityId>("EntityId");
 
-        type["__tostring"] = [](ecs::EntityId id) { return fmt("[%; %]", id.index(), id.version()); };
+        type["__tostring"] = [](ecs::EntityId id) { return fmt("[{}; {}]", id.index(), id.version()); };
     }
 
     {

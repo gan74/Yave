@@ -80,12 +80,14 @@ LifetimeManager::~LifetimeManager() {
     poll_cmd_buffers();
 
     y_debug_assert(_create_counter == _next);
-    y_always_assert(_in_flight.empty(), "CmdBuffer still in flight");
+    y_always_assert(_in_flight.locked([](auto&& in_flight) { return in_flight.is_empty(); }), "CmdBuffer still in flight");
 
-    for(auto& res : _to_destroy) {
-        y_always_assert(res.first == _next, "Resourse is still waiting on unsignaled fence.");
-        destroy_resource(res.second);
-    }
+    _to_destroy.locked([&](auto&& to_destroy) {
+        for(auto& res : to_destroy) {
+            y_always_assert(res.first == _next, "Resourse is still waiting on unsignaled fence.");
+            destroy_resource(res.second);
+        }
+    });
 }
 
 void LifetimeManager::shutdown_collector_thread() {
@@ -109,30 +111,30 @@ void LifetimeManager::poll_cmd_buffers() {
 
     {
         y_profile_zone("fence polling");
-        const auto lock = y_profile_unique_lock(_cmd_lock);
+        _in_flight.locked([&](auto&& in_flight) {
+            y_debug_assert(std::is_sorted(in_flight.begin(), in_flight.end(), compare_cmd_buffers));
 
-        y_debug_assert(std::is_sorted(_in_flight.begin(), _in_flight.end(), compare_cmd_buffers));
+            to_recycle = core::ScratchVector<CmdBufferData*>(in_flight.size());
 
-        to_recycle = core::ScratchVector<CmdBufferData*>(_in_flight.size());
+            next = _next;
+            while(!in_flight.is_empty()) {
+                CmdBufferData* data = in_flight.first();
+                if(data->resource_fence()._value != next) {
+                    break;
+                }
 
-        next = _next;
-        while(!_in_flight.empty()) {
-            CmdBufferData* data = _in_flight.front();
-            if(data->resource_fence()._value != next) {
-                break;
+                if(data->poll()) {
+                    in_flight.pop_front();
+                    ++next;
+
+                    to_recycle.emplace_back(data);
+                } else {
+                    break;
+                }
             }
 
-            if(data->poll()) {
-                _in_flight.pop_front();
-                ++next;
-
-                to_recycle.emplace_back(data);
-            } else {
-                break;
-            }
-        }
-
-        _next = next;
+            _next = next;
+        });
     }
 
     if(!to_recycle.is_empty()) {
@@ -150,17 +152,17 @@ void LifetimeManager::poll_cmd_buffers() {
 void LifetimeManager::clear_resources(u64 up_to) {
     y_profile();
 
-    core::Vector<ManagedResource> to_delete;
+    core::SmallVector<ManagedResource, 64> to_delete;
 
     {
         y_profile_zone("collection");
-        const auto lock = y_profile_unique_lock(_resources_lock);
-
-        y_debug_assert(std::is_sorted(_to_destroy.begin(), _to_destroy.end(), [](const auto& a, const auto& b) { return a.first < b.first; }));
-        while(!_to_destroy.empty() && _to_destroy.front().first <= up_to) {
-            to_delete.push_back(std::move(_to_destroy.front().second));
-            _to_destroy.pop_front();
-        }
+        _to_destroy.locked([&](auto&& to_destroy) {
+            y_debug_assert(std::is_sorted(to_destroy.begin(), to_destroy.end(), [](const auto& a, const auto& b) { return a.first < b.first; }));
+            while(!to_destroy.is_empty() && to_destroy.first().first <= up_to) {
+                to_delete.push_back(std::move(to_destroy.first().second));
+                to_destroy.pop_front();
+            }
+        });
     }
 
     y_profile_zone("clear");
@@ -171,7 +173,7 @@ void LifetimeManager::clear_resources(u64 up_to) {
 
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
     std::visit(
-        [](auto& res) {
+        [](auto&& res) {
             if constexpr(std::is_same_v<decltype(res), EmptyResource&>) {
                 y_fatal("Empty resource");
             } else if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
@@ -183,7 +185,7 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
             } else if constexpr(std::is_same_v<decltype(res), MaterialDrawData&>) {
                 res.recycle();
             } else {
-                // log_msg(fmt("destroying % %", ct_type_name<decltype(res)>(), (void*)res));
+                // log_msg(fmt("destroying {} {}", ct_type_name<decltype(res)>(), (void*)res));
                 vk_destroy(res.consume());
             }
         },
@@ -197,15 +199,15 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 void LifetimeManager::wait_cmd_buffers() {
     y_profile();
 
-    command_queue().submit(create_disposable_cmd_buffer()).wait();
+    _in_flight.locked([&](auto&& in_flight) {
+        for(CmdBufferData* data : in_flight) {
+            data->wait();
+        }
 
-    const auto lock = y_profile_unique_lock(_cmd_lock);
-    for(CmdBufferData* data : _in_flight) {
-        data->wait();
-    }
+        poll_cmd_buffers();
 
-    poll_cmd_buffers();
-    y_debug_assert(_in_flight.empty());
+        y_debug_assert(in_flight.is_empty());
+    });
 }
 
 ResourceFence LifetimeManager::create_fence() {
@@ -215,16 +217,14 @@ ResourceFence LifetimeManager::create_fence() {
 void LifetimeManager::register_for_polling(CmdBufferData* data) {
     bool collect = false;
 
-    {
-        const auto lock = y_profile_unique_lock(_cmd_lock);
+    _in_flight.locked([&](auto&& in_flight) {
+        y_debug_assert(std::find(in_flight.begin(), in_flight.end(), data) == in_flight.end());
 
-        y_debug_assert(std::find(_in_flight.begin(), _in_flight.end(), data) == _in_flight.end());
+        const auto it = std::lower_bound(in_flight.begin(), in_flight.end(), data, compare_cmd_buffers);
+        in_flight.insert(it, data);
 
-        const auto it = std::lower_bound(_in_flight.begin(), _in_flight.end(), data, compare_cmd_buffers);
-        _in_flight.insert(it, data);
-
-        collect = (_in_flight.front()->resource_fence()._value == _next);
-    }
+        collect = (in_flight.first()->resource_fence()._value == _next);
+    });
 
     unused(collect);
 #ifndef YAVE_MT_LIFETIME_MANAGER
@@ -235,13 +235,11 @@ void LifetimeManager::register_for_polling(CmdBufferData* data) {
 }
 
 usize LifetimeManager::pending_cmd_buffers() const {
-    const auto lock = y_profile_unique_lock(_cmd_lock);
-    return _in_flight.size();
+    return _in_flight.locked([](auto&& in_flight) { return in_flight.size(); });
 }
 
 usize LifetimeManager::pending_deletions() const {
-    const auto lock = y_profile_unique_lock(_resources_lock);
-    return _to_destroy.size();
+    return _to_destroy.locked([](auto&& to_destroy) { return to_destroy.size(); });
 }
 
 }

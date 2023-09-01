@@ -86,11 +86,11 @@ void ScriptPanel::on_gui() {
     auto& scripts = script_component->scripts();
 
     for(usize i = 0; i != scripts.size(); ++i) {
-        if(ImGui::Button(fmt_c_str(ICON_FA_EDIT "##%", i))) {
+        if(ImGui::Button(fmt_c_str(ICON_FA_EDIT "##{}", i))) {
             edit_script(scripts[i]);
         }
         ImGui::SameLine();
-        if(ImGui::Button(fmt_c_str(ICON_FA_TRASH "##%", i))) {
+        if(ImGui::Button(fmt_c_str(ICON_FA_TRASH "##{}", i))) {
             scripts.erase(scripts.begin() + i);
             break;
         }
@@ -120,7 +120,7 @@ void ScriptPanel::on_gui() {
     {
         if(_result && _result->done) {
             if(_result->result.is_error()) {
-                log_msg(fmt("Lua error: %", _result->result.error()), Log::Error);
+                log_msg(fmt("Lua error: {}", _result->result.error()), Log::Error);
                 _error = _result->result.error();
             }
             _result = nullptr;

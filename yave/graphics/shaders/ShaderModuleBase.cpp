@@ -86,7 +86,7 @@ static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::
         return false;
     }
     const std::string_view name = std::string_view(res.name);
-    if(name.size() > 7 && name.substr(name.size() - 7) == "_Inline") {
+    if(name.ends_with("_Inline")) {
         return true;
     }
     return false;
@@ -186,7 +186,7 @@ static core::ScratchPad<ShaderModuleBase::Attribute> create_attribs(const spirv_
         const auto& type = compiler.get_type(res.type_id);
 
         const std::string_view name = std::string_view(res.name);
-        const bool packed = (name.size() > 7 && name.substr(name.size() - 7) == "_Packed");
+        const bool packed = name.ends_with("_Packed");
         attribs[attrib_count++] = ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype), packed};
     }
     return attribs;
@@ -214,13 +214,13 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
     /*auto print_resources = [&](auto resources) {
         for(const auto& buffer : resources) {
             const auto& type = compiler.get_type(buffer.base_type_id);
-            log_msg(fmt("%:", buffer.name.data()), Log::Warning);
-            log_msg(fmt("   storage: %", compiler.get_storage_class(buffer.id)), Log::Warning);
-            log_msg(fmt("   type base: %", type.basetype), Log::Warning);
-            log_msg(fmt("   type storage: %", type.storage), Log::Warning);
+            log_msg(fmt("{}:", buffer.name.data()), Log::Warning);
+            log_msg(fmt("   storage: {}", compiler.get_storage_class(buffer.id)), Log::Warning);
+            log_msg(fmt("   type base: {}", type.basetype), Log::Warning);
+            log_msg(fmt("   type storage: {}", type.storage), Log::Warning);
             const auto& bitset = compiler.get_decoration_bitset(buffer.id);
             bitset.for_each_bit([](u32 bit) {
-                log_msg(fmt("   decoration: %", bit), Log::Warning);
+                log_msg(fmt("   decoration: {}", bit), Log::Warning);
             });
         }
     };

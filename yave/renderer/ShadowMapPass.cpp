@@ -88,9 +88,9 @@ struct SubPass {
 };
 
 static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
-                            math::Vec2ui offset, u32 size, // from allocator
-                            const SceneView& light_view,
-                            const math::Vec2& uv_mul) {
+                              math::Vec2ui offset, u32 size, // from allocator
+                              const SceneView& light_view,
+                              const math::Vec2& uv_mul) {
     y_profile();
 
     if(!size) {
@@ -122,7 +122,7 @@ static math::Matrix4<> flip_for_backfaces(math::Matrix4<> proj) {
 
 
 static Camera spotlight_camera(const TransformableComponent& tr, const SpotLightComponent& light) {
-    const float z_near = 0.1f;
+    const float z_near = light.min_radius();
 
     Camera camera;
     camera.set_view(math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()));

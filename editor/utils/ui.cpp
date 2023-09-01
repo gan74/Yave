@@ -90,7 +90,7 @@ ImGuiKey to_imgui_key(Key k) {
         break;
     }
 
-    //log_msg(fmt("Unknown key pressed: %", key_name(k)), Log::Warning);
+    //log_msg(fmt("Unknown key pressed: {}", key_name(k)), Log::Warning);
     return ImGuiKey_None;
 }
 
@@ -221,7 +221,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
     const math::Vec2 padded_button_size =  button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f;
 
-    ImGui::PushID(fmt_c_str("%_%_%", id.id(), uenum(type), text));
+    ImGui::PushID(fmt_c_str("{}_{}_{}", id.id(), uenum(type), text));
     ImGui::BeginGroup();
 
     const auto name = asset_store().name(id);
@@ -246,7 +246,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
             ret = ImGui::Button(ICON_FA_EXCLAMATION_CIRCLE, padded_button_size);
             ImGui::PopStyleColor();
             if(ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Asset with id %016" PRIx64 " could not be loaded", id.id());
+                ImGui::SetTooltip(fmt_c_str("Asset with id {:#016x} could not be loaded", id.id()));
             }
         }
     }
@@ -334,7 +334,7 @@ bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     }
 
-    const core::String name = id.is_valid() ? fmt("% %", world.entity_icon(id), world.entity_name(id)) : "No entity";
+    const core::String name = id.is_valid() ? fmt("{} {}", world.entity_icon(id), world.entity_name(id)) : "No entity";
     const bool combo = ImGui::BeginCombo("##combo", name.data());
 
     if(!id.is_valid()) {

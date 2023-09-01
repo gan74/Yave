@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-CmdTimingRecorder::CmdTimingRecorder(const CmdBufferRecorder& recorder) : _query_pool(recorder.vk_cmd_buffer()) {
+CmdTimingRecorder::CmdTimingRecorder(const CmdBufferRecorderBase& recorder) : _query_pool(recorder.vk_cmd_buffer()) {
 }
 
 VkCommandBuffer CmdTimingRecorder::vk_cmd_buffer() const {

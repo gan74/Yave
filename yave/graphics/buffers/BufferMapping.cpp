@@ -63,18 +63,5 @@ const void* BufferMappingBase::raw_data() const {
     return _mapping;
 }
 
-void BufferMappingBase::stage(CmdBufferRecorder& recorder, const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
-    const u64 dst_size = dst.byte_size();
-
-    const StagingBuffer buffer(dst_size);
-    auto map = buffer.map_bytes(MappingAccess::WriteOnly);
-    if(!data) {
-        std::memset(map.raw_data(), 0, dst_size);
-    } else {
-        std::memcpy(map.raw_data(), data, dst_size);
-    }
-    recorder.copy(buffer, dst);
-}
-
 }
 

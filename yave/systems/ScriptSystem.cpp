@@ -53,7 +53,7 @@ void ScriptSystem::update(float) {
             try {
                 _state.safe_script(one_shot.code);
             } catch(std::exception& e) {
-                log_msg(fmt("Lua error in one shot: %", e.what()), Log::Error);
+                log_msg(fmt("Lua error in one shot: {}", e.what()), Log::Error);
             }
         }
     }
@@ -63,7 +63,7 @@ void ScriptSystem::update(float) {
         try {
             _state.safe_script(script.code);
         } catch(std::exception& e) {
-            log_msg(fmt("Lua error in %: %", script.name, e.what()), Log::Error);
+            log_msg(fmt("Lua error in {}: {}", script.name, e.what()), Log::Error);
         }
     }
 

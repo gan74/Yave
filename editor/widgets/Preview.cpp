@@ -184,7 +184,7 @@ void Preview::on_gui() {
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& src = self->resources().image_base(output_image);
             output = UiTexture(src.format(), src.image_size().to<2>());
-            recorder.barriered_copy(src, output.texture());
+            recorder.copy(src, output.texture());
         });
 
 

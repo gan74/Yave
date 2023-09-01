@@ -23,7 +23,6 @@ SOFTWARE.
 #define Y_CORE_STRING_H
 
 #include <y/utils.h>
-#include <y/utils/format.h>
 #include <y/utils/detect.h>
 
 #include <string>
@@ -133,6 +132,7 @@ class String {
 
         ~String();
 
+
         void set_min_capacity(usize cap);
 
         usize size() const;
@@ -145,6 +145,9 @@ class String {
         void shrink(usize new_size);
         void grow(usize new_size, char c);
         void resize(usize new_size, char c = ' ');
+
+        static String replaced(std::string_view str, std::string_view from, std::string_view to);
+        String replaced(std::string_view from, std::string_view to) const;
 
         char* data();
         const char* data() const;
@@ -260,36 +263,7 @@ std::string_view trim_right(std::string_view str);
 std::string_view trim(std::string_view str);
 
 
-namespace detail {
-template<typename T>
-using has_append_t = decltype(std::declval<String&>().operator+=(std::declval<const T&>()));
-}
-
-template<typename T>
-inline core::String operator+(core::String l, T&& r) {
-    if constexpr(is_detected_v<detail::has_append_t, T>) {
-        l += y_fwd(r);
-    } else {
-        fmt_into(l, "%", y_fwd(r));
-    }
-    return l;
-}
-
-inline core::String operator+(std::string_view l, const core::String& r) {
-    core::String s;
-    fmt_into(s, "%""%", l, r);
-    return s;
-}
-
-
 } // core
-
-template<typename... Args>
-core::String fmt_to_owned(const char* fmt_str, Args&&... args) {
-    core::String owned;
-    fmt_into(owned, fmt_str, y_fwd(args)...);
-    return owned;
-}
 
 }
 

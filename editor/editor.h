@@ -100,7 +100,7 @@ void register_action(EditorAction* action);
             action_register_t() {                                                                       \
                 static constexpr std::string_view names[] = { name, __VA_ARGS__ };                      \
                 static editor::EditorAction action = {                                                  \
-                    names[0], desc, (flags), yave::KeyCombination(shortcut), []{ func(); },             \
+                    names[0], desc, (flags), yave::KeyCombination(shortcut), [] { func(); },             \
                     y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr           \
                 };                                                                                      \
                 editor::detail::register_action(&action);                                               \

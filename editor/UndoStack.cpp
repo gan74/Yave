@@ -39,7 +39,7 @@ namespace editor {
     for(const auto& comp : prefab.components()) {
         using CC = ecs::ComponentBox<TransformableComponent>;
         if(const auto* tr = dynamic_cast<const CC*>(comp.get())) {
-            log_msg(fmt("%", tr->component().position()));
+            log_msg(fmt("{}", tr->component().position()));
         }
     }
 }*/
@@ -83,7 +83,7 @@ class UndoStackWidget : public Widget {
                 //const auto& stack = undo_stack()._stack;
                 //const usize cursor = stack.size() - undo_stack()._cursor - 1;
                 //for(usize i = 0; i != stack.size(); ++i) {
-                //    ImGui::Selectable(fmt_c_str("Entity #%", stack[i].id.index()), i == cursor);
+                //    ImGui::Selectable(fmt_c_str("Entity #{}", stack[i].id.index()), i == cursor);
                 //}
                 ImGui::EndListBox();
             }

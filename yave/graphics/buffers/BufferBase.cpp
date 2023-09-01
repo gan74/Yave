@@ -38,7 +38,7 @@ static VkBuffer create_buffer(u64 byte_size, VkBufferUsageFlags usage) {
     y_debug_assert(byte_size);
     if(usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
         if(byte_size > device_properties().max_uniform_buffer_size) {
-            y_fatal("Uniform buffer size exceeds maxUniformBufferRange (%).", device_properties().max_uniform_buffer_size);
+            y_fatal("Uniform buffer size exceeds maxUniformBufferRange ({}).", device_properties().max_uniform_buffer_size);
         }
     }
 

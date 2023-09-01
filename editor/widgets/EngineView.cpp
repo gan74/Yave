@@ -100,8 +100,8 @@ EngineView::~EngineView() {
 }
 
 CmdTimingRecorder* EngineView::timing_recorder() const {
-    if(!_time_recs.empty() && _time_recs.front()->is_data_ready()) {
-        return _time_recs.front().get();
+    if(!_time_recs.is_empty() && _time_recs.first()->is_data_ready()) {
+        return _time_recs.first().get();
     }
     return nullptr;
 }
@@ -182,7 +182,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
             }
             const auto& src = self->resources().image_base(output_image);
             output = UiTexture(src.format(), src.image_size().to<2>());
-            recorder.barriered_copy(src, output.texture());
+            recorder.copy(src, output.texture());
         });
     }
 

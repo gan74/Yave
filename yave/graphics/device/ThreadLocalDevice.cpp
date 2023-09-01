@@ -45,6 +45,10 @@ CmdBufferRecorder ThreadLocalDevice::create_disposable_cmd_buffer() const {
     return _disposable_cmd_pool.create_buffer();
 }
 
+TransferCmdBufferRecorder ThreadLocalDevice::create_disposable_transfer_cmd_buffer() const {
+    return _disposable_cmd_pool.create_transfer_buffer();
+}
+
 ThreadLocalLifetimeManager& ThreadLocalDevice::lifetime_manager() const {
     return _lifetime_manager;
 }

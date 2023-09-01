@@ -36,7 +36,7 @@ template<typename T>
 using has_no_serde3_t = decltype(std::declval<T>()._y_serde3_no_serde);
 
 template<typename T>
-static inline constexpr bool has_no_serde3_impl() {
+static inline consteval bool has_no_serde3_impl() {
     if constexpr(is_detected_v<has_no_serde3_t, T>) {
         return T::_y_serde3_no_serde;
     }
@@ -92,7 +92,7 @@ struct IsProperty<detail::Property<T, G, S>> {
     static constexpr bool value = true;
 };
 
-template<typename T, typename value_type = remove_cvref_t<typename T::value_type>>
+template<typename T, typename value_type = std::remove_cvref_t<typename T::value_type>>
 constexpr bool use_collection_fast_path =
         (has_resize_v<T> || has_emplace_back_v<T>) &&
         std::is_pointer_v<decltype(std::declval<T>().begin())> &&
@@ -101,10 +101,10 @@ constexpr bool use_collection_fast_path =
         !std::is_pointer_v<value_type>;
 
 template<typename T>
-static constexpr bool is_pod_base_v = std::is_trivially_copyable_v<remove_cvref_t<T>> && std::is_trivially_copy_constructible_v<remove_cvref_t<T>>;
+static constexpr bool is_pod_base_v = std::is_trivially_copyable_v<std::remove_cvref_t<T>> && std::is_trivially_copy_constructible_v<std::remove_cvref_t<T>>;
 
 template<typename T>
-constexpr bool is_pod_iterable() {
+consteval bool is_pod_iterable() {
     if constexpr(is_iterable_v<T>) {
         using value_type = decltype(*std::declval<T>().begin());
         return is_pod_base_v<value_type>;
@@ -116,10 +116,10 @@ constexpr bool is_pod_iterable() {
 
 // Warning: some types like Range and Span are can be POD (Span is handled separatly tho)
 template<typename T>
-static constexpr bool is_pod_v = detail::is_pod_base_v<T> && detail::is_pod_iterable<remove_cvref_t<T>>();
+static constexpr bool is_pod_v = detail::is_pod_base_v<T> && detail::is_pod_iterable<std::remove_cvref_t<T>>();
 
 template<typename T>
-static constexpr bool is_property_v = detail::IsProperty<remove_cvref_t<T>>::value;
+static constexpr bool is_property_v = detail::IsProperty<std::remove_cvref_t<T>>::value;
 
 }
 }

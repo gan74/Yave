@@ -46,7 +46,7 @@ struct Removed {};
 namespace traits {
 template<typename T>
 struct component_type {
-    using raw_type = remove_cvref_t<T>;
+    using raw_type = std::remove_cvref_t<T>;
     using type = const raw_type;
     static constexpr bool required = true;
     static constexpr bool changed = false;

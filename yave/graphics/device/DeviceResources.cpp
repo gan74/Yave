@@ -182,7 +182,7 @@ static Texture create_white_noise(usize size = 256) {
 
     core::DebugTimer _("create_white_noise()");
 
-    std::unique_ptr<u32[]> data = std::make_unique<u32[]>(size * size);
+    auto data = std::make_unique_for_overwrite<u32[]>(size * size);
 
     math::FastRandom rng;
     std::generate_n(data.get(), size * size, rng);
@@ -220,8 +220,8 @@ DeviceResources::DeviceResources() {
     {
         y_profile_zone("Shaders");
         for(usize i = 0; i != spirv_count; ++i) {
-            const auto file_name = fmt("%.spv", spirv_names[i]);
-            _spirv[i] = SpirVData::deserialized(io2::File::open(file_name).expected(fmt_c_str("Unable to open SPIR-V file (%).", file_name)));
+            const auto file_name = fmt("{}.spv", spirv_names[i]);
+            _spirv[i] = SpirVData::deserialized(io2::File::open(file_name).expected(fmt_c_str("Unable to open SPIR-V file ({}).", file_name)));
         }
 
         for(usize i = 0; i != compute_count; ++i) {
@@ -244,7 +244,7 @@ DeviceResources::DeviceResources() {
                     .set_primitive_type(data.primitive_type);
                 ;
             _material_templates[i] = MaterialTemplate(std::move(template_data));
-            _material_templates[i].set_name(fmt_c_str("% | %", spirv_names[data.vert], spirv_names[data.frag]));
+            _material_templates[i].set_name(fmt_c_str("{} | {}", spirv_names[data.vert], spirv_names[data.frag]));
         }
     }
 

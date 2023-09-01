@@ -9,7 +9,6 @@ struct SurfaceInfo {
     vec3 albedo;
 
     float perceptual_roughness;
-    float roughness;
     float metallic;
 
     vec3 F0;
@@ -91,7 +90,7 @@ struct SpotLight {
     float min_radius;
 
     vec2 att_scale_offset;
-    uint padding_0;
+    float sin_angle;
     uint shadow_map_index;
 
     vec3 encl_sphere_center;
@@ -100,6 +99,7 @@ struct SpotLight {
 
 struct ShadowMapParams {
     mat4 view_proj;
+
     vec2 uv_offset;
     vec2 uv_mul;
 
@@ -141,10 +141,6 @@ vec4 saturate(vec4 x) {
 
 float sqr(float x) {
     return x * x;
-}
-
-float noise(vec2 co) {
-    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 uint hash(uint x) {
@@ -202,25 +198,6 @@ float luminance(vec3 rgb) {
     return dot(rgb, vec3(0.2126, 0.7152, 0.0722));
 }
 
-bool intersect_ray_sphere(vec3 origin, vec3 dir, float radius, out vec2 intersections) {
-    const float a = dot(dir, dir);
-    const float b = 2.0 * dot(dir, origin);
-    const float c = dot(origin, origin) - sqr(radius);
-    const float d = sqr(b) - 4.0 * a * c;
-
-    if (d < 0.0) {
-        intersections = vec2(1e5, -1e5);
-        return false;
-    }
-
-    intersections = vec2(
-            (-b - sqrt(d)) / (2.0 * a),
-            (-b + sqrt(d)) / (2.0 * a)
-        );
-
-    return true;
-}
-
 vec4 plane(vec3 p0, vec3 p1, vec3 p2) {
     const vec3 n = normalize(cross(p0 - p1, p2 - p1));
     return vec4(-n, dot(n, p1));
@@ -255,6 +232,22 @@ vec2 intersect_sphere(vec3 center, float radius, vec3 origin, vec3 dir) {
         }
     }
     return vec2(-1.0, 0.0);
+}
+
+// https://iquilezles.org/articles/intersectors/
+bool intersect_ray_sphere(vec3 ray_origin, vec3 dir, vec3 pos, float radius, out vec2 intersections) {
+    const vec3 oc = ray_origin - pos;
+    const float b = -dot(oc, dir);
+    const float c = dot(oc, oc) - sqr(radius);
+    float h = sqr(b) - c;
+    if(h < 0.0) {
+        intersections = vec2(0.0);
+        return false;
+    }
+
+    h = sqrt(h);
+    intersections = vec2(b - h, b + h);
+    return true;
 }
 
 vec3 unpack_normal_map(vec2 normal) {

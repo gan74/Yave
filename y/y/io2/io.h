@@ -60,8 +60,8 @@ class Reader : NonCopyable {
         }
 
         template<typename T>
-        core::Result<remove_cvref_t<T>, usize> read_one() {
-            remove_cvref_t<T> t;
+        core::Result<std::remove_cvref_t<T>, usize> read_one() {
+            std::remove_cvref_t<T> t;
             if(const auto r = read_one(t); !r) {
                 return core::Err(r.error());
             }

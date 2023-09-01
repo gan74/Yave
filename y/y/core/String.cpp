@@ -235,6 +235,30 @@ void String::resize(usize new_size, char c) {
 }
 
 
+String String::replaced(std::string_view str, std::string_view from, std::string_view to) {
+    String repl;
+    repl.set_min_capacity(str.size() + to.size() * 2);
+
+    usize beg = 0;
+    for(;;) {
+        const std::string_view remaining = str.substr(beg);
+        const auto it = remaining.find(from);
+        if(it == std::string_view::npos) {
+            repl += remaining;
+            break;
+        } else {
+            repl += str.substr(beg, it);
+            repl += to;
+            beg += it + from.size();
+        }
+    }
+    return repl;
+}
+
+String String::replaced(std::string_view from, std::string_view to) const {
+    return replaced(view(), from, to);
+}
+
 char* String::data() {
     return is_long() ? _l.data : _s.data;
 }
@@ -451,7 +475,7 @@ std::string_view trim(std::string_view str) {
 Vector<u32> String::to_unicode() const {
     usize si = size();
     const char* dat = data();
-    auto utf8 = vector_with_capacity<u32>((si * 2) / 3);
+    auto utf8 = Vector<u32>::with_capacity((si * 2) / 3);
     while(dat < end()) {
         usize len = utf8_len(*dat);
         //u32 buffer = c & (0xFF >> len);

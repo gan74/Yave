@@ -109,7 +109,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         IM_CHECK_NE(ids.size(), 0_uu);
         const ecs::EntityId id = ids[ids.size() / 2];
 
-        ctx->ItemClick(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###%", id.as_u64()), ImGuiMouseButton_Right);
+        ctx->ItemClick(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###{}", id.as_u64()), ImGuiMouseButton_Right);
         ctx->ItemClick("//$FOCUSED/Rename");
 
         ctx->SetRef("//Rename##1");
@@ -117,7 +117,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->KeyChars("flubudu");
         ctx->ItemClick("Ok");
 
-        const core::String label = ctx->ItemInfo(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###%", id.as_u64()))->DebugLabel;
+        const core::String label = ctx->ItemInfo(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###{}", id.as_u64()))->DebugLabel;
         IM_CHECK_EQ(label.starts_with(ICON_FA_DATABASE " flubudu"), true);
     };
 
@@ -128,7 +128,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
         {
             ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
-            ctx->ItemClick(fmt_c_str("**/###%", id.as_u64()), ImGuiMouseButton_Right);
+            ctx->ItemClick(fmt_c_str("**/###{}", id.as_u64()), ImGuiMouseButton_Right);
             ctx->ItemClick("//$FOCUSED/" ICON_FA_TRASH " Delete");
             ctx->ItemClick("//$FOCUSED/Cancel");
         }
@@ -137,7 +137,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
         {
             ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
-            ctx->ItemClick(fmt_c_str("**/###%", id.as_u64()), ImGuiMouseButton_Right);
+            ctx->ItemClick(fmt_c_str("**/###{}", id.as_u64()), ImGuiMouseButton_Right);
             ctx->ItemClick("//$FOCUSED/" ICON_FA_TRASH " Delete");
             ctx->ItemClick("//$FOCUSED/Ok");
         }
@@ -171,9 +171,9 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
         ImGuiTestItemList items;
         ctx->GatherItems(&items, "");
-        log_msg(fmt("% items", items.size()));
+        log_msg(fmt("{} items", items.size()));
         for(const ImGuiTestItemInfo& info : items) {
-            log_msg(fmt("  %: '%', table: %", info.ID, info.DebugLabel, !!ImGui::TableFindByID(info.ID)));
+            log_msg(fmt("  {}: '{}', table: {}", info.ID, info.DebugLabel, !!ImGui::TableFindByID(info.ID)));
         }
         //const ImGuiTestItemInfo* info = ctx->ItemInfoOpenFullPath("**/##filetable");
         //IM_CHECK_NE(info->ID, 0);
@@ -206,7 +206,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
         {
             ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
-            ctx->ItemClick(fmt_c_str("**/###%", id.as_u64()));
+            ctx->ItemClick(fmt_c_str("**/###{}", id.as_u64()));
         }
 
         ctx->Yield();
@@ -241,9 +241,9 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
         {
             ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
-            const ImGuiTestItemInfo* info = ctx->ItemInfoOpenFullPath(fmt_c_str("**/###%", id.as_u64()));
+            const ImGuiTestItemInfo* info = ctx->ItemInfoOpenFullPath(fmt_c_str("**/###{}", id.as_u64()));
             IM_CHECK_NE(info->ID, 0u);
-            IM_CHECK_STR_EQ(info->DebugLabel, fmt_c_str(ICON_FA_CUBE " shalg###%", id.as_u64()));
+            IM_CHECK_STR_EQ(info->DebugLabel, fmt_c_str(ICON_FA_CUBE " shalg###{}", id.as_u64()));
         }
     };
 

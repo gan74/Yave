@@ -53,41 +53,59 @@ struct RaiiCounter : NonCopyable {
 };
 
 y_test_func("RingQueue creation") {
-    const usize cap = 256;
-    const RingQueue<int> q(cap);
+    const RingQueue<int> q;
     y_test_assert(q.size() == 0);
-    y_test_assert(q.capacity() == cap);
+    y_test_assert(q.capacity() == 0);
 }
 
 y_test_func("RingQueue push/pop") {
     const usize cap = 256;
-    RingQueue<usize> q(cap);
+    RingQueue<usize> q;
 
     for(usize i = 0; i != cap / 2; ++i) {
-        q.push(i);
+        q.push_back(i);
         y_test_assert(q.last() == i);
         y_test_assert(q.size() == i + 1);
     }
     for(usize i = 0; i != cap / 2; ++i) {
-        y_test_assert(q.pop() == i);
+        y_test_assert(q.pop_front() == i);
     }
 }
 
 y_test_func("RingQueue full") {
     const usize cap = 256;
-    RingQueue<usize> q(cap);
+    RingQueue<usize> q;
     y_test_assert(q.is_empty());
 
     for(usize i = 0; i != cap; ++i) {
-        q.push(i);
+        q.push_back(i);
     }
 
     y_test_assert(!q.is_empty());
-    y_test_assert(q.is_full());
     y_test_assert(q.size() == cap);
 
     for(usize i = 0; i != cap; ++i) {
-        y_test_assert(q.pop() == i);
+        y_test_assert(q.pop_front() == i);
+    }
+}
+
+y_test_func("RingQueue insert") {
+    RingQueue<int> q;
+    for(usize k = 0; k != 70; ++k) {
+        q.push_back(0);
+        q.push_back(1);
+        q.push_back(2);
+        q.push_back(4);
+        q.push_back(5);
+        q.push_back(6);
+
+        const auto it = std::find(q.begin(), q.end(), 4);
+        y_test_assert(*it == 4);
+        q.insert(it, 3);
+
+        for(int i = 0; !q.is_empty(); ++i) {
+            y_test_assert(q.pop_front() == i);
+        }
     }
 }
 

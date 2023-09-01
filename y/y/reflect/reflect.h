@@ -146,7 +146,7 @@ inline constexpr void explore_members(F&& func) {
 }
 
 template<typename T>
-inline constexpr auto list_members() {
+inline consteval auto list_members() {
     if constexpr(has_reflect_v<T>) {
         return T::_y_reflect_static();
     } else {
@@ -155,7 +155,7 @@ inline constexpr auto list_members() {
 }
 
 template<typename T>
-inline constexpr usize member_count() {
+inline consteval usize member_count() {
     return std::tuple_size_v<decltype(list_members<T>())>;
 }
 
@@ -171,11 +171,11 @@ static constexpr std::string_view _y_reflect_type_name = #Type;                 
 
 #define y_reflect_empty(Type)                                                                               \
 y_reflect_base(Type)                                                                                        \
-template<typename = void> static inline constexpr auto _y_reflect_static() const { return std::tuple<>{}; }
+template<typename = void> static inline consteval auto _y_reflect_static() const { return std::tuple<>{}; }
 
 #define y_reflect_static(Type, ...)                                                                         \
 y_reflect_base(Type);                                                                                       \
-template<typename = void> static inline constexpr auto _y_reflect_static() {                                \
+template<typename = void> static inline consteval auto _y_reflect_static() {                                \
     using _y_refl_self_type = Type;                                                                         \
     return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_member, __VA_ARGS__))};                      \
 }

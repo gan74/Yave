@@ -245,7 +245,7 @@ class WritableArchive final {
             static_assert(std::is_const_v<T>);
             static_assert(is_iterable_v<T>);
 
-            if constexpr(detail::use_collection_fast_path<remove_cvref_t<T>>) {
+            if constexpr(detail::use_collection_fast_path<std::remove_cvref_t<T>>) {
                 y_try(write_one(size_type(object.object.size())));
                 if(object.object.size()) {
                     const auto header = detail::build_header(y_create_named_object(*object.object.begin(), detail::collection_version_string));

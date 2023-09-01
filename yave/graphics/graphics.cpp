@@ -37,9 +37,9 @@ SOFTWARE.
 #include <yave/graphics/device/MaterialAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
 
+#include <y/concurrent/Mutexed.h>
 #include <y/core/ScratchPad.h>
 
-#include <mutex>
 
 namespace yave {
 namespace device {
@@ -79,10 +79,7 @@ struct {
 struct {
 } extensions;
 
-struct {
-    std::mutex lock;
-    core::Vector<std::pair<std::unique_ptr<ThreadLocalDevice>, ThreadDevicePtr*>> devices;
-} threads;
+concurrent::Mutexed<core::Vector<std::pair<std::unique_ptr<ThreadLocalDevice>, ThreadDevicePtr*>>> thread_devices;
 
 }
 
@@ -114,9 +111,9 @@ static void init_vk_device() {
     const u32 main_queue_index = queue_family_index(queue_families, graphic_queue_flags);
 
     const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
-    const usize queue_count = std::min(main_queue_family_properties.queueCount, 5u);
+    const usize queue_count = std::min(main_queue_family_properties.queueCount, 5u); // 1 main + 4 loading
 
-    auto extensions = core::vector_with_capacity<const char*>(4);
+    auto extensions = core::Vector<const char*>::with_capacity(4);
     extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
@@ -231,11 +228,12 @@ void destroy_device() {
     y_always_assert(device::active_pools == 1, "Not all pools have been destroyed");
     {
         y_profile_zone("collecting thread devices");
-        const auto lock = y_profile_unique_lock(device::threads.lock);
-        for(const auto& p : device::threads.devices) {
-            *p.second = nullptr;
-        }
-        device::threads.devices.clear();
+        device::thread_devices.locked([](auto&& devices) {
+            for(const auto& p : devices) {
+                *p.second = nullptr;
+            }
+            devices.clear();
+        });
     }
     y_always_assert(device::active_pools == 0, "Not all pools have been destroyed");
 
@@ -279,15 +277,16 @@ ThreadDevicePtr thread_device() {
     static thread_local y_defer({
         if(auto* device = thread_device) {
             y_debug_assert(device_initialized());
-            const auto lock = y_profile_unique_lock(device::threads.lock);
-            const auto it = std::find_if(device::threads.devices.begin(), device::threads.devices.end(), [&](const auto& p) { return p.first.get() == device; });
+            device::thread_devices.locked([&](auto&& devices) {
+                const auto it = std::find_if(devices.begin(), devices.end(), [&](const auto& p) { return p.first.get() == device; });
 
-            y_always_assert(it != device::threads.devices.end(), "ThreadLocalDevice not found.");
-            y_debug_assert(*it->second == device);
+                y_always_assert(it != devices.end(), "ThreadLocalDevice not found.");
+                y_debug_assert(*it->second == device);
 
-            *it->second = nullptr;
-            device::threads.devices.erase_unordered(it);
-            y_always_assert(device::active_pools == device::threads.devices.size(), "Invalid number of pools");
+                *it->second = nullptr;
+                devices.erase_unordered(it);
+                y_always_assert(device::active_pools == devices.size(), "Invalid number of pools");
+            });
         }
     });
 
@@ -297,8 +296,9 @@ ThreadDevicePtr thread_device() {
         auto device = std::make_unique<ThreadLocalDevice>();
         thread_device = device.get();
 
-        const auto lock = y_profile_unique_lock(device::threads.lock);
-        device::threads.devices.emplace_back(std::move(device), &thread_device);
+        device::thread_devices.locked([&](auto&& devices) {
+            devices.emplace_back(std::move(device), &thread_device);
+        });
     }
 
     return thread_device;
@@ -373,6 +373,10 @@ const PhysicalDevice& physical_device() {
 
 CmdBufferRecorder create_disposable_cmd_buffer() {
     return thread_device()->create_disposable_cmd_buffer();
+}
+
+TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer() {
+    return thread_device()->create_disposable_transfer_cmd_buffer();
 }
 
 DeviceMemoryAllocator& device_allocator() {
