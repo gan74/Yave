@@ -57,8 +57,10 @@ static std::array<TextureView, MaterialData::texture_count> material_texture_vie
 
 
 MaterialAllocator::MaterialAllocator() : _materials(max_materials) {
-    _free.set_min_size(_materials.size());
-    std::iota(_free.begin(), _free.end(), 0);
+    _free.locked([&](auto&& free) {
+        free.set_min_size(_materials.size());
+        std::iota(free.begin(), free.end(), 0);
+    });
 
 #ifdef Y_DEBUG
     if(const auto* debug = debug_utils()) {
@@ -68,7 +70,9 @@ MaterialAllocator::MaterialAllocator() : _materials(max_materials) {
 }
 
 MaterialAllocator::~MaterialAllocator() {
-    y_debug_assert(_free.size() == _materials.size());
+    _free.locked([&](auto&& free) {
+        y_always_assert(free.size() == _materials.size(), "Not all materials have been released");
+    });
 }
 
 MaterialDrawData MaterialAllocator::allocate_material(const MaterialData& material) {
@@ -85,12 +89,13 @@ MaterialDrawData MaterialAllocator::allocate_material(const MaterialData& materi
         }
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
-
-    y_always_assert(!_free.is_empty(), "Max number of materials reached");
-    const u32 index = _free.pop();
+    const u32 index = _free.locked([&](auto&& free) {
+        y_always_assert(!free.is_empty(), "Max number of materials reached");
+        return free.pop();
+    });
 
     {
+        Y_TODO(does map need to be synchronized?)
         auto mapping = _materials.map(MappingAccess::ReadWrite);
         mapping[index] = data;
     }
@@ -106,10 +111,9 @@ void MaterialAllocator::recycle(MaterialDrawData* data) {
     y_debug_assert(!data->is_null());
     y_debug_assert(data->_parent == this);
 
-    {
-        const auto lock = y_profile_unique_lock(_lock);
-        _free << data->_index;
-    }
+    _free.locked([&](auto&& free) {
+        free << data->_index;
+    });
 
     for(const auto& tex : data->_textures) {
         texture_library().remove_texture(tex);

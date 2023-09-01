@@ -111,7 +111,7 @@ DescriptorArray::DescriptorArray(VkDescriptorType type, u32 max_desc) :
 
 #ifdef Y_DEBUG
     if(const auto* debug = debug_utils()) {
-        debug->set_resource_name(_set.vk_descriptor_set(), fmt_c_str("Descriptor Array [%]", _type));
+        debug->set_resource_name(_set.vk_descriptor_set(), fmt_c_str("Descriptor Array [{}]", _type));
     }
 #endif
 }

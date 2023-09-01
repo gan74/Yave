@@ -35,8 +35,6 @@ class TextureLibrary final : public DescriptorArray {
 
         u32 add_texture(const TextureView& tex);
         void remove_texture(const TextureView& tex);
-
-        mutable std::mutex _big_lock;
 };
 
 }

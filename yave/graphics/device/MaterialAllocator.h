@@ -30,8 +30,8 @@ SOFTWARE.
 #include <yave/graphics/descriptors/uniforms.h>
 
 #include <y/core/Vector.h>
+#include <y/concurrent/Mutexed.h>
 
-#include <mutex>
 
 namespace yave {
 
@@ -54,9 +54,8 @@ class MaterialAllocator : NonMovable {
         void recycle(MaterialDrawData* data);
 
         TypedBuffer<uniform::MaterialData, BufferUsage::StorageBit, MemoryType::CpuVisible> _materials;
-        core::Vector<u32> _free;
+        concurrent::Mutexed<core::Vector<u32>> _free;
 
-        mutable std::mutex _lock;
 };
 
 }
