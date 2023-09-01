@@ -121,7 +121,7 @@ void FrameGraphFrameResources::flush_mapped_buffers(CmdBufferRecorder& recorder)
 
     for(const auto& buffer : _buffers) {
         if(buffer.buffer && buffer.is_mapped()) {
-            recorder.copy(staging_buffer(buffer), TransientSubBuffer<BufferUsage::TransferDstBit>(*buffer.buffer) );
+            recorder.unbarriered_copy(staging_buffer(buffer), TransientSubBuffer<BufferUsage::TransferDstBit>(*buffer.buffer) );
         }
     }
 }

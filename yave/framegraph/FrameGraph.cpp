@@ -122,7 +122,7 @@ static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, Frame
     } else {
         to_barrier.erase(src);
         to_barrier.erase(dst);
-        recorder.barriered_copy(resources.image_base(src), resources.image_base(dst));
+        recorder.copy(resources.image_base(src), resources.image_base(dst));
     }
 }
 

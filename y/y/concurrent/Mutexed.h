@@ -49,10 +49,6 @@ class Mutexed : NonCopyable {
             return func(_obj);
         }
 
-        const T& get() const {
-            return _obj;
-        }
-
     private:
         T _obj;
         mutable Lock _lock;

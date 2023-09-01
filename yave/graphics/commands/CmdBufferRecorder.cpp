@@ -461,7 +461,7 @@ void CmdBufferRecorder::full_barrier() {
     );
 }
 
-void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
+void CmdBufferRecorder::copy(const ImageBase& src,  const ImageBase& dst) {
     y_always_assert((src.usage() & ImageUsage::TransferSrcBit) == ImageUsage::TransferSrcBit, "src should have TransferSrcBit usage");
     y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
 
@@ -500,7 +500,7 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
     }
 }
 
-void CmdBufferRecorder::copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
+void CmdBufferRecorder::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
     y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match.");
 
     VkBufferCopy copy = {};

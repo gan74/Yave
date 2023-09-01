@@ -182,7 +182,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
             }
             const auto& src = self->resources().image_base(output_image);
             output = UiTexture(src.format(), src.image_size().to<2>());
-            recorder.barriered_copy(src, output.texture());
+            recorder.copy(src, output.texture());
         });
     }
 

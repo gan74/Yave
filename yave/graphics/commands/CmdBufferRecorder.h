@@ -133,11 +133,11 @@ class CmdBufferRecorder final : NonCopyable {
 
         void full_barrier();
 
+        void copy(const ImageBase& src,  const ImageBase& dst);
 
-        Y_TODO(Const all this)
-        void barriered_copy(const ImageBase& src,  const ImageBase& dst);
-        void copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
+        void unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
 
+        bool _unsynced_start = false;
 
     private:
         friend class ImageBase;

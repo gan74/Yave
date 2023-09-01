@@ -131,8 +131,7 @@ static void fill_probe(core::MutableSpan<ProbeBaseView> views, const Image<Image
         }
     }
 
-    // use sync compute to avoid having to sync later
-    loading_command_queue().submit(std::move(recorder)).wait();
+    loading_command_queue().submit(std::move(recorder));
 }
 
 template<ImageType T>

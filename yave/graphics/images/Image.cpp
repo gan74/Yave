@@ -129,6 +129,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
     CmdBufferRecorder recorder(create_disposable_cmd_buffer());
 
     {
+        recorder._unsynced_start = true;
         const auto region = recorder.region("Image upload");
         recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)});
         vkCmdCopyBufferToImage(recorder.vk_cmd_buffer(), staging_buffer.vk_buffer(), image.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, u32(regions.size()), regions.data());

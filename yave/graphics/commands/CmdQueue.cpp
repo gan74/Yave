@@ -45,10 +45,6 @@ u32 CmdQueue::family_index() const {
     return _family_index;
 }
 
-VkQueue CmdQueue::vk_queue() const {
-    return _queue.get();
-}
-
 void CmdQueue::wait() const {
     _queue.locked([](auto&& queue) {
         vk_check(vkQueueWaitIdle(queue));
@@ -72,15 +68,25 @@ WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder, VkSemaphore wait, VkSem
 
         const VkSemaphore timeline_semaphore = vk_timeline_semaphore();
 
-        const std::array<VkSemaphore, 2> wait_semaphores = {timeline_semaphore, wait};
-        const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
+        u32 wait_count = 0;
+        std::array<VkSemaphore, 2> wait_semaphores;
+        std::array<u64, 2> wait_values;
+        if(!recorder._unsynced_start) {
+            wait_values[wait_count] = prev_value;
+            wait_semaphores[wait_count] = timeline_semaphore;
+            ++wait_count;
+        }
+        if(wait) {
+             wait_values[wait_count] = 0;
+            wait_semaphores[wait_count] = wait;
+             ++wait_count;
+        }
 
-        const std::array<u64, 2> wait_values = {prev_value, 0};
         const std::array<u64, 2> signal_values = {timeline_fence._value, 0};
+        const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
+        const u32 signal_count = signal_semaphores[1] ? 2 : 1;
 
         const std::array<VkPipelineStageFlags, 2> pipe_stage_flags = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
-        const u32 wait_count = wait_semaphores[1] ? 2 : 1;
-        const u32 signal_count = signal_semaphores[1] ? 2 : 1;
 
         VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
         {
