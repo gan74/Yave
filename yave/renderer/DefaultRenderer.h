@@ -28,6 +28,7 @@ SOFTWARE.
 #include "ToneMappingPass.h"
 #include "SSAOPass.h"
 #include "BloomPass.h"
+#include "TAAPass.h"
 
 namespace yave {
 
@@ -46,6 +47,7 @@ struct DefaultRenderer {
     BloomPass bloom;
     ToneMappingPass tone_mapping;
     SSAOPass ssao;
+    TAAPass taa;
 
 
     FrameGraphImageId final;

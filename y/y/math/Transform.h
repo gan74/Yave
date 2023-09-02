@@ -55,6 +55,10 @@ struct Transform : Matrix4<T> {
         return *this;
     }
 
+    inline constexpr const Matrix4<T>& matrix() const {
+        return *this;
+    }
+
     inline constexpr math::Vec<3, T> transform_point(const Vec<3, T>& p) const {
         return position() + transform_direction(p);
     }

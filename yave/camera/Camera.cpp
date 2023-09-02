@@ -86,6 +86,23 @@ void Camera::set_far(float far_dist) {
     _far = far_dist;
 }
 
+
+Camera Camera::jittered(usize i, const math::Vec2ui& size) const {
+    const std::array jitter_pos = {
+        math::Vec2(0.6f, 0.1f),
+        math::Vec2(0.4f, 0.9f),
+        math::Vec2(0.6f, 0.9f),
+        math::Vec2(0.4f, 0.1f),
+    };
+    const math::Vec2 jitter = (jitter_pos[i % jitter_pos.size()] / math::Vec2(size)) * 2.0f - 1.0f;
+    const math::Transform<> jitter_tr(math::Vec3(jitter, 0.0f));
+
+    Camera cam;
+    cam.set_view(_view);
+    cam.set_proj(_proj * jitter_tr.matrix());
+    return cam;
+}
+
 const math::Matrix4<>& Camera::view_matrix() const {
     return _view;
 }
