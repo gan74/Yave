@@ -81,7 +81,7 @@ static core::ScratchPad<VkBufferImageCopy> get_copy_regions(const ImageData& dat
     return regions;
 }
 
-static auto create_stagin_buffer(usize byte_size, const void* data) {
+static auto create_staging_buffer(usize byte_size, const void* data) {
     y_profile();
     auto staging_buffer = StagingBuffer(byte_size);
     {
@@ -123,7 +123,7 @@ static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_
 static void upload_data(ImageBase& image, const ImageData& data) {
     y_profile();
 
-    const auto staging_buffer = create_stagin_buffer(data.byte_size(), data.data());
+    const auto staging_buffer = create_staging_buffer(data.byte_size(), data.data());
     const auto regions = get_copy_regions(data);
 
     TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
