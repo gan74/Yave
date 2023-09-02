@@ -424,8 +424,15 @@ class ComponentPanelInspector : public ecs::ComponentInspector {
                 break;
             }
 
+            auto adjuct_factor = [=](float f) {
+                if(f > -std::numeric_limits<float>::max() && f < std::numeric_limits<float>::max()) {
+                    return f * factor;
+                }
+                return f;
+            };
+
             float value = f * factor;
-            if(ImGui::DragFloat("##drag", &value, 1.0f, min * factor, max * factor, format)) {
+            if(ImGui::DragFloat("##drag", &value, 1.0f, adjuct_factor(min), adjuct_factor(max), format)) {
                 f = value / factor;
             }
         }

@@ -252,6 +252,7 @@ class String {
         static usize compute_capacity(usize len);
         static void free_long(LongData& d);
         static void free_short(ShortData& d);
+        void set(const char* str, usize len);
 
         void free_data();
 
