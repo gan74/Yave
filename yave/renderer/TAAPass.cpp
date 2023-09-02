@@ -34,7 +34,7 @@ namespace yave {
 TAAPass TAAPass::create(FrameGraph& framegraph, FrameGraphImageId in) {
     static const FrameGraphPersistentResourceId persitent_id = FrameGraphPersistentResourceId::create();
 
-    const ImageFormat format = framegraph.image_format(in);
+    const ImageFormat format = VK_FORMAT_R16G16B16A16_UNORM;
     const math::Vec2ui size = framegraph.image_size(in);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("TAA resolve pass");

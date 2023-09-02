@@ -24,15 +24,17 @@ SOFTWARE.
 
 namespace yave {
 
-DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const RendererSettings& settings) {
+DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, SceneView scene_view, const math::Vec2ui& size, const RendererSettings& settings) {
     y_profile();
 
-    static usize i = 0;
-    const SceneView jittered_view(&view.world(), view.camera().jittered(i++, size));
+    if(settings.enable_taa) {
+        static usize i = 0;
+        scene_view = SceneView(&scene_view.world(), scene_view.camera().jittered(i++, size));
+    }
 
     DefaultRenderer renderer;
 
-    renderer.gbuffer        = GBufferPass::create(framegraph, jittered_view, size);
+    renderer.gbuffer        = GBufferPass::create(framegraph, scene_view, size);
     renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
@@ -41,8 +43,7 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.bloom.bloomed, renderer.exposure, settings.tone_mapping);
     renderer.taa            = TAAPass::create(framegraph, renderer.tone_mapping.tone_mapped);
 
-
-    renderer.final = renderer.taa.anti_aliased;
+    renderer.final = settings.enable_taa ? renderer.taa.anti_aliased : renderer.tone_mapping.tone_mapped;
     renderer.depth = renderer.gbuffer.depth;
 
     return renderer;

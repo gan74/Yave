@@ -293,11 +293,16 @@ void EngineView::draw_settings_menu() {
         ImGui::EndMenu();
     }
 
-
     if(ImGui::BeginMenu("Lighting")) {
         LightingSettings& settings = _settings.renderer_settings.lighting;
 
         ImGui::Checkbox("Use compute", &settings.use_compute_for_locals);
+
+        ImGui::EndMenu();
+    }
+
+    if(ImGui::BeginMenu("TAA")) {
+        ImGui::Checkbox("Enable TAA", &_settings.renderer_settings.enable_taa);
 
         ImGui::EndMenu();
     }
