@@ -214,16 +214,15 @@ void destroy_device() {
     lifetime_manager().shutdown_collector_thread();
     wait_all_queues();
 
+    device::resources.destroy();
+    device::extensions = {};
+
+    lifetime_manager().wait_cmd_buffers();
+
 #ifdef Y_DEBUG
     device::destroying = true;
     y_defer(device::destroying = false);
 #endif
-
-    device::resources.destroy();
-
-    device::extensions = {};
-
-    lifetime_manager().wait_cmd_buffers();
 
     y_always_assert(device::active_pools == 1, "Not all pools have been destroyed");
     {
