@@ -119,7 +119,7 @@ DescriptorArray::DescriptorArray(VkDescriptorType type, u32 max_desc) :
 DescriptorArray::~DescriptorArray() {
     {
         const auto lock = y_profile_unique_lock(_map_lock);
-        y_always_assert(_descriptors.is_empty(), "Some textures have not been released"); // Do we care?
+        y_always_assert(_descriptors.is_empty(), "Some bindless descriptors have not been released"); // Do we care?
     }
     destroy_graphic_resource(std::move(_pool));
     destroy_graphic_resource(std::move(_layout));

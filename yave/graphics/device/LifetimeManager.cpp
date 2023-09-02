@@ -199,6 +199,8 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
 void LifetimeManager::wait_cmd_buffers() {
     y_profile();
 
+    command_queue().submit(create_disposable_cmd_buffer()).wait();
+
     _in_flight.locked([&](auto&& in_flight) {
         for(CmdBufferData* data : in_flight) {
             data->wait();
