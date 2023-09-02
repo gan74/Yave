@@ -29,12 +29,12 @@ void main() {
 
     barrier();
 
-    for(uint i = 1; i < lum_histogram_size; i <<= 1) {
-        if(index >= i) {
-            histogram[index] += histogram[index - i];
+    // Make this not serial
+    if(index == 0) {
+        for(uint i = 1; i < lum_histogram_size; ++i) {
+            histogram[i] += histogram[i - 1];
         }
-        barrier();
-     }
+    }
 
     barrier();
 
@@ -51,11 +51,11 @@ void main() {
 
     barrier();
 
-    for(uint i = 1; i < lum_histogram_size; i <<= 1) {
-       if(index + i < lum_histogram_size) {
-           histogram[index] += histogram[index + i];
-       }
-       barrier();
+    // Make this not serial
+    if(index == 0) {
+        for(uint i = lum_histogram_size - 1; i != 0; --i) {
+            histogram[i - 1] += histogram[i];
+        }
     }
 
     barrier();
