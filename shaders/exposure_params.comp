@@ -12,7 +12,6 @@ layout(set = 0, binding = 1) uniform usampler2D in_histogram;
 
 shared uint histogram[lum_histogram_size];
 shared uint total;
-shared uint max_bin;
 
 // https://bruop.github.io/exposure/
 void main() {
@@ -21,7 +20,6 @@ void main() {
 
     if(index == 0) {
         total = 0;
-        max_bin = 0;
     }
 
     barrier();
@@ -40,11 +38,11 @@ void main() {
 
     barrier();
 
-    const uint cutoff = uint(total * 0.95); // Kill the top 5% of brightest pixels
+    const uint total = uint(total * 0.95); // Kill the top 5% of brightest pixels
     const uint less_eq = histogram[index];
-    if(less_eq > cutoff) {
+    if(less_eq > total) {
         const uint less_than_bin = less_eq - bin_size;
-        bin_size = cutoff - min(cutoff, less_than_bin);
+        bin_size = total - min(total, less_than_bin);
     }
 
     barrier();
@@ -61,10 +59,6 @@ void main() {
     }
 
     barrier();
-
-    if(bin_size > 0) {
-        atomicMax(max_bin, index);
-    }
 
     if(index == 0) {
         const uint weighted = histogram[0];
