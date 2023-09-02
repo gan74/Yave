@@ -42,8 +42,8 @@ void main() {
 
     const uint cutoff = uint(total * 0.95); // Kill the top 5% of brightest pixels
     const uint less_eq = histogram[index];
-    const uint less_than_bin = less_eq - bin_size;
-    if(less_eq > cutoff && cutoff > less_than_bin) {
+    if(less_eq > cutoff) {
+        const uint less_than_bin = less_eq - bin_size;
         bin_size = cutoff - min(cutoff, less_than_bin);
     }
 
