@@ -58,6 +58,11 @@ class FrameGraph : NonMovable {
         usize last_write = 0;
         usize first_use = 0;
 
+        FrameGraphPersistentResourceId persistent;  // Persistent
+        FrameGraphPersistentResourceId persistent_prev; // Persistent from previous frame
+
+        bool is_persistent() const;
+        bool is_prev() const;
         usize last_use() const;
         void register_use(usize index, bool is_written);
     };
@@ -110,6 +115,8 @@ class FrameGraph : NonMovable {
         FrameGraphPassBuilder add_pass(std::string_view name);
         FrameGraphComputePassBuilder add_compute_pass(std::string_view name);
 
+        FrameGraphImageId make_persistent_and_get_prev(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id);
+
         math::Vec2ui image_size(FrameGraphImageId res) const;
         math::Vec3ui volume_size(FrameGraphVolumeId res) const;
 
@@ -142,6 +149,7 @@ class FrameGraph : NonMovable {
         const ImageCreateInfo& info(FrameGraphImageId res) const;
         const ImageCreateInfo& info(FrameGraphVolumeId res) const;
         const BufferCreateInfo& info(FrameGraphBufferId res) const;
+
 
         void register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass);
         void register_usage(FrameGraphVolumeId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass);

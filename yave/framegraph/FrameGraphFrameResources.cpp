@@ -37,13 +37,13 @@ FrameGraphFrameResources::FrameGraphFrameResources(std::shared_ptr<FrameGraphRes
 
 FrameGraphFrameResources::~FrameGraphFrameResources() {
     for(auto&& res : _image_storage) {
-        _pool->release(std::move(res));
+        _pool->release(std::move(res.first), res.second);
     }
     for(auto&& res : _volume_storage) {
-        _pool->release(std::move(res));
+        _pool->release(std::move(res.first), res.second);
     }
     for(auto&& res : _buffer_storage) {
-        _pool->release(std::move(res));
+        _pool->release(std::move(res.first), res.second);
     }
     _pool->garbage_collect();
 }
@@ -60,69 +60,73 @@ u32 FrameGraphFrameResources::create_buffer_id() {
     return _next_buffer_id++;
 }
 
-void FrameGraphFrameResources::reserve(usize images, usize volumes, usize buffers) {
-    _images.set_min_capacity(images);
-    _volumes.set_min_capacity(volumes);
-    _buffers.set_min_capacity(buffers);
-}
-
 void FrameGraphFrameResources::init_staging_buffer() {
     if(_staging_buffer_len) {
         _staging_buffer = StagingBuffer(_staging_buffer_len);
     }
 }
 
-void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+void FrameGraphFrameResources::create_image(FrameGraphImageId res, TransientImage&& image, FrameGraphPersistentResourceId persistent_id) {
     res.check_valid();
+    y_debug_assert(!image.is_null());
+
+    auto* ptr = &_image_storage.emplace_back(std::move(image), persistent_id).first;
 
     _images.set_min_size(res.id() + 1);
+    y_always_assert(!_images[res.id()], "Image already exists");
+    _images[res.id()] = ptr;
+}
 
-    auto& image = _images[res.id()];
-    y_always_assert(!image, "Image already exists");
+void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, TransientVolume&& volume, FrameGraphPersistentResourceId persistent_id) {
+    res.check_valid();
+    y_debug_assert(!volume.is_null());
 
-    _image_storage.emplace_back(_pool->create_image(format, size, usage));
-    image = &_image_storage.back();
+    auto* ptr = &_volume_storage.emplace_back(std::move(volume), persistent_id).first;
+
+    _volumes.set_min_size(res.id() + 1);
+    y_always_assert(!_volumes[res.id()], "Volume already exists");
+    _volumes[res.id()] = ptr;
+}
+
+FrameGraphFrameResources::BufferData& FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, TransientBuffer&& buffer, FrameGraphPersistentResourceId persistent_id) {
+    res.check_valid();
+    y_debug_assert(!buffer.is_null());
+
+    auto* ptr = &_buffer_storage.emplace_back(std::move(buffer), persistent_id).first;
+
+    _buffers.set_min_size(res.id() + 1);
+    y_always_assert(!_buffers[res.id()].buffer, "Buffer already exists");
+    _buffers[res.id()].buffer = ptr;
+
+    return _buffers[res.id()];
+}
+
+void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id) {
+    create_image(res, _pool->create_image(format, size, usage), persistent_id);
 }
 
 void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage) {
-    res.check_valid();
-
-    _volumes.set_min_size(res.id() + 1);
-
-    auto& volume = _volumes[res.id()];
-    y_always_assert(!volume, "Volume already exists");
-
-    _volume_storage.emplace_back(_pool->create_volume(format, size, usage));
-    volume = &_volume_storage.back();
+    create_volume(res, _pool->create_volume(format, size, usage), FrameGraphPersistentResourceId());
 }
 
 void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory) {
-    res.check_valid();
-
-    _buffers.set_min_size(res.id() + 1);
-
-    auto& buffer = _buffers[res.id()];
-    y_always_assert(!buffer.buffer, "Buffer already exists");
+    BufferData& buffer = create_buffer(res, _pool->create_buffer(byte_size, usage, MemoryType::DeviceLocal), FrameGraphPersistentResourceId());
 
     if(is_cpu_visible(memory)) {
         y_debug_assert(_staging_buffer.is_null());
         buffer.staging_buffer_offset = _staging_buffer_len;
         _staging_buffer_len += align_up_to(byte_size, device_properties().non_coherent_atom_size);
     }
-
-    _buffer_storage.emplace_back(_pool->create_buffer(byte_size, usage, MemoryType::DeviceLocal));
-    buffer.buffer = &_buffer_storage.back();
 }
 
-void FrameGraphFrameResources::flush_mapped_buffers(CmdBufferRecorder& recorder) {
-    y_profile();
-    const auto region = recorder.region("Flush buffers");
+void FrameGraphFrameResources::create_prev_image(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id) {
+    persistent_id.check_valid();
+    create_image(res, _pool->persistent_image(persistent_id), persistent_id);
+}
 
-    for(const auto& buffer : _buffers) {
-        if(buffer.buffer && buffer.is_mapped()) {
-            recorder.unbarriered_copy(staging_buffer(buffer), TransientSubBuffer<BufferUsage::TransferDstBit>(*buffer.buffer) );
-        }
-    }
+
+bool FrameGraphFrameResources::has_prev_image(FrameGraphPersistentResourceId persistent_id) const {
+    return _pool->has_persistent_image(persistent_id);
 }
 
 bool FrameGraphFrameResources::is_alive(FrameGraphImageId res) const {
@@ -164,6 +168,16 @@ const BufferBase& FrameGraphFrameResources::buffer_base(FrameGraphBufferId res) 
     return find(res);
 }
 
+void FrameGraphFrameResources::flush_mapped_buffers(CmdBufferRecorder& recorder) {
+    y_profile();
+    const auto region = recorder.region("Flush buffers");
+
+    for(const auto& buffer : _buffers) {
+        if(buffer.buffer && buffer.is_mapped()) {
+            recorder.unbarriered_copy(staging_buffer(buffer), TransientSubBuffer<BufferUsage::TransferDstBit>(*buffer.buffer) );
+        }
+    }
+}
 
 void FrameGraphFrameResources::create_alias(FrameGraphImageId dst, FrameGraphImageId src) {
     dst.check_valid();

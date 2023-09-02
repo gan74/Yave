@@ -301,8 +301,14 @@ void FrameGraph::alloc_resources() {
             auto& dst_info = check_exists(_images, cpy.dst);
             auto* src_info = &check_exists(_images, cpy.src);
 
+            y_debug_assert(!dst_info.is_prev());
+
             while(src_info->alias.is_valid()) {
                 src_info = &check_exists(_images, src_info->alias);
+            }
+
+            if(src_info->is_persistent()) {
+                continue;
             }
 
             const usize src_last_use = src_info->last_use();
@@ -321,12 +327,15 @@ void FrameGraph::alloc_resources() {
     std::copy_if(_images.begin(), _images.end(), std::back_inserter(images), [](const auto& p) { return p.first.is_valid(); });
     std::sort(images.begin(), images.end(), [](const auto& a, const auto& b) { return a.second.first_use < b.second.first_use; });
 
-    _resources->reserve(_images.size(), _volumes.size(), _buffers.size());
-
     for(auto&& [res, info] : images) {
         /*if(info.last_read < info.last_write && (info.usage & ImageUsage::Attachment) == ImageUsage::None) {
             log_msg(fmt("Image written by {} is never consumed", pass_name(info.last_write)), Log::Warning);
         }*/
+
+        if(info.is_prev()) {
+            y_debug_assert(_resources->is_alive(res));
+            continue;
+        }
         if(info.alias.is_valid()) {
             y_debug_assert(allow_image_aliasing);
             _resources->create_alias(res, info.alias);
@@ -336,7 +345,7 @@ void FrameGraph::alloc_resources() {
                 // All images should support texturing, hopefully
                 info.usage = info.usage | ImageUsage::TextureBit;
             }
-            _resources->create_image(res, info.format, info.size.to<2>(), info.usage);
+            _resources->create_image(res, info.format, info.size.to<2>(), info.usage, info.persistent);
         }
     }
 
@@ -448,13 +457,20 @@ const FrameGraph::BufferCreateInfo& FrameGraph::info(FrameGraphBufferId res) con
     return check_exists(_buffers, res);
 }
 
+bool FrameGraph::ResourceCreateInfo::is_persistent() const {
+    return persistent.is_valid();
+}
 
+bool FrameGraph::ResourceCreateInfo::is_prev() const {
+    return persistent_prev.is_valid();
+}
 
 usize FrameGraph::ResourceCreateInfo::last_use() const {
     return std::max(last_read, last_write);
 }
 
 void FrameGraph::ResourceCreateInfo::register_use(usize index, bool is_written) {
+    y_debug_assert(!is_written || !is_prev());
     usize& last = is_written ? last_write : last_read;
     last = std::max(last, index);
     if(!first_use) {
@@ -466,11 +482,13 @@ void FrameGraph::ImageCreateInfo::register_alias(const ImageCreateInfo& other) {
     y_debug_assert(other.size == size);
     y_debug_assert(other.format == format);
     y_debug_assert(other.first_use > last_write);
+    y_debug_assert(!is_persistent());
 
     last_write = std::max(last_write, other.last_write);
     last_read = std::max(last_read, other.last_read);
     usage = usage | other.usage;
     last_usage = last_usage | other.last_usage;
+    persistent = other.persistent;
 }
 
 bool FrameGraph::ImageCreateInfo::is_aliased() const {
@@ -484,6 +502,8 @@ bool FrameGraph::ImageCreateInfo::has_usage() const {
 void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass) {
     check_usage_io(usage, is_written);
     auto& info = check_exists(_images, res);
+
+    y_always_assert(!info.is_prev() || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
     info.usage = info.usage | usage;
 
     const bool is_last = info.last_use() < pass->_index;
@@ -494,6 +514,8 @@ void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is
 void FrameGraph::register_usage(FrameGraphVolumeId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass) {
     check_usage_io(usage, is_written);
     auto& info = check_exists(_volumes, res);
+
+    y_always_assert(!info.is_prev() || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
     info.usage = info.usage | usage;
 
     const bool is_last = info.last_use() < pass->_index;
@@ -504,18 +526,50 @@ void FrameGraph::register_usage(FrameGraphVolumeId res, ImageUsage usage, bool i
 void FrameGraph::register_usage(FrameGraphBufferId res, BufferUsage usage, bool is_written, const FrameGraphPass* pass) {
     check_usage_io(usage, is_written);
     auto& info = check_exists(_buffers, res);
+
+    y_always_assert(!info.is_prev() || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
     info.usage = info.usage | usage;
+
     info.register_use(pass->_index, is_written);
 }
 
 void FrameGraph::register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass) {
     auto& info = check_exists(_images, dst);
-    if(info.copy_src.is_valid()) {
-        y_fatal("Resource is already a copy");
-    }
+    y_always_assert(!info.copy_src.is_valid(), "Resource is already a copy");
     info.copy_src = src;
     _image_copies.push_back({pass->_index, dst, src});
 }
+
+FrameGraphImageId FrameGraph::make_persistent_and_get_prev(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id) {
+    {
+        persistent_id.check_valid();
+        auto& info = check_exists(_images, res);
+        y_always_assert(!info.persistent.is_valid(), "Resource already has a persistent ID");
+        info.persistent = persistent_id;
+    }
+
+    if(!_resources->has_prev_image(persistent_id)) {
+        return res;
+    }
+
+    FrameGraphMutableImageId id;
+    id._id = _resources->create_image_id();
+
+    _resources->create_prev_image(id, persistent_id);
+    _images.set_min_size(id._id + 1);
+
+    auto& [i, info]  = _images[id._id];
+    i = id;
+
+    const auto& image = _resources->find(id);
+    info.format = image.format();
+    info.size = image.image_size();
+    info.usage = image.usage();
+    info.persistent_prev = persistent_id;
+
+    return id;
+}
+
 
 InlineDescriptor FrameGraph::copy_inline_descriptor(InlineDescriptor desc) {
     const usize desc_word_size = desc.size_in_words();

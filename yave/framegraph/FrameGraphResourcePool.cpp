@@ -145,21 +145,51 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
     });
 }
 
-
-void FrameGraphResourcePool::release(TransientImage image) {
+void FrameGraphResourcePool::release(TransientImage image, FrameGraphPersistentResourceId persistent_id) {
     y_debug_assert(!image.is_null());
-    _images.locked([&](auto&& images) { images.emplace_back(std::move(image), _collection_id); });
+    if(persistent_id.is_valid()) {
+        _persistent_images.locked([&](auto&& images) {
+            const usize index = persistent_id.id();
+            images.set_min_size(index + 1);
+            if(!images[index].is_null()) {
+                release(std::move(images[index]));
+            }
+            y_debug_assert(images[index].is_null());
+            images[index] = std::move(image);
+        });
+    } else {
+        _images.locked([&](auto&& images) { images.emplace_back(std::move(image), _collection_id); });
+    }
 }
 
-void FrameGraphResourcePool::release(TransientVolume volume) {
+void FrameGraphResourcePool::release(TransientVolume volume, FrameGraphPersistentResourceId persistent_id) {
+    y_always_assert(!persistent_id.is_valid(), "Persistent volumes not supported");
     y_debug_assert(!volume.is_null());
     _volumes.locked([&](auto&& volumes) { volumes.emplace_back(std::move(volume), _collection_id); });
 }
 
-void FrameGraphResourcePool::release(TransientBuffer buffer) {
+void FrameGraphResourcePool::release(TransientBuffer buffer, FrameGraphPersistentResourceId persistent_id) {
+    y_always_assert(!persistent_id.is_valid(), "Persistent buffers not supported");
     y_debug_assert(!buffer.is_null());
     _buffers.locked([&](auto&& buffers) { buffers.emplace_back(std::move(buffer), _collection_id); });
 }
+
+bool FrameGraphResourcePool::has_persistent_image(FrameGraphPersistentResourceId persistent_id) const {
+    return _persistent_images.locked([&](auto&& images) {
+        return persistent_id.id() < images.size() && !images[persistent_id.id()].is_null();
+    });
+}
+
+TransientImage FrameGraphResourcePool::persistent_image(FrameGraphPersistentResourceId persistent_id) {
+    return _persistent_images.locked([&](auto&& images) {
+        if(persistent_id.id() < images.size()) {
+            TransientImage img(std::move(images[persistent_id.id()]));
+            return img;
+        }
+        y_fatal("Persistent resource not found");
+    });
+}
+
 
 void FrameGraphResourcePool::garbage_collect() {
     y_profile();

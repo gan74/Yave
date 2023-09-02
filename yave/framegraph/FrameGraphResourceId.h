@@ -28,6 +28,36 @@ SOFTWARE.
 
 namespace yave {
 
+class FrameGraphPersistentResourceId {
+    public:
+        constexpr FrameGraphPersistentResourceId() = default;
+
+        static FrameGraphPersistentResourceId create();
+
+        u32 id() const {
+            return u32(_id);
+        }
+
+        bool is_valid() const {
+            return _id != invalid_id;
+        }
+
+        void check_valid() const {
+            if(!is_valid()) {
+                y_fatal("Invalid resource");
+            }
+        }
+
+        bool operator==(const FrameGraphPersistentResourceId& other) const {
+            return _id == other._id;
+        }
+
+    private:
+        static constexpr u32 invalid_id = u32(-1);
+
+        u32 _id = invalid_id;
+};
+
 class FrameGraphResourceId {
     public:
         constexpr FrameGraphResourceId() = default;
@@ -46,7 +76,7 @@ class FrameGraphResourceId {
 
         void check_valid() const {
             if(!is_valid()) {
-                y_fatal("Invalid resource.");
+                y_fatal("Invalid resource");
             }
         }
 
