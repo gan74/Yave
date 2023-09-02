@@ -29,10 +29,6 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
-
 namespace yave {
 
 ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ExposurePass& exposure, const ToneMappingSettings& settings) {

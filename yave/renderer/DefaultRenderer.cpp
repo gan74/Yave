@@ -27,12 +27,9 @@ namespace yave {
 DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const RendererSettings& settings) {
     y_profile();
 
-    static usize i = 0;
-    const SceneView jittered_view(&view.world(), view.camera().jittered(i++, size));
-
     DefaultRenderer renderer;
 
-    renderer.gbuffer        = GBufferPass::create(framegraph, jittered_view, size);
+    renderer.gbuffer        = GBufferPass::create(framegraph, view, size);
     renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
