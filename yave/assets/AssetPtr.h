@@ -153,6 +153,8 @@ class AssetPtr {
         inline bool has_loader() const;
         inline AssetLoader* loader() const;
 
+        inline usize ref_count() const;
+
         inline AssetType type() const;
 
         inline bool is_loaded() const;

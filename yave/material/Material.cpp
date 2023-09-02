@@ -43,6 +43,7 @@ Material::Material(const MaterialTemplate* tmp, MaterialData&& data) :
         _template(tmp),
         _draw_data(material_allocator().allocate_material(data)),
         _data(std::move(data)) {
+    y_debug_assert(!is_null());
 }
 
 Material::~Material() {

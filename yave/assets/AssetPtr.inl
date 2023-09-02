@@ -149,6 +149,11 @@ AssetLoader* AssetPtr<T>::loader() const {
 }
 
 template<typename T>
+usize AssetPtr<T>::ref_count() const {
+    return usize(_data.use_count());
+}
+
+template<typename T>
 AssetType AssetPtr<T>::type() const {
     return detail::asset_type<T>();
 }
