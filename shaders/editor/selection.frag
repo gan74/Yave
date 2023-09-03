@@ -42,8 +42,9 @@ void main() {
         }
     }
 
-    if(texelFetch(in_depth, coords, 0).r > min_depth) {
+    // This is broken by TAA
+    /*if(texelFetch(in_depth, coords, 0).r > min_depth) {
         out_color.a *= 0.35;
-    }
+    }*/
 }
 

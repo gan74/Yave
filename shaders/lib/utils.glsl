@@ -146,6 +146,10 @@ float sqr(float x) {
     return x * x;
 }
 
+float length2(vec3 v) {
+    return dot(v, v);
+}
+
 uint hash(uint x) {
     x += (x << 10u);
     x ^= (x >>  6u);
