@@ -48,10 +48,8 @@ StaticMeshRendererSystem::StaticMeshRendererSystem() : ecs::System("StaticMeshRe
 void StaticMeshRendererSystem::destroy() {
     auto query = world().query<StaticMeshComponent>();
     for(auto&& [mesh] : query.components()) {
-        if(mesh.has_instance_index()) {
-            _free.push_back(mesh._instance_index);
-            mesh._instance_index = u32(-1);
-        }
+        free_index(mesh._transform_index);
+        free_index(mesh._last_transform_index);
     }
 
     y_debug_assert(_free.size() == _transforms.size());
@@ -73,13 +71,11 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
 
         auto mapping = _transforms.map(MappingAccess::ReadWrite);
         for(const auto& [mesh, tr] : query.components()) {
-            if(!mesh.has_instance_index()) {
-                y_always_assert(!_free.is_empty(), "Max number of transforms reached");
-                mesh._instance_index = _free.pop();
-            }
+            std::swap(mesh._last_transform_index, mesh._transform_index);
+            alloc_index(mesh._transform_index);
 
-            y_debug_assert(mesh.has_instance_index());
-            mapping[mesh._instance_index] = tr.transform();
+            y_debug_assert(mesh.has_transform_index());
+            mapping[mesh._transform_index] = tr.transform();
         }
     };
 
@@ -91,10 +87,22 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
 
     auto removed = world().query<ecs::Removed<StaticMeshComponent>>();
     for(const auto& [mesh] : removed.components()) {
-        if(mesh.has_instance_index()) {
-            _free.push_back(mesh._instance_index);
-            mesh._instance_index = u32(-1);
-        }
+        free_index(mesh._transform_index);
+        free_index(mesh._last_transform_index);
+    }
+}
+
+void StaticMeshRendererSystem::free_index(u32& index) {
+    if(index != u32(-1)) {
+        _free.push_back(index);
+        index = u32(-1);
+    }
+}
+
+void StaticMeshRendererSystem::alloc_index(u32& index) {
+    if(index == u32(-1)) {
+        y_always_assert(!_free.is_empty(), "Max number of transforms reached");
+        index = _free.pop();
     }
 }
 

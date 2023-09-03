@@ -62,23 +62,34 @@ void StaticMeshRenderSubPass::render_custom(RenderPassRecorder& render_pass, con
     auto indices_mapping = pass->resources().map_buffer(indices_buffer);
     for(const auto& [id, comp] : query.id_components()) {
         const auto& [mesh] = comp;
-        if(!mesh.mesh() || !mesh.has_instance_index()) {
+        if(!mesh.mesh() || !mesh.has_transform_index()) {
             continue;
         }
 
-        const u32 transform_index = mesh.instance_index();
+        const u32 transform_index = mesh.transform_index();
+        const u32 last_transform_index = mesh.has_last_transform_index() ? mesh.last_transform_index() : transform_index;
 
         const auto materials = mesh.materials();
         if(materials.size() == 1) {
             if(const Material* mat = materials[0].get()) {
                 render_func(id, mesh, mesh.mesh()->draw_command(), mat, index);
-                indices_mapping[index++] = math::Vec2ui(transform_index, mat->draw_data().index());
+                indices_mapping[index++] = math::Vec4ui(
+                    transform_index,
+                    last_transform_index,
+                    mat->draw_data().index(),
+                    0
+                );
             }
         } else {
             for(usize i = 0; i != materials.size(); ++i) {
                 if(const Material* mat = materials[i].get()) {
                     render_func(id, mesh, mesh.mesh()->sub_meshes()[i], mat, index);
-                    indices_mapping[index++] = math::Vec2ui(transform_index, mat->draw_data().index());
+                    indices_mapping[index++] = math::Vec4ui(
+                        transform_index,
+                        last_transform_index,
+                        mat->draw_data().index(),
+                        0
+                    );
                 }
             }
         }

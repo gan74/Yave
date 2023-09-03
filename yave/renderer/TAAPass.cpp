@@ -50,7 +50,13 @@ TAAJitterPass TAAJitterPass::create(FrameGraph&, const SceneView& view, const ma
     return pass;
 }
 
-TAAPass TAAPass::create(FrameGraph& framegraph, const TAAJitterPass& jitter, FrameGraphImageId in_color, FrameGraphImageId in_depth, FrameGraphTypedBufferId<uniform::Camera> camera_buffer) {
+TAAPass TAAPass::create(FrameGraph& framegraph,
+                        const TAAJitterPass& jitter,
+                        FrameGraphImageId in_color,
+                        FrameGraphImageId in_depth,
+                        FrameGraphImageId& in_motion,
+                        FrameGraphTypedBufferId<uniform::Camera> camera_buffer) {
+
     const TAASettings& settings = jitter.settings;
     if(!settings.enable) {
         TAAPass pass;
@@ -93,7 +99,8 @@ TAAPass TAAPass::create(FrameGraph& framegraph, const TAAJitterPass& jitter, Fra
     builder.add_color_output(aa);
     builder.add_uniform_input(in_depth, SamplerType::PointClamp);
     builder.add_uniform_input(in_color, SamplerType::PointClamp);
-    builder.add_uniform_input(prev_color, SamplerType::LinearClamp);
+    builder.add_uniform_input(in_motion);
+    builder.add_uniform_input(prev_color);
     builder.add_uniform_input(camera_buffer);
     builder.add_uniform_input(prev_camera);
     builder.add_inline_input(InlineDescriptor(settings_data));

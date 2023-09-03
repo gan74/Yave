@@ -156,7 +156,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
     UiTexture output;
     FrameGraph graph(_resource_pool);
-    const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, _settings);
+
+    EditorRendererSettings settings = _settings;
+    settings.renderer_settings.taa.enable &= (_view == RenderView::Lit);
+
+    const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, settings);
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
@@ -170,6 +174,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_inline_input(InlineDescriptor(_view));
         builder.add_uniform_input(renderer.final);
         builder.add_uniform_input(gbuffer.depth);
+        builder.add_uniform_input(gbuffer.motion);
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white));
@@ -328,7 +333,7 @@ void EngineView::draw_menu_bar() {
             ImGui::Separator();
             {
                 const char* output_names[] = {
-                        "Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "AO",
+                        "Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO",
                     };
                 for(usize i = 0; i != usize(RenderView::MaxRenderViews); ++i) {
                     bool selected = usize(_view) == i;

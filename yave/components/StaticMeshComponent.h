@@ -49,8 +49,11 @@ class StaticMeshComponent final :
 
         const AABB& aabb() const;
 
-        u32 instance_index() const;
-        bool has_instance_index() const;
+        u32 transform_index() const;
+        u32 last_transform_index() const;
+
+        bool has_transform_index() const;
+        bool has_last_transform_index() const;
 
         bool is_fully_loaded() const;
 
@@ -68,7 +71,8 @@ class StaticMeshComponent final :
         AABB _aabb;
 
         friend class StaticMeshRendererSystem;
-        mutable u32 _instance_index = u32(-1);
+        mutable u32 _transform_index = u32(-1);
+        mutable u32 _last_transform_index = u32(-1);
 
 };
 

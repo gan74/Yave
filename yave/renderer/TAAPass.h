@@ -48,7 +48,12 @@ struct TAAJitterPass {
 struct TAAPass {
     FrameGraphImageId anti_aliased;
 
-    static TAAPass create(FrameGraph& framegraph, const TAAJitterPass& jitter, FrameGraphImageId in_color, FrameGraphImageId in_depth, FrameGraphTypedBufferId<uniform::Camera> camera_buffer);
+    static TAAPass create(FrameGraph& framegraph,
+                          const TAAJitterPass& jitter,
+                          FrameGraphImageId in_color,
+                          FrameGraphImageId in_depth,
+                          FrameGraphImageId& in_motion,
+                          FrameGraphTypedBufferId<uniform::Camera> camera_buffer);
 };
 
 

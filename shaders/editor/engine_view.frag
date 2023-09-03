@@ -10,9 +10,10 @@ layout(set = 0, binding = 0) uniform Target_Inline {
 
 layout(set = 0, binding = 1) uniform sampler2D in_final;
 layout(set = 0, binding = 2) uniform sampler2D in_depth;
-layout(set = 0, binding = 3) uniform sampler2D in_rt0;
-layout(set = 0, binding = 4) uniform sampler2D in_rt1;
-layout(set = 0, binding = 5) uniform sampler2D in_ao;
+layout(set = 0, binding = 3) uniform sampler2D in_motion;
+layout(set = 0, binding = 4) uniform sampler2D in_rt0;
+layout(set = 0, binding = 5) uniform sampler2D in_rt1;
+layout(set = 0, binding = 6) uniform sampler2D in_ao;
 
 
 layout(location = 0) in vec2 in_uv;
@@ -39,6 +40,9 @@ void main() {
         const float depth = texelFetch(in_depth, coord, 0).r;
         color = vec3(pow(depth, 0.35));
     } else if(target_index == 6) {
+        const vec2 motion = texelFetch(in_motion, coord, 0).xy;
+        color = vec3(saturate((motion * 10.0 + 0.5)), 0.5);
+    } else if(target_index == 7) {
         const float ao = texture(in_ao, in_uv).r;
         color = vec3(ao);
     }

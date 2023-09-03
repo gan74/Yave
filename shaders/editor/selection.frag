@@ -22,7 +22,7 @@ void main() {
     float min_depth = 1.0;
     if(base_id != 0) {
         min_depth = texelFetch(in_seletion_depth, coords, 0).r;
-        out_color.a = max(0.0, sin(dot(vec2(1.0, 1.0), gl_FragCoord.xy)) * 0.5);
+        out_color.a = 0; // max(0.0, sin(dot(vec2(1.0, 1.0), gl_FragCoord.xy)) * 0.5);
     } else {
         float sum = 0.0;
         float total = 0.0;
@@ -41,6 +41,7 @@ void main() {
             out_color.a = saturate(sum / total * 8.0);
         }
     }
+
 
     // This is broken by TAA
     /*if(texelFetch(in_depth, coords, 0).r > min_depth) {

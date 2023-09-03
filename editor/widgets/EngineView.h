@@ -48,6 +48,7 @@ class EngineView final : public Widget {
             Roughness,
 
             Depth,
+            Motion,
 
             SSAO,
 

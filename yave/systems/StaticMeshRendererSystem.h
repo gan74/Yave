@@ -50,6 +50,9 @@ class StaticMeshRendererSystem : public ecs::System {
 
 
     private:
+        void free_index(u32& index);
+        void alloc_index(u32& index);
+
         void run_tick(bool only_recent);
 
         TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible> _transforms;

@@ -7,17 +7,18 @@
 
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
 layout(set = 0, binding = 1) uniform sampler2D in_color;
-layout(set = 0, binding = 2) uniform sampler2D in_prev;
+layout(set = 0, binding = 2) uniform sampler2D in_motion;
+layout(set = 0, binding = 3) uniform sampler2D in_prev;
 
-layout(set = 0, binding = 3) uniform CurrentCameraData {
+layout(set = 0, binding = 4) uniform CurrentCameraData {
     Camera current_cam;
 };
 
-layout(set = 0, binding = 4) uniform PrevCameraData {
+layout(set = 0, binding = 5) uniform PrevCameraData {
     Camera prev_cam;
 };
 
-layout(set = 0, binding = 5) uniform Settings_Inline {
+layout(set = 0, binding = 6) uniform Settings_Inline {
     uint flags;
     float blending_factor;
 };
@@ -70,14 +71,15 @@ void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
     const vec2 inv_size = 1.0 / vec2(textureSize(in_color, 0).xy);
     const vec2 uv = gl_FragCoord.xy * inv_size;
+    const vec2 motion = texelFetch(in_motion, coord, 0).rg;
 
     bool sample_valid = true;
 
-    vec2 prev_uv = uv;
+    vec2 prev_uv = uv + motion;
     if((flags & reprojection_bit) != 0) {
         const float depth = texelFetch(in_depth, coord, 0).x;
         const vec3 world_pos = unproject(uv, depth, current_cam.inv_unjittered_view_proj);
-        prev_uv = project(world_pos, prev_cam.unjittered_view_proj).xy;
+        prev_uv = project(world_pos, prev_cam.unjittered_view_proj).xy + motion;
 
         sample_valid = sample_valid && (prev_uv == saturate(prev_uv));
     }
@@ -86,7 +88,7 @@ void main() {
     vec3 prev = texture(in_prev, prev_uv).rgb;
 
     if((flags & clamping_bit) != 0 && sample_valid) {
-        // Only clamp when UV delta is big
+        // Only clamp when UV delta is > 1 pixel
         if(any(greaterThan(abs(prev_uv - uv), inv_size))) {
             const ClampingInfo clamping_info = gather_clamping_info(in_color, uv);
             prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);

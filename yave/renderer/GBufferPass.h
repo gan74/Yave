@@ -30,6 +30,7 @@ struct GBufferPass {
     SceneRenderSubPass scene_pass;
 
     FrameGraphImageId depth;
+    FrameGraphImageId motion;
     FrameGraphImageId color;
     FrameGraphImageId normal;
     FrameGraphImageId emissive;
