@@ -22,35 +22,58 @@ SOFTWARE.
 
 #include "TAAPass.h"
 
-#include <yave/graphics/shaders/ComputeProgram.h>
+#include <yave/camera/Camera.h>
+
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/device/DeviceResources.h>
+
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <y/utils/log.h>
 
 namespace yave {
 
-TAAPass TAAPass::create(FrameGraph& framegraph, FrameGraphImageId in) {
-    static const FrameGraphPersistentResourceId persitent_id = FrameGraphPersistentResourceId::create();
+TAAPass TAAPass::create(FrameGraph& framegraph, FrameGraphImageId in_color, FrameGraphImageId in_depth, FrameGraphTypedBufferId<uniform::Camera> camera_buffer, const TAASettings& settings) {
+    if(!settings.enable) {
+        TAAPass pass;
+        pass.anti_aliased = in_color;
+        return pass;
+    }
 
-    const ImageFormat format = VK_FORMAT_R16G16B16A16_UNORM;
-    const math::Vec2ui size = framegraph.image_size(in);
+    static const FrameGraphPersistentResourceId color_id = FrameGraphPersistentResourceId::create();
+    static const FrameGraphPersistentResourceId camera_id = FrameGraphPersistentResourceId::create();
+
+    const ImageFormat format = framegraph.image_format(in_color);
+    const math::Vec2ui size = framegraph.image_size(in_color);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("TAA resolve pass");
 
     const auto aa = builder.declare_image(format, size);
 
-    FrameGraphImageId prev = framegraph.make_persistent_and_get_prev(aa, persitent_id);
-    if(prev == aa) {
-        prev = builder.declare_copy(aa);
+    FrameGraphImageId prev_color = framegraph.make_persistent_and_get_prev(aa, color_id);
+    if(!prev_color.is_valid()) {
+        prev_color = builder.declare_copy(aa);
     }
-
     builder.add_image_input_usage(aa, ImageUsage::TextureBit);
 
+    FrameGraphBufferId prev_camera = framegraph.make_persistent_and_get_prev(camera_buffer, camera_id);
+    if(!prev_camera.is_valid()) {
+        prev_camera = builder.declare_copy(camera_buffer);
+    }
+
+    const std::array<u32, 2> settings_data = {
+        u32(settings.use_reprojection ? 1 : 0),
+        u32(settings.use_clamping ? 1 : 0),
+    };
+
     builder.add_color_output(aa);
-    builder.add_uniform_input(in);
-    builder.add_uniform_input(prev);
+    builder.add_uniform_input(in_depth, SamplerType::LinearClamp);
+    builder.add_uniform_input(in_color, SamplerType::LinearClamp);
+    builder.add_uniform_input(prev_color, SamplerType::LinearClamp);
+    builder.add_uniform_input(camera_buffer);
+    builder.add_uniform_input(prev_camera);
+    builder.add_inline_input(InlineDescriptor(settings_data));
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::TAAResolveMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets());

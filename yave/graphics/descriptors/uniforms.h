@@ -35,6 +35,7 @@ struct Camera {
 
     math::Matrix4<> proj;
     math::Matrix4<> inv_proj;
+    math::Matrix4<> unjittered_proj;
 
     math::Matrix4<> view;
     math::Matrix4<> inv_view;

@@ -302,7 +302,14 @@ void EngineView::draw_settings_menu() {
     }
 
     if(ImGui::BeginMenu("TAA")) {
-        ImGui::Checkbox("Enable TAA", &_settings.renderer_settings.enable_taa);
+        TAASettings& settings = _settings.renderer_settings.taa;
+
+        ImGui::Checkbox("Enable TAA", &settings.enable);
+
+        ImGui::Separator();
+
+        ImGui::Checkbox("Enable reprojection", &settings.use_reprojection);
+        ImGui::Checkbox("Enable clamping", &settings.use_clamping);
 
         ImGui::EndMenu();
     }

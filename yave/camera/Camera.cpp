@@ -67,19 +67,16 @@ Camera::Camera() {
 
 void Camera::set_view(const math::Matrix4<>& view) {
     _view = view;
-    _dirty = true;
+    update_viewproj();
 }
 
 void Camera::set_proj(const math::Matrix4<>& proj) {
     _proj = proj;
-    _dirty = true;
+    update_viewproj();
 }
 
-void Camera::update_viewproj() const {
-    if(_dirty) {
-        _viewproj = _proj * _view;
-        _dirty = false;
-    }
+void Camera::update_viewproj() {
+    _viewproj = _proj * _view;
 }
 
 void Camera::set_far(float far_dist) {
@@ -112,12 +109,17 @@ const math::Matrix4<>& Camera::proj_matrix() const {
 }
 
 const math::Matrix4<>& Camera::viewproj_matrix() const {
-    update_viewproj();
     return _viewproj;
 }
 
 math::Matrix4<> Camera::inverse_matrix() const {
     return (viewproj_matrix()).inverse();
+}
+
+math::Matrix4<> Camera::unjittered_proj() const {
+    math::Matrix4<> proj = _proj;
+    proj[2].to<2>() = {};
+    return proj;
 }
 
 float Camera::aspect_ratio() const {
@@ -165,6 +167,7 @@ Camera::operator uniform::Camera() const {
 
     camera_data.proj = proj_matrix();
     camera_data.inv_proj = proj_matrix().inverse();
+    camera_data.unjittered_proj = unjittered_proj();
 
     camera_data.view = view_matrix();
     camera_data.inv_view = view_matrix().inverse();

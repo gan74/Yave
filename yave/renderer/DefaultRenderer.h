@@ -37,7 +37,7 @@ struct RendererSettings {
     LightingSettings lighting;
     SSAOSettings ssao;
     BloomSettings bloom;
-    bool enable_taa = true;
+    TAASettings taa;
 };
 
 struct DefaultRenderer {
@@ -55,7 +55,7 @@ struct DefaultRenderer {
     FrameGraphImageId depth;
 
     static DefaultRenderer create(FrameGraph& framegraph,
-                                  SceneView scene_view,
+                                  const SceneView& scene_view,
                                   const math::Vec2ui& size,
                                   const RendererSettings& settings = RendererSettings());
 };

@@ -56,6 +56,8 @@ class Camera {
 
         math::Matrix4<> inverse_matrix() const;
 
+        math::Matrix4<> unjittered_proj() const;
+
         float aspect_ratio() const;
         float field_of_view() const;
 
@@ -72,16 +74,14 @@ class Camera {
         operator uniform::Camera() const;
 
     private:
-        void update_viewproj() const;
+        void update_viewproj();
 
         math::Matrix4<> _view;
         math::Matrix4<> _proj;
 
         float _far = -1.0f;
 
-        Y_TODO(This is not thread safe)
-        mutable math::Matrix4<> _viewproj;
-        mutable bool _dirty = true;
+        math::Matrix4<> _viewproj;
 };
 
 }

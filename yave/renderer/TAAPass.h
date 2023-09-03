@@ -26,10 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
+struct TAASettings {
+    bool enable = true;
+    bool use_reprojection = true;
+    bool use_clamping = true;
+};
+
 struct TAAPass {
     FrameGraphImageId anti_aliased;
 
-    static TAAPass create(FrameGraph& framegraph, FrameGraphImageId in);
+    static TAAPass create(FrameGraph& framegraph, FrameGraphImageId in_color, FrameGraphImageId in_depth, FrameGraphTypedBufferId<uniform::Camera> camera_buffer, const TAASettings& settings = {});
 };
 
 

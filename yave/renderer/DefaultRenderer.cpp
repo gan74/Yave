@@ -22,28 +22,32 @@ SOFTWARE.
 
 #include "DefaultRenderer.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
-DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, SceneView scene_view, const math::Vec2ui& size, const RendererSettings& settings) {
+DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& scene_view, const math::Vec2ui& size, const RendererSettings& settings) {
     y_profile();
 
-    if(settings.enable_taa) {
-        static usize i = 0;
-        scene_view = SceneView(&scene_view.world(), scene_view.camera().jittered(i++, size));
-    }
+    static usize jitter = 1;
+    const usize jitter_index = jitter++;
+    const SceneView jiterred(&scene_view.world(), scene_view.camera().jittered(jitter_index, size));
 
     DefaultRenderer renderer;
 
-    renderer.gbuffer        = GBufferPass::create(framegraph, scene_view, size);
+    renderer.gbuffer        = GBufferPass::create(framegraph, settings.taa.enable ? jiterred : scene_view, size);
     renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
-    renderer.exposure       = ExposurePass::create(framegraph, renderer.atmosphere.lit);
-    renderer.bloom          = BloomPass::create(framegraph, renderer.atmosphere.lit, renderer.exposure.params, settings.bloom);
-    renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.bloom.bloomed, renderer.exposure, settings.tone_mapping);
-    renderer.taa            = TAAPass::create(framegraph, renderer.tone_mapping.tone_mapped);
 
-    renderer.final = settings.enable_taa ? renderer.taa.anti_aliased : renderer.tone_mapping.tone_mapped;
+    renderer.taa            = TAAPass::create(framegraph, renderer.atmosphere.lit, renderer.gbuffer.depth, renderer.gbuffer.scene_pass.camera_buffer, settings.taa);
+
+    renderer.exposure       = ExposurePass::create(framegraph, renderer.taa.anti_aliased);
+    renderer.bloom          = BloomPass::create(framegraph, renderer.taa.anti_aliased, renderer.exposure.params, settings.bloom);
+    renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.bloom.bloomed, renderer.exposure, settings.tone_mapping);
+
+    renderer.final = renderer.tone_mapping.tone_mapped;
     renderer.depth = renderer.gbuffer.depth;
 
     return renderer;
