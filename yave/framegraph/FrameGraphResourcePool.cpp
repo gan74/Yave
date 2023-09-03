@@ -169,14 +169,31 @@ void FrameGraphResourcePool::release(TransientVolume volume, FrameGraphPersisten
 }
 
 void FrameGraphResourcePool::release(TransientBuffer buffer, FrameGraphPersistentResourceId persistent_id) {
-    y_always_assert(!persistent_id.is_valid(), "Persistent buffers not supported");
     y_debug_assert(!buffer.is_null());
-    _buffers.locked([&](auto&& buffers) { buffers.emplace_back(std::move(buffer), _collection_id); });
+    if(persistent_id.is_valid()) {
+        _persistent_buffers.locked([&](auto&& buffers) {
+            const usize index = persistent_id.id();
+            buffers.set_min_size(index + 1);
+            if(!buffers[index].is_null()) {
+                release(std::move(buffers[index]));
+            }
+            y_debug_assert(buffers[index].is_null());
+            buffers[index] = std::move(buffer);
+        });
+    } else {
+        _buffers.locked([&](auto&& buffers) { buffers.emplace_back(std::move(buffer), _collection_id); });
+    }
 }
 
 bool FrameGraphResourcePool::has_persistent_image(FrameGraphPersistentResourceId persistent_id) const {
     return _persistent_images.locked([&](auto&& images) {
         return persistent_id.id() < images.size() && !images[persistent_id.id()].is_null();
+    });
+}
+
+bool FrameGraphResourcePool::has_persistent_buffer(FrameGraphPersistentResourceId persistent_id) const {
+    return _persistent_buffers.locked([&](auto&& buffers) {
+        return persistent_id.id() < buffers.size() && !buffers[persistent_id.id()].is_null();
     });
 }
 
@@ -190,6 +207,15 @@ TransientImage FrameGraphResourcePool::persistent_image(FrameGraphPersistentReso
     });
 }
 
+TransientBuffer FrameGraphResourcePool::persistent_buffer(FrameGraphPersistentResourceId persistent_id) {
+    return _persistent_buffers.locked([&](auto&& buffers) {
+        if(persistent_id.id() < buffers.size()) {
+            TransientBuffer buff(std::move(buffers[persistent_id.id()]));
+            return buff;
+        }
+        y_fatal("Persistent resource not found");
+    });
+}
 
 void FrameGraphResourcePool::garbage_collect() {
     y_profile();

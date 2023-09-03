@@ -48,7 +48,7 @@ class FrameGraphPassBuilderBase {
         FrameGraphMutableBufferId declare_buffer(u64 byte_size);
 
         FrameGraphMutableImageId declare_copy(FrameGraphImageId src);
-        //FrameGraphMutableBufferId declare_copy(FrameGraphBufferId src);
+        FrameGraphMutableBufferId declare_copy(FrameGraphBufferId src);
 
         template<typename T>
         FrameGraphMutableTypedBufferId<T> declare_typed_buffer(usize size = 1) {

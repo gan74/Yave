@@ -87,6 +87,18 @@ FrameGraphMutableImageId FrameGraphPassBuilderBase::declare_copy(FrameGraphImage
     return res;
 }
 
+FrameGraphMutableBufferId FrameGraphPassBuilderBase::declare_copy(FrameGraphBufferId src) {
+    const auto src_info = parent()->info(src);
+    const auto res = declare_buffer(src_info.byte_size);
+
+    // copies are done before the pass proper so we don't set the stage
+    add_to_pass(src, BufferUsage::TransferSrcBit, false, PipelineStage::None);
+    add_to_pass(res, BufferUsage::TransferDstBit, true, PipelineStage::None);
+
+    parent()->register_buffer_copy(res, src, _pass);
+
+    return res;
+}
 
 // --------------------------------- Usage ---------------------------------
 

@@ -97,12 +97,14 @@ class FrameGraphFrameResources final : NonMovable {
         u32 create_buffer_id();
 
         void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id = {});
-        void create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
-        void create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory);
+        void create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id = {});
+        void create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, FrameGraphPersistentResourceId persistent_id = {});
 
         void create_prev_image(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id);
+        void create_prev_buffer(FrameGraphBufferId res, FrameGraphPersistentResourceId persistent_id);
 
         bool has_prev_image(FrameGraphPersistentResourceId persistent_id) const;
+        bool has_prev_buffer(FrameGraphPersistentResourceId persistent_id) const;
 
         bool is_alive(FrameGraphImageId res) const;
         bool is_alive(FrameGraphVolumeId res) const;

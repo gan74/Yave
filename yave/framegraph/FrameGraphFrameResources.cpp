@@ -29,7 +29,6 @@ SOFTWARE.
 
 #include <y/utils/memory.h>
 
-
 namespace yave {
 
 FrameGraphFrameResources::FrameGraphFrameResources(std::shared_ptr<FrameGraphResourcePool> pool) : _pool(pool) {
@@ -105,12 +104,12 @@ void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat f
     create_image(res, _pool->create_image(format, size, usage), persistent_id);
 }
 
-void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage) {
-    create_volume(res, _pool->create_volume(format, size, usage), FrameGraphPersistentResourceId());
+void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id) {
+    create_volume(res, _pool->create_volume(format, size, usage), persistent_id);
 }
 
-void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory) {
-    BufferData& buffer = create_buffer(res, _pool->create_buffer(byte_size, usage, MemoryType::DeviceLocal), FrameGraphPersistentResourceId());
+void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, FrameGraphPersistentResourceId persistent_id) {
+    BufferData& buffer = create_buffer(res, _pool->create_buffer(byte_size, usage, MemoryType::DeviceLocal), persistent_id);
 
     if(is_cpu_visible(memory)) {
         y_debug_assert(_staging_buffer.is_null());
@@ -124,9 +123,17 @@ void FrameGraphFrameResources::create_prev_image(FrameGraphImageId res, FrameGra
     create_image(res, _pool->persistent_image(persistent_id), persistent_id);
 }
 
+void FrameGraphFrameResources::create_prev_buffer(FrameGraphBufferId res, FrameGraphPersistentResourceId persistent_id) {
+    persistent_id.check_valid();
+    create_buffer(res, _pool->persistent_buffer(persistent_id), persistent_id);
+}
 
 bool FrameGraphFrameResources::has_prev_image(FrameGraphPersistentResourceId persistent_id) const {
     return _pool->has_persistent_image(persistent_id);
+}
+
+bool FrameGraphFrameResources::has_prev_buffer(FrameGraphPersistentResourceId persistent_id) const {
+    return _pool->has_persistent_buffer(persistent_id);
 }
 
 bool FrameGraphFrameResources::is_alive(FrameGraphImageId res) const {
