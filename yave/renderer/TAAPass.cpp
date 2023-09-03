@@ -79,14 +79,14 @@ TAAPass TAAPass::create(FrameGraph& framegraph, const TAAJitterPass& jitter, Fra
         prev_camera = builder.declare_copy(camera_buffer);
     }
 
-    const u32 resolve_bit = 0x1;
+    const u32 reprojection_bit = 0x1;
     const u32 clamping_bit = 0x2;
 
     struct SettingsData {
         u32 flags;
         float blending_factor;
     } settings_data {
-        (settings.use_reprojection ? resolve_bit : 0) | (settings.use_clamping ? clamping_bit : 0),
+        (settings.use_reprojection ? reprojection_bit : 0) | (settings.use_clamping ? clamping_bit : 0),
         settings.blending_factor,
     };
 

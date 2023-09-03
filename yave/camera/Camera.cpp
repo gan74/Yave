@@ -95,9 +95,11 @@ Camera Camera::jittered(usize i, const math::Vec2ui& size, float intensity) cons
     const float y = (std::fmod(0.5f + a2 * i, 1.0f) * 2.0f - 1.0f) * intensity;
 
     const math::Vec2 jitter = math::Vec2(x, y) / math::Vec2(size);
-    const math::Transform<> jitter_tr(math::Vec3(jitter, 0.0f));
 
-    return Camera(_view, jitter_tr.matrix() * _proj);
+    math::Matrix4<> jittered_proj = _proj;
+    jittered_proj[2].to<2>() = jitter;
+
+    return Camera(_view, jittered_proj);
 }
 
 Camera Camera::unjittered() const {

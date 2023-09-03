@@ -63,21 +63,21 @@ ClampingInfo gather_clamping_info(sampler2D in_color, vec2 uv) {
 
 // -------------------------------- Main --------------------------------
 
-const uint resolve_bit = 0x1;
+const uint reprojection_bit = 0x1;
 const uint clamping_bit = 0x2;
 
 void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
-    const vec2 size = vec2(textureSize(in_color, 0).xy);
-    const vec2 uv = gl_FragCoord.xy / size;
+    const vec2 inv_size = 1.0 / vec2(textureSize(in_color, 0).xy);
+    const vec2 uv = gl_FragCoord.xy * inv_size;
 
     bool sample_valid = true;
 
     vec2 prev_uv = uv;
-    if((flags & resolve_bit) != 0) {
+    if((flags & reprojection_bit) != 0) {
         const float depth = texelFetch(in_depth, coord, 0).x;
         const vec3 world_pos = unproject(uv, depth, current_cam.inv_unjittered_view_proj);
-        const vec2 prev_uv = project(world_pos, prev_cam.unjittered_view_proj).xy;
+        prev_uv = project(world_pos, prev_cam.unjittered_view_proj).xy;
 
         sample_valid = sample_valid && (prev_uv == saturate(prev_uv));
     }
@@ -86,10 +86,12 @@ void main() {
     vec3 prev = texture(in_prev, prev_uv).rgb;
 
     if((flags & clamping_bit) != 0 && sample_valid) {
-        const ClampingInfo clamping_info = gather_clamping_info(in_color, uv);
-        prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);
+        // Only clamp when UV delta is big
+        if(any(greaterThan(abs(prev_uv - uv), inv_size))) {
+            const ClampingInfo clamping_info = gather_clamping_info(in_color, uv);
+            prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);
+        }
     }
-
 
     out_color = vec4(mix(current, prev, sample_valid ? blending_factor : 0.0), 1.0);
 }
