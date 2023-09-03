@@ -18,10 +18,9 @@ layout(set = 0, binding = 4) uniform PrevCameraData {
 };
 
 layout(set = 0, binding = 5) uniform Settings_Inline {
-    uint use_reprojection;
-    uint use_clamping;
+    uint flags;
+    float blending_factor;
 };
-
 
 layout(location = 0) in vec2 in_uv;
 
@@ -60,26 +59,25 @@ ClampingInfo gather_clamping_info(sampler2D in_color, vec2 uv) {
     return info;
 }
 
-mat4 unjittered_view_proj(Camera cam) {
-    return cam.unjittered_proj * cam.view;
-}
 
 
 // -------------------------------- Main --------------------------------
 
+const uint resolve_bit = 0x1;
+const uint clamping_bit = 0x2;
+
 void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
-    const vec2 uv = gl_FragCoord.xy / vec2(textureSize(in_depth, 0).xy);
+    const vec2 size = vec2(textureSize(in_color, 0).xy);
+    const vec2 uv = gl_FragCoord.xy / size;
 
     bool sample_valid = true;
 
     vec2 prev_uv = uv;
-    if(use_reprojection != 0) {
+    if((flags & resolve_bit) != 0) {
         const float depth = texelFetch(in_depth, coord, 0).x;
-        const mat4 unproj_mat = inverse(unjittered_view_proj(current_cam));
-        const mat4 reproj_mat = unjittered_view_proj(prev_cam);
-        const vec3 world_pos = unproject(uv, depth, unproj_mat);
-        const vec2 prev_uv = project(world_pos, reproj_mat).xy;
+        const vec3 world_pos = unproject(uv, depth, current_cam.inv_unjittered_view_proj);
+        const vec2 prev_uv = project(world_pos, prev_cam.unjittered_view_proj).xy;
 
         sample_valid = sample_valid && (prev_uv == saturate(prev_uv));
     }
@@ -87,12 +85,12 @@ void main() {
     const vec3 current = texture(in_color, uv).rgb;
     vec3 prev = texture(in_prev, prev_uv).rgb;
 
-    if(use_clamping != 0 && sample_valid) {
+    if((flags & clamping_bit) != 0 && sample_valid) {
         const ClampingInfo clamping_info = gather_clamping_info(in_color, uv);
         prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);
     }
 
 
-    out_color = vec4(mix(current, prev, sample_valid ? 0.9 : 0.0), 1.0);
+    out_color = vec4(mix(current, prev, sample_valid ? blending_factor : 0.0), 1.0);
 }
 

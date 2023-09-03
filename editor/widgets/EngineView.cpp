@@ -311,6 +311,11 @@ void EngineView::draw_settings_menu() {
         ImGui::Checkbox("Enable reprojection", &settings.use_reprojection);
         ImGui::Checkbox("Enable clamping", &settings.use_clamping);
 
+        ImGui::Separator();
+
+        ImGui::SliderFloat("Blending factor", &settings.blending_factor, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Jitter intensity", &settings.jitter_intensity, 0.0f, 2.0f, "%.2f");
+
         ImGui::EndMenu();
     }
 }

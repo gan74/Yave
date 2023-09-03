@@ -30,6 +30,9 @@ struct TAASettings {
     bool enable = true;
     bool use_reprojection = true;
     bool use_clamping = true;
+
+    float blending_factor = 0.9f;
+    float jitter_intensity = 1.0f;
 };
 
 struct TAAPass {

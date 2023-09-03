@@ -115,7 +115,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
         }
 
         if(!finite) {
-            const math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4(_picking_uvs * 2.0f - 1.0f, 1.0f, 1.0f);
+            const math::Vec4 hp = camera.view_proj_matrix().inverse() * math::Vec4(_picking_uvs * 2.0f - 1.0f, 1.0f, 1.0f);
             _picked_pos = hp.to<3>() / hp.w();
             _picking_depth = 1.0f;
         }
@@ -187,7 +187,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 
         // Pan
         if(_mouse_button == 2) {
-            const math::Vec4 hp = camera.viewproj_matrix().inverse() * math::Vec4((_picking_uvs - delta) * 2.0f - 1.0f, _picking_depth, 1.0f);
+            const math::Vec4 hp = camera.view_proj_matrix().inverse() * math::Vec4((_picking_uvs - delta) * 2.0f - 1.0f, _picking_depth, 1.0f);
             cam_pos = _orig_pos + (hp.to<3>() / hp.w()) - _picked_pos;
         }
     }

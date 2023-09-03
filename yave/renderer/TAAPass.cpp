@@ -62,14 +62,20 @@ TAAPass TAAPass::create(FrameGraph& framegraph, FrameGraphImageId in_color, Fram
         prev_camera = builder.declare_copy(camera_buffer);
     }
 
-    const std::array<u32, 2> settings_data = {
-        u32(settings.use_reprojection ? 1 : 0),
-        u32(settings.use_clamping ? 1 : 0),
+    const u32 resolve_bit = 0x1;
+    const u32 clamping_bit = 0x2;
+
+    struct SettingsData {
+        u32 flags;
+        float blending_factor;
+    } settings_data {
+        (settings.use_reprojection ? resolve_bit : 0) | (settings.use_clamping ? clamping_bit : 0),
+        settings.blending_factor,
     };
 
     builder.add_color_output(aa);
-    builder.add_uniform_input(in_depth, SamplerType::LinearClamp);
-    builder.add_uniform_input(in_color, SamplerType::LinearClamp);
+    builder.add_uniform_input(in_depth, SamplerType::PointClamp);
+    builder.add_uniform_input(in_color, SamplerType::PointClamp);
     builder.add_uniform_input(prev_color, SamplerType::LinearClamp);
     builder.add_uniform_input(camera_buffer);
     builder.add_uniform_input(prev_camera);

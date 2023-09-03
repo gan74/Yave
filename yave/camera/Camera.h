@@ -47,16 +47,17 @@ class Camera {
 
         void set_far(float far_dist);
 
-        Camera jittered(usize i, const math::Vec2ui& size) const;
+        Camera jittered(usize i, const math::Vec2ui& size, float intensity = 1.0f) const;
 
         const math::Matrix4<>& view_matrix() const;
         const math::Matrix4<>& proj_matrix() const;
 
-        const math::Matrix4<>& viewproj_matrix() const;
+        const math::Matrix4<>& view_proj_matrix() const;
 
         math::Matrix4<> inverse_matrix() const;
 
         math::Matrix4<> unjittered_proj() const;
+        math::Matrix4<> unjittered_view_proj() const;
 
         float aspect_ratio() const;
         float field_of_view() const;
@@ -74,14 +75,13 @@ class Camera {
         operator uniform::Camera() const;
 
     private:
-        void update_viewproj();
+        void update_view_proj();
 
         math::Matrix4<> _view;
         math::Matrix4<> _proj;
+        math::Matrix4<> _view_proj;
 
         float _far = -1.0f;
-
-        math::Matrix4<> _viewproj;
 };
 
 }

@@ -67,16 +67,16 @@ Camera::Camera() {
 
 void Camera::set_view(const math::Matrix4<>& view) {
     _view = view;
-    update_viewproj();
+    update_view_proj();
 }
 
 void Camera::set_proj(const math::Matrix4<>& proj) {
     _proj = proj;
-    update_viewproj();
+    update_view_proj();
 }
 
-void Camera::update_viewproj() {
-    _viewproj = _proj * _view;
+void Camera::update_view_proj() {
+    _view_proj = _proj * _view;
 }
 
 void Camera::set_far(float far_dist) {
@@ -84,12 +84,12 @@ void Camera::set_far(float far_dist) {
 }
 
 
-Camera Camera::jittered(usize i, const math::Vec2ui& size) const {
+Camera Camera::jittered(usize i, const math::Vec2ui& size, float intensity) const {
     const float g = 1.32471795724474602596f;
     const float a1 = 1.0f / g;
     const float a2 = 1.0f / (g * g);
-    const float x = std::fmod(0.5f + a1 * i, 1.0f) * 2.0f - 1.0f;
-    const float y = std::fmod(0.5f + a2 * i, 1.0f) * 2.0f - 1.0f;
+    const float x = (std::fmod(0.5f + a1 * i, 1.0f) * 2.0f - 1.0f) * intensity;
+    const float y = (std::fmod(0.5f + a2 * i, 1.0f) * 2.0f - 1.0f) * intensity;
 
     const math::Vec2 jitter = math::Vec2(x, y) / math::Vec2(size);
     const math::Transform<> jitter_tr(math::Vec3(jitter, 0.0f));
@@ -108,18 +108,22 @@ const math::Matrix4<>& Camera::proj_matrix() const {
     return _proj;
 }
 
-const math::Matrix4<>& Camera::viewproj_matrix() const {
-    return _viewproj;
+const math::Matrix4<>& Camera::view_proj_matrix() const {
+    return _view_proj;
 }
 
 math::Matrix4<> Camera::inverse_matrix() const {
-    return (viewproj_matrix()).inverse();
+    return (view_proj_matrix()).inverse();
 }
 
 math::Matrix4<> Camera::unjittered_proj() const {
     math::Matrix4<> proj = _proj;
     proj[2].to<2>() = {};
     return proj;
+}
+
+math::Matrix4<> Camera::unjittered_view_proj() const {
+    return unjittered_proj() * _view;
 }
 
 float Camera::aspect_ratio() const {
@@ -162,15 +166,17 @@ Frustum Camera::frustum() const {
 
 Camera::operator uniform::Camera() const {
     uniform::Camera camera_data = {};
-    camera_data.view_proj = viewproj_matrix();
+    camera_data.view_proj = view_proj_matrix();
     camera_data.inv_view_proj = inverse_matrix();
 
+    camera_data.unjittered_view_proj = unjittered_view_proj();
+    camera_data.inv_unjittered_view_proj = camera_data.unjittered_view_proj.inverse();
+
     camera_data.proj = proj_matrix();
-    camera_data.inv_proj = proj_matrix().inverse();
-    camera_data.unjittered_proj = unjittered_proj();
+    camera_data.inv_proj = camera_data.proj.inverse();
 
     camera_data.view = view_matrix();
-    camera_data.inv_view = view_matrix().inverse();
+    camera_data.inv_view = camera_data.view.inverse();
 
     camera_data.position = position();
     camera_data.forward = forward();

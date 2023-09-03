@@ -32,7 +32,7 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 
     static usize jitter = 1;
     const usize jitter_index = jitter++;
-    const SceneView jiterred(&scene_view.world(), scene_view.camera().jittered(jitter_index, size));
+    const SceneView jiterred(&scene_view.world(), scene_view.camera().jittered(jitter_index, size, settings.taa.jitter_intensity));
 
     DefaultRenderer renderer;
 

@@ -93,7 +93,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 
     {
         auto mapping = pass->resources().map_buffer(pass_buffer);
-        mapping->view_proj = scene_view.camera().viewproj_matrix();
+        mapping->view_proj = scene_view.camera().view_proj_matrix();
         mapping->viewport_size = pass->framebuffer().size();
         mapping->size = 64.0f;
     }
@@ -281,10 +281,10 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, Fra
                 render_octree(direct.add_primitive("octree"), view);
             }
         }
-        direct.render(render_pass, view.camera().viewproj_matrix());
+        direct.render(render_pass, view.camera().view_proj_matrix());
 
         if(app_settings().debug.display_debug_drawer) {
-            debug_drawer().render(render_pass, view.camera().viewproj_matrix());
+            debug_drawer().render(render_pass, view.camera().view_proj_matrix());
         }
         debug_drawer().clear();
     });

@@ -55,7 +55,7 @@ void OrientationGizmo::draw() {
     const math::Vec2 offset = ImGui::GetWindowPos();
     const math::Vec2 viewport = ImGui::GetWindowSize();
     const math::Vec2 center = offset + viewport - (orientation_gizmo_size * 2.0f);
-    const auto view_proj = _scene_view->camera().viewproj_matrix();
+    const auto view_proj = _scene_view->camera().view_proj_matrix();
     const auto view = _scene_view->camera().view_matrix();
 
     const float ratio = viewport.x() / viewport.y();

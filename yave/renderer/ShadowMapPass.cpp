@@ -99,7 +99,7 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
 
     const float size_f = float(size);
     const uniform::ShadowMapParams params = {
-        light_view.camera().viewproj_matrix(),
+        light_view.camera().view_proj_matrix(),
         math::Vec2(offset) * uv_mul,
         uv_mul * size_f,
         size_f,

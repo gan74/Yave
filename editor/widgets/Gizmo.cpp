@@ -124,7 +124,7 @@ void Gizmo::set_center_on_object(bool b) {
 }
 
 math::Vec3 Gizmo::to_screen_pos(const math::Vec3& world) const {
-    const auto h_pos = _scene_view->camera().viewproj_matrix() * math::Vec4(world, 1.0f);
+    const auto h_pos = _scene_view->camera().view_proj_matrix() * math::Vec4(world, 1.0f);
     return math::Vec3((h_pos.to<2>() / h_pos.w()) * 0.5f + 0.5f, h_pos.z() / h_pos.w());
 }
 
@@ -169,7 +169,7 @@ bool Gizmo::compute_gizmo_data(GizmoData &data) const {
 
     data.cam_pos = _scene_view->camera().position();
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
-    const math::Matrix4<> view_proj = _scene_view->camera().viewproj_matrix();
+    const math::Matrix4<> view_proj = _scene_view->camera().view_proj_matrix();
     auto [obj_pos, obj_rot, obj_scale] = data.ref_transformable->transform().decompose();
 
     if((_mode == Translate) && _center_on_object) {
