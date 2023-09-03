@@ -59,10 +59,13 @@ math::Vec3 Camera::position_from_view(const math::Matrix4<>& view) {
     return pos;
 }
 
-Camera::Camera() {
-    const float ratio = 4.0f / 3.0f;
-    set_proj(math::perspective(math::to_rad(45.0f), ratio, 0.1f));
-    set_view(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3{}, math::Vec3{0.0f, 0.0f, 1.0f}));
+
+
+Camera::Camera() : Camera(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3{}, math::Vec3{0.0f, 0.0f, 1.0f}), math::perspective(math::to_rad(45.0f), 16.0f / 9.0f, 0.1f)) {
+}
+
+Camera::Camera(const math::Matrix4<>& view, const math::Matrix4<>& proj) : _view(view), _proj(proj) {
+    update_view_proj();
 }
 
 void Camera::set_view(const math::Matrix4<>& view) {
@@ -94,10 +97,11 @@ Camera Camera::jittered(usize i, const math::Vec2ui& size, float intensity) cons
     const math::Vec2 jitter = math::Vec2(x, y) / math::Vec2(size);
     const math::Transform<> jitter_tr(math::Vec3(jitter, 0.0f));
 
-    Camera cam;
-    cam.set_view(_view);
-    cam.set_proj(jitter_tr.matrix() * _proj);
-    return cam;
+    return Camera(_view, jitter_tr.matrix() * _proj);
+}
+
+Camera Camera::unjittered() const {
+    return Camera(_view, unjittered_proj());
 }
 
 const math::Matrix4<>& Camera::view_matrix() const {

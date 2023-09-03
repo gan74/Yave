@@ -41,6 +41,7 @@ struct RendererSettings {
 };
 
 struct DefaultRenderer {
+    TAAJitterPass jitter;
     GBufferPass gbuffer;
     LightingPass lighting;
     AtmospherePass atmosphere;

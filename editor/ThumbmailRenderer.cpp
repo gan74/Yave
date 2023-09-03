@@ -59,9 +59,11 @@ namespace editor {
 static Texture render_world(const ecs::EntityWorld& world) {
     y_profile();
 
-    SceneView scene(&world);
-    scene.camera().set_proj(math::perspective(math::to_rad(45.0f), 1.0f, 0.1f));
-    scene.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
+    const Camera camera(
+        math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)),
+        math::perspective(math::to_rad(45.0f), 1.0f, 0.1f)
+    );
+    const SceneView scene(&world, camera);
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));

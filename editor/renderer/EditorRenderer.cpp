@@ -68,16 +68,17 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
     }
 
     if(settings.show_editor_entities) {
-        const EditorPass ed = EditorPass::create(framegraph, view, renderer.depth, renderer.final);
+        const EditorPass ed = EditorPass::create(framegraph, renderer.renderer.jitter.unjittered_view, renderer.depth, renderer.final);
         renderer.depth = ed.depth;
         renderer.final = ed.color;
     }
 
     if(settings.show_selection) {
+        const SceneView& scene_view = renderer.renderer.jitter.jittered_view;
         auto id_and_depth = [](const auto& pass) { return std::pair{pass.id, pass.depth}; };
-        const IdBufferPass id_pass = IdBufferPass::create(framegraph, view, size, EditorPassFlags::SelectionOnly);
+        const IdBufferPass id_pass = IdBufferPass::create(framegraph, scene_view, size, EditorPassFlags::SelectionOnly);
         const auto [id, depth] = settings.show_editor_entities
-            ? id_and_depth(EditorPass::create(framegraph, view, id_pass.depth, {}, id_pass.id, EditorPassFlags::SelectionOnly))
+            ? id_and_depth(EditorPass::create(framegraph, scene_view, id_pass.depth, {}, id_pass.id, EditorPassFlags::SelectionOnly))
             : id_and_depth(id_pass);
 
         renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth, id);

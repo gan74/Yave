@@ -41,6 +41,7 @@ class Camera {
 
 
         Camera();
+        Camera(const math::Matrix4<>& view, const math::Matrix4<>& proj);
 
         void set_view(const math::Matrix4<>& view);
         void set_proj(const math::Matrix4<>& proj);
@@ -48,6 +49,7 @@ class Camera {
         void set_far(float far_dist);
 
         Camera jittered(usize i, const math::Vec2ui& size, float intensity = 1.0f) const;
+        Camera unjittered() const;
 
         const math::Matrix4<>& view_matrix() const;
         const math::Matrix4<>& proj_matrix() const;

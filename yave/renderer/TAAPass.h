@@ -35,10 +35,20 @@ struct TAASettings {
     float jitter_intensity = 1.0f;
 };
 
+struct TAAJitterPass {
+    SceneView jittered_view;
+    SceneView unjittered_view;
+    TAASettings settings;
+
+    Y_TODO(why not move the camera buffer generation here)
+
+    static TAAJitterPass create(FrameGraph&, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings = {});
+};
+
 struct TAAPass {
     FrameGraphImageId anti_aliased;
 
-    static TAAPass create(FrameGraph& framegraph, FrameGraphImageId in_color, FrameGraphImageId in_depth, FrameGraphTypedBufferId<uniform::Camera> camera_buffer, const TAASettings& settings = {});
+    static TAAPass create(FrameGraph& framegraph, const TAAJitterPass& jitter, FrameGraphImageId in_color, FrameGraphImageId in_depth, FrameGraphTypedBufferId<uniform::Camera> camera_buffer);
 };
 
 

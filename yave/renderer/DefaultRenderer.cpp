@@ -30,18 +30,15 @@ namespace yave {
 DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& scene_view, const math::Vec2ui& size, const RendererSettings& settings) {
     y_profile();
 
-    static usize jitter = 1;
-    const usize jitter_index = jitter++;
-    const SceneView jiterred(&scene_view.world(), scene_view.camera().jittered(jitter_index, size, settings.taa.jitter_intensity));
-
     DefaultRenderer renderer;
 
-    renderer.gbuffer        = GBufferPass::create(framegraph, settings.taa.enable ? jiterred : scene_view, size);
+    renderer.jitter         = TAAJitterPass::create(framegraph, scene_view, size, settings.taa);
+    renderer.gbuffer        = GBufferPass::create(framegraph, renderer.jitter.jittered_view, size);
     renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
 
-    renderer.taa            = TAAPass::create(framegraph, renderer.atmosphere.lit, renderer.gbuffer.depth, renderer.gbuffer.scene_pass.camera_buffer, settings.taa);
+    renderer.taa            = TAAPass::create(framegraph, renderer.jitter, renderer.atmosphere.lit, renderer.gbuffer.depth, renderer.gbuffer.scene_pass.camera_buffer);
 
     renderer.exposure       = ExposurePass::create(framegraph, renderer.taa.anti_aliased);
     renderer.bloom          = BloomPass::create(framegraph, renderer.taa.anti_aliased, renderer.exposure.params, settings.bloom);

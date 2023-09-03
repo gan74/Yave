@@ -34,7 +34,24 @@ SOFTWARE.
 
 namespace yave {
 
-TAAPass TAAPass::create(FrameGraph& framegraph, FrameGraphImageId in_color, FrameGraphImageId in_depth, FrameGraphTypedBufferId<uniform::Camera> camera_buffer, const TAASettings& settings) {
+TAAJitterPass TAAJitterPass::create(FrameGraph&, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings) {
+    TAAJitterPass pass;
+    pass.settings = settings;
+    pass.unjittered_view = view;
+
+    if(pass.settings.enable) {
+        static usize jitter = 1;
+        const usize jitter_index = jitter++;
+        pass.jittered_view = SceneView(&view.world(), view.camera().jittered(jitter_index, size, settings.jitter_intensity));
+    } else {
+        pass.jittered_view = view;
+    }
+
+    return pass;
+}
+
+TAAPass TAAPass::create(FrameGraph& framegraph, const TAAJitterPass& jitter, FrameGraphImageId in_color, FrameGraphImageId in_depth, FrameGraphTypedBufferId<uniform::Camera> camera_buffer) {
+    const TAASettings& settings = jitter.settings;
     if(!settings.enable) {
         TAAPass pass;
         pass.anti_aliased = in_color;
