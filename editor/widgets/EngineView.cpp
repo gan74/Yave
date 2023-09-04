@@ -315,6 +315,7 @@ void EngineView::draw_settings_menu() {
 
         ImGui::Checkbox("Enable reprojection", &settings.use_reprojection);
         ImGui::Checkbox("Enable clamping", &settings.use_clamping);
+        ImGui::Checkbox("Enable masking", &settings.use_mask);
 
         ImGui::Separator();
 

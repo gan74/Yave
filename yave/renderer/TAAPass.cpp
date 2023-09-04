@@ -58,61 +58,93 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
                         FrameGraphTypedBufferId<uniform::Camera> camera_buffer) {
 
     const TAASettings& settings = jitter.settings;
+
     if(!settings.enable) {
         TAAPass pass;
         pass.anti_aliased = in_color;
         return pass;
     }
 
-    static const FrameGraphPersistentResourceId color_id = FrameGraphPersistentResourceId::create();
-    static const FrameGraphPersistentResourceId camera_id = FrameGraphPersistentResourceId::create();
+    const auto region = framegraph.region("TAA");
 
     const ImageFormat format = framegraph.image_format(in_color);
     const math::Vec2ui size = framegraph.image_size(in_color);
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("TAA resolve pass");
-
-    const auto aa = builder.declare_image(format, size);
-
-    FrameGraphImageId prev_color = framegraph.make_persistent_and_get_prev(aa, color_id);
-    if(!prev_color.is_valid()) {
-        prev_color = builder.declare_copy(aa);
-    }
-    builder.add_image_input_usage(aa, ImageUsage::TextureBit);
-
-    FrameGraphBufferId prev_camera = framegraph.make_persistent_and_get_prev(camera_buffer, camera_id);
-    if(!prev_camera.is_valid()) {
-        prev_camera = builder.declare_copy(camera_buffer);
-    }
-
-    const u32 reprojection_bit = 0x1;
-    const u32 clamping_bit = 0x2;
-
-    struct SettingsData {
-        u32 flags;
-        float blending_factor;
-    } settings_data {
-        (settings.use_reprojection ? reprojection_bit : 0) | (settings.use_clamping ? clamping_bit : 0),
-        settings.blending_factor,
-    };
-
-    builder.add_color_output(aa);
-    builder.add_uniform_input(in_depth, SamplerType::PointClamp);
-    builder.add_uniform_input(in_color, SamplerType::PointClamp);
-    builder.add_uniform_input(in_motion);
-    builder.add_uniform_input(prev_color);
-    builder.add_uniform_input(camera_buffer);
-    builder.add_uniform_input(prev_camera);
-    builder.add_inline_input(InlineDescriptor(settings_data));
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const auto* material = device_resources()[DeviceResources::TAAResolveMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets());
-        render_pass.draw_array(3);
-    });
-
 
     TAAPass pass;
-    pass.anti_aliased = aa;
+
+    if(settings.use_mask) {
+        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Deocclusion mask pass");
+
+        const auto mask = builder.declare_image(VK_FORMAT_R8_UNORM, size);
+
+        builder.add_image_output_usage(mask, ImageUsage::TransferDstBit);
+
+        builder.add_storage_output(mask);
+        builder.add_uniform_input(in_motion);
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            recorder.clear_image(self->resources().image<ImageUsage::TransferDstBit>(mask));
+            const auto& program = device_resources()[DeviceResources::TAADeocclusionMaskProgram];
+            recorder.dispatch_size(program, size, self->descriptor_sets());
+        });
+
+        pass.deocclusion_mask = mask;
+    }
+
+    {
+        static const FrameGraphPersistentResourceId color_id = FrameGraphPersistentResourceId::create();
+        static const FrameGraphPersistentResourceId camera_id = FrameGraphPersistentResourceId::create();
+
+        FrameGraphPassBuilder builder = framegraph.add_pass("TAA resolve pass");
+
+        const auto aa = builder.declare_image(format, size);
+
+        FrameGraphImageId prev_color = framegraph.make_persistent_and_get_prev(aa, color_id);
+        if(!prev_color.is_valid()) {
+            prev_color = builder.declare_copy(aa);
+        }
+        builder.add_image_input_usage(aa, ImageUsage::TextureBit);
+
+        FrameGraphBufferId prev_camera = framegraph.make_persistent_and_get_prev(camera_buffer, camera_id);
+        if(!prev_camera.is_valid()) {
+            prev_camera = builder.declare_copy(camera_buffer);
+        }
+
+        const u32 reprojection_bit = 0x1;
+        const u32 clamping_bit = 0x2;
+        const u32 mask_bit = 0x4;
+
+        u32 flag_bits = 0;
+        flag_bits |= (settings.use_reprojection ? reprojection_bit : 0);
+        flag_bits |= (settings.use_clamping ? clamping_bit : 0);
+        flag_bits |= (settings.use_mask ? mask_bit : 0);
+
+        struct SettingsData {
+            u32 flags;
+            float blending_factor;
+        } settings_data {
+            flag_bits,
+            settings.blending_factor,
+        };
+
+        builder.add_color_output(aa);
+        builder.add_uniform_input(in_depth, SamplerType::PointClamp);
+        builder.add_uniform_input(in_color, SamplerType::PointClamp);
+        builder.add_uniform_input(prev_color);
+        builder.add_uniform_input(in_motion);
+        builder.add_uniform_input_with_default(pass.deocclusion_mask, *device_resources()[DeviceResources::BlackTexture]);
+        builder.add_uniform_input(camera_buffer);
+        builder.add_uniform_input(prev_camera);
+        builder.add_inline_input(InlineDescriptor(settings_data));
+        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+            const auto* material = device_resources()[DeviceResources::TAAResolveMaterialTemplate];
+            render_pass.bind_material_template(material, self->descriptor_sets());
+            render_pass.draw_array(3);
+        });
+
+        pass.anti_aliased = aa;
+    }
+
     return pass;
 }
 

@@ -7,18 +7,19 @@
 
 layout(set = 0, binding = 0) uniform sampler2D in_depth;
 layout(set = 0, binding = 1) uniform sampler2D in_color;
-layout(set = 0, binding = 2) uniform sampler2D in_motion;
-layout(set = 0, binding = 3) uniform sampler2D in_prev;
+layout(set = 0, binding = 2) uniform sampler2D in_prev;
+layout(set = 0, binding = 3) uniform sampler2D in_motion;
+layout(set = 0, binding = 4) uniform sampler2D in_mask;
 
-layout(set = 0, binding = 4) uniform CurrentCameraData {
+layout(set = 0, binding = 5) uniform CurrentCameraData {
     Camera current_cam;
 };
 
-layout(set = 0, binding = 5) uniform PrevCameraData {
+layout(set = 0, binding = 6) uniform PrevCameraData {
     Camera prev_cam;
 };
 
-layout(set = 0, binding = 6) uniform Settings_Inline {
+layout(set = 0, binding = 7) uniform Settings_Inline {
     uint flags;
     float blending_factor;
 };
@@ -60,23 +61,34 @@ ClampingInfo gather_clamping_info(sampler2D in_color, vec2 uv) {
     return info;
 }
 
+bool fetch_reprojection_mask(vec2 uv) {
+    const vec4 mask = textureGather(in_mask, uv, 0);
+    return any(greaterThan(mask, vec4(0.0)));
+}
 
 
 // -------------------------------- Main --------------------------------
 
 const uint reprojection_bit = 0x1;
 const uint clamping_bit = 0x2;
+const uint mask_bit = 0x4;
 
 void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
     const vec2 inv_size = 1.0 / vec2(textureSize(in_color, 0).xy);
     const vec2 uv = gl_FragCoord.xy * inv_size;
-    const vec2 motion = texelFetch(in_motion, coord, 0).rg;
+    const vec2 motion = texelFetch(in_motion, coord, 0).xy;
 
     bool sample_valid = true;
 
+    if((flags & mask_bit) != 0) {
+        if(fetch_reprojection_mask(uv) && motion == vec2(0)) {
+            sample_valid = false;
+        }
+    }
+
     vec2 prev_uv = uv + motion;
-    if((flags & reprojection_bit) != 0) {
+    if((flags & reprojection_bit) != 0 && sample_valid) {
         const float depth = texelFetch(in_depth, coord, 0).x;
         const vec3 world_pos = unproject(uv, depth, current_cam.inv_unjittered_view_proj);
         prev_uv = project(world_pos, prev_cam.unjittered_view_proj).xy + motion;
@@ -84,7 +96,7 @@ void main() {
         sample_valid = sample_valid && (prev_uv == saturate(prev_uv));
     }
 
-    const vec3 current = texture(in_color, uv).rgb;
+    const vec3 current = texelFetch(in_color, coord, 0).rgb;
     vec3 prev = texture(in_prev, prev_uv).rgb;
 
     if((flags & clamping_bit) != 0 && sample_valid) {
@@ -96,5 +108,9 @@ void main() {
     }
 
     out_color = vec4(mix(current, prev, sample_valid ? blending_factor : 0.0), 1.0);
+
+    /*if(!sample_valid) {
+        out_color = vec4(1, 0, 0, 1);
+    }*/
 }
 

@@ -106,6 +106,9 @@ void FrameGraphPassBuilderBase::add_image_input_usage(FrameGraphImageId res, Ima
     add_to_pass(res, usage, false, PipelineStage::None);
 }
 
+void FrameGraphPassBuilderBase::add_image_output_usage(FrameGraphMutableImageId res, ImageUsage usage) {
+    add_to_pass(res, usage, true, PipelineStage::None);
+}
 
 // --------------------------------- Framebuffer ---------------------------------
 

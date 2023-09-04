@@ -1,0 +1,27 @@
+#version 450
+
+// -------------------------------- I/O --------------------------------
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(r8, set = 0, binding = 0) uniform writeonly image2D out_mask;
+layout(set = 0, binding = 1) uniform sampler2D in_motion;
+
+
+void main() {
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+
+    const vec2 motion = texelFetch(in_motion, coord, 0).xy;
+
+    if(motion != vec2(0.0)) {
+        const vec2 image_size = vec2(imageSize(out_mask).xy);
+        const vec2 uv = vec2(gl_GlobalInvocationID.xy) / image_size;
+        const vec2 target_uv = uv + motion;
+        const ivec2 target_texel = ivec2(round(target_uv * image_size));
+
+        if(target_texel != coord) {
+            imageStore(out_mask, target_texel, vec4(1));
+        }
+    }
+}
+

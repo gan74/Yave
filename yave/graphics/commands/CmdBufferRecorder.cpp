@@ -439,6 +439,20 @@ void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuf
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
 }
 
+void CmdBufferRecorderBase::clear_image(const DstCopyImage& dst) {
+    check_no_renderpass();
+
+    VkImageSubresourceRange range = {};
+    {
+        range.aspectMask = dst.format().is_depth_format() ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+        range.layerCount = 1;
+        range.levelCount = 1;
+    }
+
+    const VkClearColorValue value = {};
+    vkCmdClearColorImage(vk_cmd_buffer(), dst.vk_image(), vk_image_layout(dst.usage()), &value, 1, &range);
+}
+
 
 
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
@@ -454,6 +468,7 @@ TransferCmdBufferRecorder& TransferCmdBufferRecorder::operator=(TransferCmdBuffe
     swap(other);
     return *this;
 }
+
 
 
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
@@ -529,6 +544,7 @@ void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math:
 void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
     dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
 }
+
 
 }
 

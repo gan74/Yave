@@ -56,6 +56,7 @@ class FrameGraphPassBuilderBase {
         }
 
         void add_image_input_usage(FrameGraphImageId res, ImageUsage usage);
+        void add_image_output_usage(FrameGraphMutableImageId res, ImageUsage usage);
 
         void add_depth_output(FrameGraphMutableImageId res);
         void add_color_output(FrameGraphMutableImageId res);

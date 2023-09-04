@@ -30,6 +30,7 @@ struct TAASettings {
     bool enable = true;
     bool use_reprojection = true;
     bool use_clamping = true;
+    bool use_mask = true;
 
     float blending_factor = 0.9f;
     float jitter_intensity = 1.0f;
@@ -47,6 +48,7 @@ struct TAAJitterPass {
 
 struct TAAPass {
     FrameGraphImageId anti_aliased;
+    FrameGraphImageId deocclusion_mask;
 
     static TAAPass create(FrameGraph& framegraph,
                           const TAAJitterPass& jitter,
