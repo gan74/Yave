@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/buffers/buffers.h>
 #include <yave/meshes/MeshDrawData.h>
+#include <yave/ecs/SparseComponentSet.h>
 
 #include <y/core/Vector.h>
 
@@ -58,6 +59,9 @@ class StaticMeshRendererSystem : public ecs::System {
         TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible> _transforms;
 
         core::Vector<u32> _free;
+
+        ecs::SparseIdSet _moved;
+        ecs::SparseIdSet _prev_moved;
 };
 
 }

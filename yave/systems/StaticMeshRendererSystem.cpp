@@ -69,6 +69,14 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
             return;
         }
 
+        _moved.make_empty();
+        for(ecs::EntityId id : query.ids()) {
+            _moved.insert(id);
+            if(_prev_moved.contains(id)) {
+                _prev_moved.erase(id);
+            }
+        }
+
         auto mapping = _transforms.map(MappingAccess::ReadWrite);
         for(const auto& [mesh, tr] : query.components()) {
             std::swap(mesh._last_transform_index, mesh._transform_index);
@@ -84,6 +92,13 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
     } else {
         moved_query(world().query<StaticMeshComponent, TransformableComponent>());
     }
+
+
+    auto previously_moved = world().query<StaticMeshComponent>(_prev_moved.ids());
+    for(const auto& [mesh] : previously_moved.components()) {
+        free_index(mesh._last_transform_index);
+    }
+    std::swap(_prev_moved, _moved);
 
     auto removed = world().query<ecs::Removed<StaticMeshComponent>>();
     for(const auto& [mesh] : removed.components()) {
