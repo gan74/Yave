@@ -111,6 +111,7 @@ static constexpr const char* spirv_names[] = {
         "depth_bounds.comp",
         "atmosphere_integrator.comp",
         "deocclusion_mask.comp",
+        "prev_camera.comp",
 
         "deferred_point.frag",
         "deferred_spot.frag",

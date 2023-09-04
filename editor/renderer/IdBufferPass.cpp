@@ -75,21 +75,16 @@ IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view,
     const auto id = builder.declare_image(id_format, size);
 
     const auto id_buffer = builder.declare_typed_buffer<u32>(buffer_size);
-    const auto camera_buffer = builder.declare_typed_buffer<uniform::Camera>(1);
+    const auto camera = builder.declare_typed_buffer<uniform::Camera>(1);
 
     builder.map_buffer(id_buffer);
-    builder.map_buffer(camera_buffer);
+    builder.map_buffer(camera, uniform::Camera(view.camera()));
 
-    builder.add_uniform_input(camera_buffer, stage, main_descriptor_set_index);
+    builder.add_uniform_input(camera, stage, main_descriptor_set_index);
     builder.add_storage_input(id_buffer, stage, main_descriptor_set_index);
     builder.add_depth_output(depth);
     builder.add_color_output(id);
     builder.set_render_func([=, static_meshes = std::move(static_mesh_sub_pass)](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        {
-            auto camera_mapping = self->resources().map_buffer(camera_buffer);
-            camera_mapping[0] = view.camera();
-        }
-
         {
             auto id_mapping = self->resources().map_buffer(id_buffer);
 

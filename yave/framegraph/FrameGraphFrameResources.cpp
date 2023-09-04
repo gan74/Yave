@@ -175,6 +175,10 @@ const BufferBase& FrameGraphFrameResources::buffer_base(FrameGraphBufferId res) 
     return find(res);
 }
 
+BufferMapping<u8> FrameGraphFrameResources::map_buffer_bytes(FrameGraphMutableBufferId res, MappingAccess access) const {
+    return staging_buffer(res).map_bytes(access);
+}
+
 void FrameGraphFrameResources::flush_mapped_buffers(CmdBufferRecorder& recorder) {
     y_profile();
     const auto region = recorder.region("Flush buffers");

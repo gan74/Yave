@@ -11,15 +11,11 @@ layout(set = 0, binding = 2) uniform sampler2D in_prev;
 layout(set = 0, binding = 3) uniform sampler2D in_motion;
 layout(set = 0, binding = 4) uniform sampler2D in_mask;
 
-layout(set = 0, binding = 5) uniform CurrentCameraData {
-    Camera current_cam;
+layout(set = 0, binding = 5) uniform CameraData {
+    Camera camera;
 };
 
-layout(set = 0, binding = 6) uniform PrevCameraData {
-    Camera prev_cam;
-};
-
-layout(set = 0, binding = 7) uniform Settings_Inline {
+layout(set = 0, binding = 6) uniform Settings_Inline {
     uint flags;
     float blending_factor;
 };
@@ -90,10 +86,15 @@ void main() {
     vec2 prev_uv = uv + motion;
     if((flags & reprojection_bit) != 0 && sample_valid) {
         const float depth = texelFetch(in_depth, coord, 0).x;
-        const vec3 world_pos = unproject(uv, depth, current_cam.inv_unjittered_view_proj);
-        prev_uv = project(world_pos, prev_cam.unjittered_view_proj).xy + motion;
+        if(!is_OOB(depth)) {
+            // This seems wrong, we should take prev_uv into account before the reproj ?
+            const vec3 world_pos = unproject(uv, depth, camera.inv_unjittered_view_proj);
+            prev_uv = project(world_pos, camera.prev_unjittered_view_proj).xy + motion;
 
-        sample_valid = sample_valid && (prev_uv == saturate(prev_uv));
+            sample_valid = sample_valid && (prev_uv == saturate(prev_uv));
+        } else {
+            sample_valid = false;
+        }
     }
 
     const vec3 current = texelFetch(in_color, coord, 0).rgb;
@@ -109,8 +110,10 @@ void main() {
 
     out_color = vec4(mix(current, prev, sample_valid ? blending_factor : 0.0), 1.0);
 
-    /*if(!sample_valid) {
+#if 0
+    if(!sample_valid) {
         out_color = vec4(1, 0, 0, 1);
-    }*/
+    }
+#endif
 }
 

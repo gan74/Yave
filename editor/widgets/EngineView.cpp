@@ -169,7 +169,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, output_size);
 
         const auto gbuffer = renderer.renderer.gbuffer;
-        builder.add_image_input_usage(output_image, ImageUsage::TransferSrcBit);
+        builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
         builder.add_color_output(output_image);
         builder.add_inline_input(InlineDescriptor(_view));
         builder.add_uniform_input(renderer.final);

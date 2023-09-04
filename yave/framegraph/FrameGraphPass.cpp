@@ -55,10 +55,11 @@ core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
 }
 
 void FrameGraphPass::render(CmdBufferRecorder& recorder) {
-    y_debug_assert((_render == nullptr) != (_compute_render == nullptr));
     if(_compute_render) {
+        y_debug_assert(!_render);
         _compute_render(recorder, this);
-    } else {
+    } else if(_render) {
+        y_debug_assert(!_compute_render);
         y_debug_assert(!_framebuffer.is_null());
         RenderPassRecorder render_pass = recorder.bind_framebuffer(_framebuffer);
         _render(render_pass, this);

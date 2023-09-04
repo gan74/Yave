@@ -22,40 +22,19 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_TAAPASS_H
 #define YAVE_RENDERER_TAAPASS_H
 
-#include "ExposurePass.h"
+#include "CameraBufferPass.h"
 
 namespace yave {
-
-struct TAASettings {
-    bool enable = true;
-    bool use_reprojection = true;
-    bool use_clamping = true;
-    bool use_mask = true;
-
-    float blending_factor = 0.9f;
-    float jitter_intensity = 1.0f;
-};
-
-struct TAAJitterPass {
-    SceneView jittered_view;
-    SceneView unjittered_view;
-    TAASettings settings;
-
-    Y_TODO(why not move the camera buffer generation here)
-
-    static TAAJitterPass create(FrameGraph&, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings = {});
-};
 
 struct TAAPass {
     FrameGraphImageId anti_aliased;
     FrameGraphImageId deocclusion_mask;
 
     static TAAPass create(FrameGraph& framegraph,
-                          const TAAJitterPass& jitter,
+                          const CameraBufferPass& camera,
                           FrameGraphImageId in_color,
                           FrameGraphImageId in_depth,
-                          FrameGraphImageId& in_motion,
-                          FrameGraphTypedBufferId<uniform::Camera> camera_buffer);
+                          FrameGraphImageId& in_motion);
 };
 
 

@@ -91,7 +91,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input_with_default(ao, Descriptor(white));
     builder.add_external_input(*ibl_probe);
     builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp));
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_input(directional_buffer);
     builder.add_storage_input(shadow_pass.shadow_params);
     builder.add_uniform_input(params_buffer);
@@ -281,7 +281,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.color);
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_input(point_buffer);
     builder.add_storage_input(spot_buffer);
     builder.add_storage_input(shadow_pass.shadow_params);
@@ -324,7 +324,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         // Moving this down causes a reused resource assert
         copied_depth = builder.declare_copy(gbuffer.depth); // extra copy for nothing =(
 
-        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, PipelineStage::VertexBit);
+        builder.add_uniform_input(gbuffer.scene_pass.camera, PipelineStage::VertexBit);
         builder.add_storage_input(point_buffer, PipelineStage::VertexBit);
         builder.add_uniform_input(gbuffer.depth);
         builder.add_uniform_input(gbuffer.color);
@@ -355,7 +355,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
         const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_spot_lights);
 
-        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, PipelineStage::VertexBit);
+        builder.add_uniform_input(gbuffer.scene_pass.camera, PipelineStage::VertexBit);
         builder.add_storage_input(spot_buffer, PipelineStage::VertexBit);
         builder.add_uniform_input(gbuffer.depth);
         builder.add_uniform_input(gbuffer.color);

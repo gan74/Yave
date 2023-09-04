@@ -60,6 +60,7 @@ class FrameGraphFrameResources final : NonMovable {
         const ImageBase& volume_base(FrameGraphVolumeId res) const;
         const BufferBase& buffer_base(FrameGraphBufferId res) const;
 
+        BufferMapping<u8> map_buffer_bytes(FrameGraphMutableBufferId res, MappingAccess access = MappingAccess::WriteOnly) const;
 
         template<ImageUsage Usage>
         ImageView<Usage> image(FrameGraphImageId res) const {
@@ -86,6 +87,8 @@ class FrameGraphFrameResources final : NonMovable {
             const TypedSubBuffer<T, StagingBuffer::usage, StagingBuffer::memory_type> sub_buffer(staging_buffer(res));
             return sub_buffer.map(access);
         }
+
+
 
     private:
         friend class FrameGraph;

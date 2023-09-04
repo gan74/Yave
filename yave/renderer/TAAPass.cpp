@@ -30,34 +30,16 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <y/utils/log.h>
 
 namespace yave {
 
-TAAJitterPass TAAJitterPass::create(FrameGraph&, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings) {
-    TAAJitterPass pass;
-    pass.settings = settings;
-    pass.unjittered_view = view;
-
-    if(pass.settings.enable) {
-        static usize jitter = 1;
-        const usize jitter_index = jitter++;
-        pass.jittered_view = SceneView(&view.world(), view.camera().jittered(jitter_index, size, settings.jitter_intensity));
-    } else {
-        pass.jittered_view = view;
-    }
-
-    return pass;
-}
-
 TAAPass TAAPass::create(FrameGraph& framegraph,
-                        const TAAJitterPass& jitter,
+                        const CameraBufferPass& camera,
                         FrameGraphImageId in_color,
                         FrameGraphImageId in_depth,
-                        FrameGraphImageId& in_motion,
-                        FrameGraphTypedBufferId<uniform::Camera> camera_buffer) {
+                        FrameGraphImageId& in_motion) {
 
-    const TAASettings& settings = jitter.settings;
+    const TAASettings& settings = camera.taa_settings;
 
     if(!settings.enable) {
         TAAPass pass;
@@ -92,7 +74,6 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
 
     {
         static const FrameGraphPersistentResourceId color_id = FrameGraphPersistentResourceId::create();
-        static const FrameGraphPersistentResourceId camera_id = FrameGraphPersistentResourceId::create();
 
         FrameGraphPassBuilder builder = framegraph.add_pass("TAA resolve pass");
 
@@ -102,12 +83,7 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
         if(!prev_color.is_valid()) {
             prev_color = builder.declare_copy(aa);
         }
-        builder.add_image_input_usage(aa, ImageUsage::TextureBit);
-
-        FrameGraphBufferId prev_camera = framegraph.make_persistent_and_get_prev(camera_buffer, camera_id);
-        if(!prev_camera.is_valid()) {
-            prev_camera = builder.declare_copy(camera_buffer);
-        }
+        builder.add_input_usage(aa, ImageUsage::TextureBit);
 
         const u32 reprojection_bit = 0x1;
         const u32 clamping_bit = 0x2;
@@ -132,8 +108,7 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
         builder.add_uniform_input(prev_color);
         builder.add_uniform_input(in_motion);
         builder.add_uniform_input_with_default(pass.deocclusion_mask, *device_resources()[DeviceResources::BlackTexture]);
-        builder.add_uniform_input(camera_buffer);
-        builder.add_uniform_input(prev_camera);
+        builder.add_uniform_input(camera.camera);
         builder.add_inline_input(InlineDescriptor(settings_data));
         builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             const auto* material = device_resources()[DeviceResources::TAAResolveMaterialTemplate];

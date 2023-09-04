@@ -177,6 +177,7 @@ Camera::operator uniform::Camera() const {
 
     camera_data.unjittered_view_proj = unjittered_view_proj();
     camera_data.inv_unjittered_view_proj = camera_data.unjittered_view_proj.inverse();
+    camera_data.prev_unjittered_view_proj = camera_data.unjittered_view_proj;
 
     camera_data.proj = proj_matrix();
     camera_data.inv_proj = camera_data.proj.inverse();

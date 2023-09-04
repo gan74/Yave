@@ -49,7 +49,6 @@ class HoudiniCameraController;
 class ImGuiPlatform;
 class ImGuiRenderer;
 class ImageImporter;
-class MaterialEditor;
 class OrientationGizmo;
 class PerformanceMetrics;
 class PlotData;

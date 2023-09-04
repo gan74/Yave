@@ -103,11 +103,19 @@ FrameGraphMutableBufferId FrameGraphPassBuilderBase::declare_copy(FrameGraphBuff
 
 // --------------------------------- Usage ---------------------------------
 
-void FrameGraphPassBuilderBase::add_image_input_usage(FrameGraphImageId res, ImageUsage usage) {
+void FrameGraphPassBuilderBase::add_input_usage(FrameGraphImageId res, ImageUsage usage) {
     add_to_pass(res, usage, false, PipelineStage::None);
 }
 
-void FrameGraphPassBuilderBase::add_image_output_usage(FrameGraphMutableImageId res, ImageUsage usage) {
+void FrameGraphPassBuilderBase::add_input_usage(FrameGraphBufferId res, BufferUsage usage) {
+    add_to_pass(res, usage, false, PipelineStage::None);
+}
+
+void FrameGraphPassBuilderBase::add_output_usage(FrameGraphMutableImageId res, ImageUsage usage) {
+    add_to_pass(res, usage, true, PipelineStage::None);
+}
+
+void FrameGraphPassBuilderBase::add_output_usage(FrameGraphBufferId res, BufferUsage usage) {
     add_to_pass(res, usage, true, PipelineStage::None);
 }
 
@@ -296,8 +304,11 @@ void FrameGraphPassBuilderBase::add_descriptor_binding(FrameGraphDescriptorBindi
     }
 }
 
-void FrameGraphPassBuilderBase::map_buffer_internal(FrameGraphMutableBufferId res) {
+void FrameGraphPassBuilderBase::map_buffer_internal(FrameGraphMutableBufferId res, InlineDescriptor desc) {
     parent()->map_buffer(res, _pass);
+    if(desc.data()) {
+        _pass->_map_data.emplace_back(res, parent()->copy_inline_descriptor(desc));
+    }
 }
 
 FrameGraph* FrameGraphPassBuilderBase::parent() const {

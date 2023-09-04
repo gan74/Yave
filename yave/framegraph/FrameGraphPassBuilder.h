@@ -25,6 +25,7 @@ SOFTWARE.
 #include "FrameGraphResourceId.h"
 
 #include <yave/graphics/barriers/PipelineStage.h>
+#include <yave/graphics/descriptors/Descriptor.h>
 #include <yave/graphics/images/SamplerType.h>
 #include <yave/graphics/images/ImageUsage.h>
 #include <yave/graphics/images/SamplerType.h>
@@ -55,8 +56,11 @@ class FrameGraphPassBuilderBase {
             return FrameGraphMutableTypedBufferId<T>::from_untyped(declare_buffer(sizeof(T) * std::max(usize(1u), size)));
         }
 
-        void add_image_input_usage(FrameGraphImageId res, ImageUsage usage);
-        void add_image_output_usage(FrameGraphMutableImageId res, ImageUsage usage);
+        void add_input_usage(FrameGraphImageId res, ImageUsage usage);
+        void add_input_usage(FrameGraphBufferId res, BufferUsage usage);
+
+        void add_output_usage(FrameGraphMutableImageId res, ImageUsage usage);
+        void add_output_usage(FrameGraphBufferId res, BufferUsage usage);
 
         void add_depth_output(FrameGraphMutableImageId res);
         void add_color_output(FrameGraphMutableImageId res);
@@ -91,6 +95,11 @@ class FrameGraphPassBuilderBase {
             map_buffer_internal(res);
         }
 
+        template<typename T>
+        void map_buffer(FrameGraphMutableTypedBufferId<T> res, const T& data) {
+            map_buffer_internal(res, InlineDescriptor(data));
+        }
+
         void add_descriptor_binding(Descriptor desc, i32 ds_index = -1);
         i32 next_descriptor_set_index() const;
 
@@ -107,7 +116,7 @@ class FrameGraphPassBuilderBase {
 
         void add_descriptor_binding(FrameGraphDescriptorBinding binding, i32 ds_index);
 
-        void map_buffer_internal(FrameGraphMutableBufferId res);
+        void map_buffer_internal(FrameGraphMutableBufferId res, InlineDescriptor desc = {});
 
         PipelineStage or_default(PipelineStage stage) const;
 

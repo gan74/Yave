@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "SceneRenderSubPass.h"
+#include "TAAPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -48,30 +49,40 @@ static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view)
     return core::Vector<ecs::EntityId>(world.component_ids<T>());
 }
 
-
-SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
-    auto camera_buffer = builder.declare_typed_buffer<uniform::Camera>();
-
+static void fill_scene_render_pass(SceneRenderSubPass& pass, FrameGraphPassBuilder& builder) {
     const std::array tags = {ecs::tags::not_hidden};
 
-    SceneRenderSubPass pass;
-    pass.scene_view = view;
-    pass.camera_buffer = camera_buffer;
-    pass.static_meshes_sub_pass = StaticMeshRenderSubPass::create(builder, view, visible_entities<StaticMeshComponent>(view), tags);
-    pass.main_descriptor_set_index = builder.next_descriptor_set_index();
+    pass.static_meshes_sub_pass = StaticMeshRenderSubPass::create(builder, pass.scene_view, visible_entities<StaticMeshComponent>(pass.scene_view), tags);
 
-    builder.add_uniform_input(camera_buffer, PipelineStage::None, pass.main_descriptor_set_index);
-    builder.map_buffer(camera_buffer);
+    pass.main_descriptor_set_index = builder.next_descriptor_set_index();
+    builder.add_uniform_input(pass.camera, PipelineStage::None, pass.main_descriptor_set_index);
+}
+
+
+SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& scene_view) {
+    const auto camera = builder.declare_typed_buffer<uniform::Camera>();
+    builder.map_buffer(camera, uniform::Camera(scene_view.camera()));
+
+    SceneRenderSubPass pass;
+    pass.scene_view = scene_view;
+    pass.camera = camera;
+
+    fill_scene_render_pass(pass, builder);
+
+    return pass;
+}
+
+SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera) {
+    SceneRenderSubPass pass;
+    pass.scene_view = camera.view;
+    pass.camera = camera.camera;
+
+    fill_scene_render_pass(pass, builder);
 
     return pass;
 }
 
 void SceneRenderSubPass::render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const {
-    {
-        auto camera_mapping = pass->resources().map_buffer(camera_buffer);
-        camera_mapping[0] = scene_view.camera();
-    }
-
     render_pass.set_main_descriptor_set(pass->descriptor_sets()[main_descriptor_set_index]);
     static_meshes_sub_pass.render(render_pass, pass);
 }

@@ -58,7 +58,7 @@ static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const uni
     const FrameGraphMutableVolumeId scattering = builder.declare_volume(format, size);
 
     builder.add_storage_output(scattering);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_inline_input(InlineDescriptor(params));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::AtmosphereIntergratorProgram];
@@ -116,7 +116,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(lit);
     builder.add_uniform_input(scattering, SamplerType::LinearClamp);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_inline_input(InlineDescriptor(params));
     builder.add_color_output(atmo);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {

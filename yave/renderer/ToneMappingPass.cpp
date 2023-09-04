@@ -50,7 +50,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     FrameGraphMutableTypedBufferId<uniform::ExposureParams> mut_params;
     if(!settings.auto_exposure) {
         mut_params = builder.declare_typed_buffer<uniform::ExposureParams>();
-        builder.map_buffer(mut_params);
+        builder.map_buffer(mut_params, uniform::ExposureParams{});
         params = mut_params;
     }
 
@@ -59,11 +59,6 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     builder.add_uniform_input(params);
     builder.add_inline_input(InlineDescriptor(shader_settings));
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        if(!settings.auto_exposure) {
-            auto mapping = self->resources().map_buffer(mut_params);
-            mapping[0] = uniform::ExposureParams{};
-        }
-
         const auto* material = device_resources()[DeviceResources::ToneMappingMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets());
         render_pass.draw_array(3);

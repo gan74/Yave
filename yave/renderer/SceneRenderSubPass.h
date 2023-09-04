@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/framegraph/FrameGraphResourceId.h>
 
+#include "CameraBufferPass.h"
 #include "StaticMeshRenderSubPass.h"
 
 namespace yave {
@@ -33,14 +34,16 @@ struct SceneRenderSubPass {
     SceneView scene_view;
     i32 main_descriptor_set_index = -1;
 
-    Y_TODO(remove mutable)
-    FrameGraphMutableTypedBufferId<uniform::Camera> camera_buffer;
+    FrameGraphTypedBufferId<uniform::Camera> camera;
 
     StaticMeshRenderSubPass static_meshes_sub_pass;
 
+    static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& scene_view);
+    static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera);
 
-    static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& view);
     void render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const;
+
+
 };
 
 

@@ -182,7 +182,7 @@ void Preview::on_gui() {
         FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_copy(renderer.lighting.lit);
-        builder.add_image_input_usage(output_image, ImageUsage::TransferSrcBit);
+        builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& src = self->resources().image_base(output_image);
             output = UiTexture(src.format(), src.image_size().to<2>());

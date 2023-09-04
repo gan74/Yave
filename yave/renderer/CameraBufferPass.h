@@ -19,41 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_RENDERER_CAMERABUFFERPASS_H
+#define YAVE_RENDERER_CAMERABUFFERPASS_H
 
-#include "AABBUpdateSystem.h"
-
-#include <yave/components/TransformableComponent.h>
-
-#include <y/utils/log.h>
-#include <y/utils/format.h>
+#include <yave/scene/SceneView.h>
+#include <yave/framegraph/FrameGraphResourceId.h>
 
 namespace yave {
 
-AABBUpdateSystem::AABBUpdateSystem() : ecs::System("AABBUpdateSystem") {
-}
+struct TAASettings {
+    bool enable = true;
+    bool use_reprojection = true;
+    bool use_clamping = true;
+    bool use_mask = true;
 
-void AABBUpdateSystem::setup() {
-    world().make_mutated<TransformableComponent>(world().component_ids<TransformableComponent>());
-}
+    float blending_factor = 0.9f;
+    float jitter_intensity = 1.0f;
+};
 
-void AABBUpdateSystem::tick() {
-    ecs::SparseComponentSet<AABB> aabbs;
-    for(const AABBTypeInfo& info : _infos) {
-        const core::Span<ecs::EntityId> ids = world().recently_mutated(info.type);
-        if(ids.is_empty()) {
-            continue;
-        }
-        y_profile_dyn_zone(fmt_c_str("collecting {} {}", ids.size(), world().component_type_name(info.type)));
+struct CameraBufferPass {
+    SceneView view;
+    SceneView unjittered_view;
 
-        aabbs.set_min_capacity(aabbs.size() + ids.size());
-        info.collect_aabbs(world(), ids, aabbs);
-    }
+    FrameGraphTypedBufferId<uniform::Camera> camera;
 
-    for(auto&& [id, comp] : world().query<ecs::Mutate<TransformableComponent>>(aabbs.ids())) {
-        auto&& [tr] = comp;
-        tr.set_aabb(aabbs[id]);
-    }
-}
+
+    TAASettings taa_settings;
+
+    static CameraBufferPass create_no_jitter(FrameGraph&, const SceneView& view);
+    static CameraBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings = {});
+};
 
 }
+
+#endif // YAVE_RENDERER_CAMERABUFFERPASS_H
 

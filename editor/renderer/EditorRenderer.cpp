@@ -67,7 +67,7 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
         renderer.depth = renderer.renderer.depth;
     }
 
-    const SceneView& scene_view = renderer.renderer.jitter.unjittered_view;
+    const SceneView& scene_view = renderer.renderer.camera.unjittered_view;
 
     if(settings.show_editor_entities) {
         const EditorPass ed = EditorPass::create(framegraph, scene_view, renderer.depth, renderer.final);

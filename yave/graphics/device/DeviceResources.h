@@ -56,6 +56,7 @@ class DeviceResources final : NonMovable {
             DepthBoundComp,
             AtmosphereIntergratorComp,
             TAADeocclusionMaskComp,
+            PrevCameraComp,
 
             DeferredPointFrag,
             DeferredSpotFrag,
@@ -98,6 +99,7 @@ class DeviceResources final : NonMovable {
             DepthBoundProgram,
             AtmosphereIntergratorProgram,
             TAADeocclusionMaskProgram,
+            PrevCameraProgram,
 
             MaxComputePrograms
         };

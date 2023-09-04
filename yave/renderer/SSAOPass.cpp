@@ -121,7 +121,7 @@ static FrameGraphImageId compute_linear_depth(FrameGraph& framegraph, const GBuf
     const auto linear_depth = builder.declare_image(depth_format, size);
 
     builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_output(linear_depth);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::LinearizeDepthProgram];

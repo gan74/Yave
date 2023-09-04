@@ -69,6 +69,8 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
             return;
         }
 
+        y_profile_msg(fmt_c_str("{} objects moved", query.size()));
+
         _moved.make_empty();
         for(ecs::EntityId id : query.ids()) {
             _moved.insert(id);

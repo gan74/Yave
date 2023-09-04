@@ -31,7 +31,7 @@ namespace editor {
 namespace memory {
 
 constinit std::atomic<usize> live_allocs = 0;
-constinit std::atomic<u64> total_allocs= 0;
+constinit std::atomic<u64> total_allocs = 0;
 
 usize live_allocations() {
     return live_allocs;

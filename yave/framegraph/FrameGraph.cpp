@@ -276,6 +276,11 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
 
             {
                 y_profile_zone("prepare");
+                for(const auto& [res, data] : pass->_map_data) {
+                    auto mapping = _resources->map_buffer_bytes(res);
+                    std::memcpy(mapping.data(), data.data(), data.size());
+                }
+
                 while(image_copy_index < _image_copies.size() && _image_copies[image_copy_index].pass_index == pass->_index) {
                     // copie_image will not do anything if the two are aliased
                     copy_image(recorder, _image_copies[image_copy_index].src, _image_copies[image_copy_index].dst, images_to_barrier, *_resources);

@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-GBufferPass GBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size) {
+GBufferPass GBufferPass::create(FrameGraph& framegraph, const CameraBufferPass& camera, const math::Vec2ui& size) {
     static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;
     static constexpr ImageFormat motion_format = VK_FORMAT_R16G16_SNORM;
     static constexpr ImageFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -50,7 +50,7 @@ GBufferPass GBufferPass::create(FrameGraph& framegraph, const SceneView& view, c
     pass.color = color;
     pass.normal = normal;
     pass.emissive = emissive;
-    pass.scene_pass = SceneRenderSubPass::create(builder, view);
+    pass.scene_pass = SceneRenderSubPass::create(builder, camera);
 
     builder.add_depth_output(depth);
     builder.add_color_output(motion);

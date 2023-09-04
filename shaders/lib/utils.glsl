@@ -29,6 +29,7 @@ struct Camera {
 
     mat4 unjittered_view_proj;
     mat4 inv_unjittered_view_proj;
+    mat4 prev_unjittered_view_proj;
 
     mat4 proj;
     mat4 inv_proj;
