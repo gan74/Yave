@@ -61,7 +61,7 @@ ClampingInfo gather_clamping_info(sampler2D in_color, vec2 uv) {
     return info;
 }
 
-bool fetch_reprojection_mask(vec2 uv) {
+bool fetch_deocclusion_mask(vec2 uv) {
     const vec4 mask = textureGather(in_mask, uv, 0);
     return any(greaterThan(mask, vec4(0.0)));
 }
@@ -82,7 +82,7 @@ void main() {
     bool sample_valid = true;
 
     if((flags & mask_bit) != 0) {
-        if(fetch_reprojection_mask(uv) && motion == vec2(0)) {
+        if(motion == vec2(0.0) && fetch_deocclusion_mask(uv)) {
             sample_valid = false;
         }
     }

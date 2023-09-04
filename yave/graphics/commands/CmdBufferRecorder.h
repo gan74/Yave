@@ -123,8 +123,9 @@ class CmdBufferRecorderBase : NonMovable {
 
         void full_barrier();
 
+        // Clean these
         void copy(const ImageBase& src,  const ImageBase& dst);
-        void clear_image(const DstCopyImage& dst);
+        void clear(const ImageBase& dst);
 
         void unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
 

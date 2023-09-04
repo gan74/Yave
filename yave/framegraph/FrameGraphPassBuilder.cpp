@@ -100,6 +100,7 @@ FrameGraphMutableBufferId FrameGraphPassBuilderBase::declare_copy(FrameGraphBuff
     return res;
 }
 
+
 // --------------------------------- Usage ---------------------------------
 
 void FrameGraphPassBuilderBase::add_image_input_usage(FrameGraphImageId res, ImageUsage usage) {
@@ -109,6 +110,7 @@ void FrameGraphPassBuilderBase::add_image_input_usage(FrameGraphImageId res, Ima
 void FrameGraphPassBuilderBase::add_image_output_usage(FrameGraphMutableImageId res, ImageUsage usage) {
     add_to_pass(res, usage, true, PipelineStage::None);
 }
+
 
 // --------------------------------- Framebuffer ---------------------------------
 
@@ -206,11 +208,13 @@ void FrameGraphPassBuilderBase::add_uniform_input_with_default(FrameGraphImageId
     }
 }
 
+
 // --------------------------------- Inline ---------------------------------
 
 void FrameGraphPassBuilderBase::add_inline_input(InlineDescriptor desc, i32 ds_index) {
     add_descriptor_binding(Descriptor(parent()->copy_inline_descriptor(desc)), ds_index);
 }
+
 
 // --------------------------------- External ---------------------------------
 
@@ -219,6 +223,7 @@ void FrameGraphPassBuilderBase::add_external_input(Descriptor desc, PipelineStag
     y_debug_assert(!desc.is_inline_block());
     add_descriptor_binding(desc, ds_index);
 }
+
 
 // --------------------------------- Attribs ---------------------------------
 
@@ -233,10 +238,14 @@ void FrameGraphPassBuilderBase::add_index_input(FrameGraphBufferId res, Pipeline
 
 // --------------------------------- Stuff ---------------------------------
 
+void FrameGraphPassBuilderBase::clear_before_pass(FrameGraphMutableImageId res) {
+    add_to_pass(res, ImageUsage::TransferDstBit, true, PipelineStage::None);
+    parent()->register_image_clear(res, _pass);
+}
+
 void FrameGraphPassBuilderBase::add_descriptor_binding(Descriptor desc, i32 ds_index) {
     add_descriptor_binding(FrameGraphDescriptorBinding(desc), ds_index);
 }
-
 
 i32 FrameGraphPassBuilderBase::next_descriptor_set_index() const {
     const auto& bindings = _pass->_bindings;

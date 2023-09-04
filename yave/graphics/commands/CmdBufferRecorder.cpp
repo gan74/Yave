@@ -426,6 +426,26 @@ void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
     }
 }
 
+void CmdBufferRecorderBase::clear(const ImageBase& dst) {
+    y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
+
+    barriers(ImageBarrier::transition_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL));
+
+    {
+        VkImageSubresourceRange range = {};
+        {
+            range.aspectMask = dst.format().is_depth_format() ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+            range.layerCount = 1;
+            range.levelCount = 1;
+        }
+
+        const VkClearColorValue value = {};
+        vkCmdClearColorImage(vk_cmd_buffer(), dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, &range);
+    }
+
+    barriers(ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL));
+}
+
 void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
     y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match.");
 
@@ -438,22 +458,6 @@ void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuf
 
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
 }
-
-void CmdBufferRecorderBase::clear_image(const DstCopyImage& dst) {
-    check_no_renderpass();
-
-    VkImageSubresourceRange range = {};
-    {
-        range.aspectMask = dst.format().is_depth_format() ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-        range.layerCount = 1;
-        range.levelCount = 1;
-    }
-
-    const VkClearColorValue value = {};
-    vkCmdClearColorImage(vk_cmd_buffer(), dst.vk_image(), vk_image_layout(dst.usage()), &value, 1, &range);
-}
-
-
 
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
 

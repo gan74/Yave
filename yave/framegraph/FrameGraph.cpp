@@ -90,7 +90,7 @@ static auto&& check_exists(C& c, T t) {
 }
 
 template<typename C, typename B, typename H>
-static void build_barriers(const C& resources, B& barriers, H& to_barrier, FrameGraphFrameResources& frame_res) {
+static void build_barriers(const C& resources, B& barriers, H& to_barrier, const FrameGraphFrameResources& frame_res) {
     for(auto&& [res, info] : resources) {
         // barrier around attachments are handled by the renderpass
         const PipelineStage stage = info.stage & ~PipelineStage::AllAttachmentOutBit;
@@ -111,10 +111,10 @@ static void build_barriers(const C& resources, B& barriers, H& to_barrier, Frame
 
 template<typename H>
 static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, FrameGraphMutableImageId dst,
-                        H& to_barrier, const FrameGraphFrameResources& resources) {
+                       H& to_barrier, const FrameGraphFrameResources& frame_res) {
 
     Y_TODO(We might end up barriering twice here)
-    if(resources.are_aliased(src, dst)) {
+    if(frame_res.are_aliased(src, dst)) {
         if(const auto it = to_barrier.find(src); it != to_barrier.end()) {
             to_barrier[dst] = it->second;
             to_barrier.erase(it);
@@ -122,21 +122,38 @@ static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, Frame
     } else {
         to_barrier.erase(src);
         to_barrier.erase(dst);
-        recorder.copy(resources.image_base(src), resources.image_base(dst));
+        recorder.copy(frame_res.image_base(src), frame_res.image_base(dst));
     }
 }
 
-template<typename H>
+template<typename H, typename B>
 static void copy_buffer(CmdBufferRecorder& recorder, FrameGraphBufferId src, FrameGraphMutableBufferId dst,
-                        H& to_barrier, const FrameGraphFrameResources& resources) {
+                        H& to_barrier, const B& pass_buffers, const FrameGraphFrameResources& frame_res) {
 
-    Y_TODO(We might end up barriering twice here)
-    unused(to_barrier);
-    recorder.unbarriered_copy(resources.buffer<BufferUsage::TransferSrcBit>(src), resources.buffer<BufferUsage::TransferDstBit>(dst));
+    if(const auto src_it = to_barrier.find(src); src_it != to_barrier.end()) {
+        const auto dst_it = pass_buffers.find(dst);
+        y_debug_assert(dst_it != pass_buffers.end());
+        recorder.barriers(frame_res.barrier(src, src_it->second, dst_it->second.stage));
+        to_barrier.erase(src_it);
+    }
+
+    auto& dst_stage = to_barrier[dst];
+    if(dst_stage != PipelineStage::None) {
+        recorder.barriers(frame_res.barrier(dst, dst_stage, PipelineStage::TransferBit));
+    }
+
+    recorder.unbarriered_copy(frame_res.buffer<BufferUsage::TransferSrcBit>(src), frame_res.buffer<BufferUsage::TransferDstBit>(dst));
+
+    dst_stage = PipelineStage::TransferBit;
 }
 
+template<typename H>
+static void clear_image(CmdBufferRecorder& recorder, FrameGraphMutableImageId dst,
+                        H& to_barrier, const FrameGraphFrameResources& frame_res) {
 
-
+    to_barrier.erase(dst);
+    recorder.clear(frame_res.image_base(dst));
+}
 
 
 FrameGraphRegion::~FrameGraphRegion() {
@@ -231,6 +248,9 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
     usize buffer_copy_index = 0;
     std::sort(_buffer_copies.begin(), _buffer_copies.end(), [&](const auto& a, const auto& b) { return a.pass_index < b.pass_index; });
 
+    usize image_clear_index = 0;
+    std::sort(_image_clears.begin(), _image_clears.end(), [&](const auto& a, const auto& b) { return a.pass_index < b.pass_index; });
+
     using hash_t = std::hash<FrameGraphResourceId>;
     core::FlatHashMap<FrameGraphBufferId, PipelineStage, hash_t> buffers_to_barrier;
     core::FlatHashMap<FrameGraphVolumeId, PipelineStage, hash_t> volumes_to_barrier;
@@ -263,8 +283,13 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
                 }
 
                 while(buffer_copy_index < _buffer_copies.size() && _buffer_copies[buffer_copy_index].pass_index == pass->_index) {
-                    copy_buffer(recorder, _buffer_copies[buffer_copy_index].src, _buffer_copies[buffer_copy_index].dst, buffers_to_barrier, *_resources);
+                    copy_buffer(recorder, _buffer_copies[buffer_copy_index].src, _buffer_copies[buffer_copy_index].dst, buffers_to_barrier, pass->_buffers, *_resources);
                     ++buffer_copy_index;
+                }
+
+                while(image_clear_index < _image_clears.size() && _image_clears[image_clear_index].pass_index == pass->_index) {
+                    clear_image(recorder, _image_clears[image_clear_index].dst, images_to_barrier, *_resources);
+                    ++image_clear_index;
                 }
             }
 
@@ -278,8 +303,6 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
                 build_barriers(pass->_volumes, volume_barriers, volumes_to_barrier, *_resources);
                 build_barriers(pass->_images, image_barriers, images_to_barrier, *_resources);
                 recorder.barriers(buffer_barriers, image_barriers);
-
-                //recorder.full_barrier();
             }
 
             {
@@ -555,6 +578,11 @@ void FrameGraph::register_image_copy(FrameGraphMutableImageId dst, FrameGraphIma
 
 void FrameGraph::register_buffer_copy(FrameGraphMutableBufferId dst, FrameGraphBufferId src, const FrameGraphPass* pass) {
     _buffer_copies.push_back({pass->_index, dst, src});
+}
+
+void FrameGraph::register_image_clear(FrameGraphMutableImageId dst, const FrameGraphPass* pass) {
+    check_exists(_images, dst);
+    _image_clears.push_back({pass->_index, dst});
 }
 
 template<typename C, typename T, typename U>

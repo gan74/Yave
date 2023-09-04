@@ -147,6 +147,13 @@ T sign(T t) {
 }
 
 template<typename T>
+T round_up_to(T val, T to) {
+    static_assert(std::is_integral_v<T>);
+    const T m = val % to;
+    return m ? val + (to - m) : val;
+}
+
+template<typename T>
 static bool fully_finite(const T& t) {
     return std::all_of(t.begin(), t.end(), [](auto x) { return std::isfinite(x); });
 }

@@ -87,6 +87,11 @@ class FrameGraph : NonMovable {
         MemoryType memory_type = MemoryType::DontCare;
     };
 
+    struct ImageClearInfo {
+        usize pass_index = 0;
+        FrameGraphMutableImageId dst;
+    };
+
     struct ImageCopyInfo {
         usize pass_index = 0;
         FrameGraphMutableImageId dst;
@@ -165,6 +170,8 @@ class FrameGraph : NonMovable {
         void register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass);
         void register_buffer_copy(FrameGraphMutableBufferId dst, FrameGraphBufferId src, const FrameGraphPass* pass);
 
+        void register_image_clear(FrameGraphMutableImageId dst, const FrameGraphPass* pass);
+
         [[nodiscard]] InlineDescriptor copy_inline_descriptor(InlineDescriptor desc);
 
         void map_buffer(FrameGraphMutableBufferId res, const FrameGraphPass* pass);
@@ -189,6 +196,8 @@ class FrameGraph : NonMovable {
 
         core::Vector<ImageCopyInfo> _image_copies;
         core::Vector<BufferCopyInfo> _buffer_copies;
+
+        core::Vector<ImageClearInfo> _image_clears;
 
         core::Vector<InlineStorage> _inline_storage;
 

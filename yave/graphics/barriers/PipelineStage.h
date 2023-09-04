@@ -27,6 +27,7 @@ SOFTWARE.
 namespace yave {
 
 // https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkPipelineStageFlagBits.html
+// https://gpuopen.com/learn/vulkan-barriers-explained/
 enum class PipelineStage : u32 {
     None = 0,
 

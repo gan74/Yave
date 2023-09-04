@@ -78,12 +78,11 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
 
         const auto mask = builder.declare_image(VK_FORMAT_R8_UNORM, size);
 
-        builder.add_image_output_usage(mask, ImageUsage::TransferDstBit);
+        builder.clear_before_pass(mask);
 
         builder.add_storage_output(mask);
         builder.add_uniform_input(in_motion);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            recorder.clear_image(self->resources().image<ImageUsage::TransferDstBit>(mask));
             const auto& program = device_resources()[DeviceResources::TAADeocclusionMaskProgram];
             recorder.dispatch_size(program, size, self->descriptor_sets());
         });
