@@ -33,7 +33,7 @@ SOFTWARE.
 
 #undef y_fatal
 #define y_fatal_no_fmt(msg) y::fatal((msg), __FILE__, __LINE__)
-#define y_fatal(...) y::fatal(y::fmt_c_str(__VA_ARGS__), __FILE__, __LINE__)
+#define y_fatal(...) y_fatal_no_fmt(y::fmt_c_str(__VA_ARGS__))
 
 
 
@@ -43,12 +43,12 @@ core::MutableSpan<char> alloc_fmt_buffer();
 }
 
 template<typename... Args>
-const char* fmt_c_str(std::string_view fmt_str, Args&&... args);
+const char* fmt_c_str(std::format_string<Args...> fmt_str, Args&&... args);
 
 template<typename... Args>
-std::string_view fmt(std::string_view fmt_str, Args&&... args) {
+std::string_view fmt(std::format_string<Args...> fmt_str, Args&&... args) {
     if constexpr(sizeof...(args) == 0) {
-        return fmt_str;
+        return fmt_str.get();
     }
     try {
         auto buffer = detail::alloc_fmt_buffer();
@@ -87,7 +87,7 @@ std::string_view fmt(std::string_view fmt_str, Args&&... args) {
 
         static_assert(std::output_iterator<Iterator, const char&>);
 
-        it = std::vformat_to(it, fmt_str, std::make_format_args(y_fwd(args)...));
+        it = std::format_to(it, fmt_str,y_fwd(args)...);
 
         if(it.index > it.buffer_size) {
             Y_TODO(find something better)
@@ -104,15 +104,19 @@ std::string_view fmt(std::string_view fmt_str, Args&&... args) {
 }
 
 template<typename... Args>
-const char* fmt_c_str(std::string_view fmt_str, Args&&... args) {
+const char* fmt_c_str(std::format_string<Args...> fmt_str, Args&&... args) {
     return fmt(fmt_str, y_fwd(args)...).data();
 }
 
+inline const char* fmt_c_str(const char* str) {
+    return str;
+}
+
 template<typename... Args>
-std::string_view fmt_into(core::String& out, std::string_view fmt_str, Args&&... args) {
+std::string_view fmt_into(core::String& out, std::format_string<Args...> fmt_str, Args&&... args) {
     try {
         const usize start = out.size();
-        std::vformat_to(std::back_inserter(out), fmt_str, std::make_format_args(y_fwd(args)...));
+        std::format_to(std::back_inserter(out), fmt_str, y_fwd(args)...);
         return out.sub_str(start, out.size() - start);
     } catch(std::exception& e) {
         y_fatal("fmt failed: {}", e.what());
@@ -120,7 +124,7 @@ std::string_view fmt_into(core::String& out, std::string_view fmt_str, Args&&...
 }
 
 template<typename... Args>
-core::String fmt_to_owned(std::string_view fmt_str, Args&&... args) {
+core::String fmt_to_owned(std::format_string<Args...> fmt_str, Args&&... args) {
     core::String buffer;
     fmt_into(buffer, fmt_str, y_fwd(args)...);
     return buffer;
