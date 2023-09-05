@@ -31,8 +31,12 @@ class DescriptorSet : public DescriptorSetBase, NonCopyable {
 
     public:
         DescriptorSet() = default;
-
         DescriptorSet(core::Span<Descriptor> bindings);
+
+        template<typename T, typename... Args> requires(sizeof...(Args) > 0 || !std::is_convertible_v<T, core::Span<Descriptor>>)
+        explicit DescriptorSet(T&& t, Args&&... args) : DescriptorSet(std::array<Descriptor, 1 + sizeof...(Args)>{Descriptor(y_fwd(t)), Descriptor(y_fwd(args))...}) {
+        }
+
         ~DescriptorSet();
 
         DescriptorSet(DescriptorSet&& other);

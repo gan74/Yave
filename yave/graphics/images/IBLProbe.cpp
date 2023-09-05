@@ -120,12 +120,12 @@ static void fill_probe(core::MutableSpan<ProbeBaseView> views, const Image<Image
         for(usize i = 0; i != views.size(); ++i) {
             ImageView<ImageUsage::StorageBit, ImageType::Cube> z = views[i];
             const float roughness = (i * roughness_step);
-            const DescriptorSet descriptor_set(std::array{
+            const auto ds = DescriptorSet(
                 Descriptor(texture, SamplerType::LinearClamp),
-                Descriptor(z),
-                Descriptor(InlineDescriptor(roughness))
-            });
-            recorder.dispatch_size(conv_program, size, {descriptor_set});
+                z,
+                InlineDescriptor(roughness)
+            );
+            recorder.dispatch_size(conv_program, size, ds);
 
             size /= 2;
         }

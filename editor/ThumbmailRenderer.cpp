@@ -180,8 +180,8 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
     {
-        const DescriptorSet set = DescriptorSet(std::array{Descriptor(*tex, SamplerType::LinearClamp), Descriptor(StorageView(out))});
-        recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), {set});
+        const auto ds = DescriptorSet(Descriptor(*tex, SamplerType::LinearClamp), StorageView(out));
+        recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), ds);
     }
     command_queue().submit(std::move(recorder)).wait();
     return out;

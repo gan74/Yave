@@ -97,17 +97,10 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
 
         {
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-
-            const DescriptorSet ds(std::array{
-                Descriptor(_transforms),
-                Descriptor(transform_staging),
-                Descriptor(index_staging),
-                Descriptor(InlineDescriptor(index))
-            });
-
-            const auto& program = device_resources()[DeviceResources::UpdateTransformsProgram];
-            recorder.dispatch_size(program, math::Vec2ui(index, 1), ds);
-
+            {
+                const auto& program = device_resources()[DeviceResources::UpdateTransformsProgram];
+                recorder.dispatch_size(program, math::Vec2ui(index, 1), DescriptorSet(_transforms, transform_staging, index_staging, InlineDescriptor(index)));
+            }
             command_queue().submit(std::move(recorder));
         }
     };

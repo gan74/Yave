@@ -169,12 +169,10 @@ static Texture create_brdf_lut(const ComputeProgram& brdf_integrator, usize size
 
     StorageTexture image(ImageFormat(VK_FORMAT_R16G16_UNORM), {size, size});
 
-    const DescriptorSet dset = DescriptorSet(Descriptor(StorageView(image)));
-
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     {
         const auto region = recorder.region("create_brdf_lut");
-        recorder.dispatch_size(brdf_integrator, image.size(), dset);
+        recorder.dispatch_size(brdf_integrator, image.size(), DescriptorSet(StorageView(image)));
     }
     command_queue().submit(std::move(recorder)).wait();
 
