@@ -69,6 +69,7 @@ const uint reprojection_bit = 0x1;
 const uint clamping_bit = 0x2;
 const uint mask_bit = 0x4;
 
+// https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
 void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
     const vec2 inv_size = 1.0 / vec2(textureSize(in_color, 0).xy);
