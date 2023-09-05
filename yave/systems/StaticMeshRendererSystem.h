@@ -56,7 +56,7 @@ class StaticMeshRendererSystem : public ecs::System {
 
         void run_tick(bool only_recent);
 
-        TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible> _transforms;
+        TypedBuffer<math::Transform<>, BufferUsage::StorageBit> _transforms;
 
         core::Vector<u32> _free;
 

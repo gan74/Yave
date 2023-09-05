@@ -1,0 +1,35 @@
+#version 450
+
+
+#include "lib/utils.glsl"
+
+layout(local_size_x = 1) in;
+
+layout(set = 0, binding = 0) buffer OutTransforms {
+    mat4 out_transforms[];
+};
+
+layout(set = 0, binding = 1) readonly buffer InTransforms {
+    mat4 in_transforms[];
+};
+
+layout(set = 0, binding = 2) readonly buffer InIndices {
+    uint in_indices[];
+};
+
+layout(set = 0, binding = 3) uniform Params_Inline {
+    uint transform_count;
+};
+
+
+
+void main() {
+    const uint id = uint(gl_GlobalInvocationID.x);
+    if(id >= transform_count) {
+        return;
+    }
+
+    const uint index = in_indices[id];
+    out_transforms[index] = in_transforms[id];
+}
+

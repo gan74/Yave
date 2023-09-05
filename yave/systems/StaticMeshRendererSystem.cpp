@@ -27,12 +27,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
-#include <yave/graphics/device/MaterialAllocator.h>
-#include <yave/graphics/device/MeshAllocator.h>
-#include <yave/graphics/images/TextureLibrary.h>
-
-#include <yave/material/Material.h>
-#include <yave/meshes/StaticMesh.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
@@ -65,11 +60,13 @@ void StaticMeshRendererSystem::tick() {
 
 void StaticMeshRendererSystem::run_tick(bool only_recent) {
     auto moved_query = [&](auto query) {
-        if(!query.size()) {
+        const usize moved_count = query.size();
+
+        if(!moved_count) {
             return;
         }
 
-        y_profile_msg(fmt_c_str("{} objects moved", query.size()));
+        y_profile_msg(fmt_c_str("{} objects moved", moved_count));
 
         _moved.make_empty();
         for(ecs::EntityId id : query.ids()) {
@@ -79,13 +76,39 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
             }
         }
 
-        auto mapping = _transforms.map(MappingAccess::ReadWrite);
-        for(const auto& [mesh, tr] : query.components()) {
-            std::swap(mesh._last_transform_index, mesh._transform_index);
-            alloc_index(mesh._transform_index);
+        auto transform_staging = TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible>(moved_count);
+        auto index_staging = TypedBuffer<u32, BufferUsage::StorageBit, MemoryType::CpuVisible>(moved_count);
 
-            y_debug_assert(mesh.has_transform_index());
-            mapping[mesh._transform_index] = tr.transform();
+        u32 index = 0;
+        {
+            auto transform_mapping = transform_staging.map(MappingAccess::WriteOnly);
+            auto index_mapping = index_staging.map(MappingAccess::WriteOnly);
+            for(const auto& [mesh, tr] : query.components()) {
+                std::swap(mesh._last_transform_index, mesh._transform_index);
+                alloc_index(mesh._transform_index);
+
+                y_debug_assert(mesh.has_transform_index());
+
+                transform_mapping[index] = tr.transform();
+                index_mapping[index] = mesh._transform_index;
+                ++index;
+            }
+        }
+
+        {
+            CmdBufferRecorder recorder = create_disposable_cmd_buffer();
+
+            const DescriptorSet ds(std::array{
+                Descriptor(_transforms),
+                Descriptor(transform_staging),
+                Descriptor(index_staging),
+                Descriptor(InlineDescriptor(index))
+            });
+
+            const auto& program = device_resources()[DeviceResources::UpdateTransformsProgram];
+            recorder.dispatch_size(program, math::Vec2ui(index, 1), ds);
+
+            command_queue().submit(std::move(recorder));
         }
     };
 
