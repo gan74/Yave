@@ -29,20 +29,21 @@ SOFTWARE.
 #include <yave/utils/traits.h>
 
 #include <y/concurrent/Mutexed.h>
+#include <thread>
 
 namespace yave {
 
 class CmdBufferPool : NonMovable {
 
     public:
-        CmdBufferPool(ThreadDevicePtr dptr);
-
+        CmdBufferPool();
         ~CmdBufferPool();
 
         VkCommandPool vk_pool() const;
 
-        CmdBufferRecorder create_buffer();
-        TransferCmdBufferRecorder create_transfer_buffer();
+        CmdBufferRecorder create_cmd_buffer();
+        ComputeCmdBufferRecorder create_compute_cmd_buffer();
+        TransferCmdBufferRecorder create_transfer_cmd_buffer();
 
     private:
         friend class LifetimeManager;
@@ -56,12 +57,14 @@ class CmdBufferPool : NonMovable {
     private:
         CmdBufferData* create_data();
 
-        concurrent::Mutexed<core::Vector<std::unique_ptr<CmdBufferData>>> _cmd_buffers;
+        core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
         VkHandle<VkCommandPool> _pool; // Synced through _cmd_buffers
 
         concurrent::Mutexed<core::Vector<CmdBufferData*>> _released;
 
-        ThreadDevicePtr _device = nullptr;
+#ifdef Y_DEBUG
+        std::thread::id _thread_id;
+#endif
 };
 
 }

@@ -71,10 +71,12 @@ class CmdQueue final : public CmdQueueBase {
         CmdQueue(u32 family_index, VkQueue queue);
 
         // Does not wait for the completion of previous commands before starting
+        WaitToken submit_async_start(ComputeCmdBufferRecorder&& recorder) const;
         WaitToken submit_async_start(TransferCmdBufferRecorder&& recorder) const;
 
-        WaitToken submit(TransferCmdBufferRecorder&& recorder) const;
         WaitToken submit(CmdBufferRecorder&& recorder) const;
+        WaitToken submit(ComputeCmdBufferRecorder&& recorder) const;
+        WaitToken submit(TransferCmdBufferRecorder&& recorder) const;
 };
 
 }

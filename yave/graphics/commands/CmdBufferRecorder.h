@@ -130,6 +130,11 @@ class CmdBufferRecorderBase : NonMovable {
         void unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
 
     protected:
+        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+
+    protected:
         friend class CmdBufferPool;
         friend class CmdQueueBase;
 
@@ -149,38 +154,41 @@ class CmdBufferRecorderBase : NonMovable {
 
 
 
+#define YAVE_GENERATE_CMD_BUFFER_MEMBERS(CmdBufferType)                                                     \
+    public:                                                                                                 \
+        CmdBufferType(CmdBufferType&& other) { swap(other); }                                               \
+        CmdBufferType& operator=(CmdBufferType&& other) { swap(other); return *this; }                      \
+    private:                                                                                                \
+        friend class CmdBufferPool;                                                                         \
+        friend class RenderPassRecorder;                                                                    \
+        CmdBufferType() = default;                                                                          \
+        CmdBufferType(CmdBufferData* data) : CmdBufferRecorderBase(data) {}
+
+
 
 class TransferCmdBufferRecorder final : public CmdBufferRecorderBase {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(TransferCmdBufferRecorder)
+};
+
+class ComputeCmdBufferRecorder final : public CmdBufferRecorderBase {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(ComputeCmdBufferRecorder)
+
     public:
-        TransferCmdBufferRecorder(TransferCmdBufferRecorder&& other);
-        TransferCmdBufferRecorder& operator=(TransferCmdBufferRecorder&& other);
-
-    private:
-        friend class CmdBufferPool;
-        friend class RenderPassRecorder;
-
-        TransferCmdBufferRecorder() = default;
-        TransferCmdBufferRecorder(CmdBufferData* data);
+        using CmdBufferRecorderBase::dispatch;
+        using CmdBufferRecorderBase::dispatch_size;
 };
 
 class CmdBufferRecorder final : public CmdBufferRecorderBase {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(CmdBufferRecorder)
+
     public:
-        CmdBufferRecorder(CmdBufferRecorder&& other);
-        CmdBufferRecorder& operator=(CmdBufferRecorder&& other);
+        using CmdBufferRecorderBase::dispatch;
+        using CmdBufferRecorderBase::dispatch_size;
 
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
-
-        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-
-    private:
-        friend class CmdBufferPool;
-        friend class RenderPassRecorder;
-
-        CmdBufferRecorder() = default;
-        CmdBufferRecorder(CmdBufferData* data);
 };
+
+#undef CmdBufferRecorderBase
 
 }
 

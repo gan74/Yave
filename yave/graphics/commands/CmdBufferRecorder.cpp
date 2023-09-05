@@ -459,35 +459,39 @@ void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuf
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
 }
 
+void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    check_no_renderpass();
+
+    vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
+
+    if(!descriptor_sets.is_empty()) {
+        vkCmdBindDescriptorSets(vk_cmd_buffer(),
+            VK_PIPELINE_BIND_POINT_COMPUTE,
+            program.vk_pipeline_layout(),
+            0,
+            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
+            0, nullptr);
+    }
+
+    vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
+}
+
+void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    math::Vec3ui dispatch_size;
+    const math::Vec3ui program_size = program.local_size();
+    for(usize i = 0; i != 3; ++i) {
+        dispatch_size[i] = size[i] / program_size[i] + !!(size[i] % program_size[i]);
+    }
+    dispatch(program, dispatch_size, descriptor_sets);
+}
+
+void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
+}
+
+
+
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
-
-TransferCmdBufferRecorder::TransferCmdBufferRecorder(CmdBufferData* data) : CmdBufferRecorderBase(data) {
-}
-
-TransferCmdBufferRecorder::TransferCmdBufferRecorder(TransferCmdBufferRecorder&& other) {
-    swap(other);
-}
-
-TransferCmdBufferRecorder& TransferCmdBufferRecorder::operator=(TransferCmdBufferRecorder&& other) {
-    swap(other);
-    return *this;
-}
-
-
-
-// -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
-
-CmdBufferRecorder::CmdBufferRecorder(CmdBufferData* data) : CmdBufferRecorderBase(data) {
-}
-
-CmdBufferRecorder::CmdBufferRecorder(CmdBufferRecorder&& other) {
-    swap(other);
-}
-
-CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
-    swap(other);
-    return *this;
-}
 
 RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
     check_no_renderpass();
@@ -518,37 +522,6 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 
     return RenderPassRecorder(*this, Viewport(framebuffer.size()));
 }
-
-void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
-    check_no_renderpass();
-
-    vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
-
-    if(!descriptor_sets.is_empty()) {
-        vkCmdBindDescriptorSets(vk_cmd_buffer(),
-            VK_PIPELINE_BIND_POINT_COMPUTE,
-            program.vk_pipeline_layout(),
-            0,
-            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
-            0, nullptr);
-    }
-
-    vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
-}
-
-void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
-    math::Vec3ui dispatch_size;
-    const math::Vec3ui program_size = program.local_size();
-    for(usize i = 0; i != 3; ++i) {
-        dispatch_size[i] = size[i] / program_size[i] + !!(size[i] % program_size[i]);
-    }
-    dispatch(program, dispatch_size, descriptor_sets);
-}
-
-void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
-    dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
-}
-
 
 }
 

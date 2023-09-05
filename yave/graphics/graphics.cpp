@@ -23,10 +23,10 @@ SOFTWARE.
 #include "graphics.h"
 
 #include <yave/graphics/device/deviceutils.h>
-#include <yave/graphics/device/ThreadLocalDevice.h>
 #include <yave/graphics/device/Instance.h>
 #include <yave/graphics/device/DeviceProperties.h>
 #include <yave/graphics/device/DeviceResources.h>
+#include <yave/graphics/commands/CmdBufferPool.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/commands/CmdQueue.h>
@@ -76,12 +76,63 @@ struct {
     std::atomic<u64> last_polled = 0;
 } timeline;
 
-struct {
-} extensions;
 
-concurrent::Mutexed<core::Vector<std::pair<std::unique_ptr<ThreadLocalDevice>, ThreadDevicePtr*>>> thread_devices;
+struct ThreadDeviceData : NonMovable {
+    ThreadDeviceData() {
+        ++active_pools;
+    }
+
+    ~ThreadDeviceData() {
+        --active_pools;
+    }
+
+    CmdBufferPool cmd_pool;
+};
+
+struct ThreadDeviceDataStorage {
+    std::unique_ptr<ThreadDeviceData> storage;
+    ThreadDeviceData** thread_local_ptr = nullptr;
+};
+
+concurrent::Mutexed<core::Vector<ThreadDeviceDataStorage>> thread_device_datas;
 
 }
+
+static device::ThreadDeviceData* thread_device_data() {
+    static thread_local device::ThreadDeviceData* this_thread_data = nullptr;
+
+    static thread_local y_defer({
+        if(auto* data = this_thread_data) {
+            y_debug_assert(device_initialized());
+            device::thread_device_datas.locked([&](auto& datas) {
+                const auto it = std::find_if(datas.begin(), datas.end(), [&](const auto& p) { return p.storage.get() == data; });
+                y_always_assert(it != datas.end(), "ThreadDeviceData not found.");
+                y_debug_assert(*it->thread_local_ptr == data);
+                *it->thread_local_ptr = nullptr;
+                datas.erase_unordered(it);
+                y_always_assert(device::active_pools == datas.size(), "Invalid number of pools");
+            });
+        }
+    });
+
+    y_debug_assert(device_initialized());
+
+    if(auto* data = this_thread_data) {
+        return data;
+    }
+
+    y_debug_assert(!device::destroying);
+
+    auto data = std::make_unique<device::ThreadDeviceData>();
+    this_thread_data = data.get();
+
+    device::thread_device_datas.locked([&](auto&& datas) {
+        datas.emplace_back(std::move(data), &this_thread_data);
+    });
+
+    return this_thread_data;
+}
+
 
 
 static void init_timeline() {
@@ -215,7 +266,6 @@ void destroy_device() {
     wait_all_queues();
 
     device::resources.destroy();
-    device::extensions = {};
 
     lifetime_manager().wait_cmd_buffers();
 
@@ -225,15 +275,12 @@ void destroy_device() {
 #endif
 
     y_always_assert(device::active_pools == 1, "Not all pools have been destroyed");
-    {
-        y_profile_zone("collecting thread devices");
-        device::thread_devices.locked([](auto&& devices) {
-            for(const auto& p : devices) {
-                *p.second = nullptr;
-            }
-            devices.clear();
-        });
-    }
+    device::thread_device_datas.locked([](auto&& datas) {
+        for(auto& p : datas) {
+            *p.thread_local_ptr = nullptr;
+        }
+        datas.clear();
+    });
     y_always_assert(device::active_pools == 0, "Not all pools have been destroyed");
 
     for(auto& sampler : device::samplers) {
@@ -270,41 +317,6 @@ bool device_initialized() {
 const DebugParams& debug_params() {
     return device::instance->debug_params();
 }
-
-ThreadDevicePtr thread_device() {
-    static thread_local ThreadDevicePtr thread_device = nullptr;
-    static thread_local y_defer({
-        if(auto* device = thread_device) {
-            y_debug_assert(device_initialized());
-            device::thread_devices.locked([&](auto&& devices) {
-                const auto it = std::find_if(devices.begin(), devices.end(), [&](const auto& p) { return p.first.get() == device; });
-
-                y_always_assert(it != devices.end(), "ThreadLocalDevice not found.");
-                y_debug_assert(*it->second == device);
-
-                *it->second = nullptr;
-                devices.erase_unordered(it);
-                y_always_assert(device::active_pools == devices.size(), "Invalid number of pools");
-            });
-        }
-    });
-
-    y_debug_assert(device_initialized());
-    if(!thread_device) {
-        y_debug_assert(!device::destroying);
-        auto device = std::make_unique<ThreadLocalDevice>();
-        thread_device = device.get();
-
-        device::thread_devices.locked([&](auto&& devices) {
-            devices.emplace_back(std::move(device), &thread_device);
-        });
-    }
-
-    return thread_device;
-}
-
-
-
 
 TimelineFence create_timeline_fence() {
     return TimelineFence(++device::timeline.fence_value);
@@ -371,11 +383,15 @@ const PhysicalDevice& physical_device() {
 }
 
 CmdBufferRecorder create_disposable_cmd_buffer() {
-    return thread_device()->create_disposable_cmd_buffer();
+    return thread_device_data()->cmd_pool.create_cmd_buffer();
+}
+
+ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer() {
+    return thread_device_data()->cmd_pool.create_compute_cmd_buffer();
 }
 
 TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer() {
-    return thread_device()->create_disposable_transfer_cmd_buffer();
+    return thread_device_data()->cmd_pool.create_transfer_cmd_buffer();
 }
 
 DeviceMemoryAllocator& device_allocator() {

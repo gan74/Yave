@@ -45,18 +45,18 @@ static VkHandle<VkCommandPool> create_pool() {
 }
 
 
-CmdBufferPool::CmdBufferPool(ThreadDevicePtr dptr) :
-        _pool(create_pool()),
-        _device(dptr) {
+CmdBufferPool::CmdBufferPool() : _pool(create_pool()) {
+#ifdef Y_DEBUG
+    _thread_id = std::this_thread::get_id();
+#endif
 }
 
 CmdBufferPool::~CmdBufferPool() {
+    y_debug_assert(_thread_id == std::this_thread::get_id());
+
     join_all();
 
-    y_debug_assert(
-        _cmd_buffers.locked([&](auto&& cmd_buffers) { return cmd_buffers.size(); }) ==
-        _released.locked([&](auto&& released) { return released.size(); })
-    );
+    y_debug_assert( _cmd_buffers.size() == _released.locked([&](auto&& released) { return released.size(); }));
 
     destroy_graphic_resource(std::move(_pool));
 }
@@ -68,18 +68,16 @@ VkCommandPool CmdBufferPool::vk_pool() const {
 void CmdBufferPool::join_all() {
     y_profile();
 
+    y_debug_assert(_thread_id == std::this_thread::get_id());
+
     for(;;) {
-        const bool done = _cmd_buffers.locked([&](auto&& cmd_buffers) {
-            for(auto& data : cmd_buffers) {
-                data->wait();
-            }
+        for(auto& data : _cmd_buffers) {
+            data->wait();
+        }
 
-            lifetime_manager().poll_cmd_buffers();
+        lifetime_manager().poll_cmd_buffers();
 
-            return cmd_buffers.size() ==  _released.locked([&](auto&& released) { return released.size(); });
-        });
-
-        if(done) {
+        if(_cmd_buffers.size() ==  _released.locked([&](auto&& released) { return released.size(); })) {
             break;
         }
     }
@@ -96,7 +94,8 @@ void CmdBufferPool::release(CmdBufferData* data) {
 
 CmdBufferData* CmdBufferPool::alloc() {
     y_profile();
-    y_debug_assert(thread_device() == _device);
+
+    y_debug_assert(_thread_id == std::this_thread::get_id());
 
     CmdBufferData* ready = nullptr;
 
@@ -115,28 +114,31 @@ CmdBufferData* CmdBufferPool::alloc() {
 }
 
 CmdBufferData* CmdBufferPool::create_data() {
-    return _cmd_buffers.locked([&](auto&& cmd_buffers) {
-        VkCommandBufferAllocateInfo allocate_info = vk_struct();
-        {
-            allocate_info.commandBufferCount = 1;
-            allocate_info.commandPool = _pool;
-            allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        }
+    VkCommandBufferAllocateInfo allocate_info = vk_struct();
+    {
+        allocate_info.commandBufferCount = 1;
+        allocate_info.commandPool = _pool;
+        allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    }
 
-        VkCommandBuffer buffer = {};
-        vk_check(vkAllocateCommandBuffers(vk_device(), &allocate_info, &buffer));
+    VkCommandBuffer buffer = {};
+    vk_check(vkAllocateCommandBuffers(vk_device(), &allocate_info, &buffer));
 
-        return cmd_buffers.emplace_back(std::make_unique<CmdBufferData>(buffer, this)).get();
-    });
+    return _cmd_buffers.emplace_back(std::make_unique<CmdBufferData>(buffer, this)).get();
 }
 
-CmdBufferRecorder CmdBufferPool::create_buffer() {
+CmdBufferRecorder CmdBufferPool::create_cmd_buffer() {
     return CmdBufferRecorder(alloc());
 }
 
-TransferCmdBufferRecorder CmdBufferPool::create_transfer_buffer() {
+ComputeCmdBufferRecorder CmdBufferPool::create_compute_cmd_buffer() {
+    return ComputeCmdBufferRecorder(alloc());
+}
+
+TransferCmdBufferRecorder CmdBufferPool::create_transfer_cmd_buffer() {
     return TransferCmdBufferRecorder(alloc());
 }
+
 
 
 }

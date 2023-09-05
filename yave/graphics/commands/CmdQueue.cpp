@@ -122,17 +122,28 @@ WaitToken CmdQueueBase::submit(CmdBufferRecorderBase&& recorder, VkSemaphore wai
 CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : CmdQueueBase(family_index, queue, false) {
 }
 
-WaitToken CmdQueue::submit(TransferCmdBufferRecorder&& recorder) const {
-    return CmdQueueBase::submit(std::move(recorder));
+
+WaitToken CmdQueue::submit_async_start(ComputeCmdBufferRecorder&& recorder) const {
+    return CmdQueueBase::submit(std::move(recorder), {}, {}, {}, true);
 }
 
 WaitToken CmdQueue::submit_async_start(TransferCmdBufferRecorder&& recorder) const {
     return CmdQueueBase::submit(std::move(recorder), {}, {}, {}, true);
 }
 
+
 WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder) const {
     return CmdQueueBase::submit(std::move(recorder));
 }
+
+WaitToken CmdQueue::submit(ComputeCmdBufferRecorder&& recorder) const {
+    return CmdQueueBase::submit(std::move(recorder));
+}
+
+WaitToken CmdQueue::submit(TransferCmdBufferRecorder&& recorder) const {
+    return CmdQueueBase::submit(std::move(recorder));
+}
+
 
 }
 

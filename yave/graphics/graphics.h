@@ -37,8 +37,9 @@ void destroy_device();
 
 bool device_initialized();
 
+
+
 const DebugParams& debug_params();
-ThreadDevicePtr thread_device();
 
 VkDevice vk_device();
 VkInstance vk_device_instance();
@@ -46,6 +47,7 @@ VkPhysicalDevice vk_physical_device();
 VkSemaphore vk_timeline_semaphore();
 
 CmdBufferRecorder create_disposable_cmd_buffer();
+ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer();
 TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer();
 
 const PhysicalDevice& physical_device();
