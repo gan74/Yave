@@ -25,6 +25,8 @@ SOFTWARE.
 #include <y/io2/File.h>
 #include <y/concurrent/StaticThreadPool.h>
 
+#include <y/core/Chrono.h>
+
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 #include <y/serde3/archives.h>
@@ -733,6 +735,8 @@ FolderAssetStore::Result<> FolderAssetStore::save_or_restore_tree() {
 FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
     y_profile();
 
+    core::DebugTimer _("Loading asset descs");
+
     const auto lock = y_profile_unique_lock(_lock);
 
     _ids = nullptr;
@@ -771,7 +775,6 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
                     asset_sizes[uid] = info.file_size;
                 }
             }
-
         });
     }
 
@@ -779,6 +782,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
     core::Vector<core::Vector<std::pair<AssetDesc, AssetData>>> assets;
     {
         y_profile_zone("Reading descs");
+        y_profile_msg(fmt_c_str("Reading descs for {} assets", desc_ids.size()));
         concurrent::StaticThreadPool thread_pool;
 
         const usize tasks = thread_pool.concurency() * 8 + 1;
