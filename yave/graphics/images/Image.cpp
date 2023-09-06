@@ -113,6 +113,7 @@ static VkHandle<VkImageView> create_view(VkImage image, ImageFormat format, u32 
 
 static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_image(const math::Vec3ui& size, u32 layers, u32 mips, ImageFormat format, ImageUsage usage, ImageType type) {
     y_profile();
+
     auto image = create_image(size, layers, mips, format, usage, type);
     auto memory = device_allocator().alloc(image);
     bind_image_memory(image, memory);

@@ -55,6 +55,8 @@ static VkBuffer create_buffer(u64 byte_size, VkBufferUsageFlags usage) {
 }
 
 static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(u64 buffer_size, VkBufferUsageFlags usage, MemoryType type) {
+    y_profile();
+
     y_debug_assert(buffer_size);
 
     const auto buffer = create_buffer(buffer_size, usage);
