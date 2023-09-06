@@ -32,9 +32,7 @@ constexpr usize max_alignment = std::alignment_of<std::max_align_t>::value;
 
 template<typename U>
 constexpr U align_up_to(U value, U alignment) {
-    y_debug_assert(alignment);
     if(const U diff = value % alignment) {
-        y_debug_assert(diff <= value + alignment);
         return value + alignment - diff;
     }
     return value;
@@ -42,7 +40,6 @@ constexpr U align_up_to(U value, U alignment) {
 
 template<typename U>
 constexpr U align_down_to(U value, U alignment) {
-    y_debug_assert(alignment);
     const U diff = value % alignment;
     return value - diff;
 }

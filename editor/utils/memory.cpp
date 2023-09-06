@@ -51,7 +51,7 @@ static void* alloc_internal(usize size, usize alignment = max_alignment) {
     }
 
     auto try_alloc = [=] {
-        #ifdef Y_OS_WIN
+        #ifdef Y_MSVC
             return _aligned_malloc(size, alignment);
         #else
             return std::aligned_alloc(alignment, size);
@@ -83,7 +83,7 @@ static void free_internal(void* ptr) {
 
     y_profile_free(ptr);
 
-#ifdef Y_OS_WIN
+#ifdef Y_MSVC
     _aligned_free(ptr);
 #else
     std::free(ptr);
