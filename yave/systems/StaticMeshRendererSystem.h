@@ -37,7 +37,10 @@ namespace yave {
 
 class StaticMeshRendererSystem : public ecs::System {
     public:
-        static constexpr usize max_transforms = 8 * 1024;
+        static constexpr usize default_buffer_size = 1024;
+
+        static constexpr BufferUsage buffer_usage = BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit;
+        using TransformBuffer = TypedBuffer<math::Transform<>, buffer_usage>;
 
         StaticMeshRendererSystem();
 
@@ -51,12 +54,14 @@ class StaticMeshRendererSystem : public ecs::System {
 
 
     private:
+        TransformBuffer alloc_buffer(usize size);
+
         void free_index(u32& index);
         void alloc_index(u32& index);
 
         void run_tick(bool only_recent);
 
-        TypedBuffer<math::Transform<>, BufferUsage::StorageBit> _transforms;
+        TransformBuffer _transforms;
 
         core::Vector<u32> _free;
 

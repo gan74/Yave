@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
+#include <yave/graphics/barriers/Barrier.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
@@ -34,10 +35,8 @@ SOFTWARE.
 
 namespace yave {
 
-
-StaticMeshRendererSystem::StaticMeshRendererSystem() : ecs::System("StaticMeshRendererSystem"), _transforms(max_transforms) {
-    _free.set_min_size(_transforms.size());
-    std::iota(_free.begin(), _free.end(), 0);
+StaticMeshRendererSystem::StaticMeshRendererSystem() : ecs::System("StaticMeshRendererSystem") {
+    _transforms = alloc_buffer(default_buffer_size);
 }
 
 void StaticMeshRendererSystem::destroy() {
@@ -76,6 +75,15 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
             }
         }
 
+        TransformBuffer new_buffer;
+        auto realloc_if_needed = [&] {
+            if(_free.is_empty()) {
+                y_debug_assert(new_buffer.is_null());
+                const usize new_base_size = _transforms.size() + moved_count;
+                new_buffer = alloc_buffer(2_uu << log2ui(new_base_size));
+            }
+        };
+
         auto transform_staging = TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible>(moved_count);
         auto index_staging = TypedBuffer<u32, BufferUsage::StorageBit, MemoryType::CpuVisible>(moved_count);
 
@@ -84,6 +92,8 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
             auto transform_mapping = transform_staging.map(MappingAccess::WriteOnly);
             auto index_mapping = index_staging.map(MappingAccess::WriteOnly);
             for(const auto& [mesh, tr] : query.components()) {
+                realloc_if_needed();
+
                 std::swap(mesh._last_transform_index, mesh._transform_index);
                 alloc_index(mesh._transform_index);
 
@@ -98,6 +108,12 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
         {
             ComputeCmdBufferRecorder recorder = create_disposable_compute_cmd_buffer();
             {
+                if(!new_buffer.is_null()) {
+                    recorder.unbarriered_copy(_transforms, SubBuffer<BufferUsage::TransferDstBit>(new_buffer, _transforms.byte_size(), 0));
+                    recorder.barriers(BufferBarrier(new_buffer, PipelineStage::TransferBit, PipelineStage::ComputeBit));
+                    std::swap(_transforms, new_buffer);
+                }
+
                 const auto& program = device_resources()[DeviceResources::UpdateTransformsProgram];
                 recorder.dispatch_size(program, math::Vec2ui(index, 1), DescriptorSet(_transforms, transform_staging, index_staging, InlineDescriptor(index)));
             }
@@ -123,6 +139,17 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
         free_index(mesh._transform_index);
         free_index(mesh._last_transform_index);
     }
+}
+
+StaticMeshRendererSystem::TransformBuffer StaticMeshRendererSystem::alloc_buffer(usize size) {
+    y_debug_assert(size > _transforms.size());
+
+    _free.set_min_capacity(size);
+    for(usize i = _transforms.size(); i != size; ++i) {
+        _free.push_back(u32(i));
+    }
+
+    return TransformBuffer(size);
 }
 
 void StaticMeshRendererSystem::free_index(u32& index) {
