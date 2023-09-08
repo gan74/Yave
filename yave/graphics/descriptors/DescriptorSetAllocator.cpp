@@ -268,7 +268,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
                     std::memcpy(block_buffer.map_bytes(MappingAccess::WriteOnly).data(), block.data, block.size);
                 }
 
-                write.pBufferInfo = &inline_blocks_buffer_infos.emplace_back(block_buffer.descriptor_info());
+                write.pBufferInfo = &inline_blocks_buffer_infos.emplace_back(block_buffer.vk_descriptor_info());
                 write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 write.descriptorCount = 1;
 

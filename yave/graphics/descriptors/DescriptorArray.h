@@ -25,8 +25,7 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSetBase.h>
 
 #include <y/core/HashMap.h>
-
-#include <mutex>
+#include <y/concurrent/Mutexed.h>
 
 namespace yave {
 
@@ -36,28 +35,26 @@ class DescriptorArray : NonMovable {
         u32 ref_count = 0;
     };
 
-    class ArraySet : public DescriptorSetBase {
-        public:
-            ArraySet(VkDescriptorPool pool, VkDescriptorSetLayout layout, u32 desc_count);
+    struct DescriptorArraySet : DescriptorSetBase {
+        DescriptorArraySet(VkDescriptorSet set) {
+            _set = set;
+        }
     };
 
     union DescriptorKey {
-        struct {
-            VkImageView view;
-            VkSampler sampler;
-        } image;
+        VkDescriptorImageInfo image;
+        VkDescriptorBufferInfo buffer;
 
         struct {
-            VkBuffer buffer;
-            u64 offset;
-        } buffer;
-
-        struct {
-            u64 data[2];
+            u64 data[3];
         } raw;
 
+        DescriptorKey() {
+            std::fill(std::begin(raw.data), std::end(raw.data), u64(0));
+        }
+
         bool operator==(const DescriptorKey& other) const {
-            return raw.data[0] == other.raw.data[0] && raw.data[1] == other.raw.data[1];
+            return std::equal(std::begin(raw.data), std::end(raw.data), std::begin(other.raw.data));
         }
 
         bool operator!=(const DescriptorKey& other) const {
@@ -65,7 +62,7 @@ class DescriptorArray : NonMovable {
         }
     };
 
-    static_assert(sizeof(DescriptorKey) == 2 * sizeof(u64));
+    static_assert(sizeof(DescriptorKey) == 3 * sizeof(u64));
 
     struct Hasher {
         usize operator()(const DescriptorKey& key) const {
@@ -73,7 +70,10 @@ class DescriptorArray : NonMovable {
         }
     };
 
+
     public:
+        static constexpr u32 upper_descriptor_count_limit = 1024 * 1024;
+
         ~DescriptorArray();
 
         usize descriptor_count() const;
@@ -83,7 +83,7 @@ class DescriptorArray : NonMovable {
         VkDescriptorSetLayout descriptor_set_layout() const;
 
     protected:
-        DescriptorArray(VkDescriptorType type, u32 max_desc = 1024);
+        DescriptorArray(VkDescriptorType type, u32 starting_capacity = 1024);
 
         u32 add_descriptor(const Descriptor& desc);
         void remove_descriptor(const Descriptor& desc);
@@ -91,19 +91,25 @@ class DescriptorArray : NonMovable {
     private:
         static DescriptorKey descriptor_key(const Descriptor& desc);
 
-        void add_descriptor_to_set(const Descriptor& desc, u32 index);
+        VkWriteDescriptorSet descriptor_write(VkDescriptorSet set, const DescriptorKey& desc, u32 index) const;
+        void add_descriptor_to_set(const DescriptorKey& desc, u32 index);
 
-        core::FlatHashMap<DescriptorKey, Entry, Hasher> _descriptors;
-        core::Vector<u32> _free;
+        struct Allocator {
+            core::FlatHashMap<DescriptorKey, Entry, Hasher> descriptors;
+            core::Vector<u32> free;
+            VkHandle<VkDescriptorPool> pool;
+            u32 capacity = 0;
 
-        VkHandle<VkDescriptorPool> _pool;
+            VkDescriptorSet alloc_set(u32 size, const DescriptorArray* parent);
+        };
+
         VkHandle<VkDescriptorSetLayout> _layout;
-        ArraySet _set;
+        std::atomic<VkDescriptorSet> _set = {};
 
-        mutable std::mutex _map_lock;
-        mutable std::mutex _set_lock;
+        concurrent::Mutexed<Allocator> allocator;
 
-        const u32 _max_descriptors = 1024;
+        mutable std::mutex _set_lock; // Locks for writes on the set
+
         const VkDescriptorType _type;
 };
 

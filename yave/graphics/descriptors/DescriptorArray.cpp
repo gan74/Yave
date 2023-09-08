@@ -23,7 +23,9 @@ SOFTWARE.
 #include "DescriptorArray.h"
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DeviceProperties.h>
 
+#include <y/core/ScratchPad.h>
 #include <y/utils/format.h>
 
 namespace yave {
@@ -48,7 +50,29 @@ static VkHandle<VkDescriptorPool> create_libray_pool(u32 desc_count, VkDescripto
     return pool;
 }
 
-static VkHandle<VkDescriptorSetLayout> create_libray_layout(u32 desc_count, VkDescriptorType type) {
+static u32 max_descriptor_of_type(VkDescriptorType type) {
+    const DeviceProperties& props = device_properties();
+    switch(type) {
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            return props.max_sampled_image_desc_array_size;
+
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            return props.max_storage_image_desc_array_size;
+
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            return props.max_uniform_buffer_desc_array_size;
+
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            return props.max_storage_buffer_desc_array_size;
+
+        default:
+        break;
+    }
+    y_fatal("Unsupported descriptor type");
+}
+
+static VkHandle<VkDescriptorSetLayout> create_libray_layout(VkDescriptorType type) {
     const VkDescriptorBindingFlags binding_flags =
             VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
             VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
@@ -64,7 +88,7 @@ static VkHandle<VkDescriptorSetLayout> create_libray_layout(u32 desc_count, VkDe
     VkDescriptorSetLayoutBinding binding = {};
     {
         binding.descriptorType = type;
-        binding.descriptorCount = desc_count;
+        binding.descriptorCount = std::min(max_descriptor_of_type(type), DescriptorArray::upper_descriptor_count_limit);
         binding.stageFlags = VK_SHADER_STAGE_ALL;
     }
 
@@ -81,9 +105,7 @@ static VkHandle<VkDescriptorSetLayout> create_libray_layout(u32 desc_count, VkDe
     return layout;
 }
 
-
-
-DescriptorArray::ArraySet::ArraySet(VkDescriptorPool pool, VkDescriptorSetLayout layout, u32 desc_count) {
+static VkDescriptorSet create_array_set(VkDescriptorPool pool, VkDescriptorSetLayout layout, u32 desc_count) {
     VkDescriptorSetVariableDescriptorCountAllocateInfo variable = vk_struct();
     {
         variable.descriptorSetCount = 1;
@@ -98,43 +120,62 @@ DescriptorArray::ArraySet::ArraySet(VkDescriptorPool pool, VkDescriptorSetLayout
         allocate_info.pSetLayouts = &layout;
     }
 
-    vk_check(vkAllocateDescriptorSets(vk_device(), &allocate_info, &_set));
+    VkDescriptorSet set = {};
+    vk_check(vkAllocateDescriptorSets(vk_device(), &allocate_info, &set));
+    return set;
 }
 
-
-DescriptorArray::DescriptorArray(VkDescriptorType type, u32 max_desc) :
-        _pool(create_libray_pool(max_desc, type)),
-        _layout(create_libray_layout(max_desc, type)),
-        _set(_pool, _layout, max_desc),
-        _max_descriptors(max_desc),
+DescriptorArray::DescriptorArray(VkDescriptorType type, u32 starting_capacity) :
+        _layout(create_libray_layout(type)),
         _type(type) {
+
+    allocator.locked([&](auto&& allocator) {
+        _set = allocator.alloc_set(starting_capacity, this);
+    });
 
 #ifdef Y_DEBUG
     if(const auto* debug = debug_utils()) {
-        debug->set_resource_name(_set.vk_descriptor_set(), fmt_c_str("Descriptor Array [{}]", _type));
+        debug->set_resource_name(_set, fmt_c_str("Descriptor Array [{}]", _type));
     }
 #endif
 }
 
 DescriptorArray::~DescriptorArray() {
-    {
-        const auto lock = y_profile_unique_lock(_map_lock);
-        y_always_assert(_descriptors.is_empty(), "Some bindless descriptors have not been released"); // Do we care?
-    }
-    destroy_graphic_resource(std::move(_pool));
+    allocator.locked([&](auto&& allocator) {
+        y_always_assert(allocator.descriptors.is_empty(), "Some bindless descriptors have not been released"); // Do we care?
+        destroy_graphic_resource(std::move(allocator.pool));
+    });
     destroy_graphic_resource(std::move(_layout));
 }
 
+VkDescriptorSet DescriptorArray::Allocator::alloc_set(u32 size, const DescriptorArray* parent) {
+    y_profile();
+    y_debug_assert(size > capacity);
+
+    destroy_graphic_resource(std::exchange(pool, create_libray_pool(size, parent->_type)));
+    capacity = size;
+
+    const VkDescriptorSet set = create_array_set(pool, parent->_layout, size);
+    if(!descriptors.is_empty()) {
+        core::ScratchVector<VkWriteDescriptorSet> writes(descriptors.size());
+        for(const auto& [key, entry] : descriptors) {
+            writes.emplace_back(parent->descriptor_write(set, key, entry.index));
+        }
+
+        vkUpdateDescriptorSets(vk_device(), u32(writes.size()), writes.data(), 0, nullptr);
+    }
+    return set;
+}
+
+
 DescriptorArray::DescriptorKey DescriptorArray::descriptor_key(const Descriptor& desc) {
-    DescriptorKey key = {};
+    DescriptorKey key;
 
     const auto& info = desc.descriptor_info();
     if(desc.is_buffer()) {
-        key.buffer.buffer = info.buffer.buffer;
-        key.buffer.offset = u64(info.buffer.offset);
+        key.buffer = info.buffer;
     } else if(desc.is_image()) {
-        key.image.view = info.image.imageView;
-        key.image.sampler = info.image.sampler;
+        key.image = info.image;
     } else {
         y_fatal("Incompatible descriptor type");
     }
@@ -145,20 +186,27 @@ DescriptorArray::DescriptorKey DescriptorArray::descriptor_key(const Descriptor&
 u32 DescriptorArray::add_descriptor(const Descriptor& desc) {
     y_debug_assert(desc.vk_descriptor_type() == _type);
 
-    u32 entry_index = 0;
-    {
-        const auto lock = y_profile_unique_lock(_map_lock);
-        Entry& entry = _descriptors[descriptor_key(desc)];
+    const DescriptorKey key = descriptor_key(desc);
+    const u32 entry_index = allocator.locked([&](auto&& allocator) {
+        if(allocator.free.is_empty() && allocator.descriptors.size() == allocator.capacity) {
+            const VkDescriptorSet new_set = allocator.alloc_set(2 << log2ui(allocator.capacity + 1), this);
+            const auto lock = y_profile_unique_lock(_set_lock);
+            _set = new_set;
+        }
+
+
+        Entry& entry = allocator.descriptors[key];
         if(entry.ref_count) {
             ++entry.ref_count;
             return entry.index;
         }
 
         entry.ref_count = 1;
-        entry_index = entry.index = _free.is_empty() ?  u32(_descriptors.size() - 1) : _free.pop();
-    }
+        entry.index = allocator.free.is_empty() ?  u32(allocator.descriptors.size() - 1) : allocator.free.pop();
+        return entry.index;
+    });
 
-    add_descriptor_to_set(desc, entry_index);
+    add_descriptor_to_set(key, entry_index);
 
     return entry_index;
 }
@@ -166,48 +214,51 @@ u32 DescriptorArray::add_descriptor(const Descriptor& desc) {
 void DescriptorArray::remove_descriptor(const Descriptor& desc) {
     y_debug_assert(desc.vk_descriptor_type() == _type);
 
-    const auto lock = y_profile_unique_lock(_map_lock);
+    const DescriptorKey key = descriptor_key(desc);
+    allocator.locked([&](auto&& allocator) {
+        const auto it = allocator.descriptors.find(key);
+        y_debug_assert(it != allocator.descriptors.end());
 
-    const auto it = _descriptors.find(descriptor_key(desc));
-    y_debug_assert(it != _descriptors.end());
-
-    if(--(it->second.ref_count) == 0) {
-        _free.push_back(it->second.index);
-        _descriptors.erase(it);
-    }
+        if(--(it->second.ref_count) == 0) {
+            allocator.free.push_back(it->second.index);
+            allocator.descriptors.erase(it);
+        }
+    });
 }
 
-void DescriptorArray::add_descriptor_to_set(const Descriptor& desc, u32 index) {
-    y_debug_assert(desc.vk_descriptor_type() == _type);
-
-    const auto lock = y_profile_unique_lock(_set_lock);
-
+VkWriteDescriptorSet DescriptorArray::descriptor_write(VkDescriptorSet set, const DescriptorKey& key, u32 index) const {
     VkWriteDescriptorSet write = vk_struct();
     {
         write.descriptorType = _type;
         write.dstArrayElement = index;
         write.descriptorCount = 1;
-        write.dstSet = _set.vk_descriptor_set();
+        write.dstSet = set;
     }
 
-    if(desc.is_buffer()) {
-        write.pBufferInfo = &desc.descriptor_info().buffer;
-    } else if(desc.is_image()) {
-        write.pImageInfo = &desc.descriptor_info().image;
+    if(Descriptor::is_buffer(_type)) {
+        write.pBufferInfo = &key.buffer;
+    } else if(Descriptor::is_image(_type)) {
+        write.pImageInfo = &key.image;
     } else {
         y_fatal("Incompatible descriptor type");
     }
 
+    return write;
+}
+
+void DescriptorArray::add_descriptor_to_set(const DescriptorKey& desc, u32 index) {
+    const VkWriteDescriptorSet write = descriptor_write(_set, desc, index);
+
+    const auto lock = y_profile_unique_lock(_set_lock);
     vkUpdateDescriptorSets(vk_device(), 1, &write, 0, nullptr);
 }
 
 usize DescriptorArray::descriptor_count() const {
-    const auto lock = y_profile_unique_lock(_map_lock);
-    return _descriptors.size();
+    return allocator.locked([&](auto&& allocator) { return allocator.descriptors.size(); });
 }
 
 DescriptorSetBase DescriptorArray::descriptor_set() const {
-    return _set;
+    return DescriptorArraySet(_set);
 }
 
 VkDescriptorSetLayout DescriptorArray::descriptor_set_layout() const {
