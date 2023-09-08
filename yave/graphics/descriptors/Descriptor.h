@@ -100,13 +100,13 @@ class Descriptor {
         template<ImageType Type>
         Descriptor(const ImageView<ImageUsage::TextureBit, Type>& view, SamplerType sampler = SamplerType::LinearRepeat) :
                  _type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER),
-                 _info(VkDescriptorImageInfo{vk_sampler(sampler), view.vk_view(), vk_image_layout(view.usage())}) {
+                 _info(view.vk_descriptor_info(sampler)) {
         }
 
         template<ImageType Type>
         Descriptor(const ImageView<ImageUsage::StorageBit, Type>& view, SamplerType sampler = SamplerType::LinearRepeat) :
                  _type(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE),
-                 _info(VkDescriptorImageInfo{vk_sampler(sampler), view.vk_view(), vk_image_layout(ImageUsage::StorageBit)}) {
+                 _info(view.vk_descriptor_info(sampler)) {
         }
 
         template<ImageUsage Usage, ImageType Type>
@@ -116,12 +116,12 @@ class Descriptor {
 
         Descriptor(const SubBuffer<BufferUsage::UniformBit>& buffer) :
                 _type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER),
-                _info(buffer.descriptor_info()) {
+                _info(buffer.vk_descriptor_info()) {
         }
 
         Descriptor(const SubBuffer<BufferUsage::StorageBit>& buffer) :
                 _type(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER),
-                _info(buffer.descriptor_info()) {
+                _info(buffer.vk_descriptor_info()) {
         }
 
         template<BufferUsage Usage, MemoryType Memory>
@@ -158,8 +158,21 @@ class Descriptor {
             return _type;
         }
 
+
         bool is_buffer() const {
-            switch(_type) {
+            return is_buffer(_type);
+        }
+
+        bool is_image() const {
+            return is_image(_type);
+        }
+
+        bool is_inline_block() const {
+            return is_inline_block(_type);
+        }
+
+        static bool is_buffer(VkDescriptorType type) {
+            switch(type) {
                 case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
                 case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
                 case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
@@ -173,8 +186,8 @@ class Descriptor {
             return false;
         }
 
-        bool is_image() const {
-            switch(_type) {
+        static bool is_image(VkDescriptorType type) {
+            switch(type) {
                 case VK_DESCRIPTOR_TYPE_SAMPLER:
                 case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
                 case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
@@ -186,8 +199,8 @@ class Descriptor {
             return false;
         }
 
-        bool is_inline_block() const {
-            switch(_type) {
+        static bool is_inline_block(VkDescriptorType type) {
+            switch(type) {
                 case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
                     return true;
                 default:
@@ -195,7 +208,6 @@ class Descriptor {
             }
             return false;
         }
-
     private:
         VkDescriptorType _type;
         DescriptorInfo _info;

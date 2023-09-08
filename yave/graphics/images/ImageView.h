@@ -83,6 +83,16 @@ class ImageView {
             return !operator==(other);
         }
 
+        VkDescriptorImageInfo vk_descriptor_info(SamplerType sampler) const {
+            VkDescriptorImageInfo info = {};
+            {
+                info.sampler = vk_sampler(sampler);
+                info.imageView = _view;
+                info.imageLayout = vk_image_layout(_usage);
+            }
+            return info;
+        }
+
     protected:
         ImageView(const size_type& size, ImageUsage usage, ImageFormat format, VkImageView view, VkImage image) :
                 _size(size),

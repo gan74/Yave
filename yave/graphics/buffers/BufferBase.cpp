@@ -126,7 +126,7 @@ DeviceMemoryView SubBufferBase::device_memory() const {
     return _memory;
 }
 
-VkDescriptorBufferInfo SubBufferBase::descriptor_info() const {
+VkDescriptorBufferInfo SubBufferBase::vk_descriptor_info() const {
     VkDescriptorBufferInfo info = {};
     {
         info.buffer = _buffer;
@@ -179,7 +179,7 @@ const DeviceMemory& BufferBase::device_memory() const {
     return _memory;
 }
 
-VkDescriptorBufferInfo BufferBase::descriptor_info() const {
+VkDescriptorBufferInfo BufferBase::vk_descriptor_info() const {
     VkDescriptorBufferInfo info = {};
     {
         info.buffer = _buffer;
