@@ -72,7 +72,11 @@ WaitToken CmdQueueBase::submit(CmdBufferRecorderBase&& recorder, VkSemaphore wai
         u32 wait_count = 0;
         std::array<VkSemaphore, 2> wait_semaphores;
         std::array<u64, 2> wait_values;
-        if(!_is_async_queue && !async_start) {
+
+        Y_TODO(We need to ensure that the main timeline semaphore is always incremented in order)
+        Y_TODO(This means that we NEED cmd buffers to end, and signal, in order, so we have to wait on the previous one here)
+        unused(async_start);
+        /*if(!_is_async_queue && !async_start)*/ {
             wait_values[wait_count] = prev_value;
             wait_semaphores[wait_count] = timeline_semaphore;
             ++wait_count;
