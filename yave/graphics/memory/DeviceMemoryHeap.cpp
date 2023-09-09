@@ -33,6 +33,7 @@ static u64 align_size(u64 total_byte_size, u64 alignent) {
 }
 
 DeviceMemoryHeap::DeviceMemoryHeap(u32 type_bits, MemoryType type, u64 heap_size) :
+        DeviceMemoryHeapBase(type),
         _memory(alloc_memory(heap_size, type_bits, type)),
         _heap_size(heap_size),
         _mapping(nullptr) {
