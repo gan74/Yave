@@ -84,8 +84,8 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
             }
         };
 
-        auto transform_staging = TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible>(moved_count);
-        auto index_staging = TypedBuffer<u32, BufferUsage::StorageBit, MemoryType::CpuVisible>(moved_count);
+        auto transform_staging = TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::Staging>(moved_count);
+        auto index_staging = TypedBuffer<u32, BufferUsage::StorageBit, MemoryType::Staging>(moved_count);
 
         u32 index = 0;
         {
