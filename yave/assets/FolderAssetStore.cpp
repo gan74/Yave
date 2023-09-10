@@ -146,7 +146,7 @@ FileSystemModel::Result<bool> FolderAssetStore::FolderFileSystemModel::exists(st
     const bool has_delim = !path.empty() && is_delimiter(path.back());
     const std::string_view no_delim(path.data(), path.size() - has_delim);
 
-    const auto lock = y_profile_unique_lock(_parent->_lock);
+    const auto lock = std::unique_lock(_parent->_lock);
     return core::Ok(_parent->_folders.find(no_delim) != _parent->_folders.end() || (!has_delim && _parent->_assets.find(no_delim) != _parent->_assets.end()));
 }
 
@@ -157,7 +157,7 @@ FileSystemModel::Result<FileSystemModel::EntryType> FolderAssetStore::FolderFile
         return core::Ok(EntryType::Directory);
     }
 
-    const auto lock = y_profile_unique_lock(_parent->_lock);
+    const auto lock = std::unique_lock(_parent->_lock);
     const bool is_dir = _parent->_folders.find(strict_path(path)) != _parent->_folders.end();
     return core::Ok(is_dir ? EntryType::Directory : EntryType::File);
 }
@@ -173,7 +173,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::for_each(std:
 
     const bool is_root = path.empty();
 
-    const auto lock = y_profile_unique_lock(_parent->_lock);
+    const auto lock = std::unique_lock(_parent->_lock);
 
     for(auto it = _parent->_folders.lower_bound(path); it != _parent->_folders.end(); ++it) {
         if(is_strict_direct_parent(path, *it)) {
@@ -214,7 +214,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::create_direct
         return core::Ok();
     }
 
-    const auto lock = y_profile_unique_lock(_parent->_lock);
+    const auto lock = std::unique_lock(_parent->_lock);
 
     const auto parent = strict_parent_path(path);
     if(!is_directory(parent).unwrap_or(false)) {
@@ -234,7 +234,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::remove(std::s
 
     path = strict_path(path);
 
-    const auto lock = y_profile_unique_lock(_parent->_lock);
+    const auto lock = std::unique_lock(_parent->_lock);
 
     core::Vector<core::String> files_to_delete;
 
@@ -297,7 +297,7 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::rename(std::s
         return core::Err();
     }
 
-    const auto lock = y_profile_unique_lock(_parent->_lock);
+    const auto lock = std::unique_lock(_parent->_lock);
 
     std::map<core::String, AssetData> new_assets;
     {
@@ -443,7 +443,7 @@ AssetStore::Result<> FolderAssetStore::save_desc(AssetId id, const AssetDesc& de
 void FolderAssetStore::rebuild_id_map() const {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     if(!_ids) {
         _ids = std::make_unique<std::remove_reference_t<decltype(*_ids)>>();
@@ -468,7 +468,7 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
         return core::Err(ErrorType::InvalidName);
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     if(!_filesystem.create_directory(strict_parent_path(dst_name))) {
         return core::Err(ErrorType::FilesytemError);
@@ -506,7 +506,7 @@ AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data) {
         return core::Err(ErrorType::UnknownID);
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     const core::String data_file_name = asset_data_file_name(id);
     if(!io2::File::open(data_file_name)) {
@@ -538,7 +538,7 @@ AssetStore::Result<io2::ReaderPtr> FolderAssetStore::data(AssetId id) const {
 AssetStore::Result<AssetId> FolderAssetStore::id(std::string_view name) const {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     if(const auto it = _assets.find(name); it != _assets.end()) {
         return core::Ok(it->second.id);
@@ -554,7 +554,7 @@ AssetStore::Result<core::String> FolderAssetStore::name(AssetId id) const {
         return core::Err(ErrorType::UnknownID);
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     rebuild_id_map();
     if(const auto it = _ids->find(id); it != _ids->end()) {
@@ -571,7 +571,7 @@ AssetStore::Result<> FolderAssetStore::remove(AssetId id) {
         return core::Err(ErrorType::UnknownID);
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     auto na = name(id);
     y_try(na);
@@ -590,7 +590,7 @@ AssetStore::Result<> FolderAssetStore::rename(AssetId id, std::string_view new_n
         return core::Err(ErrorType::UnknownID);
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     auto na = name(id);
     y_try(na);
@@ -625,7 +625,7 @@ AssetStore::Result<AssetType> FolderAssetStore::asset_type(AssetId id) const {
         return core::Err(ErrorType::UnknownID);
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     rebuild_id_map();
     if(const auto it = _ids->find(id); it != _ids->end()) {
@@ -637,7 +637,7 @@ AssetStore::Result<AssetType> FolderAssetStore::asset_type(AssetId id) const {
 
 
 AssetId FolderAssetStore::next_id() {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     return AssetId::from_id(_next_id++);
 }
@@ -651,7 +651,7 @@ AssetId FolderAssetStore::next_id() {
 FolderAssetStore::Result<> FolderAssetStore::load_tree() {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     _folders.clear();
 
@@ -688,7 +688,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_tree() {
 FolderAssetStore::Result<> FolderAssetStore::save_tree() const {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     core::String tree_data;
     {
@@ -722,7 +722,7 @@ FolderAssetStore::Result<> FolderAssetStore::save_tree() const {
 FolderAssetStore::Result<> FolderAssetStore::save_or_restore_tree() {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     if(!save_tree()) {
         load_tree().unwrap();
@@ -737,7 +737,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
 
     core::DebugTimer _("Loading asset descs");
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     _ids = nullptr;
     _assets.clear();
@@ -850,7 +850,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
 FolderAssetStore::Result<> FolderAssetStore::reload_all() {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     _next_id = u64(std::time(nullptr));
     load_tree().unwrap();

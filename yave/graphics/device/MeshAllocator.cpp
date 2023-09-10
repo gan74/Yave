@@ -68,7 +68,7 @@ MeshAllocator::MeshAllocator() :
 }
 
 MeshAllocator::~MeshAllocator() {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     sort_and_compact_blocks();
 
@@ -145,7 +145,7 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
 void MeshAllocator::recycle(MeshDrawData* data) {
     y_debug_assert(data->_mesh_buffers == _mesh_buffers.get());
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     _free_blocks << FreeBlock {
         u64(data->_command.vertex_offset),
@@ -162,7 +162,7 @@ void MeshAllocator::recycle(MeshDrawData* data) {
 
 
 std::pair<u64, u64> MeshAllocator::alloc_block(u64 vertex_count, u64 triangle_count) {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     sort_and_compact_blocks();
 
@@ -219,7 +219,7 @@ void MeshAllocator::sort_and_compact_blocks() {
 
 
 std::pair<u64, u64> MeshAllocator::available() const {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
     u64 vert = 0;
     u64 tris = 0;
     for(const auto& b : _free_blocks) {
@@ -235,7 +235,7 @@ std::pair<u64, u64> MeshAllocator::allocated() const {
 }
 
 usize MeshAllocator::free_blocks() const {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
     return _free_blocks.size();
 }
 

@@ -35,27 +35,7 @@ SOFTWARE.
 
 #ifdef YAVE_PROFILING
 
-
 #include <external/tracy/public/tracy/TracyC.h>
-
-
-#if 0
-namespace yave {
-namespace profile {
-namespace detail {
-static thread_local bool thread_name_set = false;
-static inline void set_thread_name() {
-    if(!thread_name_set) {
-        thread_name_set = true;
-        if(const char* name = y::concurrent::thread_name()) {
-            ___tracy_set_thread_name(name);
-        }
-    }
-}
-}
-}
-}
-#endif
 
 #define y_profile_internal_capturing() (true)
 
@@ -118,18 +98,6 @@ static inline void set_thread_name() {
 
 
 
-#define y_profile_unique_lock(inner) [&]() {                            \
-        std::unique_lock l(inner, std::defer_lock);                     \
-        if(l.try_lock()) {                                              \
-            return l;                                                   \
-        }                                                               \
-        y_profile_zone("waiting for lock: " #inner);                    \
-        l.lock();                                                       \
-        return l;                                                       \
-    }()
-
-
-
 
 #else
 
@@ -151,7 +119,7 @@ static inline void set_thread_name() {
 #define y_profile_free(ptr)                 do {} while(false)
 
 
-#define y_profile_unique_lock(lock)         std::unique_lock(lock)
+#define std::unique_lock(lock)         std::unique_lock(lock)
 
 #endif // YAVE_PROFILING
 

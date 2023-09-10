@@ -206,7 +206,7 @@ u64 DescriptorSetPool::inline_sub_buffer_alignment() const {
 DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
     if(is_full() || _taken[_first_free]) {
         y_fatal("DescriptorSetPoolPage is full");
     }
@@ -294,7 +294,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
 void DescriptorSetPool::recycle(u32 id) {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
     y_debug_assert(_taken[id]);
     _taken.reset(id);
     _first_free = std::min(_first_free, id);
@@ -322,7 +322,7 @@ usize DescriptorSetPool::free_sets() const {
 }
 
 usize DescriptorSetPool::used_sets() const {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
     return _taken.count();
 }
 

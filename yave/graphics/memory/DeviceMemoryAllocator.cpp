@@ -61,7 +61,7 @@ DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements2 reqs, MemoryType
         (dedicated_reqs && dedicated_reqs->prefersDedicatedAllocation);
 
     Y_TODO(We are double locking here, each heap will lock internally)
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     if(use_dedicated_alloc) {
         return dedicated_alloc(mem_reqs, type);

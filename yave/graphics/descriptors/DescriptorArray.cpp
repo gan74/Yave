@@ -190,7 +190,7 @@ u32 DescriptorArray::add_descriptor(const Descriptor& desc) {
     const u32 entry_index = allocator.locked([&](auto&& allocator) {
         if(allocator.free.is_empty() && allocator.descriptors.size() == allocator.capacity) {
             const VkDescriptorSet new_set = allocator.alloc_set(2 << log2ui(allocator.capacity + 1), this);
-            const auto lock = y_profile_unique_lock(_set_lock);
+            const auto lock = std::unique_lock(_set_lock);
             _set = new_set;
         }
 
@@ -249,7 +249,7 @@ VkWriteDescriptorSet DescriptorArray::descriptor_write(VkDescriptorSet set, cons
 void DescriptorArray::add_descriptor_to_set(const DescriptorKey& desc, u32 index) {
     const VkWriteDescriptorSet write = descriptor_write(_set, desc, index);
 
-    const auto lock = y_profile_unique_lock(_set_lock);
+    const auto lock = std::unique_lock(_set_lock);
     vkUpdateDescriptorSets(vk_device(), 1, &write, 0, nullptr);
 }
 

@@ -49,7 +49,7 @@ DeviceMemoryHeap::DeviceMemoryHeap(u32 type_bits, MemoryType type, u64 heap_size
 }
 
 DeviceMemoryHeap::~DeviceMemoryHeap() {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     sort_and_compact_blocks();
 
@@ -72,7 +72,7 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(VkMemoryRequirements reqs) {
 
     y_debug_assert(reqs.alignment % DeviceMemoryHeap::alignment == 0 || DeviceMemoryHeap::alignment % reqs.alignment == 0);
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     sort_and_compact_blocks();
 
@@ -121,7 +121,7 @@ core::Result<DeviceMemory> DeviceMemoryHeap::alloc(VkMemoryRequirements reqs) {
 void DeviceMemoryHeap::free(const DeviceMemory& memory) {
     y_debug_assert(memory.vk_memory() == _memory);
 
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     _free_blocks << FreeBlock {
         memory.vk_offset(),
@@ -177,7 +177,7 @@ u64 DeviceMemoryHeap::size() const {
 }
 
 u64 DeviceMemoryHeap::available() const {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
     u64 tot = 0;
     for(const auto& b : _free_blocks) {
         tot += b.size;
@@ -186,7 +186,7 @@ u64 DeviceMemoryHeap::available() const {
 }
 
 usize DeviceMemoryHeap::free_blocks() const {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
     return _free_blocks.size();
 }
 
