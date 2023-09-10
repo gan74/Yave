@@ -115,7 +115,7 @@ class FrameGraphFrameResources final : NonMovable {
 
         void create_alias(FrameGraphImageId dst, FrameGraphImageId src);
 
-        void flush_mapped_buffers(CmdBufferRecorder& recorder);
+        void flush_mapped_buffers(TransferCmdBufferRecorder& recorder);
 
         const TransientImage& find(FrameGraphImageId res) const;
         const TransientVolume& find(FrameGraphVolumeId res) const;

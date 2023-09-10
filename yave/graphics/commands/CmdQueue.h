@@ -45,18 +45,16 @@ class CmdQueue final : NonMovable {
 
         CmdBufferPool& cmd_pool_for_thread();
 
-        // Does not wait for the completion of previous commands before starting
-        void submit_async_delayed_start(TransferCmdBufferRecorder&& recorder);
-        void submit_async_delayed_start(ComputeCmdBufferRecorder&& recorder);
-
-        TimelineFence submit(TransferCmdBufferRecorder&& recorder);
-        TimelineFence submit(ComputeCmdBufferRecorder&& recorder);
-        TimelineFence submit(CmdBufferRecorder&& recorder);
-
         VkResult present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync);
 
     private:
-        TimelineFence submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {});
+        friend class CmdBufferRecorderBase;
+
+        // Does not wait for the completion of previous commands before starting
+        void submit_async_delayed_start(CmdBufferData* data);
+        TimelineFence submit(CmdBufferData* data);
+
+        TimelineFence submit_internal(CmdBufferData* data, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {});
 
         void clear_thread(u32 thread_id);
 

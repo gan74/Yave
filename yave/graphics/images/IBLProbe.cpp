@@ -131,7 +131,7 @@ static void fill_probe(core::MutableSpan<ProbeBaseView> views, const Image<Image
         }
     }
 
-    command_queue().submit(std::move(recorder));
+    recorder.submit();
 }
 
 template<ImageType T>

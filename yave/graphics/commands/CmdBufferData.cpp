@@ -68,6 +68,10 @@ CmdBufferPool* CmdBufferData::pool() const {
     return _pool;
 }
 
+CmdQueue* CmdBufferData::queue() const {
+    return _pool->queue();
+}
+
 VkCommandBuffer CmdBufferData::vk_cmd_buffer() const {
     return _cmd_buffer;
 }

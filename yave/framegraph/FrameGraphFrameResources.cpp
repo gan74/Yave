@@ -179,7 +179,7 @@ BufferMapping<u8> FrameGraphFrameResources::map_buffer_bytes(FrameGraphMutableBu
     return staging_buffer(res).map_bytes(access);
 }
 
-void FrameGraphFrameResources::flush_mapped_buffers(CmdBufferRecorder& recorder) {
+void FrameGraphFrameResources::flush_mapped_buffers(TransferCmdBufferRecorder& recorder) {
     y_profile();
     const auto region = recorder.region("Flush buffers");
 

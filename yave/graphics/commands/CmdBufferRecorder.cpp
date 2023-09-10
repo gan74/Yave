@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "CmdBufferRecorder.h"
 #include "CmdTimingRecorder.h"
+#include "CmdQueue.h"
 
 #include <yave/material/Material.h>
 #include <yave/material/MaterialTemplate.h>
@@ -489,6 +490,15 @@ void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const m
     dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
 }
 
+TimelineFence CmdBufferRecorderBase::submit() {
+    vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
+    return _data->queue()->submit(std::exchange(_data, nullptr));
+}
+
+void CmdBufferRecorderBase::submit_async() {
+    vk_check(vkEndCommandBuffer(vk_cmd_buffer()));
+    _data->queue()->submit_async_delayed_start(std::exchange(_data, nullptr));
+}
 
 
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------

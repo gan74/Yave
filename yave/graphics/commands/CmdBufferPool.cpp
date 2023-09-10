@@ -32,10 +32,10 @@ SOFTWARE.
 
 namespace yave {
 
-static VkHandle<VkCommandPool> create_pool() {
+static VkHandle<VkCommandPool> create_pool(u32 queue_family_index) {
     VkCommandPoolCreateInfo create_info = vk_struct();
     {
-        create_info.queueFamilyIndex = command_queue().family_index();
+        create_info.queueFamilyIndex = queue_family_index;
         create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     }
 
@@ -45,7 +45,7 @@ static VkHandle<VkCommandPool> create_pool() {
 }
 
 
-CmdBufferPool::CmdBufferPool() : _pool(create_pool()) {
+CmdBufferPool::CmdBufferPool(CmdQueue* queue) : _pool(create_pool(queue->family_index())), _queue(queue) {
 #ifdef Y_DEBUG
     _thread_id = std::this_thread::get_id();
 #endif
@@ -63,6 +63,10 @@ CmdBufferPool::~CmdBufferPool() {
 
 VkCommandPool CmdBufferPool::vk_pool() const {
     return _pool;
+}
+
+CmdQueue* CmdBufferPool::queue() const {
+    return _queue;
 }
 
 void CmdBufferPool::join_all() {

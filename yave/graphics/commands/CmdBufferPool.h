@@ -36,10 +36,12 @@ namespace yave {
 class CmdBufferPool : NonMovable {
 
     public:
-        CmdBufferPool();
+        CmdBufferPool(CmdQueue* queue);
         ~CmdBufferPool();
 
         VkCommandPool vk_pool() const;
+
+        CmdQueue* queue() const;
 
         CmdBufferRecorder create_cmd_buffer();
         ComputeCmdBufferRecorder create_compute_cmd_buffer();
@@ -47,6 +49,7 @@ class CmdBufferPool : NonMovable {
 
     private:
         friend class LifetimeManager;
+        friend class CmdQuque;
 
         void release(CmdBufferData* data);
 
@@ -57,10 +60,12 @@ class CmdBufferPool : NonMovable {
     private:
         CmdBufferData* create_data();
 
-        core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
         VkHandle<VkCommandPool> _pool; // Synced through _cmd_buffers
+        core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
 
         concurrent::Mutexed<core::Vector<CmdBufferData*>> _released;
+
+        CmdQueue* _queue = nullptr;
 
 #ifdef Y_DEBUG
         std::thread::id _thread_id;

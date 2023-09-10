@@ -58,6 +58,7 @@ class CmdBufferData final : NonMovable {
         bool is_null() const;
 
         CmdBufferPool* pool() const;
+        CmdQueue* queue() const;
 
         ResourceFence resource_fence() const;
         TimelineFence timeline_fence() const;

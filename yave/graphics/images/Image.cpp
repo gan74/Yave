@@ -136,7 +136,7 @@ static void upload_data(ImageBase& image, const ImageData& data) {
         recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_image_layout(image.usage()))});
     }
 
-    loading_command_queue().submit_async_delayed_start(std::move(recorder));
+    recorder.submit_async();
 }
 
 static void transition_image(ImageBase& image) {
@@ -144,7 +144,7 @@ static void transition_image(ImageBase& image) {
 
     TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
     recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, vk_image_layout(image.usage()))});
-    loading_command_queue().submit_async_delayed_start(std::move(recorder));
+    recorder.submit_async();
 }
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {

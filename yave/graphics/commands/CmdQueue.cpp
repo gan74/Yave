@@ -82,34 +82,19 @@ void CmdQueue::clear_all_cmd_pools() {
     });
 }
 
-void CmdQueue::submit_async_delayed_start(TransferCmdBufferRecorder&& recorder) {
-    vk_check(vkEndCommandBuffer(recorder.vk_cmd_buffer()));
+void CmdQueue::submit_async_delayed_start(CmdBufferData* data) {
     _delayed_start.locked([&](auto&& delayed) {
-        delayed.emplace_back(std::exchange(recorder._data, nullptr));
+        delayed.emplace_back(data);
     });
 }
 
-void CmdQueue::submit_async_delayed_start(ComputeCmdBufferRecorder&& recorder) {
-    vk_check(vkEndCommandBuffer(recorder.vk_cmd_buffer()));
-    _delayed_start.locked([&](auto&& delayed) {
-        delayed.emplace_back(std::exchange(recorder._data, nullptr));
-    });
+TimelineFence CmdQueue::submit(CmdBufferData* data) {
+    return submit_internal(data);
 }
 
-TimelineFence CmdQueue::submit(TransferCmdBufferRecorder&& recorder) {
-    return submit_internal(std::move(recorder));
-}
-
-TimelineFence CmdQueue::submit(ComputeCmdBufferRecorder&& recorder) {
-    return submit_internal(std::move(recorder));
-}
-
-TimelineFence CmdQueue::submit(CmdBufferRecorder&& recorder) {
-    return submit_internal(std::move(recorder));
-}
 
 VkResult CmdQueue::present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync) {
-    submit_internal(std::move(recorder), swaphain_sync.image_available, swaphain_sync.render_complete, swaphain_sync.fence);
+    submit_internal(std::exchange(recorder._data, nullptr), swaphain_sync.image_available, swaphain_sync.render_complete, swaphain_sync.fence);
 
     return _queue.locked([&](auto&& queue) {
         y_profile_zone("present");
@@ -126,11 +111,11 @@ VkResult CmdQueue::present(CmdBufferRecorder&& recorder, const FrameToken& token
     });
 }
 
-TimelineFence CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait, VkSemaphore signal, VkFence fence) {
+TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, VkSemaphore signal, VkFence fence) {
     y_profile();
 
     const VkSemaphore timeline_semaphore = _timeline.vk_semaphore();
-    const VkCommandBuffer cmd_buffer = recorder.vk_cmd_buffer();
+    const VkCommandBuffer cmd_buffer = data->vk_cmd_buffer();
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
     TimelineFence next_fence;
@@ -142,7 +127,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSema
 
         // This needs to be inside the lock
         next_fence = _timeline.advance_timeline();
-        recorder._data->_timeline_fence = next_fence;
+        data->_timeline_fence = next_fence;
 
         y_debug_assert(current_fence.value() + 1 == next_fence.value());
 
@@ -219,7 +204,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSema
         vk_check(vkQueueSubmit(queue, u32(submit_infos.size()), submit_infos.data(), fence));
     });
 
-    pending << std::exchange(recorder._data, nullptr);
+    pending << data;
     lifetime_manager().register_pending(pending);
 
     return next_fence;
@@ -244,7 +229,7 @@ CmdBufferPool& CmdQueue::cmd_pool_for_thread() {
         if(it != cmd_pools.end()) {
             return *(it->second);
         }
-        return *cmd_pools.emplace_back(thread_id, std::make_unique<CmdBufferPool>()).second;
+        return *cmd_pools.emplace_back(thread_id, std::make_unique<CmdBufferPool>(this)).second;
     });
 }
 

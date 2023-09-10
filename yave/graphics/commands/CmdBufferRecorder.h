@@ -134,9 +134,11 @@ class CmdBufferRecorderBase : NonMovable {
         void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
         void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
 
+        TimelineFence submit();
+        void submit_async();
+
     protected:
-        friend class CmdBufferPool;
-        friend class CmdQueue;
+        friend class RenderPassRecorder;
 
         CmdBufferRecorderBase() = default;
         CmdBufferRecorderBase(CmdBufferData* data);
@@ -158,9 +160,9 @@ class CmdBufferRecorderBase : NonMovable {
     public:                                                                                                 \
         CmdBufferType(CmdBufferType&& other) { swap(other); }                                               \
         CmdBufferType& operator=(CmdBufferType&& other) { swap(other); return *this; }                      \
+        using CmdBufferRecorderBase::submit;                                                                \
     private:                                                                                                \
         friend class CmdBufferPool;                                                                         \
-        friend class RenderPassRecorder;                                                                    \
         CmdBufferType() = default;                                                                          \
         CmdBufferType(CmdBufferData* data) : CmdBufferRecorderBase(data) {}
 
@@ -168,12 +170,17 @@ class CmdBufferRecorderBase : NonMovable {
 
 class TransferCmdBufferRecorder final : public CmdBufferRecorderBase {
     YAVE_GENERATE_CMD_BUFFER_MEMBERS(TransferCmdBufferRecorder)
+
+    public:
+        using CmdBufferRecorderBase::submit_async;
 };
 
 class ComputeCmdBufferRecorder final : public CmdBufferRecorderBase {
     YAVE_GENERATE_CMD_BUFFER_MEMBERS(ComputeCmdBufferRecorder)
 
     public:
+        using CmdBufferRecorderBase::submit_async;
+
         using CmdBufferRecorderBase::dispatch;
         using CmdBufferRecorderBase::dispatch_size;
 };
@@ -181,7 +188,10 @@ class ComputeCmdBufferRecorder final : public CmdBufferRecorderBase {
 class CmdBufferRecorder final : public CmdBufferRecorderBase {
     YAVE_GENERATE_CMD_BUFFER_MEMBERS(CmdBufferRecorder)
 
+    friend class CmdQueue; // Needed for present
+
     public:
+
         using CmdBufferRecorderBase::dispatch;
         using CmdBufferRecorderBase::dispatch_size;
 
