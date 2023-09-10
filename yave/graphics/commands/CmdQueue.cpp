@@ -83,6 +83,7 @@ void CmdQueue::clear_all_cmd_pools() {
 }
 
 void CmdQueue::submit_async_delayed_start(CmdBufferData* data) {
+    vk_check(vkEndCommandBuffer(data->vk_cmd_buffer()));
     _delayed_start.locked([&](auto&& delayed) {
         delayed.emplace_back(data);
     });

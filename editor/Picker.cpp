@@ -77,7 +77,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     framegraph.render(recorder);
-    command_queue().submit(std::move(recorder)).wait();
+    recorder.submit().wait();
 
     const ReadBackData read_back = buffer.map(MappingAccess::ReadOnly)[0];
     const float depth = read_back.depth;

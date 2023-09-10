@@ -90,7 +90,7 @@ static Texture render_world(const ecs::EntityWorld& world) {
 
         graph.render(recorder);
     }
-    command_queue().submit(std::move(recorder)).wait();
+    recorder.submit().wait();
     return out;
 }
 
@@ -183,7 +183,7 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
         const auto ds = DescriptorSet(Descriptor(*tex, SamplerType::LinearClamp), StorageView(out));
         recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), ds);
     }
-    command_queue().submit(std::move(recorder)).wait();
+    recorder.submit().wait();
     return out;
 }
 
