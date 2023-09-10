@@ -368,7 +368,7 @@ core::Result<FrameToken> Swapchain::next_frame() {
     });
 }
 
-void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, const CmdQueue& queue) {
+void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, CmdQueue& queue) {
     y_profile();
 
     const usize frame_index = token.id % image_count();
@@ -383,7 +383,7 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, c
     vk_check(vkResetFences(vk_device(), 1, &current_frame_sync.fence.get()));
 
     // This sucks
-    queue.CmdQueueBase::submit(std::move(recorder), current_frame_sync.image_available, current_frame_sync.render_complete, current_frame_sync.fence);
+    queue.submit_internal(std::move(recorder), current_frame_sync.image_available, current_frame_sync.render_complete, current_frame_sync.fence);
 
     queue._queue.locked([&](auto&& vk_queue) {
         y_profile_zone("present");

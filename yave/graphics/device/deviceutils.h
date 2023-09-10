@@ -31,14 +31,6 @@ SOFTWARE.
 
 namespace yave {
 
-// https://stackoverflow.com/questions/16190078/how-to-atomically-update-a-maximum-value
-template<typename T>
-inline void update_maximum(std::atomic<T>& maximum_value, const T& value) noexcept {
-    T prev_value = maximum_value;
-    while(prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value)) {
-    }
-}
-
 float device_score(const PhysicalDevice& device);
 
 bool try_enable_extension(core::Vector<const char*>& exts, const char* name, const PhysicalDevice& device);

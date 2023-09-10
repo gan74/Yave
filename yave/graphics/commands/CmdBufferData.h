@@ -64,7 +64,7 @@ class TimelineFence {
         bool operator<=(const TimelineFence& other) const;
 
     private:
-        friend class CmdQueueBase;
+        friend class CmdQueue;
 
         u64 _value = u64(-1);
 };
@@ -81,21 +81,23 @@ class CmdBufferData final : NonMovable {
         CmdBufferPool* pool() const;
 
         ResourceFence resource_fence() const;
-        TimelineFence queue_fence() const;
+        TimelineFence timeline_fence() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
 
+        bool is_ready() const;
         void wait();
-        bool poll();
 
     private:
         friend class CmdBufferPool;
-        friend class CmdQueueBase;
+        friend class CmdQueue;
 
         void begin();
 
         // These are owned by the command pool
         VkCommandBuffer _cmd_buffer = {};
+
+        VkHandle<VkSemaphore> _semaphore;
 
         CmdBufferPool* _pool = nullptr;
 

@@ -78,7 +78,7 @@ class Swapchain : NonMovable {
         }
 
         core::Result<FrameToken> next_frame();
-        void present(const FrameToken& token, CmdBufferRecorder&& recorder, const CmdQueue& queue);
+        void present(const FrameToken& token, CmdBufferRecorder&& recorder, CmdQueue& queue);
 
     private:
         bool is_valid() const;

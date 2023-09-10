@@ -69,7 +69,7 @@ LifetimeManager::LifetimeManager() {
                     log_msg("Semaphore was not signaled after 100ms", Log::Warning);
                 }*/
             } else {
-                poll_cmd_buffers();
+                collect_cmd_buffers();
             }
         }
     });
@@ -77,14 +77,14 @@ LifetimeManager::LifetimeManager() {
 }
 
 LifetimeManager::~LifetimeManager() {
-    poll_cmd_buffers();
+    collect_cmd_buffers();
 
-    y_debug_assert(_create_counter == _next);
+    y_debug_assert(_create_counter == _next_to_collect);
     y_always_assert(_in_flight.locked([](auto&& in_flight) { return in_flight.is_empty(); }), "CmdBuffer still in flight");
 
     _to_destroy.locked([&](auto&& to_destroy) {
         for(auto& res : to_destroy) {
-            y_always_assert(res.first == _next, "Resourse is still waiting on unsignaled fence.");
+            y_always_assert(res.first == _next_to_collect, "Resourse is still waiting on unsignaled fence.");
             destroy_resource(res.second);
         }
     });
@@ -102,7 +102,30 @@ void LifetimeManager::shutdown_collector_thread() {
 #endif
 }
 
-void LifetimeManager::poll_cmd_buffers() {
+
+
+void LifetimeManager::register_pending(core::Span<CmdBufferData*> datas) {
+    bool collect = false;
+
+    _in_flight.locked([&](auto&& in_flight) {
+        for(CmdBufferData* data : datas) {
+            y_debug_assert(std::find(in_flight.begin(), in_flight.end(), data) == in_flight.end());
+            const auto it = std::lower_bound(in_flight.begin(), in_flight.end(), data, compare_cmd_buffers);
+            in_flight.insert(it, data);
+        }
+
+        collect = (in_flight.first()->resource_fence()._value == _next_to_collect);
+    });
+
+    unused(collect);
+#ifndef YAVE_MT_LIFETIME_MANAGER
+    if(collect) {
+        collect_cmd_buffers();
+    }
+#endif
+}
+
+void LifetimeManager::collect_cmd_buffers() {
     y_profile();
 
     // To ensure that CmdBufferData keep alives are freed outside the lock
@@ -110,20 +133,22 @@ void LifetimeManager::poll_cmd_buffers() {
     u64 next = 0;
 
     {
-        y_profile_zone("fence polling");
+        y_profile_zone("collecting fences");
         _in_flight.locked([&](auto&& in_flight) {
             y_debug_assert(std::is_sorted(in_flight.begin(), in_flight.end(), compare_cmd_buffers));
 
             to_recycle = core::ScratchVector<CmdBufferData*>(in_flight.size());
 
-            next = _next;
+            const TimelineFence ready = last_ready_timeline_fence();
+
+            next = _next_to_collect;
             while(!in_flight.is_empty()) {
                 CmdBufferData* data = in_flight.first();
                 if(data->resource_fence()._value != next) {
                     break;
                 }
 
-                if(data->poll()) {
+                if(data->timeline_fence() <= ready) {
                     in_flight.pop_front();
                     ++next;
 
@@ -133,7 +158,7 @@ void LifetimeManager::poll_cmd_buffers() {
                 }
             }
 
-            _next = next;
+            _next_to_collect = next;
         });
     }
 
@@ -147,6 +172,22 @@ void LifetimeManager::poll_cmd_buffers() {
             data->pool()->release(data);
         }
     }
+}
+
+void LifetimeManager::wait_cmd_buffers() {
+    y_profile();
+
+    command_queue().submit(create_disposable_cmd_buffer()).wait();
+
+    _in_flight.locked([&](auto&& in_flight) {
+        for(CmdBufferData* data : in_flight) {
+            data->wait();
+        }
+
+        collect_cmd_buffers();
+
+        y_debug_assert(in_flight.is_empty());
+    });
 }
 
 void LifetimeManager::clear_resources(u64 up_to) {
@@ -171,6 +212,20 @@ void LifetimeManager::clear_resources(u64 up_to) {
     }
 }
 
+
+ResourceFence LifetimeManager::create_fence() {
+    return _create_counter++;
+}
+
+usize LifetimeManager::pending_cmd_buffers() const {
+    return _in_flight.locked([](auto&& in_flight) { return in_flight.size(); });
+}
+
+usize LifetimeManager::pending_deletions() const {
+    return _to_destroy.locked([](auto&& to_destroy) { return to_destroy.size(); });
+}
+
+
 void LifetimeManager::destroy_resource(ManagedResource& resource) const {
     std::visit(
         [](auto&& res) {
@@ -192,56 +247,5 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
         resource);
 }
 
-
-
-
-
-void LifetimeManager::wait_cmd_buffers() {
-    y_profile();
-
-    command_queue().submit(create_disposable_cmd_buffer()).wait();
-
-    _in_flight.locked([&](auto&& in_flight) {
-        for(CmdBufferData* data : in_flight) {
-            data->wait();
-        }
-
-        poll_cmd_buffers();
-
-        y_debug_assert(in_flight.is_empty());
-    });
-}
-
-ResourceFence LifetimeManager::create_fence() {
-    return _create_counter++;
-}
-
-void LifetimeManager::register_for_polling(CmdBufferData* data) {
-    bool collect = false;
-
-    _in_flight.locked([&](auto&& in_flight) {
-        y_debug_assert(std::find(in_flight.begin(), in_flight.end(), data) == in_flight.end());
-
-        const auto it = std::lower_bound(in_flight.begin(), in_flight.end(), data, compare_cmd_buffers);
-        in_flight.insert(it, data);
-
-        collect = (in_flight.first()->resource_fence()._value == _next);
-    });
-
-    unused(collect);
-#ifndef YAVE_MT_LIFETIME_MANAGER
-    if(collect) {
-        poll_cmd_buffers();
-    }
-#endif
-}
-
-usize LifetimeManager::pending_cmd_buffers() const {
-    return _in_flight.locked([](auto&& in_flight) { return in_flight.size(); });
-}
-
-usize LifetimeManager::pending_deletions() const {
-    return _to_destroy.locked([](auto&& to_destroy) { return to_destroy.size(); });
-}
 
 }

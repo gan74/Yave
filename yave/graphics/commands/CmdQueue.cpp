@@ -23,8 +23,18 @@ SOFTWARE.
 #include "CmdQueue.h"
 
 #include <yave/graphics/device/LifetimeManager.h>
+#include <y/core/ScratchPad.h>
 
 namespace yave {
+
+static VkHandle<VkSemaphore> create_cmd_buffer_semaphore() {
+    VkHandle<VkSemaphore> semaphore;
+
+    VkSemaphoreCreateInfo create_info = vk_struct();
+    vk_check(vkCreateSemaphore(vk_device(), &create_info, vk_allocation_callbacks(), semaphore.get_ptr_for_init()));
+
+    return semaphore;
+}
 
 
 WaitToken::WaitToken(const TimelineFence& fence) : _fence(fence) {
@@ -35,74 +45,131 @@ void WaitToken::wait() {
 }
 
 
-CmdQueueBase::CmdQueueBase(u32 family_index, VkQueue queue, bool is_async) : _queue(queue), _family_index(family_index), _is_async_queue(is_async) {
+
+CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_index(family_index) {
 }
 
-CmdQueueBase::~CmdQueueBase() {
+CmdQueue::~CmdQueue() {
+    y_always_assert(_delayed_start.locked([&](auto&& delayed) { return delayed.is_empty(); }), "Delayed cmd buffers have not been flushed");
     wait();
 }
 
-u32 CmdQueueBase::family_index() const {
+u32 CmdQueue::family_index() const {
     return _family_index;
 }
 
-void CmdQueueBase::wait() const {
+void CmdQueue::wait() {
     _queue.locked([](auto&& queue) {
         vk_check(vkQueueWaitIdle(queue));
     });
 }
 
-WaitToken CmdQueueBase::submit(CmdBufferRecorderBase&& recorder, VkSemaphore wait, VkSemaphore signal, VkFence fence, bool async_start) const {
+void CmdQueue::submit_async_delayed_start(TransferCmdBufferRecorder&& recorder) {
+    vk_check(vkEndCommandBuffer(recorder.vk_cmd_buffer()));
+    _delayed_start.locked([&](auto&& delayed) {
+        delayed.emplace_back(std::exchange(recorder._data, nullptr));
+    });
+}
+
+void CmdQueue::submit_async_delayed_start(ComputeCmdBufferRecorder&& recorder) {
+    vk_check(vkEndCommandBuffer(recorder.vk_cmd_buffer()));
+    _delayed_start.locked([&](auto&& delayed) {
+        delayed.emplace_back(std::exchange(recorder._data, nullptr));
+    });
+}
+
+WaitToken CmdQueue::submit(TransferCmdBufferRecorder&& recorder) {
+    return submit_internal(std::move(recorder));
+}
+
+WaitToken CmdQueue::submit(ComputeCmdBufferRecorder&& recorder) {
+    return submit_internal(std::move(recorder));
+}
+
+WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder) {
+    return submit_internal(std::move(recorder));
+}
+
+WaitToken CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait, VkSemaphore signal, VkFence fence) {
     y_profile();
 
     const VkCommandBuffer cmd_buffer = recorder.vk_cmd_buffer();
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
     TimelineFence timeline_fence;
+    const VkSemaphore timeline_semaphore = vk_timeline_semaphore();
+
+    core::SmallVector<CmdBufferData*> pending;
 
     _queue.locked([&](auto&& queue) {
         // This needs to be inside the lock
         timeline_fence = create_timeline_fence();
         const u64 prev_value = timeline_fence._value - 1;
-
         recorder._data->_timeline_fence = timeline_fence;
 
-        const VkSemaphore timeline_semaphore = vk_timeline_semaphore();
+        core::SmallVector<VkSubmitInfo> submit_infos;
+        core::SmallVector<VkSemaphore> wait_semaphores;
+        core::SmallVector<u64> wait_values;
 
-        u32 wait_count = 0;
-        std::array<VkSemaphore, 2> wait_semaphores;
-        std::array<u64, 2> wait_values;
-        if(!_is_async_queue && !async_start) {
-            wait_values[wait_count] = prev_value;
-            wait_semaphores[wait_count] = timeline_semaphore;
-            ++wait_count;
+        _delayed_start.locked([&](auto&& delayed) {
+            for(CmdBufferData* data : delayed) {
+                if(!data->_semaphore) {
+                    data->_semaphore = create_cmd_buffer_semaphore();
+                }
+
+                VkSubmitInfo& submit_info = submit_infos.emplace_back<VkSubmitInfo>(vk_struct());
+                {
+                    submit_info.commandBufferCount = 1;
+                    submit_info.pCommandBuffers = &data->_cmd_buffer;
+                    submit_info.signalSemaphoreCount = 1;
+                    submit_info.pSignalSemaphores = &data->_semaphore.get();
+                }
+
+                wait_semaphores.push_back(data->_semaphore.get());
+                wait_values.push_back(0);
+
+                data->_timeline_fence = timeline_fence;
+                pending << data;
+            }
+
+            delayed.make_empty();
+        });
+
+
+        {
+            wait_semaphores.push_back(timeline_semaphore);
+            wait_values.push_back(prev_value);
+
+            if(wait) {
+                wait_semaphores.push_back(wait);
+                wait_values.push_back(0);
+            }
         }
-        if(wait) {
-            wait_values[wait_count] = 0;
-            wait_semaphores[wait_count] = wait;
-             ++wait_count;
-        }
+
+        y_debug_assert(wait_semaphores.size() == wait_values.size());
 
         const std::array<u64, 2> signal_values = {timeline_fence._value, 0};
         const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
         const u32 signal_count = signal_semaphores[1] ? 2 : 1;
+        const u32 wait_count = u32(wait_semaphores.size());
 
-        const std::array<VkPipelineStageFlags, 2> pipe_stage_flags = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
+        const core::ScratchPad<VkPipelineStageFlags> wait_stages(wait_count, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 
         VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
         {
+            y_debug_assert(wait_semaphores.size() == wait_values.size());
             timeline_info.waitSemaphoreValueCount = wait_count;
             timeline_info.pWaitSemaphoreValues = wait_values.data();
             timeline_info.signalSemaphoreValueCount = signal_count;
             timeline_info.pSignalSemaphoreValues = signal_values.data();
         }
 
-        VkSubmitInfo submit_info = vk_struct();
+        VkSubmitInfo& submit_info = submit_infos.emplace_back<VkSubmitInfo>(vk_struct());
         {
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &cmd_buffer;
             submit_info.pNext = &timeline_info;
-            submit_info.pWaitDstStageMask = pipe_stage_flags.data();
+            submit_info.pWaitDstStageMask = wait_stages.data();
             submit_info.waitSemaphoreCount = wait_count;
             submit_info.pWaitSemaphores = wait_semaphores.data();
             submit_info.signalSemaphoreCount = signal_count;
@@ -110,40 +177,14 @@ WaitToken CmdQueueBase::submit(CmdBufferRecorderBase&& recorder, VkSemaphore wai
         }
 
         y_profile_zone("submit");
-        vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
+        vk_check(vkQueueSubmit(queue, u32(submit_infos.size()), submit_infos.data(), fence));
     });
 
-    lifetime_manager().register_for_polling(std::exchange(recorder._data, nullptr));
+    pending << std::exchange(recorder._data, nullptr);
+    lifetime_manager().register_pending(pending);
 
     return WaitToken(timeline_fence);
 }
-
-
-CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : CmdQueueBase(family_index, queue, false) {
-}
-
-
-WaitToken CmdQueue::submit_async_start(ComputeCmdBufferRecorder&& recorder) const {
-    return CmdQueueBase::submit(std::move(recorder), {}, {}, {}, true);
-}
-
-WaitToken CmdQueue::submit_async_start(TransferCmdBufferRecorder&& recorder) const {
-    return CmdQueueBase::submit(std::move(recorder), {}, {}, {}, true);
-}
-
-
-WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder) const {
-    return CmdQueueBase::submit(std::move(recorder));
-}
-
-WaitToken CmdQueue::submit(ComputeCmdBufferRecorder&& recorder) const {
-    return CmdQueueBase::submit(std::move(recorder));
-}
-
-WaitToken CmdQueue::submit(TransferCmdBufferRecorder&& recorder) const {
-    return CmdQueueBase::submit(std::move(recorder));
-}
-
 
 }
 

@@ -56,8 +56,8 @@ DescriptorSetAllocator& descriptor_set_allocator();
 MeshAllocator& mesh_allocator();
 MaterialAllocator& material_allocator();
 TextureLibrary& texture_library();
-const CmdQueue& command_queue();
-const CmdQueue& loading_command_queue();
+CmdQueue& command_queue();
+CmdQueue& loading_command_queue();
 const DeviceResources& device_resources();
 const DeviceProperties& device_properties();
 LifetimeManager& lifetime_manager();
@@ -66,8 +66,9 @@ const VkAllocationCallbacks* vk_allocation_callbacks();
 VkSampler vk_sampler(SamplerType type);
 
 TimelineFence create_timeline_fence();
-bool poll_fence(const TimelineFence& fence);
-void wait_for_fence(const TimelineFence& fence);
+TimelineFence last_ready_timeline_fence();
+bool is_timeline_fence_ready(TimelineFence fence);
+void wait_for_fence(TimelineFence fence);
 
 const DebugUtils* debug_utils();
 

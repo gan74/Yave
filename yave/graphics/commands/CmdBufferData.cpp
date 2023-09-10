@@ -75,7 +75,6 @@ TimelineFence::TimelineFence(u64 v) : _value(v) {
 
 
 
-
 CmdBufferData::CmdBufferData(VkCommandBuffer buf, CmdBufferPool* p) :
         _cmd_buffer(buf),
         _pool(p),
@@ -83,7 +82,8 @@ CmdBufferData::CmdBufferData(VkCommandBuffer buf, CmdBufferPool* p) :
 }
 
 CmdBufferData::~CmdBufferData() {
-    y_debug_assert(!_pool || poll());
+    y_debug_assert(!_pool || is_ready());
+    destroy_graphic_resource(std::move(_semaphore));
 }
 
 bool CmdBufferData::is_null() const {
@@ -102,17 +102,17 @@ ResourceFence CmdBufferData::resource_fence() const {
     return _resource_fence;
 }
 
-TimelineFence CmdBufferData::queue_fence() const {
+TimelineFence CmdBufferData::timeline_fence() const {
     return _timeline_fence;
+}
+
+bool CmdBufferData::is_ready() const {
+    return is_timeline_fence_ready(_timeline_fence);
 }
 
 void CmdBufferData::wait() {
     y_profile();
     wait_for_fence(_timeline_fence);
-}
-
-bool CmdBufferData::poll() {
-    return poll_fence(_timeline_fence);
 }
 
 void CmdBufferData::begin() {

@@ -136,7 +136,7 @@ class CmdBufferRecorderBase : NonMovable {
 
     protected:
         friend class CmdBufferPool;
-        friend class CmdQueueBase;
+        friend class CmdQueue;
 
         CmdBufferRecorderBase() = default;
         CmdBufferRecorderBase(CmdBufferData* data);

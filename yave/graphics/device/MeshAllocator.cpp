@@ -136,7 +136,7 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
             mesh_data._command.vertex_offset = i32(vertex_begin);
         }
 
-        loading_command_queue().submit_async_start(std::move(recorder));
+        loading_command_queue().submit_async_delayed_start(std::move(recorder));
     }
 
     return mesh_data;

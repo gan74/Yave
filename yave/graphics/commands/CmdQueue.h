@@ -27,6 +27,7 @@ SOFTWARE.
 #include <y/concurrent/Mutexed.h>
 
 #include <memory>
+#include <variant>
 
 namespace yave {
 
@@ -35,7 +36,7 @@ class WaitToken {
         void wait();
 
     private:
-        friend class CmdQueueBase;
+        friend class CmdQueue;
 
         WaitToken(const TimelineFence& fence);
 
@@ -43,40 +44,33 @@ class WaitToken {
 };
 
 
-class CmdQueueBase : NonMovable {
-    public:
-        ~CmdQueueBase();
-
-        u32 family_index() const;
-        VkQueue vk_queue() const;
-
-        void wait() const;
-
-    protected:
-        friend class Swapchain;
-
-        CmdQueueBase(u32 family_index, VkQueue queue, bool is_async);
-
-        WaitToken submit(CmdBufferRecorderBase&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {}, bool async_start = false) const;
-
-    private:
-        concurrent::Mutexed<VkQueue> _queue = {};
-        const u32 _family_index = u32(-1);
-        const bool _is_async_queue;
-
-};
-
-class CmdQueue final : public CmdQueueBase {
+class CmdQueue final : NonMovable {
     public:
         CmdQueue(u32 family_index, VkQueue queue);
+        ~CmdQueue();
+
+        u32 family_index() const;
+
+        void wait();
 
         // Does not wait for the completion of previous commands before starting
-        WaitToken submit_async_start(ComputeCmdBufferRecorder&& recorder) const;
-        WaitToken submit_async_start(TransferCmdBufferRecorder&& recorder) const;
+        void submit_async_delayed_start(TransferCmdBufferRecorder&& recorder);
+        void submit_async_delayed_start(ComputeCmdBufferRecorder&& recorder);
 
-        WaitToken submit(CmdBufferRecorder&& recorder) const;
-        WaitToken submit(ComputeCmdBufferRecorder&& recorder) const;
-        WaitToken submit(TransferCmdBufferRecorder&& recorder) const;
+        WaitToken submit(TransferCmdBufferRecorder&& recorder);
+        WaitToken submit(ComputeCmdBufferRecorder&& recorder);
+        WaitToken submit(CmdBufferRecorder&& recorder);
+
+    private:
+        friend class Swapchain;
+
+
+        WaitToken submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {});
+
+        concurrent::Mutexed<VkQueue> _queue = {};
+        concurrent::Mutexed<core::Vector<CmdBufferData*>> _delayed_start;
+
+        const u32 _family_index = u32(-1);
 };
 
 }

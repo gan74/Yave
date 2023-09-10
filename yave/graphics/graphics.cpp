@@ -61,7 +61,7 @@ Uninitialized<DeviceResources> resources;
 
 VkDevice vk_device;
 
-core::FixedArray<std::unique_ptr<CmdQueue>> queues;
+Uninitialized<CmdQueue> queue;
 std::atomic<u64> next_loading_queue_index = 0;
 
 std::atomic<u64> active_pools = 0;
@@ -73,7 +73,7 @@ std::atomic<bool> destroying = false;
 struct {
     VkSemaphore semaphore = {};
     std::atomic<u64> fence_value = 0;
-    std::atomic<u64> last_polled = 0;
+    std::atomic<u64> known_ready = 0;
 } timeline;
 
 
@@ -96,6 +96,14 @@ struct ThreadDeviceDataStorage {
 
 concurrent::Mutexed<core::Vector<ThreadDeviceDataStorage>> thread_device_datas;
 
+}
+
+// https://stackoverflow.com/questions/16190078/how-to-atomically-update-a-maximum-value
+template<typename T>
+inline void update_maximum(std::atomic<T>& maximum_value, const T& value) noexcept {
+    T prev_value = maximum_value;
+    while(prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value)) {
+    }
 }
 
 static device::ThreadDeviceData* thread_device_data() {
@@ -161,8 +169,8 @@ static void init_vk_device() {
     const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
     const u32 main_queue_index = queue_family_index(queue_families, graphic_queue_flags);
 
-    const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
-    const usize queue_count = std::min(main_queue_family_properties.queueCount, 5u); // 1 main + 4 loading
+    // const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
+    const usize queue_count = 1;
 
     auto extensions = core::Vector<const char*>::with_capacity(4);
     extensions = {
@@ -224,10 +232,7 @@ static void init_vk_device() {
 
     print_properties(device::device_properties);
 
-    device::queues = core::FixedArray<std::unique_ptr<CmdQueue>>(queue_count);
-    for(u32 i = 0; i != device::queues.size(); ++i) {
-        device::queues[i] = std::make_unique<CmdQueue>(main_queue_index, create_queue(device::vk_device, main_queue_index, i));
-    }
+    device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
 }
 
 
@@ -296,7 +301,7 @@ void destroy_device() {
 
     vkDestroySemaphore(device::vk_device, device::timeline.semaphore, vk_allocation_callbacks());
 
-    device::queues.clear();
+    device::queue.destroy();
 
     {
         y_profile_zone("vkDestroyDevice");
@@ -322,25 +327,29 @@ TimelineFence create_timeline_fence() {
     return TimelineFence(++device::timeline.fence_value);
 }
 
-bool poll_fence(const TimelineFence& fence) {
-    if(device::timeline.last_polled >= fence.value()) {
+TimelineFence last_ready_timeline_fence() {
+    u64 value = 0;
+    vk_check(vkGetSemaphoreCounterValue(device::vk_device, device::timeline.semaphore, &value));
+
+    update_maximum(device::timeline.known_ready, value);
+
+    return TimelineFence(value);
+}
+
+bool is_timeline_fence_ready(TimelineFence fence) {
+    if(fence.value() <= device::timeline.known_ready) {
         return true;
     }
 
-    u64 value = 0;
-    vk_check(vkGetSemaphoreCounterValue(device::vk_device, device::timeline.semaphore, &value));
-    update_maximum(device::timeline.last_polled, value);
-
-    return device::timeline.last_polled >= fence.value();
-
+    return fence <= last_ready_timeline_fence();
 }
 
-void wait_for_fence(const TimelineFence& fence) {
-    if(device::timeline.last_polled >= fence.value()) {
+void wait_for_fence(TimelineFence fence) {
+    y_profile();
+
+    if(is_timeline_fence_ready(fence)) {
         return;
     }
-
-    y_profile();
 
     const u64 fence_value = fence.value();
     VkSemaphoreWaitInfo wait_info = vk_struct();
@@ -354,8 +363,6 @@ void wait_for_fence(const TimelineFence& fence) {
     if(vkWaitSemaphores(device::vk_device, &wait_info, timeout_ns) != VK_SUCCESS) {
         y_fatal("Semaphore timeout expired");
     }
-
-    update_maximum(device::timeline.last_polled, fence_value);
 }
 
 
@@ -414,15 +421,12 @@ TextureLibrary& texture_library() {
     return device::texture_library.get();
 }
 
-const CmdQueue& command_queue() {
-    return *device::queues[0];
+CmdQueue& command_queue() {
+    return device::queue.get();
 }
 
-const CmdQueue& loading_command_queue() {
-    if(const usize loading_queue_count = device::queues.size() - 1) {
-        device::queues[++device::next_loading_queue_index % loading_queue_count];
-    }
-    return *device::queues[0];
+CmdQueue& loading_command_queue() {
+    return device::queue.get();
 }
 
 const DeviceResources& device_resources() {
@@ -474,10 +478,7 @@ const DebugUtils* debug_utils() {
 }
 
 void wait_all_queues() {
-    Y_TODO(This is wrong)
-    for(auto& queue : device::queues) {
-        queue->wait();
-    }
+    device::queue.get().wait();
 }
 
 

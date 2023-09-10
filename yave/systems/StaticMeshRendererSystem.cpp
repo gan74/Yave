@@ -117,7 +117,7 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
                 const auto& program = device_resources()[DeviceResources::UpdateTransformsProgram];
                 recorder.dispatch_size(program, math::Vec2ui(index, 1), DescriptorSet(_transforms, transform_staging, index_staging, InlineDescriptor(index)));
             }
-            command_queue().submit_async_start(std::move(recorder));
+            command_queue().submit_async_delayed_start(std::move(recorder));
         }
     };
 

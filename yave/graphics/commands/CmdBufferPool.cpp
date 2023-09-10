@@ -75,7 +75,7 @@ void CmdBufferPool::join_all() {
             data->wait();
         }
 
-        lifetime_manager().poll_cmd_buffers();
+        lifetime_manager().collect_cmd_buffers();
 
         if(_cmd_buffers.size() ==  _released.locked([&](auto&& released) { return released.size(); })) {
             break;
@@ -87,7 +87,7 @@ void CmdBufferPool::release(CmdBufferData* data) {
     y_profile();
 
     y_debug_assert(data->pool() == this);
-    y_debug_assert(data->poll());
+    y_debug_assert(data->is_ready());
 
     _released.locked([&](auto&& released) { released << data; });
 }

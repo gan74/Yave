@@ -23,10 +23,11 @@ SOFTWARE.
 #define YAVE_DEVICE_LIFETIMEMANAGER_H
 
 #include <yave/graphics/graphics.h>
+
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemory.h>
-#include <yave/meshes/MeshDrawData.h>
 #include <yave/material/MaterialDrawData.h>
+#include <yave/meshes/MeshDrawData.h>
 
 #include <y/concurrent/Mutexed.h>
 #include <y/core/RingQueue.h>
@@ -58,12 +59,12 @@ YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_RT_VARIANT)
         void shutdown_collector_thread();
 
         ResourceFence create_fence();
-        void register_for_polling(CmdBufferData* data);
+        void register_pending(core::Span<CmdBufferData*> datas);
 
         usize pending_deletions() const;
         usize pending_cmd_buffers() const;
 
-        void poll_cmd_buffers();
+        void collect_cmd_buffers();
         void wait_cmd_buffers();
 
 #define YAVE_GENERATE_DESTROY(T)                                                        \
@@ -83,7 +84,7 @@ YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_DESTROY)
         concurrent::Mutexed<core::RingQueue<CmdBufferData*>, std::recursive_mutex> _in_flight;
 
         std::atomic<u64> _create_counter = 0;
-        u64 _next = 0; // Guarded by _in_flight
+        u64 _next_to_collect = 0; // Guarded by _in_flight
 
 #ifdef YAVE_MT_LIFETIME_MANAGER
         std::thread _collector_thread;
