@@ -58,8 +58,15 @@ static void parse_args(int argc, char** argv) {
 #else
                 log_msg(fmt("{} is not supported unless Y_DEBUG is defined", arg), Log::Error);
 #endif
-        }
-        else {
+        } else if(arg == "--waitdbg") {
+#ifdef Y_OS_WIN
+            while(!::IsDebuggerPresent()) {
+                core::Duration::sleep(core::Duration::milliseconds(10));
+            }
+#else
+            log_msg(fmt("{} is not supported outside of Windows", arg), Log::Error);
+#endif
+        } else {
             log_msg(fmt("Unknown argumeent: {}", arg), Log::Error);
         }
     }
