@@ -364,6 +364,7 @@ core::Result<FrameToken> Swapchain::next_frame() {
         _frame_id,
         image_index,
         u32(_images.size()),
+        _swapchain.get(),
         SwapchainImageView(_images[image_index]),
     });
 }
@@ -382,24 +383,9 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, C
     _image_fences[frame_index] = current_frame_sync.fence;
     vk_check(vkResetFences(vk_device(), 1, &current_frame_sync.fence.get()));
 
-    // This sucks
-    queue.submit_internal(std::move(recorder), current_frame_sync.image_available, current_frame_sync.render_complete, current_frame_sync.fence);
-
-    queue._queue.locked([&](auto&& vk_queue) {
-        y_profile_zone("present");
-        VkPresentInfoKHR present_info = vk_struct();
-        {
-            present_info.swapchainCount = 1;
-            present_info.pSwapchains = &_swapchain.get();
-            present_info.pImageIndices = &token.image_index;
-            present_info.waitSemaphoreCount = 1;
-            present_info.pWaitSemaphores = &current_frame_sync.render_complete.get();
-        }
-
-        if(vk_swapchain_out_of_date(vkQueuePresentKHR(vk_queue, &present_info))) {
-            // Nothing ?
-        }
-    });
+    if(vk_swapchain_out_of_date(queue.present(std::move(recorder), token, current_frame_sync))) {
+        // Nothing ?
+    }
 
     ++_frame_id;
 

@@ -55,13 +55,13 @@ class Swapchain : NonMovable {
             SwapchainImage() = default;
     };
 
-    struct FrameSyncObjects {
-        VkHandle<VkSemaphore> image_available;
-        VkHandle<VkSemaphore> render_complete;
-        VkHandle<VkFence> fence;
-    };
-
     public:
+        struct FrameSyncObjects {
+            VkHandle<VkSemaphore> image_available;
+            VkHandle<VkSemaphore> render_complete;
+            VkHandle<VkFence> fence;
+        };
+
         Swapchain(VkHandle<VkSurfaceKHR> surface);
         Swapchain(Window* window);
         ~Swapchain();

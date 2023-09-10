@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "CmdBufferRecorder.h"
 
+#include <yave/graphics/swapchain/Swapchain.h>
 #include <y/concurrent/Mutexed.h>
 
 #include <memory>
@@ -61,10 +62,9 @@ class CmdQueue final : NonMovable {
         WaitToken submit(ComputeCmdBufferRecorder&& recorder);
         WaitToken submit(CmdBufferRecorder&& recorder);
 
+        VkResult present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync);
+
     private:
-        friend class Swapchain;
-
-
         WaitToken submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {});
 
         concurrent::Mutexed<VkQueue> _queue = {};

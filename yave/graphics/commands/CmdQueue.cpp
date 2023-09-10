@@ -90,6 +90,24 @@ WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder) {
     return submit_internal(std::move(recorder));
 }
 
+VkResult CmdQueue::present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync) {
+    submit_internal(std::move(recorder), swaphain_sync.image_available, swaphain_sync.render_complete, swaphain_sync.fence);
+
+    return _queue.locked([&](auto&& queue) {
+        y_profile_zone("present");
+        VkPresentInfoKHR present_info = vk_struct();
+        {
+            present_info.swapchainCount = 1;
+            present_info.pSwapchains = &token.swapchain;
+            present_info.pImageIndices = &token.image_index;
+            present_info.waitSemaphoreCount = 1;
+            present_info.pWaitSemaphores = &swaphain_sync.render_complete.get();
+        }
+
+        return vkQueuePresentKHR(queue, &present_info);
+    });
+}
+
 WaitToken CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait, VkSemaphore signal, VkFence fence) {
     y_profile();
 
