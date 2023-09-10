@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 #define YAVE_GRAPHICS_COMMANDS_DATA_CMDBUFFERDATA_H
 
-#include <yave/graphics/graphics.h>
+#include "Timeline.h"
 
 #include <y/core/Vector.h>
 
@@ -49,27 +49,6 @@ class ResourceFence {
 
         u64 _value = 0;
 };
-
-class TimelineFence {
-    public:
-        TimelineFence() = default;
-        TimelineFence(u64 v);
-
-        u64 value() const;
-
-        bool operator==(const TimelineFence& other) const;
-        bool operator!=(const TimelineFence& other) const;
-
-        bool operator<(const TimelineFence& other) const;
-        bool operator<=(const TimelineFence& other) const;
-
-    private:
-        friend class CmdQueue;
-
-        u64 _value = u64(-1);
-};
-
-
 
 class CmdBufferData final : NonMovable {
     public:

@@ -108,6 +108,7 @@ class Uninitialized : NonMovable {
             y_debug_assert(_is_init);
             return _storage.obj;
         }
+
     private:
         union Storage {
             Storage() : dummy(0) {

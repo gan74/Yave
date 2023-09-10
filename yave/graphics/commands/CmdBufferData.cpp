@@ -49,32 +49,6 @@ ResourceFence::ResourceFence(u64 v) : _value(v) {
 
 
 
-
-u64 TimelineFence::value() const {
-    return _value;
-}
-
-bool TimelineFence::operator==(const TimelineFence& other) const {
-    return _value == other._value;
-}
-
-bool TimelineFence::operator!=(const TimelineFence& other) const {
-    return _value != other._value;
-}
-
-bool TimelineFence::operator<(const TimelineFence& other) const {
-    return _value < other._value;
-}
-
-bool TimelineFence::operator<=(const TimelineFence& other) const {
-    return _value <= other._value;
-}
-
-TimelineFence::TimelineFence(u64 v) : _value(v) {
-}
-
-
-
 CmdBufferData::CmdBufferData(VkCommandBuffer buf, CmdBufferPool* p) :
         _cmd_buffer(buf),
         _pool(p),
@@ -121,6 +95,7 @@ void CmdBufferData::begin() {
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 
     _resource_fence = lifetime_manager().create_fence();
+    _timeline_fence = {};
 }
 
 

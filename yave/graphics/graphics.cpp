@@ -61,8 +61,8 @@ Uninitialized<DeviceResources> resources;
 
 VkDevice vk_device;
 
+Uninitialized<Timeline> timeline;
 Uninitialized<CmdQueue> queue;
-std::atomic<u64> next_loading_queue_index = 0;
 
 std::atomic<u64> active_pools = 0;
 
@@ -70,11 +70,7 @@ std::atomic<u64> active_pools = 0;
 std::atomic<bool> destroying = false;
 #endif
 
-struct {
-    VkSemaphore semaphore = {};
-    std::atomic<u64> fence_value = 0;
-    std::atomic<u64> known_ready = 0;
-} timeline;
+
 
 
 struct ThreadDeviceData : NonMovable {
@@ -98,13 +94,7 @@ concurrent::Mutexed<core::Vector<ThreadDeviceDataStorage>> thread_device_datas;
 
 }
 
-// https://stackoverflow.com/questions/16190078/how-to-atomically-update-a-maximum-value
-template<typename T>
-inline void update_maximum(std::atomic<T>& maximum_value, const T& value) noexcept {
-    T prev_value = maximum_value;
-    while(prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value)) {
-    }
-}
+
 
 static device::ThreadDeviceData* thread_device_data() {
     static thread_local device::ThreadDeviceData* this_thread_data = nullptr;
@@ -142,22 +132,6 @@ static device::ThreadDeviceData* thread_device_data() {
 }
 
 
-
-static void init_timeline() {
-    VkSemaphoreTypeCreateInfo type_create_info = vk_struct();
-    type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-
-    VkSemaphoreCreateInfo create_info = vk_struct();
-    create_info.pNext = &type_create_info;
-
-    vk_check(vkCreateSemaphore(device::vk_device, &create_info, vk_allocation_callbacks(), &device::timeline.semaphore));
-
-    VkSemaphoreSignalInfo signal_info = vk_struct();
-    signal_info.semaphore = device::timeline.semaphore;
-    signal_info.value = create_timeline_fence().value();
-
-    vk_check(vkSignalSemaphore(device::vk_device, &signal_info));
-}
 
 static void init_vk_device() {
     y_profile();
@@ -233,6 +207,7 @@ static void init_vk_device() {
     print_properties(device::device_properties);
 
     device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
+    device::timeline.init();
 }
 
 
@@ -249,7 +224,6 @@ void init_device(Instance& instance, PhysicalDevice device) {
     device::device_properties = device::physical_device->device_properties();
 
     init_vk_device();
-    init_timeline();
 
     device::lifetime_manager.init();
     device::allocator.init(device_properties());
@@ -299,9 +273,8 @@ void destroy_device() {
     device::lifetime_manager.destroy();
     device::allocator.destroy();
 
-    vkDestroySemaphore(device::vk_device, device::timeline.semaphore, vk_allocation_callbacks());
-
     device::queue.destroy();
+    device::timeline.destroy();
 
     {
         y_profile_zone("vkDestroyDevice");
@@ -324,45 +297,19 @@ const DebugParams& debug_params() {
 }
 
 TimelineFence create_timeline_fence() {
-    return TimelineFence(++device::timeline.fence_value);
+    return device::timeline.get().advance_timeline();
 }
 
 TimelineFence last_ready_timeline_fence() {
-    u64 value = 0;
-    vk_check(vkGetSemaphoreCounterValue(device::vk_device, device::timeline.semaphore, &value));
-
-    update_maximum(device::timeline.known_ready, value);
-
-    return TimelineFence(value);
+    return device::timeline.get().last_ready();
 }
 
 bool is_timeline_fence_ready(TimelineFence fence) {
-    if(fence.value() <= device::timeline.known_ready) {
-        return true;
-    }
-
-    return fence <= last_ready_timeline_fence();
+    return device::timeline.get().is_ready(fence);
 }
 
 void wait_for_fence(TimelineFence fence) {
-    y_profile();
-
-    if(is_timeline_fence_ready(fence)) {
-        return;
-    }
-
-    const u64 fence_value = fence.value();
-    VkSemaphoreWaitInfo wait_info = vk_struct();
-    {
-        wait_info.pSemaphores = &device::timeline.semaphore;
-        wait_info.pValues = &fence_value;
-        wait_info.semaphoreCount = 1;
-    }
-
-    static constexpr u64 timeout_ns = 10'000'000'000llu; // 10s
-    if(vkWaitSemaphores(device::vk_device, &wait_info, timeout_ns) != VK_SUCCESS) {
-        y_fatal("Semaphore timeout expired");
-    }
+    device::timeline.get().wait(fence);
 }
 
 
@@ -382,7 +329,7 @@ VkPhysicalDevice vk_physical_device() {
 }
 
 VkSemaphore vk_timeline_semaphore() {
-    return device::timeline.semaphore;
+    return device::timeline.get().vk_semaphore();
 }
 
 const PhysicalDevice& physical_device() {
