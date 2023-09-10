@@ -188,7 +188,11 @@ class CmdBufferRecorder final : public CmdBufferRecorderBase {
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
 };
 
-#undef CmdBufferRecorderBase
+static_assert(sizeof(TransferCmdBufferRecorder) == sizeof(CmdBufferRecorderBase));
+static_assert(sizeof(ComputeCmdBufferRecorder) == sizeof(CmdBufferRecorderBase));
+static_assert(sizeof(CmdBufferRecorder) == sizeof(CmdBufferRecorderBase));
+
+#undef YAVE_GENERATE_CMD_BUFFER_MEMBERS
 
 }
 
