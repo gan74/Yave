@@ -28,22 +28,9 @@ SOFTWARE.
 #include <y/concurrent/Mutexed.h>
 
 #include <memory>
-#include <variant>
+#include <thread>
 
 namespace yave {
-
-class WaitToken {
-    public:
-        void wait();
-
-    private:
-        friend class CmdQueue;
-
-        WaitToken(const TimelineFence& fence);
-
-        TimelineFence _fence;
-};
-
 
 class CmdQueue final : NonMovable {
     public:
@@ -51,26 +38,38 @@ class CmdQueue final : NonMovable {
         ~CmdQueue();
 
         u32 family_index() const;
+        const Timeline& timeline() const;
 
         void wait();
+        void clear_all_cmd_pools();
+
+        CmdBufferPool& cmd_pool_for_thread();
 
         // Does not wait for the completion of previous commands before starting
         void submit_async_delayed_start(TransferCmdBufferRecorder&& recorder);
         void submit_async_delayed_start(ComputeCmdBufferRecorder&& recorder);
 
-        WaitToken submit(TransferCmdBufferRecorder&& recorder);
-        WaitToken submit(ComputeCmdBufferRecorder&& recorder);
-        WaitToken submit(CmdBufferRecorder&& recorder);
+        TimelineFence submit(TransferCmdBufferRecorder&& recorder);
+        TimelineFence submit(ComputeCmdBufferRecorder&& recorder);
+        TimelineFence submit(CmdBufferRecorder&& recorder);
 
         VkResult present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync);
 
     private:
-        WaitToken submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {});
+        TimelineFence submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {});
+
+        void clear_thread(u32 thread_id);
 
         concurrent::Mutexed<VkQueue> _queue = {};
         concurrent::Mutexed<core::Vector<CmdBufferData*>> _delayed_start;
 
+        Timeline _timeline;
+
+        concurrent::Mutexed<core::Vector<std::pair<u32, std::unique_ptr<CmdBufferPool>>>> _cmd_pools;
+
         const u32 _family_index = u32(-1);
+
+        static concurrent::Mutexed<core::Vector<CmdQueue*>> _all_queues;
 };
 
 }

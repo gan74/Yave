@@ -81,12 +81,12 @@ TimelineFence CmdBufferData::timeline_fence() const {
 }
 
 bool CmdBufferData::is_ready() const {
-    return is_timeline_fence_ready(_timeline_fence);
+    return _timeline_fence.is_ready();
 }
 
 void CmdBufferData::wait() {
     y_profile();
-    wait_for_fence(_timeline_fence);
+    _timeline_fence.wait();
 }
 
 void CmdBufferData::begin() {

@@ -22,8 +22,12 @@ SOFTWARE.
 
 #include "CmdQueue.h"
 
+#include <yave/graphics/commands/CmdBufferPool.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <y/core/ScratchPad.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
@@ -37,30 +41,44 @@ static VkHandle<VkSemaphore> create_cmd_buffer_semaphore() {
 }
 
 
-WaitToken::WaitToken(const TimelineFence& fence) : _fence(fence) {
-}
-
-void WaitToken::wait() {
-    wait_for_fence(_fence);
-}
-
-
+concurrent::Mutexed<core::Vector<CmdQueue*>> CmdQueue::_all_queues = {};
 
 CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_index(family_index) {
+    _all_queues.locked([&](auto&& all_queues) {
+        y_debug_assert(std::find(all_queues.begin(), all_queues.end(), this) == all_queues.end());
+        all_queues << this;
+    });
 }
 
 CmdQueue::~CmdQueue() {
     y_always_assert(_delayed_start.locked([&](auto&& delayed) { return delayed.is_empty(); }), "Delayed cmd buffers have not been flushed");
     wait();
+
+    _all_queues.locked([&](auto&& all_queues) {
+        const auto it = std::find(all_queues.begin(), all_queues.end(), this);
+        y_debug_assert(it != all_queues.end());
+        all_queues.erase_unordered(it);
+    });
 }
 
 u32 CmdQueue::family_index() const {
     return _family_index;
 }
 
+const Timeline& CmdQueue::timeline() const {
+    return _timeline;
+}
+
 void CmdQueue::wait() {
     _queue.locked([](auto&& queue) {
         vk_check(vkQueueWaitIdle(queue));
+    });
+}
+
+void CmdQueue::clear_all_cmd_pools() {
+    wait();
+    _cmd_pools.locked([&](auto&& cmd_pools) {
+        cmd_pools.clear();
     });
 }
 
@@ -78,15 +96,15 @@ void CmdQueue::submit_async_delayed_start(ComputeCmdBufferRecorder&& recorder) {
     });
 }
 
-WaitToken CmdQueue::submit(TransferCmdBufferRecorder&& recorder) {
+TimelineFence CmdQueue::submit(TransferCmdBufferRecorder&& recorder) {
     return submit_internal(std::move(recorder));
 }
 
-WaitToken CmdQueue::submit(ComputeCmdBufferRecorder&& recorder) {
+TimelineFence CmdQueue::submit(ComputeCmdBufferRecorder&& recorder) {
     return submit_internal(std::move(recorder));
 }
 
-WaitToken CmdQueue::submit(CmdBufferRecorder&& recorder) {
+TimelineFence CmdQueue::submit(CmdBufferRecorder&& recorder) {
     return submit_internal(std::move(recorder));
 }
 
@@ -108,22 +126,25 @@ VkResult CmdQueue::present(CmdBufferRecorder&& recorder, const FrameToken& token
     });
 }
 
-WaitToken CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait, VkSemaphore signal, VkFence fence) {
+TimelineFence CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphore wait, VkSemaphore signal, VkFence fence) {
     y_profile();
 
+    const VkSemaphore timeline_semaphore = _timeline.vk_semaphore();
     const VkCommandBuffer cmd_buffer = recorder.vk_cmd_buffer();
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
-    TimelineFence timeline_fence;
-    const VkSemaphore timeline_semaphore = vk_timeline_semaphore();
+    TimelineFence next_fence;
 
     core::SmallVector<CmdBufferData*> pending;
 
     _queue.locked([&](auto&& queue) {
+        const TimelineFence current_fence = _timeline.current_timeline();
+
         // This needs to be inside the lock
-        timeline_fence = create_timeline_fence();
-        const u64 prev_value = timeline_fence._value - 1;
-        recorder._data->_timeline_fence = timeline_fence;
+        next_fence = _timeline.advance_timeline();
+        recorder._data->_timeline_fence = next_fence;
+
+        y_debug_assert(current_fence.value() + 1 == next_fence.value());
 
         core::SmallVector<VkSubmitInfo> submit_infos;
         core::SmallVector<VkSemaphore> wait_semaphores;
@@ -146,7 +167,7 @@ WaitToken CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphor
                 wait_semaphores.push_back(data->_semaphore.get());
                 wait_values.push_back(0);
 
-                data->_timeline_fence = timeline_fence;
+                data->_timeline_fence = next_fence;
                 pending << data;
             }
 
@@ -156,7 +177,7 @@ WaitToken CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphor
 
         {
             wait_semaphores.push_back(timeline_semaphore);
-            wait_values.push_back(prev_value);
+            wait_values.push_back(current_fence.value());
 
             if(wait) {
                 wait_semaphores.push_back(wait);
@@ -166,7 +187,7 @@ WaitToken CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphor
 
         y_debug_assert(wait_semaphores.size() == wait_values.size());
 
-        const std::array<u64, 2> signal_values = {timeline_fence._value, 0};
+        const std::array<u64, 2> signal_values = {next_fence.value(), 0};
         const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
         const u32 signal_count = signal_semaphores[1] ? 2 : 1;
         const u32 wait_count = u32(wait_semaphores.size());
@@ -201,7 +222,41 @@ WaitToken CmdQueue::submit_internal(CmdBufferRecorderBase&& recorder, VkSemaphor
     pending << std::exchange(recorder._data, nullptr);
     lifetime_manager().register_pending(pending);
 
-    return WaitToken(timeline_fence);
+    return next_fence;
+}
+
+
+CmdBufferPool& CmdQueue::cmd_pool_for_thread() {
+    y_profile();
+
+    static thread_local y_defer(
+        const u32 thread_id = concurrent::thread_id();
+        _all_queues.locked([&](auto&& all_queues) {
+            for(CmdQueue* queue : all_queues) {
+                queue->clear_thread(thread_id);
+            }
+        });
+    );
+
+    const u32 thread_id = concurrent::thread_id();
+    return _cmd_pools.locked([&](auto&& cmd_pools) -> CmdBufferPool& {
+        const auto it = std::find_if(cmd_pools.begin(), cmd_pools.end(), [=](const auto& pool) { return pool.first == thread_id; });
+        if(it != cmd_pools.end()) {
+            return *(it->second);
+        }
+        return *cmd_pools.emplace_back(thread_id, std::make_unique<CmdBufferPool>()).second;
+    });
+}
+
+void CmdQueue::clear_thread(u32 thread_id) {
+    y_profile();
+
+    _cmd_pools.locked([&](auto&& cmd_pools) {
+        const auto it = std::find_if(cmd_pools.begin(), cmd_pools.end(), [=](const auto& pool) { return pool.first == thread_id; });
+        if(it != cmd_pools.end()) {
+            cmd_pools.erase_unordered(it);
+        }
+    });
 }
 
 }

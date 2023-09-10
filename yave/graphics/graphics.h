@@ -44,7 +44,6 @@ const DebugParams& debug_params();
 VkDevice vk_device();
 VkInstance vk_device_instance();
 VkPhysicalDevice vk_physical_device();
-VkSemaphore vk_timeline_semaphore();
 
 CmdBufferRecorder create_disposable_cmd_buffer();
 ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer();
@@ -64,11 +63,6 @@ LifetimeManager& lifetime_manager();
 
 const VkAllocationCallbacks* vk_allocation_callbacks();
 VkSampler vk_sampler(SamplerType type);
-
-TimelineFence create_timeline_fence();
-TimelineFence last_ready_timeline_fence();
-bool is_timeline_fence_ready(TimelineFence fence);
-void wait_for_fence(TimelineFence fence);
 
 const DebugUtils* debug_utils();
 

@@ -33,7 +33,13 @@ void TimelineFence::wait() const {
     _parent->wait(*this);
 }
 
+bool TimelineFence::is_ready() const {
+    y_debug_assert(_parent);
+    return _parent->is_ready(*this);
+}
+
 u64 TimelineFence::value() const {
+    y_debug_assert(_parent);
     return _value;
 }
 
@@ -80,6 +86,11 @@ static VkSemaphore create_timeline_semaphore() {
     VkSemaphore semaphore = {};
     vk_check(vkCreateSemaphore(vk_device(), &create_info, vk_allocation_callbacks(), &semaphore));
 
+    /*VkSemaphoreSignalInfo signal_info = vk_struct();
+    signal_info.semaphore = semaphore;
+    signal_info.value = 1;
+    vk_check(vkSignalSemaphore(vk_device(), &signal_info));*/
+
     return semaphore;
 }
 
@@ -97,6 +108,10 @@ TimelineFence Timeline::advance_timeline() {
     return TimelineFence(++_value, this);
 }
 
+TimelineFence Timeline::current_timeline() const {
+    return TimelineFence(_value, this);
+}
+
 TimelineFence Timeline::last_ready() const {
     u64 value = 0;
     vk_check(vkGetSemaphoreCounterValue(vk_device(), _semaphore, &value));
@@ -107,11 +122,11 @@ TimelineFence Timeline::last_ready() const {
 bool Timeline::is_ready(TimelineFence fence) const {
     y_debug_assert(fence._parent == this);
 
-    if(fence._value <= _ready) {
+    /*if(fence._value <= _ready) {
         return true;
-    }
+    }*/
 
-    return fence <= last_ready_timeline_fence();
+    return fence <= last_ready();
 }
 
 
@@ -121,6 +136,10 @@ void Timeline::wait(TimelineFence fence) const {
     y_debug_assert(fence._parent == this);
 
     const u64 value = fence.value();
+   /* if(value <= _ready) {
+        return;
+    }*/
+
 
     VkSemaphoreWaitInfo wait_info = vk_struct();
     {
@@ -133,7 +152,7 @@ void Timeline::wait(TimelineFence fence) const {
 }
 
 void Timeline::wait() const {
-    wait(TimelineFence(_value, this));
+    wait(current_timeline());
 }
 
 VkSemaphore Timeline::vk_semaphore() const {

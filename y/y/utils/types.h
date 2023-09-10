@@ -99,12 +99,22 @@ class Uninitialized : NonMovable {
             y_debug_assert(!toggle_init());
         }
 
-        T& get() {
+        T* operator->() {
+            y_debug_assert(_is_init);
+            return &_storage.obj;
+        }
+
+        const T* operator->() const {
+            y_debug_assert(_is_init);
+            return &_storage.obj;
+        }
+
+        T& operator*() {
             y_debug_assert(_is_init);
             return _storage.obj;
         }
 
-        const T& get() const {
+        const T& operator*() const {
             y_debug_assert(_is_init);
             return _storage.obj;
         }

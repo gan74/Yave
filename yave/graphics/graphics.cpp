@@ -61,76 +61,13 @@ Uninitialized<DeviceResources> resources;
 
 VkDevice vk_device;
 
-Uninitialized<Timeline> timeline;
 Uninitialized<CmdQueue> queue;
-
-std::atomic<u64> active_pools = 0;
 
 #ifdef Y_DEBUG
 std::atomic<bool> destroying = false;
 #endif
 
-
-
-
-struct ThreadDeviceData : NonMovable {
-    ThreadDeviceData() {
-        ++active_pools;
-    }
-
-    ~ThreadDeviceData() {
-        --active_pools;
-    }
-
-    CmdBufferPool cmd_pool;
-};
-
-struct ThreadDeviceDataStorage {
-    std::unique_ptr<ThreadDeviceData> storage;
-    ThreadDeviceData** thread_local_ptr = nullptr;
-};
-
-concurrent::Mutexed<core::Vector<ThreadDeviceDataStorage>> thread_device_datas;
-
 }
-
-
-
-static device::ThreadDeviceData* thread_device_data() {
-    static thread_local device::ThreadDeviceData* this_thread_data = nullptr;
-
-    static thread_local y_defer({
-        if(auto* data = this_thread_data) {
-            y_debug_assert(device_initialized());
-            device::thread_device_datas.locked([&](auto& datas) {
-                const auto it = std::find_if(datas.begin(), datas.end(), [&](const auto& p) { return p.storage.get() == data; });
-                y_always_assert(it != datas.end(), "ThreadDeviceData not found.");
-                y_debug_assert(*it->thread_local_ptr == data);
-                *it->thread_local_ptr = nullptr;
-                datas.erase_unordered(it);
-                y_always_assert(device::active_pools == datas.size(), "Invalid number of pools");
-            });
-        }
-    });
-
-    y_debug_assert(device_initialized());
-
-    if(auto* data = this_thread_data) {
-        return data;
-    }
-
-    y_debug_assert(!device::destroying);
-
-    auto data = std::make_unique<device::ThreadDeviceData>();
-    this_thread_data = data.get();
-
-    device::thread_device_datas.locked([&](auto&& datas) {
-        datas.emplace_back(std::move(data), &this_thread_data);
-    });
-
-    return this_thread_data;
-}
-
 
 
 static void init_vk_device() {
@@ -207,7 +144,6 @@ static void init_vk_device() {
     print_properties(device::device_properties);
 
     device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
-    device::timeline.init();
 }
 
 
@@ -253,14 +189,7 @@ void destroy_device() {
     y_defer(device::destroying = false);
 #endif
 
-    y_always_assert(device::active_pools == 1, "Not all pools have been destroyed");
-    device::thread_device_datas.locked([](auto&& datas) {
-        for(auto& p : datas) {
-            *p.thread_local_ptr = nullptr;
-        }
-        datas.clear();
-    });
-    y_always_assert(device::active_pools == 0, "Not all pools have been destroyed");
+    device::queue->clear_all_cmd_pools();
 
     for(auto& sampler : device::samplers) {
         sampler.destroy();
@@ -274,7 +203,6 @@ void destroy_device() {
     device::allocator.destroy();
 
     device::queue.destroy();
-    device::timeline.destroy();
 
     {
         y_profile_zone("vkDestroyDevice");
@@ -296,23 +224,6 @@ const DebugParams& debug_params() {
     return device::instance->debug_params();
 }
 
-TimelineFence create_timeline_fence() {
-    return device::timeline.get().advance_timeline();
-}
-
-TimelineFence last_ready_timeline_fence() {
-    return device::timeline.get().last_ready();
-}
-
-bool is_timeline_fence_ready(TimelineFence fence) {
-    return device::timeline.get().is_ready(fence);
-}
-
-void wait_for_fence(TimelineFence fence) {
-    device::timeline.get().wait(fence);
-}
-
-
 
 
 
@@ -328,56 +239,52 @@ VkPhysicalDevice vk_physical_device() {
     return physical_device().vk_physical_device();
 }
 
-VkSemaphore vk_timeline_semaphore() {
-    return device::timeline.get().vk_semaphore();
-}
-
 const PhysicalDevice& physical_device() {
     return *device::physical_device;
 }
 
 CmdBufferRecorder create_disposable_cmd_buffer() {
-    return thread_device_data()->cmd_pool.create_cmd_buffer();
+    return device::queue->cmd_pool_for_thread().create_cmd_buffer();
 }
 
 ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer() {
-    return thread_device_data()->cmd_pool.create_compute_cmd_buffer();
+    return device::queue->cmd_pool_for_thread().create_compute_cmd_buffer();
 }
 
 TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer() {
-    return thread_device_data()->cmd_pool.create_transfer_cmd_buffer();
+    return device::queue->cmd_pool_for_thread().create_transfer_cmd_buffer();
 }
 
 DeviceMemoryAllocator& device_allocator() {
-    return device::allocator.get();
+    return *device::allocator;
 }
 
 DescriptorSetAllocator& descriptor_set_allocator() {
-    return device::descriptor_set_allocator.get();
+    return *device::descriptor_set_allocator;
 }
 
 MeshAllocator& mesh_allocator() {
-    return device::mesh_allocator.get();
+    return *device::mesh_allocator;
 }
 
 MaterialAllocator& material_allocator() {
-    return device::material_allocator.get();
+    return *device::material_allocator;
 }
 
 TextureLibrary& texture_library() {
-    return device::texture_library.get();
+    return *device::texture_library;
 }
 
 CmdQueue& command_queue() {
-    return device::queue.get();
+    return *device::queue;
 }
 
 CmdQueue& loading_command_queue() {
-    return device::queue.get();
+    return *device::queue;
 }
 
 const DeviceResources& device_resources() {
-    return device::resources.get();
+    return *device::resources;
 }
 
 const DeviceProperties& device_properties() {
@@ -385,7 +292,7 @@ const DeviceProperties& device_properties() {
 }
 
 LifetimeManager& lifetime_manager() {
-    return device::lifetime_manager.get();
+    return *device::lifetime_manager;
 }
 
 const VkAllocationCallbacks* vk_allocation_callbacks() {
@@ -417,7 +324,7 @@ const VkAllocationCallbacks* vk_allocation_callbacks() {
 
 VkSampler vk_sampler(SamplerType type) {
     y_debug_assert(usize(type) < device::samplers.size());
-    return device::samplers[usize(type)].get().vk_sampler();
+    return device::samplers[usize(type)]->vk_sampler();
 }
 
 const DebugUtils* debug_utils() {
@@ -425,7 +332,7 @@ const DebugUtils* debug_utils() {
 }
 
 void wait_all_queues() {
-    device::queue.get().wait();
+    device::queue->wait();
 }
 
 

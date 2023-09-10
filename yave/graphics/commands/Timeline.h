@@ -33,6 +33,8 @@ class TimelineFence {
         TimelineFence() = default;
 
         void wait() const;
+        bool is_ready() const;
+
         u64 value() const;
         bool is_valid() const;
 
@@ -43,7 +45,6 @@ class TimelineFence {
         bool operator<=(const TimelineFence& other) const;
 
     private:
-        friend class CmdQueue;
         friend class Timeline;
 
         TimelineFence(u64 value, const Timeline* parent);
@@ -58,6 +59,7 @@ class Timeline : NonMovable {
         ~Timeline();
 
         TimelineFence advance_timeline();
+        TimelineFence current_timeline() const;
 
         TimelineFence last_ready() const;
         bool is_ready(TimelineFence fence) const;
@@ -69,6 +71,7 @@ class Timeline : NonMovable {
 
     private:
         const VkSemaphore _semaphore;
+
         std::atomic<u64> _value = 0;
         mutable std::atomic<u64> _ready = 0;
 };

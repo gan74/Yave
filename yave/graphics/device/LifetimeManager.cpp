@@ -45,7 +45,7 @@ LifetimeManager::LifetimeManager() {
     _collector_thread = std::thread([this] {
         concurrent::set_thread_name("LifetimeManager collector thread");
         const VkDevice device = vk_device();
-        const VkSemaphore timeline_semaphore = vk_timeline_semaphore();
+        const VkSemaphore timeline_semaphore = command_queue().timeline().vk_semaphore();
 
         u64 semaphore_value = 0;
         vk_check(vkGetSemaphoreCounterValue(device, timeline_semaphore, &semaphore_value));
@@ -139,8 +139,6 @@ void LifetimeManager::collect_cmd_buffers() {
 
             to_recycle = core::ScratchVector<CmdBufferData*>(in_flight.size());
 
-            const TimelineFence ready = last_ready_timeline_fence();
-
             next = _next_to_collect;
             while(!in_flight.is_empty()) {
                 CmdBufferData* data = in_flight.first();
@@ -148,7 +146,7 @@ void LifetimeManager::collect_cmd_buffers() {
                     break;
                 }
 
-                if(data->timeline_fence() <= ready) {
+                if(data->is_ready()) {
                     in_flight.pop_front();
                     ++next;
 
