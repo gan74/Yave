@@ -32,30 +32,25 @@ namespace detail {
 
 static constexpr usize scratch_buffer_size = 64 * 1024;
 
-static thread_local FixedArray<u8> scratch_buffer;
-static thread_local u8* scratch_begin = nullptr;
+static thread_local std::array<u8, scratch_buffer_size> scratch_buffer;
+static thread_local u8* scratch_begin = scratch_buffer.data();
 
 void* alloc_scratchpad(usize size) {
     if(!size) {
         return nullptr;
     }
 
-    auto& scratch = scratch_buffer;
-    auto& begin = scratch_begin;
-
-    y_debug_assert(begin >= scratch.begin());
-    y_debug_assert(begin <= scratch.end());
-
-    if(!begin) {
-        scratch = FixedArray<u8>(scratch_buffer_size);
-        begin = scratch.data();
-    }
-
     const usize aligned_size = align_up_to_max(size);
-    u8* data = begin;
-    begin += aligned_size;
+    const u8* scratch_end = scratch_buffer.data() + scratch_buffer.size();
 
-    y_always_assert(begin <= scratch.end(), "Scratch pad full: trying to allocate {} bytes (free space = {})", size, data - scratch.end());
+    unused(scratch_end);
+    y_debug_assert(scratch_begin >= scratch_buffer.data());
+    y_debug_assert(scratch_begin <= scratch_end);
+
+    u8* data = scratch_begin;
+    scratch_begin += aligned_size;
+
+    y_always_assert(scratch_begin <= scratch_end, "Scratch pad full: trying to allocate {} bytes (free space = {})", size, data - scratch_end);
 
     return data;
 }
@@ -67,19 +62,18 @@ void free_scratchpad(void* ptr, usize size) {
         return;
     }
 
-    auto& begin = scratch_begin;
-    y_debug_assert(begin);
-
     const usize aligned_size = align_up_to_max(size);
+
+    y_debug_assert(scratch_begin);
 
     u8* alloc_end = static_cast<u8*>(ptr) + aligned_size;
     unused(alloc_end);
-    y_debug_assert(alloc_end == begin);
+    y_debug_assert(alloc_end == scratch_begin);
 
-    begin = static_cast<u8*>(ptr);
+    scratch_begin = static_cast<u8*>(ptr);
 
 #ifdef Y_DEBUG
-    std::fill(begin, alloc_end, u8(0xFE));
+    std::fill(scratch_begin, alloc_end, u8(0xFE));
 #endif
 }
 

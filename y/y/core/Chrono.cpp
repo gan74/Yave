@@ -113,7 +113,7 @@ Duration Chrono::elapsed() const {
 #ifdef Y_OS_WIN
     LARGE_INTEGER li;
     QueryPerformanceCounter(&li);
-    const u64 diff = li.QuadPart -_counter;
+    const u64 diff = li.QuadPart - _counter;
     return Duration::seconds(diff / double(_freq));
     //return Duration(diff / _freq, u32((double(diff) / _freq) * 1000000000.0));
 #else
