@@ -36,8 +36,7 @@ SOFTWARE.
 #ifdef YAVE_PROFILING
 
 
-// #include <external/tracy/public/tracy/TracyC.h>
-#include <external/tracy/TracyC.h>
+#include <external/tracy/public/tracy/TracyC.h>
 
 
 #if 0

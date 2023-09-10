@@ -102,46 +102,43 @@ include_directories(external/LuaJIT/src)
 
 # Yave's core file
 file(GLOB_RECURSE YAVE_FILES
-        "yave/*.h"
-        "yave/*.cpp"
-    )
+    "yave/*.h"
+    "yave/*.cpp"
+)
 
 set(TRACY_FILES
-        # "external/tracy/public/TracyClient.cpp"
-        # "external/tracy/public/tracy/Tracy.hpp"
-        "external/tracy/TracyClient.cpp"
-        "external/tracy/Tracy.hpp"
-    )
+    "external/tracy/public/TracyClient.cpp"
+)
 
 # Editor files
 file(GLOB_RECURSE EDITOR_FILES
-        "editor/*.cpp"
-        "editor/*.h"
-    )
+    "editor/*.cpp"
+    "editor/*.h"
+)
 
 file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
-        "external/imgui/*.cpp"
-        "external/imgui/*.h"
+    "external/imgui/*.cpp"
+    "external/imgui/*.h"
 
-        "external/imgui_test_engine/*.cpp"
-        "external/imgui_test_engine/*.h"
+    "external/imgui_test_engine/*.cpp"
+    "external/imgui_test_engine/*.h"
 
-        "external/tinygltf/*.hpp"
-        "external/tinygltf/*.h"
-    )
+    "external/tinygltf/*.hpp"
+    "external/tinygltf/*.h"
+)
 
 # Shader files
 file(GLOB_RECURSE SHADER_FILES
-        "shaders/*.frag"
-        "shaders/*.vert"
-        "shaders/*.geom"
-        "shaders/*.comp"
-    )
+    "shaders/*.frag"
+    "shaders/*.vert"
+    "shaders/*.geom"
+    "shaders/*.comp"
+)
 
 # Shader libs, they are here so the IDE can find them
 file(GLOB_RECURSE SHADER_LIBS
-        "shaders/*.glsl"
-    )
+    "shaders/*.glsl"
+)
 
 
 
