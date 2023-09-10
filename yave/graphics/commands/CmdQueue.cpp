@@ -40,6 +40,37 @@ static VkHandle<VkSemaphore> create_cmd_buffer_semaphore() {
     return semaphore;
 }
 
+#ifdef YAVE_PROFILING
+static auto create_profiling_ctx(VkQueue queue, u32 family_index) {
+    y_profile();
+
+    VkCommandPool pool = {};
+    VkCommandBuffer cmd_buffer = {};
+
+    {
+        VkCommandPoolCreateInfo create_info = vk_struct();
+        create_info.queueFamilyIndex = family_index;
+        create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        vk_check(vkCreateCommandPool(vk_device(), &create_info, vk_allocation_callbacks(), &pool));
+    }
+
+    {
+        VkCommandBufferAllocateInfo allocate_info = vk_struct();
+        allocate_info.commandBufferCount = 1;
+        allocate_info.commandPool = pool;
+        allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        vk_check(vkAllocateCommandBuffers(vk_device(), &allocate_info, &cmd_buffer));
+    }
+
+    const TracyVkCtx ctx = TracyVkContext(vk_physical_device(), vk_device(), queue, cmd_buffer);
+
+    vkDestroyCommandPool(vk_device(), pool, vk_allocation_callbacks());
+
+    return ctx;
+}
+#endif
+
+
 
 concurrent::Mutexed<core::Vector<CmdQueue*>> CmdQueue::_all_queues = {};
 
@@ -48,6 +79,10 @@ CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_ind
         y_debug_assert(std::find(all_queues.begin(), all_queues.end(), this) == all_queues.end());
         all_queues << this;
     });
+
+#ifdef YAVE_PROFILING
+    _profiling_ctx = create_profiling_ctx(queue, family_index);
+#endif
 }
 
 CmdQueue::~CmdQueue() {
@@ -59,6 +94,10 @@ CmdQueue::~CmdQueue() {
         y_debug_assert(it != all_queues.end());
         all_queues.erase_unordered(it);
     });
+
+#ifdef YAVE_PROFILING
+    TracyVkDestroy(_profiling_ctx);
+#endif
 }
 
 u32 CmdQueue::family_index() const {
@@ -68,6 +107,12 @@ u32 CmdQueue::family_index() const {
 const Timeline& CmdQueue::timeline() const {
     return _timeline;
 }
+
+#ifdef YAVE_PROFILING
+TracyVkCtx CmdQueue::profiling_context() const {
+    return _profiling_ctx;
+}
+#endif
 
 void CmdQueue::wait() {
     _queue.locked([](auto&& queue) {
@@ -117,6 +162,11 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
 
     const VkSemaphore timeline_semaphore = _timeline.vk_semaphore();
     const VkCommandBuffer cmd_buffer = data->vk_cmd_buffer();
+
+#ifdef YAVE_PROFILING
+    TracyVkCollect(_profiling_ctx, cmd_buffer);
+#endif
+
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
     TimelineFence next_fence;

@@ -44,10 +44,14 @@ class CmdBufferRegion : NonCopyable {
     private:
         friend class CmdBufferRecorderBase;
 
-        CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color);
+        CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, CmdQueue* queue, const char* name, const math::Vec4& color);
 
         VkCommandBuffer _buffer = {};
         CmdTimingRecorder* _time_recorder = nullptr;
+
+#ifdef YAVE_GPU_PROFILING
+        u64 _profiling_scope[3] = {};
+#endif
 };
 
 class RenderPassRecorder final : NonMovable {

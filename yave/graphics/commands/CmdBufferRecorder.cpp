@@ -51,10 +51,14 @@ CmdBufferRegion::~CmdBufferRegion() {
             y_debug_assert(_time_recorder->vk_cmd_buffer() == _buffer);
             _time_recorder->end_zone();
         }
+
+#ifdef YAVE_GPU_PROFILING
+        reinterpret_cast<tracy::VkCtxScope*>(&_profiling_scope)->~VkCtxScope();
+#endif
     }
 }
 
-CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color) :
+CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, CmdQueue* queue, const char* name, const math::Vec4& color) :
         _buffer(cmd_buffer.vk_cmd_buffer()),
         _time_recorder(time_rec) {
 
@@ -66,6 +70,17 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTim
         y_debug_assert(_time_recorder->vk_cmd_buffer() == _buffer);
         _time_recorder->begin_zone(name);
     }
+
+    unused(queue);
+#ifdef YAVE_GPU_PROFILING
+    new(&_profiling_scope) tracy::VkCtxScope(
+        queue->profiling_context(),
+        TracyLine, TracyFile, std::strlen(TracyFile),
+        TracyFunction, std::strlen(TracyFunction),
+        name, std::strlen(name),
+        _buffer, true
+    );
+#endif
 }
 
 CmdBufferRegion::CmdBufferRegion(CmdBufferRegion&& other) {
@@ -80,6 +95,9 @@ CmdBufferRegion& CmdBufferRegion::operator=(CmdBufferRegion&& other) {
 void CmdBufferRegion::swap(CmdBufferRegion& other) {
     std::swap(_buffer, other._buffer);
     std::swap(_time_recorder, other._time_recorder);
+#ifdef YAVE_GPU_PROFILING
+    std::swap(_profiling_scope, other._profiling_scope);
+#endif
 }
 
 
@@ -282,7 +300,7 @@ bool CmdBufferRecorderBase::is_inside_renderpass() const {
 }
 
 CmdBufferRegion CmdBufferRecorderBase::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
-    return CmdBufferRegion(*this, time_rec, name, color);
+    return CmdBufferRegion(*this, time_rec, _data->queue(), name, color);
 }
 
 void CmdBufferRecorderBase::end_renderpass() {

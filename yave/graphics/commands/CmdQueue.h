@@ -30,6 +30,10 @@ SOFTWARE.
 #include <memory>
 #include <thread>
 
+#ifdef YAVE_GPU_PROFILING
+#include <external/tracy/public/tracy/TracyVulkan.hpp>
+#endif
+
 namespace yave {
 
 class CmdQueue final : NonMovable {
@@ -46,6 +50,10 @@ class CmdQueue final : NonMovable {
         CmdBufferPool& cmd_pool_for_thread();
 
         VkResult present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync);
+
+#ifdef YAVE_GPU_PROFILING
+        TracyVkCtx profiling_context() const;
+#endif
 
     private:
         friend class CmdBufferRecorderBase;
@@ -66,6 +74,10 @@ class CmdQueue final : NonMovable {
         concurrent::Mutexed<core::Vector<std::pair<u32, std::unique_ptr<CmdBufferPool>>>> _cmd_pools;
 
         const u32 _family_index = u32(-1);
+
+#ifdef YAVE_GPU_PROFILING
+        TracyVkCtx _profiling_ctx;
+#endif
 
         static concurrent::Mutexed<core::Vector<CmdQueue*>> _all_queues;
 };
