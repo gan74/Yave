@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace yave {
 
-DedicatedDeviceMemoryAllocator::DedicatedDeviceMemoryAllocator(MemoryType type) : _type(type) {
+DedicatedDeviceMemoryAllocator::DedicatedDeviceMemoryAllocator(MemoryType type) : DeviceMemoryHeapBase(type) {
 }
 
 DedicatedDeviceMemoryAllocator::~DedicatedDeviceMemoryAllocator() {
@@ -34,7 +34,8 @@ DedicatedDeviceMemoryAllocator::~DedicatedDeviceMemoryAllocator() {
 core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(VkMemoryRequirements reqs) {
     y_profile();
 
-    _size += reqs.size;
+    _total_size += reqs.size;
+    ++_alloc_count;
 
     const VkDeviceMemory allocated = alloc_memory(reqs, _type);
 
@@ -53,10 +54,10 @@ core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(VkMemoryRequire
 void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
     y_profile();
 
-    if(memory.vk_offset()) {
-        y_fatal("Tried to free memory using non zero offset.");
-    }
-    _size -= memory.vk_size();
+    y_always_assert(memory.vk_offset() == 0, "Tried to free memory using non zero offset.");
+
+    _total_size -= memory.vk_size();
+    --_alloc_count;
 
     if(is_cpu_visible(_type)) {
         _mappings.locked([&](auto&& mappings) {
@@ -70,8 +71,8 @@ void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
 }
 
 void* DedicatedDeviceMemoryAllocator::map(const VkMappedMemoryRange& range, MappingAccess access) {
-    invalidate_for_map(range, access);
     if(is_cpu_visible(_type)) {
+        invalidate_for_map(range, access);
         return _mappings.locked([&](auto&& mappings) {
             return static_cast<u8*>(mappings[range.memory]) + range.offset;
         });
@@ -80,11 +81,17 @@ void* DedicatedDeviceMemoryAllocator::map(const VkMappedMemoryRange& range, Mapp
 }
 
 void DedicatedDeviceMemoryAllocator::unmap(const VkMappedMemoryRange& range, MappingAccess access) {
-    flush_for_unmap(range, access);
+    if(is_cpu_visible(_type)) {
+        flush_for_unmap(range, access);
+    }
 }
 
 u64 DedicatedDeviceMemoryAllocator::allocated_size() const {
-    return _size;
+    return _total_size;
+}
+
+usize DedicatedDeviceMemoryAllocator::allocation_count() const {
+    return _alloc_count;
 }
 
 }

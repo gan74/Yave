@@ -43,10 +43,11 @@ class DedicatedDeviceMemoryAllocator : public DeviceMemoryHeapBase {
         void unmap(const VkMappedMemoryRange& range, MappingAccess access) override;
 
         u64 allocated_size() const;
+        usize allocation_count() const;
 
     private:
-        MemoryType _type;
-        u64 _size = 0;
+        std::atomic<u64> _total_size = 0;
+        std::atomic<usize> _alloc_count = 0;
 
         concurrent::Mutexed<core::FlatHashMap<VkDeviceMemory, void*>> _mappings;
 };
