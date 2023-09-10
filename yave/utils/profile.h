@@ -26,6 +26,7 @@ SOFTWARE.
 
 #if defined(TRACY_ENABLE) && !defined(YAVE_PROFILING_DISABLED)
 #define YAVE_PROFILING
+#define YAVE_GPU_PROFILING
 #endif
 
 #if defined(YAVE_PROFILING) && !defined(TRACY_ENABLE)
@@ -50,76 +51,36 @@ SOFTWARE.
     const char* y_create_name_with_prefix(zone) = (name);                                                                                       \
     ___tracy_emit_zone_name(y_create_name_with_prefix(ctx), y_create_name_with_prefix(zone), strlen(y_create_name_with_prefix(zone)));
 
-#define y_profile_internal_set_arg(arg)                                                                                                         \
-    const char* y_create_name_with_prefix(args) = (arg);                                                                                        \
-    ___tracy_emit_zone_text(y_create_name_with_prefix(ctx), y_create_name_with_prefix(args), strlen(y_create_name_with_prefix(args)));          \
 
 
-
-
+#define y_profile_frame_begin()     do { } while(false)
 #define y_profile_frame_end()       do { ___tracy_emit_frame_mark(nullptr); } while(false)
-
-
 
 #define y_profile_msg(msg)          do { const char* _y_msg = (msg); TracyCMessage(_y_msg, strlen(_y_msg)); } while(false)
 
-
-
-#define y_profile_plot(name, val)   do { static constexpr const char* _y_plot = (name); TracyCPlot(_y_plot, (val)); } while(false)
-
-
-
-#define y_profile()  y_profile_internal(nullptr)
-
-#define y_profile_zone(name) y_profile_internal(name)
-
+#define y_profile()                 y_profile_internal(nullptr)
+#define y_profile_zone(name)        y_profile_internal(name)
 #define y_profile_dyn_zone(name)                \
     y_profile();                                \
     y_profile_internal_set_name(name)
 
 
-
-#define y_profile_arg(arg)                      \
-    y_profile();                                \
-    y_profile_internal_set_arg(arg)
-
-
-#define y_profile_zone_arg(name, arg)           \
-    y_profile_zone(name);                       \
-    y_profile_internal_set_arg(arg)
-
-#define y_profile_dyn_zone_arg(name, arg)       \
-    y_profile_dyn_zone(name);                   \
-    y_profile_internal_set_arg(arg)
-
-
 #define y_profile_alloc(ptr, size) ___tracy_emit_memory_alloc(ptr, size, 0)
 #define y_profile_free(ptr) ___tracy_emit_memory_free(ptr, 0)
 
-
-
-
 #else
 
+#define y_profile_frame_begin()               do {} while(false)
 #define y_profile_frame_end()               do {} while(false)
 
 #define y_profile_msg(msg)                  do {} while(false)
-
-#define y_profile_plot(name, val)           do {} while(false)
 
 #define y_profile()                         do {} while(false)
 #define y_profile_zone(name)                do {} while(false)
 #define y_profile_dyn_zone(name)            do {} while(false)
 
-#define y_profile_arg(arg)                  do {} while(false)
-#define y_profile_zone_arg(name, arg)       do {} while(false)
-#define y_profile_dyn_zone_arg(name, arg)   do {} while(false)
-
 #define y_profile_alloc(ptr, size)          do {} while(false)
 #define y_profile_free(ptr)                 do {} while(false)
-
-
-#define std::unique_lock(lock)         std::unique_lock(lock)
 
 #endif // YAVE_PROFILING
 

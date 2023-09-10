@@ -334,6 +334,8 @@ void Swapchain::destroy_sync_objects() {
 core::Result<FrameToken> Swapchain::next_frame() {
     y_profile();
 
+    y_profile_frame_begin();
+
     if(_images.is_empty()) {
         if(!reset()) {
             return core::Err();
