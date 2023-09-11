@@ -302,10 +302,9 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
                 y_profile_zone("barriers");
 
                 core::ScratchVector<BufferBarrier> buffer_barriers(pass->_buffers.size());
-                core::ScratchVector<ImageBarrier> volume_barriers(pass->_volumes.size());
-                core::ScratchVector<ImageBarrier> image_barriers(pass->_images.size());
+                core::ScratchVector<ImageBarrier> image_barriers(pass->_images.size() + pass->_volumes.size());
                 build_barriers(pass->_buffers, buffer_barriers, buffers_to_barrier, *_resources);
-                build_barriers(pass->_volumes, volume_barriers, volumes_to_barrier, *_resources);
+                build_barriers(pass->_volumes, image_barriers, volumes_to_barrier, *_resources);
                 build_barriers(pass->_images, image_barriers, images_to_barrier, *_resources);
                 recorder.barriers(buffer_barriers, image_barriers);
             }
