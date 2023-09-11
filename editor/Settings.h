@@ -85,8 +85,10 @@ struct DebugSettings {
 
 class Settings {
     public:
-        Settings(bool load = true);
-        ~Settings();
+        Settings() = default;
+
+        static Settings load();
+        void save() const;
 
         EditorSettings editor;
         CameraSettings camera;

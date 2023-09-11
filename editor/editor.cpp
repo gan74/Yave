@@ -39,7 +39,19 @@ EditorApplication* application() {
 
 
 Settings& app_settings() {
+    static bool loaded = false;
     static Settings settings;
+    static y_defer(
+        if(loaded) {
+            settings.save();
+        }
+    );
+
+    if(!loaded) {
+        settings = Settings::load();
+        loaded = true;
+    }
+
     return settings;
 }
 

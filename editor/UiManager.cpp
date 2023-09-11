@@ -165,7 +165,7 @@ void UiManager::draw_menu_bar() {
 
         if(asset_loader().is_loading()) {
             ImGui::Separator();
-            ImGui::TextUnformatted(ICON_FA_DATABASE);
+            ImGui::TextColored(imgui::error_text_color, ICON_FA_DATABASE);
             if(ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
                 ImGui::Text("Assets are loading%s", imgui::ellipsis());

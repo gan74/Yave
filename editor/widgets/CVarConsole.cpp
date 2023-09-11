@@ -32,7 +32,7 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 #include <algorithm>
-#include <string>
+#include <utility>
 #include <regex>
 
 
@@ -48,60 +48,100 @@ static constexpr bool is_printable_v =
 template<typename T>
 static bool try_parse(std::string_view str, T& t) {
     unused(str, t);
-    if constexpr(std::is_arithmetic_v<T>) {
-        try {
-            usize pos = 0;
-            const double val = std::stod(std::string(str), &pos); // Why???
-            if(pos != str.size()) {
+
+    try {
+        if constexpr(std::is_arithmetic_v<T>) {
+            // Specialize for bool to allow "true"/"false"
+            if constexpr(std::is_same_v<bool, T>) {
+                static constexpr std::string_view true_value = "true";
+                static constexpr std::string_view false_value = "false";
+                auto eq_icase = [](unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); };
+                if(std::equal(str.begin(), str.end(), true_value.begin(), true_value.end(), eq_icase)) {
+                    t = true;
+                    return true;
+                }
+                if(std::equal(str.begin(), str.end(), false_value.begin(), false_value.end(), eq_icase)) {
+                    t = false;
+                    return true;
+                }
+            }
+
+            double val = 0.0;
+            if(std::from_chars(str.data(), str.data() + str.size(), val).ec != std::errc()) {
                 return false;
             }
             t = T(val);
             return true;
-        } catch(...) {
-            return false;
+        } else if constexpr(std::is_constructible_v<std::string_view>) {
+            t = T(str);
+            return true;
         }
-    } else if constexpr(std::is_constructible_v<std::string_view>) {
-        t = T(str);
-        return true;
+    } catch(...) {
     }
     return false;
 }
 
+static std::string_view trim_type_name(std::string_view name) {
+    if(name.starts_with("class ")) {
+        name = name.substr(6);
+    } else if(name.starts_with("struct ")) {
+        name = name.substr(7);
+    }
+
+
+    if(name.starts_with("y::core::")) {
+        return name.substr(9);
+    } else if(name.starts_with("y::math::")) {
+        return name.substr(9);
+    } else if(name.starts_with("yave::ecs::")) {
+        return name.substr(11);
+    } else if(name.starts_with("yave::")) {
+        return name.substr(6);
+    } else if(name.starts_with("editor::")) {
+        return name.substr(8);
+    } else if(name.starts_with("y::")) {
+        return name.substr(3);
+    }
+    return name;
+}
+
 template<typename T, typename C, typename F>
-static void collect_var(C& vars, const core::String& parent, std::string_view name, F&& getter) {
+static void collect_var(C& vars, const core::String& parent, std::string_view name, F&& getter, const T& default_value) {
     unused(vars, parent, name, getter);
 
     const core::String full_name = parent + "." + name;
     if constexpr(is_printable_v<T>) {
         vars.emplace_back(
             full_name,
-            [=]{ return fmt("{}", getter()); },
+            [=]{ return fmt_to_owned("{}", getter()); },
             [=](std::string_view str) { return try_parse(str, getter()); },
-            ct_type_name<T>(), "", false, false
+            trim_type_name(ct_type_name<T>()),
+            fmt_to_owned("{}", default_value),
+            false
         );
     } else if constexpr(is_iterable_v<T>) {
         if constexpr(is_printable_v<typename T::value_type>) {
             vars.emplace_back(
                 full_name,
-                [=]{ return fmt("{}", getter()); },
+                [=]{ return fmt_to_owned("{}", getter()); },
                 [=](std::string_view) { /* not supported */ return false; },
-                ct_type_name<T>(), "", false, false
+                trim_type_name(ct_type_name<T>()),
+                fmt_to_owned("{}", default_value),
+                false
             );
         }
     }
 }
 
-template<typename C, typename F>
-static void explore(C& vars, const core::String& parent, std::string_view name, F&& getter) {
-    using result_type = std::remove_cvref_t<decltype(getter())>;
+template<typename C, typename F, typename T>
+static void explore(C& vars, const core::String& parent, std::string_view name, F&& getter, const T& default_value) {
+    collect_var(vars, parent, name, getter, default_value);
 
-    collect_var<result_type>(vars, parent, name, getter);
-
-    reflect::explore_members<result_type>([&, full = parent + "." + name](std::string_view name, auto member) mutable {
-        using member_type = std::remove_cvref_t<decltype(std::declval<result_type>().*member)>;
+    reflect::explore_members<T>([&, full = parent + "." + name](std::string_view name, auto member) mutable {
+        using member_type = std::remove_cvref_t<decltype(std::declval<T>().*member)>;
         explore(vars, full, name, [getter, member]() -> member_type& {
             return getter().*member;
-        });
+        }, default_value.*member);
     });
 }
 
@@ -109,11 +149,7 @@ static void explore(C& vars, const core::String& parent, std::string_view name, 
 
 
 CVarConsole::CVarConsole() : Widget(ICON_FA_STREAM " CVars") {
-    explore(_cvars, "", "settings", app_settings);
-
-    for(auto& var : _cvars) {
-        var.default_value = var.to_string();
-    }
+    explore(_cvars, "", "settings", app_settings, Settings{});
 }
 
 void CVarConsole::on_gui() {
@@ -152,44 +188,43 @@ void CVarConsole::on_gui() {
 
                 ImGui::TableSetColumnIndex(1);
 
+                const core::String value = var.to_string();
+                const bool modified = var.default_value != value;
+
                 {
+
                     bool pop_color = false;
                     if(var.error) {
                         ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
                         pop_color = true;
-                    } else if(var.modified) {
+                    } else if(modified) {
                         ImGui::PushStyleColor(ImGuiCol_Text, math::Vec4(sRGB_to_linear(math::Vec3(0.3f, 0.3f, 1.0f)), 1.0f));
                         pop_color = true;
                     }
 
-                    const std::string_view view = var.to_string();
-                    std::copy_n(view.data(), std::max(view.size(), _value.size() - 1) + 1, _value.data());
+                    std::copy_n(value.data(), std::max(value.size(), _value.size() - 1) + 1, _value.data());
 
                     if(imgui::selectable_input("##value", false, _value.data(), _value.size())) {
                         var.error = !var.from_string(_value.data());
-                        var.modified = true;
-                    }
-
-                    if(ImGui::IsItemHovered()) {
-                        ImGui::BeginTooltip();
-                        ImGui::TextUnformatted(var.type_name.data());
-                        ImGui::EndTooltip();
                     }
 
                     if(pop_color) {
                         ImGui::PopStyleColor();
                     }
+
+                    if(ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("%s (default value: \"%s\")", var.type_name.data(), var.default_value.data());
+                        ImGui::EndTooltip();
+                    }
                 }
 
                 ImGui::TableSetColumnIndex(2);
 
-                {
-                    if(var.modified) {
-                        if(ImGui::Selectable(ICON_FA_UNDO)) {
-                            y_always_assert(var.from_string(var.default_value), "Unable to reset value");
-                            var.error = false;
-                            var.modified = false;
-                        }
+                if(modified) {
+                    if(ImGui::Selectable(ICON_FA_UNDO)) {
+                        y_always_assert(var.from_string(var.default_value), "Unable to reset value");
+                        var.error = false;
                     }
                 }
 

@@ -43,12 +43,12 @@ class CVarConsole : public Widget {
 
     struct CVar {
         core::String full_name;
-        std::function<std::string_view()> to_string;
+        std::function<core::String()> to_string;
         std::function<bool(std::string_view)> from_string;
 
         core::String type_name;
         core::String default_value;
-        bool modified = false;
+
         bool error = false;
     };
 
