@@ -140,6 +140,8 @@ TimelineFence CmdQueue::submit(CmdBufferData* data) {
 
 
 VkResult CmdQueue::present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync) {
+    y_profile();
+
     submit_internal(std::exchange(recorder._data, nullptr), swaphain_sync.image_available, swaphain_sync.render_complete, swaphain_sync.fence);
 
     return _queue.locked([&](auto&& queue) {
@@ -187,6 +189,10 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
         core::SmallVector<u64> wait_values;
 
         _delayed_start.locked([&](auto&& delayed) {
+            y_profile_zone("flushing delayed cmd buffers");
+
+            y_profile_msg(fmt_c_str("{} delayed cmd buffers", delayed.size()));
+
             for(CmdBufferData* data : delayed) {
                 if(!data->_semaphore) {
                     data->_semaphore = create_cmd_buffer_semaphore();

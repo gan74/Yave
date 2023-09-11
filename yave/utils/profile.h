@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_UTILS_PROFILE_H
 
 #include <y/concurrent/concurrent.h>
+#include <cstring>
 
 #if defined(TRACY_ENABLE) && !defined(YAVE_PROFILING_DISABLED)
 #define YAVE_PROFILING
@@ -36,41 +37,25 @@ SOFTWARE.
 
 #ifdef YAVE_PROFILING
 
-#include <external/tracy/public/tracy/TracyC.h>
-
-#define y_profile_internal_capturing() (true)
-
-#define y_profile_internal(name)                                                                                                                \
-    static constexpr const char* y_create_name_with_prefix(static_name) = (name);                                                               \
-    static constexpr auto y_create_name_with_prefix(sloc) = ___tracy_source_location_data {                                                     \
-        y_create_name_with_prefix(static_name), __FUNCTION__, __FILE__, __LINE__, 0};                                                           \
-    const auto y_create_name_with_prefix(ctx) = ___tracy_emit_zone_begin(&y_create_name_with_prefix(sloc), y_profile_internal_capturing());     \
-    y_defer_named(___tracy_emit_zone_end(y_create_name_with_prefix(ctx)), profile_end)
-
-#define y_profile_internal_set_name(name)                                                                                                       \
-    const char* y_create_name_with_prefix(zone) = (name);                                                                                       \
-    ___tracy_emit_zone_name(y_create_name_with_prefix(ctx), y_create_name_with_prefix(zone), strlen(y_create_name_with_prefix(zone)));
+#include <external/tracy/public/tracy/Tracy.hpp>
 
 
+#define y_profile_frame_begin()             do {} while(false)
+#define y_profile_frame_end()               do { FrameMark; } while(false)
 
-#define y_profile_frame_begin()     do { } while(false)
-#define y_profile_frame_end()       do { ___tracy_emit_frame_mark(nullptr); } while(false)
+#define y_profile_msg(msg)                  do { const char* y_msg = (msg); TracyMessage(y_msg, std::strlen(y_msg)); } while(false)
 
-#define y_profile_msg(msg)          do { const char* _y_msg = (msg); TracyCMessage(_y_msg, strlen(_y_msg)); } while(false)
-
-#define y_profile()                 y_profile_internal(nullptr)
-#define y_profile_zone(name)        y_profile_internal(name)
-#define y_profile_dyn_zone(name)                \
-    y_profile();                                \
-    y_profile_internal_set_name(name)
+#define y_profile()                         ZoneNamed(y_create_name_with_prefix(tracy), true)
+#define y_profile_zone(name)                ZoneNamedN(y_create_name_with_prefix(tracy), name, true)
+#define y_profile_dyn_zone(name)            ZoneNamed(y_create_name_with_prefix(tracy), true); ZoneNameV(y_create_name_with_prefix(tracy), name, std::strlen(name))
 
 
-#define y_profile_alloc(ptr, size) ___tracy_emit_memory_alloc(ptr, size, 0)
-#define y_profile_free(ptr) ___tracy_emit_memory_free(ptr, 0)
+#define y_profile_alloc(ptr, size)          TracyAlloc(ptr, size)
+#define y_profile_free(ptr)                 TracyFree(ptr)
 
 #else
 
-#define y_profile_frame_begin()               do {} while(false)
+#define y_profile_frame_begin()             do {} while(false)
 #define y_profile_frame_end()               do {} while(false)
 
 #define y_profile_msg(msg)                  do {} while(false)

@@ -140,6 +140,7 @@ TimestampQuery TimestampQueryPool::query(PipelineStage stage) {
 }
 
 bool TimestampQueryPool::all_query_ready() const {
+    y_profile();
     return !_data || _data->all_ready();
 }
 

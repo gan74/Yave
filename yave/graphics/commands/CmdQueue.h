@@ -30,9 +30,30 @@ SOFTWARE.
 #include <memory>
 #include <thread>
 
+
+
 #ifdef YAVE_GPU_PROFILING
-#include <external/tracy/public/tracy/TracyVulkan.hpp>
+#ifdef Y_GNU
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 #endif
+
+#ifdef Y_MSVC
+#pragma warning(push)
+#pragma warning(disable:4459) //  declaration hides global declaration
+#endif
+
+#include <external/tracy/public/tracy/TracyVulkan.hpp>
+
+#ifdef Y_MSVC
+#pragma warning(pop)
+#endif
+
+#ifdef Y_GNU
+#pragma GCC diagnostic pop
+#endif
+#endif
+
 
 namespace yave {
 
