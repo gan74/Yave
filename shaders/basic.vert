@@ -42,9 +42,9 @@ void main() {
     const mat3 model = mat3(transform);
 
     const vec4 current_position = (camera.unjittered_view_proj * transform * vec4(in_position, 1.0));
-    const vec4 last_position = (camera.unjittered_view_proj * last_transform * vec4(in_position, 1.0));
+    const vec4 last_position = (camera.prev_unjittered_view_proj * last_transform * vec4(in_position, 1.0));
 
-    out_motion = ((last_position.xy / last_position.w) - (current_position.xy / current_position.w)) * 0.5;
+    out_motion = (((last_position.xy / last_position.w) - (current_position.xy / current_position.w))) * 0.5;
 
     out_normal = normalize(model * in_normal);
     out_tangent = normalize(model * in_tangent_sign.xyz);

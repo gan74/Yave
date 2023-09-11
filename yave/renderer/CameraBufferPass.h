@@ -29,7 +29,7 @@ namespace yave {
 
 struct TAASettings {
     bool enable = true;
-    bool use_reprojection = true;
+
     bool use_clamping = true;
     bool use_mask = true;
 

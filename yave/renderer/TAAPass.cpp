@@ -85,12 +85,10 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
         }
         builder.add_input_usage(aa, ImageUsage::TextureBit);
 
-        const u32 reprojection_bit = 0x1;
-        const u32 clamping_bit = 0x2;
-        const u32 mask_bit = 0x4;
+        const u32 clamping_bit = 0x1;
+        const u32 mask_bit = 0x2;
 
         u32 flag_bits = 0;
-        flag_bits |= (settings.use_reprojection ? reprojection_bit : 0);
         flag_bits |= (settings.use_clamping ? clamping_bit : 0);
         flag_bits |= (settings.use_mask ? mask_bit : 0);
 
