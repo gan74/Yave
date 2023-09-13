@@ -1,5 +1,6 @@
 #include "lib/utils.glsl"
 #include "lib/gbuffer.glsl"
+#include "lib/interpolants.glsl"
 
 #extension GL_EXT_nonuniform_qualifier : enable
 
@@ -19,14 +20,8 @@ layout(set = 1, binding = 2) readonly buffer Indices {
 
 layout(set = 2, binding = 0) uniform sampler2D all_textures_Variable[];
 
-layout(location = 0) in vec3 in_normal;
-layout(location = 1) in vec3 in_tangent;
-layout(location = 2) in vec3 in_bitangent;
-layout(location = 3) in vec2 in_uv;
-layout(location = 4) in vec2 in_motion;
-layout(location = 5) in flat uint in_instance_index;
 
-
+DECLARE_STANDARD_INTERPOLANTS(in)
 
 
 #define GLTF_ROUGHNESS_CHANNEL g
@@ -63,7 +58,8 @@ void main() {
 
 
     write_gbuffer(surface, out_rt0, out_rt1);
-    out_motion = in_motion;
+
+    out_motion = ((in_last_screen_pos.xy / in_last_screen_pos.z) - (in_screen_pos.xy / in_screen_pos.z)) * 0.5;
     out_emissive = tex_from_index(material, emissive_texture_index, in_uv) * vec4(material.emissive_mul, 1.0);
 }
 
