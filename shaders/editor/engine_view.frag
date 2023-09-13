@@ -41,7 +41,7 @@ void main() {
         color = vec3(pow(depth, 0.35));
     } else if(target_index == 6) {
         const vec2 motion = texelFetch(in_motion, coord, 0).xy;
-        color = vec3(saturate(motion * 10.0 + 0.5), 0.5);
+        color = vec3(clamp(motion * 10.0, -0.5, 0.5) + 0.5, 0.5);
     } else if(target_index == 7) {
         const float ao = texture(in_ao, in_uv).r;
         color = vec3(ao);

@@ -82,7 +82,19 @@ static auto standard_resolutions() {
     return resolutions;
 }
 
+static bool keep_taa(EngineView::RenderView view) {
+    switch(view) {
+        case EngineView::RenderView::Lit:
+        case EngineView::RenderView::Motion:
+            return true;
+        break;
 
+        default:
+        break;
+    }
+
+    return false;
+}
 
 
 
@@ -157,8 +169,9 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     UiTexture output;
     FrameGraph graph(_resource_pool);
 
+
     EditorRendererSettings settings = _settings;
-    settings.renderer_settings.taa.enable &= (_view == RenderView::Lit);
+    settings.renderer_settings.taa.enable &= keep_taa(_view);
 
     const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, settings);
     {
