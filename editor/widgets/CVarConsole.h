@@ -33,7 +33,7 @@ namespace editor {
 
 class CVarConsole : public Widget {
 
-    editor_widget(CVarConsole)
+    editor_widget_open(CVarConsole)
 
     enum class Status {
         None,

@@ -32,7 +32,7 @@ namespace editor {
 
 class ScriptPanel final : public Widget {
 
-    editor_widget_open(ScriptPanel)
+    editor_widget(ScriptPanel)
 
     public:
         ScriptPanel();
