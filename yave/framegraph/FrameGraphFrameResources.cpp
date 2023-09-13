@@ -47,6 +47,10 @@ FrameGraphFrameResources::~FrameGraphFrameResources() {
     _pool->garbage_collect();
 }
 
+u64 FrameGraphFrameResources::frame_id() const {
+    return _pool->frame_id();
+}
+
 u32 FrameGraphFrameResources::create_image_id() {
     return _next_image_id++;
 }

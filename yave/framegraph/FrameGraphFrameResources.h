@@ -50,6 +50,8 @@ class FrameGraphFrameResources final : NonMovable {
         FrameGraphFrameResources(std::shared_ptr<FrameGraphResourcePool> pool);
         ~FrameGraphFrameResources();
 
+        u64 frame_id() const;
+
         bool are_aliased(FrameGraphImageId a, FrameGraphImageId b) const;
 
         ImageBarrier barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const;

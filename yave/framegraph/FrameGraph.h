@@ -117,6 +117,7 @@ class FrameGraph : NonMovable {
         FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool);
         ~FrameGraph();
 
+        u64 frame_id() const;
         const FrameGraphFrameResources& resources() const;
 
         FrameGraphRegion region(std::string_view name);

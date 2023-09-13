@@ -158,14 +158,14 @@ void FrameGraphResourcePool::release(TransientImage image, FrameGraphPersistentR
             images[index] = std::move(image);
         });
     } else {
-        _images.locked([&](auto&& images) { images.emplace_back(std::move(image), _collection_id); });
+        _images.locked([&](auto&& images) { images.emplace_back(std::move(image), _frame_id); });
     }
 }
 
 void FrameGraphResourcePool::release(TransientVolume volume, FrameGraphPersistentResourceId persistent_id) {
     y_always_assert(!persistent_id.is_valid(), "Persistent volumes not supported");
     y_debug_assert(!volume.is_null());
-    _volumes.locked([&](auto&& volumes) { volumes.emplace_back(std::move(volume), _collection_id); });
+    _volumes.locked([&](auto&& volumes) { volumes.emplace_back(std::move(volume), _frame_id); });
 }
 
 void FrameGraphResourcePool::release(TransientBuffer buffer, FrameGraphPersistentResourceId persistent_id) {
@@ -181,7 +181,7 @@ void FrameGraphResourcePool::release(TransientBuffer buffer, FrameGraphPersisten
             buffers[index] = std::move(buffer);
         });
     } else {
-        _buffers.locked([&](auto&& buffers) { buffers.emplace_back(std::move(buffer), _collection_id); });
+        _buffers.locked([&](auto&& buffers) { buffers.emplace_back(std::move(buffer), _frame_id); });
     }
 }
 
@@ -221,11 +221,11 @@ void FrameGraphResourcePool::garbage_collect() {
     y_profile();
 
     const u64 max_col_count = 6;
-    const u64 collect_id = _collection_id++;
+    const u64 frame_id = _frame_id++;
 
     _images.locked([&](auto&& images) {
         for(usize i = 0; i < images.size(); ++i) {
-            if(images[i].second + max_col_count < collect_id) {
+            if(images[i].second + max_col_count < frame_id) {
                 images.erase(images.begin() + i);
                 --i;
             }
@@ -234,7 +234,7 @@ void FrameGraphResourcePool::garbage_collect() {
 
     _volumes.locked([&](auto&& volumes) {
         for(usize i = 0; i < volumes.size(); ++i) {
-            if(volumes[i].second + max_col_count < collect_id) {
+            if(volumes[i].second + max_col_count < frame_id) {
                 volumes.erase(volumes.begin() + i);
                 --i;
             }
@@ -243,7 +243,7 @@ void FrameGraphResourcePool::garbage_collect() {
 
     _buffers.locked([&](auto&& buffers) {
         for(usize i = 0; i < buffers.size(); ++i) {
-            if(buffers[i].second + max_col_count < collect_id) {
+            if(buffers[i].second + max_col_count < frame_id) {
                 buffers.erase(buffers.begin() + i);
                 --i;
             }
@@ -251,6 +251,9 @@ void FrameGraphResourcePool::garbage_collect() {
     });
 }
 
+u64 FrameGraphResourcePool::frame_id() const {
+    return _frame_id;
+}
 
 }
 

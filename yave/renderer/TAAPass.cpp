@@ -50,19 +50,18 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
     const ImageFormat format = framegraph.image_format(in_color);
     const math::Vec2ui size = framegraph.image_size(in_color);
 
-    static const FrameGraphPersistentResourceId color_id = FrameGraphPersistentResourceId::create();
-    static const FrameGraphPersistentResourceId motion_id = FrameGraphPersistentResourceId::create();
-
     FrameGraphPassBuilder builder = framegraph.add_pass("TAA resolve pass");
 
     const auto aa = builder.declare_image(format, size);
     builder.add_input_usage(aa, ImageUsage::TextureBit);
 
+    static const FrameGraphPersistentResourceId color_id = FrameGraphPersistentResourceId::create();
     FrameGraphImageId prev_color = framegraph.make_persistent_and_get_prev(aa, color_id);
     if(!prev_color.is_valid()) {
         prev_color = builder.declare_copy(aa);
     }
 
+    static const FrameGraphPersistentResourceId motion_id = FrameGraphPersistentResourceId::create();
     FrameGraphImageId prev_motion = framegraph.make_persistent_and_get_prev(in_motion, motion_id);
     if(!prev_motion.is_valid()) {
         prev_motion = builder.declare_copy(in_motion);

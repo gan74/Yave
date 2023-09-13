@@ -170,6 +170,10 @@ FrameGraph::FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool) : _resource
 FrameGraph::~FrameGraph() {
 }
 
+u64 FrameGraph::frame_id() const {
+    return _resources->frame_id();
+}
+
 const FrameGraphFrameResources& FrameGraph::resources() const {
     return *_resources;
 }

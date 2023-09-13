@@ -55,6 +55,8 @@ class FrameGraphResourcePool : NonMovable {
 
         void garbage_collect();
 
+        u64 frame_id() const;
+
     private:
         bool create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
         bool create_volume_from_pool(TransientVolume& res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
@@ -68,7 +70,7 @@ class FrameGraphResourcePool : NonMovable {
         concurrent::Mutexed<core::Vector<TransientImage>, std::recursive_mutex> _persistent_images;
         concurrent::Mutexed<core::Vector<TransientBuffer>, std::recursive_mutex> _persistent_buffers;
 
-        std::atomic<u64> _collection_id = 0;
+        std::atomic<u64> _frame_id = 0;
 };
 
 }

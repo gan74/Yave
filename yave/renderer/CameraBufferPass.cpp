@@ -52,11 +52,7 @@ CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneVie
         return create_no_jitter(framegraph, view);
     }
 
-    static const FrameGraphPersistentResourceId camera_id = FrameGraphPersistentResourceId::create();
-    static usize jitter = 1;
-    const usize jitter_index = jitter++;
-
-    const SceneView jittered_view = SceneView(&view.world(), view.camera().jittered(jitter_index, size, settings.jitter_intensity));
+    const SceneView jittered_view = SceneView(&view.world(), view.camera().jittered(framegraph.frame_id(), size, settings.jitter_intensity));
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
 
@@ -65,6 +61,7 @@ CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneVie
 
     builder.add_input_usage(camera, BufferUsage::UniformBit);
 
+    static const FrameGraphPersistentResourceId camera_id = FrameGraphPersistentResourceId::create();
     const FrameGraphBufferId prev_camera = framegraph.make_persistent_and_get_prev(camera, camera_id);
 
     if(prev_camera.is_valid()) {
