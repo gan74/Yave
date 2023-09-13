@@ -33,6 +33,22 @@ SOFTWARE.
 
 namespace yave {
 
+static math::Vec2 compute_jitter(TAASettings::JitterSeq jitter, u64 jitter_index) {
+    switch(jitter) {
+        case TAASettings::JitterSeq::Weyl:
+            return math::Vec2(math::weyl_2d<double>(jitter_index));
+
+        case TAASettings::JitterSeq::R2:
+            return math::Vec2(math::golden_r2_2d<double>(jitter_index));
+
+        default:
+            y_fatal("Unknown jitter type");
+    }
+
+    return math::Vec2(0.5f);
+}
+
+
 CameraBufferPass CameraBufferPass::create_no_jitter(FrameGraph& framegraph, const SceneView& view) {
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
 
@@ -52,7 +68,8 @@ CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneVie
         return create_no_jitter(framegraph, view);
     }
 
-    const SceneView jittered_view = SceneView(&view.world(), view.camera().jittered(framegraph.frame_id(), size, settings.jitter_intensity));
+    const u64 jitter_index = framegraph.frame_id() % 1024;
+    const SceneView jittered_view = SceneView(&view.world(), view.camera().jittered(compute_jitter(settings.jitter, jitter_index), size, settings.jitter_intensity));
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
 

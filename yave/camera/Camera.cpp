@@ -87,15 +87,10 @@ void Camera::set_far(float far_dist) {
 }
 
 
-Camera Camera::jittered(u64 index, const math::Vec2ui& size, float intensity) const {
-    index = index % 1024;
-    const double g = 1.32471795724474602596;
-    const double a1 = 1.0 / g;
-    const double a2 = 1.0 / (g * g);
-    const float x = float(std::fmod(0.5 + a1 * index, 1.0) * 2.0 - 1.0) * intensity;
-    const float y = float(std::fmod(0.5 + a2 * index, 1.0) * 2.0 - 1.0) * intensity;
+Camera Camera::jittered(math::Vec2 jitter_seq, const math::Vec2ui& size, float intensity) const {
+    y_debug_assert(jitter_seq.saturated() == jitter_seq);
 
-    const math::Vec2 jitter = math::Vec2(x, y) / math::Vec2(size);
+    const math::Vec2 jitter = ((jitter_seq  * 2.0f - 1.0f) / math::Vec2(size)) * intensity;
 
     math::Matrix4<> jittered_proj = _proj;
     jittered_proj[2].to<2>() = jitter;

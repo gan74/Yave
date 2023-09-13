@@ -28,7 +28,6 @@ SOFTWARE.
 namespace yave {
 
 class Camera {
-
     public:
         static bool is_proj_orthographic(const math::Matrix4<>& proj);
         static float fov_from_proj(const math::Matrix4<>& proj);
@@ -48,7 +47,7 @@ class Camera {
 
         void set_far(float far_dist);
 
-        Camera jittered(u64 index, const math::Vec2ui& size, float intensity = 1.0f) const;
+        Camera jittered(math::Vec2 jitter_seq, const math::Vec2ui& size, float intensity = 1.0f) const;
         Camera unjittered() const;
 
         const math::Matrix4<>& view_matrix() const;

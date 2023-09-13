@@ -331,6 +331,20 @@ void EngineView::draw_settings_menu() {
 
         ImGui::Separator();
 
+        const char* jitter_names[] = {"Weyl", "R2"};
+        if(ImGui::BeginCombo("Jitter", jitter_names[usize(settings.jitter)])) {
+            for(usize i = 0; i != sizeof(jitter_names) / sizeof(jitter_names[0]); ++i) {
+                const bool selected = usize(settings.jitter) == i;
+                if(ImGui::Selectable(jitter_names[i], selected)) {
+                    settings.jitter = TAASettings::JitterSeq(i);
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+
+        ImGui::Separator();
+
         ImGui::SliderFloat("Blending factor", &settings.blending_factor, 0.0f, 1.0f, "%.2f");
         ImGui::SliderFloat("Jitter intensity", &settings.jitter_intensity, 0.0f, 2.0f, "%.2f");
 
@@ -345,9 +359,7 @@ void EngineView::draw_menu_bar() {
 
             ImGui::Separator();
             {
-                const char* output_names[] = {
-                        "Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO",
-                    };
+                const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO"};
                 for(usize i = 0; i != usize(RenderView::MaxRenderViews); ++i) {
                     bool selected = usize(_view) == i;
                     ImGui::MenuItem(output_names[i], nullptr, &selected);

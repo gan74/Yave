@@ -67,8 +67,8 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
         prev_motion = builder.declare_copy(in_motion);
     }
 
-    const u32 clamping_bit              = 0x1;
-    const u32 motion_rejection_bit      = 0x2;
+    const u32 clamping_bit              = 0x01;
+    const u32 motion_rejection_bit      = 0x02;
 
     u32 flag_bits = 0;
     flag_bits |= (settings.use_clamping ? clamping_bit : 0);

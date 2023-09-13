@@ -28,13 +28,19 @@ SOFTWARE.
 namespace yave {
 
 struct TAASettings {
-    bool enable = true;
+    enum class JitterSeq {
+        Weyl,
+        R2,
+    };
+
+    JitterSeq jitter = JitterSeq::R2;
+    float blending_factor = 0.9f;
+    float jitter_intensity = 1.0f;
 
     bool use_clamping = true;
     bool use_motion_rejection = true;
 
-    float blending_factor = 0.9f;
-    float jitter_intensity = 1.0f;
+    bool enable = true;
 };
 
 struct CameraBufferPass {
