@@ -28,13 +28,12 @@ namespace yave {
 
 struct TAAPass {
     FrameGraphImageId anti_aliased;
-    FrameGraphImageId deocclusion_mask;
 
     static TAAPass create(FrameGraph& framegraph,
                           const CameraBufferPass& camera,
                           FrameGraphImageId in_color,
                           FrameGraphImageId in_depth,
-                          FrameGraphImageId& in_motion);
+                          FrameGraphImageId in_motion);
 };
 
 

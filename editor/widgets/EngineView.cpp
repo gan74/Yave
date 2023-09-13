@@ -327,7 +327,7 @@ void EngineView::draw_settings_menu() {
         ImGui::Separator();
 
         ImGui::Checkbox("Enable clamping", &settings.use_clamping);
-        ImGui::Checkbox("Enable masking", &settings.use_mask);
+        ImGui::Checkbox("Enable motion rejection", &settings.use_motion_rejection);
 
         ImGui::Separator();
 

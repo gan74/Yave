@@ -55,7 +55,6 @@ class DeviceResources final : NonMovable {
             ExposureDebugComp,
             DepthBoundComp,
             AtmosphereIntergratorComp,
-            TAADeocclusionMaskComp,
             PrevCameraComp,
             UpdateTransformsComp,
 
@@ -99,7 +98,6 @@ class DeviceResources final : NonMovable {
             ExposureDebugProgram,
             DepthBoundProgram,
             AtmosphereIntergratorProgram,
-            TAADeocclusionMaskProgram,
             PrevCameraProgram,
             UpdateTransformsProgram,
 

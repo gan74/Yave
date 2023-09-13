@@ -31,7 +31,7 @@ struct TAASettings {
     bool enable = true;
 
     bool use_clamping = true;
-    bool use_mask = true;
+    bool use_motion_rejection = true;
 
     float blending_factor = 0.9f;
     float jitter_intensity = 1.0f;
