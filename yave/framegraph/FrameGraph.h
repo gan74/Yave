@@ -205,6 +205,8 @@ class FrameGraph : NonMovable {
 
         core::Vector<Region> _regions;
 
+        core::Vector<FrameGraphResourceId> _persistents;
+
 };
 
 }

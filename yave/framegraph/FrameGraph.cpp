@@ -589,12 +589,17 @@ void FrameGraph::register_image_clear(FrameGraphMutableImageId dst, const FrameG
     _image_clears.push_back({pass->_index, dst});
 }
 
-template<typename C, typename T, typename U>
-static void make_persistent(C& c, T res, U persistent_id) {
+template<typename C, typename P, typename T, typename U>
+static void make_persistent(C& c, P& persistents, T res, U persistent_id) {
     persistent_id.check_valid();
     auto& info = check_exists(c, res);
     y_always_assert(!info.persistent.is_valid(), "Resource already has a persistent ID");
     info.persistent = persistent_id;
+
+    persistents.set_min_size(persistent_id.id() + 1);
+    auto& p = persistents[persistent_id.id()];
+    y_always_assert(!p.is_valid(), "Persistent id has already been registered");
+    p = res;
 }
 
 template<typename C, typename T, typename U>
@@ -607,7 +612,7 @@ static auto& alloc_prev(C& c, T new_res, U persistent_id) {
 }
 
 FrameGraphImageId FrameGraph::make_persistent_and_get_prev(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id) {
-    make_persistent(_images, res, persistent_id);
+    make_persistent(_images, _persistents, res, persistent_id);
 
     if(!_resources->has_prev_image(persistent_id)) {
         return {};
@@ -628,7 +633,7 @@ FrameGraphImageId FrameGraph::make_persistent_and_get_prev(FrameGraphImageId res
 }
 
 FrameGraphBufferId FrameGraph::make_persistent_and_get_prev(FrameGraphBufferId res, FrameGraphPersistentResourceId persistent_id) {
-    make_persistent(_buffers, res, persistent_id);
+    make_persistent(_buffers, _persistents, res, persistent_id);
 
     if(!_resources->has_prev_buffer(persistent_id)) {
         return {};
