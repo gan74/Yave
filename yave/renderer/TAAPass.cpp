@@ -76,9 +76,11 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
 
     struct SettingsData {
         u32 flags;
+        u32 weighting_mode;
         float blending_factor;
     } settings_data {
         flag_bits,
+        u32(settings.weighting_mode),
         settings.blending_factor,
     };
 

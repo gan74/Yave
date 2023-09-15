@@ -17,6 +17,7 @@ layout(set = 0, binding = 5) uniform CameraData {
 
 layout(set = 0, binding = 6) uniform Settings_Inline {
     uint flags;
+    uint weighting_mode;
     float blending_factor;
 };
 
@@ -69,11 +70,37 @@ vec2 find_motion(sampler2D depth, sampler2D motion, ivec2 coord) {
 #endif
 }
 
+vec3 blend_weighted(vec3 curr, vec3 prev, float factor) {
+    switch(weighting_mode) {
+        case 0:     // None
+            return mix(curr, prev, factor);
+
+        case 1: {   // Lum
+            const float curr_weight = (1.0 - factor) / luminance(curr);
+            const float prev_weight = factor / luminance(prev);
+            const float total_weight = curr_weight + prev_weight;
+            return (curr * curr_weight + prev * prev_weight) / total_weight;
+        }
+
+        case 2: {   // Log
+            const vec3 log_curr = log(max(curr, epsilon));
+            const vec3 log_prev = log(max(prev, epsilon));
+            return exp(mix(log_curr, log_prev, factor));
+        }
+
+        default:
+        break;
+    }
+
+    return curr;
+}
+
 
 // -------------------------------- Main --------------------------------
 
 const uint clamping_bit = 0x1;
 const uint motion_rejection_bit = 0x2;
+const uint deocclusion_mask_bit = 0x4;
 
 // https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
 void main() {
@@ -88,19 +115,18 @@ void main() {
     const vec2 uv = gl_FragCoord.xy * inv_size;
     const vec2 prev_uv = uv + motion;
 
-    const vec2 prev_motion = texture(in_prev_motion, prev_uv).xy;
-
     const vec3 current = texelFetch(in_color, coord, 0).rgb;
     vec3 prev = current;
 
 
-    bool sample_valid = true;
+    bool sample_valid = saturate(prev_uv) == prev_uv;
 
 
     // Motion rejection
-    if((flags & motion_rejection_bit) != 0) {
+    if(sample_valid && (flags & motion_rejection_bit) != 0) {
         const vec2 ratio = vec2(1.0, y_ratio);
-        sample_valid = sample_valid && (length((prev_motion - motion) * ratio) < (length(motion * ratio) * 0.2 + 0.05));
+        const vec2 prev_motion = texture(in_prev_motion, prev_uv).xy;
+        sample_valid = (length((prev_motion - motion) * ratio) < (length(motion * ratio) * 0.2 + 0.05));
     }
 
 
@@ -111,16 +137,15 @@ void main() {
         if((flags & clamping_bit) != 0) {
             const ClampingInfo clamping_info = gather_clamping_info(in_color, coord);
             const vec3 clamped = clamp(prev, clamping_info.min_color, clamping_info.max_color);
-            prev = mix(clamped, prev, 0.5); // ???
+            prev = clamped;
         }
     }
 
 
 
 
-
     if(sample_valid) {
-        out_color = vec4(mix(current, prev, blending_factor), 1.0);
+        out_color = vec4(blend_weighted(current, prev, blending_factor), 1.0);
     } else {
         out_color = vec4(current, 1.0);
     }

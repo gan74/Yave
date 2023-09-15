@@ -33,7 +33,15 @@ struct TAASettings {
         R2,
     };
 
+    enum class WeightingMode : u32 {
+        None,
+        Luminance,
+        Log,
+    };
+
     JitterSeq jitter = JitterSeq::R2;
+    WeightingMode weighting_mode = WeightingMode::Log;
+
     float blending_factor = 0.9f;
     float jitter_intensity = 1.0f;
 

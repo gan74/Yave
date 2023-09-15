@@ -332,6 +332,17 @@ void EngineView::draw_settings_menu() {
 
         ImGui::Separator();
 
+        const char* weighting_names[] = {"None", "Luminance", "Log"};
+        if(ImGui::BeginCombo("Weighting mode", weighting_names[usize(settings.weighting_mode)])) {
+            for(usize i = 0; i != sizeof(weighting_names) / sizeof(weighting_names[0]); ++i) {
+                const bool selected = usize(settings.weighting_mode) == i;
+                if(ImGui::Selectable(weighting_names[i], selected)) {
+                    settings.weighting_mode = TAASettings::WeightingMode(i);
+                }
+            }
+            ImGui::EndCombo();
+        }
+
         const char* jitter_names[] = {"Weyl", "R2"};
         if(ImGui::BeginCombo("Jitter", jitter_names[usize(settings.jitter)])) {
             for(usize i = 0; i != sizeof(jitter_names) / sizeof(jitter_names[0]); ++i) {
