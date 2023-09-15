@@ -90,9 +90,8 @@ static void setup_style() {
 
     const math::Vec4 none = {};
 
-    const float lightness = 1.0f;
     auto rgb = [=](u8 r, u8 g, u8 b, float alpha = 1.0f) {
-        const math::Vec3 linear = (math::Vec3(r, g, b) / 255.0f * lightness).min(math::Vec3(1.0f));
+        const math::Vec3 linear = (math::Vec3(r, g, b) / 255.0f).saturated();
         return math::Vec4(sRGB_to_linear(linear), alpha);
     };
 
@@ -105,6 +104,26 @@ static void setup_style() {
     }
 
 
+    /*auto stl = [&](u8 base, float alpha = 1.0f) {
+        const float b = base;
+        const float o = std::pow(b * 0.08f, 1.35f);
+        return rgb(
+            u8(std::min(b,              255.0f)),
+            u8(std::min(b + o,          255.0f)),
+            u8(std::min(b + o * 2.0f,   255.0f)),
+            alpha
+        );
+    };*/
+
+    auto stl = [&](u8 base, float alpha = 1.0f) {
+        return rgb(base, base + 3, base + 7, alpha);
+    };
+
+    const math::Vec4 bg = stl(33);        // rgb(33, 36, 40);
+    const math::Vec4 child = stl(44);     // rgb(44, 47, 52);
+    const math::Vec4 highlight = rgb(0, 112, 224);
+
+
     colors[ImGuiCol_BorderShadow]           = none;
     colors[ImGuiCol_FrameBgActive]          = none;
     colors[ImGuiCol_Tab]                    = none;
@@ -112,92 +131,95 @@ static void setup_style() {
     colors[ImGuiCol_DockingEmptyBg]         = none;
     colors[ImGuiCol_ModalWindowDimBg]       = none;
     colors[ImGuiCol_TableRowBg]             = none;
+    colors[ImGuiCol_FrameBgHovered]         = none;
+    colors[ImGuiCol_TextSelectedBg]         = none;
+    colors[ImGuiCol_TableRowBgAlt]          = none;
+    colors[ImGuiCol_Border]                 = none;
 
-    colors[ImGuiCol_Text]                   = grey(180);
-    colors[ImGuiCol_TextDisabled]           = grey(90);
+    colors[ImGuiCol_Text]                   = rgb(177, 183, 190);
+    colors[ImGuiCol_TextDisabled]           = rgb(107, 123, 139);
 
-    colors[ImGuiCol_CheckMark]              = rgb(0, 112, 224);
-    colors[ImGuiCol_DragDropTarget]         = rgb(0, 112, 224);
-    colors[ImGuiCol_NavWindowingHighlight]  = rgb(0, 112, 224);
+    colors[ImGuiCol_SliderGrabActive]       = stl(143); // rgb(143, 146, 150);
+    colors[ImGuiCol_ScrollbarGrabActive]    = stl(143); // rgb(143, 146, 150);
+    colors[ImGuiCol_ScrollbarGrabHovered]   = stl(143); // rgb(143, 146, 150);
+    colors[ImGuiCol_ResizeGripActive]       = stl(143); // rgb(143, 146, 150);
+    colors[ImGuiCol_ResizeGripHovered]      = stl(143); // rgb(143, 146, 150);
 
-    colors[ImGuiCol_PlotHistogram]          = rgb(0, 112, 224);
-    colors[ImGuiCol_PlotHistogramHovered]   = rgb(0, 112, 224);
-    colors[ImGuiCol_PlotLines]              = rgb(0, 112, 224);
-    colors[ImGuiCol_PlotLinesHovered]       = rgb(0, 112, 224);
+    colors[ImGuiCol_SliderGrab]             = stl(57); // rgb(57, 60, 65);
+    colors[ImGuiCol_ScrollbarGrab]          = stl(57); // rgb(57, 60, 65);
+    colors[ImGuiCol_ResizeGrip]             = stl(57); // rgb(57, 60, 65);
 
-    colors[ImGuiCol_NavWindowingHighlight]  = rgb(128, 168, 224);
+    colors[ImGuiCol_Button]                 = stl(63); // rgb(63, 68, 76);
+    colors[ImGuiCol_ButtonHovered]          = stl(56); // rgb(56, 60, 68);
+    colors[ImGuiCol_PopupBg]                = stl(56); // rgb(56, 60, 68);
+    colors[ImGuiCol_Header]                 = stl(56); // rgb(56, 60, 68);
 
-    colors[ImGuiCol_Border]                 = grey(21, 0.75f);
-    colors[ImGuiCol_PopupBg]                = grey(21, 0.9f);
-    colors[ImGuiCol_FrameBg]                = grey(15, 0.5f);
+    colors[ImGuiCol_ButtonActive]           = stl(60); // rgb(60, 65, 72);
+    colors[ImGuiCol_TableBorderLight]       = stl(60);
+    colors[ImGuiCol_TableBorderStrong]      = stl(60);
 
-    colors[ImGuiCol_NavWindowingDimBg]      = grey(128, 0.75f);
-    colors[ImGuiCol_DockingPreview]         = grey(128, 0.25f);
-    colors[ImGuiCol_FrameBgHovered]         = grey(128, 0.25f);
-    colors[ImGuiCol_TextSelectedBg]         = grey(128, 0.25f);
-    colors[ImGuiCol_TableRowBgAlt]          = grey(128, 0.05f);
+    colors[ImGuiCol_TabActive]              = child;
+    colors[ImGuiCol_TabUnfocusedActive]     = child;
+    colors[ImGuiCol_ChildBg]                = child;
+    colors[ImGuiCol_WindowBg]               = child;
+    colors[ImGuiCol_TabHovered]             = child;
 
-    colors[ImGuiCol_SliderGrabActive]       = grey(128);
-    colors[ImGuiCol_ScrollbarGrabActive]    = grey(128);
-    colors[ImGuiCol_ScrollbarGrabHovered]   = grey(128);
-    colors[ImGuiCol_ResizeGripActive]       = grey(128);
-    colors[ImGuiCol_ResizeGripHovered]      = grey(128);
+    colors[ImGuiCol_ScrollbarBg]            = bg;
+    colors[ImGuiCol_Separator]              = bg;
+    colors[ImGuiCol_TitleBg]                = bg;
+    colors[ImGuiCol_TitleBgActive]          = bg;
+    colors[ImGuiCol_TitleBgCollapsed]       = bg;
+    colors[ImGuiCol_MenuBarBg]              = bg;
+    colors[ImGuiCol_FrameBg]                = bg;
+    colors[ImGuiCol_TableHeaderBg]          = bg;
 
-    colors[ImGuiCol_SliderGrab]             = grey(87);
-    colors[ImGuiCol_ScrollbarGrab]          = grey(87);
-    colors[ImGuiCol_ResizeGrip]             = grey(87);
+    colors[ImGuiCol_CheckMark]              = highlight;
+    colors[ImGuiCol_DragDropTarget]         = highlight;
+    colors[ImGuiCol_NavWindowingHighlight]  = highlight;
+    colors[ImGuiCol_PlotHistogram]          = highlight;
+    colors[ImGuiCol_PlotHistogramHovered]   = highlight;
+    colors[ImGuiCol_PlotLines]              = highlight;
+    colors[ImGuiCol_PlotLinesHovered]       = highlight;
+    colors[ImGuiCol_HeaderActive]           = highlight;
+    colors[ImGuiCol_SeparatorActive]        = highlight;
 
-    colors[ImGuiCol_Button]                 = grey(60);
+    colors[ImGuiCol_HeaderHovered]          = math::lerp(child, highlight, 0.25f);
+    colors[ImGuiCol_SeparatorHovered]       = math::lerp(child, highlight, 0.25f);
 
-    colors[ImGuiCol_ButtonHovered]          = grey(47);
-    colors[ImGuiCol_ButtonActive]           = grey(47);
-    colors[ImGuiCol_Header]                 = grey(47);
-    colors[ImGuiCol_HeaderHovered]          = grey(47);
-    colors[ImGuiCol_HeaderActive]           = grey(47);
-    colors[ImGuiCol_TableHeaderBg]          = grey(47);
-    colors[ImGuiCol_SeparatorActive]        = grey(47);
-    colors[ImGuiCol_SeparatorHovered]       = grey(47);
-    colors[ImGuiCol_TabHovered]             = grey(47);
 
-    colors[ImGuiCol_WindowBg]               = grey(36);
-    colors[ImGuiCol_TabActive]              = grey(36);
-    colors[ImGuiCol_TabUnfocusedActive]     = grey(36);
+    // colors[ImGuiCol_NavWindowingHighlight]  = rgb(128, 168, 224);
+    // colors[ImGuiCol_NavWindowingDimBg]      = grey(128, 0.75f);
+    // colors[ImGuiCol_DockingPreview]         = grey(128, 0.25f);
 
-    colors[ImGuiCol_ChildBg]                = grey(28);
 
-    colors[ImGuiCol_Separator]              = grey(26);
-    colors[ImGuiCol_TableBorderLight]       = grey(26);
-    colors[ImGuiCol_TableBorderStrong]      = grey(26);
-    colors[ImGuiCol_ScrollbarBg]            = grey(26);
-
-    colors[ImGuiCol_TitleBg]                = grey(21);
-    colors[ImGuiCol_TitleBgActive]          = grey(21);
-    colors[ImGuiCol_TitleBgCollapsed]       = grey(21);
-    colors[ImGuiCol_MenuBarBg]              = grey(21);
 
 
     style.WindowPadding     = ImVec2(4, 4);
     style.FramePadding      = ImVec2(6, 6);
     style.ItemSpacing       = ImVec2(4, 2);
+    style.CellPadding       = ImVec2(4, 3);
 
     style.ScrollbarSize     = 12;
     style.ScrollbarRounding = 12;
 
     style.IndentSpacing     = 12;
 
-    style.WindowBorderSize  = 1;
+    style.FrameBorderSize   = 1;
+
+    style.WindowBorderSize  = 0;
     style.ChildBorderSize   = 0;
     style.PopupBorderSize   = 0;
-    style.FrameBorderSize   = 0;
     style.PopupRounding     = 0;
 
     style.FrameRounding     = 3;
-    style.GrabRounding      = 3;
 
+    style.GrabRounding      = 0;
     style.WindowRounding    = 0;
     style.ChildRounding     = 0;
     style.TabBorderSize     = 0;
     style.TabRounding       = 0;
+
+    style.WindowMenuButtonPosition = ImGuiDir_Right;
 
 
     if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
@@ -460,7 +482,9 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 setup_imgui_dockspace();
 
                 if(_demo_window && !_test_engine) {
+                    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, 0);
                     ImGui::ShowDemoWindow(&_demo_window);
+                    ImGui::PopStyleColor();
                 }
 
                 if(func) {

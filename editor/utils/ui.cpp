@@ -158,6 +158,9 @@ static usize str_buffer_capacity(const core::String& str) {
 }
 
 bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags) {
+    ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_ButtonActive));
+    y_defer(ImGui::PopStyleColor());
+
     str.resize(str_buffer_capacity(str), '\0');
     const bool modified = ImGui::InputText(name, str.data(), str.size(), flags);
     str.resize(std::strlen(str.data()));

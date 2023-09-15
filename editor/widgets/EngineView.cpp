@@ -142,15 +142,16 @@ bool EngineView::should_keep_alive() const {
 // ---------------------------------------------- DRAW ----------------------------------------------
 
 bool EngineView::before_gui() {
-    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, 0);
     ImGui::PushStyleColor(ImGuiCol_Border, 0);
-
+    ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetColorU32(ImGuiCol_HeaderActive));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2());
 
-    return true;
+    return Widget::before_gui();
 }
 
 void EngineView::after_gui() {
+    Widget::after_gui();
+
     ImGui::PopStyleColor(2);
     ImGui::PopStyleVar();
 }

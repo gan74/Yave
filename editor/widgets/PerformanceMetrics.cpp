@@ -109,7 +109,7 @@ PerformanceMetrics::PerformanceMetrics() :
 
 bool PerformanceMetrics::before_gui() {
     ImGui::SetNextWindowSizeConstraints(ImVec2(-1.0f, 0.0f), ImVec2(-1.0f, std::numeric_limits<float>::max()));
-    return true;
+    return Widget::before_gui();
 }
 
 void PerformanceMetrics::on_gui() {

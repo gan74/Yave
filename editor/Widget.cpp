@@ -83,10 +83,13 @@ void Widget::on_gui() {
 }
 
 bool Widget::before_gui() {
+    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, 0);
+
     return true;
 }
 
 void Widget::after_gui() {
+    ImGui::PopStyleColor();
 }
 
 void Widget::draw_gui_inside() {

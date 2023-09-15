@@ -80,25 +80,6 @@ class UiManager : NonMovable {
         u64 _frame_number = 0;
 };
 
-
-
-class FunctionWidget final : public Widget {
-    public:
-        FunctionWidget(std::string_view name, std::function<void()> gui) : Widget(name), _on_gui(std::move(gui)) {
-        }
-
-    protected:
-        void on_gui() override {
-            if(_on_gui) {
-                _on_gui();
-            }
-        }
-
-    private:
-        std::function<void()> _on_gui;
-};
-
-
 }
 
 #endif // EDITOR_UIMANAGER_H
