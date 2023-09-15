@@ -115,6 +115,7 @@ TracyVkCtx CmdQueue::profiling_context() const {
 #endif
 
 void CmdQueue::wait() {
+    y_always_assert(_delayed_start.locked([](auto&& delayed) { return delayed.is_empty(); }), "Delayed cmd buffers have not been flushed");
     _queue.locked([](auto&& queue) {
         vk_check(vkQueueWaitIdle(queue));
     });

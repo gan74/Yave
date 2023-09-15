@@ -66,13 +66,12 @@ class CmdBufferData final : NonMovable {
         VkCommandBuffer vk_cmd_buffer() const;
 
         bool is_ready() const;
-        void wait();
 
     private:
         friend class CmdBufferPool;
         friend class CmdQueue;
 
-        void begin();
+        void reset();
 
         // These are owned by the command pool
         VkCommandBuffer _cmd_buffer = {};

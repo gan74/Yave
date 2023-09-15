@@ -136,7 +136,7 @@ void Timeline::wait(TimelineFence fence) const {
     y_debug_assert(fence._parent == this);
 
     const u64 value = fence.value();
-   /* if(value <= _ready) {
+    /*if(value <= _ready) {
         return;
     }*/
 

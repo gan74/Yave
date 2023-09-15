@@ -55,8 +55,6 @@ class CmdBufferPool : NonMovable {
 
         CmdBufferData* alloc();
 
-        void join_all();
-
     private:
         CmdBufferData* create_data();
 

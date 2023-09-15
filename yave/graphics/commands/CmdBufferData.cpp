@@ -85,15 +85,10 @@ TimelineFence CmdBufferData::timeline_fence() const {
 }
 
 bool CmdBufferData::is_ready() const {
-    return _timeline_fence.is_ready();
+    return _timeline_fence.is_valid() && _timeline_fence.is_ready();
 }
 
-void CmdBufferData::wait() {
-    y_profile();
-    _timeline_fence.wait();
-}
-
-void CmdBufferData::begin() {
+void CmdBufferData::reset() {
     y_profile();
 
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));

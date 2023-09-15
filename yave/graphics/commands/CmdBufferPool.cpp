@@ -54,9 +54,14 @@ CmdBufferPool::CmdBufferPool(CmdQueue* queue) : _pool(create_pool(queue->family_
 CmdBufferPool::~CmdBufferPool() {
     y_debug_assert(_thread_id == std::this_thread::get_id());
 
-    join_all();
-
-    y_debug_assert( _cmd_buffers.size() == _released.locked([&](auto&& released) { return released.size(); }));
+    for(;;) {
+        if(_cmd_buffers.size() == _released.locked([&](auto&& released) { return released.size(); })) {
+            break;
+        } else {
+            create_cmd_buffer().submit().wait();
+            lifetime_manager().collect_cmd_buffers();
+        }
+    }
 
     destroy_graphic_resource(std::move(_pool));
 }
@@ -67,24 +72,6 @@ VkCommandPool CmdBufferPool::vk_pool() const {
 
 CmdQueue* CmdBufferPool::queue() const {
     return _queue;
-}
-
-void CmdBufferPool::join_all() {
-    y_profile();
-
-    y_debug_assert(_thread_id == std::this_thread::get_id());
-
-    for(;;) {
-        for(auto& data : _cmd_buffers) {
-            data->wait();
-        }
-
-        lifetime_manager().collect_cmd_buffers();
-
-        if(_cmd_buffers.size() ==  _released.locked([&](auto&& released) { return released.size(); })) {
-            break;
-        }
-    }
 }
 
 void CmdBufferPool::release(CmdBufferData* data) {
@@ -110,7 +97,7 @@ CmdBufferData* CmdBufferPool::alloc() {
     });
 
     if(ready) {
-        ready->begin();
+        ready->reset();
         return ready;
     }
 

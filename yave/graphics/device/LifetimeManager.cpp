@@ -84,7 +84,7 @@ LifetimeManager::~LifetimeManager() {
 
     _to_destroy.locked([&](auto&& to_destroy) {
         for(auto& res : to_destroy) {
-            y_always_assert(res.first == _next_to_collect, "Resourse is still waiting on unsignaled fence.");
+            y_always_assert(res.first == _next_to_collect, "Resourse is still waiting on unsignaled fence");
             destroy_resource(res.second);
         }
     });
@@ -139,24 +139,22 @@ void LifetimeManager::collect_cmd_buffers() {
 
             to_recycle = core::ScratchVector<CmdBufferData*>(in_flight.size());
 
-            next = _next_to_collect;
             while(!in_flight.is_empty()) {
                 CmdBufferData* data = in_flight.first();
-                if(data->resource_fence()._value != next) {
+                if(data->resource_fence()._value != _next_to_collect) {
                     break;
                 }
 
                 if(data->is_ready()) {
                     in_flight.pop_front();
-                    ++next;
-
                     to_recycle.emplace_back(data);
+                    ++_next_to_collect;
                 } else {
                     break;
                 }
             }
 
-            _next_to_collect = next;
+            next = _next_to_collect;
         });
     }
 
@@ -179,7 +177,7 @@ void LifetimeManager::wait_cmd_buffers() {
 
     _in_flight.locked([&](auto&& in_flight) {
         for(CmdBufferData* data : in_flight) {
-            data->wait();
+            data->timeline_fence().wait();
         }
 
         collect_cmd_buffers();
