@@ -44,7 +44,7 @@ layout(set = 0, binding = 10) uniform Params {
 
 layout(location = 0) in vec2 in_uv;
 
-layout(location = 0) out vec4 out_color;
+layout(location = 0) out vec3 out_color;
 
 
 // -------------------------------- HELPERS --------------------------------
@@ -164,6 +164,6 @@ void main() {
 #endif
     }
 
-    out_color = vec4(irradiance, 1.0);
+    out_color = irradiance;
 }
 

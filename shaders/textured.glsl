@@ -7,7 +7,7 @@
 layout(location = 0) out vec2 out_motion;
 layout(location = 1) out vec4 out_rt0;
 layout(location = 2) out vec4 out_rt1;
-layout(location = 3) out vec4 out_emissive;
+layout(location = 3) out vec3 out_emissive;
 
 layout(set = 1, binding = 1) readonly buffer Materials {
     MaterialData materials[];
@@ -60,6 +60,6 @@ void main() {
     write_gbuffer(surface, out_rt0, out_rt1);
 
     out_motion = ((in_last_screen_pos.xy / in_last_screen_pos.z) - (in_screen_pos.xy / in_screen_pos.z)) * 0.5;
-    out_emissive = tex_from_index(material, emissive_texture_index, in_uv) * vec4(material.emissive_mul, 1.0);
+    out_emissive = tex_from_index(material, emissive_texture_index, in_uv).rgb * material.emissive_mul;
 }
 

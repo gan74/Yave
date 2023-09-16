@@ -26,7 +26,7 @@ layout(set = 0, binding = 6) readonly buffer Shadows {
 
 layout(location = 0) flat in uint in_instance_id;
 
-layout(location = 0) out vec4 out_color;
+layout(location = 0) out vec3 out_color;
 
 
 // -------------------------------- MAIN --------------------------------
@@ -66,6 +66,6 @@ void main() {
         }
     }
 
-    out_color = vec4(irradiance, 1.0);
+    out_color = irradiance;
 }
 
