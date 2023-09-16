@@ -31,6 +31,7 @@ SOFTWARE.
 #include <y/core/HashMap.h>
 
 #include <y/reflect/reflect.h>
+#include <y/utils/format.h>
 
 #define SOL_ALL_SAFETIES_ON 1
 #include <sol/sol.hpp>

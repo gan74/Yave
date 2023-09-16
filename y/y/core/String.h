@@ -198,6 +198,9 @@ class String {
         bool operator!=(std::string_view str) const;
         bool operator<(std::string_view str) const;
 
+        // implemented in format.h
+        template<typename T>
+        core::String operator+(const T& r) const;
 
         template<typename T>
         String& operator=(T&& t) {
@@ -265,6 +268,8 @@ std::string_view trim(std::string_view str);
 
 
 } // core
+
+core::String operator+(std::string_view l, const core::String& r);
 
 }
 

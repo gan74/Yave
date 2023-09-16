@@ -54,9 +54,9 @@ static void parse_args(int argc, char** argv) {
             run_tests = true;
         } else if(arg == "--errbreak") {
 #ifdef Y_DEBUG
-                core::result::break_on_error = true;
+            core::result::break_on_error = true;
 #else
-                log_msg(fmt("{} is not supported unless Y_DEBUG is defined", arg), Log::Error);
+            log_msg(fmt("{} is not supported unless Y_DEBUG is defined", arg), Log::Error);
 #endif
         } else if(arg == "--waitdbg") {
 #ifdef Y_OS_WIN

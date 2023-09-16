@@ -23,7 +23,6 @@ SOFTWARE.
 #include "Skeleton.h"
 
 #include <y/utils/log.h>
-#include <y/utils/format.h>
 
 namespace yave {
 
@@ -41,11 +40,8 @@ static void debug_bone(usize index, core::Span<Bone> bones, const core::String& 
         }
     }
 }
-
 Skeleton::Skeleton(core::Span<Bone> bones) : _bones(bones) {
-    if(_bones.size() > max_bones) {
-        y_fatal("Bone count exceeds max_bones.");
-    }
+    y_always_assert(_bones.size() <= max_bones, "Bone count exceeds max_bones.");
 
     for(usize i = 0; i != _bones.size(); ++i) {
         const auto& bone = _bones[i];

@@ -134,21 +134,14 @@ core::String fmt_to_owned(std::format_string<Args...> fmt_str, Args&&... args) {
 
 
 template<typename T>
-inline core::String operator+(core::String l, T&& r) {
+core::String core::String::operator+(const T& r) const {
+    core::String l(*this);
     if constexpr(has_append_v<core::String, T>) {
         l += y_fwd(r);
     } else {
         fmt_into(l, "{}", r);
     }
     return l;
-}
-
-inline core::String operator+(std::string_view l, const core::String& r) {
-    core::String s;
-    s.set_min_capacity(l.size() + r.size());
-    s += l;
-    s += r;
-    return s;
 }
 
 }

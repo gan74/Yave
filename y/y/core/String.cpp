@@ -369,7 +369,6 @@ String& String::operator+=(std::string_view str) {
     return append(str.data(), str.size());
 }
 
-
 String& String::append(const char* other_data, usize other_size) {
     usize self_size = size();
     const usize total_size = self_size + other_size;
@@ -457,37 +456,15 @@ std::string_view trim(std::string_view str) {
     return trim_left(trim_right(str));
 }
 
-/*static usize utf8_len(char c) {
-    if(c & 0x80) {
-        usize len = 0;
-        for(; c & 0x80; c <<= 1) {
-            ++len;
-        }
-        return len;
-    }
-    return 1;
 }
 
-Vector<u32> String::to_unicode() const {
-    usize si = size();
-    const char* dat = data();
-    auto utf8 = Vector<u32>::with_capacity((si * 2) / 3);
-    while(dat < end()) {
-        usize len = utf8_len(*dat);
-        //u32 buffer = c & (0xFF >> len);
-        if(len == 1) {
-            utf8 << u32(*dat++);
-        } else {
-            u32 buffer = *dat++ & (0xFF >> len);
-            for(usize l = 1; l < len; ++l) {
-                buffer = (buffer << 6) | (*dat++ & 0x3F);
-            }
-            utf8 << buffer;
-        }
-    }
-    return utf8;
-}*/
-
+core::String operator+(std::string_view l, const core::String& r) {
+    core::String s;
+    s.set_min_capacity(l.size() + r.size());
+    s += l;
+    s += r;
+    return s;
 }
+
 }
 
