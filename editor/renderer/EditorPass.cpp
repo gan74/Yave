@@ -172,7 +172,8 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
         const math::Vec3 x = tr->forward().normalized();
         const float scale = tr->transform().scale().max_component();
 
-        auto add_sphere = [&](const math::Vec3& pos, float radius) {
+        auto add_sphere = [&](const math::Vec3& pos, float radius, const math::Vec3& color = math::Vec3(0.0f, 0.0f, 1.0f)) {
+            primitive->set_color(color);
             primitive->add_circle(pos, x, y, radius);
             primitive->add_circle(pos, y, z, radius);
             primitive->add_circle(pos, z, x, radius);
@@ -180,12 +181,12 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
 
         if(const auto* l = world.component<PointLightComponent>(selected)) {
             add_sphere(tr->position(), l->range() * scale);
-            add_sphere(tr->position(), l->min_radius() * scale);
+            add_sphere(tr->position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
         }
 
         if(const auto* l = world.component<SpotLightComponent>(selected)) {
             primitive->add_cone(tr->position(), x, y, l->range() * scale, l->half_angle());
-            add_sphere(tr->position(), l->min_radius() * scale);
+            add_sphere(tr->position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
 
             if(draw_enclosing_sphere) {
                 const auto enclosing = l->enclosing_sphere();

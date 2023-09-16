@@ -18,40 +18,37 @@ vec3 F_Schlick(float cos_theta, vec3 F0, float roughness) {
 
 // -------------------------------- VISIBILITY --------------------------------
 
-float V_Smith(float NoV, float NoL, float roughness) {
-    const float a2 = sqr(sqr(roughness));
-    const float V_Smith_V = NoV + sqrt(NoV * (NoV - NoV * a2) + a2);
-    const float V_Smith_L = NoL + sqrt(NoL * (NoL - NoL * a2) + a2);
+float V_Smith(float NoV, float NoL, float sqr_alpha) {
+    const float V_Smith_V = NoV + sqrt(NoV * (NoV - NoV * sqr_alpha) + sqr_alpha);
+    const float V_Smith_L = NoL + sqrt(NoL * (NoL - NoL * sqr_alpha) + sqr_alpha);
     return 1.0 / (V_Smith_V * V_Smith_L);
 }
 
-float V_Smith_approx(float NoV, float NoL, float roughness) {
-    const float a = sqr(roughness);
-    const float V_Smith_V = NoL * (NoV * (1.0 - a) + a);
-    const float V_Smith_L = NoV * (NoL * (1.0 - a) + a);
+float V_Smith_approx(float NoV, float NoL, float alpha) {
+    const float V_Smith_V = NoL * (NoV * (1.0 - alpha) + alpha);
+    const float V_Smith_L = NoV * (NoL * (1.0 - alpha) + alpha);
     return 0.5 / min(epsilon, V_Smith_V + V_Smith_L);
 }
 
 
 // -------------------------------- GEOMETRY --------------------------------
 
-float G_Schlick_GGX(float NoV, float roughness) {
-    const float k = sqr(roughness) * 0.5;
+float G_Schlick_GGX(float NoV, float alpha) {
+    const float k = alpha * 0.5;
     const float denom = NoV * (1.0 - k) + k;
     return NoV / denom;
 }
 
-float G_Smith(float NoV, float NoL, float roughness) {
-    return G_Schlick_GGX(NoV, roughness) * G_Schlick_GGX(NoL, roughness);
+float G_Smith(float NoV, float NoL, float alpha) {
+    return G_Schlick_GGX(NoV, alpha) * G_Schlick_GGX(NoL, alpha);
 }
 
 
 // -------------------------------- DISTRIB --------------------------------
 
-float D_GGX(float NoH, float roughness) {
-    float a2 = sqr(sqr(roughness));
-    const float denom = (NoH * a2 - NoH) * NoH + 1.0;
-    return a2 / (pi * sqr(denom));
+float D_GGX(float NoH, float sqr_alpha) {
+    const float denom = (NoH * sqr_alpha - NoH) * NoH + 1.0;
+    return sqr_alpha / (pi * sqr(denom));
 }
 
 
@@ -62,11 +59,10 @@ vec3 Lambert_diffuse_brdf(SurfaceInfo surface) {
 }
 
 vec3 OrenNayar_diffuse_brdf(SurfaceInfo surface, float NoV, float NoL, float VoH) {
-    const float a = sqr(surface.perceptual_roughness);
-    const float a2 = sqr(a);
-    float s     = a;                    // ( 1.29 + 0.5 * a );
+    const float a2 = surface.sqr_alpha;
+    float s     = surface.alpha;                    // ( 1.29 + 0.5 * a );
     float s2    = s * s;
-    const float VoL   = 2.0 * VoH * VoH - 1.0;    // double angle identity
+    const float VoL   = 2.0 * VoH * VoH - 1.0;      // double angle identity
     const float cos_r = VoL - NoV * NoL;
     const float r = cos_r >= 0.0 ? 1.0 / max(NoL, NoV + epsilon) : 1.0;
     float c_1    = 1.0 - 0.5 * a2 / (a2 + 0.33);

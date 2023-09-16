@@ -45,25 +45,24 @@ void main() {
     vec3 irradiance = vec3(0.0);
     {
         const Light light = lights[in_instance_id];
-
-        vec3 light_dir = light.position - world_pos;
-        const float distance = length(light_dir);
-        light_dir /= distance;
-        float att = attenuation(distance * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
+        const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
+        float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 
 #ifdef SPOT_LIGHT
-        const float spot_cos_alpha = max(0.0, -dot(light_dir, light.forward));
-        att *= spot_attenuation(spot_cos_alpha, light.att_scale_offset);
+        if(att > 0.0) {
+            const float spot_cos_alpha = max(0.0, -dot(area.light_dir, light.forward));
+            att *= spot_attenuation(spot_cos_alpha, light.att_scale_offset);
 
-        if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
-            const ShadowMapParams params = shadow_params[light.shadow_map_index];
-            att *= compute_shadow_pcf(in_shadows, params, world_pos);
+            if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
+                const ShadowMapParams params = shadow_params[light.shadow_map_index];
+                att *= compute_shadow_pcf(in_shadows, params, world_pos);
+            }
         }
 #endif
 
         if(att > 0.0) {
             const vec3 radiance = light.color * att;
-            irradiance += radiance * L0(light_dir, view_dir, surface);
+            irradiance += radiance * L0(area.light_dir, view_dir, alpha_corrected(surface, area));
         }
     }
 

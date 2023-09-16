@@ -9,12 +9,16 @@ struct SurfaceInfo {
     vec3 albedo;
 
     float perceptual_roughness;
+    float alpha; // perceptual_roughness ^ 2
+    float sqr_alpha; // alpha ^ 2
+
     float metallic;
 
     vec3 F0;
 
     vec3 normal;
 };
+
 struct Frustum {
     vec4 planes[6];
 };
