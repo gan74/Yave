@@ -135,6 +135,7 @@ static void setup_style() {
     colors[ImGuiCol_TextSelectedBg]         = none;
     colors[ImGuiCol_TableRowBgAlt]          = none;
     colors[ImGuiCol_Border]                 = none;
+    colors[ImGuiCol_DockingPreview]         = none;
 
     colors[ImGuiCol_Text]                   = rgb(177, 183, 190);
     colors[ImGuiCol_TextDisabled]           = rgb(107, 123, 139);
@@ -189,9 +190,6 @@ static void setup_style() {
 
     // colors[ImGuiCol_NavWindowingHighlight]  = rgb(128, 168, 224);
     // colors[ImGuiCol_NavWindowingDimBg]      = grey(128, 0.75f);
-    // colors[ImGuiCol_DockingPreview]         = grey(128, 0.25f);
-
-
 
 
     style.WindowPadding     = ImVec2(4, 4);

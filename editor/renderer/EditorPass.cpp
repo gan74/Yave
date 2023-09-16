@@ -95,7 +95,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         auto mapping = pass->resources().map_buffer(pass_buffer);
         mapping->view_proj = scene_view.camera().view_proj_matrix();
         mapping->viewport_size = pass->framebuffer().size();
-        mapping->size = 64.0f;
+        mapping->size = mapping->viewport_size.min_component() / 16.0f;
     }
 
     {

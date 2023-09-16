@@ -100,7 +100,6 @@ vec3 blend_weighted(vec3 curr, vec3 prev, float factor) {
 
 const uint clamping_bit = 0x1;
 const uint motion_rejection_bit = 0x2;
-const uint deocclusion_mask_bit = 0x4;
 
 // https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
 void main() {
