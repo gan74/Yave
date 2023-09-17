@@ -50,6 +50,20 @@ inline const char* memory_type_name(MemoryType type) {
     return names[usize(type)];
 }
 
+
+enum class MemoryAllocFlags  {
+    None                    = 0x00,
+    NoDedicatedAllocBit     = 0x01,
+};
+
+constexpr MemoryAllocFlags operator|(MemoryAllocFlags a, MemoryAllocFlags b) {
+    return MemoryAllocFlags(u32(a) | u32(b));
+}
+
+constexpr MemoryAllocFlags operator&(MemoryAllocFlags a, MemoryAllocFlags b) {
+    return MemoryAllocFlags(u32(a) & u32(b));
+}
+
 }
 
 #endif // YAVE_GRAPHICS_MEMORY_MEMORYTYPE_H

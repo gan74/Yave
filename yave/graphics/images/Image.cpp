@@ -111,11 +111,16 @@ static VkHandle<VkImageView> create_view(VkImage image, ImageFormat format, u32 
     return view;
 }
 
-static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_image(const math::Vec3ui& size, u32 layers, u32 mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_image(const math::Vec3ui& size,
+                                                                                      u32 layers, u32 mips,
+                                                                                      ImageFormat format,
+                                                                                      ImageUsage usage,
+                                                                                      ImageType type,
+                                                                                      MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) {
     y_profile();
 
     auto image = create_image(size, layers, mips, format, usage, type);
-    auto memory = device_allocator().alloc(image);
+    auto memory = device_allocator().alloc(image, alloc_flags);
     bind_image_memory(image, memory);
 
     return {std::move(image), std::move(memory), create_view(image, format, layers, mips, type)};
@@ -148,22 +153,14 @@ static void transition_image(ImageBase& image) {
 }
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {
-    if(type == ImageType::TwoD && layers > 1) {
-        y_fatal("Invalid layer count");
-    }
-    if(type == ImageType::Cube && layers != 6) {
-        y_fatal("Invalid layer count");
-    }
-    if(size.z() == 0) {
-        y_fatal("Invalid size");
-    }
-    if(size.z() != 1 && type != ImageType::ThreeD) {
-        y_fatal("Invalid size");
-    }
+    y_always_assert(type != ImageType::TwoD || layers == 1, "Invalid layer count");
+    y_always_assert(type != ImageType::Cube || layers == 6, "Invalid layer count");
+    y_always_assert(type == ImageType::ThreeD || size.z() == 1, "Invalid size");
+    y_always_assert(size.min_component() != 0, "Invalid size");
 }
 
 
-ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips) :
+ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips, MemoryAllocFlags alloc_flags) :
         _size(size),
         _layers(u32(layers)),
         _mips(u32(mips)),
@@ -172,7 +169,7 @@ ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& s
 
     check_layer_count(type, _size, _layers);
 
-    std::tie(_image, _memory, _view) = alloc_image(_size, _layers, _mips, _format, _usage, type);
+    std::tie(_image, _memory, _view) = alloc_image(_size, _layers, _mips, _format, _usage, type, alloc_flags);
 
     transition_image(*this);
 }

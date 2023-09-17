@@ -50,15 +50,16 @@ DeviceMemory DeviceMemoryAllocator::dedicated_alloc(VkMemoryRequirements reqs, M
     return std::move(heap->alloc(reqs).unwrap());
 }
 
-DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements2 reqs, MemoryType type) {
+DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements2 reqs, MemoryType type, MemoryAllocFlags flags) {
     y_profile();
 
     const VkMemoryRequirements& mem_reqs = reqs.memoryRequirements;
     const VkMemoryDedicatedRequirements* dedicated_reqs = vk_find_pnext<VkMemoryDedicatedRequirements>(reqs);
 
+    const bool dedicated_alloc_allowed = (flags & MemoryAllocFlags::NoDedicatedAllocBit) == MemoryAllocFlags::None;
     const bool use_dedicated_alloc =
         (mem_reqs.size >= heap_size_for_type(type)) ||
-        (dedicated_reqs && dedicated_reqs->prefersDedicatedAllocation);
+        (dedicated_reqs && dedicated_reqs->prefersDedicatedAllocation && dedicated_alloc_allowed);
 
     Y_TODO(We are double locking here, each heap will lock internally)
     const auto lock = std::unique_lock(_lock);
@@ -87,7 +88,7 @@ DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements2 reqs, MemoryType
     return alloc;
 }
 
-DeviceMemory DeviceMemoryAllocator::alloc(VkImage image) {
+DeviceMemory DeviceMemoryAllocator::alloc(VkImage image, MemoryAllocFlags flags) {
     VkImageMemoryRequirementsInfo2 infos = vk_struct();
     infos.image = image;
 
@@ -96,10 +97,10 @@ DeviceMemory DeviceMemoryAllocator::alloc(VkImage image) {
     reqs.pNext = &dedicated;
 
     vkGetImageMemoryRequirements2(vk_device(), &infos, &reqs);
-    return alloc(reqs, MemoryType::DeviceLocal);
+    return alloc(reqs, MemoryType::DeviceLocal, flags);
 }
 
-DeviceMemory DeviceMemoryAllocator::alloc(VkBuffer buffer, MemoryType type) {
+DeviceMemory DeviceMemoryAllocator::alloc(VkBuffer buffer, MemoryType type, MemoryAllocFlags flags) {
     VkBufferMemoryRequirementsInfo2 infos = vk_struct();
     infos.buffer = buffer;
 
@@ -108,7 +109,7 @@ DeviceMemory DeviceMemoryAllocator::alloc(VkBuffer buffer, MemoryType type) {
     reqs.pNext = &dedicated;
 
     vkGetBufferMemoryRequirements2(vk_device(), &infos, &reqs);
-    return alloc(reqs, type);
+    return alloc(reqs, type, flags);
 }
 
 }

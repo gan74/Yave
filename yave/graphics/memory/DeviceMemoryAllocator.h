@@ -43,9 +43,9 @@ class DeviceMemoryAllocator {
     public:
         DeviceMemoryAllocator(const DeviceProperties& properties);
 
-        DeviceMemory alloc(VkImage image);
-        DeviceMemory alloc(VkBuffer buffer, MemoryType type);
-        DeviceMemory alloc(VkMemoryRequirements2 reqs, MemoryType type);
+        DeviceMemory alloc(VkImage image, MemoryAllocFlags flags = MemoryAllocFlags::None);
+        DeviceMemory alloc(VkBuffer buffer, MemoryType type, MemoryAllocFlags flags = MemoryAllocFlags::None);
+        DeviceMemory alloc(VkMemoryRequirements2 reqs, MemoryType type, MemoryAllocFlags flags);
 
         auto heaps() const {
             return _heaps.values();

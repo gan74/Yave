@@ -25,6 +25,7 @@ SOFTWARE.
 #include "ImageUsage.h"
 
 #include <yave/graphics/memory/DeviceMemory.h>
+#include <yave/graphics/memory/MemoryType.h>
 
 #include <yave/utils/traits.h>
 #include <yave/assets/AssetTraits.h>
@@ -56,7 +57,7 @@ class ImageBase : NonCopyable {
         ImageBase(ImageBase&&) = default;
         ImageBase& operator=(ImageBase&&) = default;
 
-        ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1);
+        ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None);
         ImageBase(ImageUsage usage, ImageType type, const ImageData& data);
 
 
@@ -96,7 +97,7 @@ class Image : public ImageBase {
 
         Image() = default;
 
-        Image(ImageFormat format, const size_type& image_size) : ImageBase(format, Usage, to_3d_size(image_size)) {
+        Image(ImageFormat format, const size_type& image_size, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) : ImageBase(format, Usage, to_3d_size(image_size), Type, 1, 1, alloc_flags) {
             static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized.");
             static_assert(Type == ImageType::TwoD || is_storage_usage(Usage), "Only 2D images can be created empty.");
         }

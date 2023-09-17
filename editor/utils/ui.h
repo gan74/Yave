@@ -41,7 +41,7 @@ class UiTexture {
 
         Data() = default;
 
-        Data(ImageFormat format, const math::Vec2ui& size) : texture(format, size), view(texture) {
+        Data(ImageFormat format, const math::Vec2ui& size) : texture(format, size, MemoryAllocFlags::NoDedicatedAllocBit), view(texture) {
         }
 
         Data(TextureView v) : view(v) {
