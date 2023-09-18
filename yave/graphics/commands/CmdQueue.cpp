@@ -115,6 +115,8 @@ TracyVkCtx CmdQueue::profiling_context() const {
 #endif
 
 void CmdQueue::wait() {
+    y_profile();
+
     y_always_assert(_delayed_start.locked([](auto&& delayed) { return delayed.is_empty(); }), "Delayed cmd buffers have not been flushed");
     _queue.locked([](auto&& queue) {
         vk_check(vkQueueWaitIdle(queue));
@@ -122,6 +124,8 @@ void CmdQueue::wait() {
 }
 
 void CmdQueue::clear_all_cmd_pools() {
+    y_profile();
+
     wait();
     _cmd_pools.locked([&](auto&& cmd_pools) {
         cmd_pools.clear();
@@ -129,6 +133,13 @@ void CmdQueue::clear_all_cmd_pools() {
 }
 
 void CmdQueue::submit_async_delayed_start(CmdBufferData* data) {
+    y_profile();
+    y_always_assert(!data->is_secondary(), "Secondaries can not be submitted directly");
+
+    if(!data->_semaphore) {
+        data->_semaphore = create_cmd_buffer_semaphore();
+    }
+
     vk_check(vkEndCommandBuffer(data->vk_cmd_buffer()));
     _delayed_start.locked([&](auto&& delayed) {
         delayed.emplace_back(data);
@@ -162,6 +173,7 @@ VkResult CmdQueue::present(CmdBufferRecorder&& recorder, const FrameToken& token
 
 TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, VkSemaphore signal, VkFence fence) {
     y_profile();
+    y_always_assert(!data->is_secondary(), "Secondaries can not be submitted directly");
 
     const VkSemaphore timeline_semaphore = _timeline.vk_semaphore();
     const VkCommandBuffer cmd_buffer = data->vk_cmd_buffer();
@@ -181,7 +193,6 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
 
         // This needs to be inside the lock
         next_fence = _timeline.advance_timeline();
-        data->_timeline_fence = next_fence;
 
         y_debug_assert(current_fence.value() + 1 == next_fence.value());
 
@@ -195,10 +206,6 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
             y_profile_msg(fmt_c_str("{} delayed cmd buffers", delayed.size()));
 
             for(CmdBufferData* data : delayed) {
-                if(!data->_semaphore) {
-                    data->_semaphore = create_cmd_buffer_semaphore();
-                }
-
                 VkSubmitInfo& submit_info = submit_infos.emplace_back<VkSubmitInfo>(vk_struct());
                 {
                     submit_info.commandBufferCount = 1;
@@ -207,6 +214,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
                     submit_info.pSignalSemaphores = &data->_semaphore.get();
                 }
 
+                y_debug_assert(data->_semaphore);
                 wait_semaphores.push_back(data->_semaphore.get());
                 wait_values.push_back(0);
 
@@ -262,8 +270,24 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
         vk_check(vkQueueSubmit(queue, u32(submit_infos.size()), submit_infos.data(), fence));
     });
 
+    data->_timeline_fence = next_fence;
     pending << data;
+
+    {
+        y_profile_zone("push secondaries");
+        for(usize i = 0, size = pending.size(); i != size; ++i) {
+            for(CmdBufferData* secondary : pending[i]->_secondaries) {
+                y_debug_assert(secondary->is_secondary());
+                y_debug_assert(!secondary->_timeline_fence.is_valid());
+                secondary->_timeline_fence = next_fence;
+                pending << secondary;
+            }
+            pending[i]->_secondaries.make_empty();
+        }
+    }
+
     lifetime_manager().register_pending(pending);
+
 
     return next_fence;
 }

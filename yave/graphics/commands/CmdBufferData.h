@@ -52,10 +52,13 @@ class ResourceFence {
 
 class CmdBufferData final : NonMovable {
     public:
-        CmdBufferData(VkCommandBuffer buf, CmdBufferPool* p);
+        CmdBufferData(VkCommandBuffer buffer, CmdBufferPool* pool, VkCommandBufferLevel level);
         ~CmdBufferData();
 
+        void push_secondary(CmdBufferData* data);
+
         bool is_null() const;
+        bool is_secondary() const;
 
         CmdBufferPool* pool() const;
         CmdQueue* queue() const;
@@ -74,7 +77,7 @@ class CmdBufferData final : NonMovable {
         void reset();
 
         // These are owned by the command pool
-        VkCommandBuffer _cmd_buffer = {};
+        const VkCommandBuffer _cmd_buffer;
 
         VkHandle<VkSemaphore> _semaphore;
 
@@ -82,6 +85,9 @@ class CmdBufferData final : NonMovable {
 
         ResourceFence _resource_fence;
         TimelineFence _timeline_fence;
+
+        core::SmallVector<CmdBufferData*, 8> _secondaries;
+        const VkCommandBufferLevel _level;
 };
 
 }

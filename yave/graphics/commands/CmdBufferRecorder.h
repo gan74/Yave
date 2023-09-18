@@ -114,6 +114,8 @@ class CmdBufferRecorderBase : NonMovable {
 
         ~CmdBufferRecorderBase();
 
+        CmdQueue* queue() const;
+
         VkCommandBuffer vk_cmd_buffer() const;
         ResourceFence resource_fence() const;
 
@@ -200,6 +202,8 @@ class CmdBufferRecorder final : public CmdBufferRecorderBase {
         using CmdBufferRecorderBase::dispatch_size;
 
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
+
+        void execute(CmdBufferRecorder&& other);
 };
 
 static_assert(sizeof(TransferCmdBufferRecorder) == sizeof(CmdBufferRecorderBase));

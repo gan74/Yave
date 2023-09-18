@@ -38,6 +38,7 @@ SOFTWARE.
 
 #include <y/core/ScratchPad.h>
 
+
 namespace yave {
 
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
@@ -267,9 +268,11 @@ void RenderPassRecorder::set_scissor(const math::Vec2i& offset, const math::Vec2
 // -------------------------------------------------- CmdBufferRecorderBase --------------------------------------------------
 
 CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferData* data) : _data(data) {
+    VkCommandBufferInheritanceInfo inheritance_info = vk_struct();
     VkCommandBufferBeginInfo begin_info = vk_struct();
     {
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        begin_info.pInheritanceInfo = &inheritance_info;
     }
 
     vk_check(vkBeginCommandBuffer(vk_cmd_buffer(), &begin_info));
@@ -281,8 +284,15 @@ CmdBufferRecorderBase::~CmdBufferRecorderBase() {
 }
 
 void CmdBufferRecorderBase::swap(CmdBufferRecorderBase& other) {
+    y_debug_assert(_data->is_secondary() == other._data->is_secondary());
+
     std::swap(_data, other._data);
     std::swap(_render_pass, other._render_pass);
+}
+
+CmdQueue* CmdBufferRecorderBase::queue() const {
+    y_debug_assert(_data);
+    return _data->queue();
 }
 
 VkCommandBuffer CmdBufferRecorderBase::vk_cmd_buffer() const {
@@ -547,6 +557,20 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
     _render_pass = &framebuffer.render_pass();
 
     return RenderPassRecorder(*this, Viewport(framebuffer.size()));
+}
+
+void CmdBufferRecorder::execute(CmdBufferRecorder&& other) {
+    y_debug_assert(_data);
+    y_debug_assert(other._data);
+    y_always_assert(!_data->is_secondary(), "execute should only be called on primary cmd buffers");
+    y_always_assert(other._data->is_secondary(), "execute should only be used with secondary cmd buffers");
+
+    const VkCommandBuffer secondary = other._data->vk_cmd_buffer();
+    vk_check(vkEndCommandBuffer(secondary));
+
+    vkCmdExecuteCommands(vk_cmd_buffer(), 1, &secondary);
+
+    _data->push_secondary(std::exchange(other._data, nullptr));
 }
 
 }

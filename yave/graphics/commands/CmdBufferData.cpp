@@ -49,10 +49,11 @@ ResourceFence::ResourceFence(u64 v) : _value(v) {
 
 
 
-CmdBufferData::CmdBufferData(VkCommandBuffer buf, CmdBufferPool* p) :
-        _cmd_buffer(buf),
-        _pool(p),
-        _resource_fence(lifetime_manager().create_fence()) {
+CmdBufferData::CmdBufferData(VkCommandBuffer buffer, CmdBufferPool* pool, VkCommandBufferLevel level) :
+        _cmd_buffer(buffer),
+        _pool(pool),
+        _resource_fence(lifetime_manager().create_fence()),
+        _level(level) {
 }
 
 CmdBufferData::~CmdBufferData() {
@@ -60,8 +61,17 @@ CmdBufferData::~CmdBufferData() {
     destroy_graphic_resource(std::move(_semaphore));
 }
 
+void CmdBufferData::push_secondary(CmdBufferData* data) {
+    y_debug_assert(!is_secondary());
+    _secondaries << data;
+}
+
 bool CmdBufferData::is_null() const {
     return !_cmd_buffer;
+}
+
+bool CmdBufferData::is_secondary() const {
+    return _level == VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 }
 
 CmdBufferPool* CmdBufferData::pool() const {

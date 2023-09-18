@@ -105,10 +105,14 @@ void LifetimeManager::shutdown_collector_thread() {
 
 
 void LifetimeManager::register_pending(core::Span<CmdBufferData*> datas) {
+    y_profile();
+
     bool collect = false;
 
     _in_flight.locked([&](auto&& in_flight) {
+        in_flight.set_min_capacity(in_flight.size() + datas.size());
         for(CmdBufferData* data : datas) {
+            y_debug_assert(data->timeline_fence().is_valid());
             y_debug_assert(std::find(in_flight.begin(), in_flight.end(), data) == in_flight.end());
             const auto it = std::lower_bound(in_flight.begin(), in_flight.end(), data, compare_cmd_buffers);
             in_flight.insert(it, data);

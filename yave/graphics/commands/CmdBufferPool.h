@@ -39,29 +39,33 @@ class CmdBufferPool : NonMovable {
         CmdBufferPool(CmdQueue* queue);
         ~CmdBufferPool();
 
-        VkCommandPool vk_pool() const;
-
         CmdQueue* queue() const;
 
-        CmdBufferRecorder create_cmd_buffer();
+        CmdBufferRecorder create_cmd_buffer(bool secondary = false);
         ComputeCmdBufferRecorder create_compute_cmd_buffer();
         TransferCmdBufferRecorder create_transfer_cmd_buffer();
 
     private:
         friend class LifetimeManager;
-        friend class CmdQuque;
+
+        struct Level {
+            Level(VkCommandBufferLevel lvl) : level(lvl) {
+            }
+
+            core::Vector<std::unique_ptr<CmdBufferData>> cmd_buffers;
+            concurrent::Mutexed<core::Vector<CmdBufferData*>> released;
+            const VkCommandBufferLevel level;
+        };
 
         void release(CmdBufferData* data);
 
-        CmdBufferData* alloc();
+        CmdBufferData* alloc(Level& level);
+        CmdBufferData* create_data(Level& level);
 
-    private:
-        CmdBufferData* create_data();
+        VkHandle<VkCommandPool> _pool;
 
-        VkHandle<VkCommandPool> _pool; // Synced through _cmd_buffers
-        core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
-
-        concurrent::Mutexed<core::Vector<CmdBufferData*>> _released;
+        Level _primary;
+        Level _secondary;
 
         CmdQueue* _queue = nullptr;
 
