@@ -135,7 +135,6 @@ static void setup_style() {
     colors[ImGuiCol_TextSelectedBg]         = none;
     colors[ImGuiCol_TableRowBgAlt]          = none;
     colors[ImGuiCol_Border]                 = none;
-    colors[ImGuiCol_DockingPreview]         = none;
 
     colors[ImGuiCol_Text]                   = rgb(177, 183, 190);
     colors[ImGuiCol_TextDisabled]           = rgb(107, 123, 139);
@@ -173,6 +172,7 @@ static void setup_style() {
     colors[ImGuiCol_MenuBarBg]              = bg;
     colors[ImGuiCol_FrameBg]                = bg;
     colors[ImGuiCol_TableHeaderBg]          = bg;
+    colors[ImGuiCol_DockingPreview]         = bg;
 
     colors[ImGuiCol_CheckMark]              = highlight;
     colors[ImGuiCol_DragDropTarget]         = highlight;
