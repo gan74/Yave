@@ -40,6 +40,17 @@ constexpr T log2ui(T n) {
     return (n >> 1) ? log2ui(n >> 1) + 1 : 0;
 }
 
+template<typename T>
+constexpr T next_pow_of_2(T n) {
+    const T l = log2ui(n);
+    const T prev = T(1) << l;
+    return prev < n ? prev * 2 : prev;
+}
+
+template<typename T>
+constexpr bool is_pow_of_2(T n) {
+    return n == (T(1) << log2ui(n));
+}
 
 
 

@@ -28,6 +28,8 @@ SOFTWARE.
 #include <yave/graphics/device/Instance.h>
 #include <y/concurrent/concurrent.h>
 
+#include <y/math/random.h>
+
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -82,7 +84,53 @@ static Instance create_instance() {
     return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
 }
 
+
+
+
+#include <yave/world/World.h>
+
+
+void test_arch() {
+    World world;
+
+    core::Vector<std::pair<usize, UntypedNodeRef>> refs;
+
+    const usize count = 20000;
+    for(usize i = 0; i != count; ++i) {
+        refs.emplace_back(i, world.add<usize>(i));
+    }
+
+    math::FastRandom rng;
+    for(usize i = 0; i != count / 4; ++i) {
+        const usize index = usize(rng()) % refs.size();
+        const auto ref = refs[index].second;
+        refs.erase_unordered(refs.begin() + index);
+        const auto typed = ref.to_typed<usize>();
+
+        y_debug_assert(typed.get());
+        world.remove(typed);
+        y_debug_assert(!typed.get());
+    }
+
+    for(usize i = 0; i != refs.size(); ++i) {
+        const auto& [index, ref] = refs[i];
+        y_debug_assert(ref.is<usize>());
+        const auto typed = ref.to_typed<usize>();
+        y_debug_assert(*typed.get() == index);
+    }
+
+    log_msg(fmt("page size for usize: {}", yave::detail::Page<usize>::element_count));
+    log_msg("Ok");
+}
+
+
+
 int main(int argc, char** argv) {
+    test_arch();
+
+    return 0;
+
+
     concurrent::set_thread_name("Main thread");
 
     parse_args(argc, argv);

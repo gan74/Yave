@@ -42,7 +42,6 @@ class EntityView;
 class FileBrowser;
 class FileRenamer;
 class FileSystemView;
-class FunctionWidget;
 class Gizmo;
 class GpuProfiler;
 class HoudiniCameraController;
