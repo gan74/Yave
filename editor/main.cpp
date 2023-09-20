@@ -93,33 +93,39 @@ static Instance create_instance() {
 void test_arch() {
     World world;
 
-    core::Vector<std::pair<usize, UntypedNodeRef>> refs;
-
-    const usize count = 20000;
-    for(usize i = 0; i != count; ++i) {
-        refs.emplace_back(i, world.add<usize>(i));
+    {
+        const auto id = world.create_entity().id();
+        world.add<u32>(id, 1);
+        world.add<int>(id, 1);
     }
 
-    math::FastRandom rng;
-    for(usize i = 0; i != count / 4; ++i) {
-        const usize index = usize(rng()) % refs.size();
-        const auto ref = refs[index].second;
-        refs.erase_unordered(refs.begin() + index);
-        const auto typed = ref.to_typed<usize>();
-
-        y_debug_assert(typed.get());
-        world.remove(typed);
-        y_debug_assert(!typed.get());
+    {
+        const auto id = world.create_entity().id();
+        world.add<u32>(id, 2);
     }
 
-    for(usize i = 0; i != refs.size(); ++i) {
-        const auto& [index, ref] = refs[i];
-        y_debug_assert(ref.is<usize>());
-        const auto typed = ref.to_typed<usize>();
-        y_debug_assert(*typed.get() == index);
+    {
+        const auto id = world.create_entity().id();
+        world.add<int>(id, 3);
     }
 
-    log_msg(fmt("page size for usize: {}", yave::detail::Page<usize>::element_count));
+    {
+        const auto id = world.create_entity().id();
+        world.add<u32>(id, 4);
+        world.add<int>(id, 4);
+        world.add<u64>(id, 4);
+    }
+
+    const auto q = world.query<int, u32>();
+    for(usize i = 0; i < q.ids.size(); ++i) {
+
+        log_msg(q.refs[2 * i + 0].type().name());
+        log_msg(q.refs[2 * i + 1].type().name());
+
+        y_debug_assert(q.refs[2 * i + 0].is<int>());
+        y_debug_assert(q.refs[2 * i + 1].is<u32>());
+    }
+
     log_msg("Ok");
 }
 

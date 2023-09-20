@@ -153,7 +153,7 @@ class TimestampQueryPoolData;
 class TransferCmdBufferRecorder;
 class TransformableComponent;
 class TransientBuffer;
-class UntypedNodeRef;
+class UntypedComponentRef;
 class Window;
 class World;
 struct AABBTypeInfo;

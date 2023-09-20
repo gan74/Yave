@@ -22,112 +22,124 @@ SOFTWARE.
 #ifndef YAVE_WORLD_WORLD_H
 #define YAVE_WORLD_WORLD_H
 
-#include "NodeRef.h"
+#include "ComponentContainer.h"
+#include "Entity.h"
 
-#include <y/core/Vector.h>
+#include <y/core/ScratchPad.h>
 
 namespace yave {
 
-class NodeContainerBase : NonMovable {
+class ComponentLut : NonCopyable {
     public:
-        virtual ~NodeContainerBase();
+        struct Entry {
+            EntityId id;
+            UntypedComponentRef ref;
 
-        NodeType type() const;
-
-    protected:
-        NodeContainerBase(NodeType type);
-
-        const NodeType _type;
-};
-
-
-template<typename T>
-class NodeContainer : public NodeContainerBase {
-    using Page = detail::Page<T>;
-    using PagePtr = detail::PagePtr<T>;
-
-    public:
-        NodeContainer() : NodeContainerBase(node_type<T>()) {
-        }
-
-        template<typename... Args>
-        NodeRef<T> add(Args&&... args) {
-            NodeRef<T> ref = create_ref();
-            ref._ptr->init(ref._generation, y_fwd(args)...);
-            return ref;
-        }
-
-        void remove(NodeRef<T> ref) {
-            y_debug_assert(!ref.is_null());
-            y_debug_assert(std::any_of(_pages.begin(), _pages.end(), [&](const auto& page) { return page._ptr == detail::page_from_ptr<T>(ref._ptr); }));
-            if(!ref._ptr->is_empty()) {
-                ref._ptr->destroy();
-                _free << ref;
+            bool operator<(const Entry& other) const {
+                return id < other.id;
             }
+        };
+
+        usize size() const {
+            return _lut.size();
+        }
+
+        void add_ref(EntityId id, UntypedComponentRef ref) {
+            _lut.emplace_back(id, ref);
+            std::sort(_lut.begin(), _lut.end());
+        }
+
+        core::Span<Entry> lut() const {
+            return _lut;
         }
 
     private:
-        NodeRef<T> create_ref() {
-            if(_free.is_empty()) {
-                create_page();
-                return create_ref();
-            }
-
-            NodeRef<T> ref = _free.pop();
-            ++ref._generation;
-            return ref;
-        }
-
-        void create_page() {
-            PagePtr& page = _pages.emplace_back();
-            page.init();
-            for(usize i = 0; i != Page::element_count; ++i) {
-                _free << NodeRef<T>(page.get(i));
-            }
-        }
-
-
-        core::Vector<PagePtr> _pages;
-        core::Vector<NodeRef<T>> _free;
+        core::Vector<Entry> _lut;
 };
 
 
-
+struct QueryResult : NonCopyable {
+    core::Vector<EntityId> ids;
+    core::Vector<UntypedComponentRef> refs;
+};
 
 class World {
     public:
         template<typename T, typename... Args>
-        NodeRef<T> add(Args&&... args) {
-            return create_container<T>().add(y_fwd(args)...);
+        ComponentRef<T> add(EntityId id, Args&&... args) {
+            const ComponentRef<T> ref = create_container<T>().add(y_fwd(args)...);
+            _entities.register_component(id, ref);
+            create_lut<T>().add_ref(id, ref);
+            return ref;
         }
 
-        template<typename T>
-        void remove(NodeRef<T> ref) {
-            create_container<T>().remove(ref);
+        Entity& create_entity() {
+            return _entities.create_entity();
+        }
+
+        const Entity& entity(EntityId id) const {
+            return _entities[id];
+        }
+
+
+        template<typename... Args>
+        QueryResult query() {
+            std::array<ComponentLut*, sizeof...(Args)> luts = {};
+            if(fill_luts<Args...>(luts)) {
+                return compute_query(luts);
+            }
+            return {};
         }
 
     private:
         template<typename T>
-        NodeContainer<T>& create_container() {
-            const NodeType type = node_type<T>();
-            _containers.set_min_size(type + 1);
-            auto& cont = _containers[type];
+        ComponentContainer<T>& create_container() {
+            const ComponentType type = component_type<T>();
+            _containers.set_min_size(type.index() + 1);
+
+            auto& cont = _containers[type.index()];
             if(!cont) {
-                cont = std::make_unique<NodeContainer<T>>();
+                cont = std::make_unique<ComponentContainer<T>>();
             }
-            NodeContainer<T>* cont_ptr = dynamic_cast<NodeContainer<T>*>(cont.get());
+
+            ComponentContainer<T>* cont_ptr = dynamic_cast<ComponentContainer<T>*>(cont.get());
             y_debug_assert(cont_ptr);
             return *cont_ptr;
         }
 
+        template<typename T>
+        ComponentLut& create_lut() {
+            const u32 type = component_type<T>().index();
+            _lookup.set_min_size(type + 1);
+            return _lookup[type];
+        }
 
-        core::Vector<std::unique_ptr<NodeContainerBase>> _containers;
+
+        template<typename T, typename... Args>
+        bool fill_luts(core::MutableSpan<ComponentLut*> luts) {
+            y_debug_assert(luts.size() == sizeof...(Args) + 1);
+
+            const u32 type = component_type<T>().index();
+            if(type < _lookup.size()) {
+                luts[0] = &_lookup[type];
+            } else {
+                return false;
+            }
+
+            if constexpr(sizeof...(Args)) {
+                return fill_luts<Args...>(luts.take(1));
+            }
+
+            return luts[0]->size();
+        }
+
+        static QueryResult compute_query(core::MutableSpan<ComponentLut*> luts);
+
+        core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
+        core::Vector<ComponentLut> _lookup;
+
+        EntityContainer _entities;
 };
-
-
-
-
-
 
 }
 

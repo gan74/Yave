@@ -198,14 +198,14 @@ class Vector : Allocator {
             ::new(_data_end++) data_type{elem};
         }
 
-        inline void push_back(value_type&& elem) {
+        inline reference push_back(value_type&& elem) {
             if(is_full()) {
                 expand();
             }
 
             Y_CHECK_ELECTRIC(_data_end, 1);
 
-            ::new(_data_end++) data_type{std::move(elem)};
+            return *(::new(_data_end++) data_type{std::move(elem)});
         }
 
         template<typename... Args>

@@ -19,37 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_WORLD_NODETYPE_H
-#define YAVE_WORLD_NODETYPE_H
 
-#include <yave/yave.h>
-
-#include <y/core/Vector.h>
-
-#include <array>
-#include <bit>
+#include "ComponentContainer.h"
 
 namespace yave {
 
-using NodeType = u32;
-
-namespace detail {
-u32 create_node_type();
+ComponentContainerBase::ComponentContainerBase(ComponentType type) : _type(type) {
 }
 
-template<typename T>
-NodeType node_type() {
-    static NodeType index = detail::create_node_type();
-    return index;
-}
-
-
-template<typename T>
-class NodeContainer;
-
+ComponentContainerBase::~ComponentContainerBase() {
 
 }
 
+ComponentType ComponentContainerBase::type() const {
+    return _type;
+}
 
-#endif // YAVE_WORLD_NODETYPE_H
+}
+
 

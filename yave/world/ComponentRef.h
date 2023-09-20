@@ -19,22 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_WORLD_NODEREF_H
-#define YAVE_WORLD_NODEREF_H
+#ifndef YAVE_WORLD_COMPONENTREF_H
+#define YAVE_WORLD_COMPONENTREF_H
 
-#include "NodeType.h"
+#include "ComponentType.h"
 
 #include <array>
 #include <bit>
 
 namespace yave {
 
-using NodeType = u32;
-
 
 template<typename T>
-struct NodeElement : NonMovable {
-    ~NodeElement() {
+struct ComponentStorage : NonMovable {
+    ~ComponentStorage() {
         if(!is_empty()) {
             destroy();
         }
@@ -42,7 +40,7 @@ struct NodeElement : NonMovable {
 
     T* get() {
         y_debug_assert(!is_empty());
-        return &_node.node;
+        return &_storage.obj;
     }
 
     bool is_empty() const {
@@ -52,7 +50,7 @@ struct NodeElement : NonMovable {
     template<typename... Args>
     void init(u32 generation, Args&&... args) {
         y_debug_assert(is_empty());
-        new(&_node.node) T(y_fwd(args)...);
+        new(&_storage.obj) T(y_fwd(args)...);
         _generation = generation;
         y_debug_assert(!is_empty());
     }
@@ -61,22 +59,22 @@ struct NodeElement : NonMovable {
         y_debug_assert(!is_empty());
 
         _generation = 0;
-        _node.node.~T();
+        _storage.obj.~T();
 
 #ifdef Y_DEBUG
-        std::memset(&_node.node, 0xFE, sizeof(_node.node));
+        std::memset(&_storage.obj, 0xFE, sizeof(_storage.obj));
 #endif
     }
 
-    union Node {
-        Node() {
+    union Storage {
+        Storage() {
 #ifdef Y_DEBUG
-            std::memset(&node, 0xFE, sizeof(node));
+            std::memset(&obj, 0xFE, sizeof(obj));
 #endif
         }
 
-        T node;
-    } _node;
+        T obj;
+    } _storage;
 
     u32 _generation = 0;
 };
@@ -90,12 +88,12 @@ void* alloc_page(usize size, usize align);
 void dealloc_page(void* ptr, usize size);
 
 
-static constexpr usize node_page_size = 16 * 1024;
-static constexpr usize node_page_alignement = node_page_size;
+static constexpr usize component_page_size = 16 * 1024;
+static constexpr usize component_page_alignement = component_page_size;
 
 
 struct PageHeader {
-    const NodeType type;
+    const ComponentType type;
 
 #ifdef Y_DEBUG
     static constexpr u32 fence_value = 0x12345678;
@@ -109,16 +107,16 @@ class PagePtr;
 template<typename T>
 class Page {
     public:
-        static constexpr usize element_count = (node_page_size - sizeof(PageHeader)) / sizeof(NodeElement<T>);
-        static_assert(element_count >= 1);
+        static constexpr usize component_count = (component_page_size - sizeof(PageHeader)) / sizeof(ComponentStorage<T>);
+        static_assert(component_count >= 1);
 
         detail::PageHeader header;
-        std::array<NodeElement<T>, element_count> nodes;
+        std::array<ComponentStorage<T>, component_count> components;
 
     private:
         friend PagePtr<T>;
 
-        Page() : header(node_type<T>()) {
+        Page() : header(component_type<T>()) {
             static_assert(offsetof(Page, header) == 0);
         }
 };
@@ -126,7 +124,7 @@ class Page {
 template<typename T>
 class PagePtr : NonCopyable {
     public:
-        static_assert(sizeof(Page<T>) <= detail::node_page_size);
+        static_assert(sizeof(Page<T>) <= detail::component_page_size);
 
         PagePtr() = default;
 
@@ -146,19 +144,23 @@ class PagePtr : NonCopyable {
             return *this;
         }
 
+        bool is_null() const {
+            return !_ptr;
+        }
+
         void init() {
             y_debug_assert(!_ptr);
-            void* alloc = detail::alloc_page(sizeof(Page<T>), detail::node_page_alignement);
+            void* alloc = detail::alloc_page(sizeof(Page<T>), detail::component_page_alignement);
             _ptr = new(alloc) Page<T>();
         }
 
-        NodeElement<T>* get(usize index) {
+        ComponentStorage<T>* get(usize index) {
             y_debug_assert(_ptr);
-            return &_ptr->nodes[index];
+            return &_ptr->components[index];
         }
 
     private:
-        friend NodeContainer<T>;
+        friend ComponentContainer<T>;
 
         Page<T>* _ptr = nullptr;
 };
@@ -167,7 +169,7 @@ class PagePtr : NonCopyable {
 inline PageHeader* page_header_from_ptr(void* ptr) {
     static_assert(sizeof(usize) == sizeof(ptr));
     const usize uptr = std::bit_cast<usize>(ptr);
-    const usize start = uptr - (uptr % node_page_alignement);
+    const usize start = uptr - (uptr % component_page_alignement);
     PageHeader* header = std::bit_cast<PageHeader*>(start);
     y_debug_assert(header->fence == PageHeader::fence_value);
     return header;
@@ -176,7 +178,7 @@ inline PageHeader* page_header_from_ptr(void* ptr) {
 template<typename T>
 inline Page<T>* page_from_ptr(void* ptr) {
     PageHeader* header = page_header_from_ptr(ptr);
-    y_debug_assert(header->type == node_type<T>());
+    y_debug_assert(header->type == component_type<T>());
     return reinterpret_cast<Page<T>*>(header);
 }
 
@@ -190,9 +192,9 @@ inline Page<T>* page_from_ptr(void* ptr) {
 
 
 template<typename T>
-struct NodeRef {
+struct ComponentRef {
     public:
-        NodeRef() = default;
+        ComponentRef() = default;
 
         bool is_null() const {
             y_debug_assert(!_ptr == !_generation);
@@ -207,41 +209,54 @@ struct NodeRef {
         }
 
     private:
-        friend NodeContainer<T>;
-        friend class UntypedNodeRef;
+        friend ComponentContainer<T>;
+        friend class UntypedComponentRef;
 
-        NodeRef(NodeElement<T>* ptr) : _ptr(ptr) {
+        ComponentRef(ComponentStorage<T>* ptr) : _ptr(ptr) {
         }
 
-        NodeElement<T>* _ptr = nullptr;
+        ComponentStorage<T>* _ptr = nullptr;
         u32 _generation = 0;
 };
 
-class UntypedNodeRef {
+class UntypedComponentRef {
     public:
-        UntypedNodeRef() = default;
+        UntypedComponentRef() = default;
 
         template<typename T>
-        UntypedNodeRef(NodeRef<T> ref) : _ptr(ref._ptr), _generation(ref._generation) {
+        UntypedComponentRef(ComponentRef<T> ref) : _ptr(ref._ptr), _generation(ref._generation) {
             y_debug_assert(is<T>());
+        }
+
+        ComponentType type() const {
+            y_debug_assert(_ptr);
+            return detail::page_header_from_ptr(_ptr)->type;
         }
 
         template<typename T>
         bool is() const {
-            return _ptr ? detail::page_header_from_ptr(_ptr)->type == node_type<T>() : false;
+            return _ptr ? detail::page_header_from_ptr(_ptr)->type == component_type<T>() : false;
         }
 
         template<typename T>
-        NodeRef<T> to_typed() const {
+        ComponentRef<T> to_typed() const {
             if(!is<T>()) {
+                return {};
             }
 
-            NodeElement<T>* element = reinterpret_cast<NodeElement<T>*>(_ptr);
+            return to_typed_unchecked<T>();
+        }
+
+        template<typename T>
+        ComponentRef<T> to_typed_unchecked() const {
+            y_debug_assert(is<T>());
+
+            ComponentStorage<T>* element = reinterpret_cast<ComponentStorage<T>*>(_ptr);
             if(element->_generation != _generation) {
                 return {};
             }
 
-            NodeRef<T> ref;
+            ComponentRef<T> ref;
             ref._ptr = element;
             ref._generation = _generation;
             return ref;
@@ -255,5 +270,5 @@ class UntypedNodeRef {
 }
 
 
-#endif // YAVE_WORLD_NODEREF_H
+#endif // YAVE_WORLD_COMPONENTREF_H
 

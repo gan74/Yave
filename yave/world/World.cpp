@@ -22,50 +22,73 @@ SOFTWARE.
 
 #include "World.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
-namespace detail {
-u32 create_node_type() {
-    static std::atomic<u32> type_index = 0;
-    return type_index++;
+
+QueryResult World::compute_query(core::MutableSpan<ComponentLut*> luts) {
+    QueryResult result;
+    if(luts.is_empty()) {
+        return result;
+    }
+
+    usize smallest_index = 0;
+    {
+        usize smallest_size = luts[0]->size();
+        for(usize i = 1; i != luts.size(); ++i) {
+            const usize size = luts[i]->size();
+            if(size < smallest_size) {
+                smallest_size = size;
+                smallest_index = i;
+            }
+        }
+    }
+
+    core::Span<ComponentLut::Entry> base;
+    core::ScratchPad<core::Span<ComponentLut::Entry>> iterators(luts.size() - 1);
+    for(usize i = 0; i != luts.size(); ++i) {
+        y_debug_assert(std::is_sorted(luts[i]->lut().begin(), luts[i]->lut().end()));
+        if(i == smallest_index) {
+            base = luts[i]->lut();
+        } else {
+            iterators[i < smallest_index ? i : (i - 1)] = luts[i]->lut();
+        }
+    }
+
+
+    for(const auto& base_it : base) {
+        const EntityId id = base_it.id;
+
+        bool matching = true;
+        for(auto& it : iterators) {
+            while(!it.is_empty() && it[0].id < id) {
+                it = it.take(1);
+            }
+            if(it.is_empty()) {
+                matching = false;
+                break;
+            }
+            matching &= (id == it[0].id);
+        }
+
+        if(matching) {
+            result.ids << id;
+
+            for(usize i = 0; i != smallest_index; ++i) {
+                result.refs << iterators[i][0].ref;
+            }
+
+            result.refs << base_it.ref;
+
+            for(usize i = smallest_index; i != iterators.size(); ++i) {
+                result.refs << iterators[i][0].ref;
+            }
+        }
+    }
+
+    return result;
 }
-
-
-void* alloc_page(usize size, usize align) {
-    void* ptr = nullptr;
-#ifdef Y_MSVC
-    ptr = _aligned_malloc(size, align);
-#else
-    ptr = std::aligned_alloc(align, size);
-#endif
-
-    y_debug_assert(ptr);
-    return ptr;
-}
-
-void dealloc_page(void* ptr, usize size) {
-    unused(size);
-#ifdef Y_MSVC
-    _aligned_free(ptr);
-#else
-    std::free(ptr);
-#endif
-}
-
-}
-
-
-NodeContainerBase::NodeContainerBase(NodeType type) : _type(type) {
-}
-
-NodeContainerBase::~NodeContainerBase() {
-
-}
-
-NodeType NodeContainerBase::type() const {
-    return _type;
-}
-
-
 
 
 }
