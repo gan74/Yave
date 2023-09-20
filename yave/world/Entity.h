@@ -27,9 +27,6 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
 namespace yave {
 
 struct Entity : NonCopyable {
@@ -66,8 +63,6 @@ struct Entity : NonCopyable {
         void register_component(UntypedComponentRef ref) {
             const ComponentTypeIndex index = ref.type().index();
             const auto it = find_type_it(index);
-
-            log_msg(fmt("adding {} ({})", ref.type().name(), index));
 
             y_always_assert(it == _components.end() || it->type_index != index, "Component already exist");
             _components.insert(it, Component(index, ref));

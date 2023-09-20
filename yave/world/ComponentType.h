@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <compare>
-#include <array>
 #include <bit>
 
 namespace yave {
@@ -57,6 +56,10 @@ class ComponentType {
 
         inline bool operator==(const ComponentType& other) const {
             return _index == other._index;
+        }
+
+        inline bool operator!=(const ComponentType& other) const {
+            return !operator==(other);
         }
 
     private:
