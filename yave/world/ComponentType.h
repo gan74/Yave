@@ -31,11 +31,20 @@ SOFTWARE.
 
 namespace yave {
 
-struct ComponentType {
+class ComponentType;
+
+namespace detail {
+template<typename T>
+ComponentType raw_component_type();
+}
+
+using ComponentTypeIndex = u32;
+
+class ComponentType {
     public:
         ComponentType() = default;
 
-        u32 index() const {
+        ComponentTypeIndex index() const {
             return _index;
         }
 
@@ -57,7 +66,7 @@ struct ComponentType {
 
     private:
         template<typename T>
-        friend ComponentType component_type();
+        friend ComponentType detail::raw_component_type();
 
         ComponentType(u32 i, std::string_view n) : _index(i), _name(n) {
         }
@@ -66,19 +75,25 @@ struct ComponentType {
         std::string_view _name;
 };
 
+
+
+
 namespace detail {
-u32 create_component_type_index();
+ComponentTypeIndex create_component_type_index();
+
+template<typename T>
+ComponentType raw_component_type() {
+    static ComponentType type(create_component_type_index(), ct_type_name<T>());
+    return type;
 }
+}
+
+
 
 template<typename T>
 ComponentType component_type() {
-    static ComponentType type(detail::create_component_type_index(), ct_type_name<T>());
-    return type;
+    return detail::raw_component_type<std::remove_cvref_t<T>>();
 }
-
-
-template<typename T>
-class ComponentContainer;
 
 
 }

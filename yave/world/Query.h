@@ -19,38 +19,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_WORLD_QUERY_H
+#define YAVE_WORLD_QUERY_H
 
-#include "World.h"
+#include "ComponentRef.h"
+#include "EntityId.h"
 
 namespace yave {
 namespace detail {
-ComponentTypeIndex create_component_type_index() {
-    static std::atomic<ComponentTypeIndex> type_index = 0;
-    return type_index++;
+template<typename T, typename U, typename... Args>
+static constexpr usize index_of_type() {
+    if constexpr(std::is_same_v<T, std::remove_cvref_t<U>>) {
+        return 0;
+    } else {
+        return index_of_type<T, Args...>() + 1;
+    }
+}
+}
+
+struct QueryResult : NonCopyable {
+    core::Vector<EntityId> ids;
+    core::Vector<UntypedComponentRef> refs;
+};
+
+
+
+template<typename... Args>
+class Query {
+    public:
+        Query() = default;
+
+        Query(QueryResult&& r) : _result(std::move(r)) {
+        }
+
+        template<typename T>
+        ComponentRef<T> get(usize index) const {
+            constexpr usize type_index = detail::index_of_type<T, Args...>();
+            return _result.refs[index * sizeof...(Args) + type_index].to_typed_unchecked<T>();
+        }
+
+        usize size() const {
+            return _result.ids.size();
+        }
+
+    private:
+        QueryResult _result;
+};
+
+
 }
 
 
-void* alloc_page(usize size, usize align) {
-    void* ptr = nullptr;
-#ifdef Y_MSVC
-    ptr = _aligned_malloc(size, align);
-#else
-    ptr = std::aligned_alloc(align, size);
-#endif
-
-    y_debug_assert(ptr);
-    return ptr;
-}
-
-void dealloc_page(void* ptr, usize size) {
-    unused(size);
-#ifdef Y_MSVC
-    _aligned_free(ptr);
-#else
-    std::free(ptr);
-#endif
-}
-
-}
-}
+#endif // YAVE_WORLD_QUERY_H
 

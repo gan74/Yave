@@ -27,12 +27,15 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 struct Entity : NonCopyable {
     public:
         struct Component {
-            ComponentType type;
+            ComponentTypeIndex type_index;
             UntypedComponentRef component;
         };
 
@@ -42,11 +45,9 @@ struct Entity : NonCopyable {
         }
 
         UntypedComponentRef get(ComponentType type) const {
-            const auto& it = std::lower_bound(_components.begin(), _components.end(), type, [](const auto& comp, const auto& type) {
-                return comp.type < type;
-            });
-
-            if(it == _components.end() || it->type != type) {
+            const ComponentTypeIndex index = type.index();
+            const auto it = find_type_it(index);
+            if(it == _components.end() || it->type_index != index) {
                 return {};
             }
 
@@ -63,17 +64,27 @@ struct Entity : NonCopyable {
         friend class EntityContainer;
 
         void register_component(UntypedComponentRef ref) {
-            const ComponentType type = ref.type();
-            const auto& it = std::lower_bound(_components.begin(), _components.end(), type, [](const auto& comp, const auto& type) {
-                return comp.type < type;
-            });
+            const ComponentTypeIndex index = ref.type().index();
+            const auto it = find_type_it(index);
 
-            y_always_assert(it == _components.end() || it->type != type, "Component already exist");
-            _components.insert(it, Component(type, ref));
+            log_msg(fmt("adding {} ({})", ref.type().name(), index));
+
+            y_always_assert(it == _components.end() || it->type_index != index, "Component already exist");
+            _components.insert(it, Component(index, ref));
         }
 
         Entity(EntityId id) : _id(id) {
         }
+
+
+
+
+        auto find_type_it(ComponentTypeIndex index) const {
+            return std::lower_bound(_components.begin(), _components.end(), index, [](const Component& comp, ComponentTypeIndex index) {
+                return index < comp.type_index;
+            });
+        }
+
 
         EntityId _id;
         core::Vector<Component> _components;

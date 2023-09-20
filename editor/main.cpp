@@ -93,6 +93,8 @@ static Instance create_instance() {
 void test_arch() {
     World world;
 
+    y_debug_assert(component_type<int>() == component_type<const int&>());
+
     {
         const auto id = world.create_entity().id();
         world.add<u32>(id, 1);
@@ -116,14 +118,11 @@ void test_arch() {
         world.add<u64>(id, 4);
     }
 
-    const auto q = world.query<int, u32>();
-    for(usize i = 0; i < q.ids.size(); ++i) {
-
-        log_msg(q.refs[2 * i + 0].type().name());
-        log_msg(q.refs[2 * i + 1].type().name());
-
-        y_debug_assert(q.refs[2 * i + 0].is<int>());
-        y_debug_assert(q.refs[2 * i + 1].is<u32>());
+    {
+        const auto q = world.query<int, u32>();
+        y_debug_assert(q.size() == 2);
+        y_debug_assert(*q.get<int>(0) == 1);
+        y_debug_assert(*q.get<int>(1) == 4);
     }
 
     log_msg("Ok");

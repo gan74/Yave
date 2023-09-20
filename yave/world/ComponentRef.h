@@ -29,6 +29,9 @@ SOFTWARE.
 
 namespace yave {
 
+template<typename T>
+class ComponentContainer;
+
 
 template<typename T>
 struct ComponentStorage : NonMovable {
@@ -199,6 +202,12 @@ struct ComponentRef {
         bool is_null() const {
             y_debug_assert(!_ptr == !_generation);
             return !_ptr;
+        }
+
+        const T& operator*() const {
+            const T* p = get();
+            y_debug_assert(p);
+            return *p;
         }
 
         const T* get() const {

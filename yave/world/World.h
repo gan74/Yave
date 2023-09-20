@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_WORLD_WORLD_H
 
 #include "ComponentContainer.h"
+#include "Query.h"
 #include "Entity.h"
 
 #include <y/core/ScratchPad.h>
@@ -57,12 +58,6 @@ class ComponentLut : NonCopyable {
         core::Vector<Entry> _lut;
 };
 
-
-struct QueryResult : NonCopyable {
-    core::Vector<EntityId> ids;
-    core::Vector<UntypedComponentRef> refs;
-};
-
 class World {
     public:
         template<typename T, typename... Args>
@@ -83,7 +78,7 @@ class World {
 
 
         template<typename... Args>
-        QueryResult query() {
+        Query<Args...> query() {
             std::array<ComponentLut*, sizeof...(Args)> luts = {};
             if(fill_luts<Args...>(luts)) {
                 return compute_query(luts);
@@ -94,10 +89,10 @@ class World {
     private:
         template<typename T>
         ComponentContainer<T>& create_container() {
-            const ComponentType type = component_type<T>();
-            _containers.set_min_size(type.index() + 1);
+            const ComponentTypeIndex index = component_type<T>().index();
+            _containers.set_min_size(index + 1);
 
-            auto& cont = _containers[type.index()];
+            auto& cont = _containers[index];
             if(!cont) {
                 cont = std::make_unique<ComponentContainer<T>>();
             }
@@ -109,9 +104,9 @@ class World {
 
         template<typename T>
         ComponentLut& create_lut() {
-            const u32 type = component_type<T>().index();
-            _lookup.set_min_size(type + 1);
-            return _lookup[type];
+            const ComponentTypeIndex index = component_type<T>().index();
+            _lookup.set_min_size(index + 1);
+            return _lookup[index];
         }
 
 
@@ -119,7 +114,7 @@ class World {
         bool fill_luts(core::MutableSpan<ComponentLut*> luts) {
             y_debug_assert(luts.size() == sizeof...(Args) + 1);
 
-            const u32 type = component_type<T>().index();
+            const ComponentTypeIndex type = component_type<T>().index();
             if(type < _lookup.size()) {
                 luts[0] = &_lookup[type];
             } else {
