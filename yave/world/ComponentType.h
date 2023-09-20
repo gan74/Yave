@@ -24,8 +24,7 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <y/core/Vector.h>
-
+#include <compare>
 #include <array>
 #include <bit>
 
@@ -44,24 +43,20 @@ class ComponentType {
     public:
         ComponentType() = default;
 
-        ComponentTypeIndex index() const {
+        inline ComponentTypeIndex index() const {
             return _index;
         }
 
-        std::string_view name() const {
+        inline std::string_view name() const {
             return _name;
+        }
+
+        inline std::strong_ordering operator<=>(const ComponentType& other) const {
+            return _index <=> other._index;
         }
 
         inline bool operator==(const ComponentType& other) const {
             return _index == other._index;
-        }
-
-        inline bool operator!=(const ComponentType& other) const {
-            return operator==(other);
-        }
-
-        inline bool operator<(const ComponentType& other) const {
-            return _index < other._index;
         }
 
     private:
