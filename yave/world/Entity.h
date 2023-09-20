@@ -79,7 +79,7 @@ struct Entity : NonCopyable {
 
 
 
-        auto find_type_it(ComponentTypeIndex index) const {
+        inline auto find_type_it(ComponentTypeIndex index) const {
             return std::lower_bound(_components.begin(), _components.end(), index, [](const Component& comp, ComponentTypeIndex index) {
                 return index < comp.type_index;
             });

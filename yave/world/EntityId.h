@@ -24,33 +24,29 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <compare>
+
 namespace yave {
 
 class EntityId {
     public:
-        u32 index() const {
+        inline u32 index() const {
             return _index;
         }
 
-        bool is_valid() const {
+        inline bool is_valid() const {
             return _generation;
         }
 
-        u64 as_u64() const {
+        inline u64 as_u64() const {
             return (u64(_index) << 32) | u64(_generation);
         }
 
-        bool operator==(const EntityId& other) const {
-            return _index == other._index && _generation == other._generation;
+        inline std::strong_ordering operator<=>(const EntityId& id) const {
+            return as_u64() <=> id.as_u64();
         }
 
-        bool operator!=(const EntityId& other) const {
-            return !operator==(other);
-        }
-
-        bool operator<(const EntityId& other) const {
-            return as_u64() < other.as_u64();
-        }
+        bool operator==(const EntityId&) const = default;
 
     private:
         friend class EntityContainer;
