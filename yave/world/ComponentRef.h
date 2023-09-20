@@ -199,19 +199,20 @@ struct ComponentRef {
     public:
         ComponentRef() = default;
 
-        bool is_null() const {
+        inline bool is_null() const {
             y_debug_assert(!_ptr == !_generation);
             return !_ptr;
         }
 
-        const T& operator*() const {
+        inline const T& operator*() const {
             const T* p = get();
             y_debug_assert(p);
             return *p;
         }
 
-        const T* get() const {
-            if(!_ptr) {
+        inline const T* get() const {
+            if(is_null()) {
+                Y_TODO(use null object with invalid generation?)
                 return nullptr;
             }
             return _ptr->_generation == _generation ? _ptr->get() : nullptr;
@@ -237,18 +238,18 @@ class UntypedComponentRef {
             y_debug_assert(is<T>());
         }
 
-        ComponentType type() const {
+        inline ComponentType type() const {
             y_debug_assert(_ptr);
             return detail::page_header_from_ptr(_ptr)->type;
         }
 
         template<typename T>
-        bool is() const {
+        inline bool is() const {
             return _ptr ? detail::page_header_from_ptr(_ptr)->type == component_type<T>() : false;
         }
 
         template<typename T>
-        ComponentRef<T> to_typed() const {
+        inline ComponentRef<T> to_typed() const {
             if(!is<T>()) {
                 return {};
             }
@@ -257,16 +258,11 @@ class UntypedComponentRef {
         }
 
         template<typename T>
-        ComponentRef<T> to_typed_unchecked() const {
+        inline ComponentRef<T> to_typed_unchecked() const {
             y_debug_assert(is<T>());
 
-            ComponentStorage<T>* element = reinterpret_cast<ComponentStorage<T>*>(_ptr);
-            if(element->_generation != _generation) {
-                return {};
-            }
-
             ComponentRef<T> ref;
-            ref._ptr = element;
+            ref._ptr = reinterpret_cast<ComponentStorage<T>*>(_ptr);
             ref._generation = _generation;
             return ref;
         }
