@@ -174,10 +174,40 @@ void test_arch() {
     }
 }
 
+void bench_arch() {
+    y_profile();
+
+    World world;
+
+    core::Vector<EntityId> ids;
+    for(usize i = 0; i != 10000; ++i) {
+        const auto id = world.create_entity();
+
+        if(i % 2 == 0) {
+            world.add<usize>(id, i);
+        }
+        if(i % 3 == 0) {
+            world.add<int>(id, int(i));
+        }
+        if(i % 5 == 0) {
+            world.add<u32>(id, u32(i));
+        }
+
+        ids << id;
+    }
+
+    for(const EntityId id : ids) {
+        world.remove_entity(id);
+    }
+
+    core::DebugTimer _("flush");
+    world.flush();
+}
 
 
 int main(int argc, char** argv) {
     test_arch();
+    bench_arch();
 
     return 0;
 

@@ -56,7 +56,7 @@ UncheckedComponentRef ComponentLut::find(EntityId id) const {
             return entry.id < id;
         });
 
-        if(it != sorted_end) {
+        if(it != sorted_end && it->id == id) {
             return it->ref;
         }
     }
@@ -85,14 +85,15 @@ void ComponentLut::flush_removals(core::Vector<UncheckedComponentRef>* removed) 
     y_profile();
 
     if(!_to_remove.is_empty()) {
+        flush_additions();
+
         std::sort(_to_remove.begin(), _to_remove.end());
         y_debug_assert(std::unique(_to_remove.begin(), _to_remove.end()) == _to_remove.end());
+        y_debug_assert(_to_remove.size() <= _lut.size());
 
         auto remove_it = _to_remove.begin();
-        auto it = std::lower_bound(_lut.begin(), _lut.end(), *remove_it, [](const Entry& entry, EntityId id) {
-            return entry.id < id;
-        });
 
+        auto it = _lut.begin();
         auto out_it = it;
         while(it != _lut.end()) {
             if(remove_it != _to_remove.end() && it->id == *remove_it) {
@@ -101,7 +102,9 @@ void ComponentLut::flush_removals(core::Vector<UncheckedComponentRef>* removed) 
                 }
                 ++remove_it;
             } else {
-                *out_it = std::move(*it);
+                if(out_it != it) {
+                    *out_it = std::move(*it);
+                }
                 ++out_it;
             }
             ++it;
@@ -196,7 +199,9 @@ void World::clear_mutated() {
     y_profile();
 
     for(auto& pool : _pools) {
-        pool->clear_mutated();
+        if(pool) {
+            pool->clear_mutated();
+        }
     }
 }
 
