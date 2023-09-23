@@ -57,7 +57,7 @@ class ComponentStorage : NonMovable {
         T* get_mut() {
             y_debug_assert(!is_empty());
             if(_metadata.mutate()) {
-                make_mutated();
+                register_mutated();
             }
             return &_storage.obj;
         }
@@ -74,7 +74,9 @@ class ComponentStorage : NonMovable {
         void init(u32 generation, Args&&... args) {
             y_debug_assert(is_empty());
             new(&_storage.obj) T(y_fwd(args)...);
-            _metadata.set_generation(generation);
+            if(_metadata.set_generation(generation)) {
+                register_mutated();
+            }
             y_debug_assert(!is_empty());
         }
 
@@ -95,7 +97,7 @@ class ComponentStorage : NonMovable {
         }
 
     private:
-        void make_mutated(); // ComponentPool.h
+        void register_mutated(); // ComponentPool.h
 
         union Storage {
             Storage() {
@@ -108,13 +110,13 @@ class ComponentStorage : NonMovable {
         } _storage;
 
         struct MetaData {
-            u32 generation : 31 = 0;
             u32 mutated    : 1  = false;
+            u32 generation : 31 = 0;
 
-            void set_generation(u32 gen) {
+            [[nodiscard]] bool set_generation(u32 gen) {
                 y_debug_assert(generation == 0);
                 generation = gen;
-                mutated = 0;
+                return mutate();
             }
 
             [[nodiscard]] bool mutate() {
@@ -128,7 +130,9 @@ class ComponentStorage : NonMovable {
 
             void clear() {
                 generation = 0;
-                mutated = 0;
+                // We do not clear the mutated flag.
+                // If the component gets reallocated immediatly, it might still be in the mutated list of its parent pool
+                // Keeping the flag avoids inserting it a second time in this case
             }
         } _metadata;
 
@@ -287,6 +291,9 @@ class ComponentRef {
             }
         }
 
+        bool operator==(const ComponentRef&) const = default;
+        bool operator!=(const ComponentRef&) const = default;
+
     private:
         friend ComponentPool<component_type>;
         friend storage_type;
@@ -349,6 +356,9 @@ class UntypedComponentRef {
         }
 
 
+        bool operator==(const UntypedComponentRef&) const = default;
+        bool operator!=(const UntypedComponentRef&) const = default;
+
     private:
         friend class UncheckedComponentRef;
 
@@ -382,6 +392,10 @@ class UncheckedComponentRef {
             ref._generation = ref._ptr->generation();
             return ref;
         }
+
+
+        bool operator==(const UncheckedComponentRef&) const = default;
+        bool operator!=(const UncheckedComponentRef&) const = default;
 
     private:
         void* _ptr = nullptr;

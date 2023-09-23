@@ -32,24 +32,60 @@ std::strong_ordering ComponentLut::Entry::operator<=>(const Entry& other) const 
 }
 
 usize ComponentLut::size() const {
-    return _lut.size();
+    return _entry_count;
 }
 
 core::Span<ComponentLut::Entry> ComponentLut::lut() const {
-    return _lut;
+    return core::Span<Entry>(_lut.data(), _entry_count);
 }
 
 void ComponentLut::add_ref(EntityId id, UntypedComponentRef ref) {
     _lut.emplace_back(id, ref);
-    std::sort(_lut.begin(), _lut.end());
 }
 
 void ComponentLut::remove_ref(EntityId id) {
-    const auto it = std::lower_bound(_lut.begin(), _lut.end(), id, [](const Entry& entry, EntityId id) {
-        return entry.id < id;
-    });
-    y_debug_assert(it != _lut.end() && it->id == id);
-    _lut.erase(it);
+    _to_remove.emplace_back(id);
+}
+
+
+void ComponentLut::flush() {
+    y_profile();
+
+    if(_entry_count != _lut.size()) {
+        y_profile_zone("flushing additions");
+
+        std::sort(_lut.begin(), _lut.end());
+        _entry_count = _lut.size();
+    }
+
+    if(!_to_remove.is_empty()) {
+        y_profile_zone("flushing removals");
+
+        std::sort(_to_remove.begin(), _to_remove.end());
+        auto remove_it = _to_remove.begin();
+        auto it = std::lower_bound(_lut.begin(), _lut.end(), *remove_it, [](const Entry& entry, EntityId id) {
+            return entry.id < id;
+        });
+
+        auto out_it = it;
+        while(it != _lut.end()) {
+            if(remove_it != _to_remove.end() && it->id == *remove_it) {
+                ++remove_it;
+            } else {
+                *out_it = std::move(*it);
+                ++out_it;
+            }
+            ++it;
+        }
+
+        y_debug_assert(usize(it - out_it) == _to_remove.size());
+        _entry_count = _lut.size() - _to_remove.size();
+        while(_lut.size() != _entry_count) {
+            _lut.pop();
+        }
+
+        _to_remove.make_empty();
+    }
 }
 
 
@@ -155,6 +191,21 @@ QueryResult World::compute_query(core::Span<LutQuery> luts, usize entity_count) 
     } else {
         return compute_query_internal<false>(luts, smallest_index);
     }
+}
+
+void World::audit() {
+#ifdef Y_DEBUG
+    for(const Entity& e : _entities.entities()) {
+        if(!e.is_valid()) {
+            continue;
+        }
+        for(const auto& entry : e.components()) {
+            y_debug_assert(!entry.component.is_null());
+            y_debug_assert(entry.component.type() == entry.component.pool()->type());
+            y_debug_assert(entry.component.type().index() == entry.type_index);
+        }
+    }
+#endif
 }
 
 

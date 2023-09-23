@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
+
 namespace yave {
 
 class ComponentPoolBase : NonMovable {
@@ -50,9 +51,13 @@ class ComponentPoolBase : NonMovable {
 
 
 template<typename T>
-void ComponentStorage<T>::make_mutated() {
+void ComponentStorage<T>::register_mutated() {
+    y_debug_assert(is_mutated());
+
     const UntypedComponentRef ref(ComponentRef<T>(this));
-    ref.pool()->_mutated.push_back(ref);
+    auto& mutated = ref.pool()->_mutated;
+    y_debug_assert(std::find(mutated.begin(), mutated.end(), ref) == mutated.end());
+    mutated.push_back(ref);
 }
 
 
