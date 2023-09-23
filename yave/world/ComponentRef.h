@@ -32,6 +32,8 @@ namespace yave {
 template<typename T>
 class ComponentPool;
 
+class ComponentPoolBase;
+
 
 template<typename T>
 class ComponentStorage : NonMovable {
@@ -130,6 +132,7 @@ static constexpr usize component_page_alignement = component_page_size;
 
 struct PageHeader {
     const ComponentType type;
+    ComponentPoolBase* parent = nullptr;
 
 #ifdef Y_DEBUG
     static constexpr u32 fence_value = 0x12345678;
@@ -154,7 +157,7 @@ class Page {
     private:
         friend PagePtr<T>;
 
-        Page() : header(component_type<T>()) {
+        Page(ComponentPoolBase* parent) : header(component_type<T>(), parent) {
             static_assert(offsetof(Page, header) == 0);
             y_always_assert(page_header_from_ptr(&components[component_count - 1]) == &header, "Page alignment failure");
         }
@@ -163,9 +166,10 @@ class Page {
 template<typename T>
 class PagePtr : NonCopyable {
     public:
-        static_assert(sizeof(Page<T>) <= detail::component_page_size);
-
-        PagePtr() = default;
+        PagePtr(ComponentPool<T>* parent) {
+            void* alloc = detail::alloc_page(sizeof(Page<T>), detail::component_page_alignement);
+            _ptr = new(alloc) Page<T>(parent);
+        }
 
         ~PagePtr() {
             if(_ptr) {
@@ -185,12 +189,6 @@ class PagePtr : NonCopyable {
 
         bool is_null() const {
             return !_ptr;
-        }
-
-        void init() {
-            y_debug_assert(!_ptr);
-            void* alloc = detail::alloc_page(sizeof(Page<T>), detail::component_page_alignement);
-            _ptr = new(alloc) Page<T>();
         }
 
         ComponentStorage<T>* get(usize index) {
@@ -243,6 +241,11 @@ struct ComponentRef {
             return !_ptr;
         }
 
+        inline bool is_stale() const {
+            y_debug_assert(_ptr);
+            return _ptr->generation() != _generation;
+        }
+
         inline T& operator*() const {
             T* p = get();
             y_debug_assert(p);
@@ -254,7 +257,7 @@ struct ComponentRef {
                 Y_TODO(use tombstone object with invalid generation?)
                 return nullptr;
             }
-            if(_ptr->generation() != _generation) {
+            if(is_stale()) {
                 return nullptr;
             }
 
@@ -287,6 +290,11 @@ class UntypedComponentRef {
             y_debug_assert(is<T>());
         }
 
+        inline bool is_null() const {
+            y_debug_assert(!_ptr == !_generation);
+            return !_ptr;
+        }
+
         inline ComponentType type() const {
             y_debug_assert(_ptr);
             return detail::page_header_from_ptr(_ptr)->type;
@@ -315,6 +323,11 @@ class UntypedComponentRef {
             ref._generation = _generation;
             return ref;
         }
+
+        ComponentPoolBase* pool() const {
+            return _ptr ? detail::page_header_from_ptr(_ptr)->parent : nullptr;
+        }
+
 
     private:
         friend class UncheckedComponentRef;

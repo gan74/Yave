@@ -109,6 +109,8 @@ void test_arch() {
     {
         const auto id = world.create_entity().id();
         world.add<int>(id, 3);
+        world.add<u32>(id, 3);
+        world.remove<u32>(id);
     }
 
     {
@@ -122,6 +124,7 @@ void test_arch() {
         const auto id = world.create_entity().id();
         world.add<i16>(id, i16(5));
     }
+
 
 
 
@@ -140,6 +143,13 @@ void test_arch() {
         y_debug_assert(q.size() == 2);
         y_debug_assert(*q.get<u32>(0) == 1);
         y_debug_assert(*q.get<u32>(1) == 2);
+        log_msg("  ok");
+    }
+
+    {
+        log_msg("Not driver");
+        const auto q = world.query<Not<int>, u32>();
+        y_debug_assert(q.size() == 1);
         log_msg("  ok");
     }
 

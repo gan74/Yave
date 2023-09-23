@@ -85,8 +85,7 @@ class ComponentPool : public ComponentPoolBase {
         }
 
         void create_page() {
-            PagePtr& page = _pages.emplace_back();
-            page.init();
+            PagePtr& page = _pages.emplace_back(this);
             for(usize i = 0; i != Page::component_count; ++i) {
                 _free << ComponentRef<T>(page.get(i));
             }

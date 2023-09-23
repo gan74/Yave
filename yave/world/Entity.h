@@ -36,45 +36,26 @@ struct Entity : NonCopyable {
             UntypedComponentRef component;
         };
 
-
-        EntityId id() const {
-            return _id;
-        }
-
-        UntypedComponentRef get(ComponentType type) const {
-            const ComponentTypeIndex index = type.index();
-            const auto it = find_type_it(index);
-            if(it == _components.end() || it->type_index != index) {
-                return {};
-            }
-
-            return it->component;
-        }
-
-        template<typename T>
-        ComponentRef<T> get() const {
-            return get(component_type<T>()).to_typed<T>();
-        }
-
+        EntityId id() const;
+        UntypedComponentRef get(ComponentType type) const;
 
     private:
         friend class EntityContainer;
 
-        void register_component(UntypedComponentRef ref) {
-            const ComponentTypeIndex index = ref.type().index();
-            const auto it = find_type_it(index);
+        void register_component(UntypedComponentRef ref);
+        UntypedComponentRef unregister_component(ComponentType type);
 
-            y_always_assert(it == _components.end() || it->type_index != index, "Component already exist");
-            _components.insert(it, Component(index, ref));
-        }
-
-        Entity(EntityId id) : _id(id) {
-        }
-
+        Entity(EntityId id);
 
 
 
         inline auto find_type_it(ComponentTypeIndex index) const {
+            return std::lower_bound(_components.begin(), _components.end(), index, [](const Component& comp, ComponentTypeIndex index) {
+                return index < comp.type_index;
+            });
+        }
+
+        inline auto find_type_it(ComponentTypeIndex index) {
             return std::lower_bound(_components.begin(), _components.end(), index, [](const Component& comp, ComponentTypeIndex index) {
                 return index < comp.type_index;
             });
@@ -88,42 +69,18 @@ struct Entity : NonCopyable {
 
 class EntityContainer {
     public:
-        Entity& create_entity() {
-            return _entities.push_back(create_id());
-        }
+        Entity& create_entity();
+        bool exists(EntityId id) const;
 
-        bool exists(EntityId id) const {
-            return id._index < _entities.size() && _entities[id._index]._id == id;
-        }
+        void register_component(EntityId id, UntypedComponentRef ref);
+        UntypedComponentRef unregister_component(EntityId id, ComponentType type);
 
-        void register_component(EntityId id, UntypedComponentRef ref) {
-            y_debug_assert(exists(id));
-            return _entities[id._index].register_component(ref);
-        }
+        const Entity& operator[](EntityId id) const;
 
-        const Entity& operator[](EntityId id) const {
-            y_debug_assert(exists(id));
-            return _entities[id._index];
-        }
-
-        usize entity_count() const {
-            y_debug_assert(_entities.size() >= _free.size());
-            return _entities.size() - _free.size();
-        }
+        usize entity_count() const;
 
     private:
-        EntityId create_id() {
-            EntityId id;
-            if(!_free.is_empty()) {
-                id = _free.pop();
-            } else {
-                id._index = u32(_entities.size());
-            }
-
-            ++id._generation;
-            return id;
-        }
-
+        EntityId create_id();
 
         core::Vector<Entity> _entities;
         core::Vector<EntityId> _free;

@@ -50,6 +50,14 @@ class ComponentLut : NonCopyable {
             std::sort(_lut.begin(), _lut.end());
         }
 
+        void remove_ref(EntityId id) {
+            const auto it = std::lower_bound(_lut.begin(), _lut.end(), id, [](const Entry& entry, EntityId id) {
+                return entry.id < id;
+            });
+            y_debug_assert(it != _lut.end() && it->id == id);
+            _lut.erase(it);
+        }
+
         core::Span<Entry> lut() const {
             return _lut;
         }
@@ -70,14 +78,6 @@ struct LutQuery {
 
 class World {
     public:
-        template<typename T, typename... Args>
-        ComponentRef<T> add(EntityId id, Args&&... args) {
-            const ComponentRef<T> ref = create_container<T>().add(y_fwd(args)...);
-            _entities.register_component(id, ref);
-            create_lut<T>().add_ref(id, ref);
-            return ref;
-        }
-
         Entity& create_entity() {
             return _entities.create_entity();
         }
@@ -86,6 +86,23 @@ class World {
             return _entities[id];
         }
 
+
+        template<typename T, typename... Args>
+        ComponentRef<T> add(EntityId id, Args&&... args) {
+            const ComponentRef<T> ref = create_container<T>().add(y_fwd(args)...);
+            _entities.register_component(id, ref);
+            create_lut<T>().add_ref(id, ref);
+            return ref;
+        }
+
+        template<typename T>
+        void remove(EntityId id) {
+            const UntypedComponentRef ref = _entities.unregister_component(id, component_type<T>());
+            y_debug_assert(!ref.to_typed<T>().is_stale());
+            ref.pool()->remove(ref);
+            create_lut<T>().remove_ref(id);
+            y_debug_assert(ref.to_typed<T>().is_stale());
+        }
 
         template<typename... Args>
         Query<Args...> query() {
