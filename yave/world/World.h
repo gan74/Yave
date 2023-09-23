@@ -58,6 +58,16 @@ class ComponentLut : NonCopyable {
         core::Vector<Entry> _lut;
 };
 
+struct LutQuery {
+    const ComponentLut* lut = nullptr;
+    const bool exlude = false;
+    const ComponentType type;
+};
+
+
+
+
+
 class World {
     public:
         template<typename T, typename... Args>
@@ -79,8 +89,8 @@ class World {
 
         template<typename... Args>
         Query<Args...> query() {
-            const std::array luts{find_lut<Args>()...};
-            return compute_query(luts);
+            const std::array luts{lut_for_query<Args>()...};
+            return compute_query(luts, _entities.entity_count());
         }
 
     private:
@@ -107,15 +117,21 @@ class World {
         }
 
         template<typename T>
-        ComponentLut* find_lut() {
-            const ComponentTypeIndex type = component_type<T>().index();
-            if(type < _lookup.size()) {
-                return &_lookup[type];
+        LutQuery lut_for_query() {
+            using traits = detail::query_traits<T>;
+            const ComponentType type = component_type<typename traits::raw_type>();
+            const ComponentTypeIndex type_index = type.index();
+            if(type_index < _lookup.size()) {
+                return LutQuery {
+                    &_lookup[type_index],
+                    traits::exclude,
+                    type,
+                };
             }
-            return nullptr;
+            return {};
         }
 
-        static QueryResult compute_query(core::Span<ComponentLut*> luts);
+        static QueryResult compute_query(core::Span<LutQuery> luts, usize entity_count);
 
         core::Vector<std::unique_ptr<ComponentPoolBase>> _pools;
         core::Vector<ComponentLut> _lookup;

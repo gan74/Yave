@@ -27,71 +27,104 @@ SOFTWARE.
 
 namespace yave {
 
-QueryResult World::compute_query(core::Span<ComponentLut*> luts) {
-    QueryResult result;
-    if(luts.is_empty()) {
-        return result;
-    }
-
+static usize find_smallest_lut_index(core::Span<LutQuery> luts, usize entity_count) {
     usize smallest_index = 0;
     usize smallest_size = usize(-1);
-    {
-        for(usize i = 0; i != luts.size(); ++i) {
-            if(!luts[i]) {
-                return result;
-            }
 
-            const usize size = luts[i]->size();
-            if(size < smallest_size) {
-                smallest_size = size;
-                smallest_index = i;
-            }
-        }
-    }
-
-    core::Span<ComponentLut::Entry> base;
-    core::ScratchPad<core::Span<ComponentLut::Entry>> iterators(luts.size() - 1);
     for(usize i = 0; i != luts.size(); ++i) {
-        y_debug_assert(std::is_sorted(luts[i]->lut().begin(), luts[i]->lut().end()));
+        if(luts[i].exlude) {
+            // Queries don't support the driver being exluded
+            continue;
+        }
+
+        const usize raw_size = luts[i].lut ? luts[i].lut->size() : 0;
+        y_debug_assert(raw_size <= entity_count);
+
+        const usize size = luts[i].exlude ? (entity_count - raw_size) : raw_size;
+        if(size < smallest_size) {
+            smallest_size = size;
+            smallest_index = i;
+        }
+    }
+
+    return smallest_index;
+}
+
+template<bool DriverExcluded>
+static QueryResult compute_query_internal(core::Span<LutQuery> luts, usize smallest_index) {
+    y_always_assert(!DriverExcluded, "Fully negative queries are not supported");
+
+    y_debug_assert(luts[smallest_index].exlude == DriverExcluded);
+
+    core::Span<ComponentLut::Entry> driver;
+    core::ScratchPad<std::pair<core::Span<ComponentLut::Entry>, bool>> iterators(luts.size() - 1);
+
+    for(usize i = 0; i != luts.size(); ++i) {
+        const core::Span<ComponentLut::Entry> lut = luts[i].lut->lut();
+        y_debug_assert(std::is_sorted(lut.begin(), lut.end()));
         if(i == smallest_index) {
-            base = luts[i]->lut();
+            driver = lut;
         } else {
-            iterators[i < smallest_index ? i : (i - 1)] = luts[i]->lut();
+            iterators[i < smallest_index ? i : (i - 1)] = {
+                lut,
+                luts[i].exlude,
+            };
         }
     }
 
 
-    for(const auto& base_it : base) {
-        const EntityId id = base_it.id;
+    QueryResult result;
+    for(const auto& driver_it : driver) {
+        const EntityId id = driver_it.id;
 
         bool matching = true;
         for(auto& it : iterators) {
-            while(!it.is_empty() && it[0].id < id) {
-                it = it.take(1);
+            while(!it.first.is_empty() && it.first[0].id < id) {
+                it.first = it.first.take(1);
             }
-            if(it.is_empty()) {
-                matching = false;
+
+            if(it.first.is_empty()) {
+                matching = it.second;
                 break;
             }
-            matching &= (id == it[0].id);
+            matching &= (id == it.first[0].id) != it.second;
         }
 
         if(matching) {
             result.ids << id;
 
             for(usize i = 0; i != smallest_index; ++i) {
-                result.refs << iterators[i][0].ref;
+                if(!iterators[i].second) {
+                    result.refs << iterators[i].first[0].ref;
+                }
             }
 
-            result.refs << base_it.ref;
+            if(!DriverExcluded) {
+                result.refs << driver_it.ref;
+            }
 
             for(usize i = smallest_index; i != iterators.size(); ++i) {
-                result.refs << iterators[i][0].ref;
+                if(!iterators[i].second) {
+                    result.refs << iterators[i].first[0].ref;
+                }
             }
         }
     }
 
     return result;
+}
+
+QueryResult World::compute_query(core::Span<LutQuery> luts, usize entity_count) {
+    if(luts.is_empty()) {
+        return {};
+    }
+
+    const usize smallest_index = find_smallest_lut_index(luts, entity_count);
+    if(luts[smallest_index].exlude) {
+        return compute_query_internal<true>(luts, smallest_index);
+    } else {
+        return compute_query_internal<false>(luts, smallest_index);
+    }
 }
 
 

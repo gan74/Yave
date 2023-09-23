@@ -119,13 +119,36 @@ void test_arch() {
     }
 
     {
+        const auto id = world.create_entity().id();
+        world.add<i16>(id, i16(5));
+    }
+
+
+
+    {
+        log_msg("Simple");
         const auto q = world.query<int, u32>();
         y_debug_assert(q.size() == 2);
         y_debug_assert(*q.get<int>(0) == 1);
         y_debug_assert(*q.get<int>(1) == 4);
+        log_msg("  ok");
     }
 
-    log_msg("Ok");
+    {
+        log_msg("Not");
+        const auto q = world.query<Not<u64>, u32>();
+        y_debug_assert(q.size() == 2);
+        y_debug_assert(*q.get<u32>(0) == 1);
+        y_debug_assert(*q.get<u32>(1) == 2);
+        log_msg("  ok");
+    }
+
+    {
+        log_msg("Not driver");
+        const auto q = world.query<Not<int>, u32>();
+        y_debug_assert(q.size() == 1);
+        log_msg("  ok");
+    }
 }
 
 

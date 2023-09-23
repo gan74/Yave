@@ -139,6 +139,38 @@ class Uninitialized : NonMovable {
 #endif
 };
 
+
+
+
+template<typename... Args>
+struct type_pack {
+    static constexpr usize size = sizeof...(Args);
+};
+
+namespace detail {
+template<typename T, typename U, typename... Args>
+constexpr usize type_index_in_pack() {
+    if constexpr(std::is_same_v<T, U>) {
+        return 0;
+    } else {
+        static_assert(sizeof...(Args) > 0, "Type is not present in pack");
+        return type_index_in_pack<T, Args...>() + 1;
+    }
+}
+}
+
+template<typename... Args, typename... More>
+constexpr auto concatenate_packs(type_pack<Args...>, type_pack<More...>) {
+    return type_pack<Args..., More...>{};
+}
+
+template<typename T, typename... Args>
+consteval usize type_index_in_pack(type_pack<Args...> pack) {
+    static_assert(pack.size > 0, "type_pack is empty");
+    return detail::type_index_in_pack<T, Args...>();
+
+}
+
 }
 
 

@@ -106,6 +106,11 @@ class EntityContainer {
             return _entities[id._index];
         }
 
+        usize entity_count() const {
+            y_debug_assert(_entities.size() >= _free.size());
+            return _entities.size() - _free.size();
+        }
+
     private:
         EntityId create_id() {
             EntityId id;

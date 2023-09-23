@@ -25,17 +25,50 @@ SOFTWARE.
 #include "ComponentRef.h"
 #include "EntityId.h"
 
+#include <y/core/Vector.h>
+
 namespace yave {
+
+template<typename T>
+struct Not {};
+
+
 namespace detail {
-template<typename T, typename U, typename... Args>
-static constexpr usize index_of_type() {
-    if constexpr(std::is_same_v<T, std::remove_cvref_t<U>>) {
-        return 0;
+template<typename T>
+struct query_traits {
+    using raw_type = std::remove_cvref_t<T>;
+    using type = const raw_type;
+    static constexpr bool exclude = false;
+};
+
+template<typename T>
+struct query_traits<Not<T>> {
+    using raw_type = typename query_traits<T>::raw_type;
+    using type = typename query_traits<T>::type;
+    static constexpr bool exclude = true;
+};
+
+template<typename T>
+static constexpr auto filter_query_type() {
+    if constexpr(query_traits<T>::exclude) {
+        return type_pack<>{};
     } else {
-        return index_of_type<T, Args...>() + 1;
+        return type_pack<T>{};
+    }
+}
+
+template<typename T, typename... Args>
+static constexpr auto filter_query_types() {
+    constexpr auto lhs = filter_query_type<T>();
+    if constexpr(sizeof...(Args)) {
+        constexpr auto rhs = filter_query_types<Args...>();
+        return concatenate_packs(lhs, rhs);
+    } else {
+        return lhs;
     }
 }
 }
+
 
 struct QueryResult : NonCopyable {
     core::Vector<EntityId> ids;
@@ -46,6 +79,8 @@ struct QueryResult : NonCopyable {
 
 template<typename... Args>
 class Query {
+    using types = decltype(detail::filter_query_types<Args...>());
+
     public:
         Query() = default;
 
@@ -53,9 +88,10 @@ class Query {
         }
 
         template<typename T>
-        ComponentRef<T> get(usize index) const {
-            constexpr usize type_index = detail::index_of_type<T, Args...>();
-            return _result.refs[index * sizeof...(Args) + type_index].to_typed_unchecked<T>();
+        auto get(usize index) const {
+            using traits = detail::query_traits<T>;
+            constexpr usize type_index = type_index_in_pack<typename traits::raw_type>(types{});
+            return _result.refs[index * types::size + type_index].to_typed_unchecked<typename traits::type>();
         }
 
         usize size() const {
