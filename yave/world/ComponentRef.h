@@ -34,52 +34,85 @@ class ComponentPool;
 
 
 template<typename T>
-struct ComponentStorage : NonMovable {
-    ~ComponentStorage() {
-        if(!is_empty()) {
-            destroy();
-        }
-    }
-
-    T* get() {
-        y_debug_assert(!is_empty());
-        return &_storage.obj;
-    }
-
-    bool is_empty() const {
-        return !_generation;
-    }
-
-    template<typename... Args>
-    void init(u32 generation, Args&&... args) {
-        y_debug_assert(is_empty());
-        new(&_storage.obj) T(y_fwd(args)...);
-        _generation = generation;
-        y_debug_assert(!is_empty());
-    }
-
-    void destroy() {
-        y_debug_assert(!is_empty());
-
-        _generation = 0;
-        _storage.obj.~T();
-
-#ifdef Y_DEBUG
-        std::memset(&_storage.obj, 0xFE, sizeof(_storage.obj));
-#endif
-    }
-
-    union Storage {
-        Storage() {
-#ifdef Y_DEBUG
-            std::memset(&obj, 0xFE, sizeof(obj));
-#endif
+class ComponentStorage : NonMovable {
+    public:
+        ~ComponentStorage() {
+            if(!is_empty()) {
+                destroy();
+            }
         }
 
-        T obj;
-    } _storage;
+        u32 generation() const {
+            return _metadata.generation;
+        }
 
-    u32 _generation = 0;
+        const T* get() const {
+            y_debug_assert(!is_empty());
+            return &_storage.obj;
+        }
+
+        T* get_mut() {
+            y_debug_assert(!is_empty());
+            _metadata.mutate();
+            return &_storage.obj;
+        }
+
+        bool is_empty() const {
+            return !generation();
+        }
+
+        template<typename... Args>
+        void init(u32 generation, Args&&... args) {
+            y_debug_assert(is_empty());
+            new(&_storage.obj) T(y_fwd(args)...);
+            _metadata.generation = generation;
+            y_debug_assert(!is_empty());
+        }
+
+        void destroy() {
+            y_debug_assert(!is_empty());
+
+            _metadata.clear();
+            _storage.obj.~T();
+
+    #ifdef Y_DEBUG
+            std::memset(&_storage.obj, 0xFE, sizeof(_storage.obj));
+    #endif
+        }
+
+    private:
+        union Storage {
+            Storage() {
+    #ifdef Y_DEBUG
+                std::memset(&obj, 0xFE, sizeof(obj));
+    #endif
+            }
+
+            T obj;
+        } _storage;
+
+        struct MetaData {
+            u32 generation : 31 = 0;
+            u32 mutated    : 1  = false;
+
+            void set_generation(u32 gen) {
+                y_debug_assert(generation == 0);
+                generation = gen;
+                mutated = 0;
+            }
+
+            void mutate() {
+                y_debug_assert(generation != 0);
+                mutated = true;
+            }
+
+            void clear() {
+                generation = 0;
+                mutated = 0;
+            }
+        } _metadata;
+
+        static_assert(sizeof(MetaData) == sizeof(u32));
 };
 
 
@@ -107,6 +140,8 @@ struct PageHeader {
 template<typename T>
 class PagePtr;
 
+inline PageHeader* page_header_from_ptr(void* ptr);
+
 template<typename T>
 class Page {
     public:
@@ -121,6 +156,7 @@ class Page {
 
         Page() : header(component_type<T>()) {
             static_assert(offsetof(Page, header) == 0);
+            y_always_assert(page_header_from_ptr(&components[component_count - 1]) == &header, "Page alignment failure");
         }
 };
 
@@ -197,6 +233,9 @@ inline Page<T>* page_from_ptr(void* ptr) {
 template<typename T>
 struct ComponentRef {
     public:
+        using component_type = std::remove_const_t<T>;
+        using storage_type = ComponentStorage<component_type>;
+
         ComponentRef() = default;
 
         inline bool is_null() const {
@@ -204,29 +243,37 @@ struct ComponentRef {
             return !_ptr;
         }
 
-        inline const T& operator*() const {
-            const T* p = get();
+        inline T& operator*() const {
+            T* p = get();
             y_debug_assert(p);
             return *p;
         }
 
-        inline const T* get() const {
+        inline T* get() const {
             if(is_null()) {
-                Y_TODO(use null object with invalid generation?)
+                Y_TODO(use tombstone object with invalid generation?)
                 return nullptr;
             }
-            return _ptr->_generation == _generation ? _ptr->get() : nullptr;
+            if(_ptr->generation() != _generation) {
+                return nullptr;
+            }
+
+            if constexpr(std::is_const_v<T>) {
+                return _ptr->get();
+            } else {
+                return _ptr->get_mut();
+            }
         }
 
     private:
-        friend ComponentPool<T>;
+        friend ComponentPool<component_type>;
         friend class UntypedComponentRef;
         friend class UncheckedComponentRef;
 
-        ComponentRef(ComponentStorage<T>* ptr) : _ptr(ptr) {
+        ComponentRef(storage_type* ptr) : _ptr(ptr) {
         }
 
-        ComponentStorage<T>* _ptr = nullptr;
+        storage_type* _ptr = nullptr;
         u32 _generation = 0;
 };
 
@@ -236,6 +283,7 @@ class UntypedComponentRef {
 
         template<typename T>
         UntypedComponentRef(ComponentRef<T> ref) : _ptr(ref._ptr), _generation(ref._generation) {
+            static_assert(!std::is_const_v<T>);
             y_debug_assert(is<T>());
         }
 
@@ -263,7 +311,7 @@ class UntypedComponentRef {
             y_debug_assert(is<T>());
 
             ComponentRef<T> ref;
-            ref._ptr = reinterpret_cast<ComponentStorage<T>*>(_ptr);
+            ref._ptr = reinterpret_cast<typename ComponentRef<T>::storage_type*>(_ptr);
             ref._generation = _generation;
             return ref;
         }
@@ -297,8 +345,8 @@ class UncheckedComponentRef {
             y_debug_assert(is<T>());
 
             ComponentRef<T> ref;
-            ref._ptr = reinterpret_cast<ComponentStorage<T>*>(_ptr);
-            ref._generation = ref._ptr->_generation;
+            ref._ptr = reinterpret_cast<typename ComponentRef<T>::storage_type*>(_ptr);
+            ref._generation = ref._ptr->generation();
             return ref;
         }
 
