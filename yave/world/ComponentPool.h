@@ -35,16 +35,30 @@ class ComponentPoolBase : NonMovable {
         ComponentType type() const;
 
         virtual void remove(UntypedComponentRef ref) = 0;
+        virtual void clear_mutated() = 0;
 
     protected:
+        template<typename T>
+        friend class ComponentStorage;
+        friend class World;
+
         ComponentPoolBase(ComponentType type);
 
         const ComponentType _type;
+        core::Vector<UncheckedComponentRef> _mutated;
 };
 
 
 template<typename T>
-class ComponentPool : public ComponentPoolBase {
+void ComponentStorage<T>::make_mutated() {
+    const UntypedComponentRef ref(ComponentRef<T>(this));
+    ref.pool()->_mutated.push_back(ref);
+}
+
+
+
+template<typename T>
+class ComponentPool final : public ComponentPoolBase {
     using Page = detail::Page<T>;
     using PagePtr = detail::PagePtr<T>;
 
@@ -89,6 +103,13 @@ class ComponentPool : public ComponentPoolBase {
             for(usize i = 0; i != Page::component_count; ++i) {
                 _free << ComponentRef<T>(page.get(i));
             }
+        }
+
+        void clear_mutated() override {
+            for(UncheckedComponentRef ref : _mutated) {
+                ref.to_typed_unchecked<T>()._ptr->reset_mutated();
+            }
+            _mutated.make_empty();
         }
 
 

@@ -35,6 +35,7 @@ ComponentType ComponentPoolBase::type() const {
     return _type;
 }
 
+
 }
 
 

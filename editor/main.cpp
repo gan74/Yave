@@ -122,10 +122,18 @@ void test_arch() {
 
     {
         const auto id = world.create_entity().id();
-        world.add<i16>(id, i16(5));
+        auto ref = world.add<i16>(id);
+        *ref.get() = 1;
+        *ref.get() = 2;
+        *ref.get() = 3;
+        *ref.get() = 4;
+        *ref.get() = 5;
     }
 
-
+    y_debug_assert(world.mutated<i16>().size() == 1);
+    y_debug_assert(*world.mutated<i16>()[0] == 5);
+    world.clear_mutated();
+    y_debug_assert(!world.mutated<i16>().size());
 
 
     {
@@ -134,6 +142,14 @@ void test_arch() {
         y_debug_assert(q.size() == 2);
         y_debug_assert(*q.get<int>(0) == 1);
         y_debug_assert(*q.get<int>(1) == 4);
+        log_msg("  ok");
+    }
+
+    {
+        log_msg("Mut");
+        const auto q = world.query<i16>();
+        y_debug_assert(q.size() == 1);
+        y_debug_assert(*q.get<i16>(0) == 5);
         log_msg("  ok");
     }
 

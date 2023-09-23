@@ -27,6 +27,36 @@ SOFTWARE.
 
 namespace yave {
 
+std::strong_ordering ComponentLut::Entry::operator<=>(const Entry& other) const {
+    return id <=> other.id;
+}
+
+usize ComponentLut::size() const {
+    return _lut.size();
+}
+
+core::Span<ComponentLut::Entry> ComponentLut::lut() const {
+    return _lut;
+}
+
+void ComponentLut::add_ref(EntityId id, UntypedComponentRef ref) {
+    _lut.emplace_back(id, ref);
+    std::sort(_lut.begin(), _lut.end());
+}
+
+void ComponentLut::remove_ref(EntityId id) {
+    const auto it = std::lower_bound(_lut.begin(), _lut.end(), id, [](const Entry& entry, EntityId id) {
+        return entry.id < id;
+    });
+    y_debug_assert(it != _lut.end() && it->id == id);
+    _lut.erase(it);
+}
+
+
+
+
+
+
 static usize find_smallest_lut_index(core::Span<LutQuery> luts, usize entity_count) {
     usize smallest_index = 0;
     usize smallest_size = usize(-1);

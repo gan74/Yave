@@ -31,8 +31,9 @@ namespace yave {
 
 template<typename T>
 class ComponentPool;
-
 class ComponentPoolBase;
+
+
 
 
 template<typename T>
@@ -55,7 +56,9 @@ class ComponentStorage : NonMovable {
 
         T* get_mut() {
             y_debug_assert(!is_empty());
-            _metadata.mutate();
+            if(_metadata.mutate()) {
+                make_mutated();
+            }
             return &_storage.obj;
         }
 
@@ -63,11 +66,15 @@ class ComponentStorage : NonMovable {
             return !generation();
         }
 
+        bool is_mutated() const {
+            return _metadata.mutated;
+        }
+
         template<typename... Args>
         void init(u32 generation, Args&&... args) {
             y_debug_assert(is_empty());
             new(&_storage.obj) T(y_fwd(args)...);
-            _metadata.generation = generation;
+            _metadata.set_generation(generation);
             y_debug_assert(!is_empty());
         }
 
@@ -82,7 +89,14 @@ class ComponentStorage : NonMovable {
     #endif
         }
 
+        void reset_mutated() {
+            y_debug_assert(is_mutated());
+            _metadata.mutated = 0;
+        }
+
     private:
+        void make_mutated(); // ComponentPool.h
+
         union Storage {
             Storage() {
     #ifdef Y_DEBUG
@@ -103,9 +117,13 @@ class ComponentStorage : NonMovable {
                 mutated = 0;
             }
 
-            void mutate() {
+            [[nodiscard]] bool mutate() {
                 y_debug_assert(generation != 0);
-                mutated = true;
+                if(!mutated) {
+                    mutated = true;
+                    return true;
+                }
+                return false;
             }
 
             void clear() {
@@ -228,8 +246,9 @@ inline Page<T>* page_from_ptr(void* ptr) {
 
 
 
+
 template<typename T>
-struct ComponentRef {
+class ComponentRef {
     public:
         using component_type = std::remove_const_t<T>;
         using storage_type = ComponentStorage<component_type>;
@@ -270,6 +289,7 @@ struct ComponentRef {
 
     private:
         friend ComponentPool<component_type>;
+        friend storage_type;
         friend class UntypedComponentRef;
         friend class UncheckedComponentRef;
 

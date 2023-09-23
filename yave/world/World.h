@@ -27,6 +27,9 @@ SOFTWARE.
 #include "Entity.h"
 
 #include <y/core/ScratchPad.h>
+#include <y/core/Range.h>
+
+#include <y/utils/iter.h>
 
 namespace yave {
 
@@ -36,31 +39,14 @@ class ComponentLut : NonCopyable {
             EntityId id;
             UncheckedComponentRef ref;
 
-            std::strong_ordering operator<=>(const Entry& other) const {
-                return id <=> other.id;
-            }
+            std::strong_ordering operator<=>(const Entry& other) const;
         };
 
-        usize size() const {
-            return _lut.size();
-        }
+        usize size() const;
+        core::Span<Entry> lut() const;
 
-        void add_ref(EntityId id, UntypedComponentRef ref) {
-            _lut.emplace_back(id, ref);
-            std::sort(_lut.begin(), _lut.end());
-        }
-
-        void remove_ref(EntityId id) {
-            const auto it = std::lower_bound(_lut.begin(), _lut.end(), id, [](const Entry& entry, EntityId id) {
-                return entry.id < id;
-            });
-            y_debug_assert(it != _lut.end() && it->id == id);
-            _lut.erase(it);
-        }
-
-        core::Span<Entry> lut() const {
-            return _lut;
-        }
+        void add_ref(EntityId id, UntypedComponentRef ref);
+        void remove_ref(EntityId id);
 
     private:
         core::Vector<Entry> _lut;
@@ -86,10 +72,19 @@ class World {
             return _entities[id];
         }
 
+        void clear_mutated() {
+            for(auto& pool : _pools) {
+                pool->clear_mutated();
+            }
+        }
+
+
+
+
 
         template<typename T, typename... Args>
         ComponentRef<T> add(EntityId id, Args&&... args) {
-            const ComponentRef<T> ref = create_container<T>().add(y_fwd(args)...);
+            const ComponentRef<T> ref = create_pool<T>().add(y_fwd(args)...);
             _entities.register_component(id, ref);
             create_lut<T>().add_ref(id, ref);
             return ref;
@@ -104,15 +99,30 @@ class World {
             y_debug_assert(ref.to_typed<T>().is_stale());
         }
 
+
+
+
+
+        template<typename T>
+        auto mutated() const {
+            const ComponentPool<T>* pool = find_pool<T>();
+            const core::Span<UncheckedComponentRef> mut = pool ? pool->_mutated : core::Span<UncheckedComponentRef>();
+            return core::Range(
+                TransformIterator(mut.begin(), [](UncheckedComponentRef ref) { return ref.to_typed_unchecked<T>(); }),
+                mut.end()
+            );
+        }
+
         template<typename... Args>
         Query<Args...> query() {
             const std::array luts{lut_for_query<Args>()...};
             return compute_query(luts, _entities.entity_count());
         }
 
+
     private:
         template<typename T>
-        ComponentPool<T>& create_container() {
+        ComponentPool<T>& create_pool() {
             const ComponentTypeIndex index = component_type<T>().index();
             _pools.set_min_size(index + 1);
 
@@ -124,6 +134,16 @@ class World {
             ComponentPool<T>* pool_ptr = dynamic_cast<ComponentPool<T>*>(pool.get());
             y_debug_assert(pool_ptr);
             return *pool_ptr;
+        }
+
+        template<typename T>
+        const ComponentPool<T>* find_pool() const {
+            const ComponentTypeIndex index = component_type<T>().index();
+            if(_pools.size() <= usize(index)) {
+                return nullptr;
+            }
+
+            return dynamic_cast<const ComponentPool<T>*>(_pools[index].get());
         }
 
         template<typename T>
