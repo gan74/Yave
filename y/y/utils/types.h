@@ -157,7 +157,19 @@ constexpr usize type_index_in_pack() {
         return type_index_in_pack<T, Args...>() + 1;
     }
 }
+
+template<usize I, typename T, typename... Args>
+constexpr auto type_ptr_at_index() {
+    if constexpr(!I) {
+        T* p = nullptr;
+        return p;
+    } else {
+        return type_ptr_at_index<I - 1, Args...>();
+    }
 }
+}
+
+
 
 template<typename... Args, typename... More>
 constexpr auto concatenate_packs(type_pack<Args...>, type_pack<More...>) {
@@ -168,8 +180,17 @@ template<typename T, typename... Args>
 consteval usize type_index_in_pack(type_pack<Args...> pack) {
     static_assert(pack.size > 0, "type_pack is empty");
     return detail::type_index_in_pack<T, Args...>();
-
 }
+
+template<usize I, typename... Args>
+struct type_at_index {
+    using type = std::remove_reference_t<decltype(*detail::type_ptr_at_index<0, Args...>())>;
+};
+
+template<usize I, typename... Args>
+struct type_at_index<I, type_pack<Args...>> {
+    using type = typename type_at_index<I, Args...>::type;
+};
 
 }
 

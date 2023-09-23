@@ -136,7 +136,7 @@ void test_arch() {
 
     {
         log_msg("Not");
-        const auto q = world.query<Not<u64>, u32>();
+        const auto q = world.query<Not<u64>, Mut<u32>>();
         y_debug_assert(q.size() == 2);
         y_debug_assert(*q.get<u32>(0) == 1);
         y_debug_assert(*q.get<u32>(1) == 2);

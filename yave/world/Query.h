@@ -32,6 +32,9 @@ namespace yave {
 template<typename T>
 struct Not {};
 
+template<typename T>
+struct Mut {};
+
 
 namespace detail {
 template<typename T>
@@ -43,25 +46,40 @@ struct query_traits {
 
 template<typename T>
 struct query_traits<Not<T>> {
-    using raw_type = typename query_traits<T>::raw_type;
-    using type = typename query_traits<T>::type;
+    using parent = query_traits<T>;
+    using raw_type = typename parent::raw_type;
+    using type = typename parent::type;
     static constexpr bool exclude = true;
 };
 
 template<typename T>
-static constexpr auto filter_query_type() {
-    if constexpr(query_traits<T>::exclude) {
+struct query_traits<Mut<T>> {
+    using parent = query_traits<T>;
+    using raw_type = typename parent::raw_type;
+    using type = std::remove_const_t<typename parent::type>;
+    static constexpr bool exclude = parent::exclude;
+};
+
+
+template<bool Raw, typename T>
+static constexpr auto build_query_type() {
+    using traits = query_traits<T>;
+    if constexpr(traits::exclude) {
         return type_pack<>{};
     } else {
-        return type_pack<T>{};
+        if constexpr(Raw) {
+            return type_pack<typename traits::raw_type>{};
+        } else {
+            return type_pack<typename traits::type>{};
+        }
     }
 }
 
-template<typename T, typename... Args>
-static constexpr auto filter_query_types() {
-    constexpr auto lhs = filter_query_type<T>();
+template<bool Raw, typename T, typename... Args>
+static constexpr auto build_query_type_pack() {
+    constexpr auto lhs = build_query_type<Raw, T>();
     if constexpr(sizeof...(Args)) {
-        constexpr auto rhs = filter_query_types<Args...>();
+        constexpr auto rhs = build_query_type_pack<Raw, Args...>();
         return concatenate_packs(lhs, rhs);
     } else {
         return lhs;
@@ -79,9 +97,10 @@ struct QueryResult : NonCopyable {
 
 template<typename... Args>
 class Query {
-    using types = decltype(detail::filter_query_types<Args...>());
-
     public:
+        using raw_types = decltype(detail::build_query_type_pack<true, Args...>());
+        using types = decltype(detail::build_query_type_pack<false, Args...>());
+
         Query() = default;
 
         Query(QueryResult&& r) : _result(std::move(r)) {
@@ -89,9 +108,9 @@ class Query {
 
         template<typename T>
         auto get(usize index) const {
-            using traits = detail::query_traits<T>;
-            constexpr usize type_index = type_index_in_pack<typename traits::raw_type>(types{});
-            return _result.refs[index * types::size + type_index].to_typed_unchecked<typename traits::type>();
+            constexpr usize type_index = index_in_result<T>();
+            using return_type = typename type_at_index<type_index, types>::type;
+            return _result.refs[index * types::size + type_index].to_typed_unchecked<return_type>();
         }
 
         usize size() const {
@@ -99,6 +118,11 @@ class Query {
         }
 
     private:
+        template<typename T>
+        static constexpr usize index_in_result() {
+            return type_index_in_pack<T>(raw_types{});
+        }
+
         QueryResult _result;
 };
 
