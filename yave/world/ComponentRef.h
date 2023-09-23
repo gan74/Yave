@@ -30,7 +30,7 @@ SOFTWARE.
 namespace yave {
 
 template<typename T>
-class ComponentContainer;
+class ComponentPool;
 
 
 template<typename T>
@@ -163,7 +163,7 @@ class PagePtr : NonCopyable {
         }
 
     private:
-        friend ComponentContainer<T>;
+        friend ComponentPool<T>;
 
         Page<T>* _ptr = nullptr;
 };
@@ -219,8 +219,9 @@ struct ComponentRef {
         }
 
     private:
-        friend ComponentContainer<T>;
+        friend ComponentPool<T>;
         friend class UntypedComponentRef;
+        friend class UncheckedComponentRef;
 
         ComponentRef(ComponentStorage<T>* ptr) : _ptr(ptr) {
         }
@@ -268,8 +269,41 @@ class UntypedComponentRef {
         }
 
     private:
+        friend class UncheckedComponentRef;
+
         void* _ptr = nullptr;
         u32 _generation = 0;
+};
+
+class UncheckedComponentRef {
+    public:
+        UncheckedComponentRef() = default;
+
+        UncheckedComponentRef(UntypedComponentRef ref) : _ptr(ref._ptr) {
+        }
+
+        inline ComponentType type() const {
+            y_debug_assert(_ptr);
+            return detail::page_header_from_ptr(_ptr)->type;
+        }
+
+        template<typename T>
+        inline bool is() const {
+            return _ptr ? detail::page_header_from_ptr(_ptr)->type == component_type<T>() : false;
+        }
+
+        template<typename T>
+        inline ComponentRef<T> to_typed_unchecked() const {
+            y_debug_assert(is<T>());
+
+            ComponentRef<T> ref;
+            ref._ptr = reinterpret_cast<ComponentStorage<T>*>(_ptr);
+            ref._generation = ref._ptr->_generation;
+            return ref;
+        }
+
+    private:
+        void* _ptr = nullptr;
 };
 
 }

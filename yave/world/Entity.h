@@ -82,6 +82,7 @@ struct Entity : NonCopyable {
 
 
         EntityId _id;
+        EntityId _parent;
         core::Vector<Component> _components;
 };
 

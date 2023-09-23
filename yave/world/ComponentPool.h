@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_WORLD_COMPONENTCONTAINER_H
-#define YAVE_WORLD_COMPONENTCONTAINER_H
+#ifndef YAVE_WORLD_COMPONENTPOOL_H
+#define YAVE_WORLD_COMPONENTPOOL_H
 
 #include "ComponentRef.h"
 
@@ -28,28 +28,28 @@ SOFTWARE.
 
 namespace yave {
 
-class ComponentContainerBase : NonMovable {
+class ComponentPoolBase : NonMovable {
     public:
-        virtual ~ComponentContainerBase();
+        virtual ~ComponentPoolBase();
 
         ComponentType type() const;
 
         virtual void remove(UntypedComponentRef ref) = 0;
 
     protected:
-        ComponentContainerBase(ComponentType type);
+        ComponentPoolBase(ComponentType type);
 
         const ComponentType _type;
 };
 
 
 template<typename T>
-class ComponentContainer : public ComponentContainerBase {
+class ComponentPool : public ComponentPoolBase {
     using Page = detail::Page<T>;
     using PagePtr = detail::PagePtr<T>;
 
     public:
-        ComponentContainer() : ComponentContainerBase(component_type<T>()) {
+        ComponentPool() : ComponentPoolBase(component_type<T>()) {
         }
 
         void remove(UntypedComponentRef ref) override {
@@ -100,5 +100,5 @@ class ComponentContainer : public ComponentContainerBase {
 }
 
 
-#endif // YAVE_WORLD_COMPONENTCONTAINER_H
+#endif // YAVE_WORLD_COMPONENTPOOL_H
 

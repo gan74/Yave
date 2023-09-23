@@ -27,16 +27,20 @@ SOFTWARE.
 
 namespace yave {
 
-QueryResult World::compute_query(core::MutableSpan<ComponentLut*> luts) {
+QueryResult World::compute_query(core::Span<ComponentLut*> luts) {
     QueryResult result;
     if(luts.is_empty()) {
         return result;
     }
 
     usize smallest_index = 0;
+    usize smallest_size = usize(-1);
     {
-        usize smallest_size = luts[0]->size();
-        for(usize i = 1; i != luts.size(); ++i) {
+        for(usize i = 0; i != luts.size(); ++i) {
+            if(!luts[i]) {
+                return result;
+            }
+
             const usize size = luts[i]->size();
             if(size < smallest_size) {
                 smallest_size = size;

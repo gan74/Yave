@@ -39,7 +39,7 @@ static constexpr usize index_of_type() {
 
 struct QueryResult : NonCopyable {
     core::Vector<EntityId> ids;
-    core::Vector<UntypedComponentRef> refs;
+    core::Vector<UncheckedComponentRef> refs;
 };
 
 

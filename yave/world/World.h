@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_WORLD_WORLD_H
 #define YAVE_WORLD_WORLD_H
 
-#include "ComponentContainer.h"
+#include "ComponentPool.h"
 #include "Query.h"
 #include "Entity.h"
 
@@ -34,10 +34,10 @@ class ComponentLut : NonCopyable {
     public:
         struct Entry {
             EntityId id;
-            UntypedComponentRef ref;
+            UncheckedComponentRef ref;
 
-            bool operator<(const Entry& other) const {
-                return id < other.id;
+            std::strong_ordering operator<=>(const Entry& other) const {
+                return id <=> other.id;
             }
         };
 
@@ -79,27 +79,24 @@ class World {
 
         template<typename... Args>
         Query<Args...> query() {
-            std::array<ComponentLut*, sizeof...(Args)> luts = {};
-            if(fill_luts<Args...>(luts)) {
-                return compute_query(luts);
-            }
-            return {};
+            const std::array luts{find_lut<Args>()...};
+            return compute_query(luts);
         }
 
     private:
         template<typename T>
-        ComponentContainer<T>& create_container() {
+        ComponentPool<T>& create_container() {
             const ComponentTypeIndex index = component_type<T>().index();
-            _containers.set_min_size(index + 1);
+            _pools.set_min_size(index + 1);
 
-            auto& cont = _containers[index];
-            if(!cont) {
-                cont = std::make_unique<ComponentContainer<T>>();
+            auto& pool = _pools[index];
+            if(!pool) {
+                pool = std::make_unique<ComponentPool<T>>();
             }
 
-            ComponentContainer<T>* cont_ptr = dynamic_cast<ComponentContainer<T>*>(cont.get());
-            y_debug_assert(cont_ptr);
-            return *cont_ptr;
+            ComponentPool<T>* pool_ptr = dynamic_cast<ComponentPool<T>*>(pool.get());
+            y_debug_assert(pool_ptr);
+            return *pool_ptr;
         }
 
         template<typename T>
@@ -109,28 +106,18 @@ class World {
             return _lookup[index];
         }
 
-
-        template<typename T, typename... Args>
-        bool fill_luts(core::MutableSpan<ComponentLut*> luts) {
-            y_debug_assert(luts.size() == sizeof...(Args) + 1);
-
+        template<typename T>
+        ComponentLut* find_lut() {
             const ComponentTypeIndex type = component_type<T>().index();
             if(type < _lookup.size()) {
-                luts[0] = &_lookup[type];
-            } else {
-                return false;
+                return &_lookup[type];
             }
-
-            if constexpr(sizeof...(Args)) {
-                return fill_luts<Args...>(luts.take(1));
-            }
-
-            return luts[0]->size();
+            return nullptr;
         }
 
-        static QueryResult compute_query(core::MutableSpan<ComponentLut*> luts);
+        static QueryResult compute_query(core::Span<ComponentLut*> luts);
 
-        core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
+        core::Vector<std::unique_ptr<ComponentPoolBase>> _pools;
         core::Vector<ComponentLut> _lookup;
 
         EntityContainer _entities;

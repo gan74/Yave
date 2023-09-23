@@ -20,18 +20,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "ComponentContainer.h"
+#include "ComponentPool.h"
 
 namespace yave {
 
-ComponentContainerBase::ComponentContainerBase(ComponentType type) : _type(type) {
+ComponentPoolBase::ComponentPoolBase(ComponentType type) : _type(type) {
 }
 
-ComponentContainerBase::~ComponentContainerBase() {
+ComponentPoolBase::~ComponentPoolBase() {
 
 }
 
-ComponentType ComponentContainerBase::type() const {
+ComponentType ComponentPoolBase::type() const {
     return _type;
 }
 
