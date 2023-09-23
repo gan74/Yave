@@ -26,6 +26,7 @@ SOFTWARE.
 #include <editor/utils/crashhandler.h>
 
 #include <yave/graphics/device/Instance.h>
+#include <yave/ecs/EntityWorld.h>
 #include <y/concurrent/concurrent.h>
 
 #include <y/math/random.h>
@@ -174,13 +175,15 @@ void test_arch() {
     }
 }
 
-void bench_arch() {
+
+void bench_arch(usize max) {
     y_profile();
 
+    core::DebugTimer w("arch");
     World world;
 
     core::Vector<EntityId> ids;
-    for(usize i = 0; i != 10000; ++i) {
+    for(usize i = 0; i != max; ++i) {
         const auto id = world.create_entity();
 
         if(i % 2 == 0) {
@@ -196,18 +199,81 @@ void bench_arch() {
         ids << id;
     }
 
+
+    {
+        core::DebugTimer _("  flush");
+        world.flush();
+    }
+
+    {
+        core::DebugTimer _("  query");
+        auto build_query = [&]() {
+            core::DebugTimer _("    build query");
+            return world.query<Mut<u32>>();
+        };
+        auto query = build_query();
+        for(usize i = 0; i != query.size(); ++i) {
+            (*query.get<u32>(i)) += 2;
+        }
+    }
+
     for(const EntityId id : ids) {
         world.remove_entity(id);
     }
 
-    core::DebugTimer _("flush");
-    world.flush();
+    {
+        core::DebugTimer _("  flush");
+        world.flush();
+    }
+}
+
+void bench_ecs(usize max) {
+    y_profile();
+
+    core::DebugTimer w("ecs");
+    ecs::EntityWorld world;
+
+    core::Vector<ecs::EntityId> ids;
+    for(usize i = 0; i != max; ++i) {
+        const auto id = world.create_entity();
+
+        if(i % 2 == 0) {
+            world.add_component<usize>(id, i);
+        }
+        if(i % 3 == 0) {
+            world.add_component<int>(id, int(i));
+        }
+        if(i % 5 == 0) {
+            world.add_component<u32>(id, u32(i));
+        }
+
+        ids << id;
+    }
+
+    {
+        core::DebugTimer _("  query");
+        auto build_query = [&]() {
+            core::DebugTimer _("    build query");
+            return world.query<ecs::Mutate<u32>>();
+        };
+        auto query = build_query();
+        for(auto&& [u] : query.components()) {
+            u += 2;
+        }
+    }
+
+    for(const ecs::EntityId id : ids) {
+        world.remove_entity(id);
+    }
 }
 
 
 int main(int argc, char** argv) {
+    //core::Duration::sleep(core::Duration::seconds(2));
+
     test_arch();
-    bench_arch();
+    bench_ecs(100000);
+    bench_arch(100000);
 
     return 0;
 

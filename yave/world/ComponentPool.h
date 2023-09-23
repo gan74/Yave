@@ -26,7 +26,6 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
-
 namespace yave {
 
 class ComponentPoolBase : NonMovable {
@@ -56,7 +55,6 @@ void ComponentStorage<T>::register_mutated() {
 
     const UntypedComponentRef ref(ComponentRef<T>(this));
     auto& mutated = ref.pool()->_mutated;
-    y_debug_assert(std::find(mutated.begin(), mutated.end(), ref) == mutated.end());
     mutated.push_back(ref);
 }
 
@@ -84,7 +82,7 @@ class ComponentPool final : public ComponentPoolBase {
 
         void remove(ComponentRef<T> ref) {
             y_debug_assert(!ref.is_null());
-            y_debug_assert(std::any_of(_pages.begin(), _pages.end(), [&](const auto& page) { return page._ptr == detail::page_from_ptr<T>(ref._ptr); }));
+            y_debug_assert(UntypedComponentRef(ref).pool() == this);
             if(!ref._ptr->is_empty()) {
                 ref._ptr->destroy();
                 _free << ref;
