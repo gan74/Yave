@@ -31,72 +31,24 @@ SOFTWARE.
 namespace yave {
 
 struct Entity : NonCopyable {
-    public:
-        struct Component {
-            ComponentTypeIndex type_index;
-            UntypedComponentRef component;
-        };
-
-        Entity() = default;
-
-        bool is_valid() const;
-
-        EntityId id() const;
-        core::Span<Component> components() const;
-
-        UntypedComponentRef get(ComponentType type) const;
-
-
-    private:
-        friend class EntityContainer;
-
-        void register_component(UntypedComponentRef ref);
-        UntypedComponentRef unregister_component(ComponentType type);
-
-        void init(EntityId id);
-        void invalidate();
-
-        inline auto find_type_it(ComponentTypeIndex index) const {
-            return std::lower_bound(_components.begin(), _components.end(), index, [](const Component& comp, ComponentTypeIndex index) {
-                return index < comp.type_index;
-            });
-        }
-
-        inline auto find_type_it(ComponentTypeIndex index) {
-            return std::lower_bound(_components.begin(), _components.end(), index, [](const Component& comp, ComponentTypeIndex index) {
-                return index < comp.type_index;
-            });
-        }
-
-
-        EntityId _id;
-        EntityId _parent;
-        core::Vector<Component> _components;
+    EntityId id;
+    EntityId parent;
 };
 
-class EntityContainer {
+class EntityPool {
     public:
-        Entity& create_entity();
+        EntityId create_entity();
         void remove_entity(EntityId id);
 
         bool exists(EntityId id) const;
 
-        void register_component(EntityId id, UntypedComponentRef ref);
-        UntypedComponentRef unregister_component(EntityId id, ComponentType type);
-
-        core::Span<Entity> entities() const;
-        const Entity& operator[](EntityId id) const;
-
         usize entity_count() const;
-
-        void flush_removals();
 
     private:
         EntityId create_id();
 
         core::Vector<Entity> _entities;
         core::Vector<EntityId> _free;
-        core::Vector<EntityId> _to_remove;
 };
 
 }

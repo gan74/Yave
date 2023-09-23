@@ -47,9 +47,10 @@ class EntityId {
         }
 
         bool operator==(const EntityId&) const = default;
+        bool operator!=(const EntityId&) const = default;
 
     private:
-        friend class EntityContainer;
+        friend class EntityPool;
 
         u32 _index = 0;
         u32 _generation = 0;

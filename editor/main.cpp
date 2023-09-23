@@ -96,51 +96,48 @@ void test_arch() {
     y_debug_assert(component_type<int>() == component_type<const int&>());
 
     {
-        const auto id = world.create_entity().id();
+        const auto id = world.create_entity();
         world.add<u32>(id, 1);
         world.add<int>(id, 1);
     }
 
     {
-        const auto id = world.create_entity().id();
+        const auto id = world.create_entity();
         world.add<u32>(id, 2);
     }
 
     {
-        const auto id = world.create_entity().id();
+        const auto id = world.create_entity();
         world.add<int>(id, 3);
         world.add<u32>(id, 3);
         world.remove<u32>(id);
     }
 
     {
-        const auto id = world.create_entity().id();
+        const auto id = world.create_entity();
         world.add<u32>(id, 4);
         world.add<int>(id, 4);
         world.add<u64>(id, 4);
     }
 
     {
-        const auto id = world.create_entity().id();
+        const auto id = world.create_entity();
         auto ref = world.add<i16>(id);
         *ref.get() = 1;
         *ref.get() = 5;
     }
 
     {
-        const auto id = world.create_entity().id();
+        const auto id = world.create_entity();
         world.add<u32>(id, 6);
-        world.add<int>(id, 6);
+        const auto ref = world.add<int>(id, 6);
         world.remove_entity(id);
+
+        y_debug_assert(*ref.get() == 6);
+        world.flush();
+        y_debug_assert(!ref.get());
     }
 
-
-    world.flush();
-
-    y_debug_assert(world.mutated<i16>().size() == 1);
-    y_debug_assert(*world.mutated<i16>()[0] == 5);
-    world.clear_mutated();
-    y_debug_assert(!world.mutated<i16>().size());
 
 
     {

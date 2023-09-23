@@ -35,7 +35,7 @@ class ComponentPoolBase : NonMovable {
 
         ComponentType type() const;
 
-        virtual void remove(UntypedComponentRef ref) = 0;
+        virtual void remove(UncheckedComponentRef ref) = 0;
         virtual void clear_mutated() = 0;
 
     protected:
@@ -71,8 +71,8 @@ class ComponentPool final : public ComponentPoolBase {
         ComponentPool() : ComponentPoolBase(component_type<T>()) {
         }
 
-        void remove(UntypedComponentRef ref) override {
-            remove(ref.to_typed<T>());
+        void remove(UncheckedComponentRef ref) override {
+            remove(ref.to_typed_unchecked<T>());
         }
 
         template<typename... Args>

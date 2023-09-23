@@ -48,20 +48,46 @@ void ComponentLut::remove_ref(EntityId id) {
 }
 
 
-void ComponentLut::flush() {
+UncheckedComponentRef ComponentLut::find(EntityId id) const {
+    const auto sorted_end = _lut.begin() + _entry_count;
+
+    {
+        const auto it = std::lower_bound(_lut.begin(), sorted_end, id, [](const Entry& entry, EntityId id) {
+            return entry.id < id;
+        });
+
+        if(it != sorted_end) {
+            return it->ref;
+        }
+    }
+
+    {
+        const auto it = std::find_if(sorted_end, _lut.end(), [=](const auto& entry) { return entry.id == id; });
+        if(it != _lut.end()) {
+            return it->ref;
+        }
+    }
+
+    return {};
+}
+
+
+void ComponentLut::flush_additions() {
     y_profile();
 
     if(_entry_count != _lut.size()) {
-        y_profile_zone("flushing additions");
-
         std::sort(_lut.begin(), _lut.end());
         _entry_count = _lut.size();
     }
+}
+
+void ComponentLut::flush_removals(core::Vector<UncheckedComponentRef>* removed) {
+    y_profile();
 
     if(!_to_remove.is_empty()) {
-        y_profile_zone("flushing removals");
-
         std::sort(_to_remove.begin(), _to_remove.end());
+        y_debug_assert(std::unique(_to_remove.begin(), _to_remove.end()) == _to_remove.end());
+
         auto remove_it = _to_remove.begin();
         auto it = std::lower_bound(_lut.begin(), _lut.end(), *remove_it, [](const Entry& entry, EntityId id) {
             return entry.id < id;
@@ -70,6 +96,9 @@ void ComponentLut::flush() {
         auto out_it = it;
         while(it != _lut.end()) {
             if(remove_it != _to_remove.end() && it->id == *remove_it) {
+                if(removed) {
+                    removed->push_back(it->ref);
+                }
                 ++remove_it;
             } else {
                 *out_it = std::move(*it);
@@ -87,6 +116,99 @@ void ComponentLut::flush() {
         _to_remove.make_empty();
     }
 }
+
+
+
+
+
+
+
+EntityId World::create_entity() {
+    return _entities.create_entity();
+}
+
+void World::remove_entity(EntityId id) {
+    _deferred_removals.entities << id;
+}
+
+void World::tick() {
+    y_profile();
+
+    for(auto& system : _systems) {
+        flush_additions();
+        system->tick();
+    }
+
+    flush();
+}
+
+void World::flush() {
+    y_profile();
+
+    flush_additions();
+
+    clear_mutated();
+    flush_removals();
+    audit();
+}
+
+void World::flush_additions() {
+    y_profile();
+
+    for(auto& lut : _lookup) {
+        lut.flush_additions();
+    }
+}
+
+void World::flush_removals() {
+    y_profile();
+
+    {
+        y_profile_zone("Removing entities");
+        for(const EntityId id : _deferred_removals.entities) {
+            for(auto& lut : _lookup) {
+                const UncheckedComponentRef ref = lut.find(id);
+                if(!ref.is_null()) {
+                    lut.remove_ref(id);
+                }
+            }
+        }
+        _deferred_removals.entities.make_empty();
+    }
+
+    core::Vector<UncheckedComponentRef> removed;
+    {
+        y_profile_zone("Removing components");
+        for(auto& lut : _lookup) {
+            lut.flush_removals(&removed);
+        }
+    }
+
+    {
+        y_profile_zone("Clearning removed components");
+        for(UncheckedComponentRef ref : removed) {
+            ref.pool()->remove(ref);
+        }
+    }
+}
+
+void World::clear_mutated() {
+    y_profile();
+
+    for(auto& pool : _pools) {
+        pool->clear_mutated();
+    }
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -195,16 +317,6 @@ QueryResult World::compute_query(core::Span<LutQuery> luts, usize entity_count) 
 
 void World::audit() {
 #ifdef Y_DEBUG
-    for(const Entity& e : _entities.entities()) {
-        if(!e.is_valid()) {
-            continue;
-        }
-        for(const auto& entry : e.components()) {
-            y_debug_assert(!entry.component.is_null());
-            y_debug_assert(entry.component.type() == entry.component.pool()->type());
-            y_debug_assert(entry.component.type().index() == entry.type_index);
-        }
-    }
 #endif
 }
 

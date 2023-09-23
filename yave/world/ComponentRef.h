@@ -373,6 +373,10 @@ class UncheckedComponentRef {
         UncheckedComponentRef(UntypedComponentRef ref) : _ptr(ref._ptr) {
         }
 
+        inline bool is_null() const {
+            return !_ptr;
+        }
+
         inline ComponentType type() const {
             y_debug_assert(_ptr);
             return detail::page_header_from_ptr(_ptr)->type;
@@ -393,6 +397,9 @@ class UncheckedComponentRef {
             return ref;
         }
 
+        ComponentPoolBase* pool() const {
+            return _ptr ? detail::page_header_from_ptr(_ptr)->parent : nullptr;
+        }
 
         bool operator==(const UncheckedComponentRef&) const = default;
         bool operator!=(const UncheckedComponentRef&) const = default;

@@ -49,7 +49,10 @@ class ComponentLut : NonCopyable {
         void add_ref(EntityId id, UntypedComponentRef ref);
         void remove_ref(EntityId id);
 
-        void flush();
+        void flush_additions();
+        void flush_removals(core::Vector<UncheckedComponentRef>* removed = nullptr);
+
+        UncheckedComponentRef find(EntityId id) const;
 
     private:
         core::Vector<Entry> _lut;
@@ -67,59 +70,21 @@ struct LutQuery {
 
 
 
-class World {
+// Systems have a ptr to World
+class World : NonMovable {
     public:
-        Entity& create_entity() {
-            return _entities.create_entity();
-        }
+        EntityId create_entity();
 
-        void remove_entity(EntityId id) {
-            const Entity& e = entity(id);
-            for(const auto& entry : e.components()) {
-                remove_component(id, entry.component);
-            }
-            _entities.remove_entity(id);
-        }
-
-        const Entity& entity(EntityId id) const {
-            return _entities[id];
-        }
+        void remove_entity(EntityId id);
 
 
 
+        void tick();
 
-
-        void tick() {
-            y_profile();
-
-            for(auto& system : _systems) {
-                flush();
-                system->tick();
-            }
-
-            flush();
-            clear_mutated();
-            audit();
-        }
-
-        void flush() {
-            y_profile();
-
-            for(auto& lut : _lookup) {
-                lut.flush();
-            }
-            _entities.flush_removals();
-        }
-
-        void clear_mutated() {
-            y_profile();
-
-            for(auto& pool : _pools) {
-                pool->clear_mutated();
-            }
-        }
-
-
+        void flush();
+        void flush_additions();
+        void flush_removals();
+        void clear_mutated();
 
 
 
@@ -150,17 +115,13 @@ class World {
         template<typename T, typename... Args>
         ComponentRef<T> add(EntityId id, Args&&... args) {
             const ComponentRef<T> ref = create_pool<T>().add(y_fwd(args)...);
-            _entities.register_component(id, ref);
             create_lut<T>().add_ref(id, ref);
             return ref;
         }
 
         template<typename T>
         void remove(EntityId id) {
-            const UntypedComponentRef ref = _entities.unregister_component(id, component_type<T>());
-            y_debug_assert(!ref.to_typed<T>().is_stale());
-            remove_component(id, ref);
-            y_debug_assert(ref.to_typed<T>().is_stale());
+            create_lut<T>().remove_ref(id);
         }
 
 
@@ -184,11 +145,6 @@ class World {
         }
 
     private:
-        void remove_component(EntityId id, UntypedComponentRef ref) {
-            create_lut(ref.type()).remove_ref(id);
-            ref.pool()->remove(ref);
-        }
-
         template<typename T>
         ComponentPool<T>& create_pool() {
             const ComponentTypeIndex index = component_type<T>().index();
@@ -245,12 +201,14 @@ class World {
 
         void audit();
 
-
-
         core::Vector<std::unique_ptr<ComponentPoolBase>> _pools;
         core::Vector<ComponentLut> _lookup;
 
-        EntityContainer _entities;
+        EntityPool _entities;
+
+        struct {
+            core::Vector<EntityId> entities;
+        } _deferred_removals;
 
         core::Vector<std::unique_ptr<System>> _systems;
 };
