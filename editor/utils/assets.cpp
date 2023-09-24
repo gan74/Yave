@@ -50,7 +50,6 @@ std::string_view asset_type_icon(AssetType type) {
         case AssetType::Material:
             return ICON_FA_BRUSH;
 
-        case AssetType::Scene:
         case AssetType::Prefab:
             return ICON_FA_DATABASE;
 

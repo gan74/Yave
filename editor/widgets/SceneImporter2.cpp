@@ -33,7 +33,6 @@ SOFTWARE.
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/ecs/EntityWorld.h>
-#include <yave/ecs/EntityScene.h>
 
 #include <editor/utils/ui.h>
 #include <editor/components/EditorComponent.h>
@@ -231,19 +230,7 @@ usize SceneImporter2::import_assets() {
 
     // --------------------------------- Scene ---------------------------------
     if(_import_options.import_scene) {
-        ++to_import;
-        _thread_pool.schedule([=] {
-            const core::String scene_import_path = asset_store().filesystem()->join(_import_path, "Scenes");
-            auto prefabs = core::Vector<ecs::EntityPrefab>::with_capacity(_scene.nodes.size());
-            for(const auto& node : _scene.nodes) {
-                const auto it = std::find_if(_scene.mesh_prefabs.begin(), _scene.mesh_prefabs.end(), [=](const auto& mesh) { return mesh.gltf_index == node.mesh_gltf_index; });
-                if(it != _scene.mesh_prefabs.end()) {
-                    ecs::EntityPrefab& prefab = prefabs.emplace_back(build_prefab(*it, node.transform));
-                    prefab.add(EditorComponent(node.name));
-                }
-            }
-            import_single_asset(ecs::EntityScene(std::move(prefabs)), asset_store().filesystem()->join(scene_import_path, _scene.name), AssetType::Scene, _emergency_uid, log_func);
-        }, nullptr, mesh_material_deps);
+       y_fatal("oof");
     }
 
     return to_import;

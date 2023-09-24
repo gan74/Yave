@@ -91,21 +91,30 @@ int main(int argc, char** argv) {
     {
         ecs::EntityWorld w;
 
-        ecs::EntityPrefab child(ecs::EntityId::dummy(0));
+        ecs::EntityPrefab child(ecs::EntityId::dummy(10));
         child.add<int>(4);
 
-        ecs::EntityPrefab parent(ecs::EntityId::dummy(1));
+        ecs::EntityPrefab parent(ecs::EntityId::dummy(20));
+        child.add<ecs::EntityId>(parent.original_id());
         parent.add<int>(5);
         parent.add_child(std::make_unique<ecs::EntityPrefab>(std::move(child)));
 
         const ecs::EntityId id = w.create_entity(parent);
 
         log_msg(fmt("prefab: {}", id.index()));
-        const auto q = w.query<int>();
-        for(auto [i, c] : q) {
-            log_msg(fmt("  {}: {} parent: {}", i.index(), std::get<0>(c), w.parent(i).index()));
-        }
 
+        {
+            const auto q = w.query<int>();
+            for(auto [i, c] : q) {
+                log_msg(fmt("  {}: {} parent: {}", i.index(), std::get<0>(c), w.parent(i).index()));
+            }
+        }
+        {
+            const auto q = w.query<ecs::EntityId>();
+            for(auto [i, c] : q) {
+                log_msg(fmt("  {}: {}", i.index(), std::get<0>(c).index()));
+            }
+        }
     }
 
 

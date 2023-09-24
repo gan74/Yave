@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <editor/components/EditorComponent.h>
 
-#include <yave/ecs/EntityScene.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/FileSystemModel.h>
 
@@ -158,22 +157,6 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
         return id;
     }
     return ecs::EntityId();
-}
-
-void EditorWorld::add_scene(std::string_view name, ecs::EntityId parent) {
-    if(const auto id = asset_store().id(name)) {
-        add_scene(id.unwrap(), parent);
-    }
-}
-
-void EditorWorld::add_scene(AssetId asset, ecs::EntityId parent) {
-    y_profile();
-
-    if(const auto scene = asset_loader().load_res<ecs::EntityScene>(asset)) {
-        for(const auto& prefab : scene.unwrap()->prefabs()) {
-            set_parent(create_entity(prefab), parent);
-        }
-    }
 }
 
 void EditorWorld::set_parent(ecs::EntityId id, ecs::EntityId parent) {

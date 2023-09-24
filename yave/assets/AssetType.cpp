@@ -29,7 +29,7 @@ std::string_view asset_type_name(AssetType type) {
         "image",
         "animation",
         "font",
-        "scene",
+        "unused type index",
         "material",
         "prefab",
     };
