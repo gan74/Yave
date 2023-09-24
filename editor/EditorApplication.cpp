@@ -41,8 +41,6 @@ SOFTWARE.
 
 #include <external/imgui/IconsFontAwesome5.h>
 
-#include <yave/world/World.h>
-
 namespace editor {
 
 
