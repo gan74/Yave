@@ -115,6 +115,8 @@ int main(int argc, char** argv) {
                 log_msg(fmt("  {}: {}", i.index(), std::get<0>(c).index()));
             }
         }
+
+        w.tick();
     }
 
 

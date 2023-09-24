@@ -35,6 +35,21 @@ namespace yave {
 namespace ecs {
 
 class EntityPool : NonCopyable {
+    struct Entity {
+        EntityId id;
+        EntityId parent;
+
+        EntityId first_child;
+        EntityId left_sibling;
+        EntityId right_sibling;
+
+        bool is_valid() const;
+        void invalidate();
+        void make_valid(u32 index);
+
+        y_reflect(Entity, id, parent, first_child, left_sibling, right_sibling)
+    };
+
     public:
         EntityPool() = default;
         EntityPool(EntityPool&&) = default;
@@ -51,18 +66,22 @@ class EntityPool : NonCopyable {
         EntityId parent(EntityId id) const;
         void set_parent(EntityId id, EntityId parent_id);
 
+        void audit();
+
         auto ids() const {
             return core::Range(
-                FilterIterator(_ids.begin(), _ids.end(), [](EntityId id) { return id.is_valid(); }),
-                EndIterator()
+                FilterIterator(
+                    TransformIterator(_entities.begin(), [](const Entity& e) { return e.id; }),
+                    _entities.end(),
+                    [](EntityId id) { return id.is_valid(); }
+                ), EndIterator()
             );
         }
 
-        y_reflect(EntityPool, _ids, _parents, _free)
+        y_reflect(EntityPool, _entities, _free)
 
     private:
-        core::Vector<EntityId> _ids;
-        core::Vector<EntityId> _parents;
+        core::Vector<Entity> _entities;
         core::Vector<u32> _free;
 };
 

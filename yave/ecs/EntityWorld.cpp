@@ -153,6 +153,8 @@ void EntityWorld::tick() {
             }
         }
     }
+
+    _entities.audit();
 }
 
 void EntityWorld::update(float dt) {

@@ -57,8 +57,8 @@ class EntityPrefab : NonCopyable {
 
 
         EntityId _id;
-        core::Vector<std::unique_ptr<ComponentBoxBase>> _components;
-        core::Vector<std::unique_ptr<EntityPrefab>> _children;
+        core::SmallVector<std::unique_ptr<ComponentBoxBase>, 8> _components;
+        core::SmallVector<std::unique_ptr<EntityPrefab>, 8> _children;
 };
 
 }
