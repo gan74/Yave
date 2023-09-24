@@ -71,8 +71,6 @@ class EntityWorld {
 
         const SparseIdSetBase* tag_set(const core::String& tag) const;
 
-        core::Span<ComponentTypeIndex> required_components() const;
-
         std::string_view component_type_name(ComponentTypeIndex type_id) const;
 
         void make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> ids);
@@ -117,9 +115,9 @@ class EntityWorld {
         // ---------------------------------------- Static Archetypes ----------------------------------------
 
         template<typename... Args>
-        EntityId create_entity(StaticArchetype<Args...> = {}) {
+        EntityId create_entity() {
             const EntityId id = create_entity();
-            add_components<Args...>(id);
+            add_or_replace_components<Args...>(id);
             return id;
         }
 
@@ -127,26 +125,32 @@ class EntityWorld {
 
         // ---------------------------------------- Components ----------------------------------------
 
-        template<typename T, typename... Args>
-        T* add_component(EntityId id, Args&&... args) {
+        template<typename T>
+        T* get_or_add_component(EntityId id) {
             check_exists(id);
-            return &find_container<T>()->template add<T>(*this, id, y_fwd(args)...);
+            return &find_container<T>()->template get_or_add<T>(id);
+        }
+
+        template<typename T, typename... Args>
+        T* add_or_replace_component(EntityId id, Args&&... args) {
+            check_exists(id);
+            return &find_container<T>()->template add_or_replace<T>(id, y_fwd(args)...);
         }
 
         template<typename First, typename... Args>
-        void add_components(EntityId id) {
+        void add_or_replace_components(EntityId id) {
             y_debug_assert(exists(id));
             if(!has<First>(id)) {
-                add_component<First>(id);
+                add_or_replace_component<First>(id);
             }
             if constexpr(sizeof...(Args) != 0) {
-                add_components<Args...>(id);
+                add_or_replace_components<Args...>(id);
             }
         }
 
 
 
-        // ---------------------------------------- Components ----------------------------------------
+        // ---------------------------------------- Tags ----------------------------------------
 
         void add_tag(EntityId id, const core::String& tag);
 
@@ -157,6 +161,7 @@ class EntityWorld {
         bool has_tag(EntityId id, const core::String& tag) const;
 
         static bool is_tag_implicit(std::string_view tag);
+
 
 
 
@@ -305,16 +310,6 @@ class EntityWorld {
             return q;
         }
 
-        template<typename... Args>
-        auto query(StaticArchetype<Args...>) {
-            return query<Args...>();
-        }
-
-        template<typename... Args>
-        auto query(StaticArchetype<Args...>) const {
-            return query<Args...>();
-        }
-
 
 
         // ---------------------------------------- Misc ----------------------------------------
@@ -322,20 +317,6 @@ class EntityWorld {
         template<typename T>
         void make_mutated(core::Span<EntityId> ids) {
             make_mutated(type_index<T>(), ids);
-        }
-
-        template<typename T>
-        void add_required_component() {
-            static_assert(std::is_default_constructible_v<T>);
-            Y_TODO(check for duplicates)
-            _required_components << find_container<T>()->type_id();
-            for(const ComponentTypeIndex c : _required_components) {
-                unused(c);
-                y_debug_assert(find_container(c)->type_id() == c);
-            }
-            for(EntityId id : ids()) {
-                add_component<T>(id);
-            }
         }
 
         void inspect_components(EntityId id, ComponentInspector* inspector);
@@ -454,8 +435,6 @@ class EntityWorld {
         core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
         core::FlatHashMap<core::String, SparseIdSet> _tags;
         EntityIdPool _entities;
-
-        core::Vector<ComponentTypeIndex> _required_components;
 
         core::Vector<std::unique_ptr<System>> _systems;
         core::Vector<std::unique_ptr<WorldComponentContainerBase>> _world_components;

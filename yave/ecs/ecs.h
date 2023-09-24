@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <compare>
+
 namespace yave {
 namespace ecs {
 
@@ -74,17 +76,12 @@ class EntityId {
             return (u64(_index) << 32) | _version;
         }
 
-        bool operator==(const EntityId& other) const {
-            return _index == other._index && _version == other._version;
+        std::strong_ordering operator<=>(const EntityId& other) const {
+            return as_u64() <=> other.as_u64();
         }
 
-        bool operator!=(const EntityId& other) const {
-            return !operator==(other);
-        }
-
-        bool operator<(const EntityId& other) const {
-            return as_u64() < other.as_u64();
-        }
+        bool operator==(const EntityId& other) const = default;
+        bool operator!=(const EntityId& other) const = default;
 
     private:
         static constexpr u32 invalid_index = u32(-1);
@@ -94,27 +91,6 @@ class EntityId {
 };
 
 
-
-
-template<typename... Args>
-struct StaticArchetype {
-    static constexpr usize component_count = sizeof...(Args);
-
-    template<typename... E>
-    using with = StaticArchetype<Args..., E...>;
-};
-
-template<typename... Args>
-struct RequiredComponents {
-    static inline constexpr auto required_components_archetype() {
-        static_assert(std::is_default_constructible_v<std::tuple<Args...>>);
-        return StaticArchetype<Args...>{};
-    }
-
-    // EntityWorld.inl
-    static inline void add_required_components(EntityWorld& world, EntityId id);
-
-};
 
 template<typename Component, typename... SystemTypes>
 struct SystemLinkedComponent {

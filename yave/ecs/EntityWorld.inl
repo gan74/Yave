@@ -39,15 +39,11 @@ std::unique_ptr<ComponentContainerBase> create_container() {
 }
 
 template<typename T>
-void create_component(EntityWorld& world, EntityId id) {
-    world.add_component<T>(id);
+void create_or_replace_component(EntityWorld& world, EntityId id) {
+    world.add_or_replace_component<T>(id);
 }
 
 
-template<typename... Args>
-void RequiredComponents<Args...>::add_required_components(EntityWorld& world, EntityId id) {
-    world.add_components<Args...>(id);
-}
 
 
 template<typename Component, typename SystemType, typename... Tail>
@@ -90,7 +86,7 @@ ComponentRuntimeInfo ComponentBox<T>::runtime_info() const {
 
 template<typename T>
 void ComponentBox<T>::add_to(EntityWorld& world, EntityId id) const {
-    world.add_component<T>(id, _component);
+    world.add_or_replace_component<T>(id, _component);
 }
 
 }

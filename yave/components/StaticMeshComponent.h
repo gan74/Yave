@@ -33,7 +33,6 @@ SOFTWARE.
 namespace yave {
 
 class StaticMeshComponent final :
-        public ecs::RequiredComponents<TransformableComponent>,
         public ecs::SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem, AABBUpdateSystem> {
 
     public:

@@ -34,7 +34,6 @@ namespace yave {
 
 class PointLightComponent final :
         public LocalLightBase,
-        public ecs::RequiredComponents<TransformableComponent>,
         public ecs::SystemLinkedComponent<PointLightComponent, AABBUpdateSystem> {
 
     public:

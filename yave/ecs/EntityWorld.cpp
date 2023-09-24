@@ -76,7 +76,6 @@ void EntityWorld::swap(EntityWorld& other) {
         std::swap(_containers, other._containers);
         std::swap(_tags, other._tags);
         std::swap(_entities, other._entities);
-        std::swap(_required_components, other._required_components);
         std::swap(_systems, other._systems);
         std::swap(_world_components, other._world_components);
 
@@ -89,10 +88,6 @@ void EntityWorld::swap(EntityWorld& other) {
             y_debug_assert(system->_world == this);
             system->_world = &other;
         }
-    }
-    for(const ComponentTypeIndex c : _required_components) {
-        unused(c);
-        y_debug_assert(find_container(c));
     }
 }
 
@@ -146,13 +141,7 @@ bool EntityWorld::exists(EntityId id) const {
 }
 
 EntityId EntityWorld::create_entity() {
-    const EntityId id = _entities.create();
-    for(const ComponentTypeIndex c : _required_components) {
-        ComponentContainerBase* container = find_container(c);
-        y_debug_assert(container && container->type_id() == c);
-        container->add(*this, id);
-    }
-    return id;
+    return _entities.create();
 }
 
 EntityId EntityWorld::create_entity(const Archetype& archetype) {
@@ -160,7 +149,7 @@ EntityId EntityWorld::create_entity(const Archetype& archetype) {
     for(const auto& info : archetype.component_infos()) {
         ComponentContainerBase* container = find_container(info.type_id);
         y_debug_assert(container);
-        container->add(*this, id);
+        container->add_if_absent(id);
     }
     return id;
 }
@@ -290,10 +279,6 @@ bool EntityWorld::is_tag_implicit(std::string_view tag) {
     return !tag.empty() && (tag[0] == '@' || tag[0] == '!');
 }
 
-core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
-    return _required_components;
-}
-
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
     return find_container(type_id)->runtime_info().clean_component_name();
 }
@@ -361,12 +346,6 @@ void EntityWorld::post_deserialize() {
         y_debug_assert(system);
         y_debug_assert(system->_world == this);
         system->reset();
-    }
-
-
-    for(const ComponentTypeIndex c : _required_components) {
-        unused(c);
-        y_always_assert(find_container(c), "Required component container not found");
     }
 }
 

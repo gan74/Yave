@@ -76,23 +76,23 @@ static void add_debug_lights() {
     const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
 
     const ecs::EntityId parent = world.create_collection_entity("Debug lights");
-    world.component_mut<EditorComponent>(parent)->set_hidden_in_editor(true);
+    world.get_or_add_component<EditorComponent>(parent)->set_hidden_in_editor(true);
 
     const math::Vec3 center; //new_entity_pos(side * 1.5f);
 
     math::FastRandom rng;
     for(usize i = 0; i != entity_count; ++i) {
-        const ecs::EntityId entity = world.create_entity<PointLightComponent>();
+        const ecs::EntityId entity = world.create_entity();
 
         world.set_entity_name(entity, "Debug light");
         world.set_parent(entity, parent);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
-        world.component_mut<TransformableComponent>(entity)->set_position(pos * spacing);
-        world.component_mut<EditorComponent>(entity)->set_hidden_in_editor(true);
-        world.component_mut<PointLightComponent>(entity)->range() = spacing;
-        world.component_mut<PointLightComponent>(entity)->intensity() = spacing * spacing;
-        world.component_mut<PointLightComponent>(entity)->color() = identifying_color(rng());
+        world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
+        world.get_or_add_component<EditorComponent>(entity)->set_hidden_in_editor(true);
+        world.get_or_add_component<PointLightComponent>(entity)->range() = spacing;
+        world.get_or_add_component<PointLightComponent>(entity)->intensity() = spacing * spacing;
+        world.get_or_add_component<PointLightComponent>(entity)->color() = identifying_color(rng());
     }
 }
 
@@ -109,7 +109,7 @@ static void add_debug_entities() {
     const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
 
     const ecs::EntityId parent = world.create_collection_entity("Debug entities");
-    world.component_mut<EditorComponent>(parent)->set_hidden_in_editor(true);
+    world.get_or_add_component<EditorComponent>(parent)->set_hidden_in_editor(true);
 
     const math::Vec3 center = new_entity_pos(side * 1.5f);
 
@@ -120,9 +120,9 @@ static void add_debug_entities() {
         world.set_parent(entity, parent);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
-        world.component_mut<TransformableComponent>(entity)->set_position(pos * spacing);
-        *world.component_mut<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, material);
-        world.component_mut<EditorComponent>(entity)->set_hidden_in_editor(true);
+        world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
+        *world.get_or_add_component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, material);
+        world.get_or_add_component<EditorComponent>(entity)->set_hidden_in_editor(true);
     }
 }
 
@@ -222,13 +222,13 @@ static void populate_context_menu(EditorWorld& world, ecs::EntityId id = ecs::En
 
     ImGui::Separator();
 
-    if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add Point light")) {
+    /*if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add Point light")) {
         new_entity = world.create_named_entity("Point light", ecs::StaticArchetype<PointLightComponent>());
     }
 
     if(ImGui::MenuItem(ICON_FA_VIDEO " Add Spot light")) {
         new_entity = world.create_named_entity("Spot light", ecs::StaticArchetype<SpotLightComponent>());
-    }
+    }*/
 
     if(new_entity.is_valid()) {
         world.set_parent(new_entity, id);

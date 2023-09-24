@@ -87,11 +87,12 @@ class ComponentContainerBase : NonMovable {
 
         virtual ComponentRuntimeInfo runtime_info() const = 0;
 
-        virtual void add(EntityWorld& world, EntityId id) = 0;
+        virtual void add_if_absent(EntityId id) = 0;
 
         virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
 
         virtual void inspect_component(EntityId id, ComponentInspector* inspector) = 0;
+
 
 
         inline bool contains(EntityId id) const {
@@ -126,14 +127,13 @@ class ComponentContainerBase : NonMovable {
         }
 
         template<typename T, typename... Args>
-        inline T& add(EntityWorld& world, EntityId id, Args&&... args) {
+        inline T& add_or_replace(EntityId id, Args&&... args) {
             y_debug_assert(id.is_valid());
 
             _mutated.insert(id);
 
             auto& set = component_set<T>();
             if(!set.contains_index(id.index())) {
-                add_required_components<T>(world, id);
                 return set.insert(id, y_fwd(args)...);
             } else {
                 if constexpr(sizeof...(Args) != 0) {
@@ -141,6 +141,20 @@ class ComponentContainerBase : NonMovable {
                 } else {
                     return set[id] = std::move(T());
                 }
+            }
+        }
+
+        template<typename T>
+        inline T& get_or_add(EntityId id) {
+            y_debug_assert(id.is_valid());
+
+            _mutated.insert(id);
+
+            auto& set = component_set<T>();
+            if(!set.contains_index(id.index())) {
+                return set.insert(id);
+            } else {
+                return set[id];
             }
         }
 
@@ -172,12 +186,7 @@ class ComponentContainerBase : NonMovable {
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
 
-    private:
-        friend class EntityWorld;
 
-        const ComponentTypeIndex _type_id;
-        SparseIdSet _mutated;
-        SparseIdSet _to_remove;
 
     protected:
         ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
@@ -191,6 +200,8 @@ class ComponentContainerBase : NonMovable {
 
 
     private:
+        friend class EntityWorld;
+
         template<typename T>
         inline auto& component_set() {
             return component_set_fast<traits::component_raw_type_t<T>>();
@@ -218,6 +229,11 @@ class ComponentContainerBase : NonMovable {
             y_debug_assert(type_index<T>() == _type_id);
             return *reinterpret_cast<const SparseComponentSet<T>*>(this + 1);
         }
+
+
+        const ComponentTypeIndex _type_id;
+        SparseIdSet _mutated;
+        SparseIdSet _to_remove;
 };
 
 
@@ -242,9 +258,10 @@ class ComponentContainer final : public ComponentContainerBase {
             return ComponentRuntimeInfo::create<T>();
         }
 
-        void add(EntityWorld& world, EntityId id) override {
-            ComponentContainerBase::add<T>(world, id);
+        void add_if_absent(EntityId id) override {
+            ComponentContainerBase::get_or_add<T>(id);
         }
+
 
         std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const override {
             unused(id);

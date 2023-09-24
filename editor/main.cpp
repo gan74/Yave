@@ -238,13 +238,13 @@ void bench_ecs(usize max) {
         const auto id = world.create_entity();
 
         if(i % 2 == 0) {
-            world.add_component<usize>(id, i);
+            world.add_or_replace_component<usize>(id, i);
         }
         if(i % 3 == 0) {
-            world.add_component<int>(id, int(i));
+            world.add_or_replace_component<int>(id, int(i));
         }
         if(i % 5 == 0) {
-            world.add_component<u32>(id, u32(i));
+            world.add_or_replace_component<u32>(id, u32(i));
         }
 
         ids << id;
@@ -275,7 +275,6 @@ int main(int argc, char** argv) {
     bench_ecs(100000);
     bench_arch(100000);
 
-    return 0;
 
 
     concurrent::set_thread_name("Main thread");

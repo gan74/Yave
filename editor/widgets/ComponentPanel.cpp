@@ -632,9 +632,9 @@ void ComponentPanel::on_gui() {
 
     if(ImGui::BeginPopup("##addcomponentmenu")) {
         for(const auto& [name, info] : EditorWorld::component_types()) {
-            const bool enabled = !name.is_empty() && !world.has(id, info.type_id) && info.add_component;
+            const bool enabled = !name.is_empty() && !world.has(id, info.type_id) && info.add_or_replace_component;
             if(ImGui::MenuItem(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", name), nullptr, nullptr, enabled) && enabled) {
-                info.add_component(world, id);
+                info.add_or_replace_component(world, id);
             }
         }
         ImGui::EndPopup();
