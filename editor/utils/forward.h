@@ -30,7 +30,7 @@ class AssetSelector;
 class AssetStringifier;
 class CVarConsole;
 class CameraController;
-class ComponentPanel;
+class Inspector;
 class DeletionDialog;
 class EditorApplication;
 class EditorComponent;
