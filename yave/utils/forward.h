@@ -262,7 +262,7 @@ class ComponentBoxBase;
 class ComponentContainerBase;
 class ComponentInspector;
 class EntityId;
-class EntityIdPool;
+class EntityPool;
 class EntityPrefab;
 class EntityScene;
 class EntityWorld;

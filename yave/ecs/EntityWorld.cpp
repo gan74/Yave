@@ -340,6 +340,7 @@ void EntityWorld::post_deserialize() {
         patched.set_min_size(usize(id) + 1);
         patched[usize(id)] = std::move(container);
     }
+
     _containers = std::move(patched);
 
     for(auto& system : _systems) {

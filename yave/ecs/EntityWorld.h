@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_ECS_ENTITYWORLD_H
 #define YAVE_ECS_ENTITYWORLD_H
 
-#include "EntityIdPool.h"
+#include "EntityPool.h"
 #include "Query.h"
 #include "Archetype.h"
 #include "EntityPrefab.h"
@@ -434,7 +434,7 @@ class EntityWorld {
 
         core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
         core::FlatHashMap<core::String, SparseIdSet> _tags;
-        EntityIdPool _entities;
+        EntityPool _entities;
 
         core::Vector<std::unique_ptr<System>> _systems;
         core::Vector<std::unique_ptr<WorldComponentContainerBase>> _world_components;
