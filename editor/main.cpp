@@ -87,194 +87,29 @@ static Instance create_instance() {
 
 
 
-
-#include <yave/world/World.h>
-
-
-void test_arch() {
-    World world;
-
-    y_debug_assert(component_type<int>() == component_type<const int&>());
-
-    {
-        const auto id = world.create_entity();
-        world.add<u32>(id, 1);
-        world.add<int>(id, 1);
-    }
-
-    {
-        const auto id = world.create_entity();
-        world.add<u32>(id, 2);
-    }
-
-    {
-        const auto id = world.create_entity();
-        world.add<int>(id, 3);
-        world.add<u32>(id, 3);
-        world.remove<u32>(id);
-    }
-
-    {
-        const auto id = world.create_entity();
-        world.add<u32>(id, 4);
-        world.add<int>(id, 4);
-        world.add<u64>(id, 4);
-    }
-
-    {
-        const auto id = world.create_entity();
-        auto ref = world.add<i16>(id);
-        *ref.get() = 1;
-        *ref.get() = 5;
-    }
-
-    {
-        const auto id = world.create_entity();
-        world.add<u32>(id, 6);
-        const auto ref = world.add<int>(id, 6);
-        world.remove_entity(id);
-
-        y_debug_assert(*ref.get() == 6);
-        world.flush();
-        y_debug_assert(!ref.get());
-    }
-
-
-
-    {
-        log_msg("Simple");
-        const auto q = world.query<int, u32>();
-        y_debug_assert(q.size() == 2);
-        y_debug_assert(*q.get<int>(0) == 1);
-        y_debug_assert(*q.get<int>(1) == 4);
-        log_msg("  ok");
-    }
-
-    {
-        log_msg("Mut");
-        const auto q = world.query<i16>();
-        y_debug_assert(q.size() == 1);
-        y_debug_assert(*q.get<i16>(0) == 5);
-        log_msg("  ok");
-    }
-
-    {
-        log_msg("Not");
-        const auto q = world.query<Not<u64>, Mut<u32>>();
-        y_debug_assert(q.size() == 2);
-        y_debug_assert(*q.get<u32>(0) == 1);
-        y_debug_assert(*q.get<u32>(1) == 2);
-        log_msg("  ok");
-    }
-
-    {
-        log_msg("Not driver");
-        const auto q = world.query<Not<int>, u32>();
-        y_debug_assert(q.size() == 1);
-        log_msg("  ok");
-    }
-}
-
-
-void bench_arch(usize max) {
-    y_profile();
-
-    core::DebugTimer w("arch");
-    World world;
-
-    core::Vector<EntityId> ids;
-    for(usize i = 0; i != max; ++i) {
-        const auto id = world.create_entity();
-
-        if(i % 2 == 0) {
-            world.add<usize>(id, i);
-        }
-        if(i % 3 == 0) {
-            world.add<int>(id, int(i));
-        }
-        if(i % 5 == 0) {
-            world.add<u32>(id, u32(i));
-        }
-
-        ids << id;
-    }
-
-
-    {
-        core::DebugTimer _("  flush");
-        world.flush();
-    }
-
-    {
-        core::DebugTimer _("  query");
-        auto build_query = [&]() {
-            core::DebugTimer _("    build query");
-            return world.query<Mut<u32>>();
-        };
-        auto query = build_query();
-        for(usize i = 0; i != query.size(); ++i) {
-            (*query.get<u32>(i)) += 2;
-        }
-    }
-
-    for(const EntityId id : ids) {
-        world.remove_entity(id);
-    }
-
-    {
-        core::DebugTimer _("  flush");
-        world.flush();
-    }
-}
-
-void bench_ecs(usize max) {
-    y_profile();
-
-    core::DebugTimer w("ecs");
-    ecs::EntityWorld world;
-
-    core::Vector<ecs::EntityId> ids;
-    for(usize i = 0; i != max; ++i) {
-        const auto id = world.create_entity();
-
-        if(i % 2 == 0) {
-            world.add_or_replace_component<usize>(id, i);
-        }
-        if(i % 3 == 0) {
-            world.add_or_replace_component<int>(id, int(i));
-        }
-        if(i % 5 == 0) {
-            world.add_or_replace_component<u32>(id, u32(i));
-        }
-
-        ids << id;
-    }
-
-    {
-        core::DebugTimer _("  query");
-        auto build_query = [&]() {
-            core::DebugTimer _("    build query");
-            return world.query<ecs::Mutate<u32>>();
-        };
-        auto query = build_query();
-        for(auto&& [u] : query.components()) {
-            u += 2;
-        }
-    }
-
-    for(const ecs::EntityId id : ids) {
-        world.remove_entity(id);
-    }
-}
-
-
 int main(int argc, char** argv) {
-    //core::Duration::sleep(core::Duration::seconds(2));
+    {
+        ecs::EntityWorld w;
 
-    test_arch();
-    bench_ecs(100000);
-    bench_arch(100000);
+        ecs::EntityPrefab child(ecs::EntityId::dummy(0));
+        child.add<int>(4);
 
+        ecs::EntityPrefab parent(ecs::EntityId::dummy(1));
+        parent.add<int>(5);
+        parent.add_child(std::make_unique<ecs::EntityPrefab>(std::move(child)));
+
+        const ecs::EntityId id = w.create_entity(parent);
+
+        log_msg(fmt("prefab: {}", id.index()));
+        const auto q = w.query<int>();
+        for(auto [i, c] : q) {
+            log_msg(fmt("  {}: {} parent: {}", i.index(), std::get<0>(c), w.parent(i).index()));
+        }
+
+    }
+
+
+    return 0;
 
 
     concurrent::set_thread_name("Main thread");

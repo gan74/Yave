@@ -45,10 +45,15 @@ ComponentTypeIndex type_index() {
 
 
 
-
 class EntityId {
     public:
-        explicit EntityId(u32 index = invalid_index, u32 version = 0) : _index(index), _version(version) {
+        EntityId() = default;
+
+        explicit EntityId(u32 index, u32 version = 0) : _index(index), _version(version) {
+        }
+
+        static EntityId dummy(u32 index = 0) {
+            return EntityId(index, u32(-1));
         }
 
         void invalidate() {

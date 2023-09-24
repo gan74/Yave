@@ -51,6 +51,39 @@ static auto create_component_containers() {
     return containers;
 }
 
+static EntityId create_prefab_entities(EntityWorld& world, const EntityPrefab& prefab, EntityIdMap& id_map) {
+    y_debug_assert(prefab.original_id().is_valid());
+
+    const EntityId id = world.create_entity();
+    y_always_assert(id_map.find(prefab.original_id()) == id_map.end(), "Invalid prefab: id is duplicated");
+    id_map.emplace_back(prefab.original_id(), id);
+
+    for(const auto& child : prefab.children()) {
+        world.set_parent(create_prefab_entities(world, *child, id_map), id);
+    }
+
+    return id;
+}
+
+static void add_prefab_components(EntityWorld& world, const EntityPrefab& prefab, const EntityIdMap& id_map) {
+    y_debug_assert(prefab.original_id().is_valid());
+
+    const auto it = id_map.find(prefab.original_id());
+    y_debug_assert(it != id_map.end());
+
+    for(const auto& comp : prefab.components()) {
+        comp->add_to(world, it->second, id_map);
+    }
+
+    for(const auto& child : prefab.children()) {
+        add_prefab_components(world, *child, id_map);
+    }
+}
+
+
+
+
+
 EntityWorld::EntityWorld() : _containers(create_component_containers()) {
 }
 
@@ -137,7 +170,7 @@ usize EntityWorld::entity_count() const {
 }
 
 bool EntityWorld::exists(EntityId id) const {
-    return _entities.contains(id);
+    return _entities.exists(id);
 }
 
 EntityId EntityWorld::create_entity() {
@@ -155,14 +188,9 @@ EntityId EntityWorld::create_entity(const Archetype& archetype) {
 }
 
 EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
-    const EntityId id = create_entity();
-    for(const auto& comp : prefab.components()) {
-        if(!comp) {
-            log_msg("Unable to add null component", Log::Error);
-        } else {
-            comp->add_to(*this, id);
-        }
-    }
+    EntityIdMap id_map;
+    const EntityId id = create_prefab_entities(*this, prefab, id_map);
+    add_prefab_components(*this, prefab, id_map);
     return id;
 }
 
@@ -188,20 +216,18 @@ EntityId EntityWorld::id_from_index(u32 index) const {
 
 EntityPrefab EntityWorld::create_prefab(EntityId id) const {
     check_exists(id);
+
     EntityPrefab prefab;
-    for(auto& container : _containers) {
-        if(container) {
-            if(!container->contains(id)) {
-                continue;
-            }
-            auto box = container->create_box(id);
-            if(!box) {
-                log_msg(fmt("{} is not copyable and was excluded from prefab", container->runtime_info().type_name), Log::Warning);
-            }
-            prefab.add(std::move(box));
-        }
-    }
+    y_fatal("oof");
     return prefab;
+}
+
+EntityId EntityWorld::parent(EntityId id) const {
+    return _entities.parent(id);
+}
+
+void EntityWorld::set_parent(EntityId id, EntityId parent_id) {
+    _entities.set_parent(id, parent_id);
 }
 
 core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) const {

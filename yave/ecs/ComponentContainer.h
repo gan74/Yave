@@ -25,11 +25,8 @@ SOFTWARE.
 #include "ecs.h"
 #include "traits.h"
 #include "SparseComponentSet.h"
-#include "ComponentRuntimeInfo.h"
 #include "ComponentInspector.h"
-
-Y_TODO(try replacing this?)
-#include <y/serde3/archives.h>
+#include "ComponentBox.h"
 
 namespace yave {
 namespace ecs {
@@ -43,39 +40,6 @@ template<typename T>
 using has_inspect_t = decltype(std::declval<T>().inspect(std::declval<ComponentInspector*>()));
 }
 
-
-
-class ComponentBoxBase : NonMovable {
-    public:
-        virtual ~ComponentBoxBase();
-
-        virtual ComponentRuntimeInfo runtime_info() const = 0;
-        virtual void add_to(EntityWorld& world, EntityId id) const = 0;
-        // virtual void add_or_replace_to(EntityWorld& world, EntityId id) const = 0;
-
-        y_serde3_poly_abstract_base(ComponentBoxBase)
-};
-
-template<typename T>
-class ComponentBox final : public ComponentBoxBase {
-    public:
-        ComponentBox() = default;
-        ComponentBox(T t);
-
-        ComponentRuntimeInfo runtime_info() const override;
-        void add_to(EntityWorld& world, EntityId id) const override;
-        // void add_or_replace_to(EntityWorld& world, EntityId id) const override;
-
-        const T& component() const {
-            return _component;
-        }
-
-        y_reflect(ComponentBox, _component)
-        y_serde3_poly(ComponentBox)
-
-    private:
-        T _component;
-};
 
 
 

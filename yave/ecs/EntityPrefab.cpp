@@ -19,55 +19,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ECS_ENTITYPOOL_H
-#define YAVE_ECS_ENTITYPOOL_H
-
-#include "ecs.h"
-
-#include <y/core/Vector.h>
-#include <y/core/Range.h>
-
-#include <y/reflect/reflect.h>
-
-#include <y/utils/iter.h>
+#include "EntityPrefab.h"
 
 namespace yave {
 namespace ecs {
 
-class EntityPool : NonCopyable {
-    public:
-        EntityPool() = default;
-        EntityPool(EntityPool&&) = default;
-        EntityPool& operator=(EntityPool&&) = default;
+EntityPrefab::EntityPrefab(EntityId id) : _id(id) {
+}
 
-        usize size() const;
-        bool exists(EntityId id) const;
+bool EntityPrefab::is_empty() const {
+    return !_id.is_valid();
+}
 
-        EntityId id_from_index(u32 index) const;
+void EntityPrefab::add_box(std::unique_ptr<ComponentBoxBase> box) {
+    _components.emplace_back(std::move(box));
+}
 
-        EntityId create();
-        void recycle(EntityId id);
+void EntityPrefab::add_child(std::unique_ptr<EntityPrefab> prefab) {
+    _children.emplace_back(std::move(prefab));
+}
 
-        EntityId parent(EntityId id) const;
-        void set_parent(EntityId id, EntityId parent_id);
+core::Span<std::unique_ptr<ComponentBoxBase>> EntityPrefab::components() const {
+    return _components;
+}
 
-        auto ids() const {
-            return core::Range(
-                FilterIterator(_ids.begin(), _ids.end(), [](EntityId id) { return id.is_valid(); }),
-                EndIterator()
-            );
-        }
+core::Span<std::unique_ptr<EntityPrefab>> EntityPrefab::children() const {
+    return _children;
+}
 
-        y_reflect(EntityPool, _ids, _parents, _free)
-
-    private:
-        core::Vector<EntityId> _ids;
-        core::Vector<EntityId> _parents;
-        core::Vector<u32> _free;
-};
+EntityId EntityPrefab::original_id() const {
+    return _id;
+}
 
 }
 }
-
-#endif // YAVE_ECS_ENTITYPOOL_H
 

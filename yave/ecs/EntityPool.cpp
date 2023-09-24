@@ -29,7 +29,7 @@ usize EntityPool::size() const {
     return _ids.size() - _free.size();
 }
 
-bool EntityPool::contains(EntityId id) const {
+bool EntityPool::exists(EntityId id) const {
     return id.is_valid() &&
            id.index() < _ids.size() &&
            _ids[id.index()] == id;
@@ -63,9 +63,23 @@ EntityId EntityPool::create() {
 
 
 void EntityPool::recycle(EntityId id) {
-    y_debug_assert(contains(id));
+    y_debug_assert(exists(id));
     _ids[id.index()].invalidate();
     _free << id.index();
+}
+
+EntityId EntityPool::parent(EntityId id) const {
+    if(id.index() < _parents.size()) {
+        return _parents[id.index()];
+    }
+    return {};
+}
+
+void EntityPool::set_parent(EntityId id, EntityId parent_id) {
+    y_debug_assert(exists(id));
+
+    _parents.set_min_size(id.index() + 1);
+    _parents[id.index()] = parent_id;
 }
 
 

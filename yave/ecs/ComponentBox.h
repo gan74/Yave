@@ -19,55 +19,55 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ECS_ENTITYPOOL_H
-#define YAVE_ECS_ENTITYPOOL_H
+#ifndef YAVE_ECS_COMPONENTBOX_H
+#define YAVE_ECS_COMPONENTBOX_H
 
 #include "ecs.h"
+#include "ComponentRuntimeInfo.h"
 
-#include <y/core/Vector.h>
-#include <y/core/Range.h>
+#include <y/core/AssocVector.h>
 
-#include <y/reflect/reflect.h>
-
-#include <y/utils/iter.h>
+#include <y/serde3/archives.h>
 
 namespace yave {
 namespace ecs {
 
-class EntityPool : NonCopyable {
+using EntityIdMap = core::AssocVector<EntityId, EntityId>;
+
+class ComponentBoxBase : NonMovable {
     public:
-        EntityPool() = default;
-        EntityPool(EntityPool&&) = default;
-        EntityPool& operator=(EntityPool&&) = default;
+        virtual ~ComponentBoxBase();
 
-        usize size() const;
-        bool exists(EntityId id) const;
+        virtual ComponentRuntimeInfo runtime_info() const = 0;
+        virtual void add_to(EntityWorld& world, EntityId id, const EntityIdMap& id_map) const = 0;
+        // virtual void add_or_replace_to(EntityWorld& world, EntityId id) const = 0;
 
-        EntityId id_from_index(u32 index) const;
+        y_serde3_poly_abstract_base(ComponentBoxBase)
+};
 
-        EntityId create();
-        void recycle(EntityId id);
+template<typename T>
+class ComponentBox final : public ComponentBoxBase {
+    public:
+        ComponentBox() = default;
+        ComponentBox(T t);
 
-        EntityId parent(EntityId id) const;
-        void set_parent(EntityId id, EntityId parent_id);
+        ComponentRuntimeInfo runtime_info() const override;
+        void add_to(EntityWorld& world, EntityId id, const EntityIdMap& id_map) const override;
+        // void add_or_replace_to(EntityWorld& world, EntityId id) const override;
 
-        auto ids() const {
-            return core::Range(
-                FilterIterator(_ids.begin(), _ids.end(), [](EntityId id) { return id.is_valid(); }),
-                EndIterator()
-            );
+        const T& component() const {
+            return _component;
         }
 
-        y_reflect(EntityPool, _ids, _parents, _free)
+        y_reflect(ComponentBox, _component)
+        y_serde3_poly(ComponentBox)
 
     private:
-        core::Vector<EntityId> _ids;
-        core::Vector<EntityId> _parents;
-        core::Vector<u32> _free;
+        T _component;
 };
 
 }
 }
 
-#endif // YAVE_ECS_ENTITYPOOL_H
+#endif // YAVE_ECS_COMPONENTBOX_H
 

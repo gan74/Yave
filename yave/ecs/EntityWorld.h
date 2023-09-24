@@ -77,6 +77,12 @@ class EntityWorld {
 
 
 
+        // ---------------------------------------- Parent ----------------------------------------
+
+        EntityId parent(EntityId id) const;
+        void set_parent(EntityId id, EntityId parent_id);
+
+
         // ---------------------------------------- Systems ----------------------------------------
 
         template<typename S, typename... Args>
