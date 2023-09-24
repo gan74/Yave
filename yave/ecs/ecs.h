@@ -27,24 +27,20 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class EntityWorld;
-class ComponentContainerBase;
-
-
-
+enum class ComponentTypeIndex : u32 {};
 
 namespace detail {
-u32 next_type_index();
+ComponentTypeIndex next_type_index();
 }
+
 
 template<typename T>
-u32 type_index() {
-    static u32 index = detail::next_type_index();
-    return index;
+ComponentTypeIndex type_index() {
+    static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
+    static ComponentTypeIndex type(detail::next_type_index());
+    return type;
 }
 
-
-using ComponentTypeIndex = u32;
 
 
 

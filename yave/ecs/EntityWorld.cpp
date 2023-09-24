@@ -44,8 +44,8 @@ static auto create_component_containers() {
             y_debug_assert(container);
 
             const ComponentTypeIndex id = container->type_id();
-            containers.set_min_size(id + 1);
-            containers[id] = std::move(container);
+            containers.set_min_size(usize(id) + 1);
+            containers[usize(id)] = std::move(container);
         }
     }
     return containers;
@@ -307,13 +307,13 @@ void EntityWorld::make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> 
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
-    y_debug_assert(_containers.size() > type_id);
-    return _containers[type_id].get();
+    y_debug_assert(_containers.size() > usize(type_id));
+    return _containers[usize(type_id)].get();
 }
 
 ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) {
-    y_debug_assert(_containers.size() > type_id);
-    return _containers[type_id].get();
+    y_debug_assert(_containers.size() > usize(type_id));
+    return _containers[usize(type_id)].get();
 }
 
 void EntityWorld::register_component_types(System* system) const {
@@ -352,8 +352,8 @@ void EntityWorld::post_deserialize() {
         }
 
         const ComponentTypeIndex id = container->type_id();
-        patched.set_min_size(id + 1);
-        patched[id] = std::move(container);
+        patched.set_min_size(usize(id) + 1);
+        patched[usize(id)] = std::move(container);
     }
     _containers = std::move(patched);
 
