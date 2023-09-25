@@ -399,6 +399,15 @@ class Vector : Allocator {
             return v;
         }
 
+        template<typename R>
+        static inline Vector from_range(const R& range) {
+            Vector v;
+            for(const auto& e : range) {
+                v.emplace_back(e);
+            }
+            return v;
+        }
+
         static inline constexpr usize max_size() {
             return usize(-1);
         }

@@ -72,11 +72,15 @@ class Range {
         }
 
         inline usize count() const {
-            usize cnt = 0;
-            for(auto it = _beg; it != _end; ++it) {
-                ++cnt;
+            if constexpr(std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::random_access_iterator_tag>) {
+                return _end - _beg;
+            } else {
+                usize cnt = 0;
+                for(auto it = _beg; it != _end; ++it) {
+                    ++cnt;
+                }
+                return cnt;
             }
-            return cnt;
         }
 
         inline decltype(auto) operator[](usize index) const {

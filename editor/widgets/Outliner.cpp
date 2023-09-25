@@ -31,7 +31,6 @@ SOFTWARE.
 
 namespace editor {
 
-
 Outliner::Outliner() : Widget(ICON_FA_SITEMAP " Outliner") {
     _tag_buttons.emplace_back(ICON_FA_EYE, ecs::tags::hidden, false);
 }
@@ -107,9 +106,22 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
             world.toggle_selected(id, !ImGui::GetIO().KeyCtrl);
         }
 
+        if(ImGui::BeginDragDropTarget()) {
+            if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id)) {
+                if(const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data); world.exists(dragged) && !world.is_parent(id, dragged)) {
+                    world.set_parent(dragged, id);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        } else if(ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload(imgui::drag_drop_entity_id, &id, sizeof(id));
+            ImGui::EndDragDropSource();
+        }
+
         display_tags();
 
-        for(const ecs::EntityId child : world.children(id)) {
+        const auto children = core::Vector<ecs::EntityId>::from_range(world.children(id));
+        for(const ecs::EntityId child : children) {
             display_node(world, child);
         }
 

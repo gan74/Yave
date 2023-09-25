@@ -240,6 +240,10 @@ bool EntityWorld::has_children(EntityId id) const {
     return _entities.first_child(id).is_valid();
 }
 
+bool EntityWorld::is_parent(EntityId id, EntityId parent) const {
+    return _entities.is_parent(id, parent);
+}
+
 core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) const {
     return find_container(type_id)->ids();
 }

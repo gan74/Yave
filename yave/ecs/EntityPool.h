@@ -38,6 +38,7 @@ namespace ecs {
 class EntityPool : NonCopyable {
     struct Entity {
         EntityId id;
+
         EntityId parent;
 
         EntityId first_child;
@@ -70,6 +71,7 @@ class EntityPool : NonCopyable {
         EntityId parent(EntityId id) const;
         void set_parent(EntityId id, EntityId parent_id);
 
+        bool is_parent(EntityId id, EntityId parent) const;
 
         void audit();
 

@@ -40,9 +40,8 @@ void EntityPool::Entity::invalidate() {
 void EntityPool::Entity::make_valid(u32 index) {
     y_debug_assert(!is_valid());
     id.make_valid(index);
-    left_sibling = right_sibling = id;
+    left_sibling = right_sibling = {};
 }
-
 
 usize EntityPool::size() const {
     return _entities.size() - _free.size();
@@ -107,60 +106,101 @@ void EntityPool::set_parent(EntityId id, EntityId parent_id) {
         return;
     }
 
-    // Unparent
+    y_always_assert(!is_parent(parent_id, id), "Entity hierarchy can not have cycles");
+
+    y_debug_assert(!child.parent.is_valid() || child.right_sibling.is_valid());
+    y_debug_assert(child.left_sibling.is_valid() == child.right_sibling.is_valid());
+
+
     if(child.parent.is_valid()) {
-        Entity& left = _entities[child.left_sibling.index()];
-        Entity& right = _entities[child.right_sibling.index()];
-        left.right_sibling = child.right_sibling;
-        right.left_sibling = child.left_sibling;
+        y_debug_assert(child.id.is_valid());
+
+        const bool alone_child = child.right_sibling == child.id;
 
         Entity& parent = _entities[child.parent.index()];
-        if(parent.first_child == id) {
-            parent.first_child = (child.right_sibling == id) ? EntityId() : child.right_sibling;
+        if(parent.first_child == child.id) {
+            parent.first_child = alone_child ? EntityId() : child.right_sibling;
         }
+
+        if(!alone_child) {
+            Entity& left = _entities[child.left_sibling.index()];
+            Entity& right = _entities[child.right_sibling.index()];
+
+            left.right_sibling = right.id;
+            right.left_sibling = left.id;
+        }
+
+        child.left_sibling = child.right_sibling = child.parent = {};
     }
 
-    // Set parent
-    child.parent = parent_id;
+
     if(parent_id.is_valid()) {
         Entity& parent = _entities[parent_id.index()];
-        const EntityId first_id = parent.first_child;
-        parent.first_child = id;
+        if(parent.first_child.is_valid()) {
+            Entity& other = _entities[parent.first_child.index()];
+            y_debug_assert(other.parent == parent_id);
 
-        if(first_id.is_valid()) {
-            Entity& first = _entities[first_id.index()];
-            child.right_sibling = first_id;
-            if(first.right_sibling == first_id) {
-                first.right_sibling = id;
-            }
+            y_debug_assert(child.id.is_valid() && other.id.is_valid());
+            y_debug_assert(other.parent.is_valid());
+            y_debug_assert(!child.left_sibling.is_valid());
+            y_debug_assert(!child.right_sibling.is_valid());
 
-            child.left_sibling = first.left_sibling;
-            first.left_sibling = id;
+            Entity& end = _entities[other.left_sibling.index()];
+            y_debug_assert(end.right_sibling == other.id);
 
+            end.right_sibling = child.id;
+            child.left_sibling = end.id;
+
+            other.left_sibling = child.id;
+            child.right_sibling = other.id;
+
+        } else {
+            parent.first_child = child.id;
+            child.left_sibling = child.right_sibling = child.id;
+        }
+        child.parent = parent_id;
+    }
+
+    audit();
+}
+
+bool EntityPool::is_parent(EntityId id, EntityId parent) const {
+    if(!parent.is_valid()) {
+        return false;
+    }
+    for(const EntityId p : parents(id)) {
+        if(p == parent) {
+            return true;
         }
     }
+    return false;
 }
 
 void EntityPool::audit() {
 #ifdef Y_DEBUG
     // Detect cycles
     for(const auto& en : _entities) {
-        EntityId p = en.parent;
-        while(p.is_valid()) {
-            y_debug_assert(p != en.id);
-            p = parent(p);
-        }
+        y_debug_assert(!is_parent(en.id, en.id));
     }
 
     // Children cycles & parent
     for(const auto& en : _entities) {
-        EntityId c = en.first_child;
-        if(c.is_valid()) {
-            do {
-                const Entity& e = _entities[c.index()];
-                y_debug_assert(e.parent == en.id);
-                c = e.right_sibling;
-            } while(c != en.first_child);
+        if(en.is_valid()) {
+            for(const EntityId c : children(en.id)) {
+                y_debug_assert(_entities[c.index()].is_valid());
+                y_debug_assert(_entities[c.index()].parent == en.id);
+            }
+        }
+    }
+
+    // Check childrens
+    for(const auto& en : _entities) {
+        if(en.is_valid() && en.parent.is_valid()) {
+            bool found = false;
+            for(const EntityId c : children(en.parent)) {
+                found |= c == en.id;
+            }
+            y_debug_assert(found);
         }
     }
 #endif
