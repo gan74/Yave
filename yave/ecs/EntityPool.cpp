@@ -108,7 +108,7 @@ void EntityPool::set_parent(EntityId id, EntityId parent_id) {
 
     y_always_assert(!is_parent(parent_id, id), "Entity hierarchy can not have cycles");
 
-    y_debug_assert(!child.parent.is_valid() || child.right_sibling.is_valid());
+    y_debug_assert(child.parent.is_valid() == child.right_sibling.is_valid());
     y_debug_assert(child.left_sibling.is_valid() == child.right_sibling.is_valid());
 
 
@@ -181,6 +181,12 @@ void EntityPool::audit() {
     // Detect cycles
     for(const auto& en : _entities) {
         y_debug_assert(!is_parent(en.id, en.id));
+    }
+
+    // Parenting state
+    for(const auto& en : _entities) {
+        y_debug_assert(en.parent.is_valid() == en.right_sibling.is_valid());
+        y_debug_assert(en.left_sibling.is_valid() == en.right_sibling.is_valid());
     }
 
     // Children cycles & parent

@@ -36,6 +36,9 @@ Outliner::Outliner() : Widget(ICON_FA_SITEMAP " Outliner") {
 }
 
 void Outliner::on_gui() {
+    //ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2(ImGui::GetStyle().FramePadding));
+    //y_defer(ImGui::PopStyleVar());
+
     EditorWorld& world = current_world();
 
     if(ImGui::Button(ICON_FA_PLUS)) {
@@ -58,6 +61,13 @@ void Outliner::on_gui() {
         }
 
         ImGui::EndTable();
+    }
+
+    {
+        ImGui::Indent();
+        ImGui::Dummy(math::Vec2(ImGui::GetContentRegionAvail()) - math::Vec2(ImGui::GetStyle().FramePadding));
+        make_drop_target(world, {});
+        ImGui::Unindent();
     }
 }
 
@@ -106,16 +116,11 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
             world.toggle_selected(id, !ImGui::GetIO().KeyCtrl);
         }
 
-        if(ImGui::BeginDragDropTarget()) {
-            if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id)) {
-                if(const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data); world.exists(dragged) && !world.is_parent(id, dragged)) {
-                    world.set_parent(dragged, id);
-                }
+        if(!make_drop_target(world, id)) {
+            if(ImGui::BeginDragDropSource()) {
+                ImGui::SetDragDropPayload(imgui::drag_drop_entity_id, &id, sizeof(id));
+                ImGui::EndDragDropSource();
             }
-            ImGui::EndDragDropTarget();
-        } else if(ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload(imgui::drag_drop_entity_id, &id, sizeof(id));
-            ImGui::EndDragDropSource();
         }
 
         display_tags();
@@ -127,9 +132,26 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
         ImGui::TreePop();
     } else {
+        make_drop_target(world, id);
         display_tags();
     }
 }
+
+bool Outliner::make_drop_target(EditorWorld& world, ecs::EntityId id) {
+    if(!ImGui::BeginDragDropTarget()) {
+        return false;
+    }
+
+    if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id)) {
+        if(const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data); world.exists(dragged) && !world.is_parent(id, dragged)) {
+            world.set_parent(dragged, id);
+        }
+    }
+    ImGui::EndDragDropTarget();
+
+    return true;
+}
+
 
 }
 

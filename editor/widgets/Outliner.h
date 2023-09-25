@@ -40,6 +40,7 @@ class Outliner final : public Widget {
 
     private:
         void display_node(EditorWorld& world, ecs::EntityId id);
+        bool make_drop_target(EditorWorld& world, ecs::EntityId id);
 
         core::Vector<std::tuple<const char*, core::String, bool>> _tag_buttons;
 };
