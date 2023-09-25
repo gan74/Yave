@@ -57,7 +57,10 @@ class EntityWorld {
         EntityId create_entity(const Archetype& archetype);
         EntityId create_entity(const EntityPrefab& prefab);
 
+        void add_prefab(EntityId id, const EntityPrefab& prefab);
+
         void remove_entity(EntityId id);
+        void remove_all_components(EntityId id);
 
         EntityId id_from_index(u32 index) const;
 

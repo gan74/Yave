@@ -31,6 +31,8 @@ namespace ecs {
 core::Vector<EntityId> QueryUtils::matching(core::Span<SetMatch> matches, core::Span<EntityId> ids) {
     y_profile();
 
+    Y_TODO(maybe do one set at a time for better cache performance)
+
     auto match = core::Vector<EntityId>::with_capacity(ids.size());
     for(EntityId id : ids) {
         bool matched = true;

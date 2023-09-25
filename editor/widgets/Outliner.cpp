@@ -21,9 +21,13 @@ SOFTWARE.
 **********************************/
 
 #include "Outliner.h"
+#include "AssetSelector.h"
 
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
+
+#include <yave/components/TransformableComponent.h>
+#include <yave/scene/SceneView.h>
 
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
@@ -31,20 +35,59 @@ SOFTWARE.
 
 namespace editor {
 
+static math::Vec3 new_entity_pos(float size) {
+    const Camera& camera = scene_view().camera();
+    return camera.position() + camera.forward() * size;
+}
+
+static void set_new_entity_pos(ecs::EntityId id) {
+    if(!id.is_valid()) {
+        return;
+    }
+    EditorWorld& world = current_world();
+    if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
+        const float size = transformable->global_aabb().radius();
+        transformable->set_position(new_entity_pos(std::min(100.0f, size * 2.0f)));
+    }
+}
+
+static void add_prefab() {
+    add_detached_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
+        [](AssetId asset) {
+            const ecs::EntityId id = current_world().add_prefab(asset);
+            current_world().set_selected(id);
+            set_new_entity_pos(id);
+            return id.is_valid();
+        });
+}
+
+
+
 Outliner::Outliner() : Widget(ICON_FA_SITEMAP " Outliner") {
     _tag_buttons.emplace_back(ICON_FA_EYE, ecs::tags::hidden, false);
 }
 
 void Outliner::on_gui() {
-    //ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2(ImGui::GetStyle().FramePadding));
-    //y_defer(ImGui::PopStyleVar());
-
     EditorWorld& world = current_world();
 
     if(ImGui::Button(ICON_FA_PLUS)) {
-        const ecs::EntityId id = world.create_named_entity("new entity");
-        world.set_parent(id, world.selected_entity());
+        ImGui::OpenPopup("##plusmenu");
     }
+
+    if(ImGui::BeginPopup("##plusmenu")) {
+        if(ImGui::MenuItem("Empty entity")) {
+            current_world().set_selected(world.create_named_entity("New entity"));
+        }
+
+        ImGui::Separator();
+
+        if(ImGui::MenuItem("Add Prefab")) {
+            add_prefab();
+        }
+
+        ImGui::EndPopup();
+    }
+
 
     if(ImGui::BeginTable("##entities", int(1 + _tag_buttons.size()))) {
         y_profile_zone("fill entity table");

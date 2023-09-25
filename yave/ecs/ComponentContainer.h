@@ -100,6 +100,9 @@ class ComponentContainerBase : NonMovable {
             if(!set.contains_index(id.index())) {
                 return set.insert(id, y_fwd(args)...);
             } else {
+                if(_to_remove.contains_index(id.index())) {
+                    _to_remove.erase(id);
+                }
                 if constexpr(sizeof...(Args) != 0) {
                     return set[id] = std::move(T{y_fwd(args)...});
                 } else {
