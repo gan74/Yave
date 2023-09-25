@@ -31,11 +31,8 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
-
-
 #include <y/utils/format.h>
 
-#include <cinttypes>
 
 namespace editor {
 

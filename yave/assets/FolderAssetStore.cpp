@@ -811,7 +811,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
 
                         assets[index].emplace_back(std::move(desc), std::move(data));
                     } else {
-                        log_msg(fmt("{}.desc could not be read", uid), Log::Error);
+                        log_msg(fmt("{}.desc could not be read", stringify_id(id)), Log::Error);
                     }
                 }
             });
