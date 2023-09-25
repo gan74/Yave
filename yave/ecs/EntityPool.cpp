@@ -90,8 +90,22 @@ void EntityPool::set_parent(EntityId id, EntityId parent_id) {
     y_debug_assert(exists(id));
 
     Entity& child = _entities[id.index()];
-    child.parent = parent_id;
 
+    // Unparent
+    if(child.parent.is_valid()) {
+        Entity& left = _entities[child.left_sibling.index()];
+        Entity& right = _entities[child.right_sibling.index()];
+        left.right_sibling = child.right_sibling;
+        right.left_sibling = child.left_sibling;
+
+        Entity& parent = _entities[child.parent.index()];
+        if(parent.first_child == id) {
+            parent.first_child = (child.right_sibling == id) ? EntityId() : child.right_sibling;
+        }
+    }
+
+    // Set parent
+    child.parent = parent_id;
     if(parent_id.is_valid()) {
         Entity& parent = _entities[parent_id.index()];
         const EntityId first_id = parent.first_child;
@@ -116,7 +130,7 @@ void EntityPool::audit() {
         }
     }
 
-    // Children cycles&parent
+    // Children cycles & parent
     for(const auto& en : _entities) {
         EntityId c = en.first_child;
         if(c.is_valid()) {
