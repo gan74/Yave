@@ -199,6 +199,15 @@ class [[nodiscard]] Result : NonCopyable {
             move(other);
         }
 
+        inline explicit Result(const Result& other) {
+            copy(other);
+        }
+
+        template<typename A, typename B>
+        inline explicit Result(const Result<A, B>& other) {
+            copy(other);
+        }
+
         inline ~Result() {
             destroy();
         }
@@ -206,6 +215,12 @@ class [[nodiscard]] Result : NonCopyable {
         inline Result& operator=(Result&& other) {
             destroy();
             move(other);
+            return *this;
+        }
+
+        inline Result& operator=(const Result& other) {
+            destroy();
+            copy(other);
             return *this;
         }
 
@@ -246,10 +261,6 @@ class [[nodiscard]] Result : NonCopyable {
             return expected("Unwrap failed.");
         }
 
-        /*value_type_rref unwrap() && {
-            return std::move(expected("Unwrap failed."));
-        }*/
-
         inline const_value_type_ref expected(const char* err_msg) const {
             if(is_error()) {
                 y_fatal(err_msg);
@@ -263,13 +274,6 @@ class [[nodiscard]] Result : NonCopyable {
             }
             return _value.get();
         }
-
-        /*value_type_rref expected(const char* err_msg) && {
-            if(is_error()) {
-                y_fatal(err_msg);
-            }
-            return std::move(_value.get());
-        }*/
 
         inline void ignore() const {
             /* nothing */
@@ -302,13 +306,6 @@ class [[nodiscard]] Result : NonCopyable {
             }
             return _value.get();
         }
-
-        /*value_type_rref or_throw(const char* err_msg = "Unwrap failed.") && {
-            if(is_error()) {
-                y_throw(err_msg);
-            }
-            return std::move(_value.get());
-        }*/
 
         inline const_error_type_ref error() const {
             if(is_ok()) {
@@ -392,14 +389,32 @@ class [[nodiscard]] Result : NonCopyable {
         inline void move(Result<A, B>& other) {
             _is_ok = other.is_ok();
             if(_is_ok) {
-                if constexpr(!std::is_void_v<decltype(other._value)>) {
+                if constexpr(!std::is_void_v<A>) {
                     ::new(&_value) ok_type(std::move(other._value));
                 } else {
                     ::new(&_value) ok_type();
                 }
             } else {
-                if constexpr(!std::is_void_v<decltype(other._error)>) {
+                if constexpr(!std::is_void_v<B>) {
                     ::new(&_error) err_type(std::move(other._error));
+                } else {
+                    ::new(&_error) err_type();
+                }
+            }
+        }
+
+        template<typename A, typename B>
+        inline void copy(const Result<A, B>& other) {
+            _is_ok = other.is_ok();
+            if(_is_ok) {
+                if constexpr(!std::is_void_v<A>) {
+                    ::new(&_value) ok_type(other._value);
+                } else {
+                    ::new(&_value) ok_type();
+                }
+            } else {
+                if constexpr(!std::is_void_v<B>) {
+                    ::new(&_error) err_type(other._error);
                 } else {
                     ::new(&_error) err_type();
                 }
