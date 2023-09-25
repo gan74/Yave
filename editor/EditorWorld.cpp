@@ -179,19 +179,17 @@ void EditorWorld::set_selected(ecs::EntityId id) {
     add_tag(id, ecs::tags::selected);
 }
 
-void EditorWorld::toggle_selected(ecs::EntityId id, bool set) {
-    if(!id.is_valid() || selected_entity() == id) {
+void EditorWorld::toggle_selected(ecs::EntityId id, bool reset_selection) {
+    if(!id.is_valid()) {
         return;
     }
 
     if(has_tag(id, ecs::tags::selected)) {
-        if(set) {
-            set_selected(id);
-        } else {
+        if(!reset_selection) {
             remove_tag(id, ecs::tags::selected);
         }
     } else {
-        if(set) {
+        if(reset_selection) {
             clear_selection();
         }
         add_tag(id, ecs::tags::selected);

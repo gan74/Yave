@@ -61,7 +61,7 @@ class EditorWorld : public ecs::EntityWorld {
         bool is_selected(ecs::EntityId id) const;
 
         void set_selected(ecs::EntityId id);
-        void toggle_selected(ecs::EntityId id, bool set);
+        void toggle_selected(ecs::EntityId id, bool reset_selection);
         void set_selection(core::Span<ecs::EntityId> selection);
         void clear_selection();
 

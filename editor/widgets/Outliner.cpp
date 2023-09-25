@@ -58,7 +58,6 @@ void Outliner::on_gui() {
             display_node(world, id);
         }
 
-
         ImGui::EndTable();
     }
 }

@@ -220,7 +220,7 @@ class SelectionDebug : public Widget {
 
     protected:
         void on_gui() override {
-            if(ImGui::CollapsingHeader(fmt_c_str("{} entity selected###header", current_world().selected_entities().size()))) {
+            if(ImGui::CollapsingHeader(fmt_c_str("{} entity selected###header", current_world().selected_entities().size()), ImGuiTreeNodeFlags_DefaultOpen)) {
                 for(const ecs::EntityId id : current_world().selected_entities()) {
                     imgui::text_read_only(fmt_c_str("##{}", id.index()), fmt("{:#08x}", id.index()));
                     ImGui::SameLine();
