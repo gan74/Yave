@@ -134,7 +134,6 @@ class TransformIterator : private Transform {
             return &Transform::operator()(*_it);
         }
 
-
         inline TransformIterator operator+(usize i) const {
             return TransformIterator(_it + i, *this);
         }
@@ -234,7 +233,7 @@ class FilterIterator : private Filter {
 
         inline auto* operator->() const {
             y_debug_assert(!at_end());
-            return *_it;
+            return &(*_it);
         }
 
         inline const iterator_type& inner() const {
@@ -254,6 +253,68 @@ class FilterIterator : private Filter {
         iterator_type _it;
         end_iterator_type _end;
 };
+
+
+
+
+template<typename Func>
+class FunctorIterator  {
+    static_assert(std::is_copy_constructible_v<Func>);
+    using result_type = decltype(std::declval<Func>()());
+
+    public:
+        using value_type = std::remove_reference_t<decltype(std::declval<result_type>().unwrap())>;
+
+        using difference_type = std::intptr_t;
+        using iterator_category = std::forward_iterator_tag;
+
+        using reference = value_type&;
+        using pointer = value_type*;
+
+        inline FunctorIterator(Func&& f) : _func(y_fwd(f)), _result(_func()) {
+        }
+
+        inline FunctorIterator(FunctorIterator&&) = default;
+        inline FunctorIterator(const FunctorIterator&) = default;
+
+        inline FunctorIterator& operator=(FunctorIterator&&) = default;
+        inline FunctorIterator& operator=(const FunctorIterator&) = default;
+
+        inline bool at_end() const {
+            return _result.is_error();
+        }
+
+        inline FunctorIterator& operator++() {
+            advance();
+            return *this;
+        }
+
+        inline FunctorIterator operator++(int) {
+            FunctorIterator f(*this);
+            advance();
+            return f;
+        }
+
+        inline decltype(auto) operator*() const {
+            y_debug_assert(!at_end());
+            return _result.unwrap();
+        }
+
+        inline auto* operator->() const {
+            y_debug_assert(!at_end());
+            return &_result.unwrap();
+        }
+
+    private:
+        void advance() {
+            _result = _func();
+        }
+
+        Func _func;
+        result_type _result;
+};
+
+
 
 
 

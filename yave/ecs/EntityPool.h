@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 #include <y/core/Range.h>
+#include <y/core/Result.h>
 
 #include <y/reflect/reflect.h>
 
@@ -63,10 +64,15 @@ class EntityPool : NonCopyable {
         EntityId create();
         void recycle(EntityId id);
 
+        EntityId first_child(EntityId id) const;
+        EntityId next_child(EntityId id) const;
+
         EntityId parent(EntityId id) const;
         void set_parent(EntityId id, EntityId parent_id);
 
+
         void audit();
+
 
         auto ids() const {
             return core::Range(
@@ -74,6 +80,37 @@ class EntityPool : NonCopyable {
                     TransformIterator(_entities.begin(), [](const Entity& e) { return e.id; }),
                     _entities.end(),
                     [](EntityId id) { return id.is_valid(); }
+                ), EndIterator()
+            );
+        }
+
+        auto parents(EntityId id) const {
+            return core::Range(
+                FunctorIterator(
+                    [this, i = id]() mutable -> core::Result<EntityId> {
+                        i = parent(i);
+                        if(!i.is_valid()) {
+                            return core::Err();
+                        }
+                        return core::Ok(i);
+                    }
+                ), EndIterator()
+            );
+        }
+
+        auto children(EntityId id) const {
+            const EntityId start = first_child(id);
+            return core::Range(
+                FunctorIterator(
+                    [this, i = start, start, init = false]() mutable -> core::Result<EntityId> {
+                        if(!i.is_valid() || (i == start && init)) {
+                            return core::Err();
+                        }
+                        init = true;
+                        const EntityId prev = i;
+                        i = next_child(prev);
+                        return core::Ok(prev);
+                    }
                 ), EndIterator()
             );
         }

@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "EntityPool.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 namespace ecs {
 
@@ -31,8 +34,10 @@ bool EntityPool::Entity::is_valid() const {
 
 void EntityPool::Entity::invalidate() {
     y_debug_assert(is_valid());
+    y_debug_assert(!parent.is_valid());
+    y_debug_assert(!left_sibling.is_valid());
+    y_debug_assert(!right_sibling.is_valid());
     id.invalidate();
-    left_sibling = right_sibling = parent = {};
 }
 
 void EntityPool::Entity::make_valid(u32 index) {
@@ -75,8 +80,19 @@ EntityId EntityPool::create() {
 
 void EntityPool::recycle(EntityId id) {
     y_debug_assert(exists(id));
+    set_parent(id, {});
     _entities[id.index()].invalidate();
     _free << id.index();
+}
+
+EntityId EntityPool::first_child(EntityId id) const {
+    y_debug_assert(exists(id));
+    return _entities[id.index()].first_child;
+}
+
+EntityId EntityPool::next_child(EntityId id) const {
+    y_debug_assert(exists(id));
+    return _entities[id.index()].right_sibling;
 }
 
 EntityId EntityPool::parent(EntityId id) const {
@@ -113,8 +129,14 @@ void EntityPool::set_parent(EntityId id, EntityId parent_id) {
 
         if(first_id.is_valid()) {
             Entity& first = _entities[first_id.index()];
-            child.left_sibling = std::exchange(first.left_sibling, id);
             child.right_sibling = first_id;
+            if(first.right_sibling == first_id) {
+                first.right_sibling = id;
+            }
+
+            child.left_sibling = first.left_sibling;
+            first.left_sibling = id;
+
         }
     }
 }

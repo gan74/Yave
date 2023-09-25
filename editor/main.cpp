@@ -91,28 +91,38 @@ int main(int argc, char** argv) {
     {
         ecs::EntityWorld w;
 
-        ecs::EntityPrefab child(ecs::EntityId::dummy(10));
-        child.add<int>(4);
+        ecs::EntityPrefab child_0(ecs::EntityId::dummy(10));
+        ecs::EntityPrefab child_1(ecs::EntityId::dummy(11));
 
         ecs::EntityPrefab parent(ecs::EntityId::dummy(20));
-        child.add<ecs::EntityId>(parent.original_id());
-        parent.add<int>(5);
-        parent.add_child(std::make_unique<ecs::EntityPrefab>(std::move(child)));
+
+        child_0.add<core::String>("child 0");
+        child_0.add<ecs::EntityId>(parent.original_id());
+
+        child_1.add<core::String>("child 1");
+        child_1.add<ecs::EntityId>(child_0.original_id());
+
+        parent.add<core::String>("parent");
+        parent.add_child(std::make_unique<ecs::EntityPrefab>(std::move(child_0)));
+        parent.add_child(std::make_unique<ecs::EntityPrefab>(std::move(child_1)));
 
         const ecs::EntityId id = w.create_entity(parent);
 
         log_msg(fmt("prefab: {}", id.index()));
-
         {
-            const auto q = w.query<int>();
+            const auto q = w.query<core::String, ecs::EntityId>();
             for(auto [i, c] : q) {
-                log_msg(fmt("  {}: {} parent: {}", i.index(), std::get<0>(c), w.parent(i).index()));
+                log_msg(fmt("  entity: {}  name: '{}'  link: {}", i.index(), std::get<0>(c), std::get<1>(c).index()));
+                for(ecs::EntityId p : w.parents(i)) {
+                    log_msg(fmt("    parent: {}", p.index()));
+                }
             }
         }
-        {
-            const auto q = w.query<ecs::EntityId>();
-            for(auto [i, c] : q) {
-                log_msg(fmt("  {}: {}", i.index(), std::get<0>(c).index()));
+
+        for(ecs::EntityId i : w.ids()) {
+            log_msg(fmt("entity: {}", i.index()));
+            for(ecs::EntityId p : w.children(i)) {
+                log_msg(fmt("  child: {}", p.index()));
             }
         }
 

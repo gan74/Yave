@@ -82,6 +82,14 @@ class EntityWorld {
         EntityId parent(EntityId id) const;
         void set_parent(EntityId id, EntityId parent_id);
 
+        auto parents(EntityId id) const {
+            return _entities.parents(id);
+        }
+
+        auto children(EntityId id) const {
+            return _entities.children(id);
+        }
+
 
         // ---------------------------------------- Systems ----------------------------------------
 
