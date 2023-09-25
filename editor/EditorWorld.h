@@ -53,8 +53,6 @@ class EditorWorld : public ecs::EntityWorld {
         ecs::EntityId add_prefab(std::string_view name);
         ecs::EntityId add_prefab(AssetId asset);
 
-        void set_parent(ecs::EntityId id, ecs::EntityId parent);
-
 
         bool has_selected_entities() const;
         usize selected_entity_count() const;

@@ -37,24 +37,29 @@ DeletionDialog::DeletionDialog(ecs::EntityId id) :
 
 void DeletionDialog::on_gui() {
     EditorWorld& world = current_world();
+
     const EditorComponent* component = world.component<EditorComponent>(_id);
     y_debug_assert(component);
 
-    ImGui::Text("Delete %s?", component->name().data());
+    ImGui::Text("Delete \"%s\"?", component->name().data());
 
-    if(!component->children().is_empty()) {
-        ImGui::Checkbox(fmt_c_str("Delete {} children", component->children().size()), &_delete_children);
+    if(world.has_children(_id)) {
+        const usize children_count = world.children(_id).count();
+        ImGui::Checkbox(fmt_c_str("Delete {} children", children_count), &_delete_children);
     }
 
     if(ImGui::Button("Ok")) {
         y_profile_zone("deleting entities");
-        for(ecs::EntityId id : component->children()) {
+
+        const ecs::EntityId parent = world.parent(_id);
+        for(ecs::EntityId id : world.children(_id)) {
             if(_delete_children) {
                 world.remove_entity(id);
             } else {
-                world.set_parent(id, ecs::EntityId());
+                world.set_parent(id, parent);
             }
         }
+
         world.remove_entity(_id);
         close();
     }

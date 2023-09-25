@@ -25,9 +25,9 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/EntitySelector.h>
-#include <editor/utils/ui.h>
 #include <editor/components/EditorComponent.h>
 #include <editor/utils/assets.h>
+#include <editor/utils/ui.h>
 
 #include <yave/ecs/ComponentInspector.h>
 #include <yave/assets/AssetLoader.h>
@@ -41,8 +41,6 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
-
-#include <cinttypes>
 
 namespace editor {
 
@@ -175,14 +173,14 @@ static const ImGuiColorEditFlags color_flags =
     ImGuiColorEditFlags_Float |
     ImGuiColorEditFlags_InputRGB;
 
-class ComponentPanelInspector : public ecs::ComponentInspector {
+class InspectorPanelInspector : public ecs::ComponentInspector {
     public:
-        ComponentPanelInspector(ecs::EntityId id, EditorComponent* editor) :
+        InspectorPanelInspector(ecs::EntityId id, EditorComponent* editor) :
                 _id(id),
                 _editor(editor) {
         }
 
-        ~ComponentPanelInspector() {
+        ~InspectorPanelInspector() {
             end_table();
         }
 
@@ -563,9 +561,7 @@ static void entity_properties(ecs::EntityId id, EditorComponent* component) {
     {
         ImGui::TextUnformatted("Id");
         ImGui::TableNextColumn();
-        std::array<char, 32> buffer = {};
-        std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
-        imgui::text_read_only("##id", buffer.data());
+        imgui::text_read_only("##id", fmt("id: {:#08x}", id.index()));
         ImGui::SameLine();
         ImGui::TextDisabled("(?)");
         if(ImGui::IsItemHovered()) {
@@ -598,13 +594,9 @@ void Inspector::on_gui() {
     EditorWorld& world = current_world();
 
     if(EditorComponent* component = world.component_mut<EditorComponent>(id)) {
-        if(component->is_collection()) {
-            return;
-        }
-
         entity_properties(id, component);
 
-        ComponentPanelInspector inspector(id, component);
+        InspectorPanelInspector inspector(id, component);
         world.inspect_components(id, &inspector);
     }
 

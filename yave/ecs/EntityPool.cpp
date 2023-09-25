@@ -22,9 +22,6 @@ SOFTWARE.
 
 #include "EntityPool.h"
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
 namespace yave {
 namespace ecs {
 

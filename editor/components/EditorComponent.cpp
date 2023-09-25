@@ -35,22 +35,6 @@ void EditorComponent::set_name(core::String name) {
     _name = std::move(name);
 }
 
-bool EditorComponent::has_parent() const {
-    return _parent.is_valid();
-}
-
-bool EditorComponent::is_collection() const {
-    return _is_collection;
-}
-
-ecs::EntityId EditorComponent::parent() const {
-    return _parent;
-}
-
-core::Span<ecs::EntityId> EditorComponent::children() const {
-    return _is_collection ? _children : core::Span<ecs::EntityId>();
-}
-
 math::Vec3& EditorComponent::euler() {
     return _euler;
 }

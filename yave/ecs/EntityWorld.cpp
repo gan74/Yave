@@ -232,6 +232,14 @@ void EntityWorld::set_parent(EntityId id, EntityId parent_id) {
     _entities.set_parent(id, parent_id);
 }
 
+bool EntityWorld::has_parent(EntityId id) const {
+    return parent(id).is_valid();
+}
+
+bool EntityWorld::has_children(EntityId id) const {
+    return _entities.first_child(id).is_valid();
+}
+
 core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) const {
     return find_container(type_id)->ids();
 }

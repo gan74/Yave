@@ -19,25 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_INSPECTOR_H
-#define EDITOR_WIDGETS_INSPECTOR_H
+#ifndef EDITOR_WIDGETS_OUTLINER_H
+#define EDITOR_WIDGETS_OUTLINER_H
+
+#include <yave/ecs/EntityWorld.h>
 
 #include <editor/Widget.h>
 
 namespace editor {
 
-class Inspector final : public Widget {
+class Outliner final : public Widget {
 
-    editor_widget_open(Inspector)
+    editor_widget_open(Outliner)
 
     public:
-        Inspector();
+        Outliner();
 
     protected:
         void on_gui() override;
+
+    private:
+        void display_node(EditorWorld& world, ecs::EntityId id);
+
+        core::Vector<std::tuple<const char*, core::String, bool>> _tag_buttons;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_INSPECTOR_H
+#endif // EDITOR_WIDGETS_OUTLINER_H
 

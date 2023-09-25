@@ -116,13 +116,7 @@ std::string_view EditorWorld::entity_icon(ecs::EntityId id) const {
         return ICON_FA_CLOUD;
     }
 
-    if(const EditorComponent* comp = component<EditorComponent>(id)) {
-        if(comp->is_collection()) {
-            return ICON_FA_BOX_OPEN;
-        }
-    }
-
-    return ICON_FA_DATABASE;
+    return ICON_FA_PUZZLE_PIECE;
 }
 
 
@@ -157,35 +151,6 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
         return id;
     }
     return ecs::EntityId();
-}
-
-void EditorWorld::set_parent(ecs::EntityId id, ecs::EntityId parent) {
-    y_profile();
-
-    if(EditorComponent* comp = get_or_add_component<EditorComponent>(id)) {
-        if(comp->_parent == parent) {
-            return;
-        }
-
-        if(comp->has_parent()) {
-            if(EditorComponent* current_parent = get_or_add_component<EditorComponent>(comp->_parent)) {
-                if(current_parent->_is_collection) {
-                    const auto it = std::find(current_parent->_children.begin(), current_parent->_children.end(), comp->_parent);
-                    if(it != current_parent->_children.end()) {
-                        current_parent->_children.erase_unordered(it);
-                    }
-                }
-                comp->_parent = ecs::EntityId();
-            }
-        }
-
-        if(EditorComponent* new_parent = get_or_add_component<EditorComponent>(parent)) {
-            if(new_parent->_is_collection) {
-                new_parent->_children.push_back(id);
-                comp->_parent = parent;
-            }
-        }
-    }
 }
 
 bool EditorWorld::has_selected_entities() const {
