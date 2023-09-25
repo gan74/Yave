@@ -29,7 +29,9 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-enum class ComponentTypeIndex : u32 {};
+enum class ComponentTypeIndex : u32 {
+    invalid_index = u32(-1),
+};
 
 namespace detail {
 ComponentTypeIndex next_type_index();

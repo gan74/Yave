@@ -110,16 +110,16 @@ static void id_selector(ecs::EntityId& property_id, const core::String& name, ec
             ecs::EntityId _id;
     };
 
-    bool clear = false;
-    if(imgui::id_selector(property_id, current_world(), &clear)) {
+    bool browse = false;
+    imgui::id_selector(property_id, current_world(), target_type, &browse);
+    if(browse) {
         add_child_widget<EntitySelector>(target_type)->set_selected_callback(
             [=](ecs::EntityId new_id) {
                 IdSetterInspector setter(new_id, name, comp_type);
                 current_world().inspect_components(entity_id, &setter);
                 return true;
-            });
-    } else if(clear) {
-        property_id = ecs::EntityId();
+            }
+        );
     }
 }
 

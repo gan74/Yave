@@ -327,8 +327,11 @@ bool path_selector(const char* text, const core::String& path) {
     return ret;
 }
 
-bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear) {
-    bool ret = false;
+bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentTypeIndex with_component, bool* browse) {
+    const ecs::EntityId base_id = id;
+    if(browse) {
+        *browse = false;
+    }
 
     ImGui::BeginGroup();
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
@@ -348,14 +351,14 @@ bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear) {
         ImGui::Selectable(name.data(), false, ImGuiSelectableFlags_Disabled);
 
         ImGui::Separator();
-        if(ImGui::Selectable(ICON_FA_FOLDER_OPEN " Browse")) {
-            ret = true;
+        if(browse && ImGui::Selectable(ICON_FA_FOLDER_OPEN " Browse")) {
+            *browse = true;
         }
 
-        if(id.is_valid() && clear) {
+        if(id.is_valid()) {
             ImGui::Separator();
             if(ImGui::Selectable(ICON_FA_TRASH " Clear")) {
-                *clear = true;
+                id = {};
             }
         }
 
@@ -364,7 +367,18 @@ bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear) {
 
     ImGui::EndGroup();
 
-    return ret;
+    if(ImGui::BeginDragDropTarget()) {
+        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id, ImGuiDragDropFlags_AcceptPeekOnly)) {
+            const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data);
+            if(with_component == ecs::ComponentTypeIndex::invalid_index || world.has(dragged, with_component)) {
+                ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id);
+                id = dragged;
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    return id != base_id;
 }
 
 
