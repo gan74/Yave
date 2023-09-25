@@ -132,7 +132,6 @@ static void setup_style() {
     colors[ImGuiCol_ModalWindowDimBg]       = none;
     colors[ImGuiCol_TableRowBg]             = none;
     colors[ImGuiCol_FrameBgHovered]         = none;
-    colors[ImGuiCol_TextSelectedBg]         = none;
     colors[ImGuiCol_TableRowBgAlt]          = none;
     colors[ImGuiCol_Border]                 = none;
 
@@ -186,6 +185,7 @@ static void setup_style() {
 
     colors[ImGuiCol_HeaderHovered]          = math::lerp(child, highlight, 0.25f);
     colors[ImGuiCol_SeparatorHovered]       = math::lerp(child, highlight, 0.25f);
+    colors[ImGuiCol_TextSelectedBg]         = math::lerp(child, highlight, 0.25f);
 
 
     // colors[ImGuiCol_NavWindowingHighlight]  = rgb(128, 168, 224);
