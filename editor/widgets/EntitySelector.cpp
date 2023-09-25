@@ -29,14 +29,11 @@ SOFTWARE.
 
 namespace editor {
 
-EntitySelector::EntitySelector() : Widget("Select an entity") {
-    set_modal(true);
-}
-
 EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter) :
-        Widget(fmt("Select a {}", current_world().component_type_name(filter))),
-        _filter(filter),
-        _has_filter(true) {
+        Widget(filter == ecs::ComponentTypeIndex::invalid_index
+            ? "Select an entity"
+            : fmt("Select a {}", current_world().component_type_name(filter))),
+        _filter(filter) {
     set_modal(true);
 }
 
@@ -44,17 +41,21 @@ EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter) :
 void EntitySelector::on_gui() {
     const EditorWorld& world = current_world();
 
-    const auto query = _has_filter
+    const bool has_filter = (_filter != ecs::ComponentTypeIndex::invalid_index);
+
+    if(has_filter) {
+        ImGui::Checkbox("Show all entities", &_show_all);
+    }
+
+    const auto query = (has_filter && !_show_all)
         ? world.query<EditorComponent>(world.component_ids(_filter))
         : world.query<EditorComponent>();
 
-    if(query.is_empty()) {
-        ImGui::TextDisabled("No viable entities found");
-        return;
-    }
-
-    y_defer(ImGui::EndChild());
     if(ImGui::BeginChild("##entities")) {
+        if(query.is_empty()) {
+            ImGui::TextDisabled("No viable entities found");
+        }
+
         for(auto&& [id, comp] : query) {
             const auto& [c] = comp;
             if(ImGui::Selectable(fmt_c_str("{} {}", world.entity_icon(id), c.name().data()))) {
@@ -65,6 +66,7 @@ void EntitySelector::on_gui() {
             }
         }
     }
+    ImGui::EndChild();
 }
 
 }

@@ -32,8 +32,7 @@ namespace editor {
 
 class EntitySelector final : public Widget {
     public:
-        EntitySelector();
-        EntitySelector(ecs::ComponentTypeIndex filter);
+        EntitySelector(ecs::ComponentTypeIndex filter = ecs::ComponentTypeIndex::invalid_index);
 
         template<typename F>
         void set_selected_callback(F&& func) {
@@ -44,8 +43,8 @@ class EntitySelector final : public Widget {
         void on_gui() override;
 
     private:
-        ecs::ComponentTypeIndex _filter = {};
-        bool _has_filter = false;
+        ecs::ComponentTypeIndex _filter = ecs::ComponentTypeIndex::invalid_index;
+        bool _show_all = false;
 
         std::function<bool(ecs::EntityId)> _selected = [](const auto&) { return false; };
 };
