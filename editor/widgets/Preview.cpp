@@ -126,15 +126,15 @@ void Preview::reset_world() {
     _view = SceneView(_world.get());
 
     {
-        const ecs::EntityId sky_id = _world->create_entity<SkyLightComponent>();
-        SkyLightComponent* sky = _world->component_mut<SkyLightComponent>(sky_id);
+        const ecs::EntityId sky_id = _world->create_entity();
+        SkyLightComponent* sky = _world->get_or_add_component<SkyLightComponent>(sky_id);
         sky->probe() = _ibl_probe ? _ibl_probe : device_resources().ibl_probe();
         sky->display_sky() = true;
     }
 
     if(!_mesh.is_empty() && !_material.is_empty()) {
-        const ecs::EntityId id = _world->create_entity<StaticMeshComponent>();
-        *_world->component_mut<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
+        const ecs::EntityId id = _world->create_entity();
+        *_world->get_or_add_component<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
 
         const float radius = _mesh->radius();
         _cam_distance = radius * 1.5f;

@@ -98,24 +98,24 @@ static void fill_world(ecs::EntityWorld& world) {
     const float intensity = 0.25f;
 
     {
-        const ecs::EntityId light_id = world.create_entity<DirectionalLightComponent>();
-        DirectionalLightComponent* light_comp = world.component_mut<DirectionalLightComponent>(light_id);
+        const ecs::EntityId light_id = world.create_entity();
+        DirectionalLightComponent* light_comp = world.get_or_add_component<DirectionalLightComponent>(light_id);
         light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
         light_comp->intensity() = 3.0f * intensity;
     }
     {
-        const ecs::EntityId light_id = world.create_entity<PointLightComponent>();
-        world.component_mut<TransformableComponent>(light_id)->set_position(math::Vec3(0.75f, -0.5f, 0.5f));
-        PointLightComponent* light = world.component_mut<PointLightComponent>(light_id);
+        const ecs::EntityId light_id = world.create_entity();
+        world.get_or_add_component<TransformableComponent>(light_id)->set_position(math::Vec3(0.75f, -0.5f, 0.5f));
+        PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(2500.0f);
         light->intensity() = 1.5f * intensity;
         light->falloff() = 0.5f;
         light->range() = 2.0f;
     }
     {
-        const ecs::EntityId light_id = world.create_entity<PointLightComponent>();
-        world.component_mut<TransformableComponent>(light_id)->set_position(math::Vec3(-0.75f, -0.5f, 0.5f));
-        PointLightComponent* light = world.component_mut<PointLightComponent>(light_id);
+        const ecs::EntityId light_id = world.create_entity();
+        world.get_or_add_component<TransformableComponent>(light_id)->set_position(math::Vec3(-0.75f, -0.5f, 0.5f));
+        PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(10000.0f);
         light->intensity() = 1.5f * intensity;
         light->falloff() = 0.5f;
@@ -123,8 +123,8 @@ static void fill_world(ecs::EntityWorld& world) {
     }
 
     {
-        const ecs::EntityId sky_id = world.create_entity<SkyLightComponent>();
-        SkyLightComponent* sky = world.component_mut<SkyLightComponent>(sky_id);
+        const ecs::EntityId sky_id = world.create_entity();
+        SkyLightComponent* sky = world.get_or_add_component<SkyLightComponent>(sky_id);
         sky->probe() = device_resources().ibl_probe();
         sky->intensity() = intensity;
     }
@@ -148,9 +148,9 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
     fill_world(world);
 
     {
-        const ecs::EntityId entity = world.create_entity<StaticMeshComponent>();
-        *world.component_mut<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, mat);
-        world.component_mut<TransformableComponent>(entity)->set_transform(center_to_camera(mesh->aabb()));
+        const ecs::EntityId entity = world.create_entity();
+        *world.get_or_add_component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, mat);
+        world.get_or_add_component<TransformableComponent>(entity)->set_transform(center_to_camera(mesh->aabb()));
     }
 
     return render_world(world);

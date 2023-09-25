@@ -129,15 +129,6 @@ class EntityWorld {
 
 
 
-        // ---------------------------------------- Static Archetypes ----------------------------------------
-
-        template<typename... Args>
-        EntityId create_entity() {
-            const EntityId id = create_entity();
-            add_or_replace_components<Args...>(id);
-            return id;
-        }
-
 
 
         // ---------------------------------------- Components ----------------------------------------
@@ -331,15 +322,24 @@ class EntityWorld {
 
         // ---------------------------------------- Misc ----------------------------------------
 
+
+        template<typename... Args>
+        EntityId create_entity_with_components() {
+            const EntityId id = create_entity();
+            add_or_replace_components<Args...>(id);
+            return id;
+        }
+
         template<typename T>
         void make_mutated(core::Span<EntityId> ids) {
             make_mutated(type_index<T>(), ids);
         }
 
+
+
         void inspect_components(EntityId id, ComponentInspector* inspector);
 
         void post_deserialize();
-
 
         y_reflect(EntityWorld, _entities, _containers, _tags, _world_components)
 

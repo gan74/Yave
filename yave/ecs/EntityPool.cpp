@@ -103,6 +103,9 @@ void EntityPool::set_parent(EntityId id, EntityId parent_id) {
     y_debug_assert(exists(id));
 
     Entity& child = _entities[id.index()];
+    if(child.parent == parent_id) {
+        return;
+    }
 
     // Unparent
     if(child.parent.is_valid()) {
