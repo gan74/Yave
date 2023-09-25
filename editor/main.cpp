@@ -39,7 +39,7 @@ SOFTWARE.
 using namespace editor;
 
 static bool debug_instance = is_debug_defined;
-static bool multi_viewport = true;
+static bool multi_viewport = false;
 static bool run_tests = false;
 
 
@@ -51,6 +51,8 @@ static void parse_args(int argc, char** argv) {
             debug_instance = true;
         } else if(arg == "--nomv") {
             multi_viewport = false;
+        } else if(arg == "--mv") {
+            multi_viewport = true;
         } else if(arg == "--run-tests") {
             run_tests = true;
         } else if(arg == "--errbreak") {
