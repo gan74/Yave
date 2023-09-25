@@ -336,12 +336,29 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
     ImGui::BeginGroup();
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
 
+    bool has_component = true;
     if(!id.is_valid()) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    } else if(with_component != ecs::ComponentTypeIndex::invalid_index) {
+        has_component = world.has(id, with_component);
     }
 
-    const core::String name = id.is_valid() ? fmt("{} {}", world.entity_icon(id), world.entity_name(id)) : "No entity";
+    if(!has_component) {
+        ImGui::PushStyleColor(ImGuiCol_Text, warning_text_color);
+    }
+
+    const std::string_view icon = has_component ? world.entity_icon(id) : ICON_FA_EXCLAMATION_TRIANGLE;
+    const core::String name = id.is_valid() ? fmt("{} {}", icon, world.entity_name(id)) : "No entity";
     const bool combo = ImGui::BeginCombo("##combo", name.data());
+
+    if(!has_component) {
+        ImGui::PopStyleColor();
+        if(ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted(fmt_c_str("Entity does not have the required component ({})", world.component_type_name(with_component)));
+            ImGui::EndTooltip();
+        }
+    }
 
     if(!id.is_valid()) {
         ImGui::PopStyleColor();
@@ -368,12 +385,9 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
     ImGui::EndGroup();
 
     if(ImGui::BeginDragDropTarget()) {
-        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id, ImGuiDragDropFlags_AcceptPeekOnly)) {
+        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id)) {
             const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data);
-            if(with_component == ecs::ComponentTypeIndex::invalid_index || world.has(dragged, with_component)) {
-                ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id);
-                id = dragged;
-            }
+            id = dragged;
         }
         ImGui::EndDragDropTarget();
     }
