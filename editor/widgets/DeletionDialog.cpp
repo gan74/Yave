@@ -29,14 +29,31 @@ SOFTWARE.
 
 namespace editor {
 
+static void remove_children(EditorWorld& world, ecs::EntityId id) {
+    core::SmallVector<ecs::EntityId, 64> children;
+    for(const ecs::EntityId child : world.children(id)) {
+        children << child;
+    }
+
+    for(const ecs::EntityId child : children) {
+        remove_children(world, child);
+        world.remove_entity(child);
+    }
+}
+
 DeletionDialog::DeletionDialog(ecs::EntityId id) :
         Widget("Confirm", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
         _id(id) {
+
    set_modal(true);
 }
 
 void DeletionDialog::on_gui() {
     EditorWorld& world = current_world();
+
+    if(!world.exists(_id)) {
+        close();
+    }
 
     const EditorComponent* component = world.component<EditorComponent>(_id);
     y_debug_assert(component);
@@ -44,24 +61,18 @@ void DeletionDialog::on_gui() {
     ImGui::Text("Delete \"%s\"?", component->name().data());
 
     if(world.has_children(_id)) {
-        const usize children_count = world.children(_id).count();
-        ImGui::Checkbox(fmt_c_str("Delete {} children", children_count), &_delete_children);
+        ImGui::Checkbox("Delete children", &_delete_children);
     }
 
     if(ImGui::Button("Ok")) {
         y_profile_zone("deleting entities");
 
-        const ecs::EntityId parent = world.parent(_id);
-        const auto children = core::Vector<ecs::EntityId>::from_range(world.children(_id));
-        for(ecs::EntityId id : children) {
-            if(_delete_children) {
-                world.remove_entity(id);
-            } else {
-                world.set_parent(id, parent);
-            }
+        if(_delete_children) {
+            remove_children(world, _id);
         }
 
         world.remove_entity(_id);
+
         close();
     }
 

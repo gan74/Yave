@@ -47,6 +47,7 @@ class EntityPool : NonCopyable {
 
         bool is_valid() const;
         void invalidate();
+        void invalidate_hierarchy();
         void make_valid(u32 index);
 
         y_reflect(Entity, id, parent, first_child, left_sibling, right_sibling)
@@ -63,7 +64,7 @@ class EntityPool : NonCopyable {
         EntityId id_from_index(u32 index) const;
 
         EntityId create();
-        void recycle(EntityId id);
+        void remove(EntityId id);
 
         EntityId first_child(EntityId id) const;
         EntityId next_child(EntityId id) const;
@@ -120,6 +121,8 @@ class EntityPool : NonCopyable {
         y_reflect(EntityPool, _entities, _free)
 
     private:
+        void reroot_all_children(EntityId id, EntityId new_parent);
+
         core::Vector<Entity> _entities;
         core::Vector<u32> _free;
 };

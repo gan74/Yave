@@ -32,15 +32,20 @@ bool EntityPool::Entity::is_valid() const {
 void EntityPool::Entity::invalidate() {
     y_debug_assert(is_valid());
     y_debug_assert(!parent.is_valid());
+    y_debug_assert(!first_child.is_valid());
     y_debug_assert(!left_sibling.is_valid());
     y_debug_assert(!right_sibling.is_valid());
     id.invalidate();
 }
 
+void EntityPool::Entity::invalidate_hierarchy() {
+    left_sibling = right_sibling = parent = {};
+}
+
 void EntityPool::Entity::make_valid(u32 index) {
     y_debug_assert(!is_valid());
     id.make_valid(index);
-    left_sibling = right_sibling = {};
+    left_sibling = right_sibling = parent = {};
 }
 
 usize EntityPool::size() const {
@@ -73,11 +78,35 @@ EntityId EntityPool::create() {
     return _entities[index].id;
 }
 
+void EntityPool::reroot_all_children(EntityId id, EntityId new_parent) {
+    Y_TODO(Fix alloc, maybe use a recursive function)
+    core::SmallVector<EntityId, 64> children_cached;
+    for(const EntityId child : children(id)) {
+        children_cached << child;
+    }
 
-void EntityPool::recycle(EntityId id) {
+    for(const EntityId child : children_cached) {
+        _entities[child.index()].invalidate_hierarchy();
+    }
+
+    _entities[id.index()].first_child = {};
+
+    if(new_parent.is_valid()) {
+        for(const EntityId child : children_cached) {
+            set_parent(child, new_parent);
+        }
+    }
+}
+
+void EntityPool::remove(EntityId id) {
     y_debug_assert(exists(id));
+
+    auto& entity = _entities[id.index()];
+    reroot_all_children(id, entity.parent);
+
     set_parent(id, {});
-    _entities[id.index()].invalidate();
+
+    entity.invalidate();
     _free << id.index();
 }
 
@@ -130,7 +159,7 @@ void EntityPool::set_parent(EntityId id, EntityId parent_id) {
             right.left_sibling = left.id;
         }
 
-        child.left_sibling = child.right_sibling = child.parent = {};
+        child.invalidate_hierarchy();
     }
 
 

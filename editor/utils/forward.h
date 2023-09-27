@@ -89,6 +89,7 @@ struct ZoneHistory;
 
 namespace editor::import {
 struct Asset;
+struct Mesh;
 struct Node;
 struct ParsedScene;
 }

@@ -204,24 +204,28 @@ void EntityWorld::add_prefab(EntityId id, const EntityPrefab& prefab) {
 
 void EntityWorld::remove_entity(EntityId id) {
     check_exists(id);
-    for(auto& container : _containers) {
-        if(container) {
-            container->remove(id);
-        }
-    }
-    for(auto& [tag, container] : _tags) {
-        unused(tag);
-        if(container.contains(id)) {
-            container.erase(id);
-        }
-    }
-    _entities.recycle(id);
+
+    remove_all_components(id);
+    _entities.remove(id);
+
+    // Entities are deleted immediatly, while components linger until the end of tick.
+    // This needs to be changed to be made consistent.
+    // Deferring entity deletion is problematic as we could add new components to the entity, while it is in limbo
+    // Idealy deletions should be instantaneous, and we should rely on callbacks/events rather than to_be_removed & co
+    Y_TODO(Fixme)
 }
 
 void EntityWorld::remove_all_components(EntityId id) {
     for(auto& cont : _containers) {
         if(cont) {
             cont->remove(id);
+        }
+    }
+
+    for(auto& [tag, container] : _tags) {
+        unused(tag);
+        if(container.contains(id)) {
+            container.erase(id);
         }
     }
 }
