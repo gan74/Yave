@@ -259,6 +259,122 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
     return tr;
 }
 
+template<typename T>
+static void read_attrib(T& v, core::Span<typename T::value_type> s) {
+    std::copy_n(s.begin(), std::min(v.size(), s.size()), v.begin());
+}
+
+template<usize I>
+static void read_packed_unit_vec(math::Vec2ui& packed, core::Span<float> s) {
+    math::Vec4 v;
+    read_attrib(v, s);
+    packed[I] = pack_2_10_10_10(v.to<3>().normalized(), v.w() < 0.0f);
+}
+
+
+template<typename T, typename F>
+static void import_stream(const tinygltf::Model& model, const tinygltf::Accessor& accessor, core::MutableSpan<T> stream, F&& packer) {
+    const usize components = component_count(accessor.type);
+    const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
+
+    const u8* begin = model.buffers[buffer.buffer].data.data() + buffer.byteOffset + accessor.byteOffset;
+    const usize stride = buffer.byteStride ? buffer.byteStride : (components * sizeof(float));
+
+    for(usize i = 0; i != stream.size(); ++i) {
+        const float* attrib_begin = reinterpret_cast<const float*>(begin + (stride * i));
+        packer(stream[i], core::Span<float>(attrib_begin, components));
+    }
+}
+
+static core::Result<MeshVertexStreams> import_vertices(const tinygltf::Model& model, const tinygltf::Primitive& primitive) {
+    usize size = 0;
+    for(auto [name, id] : primitive.attributes) {
+        const usize count = model.accessors[id].count;
+        if(!size) {
+            size = count;
+        } else if(size != count) {
+            return core::Err();
+        }
+    }
+
+    bool has_tangents = false;
+
+    MeshVertexStreams streams(size);
+    for(const auto& [name, id] : primitive.attributes) {
+        const tinygltf::Accessor accessor = model.accessors[id];
+
+        if(!accessor.count) {
+            continue;
+        }
+
+        if(accessor.sparse.isSparse || accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
+            return core::Err();
+        }
+
+        if(name == "POSITION") {
+            import_stream(model, accessor, streams.stream<VertexStreamType::Position>(), read_attrib<math::Vec3>);
+        } else if(name == "NORMAL") {
+            import_stream(model, accessor, streams.stream<VertexStreamType::NormalTangent>(), read_packed_unit_vec<0>);
+        } else if(name == "TANGENT") {
+            has_tangents = true;
+            import_stream(model, accessor, streams.stream<VertexStreamType::NormalTangent>(), read_packed_unit_vec<1>);
+        } else if(name == "TEXCOORD_0") {
+            import_stream(model, accessor, streams.stream<VertexStreamType::Uv>(), read_attrib<math::Vec2>);
+        } else {
+            log_msg(fmt("Attribute \"{}\" is not supported", name), Log::Warning);
+        }
+    }
+
+    if(!has_tangents) {
+        log_msg("Mesh doesn't have tangents", Log::Warning);
+    }
+
+    return core::Ok(std::move(streams));
+}
+
+static core::Result<core::Vector<IndexedTriangle>> import_triangles(const tinygltf::Model& model, const tinygltf::Primitive& primitive) {
+    const tinygltf::Accessor accessor = model.accessors[primitive.indices];
+
+    if(!accessor.count || accessor.sparse.isSparse) {
+        return core::Err();
+    }
+
+    core::Vector<IndexedTriangle> triangles;
+    triangles.set_min_size(accessor.count / 3);
+
+    auto decode_indices = [&](u32 elem_size, auto convert_index) {
+        const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
+        const u8* begin = model.buffers[buffer.buffer].data.data() + buffer.byteOffset + accessor.byteOffset;
+        const usize stride = buffer.byteStride ? buffer.byteStride : elem_size;
+
+        for(usize i = 0; i != accessor.count; ++i) {
+            triangles[i / 3][i % 3] = convert_index(begin + (i * stride));
+        }
+    };
+
+    switch(accessor.componentType) {
+        case TINYGLTF_PARAMETER_TYPE_BYTE:
+        case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE:
+            decode_indices(1, [](const u8* data) -> u32 { return *data; });
+        break;
+
+        case TINYGLTF_PARAMETER_TYPE_SHORT:
+        case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT:
+            decode_indices(2, [](const u8* data) -> u32 { return *reinterpret_cast<const u16*>(data); });
+        break;
+
+        case TINYGLTF_PARAMETER_TYPE_INT:
+        case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT:
+            decode_indices(4, [](const u8* data) -> u32 { return *reinterpret_cast<const u32*>(data); });
+        break;
+
+        default:
+            return core::Err();
+    }
+
+    return core::Ok(std::move(triangles));
+}
+
 
 
 
@@ -303,7 +419,6 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
     }
 
 
-    scene.nodes.set_min_capacity(scene.gltf->nodes.size());
     for(const tinygltf::Node& gltf_node : scene.gltf->nodes) {
         auto& node = scene.nodes.emplace_back();
 
@@ -314,6 +429,17 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
 
         if(node.name.is_empty()) {
             node.name = fmt_to_owned("node_{}", scene.nodes.size());
+        }
+    }
+
+
+    for(const tinygltf::Mesh& gltf_mesh : scene.gltf->meshes) {
+        auto& mesh = scene.meshes.emplace_back();
+
+        mesh.name = gltf_mesh.name;
+
+        if(mesh.name.is_empty()) {
+            mesh.name = fmt_to_owned("mesh_{}", scene.meshes.size());
         }
     }
 
@@ -334,6 +460,35 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
 
     return core::Ok(std::move(scene));
 }
+
+core::Result<MeshData> ParsedScene::create_mesh(int index) const {
+    if(index < 0) {
+        return core::Err();
+    }
+
+    const tinygltf::Mesh& mesh = gltf->meshes[index];
+
+    MeshData mesh_data;
+    for(usize i = 0; i != mesh.primitives.size(); ++i) {
+        const tinygltf::Primitive& primitive = mesh.primitives[i];
+
+        if(primitive.mode != TINYGLTF_MODE_TRIANGLES) {
+            return core::Err();
+        }
+
+        auto vertex_streams = import_vertices(*gltf, primitive);
+        auto triangles = import_triangles(*gltf, primitive);
+
+        if(vertex_streams.is_error() || triangles.is_error()) {
+            return core::Err();
+        }
+
+        mesh_data.add_sub_mesh(std::move(vertex_streams.unwrap()), std::move(triangles.unwrap()));
+    }
+
+    return core::Ok(std::move(mesh_data));
+}
+
 
 core::String supported_scene_extensions() {
     return "*.gltf;*.glb";

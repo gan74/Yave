@@ -22,10 +22,14 @@ SOFTWARE.
 
 #include "GltfImporter.h"
 
+#include <yave/graphics/graphics.h>
+#include <yave/graphics/device/DeviceResources.h>
 #include <yave/assets/AssetStore.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/ecs/EntityWorld.h>
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/meshes/StaticMesh.h>
 
 #include <editor/utils/ui.h>
 #include <editor/components/EditorComponent.h>
@@ -37,7 +41,7 @@ SOFTWARE.
 namespace editor {
 
 template<typename T>
-static AssetId import_asset(AssetStore& store, const core::String& name, const T& asset) {
+static AssetId import_asset(AssetStore& store, const core::String& name, const T& asset, AssetType type) {
     io2::Buffer buffer;
     {
         y_profile_zone("serialize");
@@ -50,7 +54,7 @@ static AssetId import_asset(AssetStore& store, const core::String& name, const T
 
     {
         y_profile_zone("import");
-        if(const auto res = store.import(buffer, name, AssetTraits<T>::type); res.is_ok()) {
+        if(const auto res = store.import(buffer, name, type); res.is_ok()) {
             return res.unwrap();
         }
     }
@@ -72,6 +76,13 @@ static AssetId import_node(AssetStore& store, import::ParsedScene& scene, int in
     prefab.add(EditorComponent(node.name));
     prefab.add(TransformableComponent(node.transform));
 
+    if(node.mesh_index >= 0) {
+       const auto& mesh = scene.meshes[node.mesh_index];
+       if(mesh.asset_id != AssetId::invalid_id()) {
+           prefab.add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.asset_id), device_resources()[DeviceResources::EmptyMaterial]));
+       }
+    }
+
     for(const int child : node.children) {
         const AssetId id = import_node(store, scene, child);
         if(id != AssetId::invalid_id()) {
@@ -79,8 +90,7 @@ static AssetId import_node(AssetStore& store, import::ParsedScene& scene, int in
         }
     }
 
-    node.asset_id = import_asset(store, node.name, prefab);
-    node.is_error = node.asset_id == AssetId::invalid_id();
+    node.set_id(import_asset(store, node.name, prefab, AssetType::Prefab));
 
     return node.asset_id;
 }
@@ -137,9 +147,18 @@ void GltfImporter::on_gui() {
         case State::Settings: {
             core::DebugTimer _("Importing nodes");
             y_debug_assert(_scene.is_ok());
+
+            for(usize i = 0; i != _scene.unwrap().meshes.size(); ++i) {
+                auto& mesh = _scene.unwrap().meshes[i];
+                if(const auto mesh_data = _scene.unwrap().create_mesh(int(i))) {
+                    mesh.set_id(import_asset(asset_store(), mesh.name, mesh_data.unwrap(), AssetType::Mesh));
+                }
+            }
+
             for(const int node_index : _scene.unwrap().root_nodes) {
                 import_node(asset_store(), _scene.unwrap(), node_index);
             }
+
             _state = State::Importing;
         } break;
 

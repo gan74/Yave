@@ -52,6 +52,15 @@ struct ParsedScene : NonCopyable {
         core::String name = "Unamed asset";
         AssetId asset_id;
         bool is_error = false;
+
+        void set_id(AssetId id) {
+            asset_id = id;
+            is_error = (id == AssetId::invalid_id());
+        }
+    };
+
+    struct Mesh : Asset {
+
     };
 
     struct Node : Asset {
@@ -65,10 +74,14 @@ struct ParsedScene : NonCopyable {
     core::String name;
     core::String filename;
 
+    core::Vector<Mesh> meshes;
+
     core::Vector<Node> nodes;
     core::Vector<int> root_nodes;
 
     std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
+
+    core::Result<MeshData> create_mesh(int index) const;
 };
 
 
