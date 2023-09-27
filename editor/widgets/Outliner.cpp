@@ -175,6 +175,10 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
         ImGui::TreePop();
     } else {
+        if(ImGui::IsItemClicked()) {
+            world.toggle_selected(id, !ImGui::GetIO().KeyCtrl);
+        }
+
         make_drop_target(world, id);
         display_tags();
     }
