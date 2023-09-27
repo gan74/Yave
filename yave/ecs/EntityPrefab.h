@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "ComponentBox.h"
 
+#include <yave/assets/AssetPtr.h>
 #include <yave/assets/AssetTraits.h>
 
 namespace yave {
@@ -37,10 +38,10 @@ class EntityPrefab : NonCopyable {
         bool is_empty() const;
 
         void add_box(std::unique_ptr<ComponentBoxBase> box);
-        void add_child(std::unique_ptr<EntityPrefab> prefab);
+        void add_child(AssetPtr<EntityPrefab> prefab);
 
         core::Span<std::unique_ptr<ComponentBoxBase>> components() const;
-        core::Span<std::unique_ptr<EntityPrefab>> children() const;
+        core::Span<AssetPtr<EntityPrefab>> children() const;
 
         EntityId original_id() const;
 
@@ -55,10 +56,9 @@ class EntityPrefab : NonCopyable {
     private:
         friend class EntityWorld;
 
-
         EntityId _id;
         core::Vector<std::unique_ptr<ComponentBoxBase>> _components;
-        core::Vector<std::unique_ptr<EntityPrefab>> _children;
+        core::Vector<AssetPtr<EntityPrefab>> _children;
 };
 
 }

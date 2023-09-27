@@ -19,25 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_IMPORT_MESHUTILS_H
-#define EDITOR_IMPORT_MESHUTILS_H
+#ifndef EDITOR_WIDGETS_GLTFIMPORTER_H
+#define EDITOR_WIDGETS_GLTFIMPORTER_H
 
-#include "import.h"
+#include "FileBrowser.h"
 
-#include <y/io2/io.h>
+#include <editor/import/import.h>
+
+#include <y/concurrent/StaticThreadPool.h>
+#include <y/concurrent/Mutexed.h>
 
 namespace editor {
-namespace import {
 
-[[nodiscard]] MeshData transform(const MeshData& mesh, const math::Transform<>& tr);
-[[nodiscard]] MeshData compute_tangents(const MeshData& mesh);
+class GltfImporter final : public Widget {
 
-[[nodiscard]] Animation set_speed(const Animation& anim, float speed);
+    enum class State {
+        Browsing,
+        Parsing,
+        Settings,
+        Importing,
+        Done,
+        Failed,
+    };
 
-core::Result<void> export_to_obj(const MeshData& mesh, io2::Writer& writer);
+    public:
+        GltfImporter();
+        GltfImporter(std::string_view import_dst_path);
+
+    protected:
+        void on_gui() override;
+
+        bool should_keep_alive() const override;
+
+    private:
+        core::String _import_path;
+        State _state = State::Browsing;
+
+        FileBrowser _browser;
+        core::Result<import::ParsedScene> _scene = core::Err();
+
+
+
+        concurrent::StaticThreadPool _thread_pool;
+};
 
 }
-}
 
-#endif // EDITOR_IMPORT_TRANSFORMS_H
+#endif // EDITOR_WIDGETS_GLTFIMPORTER_H
 

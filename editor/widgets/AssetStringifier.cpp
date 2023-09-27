@@ -32,7 +32,6 @@ SOFTWARE.
 #include <y/serde3/archives.h>
 #include <y/io2/File.h>
 
-#include <editor/import/mesh_utils.h>
 #include <editor/utils/ui.h>
 
 namespace yave {
@@ -46,6 +45,44 @@ MeshData cone_mesh_data();
 }
 
 namespace editor {
+
+static core::Result<void> export_to_obj(const MeshData& mesh, io2::Writer& writer) {
+    auto write = [&](std::string_view l) {
+        return writer.write(l.data(), l.size());
+    };
+
+    y_try_discard(write("# Yave OBJ export\n"));
+    y_try_discard(write("o Mesh\n"));
+
+    const usize vertex_count = mesh.vertex_streams().vertex_count();
+    for(usize i = 0; i != vertex_count; ++i) {
+        const FullVertex v = unpack_vertex(mesh.vertex_streams()[i]);
+        y_try_discard(write(fmt("v {} {} {}\nvn {} {} {}\nvt {} {}\n",
+            v.position.x(),
+            v.position.y(),
+            v.position.z(),
+            v.normal.x(),
+            v.normal.y(),
+            v.normal.z(),
+            v.uv.x(),
+            v.uv.y()
+        )));
+    }
+
+    y_try_discard(write("s 0\n"));
+
+    for(const IndexedTriangle& triangle : mesh.triangles()) {
+        const IndexedTriangle tri = {triangle[0] + 1, triangle[1] + 1, triangle[2] + 1};
+        y_try_discard(write(fmt("f {}/{}/{} {}/{}/{} {}/{}/{}\n",
+            tri[0], tri[0], tri[0],
+            tri[1], tri[1], tri[1],
+            tri[2], tri[2], tri[2]
+        )));
+    }
+    return core::Ok();
+}
+
+
 
 AssetStringifier::AssetStringifier() :
         Widget("Asset stringifier"),
@@ -126,7 +163,7 @@ void AssetStringifier::on_gui() {
             browser->set_selection_filter("*.obj", FileBrowser::FilterFlags::AllowNewFiles);
             browser->set_selected_callback([mesh = _mesh](const auto& filename) {
                 if(auto res = io2::File::create(filename)) {
-                    if(import::export_to_obj(*mesh, res.unwrap()).is_ok()) {
+                    if(export_to_obj(*mesh, res.unwrap()).is_ok()) {
                         log_msg(fmt("Exported as {}", filename));
                     } else {
                         log_msg("Export failed", Log::Error);

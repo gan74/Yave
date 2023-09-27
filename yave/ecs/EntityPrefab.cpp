@@ -35,7 +35,7 @@ void EntityPrefab::add_box(std::unique_ptr<ComponentBoxBase> box) {
     _components.emplace_back(std::move(box));
 }
 
-void EntityPrefab::add_child(std::unique_ptr<EntityPrefab> prefab) {
+void EntityPrefab::add_child(AssetPtr<EntityPrefab> prefab) {
     _children.emplace_back(std::move(prefab));
 }
 
@@ -43,7 +43,7 @@ core::Span<std::unique_ptr<ComponentBoxBase>> EntityPrefab::components() const {
     return _components;
 }
 
-core::Span<std::unique_ptr<EntityPrefab>> EntityPrefab::children() const {
+core::Span<AssetPtr<EntityPrefab>> EntityPrefab::children() const {
     return _children;
 }
 

@@ -22,10 +22,8 @@ SOFTWARE.
 
 #include "import.h"
 #include "image_utils.h"
-#include "mesh_utils.h"
 
 #include <yave/meshes/Vertex.h>
-#include <yave/animations/Animation.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/material/MaterialData.h>
 #include <yave/utils/FileSystemModel.h>
@@ -189,7 +187,6 @@ core::String supported_image_extensions() {
 
 
 
-
 static usize component_count(int type) {
     switch(type) {
         case TINYGLTF_TYPE_SCALAR: return 1;
@@ -202,145 +199,6 @@ static usize component_count(int type) {
         default:
             y_throw_msg("Sparse accessors are not supported");
     }
-}
-
-template<typename T>
-static void decode_attrib_buffer_convert_internal(const tinygltf::Model& model, const tinygltf::BufferView& buffer, const tinygltf::Accessor& accessor, T* vertex_elems, usize vertex_count) {
-    using value_type = typename T::value_type;
-    static constexpr usize size = T::size();
-
-    const usize components = component_count(accessor.type);
-    const bool normalize = accessor.normalized;
-
-    y_always_assert(accessor.count == vertex_count, "Invalid accesors");
-
-    if(components != size) {
-        log_msg(fmt("Expected VEC{} attribute, got VEC{}", size, components), Log::Warning);
-    }
-
-    const usize min_size = std::min(size, components);
-    auto convert = [=](const u8* data) {
-        T vec;
-        for(usize i = 0; i != min_size; ++i) {
-            vec[i] = reinterpret_cast<const value_type*>(data)[i];
-        }
-        if(normalize) {
-            if constexpr(size == 4) {
-                vec.template to<3>().normalize();
-            } else {
-                vec.normalize();
-            }
-        }
-        return vec;
-    };
-
-    {
-        u8* out_begin = reinterpret_cast<u8*>(vertex_elems);
-
-        const auto& in_buffer = model.buffers[buffer.buffer].data;
-        const u8* in_begin = in_buffer.data() + buffer.byteOffset + accessor.byteOffset;
-        const usize attrib_size = components * sizeof(value_type);
-        const usize input_stride = buffer.byteStride ? buffer.byteStride : attrib_size;
-
-        for(usize i = 0; i != accessor.count; ++i) {
-            const u8* attrib = in_begin + i * input_stride;
-            y_debug_assert(attrib < in_buffer.data() + in_buffer.size());
-            *reinterpret_cast<T*>(out_begin + i * sizeof(FullVertex)) = convert(attrib);
-        }
-    }
-}
-
-static void decode_attrib_buffer(const tinygltf::Model& model, const std::string& name, const tinygltf::Accessor& accessor, core::MutableSpan<FullVertex> vertices) {
-    const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
-
-    if(accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
-        y_throw_msg(fmt_c_str("Unsupported component type ({}) for \"{}\"", accessor.componentType, std::string_view(name)));
-    }
-
-    if(name == "POSITION") {
-        decode_attrib_buffer_convert_internal(model, buffer, accessor, &vertices[0].position, vertices.size());
-    } else if(name == "NORMAL") {
-        decode_attrib_buffer_convert_internal(model, buffer, accessor, &vertices[0].normal, vertices.size());
-    } else if(name == "TANGENT") {
-        decode_attrib_buffer_convert_internal(model, buffer, accessor, &vertices[0].tangent, vertices.size());
-    } else if(name == "TEXCOORD_0") {
-        decode_attrib_buffer_convert_internal(model, buffer, accessor, &vertices[0].uv, vertices.size());
-    } else {
-        log_msg(fmt("Attribute \"{}\" is not supported", std::string_view(name)), Log::Warning);
-        return;
-    }
-}
-
-static core::Vector<FullVertex> import_vertices(const tinygltf::Model& model, const tinygltf::Primitive& prim) {
-    core::Vector<FullVertex> vertices;
-    for(auto [name, id] : prim.attributes) {
-        tinygltf::Accessor accessor = model.accessors[id];
-        if(!accessor.count) {
-            continue;
-        }
-
-        if(accessor.sparse.isSparse) {
-            y_throw_msg("Sparse accessors are not supported");
-        }
-
-        if(!vertices.size()) {
-            std::fill_n(std::back_inserter(vertices), accessor.count, FullVertex());
-        } else if(vertices.size() != accessor.count) {
-            y_throw_msg("Invalid attribute count");
-        }
-
-        decode_attrib_buffer(model, name, accessor, vertices);
-    }
-    return vertices;
-}
-
-template<typename F>
-static void decode_index_buffer(const tinygltf::Model& model, const tinygltf::BufferView& buffer, const tinygltf::Accessor& accessor, IndexedTriangle* triangles, usize elem_size, F convert_index) {
-    u32* out_buffer = reinterpret_cast<u32*>(triangles);
-
-    const u8* in_buffer = model.buffers[buffer.buffer].data.data() + buffer.byteOffset + accessor.byteOffset;
-    const usize input_stride = buffer.byteStride ? buffer.byteStride : elem_size;
-
-    for(usize i = 0; i != accessor.count; ++i) {
-        out_buffer[i] = convert_index(in_buffer + i * input_stride);
-    }
-}
-
-static core::Vector<IndexedTriangle> import_triangles(const tinygltf::Model& model, const tinygltf::Primitive& prim) {
-    tinygltf::Accessor accessor = model.accessors[prim.indices];
-
-    if(!accessor.count) {
-        y_throw_msg("Non indexed primitives are not supported");
-    }
-
-    if(accessor.sparse.isSparse) {
-        y_throw_msg("Sparse accessors are not supported");
-    }
-
-    core::Vector<IndexedTriangle> triangles;
-    std::fill_n(std::back_inserter(triangles), accessor.count / 3, IndexedTriangle{});
-    const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
-    switch(accessor.componentType) {
-        case TINYGLTF_PARAMETER_TYPE_BYTE:
-        case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE:
-            decode_index_buffer(model, buffer, accessor, triangles.data(), 1, [](const u8* data) -> u32 { return *data; });
-        break;
-
-        case TINYGLTF_PARAMETER_TYPE_SHORT:
-        case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT:
-            decode_index_buffer(model, buffer, accessor, triangles.data(), 2, [](const u8* data) -> u32 { return *reinterpret_cast<const u16*>(data); });
-        break;
-
-        case TINYGLTF_PARAMETER_TYPE_INT:
-        case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT:
-            decode_index_buffer(model, buffer, accessor, triangles.data(), 4, [](const u8* data) -> u32 { return *reinterpret_cast<const u32*>(data); });
-        break;
-
-        default:
-            y_throw_msg("Index component type not supported");
-    }
-
-    return triangles;
 }
 
 static math::Transform<> build_base_change_transform() {
@@ -363,10 +221,10 @@ static math::Transform<> parse_node_transform_matrix(const tinygltf::Node& node)
         return float(f);
     });
 
-    const math::Transform<> tr(mat);
-    y_debug_assert(math::fully_finite(tr));
-    y_debug_assert(tr[3][3] == 1.0f);
-    return tr;
+
+    y_debug_assert(math::fully_finite(mat));
+    y_debug_assert(mat[3][3] == 1.0f);
+    return base_change_transform * mat;
 }
 
 static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
@@ -401,34 +259,15 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
     return tr;
 }
 
-static ParsedScene::Node& parse_node(usize index, ParsedScene& scene) {
-    const auto& node = scene.gltf->nodes[index];
-
-    const math::Transform<> transform = parse_node_transform(node);
-
-    const usize node_index = scene.nodes.size();
-    scene.nodes.emplace_back(
-        node.name.empty() ? fmt_to_owned("unnamed_node_{}", index) : clean_asset_name(node.name),
-        transform,
-        node.mesh
-    );
-
-    for(auto& child : node.children) {
-        auto& parsed_child = parse_node(child, scene);
-        parsed_child.transform = transform * parsed_child.transform;
-    }
-
-    return scene.nodes[node_index];
-}
 
 
-ParsedScene parse_scene(const core::String& filename) {
+
+core::Result<ParsedScene> parse_scene(const core::String& filename) {
     y_profile();
 
     core::DebugTimer timer("Parsing gltf");
 
     ParsedScene scene;
-    scene.is_error = false;
     scene.filename = filename;
     scene.name = clean_asset_name(filename);
     scene.gltf = decltype(scene.gltf)(new tinygltf::Model(), [](tinygltf::Model* ptr) { delete ptr; });
@@ -459,189 +298,41 @@ ParsedScene parse_scene(const core::String& filename) {
         }
 
         if(!ok) {
-            return ParsedScene();
+            return core::Err();
         }
     }
 
-    for(usize i = 0; i != scene.gltf->meshes.size(); ++i) {
-        const tinygltf::Mesh& mesh = scene.gltf->meshes[i];
 
-        auto& parsed_mesh = scene.mesh_prefabs.emplace_back();
-        parsed_mesh.name = mesh.name.empty() ? fmt_to_owned("unnamed_mesh_{}", i) : clean_asset_name(mesh.name);
-        parsed_mesh.gltf_index = int(i);
+    scene.nodes.set_min_capacity(scene.gltf->nodes.size());
+    for(const tinygltf::Node& gltf_node : scene.gltf->nodes) {
+        auto& node = scene.nodes.emplace_back();
 
-        for(usize j = 0; j != mesh.primitives.size(); ++j) {
-            const tinygltf::Primitive& prim = mesh.primitives[j];
+        node.name = gltf_node.name;
+        node.transform = parse_node_transform(gltf_node);
+        node.mesh_index = gltf_node.mesh;
+        node.children = core::Vector<int>::from_range(gltf_node.children);
 
-            if(prim.mode != TINYGLTF_MODE_TRIANGLES) {
-                continue;
+        if(node.name.is_empty()) {
+            node.name = fmt_to_owned("node_{}", scene.nodes.size());
+        }
+    }
+
+
+    {
+        for(const auto& node : scene.nodes) {
+            for(const int child_index : node.children) {
+                scene.nodes[child_index].has_parent = true;
             }
-
-            auto& group = parsed_mesh.materials.emplace_back();
-            group.primitive_index = int(j);
-            group.gltf_material_index = prim.material;
-
-        }
-    }
-
-    for(usize i = 0; i != scene.gltf->images.size(); ++i) {
-        const tinygltf::Image& image = scene.gltf->images[i];
-
-        auto& parsed_image = scene.images.emplace_back();
-        parsed_image.name = image.name.empty() ? fmt_to_owned("unnamed_image_{}", i) : clean_asset_name(image.name);
-        parsed_image.gltf_index = int(i);
-    }
-
-    for(usize i = 0; i != scene.gltf->materials.size(); ++i) {
-        const tinygltf::Material& material = scene.gltf->materials[i];
-
-        auto& parsed_material = scene.materials.emplace_back();
-        parsed_material.name = material.name.empty() ? fmt_to_owned("unnamed_material_{}", i) : clean_asset_name(material.name);
-        parsed_material.gltf_index = int(i);
-
-        const int tex_index = material.pbrMetallicRoughness.baseColorTexture.index;
-        if(tex_index >= 0) {
-            const int image_index = scene.gltf->textures[tex_index].source;
-            scene.images[image_index].as_sRGB = true;
-        }
-    }
-
-
-    if(scene.gltf->defaultScene >= 0) {
-        const auto& gltf_scene = scene.gltf->scenes[scene.gltf->defaultScene];
-        for(int node : gltf_scene.nodes) {
-            parse_node(node, scene);
-        }
-    }
-
-    return scene;
-}
-
-core::Result<MeshData> ParsedScene::build_mesh_data(usize index) const {
-    y_profile();
-
-    const MeshPrefab& parsed_mesh = mesh_prefabs[index];
-    y_debug_assert(!parsed_mesh.is_error);
-
-    /*const math::Vec3 forward = math::Vec3(0.0f, 0.0f, 1.0f);
-    const math::Vec3 up = math::Vec3(0.0f, 1.0f, 0.0f);
-
-    math::Transform<> transform;
-    transform.set_basis(forward, forward.cross(up), up);
-    transform = transform.transposed();*/
-
-    MeshData mesh_data;
-    for(const MaterialGroup& group : parsed_mesh.materials) {
-        if(group.gltf_material_index < 0 || group.primitive_index < 0) {
-            continue;
         }
 
-        const tinygltf::Primitive& prim = gltf->meshes[parsed_mesh.gltf_index].primitives[group.primitive_index];
-
-        try {
-            auto vertices = import_vertices(*gltf, prim);
-            if(vertices.is_empty()) {
-                continue;
+        for(usize i = 0; i != scene.nodes.size(); ++i) {
+            if(!scene.nodes[i].has_parent) {
+                scene.root_nodes << int(i);
             }
-
-            const bool recompute_tangents = vertices.size() && vertices[0].tangent.is_zero();
-
-            Y_TODO(Make faster by using vertex streams)
-            for(FullVertex& vertex : vertices) {
-                vertex.position = base_change_transform.transform_point(vertex.position);
-                vertex.normal = base_change_transform.transform_direction(vertex.normal);
-                vertex.tangent.to<3>() = base_change_transform.transform_direction(vertex.tangent.to<3>());
-                Y_TODO(Do we need to fix the binormal sign ?)
-            }
-
-            MeshData mesh(vertices, import_triangles(*gltf, prim));
-
-            if(recompute_tangents) {
-                mesh = compute_tangents(mesh);
-            }
-
-            mesh_data.add_sub_mesh(mesh.vertex_streams(), mesh.triangles());
-        } catch(std::exception& e) {
-            log_msg(fmt("Unable to build mesh: {}" , e.what()), Log::Error);
         }
     }
 
-    if(mesh_data.is_empty()) {
-        log_msg("Mesh is empty, skipping" , Log::Warning);
-        return core::Err();
-    }
-
-    return core::Ok(std::move(mesh_data));
-}
-
-core::Result<ImageData> ParsedScene::build_image_data(usize index, bool compress) const {
-    y_profile();
-
-    const Image& parsed_image = images[index];
-    y_debug_assert(!parsed_image.is_error);
-
-    ImageImportFlags flags = compress ? ImageImportFlags::Compress : ImageImportFlags::None;
-    if(parsed_image.as_sRGB) {
-        flags = flags | ImageImportFlags::ImportAsSRGB;
-    }
-    if(parsed_image.generate_mips) {
-        flags = flags | ImageImportFlags::GenerateMipmaps;
-    }
-
-    const tinygltf::Image& image = gltf->images[parsed_image.gltf_index];
-    if(!image.uri.empty()) {
-        const FileSystemModel* fs = FileSystemModel::local_filesystem();
-        const auto path = fs->parent_path(filename);
-        const core::String image_path = path ? fs->join(path.unwrap(), image.uri) : core::String(image.uri);
-        return import_image(image_path, flags);
-    } else {
-        const tinygltf::BufferView& view = gltf->bufferViews[image.bufferView];
-        const tinygltf::Buffer& buffer = gltf->buffers[view.buffer];
-        return import_image(core::Span<u8>(buffer.data.data() + view.byteOffset, view.byteLength), flags);
-    }
-}
-
-core::Result<MaterialData> ParsedScene::build_material_data(usize index) const {
-    y_profile();
-
-    const Material& parsed_material = materials[index];
-    y_debug_assert(!parsed_material.is_error);
-
-    const tinygltf::Material gltf_mat = gltf->materials[parsed_material.gltf_index];
-    const tinygltf::PbrMetallicRoughness& pbr = gltf_mat.pbrMetallicRoughness;
-
-    auto find_texture = [this](int tex_index) -> AssetPtr<Texture> {
-        if(tex_index < 0) {
-            return {};
-        }
-
-        const int image_index = gltf->textures[tex_index].source;
-        const auto it = std::find_if(images.begin(), images.end(), [=](const auto& img) { return img.gltf_index == image_index; });
-        if(it == images.end()) {
-            return {};
-        }
-
-        y_debug_assert(it->gltf_index == image_index);
-        return make_asset_with_id<Texture>(it->asset_id);
-    };
-
-    MaterialData data;
-    data.set_texture(MaterialData::Diffuse, find_texture(pbr.baseColorTexture.index));
-    data.set_texture(MaterialData::Normal, find_texture(gltf_mat.normalTexture.index));
-    data.set_texture(MaterialData::Roughness, find_texture(pbr.metallicRoughnessTexture.index));
-    data.set_texture(MaterialData::Metallic, find_texture(pbr.metallicRoughnessTexture.index));
-    data.set_texture(MaterialData::Emissive, find_texture(gltf_mat.emissiveTexture.index));
-
-    data.alpha_tested() = (gltf_mat.alphaMode != "OPAQUE");
-    data.double_sided() = gltf_mat.doubleSided;
-
-    data.metallic_mul() = float(pbr.metallicFactor);
-    data.roughness_mul() = float(pbr.roughnessFactor);
-    for(usize i = 0; i != 3; ++i) {
-        data.emissive_mul()[i] = float(gltf_mat.emissiveFactor[i]);
-    }
-
-    return core::Ok(std::move(data));
+    return core::Ok(std::move(scene));
 }
 
 core::String supported_scene_extensions() {

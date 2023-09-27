@@ -47,60 +47,32 @@ core::String clean_asset_name(const core::String& name);
 
 
 // ----------------------------- SCENE -----------------------------
-struct ParsedScene {
+struct ParsedScene : NonCopyable {
     struct Asset {
-        bool is_error = false;
-
-        core::String name = "unamed asset";
-
-        int gltf_index = -1;
+        core::String name = "Unamed asset";
         AssetId asset_id;
+        bool is_error = false;
     };
 
-    struct MaterialGroup {
-        int primitive_index = -1;
-        int gltf_material_index = -1;
-    };
-
-    struct MeshPrefab : Asset {
-        AssetId mesh_asset_id;
-        core::Vector<MaterialGroup> materials;
-    };
-
-    struct Image : Asset {
-       bool as_sRGB = false;
-       bool generate_mips = true;
-    };
-
-    struct Material : Asset {
-    };
-
-    struct Node {
-        core::String name = "unamed node";
+    struct Node : Asset {
         math::Transform<> transform;
-        int mesh_gltf_index = -1;
-    };
+        core::Vector<int> children;
 
-    bool is_error = true;
+        int mesh_index = -1;
+        bool has_parent = false;
+    };
 
     core::String name;
     core::String filename;
 
-    core::Vector<MeshPrefab> mesh_prefabs;
-    core::Vector<Material> materials;
-    core::Vector<Image> images;
-
     core::Vector<Node> nodes;
+    core::Vector<int> root_nodes;
 
     std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
-
-    core::Result<MeshData> build_mesh_data(usize index) const;
-    core::Result<ImageData> build_image_data(usize index, bool compress = true) const;
-    core::Result<MaterialData> build_material_data(usize index) const;
 };
 
 
-ParsedScene parse_scene(const core::String& filename);
+core::Result<ParsedScene> parse_scene(const core::String& filename);
 core::String supported_scene_extensions();
 
 

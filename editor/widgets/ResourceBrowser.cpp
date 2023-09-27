@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "ResourceBrowser.h"
 
-#include "SceneImporter2.h"
+#include "GltfImporter.h"
 #include "ImageImporter.h"
 
 #include <editor/ThumbmailRenderer.h>
@@ -45,7 +45,7 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action("Import objects", add_detached_widget<SceneImporter2>)
+editor_action("Import glTF", add_detached_widget<GltfImporter>)
 editor_action("Import image", add_detached_widget<ImageImporter>)
 
 
@@ -70,8 +70,8 @@ bool ResourceBrowser::is_searching() const {
 }
 
 void ResourceBrowser::draw_import_menu() {
-    if(ImGui::Selectable("Import objects")) {
-        add_detached_widget<SceneImporter2>(path());
+    if(ImGui::Selectable("Import glTF")) {
+        add_detached_widget<GltfImporter>(path());
     }
     if(ImGui::Selectable("Import image")) {
         add_detached_widget<ImageImporter>(path());
@@ -84,23 +84,6 @@ void ResourceBrowser::draw_context_menu() {
     ImGui::Separator();
 
     draw_import_menu();
-
-    ImGui::Separator();
-
-    if(ImGui::Selectable("Create material")) {
-        const MaterialData material;
-        io2::Buffer buffer;
-        serde3::WritableArchive arc(buffer);
-        if(arc.serialize(material)) {
-            buffer.reset();
-            AssetStore& store = asset_store();
-            if(!store.import(buffer, store.filesystem()->join(path(), "new material"), AssetType::Material)) {
-                log_msg("Unable to import new material", Log::Error);
-            }
-        } else {
-            log_msg("Unable to create new material", Log::Error);
-        }
-    }
 }
 
 void ResourceBrowser::draw_top_bar() {
