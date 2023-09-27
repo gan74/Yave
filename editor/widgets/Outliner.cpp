@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "Outliner.h"
 #include "AssetSelector.h"
+#include "DeletionDialog.h"
 
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
@@ -123,6 +124,15 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
     auto display_tags = [&] {
         ImGui::TableNextColumn();
+
+        {
+            ImGui::TextUnformatted(ICON_FA_TRASH);
+            if(ImGui::IsItemClicked()) {
+                add_child_widget<DeletionDialog>(id);
+            }
+            ImGui::SameLine();
+        }
+
         for(const auto& [icon, tag, state] : _tag_buttons) {
             const bool tagged = world.has_tag(id, tag);
             if(tagged == state) {
@@ -154,7 +164,10 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
         (has_children ? 0 : ImGuiTreeNodeFlags_Leaf)
     ;
 
-    if(ImGui::TreeNodeEx(fmt_c_str("{} {}###{}", world.entity_icon(id), component->name(), id.as_u64()), flags)) {
+    const bool open = ImGui::TreeNodeEx(fmt_c_str("{} {}###{}", world.entity_icon(id), component->name(), id.as_u64()), flags);
+
+
+    {
         if(ImGui::IsItemClicked()) {
             world.toggle_selected(id, !ImGui::GetIO().KeyCtrl);
         }
@@ -167,20 +180,16 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
         }
 
         display_tags();
+    }
 
+
+    if(open) {
         const auto children = core::Vector<ecs::EntityId>::from_range(world.children(id));
         for(const ecs::EntityId child : children) {
             display_node(world, child);
         }
 
         ImGui::TreePop();
-    } else {
-        if(ImGui::IsItemClicked()) {
-            world.toggle_selected(id, !ImGui::GetIO().KeyCtrl);
-        }
-
-        make_drop_target(world, id);
-        display_tags();
     }
 }
 

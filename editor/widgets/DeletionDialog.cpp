@@ -52,7 +52,8 @@ void DeletionDialog::on_gui() {
         y_profile_zone("deleting entities");
 
         const ecs::EntityId parent = world.parent(_id);
-        for(ecs::EntityId id : world.children(_id)) {
+        const auto children = core::Vector<ecs::EntityId>::from_range(world.children(_id));
+        for(ecs::EntityId id : children) {
             if(_delete_children) {
                 world.remove_entity(id);
             } else {
