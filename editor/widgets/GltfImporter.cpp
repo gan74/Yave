@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/meshes/StaticMesh.h>
+#include <yave/material/Material.h>
 
 #include <editor/utils/ui.h>
 #include <editor/components/EditorComponent.h>
@@ -54,9 +55,18 @@ static AssetId import_asset(AssetStore& store, const core::String& name, const T
 
     {
         y_profile_zone("import");
-        if(const auto res = store.import(buffer, name, type); res.is_ok()) {
-            return res.unwrap();
+
+        core::String suffix;
+        for(usize i = 0;; ++i) {
+            if(const auto res = store.import(buffer, "import/" + name + suffix, type); res.is_ok()) {
+                return res.unwrap();
+            } else if(res.error() == AssetStore::ErrorType::NameAlreadyExists) {
+                suffix = fmt_to_owned(" ({})", i);
+            } else {
+                log_msg(fmt("Unable to import {}, error: {}", name, res.error()), Log::Error);
+            }
         }
+
     }
 
     return AssetId::invalid_id();
@@ -72,14 +82,24 @@ static AssetId import_node(AssetStore& store, import::ParsedScene& scene, int in
         return node.asset_id;
     }
 
+    core::String name = node.name;
+
     ecs::EntityPrefab prefab(ecs::EntityId::dummy(u32(index)));
-    prefab.add(EditorComponent(node.name));
-    prefab.add(TransformableComponent(node.transform));
 
     if(node.mesh_index >= 0) {
        const auto& mesh = scene.meshes[node.mesh_index];
        if(mesh.asset_id != AssetId::invalid_id()) {
-           prefab.add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.asset_id), device_resources()[DeviceResources::EmptyMaterial]));
+           core::Vector<AssetPtr<Material>> materials;
+           std::transform(mesh.materials.begin(), mesh.materials.end(), std::back_inserter(materials), [&](int mat_index) {
+               if(mat_index < 0) {
+                   return AssetPtr<Material>();
+               }
+               return make_asset_with_id<Material>(scene.materials[mat_index].asset_id);
+           });
+
+            prefab.add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.asset_id), std::move(materials)));
+
+           name = mesh.name;
        }
     }
 
@@ -89,6 +109,9 @@ static AssetId import_node(AssetStore& store, import::ParsedScene& scene, int in
             prefab.add_child(make_asset_with_id<ecs::EntityPrefab>(id));
         }
     }
+
+    prefab.add(TransformableComponent(node.transform));
+    prefab.add(EditorComponent(name));
 
     node.set_id(import_asset(store, node.name, prefab, AssetType::Prefab));
 
@@ -147,6 +170,13 @@ void GltfImporter::on_gui() {
         case State::Settings: {
             core::DebugTimer _("Importing nodes");
             y_debug_assert(_scene.is_ok());
+
+            for(usize i = 0; i != _scene.unwrap().materials.size(); ++i) {
+                auto& material = _scene.unwrap().materials[i];
+                if(const auto material_data = _scene.unwrap().create_material(int(i))) {
+                    material.set_id(import_asset(asset_store(), material.name, material_data.unwrap(), AssetType::Material));
+                }
+            }
 
             for(usize i = 0; i != _scene.unwrap().meshes.size(); ++i) {
                 auto& mesh = _scene.unwrap().meshes[i];

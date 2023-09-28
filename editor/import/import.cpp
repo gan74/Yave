@@ -249,10 +249,6 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
         rotation[k] = float(node.rotation[k]);
     }
 
-    // rotation.to<3>() = base_change_transform.transform_direction(rotation.to<3>());
-    // translation = base_change_transform.transform_direction(translation);
-    // scale = base_change_transform.transform_direction(scale);
-
     const math::Transform<> tr = math::Transform<>(translation, rotation, scale);
     y_debug_assert(math::fully_finite(tr));
     y_debug_assert(tr[3][3] == 1.0f);
@@ -442,10 +438,25 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
     }
 
 
+    for(const tinygltf::Material& gltf_material : scene.gltf->materials) {
+        auto& material = scene.materials.emplace_back();
+
+        material.name = gltf_material.name;
+
+        if(material.name.is_empty()) {
+            material.name = fmt_to_owned("material_{}", scene.materials.size());
+        }
+    }
+
+
     for(const tinygltf::Mesh& gltf_mesh : scene.gltf->meshes) {
         auto& mesh = scene.meshes.emplace_back();
 
         mesh.name = gltf_mesh.name;
+
+        for(const auto& primitive : gltf_mesh.primitives) {
+            mesh.materials << primitive.material;
+        }
 
         if(mesh.name.is_empty()) {
             mesh.name = fmt_to_owned("mesh_{}", scene.meshes.size());
@@ -503,6 +514,20 @@ core::Result<MeshData> ParsedScene::create_mesh(int index) const {
     return core::Ok(std::move(mesh_data));
 }
 
+core::Result<MaterialData> ParsedScene::create_material(int index) const {
+    if(index < 0) {
+        return core::Err();
+    }
+
+    const tinygltf::Material& material = gltf->materials[index];
+
+    MaterialData mat_data;
+    for(usize i = 0; i != 3; ++i) {
+        mat_data.base_color_mul()[i] = float(material.pbrMetallicRoughness.baseColorFactor[i]);
+    }
+
+    return core::Ok(std::move(mat_data));
+}
 
 core::String supported_scene_extensions() {
     return "*.gltf;*.glb";

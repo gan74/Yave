@@ -59,8 +59,12 @@ struct ParsedScene : NonCopyable {
         }
     };
 
-    struct Mesh : Asset {
+    struct Material : Asset {
 
+    };
+
+    struct Mesh : Asset {
+        core::Vector<int> materials;
     };
 
     struct Node : Asset {
@@ -75,6 +79,7 @@ struct ParsedScene : NonCopyable {
     core::String filename;
 
     core::Vector<Mesh> meshes;
+    core::Vector<Material> materials;
 
     core::Vector<Node> nodes;
     core::Vector<int> root_nodes;
@@ -82,6 +87,7 @@ struct ParsedScene : NonCopyable {
     std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
 
     core::Result<MeshData> create_mesh(int index) const;
+    core::Result<MaterialData> create_material(int index) const;
 };
 
 
