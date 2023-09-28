@@ -224,7 +224,7 @@ static math::Transform<> parse_node_transform_matrix(const tinygltf::Node& node)
 
     y_debug_assert(math::fully_finite(mat));
     y_debug_assert(mat[3][3] == 1.0f);
-    return base_change_transform * mat;
+    return mat;
 }
 
 static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
@@ -249,14 +249,24 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
         rotation[k] = float(node.rotation[k]);
     }
 
-    rotation.to<3>() = base_change_transform.transform_direction(rotation.to<3>());
-    translation = base_change_transform.transform_direction(translation);
-    scale = base_change_transform.transform_direction(scale);
+    // rotation.to<3>() = base_change_transform.transform_direction(rotation.to<3>());
+    // translation = base_change_transform.transform_direction(translation);
+    // scale = base_change_transform.transform_direction(scale);
 
     const math::Transform<> tr = math::Transform<>(translation, rotation, scale);
     y_debug_assert(math::fully_finite(tr));
     y_debug_assert(tr[3][3] == 1.0f);
     return tr;
+}
+
+template<typename T>
+void propagate_transforms(T& nodes, int index, math::Transform<> parent) {
+    auto& node = nodes[index];
+    node.transform = parent * node.transform;
+
+    for(const int child_index : node.children) {
+        propagate_transforms(nodes, child_index, node.transform);
+    }
 }
 
 template<typename T>
@@ -377,7 +387,6 @@ static core::Result<core::Vector<IndexedTriangle>> import_triangles(const tinygl
 
 
 
-
 core::Result<ParsedScene> parse_scene(const core::String& filename) {
     y_profile();
 
@@ -445,16 +454,21 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
 
 
     {
-        for(const auto& node : scene.nodes) {
-            for(const int child_index : node.children) {
-                scene.nodes[child_index].has_parent = true;
+        for(usize i = 0; i != scene.nodes.size(); ++i) {
+            for(const int child_index : scene.nodes[i].children) {
+                scene.nodes[child_index].parent_index = int(i);
             }
         }
 
         for(usize i = 0; i != scene.nodes.size(); ++i) {
-            if(!scene.nodes[i].has_parent) {
+            if(scene.nodes[i].parent_index < 0) {
                 scene.root_nodes << int(i);
+                propagate_transforms(scene.nodes, int(i), math::Transform<>());
             }
+        }
+
+        for(auto& node : scene.nodes) {
+            node.transform = base_change_transform * node.transform;
         }
     }
 

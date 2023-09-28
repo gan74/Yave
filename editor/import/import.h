@@ -68,7 +68,7 @@ struct ParsedScene : NonCopyable {
         core::Vector<int> children;
 
         int mesh_index = -1;
-        bool has_parent = false;
+        int parent_index = -1;
     };
 
     core::String name;
