@@ -49,7 +49,7 @@ void main() {
                                normal.z * in_normal;
 
     SurfaceInfo surface;
-    surface.albedo = color.rgb;
+    surface.albedo = color.rgb * material.base_color_mul;
     surface.normal = mapped_normal;
 
     // We fetch Y so we can use either greyscale or RG metallic/roughness textures

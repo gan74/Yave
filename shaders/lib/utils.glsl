@@ -61,9 +61,10 @@ struct MaterialData {
     vec3 emissive_mul;
     float roughness_mul;
 
+    vec3 base_color_mul;
     float metallic_mul;
 
-    uint texture_indices[7];
+    uint texture_indices[8];
 };
 
 struct DirectionalLight {

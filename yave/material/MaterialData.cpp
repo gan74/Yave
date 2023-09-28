@@ -81,6 +81,14 @@ math::Vec3& MaterialData::emissive_mul() {
     return _emissive_mul;
 }
 
+math::Vec3 MaterialData::base_color_mul() const {
+    return _base_color_mul;
+}
+
+math::Vec3& MaterialData::base_color_mul() {
+    return _base_color_mul;
+}
+
 float MaterialData::roughness_mul() const {
     return _roughness_mul;
 }

@@ -58,11 +58,12 @@ static_assert(sizeof(Camera) % 16 == 0);
 
 
 struct MaterialData {
-    static constexpr usize texture_count = 7;
+    static constexpr usize texture_count = 8;
 
     math::Vec3 emissive_mul;
     float roughness_mul = 1.0f;
 
+    math::Vec3 base_color_mul;
     float metallic_mul = 0.0f;
 
     u32 texture_indices[texture_count];

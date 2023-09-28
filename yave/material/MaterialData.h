@@ -55,6 +55,9 @@ class MaterialData {
         math::Vec3 emissive_mul() const;
         math::Vec3& emissive_mul();
 
+        math::Vec3 base_color_mul() const;
+        math::Vec3& base_color_mul();
+
         float roughness_mul() const;
         float& roughness_mul();
 
@@ -72,7 +75,8 @@ class MaterialData {
 
         y_reflect(MaterialData,
               _textures,
-              _emissive_mul, _roughness_mul, _metallic_mul,
+              _emissive_mul, _base_color_mul,
+              _roughness_mul, _metallic_mul,
               _alpha_tested, _double_sided
         )
 
@@ -82,6 +86,7 @@ class MaterialData {
         std::array<AssetPtr<Texture>, texture_count> _textures;
 
         math::Vec3 _emissive_mul;
+        math::Vec3 _base_color_mul = math::Vec3(1.0f);
         float _roughness_mul = 1.0f;
         float _metallic_mul = 0.0f;
 

@@ -81,6 +81,7 @@ MaterialDrawData MaterialAllocator::allocate_material(const MaterialData& materi
     uniform::MaterialData data = {};
     {
         data.emissive_mul = material.emissive_mul();
+        data.base_color_mul = material.base_color_mul();
         data.roughness_mul = material.roughness_mul();
         data.metallic_mul = material.metallic_mul();
         y_debug_assert(textures.size() <= data.texture_count);
