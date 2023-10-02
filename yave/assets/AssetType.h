@@ -29,6 +29,7 @@ SOFTWARE.
 namespace yave {
 
 enum class AssetType : u32 {
+    Unknown = 0,
     Mesh = 1,
     Image = 2,
     Animation = 3,
@@ -36,8 +37,6 @@ enum class AssetType : u32 {
     // Unused 5
     Material = 6,
     Prefab = 7,
-
-    Unknown = u32(-1)
 };
 
 std::string_view asset_type_name(AssetType type);
