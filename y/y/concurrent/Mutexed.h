@@ -26,6 +26,7 @@ SOFTWARE.
 #include <y/utils.h>
 
 #include <mutex>
+#include <shared_mutex>
 
 namespace y {
 namespace concurrent {
@@ -46,6 +47,12 @@ class Mutexed : NonCopyable {
         template<typename F>
         inline decltype(auto) locked(F&& func) const {
             const std::unique_lock lock(_lock);
+            return func(_obj);
+        }
+
+        template<typename F>
+        inline decltype(auto) locked_shared(F&& func) const {
+            const std::shared_lock lock(_lock);
             return func(_obj);
         }
 
