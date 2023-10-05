@@ -95,20 +95,22 @@ void register_action(EditorAction* action);
 
 
 #define editor_action_(name, desc, flags, shortcut, func, ...)                                          \
-    struct y_create_name_with_prefix(action_trigger_t) {                                                \
-        inline static struct action_register_t {                                                        \
-            action_register_t() {                                                                       \
+    namespace {                                                                                         \
+        inline static struct y_create_name_with_prefix(action_register_t) {                             \
+            y_create_name_with_prefix(action_register_t)() {                                            \
                 static constexpr std::string_view names[] = { name, __VA_ARGS__ };                      \
                 static editor::EditorAction action = {                                                  \
-                    names[0], desc, (flags), yave::KeyCombination(shortcut), [] { func(); },             \
+                    names[0], desc, (flags), yave::KeyCombination(shortcut), [] { func(); },            \
                     y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr           \
                 };                                                                                      \
                 editor::detail::register_action(&action);                                               \
             }                                                                                           \
             void trigger() {}                                                                           \
-        } action_registerer;                                                                            \
-        void trigger() { action_registerer.trigger(); }                                                 \
-    };
+        } y_create_name_with_prefix(action_register);                                                   \
+    }                                                                                                   \
+    void y_register_action(y_create_name_with_prefix(action_register_t)) {                              \
+        y_create_name_with_prefix(action_register).trigger();                                           \
+    }
 
 
 #define editor_action_shortcut(name, shortcut, func, ...) editor_action_(name, "", 0, shortcut, func, __VA_ARGS__)

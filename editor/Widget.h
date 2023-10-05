@@ -30,21 +30,22 @@ SOFTWARE.
 
 #include <array>
 
+#define editor_widget_(type, on_startup, ...)                                                                       \
+    inline static struct widget_register_t {                                                                        \
+        widget_register_t() {                                                                                       \
+            auto open_func = [] { editor::add_detached_widget<type>(); };                                           \
+            static editor::EditorWidget widget = {                                                                  \
+                #type, (on_startup), open_func, nullptr                                                             \
+            };                                                                                                      \
+            static editor::EditorAction action = {                                                                  \
+                #type, "Open a new " #type, 0, yave::KeyCombination(), open_func, {}, nullptr                       \
+            };                                                                                                      \
+            editor::detail::register_widget(&widget);                                                               \
+            editor::detail::register_action(&action);                                                               \
+        }                                                                                                           \
+        void trigger() {}                                                                                           \
+    } widget_registerer;                                                                                            \
 
-#define editor_widget_(type, on_startup, ...)                                                                                   \
-    editor_action_(#type, "Open a new " #type, 0, /* no shortcut */, [] { editor::add_detached_widget<type>(); }, __VA_ARGS__)   \
-    struct y_create_name_with_prefix(widget_trigger_t) {                                                                        \
-        inline static struct widget_register_t {                                                                                \
-            widget_register_t() {                                                                                               \
-                static editor::EditorWidget widget = {                                                                          \
-                    #type, (on_startup), [] { editor::add_detached_widget<type>(); }, nullptr                                    \
-                };                                                                                                              \
-                editor::detail::register_widget(&widget);                                                                       \
-            }                                                                                                                   \
-            void trigger() {}                                                                                                   \
-        } widget_registerer;                                                                                                    \
-        void trigger() { widget_registerer.trigger(); }                                                                         \
-    };
 
 
 #define editor_widget(type, ...)        editor_widget_(type, false, __VA_ARGS__)
