@@ -61,10 +61,14 @@ void DependencyGroup::solve_dependency() {
 }
 
 
-StaticThreadPool::FuncData::FuncData(Func func, DependencyGroup wait, DependencyGroup done) :
+StaticThreadPool::FuncData::FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done) :
         function(std::move(func)),
-        wait_for(std::move(wait)),
+        wait_for(wait),
         on_done(std::move(done)) {
+}
+
+bool StaticThreadPool::FuncData::is_ready() const {
+    return std::all_of(wait_for.begin(), wait_for.end(), [](const auto& dg) { return dg.is_ready(); });
 }
 
 StaticThreadPool::StaticThreadPool(usize thread_count) {
@@ -121,16 +125,16 @@ void StaticThreadPool::process_until_empty() {
     }
 }
 
-void StaticThreadPool::schedule(Func&& func, DependencyGroup* on_done, DependencyGroup wait_for) {
+void StaticThreadPool::schedule(Func&& func, DependencyGroup* on_done, core::Span<DependencyGroup> wait_for) {
     y_debug_assert(_shared_data.run);
 
     {
         const std::unique_lock lock(_shared_data.lock);
         if(on_done) {
             on_done->add_dependency();
-            _shared_data.queue.emplace_back(std::move(func), std::move(wait_for), *on_done);
+            _shared_data.queue.emplace_back(std::move(func), wait_for, *on_done);
         } else {
-            _shared_data.queue.emplace_back(std::move(func), std::move(wait_for));
+            _shared_data.queue.emplace_back(std::move(func), wait_for);
         }
     }
 
@@ -146,7 +150,7 @@ bool StaticThreadPool::process_one(std::unique_lock<std::mutex> lock) {
     y_defer(--_shared_data.working);
 
     for(auto it = _shared_data.queue.begin(); it != _shared_data.queue.end(); ++it) {
-        if(it->wait_for.is_ready()) {
+        if(it->is_ready()) {
             auto f = std::move(*it);
             _shared_data.queue.erase(it);
 
