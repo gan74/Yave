@@ -59,6 +59,11 @@ struct ParsedScene : NonCopyable {
         }
     };
 
+    struct Image : Asset {
+        bool as_sRGB = false;
+        bool generate_mips = true;
+    };
+
     struct Material : Asset {
 
     };
@@ -80,6 +85,7 @@ struct ParsedScene : NonCopyable {
 
     core::Vector<Mesh> meshes;
     core::Vector<Material> materials;
+    core::Vector<Image> images;
 
     core::Vector<Node> nodes;
     core::Vector<int> root_nodes;
@@ -88,6 +94,7 @@ struct ParsedScene : NonCopyable {
 
     core::Result<MeshData> create_mesh(int index) const;
     core::Result<MaterialData> create_material(int index) const;
+    core::Result<ImageData> create_image(int index, bool compress = false) const;
 };
 
 

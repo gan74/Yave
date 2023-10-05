@@ -52,6 +52,8 @@ static auto create_component_containers() {
 }
 
 static EntityId create_prefab_entities(EntityWorld& world, const EntityPrefab& prefab, EntityIdMap& id_map, EntityId base_id = {}) {
+    y_profile();
+
     y_debug_assert(prefab.original_id().is_valid());
 
     const EntityId id = base_id.is_valid() ? base_id : world.create_entity();
@@ -59,24 +61,32 @@ static EntityId create_prefab_entities(EntityWorld& world, const EntityPrefab& p
     id_map.emplace_back(prefab.original_id(), id);
 
     for(const auto& child : prefab.children()) {
-        world.set_parent(create_prefab_entities(world, *child, id_map), id);
+        if(child) {
+            world.set_parent(create_prefab_entities(world, *child, id_map), id);
+        }
     }
 
     return id;
 }
 
 static void add_prefab_components(EntityWorld& world, const EntityPrefab& prefab, const EntityIdMap& id_map) {
+    y_profile();
+
     y_debug_assert(prefab.original_id().is_valid());
 
     const auto it = id_map.find(prefab.original_id());
     y_debug_assert(it != id_map.end());
 
     for(const auto& comp : prefab.components()) {
-        comp->add_to(world, it->second, id_map);
+        if(comp) {
+            comp->add_to(world, it->second, id_map);
+        }
     }
 
     for(const auto& child : prefab.children()) {
-        add_prefab_components(world, *child, id_map);
+        if(child) {
+            add_prefab_components(world, *child, id_map);
+        }
     }
 }
 
@@ -159,6 +169,7 @@ void EntityWorld::tick() {
 
 void EntityWorld::update(float dt) {
     y_profile();
+
     for(auto& system : _systems) {
         y_profile_dyn_zone(system->name().data());
         y_debug_assert(system->_world == this);
@@ -176,6 +187,8 @@ bool EntityWorld::exists(EntityId id) const {
 }
 
 EntityId EntityWorld::create_entity() {
+    y_profile();
+
     return _entities.create();
 }
 
@@ -197,12 +210,16 @@ EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
 
 
 void EntityWorld::add_prefab(EntityId id, const EntityPrefab& prefab) {
+    y_profile();
+
     EntityIdMap id_map;
     create_prefab_entities(*this, prefab, id_map, id);
     add_prefab_components(*this, prefab, id_map);
 }
 
 void EntityWorld::remove_entity(EntityId id) {
+    y_profile();
+
     check_exists(id);
 
     remove_all_components(id);
@@ -216,6 +233,8 @@ void EntityWorld::remove_entity(EntityId id) {
 }
 
 void EntityWorld::remove_all_components(EntityId id) {
+    y_profile();
+
     for(auto& cont : _containers) {
         if(cont) {
             cont->remove(id);
@@ -238,7 +257,7 @@ EntityPrefab EntityWorld::create_prefab(EntityId id) const {
     check_exists(id);
 
     EntityPrefab prefab;
-    y_fatal("oof");
+    y_fatal("not supported");
     return prefab;
 }
 
@@ -247,6 +266,8 @@ EntityId EntityWorld::parent(EntityId id) const {
 }
 
 void EntityWorld::set_parent(EntityId id, EntityId parent_id) {
+    y_profile();
+
     _entities.set_parent(id, parent_id);
 }
 

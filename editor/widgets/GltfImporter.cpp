@@ -42,12 +42,16 @@ SOFTWARE.
 namespace editor {
 
 template<typename T>
-static AssetId import_asset(AssetStore& store, const core::String& name, const T& asset, AssetType type) {
+static AssetId import_asset(const core::String& name, const T& asset, AssetType type) {
+    y_profile();
+    y_profile_msg(fmt_c_str("Importing {} {}", asset_type_name(type), name));
+
     io2::Buffer buffer;
     {
         y_profile_zone("serialize");
         serde3::WritableArchive arc(buffer);
         if(const auto res = arc.serialize(asset); res.is_error()) {
+            log_msg(fmt("Unable to serialize {}", name), Log::Error);
             return AssetId::invalid_id();
         }
         buffer.reset();
@@ -58,12 +62,14 @@ static AssetId import_asset(AssetStore& store, const core::String& name, const T
 
         core::String suffix;
         for(usize i = 0;; ++i) {
-            if(const auto res = store.import(buffer, "import/" + name + suffix, type); res.is_ok()) {
+            if(const auto res = asset_store().import(buffer, "import/" + name + suffix, type); res.is_ok()) {
+                log_msg(fmt("Imported {} \"{}\" as {}", asset_type_name(type), name, stringify_id(res.unwrap())));
                 return res.unwrap();
             } else if(res.error() == AssetStore::ErrorType::NameAlreadyExists) {
                 suffix = fmt_to_owned(" ({})", i);
             } else {
                 log_msg(fmt("Unable to import {}, error: {}", name, res.error()), Log::Error);
+                break;
             }
         }
 
@@ -72,7 +78,7 @@ static AssetId import_asset(AssetStore& store, const core::String& name, const T
     return AssetId::invalid_id();
 }
 
-static AssetId import_node(AssetStore& store, import::ParsedScene& scene, int index) {
+static AssetId import_node(import::ParsedScene& scene, int index) {
     if(index < 0 || scene.nodes[index].is_error) {
         return AssetId();
     }
@@ -104,7 +110,7 @@ static AssetId import_node(AssetStore& store, import::ParsedScene& scene, int in
     }
 
     for(const int child : node.children) {
-        const AssetId id = import_node(store, scene, child);
+        const AssetId id = import_node(scene, child);
         if(id != AssetId::invalid_id()) {
             prefab.add_child(make_asset_with_id<ecs::EntityPrefab>(id));
         }
@@ -113,11 +119,50 @@ static AssetId import_node(AssetStore& store, import::ParsedScene& scene, int in
     prefab.add(TransformableComponent(node.transform));
     prefab.add(EditorComponent(name));
 
-    node.set_id(import_asset(store, node.name, prefab, AssetType::Prefab));
+    node.set_id(import_asset(node.name, prefab, AssetType::Prefab));
 
     return node.asset_id;
 }
 
+static void import_all(concurrent::StaticThreadPool& thread_pool, import::ParsedScene& scene) {
+    concurrent::DependencyGroup image_group;
+    concurrent::DependencyGroup material_group;
+    concurrent::DependencyGroup mesh_group;
+
+    for(usize i = 0; i != scene.images.size(); ++i) {
+        thread_pool.schedule([i, &scene] {
+            auto& image = scene.images[i];
+            if(const auto image_data = scene.create_image(int(i), true)) {
+                image.set_id(import_asset(image.name, image_data.unwrap(), AssetType::Image));
+            }
+        }, &image_group);
+    }
+
+    for(usize i = 0; i != scene.materials.size(); ++i) {
+        thread_pool.schedule([i, &scene] {
+            auto& material = scene.materials[i];
+            if(const auto material_data = scene.create_material(int(i))) {
+                material.set_id(import_asset(material.name, material_data.unwrap(), AssetType::Material));
+            }
+        }, &material_group, image_group);
+    }
+
+    for(usize i = 0; i != scene.meshes.size(); ++i) {
+        thread_pool.schedule([i, &scene] {
+            auto& mesh = scene.meshes[i];
+            if(const auto mesh_data = scene.create_mesh(int(i))) {
+                mesh.set_id(import_asset(mesh.name, mesh_data.unwrap(), AssetType::Mesh));
+            }
+        }, &mesh_group, material_group);
+    }
+
+    Y_TODO(slow, be import_node is not thread safe)
+    thread_pool.schedule([&scene] {
+        for(const int child_index : scene.root_nodes) {
+            import_node(scene, child_index);
+        }
+    }, nullptr, mesh_group);
+}
 
 
 GltfImporter::GltfImporter() : GltfImporter(asset_store().filesystem()->current_path().unwrap_or(".")) {
@@ -168,27 +213,8 @@ void GltfImporter::on_gui() {
         break;
 
         case State::Settings: {
-            core::DebugTimer _("Importing nodes");
             y_debug_assert(_scene.is_ok());
-
-            for(usize i = 0; i != _scene.unwrap().materials.size(); ++i) {
-                auto& material = _scene.unwrap().materials[i];
-                if(const auto material_data = _scene.unwrap().create_material(int(i))) {
-                    material.set_id(import_asset(asset_store(), material.name, material_data.unwrap(), AssetType::Material));
-                }
-            }
-
-            for(usize i = 0; i != _scene.unwrap().meshes.size(); ++i) {
-                auto& mesh = _scene.unwrap().meshes[i];
-                if(const auto mesh_data = _scene.unwrap().create_mesh(int(i))) {
-                    mesh.set_id(import_asset(asset_store(), mesh.name, mesh_data.unwrap(), AssetType::Mesh));
-                }
-            }
-
-            for(const int node_index : _scene.unwrap().root_nodes) {
-                import_node(asset_store(), _scene.unwrap(), node_index);
-            }
-
+            import_all(_thread_pool, _scene.unwrap());
             _state = State::Importing;
         } break;
 

@@ -207,6 +207,8 @@ bool EntityPool::is_parent(EntityId id, EntityId parent) const {
 
 void EntityPool::audit() {
 #ifdef Y_DEBUG
+    y_profile();
+
     // Detect cycles
     for(const auto& en : _entities) {
         y_debug_assert(!is_parent(en.id, en.id));

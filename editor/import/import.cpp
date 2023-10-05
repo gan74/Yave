@@ -170,7 +170,7 @@ core::Result<ImageData> import_image(core::Span<u8> image_data, ImageImportFlags
             break; */
 
             default:
-                log_msg("Compression is not supported for the given image format", Log::Error);
+                log_msg("Compression is not supported for the given image format", Log::Warning);
         }
     }
 
@@ -187,17 +187,17 @@ core::String supported_image_extensions() {
 
 
 
-static usize component_count(int type) {
+static core::Result<usize> component_count(int type) {
     switch(type) {
-        case TINYGLTF_TYPE_SCALAR: return 1;
-        case TINYGLTF_TYPE_VEC2: return 2;
-        case TINYGLTF_TYPE_VEC3: return 3;
-        case TINYGLTF_TYPE_VEC4: return 4;
-        case TINYGLTF_TYPE_MAT2: return 4;
-        case TINYGLTF_TYPE_MAT3: return 9;
-        case TINYGLTF_TYPE_MAT4: return 16;
+        case TINYGLTF_TYPE_SCALAR:  return core::Ok(1_uu);
+        case TINYGLTF_TYPE_VEC2:    return core::Ok(2_uu);
+        case TINYGLTF_TYPE_VEC3:    return core::Ok(3_uu);
+        case TINYGLTF_TYPE_VEC4:    return core::Ok(4_uu);
+        case TINYGLTF_TYPE_MAT2:    return core::Ok(4_uu);
+        case TINYGLTF_TYPE_MAT3:    return core::Ok(9_uu);
+        case TINYGLTF_TYPE_MAT4:    return core::Ok(16_uu);
         default:
-            y_throw_msg("Sparse accessors are not supported");
+            return core::Err();
     }
 }
 
@@ -280,7 +280,7 @@ static void read_packed_unit_vec(math::Vec2ui& packed, core::Span<float> s) {
 
 template<typename T, typename F>
 static void import_stream(const tinygltf::Model& model, const tinygltf::Accessor& accessor, core::MutableSpan<T> stream, F&& packer) {
-    const usize components = component_count(accessor.type);
+    const usize components = component_count(accessor.type).unwrap();
     const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
 
     const u8* begin = model.buffers[buffer.buffer].data.data() + buffer.byteOffset + accessor.byteOffset;
@@ -313,7 +313,8 @@ static core::Result<MeshVertexStreams> import_vertices(const tinygltf::Model& mo
             continue;
         }
 
-        if(accessor.sparse.isSparse || accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) {
+        if(accessor.sparse.isSparse || accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT || component_count(accessor.type).is_error()) {
+            log_msg("Unsupported component type", Log::Error);
             return core::Err();
         }
 
@@ -437,6 +438,15 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
         }
     }
 
+    for(const tinygltf::Image& gltf_image : scene.gltf->images) {
+        auto& texture = scene.images.emplace_back();
+
+        texture.name = gltf_image.name;
+
+        if(texture.name.is_empty()) {
+            texture.name = fmt_to_owned("texture_{}", scene.materials.size());
+        }
+    }
 
     for(const tinygltf::Material& gltf_material : scene.gltf->materials) {
         auto& material = scene.materials.emplace_back();
@@ -445,6 +455,12 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
 
         if(material.name.is_empty()) {
             material.name = fmt_to_owned("material_{}", scene.materials.size());
+        }
+
+        if(const int texture_index = gltf_material.pbrMetallicRoughness.baseColorTexture.index; texture_index >= 0) {
+            if(const int image_index = scene.gltf->textures[texture_index].source; image_index >= 0) {
+                scene.images[image_index].as_sRGB = true;
+            }
         }
     }
 
@@ -520,13 +536,69 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
     }
 
     const tinygltf::Material& material = gltf->materials[index];
+    const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
+
+
+    auto find_texture = [&](int tex_index) -> AssetPtr<Texture> {
+        if(tex_index < 0) {
+            return {};
+        }
+
+        const int image_index = gltf->textures[tex_index].source;
+        if(image_index < 0) {
+            return {};
+        }
+
+        return make_asset_with_id<Texture>(images[image_index].asset_id);
+    };
+
 
     MaterialData mat_data;
+
+    mat_data.set_texture(MaterialData::Diffuse, find_texture(pbr.baseColorTexture.index));
+    mat_data.set_texture(MaterialData::Normal, find_texture(material.normalTexture.index));
+    mat_data.set_texture(MaterialData::Roughness, find_texture(pbr.metallicRoughnessTexture.index));
+    mat_data.set_texture(MaterialData::Metallic, find_texture(pbr.metallicRoughnessTexture.index));
+    mat_data.set_texture(MaterialData::Emissive, find_texture(material.emissiveTexture.index));
+
+    mat_data.alpha_tested() = (material.alphaMode != "OPAQUE");
+    mat_data.double_sided() = material.doubleSided;
+    mat_data.metallic_mul() = float(pbr.metallicFactor);
+    mat_data.roughness_mul() = float(pbr.roughnessFactor);
     for(usize i = 0; i != 3; ++i) {
         mat_data.base_color_mul()[i] = float(material.pbrMetallicRoughness.baseColorFactor[i]);
+        mat_data.emissive_mul()[i] = float(material.emissiveFactor[i]);
     }
 
+
     return core::Ok(std::move(mat_data));
+}
+
+core::Result<ImageData> ParsedScene::create_image(int index, bool compress) const {
+    if(index < 0) {
+        return core::Err();
+    }
+
+    ImageImportFlags flags = compress ? ImageImportFlags::Compress : ImageImportFlags::None;
+    if(images[index].as_sRGB) {
+        flags = flags | ImageImportFlags::ImportAsSRGB;
+    }
+    if(images[index].generate_mips) {
+        flags = flags | ImageImportFlags::GenerateMipmaps;
+    }
+
+    const tinygltf::Image& image = gltf->images[index];
+
+    if(!image.uri.empty()) {
+        const FileSystemModel* fs = FileSystemModel::local_filesystem();
+        const auto path = fs->parent_path(filename);
+        const core::String image_path = path ? fs->join(path.unwrap(), image.uri) : core::String(image.uri);
+        return import_image(image_path, flags);
+    }
+
+    const tinygltf::BufferView& view = gltf->bufferViews[image.bufferView];
+    const tinygltf::Buffer& buffer = gltf->buffers[view.buffer];
+    return import_image(core::Span<u8>(buffer.data.data() + view.byteOffset, view.byteLength), flags);
 }
 
 core::String supported_scene_extensions() {

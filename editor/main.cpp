@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/graphics/device/Instance.h>
 #include <yave/ecs/EntityWorld.h>
 #include <y/concurrent/concurrent.h>
+#include <y/concurrent/Signal.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
