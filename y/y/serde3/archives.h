@@ -652,9 +652,10 @@ class ReadableArchive final {
             }
 
             try {
+                Success status = Success::Full;
                 if constexpr(detail::use_collection_fast_path<T>) {
                     if(collection_size) {
-                        y_try(check_header(y_create_named_object(*object.object.begin(), detail::collection_version_string)));
+                        y_try_status(check_header(y_create_named_object(*object.object.begin(), detail::collection_version_string)));
                         if constexpr(!IsRange) {
                             if constexpr(has_resize_v<T>) {
                                 object.object.resize(collection_size);
@@ -680,23 +681,23 @@ class ReadableArchive final {
                     if constexpr(has_emplace_back_v<T>) {
                         for(size_type i = 0; i != collection_size; ++i) {
                             object.object.emplace_back();
-                            y_try(deserialize_one(y_create_named_object(object.object.last(), detail::collection_version_string)));
+                            y_try_status(deserialize_one(y_create_named_object(object.object.last(), detail::collection_version_string)));
                         }
                     } else if constexpr(has_resize_v<T>) {
                         object.object.resize(collection_size);
                         for(size_type i = 0; i != collection_size; ++i) {
-                            y_try(deserialize_one(y_create_named_object(object.object[usize(i)], detail::collection_version_string)));
+                            y_try_status(deserialize_one(y_create_named_object(object.object[usize(i)], detail::collection_version_string)));
                         }
                     } else {
                         if constexpr(is_array_v<T> || IsRange) {
                             for(size_type i = 0; i != collection_size; ++i) {
-                                y_try(deserialize_one(y_create_named_object(object.object[i], detail::collection_version_string)));
+                                y_try_status(deserialize_one(y_create_named_object(object.object[i], detail::collection_version_string)));
                             }
                         } else {
                             using value_type = deconst_t<typename T::value_type>;
                             for(size_type i = 0; i != collection_size; ++i) {
                                 value_type value;
-                                y_try(deserialize_one(y_create_named_object(value, detail::collection_version_string)));
+                                y_try_status(deserialize_one(y_create_named_object(value, detail::collection_version_string)));
                                 object.object.insert(std::move(value));
                             }
                         }
@@ -709,7 +710,7 @@ class ReadableArchive final {
                     }
                 }
 
-                return core::Ok(Success::Full);
+                return core::Ok(status);
 
             } catch(std::bad_alloc&) {
                 return core::Err(Error(ErrorType::SizeError, object.name.data()));
@@ -875,7 +876,7 @@ class ReadableArchive final {
                             if(tell() != end) {
                                 return core::Err(Error(ErrorType::SignatureError, member.name.data()));
                             }
-                            offsets.erase_unordered(offsets.begin() + i);
+                            offsets.erase(offsets.begin() + i);
                             found = true;
                             break;
                         }
