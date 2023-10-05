@@ -67,6 +67,8 @@ void FrameGraphPass::render(CmdBufferRecorder& recorder) {
 }
 
 void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources) {
+    y_profile();
+
     if(_depth.image.is_valid() || _colors.size()) {
         auto declared_here = [&](FrameGraphImageId id) {
             const auto& info = _parent->info(id);
@@ -107,6 +109,8 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
 }
 
 void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resources) {
+    y_profile();
+
     for(const auto& set : _bindings) {
         core::ScratchVector<Descriptor> bindings(set.size());
 
