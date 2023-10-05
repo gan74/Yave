@@ -27,15 +27,15 @@ SOFTWARE.
 namespace y {
 namespace core {
 
-template<typename Key, typename Value, typename ResizePolicy = DefaultVectorResizePolicy>
-class AssocVector : public Vector<std::pair<Key, Value>, ResizePolicy> {
+template<typename Key, typename Value>
+class AssocVector : public Vector<std::pair<Key, Value>> {
 
     public:
         using value_type = std::pair<Key, Value>;
-        using Vector<value_type, ResizePolicy>::Vector;
+        using Vector<value_type>::Vector;
 
-        using iterator = typename Vector<value_type, ResizePolicy>::iterator;
-        using const_iterator = typename Vector<value_type, ResizePolicy>::const_iterator;
+        using iterator = typename Vector<value_type>::iterator;
+        using const_iterator = typename Vector<value_type>::const_iterator;
 
         template<typename K, typename T>
         inline void insert(K&& key, T&& value) {

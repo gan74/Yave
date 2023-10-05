@@ -69,6 +69,34 @@ struct RaiiCounter : NonCopyable {
     usize* counter;
 };
 
+struct LogCopyMove {
+    LogCopyMove(LogCopyMove&& other) : copies(other.copies), moves(other.moves) {
+        ++(*moves);
+    }
+
+    LogCopyMove(const LogCopyMove& other) : copies(other.copies), moves(other.moves) {
+        ++(*copies);
+    }
+
+    LogCopyMove& operator=(LogCopyMove&& other) {
+        y_debug_assert(copies == other.copies && moves == other.moves);
+        ++(*moves);
+        return *this;
+    }
+
+    LogCopyMove& operator=(const LogCopyMove& other) {
+        y_debug_assert(copies == other.copies && moves == other.moves);
+        ++(*copies);
+        return *this;
+    }
+
+    LogCopyMove(usize* c, usize* m) : copies(c), moves(m) {
+    }
+
+    usize* copies = nullptr;
+    usize* moves = nullptr;
+};
+
 template<typename T>
 struct FakeAllocator {
     using value_type = T;
@@ -323,7 +351,8 @@ y_test_func("SmallVector move") {
         y_test_assert(rc.use_count() == 2);
         {
             y_test_assert(rc.use_count() == 2);
-            const SmallVector<std::shared_ptr<int>, 8> cpy = std::move(vec);
+            const SmallVector<std::shared_ptr<int>, 8> cpy(std::move(vec));
+            y_test_assert(rc.use_count() == 2);
         }
         y_test_assert(rc.use_count() == 1);
     }
@@ -347,6 +376,45 @@ y_test_func("Vector insert") {
     }
 }
 
+y_test_func("Vector copy-swap") {
+    usize copies = 0;
+    usize moves = 0;
+    core::Vector<LogCopyMove> v;
+    v.emplace_back(&copies, &moves);
+    v.emplace_back(&copies, &moves);
+    v.emplace_back(&copies, &moves);
+    v.emplace_back(&copies, &moves);
+    v.emplace_back(&copies, &moves);
+
+    y_test_assert(copies == 0);
+    y_test_assert(moves == 0);
+
+    core::Vector<LogCopyMove> s;
+    std::swap(v, s);
+
+    y_test_assert(copies == 0);
+    y_test_assert(moves == 0);
+}
+
+
+y_test_func("SmallVector copy-swap") {
+    usize copies = 0;
+    usize moves = 0;
+    core::SmallVector<LogCopyMove, 4> v;
+    v.emplace_back(&copies, &moves);
+    v.emplace_back(&copies, &moves);
+    v.emplace_back(&copies, &moves);
+    v.emplace_back(&copies, &moves);
+
+    y_test_assert(copies == 0);
+    y_test_assert(moves == 0);
+
+    core::SmallVector<LogCopyMove, 4> s;
+    std::swap(v, s);
+
+    y_test_assert(copies == 0);
+    y_test_assert(moves == 8); // swap = 2 moves
+}
 
 }
 

@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSetBase.h>
 
 #include <y/core/HashMap.h>
+#include <y/core/Vector.h>
 #include <y/concurrent/Mutexed.h>
 
 namespace yave {

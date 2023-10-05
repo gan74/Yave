@@ -29,16 +29,35 @@ SOFTWARE.
 #include <iterator>
 
 
-#ifdef Y_VECTOR_ELECTRIC
-#define Y_CLEAR_ELECTRIC(ptr, size) do { std::memset(static_cast<void*>(ptr), 0xFE, (size) * sizeof(data_type)); } while(false)
-#define Y_CHECK_ELECTRIC(ptr, size) do { for(usize i = 0; i != (size) * sizeof(data_type); ++i) { y_debug_assert(static_cast<const u8*>(static_cast<const void*>(ptr))[i] == 0xFE); } } while(false)
-#else
-#define Y_CLEAR_ELECTRIC(ptr, size)
-#define Y_CHECK_ELECTRIC(ptr, size)
-#endif
-
 namespace y {
 namespace core {
+namespace detail {
+template<typename Elem, usize N>
+struct SBOStorage {
+    using data_type = typename std::remove_const<Elem>::type;
+    union Storage {
+        Storage() {}
+        ~Storage() {}
+
+        data_type storage[N];
+    } sbo_storage;
+
+    inline data_type* sbo_buffer() {
+        return &sbo_storage.storage[0];
+    }
+
+    static_assert(sizeof(Storage) == N * sizeof(data_type));
+};
+
+template<typename Elem>
+struct SBOStorage<Elem, 0> {
+    using data_type = typename std::remove_const<Elem>::type;
+    inline data_type* sbo_buffer() {
+        return nullptr;
+    }
+};
+}
+
 
 template<usize Minimum>
 struct SmallVectorResizePolicy {
@@ -70,11 +89,12 @@ struct SmallVectorResizePolicy {
 
 using DefaultVectorResizePolicy = SmallVectorResizePolicy<16>;
 
+template<typename Elem, typename Allocator = std::allocator<Elem>, typename SBOCapacity = std::integral_constant<usize, 0>>
+class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
 
-template<typename Elem, typename ResizePolicy = DefaultVectorResizePolicy, typename Allocator = std::allocator<Elem>>
-class Vector : Allocator {
-
+    static constexpr bool has_sbo = SBOCapacity::value > 0;
     using data_type = typename std::remove_const<Elem>::type;
+    using ResizePolicy = std::conditional_t<has_sbo, SmallVectorResizePolicy<SBOCapacity::value>, DefaultVectorResizePolicy>;
 
     public:
         using value_type = Elem;
@@ -173,17 +193,6 @@ class Vector : Allocator {
             push_back(beg_it, end_it);
         }
 
-        inline void swap(Vector& v) {
-            if(&v != this) {
-                if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
-                    std::swap<Allocator>(*this, v);
-                }
-                std::swap(_data, v._data);
-                std::swap(_data_end, v._data_end);
-                std::swap(_alloc_end, v._alloc_end);
-            }
-        }
-
         inline ~Vector() {
             clear();
         }
@@ -193,8 +202,6 @@ class Vector : Allocator {
                 expand();
             }
 
-            Y_CHECK_ELECTRIC(_data_end, 1);
-
             ::new(_data_end++) data_type{elem};
         }
 
@@ -202,8 +209,6 @@ class Vector : Allocator {
             if(is_full()) {
                 expand();
             }
-
-            Y_CHECK_ELECTRIC(_data_end, 1);
 
             return *(::new(_data_end++) data_type{std::move(elem)});
         }
@@ -213,8 +218,6 @@ class Vector : Allocator {
             if(is_full()) {
                 expand();
             }
-
-            Y_CHECK_ELECTRIC(_data_end, 1);
 
             return *(::new(_data_end++) data_type{y_fwd(args)...});
         }
@@ -252,8 +255,6 @@ class Vector : Allocator {
             --_data_end;
             data_type r = std::move(*_data_end);
             _data_end->~data_type();
-
-            Y_CLEAR_ELECTRIC(_data_end, 1);
 
             shrink();
             return r;
@@ -412,8 +413,72 @@ class Vector : Allocator {
             return usize(-1);
         }
 
+        inline void swap(Vector& other) {
+            if(&other == this) {
+                return;
+            }
+
+            if(!sbo_swap(other)) {
+                std::swap(_data, other._data);
+                std::swap(_data_end, other._data_end);
+                std::swap(_alloc_end, other._alloc_end);
+            }
+
+            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
+                std::swap<Allocator>(*this, other);
+            }
+        }
+
     private:
+        inline bool sbo_swap(Vector& other) {
+            if constexpr(has_sbo) {
+                if(is_sbo_active() && other.is_sbo_active()) {
+                    const usize this_size = size();
+                    const usize other_size = other.size();
+                    Vector* small = this_size < other_size ? this : &other;
+                    Vector* big = this_size < other_size ? &other : this;
+                    const usize min_size = small->size();
+                    const usize max_size = big->size();
+
+                    for(usize i = 0; i != min_size; ++i) {
+                        std::swap(_data[i], other._data[i]);
+                    }
+                    for(usize i = min_size; i != max_size; ++i) {
+                        ::new(&small->_data[i]) data_type(std::move(big->_data[i]));
+                        big->_data[i].~data_type();
+                    }
+                    small->_data_end = small->_data + max_size;
+                    big->_data_end = big->_data + min_size;
+                    y_debug_assert(small->size() <= small->capacity());
+                    y_debug_assert(big->size() <= big->capacity());
+                } else if(is_sbo_active()) {
+                    y_debug_assert(!other.is_sbo_active());
+                    data_type* data = std::exchange(other._data, other.sbo_buffer());
+                    data_type* data_end = std::exchange(other._data_end, other._data + size());
+                    data_type* alloc_end = std::exchange(other._alloc_end, other._data + SBOCapacity::value);
+                    move_range(other._data, _data, size());
+                    _data = data;
+                    _data_end = data_end;
+                    _alloc_end = alloc_end;
+                } else if(other.is_sbo_active()) {
+                    y_debug_assert(!is_sbo_active());
+                    other.swap(*this);
+                } else {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
         static constexpr bool is_data_trivial = std::is_trivial_v<data_type>;
+
+        inline bool is_sbo_active() {
+            if constexpr(has_sbo) {
+                return _data == this->sbo_buffer();
+            }
+            return false;
+        }
 
         inline bool is_full() const {
             return _data_end == _alloc_end;
@@ -424,7 +489,6 @@ class Vector : Allocator {
         }
 
         inline void move_range(data_type* dst, data_type* src, usize n) {
-            Y_CHECK_ELECTRIC(dst, n);
             if constexpr(is_data_trivial) {
                 std::copy_n(src, n, dst);
             } else {
@@ -440,8 +504,6 @@ class Vector : Allocator {
                     (--e)->~data_type();
                 }
             }
-
-            Y_CLEAR_ELECTRIC(beg, en - beg);
         }
 
         inline void expand() {
@@ -463,28 +525,33 @@ class Vector : Allocator {
             }
 
             const usize current_size = size();
-            const usize num_to_move = new_cap < current_size ? new_cap : current_size;
+            const usize num_to_keep = new_cap < current_size ? new_cap : current_size;
 
-            data_type* new_data = new_cap ? Allocator::allocate(new_cap) : nullptr;
-
-            Y_CLEAR_ELECTRIC(new_data, new_cap);
-            Y_CHECK_ELECTRIC(new_data, new_cap);
-
-            if(new_data != _data) {
-                move_range(new_data, _data, num_to_move);
-                clear(_data, _data_end);
-
-                if(_data) {
-                    Allocator::deallocate(_data, capacity());
-                }
+            data_type* new_data = nullptr;
+            if(new_cap) {
+                new_data = (new_cap <= SBOCapacity::value)
+                    ? this->sbo_buffer()
+                    : Allocator::allocate(new_cap);
             }
 
+            if(new_data != _data) {
+                move_range(new_data, _data, num_to_keep);
+                clear(_data, _data_end);
+
+                if(_data && _data != this->sbo_buffer()) {
+                    Allocator::deallocate(_data, capacity());
+                }
+            } else {
+                clear(_data + num_to_keep, _data + current_size);
+            }
+
+
             _data = new_data;
-            _data_end = _data + num_to_move;
+            _data_end = _data + num_to_keep;
             _alloc_end = _data + new_cap;
         }
 
-        Owner<data_type*> _data = nullptr;
+        data_type* _data = nullptr;
         data_type* _data_end = nullptr;
         data_type* _alloc_end = nullptr;
 };
@@ -510,56 +577,12 @@ inline Vector<Args...> operator+(Vector<Args...> vec, T&& t) {
 
 
 
-// Never, EVER use outside of vector
-template<typename Elem, usize Capacity, typename Allocator = std::allocator<Elem>>
-class SmallVectorAllocator : private Allocator {
-    public:
-        using Allocator::value_type;
-        using Allocator::size_type;
-        using Allocator::difference_type;
-        using Allocator::propagate_on_container_move_assignment; // Elements should be copied by the container
-
-        Elem* allocate(usize size) {
-            y_debug_assert(size >= Capacity);
-            if(size == Capacity) {
-                return &_storage.elems[0];
-            }
-            return Allocator::allocate(size);
-        }
-
-        void deallocate(Elem* ptr, usize size) {
-            y_debug_assert(size >= Capacity);
-            if(size > Capacity) {
-                Allocator::deallocate(ptr, size);
-            }
-        }
-
-    private:
-        union Storage {
-            Storage() {}
-            ~Storage() {}
-
-            Storage(const Storage&) {}
-            Storage& operator=(const Storage&) {
-                return *this;
-            }
-
-
-            Elem elems[Capacity];
-        } _storage;
-
-        static_assert(sizeof(Storage) == sizeof(Elem) * Capacity);
-};
-
-
-template<typename Elem, usize Capacity = 16, typename InnerAllocator = std::allocator<Elem>>
-using SmallVector = Vector<Elem, SmallVectorResizePolicy<Capacity>, SmallVectorAllocator<Elem, Capacity, InnerAllocator>>;
+template<typename Elem, usize Capacity = 16, typename Allocator = std::allocator<Elem>>
+using SmallVector = Vector<Elem, Allocator, std::integral_constant<usize, Capacity>>;
 
 }
 }
 
-#undef Y_CLEAR_ELECTRIC
-#undef Y_CHECK_ELECTRIC
 
 #endif
 

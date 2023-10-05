@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef Y_CORE_HASHMAP_H
 #define Y_CORE_HASHMAP_H
 
-#include "Vector.h"
 #include "Range.h"
 #include "FixedArray.h"
 
