@@ -595,9 +595,12 @@ class ReadableArchive final {
         inline Result deserialize_property(NamedObject<T> object) {
             using inner = typename T::value_type;
             inner i;
-            y_try(deserialize_one(NamedObject<inner>{i, object.name, object.name_hash.hash}));
+
+            Success status = Success::Full;
+            y_try_status(deserialize_one(NamedObject<inner>{i, object.name, object.name_hash.hash}));
+
             object.object.set(std::move(i));
-            return core::Ok(Success::Full);
+            return core::Ok(status);
         }
 
 
@@ -889,7 +892,8 @@ class ReadableArchive final {
                     y_try(read_one(size));
                     const usize end = tell() + size;
 
-                    y_try(deserialize_one(member));
+                    auto& status = object_data.success_state;
+                    y_try_status(deserialize_one(member));
 
                     if(tell() != end) {
                         return core::Err(Error(ErrorType::SignatureError, member.name.data()));
@@ -913,11 +917,13 @@ class ReadableArchive final {
         template<usize I, typename Tpl>
         inline Result deserialize_tuple_members(Tpl& object) {
             unused(object);
+
+            Success status = Success::Full;
             if constexpr(I < std::tuple_size_v<Tpl>) {
-                y_try(deserialize_one(y_create_named_object(std::get<I>(object), detail::tuple_version_string)));
-                return deserialize_tuple_members<I + 1>(object);
+                y_try_status(deserialize_one(y_create_named_object(std::get<I>(object), detail::tuple_version_string)));
+                y_try_status(deserialize_tuple_members<I + 1>(object));
             }
-            return core::Ok(Success::Full);
+            return core::Ok(status);
         }
 
 
