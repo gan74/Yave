@@ -150,15 +150,10 @@ class EntityWorld {
             return &find_container<T>()->template add_or_replace<T>(id, y_fwd(args)...);
         }
 
-        template<typename First, typename... Args>
+        template<typename... Args>
         void add_or_replace_components(EntityId id) {
-            y_debug_assert(exists(id));
-            if(!has<First>(id)) {
-                add_or_replace_component<First>(id);
-            }
-            if constexpr(sizeof...(Args) != 0) {
-                add_or_replace_components<Args...>(id);
-            }
+            check_exists(id);
+            (find_container<Args>()->template add_or_replace<Args>(id), ...);
         }
 
 
@@ -295,7 +290,7 @@ class EntityWorld {
 
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) {
-            auto q = Query<Args...>(typed_component_sets_or_none<Args...>(), build_matches_for_query<Args...>(tags));
+            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags));
             dirty_mutated_containers<Args...>(q.ids());
             return q;
         }
@@ -303,14 +298,14 @@ class EntityWorld {
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
-            auto q = Query<Args...>(typed_component_sets_or_none<Args...>(), build_matches_for_query<Args...>(tags));
+            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags));
 
             return q;
         }
 
         template<typename... Args>
         auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) {
-            auto q = Query<Args...>(typed_component_sets_or_none<Args...>(), build_matches_for_query<Args...>(tags), ids);
+            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags), ids);
             dirty_mutated_containers<Args...>(q.ids());
             return q;
         }
@@ -318,7 +313,7 @@ class EntityWorld {
         template<typename... Args>
         auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
-            auto q = Query<Args...>(typed_component_sets_or_none<Args...>(), build_matches_for_query<Args...>(tags), ids);
+            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags), ids);
 
             return q;
         }
@@ -371,45 +366,20 @@ class EntityWorld {
             return find_container(type_index<component_type>());
         }
 
-        template<typename T, typename... Args>
-        auto typed_component_sets() const {
-            if constexpr(sizeof...(Args) != 0) {
-                return std::tuple_cat(typed_component_sets<T>(),
-                                      typed_component_sets<Args...>());
-            } else {
-                // We need non consts here and we want to avoir returning non const everywhere else
-                // This shouldn't be UB as component containers are never const
-                using component_type = traits::component_raw_type_t<T>;
-                ComponentContainerBase* container = const_cast<ComponentContainerBase*>(find_container<component_type>());
-                auto* set = container ? &container->component_set<component_type>() : nullptr;
-                return std::tuple{set};
-            }
-        }
-
         template<typename... Args>
-        auto typed_component_sets_or_none() const {
-            if constexpr(sizeof...(Args) != 0) {
-                return typed_component_sets<Args...>();
-            } else {
-                return std::tuple<>{};
-            }
-        }
-
-        template<usize I = 0, typename... Args>
-        auto fill_container_array(std::array<const ComponentContainerBase*, sizeof...(Args)>& containers) const {
-            if constexpr(I < sizeof...(Args)) {
-                using component_type = typename traits::component_raw_type_t<std::tuple_element_t<I, std::tuple<Args...>>>;
-                containers[I] = find_container<component_type>();
-                fill_container_array<I + 1, Args...>(containers);
-            }
+        auto component_sets_for_query() const {
+            return std::tuple {
+                &const_cast<ComponentContainerBase*>(find_container<Args>())->template component_set<Args>()...
+            };
         }
 
         template<typename... Args>
         auto build_matches_for_query(core::Span<core::String> tags) const {
             constexpr usize container_count = sizeof...(Args);
 
-            std::array<const ComponentContainerBase*, container_count> containers;
-            fill_container_array<0, Args...>(containers);
+            const std::array<const ComponentContainerBase*, container_count> containers = {
+                find_container<Args>()...
+            };
 
             core::ScratchPad<QueryUtils::SetMatch> matches(container_count + tags.size());
             QueryUtils::fill_match_array<0, Args...>(matches, containers);
