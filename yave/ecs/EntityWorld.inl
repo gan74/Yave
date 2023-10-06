@@ -67,17 +67,6 @@ void SystemLinkedComponent<Component, SystemTypes...>::register_component_type(S
 
 
 template<typename T>
-void ComponentContainerBase::add_required_components(EntityWorld& world, EntityId id) {
-    unused(id);
-    if constexpr(is_detected_v<detail::has_required_components_t, T>) {
-        T::add_required_components(world, id);
-    }
-}
-
-
-
-
-template<typename T>
 ComponentBox<T>::ComponentBox(T t) : _component(std::move(t)) {
 }
 

@@ -31,6 +31,36 @@ ComponentBoxBase::~ComponentBoxBase() {
 ComponentContainerBase::~ComponentContainerBase() {
 }
 
+void ComponentContainerBase::remove(EntityId id) {
+    if(contains(id)) {
+        _to_remove.insert(id);
+    }
+}
+
+bool ComponentContainerBase::contains(EntityId id) const {
+    return id_set().contains(id);
+}
+
+core::Span<EntityId> ComponentContainerBase::ids() const {
+    return id_set().ids();
+}
+
+ComponentTypeIndex ComponentContainerBase::type_id() const {
+    return _type_id;
+}
+
+const SparseIdSetBase& ComponentContainerBase::id_set() const {
+    return *reinterpret_cast<const SparseIdSetBase*>(this + 1);
+}
+
+const SparseIdSet& ComponentContainerBase::recently_mutated() const {
+    return _mutated;
+}
+
+const SparseIdSet& ComponentContainerBase::to_be_removed() const {
+    return _to_remove;
+}
+
 
 void ComponentContainerBase::clean_after_tick() {
     _mutated.make_empty();

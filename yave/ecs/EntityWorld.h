@@ -141,19 +141,19 @@ class EntityWorld {
         template<typename T>
         T* get_or_add_component(EntityId id) {
             check_exists(id);
-            return &find_container<T>()->template get_or_add<T>(id);
+            return &find_container<T>()->get_or_add(id);
         }
 
         template<typename T, typename... Args>
         T* add_or_replace_component(EntityId id, Args&&... args) {
             check_exists(id);
-            return &find_container<T>()->template add_or_replace<T>(id, y_fwd(args)...);
+            return &find_container<T>()->add_or_replace(id, y_fwd(args)...);
         }
 
         template<typename... Args>
         void add_or_replace_components(EntityId id) {
             check_exists(id);
-            (find_container<Args>()->template add_or_replace<Args>(id), ...);
+            (find_container<Args>()->add_or_replace(id), ...);
         }
 
 
@@ -206,18 +206,13 @@ class EntityWorld {
         }
 
         template<typename T>
-        auto* component(EntityId id) {
-            return find_container<T>()->template component_ptr<T>(id);
-        }
-
-        template<typename T>
         auto* component_mut(EntityId id) {
-            return component<Mutate<T>>(id);
+            return find_container<T>()->component_ptr_mut(id);
         }
 
         template<typename T>
         const auto* component(EntityId id) const {
-            return find_container<T>()->template component_ptr<T>(id);
+            return find_container<T>()->component_ptr(id);
         }
 
 
@@ -257,16 +252,31 @@ class EntityWorld {
 
 
 
+
+        // ---------------------------------------- Signals ----------------------------------------
+
+        template<typename T>
+        concurrent::Signal<EntityId, T>& on_create() {
+            return find_container<T>()->_on_create;
+        }
+
+        template<typename T>
+        concurrent::Signal<EntityId, T>& on_destroy() {
+            return find_container<T>()->_on_destroy;
+        }
+
+
+
         // ---------------------------------------- Component sets ----------------------------------------
 
         template<typename T>
         const SparseComponentSet<T>& component_set() const {
-            return find_container<T>()->template component_set<T>();
+            return find_container<T>()->component_set();
         }
 
         template<typename T>
         core::Span<T> components() const {
-            return find_container<T>()->template components<T>();
+            return component_set<T>().values();
         }
 
         template<typename T>
@@ -349,27 +359,33 @@ class EntityWorld {
 
 
         template<typename T>
-        const ComponentContainerBase* find_container() const {
-            using component_type = traits::component_raw_type_t<T>;
+        const ComponentContainer<T>* find_container() const {
+            static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
 
-            static const auto static_info = ComponentRuntimeInfo::create<component_type>();
+            static const auto static_info = ComponentRuntimeInfo::create<T>();
             unused(static_info);
-            return find_container(type_index<component_type>());
+
+            return static_cast<const ComponentContainer<T>*>(find_container(type_index<T>()));
         }
 
         template<typename T>
-        ComponentContainerBase* find_container() {
-            using component_type = traits::component_raw_type_t<T>;
+        ComponentContainer<T>* find_container() {
+            static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
 
-            static const auto static_info = ComponentRuntimeInfo::create<component_type>();
+            static const auto static_info = ComponentRuntimeInfo::create<T>();
             unused(static_info);
-            return find_container(type_index<component_type>());
+
+            return static_cast<ComponentContainer<T>*>(find_container(type_index<T>()));
         }
+
+
+
 
         template<typename... Args>
         auto component_sets_for_query() const {
+            auto unconst = [] <typename C> (const C* c) { return const_cast<C*>(c); };
             return std::tuple {
-                &const_cast<ComponentContainerBase*>(find_container<Args>())->template component_set<Args>()...
+                &unconst(find_container<traits::component_raw_type_t<Args>>())->component_set()...
             };
         }
 
@@ -378,7 +394,7 @@ class EntityWorld {
             constexpr usize container_count = sizeof...(Args);
 
             const std::array<const ComponentContainerBase*, container_count> containers = {
-                find_container<Args>()...
+                find_container<traits::component_raw_type_t<Args>>()...
             };
 
             core::ScratchPad<QueryUtils::SetMatch> matches(container_count + tags.size());
