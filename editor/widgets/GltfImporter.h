@@ -58,6 +58,9 @@ class GltfImporter final : public Widget {
         FileBrowser _browser;
         core::Result<import::ParsedScene> _scene = core::Err();
 
+        struct {
+            bool import_child_prefabs_as_assets = false;
+        } _settings;
 
 
         concurrent::StaticThreadPool _thread_pool;

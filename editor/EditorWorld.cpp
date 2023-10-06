@@ -150,6 +150,7 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
         }
         return id;
     }
+
     return ecs::EntityId();
 }
 
@@ -176,7 +177,9 @@ ecs::EntityId EditorWorld::selected_entity() const {
 
 void EditorWorld::set_selected(ecs::EntityId id) {
     clear_selection();
-    add_tag(id, ecs::tags::selected);
+    if(id.is_valid()) {
+        add_tag(id, ecs::tags::selected);
+    }
 }
 
 void EditorWorld::toggle_selected(ecs::EntityId id, bool reset_selection) {

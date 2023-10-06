@@ -78,7 +78,53 @@ static AssetId import_asset(const core::String& name, const T& asset, AssetType 
     return AssetId::invalid_id();
 }
 
-static AssetId import_node(import::ParsedScene& scene, int index) {
+static AssetId import_node(import::ParsedScene& scene, int index, bool import_child_prefab_as_assets);
+
+static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab(import::ParsedScene& scene, int index, bool import_child_prefabs_as_assets) {
+    if(index < 0 || scene.nodes[index].is_error) {
+        return {};
+    }
+
+    auto& node = scene.nodes[index];
+
+    core::String name = node.name;
+    auto prefab = std::make_unique<ecs::EntityPrefab>(ecs::EntityId::dummy(u32(index)));
+
+    if(node.mesh_index >= 0) {
+        if(const auto& mesh = scene.meshes[node.mesh_index]; mesh.asset_id != AssetId::invalid_id()) {
+            core::Vector<AssetPtr<Material>> materials;
+            std::transform(mesh.materials.begin(), mesh.materials.end(), std::back_inserter(materials), [&](int mat_index) {
+                if(mat_index < 0) {
+                    return AssetPtr<Material>();
+                }
+                return make_asset_with_id<Material>(scene.materials[mat_index].asset_id);
+            });
+
+            prefab->add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.asset_id), std::move(materials)));
+
+            name = mesh.name;
+        }
+    }
+
+    for(const int child_index : node.children) {
+        if(import_child_prefabs_as_assets) {
+            if(const AssetId id = import_node(scene, child_index, import_child_prefabs_as_assets); id != AssetId::invalid_id()) {
+                prefab->add_child(make_asset_with_id<ecs::EntityPrefab>(id));
+            }
+        } else {
+            if(auto child = create_prefab(scene, child_index, import_child_prefabs_as_assets); child.first) {
+                prefab->add_child(std::move(child.first));
+            }
+        }
+    }
+
+    prefab->add(TransformableComponent(node.transform));
+    prefab->add(EditorComponent(name));
+
+    return {std::move(prefab), name};
+}
+
+static AssetId import_node(import::ParsedScene& scene, int index, bool import_child_prefabs_as_assets) {
     if(index < 0 || scene.nodes[index].is_error) {
         return AssetId();
     }
@@ -88,43 +134,14 @@ static AssetId import_node(import::ParsedScene& scene, int index) {
         return node.asset_id;
     }
 
-    core::String name = node.name;
-
-    ecs::EntityPrefab prefab(ecs::EntityId::dummy(u32(index)));
-
-    if(node.mesh_index >= 0) {
-       const auto& mesh = scene.meshes[node.mesh_index];
-       if(mesh.asset_id != AssetId::invalid_id()) {
-           core::Vector<AssetPtr<Material>> materials;
-           std::transform(mesh.materials.begin(), mesh.materials.end(), std::back_inserter(materials), [&](int mat_index) {
-               if(mat_index < 0) {
-                   return AssetPtr<Material>();
-               }
-               return make_asset_with_id<Material>(scene.materials[mat_index].asset_id);
-           });
-
-            prefab.add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.asset_id), std::move(materials)));
-
-           name = mesh.name;
-       }
-    }
-
-    for(const int child : node.children) {
-        const AssetId id = import_node(scene, child);
-        if(id != AssetId::invalid_id()) {
-            prefab.add_child(make_asset_with_id<ecs::EntityPrefab>(id));
-        }
-    }
-
-    prefab.add(TransformableComponent(node.transform));
-    prefab.add(EditorComponent(name));
-
-    node.set_id(import_asset(node.name, prefab, AssetType::Prefab));
+    const auto [prefab, name] = create_prefab(scene, index, import_child_prefabs_as_assets);
+    node.set_id(import_asset(name, *prefab, AssetType::Prefab));
 
     return node.asset_id;
 }
 
-static void import_all(concurrent::StaticThreadPool& thread_pool, import::ParsedScene& scene) {
+template<typename T>
+static void import_all(concurrent::StaticThreadPool& thread_pool, import::ParsedScene& scene, T settings) {
     concurrent::DependencyGroup image_group;
     concurrent::DependencyGroup material_group;
     concurrent::DependencyGroup mesh_group;
@@ -157,9 +174,9 @@ static void import_all(concurrent::StaticThreadPool& thread_pool, import::Parsed
     }
 
     Y_TODO(slow, be import_node is not thread safe)
-    thread_pool.schedule([&scene] {
+    thread_pool.schedule([&scene, settings] {
         for(const int child_index : scene.root_nodes) {
-            import_node(scene, child_index);
+            import_node(scene, child_index, settings.import_child_prefabs_as_assets);
         }
     }, nullptr, mesh_group);
 }
@@ -214,8 +231,13 @@ void GltfImporter::on_gui() {
 
         case State::Settings: {
             y_debug_assert(_scene.is_ok());
-            import_all(_thread_pool, _scene.unwrap());
-            _state = State::Importing;
+
+            ImGui::Checkbox("Import children prefabs as assets", &_settings.import_child_prefabs_as_assets);
+
+            if(ImGui::Button("Import")) {
+                import_all(_thread_pool, _scene.unwrap(), _settings);
+                _state = State::Importing;
+            }
         } break;
 
         case State::Importing: {

@@ -37,13 +37,18 @@ class EntityPrefab : NonCopyable {
 
         bool is_empty() const;
 
+        EntityId original_id() const;
+
         void add_box(std::unique_ptr<ComponentBoxBase> box);
         void add_child(AssetPtr<EntityPrefab> prefab);
+        void add_child(std::unique_ptr<EntityPrefab> prefab);
+
+
+        core::Span<std::unique_ptr<EntityPrefab>> children() const;
+        core::Span<AssetPtr<EntityPrefab>> asset_children() const;
 
         core::Span<std::unique_ptr<ComponentBoxBase>> components() const;
-        core::Span<AssetPtr<EntityPrefab>> children() const;
 
-        EntityId original_id() const;
 
         template<typename T>
         void add(T component) {
@@ -51,14 +56,15 @@ class EntityPrefab : NonCopyable {
         }
 
 
-        y_reflect(EntityPrefab, _id, _components, _children)
+        y_reflect(EntityPrefab, _id, _components, _children, _asset_children)
 
     private:
         friend class EntityWorld;
 
         EntityId _id;
         core::Vector<std::unique_ptr<ComponentBoxBase>> _components;
-        core::Vector<AssetPtr<EntityPrefab>> _children;
+        core::Vector<std::unique_ptr<EntityPrefab>> _children;
+        core::Vector<AssetPtr<EntityPrefab>> _asset_children;
 };
 
 }

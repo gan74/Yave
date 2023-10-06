@@ -60,10 +60,18 @@ static EntityId create_prefab_entities(EntityWorld& world, const EntityPrefab& p
     y_always_assert(id_map.find(prefab.original_id()) == id_map.end(), "Invalid prefab: id is duplicated");
     id_map.emplace_back(prefab.original_id(), id);
 
-    for(const auto& child : prefab.children()) {
+    auto parent_child = [&](const auto& child) {
         if(child) {
             world.set_parent(create_prefab_entities(world, *child, id_map), id);
         }
+    };
+
+    for(const auto& child : prefab.children()) {
+        parent_child(child);
+    }
+
+    for(const auto& child : prefab.asset_children()) {
+        parent_child(child);
     }
 
     return id;
@@ -83,10 +91,18 @@ static void add_prefab_components(EntityWorld& world, const EntityPrefab& prefab
         }
     }
 
-    for(const auto& child : prefab.children()) {
+    auto add_child_components = [&](const auto& child) {
         if(child) {
             add_prefab_components(world, *child, id_map);
         }
+    };
+
+    for(const auto& child : prefab.children()) {
+        add_child_components(child);
+    }
+
+    for(const auto& child : prefab.asset_children()) {
+        add_child_components(child);
     }
 }
 
