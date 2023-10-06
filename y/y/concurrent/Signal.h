@@ -37,7 +37,7 @@ struct SignalDataBase {
     virtual ~SignalDataBase() {
     }
 
-    virtual void remove(u32 index) = 0;
+    virtual void disconnect(u32 index) = 0;
 };
 }
 
@@ -80,7 +80,7 @@ class Signal {
         Mutexed<core::Vector<Slot>, std::shared_mutex> _receivers;
         std::atomic<u32> counter = 0;
 
-        void remove(u32 index) override {
+        void disconnect(u32 index) override {
             _receivers.locked([&](auto&& receivers) {
                 auto it = std::find_if(receivers.begin(), receivers.end(), [&](const auto& rec) {
                     return rec.index == index;

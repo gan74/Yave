@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/scene/Octree.h>
 
+#include <y/concurrent/Signal.h>
 #include <y/core/Vector.h>
 
 namespace yave {
@@ -46,6 +47,8 @@ class OctreeSystem : public ecs::System {
         void run_tick(bool only_recent);
 
         Octree _tree;
+
+        concurrent::Subscription _transform_destroyed;
 };
 
 }

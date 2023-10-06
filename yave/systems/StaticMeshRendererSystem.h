@@ -29,9 +29,11 @@ SOFTWARE.
 #include <yave/meshes/MeshDrawData.h>
 #include <yave/ecs/SparseComponentSet.h>
 
+#include <yave/framegraph/FrameGraphResourceId.h>
+
+#include <y/concurrent/Signal.h>
 #include <y/core/Vector.h>
 
-#include <yave/framegraph/FrameGraphResourceId.h>
 
 namespace yave {
 
@@ -67,6 +69,9 @@ class StaticMeshRendererSystem : public ecs::System {
 
         ecs::SparseIdSet _moved;
         ecs::SparseIdSet _prev_moved;
+
+
+        concurrent::Subscription _mesh_destroyed;
 };
 
 }

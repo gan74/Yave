@@ -44,6 +44,12 @@ void OctreeSystem::destroy() {
 }
 
 void OctreeSystem::setup() {
+    _transform_destroyed = world().on_destroy<TransformableComponent>().subscribe([](ecs::EntityId id, TransformableComponent& tr) {
+        if(tr._node) {
+            tr._node->remove(id);
+        }
+    });
+
     run_tick(false);
 }
 
@@ -82,14 +88,6 @@ void OctreeSystem::run_tick(bool only_recent) {
 
     if(only_recent) {
         process_moved_query(world().query<ecs::Changed<TransformableComponent>>());
-
-        for(auto&& [id, comp] : world().query<ecs::Removed<TransformableComponent>>()) {
-            auto&& [tr] = comp;
-
-            if(tr._node) {
-                tr._node->remove(id);
-            }
-        }
     } else {
         process_moved_query(world().query<TransformableComponent>());
     }

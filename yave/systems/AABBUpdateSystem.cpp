@@ -39,7 +39,7 @@ void AABBUpdateSystem::setup() {
 void AABBUpdateSystem::tick() {
     ecs::SparseComponentSet<AABB> aabbs;
     for(const AABBTypeInfo& info : _infos) {
-        const core::Span<ecs::EntityId> ids = world().recently_mutated(info.type);
+        const core::Span<ecs::EntityId> ids = world().recently_mutated(info.type).ids();
         if(ids.is_empty()) {
             continue;
         }

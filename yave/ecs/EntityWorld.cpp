@@ -303,13 +303,10 @@ core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) cons
     return find_container(type_id)->ids();
 }
 
-core::Span<EntityId> EntityWorld::recently_mutated(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->recently_mutated().ids();
+const SparseIdSet& EntityWorld::recently_mutated(ComponentTypeIndex type_id) const {
+    return find_container(type_id)->recently_mutated();
 }
 
-core::Span<EntityId> EntityWorld::to_be_removed(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->to_be_removed().ids();
-}
 
 core::Span<EntityId> EntityWorld::with_tag(const core::String& tag) const {
     const SparseIdSetBase* set = tag_set(tag);
@@ -425,7 +422,6 @@ void EntityWorld::post_deserialize() {
             continue;
         }
 
-        container->_to_remove.clear();
         container->_mutated.clear();
         for(const EntityId id : container->ids()) {
             container->_mutated.insert(id);

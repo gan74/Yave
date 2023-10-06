@@ -51,15 +51,16 @@ class ComponentContainerBase : NonMovable {
 
         virtual ComponentRuntimeInfo runtime_info() const = 0;
 
-        virtual void add_if_absent(EntityId id) = 0;
-
         virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
+
+
+        virtual void add_if_absent(EntityId id) = 0;
+        virtual void remove(EntityId id) = 0;
+
 
         virtual void inspect_component(EntityId id, ComponentInspector* inspector) = 0;
 
 
-
-        void remove(EntityId id);
 
         bool contains(EntityId id) const;
 
@@ -69,7 +70,6 @@ class ComponentContainerBase : NonMovable {
 
         const SparseIdSetBase& id_set() const;
         const SparseIdSet& recently_mutated() const;
-        const SparseIdSet& to_be_removed() const;
 
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
@@ -87,7 +87,6 @@ class ComponentContainerBase : NonMovable {
 
         const ComponentTypeIndex _type_id;
         SparseIdSet _mutated;
-        SparseIdSet _to_remove;
 };
 
 
@@ -108,10 +107,6 @@ class ComponentContainer final : public ComponentContainerBase {
 
         ComponentRuntimeInfo runtime_info() const override {
             return ComponentRuntimeInfo::create<T>();
-        }
-
-        void add_if_absent(EntityId id) override {
-            get_or_add(id);
         }
 
         std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const override {
@@ -138,6 +133,17 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
 
+        void add_if_absent(EntityId id) override {
+            get_or_add(id);
+        }
+
+        void remove(EntityId id) override {
+            if(T* comp = _components.try_get(id)) {
+                _on_destroy.send(id, *comp);
+                _components.erase(id);
+            }
+        }
+
 
 
 
@@ -147,18 +153,15 @@ class ComponentContainer final : public ComponentContainerBase {
 
             _mutated.insert(id);
 
+            T* comp = nullptr;
             if(!_components.contains_index(id.index())) {
-                return _components.insert(id, y_fwd(args)...);
+                comp = &_components.insert(id, y_fwd(args)...);
             } else {
-                if(_to_remove.contains_index(id.index())) {
-                    _to_remove.erase(id);
-                }
-                if constexpr(sizeof...(Args) != 0) {
-                    return _components[id] = std::move(T{y_fwd(args)...});
-                } else {
-                    return _components[id] = std::move(T());
-                }
+                comp = &(_components[id] = std::move(T(y_fwd(args)...)));
             }
+
+            _on_create.send(id, *comp);
+            return *comp;
         }
 
         inline T& get_or_add(EntityId id) {
@@ -167,7 +170,9 @@ class ComponentContainer final : public ComponentContainerBase {
             _mutated.insert(id);
 
             if(!_components.contains_index(id.index())) {
-                return _components.insert(id);
+                T& comp = _components.insert(id);
+                _on_create.send(id, comp);
+                return comp;
             } else {
                 return _components[id];
             }
@@ -195,27 +200,20 @@ class ComponentContainer final : public ComponentContainerBase {
             return _components;
         }
 
+
+
         y_no_serde3_expr(serde3::has_no_serde3_v<T>)
 
         y_reflect(ComponentContainer, _components)
         y_serde3_poly(ComponentContainer)
 
-    protected:
-        void clean_after_tick() override {
-            y_profile();
-            for(const EntityId id : to_be_removed()) {
-                _components.erase(id);
-            }
-            ComponentContainerBase::clean_after_tick();
-        }
-
     private:
-        friend class ComponentContainerBase;
+        friend class EntityWorld;
 
         SparseComponentSet<T> _components;
 
-        concurrent::Signal<EntityId, T> _on_create;
-        concurrent::Signal<EntityId, T> _on_destroy;
+        concurrent::Signal<EntityId, T&> _on_create;
+        concurrent::Signal<EntityId, T&> _on_destroy;
 };
 
 }

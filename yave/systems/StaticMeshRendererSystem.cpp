@@ -50,6 +50,11 @@ void StaticMeshRendererSystem::destroy() {
 }
 
 void StaticMeshRendererSystem::setup() {
+    _mesh_destroyed = world().on_destroy<StaticMeshComponent>().subscribe([this](ecs::EntityId, StaticMeshComponent& mesh) {
+        free_index(mesh._transform_index);
+        free_index(mesh._last_transform_index);
+    });
+
     run_tick(false);
 }
 
@@ -133,12 +138,6 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
         free_index(mesh._last_transform_index);
     }
     std::swap(_prev_moved, _moved);
-
-    auto removed = world().query<ecs::Removed<StaticMeshComponent>>();
-    for(const auto& [mesh] : removed.components()) {
-        free_index(mesh._transform_index);
-        free_index(mesh._last_transform_index);
-    }
 }
 
 StaticMeshRendererSystem::TransformBuffer StaticMeshRendererSystem::alloc_buffer(usize size) {

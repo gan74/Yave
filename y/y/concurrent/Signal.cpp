@@ -49,7 +49,7 @@ void Subscription::swap(Subscription& other) {
 
 void Subscription::disconnect() {
     if(auto ptr = _data.lock()) {
-        ptr->remove(_index);
+        ptr->disconnect(_index);
     }
     _data.reset();
 }

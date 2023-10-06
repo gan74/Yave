@@ -67,8 +67,7 @@ class EntityWorld {
         EntityPrefab create_prefab(EntityId id) const;
 
         core::Span<EntityId> component_ids(ComponentTypeIndex type_id) const;
-        core::Span<EntityId> recently_mutated(ComponentTypeIndex type_id) const;
-        core::Span<EntityId> to_be_removed(ComponentTypeIndex type_id) const;
+        const SparseIdSet& recently_mutated(ComponentTypeIndex type_id) const;
 
         core::Span<EntityId> with_tag(const core::String& tag) const;
 
@@ -256,12 +255,12 @@ class EntityWorld {
         // ---------------------------------------- Signals ----------------------------------------
 
         template<typename T>
-        concurrent::Signal<EntityId, T>& on_create() {
+        concurrent::Signal<EntityId, T&>& on_create() {
             return find_container<T>()->_on_create;
         }
 
         template<typename T>
-        concurrent::Signal<EntityId, T>& on_destroy() {
+        concurrent::Signal<EntityId, T&>& on_destroy() {
             return find_container<T>()->_on_destroy;
         }
 
@@ -285,13 +284,8 @@ class EntityWorld {
         }
 
         template<typename T>
-        core::Span<EntityId> recently_mutated() const {
+        const SparseIdSet& recently_mutated() const {
             return recently_mutated(type_index<T>());
-        }
-
-        template<typename T>
-        core::Span<EntityId> to_be_removed() const {
-            return to_be_removed(type_index<T>());
         }
 
 
