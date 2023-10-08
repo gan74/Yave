@@ -208,16 +208,6 @@ EntityId EntityWorld::create_entity() {
     return _entities.create();
 }
 
-EntityId EntityWorld::create_entity(const Archetype& archetype) {
-    const EntityId id = create_entity();
-    for(const auto& info : archetype.component_infos()) {
-        ComponentContainerBase* container = find_container(info.type_id);
-        y_debug_assert(container);
-        container->add_if_absent(id);
-    }
-    return id;
-}
-
 EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
     const EntityId id = create_entity();
     add_prefab(id, prefab);

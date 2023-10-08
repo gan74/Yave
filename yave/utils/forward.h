@@ -252,7 +252,6 @@ struct VkStructInitializer;
 
 
 namespace yave::ecs {
-class Archetype;
 class ComponentBoxBase;
 class ComponentContainerBase;
 class ComponentInspector;

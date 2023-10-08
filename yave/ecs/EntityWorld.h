@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include "EntityPool.h"
 #include "Query.h"
-#include "Archetype.h"
 #include "EntityPrefab.h"
 #include "System.h"
 #include "tags.h"
@@ -32,6 +31,7 @@ SOFTWARE.
 #include "WorldComponentContainer.h"
 #include "ComponentContainer.h"
 
+#include <y/core/HashMap.h>
 #include <y/core/ScratchPad.h>
 
 namespace yave {
@@ -54,7 +54,6 @@ class EntityWorld {
         bool exists(EntityId id) const;
 
         EntityId create_entity();
-        EntityId create_entity(const Archetype& archetype);
         EntityId create_entity(const EntityPrefab& prefab);
 
         void add_prefab(EntityId id, const EntityPrefab& prefab);
