@@ -48,22 +48,26 @@ void create_or_replace_component(EntityWorld& world, EntityId id) {
 
 
 
-template<typename Component, typename SystemType, typename... Tail>
-static inline void register_component_type_rec(System* system) {
+template<typename Component, typename SystemType>
+static inline void register_component_type_internal(System* system) {
     if(SystemType* s = dynamic_cast<SystemType*>(system)) {
         s->template register_component_type<Component>();
-    }
-    if constexpr(sizeof...(Tail)) {
-        register_component_type_rec<Component, Tail...>(system);
     }
 }
 
 template<typename Component, typename... SystemTypes>
 void SystemLinkedComponent<Component, SystemTypes...>::register_component_type(System* system) {
-    register_component_type_rec<Component, SystemTypes...>(system);
+    (register_component_type_internal<Component, SystemTypes>(system), ...);
 }
 
 
+
+template<typename System>
+void RequiredSystem<System>::add_required_system(EntityWorld* world) {
+    if(!world->find_system<System>()) {
+        world->add_system<System>();
+    }
+}
 
 
 template<typename T>

@@ -104,7 +104,7 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
 
                 y_debug_assert(mesh.has_transform_index());
 
-                transform_mapping[index] = tr.transform();
+                transform_mapping[index] = tr.world_transform();
                 index_mapping[index] = mesh._transform_index;
                 ++index;
             }

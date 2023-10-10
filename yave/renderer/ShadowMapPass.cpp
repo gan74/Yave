@@ -123,12 +123,14 @@ static math::Matrix4<> flip_for_backfaces(math::Matrix4<> proj) {
 
 static Camera spotlight_camera(const TransformableComponent& tr, const SpotLightComponent& light) {
     const float z_near = light.min_radius();
+    const math::Transform<> transform = tr.world_transform();
 
     Camera camera(
-        math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()),
+        math::look_at(transform.position(), transform.position() + transform.forward(), transform.up()),
         flip_for_backfaces(math::perspective(light.half_angle() * 2.0f, 1.0f, z_near))
     );
-    camera.set_far(light.range() * tr.transform().scale().max_component());
+
+    camera.set_far(light.range() * transform.scale().max_component());
     y_debug_assert(!camera.is_orthographic());
     return camera;
 }

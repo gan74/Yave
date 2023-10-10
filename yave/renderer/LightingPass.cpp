@@ -162,14 +162,15 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
     const std::array tags = {ecs::tags::not_hidden};
     for(auto point : scene.world().query<TransformableComponent, PointLightComponent>(tags)) {
         const auto& [t, l] = point.components;
+        const math::Transform<> transform = t.world_transform();
 
-        const float scaled_range = l.range() * t.transform().scale().max_component();
-        if(!frustum.is_inside(t.position(), scaled_range)) {
+        const float scaled_range = l.range() * transform.scale().max_component();
+        if(!frustum.is_inside(transform.position(), scaled_range)) {
             continue;
         }
 
         points[count++] = {
-            t.position(),
+            transform.position(),
             scaled_range,
 
             l.color() * l.intensity(),
@@ -206,9 +207,10 @@ static u32 fill_spot_light_buffer(
     const std::array tags = {ecs::tags::not_hidden};
     for(auto&& [id, comp] : scene.world().query<TransformableComponent, SpotLightComponent>(tags)) {
         const auto& [t, l] = comp;
+        const math::Transform<> transform = t.world_transform();
 
-        const math::Vec3 forward = t.forward().normalized();
-        const float scale = t.transform().scale().max_component();
+        const math::Vec3 forward = transform.forward().normalized();
+        const float scale = transform.scale().max_component();
         const float scaled_range = l.range() * scale;
 
         auto enclosing_sphere = l.enclosing_sphere();
@@ -217,7 +219,7 @@ static u32 fill_spot_light_buffer(
             enclosing_sphere.radius *= scale;
         }
 
-        const math::Vec3 encl_sphere_center =  t.position() + forward * enclosing_sphere.dist_to_center;
+        const math::Vec3 encl_sphere_center =  transform.position() + forward * enclosing_sphere.dist_to_center;
         if(!frustum.is_inside(encl_sphere_center, enclosing_sphere.radius)) {
             continue;
         }
@@ -232,11 +234,11 @@ static u32 fill_spot_light_buffer(
         if constexpr(Transforms) {
             const float geom_radius = scaled_range * 1.1f;
             const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
-            transforms[count] = t.transform().non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
+            transforms[count] = transform.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
         }
 
         spots[count++] = {
-            t.position(),
+            transform.position(),
             scaled_range,
 
             l.color() * l.intensity(),

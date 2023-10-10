@@ -105,7 +105,7 @@ static void fill_world(ecs::EntityWorld& world) {
     }
     {
         const ecs::EntityId light_id = world.create_entity();
-        world.get_or_add_component<TransformableComponent>(light_id)->set_position(math::Vec3(0.75f, -0.5f, 0.5f));
+        world.get_or_add_component<TransformableComponent>(light_id)->set_world_transform(math::Vec3(0.75f, -0.5f, 0.5f));
         PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(2500.0f);
         light->intensity() = 1.5f * intensity;
@@ -114,7 +114,7 @@ static void fill_world(ecs::EntityWorld& world) {
     }
     {
         const ecs::EntityId light_id = world.create_entity();
-        world.get_or_add_component<TransformableComponent>(light_id)->set_position(math::Vec3(-0.75f, -0.5f, 0.5f));
+        world.get_or_add_component<TransformableComponent>(light_id)->set_world_transform(math::Vec3(-0.75f, -0.5f, 0.5f));
         PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(10000.0f);
         light->intensity() = 1.5f * intensity;
@@ -150,7 +150,7 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
     {
         const ecs::EntityId entity = world.create_entity();
         *world.get_or_add_component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, mat);
-        world.get_or_add_component<TransformableComponent>(entity)->set_transform(center_to_camera(mesh->aabb()));
+        world.get_or_add_component<TransformableComponent>(entity)->set_world_transform(center_to_camera(mesh->aabb()));
     }
 
     return render_world(world);
@@ -166,7 +166,7 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
         const ecs::EntityId entity = world.create_entity(*prefab);
         if(const StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
             if(TransformableComponent* trans_comp = world.component_mut<TransformableComponent>(entity)) {
-                trans_comp->set_transform(center_to_camera(mesh_comp->aabb()));
+                trans_comp->set_world_transform(center_to_camera(mesh_comp->aabb()));
             }
         }
     }

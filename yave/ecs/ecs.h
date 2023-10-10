@@ -105,6 +105,12 @@ struct SystemLinkedComponent {
     static inline void register_component_type(System*);
 };
 
+template<typename System>
+struct RequiredSystem {
+    // EntityWorld.inl
+    static inline void add_required_system(EntityWorld*);
+};
+
 
 
 }

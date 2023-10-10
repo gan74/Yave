@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-TransformableComponent::TransformableComponent(const math::Transform<>& transform) : _transform(transform) {
+TransformableComponent::TransformableComponent(const math::Transform<>& world_transform) : _world_transform(world_transform) {
 }
 
 TransformableComponent::TransformableComponent(TransformableComponent&& other) {
@@ -39,58 +39,33 @@ TransformableComponent& TransformableComponent::operator=(TransformableComponent
 }
 
 TransformableComponent::TransformableComponent(const TransformableComponent& other) {
-    set_transform(other.transform());
+    set_world_transform(other.world_transform());
 }
 
 TransformableComponent& TransformableComponent::operator=(const TransformableComponent& other) {
-    set_transform(other.transform());
+    set_world_transform(other.world_transform());
     return *this;
 }
 
 void TransformableComponent::swap(TransformableComponent& other) {
-    std::swap(_transform, other._transform);
+    std::swap(_world_transform, other._world_transform);
     std::swap(_aabb, other._aabb);
     std::swap(_node, other._node);
 }
 
-void TransformableComponent::set_transform(const math::Transform<>& tr) {
-    _transform = tr;
+void TransformableComponent::set_world_transform(const math::Transform<>& tr) {
+    _world_transform = tr;
 }
 
-void TransformableComponent::set_position(const math::Vec3& pos) {
-    _transform.position() = pos;
+const math::Transform<>& TransformableComponent::world_transform() const {
+    return _world_transform;
 }
 
-const math::Transform<>& TransformableComponent::transform() const {
-    return _transform;
-}
-
-const math::Vec3& TransformableComponent::forward() const {
-    return _transform.forward();
-}
-
-const math::Vec3& TransformableComponent::right() const {
-    return _transform.right();
-}
-
-const math::Vec3& TransformableComponent::up() const {
-    return _transform.up();
-}
-
-const math::Vec3& TransformableComponent::position() const {
-    return _transform.position();
-}
-
-math::Vec3 TransformableComponent::to_global(const math::Vec3& pos) const {
-    return _transform.transform_point(pos);
-}
-
-AABB TransformableComponent::to_global(const AABB& aabb) const {
+AABB TransformableComponent::to_world(const AABB& aabb) const {
     // https://zeux.io/2010/10/17/aabb-from-obb-with-component-wise-abs/
-    const math::Transform<> abs_tr = _transform.abs();
-    const math::Vec3 center = transform().transform_point(aabb.center());
+    const math::Transform<> abs_tr = _world_transform.abs();
+    const math::Vec3 center = _world_transform.transform_point(aabb.center());
     const math::Vec3 half_extent = abs_tr.transform_direction(aabb.half_extent());
-
     return AABB(center - half_extent, center + half_extent);
 }
 
@@ -102,8 +77,8 @@ const AABB& TransformableComponent::local_aabb() const {
     return _aabb;
 }
 
-AABB TransformableComponent::global_aabb() const {
-    return to_global(_aabb);
+AABB TransformableComponent::world_aabb() const {
+    return to_world(_aabb);
 }
 
 const OctreeNode* TransformableComponent::octree_node() const {
@@ -111,7 +86,7 @@ const OctreeNode* TransformableComponent::octree_node() const {
 }
 
 void TransformableComponent::inspect(ecs::ComponentInspector* inspector) {
-    inspector->inspect("Transform", _transform);
+    inspector->inspect("Transform", _world_transform);
 }
 
 }

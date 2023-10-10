@@ -35,6 +35,8 @@ namespace ecs {
 
 namespace detail {
 template<typename T>
+using has_add_required_system_t = decltype(std::declval<T>().add_required_system(std::declval<EntityWorld*>()));
+template<typename T>
 using has_register_component_type_t = decltype(std::declval<T>().register_component_type(std::declval<System*>()));
 template<typename T>
 using has_inspect_t = decltype(std::declval<T>().inspect(std::declval<ComponentInspector*>()));
@@ -80,9 +82,10 @@ class ComponentContainerBase : NonMovable {
         ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
         }
 
+        virtual  void register_world(EntityWorld* world) = 0;
+
         virtual void clean_after_tick();
         virtual void prepare_for_tick();
-
 
 
         const ComponentTypeIndex _type_id;
@@ -210,10 +213,19 @@ class ComponentContainer final : public ComponentContainerBase {
     private:
         friend class EntityWorld;
 
+        void register_world(EntityWorld* world) override {
+            if constexpr(is_detected_v<detail::has_add_required_system_t, T>) {
+                T::add_required_system(world);
+            }
+        }
+
+
         SparseComponentSet<T> _components;
 
         concurrent::Signal<EntityId, T&> _on_create;
         concurrent::Signal<EntityId, T&> _on_destroy;
+
+
 };
 
 }

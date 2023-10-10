@@ -22,54 +22,51 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 #define YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 
+#include <yave/systems/TransformManagerSystem.h>
 #include <yave/systems/AABBUpdateSystem.h>
 
 #include <yave/scene/OctreeData.h>
 #include <yave/meshes/AABB.h>
 
-
 #include <y/reflect/reflect.h>
 
 namespace yave {
 
-class TransformableComponent final {
+class TransformableComponent final : public ecs::RequiredSystem<TransformManagerSystem> {
     public:
-        TransformableComponent(const math::Transform<>& transform = {});
+        TransformableComponent(const math::Transform<>& world_transform = {});
 
         TransformableComponent(TransformableComponent&& other);
         TransformableComponent& operator=(TransformableComponent&& other);
-
         TransformableComponent(const TransformableComponent& other);
         TransformableComponent& operator=(const TransformableComponent& other);
 
-        void set_transform(const math::Transform<>& tr);
-        void set_position(const math::Vec3& pos);
 
-        const math::Transform<>& transform() const;
+        void set_world_transform(const math::Transform<>& tr);
+        const math::Transform<>& world_transform() const;
 
-        const math::Vec3& forward() const;
-        const math::Vec3& right() const;
-        const math::Vec3& up() const;
 
-        const math::Vec3& position() const;
 
-        math::Vec3 to_global(const math::Vec3& pos) const;
-        AABB to_global(const AABB& aabb) const;
+        AABB to_world(const AABB& aabb) const;
+
 
         void set_aabb(const AABB& aabb);
+
         const AABB& local_aabb() const;
-        AABB global_aabb() const;
+        AABB world_aabb() const;
+
+
 
         const OctreeNode* octree_node() const;
 
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect(TransformableComponent, _transform)
+        y_reflect(TransformableComponent, _world_transform)
 
     private:
         void swap(TransformableComponent& other);
 
-        math::Transform<> _transform;
+        math::Transform<> _world_transform;
         AABB _aabb;
 
         friend class Octree;

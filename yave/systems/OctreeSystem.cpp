@@ -69,7 +69,7 @@ void OctreeSystem::run_tick(bool only_recent) {
                 continue;
             }
 
-            const AABB aabb = tr.global_aabb();
+            const AABB aabb = tr.world_aabb();
 
             if(tr._node) {
                 if(tr._node->contains(aabb)) {

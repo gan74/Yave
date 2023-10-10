@@ -170,11 +170,11 @@ bool Gizmo::compute_gizmo_data(GizmoData &data) const {
     data.cam_pos = _scene_view->camera().position();
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
     const math::Matrix4<> view_proj = _scene_view->camera().view_proj_matrix();
-    auto [obj_pos, obj_rot, obj_scale] = data.ref_transformable->transform().decompose();
+    auto [obj_pos, obj_rot, obj_scale] = data.ref_transformable->world_transform().decompose();
 
     if((_mode == Translate) && _center_on_object) {
         if(const TransformableComponent* transformable = current_world().component<TransformableComponent>(data.ref_entity_id)) {
-            const math::Vec3 center = transformable->global_aabb().center();
+            const math::Vec3 center = transformable->world_aabb().center();
             data.gizmo_offset = center - obj_pos;
             obj_pos = center;
         }
@@ -347,7 +347,9 @@ void Gizmo::translate_gizmo() {
 
         auto query = current_world().query<ecs::Mutate<TransformableComponent>>(current_world().selected_entities());
         for(auto&& [transformable] : query.components()) {
-            transformable.set_position(transformable.position() + offset);
+            math::Transform<> transform = transformable.world_transform();
+            transform.position() += offset;
+            transformable.set_world_transform(transform);
         }
     }
 }
@@ -454,9 +456,9 @@ void Gizmo::rotate_gizmo() {
 
         auto query = current_world().query<ecs::Mutate<TransformableComponent>>(current_world().selected_entities());
         for(auto&& [transformable] : query.components()) {
-            math::Transform<> tr = transformable.transform();
+            auto tr = transformable.world_transform();
             tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
-            transformable.set_transform(tr);
+            transformable.set_world_transform(tr);
         }
 
         _rotation_offset += angle_offset;

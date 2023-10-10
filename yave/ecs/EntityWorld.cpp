@@ -111,6 +111,11 @@ static void add_prefab_components(EntityWorld& world, const EntityPrefab& prefab
 
 
 EntityWorld::EntityWorld() : _containers(create_component_containers()) {
+    for(auto& container : _containers) {
+        if(container) {
+            container->register_world(this);
+        }
+    }
 }
 
 EntityWorld::~EntityWorld() {
@@ -411,6 +416,8 @@ void EntityWorld::post_deserialize() {
         if(!container) {
             continue;
         }
+
+        container->register_world(this);
 
         container->_mutated.clear();
         for(const EntityId id : container->ids()) {

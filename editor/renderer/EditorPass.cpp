@@ -120,7 +120,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
                 return;
             }
             if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
-                vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size, id.index()};
+                vertex_mapping[index] = ImGuiBillboardVertex{tr->world_transform().position(), uv, size, id.index()};
                 ++index;
             }
         };
@@ -163,14 +163,16 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
         return;
     }
 
+    const math::Transform<> transform = tr->world_transform();
+
     constexpr bool draw_enclosing_sphere = false;
     const bool draw_bbox = app_settings().debug.display_selected_bbox;
 
     {
-        const math::Vec3 z = tr->up().normalized();
-        const math::Vec3 y = tr->right().normalized();
-        const math::Vec3 x = tr->forward().normalized();
-        const float scale = tr->transform().scale().max_component();
+        const math::Vec3 z = transform.up().normalized();
+        const math::Vec3 y = transform.right().normalized();
+        const math::Vec3 x = transform.forward().normalized();
+        const float scale = transform.scale().max_component();
 
         auto add_sphere = [&](const math::Vec3& pos, float radius, const math::Vec3& color = math::Vec3(0.0f, 0.0f, 1.0f)) {
             primitive->set_color(color);
@@ -180,17 +182,17 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
         };
 
         if(const auto* l = world.component<PointLightComponent>(selected)) {
-            add_sphere(tr->position(), l->range() * scale);
-            add_sphere(tr->position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
+            add_sphere(transform.position(), l->range() * scale);
+            add_sphere(transform.position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
         }
 
         if(const auto* l = world.component<SpotLightComponent>(selected)) {
-            primitive->add_cone(tr->position(), x, y, l->range() * scale, l->half_angle());
-            add_sphere(tr->position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
+            primitive->add_cone(transform.position(), x, y, l->range() * scale, l->half_angle());
+            add_sphere(transform.position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
 
             if(draw_enclosing_sphere) {
                 const auto enclosing = l->enclosing_sphere();
-                const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center * scale;
+                const math::Vec3 center = transform.position() + transform.forward() * enclosing.dist_to_center * scale;
                 add_sphere(center, enclosing.radius * scale);
             }
         }
@@ -201,7 +203,7 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
                 y_defer(primitive->set_color(color));
 
                 primitive->set_color(math::Vec3(1, 1, 0));
-                primitive->add_box(tr->global_aabb());
+                primitive->add_box(tr->world_aabb());
             }
         }
     }
