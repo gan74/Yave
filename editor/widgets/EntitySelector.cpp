@@ -48,7 +48,7 @@ void EntitySelector::on_gui() {
     }
 
     const auto query = (has_filter && !_show_all)
-        ? world.query<EditorComponent>(world.component_ids(_filter))
+        ? world.query<EditorComponent>(world.component_ids(_filter).ids())
         : world.query<EditorComponent>();
 
     if(ImGui::BeginChild("##entities")) {

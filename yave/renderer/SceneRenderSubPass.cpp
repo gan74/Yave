@@ -46,7 +46,7 @@ static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view)
         return octree_system->find_entities(scene_view.camera());
     }
 
-    return core::Vector<ecs::EntityId>(world.component_ids<T>());
+    return core::Vector<ecs::EntityId>(world.component_set<T>().ids());
 }
 
 static void fill_scene_render_pass(SceneRenderSubPass& pass, FrameGraphPassBuilder& builder) {

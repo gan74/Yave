@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/systems/OctreeSystem.h>
 #include <yave/graphics/device/MeshAllocator.h>
+#include <yave/components/TransformableComponent.h>
 
 #include <editor/utils/ui.h>
 
@@ -102,7 +103,7 @@ class CullingDebug : public Widget {
             }
 
             const usize in_frustum = visible.size();
-            const usize total = world.component_ids<TransformableComponent>().size();
+            const usize total = world.component_set<TransformableComponent>().size();
 
             ImGui::Text("%u entities in octree", u32(total));
             ImGui::Text("%u entities in frustum", u32(in_frustum));

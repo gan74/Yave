@@ -160,8 +160,7 @@ void EditorApplication::process_deferred_actions() {
         load_world_deferred();
     }
     if(_deferred_actions & New) {
-        EditorWorld world(*_loader);
-        *_world = std::move(world);
+        _world = std::make_unique<EditorWorld>(*_loader);
         log_msg("New world");
     }
 
@@ -193,10 +192,10 @@ void EditorApplication::load_world_deferred() {
         return;
     }
 
-    EditorWorld world(*_loader);
+    auto world = std::make_unique<EditorWorld>(*_loader);
 
     serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
-    const auto status = arc.deserialize(world);
+    const auto status = arc.deserialize(*world);
     if(status.is_error()) {
         log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(status.error()), status.error().member), Log::Error);
         return;
@@ -206,7 +205,7 @@ void EditorApplication::load_world_deferred() {
         log_msg("World was only partialy loaded", Log::Warning);
     }
 
-    *_world = std::move(world);
+    _world = std::move(world);
     log_msg("World loaded");
 }
 

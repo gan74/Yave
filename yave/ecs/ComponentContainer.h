@@ -64,8 +64,6 @@ class ComponentContainerBase : NonMovable {
 
         bool contains(EntityId id) const;
 
-        core::Span<EntityId> ids() const;
-
         ComponentTypeIndex type_id() const;
 
         const SparseIdSetBase& id_set() const;
@@ -133,10 +131,6 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
 
-        void add_if_absent(EntityId id) override {
-            get_or_add(id);
-        }
-
         void remove(EntityId id) override {
             if(T* comp = _components.try_get(id)) {
                 _on_destroy.send(id, *comp);
@@ -146,6 +140,9 @@ class ComponentContainer final : public ComponentContainerBase {
 
 
 
+        void add_if_absent(EntityId id) override {
+            get_or_add(id);
+        }
 
         template<typename... Args>
         inline T& add_or_replace(EntityId id, Args&&... args) {
@@ -190,6 +187,7 @@ class ComponentContainer final : public ComponentContainerBase {
             }
             return ptr;
         }
+
 
 
         const SparseComponentSet<T>& component_set() const {

@@ -55,7 +55,7 @@ static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view,
         return octree_system->find_entities(scene_view.camera());
     }
 
-    return core::Vector<ecs::EntityId>(world.component_ids<T>());
+    return core::Vector<ecs::EntityId>(world.component_set<T>().ids());
 }
 
 IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, EditorPassFlags flags) {

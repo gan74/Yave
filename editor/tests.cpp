@@ -53,7 +53,7 @@ static usize entity_count(const EditorWorld& world = current_world()) {
 
 static core::Vector<ecs::EntityId> all_ids(const EditorWorld& world = current_world()) {
     core::Vector<ecs::EntityId> entities;
-    for(const ecs::EntityId id : world.ids()) {
+    for(const ecs::EntityId id : world.all_entities()) {
         entities << id;
     }
     return entities;

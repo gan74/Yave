@@ -121,35 +121,6 @@ EntityWorld::~EntityWorld() {
     _containers.clear();
 }
 
-EntityWorld::EntityWorld(EntityWorld&& other) {
-    swap(other);
-}
-
-EntityWorld& EntityWorld::operator=(EntityWorld&& other) {
-    swap(other);
-    return *this;
-}
-
-void EntityWorld::swap(EntityWorld& other) {
-    if(this != &other) {
-        std::swap(_containers, other._containers);
-        std::swap(_tags, other._tags);
-        std::swap(_entities, other._entities);
-        std::swap(_systems, other._systems);
-        std::swap(_world_components, other._world_components);
-
-        for(auto& system : _systems) {
-            y_debug_assert(system->_world == &other);
-            system->_world = this;
-        }
-
-        for(auto& system : other._systems) {
-            y_debug_assert(system->_world == this);
-            system->_world = &other;
-        }
-    }
-}
-
 void EntityWorld::tick() {
     y_profile();
 
@@ -289,14 +260,13 @@ bool EntityWorld::is_parent(EntityId id, EntityId parent) const {
     return _entities.is_parent(id, parent);
 }
 
-core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->ids();
+const SparseIdSetBase& EntityWorld::component_ids(ComponentTypeIndex type_id) const {
+    return find_container(type_id)->id_set();
 }
 
 const SparseIdSet& EntityWorld::recently_mutated(ComponentTypeIndex type_id) const {
     return find_container(type_id)->recently_mutated();
 }
-
 
 core::Span<EntityId> EntityWorld::with_tag(const core::String& tag) const {
     const SparseIdSetBase* set = tag_set(tag);
@@ -413,7 +383,7 @@ void EntityWorld::post_deserialize() {
         }
 
         container->_mutated.clear();
-        for(const EntityId id : container->ids()) {
+        for(const EntityId id : container->id_set().ids()) {
             container->_mutated.insert(id);
         }
 

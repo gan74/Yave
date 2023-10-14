@@ -35,10 +35,6 @@ bool ComponentContainerBase::contains(EntityId id) const {
     return id_set().contains(id);
 }
 
-core::Span<EntityId> ComponentContainerBase::ids() const {
-    return id_set().ids();
-}
-
 ComponentTypeIndex ComponentContainerBase::type_id() const {
     return _type_id;
 }

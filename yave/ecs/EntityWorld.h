@@ -37,15 +37,10 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class EntityWorld {
+class EntityWorld : NonMovable {
     public:
         EntityWorld();
         ~EntityWorld();
-
-        EntityWorld(EntityWorld&& other);
-        EntityWorld& operator=(EntityWorld&& other);
-
-        void swap(EntityWorld& other);
 
         void tick();
         void update(float dt);
@@ -65,11 +60,10 @@ class EntityWorld {
 
         EntityPrefab create_prefab(EntityId id) const;
 
-        core::Span<EntityId> component_ids(ComponentTypeIndex type_id) const;
+        const SparseIdSetBase& component_ids(ComponentTypeIndex type_id) const;
         const SparseIdSet& recently_mutated(ComponentTypeIndex type_id) const;
 
         core::Span<EntityId> with_tag(const core::String& tag) const;
-
         const SparseIdSetBase* tag_set(const core::String& tag) const;
 
         std::string_view component_type_name(ComponentTypeIndex type_id) const;
@@ -95,6 +89,7 @@ class EntityWorld {
         auto children(EntityId id) const {
             return _entities.children(id);
         }
+
 
 
         // ---------------------------------------- Systems ----------------------------------------
@@ -156,42 +151,6 @@ class EntityWorld {
 
 
 
-        // ---------------------------------------- Tags ----------------------------------------
-
-        void add_tag(EntityId id, const core::String& tag);
-
-        void remove_tag(EntityId id, const core::String& tag);
-
-        void clear_tag(const core::String& tag);
-
-        bool has_tag(EntityId id, const core::String& tag) const;
-
-        static bool is_tag_implicit(std::string_view tag);
-
-
-
-
-        // ---------------------------------------- Enumerations ----------------------------------------
-
-        auto ids() const {
-            return _entities.ids();
-        }
-
-        auto component_types() const {
-            auto tr = [](const std::unique_ptr<ComponentContainerBase>& cont) { return cont->type_id(); };
-            return core::Range(TransformIterator(_containers.begin(), tr), _containers.end());
-        }
-
-        auto tags() const {
-            return _tags.keys();
-        }
-
-        core::Span<std::unique_ptr<System>> systems() const {
-           return _systems;
-        }
-
-
-
         // ---------------------------------------- Component getters ----------------------------------------
 
         template<typename T>
@@ -211,6 +170,43 @@ class EntityWorld {
         template<typename T>
         const auto* component(EntityId id) const {
             return find_container<T>()->component_ptr(id);
+        }
+
+
+
+
+        // ---------------------------------------- Tags ----------------------------------------
+
+        void add_tag(EntityId id, const core::String& tag);
+
+        void remove_tag(EntityId id, const core::String& tag);
+
+        void clear_tag(const core::String& tag);
+
+        bool has_tag(EntityId id, const core::String& tag) const;
+
+        static bool is_tag_implicit(std::string_view tag);
+
+
+
+
+        // ---------------------------------------- Enumerations ----------------------------------------
+
+        auto all_entities() const {
+            return _entities.ids();
+        }
+
+        auto component_types() const {
+            auto tr = [](const std::unique_ptr<ComponentContainerBase>& cont) { return cont->type_id(); };
+            return core::Range(TransformIterator(_containers.begin(), tr), _containers.end());
+        }
+
+        auto tags() const {
+            return _tags.keys();
+        }
+
+        core::Span<std::unique_ptr<System>> systems() const {
+           return _systems;
         }
 
 
@@ -270,16 +266,6 @@ class EntityWorld {
         template<typename T>
         const SparseComponentSet<T>& component_set() const {
             return find_container<T>()->component_set();
-        }
-
-        template<typename T>
-        core::Span<T> components() const {
-            return component_set<T>().values();
-        }
-
-        template<typename T>
-        core::Span<EntityId> component_ids() const {
-            return component_ids(type_index<T>());
         }
 
         template<typename T>

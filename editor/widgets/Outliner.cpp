@@ -96,7 +96,7 @@ void Outliner::on_gui() {
         ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("##tagbuttons",ImGuiTableColumnFlags_WidthFixed);
 
-        for(const ecs::EntityId id : world.component_ids<EditorComponent>()) {
+        for(const ecs::EntityId id : world.component_set<EditorComponent>().ids()) {
             if(world.has_parent(id)) {
                 continue;
             }

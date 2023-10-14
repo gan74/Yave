@@ -33,7 +33,7 @@ AABBUpdateSystem::AABBUpdateSystem() : ecs::System("AABBUpdateSystem") {
 }
 
 void AABBUpdateSystem::setup() {
-    world().make_mutated<TransformableComponent>(world().component_ids<TransformableComponent>());
+    world().make_mutated<TransformableComponent>(world().component_set<TransformableComponent>().ids());
 }
 
 void AABBUpdateSystem::tick() {

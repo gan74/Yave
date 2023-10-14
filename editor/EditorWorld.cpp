@@ -60,11 +60,8 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
 }
 
 void EditorWorld::clear() {
-    core::Vector<ecs::EntityId> all_entities;
-    for(const ecs::EntityId id : ids()) {
-        all_entities << id;
-    }
-    for(const ecs::EntityId id : all_entities) {
+    auto cached_entities = core::Vector<ecs::EntityId>::from_range(all_entities());
+    for(const ecs::EntityId id : cached_entities) {
         remove_entity(id);
     }
 }
