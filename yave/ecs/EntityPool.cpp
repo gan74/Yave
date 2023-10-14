@@ -127,12 +127,13 @@ EntityId EntityPool::parent(EntityId id) const {
     return {};
 }
 
-void EntityPool::set_parent(EntityId id, EntityId parent_id) {
+EntityId EntityPool::set_parent(EntityId id, EntityId parent_id) {
     y_debug_assert(exists(id));
 
     Entity& child = _entities[id.index()];
+    const EntityId old_parent = child.parent;
     if(child.parent == parent_id) {
-        return;
+        return old_parent;
     }
 
     y_always_assert(!is_parent(parent_id, id), "Entity hierarchy can not have cycles");
@@ -191,6 +192,8 @@ void EntityPool::set_parent(EntityId id, EntityId parent_id) {
     }
 
     audit();
+
+    return old_parent;
 }
 
 bool EntityPool::is_parent(EntityId id, EntityId parent) const {

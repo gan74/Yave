@@ -28,6 +28,8 @@ SOFTWARE.
 #include "ComponentBox.h"
 
 #include <y/concurrent/Signal.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 
 namespace yave {
@@ -71,8 +73,6 @@ class ComponentContainerBase : NonMovable {
         ComponentTypeIndex type_id() const;
 
         const SparseIdSetBase& id_set() const;
-        const SparseIdSet& recently_mutated() const;
-
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
 
@@ -82,14 +82,11 @@ class ComponentContainerBase : NonMovable {
         ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
         }
 
-        virtual  void register_world(EntityWorld* world) = 0;
-
-        virtual void clean_after_tick();
-        virtual void prepare_for_tick();
+        virtual void register_world(EntityWorld* world) = 0;
+        virtual void resend_created_signal() = 0;
 
 
         const ComponentTypeIndex _type_id;
-        SparseIdSet _mutated;
 };
 
 
@@ -123,9 +120,10 @@ class ComponentContainer final : public ComponentContainerBase {
 
         void inspect_component(EntityId id, ComponentInspector* inspector) override {
             if constexpr(is_detected_v<detail::has_inspect_t, T>) {
-                if(T* comp = component_ptr_mut(id)) {
+                if(T* comp = _components.try_get(id)) {
                     if(inspector->inspect_component_type(runtime_info(), true)) {
                         comp->inspect(inspector);
+                        _on_mutated.send(id, *comp);
                     }
                 }
             } else {
@@ -136,25 +134,23 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
 
-        void add_if_absent(EntityId id) override {
-            get_or_add(id);
-        }
-
         void remove(EntityId id) override {
             if(T* comp = _components.try_get(id)) {
-                _on_destroy.send(id, *comp);
+                _on_destroyed.send(id, *comp);
                 _components.erase(id);
             }
         }
 
-
-
+        void add_if_absent(EntityId id) override {
+            if(!_components.contains_index(id.index())) {
+                T& comp = _components.insert(id);
+                _on_created.send(id, comp);
+            }
+        }
 
         template<typename... Args>
-        inline T& add_or_replace(EntityId id, Args&&... args) {
+        inline void add_or_replace(EntityId id, Args&&... args) {
             y_debug_assert(id.is_valid());
-
-            _mutated.insert(id);
 
             T* comp = nullptr;
             if(!_components.contains_index(id.index())) {
@@ -162,47 +158,29 @@ class ComponentContainer final : public ComponentContainerBase {
             } else {
                 comp = &(_components[id] = std::move(T(y_fwd(args)...)));
             }
-
-            _on_create.send(id, *comp);
-            return *comp;
+            if(!_on_created.has_subscribers()) {
+                log_msg(fmt("no subs {} for {}", ct_type_name<T>(), (void*)&_on_created));
+            }
+            _on_created.send(id, *comp);
         }
 
-        inline T& get_or_add(EntityId id) {
+        template<typename F>
+        inline void patch(EntityId id, F&& func) {
             y_debug_assert(id.is_valid());
 
-            _mutated.insert(id);
-
-            if(!_components.contains_index(id.index())) {
-                T& comp = _components.insert(id);
-                _on_create.send(id, comp);
-                return comp;
-            } else {
-                return _components[id];
+            if(T* comp = _components.try_get(id)) {
+                func(*comp);
+                _on_mutated.send(id, *comp);
             }
         }
-
 
         inline const T* component_ptr(EntityId id) const {
             return _components.try_get(id);
         }
 
-        inline T* component_ptr_mut(EntityId id) {
-            auto* ptr = _components.try_get(id);
-            if(ptr) {
-                _mutated.insert(id);
-            }
-            return ptr;
-        }
-
-
         const SparseComponentSet<T>& component_set() const {
             return _components;
         }
-
-        SparseComponentSet<T>& component_set() {
-            return _components;
-        }
-
 
 
         y_no_serde3_expr(serde3::has_no_serde3_v<T>)
@@ -219,11 +197,20 @@ class ComponentContainer final : public ComponentContainerBase {
             }
         }
 
+        void resend_created_signal() override {
+            if(_on_created.has_subscribers()) {
+                for(auto&& [id, comp] : _components) {
+                    _on_created.send(id, comp);
+                }
+            }
+        }
+
 
         SparseComponentSet<T> _components;
 
-        concurrent::Signal<EntityId, T&> _on_create;
-        concurrent::Signal<EntityId, T&> _on_destroy;
+        concurrent::Signal<EntityId, T&> _on_created;
+        concurrent::Signal<EntityId, T&> _on_destroyed;
+        concurrent::Signal<EntityId, T&> _on_mutated;
 
 
 };

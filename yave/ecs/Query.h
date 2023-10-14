@@ -79,22 +79,15 @@ struct QueryUtils {
     static core::Vector<EntityId> matching(core::Span<SetMatch> matches, core::Span<EntityId> ids);
 
     template<usize I = 0, typename... Args>
-    static void fill_match_array(core::MutableSpan<SetMatch> matches, const std::array<const ComponentContainerBase*, sizeof...(Args)>& containers, bool only_changed = true) {
+    static void fill_match_array(core::MutableSpan<SetMatch> matches, const std::array<const ComponentContainerBase*, sizeof...(Args)>& containers) {
         if constexpr(I < sizeof...(Args)) {
             using component_type = std::tuple_element_t<I, std::tuple<Args...>>;
             static constexpr bool required = traits::component_required_v<component_type>;
-            static constexpr bool changed = traits::component_changed_v<component_type>;
 
             const SparseIdSetBase* set = nullptr;
             if(const ComponentContainerBase* container = containers[I]) {
-
                 y_debug_assert(type_index<traits::component_raw_type_t<component_type>>() == container->type_id());
-
-                if(changed && only_changed) {
-                    set = &container->recently_mutated();
-                } else {
-                    set = &container->id_set();
-                }
+                set = &container->id_set();
             }
 
             matches[I] = {
@@ -110,7 +103,7 @@ struct QueryUtils {
 template<typename... Args>
 class Query : NonCopyable {
 
-    using set_tuple = std::tuple<SparseComponentSet<traits::component_raw_type_t<Args>>*...>;
+    using set_tuple = std::tuple<const SparseComponentSet<traits::component_raw_type_t<Args>>*...>;
     using all_components = std::tuple<traits::component_type_t<Args>...>;
 
     // static constexpr bool tuple_is_empty = sizeof...(Args) == 0;

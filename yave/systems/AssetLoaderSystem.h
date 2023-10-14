@@ -27,6 +27,9 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 class AssetLoaderSystem : public ecs::System {
@@ -36,62 +39,66 @@ class AssetLoaderSystem : public ecs::System {
         void setup() override;
         void tick() override;
 
-        core::Span<ecs::EntityId> recently_loaded() const;
-
 
         template<typename T>
         void register_component_type() {
-            _infos << LoadableComponentTypeInfo {
-                &start_loading_components<T>,
-                &update_loading_status<T>,
-                ecs::type_index<T>()
+            _per_type_infos << LoadableComponentTypeInfo {
+                ecs::type_index<T>(),
+                &start_loading<T>,
+                &update_status<T>,
+                &connect<T>,
             };
         }
 
-    private:
-        void run_tick(bool only_recent);
-        void post_load();
-
-        core::FlatHashMap<ecs::ComponentTypeIndex, core::Vector<ecs::EntityId>> _loading;
-        core::Vector<ecs::EntityId> _recently_loaded;
-
-        AssetLoader* _loader = nullptr;
 
     private:
         struct LoadableComponentTypeInfo {
-            void (*start_loading)(ecs::EntityWorld&, AssetLoadingContext&, bool, core::Vector<ecs::EntityId>&) = nullptr;
-            void (*update_status)(ecs::EntityWorld&, core::Vector<ecs::EntityId>&, core::Vector<ecs::EntityId>&) = nullptr;
             ecs::ComponentTypeIndex type;
+
+            void (*start_loading)(ecs::EntityWorld&, AssetLoadingContext&, core::Span<ecs::EntityId>) = nullptr;
+            void (*update_status)(ecs::EntityWorld&, core::Vector<ecs::EntityId>&) = nullptr;
+            void (*connect)(LoadableComponentTypeInfo&, ecs::EntityWorld&) = nullptr;
+
+            core::Vector<ecs::EntityId> to_load;
+            core::Vector<ecs::EntityId> loading;
+
+            concurrent::Subscription created;
         };
 
         template<typename T>
-        static core::Span<ecs::EntityId> ids(ecs::EntityWorld& world, bool recent) {
-            return recent
-                ? world.recently_mutated<T>().ids()
-                : world.component_ids<T>();
-        }
+        static void start_loading(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, core::Span<ecs::EntityId> to_load) {
+            y_profile();
 
-        template<typename T>
-        static void start_loading_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, bool recent, core::Vector<ecs::EntityId>& out_ids) {
-            for(auto id_comp : world.query<ecs::Mutate<T>>(ids<T>(world, recent))) {
-                id_comp.template component<T>().load_assets(loading_ctx);
-                out_ids << id_comp.id;
+            for(const ecs::EntityId id : to_load) {
+                world.patch<T>(id, [&](T& comp) {
+                    comp.load_assets(loading_ctx);
+                });
             }
         }
 
         template<typename T>
-        static void update_loading_status(ecs::EntityWorld& world, core::Vector<ecs::EntityId>& ids, core::Vector<ecs::EntityId>& done) {
-            for(usize i = 0; i != ids.size(); ++i) {
-                T* component = world.component_mut<T>(ids[i]);
-                if(!component || component->update_asset_loading_status()) {
-                    done.push_back(ids[i]);
-                    ids.erase_unordered(ids.begin() + i);
-                    --i;
-                }
+        static void update_status(ecs::EntityWorld& world, core::Vector<ecs::EntityId>& loading) {
+            y_profile();
+
+            for(usize i = 0; i != loading.size(); ++i) {
+                world.patch<T>(loading[i], [&](T& comp) {
+                    if(comp.update_asset_loading_status()) {
+                        loading.erase_unordered(loading.begin() + i);
+                        --i;
+                    }
+                });
             }
         }
 
-        core::Vector<LoadableComponentTypeInfo> _infos;
+        template<typename T>
+        static void connect(LoadableComponentTypeInfo& info, ecs::EntityWorld& world) {
+            info.created = world.on_component_created<T>().subscribe([&info](ecs::EntityId id, T&) {
+                info.to_load.push_back(id);
+            });
+        }
+
+        core::Vector<LoadableComponentTypeInfo> _per_type_infos;
+        AssetLoader* _loader = nullptr;
 };
 
 }

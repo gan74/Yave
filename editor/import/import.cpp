@@ -255,7 +255,7 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
     return tr;
 }
 
-template<typename T>
+/*template<typename T>
 void propagate_transforms(T& nodes, int index, math::Transform<> parent) {
     auto& node = nodes[index];
     node.transform = parent * node.transform;
@@ -263,7 +263,7 @@ void propagate_transforms(T& nodes, int index, math::Transform<> parent) {
     for(const int child_index : node.children) {
         propagate_transforms(nodes, child_index, node.transform);
     }
-}
+}*/
 
 template<typename T>
 static void read_attrib(T& v, core::Span<typename T::value_type> s) {
@@ -490,12 +490,11 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
         for(usize i = 0; i != scene.nodes.size(); ++i) {
             if(scene.nodes[i].parent_index < 0) {
                 scene.root_nodes << int(i);
-                propagate_transforms(scene.nodes, int(i), math::Transform<>());
             }
         }
 
         for(auto& node : scene.nodes) {
-            node.transform = base_change_transform * node.transform;
+            node.transform = /*base_change_transform * */node.transform;
         }
     }
 

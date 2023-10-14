@@ -98,35 +98,43 @@ static void fill_world(ecs::EntityWorld& world) {
     const float intensity = 0.25f;
 
     {
-        const ecs::EntityId light_id = world.create_entity();
-        DirectionalLightComponent* light_comp = world.get_or_add_component<DirectionalLightComponent>(light_id);
-        light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
-        light_comp->intensity() = 3.0f * intensity;
-    }
-    {
-        const ecs::EntityId light_id = world.create_entity();
-        world.get_or_add_component<TransformableComponent>(light_id)->set_world_transform(math::Vec3(0.75f, -0.5f, 0.5f));
-        PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
-        light->color() = k_to_rbg(2500.0f);
-        light->intensity() = 1.5f * intensity;
-        light->falloff() = 0.5f;
-        light->range() = 2.0f;
-    }
-    {
-        const ecs::EntityId light_id = world.create_entity();
-        world.get_or_add_component<TransformableComponent>(light_id)->set_world_transform(math::Vec3(-0.75f, -0.5f, 0.5f));
-        PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
-        light->color() = k_to_rbg(10000.0f);
-        light->intensity() = 1.5f * intensity;
-        light->falloff() = 0.5f;
-        light->range() = 2.0f;
+        DirectionalLightComponent light;
+        light.direction() = math::Vec3{0.0f, 0.3f, -1.0f};
+        light.intensity() = 3.0f * intensity;
+
+        world.add_or_replace_component<DirectionalLightComponent>(world.create_entity(), std::move(light));
     }
 
     {
-        const ecs::EntityId sky_id = world.create_entity();
-        SkyLightComponent* sky = world.get_or_add_component<SkyLightComponent>(sky_id);
-        sky->probe() = device_resources().ibl_probe();
-        sky->intensity() = intensity;
+        PointLightComponent light;
+        light.color() = k_to_rbg(2500.0f);
+        light.intensity() = 1.5f * intensity;
+        light.falloff() = 0.5f;
+        light.range() = 2.0f;
+
+        const ecs::EntityId id = world.create_entity();
+        world.add_or_replace_component<PointLightComponent>(id, std::move(light));
+        world.add_or_replace_component<TransformableComponent>(id, math::Vec3(0.75f, -0.5f, 0.5f));
+    }
+
+    {
+        PointLightComponent light;
+        light.color() = k_to_rbg(10000.0f);
+        light.intensity() = 1.5f * intensity;
+        light.falloff() = 0.5f;
+        light.range() = 2.0f;
+
+        const ecs::EntityId id = world.create_entity();
+        world.add_or_replace_component<PointLightComponent>(id, std::move(light));
+        world.add_or_replace_component<TransformableComponent>(id, math::Vec3(-0.75f, -0.5f, 0.5f));
+    }
+
+    {
+        SkyLightComponent sky;
+        sky.probe() = device_resources().ibl_probe();
+        sky.intensity() = intensity;
+
+        world.add_or_replace_component<SkyLightComponent>(world.create_entity(), std::move(sky));
     }
 
 }
@@ -149,8 +157,8 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
 
     {
         const ecs::EntityId entity = world.create_entity();
-        *world.get_or_add_component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, mat);
-        world.get_or_add_component<TransformableComponent>(entity)->set_world_transform(center_to_camera(mesh->aabb()));
+        world.add_or_replace_component<StaticMeshComponent>(entity, StaticMeshComponent(mesh, mat));
+        world.add_or_replace_component<TransformableComponent>(entity, center_to_camera(mesh->aabb()));
     }
 
     return render_world(world);
@@ -165,9 +173,9 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
     {
         const ecs::EntityId entity = world.create_entity(*prefab);
         if(const StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
-            if(TransformableComponent* trans_comp = world.component_mut<TransformableComponent>(entity)) {
-                trans_comp->set_world_transform(center_to_camera(mesh_comp->aabb()));
-            }
+            world.patch<TransformableComponent>(entity, [&](TransformableComponent& tr){
+                tr.set_world_transform(center_to_camera(mesh_comp->aabb()));
+            });
         }
     }
 

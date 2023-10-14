@@ -22,11 +22,11 @@ SOFTWARE.
 
 #include "TransformableComponent.h"
 
-#include <yave/scene/OctreeNode.h>
+#include <yave/systems/TransformManagerSystem.h>
 
 namespace yave {
 
-TransformableComponent::TransformableComponent(const math::Transform<>& world_transform) : _world_transform(world_transform) {
+TransformableComponent::TransformableComponent(const math::Transform<>& local_transform) : _local_transform(local_transform) {
 }
 
 TransformableComponent::TransformableComponent(TransformableComponent&& other) {
@@ -39,7 +39,7 @@ TransformableComponent& TransformableComponent::operator=(TransformableComponent
 }
 
 TransformableComponent::TransformableComponent(const TransformableComponent& other) {
-    set_world_transform(other.world_transform());
+    set_local_transform(other.local_transform());
 }
 
 TransformableComponent& TransformableComponent::operator=(const TransformableComponent& other) {
@@ -48,23 +48,48 @@ TransformableComponent& TransformableComponent::operator=(const TransformableCom
 }
 
 void TransformableComponent::swap(TransformableComponent& other) {
-    std::swap(_world_transform, other._world_transform);
+    std::swap(_local_transform, other._local_transform);
     std::swap(_aabb, other._aabb);
-    std::swap(_node, other._node);
+    std::swap(_manager_index, other._manager_index);
+    std::swap(_manager, other._manager);
 }
 
+
+
+
+
+
+void TransformableComponent::set_local_transform(const math::Transform<>& tr) {
+    _local_transform = tr;
+    if(_manager) {
+        _manager->update_world_transform(_manager_index, this);
+    }
+}
+
+const math::Transform<>& TransformableComponent::local_transform() const {
+    return _local_transform;
+}
+
+
+
+
 void TransformableComponent::set_world_transform(const math::Transform<>& tr) {
-    _world_transform = tr;
+    y_debug_assert(_manager);
+    _manager->set_world_transform(*this, tr);
 }
 
 const math::Transform<>& TransformableComponent::world_transform() const {
-    return _world_transform;
+    y_debug_assert(_manager);
+    return _manager->world_transform(*this);
 }
+
+
 
 AABB TransformableComponent::to_world(const AABB& aabb) const {
     // https://zeux.io/2010/10/17/aabb-from-obb-with-component-wise-abs/
-    const math::Transform<> abs_tr = _world_transform.abs();
-    const math::Vec3 center = _world_transform.transform_point(aabb.center());
+    const math::Transform<> world = world_transform();
+    const math::Transform<> abs_tr = world.abs();
+    const math::Vec3 center = world.transform_point(aabb.center());
     const math::Vec3 half_extent = abs_tr.transform_direction(aabb.half_extent());
     return AABB(center - half_extent, center + half_extent);
 }
@@ -81,13 +106,15 @@ AABB TransformableComponent::world_aabb() const {
     return to_world(_aabb);
 }
 
-const OctreeNode* TransformableComponent::octree_node() const {
-    return _node;
+void TransformableComponent::inspect(ecs::ComponentInspector* inspector) {
+    math::Transform<> local_transform = _local_transform;
+    inspector->inspect("Transform", local_transform);
+
+    if(!std::equal(local_transform.matrix().begin(), local_transform.matrix().end(), _local_transform.matrix().begin())) {
+        set_local_transform(_local_transform);
+    }
 }
 
-void TransformableComponent::inspect(ecs::ComponentInspector* inspector) {
-    inspector->inspect("Transform", _world_transform);
-}
 
 }
 

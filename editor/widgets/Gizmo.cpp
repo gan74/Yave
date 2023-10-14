@@ -345,11 +345,12 @@ void Gizmo::translate_gizmo() {
         }
         offset = math::Vec3(snap(offset.x()), snap(offset.y()), snap(offset.z()));
 
-        auto query = current_world().query<ecs::Mutate<TransformableComponent>>(current_world().selected_entities());
-        for(auto&& [transformable] : query.components()) {
-            math::Transform<> transform = transformable.world_transform();
-            transform.position() += offset;
-            transformable.set_world_transform(transform);
+        for(const ecs::EntityId id : current_world().selected_entities()) {
+            current_world().patch<TransformableComponent>(id, [&](TransformableComponent& tr) {
+                math::Transform<> transform = tr.world_transform();
+                transform.position() += offset;
+                tr.set_world_transform(transform);
+            });
         }
     }
 }
@@ -454,11 +455,12 @@ void Gizmo::rotate_gizmo() {
         const float angle_offset = snap_rot(angle - _rotation_offset);
         const math::Quaternion<> rot = math::Quaternion<>::from_axis_angle(data.basis[_rotation_axis], angle_offset);
 
-        auto query = current_world().query<ecs::Mutate<TransformableComponent>>(current_world().selected_entities());
-        for(auto&& [transformable] : query.components()) {
-            auto tr = transformable.world_transform();
-            tr.set_basis(rot(tr.forward()), rot(tr.right()), rot(tr.up()));
-            transformable.set_world_transform(tr);
+        for(const ecs::EntityId id : current_world().selected_entities()) {
+            current_world().patch<TransformableComponent>(id, [&](TransformableComponent& tr) {
+                math::Transform<> transform = tr.world_transform();
+                transform.set_basis(rot(transform.forward()), rot(transform.right()), rot(transform.up()));
+                tr.set_world_transform(transform);
+            });
         }
 
         _rotation_offset += angle_offset;

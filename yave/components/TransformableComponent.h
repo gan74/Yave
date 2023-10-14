@@ -34,7 +34,7 @@ namespace yave {
 
 class TransformableComponent final : public ecs::RequiredSystem<TransformManagerSystem> {
     public:
-        TransformableComponent(const math::Transform<>& world_transform = {});
+        TransformableComponent(const math::Transform<>& local_transform = {});
 
         TransformableComponent(TransformableComponent&& other);
         TransformableComponent& operator=(TransformableComponent&& other);
@@ -44,6 +44,10 @@ class TransformableComponent final : public ecs::RequiredSystem<TransformManager
 
         void set_world_transform(const math::Transform<>& tr);
         const math::Transform<>& world_transform() const;
+
+
+        void set_local_transform(const math::Transform<>& tr);
+        const math::Transform<>& local_transform() const;
 
 
 
@@ -57,21 +61,21 @@ class TransformableComponent final : public ecs::RequiredSystem<TransformManager
 
 
 
-        const OctreeNode* octree_node() const;
 
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect(TransformableComponent, _world_transform)
+        y_reflect(TransformableComponent, _local_transform)
 
     private:
+        friend class TransformManagerSystem;
+
         void swap(TransformableComponent& other);
 
-        math::Transform<> _world_transform;
+        math::Transform<> _local_transform;
         AABB _aabb;
 
-        friend class Octree;
-        friend class OctreeSystem;
-        mutable OctreeNode* _node = nullptr;
+        mutable u32 _manager_index = u32(-1);
+        mutable TransformManagerSystem* _manager = nullptr;
 };
 
 }

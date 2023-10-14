@@ -30,15 +30,35 @@ SOFTWARE.
 namespace yave {
 
 class TransformManagerSystem : public ecs::System {
+    struct TransformData {
+        math::Transform<> world_transform;
+
+        bool modified = false;
+    };
+
     public:
         TransformManagerSystem();
 
         void setup() override;
-        void tick() override;
 
     private:
+        friend class TransformableComponent;
+
+
+        void update_world_transform(u32 index, const TransformableComponent* tr);
+
+        void set_world_transform(TransformableComponent& tr, const math::Transform<>& world_transform);
+        const math::Transform<>& world_transform(const TransformableComponent& tr) const;
+
+    private:
+        void make_modified(u32 index);
+
+
+        concurrent::Subscription _entity_created;
         concurrent::Subscription _transform_created;
-        concurrent::Subscription _transform_destroyed;
+
+        core::Vector<TransformData> _transforms;
+        core::Vector<u32> _modified;
 };
 
 }

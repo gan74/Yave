@@ -54,9 +54,12 @@ editor_action("Remove all entities", [] { current_world().clear(); })
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<AssetLoaderSystem>(loader);
     add_system<AABBUpdateSystem>();
-    add_system<OctreeSystem>();
     add_system<ScriptSystem>();
     add_system<StaticMeshRendererSystem>();
+
+    on_entity_created().subscribe([this](ecs::EntityId id) {
+        add_if_absent<EditorComponent>(id);
+    }).detach();
 }
 
 void EditorWorld::clear() {
@@ -75,11 +78,12 @@ void EditorWorld::flush_reload() {
 }
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {
-    if(EditorComponent* comp = get_or_add_component<EditorComponent>(id)) {
-        comp->set_name(name);
-        return true;
-    }
-    return false;
+    bool ok = false;
+    patch<EditorComponent>(id, [&](EditorComponent& comp) {
+        comp.set_name(name);
+        ok = true;
+    });
+    return ok;
 }
 
 
@@ -119,16 +123,6 @@ std::string_view EditorWorld::entity_icon(ecs::EntityId id) const {
     return ICON_FA_PUZZLE_PIECE;
 }
 
-
-ecs::EntityId EditorWorld::create_collection_entity(std::string_view name) {
-    const ecs::EntityId id = create_entity();
-    EditorComponent* comp = get_or_add_component<EditorComponent>(id);
-    y_always_assert(comp, "Unable to create entity name");
-    comp->set_name(name);
-    comp->_is_collection = true;
-    return id;
-}
-
 ecs::EntityId EditorWorld::add_prefab(std::string_view name) {
     if(const auto id = asset_store().id(name)) {
         return add_prefab(id.unwrap());
@@ -142,9 +136,6 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
     if(const auto prefab = asset_loader().load_res<ecs::EntityPrefab>(asset)) {
         const ecs::EntityId id = create_entity(*prefab.unwrap());
 
-        if(EditorComponent* comp = get_or_add_component<EditorComponent>(id)) {
-            comp->set_parent_prefab(asset);
-        }
         if(const auto name = asset_store().name(asset)) {
             set_entity_name(id, asset_store().filesystem()->filename(name.unwrap()));
         }

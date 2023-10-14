@@ -24,42 +24,36 @@ SOFTWARE.
 
 #include <yave/assets/AssetLoader.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
 AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs::System("AssetLoaderSystem"), _loader(&loader) {
 }
 
 void AssetLoaderSystem::setup() {
-    run_tick(false);
+    for(LoadableComponentTypeInfo& info : _per_type_infos) {
+        info.connect(info, world());
+    }
 }
 
 void AssetLoaderSystem::tick() {
-    run_tick(true);
-}
-
-void AssetLoaderSystem::run_tick(bool only_recent) {
     y_profile();
 
     AssetLoadingContext loading_ctx(_loader);
 
-    for(const LoadableComponentTypeInfo& info : _infos) {
-        info.start_loading(world(), loading_ctx, only_recent, _loading[info.type]);
+    for(LoadableComponentTypeInfo& info : _per_type_infos) {
+        y_debug_assert(info.created.is_connected());
+
+        info.start_loading(world(), loading_ctx, info.to_load);
+        info.loading.push_back(info.to_load.begin(), info.to_load.end());
+        info.to_load.make_empty();
     }
 
-    post_load();
-}
-
-void AssetLoaderSystem::post_load() {
-    y_profile();
-
-    _recently_loaded.make_empty();
-    for(const LoadableComponentTypeInfo& info : _infos) {
-        info.update_status(world(), _loading[info.type], _recently_loaded);
+    for(LoadableComponentTypeInfo& info : _per_type_infos) {
+        info.update_status(world(), info.loading);
     }
-}
-
-core::Span<ecs::EntityId> AssetLoaderSystem::recently_loaded() const {
-    return _recently_loaded;
 }
 
 

@@ -593,13 +593,11 @@ void Inspector::on_gui() {
 
     EditorWorld& world = current_world();
 
-    if(EditorComponent* component = world.component_mut<EditorComponent>(id)) {
-        entity_properties(id, component);
-
-        InspectorPanelInspector inspector(id, component);
+    world.patch<EditorComponent>(id, [&](EditorComponent& comp) {
+        entity_properties(id, &comp);
+        InspectorPanelInspector inspector(id, &comp);
         world.inspect_components(id, &inspector);
-    }
-
+    });
 
 
     if(ImGui::CollapsingHeader(ICON_FA_TAGS " Tags")) {

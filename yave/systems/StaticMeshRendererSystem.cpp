@@ -50,7 +50,7 @@ void StaticMeshRendererSystem::destroy() {
 }
 
 void StaticMeshRendererSystem::setup() {
-    _mesh_destroyed = world().on_destroy<StaticMeshComponent>().subscribe([this](ecs::EntityId, StaticMeshComponent& mesh) {
+    _mesh_destroyed = world().on_component_destroyed<StaticMeshComponent>().subscribe([this](ecs::EntityId, StaticMeshComponent& mesh) {
         free_index(mesh._transform_index);
         free_index(mesh._last_transform_index);
     });
@@ -126,11 +126,7 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
         }
     };
 
-    if(only_recent) {
-        moved_query(world().query<StaticMeshComponent, ecs::Changed<TransformableComponent>>());
-    } else {
-        moved_query(world().query<StaticMeshComponent, TransformableComponent>());
-    }
+    moved_query(world().query<StaticMeshComponent, TransformableComponent>());
 
 
     auto previously_moved = world().query<StaticMeshComponent>(_prev_moved.ids());

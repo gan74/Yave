@@ -37,15 +37,10 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class EntityWorld {
+class EntityWorld : NonMovable {
     public:
         EntityWorld();
         ~EntityWorld();
-
-        EntityWorld(EntityWorld&& other);
-        EntityWorld& operator=(EntityWorld&& other);
-
-        void swap(EntityWorld& other);
 
         void tick();
         void update(float dt);
@@ -66,15 +61,12 @@ class EntityWorld {
         EntityPrefab create_prefab(EntityId id) const;
 
         core::Span<EntityId> component_ids(ComponentTypeIndex type_id) const;
-        const SparseIdSet& recently_mutated(ComponentTypeIndex type_id) const;
 
         core::Span<EntityId> with_tag(const core::String& tag) const;
 
         const SparseIdSetBase* tag_set(const core::String& tag) const;
 
         std::string_view component_type_name(ComponentTypeIndex type_id) const;
-
-        void make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> ids);
 
 
 
@@ -97,6 +89,9 @@ class EntityWorld {
         }
 
 
+
+
+
         // ---------------------------------------- Systems ----------------------------------------
 
         template<typename S, typename... Args>
@@ -104,9 +99,9 @@ class EntityWorld {
             y_always_assert(!find_system<S>(), "System already exist");
             auto s = std::make_unique<S>(y_fwd(args)...);
             S* system = s.get();
+            system->_world = this;
             _systems.emplace_back(std::move(s));
             register_component_types(system);
-            system->_world = this;
             system->setup();
             return system;
         }
@@ -135,18 +130,18 @@ class EntityWorld {
 
 
 
-        // ---------------------------------------- Components ----------------------------------------
+        // ---------------------------------------- Components creation/mutation ---------------------------------------
 
-        template<typename T>
-        T* get_or_add_component(EntityId id) {
+        template<typename... Args>
+        void add_if_absent(EntityId id) {
             check_exists(id);
-            return &find_container<T>()->get_or_add(id);
+            (find_container<Args>()->add_if_absent(id), ...);
         }
 
         template<typename T, typename... Args>
-        T* add_or_replace_component(EntityId id, Args&&... args) {
+        void add_or_replace_component(EntityId id, Args&&... args) {
             check_exists(id);
-            return &find_container<T>()->add_or_replace(id, y_fwd(args)...);
+            return find_container<T>()->add_or_replace(id, y_fwd(args)...);
         }
 
         template<typename... Args>
@@ -154,6 +149,29 @@ class EntityWorld {
             check_exists(id);
             (find_container<Args>()->add_or_replace(id), ...);
         }
+
+        template<typename T, typename F>
+        void patch(EntityId id, F&& func) {
+            find_container<T>()->patch(id, y_fwd(func));
+        }
+
+
+        // ---------------------------------------- Component getters ----------------------------------------
+
+        template<typename T>
+        bool has(EntityId id) const {
+            return find_container<T>()->contains(id);
+        }
+
+        bool has(EntityId id, ComponentTypeIndex type_id) const {
+            return find_container(type_id)->contains(id);
+        }
+
+        template<typename T>
+        const auto* component(EntityId id) const {
+            return find_container<T>()->component_ptr(id);
+        }
+
 
 
 
@@ -189,29 +207,6 @@ class EntityWorld {
 
         core::Span<std::unique_ptr<System>> systems() const {
            return _systems;
-        }
-
-
-
-        // ---------------------------------------- Component getters ----------------------------------------
-
-        template<typename T>
-        bool has(EntityId id) const {
-            return find_container<T>()->contains(id);
-        }
-
-        bool has(EntityId id, ComponentTypeIndex type_id) const {
-            return find_container(type_id)->contains(id);
-        }
-
-        template<typename T>
-        auto* component_mut(EntityId id) {
-            return find_container<T>()->component_ptr_mut(id);
-        }
-
-        template<typename T>
-        const auto* component(EntityId id) const {
-            return find_container<T>()->component_ptr(id);
         }
 
 
@@ -255,13 +250,30 @@ class EntityWorld {
         // ---------------------------------------- Signals ----------------------------------------
 
         template<typename T>
-        concurrent::Signal<EntityId, T&>& on_create() {
-            return find_container<T>()->_on_create;
+        concurrent::Signal<EntityId, T&>& on_component_created() {
+            return find_container<T>()->_on_created;
         }
 
         template<typename T>
-        concurrent::Signal<EntityId, T&>& on_destroy() {
-            return find_container<T>()->_on_destroy;
+        concurrent::Signal<EntityId, T&>& on_component_destroyed() {
+            return find_container<T>()->_on_destroyed;
+        }
+
+        template<typename T>
+        concurrent::Signal<EntityId, T&>& on_component_mutated() {
+            return find_container<T>()->_on_mutated;
+        }
+
+        concurrent::Signal<EntityId>& on_entity_created() {
+            return _on_created;
+        }
+
+        concurrent::Signal<EntityId>& on_entity_destroyed() {
+            return _on_destroyed;
+        }
+
+        concurrent::Signal<EntityId, EntityId>& on_parent() {
+            return _on_parent;
         }
 
 
@@ -283,42 +295,20 @@ class EntityWorld {
             return component_ids(type_index<T>());
         }
 
-        template<typename T>
-        const SparseIdSet& recently_mutated() const {
-            return recently_mutated(type_index<T>());
-        }
-
 
 
         // ---------------------------------------- Queries ----------------------------------------
 
         template<typename... Args>
-        auto query(core::Span<core::String> tags = {}) {
-            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags));
-            dirty_mutated_containers<Args...>(q.ids());
-            return q;
-        }
-
-        template<typename... Args>
         auto query(core::Span<core::String> tags = {}) const {
-            static_assert((traits::is_component_const_v<Args> && ...));
             auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags));
-
             return q;
         }
 
-        template<typename... Args>
-        auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) {
-            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags), ids);
-            dirty_mutated_containers<Args...>(q.ids());
-            return q;
-        }
 
         template<typename... Args>
         auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) const {
-            static_assert((traits::is_component_const_v<Args> && ...));
             auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags), ids);
-
             return q;
         }
 
@@ -332,11 +322,6 @@ class EntityWorld {
             const EntityId id = create_entity();
             add_or_replace_components<Args...>(id);
             return id;
-        }
-
-        template<typename T>
-        void make_mutated(core::Span<EntityId> ids) {
-            make_mutated(type_index<T>(), ids);
         }
 
 
@@ -406,30 +391,14 @@ class EntityWorld {
         }
 
 
-        template<typename T, typename... Args>
-        void dirty_mutated_containers(core::Span<EntityId> mutated) {
-            if(mutated.is_empty()) {
-                return;
-            }
-            if constexpr(sizeof...(Args) != 0) {
-                dirty_mutated_containers<T>(mutated);
-                dirty_mutated_containers<Args...>(mutated);
-            } else {
-                if constexpr(traits::is_component_mutable_v<T>) {
-                    using component_type = traits::component_raw_type_t<T>;
-                    make_mutated<component_type>(mutated);
-                }
-            }
-        }
-
-
-
         const SparseIdSet* raw_tag_set(const core::String& tag) const;
 
         const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
         ComponentContainerBase* find_container(ComponentTypeIndex type_id);
 
         void register_component_types(System* system) const;
+        void register_world_to_systems();
+
 
         void check_exists(EntityId id) const;
 
@@ -440,6 +409,10 @@ class EntityWorld {
 
         core::Vector<std::unique_ptr<System>> _systems;
         core::Vector<std::unique_ptr<WorldComponentContainerBase>> _world_components;
+
+        concurrent::Signal<EntityId> _on_created;
+        concurrent::Signal<EntityId> _on_destroyed;
+        concurrent::Signal<EntityId, EntityId> _on_parent;
 };
 
 }

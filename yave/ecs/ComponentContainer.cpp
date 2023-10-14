@@ -48,18 +48,6 @@ const SparseIdSetBase& ComponentContainerBase::id_set() const {
     return *reinterpret_cast<const SparseIdSetBase*>(this + 1);
 }
 
-const SparseIdSet& ComponentContainerBase::recently_mutated() const {
-    return _mutated;
-}
-
-void ComponentContainerBase::clean_after_tick() {
-    y_profile();
-    _mutated.make_empty();
-}
-
-void ComponentContainerBase::prepare_for_tick() {
-    y_profile();
-}
 
 }
 }

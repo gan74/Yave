@@ -46,10 +46,10 @@ static void set_new_entity_pos(ecs::EntityId id) {
         return;
     }
     EditorWorld& world = current_world();
-    if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
-        const float size = transformable->world_aabb().radius();
-        transformable->set_world_transform(new_entity_pos(std::min(100.0f, size * 2.0f)));
-    }
+    world.patch<TransformableComponent>(id, [&](TransformableComponent& tr) {
+        const float size = tr.world_aabb().radius();
+        tr.set_world_transform(new_entity_pos(std::min(100.0f, size * 2.0f)));
+    });
 }
 
 static void add_prefab() {

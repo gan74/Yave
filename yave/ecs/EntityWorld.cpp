@@ -126,46 +126,9 @@ EntityWorld::~EntityWorld() {
     _containers.clear();
 }
 
-EntityWorld::EntityWorld(EntityWorld&& other) {
-    swap(other);
-}
-
-EntityWorld& EntityWorld::operator=(EntityWorld&& other) {
-    swap(other);
-    return *this;
-}
-
-void EntityWorld::swap(EntityWorld& other) {
-    if(this != &other) {
-        std::swap(_containers, other._containers);
-        std::swap(_tags, other._tags);
-        std::swap(_entities, other._entities);
-        std::swap(_systems, other._systems);
-        std::swap(_world_components, other._world_components);
-
-        for(auto& system : _systems) {
-            y_debug_assert(system->_world == &other);
-            system->_world = this;
-        }
-
-        for(auto& system : other._systems) {
-            y_debug_assert(system->_world == this);
-            system->_world = &other;
-        }
-    }
-}
 
 void EntityWorld::tick() {
     y_profile();
-
-    {
-        y_profile_zone("prepare tick");
-        for(auto& container : _containers) {
-            if(container) {
-                container->prepare_for_tick();
-            }
-        }
-    }
 
     {
         y_profile_zone("tick");
@@ -173,15 +136,6 @@ void EntityWorld::tick() {
             y_profile_dyn_zone(system->name().data());
             y_debug_assert(system->_world == this);
             system->tick();
-        }
-    }
-
-    {
-        y_profile_zone("clean after tick");
-        for(auto& container : _containers) {
-            if(container) {
-                container->clean_after_tick();
-            }
         }
     }
 
@@ -210,7 +164,9 @@ bool EntityWorld::exists(EntityId id) const {
 EntityId EntityWorld::create_entity() {
     y_profile();
 
-    return _entities.create();
+    const EntityId id = _entities.create();
+    _on_created.send(id);
+    return id;
 }
 
 EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
@@ -232,15 +188,10 @@ void EntityWorld::remove_entity(EntityId id) {
     y_profile();
 
     check_exists(id);
+    _on_destroyed.send(id);
 
     remove_all_components(id);
     _entities.remove(id);
-
-    // Entities are deleted immediatly, while components linger until the end of tick.
-    // This needs to be changed to be made consistent.
-    // Deferring entity deletion is problematic as we could add new components to the entity, while it is in limbo
-    // Idealy deletions should be instantaneous, and we should rely on callbacks/events rather than to_be_removed & co
-    Y_TODO(Fixme)
 }
 
 void EntityWorld::remove_all_components(EntityId id) {
@@ -279,7 +230,9 @@ EntityId EntityWorld::parent(EntityId id) const {
 void EntityWorld::set_parent(EntityId id, EntityId parent_id) {
     y_profile();
 
-    _entities.set_parent(id, parent_id);
+    if(_entities.set_parent(id, parent_id) != parent_id) {
+        _on_parent.send(id, parent_id);
+    }
 }
 
 bool EntityWorld::has_parent(EntityId id) const {
@@ -297,11 +250,6 @@ bool EntityWorld::is_parent(EntityId id, EntityId parent) const {
 core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) const {
     return find_container(type_id)->ids();
 }
-
-const SparseIdSet& EntityWorld::recently_mutated(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->recently_mutated();
-}
-
 
 core::Span<EntityId> EntityWorld::with_tag(const core::String& tag) const {
     const SparseIdSetBase* set = tag_set(tag);
@@ -370,14 +318,6 @@ std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) co
     return find_container(type_id)->runtime_info().clean_component_name();
 }
 
-void EntityWorld::make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> ids) {
-    y_profile();
-    auto& mutated = find_container(type_id)->_mutated;
-    for(const EntityId id : ids) {
-        mutated.insert(id);
-    }
-}
-
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
     y_debug_assert(_containers.size() > usize(type_id));
     return _containers[usize(type_id)].get();
@@ -411,17 +351,10 @@ void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector)
 void EntityWorld::post_deserialize() {
     y_profile();
 
-    auto patched = create_component_containers();
+    core::Vector<std::unique_ptr<ComponentContainerBase>> patched;
     for(auto& container : _containers) {
         if(!container) {
             continue;
-        }
-
-        container->register_world(this);
-
-        container->_mutated.clear();
-        for(const EntityId id : container->ids()) {
-            container->_mutated.insert(id);
         }
 
         const ComponentTypeIndex id = container->type_id();
@@ -435,6 +368,12 @@ void EntityWorld::post_deserialize() {
         y_debug_assert(system);
         y_debug_assert(system->_world == this);
         system->reset();
+    }
+
+    for(auto& container : _containers) {
+        if(container) {
+            container->resend_created_signal();
+        }
     }
 }
 

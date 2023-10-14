@@ -81,14 +81,15 @@ ComponentRuntimeInfo ComponentBox<T>::runtime_info() const {
 
 template<typename T>
 void ComponentBox<T>::add_to(EntityWorld& world, EntityId id, const EntityIdMap& id_map) const {
-    T* comp = world.add_or_replace_component<T>(id, _component);
-
-    reflect::explore_recursive(*comp, [&](auto& m) {
-        if constexpr(std::is_same_v<std::remove_cvref_t<decltype(m)>, EntityId>) {
-            if(const auto it = id_map.find(m); it != id_map.end()) {
-                m = it->second;
+    world.add_or_replace_component<T>(id, _component);
+    world.patch<T>(id, [&](T& comp) {
+        reflect::explore_recursive(comp, [&](auto& m) {
+            if constexpr(std::is_same_v<std::remove_cvref_t<decltype(m)>, EntityId>) {
+                if(const auto it = id_map.find(m); it != id_map.end()) {
+                    m = it->second;
+                }
             }
-        }
+        });
     });
 }
 

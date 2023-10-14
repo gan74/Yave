@@ -70,7 +70,7 @@ class [[nodiscard]] Subscription : NonCopyable {
 
 
 template<typename... Args>
-class Signal {
+class Signal : NonCopyable {
     struct Data : detail::SignalDataBase {
         struct Slot {
             std::function<void(Args...)> func;
@@ -109,6 +109,12 @@ class Signal {
                 for(const auto& rec : receivers) {
                     rec.func(args...);
                 }
+            });
+        }
+
+        bool has_subscribers() const {
+            return _data->_receivers.locked_shared([&](const auto& receivers) {
+                return !receivers.is_empty();
             });
         }
 
