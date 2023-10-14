@@ -133,7 +133,7 @@ class ComponentContainer final : public ComponentContainerBase {
 
         void remove(EntityId id) override {
             if(T* comp = _components.try_get(id)) {
-                _on_destroy.send(id, *comp);
+                _on_destroyed.send(id, *comp);
                 _components.erase(id);
             }
         }
@@ -157,7 +157,7 @@ class ComponentContainer final : public ComponentContainerBase {
                 comp = &(_components[id] = std::move(T(y_fwd(args)...)));
             }
 
-            _on_create.send(id, *comp);
+            _on_created.send(id, *comp);
             return *comp;
         }
 
@@ -168,7 +168,7 @@ class ComponentContainer final : public ComponentContainerBase {
 
             if(!_components.contains_index(id.index())) {
                 T& comp = _components.insert(id);
-                _on_create.send(id, comp);
+                _on_created.send(id, comp);
                 return comp;
             } else {
                 return _components[id];
@@ -210,8 +210,8 @@ class ComponentContainer final : public ComponentContainerBase {
 
         SparseComponentSet<T> _components;
 
-        concurrent::Signal<EntityId, T&> _on_create;
-        concurrent::Signal<EntityId, T&> _on_destroy;
+        concurrent::Signal<EntityId, T&> _on_created;
+        concurrent::Signal<EntityId, T&> _on_destroyed;
 };
 
 }

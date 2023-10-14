@@ -44,7 +44,7 @@ void OctreeSystem::destroy() {
 }
 
 void OctreeSystem::setup() {
-    _transform_destroyed = world().on_destroy<TransformableComponent>().subscribe([](ecs::EntityId id, TransformableComponent& tr) {
+    _transform_destroyed = world().on_destroyed<TransformableComponent>().subscribe([](ecs::EntityId id, TransformableComponent& tr) {
         if(tr._node) {
             tr._node->remove(id);
         }

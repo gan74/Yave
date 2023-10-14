@@ -250,15 +250,22 @@ class EntityWorld : NonMovable {
         // ---------------------------------------- Signals ----------------------------------------
 
         template<typename T>
-        concurrent::Signal<EntityId, T&>& on_create() {
-            return find_container<T>()->_on_create;
+        concurrent::Signal<EntityId, T&>& on_created() {
+            return find_container<T>()->_on_created;
         }
 
         template<typename T>
-        concurrent::Signal<EntityId, T&>& on_destroy() {
-            return find_container<T>()->_on_destroy;
+        concurrent::Signal<EntityId, T&>& on_destroyed() {
+            return find_container<T>()->_on_destroyed;
         }
 
+        concurrent::Signal<EntityId>& on_entity_created() {
+            return _on_created;
+        }
+
+        concurrent::Signal<EntityId>& on_entity_destroyed() {
+            return _on_destroyed;
+        }
 
 
         // ---------------------------------------- Component sets ----------------------------------------
@@ -425,6 +432,9 @@ class EntityWorld : NonMovable {
 
         core::Vector<std::unique_ptr<System>> _systems;
         core::Vector<std::unique_ptr<WorldComponentContainerBase>> _world_components;
+
+        concurrent::Signal<EntityId> _on_created;
+        concurrent::Signal<EntityId> _on_destroyed;
 };
 
 }

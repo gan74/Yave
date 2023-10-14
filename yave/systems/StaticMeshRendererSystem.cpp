@@ -50,7 +50,7 @@ void StaticMeshRendererSystem::destroy() {
 }
 
 void StaticMeshRendererSystem::setup() {
-    _mesh_destroyed = world().on_destroy<StaticMeshComponent>().subscribe([this](ecs::EntityId, StaticMeshComponent& mesh) {
+    _mesh_destroyed = world().on_destroyed<StaticMeshComponent>().subscribe([this](ecs::EntityId, StaticMeshComponent& mesh) {
         free_index(mesh._transform_index);
         free_index(mesh._last_transform_index);
     });

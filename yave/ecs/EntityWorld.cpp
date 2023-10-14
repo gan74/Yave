@@ -176,7 +176,9 @@ bool EntityWorld::exists(EntityId id) const {
 EntityId EntityWorld::create_entity() {
     y_profile();
 
-    return _entities.create();
+    const EntityId id = _entities.create();
+    _on_created.send(id);
+    return id;
 }
 
 EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
@@ -198,6 +200,8 @@ void EntityWorld::remove_entity(EntityId id) {
     y_profile();
 
     check_exists(id);
+
+    _on_destroyed.send(id);
 
     remove_all_components(id);
     _entities.remove(id);
