@@ -163,7 +163,7 @@ class DescriptorSetAllocator {
         usize used_sets() const;
 
     private:
-        using LayoutMap = core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual, true>;
+        using LayoutMap = core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual>;
 
         static LayoutPools& layout_pool(LayoutMap& layouts, LayoutKey bindings);
 

@@ -90,7 +90,7 @@ inline constexpr usize probing_offset(usize i) {
 
 
 namespace swiss {
-template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>, bool StoreHash = false>
+template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>>
 class FlatHashMap : Hasher, Equal {
     public:
         using key_type = std::remove_cvref_t<Key>;
@@ -110,95 +110,50 @@ class FlatHashMap : Hasher, Equal {
             usize hash;
         };
 
-        struct StateHash {
-            static constexpr usize hash_bit = usize(1) << (8 * sizeof(usize) - 1);
-            static constexpr usize empty_states = 0;
-            static constexpr usize tombstone_states = 1;
+        struct CompactState {
+            static constexpr u8 tombstone_bits  = 0x01;
+            static constexpr u8 empty_bits      = 0x00;
+            static constexpr u8 has_hash_bit    = 0x80;
 
-            usize bits = empty_states;
+            u8 bits = 0;
+
 
             inline void set_hash(usize hash) {
                 y_debug_assert(!is_full());
-                bits = hash | hash_bit;
+                bits = u8(hash & 0xFF) | has_hash_bit;
             }
 
             inline void make_empty() {
                 y_debug_assert(is_full());
-                bits = tombstone_states;
+                bits = tombstone_bits;
             }
 
             inline bool is_full() const {
-                return bits & hash_bit;
+                return (bits & has_hash_bit) != 0;
             }
 
-            inline bool is_hash(usize hash) const {
-                return bits == (hash | hash_bit);
-            }
-
-            inline bool is_empty_strict() const {
-                return bits == empty_states;
-            }
-
-            inline bool is_tombstone() const {
-                return bits == tombstone_states;
-            }
-
-            inline usize hash() const {
-                y_debug_assert(is_full());
-                // we dont care about the last bit since we mask instead of %
-                return bits;
-            }
-        };
-
-        struct SimpleState {
-            enum State : u8 {
-                Empty,
-                Full,
-                Tombstone
-            } state = Empty;
-
-            inline void set_hash(usize) {
-                y_debug_assert(!is_full());
-                state = Full;
-            }
-
-            inline void make_empty() {
-                y_debug_assert(is_full());
-                state = Tombstone;
-            }
-
-            inline bool is_full() const {
-                return state == Full;
-            }
-
-            inline bool is_hash(usize) const {
+            inline bool matches_hash(usize) const {
                 return is_full();
             }
 
             inline bool is_empty_strict() const {
-                return state == Empty;
+                return bits == empty_bits;
             }
 
             inline bool is_tombstone() const {
-                return state == Tombstone;
+                return bits == tombstone_bits;
             }
         };
 
-        static_assert(sizeof(StateHash) == sizeof(usize));
-        static_assert(sizeof(SimpleState) == sizeof(u8));
+        static_assert(sizeof(CompactState) == sizeof(u8));
 
         template<typename K>
-        inline usize retrieve_hash(const K&, const StateHash& state) const {
-            return state.hash();
-        }
-
-        template<typename K>
-        inline usize retrieve_hash(const K& key, const SimpleState&) const {
+        inline usize retrieve_hash(const K& key, const CompactState&) const {
             return hash(key);
         }
 
 
-        using State = std::conditional_t<StoreHash, StateHash, SimpleState>;
+        using State = CompactState;
 
         struct Entry : NonMovable {
             union {
@@ -413,7 +368,7 @@ class FlatHashMap : Hasher, Equal {
                         if(best_index == invalid_index) {
                             best_index = index;
                         }
-                    } else if(state.is_hash(h) && equal(_entries[index].key(), key)) {
+                    } else if(state.matches_hash(h) && equal(_entries[index].key(), key)) {
                         return {index, h};
                     }
                 }
@@ -445,7 +400,7 @@ class FlatHashMap : Hasher, Equal {
             for(usize i = 0; i <= _max_probe_len; ++i) {
                 const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
                 const State& state = _states[index];
-                if(state.is_hash(h)) {
+                if(state.matches_hash(h)) {
                     if(equal(_entries[index].key(), key)) {
                         return index;
                     }
