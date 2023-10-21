@@ -32,6 +32,8 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
+#include <bit>
+
 namespace yave {
 
 static constexpr usize inline_block_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1;
@@ -192,38 +194,17 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
         log_msg(fmt("Allocating {} * {} bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
         _inline_buffer = Buffer<BufferUsage::UniformBit, MemoryType::CpuVisible>(_descriptor_buffer_size * pool_size);
     }
+
+    y_debug_assert(used_sets() == 0);
 }
 
 DescriptorSetPool::~DescriptorSetPool() {
-    y_debug_assert(_taken.none());
+    y_debug_assert(used_sets() == 0);
     destroy_graphic_resource(std::move(_pool));
 }
 
 u64 DescriptorSetPool::inline_sub_buffer_alignment() const {
     return SubBuffer<BufferUsage::UniformBit>::byte_alignment();
-}
-
-DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
-    y_profile();
-
-    const auto lock = std::unique_lock(_lock);
-    if(is_full() || _taken[_first_free]) {
-        y_fatal("DescriptorSetPoolPage is full");
-    }
-    const u32 id = _first_free;
-
-    for(++_first_free; _first_free < pool_size; ++_first_free) {
-        if(!_taken[_first_free]) {
-            break;
-        }
-    }
-
-    y_debug_assert(is_full() || !_taken[_first_free]);
-
-    _taken.set(id);
-
-    update_set(id, descriptors);
-    return DescriptorSetData(this, id);
 }
 
 void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
@@ -290,19 +271,50 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
     vkUpdateDescriptorSets(vk_device(), u32(writes.size()), writes.data(), 0, nullptr);
 }
 
+DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
+    y_profile();
+
+    const auto lock = std::unique_lock(_lock);
+
+    u32 id = u32(-1);
+    for(usize i = 0; i != _taken.size(); ++i) {
+        y_debug_assert(i == 0 || _taken[i - 1] == u64(-1));
+        const u64 ones = std::countr_one(_taken[i]);
+        if(ones < 64) {
+            id = u32(i * 64) + u32(ones);
+            y_debug_assert(!is_taken(id));
+
+            const u64 mask = u64(1) << ones;
+            _taken[i] = _taken[i] | mask;
+
+            break;
+        }
+    }
+    y_always_assert(id < pool_size, "DescriptorSetPool is full");
+    y_debug_assert(is_taken(id));
+
+    update_set(id, descriptors);
+    return DescriptorSetData(this, id);
+}
 
 void DescriptorSetPool::recycle(u32 id) {
     y_profile();
 
     const auto lock = std::unique_lock(_lock);
-    y_debug_assert(_taken[id]);
-    _taken.reset(id);
-    _first_free = std::min(_first_free, id);
+    y_debug_assert(is_taken(id));
+
+    const u32 index = id / 64;
+    const u64 mask = u64(1) << (id % 64);
+    _taken[index] = _taken[index] & ~mask;
 }
 
 bool DescriptorSetPool::is_full() const {
-    // we shouldn't need to lock here
-    return _first_free >= pool_size;
+    for(const u64 bits : _taken) {
+        if(bits != u64(-1)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 VkDescriptorSet DescriptorSetPool::vk_descriptor_set(u32 id) const {
@@ -317,13 +329,26 @@ VkDescriptorSetLayout DescriptorSetPool::vk_descriptor_set_layout() const {
     return _layout;
 }
 
+
+bool DescriptorSetPool::is_taken(u32 id) const {
+    y_debug_assert(id < pool_size);
+    const u32 index = id / 64;
+    const u64 mask = u64(1) << (id % 64);
+    return (_taken[index] & mask) == mask;
+}
+
 usize DescriptorSetPool::free_sets() const {
     return pool_size - used_sets();
 }
 
 usize DescriptorSetPool::used_sets() const {
     const auto lock = std::unique_lock(_lock);
-    return _taken.count();
+
+    usize used = 0;
+    for(const u64 bits : _taken) {
+        used += std::popcount(bits);
+    }
+    return used;
 }
 
 

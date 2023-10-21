@@ -33,7 +33,6 @@ SOFTWARE.
 #include <y/concurrent/SpinLock.h>
 #include <y/concurrent/Mutexed.h>
 
-#include <bitset>
 #include <memory>
 #include <algorithm>
 #include <memory>
@@ -103,12 +102,13 @@ class DescriptorSetPool : NonMovable {
         usize used_sets() const;
 
     private:
+        bool is_taken(u32 id) const;
         void update_set(u32 id, core::Span<Descriptor> descriptors);
 
         u64 inline_sub_buffer_alignment() const;
 
-        std::bitset<pool_size> _taken;
-        u32 _first_free = 0;
+        static_assert(pool_size % 64 == 0);
+        std::array<u64, pool_size / 64> _taken = {};
 
         mutable concurrent::SpinLock _lock;
 
