@@ -77,7 +77,6 @@ static bool keep_taa(EngineView::RenderView view) {
 EngineView::EngineView() :
         Widget(ICON_FA_DESKTOP " Engine View"),
         _resource_pool(std::make_shared<FrameGraphResourcePool>()),
-        _scene_view(&current_world()),
         _camera_controller(std::make_unique<HoudiniCameraController>()),
         _tr_gizmo(&_scene_view),
         _rot_gizmo(&_scene_view),
@@ -233,13 +232,18 @@ void EngineView::update() {
     }
 }
 
-void EngineView::update_proj() {
+void EngineView::update_scene_view() {
+    if(!_scene_view.has_world() || &_scene_view.world() != &current_world()) {
+        _scene_view = SceneView(&current_world());
+    }
+
     const CameraSettings& settings = app_settings().camera;
     math::Vec2ui viewport_size = content_size();
 
     const float fov = math::to_rad(settings.fov);
     const auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), settings.z_near);
     _scene_view.camera().set_proj(proj);
+
 }
 
 
@@ -286,7 +290,7 @@ void EngineView::make_drop_target() {
 
 void EngineView::on_gui() {
     if(ImGui::BeginChild("##view")) {
-        update_proj();
+        update_scene_view();
 
         const math::Vec2 cursor = ImGui::GetCursorPos();
 

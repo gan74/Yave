@@ -83,7 +83,7 @@ class EngineView final : public Widget {
         void draw_resolution_menu();
         void draw_settings_menu();
 
-        void update_proj();
+        void update_scene_view();
         void update();
         void update_picking();
 
