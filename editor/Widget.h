@@ -29,6 +29,7 @@ SOFTWARE.
 #include <y/utils/log.h>
 
 #include <array>
+#include <tuple>
 
 #define editor_widget_(type, on_startup, ...)                                                                       \
     inline static struct widget_register_t {                                                                        \
@@ -37,8 +38,10 @@ SOFTWARE.
             static editor::EditorWidget widget = {                                                                  \
                 #type, (on_startup), open_func, nullptr                                                             \
             };                                                                                                      \
+            static constexpr usize arg_count = std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value;      \
+            static const std::array<std::string_view, arg_count> menu = {__VA_ARGS__};                              \
             static editor::EditorAction action = {                                                                  \
-                #type, "Open a new " #type, 0, yave::KeyCombination(), open_func, {}, nullptr                       \
+                #type, "Open a new " #type, 0, yave::KeyCombination(), open_func, menu, nullptr                     \
             };                                                                                                      \
             editor::detail::register_widget(&widget);                                                               \
             editor::detail::register_action(&action);                                                               \

@@ -156,9 +156,7 @@ void UiManager::draw_menu_bar() {
         if(ImGui::BeginMenu("File")) {
             ImGui::EndMenu();
         }
-        if(ImGui::BeginMenu("Edit")) {
-            ImGui::EndMenu();
-        }
+
         if(ImGui::BeginMenu("View")) {
             ImGui::EndMenu();
         }
