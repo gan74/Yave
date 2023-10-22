@@ -23,6 +23,7 @@ SOFTWARE.
 #include "Outliner.h"
 #include "AssetSelector.h"
 #include "DeletionDialog.h"
+#include "Renamer.h"
 
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
@@ -125,14 +126,6 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
     auto display_tags = [&] {
         ImGui::TableNextColumn();
 
-        {
-            ImGui::TextUnformatted(ICON_FA_TRASH);
-            if(ImGui::IsItemClicked()) {
-                add_child_widget<DeletionDialog>(id);
-            }
-            ImGui::SameLine();
-        }
-
         for(const auto& [icon, tag, state] : _tag_buttons) {
             const bool tagged = world.has_tag(id, tag);
             if(tagged == state) {
@@ -166,10 +159,14 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
     const bool open = ImGui::TreeNodeEx(fmt_c_str("{} {}###{}", world.entity_icon(id), component->name(), id.as_u64()), flags);
 
-
     {
         if(ImGui::IsItemClicked()) {
             world.toggle_selected(id, !ImGui::GetIO().KeyCtrl);
+        }
+
+        if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            _context_menu_target = id;
+            ImGui::OpenPopup("##contextmenu");
         }
 
         if(!make_drop_target(world, id)) {
@@ -180,6 +177,27 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
         }
 
         display_tags();
+    }
+
+
+    if(_context_menu_target.is_valid() && ImGui::BeginPopup("##contextmenu")) {
+        ImGui::MenuItem(component->name().data(), "", false, false);
+        ImGui::Separator();
+
+        if(ImGui::MenuItem("Rename")) {
+            add_child_widget<Renamer>(component->name(), [=](std::string_view name) {
+                if(EditorComponent* comp = current_world().component_mut<EditorComponent>(_context_menu_target)) {
+                    comp->set_name(name);
+                }
+                return true;
+            });
+        }
+
+        if(ImGui::MenuItem(ICON_FA_TRASH " Delete")) {
+            add_child_widget<DeletionDialog>(_context_menu_target);
+        }
+
+        ImGui::EndPopup();
     }
 
 

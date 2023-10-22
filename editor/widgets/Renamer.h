@@ -32,7 +32,7 @@ namespace editor {
 
 class Renamer : public Widget {
     public:
-        Renamer(core::String name, std::function<bool(std::string_view)> callback);
+        Renamer(std::string_view name, std::function<bool(std::string_view)> callback);
 
         const core::String& original_name() const;
 

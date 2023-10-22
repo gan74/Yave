@@ -43,6 +43,8 @@ class Outliner final : public Widget {
         bool make_drop_target(EditorWorld& world, ecs::EntityId id);
 
         core::Vector<std::tuple<const char*, core::String, bool>> _tag_buttons;
+
+        ecs::EntityId _context_menu_target;
 };
 
 }

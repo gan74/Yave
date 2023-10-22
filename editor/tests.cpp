@@ -97,10 +97,10 @@ void register_editor_tests(ImGuiTestEngine* engine) {
     };
 
     IM_REGISTER_TEST(engine, "tests", "add empty entities")->TestFunc = [=](ImGuiTestContext* ctx) {
-        ctx->SetRef(ICON_FA_CUBES " Entities##1");
+        ctx->SetRef(ICON_FA_SITEMAP " Outliner##1");
         for(usize i = 0; i != 4; ++i) {
             ctx->ItemClick(ICON_FA_PLUS);
-            ctx->ItemClick("**/" ICON_FA_PLUS " New empty entity");
+            ctx->ItemClick("**/Empty entity");
         }
     };
 
@@ -109,7 +109,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         IM_CHECK_NE(ids.size(), 0_uu);
         const ecs::EntityId id = ids[ids.size() / 2];
 
-        ctx->ItemClick(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###{}", id.as_u64()), ImGuiMouseButton_Right);
+        ctx->ItemClick(fmt_c_str("//" ICON_FA_SITEMAP " Outliner##1/**/###{}", id.as_u64()), ImGuiMouseButton_Right);
         ctx->ItemClick("//$FOCUSED/Rename");
 
         ctx->SetRef("//Rename##1");
@@ -117,7 +117,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->KeyChars("flubudu");
         ctx->ItemClick("Ok");
 
-        const core::String label = ctx->ItemInfo(fmt_c_str("//" ICON_FA_CUBES " Entities##1/**/###{}", id.as_u64()))->DebugLabel;
+        const core::String label = ctx->ItemInfo(fmt_c_str("//" ICON_FA_SITEMAP " Outliner##1/**/###{}", id.as_u64()))->DebugLabel;
         IM_CHECK_EQ(label.starts_with(ICON_FA_DATABASE " flubudu"), true);
     };
 
@@ -127,7 +127,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         const ecs::EntityId id = ids[ids.size() / 3];
 
         {
-            ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
+            ctx->SetRef("//" ICON_FA_SITEMAP " Outliner##1");
             ctx->ItemClick(fmt_c_str("**/###{}", id.as_u64()), ImGuiMouseButton_Right);
             ctx->ItemClick("//$FOCUSED/" ICON_FA_TRASH " Delete");
             ctx->ItemClick("//$FOCUSED/Cancel");
@@ -136,7 +136,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->Yield();
 
         {
-            ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
+            ctx->SetRef("//" ICON_FA_SITEMAP " Outliner##1");
             ctx->ItemClick(fmt_c_str("**/###{}", id.as_u64()), ImGuiMouseButton_Right);
             ctx->ItemClick("//$FOCUSED/" ICON_FA_TRASH " Delete");
             ctx->ItemClick("//$FOCUSED/Ok");
@@ -205,14 +205,14 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         const ecs::EntityId id = ids[0];
 
         {
-            ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
+            ctx->SetRef("//" ICON_FA_SITEMAP " Outliner##1");
             ctx->ItemClick(fmt_c_str("**/###{}", id.as_u64()));
         }
 
         ctx->Yield();
 
         {
-            ctx->SetRef("//" ICON_FA_WRENCH " Components##1");
+            ctx->SetRef("//" ICON_FA_WRENCH " Inspector##1");
 
             {
                 ctx->ItemOpen("**/" ICON_FA_PUZZLE_PIECE " Entity");
@@ -240,7 +240,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->Yield();
 
         {
-            ctx->SetRef("//" ICON_FA_CUBES " Entities##1");
+            ctx->SetRef("//" ICON_FA_SITEMAP " Outliner##1");
             const ImGuiTestItemInfo* info = ctx->ItemInfoOpenFullPath(fmt_c_str("**/###{}", id.as_u64()));
             IM_CHECK_NE(info->ID, 0u);
             IM_CHECK_STR_EQ(info->DebugLabel, fmt_c_str(ICON_FA_CUBE " shalg###{}", id.as_u64()));
