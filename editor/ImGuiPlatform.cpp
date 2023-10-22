@@ -103,18 +103,6 @@ static void setup_style() {
         colors[i] = rgb(255, 0, 0);
     }
 
-
-    /*auto stl = [&](u8 base, float alpha = 1.0f) {
-        const float b = base;
-        const float o = std::pow(b * 0.08f, 1.35f);
-        return rgb(
-            u8(std::min(b,              255.0f)),
-            u8(std::min(b + o,          255.0f)),
-            u8(std::min(b + o * 2.0f,   255.0f)),
-            alpha
-        );
-    };*/
-
     auto stl = [&](u8 base, float alpha = 1.0f) {
         return rgb(base, base + 3, base + 7, alpha);
     };

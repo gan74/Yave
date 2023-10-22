@@ -39,6 +39,13 @@ class EngineView final : public Widget {
 
     editor_widget_open(EngineView, "View")
 
+    enum class GizmoType : u32 {
+        Translate,
+        Rotate,
+
+        Max,
+    };
+
     public:
         enum class RenderView : u32 {
             Lit,
@@ -52,7 +59,7 @@ class EngineView final : public Widget {
 
             SSAO,
 
-            MaxRenderViews
+            Max,
         };
 
         EngineView();
@@ -70,9 +77,11 @@ class EngineView final : public Widget {
 
     private:
         void draw(CmdBufferRecorder& recorder);
-        void draw_menu_bar();
+
+        void draw_toolbar_and_gizmos();
+        void draw_menu();
+        void draw_resolution_menu();
         void draw_settings_menu();
-        void draw_gizmo_tool_bar();
 
         void update_proj();
         void update();
@@ -82,6 +91,10 @@ class EngineView final : public Widget {
         bool is_focussed() const;
 
         void make_drop_target();
+
+        bool is_dragging_gizmo() const;
+        void set_allow_dragging_gizmo(bool allow);
+
 
         RenderView _view = RenderView::Lit;
 
@@ -93,10 +106,12 @@ class EngineView final : public Widget {
         SceneView _scene_view;
         std::unique_ptr<CameraController> _camera_controller;
 
-        Gizmo _gizmo;
+        GizmoType _gizmo = GizmoType::Translate;
+
+        TranslationGizmo _tr_gizmo;
+        RotationGizmo _rot_gizmo;
         OrientationGizmo _orientation_gizmo;
 
-        bool _disable_render = false;
         isize _resolution = -1;
 };
 
