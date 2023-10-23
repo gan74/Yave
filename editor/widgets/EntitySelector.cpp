@@ -61,7 +61,7 @@ void EntitySelector::on_gui() {
             if(ImGui::Selectable(fmt_c_str("{} {}", world.entity_icon(id), c.name().data()))) {
                 if(_selected(id)) {
                     close();
-                    return;
+                    break;
                 }
             }
         }

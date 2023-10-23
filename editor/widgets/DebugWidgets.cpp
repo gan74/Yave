@@ -144,6 +144,31 @@ class EcsDebug : public Widget {
             EditorWorld& world = current_world();
 
             const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+
+            if(ImGui::CollapsingHeader("Entities")) {
+                if(ImGui::BeginTable("##components", 2, table_flags | ImGuiTableFlags_BordersInnerV)) {
+                    ImGui::TableSetupColumn("Component", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("Entities", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableHeadersRow();
+
+                    for(const auto& [name, info] : world.component_types()) {
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted(name.begin(), name.end());
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%u", unsigned(world.component_ids(info.type_id).size()));
+                    }
+
+                    {
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted("Total");
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%u", unsigned(world.entity_count()));
+                    }
+
+                    ImGui::EndTable();
+                }
+            }
+
             if(ImGui::CollapsingHeader("Systems")) {
                 if(ImGui::BeginTable("##systems", 2, table_flags | ImGuiTableFlags_BordersInnerV)) {
                     ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
