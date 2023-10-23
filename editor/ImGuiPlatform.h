@@ -96,6 +96,7 @@ class ImGuiPlatform : NonMovable {
         bool _demo_window = is_debug_defined;
 
         ImGuiTestEngine* _test_engine = nullptr;
+        bool _tests_done = false;
 };
 
 }

@@ -59,6 +59,7 @@ class GltfImporter final : public Widget {
         core::Result<import::ParsedScene> _scene = core::Err();
 
         struct {
+            core::String import_path = "import/";
             bool import_child_prefabs_as_assets = false;
         } _settings;
 

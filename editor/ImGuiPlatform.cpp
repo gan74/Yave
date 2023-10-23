@@ -37,6 +37,7 @@ SOFTWARE.
 #include <external/imgui_test_engine/imgui_te_context.h>
 #include <external/imgui_test_engine/imgui_te_exporters.h>
 #include <external/imgui_test_engine/imgui_te_internal.h>
+#include <external/imgui_test_engine/imgui_te_ui.h>
 
 #include <deque>
 
@@ -60,7 +61,7 @@ static ImGuiTestEngine* init_test_engine() {
     test_io.ConfigVerboseLevelOnError = ImGuiTestVerboseLevel_Debug;
     test_io.ConfigBreakOnError = true;
 
-    test_io.ConfigRunSpeed = ImGuiTestRunSpeed_Normal;
+    test_io.ConfigRunSpeed = ImGuiTestRunSpeed_Fast;
 
     const float speed_scale = 2.0f;
     test_io.MouseSpeed *= speed_scale;
@@ -473,6 +474,10 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                     ImGui::PopStyleColor();
                 }
 
+                if(_tests_done) {
+                    ImGuiTestEngine_ShowTestEngineWindows(_test_engine, &_tests_done);
+                }
+
                 if(func) {
                     func(recorder);
                 }
@@ -496,7 +501,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
             _main_window->swapchain.present(token, std::move(recorder), command_queue());
             UiTexture::clear_all();
 
-            if(_test_engine) {
+            if(_test_engine && !_tests_done) {
                 ImGuiTestEngine_PostSwap(_test_engine);
                 if(ImGuiTestEngine_IsTestQueueEmpty(_test_engine)) {
                     int tested = 0;
@@ -505,7 +510,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                     ImGuiTestEngine_PrintResultSummary(_test_engine);
 
                     log_msg(fmt("{}/{} tests passed", success, tested), success == tested ? Log::Debug : Log::Error);
-                    _test_engine = nullptr;
+                    _tests_done = true;
                 }
             }
         }

@@ -118,7 +118,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->ItemClick("Ok");
 
         const core::String label = ctx->ItemInfo(fmt_c_str("//" ICON_FA_SITEMAP " Outliner##1/**/###{}", id.as_u64()))->DebugLabel;
-        IM_CHECK_EQ(label.starts_with(ICON_FA_DATABASE " flubudu"), true);
+        IM_CHECK_EQ(label.starts_with(ICON_FA_PUZZLE_PIECE " flubudu"), true);
     };
 
     IM_REGISTER_TEST(engine, "tests", "remove entity")->TestFunc = [=](ImGuiTestContext* ctx) {
@@ -129,7 +129,9 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         {
             ctx->SetRef("//" ICON_FA_SITEMAP " Outliner##1");
             ctx->ItemClick(fmt_c_str("**/###{}", id.as_u64()), ImGuiMouseButton_Right);
+            ctx->Yield();
             ctx->ItemClick("//$FOCUSED/" ICON_FA_TRASH " Delete");
+            ctx->Yield();
             ctx->ItemClick("//$FOCUSED/Cancel");
         }
 
@@ -138,7 +140,9 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         {
             ctx->SetRef("//" ICON_FA_SITEMAP " Outliner##1");
             ctx->ItemClick(fmt_c_str("**/###{}", id.as_u64()), ImGuiMouseButton_Right);
+            ctx->Yield();
             ctx->ItemClick("//$FOCUSED/" ICON_FA_TRASH " Delete");
+            ctx->Yield();
             ctx->ItemClick("//$FOCUSED/Ok");
         }
 
@@ -156,6 +160,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         ctx->MenuClick("File/New");
         IM_CHECK_EQ(entity_count(), 0_uu);
 
+        ctx->Yield();
         ctx->MenuClick("File/" ICON_FA_FOLDER " Load");
         IM_CHECK_EQ(entity_count(), 3_uu);
     };
@@ -223,6 +228,9 @@ void register_editor_tests(ImGuiTestEngine* engine) {
             ctx->ItemClick("**/" ICON_FA_PLUS " Add component");
             ctx->ItemClick("//$FOCUSED/" ICON_FA_PUZZLE_PIECE " StaticMeshComponent");
 
+            ctx->ItemClick("**/" ICON_FA_PLUS " Add component");
+            ctx->ItemClick("//$FOCUSED/" ICON_FA_PUZZLE_PIECE " TransformableComponent");
+
             {
                 ctx->ItemOpen("**/" ICON_FA_PUZZLE_PIECE " TransformableComponent");
                 ctx->ItemInputValue("**/##position/##x", 1.0f);
@@ -265,11 +273,11 @@ void register_editor_tests(ImGuiTestEngine* engine) {
 
         ctx->SetRef("//" ICON_FA_FOLDER_OPEN " Resource Browser##1");
         ctx->ItemClick("**/" ICON_FA_PLUS " Import");
-        ctx->ItemClick("//$FOCUSED/Import objects");
+        ctx->ItemClick("//$FOCUSED/Import glTF");
 
         IM_CHECK_EQ(FileSystemModel::local_filesystem()->exists(temp_file).unwrap_or(false), true);
 
-        ctx->SetRef("//Scene importer##1");
+        ctx->SetRef("//glTF importer##1");
         ctx->ItemInputValue("**/##path", path.unwrap().data());
         ctx->ItemInputValue("**/##filename", temp_file.sub_str(path.unwrap().size() + 1).data());
 
@@ -293,7 +301,7 @@ void register_editor_tests(ImGuiTestEngine* engine) {
         }
 
 
-        ctx->SetRef("//Scene importer##1");
+        ctx->SetRef("//glTF importer##1");
         ctx->ItemClick("**/" ICON_FA_CHECK " Import");
 
         for(usize i = 0; !ctx->ItemInfoOpenFullPath("**/Ok", ImGuiTestOpFlags_NoError)->ID; ++i) {
