@@ -139,12 +139,13 @@ static void setup_style() {
 
     colors[ImGuiCol_Button]                 = stl(63); // rgb(63, 68, 76);
     colors[ImGuiCol_ButtonHovered]          = stl(56); // rgb(56, 60, 68);
-    colors[ImGuiCol_PopupBg]                = stl(56); // rgb(56, 60, 68);
     colors[ImGuiCol_Header]                 = stl(56); // rgb(56, 60, 68);
 
     colors[ImGuiCol_ButtonActive]           = stl(60); // rgb(60, 65, 72);
     colors[ImGuiCol_TableBorderLight]       = stl(60);
     colors[ImGuiCol_TableBorderStrong]      = stl(60);
+
+    colors[ImGuiCol_PopupBg]                = stl(44, 0.95f);
 
     colors[ImGuiCol_TabActive]              = child;
     colors[ImGuiCol_TabUnfocusedActive]     = child;

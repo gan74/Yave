@@ -162,8 +162,7 @@ static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, e
 static const ImGuiTableFlags table_flags =
     ImGuiTableFlags_BordersInnerV |
     // ImGuiTableFlags_BordersInnerH |
-    ImGuiTableFlags_Resizable |
-    ImGuiTableFlags_RowBg;
+    ImGuiTableFlags_Resizable;
 
 
 static const ImGuiColorEditFlags color_flags =
@@ -210,7 +209,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
             _type = info.type_id;
 
-            if(ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", info.clean_component_name()))) {
+            if(ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", info.clean_component_name()), ImGuiTreeNodeFlags_DefaultOpen)) {
                 if(has_inspect) {
                     begin_table();
                 } else {
@@ -535,7 +534,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
 
 static void entity_properties(ecs::EntityId id, EditorComponent* component) {
-    if(!ImGui::CollapsingHeader(ICON_FA_PUZZLE_PIECE " Entity")) {
+    if(!ImGui::CollapsingHeader(ICON_FA_PUZZLE_PIECE " Entity", ImGuiTreeNodeFlags_DefaultOpen)) {
         return;
     }
 
@@ -600,21 +599,6 @@ void Inspector::on_gui() {
         world.inspect_components(id, &inspector);
     }
 
-
-
-    if(ImGui::CollapsingHeader(ICON_FA_TAGS " Tags")) {
-        ImGui::Indent();
-        for(const core::String& tag : world.tags()) {
-            if(world.has_tag(id, tag)) {
-                ImGui::TextUnformatted(tag.data());
-            }
-        }
-        if(ImGui::Button(ICON_FA_PLUS " Add tag")) {
-            auto all = world.tags();
-            world.add_tag(id, fmt("tag #{}", std::distance(all.begin(), all.end()) + 1));
-        }
-        ImGui::Unindent();
-    }
 
     ImGui::Separator();
 
