@@ -23,7 +23,6 @@ SOFTWARE.
 #define EDITOR_WIDGETS_ENGINEVIEW_H
 
 #include "Gizmo.h"
-#include "OrientationGizmo.h"
 
 #include <editor/Widget.h>
 #include <editor/renderer/EditorRenderer.h>

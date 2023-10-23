@@ -51,6 +51,15 @@ static const u32 gizmo_hover_color = pack_to_u32(sRGB_to_linear(unpack_from_u32(
 
 
 
+static constexpr float orientation_gizmo_size = 25.0f;
+static constexpr float orientation_gizmo_width = 2.5f;
+static constexpr float orientation_gizmo_end_point_width = 8.0f;
+
+static constexpr u32 orientation_gizmo_alpha = 0xB0000000;
+
+
+
+
 
 static bool is_clicked() {
     return ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
@@ -565,5 +574,103 @@ void RotationGizmo::draw() {
 
 
 
+
+
+
+OrientationGizmo::OrientationGizmo(SceneView* view) : GizmoBase(view) {
+}
+
+void OrientationGizmo::draw() {
+    y_profile();
+
+    _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
+
+    const math::Vec2 offset = ImGui::GetWindowPos();
+    const math::Vec2 viewport = ImGui::GetWindowSize();
+    const math::Vec2 mouse_pos = ImGui::GetMousePos();
+
+    const math::Vec2 center = offset + viewport - (orientation_gizmo_size * 2.0f);
+
+    Camera& camera = _scene_view->camera();
+    const auto view_proj = camera.view_proj_matrix();
+    const auto view = camera.view_matrix();
+
+    const float ratio = viewport.x() / viewport.y();
+
+    std::array<i32, 4> axes = {
+        -1, 0, 1, 2
+    };
+
+    const std::array axis_names = {
+        "X", "Y", "Z"
+    };
+
+
+    std::sort(axes.begin(), axes.end(), [&](i32 a, i32 b) {
+        math::Vec4 va, vb;
+        if(a >= 0) {
+            va[a] = 1.0f;
+        }
+        if(b >= 0) {
+            vb[b] = 1.0f;
+        }
+        return (view * va).z() < (view * vb).z();
+    });
+
+
+
+    for(i32 i : axes) {
+        if(i < 0) {
+            ImGui::GetWindowDrawList()->AddCircleFilled(center, orientation_gizmo_width, 0xFFFFFFFF);
+            continue;
+        }
+
+        const u32 color = orientation_gizmo_alpha | imgui::gizmo_color(i);
+
+        math::Vec4 v;
+        v[i] = orientation_gizmo_size + orientation_gizmo_end_point_width;
+        const math::Vec2 axis = ((view_proj * v).to<2>() * 0.5f + 0.5f) * math::Vec2(ratio, 1.0f);
+        const math::Vec2 end = center + axis;
+
+        if(axis.length() > orientation_gizmo_end_point_width) {
+            const math::Vec2 dir = axis.normalized();
+            ImGui::GetWindowDrawList()->AddLine(center + dir * orientation_gizmo_width, end - dir * (orientation_gizmo_end_point_width - 1.0f), color, orientation_gizmo_width);
+        }
+
+        ImGui::GetWindowDrawList()->AddCircleFilled(end, orientation_gizmo_end_point_width, color);
+
+        const math::Vec2 text_offset = math::Vec2(ImGui::CalcTextSize(axis_names[i]));
+        ImGui::GetWindowDrawList()->AddText(end - text_offset * 0.5f, orientation_gizmo_alpha, axis_names[i]);
+    }
+
+    if(_allow_dragging) {
+        const float full_radius = orientation_gizmo_size + orientation_gizmo_end_point_width * 2.0f;
+        if(_is_dragging || (center - mouse_pos).length() < full_radius) {
+            ImGui::GetWindowDrawList()->AddCircle(center, full_radius, orientation_gizmo_alpha | 0x00FFFFFF);
+            if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                _is_dragging = true;
+            }
+        }
+    }
+
+
+
+    if(_is_dragging && _allow_dragging) {
+        const math::Vec2 raw_mouse_delta = math::Vec2(ImGui::GetIO().MouseDelta);
+        if(raw_mouse_delta.length() > 1.0f) {
+            const math::Vec2 mouse_delta = raw_mouse_delta / (-0.5f * math::pi<float> * orientation_gizmo_size);
+            const math::Vec3 cam_pos = camera.position();
+            const math::Vec3 cam_fwd = camera.forward();
+            // Hack to avoid the camera rolling
+            const math::Vec3 cam_right = math::Vec3(camera.right().to<2>(), 0.0f).normalized();
+            const math::Vec3 cam_up = cam_fwd.cross(cam_right).normalized();
+
+            const math::Quaternion<> yaw = math::Quaternion<>::from_axis_angle(cam_up, mouse_delta.x());
+            const math::Quaternion<> pitch = math::Quaternion<>::from_axis_angle(cam_right, -mouse_delta.y());
+
+            _scene_view->camera().set_view(math::look_at(cam_pos, cam_pos + yaw(pitch(cam_fwd)), pitch(cam_up)));
+        }
+    }
+}
 
 }

@@ -49,6 +49,7 @@ class GizmoBase {
         bool _allow_dragging = true;
 };
 
+
 class TranslationGizmo final : public GizmoBase {
     public:
         TranslationGizmo(SceneView* view);
@@ -73,6 +74,14 @@ class RotationGizmo final : public GizmoBase {
         usize _rotation_axis = usize(-1);
         float _angle_offset = 0.0f;
 
+};
+
+
+class OrientationGizmo final : public GizmoBase {
+    public:
+        OrientationGizmo(SceneView* view);
+
+        void draw() override;
 };
 
 }

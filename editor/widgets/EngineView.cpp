@@ -118,6 +118,7 @@ bool EngineView::is_dragging_gizmo() const {
 }
 
 void EngineView::set_allow_dragging_gizmo(bool allow) {
+    _orientation_gizmo.set_allow_dragging(allow);
     _tr_gizmo.set_allow_dragging(allow);
     _rot_gizmo.set_allow_dragging(allow);
 }
@@ -331,8 +332,8 @@ void EngineView::draw_toolbar_and_gizmos() {
 
 
     if(!is_dragging_gizmo()) {
-        ImGui::PushStyleColor(ImGuiCol_Text, math::Vec4(1.0f));
-        ImGui::PushStyleColor(ImGuiCol_Button, math::Vec4(ImGui::GetStyleColorVec4(ImGuiCol_Button)) * math::Vec4(1.0f, 1.0f, 1.0f, 0.95f));
+        ImGui::PushStyleColor(ImGuiCol_Text, 0xFFFFFFFF);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_PopupBg));
 
         if(ImGui::Button(ICON_FA_ADJUST)) {
             ImGui::OpenPopup("##menu");
