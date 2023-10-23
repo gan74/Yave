@@ -52,52 +52,14 @@ std::string_view fmt(std::format_string<Args...> fmt_str, Args&&... args) {
     }
     try {
         auto buffer = detail::alloc_fmt_buffer();
+        const auto res = std::format_to_n(buffer.begin(), buffer.size() - 1, fmt_str,y_fwd(args)...);
 
-        struct Iterator {
-            using iterator_category = std::forward_iterator_tag;
-            using difference_type = std::ptrdiff_t;
-
-            using value_type = char;
-            using reference = char&;
-            using pointer = char*;
-
-            inline Iterator& operator++() {
-                ++index;
-                return *this;
-            }
-
-            inline Iterator operator++(int) {
-                auto it = *this;
-                ++index;
-                return it;
-            }
-
-            inline char& operator*() const {
-                return index < buffer_size ? buffer[index] : overflow;
-            }
-
-            char* buffer = nullptr;
-            usize buffer_size = 0;
-            usize index = 0;
-            mutable char overflow = 0;
-        } it {
-            buffer.data(), buffer.size() - 1,
-            0, 0
-        };
-
-        static_assert(std::output_iterator<Iterator, const char&>);
-
-        it = std::format_to(it, fmt_str,y_fwd(args)...);
-
-        if(it.index > it.buffer_size) {
-            Y_TODO(find something better)
-            y_breakpoint;
-            it.index = it.buffer_size;
-            it.buffer[it.index - 1] = it.buffer[it.index - 2] = it.buffer[it.index - 3] = '.';
+        if(usize(res.size + 1) >= buffer.size()) {
+            *(res.out - 1) = *(res.out - 2) = *(res.out - 3) = '.';
         }
 
-        it.buffer[it.index] = 0;
-        return std::string_view(it.buffer, it.index);
+        *res.out = 0;
+        return std::string_view(buffer.begin(), res.out - buffer.data());
     } catch(std::exception& e) {
         y_fatal("fmt failed: {}", e.what());
     }
