@@ -137,14 +137,16 @@ static bool is_inside(core::Span<math::Vec2> pts, const math::Vec2& p) {
     return true;
 }
 
-static void move_recursive(EditorWorld& world, ecs::EntityId id, const math::Vec3& offset) {
+static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform<> old_parent_transform, math::Transform<> new_parent_transform) {
     if(TransformableComponent* component = world.component_mut<TransformableComponent>(id)) {
-        const math::Vec3 position = component->position();
-        component->set_position(position + offset);
+        const math::Transform<> tr = component->transform();
+        component->set_transform(new_parent_transform * old_parent_transform.inverse() * tr);
+        old_parent_transform = tr;
+        new_parent_transform = component->transform();
     }
 
     for(const ecs::EntityId child : world.children(id)) {
-        move_recursive(world, child, offset);
+        move_recursive(world, child, old_parent_transform, new_parent_transform);
     }
 }
 
@@ -221,12 +223,6 @@ void TranslationGizmo::draw() {
     }
 
 
-    auto set_position = [&](const math::Vec3& pos) {
-        const math::Vec3 position = world.component_mut<TransformableComponent>(selected)->position();
-        move_recursive(world, selected, pos - position);
-    };
-
-
 
     const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos);
 
@@ -291,6 +287,20 @@ void TranslationGizmo::draw() {
         return pts;
     };
 
+
+
+
+
+
+
+
+    auto set_position = [&](const math::Vec3& pos) {
+        const math::Transform<> old_transform = transformable->transform();
+        math::Transform<> new_transform = old_transform;
+        new_transform.position() = pos;
+
+        move_recursive(world, selected, old_transform, new_transform);
+    };
 
 
 
@@ -472,6 +482,9 @@ void RotationGizmo::draw() {
         return {to_window_pos(obj_pos + radial * gizmo_radius * perspective), is_cam_side(obj_pos + radial)};
     };
 
+
+
+
     auto for_each_visible_segment = [&](usize axis, auto&& func) {
         math::Vec2 prev_point = next_point(axis, 0).first;
         for(usize i = 1; i != segment_count + 1; ++i) {
@@ -482,6 +495,17 @@ void RotationGizmo::draw() {
                 func(prev_point, next);
             }
         }
+    };
+
+
+
+
+
+
+    auto set_rotation = [transformable, selected, &world](const math::Quaternion<>& quat) {
+        const math::Transform<> old_transform = transformable->transform();
+        const auto [obj_pos, obj_rot, obj_scale] = old_transform.decompose();
+        move_recursive(world, selected, old_transform, math::Transform<>(obj_pos, quat * obj_rot, obj_scale));
     };
 
 
@@ -499,7 +523,7 @@ void RotationGizmo::draw() {
             const float angle = compute_angle(_rotation_axis);
             const math::Quaternion<> quat = math::Quaternion<>::from_axis_angle(basis[_rotation_axis], angle - _angle_offset);
 
-            world.component_mut<TransformableComponent>(selected)->set_transform(math::Transform<>(obj_pos, quat * obj_rot, obj_scale));
+            set_rotation(quat);
             _angle_offset = angle;
         }
     } else {
