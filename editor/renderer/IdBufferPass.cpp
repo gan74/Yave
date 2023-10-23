@@ -46,11 +46,24 @@ namespace editor {
 
 template<typename T>
 static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view, EditorPassFlags flags) {
+    y_profile();
+
     const EditorWorld& world = current_world();
     y_debug_assert(&world == &scene_view.world());
 
-    if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
-        return core::Vector<ecs::EntityId>(world.selected_entities());
+    const bool selection = (flags & (EditorPassFlags::SelectionOnly | EditorPassFlags::SelectionAndChildren)) != EditorPassFlags::None;
+    if(selection) {
+        auto ids = core::Vector<ecs::EntityId>::from_range(world.selected_entities());
+        if((flags & EditorPassFlags::SelectionAndChildren) != EditorPassFlags::None) {
+            for(usize i = 0; i != ids.size(); ++i) {
+                for(const ecs::EntityId child : world.children(ids[i])) {
+                    if(!world.is_selected(child)) {
+                        ids << child;
+                    }
+                }
+            }
+        }
+        return ids;
     } else if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
         return octree_system->find_entities(scene_view.camera());
     }

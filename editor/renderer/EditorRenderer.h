@@ -29,8 +29,9 @@ SOFTWARE.
 namespace editor {
 
 enum class EditorPassFlags : u32 {
-    None                = 0x00,
-    SelectionOnly       = 0x01
+    None                            = 0x00,
+    SelectionOnly                   = 0x01,
+    SelectionAndChildren            = 0x02,
 };
 
 constexpr EditorPassFlags operator|(EditorPassFlags a, EditorPassFlags b) {
