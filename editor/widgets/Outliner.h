@@ -45,6 +45,7 @@ class Outliner final : public Widget {
         core::Vector<std::tuple<const char*, core::String, bool>> _tag_buttons;
 
         ecs::EntityId _context_menu_target;
+        ecs::EntityId _click_target;
 };
 
 }

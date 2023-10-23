@@ -159,12 +159,23 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
     const bool open = ImGui::TreeNodeEx(fmt_c_str("{} {}###{}", world.entity_icon(id), component->name(), id.as_u64()), flags);
 
-    {
-        if(ImGui::IsItemClicked()) {
+    if(ImGui::IsItemHovered()) {
+        if(ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            _click_target = id;
+        }
+    } else if(_click_target == id) {
+        _click_target = {};
+    }
+
+
+    if(_click_target == id) {
+        const bool right_clicked = ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+
+        if(ImGui::IsMouseReleased(ImGuiMouseButton_Left) || right_clicked) {
             world.toggle_selected(id, !ImGui::GetIO().KeyCtrl);
         }
 
-        if(ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        if(right_clicked) {
             _context_menu_target = id;
             ImGui::OpenPopup("##contextmenu");
         }
