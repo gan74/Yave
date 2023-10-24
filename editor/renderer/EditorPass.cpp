@@ -283,11 +283,6 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, Fra
             }
         }
         direct.render(render_pass, view.camera().view_proj_matrix());
-
-        if(app_settings().debug.display_debug_drawer) {
-            debug_drawer().render(render_pass, view.camera().view_proj_matrix());
-        }
-        debug_drawer().clear();
     });
 
     EditorPass pass;

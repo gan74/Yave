@@ -157,7 +157,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
 
     EditorRendererSettings settings = _settings;
-    settings.renderer_settings.taa.enable &= keep_taa(_view);
+    {
+        settings.show_debug_drawer = app_settings().debug.display_debug_drawer;
+        settings.renderer_settings.taa.enable &= keep_taa(_view);
+    }
+
 
     const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, settings);
     {

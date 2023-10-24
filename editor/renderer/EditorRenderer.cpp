@@ -31,6 +31,8 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/utils/DirectDraw.h>
+
 
 namespace editor {
 
@@ -55,6 +57,23 @@ static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameG
 
     return selection;
 }
+
+static FrameGraphImageId render_debug_drawer(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_color, FrameGraphImageId in_depth) {
+    FrameGraphPassBuilder builder = framegraph.add_pass("Debug drawer pass");
+
+    const auto color = builder.declare_copy(in_color);
+    const auto depth = builder.declare_copy(in_depth);
+
+    builder.add_color_output(color);
+    builder.add_depth_output(depth);
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass*) {
+        debug_drawer().render(render_pass, view.camera().view_proj_matrix());
+        debug_drawer().clear();
+    });
+
+    return color;
+}
+
 
 EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const EditorRendererSettings& settings) {
     y_profile();
@@ -83,6 +102,10 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
             : id_and_depth(id_pass);
 
         renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth, id);
+    }
+
+    if(settings.show_debug_drawer) {
+        renderer.final = render_debug_drawer(framegraph, scene_view, renderer.final, renderer.depth);
     }
 
     return renderer;
