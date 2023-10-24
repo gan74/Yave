@@ -158,7 +158,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
         (has_children ? 0 : ImGuiTreeNodeFlags_Leaf)
     ;
 
-    const bool open = ImGui::TreeNodeEx(fmt_c_str("{} {}###{}", world.entity_icon(id), component->name(), id.as_u64()), flags);
+    const bool open = ImGui::TreeNodeEx(fmt_c_str("{} ###{}", world.entity_icon(id), id.as_u64()), flags);
 
     if(ImGui::IsItemHovered()) {
         if(ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
@@ -167,7 +167,6 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
     } else if(_click_target == id) {
         _click_target = {};
     }
-
 
     if(_click_target == id) {
         const bool right_clicked = ImGui::IsMouseClicked(ImGuiMouseButton_Right);
@@ -187,9 +186,13 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
                 ImGui::EndDragDropSource();
             }
         }
-
-        display_tags();
     }
+
+
+    ImGui::SameLine();
+    ImGui::TextUnformatted(component->name().data());
+
+    display_tags();
 
 
     if(_context_menu_target.is_valid() && ImGui::BeginPopup("##contextmenu")) {
