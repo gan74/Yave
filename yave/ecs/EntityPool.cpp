@@ -194,7 +194,7 @@ void EntityPool::set_parent(EntityId id, EntityId parent_id) {
 }
 
 bool EntityPool::is_parent(EntityId id, EntityId parent) const {
-    if(!parent.is_valid()) {
+    if(!parent.is_valid() || !id.is_valid()) {
         return false;
     }
     for(const EntityId p : parents(id)) {
