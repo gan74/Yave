@@ -158,7 +158,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
         (has_children ? 0 : ImGuiTreeNodeFlags_Leaf)
     ;
 
-    const bool open = ImGui::TreeNodeEx(fmt_c_str("{} ###{}", world.entity_icon(id), id.as_u64()), flags);
+    const bool open = ImGui::TreeNodeEx(fmt_c_str("###{}", id.as_u64()), flags);
 
     if(ImGui::IsItemHovered()) {
         if(ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
@@ -188,6 +188,10 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
         }
     }
 
+    ImGui::SameLine();
+    ImGui::PushStyleColor(ImGuiCol_Text, 0xFFBE9270);
+    ImGui::TextUnformatted(fmt_c_str(" {}", world.entity_icon(id)));
+    ImGui::PopStyleColor();
 
     ImGui::SameLine();
     ImGui::TextUnformatted(component->name().data());
