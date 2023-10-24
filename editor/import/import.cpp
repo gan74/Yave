@@ -222,7 +222,7 @@ static math::Transform<> parse_node_transform_matrix(const tinygltf::Node& node)
     });
 
 
-    y_debug_assert(math::fully_finite(mat));
+    y_debug_assert(math::all_finite(mat));
     y_debug_assert(mat[3][3] == 1.0f);
     return mat;
 }
@@ -250,7 +250,7 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
     }
 
     const math::Transform<> tr = math::Transform<>(translation, rotation, scale);
-    y_debug_assert(math::fully_finite(tr));
+    y_debug_assert(math::all_finite(tr));
     y_debug_assert(tr[3][3] == 1.0f);
     return tr;
 }

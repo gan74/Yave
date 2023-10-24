@@ -66,7 +66,7 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
     }
 
     const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_rht));
-    if(math::fully_finite(view)) {
+    if(math::all_finite(view)) {
         camera.set_view(view);
     }
 }
@@ -109,22 +109,18 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 
 
     if(_init) {
-        bool finite = true;
-        for(float f : _picked_pos) {
-            finite &= std::isfinite(f);
-        }
-
-        if(!finite) {
+        const bool is_finite = math::all_finite(_picked_pos);
+        if(!is_finite) {
             const math::Vec4 hp = camera.view_proj_matrix().inverse() * math::Vec4(_picking_uvs * 2.0f - 1.0f, 1.0f, 1.0f);
             _picked_pos = hp.to<3>() / hp.w();
             _picking_depth = 1.0f;
         }
 
-        float dist = (cam_pos - _picked_pos).length();
+        const float dist = (cam_pos - _picked_pos).length();
         const math::Vec3 target_pos = cam_pos + cam_fwd * dist;
+
         _target_offset = target_pos - _picked_pos;
         _orig_pos = cam_pos;
-
         _cumulated_delta = 0.0f;
 
         _init = false;
@@ -192,7 +188,6 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
         }
     }
 
-
     // kill any roll that might arise from imprecisions
     {
         cam_rht.z() = 0.0f;
@@ -200,7 +195,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
     }
 
     const auto view = math::look_at(cam_pos, cam_pos + cam_fwd, cam_fwd.cross(cam_rht));
-    if(fully_finite(view)) {
+    if(math::all_finite(view)) {
         camera.set_view(view);
     }
 }

@@ -154,7 +154,7 @@ T round_up_to(T val, T to) {
 }
 
 template<typename T>
-static bool fully_finite(const T& t) {
+static bool all_finite(const T& t) {
     return std::all_of(t.begin(), t.end(), [](auto x) { return std::isfinite(x); });
 }
 
