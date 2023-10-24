@@ -135,6 +135,7 @@ class ComponentContainer final : public ComponentContainerBase {
             if(T* comp = _components.try_get(id)) {
                 _on_destroyed.send(id, *comp);
                 _components.erase(id);
+                _mutated.erase(id);
             }
         }
 
