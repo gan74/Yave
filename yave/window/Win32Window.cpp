@@ -198,17 +198,12 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
                 const bool is_down =
                     u_msg == WM_SYSKEYDOWN ||
                     u_msg == WM_KEYDOWN;
-                const bool is_system =
-                    u_msg == WM_SYSKEYDOWN ||
-                    u_msg == WM_SYSKEYUP;
 
                 if(const auto handler = window->event_handler()) {
                     const auto k = to_key(w_param, l_param);
                     if(k != Key::Unknown) {
                         is_down ? handler->key_pressed(k) : handler->key_released(k);
-                        if(!is_system) {
-                            return 0;
-                        }
+                        return 0;
                     }
                 } else if(is_down && w_param == VK_ESCAPE) {
                     // escape close the window by default
