@@ -237,8 +237,39 @@ static void setup_backend_flags(ImGuiIO& io, bool multi_viewport) {
     io.ConfigDockingWithShift = false;
 
     io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports | ImGuiBackendFlags_RendererHasViewports;
+    io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
+
+
     if(multi_viewport) {
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    }
+}
+
+static CursorShape to_cursor_shape(ImGuiMouseCursor cursor) {
+    switch (cursor){
+        case ImGuiMouseCursor_None:
+            return CursorShape::None;
+        case ImGuiMouseCursor_Arrow:
+            return CursorShape::Arrow;
+        case ImGuiMouseCursor_TextInput:
+            return CursorShape::TextInput;
+        case ImGuiMouseCursor_ResizeAll:
+            return CursorShape::ResizeAll;
+        case ImGuiMouseCursor_ResizeEW:
+            return CursorShape::ResizeEW;
+        case ImGuiMouseCursor_ResizeNS:
+            return CursorShape::ResizeNS;
+        case ImGuiMouseCursor_ResizeNESW:
+            return CursorShape::ResizeNESW;
+        case ImGuiMouseCursor_ResizeNWSE:
+            return CursorShape::ResizeNWSE;
+        case ImGuiMouseCursor_Hand:
+            return CursorShape::Hand;
+        case ImGuiMouseCursor_NotAllowed:
+            return CursorShape::NotAllowed;
+
+        default:
+            return CursorShape::Arrow;
     }
 }
 
@@ -458,6 +489,8 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
 
         ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
         ImGui::GetIO().DisplaySize = _main_window->window.size();
+
+        Window::set_cursor_shape(ImGui::GetIO().MouseDrawCursor ? CursorShape::None : to_cursor_shape(ImGui::GetMouseCursor()));
 
         if(const auto r = _main_window->swapchain.next_frame()) {
             const FrameToken& token = r.unwrap();
