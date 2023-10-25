@@ -192,37 +192,23 @@ bool position_input(const char* str_id, math::Vec3& position) {
     const float width = ImGui::CalcItemWidth();
     bool edited = false;
 
-    ImGui::Dummy(ImVec2());
-
-    const char* text[] = {"X", "Y", "Z"};
     const char* input_name[] = {"##x", "##y", "##z"};
 
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
     for(usize i = 0; i != 3; ++i) {
-        ImGui::SameLine();
-        ImGui::BeginGroup();
-
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2());
-
-        ImGui::SetNextItemWidth(width / 3.0f);
-        //edited |= ImGui::InputFloat(input_name[i], &position[i], 0.0f, 0.0f, "%.2f");
-        edited |= ImGui::DragFloat(input_name[i], &position[i], 1.0f, 0.0f, 0.0f, "%.2f");
-
-        ImGui::SameLine();
-
         math::Vec4 color = math::Vec4(0.0f, 0.0f, 0.0f, 0.5f);
         color[i] = 1.0f;
 
-        ImGui::PushStyleColor(ImGuiCol_Button, color);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
+        ImGui::SameLine();
 
-        ImGui::Button(text[i]);
+        ImGui::PushStyleColor(ImGuiCol_Border, color);
 
-        ImGui::PopStyleColor(3);
-        ImGui::PopStyleVar();
+        ImGui::SetNextItemWidth(width / 3.0f);
+        edited |= ImGui::DragFloat(input_name[i], &position[i], 1.0f, 0.0f, 0.0f, "%.2f");
 
-        ImGui::EndGroup();
+        ImGui::PopStyleColor();
     }
+    ImGui::PopStyleVar();
 
     return edited;
 }

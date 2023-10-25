@@ -172,6 +172,17 @@ static const ImGuiColorEditFlags color_flags =
     ImGuiColorEditFlags_Float |
     ImGuiColorEditFlags_InputRGB;
 
+
+static bool begin_property_table() {
+    if(ImGui::BeginTable("#properties", 2, table_flags)) {
+        ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+        return true;
+    }
+    return false;
+}
+
+
 class InspectorPanelInspector : public ecs::ComponentInspector {
     public:
         InspectorPanelInspector(ecs::EntityId id, EditorComponent* editor) :
@@ -193,7 +204,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
         bool begin_table() {
             y_debug_assert(!_in_table);
-            if(ImGui::BeginTable("#properties", 2, table_flags)) {
+            if(begin_property_table()) {
                 _in_table = true;
                 ImGui::Indent();
             }
@@ -538,7 +549,7 @@ static void entity_properties(ecs::EntityId id, EditorComponent* component) {
         return;
     }
 
-    if(!ImGui::BeginTable("#properties", 2, table_flags)) {
+    if(!begin_property_table()) {
         return;
     }
 

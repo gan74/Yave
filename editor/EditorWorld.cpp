@@ -123,7 +123,7 @@ UiIcon EditorWorld::entity_icon(ecs::EntityId id) const {
     }
 
     if(has_children(id)) {
-        return { ICON_FA_FOLDER, folder_color };
+        return { ICON_FA_FOLDER_OPEN, folder_color };
     }
 
     return { ICON_FA_PUZZLE_PIECE, base_color };

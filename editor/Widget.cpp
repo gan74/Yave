@@ -113,6 +113,7 @@ void Widget::draw(bool inside) {
     if(inside) {
         opened = ImGui::BeginChild(_title_with_id.data(), math::Vec2(), false, _flags);
     } else if(is_modal) {
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGui::GetColorU32(ImGuiCol_ChildBg));
         if(_visible) {
             ImGui::OpenPopup(_title_with_id.data());
         }
@@ -131,6 +132,7 @@ void Widget::draw(bool inside) {
         if(opened) {
             ImGui::EndPopup();
         }
+        ImGui::PopStyleColor();
     } else {
         ImGui::End();
     }

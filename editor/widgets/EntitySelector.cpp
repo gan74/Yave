@@ -58,7 +58,9 @@ void EntitySelector::on_gui() {
 
         for(auto&& [id, comp] : query) {
             const auto& [c] = comp;
-            if(ImGui::Selectable(fmt_c_str("{} {}", world.entity_icon(id).icon, c.name().data()))) {
+            imgui::text_icon(world.entity_icon(id));
+            ImGui::SameLine();
+            if(ImGui::Selectable(c.name().data())) {
                 if(_selected(id)) {
                     close();
                     break;
