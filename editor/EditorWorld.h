@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
-#include <y/core/Span.h>
+#include <editor/utils/ui.h>
 
 namespace editor {
 
@@ -39,7 +39,7 @@ class EditorWorld : public ecs::EntityWorld {
 
         bool set_entity_name(ecs::EntityId id, std::string_view name);
         std::string_view entity_name(ecs::EntityId id) const;
-        std::string_view entity_icon(ecs::EntityId id) const;
+        UiIcon entity_icon(ecs::EntityId id) const;
 
         template<typename... Args>
         ecs::EntityId create_named_entity(std::string_view name, Args&&... args) {

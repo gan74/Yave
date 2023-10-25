@@ -91,6 +91,11 @@ class UiTexture {
         ImTextureID _id = {};
 };
 
+struct UiIcon {
+    std::string_view icon;
+    u32 color;
+};
+
 ImGuiKey to_imgui_key(Key k);
 ImGuiMouseButton to_imgui_button(MouseButton b);
 
@@ -109,6 +114,9 @@ math::Vec2 client_window_pos();
 math::Vec2 from_client_pos(const math::Vec2& pos);
 
 usize text_line_count(std::string_view text);
+
+
+void text_icon(const UiIcon& icon);
 
 bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags = 0);
 bool text_input_multiline(const char* name, core::String& str);

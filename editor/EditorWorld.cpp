@@ -88,32 +88,45 @@ std::string_view EditorWorld::entity_name(ecs::EntityId id) const {
     return "";
 }
 
-std::string_view EditorWorld::entity_icon(ecs::EntityId id) const {
+UiIcon EditorWorld::entity_icon(ecs::EntityId id) const {
+    const u32 base_color = 0xFFBE9270;      // light blue
+    const u32 mesh_color = 0xFF9C6CFF;      // Pink-ish
+    const u32 folder_color = 0xFF62D6FF;    // Light yellow
+    const u32 light_color = 0xFFFFFFFF;
+
+    if(!exists(id)) {
+        return { ICON_FA_PUZZLE_PIECE, base_color };
+    }
+
     if(has<StaticMeshComponent>(id)) {
-        return ICON_FA_CUBE;
+        return { ICON_FA_CUBE, mesh_color };
     }
 
     if(has<PointLightComponent>(id)) {
-        return ICON_FA_LIGHTBULB;
+        return { ICON_FA_LIGHTBULB, light_color };
     }
 
     if(has<SpotLightComponent>(id)) {
-        return ICON_FA_VIDEO;
+        return { ICON_FA_VIDEO, light_color };
     }
 
     if(has<DirectionalLightComponent>(id)) {
-        return ICON_FA_SUN;
+        return { ICON_FA_SUN, light_color };
     }
 
     if(has<SkyLightComponent>(id)) {
-        return ICON_FA_CLOUD_SUN;
+        return { ICON_FA_CLOUD_SUN, base_color };
     }
 
     if(has<AtmosphereComponent>(id)) {
-        return ICON_FA_CLOUD;
+        return { ICON_FA_CLOUD, base_color };
     }
 
-    return ICON_FA_PUZZLE_PIECE;
+    if(has_children(id)) {
+        return { ICON_FA_FOLDER, folder_color };
+    }
+
+    return { ICON_FA_PUZZLE_PIECE, base_color };
 }
 
 

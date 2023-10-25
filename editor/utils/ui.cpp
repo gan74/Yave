@@ -150,6 +150,13 @@ usize text_line_count(std::string_view text) {
     return lines;
 }
 
+
+void text_icon(const UiIcon& icon) {
+    ImGui::PushStyleColor(ImGuiCol_Text, icon.color);
+    ImGui::TextUnformatted(icon.icon.data(), icon.icon.data() + icon.icon.size());
+    ImGui::PopStyleColor();
+}
+
 static usize str_buffer_capacity(const core::String& str) {
     if(str.size() < 512) {
         return 512;
@@ -337,7 +344,7 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
 
     bool has_component = true;
-    if(!id.is_valid()) {
+    if(!world.exists(id)) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     } else if(with_component != ecs::ComponentTypeIndex::invalid_index) {
         has_component = world.has(id, with_component);
@@ -347,7 +354,7 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
         ImGui::PushStyleColor(ImGuiCol_Text, warning_text_color);
     }
 
-    const std::string_view icon = has_component ? world.entity_icon(id) : ICON_FA_EXCLAMATION_TRIANGLE;
+    const std::string_view icon = has_component ? world.entity_icon(id).icon : ICON_FA_EXCLAMATION_TRIANGLE;
     const core::String name = id.is_valid() ? fmt("{} {}", icon, world.entity_name(id)) : "No entity";
     const bool combo = ImGui::BeginCombo("##combo", name.data());
 

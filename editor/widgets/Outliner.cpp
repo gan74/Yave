@@ -188,10 +188,8 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
         }
     }
 
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_Text, 0xFFBE9270);
-    ImGui::TextUnformatted(fmt_c_str(" {}", world.entity_icon(id)));
-    ImGui::PopStyleColor();
+    ImGui::SameLine(0.0f, ImGui::GetStyle().FramePadding.x * 2.0f);
+    imgui::text_icon(world.entity_icon(id));
 
     ImGui::SameLine();
     ImGui::TextUnformatted(component->name().data());
