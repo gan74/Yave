@@ -51,7 +51,7 @@ class EditorComponent {
         AssetId parent_prefab() const;
         bool is_prefab() const;
 
-        y_reflect(EditorComponent, _name, _prefab, _hide_in_editor, _parent, _is_collection)
+        y_reflect(EditorComponent, _name, _prefab, _hide_in_editor)
 
     private:
         core::String _name = "Unnamed entity";
@@ -59,12 +59,6 @@ class EditorComponent {
 
         bool _hide_in_editor = false;
         math::Vec3 _euler;
-
-    private:
-        friend class EditorWorld;
-
-        ecs::EntityId _parent;
-        bool _is_collection = false;
 };
 
 }

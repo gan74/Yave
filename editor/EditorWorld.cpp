@@ -129,16 +129,6 @@ UiIcon EditorWorld::entity_icon(ecs::EntityId id) const {
     return { ICON_FA_PUZZLE_PIECE, base_color };
 }
 
-
-ecs::EntityId EditorWorld::create_collection_entity(std::string_view name) {
-    const ecs::EntityId id = create_entity();
-    EditorComponent* comp = get_or_add_component<EditorComponent>(id);
-    y_always_assert(comp, "Unable to create entity name");
-    comp->set_name(name);
-    comp->_is_collection = true;
-    return id;
-}
-
 ecs::EntityId EditorWorld::add_prefab(std::string_view name) {
     if(const auto id = asset_store().id(name)) {
         return add_prefab(id.unwrap());

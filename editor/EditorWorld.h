@@ -48,8 +48,6 @@ class EditorWorld : public ecs::EntityWorld {
             return id;
         }
 
-        ecs::EntityId create_collection_entity(std::string_view name);
-
         ecs::EntityId add_prefab(std::string_view name);
         ecs::EntityId add_prefab(AssetId asset);
 
