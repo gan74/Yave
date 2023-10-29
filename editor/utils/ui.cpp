@@ -157,28 +157,27 @@ void text_icon(const UiIcon& icon) {
     ImGui::PopStyleColor();
 }
 
-static usize str_buffer_capacity(const core::String& str) {
-    if(str.size() < 512) {
-        return 512;
+static int str_resize_callback(ImGuiInputTextCallbackData* data) {
+    if(data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+        core::String& str = *static_cast<core::String*>(data->UserData);
+        y_debug_assert(str.data() == data->Buf);
+        str.resize(usize(data->BufSize), '\0'); // NB: On resizing calls, generally data->BufSize == data->BufTextLen + 1
+        data->Buf = str.data();
     }
-    return str.size() * 2;
+    return 0;
 }
 
 bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags) {
     ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_ButtonActive));
     y_defer(ImGui::PopStyleColor());
 
-    str.resize(str_buffer_capacity(str), '\0');
-    const bool modified = ImGui::InputText(name, str.data(), str.size(), flags);
-    str.resize(std::strlen(str.data()));
-    return modified;
+    y_defer(str.resize(std::strlen(str.data())));
+    return ImGui::InputText(name, str.data(), str.size(), flags | ImGuiInputTextFlags_CallbackResize, str_resize_callback, &str);
 }
 
 bool text_input_multiline(const char* name, core::String& str) {
-    str.resize(str_buffer_capacity(str), '\0');
-    const bool modified = ImGui::InputTextMultiline(name, str.data(), str.size());
-    str.resize(std::strlen(str.data()));
-    return modified;
+    y_defer(str.resize(std::strlen(str.data())));
+    return ImGui::InputTextMultiline(name, str.data(), str.size(), ImVec2(), ImGuiInputTextFlags_CallbackResize, str_resize_callback, &str);
 }
 
 void text_read_only(const char* name, std::string_view str) {
