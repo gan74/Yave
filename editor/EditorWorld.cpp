@@ -91,7 +91,7 @@ std::string_view EditorWorld::entity_name(ecs::EntityId id) const {
 UiIcon EditorWorld::entity_icon(ecs::EntityId id) const {
     const u32 base_color = 0xFFBE9270;      // light blue
     const u32 mesh_color = 0xFF9C6CFF;      // Pink-ish
-    const u32 folder_color = 0xFF62D6FF;    // Light yellow
+    const u32 folder_color = imgui::folder_icon_color;
     const u32 light_color = 0xFFFFFFFF;
 
     if(!exists(id)) {

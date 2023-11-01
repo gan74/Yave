@@ -141,16 +141,16 @@ void FileSystemView::update() {
     _refresh = false;
 }
 
-core::Result<core::String> FileSystemView::entry_icon(const core::String&, EntryType type) const {
+core::Result<UiIcon> FileSystemView::entry_icon(const core::String&, EntryType type) const {
     switch(type) {
         case EntryType::Directory:
-            return core::Ok(core::String(ICON_FA_FOLDER));
+            return core::Ok(UiIcon{ICON_FA_FOLDER, imgui::folder_icon_color});
 
         case EntryType::File:
-            core::Ok(core::String(ICON_FA_FILE_ALT));
+            return core::Ok(UiIcon{ICON_FA_FILE_ALT, 0xFFFFFFFF});
 
         case EntryType::Unknown:
-            core::Ok(core::String(ICON_FA_QUESTION));
+            return core::Ok(UiIcon{ICON_FA_QUESTION, 0xFFFFFFFF});
 
         default:
             return core::Err();
@@ -220,7 +220,7 @@ void FileSystemView::on_gui() {
         while(clipper.Step()) {
             for(int i = clipper.DisplayStart; i < clipper.DisplayEnd && i < _entries.size(); ++i) {
                 imgui::table_begin_next_row();
-                if(ImGui::Selectable(fmt_c_str("{} {}##{}", _entries[i].icon, _entries[i].name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
+                if(imgui::selectable_icon(_entries[i].icon, fmt_c_str("{}##{}", _entries[i].name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
                     entry_clicked(_entries[i]);
                     break; // break because we might update inside entry_clicked
                 }

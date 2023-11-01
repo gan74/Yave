@@ -106,6 +106,8 @@ static constexpr const char* drag_drop_entity_id = "YAVE_DRAG_DROP_ENTITY";
 static const math::Vec4 error_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.3f, 0.3f)), 1.0f);
 static const math::Vec4 warning_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.8f, 0.4f)), 1.0f);
 
+const u32 folder_icon_color = 0xFF62D6FF;    // Light yellow
+
 u32 gizmo_color(usize axis);
 
 bool should_open_context_menu();
@@ -114,7 +116,6 @@ math::Vec2 client_window_pos();
 math::Vec2 from_client_pos(const math::Vec2& pos);
 
 usize text_line_count(std::string_view text);
-
 
 void text_icon(const UiIcon& icon);
 
@@ -138,6 +139,7 @@ bool suggestion_item(const char* name, const char* shortcut = nullptr);
 void table_begin_next_row(int col_index = 0);
 
 
+bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags = 0);
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
 
 

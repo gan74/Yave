@@ -23,6 +23,7 @@ SOFTWARE.
 #define EDITOR_WIDGETS_FILESYSTEMVIEW_H
 
 #include <editor/Widget.h>
+#include <editor/utils/ui.h>
 
 #include <yave/utils/FileSystemModel.h>
 
@@ -47,7 +48,7 @@ class FileSystemView : public Widget {
         struct Entry {
             core::String name;
             EntryType type;
-            core::String icon;
+            UiIcon icon;
 
             usize file_size;
 
@@ -66,7 +67,7 @@ class FileSystemView : public Widget {
 
         virtual void update();
         virtual void draw_context_menu();
-        virtual core::Result<core::String> entry_icon(const core::String&, EntryType type) const;
+        virtual core::Result<UiIcon> entry_icon(const core::String&, EntryType type) const;
 
         virtual void path_changed() {}
         virtual void entry_hoverred(const Entry*) {}

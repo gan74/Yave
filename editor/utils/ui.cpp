@@ -565,6 +565,14 @@ void table_begin_next_row(int col_index) {
 }
 
 
+bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags) {
+    ImGui::PushStyleColor(ImGuiCol_Text, icon.color);
+    const bool activated = ImGui::Selectable(fmt_c_str("{}##{}", icon.icon, str_id), selected, flags);
+    ImGui::PopStyleColor();
+
+    ImGui::SameLine();
+    return ImGui::Selectable(str_id, selected, flags) || activated;
+}
 
 // https://github.com/ocornut/imgui/issues/2718
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size) {

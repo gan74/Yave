@@ -189,7 +189,7 @@ void ResourceBrowser::draw_search_results() {
     if(ImGui::BeginTable("##searchresults", 1, table_flags)) {
         for(const Entry& entry : *_search_results) {
             imgui::table_begin_next_row();
-            if(ImGui::Selectable(fmt_c_str("{} {}", entry.icon, entry.name))) {
+            if(ImGui::Selectable(fmt_c_str("{} {}", entry.icon.icon, entry.name))) {
                 if(const AssetId id = asset_id(entry.name); id != AssetId::invalid_id()) {
                     asset_selected(id);
                 }
@@ -295,13 +295,13 @@ void ResourceBrowser::update_search() {
     }
 }
 
-core::Result<core::String> ResourceBrowser::entry_icon(const core::String& full_name, EntryType type) const {
+core::Result<UiIcon> ResourceBrowser::entry_icon(const core::String& full_name, EntryType type) const {
     if(type == EntryType::Directory) {
         return FileSystemView::entry_icon(full_name, type);
     }
     if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
         const AssetType asset = read_file_type(id);
-        return core::Ok(core::String(asset_type_icon(asset)));
+        return core::Ok(UiIcon{asset_type_icon(asset), 0xFFFFFFFF});
     }
     return core::Err();
 }
