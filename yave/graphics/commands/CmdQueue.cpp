@@ -117,13 +117,14 @@ TracyVkCtx CmdQueue::profiling_context() const {
 void CmdQueue::wait() {
     y_profile();
 
-    const bool has_delayed_cmd_buffers = !_delayed_start.locked([](auto&& delayed) { return delayed.is_empty(); });
-    if(has_delayed_cmd_buffers) {
-        cmd_pool_for_thread().create_cmd_buffer().submit();
-    }
+    _queue.locked([&](auto&& queue) {
+        _delayed_start.locked([&](auto&& delayed) {
+            if(!delayed.is_empty()) {
+                cmd_pool_for_thread().create_cmd_buffer().submit();
+            }
+            vk_check(vkQueueWaitIdle(queue));
+        });
 
-    _queue.locked([](auto&& queue) {
-        vk_check(vkQueueWaitIdle(queue));
     });
 }
 

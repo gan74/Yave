@@ -87,8 +87,8 @@ class CmdQueue final : NonMovable {
 
         void clear_thread(u32 thread_id);
 
-        concurrent::Mutexed<VkQueue> _queue = {};
-        concurrent::Mutexed<core::Vector<CmdBufferData*>> _delayed_start;
+        concurrent::Mutexed<VkQueue, std::recursive_mutex> _queue = {};
+        concurrent::Mutexed<core::Vector<CmdBufferData*>, std::recursive_mutex> _delayed_start;
 
         Timeline _timeline;
 
