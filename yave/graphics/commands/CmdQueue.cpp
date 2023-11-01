@@ -40,7 +40,7 @@ static VkHandle<VkSemaphore> create_cmd_buffer_semaphore() {
     return semaphore;
 }
 
-#ifdef YAVE_PROFILING
+#ifdef YAVE_GPU_PROFILING
 static auto create_profiling_ctx(VkQueue queue, u32 family_index) {
     y_profile();
 
@@ -80,7 +80,7 @@ CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_ind
         all_queues << this;
     });
 
-#ifdef YAVE_PROFILING
+#ifdef YAVE_GPU_PROFILING
     _profiling_ctx = create_profiling_ctx(queue, family_index);
 #endif
 }
@@ -95,7 +95,7 @@ CmdQueue::~CmdQueue() {
         all_queues.erase_unordered(it);
     });
 
-#ifdef YAVE_PROFILING
+#ifdef YAVE_GPU_PROFILING
     TracyVkDestroy(_profiling_ctx);
 #endif
 }
@@ -108,7 +108,7 @@ const Timeline& CmdQueue::timeline() const {
     return _timeline;
 }
 
-#ifdef YAVE_PROFILING
+#ifdef YAVE_GPU_PROFILING
 TracyVkCtx CmdQueue::profiling_context() const {
     return _profiling_ctx;
 }
@@ -183,7 +183,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
     const VkSemaphore timeline_semaphore = _timeline.vk_semaphore();
     const VkCommandBuffer cmd_buffer = data->vk_cmd_buffer();
 
-#ifdef YAVE_PROFILING
+#ifdef YAVE_GPU_PROFILING
     TracyVkCollect(_profiling_ctx, cmd_buffer);
 #endif
 
