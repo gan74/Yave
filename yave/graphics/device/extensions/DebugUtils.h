@@ -65,6 +65,10 @@ class DebugUtils : NonCopyable {
             set_name(u64(res), VK_OBJECT_TYPE_SHADER_MODULE, name);
         }
 
+        void set_resource_name(VkQueue res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_QUEUE, name);
+        }
+
     private:
         friend class CmdBufferRegion;
 

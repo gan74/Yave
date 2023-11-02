@@ -23,6 +23,7 @@ SOFTWARE.
 #include "CmdQueue.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
+#include <yave/graphics/device/extensions/DebugUtils.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <y/core/ScratchPad.h>
 
@@ -79,6 +80,12 @@ CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_ind
         y_debug_assert(std::find(all_queues.begin(), all_queues.end(), this) == all_queues.end());
         all_queues << this;
     });
+
+#ifdef Y_DEBUG
+    if(const auto* debug = debug_utils()) {
+        debug->set_resource_name(queue, "Main queue");
+    }
+#endif
 
 #ifdef YAVE_GPU_PROFILING
     _profiling_ctx = create_profiling_ctx(queue, family_index);

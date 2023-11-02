@@ -78,7 +78,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
         labels += " > ";
     }
 
-    log_msg(fmt("Vk: @[{}] {}:\n{}\n", src, labels, callback_data->pMessage),  level);
+    log_msg(fmt_to_owned("Vk: @[{}] {}:\n{}\n", src, labels, callback_data->pMessage),  level);
 
     if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
         y_breakpoint;

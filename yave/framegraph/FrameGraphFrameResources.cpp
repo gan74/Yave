@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/device/DeviceProperties.h>
+#include <yave/graphics/device/extensions/DebugUtils.h>
 
 #include <y/utils/memory.h>
 
@@ -66,6 +67,12 @@ u32 FrameGraphFrameResources::create_buffer_id() {
 void FrameGraphFrameResources::init_staging_buffer() {
     if(_staging_buffer_len) {
         _staging_buffer = StagingBuffer(_staging_buffer_len);
+
+#ifdef Y_DEBUG
+        if(const auto* debug = debug_utils()) {
+            debug->set_resource_name(_staging_buffer.vk_buffer(), "Frame graph staging buffer");
+        }
+#endif
     }
 }
 
@@ -189,7 +196,7 @@ void FrameGraphFrameResources::flush_mapped_buffers(TransferCmdBufferRecorder& r
 
     for(const auto& buffer : _buffers) {
         if(buffer.buffer && buffer.is_mapped()) {
-            recorder.unbarriered_copy(staging_buffer(buffer), TransientSubBuffer<BufferUsage::TransferDstBit>(*buffer.buffer) );
+            recorder.unbarriered_copy(staging_buffer(buffer), TransientSubBuffer<BufferUsage::TransferDstBit>(*buffer.buffer));
         }
     }
 }
