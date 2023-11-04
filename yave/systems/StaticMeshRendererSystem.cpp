@@ -63,13 +63,14 @@ void StaticMeshRendererSystem::tick() {
 }
 
 void StaticMeshRendererSystem::run_tick(bool only_recent) {
-    auto moved_query = [&](auto query) {
-        const usize moved_count = query.size();
 
-        if(!moved_count) {
-            return;
-        }
 
+    auto query = only_recent
+        ? world().query<StaticMeshComponent, ecs::Changed<TransformableComponent>>()
+        : world().query<StaticMeshComponent, TransformableComponent>();
+
+
+    if(const usize moved_count = query.size()) {
         y_profile_msg(fmt_c_str("{} objects moved", moved_count));
 
         _moved.make_empty();
@@ -124,20 +125,16 @@ void StaticMeshRendererSystem::run_tick(bool only_recent) {
             }
             recorder.submit_async();
         }
-    };
-
-    if(only_recent) {
-        moved_query(world().query<StaticMeshComponent, ecs::Changed<TransformableComponent>>());
-    } else {
-        moved_query(world().query<StaticMeshComponent, TransformableComponent>());
     }
 
 
-    auto previously_moved = world().query<StaticMeshComponent>(_prev_moved.ids());
-    for(const auto& [mesh] : previously_moved.components()) {
-        free_index(mesh._last_transform_index);
+    {
+        auto previously_moved = world().query<StaticMeshComponent>(_prev_moved.ids());
+        for(const auto& [mesh] : previously_moved.components()) {
+            free_index(mesh._last_transform_index);
+        }
+        std::swap(_prev_moved, _moved);
     }
-    std::swap(_prev_moved, _moved);
 }
 
 StaticMeshRendererSystem::TransformBuffer StaticMeshRendererSystem::alloc_buffer(usize size) {

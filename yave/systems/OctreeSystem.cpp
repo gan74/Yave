@@ -60,37 +60,33 @@ void OctreeSystem::tick() {
 void OctreeSystem::run_tick(bool only_recent) {
     y_profile();
 
-    auto process_moved_query = [&](auto query) {
-        usize insertions = 0;
-        for(auto&& [id, comp] : query) {
-            auto&& [tr] = comp;
+    auto query = only_recent
+        ? world().query<ecs::Changed<TransformableComponent>>()
+        : world().query<TransformableComponent>();
 
-            if(tr.local_aabb().is_empty()) {
-                continue;
-            }
+    usize insertions = 0;
+    for(auto&& [id, comp] : query) {
+        auto&& [tr] = comp;
 
-            const AABB aabb = tr.global_aabb();
-
-            if(tr._node) {
-                if(tr._node->contains(aabb)) {
-                    continue;
-                }
-                tr._node->remove(id);
-            }
-
-            tr._node = _tree.insert(id, aabb);
-            ++insertions;
+        if(tr.local_aabb().is_empty()) {
+            continue;
         }
 
-        unused(insertions);
-        y_profile_msg(fmt_c_str("{}/{} objects inserted", insertions, query.size()));
-    };
+        const AABB aabb = tr.global_aabb();
 
-    if(only_recent) {
-        process_moved_query(world().query<ecs::Changed<TransformableComponent>>());
-    } else {
-        process_moved_query(world().query<TransformableComponent>());
+        if(tr._node) {
+            if(tr._node->contains(aabb)) {
+                continue;
+            }
+            tr._node->remove(id);
+        }
+
+        tr._node = _tree.insert(id, aabb);
+        ++insertions;
     }
+
+    unused(insertions);
+    y_profile_msg(fmt_c_str("{}/{} objects inserted", insertions, query.size()));
 
     _tree.audit();
 }

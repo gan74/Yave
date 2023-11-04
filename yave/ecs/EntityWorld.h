@@ -287,7 +287,7 @@ class EntityWorld : NonMovable {
 
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) {
-            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags));
+            auto q = Query<traits::discard_query_qualifiers_t<Args>...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags));
             dirty_mutated_containers<Args...>(q.ids());
             return q;
         }
@@ -295,14 +295,14 @@ class EntityWorld : NonMovable {
         template<typename... Args>
         auto query(core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
-            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags));
+            auto q = Query<traits::discard_query_qualifiers_t<Args>...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags));
 
             return q;
         }
 
         template<typename... Args>
         auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) {
-            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags), ids);
+            auto q = Query<traits::discard_query_qualifiers_t<Args>...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags), ids);
             dirty_mutated_containers<Args...>(q.ids());
             return q;
         }
@@ -310,7 +310,7 @@ class EntityWorld : NonMovable {
         template<typename... Args>
         auto query(core::Span<EntityId> ids, core::Span<core::String> tags = {}) const {
             static_assert((traits::is_component_const_v<Args> && ...));
-            auto q = Query<Args...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags), ids);
+            auto q = Query<traits::discard_query_qualifiers_t<Args>...>(component_sets_for_query<Args...>(), build_matches_for_query<Args...>(tags), ids);
 
             return q;
         }

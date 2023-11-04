@@ -45,6 +45,8 @@ template<typename T>
 struct component_type {
     using raw_type = std::remove_cvref_t<T>;
     using type = const raw_type;
+    using discard_query_quals = T;
+
     static constexpr bool required = true;
     static constexpr bool changed = false;
 };
@@ -53,6 +55,8 @@ template<typename T>
 struct component_type<Mutate<T>> {
     using raw_type = typename component_type<T>::raw_type;
     using type = std::remove_const_t<typename component_type<T>::type>;
+    using discard_query_quals = Mutate<T>;
+
     static constexpr bool required = component_type<T>::required;
     static constexpr bool changed = component_type<T>::changed;
 };
@@ -61,6 +65,8 @@ template<typename T>
 struct component_type<Not<T>> {
     using raw_type = typename component_type<T>::raw_type;
     using type = typename component_type<T>::type;
+    using discard_query_quals = Not<T>;
+
     static constexpr bool required = !component_type<T>::required;
     static constexpr bool changed = component_type<T>::changed;
 };
@@ -71,6 +77,8 @@ struct component_type<Changed<T>> {
 
     using raw_type = typename component_type<T>::raw_type;
     using type = typename component_type<T>::type;
+    using discard_query_quals = T;
+
     static constexpr bool required = true;
     static constexpr bool changed = true;
 };
@@ -86,6 +94,9 @@ using component_raw_type_t = typename component_type<T>::raw_type;
 template<typename T>
 using component_type_t = typename component_type<T>::type;
 
+template<typename T>
+using discard_query_qualifiers_t = typename component_type<T>::discard_query_quals;
+
 
 template<typename T>
 static constexpr bool component_required_v = component_type<T>::required;
@@ -98,6 +109,8 @@ static constexpr bool is_component_const_v = std::is_const_v<typename component_
 
 template<typename T>
 static constexpr bool is_component_mutable_v = !is_component_const_v<T>;
+
+
 
 }
 
