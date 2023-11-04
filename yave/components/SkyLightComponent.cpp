@@ -52,7 +52,7 @@ float SkyLightComponent::intensity() const {
 }
 
 bool SkyLightComponent::update_asset_loading_status() {
-    return true;
+    return !_probe.is_loading();
 }
 
 void SkyLightComponent::load_assets(AssetLoadingContext& loading_ctx) {
