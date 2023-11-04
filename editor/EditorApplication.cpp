@@ -175,9 +175,11 @@ void EditorApplication::save_world_deferred() const {
         log_msg("Unable to open file", Log::Error);
         return;
     }
+
     serde3::WritableArchive arc(file.unwrap());
-    if(auto r = arc.serialize(*_world); !r) {
+    if(auto r = _world->save_state(arc); !r) {
         log_msg(fmt("Unable to save world: {}", serde3::error_msg(r.error())), Log::Error);
+        return;
     }
 
     log_msg("World saved");
@@ -192,20 +194,14 @@ void EditorApplication::load_world_deferred() {
         return;
     }
 
-    auto world = std::make_unique<EditorWorld>(*_loader);
-
     serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
-    const auto status = arc.deserialize(*world);
-    if(status.is_error()) {
-        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(status.error()), status.error().member), Log::Error);
+    if(auto r = _world->load_state(arc); !r) {
+        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(r.error()), r.error().member), Log::Error);
         return;
-    }
-
-    if(status.unwrap() == serde3::Success::Partial) {
+    } else if(r.unwrap() == serde3::Success::Partial) {
         log_msg("World was only partialy loaded", Log::Warning);
     }
 
-    _world = std::move(world);
     log_msg("World loaded");
 }
 

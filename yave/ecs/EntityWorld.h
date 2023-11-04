@@ -55,6 +55,7 @@ class EntityWorld : NonMovable {
 
         void remove_entity(EntityId id);
         void remove_all_components(EntityId id);
+        void remove_all_entities();
 
         EntityId id_from_index(u32 index) const;
 
@@ -335,9 +336,10 @@ class EntityWorld : NonMovable {
 
         void inspect_components(EntityId id, ComponentInspector* inspector);
 
-        void post_deserialize();
 
-        y_reflect(EntityWorld, _entities, _containers, _tags, _world_components)
+        serde3::Result save_state(serde3::WritableArchive& arc) const;
+        serde3::Result load_state(serde3::ReadableArchive& arc);
+
 
     private:
         template<typename T>

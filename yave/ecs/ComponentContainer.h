@@ -70,6 +70,9 @@ class ComponentContainerBase : NonMovable {
         const SparseIdSet& recently_mutated() const;
 
 
+
+
+
         y_serde3_poly_abstract_base(ComponentContainerBase)
 
     protected:
@@ -78,9 +81,10 @@ class ComponentContainerBase : NonMovable {
         ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
         }
 
-        virtual void clean_after_tick();
-        virtual void prepare_for_tick();
 
+        virtual serde3::Result save_state(serde3::WritableArchive& arc) const = 0;
+        virtual serde3::Result load_state(serde3::ReadableArchive& arc) = 0;
+        virtual void post_load() = 0;
 
 
         const ComponentTypeIndex _type_id;
@@ -200,14 +204,28 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
 
-
-        y_no_serde3_expr(serde3::has_no_serde3_v<T>)
-
-        y_reflect(ComponentContainer, _components)
         y_serde3_poly(ComponentContainer)
+        y_reflect(ComponentContainer, _components)
 
     private:
         friend class EntityWorld;
+
+
+        serde3::Result save_state(serde3::WritableArchive& arc) const override {
+            return arc.serialize(_components);
+        }
+
+        serde3::Result load_state(serde3::ReadableArchive& arc) override {
+            return arc.deserialize(_components);
+        }
+
+        void post_load() override {
+            for(auto&& [id, comp] : _components) {
+                _mutated.insert(id);
+                _on_created.send(id, comp);
+            }
+        }
+
 
         SparseComponentSet<T> _components;
 

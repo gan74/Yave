@@ -49,7 +49,7 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action("Remove all entities", [] { current_world().clear(); })
+editor_action("Remove all entities", [] { current_world().remove_all_entities(); })
 
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<AssetLoaderSystem>(loader);
@@ -57,13 +57,6 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<OctreeSystem>();
     add_system<ScriptSystem>();
     add_system<StaticMeshRendererSystem>();
-}
-
-void EditorWorld::clear() {
-    auto cached_entities = core::Vector<ecs::EntityId>::from_range(all_entities());
-    for(const ecs::EntityId id : cached_entities) {
-        remove_entity(id);
-    }
 }
 
 void EditorWorld::flush_reload() {

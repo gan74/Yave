@@ -125,15 +125,6 @@ void EntityWorld::tick() {
     y_profile();
 
     {
-        y_profile_zone("prepare tick");
-        for(auto& container : _containers) {
-            if(container) {
-                container->prepare_for_tick();
-            }
-        }
-    }
-
-    {
         y_profile_zone("tick");
         for(auto& system : _systems) {
             y_profile_dyn_zone(system->name().data());
@@ -146,7 +137,7 @@ void EntityWorld::tick() {
         y_profile_zone("clean after tick");
         for(auto& container : _containers) {
             if(container) {
-                container->clean_after_tick();
+                container->_mutated.clear();
             }
         }
     }
@@ -227,6 +218,15 @@ void EntityWorld::remove_all_components(EntityId id) {
         if(container.contains(id)) {
             container.erase(id);
         }
+    }
+}
+
+void EntityWorld::remove_all_entities() {
+    y_profile();
+
+    auto cached_entities = core::Vector<EntityId>::from_range(all_entities());
+    for(const EntityId id : cached_entities) {
+        remove_entity(id);
     }
 }
 
@@ -377,33 +377,54 @@ void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector)
     }
 }
 
-void EntityWorld::post_deserialize() {
+
+serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
     y_profile();
 
-    auto patched = create_component_containers();
-    for(auto& container : _containers) {
-        if(!container) {
-            continue;
-        }
+    y_try(arc.serialize(_entities));
+    y_try(arc.serialize(_tags));
+    y_try(arc.serialize(_world_components));
 
-        container->_mutated.clear();
-        for(const EntityId id : container->id_set().ids()) {
-            container->_mutated.insert(id);
+    for(auto&& container : _containers) {
+        if(container) {
+            y_try(container->save_state(arc));
         }
-
-        const ComponentTypeIndex id = container->type_id();
-        patched.set_min_size(usize(id) + 1);
-        patched[usize(id)] = std::move(container);
     }
 
-    _containers = std::move(patched);
-
-    for(auto& system : _systems) {
-        y_debug_assert(system);
-        y_debug_assert(system->_world == this);
-        system->reset();
-    }
+    return core::Ok(serde3::Success::Full);
 }
+
+serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
+    remove_all_entities();
+    _tags.clear();
+    _world_components.clear();
+
+    y_try(arc.deserialize(_entities));
+    y_try(arc.deserialize(_tags));
+    y_try(arc.deserialize(_world_components));
+
+    for(auto&& container : _containers) {
+        if(container) {
+            y_try(container->load_state(arc));
+        }
+    }
+
+
+    {
+        for(const EntityId id : _entities.ids()) {
+            _on_created.send(id);
+        }
+
+        for(auto&& container : _containers) {
+            if(container) {
+                container->post_load();
+            }
+        }
+    }
+
+    return core::Ok(serde3::Success::Full);
+}
+
 
 }
 }
