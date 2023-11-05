@@ -233,12 +233,18 @@ void TranslationGizmo::draw() {
 
 
 
+
     const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos);
 
     const math::Vec3 cam_pos = _scene_view->camera().position();
+    const math::Vec3 cam_fwd = _scene_view->camera().forward();
     const math::Matrix4<> view_proj = _scene_view->camera().view_proj_matrix();
 
     const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
+
+    if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
+        return;
+    }
 
     const float perspective = (view_proj * math::Vec4(obj_pos, 1.0f)).w() * gizmo_size;
     const math::Vec2 gizmo_screen_center = to_window_pos(obj_pos);
@@ -424,12 +430,16 @@ void RotationGizmo::draw() {
     const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos);
 
     const math::Vec3 cam_pos = _scene_view->camera().position();
+    const math::Vec3 cam_fwd = _scene_view->camera().forward();
     const math::Matrix4<> view_proj = _scene_view->camera().view_proj_matrix();
 
     const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
 
-    const float perspective = (view_proj * math::Vec4(obj_pos, 1.0f)).w() * gizmo_size;
+    if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
+        return;
+    }
 
+    const float perspective = (view_proj * math::Vec4(obj_pos, 1.0f)).w() * gizmo_size;
 
     const std::array basis = {
         math::Vec3(1.0f, 0.0f, 0.0f),
