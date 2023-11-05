@@ -81,9 +81,9 @@ CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_ind
         all_queues << this;
     });
 
-    _async_start.locked([&](auto&& async) {
-        async.current_fence = _timeline.current_timeline();
-        async.next_fence = _timeline.advance_timeline();
+    _async_submit_data.locked([&](auto&& submit_data) {
+        submit_data.current_fence = _timeline.current_timeline();
+        submit_data.next_fence = _timeline.advance_timeline();
     });
 
 #ifdef Y_DEBUG
@@ -194,9 +194,9 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
         y_always_assert(!wait && !signal && !fence, "Invalid submit");
 
         _queue.locked([&](auto&& queue) {
-            _async_start.locked([&](auto&& async) {
+            _async_submit_data.locked([&](auto&& submit_data) {
                 const VkSemaphore semaphore = data->_semaphore;
-                async.semaphores << semaphore;
+                submit_data.semaphores << semaphore;
 
                 VkSubmitInfo submit_info = vk_struct();
                 {
@@ -206,7 +206,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
                     submit_info.pSignalSemaphores = &semaphore;
                 }
 
-                next_fence = async.next_fence;
+                next_fence = submit_data.next_fence;
 
                 y_profile_zone("submit async");
                 vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
@@ -217,12 +217,12 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
             core::Vector<VkSemaphore> wait_semaphores;
             TimelineFence current_fence;
 
-            _async_start.locked([&](auto&& async) {
-                current_fence = async.current_fence;
-                next_fence = async.next_fence;
-                async.current_fence = _timeline.current_timeline();
-                async.next_fence = _timeline.advance_timeline();
-                wait_semaphores.swap(async.semaphores);
+            _async_submit_data.locked([&](auto&& submit_data) {
+                current_fence = submit_data.current_fence;
+                next_fence = submit_data.next_fence;
+                submit_data.current_fence = _timeline.current_timeline();
+                submit_data.next_fence = _timeline.advance_timeline();
+                wait_semaphores.swap(submit_data.semaphores);
             });
 
             core::SmallVector<u64> wait_values;
