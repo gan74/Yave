@@ -100,6 +100,29 @@ CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_ind
 CmdQueue::~CmdQueue() {
     wait();
 
+    // "Fake" submit to set consume _async_submit_data.next_fence
+    _queue.locked([&](auto&& queue) {
+        const TimelineFence next_fence = _async_submit_data.locked([](auto&& submit_data) { return submit_data.next_fence; });
+        const VkSemaphore signal_sem = _timeline.vk_semaphore();
+        const u64 signal_value = next_fence.value();
+
+        VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
+        {
+            timeline_info.signalSemaphoreValueCount = 1;
+            timeline_info.pSignalSemaphoreValues = &signal_value;
+        }
+
+        VkSubmitInfo submit_info = vk_struct();
+        {
+            submit_info.pNext = &timeline_info;
+            submit_info.signalSemaphoreCount = 1;
+            submit_info.pSignalSemaphores = &signal_sem;
+        }
+
+        vk_check(vkQueueSubmit(queue, 1, &submit_info, {}));
+        vk_check(vkQueueWaitIdle(queue));
+    });
+
     _all_queues.locked([&](auto&& all_queues) {
         const auto it = std::find(all_queues.begin(), all_queues.end(), this);
         y_debug_assert(it != all_queues.end());
