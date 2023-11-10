@@ -212,11 +212,11 @@ void CVarConsole::on_gui() {
                         ImGui::PopStyleColor();
                     }
 
-                    if(ImGui::IsItemHovered()) {
+                    /*if(ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
                         ImGui::Text("%s (default value: \"%s\")", var.type_name.data(), var.default_value.data());
                         ImGui::EndTooltip();
-                    }
+                    }*/
                 }
 
                 ImGui::TableSetColumnIndex(2);
