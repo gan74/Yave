@@ -25,15 +25,18 @@ SOFTWARE.
 #include "DeletionDialog.h"
 #include "Renamer.h"
 
+#include <editor/Settings.h>
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
 
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/PointLightComponent.h>
 #include <yave/scene/SceneView.h>
 
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
 
+#include <y/math/random.h>
 
 namespace editor {
 
@@ -63,6 +66,37 @@ static void add_prefab() {
         });
 }
 
+
+
+
+static void add_debug_lights() {
+    y_profile();
+
+    EditorWorld& world = current_world();
+
+    const float spacing =  app_settings().debug.entity_spacing;
+    const usize entity_count = app_settings().debug.entity_count;
+    const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
+
+    const math::Vec3 center; //new_entity_pos(side * 1.5f);
+
+    const ecs::EntityId parent = world.create_named_entity("Debug Lights");
+
+
+    math::FastRandom rng;
+    for(usize i = 0; i != entity_count; ++i) {
+        const ecs::EntityId entity = world.create_named_entity(fmt("Debug light #{}", i));
+        world.set_parent(entity, parent);
+
+        const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
+        world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
+        world.get_or_add_component<PointLightComponent>(entity)->range() = spacing;
+        world.get_or_add_component<PointLightComponent>(entity)->intensity() = spacing * spacing;
+        world.get_or_add_component<PointLightComponent>(entity)->color() = identifying_color(rng());
+    }
+}
+
+editor_action("Add debug lights", add_debug_lights)
 
 
 Outliner::Outliner() : Widget(ICON_FA_SITEMAP " Outliner") {

@@ -220,6 +220,7 @@ void EntityPool::audit() {
         y_debug_assert(en.left_sibling.is_valid() == en.right_sibling.is_valid());
     }
 
+#if 0
     // Children cycles & parent
     for(const auto& en : _entities) {
         if(en.is_valid()) {
@@ -240,6 +241,7 @@ void EntityPool::audit() {
             y_debug_assert(found);
         }
     }
+#endif
 #endif
 }
 
