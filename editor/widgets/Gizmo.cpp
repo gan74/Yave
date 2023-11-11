@@ -242,7 +242,7 @@ void TranslationGizmo::draw() {
 
     const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
 
-    if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
+    if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f || (cam_pos - obj_pos).length() < math::epsilon<float>) {
         return;
     }
 
@@ -435,7 +435,7 @@ void RotationGizmo::draw() {
 
     const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
 
-    if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f) {
+    if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f || (cam_pos - obj_pos).length() < math::epsilon<float>) {
         return;
     }
 
