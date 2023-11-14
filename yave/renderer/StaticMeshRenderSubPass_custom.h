@@ -29,7 +29,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include <yave/systems/StaticMeshRendererSystem.h>
+#include <yave/systems/RendererSystem.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
@@ -51,7 +51,7 @@ void StaticMeshRenderSubPass::render_custom(RenderPassRecorder& render_pass, con
     }
 
     const ecs::EntityWorld& world = scene_view.world();
-    auto query = world.query<StaticMeshComponent>(ids, tags);
+    auto query = world.query<TransformableComponent, StaticMeshComponent>(ids, tags);
     if(query.is_empty()) {
         return;
     }
@@ -61,34 +61,28 @@ void StaticMeshRenderSubPass::render_custom(RenderPassRecorder& render_pass, con
     u32 index = 0;
     auto indices_mapping = pass->resources().map_buffer(indices_buffer);
     for(const auto& [id, comp] : query.id_components()) {
-        const auto& [mesh] = comp;
-        if(!mesh.mesh() || !mesh.has_transform_index()) {
+        const auto& [tr, mesh] = comp;
+        const u32 transform_index = tr.transform_index();
+        if(!mesh.mesh() || transform_index == u32(-1)) {
             continue;
         }
-
-        const u32 transform_index = mesh.transform_index();
-        const u32 last_transform_index = mesh.has_last_transform_index() ? mesh.last_transform_index() : transform_index;
 
         const auto materials = mesh.materials();
         if(materials.size() == 1) {
             if(const Material* mat = materials[0].get()) {
                 render_func(id, mesh, mesh.mesh()->draw_command(), mat, index);
-                indices_mapping[index++] = math::Vec4ui(
+                indices_mapping[index++] = math::Vec2ui(
                     transform_index,
-                    last_transform_index,
-                    mat->draw_data().index(),
-                    0
+                    mat->draw_data().index()
                 );
             }
         } else {
             for(usize i = 0; i != materials.size(); ++i) {
                 if(const Material* mat = materials[i].get()) {
                     render_func(id, mesh, mesh.mesh()->sub_meshes()[i], mat, index);
-                    indices_mapping[index++] = math::Vec4ui(
+                    indices_mapping[index++] = math::Vec2ui(
                         transform_index,
-                        last_transform_index,
-                        mat->draw_data().index(),
-                        0
+                        mat->draw_data().index()
                     );
                 }
             }

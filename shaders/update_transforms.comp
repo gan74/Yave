@@ -3,10 +3,10 @@
 
 #include "lib/utils.glsl"
 
-layout(local_size_x = 1) in;
+layout(local_size_x = 64) in;
 
-layout(set = 0, binding = 0) buffer OutTransforms {
-    mat4 out_transforms[];
+layout(set = 0, binding = 0) buffer OutTransformables {
+    TransformableData out_transformables[];
 };
 
 layout(set = 0, binding = 1) readonly buffer InTransforms {
@@ -30,6 +30,8 @@ void main() {
     }
 
     const uint index = in_indices[id];
-    out_transforms[index] = in_transforms[id];
+
+    out_transformables[index].last = out_transformables[index].current;
+    out_transformables[index].current = in_transforms[id];
 }
 

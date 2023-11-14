@@ -28,7 +28,7 @@ StaticMeshRenderSubPass StaticMeshRenderSubPass::create(FrameGraphPassBuilder& b
     y_profile();
 
     const ecs::EntityWorld& world = view.world();
-    const StaticMeshRendererSystem* static_meshes = world.find_system<StaticMeshRendererSystem>();
+    const RendererSystem* static_meshes = world.find_system<RendererSystem>();
 
     if(!static_meshes || ids.is_empty()) {
         return {};
@@ -48,7 +48,7 @@ StaticMeshRenderSubPass StaticMeshRenderSubPass::create(FrameGraphPassBuilder& b
     static const PipelineStage stage = PipelineStage::VertexBit | PipelineStage::FragmentBit;
     const i32 descriptor_set_index = builder.next_descriptor_set_index();
 
-    const auto indices_buffer = builder.declare_typed_buffer<math::Vec4ui>(batch_count);
+    const auto indices_buffer = builder.declare_typed_buffer<math::Vec2ui>(batch_count);
     builder.map_buffer(indices_buffer);
 
     builder.add_external_input(Descriptor(static_meshes->transform_buffer()), stage, descriptor_set_index);

@@ -61,6 +61,7 @@ class TransformableComponent final {
         AABB global_aabb() const;
 
         const OctreeNode* octree_node() const;
+        u32 transform_index() const;
 
         void inspect(ecs::ComponentInspector* inspector);
 
@@ -75,6 +76,12 @@ class TransformableComponent final {
         friend class Octree;
         friend class OctreeSystem;
         mutable OctreeNode* _node = nullptr;
+
+
+    private:
+        friend class RendererSystem;
+
+        mutable u32 _transform_index = u32(-1);
 };
 
 }

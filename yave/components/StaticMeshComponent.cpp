@@ -52,23 +52,6 @@ const AABB& StaticMeshComponent::aabb() const {
     return _aabb;
 }
 
-u32 StaticMeshComponent::transform_index() const {
-    return _transform_index;
-}
-
-u32 StaticMeshComponent::last_transform_index() const {
-    return _last_transform_index;
-}
-
-bool StaticMeshComponent::has_transform_index() const {
-    return _transform_index != u32(-1);
-}
-
-bool StaticMeshComponent::has_last_transform_index() const {
-    return _last_transform_index != u32(-1);
-}
-
-
 AssetPtr<StaticMesh>& StaticMeshComponent::mesh() {
     return _mesh;
 }

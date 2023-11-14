@@ -39,7 +39,7 @@ SOFTWARE.
 #include <yave/systems/AABBUpdateSystem.h>
 #include <yave/systems/OctreeSystem.h>
 #include <yave/systems/ScriptSystem.h>
-#include <yave/systems/StaticMeshRendererSystem.h>
+#include <yave/systems/RendererSystem.h>
 
 #include <y/utils/format.h>
 
@@ -56,7 +56,7 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<AABBUpdateSystem>();
     add_system<OctreeSystem>();
     add_system<ScriptSystem>();
-    add_system<StaticMeshRendererSystem>();
+    add_system<RendererSystem>();
 }
 
 void EditorWorld::flush_reload() {

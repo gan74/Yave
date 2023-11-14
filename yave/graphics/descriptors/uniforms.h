@@ -57,6 +57,14 @@ struct Camera {
 static_assert(sizeof(Camera) % 16 == 0);
 
 
+struct TransformableData {
+    math::Matrix4<> current;
+    math::Matrix4<> last;
+};
+
+static_assert(sizeof(TransformableData) % 16 == 0);
+
+
 struct MaterialData {
     static constexpr usize texture_count = 8;
 

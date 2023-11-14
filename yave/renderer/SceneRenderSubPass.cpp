@@ -29,7 +29,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/systems/OctreeSystem.h>
-#include <yave/systems/StaticMeshRendererSystem.h>
+#include <yave/systems/RendererSystem.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/ecs/EntityWorld.h>

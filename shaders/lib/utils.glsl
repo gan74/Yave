@@ -51,6 +51,11 @@ struct Camera {
     uint padding_2;
 };
 
+struct TransformableData {
+    mat4 current;
+    mat4 last;
+};
+
 const uint diffuse_texture_index = 0;
 const uint normal_texture_index = 1;
 const uint roughness_texture_index = 2;

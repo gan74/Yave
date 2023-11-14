@@ -110,6 +110,10 @@ const OctreeNode* TransformableComponent::octree_node() const {
     return _node;
 }
 
+u32 TransformableComponent::transform_index() const {
+    return _transform_index;
+}
+
 void TransformableComponent::inspect(ecs::ComponentInspector* inspector) {
     inspector->inspect("Transform", _transform);
 }

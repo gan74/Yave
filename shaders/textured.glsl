@@ -14,7 +14,7 @@ layout(set = 1, binding = 1) readonly buffer Materials {
 };
 
 layout(set = 1, binding = 2) readonly buffer Indices {
-    uvec4 mesh_indices[];
+    uvec2 mesh_indices[];
 };
 
 
@@ -33,7 +33,7 @@ vec4 tex_from_index(MaterialData material, uint index, vec2 uv) {
 }
 
 void main() {
-    const MaterialData material = materials[mesh_indices[in_instance_index].z];
+    const MaterialData material = materials[mesh_indices[in_instance_index].y];
 
     const vec4 color = tex_from_index(material, diffuse_texture_index, in_uv);
 
