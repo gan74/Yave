@@ -175,9 +175,7 @@ static void import_all(concurrent::StaticThreadPool& thread_pool, import::Parsed
 
     Y_TODO(slow, be import_node is not thread safe)
     thread_pool.schedule([settings, &scene] {
-        for(const int child_index : scene.root_nodes) {
-            import_node(scene, child_index, settings.import_child_prefabs_as_assets, settings.import_path);
-        }
+        import_node(scene, scene.root_node, settings.import_child_prefabs_as_assets, settings.import_path);
     }, nullptr, mesh_group);
 }
 

@@ -491,6 +491,7 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
     }
 
 
+    core::Vector<int> root_nodes;
     {
         for(usize i = 0; i != scene.nodes.size(); ++i) {
             for(const int child_index : scene.nodes[i].children) {
@@ -500,13 +501,35 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
 
         for(usize i = 0; i != scene.nodes.size(); ++i) {
             if(scene.nodes[i].parent_index < 0) {
-                scene.root_nodes << int(i);
+                root_nodes << int(i);
                 propagate_transforms(scene.nodes, int(i), math::Transform<>());
             }
         }
 
         for(auto& node : scene.nodes) {
             node.transform = base_change_transform * node.transform;
+        }
+    }
+
+
+    if(root_nodes.size() == 1) {
+        scene.root_node = root_nodes.first();
+    } else {
+        scene.root_node = int(scene.nodes.size());
+        auto& root = scene.nodes.emplace_back();
+
+        if(root_nodes.is_empty()) {
+            for(int i = 0; i != int(scene.nodes.size()); ++i) {
+                root.children << i;
+            }
+        } else {
+            root.children = std::move(root_nodes);
+        }
+
+
+        root.name = scene.name;
+        for(int child : root.children) {
+            scene.nodes[child].parent_index = scene.root_node;
         }
     }
 

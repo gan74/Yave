@@ -89,7 +89,7 @@ struct ParsedScene : NonCopyable {
     core::Vector<Image> images;
 
     core::Vector<Node> nodes;
-    core::Vector<int> root_nodes;
+    int root_node = -1;
 
     std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
 
