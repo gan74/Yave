@@ -119,7 +119,11 @@ void Widget::draw(bool inside) {
         }
         opened = ImGui::BeginPopupModal(_title_with_id.data(), &_visible, _flags);
     } else {
+        ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_ScrollbarBg));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.5f);
         opened = ImGui::Begin(_title_with_id.data(), &_visible, _flags);
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
     }
 
     if(opened) {
