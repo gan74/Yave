@@ -61,6 +61,7 @@ struct ParsedScene : NonCopyable {
 
     struct Image : Asset {
         bool as_sRGB = false;
+        bool as_normal = false;
         bool generate_mips = true;
     };
 

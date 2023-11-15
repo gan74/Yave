@@ -457,10 +457,21 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
             material.name = fmt_to_owned("material_{}", scene.materials.size());
         }
 
-        if(const int texture_index = gltf_material.pbrMetallicRoughness.baseColorTexture.index; texture_index >= 0) {
-            if(const int image_index = scene.gltf->textures[texture_index].source; image_index >= 0) {
-                scene.images[image_index].as_sRGB = true;
+        auto compute_image_index = [&](int texture_index) {
+            if(texture_index >= 0) {
+                if(const int image_index = scene.gltf->textures[texture_index].source; image_index >= 0) {
+                    return image_index;
+                }
             }
+            return -1;
+        };
+
+        if(const int image_index = compute_image_index(gltf_material.pbrMetallicRoughness.baseColorTexture.index); image_index >= 0) {
+            scene.images[image_index].as_sRGB = true;
+        }
+
+        if(const int image_index = compute_image_index(gltf_material.normalTexture.index); image_index >= 0) {
+            scene.images[image_index].as_normal = true;
         }
     }
 
@@ -579,7 +590,10 @@ core::Result<ImageData> ParsedScene::create_image(int index, bool compress) cons
         return core::Err();
     }
 
-    ImageImportFlags flags = compress ? ImageImportFlags::Compress : ImageImportFlags::None;
+    ImageImportFlags flags = ImageImportFlags::None;
+    if(compress && !images[index].as_normal) {
+        flags = flags | ImageImportFlags::Compress;
+    }
     if(images[index].as_sRGB) {
         flags = flags | ImageImportFlags::ImportAsSRGB;
     }
