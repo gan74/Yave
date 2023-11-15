@@ -51,6 +51,7 @@ void TransformableComponent::swap(TransformableComponent& other) {
     std::swap(_transform, other._transform);
     std::swap(_aabb, other._aabb);
     std::swap(_node, other._node);
+    std::swap(_transform_index, other._transform_index);
 }
 
 void TransformableComponent::set_transform(const math::Transform<>& tr) {
