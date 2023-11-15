@@ -145,7 +145,7 @@ static void setup_style() {
     colors[ImGuiCol_TableBorderLight]       = stl(60);
     colors[ImGuiCol_TableBorderStrong]      = stl(60);
 
-    colors[ImGuiCol_PopupBg]                = stl(44, 0.95f);
+    colors[ImGuiCol_PopupBg]                = stl(30, 0.9f);
 
     colors[ImGuiCol_TabActive]              = child;
     colors[ImGuiCol_TabUnfocusedActive]     = child;
