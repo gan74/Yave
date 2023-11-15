@@ -51,7 +51,6 @@ RendererSystem::TransformManager::~TransformManager() {
 
 RendererSystem::TransformManager::TransformBuffer RendererSystem::TransformManager::alloc_buffer(usize size) {
     y_debug_assert(size > _transform_buffer.size());
-    y_debug_assert(_free.size() == _transform_buffer.size());
 
     _free.set_min_capacity(size);
     for(usize i = _transform_buffer.size(); i != size; ++i) {
