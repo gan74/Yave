@@ -23,7 +23,6 @@ SOFTWARE.
 #include "Preview.h"
 #include "AssetSelector.h"
 
-#include <editor/EditorApplication.h>
 #include <editor/EditorWorld.h>
 #include <editor/Settings.h>
 #include <editor/utils/ui.h>
@@ -190,9 +189,12 @@ void Preview::on_gui() {
         });
 
 
-        CmdBufferRecorder& recorder = application()->recorder();
-        const auto region = recorder.region("Peview render", nullptr, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
-        graph.render(recorder);
+        {
+            CmdBufferRecorder recorder = create_disposable_cmd_buffer();
+            const auto region = recorder.region("Peview render", nullptr, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+            graph.render(recorder);
+            recorder.submit();
+        }
     }
 
     if(output) {

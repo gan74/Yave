@@ -23,10 +23,11 @@ SOFTWARE.
 #ifndef EDITOR_EDITOR_H
 #define EDITOR_EDITOR_H
 
-#include <yave/window/EventHandler.h>
 
 #include <yave/utils/forward.h>
 #include <editor/utils/forward.h>
+
+#include "Settings.h"
 
 #include <y/core/Span.h>
 
@@ -42,22 +43,39 @@ namespace editor {
 
 using namespace yave;
 
+void init_editor(ImGuiPlatform* platform, const Settings& settings = Settings());
+void destroy_editor();
 
-EditorApplication* application();
+void run_editor();
 
 Settings& app_settings();
-
+UiManager& ui();
 AssetStore& asset_store();
 AssetLoader& asset_loader();
 ThumbmailRenderer& thumbmail_renderer();
 
+const EditorResources& resources();
+
+void save_world();
+void load_world();
+void new_world();
 EditorWorld& current_world();
+
+void set_scene_view(SceneView* scene);
+void unset_scene_view(SceneView* scene);
+
 const SceneView& scene_view();
+
+
+
+
 
 DirectDraw& debug_drawer();
 
-const EditorResources& resources();
-UiManager& ui();
+
+
+
+
 
 
 Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);

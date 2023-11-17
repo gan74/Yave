@@ -26,7 +26,6 @@ SOFTWARE.
 #include <editor/Settings.h>
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
-#include <editor/EditorApplication.h>
 #include <editor/utils/CameraController.h>
 #include <editor/utils/ui.h>
 
@@ -84,7 +83,7 @@ EngineView::EngineView() :
 }
 
 EngineView::~EngineView() {
-    application()->unset_scene_view(&_scene_view);
+    unset_scene_view(&_scene_view);
 }
 
 CmdTimingRecorder* EngineView::timing_recorder() const {
@@ -225,7 +224,7 @@ void EngineView::update() {
     }
 
     if(focussed) {
-        application()->set_scene_view(&_scene_view);
+        set_scene_view(&_scene_view);
     }
 
     if(!is_dragging_gizmo() && _camera_controller) {
@@ -299,7 +298,12 @@ void EngineView::on_gui() {
 
         const math::Vec2 cursor = ImGui::GetCursorPos();
 
-        draw(application()->recorder());
+        {
+            CmdBufferRecorder recorder = create_disposable_cmd_buffer();
+            draw(recorder);
+            recorder.submit();
+        }
+
         make_drop_target();
 
         {

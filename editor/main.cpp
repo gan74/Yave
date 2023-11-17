@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
+#include "editor.h"
 #include "ImGuiPlatform.h"
-#include "EditorApplication.h"
 
 #include <editor/utils/crashhandler.h>
 
@@ -64,8 +64,8 @@ static void parse_args(int argc, char** argv) {
 #endif
         } else if(arg == "--waitdbg") {
 #ifdef Y_OS_WIN
-            while(!::IsDebuggerPresent()) {
-                core::Duration::sleep(core::Duration::milliseconds(10));
+            if(!::IsDebuggerPresent()) {
+                ::MessageBoxA(nullptr, "Attach debugger now", "Attach debugger now", MB_OK);
             }
 #else
             log_msg(fmt("{} is not supported outside of Windows", arg), Log::Error);
@@ -103,11 +103,18 @@ int main(int argc, char** argv) {
     y_defer(destroy_device());
 
 
+    Settings settings;
+    settings.load();
+
     {
         ImGuiPlatform platform(multi_viewport, run_tests);
-        EditorApplication editor(&platform);
-        editor.exec();
+        init_editor(&platform, settings);
+        y_defer(destroy_editor());
+
+        run_editor();
     }
+
+    settings.save();
 
     log_msg("exiting...");
 
