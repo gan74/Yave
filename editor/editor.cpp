@@ -119,7 +119,7 @@ void destroy_editor() {
 }
 
 void run_editor() {
-    application::imgui_platform->exec([](CmdBufferRecorder&) {
+    application::imgui_platform->exec([] {
         application::world->tick();
         application::world->update(float(application::update_timer.reset().to_secs()));
         application::ui->on_gui();
@@ -169,6 +169,7 @@ static void load_world_deferred() {
 void post_tick() {
     y_profile();
     if(application::deferred_actions & application::Save) {
+        save_world_deferred();
     }
 
     if(application::deferred_actions & application::Load) {

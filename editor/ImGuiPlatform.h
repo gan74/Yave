@@ -58,7 +58,7 @@ class ImGuiPlatform : NonMovable {
     };
 
     public:
-        using OnGuiFunc = std::function<void(CmdBufferRecorder&)>;
+        using OnGuiFunc = std::function<void()>;
 
         ImGuiPlatform(bool multi_viewport = true, bool run_tests = false);
         ~ImGuiPlatform();

@@ -494,7 +494,6 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
 
         if(const auto r = _main_window->swapchain.next_frame()) {
             const FrameToken& token = r.unwrap();
-            CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
             {
                 y_profile_zone("imgui");
@@ -513,11 +512,13 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 }
 
                 if(func) {
-                    func(recorder);
+                    func();
                 }
 
                 ImGui::Render();
             }
+
+            CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
             {
                 y_profile_zone("main window");
