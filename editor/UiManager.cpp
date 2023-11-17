@@ -176,6 +176,10 @@ void UiManager::draw_menu_bar() {
             draw_fps_counter();
         }
 
+        if(ImGui::GetIO().WantCaptureKeyboard) {
+            ImGui::TextUnformatted(ICON_FA_KEYBOARD);
+        }
+
         for(const EditorAction* action : _actions) {
             if(!action->menu.size()) {
                 continue;
@@ -202,7 +206,7 @@ void UiManager::draw_menu_bar() {
         }
 
         {
-            const float search_bar_size = 200.0;
+            const float search_bar_size = 250.0;
             const float margin = ImGui::CalcTextSize(ICON_FA_SEARCH " ").x;
             const float offset = ImGui::GetContentRegionMax().x - (search_bar_size + margin);
 
@@ -215,6 +219,10 @@ void UiManager::draw_menu_bar() {
                 if(imgui::begin_suggestion_popup()) {
                     const std::regex regex(_search_pattern.data(), std::regex::icase);
                     for(const EditorAction* action : _actions) {
+                        if(action->enabled && !(action->enabled())) {
+                            continue;
+                        }
+
                         if(std::regex_search(action->name.data(), regex)) {
                             const core::String shortcut = shortcut_text(action->shortcut);
                             if(imgui::suggestion_item(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {

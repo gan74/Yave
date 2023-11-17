@@ -99,6 +99,7 @@ struct EditorAction {
     u32 flags = 0;
     KeyCombination shortcut;
     void (*function)() = nullptr;
+    bool (*enabled)() = nullptr;
     core::Span<std::string_view> menu;
     EditorAction const* next = nullptr;
 };
@@ -112,13 +113,13 @@ void register_action(EditorAction* action);
 }
 
 
-#define editor_action_(name, desc, flags, shortcut, func, ...)                                          \
+#define editor_action_(name, desc, flags, shortcut, func, enabled, ...)                                 \
     namespace {                                                                                         \
         inline static struct y_create_name_with_prefix(action_register_t) {                             \
             y_create_name_with_prefix(action_register_t)() {                                            \
                 static constexpr std::string_view names[] = { name, __VA_ARGS__ };                      \
                 static editor::EditorAction action = {                                                  \
-                    names[0], desc, (flags), yave::KeyCombination(shortcut), [] { func(); },            \
+                    names[0], desc, (flags), yave::KeyCombination(shortcut), [] { func(); }, enabled,   \
                     y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr           \
                 };                                                                                      \
                 editor::detail::register_action(&action);                                               \
@@ -131,8 +132,9 @@ void register_action(EditorAction* action);
     }
 
 
-#define editor_action_shortcut(name, shortcut, func, ...) editor_action_(name, "", 0, shortcut, func, __VA_ARGS__)
-#define editor_action_desc(name, desc, func, ...) editor_action_(name, desc, 0, /* no shortcut */, func, __VA_ARGS__)
+#define editor_action_shortcut(name, shortcut, func, ...) editor_action_(name, "", 0, shortcut, func, nullptr, __VA_ARGS__)
+#define editor_action_desc(name, desc, func, ...) editor_action_(name, desc, 0, /* no shortcut */, func, nullptr, __VA_ARGS__)
+#define editor_action_enabled(name, func, enabled, ...) editor_action_(name, "", 0, /* no shortcut */, func, enabled, __VA_ARGS__)
 #define editor_action(name, func, ...) editor_action_desc(name, "", func, __VA_ARGS__)
 
 

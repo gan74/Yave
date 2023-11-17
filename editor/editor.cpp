@@ -44,6 +44,23 @@ SOFTWARE.
 
 
 namespace editor {
+
+#ifdef Y_DEBUG
+editor_action_desc("Debug assert", "Calls assert(false) and crashes the program", [] { y_debug_assert(false); })
+#endif
+
+editor_action("Quit", [] { imgui_platform()->main_window()->close(); })
+editor_action("Show ImGui demo", [] { imgui_platform()->show_demo(); })
+editor_action("Restore default layout", [] { ui().restore_default_layout(); })
+
+editor_action_desc("Lag", "Pause execution for 1s to simulate load", [] { core::Duration::sleep(core::Duration::seconds(1)); })
+
+editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, [] { save_world(); }, "File")
+editor_action(ICON_FA_FOLDER " Load", [] { load_world(); }, "File")
+editor_action_shortcut("New", Key::Ctrl + Key::N, [] { new_world(); }, "File")
+
+
+
 namespace application {
 std::unique_ptr<EditorResources> resources;
 std::shared_ptr<AssetStore> asset_store;
@@ -72,7 +89,6 @@ enum DeferredActions : u32 {
 
 u32 deferred_actions = None;
 }
-
 
 void post_tick();
 

@@ -41,7 +41,7 @@ SOFTWARE.
             static constexpr usize arg_count = std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value;      \
             static const std::array<std::string_view, arg_count> menu = {__VA_ARGS__};                              \
             static editor::EditorAction action = {                                                                  \
-                #type, "Open a new " #type, 0, yave::KeyCombination(), open_func, menu, nullptr                     \
+                #type, "Open a new " #type, 0, yave::KeyCombination(), open_func, nullptr, menu, nullptr            \
             };                                                                                                      \
             editor::detail::register_widget(&widget);                                                               \
             editor::detail::register_action(&action);                                                               \
