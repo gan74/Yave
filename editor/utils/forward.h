@@ -31,7 +31,6 @@ class AssetStringifier;
 class CVarConsole;
 class CameraController;
 class DeletionDialog;
-class EditorApplication;
 class EditorComponent;
 class EditorResources;
 class EditorWorld;

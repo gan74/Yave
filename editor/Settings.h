@@ -22,8 +22,6 @@ SOFTWARE.
 #ifndef EDITOR_SETTINGS_H
 #define EDITOR_SETTINGS_H
 
-#include <editor/editor.h>
-
 #include <yave/window/EventHandler.h>
 
 #include <y/reflect/reflect.h>
