@@ -96,7 +96,15 @@ static void add_debug_lights() {
     }
 }
 
+
+
+
 editor_action("Add debug lights", add_debug_lights)
+
+editor_action_enabled(ICON_FA_TRASH " Delete selected", [] { add_child_widget<DeletionDialog>(current_world().selected_entities()); }, [] { return current_world().has_selected_entities(); })
+
+
+
 
 
 Outliner::Outliner() : Widget(ICON_FA_SITEMAP " Outliner") {

@@ -41,9 +41,9 @@ static void remove_children(EditorWorld& world, ecs::EntityId id) {
     }
 }
 
-DeletionDialog::DeletionDialog(ecs::EntityId id) :
+DeletionDialog::DeletionDialog(core::Span<ecs::EntityId> ids) :
         Widget("Confirm", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
-        _id(id) {
+        _ids(ids) {
 
    set_modal(true);
 }
@@ -51,28 +51,35 @@ DeletionDialog::DeletionDialog(ecs::EntityId id) :
 void DeletionDialog::on_gui() {
     EditorWorld& world = current_world();
 
-    if(!world.exists(_id)) {
+    const bool exists = std::any_of(_ids.begin(), _ids.end(), [&](const ecs::EntityId id) { return world.exists(id); });
+    if(!exists) {
         close();
     }
 
-    const EditorComponent* component = world.component<EditorComponent>(_id);
-    y_debug_assert(component);
+    if(_ids.size() == 1) {
+        const EditorComponent* component = world.component<EditorComponent>(_ids[0]);
+        y_debug_assert(component);
+        ImGui::Text("Delete \"%s\"?", component->name().data());
+    } else {
+        ImGui::Text("Delete %u entities?", u32(_ids.size()));
+    }
 
-    ImGui::Text("Delete \"%s\"?", component->name().data());
-
-    if(world.has_children(_id)) {
+    const bool has_children = std::any_of(_ids.begin(), _ids.end(), [&](const ecs::EntityId id) { return world.has_children(id); });
+    if(has_children) {
         ImGui::Checkbox("Delete children", &_delete_children);
     }
 
     if(ImGui::Button("Ok")) {
         y_profile_zone("deleting entities");
-
-        if(_delete_children) {
-            remove_children(world, _id);
+        for(const ecs::EntityId id : _ids) {
+            if(!world.exists(id)) {
+                continue;
+            }
+            if(_delete_children) {
+                remove_children(world, id);
+            }
+            world.remove_entity(id);
         }
-
-        world.remove_entity(_id);
-
         close();
     }
 

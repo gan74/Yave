@@ -26,17 +26,19 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
+#include <y/core/Vector.h>
+
 namespace editor {
 
 class DeletionDialog final : public Widget {
     public:
-        DeletionDialog(ecs::EntityId id);
+        DeletionDialog(core::Span<ecs::EntityId> ids);
 
     protected:
         void on_gui() override;
 
     private:
-        ecs::EntityId _id;
+        core::Vector<ecs::EntityId> _ids;
         bool _delete_children = true;
 };
 
