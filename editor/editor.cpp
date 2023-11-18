@@ -62,6 +62,7 @@ editor_action_shortcut("New", Key::Ctrl + Key::N, [] { new_world(); }, "File")
 
 
 namespace application {
+std::unique_ptr<UndoStack> undo_stack;
 std::unique_ptr<EditorResources> resources;
 std::shared_ptr<AssetStore> asset_store;
 std::unique_ptr<AssetLoader> loader;
@@ -105,6 +106,7 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
         ? app_settings().editor.test_world_file
         : app_settings().editor.world_file;
 
+    application::undo_stack = std::make_unique<UndoStack>();
     application::resources = std::make_unique<EditorResources>();
     application::ui = std::make_unique<UiManager>();
     application::asset_store = std::make_shared<FolderAssetStore>(store_dir);
@@ -132,6 +134,7 @@ void destroy_editor() {
     application::debug_drawer = nullptr;
     application::resources = nullptr;
     application::ui = nullptr;
+    application::undo_stack = nullptr;
 }
 
 void run_editor() {
@@ -218,6 +221,10 @@ AssetStore& asset_store() {
 
 AssetLoader& asset_loader() {
     return *application::loader;
+}
+
+UndoStack& undo_stack() {
+    return *application::undo_stack;
 }
 
 ThumbmailRenderer& thumbmail_renderer() {

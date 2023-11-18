@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <yave/ecs/EntityPrefab.h>
+#include <yave/ecs/ecs.h>
 
 #include <y/io2/Buffer.h>
 
@@ -32,10 +32,28 @@ namespace editor {
 
 class UndoStack : NonMovable {
     public:
+        struct Item {
+            core::String name;
+            ecs::EntityId id;
+            std::function<void(EditorWorld&)> undo;
+            std::function<void(EditorWorld&)> redo;
+        };
+
         UndoStack();
+
+        void add(Item item);
+
+        void undo();
+        void redo();
+
+        core::Span<Item> items() const;
+        usize stack_top() const;
 
     private:
         friend class UndoStackWidget;
+
+        core::Vector<Item> _items;
+        usize _top = 0;
 };
 
 }
