@@ -95,9 +95,15 @@ T* add_detached_widget(Args&&... args) {
 
 
 struct EditorAction {
+    enum Flags : u32 {
+        None            = 0x00,
+        Contextual      = 0x01,
+        Widget          = 0x02,
+    };
+
     std::string_view name;
     std::string_view description;
-    u32 flags = 0;
+    Flags flags = Flags::None;
     KeyCombination shortcut;
     void (*function)() = nullptr;
     bool (*enabled)() = nullptr;
@@ -133,10 +139,11 @@ void register_action(EditorAction* action);
     }
 
 
-#define editor_action_shortcut(name, shortcut, func, ...) editor_action_(name, "", 0, shortcut, func, nullptr, __VA_ARGS__)
-#define editor_action_desc(name, desc, func, ...) editor_action_(name, desc, 0, /* no shortcut */, func, nullptr, __VA_ARGS__)
-#define editor_action_enabled(name, func, enabled, ...) editor_action_(name, "", 0, /* no shortcut */, func, enabled, __VA_ARGS__)
-#define editor_action(name, func, ...) editor_action_desc(name, "", func, __VA_ARGS__)
+#define editor_action_shortcut(name, shortcut, func, ...)   editor_action_(name, "", EditorAction::None, shortcut, func, nullptr, __VA_ARGS__)
+#define editor_action_desc(name, desc, func, ...)           editor_action_(name, desc, EditorAction::None, /* no shortcut */, func, nullptr, __VA_ARGS__)
+#define editor_action_contextual(name, func, enabled, ...)  editor_action_(name, "", EditorAction::Contextual, /* no shortcut */, func, enabled, __VA_ARGS__)
+
+#define editor_action(name, func, ...)  editor_action_desc(name, "", func, __VA_ARGS__)
 
 
 #endif // EDITOR_EDITOR_H

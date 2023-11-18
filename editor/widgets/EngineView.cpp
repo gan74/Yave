@@ -116,10 +116,11 @@ bool EngineView::is_dragging_gizmo() const {
     return _orientation_gizmo.is_dragging() || _tr_gizmo.is_dragging() || _rot_gizmo.is_dragging();
 }
 
-void EngineView::set_allow_dragging_gizmo(bool allow) {
-    _orientation_gizmo.set_allow_dragging(allow);
-    _tr_gizmo.set_allow_dragging(allow);
-    _rot_gizmo.set_allow_dragging(allow);
+void EngineView::set_is_moving_camera(bool moving) {
+    _moving_camera = moving;
+    _orientation_gizmo.set_allow_dragging(!moving);
+    _tr_gizmo.set_allow_dragging(!moving);
+    _rot_gizmo.set_allow_dragging(!moving);
 }
 
 
@@ -210,7 +211,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 void EngineView::update() {
     const bool hovered = ImGui::IsWindowHovered() && is_mouse_inside();
 
-    set_allow_dragging_gizmo(hovered);
+    set_is_moving_camera(!hovered);
 
     if(!hovered) {
         return;
@@ -266,7 +267,7 @@ void EngineView::update_picking() {
     const PickingResult picking_data = Picker::pick_sync(_scene_view, uv, viewport_size);
     if(_camera_controller && _camera_controller->viewport_clicked(picking_data)) {
         // event has been eaten by the camera controller, don't proceed further
-        set_allow_dragging_gizmo(false);
+        set_is_moving_camera(true);
         return;
     }
 
@@ -311,6 +312,7 @@ void EngineView::on_gui() {
             draw_toolbar_and_gizmos();
         }
 
+
         if(ImGui::BeginPopup("##menu")) {
             draw_menu();
             ImGui::EndPopup();
@@ -321,7 +323,26 @@ void EngineView::on_gui() {
             ImGui::EndPopup();
         }
 
+
         update();
+
+
+        if(!is_dragging_gizmo() && !_moving_camera && imgui::should_open_context_menu()) {
+            ImGui::OpenPopup("##contextmenu");
+        }
+
+        if(ImGui::BeginPopup("##contextmenu")) {
+            for(const EditorAction* action = all_actions(); action; action = action->next) {
+                if(action->enabled && !(action->enabled()) || (action->flags & EditorAction::Contextual) != EditorAction::Contextual) {
+                    continue;
+                }
+
+                if(ImGui::MenuItem(action->name.data())) {
+                    action->function();
+                }
+            }
+            ImGui::EndPopup();
+        }
     }
     ImGui::EndChild();
 }

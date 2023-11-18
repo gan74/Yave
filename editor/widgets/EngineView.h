@@ -92,7 +92,7 @@ class EngineView final : public Widget {
         void make_drop_target();
 
         bool is_dragging_gizmo() const;
-        void set_allow_dragging_gizmo(bool allow);
+        void set_is_moving_camera(bool moving);
 
 
         RenderView _view = RenderView::Lit;
@@ -110,6 +110,8 @@ class EngineView final : public Widget {
         TranslationGizmo _tr_gizmo;
         RotationGizmo _rot_gizmo;
         OrientationGizmo _orientation_gizmo;
+
+        bool _moving_camera = false;
 
         isize _resolution = -1;
 };
