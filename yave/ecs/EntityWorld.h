@@ -97,6 +97,7 @@ class EntityWorld : NonMovable {
 
         template<typename S, typename... Args>
         S* add_system(Args&&... args) {
+            y_always_assert(!find_system<S>(), "System already exists");
             auto s = std::make_unique<S>(y_fwd(args)...);
             S* system = s.get();
             _systems.emplace_back(std::move(s));

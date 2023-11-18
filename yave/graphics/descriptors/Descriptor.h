@@ -101,12 +101,14 @@ class Descriptor {
         Descriptor(const ImageView<ImageUsage::TextureBit, Type>& view, SamplerType sampler = SamplerType::LinearRepeat) :
                  _type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER),
                  _info(view.vk_descriptor_info(sampler)) {
+            y_debug_assert(!view.is_null());
         }
 
         template<ImageType Type>
         Descriptor(const ImageView<ImageUsage::StorageBit, Type>& view, SamplerType sampler = SamplerType::LinearRepeat) :
                  _type(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE),
                  _info(view.vk_descriptor_info(sampler)) {
+            y_debug_assert(!view.is_null());
         }
 
         template<ImageUsage Usage, ImageType Type>
@@ -117,11 +119,13 @@ class Descriptor {
         Descriptor(const SubBuffer<BufferUsage::UniformBit>& buffer) :
                 _type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER),
                 _info(buffer.vk_descriptor_info()) {
+            y_debug_assert(!buffer.is_null());
         }
 
         Descriptor(const SubBuffer<BufferUsage::StorageBit>& buffer) :
                 _type(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER),
                 _info(buffer.vk_descriptor_info()) {
+            y_debug_assert(!buffer.is_null());
         }
 
         template<BufferUsage Usage, MemoryType Memory>

@@ -219,7 +219,7 @@ void UiManager::draw_menu_bar() {
                 if(imgui::begin_suggestion_popup()) {
                     const std::regex regex(_search_pattern.data(), std::regex::icase);
                     for(const EditorAction* action : _actions) {
-                        if(action->enabled && !(action->enabled())) {
+                        if(action->enabled && !(action->enabled()) || (action->flags & EditorAction::Contextual) == EditorAction::Contextual) {
                             continue;
                         }
 

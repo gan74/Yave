@@ -34,6 +34,8 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <yave/renderer/DefaultRenderer.h>
+#include <yave/systems/RendererSystem.h>
+
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
@@ -56,8 +58,10 @@ SOFTWARE.
 
 namespace editor {
 
-static Texture render_world(const ecs::EntityWorld& world) {
+static Texture render_world(ecs::EntityWorld& world) {
     y_profile();
+
+    world.add_system<RendererSystem>();
 
     const Camera camera(
         math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)),
