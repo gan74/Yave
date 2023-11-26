@@ -119,7 +119,7 @@ usize text_line_count(std::string_view text);
 
 void text_icon(const UiIcon& icon);
 
-bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags = 0);
+bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags = 0, const char* hint = "");
 bool text_input_multiline(const char* name, core::String& str);
 void text_read_only(const char* name, std::string_view str);
 

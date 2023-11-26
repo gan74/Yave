@@ -167,12 +167,17 @@ static int str_resize_callback(ImGuiInputTextCallbackData* data) {
     return 0;
 }
 
-bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags) {
+bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags, const char* hint) {
     ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_ButtonActive));
     y_defer(ImGui::PopStyleColor());
 
     y_defer(str.resize(std::strlen(str.data())));
-    return ImGui::InputText(name, str.data(), str.size() + 1, flags | ImGuiInputTextFlags_CallbackResize, str_resize_callback, &str);
+
+    /*if(hint.empty()) {
+        return ImGui::InputText(name, str.data(), str.size() + 1, flags | ImGuiInputTextFlags_CallbackResize, str_resize_callback, &str);
+    } else*/ {
+        return ImGui::InputTextWithHint(name, hint, str.data(), str.size() + 1, flags | ImGuiInputTextFlags_CallbackResize, str_resize_callback, &str);
+    }
 }
 
 bool text_input_multiline(const char* name, core::String& str) {
