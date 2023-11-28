@@ -205,7 +205,9 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
     const VkCommandBuffer cmd_buffer = data->vk_cmd_buffer();
 
 #ifdef YAVE_GPU_PROFILING
-    TracyVkCollect(_profiling_ctx, cmd_buffer);
+    if(!async_start) {
+        TracyVkCollect(_profiling_ctx, cmd_buffer);
+    }
 #endif
 
     vk_check(vkEndCommandBuffer(cmd_buffer));
