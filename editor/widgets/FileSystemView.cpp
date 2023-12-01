@@ -70,8 +70,6 @@ void FileSystemView::set_path(const core::String& path) {
     if(filesystem()->is_directory(absolute).unwrap_or(false)) {
         _current_path = std::move(absolute);
 
-        _at_root = parent.is_error() || (parent.unwrap() == _current_path);
-
         update();
         path_changed();
     } else if(parent) {
@@ -157,6 +155,10 @@ core::Result<UiIcon> FileSystemView::entry_icon(const core::String&, EntryType t
     }
 }
 
+UiTexture FileSystemView::entry_thumbmail(const core::String&, EntryType) const {
+    return {};
+}
+
 void FileSystemView::entry_clicked(const Entry& entry) {
     if(entry.type == EntryType::Directory) {
         set_path(entry_full_name(entry));
@@ -174,7 +176,7 @@ void FileSystemView::on_gui() {
         update();
     }
 
-    auto make_drop_target = [this](const core::String& drop_path) {
+    auto make_drop_target = [&](const core::String& drop_path) {
         if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
             const std::string_view original_name = static_cast<const char*>(payload->Data);
             const FileSystemModel* fs = filesystem();
@@ -186,76 +188,82 @@ void FileSystemView::on_gui() {
         }
     };
 
-
     const bool modify = allow_modify();
 
+    usize new_hovered_index = usize(-1);
+    auto post_draw_entry = [&](usize index) {
+        const Entry& entry = _entries[index];
+        if(modify) {
+            if(ImGui::BeginDragDropTarget()) {
+                const core::String full_name = entry_full_name(entry);
+                make_drop_target(full_name);
+                ImGui::EndDragDropTarget();
+            } else if(ImGui::BeginDragDropSource()) {
+                const core::String full_name = entry_full_name(entry);
+                ImGui::SetDragDropPayload(imgui::drag_drop_path_id, full_name.data(), full_name.size() + 1);
+                ImGui::EndDragDropSource();
+            }
+        }
+
+        if(ImGui::IsItemHovered()) {
+            new_hovered_index = index;
+        }
+    };
+
+    auto open_menu_if_needed = [&] {
+        const bool menu_openned = process_context_menu();
+        if(!menu_openned && _hovered != new_hovered_index) {
+            entry_hoverred(entry(new_hovered_index));
+            _hovered = new_hovered_index;
+        }
+
+    };
+
     ImGui::BeginChild("##fileentriespanel");
-    const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
-    if(ImGui::BeginTable("##fileentries", 2, table_flags)) {
-        ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("##size", ImGuiTableColumnFlags_WidthFixed);
 
-        usize hovered = usize(-1);
+    {
+        const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+        if(ImGui::BeginTable("##fileentries", 2, table_flags)) {
+            ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("##size", ImGuiTableColumnFlags_WidthFixed);
 
-        const auto parent_path = filesystem()->parent_path(path());
-
-        if(!_at_root) {
-            imgui::table_begin_next_row();
-            if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..", false, ImGuiSelectableFlags_SpanAllColumns)) {
-                if(parent_path) {
+            const auto parent_path = filesystem()->parent_path(path());
+            const bool at_root = (!parent_path.is_ok()) || (parent_path.unwrap() == _current_path);
+            if(!at_root) {
+                imgui::table_begin_next_row();
+                if(ImGui::Selectable(ICON_FA_ARROW_LEFT " ..", false, ImGuiSelectableFlags_SpanAllColumns)) {
                     set_path(parent_path.unwrap());
                 }
-            }
-            if(modify && parent_path) {
+
                 if(ImGui::BeginDragDropTarget()) {
                     make_drop_target(parent_path.unwrap());
                     ImGui::EndDragDropTarget();
                 }
             }
-        }
 
-
-        ImGuiListClipper clipper;
-        clipper.Begin(int(_entries.size()));
-        while(clipper.Step()) {
-            for(int i = clipper.DisplayStart; i < clipper.DisplayEnd && i < _entries.size(); ++i) {
+            for(usize i = 0; i != _entries.size(); ++i) {
                 imgui::table_begin_next_row();
-                if(imgui::selectable_icon(_entries[i].icon, fmt_c_str("{}##{}", _entries[i].name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
-                    entry_clicked(_entries[i]);
-                    break; // break because we might update inside entry_clicked
+
+                const Entry& entry = _entries[i];
+                if(imgui::selectable_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
+                    entry_clicked(entry);
+                    break;
                 }
 
-                if(modify) {
-                    if(ImGui::BeginDragDropTarget()) {
-                        const core::String full_name = entry_full_name(_entries[i]);
-                        make_drop_target(full_name);
-                        ImGui::EndDragDropTarget();
-                    } else if(ImGui::BeginDragDropSource()) {
-                        const core::String full_name = entry_full_name(_entries[i]);
-                        ImGui::SetDragDropPayload(imgui::drag_drop_path_id, full_name.data(), full_name.size() + 1);
-                        ImGui::EndDragDropSource();
-                    }
-                }
+                post_draw_entry(i);
 
-                if(ImGui::IsItemHovered()) {
-                    hovered = i;
-                }
-
-                if(_entries[i].type == EntryType::File) {
+                if(entry.type == EntryType::File) {
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(fmt_c_str("{} KB", (_entries[i].file_size + 1023) / 1024, i));
+                    ImGui::TextUnformatted(fmt_c_str("{} KB", (entry.file_size + 1023) / 1024, i));
                 }
             }
-        }
 
-        const bool menu_openned = process_context_menu();
-        if(!menu_openned && _hovered != hovered) {
-            entry_hoverred(entry(hovered));
-            _hovered = hovered;
-        }
+            open_menu_if_needed();
 
-        ImGui::EndTable();
+            ImGui::EndTable();
+        }
     }
+
     ImGui::EndChild();
 }
 

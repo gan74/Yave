@@ -151,6 +151,19 @@ usize text_line_count(std::string_view text) {
 }
 
 
+std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c) {
+    math::Vec2 uv;
+    math::Vec2 size(1.0f);
+
+    unsigned u = 0;
+    ImTextCharFromUtf8(&u, c, c + std::strlen(c));
+    if(const ImFontGlyph* glyph = ImGui::GetFont()->FindGlyph(ImWchar(u))) {
+        uv = math::Vec2{glyph->U0, glyph->V0};
+        size = math::Vec2{glyph->U1, glyph->V1} - uv;
+    }
+    return {uv, size};
+}
+
 void text_icon(const UiIcon& icon) {
     ImGui::PushStyleColor(ImGuiCol_Text, icon.color);
     ImGui::TextUnformatted(icon.icon.data(), icon.icon.data() + icon.icon.size());
@@ -298,24 +311,14 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     return ret;
 }
 
-bool path_selector(const char* text, const core::String& path) {
-    static constexpr usize buffer_capacity = 1024;
-
+bool path_selector(const char* text, std::string_view path) {
     ImGui::PushID(text);
     ImGui::BeginGroup();
 
     ImGui::TextUnformatted(text);
 
-    std::array<char, buffer_capacity> buffer;
-    {
-        const bool end_with_slash = path.ends_with("/");
-        const usize len = std::min(buffer.size() - (end_with_slash ? 1 : 2), path.size());
-        std::copy_n(path.begin(), len, buffer.begin());
-        buffer[len] = '/';
-        buffer[len + !end_with_slash] = 0;
-    }
-
-    ImGui::InputText("", buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+    core::String path_copy = path;
+    ImGui::InputText("", path_copy.data(), path_copy.size(), ImGuiInputTextFlags_ReadOnly);
     ImGui::SameLine();
     const bool ret = ImGui::Button(ICON_FA_FOLDER_OPEN);
 
@@ -563,7 +566,6 @@ bool suggestion_item(const char* name, const char* shortcut) {
     return activated;
 }
 
-
 void table_begin_next_row(int col_index) {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(col_index);
@@ -574,9 +576,36 @@ bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGu
     ImGui::PushStyleColor(ImGuiCol_Text, icon.color);
     const bool activated = ImGui::Selectable(fmt_c_str("{}##{}", icon.icon, str_id), selected, flags);
     ImGui::PopStyleColor();
-
     ImGui::SameLine();
     return ImGui::Selectable(str_id, selected, flags) || activated;
+}
+
+
+static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const char* str_id, bool selected, float icon_size) {
+    const ImVec2 cursor = ImGui::GetCursorPos();
+    if(tex_icon) {
+        ImGui::Image(tex_icon.to_imgui(), math::Vec2(icon_size));
+    } else {
+        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
+        const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
+        ImGui::Image({}, math::Vec2(icon_size), uv, uv + uv_size, color, ImVec4(1.0f, 0, 0, 1.0f));
+    }
+
+    ImGui::SetCursorPos(cursor);
+    ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
+    const float text_height = ImGui::CalcTextSize(str_id).y;
+    const bool activated = ImGui::Selectable(str_id, selected, 0, math::Vec2(icon_size, icon_size + text_height));
+    ImGui::PopStyleVar();
+
+    return activated;
+}
+
+bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size) {
+    return icon_button(icon, {}, str_id, selected, icon_size);
+}
+
+bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size) {
+    return icon_button({}, icon, str_id, selected, icon_size);
 }
 
 // https://github.com/ocornut/imgui/issues/2718

@@ -55,7 +55,6 @@ class ResourceBrowser : public FileSystemView {
         void path_changed() override;
 
         core::Result<UiIcon> entry_icon(const core::String& name, EntryType type) const override;
-        void entry_hoverred(const Entry* entry) override;
         void entry_clicked(const Entry& entry) override;
 
     private:
@@ -64,7 +63,6 @@ class ResourceBrowser : public FileSystemView {
         void draw_import_menu();
 
         core::String _set_path_deferred;
-        AssetId _preview_id;
 };
 
 }

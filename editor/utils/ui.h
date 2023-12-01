@@ -117,6 +117,8 @@ math::Vec2 from_client_pos(const math::Vec2& pos);
 
 usize text_line_count(std::string_view text);
 
+std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c);
+
 void text_icon(const UiIcon& icon);
 
 bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags = 0, const char* hint = "");
@@ -126,7 +128,7 @@ void text_read_only(const char* name, std::string_view str);
 bool position_input(const char* str_id, math::Vec3& position);
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear = nullptr);
-bool path_selector(const char* text, const core::String& path);
+bool path_selector(const char* text, std::string_view path);
 bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentTypeIndex with_component = ecs::ComponentTypeIndex::invalid_index, bool* browse = nullptr);
 
 bool search_bar(const char* text, char* buffer, usize buffer_size);
@@ -140,6 +142,9 @@ void table_begin_next_row(int col_index = 0);
 
 
 bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags = 0);
+bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size);
+bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size);
+
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
 
 

@@ -65,20 +65,6 @@ struct EditorPassData {
     float size;
 };
 
-static std::pair<math::Vec2, math::Vec2> compute_uv_size(const char* c) {
-    math::Vec2 uv;
-    math::Vec2 size(1.0f);
-
-    unsigned u = 0;
-    ImTextCharFromUtf8(&u, c, c + std::strlen(c));
-    if(const ImFontGlyph* glyph = ImGui::GetFont()->FindGlyph(ImWchar(u))) {
-        uv = math::Vec2{glyph->U0, glyph->V0};
-        size = math::Vec2{glyph->U1, glyph->V1} - uv;
-    }
-    return {uv, size};
-}
-
-
 
 
 static void render_editor_entities(RenderPassRecorder& recorder, const FrameGraphPass* pass,
@@ -128,14 +114,14 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         const std::array tags = {ecs::tags::not_hidden};
 
         {
-            std::tie(uv, size) = compute_uv_size(ICON_FA_LIGHTBULB);
+            std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_LIGHTBULB);
             for(ecs::EntityId id : world.query<PointLightComponent>(tags).ids()) {
                 push_entity(id);
             }
         }
 
         {
-            std::tie(uv, size) = compute_uv_size(ICON_FA_VIDEO);
+            std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_VIDEO);
             for(ecs::EntityId id : world.query<SpotLightComponent>(tags).ids()) {
                 push_entity(id);
             }

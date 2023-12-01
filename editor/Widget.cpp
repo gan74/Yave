@@ -112,16 +112,18 @@ void Widget::draw(bool inside) {
     bool opened = false;
     if(inside) {
         opened = ImGui::BeginChild(_title_with_id.data(), math::Vec2(), false, _flags);
-    } else if(is_modal) {
-        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGui::GetColorU32(ImGuiCol_ChildBg));
-        if(_visible) {
-            ImGui::OpenPopup(_title_with_id.data());
-        }
-        opened = ImGui::BeginPopupModal(_title_with_id.data(), &_visible, _flags);
     } else {
         ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_ScrollbarBg));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.5f);
-        opened = ImGui::Begin(_title_with_id.data(), &_visible, _flags);
+        if(is_modal) {
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGui::GetColorU32(ImGuiCol_ChildBg));
+            if(_visible) {
+                ImGui::OpenPopup(_title_with_id.data());
+            }
+            opened = ImGui::BeginPopupModal(_title_with_id.data(), &_visible, _flags);
+        } else {
+            opened = ImGui::Begin(_title_with_id.data(), &_visible, _flags);
+        }
         ImGui::PopStyleVar();
         ImGui::PopStyleColor();
     }

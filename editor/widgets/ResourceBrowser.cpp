@@ -136,14 +136,6 @@ core::Result<UiIcon> ResourceBrowser::entry_icon(const core::String& full_name, 
     return core::Err();
 }
 
-void ResourceBrowser::entry_hoverred(const Entry* entry) {
-    _preview_id = AssetId::invalid_id();
-    if(entry) {
-        if(const AssetId id = asset_id(entry_full_name(*entry)); id != AssetId::invalid_id()) {
-            _preview_id = id;
-        }
-    }
-}
 
 void ResourceBrowser::entry_clicked(const Entry& entry) {
     const core::String full_name = entry_full_name(entry);

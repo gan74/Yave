@@ -53,8 +53,8 @@ static ImageData load_font() {
         ImFontConfig config;
         config.MergeMode = true;
         config.PixelSnapH = true;
-        config.OversampleV = 1;
-        config.OversampleH = 1;
+        config.OversampleV = 2;
+        config.OversampleH = 2;
 
         const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
         fonts->AddFontFromMemoryCompressedTTF(font_awesome_compressed_data, font_awesome_compressed_size, 13.0f, &config, icon_ranges);
@@ -64,6 +64,7 @@ static ImageData load_font() {
     int width = 0;
     int height = 0;
     fonts->GetTexDataAsRGBA32(&font_data, &width, &height);
+    log_msg(fmt("ImGui font texture is {}x{}", width, height));
     return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(VK_FORMAT_R8G8B8A8_UNORM));
 }
 
