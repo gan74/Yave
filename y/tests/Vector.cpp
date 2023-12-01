@@ -79,12 +79,14 @@ struct LogCopyMove {
     }
 
     LogCopyMove& operator=(LogCopyMove&& other) {
+        unused(other);
         y_debug_assert(copies == other.copies && moves == other.moves);
         ++(*moves);
         return *this;
     }
 
     LogCopyMove& operator=(const LogCopyMove& other) {
+        unused(other);
         y_debug_assert(copies == other.copies && moves == other.moves);
         ++(*copies);
         return *this;
