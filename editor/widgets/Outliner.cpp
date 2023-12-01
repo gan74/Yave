@@ -241,8 +241,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
     display_tags();
 
-
-    if(_context_menu_target.is_valid() && ImGui::BeginPopup("##contextmenu")) {
+    if(_context_menu_target == id && ImGui::BeginPopup("##contextmenu")) {
         ImGui::MenuItem(component->name().data(), "", false, false);
         ImGui::Separator();
 
