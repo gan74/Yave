@@ -181,6 +181,10 @@ TimelineFence CmdQueue::submit(CmdBufferData* data) {
 VkResult CmdQueue::present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync) {
     y_profile();
 
+#ifdef YAVE_GPU_PROFILING
+    TracyVkCollect(_profiling_ctx, recorder.vk_cmd_buffer());
+#endif
+
     submit_internal(std::exchange(recorder._data, nullptr), swaphain_sync.image_available, swaphain_sync.render_complete, swaphain_sync.fence);
 
     return _queue.locked([&](auto&& queue) {
@@ -203,12 +207,6 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
     y_always_assert(!data->is_secondary(), "Secondaries can not be submitted directly");
 
     const VkCommandBuffer cmd_buffer = data->vk_cmd_buffer();
-
-#ifdef YAVE_GPU_PROFILING
-    if(!async_start) {
-        TracyVkCollect(_profiling_ctx, cmd_buffer);
-    }
-#endif
 
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
