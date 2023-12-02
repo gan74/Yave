@@ -24,33 +24,38 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <compare>
+
 namespace yave {
 namespace ecs {
 
-class EntityWorld;
-class ComponentContainerBase;
-
-
-
+enum class ComponentTypeIndex : u32 {
+    invalid_index = u32(-1),
+};
 
 namespace detail {
-u32 next_type_index();
+ComponentTypeIndex next_type_index();
 }
+
 
 template<typename T>
-u32 type_index() {
-    static u32 index = detail::next_type_index();
-    return index;
+ComponentTypeIndex type_index() {
+    static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
+    static ComponentTypeIndex type(detail::next_type_index());
+    return type;
 }
-
-
-using ComponentTypeIndex = u32;
 
 
 
 class EntityId {
     public:
-        explicit EntityId(u32 index = invalid_index, u32 version = 0) : _index(index), _version(version) {
+        EntityId() = default;
+
+        explicit EntityId(u32 index, u32 version = 0) : _index(index), _version(version) {
+        }
+
+        static EntityId dummy(u32 index = 0) {
+            return EntityId(index, u32(-1));
         }
 
         void invalidate() {
@@ -78,17 +83,12 @@ class EntityId {
             return (u64(_index) << 32) | _version;
         }
 
-        bool operator==(const EntityId& other) const {
-            return _index == other._index && _version == other._version;
+        std::strong_ordering operator<=>(const EntityId& other) const {
+            return as_u64() <=> other.as_u64();
         }
 
-        bool operator!=(const EntityId& other) const {
-            return !operator==(other);
-        }
-
-        bool operator<(const EntityId& other) const {
-            return as_u64() < other.as_u64();
-        }
+        bool operator==(const EntityId& other) const = default;
+        bool operator!=(const EntityId& other) const = default;
 
     private:
         static constexpr u32 invalid_index = u32(-1);
@@ -98,27 +98,6 @@ class EntityId {
 };
 
 
-
-
-template<typename... Args>
-struct StaticArchetype {
-    static constexpr usize component_count = sizeof...(Args);
-
-    template<typename... E>
-    using with = StaticArchetype<Args..., E...>;
-};
-
-template<typename... Args>
-struct RequiredComponents {
-    static inline constexpr auto required_components_archetype() {
-        static_assert(std::is_default_constructible_v<std::tuple<Args...>>);
-        return StaticArchetype<Args...>{};
-    }
-
-    // EntityWorld.inl
-    static inline void add_required_components(EntityWorld& world, EntityId id);
-
-};
 
 template<typename Component, typename... SystemTypes>
 struct SystemLinkedComponent {

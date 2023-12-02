@@ -22,7 +22,6 @@ SOFTWARE.
 #ifndef Y_CORE_HASHMAP_H
 #define Y_CORE_HASHMAP_H
 
-#include "Vector.h"
 #include "Range.h"
 #include "FixedArray.h"
 
@@ -64,7 +63,8 @@ inline std::pair<const K, V>& map_entry_to_value_type(std::pair<K, V>& p) {
 }
 
 inline constexpr usize ceil_next_power_of_2(usize k) {
-    return 1_uu << log2ui(k + 1);
+    const usize l = log2ui(k);
+    return (k == (1_uu << l)) ? k : (2_uu << l);
 }
 
 
@@ -90,11 +90,11 @@ inline constexpr usize probing_offset(usize i) {
 
 
 namespace swiss {
-template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>, bool StoreHash = false>
+template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>>
 class FlatHashMap : Hasher, Equal {
     public:
-        using key_type = remove_cvref_t<Key>;
-        using mapped_type = remove_cvref_t<Value>;
+        using key_type = std::remove_cvref_t<Key>;
+        using mapped_type = std::remove_cvref_t<Value>;
         using value_type = std::pair<const key_type, mapped_type>;
 
         static constexpr double max_load_factor = detail::default_hash_map_max_load_factor;
@@ -110,95 +110,50 @@ class FlatHashMap : Hasher, Equal {
             usize hash;
         };
 
-        struct StateHash {
-            static constexpr usize hash_bit = usize(1) << (8 * sizeof(usize) - 1);
-            static constexpr usize empty_states = 0;
-            static constexpr usize tombstone_states = 1;
+        struct CompactState {
+            static constexpr u8 tombstone_bits  = 0x01;
+            static constexpr u8 empty_bits      = 0x00;
+            static constexpr u8 has_hash_bit    = 0x80;
 
-            usize bits = empty_states;
+            u8 bits = 0;
+
 
             inline void set_hash(usize hash) {
                 y_debug_assert(!is_full());
-                bits = hash | hash_bit;
+                bits = u8(hash & 0xFF) | has_hash_bit;
             }
 
             inline void make_empty() {
                 y_debug_assert(is_full());
-                bits = tombstone_states;
+                bits = tombstone_bits;
             }
 
             inline bool is_full() const {
-                return bits & hash_bit;
+                return (bits & has_hash_bit) != 0;
             }
 
-            inline bool is_hash(usize hash) const {
-                return bits == (hash | hash_bit);
-            }
-
-            inline bool is_empty_strict() const {
-                return bits == empty_states;
-            }
-
-            inline bool is_tombstone() const {
-                return bits == tombstone_states;
-            }
-
-            inline usize hash() const {
-                y_debug_assert(is_full());
-                // we dont care about the last bit since we mask instead of %
-                return bits;
-            }
-        };
-
-        struct SimpleState {
-            enum State : u8 {
-                Empty,
-                Full,
-                Tombstone
-            } state = Empty;
-
-            inline void set_hash(usize) {
-                y_debug_assert(!is_full());
-                state = Full;
-            }
-
-            inline void make_empty() {
-                y_debug_assert(is_full());
-                state = Tombstone;
-            }
-
-            inline bool is_full() const {
-                return state == Full;
-            }
-
-            inline bool is_hash(usize) const {
+            inline bool matches_hash(usize) const {
                 return is_full();
             }
 
             inline bool is_empty_strict() const {
-                return state == Empty;
+                return bits == empty_bits;
             }
 
             inline bool is_tombstone() const {
-                return state == Tombstone;
+                return bits == tombstone_bits;
             }
         };
 
-        static_assert(sizeof(StateHash) == sizeof(usize));
-        static_assert(sizeof(SimpleState) == sizeof(u8));
+        static_assert(sizeof(CompactState) == sizeof(u8));
 
         template<typename K>
-        inline usize retrieve_hash(const K&, const StateHash& state) const {
-            return state.hash();
-        }
-
-        template<typename K>
-        inline usize retrieve_hash(const K& key, const SimpleState&) const {
+        inline usize retrieve_hash(const K& key, const CompactState&) const {
             return hash(key);
         }
 
 
-        using State = std::conditional_t<StoreHash, StateHash, SimpleState>;
+        using State = CompactState;
 
         struct Entry : NonMovable {
             union {
@@ -367,7 +322,7 @@ class FlatHashMap : Hasher, Equal {
 
             public:
                 using iterator_category = std::forward_iterator_tag;
-                using difference_type = usize;
+                using difference_type = std::ptrdiff_t;
 
                 using value_type = const_type_t<Const, typename Transform::type>;
                 using reference = value_type&;
@@ -413,7 +368,7 @@ class FlatHashMap : Hasher, Equal {
                         if(best_index == invalid_index) {
                             best_index = index;
                         }
-                    } else if(state.is_hash(h) && equal(_entries[index].key(), key)) {
+                    } else if(state.matches_hash(h) && equal(_entries[index].key(), key)) {
                         return {index, h};
                     }
                 }
@@ -445,7 +400,7 @@ class FlatHashMap : Hasher, Equal {
             for(usize i = 0; i <= _max_probe_len; ++i) {
                 const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
                 const State& state = _states[index];
-                if(state.is_hash(h)) {
+                if(state.matches_hash(h)) {
                     if(equal(_entries[index].key(), key)) {
                         return index;
                     }
@@ -460,12 +415,14 @@ class FlatHashMap : Hasher, Equal {
             const usize pow_2 = detail::ceil_next_power_of_2(new_bucket_count);
             const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
 
+            y_debug_assert(pow_2 >= new_bucket_count);
+
             if(new_size <= bucket_count()) {
                 return;
             }
 
             auto old_states = std::exchange(_states, FixedArray<State>(new_size));
-            auto old_entries = std::exchange(_entries, std::make_unique<Entry[]>(new_size));
+            auto old_entries = std::exchange(_entries, std::make_unique_for_overwrite<Entry[]>(new_size));
             _max_probe_len = 0;
 
             if(_size) {
@@ -681,7 +638,7 @@ class FlatHashMap : Hasher, Equal {
             return insert(pair_type{key, mapped_type{y_fwd(args)...}});
         }
 
-        inline std::pair<iterator, bool> insert(pair_type p) {
+        inline std::pair<iterator, bool> insert(value_type p) {
             if(should_expand()) {
                 expand();
             }

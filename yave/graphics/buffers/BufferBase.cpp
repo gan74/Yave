@@ -38,7 +38,7 @@ static VkBuffer create_buffer(u64 byte_size, VkBufferUsageFlags usage) {
     y_debug_assert(byte_size);
     if(usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
         if(byte_size > device_properties().max_uniform_buffer_size) {
-            y_fatal("Uniform buffer size exceeds maxUniformBufferRange (%).", device_properties().max_uniform_buffer_size);
+            y_fatal("Uniform buffer size exceeds maxUniformBufferRange ({}).", device_properties().max_uniform_buffer_size);
         }
     }
 
@@ -55,6 +55,8 @@ static VkBuffer create_buffer(u64 byte_size, VkBufferUsageFlags usage) {
 }
 
 static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(u64 buffer_size, VkBufferUsageFlags usage, MemoryType type) {
+    y_profile();
+
     y_debug_assert(buffer_size);
 
     const auto buffer = create_buffer(buffer_size, usage);
@@ -124,7 +126,7 @@ DeviceMemoryView SubBufferBase::device_memory() const {
     return _memory;
 }
 
-VkDescriptorBufferInfo SubBufferBase::descriptor_info() const {
+VkDescriptorBufferInfo SubBufferBase::vk_descriptor_info() const {
     VkDescriptorBufferInfo info = {};
     {
         info.buffer = _buffer;
@@ -177,7 +179,7 @@ const DeviceMemory& BufferBase::device_memory() const {
     return _memory;
 }
 
-VkDescriptorBufferInfo BufferBase::descriptor_info() const {
+VkDescriptorBufferInfo BufferBase::vk_descriptor_info() const {
     VkDescriptorBufferInfo info = {};
     {
         info.buffer = _buffer;

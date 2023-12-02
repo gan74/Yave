@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/graphics/images/ImageData.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/animations/Animation.h>
-#include <yave/material/SimpleMaterialData.h>
+#include <yave/material/MaterialData.h>
 
 #include <y/core/Result.h>
 #include <y/core/Vector.h>
@@ -47,60 +47,59 @@ core::String clean_asset_name(const core::String& name);
 
 
 // ----------------------------- SCENE -----------------------------
-struct ParsedScene {
+struct ParsedScene : NonCopyable {
     struct Asset {
+        core::String name = "Unamed asset";
+        AssetId asset_id;
         bool is_error = false;
 
-        core::String name = "unamed asset";
-
-        int gltf_index = -1;
-        AssetId asset_id;
-    };
-
-    struct MaterialGroup {
-        int primitive_index = -1;
-        int gltf_material_index = -1;
-    };
-
-    struct MeshPrefab : Asset {
-        AssetId mesh_asset_id;
-        core::Vector<MaterialGroup> materials;
+        void set_id(AssetId id) {
+            asset_id = id;
+            is_error = (id == AssetId::invalid_id());
+        }
     };
 
     struct Image : Asset {
-       bool as_sRGB = false;
-       bool generate_mips = true;
+        bool as_sRGB = false;
+        bool as_normal = false;
+        bool generate_mips = true;
     };
 
     struct Material : Asset {
+
     };
 
-    struct Node {
-        core::String name = "unamed node";
+    struct Mesh : Asset {
+        core::Vector<int> materials;
+    };
+
+    struct Node : Asset {
         math::Transform<> transform;
-        int mesh_gltf_index = -1;
-    };
+        core::Vector<int> children;
 
-    bool is_error = true;
+        int mesh_index = -1;
+        int parent_index = -1;
+    };
 
     core::String name;
     core::String filename;
 
-    core::Vector<MeshPrefab> mesh_prefabs;
+    core::Vector<Mesh> meshes;
     core::Vector<Material> materials;
     core::Vector<Image> images;
 
     core::Vector<Node> nodes;
+    int root_node = -1;
 
     std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
 
-    core::Result<MeshData> build_mesh_data(usize index) const;
-    core::Result<ImageData> build_image_data(usize index, bool compress = true) const;
-    core::Result<SimpleMaterialData> build_material_data(usize index) const;
+    core::Result<MeshData> create_mesh(int index) const;
+    core::Result<MaterialData> create_material(int index) const;
+    core::Result<ImageData> create_image(int index, bool compress = false) const;
 };
 
 
-ParsedScene parse_scene(const core::String& filename);
+core::Result<ParsedScene> parse_scene(const core::String& filename);
 core::String supported_scene_extensions();
 
 
@@ -117,7 +116,7 @@ enum class ImageImportFlags {
 };
 
 core::Result<ImageData> import_image(const core::String& filename, ImageImportFlags flags = ImageImportFlags::None);
-core::Result<ImageData> import_image(core::Span<byte> image_data, ImageImportFlags flags = ImageImportFlags::None);
+core::Result<ImageData> import_image(core::Span<u8> image_data, ImageImportFlags flags = ImageImportFlags::None);
 core::String supported_image_extensions();
 
 

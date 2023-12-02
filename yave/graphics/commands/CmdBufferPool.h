@@ -28,41 +28,50 @@ SOFTWARE.
 
 #include <yave/utils/traits.h>
 
-#include <mutex>
+#include <y/concurrent/Mutexed.h>
+#include <thread>
 
 namespace yave {
 
 class CmdBufferPool : NonMovable {
 
     public:
-        CmdBufferPool(ThreadDevicePtr dptr);
-
+        CmdBufferPool(CmdQueue* queue);
         ~CmdBufferPool();
 
-        VkCommandPool vk_pool() const;
+        CmdQueue* queue() const;
 
-        CmdBufferRecorder create_buffer();
+        CmdBufferRecorder create_cmd_buffer(bool secondary = false);
+        ComputeCmdBufferRecorder create_compute_cmd_buffer();
+        TransferCmdBufferRecorder create_transfer_cmd_buffer();
 
     private:
         friend class LifetimeManager;
 
+        struct Level {
+            Level(VkCommandBufferLevel lvl) : level(lvl) {
+            }
+
+            core::Vector<std::unique_ptr<CmdBufferData>> cmd_buffers;
+            concurrent::Mutexed<core::Vector<CmdBufferData*>> released;
+            const VkCommandBufferLevel level;
+        };
+
         void release(CmdBufferData* data);
 
-        CmdBufferData* alloc();
+        CmdBufferData* alloc(Level& level);
+        CmdBufferData* create_data(Level& level);
 
-        void join_all();
-
-    private:
-        CmdBufferData* create_data();
-
-        std::mutex _pool_lock;
         VkHandle<VkCommandPool> _pool;
-        core::Vector<std::unique_ptr<CmdBufferData>> _cmd_buffers;
 
-        std::mutex _release_lock;
-        core::Vector<CmdBufferData*> _released;
+        Level _primary;
+        Level _secondary;
 
-        ThreadDevicePtr _device = nullptr;
+        CmdQueue* _queue = nullptr;
+
+#ifdef Y_DEBUG
+        std::thread::id _thread_id;
+#endif
 };
 
 }

@@ -31,9 +31,8 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
 #include <y/concurrent/SpinLock.h>
+#include <y/concurrent/Mutexed.h>
 
-#include <mutex>
-#include <bitset>
 #include <memory>
 #include <algorithm>
 #include <memory>
@@ -103,12 +102,13 @@ class DescriptorSetPool : NonMovable {
         usize used_sets() const;
 
     private:
+        bool is_taken(u32 id) const;
         void update_set(u32 id, core::Span<Descriptor> descriptors);
 
         u64 inline_sub_buffer_alignment() const;
 
-        std::bitset<pool_size> _taken;
-        u32 _first_free = 0;
+        static_assert(pool_size % 64 == 0);
+        std::array<u64, pool_size / 64> _taken = {};
 
         mutable concurrent::SpinLock _lock;
 
@@ -145,7 +145,7 @@ class DescriptorSetAllocator {
     };
 
 
-    struct LayoutPools {
+    struct LayoutPools : NonCopyable {
         DescriptorSetLayout layout;
         core::Vector<std::unique_ptr<DescriptorSetPool>> pools;
     };
@@ -163,10 +163,11 @@ class DescriptorSetAllocator {
         usize used_sets() const;
 
     private:
-        LayoutPools& layout(LayoutKey bindings);
+        using LayoutMap = core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual>;
 
-        core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual, true> _layouts;
-        mutable std::mutex _lock;
+        static LayoutPools& layout_pool(LayoutMap& layouts, LayoutKey bindings);
+
+        concurrent::Mutexed<LayoutMap> _layouts;
 };
 
 }

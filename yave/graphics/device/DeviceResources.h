@@ -50,12 +50,13 @@ class DeviceResources final : NonMovable {
             SSAOUpsampleComp,
             SSAOUpsampleMergeComp,
             CopyComp,
-            HistogramClearComp,
             HistogramComp,
             ExposureParamsComp,
             ExposureDebugComp,
             DepthBoundComp,
             AtmosphereIntergratorComp,
+            PrevCameraComp,
+            UpdateTransformsComp,
 
             DeferredPointFrag,
             DeferredSpotFrag,
@@ -71,11 +72,11 @@ class DeviceResources final : NonMovable {
             HBlurFrag,
             VBlurFrag,
             WireFrameFrag,
+            TAAResolveFrag,
 
             DeferredPointVert,
             DeferredSpotVert,
             BasicVert,
-            SkinnedVert,
             ScreenVert,
             WireFrameVert,
 
@@ -92,12 +93,13 @@ class DeviceResources final : NonMovable {
             SSAOUpsampleProgram,
             SSAOUpsampleMergeProgram,
             CopyProgram,
-            HistogramClearProgram,
             HistogramProgram,
             ExposureParamsProgram,
             ExposureDebugProgram,
             DepthBoundProgram,
             AtmosphereIntergratorProgram,
+            PrevCameraProgram,
+            UpdateTransformsProgram,
 
             MaxComputePrograms
         };
@@ -105,7 +107,6 @@ class DeviceResources final : NonMovable {
         enum MaterialTemplates {
             TexturedMaterialTemplate,
             TexturedAlphaMaterialTemplate,
-            TexturedSkinnedMaterialTemplate,
 
             DeferredPointLightMaterialTemplate,
             DeferredSpotLightMaterialTemplate,
@@ -125,6 +126,8 @@ class DeviceResources final : NonMovable {
             VBlurMaterialTemplate,
 
             WireFrameMaterialTemplate,
+
+            TAAResolveMaterialTemplate,
 
             MaxMaterialTemplates
         };

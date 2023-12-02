@@ -29,33 +29,57 @@ SOFTWARE.
 
 namespace editor {
 
-DeletionDialog::DeletionDialog(ecs::EntityId id) :
+static void remove_children(EditorWorld& world, ecs::EntityId id) {
+    core::SmallVector<ecs::EntityId, 64> children;
+    for(const ecs::EntityId child : world.children(id)) {
+        children << child;
+    }
+
+    for(const ecs::EntityId child : children) {
+        remove_children(world, child);
+        world.remove_entity(child);
+    }
+}
+
+DeletionDialog::DeletionDialog(core::Span<ecs::EntityId> ids) :
         Widget("Confirm", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
-        _id(id) {
+        _ids(ids) {
+
    set_modal(true);
 }
 
 void DeletionDialog::on_gui() {
     EditorWorld& world = current_world();
-    const EditorComponent* component = world.component<EditorComponent>(_id);
-    y_debug_assert(component);
 
-    ImGui::Text("Delete %s?", component->name().data());
+    const bool exists = std::any_of(_ids.begin(), _ids.end(), [&](const ecs::EntityId id) { return world.exists(id); });
+    if(!exists) {
+        close();
+    }
 
-    if(!component->children().is_empty()) {
-        ImGui::Checkbox(fmt_c_str("Delete % children", component->children().size()), &_delete_children);
+    if(_ids.size() == 1) {
+        const EditorComponent* component = world.component<EditorComponent>(_ids[0]);
+        y_debug_assert(component);
+        ImGui::Text("Delete \"%s\"?", component->name().data());
+    } else {
+        ImGui::Text("Delete %u entities?", u32(_ids.size()));
+    }
+
+    const bool has_children = std::any_of(_ids.begin(), _ids.end(), [&](const ecs::EntityId id) { return world.has_children(id); });
+    if(has_children) {
+        ImGui::Checkbox("Delete children", &_delete_children);
     }
 
     if(ImGui::Button("Ok")) {
         y_profile_zone("deleting entities");
-        for(ecs::EntityId id : component->children()) {
-            if(_delete_children) {
-                world.remove_entity(id);
-            } else {
-                world.set_parent(id, ecs::EntityId());
+        for(const ecs::EntityId id : _ids) {
+            if(!world.exists(id)) {
+                continue;
             }
+            if(_delete_children) {
+                remove_children(world, id);
+            }
+            world.remove_entity(id);
         }
-        world.remove_entity(_id);
         close();
     }
 

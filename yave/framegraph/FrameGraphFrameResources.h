@@ -50,6 +50,8 @@ class FrameGraphFrameResources final : NonMovable {
         FrameGraphFrameResources(std::shared_ptr<FrameGraphResourcePool> pool);
         ~FrameGraphFrameResources();
 
+        u64 frame_id() const;
+
         bool are_aliased(FrameGraphImageId a, FrameGraphImageId b) const;
 
         ImageBarrier barrier(FrameGraphImageId res, PipelineStage src, PipelineStage dst) const;
@@ -60,6 +62,7 @@ class FrameGraphFrameResources final : NonMovable {
         const ImageBase& volume_base(FrameGraphVolumeId res) const;
         const BufferBase& buffer_base(FrameGraphBufferId res) const;
 
+        BufferMapping<u8> map_buffer_bytes(FrameGraphMutableBufferId res, MappingAccess access = MappingAccess::WriteOnly) const;
 
         template<ImageUsage Usage>
         ImageView<Usage> image(FrameGraphImageId res) const {
@@ -87,19 +90,26 @@ class FrameGraphFrameResources final : NonMovable {
             return sub_buffer.map(access);
         }
 
+
+
     private:
         friend class FrameGraph;
 
-        void reserve(usize images, usize volumes, usize buffers);
         void init_staging_buffer();
 
         u32 create_image_id();
         u32 create_volume_id();
         u32 create_buffer_id();
 
-        void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
-        void create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
-        void create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory);
+        void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id = {});
+        void create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id = {});
+        void create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, FrameGraphPersistentResourceId persistent_id = {});
+
+        void create_prev_image(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id);
+        void create_prev_buffer(FrameGraphBufferId res, FrameGraphPersistentResourceId persistent_id);
+
+        bool has_prev_image(FrameGraphPersistentResourceId persistent_id) const;
+        bool has_prev_buffer(FrameGraphPersistentResourceId persistent_id) const;
 
         bool is_alive(FrameGraphImageId res) const;
         bool is_alive(FrameGraphVolumeId res) const;
@@ -107,12 +117,15 @@ class FrameGraphFrameResources final : NonMovable {
 
         void create_alias(FrameGraphImageId dst, FrameGraphImageId src);
 
-        void flush_mapped_buffers(CmdBufferRecorder& recorder);
+        void flush_mapped_buffers(TransferCmdBufferRecorder& recorder);
 
-    private:
         const TransientImage& find(FrameGraphImageId res) const;
         const TransientVolume& find(FrameGraphVolumeId res) const;
         const TransientBuffer& find(FrameGraphBufferId res) const;
+
+        void create_image(FrameGraphImageId res, TransientImage&& image, FrameGraphPersistentResourceId persistent_id);
+        void create_volume(FrameGraphVolumeId res, TransientVolume&& volume, FrameGraphPersistentResourceId persistent_id);
+        BufferData& create_buffer(FrameGraphBufferId res, TransientBuffer&& buffer, FrameGraphPersistentResourceId persistent_id);
 
         StagingSubBuffer staging_buffer(FrameGraphMutableBufferId res) const;
         StagingSubBuffer staging_buffer(const BufferData& buffer) const;
@@ -128,9 +141,9 @@ class FrameGraphFrameResources final : NonMovable {
         std::shared_ptr<FrameGraphResourcePool> _pool;
 
         // We need pointer stability
-        std::deque<TransientImage> _image_storage;
-        std::deque<TransientVolume> _volume_storage;
-        std::deque<TransientBuffer> _buffer_storage;
+        std::deque<std::pair<TransientImage, FrameGraphPersistentResourceId>> _image_storage;
+        std::deque<std::pair<TransientVolume, FrameGraphPersistentResourceId>> _volume_storage;
+        std::deque<std::pair<TransientBuffer, FrameGraphPersistentResourceId>> _buffer_storage;
 
         StagingBuffer _staging_buffer;
         u64 _staging_buffer_len = 0;

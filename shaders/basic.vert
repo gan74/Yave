@@ -1,34 +1,51 @@
 #version 450
 
 #include "lib/utils.glsl"
+#include "lib/interpolants.glsl"
 
 layout(set = 0, binding = 0) uniform CameraData {
     Camera camera;
+};
+
+layout(set = 1, binding = 0) readonly buffer Transformables {
+    TransformableData transformables[];
+};
+
+layout(set = 1, binding = 1) readonly buffer Materials {
+    MaterialData materials[];
+};
+
+layout(set = 1, binding = 2) readonly buffer Indices {
+    uvec2 mesh_indices[];
 };
 
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in uvec2 in_packed_normal_tangent_sign;
 layout(location = 2) in vec2 in_uv;
 
-layout(location = 8) in mat4 in_model;
-
-layout(location = 0) out vec3 out_normal;
-layout(location = 1) out vec3 out_tangent;
-layout(location = 2) out vec3 out_bitangent;
-layout(location = 3) out vec2 out_uv;
+DECLARE_STANDARD_INTERPOLANTS(out)
 
 void main() {
-    out_uv = in_uv;
-
-    const mat3 model = mat3(in_model);
-
     const vec3 in_normal = unpack_2_10_10_10(in_packed_normal_tangent_sign.x).xyz;
     const vec4 in_tangent_sign = unpack_2_10_10_10(in_packed_normal_tangent_sign.y);
+
+    const TransformableData transformable = transformables[mesh_indices[gl_InstanceIndex].x];
+
+    const mat3 model = mat3(transformable.current);
+
+    const vec4 current_position = (camera.unjittered_view_proj * transformable.current * vec4(in_position, 1.0));
+    const vec4 last_position = (camera.prev_unjittered_view_proj * transformable.last * vec4(in_position, 1.0));
+
+    gl_Position = camera.view_proj * transformable.current * vec4(in_position, 1.0);
+
+    out_instance_index = gl_InstanceIndex;
+    out_uv = in_uv;
 
     out_normal = normalize(model * in_normal);
     out_tangent = normalize(model * in_tangent_sign.xyz);
     out_bitangent = cross(out_tangent, out_normal) * in_tangent_sign.w;
 
-    gl_Position = camera.view_proj * in_model * vec4(in_position, 1.0);
+    out_screen_pos = current_position.xyw;
+    out_last_screen_pos = last_position.xyw;
 }
 

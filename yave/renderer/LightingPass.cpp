@@ -41,6 +41,8 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
+#include <bit>
+
 
 namespace yave {
 
@@ -89,7 +91,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input_with_default(ao, Descriptor(white));
     builder.add_external_input(*ibl_probe);
     builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp));
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_input(directional_buffer);
     builder.add_storage_input(shadow_pass.shadow_params);
     builder.add_uniform_input(params_buffer);
@@ -130,13 +132,13 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
             params[0] = {
                 count,
                 display_sky ? 1 : 0,
-                reinterpret_cast<const u32&>(ibl_intensity),
+                std::bit_cast<u32>(ibl_intensity),
                 0
             };
         }
 
         const auto* material = device_resources()[DeviceResources::DeferredAmbientMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+        render_pass.bind_material_template(material, self->descriptor_sets());
         render_pass.draw_array(3);
     });
 
@@ -244,7 +246,7 @@ static u32 fill_spot_light_buffer(
             l.min_radius(),
 
             l.attenuation_scale_offset(),
-            0,
+            std::sin(l.half_angle()),
             shadow_indices[0],
 
             encl_sphere_center,
@@ -279,7 +281,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.color);
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
-    builder.add_uniform_input(gbuffer.scene_pass.camera_buffer);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_input(point_buffer);
     builder.add_storage_input(spot_buffer);
     builder.add_storage_input(shadow_pass.shadow_params);
@@ -297,7 +299,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
             const auto& program = device_resources()[DeviceResources::DeferredLocalsProgram];
 
             const math::Vec2ui light_count(point_count, spot_count);
-            const auto light_count_set = DescriptorSet(std::array{Descriptor(InlineDescriptor(light_count))});
+            const auto light_count_set = DescriptorSet(InlineDescriptor(light_count));
             const std::array<DescriptorSetBase, 2> descriptor_sets = {self->descriptor_sets()[0], light_count_set};
             recorder.dispatch_size(program, size, descriptor_sets);
         }
@@ -322,7 +324,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         // Moving this down causes a reused resource assert
         copied_depth = builder.declare_copy(gbuffer.depth); // extra copy for nothing =(
 
-        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, PipelineStage::VertexBit);
+        builder.add_uniform_input(gbuffer.scene_pass.camera, PipelineStage::VertexBit);
         builder.add_storage_input(point_buffer, PipelineStage::VertexBit);
         builder.add_uniform_input(gbuffer.depth);
         builder.add_uniform_input(gbuffer.color);
@@ -339,7 +341,7 @@ static void local_lights_pass(FrameGraph& framegraph,
             }
 
             const auto* material = device_resources()[DeviceResources::DeferredPointLightMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+            render_pass.bind_material_template(material, self->descriptor_sets());
             {
                 const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
                 render_pass.draw(sphere.draw_data(), point_count);
@@ -353,7 +355,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
         const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_spot_lights);
 
-        builder.add_uniform_input(gbuffer.scene_pass.camera_buffer, PipelineStage::VertexBit);
+        builder.add_uniform_input(gbuffer.scene_pass.camera, PipelineStage::VertexBit);
         builder.add_storage_input(spot_buffer, PipelineStage::VertexBit);
         builder.add_uniform_input(gbuffer.depth);
         builder.add_uniform_input(gbuffer.color);
@@ -376,7 +378,7 @@ static void local_lights_pass(FrameGraph& framegraph,
             }
 
             const auto* material = device_resources()[DeviceResources::DeferredSpotLightMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+            render_pass.bind_material_template(material, self->descriptor_sets());
 
             {
                 render_pass.bind_per_instance_attrib_buffers(self->resources().buffer<BufferUsage::AttributeBit>(transform_buffer));

@@ -44,64 +44,92 @@ static auto create_component_containers() {
             y_debug_assert(container);
 
             const ComponentTypeIndex id = container->type_id();
-            containers.set_min_size(id + 1);
-            containers[id] = std::move(container);
+            containers.set_min_size(usize(id) + 1);
+            containers[usize(id)] = std::move(container);
         }
     }
     return containers;
 }
+
+static EntityId create_prefab_entities(EntityWorld& world, const EntityPrefab& prefab, EntityIdMap& id_map, EntityId base_id = {}) {
+    y_profile();
+
+    y_debug_assert(prefab.original_id().is_valid());
+
+    const EntityId id = base_id.is_valid() ? base_id : world.create_entity();
+    y_always_assert(id_map.find(prefab.original_id()) == id_map.end(), "Invalid prefab: id is duplicated");
+    id_map.emplace_back(prefab.original_id(), id);
+
+    auto parent_child = [&](const auto& child) {
+        if(child) {
+            world.set_parent(create_prefab_entities(world, *child, id_map), id);
+        }
+    };
+
+    for(const auto& child : prefab.children()) {
+        parent_child(child);
+    }
+
+    for(const auto& child : prefab.asset_children()) {
+        parent_child(child);
+    }
+
+    return id;
+}
+
+static void add_prefab_components(EntityWorld& world, const EntityPrefab& prefab, const EntityIdMap& id_map) {
+    y_profile();
+
+    y_debug_assert(prefab.original_id().is_valid());
+
+    const auto it = id_map.find(prefab.original_id());
+    y_debug_assert(it != id_map.end());
+
+    for(const auto& comp : prefab.components()) {
+        if(comp) {
+            comp->add_to(world, it->second, id_map);
+        }
+    }
+
+    auto add_child_components = [&](const auto& child) {
+        if(child) {
+            add_prefab_components(world, *child, id_map);
+        }
+    };
+
+    for(const auto& child : prefab.children()) {
+        add_child_components(child);
+    }
+
+    for(const auto& child : prefab.asset_children()) {
+        add_child_components(child);
+    }
+}
+
+
+
+
 
 EntityWorld::EntityWorld() : _containers(create_component_containers()) {
 }
 
 EntityWorld::~EntityWorld() {
     for(auto& system : _systems) {
-        system->destroy(*this);
+        y_debug_assert(system->_world == this);
+        system->destroy();
     }
     _containers.clear();
-}
-
-EntityWorld::EntityWorld(EntityWorld&& other) {
-    swap(other);
-}
-
-EntityWorld& EntityWorld::operator=(EntityWorld&& other) {
-    swap(other);
-    return *this;
-}
-
-void EntityWorld::swap(EntityWorld& other) {
-    if(this != &other) {
-        std::swap(_containers, other._containers);
-        std::swap(_tags, other._tags);
-        std::swap(_entities, other._entities);
-        std::swap(_required_components, other._required_components);
-        std::swap(_systems, other._systems);
-        std::swap(_world_components, other._world_components);
-    }
-    for(const ComponentTypeIndex c : _required_components) {
-        unused(c);
-        y_debug_assert(find_container(c));
-    }
 }
 
 void EntityWorld::tick() {
     y_profile();
 
     {
-        y_profile_zone("prepare tick");
-        for(auto& container : _containers) {
-            if(container) {
-                container->prepare_for_tick();
-            }
-        }
-    }
-
-    {
         y_profile_zone("tick");
         for(auto& system : _systems) {
             y_profile_dyn_zone(system->name().data());
-            system->tick(*this);
+            y_debug_assert(system->_world == this);
+            system->tick();
         }
     }
 
@@ -109,18 +137,22 @@ void EntityWorld::tick() {
         y_profile_zone("clean after tick");
         for(auto& container : _containers) {
             if(container) {
-                container->clean_after_tick();
+                container->_mutated.clear();
             }
         }
     }
+
+    _entities.audit();
 }
 
 void EntityWorld::update(float dt) {
     y_profile();
+
     for(auto& system : _systems) {
         y_profile_dyn_zone(system->name().data());
-        system->update(*this, dt);
-        system->schedule_fixed_update(*this, dt);
+        y_debug_assert(system->_world == this);
+        system->update(dt);
+        system->schedule_fixed_update(dt);
     }
 }
 
@@ -129,55 +161,73 @@ usize EntityWorld::entity_count() const {
 }
 
 bool EntityWorld::exists(EntityId id) const {
-    return _entities.contains(id);
+    return _entities.exists(id);
 }
 
 EntityId EntityWorld::create_entity() {
-    const EntityId id = _entities.create();
-    for(const ComponentTypeIndex c : _required_components) {
-        ComponentContainerBase* container = find_container(c);
-        y_debug_assert(container && container->type_id() == c);
-        container->add(*this, id);
-    }
-    return id;
-}
+    y_profile();
 
-EntityId EntityWorld::create_entity(const Archetype& archetype) {
-    const EntityId id = create_entity();
-    for(const auto& info : archetype.component_infos()) {
-        ComponentContainerBase* container = find_container(info.type_id);
-        y_debug_assert(container);
-        container->add(*this, id);
-    }
+    const EntityId id = _entities.create();
+    _on_created.send(id);
     return id;
 }
 
 EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
     const EntityId id = create_entity();
-    for(const auto& comp : prefab.components()) {
-        if(!comp) {
-            log_msg("Unable to add null component", Log::Error);
-        } else {
-            comp->add_to(*this, id);
-        }
-    }
+    add_prefab(id, prefab);
     return id;
 }
 
+
+void EntityWorld::add_prefab(EntityId id, const EntityPrefab& prefab) {
+    y_profile();
+
+    EntityIdMap id_map;
+    create_prefab_entities(*this, prefab, id_map, id);
+    add_prefab_components(*this, prefab, id_map);
+}
+
 void EntityWorld::remove_entity(EntityId id) {
+    y_profile();
+
     check_exists(id);
-    for(auto& container : _containers) {
-        if(container) {
-            container->remove(id);
+
+    _on_destroyed.send(id);
+
+    remove_all_components(id);
+    _entities.remove(id);
+
+    // Entities are deleted immediatly, while components linger until the end of tick.
+    // This needs to be changed to be made consistent.
+    // Deferring entity deletion is problematic as we could add new components to the entity, while it is in limbo
+    // Idealy deletions should be instantaneous, and we should rely on callbacks/events rather than to_be_removed & co
+    Y_TODO(Fixme)
+}
+
+void EntityWorld::remove_all_components(EntityId id) {
+    y_profile();
+
+    for(auto& cont : _containers) {
+        if(cont) {
+            cont->remove(id);
         }
     }
+
     for(auto& [tag, container] : _tags) {
         unused(tag);
         if(container.contains(id)) {
             container.erase(id);
         }
     }
-    _entities.recycle(id);
+}
+
+void EntityWorld::remove_all_entities() {
+    y_profile();
+
+    auto cached_entities = core::Vector<EntityId>::from_range(all_entities());
+    for(const EntityId id : cached_entities) {
+        remove_entity(id);
+    }
 }
 
 EntityId EntityWorld::id_from_index(u32 index) const {
@@ -186,32 +236,40 @@ EntityId EntityWorld::id_from_index(u32 index) const {
 
 EntityPrefab EntityWorld::create_prefab(EntityId id) const {
     check_exists(id);
+
     EntityPrefab prefab;
-    for(auto& container : _containers) {
-        if(container) {
-            if(!container->contains(id)) {
-                continue;
-            }
-            auto box = container->create_box(id);
-            if(!box) {
-                log_msg(fmt("% is not copyable and was excluded from prefab", container->runtime_info().type_name), Log::Warning);
-            }
-            prefab.add(std::move(box));
-        }
-    }
+    y_fatal("not supported");
     return prefab;
 }
 
-core::Span<EntityId> EntityWorld::component_ids(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->ids();
+EntityId EntityWorld::parent(EntityId id) const {
+    return _entities.parent(id);
 }
 
-core::Span<EntityId> EntityWorld::recently_mutated(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->recently_mutated().ids();
+void EntityWorld::set_parent(EntityId id, EntityId parent_id) {
+    y_profile();
+
+    _entities.set_parent(id, parent_id);
 }
 
-core::Span<EntityId> EntityWorld::to_be_removed(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->to_be_removed().ids();
+bool EntityWorld::has_parent(EntityId id) const {
+    return parent(id).is_valid();
+}
+
+bool EntityWorld::has_children(EntityId id) const {
+    return _entities.first_child(id).is_valid();
+}
+
+bool EntityWorld::is_parent(EntityId id, EntityId parent) const {
+    return _entities.is_parent(id, parent);
+}
+
+const SparseIdSetBase& EntityWorld::component_ids(ComponentTypeIndex type_id) const {
+    return find_container(type_id)->id_set();
+}
+
+const SparseIdSet& EntityWorld::recently_mutated(ComponentTypeIndex type_id) const {
+    return find_container(type_id)->recently_mutated();
 }
 
 core::Span<EntityId> EntityWorld::with_tag(const core::String& tag) const {
@@ -277,10 +335,6 @@ bool EntityWorld::is_tag_implicit(std::string_view tag) {
     return !tag.empty() && (tag[0] == '@' || tag[0] == '!');
 }
 
-core::Span<ComponentTypeIndex> EntityWorld::required_components() const {
-    return _required_components;
-}
-
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
     return find_container(type_id)->runtime_info().clean_component_name();
 }
@@ -294,13 +348,13 @@ void EntityWorld::make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> 
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
-    y_debug_assert(_containers.size() > type_id);
-    return _containers[type_id].get();
+    y_debug_assert(_containers.size() > usize(type_id));
+    return _containers[usize(type_id)].get();
 }
 
 ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) {
-    y_debug_assert(_containers.size() > type_id);
-    return _containers[type_id].get();
+    y_debug_assert(_containers.size() > usize(type_id));
+    return _containers[usize(type_id)].get();
 }
 
 void EntityWorld::register_component_types(System* system) const {
@@ -323,38 +377,54 @@ void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector)
     }
 }
 
-void EntityWorld::post_deserialize() {
+
+serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
     y_profile();
 
-    auto patched = create_component_containers();
-    for(auto& container : _containers) {
-        if(!container) {
-            continue;
+    y_try(arc.serialize(_entities));
+    y_try(arc.serialize(_tags));
+    y_try(arc.serialize(_world_components));
+
+    for(auto&& container : _containers) {
+        if(container) {
+            y_try(container->save_state(arc));
         }
-
-        container->_to_remove.clear();
-        container->_mutated.clear();
-        for(const EntityId id : container->ids()) {
-            container->_mutated.insert(id);
-        }
-
-        const ComponentTypeIndex id = container->type_id();
-        patched.set_min_size(id + 1);
-        patched[id] = std::move(container);
-    }
-    _containers = std::move(patched);
-
-    for(auto& system : _systems) {
-        y_debug_assert(system);
-        system->reset(*this);
     }
 
-
-    for(const ComponentTypeIndex c : _required_components) {
-        unused(c);
-        y_always_assert(find_container(c), "Required component container not found");
-    }
+    return core::Ok(serde3::Success::Full);
 }
+
+serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
+    remove_all_entities();
+    _tags.clear();
+    _world_components.clear();
+
+    y_try(arc.deserialize(_entities));
+    y_try(arc.deserialize(_tags));
+    y_try(arc.deserialize(_world_components));
+
+    for(auto&& container : _containers) {
+        if(container) {
+            y_try(container->load_state(arc));
+        }
+    }
+
+
+    {
+        for(const EntityId id : _entities.ids()) {
+            _on_created.send(id);
+        }
+
+        for(auto&& container : _containers) {
+            if(container) {
+                container->post_load();
+            }
+        }
+    }
+
+    return core::Ok(serde3::Success::Full);
+}
+
 
 }
 }

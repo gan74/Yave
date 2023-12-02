@@ -30,7 +30,6 @@ SOFTWARE.
 
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
-#include <yave/utils/color.h>
 
 #include <external/imgui/imgui.h>
 #include <external/imgui/imgui_internal.h>
@@ -91,7 +90,7 @@ ImGuiKey to_imgui_key(Key k) {
         break;
     }
 
-    //log_msg(fmt("Unknown key pressed: %", key_name(k)), Log::Warning);
+    //log_msg(fmt("Unknown key pressed: {}", key_name(k)), Log::Warning);
     return ImGuiKey_None;
 }
 
@@ -117,9 +116,9 @@ u32 gizmo_color(usize axis) {
     //return (0xFF << (axis * 8));
     // Values to match Blender
     const u32 colors[] = {
-        0x005236F6,
-        0x001BA56F,
-        0x00E3832F,
+        pack_to_u32(sRGB_to_linear(unpack_from_u32(0x005236F6))),
+        pack_to_u32(sRGB_to_linear(unpack_from_u32(0x001BA56F))),
+        pack_to_u32(sRGB_to_linear(unpack_from_u32(0x00E3832F))),
     };
     return colors[axis];
 }
@@ -151,25 +150,52 @@ usize text_line_count(std::string_view text) {
     return lines;
 }
 
-static usize str_buffer_capacity(const core::String& str) {
-    if(str.size() < 512) {
-        return 512;
+
+std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c) {
+    math::Vec2 uv;
+    math::Vec2 size(1.0f);
+
+    unsigned u = 0;
+    ImTextCharFromUtf8(&u, c, c + std::strlen(c));
+    if(const ImFontGlyph* glyph = ImGui::GetFont()->FindGlyph(ImWchar(u))) {
+        uv = math::Vec2{glyph->U0, glyph->V0};
+        size = math::Vec2{glyph->U1, glyph->V1} - uv;
     }
-    return str.size() * 2;
+    return {uv, size};
 }
 
-bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags) {
-    str.resize(str_buffer_capacity(str), '\0');
-    const bool modified = ImGui::InputText(name, str.data(), str.size(), flags);
-    str.resize(std::strlen(str.data()));
-    return modified;
+void text_icon(const UiIcon& icon) {
+    ImGui::PushStyleColor(ImGuiCol_Text, icon.color);
+    ImGui::TextUnformatted(icon.icon.data(), icon.icon.data() + icon.icon.size());
+    ImGui::PopStyleColor();
+}
+
+static int str_resize_callback(ImGuiInputTextCallbackData* data) {
+    if(data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+        core::String& str = *static_cast<core::String*>(data->UserData);
+        y_debug_assert(str.data() == data->Buf);
+        str.resize(usize(data->BufSize), '\0'); // NB: On resizing calls, generally data->BufSize == data->BufTextLen + 1
+        data->Buf = str.data();
+    }
+    return 0;
+}
+
+bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags, const char* hint) {
+    ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_ButtonActive));
+    y_defer(ImGui::PopStyleColor());
+
+    y_defer(str.resize(std::strlen(str.data())));
+
+    /*if(hint.empty()) {
+        return ImGui::InputText(name, str.data(), str.size() + 1, flags | ImGuiInputTextFlags_CallbackResize, str_resize_callback, &str);
+    } else*/ {
+        return ImGui::InputTextWithHint(name, hint, str.data(), str.size() + 1, flags | ImGuiInputTextFlags_CallbackResize, str_resize_callback, &str);
+    }
 }
 
 bool text_input_multiline(const char* name, core::String& str) {
-    str.resize(str_buffer_capacity(str), '\0');
-    const bool modified = ImGui::InputTextMultiline(name, str.data(), str.size());
-    str.resize(std::strlen(str.data()));
-    return modified;
+    y_defer(str.resize(std::strlen(str.data())));
+    return ImGui::InputTextMultiline(name, str.data(), str.size() + 1, ImVec2(), ImGuiInputTextFlags_CallbackResize, str_resize_callback, &str);
 }
 
 void text_read_only(const char* name, std::string_view str) {
@@ -183,37 +209,23 @@ bool position_input(const char* str_id, math::Vec3& position) {
     const float width = ImGui::CalcItemWidth();
     bool edited = false;
 
-    ImGui::Dummy(ImVec2());
-
-    const char* text[] = {"X", "Y", "Z"};
     const char* input_name[] = {"##x", "##y", "##z"};
 
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
     for(usize i = 0; i != 3; ++i) {
-        ImGui::SameLine();
-        ImGui::BeginGroup();
-
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2());
-
-        ImGui::SetNextItemWidth(width / 3.0f);
-        //edited |= ImGui::InputFloat(input_name[i], &position[i], 0.0f, 0.0f, "%.2f");
-        edited |= ImGui::DragFloat(input_name[i], &position[i], 1.0f, 0.0f, 0.0f, "%.2f");
-
-        ImGui::SameLine();
-
         math::Vec4 color = math::Vec4(0.0f, 0.0f, 0.0f, 0.5f);
         color[i] = 1.0f;
 
-        ImGui::PushStyleColor(ImGuiCol_Button, color);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
+        ImGui::SameLine();
 
-        ImGui::Button(text[i]);
+        ImGui::PushStyleColor(ImGuiCol_Border, color);
 
-        ImGui::PopStyleColor(3);
-        ImGui::PopStyleVar();
+        ImGui::SetNextItemWidth(width / 3.0f);
+        edited |= ImGui::DragFloat(input_name[i], &position[i], 1.0f, 0.0f, 0.0f, "%.2f");
 
-        ImGui::EndGroup();
+        ImGui::PopStyleColor();
     }
+    ImGui::PopStyleVar();
 
     return edited;
 }
@@ -222,7 +234,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
     const math::Vec2 padded_button_size =  button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f;
 
-    ImGui::PushID(fmt_c_str("%_%_%", id.id(), uenum(type), text));
+    ImGui::PushID(fmt_c_str("{}_{}_{}", id.id(), uenum(type), text));
     ImGui::BeginGroup();
 
     const auto name = asset_store().name(id);
@@ -247,7 +259,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
             ret = ImGui::Button(ICON_FA_EXCLAMATION_CIRCLE, padded_button_size);
             ImGui::PopStyleColor();
             if(ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Asset with id %016" PRIx64 " could not be loaded", id.id());
+                ImGui::SetTooltip(fmt_c_str("Asset with id {:#016x} could not be loaded", id.id()));
             }
         }
     }
@@ -299,24 +311,14 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     return ret;
 }
 
-bool path_selector(const char* text, const core::String& path) {
-    static constexpr usize buffer_capacity = 1024;
-
+bool path_selector(const char* text, std::string_view path) {
     ImGui::PushID(text);
     ImGui::BeginGroup();
 
     ImGui::TextUnformatted(text);
 
-    std::array<char, buffer_capacity> buffer;
-    {
-        const bool end_with_slash = path.ends_with("/");
-        const usize len = std::min(buffer.size() - (end_with_slash ? 1 : 2), path.size());
-        std::copy_n(path.begin(), len, buffer.begin());
-        buffer[len] = '/';
-        buffer[len + !end_with_slash] = 0;
-    }
-
-    ImGui::InputText("", buffer.data(), buffer.size(), ImGuiInputTextFlags_ReadOnly);
+    core::String path_copy = path;
+    ImGui::InputText("", path_copy.data(), path_copy.size(), ImGuiInputTextFlags_ReadOnly);
     ImGui::SameLine();
     const bool ret = ImGui::Button(ICON_FA_FOLDER_OPEN);
 
@@ -325,18 +327,38 @@ bool path_selector(const char* text, const core::String& path) {
     return ret;
 }
 
-bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear) {
-    bool ret = false;
+bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentTypeIndex with_component, bool* browse) {
+    const ecs::EntityId base_id = id;
+    if(browse) {
+        *browse = false;
+    }
 
     ImGui::BeginGroup();
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
 
-    if(!id.is_valid()) {
+    bool has_component = true;
+    if(!world.exists(id)) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    } else if(with_component != ecs::ComponentTypeIndex::invalid_index) {
+        has_component = world.has(id, with_component);
     }
 
-    const core::String name = id.is_valid() ? fmt("% %", world.entity_icon(id), world.entity_name(id)) : "No entity";
+    if(!has_component) {
+        ImGui::PushStyleColor(ImGuiCol_Text, warning_text_color);
+    }
+
+    const std::string_view icon = has_component ? world.entity_icon(id).icon : ICON_FA_EXCLAMATION_TRIANGLE;
+    const core::String name = id.is_valid() ? fmt("{} {}", icon, world.entity_name(id)) : "No entity";
     const bool combo = ImGui::BeginCombo("##combo", name.data());
+
+    if(!has_component) {
+        ImGui::PopStyleColor();
+        if(ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted(fmt_c_str("Entity does not have the required component ({})", world.component_type_name(with_component)));
+            ImGui::EndTooltip();
+        }
+    }
 
     if(!id.is_valid()) {
         ImGui::PopStyleColor();
@@ -346,14 +368,14 @@ bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear) {
         ImGui::Selectable(name.data(), false, ImGuiSelectableFlags_Disabled);
 
         ImGui::Separator();
-        if(ImGui::Selectable(ICON_FA_FOLDER_OPEN " Browse")) {
-            ret = true;
+        if(browse && ImGui::Selectable(ICON_FA_FOLDER_OPEN " Browse")) {
+            *browse = true;
         }
 
-        if(id.is_valid() && clear) {
+        if(id.is_valid()) {
             ImGui::Separator();
             if(ImGui::Selectable(ICON_FA_TRASH " Clear")) {
-                *clear = true;
+                id = {};
             }
         }
 
@@ -362,7 +384,15 @@ bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear) {
 
     ImGui::EndGroup();
 
-    return ret;
+    if(ImGui::BeginDragDropTarget()) {
+        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id)) {
+            const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data);
+            id = dragged;
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    return id != base_id;
 }
 
 
@@ -478,7 +508,7 @@ bool begin_suggestion_popup() {
             ImGuiWindowFlags_NoSavedSettings;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, math::Vec4(40.0f, 40.0f, 40.0f, 220.0f) / 255.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, math::Vec4(sRGB_to_linear(math::Vec3(20.0f / 255.0f)), 0.95f));
 
     ImGui::SetNextWindowPos(search_bar_state.popup_pos);
     ImGui::SetNextWindowSize(ImVec2(search_bar_state.popup_width, 0.0f));
@@ -536,13 +566,47 @@ bool suggestion_item(const char* name, const char* shortcut) {
     return activated;
 }
 
-
 void table_begin_next_row(int col_index) {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(col_index);
 }
 
 
+bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags) {
+    ImGui::PushStyleColor(ImGuiCol_Text, icon.color);
+    const bool activated = ImGui::Selectable(fmt_c_str("{}##{}", icon.icon, str_id), selected, flags);
+    ImGui::PopStyleColor();
+    ImGui::SameLine();
+    return ImGui::Selectable(str_id, selected, flags) || activated;
+}
+
+
+static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const char* str_id, bool selected, float icon_size) {
+    const ImVec2 cursor = ImGui::GetCursorPos();
+    if(tex_icon) {
+        ImGui::Image(tex_icon.to_imgui(), math::Vec2(icon_size));
+    } else {
+        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
+        const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
+        ImGui::Image({}, math::Vec2(icon_size), uv, uv + uv_size, color, ImVec4(1.0f, 0, 0, 1.0f));
+    }
+
+    ImGui::SetCursorPos(cursor);
+    ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
+    const float text_height = ImGui::CalcTextSize(str_id).y;
+    const bool activated = ImGui::Selectable(str_id, selected, 0, math::Vec2(icon_size, icon_size + text_height));
+    ImGui::PopStyleVar();
+
+    return activated;
+}
+
+bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size) {
+    return icon_button(icon, {}, str_id, selected, icon_size);
+}
+
+bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size) {
+    return icon_button({}, icon, str_id, selected, icon_size);
+}
 
 // https://github.com/ocornut/imgui/issues/2718
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size) {

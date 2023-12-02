@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
-#include "concurrent.h"
-
 #include <list>
 #include <functional>
 #include <thread>
@@ -62,10 +60,12 @@ class StaticThreadPool : NonMovable {
         using Func = std::function<void()>;
 
         struct FuncData : NonCopyable {
-            FuncData(Func func, DependencyGroup wait, DependencyGroup done = DependencyGroup());
+            FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done = DependencyGroup());
+
+            bool is_ready() const;
 
             Func function;
-            DependencyGroup wait_for;
+            core::SmallVector<DependencyGroup, 4> wait_for;
             DependencyGroup on_done;
         };
 
@@ -89,10 +89,10 @@ class StaticThreadPool : NonMovable {
 
         void cancel_pending_tasks();
 
-        void schedule(Func&& func, DependencyGroup* on_done = nullptr, DependencyGroup wait_for = DependencyGroup());
+        void schedule(Func&& func, DependencyGroup* on_done = nullptr, core::Span<DependencyGroup> wait_for = {});
 
         template<typename F, typename R = decltype(std::declval<F>()())>
-        std::future<R> schedule_with_future(F&& func, DependencyGroup* on_done = nullptr, DependencyGroup wait_for = DependencyGroup()) {
+        std::future<R> schedule_with_future(F&& func, DependencyGroup* on_done = nullptr, core::Span<DependencyGroup> wait_for = {}) {
             auto promise = std::make_shared<std::promise<R>>();
             auto future = promise->get_future();
             schedule(std::move([p = std::move(promise), f = y_fwd(func)]() { p->set_value(f()); }), on_done, wait_for);

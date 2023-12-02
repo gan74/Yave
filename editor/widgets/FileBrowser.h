@@ -55,7 +55,7 @@ class FileBrowser final : public FileSystemView {
         void on_gui() override;
 
         void path_changed() override;
-        core::Result<core::String> entry_icon(const core::String &name, EntryType type) const override;
+        core::Result<UiIcon> entry_icon(const core::String &name, EntryType type) const override;
         void entry_clicked(const Entry& entry) override;
 
     private:

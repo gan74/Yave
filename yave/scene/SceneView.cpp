@@ -26,8 +26,8 @@ SOFTWARE.
 
 namespace yave {
 
-SceneView::SceneView(const ecs::EntityWorld* wor, Camera cam) :
-        _world(wor),
+SceneView::SceneView(const ecs::EntityWorld* world, Camera cam) :
+        _world(world),
         _camera(cam) {
 }
 

@@ -55,8 +55,6 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
         u64 available() const; // slow!
         usize free_blocks() const;
 
-        bool mapped() const;
-
     private:
         void swap(DeviceMemoryHeap& other);
 

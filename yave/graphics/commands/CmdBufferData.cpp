@@ -49,49 +49,37 @@ ResourceFence::ResourceFence(u64 v) : _value(v) {
 
 
 
-
-u64 TimelineFence::value() const {
-    return _value;
-}
-
-bool TimelineFence::operator==(const TimelineFence& other) const {
-    return _value == other._value;
-}
-
-bool TimelineFence::operator!=(const TimelineFence& other) const {
-    return _value != other._value;
-}
-
-bool TimelineFence::operator<(const TimelineFence& other) const {
-    return _value < other._value;
-}
-
-bool TimelineFence::operator<=(const TimelineFence& other) const {
-    return _value <= other._value;
-}
-
-TimelineFence::TimelineFence(u64 v) : _value(v) {
-}
-
-
-
-
-CmdBufferData::CmdBufferData(VkCommandBuffer buf, CmdBufferPool* p) :
-        _cmd_buffer(buf),
-        _pool(p),
-        _resource_fence(lifetime_manager().create_fence()) {
+CmdBufferData::CmdBufferData(VkCommandBuffer buffer, CmdBufferPool* pool, VkCommandBufferLevel level) :
+        _cmd_buffer(buffer),
+        _pool(pool),
+        _resource_fence(lifetime_manager().create_fence()),
+        _level(level) {
 }
 
 CmdBufferData::~CmdBufferData() {
-    y_debug_assert(!_pool || poll());
+    y_debug_assert(!_pool || is_ready());
+    destroy_graphic_resource(std::move(_semaphore));
+}
+
+void CmdBufferData::push_secondary(CmdBufferData* data) {
+    y_debug_assert(!is_secondary());
+    _secondaries << data;
 }
 
 bool CmdBufferData::is_null() const {
     return !_cmd_buffer;
 }
 
+bool CmdBufferData::is_secondary() const {
+    return _level == VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+}
+
 CmdBufferPool* CmdBufferData::pool() const {
     return _pool;
+}
+
+CmdQueue* CmdBufferData::queue() const {
+    return _pool->queue();
 }
 
 VkCommandBuffer CmdBufferData::vk_cmd_buffer() const {
@@ -102,25 +90,21 @@ ResourceFence CmdBufferData::resource_fence() const {
     return _resource_fence;
 }
 
-TimelineFence CmdBufferData::queue_fence() const {
+TimelineFence CmdBufferData::timeline_fence() const {
     return _timeline_fence;
 }
 
-void CmdBufferData::wait() {
-    y_profile();
-    wait_for_fence(_timeline_fence);
+bool CmdBufferData::is_ready() const {
+    return _timeline_fence.is_valid() && _timeline_fence.is_ready();
 }
 
-bool CmdBufferData::poll() {
-    return poll_fence(_timeline_fence);
-}
-
-void CmdBufferData::begin() {
+void CmdBufferData::reset() {
     y_profile();
 
     vk_check(vkResetCommandBuffer(_cmd_buffer, 0));
 
     _resource_fence = lifetime_manager().create_fence();
+    _timeline_fence = {};
 }
 
 

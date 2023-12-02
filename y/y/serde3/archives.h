@@ -157,7 +157,7 @@ class WritableArchive final {
                     break;
                 }
                 y_debug_assert(p.index - _cached_file_size < _buffer_size);
-                byte* offset = _buffer.data() + (p.index - _cached_file_size);
+                u8* offset = _buffer.data() + (p.index - _cached_file_size);
                 std::memcpy(offset, &p.size, sizeof(p.size));
                 _patches.pop();
             }
@@ -245,7 +245,7 @@ class WritableArchive final {
             static_assert(std::is_const_v<T>);
             static_assert(is_iterable_v<T>);
 
-            if constexpr(detail::use_collection_fast_path<remove_cvref_t<T>>) {
+            if constexpr(detail::use_collection_fast_path<std::remove_cvref_t<T>>) {
                 y_try(write_one(size_type(object.object.size())));
                 if(object.object.size()) {
                     const auto header = detail::build_header(y_create_named_object(*object.object.begin(), detail::collection_version_string));
@@ -409,7 +409,7 @@ class WritableArchive final {
                     return core::Err(Error(ErrorType::IOError));
                 }
             } else {
-                byte* offset = _buffer.data() + _buffer_size;
+                u8* offset = _buffer.data() + _buffer_size;
                 std::memcpy(offset, &t, total_size);
                 _buffer_size += total_size;
             }
@@ -439,7 +439,7 @@ class WritableArchive final {
                     return core::Err(Error(ErrorType::IOError));
                 }
             } else {
-                byte* offset = _buffer.data() + _buffer_size;
+                u8* offset = _buffer.data() + _buffer_size;
                 std::memcpy(offset, t, total_size);
                 _buffer_size += total_size;
             }
@@ -471,7 +471,7 @@ class WritableArchive final {
         File& _file;
 
 #ifdef Y_SERDE3_BUFFER
-        core::FixedArray<byte> _buffer;
+        core::FixedArray<u8> _buffer;
         usize _buffer_size = 0;
 #endif
         usize _cached_file_size = 0;
@@ -595,9 +595,12 @@ class ReadableArchive final {
         inline Result deserialize_property(NamedObject<T> object) {
             using inner = typename T::value_type;
             inner i;
-            y_try(deserialize_one(NamedObject<inner>{i, object.name, object.name_hash.hash}));
+
+            Success status = Success::Full;
+            y_try_status(deserialize_one(NamedObject<inner>{i, object.name, object.name_hash.hash}));
+
             object.object.set(std::move(i));
-            return core::Ok(Success::Full);
+            return core::Ok(status);
         }
 
 
@@ -652,9 +655,10 @@ class ReadableArchive final {
             }
 
             try {
+                Success status = Success::Full;
                 if constexpr(detail::use_collection_fast_path<T>) {
                     if(collection_size) {
-                        y_try(check_header(y_create_named_object(*object.object.begin(), detail::collection_version_string)));
+                        y_try_status(check_header(y_create_named_object(*object.object.begin(), detail::collection_version_string)));
                         if constexpr(!IsRange) {
                             if constexpr(has_resize_v<T>) {
                                 object.object.resize(collection_size);
@@ -680,23 +684,23 @@ class ReadableArchive final {
                     if constexpr(has_emplace_back_v<T>) {
                         for(size_type i = 0; i != collection_size; ++i) {
                             object.object.emplace_back();
-                            y_try(deserialize_one(y_create_named_object(object.object.last(), detail::collection_version_string)));
+                            y_try_status(deserialize_one(y_create_named_object(object.object.last(), detail::collection_version_string)));
                         }
                     } else if constexpr(has_resize_v<T>) {
                         object.object.resize(collection_size);
                         for(size_type i = 0; i != collection_size; ++i) {
-                            y_try(deserialize_one(y_create_named_object(object.object[usize(i)], detail::collection_version_string)));
+                            y_try_status(deserialize_one(y_create_named_object(object.object[usize(i)], detail::collection_version_string)));
                         }
                     } else {
                         if constexpr(is_array_v<T> || IsRange) {
                             for(size_type i = 0; i != collection_size; ++i) {
-                                y_try(deserialize_one(y_create_named_object(object.object[i], detail::collection_version_string)));
+                                y_try_status(deserialize_one(y_create_named_object(object.object[i], detail::collection_version_string)));
                             }
                         } else {
                             using value_type = deconst_t<typename T::value_type>;
                             for(size_type i = 0; i != collection_size; ++i) {
                                 value_type value;
-                                y_try(deserialize_one(y_create_named_object(value, detail::collection_version_string)));
+                                y_try_status(deserialize_one(y_create_named_object(value, detail::collection_version_string)));
                                 object.object.insert(std::move(value));
                             }
                         }
@@ -709,7 +713,7 @@ class ReadableArchive final {
                     }
                 }
 
-                return core::Ok(Success::Full);
+                return core::Ok(status);
 
             } catch(std::bad_alloc&) {
                 return core::Err(Error(ErrorType::SizeError, object.name.data()));
@@ -729,6 +733,7 @@ class ReadableArchive final {
                 TypeId type_id;
                 y_try(read_one(type_id));
 
+                const bool propagate_poly_failure = (_flags & DeserializationFlags::DontPropagatePolyFailure) == DeserializationFlags::None;
                 if constexpr(is_std_ptr_v<T>) {
                     static_assert(!has_serde3_v<T>);
 
@@ -738,14 +743,18 @@ class ReadableArchive final {
                         object.object = poly_type->create();
                         if(object.object) {
                             auto r = object.object->_y_serde3_poly_deserialize(*this);
-                            if(r.is_ok() || (_flags & DeserializationFlags::DontPropagatePolyFailure) == DeserializationFlags::None) {
+                            if(r.is_ok() || propagate_poly_failure) {
                                 return r;
                             }
                             object.object = nullptr;
                         }
                     }
 
-                    return core::Ok(Success::Partial);
+                    if(propagate_poly_failure) {
+                        return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
+                    } else {
+                        return core::Ok(Success::Partial);
+                    }
                 } else {
                     static_assert(has_serde3_poly_v<T>);
                     static_assert(!has_serde3_v<T>);
@@ -838,8 +847,7 @@ class ReadableArchive final {
         }
 
         template<bool Safe, usize I, typename T>
-        inline Result deserialize_members_internal(T& object,
-                                            ObjectData& object_data) {
+        inline Result deserialize_members_internal(T& object, ObjectData& object_data) {
             unused(object, object_data);
 
 #ifdef Y_NO_SAFE_DESER
@@ -849,8 +857,11 @@ class ReadableArchive final {
             const auto members = list_members<T>();
             if constexpr(I < std::tuple_size_v<decltype(members)>) {
                 auto member = std::get<I>(members).materialize(object);
-
                 if constexpr(Safe) {
+                    // Removed all flags when trying to deserialize members to ensure errors are never ignored
+                    const DeserializationFlags flags = std::exchange(_flags, DeserializationFlags::None);
+                    y_defer(_flags = flags);
+
                     auto& offsets = object_data.members_offsets;
                     if(offsets.is_empty()) {
                         return core::Ok(Success::Partial);
@@ -864,11 +875,11 @@ class ReadableArchive final {
                         y_try(read_one(size));
                         const usize end = tell() + size;
 
-                        if(deserialize_one(member)) {
+                        if(const auto res = deserialize_one(member); res.is_ok() && res.unwrap() == Success::Full) {
                             if(tell() != end) {
                                 return core::Err(Error(ErrorType::SignatureError, member.name.data()));
                             }
-                            offsets.erase_unordered(offsets.begin() + i);
+                            offsets.erase(offsets.begin() + i);
                             found = true;
                             break;
                         }
@@ -881,7 +892,8 @@ class ReadableArchive final {
                     y_try(read_one(size));
                     const usize end = tell() + size;
 
-                    y_try(deserialize_one(member));
+                    auto& status = object_data.success_state;
+                    y_try_status(deserialize_one(member));
 
                     if(tell() != end) {
                         return core::Err(Error(ErrorType::SignatureError, member.name.data()));
@@ -905,11 +917,13 @@ class ReadableArchive final {
         template<usize I, typename Tpl>
         inline Result deserialize_tuple_members(Tpl& object) {
             unused(object);
+
+            Success status = Success::Full;
             if constexpr(I < std::tuple_size_v<Tpl>) {
-                y_try(deserialize_one(y_create_named_object(std::get<I>(object), detail::tuple_version_string)));
-                return deserialize_tuple_members<I + 1>(object);
+                y_try_status(deserialize_one(y_create_named_object(std::get<I>(object), detail::tuple_version_string)));
+                y_try_status(deserialize_tuple_members<I + 1>(object));
             }
-            return core::Ok(Success::Full);
+            return core::Ok(status);
         }
 
 

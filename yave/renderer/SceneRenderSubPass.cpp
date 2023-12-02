@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "SceneRenderSubPass.h"
+#include "TAAPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -28,6 +29,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/systems/OctreeSystem.h>
+#include <yave/systems/RendererSystem.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/ecs/EntityWorld.h>
@@ -36,71 +38,53 @@ SOFTWARE.
 
 namespace yave {
 
-SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& view) {
-    const usize buffer_size = view.world().components<TransformableComponent>().size();
+template<typename T>
+static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view) {
+    const ecs::EntityWorld& world = scene_view.world();
 
-    auto camera_buffer = builder.declare_typed_buffer<Renderable::CameraData>();
-    const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(buffer_size);
+    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
+        return octree_system->find_entities(scene_view.camera());
+    }
+
+    return core::Vector<ecs::EntityId>(world.component_set<T>().ids());
+}
+
+static void fill_scene_render_pass(SceneRenderSubPass& pass, FrameGraphPassBuilder& builder) {
+    const std::array tags = {ecs::tags::not_hidden};
+
+    pass.static_meshes_sub_pass = StaticMeshRenderSubPass::create(builder, pass.scene_view, visible_entities<StaticMeshComponent>(pass.scene_view), tags);
+
+    pass.main_descriptor_set_index = builder.next_descriptor_set_index();
+    builder.add_uniform_input(pass.camera, PipelineStage::None, pass.main_descriptor_set_index);
+}
+
+
+SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& scene_view) {
+    const auto camera = builder.declare_typed_buffer<uniform::Camera>();
+    builder.map_buffer(camera, uniform::Camera(scene_view.camera()));
 
     SceneRenderSubPass pass;
-    pass.scene_view = view;
-    pass.descriptor_set_index = builder.next_descriptor_set_index();
-    pass.camera_buffer = camera_buffer;
-    pass.transform_buffer = transform_buffer;
+    pass.scene_view = scene_view;
+    pass.camera = camera;
 
-    builder.add_uniform_input(camera_buffer, PipelineStage::None, pass.descriptor_set_index);
-    builder.add_attrib_input(transform_buffer);
-    builder.map_buffer(camera_buffer);
-    builder.map_buffer(transform_buffer);
+    fill_scene_render_pass(pass, builder);
 
     return pass;
 }
 
+SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera) {
+    SceneRenderSubPass pass;
+    pass.scene_view = camera.view;
+    pass.camera = camera.camera;
 
-static usize render_world(const SceneRenderSubPass* sub_pass, RenderPassRecorder& recorder, const FrameGraphPass* pass, usize index = 0) {
-    y_profile();
+    fill_scene_render_pass(pass, builder);
 
-    const auto region = recorder.region("Scene");
-
-    const ecs::EntityWorld& world = sub_pass->scene_view.world();
-    const Camera& camera = sub_pass->scene_view.camera();
-
-    auto transform_mapping = pass->resources().map_buffer(sub_pass->transform_buffer);
-    const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(sub_pass->transform_buffer);
-    const auto& descriptor_set = pass->descriptor_sets()[sub_pass->descriptor_set_index];
-
-    recorder.set_main_descriptor_set(descriptor_set);
-    recorder.bind_per_instance_attrib_buffers(transforms);
-
-    auto render_query = [&](auto query) {
-        for(const auto& [tr, mesh] : query.components()) {
-            transform_mapping[index] = tr.transform();
-            mesh.render(recorder, Renderable::SceneData{u32(index)});
-            ++index;
-        }
-    };
-
-    const std::array tags = {ecs::tags::not_hidden};
-    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-        const core::Vector<ecs::EntityId> visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
-        render_query(world.query<TransformableComponent, StaticMeshComponent>(visible, tags));
-    } else {
-        render_query(world.query<TransformableComponent, StaticMeshComponent>(tags));
-    }
-
-    y_profile_msg(fmt_c_str("% meshes", index));
-
-    return index;
+    return pass;
 }
 
-void SceneRenderSubPass::render(RenderPassRecorder& recorder, const FrameGraphPass* pass) const {
-    // fill render data
-    auto camera_mapping = pass->resources().map_buffer(camera_buffer);
-    camera_mapping[0] = scene_view.camera();
-
-    if(scene_view.has_world()) {
-        render_world(this, recorder, pass, 0);
-    }
+void SceneRenderSubPass::render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const {
+    render_pass.set_main_descriptor_set(pass->descriptor_sets()[main_descriptor_set_index]);
+    static_meshes_sub_pass.render(render_pass, pass);
 }
 
 }

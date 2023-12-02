@@ -39,7 +39,7 @@ void break_in_debugger();
 // keep the namespacing ?
 #define y_fatal(msg) y::fatal((msg), __FILE__, __LINE__)
 
-#define y_always_assert(cond, ...) do { if(!(cond)) { y_fatal(__VA_ARGS__); } } while(false)
+#define y_always_assert(cond, ...) do { if(!(cond)) [[unlikely]] { y_fatal(__VA_ARGS__); } } while(false)
 
 #ifdef Y_DEBUG
 #define y_debug_assert(cond) y_always_assert(cond, "Assert failed: " #cond)
@@ -90,6 +90,16 @@ static constexpr bool is_debug_defined = false;
 #define Y_GNU
 #endif
 
+
+/****************** UTILS DEFINE ******************/
+
+#define Y_CREATE_NAME_LINE_HELPER(prefix, LINE) _generated_ ## prefix ## _at_ ## LINE
+#define Y_CREATE_NAME_HELPER(prefix, LINE) Y_CREATE_NAME_LINE_HELPER(prefix, LINE)
+
+#define y_create_name_with_prefix(prefix) Y_CREATE_NAME_HELPER(prefix, __LINE__)
+#define y_create_name y_create_name_with_prefix()
+
+
 #ifdef Y_DEBUG
 #define y_breakpoint do { y::break_in_debugger(); } while(false)
 #else
@@ -103,26 +113,6 @@ static constexpr bool is_debug_defined = false;
 #else
 #define Y_DLL_EXPORT
 #define Y_DLL_IMPORT
-#endif
-
-
-/****************** UTILS DEFINE ******************/
-
-#define Y_CREATE_NAME_LINE_HELPER(prefix, LINE) _generated_ ## prefix ## _at_ ## LINE
-#define Y_CREATE_NAME_HELPER(prefix, LINE) Y_CREATE_NAME_LINE_HELPER(prefix, LINE)
-
-#define y_create_name_with_prefix(prefix) Y_CREATE_NAME_HELPER(prefix, __LINE__)
-#define y_create_name y_create_name_with_prefix()
-
-
-
-
-
-// For some reason gcc 9.2 accepts even in C++17
-#if __cpp_constexpr >= 201907L
-#define Y_CONSTEXPR_VIRTUAL constexpr virtual
-#else
-#define Y_CONSTEXPR_VIRTUAL virtual
 #endif
 
 

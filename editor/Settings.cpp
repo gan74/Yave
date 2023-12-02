@@ -30,22 +30,24 @@ namespace editor {
 
 static constexpr std::string_view settings_file = "../settings.dat";
 
-Settings::Settings(bool load) {
-    if(load) {
-        auto file = io2::File::open(settings_file);
-        if(!file) {
-            log_msg("Unable to open settings file.", Log::Error);
-            return;
-        }
-        serde3::ReadableArchive arc(file.unwrap());
-        if(!arc.deserialize(*this)) {
-            log_msg("Unable to read settings file.", Log::Error);
-            *this = Settings(false);
-        }
+Settings Settings::load() {
+    Settings settings;
+
+    auto file = io2::File::open(settings_file);
+    if(!file) {
+        log_msg("Unable to open settings file.", Log::Error);
+        return settings;
     }
+
+    serde3::ReadableArchive arc(file.unwrap());
+    if(!arc.deserialize(settings)) {
+        log_msg("Unable to read settings file.", Log::Error);
+    }
+
+    return settings;
 }
 
-Settings::~Settings() {
+void Settings::save() const {
     auto file = io2::File::create(settings_file);
     if(!file) {
         log_msg("Unable to open settings file.", Log::Error);

@@ -24,42 +24,91 @@ SOFTWARE.
 
 #include "CmdBufferRecorder.h"
 
-#include <mutex>
+#include <yave/graphics/swapchain/Swapchain.h>
+#include <y/concurrent/Mutexed.h>
+
 #include <memory>
+#include <thread>
+
+
+
+#ifdef YAVE_GPU_PROFILING
+#ifdef Y_GNU
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#endif
+
+#ifdef Y_MSVC
+#pragma warning(push)
+#pragma warning(disable:4459) //  declaration hides global declaration
+#endif
+
+#include <external/tracy/public/tracy/TracyVulkan.hpp>
+
+#ifdef Y_MSVC
+#pragma warning(pop)
+#endif
+
+#ifdef Y_GNU
+#pragma GCC diagnostic pop
+#endif
+#endif
+
 
 namespace yave {
 
-class WaitToken {
-    public:
-        void wait();
-
-    private:
-        friend class CmdQueue;
-
-        WaitToken(const TimelineFence& fence);
-
-        TimelineFence _fence;
-};
-
-class CmdQueue : NonMovable {
+class CmdQueue final : NonMovable {
     public:
         CmdQueue(u32 family_index, VkQueue queue);
         ~CmdQueue();
 
         u32 family_index() const;
-        VkQueue vk_queue() const;
+        const Timeline& timeline() const;
 
-        void wait() const;
+        void wait();
+        void clear_all_cmd_pools();
 
-        WaitToken submit(CmdBufferRecorder&& recorder, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {}) const;
+        CmdBufferPool& cmd_pool_for_thread();
+
+        VkResult present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync);
+
+#ifdef YAVE_GPU_PROFILING
+        TracyVkCtx profiling_context() const;
+#endif
 
     private:
-        friend class Swapchain;
+        friend class CmdBufferRecorderBase;
 
-        u32 _family_index = u32(-1);
-        VkQueue _queue = {};
+        struct AsyncSubmitData {
+            TimelineFence current_fence;
+            TimelineFence next_fence;
+            core::Vector<VkSemaphore> semaphores;
+        };
 
-        mutable std::mutex _lock;
+
+        // Does not wait for the completion of previous commands before starting
+        void submit_async_start(CmdBufferData* data);
+        TimelineFence submit(CmdBufferData* data);
+
+        TimelineFence submit_internal(CmdBufferData* data, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {}, bool async_start = false);
+
+        void clear_thread(u32 thread_id);
+
+
+        concurrent::Mutexed<VkQueue> _queue = {};
+        concurrent::Mutexed<AsyncSubmitData> _async_submit_data;
+
+        Timeline _timeline;
+
+        concurrent::Mutexed<core::Vector<std::pair<u32, std::unique_ptr<CmdBufferPool>>>> _cmd_pools;
+
+        const u32 _family_index = u32(-1);
+
+#ifdef YAVE_GPU_PROFILING
+        TracyVkCtx _profiling_ctx;
+#endif
+
+        static concurrent::Mutexed<core::Vector<CmdQueue*>> _all_queues;
 };
 
 }

@@ -24,52 +24,36 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <yave/ecs/EntityPrefab.h>
+#include <yave/ecs/ecs.h>
 
 #include <y/io2/Buffer.h>
 
 namespace editor {
 
-class UndoStackWidget;
-
 class UndoStack : NonMovable {
-
-    struct StackItem {
-        ecs::EntityId id;
-        ecs::EntityPrefab prefab;
-    };
-
     public:
+        struct Item {
+            core::String name;
+            ecs::EntityId id;
+            std::function<void(EditorWorld&)> undo;
+            std::function<void(EditorWorld&)> redo;
+        };
+
         UndoStack();
 
-        void clear();
+        void add(Item item);
 
-        void set_editing_entity(ecs::EntityId id);
-
-        void done_editing();
-        void make_dirty();
-
-        bool is_entity_dirty() const;
-
-        void push_before_dirty(ecs::EntityId id);
-
-        bool can_undo() const;
         void undo();
-
-        bool can_redo() const;
         void redo();
 
-
-        UndoStack& operator<<(bool dirty) {
-            if(dirty) {
-                make_dirty();
-            }
-            return *this;
-        }
+        core::Span<Item> items() const;
+        usize stack_top() const;
 
     private:
         friend class UndoStackWidget;
-        void restore_entity();
+
+        core::Vector<Item> _items;
+        usize _top = 0;
 };
 
 }

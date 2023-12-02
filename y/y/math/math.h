@@ -147,8 +147,39 @@ T sign(T t) {
 }
 
 template<typename T>
-static bool fully_finite(const T& t) {
+T round_up_to(T val, T to) {
+    static_assert(std::is_integral_v<T>);
+    const T m = val % to;
+    return m ? val + (to - m) : val;
+}
+
+template<typename T>
+static bool all_finite(const T& t) {
     return std::all_of(t.begin(), t.end(), [](auto x) { return std::isfinite(x); });
+}
+
+
+
+// https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/#GeneralizingGoldenRatio
+template<typename T, typename I>
+Vec<2, T> golden_r2_2d(I n) {
+    const T g = T(1.32471795724474602596);
+    const T a1 = T(1.0) / g;
+    const T a2 = T(1.0) / (g * g);
+    const T px = T(0.5) + a1 * T(n);
+    const T py = T(0.5) + a2 * T(n);
+
+    return Vec<2, T>(std::fmod(px, T(1.0)), std::fmod(py, T(1.0)));
+}
+
+// https://www.shadertoy.com/view/4dtBWH
+template<typename T, typename I>
+Vec<2, T> weyl_2d(I n) {
+    const T d24 = T(1 << 24);
+    const T px = T(n * 12664745) / d24;
+    const T py = T(n * 9560333) / d24;
+
+    return Vec<2, T>(std::fmod(px, T(1.0)), std::fmod(py, T(1.0)));
 }
 
 }

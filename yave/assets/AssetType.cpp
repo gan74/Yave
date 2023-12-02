@@ -25,18 +25,15 @@ namespace yave {
 
 std::string_view asset_type_name(AssetType type) {
     static constexpr std::string_view names[] = {
+        "asset",
         "mesh",
         "image",
         "animation",
         "font",
-        "scene",
+        "unused type index",
         "material",
         "prefab",
     };
-
-    if(type == AssetType::Unknown) {
-        return "asset";
-    }
 
     y_debug_assert(usize(type) < sizeof(names) / sizeof(names[0]));
     return names[usize(type)];

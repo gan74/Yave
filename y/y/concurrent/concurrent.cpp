@@ -46,11 +46,12 @@ void set_thread_name(const char* thread_name) {
     usize len = std::min(std::strlen(thread_name), sizeof(detail::thread_name) - 1);
     std::copy_n(thread_name, len, detail::thread_name);
 
-#if 0
-    // Not always available, doesn't register in tracy
-    wchar_t w_thread_name[sizeof(detail::thread_name)] = {};
-    std::copy_n(thread_name, len, w_thread_name);
-    ::SetThreadDescription(::GetCurrentThread(), w_thread_name);
+#ifdef Y_OS_WIN
+    if(auto set_thread_desc = reinterpret_cast<decltype(&::SetThreadDescription)>(::GetProcAddress(::GetModuleHandleA("Kernel32.dll"), "SetThreadDescription"))) {
+        wchar_t w_thread_name[sizeof(detail::thread_name)] = {};
+        std::copy_n(thread_name, len, w_thread_name);
+        set_thread_desc(::GetCurrentThread(), w_thread_name);
+    }
 #endif
 }
 

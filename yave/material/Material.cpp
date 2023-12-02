@@ -24,64 +24,59 @@ SOFTWARE.
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/device/DeviceResources.h>
+#include <yave/graphics/device/MaterialAllocator.h>
 
 namespace yave {
 
-static DescriptorSet create_descriptor_set(const SimpleMaterialData& data) {
-
-    std::array<Descriptor, SimpleMaterialData::texture_count + 1> bindings = {
-            *device_resources()[DeviceResources::GreyTexture],          // Diffuse
-            *device_resources()[DeviceResources::FlatNormalTexture],    // Normal
-            *device_resources()[DeviceResources::WhiteTexture],         // Roughness
-            *device_resources()[DeviceResources::WhiteTexture],         // Metallic
-            *device_resources()[DeviceResources::WhiteTexture],         // Emissive
-            InlineDescriptor(data.constants())
-        };
-
-    for(usize i = 0; i != SimpleMaterialData::texture_count; ++i) {
-        y_debug_assert(!data.textures()[i].is_loading());
-        if(const auto* tex = data.textures()[i].get()) {
-            bindings[i] = *tex;
-        }
-    }
-
-    return DescriptorSet(bindings);
-}
-
-static DeviceResources::MaterialTemplates material_template_for_data(const SimpleMaterialData& data) {
+static DeviceResources::MaterialTemplates material_template_for_data(const MaterialData& data) {
     if(data.alpha_tested()) {
        return DeviceResources::TexturedAlphaMaterialTemplate;
     }
     return DeviceResources::TexturedMaterialTemplate;
 }
 
-Material::Material(SimpleMaterialData&& data) :
-        _template(device_resources()[material_template_for_data(data)]),
-        _set(create_descriptor_set(data)),
-        _data(std::move(data)) {
+
+Material::Material(MaterialData&& data) : Material(device_resources()[material_template_for_data(data)], std::move(data)) {
 }
 
-Material::Material(const MaterialTemplate* tmp, SimpleMaterialData&& data) :
+Material::Material(const MaterialTemplate* tmp, MaterialData&& data) :
         _template(tmp),
-        _set(create_descriptor_set(data)),
+        _draw_data(material_allocator().allocate_material(data)),
         _data(std::move(data)) {
+    y_debug_assert(!is_null());
 }
 
-const SimpleMaterialData& Material::data() const {
-    return _data;
+Material::~Material() {
+    if(!is_null()) {
+        destroy_graphic_resource(std::move(_draw_data));
+    }
 }
 
-const DescriptorSetBase& Material::descriptor_set() const {
-    return _set;
+Material::Material(Material&& other) {
+    swap(other);
+}
+
+Material& Material::operator=(Material&& other) {
+    swap(other);
+    return *this;
+}
+
+void Material::swap(Material& other) {
+    std::swap(_template, other._template);
+    std::swap(_draw_data, other._draw_data);
+    std::swap(_data, other._data);
+}
+
+bool Material::is_null() const {
+    return _template == nullptr;
 }
 
 const MaterialTemplate* Material::material_template() const {
     return _template;
 }
 
-bool Material::is_null() const {
-    return !_template;
+const MaterialDrawData& Material::draw_data() const {
+    return _draw_data;
 }
 
 }
-

@@ -32,6 +32,8 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
+#include <bit>
+
 namespace yave {
 
 static constexpr usize inline_block_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1;
@@ -78,7 +80,7 @@ DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding
     core::ScratchVector<VkDescriptorSetLayoutBinding> patched_bindings(bindings.size());
     for(const auto& b : bindings) {
         if(needs_fallback(b)) {
-            // log_msg(fmt("Inline uniform at binding % of size % requires fallback uniform buffer", b.binding, b.descriptorCount), Log::Warning);
+            // log_msg(fmt("Inline uniform at binding {} of size {} requires fallback uniform buffer", b.binding, b.descriptorCount), Log::Warning);
             patched_bindings.emplace_back(create_inline_uniform_binding_fallback(b));
             _inline_blocks_fallbacks << InlineBlock{b.binding, b.descriptorCount};
         } else {
@@ -154,6 +156,8 @@ static VkHandle<VkDescriptorPool> create_descriptor_pool(const DescriptorSetLayo
         create_info.maxSets = u32(set_count);
     }
 
+    // This is apparently optional: see https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDescriptorPoolInlineUniformBlockCreateInfo.html
+    // Or not? Causes out of pool memory on Intel
     VkDescriptorPoolInlineUniformBlockCreateInfo inline_create_info = vk_struct();
     if(const u32 inline_blocks = u32(layout.inline_blocks())) {
         inline_create_info.maxInlineUniformBlockBindings = inline_blocks * u32(set_count);
@@ -187,41 +191,20 @@ DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
         for(const auto& buffer : layout.inline_blocks_fallbacks()) {
             _descriptor_buffer_size += align_up_to(u64(buffer.byte_size), alignment);
         }
-        log_msg(fmt("Allocating % * % bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
+        log_msg(fmt("Allocating {} * {} bytes of inline uniform storage", _descriptor_buffer_size, pool_size));
         _inline_buffer = Buffer<BufferUsage::UniformBit, MemoryType::CpuVisible>(_descriptor_buffer_size * pool_size);
     }
+
+    y_debug_assert(used_sets() == 0);
 }
 
 DescriptorSetPool::~DescriptorSetPool() {
-    y_debug_assert(_taken.none());
+    y_debug_assert(used_sets() == 0);
     destroy_graphic_resource(std::move(_pool));
 }
 
 u64 DescriptorSetPool::inline_sub_buffer_alignment() const {
     return SubBuffer<BufferUsage::UniformBit>::byte_alignment();
-}
-
-DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
-    y_profile();
-
-    const auto lock = y_profile_unique_lock(_lock);
-    if(is_full() || _taken[_first_free]) {
-        y_fatal("DescriptorSetPoolPage is full");
-    }
-    const u32 id = _first_free;
-
-    for(++_first_free; _first_free < pool_size; ++_first_free) {
-        if(!_taken[_first_free]) {
-            break;
-        }
-    }
-
-    y_debug_assert(is_full() || !_taken[_first_free]);
-
-    _taken.set(id);
-
-    update_set(id, descriptors);
-    return DescriptorSetData(this, id);
 }
 
 void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
@@ -233,7 +216,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
 
     const usize descriptor_count = descriptors.size();
 
-    core::ScratchVector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_blocks(_inline_blocks ? descriptor_count : 0);
+    core::ScratchVector<VkWriteDescriptorSetInlineUniformBlock> inline_blocks(_inline_blocks ? descriptor_count : 0);
     core::ScratchVector<VkDescriptorBufferInfo> inline_blocks_buffer_infos(!_inline_buffer.is_null() ? descriptor_count : 0);
 
     usize inline_buffer_offset = 0;
@@ -266,13 +249,13 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
                     std::memcpy(block_buffer.map_bytes(MappingAccess::WriteOnly).data(), block.data, block.size);
                 }
 
-                write.pBufferInfo = &inline_blocks_buffer_infos.emplace_back(block_buffer.descriptor_info());
+                write.pBufferInfo = &inline_blocks_buffer_infos.emplace_back(block_buffer.vk_descriptor_info());
                 write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 write.descriptorCount = 1;
 
                 inline_buffer_offset += aligned_block_size;
             } else {
-                VkWriteDescriptorSetInlineUniformBlockEXT& inline_block = inline_blocks.emplace_back(VkWriteDescriptorSetInlineUniformBlockEXT(vk_struct()));
+                VkWriteDescriptorSetInlineUniformBlock& inline_block = inline_blocks.emplace_back(VkWriteDescriptorSetInlineUniformBlock(vk_struct()));
                 inline_block.pData = block.data;
                 inline_block.dataSize = u32(block.size);
                 write.pNext = &inline_block;
@@ -285,23 +268,53 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
         writes[i] = write;
     }
 
-
     vkUpdateDescriptorSets(vk_device(), u32(writes.size()), writes.data(), 0, nullptr);
 }
 
+DescriptorSetData DescriptorSetPool::alloc(core::Span<Descriptor> descriptors) {
+    y_profile();
+
+    const auto lock = std::unique_lock(_lock);
+
+    u32 id = u32(-1);
+    for(usize i = 0; i != _taken.size(); ++i) {
+        y_debug_assert(i == 0 || _taken[i - 1] == u64(-1));
+        const u64 ones = std::countr_one(_taken[i]);
+        if(ones < 64) {
+            id = u32(i * 64) + u32(ones);
+            y_debug_assert(!is_taken(id));
+
+            const u64 mask = u64(1) << ones;
+            _taken[i] = _taken[i] | mask;
+
+            break;
+        }
+    }
+    y_always_assert(id < pool_size, "DescriptorSetPool is full");
+    y_debug_assert(is_taken(id));
+
+    update_set(id, descriptors);
+    return DescriptorSetData(this, id);
+}
 
 void DescriptorSetPool::recycle(u32 id) {
     y_profile();
 
-    const auto lock = y_profile_unique_lock(_lock);
-    y_debug_assert(_taken[id]);
-    _taken.reset(id);
-    _first_free = std::min(_first_free, id);
+    const auto lock = std::unique_lock(_lock);
+    y_debug_assert(is_taken(id));
+
+    const u32 index = id / 64;
+    const u64 mask = u64(1) << (id % 64);
+    _taken[index] = _taken[index] & ~mask;
 }
 
 bool DescriptorSetPool::is_full() const {
-    // we shouldn't need to lock here
-    return _first_free >= pool_size;
+    for(const u64 bits : _taken) {
+        if(bits != u64(-1)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 VkDescriptorSet DescriptorSetPool::vk_descriptor_set(u32 id) const {
@@ -316,13 +329,26 @@ VkDescriptorSetLayout DescriptorSetPool::vk_descriptor_set_layout() const {
     return _layout;
 }
 
+
+bool DescriptorSetPool::is_taken(u32 id) const {
+    y_debug_assert(id < pool_size);
+    const u32 index = id / 64;
+    const u64 mask = u64(1) << (id % 64);
+    return (_taken[index] & mask) == mask;
+}
+
 usize DescriptorSetPool::free_sets() const {
     return pool_size - used_sets();
 }
 
 usize DescriptorSetPool::used_sets() const {
-    const auto lock = y_profile_unique_lock(_lock);
-    return _taken.count();
+    const auto lock = std::unique_lock(_lock);
+
+    usize used = 0;
+    for(const u64 bits : _taken) {
+        used += std::popcount(bits);
+    }
+    return used;
 }
 
 
@@ -339,30 +365,29 @@ DescriptorSetData DescriptorSetAllocator::create_descritptor_set(core::Span<Desc
         layout_bindings[i] = descriptors[i].descriptor_set_layout_binding(u32(i));
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
+    return _layouts.locked([&](auto&& layouts) {
+        Y_TODO(get rid of layout binding stuff, we shouldnt need the extra alloc)
+        auto& pool = layout_pool(layouts, layout_bindings);
 
-    Y_TODO(get rid of layout binding stuff, we shouldnt need the extra alloc)
-    auto& pool = layout(layout_bindings);
-
-    const auto reversed = core::Range(std::make_reverse_iterator(pool.pools.end()),
-                                      std::make_reverse_iterator(pool.pools.begin()));
-    for(auto& page : reversed) {
-        if(!page->is_full()) {
-            return page->alloc(descriptors);
+        const auto reversed = core::Range(std::make_reverse_iterator(pool.pools.end()),
+                                          std::make_reverse_iterator(pool.pools.begin()));
+        for(auto& page : reversed) {
+            if(!page->is_full()) {
+                return page->alloc(descriptors);
+            }
         }
-    }
 
-    pool.pools.emplace_back(std::make_unique<DescriptorSetPool>(pool.layout));
-    return pool.pools.last()->alloc(descriptors);
+        pool.pools.emplace_back(std::make_unique<DescriptorSetPool>(pool.layout));
+        return pool.pools.last()->alloc(descriptors);
+    });
 }
 
 const DescriptorSetLayout& DescriptorSetAllocator::descriptor_set_layout(LayoutKey bindings) {
-    const auto lock = y_profile_unique_lock(_lock);
-    return layout(bindings).layout;
+    return _layouts.locked([&](auto&& layouts) -> const LayoutPools& { return layout_pool(layouts, bindings); }).layout;
 }
 
-DescriptorSetAllocator::LayoutPools& DescriptorSetAllocator::layout(LayoutKey bindings) {
-    auto& layout  = _layouts[bindings];
+DescriptorSetAllocator::LayoutPools& DescriptorSetAllocator::layout_pool(LayoutMap& layouts, LayoutKey bindings) {
+    auto& layout  = layouts[bindings];
     if(layout.layout.is_null()) {
         layout.layout = DescriptorSetLayout(bindings);
     }
@@ -370,39 +395,41 @@ DescriptorSetAllocator::LayoutPools& DescriptorSetAllocator::layout(LayoutKey bi
 }
 
 usize DescriptorSetAllocator::layout_count() const {
-    const auto lock = y_profile_unique_lock(_lock);
-    return _layouts.size();
+    return _layouts.locked([](auto&& layouts) { return layouts.size(); });
 }
 
 usize DescriptorSetAllocator::pool_count() const {
-    const auto lock = y_profile_unique_lock(_lock);
-    usize count = 0;
-    for(const auto& l : _layouts) {
-        count += l.second.pools.size();
-    }
-    return count;
+    return _layouts.locked([](auto&& layouts) {
+        usize count = 0;
+        for(const auto& l : layouts) {
+            count += l.second.pools.size();
+        }
+        return count;
+    });
 }
 
 usize DescriptorSetAllocator::free_sets() const {
-    const auto lock = y_profile_unique_lock(_lock);
-    usize count = 0;
-    for(const auto& l : _layouts) {
-        for(const auto& p : l.second.pools) {
-            count += p->free_sets();
+    return _layouts.locked([](auto&& layouts) {
+        usize count = 0;
+        for(const auto& l : layouts) {
+            for(const auto& p : l.second.pools) {
+                count += p->free_sets();
+            }
         }
-    }
-    return count;
+        return count;
+    });
 }
 
 usize DescriptorSetAllocator::used_sets() const {
-    const auto lock = y_profile_unique_lock(_lock);
-    usize count = 0;
-    for(const auto& l : _layouts) {
-        for(const auto& p : l.second.pools) {
-            count += p->used_sets();
+    return _layouts.locked([](auto&& layouts) {
+        usize count = 0;
+        for(const auto& l : layouts) {
+            for(const auto& p : l.second.pools) {
+                count += p->used_sets();
+            }
         }
-    }
-    return count;
+        return count;
+    });
 }
 
 }

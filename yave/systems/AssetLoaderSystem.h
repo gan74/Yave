@@ -33,8 +33,8 @@ class AssetLoaderSystem : public ecs::System {
     public:
         AssetLoaderSystem(AssetLoader& loader);
 
-        void setup(ecs::EntityWorld& world) override;
-        void tick(ecs::EntityWorld& world) override;
+        void setup() override;
+        void tick() override;
 
         core::Span<ecs::EntityId> recently_loaded() const;
 
@@ -49,8 +49,8 @@ class AssetLoaderSystem : public ecs::System {
         }
 
     private:
-        void run_tick(ecs::EntityWorld& world, bool only_recent);
-        void post_load(ecs::EntityWorld& world);
+        void run_tick(bool only_recent);
+        void post_load();
 
         core::FlatHashMap<ecs::ComponentTypeIndex, core::Vector<ecs::EntityId>> _loading;
         core::Vector<ecs::EntityId> _recently_loaded;
@@ -67,8 +67,8 @@ class AssetLoaderSystem : public ecs::System {
         template<typename T>
         static core::Span<ecs::EntityId> ids(ecs::EntityWorld& world, bool recent) {
             return recent
-                ? world.recently_mutated<T>()
-                : world.component_ids<T>();
+                ? world.recently_mutated<T>().ids()
+                : world.component_set<T>().ids();
         }
 
         template<typename T>

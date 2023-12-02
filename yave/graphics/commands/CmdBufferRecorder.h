@@ -42,12 +42,16 @@ class CmdBufferRegion : NonCopyable {
         void swap(CmdBufferRegion& other);
 
     private:
-        friend class CmdBufferRecorder;
+        friend class CmdBufferRecorderBase;
 
-        CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color);
+        CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, CmdQueue* queue, const char* name, const math::Vec4& color);
 
         VkCommandBuffer _buffer = {};
         CmdTimingRecorder* _time_recorder = nullptr;
+
+#ifdef YAVE_GPU_PROFILING
+        u64 _profiling_scope[3] = {};
+#endif
 };
 
 class RenderPassRecorder final : NonMovable {
@@ -55,8 +59,7 @@ class RenderPassRecorder final : NonMovable {
         ~RenderPassRecorder();
 
         // specific
-        void bind_material(const Material& material);
-        void bind_material_template(const MaterialTemplate* material_template, DescriptorSetBase descriptor_set, u32 ds_offset = 0);
+        void bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> sets, bool bind_main_ds = false);
 
         void set_main_descriptor_set(DescriptorSetBase ds_set);
 
@@ -101,31 +104,24 @@ class RenderPassRecorder final : NonMovable {
         } _cache;
 };
 
-class CmdBufferRecorder final : NonCopyable {
 
-    using SrcCopySubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
-    using DstCopySubBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
-    using SrcCopyImage = ImageView<ImageUsage::TransferSrcBit>;
-    using DstCopyImage = ImageView<ImageUsage::TransferDstBit>;
-
+class CmdBufferRecorderBase : NonMovable {
     public:
-        CmdBufferRecorder(CmdBufferRecorder&& other);
-        CmdBufferRecorder& operator=(CmdBufferRecorder&& other);
+        using SrcCopySubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::DontCare>;
+        using DstCopySubBuffer = SubBuffer<BufferUsage::TransferDstBit, MemoryType::DontCare>;
+        using SrcCopyImage = ImageView<ImageUsage::TransferSrcBit>;
+        using DstCopyImage = ImageView<ImageUsage::TransferDstBit>;
 
-        ~CmdBufferRecorder();
+        ~CmdBufferRecorderBase();
+
+        CmdQueue* queue() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
         ResourceFence resource_fence() const;
 
-        CmdBufferRegion region(const char* name, CmdTimingRecorder* time_rec = nullptr, const math::Vec4& color = math::Vec4());
-
         bool is_inside_renderpass() const;
-        RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
 
-        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-
+        CmdBufferRegion region(const char* name, CmdTimingRecorder* time_rec = nullptr, const math::Vec4& color = math::Vec4());
 
         void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);
         void barriers(core::Span<BufferBarrier> buffers);
@@ -133,34 +129,88 @@ class CmdBufferRecorder final : NonCopyable {
 
         void full_barrier();
 
+        // Clean these
+        void copy(const ImageBase& src,  const ImageBase& dst);
+        void clear(const ImageBase& dst);
 
-        Y_TODO(Const all this)
-        void barriered_copy(const ImageBase& src,  const ImageBase& dst);
-        void copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
+        void unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
 
+    protected:
+        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
 
-    private:
-        friend class ImageBase;
+        TimelineFence submit();
+        void submit_async();
 
-        void transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst);
-
-    private:
+    protected:
         friend class RenderPassRecorder;
-        friend class CmdBufferPool;
-        friend class CmdQueue;
 
-        CmdBufferRecorder() = default;
-        CmdBufferRecorder(CmdBufferData* data);
+        CmdBufferRecorderBase() = default;
+        CmdBufferRecorderBase(CmdBufferData* data);
 
-        void swap(CmdBufferRecorder& other);
+        void swap(CmdBufferRecorderBase& other);
 
         void end_renderpass();
         void check_no_renderpass() const;
+
 
         CmdBufferData* _data = nullptr;
         // this could be in RenderPassRecorder, but putting it here makes erroring easier
         const RenderPass* _render_pass = nullptr;
 };
+
+
+
+#define YAVE_GENERATE_CMD_BUFFER_MEMBERS(CmdBufferType)                                                     \
+    public:                                                                                                 \
+        CmdBufferType(CmdBufferType&& other) { swap(other); }                                               \
+        CmdBufferType& operator=(CmdBufferType&& other) { swap(other); return *this; }                      \
+        using CmdBufferRecorderBase::submit;                                                                \
+    private:                                                                                                \
+        friend class CmdBufferPool;                                                                         \
+        CmdBufferType() = default;                                                                          \
+        CmdBufferType(CmdBufferData* data) : CmdBufferRecorderBase(data) {}
+
+
+
+class TransferCmdBufferRecorder final : public CmdBufferRecorderBase {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(TransferCmdBufferRecorder)
+
+    public:
+        using CmdBufferRecorderBase::submit_async;
+};
+
+class ComputeCmdBufferRecorder final : public CmdBufferRecorderBase {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(ComputeCmdBufferRecorder)
+
+    public:
+        using CmdBufferRecorderBase::submit_async;
+
+        using CmdBufferRecorderBase::dispatch;
+        using CmdBufferRecorderBase::dispatch_size;
+};
+
+class CmdBufferRecorder final : public CmdBufferRecorderBase {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(CmdBufferRecorder)
+
+    friend class CmdQueue; // Needed for present
+
+    public:
+
+        using CmdBufferRecorderBase::dispatch;
+        using CmdBufferRecorderBase::dispatch_size;
+
+        RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
+
+        void execute(CmdBufferRecorder&& other);
+};
+
+static_assert(sizeof(TransferCmdBufferRecorder) == sizeof(CmdBufferRecorderBase));
+static_assert(sizeof(ComputeCmdBufferRecorder) == sizeof(CmdBufferRecorderBase));
+static_assert(sizeof(CmdBufferRecorder) == sizeof(CmdBufferRecorderBase));
+
+#undef YAVE_GENERATE_CMD_BUFFER_MEMBERS
 
 }
 

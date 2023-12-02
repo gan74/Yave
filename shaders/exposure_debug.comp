@@ -54,7 +54,8 @@ void main() {
 
     for(int x = 0; x != bar_width; ++x) {
         for(int y = 0; y != bar; ++y) {
-            imageStore(out_color, ivec2(x_offset + x, image_height - y) + display_offset, vec4(1.0));
+            const vec4 color = vec4(bin_size > 0 ? 1.0 : 0.25);
+            imageStore(out_color, ivec2(x_offset + x, image_height - y) + display_offset, color);
         }
     }
 

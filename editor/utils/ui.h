@@ -24,8 +24,10 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
+#include <yave/ecs/ecs.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/assets/AssetType.h>
+#include <yave/utils/color.h>
 
 #include <y/core/Vector.h>
 
@@ -40,7 +42,7 @@ class UiTexture {
 
         Data() = default;
 
-        Data(ImageFormat format, const math::Vec2ui& size) : texture(format, size), view(texture) {
+        Data(ImageFormat format, const math::Vec2ui& size) : texture(format, size, MemoryAllocFlags::NoDedicatedAllocBit), view(texture) {
         }
 
         Data(TextureView v) : view(v) {
@@ -89,14 +91,22 @@ class UiTexture {
         ImTextureID _id = {};
 };
 
+struct UiIcon {
+    std::string_view icon;
+    u32 color;
+};
+
 ImGuiKey to_imgui_key(Key k);
 ImGuiMouseButton to_imgui_button(MouseButton b);
 
 namespace imgui {
 
 static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";
-static constexpr math::Vec4 error_text_color = math::Vec4(1.0f, 0.3f, 0.3f, 1.0f);
-static constexpr math::Vec4 warning_text_color = math::Vec4(1.0f, 0.8f, 0.4f, 1.0f);
+static constexpr const char* drag_drop_entity_id = "YAVE_DRAG_DROP_ENTITY";
+static const math::Vec4 error_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.3f, 0.3f)), 1.0f);
+static const math::Vec4 warning_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.8f, 0.4f)), 1.0f);
+
+const u32 folder_icon_color = 0xFF62D6FF;    // Light yellow
 
 u32 gizmo_color(usize axis);
 
@@ -107,15 +117,19 @@ math::Vec2 from_client_pos(const math::Vec2& pos);
 
 usize text_line_count(std::string_view text);
 
-bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags = 0);
+std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c);
+
+void text_icon(const UiIcon& icon);
+
+bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags = 0, const char* hint = "");
 bool text_input_multiline(const char* name, core::String& str);
 void text_read_only(const char* name, std::string_view str);
 
 bool position_input(const char* str_id, math::Vec3& position);
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear = nullptr);
-bool path_selector(const char* text, const core::String& path);
-bool id_selector(ecs::EntityId id, const EditorWorld& world, bool* clear = nullptr);
+bool path_selector(const char* text, std::string_view path);
+bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentTypeIndex with_component = ecs::ComponentTypeIndex::invalid_index, bool* browse = nullptr);
 
 bool search_bar(const char* text, char* buffer, usize buffer_size);
 
@@ -126,6 +140,10 @@ bool suggestion_item(const char* name, const char* shortcut = nullptr);
 
 void table_begin_next_row(int col_index = 0);
 
+
+bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags = 0);
+bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size);
+bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size);
 
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
 

@@ -33,6 +33,11 @@ struct Camera {
     math::Matrix4<> view_proj;
     math::Matrix4<> inv_view_proj;
 
+    math::Matrix4<> unjittered_view_proj;
+    math::Matrix4<> inv_unjittered_view_proj;
+
+    math::Matrix4<> prev_unjittered_view_proj;
+
     math::Matrix4<> proj;
     math::Matrix4<> inv_proj;
 
@@ -50,6 +55,29 @@ struct Camera {
 };
 
 static_assert(sizeof(Camera) % 16 == 0);
+
+
+struct TransformableData {
+    math::Matrix4<> current;
+    math::Matrix4<> last;
+};
+
+static_assert(sizeof(TransformableData) % 16 == 0);
+
+
+struct MaterialData {
+    static constexpr usize texture_count = 8;
+
+    math::Vec3 emissive_mul;
+    float roughness_mul = 1.0f;
+
+    math::Vec3 base_color_mul;
+    float metallic_mul = 0.0f;
+
+    u32 texture_indices[texture_count];
+};
+
+static_assert(sizeof(MaterialData) % 16 == 0);
 
 
 struct DirectionalLight {
@@ -90,7 +118,7 @@ struct SpotLight {
     float min_radius = 0.01f;
 
     math::Vec2 att_scale_offset;
-    u32 padding_0 = 0;
+    float sin_angle = 0.0f;
     u32 shadow_map_index = u32(-1);
 
     math::Vec3 encl_sphere_center;
@@ -102,6 +130,7 @@ static_assert(sizeof(SpotLight) % 16 == 0);
 
 struct ShadowMapParams {
     math::Matrix4<> view_proj;
+
     math::Vec2 uv_offset;
     math::Vec2 uv_mul;
 
@@ -140,7 +169,6 @@ struct AtmosphereParams {
 };
 
 static_assert(sizeof(AtmosphereParams) % 16 == 0);
-
 
 
 }

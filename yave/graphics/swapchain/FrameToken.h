@@ -32,28 +32,22 @@ struct FrameToken {
     const u64 id;
     const u32 image_index;
     const u32 image_count;
+    const VkSwapchainKHR swapchain;
 
     const ImageView<ImageUsage::ColorBit> image_view;
 
     bool operator==(const FrameToken& other) const {
         return id == other.id &&
-               image_view == other.image_view &&
                image_index == other.image_index &&
-               image_count == other.image_count;
+               image_count == other.image_count &&
+               swapchain == other.swapchain &&
+               image_view == other.image_view;
     }
 
     bool operator!=(const FrameToken& other) const {
         return !operator==(other);
     }
 
-    static FrameToken create_disposable(ImageView<ImageUsage::ColorBit> out_view) {
-        return FrameToken {
-                invalid_id,
-                0,
-                1,
-                out_view
-            };
-    }
 
 };
 

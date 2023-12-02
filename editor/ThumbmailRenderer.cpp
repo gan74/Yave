@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetLoader.h>
 #include <yave/material/Material.h>
-#include <yave/material/SimpleMaterialData.h>
+#include <yave/material/MaterialData.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/graphics/images/ImageData.h>
@@ -34,6 +34,8 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <yave/renderer/DefaultRenderer.h>
+#include <yave/systems/RendererSystem.h>
+
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
@@ -56,12 +58,16 @@ SOFTWARE.
 
 namespace editor {
 
-static Texture render_world(const ecs::EntityWorld& world) {
+static Texture render_world(ecs::EntityWorld& world) {
     y_profile();
 
-    SceneView scene(&world);
-    scene.camera().set_proj(math::perspective(math::to_rad(45.0f), 1.0f, 0.1f));
-    scene.camera().set_view(math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)));
+    world.add_system<RendererSystem>();
+
+    const Camera camera(
+        math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)),
+        math::perspective(math::to_rad(45.0f), 1.0f, 0.1f)
+    );
+    const SceneView scene(&world, camera);
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
@@ -88,7 +94,7 @@ static Texture render_world(const ecs::EntityWorld& world) {
 
         graph.render(recorder);
     }
-    command_queue().submit(std::move(recorder)).wait();
+    recorder.submit().wait();
     return out;
 }
 
@@ -96,24 +102,24 @@ static void fill_world(ecs::EntityWorld& world) {
     const float intensity = 0.25f;
 
     {
-        const ecs::EntityId light_id = world.create_entity<DirectionalLightComponent>();
-        DirectionalLightComponent* light_comp = world.component_mut<DirectionalLightComponent>(light_id);
+        const ecs::EntityId light_id = world.create_entity();
+        DirectionalLightComponent* light_comp = world.get_or_add_component<DirectionalLightComponent>(light_id);
         light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
         light_comp->intensity() = 3.0f * intensity;
     }
     {
-        const ecs::EntityId light_id = world.create_entity<PointLightComponent>();
-        world.component_mut<TransformableComponent>(light_id)->set_position(math::Vec3(0.75f, -0.5f, 0.5f));
-        PointLightComponent* light = world.component_mut<PointLightComponent>(light_id);
+        const ecs::EntityId light_id = world.create_entity();
+        world.get_or_add_component<TransformableComponent>(light_id)->set_position(math::Vec3(0.75f, -0.5f, 0.5f));
+        PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(2500.0f);
         light->intensity() = 1.5f * intensity;
         light->falloff() = 0.5f;
         light->range() = 2.0f;
     }
     {
-        const ecs::EntityId light_id = world.create_entity<PointLightComponent>();
-        world.component_mut<TransformableComponent>(light_id)->set_position(math::Vec3(-0.75f, -0.5f, 0.5f));
-        PointLightComponent* light = world.component_mut<PointLightComponent>(light_id);
+        const ecs::EntityId light_id = world.create_entity();
+        world.get_or_add_component<TransformableComponent>(light_id)->set_position(math::Vec3(-0.75f, -0.5f, 0.5f));
+        PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
         light->color() = k_to_rbg(10000.0f);
         light->intensity() = 1.5f * intensity;
         light->falloff() = 0.5f;
@@ -121,8 +127,8 @@ static void fill_world(ecs::EntityWorld& world) {
     }
 
     {
-        const ecs::EntityId sky_id = world.create_entity<SkyLightComponent>();
-        SkyLightComponent* sky = world.component_mut<SkyLightComponent>(sky_id);
+        const ecs::EntityId sky_id = world.create_entity();
+        SkyLightComponent* sky = world.get_or_add_component<SkyLightComponent>(sky_id);
         sky->probe() = device_resources().ibl_probe();
         sky->intensity() = intensity;
     }
@@ -146,9 +152,9 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
     fill_world(world);
 
     {
-        const ecs::EntityId entity = world.create_entity<StaticMeshComponent>();
-        *world.component_mut<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, mat);
-        world.component_mut<TransformableComponent>(entity)->set_transform(center_to_camera(mesh->aabb()));
+        const ecs::EntityId entity = world.create_entity();
+        *world.get_or_add_component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, mat);
+        world.get_or_add_component<TransformableComponent>(entity)->set_transform(center_to_camera(mesh->aabb()));
     }
 
     return render_world(world);
@@ -178,10 +184,10 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
     {
-        const DescriptorSet set = DescriptorSet(std::array{Descriptor(*tex, SamplerType::LinearClamp), Descriptor(StorageView(out))});
-        recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), {set});
+        const auto ds = DescriptorSet(Descriptor(*tex, SamplerType::LinearClamp), StorageView(out));
+        recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), ds);
     }
-    command_queue().submit(std::move(recorder)).wait();
+    recorder.submit().wait();
     return out;
 }
 
@@ -197,38 +203,37 @@ const TextureView* ThumbmailRenderer::thumbmail(AssetId id) {
         return nullptr;
     }
 
-    const auto lock = y_profile_unique_lock(_lock);
+    return _thumbmails.locked([&](auto&& thumbmails) -> const TextureView* {
+        auto& data = thumbmails[id];
 
-    auto& data = _thumbmails[id];
-
-    if(!data) {
-        data = std::make_unique<ThumbmailData>();
-        query(id, *data);
-        return nullptr;
-    }
-
-    if(data->failed) {
-        return nullptr;
-    } else if(data->asset_ptr.is_loaded()) {
-        if(data->done.is_empty()) {
-            y_profile_zone("schedule render");
-            _render_thread.schedule([d = data.get()]() {
-                d->texture = d->render();
-                if(!(d->failed = d->texture.is_null())) {
-                    d->view = d->texture;
-                }
-            }, &data->done);
-        } else if(data->done.is_ready() && !data->failed) {
-            return &data->view;
+        if(!data) {
+            data = std::make_unique<ThumbmailData>();
+            query(id, *data);
+            return nullptr;
         }
-    }
 
-    return nullptr;
+        if(data->failed) {
+            return nullptr;
+        } else if(data->asset_ptr.is_loaded()) {
+            if(data->done.is_empty()) {
+                y_profile_zone("schedule render");
+                _render_thread.schedule([d = data.get()]() {
+                    d->texture = d->render();
+                    if(!(d->failed = d->texture.is_null())) {
+                        d->view = d->texture;
+                    }
+                }, &data->done);
+            } else if(data->done.is_ready() && !data->failed) {
+                return &data->view;
+            }
+        }
+
+        return nullptr;
+    });
 }
 
 usize ThumbmailRenderer::cached_thumbmails()  {
-    const auto lock = y_profile_unique_lock(_lock);
-    return _thumbmails.size();
+    return _thumbmails.locked([&](auto&& thumbmails) { return thumbmails.size(); });
 }
 
 void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
@@ -261,7 +266,7 @@ void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
 
         default:
             data.failed = true;
-            log_msg(fmt("Unknown asset type % for %.", asset_type, id.id()), Log::Error);
+            log_msg(fmt("Unknown asset type {} for {}", asset_type, id.id()), Log::Error);
         break;
     }
 }

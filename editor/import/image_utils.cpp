@@ -209,9 +209,9 @@ ImageData compute_mipmaps(const ImageData& image) {
         y_profile_zone("unpack");
         if(is_sRGB) {
             Y_TODO(Alpha should not be gammaed)
-            unpack_with_gamma(to_u8(image.data()), input.size(), input.data());
+            unpack_with_gamma(image.data(), input.size(), input.data());
         } else {
-            unpack(to_u8(image.data()), input.size(), input.data());
+            unpack(image.data(), input.size(), input.data());
         }
     }
 
@@ -239,7 +239,7 @@ ImageData block_compress(const ImageData& image, ImageFormat compressed_format, 
 
         const usize mip_count = image.mipmaps();
         const usize compressed_size = ImageData::byte_size(image.size(), compressed_format, mip_count);
-        core::FixedArray<byte> compressed_data(compressed_size);
+        core::FixedArray<u8> compressed_data(compressed_size);
 
         const math::Vec3ui block_size = compressed_format.block_size();
         y_debug_assert(block_size.z() == 1);

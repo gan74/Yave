@@ -52,6 +52,9 @@ using TypedSubBuffer = TypedWrapper<Elem, SubBuffer<Usage, Memory>>;
 using StagingBuffer = Buffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
 using StagingSubBuffer = SubBuffer<BufferUsage::TransferSrcBit, MemoryType::Staging>;
 
+template<typename T>
+using TypedStagingBuffer = TypedBuffer<T, BufferUsage::TransferSrcBit, MemoryType::Staging>;
+
 
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>

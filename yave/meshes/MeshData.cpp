@@ -34,7 +34,7 @@ SOFTWARE.
 namespace yave {
 
 static core::Vector<PackedVertex> pack_vertices(core::Span<FullVertex> vertices) {
-    auto packed = core::vector_with_capacity<PackedVertex>(vertices.size());
+    auto packed = core::Vector<PackedVertex>::with_capacity(vertices.size());
     for(const FullVertex& v : vertices) {
         packed << pack_vertex(v);
     }
@@ -119,8 +119,8 @@ u32 MeshData::add_vertices_from_streams(const MeshVertexStreams& streams) {
 
         _aabb = _sub_meshes.is_empty() ? AABB(min, max) : _aabb.merged(AABB(min, max));
 
-        y_debug_assert(math::fully_finite(_aabb.min()));
-        y_debug_assert(math::fully_finite(_aabb.max()));
+        y_debug_assert(math::all_finite(_aabb.min()));
+        y_debug_assert(math::all_finite(_aabb.max()));
     }
 
 

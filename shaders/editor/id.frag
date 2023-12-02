@@ -1,13 +1,15 @@
 #version 450
 
+#include "../lib/interpolants.glsl"
+
 layout(location = 0) out uint out_id;
 
-layout(location = 0) in flat uint in_instance_id;
+DECLARE_STANDARD_INTERPOLANTS(in)
 
-layout(location = 1) in vec2 in_uv;
-layout(location = 2) in vec4 in_color;
+layout(set = 0, binding = 1) readonly buffer Ids {
+    uint ids[];
+};
 
 void main() {
-    out_id = in_instance_id + 1;
+    out_id = ids[in_instance_index] + 1;
 }
-

@@ -115,8 +115,8 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         keep_depth_only_stages(pipeline_shader_stages);
     }
 
-    auto attribute_bindings = program.vk_attribute_bindings();
-    auto attribute_descriptions = program.vk_attributes_descriptions();
+    const auto attribute_bindings = program.vk_attribute_bindings();
+    const auto attribute_descriptions = program.vk_attributes_descriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input = vk_struct();
     {
@@ -237,7 +237,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     }
 
     VkHandle<VkPipeline> pipeline;
-    vk_check(vkCreateGraphicsPipelines(vk_device(), vk_null(), 1, &create_info, vk_allocation_callbacks(), pipeline.get_ptr_for_init()));
+    vk_check(vkCreateGraphicsPipelines(vk_device(), {}, 1, &create_info, vk_allocation_callbacks(), pipeline.get_ptr_for_init()));
     return GraphicPipeline(std::move(pipeline), std::move(pipeline_layout));
 }
 

@@ -22,8 +22,6 @@ SOFTWARE.
 #ifndef EDITOR_SETTINGS_H
 #define EDITOR_SETTINGS_H
 
-#include <editor/editor.h>
-
 #include <yave/window/EventHandler.h>
 
 #include <y/reflect/reflect.h>
@@ -85,8 +83,10 @@ struct DebugSettings {
 
 class Settings {
     public:
-        Settings(bool load = true);
-        ~Settings();
+        Settings() = default;
+
+        static Settings load();
+        void save() const;
 
         EditorSettings editor;
         CameraSettings camera;

@@ -23,10 +23,10 @@ SOFTWARE.
 #include "graphics.h"
 
 #include <yave/graphics/device/deviceutils.h>
-#include <yave/graphics/device/ThreadLocalDevice.h>
 #include <yave/graphics/device/Instance.h>
 #include <yave/graphics/device/DeviceProperties.h>
 #include <yave/graphics/device/DeviceResources.h>
+#include <yave/graphics/commands/CmdBufferPool.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/commands/CmdQueue.h>
@@ -34,10 +34,12 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/device/MeshAllocator.h>
+#include <yave/graphics/device/MaterialAllocator.h>
+#include <yave/graphics/images/TextureLibrary.h>
 
+#include <y/concurrent/Mutexed.h>
 #include <y/core/ScratchPad.h>
 
-#include <mutex>
 
 namespace yave {
 namespace device {
@@ -53,51 +55,20 @@ Uninitialized<DeviceMemoryAllocator> allocator;
 Uninitialized<LifetimeManager> lifetime_manager;
 Uninitialized<DescriptorSetAllocator> descriptor_set_allocator;
 Uninitialized<MeshAllocator> mesh_allocator;
+Uninitialized<MaterialAllocator> material_allocator;
+Uninitialized<TextureLibrary> texture_library;
 Uninitialized<DeviceResources> resources;
 
 VkDevice vk_device;
 
-core::FixedArray<std::unique_ptr<CmdQueue>> queues;
-std::atomic<u64> next_loading_queue_index = 0;
-
-std::atomic<u64> active_pools = 0;
+Uninitialized<CmdQueue> queue;
 
 #ifdef Y_DEBUG
 std::atomic<bool> destroying = false;
 #endif
 
-struct {
-    VkSemaphore semaphore = {};
-    std::atomic<u64> fence_value = 0;
-    std::atomic<u64> last_polled = 0;
-} timeline;
-
-struct {
-} extensions;
-
-struct {
-    std::mutex lock;
-    core::Vector<std::pair<std::unique_ptr<ThreadLocalDevice>, ThreadDevicePtr*>> devices;
-} threads;
-
 }
 
-
-static void init_timeline() {
-    VkSemaphoreTypeCreateInfo type_create_info = vk_struct();
-    type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-
-    VkSemaphoreCreateInfo create_info = vk_struct();
-    create_info.pNext = &type_create_info;
-
-    vk_check(vkCreateSemaphore(device::vk_device, &create_info, vk_allocation_callbacks(), &device::timeline.semaphore));
-
-    VkSemaphoreSignalInfo signal_info = vk_struct();
-    signal_info.semaphore = device::timeline.semaphore;
-    signal_info.value = create_timeline_fence().value();
-
-    vk_check(vkSignalSemaphore(device::vk_device, &signal_info));
-}
 
 static void init_vk_device() {
     y_profile();
@@ -109,10 +80,10 @@ static void init_vk_device() {
     const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
     const u32 main_queue_index = queue_family_index(queue_families, graphic_queue_flags);
 
-    const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
-    const usize queue_count = std::min(main_queue_family_properties.queueCount, 5u);
+    // const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
+    const usize queue_count = 1;
 
-    auto extensions = core::vector_with_capacity<const char*>(4);
+    auto extensions = core::Vector<const char*>::with_capacity(4);
     extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
@@ -172,10 +143,7 @@ static void init_vk_device() {
 
     print_properties(device::device_properties);
 
-    device::queues = core::FixedArray<std::unique_ptr<CmdQueue>>(queue_count);
-    for(u32 i = 0; i != device::queues.size(); ++i) {
-        device::queues[i] = std::make_unique<CmdQueue>(main_queue_index, create_queue(device::vk_device, main_queue_index, i));
-    }
+    device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
 }
 
 
@@ -192,12 +160,13 @@ void init_device(Instance& instance, PhysicalDevice device) {
     device::device_properties = device::physical_device->device_properties();
 
     init_vk_device();
-    init_timeline();
 
     device::lifetime_manager.init();
     device::allocator.init(device_properties());
     device::descriptor_set_allocator.init();
     device::mesh_allocator.init();
+    device::material_allocator.init();
+    device::texture_library.init();
 
     for(usize i = 0; i != device::samplers.size(); ++i) {
         device::samplers[i].init(create_sampler(SamplerType(i)));
@@ -211,41 +180,29 @@ void destroy_device() {
     lifetime_manager().shutdown_collector_thread();
     wait_all_queues();
 
+    device::resources.destroy();
+
+    lifetime_manager().wait_cmd_buffers();
+
 #ifdef Y_DEBUG
     device::destroying = true;
     y_defer(device::destroying = false);
 #endif
 
-    device::resources.destroy();
-
-    device::extensions = {};
-
-    command_queue().submit(create_disposable_cmd_buffer()).wait();
-    lifetime_manager().wait_cmd_buffers();
-
-    y_always_assert(device::active_pools == 1, "Not all pools have been destroyed");
-    {
-        y_profile_zone("collecting thread devices");
-        const auto lock = y_profile_unique_lock(device::threads.lock);
-        for(const auto& p : device::threads.devices) {
-            *p.second = nullptr;
-        }
-        device::threads.devices.clear();
-    }
-    y_always_assert(device::active_pools == 0, "Not all pools have been destroyed");
+    device::queue->clear_all_cmd_pools();
 
     for(auto& sampler : device::samplers) {
         sampler.destroy();
     }
 
+    device::texture_library.destroy();
+    device::material_allocator.destroy();
     device::mesh_allocator.destroy();
     device::descriptor_set_allocator.destroy();
     device::lifetime_manager.destroy();
     device::allocator.destroy();
 
-    vkDestroySemaphore(device::vk_device, device::timeline.semaphore, vk_allocation_callbacks());
-
-    device::queues.clear();
+    device::queue.destroy();
 
     {
         y_profile_zone("vkDestroyDevice");
@@ -267,80 +224,6 @@ const DebugParams& debug_params() {
     return device::instance->debug_params();
 }
 
-ThreadDevicePtr thread_device() {
-    static thread_local ThreadDevicePtr thread_device = nullptr;
-    static thread_local y_defer({
-        if(auto* device = thread_device) {
-            y_debug_assert(device_initialized());
-            const auto lock = y_profile_unique_lock(device::threads.lock);
-            const auto it = std::find_if(device::threads.devices.begin(), device::threads.devices.end(), [&](const auto& p) { return p.first.get() == device; });
-
-            y_always_assert(it != device::threads.devices.end(), "ThreadLocalDevice not found.");
-            y_debug_assert(*it->second == device);
-
-            *it->second = nullptr;
-            device::threads.devices.erase_unordered(it);
-            y_always_assert(device::active_pools == device::threads.devices.size(), "Invalid number of pools");
-        }
-    });
-
-    y_debug_assert(device_initialized());
-    if(!thread_device) {
-        y_debug_assert(!device::destroying);
-        auto device = std::make_unique<ThreadLocalDevice>();
-        thread_device = device.get();
-
-        const auto lock = y_profile_unique_lock(device::threads.lock);
-        device::threads.devices.emplace_back(std::move(device), &thread_device);
-    }
-
-    return thread_device;
-}
-
-
-
-
-TimelineFence create_timeline_fence() {
-    return TimelineFence(++device::timeline.fence_value);
-}
-
-bool poll_fence(const TimelineFence& fence) {
-    if(device::timeline.last_polled >= fence.value()) {
-        return true;
-    }
-
-    u64 value = 0;
-    vk_check(vkGetSemaphoreCounterValue(device::vk_device, device::timeline.semaphore, &value));
-    update_maximum(device::timeline.last_polled, value);
-
-    return device::timeline.last_polled >= fence.value();
-
-}
-
-void wait_for_fence(const TimelineFence& fence) {
-    if(device::timeline.last_polled >= fence.value()) {
-        return;
-    }
-
-    y_profile();
-
-    const u64 fence_value = fence.value();
-    VkSemaphoreWaitInfo wait_info = vk_struct();
-    {
-        wait_info.pSemaphores = &device::timeline.semaphore;
-        wait_info.pValues = &fence_value;
-        wait_info.semaphoreCount = 1;
-    }
-
-    static constexpr u64 timeout_ns = 10'000'000'000llu; // 10s
-    if(vkWaitSemaphores(device::vk_device, &wait_info, timeout_ns) != VK_SUCCESS) {
-        y_fatal("Semaphore timeout expired");
-    }
-
-    update_maximum(device::timeline.last_polled, fence_value);
-}
-
-
 
 
 
@@ -356,43 +239,52 @@ VkPhysicalDevice vk_physical_device() {
     return physical_device().vk_physical_device();
 }
 
-VkSemaphore vk_timeline_semaphore() {
-    return device::timeline.semaphore;
-}
-
 const PhysicalDevice& physical_device() {
     return *device::physical_device;
 }
 
 CmdBufferRecorder create_disposable_cmd_buffer() {
-    return thread_device()->create_disposable_cmd_buffer();
+    return device::queue->cmd_pool_for_thread().create_cmd_buffer();
+}
+
+ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer() {
+    return device::queue->cmd_pool_for_thread().create_compute_cmd_buffer();
+}
+
+TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer() {
+    return device::queue->cmd_pool_for_thread().create_transfer_cmd_buffer();
 }
 
 DeviceMemoryAllocator& device_allocator() {
-    return device::allocator.get();
+    return *device::allocator;
 }
 
 DescriptorSetAllocator& descriptor_set_allocator() {
-    return device::descriptor_set_allocator.get();
+    return *device::descriptor_set_allocator;
 }
 
 MeshAllocator& mesh_allocator() {
-    return device::mesh_allocator.get();
+    return *device::mesh_allocator;
 }
 
-const CmdQueue& command_queue() {
-    return *device::queues[0];
+MaterialAllocator& material_allocator() {
+    return *device::material_allocator;
 }
 
-const CmdQueue& loading_command_queue() {
-    if(const usize loading_queue_count = device::queues.size() - 1) {
-        device::queues[++device::next_loading_queue_index % loading_queue_count];
-    }
-    return *device::queues[0];
+TextureLibrary& texture_library() {
+    return *device::texture_library;
+}
+
+CmdQueue& command_queue() {
+    return *device::queue;
+}
+
+CmdQueue& loading_command_queue() {
+    return *device::queue;
 }
 
 const DeviceResources& device_resources() {
-    return device::resources.get();
+    return *device::resources;
 }
 
 const DeviceProperties& device_properties() {
@@ -400,7 +292,7 @@ const DeviceProperties& device_properties() {
 }
 
 LifetimeManager& lifetime_manager() {
-    return device::lifetime_manager.get();
+    return *device::lifetime_manager;
 }
 
 const VkAllocationCallbacks* vk_allocation_callbacks() {
@@ -432,7 +324,7 @@ const VkAllocationCallbacks* vk_allocation_callbacks() {
 
 VkSampler vk_sampler(SamplerType type) {
     y_debug_assert(usize(type) < device::samplers.size());
-    return device::samplers[usize(type)].get().vk_sampler();
+    return device::samplers[usize(type)]->vk_sampler();
 }
 
 const DebugUtils* debug_utils() {
@@ -440,10 +332,7 @@ const DebugUtils* debug_utils() {
 }
 
 void wait_all_queues() {
-    Y_TODO(This is wrong)
-    for(auto& queue : device::queues) {
-        queue->wait();
-    }
+    device::queue->wait();
 }
 
 

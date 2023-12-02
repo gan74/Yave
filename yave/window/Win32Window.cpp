@@ -45,6 +45,7 @@ static Key to_key(WPARAM w_param, LPARAM l_param) {
         const Key key = Key(std::toupper(int(w_param)));
         return is_character_key(key) ? key : Key::Unknown;
     }
+
     switch(w_param) {
         case VK_TAB:        return Key::Tab;
         case VK_CLEAR:      return Key::Clear;
@@ -121,6 +122,32 @@ static MouseButton mouse_button(UINT u_msg) {
     y_fatal("Unknown mouse button");
 }
 
+static LPTSTR to_windows_cursor_icon(CursorShape shape) {
+    switch(shape) {
+        case CursorShape::Arrow:
+            return IDC_ARROW;
+        case CursorShape::TextInput:
+            return IDC_IBEAM;
+        case CursorShape::ResizeAll:
+            return IDC_SIZEALL;
+        case CursorShape::ResizeEW:
+            return IDC_SIZEWE;
+        case CursorShape::ResizeNS:
+            return IDC_SIZENS;
+        case CursorShape::ResizeNESW:
+            return IDC_SIZENESW;
+        case CursorShape::ResizeNWSE:
+            return IDC_SIZENWSE;
+        case CursorShape::Hand:
+            return IDC_HAND;
+        case CursorShape::NotAllowed:
+            return IDC_NO;
+
+        default:
+            return IDC_ARROW;
+    }
+}
+
 [[maybe_unused]]
 static math::Vec2i client_mouse_pos(Window* win) {
     POINT mouse_pos = {};
@@ -171,17 +198,12 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
                 const bool is_down =
                     u_msg == WM_SYSKEYDOWN ||
                     u_msg == WM_KEYDOWN;
-                const bool is_system =
-                    u_msg == WM_SYSKEYDOWN ||
-                    u_msg == WM_SYSKEYUP;
 
                 if(const auto handler = window->event_handler()) {
                     const auto k = to_key(w_param, l_param);
                     if(k != Key::Unknown) {
                         is_down ? handler->key_pressed(k) : handler->key_released(k);
-                        if(!is_system) {
-                            return 0;
-                        }
+                        return 0;
                     }
                 } else if(is_down && w_param == VK_ESCAPE) {
                     // escape close the window by default
@@ -233,6 +255,8 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
             break;
         }
     }
+
+    y_profile_zone("windows proc");
     return ::DefWindowProc(hwnd, u_msg, w_param, l_param);
 }
 
@@ -294,11 +318,13 @@ void Window::close() {
 
 bool Window::update() {
     y_profile();
-    MSG msg;
+
+    MSG msg = {};
     while(::PeekMessage(&msg, _hwnd, 0, 0, PM_REMOVE)) {
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
     }
+
     return _run;
 }
 
@@ -359,6 +385,10 @@ void Window::set_window_position(const math::Vec2i &pos) {
 
 void Window::set_title(const core::String& title) {
     ::SetWindowTextA(_hwnd, title.data());
+}
+
+void Window::set_cursor_shape(CursorShape shape) {
+    ::SetCursor(shape == CursorShape::None ? nullptr : ::LoadCursor(nullptr, to_windows_cursor_icon(shape)));
 }
 
 }

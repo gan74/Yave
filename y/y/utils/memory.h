@@ -24,15 +24,15 @@ SOFTWARE.
 
 #include <y/utils.h>
 
+#include <bit>
+
 namespace y {
 
 constexpr usize max_alignment = std::alignment_of<std::max_align_t>::value;
 
 template<typename U>
 constexpr U align_up_to(U value, U alignment) {
-    y_debug_assert(alignment);
     if(const U diff = value % alignment) {
-        y_debug_assert(diff <= value + alignment);
         return value + alignment - diff;
     }
     return value;
@@ -40,7 +40,6 @@ constexpr U align_up_to(U value, U alignment) {
 
 template<typename U>
 constexpr U align_down_to(U value, U alignment) {
-    y_debug_assert(alignment);
     const U diff = value % alignment;
     return value - diff;
 }
@@ -49,26 +48,6 @@ template<typename U>
 constexpr U align_up_to_max(U size) {
     return align_up_to(size, U(max_alignment));
 }
-
-// https://en.wikipedia.org/wiki/Hamming_weight
-static inline u32 popcnt_32(u32 x) {
-    x -= (x >> 1) & 0x55555555;
-    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-    x = (x + (x >> 4)) & 0x0f0f0f0f;
-    return (x * 0x01010101) >> 24;
-}
-
-static inline u64 popcnt_64(u64 x) {
-    const u64 m1  = 0x5555555555555555;
-    const u64 m2  = 0x3333333333333333;
-    const u64 m4  = 0x0f0f0f0f0f0f0f0f;
-    const u64 h01 = 0x0101010101010101;
-    x -= (x >> 1) & m1;
-    x = (x & m2) + ((x >> 2) & m2);
-    x = (x + (x >> 4)) & m4;
-    return (x * h01) >> 56;
-}
-
 
 }
 

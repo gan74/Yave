@@ -23,6 +23,7 @@ SOFTWARE.
 #define EDITOR_WIDGETS_FILESYSTEMVIEW_H
 
 #include <editor/Widget.h>
+#include <editor/utils/ui.h>
 
 #include <yave/utils/FileSystemModel.h>
 
@@ -47,7 +48,7 @@ class FileSystemView : public Widget {
         struct Entry {
             core::String name;
             EntryType type;
-            core::String icon;
+            UiIcon icon;
 
             usize file_size;
 
@@ -63,10 +64,10 @@ class FileSystemView : public Widget {
         const Entry* entry(usize index) const;
         core::String entry_full_name(const Entry& entry) const;
 
-
         virtual void update();
         virtual void draw_context_menu();
-        virtual core::Result<core::String> entry_icon(const core::String&, EntryType type) const;
+        virtual core::Result<UiIcon> entry_icon(const core::String&, EntryType type) const;
+        virtual UiTexture entry_thumbmail(const core::String&, EntryType) const;
 
         virtual void path_changed() {}
         virtual void entry_hoverred(const Entry*) {}
@@ -79,19 +80,19 @@ class FileSystemView : public Widget {
     private:
         bool process_context_menu();
 
-        const FileSystemModel* _filesystem = nullptr;
+        static constexpr auto update_duration = core::Duration::seconds(1.0);
 
-        bool _at_root = true;
-        bool _refresh = false;
+        const FileSystemModel* _filesystem = nullptr;
 
         usize _hovered = usize(-1);
         core::Vector<Entry> _entries;
 
         core::String _current_path;
 
-        static constexpr auto update_duration = core::Duration::seconds(1.0);
-
         core::Chrono _update_chrono;
+
+        bool _refresh = false;
+        bool _display_thumbmails = false;
 };
 
 }

@@ -29,6 +29,8 @@ SOFTWARE.
 #include "EntityWorld.h"
 #endif
 
+#include <y/reflect/reflect.h>
+
 
 namespace yave {
 namespace ecs {
@@ -39,15 +41,11 @@ std::unique_ptr<ComponentContainerBase> create_container() {
 }
 
 template<typename T>
-void create_component(EntityWorld& world, EntityId id) {
-    world.add_component<T>(id);
+void create_or_replace_component(EntityWorld& world, EntityId id) {
+    world.add_or_replace_component<T>(id);
 }
 
 
-template<typename... Args>
-void RequiredComponents<Args...>::add_required_components(EntityWorld& world, EntityId id) {
-    world.add_components<Args...>(id);
-}
 
 
 template<typename Component, typename SystemType, typename... Tail>
@@ -69,17 +67,6 @@ void SystemLinkedComponent<Component, SystemTypes...>::register_component_type(S
 
 
 template<typename T>
-void ComponentContainerBase::add_required_components(EntityWorld& world, EntityId id) {
-    unused(id);
-    if constexpr(is_detected_v<detail::has_required_components_t, T>) {
-        T::add_required_components(world, id);
-    }
-}
-
-
-
-
-template<typename T>
 ComponentBox<T>::ComponentBox(T t) : _component(std::move(t)) {
 }
 
@@ -89,8 +76,16 @@ ComponentRuntimeInfo ComponentBox<T>::runtime_info() const {
 }
 
 template<typename T>
-void ComponentBox<T>::add_to(EntityWorld& world, EntityId id) const {
-    world.add_component<T>(id, _component);
+void ComponentBox<T>::add_to(EntityWorld& world, EntityId id, const EntityIdMap& id_map) const {
+    T* comp = world.add_or_replace_component<T>(id, _component);
+
+    reflect::explore_recursive(*comp, [&](auto& m) {
+        if constexpr(std::is_same_v<std::remove_cvref_t<decltype(m)>, EntityId>) {
+            if(const auto it = id_map.find(m); it != id_map.end()) {
+                m = it->second;
+            }
+        }
+    });
 }
 
 }

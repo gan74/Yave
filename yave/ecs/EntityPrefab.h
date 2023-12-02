@@ -22,32 +22,49 @@ SOFTWARE.
 #ifndef YAVE_ECS_ENTITYPREFAB_H
 #define YAVE_ECS_ENTITYPREFAB_H
 
-#include "ComponentContainer.h"
+#include "ComponentBox.h"
 
+#include <yave/assets/AssetPtr.h>
 #include <yave/assets/AssetTraits.h>
 
 namespace yave {
 namespace ecs {
 
-class EntityPrefab {
+class EntityPrefab : NonCopyable {
     public:
+        EntityPrefab() = default;
+        EntityPrefab(EntityId id);
+
+        bool is_empty() const;
+
+        EntityId original_id() const;
+
+        void add_box(std::unique_ptr<ComponentBoxBase> box);
+        void add_child(AssetPtr<EntityPrefab> prefab);
+        void add_child(std::unique_ptr<EntityPrefab> prefab);
+
+
+        core::Span<std::unique_ptr<EntityPrefab>> children() const;
+        core::Span<AssetPtr<EntityPrefab>> asset_children() const;
+
+        core::Span<std::unique_ptr<ComponentBoxBase>> components() const;
+
+
         template<typename T>
         void add(T component) {
-            _components << std::make_unique<ComponentBox<T>>(std::move(component));
+            add_box(std::make_unique<ComponentBox<T>>(std::move(component)));
         }
 
-        void add(std::unique_ptr<ComponentBoxBase> box) {
-            _components << std::move(box);
-        }
 
-        const auto& components() const {
-            return _components;
-        }
-
-        y_reflect(EntityPrefab, _components)
+        y_reflect(EntityPrefab, _id, _components, _children, _asset_children)
 
     private:
+        friend class EntityWorld;
+
+        EntityId _id;
         core::Vector<std::unique_ptr<ComponentBoxBase>> _components;
+        core::Vector<std::unique_ptr<EntityPrefab>> _children;
+        core::Vector<AssetPtr<EntityPrefab>> _asset_children;
 };
 
 }

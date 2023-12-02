@@ -33,7 +33,7 @@ void ComponentInspector::inspect(const core::String& name, float& f, FloatRole r
         case FloatRole::Distance:
         case FloatRole::DistanceKilometers:
         case FloatRole::NormalizedLumFlux:
-            inspect(name, f, 0.0, -std::numeric_limits<float>::max(), role);
+            inspect(name, f, 0.0, std::numeric_limits<float>::max(), role);
         break;
 
         case FloatRole::Angle:
@@ -45,7 +45,7 @@ void ComponentInspector::inspect(const core::String& name, float& f, FloatRole r
         break;
 
         default:
-            inspect(name, f, std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), role);
+            inspect(name, f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), role);
         break;
     }
 

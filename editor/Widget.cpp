@@ -24,12 +24,14 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 namespace detail {
 EditorWidget* first_widget = nullptr;
 void register_widget(EditorWidget* widget) {
-    log_msg(fmt("Registering widget \"%\"", widget->name), Log::Debug);
+    log_msg(fmt("Registering widget \"{}\"", widget->name), Log::Debug);
     widget->next = first_widget;
     first_widget = widget;
 }
@@ -81,10 +83,13 @@ void Widget::on_gui() {
 }
 
 bool Widget::before_gui() {
+    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, 0);
+
     return true;
 }
 
 void Widget::after_gui() {
+    ImGui::PopStyleColor();
 }
 
 void Widget::draw_gui_inside() {
@@ -107,13 +112,20 @@ void Widget::draw(bool inside) {
     bool opened = false;
     if(inside) {
         opened = ImGui::BeginChild(_title_with_id.data(), math::Vec2(), false, _flags);
-    } else if(is_modal) {
-        if(_visible) {
-            ImGui::OpenPopup(_title_with_id.data());
-        }
-        opened = ImGui::BeginPopupModal(_title_with_id.data(), &_visible, _flags);
     } else {
-        opened = ImGui::Begin(_title_with_id.data(), &_visible, _flags);
+        ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_ScrollbarBg));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.5f);
+        if(is_modal) {
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGui::GetColorU32(ImGuiCol_ChildBg));
+            if(_visible) {
+                ImGui::OpenPopup(_title_with_id.data());
+            }
+            opened = ImGui::BeginPopupModal(_title_with_id.data(), &_visible, _flags);
+        } else {
+            opened = ImGui::Begin(_title_with_id.data(), &_visible, _flags);
+        }
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
     }
 
     if(opened) {
@@ -126,6 +138,7 @@ void Widget::draw(bool inside) {
         if(opened) {
             ImGui::EndPopup();
         }
+        ImGui::PopStyleColor();
     } else {
         ImGui::End();
     }
@@ -147,7 +160,7 @@ void Widget::set_id(u64 id) {
 }
 
 void Widget::set_title(std::string_view title) {
-    _title_with_id = fmt("%##%", title, _id);
+    _title_with_id = fmt("{}##{}", title, _id);
     _title = std::string_view(_title_with_id.begin(), title.size());
 }
 

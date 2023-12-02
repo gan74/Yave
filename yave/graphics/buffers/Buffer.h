@@ -179,6 +179,13 @@ class TypedWrapper final : public Buff {
 
         using value_type = Elem;
 
+        static_assert(
+            !(usage == BufferUsage::StorageBit || usage == BufferUsage::UniformBit) ||
+            (sizeof(Elem) == sizeof(u32)) ||
+            (sizeof(Elem) == sizeof(u32) * 2) ||
+            sizeof(Elem) % (sizeof(u32) * 4) == 0,
+            "Element size should be a multiple of vec4's (or float or vec2)"
+        );
 
         static u64 total_byte_size(u64 size) {
             return size * sizeof(value_type);

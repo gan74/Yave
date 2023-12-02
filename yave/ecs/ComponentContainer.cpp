@@ -31,20 +31,21 @@ ComponentBoxBase::~ComponentBoxBase() {
 ComponentContainerBase::~ComponentContainerBase() {
 }
 
-
-void ComponentContainerBase::clean_after_tick() {
-    _mutated.make_empty();
-    _to_remove.clear();
+bool ComponentContainerBase::contains(EntityId id) const {
+    return id_set().contains(id);
 }
 
-void ComponentContainerBase::prepare_for_tick() {
-    y_profile();
+ComponentTypeIndex ComponentContainerBase::type_id() const {
+    return _type_id;
+}
 
-    for(const EntityId id : _to_remove) {
-        if(_mutated.contains(id)) {
-            _mutated.erase(id);
-        }
-    }
+const SparseIdSetBase& ComponentContainerBase::id_set() const {
+    Y_TODO(clean this mess)
+    return *reinterpret_cast<const SparseIdSetBase*>(this + 1);
+}
+
+const SparseIdSet& ComponentContainerBase::recently_mutated() const {
+    return _mutated;
 }
 
 }

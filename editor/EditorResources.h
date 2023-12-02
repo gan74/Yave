@@ -44,7 +44,7 @@ class EditorResources final : NonMovable {
             ScreenVert,
             ImGuiVert,
             ImGuiBillBoardVert,
-            IdVert,
+            BasicVert,
 
             ImGuiBillBoardGeom,
 

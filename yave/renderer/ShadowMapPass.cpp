@@ -88,9 +88,9 @@ struct SubPass {
 };
 
 static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
-                            math::Vec2ui offset, u32 size, // from allocator
-                            const SceneView& light_view,
-                            const math::Vec2& uv_mul) {
+                              math::Vec2ui offset, u32 size, // from allocator
+                              const SceneView& light_view,
+                              const math::Vec2& uv_mul) {
     y_profile();
 
     if(!size) {
@@ -99,7 +99,7 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
 
     const float size_f = float(size);
     const uniform::ShadowMapParams params = {
-        light_view.camera().viewproj_matrix(),
+        light_view.camera().view_proj_matrix(),
         math::Vec2(offset) * uv_mul,
         uv_mul * size_f,
         size_f,
@@ -122,11 +122,12 @@ static math::Matrix4<> flip_for_backfaces(math::Matrix4<> proj) {
 
 
 static Camera spotlight_camera(const TransformableComponent& tr, const SpotLightComponent& light) {
-    const float z_near = 0.1f;
+    const float z_near = light.min_radius();
 
-    Camera camera;
-    camera.set_view(math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()));
-    camera.set_proj(flip_for_backfaces(math::perspective(light.half_angle() * 2.0f, 1.0f, z_near)));
+    Camera camera(
+        math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()),
+        flip_for_backfaces(math::perspective(light.half_angle() * 2.0f, 1.0f, z_near))
+    );
     camera.set_far(light.range() * tr.transform().scale().max_component());
     y_debug_assert(!camera.is_orthographic());
     return camera;
@@ -183,7 +184,7 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene)
 
     ShadowCastingLights shadow_casters;
 
-    shadow_casters.directionals.set_min_capacity(world.components<DirectionalLightComponent>().size());
+    shadow_casters.directionals.set_min_capacity(world.component_set<DirectionalLightComponent>().size());
     for(auto&& [id, comp] : world.query<DirectionalLightComponent>(tags)) {
         const auto& [l] = comp;
         if(!l.cast_shadow()) {
@@ -204,8 +205,7 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene)
     };
 
     if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-        const Camera& camera = scene.camera();
-        const core::Vector<ecs::EntityId> visible = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
+        const core::Vector<ecs::EntityId> visible = octree_system->find_entities(scene.camera());
         collect_spots(world.query<TransformableComponent, SpotLightComponent>(visible, tags));
     } else {
         collect_spots(world.query<TransformableComponent, SpotLightComponent>(tags));

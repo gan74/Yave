@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <y/utils/types.h>
 
+
 #define y_defer_named(expr, name)   auto y_create_name_with_prefix(defer_ ## name) = y::ScopeGuard([&]() { expr; })
 #define y_defer(expr)               auto y_create_name_with_prefix(defer)          = y::ScopeGuard([&]() { expr; })
 
@@ -39,6 +40,17 @@ constexpr T log2ui(T n) {
     return (n >> 1) ? log2ui(n >> 1) + 1 : 0;
 }
 
+template<typename T>
+constexpr T next_pow_of_2(T n) {
+    const T l = log2ui(n);
+    const T prev = T(1) << l;
+    return prev < n ? prev * 2 : prev;
+}
+
+template<typename T>
+constexpr bool is_pow_of_2(T n) {
+    return n == (T(1) << log2ui(n));
+}
 
 
 
@@ -56,27 +68,11 @@ inline constexpr bool is_32_bits() {
 }
 
 template<auto T>
-inline constexpr auto force_ct() {
+inline consteval auto force_ct() {
     return T;
 }
 
-
-namespace detail {
-    static constexpr u32 endian = 0x01020304; // http://stackoverflow.com/questions/1583791/constexpr-and-endianness
-    static constexpr u32 endianness = static_cast<const u8&>(endian);
-}
-
-inline constexpr bool is_little_endian() {
-    return detail::endianness == 0x04;
-}
-
-inline constexpr bool is_big_endian() {
-    return detail::endianness == 0x01;
-}
-
-static_assert(is_little_endian() || is_big_endian(), "Endianness unknown");
-
-
+// https://stackoverflow.com/a/57453713/3496382
 
 template<typename T>
 class ScopeGuard {

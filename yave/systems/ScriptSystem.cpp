@@ -42,10 +42,10 @@ ScriptSystem::ScriptSystem() : ecs::System("ScriptSystem") {
     script::bind_component_type<PointLightComponent>(_state);
 }
 
-void ScriptSystem::update(ecs::EntityWorld& world, float) {
-    ScriptWorldComponent* scripts_comp = world.get_or_add_world_component<ScriptWorldComponent>();
+void ScriptSystem::update(float) {
+    ScriptWorldComponent* scripts_comp = world().get_or_add_world_component<ScriptWorldComponent>();
 
-    _state["world"] = &world;
+    _state["world"] = &world();
 
     for(auto& one_shot : scripts_comp->_one_shot) {
         if(!one_shot.done) {
@@ -53,7 +53,7 @@ void ScriptSystem::update(ecs::EntityWorld& world, float) {
             try {
                 _state.safe_script(one_shot.code);
             } catch(std::exception& e) {
-                log_msg(fmt("Lua error in one shot: %", e.what()), Log::Error);
+                log_msg(fmt("Lua error in one shot: {}", e.what()), Log::Error);
             }
         }
     }
@@ -63,7 +63,7 @@ void ScriptSystem::update(ecs::EntityWorld& world, float) {
         try {
             _state.safe_script(script.code);
         } catch(std::exception& e) {
-            log_msg(fmt("Lua error in %: %", script.name, e.what()), Log::Error);
+            log_msg(fmt("Lua error in {}: {}", script.name, e.what()), Log::Error);
         }
     }
 

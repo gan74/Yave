@@ -32,7 +32,7 @@ SOFTWARE.
 namespace yave {
 
 ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ExposurePass& exposure, const ToneMappingSettings& settings) {
-    static constexpr ImageFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    static constexpr ImageFormat format = VK_FORMAT_A2R10G10B10_UNORM_PACK32;
 
     const math::Vec2ui size = framegraph.image_size(in_lit);
 
@@ -50,7 +50,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     FrameGraphMutableTypedBufferId<uniform::ExposureParams> mut_params;
     if(!settings.auto_exposure) {
         mut_params = builder.declare_typed_buffer<uniform::ExposureParams>();
-        builder.map_buffer(mut_params);
+        builder.map_buffer(mut_params, uniform::ExposureParams{});
         params = mut_params;
     }
 
@@ -59,13 +59,8 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     builder.add_uniform_input(params);
     builder.add_inline_input(InlineDescriptor(shader_settings));
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        if(!settings.auto_exposure) {
-            auto mapping = self->resources().map_buffer(mut_params);
-            mapping[0] = uniform::ExposureParams{};
-        }
-
         const auto* material = device_resources()[DeviceResources::ToneMappingMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+        render_pass.bind_material_template(material, self->descriptor_sets());
         render_pass.draw_array(3);
     });
 

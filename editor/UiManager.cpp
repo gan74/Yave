@@ -118,9 +118,7 @@ void UiManager::update_fps_counter() {
 
 void UiManager::draw_fps_counter() {
     const float avg_time = _total_time / std::min(u64(_frame_times.size()), _frame_number);
-    char buffer[64] = {};
-    std::snprintf(buffer, sizeof(buffer), "FPS: %.01f (%.01f ms)", 1000.0f / avg_time, avg_time);
-    if(ImGui::MenuItem(buffer)) {
+    if(ImGui::MenuItem(fmt_c_str("FPS: {:.1f} {:.01f} ms", 1000.0f / avg_time, avg_time))) {
         add_widget(std::make_unique<PerformanceMetrics>());
     }
 }
@@ -158,16 +156,14 @@ void UiManager::draw_menu_bar() {
         if(ImGui::BeginMenu("File")) {
             ImGui::EndMenu();
         }
-        if(ImGui::BeginMenu("Edit")) {
-            ImGui::EndMenu();
-        }
+
         if(ImGui::BeginMenu("View")) {
             ImGui::EndMenu();
         }
 
         if(asset_loader().is_loading()) {
             ImGui::Separator();
-            ImGui::TextUnformatted(ICON_FA_DATABASE);
+            ImGui::TextColored(imgui::error_text_color, ICON_FA_DATABASE);
             if(ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
                 ImGui::Text("Assets are loading%s", imgui::ellipsis());
@@ -178,6 +174,10 @@ void UiManager::draw_menu_bar() {
         if(app_settings().ui.draw_fps_counter) {
             ImGui::Separator();
             draw_fps_counter();
+        }
+
+        if(ImGui::GetIO().WantCaptureKeyboard) {
+            ImGui::TextUnformatted(ICON_FA_KEYBOARD);
         }
 
         for(const EditorAction* action : _actions) {
@@ -206,7 +206,7 @@ void UiManager::draw_menu_bar() {
         }
 
         {
-            const float search_bar_size = 200.0;
+            const float search_bar_size = 250.0;
             const float margin = ImGui::CalcTextSize(ICON_FA_SEARCH " ").x;
             const float offset = ImGui::GetContentRegionMax().x - (search_bar_size + margin);
 
@@ -219,6 +219,10 @@ void UiManager::draw_menu_bar() {
                 if(imgui::begin_suggestion_popup()) {
                     const std::regex regex(_search_pattern.data(), std::regex::icase);
                     for(const EditorAction* action : _actions) {
+                        if(action->enabled && !(action->enabled()) || (action->flags & EditorAction::Contextual) == EditorAction::Contextual) {
+                            continue;
+                        }
+
                         if(std::regex_search(action->name.data(), regex)) {
                             const core::String shortcut = shortcut_text(action->shortcut);
                             if(imgui::suggestion_item(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {

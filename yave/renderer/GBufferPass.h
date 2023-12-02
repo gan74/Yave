@@ -30,11 +30,12 @@ struct GBufferPass {
     SceneRenderSubPass scene_pass;
 
     FrameGraphImageId depth;
+    FrameGraphImageId motion;
     FrameGraphImageId color;
     FrameGraphImageId normal;
     FrameGraphImageId emissive;
 
-    static GBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size);
+    static GBufferPass create(FrameGraph& framegraph, const CameraBufferPass& camera, const math::Vec2ui& size);
 };
 
 }

@@ -58,6 +58,11 @@ class FrameGraph : NonMovable {
         usize last_write = 0;
         usize first_use = 0;
 
+        FrameGraphPersistentResourceId persistent;  // Persistent
+        FrameGraphPersistentResourceId persistent_prev; // Persistent from previous frame
+
+        bool is_persistent() const;
+        bool is_prev() const;
         usize last_use() const;
         void register_use(usize index, bool is_written);
     };
@@ -82,10 +87,21 @@ class FrameGraph : NonMovable {
         MemoryType memory_type = MemoryType::DontCare;
     };
 
+    struct ImageClearInfo {
+        usize pass_index = 0;
+        FrameGraphMutableImageId dst;
+    };
+
     struct ImageCopyInfo {
         usize pass_index = 0;
         FrameGraphMutableImageId dst;
         FrameGraphImageId src;
+    };
+
+    struct BufferCopyInfo {
+        usize pass_index = 0;
+        FrameGraphMutableBufferId dst;
+        FrameGraphBufferId src;
     };
 
     struct InlineStorage {
@@ -101,6 +117,7 @@ class FrameGraph : NonMovable {
         FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool);
         ~FrameGraph();
 
+        u64 frame_id() const;
         const FrameGraphFrameResources& resources() const;
 
         FrameGraphRegion region(std::string_view name);
@@ -109,6 +126,9 @@ class FrameGraph : NonMovable {
 
         FrameGraphPassBuilder add_pass(std::string_view name);
         FrameGraphComputePassBuilder add_compute_pass(std::string_view name);
+
+        FrameGraphImageId make_persistent_and_get_prev(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id);
+        FrameGraphBufferId make_persistent_and_get_prev(FrameGraphBufferId res, FrameGraphPersistentResourceId persistent_id);
 
         math::Vec2ui image_size(FrameGraphImageId res) const;
         math::Vec3ui volume_size(FrameGraphVolumeId res) const;
@@ -120,6 +140,11 @@ class FrameGraph : NonMovable {
 
         template<typename T>
         usize buffer_size(FrameGraphTypedBufferId<T> res) const {
+            return usize(buffer_byte_size(res) / sizeof(T));
+        }
+
+        template<typename T>
+        usize buffer_size(FrameGraphMutableTypedBufferId<T> res) const {
             return usize(buffer_byte_size(res) / sizeof(T));
         }
 
@@ -138,10 +163,15 @@ class FrameGraph : NonMovable {
         const ImageCreateInfo& info(FrameGraphVolumeId res) const;
         const BufferCreateInfo& info(FrameGraphBufferId res) const;
 
+
         void register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass);
         void register_usage(FrameGraphVolumeId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass);
         void register_usage(FrameGraphBufferId res, BufferUsage usage, bool is_written, const FrameGraphPass* pass);
+
         void register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass);
+        void register_buffer_copy(FrameGraphMutableBufferId dst, FrameGraphBufferId src, const FrameGraphPass* pass);
+
+        void register_image_clear(FrameGraphMutableImageId dst, const FrameGraphPass* pass);
 
         [[nodiscard]] InlineDescriptor copy_inline_descriptor(InlineDescriptor desc);
 
@@ -166,11 +196,17 @@ class FrameGraph : NonMovable {
         core::Vector<std::pair<FrameGraphMutableBufferId, BufferCreateInfo>> _buffers;
 
         core::Vector<ImageCopyInfo> _image_copies;
+        core::Vector<BufferCopyInfo> _buffer_copies;
+
+        core::Vector<ImageClearInfo> _image_clears;
+
         core::Vector<InlineStorage> _inline_storage;
 
         usize _pass_index = 0;
 
         core::Vector<Region> _regions;
+
+        core::Vector<FrameGraphResourceId> _persistents;
 
 };
 

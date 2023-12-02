@@ -171,9 +171,10 @@ class ScratchPad : public ScratchPadBase<Elem> {
 
         inline ScratchPad() = default;
 
-        inline ScratchPad(usize size) : ScratchPadBase<Elem>(detail::alloc_typed_scratchpad<data_type>(size), size) {
+        template<typename... Args>
+        inline ScratchPad(usize size, Args&&... args) : ScratchPadBase<Elem>(detail::alloc_typed_scratchpad<data_type>(size), size) {
             for(usize i = 0; i != this->_size; ++i) {
-                new(this->_data + i) data_type();
+                new(this->_data + i) data_type(y_fwd(args)...);
             }
         }
 

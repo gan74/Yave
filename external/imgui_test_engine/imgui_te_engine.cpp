@@ -479,8 +479,12 @@ void ImGuiTestEngine_ClearInput(ImGuiTestEngine* engine)
     engine->Inputs.MouseWheel = ImVec2(0, 0);
 
     // FIXME: Necessary?
+#if IMGUI_VERSION_NUM >= 18972
+    g.IO.ClearEventsQueue();
+#else
     g.InputEventsQueue.resize(0);
     g.IO.ClearInputCharacters();
+#endif
     g.IO.ClearInputKeys();
 
     ImGuiTestEngine_ApplyInputToImGuiContext(engine);
@@ -826,6 +830,18 @@ static void ImGuiTestEngine_PostRender(ImGuiTestEngine* engine, ImGuiContext* ui
     ImGuiContext& g = *ui_ctx;
     if (!engine->IO.ConfigMouseDrawCursor && !g.IO.MouseDrawCursor && ImGuiTestEngine_IsUsingSimulatedInputs(engine))
         g.MouseCursor = ImGuiMouseCursor_Arrow;
+
+
+    // Check ImDrawData integrity
+    // This is currently a very cheap operation but may later become slower we if e.g. check idx boundaries.
+#ifdef IMGUI_HAS_DOCK
+    if (engine->IO.CheckDrawDataIntegrity)
+        for (ImGuiViewport* viewport : ImGui::GetPlatformIO().Viewports)
+            DrawDataVerifyMatchingBufferCount(viewport->DrawData);
+#else
+    if (engine->IO.CheckDrawDataIntegrity)
+        DrawDataVerifyMatchingBufferCount(ImGui::GetDrawData());
+#endif
 
     engine->CaptureContext.PostRender();
 }
@@ -1332,6 +1348,18 @@ void ImGuiTestEngine_GetResult(ImGuiTestEngine* engine, int& count_tested, int& 
         if (test->Status == ImGuiTestStatus_Success)
             count_success++;
     }
+}
+
+// Get a copy of the test list
+void ImGuiTestEngine_GetTestList(ImGuiTestEngine* engine, ImVector<ImGuiTest*>* out_tests)
+{
+    *out_tests = engine->TestsAll;
+}
+
+// Get a copy of the test queue
+void ImGuiTestEngine_GetTestQueue(ImGuiTestEngine* engine, ImVector<ImGuiTestRunTask>* out_tests)
+{
+    *out_tests = engine->TestsQueue;
 }
 
 static void ImGuiTestEngine_UpdateHooks(ImGuiTestEngine* engine)

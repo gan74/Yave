@@ -28,6 +28,7 @@ SOFTWARE.
 #include "ToneMappingPass.h"
 #include "SSAOPass.h"
 #include "BloomPass.h"
+#include "TAAPass.h"
 
 namespace yave {
 
@@ -36,9 +37,11 @@ struct RendererSettings {
     LightingSettings lighting;
     SSAOSettings ssao;
     BloomSettings bloom;
+    TAASettings taa;
 };
 
 struct DefaultRenderer {
+    CameraBufferPass camera;
     GBufferPass gbuffer;
     LightingPass lighting;
     AtmospherePass atmosphere;
@@ -46,13 +49,14 @@ struct DefaultRenderer {
     BloomPass bloom;
     ToneMappingPass tone_mapping;
     SSAOPass ssao;
+    TAAPass taa;
 
 
     FrameGraphImageId final;
     FrameGraphImageId depth;
 
     static DefaultRenderer create(FrameGraph& framegraph,
-                                  const SceneView& view,
+                                  const SceneView& scene_view,
                                   const math::Vec2ui& size,
                                   const RendererSettings& settings = RendererSettings());
 };

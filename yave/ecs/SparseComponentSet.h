@@ -102,15 +102,19 @@ class SparseIdSet : public SparseIdSetBase {
             }
         }
 
-        void erase(EntityId id) {
-            y_debug_assert(contains(id));
-
+        bool erase(EntityId id) {
             const index_type index = id.index();
+            if(index >= _sparse.size()) {
+                return false;
+            }
+
             const index_type dense_index = _sparse[index];
+            if(dense_index >= _dense.size() || _dense[dense_index] != id) {
+                return false;
+            }
+
             const index_type last_dense_index = index_type(_dense.size() - 1);
             const EntityId last = _dense[last_dense_index];
-
-            y_debug_assert(_dense[dense_index] == id);
 
             std::swap(_dense[dense_index], _dense[last_dense_index]);
 
@@ -120,8 +124,9 @@ class SparseIdSet : public SparseIdSetBase {
             _sparse[last_sparse_index] = dense_index;
             _sparse[index] = invalid_index;
 
-
             y_debug_assert(!contains(id));
+
+            return true;
         }
 
         void clear() {
@@ -267,15 +272,19 @@ class SparseComponentSetBase : public SparseIdSetBase {
             return insert(std::get<0>(value), std::move(std::get<1>(value)));
         }
 
-        void erase(EntityId id) {
-            y_debug_assert(contains(id));
-
+        bool erase(EntityId id) {
             const index_type index = id.index();
+            if(index >= _sparse.size()) {
+                return false;
+            }
+
             const index_type dense_index = _sparse[index];
+            if(dense_index >= _dense.size() || _dense[dense_index] != id) {
+                return false;
+            }
+
             const index_type last_dense_index = index_type(_dense.size() - 1);
             const EntityId last = _dense[last_dense_index];
-
-            y_debug_assert(_dense[dense_index] == id);
 
             std::swap(_dense[dense_index], _dense[last_dense_index]);
             std::swap(_values[dense_index], _values[last_dense_index]);
@@ -290,6 +299,8 @@ class SparseComponentSetBase : public SparseIdSetBase {
             audit();
 
             y_debug_assert(!contains(id));
+
+            return true;
         }
 
 

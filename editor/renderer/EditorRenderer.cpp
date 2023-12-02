@@ -31,6 +31,8 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/utils/DirectDraw.h>
+
 
 namespace editor {
 
@@ -49,12 +51,29 @@ static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameG
     builder.add_uniform_input(selection_id);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = resources()[EditorResources::SelectionMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets()[0]);
+        render_pass.bind_material_template(material, self->descriptor_sets());
         render_pass.draw_array(3);
     });
 
     return selection;
 }
+
+static FrameGraphImageId render_debug_drawer(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_color, FrameGraphImageId in_depth) {
+    FrameGraphPassBuilder builder = framegraph.add_pass("Debug drawer pass");
+
+    const auto color = builder.declare_copy(in_color);
+    const auto depth = builder.declare_copy(in_depth);
+
+    builder.add_color_output(color);
+    builder.add_depth_output(depth);
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass*) {
+        debug_drawer().render(render_pass, view.camera().view_proj_matrix());
+        debug_drawer().clear();
+    });
+
+    return color;
+}
+
 
 EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const EditorRendererSettings& settings) {
     y_profile();
@@ -67,20 +86,26 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
         renderer.depth = renderer.renderer.depth;
     }
 
+    const SceneView& scene_view = renderer.renderer.camera.unjittered_view;
+
     if(settings.show_editor_entities) {
-        const EditorPass ed = EditorPass::create(framegraph, view, renderer.depth, renderer.final);
+        const EditorPass ed = EditorPass::create(framegraph, scene_view, renderer.depth, renderer.final);
         renderer.depth = ed.depth;
         renderer.final = ed.color;
     }
 
     if(settings.show_selection) {
         auto id_and_depth = [](const auto& pass) { return std::pair{pass.id, pass.depth}; };
-        const IdBufferPass id_pass = IdBufferPass::create(framegraph, view, size, EditorPassFlags::SelectionOnly);
+        const IdBufferPass id_pass = IdBufferPass::create(framegraph, scene_view, size, EditorPassFlags::SelectionAndChildren);
         const auto [id, depth] = settings.show_editor_entities
-            ? id_and_depth(EditorPass::create(framegraph, view, id_pass.depth, {}, id_pass.id, EditorPassFlags::SelectionOnly))
+            ? id_and_depth(EditorPass::create(framegraph, scene_view, id_pass.depth, {}, id_pass.id, EditorPassFlags::SelectionAndChildren))
             : id_and_depth(id_pass);
 
         renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth, id);
+    }
+
+    if(settings.show_debug_drawer) {
+        renderer.final = render_debug_drawer(framegraph, scene_view, renderer.final, renderer.depth);
     }
 
     return renderer;

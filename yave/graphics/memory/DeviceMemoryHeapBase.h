@@ -43,11 +43,15 @@ class DeviceMemoryHeapBase : NonMovable {
         virtual void* map(const VkMappedMemoryRange& range, MappingAccess access) = 0;
         virtual void unmap(const VkMappedMemoryRange& range, MappingAccess access) = 0;
 
+        MemoryType memory_type() const;
+
     protected:
-        DeviceMemoryHeapBase() = default;
+        DeviceMemoryHeapBase(MemoryType type);
 
         void invalidate_for_map(const VkMappedMemoryRange& range, MappingAccess access);
         void flush_for_unmap(const VkMappedMemoryRange& range, MappingAccess access);
+
+        const MemoryType _type;
 };
 
 }

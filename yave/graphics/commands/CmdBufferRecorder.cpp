@@ -22,9 +22,11 @@ SOFTWARE.
 
 #include "CmdBufferRecorder.h"
 #include "CmdTimingRecorder.h"
+#include "CmdQueue.h"
 
 #include <yave/material/Material.h>
 #include <yave/material/MaterialTemplate.h>
+#include <yave/graphics/images/TextureLibrary.h>
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
@@ -35,6 +37,7 @@ SOFTWARE.
 #include <yave/graphics/device/extensions/DebugUtils.h>
 
 #include <y/core/ScratchPad.h>
+
 
 namespace yave {
 
@@ -49,10 +52,14 @@ CmdBufferRegion::~CmdBufferRegion() {
             y_debug_assert(_time_recorder->vk_cmd_buffer() == _buffer);
             _time_recorder->end_zone();
         }
+
+#ifdef YAVE_GPU_PROFILING
+        reinterpret_cast<tracy::VkCtxScope*>(&_profiling_scope)->~VkCtxScope();
+#endif
     }
 }
 
-CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, CmdTimingRecorder* time_rec, const char* name, const math::Vec4& color) :
+CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, CmdQueue* queue, const char* name, const math::Vec4& color) :
         _buffer(cmd_buffer.vk_cmd_buffer()),
         _time_recorder(time_rec) {
 
@@ -64,6 +71,17 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorder& cmd_buffer, CmdTimingR
         y_debug_assert(_time_recorder->vk_cmd_buffer() == _buffer);
         _time_recorder->begin_zone(name);
     }
+
+    unused(queue);
+#ifdef YAVE_GPU_PROFILING
+    new(&_profiling_scope) tracy::VkCtxScope(
+        queue->profiling_context(),
+        TracyLine, TracyFile, std::strlen(TracyFile),
+        TracyFunction, std::strlen(TracyFunction),
+        name, std::strlen(name),
+        _buffer, true
+    );
+#endif
 }
 
 CmdBufferRegion::CmdBufferRegion(CmdBufferRegion&& other) {
@@ -78,6 +96,9 @@ CmdBufferRegion& CmdBufferRegion::operator=(CmdBufferRegion&& other) {
 void CmdBufferRegion::swap(CmdBufferRegion& other) {
     std::swap(_buffer, other._buffer);
     std::swap(_time_recorder, other._time_recorder);
+#ifdef YAVE_GPU_PROFILING
+    std::swap(_profiling_scope, other._profiling_scope);
+#endif
 }
 
 
@@ -92,11 +113,7 @@ RenderPassRecorder::~RenderPassRecorder() {
     _cmd_buffer.end_renderpass();
 }
 
-void RenderPassRecorder::bind_material(const Material& material) {
-    bind_material_template(material.material_template(), material.descriptor_set(), 1);
-}
-
-void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, DescriptorSetBase descriptor_set, u32 ds_offset) {
+void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> sets, bool bind_main_ds) {
     if(material_template != _cache.material) {
         const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
         vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
@@ -105,7 +122,7 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
         _cache.pipeline_layout = pipeline.vk_pipeline_layout();
     }
 
-    if(_main_descriptor_set && ds_offset > 0) {
+    if(_main_descriptor_set && bind_main_ds) {
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -117,14 +134,13 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
         _main_descriptor_set = {};
     }
 
-    if(!descriptor_set.is_null()) {
-        const VkDescriptorSet vk_set = descriptor_set.vk_descriptor_set();
+    if(!sets.is_empty()) {
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             _cache.pipeline_layout,
-            ds_offset,
-            1, &vk_set,
+            bind_main_ds ? 1 : 0,
+            u32(sets.size()), reinterpret_cast<const VkDescriptorSet*>(sets.data()),
             0, nullptr
         );
     }
@@ -248,128 +264,67 @@ void RenderPassRecorder::set_scissor(const math::Vec2i& offset, const math::Vec2
 }
 
 
-// -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
 
+// -------------------------------------------------- CmdBufferRecorderBase --------------------------------------------------
 
-
-CmdBufferRecorder::CmdBufferRecorder(CmdBufferData* data) : _data(data) {
+CmdBufferRecorderBase::CmdBufferRecorderBase(CmdBufferData* data) : _data(data) {
+    VkCommandBufferInheritanceInfo inheritance_info = vk_struct();
     VkCommandBufferBeginInfo begin_info = vk_struct();
     {
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        begin_info.pInheritanceInfo = &inheritance_info;
     }
 
     vk_check(vkBeginCommandBuffer(vk_cmd_buffer(), &begin_info));
 }
 
-CmdBufferRecorder::~CmdBufferRecorder() {
+CmdBufferRecorderBase::~CmdBufferRecorderBase() {
     check_no_renderpass();
     y_always_assert(!_data, "CmdBufferRecorder has not been submitted");
 }
 
-CmdBufferRecorder::CmdBufferRecorder(CmdBufferRecorder&& other) {
-    swap(other);
-}
+void CmdBufferRecorderBase::swap(CmdBufferRecorderBase& other) {
+    y_debug_assert(_data->is_secondary() == other._data->is_secondary());
 
-CmdBufferRecorder& CmdBufferRecorder::operator=(CmdBufferRecorder&& other) {
-    swap(other);
-    return *this;
-}
-
-void CmdBufferRecorder::swap(CmdBufferRecorder& other) {
     std::swap(_data, other._data);
     std::swap(_render_pass, other._render_pass);
 }
 
-VkCommandBuffer CmdBufferRecorder::vk_cmd_buffer() const {
+CmdQueue* CmdBufferRecorderBase::queue() const {
+    y_debug_assert(_data);
+    return _data->queue();
+}
+
+VkCommandBuffer CmdBufferRecorderBase::vk_cmd_buffer() const {
     y_debug_assert(_data);
     return _data->vk_cmd_buffer();
 }
 
-ResourceFence CmdBufferRecorder::resource_fence() const {
+ResourceFence CmdBufferRecorderBase::resource_fence() const {
     y_debug_assert(_data);
     return _data->resource_fence();
 }
 
-bool CmdBufferRecorder::is_inside_renderpass() const {
+bool CmdBufferRecorderBase::is_inside_renderpass() const {
     return _render_pass;
 }
 
-void CmdBufferRecorder::end_renderpass() {
-    y_always_assert(_render_pass, "CmdBufferRecorder has no render pass");
+CmdBufferRegion CmdBufferRecorderBase::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
+    return CmdBufferRegion(*this, time_rec, _data->queue(), name, color);
+}
+
+void CmdBufferRecorderBase::end_renderpass() {
+    y_debug_assert(_render_pass);
 
     vkCmdEndRenderPass(vk_cmd_buffer());
     _render_pass = nullptr;
 }
 
-void CmdBufferRecorder::check_no_renderpass() const {
+void CmdBufferRecorderBase::check_no_renderpass() const {
     y_always_assert(!_render_pass, "Command can not be used or destoryed while it has a RenderPassRecorder.");
 }
 
-CmdBufferRegion CmdBufferRecorder::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
-    return CmdBufferRegion(*this, time_rec, name, color);
-}
-
-RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
-    check_no_renderpass();
-
-    auto clear_values = core::ScratchPad<VkClearValue>(framebuffer.attachment_count() + 1);
-    for(usize i = 0; i != framebuffer.attachment_count(); ++i) {
-        clear_values[i] = VkClearValue{};
-    }
-
-    {
-        VkClearValue depth_clear_value = {};
-        depth_clear_value.depthStencil = VkClearDepthStencilValue{0.0f, 0}; // reversed Z
-        clear_values.last() = depth_clear_value;
-    }
-
-    VkRenderPassBeginInfo begin_info = vk_struct();
-    {
-        begin_info.renderArea = {{0, 0}, {framebuffer.size().x(), framebuffer.size().y()}};
-        begin_info.renderPass = framebuffer.render_pass().vk_render_pass();
-        begin_info.framebuffer = framebuffer.vk_framebuffer();
-        begin_info.pClearValues = clear_values.begin();
-        begin_info.clearValueCount = u32(clear_values.size());
-    }
-
-
-    vkCmdBeginRenderPass(vk_cmd_buffer(), &begin_info, VK_SUBPASS_CONTENTS_INLINE);
-    _render_pass = &framebuffer.render_pass();
-
-    return RenderPassRecorder(*this, Viewport(framebuffer.size()));
-}
-
-void CmdBufferRecorder::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
-    check_no_renderpass();
-
-    vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
-
-    if(!descriptor_sets.is_empty()) {
-        vkCmdBindDescriptorSets(vk_cmd_buffer(),
-            VK_PIPELINE_BIND_POINT_COMPUTE,
-            program.vk_pipeline_layout(),
-            0,
-            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
-            0, nullptr);
-    }
-
-    vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
-}
-
-void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
-    math::Vec3ui dispatch_size;
-    const math::Vec3ui program_size = program.local_size();
-    for(usize i = 0; i != 3; ++i) {
-        dispatch_size[i] = size[i] / program_size[i] + !!(size[i] % program_size[i]);
-    }
-    dispatch(program, dispatch_size, descriptor_sets);
-}
-
-void CmdBufferRecorder::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
-    dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
-}
-
-void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
+void CmdBufferRecorderBase::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
     check_no_renderpass();
 
     if(buffers.is_empty() && images.is_empty()) {
@@ -406,15 +361,15 @@ void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers, core::Span<I
     );
 }
 
-void CmdBufferRecorder::barriers(core::Span<BufferBarrier> buffers) {
+void CmdBufferRecorderBase::barriers(core::Span<BufferBarrier> buffers) {
     barriers(buffers, {});
 }
 
-void CmdBufferRecorder::barriers(core::Span<ImageBarrier> images) {
+void CmdBufferRecorderBase::barriers(core::Span<ImageBarrier> images) {
     barriers({}, images);
 }
 
-void CmdBufferRecorder::full_barrier() {
+void CmdBufferRecorderBase::full_barrier() {
     VkMemoryBarrier barrier = vk_struct();
     barrier.srcAccessMask =
         VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
@@ -461,7 +416,7 @@ void CmdBufferRecorder::full_barrier() {
     );
 }
 
-void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& dst) {
+void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
     y_always_assert((src.usage() & ImageUsage::TransferSrcBit) == ImageUsage::TransferSrcBit, "src should have TransferSrcBit usage");
     y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
 
@@ -500,7 +455,27 @@ void CmdBufferRecorder::barriered_copy(const ImageBase& src,  const ImageBase& d
     }
 }
 
-void CmdBufferRecorder::copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
+void CmdBufferRecorderBase::clear(const ImageBase& dst) {
+    y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
+
+    barriers(ImageBarrier::transition_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL));
+
+    {
+        VkImageSubresourceRange range = {};
+        {
+            range.aspectMask = dst.format().is_depth_format() ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+            range.layerCount = 1;
+            range.levelCount = 1;
+        }
+
+        const VkClearColorValue value = {};
+        vkCmdClearColorImage(vk_cmd_buffer(), dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, &range);
+    }
+
+    barriers(ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL));
+}
+
+void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
     y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match.");
 
     VkBufferCopy copy = {};
@@ -513,8 +488,89 @@ void CmdBufferRecorder::copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
 }
 
-void CmdBufferRecorder::transition_image(ImageBase& image, VkImageLayout src, VkImageLayout dst) {
-    barriers({ImageBarrier::transition_barrier(image, src, dst)});
+void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    check_no_renderpass();
+
+    vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
+
+    if(!descriptor_sets.is_empty()) {
+        vkCmdBindDescriptorSets(vk_cmd_buffer(),
+            VK_PIPELINE_BIND_POINT_COMPUTE,
+            program.vk_pipeline_layout(),
+            0,
+            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
+            0, nullptr);
+    }
+
+    vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
+}
+
+void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    math::Vec3ui dispatch_size;
+    const math::Vec3ui program_size = program.local_size();
+    for(usize i = 0; i != 3; ++i) {
+        dispatch_size[i] = size[i] / program_size[i] + !!(size[i] % program_size[i]);
+    }
+    dispatch(program, dispatch_size, descriptor_sets);
+}
+
+void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
+}
+
+TimelineFence CmdBufferRecorderBase::submit() {
+    return _data->queue()->submit(std::exchange(_data, nullptr));
+}
+
+void CmdBufferRecorderBase::submit_async() {
+    _data->queue()->submit_async_start(std::exchange(_data, nullptr));
+}
+
+
+// -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
+
+RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
+    check_no_renderpass();
+
+    auto clear_values = core::ScratchPad<VkClearValue>(framebuffer.attachment_count() + 1);
+    for(usize i = 0; i != framebuffer.attachment_count(); ++i) {
+        clear_values[i] = VkClearValue{};
+    }
+
+    {
+        VkClearValue depth_clear_value = {};
+        depth_clear_value.depthStencil = VkClearDepthStencilValue{0.0f, 0}; // reversed Z
+        clear_values.last() = depth_clear_value;
+    }
+
+    VkRenderPassBeginInfo begin_info = vk_struct();
+    {
+        begin_info.renderArea = {{0, 0}, {framebuffer.size().x(), framebuffer.size().y()}};
+        begin_info.renderPass = framebuffer.render_pass().vk_render_pass();
+        begin_info.framebuffer = framebuffer.vk_framebuffer();
+        begin_info.pClearValues = clear_values.begin();
+        begin_info.clearValueCount = u32(clear_values.size());
+    }
+
+
+    vkCmdBeginRenderPass(vk_cmd_buffer(), &begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    _render_pass = &framebuffer.render_pass();
+
+    return RenderPassRecorder(*this, Viewport(framebuffer.size()));
+}
+
+void CmdBufferRecorder::execute(CmdBufferRecorder&& other) {
+    y_debug_assert(_data);
+    y_debug_assert(other._data);
+    y_always_assert(!_data->is_secondary(), "execute should only be called on primary cmd buffers");
+    y_always_assert(other._data->is_secondary(), "execute should only be used with secondary cmd buffers");
+
+    const VkCommandBuffer secondary = other._data->vk_cmd_buffer();
+    vk_check(vkEndCommandBuffer(secondary));
+
+    vkCmdExecuteCommands(vk_cmd_buffer(), 1, &secondary);
+
+    _data->push_secondary(std::exchange(other._data, nullptr));
 }
 
 }

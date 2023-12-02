@@ -31,7 +31,7 @@ namespace yave {
 class SceneView {
     public:
         SceneView() = default;
-        SceneView(const ecs::EntityWorld* wor, Camera cam = Camera());
+        SceneView(const ecs::EntityWorld* world, Camera cam = Camera());
 
 #ifdef Y_DEBUG
         ~SceneView() {
@@ -41,9 +41,7 @@ class SceneView {
 
         const ecs::EntityWorld& world() const;
 
-        bool has_scene() const;
         bool has_world() const;
-
 
         const Camera& camera() const;
         Camera& camera();

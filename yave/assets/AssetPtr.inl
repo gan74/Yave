@@ -149,6 +149,11 @@ AssetLoader* AssetPtr<T>::loader() const {
 }
 
 template<typename T>
+usize AssetPtr<T>::ref_count() const {
+    return usize(_data.use_count());
+}
+
+template<typename T>
 AssetType AssetPtr<T>::type() const {
     return detail::asset_type<T>();
 }
@@ -179,7 +184,7 @@ template<typename T>
 bool AssetPtr<T>::flush_reload() {
     if(_data) {
         y_debug_assert(_data->id == _id);
-        if(auto reloaded = std::atomic_load(&_data->reloaded)) {
+        if(auto reloaded = _data->reloaded.load()) {
             y_debug_assert(reloaded->is_loaded());
             y_debug_assert(reloaded->id == _id);
             *this = reloaded;

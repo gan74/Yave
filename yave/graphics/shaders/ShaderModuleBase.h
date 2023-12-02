@@ -94,10 +94,6 @@ class ShaderModuleBase : NonMovable {
 
         ~ShaderModuleBase();
 
-        const auto& bindings() const {
-            return _bindings;
-        }
-
         core::Span<Attribute> attributes() const {
             return _attribs;
         }
@@ -134,9 +130,23 @@ class ShaderModuleBase : NonMovable {
         ShaderModuleBase(const SpirVData& data);
 
     private:
+        friend class ShaderProgram;
+        friend class ComputeProgram;
+
+        const auto& bindings() const {
+            return _bindings;
+        }
+
+        core::Span<u32> variable_size_bindings() const {
+            return _variable_size_bindings;
+        }
+
+
+    private:
         VkHandle<VkShaderModule> _module;
         ShaderType _type = ShaderType::None;
         core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
+        core::Vector<u32> _variable_size_bindings;
         core::Vector<VkSpecializationMapEntry> _spec_constants;
         core::Vector<Attribute> _attribs;
         core::Vector<u32> _stage_output;

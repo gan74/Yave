@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/core/ScratchPad.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
@@ -54,10 +55,11 @@ core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
 }
 
 void FrameGraphPass::render(CmdBufferRecorder& recorder) {
-    y_debug_assert((_render == nullptr) != (_compute_render == nullptr));
     if(_compute_render) {
+        y_debug_assert(!_render);
         _compute_render(recorder, this);
-    } else {
+    } else if(_render) {
+        y_debug_assert(!_compute_render);
         y_debug_assert(!_framebuffer.is_null());
         RenderPassRecorder render_pass = recorder.bind_framebuffer(_framebuffer);
         _render(render_pass, this);
@@ -65,37 +67,35 @@ void FrameGraphPass::render(CmdBufferRecorder& recorder) {
 }
 
 void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources) {
+    y_profile();
+
     if(_depth.image.is_valid() || _colors.size()) {
         auto declared_here = [&](FrameGraphImageId id) {
             const auto& info = _parent->info(id);
             return info.first_use == _index && !info.is_aliased();
         };
 
-        Framebuffer::DepthAttachment depth;
-        if(_depth.image.is_valid()) {
-            depth = Framebuffer::DepthAttachment(resources.image<ImageUsage::DepthBit>(_depth.image), declared_here(_depth.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
-
+        auto set_image_name = [&](FrameGraphImageId id, const char* suffix) {
+            unused(id, suffix);
 #ifdef Y_DEBUG
-            const auto& img = resources.image_base(_depth.image);
-            if(const auto* debug = debug_utils()) {
-                const core::String name = _name + " depth";
+            if(const auto* debug = debug_utils(); debug && declared_here(id)) {
+                const auto& img = resources.image_base(id);
+                const std::string_view name = fmt("{} {}", _name, suffix);
                 debug->set_resource_name(img.vk_image(), name.data());
                 debug->set_resource_name(img.vk_view(), name.data());
             }
 #endif
+        };
+
+        Framebuffer::DepthAttachment depth;
+        if(_depth.image.is_valid()) {
+            depth = Framebuffer::DepthAttachment(resources.image<ImageUsage::DepthBit>(_depth.image), declared_here(_depth.image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
+            set_image_name(_depth.image, "Depth");
         }
         auto colors = core::ScratchPad<Framebuffer::ColorAttachment>(_colors.size());
         for(usize i = 0; i != _colors.size(); ++i) {
             colors[i] = Framebuffer::ColorAttachment(resources.image<ImageUsage::ColorBit>(_colors[i].image), declared_here(_colors[i].image) ? Framebuffer::LoadOp::Clear : Framebuffer::LoadOp::Load);
-
-#ifdef Y_DEBUG
-            const auto& img = resources.image_base(_colors[i].image);
-            if(const auto* debug = debug_utils()) {
-                const core::String name = (_name + " RT") + colors.size();
-                debug->set_resource_name(img.vk_image(), name.data());
-                debug->set_resource_name(img.vk_view(), name.data());
-            }
-#endif
+            set_image_name(_colors[i].image, "RT");
         }
         _framebuffer = Framebuffer(depth, colors);
 
@@ -109,6 +109,8 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
 }
 
 void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resources) {
+    y_profile();
+
     for(const auto& set : _bindings) {
         core::ScratchVector<Descriptor> bindings(set.size());
 

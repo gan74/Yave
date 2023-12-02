@@ -185,10 +185,10 @@ Intersection Frustum::intersection(const AABB &aabb, float far_dist) const {
             }
         }
 
-        if(normal.dot(p) > -far_dist) {
+        if(normal.dot(p) > far_dist) {
             return Intersection::Outside;
         }
-        if(normal.dot(n) > -far_dist) {
+        if(normal.dot(n) > far_dist) {
             return Intersection::Intersects;
         }
     }

@@ -34,8 +34,8 @@ class AABBUpdateSystem : public ecs::System {
     public:
         AABBUpdateSystem();
 
-        void setup(ecs::EntityWorld& world) override;
-        void tick(ecs::EntityWorld& world) override;
+        void setup() override;
+        void tick() override;
 
         template<typename T>
         void register_component_type() {

@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
-#include <y/core/Span.h>
+#include <editor/utils/ui.h>
 
 namespace editor {
 
@@ -39,7 +39,7 @@ class EditorWorld : public ecs::EntityWorld {
 
         bool set_entity_name(ecs::EntityId id, std::string_view name);
         std::string_view entity_name(ecs::EntityId id) const;
-        std::string_view entity_icon(ecs::EntityId id) const;
+        UiIcon entity_icon(ecs::EntityId id) const;
 
         template<typename... Args>
         ecs::EntityId create_named_entity(std::string_view name, Args&&... args) {
@@ -48,15 +48,8 @@ class EditorWorld : public ecs::EntityWorld {
             return id;
         }
 
-        ecs::EntityId create_collection_entity(std::string_view name);
-
         ecs::EntityId add_prefab(std::string_view name);
         ecs::EntityId add_prefab(AssetId asset);
-
-        void add_scene(std::string_view name, ecs::EntityId parent = ecs::EntityId());
-        void add_scene(AssetId asset, ecs::EntityId parent = ecs::EntityId());
-
-        void set_parent(ecs::EntityId id, ecs::EntityId parent);
 
 
         bool has_selected_entities() const;
@@ -66,7 +59,7 @@ class EditorWorld : public ecs::EntityWorld {
         bool is_selected(ecs::EntityId id) const;
 
         void set_selected(ecs::EntityId id);
-        void toggle_selected(ecs::EntityId id, bool set);
+        void toggle_selected(ecs::EntityId id, bool reset_selection);
         void set_selection(core::Span<ecs::EntityId> selection);
         void clear_selection();
 

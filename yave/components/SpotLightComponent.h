@@ -33,7 +33,6 @@ namespace yave {
 
 class SpotLightComponent final :
         public LocalLightBase,
-        public ecs::RequiredComponents<TransformableComponent>,
         public ecs::SystemLinkedComponent<SpotLightComponent, AABBUpdateSystem> {
 
     public:

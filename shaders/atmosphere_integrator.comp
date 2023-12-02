@@ -29,6 +29,7 @@ void main() {
     const vec3 view_dir = -view_direction(camera, uv);
     const vec3 cam_pos = camera.position / km;
 
+    // replace by intersect_ray_sphere
     const vec2 intersection = intersect_sphere(atmos.center, atmos.radius, cam_pos, view_dir);
     const vec2 planet_intersection = intersect_sphere(atmos.center, atmos.planet_radius, cam_pos, view_dir);
     const float near = intersection.x;

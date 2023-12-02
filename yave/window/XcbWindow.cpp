@@ -204,6 +204,9 @@ void Window::set_title(const core::String& title) {
         title.data());
 }
 
+void Window::set_cursor_shape(CursorShape shape) {
+}
+
 }
 
 #endif

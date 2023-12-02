@@ -24,87 +24,87 @@ SOFTWARE.
 #include "AssetLoaderSystem.h"
 
 #include <yave/components/TransformableComponent.h>
+#include <yave/camera/Camera.h>
+
 #include <yave/ecs/EntityWorld.h>
 
 #include <y/core/Chrono.h>
 
 namespace yave {
 
-static core::Span<ecs::EntityId> transformable_ids(ecs::EntityWorld& world, bool recent) {
-    return recent
-        ? world.recently_mutated<TransformableComponent>()
-        : world.component_ids<TransformableComponent>();
-}
-
-
 
 OctreeSystem::OctreeSystem() : ecs::System("OctreeSystem") {
 }
 
-void OctreeSystem::destroy(ecs::EntityWorld& world) {
-    auto query = world.query<ecs::Mutate<TransformableComponent>>();
+void OctreeSystem::destroy() {
+    auto query = world().query<TransformableComponent>();
     for(auto&& [tr] : query.components()) {
         tr._node = nullptr;
     }
 }
 
-void OctreeSystem::setup(ecs::EntityWorld& world) {
-    run_tick(world, false);
+void OctreeSystem::setup() {
+    _transform_destroyed = world().on_destroyed<TransformableComponent>().subscribe([](ecs::EntityId id, TransformableComponent& tr) {
+        if(tr._node) {
+            tr._node->remove(id);
+        }
+    });
+
+    run_tick(false);
 }
 
-void OctreeSystem::tick(ecs::EntityWorld& world) {
-    run_tick(world, true);
+void OctreeSystem::tick() {
+    run_tick(true);
 }
 
-void OctreeSystem::run_tick(ecs::EntityWorld& world, bool only_recent) {
+void OctreeSystem::run_tick(bool only_recent) {
     y_profile();
 
-    {
-        y_profile_zone("updating moved objects");
-        usize insertions = 0;
-        for(auto&& [id, comp] : world.query<TransformableComponent>(transformable_ids(world, only_recent))) {
-            auto&& [tr] = comp;
+    auto query = only_recent
+        ? world().query<ecs::Changed<TransformableComponent>>()
+        : world().query<TransformableComponent>();
 
-            if(tr.local_aabb().is_empty()) {
+    usize insertions = 0;
+    for(auto&& [id, comp] : query) {
+        auto&& [tr] = comp;
+
+        if(tr.local_aabb().is_empty()) {
+            continue;
+        }
+
+        const AABB aabb = tr.global_aabb();
+
+        if(tr._node) {
+            if(tr._node->contains(aabb)) {
                 continue;
             }
-
-            const AABB aabb = tr.global_aabb();
-
-            if(tr._node) {
-                if(tr._node->contains(aabb)) {
-                    continue;
-                }
-                tr._node->remove(id);
-            }
-
-            tr._node = _tree.insert(id, aabb);
-            ++insertions;
+            tr._node->remove(id);
         }
 
-        unused(insertions);
-        y_profile_msg(fmt_c_str("%/% objects reinserted", insertions, transformable_ids(world, only_recent).size()));
+        tr._node = _tree.insert(id, aabb);
+        ++insertions;
     }
 
-    if(only_recent) {
-        for(auto&& [id, comp] : world.query<TransformableComponent>(world.to_be_removed<TransformableComponent>())) {
-            auto&& [tr] = comp;
-
-            if(tr._node) {
-                tr._node->remove(id);
-            }
-        }
-    }
+    unused(insertions);
+    y_profile_msg(fmt_c_str("{}/{} objects inserted", insertions, query.size()));
 
     _tree.audit();
 }
 
-const OctreeNode& OctreeSystem::root() const {
-    return _tree.root();
+core::Vector<ecs::EntityId> OctreeSystem::find_entities(const Camera& camera) const {
+    auto visible = _tree.find_entities(camera.frustum(), camera.far_plane_dist());
+
+    core::Vector<ecs::EntityId> entities;
+    entities.swap(visible.inside);
+
+    Y_TODO(do intersection tests)
+    entities.push_back(visible.intersect.begin(), visible.intersect.end());
+
+    return entities;
 }
 
-const Octree& OctreeSystem::octree() const {
-    return _tree;
+const OctreeNode& OctreeSystem::root() const {
+    return _tree.root();
 }
 
 }

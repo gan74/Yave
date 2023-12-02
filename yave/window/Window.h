@@ -49,6 +49,20 @@ using HWND_ = HWND__*;
 using LRESULT_ = long long int;
 #endif
 
+
+enum class CursorShape {
+    None,
+    Arrow,
+    TextInput,
+    ResizeAll,
+    ResizeEW,
+    ResizeNS,
+    ResizeNESW,
+    ResizeNWSE,
+    Hand,
+    NotAllowed,
+};
+
 class Window : NonMovable {
     public:
         enum Flags {
@@ -84,6 +98,8 @@ class Window : NonMovable {
 
         void set_event_handler(EventHandler* handler) { _event_handler = handler; }
         EventHandler* event_handler() const { return _event_handler; }
+
+        static void set_cursor_shape(CursorShape shape);
 
 #ifdef Y_OS_WIN
         HINSTANCE_ instance() const { return _hinstance; }

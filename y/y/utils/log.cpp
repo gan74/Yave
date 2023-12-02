@@ -54,13 +54,13 @@ static void* callback_user_data = nullptr;
 
 void log_msg(std::string_view msg, Log type) {
     // https://en.wikipedia.org/wiki/ANSI_escape_code
-    static constexpr std::array<const char*, 5> log_type_str = {{
+    static constexpr std::array<const char*, 5> log_type_str = {
         "[info]",
         "\x1b[33m[warning]\x1b[0m",
         "\x1b[31m[error]\x1b[0m",
         "\x1b[94m[debug]\x1b[0m",
         "\x1b[35m[perf]\x1b[0m"
-    }};
+    };
 
     detail::setup_console();
 

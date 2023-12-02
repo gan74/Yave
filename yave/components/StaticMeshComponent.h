@@ -25,7 +25,6 @@ SOFTWARE.
 #include "TransformableComponent.h"
 
 #include <yave/assets/AssetPtr.h>
-#include <yave/scene/Renderable.h>
 #include <yave/systems/AABBUpdateSystem.h>
 #include <yave/systems/AssetLoaderSystem.h>
 
@@ -34,17 +33,12 @@ SOFTWARE.
 namespace yave {
 
 class StaticMeshComponent final :
-        public Renderable,
-        public ecs::RequiredComponents<TransformableComponent>,
         public ecs::SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem, AABBUpdateSystem> {
 
     public:
         StaticMeshComponent() = default;
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, core::Vector<AssetPtr<Material>> materials);
-
-        void render(RenderPassRecorder& recorder, const SceneData& scene_data) const;
-        void render_mesh(RenderPassRecorder& recorder, u32 instance_index) const;
 
         AssetPtr<StaticMesh>& mesh();
         const AssetPtr<StaticMesh>& mesh() const;
@@ -68,7 +62,6 @@ class StaticMeshComponent final :
         core::Vector<AssetPtr<Material>> _materials;
 
         AABB _aabb;
-
 };
 
 }

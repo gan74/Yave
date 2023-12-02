@@ -58,6 +58,8 @@ class MeshAllocator : NonMovable {
         std::pair<u64, u64> allocated() const; // slow!
         usize free_blocks() const;
 
+        const MeshDrawBuffers& mesh_buffers() const;
+
     private:
         friend class MeshDrawData;
 

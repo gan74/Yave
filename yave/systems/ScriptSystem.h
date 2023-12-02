@@ -35,7 +35,7 @@ class ScriptSystem : public ecs::System {
     public:
         ScriptSystem();
 
-        void update(ecs::EntityWorld& world, float dt) override;
+        void update(float dt) override;
 
     private:
         sol::state _state;

@@ -65,20 +65,6 @@ struct EditorPassData {
     float size;
 };
 
-static std::pair<math::Vec2, math::Vec2> compute_uv_size(const char* c) {
-    math::Vec2 uv;
-    math::Vec2 size(1.0f);
-
-    unsigned u = 0;
-    ImTextCharFromUtf8(&u, c, c + std::strlen(c));
-    if(const ImFontGlyph* glyph = ImGui::GetFont()->FindGlyph(ImWchar(u))) {
-        uv = math::Vec2{glyph->U0, glyph->V0};
-        size = math::Vec2{glyph->U1, glyph->V1} - uv;
-    }
-    return {uv, size};
-}
-
-
 
 
 static void render_editor_entities(RenderPassRecorder& recorder, const FrameGraphPass* pass,
@@ -86,7 +72,6 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
                                    const FrameGraphMutableTypedBufferId<EditorPassData> pass_buffer,
                                    FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer,
                                    EditorPassFlags flags) {
-
     y_profile();
 
     const EditorWorld& world = current_world();
@@ -94,9 +79,9 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 
     {
         auto mapping = pass->resources().map_buffer(pass_buffer);
-        mapping->view_proj = scene_view.camera().viewproj_matrix();
+        mapping->view_proj = scene_view.camera().view_proj_matrix();
         mapping->viewport_size = pass->framebuffer().size();
-        mapping->size = 64.0f;
+        mapping->size = mapping->viewport_size.min_component() / 16.0f;
     }
 
     {
@@ -106,7 +91,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 
     {
         const auto* material = resources()[EditorResources::ImGuiBillBoardMaterialTemplate];
-        recorder.bind_material_template(material, pass->descriptor_sets()[0]);
+        recorder.bind_material_template(material, pass->descriptor_sets());
     }
 
     {
@@ -129,14 +114,14 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         const std::array tags = {ecs::tags::not_hidden};
 
         {
-            std::tie(uv, size) = compute_uv_size(ICON_FA_LIGHTBULB);
+            std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_LIGHTBULB);
             for(ecs::EntityId id : world.query<PointLightComponent>(tags).ids()) {
                 push_entity(id);
             }
         }
 
         {
-            std::tie(uv, size) = compute_uv_size(ICON_FA_VIDEO);
+            std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_VIDEO);
             for(ecs::EntityId id : world.query<SpotLightComponent>(tags).ids()) {
                 push_entity(id);
             }
@@ -157,9 +142,10 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
     const ecs::EntityId selected = world.selected_entity();
 
     y_debug_assert(&scene_view.world() == &world);
+    unused(scene_view);
 
     const TransformableComponent* tr = world.component<TransformableComponent>(selected);
-    if(!tr) {
+    if(!tr || world.has_tag(selected, ecs::tags::hidden)) {
         return;
     }
 
@@ -171,21 +157,27 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
         const math::Vec3 y = tr->right().normalized();
         const math::Vec3 x = tr->forward().normalized();
         const float scale = tr->transform().scale().max_component();
+
+        auto add_sphere = [&](const math::Vec3& pos, float radius, const math::Vec3& color = math::Vec3(0.0f, 0.0f, 1.0f)) {
+            primitive->set_color(color);
+            primitive->add_circle(pos, x, y, radius);
+            primitive->add_circle(pos, y, z, radius);
+            primitive->add_circle(pos, z, x, radius);
+        };
+
         if(const auto* l = world.component<PointLightComponent>(selected)) {
-            primitive->add_circle(tr->position(), x, y, l->range() * scale);
-            primitive->add_circle(tr->position(), y, z, l->range() * scale);
-            primitive->add_circle(tr->position(), z, x, l->range() * scale);
+            add_sphere(tr->position(), l->range() * scale);
+            add_sphere(tr->position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
         }
 
         if(const auto* l = world.component<SpotLightComponent>(selected)) {
             primitive->add_cone(tr->position(), x, y, l->range() * scale, l->half_angle());
+            add_sphere(tr->position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
 
             if(draw_enclosing_sphere) {
                 const auto enclosing = l->enclosing_sphere();
                 const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center * scale;
-                primitive->add_circle(center, x, y, enclosing.radius * scale);
-                primitive->add_circle(center, y, z, enclosing.radius * scale);
-                primitive->add_circle(center, z, x, enclosing.radius * scale);
+                add_sphere(center, enclosing.radius * scale);
             }
         }
 
@@ -199,7 +191,6 @@ static void render_selection(DirectDrawPrimitive* primitive, const SceneView& sc
             }
         }
     }
-
 }
 
 static void visit_octree(DirectDrawPrimitive* primitive, const Frustum& frustum, const OctreeNode& node) {
@@ -261,29 +252,24 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, Fra
     builder.add_color_output(color);
     builder.add_color_output(id);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-            render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer, flags);
+        render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer, flags);
 
-            if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
-                return;
+        if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
+            return;
+        }
+
+        DirectDraw direct;
+        {
+            if(current_world().selected_entity().is_valid()) {
+                render_selection(direct.add_primitive("selection"), view);
             }
 
-            DirectDraw direct;
-            {
-                if(current_world().selected_entity().is_valid()) {
-                    render_selection(direct.add_primitive("selection"), view);
-                }
-
-                if(app_settings().debug.display_octree) {
-                    render_octree(direct.add_primitive("octree"), view);
-                }
+            if(app_settings().debug.display_octree) {
+                render_octree(direct.add_primitive("octree"), view);
             }
-            direct.render(render_pass, view.camera().viewproj_matrix());
-
-            if(app_settings().debug.display_debug_drawer) {
-                debug_drawer().render(render_pass, view.camera().viewproj_matrix());
-            }
-            debug_drawer().clear();
-        });
+        }
+        direct.render(render_pass, view.camera().view_proj_matrix());
+    });
 
     EditorPass pass;
     pass.depth = depth;

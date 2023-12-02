@@ -30,7 +30,7 @@ namespace y {
 namespace detail {
 // Trick from https://github.com/Neargye/nameof
 template<typename... T>
-constexpr std::string_view ct_type_name() {
+consteval std::string_view ct_type_name() {
 #if defined(Y_CLANG)
     return std::string_view{__PRETTY_FUNCTION__ + 49, sizeof(__PRETTY_FUNCTION__) - 52};
 #elif defined(Y_GCC)

@@ -20,13 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
+#include "editor.h"
 #include "ImGuiPlatform.h"
-#include "EditorApplication.h"
 
 #include <editor/utils/crashhandler.h>
 
 #include <yave/graphics/device/Instance.h>
+#include <yave/ecs/EntityWorld.h>
 #include <y/concurrent/concurrent.h>
+#include <y/concurrent/Signal.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -38,7 +40,7 @@ SOFTWARE.
 using namespace editor;
 
 static bool debug_instance = is_debug_defined;
-static bool multi_viewport = true;
+static bool multi_viewport = false;
 static bool run_tests = false;
 
 
@@ -50,17 +52,26 @@ static void parse_args(int argc, char** argv) {
             debug_instance = true;
         } else if(arg == "--nomv") {
             multi_viewport = false;
+        } else if(arg == "--mv") {
+            multi_viewport = true;
         } else if(arg == "--run-tests") {
             run_tests = true;
         } else if(arg == "--errbreak") {
 #ifdef Y_DEBUG
-                core::result::break_on_error = true;
+            core::result::break_on_error = true;
 #else
-                log_msg(fmt("% is not supported unless Y_DEBUG is defined%", arg), Log::Error);
+            log_msg(fmt("{} is not supported unless Y_DEBUG is defined", arg), Log::Error);
 #endif
-        }
-        else {
-            log_msg(fmt("Unknown argumeent: %", arg), Log::Error);
+        } else if(arg == "--waitdbg") {
+#ifdef Y_OS_WIN
+            if(!::IsDebuggerPresent()) {
+                ::MessageBoxA(nullptr, "Attach debugger now", "Attach debugger now", MB_OK);
+            }
+#else
+            log_msg(fmt("{} is not supported outside of Windows", arg), Log::Error);
+#endif
+        } else {
+            log_msg(fmt("Unknown argumeent: {}", arg), Log::Error);
         }
     }
 
@@ -74,6 +85,8 @@ static Instance create_instance() {
     }
     return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
 }
+
+
 
 int main(int argc, char** argv) {
     concurrent::set_thread_name("Main thread");
@@ -90,11 +103,18 @@ int main(int argc, char** argv) {
     y_defer(destroy_device());
 
 
+    Settings settings;
+    settings.load();
+
     {
         ImGuiPlatform platform(multi_viewport, run_tests);
-        EditorApplication editor(&platform);
-        editor.exec();
+        init_editor(&platform, settings);
+        y_defer(destroy_editor());
+
+        run_editor();
     }
+
+    settings.save();
 
     log_msg("exiting...");
 

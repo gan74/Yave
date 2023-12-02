@@ -28,6 +28,7 @@ namespace yave {
 static VkAccessFlags vk_layout_access_flags(VkImageLayout layout) {
     switch(layout) {
         case VK_IMAGE_LAYOUT_UNDEFINED:
+        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             return 0;
 
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
@@ -47,9 +48,6 @@ static VkAccessFlags vk_layout_access_flags(VkImageLayout layout) {
 
         case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
             return VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-            return VK_ACCESS_MEMORY_READ_BIT;
 
         case VK_IMAGE_LAYOUT_GENERAL:
             // assume storage image

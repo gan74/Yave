@@ -90,7 +90,7 @@ static auto&& check_exists(C& c, T t) {
 }
 
 template<typename C, typename B, typename H>
-static void build_barriers(const C& resources, B& barriers, H& to_barrier, FrameGraphFrameResources& frame_res) {
+static void build_barriers(const C& resources, B& barriers, H& to_barrier, const FrameGraphFrameResources& frame_res) {
     for(auto&& [res, info] : resources) {
         // barrier around attachments are handled by the renderpass
         const PipelineStage stage = info.stage & ~PipelineStage::AllAttachmentOutBit;
@@ -111,10 +111,10 @@ static void build_barriers(const C& resources, B& barriers, H& to_barrier, Frame
 
 template<typename H>
 static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, FrameGraphMutableImageId dst,
-                        H& to_barrier, const FrameGraphFrameResources& resources) {
+                       H& to_barrier, const FrameGraphFrameResources& frame_res) {
 
     Y_TODO(We might end up barriering twice here)
-    if(resources.are_aliased(src, dst)) {
+    if(frame_res.are_aliased(src, dst)) {
         if(const auto it = to_barrier.find(src); it != to_barrier.end()) {
             to_barrier[dst] = it->second;
             to_barrier.erase(it);
@@ -122,19 +122,38 @@ static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, Frame
     } else {
         to_barrier.erase(src);
         to_barrier.erase(dst);
-        recorder.barriered_copy(resources.image_base(src), resources.image_base(dst));
+        recorder.copy(frame_res.image_base(src), frame_res.image_base(dst));
     }
+}
+
+template<typename H, typename B>
+static void copy_buffer(CmdBufferRecorder& recorder, FrameGraphBufferId src, FrameGraphMutableBufferId dst,
+                        H& to_barrier, const B& pass_buffers, const FrameGraphFrameResources& frame_res) {
+
+    if(const auto src_it = to_barrier.find(src); src_it != to_barrier.end()) {
+        const auto dst_it = pass_buffers.find(dst);
+        y_debug_assert(dst_it != pass_buffers.end());
+        recorder.barriers(frame_res.barrier(src, src_it->second, dst_it->second.stage));
+        to_barrier.erase(src_it);
+    }
+
+    auto& dst_stage = to_barrier[dst];
+    if(dst_stage != PipelineStage::None) {
+        recorder.barriers(frame_res.barrier(dst, dst_stage, PipelineStage::TransferBit));
+    }
+
+    recorder.unbarriered_copy(frame_res.buffer<BufferUsage::TransferSrcBit>(src), frame_res.buffer<BufferUsage::TransferDstBit>(dst));
+
+    dst_stage = PipelineStage::TransferBit;
 }
 
 template<typename H>
-[[maybe_unused]] static void copy_images(CmdBufferRecorder& recorder, core::Span<std::pair<FrameGraphImageId, FrameGraphMutableImageId>> copies,
-                        H& to_barrier, const FrameGraphFrameResources& resources) {
+static void clear_image(CmdBufferRecorder& recorder, FrameGraphMutableImageId dst,
+                        H& to_barrier, const FrameGraphFrameResources& frame_res) {
 
-    for(auto [src, dst] : copies) {
-        copy_image(recorder, src, dst, to_barrier, resources);
-    }
+    to_barrier.erase(dst);
+    recorder.clear(frame_res.image_base(dst));
 }
-
 
 
 FrameGraphRegion::~FrameGraphRegion() {
@@ -149,6 +168,10 @@ FrameGraph::FrameGraph(std::shared_ptr<FrameGraphResourcePool> pool) : _resource
 }
 
 FrameGraph::~FrameGraph() {
+}
+
+u64 FrameGraph::frame_id() const {
+    return _resources->frame_id();
 }
 
 const FrameGraphFrameResources& FrameGraph::resources() const {
@@ -223,8 +246,14 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
     // -------------------- resource management --------------------
     alloc_resources();
 
-    usize copy_index = 0;
+    usize image_copy_index = 0;
     std::sort(_image_copies.begin(), _image_copies.end(), [&](const auto& a, const auto& b) { return a.pass_index < b.pass_index; });
+
+    usize buffer_copy_index = 0;
+    std::sort(_buffer_copies.begin(), _buffer_copies.end(), [&](const auto& a, const auto& b) { return a.pass_index < b.pass_index; });
+
+    usize image_clear_index = 0;
+    std::sort(_image_clears.begin(), _image_clears.end(), [&](const auto& a, const auto& b) { return a.pass_index < b.pass_index; });
 
     using hash_t = std::hash<FrameGraphResourceId>;
     core::FlatHashMap<FrameGraphBufferId, PipelineStage, hash_t> buffers_to_barrier;
@@ -251,10 +280,25 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
 
             {
                 y_profile_zone("prepare");
-                while(copy_index < _image_copies.size() && _image_copies[copy_index].pass_index == pass->_index) {
+                for(const auto& [res, data] : pass->_map_data) {
+                    auto mapping = _resources->map_buffer_bytes(res);
+                    std::memcpy(mapping.data(), data.data(), data.size());
+                }
+
+                while(image_copy_index < _image_copies.size() && _image_copies[image_copy_index].pass_index == pass->_index) {
                     // copie_image will not do anything if the two are aliased
-                    copy_image(recorder, _image_copies[copy_index].src, _image_copies[copy_index].dst, images_to_barrier, *_resources);
-                    ++copy_index;
+                    copy_image(recorder, _image_copies[image_copy_index].src, _image_copies[image_copy_index].dst, images_to_barrier, *_resources);
+                    ++image_copy_index;
+                }
+
+                while(buffer_copy_index < _buffer_copies.size() && _buffer_copies[buffer_copy_index].pass_index == pass->_index) {
+                    copy_buffer(recorder, _buffer_copies[buffer_copy_index].src, _buffer_copies[buffer_copy_index].dst, buffers_to_barrier, pass->_buffers, *_resources);
+                    ++buffer_copy_index;
+                }
+
+                while(image_clear_index < _image_clears.size() && _image_clears[image_clear_index].pass_index == pass->_index) {
+                    clear_image(recorder, _image_clears[image_clear_index].dst, images_to_barrier, *_resources);
+                    ++image_clear_index;
                 }
             }
 
@@ -262,14 +306,11 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
                 y_profile_zone("barriers");
 
                 core::ScratchVector<BufferBarrier> buffer_barriers(pass->_buffers.size());
-                core::ScratchVector<ImageBarrier> volume_barriers(pass->_volumes.size());
-                core::ScratchVector<ImageBarrier> image_barriers(pass->_images.size());
+                core::ScratchVector<ImageBarrier> image_barriers(pass->_images.size() + pass->_volumes.size());
                 build_barriers(pass->_buffers, buffer_barriers, buffers_to_barrier, *_resources);
-                build_barriers(pass->_volumes, volume_barriers, volumes_to_barrier, *_resources);
+                build_barriers(pass->_volumes, image_barriers, volumes_to_barrier, *_resources);
                 build_barriers(pass->_images, image_barriers, images_to_barrier, *_resources);
                 recorder.barriers(buffer_barriers, image_barriers);
-
-                //recorder.full_barrier();
             }
 
             {
@@ -283,9 +324,9 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
     }
 
     {
-        CmdBufferRecorder prepare = create_disposable_cmd_buffer();
+        TransferCmdBufferRecorder prepare = create_disposable_transfer_cmd_buffer();
         _resources->flush_mapped_buffers(prepare);
-        command_queue().submit(std::move(prepare));
+        prepare.submit_async();
     }
 
     Y_TODO(Put resource barriers at the end of the graph to prevent clash with whatever comes after)
@@ -301,8 +342,14 @@ void FrameGraph::alloc_resources() {
             auto& dst_info = check_exists(_images, cpy.dst);
             auto* src_info = &check_exists(_images, cpy.src);
 
+            y_debug_assert(!dst_info.is_prev());
+
             while(src_info->alias.is_valid()) {
                 src_info = &check_exists(_images, src_info->alias);
+            }
+
+            if(src_info->is_persistent()) {
+                continue;
             }
 
             const usize src_last_use = src_info->last_use();
@@ -321,48 +368,54 @@ void FrameGraph::alloc_resources() {
     std::copy_if(_images.begin(), _images.end(), std::back_inserter(images), [](const auto& p) { return p.first.is_valid(); });
     std::sort(images.begin(), images.end(), [](const auto& a, const auto& b) { return a.second.first_use < b.second.first_use; });
 
-    _resources->reserve(_images.size(), _volumes.size(), _buffers.size());
-
     for(auto&& [res, info] : images) {
-        /*if(info.last_read < info.last_write && (info.usage & ImageUsage::Attachment) == ImageUsage::None) {
-            log_msg(fmt("Image written by % is never consumed", pass_name(info.last_write)), Log::Warning);
-        }*/
+        if(info.is_prev()) {
+            y_debug_assert(_resources->is_alive(res));
+            continue;
+        }
+
         if(info.alias.is_valid()) {
             y_debug_assert(allow_image_aliasing);
             _resources->create_alias(res, info.alias);
         } else {
             if(!info.has_usage()) {
-                log_msg(fmt("Image declared by % has no usage", pass_name(info.first_use)), Log::Warning);
+                log_msg(fmt("Image declared by {} has no usage", pass_name(info.first_use)), Log::Warning);
                 // All images should support texturing, hopefully
                 info.usage = info.usage | ImageUsage::TextureBit;
             }
-            _resources->create_image(res, info.format, info.size.to<2>(), info.usage);
+            _resources->create_image(res, info.format, info.size.to<2>(), info.usage, info.persistent);
         }
     }
 
     for(auto&& [res, info] : _volumes) {
+        if(info.is_prev()) {
+            y_debug_assert(_resources->is_alive(res));
+            continue;
+        }
+
         y_always_assert(!info.alias.is_valid(), "Volume aliasing not supported");
         if(!info.has_usage()) {
-            log_msg(fmt("Volume declared by % has no usage", pass_name(info.first_use)), Log::Warning);
+            log_msg(fmt("Volume declared by {} has no usage", pass_name(info.first_use)), Log::Warning);
             // All images should support texturing, hopefully
             info.usage = info.usage | ImageUsage::TextureBit;
         }
-        _resources->create_volume(res, info.format, info.size, info.usage);
+        _resources->create_volume(res, info.format, info.size, info.usage, info.persistent);
     }
 
     for(auto&& [res, info] : _buffers) {
-        if(!res.is_valid()) {
+        if(info.is_prev()) {
+            y_debug_assert(_resources->is_alive(res));
             continue;
         }
 
         if(info.last_read < info.last_write) {
-            log_msg(fmt("Buffer written by % is never consumed", pass_name(info.last_write)), Log::Warning);
+            log_msg(fmt("Buffer written by {} is never consumed", pass_name(info.last_write)), Log::Warning);
         }
         if(is_none(info.usage)) {
             log_msg("Unused frame graph buffer resource", Log::Warning);
             info.usage = info.usage | BufferUsage::StorageBit;
         }
-        _resources->create_buffer(res, info.byte_size, info.usage, info.memory_type);
+        _resources->create_buffer(res, info.byte_size, info.usage, info.memory_type, info.persistent);
     }
 
     _resources->init_staging_buffer();
@@ -374,7 +427,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
             return pass->name();
         }
     }
-    y_fatal("Pass index out of bounds (%)", pass_index);
+    y_fatal("Pass index out of bounds ({})", pass_index);
 }
 
 FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
@@ -448,13 +501,20 @@ const FrameGraph::BufferCreateInfo& FrameGraph::info(FrameGraphBufferId res) con
     return check_exists(_buffers, res);
 }
 
+bool FrameGraph::ResourceCreateInfo::is_persistent() const {
+    return persistent.is_valid();
+}
 
+bool FrameGraph::ResourceCreateInfo::is_prev() const {
+    return persistent_prev.is_valid();
+}
 
 usize FrameGraph::ResourceCreateInfo::last_use() const {
     return std::max(last_read, last_write);
 }
 
 void FrameGraph::ResourceCreateInfo::register_use(usize index, bool is_written) {
+    y_debug_assert(!is_written || !is_prev());
     usize& last = is_written ? last_write : last_read;
     last = std::max(last, index);
     if(!first_use) {
@@ -466,11 +526,13 @@ void FrameGraph::ImageCreateInfo::register_alias(const ImageCreateInfo& other) {
     y_debug_assert(other.size == size);
     y_debug_assert(other.format == format);
     y_debug_assert(other.first_use > last_write);
+    y_debug_assert(!is_persistent());
 
     last_write = std::max(last_write, other.last_write);
     last_read = std::max(last_read, other.last_read);
     usage = usage | other.usage;
     last_usage = last_usage | other.last_usage;
+    persistent = other.persistent;
 }
 
 bool FrameGraph::ImageCreateInfo::is_aliased() const {
@@ -484,6 +546,8 @@ bool FrameGraph::ImageCreateInfo::has_usage() const {
 void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass) {
     check_usage_io(usage, is_written);
     auto& info = check_exists(_images, res);
+
+    y_always_assert(!info.is_prev() || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
     info.usage = info.usage | usage;
 
     const bool is_last = info.last_use() < pass->_index;
@@ -494,6 +558,8 @@ void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is
 void FrameGraph::register_usage(FrameGraphVolumeId res, ImageUsage usage, bool is_written, const FrameGraphPass* pass) {
     check_usage_io(usage, is_written);
     auto& info = check_exists(_volumes, res);
+
+    y_always_assert(!info.is_prev() || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
     info.usage = info.usage | usage;
 
     const bool is_last = info.last_use() < pass->_index;
@@ -504,17 +570,90 @@ void FrameGraph::register_usage(FrameGraphVolumeId res, ImageUsage usage, bool i
 void FrameGraph::register_usage(FrameGraphBufferId res, BufferUsage usage, bool is_written, const FrameGraphPass* pass) {
     check_usage_io(usage, is_written);
     auto& info = check_exists(_buffers, res);
+
+    y_always_assert(!info.is_prev() || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
     info.usage = info.usage | usage;
+
     info.register_use(pass->_index, is_written);
 }
 
 void FrameGraph::register_image_copy(FrameGraphMutableImageId dst, FrameGraphImageId src, const FrameGraphPass* pass) {
     auto& info = check_exists(_images, dst);
-    if(info.copy_src.is_valid()) {
-        y_fatal("Resource is already a copy");
-    }
+    y_always_assert(!info.copy_src.is_valid(), "Resource is already a copy");
     info.copy_src = src;
     _image_copies.push_back({pass->_index, dst, src});
+}
+
+void FrameGraph::register_buffer_copy(FrameGraphMutableBufferId dst, FrameGraphBufferId src, const FrameGraphPass* pass) {
+    _buffer_copies.push_back({pass->_index, dst, src});
+}
+
+void FrameGraph::register_image_clear(FrameGraphMutableImageId dst, const FrameGraphPass* pass) {
+    check_exists(_images, dst);
+    _image_clears.push_back({pass->_index, dst});
+}
+
+template<typename C, typename P, typename T, typename U>
+static void make_persistent(C& c, P& persistents, T res, U persistent_id) {
+    persistent_id.check_valid();
+    auto& info = check_exists(c, res);
+    y_always_assert(!info.persistent.is_valid(), "Resource already has a persistent ID");
+    info.persistent = persistent_id;
+
+    persistents.set_min_size(persistent_id.id() + 1);
+    auto& p = persistents[persistent_id.id()];
+    y_always_assert(!p.is_valid(), "Persistent id has already been registered");
+    p = res;
+}
+
+template<typename C, typename T, typename U>
+static auto& alloc_prev(C& c, T new_res, U persistent_id) {
+    c.set_min_size(new_res.id() + 1);
+    auto& [i, info]  = c[new_res.id()];
+    i = new_res;
+    info.persistent_prev = persistent_id;
+    return info;
+}
+
+FrameGraphImageId FrameGraph::make_persistent_and_get_prev(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id) {
+    make_persistent(_images, _persistents, res, persistent_id);
+
+    if(!_resources->has_prev_image(persistent_id)) {
+        return {};
+    }
+
+    FrameGraphMutableImageId id;
+    id._id = _resources->create_image_id();
+
+    _resources->create_prev_image(id, persistent_id);
+    auto& info = alloc_prev(_images, id, persistent_id);
+
+    const auto& image = _resources->find(id);
+    info.format = image.format();
+    info.size = image.image_size();
+    info.usage = image.usage();
+
+    return id;
+}
+
+FrameGraphBufferId FrameGraph::make_persistent_and_get_prev(FrameGraphBufferId res, FrameGraphPersistentResourceId persistent_id) {
+    make_persistent(_buffers, _persistents, res, persistent_id);
+
+    if(!_resources->has_prev_buffer(persistent_id)) {
+        return {};
+    }
+
+    FrameGraphMutableBufferId id;
+    id._id = _resources->create_buffer_id();
+
+    _resources->create_prev_buffer(id, persistent_id);
+    auto& info = alloc_prev(_buffers, id, persistent_id);
+
+    const auto& buffer = _resources->find(id);
+    info.byte_size = buffer.byte_size();
+    info.usage = buffer.usage();
+
+    return id;
 }
 
 InlineDescriptor FrameGraph::copy_inline_descriptor(InlineDescriptor desc) {

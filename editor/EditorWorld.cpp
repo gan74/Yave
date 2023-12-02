@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <editor/components/EditorComponent.h>
 
-#include <yave/ecs/EntityScene.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/FileSystemModel.h>
 
@@ -40,6 +39,7 @@ SOFTWARE.
 #include <yave/systems/AABBUpdateSystem.h>
 #include <yave/systems/OctreeSystem.h>
 #include <yave/systems/ScriptSystem.h>
+#include <yave/systems/RendererSystem.h>
 
 #include <y/utils/format.h>
 
@@ -49,34 +49,23 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action("Remove all entities", [] { current_world().clear(); })
+editor_action("Remove all entities", [] { current_world().remove_all_entities(); })
 
 EditorWorld::EditorWorld(AssetLoader& loader) {
-    add_required_component<EditorComponent>();
     add_system<AssetLoaderSystem>(loader);
     add_system<AABBUpdateSystem>();
     add_system<OctreeSystem>();
     add_system<ScriptSystem>();
-    // add_system<ASUpdateSystem>();
-}
-
-void EditorWorld::clear() {
-    core::Vector<ecs::EntityId> all_entities;
-    for(const ecs::EntityId id : ids()) {
-        all_entities << id;
-    }
-    for(const ecs::EntityId id : all_entities) {
-        remove_entity(id);
-    }
+    add_system<RendererSystem>();
 }
 
 void EditorWorld::flush_reload() {
     AssetLoaderSystem* system = find_system<AssetLoaderSystem>();
-    system->reset(*this);
+    system->reset();
 }
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {
-    if(EditorComponent* comp = component_mut<EditorComponent>(id)) {
+    if(EditorComponent* comp = get_or_add_component<EditorComponent>(id)) {
         comp->set_name(name);
         return true;
     }
@@ -92,48 +81,45 @@ std::string_view EditorWorld::entity_name(ecs::EntityId id) const {
     return "";
 }
 
-std::string_view EditorWorld::entity_icon(ecs::EntityId id) const {
+UiIcon EditorWorld::entity_icon(ecs::EntityId id) const {
+    const u32 base_color = 0xFFBE9270;      // light blue
+    const u32 mesh_color = 0xFF9C6CFF;      // Pink-ish
+    const u32 folder_color = imgui::folder_icon_color;
+    const u32 light_color = 0xFFFFFFFF;
+
+    if(!exists(id)) {
+        return { ICON_FA_PUZZLE_PIECE, base_color };
+    }
+
     if(has<StaticMeshComponent>(id)) {
-        return ICON_FA_CUBE;
+        return { ICON_FA_CUBE, mesh_color };
     }
 
     if(has<PointLightComponent>(id)) {
-        return ICON_FA_LIGHTBULB;
+        return { ICON_FA_LIGHTBULB, light_color };
     }
 
     if(has<SpotLightComponent>(id)) {
-        return ICON_FA_VIDEO;
+        return { ICON_FA_VIDEO, light_color };
     }
 
     if(has<DirectionalLightComponent>(id)) {
-        return ICON_FA_SUN;
+        return { ICON_FA_SUN, light_color };
     }
 
     if(has<SkyLightComponent>(id)) {
-        return ICON_FA_CLOUD_SUN;
+        return { ICON_FA_CLOUD_SUN, base_color };
     }
 
     if(has<AtmosphereComponent>(id)) {
-        return ICON_FA_CLOUD;
+        return { ICON_FA_CLOUD, base_color };
     }
 
-    if(const EditorComponent* comp = component<EditorComponent>(id)) {
-        if(comp->is_collection()) {
-            return ICON_FA_BOX_OPEN;
-        }
+    if(has_children(id)) {
+        return { ICON_FA_FOLDER_OPEN, folder_color };
     }
 
-    return ICON_FA_DATABASE;
-}
-
-
-ecs::EntityId EditorWorld::create_collection_entity(std::string_view name) {
-    const ecs::EntityId id = create_entity();
-    EditorComponent* comp = component_mut<EditorComponent>(id);
-    y_always_assert(comp, "Unable to create entity name");
-    comp->set_name(name);
-    comp->_is_collection = true;
-    return id;
+    return { ICON_FA_PUZZLE_PIECE, base_color };
 }
 
 ecs::EntityId EditorWorld::add_prefab(std::string_view name) {
@@ -149,7 +135,7 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
     if(const auto prefab = asset_loader().load_res<ecs::EntityPrefab>(asset)) {
         const ecs::EntityId id = create_entity(*prefab.unwrap());
 
-        if(EditorComponent* comp = component_mut<EditorComponent>(id)) {
+        if(EditorComponent* comp = get_or_add_component<EditorComponent>(id)) {
             comp->set_parent_prefab(asset);
         }
         if(const auto name = asset_store().name(asset)) {
@@ -157,52 +143,8 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
         }
         return id;
     }
+
     return ecs::EntityId();
-}
-
-void EditorWorld::add_scene(std::string_view name, ecs::EntityId parent) {
-    if(const auto id = asset_store().id(name)) {
-        add_scene(id.unwrap(), parent);
-    }
-}
-
-void EditorWorld::add_scene(AssetId asset, ecs::EntityId parent) {
-    y_profile();
-
-    if(const auto scene = asset_loader().load_res<ecs::EntityScene>(asset)) {
-        for(const auto& prefab : scene.unwrap()->prefabs()) {
-            set_parent(create_entity(prefab), parent);
-        }
-    }
-}
-
-void EditorWorld::set_parent(ecs::EntityId id, ecs::EntityId parent) {
-    y_profile();
-
-    if(EditorComponent* comp = component_mut<EditorComponent>(id)) {
-        if(comp->_parent == parent) {
-            return;
-        }
-
-        if(comp->has_parent()) {
-            if(EditorComponent* current_parent = component_mut<EditorComponent>(comp->_parent)) {
-                if(current_parent->_is_collection) {
-                    const auto it = std::find(current_parent->_children.begin(), current_parent->_children.end(), comp->_parent);
-                    if(it != current_parent->_children.end()) {
-                        current_parent->_children.erase_unordered(it);
-                    }
-                }
-                comp->_parent = ecs::EntityId();
-            }
-        }
-
-        if(EditorComponent* new_parent = component_mut<EditorComponent>(parent)) {
-            if(new_parent->_is_collection) {
-                new_parent->_children.push_back(id);
-                comp->_parent = parent;
-            }
-        }
-    }
 }
 
 bool EditorWorld::has_selected_entities() const {
@@ -228,22 +170,22 @@ ecs::EntityId EditorWorld::selected_entity() const {
 
 void EditorWorld::set_selected(ecs::EntityId id) {
     clear_selection();
-    add_tag(id, ecs::tags::selected);
+    if(id.is_valid()) {
+        add_tag(id, ecs::tags::selected);
+    }
 }
 
-void EditorWorld::toggle_selected(ecs::EntityId id, bool set) {
-    if(!id.is_valid() || selected_entity() == id) {
+void EditorWorld::toggle_selected(ecs::EntityId id, bool reset_selection) {
+    if(!id.is_valid()) {
         return;
     }
 
     if(has_tag(id, ecs::tags::selected)) {
-        if(set) {
-            set_selected(id);
-        } else {
+        if(!reset_selection) {
             remove_tag(id, ecs::tags::selected);
         }
     } else {
-        if(set) {
+        if(reset_selection) {
             clear_selection();
         }
         add_tag(id, ecs::tags::selected);

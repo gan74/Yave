@@ -37,7 +37,7 @@ namespace ecs {
 namespace detail {
 template<typename T, typename U, typename... Args>
 static constexpr usize tuple_index(const std::tuple<U, Args...>*) {
-    if constexpr(std::is_same_v<T, remove_cvref_t<U>>) {
+    if constexpr(std::is_same_v<T, std::remove_cvref_t<U>>) {
         return 0;
     } else {
         const std::tuple<Args...>* p = nullptr;
@@ -84,16 +84,13 @@ struct QueryUtils {
             using component_type = std::tuple_element_t<I, std::tuple<Args...>>;
             static constexpr bool required = traits::component_required_v<component_type>;
             static constexpr bool changed = traits::component_changed_v<component_type>;
-            static constexpr bool removed = traits::component_removed_v<component_type>;
 
             const SparseIdSetBase* set = nullptr;
             if(const ComponentContainerBase* container = containers[I]) {
 
                 y_debug_assert(type_index<traits::component_raw_type_t<component_type>>() == container->type_id());
 
-                if constexpr(removed) {
-                    set = &container->to_be_removed();
-                } else if(changed && only_changed) {
+                if(changed && only_changed) {
                     set = &container->recently_mutated();
                 } else {
                     set = &container->id_set();

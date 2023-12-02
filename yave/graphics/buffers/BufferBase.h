@@ -46,7 +46,7 @@ class SubBufferBase {
 
         DeviceMemoryView device_memory() const;
 
-        VkDescriptorBufferInfo descriptor_info() const;
+        VkDescriptorBufferInfo vk_descriptor_info() const;
         VkMappedMemoryRange vk_memory_range() const;
 
         bool operator==(const SubBufferBase& other) const;
@@ -73,7 +73,7 @@ class BufferBase : NonCopyable {
         u64 byte_size() const;
         const DeviceMemory& device_memory() const;
 
-        VkDescriptorBufferInfo descriptor_info() const;
+        VkDescriptorBufferInfo vk_descriptor_info() const;
 
         bool is_null() const;
 

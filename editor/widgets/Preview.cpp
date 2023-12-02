@@ -23,7 +23,6 @@ SOFTWARE.
 #include "Preview.h"
 #include "AssetSelector.h"
 
-#include <editor/EditorApplication.h>
 #include <editor/EditorWorld.h>
 #include <editor/Settings.h>
 #include <editor/utils/ui.h>
@@ -113,8 +112,10 @@ void Preview::update_camera() {
         const float cos_y = std::cos(_angle.y());
         const math::Vec3 cam = math::Vec3(std::sin(_angle.x()) * cos_y, std::cos(_angle.x()) * cos_y, std::sin(_angle.y()));
 
-        _view.camera().set_view(math::look_at(cam * _cam_distance, math::Vec3(), math::Vec3(0.0f, 0.0f, 1.0f)));
-        _view.camera().set_proj(math::perspective(math::to_rad(90.0f), 1.0f, _cam_distance * 0.1f));
+        _view.camera() = Camera(
+            math::look_at(cam * _cam_distance, math::Vec3(), math::Vec3(0.0f, 0.0f, 1.0f)),
+            math::perspective(math::to_rad(90.0f), 1.0f, _cam_distance * 0.1f)
+        );
     }
 }
 
@@ -124,15 +125,15 @@ void Preview::reset_world() {
     _view = SceneView(_world.get());
 
     {
-        const ecs::EntityId sky_id = _world->create_entity<SkyLightComponent>();
-        SkyLightComponent* sky = _world->component_mut<SkyLightComponent>(sky_id);
+        const ecs::EntityId sky_id = _world->create_entity();
+        SkyLightComponent* sky = _world->get_or_add_component<SkyLightComponent>(sky_id);
         sky->probe() = _ibl_probe ? _ibl_probe : device_resources().ibl_probe();
         sky->display_sky() = true;
     }
 
     if(!_mesh.is_empty() && !_material.is_empty()) {
-        const ecs::EntityId id = _world->create_entity<StaticMeshComponent>();
-        *_world->component_mut<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
+        const ecs::EntityId id = _world->create_entity();
+        *_world->get_or_add_component<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
 
         const float radius = _mesh->radius();
         _cam_distance = radius * 1.5f;
@@ -180,17 +181,20 @@ void Preview::on_gui() {
         FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_copy(renderer.lighting.lit);
-        builder.add_image_input_usage(output_image, ImageUsage::TransferSrcBit);
+        builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& src = self->resources().image_base(output_image);
             output = UiTexture(src.format(), src.image_size().to<2>());
-            recorder.barriered_copy(src, output.texture());
+            recorder.copy(src, output.texture());
         });
 
 
-        CmdBufferRecorder& recorder = application()->recorder();
-        const auto region = recorder.region("Peview render", nullptr, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
-        graph.render(recorder);
+        {
+            CmdBufferRecorder recorder = create_disposable_cmd_buffer();
+            const auto region = recorder.region("Peview render", nullptr, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+            graph.render(recorder);
+            recorder.submit();
+        }
     }
 
     if(output) {

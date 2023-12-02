@@ -39,63 +39,52 @@ struct Not {};
 template<typename T>
 struct Changed {};
 
-template<typename T>
-struct Removed {};
-
 
 namespace traits {
 template<typename T>
 struct component_type {
-    using raw_type = remove_cvref_t<T>;
+    using raw_type = std::remove_cvref_t<T>;
     using type = const raw_type;
+    using discard_query_quals = T;
+
     static constexpr bool required = true;
     static constexpr bool changed = false;
-    static constexpr bool removed = false;
 };
 
 template<typename T>
 struct component_type<Mutate<T>> {
     using raw_type = typename component_type<T>::raw_type;
     using type = std::remove_const_t<typename component_type<T>::type>;
+    using discard_query_quals = Mutate<T>;
+
     static constexpr bool required = component_type<T>::required;
     static constexpr bool changed = component_type<T>::changed;
-    static constexpr bool removed = component_type<T>::removed;
 };
 
 template<typename T>
 struct component_type<Not<T>> {
-    static_assert(!component_type<T>::removed, "Not<Removed<T>> is not a valid query");
-
     using raw_type = typename component_type<T>::raw_type;
     using type = typename component_type<T>::type;
+    using discard_query_quals = Not<T>;
+
     static constexpr bool required = !component_type<T>::required;
     static constexpr bool changed = component_type<T>::changed;
-    static constexpr bool removed = false;
 };
 
 template<typename T>
 struct component_type<Changed<T>> {
     static_assert(component_type<T>::required, "Changed<Not<T>> is not a valid query, try Not<Changed<T>>");
-    static_assert(!component_type<T>::removed, "Changed<Removed<T>> is not a valid query");
 
     using raw_type = typename component_type<T>::raw_type;
     using type = typename component_type<T>::type;
+    using discard_query_quals = T;
+
     static constexpr bool required = true;
     static constexpr bool changed = true;
-    static constexpr bool removed = false;
 };
 
-template<typename T>
-struct component_type<Removed<T>> {
-    static_assert(component_type<T>::required, "Removed<Not<T>> is not a valid query");
-    static_assert(!component_type<T>::changed, "Removed<Changed<T>> is not a valid query");
 
-    using raw_type = typename component_type<T>::raw_type;
-    using type = typename component_type<T>::type;
-    static constexpr bool required = true;
-    static constexpr bool changed = false;
-    static constexpr bool removed = true;
-};
+
 
 
 
@@ -105,6 +94,9 @@ using component_raw_type_t = typename component_type<T>::raw_type;
 template<typename T>
 using component_type_t = typename component_type<T>::type;
 
+template<typename T>
+using discard_query_qualifiers_t = typename component_type<T>::discard_query_quals;
+
 
 template<typename T>
 static constexpr bool component_required_v = component_type<T>::required;
@@ -113,13 +105,12 @@ template<typename T>
 static constexpr bool component_changed_v = component_type<T>::changed;
 
 template<typename T>
-static constexpr bool component_removed_v = component_type<T>::removed;
-
-template<typename T>
 static constexpr bool is_component_const_v = std::is_const_v<typename component_type<T>::type> || !component_required_v<T>;
 
 template<typename T>
 static constexpr bool is_component_mutable_v = !is_component_const_v<T>;
+
+
 
 }
 

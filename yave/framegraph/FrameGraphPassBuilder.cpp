@@ -87,11 +87,36 @@ FrameGraphMutableImageId FrameGraphPassBuilderBase::declare_copy(FrameGraphImage
     return res;
 }
 
+FrameGraphMutableBufferId FrameGraphPassBuilderBase::declare_copy(FrameGraphBufferId src) {
+    const auto src_info = parent()->info(src);
+    const auto res = declare_buffer(src_info.byte_size);
+
+    // copies are done before the pass proper so we don't set the stage
+    add_to_pass(src, BufferUsage::TransferSrcBit, false, PipelineStage::None);
+    add_to_pass(res, BufferUsage::TransferDstBit, true, PipelineStage::None);
+
+    parent()->register_buffer_copy(res, src, _pass);
+
+    return res;
+}
+
 
 // --------------------------------- Usage ---------------------------------
 
-void FrameGraphPassBuilderBase::add_image_input_usage(FrameGraphImageId res, ImageUsage usage) {
+void FrameGraphPassBuilderBase::add_input_usage(FrameGraphImageId res, ImageUsage usage) {
     add_to_pass(res, usage, false, PipelineStage::None);
+}
+
+void FrameGraphPassBuilderBase::add_input_usage(FrameGraphBufferId res, BufferUsage usage) {
+    add_to_pass(res, usage, false, PipelineStage::None);
+}
+
+void FrameGraphPassBuilderBase::add_output_usage(FrameGraphMutableImageId res, ImageUsage usage) {
+    add_to_pass(res, usage, true, PipelineStage::None);
+}
+
+void FrameGraphPassBuilderBase::add_output_usage(FrameGraphBufferId res, BufferUsage usage) {
+    add_to_pass(res, usage, true, PipelineStage::None);
 }
 
 
@@ -191,11 +216,13 @@ void FrameGraphPassBuilderBase::add_uniform_input_with_default(FrameGraphImageId
     }
 }
 
+
 // --------------------------------- Inline ---------------------------------
 
 void FrameGraphPassBuilderBase::add_inline_input(InlineDescriptor desc, i32 ds_index) {
     add_descriptor_binding(Descriptor(parent()->copy_inline_descriptor(desc)), ds_index);
 }
+
 
 // --------------------------------- External ---------------------------------
 
@@ -204,6 +231,7 @@ void FrameGraphPassBuilderBase::add_external_input(Descriptor desc, PipelineStag
     y_debug_assert(!desc.is_inline_block());
     add_descriptor_binding(desc, ds_index);
 }
+
 
 // --------------------------------- Attribs ---------------------------------
 
@@ -218,10 +246,14 @@ void FrameGraphPassBuilderBase::add_index_input(FrameGraphBufferId res, Pipeline
 
 // --------------------------------- Stuff ---------------------------------
 
+void FrameGraphPassBuilderBase::clear_before_pass(FrameGraphMutableImageId res) {
+    add_to_pass(res, ImageUsage::TransferDstBit, true, PipelineStage::None);
+    parent()->register_image_clear(res, _pass);
+}
+
 void FrameGraphPassBuilderBase::add_descriptor_binding(Descriptor desc, i32 ds_index) {
     add_descriptor_binding(FrameGraphDescriptorBinding(desc), ds_index);
 }
-
 
 i32 FrameGraphPassBuilderBase::next_descriptor_set_index() const {
     const auto& bindings = _pass->_bindings;
@@ -232,7 +264,7 @@ template<typename T>
 void set_stage(const FrameGraphPass* pass, T& info, PipelineStage stage) {
     if(info.stage != PipelineStage::None) {
         Y_TODO(This should be either one write or many reads)
-        y_fatal("Resource can only be used once per pass (used twice by \"%\", previous stage was %).", pass->name(), usize(info.stage));
+        y_fatal("Resource can only be used once per pass (used twice by \"{}\", previous stage was {}).", pass->name(), usize(info.stage));
     }
     info.stage = stage;
 }
@@ -272,8 +304,11 @@ void FrameGraphPassBuilderBase::add_descriptor_binding(FrameGraphDescriptorBindi
     }
 }
 
-void FrameGraphPassBuilderBase::map_buffer_internal(FrameGraphMutableBufferId res) {
+void FrameGraphPassBuilderBase::map_buffer_internal(FrameGraphMutableBufferId res, InlineDescriptor desc) {
     parent()->map_buffer(res, _pass);
+    if(desc.data()) {
+        _pass->_map_data.emplace_back(res, parent()->copy_inline_descriptor(desc));
+    }
 }
 
 FrameGraph* FrameGraphPassBuilderBase::parent() const {

@@ -59,15 +59,15 @@ void FileBrowser::path_changed() {
     _path_buffer = path();
 }
 
-core::Result<core::String> FileBrowser::entry_icon(const core::String& name, EntryType type) const {
+core::Result<UiIcon> FileBrowser::entry_icon(const core::String& name, EntryType type) const {
     if(type == EntryType::Directory) {
-        return core::Ok(core::String(ICON_FA_FOLDER));
+        return core::Ok(UiIcon{ICON_FA_FOLDER, imgui::folder_icon_color});
     }
     if(_extensions.is_empty()) {
         return core::Err();
     }
     if(has_valid_extension(name)) {
-        return core::Ok(core::String(ICON_FA_FILE_ALT));
+        return core::Ok(UiIcon{ICON_FA_FILE_ALT, 0xFFFFFFFF});
     }
     return core::Err();
 }

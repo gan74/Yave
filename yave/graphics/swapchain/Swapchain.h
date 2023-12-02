@@ -55,13 +55,13 @@ class Swapchain : NonMovable {
             SwapchainImage() = default;
     };
 
-    struct FrameSyncObjects {
-        VkHandle<VkSemaphore> image_available;
-        VkHandle<VkSemaphore> render_complete;
-        VkHandle<VkFence> fence;
-    };
-
     public:
+        struct FrameSyncObjects {
+            VkHandle<VkSemaphore> image_available;
+            VkHandle<VkSemaphore> render_complete;
+            VkHandle<VkFence> fence;
+        };
+
         Swapchain(VkHandle<VkSurfaceKHR> surface);
         Swapchain(Window* window);
         ~Swapchain();
@@ -78,7 +78,7 @@ class Swapchain : NonMovable {
         }
 
         core::Result<FrameToken> next_frame();
-        void present(const FrameToken& token, CmdBufferRecorder&& recorder, const CmdQueue& queue);
+        void present(const FrameToken& token, CmdBufferRecorder&& recorder, CmdQueue& queue);
 
     private:
         bool is_valid() const;

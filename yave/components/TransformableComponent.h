@@ -61,21 +61,27 @@ class TransformableComponent final {
         AABB global_aabb() const;
 
         const OctreeNode* octree_node() const;
+        u32 transform_index() const;
 
         void inspect(ecs::ComponentInspector* inspector);
 
         y_reflect(TransformableComponent, _transform)
 
     private:
-        friend class Octree;
-        friend class OctreeSystem;
-
         void swap(TransformableComponent& other);
 
         math::Transform<> _transform;
         AABB _aabb;
 
+        friend class Octree;
+        friend class OctreeSystem;
         mutable OctreeNode* _node = nullptr;
+
+
+    private:
+        friend class RendererSystem;
+
+        mutable u32 _transform_index = u32(-1);
 };
 
 }

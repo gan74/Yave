@@ -9,13 +9,16 @@ struct SurfaceInfo {
     vec3 albedo;
 
     float perceptual_roughness;
-    float roughness;
+    float alpha; // perceptual_roughness ^ 2
+    float sqr_alpha; // alpha ^ 2
+
     float metallic;
 
     vec3 F0;
 
     vec3 normal;
 };
+
 struct Frustum {
     vec4 planes[6];
 };
@@ -27,6 +30,10 @@ struct Frustum4 {
 struct Camera {
     mat4 view_proj;
     mat4 inv_view_proj;
+
+    mat4 unjittered_view_proj;
+    mat4 inv_unjittered_view_proj;
+    mat4 prev_unjittered_view_proj;
 
     mat4 proj;
     mat4 inv_proj;
@@ -42,6 +49,27 @@ struct Camera {
 
     vec3 up;
     uint padding_2;
+};
+
+struct TransformableData {
+    mat4 current;
+    mat4 last;
+};
+
+const uint diffuse_texture_index = 0;
+const uint normal_texture_index = 1;
+const uint roughness_texture_index = 2;
+const uint metallic_texture_index = 3;
+const uint emissive_texture_index = 4;
+
+struct MaterialData {
+    vec3 emissive_mul;
+    float roughness_mul;
+
+    vec3 base_color_mul;
+    float metallic_mul;
+
+    uint texture_indices[8];
 };
 
 struct DirectionalLight {
@@ -76,7 +104,7 @@ struct SpotLight {
     float min_radius;
 
     vec2 att_scale_offset;
-    uint padding_0;
+    float sin_angle;
     uint shadow_map_index;
 
     vec3 encl_sphere_center;
@@ -85,6 +113,7 @@ struct SpotLight {
 
 struct ShadowMapParams {
     mat4 view_proj;
+
     vec2 uv_offset;
     vec2 uv_mul;
 
@@ -128,8 +157,8 @@ float sqr(float x) {
     return x * x;
 }
 
-float noise(vec2 co) {
-    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+float length2(vec3 v) {
+    return dot(v, v);
 }
 
 uint hash(uint x) {
@@ -187,25 +216,6 @@ float luminance(vec3 rgb) {
     return dot(rgb, vec3(0.2126, 0.7152, 0.0722));
 }
 
-bool intersect_ray_sphere(vec3 origin, vec3 dir, float radius, out vec2 intersections) {
-    const float a = dot(dir, dir);
-    const float b = 2.0 * dot(dir, origin);
-    const float c = dot(origin, origin) - sqr(radius);
-    const float d = sqr(b) - 4.0 * a * c;
-
-    if (d < 0.0) {
-        intersections = vec2(1e5, -1e5);
-        return false;
-    }
-
-    intersections = vec2(
-            (-b - sqrt(d)) / (2.0 * a),
-            (-b + sqrt(d)) / (2.0 * a)
-        );
-
-    return true;
-}
-
 vec4 plane(vec3 p0, vec3 p1, vec3 p2) {
     const vec3 n = normalize(cross(p0 - p1, p2 - p1));
     return vec4(-n, dot(n, p1));
@@ -240,6 +250,22 @@ vec2 intersect_sphere(vec3 center, float radius, vec3 origin, vec3 dir) {
         }
     }
     return vec2(-1.0, 0.0);
+}
+
+// https://iquilezles.org/articles/intersectors/
+bool intersect_ray_sphere(vec3 ray_origin, vec3 dir, vec3 pos, float radius, out vec2 intersections) {
+    const vec3 oc = ray_origin - pos;
+    const float b = -dot(oc, dir);
+    const float c = dot(oc, oc) - sqr(radius);
+    float h = sqr(b) - c;
+    if(h < 0.0) {
+        intersections = vec2(0.0);
+        return false;
+    }
+
+    h = sqrt(h);
+    intersections = vec2(b - h, b + h);
+    return true;
 }
 
 vec3 unpack_normal_map(vec2 normal) {

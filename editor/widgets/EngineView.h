@@ -23,7 +23,6 @@ SOFTWARE.
 #define EDITOR_WIDGETS_ENGINEVIEW_H
 
 #include "Gizmo.h"
-#include "OrientationGizmo.h"
 
 #include <editor/Widget.h>
 #include <editor/renderer/EditorRenderer.h>
@@ -31,13 +30,20 @@ SOFTWARE.
 #include <yave/graphics/images/ImageView.h>
 #include <yave/scene/SceneView.h>
 
-#include <deque>
+#include <y/core/RingQueue.h>
 
 namespace editor {
 
 class EngineView final : public Widget {
 
     editor_widget_open(EngineView, "View")
+
+    enum class GizmoType : u32 {
+        Translate,
+        Rotate,
+
+        Max,
+    };
 
     public:
         enum class RenderView : u32 {
@@ -48,10 +54,11 @@ class EngineView final : public Widget {
             Roughness,
 
             Depth,
+            Motion,
 
             SSAO,
 
-            MaxRenderViews
+            Max,
         };
 
         EngineView();
@@ -69,11 +76,13 @@ class EngineView final : public Widget {
 
     private:
         void draw(CmdBufferRecorder& recorder);
-        void draw_menu_bar();
-        void draw_settings_menu();
-        void draw_gizmo_tool_bar();
 
-        void update_proj();
+        void draw_toolbar_and_gizmos();
+        void draw_menu();
+        void draw_resolution_menu();
+        void draw_settings_menu();
+
+        void update_scene_view();
         void update();
         void update_picking();
 
@@ -82,20 +91,28 @@ class EngineView final : public Widget {
 
         void make_drop_target();
 
+        bool is_dragging_gizmo() const;
+        void set_is_moving_camera(bool moving);
+
+
         RenderView _view = RenderView::Lit;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
-        std::deque<std::unique_ptr<CmdTimingRecorder>> _time_recs;
+        core::RingQueue<std::unique_ptr<CmdTimingRecorder>> _time_recs;
 
         EditorRendererSettings _settings;
 
         SceneView _scene_view;
         std::unique_ptr<CameraController> _camera_controller;
 
-        Gizmo _gizmo;
+        GizmoType _gizmo = GizmoType::Translate;
+
+        TranslationGizmo _tr_gizmo;
+        RotationGizmo _rot_gizmo;
         OrientationGizmo _orientation_gizmo;
 
-        bool _disable_render = false;
+        bool _moving_camera = false;
+
         isize _resolution = -1;
 };
 

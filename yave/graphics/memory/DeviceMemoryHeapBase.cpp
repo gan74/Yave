@@ -24,6 +24,10 @@ SOFTWARE.
 
 namespace yave {
 
+DeviceMemoryHeapBase::DeviceMemoryHeapBase(MemoryType type) : _type(type) {
+
+}
+
 void DeviceMemoryHeapBase::invalidate_for_map(const VkMappedMemoryRange& range, MappingAccess access) {
     switch(access) {
         case MappingAccess::ReadOnly:
@@ -46,6 +50,10 @@ void DeviceMemoryHeapBase::flush_for_unmap(const VkMappedMemoryRange& range, Map
         case MappingAccess::ReadOnly:
         break;
     }
+}
+
+MemoryType DeviceMemoryHeapBase::memory_type() const {
+    return _type;
 }
 
 }

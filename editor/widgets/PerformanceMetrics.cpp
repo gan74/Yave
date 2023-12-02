@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 static double to_mb(double b) {
@@ -107,7 +109,7 @@ PerformanceMetrics::PerformanceMetrics() :
 
 bool PerformanceMetrics::before_gui() {
     ImGui::SetNextWindowSizeConstraints(ImVec2(-1.0f, 0.0f), ImVec2(-1.0f, std::numeric_limits<float>::max()));
-    return true;
+    return Widget::before_gui();
 }
 
 void PerformanceMetrics::on_gui() {
@@ -144,25 +146,27 @@ void PerformanceMetrics::draw_timings() {
 void PerformanceMetrics::draw_memory() {
     double used_per_type_mb[4] = {};
     double allocated_per_type_mb[4] = {};
-    for(auto&& [type, heaps] : device_allocator().heaps()) {
+    for(const auto& heaps : device_allocator().heaps()) {
         for(const auto& heap : heaps) {
             u64 free = heap->available();
             const u64 used = heap->size() - free;
-            used_per_type_mb[uenum(type.second)] += to_mb(used);
-            allocated_per_type_mb[uenum(type.second)] += to_mb(heap->size());
+            used_per_type_mb[uenum(heap->memory_type())] += to_mb(used);
+            allocated_per_type_mb[uenum(heap->memory_type())] += to_mb(heap->size());
         }
     }
 
     double dedicated_mb = 0.0;
-    for(auto&& [type, heap] : device_allocator().dedicated_heaps()) {
+    usize dedicated_count = 0;
+    for(const auto& heap : device_allocator().dedicated_heaps()) {
         const double mb = to_mb(heap->allocated_size());
         dedicated_mb += mb;
-        used_per_type_mb[uenum(type)] += mb;
-        allocated_per_type_mb[uenum(type)] += mb;
+        dedicated_count += heap->allocation_count();
+        used_per_type_mb[uenum(heap->memory_type())] += mb;
+        allocated_per_type_mb[uenum(heap->memory_type())] += mb;
     }
 
     auto progress_bar = [](double used, double allocated) {
-        ImGui::ProgressBar(float(used / allocated), ImVec2(0, 0), fmt_c_str("%MB / %MB", u64(used), u64(allocated)));
+        ImGui::ProgressBar(float(used / allocated), ImVec2(0, 0), fmt_c_str("{}MB / {}MB", u64(used), u64(allocated)));
     };
 
 
@@ -177,7 +181,7 @@ void PerformanceMetrics::draw_memory() {
 
     {
         ImGui::Text("Total used: %.1lfMB", total_used_mb);
-        ImGui::Text("Dedicated allocations size: %.1lfMB", dedicated_mb);
+        ImGui::Text("Dedicated allocation: %.1lfMB across %u allocations", dedicated_mb, unsigned(dedicated_count));
         ImGui::Text("Total allocated: %.1lfMB", total_allocated_mb);
         ImGui::SetNextItemWidth(-1);
         progress_bar(total_used_mb, total_allocated_mb);
@@ -203,7 +207,7 @@ void PerformanceMetrics::draw_memory() {
         ImGui::Text("Descriptor set layouts: %u", u32(alloc.layout_count()));
         ImGui::Text("Descriptor set pools: %u", u32(pools));
 
-        ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt_c_str("% / % sets", used_sets, total_sets));
+        ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt_c_str("{} / {} sets", used_sets, total_sets));
     }
 
     ImGui::Spacing();

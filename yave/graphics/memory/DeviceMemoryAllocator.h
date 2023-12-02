@@ -43,16 +43,16 @@ class DeviceMemoryAllocator {
     public:
         DeviceMemoryAllocator(const DeviceProperties& properties);
 
-        DeviceMemory alloc(VkImage image);
-        DeviceMemory alloc(VkBuffer buffer, MemoryType type);
-        DeviceMemory alloc(VkMemoryRequirements reqs, MemoryType type);
+        DeviceMemory alloc(VkImage image, MemoryAllocFlags flags = MemoryAllocFlags::None);
+        DeviceMemory alloc(VkBuffer buffer, MemoryType type, MemoryAllocFlags flags = MemoryAllocFlags::None);
+        DeviceMemory alloc(VkMemoryRequirements2 reqs, MemoryType type, MemoryAllocFlags flags);
 
         auto heaps() const {
-            return core::Range(_heaps.begin(), _heaps.end());
+            return _heaps.values();
         }
 
         auto dedicated_heaps() const {
-            return core::Range(_dedicated_heaps.begin(), _dedicated_heaps.end());
+            return _dedicated_heaps.values();
         }
 
     private:

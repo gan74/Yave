@@ -50,7 +50,7 @@ AssetLoadingContext& AssetLoadingThreadPool::LoadingJob::loading_context() {
 }
 
 AssetLoadingThreadPool::AssetLoadingThreadPool(AssetLoader* parent, usize concurency) : _parent(parent) {
-    _threads = core::vector_with_capacity<std::thread>(concurency);
+    _threads = core::Vector<std::thread>::with_capacity(concurency);
     for(usize i = 0; i != concurency; ++i) {
         _threads.emplace_back([this] {
             concurrent::set_thread_name("Asset loading thread");
@@ -62,7 +62,7 @@ AssetLoadingThreadPool::AssetLoadingThreadPool(AssetLoader* parent, usize concur
 AssetLoadingThreadPool::~AssetLoadingThreadPool() {
     {
         _run = false;
-        const auto lock = y_profile_unique_lock(_lock);
+        const auto lock = std::unique_lock(_lock);
         _condition.notify_all();
     }
 
@@ -74,13 +74,13 @@ AssetLoadingThreadPool::~AssetLoadingThreadPool() {
 void AssetLoadingThreadPool::wait_until_loaded(const GenericAssetPtr& ptr) {
     y_profile();
     while(ptr.is_loading()) {
-        process_one(y_profile_unique_lock(_lock));
+        process_one(std::unique_lock(_lock));
     }
 }
 
 void AssetLoadingThreadPool::add_loading_job(std::unique_ptr<LoadingJob> job) {
     {
-        const auto lock = y_profile_unique_lock(_lock);
+        const auto lock = std::unique_lock(_lock);
         _loading_jobs.emplace_back(std::move(job));
     }
     _condition.notify_one();
@@ -119,9 +119,9 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
 
     y_debug_assert(lock.owns_lock());
 
-    if(!_loading_jobs.empty()) {
+    if(!_loading_jobs.is_empty()) {
         y_profile_zone("load one");
-        auto job = std::move(_loading_jobs.front());
+        auto job = std::move(_loading_jobs.first());
         _loading_jobs.pop_front();
         lock.unlock();
 
@@ -136,7 +136,7 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
                 }
                 _condition.notify_all();
             } else {
-                auto inner_lock = y_profile_unique_lock(_lock);
+                auto inner_lock = std::unique_lock(_lock);
                 _finalize_jobs.emplace_back(std::move(job));
             }
         }
@@ -145,9 +145,9 @@ void AssetLoadingThreadPool::process_one(std::unique_lock<std::mutex> lock) {
 
 void AssetLoadingThreadPool::worker() {
     while(_run) {
-        auto lock = y_profile_unique_lock(_lock);
+        auto lock = std::unique_lock(_lock);
         _condition.wait(lock, [this] {
-            return !_loading_jobs.empty() || !_finalize_jobs.empty() ||  !_run;
+            return !_loading_jobs.is_empty() || !_finalize_jobs.empty() ||  !_run;
         });
         process_one(std::move(lock));
     }

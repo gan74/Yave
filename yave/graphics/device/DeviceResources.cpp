@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "DeviceResources.h"
+#include "LifetimeManager.h"
 
 #include <yave/graphics/device/extensions/DebugUtils.h>
 #include <yave/graphics/shaders/SpirVData.h>
@@ -66,10 +67,6 @@ struct DeviceMaterialData {
         return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None,  CullMode::Back, true};
     }
 
-    static constexpr DeviceMaterialData skinned(SpirV frag) {
-        return DeviceMaterialData{frag, SpirV::SkinnedVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true};
-    }
-
     static constexpr DeviceMaterialData wire(SpirV frag) {
         return DeviceMaterialData{frag, SpirV::WireFrameVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines};
     }
@@ -82,7 +79,6 @@ struct DeviceMaterialData {
 static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::basic(SpirV::TexturedFrag),
         DeviceMaterialData::basic(SpirV::TexturedAlphaFrag),
-        DeviceMaterialData::skinned(SpirV::TexturedFrag),
         DeviceMaterialData{SpirV::DeferredPointFrag, SpirV::DeferredPointVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
         DeviceMaterialData{SpirV::DeferredSpotFrag, SpirV::DeferredSpotVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
         DeviceMaterialData::screen(SpirV::DeferredAmbientFrag, true),
@@ -96,6 +92,7 @@ static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::screen(SpirV::HBlurFrag, true),
         DeviceMaterialData::screen(SpirV::VBlurFrag, true),
         DeviceMaterialData::wire(SpirV::WireFrameFrag),
+        DeviceMaterialData::screen(SpirV::TAAResolveFrag),
     };
 
 static constexpr const char* spirv_names[] = {
@@ -108,12 +105,13 @@ static constexpr const char* spirv_names[] = {
         "ssao_upsample.comp",
         "ssao_upsample_merge.comp",
         "copy.comp",
-        "histogram_clear.comp",
         "histogram.comp",
         "exposure_params.comp",
         "exposure_debug.comp",
         "depth_bounds.comp",
         "atmosphere_integrator.comp",
+        "prev_camera.comp",
+        "update_transforms.comp",
 
         "deferred_point.frag",
         "deferred_spot.frag",
@@ -129,11 +127,11 @@ static constexpr const char* spirv_names[] = {
         "hblur.frag",
         "vblur.frag",
         "wireframe.frag",
+        "taa_resolve.frag",
 
         "deferred_point.vert",
         "deferred_spot.vert",
         "basic.vert",
-        "skinned.vert",
         "screen.vert",
         "wireframe.vert",
     };
@@ -170,14 +168,12 @@ static Texture create_brdf_lut(const ComputeProgram& brdf_integrator, usize size
 
     StorageTexture image(ImageFormat(VK_FORMAT_R16G16_UNORM), {size, size});
 
-    const DescriptorSet dset = DescriptorSet(Descriptor(StorageView(image)));
-
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     {
         const auto region = recorder.region("create_brdf_lut");
-        recorder.dispatch_size(brdf_integrator, image.size(), dset);
+        recorder.dispatch_size(brdf_integrator, image.size(), DescriptorSet(StorageView(image)));
     }
-    command_queue().submit(std::move(recorder)).wait();
+    recorder.submit().wait();
 
     return image;
 }
@@ -187,7 +183,7 @@ static Texture create_white_noise(usize size = 256) {
 
     core::DebugTimer _("create_white_noise()");
 
-    std::unique_ptr<u32[]> data = std::make_unique<u32[]>(size * size);
+    auto data = std::make_unique_for_overwrite<u32[]>(size * size);
 
     math::FastRandom rng;
     std::generate_n(data.get(), size * size, rng);
@@ -225,8 +221,8 @@ DeviceResources::DeviceResources() {
     {
         y_profile_zone("Shaders");
         for(usize i = 0; i != spirv_count; ++i) {
-            const auto file_name = fmt("%.spv", spirv_names[i]);
-            _spirv[i] = SpirVData::deserialized(io2::File::open(file_name).expected(fmt_c_str("Unable to open SPIR-V file (%).", file_name)));
+            const auto file_name = fmt("{}.spv", spirv_names[i]);
+            _spirv[i] = SpirVData::deserialized(io2::File::open(file_name).expected(fmt_c_str("Unable to open SPIR-V file ({}).", file_name)));
         }
 
         for(usize i = 0; i != compute_count; ++i) {
@@ -249,7 +245,7 @@ DeviceResources::DeviceResources() {
                     .set_primitive_type(data.primitive_type);
                 ;
             _material_templates[i] = MaterialTemplate(std::move(template_data));
-            _material_templates[i].set_name(fmt_c_str("% | %", spirv_names[data.vert], spirv_names[data.frag]));
+            _material_templates[i].set_name(fmt_c_str("{} | {}", spirv_names[data.vert], spirv_names[data.frag]));
         }
     }
 
@@ -293,6 +289,8 @@ DeviceResources::DeviceResources() {
 
 
 DeviceResources::~DeviceResources() {
+    // _materials = {};
+    // lifetime_manager().wait_cmd_buffers();
 }
 
 TextureView DeviceResources::brdf_lut() const {

@@ -28,14 +28,12 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/systems/OctreeSystem.h>
 #include <yave/graphics/device/MeshAllocator.h>
+#include <yave/components/TransformableComponent.h>
 
 #include <editor/utils/ui.h>
 
-
-
 #include <y/utils/format.h>
 
-#include <cinttypes>
 
 namespace editor {
 
@@ -98,20 +96,18 @@ class CullingDebug : public Widget {
     protected:
         void on_gui() override {
             const EditorWorld& world = current_world();
-            const Camera& camera = scene_view().camera();
 
             core::Vector<ecs::EntityId> visible;
             if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-                visible = octree_system->octree().find_entities(camera.frustum());
+                visible = octree_system->find_entities(scene_view().camera());
             }
 
             const usize in_frustum = visible.size();
-            const usize total = world.component_ids<TransformableComponent>().size();
+            const usize total = world.component_set<TransformableComponent>().size();
 
             ImGui::Text("%u entities in octree", u32(total));
             ImGui::Text("%u entities in frustum", u32(in_frustum));
             ImGui::Text("%u%% culled", u32(float(total - in_frustum) / float(total) * 100.0f));
-
         }
 };
 
@@ -126,8 +122,8 @@ class MemoryDebug : public Widget {
     protected:
         void on_gui() override {
             const u64 total_allocs = memory::total_allocations();
-            ImGui::TextUnformatted(fmt_c_str("% live allocations", memory::live_allocations()));
-            ImGui::TextUnformatted(fmt_c_str("% allocations per frame", total_allocs - _last_total));
+            ImGui::TextUnformatted(fmt_c_str("{} live allocations", memory::live_allocations()));
+            ImGui::TextUnformatted(fmt_c_str("{} allocations per frame", total_allocs - _last_total));
             _last_total = total_allocs;
         }
 
@@ -148,6 +144,31 @@ class EcsDebug : public Widget {
             EditorWorld& world = current_world();
 
             const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+
+            if(ImGui::CollapsingHeader("Entities")) {
+                if(ImGui::BeginTable("##components", 2, table_flags | ImGuiTableFlags_BordersInnerV)) {
+                    ImGui::TableSetupColumn("Component", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("Entities", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableHeadersRow();
+
+                    for(const auto& [name, info] : world.component_types()) {
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted(name.begin(), name.end());
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%u", unsigned(world.component_ids(info.type_id).size()));
+                    }
+
+                    {
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted("Total");
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%u", unsigned(world.entity_count()));
+                    }
+
+                    ImGui::EndTable();
+                }
+            }
+
             if(ImGui::CollapsingHeader("Systems")) {
                 if(ImGui::BeginTable("##systems", 2, table_flags | ImGuiTableFlags_BordersInnerV)) {
                     ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
@@ -174,7 +195,7 @@ class EcsDebug : public Widget {
                         imgui::table_begin_next_row();
                         ImGui::TextUnformatted(tag.data());
                         ImGui::TableNextColumn();
-                        ImGui::TextUnformatted(fmt_c_str("% entities", world.tag_set(tag)->size()));
+                        ImGui::TextUnformatted(fmt_c_str("{} entities", world.tag_set(tag)->size()));
                         ImGui::TableNextColumn();
                         if(ImGui::SmallButton(ICON_FA_TRASH)) {
                             world.clear_tag(tag);
@@ -202,14 +223,14 @@ class MeshAllocatorDebug : public Widget {
                 ImGui::TextUnformatted("Vertex buffer:");
                 ImGui::SameLine();
                 ImGui::ProgressBar(float(vert) / MeshAllocator::default_vertex_count, ImVec2(-1.0f, 0.0f),
-                    fmt_c_str("%k / %k", vert / 1000, MeshAllocator::default_vertex_count / 1000)
+                    fmt_c_str("{}k / {}k", vert / 1000, MeshAllocator::default_vertex_count / 1000)
                 );
             }
             {
                 ImGui::TextUnformatted("Triangle buffer:");
                 ImGui::SameLine();
                 ImGui::ProgressBar(float(tris) / MeshAllocator::default_triangle_count, ImVec2(-1.0f, 0.0f),
-                    fmt_c_str("%k / %k", tris / 1000, MeshAllocator::default_triangle_count / 1000)
+                    fmt_c_str("{}k / {}k", tris / 1000, MeshAllocator::default_triangle_count / 1000)
                 );
             }
         }
@@ -225,11 +246,9 @@ class SelectionDebug : public Widget {
 
     protected:
         void on_gui() override {
-            if(ImGui::CollapsingHeader(fmt_c_str("% entity selected###header", current_world().selected_entities().size()))) {
+            if(ImGui::CollapsingHeader(fmt_c_str("{} entity selected###header", current_world().selected_entities().size()), ImGuiTreeNodeFlags_DefaultOpen)) {
                 for(const ecs::EntityId id : current_world().selected_entities()) {
-                    std::array<char, 32> buffer = {};
-                    std::snprintf(buffer.data(), buffer.size(), "%08" PRIu32, id.index());
-                    imgui::text_read_only(fmt_c_str("##%", id.index()), buffer.data());
+                    imgui::text_read_only(fmt_c_str("##{}", id.index()), fmt("{:#08x}", id.index()));
                     ImGui::SameLine();
                     const auto name = current_world().entity_name(id);
                     ImGui::TextUnformatted(name.data(), name.data() + name.size());

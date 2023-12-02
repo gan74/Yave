@@ -3,7 +3,7 @@ project(y)
 
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # This causes recursive macros to generate a bunch of warnings, solved by C++20
 # set(CMAKE_CXX_EXTENSIONS OFF)
@@ -19,7 +19,7 @@ if(MSVC)
     set(Y_COMPILE_OPTIONS /permissive- /fp:fast /W4 /wd4702 /wd4127)
 
     set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} -D_CRT_SECURE_NO_DEPRECATE)
-    set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} /Zc:preprocessor)
+    set(Y_COMPILE_OPTIONS ${Y_COMPILE_OPTIONS} /Zc:preprocessor /bigobj)
 
     # Allow some inlining in debug to make stepping easier
     # string(REPLACE "/Ob0" "/Ob1" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")

@@ -35,9 +35,6 @@ namespace yave {
 
 using namespace y;
 
-class ThreadLocalDevice;
-using ThreadDevicePtr = const ThreadLocalDevice*;
-
 }
 
 // Hack to get drawer from the editor

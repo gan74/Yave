@@ -37,32 +37,32 @@ void destroy_device();
 
 bool device_initialized();
 
+
+
 const DebugParams& debug_params();
-ThreadDevicePtr thread_device();
 
 VkDevice vk_device();
 VkInstance vk_device_instance();
 VkPhysicalDevice vk_physical_device();
-VkSemaphore vk_timeline_semaphore();
 
 CmdBufferRecorder create_disposable_cmd_buffer();
+ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer();
+TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer();
 
 const PhysicalDevice& physical_device();
 DeviceMemoryAllocator& device_allocator();
 DescriptorSetAllocator& descriptor_set_allocator();
 MeshAllocator& mesh_allocator();
-const CmdQueue& command_queue();
-const CmdQueue& loading_command_queue();
+MaterialAllocator& material_allocator();
+TextureLibrary& texture_library();
+CmdQueue& command_queue();
+CmdQueue& loading_command_queue();
 const DeviceResources& device_resources();
 const DeviceProperties& device_properties();
 LifetimeManager& lifetime_manager();
 
 const VkAllocationCallbacks* vk_allocation_callbacks();
 VkSampler vk_sampler(SamplerType type);
-
-TimelineFence create_timeline_fence();
-bool poll_fence(const TimelineFence& fence);
-void wait_for_fence(const TimelineFence& fence);
 
 const DebugUtils* debug_utils();
 

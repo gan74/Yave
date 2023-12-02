@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-CmdTimingRecorder::CmdTimingRecorder(const CmdBufferRecorder& recorder) : _query_pool(recorder.vk_cmd_buffer()) {
+CmdTimingRecorder::CmdTimingRecorder(const CmdBufferRecorderBase& recorder) : _query_pool(recorder.vk_cmd_buffer()) {
 }
 
 VkCommandBuffer CmdTimingRecorder::vk_cmd_buffer() const {
@@ -38,15 +38,23 @@ bool CmdTimingRecorder::is_data_ready() const {
 }
 
 core::Span<CmdTimingRecorder::Event> CmdTimingRecorder::events() const {
-    return _events;
+    if(!is_data_ready()) {
+        return {};
+    }
+
+    return _events.locked([](auto&& events) -> core::Span<Event> { return events; });
 }
 
 void CmdTimingRecorder::begin_zone(const char* name) {
-    _events.emplace_back(EventType::BeginZone, name, _query_pool.query(PipelineStage::BeginOfPipe), _cpu.elapsed().to_nanos());
+    _events.locked([&](auto&& events) {
+        events.emplace_back(EventType::BeginZone, name, _query_pool.query(PipelineStage::BeginOfPipe), _cpu.elapsed().to_nanos());
+    });
 }
 
 void CmdTimingRecorder::end_zone() {
-    _events.emplace_back(EventType::EndZone, "", _query_pool.query(PipelineStage::EndOfPipe), _cpu.elapsed().to_nanos());
+    _events.locked([&](auto&& events) {
+        events.emplace_back(EventType::EndZone, "", _query_pool.query(PipelineStage::EndOfPipe), _cpu.elapsed().to_nanos());
+    });
 }
 
 }

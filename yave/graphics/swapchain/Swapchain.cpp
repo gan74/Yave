@@ -45,12 +45,23 @@ static VkSurfaceCapabilitiesKHR compute_capabilities(VkSurfaceKHR surface) {
 }
 
 static VkSurfaceFormatKHR surface_format(VkSurfaceKHR surface) {
-    Y_TODO(Find best format instead of always returning first)
-    u32 format_count = 1;
-    VkSurfaceFormatKHR format = {};
-    vk_check_or_incomplete(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_physical_device(), surface, &format_count, &format));
-    y_always_assert(format_count, "No swapchain format supported");
-    return format;
+    std::array<VkSurfaceFormatKHR, 16> formats = {};
+    u32 format_count = u32(formats.size());
+    vk_check_or_incomplete(vkGetPhysicalDeviceSurfaceFormatsKHR(vk_physical_device(), surface, &format_count, formats.data()));
+    y_always_assert(format_count, "No surface format supported");
+
+    for(u32 i = 0; i != format_count; ++i) {
+        switch(formats[i].format) {
+            case VK_FORMAT_R8G8B8A8_SRGB:
+            case VK_FORMAT_B8G8R8A8_SRGB:
+                return formats[i];
+
+            default:
+            break;
+        }
+    }
+
+    return formats[0];
 }
 
 static VkPresentModeKHR present_mode(VkSurfaceKHR surface) {
@@ -58,6 +69,7 @@ static VkPresentModeKHR present_mode(VkSurfaceKHR surface) {
     u32 mode_count = u32(modes.size());
     vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(vk_physical_device(), surface, &mode_count, modes.data()));
     y_always_assert(mode_count, "No presentation mode supported");
+
     for(u32 i = 0; i != mode_count; ++i) {
         if(modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
             return VK_PRESENT_MODE_MAILBOX_KHR;
@@ -159,7 +171,7 @@ static VkHandle<VkSurfaceKHR> create_surface(Window* window) {
 #endif
 
     unused(window);
-    return vk_null();
+    return {};
 }
 
 
@@ -176,12 +188,17 @@ bool Swapchain::reset() {
 
     _images.clear();
 
+    destroy_sync_objects();
+    y_defer(build_sync_objects());
+
     VkHandle<VkSwapchainKHR> old;
-    *old.get_ptr_for_init() = _swapchain;
+    *old.get_ptr_for_init() = _swapchain.get();
 
     if(build_swapchain()) {
         destroy_graphic_resource(std::move(old));
         return true;
+    } else {
+        old.consume();
     }
 
     return false;
@@ -247,15 +264,13 @@ bool Swapchain::build_swapchain() {
     for(const VkImage image : images) {
         auto view = create_image_view(image, _color_format.vk_format());
 
-#ifdef Y_DEBUG
         if(const auto* debug = debug_utils()) {
             debug->set_resource_name(image, "Swapchain Image");
             debug->set_resource_name(view, "Swapchain Image View");
         }
-#endif
 
         struct SwapchainImageMemory : DeviceMemory {
-            SwapchainImageMemory() : DeviceMemory(vk_null(), 0, 0) {
+            SwapchainImageMemory() : DeviceMemory({}, 0, 0) {
             }
         };
 
@@ -273,11 +288,11 @@ bool Swapchain::build_swapchain() {
         _images << std::move(swapchain_image);
     }
 
-    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
+    CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     for(auto& i : _images) {
         recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
     }
-    command_queue().submit(std::move(recorder)).wait();
+    recorder.submit().wait();
 
     return true;
 }
@@ -319,6 +334,8 @@ void Swapchain::destroy_sync_objects() {
 core::Result<FrameToken> Swapchain::next_frame() {
     y_profile();
 
+    y_profile_frame_begin();
+
     if(_images.is_empty()) {
         if(!reset()) {
             return core::Err();
@@ -328,14 +345,15 @@ core::Result<FrameToken> Swapchain::next_frame() {
     y_debug_assert(_sync_objects.size());
 
     const usize current_frame_index = _frame_id % image_count();
-    FrameSyncObjects& current_frame_sync = _sync_objects[current_frame_index];
+    // we need to do the lookup every time, in case _sync_objects gets rebuild
+    auto current_sync = [=]() -> FrameSyncObjects& { return _sync_objects[current_frame_index]; };
 
-    vk_check(vkWaitForFences(vk_device(), 1, &current_frame_sync.fence.get(), true, u64(-1)));
+    vk_check(vkWaitForFences(vk_device(), 1, &current_sync().fence.get(), true, u64(-1)));
 
     u32 image_index = u32(-1);
     {
         y_profile_zone("aquire");
-        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_frame_sync.image_available, vk_null(), &image_index))) {
+        while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_sync().image_available, {}, &image_index))) {
             if(!reset()) {
                 return core::Err();
             }
@@ -348,11 +366,12 @@ core::Result<FrameToken> Swapchain::next_frame() {
         _frame_id,
         image_index,
         u32(_images.size()),
+        _swapchain.get(),
         SwapchainImageView(_images[image_index]),
     });
 }
 
-void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, const CmdQueue& queue) {
+void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, CmdQueue& queue) {
     y_profile();
 
     const usize frame_index = token.id % image_count();
@@ -366,24 +385,8 @@ void Swapchain::present(const FrameToken& token, CmdBufferRecorder&& recorder, c
     _image_fences[frame_index] = current_frame_sync.fence;
     vk_check(vkResetFences(vk_device(), 1, &current_frame_sync.fence.get()));
 
-    queue.submit(std::move(recorder), current_frame_sync.image_available, current_frame_sync.render_complete, current_frame_sync.fence);
-
-    {
-        const auto lock = y_profile_unique_lock(queue._lock);
-
-        y_profile_zone("present");
-        VkPresentInfoKHR present_info = vk_struct();
-        {
-            present_info.swapchainCount = 1;
-            present_info.pSwapchains = &_swapchain.get();
-            present_info.pImageIndices = &token.image_index;
-            present_info.waitSemaphoreCount = 1;
-            present_info.pWaitSemaphores = &current_frame_sync.render_complete.get();
-        }
-
-        if(vk_swapchain_out_of_date(vkQueuePresentKHR(queue.vk_queue(), &present_info))) {
-            // Nothing ?
-        }
+    if(vk_swapchain_out_of_date(queue.present(std::move(recorder), token, current_frame_sync))) {
+        // Nothing ?
     }
 
     ++_frame_id;

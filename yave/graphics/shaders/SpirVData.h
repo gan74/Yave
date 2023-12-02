@@ -47,7 +47,7 @@ class SpirVData {
 
     private:
         SpirVData(core::Span<u32> data);
-        SpirVData(core::Span<byte> data);
+        SpirVData(core::Span<u8> data);
 
         core::Vector<u32> _data;
 };

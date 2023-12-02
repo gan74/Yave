@@ -50,7 +50,8 @@ namespace yave {
 #define YAVE_YAVE_RESOURCE_TYPES(X)         \
     X(DeviceMemory)                         \
     X(DescriptorSetData)                    \
-    X(MeshDrawData)
+    X(MeshDrawData)                         \
+    X(MaterialDrawData)
 
 #define YAVE_GRAPHIC_RESOURCE_TYPES(X)      \
     YAVE_YAVE_RESOURCE_TYPES(X)             \

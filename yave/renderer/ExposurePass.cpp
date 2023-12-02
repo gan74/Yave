@@ -35,24 +35,17 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
     const auto region = framegraph.region("Exposure");
 
     static const math::Vec2ui histogram_size = math::Vec2ui(256, 1);
-
     const math::Vec2ui size = framegraph.image_size(in_lit);
 
-    FrameGraphComputePassBuilder clear_builder = framegraph.add_compute_pass("Histogram clear pass");
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Histogram gather pass");
 
-    const auto histogram = clear_builder.declare_image(VK_FORMAT_R32_UINT, histogram_size);
+    const auto histogram = builder.declare_image(VK_FORMAT_R32_UINT, histogram_size);
 
-    clear_builder.add_storage_output(histogram);
-    clear_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::HistogramClearProgram];
-        recorder.dispatch_size(program, histogram_size, self->descriptor_sets());
-    });
+    builder.clear_before_pass(histogram);
 
-    FrameGraphComputePassBuilder histogram_builder = framegraph.add_compute_pass("Histogram gather pass");
-
-    histogram_builder.add_storage_output(histogram);
-    histogram_builder.add_uniform_input(in_lit);
-    histogram_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+    builder.add_storage_output(histogram);
+    builder.add_uniform_input(in_lit);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::HistogramProgram];
         const u32 thread_count = program.local_size().x();
         y_debug_assert(thread_count == program.thread_count());

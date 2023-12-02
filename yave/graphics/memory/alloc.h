@@ -92,7 +92,7 @@ inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
                 best_index = i;
                 break;
             } else if((memory_type.propertyFlags & flags) == flags) {
-                const u32 pop = popcnt_32(memory_type.propertyFlags);
+                const u32 pop = std::popcount(memory_type.propertyFlags);
                 if(pop < best_pop) {
                     best_pop = pop;
                     best_index = i;
@@ -110,16 +110,16 @@ inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
             const VkResult result = vkAllocateMemory(vk_device(), &allocate_info, vk_allocation_callbacks(), &memory);
             if(is_error(result)) {
                 if(result == VK_ERROR_OUT_OF_DEVICE_MEMORY) {
-                    log_msg(fmt("% heap out of memory", memory_type_name(type)), Log::Warning);
+                    log_msg(fmt("{} heap out of memory", memory_type_name(type)), Log::Warning);
                     continue;
                 }
-                y_fatal("Failed to allocate memory: %", vk_result_str(result));
+                y_fatal("Failed to allocate memory: {}", vk_result_str(result));
             }
             return memory;
         }
     }
 
-    y_fatal("Failed to allocate memory: out of memory");
+    y_fatal("Failed to allocate memory: no suitable heap found (out of memory?)");
 }
 
 inline VkDeviceMemory alloc_memory(VkMemoryRequirements reqs, MemoryType type) {

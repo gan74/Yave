@@ -45,8 +45,8 @@ bool break_on_error = false;
 
 void break_in_debugger() {
 #ifdef Y_OS_WIN
-    if(IsDebuggerPresent()) {
-        DebugBreak();
+    if(::IsDebuggerPresent()) {
+        ::DebugBreak();
     }
 #endif
 #ifdef Y_OS_LINUX

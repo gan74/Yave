@@ -30,8 +30,8 @@ SOFTWARE.
 namespace editor {
 namespace memory {
 
-std::atomic<usize> live_allocs = 0;
-std::atomic<u64> total_allocs= 0;
+constinit std::atomic<usize> live_allocs = 0;
+constinit std::atomic<u64> total_allocs = 0;
 
 usize live_allocations() {
     return live_allocs;
@@ -51,7 +51,7 @@ static void* alloc_internal(usize size, usize alignment = max_alignment) {
     }
 
     auto try_alloc = [=] {
-        #ifdef Y_OS_WIN
+        #ifdef Y_MSVC
             return _aligned_malloc(size, alignment);
         #else
             return std::aligned_alloc(alignment, size);
@@ -83,7 +83,7 @@ static void free_internal(void* ptr) {
 
     y_profile_free(ptr);
 
-#ifdef Y_OS_WIN
+#ifdef Y_MSVC
     _aligned_free(ptr);
 #else
     std::free(ptr);

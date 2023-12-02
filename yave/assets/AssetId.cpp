@@ -24,15 +24,12 @@ SOFTWARE.
 
 #include <y/core/String.h>
 
-#include <cinttypes>
-#include <cstdio>
+#include <y/utils/format.h>
 
 namespace yave {
 
 core::String stringify_id(AssetId id) {
-    std::array<char, 32> buffer = {0};
-    std::snprintf(buffer.data(), buffer.size(), "%016" PRIx64, id.id());
-    return core::String(buffer.data());
+    return fmt_to_owned("{:016x}", id.id());
 }
 
 }

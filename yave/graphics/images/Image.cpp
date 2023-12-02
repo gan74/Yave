@@ -81,7 +81,7 @@ static core::ScratchPad<VkBufferImageCopy> get_copy_regions(const ImageData& dat
     return regions;
 }
 
-static auto stage_data(usize byte_size, const void* data) {
+static auto create_staging_buffer(usize byte_size, const void* data) {
     y_profile();
     auto staging_buffer = StagingBuffer(byte_size);
     {
@@ -111,10 +111,16 @@ static VkHandle<VkImageView> create_view(VkImage image, ImageFormat format, u32 
     return view;
 }
 
-static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_image(const math::Vec3ui& size, u32 layers, u32 mips, ImageFormat format, ImageUsage usage, ImageType type) {
+static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_image(const math::Vec3ui& size,
+                                                                                      u32 layers, u32 mips,
+                                                                                      ImageFormat format,
+                                                                                      ImageUsage usage,
+                                                                                      ImageType type,
+                                                                                      MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) {
     y_profile();
+
     auto image = create_image(size, layers, mips, format, usage, type);
-    auto memory = device_allocator().alloc(image);
+    auto memory = device_allocator().alloc(image, alloc_flags);
     bind_image_memory(image, memory);
 
     return {std::move(image), std::move(memory), create_view(image, format, layers, mips, type)};
@@ -123,10 +129,10 @@ static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_
 static void upload_data(ImageBase& image, const ImageData& data) {
     y_profile();
 
-    const auto staging_buffer = stage_data(data.byte_size(), data.data());
+    const auto staging_buffer = create_staging_buffer(data.byte_size(), data.data());
     const auto regions = get_copy_regions(data);
 
-    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
+    TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
 
     {
         const auto region = recorder.region("Image upload");
@@ -135,34 +141,26 @@ static void upload_data(ImageBase& image, const ImageData& data) {
         recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_image_layout(image.usage()))});
     }
 
-    loading_command_queue().submit(std::move(recorder));
+    recorder.submit_async();
 }
 
 static void transition_image(ImageBase& image) {
     y_profile();
 
-    CmdBufferRecorder recorder(create_disposable_cmd_buffer());
+    TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
     recorder.barriers({ImageBarrier::transition_barrier(image, VK_IMAGE_LAYOUT_UNDEFINED, vk_image_layout(image.usage()))});
-    loading_command_queue().submit(std::move(recorder));
+    recorder.submit_async();
 }
 
 static void check_layer_count(ImageType type, const math::Vec3ui& size, usize layers) {
-    if(type == ImageType::TwoD && layers > 1) {
-        y_fatal("Invalid layer count.");
-    }
-    if(type == ImageType::Cube && layers != 6) {
-        y_fatal("Invalid layer count.");
-    }
-    if(size.z() == 0) {
-        y_fatal("Invalid size.");
-    }
-    if(size.z() != 1 && type != ImageType::ThreeD) {
-        y_fatal("Invalid size.");
-    }
+    y_always_assert(type != ImageType::TwoD || layers == 1, "Invalid layer count");
+    y_always_assert(type != ImageType::Cube || layers == 6, "Invalid layer count");
+    y_always_assert(type == ImageType::ThreeD || size.z() == 1, "Invalid size");
+    y_always_assert(size.min_component() != 0, "Invalid size");
 }
 
 
-ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips) :
+ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips, MemoryAllocFlags alloc_flags) :
         _size(size),
         _layers(u32(layers)),
         _mips(u32(mips)),
@@ -171,7 +169,7 @@ ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& s
 
     check_layer_count(type, _size, _layers);
 
-    std::tie(_image, _memory, _view) = alloc_image(_size, _layers, _mips, _format, _usage, type);
+    std::tie(_image, _memory, _view) = alloc_image(_size, _layers, _mips, _format, _usage, type, alloc_flags);
 
     transition_image(*this);
 }

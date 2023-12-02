@@ -29,106 +29,95 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-
-#include <yave/ecs/ecs.h>
+#include <yave/graphics/device/MeshAllocator.h>
 
 #include <yave/systems/OctreeSystem.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
-#include <yave/meshes/StaticMesh.h>
 #include <yave/graphics/images/ImageData.h>
+#include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
 
+#include <yave/renderer/StaticMeshRenderSubPass_custom.h>
 
-Y_TODO(merge with scene sub pass?)
 
-// mostly copied from SceneRednerSubPass and EditorPass
+
 namespace editor {
 
-static void render_world(RenderPassRecorder& recorder, const FrameGraphPass* pass,
-                          const SceneView& scene_view,
-                          const FrameGraphMutableTypedBufferId<math::Transform<>> transform_buffer,
-                          const FrameGraphMutableTypedBufferId<u32> id_buffer,
-                          EditorPassFlags flags) {
+template<typename T>
+static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view, EditorPassFlags flags) {
     y_profile();
 
     const EditorWorld& world = current_world();
     y_debug_assert(&world == &scene_view.world());
 
-    const Camera& camera = scene_view.camera();
-
-    auto transform_mapping = pass->resources().map_buffer(transform_buffer);
-    const auto transforms = pass->resources().buffer<BufferUsage::AttributeBit>(transform_buffer);
-
-    auto id_mapping = pass->resources().map_buffer(id_buffer);
-    const auto ids = pass->resources().buffer<BufferUsage::AttributeBit>(id_buffer);
-
-    recorder.bind_per_instance_attrib_buffers(std::array{transforms, ids});
-    recorder.bind_material_template(resources()[EditorResources::IdMaterialTemplate], pass->descriptor_sets()[0]);
-
-    bool use_entity_list = false;
-    core::Vector<ecs::EntityId> entities;
-
-    if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
-        const auto selected = world.selected_entities();
-        entities.assign(selected.begin(), selected.end());
-        use_entity_list = true;
-    } else {
-        if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-            entities = octree_system->octree().find_entities(camera.frustum(), camera.far_plane_dist());
-            use_entity_list = true;
+    const bool selection = (flags & (EditorPassFlags::SelectionOnly | EditorPassFlags::SelectionAndChildren)) != EditorPassFlags::None;
+    if(selection) {
+        auto ids = core::Vector<ecs::EntityId>::from_range(world.selected_entities());
+        if((flags & EditorPassFlags::SelectionAndChildren) != EditorPassFlags::None) {
+            for(usize i = 0; i != ids.size(); ++i) {
+                for(const ecs::EntityId child : world.children(ids[i])) {
+                    if(!world.is_selected(child)) {
+                        ids << child;
+                    }
+                }
+            }
         }
+        return ids;
+    } else if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
+        return octree_system->find_entities(scene_view.camera());
     }
 
-    auto render_query = [&](auto query) {
-        usize index = 0;
-        for(auto&& [id, comp] : query) {
-            const auto& [tr, mesh] = comp;
-            transform_mapping[index] = tr.transform();
-            id_mapping[index] = id.index();
-            mesh.render_mesh(recorder, u32(index));
-            ++index;
-        }
-    };
-
-    if(use_entity_list) {
-        render_query(world.query<TransformableComponent, StaticMeshComponent>(entities));
-    } else {
-        render_query(world.query<TransformableComponent, StaticMeshComponent>());
-    }
+    return core::Vector<ecs::EntityId>(world.component_set<T>().ids());
 }
 
 IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, EditorPassFlags flags) {
     static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;
     static constexpr ImageFormat id_format = VK_FORMAT_R32_UINT;
 
-    const usize buffer_size = view.world().components<TransformableComponent>().size();
-
     FrameGraphPassBuilder builder = framegraph.add_pass("ID pass");
 
-    const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(buffer_size);
-    const auto id_buffer = builder.declare_typed_buffer<u32>(buffer_size);
+    const std::array tags = {ecs::tags::not_hidden};
+    auto static_mesh_sub_pass = StaticMeshRenderSubPass::create(builder, view, visible_entities<StaticMeshComponent>(view, flags), tags);
+    const usize buffer_size = static_mesh_sub_pass.indices_buffer.is_valid() ? framegraph.buffer_size(static_mesh_sub_pass.indices_buffer) : 1;
+
+    static const PipelineStage stage = PipelineStage::VertexBit | PipelineStage::FragmentBit;
+    const i32 main_descriptor_set_index = builder.next_descriptor_set_index();
 
     const auto depth = builder.declare_image(depth_format, size);
     const auto id = builder.declare_image(id_format, size);
+
+    const auto id_buffer = builder.declare_typed_buffer<u32>(buffer_size);
+    const auto camera = builder.declare_typed_buffer<uniform::Camera>(1);
+
+    builder.map_buffer(id_buffer);
+    builder.map_buffer(camera, uniform::Camera(view.camera()));
+
+    builder.add_uniform_input(camera, stage, main_descriptor_set_index);
+    builder.add_storage_input(id_buffer, stage, main_descriptor_set_index);
+    builder.add_depth_output(depth);
+    builder.add_color_output(id);
+    builder.set_render_func([=, static_meshes = std::move(static_mesh_sub_pass)](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        {
+            auto id_mapping = self->resources().map_buffer(id_buffer);
+
+            if(static_meshes.descriptor_set_index >= 0) {
+                render_pass.set_main_descriptor_set(self->descriptor_sets()[main_descriptor_set_index]);
+                render_pass.bind_material_template(resources()[EditorResources::IdMaterialTemplate], self->descriptor_sets()[static_meshes.descriptor_set_index], true);
+
+                static_meshes.render_custom(render_pass, self, [&](ecs::EntityId id, const StaticMeshComponent&, const MeshDrawCommand& draw_cmd, const Material*, u32 instance_index) {
+                    id_mapping[instance_index] = id.index();
+                    render_pass.draw(draw_cmd.vk_indirect_data(instance_index));
+                });
+            }
+        }
+    });
+
 
     IdBufferPass pass;
     pass.scene_view = view;
     pass.depth = depth;
     pass.id = id;
-
-    builder.add_inline_input(InlineDescriptor(view.camera().viewproj_matrix()));
-    builder.add_attrib_input(transform_buffer);
-    builder.add_attrib_input(id_buffer);
-    builder.map_buffer(transform_buffer);
-    builder.map_buffer(id_buffer);
-
-    builder.add_depth_output(depth);
-    builder.add_color_output(id);
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        render_world(render_pass, self, view, transform_buffer, id_buffer, flags);
-    });
-
     return pass;
 }
 

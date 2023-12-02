@@ -34,6 +34,11 @@ struct DeviceProperties {
 
     u32 max_memory_allocations;
 
+    u32 max_uniform_buffer_desc_array_size;
+    u32 max_storage_buffer_desc_array_size;
+    u32 max_sampled_image_desc_array_size;
+    u32 max_storage_image_desc_array_size;
+
     u32 max_inline_uniform_size;
 
     float timestamp_period;

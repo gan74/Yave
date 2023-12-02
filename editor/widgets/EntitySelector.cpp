@@ -29,14 +29,11 @@ SOFTWARE.
 
 namespace editor {
 
-EntitySelector::EntitySelector() : Widget("Select an entity") {
-    set_modal(true);
-}
-
 EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter) :
-        Widget(fmt("Select a %", current_world().component_type_name(filter))),
-        _filter(filter),
-        _has_filter(true) {
+        Widget(filter == ecs::ComponentTypeIndex::invalid_index
+            ? "Select an entity"
+            : fmt("Select a {}", current_world().component_type_name(filter))),
+        _filter(filter) {
     set_modal(true);
 }
 
@@ -44,27 +41,34 @@ EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter) :
 void EntitySelector::on_gui() {
     const EditorWorld& world = current_world();
 
-    const auto query = _has_filter
-        ? world.query<EditorComponent>(world.component_ids(_filter))
-        : world.query<EditorComponent>();
+    const bool has_filter = (_filter != ecs::ComponentTypeIndex::invalid_index);
 
-    if(query.is_empty()) {
-        ImGui::TextDisabled("No viable entities found");
-        return;
+    if(has_filter) {
+        ImGui::Checkbox("Show all entities", &_show_all);
     }
 
-    y_defer(ImGui::EndChild());
+    const auto query = (has_filter && !_show_all)
+        ? world.query<EditorComponent>(world.component_ids(_filter).ids())
+        : world.query<EditorComponent>();
+
     if(ImGui::BeginChild("##entities")) {
+        if(query.is_empty()) {
+            ImGui::TextDisabled("No viable entities found");
+        }
+
         for(auto&& [id, comp] : query) {
             const auto& [c] = comp;
-            if(ImGui::Selectable(fmt_c_str("% %", world.entity_icon(id), c.name().data()))) {
+            imgui::text_icon(world.entity_icon(id));
+            ImGui::SameLine();
+            if(ImGui::Selectable(c.name().data())) {
                 if(_selected(id)) {
                     close();
-                    return;
+                    break;
                 }
             }
         }
     }
+    ImGui::EndChild();
 }
 
 }

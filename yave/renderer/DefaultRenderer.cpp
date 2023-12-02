@@ -22,19 +22,26 @@ SOFTWARE.
 
 #include "DefaultRenderer.h"
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 namespace yave {
 
-DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const RendererSettings& settings) {
+DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& scene_view, const math::Vec2ui& size, const RendererSettings& settings) {
     y_profile();
 
     DefaultRenderer renderer;
 
-    renderer.gbuffer        = GBufferPass::create(framegraph, view, size);
+    renderer.camera         = CameraBufferPass::create(framegraph, scene_view, size, settings.taa);
+    renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, size);
     renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
-    renderer.exposure       = ExposurePass::create(framegraph, renderer.atmosphere.lit);
-    renderer.bloom          = BloomPass::create(framegraph, renderer.atmosphere.lit, renderer.exposure.params, settings.bloom);
+
+    renderer.taa            = TAAPass::create(framegraph, renderer.camera, renderer.atmosphere.lit, renderer.gbuffer.depth, renderer.gbuffer.motion);
+
+    renderer.exposure       = ExposurePass::create(framegraph, renderer.taa.anti_aliased);
+    renderer.bloom          = BloomPass::create(framegraph, renderer.taa.anti_aliased, renderer.exposure.params, settings.bloom);
     renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.bloom.bloomed, renderer.exposure, settings.tone_mapping);
 
     renderer.final = renderer.tone_mapping.tone_mapped;

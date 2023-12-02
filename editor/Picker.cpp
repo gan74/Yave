@@ -69,7 +69,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& program = resources()[EditorResources::PickingProgram];
 
-            const auto uv_set = DescriptorSet(std::array{Descriptor(InlineDescriptor(uv))});
+            const auto uv_set = DescriptorSet(InlineDescriptor(uv));
             const std::array<DescriptorSetBase, 2> descriptor_sets = {self->descriptor_sets()[0], uv_set};
             recorder.dispatch(program, math::Vec3ui(1), descriptor_sets);
         });
@@ -77,7 +77,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     framegraph.render(recorder);
-    command_queue().submit(std::move(recorder)).wait();
+    recorder.submit().wait();
 
     const ReadBackData read_back = buffer.map(MappingAccess::ReadOnly)[0];
     const float depth = read_back.depth;
@@ -92,7 +92,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
             read_back.id
         };
 
-    //log_msg(fmt("picked: % (depth: %, id: %)", result.world_pos, result.depth, result.entity_index));
+    //log_msg(fmt("picked: {} (depth: {}, id: {})", result.world_pos, result.depth, result.entity_index));
     return result;
 }
 

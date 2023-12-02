@@ -24,10 +24,11 @@ SOFTWARE.
 
 #include "TransientBuffer.h"
 #include "TransientImage.h"
+#include "FrameGraphResourceId.h"
 
 #include <y/core/Vector.h>
+#include <y/concurrent/Mutexed.h>
 
-#include <mutex>
 #include <atomic>
 
 namespace yave {
@@ -38,32 +39,38 @@ class FrameGraphResourcePool : NonMovable {
         FrameGraphResourcePool();
         ~FrameGraphResourcePool();
 
-
         TransientImage create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
         TransientVolume create_volume(ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         TransientBuffer create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory);
 
-        void release(TransientImage image);
-        void release(TransientVolume volume);
-        void release(TransientBuffer buffer);
+        void release(TransientImage image, FrameGraphPersistentResourceId persistent_id = {});
+        void release(TransientVolume volume, FrameGraphPersistentResourceId persistent_id = {});
+        void release(TransientBuffer buffer, FrameGraphPersistentResourceId persistent_id = {});
+
+        bool has_persistent_image(FrameGraphPersistentResourceId persistent_id) const;
+        bool has_persistent_buffer(FrameGraphPersistentResourceId persistent_id) const;
+
+        TransientImage persistent_image(FrameGraphPersistentResourceId persistent_id);
+        TransientBuffer persistent_buffer(FrameGraphPersistentResourceId persistent_id);
 
         void garbage_collect();
+
+        u64 frame_id() const;
 
     private:
         bool create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
         bool create_volume_from_pool(TransientVolume& res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory);
 
-        core::Vector<std::pair<TransientImage, u64>> _images;
-        core::Vector<std::pair<TransientVolume, u64>> _volumes;
-        core::Vector<std::pair<TransientBuffer, u64>> _buffers;
+        // That's a lot of locking....
+        concurrent::Mutexed<core::Vector<std::pair<TransientImage, u64>>, std::recursive_mutex> _images;
+        concurrent::Mutexed<core::Vector<std::pair<TransientVolume, u64>>, std::recursive_mutex> _volumes;
+        concurrent::Mutexed<core::Vector<std::pair<TransientBuffer, u64>>, std::recursive_mutex> _buffers;
 
-        std::atomic<u64> _collection_id = 0;
+        concurrent::Mutexed<core::Vector<TransientImage>, std::recursive_mutex> _persistent_images;
+        concurrent::Mutexed<core::Vector<TransientBuffer>, std::recursive_mutex> _persistent_buffers;
 
-        Y_TODO(Find a way to not lock on every method call)
-        std::recursive_mutex _image_lock;
-        std::recursive_mutex _volume_lock;
-        std::recursive_mutex _buffer_lock;
+        std::atomic<u64> _frame_id = 0;
 };
 
 }

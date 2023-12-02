@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/graphics.h>
 
+#include <yave/graphics/device/extensions/DebugUtils.h>
+
 #include <y/core/FixedArray.h>
 #include <y/utils/memory.h>
 
@@ -56,10 +58,17 @@ MeshAllocator::MeshAllocator() :
             attrib_offset += byte_len;
         }
     }
+
+#ifdef Y_DEBUG
+    if(const auto* debug = debug_utils()) {
+        debug->set_resource_name(_triangle_buffer.vk_buffer(), "Mesh allocator triangle buffer");
+        debug->set_resource_name(_attrib_buffer.vk_buffer(), "Mesh allocator attrib buffer");
+    }
+#endif
 }
 
 MeshAllocator::~MeshAllocator() {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     sort_and_compact_blocks();
 
@@ -89,11 +98,19 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
     y_always_assert(vertex_begin + vertex_count <= global_attrib_buffer.byte_size() / sizeof(PackedVertex), "Vertex buffer pool is full");
 
     {
-        CmdBufferRecorder recorder = create_disposable_cmd_buffer();
+        TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
+
+        auto stage_copy = [&](const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
+            y_debug_assert(data);
+            const u64 dst_size = dst.byte_size();
+            const StagingBuffer buffer(dst_size);
+            std::memcpy(buffer.map_bytes(MappingAccess::WriteOnly).raw_data(), data, dst_size);
+            recorder.unbarriered_copy(buffer, dst);
+        };
 
         {
             MutableTriangleSubBuffer triangle_buffer(global_triangle_buffer, triangle_count * sizeof(IndexedTriangle), triangle_begin * sizeof(IndexedTriangle));
-            BufferMappingBase::stage(recorder, triangle_buffer, triangles.data());
+            stage_copy(triangle_buffer, triangles.data());
             mesh_data._command.first_index = u32(triangle_begin * 3);
         }
 
@@ -109,8 +126,7 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
                     y_debug_assert(sub_buffer.byte_offset() % elem_size == 0);
                     const u64 byte_offset = sub_buffer.byte_offset() + vertex_begin * elem_size;
 
-                    BufferMappingBase::stage(
-                        recorder,
+                    stage_copy(
                         SubBuffer<BufferUsage::TransferDstBit>(global_attrib_buffer, byte_len, byte_offset),
                         streams.data(VertexStreamType(i))
                     );
@@ -120,14 +136,16 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
             mesh_data._command.vertex_offset = i32(vertex_begin);
         }
 
-        loading_command_queue().submit(std::move(recorder));
+        recorder.submit_async();
     }
 
     return mesh_data;
 }
 
 void MeshAllocator::recycle(MeshDrawData* data) {
-    const auto lock = y_profile_unique_lock(_lock);
+    y_debug_assert(data->_mesh_buffers == _mesh_buffers.get());
+
+    const auto lock = std::unique_lock(_lock);
 
     _free_blocks << FreeBlock {
         u64(data->_command.vertex_offset),
@@ -144,7 +162,7 @@ void MeshAllocator::recycle(MeshDrawData* data) {
 
 
 std::pair<u64, u64> MeshAllocator::alloc_block(u64 vertex_count, u64 triangle_count) {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
 
     sort_and_compact_blocks();
 
@@ -201,7 +219,7 @@ void MeshAllocator::sort_and_compact_blocks() {
 
 
 std::pair<u64, u64> MeshAllocator::available() const {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
     u64 vert = 0;
     u64 tris = 0;
     for(const auto& b : _free_blocks) {
@@ -217,8 +235,12 @@ std::pair<u64, u64> MeshAllocator::allocated() const {
 }
 
 usize MeshAllocator::free_blocks() const {
-    const auto lock = y_profile_unique_lock(_lock);
+    const auto lock = std::unique_lock(_lock);
     return _free_blocks.size();
+}
+
+const MeshDrawBuffers& MeshAllocator::mesh_buffers() const {
+    return *_mesh_buffers;
 }
 
 }

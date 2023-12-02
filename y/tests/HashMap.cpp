@@ -86,7 +86,7 @@ struct BadHash {
 
 template<typename Map>
 static core::Vector<std::pair<int, int>> to_vector(const Map& map) {
-    auto vec = vector_with_capacity<std::pair<int, int>>(map.size());
+    auto vec = Vector<std::pair<int, int>>::with_capacity(map.size());
     for(const auto& [k, v] : map) {
         vec << std::make_pair(k, v);
     }
@@ -102,7 +102,7 @@ static Map fuzz(usize count, u32 seed) {
     math::FastRandom values(seed + 1);
     std::uniform_int_distribution<i32> dist;
 
-    auto keys = vector_with_capacity<i32>(count);
+    auto keys = Vector<i32>::with_capacity(count);
 
     for(usize i = 0; i != count; ++i) {
         switch(actions() % 4) {
@@ -217,11 +217,11 @@ y_test_func("HashMap strings") {
     DefaultImpl<core::String, int> map;
     for(int i = 0; i != max_key; ++i) {
         core::String str;
-        fmt_into(str, "%", i);
+        fmt_into(str, "{}", i);
         y_test_assert(map.insert({str, i}).second);
 
         for(int j = i; j >= 0; --j) {
-            y_test_assert(map.find(fmt("%", j))->second == j);
+            y_test_assert(map.find(fmt("{}", j))->second == j);
         }
     }
 

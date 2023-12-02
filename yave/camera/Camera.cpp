@@ -59,31 +59,47 @@ math::Vec3 Camera::position_from_view(const math::Matrix4<>& view) {
     return pos;
 }
 
-Camera::Camera() {
-    const float ratio = 4.0f / 3.0f;
-    set_proj(math::perspective(math::to_rad(45.0f), ratio, 0.1f));
-    set_view(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3{}, math::Vec3{0.0f, 0.0f, 1.0f}));
+
+
+Camera::Camera() : Camera(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3{}, math::Vec3{0.0f, 0.0f, 1.0f}), math::perspective(math::to_rad(45.0f), 16.0f / 9.0f, 0.1f)) {
+}
+
+Camera::Camera(const math::Matrix4<>& view, const math::Matrix4<>& proj) : _view(view), _proj(proj) {
+    update_view_proj();
 }
 
 void Camera::set_view(const math::Matrix4<>& view) {
     _view = view;
-    _dirty = true;
+    update_view_proj();
 }
 
 void Camera::set_proj(const math::Matrix4<>& proj) {
     _proj = proj;
-    _dirty = true;
+    update_view_proj();
 }
 
-void Camera::update_viewproj() const {
-    if(_dirty) {
-        _viewproj = _proj * _view;
-        _dirty = false;
-    }
+void Camera::update_view_proj() {
+    _view_proj = _proj * _view;
 }
 
 void Camera::set_far(float far_dist) {
     _far = far_dist;
+}
+
+
+Camera Camera::jittered(math::Vec2 jitter_seq, const math::Vec2ui& size, float intensity) const {
+    y_debug_assert(jitter_seq.saturated() == jitter_seq);
+
+    const math::Vec2 jitter = ((jitter_seq  * 2.0f - 1.0f) / math::Vec2(size)) * intensity;
+
+    math::Matrix4<> jittered_proj = _proj;
+    jittered_proj[2].to<2>() = jitter;
+
+    return Camera(_view, jittered_proj);
+}
+
+Camera Camera::unjittered() const {
+    return Camera(_view, unjittered_proj());
 }
 
 const math::Matrix4<>& Camera::view_matrix() const {
@@ -94,13 +110,22 @@ const math::Matrix4<>& Camera::proj_matrix() const {
     return _proj;
 }
 
-const math::Matrix4<>& Camera::viewproj_matrix() const {
-    update_viewproj();
-    return _viewproj;
+const math::Matrix4<>& Camera::view_proj_matrix() const {
+    return _view_proj;
 }
 
 math::Matrix4<> Camera::inverse_matrix() const {
-    return (viewproj_matrix()).inverse();
+    return (view_proj_matrix()).inverse();
+}
+
+math::Matrix4<> Camera::unjittered_proj() const {
+    math::Matrix4<> proj = _proj;
+    proj[2].to<2>() = {};
+    return proj;
+}
+
+math::Matrix4<> Camera::unjittered_view_proj() const {
+    return unjittered_proj() * _view;
 }
 
 float Camera::aspect_ratio() const {
@@ -143,14 +168,18 @@ Frustum Camera::frustum() const {
 
 Camera::operator uniform::Camera() const {
     uniform::Camera camera_data = {};
-    camera_data.view_proj = viewproj_matrix();
+    camera_data.view_proj = view_proj_matrix();
     camera_data.inv_view_proj = inverse_matrix();
 
+    camera_data.unjittered_view_proj = unjittered_view_proj();
+    camera_data.inv_unjittered_view_proj = camera_data.unjittered_view_proj.inverse();
+    camera_data.prev_unjittered_view_proj = camera_data.unjittered_view_proj;
+
     camera_data.proj = proj_matrix();
-    camera_data.inv_proj = proj_matrix().inverse();
+    camera_data.inv_proj = camera_data.proj.inverse();
 
     camera_data.view = view_matrix();
-    camera_data.inv_view = view_matrix().inverse();
+    camera_data.inv_view = camera_data.view.inverse();
 
     camera_data.position = position();
     camera_data.forward = forward();

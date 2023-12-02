@@ -29,11 +29,12 @@ SOFTWARE.
 #include <external/spirv_cross/spirv.hpp>
 #include <external/spirv_cross/spirv_cross.hpp>
 
+
 namespace yave {
 
 template<typename M>
-static void merge(M& into, const M& o) {
-    for(const auto& p : o) {
+static void merge(M& into, const M& other) {
+    for(const auto& p : other) {
         into[p.first].push_back(p.second.begin(), p.second.end());
     }
 }
@@ -71,13 +72,21 @@ static ShaderType module_type(const spirv_cross::Compiler& compiler) {
     y_fatal("Unknown shader execution model.");
 }
 
+static bool is_variable(const spirv_cross::Resource& res) {
+    const std::string_view name = std::string_view(res.name);
+    if(name.size() > 9 && name.substr(name.size() - 9) == "_Variable") {
+        return true;
+    }
+    return false;
+}
+
 Y_TODO(check if inline descriptors are always at the end)
 static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res) {
     if(compiler.get_type(res.type_id).storage != spv::StorageClass::StorageClassUniform) {
         return false;
     }
     const std::string_view name = std::string_view(res.name);
-    if(name.size() > 7 && name.substr(name.size() - 7) == "_Inline") {
+    if(name.ends_with("_Inline")) {
         return true;
     }
     return false;
@@ -89,6 +98,7 @@ static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& 
         type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
         size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
     }
+
     VkDescriptorSetLayoutBinding binding = {};
     {
         binding.binding = compiler.get_decoration(res.id, spv::DecorationBinding);
@@ -103,12 +113,25 @@ static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& 
 
 template<typename R>
 static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType, VkDescriptorType type) {
-    auto bindings = core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>>();
+    core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> bindings;
     for(const auto& res : resources) {
         const u32 set_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
         bindings[set_index] << create_binding(compiler, res, type);
     }
     return bindings;
+}
+
+template<typename R>
+static auto find_variable_size_bindings(const spirv_cross::Compiler& compiler, const R& resources) {
+    core::Vector<u32> variable_bindings;
+    for(const auto& res : resources) {
+        if(is_variable(res)) {
+            const u32 set_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
+            //const u32 binding_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
+            variable_bindings << set_index;
+        }
+    }
+    return variable_bindings;
 }
 
 template<typename R>
@@ -163,7 +186,7 @@ static core::ScratchPad<ShaderModuleBase::Attribute> create_attribs(const spirv_
         const auto& type = compiler.get_type(res.type_id);
 
         const std::string_view name = std::string_view(res.name);
-        const bool packed = (name.size() > 7 && name.substr(name.size() - 7) == "_Packed");
+        const bool packed = name.ends_with("_Packed");
         attribs[attrib_count++] = ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype), packed};
     }
     return attribs;
@@ -186,16 +209,18 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
     merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
     merge(_bindings, create_bindings(compiler, resources.storage_images, _type, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE));
 
+    _variable_size_bindings = find_variable_size_bindings(compiler, resources.sampled_images);
+
     /*auto print_resources = [&](auto resources) {
         for(const auto& buffer : resources) {
             const auto& type = compiler.get_type(buffer.base_type_id);
-            log_msg(fmt("%:", buffer.name.data()), Log::Warning);
-            log_msg(fmt("   storage: %", compiler.get_storage_class(buffer.id)), Log::Warning);
-            log_msg(fmt("   type base: %", type.basetype), Log::Warning);
-            log_msg(fmt("   type storage: %", type.storage), Log::Warning);
+            log_msg(fmt("{}:", buffer.name.data()), Log::Warning);
+            log_msg(fmt("   storage: {}", compiler.get_storage_class(buffer.id)), Log::Warning);
+            log_msg(fmt("   type base: {}", type.basetype), Log::Warning);
+            log_msg(fmt("   type storage: {}", type.storage), Log::Warning);
             const auto& bitset = compiler.get_decoration_bitset(buffer.id);
             bitset.for_each_bit([](u32 bit) {
-                log_msg(fmt("   decoration: %", bit), Log::Warning);
+                log_msg(fmt("   decoration: {}", bit), Log::Warning);
             });
         }
     };

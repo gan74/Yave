@@ -20,7 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
+#ifndef VOLK_IMPLEMENTATION
 #define VOLK_IMPLEMENTATION
+#endif
+
 #include "vk.h"
 
 namespace yave {

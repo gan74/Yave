@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "TimestampQueryPool.h"
 
+#include <y/concurrent/Mutexed.h>
+
 #include <y/core/Chrono.h>
 #include <y/core/String.h>
 
@@ -46,7 +48,7 @@ class CmdTimingRecorder : NonMovable {
             }
         };
 
-        CmdTimingRecorder(const CmdBufferRecorder& recorder);
+        CmdTimingRecorder(const CmdBufferRecorderBase& recorder);
 
         VkCommandBuffer vk_cmd_buffer() const;
 
@@ -61,7 +63,7 @@ class CmdTimingRecorder : NonMovable {
         void end_zone();
 
     private:
-        core::Vector<Event> _events;
+        concurrent::Mutexed<core::Vector<Event>> _events;
         TimestampQueryPool _query_pool;
         core::Chrono _cpu;
 };

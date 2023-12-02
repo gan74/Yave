@@ -40,6 +40,7 @@ String::LongData::LongData(const char* str, usize len) : LongData(str, compute_c
 }
 
 String::LongData::LongData(const char* str, usize cap, usize len) : data(alloc_long(cap)), capacity(cap), length(len) {
+    y_debug_assert(cap > max_short_size);
     if(str) {
         std::memcpy(data, str, len);
     }
@@ -76,7 +77,7 @@ char* String::alloc_long(usize capacity) {
 }
 
 usize String::compute_capacity(usize len) {
-    const usize cap = DefaultVectorResizePolicy().ideal_capacity(len + 1) - 1;
+    const usize cap = DefaultVectorResizePolicy().ideal_capacity(len + 1);
     y_debug_assert(cap >= len + 1);
     return cap;
 }
@@ -91,6 +92,7 @@ void String::free_long(LongData& d) {
 }
 
 void String::free_short(ShortData& d) {
+    unused(d);
 #ifdef Y_DEBUG
     std::memset(d.data, 0xFE, d.length + 1);
 #endif
@@ -109,14 +111,8 @@ void String::free_data() {
 String::String() : _s(ShortData()) {
 }
 
-String::String(const String& str) {
-    if(str.is_long()) {
-        ::new(&_l) LongData(str._l.data, str._l.length);
-    } else {
-        ::new(&_s) ShortData(str._s);
-    }
+String::String(const String& str) : String(str.data(), str.size()) {
 }
-
 
 String::String(String&& str) {
     static_assert(std::is_trivially_destructible_v<ShortData>);
@@ -139,11 +135,7 @@ String::String(const char* str) : String(str, std::strlen(str)) {
 }
 
 String::String(const char* str, usize len) {
-    if(len > max_short_size) {
-        ::new(&_l) LongData(str, len);
-    } else {
-        ::new(&_s) ShortData(str, len);
-    }
+    set(str, len);
 }
 
 String::String(const char* beg, const char* end) : String(beg, usize(end - beg)) {
@@ -153,9 +145,17 @@ String::~String() {
     free_data();
 }
 
+void String::set(const char* str, usize len) {
+    if(len > max_short_size) {
+        ::new(&_l) LongData(str, len);
+    } else {
+        ::new(&_s) ShortData(str, len);
+    }
+}
+
 void String::set_min_capacity(usize cap) {
-    if(cap > capacity() && cap > max_short_size) {
-        usize self_size = size();
+    if(cap > capacity()) {
+        const usize self_size = size();
 
         LongData new_dat(data(), compute_capacity(cap), self_size);
         free_data();
@@ -209,7 +209,7 @@ void String::shrink(usize new_size) {
 }
 
 void String::grow(usize new_size, char c) {
-    usize s = size();
+    const usize s = size();
     if(s >= new_size) {
         return;
     }
@@ -233,6 +233,30 @@ void String::resize(usize new_size, char c) {
     }
 }
 
+
+String String::replaced(std::string_view str, std::string_view from, std::string_view to) {
+    String repl;
+    repl.set_min_capacity(str.size() + to.size() * 2);
+
+    usize beg = 0;
+    for(;;) {
+        const std::string_view remaining = str.substr(beg);
+        const auto it = remaining.find(from);
+        if(it == std::string_view::npos) {
+            repl += remaining;
+            break;
+        } else {
+            repl += str.substr(beg, it);
+            repl += to;
+            beg += it + from.size();
+        }
+    }
+    return repl;
+}
+
+String String::replaced(std::string_view from, std::string_view to) const {
+    return replaced(view(), from, to);
+}
 
 char* String::data() {
     return is_long() ? _l.data : _s.data;
@@ -304,20 +328,17 @@ String::operator std::string_view() const {
 
 String& String::operator=(const String& str) {
     if(&str != this) {
+        const usize other_size = str.size();
         if(capacity() > str.size()) {
             std::copy(str.begin(), str.end() + 1, data());
             if(is_long()) {
-                _l.length = str.size();
+                _l.length = other_size;
             } else {
-                _s.length = str.size();
+                _s.length = other_size;
             }
         } else {
             free_data();
-            if(str.is_long()) {
-                ::new(&_l) LongData(str._l.data, str._l.length);
-            } else {
-                ::new(&_s) ShortData(str._s);
-            }
+            set(str.data(), other_size);
         }
     }
     return *this;
@@ -347,7 +368,6 @@ String& String::operator+=(const std::string& str) {
 String& String::operator+=(std::string_view str) {
     return append(str.data(), str.size());
 }
-
 
 String& String::append(const char* other_data, usize other_size) {
     usize self_size = size();
@@ -436,37 +456,15 @@ std::string_view trim(std::string_view str) {
     return trim_left(trim_right(str));
 }
 
-/*static usize utf8_len(char c) {
-    if(c & 0x80) {
-        usize len = 0;
-        for(; c & 0x80; c <<= 1) {
-            ++len;
-        }
-        return len;
-    }
-    return 1;
 }
 
-Vector<u32> String::to_unicode() const {
-    usize si = size();
-    const char* dat = data();
-    auto utf8 = vector_with_capacity<u32>((si * 2) / 3);
-    while(dat < end()) {
-        usize len = utf8_len(*dat);
-        //u32 buffer = c & (0xFF >> len);
-        if(len == 1) {
-            utf8 << u32(*dat++);
-        } else {
-            u32 buffer = *dat++ & (0xFF >> len);
-            for(usize l = 1; l < len; ++l) {
-                buffer = (buffer << 6) | (*dat++ & 0x3F);
-            }
-            utf8 << buffer;
-        }
-    }
-    return utf8;
-}*/
-
+core::String operator+(std::string_view l, const core::String& r) {
+    core::String s;
+    s.set_min_capacity(l.size() + r.size());
+    s += l;
+    s += r;
+    return s;
 }
+
 }
 

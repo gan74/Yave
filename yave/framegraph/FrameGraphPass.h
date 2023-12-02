@@ -83,11 +83,13 @@ class FrameGraphPass final : NonMovable {
         core::FlatHashMap<FrameGraphVolumeId, ResourceUsageInfo, hash_t> _volumes;
         core::FlatHashMap<FrameGraphBufferId, ResourceUsageInfo, hash_t> _buffers;
 
-        core::Vector<core::Vector<FrameGraphDescriptorBinding>> _bindings;
-        core::Vector<DescriptorSet> _descriptor_sets;
+        core::SmallVector<core::SmallVector<FrameGraphDescriptorBinding, 8>, 4> _bindings;
+        core::SmallVector<DescriptorSet, 4> _descriptor_sets;
+
+        core::SmallVector<std::pair<FrameGraphMutableBufferId, InlineDescriptor>, 4> _map_data;
 
         Attachment _depth;
-        core::Vector<Attachment> _colors;
+        core::SmallVector<Attachment, 6> _colors;
 
         Framebuffer _framebuffer;
 };

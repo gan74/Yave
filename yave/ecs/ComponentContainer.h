@@ -23,59 +23,23 @@ SOFTWARE.
 #define YAVE_ECS_COMPONENTCONTAINER_H
 
 #include "ecs.h"
-#include "traits.h"
 #include "SparseComponentSet.h"
-#include "ComponentRuntimeInfo.h"
 #include "ComponentInspector.h"
+#include "ComponentBox.h"
 
-Y_TODO(try replacing this?)
-#include <y/serde3/archives.h>
+#include <y/concurrent/Signal.h>
+
 
 namespace yave {
 namespace ecs {
 
 namespace detail {
 template<typename T>
-using has_required_components_t = decltype(std::declval<T>().required_components_archetype());
-template<typename T>
 using has_register_component_type_t = decltype(std::declval<T>().register_component_type(std::declval<System*>()));
 template<typename T>
 using has_inspect_t = decltype(std::declval<T>().inspect(std::declval<ComponentInspector*>()));
 }
 
-
-
-class ComponentBoxBase : NonMovable {
-    public:
-        virtual ~ComponentBoxBase();
-
-        virtual ComponentRuntimeInfo runtime_info() const = 0;
-        virtual void add_to(EntityWorld& world, EntityId id) const = 0;
-        // virtual void add_or_replace_to(EntityWorld& world, EntityId id) const = 0;
-
-        y_serde3_poly_abstract_base(ComponentBoxBase)
-};
-
-template<typename T>
-class ComponentBox final : public ComponentBoxBase {
-    public:
-        ComponentBox() = default;
-        ComponentBox(T t);
-
-        ComponentRuntimeInfo runtime_info() const override;
-        void add_to(EntityWorld& world, EntityId id) const override;
-        // void add_or_replace_to(EntityWorld& world, EntityId id) const override;
-
-        const T& component() const {
-            return _component;
-        }
-
-        y_reflect(ComponentBox, _component)
-        y_serde3_poly(ComponentBox)
-
-    private:
-        T _component;
-};
 
 
 
@@ -87,137 +51,44 @@ class ComponentContainerBase : NonMovable {
 
         virtual ComponentRuntimeInfo runtime_info() const = 0;
 
-        virtual void add(EntityWorld& world, EntityId id) = 0;
-
         virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
+
+
+        virtual void add_if_absent(EntityId id) = 0;
+        virtual void remove(EntityId id) = 0;
+
 
         virtual void inspect_component(EntityId id, ComponentInspector* inspector) = 0;
 
 
-        inline bool contains(EntityId id) const {
-            return id_set().contains(id);
-        }
 
-        inline core::Span<EntityId> ids() const {
-            return id_set().ids();
-        }
+        bool contains(EntityId id) const;
 
-        inline ComponentTypeIndex type_id() const {
-            return _type_id;
-        }
+        ComponentTypeIndex type_id() const;
 
-        inline const SparseIdSetBase& id_set() const {
-            return *reinterpret_cast<const SparseIdSetBase*>(this + 1);
-        }
-
-        inline const SparseIdSet& recently_mutated() const {
-            return _mutated;
-        }
-
-        inline const SparseIdSet& to_be_removed() const {
-            return _to_remove;
-        }
+        const SparseIdSetBase& id_set() const;
+        const SparseIdSet& recently_mutated() const;
 
 
-        void remove(EntityId id) {
-            if(contains(id)) {
-                _to_remove.insert(id);
-            }
-        }
-
-        template<typename T, typename... Args>
-        inline T& add(EntityWorld& world, EntityId id, Args&&... args) {
-            y_debug_assert(id.is_valid());
-
-            _mutated.insert(id);
-
-            auto& set = component_set<T>();
-            if(!set.contains_index(id.index())) {
-                add_required_components<T>(world, id);
-                return set.insert(id, y_fwd(args)...);
-            } else {
-                if constexpr(sizeof...(Args) != 0) {
-                    return set[id] = std::move(T{y_fwd(args)...});
-                } else {
-                    return set[id] = std::move(T());
-                }
-            }
-        }
-
-
-        template<typename T>
-        inline auto* component_ptr(EntityId id) {
-            if constexpr(traits::is_component_mutable_v<T>) {
-                auto* ptr = component_set<T>().try_get(id);
-                if(ptr) {
-                    _mutated.insert(id);
-                }
-                return ptr;
-            } else {
-                return const_component_set<T>().try_get(id);
-            }
-        }
-
-        template<typename T>
-        inline const auto* component_ptr(EntityId id) const {
-            return component_set<T>().try_get(id);
-        }
-
-        template<typename T>
-        inline core::Span<T> components() const {
-            return component_set<T>().values();
-        }
 
 
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
 
-    private:
+    protected:
         friend class EntityWorld;
 
-        const ComponentTypeIndex _type_id;
-        SparseIdSet _mutated;
-        SparseIdSet _to_remove;
-
-    protected:
         ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
         }
 
-        virtual void clean_after_tick();
-        virtual void prepare_for_tick();
 
-        template<typename T>
-        void add_required_components(EntityWorld& world, EntityId id);
+        virtual serde3::Result save_state(serde3::WritableArchive& arc) const = 0;
+        virtual serde3::Result load_state(serde3::ReadableArchive& arc) = 0;
+        virtual void post_load() = 0;
 
 
-    private:
-        template<typename T>
-        inline auto& component_set() {
-            return component_set_fast<traits::component_raw_type_t<T>>();
-        }
-
-        template<typename T>
-        inline const auto& component_set() const {
-            return component_set_fast<traits::component_raw_type_t<T>>();
-        }
-
-        template<typename T>
-        inline const auto& const_component_set() const {
-            return component_set_fast<traits::component_raw_type_t<T>>();
-        }
-
-        // Filthy hack to avoid having to cast to ComponentContainer<T> when we already know T
-        template<typename T>
-        inline auto& component_set_fast() {
-            y_debug_assert(type_index<T>() == _type_id);
-            return *reinterpret_cast<SparseComponentSet<T>*>(this + 1);
-        }
-
-        template<typename T>
-        inline const auto& component_set_fast() const {
-            y_debug_assert(type_index<T>() == _type_id);
-            return *reinterpret_cast<const SparseComponentSet<T>*>(this + 1);
-        }
+        const ComponentTypeIndex _type_id;
+        SparseIdSet _mutated;
 };
 
 
@@ -227,8 +98,6 @@ class ComponentContainer final : public ComponentContainerBase {
         using component_type = T;
 
         ComponentContainer() : ComponentContainerBase(type_index<T>()) {
-            static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
-            static_assert(sizeof(*this) == sizeof(ComponentContainerBase) + sizeof(_components));
         }
 
         void register_component_type(System* system) const override {
@@ -242,10 +111,6 @@ class ComponentContainer final : public ComponentContainerBase {
             return ComponentRuntimeInfo::create<T>();
         }
 
-        void add(EntityWorld& world, EntityId id) override {
-            ComponentContainerBase::add<T>(world, id);
-        }
-
         std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const override {
             unused(id);
             if constexpr(std::is_copy_constructible_v<T>) {
@@ -257,7 +122,7 @@ class ComponentContainer final : public ComponentContainerBase {
 
         void inspect_component(EntityId id, ComponentInspector* inspector) override {
             if constexpr(is_detected_v<detail::has_inspect_t, T>) {
-                if(T* comp = component_ptr<ecs::Mutate<T>>(id)) {
+                if(T* comp = component_ptr_mut(id)) {
                     if(inspector->inspect_component_type(runtime_info(), true)) {
                         comp->inspect(inspector);
                     }
@@ -270,22 +135,102 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
 
-        y_no_serde3_expr(serde3::has_no_serde3_v<T>)
-
-        y_reflect(ComponentContainer, _components)
-        y_serde3_poly(ComponentContainer)
-
-    protected:
-        void clean_after_tick() override {
-            y_profile();
-            for(const EntityId id : to_be_removed()) {
+        void remove(EntityId id) override {
+            if(T* comp = _components.try_get(id)) {
+                _on_destroyed.send(id, *comp);
                 _components.erase(id);
+                _mutated.erase(id);
             }
-            ComponentContainerBase::clean_after_tick();
         }
 
+
+
+        void add_if_absent(EntityId id) override {
+            get_or_add(id);
+        }
+
+        template<typename... Args>
+        inline T& add_or_replace(EntityId id, Args&&... args) {
+            y_debug_assert(id.is_valid());
+
+            _mutated.insert(id);
+
+            T* comp = nullptr;
+            if(!_components.contains_index(id.index())) {
+                comp = &_components.insert(id, y_fwd(args)...);
+            } else {
+                comp = &(_components[id] = std::move(T(y_fwd(args)...)));
+            }
+
+            _on_created.send(id, *comp);
+            return *comp;
+        }
+
+        inline T& get_or_add(EntityId id) {
+            y_debug_assert(id.is_valid());
+
+            _mutated.insert(id);
+
+            if(!_components.contains_index(id.index())) {
+                T& comp = _components.insert(id);
+                _on_created.send(id, comp);
+                return comp;
+            } else {
+                return _components[id];
+            }
+        }
+
+
+        inline const T* component_ptr(EntityId id) const {
+            return _components.try_get(id);
+        }
+
+        inline T* component_ptr_mut(EntityId id) {
+            auto* ptr = _components.try_get(id);
+            if(ptr) {
+                _mutated.insert(id);
+            }
+            return ptr;
+        }
+
+
+
+        const SparseComponentSet<T>& component_set() const {
+            return _components;
+        }
+
+        SparseComponentSet<T>& component_set() {
+            return _components;
+        }
+
+
+        y_serde3_poly(ComponentContainer)
+        y_reflect(ComponentContainer, _components)
+
     private:
+        friend class EntityWorld;
+
+
+        serde3::Result save_state(serde3::WritableArchive& arc) const override {
+            return arc.serialize(_components);
+        }
+
+        serde3::Result load_state(serde3::ReadableArchive& arc) override {
+            return arc.deserialize(_components);
+        }
+
+        void post_load() override {
+            for(auto&& [id, comp] : _components) {
+                _mutated.insert(id);
+                _on_created.send(id, comp);
+            }
+        }
+
+
         SparseComponentSet<T> _components;
+
+        concurrent::Signal<EntityId, T&> _on_created;
+        concurrent::Signal<EntityId, T&> _on_destroyed;
 };
 
 }

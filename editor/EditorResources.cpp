@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include <y/io2/File.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 using SpirV = EditorResources::SpirV;
@@ -50,7 +52,7 @@ static constexpr const char* spirv_names[] = {
         "screen.vert",
         "imgui.vert",
         "imgui_billboard.vert",
-        "id.vert",
+        "basic.vert",
 
         "imgui_billboard.geom",
     };
@@ -69,7 +71,7 @@ struct DeviceMaterialData {
 static constexpr DeviceMaterialData material_datas[] = {
         {SpirV::ImGuiFrag,          SpirV::ImGuiVert,           SpirV::MaxSpirV,            false,  false,  true,   PrimitiveType::Triangles},
         {SpirV::ImGuiBillBoardFrag, SpirV::ImGuiBillBoardVert,  SpirV::ImGuiBillBoardGeom,  true,   false,  false,  PrimitiveType::Points},
-        {SpirV::IdFrag,             SpirV::IdVert,              SpirV::MaxSpirV,            true,   true,   false,  PrimitiveType::Triangles},
+        {SpirV::IdFrag,             SpirV::BasicVert,           SpirV::MaxSpirV,            true,   true,   false,  PrimitiveType::Triangles},
         {SpirV::EngineViewFrag,     SpirV::ScreenVert,          SpirV::MaxSpirV,            false,  false,  false,  PrimitiveType::Triangles},
         {SpirV::SelectionFrag,      SpirV::ScreenVert,          SpirV::MaxSpirV,            false,  false,  true,   PrimitiveType::Triangles},
     };
@@ -96,7 +98,7 @@ EditorResources::~EditorResources() {
 
 void EditorResources::load_resources() {
     for(usize i = 0; i != spirv_count; ++i) {
-        _spirv[i] = SpirVData::deserialized(io2::File::open(fmt("%.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
+        _spirv[i] = SpirVData::deserialized(io2::File::open(fmt("{}.spv", spirv_names[i])).expected("Unable to open SPIR-V file."));
     }
 
     for(usize i = 0; i != compute_count; ++i) {

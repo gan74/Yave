@@ -104,6 +104,8 @@ static VkAttachmentReference create_attachment_reference(ImageUsage usage, usize
 }
 
 static VkHandle<VkRenderPass> create_renderpass(RenderPass::AttachmentData depth, core::Span<RenderPass::AttachmentData> colors) {
+    y_profile();
+
     const bool has_depth = depth.usage != ImageUsage::None;
     const bool has_color = !colors.is_empty();
 

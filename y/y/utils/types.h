@@ -56,8 +56,6 @@ using i16 = int16_t;
 using i32 = int32_t;
 using i64 = int64_t;
 
-using byte = std::byte;
-
 using usize = std::make_unsigned_t<std::size_t>;
 using isize = std::make_signed_t<std::size_t>;
 
@@ -78,21 +76,6 @@ using uenum = std::underlying_type<detail::Enum>::type;
 inline constexpr usize operator"" _uu(unsigned long long int t) {
     return usize(t);
 }
-
-static_assert(sizeof(byte) == sizeof(char));
-static_assert(sizeof(byte) == sizeof(u8));
-
-inline const byte* to_bytes(const char* ptr)            { return reinterpret_cast<const byte*>(ptr); }
-inline const byte* to_bytes(const signed char* ptr)     { return reinterpret_cast<const byte*>(ptr); }
-inline const byte* to_bytes(const unsigned char* ptr)   { return reinterpret_cast<const byte*>(ptr); }
-
-inline byte* to_bytes(char* ptr)            { return reinterpret_cast<byte*>(ptr); }
-inline byte* to_bytes(signed char* ptr)     { return reinterpret_cast<byte*>(ptr); }
-inline byte* to_bytes(unsigned char* ptr)   { return reinterpret_cast<byte*>(ptr); }
-
-
-inline const u8* to_u8(const byte* ptr) { return reinterpret_cast<const u8*>(ptr); }
-inline u8* to_u8(byte* ptr)             { return reinterpret_cast<u8*>(ptr); }
 
 
 template<typename T>
@@ -116,15 +99,26 @@ class Uninitialized : NonMovable {
             y_debug_assert(!toggle_init());
         }
 
-        T& get() {
+        T* operator->() {
+            y_debug_assert(_is_init);
+            return &_storage.obj;
+        }
+
+        const T* operator->() const {
+            y_debug_assert(_is_init);
+            return &_storage.obj;
+        }
+
+        T& operator*() {
             y_debug_assert(_is_init);
             return _storage.obj;
         }
 
-        const T& get() const {
+        const T& operator*() const {
             y_debug_assert(_is_init);
             return _storage.obj;
         }
+
     private:
         union Storage {
             Storage() : dummy(0) {
@@ -143,6 +137,59 @@ class Uninitialized : NonMovable {
             return _is_init = !_is_init;
         }
 #endif
+};
+
+
+
+
+template<typename... Args>
+struct type_pack {
+    static constexpr usize size = sizeof...(Args);
+};
+
+namespace detail {
+template<typename T, typename U, typename... Args>
+constexpr usize type_index_in_pack() {
+    if constexpr(std::is_same_v<T, U>) {
+        return 0;
+    } else {
+        static_assert(sizeof...(Args) > 0, "Type is not present in pack");
+        return type_index_in_pack<T, Args...>() + 1;
+    }
+}
+
+template<usize I, typename T, typename... Args>
+constexpr auto type_ptr_at_index() {
+    if constexpr(!I) {
+        T* p = nullptr;
+        return p;
+    } else {
+        return type_ptr_at_index<I - 1, Args...>();
+    }
+}
+}
+
+
+
+template<typename... Args, typename... More>
+constexpr auto concatenate_packs(type_pack<Args...>, type_pack<More...>) {
+    return type_pack<Args..., More...>{};
+}
+
+template<typename T, typename... Args>
+consteval usize type_index_in_pack(type_pack<Args...> pack) {
+    static_assert(pack.size > 0, "type_pack is empty");
+    return detail::type_index_in_pack<T, Args...>();
+}
+
+template<usize I, typename... Args>
+struct type_at_index {
+    using type = std::remove_reference_t<decltype(*detail::type_ptr_at_index<0, Args...>())>;
+};
+
+template<usize I, typename... Args>
+struct type_at_index<I, type_pack<Args...>> {
+    using type = typename type_at_index<I, Args...>::type;
 };
 
 }

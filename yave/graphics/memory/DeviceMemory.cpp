@@ -60,7 +60,7 @@ void DeviceMemory::free() {
     y_debug_assert(!_memory == !_heap);
     if(_memory && _heap) {
         _heap->free(*this);
-        _memory = vk_null();
+        _memory = {};
         _heap = nullptr;
     }
 }

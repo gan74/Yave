@@ -73,6 +73,11 @@ DeviceProperties PhysicalDevice::device_properties() const {
 
     properties.max_memory_allocations = limits.maxMemoryAllocationCount;
 
+    properties.max_uniform_buffer_desc_array_size = _properties_1_2.maxDescriptorSetUpdateAfterBindUniformBuffers;
+    properties.max_storage_buffer_desc_array_size = _properties_1_2.maxDescriptorSetUpdateAfterBindStorageBuffers;
+    properties.max_sampled_image_desc_array_size = _properties_1_2.maxDescriptorSetUpdateAfterBindSampledImages;
+    properties.max_storage_image_desc_array_size = _properties_1_2.maxDescriptorSetUpdateAfterBindStorageImages;
+
     properties.max_inline_uniform_size = _properties_1_3.maxInlineUniformBlockSize;
 
     properties.timestamp_period = limits.timestampPeriod;
@@ -85,8 +90,8 @@ bool PhysicalDevice::is_discrete() const {
     return vk_properties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 }
 
-usize PhysicalDevice::total_device_memory() const {
-    usize total = 0;
+u64 PhysicalDevice::total_device_memory() const {
+    u64 total = 0;
     for(u32 i = 0; i != _memory_properties.memoryHeapCount; ++i) {
         if(_memory_properties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
             total += _memory_properties.memoryHeaps[i].size;

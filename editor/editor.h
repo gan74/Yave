@@ -23,10 +23,11 @@ SOFTWARE.
 #ifndef EDITOR_EDITOR_H
 #define EDITOR_EDITOR_H
 
-#include <yave/window/EventHandler.h>
 
 #include <yave/utils/forward.h>
 #include <editor/utils/forward.h>
+
+#include "Settings.h"
 
 #include <y/core/Span.h>
 
@@ -42,22 +43,40 @@ namespace editor {
 
 using namespace yave;
 
+void init_editor(ImGuiPlatform* platform, const Settings& settings = Settings());
+void destroy_editor();
 
-EditorApplication* application();
+void run_editor();
 
 Settings& app_settings();
-
+UiManager& ui();
 AssetStore& asset_store();
 AssetLoader& asset_loader();
+UndoStack& undo_stack();
 ThumbmailRenderer& thumbmail_renderer();
 
+const EditorResources& resources();
+
+void save_world();
+void load_world();
+void new_world();
 EditorWorld& current_world();
+
+void set_scene_view(SceneView* scene);
+void unset_scene_view(SceneView* scene);
+
 const SceneView& scene_view();
+
+
+
+
 
 DirectDraw& debug_drawer();
 
-const EditorResources& resources();
-UiManager& ui();
+
+
+
+
 
 
 Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
@@ -76,11 +95,18 @@ T* add_detached_widget(Args&&... args) {
 
 
 struct EditorAction {
+    enum Flags : u32 {
+        None            = 0x00,
+        Contextual      = 0x01,
+        Widget          = 0x02,
+    };
+
     std::string_view name;
     std::string_view description;
-    u32 flags = 0;
+    Flags flags = Flags::None;
     KeyCombination shortcut;
     void (*function)() = nullptr;
+    bool (*enabled)() = nullptr;
     core::Span<std::string_view> menu;
     EditorAction const* next = nullptr;
 };
@@ -94,26 +120,30 @@ void register_action(EditorAction* action);
 }
 
 
-#define editor_action_(name, desc, flags, shortcut, func, ...)                                          \
-    struct y_create_name_with_prefix(action_trigger_t) {                                                \
-        inline static struct action_register_t {                                                        \
-            action_register_t() {                                                                       \
+#define editor_action_(name, desc, flags, shortcut, func, enabled, ...)                                 \
+    namespace {                                                                                         \
+        inline static struct y_create_name_with_prefix(action_register_t) {                             \
+            y_create_name_with_prefix(action_register_t)() {                                            \
                 static constexpr std::string_view names[] = { name, __VA_ARGS__ };                      \
                 static editor::EditorAction action = {                                                  \
-                    names[0], desc, (flags), yave::KeyCombination(shortcut), []{ func(); },             \
+                    names[0], desc, (flags), yave::KeyCombination(shortcut), [] { func(); }, enabled,   \
                     y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr           \
                 };                                                                                      \
                 editor::detail::register_action(&action);                                               \
             }                                                                                           \
             void trigger() {}                                                                           \
-        } action_registerer;                                                                            \
-        void trigger() { action_registerer.trigger(); }                                                 \
-    };
+        } y_create_name_with_prefix(action_register);                                                   \
+    }                                                                                                   \
+    void y_register_action(y_create_name_with_prefix(action_register_t)) {                              \
+        y_create_name_with_prefix(action_register).trigger();                                           \
+    }
 
 
-#define editor_action_shortcut(name, shortcut, func, ...) editor_action_(name, "", 0, shortcut, func, __VA_ARGS__)
-#define editor_action_desc(name, desc, func, ...) editor_action_(name, desc, 0, /* no shortcut */, func, __VA_ARGS__)
-#define editor_action(name, func, ...) editor_action_desc(name, "", func, __VA_ARGS__)
+#define editor_action_shortcut(name, shortcut, func, ...)   editor_action_(name, "", EditorAction::None, shortcut, func, nullptr, __VA_ARGS__)
+#define editor_action_desc(name, desc, func, ...)           editor_action_(name, desc, EditorAction::None, /* no shortcut */, func, nullptr, __VA_ARGS__)
+#define editor_action_contextual(name, func, enabled, ...)  editor_action_(name, "", EditorAction::Contextual, /* no shortcut */, func, enabled, __VA_ARGS__)
+
+#define editor_action(name, func, ...)  editor_action_desc(name, "", func, __VA_ARGS__)
 
 
 #endif // EDITOR_EDITOR_H

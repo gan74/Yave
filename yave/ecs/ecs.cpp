@@ -28,9 +28,9 @@ namespace yave {
 namespace ecs {
 namespace detail {
 
-u32 next_type_index() {
-    static std::atomic<u32> global_type_index = 0;
-    return global_type_index++;
+ComponentTypeIndex next_type_index() {
+    static std::atomic<std::underlying_type_t<ComponentTypeIndex>> global_type_index = 0;
+    return ComponentTypeIndex(global_type_index++);
 }
 
 }
