@@ -431,6 +431,7 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
         node.name = gltf_node.name;
         node.transform = parse_node_transform(gltf_node);
         node.mesh_index = gltf_node.mesh;
+        node.light_index = gltf_node.light;
         node.children = core::Vector<int>::from_range(gltf_node.children);
 
         if(node.name.is_empty()) {
@@ -490,6 +491,29 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
         }
     }
 
+
+    for(const tinygltf::Light& gltf_light : scene.gltf->lights) {
+        auto& light = scene.lights.emplace_back();
+
+        light.name = gltf_light.name;
+
+        if(light.name.is_empty()) {
+            light.name = fmt_to_owned("light_{}", scene.lights.size());
+        }
+
+        light.intensity = float(gltf_light.intensity);
+
+        for(usize i = 0; i != 3; ++i) {
+            light.color[i] = float(gltf_light.color[i]);
+        }
+
+        if(gltf_light.range > 0.0) {
+            light.range = float(gltf_light.range);
+        } else {
+            const float intensity = light.color.dot(math::Vec3(light.intensity));
+            light.range = std::sqrt(intensity * 100.0f); // Put radius where lum < 1%
+        }
+    }
 
     core::Vector<int> root_nodes;
     {

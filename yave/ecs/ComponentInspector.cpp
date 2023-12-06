@@ -32,7 +32,7 @@ void ComponentInspector::inspect(const core::String& name, float& f, FloatRole r
     switch(role) {
         case FloatRole::Distance:
         case FloatRole::DistanceKilometers:
-        case FloatRole::NormalizedLumFlux:
+        case FloatRole::LuminousIntensity:
             inspect(name, f, 0.0, std::numeric_limits<float>::max(), role);
         break;
 

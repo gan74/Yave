@@ -419,7 +419,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                     format = "%.3f km";
                 break;
 
-                case FloatRole::NormalizedLumFlux:
+                case FloatRole::LuminousIntensity:
                     factor = 4.0f * math::pi<float>;
                     format = "%.2f lm";
                 break;

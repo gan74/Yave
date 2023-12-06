@@ -49,7 +49,7 @@ class ComponentInspector : NonCopyable {
             HalfAngle,              // radian/2
             Distance,               // m
             DistanceKilometers,     // km
-            NormalizedLumFlux,      // lm/4pi
+            LuminousIntensity,      // lm/4pi = lm/sr = cd
             Illuminance,            // lm/m2
         };
 

@@ -78,7 +78,16 @@ struct ParsedScene : NonCopyable {
         core::Vector<int> children;
 
         int mesh_index = -1;
+        int light_index = -1;
         int parent_index = -1;
+    };
+
+    struct Light {
+        core::String name = "Unamed light";
+
+        float range = 1.0f;
+        float intensity = 1.0f;
+        math::Vec3 color = math::Vec3(1.0f);
     };
 
     core::String name;
@@ -87,6 +96,7 @@ struct ParsedScene : NonCopyable {
     core::Vector<Mesh> meshes;
     core::Vector<Material> materials;
     core::Vector<Image> images;
+    core::Vector<Light> lights;
 
     core::Vector<Node> nodes;
     int root_node = -1;

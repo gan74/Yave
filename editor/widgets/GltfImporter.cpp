@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/ecs/EntityWorld.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/PointLightComponent.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/Material.h>
 
@@ -104,6 +105,19 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
 
             name = mesh.name;
         }
+    }
+
+    if(node.light_index >= 0) {
+        const auto& light = scene.lights[node.light_index];
+
+        PointLightComponent component;
+        component.intensity() = light.intensity;
+        component.range() = light.range;
+        component.color() = light.color;
+
+        prefab->add(component);
+
+        name = light.name;
     }
 
     for(const int child_index : node.children) {
