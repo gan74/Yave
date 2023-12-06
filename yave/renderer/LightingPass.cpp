@@ -265,7 +265,8 @@ static u32 fill_spot_light_buffer(
 static void local_lights_pass_compute(FrameGraph& framegraph,
                               FrameGraphMutableImageId lit,
                               const GBufferPass& gbuffer,
-                              const ShadowMapPass& shadow_pass) {
+                              const ShadowMapPass& shadow_pass,
+                              bool debug_tiles = false) {
 
     const bool render_shadows = true;
 
@@ -296,7 +297,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
         const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), nullptr, scene, render_shadows, shadow_pass);
 
         if(point_count || spot_count) {
-            const auto& program = device_resources()[DeviceResources::DeferredLocalsProgram];
+            const auto& program = device_resources()[debug_tiles ? DeviceResources::DeferredLocalsDebugProgram : DeviceResources::DeferredLocalsProgram];
 
             const math::Vec2ui light_count(point_count, spot_count);
             const auto light_count_set = DescriptorSet(InlineDescriptor(light_count));
@@ -401,7 +402,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
     const auto lit = ambient_pass(framegraph, gbuffer, pass.shadow_pass, ao);
 
     if(settings.use_compute_for_locals) {
-        local_lights_pass_compute(framegraph, lit, gbuffer, pass.shadow_pass);
+        local_lights_pass_compute(framegraph, lit, gbuffer, pass.shadow_pass, settings.debug_tiles);
     } else {
         local_lights_pass(framegraph, lit, gbuffer, pass.shadow_pass);
     }

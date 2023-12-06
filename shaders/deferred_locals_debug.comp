@@ -1,0 +1,5 @@
+#version 450
+
+#define DEBUG
+
+#include "deferred_locals.glsl"
