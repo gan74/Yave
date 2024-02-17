@@ -37,6 +37,12 @@ SOFTWARE.
 
 namespace yave {
 
+enum class PassType {
+    Depth,
+    GBuffer,
+    ID,
+};
+
 class RendererSystem : public ecs::System {
     public:
         class TransformManager : NonMovable {
@@ -72,15 +78,20 @@ class RendererSystem : public ecs::System {
 
 
 
+
+
+        using RenderFunc = std::function<void(RenderPassRecorder& render_pass, const FrameGraphPass* pass)>;
+
         class Renderer : NonMovable {
             public:
-                using RenderFunc = std::function<void(RenderPassRecorder& render_pass, const FrameGraphPass* pass)>;
+                using RenderFunc = RendererSystem::RenderFunc;
 
                 virtual ~Renderer();
 
                 const ecs::EntityWorld& world() const;
+                const RendererSystem* parent() const;
 
-                virtual RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view) const = 0;
+                virtual RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, RendererSystem::PassType type) const = 0;
 
             private:
                 friend class RendererSystem;
@@ -89,7 +100,7 @@ class RendererSystem : public ecs::System {
         };
 
 
-        using RenderFunc = Renderer::RenderFunc;
+
 
 
         RendererSystem();
@@ -98,7 +109,7 @@ class RendererSystem : public ecs::System {
         void setup() override;
         void tick() override;
 
-        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view) const;
+        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, PassType pass_type) const;
 
         auto transform_buffer() const  {
             return _transform_manager->transform_buffer();

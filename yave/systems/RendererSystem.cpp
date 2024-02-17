@@ -154,6 +154,10 @@ void RendererSystem::TransformManager::tick(bool only_recent) {
 RendererSystem::Renderer::~Renderer() {
 }
 
+const RendererSystem* RendererSystem::Renderer::parent() const {
+    return _parent;
+}
+
 const ecs::EntityWorld& RendererSystem::Renderer::world() const {
     return _parent->world();
 }
@@ -175,11 +179,11 @@ void RendererSystem::tick() {
     _transform_manager->tick(false);
 }
 
-RendererSystem::RenderFunc RendererSystem::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view) const {
+RendererSystem::RenderFunc RendererSystem::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, PassType pass_type) const {
     auto funcs = core::Vector<typename Renderer::RenderFunc>::with_capacity(_renderers.size());
 
     for(const auto& renderer : _renderers) {
-        funcs << renderer->prepare_render(builder, view);
+        funcs << renderer->prepare_render(builder, view, pass_type);
     }
 
     return [render_funcs = std::move(funcs)](RenderPassRecorder& render_pass, const FrameGraphPass* pass) {

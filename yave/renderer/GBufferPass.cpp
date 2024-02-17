@@ -50,7 +50,7 @@ GBufferPass GBufferPass::create(FrameGraph& framegraph, const CameraBufferPass& 
     pass.color = color;
     pass.normal = normal;
     pass.emissive = emissive;
-    pass.scene_pass = SceneRenderSubPass::create(builder, camera);
+    pass.scene_pass = SceneRenderSubPass::create(builder, camera, PassType::GBuffer);
 
     builder.add_depth_output(depth);
     builder.add_color_output(motion);

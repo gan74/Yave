@@ -74,6 +74,7 @@ struct EditorSettings;
 struct EditorWidget;
 struct Entry;
 struct IdBufferPass;
+struct Item;
 struct PerfSettings;
 struct Picker;
 struct PickingResult;
@@ -89,6 +90,7 @@ struct ZoneHistory;
 namespace editor::import {
 struct Asset;
 struct Image;
+struct Light;
 struct Material;
 struct Mesh;
 struct Node;

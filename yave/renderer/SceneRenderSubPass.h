@@ -37,13 +37,11 @@ struct SceneRenderSubPass {
 
     FrameGraphTypedBufferId<uniform::Camera> camera;
 
-    StaticMeshRenderSubPass static_meshes_sub_pass;
-
     RendererSystem::RenderFunc render_func;
 
 
-    static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& scene_view);
-    static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera);
+    static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& scene_view, PassType pass_type);
+    static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera, PassType pass_type);
 
     void render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const;
 

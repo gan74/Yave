@@ -28,16 +28,11 @@ SOFTWARE.
 #include <yave/systems/AABBUpdateSystem.h>
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/RendererSystem.h>
+#include <yave/renderer/StaticMeshRenderer.h>
 
 #include <y/core/Vector.h>
 
 namespace yave {
-
-class StaticMeshRenderer : public RendererSystem::Renderer {
-    public:
-        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view) const override;
-};
-
 
 class StaticMeshComponent final :
         public ecs::SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem, AABBUpdateSystem, RendererSystem> {
