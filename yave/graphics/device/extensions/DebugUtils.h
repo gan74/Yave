@@ -69,6 +69,10 @@ class DebugUtils : NonCopyable {
             set_name(u64(res), VK_OBJECT_TYPE_QUEUE, name);
         }
 
+        void set_resource_name(VkQueryPool res, const char* name) const {
+            set_name(u64(res), VK_OBJECT_TYPE_QUERY_POOL, name);
+        }
+
     private:
         friend class CmdBufferRegion;
 

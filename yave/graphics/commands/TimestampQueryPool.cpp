@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "TimestampQueryPool.h"
 
+#include <yave/graphics/device/extensions/DebugUtils.h>
+
+#include <y/utils/format.h>
 
 namespace yave {
 
@@ -74,6 +77,13 @@ void TimestampQueryPoolData::alloc_pool() {
     auto& pool = _pools.emplace_back();
     vk_check(vkCreateQueryPool(vk_device(), &create_info, vk_allocation_callbacks(), pool.pool.get_ptr_for_init()));
     vkCmdResetQueryPool(_cmd_buffer, pool.pool, 0, pool_size);
+
+#ifdef Y_DEBUG
+    if(const DebugUtils* debug = debug_utils()) {
+        debug->set_resource_name(pool.pool, fmt_c_str("Query pool for {}", static_cast<const void*>(_cmd_buffer)));
+    }
+#endif
+
     _next_query = 0;
 }
 
