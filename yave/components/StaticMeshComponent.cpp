@@ -38,6 +38,13 @@ namespace yave {
 static constexpr bool display_empty_material = true;
 
 
+StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view) const {
+    return [](RenderPassRecorder& render_pass, const FrameGraphPass* pass) {
+        log_msg("StaticMeshRenderer::prepare_render");
+    };
+}
+
+
 StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :
         _mesh(mesh) {
 

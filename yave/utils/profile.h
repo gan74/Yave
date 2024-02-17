@@ -27,7 +27,7 @@ SOFTWARE.
 
 #if defined(TRACY_ENABLE) && !defined(YAVE_PROFILING_DISABLED)
 #define YAVE_PROFILING
-#define YAVE_GPU_PROFILING
+// #define YAVE_GPU_PROFILING
 #endif
 
 #if defined(YAVE_PROFILING) && !defined(TRACY_ENABLE)

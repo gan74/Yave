@@ -53,6 +53,7 @@ static void fill_scene_render_pass(SceneRenderSubPass& pass, FrameGraphPassBuild
     const std::array tags = {ecs::tags::not_hidden};
 
     pass.static_meshes_sub_pass = StaticMeshRenderSubPass::create(builder, pass.scene_view, visible_entities<StaticMeshComponent>(pass.scene_view), tags);
+    pass.render_func = pass.scene_view.world().find_system<RendererSystem>()->prepare_render(builder, pass.scene_view);
 
     pass.main_descriptor_set_index = builder.next_descriptor_set_index();
     builder.add_uniform_input(pass.camera, PipelineStage::None, pass.main_descriptor_set_index);
@@ -85,6 +86,7 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, co
 void SceneRenderSubPass::render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const {
     render_pass.set_main_descriptor_set(pass->descriptor_sets()[main_descriptor_set_index]);
     static_meshes_sub_pass.render(render_pass, pass);
+    render_func(render_pass, pass);
 }
 
 }

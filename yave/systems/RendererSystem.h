@@ -72,19 +72,48 @@ class RendererSystem : public ecs::System {
 
 
 
+        class Renderer : NonMovable {
+            public:
+                using RenderFunc = std::function<void(RenderPassRecorder& render_pass, const FrameGraphPass* pass)>;
+
+                virtual ~Renderer();
+
+                const ecs::EntityWorld& world() const;
+
+                virtual RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view) const = 0;
+
+            private:
+                friend class RendererSystem;
+
+                RendererSystem* _parent = nullptr;
+        };
+
+
+        using RenderFunc = Renderer::RenderFunc;
+
 
         RendererSystem();
-
-        auto transform_buffer() const  {
-            return _transform_manager->transform_buffer();
-        }
 
         void destroy() override;
         void setup() override;
         void tick() override;
 
+        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view) const;
+
+        auto transform_buffer() const  {
+            return _transform_manager->transform_buffer();
+        }
+
+        template<typename T>
+        void register_component_type() {
+            auto renderer = std::make_unique<typename T::Renderer>();
+            renderer->_parent = this;
+            _renderers << std::move(renderer);
+        }
+
     private:
         std::unique_ptr<TransformManager> _transform_manager;
+        core::Vector<std::unique_ptr<Renderer>> _renderers;
 
 };
 
