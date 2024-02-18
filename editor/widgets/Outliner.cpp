@@ -136,29 +136,32 @@ void Outliner::on_gui() {
     }
 
 
-    if(ImGui::BeginTable("##entities", int(1 + _tag_buttons.size()))) {
-        y_profile_zone("fill entity table");
+    if(ImGui::BeginChild("##entitiesarea")) {
+        if(ImGui::BeginTable("##entities", int(1 + _tag_buttons.size()))) {
+            y_profile_zone("fill entity table");
 
-        ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("##tagbuttons",ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("##tagbuttons",ImGuiTableColumnFlags_WidthFixed);
 
-        for(const ecs::EntityId id : world.component_set<EditorComponent>().ids()) {
-            if(world.has_parent(id)) {
-                continue;
+            for(const ecs::EntityId id : world.component_set<EditorComponent>().ids()) {
+                if(world.has_parent(id)) {
+                    continue;
+                }
+
+                display_node(world, id);
             }
 
-            display_node(world, id);
+            ImGui::EndTable();
         }
 
-        ImGui::EndTable();
+        {
+            ImGui::Indent();
+            ImGui::Dummy(math::Vec2(ImGui::GetContentRegionAvail()) - math::Vec2(ImGui::GetStyle().FramePadding));
+            make_drop_target(world, {});
+            ImGui::Unindent();
+        }
     }
-
-    {
-        ImGui::Indent();
-        ImGui::Dummy(math::Vec2(ImGui::GetContentRegionAvail()) - math::Vec2(ImGui::GetStyle().FramePadding));
-        make_drop_target(world, {});
-        ImGui::Unindent();
-    }
+    ImGui::EndChild();
 }
 
 void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
@@ -230,6 +233,8 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
                 ImGui::EndDragDropSource();
             }
         }
+    } else {
+        make_drop_target(world, id);
     }
 
     ImGui::SameLine(0.0f, ImGui::GetStyle().FramePadding.x * 2.0f);
