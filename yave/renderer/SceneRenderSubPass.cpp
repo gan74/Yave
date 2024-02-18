@@ -72,7 +72,9 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, co
 
 void SceneRenderSubPass::render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const {
     render_pass.set_main_descriptor_set(pass->descriptor_sets()[main_descriptor_set_index]);
-    render_func(render_pass, pass);
+    if(render_func) {
+        render_func(render_pass, pass);
+    }
 }
 
 }
