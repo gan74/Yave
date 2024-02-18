@@ -544,45 +544,6 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 };
 
 
-static void entity_properties(ecs::EntityId id, EditorComponent* component) {
-    if(!ImGui::CollapsingHeader(ICON_FA_PUZZLE_PIECE " Entity", ImGuiTreeNodeFlags_DefaultOpen)) {
-        return;
-    }
-
-    if(!begin_property_table()) {
-        return;
-    }
-
-    y_defer(ImGui::EndTable());
-
-    imgui::table_begin_next_row();
-
-    {
-        core::String name = component->name();
-        ImGui::TextUnformatted("Name");
-        ImGui::TableNextColumn();
-        if(imgui::text_input("##name", name)) {
-            component->set_name(name);
-        }
-    }
-
-    imgui::table_begin_next_row();
-
-    {
-        ImGui::TextUnformatted("Id");
-        ImGui::TableNextColumn();
-        imgui::text_read_only("##id", fmt("id: {:#08x}", id.index()));
-        ImGui::SameLine();
-        ImGui::TextDisabled("(?)");
-        if(ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
-            ImGui::TextUnformatted(fmt_c_str("id: {:#08x}", id.index()));
-            ImGui::TextUnformatted(fmt_c_str("version: {:#08x}", id.version()));
-            ImGui::EndTooltip();
-        }
-    }
-}
-
 
 
 
@@ -590,7 +551,8 @@ Inspector::Inspector() : Widget(ICON_FA_WRENCH " Inspector") {
 }
 
 void Inspector::on_gui() {
-    const ecs::EntityId id = current_world().selected_entity();
+    const ecs::EntityId selected = current_world().selected_entity();
+    const ecs::EntityId id = _locked.is_valid() ? _locked : selected;
 
     if(!id.is_valid()) {
         if(const usize selected_count = current_world().selected_entity_count(); selected_count > 1) {
@@ -604,7 +566,20 @@ void Inspector::on_gui() {
     EditorWorld& world = current_world();
 
     if(EditorComponent* component = world.component_mut<EditorComponent>(id)) {
-        entity_properties(id, component);
+
+        {
+            core::String name = component->name();
+            if(imgui::text_input("Name##name", name)) {
+                component->set_name(name);
+            }
+
+            ImGui::SameLine();
+
+            bool locked = _locked.is_valid();
+            if(ImGui::Checkbox(ICON_FA_LOCK "###lock", &locked)) {
+                _locked = locked ? selected : ecs::EntityId();
+            }
+        }
 
         InspectorPanelInspector inspector(id, component);
         world.inspect_components(id, &inspector);

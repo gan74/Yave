@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 
+#include <yave/ecs/ecs.h>
+
 namespace editor {
 
 class Inspector final : public Widget {
@@ -35,6 +37,9 @@ class Inspector final : public Widget {
 
     protected:
         void on_gui() override;
+
+    private:
+        ecs::EntityId _locked;
 };
 
 }
