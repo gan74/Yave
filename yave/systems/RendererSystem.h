@@ -40,7 +40,7 @@ namespace yave {
 enum class PassType {
     Depth,
     GBuffer,
-    ID,
+    Id,
 };
 
 class RendererSystem : public ecs::System {
@@ -91,7 +91,7 @@ class RendererSystem : public ecs::System {
                 const ecs::EntityWorld& world() const;
                 const RendererSystem* parent() const;
 
-                virtual RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, RendererSystem::PassType type) const = 0;
+                virtual RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType type) const = 0;
 
             private:
                 friend class RendererSystem;
@@ -109,7 +109,7 @@ class RendererSystem : public ecs::System {
         void setup() override;
         void tick() override;
 
-        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, PassType pass_type) const;
+        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const;
 
         auto transform_buffer() const  {
             return _transform_manager->transform_buffer();

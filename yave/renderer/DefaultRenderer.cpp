@@ -27,13 +27,15 @@ SOFTWARE.
 
 namespace yave {
 
+
 DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& scene_view, const math::Vec2ui& size, const RendererSettings& settings) {
     y_profile();
+
 
     DefaultRenderer renderer;
 
     renderer.camera         = CameraBufferPass::create(framegraph, scene_view, size, settings.taa);
-    renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, size);
+    renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, SceneVisibilitySubPass::create(scene_view), size);
     renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);

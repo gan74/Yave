@@ -35,7 +35,7 @@ struct GBufferPass {
     FrameGraphImageId normal;
     FrameGraphImageId emissive;
 
-    static GBufferPass create(FrameGraph& framegraph, const CameraBufferPass& camera, const math::Vec2ui& size);
+    static GBufferPass create(FrameGraph& framegraph, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, const math::Vec2ui& size);
 };
 
 }

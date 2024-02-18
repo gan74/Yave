@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
+#include <y/core/Vector.h>
+
 namespace yave {
 
 class SceneView {
@@ -38,6 +40,8 @@ class SceneView {
             _world = nullptr;
         }
 #endif
+
+        core::Vector<ecs::EntityId> visible_entities() const;
 
         const ecs::EntityWorld& world() const;
 

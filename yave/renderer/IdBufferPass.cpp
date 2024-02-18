@@ -19,51 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_CAMERABUFFERPASS_H
-#define YAVE_RENDERER_CAMERABUFFERPASS_H
 
-#include <yave/scene/SceneView.h>
-#include <yave/framegraph/FrameGraphResourceId.h>
+#include "IdBufferPass.h"
+
+#include <yave/framegraph/FrameGraph.h>
+#include <yave/framegraph/FrameGraphPass.h>
+
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
-struct TAASettings {
-    enum class JitterSeq {
-        Weyl,
-        R2,
-    };
+IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, const math::Vec2ui& size) {
+    static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;
+    static constexpr ImageFormat id_format = VK_FORMAT_R32_UINT;
 
-    enum class WeightingMode : u32 {
-        None,
-        Luminance,
-        Log,
-    };
+    FrameGraphPassBuilder builder = framegraph.add_pass("Id-buffer pass");
 
-    JitterSeq jitter = JitterSeq::R2;
-    WeightingMode weighting_mode = WeightingMode::Log;
+    const auto depth = builder.declare_image(depth_format, size);
+    const auto id = builder.declare_image(id_format, size);
 
-    float blending_factor = 0.9f;
-    float jitter_intensity = 1.0f;
+    IdBufferPass pass;
+    pass.depth = depth;
+    pass.id = id;
+    pass.scene_pass = SceneRenderSubPass::create(builder, camera, visibility, PassType::Id);
 
-    bool use_clamping = true;
-    bool use_motion_rejection = true;
+    builder.add_depth_output(depth);
+    builder.add_color_output(id);
 
-    bool enable = true;
-};
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        pass.scene_pass.render(render_pass, self);
+    });
 
-struct CameraBufferPass {
-    SceneView view;
-    SceneView unjittered_view;
-
-    FrameGraphTypedBufferId<uniform::Camera> camera;
-
-    TAASettings taa_settings;
-
-    static CameraBufferPass create_no_jitter(FrameGraph&, const SceneView& view);
-    static CameraBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings = {});
-};
-
+    return pass;
 }
 
-#endif // YAVE_RENDERER_CAMERABUFFERPASS_H
+}
 

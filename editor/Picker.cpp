@@ -24,7 +24,8 @@ SOFTWARE.
 
 #include <editor/EditorResources.h>
 #include <editor/renderer/EditorPass.h>
-#include <editor/renderer/IdBufferPass.h>
+
+#include <yave/renderer/IdBufferPass.h>
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -33,6 +34,10 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdQueue.h>
 
 #include <yave/graphics/shaders/ComputeProgram.h>
+
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace editor {
 
@@ -56,8 +61,9 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
     FrameGraph framegraph(std::make_shared<FrameGraphResourcePool>());
 
     Y_TODO(Take editor renderer settings into account for picking)
-    const IdBufferPass scene_pass = IdBufferPass::create(framegraph, scene_view, size);
-    const EditorPass entity_pass = EditorPass::create(framegraph, scene_view, scene_pass.depth, FrameGraphImageId(), scene_pass.id);
+    const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(scene_view);
+    const IdBufferPass scene_pass = IdBufferPass::create(framegraph, CameraBufferPass::create_no_jitter(framegraph, scene_view), visibility, size);
+    const EditorPass entity_pass = EditorPass::create(framegraph, scene_view, visibility, scene_pass.depth, FrameGraphImageId(), scene_pass.id);
 
     {
         FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Picking readback pass");

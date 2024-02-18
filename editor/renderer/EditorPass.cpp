@@ -69,9 +69,9 @@ struct EditorPassData {
 
 static void render_editor_entities(RenderPassRecorder& recorder, const FrameGraphPass* pass,
                                    const SceneView& scene_view,
+                                   const SceneVisibilitySubPass& visibility,
                                    const FrameGraphMutableTypedBufferId<EditorPassData> pass_buffer,
-                                   FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer,
-                                   EditorPassFlags flags) {
+                                   FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer) {
     y_profile();
 
     const EditorWorld& world = current_world();
@@ -102,27 +102,21 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         auto vertex_mapping = pass->resources().map_buffer(vertex_buffer);
 
         auto push_entity = [&](ecs::EntityId id) {
-            if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly && !world.is_selected(id)) {
-                return;
-            }
             if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
                 vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size, id.index()};
                 ++index;
             }
         };
-
-        const std::array tags = {ecs::tags::not_hidden};
-
         {
             std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_LIGHTBULB);
-            for(ecs::EntityId id : world.query<PointLightComponent>(tags).ids()) {
+            for(ecs::EntityId id : world.query<PointLightComponent>(*visibility.visible).ids()) {
                 push_entity(id);
             }
         }
 
         {
             std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_VIDEO);
-            for(ecs::EntityId id : world.query<SpotLightComponent>(tags).ids()) {
+            for(ecs::EntityId id : world.query<SpotLightComponent>(*visibility.visible).ids()) {
                 push_entity(id);
             }
         }
@@ -137,7 +131,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 
 
 
-static void render_selection(DirectDrawPrimitive* primitive, const SceneView& scene_view) {
+static void render_selection_aabb(DirectDrawPrimitive* primitive, const SceneView& scene_view) {
     const EditorWorld& world = current_world();
     const ecs::EntityId selected = world.selected_entity();
 
@@ -218,8 +212,6 @@ static void render_octree(DirectDrawPrimitive* primitive,
     }
 }
 
-
-
 static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, FrameGraphImageId in, ImageFormat format, const math::Vec2ui& size) {
     if(in.is_valid()) {
         return builder.declare_copy(in);
@@ -227,7 +219,12 @@ static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, Fr
     return builder.declare_image(format, size);
 }
 
-EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id, EditorPassFlags flags) {
+
+
+
+
+
+EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, const SceneVisibilitySubPass& visibility, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id) {
     const math::Vec2ui size = framegraph.image_size(in_depth);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
@@ -252,16 +249,12 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, Fra
     builder.add_color_output(color);
     builder.add_color_output(id);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        render_editor_entities(render_pass, self, view, pass_buffer, vertex_buffer, flags);
-
-        if((flags & EditorPassFlags::SelectionOnly) == EditorPassFlags::SelectionOnly) {
-            return;
-        }
+        render_editor_entities(render_pass, self, view, visibility, pass_buffer, vertex_buffer);
 
         DirectDraw direct;
         {
             if(current_world().selected_entity().is_valid()) {
-                render_selection(direct.add_primitive("selection"), view);
+                render_selection_aabb(direct.add_primitive("selection"), view);
             }
 
             if(app_settings().debug.display_octree) {

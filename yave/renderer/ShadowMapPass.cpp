@@ -108,7 +108,7 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
     };
 
     return SubPass {
-        SceneRenderSubPass::create(builder, light_view, PassType::Depth),
+        SceneRenderSubPass::create(builder, light_view, SceneVisibilitySubPass::create(light_view), PassType::Depth),
         offset, size,
         params
     };

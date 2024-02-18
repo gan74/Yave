@@ -179,16 +179,22 @@ void RendererSystem::tick() {
     _transform_manager->tick(false);
 }
 
-RendererSystem::RenderFunc RendererSystem::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, PassType pass_type) const {
+RendererSystem::RenderFunc RendererSystem::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const {
+    if(ids.is_empty()) {
+        return {};
+    }
+
     auto funcs = core::Vector<typename Renderer::RenderFunc>::with_capacity(_renderers.size());
 
     for(const auto& renderer : _renderers) {
-        funcs << renderer->prepare_render(builder, view, pass_type);
+        funcs << renderer->prepare_render(builder, view, ids, pass_type);
     }
 
     return [render_funcs = std::move(funcs)](RenderPassRecorder& render_pass, const FrameGraphPass* pass) {
         for(auto&& func : render_funcs) {
-            func(render_pass, pass);
+            if(func) {
+                func(render_pass, pass);
+            }
         }
     };
 }

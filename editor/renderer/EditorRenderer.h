@@ -28,18 +28,18 @@ SOFTWARE.
 
 namespace editor {
 
-enum class EditorPassFlags : u32 {
+enum class EditorSelectionRenderFlags : u32 {
     None                            = 0x00,
     SelectionOnly                   = 0x01,
     SelectionAndChildren            = 0x02,
 };
 
-constexpr EditorPassFlags operator|(EditorPassFlags a, EditorPassFlags b) {
-    return EditorPassFlags(u32(a) | u32(b));
+constexpr EditorSelectionRenderFlags operator|(EditorSelectionRenderFlags a, EditorSelectionRenderFlags b) {
+    return EditorSelectionRenderFlags(u32(a) | u32(b));
 }
 
-constexpr EditorPassFlags operator&(EditorPassFlags a, EditorPassFlags b) {
-    return EditorPassFlags(u32(a) & u32(b));
+constexpr EditorSelectionRenderFlags operator&(EditorSelectionRenderFlags a, EditorSelectionRenderFlags b) {
+    return EditorSelectionRenderFlags(u32(a) & u32(b));
 }
 
 struct EditorRendererSettings {

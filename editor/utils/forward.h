@@ -73,7 +73,6 @@ struct EditorRendererSettings;
 struct EditorSettings;
 struct EditorWidget;
 struct Entry;
-struct IdBufferPass;
 struct Item;
 struct PerfSettings;
 struct Picker;

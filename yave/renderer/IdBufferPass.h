@@ -19,51 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_CAMERABUFFERPASS_H
-#define YAVE_RENDERER_CAMERABUFFERPASS_H
+#ifndef YAVE_RENDERER_IDBUFFERPASS_H
+#define YAVE_RENDERER_IDBUFFERPASS_H
 
-#include <yave/scene/SceneView.h>
-#include <yave/framegraph/FrameGraphResourceId.h>
+#include <yave/renderer/GBufferPass.h>
 
 namespace yave {
 
-struct TAASettings {
-    enum class JitterSeq {
-        Weyl,
-        R2,
-    };
+struct IdBufferPass {
+    SceneRenderSubPass scene_pass;
 
-    enum class WeightingMode : u32 {
-        None,
-        Luminance,
-        Log,
-    };
+    FrameGraphImageId depth;
+    FrameGraphImageId id;
 
-    JitterSeq jitter = JitterSeq::R2;
-    WeightingMode weighting_mode = WeightingMode::Log;
-
-    float blending_factor = 0.9f;
-    float jitter_intensity = 1.0f;
-
-    bool use_clamping = true;
-    bool use_motion_rejection = true;
-
-    bool enable = true;
-};
-
-struct CameraBufferPass {
-    SceneView view;
-    SceneView unjittered_view;
-
-    FrameGraphTypedBufferId<uniform::Camera> camera;
-
-    TAASettings taa_settings;
-
-    static CameraBufferPass create_no_jitter(FrameGraph&, const SceneView& view);
-    static CameraBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings = {});
+    static IdBufferPass create(FrameGraph& framegraph, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, const math::Vec2ui& size);
 };
 
 }
 
-#endif // YAVE_RENDERER_CAMERABUFFERPASS_H
+#endif // YAVE_RENDERER_IDBUFFERPASS_H
 

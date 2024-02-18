@@ -74,6 +74,7 @@ class DeviceResources final : NonMovable {
             VBlurFrag,
             WireFrameFrag,
             TAAResolveFrag,
+            IdFrag,
 
             DeferredPointVert,
             DeferredSpotVert,
@@ -130,6 +131,8 @@ class DeviceResources final : NonMovable {
             WireFrameMaterialTemplate,
 
             TAAResolveMaterialTemplate,
+
+            IdMaterialTemplate,
 
             MaxMaterialTemplates
         };

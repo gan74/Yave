@@ -34,48 +34,36 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
-#include <y/utils/format.h>
 
 namespace yave {
 
-template<typename T>
-static core::Vector<ecs::EntityId> visible_entities(const SceneView& scene_view) {
-    const ecs::EntityWorld& world = scene_view.world();
-
-    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-        return octree_system->find_entities(scene_view.camera());
-    }
-
-    return core::Vector<ecs::EntityId>(world.component_set<T>().ids());
-}
-
 static void fill_scene_render_pass(SceneRenderSubPass& pass, FrameGraphPassBuilder& builder, PassType pass_type) {
-    const std::array tags = {ecs::tags::not_hidden};
-
-    pass.render_func = pass.scene_view.world().find_system<RendererSystem>()->prepare_render(builder, pass.scene_view, pass_type);
+    pass.render_func = pass.scene_view.world().find_system<RendererSystem>()->prepare_render(builder, pass.scene_view, *pass.visibility.visible, pass_type);
 
     pass.main_descriptor_set_index = builder.next_descriptor_set_index();
     builder.add_uniform_input(pass.camera, PipelineStage::None, pass.main_descriptor_set_index);
 }
 
 
-SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& scene_view, PassType pass_type) {
+SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& scene_view, const SceneVisibilitySubPass& visibility, PassType pass_type) {
     const auto camera = builder.declare_typed_buffer<uniform::Camera>();
     builder.map_buffer(camera, uniform::Camera(scene_view.camera()));
 
     SceneRenderSubPass pass;
     pass.scene_view = scene_view;
     pass.camera = camera;
+    pass.visibility = visibility;
 
     fill_scene_render_pass(pass, builder, pass_type);
 
     return pass;
 }
 
-SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera, PassType pass_type) {
+SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, PassType pass_type) {
     SceneRenderSubPass pass;
     pass.scene_view = camera.view;
     pass.camera = camera.camera;
+    pass.visibility = visibility;
 
     fill_scene_render_pass(pass, builder, pass_type);
 

@@ -22,7 +22,10 @@ SOFTWARE.
 
 #include "SceneView.h"
 
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/SparseComponentSet.h>
+#include <yave/systems/OctreeSystem.h>
+
 
 namespace yave {
 
@@ -46,6 +49,23 @@ const Camera& SceneView::camera() const {
 
 Camera& SceneView::camera() {
     return _camera;
+}
+
+
+core::Vector<ecs::EntityId> SceneView::visible_entities() const {
+    y_profile();
+
+    y_debug_assert(has_world());
+
+    core::Vector<ecs::EntityId> visible;
+    if(const OctreeSystem* octree_system = _world->find_system<OctreeSystem>()) {
+        visible = octree_system->find_entities(_camera);
+    } else {
+        visible = core::Vector<ecs::EntityId>::from_range(_world->all_entities());
+    }
+
+    const std::array tags = {ecs::tags::not_hidden};
+    return _world->query(visible, tags).ids();
 }
 
 }

@@ -202,6 +202,7 @@ struct FreeBlock;
 struct FullVertex;
 struct GBufferPass;
 struct Hasher;
+struct IdBufferPass;
 struct ImageClearInfo;
 struct ImageCopyInfo;
 struct ImageCreateInfo;

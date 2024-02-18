@@ -31,7 +31,7 @@ struct EditorPass {
     FrameGraphImageId color;
     FrameGraphImageId id;
 
-    static EditorPass create(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id = {}, EditorPassFlags flags = EditorPassFlags::None);
+    static EditorPass create(FrameGraph& framegraph, const SceneView& view, const SceneVisibilitySubPass& visibility, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id = {});
 };
 
 }

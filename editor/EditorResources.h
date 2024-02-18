@@ -36,7 +36,6 @@ class EditorResources final : NonMovable {
 
             ImGuiFrag,
             ImGuiBillBoardFrag,
-            IdFrag,
             ClearIdFrag,
             EngineViewFrag,
             SelectionFrag,
@@ -61,8 +60,6 @@ class EditorResources final : NonMovable {
         enum MaterialTemplates {
             ImGuiMaterialTemplate,
             ImGuiBillBoardMaterialTemplate,
-
-            IdMaterialTemplate,
 
             EngineViewMaterialTemplate,
             SelectionMaterialTemplate,

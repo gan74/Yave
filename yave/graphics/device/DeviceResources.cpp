@@ -93,6 +93,7 @@ static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::screen(SpirV::VBlurFrag, true),
         DeviceMaterialData::wire(SpirV::WireFrameFrag),
         DeviceMaterialData::screen(SpirV::TAAResolveFrag),
+        DeviceMaterialData::basic(SpirV::IdFrag),
     };
 
 static constexpr const char* spirv_names[] = {
@@ -129,6 +130,7 @@ static constexpr const char* spirv_names[] = {
         "vblur.frag",
         "wireframe.frag",
         "taa_resolve.frag",
+        "id.frag",
 
         "deferred_point.vert",
         "deferred_spot.vert",

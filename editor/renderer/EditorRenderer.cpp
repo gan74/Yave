@@ -21,20 +21,52 @@ SOFTWARE.
 **********************************/
 
 #include "EditorRenderer.h"
-#include "IdBufferPass.h"
 #include "EditorPass.h"
 
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 
+#include <yave/renderer/IdBufferPass.h>
+
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/systems/OctreeSystem.h>
+
 #include <yave/utils/DirectDraw.h>
 
-
 namespace editor {
+
+static core::Vector<ecs::EntityId> highlighted_entities(const SceneView& scene_view, EditorSelectionRenderFlags flags) {
+    y_profile();
+
+    const EditorWorld& world = current_world();
+    y_debug_assert(&world == &scene_view.world());
+
+    const bool selection = (flags & (EditorSelectionRenderFlags::SelectionOnly | EditorSelectionRenderFlags::SelectionAndChildren)) != EditorSelectionRenderFlags::None;
+    if(selection) {
+        auto ids = core::Vector<ecs::EntityId>::from_range(world.selected_entities());
+        if((flags & EditorSelectionRenderFlags::SelectionAndChildren) != EditorSelectionRenderFlags::None) {
+            for(usize i = 0; i != ids.size(); ++i) {
+                for(const ecs::EntityId child : world.children(ids[i])) {
+                    if(!world.is_selected(child)) {
+                        ids << child;
+                    }
+                }
+            }
+        }
+        return ids;
+    } else if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
+        return octree_system->find_entities(scene_view.camera());
+    }
+
+    return core::Vector<ecs::EntityId>::from_range(world.all_entities());
+}
+
+
+
+
 
 static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth, FrameGraphImageId selection_id) {
     if(!current_world().has_selected_entities()) {
@@ -75,6 +107,10 @@ static FrameGraphImageId render_debug_drawer(FrameGraph& framegraph, const Scene
 }
 
 
+
+
+
+
 EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const EditorRendererSettings& settings) {
     y_profile();
 
@@ -89,16 +125,22 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
     const SceneView& scene_view = renderer.renderer.camera.unjittered_view;
 
     if(settings.show_editor_entities) {
-        const EditorPass ed = EditorPass::create(framegraph, scene_view, renderer.depth, renderer.final);
+        const EditorPass ed = EditorPass::create(framegraph, scene_view, SceneVisibilitySubPass::create(scene_view), renderer.depth, renderer.final);
         renderer.depth = ed.depth;
         renderer.final = ed.color;
     }
 
     if(settings.show_selection) {
+        const IdBufferPass id_pass = IdBufferPass::create(
+            framegraph,
+            CameraBufferPass::create_no_jitter(framegraph, scene_view),
+            SceneVisibilitySubPass::from_entities(highlighted_entities(scene_view, EditorSelectionRenderFlags::SelectionAndChildren)),
+            size
+        );
+
         auto id_and_depth = [](const auto& pass) { return std::pair{pass.id, pass.depth}; };
-        const IdBufferPass id_pass = IdBufferPass::create(framegraph, scene_view, size, EditorPassFlags::SelectionAndChildren);
         const auto [id, depth] = settings.show_editor_entities
-            ? id_and_depth(EditorPass::create(framegraph, scene_view, id_pass.depth, {}, id_pass.id, EditorPassFlags::SelectionAndChildren))
+            ? id_and_depth(EditorPass::create(framegraph, scene_view, id_pass.scene_pass.visibility, id_pass.depth, {}, id_pass.id))
             : id_and_depth(id_pass);
 
         renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth, id);
