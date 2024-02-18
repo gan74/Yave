@@ -547,6 +547,8 @@ void EngineView::draw_settings_menu() {
 
         ImGui::Checkbox("Enable clamping", &settings.use_clamping);
         ImGui::Checkbox("Enable motion rejection", &settings.use_motion_rejection);
+        ImGui::Checkbox("Enable previous sample matching", &settings.use_previous_matching);
+        ImGui::Checkbox("Enable weighted clamp", &settings.use_weighted_clamp);
 
         ImGui::Separator();
 
