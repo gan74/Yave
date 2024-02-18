@@ -192,14 +192,13 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
     imgui::table_begin_next_row();
 
-    const bool is_child_selected = world.is_parent(world.selected_entity(), id);
     const bool is_selected = world.is_selected(id);
     const bool has_children = world.has_children(id);
 
     const int flags =
         ImGuiTreeNodeFlags_SpanAvailWidth |
         ImGuiTreeNodeFlags_OpenOnArrow |
-        (is_selected || is_child_selected ? ImGuiTreeNodeFlags_Selected : 0) |
+        (is_selected ? ImGuiTreeNodeFlags_Selected : 0) |
         (has_children ? 0 : ImGuiTreeNodeFlags_Leaf)
     ;
 
