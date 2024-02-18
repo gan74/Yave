@@ -48,6 +48,7 @@ static core::Vector<ecs::EntityId> highlighted_entities(const SceneView& scene_v
     if(selection) {
         auto ids = core::Vector<ecs::EntityId>::from_range(world.selected_entities());
         if((flags & EditorSelectionRenderFlags::SelectionAndChildren) != EditorSelectionRenderFlags::None) {
+            y_profile_zone("expanding to selected children");
             for(usize i = 0; i != ids.size(); ++i) {
                 for(const ecs::EntityId child : world.children(ids[i])) {
                     if(!world.is_selected(child)) {

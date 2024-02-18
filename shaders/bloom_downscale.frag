@@ -21,24 +21,27 @@ vec3 karis(vec3 hdr) {
     return hdr * avg;
 }
 
+vec3 max_bright(vec3 a, vec3 b) {
+    return luminance(a) > luminance(b) ? a : b;
+}
+
 void main() {
     const vec2 texel_size = 1.0 / textureSize(in_color, 0);
-    const float x = texel_size.x;
-    const float y = texel_size.y;
 
-    const vec3 a = texture(in_color, in_uv + vec2(-2.0 * x, 2.0 * y)).rgb;
-    const vec3 b = texture(in_color, in_uv + vec2(     0.0, 2.0 * y)).rgb;
-    const vec3 c = texture(in_color, in_uv + vec2( 2.0 * x, 2.0 * y)).rgb;
-    const vec3 d = texture(in_color, in_uv + vec2(-2.0 * x,     0.0)).rgb;
+    const vec3 a = texture(in_color, in_uv + vec2(-2.0,  2.0) * texel_size).rgb;
+    const vec3 b = texture(in_color, in_uv + vec2( 0.0,  2.0) * texel_size).rgb;
+    const vec3 c = texture(in_color, in_uv + vec2( 2.0,  2.0) * texel_size).rgb;
+    const vec3 d = texture(in_color, in_uv + vec2(-2.0,  0.0) * texel_size).rgb;
     const vec3 e = texture(in_color, in_uv).rgb;
-    const vec3 f = texture(in_color, in_uv + vec2( 2.0 * x,      0.0)).rgb;
-    const vec3 g = texture(in_color, in_uv + vec2(-2.0 * x, -2.0 * y)).rgb;
-    const vec3 h = texture(in_color, in_uv + vec2(     0.0, -2.0 * y)).rgb;
-    const vec3 i = texture(in_color, in_uv + vec2( 2.0 * x, -2.0 * y)).rgb;
-    const vec3 j = texture(in_color, in_uv + vec2(-x,  y)).rgb;
-    const vec3 k = texture(in_color, in_uv + vec2( x,  y)).rgb;
-    const vec3 l = texture(in_color, in_uv + vec2(-x, -y)).rgb;
-    const vec3 m = texture(in_color, in_uv + vec2( x, -y)).rgb;
+    const vec3 f = texture(in_color, in_uv + vec2( 2.0,  0.0) * texel_size).rgb;
+    const vec3 g = texture(in_color, in_uv + vec2(-2.0, -2.0) * texel_size).rgb;
+    const vec3 h = texture(in_color, in_uv + vec2( 0.0, -2.0) * texel_size).rgb;
+    const vec3 i = texture(in_color, in_uv + vec2( 2.0, -2.0) * texel_size).rgb;
+
+    const vec3 j = texture(in_color, in_uv + vec2(-1.0,  1.0) * texel_size).rgb;
+    const vec3 k = texture(in_color, in_uv + vec2( 1.0,  1.0) * texel_size).rgb;
+    const vec3 l = texture(in_color, in_uv + vec2(-1.0, -1.0) * texel_size).rgb;
+    const vec3 m = texture(in_color, in_uv + vec2( 1.0, -1.0) * texel_size).rgb;
 
     out_color.a = 1.0;
     if(pass == 0) {
