@@ -102,7 +102,7 @@ for proj in projects:
 				continue
 			fullname = root + "/" + file
 			
-			with open(fullname, "r") as f:
+			with open(fullname, "r", encoding="utf-8-sig") as f:
 				content = f.read()
 				new_content = process(content, fullname)
 				fix = try_fix and new_content != content

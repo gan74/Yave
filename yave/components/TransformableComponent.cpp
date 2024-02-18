@@ -29,6 +29,10 @@ namespace yave {
 TransformableComponent::TransformableComponent(const math::Transform<>& transform) : _transform(transform) {
 }
 
+TransformableComponent::~TransformableComponent() {
+    y_debug_assert(_transform_index == u32(-1));
+}
+
 TransformableComponent::TransformableComponent(TransformableComponent&& other) {
     swap(other);
 }

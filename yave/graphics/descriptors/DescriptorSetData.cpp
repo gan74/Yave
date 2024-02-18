@@ -24,6 +24,10 @@ SOFTWARE.
 
 namespace yave {
 
+DescriptorSetData::~DescriptorSetData() {
+    y_debug_assert(!_pool);
+}
+
 DescriptorSetData::DescriptorSetData(DescriptorSetPool* pool, u32 id) : _pool(pool), _index(id) {
 }
 
@@ -48,6 +52,9 @@ bool DescriptorSetData::is_null() const {
 void DescriptorSetData::recycle() {
     y_debug_assert(_pool);
     _pool->recycle(_index);
+
+    _pool = nullptr;
+    _index = 0;
 }
 
 VkDescriptorSetLayout DescriptorSetData::vk_descriptor_set_layout() const {

@@ -30,6 +30,7 @@ namespace yave {
 class DescriptorSetData : NonCopyable {
     public:
         DescriptorSetData() = default;
+        ~DescriptorSetData();
 
         DescriptorSetData(DescriptorSetData&& other);
         DescriptorSetData& operator=(DescriptorSetData&& other);
