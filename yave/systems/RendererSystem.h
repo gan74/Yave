@@ -68,8 +68,7 @@ class RendererSystem : public ecs::System {
                 TransformBuffer _transform_buffer;
                 core::Vector<u32> _free;
 
-                ecs::SparseIdSet _moved;
-                ecs::SparseIdSet _prev_moved;
+                ecs::SparseIdSet _last_moved;
 
                 concurrent::Subscription _transform_destroyed;
 

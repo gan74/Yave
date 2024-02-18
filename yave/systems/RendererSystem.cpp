@@ -77,18 +77,22 @@ bool RendererSystem::TransformManager::alloc_index(const TransformableComponent&
 }
 
 void RendererSystem::TransformManager::tick(bool only_recent) {
-    auto query = only_recent ? _world.query<ecs::Changed<TransformableComponent>>() : _world.query<TransformableComponent>();
+    y_profile();
 
-    if(const usize moved_count = query.size()) {
-        y_profile_msg(fmt_c_str("{} objects moved", moved_count));
+    auto moved_query = only_recent ? _world.query<ecs::Changed<TransformableComponent>>() : _world.query<TransformableComponent>();
 
-        _moved.make_empty();
-        for(ecs::EntityId id : query.ids()) {
-            _moved.insert(id);
-            if(_prev_moved.contains(id)) {
-                _prev_moved.erase(id);
-            }
+    {
+        y_profile_zone("tracking stopped objects");
+        for(const ecs::EntityId id : moved_query.ids()) {
+            _last_moved.erase(id);
         }
+    }
+
+    const usize moved_count = moved_query.size();
+    const usize stopped_count = _last_moved.size();
+    if(const usize update_count = moved_count + stopped_count) {
+        y_profile_msg(fmt_c_str("{} objects moved", moved_count));
+        y_profile_zone("updating transform buffer");
 
         TransformBuffer new_buffer;
         auto realloc_if_needed = [&] {
@@ -99,25 +103,35 @@ void RendererSystem::TransformManager::tick(bool only_recent) {
             }
         };
 
-        // moved_count * 2 because we might push 2 modifications if the transformable has not been allocated
-        auto transform_staging = TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::Staging>(moved_count * 2);
-        auto index_staging = TypedBuffer<u32, BufferUsage::StorageBit, MemoryType::Staging>(moved_count * 2);
+        auto transform_staging = TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::Staging>(update_count);
+        auto index_staging = TypedBuffer<i32, BufferUsage::StorageBit, MemoryType::Staging>(update_count);
 
         u32 index = 0;
         {
             auto transform_mapping = transform_staging.map(MappingAccess::WriteOnly);
             auto index_mapping = index_staging.map(MappingAccess::WriteOnly);
-            for(const auto& [tr] : query.components()) {
+
+            for(const auto& [tr] : moved_query.components()) {
                 realloc_if_needed();
 
                 const bool newly_allocated = alloc_index(tr);
-                for(usize i = 0; i != (newly_allocated ? 2 : 1); ++i) {
-                    transform_mapping[index] = tr.transform();
-                    index_mapping[index] = tr._transform_index;
-                    ++index;
-                }
+                transform_mapping[index] = tr.transform();
+                index_mapping[index] = newly_allocated ? -i32(tr._transform_index) : i32(tr._transform_index);
+                ++index;
+            }
+
+            auto stopped_query = _world.query<TransformableComponent>(_last_moved.ids());
+            for(const auto& [tr] : stopped_query.components()) {
+                realloc_if_needed();
+
+                y_debug_assert(tr._transform_index != u32(-1));
+                transform_mapping[index] = tr.transform();
+                index_mapping[index] = -i32(tr._transform_index);
+                ++index;
             }
         }
+
+        y_debug_assert(index <= update_count);
 
         {
             ComputeCmdBufferRecorder recorder = create_disposable_compute_cmd_buffer();
@@ -139,11 +153,11 @@ void RendererSystem::TransformManager::tick(bool only_recent) {
 
 
     {
-        auto previously_moved = _world.query<TransformableComponent>(_prev_moved.ids());
-        for(const auto& [tr] : previously_moved.components()) {
-            free_index(tr);
+        y_profile_zone("gathering moved objets for next frame");
+        _last_moved.make_empty();
+        for(const ecs::EntityId id : moved_query.ids()) {
+            _last_moved.insert(id);
         }
-        std::swap(_prev_moved, _moved);
     }
 }
 
@@ -176,7 +190,7 @@ void RendererSystem::setup() {
 }
 
 void RendererSystem::tick() {
-    _transform_manager->tick(false);
+    _transform_manager->tick(true);
 }
 
 RendererSystem::RenderFunc RendererSystem::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const {
