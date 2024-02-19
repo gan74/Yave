@@ -24,9 +24,7 @@ SOFTWARE.
 
 #include <yave/systems/AABBUpdateSystem.h>
 
-#include <yave/scene/OctreeData.h>
 #include <yave/meshes/AABB.h>
-
 
 #include <y/reflect/reflect.h>
 

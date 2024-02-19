@@ -22,15 +22,16 @@ SOFTWARE.
 #ifndef YAVE_SCENE_OCTREENODE_H
 #define YAVE_SCENE_OCTREENODE_H
 
-#include "OctreeData.h"
-
 #include <yave/meshes/AABB.h>
+
+#include <yave/ecs/ecs.h>
+
+#include <y/core/Vector.h>
 
 #include <array>
 #include <memory>
 
 namespace yave {
-
 
 class OctreeNode : NonMovable {
 

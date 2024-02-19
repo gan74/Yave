@@ -26,6 +26,8 @@ SOFTWARE.
 
 namespace yave {
 
+struct OctreeData {};
+
 class Octree : NonMovable {
 
     public:

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2024 Grégoire Angerand
+Copyright (c) 2016-2023 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -116,7 +116,6 @@ class MeshDrawBuffers;
 class MeshDrawData;
 class MeshVertexStreams;
 class Octree;
-class OctreeData;
 class OctreeNode;
 class OctreeSystem;
 class PhysicalDevice;
@@ -219,11 +218,11 @@ struct LoadableComponentTypeInfo;
 struct MeshDrawCommand;
 struct Mip;
 struct Monitor;
+struct OctreeData;
 struct OneShotScript;
 struct PackedVertex;
 struct Plane;
 struct Pool;
-struct QueryResult;
 struct Region;
 struct RendererSettings;
 struct ResourceCreateInfo;
@@ -233,13 +232,13 @@ struct RunOnceResult;
 struct SSAOPass;
 struct SSAOSettings;
 struct SceneRenderSubPass;
+struct SceneVisibilitySubPass;
 struct Script;
 struct ShadowMapPass;
 struct ShadowMapSettings;
 struct SkeletonData;
 struct SkinWeights;
 struct SkinnedVertex;
-struct StaticMeshRenderSubPass;
 struct SubMesh;
 struct TAAPass;
 struct TAASettings;
