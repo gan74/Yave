@@ -78,7 +78,7 @@ class TransformableComponent final {
 
 
     private:
-        friend class RendererSystem;
+        friend class TransformableManagerSystem;
 
         mutable u32 _transform_index = u32(-1);
 };

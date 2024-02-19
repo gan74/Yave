@@ -316,7 +316,7 @@ class Query : NonCopyable {
             return _ids;
         }
 
-        core::Vector<EntityId> ids() && {
+        core::Vector<EntityId> to_ids() && {
             return std::move(_ids);
         }
 

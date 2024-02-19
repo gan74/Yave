@@ -337,6 +337,13 @@ class SparseComponentSetBase : public SparseIdSetBase {
             _dense.set_min_capacity(cap);
         }
 
+
+        void make_empty() {
+            _values.make_empty();
+            _dense.make_empty();
+            _sparse.make_empty();
+        }
+
         void clear() {
             _values.clear();
             _dense.clear();

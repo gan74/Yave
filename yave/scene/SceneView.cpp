@@ -65,7 +65,7 @@ core::Vector<ecs::EntityId> SceneView::visible_entities() const {
     }
 
     const std::array tags = {ecs::tags::not_hidden};
-    return _world->query(visible, tags).ids();
+    return _world->query(visible, tags).to_ids();
 }
 
 }

@@ -109,14 +109,16 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         };
         {
             std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_LIGHTBULB);
-            for(ecs::EntityId id : world.query<PointLightComponent>(*visibility.visible).ids()) {
+            auto query = world.query<PointLightComponent>(*visibility.visible);
+            for(ecs::EntityId id : query.ids()) {
                 push_entity(id);
             }
         }
 
         {
             std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_VIDEO);
-            for(ecs::EntityId id : world.query<SpotLightComponent>(*visibility.visible).ids()) {
+            auto query = world.query<SpotLightComponent>(*visibility.visible);
+            for(ecs::EntityId id : query.ids()) {
                 push_entity(id);
             }
         }

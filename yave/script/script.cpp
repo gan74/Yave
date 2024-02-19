@@ -131,7 +131,7 @@ void bind_ecs_types(sol::state_view state) {
             for(auto v : va) {
                 tags.emplace_back(v.as<std::string_view>());
             }
-            return world.query<>(tags).ids();
+            return world.query<>(tags).to_ids();
         };
 
         type["component_type_names"] = [](const ecs::EntityWorld& world) -> core::Vector<std::string_view> {

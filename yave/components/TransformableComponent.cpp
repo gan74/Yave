@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "TransformableComponent.h"
 
-#include <yave/scene/OctreeNode.h>
+#include <yave/ecs/ComponentInspector.h>
 
 namespace yave {
 

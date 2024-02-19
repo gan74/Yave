@@ -45,38 +45,8 @@ enum class PassType {
 
 class RendererSystem : public ecs::System {
     public:
-        class TransformManager : NonMovable {
-            public:
-                static constexpr BufferUsage buffer_usage = BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit;
-                using TransformBuffer = TypedBuffer<uniform::TransformableData, buffer_usage>;
-
-
-                TypedSubBuffer<uniform::TransformableData, BufferUsage::StorageBit> transform_buffer() const {
-                    return _transform_buffer;
-                }
-
-                TransformManager(ecs::EntityWorld& world);
-                ~TransformManager();
-
-                void tick(bool only_recent);
-
-            private:
-                TransformBuffer alloc_buffer(usize size);
-                void free_index(const TransformableComponent& tr);
-                bool alloc_index(const TransformableComponent& tr);
-
-                TransformBuffer _transform_buffer;
-                core::Vector<u32> _free;
-
-                ecs::SparseIdSet _last_moved;
-
-                concurrent::Subscription _transform_destroyed;
-
-                ecs::EntityWorld& _world;
-        };
-
-
-
+        static constexpr BufferUsage buffer_usage = BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit;
+        using TransformBuffer = TypedBuffer<uniform::TransformableData, buffer_usage>;
 
 
         using RenderFunc = std::function<void(RenderPassRecorder& render_pass, const FrameGraphPass* pass)>;
@@ -99,9 +69,6 @@ class RendererSystem : public ecs::System {
         };
 
 
-
-
-
         RendererSystem();
 
         void destroy() override;
@@ -110,8 +77,9 @@ class RendererSystem : public ecs::System {
 
         RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const;
 
-        auto transform_buffer() const  {
-            return _transform_manager->transform_buffer();
+
+        TypedSubBuffer<uniform::TransformableData, BufferUsage::StorageBit> transform_buffer() const  {
+            return _transform_buffer;
         }
 
         template<typename T>
@@ -122,7 +90,9 @@ class RendererSystem : public ecs::System {
         }
 
     private:
-        std::unique_ptr<TransformManager> _transform_manager;
+        void update_transform_buffer(bool only_recent);
+
+        TransformBuffer _transform_buffer;
         core::Vector<std::unique_ptr<Renderer>> _renderers;
 
 };
