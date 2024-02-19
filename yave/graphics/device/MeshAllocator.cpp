@@ -115,6 +115,8 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
         }
 
         {
+            const auto region = recorder.region("Mesh upload");
+
             const auto attribs_sub_buffers = _mesh_buffers->_attrib_buffers;
             const u64 buffer_elem_count = u64(_mesh_buffers->_vertex_count);
             {

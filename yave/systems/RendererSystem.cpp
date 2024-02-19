@@ -136,6 +136,7 @@ void RendererSystem::TransformManager::tick(bool only_recent) {
         {
             ComputeCmdBufferRecorder recorder = create_disposable_compute_cmd_buffer();
             {
+                const auto region = recorder.region("Transform update");
                 if(!new_buffer.is_null()) {
                     if(!_transform_buffer.is_null()) {
                         recorder.unbarriered_copy(_transform_buffer, SubBuffer<BufferUsage::TransferDstBit>(new_buffer, _transform_buffer.byte_size(), 0));
