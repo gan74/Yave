@@ -29,11 +29,6 @@ namespace yave {
 class Octree : NonMovable {
 
     public:
-        struct QueryResult {
-            core::Vector<ecs::EntityId> inside;
-            core::Vector<ecs::EntityId> intersect;
-        };
-
         Octree();
 
         OctreeNode* insert(ecs::EntityId id, const AABB& bbox);
@@ -41,7 +36,7 @@ class Octree : NonMovable {
         const OctreeNode& root() const;
 
         core::Vector<ecs::EntityId> all_entities() const;
-        QueryResult find_entities(const Frustum& frustum, float far_dist = -1.0f) const;
+        core::Vector<ecs::EntityId> find_entities(const Frustum& frustum, float far_dist = -1.0f) const;
 
     private:
         friend class OctreeSystem;

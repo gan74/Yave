@@ -41,7 +41,6 @@ class OctreeNode : NonMovable {
     static constexpr float min_node_extent = 1.0f;
 
     static constexpr float overlap_extent_multiplier = 1.25f;
-    static constexpr float full_extent_multiplier = overlap_extent_multiplier * 2.0f;
 
     public:
         OctreeNode() = default;
@@ -61,7 +60,7 @@ class OctreeNode : NonMovable {
         bool is_empty() const;
 
         core::Span<std::unique_ptr<OctreeNode>> children() const;
-        core::Span<ecs::EntityId> entities() const;
+        core::Span<std::pair<ecs::EntityId, AABB>> entities() const;
 
         Y_TODO(Make thread safe)
         void remove(ecs::EntityId id);
@@ -70,7 +69,7 @@ class OctreeNode : NonMovable {
         friend class Octree;
         friend class OctreeSystem;
 
-        usize entity_count() const; // debug
+        usize all_entity_count() const; // debug
 
 
     private:
@@ -83,7 +82,7 @@ class OctreeNode : NonMovable {
         Y_TODO(pool allocs)
         std::array<std::unique_ptr<OctreeNode>, 8> _children;
 
-        core::Vector<ecs::EntityId> _entities;
+        core::Vector<std::pair<ecs::EntityId, AABB>> _entities;
 
         OctreeData* _data = nullptr;
 };

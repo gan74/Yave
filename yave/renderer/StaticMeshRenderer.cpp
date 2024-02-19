@@ -120,6 +120,8 @@ static void render_static_meshes_id(Q query,
 
 
 StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const {
+    y_profile();
+
     const ecs::EntityWorld* world = &view.world();
     const RendererSystem* renderer = parent();
 

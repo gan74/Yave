@@ -29,26 +29,36 @@ SOFTWARE.
 namespace yave {
 
 static void push_all_entities(core::Vector<ecs::EntityId>& entities, const OctreeNode& node) {
-    for(const ecs::EntityId id : node.entities()) {
-        entities << id;
+    for(const auto& p : node.entities()) {
+        entities << p.first;
     }
+
     for(const auto& child : node.children()) {
         push_all_entities(entities, *child);
     }
 }
 
-static void visit_node(Octree::QueryResult& query, const Frustum& frustum, float far_dist, const OctreeNode& node) {
+static void visit_node(core::Vector<ecs::EntityId>& query, const Frustum& frustum, float far_dist, const OctreeNode& node) {
     switch(frustum.intersection(node.aabb(), far_dist)) {
         case Intersection::Outside:
         break;
 
         case Intersection::Inside:
-            push_all_entities(query.inside, node);
+            push_all_entities(query, node);
         break;
 
         case Intersection::Intersects:
-            for(const ecs::EntityId id : node.entities()) {
-                query.intersect << id;
+            for(const auto& p : node.entities()) {
+                switch(frustum.intersection(p.second, far_dist)) {
+                    case Intersection::Inside:
+                    case Intersection::Intersects:
+                        query << p.first;
+                    break;
+
+                    default:
+                    break;
+                }
+
             }
             for(const auto& child : node.children()) {
                 visit_node(query, frustum, far_dist, *child);
@@ -57,7 +67,7 @@ static void visit_node(Octree::QueryResult& query, const Frustum& frustum, float
     }
 }
 
-Octree::Octree() : _root(std::make_unique<OctreeNode>(math::Vec3(), 1024.0f, &_data)) {
+Octree::Octree() : _root(std::make_unique<OctreeNode>(math::Vec3(), 8.0f, &_data)) {
 }
 
 OctreeNode* Octree::insert(ecs::EntityId id, const AABB& bbox) {
@@ -82,12 +92,10 @@ core::Vector<ecs::EntityId> Octree::all_entities() const {
     return entities;
 }
 
-Octree::QueryResult Octree::find_entities(const Frustum& frustum, float far_dist) const {
+core::Vector<ecs::EntityId> Octree::find_entities(const Frustum& frustum, float far_dist) const {
     y_profile();
 
-    QueryResult query = {};
-    query.inside.set_min_capacity(1024);
-    query.intersect.set_min_capacity(1024);
+    auto query = core::Vector<ecs::EntityId>::with_capacity(1024);
     visit_node(query, frustum, far_dist, *_root);
     return query;
 }
@@ -98,7 +106,7 @@ void Octree::audit() const {
     core::Vector<ecs::EntityId> all = all_entities();
     y_profile_dyn_zone(fmt_c_str("auditing {} entities", all.size()));
     std::sort(all.begin(), all.end());
-    y_debug_assert(_root->entity_count() == all.size());
+    y_debug_assert(_root->all_entity_count() == all.size());
     y_debug_assert(std::unique(all.begin(), all.end()) == all.end());
 #endif
 }

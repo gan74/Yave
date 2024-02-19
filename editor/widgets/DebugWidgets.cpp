@@ -96,18 +96,35 @@ class CullingDebug : public Widget {
     protected:
         void on_gui() override {
             const EditorWorld& world = current_world();
+            const auto& transformables = world.component_set<TransformableComponent>();
 
-            core::Vector<ecs::EntityId> visible;
-            if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-                visible = octree_system->find_entities(scene_view().camera());
+            const usize total = transformables.size();
+            const usize octree_visible = scene_view().visible_entities().size();
+
+            usize visible_precise = 0;
+            {
+                y_profile_zone("precise culling");
+                const Frustum frustum = scene_view().camera().frustum();
+                for(const TransformableComponent& tr : transformables.values()) {
+                    switch(frustum.intersection(tr.global_aabb())) {
+                        case Intersection::Inside:
+                        case Intersection::Intersects:
+                            ++visible_precise;
+                        break;
+
+                        default:
+                        break;
+                    }
+                }
             }
 
-            const usize in_frustum = visible.size();
-            const usize total = world.component_set<TransformableComponent>().size();
 
-            ImGui::Text("%u entities in octree", u32(total));
-            ImGui::Text("%u entities in frustum", u32(in_frustum));
-            ImGui::Text("%u%% culled", u32(float(total - in_frustum) / float(total) * 100.0f));
+
+            ImGui::Text("%u transformables in world", u32(total));
+            ImGui::Text("%u transformables visible in octree", u32(octree_visible));
+            ImGui::Text("%u transformables visible (precise)", u32(visible_precise));
+            ImGui::Separator();
+            ImGui::Text("%u%% culled by octree", u32(float(total - octree_visible) / float(total) * 100.0f));
         }
 };
 

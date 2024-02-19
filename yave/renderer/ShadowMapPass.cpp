@@ -26,7 +26,6 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 
-#include <yave/systems/OctreeSystem.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
@@ -204,12 +203,7 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene)
         }
     };
 
-    if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-        const core::Vector<ecs::EntityId> visible = octree_system->find_entities(scene.camera());
-        collect_spots(world.query<TransformableComponent, SpotLightComponent>(visible, tags));
-    } else {
-        collect_spots(world.query<TransformableComponent, SpotLightComponent>(tags));
-    }
+    collect_spots(world.query<TransformableComponent, SpotLightComponent>(scene.visible_entities(), tags));
 
     return shadow_casters;
 }
@@ -235,6 +229,8 @@ static float total_occupancy(const ShadowCastingLights& lights) {
 
 
 ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings) {
+    y_profile();
+
     const auto region = framegraph.region("Shadows");
 
     static constexpr ImageFormat shadow_format = VK_FORMAT_D32_SFLOAT;

@@ -58,11 +58,9 @@ static core::Vector<ecs::EntityId> highlighted_entities(const SceneView& scene_v
             }
         }
         return ids;
-    } else if(const OctreeSystem* octree_system = world.find_system<OctreeSystem>()) {
-        return octree_system->find_entities(scene_view.camera());
     }
 
-    return core::Vector<ecs::EntityId>::from_range(world.all_entities());
+    return scene_view.visible_entities();
 }
 
 

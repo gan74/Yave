@@ -54,7 +54,7 @@ OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
     y_debug_assert(id.is_valid());
     y_debug_assert(contains(bbox));
 
-    y_debug_assert(std::find(_entities.begin(), _entities.end(), id) == _entities.end());
+    y_debug_assert(std::find_if(_entities.begin(), _entities.end(), [=](const auto& e) { return e.first == id; }) == _entities.end());
 
     const bool split_small = split_small_object && bbox.half_extent().length() < _half_extent / min_object_size_ratio;
     const bool should_insert_into_children = _entities.size() >= max_entities_per_node || split_small;
@@ -69,13 +69,13 @@ OctreeNode* OctreeNode::insert(ecs::EntityId id, const AABB& bbox) {
         }
     }
 
-    _entities << id;
+    _entities.emplace_back(id, bbox);
 
     return this;
 }
 
 AABB OctreeNode::aabb() const {
-    return AABB::from_center_extent(_center, math::Vec3(_half_extent * full_extent_multiplier));
+    return AABB::from_center_extent(_center, math::Vec3(_half_extent * 2.0f * overlap_extent_multiplier));
 }
 
 AABB OctreeNode::strict_aabb() const {
@@ -113,13 +113,13 @@ core::Span<std::unique_ptr<OctreeNode>> OctreeNode::children() const {
         : core::Span<std::unique_ptr<OctreeNode>>();
 }
 
-core::Span<ecs::EntityId> OctreeNode::entities() const {
+core::Span<std::pair<ecs::EntityId, AABB>> OctreeNode::entities() const {
     return _entities;
 }
 
 void OctreeNode::remove(ecs::EntityId id) {
     y_debug_assert(id.is_valid());
-    const auto it = std::find(_entities.begin(), _entities.end(), id);
+    const auto it = std::find_if(_entities.begin(), _entities.end(), [=](const auto& e) { return e.first == id; });
     y_debug_assert(it != _entities.end());
     _entities.erase_unordered(it);
 }
@@ -139,6 +139,8 @@ void OctreeNode::build_children() {
         _children[i] = std::make_unique<OctreeNode>(_center + offset, child_extent, _data);
         y_debug_assert(contains(_children[i]->aabb()));
     }
+
+    Y_TODO(insert entities in children)
 }
 
 usize OctreeNode::children_index(const math::Vec3& pos) {
@@ -151,10 +153,10 @@ usize OctreeNode::children_index(const math::Vec3& pos) {
     return index;
 }
 
-usize OctreeNode::entity_count() const {
+usize OctreeNode::all_entity_count() const {
     usize count = _entities.size();
     for(const auto& child : children()) {
-        count += child->entity_count();
+        count += child->all_entity_count();
     }
     return count;
 }

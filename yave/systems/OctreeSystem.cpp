@@ -92,15 +92,7 @@ void OctreeSystem::run_tick(bool only_recent) {
 }
 
 core::Vector<ecs::EntityId> OctreeSystem::find_entities(const Camera& camera) const {
-    auto visible = _tree.find_entities(camera.frustum(), camera.far_plane_dist());
-
-    core::Vector<ecs::EntityId> entities;
-    entities.swap(visible.inside);
-
-    Y_TODO(do intersection tests)
-    entities.push_back(visible.intersect.begin(), visible.intersect.end());
-
-    return entities;
+    return _tree.find_entities(camera.frustum(), camera.far_plane_dist());
 }
 
 const OctreeNode& OctreeSystem::root() const {

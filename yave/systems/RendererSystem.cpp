@@ -195,6 +195,8 @@ void RendererSystem::tick() {
 }
 
 RendererSystem::RenderFunc RendererSystem::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const {
+    y_profile();
+
     if(ids.is_empty()) {
         return {};
     }
