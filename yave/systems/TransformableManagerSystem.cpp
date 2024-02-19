@@ -67,7 +67,7 @@ const TransformableManagerSystem::OctreeNode& TransformableManagerSystem::Octree
     return _nodes[data.parent_index];
 }
 
-void TransformableManagerSystem::Octree::insert(ecs::EntityId id, const TransformableComponent& tr) {
+void TransformableManagerSystem::Octree::insert_or_update(ecs::EntityId id, const TransformableComponent& tr) {
     _datas.set_min_size(tr._transform_index + 1);
 
     TransformData& data = _datas[tr._transform_index];
@@ -85,12 +85,13 @@ void TransformableManagerSystem::Octree::insert(ecs::EntityId id, const Transfor
     }
 
     // Avoid invalidation during iteration if we add children
-    _nodes.set_min_capacity(_nodes.size() + 8);
+    const usize max_realloc = split_threshold * split_threshold + 1;
+    _nodes.set_min_capacity(_nodes.size() + max_realloc);
 
     while(!_nodes[0].aabb().contains(data.global_aabb)) {
         recreate_root(data.global_aabb.center());
 
-        _nodes.set_min_capacity(_nodes.size() + 8);
+        _nodes.set_min_capacity(_nodes.size() + max_realloc);
     }
 
     insert_iterative(0, tr._transform_index);
@@ -130,6 +131,7 @@ void TransformableManagerSystem::Octree::insert_iterative(u32 node_index, u32 da
         const bool should_split = node.children_index == u32(-1) && node.transforms.size() >= split_threshold;
         if(should_split && node.extent > min_node_extent) {
             split(node_index);
+            reinsert(node_index);
         }
 
         if(node.children_index != u32(-1)) {
@@ -172,6 +174,23 @@ void TransformableManagerSystem::Octree::split(u32 node_index) {
             child.extent = child_extent;
         }
         y_debug_assert(node.aabb().contains(child.aabb()));
+    }
+}
+
+void TransformableManagerSystem::Octree::reinsert(u32 node_index) {
+    OctreeNode& node = _nodes[node_index];
+
+    for(usize i = 0; i != node.transforms.size(); ++i) {
+        const u32 index = node.transforms[i];
+        TransformData& data = _datas[index];
+        const AABB aabb = data.global_aabb;
+        const u32 child_index = node.children_index + compute_child_index(node.center, aabb.center());
+        if(_nodes[child_index].aabb().contains(aabb)) {
+            data.parent_index = u32(-1);
+            insert_iterative(child_index, index);
+            node.transforms.erase_unordered(node.transforms.begin() + i);
+            --i;
+        }
     }
 }
 
@@ -313,7 +332,7 @@ void TransformableManagerSystem::run_tick(bool only_recent) {
         _moved.insert(id, alloc_index(tr));
         _stopped.erase(id);
 
-        _octree.insert(id, tr);
+        _octree.insert_or_update(id, tr);
     }
 }
 

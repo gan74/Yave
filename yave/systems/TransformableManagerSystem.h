@@ -57,7 +57,7 @@ class TransformableManagerSystem : public ecs::System {
 
             Octree();
 
-            void insert(ecs::EntityId id, const TransformableComponent& tr);
+            void insert_or_update(ecs::EntityId id, const TransformableComponent& tr);
             void remove(const TransformableComponent& tr);
 
             const OctreeNode& parent_node(const TransformableComponent& tr) const;
@@ -67,6 +67,7 @@ class TransformableManagerSystem : public ecs::System {
         private:
             void insert_iterative(u32 node_index, u32 data_index);
             void split(u32 node_index);
+            void reinsert(u32 node_index);
             void recreate_root(const math::Vec3& toward);
 
             void visit_node(core::Vector<ecs::EntityId>& entities, u32 node_index, const Frustum& frustum, float far_dist) const;
