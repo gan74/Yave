@@ -26,12 +26,196 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
+
 namespace yave {
+
+static u32 compute_child_index(const math::Vec3& center, const math::Vec3& pos) {
+    u32 index = 0;
+    for(u32 i = 0; i != 3; ++i) {
+        if(pos[i] > center[i]) {
+            index += (1u << i);
+        }
+    }
+    return index;
+}
+
+
+
+
+AABB TransformableManagerSystem::OctreeNode2::aabb() const {
+    return AABB::from_center_extent(center, math::Vec3(extent * Octree::margin_factor));
+}
+
+
+
+TransformableManagerSystem::Octree::Octree() {
+    _nodes.emplace_back();
+}
+
+
+const TransformableManagerSystem::OctreeNode2& TransformableManagerSystem::Octree::parent_node(const TransformableComponent& tr) const {
+    y_debug_assert(tr._transform_index != u32(-1));
+    const TransformData& data = _datas[tr._transform_index];
+    y_debug_assert(data.parent_index != u32(-1));
+    return _nodes[data.parent_index];
+}
+
+void TransformableManagerSystem::Octree::insert(const TransformableComponent& tr) {
+    _datas.set_min_size(tr._transform_index + 1);
+
+    TransformData& data = _datas[tr._transform_index];
+    data.global_aabb = tr.global_aabb();
+
+    if(data.parent_index != u32(-1)) {
+        if(const OctreeNode2& parent = _nodes[data.parent_index]; parent.aabb().contains(data.global_aabb)) {
+           return;
+        }
+        remove(tr);
+    }
+
+    // Avoid invalidation during iteration if we add children
+    _nodes.set_min_capacity(_nodes.size() + 8);
+
+    while(!_nodes[0].aabb().contains(data.global_aabb)) {
+        recreate_root(data.global_aabb.center());
+
+        _nodes.set_min_capacity(_nodes.size() + 8);
+    }
+
+    insert_iterative(0, tr._transform_index);
+    y_debug_assert(data.parent_index != u32(-1));
+}
+
+void TransformableManagerSystem::Octree::remove(const TransformableComponent& tr) {
+    y_profile();
+
+    const u32 index = tr._transform_index;
+
+    TransformData& data = _datas[index];
+    y_debug_assert(data.parent_index != u32(-1));
+
+    OctreeNode2& node = _nodes[data.parent_index];
+    const auto it = std::find(node.transforms.begin(), node.transforms.end(), index);
+    y_debug_assert(it != node.transforms.end());
+    node.transforms.erase_unordered(it);
+
+    data.parent_index = u32(-1);
+}
+
+
+void TransformableManagerSystem::Octree::insert_iterative(u32 node_index, u32 data_index) {
+    y_profile();
+
+    TransformData& data = _datas[data_index];
+    const AABB aabb = data.global_aabb;
+
+    for(;;) {
+        OctreeNode2& node = _nodes[node_index];
+
+        y_debug_assert(data.parent_index == u32(-1));
+        y_debug_assert(node.aabb().contains(aabb));
+
+        const bool should_split = node.children_index == u32(-1) && node.transforms.size() >= split_threshold;
+        if(should_split && node.extent > min_node_extent) {
+            split(node_index);
+        }
+
+        if(node.children_index != u32(-1)) {
+            const u32 child_index = node.children_index + compute_child_index(node.center, aabb.center());
+            if(_nodes[child_index].aabb().contains(aabb)) {
+                node_index = child_index;
+                continue;
+            }
+        }
+
+        node.transforms << data_index;
+        data.parent_index = u32(node_index);
+        break;
+    }
+}
+
+void TransformableManagerSystem::Octree::split(u32 node_index) {
+    y_profile();
+
+    OctreeNode2& node = _nodes[node_index];
+
+    y_debug_assert(node.children_index == u32(-1));
+
+    node.children_index = u32(_nodes.size());
+    _nodes.set_min_size(_nodes.size() + 8);
+
+    y_debug_assert(&node == &_nodes[node_index]);
+
+    const float child_extent = node.extent * 0.5f;
+    for(usize i = 0; i != 8; ++i) {
+        const math::Vec3 offset = math::Vec3(
+            (i & 0x01 ? child_extent : -child_extent),
+            (i & 0x02 ? child_extent : -child_extent),
+            (i & 0x04 ? child_extent : -child_extent)
+        ) * 0.5f;
+
+        OctreeNode2& child = _nodes[node.children_index + i];
+        {
+            child.center = node.center + offset;
+            child.extent = child_extent;
+        }
+        y_debug_assert(node.aabb().contains(child.aabb()));
+    }
+}
+
+void TransformableManagerSystem::Octree::recreate_root(const math::Vec3& toward) {
+    y_profile();
+
+    OctreeNode2& root = _nodes[0];
+
+    [[maybe_unused]]
+    const AABB orig_aabb = AABB::from_center_extent(root.center, math::Vec3(root.extent));
+    const u32 children_index = root.children_index;
+
+    const usize index = compute_child_index(root.center, toward);
+    const float child_extent = root.extent;
+    const math::Vec3 parent_offset = math::Vec3(
+        (index & 0x01 ? child_extent : -child_extent),
+        (index & 0x02 ? child_extent : -child_extent),
+        (index & 0x04 ? child_extent : -child_extent)
+    ) * 0.5f;
+
+    {
+        root.center += parent_offset;
+        root.extent *= 2.0f;
+        root.children_index = u32(-1);
+    }
+
+    split(0);
+
+    y_debug_assert(root.children_index != u32(-1));
+
+    const u32 child_index = root.children_index + u32(7 - index);
+    OctreeNode2& child = _nodes[child_index];
+
+    y_debug_assert(child.aabb().contains(orig_aabb));
+
+    {
+        child.transforms.swap(root.transforms);
+        child.children_index = children_index;
+
+        for(const u32 data_index : child.transforms) {
+            _datas[data_index].parent_index = u32(child_index);
+        }
+    }
+
+    y_debug_assert(std::all_of(child.transforms.begin(), child.transforms.end(), [&](u32 index) {
+        return child.aabb().contains(_datas[index].global_aabb);
+    }));
+}
+
+
 
 TransformableManagerSystem::TransformableManagerSystem() : ecs::System("TransformableManagerSystem") {
 }
 
 void TransformableManagerSystem::destroy() {
+    _octree = {};
     _transform_destroyed.disconnect();
     auto query = world().query<TransformableComponent>();
     for(const auto& [tr] : query.components()) {
@@ -63,6 +247,8 @@ void TransformableManagerSystem::run_tick(bool only_recent) {
         const auto& [tr] = comp;
         _moved.insert(id, alloc_index(tr));
         _stopped.erase(id);
+
+        _octree.insert(tr);
     }
 }
 
@@ -92,13 +278,13 @@ TransformableManagerSystem::TransformIndex TransformableManagerSystem::alloc_ind
     };
 }
 
-
 u32 TransformableManagerSystem::transform_count() const {
     return _max_index;
 }
 
-
-
+AABB TransformableManagerSystem::parent_node_aabb(const TransformableComponent& tr) const {
+    return _octree.parent_node(tr).aabb();
+}
 
 }
 

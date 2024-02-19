@@ -41,6 +41,7 @@ SOFTWARE.
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/systems/OctreeSystem.h>
+#include <yave/systems/TransformableManagerSystem.h>
 
 #include <yave/utils/DirectDraw.h>
 
@@ -186,12 +187,22 @@ static void render_selection_aabb(DirectDrawPrimitive* primitive, const SceneVie
             primitive->add_box(tr->global_aabb());
         }
 
-        if(const OctreeNode* node = tr->octree_node(); draw_octree && node) {
-            const u32 color = primitive->color();
-            y_defer(primitive->set_color(color));
+        if(draw_octree) {
+            if(const OctreeNode* node = tr->octree_node()) {
+                const u32 color = primitive->color();
+                y_defer(primitive->set_color(color));
 
-            primitive->set_color(math::Vec3(0, 1, 0));
-            primitive->add_box(node->aabb());
+                primitive->set_color(math::Vec3(0, 1, 0));
+                primitive->add_box(node->aabb());
+            }
+
+            if(const TransformableManagerSystem* tr_manager = world.find_system<TransformableManagerSystem>()) {
+                const u32 color = primitive->color();
+                y_defer(primitive->set_color(color));
+
+                primitive->set_color(math::Vec3(1, 0, 0));
+                primitive->add_box(tr_manager->parent_node_aabb(*tr));
+            }
         }
     }
 }
