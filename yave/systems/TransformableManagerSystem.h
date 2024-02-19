@@ -32,7 +32,7 @@ SOFTWARE.
 namespace yave {
 
 class TransformableManagerSystem : public ecs::System {
-    struct OctreeNode2 : NonCopyable {
+    struct OctreeNode : NonCopyable {
         math::Vec3 center;
         float extent = 16.0f;
 
@@ -44,6 +44,7 @@ class TransformableManagerSystem : public ecs::System {
 
     struct TransformData {
         u32 parent_index = u32(-1);
+        ecs::EntityId id;
         AABB global_aabb;
 
     };
@@ -56,18 +57,22 @@ class TransformableManagerSystem : public ecs::System {
 
             Octree();
 
-            void insert(const TransformableComponent& tr);
+            void insert(ecs::EntityId id, const TransformableComponent& tr);
             void remove(const TransformableComponent& tr);
 
-            const OctreeNode2& parent_node(const TransformableComponent& tr) const;
+            const OctreeNode& parent_node(const TransformableComponent& tr) const;
+
+            core::Vector<ecs::EntityId> find_visible(const Frustum& frustum, float far_dist) const;
 
         private:
             void insert_iterative(u32 node_index, u32 data_index);
             void split(u32 node_index);
             void recreate_root(const math::Vec3& toward);
 
+            void visit_node(core::Vector<ecs::EntityId>& entities, u32 node_index, const Frustum& frustum, float far_dist) const;
+            void push_all_entities(core::Vector<ecs::EntityId>& entities, u32 node_index) const;
 
-            core::Vector<OctreeNode2> _nodes;
+            core::Vector<OctreeNode> _nodes;
             core::Vector<TransformData> _datas;
     };
 
@@ -88,6 +93,8 @@ class TransformableManagerSystem : public ecs::System {
 
         u32 transform_count() const;
 
+
+        core::Vector<ecs::EntityId> find_visible(const Frustum& frustum, float far_dist) const;
         AABB parent_node_aabb(const TransformableComponent& tr) const;
 
         const auto& moved() const {

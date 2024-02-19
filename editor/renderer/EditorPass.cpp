@@ -40,7 +40,6 @@ SOFTWARE.
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
-#include <yave/systems/OctreeSystem.h>
 #include <yave/systems/TransformableManagerSystem.h>
 
 #include <yave/utils/DirectDraw.h>
@@ -188,14 +187,6 @@ static void render_selection_aabb(DirectDrawPrimitive* primitive, const SceneVie
         }
 
         if(draw_octree) {
-            if(const OctreeNode* node = tr->octree_node()) {
-                const u32 color = primitive->color();
-                y_defer(primitive->set_color(color));
-
-                primitive->set_color(math::Vec3(0, 1, 0));
-                primitive->add_box(node->aabb());
-            }
-
             if(const TransformableManagerSystem* tr_manager = world.find_system<TransformableManagerSystem>()) {
                 const u32 color = primitive->color();
                 y_defer(primitive->set_color(color));
@@ -207,30 +198,6 @@ static void render_selection_aabb(DirectDrawPrimitive* primitive, const SceneVie
     }
 }
 
-static void visit_octree(DirectDrawPrimitive* primitive, const Frustum& frustum, const OctreeNode& node) {
-    if(node.is_empty()) {
-        return;
-    }
-
-    if(frustum.intersection(node.aabb()) == Intersection::Outside) {
-        return;
-    }
-
-    primitive->add_box(node.strict_aabb());
-
-    for(const auto& child : node.children()) {
-        visit_octree(primitive, frustum, *child);
-    }
-}
-
-static void render_octree(DirectDrawPrimitive* primitive,
-                          const SceneView& scene_view) {
-
-    const ecs::EntityWorld& world = scene_view.world();
-    if(const OctreeSystem* octree = world.find_system<OctreeSystem>()) {
-        visit_octree(primitive, scene_view.camera().frustum(), octree->root());
-    }
-}
 
 static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, FrameGraphImageId in, ImageFormat format, const math::Vec2ui& size) {
     if(in.is_valid()) {
@@ -275,10 +242,6 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, con
         {
             if(current_world().selected_entity().is_valid()) {
                 render_selection_aabb(direct.add_primitive("selection"), view);
-            }
-
-            if(app_settings().debug.display_octree) {
-                render_octree(direct.add_primitive("octree"), view);
             }
         }
         direct.render(render_pass, view.camera().view_proj_matrix());

@@ -54,7 +54,6 @@ TransformableComponent& TransformableComponent::operator=(const TransformableCom
 void TransformableComponent::swap(TransformableComponent& other) {
     std::swap(_transform, other._transform);
     std::swap(_aabb, other._aabb);
-    std::swap(_node, other._node);
     std::swap(_transform_index, other._transform_index);
 }
 
@@ -109,10 +108,6 @@ const AABB& TransformableComponent::local_aabb() const {
 
 AABB TransformableComponent::global_aabb() const {
     return to_global(_aabb);
-}
-
-const OctreeNode* TransformableComponent::octree_node() const {
-    return _node;
 }
 
 u32 TransformableComponent::transform_index() const {

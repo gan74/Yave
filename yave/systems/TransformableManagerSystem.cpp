@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "TransformableManagerSystem.h"
 
+#include <yave/camera/Frustum.h>
 #include <yave/components/TransformableComponent.h>
 
 #include <yave/ecs/EntityWorld.h>
@@ -41,8 +42,7 @@ static u32 compute_child_index(const math::Vec3& center, const math::Vec3& pos) 
 
 
 
-
-AABB TransformableManagerSystem::OctreeNode2::aabb() const {
+AABB TransformableManagerSystem::OctreeNode::aabb() const {
     return AABB::from_center_extent(center, math::Vec3(extent * Octree::margin_factor));
 }
 
@@ -52,22 +52,33 @@ TransformableManagerSystem::Octree::Octree() {
     _nodes.emplace_back();
 }
 
+core::Vector<ecs::EntityId> TransformableManagerSystem::Octree::find_visible(const Frustum& frustum, float far_dist) const {
+    y_profile();
 
-const TransformableManagerSystem::OctreeNode2& TransformableManagerSystem::Octree::parent_node(const TransformableComponent& tr) const {
+    auto entities = core::Vector<ecs::EntityId>::with_capacity(_datas.size());
+    visit_node(entities, 0u, frustum, far_dist);
+    return entities;
+}
+
+const TransformableManagerSystem::OctreeNode& TransformableManagerSystem::Octree::parent_node(const TransformableComponent& tr) const {
     y_debug_assert(tr._transform_index != u32(-1));
     const TransformData& data = _datas[tr._transform_index];
     y_debug_assert(data.parent_index != u32(-1));
     return _nodes[data.parent_index];
 }
 
-void TransformableManagerSystem::Octree::insert(const TransformableComponent& tr) {
+void TransformableManagerSystem::Octree::insert(ecs::EntityId id, const TransformableComponent& tr) {
     _datas.set_min_size(tr._transform_index + 1);
 
     TransformData& data = _datas[tr._transform_index];
+
+    y_debug_assert(!data.id.is_valid() || data.id == id);
+
     data.global_aabb = tr.global_aabb();
+    data.id = id;
 
     if(data.parent_index != u32(-1)) {
-        if(const OctreeNode2& parent = _nodes[data.parent_index]; parent.aabb().contains(data.global_aabb)) {
+        if(const OctreeNode& parent = _nodes[data.parent_index]; parent.aabb().contains(data.global_aabb)) {
            return;
         }
         remove(tr);
@@ -94,12 +105,13 @@ void TransformableManagerSystem::Octree::remove(const TransformableComponent& tr
     TransformData& data = _datas[index];
     y_debug_assert(data.parent_index != u32(-1));
 
-    OctreeNode2& node = _nodes[data.parent_index];
+    OctreeNode& node = _nodes[data.parent_index];
     const auto it = std::find(node.transforms.begin(), node.transforms.end(), index);
     y_debug_assert(it != node.transforms.end());
     node.transforms.erase_unordered(it);
 
     data.parent_index = u32(-1);
+    data.id = {};
 }
 
 
@@ -110,7 +122,7 @@ void TransformableManagerSystem::Octree::insert_iterative(u32 node_index, u32 da
     const AABB aabb = data.global_aabb;
 
     for(;;) {
-        OctreeNode2& node = _nodes[node_index];
+        OctreeNode& node = _nodes[node_index];
 
         y_debug_assert(data.parent_index == u32(-1));
         y_debug_assert(node.aabb().contains(aabb));
@@ -137,7 +149,7 @@ void TransformableManagerSystem::Octree::insert_iterative(u32 node_index, u32 da
 void TransformableManagerSystem::Octree::split(u32 node_index) {
     y_profile();
 
-    OctreeNode2& node = _nodes[node_index];
+    OctreeNode& node = _nodes[node_index];
 
     y_debug_assert(node.children_index == u32(-1));
 
@@ -154,7 +166,7 @@ void TransformableManagerSystem::Octree::split(u32 node_index) {
             (i & 0x04 ? child_extent : -child_extent)
         ) * 0.5f;
 
-        OctreeNode2& child = _nodes[node.children_index + i];
+        OctreeNode& child = _nodes[node.children_index + i];
         {
             child.center = node.center + offset;
             child.extent = child_extent;
@@ -166,7 +178,7 @@ void TransformableManagerSystem::Octree::split(u32 node_index) {
 void TransformableManagerSystem::Octree::recreate_root(const math::Vec3& toward) {
     y_profile();
 
-    OctreeNode2& root = _nodes[0];
+    OctreeNode& root = _nodes[0];
 
     [[maybe_unused]]
     const AABB orig_aabb = AABB::from_center_extent(root.center, math::Vec3(root.extent));
@@ -191,7 +203,7 @@ void TransformableManagerSystem::Octree::recreate_root(const math::Vec3& toward)
     y_debug_assert(root.children_index != u32(-1));
 
     const u32 child_index = root.children_index + u32(7 - index);
-    OctreeNode2& child = _nodes[child_index];
+    OctreeNode& child = _nodes[child_index];
 
     y_debug_assert(child.aabb().contains(orig_aabb));
 
@@ -208,6 +220,59 @@ void TransformableManagerSystem::Octree::recreate_root(const math::Vec3& toward)
         return child.aabb().contains(_datas[index].global_aabb);
     }));
 }
+
+
+void TransformableManagerSystem::Octree::visit_node(core::Vector<ecs::EntityId>& entities, u32 node_index, const Frustum& frustum, float far_dist) const {
+    const OctreeNode& node = _nodes[node_index];
+
+    switch(frustum.intersection(node.aabb(), far_dist)) {
+        case Intersection::Outside:
+        break;
+
+        case Intersection::Inside:
+            push_all_entities(entities, node_index);
+        break;
+
+        case Intersection::Intersects:
+            for(const u32 index : node.transforms) {
+                const TransformData& data = _datas[index];
+                switch(frustum.intersection(data.global_aabb, far_dist)) {
+                    case Intersection::Inside:
+                    case Intersection::Intersects:
+                        entities << data.id;
+                    break;
+
+                    default:
+                    break;
+                }
+            }
+
+            if(node.children_index != u32(-1)) {
+                for(u32 i = 0; i != 8; ++i) {
+                    visit_node(entities, node.children_index + i, frustum, far_dist);
+                }
+            }
+        break;
+    }
+}
+
+void TransformableManagerSystem::Octree::push_all_entities(core::Vector<ecs::EntityId>& entities, u32 node_index) const {
+    const OctreeNode& node = _nodes[node_index];
+
+    for(const u32 index : node.transforms) {
+        const TransformData& data = _datas[index];
+        entities << data.id;
+    }
+
+    if(node.children_index != u32(-1)) {
+        for(u32 i = 0; i != 8; ++i) {
+            push_all_entities(entities, node.children_index + i);
+        }
+    }
+}
+
+
+
 
 
 
@@ -248,7 +313,7 @@ void TransformableManagerSystem::run_tick(bool only_recent) {
         _moved.insert(id, alloc_index(tr));
         _stopped.erase(id);
 
-        _octree.insert(tr);
+        _octree.insert(id, tr);
     }
 }
 
@@ -284,6 +349,10 @@ u32 TransformableManagerSystem::transform_count() const {
 
 AABB TransformableManagerSystem::parent_node_aabb(const TransformableComponent& tr) const {
     return _octree.parent_node(tr).aabb();
+}
+
+core::Vector<ecs::EntityId> TransformableManagerSystem::find_visible(const Frustum& frustum, float far_dist) const {
+    return _octree.find_visible(frustum, far_dist);
 }
 
 }

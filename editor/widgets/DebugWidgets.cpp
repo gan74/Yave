@@ -26,7 +26,6 @@ SOFTWARE.
 #include <editor/ThumbmailRenderer.h>
 
 #include <yave/scene/SceneView.h>
-#include <yave/systems/OctreeSystem.h>
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/components/TransformableComponent.h>
 

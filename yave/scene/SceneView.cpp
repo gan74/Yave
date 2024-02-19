@@ -23,9 +23,9 @@ SOFTWARE.
 #include "SceneView.h"
 
 #include <yave/ecs/EntityWorld.h>
-#include <yave/ecs/SparseComponentSet.h>
-#include <yave/systems/OctreeSystem.h>
 
+#include <yave/components/TransformableComponent.h>
+#include <yave/systems/TransformableManagerSystem.h>
 
 namespace yave {
 
@@ -57,15 +57,14 @@ core::Vector<ecs::EntityId> SceneView::visible_entities() const {
 
     y_debug_assert(has_world());
 
-    core::Vector<ecs::EntityId> visible;
-    if(const OctreeSystem* octree_system = _world->find_system<OctreeSystem>()) {
-        visible = octree_system->find_entities(_camera);
-    } else {
-        visible = core::Vector<ecs::EntityId>::from_range(_world->all_entities());
+    const std::array tags = {ecs::tags::not_hidden};
+
+    if(const TransformableManagerSystem* system = _world->find_system<TransformableManagerSystem>()) {
+        const core::Vector<ecs::EntityId> visible = system->find_visible(_camera.frustum(), _camera.far_plane_dist());
+        return _world->query(visible, tags).to_ids();
     }
 
-    const std::array tags = {ecs::tags::not_hidden};
-    return _world->query(visible, tags).to_ids();
+    return _world->query<TransformableComponent>(tags).to_ids();
 }
 
 }

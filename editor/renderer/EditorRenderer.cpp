@@ -32,7 +32,6 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/systems/OctreeSystem.h>
 
 #include <yave/utils/DirectDraw.h>
 
