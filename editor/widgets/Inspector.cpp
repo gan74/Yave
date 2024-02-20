@@ -551,10 +551,13 @@ Inspector::Inspector() : Widget(ICON_FA_WRENCH " Inspector") {
 }
 
 void Inspector::on_gui() {
+    EditorWorld& world = current_world();
+
     const ecs::EntityId selected = current_world().selected_entity();
     const ecs::EntityId id = _locked.is_valid() ? _locked : selected;
+    EditorComponent* component = world.component_mut<EditorComponent>(id);
 
-    if(!id.is_valid()) {
+    if(!id.is_valid() || !component) {
         if(const usize selected_count = current_world().selected_entity_count(); selected_count > 1) {
             ImGui::Text("%u selected entities", u32(selected_count));
         } else {
@@ -563,27 +566,23 @@ void Inspector::on_gui() {
         return;
     }
 
-    EditorWorld& world = current_world();
 
-    if(EditorComponent* component = world.component_mut<EditorComponent>(id)) {
-
-        {
-            core::String name = component->name();
-            if(imgui::text_input("Name##name", name)) {
-                component->set_name(name);
-            }
-
-            ImGui::SameLine();
-
-            bool locked = _locked.is_valid();
-            if(ImGui::Checkbox(ICON_FA_LOCK "###lock", &locked)) {
-                _locked = locked ? selected : ecs::EntityId();
-            }
+    {
+        core::String name = component->name();
+        if(imgui::text_input("Name##name", name)) {
+            component->set_name(name);
         }
 
-        InspectorPanelInspector inspector(id, component);
-        world.inspect_components(id, &inspector);
+        ImGui::SameLine();
+
+        bool locked = _locked.is_valid();
+        if(ImGui::Checkbox(ICON_FA_LOCK "###lock", &locked)) {
+            _locked = locked ? selected : ecs::EntityId();
+        }
     }
+
+    InspectorPanelInspector inspector(id, component);
+    world.inspect_components(id, &inspector);
 
 
     ImGui::Separator();
