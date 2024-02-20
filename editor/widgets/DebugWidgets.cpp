@@ -29,6 +29,10 @@ SOFTWARE.
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/components/TransformableComponent.h>
 
+#include <yave/systems/TransformableManagerSystem.h>
+
+#include <y/core/Chrono.h>
+
 #include <editor/utils/ui.h>
 
 #include <y/utils/format.h>
@@ -95,15 +99,27 @@ class CullingDebug : public Widget {
     protected:
         void on_gui() override {
             const EditorWorld& world = current_world();
-            const auto& transformables = world.component_set<TransformableComponent>();
+            const Camera& camera = scene_view().camera();
 
+            const auto& transformables = world.component_set<TransformableComponent>();
             const usize total = transformables.size();
-            const usize octree_visible = scene_view().visible_entities().size();
+
+            core::Duration octree_duration;
+            core::Duration precise_duration;
+
+            usize octree_visible = 0;
+            OctreeTraversalStats stats = {};
+            if(const TransformableManagerSystem* system = world.find_system<TransformableManagerSystem>()) {
+                core::Chrono timer;
+                octree_visible = system->find_visible(camera.frustum(), camera.far_plane_dist(), &stats).size();
+                octree_duration = timer.elapsed();
+            }
 
             usize visible_precise = 0;
             {
+                core::Chrono timer;
                 y_profile_zone("precise culling");
-                const Frustum frustum = scene_view().camera().frustum();
+                const Frustum frustum = camera.frustum();
                 for(const TransformableComponent& tr : transformables.values()) {
                     switch(frustum.intersection(tr.global_aabb())) {
                         case Intersection::Inside:
@@ -115,6 +131,7 @@ class CullingDebug : public Widget {
                         break;
                     }
                 }
+                precise_duration = timer.elapsed();
             }
 
 
@@ -123,7 +140,14 @@ class CullingDebug : public Widget {
             ImGui::Text("%u transformables visible in octree", u32(octree_visible));
             ImGui::Text("%u transformables visible (precise)", u32(visible_precise));
             ImGui::Separator();
+            ImGui::Text("%u node tested", u32(stats.node_tested));
+            ImGui::Text("%u node visited", u32(stats.node_visited));
+            ImGui::Text("%u entity tested", u32(stats.entity_tested));
+            ImGui::Separator();
             ImGui::Text("%u%% culled by octree", u32(float(total - octree_visible) / float(total) * 100.0f));
+            ImGui::Separator();
+            ImGui::Text("%.2f ms for octree", float(octree_duration.to_millis()));
+            ImGui::Text("%.2f ms for precise", float(precise_duration.to_millis()));
         }
 };
 

@@ -31,6 +31,12 @@ SOFTWARE.
 
 namespace yave {
 
+struct OctreeTraversalStats {
+    usize node_tested = 0;
+    usize node_visited = 0;
+    usize entity_tested = 0;
+};
+
 class TransformableManagerSystem : public ecs::System {
     struct OctreeNode : NonCopyable {
         math::Vec3 center;
@@ -62,7 +68,7 @@ class TransformableManagerSystem : public ecs::System {
 
             const OctreeNode& parent_node(const TransformableComponent& tr) const;
 
-            core::Vector<ecs::EntityId> find_visible(const Frustum& frustum, float far_dist) const;
+            core::Vector<ecs::EntityId> find_visible(const Frustum& frustum, float far_dist, OctreeTraversalStats* stats) const;
 
         private:
             void insert_iterative(u32 node_index, u32 data_index);
@@ -70,8 +76,8 @@ class TransformableManagerSystem : public ecs::System {
             void reinsert(u32 node_index);
             void recreate_root(const math::Vec3& toward);
 
-            void visit_node(core::Vector<ecs::EntityId>& entities, u32 node_index, const Frustum& frustum, float far_dist) const;
-            void push_all_entities(core::Vector<ecs::EntityId>& entities, u32 node_index) const;
+            void visit_node(core::Vector<ecs::EntityId>& entities, u32 node_index, const Frustum& frustum, float far_dist, OctreeTraversalStats* stats) const;
+            void push_all_entities(core::Vector<ecs::EntityId>& entities, u32 node_index, OctreeTraversalStats* stats) const;
 
             core::Vector<OctreeNode> _nodes;
             core::Vector<TransformData> _datas;
@@ -95,7 +101,7 @@ class TransformableManagerSystem : public ecs::System {
         u32 transform_count() const;
 
 
-        core::Vector<ecs::EntityId> find_visible(const Frustum& frustum, float far_dist) const;
+        core::Vector<ecs::EntityId> find_visible(const Frustum& frustum, float far_dist, OctreeTraversalStats* stats = nullptr) const;
         AABB parent_node_aabb(const TransformableComponent& tr) const;
 
         const auto& moved() const {
