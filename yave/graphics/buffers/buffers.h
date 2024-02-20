@@ -87,6 +87,8 @@ using VertexSubBuffer = TypedSubBuffer<PackedVertex, BufferUsage::AttributeBit>;
 using AttribSubBuffer = SubBuffer<BufferUsage::AttributeBit>;
 using IndexSubBuffer = SubBuffer<BufferUsage::IndexBit>;
 
+using IndirectSubBuffer = TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
+
 template<typename T>
 using TypedAttribSubBuffer = TypedSubBuffer<T, BufferUsage::AttributeBit>;
 
