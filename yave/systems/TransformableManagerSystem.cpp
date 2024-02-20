@@ -317,6 +317,7 @@ void TransformableManagerSystem::destroy() {
 
 void TransformableManagerSystem::setup() {
     _transform_destroyed = world().on_destroyed<TransformableComponent>().subscribe([this](ecs::EntityId, TransformableComponent& tr) {
+        _octree.remove(tr);
         free_index(tr);
     });
 
