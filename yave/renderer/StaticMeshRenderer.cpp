@@ -93,6 +93,18 @@ template<typename Q>
 static void collect_batches(Q query, core::FlatHashMap<const MaterialTemplate*, StaticMeshBatch>& batches) {
     y_profile();
 
+    const MaterialTemplate* prev_template = nullptr;
+    StaticMeshBatch* prev_batch = nullptr;
+    auto find_batch = [&](const Material* mat) {
+        const MaterialTemplate* mat_template = mat->material_template();
+        if(mat_template != prev_template) {
+            prev_template = mat_template;
+            prev_batch = &batches[prev_template];
+        }
+        y_debug_assert(prev_batch);
+        return prev_batch;
+    };
+
     for(const auto& [tr, mesh] : query.components()) {
         const u32 transform_index = tr.transform_index();
 
@@ -103,16 +115,16 @@ static void collect_batches(Q query, core::FlatHashMap<const MaterialTemplate*, 
         const core::Span materials = mesh.materials();
         if(materials.size() == 1) {
             if(const Material* mat = materials[0].get()) {
-                auto& batch = batches[mat->material_template()];
-                batch.commands << mesh.mesh()->draw_command().vk_indirect_data();
-                batch.indices << math::Vec2ui(transform_index, mat->draw_data().index());
+                auto* batch = find_batch(mat);
+                batch->commands << mesh.mesh()->draw_command().vk_indirect_data();
+                batch->indices << math::Vec2ui(transform_index, mat->draw_data().index());
             }
         } else {
             for(usize i = 0; i != materials.size(); ++i) {
                 if(const Material* mat = materials[i].get()) {
-                    auto& batch = batches[mat->material_template()];
-                    batch.commands << mesh.mesh()->sub_meshes()[i].vk_indirect_data();
-                    batch.indices << math::Vec2ui(transform_index, mat->draw_data().index());
+                    auto* batch = find_batch(mat);
+                    batch->commands << mesh.mesh()->sub_meshes()[i].vk_indirect_data();
+                    batch->indices << math::Vec2ui(transform_index, mat->draw_data().index());
                 }
             }
         }
