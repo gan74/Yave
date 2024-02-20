@@ -88,6 +88,8 @@ class FrameGraphPassBuilderBase {
         void add_attrib_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
         void add_index_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::VertexInputBit);
 
+        void add_indrect_input(FrameGraphBufferId res, PipelineStage stage = PipelineStage::IndirectBit);
+
         void clear_before_pass(FrameGraphMutableImageId res);
 
         template<typename T>

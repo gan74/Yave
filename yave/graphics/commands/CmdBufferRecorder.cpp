@@ -177,6 +177,15 @@ void RenderPassRecorder::draw(const VkDrawIndirectCommand& indirect) {
     );
 }
 
+void RenderPassRecorder::draw_indirect(TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit> indirect) {
+    vkCmdDrawIndexedIndirect(vk_cmd_buffer(),
+        indirect.vk_buffer(),
+        indirect.byte_offset(),
+        u32(indirect.size()),
+        sizeof(VkDrawIndexedIndirectCommand)
+    );
+}
+
 void RenderPassRecorder::draw_indexed(usize index_count) {
     VkDrawIndexedIndirectCommand command = {};
     command.indexCount = u32(index_count);

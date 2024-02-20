@@ -243,6 +243,9 @@ void FrameGraphPassBuilderBase::add_index_input(FrameGraphBufferId res, Pipeline
     add_to_pass(res, BufferUsage::IndexBit, false, stage);
 }
 
+void FrameGraphPassBuilderBase::add_indrect_input(FrameGraphBufferId res, PipelineStage stage) {
+    add_to_pass(res, BufferUsage::IndirectBit, false, stage);
+}
 
 // --------------------------------- Stuff ---------------------------------
 

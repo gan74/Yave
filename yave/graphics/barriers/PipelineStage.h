@@ -40,6 +40,7 @@ enum class PipelineStage : u32 {
     VertexBit       = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
     FragmentBit     = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
     ComputeBit      = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    IndirectBit     = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
 
     // early is load, late is store
     DepthAttachmentOutBit   = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,

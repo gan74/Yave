@@ -197,17 +197,26 @@ class TypedWrapper final : public Buff {
         explicit TypedWrapper(usize elem_count) : Buff(std::max(usize(1), elem_count) * sizeof(value_type)) {
         }
 
+
         template<BufferUsage U, MemoryType M>
         TypedWrapper(const Buffer<U, M>& buffer) : Buff(buffer) {
         }
 
         template<BufferUsage U, MemoryType M>
         TypedWrapper(const SubBuffer<U, M>& buffer) : Buff(buffer) {
+            static_assert(is_sub);
         }
 
         template<BufferUsage U, MemoryType M>
         TypedWrapper(const Buffer<U, M>& buffer, usize size, usize byte_offset) : Buff(buffer, size * sizeof(value_type), byte_offset) {
+            static_assert(is_sub);
         }
+
+        template<typename = void>
+        TypedWrapper(const TypedWrapper& buffer, usize size, usize offset) : Buff(buffer, size * sizeof(value_type), offset * sizeof(value_type)) {
+            static_assert(is_sub);
+        }
+
 
 
         u64 size() const {
