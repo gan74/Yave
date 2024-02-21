@@ -36,9 +36,8 @@ struct SceneRenderSubPass {
     i32 main_descriptor_set_index = -1;
     FrameGraphTypedBufferId<uniform::Camera> camera;
 
+    std::shared_ptr<core::Vector<ecs::EntityId>> visible;
     RendererSystem::RenderFunc render_func;
-
-    SceneVisibilitySubPass visibility;
 
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& scene_view, const SceneVisibilitySubPass& visibility, PassType pass_type);
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, PassType pass_type);

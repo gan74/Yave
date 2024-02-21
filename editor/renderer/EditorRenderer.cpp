@@ -123,7 +123,7 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
     const SceneView& scene_view = renderer.renderer.camera.unjittered_view;
 
     if(settings.show_editor_entities) {
-        const EditorPass ed = EditorPass::create(framegraph, scene_view, SceneVisibilitySubPass::create(scene_view), renderer.depth, renderer.final);
+        const EditorPass ed = EditorPass::create(framegraph, scene_view, renderer.renderer.visibility, renderer.depth, renderer.final);
         renderer.depth = ed.depth;
         renderer.final = ed.color;
     }

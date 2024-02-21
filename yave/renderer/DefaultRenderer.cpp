@@ -34,8 +34,9 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 
     DefaultRenderer renderer;
 
+    renderer.visibility     = SceneVisibilitySubPass::create(scene_view);
     renderer.camera         = CameraBufferPass::create(framegraph, scene_view, size, settings.taa);
-    renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, SceneVisibilitySubPass::create(scene_view), size);
+    renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, renderer.visibility, size);
     renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);

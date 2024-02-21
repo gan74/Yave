@@ -41,6 +41,7 @@ struct RendererSettings {
 };
 
 struct DefaultRenderer {
+    SceneVisibilitySubPass visibility;
     CameraBufferPass camera;
     GBufferPass gbuffer;
     LightingPass lighting;
