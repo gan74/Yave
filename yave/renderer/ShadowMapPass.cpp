@@ -203,7 +203,7 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene)
         }
     };
 
-    collect_spots(world.query<TransformableComponent, SpotLightComponent>(scene.visible_entities(), tags));
+    collect_spots(world.query<TransformableComponent, SpotLightComponent>(tags));
 
     return shadow_casters;
 }
