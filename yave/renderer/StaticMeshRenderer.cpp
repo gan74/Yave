@@ -41,11 +41,60 @@ SOFTWARE.
 namespace yave {
 
 struct StaticMeshBatch {
-    core::Vector<VkDrawIndexedIndirectCommand> commands;
-    core::Vector<math::Vec2ui> indices;
+    const MaterialTemplate* material_template = nullptr;
+    VkDrawIndexedIndirectCommand cmd = {};
+    math::Vec2ui indices;
 };
 
-static void render_static_meshes(const core::FlatHashMap<const MaterialTemplate*, StaticMeshBatch>& batches,
+
+
+template<typename Q>
+static void collect_batches(Q query, core::Vector<StaticMeshBatch>& batches) {
+    y_profile();
+
+    for(const auto& [tr, mesh] : query.components()) {
+        const u32 transform_index = tr.transform_index();
+
+        if(!mesh.mesh() || transform_index == u32(-1)) {
+            continue;
+        }
+
+        const core::Span materials = mesh.materials();
+        if(materials.size() == 1) {
+            if(const Material* mat = materials[0].get()) {
+                batches.emplace_back(
+                    mat->material_template(),
+                    mesh.mesh()->draw_command().vk_indirect_data(),
+                    math::Vec2ui(transform_index, mat->draw_data().index())
+                );
+            }
+        } else {
+            for(usize i = 0; i != materials.size(); ++i) {
+                if(const Material* mat = materials[i].get()) {
+                    batches.emplace_back(
+                        mat->material_template(),
+                        mesh.mesh()->sub_meshes()[i].vk_indirect_data(),
+                        math::Vec2ui(transform_index, mat->draw_data().index())
+                    );
+                }
+            }
+        }
+    }
+
+    {
+        y_profile_zone("sort batches");
+        std::sort(batches.begin(), batches.end(), [](const StaticMeshBatch& a, const StaticMeshBatch& b) { return a.material_template < b.material_template; });
+    }
+
+    {
+        usize index = 0;
+        for(StaticMeshBatch& batch : batches) {
+            batch.cmd.firstInstance = u32(index++);
+        }
+    }
+}
+
+static void render_static_meshes(const core::Vector<StaticMeshBatch>& batches,
                                  RenderPassRecorder& render_pass,
                                  IndirectSubBuffer indirect,
                                  const DescriptorSet& pass_set) {
@@ -54,16 +103,50 @@ static void render_static_meshes(const core::FlatHashMap<const MaterialTemplate*
     const std::array<DescriptorSetBase, 2> desc_sets = {pass_set, texture_library().descriptor_set()};
 
     usize offset = 0;
-    for(const auto& batch : batches) {
-        const MaterialTemplate* mat_template = batch.first;
-        y_debug_assert(mat_template);
+    const MaterialTemplate* prev_template = nullptr;
+    for(usize i = 0; i != batches.size(); ++i) {
+        const StaticMeshBatch& batch = batches[i];
+        if(prev_template == batch.material_template) {
+            continue;
+        }
 
-        const usize batch_size = batch.second.commands.size();
+        prev_template = batch.material_template;
+        const usize batch_size = i - offset;
 
-        render_pass.bind_material_template(mat_template, desc_sets, true);
+        if(!batch_size) {
+            continue;
+        }
+
+        render_pass.bind_material_template(prev_template, desc_sets, true);
         render_pass.draw_indirect(IndirectSubBuffer(indirect, batch_size, offset));
 
-        offset += batch_size;
+        offset = i;
+    }
+}
+
+
+
+
+
+
+template<typename Q>
+static void collect_batches_id(Q query, core::Vector<StaticMeshBatch>& batches) {
+    y_profile();
+
+    usize index = 0;
+    for(const auto& [id, comp] : query.id_components()) {
+        const auto& [tr, mesh] = comp;
+        const u32 transform_index = tr.transform_index();
+
+        if(!mesh.mesh() || transform_index == u32(-1)) {
+            continue;
+        }
+
+        batches.emplace_back(
+            nullptr,
+            mesh.mesh()->draw_command().vk_indirect_data(index++),
+            math::Vec2ui(transform_index, id.index())
+        );
     }
 }
 
@@ -77,81 +160,7 @@ static void render_static_meshes_id(RenderPassRecorder& render_pass,
 }
 
 
-static usize compute_and_patch_batch_count(core::FlatHashMap<const MaterialTemplate*, StaticMeshBatch>& batches) {
-    usize batch_count = 0;
-    for(auto& batch : batches) {
-        for(VkDrawIndexedIndirectCommand& cmd : batch.second.commands) {
-            cmd.firstInstance = u32(batch_count++);
-        }
-    }
 
-    return batch_count;
-}
-
-
-template<typename Q>
-static void collect_batches(Q query, core::FlatHashMap<const MaterialTemplate*, StaticMeshBatch>& batches) {
-    y_profile();
-
-    const MaterialTemplate* prev_template = nullptr;
-    StaticMeshBatch* prev_batch = nullptr;
-    auto find_batch = [&](const Material* mat) {
-        const MaterialTemplate* mat_template = mat->material_template();
-        if(mat_template != prev_template) {
-            prev_template = mat_template;
-            prev_batch = &batches[prev_template];
-        }
-        y_debug_assert(prev_batch);
-        return prev_batch;
-    };
-
-    for(const auto& [tr, mesh] : query.components()) {
-        const u32 transform_index = tr.transform_index();
-
-        if(!mesh.mesh() || transform_index == u32(-1)) {
-            continue;
-        }
-
-        const core::Span materials = mesh.materials();
-        if(materials.size() == 1) {
-            if(const Material* mat = materials[0].get()) {
-                auto* batch = find_batch(mat);
-                batch->commands << mesh.mesh()->draw_command().vk_indirect_data();
-                batch->indices << math::Vec2ui(transform_index, mat->draw_data().index());
-            }
-        } else {
-            for(usize i = 0; i != materials.size(); ++i) {
-                if(const Material* mat = materials[i].get()) {
-                    auto* batch = find_batch(mat);
-                    batch->commands << mesh.mesh()->sub_meshes()[i].vk_indirect_data();
-                    batch->indices << math::Vec2ui(transform_index, mat->draw_data().index());
-                }
-            }
-        }
-    }
-}
-
-
-template<typename Q>
-static void collect_batches_ids(Q query, core::FlatHashMap<const MaterialTemplate*, StaticMeshBatch>& batches) {
-    y_profile();
-
-    for(const auto& [id, comp] : query.id_components()) {
-        const auto& [tr, mesh] = comp;
-
-        const u32 transform_index = tr.transform_index();
-
-        if(!mesh.mesh() || transform_index == u32(-1)) {
-            continue;
-        }
-
-        if(const Material* mat = mesh.materials()[0].get()) {
-            auto& batch = batches[mat->material_template()];
-            batch.commands << mesh.mesh()->draw_command().vk_indirect_data();
-            batch.indices << math::Vec2ui(transform_index, id.index());
-        }
-    }
-}
 
 StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const {
     y_profile();
@@ -159,29 +168,30 @@ StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPass
     const ecs::EntityWorld* world = &view.world();
     const RendererSystem* renderer = parent();
 
-
+    if(pass_type == PassType::Id) {
+        return {};
+    }
 
     // This is needed because std::function requires the lambda to be coyable
     // Might be fixed by std::move_only_function in C++23
     Y_TODO(fix in cpp23)
-    auto batches = std::make_shared<core::FlatHashMap<const MaterialTemplate*, StaticMeshBatch>>();
-
+    auto batches = std::make_shared<core::Vector<StaticMeshBatch>>();
     {
         auto query = world->query<TransformableComponent, StaticMeshComponent>(ids);
         switch(pass_type) {
             case PassType::Depth:
-            case PassType::GBuffer:
+            case PassType::GBuffer: 
                 collect_batches(std::move(query), *batches);
             break;
 
             case PassType::Id:
-                collect_batches_ids(std::move(query), *batches);
+                collect_batches_id(std::move(query), *batches);
             break;
         }
     }
 
-    const usize batch_count = compute_and_patch_batch_count(*batches);
 
+    const usize batch_count = batches->size();
     if(!batch_count) {
         return {};
     }
@@ -213,18 +223,11 @@ StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPass
             auto indirect_mapping = pass->resources().map_buffer(indirect_buffer);
             auto indices_mapping = pass->resources().map_buffer(indices_buffer);
 
-            usize offset = 0;
-            for(const auto& batch : *batches) {
-                const auto& commands = batch.second.commands;
-                const auto& indices = batch.second.indices;
-
-                y_debug_assert(commands.size() == indices.size());
-
-                const usize batch_size = commands.size();
-
-                std::copy_n(commands.data(), batch_size, indirect_mapping.data() + offset);
-                std::copy_n(indices.data(), batch_size, indices_mapping.data() + offset);
-                offset += batch_size;
+            usize index = 0;
+            for(const StaticMeshBatch& batch : *batches) {
+                indirect_mapping[index] = batch.cmd;
+                indices_mapping[index] = batch.indices;
+                ++index;
             }
         }
 
@@ -235,7 +238,7 @@ StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPass
 
         switch(pass_type) {
             case PassType::Depth:
-            case PassType::GBuffer:
+            case PassType::GBuffer: 
                 render_static_meshes(*batches, render_pass, buffer, pass_set);
             break;
 
