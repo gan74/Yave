@@ -37,29 +37,24 @@ SOFTWARE.
 
 namespace editor {
 
-static core::Vector<ecs::EntityId> highlighted_entities(const SceneView& scene_view, EditorSelectionRenderFlags flags) {
+static core::Vector<ecs::EntityId> highlighted_entities(const SceneView& scene_view, bool highlight_children) {
     y_profile();
 
     const EditorWorld& world = current_world();
     y_debug_assert(&world == &scene_view.world());
 
-    const bool selection = (flags & (EditorSelectionRenderFlags::SelectionOnly | EditorSelectionRenderFlags::SelectionAndChildren)) != EditorSelectionRenderFlags::None;
-    if(selection) {
-        auto ids = core::Vector<ecs::EntityId>::from_range(world.selected_entities());
-        if((flags & EditorSelectionRenderFlags::SelectionAndChildren) != EditorSelectionRenderFlags::None) {
-            y_profile_zone("expanding to selected children");
-            for(usize i = 0; i != ids.size(); ++i) {
-                for(const ecs::EntityId child : world.children(ids[i])) {
-                    if(!world.is_selected(child)) {
-                        ids << child;
-                    }
+    auto ids = core::Vector<ecs::EntityId>::from_range(world.selected_entities());
+    if(highlight_children) {
+        y_profile_zone("expanding to selected children");
+        for(usize i = 0; i != ids.size(); ++i) {
+            for(const ecs::EntityId child : world.children(ids[i])) {
+                if(!world.is_selected(child)) {
+                    ids << child;
                 }
             }
         }
-        return ids;
     }
-
-    return scene_view.visible_entities();
+    return ids;
 }
 
 
@@ -132,7 +127,7 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
         const IdBufferPass id_pass = IdBufferPass::create(
             framegraph,
             CameraBufferPass::create_no_jitter(framegraph, scene_view),
-            SceneVisibilitySubPass::from_entities(highlighted_entities(scene_view, EditorSelectionRenderFlags::SelectionAndChildren)),
+            SceneVisibilitySubPass::from_entities(highlighted_entities(scene_view, true)),
             size
         );
 
