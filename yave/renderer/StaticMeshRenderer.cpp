@@ -133,7 +133,7 @@ template<typename Q>
 static void collect_batches_id(Q query, core::Vector<StaticMeshBatch>& batches) {
     y_profile();
 
-    usize index = 0;
+    u32 index = 0;
     for(const auto& [id, comp] : query.id_components()) {
         const auto& [tr, mesh] = comp;
         const u32 transform_index = tr.transform_index();
@@ -180,7 +180,7 @@ StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPass
         auto query = world->query<TransformableComponent, StaticMeshComponent>(ids);
         switch(pass_type) {
             case PassType::Depth:
-            case PassType::GBuffer: 
+            case PassType::GBuffer:
                 collect_batches(std::move(query), *batches);
             break;
 
@@ -238,7 +238,7 @@ StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPass
 
         switch(pass_type) {
             case PassType::Depth:
-            case PassType::GBuffer: 
+            case PassType::GBuffer:
                 render_static_meshes(*batches, render_pass, buffer, pass_set);
             break;
 
