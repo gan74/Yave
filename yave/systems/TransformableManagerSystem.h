@@ -46,6 +46,7 @@ class TransformableManagerSystem : public ecs::System {
         u32 children_index = u32(-1);
 
         AABB aabb() const;
+        AABB strict_aabb() const;
     };
 
     struct TransformData {
@@ -67,6 +68,7 @@ class TransformableManagerSystem : public ecs::System {
             void remove(const TransformableComponent& tr);
 
             const OctreeNode& parent_node(const TransformableComponent& tr) const;
+            core::Span<OctreeNode> nodes() const;
 
             core::Vector<ecs::EntityId> find_visible(const Frustum& frustum, float far_dist, OctreeTraversalStats* stats) const;
 
@@ -102,7 +104,10 @@ class TransformableManagerSystem : public ecs::System {
 
 
         core::Vector<ecs::EntityId> find_visible(const Frustum& frustum, float far_dist, OctreeTraversalStats* stats = nullptr) const;
+
+
         AABB parent_node_aabb(const TransformableComponent& tr) const;
+        core::Span<OctreeNode> octree_nodes() const;
 
         const auto& moved() const {
             return _moved;

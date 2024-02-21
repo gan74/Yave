@@ -199,6 +199,24 @@ static void render_selection_aabb(DirectDrawPrimitive* primitive, const SceneVie
 }
 
 
+static void render_octree(DirectDrawPrimitive* primitive) {
+    y_profile();
+
+    const EditorWorld& world = current_world();
+    const TransformableManagerSystem* tr_system = world.find_system<TransformableManagerSystem>();
+
+    if(!tr_system) {
+        return;
+    }
+
+    primitive->set_color(math::Vec3(0, 0, 1));
+    for(const auto& node : tr_system->octree_nodes()) {
+        primitive->add_box(node.strict_aabb());
+    }
+
+}
+
+
 static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, FrameGraphImageId in, ImageFormat format, const math::Vec2ui& size) {
     if(in.is_valid()) {
         return builder.declare_copy(in);
@@ -242,6 +260,10 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, con
         {
             if(current_world().selected_entity().is_valid()) {
                 render_selection_aabb(direct.add_primitive("selection"), view);
+            }
+
+            if(app_settings().debug.diplay_octree) {
+                render_octree(direct.add_primitive("octree"));
             }
         }
         direct.render(render_pass, view.camera().view_proj_matrix());

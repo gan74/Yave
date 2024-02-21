@@ -109,9 +109,10 @@ class CullingDebug : public Widget {
 
             usize octree_visible = 0;
             OctreeTraversalStats stats = {};
-            if(const TransformableManagerSystem* system = world.find_system<TransformableManagerSystem>()) {
+            const TransformableManagerSystem* tr_system = world.find_system<TransformableManagerSystem>();
+            if(tr_system) {
                 core::Chrono timer;
-                octree_visible = system->find_visible(camera.frustum(), camera.far_plane_dist(), &stats).size();
+                octree_visible = tr_system->find_visible(camera.frustum(), camera.far_plane_dist(), &stats).size();
                 octree_duration = timer.elapsed();
             }
 
@@ -143,6 +144,8 @@ class CullingDebug : public Widget {
             ImGui::Text("%u node tested", u32(stats.node_tested));
             ImGui::Text("%u node visited", u32(stats.node_visited));
             ImGui::Text("%u entity tested", u32(stats.entity_tested));
+            ImGui::Text("%u total tests", u32(stats.entity_tested + stats.node_tested));
+            ImGui::Text("%u total nodes", u32(tr_system ? tr_system->octree_nodes().size() : 0));
             ImGui::Separator();
             ImGui::Text("%u%% culled by octree", u32(float(total - octree_visible) / float(total) * 100.0f));
             ImGui::Separator();

@@ -46,6 +46,10 @@ AABB TransformableManagerSystem::OctreeNode::aabb() const {
     return AABB::from_center_extent(center, math::Vec3(extent * Octree::margin_factor));
 }
 
+AABB TransformableManagerSystem::OctreeNode::strict_aabb() const {
+    return AABB::from_center_extent(center, math::Vec3(extent));
+}
+
 
 
 TransformableManagerSystem::Octree::Octree() {
@@ -65,6 +69,10 @@ const TransformableManagerSystem::OctreeNode& TransformableManagerSystem::Octree
     const TransformData& data = _datas[tr._transform_index];
     y_debug_assert(data.parent_index != u32(-1));
     return _nodes[data.parent_index];
+}
+
+core::Span<TransformableManagerSystem::OctreeNode> TransformableManagerSystem::Octree::nodes() const {
+    return _nodes;
 }
 
 void TransformableManagerSystem::Octree::insert_or_update(ecs::EntityId id, const TransformableComponent& tr) {
@@ -375,12 +383,17 @@ u32 TransformableManagerSystem::transform_count() const {
     return _max_index;
 }
 
+core::Vector<ecs::EntityId> TransformableManagerSystem::find_visible(const Frustum& frustum, float far_dist, OctreeTraversalStats* stats) const {
+    return _octree.find_visible(frustum, far_dist, stats);
+}
+
+
 AABB TransformableManagerSystem::parent_node_aabb(const TransformableComponent& tr) const {
     return _octree.parent_node(tr).aabb();
 }
 
-core::Vector<ecs::EntityId> TransformableManagerSystem::find_visible(const Frustum& frustum, float far_dist, OctreeTraversalStats* stats) const {
-    return _octree.find_visible(frustum, far_dist, stats);
+core::Span<TransformableManagerSystem::OctreeNode> TransformableManagerSystem::octree_nodes() const {
+    return _octree.nodes();
 }
 
 }
