@@ -37,6 +37,10 @@ SOFTWARE.
 
 namespace yave {
 
+
+RendererSystem::Renderer::Renderer(core::String name) : _name(std::move(name)) {
+}
+
 RendererSystem::Renderer::~Renderer() {
 }
 
@@ -148,15 +152,16 @@ RendererSystem::RenderFunc RendererSystem::prepare_render(FrameGraphPassBuilder&
         return {};
     }
 
-    auto funcs = core::Vector<typename Renderer::RenderFunc>::with_capacity(_renderers.size());
+    auto funcs = core::Vector<std::pair<const Renderer*, typename Renderer::RenderFunc>>::with_capacity(_renderers.size());
 
     for(const auto& renderer : _renderers) {
-        funcs << renderer->prepare_render(builder, view, ids, pass_type);
+        funcs.emplace_back(renderer.get(), renderer->prepare_render(builder, view, ids, pass_type));
     }
 
     return [render_funcs = std::move(funcs)](RenderPassRecorder& render_pass, const FrameGraphPass* pass) {
-        for(auto&& func : render_funcs) {
+        for(const auto& [renderer, func] : render_funcs) {
             if(func) {
+                const auto region = render_pass.region(renderer->_name.data());
                 func(render_pass, pass);
             }
         }

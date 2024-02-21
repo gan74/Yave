@@ -28,6 +28,8 @@ namespace yave {
 
 class StaticMeshRenderer : public RendererSystem::Renderer {
     public:
+        StaticMeshRenderer();
+
         RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const override;
 };
 

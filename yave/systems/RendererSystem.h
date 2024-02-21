@@ -55,6 +55,7 @@ class RendererSystem : public ecs::System {
             public:
                 using RenderFunc = RendererSystem::RenderFunc;
 
+                Renderer(core::String name);
                 virtual ~Renderer();
 
                 const ecs::EntityWorld& world() const;
@@ -66,6 +67,7 @@ class RendererSystem : public ecs::System {
                 friend class RendererSystem;
 
                 RendererSystem* _parent = nullptr;
+                core::String _name;
         };
 
 

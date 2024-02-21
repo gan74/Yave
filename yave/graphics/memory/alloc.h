@@ -52,8 +52,8 @@ static const VkMemoryPropertyFlags cpu_visible_flags[] = {
 
 static const VkMemoryPropertyFlags staging_flags[] = {
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
     0
 };
@@ -70,6 +70,8 @@ static const VkMemoryPropertyFlags* memory_type_flags[] = {
 
 inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
     y_profile();
+
+    y_always_assert(type != MemoryType::DontCare, "Invalid memory type for allocation");
 
     const VkPhysicalDeviceMemoryProperties& properties = physical_device().vk_memory_properties();
     for(const VkMemoryPropertyFlags* type_flags = memory_type_flags[uenum(type)]; *type_flags; ++type_flags) {
