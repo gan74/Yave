@@ -122,10 +122,6 @@ StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPass
     const ecs::EntityWorld* world = &view.world();
     const RendererSystem* renderer = parent();
 
-    if(pass_type == PassType::Id) {
-        return {};
-    }
-
     // This is needed because std::function requires the lambda to be coyable
     // Might be fixed by std::move_only_function in C++23
     Y_TODO(fix in cpp23)
