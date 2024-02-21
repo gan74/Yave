@@ -29,8 +29,10 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
 
+#include <yave/graphics/device/DeviceResources.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/PointLightComponent.h>
+#include <yave/components/StaticMeshComponent.h>
 #include <yave/scene/SceneView.h>
 
 #include <editor/utils/assets.h>
@@ -80,7 +82,7 @@ static void add_debug_lights() {
 
     const math::Vec3 center; //new_entity_pos(side * 1.5f);
 
-    const ecs::EntityId parent = world.create_named_entity("Debug Lights");
+    const ecs::EntityId parent = world.create_named_entity("Debug lights");
 
 
     math::FastRandom rng;
@@ -96,10 +98,33 @@ static void add_debug_lights() {
     }
 }
 
+static void add_debug_cubes() {
+    y_profile();
+
+    EditorWorld& world = current_world();
+
+    const float spacing =  app_settings().debug.entity_spacing;
+    const usize entity_count = app_settings().debug.entity_count;
+    const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
+
+    const math::Vec3 center; //new_entity_pos(side * 1.5f);
+
+    const ecs::EntityId parent = world.create_named_entity("Debug cubes");
+
+    for(usize i = 0; i != entity_count; ++i) {
+        const ecs::EntityId entity = world.create_named_entity(fmt("Debug cubes #{}", i));
+        world.set_parent(entity, parent);
+
+        const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
+        world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
+        world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
+    }
+}
 
 
 
 editor_action("Add debug lights", add_debug_lights)
+editor_action("Add debug cubes", add_debug_cubes)
 
 editor_action_contextual(ICON_FA_TRASH " Delete selected",
     [] { add_child_widget<DeletionDialog>(current_world().selected_entities()); },
