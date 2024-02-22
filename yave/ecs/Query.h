@@ -348,10 +348,8 @@ class Query : NonCopyable {
             y_profile();
             _components.set_min_capacity(_ids.size());
 
-            using iterator_t = LazyIterator<ComponentsReturnPolicy>;
-            const auto lazy_components = core::Range<iterator_t>(iterator_t(_ids.begin(), _sets), iterator_t(_ids.end(), _sets));
-            for(auto&& comps : lazy_components) {
-                _components.emplace_back(comps);
+            for(const EntityId id : _ids) {
+                _components.emplace_back(make_component_tuple(_sets, id));
             }
         }
 
