@@ -852,7 +852,7 @@ FolderAssetStore::Result<> FolderAssetStore::reload_all() {
 
     const auto lock = std::unique_lock(_lock);
 
-    _next_id = u64(std::time(nullptr));
+    _next_id = u64(std::time(nullptr)) << 32;
     load_tree().unwrap();
     load_asset_descs().unwrap();
 
