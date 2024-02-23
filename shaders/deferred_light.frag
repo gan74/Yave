@@ -1,6 +1,19 @@
-#include "deferred_light.glsl"
+#version 450
 
+#include "lib/utils.glsl"
+#include "lib/gbuffer.glsl"
+#include "lib/ibl.glsl"
 #include "lib/shadow.glsl"
+
+// -------------------------------- DEFINES --------------------------------
+
+#ifdef POINT
+#define Light PointLight
+#endif
+
+#ifdef SPOT
+#define Light SpotLight
+#endif
 
 
 // -------------------------------- I/O --------------------------------

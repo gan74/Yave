@@ -55,12 +55,21 @@ function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
     set(${SOURCE_VARIABLE_NAME} ${${SOURCE_VARIABLE_NAME}} ${UNIT_BUILD_FILE} PARENT_SCOPE)
 endfunction(enable_unity_build)
 
-function(optimize_shaders SHADER_TARGET)
-    file(GLOB SHADER_BINARIES "${CMAKE_CURRENT_BINARY_DIR}/*.spv")
-    foreach(SHADER ${SHADER_BINARIES})
-        add_custom_command(TARGET ${SHADER_TARGET} POST_BUILD COMMAND spirv-opt ${SHADER} -O --preserve-bindings -o ${SHADER})
+function(add_shader_variation SHADER_TARGET SHADER_FILE SHADER_DEFINES)
+    foreach(DEF ${SHADER_DEFINES})
+        set(COMPILE_ARGS ${COMPILE_ARGS} -D${DEF})
+        set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
     endforeach()
-endfunction(optimize_shaders)
+    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
+    get_filename_component(SHADER_EXT ${SHADER_FILE} EXT)
+    set(SHADER_BIN "${CMAKE_CURRENT_BINARY_DIR}/${SHADER_NAME}${NAME_SUFFIX}${SHADER_EXT}.spv")
+    add_custom_command(
+        TARGET ${SHADER_TARGET}
+        COMMAND ${Vulkan_GLSLC_EXECUTABLE} -c --target-env=vulkan1.2 ${COMPILE_ARGS} "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
+    )
+    # add_custom_command(TARGET ${SHADER_TARGET} POST_BUILD COMMAND echo optimizing ${SHADER_BIN})
+    add_custom_command(TARGET ${SHADER_TARGET} POST_BUILD COMMAND spirv-opt ${SHADER_BIN} -O --preserve-bindings -o ${SHADER_BIN})
+endfunction(add_shader_variation)
 
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
@@ -127,18 +136,77 @@ file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
     "external/tinygltf/*.h"
 )
 
-# Shader files
+# Shader files they are here so the IDE can find them
 file(GLOB_RECURSE SHADER_FILES
     "shaders/*.frag"
     "shaders/*.vert"
     "shaders/*.geom"
     "shaders/*.comp"
-)
-
-# Shader libs, they are here so the IDE can find them
-file(GLOB_RECURSE SHADER_LIBS
     "shaders/*.glsl"
 )
+
+
+function(build_engine_shaders SHADER_TARGET)
+    add_shader_variation(${SHADER_TARGET} "basic.vert" "")
+    add_shader_variation(${SHADER_TARGET} "screen.vert" "")
+    add_shader_variation(${SHADER_TARGET} "wireframe.vert" "")
+
+    add_shader_variation(${SHADER_TARGET} "id.frag" "")
+    add_shader_variation(${SHADER_TARGET} "tonemap.frag" "")
+    add_shader_variation(${SHADER_TARGET} "taa_resolve.frag" "")
+    add_shader_variation(${SHADER_TARGET} "passthrough.frag" "")
+    add_shader_variation(${SHADER_TARGET} "atmosphere.frag" "")
+    add_shader_variation(${SHADER_TARGET} "downsample.frag" "")
+    add_shader_variation(${SHADER_TARGET} "bloom_upscale.frag" "")
+    add_shader_variation(${SHADER_TARGET} "bloom_downscale.frag" "")
+    add_shader_variation(${SHADER_TARGET} "deferred_ambient.frag" "")
+    add_shader_variation(${SHADER_TARGET} "wireframe.frag" "")
+
+    add_shader_variation(${SHADER_TARGET} "copy.comp" "")
+    add_shader_variation(${SHADER_TARGET} "ssao.comp" "")
+    add_shader_variation(${SHADER_TARGET} "histogram.comp" "")
+    add_shader_variation(${SHADER_TARGET} "prev_camera.comp" "")
+    add_shader_variation(${SHADER_TARGET} "depth_bounds.comp" "")
+    add_shader_variation(${SHADER_TARGET} "update_transforms.comp" "")
+    add_shader_variation(${SHADER_TARGET} "linearize_depth.comp" "")
+    add_shader_variation(${SHADER_TARGET} "exposure_params.comp" "")
+    add_shader_variation(${SHADER_TARGET} "exposure_debug.comp" "")
+    add_shader_variation(${SHADER_TARGET} "equirec_convolution.comp" "")
+    add_shader_variation(${SHADER_TARGET} "cubemap_convolution.comp" "")
+    add_shader_variation(${SHADER_TARGET} "atmosphere_integrator.comp" "")
+    add_shader_variation(${SHADER_TARGET} "brdf_integrator.comp" "")
+
+    add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "")
+    add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "DEBUG")
+    add_shader_variation(${SHADER_TARGET} "deferred_light.frag" "POINT")
+    add_shader_variation(${SHADER_TARGET} "deferred_light.frag" "SPOT")
+    add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "POINT")
+    add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "SPOT")
+
+    add_shader_variation(${SHADER_TARGET} "blur.frag" "HORIZONTAL")
+    add_shader_variation(${SHADER_TARGET} "blur.frag" "VERTICAL")
+
+    add_shader_variation(${SHADER_TARGET} "textured.frag" "")
+    add_shader_variation(${SHADER_TARGET} "textured.frag" "ALPHA_TEST")
+
+    add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
+    add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
+endfunction(build_engine_shaders)
+
+function(build_editor_shaders SHADER_TARGET)
+    add_shader_variation(${SHADER_TARGET} "editor/engine_view.frag" "")
+    add_shader_variation(${SHADER_TARGET} "editor/imgui.frag" "")
+    add_shader_variation(${SHADER_TARGET} "editor/imgui_billboard.frag" "")
+    add_shader_variation(${SHADER_TARGET} "editor/selection.frag" "")
+
+    add_shader_variation(${SHADER_TARGET} "editor/imgui_billboard.geom" "")
+
+    add_shader_variation(${SHADER_TARGET} "editor/imgui.vert" "")
+    add_shader_variation(${SHADER_TARGET} "editor/imgui_billboard.vert" "")
+
+    add_shader_variation(${SHADER_TARGET} "editor/picking.comp" "")
+    add_shader_variation(${SHADER_TARGET} "editor/depth_alpha.comp" "")
+endfunction(build_editor_shaders)
 
 
 
@@ -172,8 +240,8 @@ if(YAVE_BUILD_YAVE)
 
     target_link_libraries(yave luajit)
 
-    add_custom_target(shaders COMMAND ${Vulkan_GLSLC_EXECUTABLE} -c --target-env=vulkan1.2 ${SHADER_FILES})
-    optimize_shaders(shaders)
+    add_custom_target(shaders)
+    build_engine_shaders(shaders)
 
     add_dependencies(yave shaders)
 endif()
@@ -181,6 +249,10 @@ endif()
 if(YAVE_BUILD_EDITOR)
     add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
     target_include_directories(editor PRIVATE external/imgui)
+
+    add_custom_target(editor_shaders)
+    build_editor_shaders(editor_shaders)
+    add_dependencies(editor editor_shaders)
 
     target_link_libraries(editor yave)
 endif()

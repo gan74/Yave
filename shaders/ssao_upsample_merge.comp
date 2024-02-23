@@ -1,5 +1,0 @@
-#version 450
-
-#define COMBINE_HIGH
-#include "ssao_upsample.glsl"
-

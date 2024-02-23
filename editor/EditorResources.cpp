@@ -44,7 +44,6 @@ static constexpr const char* spirv_names[] = {
 
         "imgui.frag",
         "imgui_billboard.frag",
-        "clear_id.frag",
         "engine_view.frag",
         "selection.frag",
 

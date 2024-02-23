@@ -1,4 +1,16 @@
-#include "deferred_light.glsl"
+#version 450
+
+#include "lib/utils.glsl"
+
+// -------------------------------- DEFINES --------------------------------
+
+#ifdef POINT
+#define Light PointLight
+#endif
+
+#ifdef SPOT
+#define Light SpotLight
+#endif
 
 layout(set = 0, binding = 0) uniform CameraData {
     Camera camera;

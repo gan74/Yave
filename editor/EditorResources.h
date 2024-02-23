@@ -36,7 +36,6 @@ class EditorResources final : NonMovable {
 
             ImGuiFrag,
             ImGuiBillBoardFrag,
-            ClearIdFrag,
             EngineViewFrag,
             SelectionFrag,
 

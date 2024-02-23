@@ -1,6 +1,6 @@
 #version 450
 
-#include "../lib/utils.glsl"
+#include "lib/utils.glsl"
 
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in uint in_packed_color_Packed;
