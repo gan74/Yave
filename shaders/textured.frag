@@ -41,7 +41,7 @@ void main() {
 
 #ifdef ALPHA_TEST
     if(color.a < 0.5) {
-        discard;
+        //discard;
     }
 #endif
 

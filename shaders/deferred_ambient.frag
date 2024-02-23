@@ -150,7 +150,7 @@ void main() {
 
             if(att > 0.0) {
                 const vec3 radiance = light.color * att;
-                irradiance += radiance * L0(light_dir, view_dir, surface);
+                irradiance += radiance * eval_lighting(surface, view_dir, light_dir);
             }
         }
 

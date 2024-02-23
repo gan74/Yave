@@ -54,7 +54,8 @@ SurfaceInfo decode_gbuffer(RawGBuffer raw) {
     surface.alpha = sqr(surface.perceptual_roughness);
     surface.sqr_alpha = sqr(surface.alpha);
 
-    surface.F0 = mix(vec3(0.04), surface.albedo, surface.metallic);
+    surface.f0 = approx_F0(surface.metallic, surface.albedo);
+    surface.f90 = F90_from_F0(surface.f0);
 
     return surface;
 }

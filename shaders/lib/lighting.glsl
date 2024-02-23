@@ -1,48 +1,11 @@
 #ifndef LIGHTING_GLSL
 #define LIGHTING_GLSL
 
-#include "brdf.glsl"
-#include "gbuffer.glsl"
+#include "utils.glsl"
 
 
-
-
-
-struct AreaLightInfo {
-    vec3 light_dir;
-    float orig_light_dist;
-    float light_dist;
-    float sqr_alpha;
-};
-
-// https://alextardif.com/arealights.html
-AreaLightInfo karis_area_light(SurfaceInfo surface, vec3 light_pos, float source_radius, vec3 world_pos, vec3 view_dir) {
-    const vec3 refl = reflect(-view_dir, surface.normal);
-    const vec3 to_light = light_pos - world_pos;
-    const vec3 center = (dot(to_light, refl) * refl) - to_light;
-    const vec3 closest_point = to_light + center * saturate(source_radius / length(center));
-
-    AreaLightInfo info;
-    info.light_dir = normalize(closest_point);
-    info.orig_light_dist = length(to_light);
-    info.light_dist = length(closest_point);
-    info.sqr_alpha = saturate(source_radius / (info.light_dist * 2.0) + surface.alpha) * surface.alpha;
-    return info;
-}
-
-AreaLightInfo karis_area_light(SurfaceInfo surface, PointLight light, vec3 world_pos, vec3 view_dir) {
-    return karis_area_light(surface, light.position, light.min_radius, world_pos, view_dir);
-}
-
-AreaLightInfo karis_area_light(SurfaceInfo surface, SpotLight light, vec3 world_pos, vec3 view_dir) {
-    return karis_area_light(surface, light.position, light.min_radius, world_pos, view_dir);
-}
-
-SurfaceInfo alpha_corrected(SurfaceInfo surface, AreaLightInfo area) {
-    surface.sqr_alpha = area.sqr_alpha;
-    return surface;
-}
-
+// Based on nvpro samples's vk_raytrace implementation
+// https://github.com/nvpro-samples/vk_raytrace/blob/master/shaders/pbr_gltf.glsl
 
 
 float attenuation(float distance, float range, float light_radius) {
@@ -57,26 +20,79 @@ float spot_attenuation(float cos_angle, vec2 scale_offset) {
 
 
 
-vec3 L0(vec3 light_dir, vec3 view_dir, SurfaceInfo surface) {
-    const vec3 half_vec = normalize(light_dir + view_dir);
 
-    const float NoV = max(0.0, dot(surface.normal, view_dir));
-    const float NoL = max(0.0, dot(surface.normal, light_dir));
-    const float NoH = max(0.0, dot(surface.normal, half_vec));
-    const float VoH = max(0.0, dot(view_dir, half_vec));
 
-    const vec3  F = F_Schlick(VoH, surface.F0);
-    const float D = D_GGX(NoH, surface.sqr_alpha);
-    const float V = V_Smith(NoV, NoL, surface.sqr_alpha);
 
-    const vec3 kS = F;
-    const vec3 kD = (1.0 - kS) * (1.0 - surface.metallic);
 
-    const vec3 specular = kS * max(0.0, D * V);
-    const vec3 diffuse = kD * Lambert_diffuse_brdf(surface);
 
-    return (diffuse + specular) * NoL;
+vec3 F_Schlick(vec3 f0, vec3 f90, float VdotH) {
+    return f0 + (f90 - f0) * pow(saturate(1.0 - VdotH), 5.0);
 }
+
+float F_Schlick(float f0, float f90, float VdotH) {
+    return f0 + (f90 - f0) * pow(saturate(1.0 - VdotH), 5.0);
+}
+
+float V_GGX(float NdotL, float NdotV, float sqr_alpha) {
+    const float GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - sqr_alpha) + sqr_alpha);
+    const float GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - sqr_alpha) + sqr_alpha);
+    const float GGX = GGXV + GGXL;
+    return GGX > 0.0 ? 0.5 / GGX : 0.0;
+}
+
+float D_GGX(float NdotH, float sqr_alpha) {
+    const float f = (NdotH * NdotH) * (sqr_alpha - 1.0) + 1.0;
+    return sqr_alpha / (pi * sqr(f));
+}
+
+float G_Schlick_GGX(float NdotV, float alpha) {
+    const float k = alpha * 0.5;
+    const float denom = NdotV * (1.0 - k) + k;
+    return NdotV / denom;
+}
+
+float G_Smith(float NdotV, float NdotL, float alpha) {
+    return G_Schlick_GGX(NdotV, alpha) * G_Schlick_GGX(NdotL, alpha);
+}
+
+
+
+
+vec3 eval_diffuse(SurfaceInfo info, vec3 f0, vec3 f90, vec3 V, vec3 N, vec3 L, vec3 H) {
+    return info.albedo * (inv_pi * (1.0 - info.metallic));
+}
+
+vec3 eval_specular(SurfaceInfo info, vec3 f0, vec3 f90, vec3 Vi, vec3 N, vec3 L, vec3 H) {
+    const float NdotL = max(dot(N, L), epsilon);
+    const float NdotV = max(abs(dot(N, Vi)), epsilon);
+    const float NdotH = dot(N, H);
+    const float LdotH = dot(L, H);
+    const float VdotH = dot(Vi, H);
+
+    const vec3 F = F_Schlick(f0, f90, VdotH);
+    const float V = V_GGX(NdotL, NdotV, info.sqr_alpha);
+    const float D = D_GGX(NdotH, info.sqr_alpha);
+
+    return F * V * D;
+}
+
+vec3 eval_lighting(SurfaceInfo info, vec3 V, vec3 L) {
+
+   const vec3 N = info.normal;
+   const float NdotL = dot(N, L);
+
+    if(NdotL < 0.0) {
+        return vec3(0.0);
+    }
+
+    const vec3 H = normalize(L + V);
+
+    const vec3 diffuse_contrib = eval_diffuse(info, info.f0, info.f90, V, N, L, H);
+    const vec3 specular_contrib = eval_specular(info, info.f0, info.f90, V, N, L, H);
+
+    return (diffuse_contrib + specular_contrib) * NdotL;
+}
+
 
 #endif // LIGHTING_GLSL
 

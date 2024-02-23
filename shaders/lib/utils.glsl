@@ -14,7 +14,8 @@ struct SurfaceInfo {
 
     float metallic;
 
-    vec3 F0;
+    vec3 f0;
+    vec3 f90;
 
     vec3 normal;
 };
@@ -446,6 +447,12 @@ vec3 uv_debug_color(vec2 p) {
 vec3 approx_F0(float metallic, vec3 albedo) {
     return mix(vec3(0.04), albedo, metallic);
 }
+
+vec3 F90_from_F0(vec3 f0) {
+    const float reflectance = max(max(f0.r, f0.g), f0.b);
+    return vec3(saturate(reflectance * 50.0));
+}
+
 
 // https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
 vec2 octahedron_wrap(vec2 v) {

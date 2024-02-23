@@ -1,8 +1,8 @@
 #version 450
 
-#include "lib/utils.glsl"
+#include "lib/lighting.glsl"
+#include "lib/area_light.glsl"
 #include "lib/gbuffer.glsl"
-#include "lib/ibl.glsl"
 #include "lib/shadow.glsl"
 
 // -------------------------------- DEFINES --------------------------------
@@ -29,7 +29,7 @@ layout(set = 0, binding = 2) uniform sampler2D in_depth;
 layout(set = 0, binding = 3) uniform sampler2D in_rt0;
 layout(set = 0, binding = 4) uniform sampler2D in_rt1;
 
-#ifdef SPOT_LIGHT
+#ifdef SPOT
 layout(set = 0, binding = 5) uniform sampler2DShadow in_shadows;
 layout(set = 0, binding = 6) readonly buffer Shadows {
     ShadowMapParams shadow_params[];
@@ -61,7 +61,7 @@ void main() {
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
         float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 
-#ifdef SPOT_LIGHT
+#ifdef SPOT
         if(att > 0.0) {
             const float spot_cos_alpha = max(0.0, -dot(area.light_dir, light.forward));
             att *= spot_attenuation(spot_cos_alpha, light.att_scale_offset);
@@ -75,7 +75,7 @@ void main() {
 
         if(att > 0.0) {
             const vec3 radiance = light.color * att;
-            irradiance += radiance * L0(area.light_dir, view_dir, alpha_corrected(surface, area));
+            irradiance += radiance * eval_lighting(alpha_corrected_surface(surface, area), view_dir, area.light_dir);
         }
     }
 
