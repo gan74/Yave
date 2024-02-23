@@ -179,7 +179,24 @@ StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPass
                 const std::array<DescriptorSetBase, 2> desc_sets = {pass_set, texture_library().descriptor_set()};
 
                 usize start_of_batch = 0;
-                const MaterialTemplate* prev_template = nullptr;
+                const MaterialTemplate* prev_template = batches[0].material_template;
+                auto push_batch = [&](const MaterialTemplate* material_template, usize index) {
+                    if(prev_template == material_template) {
+                        return;
+                    }
+
+                    if(const usize batch_size = index - start_of_batch) {
+                        if(prev_template) {
+                            render_pass.bind_material_template(prev_template, desc_sets, true);
+                            render_pass.draw_indirect(IndirectSubBuffer(buffer, batch_size, start_of_batch));
+                        }
+
+                        start_of_batch = index;
+                    }
+
+                    prev_template = material_template;
+                };
+
                 for(usize i = 0; i != batches.size(); ++i) {
                     StaticMeshBatch batch = batches[i];
                     batch.cmd.firstInstance = u32(i);
@@ -187,22 +204,9 @@ StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPass
                     indirect_mapping[i] = batch.cmd;
                     indices_mapping[i] = batch.indices;
 
-                    if(prev_template == batch.material_template) {
-                        continue;
-                    }
-
-                    prev_template = batch.material_template;
-                    const usize batch_size = i - start_of_batch;
-
-                    if(!batch_size) {
-                        continue;
-                    }
-
-                    render_pass.bind_material_template(prev_template, desc_sets, true);
-                    render_pass.draw_indirect(IndirectSubBuffer(buffer, batch_size, start_of_batch));
-
-                    start_of_batch = i;
+                    push_batch(batch.material_template, i);
                 }
+                push_batch(nullptr, batches.size());
             } break;
 
             case PassType::Id: {
