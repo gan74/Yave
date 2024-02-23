@@ -34,7 +34,7 @@ SOFTWARE.
 
 namespace yave {
 
-BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, FrameGraphTypedBufferId<uniform::ExposureParams> exposure, const BloomSettings& settings) {
+BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, FrameGraphTypedBufferId<shader::ExposureParams> exposure, const BloomSettings& settings) {
     const auto region = framegraph.region("Bloom");
 
     if(settings.intensity <= 0.0f) {

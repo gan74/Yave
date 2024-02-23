@@ -45,8 +45,8 @@ static void fill_scene_render_pass(SceneRenderSubPass& pass, FrameGraphPassBuild
 
 
 SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, const SceneView& scene_view, const SceneVisibilitySubPass& visibility, PassType pass_type) {
-    const auto camera = builder.declare_typed_buffer<uniform::Camera>();
-    builder.map_buffer(camera, uniform::Camera(scene_view.camera()));
+    const auto camera = builder.declare_typed_buffer<shader::Camera>();
+    builder.map_buffer(camera, shader::Camera(scene_view.camera()));
 
     SceneRenderSubPass pass;
     pass.scene_view = scene_view;

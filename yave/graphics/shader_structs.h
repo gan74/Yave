@@ -19,53 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_CAMERABUFFERPASS_H
-#define YAVE_RENDERER_CAMERABUFFERPASS_H
+#ifndef YAVE_GRAPHICS_SHADER_STRUCTS_H
+#define YAVE_GRAPHICS_SHADER_STRUCTS_H
 
-#include <yave/scene/SceneView.h>
-#include <yave/framegraph/FrameGraphResourceId.h>
+#include <yave/yave.h>
+#include <y/math/Vec.h>
+#include <y/math/Matrix.h>
 
 namespace yave {
+namespace shader {
 
-struct TAASettings {
-    enum class JitterSeq {
-        Weyl,
-        R2,
-    };
+using uint = u32;
 
-    enum class WeightingMode : u32 {
-        None,
-        Luminance,
-        Log,
-    };
+using vec2 = math::Vec2;
+using vec3 = math::Vec3;
+using vec4 = math::Vec4;
 
-    JitterSeq jitter = JitterSeq::R2;
-    WeightingMode weighting_mode = WeightingMode::Log;
+using uvec2 = math::Vec2ui;
+using uvec3 = math::Vec3ui;
+using uvec4 = math::Vec4ui;
 
-    float blending_factor = 0.9f;
-    float jitter_intensity = 1.0f;
+using mat4 = math::Matrix4<>;
 
-    bool use_clamping = true;
-    bool use_motion_rejection = true;
-    bool use_previous_matching = true;
-    bool use_weighted_clamp = true;
-
-    bool enable = true;
-};
-
-struct CameraBufferPass {
-    SceneView view;
-    SceneView unjittered_view;
-
-    FrameGraphTypedBufferId<shader::Camera> camera;
-
-    TAASettings taa_settings;
-
-    static CameraBufferPass create_no_jitter(FrameGraph&, const SceneView& view);
-    static CameraBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings = {});
-};
+#include <shaders/lib/structs.glsl>
 
 }
 
-#endif // YAVE_RENDERER_CAMERABUFFERPASS_H
+}
+
+
+#endif // YAVE_GRAPHICS_SHADER_STRUCTS_H
 

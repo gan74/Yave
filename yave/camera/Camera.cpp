@@ -166,8 +166,8 @@ Frustum Camera::frustum() const {
         : Frustum::from_view_proj(view_matrix(), proj_matrix());
 }
 
-Camera::operator uniform::Camera() const {
-    uniform::Camera camera_data = {};
+Camera::operator shader::Camera() const {
+    shader::Camera camera_data = {};
     camera_data.view_proj = view_proj_matrix();
     camera_data.inv_view_proj = inverse_matrix();
 

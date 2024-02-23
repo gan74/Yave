@@ -25,6 +25,8 @@ SOFTWARE.
 #include "DownsamplePass.h"
 #include "BlurPass.h"
 
+#include <yave/graphics/shader_structs.h>
+
 namespace yave {
 
 struct BloomSettings {
@@ -36,7 +38,7 @@ struct BloomSettings {
 struct BloomPass {
     FrameGraphImageId bloomed;
 
-    static BloomPass create(FrameGraph& framegraph, FrameGraphImageId input, FrameGraphTypedBufferId<uniform::ExposureParams> exposure, const BloomSettings& settings = BloomSettings());
+    static BloomPass create(FrameGraph& framegraph, FrameGraphImageId input, FrameGraphTypedBufferId<shader::ExposureParams> exposure, const BloomSettings& settings = BloomSettings());
 };
 
 }

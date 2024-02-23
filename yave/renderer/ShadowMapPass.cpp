@@ -83,7 +83,7 @@ struct SubPass {
     SceneRenderSubPass scene_pass;
     math::Vec2ui viewport_offset;
     u32 viewport_size;
-    uniform::ShadowMapParams params;
+    shader::ShadowMapInfo info;
 };
 
 static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
@@ -97,7 +97,7 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
     }
 
     const float size_f = float(size);
-    const uniform::ShadowMapParams params = {
+    const shader::ShadowMapInfo info = {
         light_view.camera().view_proj_matrix(),
         math::Vec2(offset) * uv_mul,
         uv_mul * size_f,
@@ -109,7 +109,7 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
     return SubPass {
         SceneRenderSubPass::create(builder, light_view, SceneVisibilitySubPass::create(light_view), PassType::Depth),
         offset, size,
-        params
+        info
     };
 }
 
@@ -301,17 +301,17 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
         }
     }
 
-    const auto shadow_buffer = builder.declare_typed_buffer<uniform::ShadowMapParams>(sub_passes.size());
-    pass.shadow_params = shadow_buffer;
+    const auto shadow_buffer = builder.declare_typed_buffer<shader::ShadowMapInfo>(sub_passes.size());
+    pass.shadow_infos = shadow_buffer;
 
     builder.map_buffer(shadow_buffer);
     builder.add_depth_output(shadow_map);
     builder.set_render_func([=, passes = std::move(sub_passes)](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        auto shadow_params = self->resources().map_buffer(shadow_buffer);
+        auto shadow_infos = self->resources().map_buffer(shadow_buffer);
 
         for(usize i = 0; i != passes.size(); ++i) {
             const auto& pass = passes[i];
-            shadow_params[i] = pass.params;
+            shadow_infos[i] = pass.info;
 
             render_pass.set_viewport(Viewport(math::Vec2(float(pass.viewport_size)), pass.viewport_offset));
             pass.scene_pass.render(render_pass, self);

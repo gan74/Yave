@@ -41,7 +41,7 @@ struct ShadowMapSettings {
 
 struct ShadowMapPass {
     FrameGraphImageId shadow_map;
-    FrameGraphTypedBufferId<uniform::ShadowMapParams> shadow_params;
+    FrameGraphTypedBufferId<shader::ShadowMapInfo> shadow_infos;
 
     std::shared_ptr<core::FlatHashMap<u64, math::Vec4ui>> shadow_indices;
 

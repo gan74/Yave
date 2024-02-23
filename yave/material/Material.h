@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include "MaterialDrawData.h"
 
-#include <yave/graphics/descriptors/uniforms.h>
-
 namespace yave {
 
 class Material final : NonCopyable {

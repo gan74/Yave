@@ -32,7 +32,7 @@ layout(set = 0, binding = 4) uniform sampler2D in_rt1;
 #ifdef SPOT
 layout(set = 0, binding = 5) uniform sampler2DShadow in_shadows;
 layout(set = 0, binding = 6) readonly buffer Shadows {
-    ShadowMapParams shadow_params[];
+    ShadowMapInfo shadow_infos[];
 };
 #endif
 
@@ -67,8 +67,8 @@ void main() {
             att *= spot_attenuation(spot_cos_alpha, light.att_scale_offset);
 
             if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
-                const ShadowMapParams params = shadow_params[light.shadow_map_index];
-                att *= compute_shadow_pcf(in_shadows, params, world_pos);
+                const ShadowMapInfo sm_info = shadow_infos[light.shadow_map_index];
+                att *= compute_shadow_pcf(in_shadows, sm_info, world_pos);
             }
         }
 #endif

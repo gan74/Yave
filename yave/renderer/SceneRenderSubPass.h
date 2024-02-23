@@ -34,7 +34,7 @@ struct SceneRenderSubPass {
     SceneView scene_view;
 
     i32 main_descriptor_set_index = -1;
-    FrameGraphTypedBufferId<uniform::Camera> camera;
+    FrameGraphTypedBufferId<shader::Camera> camera;
 
     RendererSystem::RenderFunc render_func;
 

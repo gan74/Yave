@@ -32,7 +32,7 @@ layout(set = 0, binding = 8) readonly buffer Lights {
 };
 
 layout(set = 0, binding = 9) readonly buffer Shadows {
-    ShadowMapParams shadow_params[];
+    ShadowMapInfo shadow_infos[];
 };
 
 layout(set = 0, binding = 10) uniform Params {
@@ -65,9 +65,9 @@ uint shadow_cascade_index(uvec4 indices, vec3 world_pos) {
             break;
         }
 
-        const ShadowMapParams params = shadow_params[index];
-        const vec2 coords = abs(project(world_pos, params.view_proj).xy * 2.0 - 1.0);
-        if(max(coords.x, coords.y) < 1.0 - (params.texel_size * 4.0)) {
+        const ShadowMapInfo sm_info = shadow_infos[index];
+        const vec2 coords = abs(project(world_pos, sm_info.view_proj).xy * 2.0 - 1.0);
+        if(max(coords.x, coords.y) < 1.0 - (sm_info.texel_size * 4.0)) {
             return index;
         }
     }
@@ -94,9 +94,9 @@ vec4 cascade_debug_color(vec3 world_pos) {
         const uint shadow_map_index = shadow_cascade_index(indices, world_pos);
 
         if(shadow_map_index < 0xFFFFFFFF) {
-            const ShadowMapParams params = shadow_params[shadow_map_index];
-            const vec3 proj = project(world_pos, params.view_proj);
-            const vec2 texel = floor(atlas_uv(params, proj.xy) * params.size);
+            const ShadowMapInfo sm_info = shadow_infos[shadow_map_index];
+            const vec3 proj = project(world_pos, sm_info.view_proj);
+            const vec2 texel = floor(atlas_uv(sm_info, proj.xy) * sm_info.size);
             const vec3 color = mix(uv_debug_color(texel), cascade_debug_color(shadow_map_index, indices), 0.25);
             return vec4(color, 1.0);
         }
@@ -144,8 +144,8 @@ void main() {
 
             const uint shadow_map_index = shadow_cascade_index(light.shadow_map_indices, world_pos);
             if(shadow_map_index < 0xFFFFFFFF) {
-                const ShadowMapParams params = shadow_params[shadow_map_index];
-                att = compute_shadow_pcf(in_shadows, params, world_pos);
+                const ShadowMapInfo sm_info = shadow_infos[shadow_map_index];
+                att = compute_shadow_pcf(in_shadows, sm_info, world_pos);
             }
 
             if(att > 0.0) {

@@ -81,7 +81,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
     const auto lit = builder.declare_copy(gbuffer.emissive);
 
-    const auto directional_buffer = builder.declare_typed_buffer<uniform::DirectionalLight>(max_directional_lights);
+    const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(max_directional_lights);
     const auto params_buffer = builder.declare_typed_buffer<math::Vec4ui>();
 
     builder.add_uniform_input(gbuffer.depth);
@@ -93,7 +93,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp));
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_input(directional_buffer);
-    builder.add_storage_input(shadow_pass.shadow_params);
+    builder.add_storage_input(shadow_pass.shadow_infos);
     builder.add_uniform_input(params_buffer);
     builder.add_color_output(lit);
     builder.map_buffer(directional_buffer);
@@ -151,7 +151,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
 
 
-static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView& scene) {
+static u32 fill_point_light_buffer(shader::PointLight* points, const SceneView& scene) {
     y_profile();
 
     Y_TODO(Use octree)
@@ -189,7 +189,7 @@ static u32 fill_point_light_buffer(uniform::PointLight* points, const SceneView&
 
 template<bool Transforms>
 static u32 fill_spot_light_buffer(
-        uniform::SpotLight* spots,
+        shader::SpotLight* spots,
         math::Transform<>* transforms,
         const SceneView& scene, bool render_shadows,
         const ShadowMapPass& shadow_pass) {
@@ -275,8 +275,8 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Lighting pass");
 
-    const auto point_buffer = builder.declare_typed_buffer<uniform::PointLight>(max_point_lights);
-    const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
+    const auto point_buffer = builder.declare_typed_buffer<shader::PointLight>(max_point_lights);
+    const auto spot_buffer = builder.declare_typed_buffer<shader::SpotLight>(max_spot_lights);
 
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.color);
@@ -285,7 +285,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_input(point_buffer);
     builder.add_storage_input(spot_buffer);
-    builder.add_storage_input(shadow_pass.shadow_params);
+    builder.add_storage_input(shadow_pass.shadow_infos);
     builder.add_storage_output(lit);
     builder.map_buffer(point_buffer);
     builder.map_buffer(spot_buffer);
@@ -320,7 +320,7 @@ static void local_lights_pass(FrameGraph& framegraph,
     {
         FrameGraphPassBuilder builder = framegraph.add_pass("Point light pass");
 
-        const auto point_buffer = builder.declare_typed_buffer<uniform::PointLight>(max_point_lights);
+        const auto point_buffer = builder.declare_typed_buffer<shader::PointLight>(max_point_lights);
 
         // Moving this down causes a reused resource assert
         copied_depth = builder.declare_copy(gbuffer.depth); // extra copy for nothing =(
@@ -353,7 +353,7 @@ static void local_lights_pass(FrameGraph& framegraph,
     {
         FrameGraphPassBuilder builder = framegraph.add_pass("Spot light pass");
 
-        const auto spot_buffer = builder.declare_typed_buffer<uniform::SpotLight>(max_spot_lights);
+        const auto spot_buffer = builder.declare_typed_buffer<shader::SpotLight>(max_spot_lights);
         const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_spot_lights);
 
         builder.add_uniform_input(gbuffer.scene_pass.camera, PipelineStage::VertexBit);
@@ -362,7 +362,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
-        builder.add_storage_input(shadow_pass.shadow_params);
+        builder.add_storage_input(shadow_pass.shadow_infos);
         builder.add_attrib_input(transform_buffer);
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);

@@ -27,7 +27,7 @@ SOFTWARE.
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/buffers/buffers.h>
 
-#include <yave/graphics/descriptors/uniforms.h>
+#include <yave/graphics/shader_structs.h>
 
 #include <y/core/Vector.h>
 #include <y/concurrent/Mutexed.h>
@@ -44,7 +44,7 @@ class MaterialAllocator : NonMovable {
 
         MaterialDrawData allocate_material(const MaterialData& material);
 
-        TypedSubBuffer<uniform::MaterialData, BufferUsage::StorageBit> material_buffer() const {
+        TypedSubBuffer<shader::MaterialData, BufferUsage::StorageBit> material_buffer() const {
             return _materials;
         }
 
@@ -53,7 +53,7 @@ class MaterialAllocator : NonMovable {
 
         void recycle(MaterialDrawData* data);
 
-        TypedBuffer<uniform::MaterialData, BufferUsage::StorageBit, MemoryType::CpuVisible> _materials;
+        TypedBuffer<shader::MaterialData, BufferUsage::StorageBit, MemoryType::CpuVisible> _materials;
         concurrent::Mutexed<core::Vector<u32>> _free;
 
 };

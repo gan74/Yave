@@ -47,10 +47,10 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
 
     auto params = exposure.params;
 
-    FrameGraphMutableTypedBufferId<uniform::ExposureParams> mut_params;
+    FrameGraphMutableTypedBufferId<shader::ExposureParams> mut_params;
     if(!settings.auto_exposure) {
-        mut_params = builder.declare_typed_buffer<uniform::ExposureParams>();
-        builder.map_buffer(mut_params, uniform::ExposureParams{});
+        mut_params = builder.declare_typed_buffer<shader::ExposureParams>();
+        builder.map_buffer(mut_params, shader::ExposureParams{});
         params = mut_params;
     }
 

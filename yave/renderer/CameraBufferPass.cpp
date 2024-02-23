@@ -52,8 +52,8 @@ static math::Vec2 compute_jitter(TAASettings::JitterSeq jitter, u64 jitter_index
 CameraBufferPass CameraBufferPass::create_no_jitter(FrameGraph& framegraph, const SceneView& view) {
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
 
-    const auto camera = builder.declare_typed_buffer<uniform::Camera>();
-    builder.map_buffer(camera, uniform::Camera(view.camera()));
+    const auto camera = builder.declare_typed_buffer<shader::Camera>();
+    builder.map_buffer(camera, shader::Camera(view.camera()));
 
     CameraBufferPass pass;
     pass.taa_settings.enable = false;
@@ -73,8 +73,8 @@ CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneVie
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
 
-    const auto camera = builder.declare_typed_buffer<uniform::Camera>();
-    builder.map_buffer(camera, uniform::Camera(jittered_view.camera()));
+    const auto camera = builder.declare_typed_buffer<shader::Camera>();
+    builder.map_buffer(camera, shader::Camera(jittered_view.camera()));
 
     builder.add_input_usage(camera, BufferUsage::UniformBit);
 

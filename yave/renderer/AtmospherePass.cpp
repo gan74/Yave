@@ -33,6 +33,8 @@ SOFTWARE.
 #include <yave/meshes/StaticMesh.h>
 #include <yave/ecs/EntityWorld.h>
 
+#include <yave/graphics/shader_structs.h>
+
 #include <y/core/Chrono.h>
 
 namespace yave {
@@ -48,7 +50,7 @@ static const AtmosphereComponent* find_atmosphere_component(const SceneView& sce
     return nullptr;
 }
 
-static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const uniform::AtmosphereParams& params, const GBufferPass& gbuffer, const AtmosphereSettings& settings) {
+static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const shader::AtmosphereParams& params, const GBufferPass& gbuffer, const AtmosphereSettings& settings) {
     const math::Vec3ui size = settings.lut_size;
     const ImageFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
     //const ImageFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -92,7 +94,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
         return v;
     };
 
-    const uniform::AtmosphereParams params {
+    const shader::AtmosphereParams params {
         math::Vec3(0.0f, 0.0f, -atmosphere->zero_altitude()),
         atmosphere->planet_radius(),
 

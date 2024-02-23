@@ -23,13 +23,14 @@ SOFTWARE.
 #define YAVE_SYSTEMS_RENDERERSYSTEM_H
 
 #include <yave/ecs/System.h>
-
-#include <yave/graphics/buffers/Buffer.h>
-#include <yave/graphics/buffers/buffers.h>
 #include <yave/ecs/SparseComponentSet.h>
 
 #include <yave/framegraph/FrameGraphResourceId.h>
-#include <yave/graphics/descriptors/uniforms.h>
+
+#include <yave/graphics/buffers/Buffer.h>
+#include <yave/graphics/buffers/buffers.h>
+
+#include <yave/graphics/shader_structs.h>
 
 #include <y/concurrent/Signal.h>
 #include <y/core/Vector.h>
@@ -46,7 +47,7 @@ enum class PassType {
 class RendererSystem : public ecs::System {
     public:
         static constexpr BufferUsage buffer_usage = BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit;
-        using TransformBuffer = TypedBuffer<uniform::TransformableData, buffer_usage>;
+        using TransformBuffer = TypedBuffer<shader::TransformableData, buffer_usage>;
 
 
         using RenderFunc = std::function<void(RenderPassRecorder& render_pass, const FrameGraphPass* pass)>;
@@ -80,7 +81,7 @@ class RendererSystem : public ecs::System {
         RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const;
 
 
-        TypedSubBuffer<uniform::TransformableData, BufferUsage::StorageBit> transform_buffer() const  {
+        TypedSubBuffer<shader::TransformableData, BufferUsage::StorageBit> transform_buffer() const  {
             return _transform_buffer;
         }
 

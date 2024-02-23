@@ -78,13 +78,13 @@ MaterialAllocator::~MaterialAllocator() {
 MaterialDrawData MaterialAllocator::allocate_material(const MaterialData& material) {
     const auto textures = material_texture_views(material);
 
-    uniform::MaterialData data = {};
+    shader::MaterialData data = {};
     {
         data.emissive_mul = material.emissive_mul();
         data.base_color_mul = material.base_color_mul();
         data.roughness_mul = material.roughness_mul();
         data.metallic_mul = material.metallic_mul();
-        y_debug_assert(textures.size() <= data.texture_count);
+        y_debug_assert(textures.size() <= sizeof(data.texture_indices) / sizeof(data.texture_indices[0]));
         for(usize i = 0; i != textures.size(); ++i) {
             data.texture_indices[i] = texture_library().add_texture(textures[i]);
         }

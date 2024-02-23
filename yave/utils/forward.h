@@ -284,7 +284,7 @@ struct DirectionalLight;
 struct ExposureParams;
 struct MaterialData;
 struct PointLight;
-struct ShadowMapParams;
+struct ShadowMapInfo;
 struct SpotLight;
 struct TransformableData;
 }

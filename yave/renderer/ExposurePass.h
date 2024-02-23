@@ -28,7 +28,7 @@ namespace yave {
 
 struct ExposurePass {
     FrameGraphImageId histogram;
-    FrameGraphTypedBufferId<uniform::ExposureParams> params;
+    FrameGraphTypedBufferId<shader::ExposureParams> params;
 
     static ExposurePass create(FrameGraph& framegraph, FrameGraphImageId in_lit);
 };

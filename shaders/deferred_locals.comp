@@ -34,7 +34,7 @@ layout(set = 0, binding = 6) readonly buffer SpotLights {
 };
 
 layout(set = 0, binding = 7) readonly buffer Shadows {
-    ShadowMapParams shadow_params[];
+    ShadowMapInfo shadow_infos[];
 };
 
 layout(r11f_g11f_b10f, set = 0, binding = 8) uniform image2D out_color;
@@ -271,8 +271,8 @@ void main() {
         }
 
         if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
-            const ShadowMapParams params = shadow_params[light.shadow_map_index];
-            att *= compute_shadow_pcf(in_shadows, params, world_pos);
+            const ShadowMapInfo info = shadow_infos[light.shadow_map_index];
+            att *= compute_shadow_pcf(in_shadows, info, world_pos);
         }
 
         if(att > 0.0) {

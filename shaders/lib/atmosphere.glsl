@@ -1,20 +1,5 @@
 #include "utils.glsl"
 
-struct AtmosphereParams {
-    vec3 center;
-    float planet_radius;
-
-    vec3 scattering_coeffs;
-    float atmosphere_height;
-
-    vec3 sun_dir;
-    float radius; // planet_radius + atmosphere_height
-
-    vec3 sun_color;
-    float density_falloff;
-};
-
-
 const float lut_first_slice = 16.0 / 1000.0;
 const float lut_slice_factor = 11.0f;
 

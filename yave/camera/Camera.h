@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_CAMERA_CAMERA_H
 #define YAVE_CAMERA_CAMERA_H
 
-#include <yave/graphics/descriptors/uniforms.h>
+#include <yave/graphics/shader_structs.h>
 #include "Frustum.h"
 
 namespace yave {
@@ -73,7 +73,7 @@ class Camera {
         math::Vec3 up() const;
         Frustum frustum() const;
 
-        operator uniform::Camera() const;
+        operator shader::Camera() const;
 
     private:
         void update_view_proj();
