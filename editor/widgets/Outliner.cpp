@@ -35,6 +35,7 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/scene/SceneView.h>
 
+#include <editor/components/DebugAnimateComponent.h>
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
 
@@ -118,6 +119,7 @@ static void add_debug_cubes() {
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
         world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
+        world.get_or_add_component<DebugAnimateComponent>(entity);
     }
 }
 
