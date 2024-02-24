@@ -53,8 +53,7 @@ static constexpr usize max_spot_lights = 1024;
 
 static std::tuple<const IBLProbe*, float, bool>  find_probe(const ecs::EntityWorld& world) {
     const std::array tags = {ecs::tags::not_hidden};
-    for(auto id_comp : world.query<SkyLightComponent>(tags)) {
-        const SkyLightComponent& sky = id_comp.component<SkyLightComponent>();
+    for(const auto& [id, sky] : world.query<SkyLightComponent>(tags)) {
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
             return {probe, sky.intensity(), sky.display_sky()};
@@ -103,9 +102,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         auto mapping = self->resources().map_buffer(directional_buffer);
 
         const std::array tags = {ecs::tags::not_hidden};
-        for(auto&& [id, components] : scene.world().query<DirectionalLightComponent>(tags)) {
-            const auto& [l] = components;
-
+        for(const auto& [id, l] : scene.world().query<DirectionalLightComponent>(tags)) {
             auto shadow_indices = math::Vec4ui(u32(-1));
             if(l.cast_shadow()) {
                 if(const auto it = shadow_pass.shadow_indices->find(id.as_u64()); it != shadow_pass.shadow_indices->end()) {
@@ -160,9 +157,7 @@ static u32 fill_point_light_buffer(shader::PointLight* points, const SceneView& 
     u32 count = 0;
 
     const std::array tags = {ecs::tags::not_hidden};
-    for(auto point : scene.world().query<TransformableComponent, PointLightComponent>(tags)) {
-        const auto& [t, l] = point.components;
-
+    for(const auto& [id, t, l] : scene.world().query<TransformableComponent, PointLightComponent>(tags)) {
         const float scaled_range = l.range() * t.transform().scale().max_component();
         if(!frustum.is_inside(t.position(), scaled_range)) {
             continue;
@@ -204,8 +199,7 @@ static u32 fill_spot_light_buffer(
     u32 count = 0;
 
     const std::array tags = {ecs::tags::not_hidden};
-    for(auto&& [id, comp] : scene.world().query<TransformableComponent, SpotLightComponent>(tags)) {
-        const auto& [t, l] = comp;
+    for(const auto& [id, t, l] : scene.world().query<TransformableComponent, SpotLightComponent>(tags)) {
 
         const math::Vec3 forward = t.forward().normalized();
         const float scale = t.transform().scale().max_component();

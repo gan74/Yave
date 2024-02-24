@@ -348,8 +348,7 @@ void TransformableManagerSystem::run_tick(bool only_recent) {
     _stopped.swap(_moved);
     _moved.make_empty();
 
-    for(const auto& [id, comp] : moved_query.id_components()) {
-        const auto& [tr] = comp;
+    for(const auto& [id, tr] : moved_query.id_components()) {
         _moved.insert(id, alloc_index(tr));
         _stopped.erase(id);
 

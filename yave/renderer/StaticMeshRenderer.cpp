@@ -93,8 +93,7 @@ static void collect_batches_for_id(Q query, core::Vector<StaticMeshBatch>& batch
     y_profile();
 
     u32 index = 0;
-    for(const auto& [id, comp] : query.id_components()) {
-        const auto& [tr, mesh] = comp;
+    for(const auto& [id, tr, mesh] : query.id_components()) {
         const u32 transform_index = tr.transform_index();
 
         if(!mesh.mesh() || transform_index == u32(-1)) {

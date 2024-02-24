@@ -49,8 +49,7 @@ void AABBUpdateSystem::tick() {
         info.collect_aabbs(world(), ids, aabbs);
     }
 
-    for(auto&& [id, comp] : world().query<ecs::Mutate<TransformableComponent>>(aabbs.ids())) {
-        auto&& [tr] = comp;
+    for(auto&& [id, tr] : world().query<ecs::Mutate<TransformableComponent>>(aabbs.ids())) {
         tr.set_aabb(aabbs[id]);
     }
 }

@@ -56,11 +56,10 @@ void EntitySelector::on_gui() {
             ImGui::TextDisabled("No viable entities found");
         }
 
-        for(auto&& [id, comp] : query) {
-            const auto& [c] = comp;
+        for(const auto& [id, comp] : query) {
             imgui::text_icon(world.entity_icon(id));
             ImGui::SameLine();
-            if(ImGui::Selectable(c.name().data())) {
+            if(ImGui::Selectable(comp.name().data())) {
                 if(_selected(id)) {
                     close();
                     break;

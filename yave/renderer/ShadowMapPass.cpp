@@ -184,8 +184,7 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene)
     ShadowCastingLights shadow_casters;
 
     shadow_casters.directionals.set_min_capacity(world.component_set<DirectionalLightComponent>().size());
-    for(auto&& [id, comp] : world.query<DirectionalLightComponent>(tags)) {
-        const auto& [l] = comp;
+    for(const auto& [id, l] : world.query<DirectionalLightComponent>(tags)) {
         if(!l.cast_shadow()) {
             continue;
         }
@@ -194,8 +193,7 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene)
 
     auto collect_spots = [&](auto&& query) {
         shadow_casters.spots.set_min_capacity(query.size());
-        for(auto&& [id, comp] : query) {
-            const auto& [t, l] = comp;
+        for(const auto& [id, t, l] : query) {
             if(!l.cast_shadow()) {
                 continue;
             }
@@ -214,12 +212,12 @@ static float total_occupancy(const ShadowCastingLights& lights) {
     };
 
     float total = 0.0f;
-    for(auto&& [id, light] : lights.directionals) {
+    for(const auto& [id, light] : lights.directionals) {
         unused(id);
         total += occupancy(light->shadow_lod()) * light->cascades();
     }
 
-    for(auto&& [id, transform, light] : lights.spots) {
+    for(const auto& [id, transform, light] : lights.spots) {
         unused(id, transform);
         total += occupancy(light->shadow_lod());
     }
@@ -264,7 +262,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
     {
         SubAtlasAllocator allocator(first_level_size);
 
-        for(auto&& [id, light] : lights.directionals) {
+        for(const auto& [id, light] : lights.directionals) {
             auto& indices = (*pass.shadow_indices)[id.as_u64()];
             indices = math::Vec4ui(u32(-1));
 
@@ -289,7 +287,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
             }
         }
 
-        for(auto&& [id, transform, light] : lights.spots) {
+        for(const auto& [id, transform, light] : lights.spots) {
             auto& indices = (*pass.shadow_indices)[id.as_u64()];
             indices = math::Vec4ui(u32(-1));
 

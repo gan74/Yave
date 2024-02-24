@@ -42,8 +42,7 @@ namespace yave {
 
 
 static const AtmosphereComponent* find_atmosphere_component(const SceneView& scene) {
-    for(const auto& [id, comp] : scene.world().query<AtmosphereComponent>(ecs::tags::not_hidden)) {
-        const auto& [atmo] = comp;
+    for(const auto& [id, atmo] : scene.world().query<AtmosphereComponent>(ecs::tags::not_hidden)) {
         return &atmo;
     }
 

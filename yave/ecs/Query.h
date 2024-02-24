@@ -138,26 +138,11 @@ class Query : NonCopyable {
     public:
         using component_tuple = decltype(make_component_tuple(set_tuple{}, EntityId{}));
 
-        struct IdComponents {
-            EntityId id;
-            component_tuple components;
-
-            template<typename T>
-            inline decltype(auto) component() const {
-                constexpr component_tuple* p = nullptr;
-                constexpr usize index = detail::tuple_index<T>(p);
-                return std::get<index>(components);
-            }
-
-            inline IdComponents(EntityId i, component_tuple c) : id(i), components(c) {
-            }
-
-        };
 
     private:
         struct IdComponentsReturnPolicy {
             inline static decltype(auto) make(EntityId id, const component_tuple& comps) {
-                return IdComponents(id, comps);
+                return std::tuple_cat(std::tuple<EntityId>(id), comps);
             }
         };
 

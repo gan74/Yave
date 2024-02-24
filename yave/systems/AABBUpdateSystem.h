@@ -42,11 +42,10 @@ class AABBUpdateSystem : public ecs::System {
             _infos << AABBTypeInfo {
                 [](const ecs::EntityWorld& world, core::Span<ecs::EntityId> ids, ecs::SparseComponentSet<AABB>& aabbs) {
                     for(auto&& [id, comp] : world.query<T>(ids)) {
-                        auto&& [c] = comp;
                         if(AABB* aabb = aabbs.try_get(id)) {
-                            *aabb = aabb->merged(c.aabb());
+                            *aabb = aabb->merged(comp.aabb());
                         } else {
-                            aabbs.insert(id, c.aabb());
+                            aabbs.insert(id, comp.aabb());
                         }
                     }
                 },
