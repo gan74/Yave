@@ -176,7 +176,8 @@ static void load_world_deferred() {
 
     serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
     if(auto r = application::world->load_state(arc); !r) {
-        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(r.error()), r.error().member), Log::Error);
+        const char* member_name = r.error().member ? r.error().member : "unknown member";
+        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(r.error()), member_name), Log::Error);
         return;
     } else if(r.unwrap() == serde3::Success::Partial) {
         log_msg("World was only partialy loaded", Log::Warning);

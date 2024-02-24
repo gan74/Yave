@@ -69,10 +69,6 @@ class ComponentContainerBase : NonMovable {
         const SparseIdSetBase& id_set() const;
         const SparseIdSet& recently_mutated() const;
 
-
-
-
-
         y_serde3_poly_abstract_base(ComponentContainerBase)
 
     protected:
@@ -82,8 +78,7 @@ class ComponentContainerBase : NonMovable {
         }
 
 
-        virtual serde3::Result save_state(serde3::WritableArchive& arc) const = 0;
-        virtual serde3::Result load_state(serde3::ReadableArchive& arc) = 0;
+        virtual void take_components_from(ComponentContainerBase* other) = 0;
         virtual void post_load() = 0;
 
 
@@ -208,15 +203,11 @@ class ComponentContainer final : public ComponentContainerBase {
         y_reflect(ComponentContainer, _components)
 
     private:
-        friend class EntityWorld;
+        void take_components_from(ComponentContainerBase* other) override {
+            ComponentContainer* typed = dynamic_cast<ComponentContainer*>(other);
+            y_always_assert(typed, "Invalid component container type");
 
-
-        serde3::Result save_state(serde3::WritableArchive& arc) const override {
-            return arc.serialize(_components);
-        }
-
-        serde3::Result load_state(serde3::ReadableArchive& arc) override {
-            return arc.deserialize(_components);
+            _components.swap(typed->_components);
         }
 
         void post_load() override {
@@ -226,6 +217,9 @@ class ComponentContainer final : public ComponentContainerBase {
             }
         }
 
+
+    private:
+        friend class EntityWorld;
 
         SparseComponentSet<T> _components;
 

@@ -384,12 +384,7 @@ serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
     y_try(arc.serialize(_entities));
     y_try(arc.serialize(_tags));
     y_try(arc.serialize(_world_components));
-
-    for(auto&& container : _containers) {
-        if(container) {
-            y_try(container->save_state(arc));
-        }
-    }
+    y_try(arc.serialize(_containers));
 
     return core::Ok(serde3::Success::Full);
 }
@@ -403,9 +398,12 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
     y_try(arc.deserialize(_tags));
     y_try(arc.deserialize(_world_components));
 
-    for(auto&& container : _containers) {
+    decltype(_containers) containers;
+    y_try(arc.deserialize(containers));
+
+    for(auto&& container : containers) {
         if(container) {
-            y_try(container->load_state(arc));
+            _containers[usize(container->type_id())]->take_components_from(container.get());
         }
     }
 

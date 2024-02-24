@@ -41,6 +41,8 @@ SOFTWARE.
 #include <yave/systems/ScriptSystem.h>
 #include <yave/systems/RendererSystem.h>
 
+#include <editor/systems/DebugAnimateSystem.h>
+
 #include <y/utils/format.h>
 
 #include <external/imgui/IconsFontAwesome5.h>
@@ -54,6 +56,7 @@ editor_action("Remove all entities", [] { current_world().remove_all_entities();
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<AssetLoaderSystem>(loader);
     add_system<AABBUpdateSystem>();
+    add_system<DebugAnimateSystem>();
     add_system<TransformableManagerSystem>();
     add_system<ScriptSystem>();
     add_system<RendererSystem>();
