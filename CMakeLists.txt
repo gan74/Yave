@@ -99,7 +99,6 @@ endif()
 # add y subtree
 add_subdirectory(y)
 
-add_subdirectory(external/spirv_cross)
 
 # setup includes
 include_directories(${y_SOURCE_DIR})
@@ -219,6 +218,8 @@ if(YAVE_UNITY_BUILD)
 endif()
 
 if(YAVE_BUILD_YAVE)
+    add_subdirectory(external/spirv_cross)
+
     add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
 
     if(UNIX)

@@ -66,6 +66,21 @@ y_test_func("PagedSet erase") {
     y_test_assert(std::find(set.begin(), set.end(), 7) == set.end());
 }
 
+y_test_func("PagedSet sort") {
+    PagedSet<int> set;
+
+    for(int i = 0; i != 1024; ++i) {
+        set.emplace(i % 17);
+    }
+
+    auto compare = [](int a, int b) {
+        return b < a;
+    };
+
+    set.sort(compare);
+
+    y_test_assert(std::is_sorted(set.begin(), set.end(), compare));
+}
 
 }
 

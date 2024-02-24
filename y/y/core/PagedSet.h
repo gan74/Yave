@@ -29,13 +29,13 @@ SOFTWARE.
 namespace y {
 namespace core {
 
-template<typename Elem, typename Allocator = std::allocator<Elem>>
+template<typename Elem, usize PageSize = 512, typename Allocator = std::allocator<Elem>>
 class PagedSet : Allocator, NonCopyable {
 
     using data_type = typename std::remove_const<Elem>::type;
 
     public:
-        static constexpr usize page_size = 512;
+        static constexpr usize page_size = PageSize;
 
         using value_type = Elem;
         using size_type = usize;
@@ -188,7 +188,17 @@ class PagedSet : Allocator, NonCopyable {
 
 
 
+        template<typename F>
+        void sort(F&& compare) {
+            std::sort(_indexes.data(), _indexes.data() + _size, [&](usize a, usize b) {
+                return compare(operator[](a), operator[](b));
+            });
+        }
 
+        void sort_indices() {
+            std::sort(_indexes.data(), _indexes.data() + _size);
+            std::sort(_indexes.data() + _size, _indexes.data() + _indexes.size());
+        }
 
         void make_empty() {
             for(usize i = 0; i != _size; ++i) {
@@ -217,10 +227,12 @@ class PagedSet : Allocator, NonCopyable {
         }
 
         inline reference operator[](usize index) {
+            y_debug_assert(index < _size);
             return *get(index);
         }
 
         inline const_reference operator[](usize index) const {
+            y_debug_assert(index < _size);
             return *get(index);
         }
 
