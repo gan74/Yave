@@ -317,6 +317,8 @@ TransformableManagerSystem::TransformableManagerSystem() : ecs::System("Transfor
 void TransformableManagerSystem::destroy() {
     _octree = {};
     _transform_destroyed.disconnect();
+    _moved.clear();
+    _stopped.clear();
     auto query = world().query<TransformableComponent>();
     for(const auto& [tr] : query.components()) {
         free_index(tr);
@@ -324,9 +326,11 @@ void TransformableManagerSystem::destroy() {
 }
 
 void TransformableManagerSystem::setup() {
-    _transform_destroyed = world().on_destroyed<TransformableComponent>().subscribe([this](ecs::EntityId, TransformableComponent& tr) {
+    _transform_destroyed = world().on_destroyed<TransformableComponent>().subscribe([this](ecs::EntityId id, TransformableComponent& tr) {
         _octree.remove(tr);
         free_index(tr);
+        _moved.erase(id);
+        _stopped.erase(id);
     });
 
     run_tick(false);
