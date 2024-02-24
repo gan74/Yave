@@ -29,10 +29,17 @@ SOFTWARE.
 namespace yave {
 
 static DeviceResources::MaterialTemplates material_template_for_data(const MaterialData& data) {
-    if(data.alpha_tested()) {
-       return DeviceResources::TexturedAlphaMaterialTemplate;
+    if(data.material_type() == MaterialData::Type::Specular) {
+        if(data.alpha_tested()) {
+            return DeviceResources::TexturedSpecularAlphaMaterialTemplate;
+        }
+        return DeviceResources::TexturedSpecularMaterialTemplate;
+    } else {
+        if(data.alpha_tested()) {
+            return DeviceResources::TexturedAlphaMaterialTemplate;
+        }
+        return DeviceResources::TexturedMaterialTemplate;
     }
-    return DeviceResources::TexturedMaterialTemplate;
 }
 
 

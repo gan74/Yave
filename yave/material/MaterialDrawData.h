@@ -51,7 +51,7 @@ class MaterialDrawData : NonCopyable {
 
         u32 _index = u32(-1);
 
-        std::array<TextureView, MaterialData::texture_count> _textures;
+        std::array<TextureView, MaterialData::max_texture_count> _textures;
         MaterialAllocator* _parent = nullptr;
 };
 

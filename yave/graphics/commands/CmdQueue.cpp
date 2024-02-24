@@ -170,7 +170,7 @@ void CmdQueue::submit_async_start(CmdBufferData* data) {
         data->_semaphore = create_cmd_buffer_semaphore();
     }
 
-    submit_internal(data, {}, {}, {}, true);
+    submit_internal(data, {}, {}, {}, false);
 }
 
 TimelineFence CmdQueue::submit(CmdBufferData* data) {

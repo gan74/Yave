@@ -188,6 +188,8 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_shader_variation(${SHADER_TARGET} "textured.frag" "")
     add_shader_variation(${SHADER_TARGET} "textured.frag" "ALPHA_TEST")
+    add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR")
+    add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR;ALPHA_TEST")
 
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")

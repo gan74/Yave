@@ -593,8 +593,41 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
         return core::Err();
     }
 
+
     const tinygltf::Material& material = gltf->materials[index];
     const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
+
+    bool use_specular = false;
+    int specular_texture_index = -1;
+    int specular_color_texture_index = -1;
+    float specular_factor = 1.0f;
+    math::Vec3 specular_color_factor = math::Vec3(1.0f);
+
+    if(const auto it = material.extensions.find("KHR_materials_specular"); it != material.extensions.end() && it->second.IsObject()) {
+        use_specular = true;
+
+        if(const auto tex_info = it->second.Get("specularTexture"); tex_info.IsObject()) {
+            if(const auto value = tex_info.Get("index"); value.IsInt()) {
+                specular_texture_index = value.GetNumberAsInt();
+            }
+        }
+
+        if(const auto tex_info = it->second.Get("specularColorTexture"); tex_info.IsObject()) {
+            if(const auto value = tex_info.Get("index"); value.IsInt()) {
+                specular_color_texture_index = value.GetNumberAsInt();
+            }
+        }
+
+        if(const auto value = it->second.Get("specularColorFactor"); value.IsArray()) {
+            for(int i = 0; i != 3; ++i) {
+                specular_color_factor[i] = float(value.Get(i).GetNumberAsDouble());
+            }
+        }
+
+         if(const auto value = it->second.Get("specularFactor"); value.IsNumber()) {
+            specular_factor *= float(value.GetNumberAsDouble());
+        }
+    }
 
 
     auto find_texture = [&](int tex_index) -> AssetPtr<Texture> {
@@ -610,24 +643,41 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
         return make_asset_with_id<Texture>(images[image_index].asset_id);
     };
 
+    auto fill_common = [&](auto& data) {
+        data.diffuse = find_texture(pbr.baseColorTexture.index);
+        data.normal = find_texture(material.normalTexture.index);
+        data.emissive = find_texture(material.emissiveTexture.index);
+
+        for(usize i = 0; i != 3; ++i) {
+            data.color_factor[i] = float(material.pbrMetallicRoughness.baseColorFactor[i]);
+            data.emissive_factor[i] = float(material.emissiveFactor[i]);
+        }
+    };
+
 
     MaterialData mat_data;
 
-    mat_data.set_texture(MaterialData::Diffuse, find_texture(pbr.baseColorTexture.index));
-    mat_data.set_texture(MaterialData::Normal, find_texture(material.normalTexture.index));
-    mat_data.set_texture(MaterialData::Roughness, find_texture(pbr.metallicRoughnessTexture.index));
-    mat_data.set_texture(MaterialData::Metallic, find_texture(pbr.metallicRoughnessTexture.index));
-    mat_data.set_texture(MaterialData::Emissive, find_texture(material.emissiveTexture.index));
+    if(use_specular) {
+        MaterialData::SpecularMaterialData data;
+        fill_common(data.common);
+        data.specular = find_texture(specular_texture_index);
+        data.specular_color = find_texture(specular_color_texture_index);
+        data.specular_color_factor = specular_color_factor;
+        data.specular_factor = specular_factor;
+
+        mat_data = MaterialData(std::move(data));
+    } else {
+        MaterialData::MetallicRoughnessMaterialData data;
+        fill_common(data.common);
+        data.metallic_roughness = find_texture(pbr.metallicRoughnessTexture.index);
+        data.metallic_factor = float(pbr.metallicFactor);
+        data.roughness_factor = float(pbr.roughnessFactor);
+
+        mat_data = MaterialData(std::move(data));
+    }
 
     mat_data.alpha_tested() = (material.alphaMode != "OPAQUE");
     mat_data.double_sided() = material.doubleSided;
-    mat_data.metallic_mul() = float(pbr.metallicFactor);
-    mat_data.roughness_mul() = float(pbr.roughnessFactor);
-    for(usize i = 0; i != 3; ++i) {
-        mat_data.base_color_mul()[i] = float(material.pbrMetallicRoughness.baseColorFactor[i]);
-        mat_data.emissive_mul()[i] = float(material.emissiveFactor[i]);
-    }
-
 
     return core::Ok(std::move(mat_data));
 }

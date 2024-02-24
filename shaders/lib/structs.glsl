@@ -32,16 +32,20 @@ struct TransformableData {
 
 const uint diffuse_texture_index = 0;
 const uint normal_texture_index = 1;
-const uint roughness_texture_index = 2;
-const uint metallic_texture_index = 3;
-const uint emissive_texture_index = 4;
+const uint emissive_texture_index = 2;
+const uint metallic_roughness_texture_index = 3;
+const uint specular_texture_index = 3;
+const uint specular_color_texture_index = 4;
 
 struct MaterialData {
-    vec3 emissive_mul;
-    float roughness_mul;
+    vec3 emissive_factor;
+    float roughness_factor;
 
-    vec3 base_color_mul;
-    float metallic_mul;
+    vec3 base_color_factor;
+    float metallic_factor;
+
+    vec3 specular_color_factor;
+    float specular_factor;
 
     uint texture_indices[8];
 };

@@ -197,7 +197,8 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
     Y_TODO(Ensure that pass are always recorded in order)
 
     // -------------------- region stuff --------------------
-    const auto frame_region = recorder.region("Framegraph render", time_rec, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+    const math::Vec4 region_color = math::Vec4(0.7f, 0.7f, 0.7f, 1.0f);
+    const auto frame_region = recorder.region("Framegraph render", time_rec, region_color);
 
     struct RuntimeRegion {
         Region region;
@@ -329,7 +330,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimingRecorder* time_rec
         prepare.submit_async();
     }
 
-    Y_TODO(Put resource barriers at the end of the graph to prevent clash with whatever comes after)
+    Y_TODO(Put ressource barriers at the end of the graph to prevent clash with whatever comes after)
 }
 
 void FrameGraph::alloc_resources() {

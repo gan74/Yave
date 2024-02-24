@@ -36,16 +36,16 @@ SOFTWARE.
 
 namespace yave {
 
-static std::array<TextureView, MaterialData::texture_count> material_texture_views(const MaterialData& data) {
-    std::array<TextureView, MaterialData::texture_count> textures = {
+static std::array<TextureView, MaterialData::max_texture_count> material_texture_views(const MaterialData& data) {
+    std::array<TextureView, MaterialData::max_texture_count> textures = {
         *device_resources()[DeviceResources::GreyTexture],          // Diffuse
         *device_resources()[DeviceResources::FlatNormalTexture],    // Normal
-        *device_resources()[DeviceResources::WhiteTexture],         // Roughness
-        *device_resources()[DeviceResources::WhiteTexture],         // Metallic
         *device_resources()[DeviceResources::WhiteTexture],         // Emissive
+        *device_resources()[DeviceResources::WhiteTexture],         // Metallic/Roughness or Specular
+        *device_resources()[DeviceResources::WhiteTexture],         // Specular color
     };
 
-    for(usize i = 0; i != MaterialData::texture_count; ++i) {
+    for(usize i = 0; i != MaterialData::max_texture_count; ++i) {
         y_debug_assert(!data.textures()[i].is_loading());
         if(const auto* tex = data.textures()[i].get()) {
             textures[i] = *tex;
@@ -80,10 +80,10 @@ MaterialDrawData MaterialAllocator::allocate_material(const MaterialData& materi
 
     shader::MaterialData data = {};
     {
-        data.emissive_mul = material.emissive_mul();
-        data.base_color_mul = material.base_color_mul();
-        data.roughness_mul = material.roughness_mul();
-        data.metallic_mul = material.metallic_mul();
+        data.emissive_factor = material.emissive_factor();
+        data.base_color_factor = material.base_color_factor();
+        data.roughness_factor = material.roughness_factor();
+        data.metallic_factor = material.metallic_factor();
         y_debug_assert(textures.size() <= sizeof(data.texture_indices) / sizeof(data.texture_indices[0]));
         for(usize i = 0; i != textures.size(); ++i) {
             data.texture_indices[i] = texture_library().add_texture(textures[i]);

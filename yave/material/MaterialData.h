@@ -28,41 +28,55 @@ SOFTWARE.
 namespace yave {
 
 class MaterialData {
-
     public:
-        enum Textures {
-            Diffuse,
-            Normal,
-            Roughness,
-            Metallic,
-            Emissive,
-            Max
+        struct CommonMaterialData {
+            AssetPtr<Texture> diffuse;
+            AssetPtr<Texture> normal;
+            AssetPtr<Texture> emissive;
+
+            math::Vec3 color_factor = math::Vec3(1.0f);
+            math::Vec3 emissive_factor;
         };
 
-        static constexpr usize texture_count = usize(Textures::Max);
+        struct MetallicRoughnessMaterialData  {
+            CommonMaterialData common;
+            AssetPtr<Texture> metallic_roughness;
+            float roughness_factor = 1.0f;
+            float metallic_factor = 1.0f;
+        };
+
+        struct SpecularMaterialData {
+            CommonMaterialData common;
+            AssetPtr<Texture> specular;
+            AssetPtr<Texture> specular_color;
+            math::Vec3 specular_color_factor = math::Vec3(1.0f);
+            float specular_factor = 1.0f;
+        };
+
+        enum class Type : u32 {
+            Specular,
+            MetallicRoughness,
+        };
+
+        static constexpr usize max_texture_count = 5;
 
         MaterialData() = default;
-        MaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures);
+        MaterialData(MetallicRoughnessMaterialData data);
+        MaterialData(SpecularMaterialData data);
 
-        MaterialData& set_texture(Textures type, AssetPtr<Texture> tex);
-        MaterialData& set_texture_reset_constants(Textures type, AssetPtr<Texture> tex);
-
+        Type material_type() const;
         bool is_empty() const;
 
-        const AssetPtr<Texture>& operator[](Textures tex) const;
-        const std::array<AssetPtr<Texture>, texture_count>& textures() const;
+        core::Span<AssetPtr<Texture>> textures() const;
 
-        math::Vec3 emissive_mul() const;
-        math::Vec3& emissive_mul();
+        math::Vec3 emissive_factor() const;
+        math::Vec3 base_color_factor() const;
+        math::Vec3 specular_color() const;
 
-        math::Vec3 base_color_mul() const;
-        math::Vec3& base_color_mul();
+        float roughness_factor() const;
+        float metallic_factor() const;
+        float specular_factor() const;
 
-        float roughness_mul() const;
-        float& roughness_mul();
-
-        float metallic_mul() const;
-        float& metallic_mul();
 
         bool alpha_tested() const;
         bool& alpha_tested();
@@ -74,21 +88,28 @@ class MaterialData {
         bool has_emissive() const;
 
         y_reflect(MaterialData,
-              _textures,
-              _emissive_mul, _base_color_mul,
-              _roughness_mul, _metallic_mul,
+              _type, _textures,
+              _emissive_factor, _base_color_factor, _specular_color_factor,
+              _roughness_factor, _metallic_factor, _specular_factor,
               _alpha_tested, _double_sided
         )
 
     private:
-        std::array<AssetId, texture_count> texture_ids() const;
+        MaterialData(Type type, CommonMaterialData data);
 
-        std::array<AssetPtr<Texture>, texture_count> _textures;
+        std::array<AssetId, max_texture_count> texture_ids() const;
 
-        math::Vec3 _emissive_mul;
-        math::Vec3 _base_color_mul = math::Vec3(1.0f);
-        float _roughness_mul = 1.0f;
-        float _metallic_mul = 0.0f;
+        Type _type = Type::MetallicRoughness;
+
+        std::array<AssetPtr<Texture>, max_texture_count> _textures;
+
+        math::Vec3 _emissive_factor;
+        math::Vec3 _base_color_factor = math::Vec3(1.0f);
+        math::Vec3 _specular_color_factor = math::Vec3(1.0f);
+
+        float _roughness_factor = 1.0f;
+        float _metallic_factor = 1.0f;
+        float _specular_factor = 1.0f;
 
         bool _alpha_tested = false;
         bool _double_sided = false;

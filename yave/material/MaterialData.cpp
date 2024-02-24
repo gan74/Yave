@@ -22,87 +22,75 @@ SOFTWARE.
 
 #include "MaterialData.h"
 
+#include <yave/graphics/shader_structs.h>
 
 namespace yave {
 
-MaterialData::MaterialData(std::array<AssetPtr<Texture>, texture_count>&& textures) :
-        _textures(std::move(textures)) {
+MaterialData::MaterialData(MetallicRoughnessMaterialData data) : MaterialData(Type::MetallicRoughness, std::move(data.common)) {
+    _textures[shader::metallic_roughness_texture_index] = std::move(data.metallic_roughness);
+
+    _metallic_factor = data.metallic_factor;
+    _roughness_factor = data.roughness_factor;
 }
 
-MaterialData& MaterialData::set_texture(Textures type, AssetPtr<Texture> tex) {
-    _textures[usize(type)] = std::move(tex);
-    return *this;
+MaterialData::MaterialData(SpecularMaterialData data) : MaterialData(Type::Specular, std::move(data.common)) {
+    _textures[shader::specular_texture_index] = std::move(data.specular);
+    _textures[shader::specular_color_texture_index] = std::move(data.specular_color);
+
+    _specular_color_factor = data.specular_color_factor;
+    _specular_factor = data.specular_factor;
 }
 
-MaterialData& MaterialData::set_texture_reset_constants(Textures type, AssetPtr<Texture> tex) {
-    switch(type) {
-        case Roughness:
-            _roughness_mul = 1.0f;
-        break;
+MaterialData::MaterialData(Type type, CommonMaterialData data) : _type(type) {
+    _textures[shader::diffuse_texture_index] = std::move(data.diffuse);
+    _textures[shader::normal_texture_index] = std::move(data.normal);
+    _textures[shader::emissive_texture_index] = std::move(data.emissive);
 
-        case Metallic:
-            _metallic_mul = 1.0f;
-        break;
+    _base_color_factor = data.color_factor;
+    _emissive_factor = data.emissive_factor;
+}
 
-        case Emissive:
-            _emissive_mul = tex.is_empty() ? 0.0f : 1.0f;
-        break;
 
-        default:
-        break;
-    }
-
-    return set_texture(type, std::move(tex));
+MaterialData::Type MaterialData::material_type() const {
+    return _type;
 }
 
 bool MaterialData::is_empty() const {
     return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return tex.is_empty(); });
 }
 
-const AssetPtr<Texture>& MaterialData::operator[](Textures tex) const {
-    return _textures[usize(tex)];
+core::Span<AssetPtr<Texture>> MaterialData::textures() const {
+    return _textures;
 }
 
-const std::array<AssetPtr<Texture>, MaterialData::texture_count>& MaterialData::textures() const {
-    return  _textures;
-}
-
-std::array<AssetId, MaterialData::texture_count> MaterialData::texture_ids() const {
-    std::array<AssetId, texture_count> ids;
+std::array<AssetId, MaterialData::max_texture_count> MaterialData::texture_ids() const {
+    std::array<AssetId, max_texture_count> ids;
     std::transform(_textures.begin(), _textures.end(), ids.begin(), [](const auto& tex) { return tex.id(); });
     return ids;
 }
 
-math::Vec3 MaterialData::emissive_mul() const {
-    return _emissive_mul;
+math::Vec3 MaterialData::emissive_factor() const {
+    return _emissive_factor;
 }
 
-math::Vec3& MaterialData::emissive_mul() {
-    return _emissive_mul;
+math::Vec3 MaterialData::base_color_factor() const {
+    return _base_color_factor;
 }
 
-math::Vec3 MaterialData::base_color_mul() const {
-    return _base_color_mul;
+math::Vec3 MaterialData::specular_color() const {
+    return _specular_color_factor;
 }
 
-math::Vec3& MaterialData::base_color_mul() {
-    return _base_color_mul;
+float MaterialData::roughness_factor() const {
+    return _roughness_factor;
 }
 
-float MaterialData::roughness_mul() const {
-    return _roughness_mul;
+float MaterialData::metallic_factor() const {
+    return _metallic_factor;
 }
 
-float& MaterialData::roughness_mul() {
-    return _roughness_mul;
-}
-
-float MaterialData::metallic_mul() const {
-    return _metallic_mul;
-}
-
-float& MaterialData::metallic_mul() {
-    return _metallic_mul;
+float MaterialData::specular_factor() const {
+    return _specular_factor;
 }
 
 bool MaterialData::alpha_tested() const {
@@ -122,7 +110,7 @@ bool& MaterialData::double_sided() {
 }
 
 bool MaterialData::has_emissive() const {
-    return !_textures[Textures::Emissive].is_empty() || !_emissive_mul.is_zero();
+    return !_textures[shader::emissive_texture_index].is_empty() || !_emissive_factor.is_zero();
 }
 
 }

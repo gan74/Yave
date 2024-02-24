@@ -59,13 +59,15 @@ class DeviceResources final : NonMovable {
             PrevCameraComp,
             UpdateTransformsComp,
 
+            TexturedFrag,
+            TexturedAlphaFrag,
+            TexturedSpecularFrag,
+            TexturedSpecularAlphaFrag,
             DeferredPointFrag,
             DeferredSpotFrag,
             DeferredAmbientFrag,
             AtmosphereFrag,
             ToneMapFrag,
-            TexturedFrag,
-            TexturedAlphaFrag,
             PassthroughFrag,
             DownsampleFrag,
             BloomUpscaleFrag,
@@ -110,6 +112,8 @@ class DeviceResources final : NonMovable {
         enum MaterialTemplates {
             TexturedMaterialTemplate,
             TexturedAlphaMaterialTemplate,
+            TexturedSpecularMaterialTemplate,
+            TexturedSpecularAlphaMaterialTemplate,
 
             DeferredPointLightMaterialTemplate,
             DeferredSpotLightMaterialTemplate,
