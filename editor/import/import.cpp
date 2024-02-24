@@ -467,6 +467,17 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
             return -1;
         };
 
+
+        if(const auto it = gltf_material.extensions.find("KHR_materials_specular"); it != gltf_material.extensions.end() && it->second.IsObject()) {
+            if(const auto tex_info = it->second.Get("specularColorTexture"); tex_info.IsObject()) {
+                if(const auto value = tex_info.Get("index"); value.IsInt()) {
+                    if(const int image_index = value.GetNumberAsInt(); image_index >= 0) {
+                        scene.images[image_index].as_sRGB = true;
+                    }
+                }
+            }
+        }
+
         if(const int image_index = compute_image_index(gltf_material.pbrMetallicRoughness.baseColorTexture.index); image_index >= 0) {
             scene.images[image_index].as_sRGB = true;
         }
