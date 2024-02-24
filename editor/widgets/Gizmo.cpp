@@ -216,6 +216,8 @@ bool TranslationGizmo::is_hovered(usize axis) const {
 }
 
 void TranslationGizmo::draw() {
+    y_profile();
+
     _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
     EditorWorld& world = current_world();
@@ -310,6 +312,7 @@ void TranslationGizmo::draw() {
 
 
     auto set_position = [&](const math::Vec3& pos) {
+        y_profile_zone("move entities");
         const math::Transform<> old_transform = transformable->transform();
         math::Transform<> new_transform = old_transform;
         new_transform.position() = pos;
@@ -409,6 +412,8 @@ RotationGizmo::RotationGizmo(SceneView* view) : GizmoBase(view) {
 }
 
 void RotationGizmo::draw() {
+    y_profile();
+
     _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
     EditorWorld& world = current_world();

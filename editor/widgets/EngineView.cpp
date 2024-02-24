@@ -349,6 +349,8 @@ void EngineView::on_gui() {
 
 
 void EngineView::draw_toolbar_and_gizmos() {
+    y_profile();
+
     struct GizmoButton  {
         const char* icon = nullptr;
         GizmoBase* gizmo = nullptr;

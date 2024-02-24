@@ -186,7 +186,7 @@ static void render_selection_aabb(DirectDrawPrimitive* primitive, const SceneVie
             primitive->add_box(tr->global_aabb());
         }
 
-        if(draw_octree) {
+        if(draw_octree && !tr->local_aabb().is_empty()) {
             if(const TransformableManagerSystem* tr_manager = world.find_system<TransformableManagerSystem>()) {
                 const u32 color = primitive->color();
                 y_defer(primitive->set_color(color));
