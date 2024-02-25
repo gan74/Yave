@@ -79,9 +79,6 @@ void TransformableManagerSystem::Octree::insert_or_update(ecs::EntityId id, cons
     _datas.set_min_size(tr._transform_index + 1);
 
     TransformData& data = _datas[tr._transform_index];
-
-    y_debug_assert(!data.id.is_valid() || data.id == id);
-
     data.global_aabb = tr.global_aabb();
     data.id = id;
 
@@ -114,7 +111,6 @@ void TransformableManagerSystem::Octree::remove(const TransformableComponent& tr
     node.transforms.erase_unordered(it);
 
     data.parent_index = u32(-1);
-    data.id = {};
 }
 
 
@@ -306,7 +302,27 @@ void TransformableManagerSystem::Octree::push_all_entities(core::Vector<ecs::Ent
     }
 }
 
+void TransformableManagerSystem::Octree::audit() const {
+#ifdef Y_DEBUG
+    y_profile();
 
+    for(u32 i = 0; i != _datas.size(); ++i) {
+        const TransformData& data = _datas[i];
+        if(data.id.is_valid()) {
+            y_debug_assert(data.parent_index != u32(-1));
+            const OctreeNode& node = _nodes[data.parent_index];
+            y_debug_assert(std::count(node.transforms.begin(), node.transforms.end(), i) == 1);
+        }
+    }
+
+    for(u32 i = 0; i != _nodes.size(); ++i) {
+        for(const u32 child_index : _nodes[i].transforms) {
+            y_debug_assert(_datas[child_index].parent_index == i);
+            y_debug_assert(_datas[child_index].id.is_valid());
+        }
+    }
+#endif
+}
 
 
 
@@ -354,6 +370,8 @@ void TransformableManagerSystem::run_tick(bool only_recent) {
 
         _octree.insert_or_update(id, tr);
     }
+
+    _octree.audit();
 }
 
 

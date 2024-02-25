@@ -53,13 +53,12 @@ class TransformableManagerSystem : public ecs::System {
         u32 parent_index = u32(-1);
         ecs::EntityId id;
         AABB global_aabb;
-
     };
 
     class Octree {
         public:
-            static constexpr usize split_threshold = 32;
-            static constexpr float min_node_extent = 1.0f;
+            static constexpr usize split_threshold = 64;
+            static constexpr float min_node_extent = 8.0f;
             static constexpr float margin_factor = 1.25f;
 
             Octree();
@@ -71,6 +70,8 @@ class TransformableManagerSystem : public ecs::System {
             core::Span<OctreeNode> nodes() const;
 
             core::Vector<ecs::EntityId> find_visible(const Frustum& frustum, float far_dist, OctreeTraversalStats* stats) const;
+
+            void audit() const;
 
         private:
             void insert_iterative(u32 node_index, u32 data_index);
