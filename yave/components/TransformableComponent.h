@@ -35,6 +35,9 @@ class TransformableComponent final {
         TransformableComponent(const math::Transform<>& transform = {});
         ~TransformableComponent();
 
+        TransformableComponent(TransformableComponent&& other);
+        TransformableComponent& operator=(TransformableComponent&& other);
+
         TransformableComponent(const TransformableComponent& other);
         TransformableComponent& operator=(const TransformableComponent& other);
 
@@ -63,6 +66,8 @@ class TransformableComponent final {
         y_reflect(TransformableComponent, _transform)
 
     private:
+        void swap(TransformableComponent& other);
+
         math::Transform<> _transform;
         AABB _aabb;
 

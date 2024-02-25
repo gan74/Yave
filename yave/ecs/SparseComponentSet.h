@@ -39,11 +39,6 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-template<typename T>
-using SparseComponentSet = ComponentSet<T>;
-using SparseIdSetBase = ComponentSetBase;
-using SparseIdSet = ComponentIdSet;
-
 class SparseIdSetBase2 : NonCopyable {
 
     public:
@@ -167,7 +162,7 @@ static_assert(is_iterable_v<SparseIdSet2>);
 
 
 template<typename Elem>
-class SparseComponentSetBase : public SparseIdSetBase2 {
+class SparseComponentSetBase2 : public SparseIdSetBase2 {
 
     public:
         using element_type = std::remove_cv_t<Elem>;
@@ -189,7 +184,7 @@ class SparseComponentSetBase : public SparseIdSetBase2 {
 
             public:
                 using difference_type = std::ptrdiff_t;
-                using value_type = SparseComponentSetBase::value_type;
+                using value_type = SparseComponentSetBase2::value_type;
                 using pointer = pointer_t;
                 using reference = std::tuple<const EntityId&, reference_t>;
                 using iterator_category = std::random_access_iterator_tag;
@@ -246,7 +241,7 @@ class SparseComponentSetBase : public SparseIdSetBase2 {
                 }
 
             private:
-                friend class SparseComponentSetBase;
+                friend class SparseComponentSetBase2;
 
                 inline PairIterator(const EntityId* id, pointer_t value) : _id(id), _value(value) {
                 }
@@ -359,7 +354,7 @@ class SparseComponentSetBase : public SparseIdSetBase2 {
         }
 
 
-        void swap(SparseComponentSetBase& v) {
+        void swap(SparseComponentSetBase2& v) {
             if(&v != this) {
                 _values.swap(v._values);
                 _dense.swap(v._dense);
@@ -435,8 +430,21 @@ class SparseComponentSetBase : public SparseIdSetBase2 {
 
 // Why we need to do this to not have imcomplete types?
 template<typename Elem>
-class SparseComponentSet2 : public SparseComponentSetBase<Elem> {
+class SparseComponentSet2 : public SparseComponentSetBase2<Elem> {
 };
+
+
+#if 1
+template<typename T>
+using SparseComponentSet = ComponentSet<T>;
+using SparseIdSetBase = ComponentSetBase;
+using SparseIdSet = ComponentIdSet;
+#else
+template<typename T>
+using SparseComponentSet = SparseComponentSet2<T>;
+using SparseIdSetBase = SparseIdSetBase2;
+using SparseIdSet = SparseIdSet2;
+#endif
 
 }
 }

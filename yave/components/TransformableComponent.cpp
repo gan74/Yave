@@ -33,15 +33,28 @@ TransformableComponent::~TransformableComponent() {
     y_debug_assert(_transform_index == u32(-1));
 }
 
+TransformableComponent::TransformableComponent(TransformableComponent&& other) {
+    swap(other);
+}
+
+TransformableComponent& TransformableComponent::operator=(TransformableComponent&& other) {
+    swap(other);
+    return *this;
+}
+
 TransformableComponent::TransformableComponent(const TransformableComponent& other) {
     set_transform(other.transform());
-    set_aabb(_aabb);
 }
 
 TransformableComponent& TransformableComponent::operator=(const TransformableComponent& other) {
     set_transform(other.transform());
-    set_aabb(_aabb);
     return *this;
+}
+
+void TransformableComponent::swap(TransformableComponent& other) {
+    std::swap(_transform, other._transform);
+    std::swap(_aabb, other._aabb);
+    std::swap(_transform_index, other._transform_index);
 }
 
 void TransformableComponent::set_transform(const math::Transform<>& tr) {
