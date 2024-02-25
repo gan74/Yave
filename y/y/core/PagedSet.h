@@ -105,10 +105,10 @@ class PagedSet : Allocator, NonCopyable {
                 friend class PagedSet;
                 friend class Iterator<!Const>;
 
-                Iterator(core::Span<data_type*> pages, usize* it) : _pages(pages), _it(it) {
+                Iterator(data_type* const* pages, const usize* it) : _pages(pages), _it(it) {
                 }
 
-                core::Span<data_type*> _pages;
+                data_type* const* _pages = nullptr;
                 const usize* _it = nullptr;
         };
 
@@ -149,19 +149,19 @@ class PagedSet : Allocator, NonCopyable {
 
 
         inline const_iterator begin() const {
-            return const_iterator(_pages, _indexes.data());
+            return const_iterator(_pages.data(), _indexes.data());
         }
 
         inline const_iterator end() const {
-            return const_iterator(_pages, _indexes.data() + _size);
+            return const_iterator(_pages.data(), _indexes.data() + _size);
         }
 
         inline iterator begin() {
-            return iterator(_pages, _indexes.data());
+            return iterator(_pages.data(), _indexes.data());
         }
 
         inline iterator end() {
-            return iterator(_pages, _indexes.data() + _size);
+            return iterator(_pages.data(), _indexes.data() + _size);
         }
 
 
