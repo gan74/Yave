@@ -121,7 +121,8 @@ class CullingDebug : public Widget {
                 core::Chrono timer;
                 y_profile_zone("precise culling");
                 const Frustum frustum = camera.frustum();
-                for(const TransformableComponent& tr : transformables.values()) {
+                for(const auto& id_comp : transformables) {
+                    const TransformableComponent& tr = id_comp.component;
                     switch(frustum.intersection(tr.global_aabb())) {
                         case Intersection::Inside:
                         case Intersection::Intersects:

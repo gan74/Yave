@@ -33,11 +33,18 @@ SOFTWARE.
 
 // #define YAVE_ECS_COMPONENT_SET_AUDIT
 
+#include "ComponentSet.h"
+
 
 namespace yave {
 namespace ecs {
 
-class SparseIdSetBase : NonCopyable {
+template<typename T>
+using SparseComponentSet = ComponentSet<T>;
+using SparseIdSetBase = ComponentSetBase;
+using SparseIdSet = ComponentIdSet;
+
+class SparseIdSetBase2 : NonCopyable {
 
     public:
         using index_type = u32;
@@ -73,7 +80,7 @@ class SparseIdSetBase : NonCopyable {
             return index < _sparse.size() ? _sparse[index] : invalid_index;
         }
 
-        const SparseIdSetBase& smallest(const SparseIdSetBase& other) const {
+        const SparseIdSetBase2& smallest(const SparseIdSetBase2& other) const {
             return size() < other.size() ? *this : other;
         }
 
@@ -87,7 +94,7 @@ class SparseIdSetBase : NonCopyable {
 };
 
 
-class SparseIdSet : public SparseIdSetBase {
+class SparseIdSet2 : public SparseIdSetBase2 {
     public:
         using value_type = ecs::EntityId;
 
@@ -156,11 +163,11 @@ class SparseIdSet : public SparseIdSetBase {
         }
 };
 
-static_assert(is_iterable_v<SparseIdSet>);
+static_assert(is_iterable_v<SparseIdSet2>);
 
 
 template<typename Elem>
-class SparseComponentSetBase : public SparseIdSetBase {
+class SparseComponentSetBase : public SparseIdSetBase2 {
 
     public:
         using element_type = std::remove_cv_t<Elem>;
@@ -428,7 +435,7 @@ class SparseComponentSetBase : public SparseIdSetBase {
 
 // Why we need to do this to not have imcomplete types?
 template<typename Elem>
-class SparseComponentSet : public SparseComponentSetBase<Elem> {
+class SparseComponentSet2 : public SparseComponentSetBase<Elem> {
 };
 
 }

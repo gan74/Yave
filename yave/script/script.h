@@ -87,7 +87,8 @@ void bind_component_type(sol::state_view state) {
             [](const LuaComponentSet* set, usize index) -> const T* {
                 y_debug_assert(set);
                 index = index - 1; // Lua 1 indexing
-                return index < set->size() ? &set->values()[index] : nullptr;
+                y_fatal("disabled during refacto");
+                return /*index < set->size() ? &set->values()[index] :*/ nullptr;
             }
         );
 

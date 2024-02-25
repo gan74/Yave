@@ -26,40 +26,153 @@ SOFTWARE.
 
 #include <y/core/PagedSet.h>
 
-#include <tuple>
-
 namespace yave {
 namespace ecs {
 
+class ComponentSetBase : NonMovable {
+    public:
+        inline bool contains(EntityId id) const {
+            if(id.index() >= _sparse.size()) {
+                return false;
+            }
+
+            const SparseElement& elem = _sparse[id.index()];
+            return elem.version == id.version();
+        }
+
+        inline bool is_empty() const {
+            return _ids.is_empty();
+        }
+
+        inline usize size() const {
+            return _ids.size();
+        }
+
+        inline core::Span<EntityId> ids() const {
+            return _ids;
+        }
+
+    protected:
+        struct SparseElement {
+            u32 version = 0;
+            u32 id_index = u32(-1);
+            void* ptr = nullptr;
+        };
+
+        inline void grow_sparse_if_needed(EntityId id) {
+            _sparse.set_min_size(id.index() + 1);
+        }
+
+        inline void erase_id(EntityId id) {
+            y_debug_assert(contains(id));
+
+            SparseElement& elem = _sparse[id.index()];
+            _ids.erase_unordered(_ids.begin() + elem.id_index);
+
+            const EntityId new_id = _ids[elem.id_index];
+            _sparse[new_id.index()].id_index = id.index();
+
+            elem = {};
+
+            y_debug_assert(std::count(_ids.begin(), _ids.end(), new_id) == 1);
+            y_debug_assert(std::count(_ids.begin(), _ids.end(), id) == 0);
+
+            y_debug_assert(!contains(id));
+        }
+
+        inline SparseElement& insert_id(EntityId id) {
+            y_debug_assert(!contains(id));
+
+            grow_sparse_if_needed(id);
+
+            SparseElement& elem = _sparse[id.index()];
+            y_debug_assert(!elem.ptr);
+
+            elem.version = id.version();
+            elem.id_index = u32(_ids.size());
+            _ids << id;
+
+            y_debug_assert(contains(id));
+
+            return elem;
+        }
+
+        core::Vector<ecs::EntityId> _ids;
+        core::Vector<SparseElement> _sparse;
+};
+
+class ComponentIdSet final : public ComponentSetBase {
+    public:
+        ComponentIdSet() = default;
+
+        ComponentIdSet(ComponentIdSet&& other) {
+            swap(other);
+        }
+
+        ComponentIdSet& operator=(ComponentIdSet&& other) {
+            swap(other);
+            return *this;
+        }
+
+        void swap(ComponentIdSet& other) {
+            _ids.swap(other._ids);
+            _sparse.swap(other._sparse);
+        }
+
+        inline bool insert(EntityId id) {
+            if(!contains(id)) {
+                return false;
+            }
+            insert_id(id);
+            return true;
+        }
+
+        inline bool erase(EntityId id) {
+            if(!contains(id)) {
+                return false;
+            }
+
+            erase_id(id);
+
+            return true;
+        }
+
+        void make_empty() {
+            _ids.make_empty();
+            _sparse.make_empty();
+        }
+
+        void clear() {
+            _ids.make_empty();
+            _sparse.clear();
+        }
+};
+
 template<typename Elem>
-class ComponentSet : NonCopyable {
-
-    struct IdComponent;
-
-    struct SparseElement {
-        u32 version = 0;
-        IdComponent* ptr = nullptr;
-    };
+class ComponentSet final : public ComponentSetBase {
 
     public:
         struct IdComponent {
             EntityId id;
-            Elem component;
+            Elem component = {};
+
+            IdComponent() = default;
 
             template<typename... Args>
             IdComponent(EntityId i, Args&&... args) : id(i), component(y_fwd(args)...) {
             }
         };
 
-        using pointer = IdComponent*;
-        using const_pointer = const IdComponent*;
+        using value_type = IdComponent;
 
-        using reference = IdComponent&;
-        using const_reference = const IdComponent&;
+        using pointer = value_type*;
+        using const_pointer = const value_type*;
+
+        using reference = value_type&;
+        using const_reference = const value_type&;
 
         using iterator = core::PagedSet<IdComponent>::iterator;
-        using const_iterator = core::PagedSet<IdComponent>::iterator;
-
+        using const_iterator = core::PagedSet<IdComponent>::const_iterator;
 
 
         ComponentSet() = default;
@@ -75,105 +188,106 @@ class ComponentSet : NonCopyable {
 
 
         void swap(ComponentSet& other) {
-            _components.swap(other._components);
+            _ids.swap(other._ids);
             _sparse.swap(other._sparse);
+            _components.swap(other._components);
         }
 
+        inline Elem& insert(value_type&& value) {
+            return insert(value.id, std::move(value.component));
+        }
 
         template<typename... Args>
-        reference insert(EntityId id, Args&&... args) {
-            y_debug_assert(!contains(id));
-            grow_sparse_if_needed(id);
-
-            SparseElement& elem = _sparse[id.index()];
-            y_debug_assert(!elem.ptr);
+        inline Elem& insert(EntityId id, Args&&... args) {
+            SparseElement& elem = insert_id(id);
 
             IdComponent& id_comp = _components.emplace(id, y_fwd(args)...);
-
-            elem.version = id.version();
             elem.ptr = &id_comp;
 
-            return id_comp;
+            y_debug_assert(_components.size() == _ids.size());
+
+            return id_comp.component;
         }
 
-        bool erase(EntityId id) {
+        inline bool erase(EntityId id) {
             if(!contains(id)) {
                 return false;
             }
 
-            const auto it = std::find(_components.begin(), _components.end(), [=](const IdComponent& id_comp) {
+            erase_id(id);
+
+            const auto it = std::find_if(_components.begin(), _components.end(), [id](const IdComponent& id_comp) {
                 return id_comp.id == id;
             });
 
             y_debug_assert(it != _components.end());
             _components.erase(it);
-            _sparse[id.index()] = {};
+
+            y_debug_assert(_components.size() == _ids.size());
 
             return true;
         }
 
-        pointer try_get(EntityId id) {
+        void make_empty() {
+            _ids.make_empty();
+            _sparse.make_empty();
+            _components.make_empty();
+            y_debug_assert(is_empty());
+        }
+
+        void clear() {
+            _ids.make_empty();
+            _sparse.clear();
+            _components.clear();
+        }
+
+        inline Elem* try_get(EntityId id) {
             if(id.index() >= _sparse.size()) {
                 return nullptr;
             }
 
             SparseElement& elem = _sparse[id.index()];
-            return elem.version == id.version() ? elem.ptr : nullptr;
+            return elem.version == id.version() ? &static_cast<IdComponent*>(elem.ptr)->component : nullptr;
         }
 
-        const_pointer try_get(EntityId id) const {
+        inline const Elem* try_get(EntityId id) const {
             if(id.index() >= _sparse.size()) {
                 return nullptr;
             }
 
             const SparseElement& elem = _sparse[id.index()];
-            return elem.version == id.version() ? elem.ptr : nullptr;
+            return elem.version == id.version() ? &static_cast<const IdComponent*>(elem.ptr)->component : nullptr;
         }
 
-
-        void make_empty() {
-            _components.make_empty();
-            _sparse.make_empty();
-        }
-
-        void clear() {
-            _components.clear();
-            _sparse.clear();
-        }
-
-
-        iterator begin() {
+        inline iterator begin() {
             return _components.begin();
         }
 
-        iterator end() {
+        inline iterator end() {
             return _components.end();
         }
 
-        const_iterator begin() const {
+        inline const_iterator begin() const {
             return _components.begin();
         }
 
-        const_iterator end() const {
+        inline const_iterator end() const {
             return _components.end();
         }
 
 
-        bool contains(EntityId id) const {
-            return try_get(id);
+        inline Elem& operator[](EntityId id) {
+            y_debug_assert(contains(id));
+            return *try_get(id);
         }
 
-        usize size() const {
-            return _components.size();
+        inline const Elem& operator[](EntityId id) const {
+            y_debug_assert(contains(id));
+            return *try_get(id);
         }
 
     private:
-        void grow_sparse_if_needed(EntityId id) {
-            _sparse.set_min_size(id.index() + 1);
-        }
-
         core::PagedSet<IdComponent> _components;
-        core::Vector<SparseElement> _sparse;
 };
 
 }

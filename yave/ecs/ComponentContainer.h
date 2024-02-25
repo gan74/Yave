@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "ecs.h"
 #include "SparseComponentSet.h"
+#include "ComponentSet.h"
 #include "ComponentInspector.h"
 #include "ComponentBox.h"
 
@@ -151,7 +152,7 @@ class ComponentContainer final : public ComponentContainerBase {
             _mutated.insert(id);
 
             T* comp = nullptr;
-            if(!_components.contains_index(id.index())) {
+            if(!_components.contains(id)) {
                 comp = &_components.insert(id, y_fwd(args)...);
             } else {
                 comp = &(_components[id] = std::move(T(y_fwd(args)...)));
@@ -166,7 +167,7 @@ class ComponentContainer final : public ComponentContainerBase {
 
             _mutated.insert(id);
 
-            if(!_components.contains_index(id.index())) {
+            if(!_components.contains(id)) {
                 T& comp = _components.insert(id);
                 _on_created.send(id, comp);
                 return comp;
@@ -181,7 +182,7 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
         inline T* component_ptr_mut(EntityId id) {
-            auto* ptr = _components.try_get(id);
+            T* ptr = _components.try_get(id);
             if(ptr) {
                 _mutated.insert(id);
             }

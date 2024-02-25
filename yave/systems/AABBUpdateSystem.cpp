@@ -45,7 +45,7 @@ void AABBUpdateSystem::tick() {
         }
         y_profile_dyn_zone(fmt_c_str("collecting {} {}", ids.size(), world().component_type_name(info.type)));
 
-        aabbs.set_min_capacity(aabbs.size() + ids.size());
+        // aabbs.set_min_capacity(aabbs.size() + ids.size());
         info.collect_aabbs(world(), ids, aabbs);
     }
 

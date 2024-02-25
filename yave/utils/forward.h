@@ -263,8 +263,6 @@ class EntityId;
 class EntityPool;
 class EntityPrefab;
 class EntityWorld;
-class SparseIdSet;
-class SparseIdSetBase;
 class System;
 class WorldComponentContainerBase;
 struct ComponentRuntimeInfo;
