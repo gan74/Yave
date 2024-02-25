@@ -27,9 +27,6 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
-#include <y/utils/format.h>
-#include <y/utils/log.h>
-
 
 namespace yave {
 
@@ -367,9 +364,7 @@ void TransformableManagerSystem::run_tick(bool only_recent) {
     _stopped.swap(_moved);
     _moved.make_empty();
 
-    log_msg("updating tr");
     for(const auto& [id, tr] : moved_query.id_components()) {
-        log_msg(fmt("  push {}", id.index()));
         _moved.insert(id, alloc_index(tr));
         _stopped.erase(id);
 

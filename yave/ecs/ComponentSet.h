@@ -67,20 +67,28 @@ class ComponentSetBase : NonMovable {
             y_debug_assert(contains(id));
 
             SparseElement& elem = _sparse[id.index()];
-            _ids.erase_unordered(_ids.begin() + elem.id_index);
 
-            const EntityId new_id = _ids[elem.id_index];
-            _sparse[new_id.index()].id_index = id.index();
+            const u32 index = elem.id_index;
+            const usize last_index = _ids.size() - 1;
+            if(index == last_index) {
+                _ids.pop();
+            } else {
+                const EntityId last = _ids[last_index];
+                std::swap(_ids[index], _ids[last_index]);
+                _ids.pop();
+                y_debug_assert(_ids[index] == last);
+                _sparse[last.index()].id_index = index;
+            }
 
             elem = {};
 
-            y_debug_assert(std::count(_ids.begin(), _ids.end(), new_id) == 1);
             y_debug_assert(std::count(_ids.begin(), _ids.end(), id) == 0);
 
             y_debug_assert(!contains(id));
         }
 
         inline SparseElement& insert_id(EntityId id) {
+            y_debug_assert(id.is_valid());
             y_debug_assert(!contains(id));
 
             grow_sparse_if_needed(id);
@@ -120,7 +128,7 @@ class ComponentIdSet final : public ComponentSetBase {
         }
 
         inline bool insert(EntityId id) {
-            if(!contains(id)) {
+            if(contains(id)) {
                 return false;
             }
             insert_id(id);
@@ -131,9 +139,7 @@ class ComponentIdSet final : public ComponentSetBase {
             if(!contains(id)) {
                 return false;
             }
-
             erase_id(id);
-
             return true;
         }
 
@@ -152,18 +158,7 @@ template<typename Elem>
 class ComponentSet final : public ComponentSetBase {
 
     public:
-        struct IdComponent {
-            EntityId id;
-            Elem component = {};
-
-            IdComponent() = default;
-
-            template<typename... Args>
-            IdComponent(EntityId i, Args&&... args) : id(i), component(y_fwd(args)...) {
-            }
-        };
-
-        using value_type = IdComponent;
+        using value_type = std::pair<EntityId, Elem>;
 
         using pointer = value_type*;
         using const_pointer = const value_type*;
@@ -171,8 +166,8 @@ class ComponentSet final : public ComponentSetBase {
         using reference = value_type&;
         using const_reference = const value_type&;
 
-        using iterator = core::PagedSet<IdComponent>::iterator;
-        using const_iterator = core::PagedSet<IdComponent>::const_iterator;
+        using iterator = core::PagedSet<value_type>::iterator;
+        using const_iterator = core::PagedSet<value_type>::const_iterator;
 
 
         ComponentSet() = default;
@@ -194,19 +189,20 @@ class ComponentSet final : public ComponentSetBase {
         }
 
         inline Elem& insert(value_type&& value) {
-            return insert(value.id, std::move(value.component));
+            return insert(value.first, std::move(value.second));
         }
 
         template<typename... Args>
         inline Elem& insert(EntityId id, Args&&... args) {
             SparseElement& elem = insert_id(id);
 
-            IdComponent& id_comp = _components.emplace(id, y_fwd(args)...);
+            value_type& id_comp = _components.emplace(id, Elem(y_fwd(args)...));
             elem.ptr = &id_comp;
 
+            y_debug_assert(std::count_if(_components.begin(), _components.end(), [=](const auto& p) { return p.first == id; }) == 1);
             y_debug_assert(_components.size() == _ids.size());
 
-            return id_comp.component;
+            return id_comp.second;
         }
 
         inline bool erase(EntityId id) {
@@ -216,8 +212,8 @@ class ComponentSet final : public ComponentSetBase {
 
             erase_id(id);
 
-            const auto it = std::find_if(_components.begin(), _components.end(), [id](const IdComponent& id_comp) {
-                return id_comp.id == id;
+            const auto it = std::find_if(_components.begin(), _components.end(), [id](const value_type& id_comp) {
+                return id_comp.first == id;
             });
 
             y_debug_assert(it != _components.end());
@@ -247,7 +243,7 @@ class ComponentSet final : public ComponentSetBase {
             }
 
             SparseElement& elem = _sparse[id.index()];
-            return elem.version == id.version() ? &static_cast<IdComponent*>(elem.ptr)->component : nullptr;
+            return elem.version == id.version() ? &static_cast<value_type*>(elem.ptr)->second : nullptr;
         }
 
         inline const Elem* try_get(EntityId id) const {
@@ -256,7 +252,7 @@ class ComponentSet final : public ComponentSetBase {
             }
 
             const SparseElement& elem = _sparse[id.index()];
-            return elem.version == id.version() ? &static_cast<const IdComponent*>(elem.ptr)->component : nullptr;
+            return elem.version == id.version() ? &static_cast<const value_type*>(elem.ptr)->second : nullptr;
         }
 
         inline iterator begin() {
@@ -287,7 +283,7 @@ class ComponentSet final : public ComponentSetBase {
         }
 
     private:
-        core::PagedSet<IdComponent> _components;
+        core::PagedSet<value_type> _components;
 };
 
 }
