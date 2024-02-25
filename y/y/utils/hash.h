@@ -89,8 +89,6 @@ inline constexpr usize hash_range(const C& c) {
     return hash_range(std::begin(c), std::end(c));
 }
 
-
-
 template<typename T>
 inline constexpr u64 ct_type_hash() {
     u64 hash = 0xd5a7de585d2af52b;
@@ -110,6 +108,13 @@ inline constexpr u32 ct_str_hash(std::string_view str) {
 
 template<typename T>
 static constexpr u64 ct_type_hash_v = ct_type_hash<T>();
+
+template<typename T>
+struct RangeHash {
+    usize operator()(const T& h) const {
+        return hash_range(h);
+    }
+};
 
 }
 
