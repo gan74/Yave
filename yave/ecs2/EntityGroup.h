@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "ecs.h"
 #include "traits.h"
+#include "ComponentMutationTable.h"
 
 #include <y/core/SlotVector.h>
 #include <y/concurrent/Signal.h>
@@ -71,6 +72,7 @@ class EntityGroup final : public EntityGroupBase {
     using ContainerTuple = std::tuple<core::SlotVector<traits::component_raw_type_t<Ts>>*...>;
     using SlotTuple = std::tuple<Slot<traits::component_raw_type_t<Ts>>...>;
     using ComponentTuple = std::tuple<traits::component_type_t<Ts>&...>;
+    using MutationTableArray = std::array<ComponentMutationTable*, type_count>;
 
     template<usize... Is>
     static inline SlotTuple make_slots(core::Span<u32> slots, std::index_sequence<Is...>) {
@@ -84,13 +86,28 @@ class EntityGroup final : public EntityGroupBase {
         return (*std::get<core::SlotVector<raw_type>*>(_containers))[std::get<Slot<raw_type>>(slots)];
     }
 
+    template<typename T, usize I>
+    inline void update_mutation_table(EntityId id) const {
+        if constexpr(!std::is_const_v<T>) {
+            _mutations_tables[I]->add(id);
+        }
+    }
+
+    template<usize... Is>
+    inline void update_mutation_tables(EntityId id, std::index_sequence<Is...>) const {
+        (update_mutation_table<traits::component_type_t<Ts>, Is>(id), ...);
+    }
+
+
+
     static inline const std::array<ComponentTypeIndex, type_count> type_storage = { type_index<traits::component_raw_type_t<Ts>>()... };
 
     public:
-        EntityGroup(ContainerTuple containers) : EntityGroupBase(type_storage), _containers(containers) {
+        EntityGroup(ContainerTuple containers, MutationTableArray mutations) : EntityGroupBase(type_storage), _containers(containers), _mutations_tables(mutations) {
         }
 
         inline ComponentTuple operator[](usize index) const {
+            update_mutation_tables(_ids[index], std::make_index_sequence<type_count>{});
             const SlotTuple slots = _component_slots[index];
             return ComponentTuple{get_component<traits::component_type_t<Ts>>(slots)...};
         }
@@ -119,6 +136,7 @@ class EntityGroup final : public EntityGroupBase {
     private:
         core::Vector<SlotTuple> _component_slots;
         ContainerTuple _containers;
+        MutationTableArray _mutations_tables;
 
         concurrent::Signal<EntityId> _on_added;
         concurrent::Signal<EntityId> _on_removed;

@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "ComponentRuntimeInfo.h"
 #include "ComponentMatrix.h"
+#include "ComponentMutationTable.h"
 
 #include <y/serde3/poly.h>
 
@@ -46,6 +47,8 @@ class ComponentContainerBase : NonMovable {
 
         const ComponentTypeIndex _type_id;
         ComponentMatrix* _matrix = nullptr;
+        ComponentMutationTable _mutation_table;
+
 };
 
 
@@ -58,7 +61,6 @@ class ComponentContainer final : public ComponentContainerBase {
 
         ComponentContainer() : ComponentContainerBase(type_index<T>()) {
         }
-
 
         T* get_or_add(EntityId id) {
             if(const Slot slot = _matrix->component_slot_index<T>(id); slot != Slot::invalid_slot) {
@@ -83,6 +85,7 @@ class ComponentContainer final : public ComponentContainerBase {
 
         template<typename... Args>
         T* add(EntityId id, Args&... args) {
+            _mutation_table.set_min_size(id);
             const Slot slot = _components.insert(y_fwd(args)...);
             _matrix->add_component<T>(id, slot);
             return &_components[slot];
