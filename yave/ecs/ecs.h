@@ -35,16 +35,14 @@ enum class ComponentTypeIndex : u32 {
 
 namespace detail {
 ComponentTypeIndex next_type_index();
-
-
-template<typename T>
-static ComponentTypeIndex type_index = next_type_index();
 }
 
 
 template<typename T>
 ComponentTypeIndex type_index() {
-    return detail::type_index<T>;
+    static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
+    static ComponentTypeIndex type(detail::next_type_index());
+    return type;
 }
 
 
