@@ -31,16 +31,16 @@ namespace yave {
 namespace ecs2 {
 
 class ComponentMatrix {
-    struct Slot {
-        u32 index = u32(-1);
-    };
-
     template<typename T>
     using TypedSlot = core::SlotVector<T>::Slot;
 
     public:
+        void add_entity(EntityId id);
+        void remove_entity(EntityId id);
+
         bool has_component(EntityId id, ComponentTypeIndex type) const;
 
+        bool contains(EntityId id) const;
 
         template<typename T>
         void has_component(EntityId id) const {
@@ -71,17 +71,15 @@ class ComponentMatrix {
         void register_group(EntityGroupBase* group);
         bool in_group(EntityId id, const EntityGroupBase* group) const;
 
-        void add_entity(EntityId id);
-        void remove_entity(EntityId id);
-
         void add_component(EntityId id, ComponentTypeIndex type, u32 slot_index);
         void remove_component(EntityId id, ComponentTypeIndex type);
 
         u32 component_slot_index(EntityId id, ComponentTypeIndex type) const;
         usize component_index(EntityId id, ComponentTypeIndex type) const;
+        core::Span<u32> slots_for_entity(EntityId id) const;
 
         usize _type_count = 0;
-        core::Vector<Slot> _slots;
+        core::Vector<u32> _slots;
         core::Vector<EntityId> _ids;
 
         core::FixedArray<core::Vector<EntityGroupBase*>> _groups;

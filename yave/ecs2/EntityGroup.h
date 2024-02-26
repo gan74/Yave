@@ -22,9 +22,7 @@ SOFTWARE.
 #ifndef YAVE_ECS2_ENTITYGROUP_H
 #define YAVE_ECS2_ENTITYGROUP_H
 
-#include "ecs.h"
-
-#include <y/core/Vector.h>
+#include "ComponentContainer.h"
 
 namespace yave {
 namespace ecs2 {
@@ -33,18 +31,6 @@ class EntityGroupBase : NonMovable {
     public:
         virtual ~EntityGroupBase() = default;
 
-        void add_entity(EntityId id) {
-            _ids << id;
-        }
-
-        bool remove_entity(EntityId id) {
-            if(const auto it = std::find(_ids.begin(), _ids.end(), id); it != _ids.end()) {
-                _ids.erase_unordered(it);
-                return true;
-            }
-            return false;
-        }
-
         core::Span<ComponentTypeIndex> types() const {
             return _types;
         }
@@ -52,6 +38,12 @@ class EntityGroupBase : NonMovable {
         core::Span<EntityId> ids() const {
             return _ids;
         }
+
+    protected:
+        friend class ComponentMatrix;
+
+        virtual void add_entity(EntityId id, core::Span<u32> slots) = 0;
+        virtual bool remove_entity(EntityId id) = 0;
 
     protected:
         EntityGroupBase(core::Span<ComponentTypeIndex> types) : _types(types) {
@@ -64,12 +56,38 @@ class EntityGroupBase : NonMovable {
 template<typename... Ts>
 class EntityGroup final : public EntityGroupBase {
     static constexpr usize type_count = sizeof...(Ts);
+
+    template<typename T>
+    using Slot = core::SlotVector<T>::Slot;
+
+    using ContainerTuple = std::tuple<ComponentContainer<Ts>*...>;
+    using SlotTuple = std::tuple<Slot<Ts>...>;
+
+    static SlotTuple make_slots(core::Span<u32> slots) {
+        return SlotTuple{Slot<Ts>(slots[usize(type_index<Ts>())])...};
+    }
+
+    static inline const std::array<ComponentTypeIndex, type_count> type_storage = { type_index<Ts>()... };
+
     public:
-        EntityGroup() : EntityGroupBase(_types_storage) {
+        EntityGroup(ContainerTuple containers) : EntityGroupBase(type_storage), _containers(containers) {
+        }
+
+    protected:
+        void add_entity(EntityId id, core::Span<u32> slots) {
+            y_debug_assert(_component_slots.size() == _ids.size());
+            _ids << id;
+            _component_slots << make_slots(slots);
+        }
+
+        bool remove_entity(EntityId id) override {
+            y_debug_assert(_component_slots.size() == _ids.size());
+            y_fatal("oof");
         }
 
     private:
-        std::array<ComponentTypeIndex, type_count> _types_storage = { type_index<Ts>()... };
+        core::Vector<SlotTuple> _component_slots;
+        ContainerTuple _containers;
 };
 
 

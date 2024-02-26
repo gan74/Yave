@@ -30,6 +30,8 @@ ComponentMatrix::ComponentMatrix(usize type_count) : _type_count(std::max(1_uu, 
 }
 
 void ComponentMatrix::register_group(EntityGroupBase* group) {
+    y_profile();
+
     for(const ComponentTypeIndex type : group->types()) {
         _groups[usize(type)] << group;
     }
@@ -38,7 +40,7 @@ void ComponentMatrix::register_group(EntityGroupBase* group) {
     y_debug_assert(entity_count * _type_count == _slots.size());
     for(const EntityId id : _ids) {
         if(id.is_valid() && in_group(id, group)) {
-            group->add_entity(id);
+            group->add_entity(id, slots_for_entity(id));
         }
     }
 }
@@ -53,54 +55,74 @@ bool ComponentMatrix::in_group(EntityId id, const EntityGroupBase* group) const 
 }
 
 void ComponentMatrix::add_entity(EntityId id) {
-    _slots.set_min_size(usize(id.index() + 1) * _type_count);
+    _slots.set_min_size(usize(id.index() + 1) * _type_count, u32(-1));
     _ids.set_min_size(usize(id.index() + 1));
+    y_debug_assert(!contains(id));
     _ids[id.index()] = id;
 }
 
 void ComponentMatrix::remove_entity(EntityId id) {
-    y_debug_assert(_ids[id.index()] == id);
+    y_debug_assert(contains(id));
     _ids[id.index()] = {};
 }
 
 void ComponentMatrix::add_component(EntityId id, ComponentTypeIndex type, u32 slot_index) {
-    add_entity(id);
+    y_profile();
 
     y_debug_assert(!has_component(id, type));
-    _slots[component_index(id, type)].index = slot_index;
+    _slots[component_index(id, type)] = slot_index;
 
-    for(EntityGroupBase* group : _groups[usize(type)]) {
-        if(in_group(id, group)) {
-            group->add_entity(id);
+    {
+        y_profile_zone("updating groups");
+        for(EntityGroupBase* group : _groups[usize(type)]) {
+            if(in_group(id, group)) {
+                group->add_entity(id, slots_for_entity(id));
+            }
         }
     }
 }
 
 void ComponentMatrix::remove_component(EntityId id, ComponentTypeIndex type) {
-    remove_entity(id);
+    y_profile();
 
+    y_debug_assert(contains(id));
     y_debug_assert(has_component(id, type));
-    _slots[component_index(id, type)].index = u32(-1);
 
-    for(EntityGroupBase* group : _groups[usize(type)]) {
-        y_debug_assert(!in_group(id, group));
-        group->remove_entity(id);
+    _slots[component_index(id, type)] = u32(-1);
+
+    {
+        y_profile_zone("updating groups");
+        for(EntityGroupBase* group : _groups[usize(type)]) {
+            y_debug_assert(!in_group(id, group));
+            group->remove_entity(id);
+        }
     }
+}
+
+
+bool ComponentMatrix::contains(EntityId id) const {
+    return _ids.size() > id.index() && _ids[id.index()] == id;
 }
 
 bool ComponentMatrix::has_component(EntityId id, ComponentTypeIndex type) const {
     const usize index = component_index(id, type);
-    return index < _slots.size() && _slots[index].index != u32(-1);
+    return index < _slots.size() && _slots[index] != u32(-1);
 }
 
 u32 ComponentMatrix::component_slot_index(EntityId id, ComponentTypeIndex type) const {
     const usize index = component_index(id, type);
-    return index < _slots.size() ? _slots[component_index(id, type)].index : u32(-1);
+    return index < _slots.size() ? _slots[component_index(id, type)] : u32(-1);
 }
 
 
 usize ComponentMatrix::component_index(EntityId id, ComponentTypeIndex type) const {
     return id.index() * _type_count + usize(type);
+}
+
+core::Span<u32> ComponentMatrix::slots_for_entity(EntityId id) const {
+    const usize start = id.index() * _type_count;
+    y_debug_assert(start < _slots.size());
+    return core::Span(_slots.data() + start, _type_count);
 }
 
 }

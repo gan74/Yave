@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
 
 #include <yave/systems/TransformableManagerSystem.h>
 

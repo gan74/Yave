@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <compare>
-
 namespace yave {
 namespace ecs {
 

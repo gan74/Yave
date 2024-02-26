@@ -73,7 +73,9 @@ bool EntityWorld::exists(EntityId id) const {
 }
 
 EntityId EntityWorld::create_entity() {
-    return _entities.create();
+    const EntityId id = _entities.create();
+    _matrix.add_entity(id);
+    return id;
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {

@@ -64,11 +64,7 @@ class EntityWorld : NonMovable {
                     return *typed_group;
                 }
             }
-            std::unique_ptr group = std::make_unique<group_type>();
-            group_type* group_ptr = group.get();
-            _groups.emplace_back(std::move(group));
-            _matrix.register_group(group_ptr);
-            return *group_ptr;
+            return *create_new_group<Ts...>();
         }
 
 
@@ -103,6 +99,15 @@ class EntityWorld : NonMovable {
             static const auto static_info = ComponentRuntimeInfo::create<T>();
             unused(static_info);
             return static_cast<ComponentContainer<T>*>(find_container(type_index<T>()));
+        }
+
+        template<typename... Ts>
+        EntityGroup<Ts...>* create_new_group() {
+            auto group = std::make_unique<EntityGroup<Ts...>>(std::tuple{find_container<Ts>()...});
+            auto* group_ptr = group.get();
+            _groups.emplace_back(std::move(group));
+            _matrix.register_group(group_ptr);
+            return group_ptr;
         }
 };
 
