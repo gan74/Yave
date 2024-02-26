@@ -155,6 +155,21 @@ class CullingDebug : public Widget {
 };
 
 
+
+class Ecs2Debug : public Widget {
+    editor_widget(Ecs2Debug, "View", "Debug")
+
+    public:
+        Ecs2Debug() : Widget("ECS2 debug") {
+        }
+
+    protected:
+        void on_gui() override {
+
+        }
+};
+
+
 class MemoryDebug : public Widget {
     editor_widget(MemoryDebug, "View", "Debug")
 
@@ -313,6 +328,5 @@ class UiDebug : public Widget {
             ImGui::Text("%u cached thumbmails", u32(thumbmail_renderer().cached_thumbmails()));
         }
 };
-
 
 }

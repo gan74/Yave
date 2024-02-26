@@ -175,6 +175,7 @@ struct BufferCopyInfo;
 struct BufferCreateInfo;
 struct BufferData;
 struct CameraBufferPass;
+struct CommonMaterialData;
 struct DefaultRenderer;
 struct DescriptorArraySet;
 struct DeviceProperties;
@@ -214,9 +215,11 @@ struct LightingPass;
 struct LightingSettings;
 struct LoadableComponentTypeInfo;
 struct MeshDrawCommand;
+struct MetallicRoughnessMaterialData;
 struct Mip;
 struct Monitor;
 struct OctreeNode;
+struct OctreeTraversalStats;
 struct OneShotScript;
 struct PackedVertex;
 struct Plane;
@@ -237,6 +240,7 @@ struct ShadowMapSettings;
 struct SkeletonData;
 struct SkinWeights;
 struct SkinnedVertex;
+struct SpecularMaterialData;
 struct SubMesh;
 struct TAAPass;
 struct TAASettings;
@@ -270,23 +274,17 @@ class WorldComponentContainerBase;
 struct ComponentRuntimeInfo;
 struct ComponentsReturnPolicy;
 struct Entity;
-struct IdComponents;
 struct IdComponentsReturnPolicy;
 struct QueryUtils;
 struct SetMatch;
+struct SparseElement;
 }
 
 
-namespace yave::uniform {
-struct AtmosphereParams;
-struct Camera;
-struct DirectionalLight;
-struct ExposureParams;
-struct MaterialData;
-struct PointLight;
-struct ShadowMapInfo;
-struct SpotLight;
-struct TransformableData;
+namespace yave::ecs2 {
+class ComponentContainerBase;
+class EntityWorld;
+struct ComponentRuntimeInfo;
 }
 
 
