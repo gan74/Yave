@@ -23,8 +23,10 @@ SOFTWARE.
 #define YAVE_ECS2_ENTITYGROUP_H
 
 #include "ecs.h"
+#include "traits.h"
 
 #include <y/core/SlotVector.h>
+#include <y/concurrent/Signal.h>
 
 namespace yave {
 namespace ecs2 {
@@ -49,7 +51,7 @@ class EntityGroupBase : NonMovable {
         friend class ComponentMatrix;
 
         virtual void add_entity(EntityId id, core::Span<u32> slots) = 0;
-        virtual bool remove_entity(EntityId id) = 0;
+        virtual void remove_entity(EntityId id) = 0;
 
     protected:
         EntityGroupBase(core::Span<ComponentTypeIndex> types) : _types(types) {
@@ -66,22 +68,23 @@ class EntityGroup final : public EntityGroupBase {
     template<typename T>
     using Slot = core::SlotVector<T>::Slot;
 
-    using ContainerTuple = std::tuple<core::SlotVector<Ts>*...>;
-    using SlotTuple = std::tuple<Slot<Ts>...>;
-    using ComponentTuple = std::tuple<Ts&...>;
+    using ContainerTuple = std::tuple<core::SlotVector<traits::component_raw_type_t<Ts>>*...>;
+    using SlotTuple = std::tuple<Slot<traits::component_raw_type_t<Ts>>...>;
+    using ComponentTuple = std::tuple<traits::component_type_t<Ts>&...>;
 
     template<usize... Is>
     static inline SlotTuple make_slots(core::Span<u32> slots, std::index_sequence<Is...>) {
         y_debug_assert((slots[usize(type_storage[Is])] != u32(-1)) && ...);
-        return SlotTuple{Slot<Ts>(slots[usize(type_storage[Is])])...};
+        return SlotTuple{Slot<traits::component_raw_type_t<Ts>>(slots[usize(type_storage[Is])])...};
     }
 
     template<typename T>
     inline T& get_component(const SlotTuple& slots) const {
-        return (*std::get<core::SlotVector<T>*>(_containers))[std::get<Slot<T>>(slots)];
+        using raw_type = traits::component_raw_type_t<T>;
+        return (*std::get<core::SlotVector<raw_type>*>(_containers))[std::get<Slot<raw_type>>(slots)];
     }
 
-    static inline const std::array<ComponentTypeIndex, type_count> type_storage = { type_index<Ts>()... };
+    static inline const std::array<ComponentTypeIndex, type_count> type_storage = { type_index<traits::component_raw_type_t<Ts>>()... };
 
     public:
         EntityGroup(ContainerTuple containers) : EntityGroupBase(type_storage), _containers(containers) {
@@ -89,7 +92,7 @@ class EntityGroup final : public EntityGroupBase {
 
         inline ComponentTuple operator[](usize index) const {
             const SlotTuple slots = _component_slots[index];
-            return ComponentTuple{get_component<Ts>(slots)...};
+            return ComponentTuple{get_component<traits::component_type_t<Ts>>(slots)...};
         }
 
     protected:
@@ -97,16 +100,29 @@ class EntityGroup final : public EntityGroupBase {
             y_debug_assert(_component_slots.size() == _ids.size());
             _ids << id;
             _component_slots << make_slots(slots, std::make_index_sequence<type_count>{});
+
+            _on_added.send(id);
         }
 
-        bool remove_entity(EntityId id) override {
+        void remove_entity(EntityId id) override {
             y_debug_assert(_component_slots.size() == _ids.size());
-            y_fatal("oof");
+            _on_removed.send(id);
+
+            const auto it = std::find(_ids.begin(), _ids.end(), id);
+            y_debug_assert(it != _ids.end());
+
+            const usize index = it - _ids.begin();
+            _ids.erase_unordered(_ids.begin() + index);
+            _component_slots.erase_unordered(_component_slots.begin() + index);
         }
 
     private:
         core::Vector<SlotTuple> _component_slots;
         ContainerTuple _containers;
+
+        concurrent::Signal<EntityId> _on_added;
+        concurrent::Signal<EntityId> _on_removed;
+
 };
 
 
