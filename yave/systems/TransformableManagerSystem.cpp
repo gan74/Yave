@@ -80,7 +80,6 @@ void TransformableManagerSystem::Octree::insert_or_update(ecs::EntityId id, cons
 
     TransformData& data = _datas[tr._transform_index];
     data.global_aabb = tr.global_aabb();
-    data.id = id;
 
     if(data.parent_index != u32(-1)) {
         if(const OctreeNode& parent = _nodes[data.parent_index]; parent.aabb().contains(data.global_aabb)) {
@@ -88,6 +87,8 @@ void TransformableManagerSystem::Octree::insert_or_update(ecs::EntityId id, cons
         }
         remove(tr);
     }
+
+    data.id = id;
 
     while(!_nodes[0].aabb().contains(data.global_aabb)) {
         recreate_root(data.global_aabb.center());
@@ -111,6 +112,7 @@ void TransformableManagerSystem::Octree::remove(const TransformableComponent& tr
     node.transforms.erase_unordered(it);
 
     data.parent_index = u32(-1);
+    data.id = {};
 }
 
 
