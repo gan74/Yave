@@ -103,7 +103,7 @@ class EntityWorld : NonMovable {
 
         template<typename... Ts>
         EntityGroup<Ts...>* create_new_group() {
-            auto group = std::make_unique<EntityGroup<Ts...>>(std::tuple{find_container<Ts>()...});
+            auto group = std::make_unique<EntityGroup<Ts...>>(std::tuple{&find_container<Ts>()->_components...});
             auto* group_ptr = group.get();
             _groups.emplace_back(std::move(group));
             _matrix.register_group(group_ptr);

@@ -166,10 +166,41 @@ class Ecs2Debug : public Widget {
 
     protected:
         void on_gui() override {
-            ecs2::EntityWorld& world = current_world()._world2;
-            const auto& group = world.create_group<TransformableComponent, StaticMeshComponent>();
+            {
+                y_profile_zone("ecs");
+                ecs::EntityWorld& world = current_world();
+                auto query = world.query<TransformableComponent, StaticMeshComponent>();
 
-            ImGui::Text("%u transformables in group", u32(group.ids().size()));
+                math::Vec3 sum;
+                {
+                    y_profile_zone("summing");
+                    for(const auto& [tr, mesh] : query.components()) {
+                        sum += tr.position();
+                    }
+                }
+
+                ImGui::Text("%u transformables in query", u32(query.size()));
+                ImGui::Text("Sum of positions = {%f, %f, %f}", sum.x(), sum.y(), sum.z());
+            }
+
+            ImGui::Separator();
+
+            {
+                y_profile_zone("ecs2");
+                ecs2::EntityWorld& world = current_world()._world2;
+                const auto& group = world.create_group<TransformableComponent, StaticMeshComponent>();
+
+                math::Vec3 sum;
+                {
+                    y_profile_zone("summing");
+                    for(usize i = 0; i != group.size(); ++i) {
+                        sum += std::get<TransformableComponent&>(group[i]).position();
+                    }
+                }
+
+                ImGui::Text("%u transformables in group", u32(group.size()));
+                ImGui::Text("Sum of positions = {%f, %f, %f}", sum.x(), sum.y(), sum.z());
+            }
         }
 };
 

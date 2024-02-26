@@ -29,24 +29,10 @@ SOFTWARE.
 namespace yave {
 namespace ecs2 {
 
-using EntityId = ecs::EntityId;
+using ecs::EntityId;
+using ecs::ComponentTypeIndex;
 
-enum class ComponentTypeIndex : u32 {
-    invalid_index = u32(-1),
-};
-
-namespace detail {
-ComponentTypeIndex next_type_index();
-
-template<typename T>
-static ComponentTypeIndex type_index = next_type_index();
-}
-
-
-template<typename T>
-ComponentTypeIndex type_index() {
-    return detail::type_index<T>;
-}
+using ecs::type_index;
 
 }
 }

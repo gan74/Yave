@@ -75,7 +75,6 @@ class ComponentContainer final : public ComponentContainerBase {
             return add(id, y_fwd(args)...);
         }
 
-
         y_serde3_poly(ComponentContainer)
         y_reflect(ComponentContainer, _components)
 
