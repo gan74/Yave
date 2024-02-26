@@ -165,7 +165,10 @@ class Ecs2Debug : public Widget {
 
     protected:
         void on_gui() override {
+            ecs2::EntityWorld& world = current_world()._world2;
+            const auto& group = world.create_group<TransformableComponent, StaticMeshComponent>();
 
+            ImGui::Text("%u transformables in group", u32(group.ids().size()));
         }
 };
 

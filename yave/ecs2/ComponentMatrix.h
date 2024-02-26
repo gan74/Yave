@@ -68,15 +68,23 @@ class ComponentMatrix {
 
         ComponentMatrix(usize type_count);
 
+        void register_group(EntityGroupBase* group);
+        bool in_group(EntityId id, const EntityGroupBase* group) const;
+
+        void add_entity(EntityId id);
+        void remove_entity(EntityId id);
+
         void add_component(EntityId id, ComponentTypeIndex type, u32 slot_index);
         void remove_component(EntityId id, ComponentTypeIndex type);
 
         u32 component_slot_index(EntityId id, ComponentTypeIndex type) const;
-
         usize component_index(EntityId id, ComponentTypeIndex type) const;
 
         usize _type_count = 0;
         core::Vector<Slot> _slots;
+        core::Vector<EntityId> _ids;
+
+        core::FixedArray<core::Vector<EntityGroupBase*>> _groups;
 };
 
 

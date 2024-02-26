@@ -283,8 +283,11 @@ struct SparseElement;
 
 namespace yave::ecs2 {
 class ComponentContainerBase;
+class ComponentMatrix;
+class EntityGroupBase;
 class EntityWorld;
 struct ComponentRuntimeInfo;
+struct Slot;
 }
 
 

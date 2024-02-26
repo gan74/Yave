@@ -24,6 +24,7 @@ SOFTWARE.
 
 
 #include "ComponentContainer.h"
+#include "EntityGroup.h"
 #include "traits.h"
 
 #include <yave/ecs/EntityPool.h>
@@ -44,7 +45,6 @@ class EntityWorld : NonMovable {
 
         EntityId create_entity();
 
-
         template<typename T>
         T* get_or_add_component(EntityId id) {
             return find_container<T>()->get_or_add(id);
@@ -56,6 +56,21 @@ class EntityWorld : NonMovable {
             return find_container<T>()->add_or_replace(id, y_fwd(args)...);
         }
 
+        template<typename... Ts>
+        const EntityGroup<Ts...>& create_group() {
+            using group_type = EntityGroup<Ts...>;
+            for(const auto& group : _groups) {
+                if(const auto* typed_group = dynamic_cast<group_type*>(group.get())) {
+                    return *typed_group;
+                }
+            }
+            std::unique_ptr group = std::make_unique<group_type>();
+            group_type* group_ptr = group.get();
+            _groups.emplace_back(std::move(group));
+            _matrix.register_group(group_ptr);
+            return *group_ptr;
+        }
+
 
     private:
         const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
@@ -65,6 +80,7 @@ class EntityWorld : NonMovable {
 
 
         core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
+        core::Vector<std::unique_ptr<EntityGroupBase>> _groups;
         ComponentMatrix _matrix;
         EntityPool _entities;
 

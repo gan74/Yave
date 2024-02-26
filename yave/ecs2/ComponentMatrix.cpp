@@ -21,25 +21,71 @@ SOFTWARE.
 **********************************/
 
 #include "ComponentMatrix.h"
+#include "EntityGroup.h"
 
 namespace yave {
 namespace ecs2 {
 
-ComponentMatrix::ComponentMatrix(usize type_count) : _type_count(type_count) {
+ComponentMatrix::ComponentMatrix(usize type_count) : _type_count(std::max(1_uu, type_count)), _groups(_type_count) {
+}
+
+void ComponentMatrix::register_group(EntityGroupBase* group) {
+    for(const ComponentTypeIndex type : group->types()) {
+        _groups[usize(type)] << group;
+    }
+
+    const usize entity_count = _slots.size() / _type_count;
+    y_debug_assert(entity_count * _type_count == _slots.size());
+    for(const EntityId id : _ids) {
+        if(id.is_valid() && in_group(id, group)) {
+            group->add_entity(id);
+        }
+    }
+}
+
+bool ComponentMatrix::in_group(EntityId id, const EntityGroupBase* group) const {
+    for(const ComponentTypeIndex type : group->types()) {
+        if(!has_component(id, type)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void ComponentMatrix::add_entity(EntityId id) {
+    _slots.set_min_size(usize(id.index() + 1) * _type_count);
+    _ids.set_min_size(usize(id.index() + 1));
+    _ids[id.index()] = id;
+}
+
+void ComponentMatrix::remove_entity(EntityId id) {
+    y_debug_assert(_ids[id.index()] == id);
+    _ids[id.index()] = {};
 }
 
 void ComponentMatrix::add_component(EntityId id, ComponentTypeIndex type, u32 slot_index) {
-    _slots.set_min_size(usize(id.index() + 1) * _type_count);
+    add_entity(id);
 
     y_debug_assert(!has_component(id, type));
     _slots[component_index(id, type)].index = slot_index;
+
+    for(EntityGroupBase* group : _groups[usize(type)]) {
+        if(in_group(id, group)) {
+            group->add_entity(id);
+        }
+    }
 }
 
 void ComponentMatrix::remove_component(EntityId id, ComponentTypeIndex type) {
-    _slots.set_min_size(usize(id.index() + 1) * _type_count);
+    remove_entity(id);
 
     y_debug_assert(has_component(id, type));
     _slots[component_index(id, type)].index = u32(-1);
+
+    for(EntityGroupBase* group : _groups[usize(type)]) {
+        y_debug_assert(!in_group(id, group));
+        group->remove_entity(id);
+    }
 }
 
 bool ComponentMatrix::has_component(EntityId id, ComponentTypeIndex type) const {
