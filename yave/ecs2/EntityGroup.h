@@ -210,6 +210,13 @@ class EntityGroup final : public EntityGroupBase {
             fill_mutation_tables(tables, _mutating_tables, _changed_tables, std::make_index_sequence<type_count>{});
         }
 
+        template<typename = void>
+        inline ComponentTuple operator[](usize index) const {
+            static_assert(mutating_count == 0 && changed_count == 0);
+            const SlotTuple slots = _component_slots[index];
+            return ComponentTuple{get_component<traits::component_type_t<Ts>>(_containers, slots)...};
+        }
+
         const_iterator begin() const {
             return const_iterator(0, _ids, _component_slots, _containers, _mutating_tables, _changed_tables);
         }
