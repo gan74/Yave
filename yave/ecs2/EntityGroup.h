@@ -185,10 +185,14 @@ class EntityGroup final : public EntityGroupBase {
             }
 
             inline void advance() {
-                for(++_index; _index != _ids.size(); ++_index) {
-                    if(EntityGroup::matches_changed(_changed, _ids[_index])) {
-                        break;
+                if constexpr(changed_count) {
+                    for(++_index; _index != _ids.size(); ++_index) {
+                        if(EntityGroup::matches_changed(_changed, _ids[_index])) {
+                            break;
+                        }
                     }
+                } else {
+                    ++_index;
                 }
             }
 
