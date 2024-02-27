@@ -53,7 +53,7 @@ class ComponentMutationTable : NonMovable {
             return false;
         }
 
-        inline bool contains(EntityId id) {
+        inline bool contains(EntityId id) const {
             const u32 index = id.index();
             const u32 pack_index = index / 64;
             const u32 bit_index = index % 64;

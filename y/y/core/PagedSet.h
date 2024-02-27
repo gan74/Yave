@@ -79,14 +79,6 @@ class PagedSet : Allocator, NonCopyable {
                     return it;
                 }
 
-                inline bool operator==(const Iterator& other) const {
-                    return _it == other._it;
-                }
-
-                inline bool operator!=(const Iterator& other) const {
-                    return _it != other._it;
-                }
-
                 inline reference operator*() const {
                     const usize index = *_it;
                     return _pages[index / page_size][index % page_size];
@@ -100,6 +92,13 @@ class PagedSet : Allocator, NonCopyable {
                 operator Iterator<true>() const {
                     return Iterator<true>(_pages, _it);
                 }
+
+                inline std::strong_ordering operator<=>(const Iterator& other) const {
+                    return _it <=> other._it;
+                }
+
+                bool operator==(const Iterator&) const = default;
+                bool operator!=(const Iterator&) const = default;
 
             private:
                 friend class PagedSet;

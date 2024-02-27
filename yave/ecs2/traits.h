@@ -80,6 +80,15 @@ using component_type_t = typename component_type<T>::type;
 template<typename T>
 using discard_query_qualifiers_t = typename component_type<T>::discard_query_quals;
 
+template<typename T>
+static constexpr bool is_component_changed_v = component_type<T>::changed;
+
+template<typename T>
+static constexpr bool is_component_const_v = std::is_const_v<typename component_type<T>::type>;
+
+template<typename T>
+static constexpr bool is_component_mutable_v = !is_component_const_v<T>;
+
 }
 
 }

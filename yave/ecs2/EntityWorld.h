@@ -58,6 +58,7 @@ class EntityWorld : NonMovable {
 
         template<typename... Ts>
         const EntityGroup<Ts...>& create_group() {
+            y_profile();
             using group_type = EntityGroup<Ts...>;
             for(const auto& group : _groups) {
                 if(const auto* typed_group = dynamic_cast<group_type*>(group.get())) {

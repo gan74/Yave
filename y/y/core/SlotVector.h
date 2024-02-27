@@ -88,14 +88,6 @@ class SlotVector : Allocator, NonCopyable {
                     return it;
                 }
 
-                inline bool operator==(const Iterator& other) const {
-                    return _it == other._it;
-                }
-
-                inline bool operator!=(const Iterator& other) const {
-                    return _it != other._it;
-                }
-
                 inline reference operator*() const {
                     return _data[*_it];
                 }
@@ -107,6 +99,13 @@ class SlotVector : Allocator, NonCopyable {
                 operator Iterator<true>() const {
                     return Iterator<true>(_data, _it);
                 }
+
+                inline std::strong_ordering operator<=>(const Iterator& other) const {
+                    return _it <=> other._it;
+                }
+
+                bool operator==(const Iterator&) const = default;
+                bool operator!=(const Iterator&) const = default;
 
             private:
                 friend class SlotVector;

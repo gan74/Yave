@@ -167,9 +167,18 @@ class Ecs2Debug : public Widget {
     protected:
         void on_gui() override {
             {
+                y_profile_zone("ecs2 mutate");
+                ecs2::EntityWorld& world = current_world()._world2;
+                const auto& group = world.create_group<ecs2::Mutate<TransformableComponent>, StaticMeshComponent>();
+
+                for(auto&& [tr, mesh] : group) {
+                }
+            }
+
+            {
                 y_profile_zone("ecs");
                 ecs::EntityWorld& world = current_world();
-                auto query = world.query<ecs::Mutate<TransformableComponent>, StaticMeshComponent>();
+                auto query = world.query<ecs::Changed<TransformableComponent>, StaticMeshComponent>();
 
                 math::Vec3 sum;
                 {
@@ -188,13 +197,13 @@ class Ecs2Debug : public Widget {
             {
                 y_profile_zone("ecs2");
                 ecs2::EntityWorld& world = current_world()._world2;
-                const auto& group = world.create_group<ecs2::Mutate<TransformableComponent>, StaticMeshComponent>();
+                const auto& group = world.create_group<ecs2::Changed<TransformableComponent>, StaticMeshComponent>();
 
                 math::Vec3 sum;
                 {
                     y_profile_zone("summing");
-                    for(usize i = 0; i != group.size(); ++i) {
-                        sum += std::get<TransformableComponent&>(group[i]).position();
+                    for(auto&& [tr, mesh] : group) {
+                        sum += tr.position();
                     }
                 }
 
