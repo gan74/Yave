@@ -40,6 +40,8 @@ namespace editor {
 static core::Vector<ecs::EntityId> highlighted_entities(const SceneView& scene_view, bool highlight_children) {
     y_profile();
 
+    unused(scene_view);
+
     const EditorWorld& world = current_world();
     y_debug_assert(&world == &scene_view.world());
 

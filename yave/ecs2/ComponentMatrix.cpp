@@ -36,6 +36,7 @@ void ComponentMatrix::register_group(EntityGroupBase* group) {
         _groups[usize(type)] << group;
     }
 
+    [[maybe_unused]]
     const usize entity_count = _slots.size() / _type_count;
     y_debug_assert(entity_count * _type_count == _slots.size());
     for(const EntityId id : _ids) {
