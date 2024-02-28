@@ -24,9 +24,8 @@ SOFTWARE.
 
 #include "ecs.h"
 #include "traits.h"
-#include "ComponentMutationTable.h"
+#include "ComponentContainer.h"
 
-#include <y/core/SlotVector.h>
 #include <y/concurrent/Signal.h>
 
 namespace yave {
@@ -45,13 +44,13 @@ class EntityGroupBase : NonMovable {
         }
 
         inline core::Span<EntityId> ids() const {
-            return _ids;
+            return _ids.ids();
         }
 
     protected:
         friend class ComponentMatrix;
 
-        virtual void add_entity(EntityId id, core::Span<u32> slots) = 0;
+        virtual void add_entity(EntityId id) = 0;
         virtual void remove_entity(EntityId id) = 0;
 
     protected:
@@ -59,81 +58,53 @@ class EntityGroupBase : NonMovable {
         }
 
         core::Span<ComponentTypeIndex> _types;
-        core::Vector<EntityId> _ids;
+        SparseIdSet _ids;
 };
+
 
 template<typename... Ts>
 class EntityGroup final : public EntityGroupBase {
     static constexpr usize type_count = sizeof...(Ts);
-    static constexpr usize mutating_count = ((traits::is_component_mutable_v<Ts> ? 1 : 0) + ...);
+    static constexpr usize mutate_count = ((traits::is_component_mutable_v<Ts> ? 1 : 0) + ...);
     static constexpr usize changed_count = ((traits::is_component_changed_v<Ts> ? 1 : 0) + ...);
 
 
     static inline const std::array<ComponentTypeIndex, type_count> type_storage = { type_index<traits::component_raw_type_t<Ts>>()... };
 
 
-
-    template<typename T>
-    using Slot = core::SlotVector<T>::Slot;
-
-    using ContainerTuple = std::tuple<core::SlotVector<traits::component_raw_type_t<Ts>>*...>;
-    using SlotTuple = std::tuple<Slot<traits::component_raw_type_t<Ts>>...>;
+    using SetTuple = std::tuple<SparseComponentSet<traits::component_raw_type_t<Ts>>*...>;
+    using ContainerTuple = std::tuple<ComponentContainer<traits::component_raw_type_t<Ts>>*...>;
     using ComponentTuple = std::tuple<traits::component_type_t<Ts>&...>;
-    using MutatingTableArray = std::array<ComponentMutationTable*, mutating_count>;
-    using ChangedTableArray = std::array<ComponentMutationTable*, changed_count>;
 
+    using MutateContainers = std::array<SparseIdSet*, mutate_count>;
+    using ChangedContainers = std::array<const SparseIdSet*, changed_count>;
 
-
-
-
-    template<usize... Is>
-    static inline SlotTuple make_slots(core::Span<u32> slots, std::index_sequence<Is...>) {
-        y_debug_assert((slots[usize(type_storage[Is])] != u32(-1)) && ...);
-        return SlotTuple{Slot<traits::component_raw_type_t<Ts>>(slots[usize(type_storage[Is])])...};
-    }
 
     template<typename T>
-    static inline T& get_component(const ContainerTuple& containers, const SlotTuple& slots) {
-        using raw_type = traits::component_raw_type_t<T>;
-        return (*std::get<core::SlotVector<raw_type>*>(containers))[std::get<Slot<raw_type>>(slots)];
+    static inline T& get_component(const SetTuple& sets, EntityId id) {
+        return (*std::get<SparseComponentSet<traits::component_raw_type_t<T>>*>(sets))[id];
     }
-
-
-
-
 
     template<typename T, usize I>
-    static void fill_one(const std::array<ComponentMutationTable*, type_count>& tables,
-                         MutatingTableArray& mutating, usize& mut_index,
-                         ChangedTableArray& changed, usize& cha_index) {
+    void fill_one(const ContainerTuple& containers, usize& mut_index, usize& cha_index) {
+        std::get<I>(_sets) = &std::get<I>(containers)->_components;
+
         if constexpr(traits::is_component_mutable_v<T>) {
-            mutating[mut_index++] = tables[I];
+            _mutate[mut_index++] = &std::get<I>(containers)->_mutated;
         }
         if constexpr(traits::is_component_changed_v<T>) {
-            changed[cha_index++] = tables[I];
+            _changed[cha_index++] = &std::get<I>(containers)->_mutated;
         }
     }
 
     template<usize... Is>
-    static inline void fill_mutation_tables(const std::array<ComponentMutationTable*, type_count>& tables, MutatingTableArray& mutating, ChangedTableArray& changed, std::index_sequence<Is...>) {
+    inline void fill_sets(const ContainerTuple& containers, std::index_sequence<Is...>) {
         usize mut_index = 0;
         usize cha_index = 0;
-        (fill_one<Ts, Is>(tables, mutating, mut_index, changed, cha_index), ...);
-        y_debug_assert(mut_index == mutating_count);
-        y_debug_assert(cha_index == changed_count);
+        (fill_one<Ts, Is>(containers, mut_index, cha_index), ...);
+        y_debug_assert(std::all_of(_mutate.begin(), _mutate.end(), [](const auto* s) { return s; }));
+        y_debug_assert(std::all_of(_changed.begin(), _changed.end(), [](const auto* s) { return s; }));
     }
-
-    static inline void update_mutation_tables(const MutatingTableArray& tables, EntityId id) {
-        for(ComponentMutationTable* table : tables) {
-            table->add(id);
-        }
-    }
-
-    static inline bool matches_changed(const ChangedTableArray& tables, EntityId id) {
-        return std::all_of(tables.begin(), tables.end(), [id](const auto* table) { return table->contains(id); });
-    }
-
-
 
 
 
@@ -148,25 +119,22 @@ class EntityGroup final : public EntityGroupBase {
             using difference_type = std::ptrdiff_t;
 
             inline Iterator& operator++() {
-                advance();
+                ++_it;
                 return *this;
             }
 
             inline Iterator operator++(int) {
                 const Iterator it = *this;
-                advance();
+                ++_it;
                 return it;
             }
 
             inline reference operator*() const {
-                y_debug_assert(_index < _ids.size());
-                update_mutation_tables(_mutating, _ids[_index]);
-                const SlotTuple slots = _slots[_index];
-                return ComponentTuple{EntityGroup::get_component<traits::component_type_t<Ts>>(_containers, slots)...};
+                return ComponentTuple{EntityGroup::get_component<traits::component_type_t<Ts>>(_sets, *_it)...};
             }
 
             inline std::strong_ordering operator<=>(const Iterator& other) const {
-                return _index <=> other._index;
+                return _it <=> other._it;
             }
 
             bool operator==(const Iterator&) const = default;
@@ -174,87 +142,105 @@ class EntityGroup final : public EntityGroupBase {
 
         private:
             friend class EntityGroup;
+            friend class Query;
 
-            Iterator(usize index, core::Span<EntityId> ids, core::Span<SlotTuple> slots, const ContainerTuple& containers, const MutatingTableArray& mutating, const ChangedTableArray& changed) :
-                    _index(index),
-                    _ids(ids),
-                    _slots(slots),
-                    _containers(containers),
-                    _mutating(mutating),
-                    _changed(changed) {
+            Iterator(const EntityId* it, const SetTuple& sets) : _it(it), _sets(sets) {
             }
 
-            inline void advance() {
-                if constexpr(changed_count) {
-                    for(++_index; _index != _ids.size(); ++_index) {
-                        if(EntityGroup::matches_changed(_changed, _ids[_index])) {
+            const EntityId* _it = nullptr;
+            SetTuple _sets = {};
+    };
+
+    class Query {
+        public:
+            using const_iterator = Iterator;
+
+            const_iterator begin() const {
+                return const_iterator(ids().begin(), _sets);
+            }
+
+            const_iterator end() const {
+                return const_iterator(ids().end(), _sets);
+            }
+
+            core::Span<EntityId> ids() const {
+                return _ids.is_empty() ? core::Span<EntityId>(_owned) : _ids;
+            }
+
+        private:
+            friend class EntityGroup;
+
+            core::Span<EntityId> _ids;
+            core::Vector<EntityId> _owned;
+            SetTuple _sets = {};
+    };
+
+    public:
+        EntityGroup(const ContainerTuple& containers) : EntityGroupBase(type_storage) {
+            fill_sets(containers, std::make_index_sequence<type_count>{});
+        }
+
+        Query query() const {
+            y_profile();
+
+            Query query;
+            query._sets = _sets;
+
+            if constexpr(changed_count) {
+                y_profile_zone("finding changed entities");
+
+                std::array<const SparseIdSet*, changed_count + 1> matches = {};
+                std::copy_n(_changed.begin(), changed_count, matches.begin());
+                matches[changed_count] = &_ids;
+
+                std::sort(matches.begin(), matches.end(), [](const SparseIdSet* a, const SparseIdSet* b) {
+                    return a->size() < b->size();
+                });
+
+                for(const EntityId id : matches[0]->ids()) {
+                    bool match = true;
+                    for(usize i = 1; i != matches.size(); ++i) {
+                        if(!matches[i]->contains(id)) {
+                            match = false;
                             break;
                         }
                     }
-                } else {
-                    ++_index;
+                    if(match) {
+                        query._owned << id;
+                    }
+                }
+            } else {
+                query._ids = _ids.ids();
+            }
+
+            if constexpr(mutate_count) {
+                y_profile_zone("propagating mutations");
+                for(SparseIdSet* mut_set : _mutate) {
+                    for(const EntityId id : query.ids()) {
+                        mut_set->insert(id);
+                    }
                 }
             }
 
-            usize _index = 0;
-            core::Span<EntityId> _ids;
-            core::Span<SlotTuple> _slots;
-            ContainerTuple _containers = {};
-            MutatingTableArray _mutating = {};
-            ChangedTableArray _changed = {};
-    };
-
-
-
-
-    public:
-        using const_iterator = Iterator;
-
-        EntityGroup(ContainerTuple containers, const std::array<ComponentMutationTable*, type_count>& tables) : EntityGroupBase(type_storage), _containers(containers) {
-            fill_mutation_tables(tables, _mutating_tables, _changed_tables, std::make_index_sequence<type_count>{});
-        }
-
-        template<typename = void>
-        inline ComponentTuple operator[](usize index) const {
-            static_assert(mutating_count == 0 && changed_count == 0);
-            const SlotTuple slots = _component_slots[index];
-            return ComponentTuple{get_component<traits::component_type_t<Ts>>(_containers, slots)...};
-        }
-
-        const_iterator begin() const {
-            return const_iterator(0, _ids, _component_slots, _containers, _mutating_tables, _changed_tables);
-        }
-
-        const_iterator end() const {
-            return const_iterator(_ids.size(), _ids, _component_slots, _containers, _mutating_tables, _changed_tables);
+            return query;
         }
 
     protected:
-        void add_entity(EntityId id, core::Span<u32> slots) {
-            y_debug_assert(_component_slots.size() == _ids.size());
-            _ids << id;
-            _component_slots << make_slots(slots, std::make_index_sequence<type_count>{});
-
+        void add_entity(EntityId id) override {
+            _ids.insert(id);
             _on_added.send(id);
         }
 
         void remove_entity(EntityId id) override {
-            y_debug_assert(_component_slots.size() == _ids.size());
             _on_removed.send(id);
-
-            const auto it = std::find(_ids.begin(), _ids.end(), id);
-            y_debug_assert(it != _ids.end());
-
-            const usize index = it - _ids.begin();
-            _ids.erase_unordered(_ids.begin() + index);
-            _component_slots.erase_unordered(_component_slots.begin() + index);
+            _ids.erase(id);
         }
 
     private:
-        core::Vector<SlotTuple> _component_slots;
-        ContainerTuple _containers;
-        MutatingTableArray _mutating_tables = {};
-        ChangedTableArray _changed_tables = {};
+        SetTuple _sets = {};
+
+        MutateContainers _mutate = {};
+        ChangedContainers _changed = {};
 
         concurrent::Signal<EntityId> _on_added;
         concurrent::Signal<EntityId> _on_removed;

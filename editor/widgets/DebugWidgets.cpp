@@ -171,7 +171,8 @@ class Ecs2Debug : public Widget {
                 ecs2::EntityWorld& world = current_world()._world2;
                 const auto& group = world.create_group<ecs2::Mutate<TransformableComponent>, StaticMeshComponent>();
 
-                for(auto&& [tr, mesh] : group) {
+                auto query = group.query();
+                for(auto&& [tr, mesh] : query) {
                 }
             }
 
@@ -202,33 +203,13 @@ class Ecs2Debug : public Widget {
                 math::Vec3 sum;
                 {
                     y_profile_zone("summing");
-                    for(auto&& [tr, mesh] : group) {
+                    for(auto&& [tr, mesh] : group.query()) {
                         sum += tr.position();
                     }
                 }
 
                 ImGui::Text("%u transformables in group", u32(group.size()));
                 ImGui::Text("Sum of positions = {%f, %f, %f}", sum.x(), sum.y(), sum.z());
-
-            }
-
-
-            {
-                y_profile_zone("ecs2 indexed");
-                ecs2::EntityWorld& world = current_world()._world2;
-                const auto& group = world.create_group<TransformableComponent, StaticMeshComponent>();
-
-                math::Vec3 sum;
-                {
-                    y_profile_zone("summing");
-                    for(usize i = 0; i != group.size(); ++i) {
-                        sum += std::get<const TransformableComponent&>(group[i]).position();
-                    }
-                }
-
-                ImGui::Text("%u transformables in group", u32(group.size()));
-                ImGui::Text("Sum of positions = {%f, %f, %f}", sum.x(), sum.y(), sum.z());
-
             }
         }
 };

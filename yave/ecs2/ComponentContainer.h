@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include "ComponentRuntimeInfo.h"
 #include "ComponentMatrix.h"
-#include "ComponentMutationTable.h"
 
 #include <y/serde3/poly.h>
 
@@ -42,20 +41,20 @@ class ComponentContainerBase : NonMovable {
     protected:
         friend class EntityWorld;
 
+        template<typename... Ts>
+        friend class EntityGroup;
+
         ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
         }
 
         const ComponentTypeIndex _type_id;
         ComponentMatrix* _matrix = nullptr;
-        ComponentMutationTable _mutation_table;
-
+        SparseIdSet _mutated;
 };
 
 
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
-    using Slot = core::SlotVector<T>::Slot;
-
     public:
         using component_type = T;
 
@@ -63,16 +62,16 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
         T* get_or_add(EntityId id) {
-            if(const Slot slot = _matrix->component_slot_index<T>(id); slot != Slot::invalid_slot) {
-                return &_components[slot];
+            if(_components.contains(id)) {
+                return &_components[id];
             }
             return add(id);
         }
 
         template<typename... Args>
         T* add_or_replace(EntityId id, Args&... args) {
-            if(const Slot slot = _matrix->component_slot_index<T>(id); slot != Slot::invalid_slot) {
-                return &(_components[slot] = T(y_fwd(args)...));
+            if(_components.contains(id)) {
+                return &(_components[id] = T(y_fwd(args)...));
             }
             return add(id, y_fwd(args)...);
         }
@@ -83,15 +82,17 @@ class ComponentContainer final : public ComponentContainerBase {
     private:
         friend class EntityWorld;
 
+        template<typename... Ts>
+        friend class EntityGroup;
+
         template<typename... Args>
         T* add(EntityId id, Args&... args) {
-            _mutation_table.set_min_size(id);
-            const Slot slot = _components.insert(y_fwd(args)...);
-            _matrix->add_component<T>(id, slot);
-            return &_components[slot];
+            T* component =  &_components.insert(id, y_fwd(args)...);
+            _matrix->add_component<T>(id);
+            return component;
         }
 
-        core::SlotVector<T> _components;
+        SparseComponentSet<T> _components;
 };
 
 }

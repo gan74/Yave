@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
+#include <yave/ecs/SparseComponentSet.h>
+
 namespace yave {
 namespace ecs2 {
 
@@ -33,6 +35,9 @@ using ecs::EntityId;
 using ecs::ComponentTypeIndex;
 
 using ecs::type_index;
+
+using ecs::SparseComponentSet;
+using ecs::SparseIdSet;
 
 }
 }

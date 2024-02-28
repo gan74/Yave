@@ -280,7 +280,7 @@ class SparseComponentSet : public SparseIdSetBase {
 
         template<typename... Args>
         reference insert(EntityId id, Args&&... args) {
-                insert_id(id);
+            insert_id(id);
             _values.emplace_back(y_fwd(args)...);
 
             return _values.last();

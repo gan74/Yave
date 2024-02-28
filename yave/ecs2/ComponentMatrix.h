@@ -31,8 +31,10 @@ namespace yave {
 namespace ecs2 {
 
 class ComponentMatrix {
-    template<typename T>
-    using TypedSlot = core::SlotVector<T>::Slot;
+    struct ComponentIndex {
+        u64 mask;
+        u32 index;
+    };
 
     public:
         void add_entity(EntityId id);
@@ -48,18 +50,13 @@ class ComponentMatrix {
         }
 
         template<typename T>
-        void add_component(EntityId id, TypedSlot<T> slot) {
-            add_component(id, type_index<T>(), u32(slot));
+        void add_component(EntityId id) {
+            add_component(id, type_index<T>());
         }
 
         template<typename T>
-        void remove_component(EntityId id, TypedSlot<T> slot) {
-            remove_component(id, type_index<T>(), u32(slot));
-        }
-
-        template<typename T>
-        TypedSlot<T> component_slot_index(EntityId id) const {
-            return TypedSlot<T>(component_slot_index(id, type_index<T>()));
+        void remove_component(EntityId id) {
+            remove_component(id, type_index<T>());
         }
 
 
@@ -71,15 +68,13 @@ class ComponentMatrix {
         void register_group(EntityGroupBase* group);
         bool in_group(EntityId id, const EntityGroupBase* group) const;
 
-        void add_component(EntityId id, ComponentTypeIndex type, u32 slot_index);
+        void add_component(EntityId id, ComponentTypeIndex type);
         void remove_component(EntityId id, ComponentTypeIndex type);
 
-        u32 component_slot_index(EntityId id, ComponentTypeIndex type) const;
-        usize component_index(EntityId id, ComponentTypeIndex type) const;
-        core::Span<u32> slots_for_entity(EntityId id) const;
+        ComponentIndex component_index(EntityId id, ComponentTypeIndex type) const;
 
-        usize _type_count = 0;
-        core::Vector<u32> _slots;
+        u32 _type_count = 0;
+        core::Vector<u64> _bits;
         core::Vector<EntityId> _ids;
 
         core::FixedArray<core::Vector<EntityGroupBase*>> _groups;
