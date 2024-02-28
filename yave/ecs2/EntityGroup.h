@@ -50,8 +50,14 @@ class EntityGroupBase : NonMovable {
     protected:
         friend class ComponentMatrix;
 
-        virtual void add_entity(EntityId id) = 0;
-        virtual void remove_entity(EntityId id) = 0;
+        void add_entity(EntityId id) {
+            _ids.insert(id);
+        }
+
+        void remove_entity(EntityId id) {
+            _ids.erase(id);
+        }
+
 
     protected:
         EntityGroupBase(core::Span<ComponentTypeIndex> types) : _types(types) {
@@ -225,25 +231,11 @@ class EntityGroup final : public EntityGroupBase {
             return query;
         }
 
-    protected:
-        void add_entity(EntityId id) override {
-            _ids.insert(id);
-            _on_added.send(id);
-        }
-
-        void remove_entity(EntityId id) override {
-            _on_removed.send(id);
-            _ids.erase(id);
-        }
-
     private:
         SetTuple _sets = {};
 
         MutateContainers _mutate = {};
         ChangedContainers _changed = {};
-
-        concurrent::Signal<EntityId> _on_added;
-        concurrent::Signal<EntityId> _on_removed;
 
 };
 
