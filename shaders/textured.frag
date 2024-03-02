@@ -25,6 +25,9 @@ layout(set = 2, binding = 0) uniform sampler2D all_textures_Variable[];
 
 DECLARE_STANDARD_INTERPOLANTS(in)
 
+
+
+
 // https://github.com/nvpro-samples/vk_raytrace/blob/master/shaders/gltf_material.glsl
 float perceived_brightness(vec3 color) {
     return sqrt(dot(vec3(0.299, 0.587, 0.114), color * color));
@@ -52,6 +55,9 @@ float metalic_from_specular(vec3 diffuse, vec3 specular) {
 }
 
 
+
+
+
 vec4 tex_from_index(MaterialData material, uint index, vec2 uv) {
     const uint texture_index = material.texture_indices[index];
     return texture(all_textures_Variable[nonuniformEXT(texture_index)], uv);
@@ -64,14 +70,17 @@ void main() {
 
 #ifdef ALPHA_TEST
     if(color.a < 0.5) {
-        //discard;
+        discard;
     }
 #endif
 
+
     const vec3 normal = unpack_normal_map(tex_from_index(material, normal_texture_index, in_uv).xy);
-    const vec3 mapped_normal = normal.x * in_tangent +
-                               normal.y * in_bitangent +
-                               normal.z * in_normal;
+    const vec3 mapped_front_face_normal = normal.x * in_tangent +
+                                          normal.y * in_bitangent +
+                                          normal.z * in_normal;
+
+    const vec3 mapped_normal = gl_FrontFacing ? mapped_front_face_normal : -mapped_front_face_normal;
 
     SurfaceInfo surface;
     surface.albedo = color.rgb * material.base_color_factor;

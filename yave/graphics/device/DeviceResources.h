@@ -112,8 +112,11 @@ class DeviceResources final : NonMovable {
         enum MaterialTemplates {
             TexturedMaterialTemplate,
             TexturedAlphaMaterialTemplate,
+            TexturedAlphaDoubleSidedMaterialTemplate,
+
             TexturedSpecularMaterialTemplate,
             TexturedSpecularAlphaMaterialTemplate,
+            TexturedSpecularAlphaDoubleSidedMaterialTemplate,
 
             DeferredPointLightMaterialTemplate,
             DeferredSpotLightMaterialTemplate,

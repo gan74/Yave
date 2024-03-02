@@ -663,8 +663,10 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
             data.color_factor[i] = float(material.pbrMetallicRoughness.baseColorFactor[i]);
             data.emissive_factor[i] = float(material.emissiveFactor[i]);
         }
-    };
 
+        data.alpha_tested = (material.alphaMode != "OPAQUE");
+        data.double_sided = material.doubleSided;
+    };
 
     MaterialData mat_data;
 
@@ -687,8 +689,6 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
         mat_data = MaterialData(std::move(data));
     }
 
-    mat_data.alpha_tested() = (material.alphaMode != "OPAQUE");
-    mat_data.double_sided() = material.doubleSided;
 
     return core::Ok(std::move(mat_data));
 }

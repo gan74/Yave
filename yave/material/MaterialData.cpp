@@ -48,6 +48,8 @@ MaterialData::MaterialData(Type type, CommonMaterialData data) : _type(type) {
 
     _base_color_factor = data.color_factor;
     _emissive_factor = data.emissive_factor;
+    _alpha_tested = data.alpha_tested;
+    _double_sided = data.double_sided;
 }
 
 
@@ -97,15 +99,7 @@ bool MaterialData::alpha_tested() const {
     return _alpha_tested;
 }
 
-bool& MaterialData::alpha_tested() {
-    return _alpha_tested;
-}
-
 bool MaterialData::double_sided() const {
-    return _double_sided;
-}
-
-bool& MaterialData::double_sided() {
     return _double_sided;
 }
 
