@@ -365,33 +365,35 @@ DescriptorSetData DescriptorSetAllocator::create_descritptor_set(core::Span<Desc
         layout_bindings[i] = descriptors[i].descriptor_set_layout_binding(u32(i));
     }
 
-    return _layouts.locked([&](auto&& layouts) {
+    LayoutPools* layout_p = _layouts.locked([&](auto&& layouts) {
         Y_TODO(get rid of layout binding stuff, we shouldnt need the extra alloc)
-        auto& pool = layout_pool(layouts, layout_bindings);
+        return layout_pool(layouts, layout_bindings);
+    });
 
-        const auto reversed = core::Range(std::make_reverse_iterator(pool.pools.end()),
-                                          std::make_reverse_iterator(pool.pools.begin()));
+    return layout_p->pools.locked([&](auto&& pools) {
+        const auto reversed = core::Range(std::make_reverse_iterator(pools.end()),
+                                          std::make_reverse_iterator(pools.begin()));
         for(auto& page : reversed) {
             if(!page->is_full()) {
                 return page->alloc(descriptors);
             }
         }
 
-        pool.pools.emplace_back(std::make_unique<DescriptorSetPool>(pool.layout));
-        return pool.pools.last()->alloc(descriptors);
+        pools.emplace_back(std::make_unique<DescriptorSetPool>(layout_p->layout));
+        return pools.last()->alloc(descriptors);
     });
 }
 
 const DescriptorSetLayout& DescriptorSetAllocator::descriptor_set_layout(LayoutKey bindings) {
-    return _layouts.locked([&](auto&& layouts) -> const LayoutPools& { return layout_pool(layouts, bindings); }).layout;
+    return _layouts.locked([&](auto&& layouts) -> const LayoutPools* { return layout_pool(layouts, bindings); })->layout;
 }
 
-DescriptorSetAllocator::LayoutPools& DescriptorSetAllocator::layout_pool(LayoutMap& layouts, LayoutKey bindings) {
+DescriptorSetAllocator::LayoutPools* DescriptorSetAllocator::layout_pool(LayoutMap& layouts, LayoutKey bindings) {
     auto& layout  = layouts[bindings];
-    if(layout.layout.is_null()) {
-        layout.layout = DescriptorSetLayout(bindings);
+    if(!layout) {
+        layout = std::make_unique<LayoutPools>(bindings);
     }
-    return layout;
+    return layout.get();
 }
 
 usize DescriptorSetAllocator::layout_count() const {
@@ -402,7 +404,7 @@ usize DescriptorSetAllocator::pool_count() const {
     return _layouts.locked([](auto&& layouts) {
         usize count = 0;
         for(const auto& l : layouts) {
-            count += l.second.pools.size();
+            count += l.second->pools.locked([](auto&& pools) { return pools.size(); });
         }
         return count;
     });
@@ -412,9 +414,11 @@ usize DescriptorSetAllocator::free_sets() const {
     return _layouts.locked([](auto&& layouts) {
         usize count = 0;
         for(const auto& l : layouts) {
-            for(const auto& p : l.second.pools) {
-                count += p->free_sets();
-            }
+            l.second->pools.locked([&](auto&& pools) {
+                for(const auto& p : pools) {
+                    count += p->free_sets();
+                }
+            });
         }
         return count;
     });
@@ -424,9 +428,11 @@ usize DescriptorSetAllocator::used_sets() const {
     return _layouts.locked([](auto&& layouts) {
         usize count = 0;
         for(const auto& l : layouts) {
-            for(const auto& p : l.second.pools) {
-                count += p->used_sets();
-            }
+            l.second->pools.locked([&](auto&& pools) {
+                for(const auto& p : pools) {
+                    count += p->used_sets();
+                }
+            });
         }
         return count;
     });

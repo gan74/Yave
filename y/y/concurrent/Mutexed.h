@@ -32,7 +32,7 @@ namespace y {
 namespace concurrent {
 
 template<typename T, typename Lock = std::mutex>
-class Mutexed : NonCopyable {
+class Mutexed : NonMovable {
     public:
         template<typename... Args>
         Mutexed(Args&&... args) : _obj(y_fwd(args)...) {
