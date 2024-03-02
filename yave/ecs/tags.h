@@ -38,7 +38,7 @@ static const core::String not_##tag = "!"#tag;
 
 DECLARE_TAG(hidden)
 DECLARE_TAG(selected)
-
+DECLARE_TAG(debug)
 
 
 #undef DECLARE_TAG

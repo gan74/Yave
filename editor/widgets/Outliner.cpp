@@ -84,12 +84,13 @@ static void add_debug_lights() {
     const math::Vec3 center; //new_entity_pos(side * 1.5f);
 
     const ecs::EntityId parent = world.create_named_entity("Debug lights");
-
+    world.add_tag(parent, ecs::tags::debug);
 
     math::FastRandom rng;
     for(usize i = 0; i != entity_count; ++i) {
         const ecs::EntityId entity = world.create_named_entity(fmt("Debug light #{}", i));
         world.set_parent(entity, parent);
+        world.add_tag(entity, ecs::tags::debug);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
@@ -113,6 +114,7 @@ static void add_debug_cubes2() {
 
     for(usize i = 0; i != entity_count; ++i) {
         const ecs::EntityId entity = world.create_entity();
+        world.add_tag(entity, ecs::tags::debug);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
@@ -133,10 +135,12 @@ static void add_debug_cubes() {
     const math::Vec3 center; //new_entity_pos(side * 1.5f);
 
     const ecs::EntityId parent = world.create_named_entity("Debug cubes");
+    world.add_tag(parent, ecs::tags::debug);
 
     for(usize i = 0; i != entity_count; ++i) {
         const ecs::EntityId entity = world.create_named_entity(fmt("Debug cubes #{}", i));
         world.set_parent(entity, parent);
+        world.add_tag(entity, ecs::tags::debug);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);

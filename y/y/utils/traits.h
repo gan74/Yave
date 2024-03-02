@@ -79,7 +79,7 @@ struct function_traits<Ret(Args...)> {
     using return_type = Ret;
     using func_type = Ret(Args...);
 
-    static constexpr usize n_args = sizeof...(Args);
+    static constexpr usize arg_count = sizeof...(Args);
 
     using argument_pack = std::tuple<std::remove_const_t<std::remove_reference_t<Args>>...>;
 
