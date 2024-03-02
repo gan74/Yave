@@ -103,18 +103,15 @@ int main(int argc, char** argv) {
     y_defer(destroy_device());
 
 
-    Settings settings;
-    settings.load();
-
     {
         ImGuiPlatform platform(multi_viewport, run_tests);
-        init_editor(&platform, settings);
+        init_editor(&platform, Settings::load());
         y_defer(destroy_editor());
 
         run_editor();
     }
 
-    settings.save();
+    app_settings().save();
 
     log_msg("exiting...");
 
