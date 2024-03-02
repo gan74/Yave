@@ -99,6 +99,37 @@ class StaticThreadPool : NonMovable {
             return future;
         }
 
+        template<typename It, typename Fn>
+        void parallel_for(It begin, It end, Fn&& func) {
+            const usize estimated_splits = ((_threads.size() + 1) * 4) - 1;
+            const usize total_size = usize(end - begin);
+            const usize dispatch_size = std::max(1_uu, total_size / estimated_splits);
+
+            DependencyGroup deps;
+            auto schedule_one = [&](It b, It e) {
+                if(b != e) {
+                    schedule([b, e, func]() {
+                        for(It it = b; it != e; ++it) {
+                            func(it);
+                        }
+                    }, &deps);
+                }
+            };
+
+            It current = begin;
+            for(usize i = 0; i < total_size; i += dispatch_size) {
+                It e = current + dispatch_size;
+                schedule_one(current, e);
+                current = e;
+            }
+
+            schedule_one(current, end);
+
+            while(!deps.is_ready()) {
+                process_until_empty();
+            }
+        }
+
     private:
         // Empty means all tasks are scheduled, not done!
         void process_until_empty();
