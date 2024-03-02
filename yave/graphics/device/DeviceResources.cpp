@@ -63,8 +63,8 @@ struct DeviceMaterialData {
         return DeviceMaterialData{frag, SpirV::ScreenVert, DepthTestMode::None, blended ? BlendMode::Add : BlendMode::None, CullMode::None, false};
     }
 
-    static constexpr DeviceMaterialData basic(SpirV frag) {
-        return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None,  CullMode::Back, true};
+    static constexpr DeviceMaterialData basic(SpirV frag, bool double_sided = false) {
+        return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None,  double_sided ? CullMode::None : CullMode::Back, true};
     }
 
     static constexpr DeviceMaterialData wire(SpirV frag) {
@@ -79,8 +79,12 @@ struct DeviceMaterialData {
 static constexpr DeviceMaterialData material_datas[] = {
         DeviceMaterialData::basic(SpirV::TexturedFrag),
         DeviceMaterialData::basic(SpirV::TexturedAlphaFrag),
+        DeviceMaterialData::basic(SpirV::TexturedAlphaFrag, true),
+
         DeviceMaterialData::basic(SpirV::TexturedSpecularFrag),
         DeviceMaterialData::basic(SpirV::TexturedSpecularAlphaFrag),
+        DeviceMaterialData::basic(SpirV::TexturedSpecularAlphaFrag, true),
+
         DeviceMaterialData{SpirV::DeferredPointFrag, SpirV::DeferredPointVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
         DeviceMaterialData{SpirV::DeferredSpotFrag, SpirV::DeferredSpotVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
         DeviceMaterialData::screen(SpirV::DeferredAmbientFrag, true),

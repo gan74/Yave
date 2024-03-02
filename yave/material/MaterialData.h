@@ -36,6 +36,9 @@ class MaterialData {
 
             math::Vec3 color_factor = math::Vec3(1.0f);
             math::Vec3 emissive_factor;
+
+            bool alpha_tested = false;
+            bool double_sided = false;
         };
 
         struct MetallicRoughnessMaterialData  {
@@ -77,13 +80,8 @@ class MaterialData {
         float metallic_factor() const;
         float specular_factor() const;
 
-
         bool alpha_tested() const;
-        bool& alpha_tested();
-
-        Y_TODO(Not used!)
         bool double_sided() const;
-        bool& double_sided();
 
         bool has_emissive() const;
 

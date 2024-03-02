@@ -26,17 +26,31 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/device/MaterialAllocator.h>
 
+#include <y/utils/log.h>
+
 namespace yave {
 
 static DeviceResources::MaterialTemplates material_template_for_data(const MaterialData& data) {
     if(data.material_type() == MaterialData::Type::Specular) {
         if(data.alpha_tested()) {
-            return DeviceResources::TexturedSpecularAlphaMaterialTemplate;
+            return data.double_sided()
+                ? DeviceResources::TexturedSpecularAlphaDoubleSidedMaterialTemplate
+                : DeviceResources::TexturedSpecularAlphaMaterialTemplate
+            ;
+        }
+        if(data.double_sided()) {
+            log_msg("Double sided is not supported for given material configuration", Log::Warning);
         }
         return DeviceResources::TexturedSpecularMaterialTemplate;
     } else {
         if(data.alpha_tested()) {
-            return DeviceResources::TexturedAlphaMaterialTemplate;
+            return data.double_sided()
+                ? DeviceResources::TexturedAlphaDoubleSidedMaterialTemplate
+                : DeviceResources::TexturedAlphaMaterialTemplate
+            ;
+        }
+        if(data.double_sided()) {
+            log_msg("Double sided is not supported for given material configuration", Log::Warning);
         }
         return DeviceResources::TexturedMaterialTemplate;
     }

@@ -323,7 +323,9 @@ class SparseComponentSet : public SparseIdSetBase {
                 return nullptr;
             }
             const SparseElement elem = _sparse[index];
-            y_debug_assert(elem.index < _values.size());
+            if(elem.index >= _values.size()) {
+                return nullptr;
+            }
             return elem.version == id.version() ? &_values[elem.index] : nullptr;
         }
 
@@ -333,7 +335,9 @@ class SparseComponentSet : public SparseIdSetBase {
                 return nullptr;
             }
             const SparseElement elem = _sparse[index];
-            y_debug_assert(elem.index < _values.size());
+            if(elem.index >= _values.size()) {
+                return nullptr;
+            }
             return elem.version == id.version() ? &_values[elem.index] : nullptr;
         }
 
