@@ -25,7 +25,8 @@ SOFTWARE.
 #include "ecs.h"
 
 #include <y/core/Vector.h>
-#include <y/core/SlotVector.h>
+#include <y/core/HashMap.h>
+#include <y/core/String.h>
 
 namespace yave {
 namespace ecs2 {
@@ -36,13 +37,25 @@ class ComponentMatrix {
         u32 index;
     };
 
+    struct TagSet {
+        SparseIdSet ids;
+        core::Vector<EntityGroupBase*> groups;
+    };
+
     public:
         void add_entity(EntityId id);
         void remove_entity(EntityId id);
 
+        bool contains(EntityId id) const;
+
         bool has_component(EntityId id, ComponentTypeIndex type) const;
 
-        bool contains(EntityId id) const;
+
+
+        void add_tag(EntityId id, std::string_view tag);
+        void remove_tag(EntityId id, std::string_view tag);
+        bool has_tag(EntityId id, std::string_view tag) const;
+
 
         template<typename T>
         void has_component(EntityId id) const {
@@ -66,7 +79,6 @@ class ComponentMatrix {
         ComponentMatrix(usize type_count);
 
         void register_group(EntityGroupBase* group);
-        bool in_group(EntityId id, const EntityGroupBase* group) const;
 
         void add_component(EntityId id, ComponentTypeIndex type);
         void remove_component(EntityId id, ComponentTypeIndex type);
@@ -76,8 +88,9 @@ class ComponentMatrix {
         u32 _type_count = 0;
         core::Vector<u64> _bits;
         core::Vector<EntityId> _ids;
-
         core::FixedArray<core::Vector<EntityGroupBase*>> _groups;
+
+        core::FlatHashMap<core::String, TagSet> _tags;
 };
 
 

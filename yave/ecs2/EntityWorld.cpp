@@ -52,6 +52,7 @@ static auto create_component_containers() {
 }
 
 
+
 EntityWorld::EntityWorld() : _containers(create_component_containers()), _matrix(_containers.size()) {
     for(auto& container : _containers) {
         if(container) {
@@ -76,6 +77,28 @@ EntityId EntityWorld::create_entity() {
     const EntityId id = _entities.create();
     _matrix.add_entity(id);
     return id;
+}
+
+void EntityWorld::add_tag(EntityId id, std::string_view tag) {
+    y_debug_assert(exists(id));
+    y_debug_assert(!is_tag_implicit(tag));
+    _matrix.add_tag(id, tag);
+}
+
+void EntityWorld::remove_tag(EntityId id, std::string_view tag) {
+    y_debug_assert(exists(id));
+    y_debug_assert(!is_tag_implicit(tag));
+    _matrix.remove_tag(id, tag);
+}
+
+bool EntityWorld::has_tag(EntityId id, std::string_view tag) const {
+    y_debug_assert(exists(id));
+    y_debug_assert(!is_tag_implicit(tag));
+    return _matrix.has_tag(id, tag);
+}
+
+bool EntityWorld::is_tag_implicit(std::string_view tag) {
+    return !tag.empty() && (tag[0] == '@' || tag[0] == '!');
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {

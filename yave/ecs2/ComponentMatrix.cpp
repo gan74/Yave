@@ -36,20 +36,24 @@ void ComponentMatrix::register_group(EntityGroupBase* group) {
         _groups[usize(type)] << group;
     }
 
-    for(const EntityId id : _ids) {
-        if(id.is_valid() && in_group(id, group)) {
-            group->add_entity(id);
-        }
-    }
-}
+    for(const core::String& tags : group->tags()) {
+        TagSet& set = _tags[tags];
+        set.groups << group;
 
-bool ComponentMatrix::in_group(EntityId id, const EntityGroupBase* group) const {
-    for(const ComponentTypeIndex type : group->types()) {
-        if(!has_component(id, type)) {
-            return false;
+        for(const EntityId id : set.ids) {
+            group->add_entity_component(id);
         }
     }
-    return true;
+
+    for(const EntityId id : _ids) {
+        if(id.is_valid()) {
+            for(const ComponentTypeIndex type : group->types()) {
+                if(has_component(id, type)) {
+                    group->add_entity_component(id);
+                }
+            }
+        }
+    }
 }
 
 void ComponentMatrix::add_entity(EntityId id) {
@@ -74,9 +78,7 @@ void ComponentMatrix::add_component(EntityId id, ComponentTypeIndex type) {
     {
         y_profile_zone("updating groups");
         for(EntityGroupBase* group : _groups[usize(type)]) {
-            if(in_group(id, group)) {
-                group->add_entity(id);
-            }
+            group->add_entity_component(id);
         }
     }
 }
@@ -91,8 +93,7 @@ void ComponentMatrix::remove_component(EntityId id, ComponentTypeIndex type) {
     {
         y_profile_zone("updating groups");
         for(EntityGroupBase* group : _groups[usize(type)]) {
-            y_debug_assert(!in_group(id, group));
-            group->remove_entity(id);
+            group->remove_entity_component(id);
         }
     }
 }
@@ -105,6 +106,33 @@ bool ComponentMatrix::contains(EntityId id) const {
 bool ComponentMatrix::has_component(EntityId id, ComponentTypeIndex type) const {
     const ComponentIndex index = component_index(id, type);
     return index.index < _bits.size() && (_bits[index.index] & index.mask) != 0;
+}
+
+void ComponentMatrix::add_tag(EntityId id, std::string_view tag) {
+    y_debug_assert(contains(id));
+    TagSet& set = _tags[tag];
+    if(set.ids.insert(id)) {
+        for(EntityGroupBase* group : set.groups) {
+            group->add_entity_component(id);
+        }
+    }
+}
+
+void ComponentMatrix::remove_tag(EntityId id, std::string_view tag) {
+    y_debug_assert(contains(id));
+    TagSet& set = _tags[tag];
+    if(set.ids.erase(id)) {
+        for(EntityGroupBase* group : set.groups) {
+            group->remove_entity_component(id);
+        }
+    }
+}
+
+bool ComponentMatrix::has_tag(EntityId id, std::string_view tag) const {
+    if(const auto it = _tags.find(tag); it != _tags.end()) {
+        return it->second.ids.contains(id);
+    }
+    return false;
 }
 
 ComponentMatrix::ComponentIndex ComponentMatrix::component_index(EntityId id, ComponentTypeIndex type) const {

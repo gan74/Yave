@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <yave/ecs/EntityPool.h>
 
+
 namespace yave {
 namespace ecs2 {
 
@@ -45,6 +46,16 @@ class EntityWorld : NonMovable {
 
         EntityId create_entity();
 
+
+
+        void add_tag(EntityId id, std::string_view tag);
+        void remove_tag(EntityId id, std::string_view tag);
+        bool has_tag(EntityId id, std::string_view tag) const;
+
+        static bool is_tag_implicit(std::string_view tag);
+
+
+
         template<typename T>
         T* get_or_add_component(EntityId id) {
             return find_container<T>()->get_or_add(id);
@@ -56,16 +67,25 @@ class EntityWorld : NonMovable {
             return find_container<T>()->add_or_replace(id, y_fwd(args)...);
         }
 
+
+
+
         template<typename... Ts>
-        const EntityGroup<Ts...>& create_group() {
+        const EntityGroup<Ts...>& create_group(core::Span<std::string_view> tags = {}) {
             y_profile();
             using group_type = EntityGroup<Ts...>;
             for(const auto& group : _groups) {
                 if(const auto* typed_group = dynamic_cast<group_type*>(group.get())) {
+                    if(tags.size() != typed_group->tags().size()) {
+                        continue;
+                    }
+                    if(!std::equal(tags.begin(), tags.end(), typed_group->tags().begin())) {
+                        continue;
+                    }
                     return *typed_group;
                 }
             }
-            return *create_new_group<Ts...>();
+            return *create_new_group<Ts...>(tags);
         }
 
 
@@ -78,8 +98,11 @@ class EntityWorld : NonMovable {
 
         core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
         core::Vector<std::unique_ptr<EntityGroupBase>> _groups;
+
         ComponentMatrix _matrix;
         EntityPool _entities;
+
+
 
 
     private:
@@ -103,8 +126,8 @@ class EntityWorld : NonMovable {
         }
 
         template<typename... Ts>
-        EntityGroup<Ts...>* create_new_group() {
-            auto group = std::make_unique<EntityGroup<Ts...>>(std::tuple{find_container<traits::component_raw_type_t<Ts>>()...});
+        EntityGroup<Ts...>* create_new_group(core::Span<std::string_view> tags) {
+            auto group = std::make_unique<EntityGroup<Ts...>>(std::tuple{find_container<traits::component_raw_type_t<Ts>>()...}, tags);
             auto* group_ptr = group.get();
             _groups.emplace_back(std::move(group));
             _matrix.register_group(group_ptr);

@@ -27,6 +27,7 @@ SOFTWARE.
 #include "ComponentContainer.h"
 
 #include <y/concurrent/Signal.h>
+#include <y/core/String.h>
 
 namespace yave {
 namespace ecs2 {
@@ -47,24 +48,43 @@ class EntityGroupBase : NonMovable {
             return _ids.ids();
         }
 
+        inline core::Span<core::String> tags() const {
+            return _tags;
+        }
+
     protected:
         friend class ComponentMatrix;
 
-        void add_entity(EntityId id) {
-            _ids.insert(id);
+        void add_entity_component(EntityId id) {
+            _entity_component_count.set_min_size(id.index() + 1);
+            y_debug_assert(_entity_component_count[id.index()] < _component_count);
+            if(++_entity_component_count[id.index()] == _component_count) {
+                y_debug_assert(!_ids.contains(id));
+                _ids.insert(id);
+            }
         }
 
-        void remove_entity(EntityId id) {
-            _ids.erase(id);
+        void remove_entity_component(EntityId id) {
+            y_debug_assert(_entity_component_count.size() > id.index());
+            const u8 prev_count = _entity_component_count[id.index()]--;
+            if(prev_count == _component_count) {
+                y_debug_assert(_ids.contains(id));
+                _ids.erase(id);
+            }
         }
-
 
     protected:
-        EntityGroupBase(core::Span<ComponentTypeIndex> types) : _types(types) {
+        EntityGroupBase(core::Span<ComponentTypeIndex> types, core::Span<std::string_view> tags) : _types(types), _tags(tags.size()), _component_count(u8(types.size() + tags.size())) {
+            std::copy(tags.begin(), tags.end(), _tags.begin());
+            y_always_assert(_component_count == types.size() + tags.size(), "Too many component types in group");
         }
 
-        core::Span<ComponentTypeIndex> _types;
         SparseIdSet _ids;
+        core::Span<ComponentTypeIndex> _types;
+        core::FixedArray<core::String> _tags;
+
+        core::Vector<u8> _entity_component_count;
+        const u8 _component_count = 0;
 };
 
 
@@ -182,7 +202,7 @@ class EntityGroup final : public EntityGroupBase {
     };
 
     public:
-        EntityGroup(const ContainerTuple& containers) : EntityGroupBase(type_storage) {
+        EntityGroup(const ContainerTuple& containers, core::Span<std::string_view> tags) : EntityGroupBase(type_storage, tags) {
             fill_sets(containers, std::make_index_sequence<type_count>{});
         }
 
