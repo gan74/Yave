@@ -146,9 +146,12 @@ class DescriptorSetAllocator {
     };
 
 
-    struct LayoutPools : NonCopyable {
+    struct LayoutPools : NonMovable {
+        LayoutPools(core::Span<VkDescriptorSetLayoutBinding> bindings) : layout(bindings) {
+        }
+
         DescriptorSetLayout layout;
-        core::Vector<std::unique_ptr<DescriptorSetPool>> pools;
+        concurrent::Mutexed<core::Vector<std::unique_ptr<DescriptorSetPool>>> pools;
     };
 
     public:
@@ -164,9 +167,9 @@ class DescriptorSetAllocator {
         usize used_sets() const;
 
     private:
-        using LayoutMap = core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, LayoutPools, KeyHash, KeyEqual>;
+        using LayoutMap = core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, std::unique_ptr<LayoutPools>, KeyHash, KeyEqual>;
 
-        static LayoutPools& layout_pool(LayoutMap& layouts, LayoutKey bindings);
+        static LayoutPools* layout_pool(LayoutMap& layouts, LayoutKey bindings);
 
         concurrent::Mutexed<LayoutMap> _layouts;
 };

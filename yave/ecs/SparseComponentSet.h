@@ -322,8 +322,9 @@ class SparseComponentSet : public SparseIdSetBase {
             if(index >= _sparse.size()) {
                 return nullptr;
             }
-            const u32 pi = _sparse[index].index;
-            return pi < _values.size() ? &_values[pi] : nullptr;
+            const SparseElement elem = _sparse[index];
+            y_debug_assert(elem.index < _values.size());
+            return elem.version == id.version() ? &_values[elem.index] : nullptr;
         }
 
         const_pointer try_get(EntityId id) const {
@@ -331,8 +332,9 @@ class SparseComponentSet : public SparseIdSetBase {
             if(index >= _sparse.size()) {
                 return nullptr;
             }
-            const u32 pi = _sparse[index].index;
-            return pi < _values.size() ? &_values[pi] : nullptr;
+            const SparseElement elem = _sparse[index];
+            y_debug_assert(elem.index < _values.size());
+            return elem.version == id.version() ? &_values[elem.index] : nullptr;
         }
 
         void set_min_capacity(usize cap) {
