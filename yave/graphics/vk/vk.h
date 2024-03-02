@@ -279,17 +279,13 @@ VK_STRUCT_TYPE(VkDeviceMemoryOpaqueCaptureAddressInfo,              VK_STRUCTURE
 
 #undef VK_STRUCT_TYPE
 
-template<typename T>
-inline constexpr T vk_init() {
-    T t = {};
-    t.sType = VkStructType<T>::type;
-    return t;
-}
 
 struct VkStructInitializer {
     template<typename T>
-    constexpr operator T() const {
-        return vk_init<T>();
+    inline constexpr operator T() const {
+        T t = {};
+        t.sType = VkStructType<T>::type;
+        return t;
     }
 };
 }
