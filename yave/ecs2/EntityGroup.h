@@ -36,10 +36,6 @@ class EntityGroupBase : NonMovable {
     public:
         virtual ~EntityGroupBase() = default;
 
-        inline usize size() const {
-            return _ids.size();
-        }
-
         inline core::Span<ComponentTypeIndex> types() const {
             return _types;
         }
@@ -177,20 +173,24 @@ class EntityGroup final : public EntityGroupBase {
             SetTuple _sets = {};
     };
 
-    class Query {
+    class Query : NonCopyable {
         public:
             using const_iterator = Iterator;
 
-            const_iterator begin() const {
+            inline const_iterator begin() const {
                 return const_iterator(ids().begin(), _sets);
             }
 
-            const_iterator end() const {
+            inline const_iterator end() const {
                 return const_iterator(ids().end(), _sets);
             }
 
-            core::Span<EntityId> ids() const {
+            inline core::Span<EntityId> ids() const {
                 return _ids.is_empty() ? core::Span<EntityId>(_owned) : _ids;
+            }
+
+            inline usize size() const {
+                return ids().size();
             }
 
         private:
