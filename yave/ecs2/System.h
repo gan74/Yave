@@ -34,9 +34,17 @@ class System : NonCopyable {
         System(core::String name) : _name(std::move(name)) {
         }
 
+        virtual ~System() = default;
+
+
+
         virtual void setup(SystemScheduler& sched) = 0;
 
-        virtual ~System() = default;
+
+
+        const core::String& name() const {
+            return _name;
+        }
 
     private:
         friend class SystemManager;

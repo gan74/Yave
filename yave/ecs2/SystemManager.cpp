@@ -22,9 +22,12 @@ SOFTWARE.
 
 #include "SystemManager.h"
 
+#include <y/core/ScratchPad.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+
+#include <numeric>
 
 namespace yave {
 namespace ecs2 {
@@ -36,20 +39,43 @@ SystemManager::SystemManager(EntityWorld* world) : _world(world) {
 void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) const {
     y_profile();
 
-    constexpr usize deps_count = usize(SystemSchedule::Max) + 1;
+    using DepGroups = core::Span<concurrent::DependencyGroup>;
 
-    std::array<concurrent::DependencyGroup, deps_count> deps;
+    const usize dep_count = std::accumulate(_schedulers.begin(), _schedulers.end(), 0_uu, [](usize acc, const auto& s) {
+        return acc + std::accumulate(s->_tasks.begin(), s->_tasks.end(), 0_uu, [](usize m, const auto& f) { return std::max(m, f.size()); });
+    });
+
+    std::array<core::ScratchVector<concurrent::DependencyGroup>, 2> deps{dep_count, dep_count};
+    auto* current = &deps[0];
+    auto* next = &deps[1];
+
     for(usize i = 0; i != usize(SystemSchedule::Max); ++i) {
+        if(!next->is_empty()) {
+            std::swap(current, next);
+            next->make_empty();
+        }
+
+        const bool wait_for_all = i == SystemSchedule::PostUpdate;
+
         for(const auto& sched : _schedulers) {
-            for(auto func : sched->_schedule[i]) {
-                const core::Span<concurrent::DependencyGroup> wait(deps.data(), i);
-                thread_pool.schedule(std::move(func), &deps[i], wait);
+            for(const auto& task : sched->_tasks[i]) {
+                const DepGroups wait = wait_for_all
+                    ? DepGroups(*current)
+                    : (i ? DepGroups(sched->_dep_groups[i - 1]) : DepGroups());
+
+                concurrent::DependencyGroup* signal = &sched->_dep_groups[i];
+                next->push_back(*signal);
+
+                thread_pool.schedule([&]() {
+                    y_profile_dyn_zone(fmt_c_str("{}: {}", sched->_system->name(), task.name));
+                    task.func();
+                }, signal, wait);
             }
         }
     }
 
     y_profile_zone("waiting for completion");
-    thread_pool.wait_for(deps);
+    thread_pool.wait_for(DepGroups(*next));
 }
 
 }

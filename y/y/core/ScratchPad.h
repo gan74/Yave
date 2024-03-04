@@ -301,6 +301,13 @@ class ScratchVector : public ScratchPadBase<Elem> {
             pop();
         }
 
+        inline void make_empty() {
+            for(usize i = 0; i != this->_size; ++i) {
+                this->_data[i].~data_type();
+            }
+            this->_size = 0;
+        }
+
     private:
         inline void swap(ScratchVector& other) {
             ScratchPadBase<Elem>::swap(other);

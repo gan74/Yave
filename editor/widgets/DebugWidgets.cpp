@@ -157,6 +157,25 @@ class CullingDebug : public Widget {
         }
 };
 
+template<usize I>
+struct TestSystem : ecs2::System {
+    TestSystem() : ecs2::System(fmt("Test {}", I)) {
+    }
+
+    void setup(ecs2::SystemScheduler& sched) {
+        for(usize i = 0; i != I; ++i) {
+            sched.schedule(ecs2::SystemSchedule::Tick, fmt("Tick {}", i + 1), [] {
+                core::Duration::sleep(core::Duration::milliseconds(1.0));
+            });
+        }
+        sched.schedule(ecs2::SystemSchedule::Update, "Update", [] {
+            core::Duration::sleep(core::Duration::milliseconds(1.0));
+        });
+        sched.schedule(ecs2::SystemSchedule::PostUpdate, "Post", [] {
+            core::Duration::sleep(core::Duration::milliseconds(1.0));
+        });
+    }
+};
 
 
 class Ecs2Debug : public Widget {
@@ -215,33 +234,18 @@ class Ecs2Debug : public Widget {
             }
 
             {
-                struct TestSystem : ecs2::System {
-                    TestSystem() : ecs2::System("Test system") {
-                    }
 
-                    void setup(ecs2::SystemScheduler& sched) {
-                        sched.schedule(ecs2::SystemSchedule::Tick, [] {
-                            y_profile_zone("Hello");
-                            core::Duration::sleep(core::Duration::milliseconds(1.5));
-                            log_msg(fmt("hello from {}", concurrent::thread_name()));
-                        });
-                        sched.schedule(ecs2::SystemSchedule::Tick, [] {
-                            y_profile_zone("Hello 2");
-                            core::Duration::sleep(core::Duration::milliseconds(1.5));
-                            log_msg(fmt("hello 2 from {}", concurrent::thread_name()));
-                        });
-                        sched.schedule(ecs2::SystemSchedule::PostUpdate, [] {
-                            y_profile_zone("Post");
-                            core::Duration::sleep(core::Duration::milliseconds(1.5));
-                            log_msg(fmt("post update from {}", concurrent::thread_name()));
-                        });
-                    }
-                };
 
 
                 ecs2::EntityWorld& world = current_world()._world2;
-                if(!world.system_manager().find_system<TestSystem>()) {
-                    world.add_system<TestSystem>();
+                if(!world.system_manager().find_system<TestSystem<1>>()) {
+                    world.add_system<TestSystem<1>>();
+                    world.add_system<TestSystem<2>>();
+                    world.add_system<TestSystem<3>>();
+                    world.add_system<TestSystem<4>>();
+                    world.add_system<TestSystem<5>>();
+                    world.add_system<TestSystem<6>>();
+                    world.add_system<TestSystem<7>>();
                 }
 
                 static concurrent::StaticThreadPool pool;

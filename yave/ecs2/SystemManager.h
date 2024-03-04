@@ -32,8 +32,15 @@ namespace yave {
 namespace ecs2 {
 
 enum SystemSchedule {
-    Tick = 0,
+    // Tick is always first.
+    // Ticks for different systems might run in parallel
+    Tick,
+
+    // Update happens after tick for a given system.
+    // Updates might still run while other systems are running their tick
     Update,
+
+    // Run after all updates are complete
     PostUpdate,
 
     Max
@@ -59,13 +66,18 @@ class SystemScheduler : NonMovable {
             EntityWorld* _world = nullptr;
     };
 
+    struct Task {
+        core::String name;
+        std::function<void()> func;
+    };
+
     public:
         SystemScheduler(System* sys, EntityWorld* world) : _system(sys), _world(world) {
         }
 
         template<typename Fn>
-        void schedule(SystemSchedule sched, Fn&& func) {
-            _schedule[usize(sched)].emplace_back([this, func]() {
+        void schedule(SystemSchedule sched, core::String name, Fn&& func) {
+            _tasks[usize(sched)].emplace_back(std::move(name), [this, func]() {
                 std::array<ArgumentMaker, function_traits<Fn>::arg_count> args;
                 std::fill(args.begin(), args.end(), _world);
                 std::apply(func, args);
@@ -75,7 +87,8 @@ class SystemScheduler : NonMovable {
     private:
         friend class SystemManager;
 
-        std::array<core::SmallVector<std::function<void()>, 4>, usize(SystemSchedule::Max)> _schedule;
+        std::array<core::SmallVector<Task, 4>, usize(SystemSchedule::Max)> _tasks;
+        mutable std::array<concurrent::DependencyGroup, usize(SystemSchedule::Max)> _dep_groups;
 
         System* _system = nullptr;
         EntityWorld* _world = nullptr;
