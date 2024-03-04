@@ -29,6 +29,12 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
+DependencyGroup DependencyGroup::non_empty() {
+    DependencyGroup group;
+    group._counter = std::make_shared<std::atomic<u32>>(0);
+    return group;
+}
+
 bool DependencyGroup::is_empty() const {
     return _counter == nullptr;
 }
@@ -59,8 +65,8 @@ void DependencyGroup::solve_dependency() {
 
 StaticThreadPool::FuncData::FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done) :
         function(std::move(func)),
-        wait_for(wait),
         signal(std::move(done)) {
+    std::copy_if(wait.begin(), wait.end(), std::back_inserter(wait_for), [](const auto& dep) { return !dep.is_empty(); });
 }
 
 bool StaticThreadPool::FuncData::is_ready() const {

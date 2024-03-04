@@ -157,23 +157,35 @@ class CullingDebug : public Widget {
         }
 };
 
+
+static void busy_sleep(core::Duration dur) {
+    core::Chrono timer;
+    while(timer.elapsed() < dur) {
+        std::this_thread::yield();
+    }
+}
+
 template<usize I>
 struct TestSystem : ecs2::System {
     TestSystem() : ecs2::System(fmt("Test {}", I)) {
     }
 
     void setup(ecs2::SystemScheduler& sched) {
-        for(usize i = 0; i != I; ++i) {
-            sched.schedule(ecs2::SystemSchedule::Tick, fmt("Tick {}", i + 1), [] {
-                core::Duration::sleep(core::Duration::milliseconds(1.0));
+        for(usize k = 0; k != 4; ++k) {
+            concurrent::DependencyGroup group;
+            for(usize i = 0; i != I; ++i) {
+                auto next = sched.schedule(ecs2::SystemSchedule::Tick, fmt("Tick {}/{}", i, k), [] {
+                    busy_sleep(core::Duration::milliseconds(0.5));
+                }, core::Span<concurrent::DependencyGroup>(&group, i % 3 == 1 ? 1 : 0));
+                group = next;
+            }
+            sched.schedule(ecs2::SystemSchedule::Update, "Update", [] {
+                busy_sleep(core::Duration::milliseconds(0.5));
+            });
+            sched.schedule(ecs2::SystemSchedule::PostUpdate, "Post", [] {
+                busy_sleep(core::Duration::milliseconds(0.5));
             });
         }
-        sched.schedule(ecs2::SystemSchedule::Update, "Update", [] {
-            core::Duration::sleep(core::Duration::milliseconds(1.0));
-        });
-        sched.schedule(ecs2::SystemSchedule::PostUpdate, "Post", [] {
-            core::Duration::sleep(core::Duration::milliseconds(1.0));
-        });
     }
 };
 
@@ -238,12 +250,12 @@ class Ecs2Debug : public Widget {
 
 
                 ecs2::EntityWorld& world = current_world()._world2;
-                if(!world.system_manager().find_system<TestSystem<1>>()) {
-                    world.add_system<TestSystem<1>>();
-                    world.add_system<TestSystem<2>>();
-                    world.add_system<TestSystem<3>>();
-                    world.add_system<TestSystem<4>>();
-                    world.add_system<TestSystem<5>>();
+                if(!world.system_manager().find_system<TestSystem<7>>()) {
+                    // world.add_system<TestSystem<1>>();
+                    // world.add_system<TestSystem<2>>();
+                    // world.add_system<TestSystem<3>>();
+                    // world.add_system<TestSystem<4>>();
+                    // world.add_system<TestSystem<5>>();
                     world.add_system<TestSystem<6>>();
                     world.add_system<TestSystem<7>>();
                 }

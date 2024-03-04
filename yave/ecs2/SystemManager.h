@@ -47,48 +47,61 @@ enum SystemSchedule {
 };
 
 class SystemScheduler : NonMovable {
-    class ArgumentMaker {
-        public:
-            ArgumentMaker() = default;
+    public:
+        using DependencyGroup = concurrent::DependencyGroup;
 
-            ArgumentMaker(EntityWorld* world) : _world(world) {
-            }
+    private:
+        class ArgumentResolver {
+            public:
+                ArgumentResolver() = default;
 
-            operator const EntityWorld&() const {
-                y_debug_assert(_world);
-                return *_world;
-            }
+                ArgumentResolver(EntityWorld* world) : _world(world) {
+                }
 
-            template<typename... Ts>
-            operator const EntityGroup<Ts...>&() const;
+                operator const EntityWorld&() const {
+                    y_debug_assert(_world);
+                    return *_world;
+                }
 
-        private:
-            EntityWorld* _world = nullptr;
-    };
+                template<typename... Ts>
+                operator const EntityGroup<Ts...>&() const;
 
-    struct Task {
-        core::String name;
-        std::function<void()> func;
-    };
+            private:
+                EntityWorld* _world = nullptr;
+        };
+
+        struct Task {
+            core::String name;
+            std::function<void()> func;
+        };
+
+        struct Schedule {
+            core::Vector<Task> tasks;
+            core::Vector<DependencyGroup> signals;
+            core::Vector<core::Vector<DependencyGroup>> wait_groups;
+        };
 
     public:
         SystemScheduler(System* sys, EntityWorld* world) : _system(sys), _world(world) {
         }
 
         template<typename Fn>
-        void schedule(SystemSchedule sched, core::String name, Fn&& func) {
-            _tasks[usize(sched)].emplace_back(std::move(name), [this, func]() {
-                std::array<ArgumentMaker, function_traits<Fn>::arg_count> args;
+        DependencyGroup schedule(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
+            auto& s = _schedules[usize(sched)];
+
+            s.wait_groups.emplace_back(wait);
+            s.tasks.emplace_back(std::move(name), [this, func]() {
+                std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
                 std::fill(args.begin(), args.end(), _world);
                 std::apply(func, args);
             });
+            return s.signals.emplace_back(DependencyGroup::non_empty());
         }
 
     private:
         friend class SystemManager;
 
-        std::array<core::SmallVector<Task, 4>, usize(SystemSchedule::Max)> _tasks;
-        mutable std::array<concurrent::DependencyGroup, usize(SystemSchedule::Max)> _dep_groups;
+        std::array<Schedule, usize(SystemSchedule::Max)> _schedules;
 
         System* _system = nullptr;
         EntityWorld* _world = nullptr;
@@ -99,12 +112,15 @@ class SystemScheduler : NonMovable {
 
 class SystemManager : NonCopyable {
     public:
+        using DependencyGroup = concurrent::DependencyGroup;
+
         SystemManager(EntityWorld* world);
 
         void run_schedule(concurrent::StaticThreadPool& thread_pool) const;
 
         template<typename S, typename... Args>
         S* add_system(Args&&... args) {
+            y_profile();
             y_always_assert(!find_system<S>(), "System already exists");
 
             auto s = std::make_unique<S>(y_fwd(args)...);
@@ -113,8 +129,11 @@ class SystemManager : NonCopyable {
             _systems.emplace_back(std::move(s));
             SystemScheduler& sched = *_schedulers.emplace_back(std::make_unique<SystemScheduler>(system, _world));
 
-            system->_world = _world;
-            system->setup(sched);
+            {
+                y_profile_zone("setup");
+                system->_world = _world;
+                system->setup(sched);
+            }
             return system;
         }
 

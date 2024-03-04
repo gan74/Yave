@@ -41,6 +41,8 @@ class DependencyGroup {
     public:
         DependencyGroup() = default;
 
+        static DependencyGroup non_empty();
+
         bool is_empty() const;
         bool is_ready() const;
         u32 dependency_count() const;

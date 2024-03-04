@@ -39,15 +39,16 @@ SystemManager::SystemManager(EntityWorld* world) : _world(world) {
 void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) const {
     y_profile();
 
-    using DepGroups = core::Span<concurrent::DependencyGroup>;
+    using DepGroups = core::Span<DependencyGroup>;
 
     const usize dep_count = std::accumulate(_schedulers.begin(), _schedulers.end(), 0_uu, [](usize acc, const auto& s) {
-        return acc + std::accumulate(s->_tasks.begin(), s->_tasks.end(), 0_uu, [](usize m, const auto& f) { return std::max(m, f.size()); });
+        return acc + std::accumulate(s->_schedules.begin(), s->_schedules.end(), 0_uu, [](usize m, const auto& s) { return std::max(m, s.tasks.size()); });
     });
 
-    std::array<core::ScratchVector<concurrent::DependencyGroup>, 2> deps{dep_count, dep_count};
-    auto* current = &deps[0];
-    auto* next = &deps[1];
+    core::ScratchVector<DependencyGroup> tmp_1(dep_count);
+    core::ScratchVector<DependencyGroup> tmp_0(dep_count);
+    auto* current = &tmp_0;
+    auto* next = &tmp_1;
 
     for(usize i = 0; i != usize(SystemSchedule::Max); ++i) {
         if(!next->is_empty()) {
@@ -57,19 +58,33 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
 
         const bool wait_for_all = i == SystemSchedule::PostUpdate;
 
-        for(const auto& sched : _schedulers) {
-            for(const auto& task : sched->_tasks[i]) {
-                const DepGroups wait = wait_for_all
+        for(const auto& scheduler : _schedulers) {
+            SystemScheduler::Schedule& sched = scheduler->_schedules[i];
+            for(usize k = 0; k != sched.tasks.size(); ++k) {
+
+                DepGroups wait = wait_for_all
                     ? DepGroups(*current)
-                    : (i ? DepGroups(sched->_dep_groups[i - 1]) : DepGroups());
+                    : (i ? DepGroups(scheduler->_schedules[i - 1].signals) : DepGroups());
 
-                concurrent::DependencyGroup* signal = &sched->_dep_groups[i];
-                next->push_back(*signal);
 
+                core::ScratchPad<DependencyGroup> all_deps;
+                if(!sched.wait_groups[k].is_empty()) {
+                    y_debug_assert(std::all_of(sched.wait_groups[k].begin(), sched.wait_groups[k].end(), [](const auto& g) { return !g.is_empty(); }));
+                    all_deps = core::ScratchPad<DependencyGroup>(wait.size() + sched.wait_groups.size());
+                    std::copy(wait.begin(), wait.begin(), all_deps.begin());
+                    std::copy(sched.wait_groups[k].begin(), sched.wait_groups[k].end(), all_deps.begin() + wait.size());
+                    wait = all_deps;
+                }
+
+
+                DependencyGroup& signal = sched.signals[k];
+                next->push_back(signal);
+
+                const SystemScheduler::Task& task = sched.tasks[k];
                 thread_pool.schedule([&]() {
-                    y_profile_dyn_zone(fmt_c_str("{}: {}", sched->_system->name(), task.name));
+                    y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
                     task.func();
-                }, signal, wait);
+                }, &signal, wait);
             }
         }
     }
