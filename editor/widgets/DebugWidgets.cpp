@@ -38,6 +38,8 @@ SOFTWARE.
 
 #include <y/utils/format.h>
 
+#include <yave/ecs2/System.h>
+
 
 namespace editor {
 
@@ -166,7 +168,7 @@ class Ecs2Debug : public Widget {
 
     protected:
         void on_gui() override {
-            {
+            /*{
                 y_profile_zone("ecs2 mutate");
                 ecs2::EntityWorld& world = current_world()._world2;
                 const auto& group = world.create_group<ecs2::Mutate<TransformableComponent>, StaticMeshComponent>();
@@ -174,12 +176,12 @@ class Ecs2Debug : public Widget {
                 auto query = group.query();
                 for(auto&& [tr, mesh] : query) {
                 }
-            }
+            }*/
 
             {
                 y_profile_zone("ecs");
                 ecs::EntityWorld& world = current_world();
-                auto query = world.query<TransformableComponent, StaticMeshComponent>();
+                auto query = world.query<TransformableComponent, StaticMeshComponent>({ecs::tags::debug});
 
                 math::Vec3 sum;
                 {
@@ -198,7 +200,7 @@ class Ecs2Debug : public Widget {
             {
                 y_profile_zone("ecs2");
                 ecs2::EntityWorld& world = current_world()._world2;
-                const auto& group = world.create_group<TransformableComponent, StaticMeshComponent>();
+                const auto& group = world.create_group<TransformableComponent, StaticMeshComponent>({ecs::tags::debug});
 
                 math::Vec3 sum;
                 {
@@ -208,9 +210,44 @@ class Ecs2Debug : public Widget {
                     }
                 }
 
-                ImGui::Text("%u transformables in group", u32(group.size()));
+                ImGui::Text("%u transformables in group", u32(group.ids().size()));
                 ImGui::Text("Sum of positions = {%f, %f, %f}", sum.x(), sum.y(), sum.z());
             }
+
+            {
+                struct TestSystem : ecs2::System {
+                    TestSystem() : ecs2::System("Test system") {
+                    }
+
+                    void setup(ecs2::SystemScheduler& sched) {
+                        sched.schedule(ecs2::SystemSchedule::Tick, [] {
+                            y_profile_zone("Hello");
+                            core::Duration::sleep(core::Duration::milliseconds(1.5));
+                            log_msg(fmt("hello from {}", concurrent::thread_name()));
+                        });
+                        sched.schedule(ecs2::SystemSchedule::Tick, [] {
+                            y_profile_zone("Hello 2");
+                            core::Duration::sleep(core::Duration::milliseconds(1.5));
+                            log_msg(fmt("hello 2 from {}", concurrent::thread_name()));
+                        });
+                        sched.schedule(ecs2::SystemSchedule::PostUpdate, [] {
+                            y_profile_zone("Post");
+                            core::Duration::sleep(core::Duration::milliseconds(1.5));
+                            log_msg(fmt("post update from {}", concurrent::thread_name()));
+                        });
+                    }
+                };
+
+
+                ecs2::EntityWorld& world = current_world()._world2;
+                if(!world.system_manager().find_system<TestSystem>()) {
+                    world.add_system<TestSystem>();
+                }
+
+                static concurrent::StaticThreadPool pool;
+                world.system_manager().run_schedule(pool);
+            }
+
         }
 };
 

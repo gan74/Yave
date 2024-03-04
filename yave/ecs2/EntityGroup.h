@@ -36,6 +36,11 @@ class EntityGroupBase : NonMovable {
     public:
         virtual ~EntityGroupBase() = default;
 
+        template<typename T>
+        inline bool has_component_type() const {
+            return std::find(_types.begin(), _types.end(), type_index<T>()) != _types.end();
+        }
+
         inline core::Span<ComponentTypeIndex> types() const {
             return _types;
         }

@@ -38,9 +38,13 @@ std::unique_ptr<ComponentContainerBase> create_container() {
     return std::make_unique<ComponentContainer<traits::component_raw_type_t<T>>>();
 }
 
+template<typename... Ts>
+SystemScheduler::ArgumentMaker::operator const EntityGroup<Ts...>&() const {
+    return _world->create_group<Ts...>();
+}
 
 }
 }
 
-#endif // YAVE_ECS2_COMPONENTCONTAINER_H
+#endif // YAVE_ECS2_ENTITYWORLD_INL
 

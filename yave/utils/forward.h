@@ -125,8 +125,6 @@ class RendererSystem;
 class ResourceFence;
 class Sampler;
 class SceneView;
-class ScriptSystem;
-class ScriptWorldComponent;
 class SearchableFileSystemModel;
 class ShaderModuleBase;
 class ShaderProgram;
@@ -220,7 +218,6 @@ struct Mip;
 struct Monitor;
 struct OctreeNode;
 struct OctreeTraversalStats;
-struct OneShotScript;
 struct PackedVertex;
 struct Plane;
 struct Pool;
@@ -228,13 +225,10 @@ struct Region;
 struct RendererSettings;
 struct ResourceCreateInfo;
 struct ResourceUsageInfo;
-struct RunOnce;
-struct RunOnceResult;
 struct SSAOPass;
 struct SSAOSettings;
 struct SceneRenderSubPass;
 struct SceneVisibilitySubPass;
-struct Script;
 struct ShadowMapPass;
 struct ShadowMapSettings;
 struct SkeletonData;
@@ -282,12 +276,19 @@ struct SparseElement;
 
 
 namespace yave::ecs2 {
+class ArgumentMaker;
 class ComponentContainerBase;
 class ComponentMatrix;
 class EntityGroupBase;
 class EntityWorld;
+class Iterator;
+class Query;
+class System;
+class SystemManager;
+class SystemScheduler;
+struct ComponentIndex;
 struct ComponentRuntimeInfo;
-struct Slot;
+struct TagSet;
 }
 
 

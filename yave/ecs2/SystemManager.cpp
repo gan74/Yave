@@ -20,10 +20,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "System.h"
+#include "SystemManager.h"
+
+
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 namespace ecs2 {
+
+SystemManager::SystemManager(EntityWorld* world) : _world(world) {
+    y_debug_assert(_world);
+}
+
+void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) const {
+    y_profile();
+
+    constexpr usize deps_count = usize(SystemSchedule::Max) + 1;
+
+    std::array<concurrent::DependencyGroup, deps_count> deps;
+    for(usize i = 0; i != usize(SystemSchedule::Max); ++i) {
+        for(const auto& sched : _schedulers) {
+            for(auto func : sched->_schedule[i]) {
+                const core::Span<concurrent::DependencyGroup> wait(deps.data(), i);
+                thread_pool.schedule(std::move(func), &deps[i], wait);
+            }
+        }
+    }
+
+    y_profile_zone("waiting for completion");
+    thread_pool.wait_for(deps);
+}
 
 }
 }

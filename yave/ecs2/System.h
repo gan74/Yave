@@ -22,65 +22,27 @@ SOFTWARE.
 #ifndef YAVE_ECS2_SYSTEM_H
 #define YAVE_ECS2_SYSTEM_H
 
-#include "EntityWorld.h"
+#include <yave/yave.h>
 
 #include <y/core/String.h>
-#include <y/core/Vector.h>
-
-#include <y/utils/traits.h>
-
 
 namespace yave {
 namespace ecs2 {
-
-class SystemScheduler : NonCopyable {
-    class ArgumentMaker {
-        public:
-            ArgumentMaker() = default;
-
-            ArgumentMaker(EntityWorld* world) : _world(world) {
-            }
-
-            template<typename... Ts>
-            operator const EntityGroup<Ts...>&() const {
-                return _world->create_group<Ts...>();
-            }
-
-        private:
-            EntityWorld* _world = nullptr;
-    };
-
-    public:
-        void exec(EntityWorld& world) {
-            for(const auto& func : _functions) {
-                func(&world);
-            }
-        }
-
-        template<typename Fn>
-        void add_system(Fn&& func) {
-            _functions.emplace_back([=](EntityWorld* world) {
-                  std::array<ArgumentMaker, function_traits<Fn>::arg_count> args;
-                  std::fill(args.begin(), args.end(), world);
-                  std::apply(func, args);
-            });
-        }
-
-    private:
-        core::Vector<std::function<void(EntityWorld*)>> _functions;
-};
 
 class System : NonCopyable {
     public:
         System(core::String name) : _name(std::move(name)) {
         }
 
-        virtual void setup(SystemScheduler& scheduler) = 0;
+        virtual void setup(SystemScheduler& sched) = 0;
 
         virtual ~System() = default;
 
     private:
+        friend class SystemManager;
+
         core::String _name;
+        EntityWorld* _world;
 };
 
 }

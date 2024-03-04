@@ -22,13 +22,14 @@ SOFTWARE.
 #ifndef YAVE_ECS2_ENTITYWORLD_H
 #define YAVE_ECS2_ENTITYWORLD_H
 
-
+#include "SystemManager.h"
 #include "ComponentContainer.h"
 #include "EntityGroup.h"
 #include "traits.h"
 
 #include <yave/ecs/EntityPool.h>
 
+#include <y/utils/log.h>
 
 namespace yave {
 namespace ecs2 {
@@ -41,11 +42,13 @@ class EntityWorld : NonMovable {
         EntityWorld();
         ~EntityWorld();
 
+        const SystemManager& system_manager() const;
+        SystemManager& system_manager();
+
         usize entity_count() const;
         bool exists(EntityId id) const;
 
         EntityId create_entity();
-
 
 
         void add_tag(EntityId id, std::string_view tag);
@@ -70,6 +73,13 @@ class EntityWorld : NonMovable {
 
 
 
+        template<typename S, typename... Args>
+        S* add_system(Args&&... args) {
+            return _system_manager.add_system<S>(y_fwd(args)...);
+        }
+
+
+
         template<typename... Ts>
         const EntityGroup<Ts...>& create_group(core::Span<std::string_view> tags = {}) {
             y_profile();
@@ -83,6 +93,10 @@ class EntityWorld : NonMovable {
                         continue;
                     }
                     return *typed_group;
+                } else if(group->types().size() == sizeof...(Ts)) {
+                    if((group->contains<Ts>() && ...)) {
+                        log_msg("An entity group with similar component set", Log::Warning);
+                    }
                 }
             }
             return *create_new_group<Ts...>(tags);
@@ -102,7 +116,7 @@ class EntityWorld : NonMovable {
         ComponentMatrix _matrix;
         EntityPool _entities;
 
-
+        SystemManager _system_manager;
 
 
     private:

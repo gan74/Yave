@@ -53,7 +53,7 @@ static auto create_component_containers() {
 
 
 
-EntityWorld::EntityWorld() : _containers(create_component_containers()), _matrix(_containers.size()) {
+EntityWorld::EntityWorld() : _containers(create_component_containers()), _matrix(_containers.size()), _system_manager(this) {
     for(auto& container : _containers) {
         if(container) {
             container->_matrix = &_matrix;
@@ -63,6 +63,14 @@ EntityWorld::EntityWorld() : _containers(create_component_containers()), _matrix
 
 EntityWorld::~EntityWorld() {
     _containers.clear();
+}
+
+const SystemManager& EntityWorld::system_manager() const {
+    return _system_manager;
+}
+
+SystemManager& EntityWorld::system_manager() {
+    return _system_manager;
 }
 
 usize EntityWorld::entity_count() const {
@@ -78,6 +86,7 @@ EntityId EntityWorld::create_entity() {
     _matrix.add_entity(id);
     return id;
 }
+
 
 void EntityWorld::add_tag(EntityId id, std::string_view tag) {
     y_debug_assert(exists(id));

@@ -37,10 +37,6 @@ bool DependencyGroup::is_ready() const {
     return dependency_count() == 0;
 }
 
-bool DependencyGroup::is_expired() const {
-    return _counter != nullptr && (*_counter) == 0;
-}
-
 u32 DependencyGroup::dependency_count() const {
     return !_counter ? u32(0) : u32(*_counter);
 }
@@ -64,7 +60,7 @@ void DependencyGroup::solve_dependency() {
 StaticThreadPool::FuncData::FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done) :
         function(std::move(func)),
         wait_for(wait),
-        on_done(std::move(done)) {
+        signal(std::move(done)) {
 }
 
 bool StaticThreadPool::FuncData::is_ready() const {
@@ -125,14 +121,20 @@ void StaticThreadPool::process_until_empty() {
     }
 }
 
-void StaticThreadPool::schedule(Func&& func, DependencyGroup* on_done, core::Span<DependencyGroup> wait_for) {
+void StaticThreadPool::wait_for(core::Span<DependencyGroup> wait) {
+    while(!std::all_of(wait.begin(), wait.end(), [](const auto& w) { return w.is_ready(); })) {
+        process_one(std::unique_lock(_shared_data.lock));
+    }
+}
+
+void StaticThreadPool::schedule(Func&& func, DependencyGroup* signal, core::Span<DependencyGroup> wait_for) {
     y_debug_assert(_shared_data.run);
 
     {
         const std::unique_lock lock(_shared_data.lock);
-        if(on_done) {
-            on_done->add_dependency();
-            _shared_data.queue.emplace_back(std::move(func), wait_for, *on_done);
+        if(signal) {
+            signal->add_dependency();
+            _shared_data.queue.emplace_back(std::move(func), wait_for, *signal);
         } else {
             _shared_data.queue.emplace_back(std::move(func), wait_for);
         }
@@ -159,8 +161,8 @@ bool StaticThreadPool::process_one(std::unique_lock<std::mutex> lock) {
             f.function();
 
             {
-                f.on_done.solve_dependency();
-                if(f.on_done.is_ready()) {
+                f.signal.solve_dependency();
+                if(f.signal.is_ready()) {
                     _shared_data.condition.notify_one();
                 }
             }

@@ -77,7 +77,7 @@ bool Duration::operator>=(const Duration& other) const {
 
 
 void Duration::sleep(const Duration& dur) {
-    const u64 micros = dur.subsec_nanos() / 1000 + dur.seconds() * 1000000;
+    const u64 micros = dur.subsec_nanos() / 1000 + dur.seconds() * 1'000'000;
     std::this_thread::sleep_for(std::chrono::microseconds(micros));
 }
 
