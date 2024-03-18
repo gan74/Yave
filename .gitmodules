@@ -4,3 +4,6 @@
 [submodule "external/tracy"]
 	path = external/tracy
 	url = https://github.com/wolfpld/tracy.git
+[submodule "external/wren"]
+	path = external/wren
+	url = https://github.com/wren-lang/wren.git

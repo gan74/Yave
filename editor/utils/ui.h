@@ -122,7 +122,7 @@ std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c);
 void text_icon(const UiIcon& icon);
 
 bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags = 0, const char* hint = "");
-bool text_input_multiline(const char* name, core::String& str);
+bool text_input_multiline(const char* name, core::String& str, const math::Vec2& size = {}, ImGuiInputTextFlags flags = 0);
 void text_read_only(const char* name, std::string_view str);
 
 bool position_input(const char* str_id, math::Vec3& position);

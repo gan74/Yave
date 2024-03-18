@@ -1,35 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(yave)
 
-function(build_luajit LUAJIT_TARGET)
-    set(LUA_DIR ${CMAKE_SOURCE_DIR}/external/LuaJIT)
-    set(LUA_SOURCE_DIR ${LUA_DIR}/src)
-
-    if(WIN32)
-        set(LUA_SHARED_OBJECT ${LUA_SOURCE_DIR}/lua51.dll)
-    else()
-        set(LUA_SHARED_OBJECT ${LUA_SOURCE_DIR}/lua51.so)
-    endif()
-
-    if(MSVC)
-        set(LUA_LIB_FILE ${LUA_SOURCE_DIR}/lua51.lib)
-        add_custom_command(OUTPUT ${LUA_LIB_FILE} COMMAND cmd /c ${LUA_SOURCE_DIR}/msvcbuild.bat WORKING_DIRECTORY ${LUA_SOURCE_DIR})
-    else()
-        set(LUA_LIB_FILE ${LUA_SHARED_OBJECT})
-        set(MAKE_CMD make)
-        if(MINGW)
-            set(MAKE_CMD mingw32-make)
-        endif()
-        add_custom_command(OUTPUT ${LUA_LIB_FILE} COMMAND ${MAKE_CMD} WORKING_DIRECTORY ${LUA_DIR})
-    endif()
-
-    add_custom_target(copy-luajit DEPENDS ${LUA_LIB_FILE})
-    add_custom_command(TARGET copy-luajit POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${LUA_SHARED_OBJECT} ${CMAKE_CURRENT_BINARY_DIR})
-
-    add_library(${LUAJIT_TARGET} STATIC IMPORTED GLOBAL)
-    add_dependencies(${LUAJIT_TARGET} copy-luajit)
-    set_target_properties(${LUAJIT_TARGET} PROPERTIES IMPORTED_LOCATION ${LUA_LIB_FILE})
-endfunction(build_luajit)
 
 function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
     message("Using unity build for target ${UB_SUFFIX}")
@@ -72,6 +43,8 @@ function(add_shader_variation SHADER_TARGET SHADER_FILE SHADER_DEFINES)
 endfunction(add_shader_variation)
 
 
+
+
 option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
 option(YAVE_TRACY_PROFILING "Use Tracy profiling" ON)
@@ -104,14 +77,18 @@ add_subdirectory(y)
 include_directories(${y_SOURCE_DIR})
 include_directories(${yave_SOURCE_DIR})
 include_directories(${Vulkan_INCLUDE_DIRS})
-include_directories(external/sol/include)
-include_directories(external/LuaJIT/src)
 
 
 # Yave's core file
 file(GLOB_RECURSE YAVE_FILES
     "yave/*.h"
     "yave/*.cpp"
+)
+
+
+file(GLOB_RECURSE WREN_FILES
+    "external/wren/src/*.h"
+    "external/wren/src/*.c"
 )
 
 set(TRACY_FILES
@@ -211,8 +188,6 @@ endfunction(build_editor_shaders)
 
 
 
-build_luajit(luajit)
-
 if(YAVE_UNITY_BUILD)
     enable_unity_build(yave YAVE_FILES)
 endif()
@@ -241,7 +216,11 @@ if(YAVE_BUILD_YAVE)
         target_link_libraries(yave stdc++fs)
     endif()
 
-    target_link_libraries(yave luajit)
+    add_library(wren STATIC ${WREN_FILES})
+    target_include_directories(wren PRIVATE external/wren/src/include)
+    target_include_directories(wren PRIVATE external/wren/src/optional)
+    target_include_directories(wren PRIVATE external/wren/src/vm)
+
 
     add_custom_target(shaders)
     build_engine_shaders(shaders)
@@ -252,6 +231,8 @@ endif()
 if(YAVE_BUILD_EDITOR)
     add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
     target_include_directories(editor PRIVATE external/imgui)
+
+    target_link_libraries(editor wren)
 
     add_custom_target(editor_shaders)
     build_editor_shaders(editor_shaders)
