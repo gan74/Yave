@@ -37,7 +37,7 @@ class ScriptingConsole final : public Widget {
         void on_gui() override;
 
     private:
-        core::String _log;
+        core::String _logs;
         core::String _code;
 
         void run(const core::String& code);
