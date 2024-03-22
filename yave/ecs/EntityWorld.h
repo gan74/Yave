@@ -127,6 +127,11 @@ class EntityWorld : NonMovable {
             return nullptr;
         }
 
+        template<typename S>
+        S* find_or_add_system() {
+            S* s = find_system<S>();
+            return s ? s : add_system<S>();
+        }
 
 
 
