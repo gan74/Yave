@@ -72,7 +72,7 @@ void RendererSystem::tick() {
 void RendererSystem::update_transform_buffer(bool only_recent) {
     y_profile();
 
-    const TransformableManagerSystem* transformable_manager = world().find_system<TransformableManagerSystem>();
+    const TransformableManagerSystem* transformable_manager = world().find_or_add_system<TransformableManagerSystem>();
 
     TransformBuffer new_buffer;
     if(transformable_manager->transform_count() > _transform_buffer.size()) {
