@@ -117,7 +117,9 @@ class EntityGroup final : public EntityGroupBase {
         std::get<I>(_sets) = &std::get<I>(containers)->_components;
 
         if constexpr(traits::is_component_mutable_v<T>) {
-            _mutate[mut_index++] = &std::get<I>(containers)->_mutated;
+            _mut_locks[mut_index] = &std::get<I>(containers)->_lock;
+            _mutate[mut_index] = &std::get<I>(containers)->_mutated;
+            ++mut_index;
         }
         if constexpr(traits::is_component_changed_v<T>) {
             _changed[cha_index++] = &std::get<I>(containers)->_mutated;
@@ -182,6 +184,35 @@ class EntityGroup final : public EntityGroupBase {
         public:
             using const_iterator = Iterator;
 
+            Query() = default;
+
+            Query(const EntityGroup* parent) : _parent(parent) {
+                _parent->lock_mutated_groups();
+            }
+
+            ~Query() {
+                if(_parent) {
+                    _parent->unlock_mutated_groups();
+                }
+            }
+
+            Query(Query&& other) {
+                swap(other);
+            }
+
+            Query& operator=(Query&& other) {
+                swap(other);
+                return *this;
+            }
+
+            void swap(Query& other) {
+                std::swap(_ids, other._ids);
+                std::swap(_owned, other._owned);
+                std::swap(_sets, other._sets);
+                std::swap(_parent, other._parent);
+            }
+
+
             inline const_iterator begin() const {
                 return const_iterator(ids().begin(), _sets);
             }
@@ -204,6 +235,8 @@ class EntityGroup final : public EntityGroupBase {
             core::Span<EntityId> _ids;
             core::Vector<EntityId> _owned;
             SetTuple _sets = {};
+
+            const EntityGroup* _parent = nullptr;
     };
 
     public:
@@ -215,6 +248,7 @@ class EntityGroup final : public EntityGroupBase {
             y_profile();
 
             Query query;
+            query._parent = this;
             query._sets = _sets;
 
             if constexpr(changed_count) {
@@ -257,10 +291,29 @@ class EntityGroup final : public EntityGroupBase {
         }
 
     private:
+        void lock_mutated_groups() const {
+            y_profile();
+
+            for(auto* lock : _mut_locks) {
+                lock->lock();
+            }
+        }
+
+        void unlock_mutated_groups() const {
+            y_profile();
+
+            for(auto* lock : _mut_locks) {
+                lock->unlock();
+            }
+        }
+
         SetTuple _sets = {};
 
         MutateContainers _mutate = {};
         ChangedContainers _changed = {};
+
+        std::array<std::mutex*, mutate_count> _mut_locks;
+
 
 };
 
