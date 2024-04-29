@@ -139,7 +139,7 @@ class PagedSet : Allocator, NonCopyable {
             }
 
             _pages.swap(other._pages);
-            _indexes.swap(other._indexes);
+            _indices.swap(other._indices);
             std::swap(_size, other._size);
 
             if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
@@ -149,60 +149,60 @@ class PagedSet : Allocator, NonCopyable {
 
 
         inline const_iterator begin() const {
-            return const_iterator(_pages.data(), _indexes.data());
+            return const_iterator(_pages.data(), _indices.data());
         }
 
         inline const_iterator end() const {
-            return const_iterator(_pages.data(), _indexes.data() + _size);
+            return const_iterator(_pages.data(), _indices.data() + _size);
         }
 
         inline iterator begin() {
-            return iterator(_pages.data(), _indexes.data());
+            return iterator(_pages.data(), _indices.data());
         }
 
         inline iterator end() {
-            return iterator(_pages.data(), _indexes.data() + _size);
+            return iterator(_pages.data(), _indices.data() + _size);
         }
 
 
 
         template<typename... Args>
         reference emplace(Args&&... args) {
-            if(_size == _indexes.size()) {
+            if(_size == _indices.size()) {
                 add_page();
             }
 
-            data_type* addr = get(_indexes[_size++]);
+            data_type* addr = get(_indices[_size++]);
             ::new(addr) data_type(y_fwd(args)...);
 
             return *addr;
         }
 
         void erase(iterator it) {
-            const usize index = (it._it - _indexes.data());
+            const usize index = (it._it - _indices.data());
             y_debug_assert(index < _size);
             clear(get(*it._it));
             --_size;
-            std::swap(_indexes[index], _indexes[_size]);
+            std::swap(_indices[index], _indices[_size]);
         }
 
 
 
         template<typename F>
         void sort(F&& compare) {
-            std::sort(_indexes.data(), _indexes.data() + _size, [&](usize a, usize b) {
+            std::sort(_indices.data(), _indices.data() + _size, [&](usize a, usize b) {
                 return compare(operator[](a), operator[](b));
             });
         }
 
         void sort_indices() {
-            std::sort(_indexes.data(), _indexes.data() + _size);
-            std::sort(_indexes.data() + _size, _indexes.data() + _indexes.size());
+            std::sort(_indices.data(), _indices.data() + _size);
+            std::sort(_indices.data() + _size, _indices.data() + _indices.size());
         }
 
         void make_empty() {
             for(usize i = 0; i != _size; ++i) {
-                clear(get(_indexes[i]));
+                clear(get(_indices[i]));
             }
             _size = 0;
         }
@@ -213,7 +213,7 @@ class PagedSet : Allocator, NonCopyable {
                 Allocator::deallocate(page, page_size);
             }
             _pages.clear();
-            _indexes.clear();
+            _indices.clear();
         }
 
 
@@ -256,16 +256,16 @@ class PagedSet : Allocator, NonCopyable {
             const usize page_count = _pages.size();
             _pages.emplace_back(Allocator::allocate(page_size));
 
-            _indexes.set_min_capacity((page_count + 1) * page_size);
+            _indices.set_min_capacity((page_count + 1) * page_size);
             for(usize i = 0; i != page_size; ++i) {
-                _indexes.emplace_back(page_count * page_size + i);
+                _indices.emplace_back(page_count * page_size + i);
             }
 
-            y_debug_assert(_indexes.size() == _pages.size() * page_size);
+            y_debug_assert(_indices.size() == _pages.size() * page_size);
         }
 
         Vector<data_type*> _pages;
-        Vector<usize> _indexes;
+        Vector<usize> _indices;
         usize _size = 0;
 
 };
