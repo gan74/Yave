@@ -23,6 +23,7 @@ SOFTWARE.
 #include "RendererSystem.h"
 
 #include <yave/ecs/EntityWorld.h>
+#include <yave/scene/EcsScene.h>
 
 #include <yave/graphics/barriers/Barrier.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
@@ -31,6 +32,7 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
 #include <yave/systems/TransformableManagerSystem.h>
 
 #include <yave/ecs/SparseComponentSet.h>
@@ -62,11 +64,16 @@ void RendererSystem::destroy() {
 }
 
 void RendererSystem::setup() {
+    _scene = std::make_unique<EcsScene>(&world());
     update_transform_buffer(false);
 }
 
 void RendererSystem::tick() {
     update_transform_buffer(true);
+
+    if(_scene) {
+        _scene->update_from_world();
+    }
 }
 
 void RendererSystem::update_transform_buffer(bool only_recent) {

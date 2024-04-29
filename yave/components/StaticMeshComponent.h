@@ -61,6 +61,8 @@ class StaticMeshComponent final :
 
         y_reflect(StaticMeshComponent, _mesh, _materials)
 
+        mutable SceneStaticMesh* _scene_repr = nullptr;
+
     private:
         AssetPtr<StaticMesh> _mesh;
         core::Vector<AssetPtr<Material>> _materials;

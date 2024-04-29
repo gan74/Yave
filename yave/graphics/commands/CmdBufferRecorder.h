@@ -164,50 +164,52 @@ class CmdBufferRecorderBase : NonMovable {
 
 
 
-#define YAVE_GENERATE_CMD_BUFFER_MEMBERS(CmdBufferType)                                                     \
+#define YAVE_GENERATE_CMD_BUFFER_MEMBERS(CmdBufferType, ParentType)                                         \
     public:                                                                                                 \
         CmdBufferType(CmdBufferType&& other) { swap(other); }                                               \
         CmdBufferType& operator=(CmdBufferType&& other) { swap(other); return *this; }                      \
-        using CmdBufferRecorderBase::submit;                                                                \
-    private:                                                                                                \
+        using ParentType::submit;                                                                           \
+    protected:                                                                                              \
         friend class CmdBufferPool;                                                                         \
         CmdBufferType() = default;                                                                          \
-        CmdBufferType(CmdBufferData* data) : CmdBufferRecorderBase(data) {}
+        CmdBufferType(CmdBufferData* data) : ParentType(data) {}
 
 
 
-class TransferCmdBufferRecorder final : public CmdBufferRecorderBase {
-    YAVE_GENERATE_CMD_BUFFER_MEMBERS(TransferCmdBufferRecorder)
-
-    public:
-        using CmdBufferRecorderBase::submit_async;
-};
-
-class ComputeCmdBufferRecorder final : public CmdBufferRecorderBase {
-    YAVE_GENERATE_CMD_BUFFER_MEMBERS(ComputeCmdBufferRecorder)
+class ComputeCapableCmdBufferRecorder : public CmdBufferRecorderBase {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(ComputeCapableCmdBufferRecorder, CmdBufferRecorderBase)
 
     public:
-        using CmdBufferRecorderBase::submit_async;
-
         using CmdBufferRecorderBase::dispatch;
         using CmdBufferRecorderBase::dispatch_size;
 };
 
-class CmdBufferRecorder final : public CmdBufferRecorderBase {
-    YAVE_GENERATE_CMD_BUFFER_MEMBERS(CmdBufferRecorder)
+class TransferCmdBufferRecorder final : public CmdBufferRecorderBase {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(TransferCmdBufferRecorder, CmdBufferRecorderBase)
+
+    public:
+        using CmdBufferRecorderBase::submit_async;
+};
+
+class ComputeCmdBufferRecorder final : public ComputeCapableCmdBufferRecorder {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(ComputeCmdBufferRecorder, ComputeCapableCmdBufferRecorder)
+
+    public:
+        using CmdBufferRecorderBase::submit_async;
+};
+
+class CmdBufferRecorder final : public ComputeCapableCmdBufferRecorder {
+    YAVE_GENERATE_CMD_BUFFER_MEMBERS(CmdBufferRecorder, ComputeCapableCmdBufferRecorder)
 
     friend class CmdQueue; // Needed for present
 
     public:
-
-        using CmdBufferRecorderBase::dispatch;
-        using CmdBufferRecorderBase::dispatch_size;
-
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
 
         void execute(CmdBufferRecorder&& other);
 };
 
+static_assert(sizeof(ComputeCapableCmdBufferRecorder) == sizeof(CmdBufferRecorderBase));
 static_assert(sizeof(TransferCmdBufferRecorder) == sizeof(CmdBufferRecorderBase));
 static_assert(sizeof(ComputeCmdBufferRecorder) == sizeof(CmdBufferRecorderBase));
 static_assert(sizeof(CmdBufferRecorder) == sizeof(CmdBufferRecorderBase));

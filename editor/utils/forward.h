@@ -30,6 +30,8 @@ class AssetSelector;
 class AssetStringifier;
 class CVarConsole;
 class CameraController;
+class DebugAnimateComponent;
+class DebugAnimateSystem;
 class DeletionDialog;
 class EditorComponent;
 class EditorResources;

@@ -49,7 +49,6 @@ class RendererSystem : public ecs::System {
         static constexpr BufferUsage buffer_usage = BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit;
         using TransformBuffer = TypedBuffer<shader::TransformableData, buffer_usage>;
 
-
         using RenderFunc = std::function<void(RenderPassRecorder& render_pass, const FrameGraphPass* pass)>;
 
         class Renderer : NonMovable {
@@ -92,11 +91,16 @@ class RendererSystem : public ecs::System {
             _renderers << std::move(renderer);
         }
 
+        std::unique_ptr<EcsScene> _scene;
+
     private:
         void update_transform_buffer(bool only_recent);
 
         TransformBuffer _transform_buffer;
         core::Vector<std::unique_ptr<Renderer>> _renderers;
+
+
+
 
 };
 
