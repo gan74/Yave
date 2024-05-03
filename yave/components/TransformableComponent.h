@@ -22,8 +22,6 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 #define YAVE_COMPONENTS_TRANSFORMABLECOMPONENT_H
 
-#include <yave/systems/AABBUpdateSystem.h>
-
 #include <yave/meshes/AABB.h>
 
 #include <y/reflect/reflect.h>
@@ -33,13 +31,6 @@ namespace yave {
 class TransformableComponent final {
     public:
         TransformableComponent(const math::Transform<>& transform = {});
-        ~TransformableComponent();
-
-        TransformableComponent(TransformableComponent&& other);
-        TransformableComponent& operator=(TransformableComponent&& other);
-
-        TransformableComponent(const TransformableComponent& other);
-        TransformableComponent& operator=(const TransformableComponent& other);
 
         void set_transform(const math::Transform<>& tr);
         void set_position(const math::Vec3& pos);
@@ -55,26 +46,12 @@ class TransformableComponent final {
         math::Vec3 to_global(const math::Vec3& pos) const;
         AABB to_global(const AABB& aabb) const;
 
-        void set_aabb(const AABB& aabb);
-        const AABB& local_aabb() const;
-        AABB global_aabb() const;
-
-        u32 transform_index() const;
-
         void inspect(ecs::ComponentInspector* inspector);
 
         y_reflect(TransformableComponent, _transform)
 
     private:
-        void swap(TransformableComponent& other);
-
         math::Transform<> _transform;
-        AABB _aabb;
-
-    private:
-        friend class TransformableManagerSystem;
-
-        mutable u32 _transform_index = u32(-1);
 };
 
 }

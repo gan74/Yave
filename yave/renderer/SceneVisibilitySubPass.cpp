@@ -25,16 +25,8 @@ SOFTWARE.
 namespace yave {
 
 SceneVisibilitySubPass SceneVisibilitySubPass::create(const SceneView& scene_view) {
-    y_profile();
-
-    return SceneVisibilitySubPass::from_entities(scene_view.visible_entities());
-}
-
-SceneVisibilitySubPass SceneVisibilitySubPass::from_entities(core::Vector<ecs::EntityId> ids) {
-    y_profile();
-
     SceneVisibilitySubPass pass;
-    pass.visible = std::make_shared<core::Vector<ecs::EntityId>>(std::move(ids));
+    pass.scene_view = scene_view;
     return pass;
 }
 

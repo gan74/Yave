@@ -36,14 +36,20 @@ u32 TransformManager::alloc_transform() {
     _transforms.set_min_size(index + 1);
     _dirty << index;
 
+    y_debug_assert(!std::exchange(_transforms[index].is_valid, true));
+
     return index;
 }
 
 void TransformManager::free_transform(u32 index) {
+    y_debug_assert(std::exchange(_transforms[index].is_valid, false));
+
     _index_allocator.free(index);
 }
 
 void TransformManager::set_transform(u32 index, const math::Transform<>& tr) {
+    y_debug_assert(_transforms[index].is_valid);
+
     auto& data = _transforms[index];
 
     if(!data.is_dirty) {
@@ -53,6 +59,13 @@ void TransformManager::set_transform(u32 index, const math::Transform<>& tr) {
     }
 
     data.transform = tr;
+}
+
+const math::Transform<>& TransformManager::transform(u32 index) const {
+    y_debug_assert(index != u32(-1));
+    y_debug_assert(_transforms[index].is_valid);
+
+    return _transforms[index].transform;
 }
 
 void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) {
@@ -78,6 +91,8 @@ void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) 
         auto index_mapping = index_staging.map(MappingAccess::WriteOnly);
 
         for(const u32 index : _dirty) {
+            y_debug_assert(_transforms[index].is_valid);
+
             const auto& data = _transforms[index];
             transform_mapping[updates] = data.transform;
             index_mapping[updates] = (index | (data.to_reset ? 0x80000000 : 0x00000000)); // Noop on little endian
@@ -104,6 +119,8 @@ void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) 
 
     auto next_dirty = core::Vector<u32>::with_capacity(_dirty.size());
     for(const u32 index : _dirty) {
+        y_debug_assert(_transforms[index].is_valid);
+
         auto& data = _transforms[index];
         y_debug_assert(data.is_dirty);
         if(data.to_reset) {

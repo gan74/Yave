@@ -41,7 +41,6 @@ static core::Vector<ecs::EntityId> highlighted_entities(const SceneView& scene_v
     y_profile();
 
     const EditorWorld& world = current_world();
-    y_debug_assert(&world == &scene_view.world());
 
     auto ids = core::Vector<ecs::EntityId>::from_range(world.selected_entities());
     if(highlight_children) {
@@ -123,7 +122,7 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
         renderer.final = ed.color;
     }
 
-    if(settings.show_selection) {
+    /*if(settings.show_selection) {
         const IdBufferPass id_pass = IdBufferPass::create(
             framegraph,
             CameraBufferPass::create_no_jitter(framegraph, scene_view),
@@ -137,7 +136,7 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
             : id_and_depth(id_pass);
 
         renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth, id);
-    }
+    }*/
 
     if(settings.show_debug_drawer) {
         renderer.final = render_debug_drawer(framegraph, scene_view, renderer.final, renderer.depth);

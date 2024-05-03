@@ -34,7 +34,6 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <yave/renderer/DefaultRenderer.h>
-#include <yave/systems/RendererSystem.h>
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -48,6 +47,7 @@ SOFTWARE.
 #include <yave/components/AtmosphereComponent.h>
 #include <yave/ecs/EntityPrefab.h>
 #include <yave/ecs/EntityWorld.h>
+#include <yave/scene/EcsScene.h>
 
 #include <yave/utils/color.h>
 
@@ -58,16 +58,15 @@ SOFTWARE.
 
 namespace editor {
 
-static Texture render_world(ecs::EntityWorld& world) {
+static Texture render_scene(const Scene& scene) {
     y_profile();
-
-    world.add_system<RendererSystem>();
 
     const Camera camera(
         math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)),
         math::perspective(math::to_rad(45.0f), 1.0f, 0.1f)
     );
-    const SceneView scene(&world, camera);
+
+    const SceneView scene_view(&scene, camera);
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
@@ -79,7 +78,7 @@ static Texture render_world(ecs::EntityWorld& world) {
 
         RendererSettings settings;
         settings.tone_mapping.auto_exposure = false;
-        const DefaultRenderer renderer = DefaultRenderer::create(graph, scene, out.size(), settings);
+        const DefaultRenderer renderer = DefaultRenderer::create(graph, scene_view, out.size(), settings);
 
         const FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
         {
@@ -157,7 +156,7 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
         world.get_or_add_component<TransformableComponent>(entity)->set_transform(center_to_camera(mesh->aabb()));
     }
 
-    return render_world(world);
+    return render_scene(EcsScene(&world));
 }
 
 static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
@@ -170,12 +169,12 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
         const ecs::EntityId entity = world.create_entity(*prefab);
         if(const StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
             if(TransformableComponent* trans_comp = world.component_mut<TransformableComponent>(entity)) {
-                trans_comp->set_transform(center_to_camera(mesh_comp->aabb()));
+                trans_comp->set_transform(center_to_camera(mesh_comp->mesh()->aabb()));
             }
         }
     }
 
-    return render_world(world);
+    return render_scene(EcsScene(&world));
 }
 
 static Texture render_texture(const AssetPtr<Texture>& tex) {

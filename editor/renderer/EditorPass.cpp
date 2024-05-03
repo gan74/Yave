@@ -36,11 +36,11 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/ecs/ecs.h>
+#include <yave/scene/EcsScene.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
-#include <yave/systems/TransformableManagerSystem.h>
 
 #include <yave/utils/DirectDraw.h>
 
@@ -67,6 +67,7 @@ struct EditorPassData {
 
 
 
+#if 0
 static void render_editor_entities(RenderPassRecorder& recorder, const FrameGraphPass* pass,
                                    const SceneView& scene_view,
                                    const SceneVisibilitySubPass& visibility,
@@ -75,7 +76,6 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
     y_profile();
 
     const EditorWorld& world = current_world();
-    y_debug_assert(&world == &scene_view.world());
 
     {
         auto mapping = pass->resources().map_buffer(pass_buffer);
@@ -129,15 +129,10 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
     }
 }
 
-
-
-
-
 static void render_selection_aabb(DirectDrawPrimitive* primitive, const SceneView& scene_view) {
     const EditorWorld& world = current_world();
     const ecs::EntityId selected = world.selected_entity();
 
-    y_debug_assert(&scene_view.world() == &world);
     unused(scene_view);
 
     const TransformableComponent* tr = world.component<TransformableComponent>(selected);
@@ -216,6 +211,8 @@ static void render_octree(DirectDrawPrimitive* primitive) {
 
 }
 
+#endif
+
 
 static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, FrameGraphImageId in, ImageFormat format, const math::Vec2ui& size) {
     if(in.is_valid()) {
@@ -227,14 +224,15 @@ static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, Fr
 
 
 
-
-
 EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, const SceneVisibilitySubPass& visibility, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id) {
     const math::Vec2ui size = framegraph.image_size(in_depth);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
-    const usize buffer_size = view.world().entity_count();
+    const EcsScene* ecs_scene = dynamic_cast<const EcsScene*>(view.scene());
+    const ecs::EntityWorld* world = ecs_scene->world();
+
+    const usize buffer_size = world->entity_count();
 
     auto pass_buffer = builder.declare_typed_buffer<EditorPassData>();
     const auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(buffer_size);
@@ -254,6 +252,7 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, con
     builder.add_color_output(color);
     builder.add_color_output(id);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+#if 0
         render_editor_entities(render_pass, self, view, visibility, pass_buffer, vertex_buffer);
 
         DirectDraw direct;
@@ -267,6 +266,7 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, con
             }
         }
         direct.render(render_pass, view.camera().view_proj_matrix());
+#endif
     });
 
     EditorPass pass;

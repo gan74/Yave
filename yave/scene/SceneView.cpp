@@ -22,25 +22,15 @@ SOFTWARE.
 
 #include "SceneView.h"
 
-#include <yave/ecs/EntityWorld.h>
-
-#include <yave/components/TransformableComponent.h>
-#include <yave/systems/TransformableManagerSystem.h>
-
 namespace yave {
 
-SceneView::SceneView(const ecs::EntityWorld* world, Camera cam) :
-        _world(world),
+SceneView::SceneView(const Scene* sce, Camera cam) :
+        _scene(sce),
         _camera(cam) {
 }
 
-const ecs::EntityWorld& SceneView::world() const {
-    y_debug_assert(has_world());
-    return *_world;
-}
-
-bool SceneView::has_world() const {
-    return _world;
+const Scene* SceneView::scene() const {
+    return _scene;
 }
 
 const Camera& SceneView::camera() const {
@@ -49,22 +39,6 @@ const Camera& SceneView::camera() const {
 
 Camera& SceneView::camera() {
     return _camera;
-}
-
-
-core::Vector<ecs::EntityId> SceneView::visible_entities() const {
-    y_profile();
-
-    y_debug_assert(has_world());
-
-    const std::array tags = {ecs::tags::not_hidden};
-
-    if(const TransformableManagerSystem* system = _world->find_system<TransformableManagerSystem>()) {
-        const core::Vector<ecs::EntityId> visible = system->find_visible(_camera.frustum(), _camera.far_plane_dist());
-        return _world->query(visible, tags).to_ids();
-    }
-
-    return _world->query<TransformableComponent>(tags).to_ids();
 }
 
 }

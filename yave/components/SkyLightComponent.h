@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-class SkyLightComponent final : public ecs::SystemLinkedComponent<SkyLightComponent, AssetLoaderSystem> {
+class SkyLightComponent final : public ecs::RegisterComponent<SkyLightComponent, AssetLoaderSystem> {
     public:
         AssetPtr<IBLProbe>& probe();
         const AssetPtr<IBLProbe>& probe() const;

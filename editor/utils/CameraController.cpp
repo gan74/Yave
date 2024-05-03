@@ -55,12 +55,14 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
             core::Result<AABB> aabb = core::Err();
             for(const ecs::EntityId id : current_world().selected_entities()) {
                 if(const TransformableComponent* tr = current_world().component<TransformableComponent>(id)) {
-                    aabb = core::Ok(tr->global_aabb());
+                    // aabb = core::Ok(tr->global_aabb());
                 }
             }
 
             if(aabb) {
                 cam_pos = aabb.unwrap().center() - cam_fwd * (aabb.unwrap().radius() * 1.5f);
+            } else {
+                log_msg("No AABB found", Log::Error);
             }
         }
     }

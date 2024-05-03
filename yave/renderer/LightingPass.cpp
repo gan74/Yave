@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
+#include <yave/scene/Scene.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/graphics/images/IBLProbe.h>
 
@@ -51,7 +52,8 @@ static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
 
 
-static std::tuple<const IBLProbe*, float, bool>  find_probe(const ecs::EntityWorld& world) {
+static std::tuple<const IBLProbe*, float, bool>  find_probe(const SceneView& scene_view) {
+#if 0
     const std::array tags = {ecs::tags::not_hidden};
     for(const auto& [id, sky] : world.query<SkyLightComponent>(tags)) {
         if(const IBLProbe* probe = sky.probe().get()) {
@@ -59,6 +61,7 @@ static std::tuple<const IBLProbe*, float, bool>  find_probe(const ecs::EntityWor
             return {probe, sky.intensity(), sky.display_sky()};
         }
     }
+#endif
 
     return {device_resources().empty_probe().get(), 1.0f, true};
 }
@@ -69,8 +72,10 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              const ShadowMapPass& shadow_pass,
                                              FrameGraphImageId ao) {
 
-    const SceneView& scene = gbuffer.scene_pass.scene_view;
-    auto [ibl_probe, intensity, sky] = find_probe(scene.world());
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const Scene* scene = scene_view.scene();
+
+    auto [ibl_probe, intensity, sky] = find_probe(scene_view);
     const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
@@ -101,19 +106,18 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         u32 count = 0;
         auto mapping = self->resources().map_buffer(directional_buffer);
 
-        const std::array tags = {ecs::tags::not_hidden};
-        for(const auto& [id, l] : scene.world().query<DirectionalLightComponent>(tags)) {
+        for(const auto& [obj, light] : scene->directionals()) {
             auto shadow_indices = math::Vec4ui(u32(-1));
-            if(l.cast_shadow()) {
-                if(const auto it = shadow_pass.shadow_indices->find(id.as_u64()); it != shadow_pass.shadow_indices->end()) {
+            if(light.cast_shadow()) {
+                if(const auto it = shadow_pass.shadow_indices->find(obj.id.as_u64()); it != shadow_pass.shadow_indices->end()) {
                     shadow_indices = it->second;
                 }
             }
 
             mapping[count++] = {
-                -l.direction().normalized(),
-                std::cos(l.disk_size()),
-                l.color() * l.intensity(),
+                -light.direction().normalized(),
+                std::cos(light.disk_size()),
+                light.color() * light.intensity(),
                 0,
                 shadow_indices
             };
@@ -148,30 +152,34 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
 
 
-static u32 fill_point_light_buffer(shader::PointLight* points, const SceneView& scene) {
+static u32 fill_point_light_buffer(shader::PointLight* points, const SceneView& scene_view) {
     y_profile();
 
     Y_TODO(Use octree)
-    const Frustum frustum = scene.camera().frustum();
+    const Frustum frustum = scene_view.camera().frustum();
+    const Scene* scene = scene_view.scene();
 
     u32 count = 0;
 
-    const std::array tags = {ecs::tags::not_hidden};
-    for(const auto& [id, t, l] : scene.world().query<TransformableComponent, PointLightComponent>(tags)) {
-        const float scaled_range = l.range() * t.transform().scale().max_component();
-        if(!frustum.is_inside(t.position(), scaled_range)) {
+    for(const auto& [obj, light] : scene->point_lights()) {
+
+        const math::Transform<> transform = scene->transform(obj);
+        const float scale = transform.scale().max_component();
+        const float scaled_range = light.range() * scale;
+
+        if(!frustum.is_inside(transform.position(), scaled_range)) {
             continue;
         }
 
         points[count++] = {
-            t.position(),
+            transform.position(),
             scaled_range,
 
-            l.color() * l.intensity(),
-            std::max(math::epsilon<float>, l.falloff()),
+            light.color() * light.intensity(),
+            std::max(math::epsilon<float>, light.falloff()),
 
             {},
-            l.min_radius(),
+            light.min_radius(),
         };
 
         if(count == max_point_lights) {
@@ -186,7 +194,7 @@ template<bool Transforms>
 static u32 fill_spot_light_buffer(
         shader::SpotLight* spots,
         math::Transform<>* transforms,
-        const SceneView& scene, bool render_shadows,
+        const SceneView& scene_view, bool render_shadows,
         const ShadowMapPass& shadow_pass) {
 
     y_profile();
@@ -194,53 +202,54 @@ static u32 fill_spot_light_buffer(
     y_debug_assert(Transforms == !!transforms);
 
     Y_TODO(Use octree)
-    const Frustum frustum = scene.camera().frustum();
+    const Frustum frustum = scene_view.camera().frustum();
+    const Scene* scene = scene_view.scene();
 
     u32 count = 0;
 
-    const std::array tags = {ecs::tags::not_hidden};
-    for(const auto& [id, t, l] : scene.world().query<TransformableComponent, SpotLightComponent>(tags)) {
+    for(const auto& [obj, light] : scene->spot_lights()) {
 
-        const math::Vec3 forward = t.forward().normalized();
-        const float scale = t.transform().scale().max_component();
-        const float scaled_range = l.range() * scale;
+        const math::Transform<> transform = scene->transform(obj);
+        const math::Vec3 forward = transform.forward().normalized();
+        const float scale = transform.scale().max_component();
+        const float scaled_range = light.range() * scale;
 
-        auto enclosing_sphere = l.enclosing_sphere();
+        auto enclosing_sphere = light.enclosing_sphere();
         {
             enclosing_sphere.dist_to_center *= scale;
             enclosing_sphere.radius *= scale;
         }
 
-        const math::Vec3 encl_sphere_center =  t.position() + forward * enclosing_sphere.dist_to_center;
+        const math::Vec3 encl_sphere_center =  transform.position() + forward * enclosing_sphere.dist_to_center;
         if(!frustum.is_inside(encl_sphere_center, enclosing_sphere.radius)) {
             continue;
         }
 
         auto shadow_indices = math::Vec4ui(u32(-1));
-        if(l.cast_shadow() && render_shadows) {
-            if(const auto it = shadow_pass.shadow_indices->find(id.as_u64()); it != shadow_pass.shadow_indices->end()) {
+        if(light.cast_shadow() && render_shadows) {
+            if(const auto it = shadow_pass.shadow_indices->find(obj.id.as_u64()); it != shadow_pass.shadow_indices->end()) {
                 shadow_indices = it->second;
             }
         }
 
         if constexpr(Transforms) {
             const float geom_radius = scaled_range * 1.1f;
-            const float two_tan_angle = std::tan(l.half_angle()) * 2.0f;
-            transforms[count] = t.transform().non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
+            const float two_tan_angle = std::tan(light.half_angle()) * 2.0f;
+            transforms[count] = transform.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
         }
 
         spots[count++] = {
-            t.position(),
+            transform.position(),
             scaled_range,
 
-            l.color() * l.intensity(),
-            std::max(math::epsilon<float>, l.falloff()),
+            light.color() * light.intensity(),
+            std::max(math::epsilon<float>, light.falloff()),
 
             forward,
-            l.min_radius(),
+            light.min_radius(),
 
-            l.attenuation_scale_offset(),
-            std::sin(l.half_angle()),
+            light.attenuation_scale_offset(),
+            std::sin(light.half_angle()),
             shadow_indices[0],
 
             encl_sphere_center,

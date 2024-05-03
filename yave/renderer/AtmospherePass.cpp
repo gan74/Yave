@@ -39,16 +39,6 @@ SOFTWARE.
 
 namespace yave {
 
-
-
-static const AtmosphereComponent* find_atmosphere_component(const SceneView& scene) {
-    for(const auto& [id, atmo] : scene.world().query<AtmosphereComponent>(ecs::tags::not_hidden)) {
-        return &atmo;
-    }
-
-    return nullptr;
-}
-
 static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const shader::AtmosphereParams& params, const GBufferPass& gbuffer, const AtmosphereSettings& settings) {
     const math::Vec3ui size = settings.lut_size;
     const ImageFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -70,11 +60,9 @@ static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const sha
 }
 
 AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AtmosphereSettings& settings) {
-    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    const AtmosphereComponent* atmosphere = find_atmosphere_component(gbuffer.scene_pass.scene_view);
-    const DirectionalLightComponent* sun = atmosphere
-        ? scene_view.world().component<DirectionalLightComponent>(atmosphere->sun())
-        : nullptr;
+    const Scene* scene = gbuffer.scene_pass.scene_view.scene();
+    const AtmosphereComponent* atmosphere = nullptr;
+    const DirectionalLightComponent* sun = nullptr;
 
     if(!atmosphere || !sun) {
         AtmospherePass pass;

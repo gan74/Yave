@@ -290,6 +290,15 @@ class SparseComponentSet : public SparseIdSetBase {
             return insert(std::get<0>(value), std::move(std::get<1>(value)));
         }
 
+        template<typename... Args>
+        reference get_or_insert(EntityId id, Args&&... args) {
+            if(pointer ptr = try_get(id)) {
+                return *ptr;
+            }
+
+            return insert(id, y_fwd(args)...);
+        }
+
         bool erase(EntityId id) {
             if(!contains(id)) {
                 return false;

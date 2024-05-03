@@ -27,10 +27,9 @@ SOFTWARE.
 namespace yave {
 
 struct SceneVisibilitySubPass {
-    std::shared_ptr<core::Vector<ecs::EntityId>> visible;
+    SceneView scene_view;
 
     static SceneVisibilitySubPass create(const SceneView& scene_view);
-    static SceneVisibilitySubPass from_entities(core::Vector<ecs::EntityId> ids);
 };
 
 }

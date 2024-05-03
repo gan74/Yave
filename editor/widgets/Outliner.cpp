@@ -54,8 +54,7 @@ static void set_new_entity_pos(ecs::EntityId id) {
     }
     EditorWorld& world = current_world();
     if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
-        const float size = transformable->global_aabb().radius();
-        transformable->set_position(new_entity_pos(std::min(100.0f, size * 2.0f)));
+        transformable->set_position(new_entity_pos(10.0f));
     }
 }
 

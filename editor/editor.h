@@ -61,6 +61,7 @@ void save_world();
 void load_world();
 void new_world();
 EditorWorld& current_world();
+Scene& current_scene();
 
 void set_scene_view(SceneView* scene);
 void unset_scene_view(SceneView* scene);

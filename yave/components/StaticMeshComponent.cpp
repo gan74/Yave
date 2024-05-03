@@ -22,14 +22,11 @@ SOFTWARE.
 
 #include "StaticMeshComponent.h"
 
-#include <yave/meshes/StaticMesh.h>
-#include <yave/material/Material.h>
-
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/scene/Scene.h>
 
 #include <yave/meshes/MeshData.h>
 #include <yave/graphics/images/ImageData.h>
-#include <yave/graphics/device/DeviceResources.h>
+
 #include <yave/assets/AssetLoader.h>
 
 namespace yave {
@@ -42,10 +39,6 @@ StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const
 
 StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, core::Vector<AssetPtr<Material>> materials) :
         _mesh(mesh), _materials(std::move(materials)) {
-}
-
-const AABB& StaticMeshComponent::aabb() const {
-    return _aabb;
 }
 
 AssetPtr<StaticMesh>& StaticMeshComponent::mesh() {
@@ -64,6 +57,10 @@ core::Span<AssetPtr<Material>> StaticMeshComponent::materials() const {
     return _materials;
 }
 
+AABB StaticMeshComponent::aabb() const {
+    return _mesh ? _mesh->aabb() : AABB();
+}
+
 bool StaticMeshComponent::is_fully_loaded() const {
     if(_mesh.is_loading()) {
         return false;
@@ -79,9 +76,6 @@ bool StaticMeshComponent::is_fully_loaded() const {
 }
 
 bool StaticMeshComponent::update_asset_loading_status() {
-    if(_mesh)  {
-        _aabb = _mesh->aabb();
-    }
     return is_fully_loaded();
 }
 

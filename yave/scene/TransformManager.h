@@ -34,10 +34,14 @@ namespace yave {
 
 class TransformManager : NonMovable {
     struct TransformData {
-        u32 is_dirty        : 1 = true;
-        u32 to_reset        : 1 = true;
-
         math::Transform<> transform;
+
+        bool is_dirty = true;
+        bool to_reset = true;
+
+#ifdef Y_DEBUG
+        bool is_valid = false;
+#endif
     };
 
     public:
@@ -47,6 +51,8 @@ class TransformManager : NonMovable {
         u32 alloc_transform();
         void free_transform(u32 index);
         void set_transform(u32 index, const math::Transform<>& tr);
+
+        const math::Transform<>& transform(u32 index) const;
 
         void update_buffer(ComputeCapableCmdBufferRecorder& recorder);
 

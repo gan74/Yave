@@ -29,34 +29,6 @@ namespace yave {
 TransformableComponent::TransformableComponent(const math::Transform<>& transform) : _transform(transform) {
 }
 
-TransformableComponent::~TransformableComponent() {
-    y_debug_assert(_transform_index == u32(-1));
-}
-
-TransformableComponent::TransformableComponent(TransformableComponent&& other) {
-    swap(other);
-}
-
-TransformableComponent& TransformableComponent::operator=(TransformableComponent&& other) {
-    swap(other);
-    return *this;
-}
-
-TransformableComponent::TransformableComponent(const TransformableComponent& other) {
-    set_transform(other.transform());
-}
-
-TransformableComponent& TransformableComponent::operator=(const TransformableComponent& other) {
-    set_transform(other.transform());
-    return *this;
-}
-
-void TransformableComponent::swap(TransformableComponent& other) {
-    std::swap(_transform, other._transform);
-    std::swap(_aabb, other._aabb);
-    std::swap(_transform_index, other._transform_index);
-}
-
 void TransformableComponent::set_transform(const math::Transform<>& tr) {
     _transform = tr;
 }
@@ -96,22 +68,6 @@ AABB TransformableComponent::to_global(const AABB& aabb) const {
     const math::Vec3 half_extent = abs_tr.transform_direction(aabb.half_extent());
 
     return AABB(center - half_extent, center + half_extent);
-}
-
-void TransformableComponent::set_aabb(const AABB& aabb) {
-    _aabb = aabb;
-}
-
-const AABB& TransformableComponent::local_aabb() const {
-    return _aabb;
-}
-
-AABB TransformableComponent::global_aabb() const {
-    return to_global(_aabb);
-}
-
-u32 TransformableComponent::transform_index() const {
-    return _transform_index;
 }
 
 void TransformableComponent::inspect(ecs::ComponentInspector* inspector) {

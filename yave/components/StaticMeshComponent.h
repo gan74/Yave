@@ -22,24 +22,20 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 #define YAVE_COMPONENTS_STATICMESHCOMPONENT_H
 
-#include "TransformableComponent.h"
+#include <yave/ecs/ecs.h>
 
-#include <yave/assets/AssetPtr.h>
-#include <yave/systems/AABBUpdateSystem.h>
+#include <yave/meshes/StaticMesh.h>
+#include <yave/material/Material.h>
+
 #include <yave/systems/AssetLoaderSystem.h>
-#include <yave/systems/RendererSystem.h>
-#include <yave/renderer/StaticMeshRenderer.h>
 
 #include <y/core/Vector.h>
 
 namespace yave {
 
-class StaticMeshComponent final :
-        public ecs::SystemLinkedComponent<StaticMeshComponent, AssetLoaderSystem, AABBUpdateSystem, RendererSystem> {
+class StaticMeshComponent final : public ecs::RegisterComponent<StaticMeshComponent, AssetLoaderSystem> {
 
     public:
-        using Renderer = StaticMeshRenderer;
-
         StaticMeshComponent() = default;
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material);
         StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, core::Vector<AssetPtr<Material>> materials);
@@ -50,7 +46,7 @@ class StaticMeshComponent final :
         core::MutableSpan<AssetPtr<Material>> materials();
         core::Span<AssetPtr<Material>> materials() const;
 
-        const AABB& aabb() const;
+        AABB aabb() const;
 
         bool is_fully_loaded() const;
 
@@ -61,13 +57,9 @@ class StaticMeshComponent final :
 
         y_reflect(StaticMeshComponent, _mesh, _materials)
 
-        mutable SceneStaticMesh* _scene_repr = nullptr;
-
     private:
         AssetPtr<StaticMesh> _mesh;
         core::Vector<AssetPtr<Material>> _materials;
-
-        AABB _aabb;
 };
 
 }

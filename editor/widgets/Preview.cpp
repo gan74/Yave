@@ -122,7 +122,8 @@ void Preview::update_camera() {
 
 void Preview::reset_world() {
     _world = std::make_unique<EditorWorld>(asset_loader());
-    _view = SceneView(_world.get());
+    _scene = std::make_unique<EcsScene>(_world.get());
+    _view = SceneView(_scene.get());
 
     {
         const ecs::EntityId sky_id = _world->create_entity();

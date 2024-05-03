@@ -22,18 +22,16 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_SPOTLIGHTCOMPONENT_H
 #define YAVE_COMPONENTS_SPOTLIGHTCOMPONENT_H
 
-#include <yave/ecs/ecs.h>
+#include "LocalLightBase.h"
+
+#include <yave/meshes/AABB.h>
 
 #include <y/reflect/reflect.h>
 
-#include "LocalLightBase.h"
-#include "TransformableComponent.h"
 
 namespace yave {
 
-class SpotLightComponent final :
-        public LocalLightBase,
-        public ecs::SystemLinkedComponent<SpotLightComponent, AABBUpdateSystem> {
+class SpotLightComponent final : public LocalLightBase {
 
     public:
         struct EnclosingSphere {

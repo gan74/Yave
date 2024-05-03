@@ -24,16 +24,39 @@ SOFTWARE.
 
 #include "Scene.h"
 
+#include <yave/ecs/SparseComponentSet.h>
+
 namespace yave {
 
 class EcsScene : public Scene {
+    struct ObjectIndices {
+        u32 mesh = u32(-1);
+        u32 point_light = u32(-1);
+        u32 spot_light = u32(-1);
+        u32 directional_light = u32(-1);
+    };
+
+
     public:
-        EcsScene(const ecs::EntityWorld* world);
+        EcsScene(const ecs::EntityWorld* w);
+
+        const ecs::EntityWorld* world() const;
 
         void update_from_world();
 
     private:
+        template<typename S>
+        typename S::value_type& register_object(u32& index, S& storage);
+
+        template<typename S>
+        void process_transformable_components(u32 ObjectIndices::* index, S& storage);
+
+        template<typename S>
+        void process_components(u32 ObjectIndices::* index, S& storage);
+
         const ecs::EntityWorld* _world = nullptr;
+
+        ecs::SparseComponentSet<ObjectIndices> _indices;
 };
 
 }

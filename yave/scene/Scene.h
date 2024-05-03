@@ -24,26 +24,36 @@ SOFTWARE.
 
 #include "TransformManager.h"
 
-#include <yave/systems/RendererSystem.h>
+#include <yave/ecs/ecs.h>
 
-#include <yave/camera/Camera.h>
-#include <yave/assets/AssetPtr.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/SpotLightComponent.h>
+#include <yave/components/DirectionalLightComponent.h>
 
-#include <y/core/Vector.h>
-#include <y/core/PagedSet.h>
-#include <y/core/FixedArray.h>
+#include <functional>
 
 namespace yave {
 
-struct SceneStaticMesh {
-    u32 transform_index = u32(-1);
-    u32 entity_index = u32(-1);
-
-    bool hidden = false;
-
-    AssetPtr<StaticMesh> mesh;
-    core::Vector<AssetPtr<Material>> materials;
+enum class PassType {
+    Depth,
+    GBuffer,
+    Id,
 };
+
+struct SceneObject {
+    ecs::EntityId id;
+};
+
+struct TransformableSceneObject : SceneObject {
+    u32 transform_index = u32(-1);
+    AABB global_aabb;
+};
+
+using StaticMeshObject = std::tuple<TransformableSceneObject, StaticMeshComponent>;
+using PointLightObject = std::tuple<TransformableSceneObject, PointLightComponent>;
+using SpotLightObject = std::tuple<TransformableSceneObject, SpotLightComponent>;
+using DirectionalLightObject = std::tuple<SceneObject, DirectionalLightComponent>;
 
 class Scene : NonMovable {
     static constexpr BufferUsage buffer_usage = BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit;
@@ -52,18 +62,33 @@ class Scene : NonMovable {
     public:
         using RenderFunc = std::function<void(RenderPassRecorder& render_pass, const FrameGraphPass* pass)>;
 
-        Scene() = default;
+
+        Scene();
 
         virtual ~Scene();
 
-        core::Vector<const SceneStaticMesh*> gather_visible_meshes(const Camera& cam) const;
 
-        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const Camera& cam,  PassType pass_type);
+        const math::Transform<>& transform(const TransformableSceneObject& obj) const;
+
+        core::Vector<const StaticMeshObject*> gather_visible_meshes(const Camera& cam) const;
+
+
+        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const Camera& cam,  PassType pass_type) const;
+
+
+
+        core::Span<StaticMeshObject>        meshes() const          { return _meshes; }
+        core::Span<PointLightObject>        point_lights() const    { return _point_lights; }
+        core::Span<SpotLightObject>         spot_lights() const     { return _spot_lights; }
+        core::Span<DirectionalLightObject>  directionals() const    { return _directionals; }
 
     protected:
-        TransformManager _transform_manager;
+        core::Vector<StaticMeshObject> _meshes;
+        core::Vector<PointLightObject> _point_lights;
+        core::Vector<SpotLightObject> _spot_lights;
+        core::Vector<DirectionalLightObject> _directionals;
 
-        core::PagedSet<SceneStaticMesh> _meshes;
+        TransformManager _transform_manager;
 };
 
 }

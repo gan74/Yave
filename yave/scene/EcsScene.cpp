@@ -29,7 +29,61 @@ SOFTWARE.
 
 namespace yave {
 
-EcsScene::EcsScene(const ecs::EntityWorld* world) : _world(world) {
+EcsScene::EcsScene(const ecs::EntityWorld* w) : _world(w) {
+    update_from_world();
+}
+
+const ecs::EntityWorld* EcsScene::world() const {
+    return _world;
+}
+
+template<typename S>
+typename S::value_type& EcsScene::register_object(u32& index, S& storage) {
+    using object_t = typename S::value_type;
+
+    object_t* obj = nullptr;
+    if(index == u32(-1)) {
+        index = u32(storage.size());
+        obj = &storage.emplace_back();
+    } else {
+        obj = &storage[index];
+    }
+
+    return *obj;
+}
+
+template<typename S>
+void EcsScene::process_transformable_components(u32 ObjectIndices::* index, S& storage) {
+    using component_t = std::tuple_element_t<1, typename S::value_type>;
+
+    auto query = _world->query<TransformableComponent, component_t>();
+    for(const auto& [id, tr, comp] : query.id_components()) {
+        auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
+        std::get<component_t>(obj) = comp;
+
+        auto& tr_obj = std::get<TransformableSceneObject>(obj);
+        if(tr_obj.transform_index == u32(-1)) {
+            tr_obj.transform_index = _transform_manager.alloc_transform();
+        }
+
+        _transform_manager.set_transform(tr_obj.transform_index, tr.transform());
+        tr_obj.global_aabb = tr.to_global(comp.aabb());
+        tr_obj.id = id;
+    }
+}
+
+
+template<typename S>
+void EcsScene::process_components(u32 ObjectIndices::* index, S& storage) {
+    using component_t = std::tuple_element_t<1, typename S::value_type>;
+
+    auto query = _world->query<component_t>();
+    for(const auto& [id, comp] : query.id_components()) {
+        auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
+        std::get<component_t>(obj) = comp;
+
+        std::get<SceneObject>(obj).id = id;
+    }
 }
 
 void EcsScene::update_from_world() {
@@ -37,24 +91,11 @@ void EcsScene::update_from_world() {
 
     y_debug_assert(_world);
 
-    {
-        auto query = _world->query<TransformableComponent, StaticMeshComponent>();
-        for(const auto& [id, tr, mesh] : query.id_components()) {
-            if(!mesh._scene_repr) {
-                mesh._scene_repr = &_meshes.emplace();
-                mesh._scene_repr->entity_index = id.index();
-            }
+    process_transformable_components(&ObjectIndices::mesh, _meshes);
+    process_transformable_components(&ObjectIndices::point_light, _point_lights);
+    process_transformable_components(&ObjectIndices::spot_light, _spot_lights);
+    process_components(&ObjectIndices::directional_light, _directionals);
 
-            if(mesh._scene_repr->transform_index == u32(-1)) {
-                mesh._scene_repr->transform_index = _transform_manager.alloc_transform();
-            }
-
-            _transform_manager.set_transform(mesh._scene_repr->transform_index, tr.transform());
-
-            mesh._scene_repr->mesh = mesh.mesh();
-            mesh._scene_repr->materials = mesh.materials();
-        }
-    }
 
     {
         ComputeCmdBufferRecorder recorder = create_disposable_compute_cmd_buffer();

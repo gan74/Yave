@@ -100,7 +100,7 @@ class EntityId {
 
 
 template<typename Component, typename... SystemTypes>
-struct SystemLinkedComponent {
+struct RegisterComponent {
     // EntityWorld.inl
     static inline void register_component_type(System*);
 };

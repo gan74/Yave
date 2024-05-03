@@ -30,17 +30,13 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include <yave/systems/RendererSystem.h>
-#include <yave/components/TransformableComponent.h>
-#include <yave/components/StaticMeshComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
 
 namespace yave {
 
 static void fill_scene_render_pass(SceneRenderSubPass& pass, FrameGraphPassBuilder& builder, PassType pass_type) {
-    // pass.render_func = pass.scene_view.world().find_system<RendererSystem>()->prepare_render(builder, pass.scene_view, *pass.visibility.visible, pass_type);
-    pass.scene_render_func = pass.scene_view.world().find_system<RendererSystem>()->_scene->prepare_render(builder, pass.scene_view.camera(), pass_type);
+    pass.render_func = pass.scene_view.scene()->prepare_render(builder, pass.scene_view.camera(), pass_type);
 
     pass.main_descriptor_set_index = builder.next_descriptor_set_index();
     builder.add_uniform_input(pass.camera, PipelineStage::None, pass.main_descriptor_set_index);
@@ -77,10 +73,6 @@ void SceneRenderSubPass::render(RenderPassRecorder& render_pass, const FrameGrap
 
     if(render_func) {
         render_func(render_pass, pass);
-    }
-
-    if(scene_render_func) {
-        scene_render_func(render_pass, pass);
     }
 }
 

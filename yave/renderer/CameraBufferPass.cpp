@@ -69,7 +69,7 @@ CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneVie
     }
 
     const u64 jitter_index = framegraph.frame_id() % 1024;
-    const SceneView jittered_view = SceneView(&view.world(), view.camera().jittered(compute_jitter(settings.jitter, jitter_index), size, settings.jitter_intensity));
+    const SceneView jittered_view = SceneView(view.scene(), view.camera().jittered(compute_jitter(settings.jitter, jitter_index), size, settings.jitter_intensity));
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
 

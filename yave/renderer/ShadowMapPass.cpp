@@ -120,14 +120,14 @@ static math::Matrix4<> flip_for_backfaces(math::Matrix4<> proj) {
 
 
 
-static Camera spotlight_camera(const TransformableComponent& tr, const SpotLightComponent& light) {
+static Camera spotlight_camera(const math::Transform<>& tr, const SpotLightComponent& light) {
     const float z_near = light.min_radius();
 
     Camera camera(
         math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()),
         flip_for_backfaces(math::perspective(light.half_angle() * 2.0f, 1.0f, z_near))
     );
-    camera.set_far(light.range() * tr.transform().scale().max_component());
+    camera.set_far(light.range() * tr.scale().max_component());
     y_debug_assert(!camera.is_orthographic());
     return camera;
 }
@@ -174,34 +174,27 @@ static Camera directional_camera(const Camera& cam, const DirectionalLightCompon
 
 struct ShadowCastingLights {
     core::Vector<std::tuple<ecs::EntityId, const DirectionalLightComponent*>> directionals;
-    core::Vector<std::tuple<ecs::EntityId, const TransformableComponent*, const SpotLightComponent*>> spots;
+    core::Vector<std::tuple<ecs::EntityId, math::Transform<>, const SpotLightComponent*>> spots;
 };
 
-static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene) {
-    const std::array tags = {ecs::tags::not_hidden};
-    const ecs::EntityWorld& world = scene.world();
-
+static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene_view) {
     ShadowCastingLights shadow_casters;
 
-    shadow_casters.directionals.set_min_capacity(world.component_set<DirectionalLightComponent>().size());
-    for(const auto& [id, l] : world.query<DirectionalLightComponent>(tags)) {
+    const Scene* scene = scene_view.scene();
+
+    shadow_casters.directionals.set_min_capacity(scene->directionals().size());
+    for(const auto& [o, l] : scene->directionals()) {
         if(!l.cast_shadow()) {
-            continue;
+            shadow_casters.directionals.push_back({o.id, &l});
         }
-        shadow_casters.directionals.push_back({id, &l});
     }
 
-    auto collect_spots = [&](auto&& query) {
-        shadow_casters.spots.set_min_capacity(query.size());
-        for(const auto& [id, t, l] : query) {
-            if(!l.cast_shadow()) {
-                continue;
-            }
-            shadow_casters.spots.push_back({id, &t, &l});
+    shadow_casters.spots.set_min_capacity(scene->spot_lights().size());
+    for(const auto& [o, l] : scene->spot_lights()) {
+        if(l.cast_shadow()) {
+            shadow_casters.spots.push_back({o.id, scene->transform(o), &l});
         }
-    };
-
-    collect_spots(world.query<TransformableComponent, SpotLightComponent>(tags));
+    }
 
     return shadow_casters;
 }
@@ -226,7 +219,7 @@ static float total_occupancy(const ShadowCastingLights& lights) {
 
 
 
-ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings) {
+ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene_view, const ShadowMapSettings& settings) {
     y_profile();
 
     const auto region = framegraph.region("Shadows");
@@ -234,7 +227,6 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
     static constexpr ImageFormat shadow_format = VK_FORMAT_D32_SFLOAT;
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Shadow pass");
-    const ecs::EntityWorld& world = scene.world();
 
     const u32 shadow_map_log_size = log2ui(settings.shadow_map_size);
     const u32 first_level_size = 1 << shadow_map_log_size;
@@ -247,7 +239,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
     const auto shadow_map = builder.declare_image(shadow_format, shadow_map_size);
 
-    const ShadowCastingLights lights = collect_shadow_casting_lights(scene);
+    const ShadowCastingLights lights = collect_shadow_casting_lights(scene_view);
 
     const float downsample_factor = settings.spill_policy == ShadowMapSpillPolicy::DownSample
         ? total_occupancy(lights) / settings.shadow_atlas_size
@@ -280,14 +272,14 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
                 const auto [offset, size] = allocator.alloc(level);
 
                 indices[i] = u32(sub_passes.size());
-                const Camera light_cam = directional_camera(scene.camera(), *light, size, near_dist, cascade_dist);
-                sub_passes.emplace_back(create_sub_pass(builder, offset, size, SceneView(&world, light_cam), uv_mul));
+                const Camera light_cam = directional_camera(scene_view.camera(), *light, size, near_dist, cascade_dist);
+                sub_passes.emplace_back(create_sub_pass(builder, offset, size, SceneView(scene_view.scene(), light_cam), uv_mul));
 
                 near_dist = cascade_dist;
             }
         }
 
-        for(const auto& [id, transform, light] : lights.spots) {
+        for(const auto& [id, tr, light] : lights.spots) {
             auto& indices = (*pass.shadow_indices)[id.as_u64()];
             indices = math::Vec4ui(u32(-1));
 
@@ -295,7 +287,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
             const auto [offset, size] = allocator.alloc(level);
 
             indices[0] = u32(sub_passes.size());
-            sub_passes.emplace_back(create_sub_pass(builder, offset, size, SceneView(&world, spotlight_camera(*transform, *light)), uv_mul));
+            sub_passes.emplace_back(create_sub_pass(builder, offset, size, SceneView(scene_view.scene(), spotlight_camera(tr, *light)), uv_mul));
         }
     }
 

@@ -20,11 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "StaticMeshRenderer.h"
+#include "Scene.h"
 
-#include <yave/scene/SceneView.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/Material.h>
+
+#include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 
 #include <yave/graphics/device/DeviceResources.h>
@@ -34,9 +35,8 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/framegraph/FrameGraphPassBuilder.h>
-#include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
-
+#include <yave/framegraph/FrameGraphPass.h>
 
 namespace yave {
 
@@ -47,13 +47,12 @@ struct StaticMeshBatch {
 };
 
 
-
-template<typename Q>
-static void collect_batches(Q query, core::Vector<StaticMeshBatch>& batches) {
+static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Vector<StaticMeshBatch>& batches) {
     y_profile();
 
-    for(const auto& [tr, mesh] : query.components()) {
-        const u32 transform_index = tr.transform_index();
+    for(const StaticMeshObject* obj : meshes) {
+        const auto& [tr, mesh] = *obj;
+        const u32 transform_index = tr.transform_index;
 
         if(!mesh.mesh() || transform_index == u32(-1)) {
             continue;
@@ -87,14 +86,13 @@ static void collect_batches(Q query, core::Vector<StaticMeshBatch>& batches) {
     }
 }
 
-
-template<typename Q>
-static void collect_batches_for_id(Q query, core::Vector<StaticMeshBatch>& batches) {
+static void collect_batches_for_id(core::Span<const StaticMeshObject*> meshes, core::Vector<StaticMeshBatch>& batches) {
     y_profile();
 
     u32 index = 0;
-    for(const auto& [id, tr, mesh] : query.id_components()) {
-        const u32 transform_index = tr.transform_index();
+    for(const StaticMeshObject* obj : meshes) {
+        const auto& [tr, mesh] = *obj;
+        const u32 transform_index = tr.transform_index;
 
         if(!mesh.mesh() || transform_index == u32(-1)) {
             continue;
@@ -103,38 +101,28 @@ static void collect_batches_for_id(Q query, core::Vector<StaticMeshBatch>& batch
         batches.emplace_back(
             nullptr,
             mesh.mesh()->draw_command().vk_indirect_data(index++),
-            math::Vec2ui(transform_index, id.index())
+            math::Vec2ui(transform_index, tr.id.index())
         );
     }
 }
 
-
-
-
-StaticMeshRenderer::StaticMeshRenderer() : RendererSystem::Renderer("StaticMeshRenderer") {
-
-}
-
-StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPassBuilder& builder, const SceneView& view, core::Span<ecs::EntityId> ids, PassType pass_type) const {
+Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Camera& cam, PassType pass_type) const {
     y_profile();
 
-    const ecs::EntityWorld* world = &view.world();
-    const RendererSystem* renderer = parent();
 
     // This is needed because std::function requires the lambda to be coyable
     // Might be fixed by std::move_only_function in C++23
     Y_TODO(fix in cpp23)
     auto static_mesh_batches = std::make_shared<core::Vector<StaticMeshBatch>>();
     {
-        auto query = world->query<TransformableComponent, StaticMeshComponent>(ids);
         switch(pass_type) {
             case PassType::Depth:
             case PassType::GBuffer:
-                collect_batches(std::move(query), *static_mesh_batches);
+                collect_batches(gather_visible_meshes(cam), *static_mesh_batches);
             break;
 
             case PassType::Id:
-                collect_batches_for_id(std::move(query), *static_mesh_batches);
+                collect_batches_for_id(gather_visible_meshes(cam), *static_mesh_batches);
             break;
         }
     }
@@ -154,7 +142,7 @@ StaticMeshRenderer::RenderFunc StaticMeshRenderer::prepare_render(FrameGraphPass
     const auto indirect_buffer = builder.declare_typed_buffer<VkDrawIndexedIndirectCommand>(batch_count);
     builder.map_buffer(indirect_buffer);
 
-    builder.add_external_input(Descriptor(renderer->transform_buffer()), stage, descriptor_set_index);
+    builder.add_external_input(Descriptor(_transform_manager.transform_buffer()), stage, descriptor_set_index);
     builder.add_external_input(Descriptor(material_allocator().material_buffer()), stage, descriptor_set_index);
     builder.add_storage_input(indices_buffer, stage, descriptor_set_index);
     builder.add_indrect_input(indirect_buffer);

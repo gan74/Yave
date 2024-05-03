@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/scene/Scene.h>
 #include <yave/scene/SceneView.h>
 #include <yave/framegraph/FrameGraphResourceId.h>
-#include <yave/systems/RendererSystem.h>
 
 #include "SceneVisibilitySubPass.h"
 
@@ -37,9 +36,7 @@ struct SceneRenderSubPass {
     i32 main_descriptor_set_index = -1;
     FrameGraphTypedBufferId<shader::Camera> camera;
 
-    RendererSystem::RenderFunc render_func;
-
-    Scene::RenderFunc scene_render_func;
+    Scene::RenderFunc render_func;
 
     SceneVisibilitySubPass visibility;
 

@@ -59,7 +59,7 @@ static inline void register_component_type_rec(System* system) {
 }
 
 template<typename Component, typename... SystemTypes>
-void SystemLinkedComponent<Component, SystemTypes...>::register_component_type(System* system) {
+void RegisterComponent<Component, SystemTypes...>::register_component_type(System* system) {
     register_component_type_rec<Component, SystemTypes...>(system);
 }
 

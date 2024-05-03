@@ -33,6 +33,7 @@ SOFTWARE.
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/DirectDraw.h>
 #include <yave/scene/SceneView.h>
+#include <yave/scene/EcsScene.h>
 
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
@@ -70,6 +71,7 @@ std::unique_ptr<ThumbmailRenderer> thumbmail_renderer;
 std::unique_ptr<DirectDraw> debug_drawer;
 std::unique_ptr<UiManager> ui;
 std::unique_ptr<EditorWorld> world;
+std::unique_ptr<EcsScene> scene;
 
 core::String world_file;
 
@@ -113,9 +115,10 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::loader = std::make_unique<AssetLoader>(application::asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     application::thumbmail_renderer = std::make_unique<ThumbmailRenderer>(*application::loader);
     application::world = std::make_unique<EditorWorld>(*application::loader);
+    application::scene = std::make_unique<EcsScene>(application::world.get());
     application::debug_drawer = std::make_unique<DirectDraw>();
 
-    application::default_scene_view = SceneView(application::world.get());
+    application::default_scene_view = SceneView(application::scene.get());
     application::scene_view = &application::default_scene_view;
 
     application::deferred_actions = application::Load;
@@ -126,6 +129,7 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
 void destroy_editor() {
     application::thumbmail_renderer = nullptr;
+    application::scene = nullptr;
     application::world = nullptr;
     application::scene_view  = nullptr;
     application::default_scene_view = {};
@@ -141,6 +145,7 @@ void run_editor() {
     application::imgui_platform->exec([] {
         application::world->tick();
         application::world->update(float(application::update_timer.reset().to_secs()));
+        application::scene->update_from_world();
         application::ui->on_gui();
         post_tick();
     });
@@ -198,7 +203,8 @@ void post_tick() {
 
     if(application::deferred_actions & application::New) {
         application::world = std::make_unique<EditorWorld>(*application::loader);
-        application::default_scene_view = SceneView(application::world.get());
+        application::scene = std::make_unique<EcsScene>(application::world.get());
+        application::default_scene_view = SceneView(application::scene.get());
         log_msg("New world");
     }
 
@@ -250,6 +256,10 @@ void new_world() {
 
 EditorWorld& current_world() {
     return *application::world;
+}
+
+Scene& current_scene() {
+    return *application::scene;
 }
 
 void set_scene_view(SceneView* scene) {

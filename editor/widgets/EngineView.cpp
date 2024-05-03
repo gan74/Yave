@@ -238,8 +238,8 @@ void EngineView::update() {
 }
 
 void EngineView::update_scene_view() {
-    if(!_scene_view.has_world() || &_scene_view.world() != &current_world()) {
-        _scene_view = SceneView(&current_world());
+    if(_scene_view.scene() != &current_scene()) {
+        _scene_view = SceneView(&current_scene());
     }
 
     const CameraSettings& settings = app_settings().camera;
@@ -248,7 +248,6 @@ void EngineView::update_scene_view() {
     const float fov = math::to_rad(settings.fov);
     const auto proj = math::perspective(fov, float(viewport_size.x()) / float(viewport_size.y()), settings.z_near);
     _scene_view.camera().set_proj(proj);
-
 }
 
 
