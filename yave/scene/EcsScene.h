@@ -34,6 +34,7 @@ class EcsScene : public Scene {
         u32 point_light = u32(-1);
         u32 spot_light = u32(-1);
         u32 directional_light = u32(-1);
+        u32 sky_light = u32(-1);
     };
 
 

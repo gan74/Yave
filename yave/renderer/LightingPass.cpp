@@ -43,6 +43,7 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 #include <bit>
+#include <tuple>
 
 
 namespace yave {
@@ -52,16 +53,14 @@ static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
 
 
-static std::tuple<const IBLProbe*, float, bool>  find_probe(const SceneView& scene_view) {
-#if 0
-    const std::array tags = {ecs::tags::not_hidden};
-    for(const auto& [id, sky] : world.query<SkyLightComponent>(tags)) {
+static std::tuple<const IBLProbe*, float, bool> find_probe(const SceneView& scene_view) {
+    for(const SkyLightObject& obj : scene_view.scene()->sky_lights()) {
+        const SkyLightComponent& sky = std::get<SkyLightComponent>(obj);
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
             return {probe, sky.intensity(), sky.display_sky()};
         }
     }
-#endif
 
     return {device_resources().empty_probe().get(), 1.0f, true};
 }

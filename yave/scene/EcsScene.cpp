@@ -95,6 +95,7 @@ void EcsScene::update_from_world() {
     process_transformable_components(&ObjectIndices::point_light, _point_lights);
     process_transformable_components(&ObjectIndices::spot_light, _spot_lights);
     process_components(&ObjectIndices::directional_light, _directionals);
+    process_components(&ObjectIndices::sky_light, _sky_lights);
 
 
     {

@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
+#include <yave/components/SkyLightComponent.h>
 
 #include <functional>
 
@@ -54,6 +55,7 @@ using StaticMeshObject = std::tuple<TransformableSceneObject, StaticMeshComponen
 using PointLightObject = std::tuple<TransformableSceneObject, PointLightComponent>;
 using SpotLightObject = std::tuple<TransformableSceneObject, SpotLightComponent>;
 using DirectionalLightObject = std::tuple<SceneObject, DirectionalLightComponent>;
+using SkyLightObject = std::tuple<SceneObject, SkyLightComponent>;
 
 class Scene : NonMovable {
     static constexpr BufferUsage buffer_usage = BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit;
@@ -81,12 +83,15 @@ class Scene : NonMovable {
         core::Span<PointLightObject>        point_lights() const    { return _point_lights; }
         core::Span<SpotLightObject>         spot_lights() const     { return _spot_lights; }
         core::Span<DirectionalLightObject>  directionals() const    { return _directionals; }
+        core::Span<SkyLightObject>          sky_lights() const      { return _sky_lights; }
 
     protected:
         core::Vector<StaticMeshObject> _meshes;
         core::Vector<PointLightObject> _point_lights;
         core::Vector<SpotLightObject> _spot_lights;
+
         core::Vector<DirectionalLightObject> _directionals;
+        core::Vector<SkyLightObject> _sky_lights;
 
         TransformManager _transform_manager;
 };
