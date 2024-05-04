@@ -36,7 +36,6 @@ SOFTWARE.
 #include <yave/components/AtmosphereComponent.h>
 
 #include <yave/systems/AssetLoaderSystem.h>
-#include <yave/systems/ScriptSystem.h>
 
 #include <editor/systems/DebugAnimateSystem.h>
 
@@ -53,7 +52,6 @@ editor_action("Remove all entities", [] { current_world().remove_all_entities();
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<AssetLoaderSystem>(loader);
     add_system<DebugAnimateSystem>();
-    add_system<ScriptSystem>();
 }
 
 void EditorWorld::flush_reload() {

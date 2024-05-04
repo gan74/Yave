@@ -19,34 +19,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ECS_TAGS_H
-#define YAVE_ECS_TAGS_H
+#ifndef YAVE_ECS2_SYSTEM_H
+#define YAVE_ECS2_SYSTEM_H
 
 #include <yave/yave.h>
 
 #include <y/core/String.h>
 
 namespace yave {
-namespace ecs {
-namespace tags {
+namespace ecs2 {
 
-#define DECLARE_TAG(tag)                                \
-static const core::String tag = #tag;                   \
-static const core::String not_##tag = "!"#tag;
+class System : NonCopyable {
+    public:
+        System(core::String name) : _name(std::move(name)) {
+        }
 
-
-
-DECLARE_TAG(hidden)
-DECLARE_TAG(selected)
-DECLARE_TAG(debug)
+        virtual ~System() = default;
 
 
-#undef DECLARE_TAG
+
+        virtual void setup(SystemScheduler& sched) = 0;
+
+
+
+        const core::String& name() const {
+            return _name;
+        }
+
+    private:
+        friend class SystemManager;
+
+        core::String _name;
+        EntityWorld* _world;
+};
 
 }
 }
-}
 
 
-#endif // YAVE_ECS_TAGS_H
+#endif // YAVE_ECS2_SYSTEM_H
 

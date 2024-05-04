@@ -19,34 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ECS_TAGS_H
-#define YAVE_ECS_TAGS_H
+#ifndef YAVE_ECS2_ECS2_H
+#define YAVE_ECS2_ECS2_H
 
 #include <yave/yave.h>
 
-#include <y/core/String.h>
+#include <yave/ecs/ecs.h>
+
+#include <yave/ecs/SparseComponentSet.h>
 
 namespace yave {
-namespace ecs {
-namespace tags {
+namespace ecs2 {
 
-#define DECLARE_TAG(tag)                                \
-static const core::String tag = #tag;                   \
-static const core::String not_##tag = "!"#tag;
+using ecs::EntityId;
+using ecs::ComponentTypeIndex;
 
+using ecs::type_index;
 
-
-DECLARE_TAG(hidden)
-DECLARE_TAG(selected)
-DECLARE_TAG(debug)
-
-
-#undef DECLARE_TAG
+using ecs::SparseComponentSet;
+using ecs::SparseIdSet;
 
 }
 }
-}
 
 
-#endif // YAVE_ECS_TAGS_H
+#endif // YAVE_ECS2_ECS_H
 

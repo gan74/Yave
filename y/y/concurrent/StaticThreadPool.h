@@ -41,9 +41,10 @@ class DependencyGroup {
     public:
         DependencyGroup() = default;
 
+        static DependencyGroup non_empty();
+
         bool is_empty() const;
         bool is_ready() const;
-        bool is_expired() const;
         u32 dependency_count() const;
 
     private:
@@ -66,7 +67,7 @@ class StaticThreadPool : NonMovable {
 
             Func function;
             core::SmallVector<DependencyGroup, 4> wait_for;
-            DependencyGroup on_done;
+            DependencyGroup signal;
         };
 
         struct SharedData {
@@ -89,7 +90,8 @@ class StaticThreadPool : NonMovable {
 
         void cancel_pending_tasks();
 
-        void schedule(Func&& func, DependencyGroup* on_done = nullptr, core::Span<DependencyGroup> wait_for = {});
+        void wait_for(core::Span<DependencyGroup> wait);
+        void schedule(Func&& func, DependencyGroup* signal = nullptr, core::Span<DependencyGroup> wait_for = {});
 
         template<typename F, typename R = decltype(std::declval<F>()())>
         std::future<R> schedule_with_future(F&& func, DependencyGroup* on_done = nullptr, core::Span<DependencyGroup> wait_for = {}) {

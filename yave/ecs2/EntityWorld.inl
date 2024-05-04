@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2024 Grégoire Angerand
+Copyright (c) 2016-2022 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,34 +19,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ECS_TAGS_H
-#define YAVE_ECS_TAGS_H
+#ifndef YAVE_ECS2_ENTITYWORLD_INL
+#define YAVE_ECS2_ENTITYWORLD_INL
 
-#include <yave/yave.h>
+#ifndef YAVE_ECS2_ENTITYWORLD_H
+#error this file should not be included directly
 
-#include <y/core/String.h>
+// Just to help the IDE
+#include "EntityWorld.h"
+#endif
+
 
 namespace yave {
-namespace ecs {
-namespace tags {
+namespace ecs2 {
 
-#define DECLARE_TAG(tag)                                \
-static const core::String tag = #tag;                   \
-static const core::String not_##tag = "!"#tag;
+template<typename T>
+std::unique_ptr<ComponentContainerBase> create_container() {
+    return std::make_unique<ComponentContainer<traits::component_raw_type_t<T>>>();
+}
 
-
-
-DECLARE_TAG(hidden)
-DECLARE_TAG(selected)
-DECLARE_TAG(debug)
-
-
-#undef DECLARE_TAG
+template<typename... Ts>
+SystemScheduler::ArgumentResolver::operator const EntityGroup<Ts...>&() const {
+    return _world->create_group<Ts...>();
+}
 
 }
 }
-}
 
-
-#endif // YAVE_ECS_TAGS_H
+#endif // YAVE_ECS2_ENTITYWORLD_INL
 

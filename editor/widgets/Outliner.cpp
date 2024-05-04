@@ -83,18 +83,42 @@ static void add_debug_lights() {
     const math::Vec3 center; //new_entity_pos(side * 1.5f);
 
     const ecs::EntityId parent = world.create_named_entity("Debug lights");
-
+    world.add_tag(parent, ecs::tags::debug);
 
     math::FastRandom rng;
     for(usize i = 0; i != entity_count; ++i) {
         const ecs::EntityId entity = world.create_named_entity(fmt("Debug light #{}", i));
         world.set_parent(entity, parent);
+        world.add_tag(entity, ecs::tags::debug);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
         world.get_or_add_component<PointLightComponent>(entity)->range() = spacing;
         world.get_or_add_component<PointLightComponent>(entity)->intensity() = spacing * spacing;
         world.get_or_add_component<PointLightComponent>(entity)->color() = identifying_color(rng());
+    }
+}
+
+
+static void add_debug_cubes2() {
+    y_profile();
+
+    ecs2::EntityWorld& world = current_world()._world2;
+
+    const float spacing =  app_settings().debug.entity_spacing;
+    const usize entity_count = app_settings().debug.entity_count;
+    const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
+
+    const math::Vec3 center; //new_entity_pos(side * 1.5f);
+
+    for(usize i = 0; i != entity_count; ++i) {
+        const ecs::EntityId entity = world.create_entity();
+        world.add_tag(entity, ecs::tags::debug);
+
+        const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
+        world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
+        world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
+        world.get_or_add_component<DebugAnimateComponent>(entity);
     }
 }
 
@@ -110,16 +134,20 @@ static void add_debug_cubes() {
     const math::Vec3 center; //new_entity_pos(side * 1.5f);
 
     const ecs::EntityId parent = world.create_named_entity("Debug cubes");
+    world.add_tag(parent, ecs::tags::debug);
 
     for(usize i = 0; i != entity_count; ++i) {
         const ecs::EntityId entity = world.create_named_entity(fmt("Debug cubes #{}", i));
         world.set_parent(entity, parent);
+        world.add_tag(entity, ecs::tags::debug);
 
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
         world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
         world.get_or_add_component<DebugAnimateComponent>(entity);
     }
+
+    add_debug_cubes2();
 }
 
 

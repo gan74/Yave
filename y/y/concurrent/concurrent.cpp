@@ -43,7 +43,7 @@ void set_thread_name(const char* thread_name) {
     // Force to generate id
     thread_id();
 
-    usize len = std::min(std::strlen(thread_name), sizeof(detail::thread_name) - 1);
+    const usize len = std::min(std::strlen(thread_name), sizeof(detail::thread_name) - 1);
     std::copy_n(thread_name, len, detail::thread_name);
 
 #ifdef Y_OS_WIN

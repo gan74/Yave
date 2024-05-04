@@ -28,12 +28,15 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
 
 #include <y/core/Chrono.h>
 
 #include <editor/utils/ui.h>
 
 #include <y/utils/format.h>
+
+#include <yave/ecs2/System.h>
 
 
 namespace editor {
@@ -85,6 +88,116 @@ class CameraDebug : public Widget {
         }
 };
 
+
+
+
+static void busy_sleep(core::Duration dur) {
+    core::Chrono timer;
+    while(timer.elapsed() < dur) {
+        std::this_thread::yield();
+    }
+}
+
+template<usize I>
+struct TestSystem : ecs2::System {
+    TestSystem() : ecs2::System(fmt("Test {}", I)) {
+    }
+
+    void setup(ecs2::SystemScheduler& sched) {
+        for(usize k = 0; k != 4; ++k) {
+            concurrent::DependencyGroup group;
+            for(usize i = 0; i != I; ++i) {
+                auto next = sched.schedule(ecs2::SystemSchedule::Tick, fmt("Tick {}/{}", i, k), [] {
+                    busy_sleep(core::Duration::milliseconds(0.5));
+                }, core::Span<concurrent::DependencyGroup>(&group, i % 3 == 1 ? 1 : 0));
+                group = next;
+            }
+            sched.schedule(ecs2::SystemSchedule::Update, "Update", [] {
+                busy_sleep(core::Duration::milliseconds(0.5));
+            });
+            sched.schedule(ecs2::SystemSchedule::PostUpdate, "Post", [] {
+                busy_sleep(core::Duration::milliseconds(0.5));
+            });
+        }
+    }
+};
+
+class Ecs2Debug : public Widget {
+    editor_widget(Ecs2Debug, "View", "Debug")
+
+    public:
+        Ecs2Debug() : Widget("ECS2 debug") {
+        }
+
+    protected:
+        void on_gui() override {
+            /*{
+                y_profile_zone("ecs2 mutate");
+                ecs2::EntityWorld& world = current_world()._world2;
+                const auto& group = world.create_group<ecs2::Mutate<TransformableComponent>, StaticMeshComponent>();
+
+                auto query = group.query();
+                for(auto&& [tr, mesh] : query) {
+                }
+            }*/
+
+            {
+                y_profile_zone("ecs");
+                ecs::EntityWorld& world = current_world();
+                auto query = world.query<TransformableComponent, StaticMeshComponent>({ecs::tags::debug});
+
+                math::Vec3 sum;
+                {
+                    y_profile_zone("summing");
+                    for(const auto& [tr, mesh] : query.components()) {
+                        sum += tr.position();
+                    }
+                }
+
+                ImGui::Text("%u transformables in query", u32(query.size()));
+                ImGui::Text("Sum of positions = {%f, %f, %f}", sum.x(), sum.y(), sum.z());
+            }
+
+            ImGui::Separator();
+
+            {
+                y_profile_zone("ecs2");
+                ecs2::EntityWorld& world = current_world()._world2;
+                const auto& group = world.create_group<TransformableComponent, StaticMeshComponent>({ecs::tags::debug});
+
+                math::Vec3 sum;
+                {
+                    y_profile_zone("summing");
+                    for(auto&& [tr, mesh] : group.query()) {
+                        sum += tr.position();
+                    }
+                }
+
+                ImGui::Text("%u transformables in group", u32(group.ids().size()));
+                ImGui::Text("Sum of positions = {%f, %f, %f}", sum.x(), sum.y(), sum.z());
+            }
+
+            {
+
+
+
+                ecs2::EntityWorld& world = current_world()._world2;
+                if(!world.system_manager().find_system<TestSystem<7>>()) {
+                    // world.add_system<TestSystem<1>>();
+                    // world.add_system<TestSystem<2>>();
+                    // world.add_system<TestSystem<3>>();
+                    // world.add_system<TestSystem<4>>();
+                    // world.add_system<TestSystem<5>>();
+                    world.add_system<TestSystem<6>>();
+                    world.add_system<TestSystem<7>>();
+                }
+
+                static concurrent::StaticThreadPool pool;
+                world.system_manager().run_schedule(pool);
+            }
+
+        }
+};
 
 class MemoryDebug : public Widget {
     editor_widget(MemoryDebug, "View", "Debug")
@@ -244,6 +357,5 @@ class UiDebug : public Widget {
             ImGui::Text("%u cached thumbmails", u32(thumbmail_renderer().cached_thumbmails()));
         }
 };
-
 
 }

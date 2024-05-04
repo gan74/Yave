@@ -124,8 +124,6 @@ class ResourceFence;
 class Sampler;
 class Scene;
 class SceneView;
-class ScriptSystem;
-class ScriptWorldComponent;
 class SearchableFileSystemModel;
 class ShaderModuleBase;
 class ShaderProgram;
@@ -216,7 +214,6 @@ struct MetallicRoughnessMaterialData;
 struct Mip;
 struct Monitor;
 struct ObjectIndices;
-struct OneShotScript;
 struct PackedVertex;
 struct Plane;
 struct Pool;
@@ -224,13 +221,10 @@ struct Region;
 struct RendererSettings;
 struct ResourceCreateInfo;
 struct ResourceUsageInfo;
-struct RunOnce;
-struct RunOnceResult;
 struct SSAOPass;
 struct SSAOSettings;
 struct SceneRenderSubPass;
 struct SceneVisibilitySubPass;
-struct Script;
 struct ShadowMapPass;
 struct ShadowMapSettings;
 struct SkeletonData;
@@ -243,6 +237,7 @@ struct TAASettings;
 struct ToneMappingPass;
 struct ToneMappingSettings;
 struct TransformData;
+struct TransformableSceneObjectData;
 struct Viewport;
 struct VolumeSampler;
 }
@@ -273,6 +268,25 @@ struct IdComponentsReturnPolicy;
 struct QueryUtils;
 struct SetMatch;
 struct SparseElement;
+}
+
+
+namespace yave::ecs2 {
+class ArgumentResolver;
+class ComponentContainerBase;
+class ComponentMatrix;
+class EntityGroupBase;
+class EntityWorld;
+class Iterator;
+class Query;
+class System;
+class SystemManager;
+class SystemScheduler;
+struct ComponentIndex;
+struct ComponentRuntimeInfo;
+struct Schedule;
+struct TagSet;
+struct Task;
 }
 
 
