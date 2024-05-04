@@ -50,20 +50,20 @@ struct StaticMeshBatch {
 static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Vector<StaticMeshBatch>& batches) {
     y_profile();
 
-    for(const StaticMeshObject* obj : meshes) {
-        const auto& [tr, mesh] = *obj;
-        const u32 transform_index = tr.transform_index;
+    for(const StaticMeshObject* mesh : meshes) {
+        const u32 transform_index = mesh->transform_index;
 
-        if(!mesh.mesh() || transform_index == u32(-1)) {
+        const StaticMesh* static_mesh = mesh->component.mesh().get();
+        if(!static_mesh || transform_index == u32(-1)) {
             continue;
         }
 
-        const core::Span materials = mesh.materials();
+        const core::Span materials = mesh->component.materials();
         if(materials.size() == 1) {
             if(const Material* mat = materials[0].get()) {
                 batches.emplace_back(
                     mat->material_template(),
-                    mesh.mesh()->draw_command().vk_indirect_data(),
+                    static_mesh->draw_command().vk_indirect_data(),
                     math::Vec2ui(transform_index, mat->draw_data().index())
                 );
             }
@@ -72,7 +72,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
                 if(const Material* mat = materials[i].get()) {
                     batches.emplace_back(
                         mat->material_template(),
-                        mesh.mesh()->sub_meshes()[i].vk_indirect_data(),
+                        static_mesh->sub_meshes()[i].vk_indirect_data(),
                         math::Vec2ui(transform_index, mat->draw_data().index())
                     );
                 }
@@ -90,19 +90,21 @@ static void collect_batches_for_id(core::Span<const StaticMeshObject*> meshes, c
     y_profile();
 
     u32 index = 0;
-    for(const StaticMeshObject* obj : meshes) {
-        const auto& [tr, mesh] = *obj;
-        const u32 transform_index = tr.transform_index;
+    for(const StaticMeshObject* mesh : meshes) {
+        const u32 transform_index = mesh->transform_index;
 
-        if(!mesh.mesh() || transform_index == u32(-1)) {
+        const StaticMesh* static_mesh = mesh->component.mesh().get();
+        if(!static_mesh || transform_index == u32(-1)) {
             continue;
         }
 
         batches.emplace_back(
             nullptr,
-            mesh.mesh()->draw_command().vk_indirect_data(index++),
-            math::Vec2ui(transform_index, tr.id.index())
+            static_mesh->draw_command().vk_indirect_data(index),
+            math::Vec2ui(transform_index, index)
         );
+
+        ++index;
     }
 }
 

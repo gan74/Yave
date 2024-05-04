@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include "TransformManager.h"
 
-#include <yave/ecs/ecs.h>
-
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
@@ -42,25 +40,31 @@ enum class PassType {
     Id,
 };
 
+
+
+template<typename T>
 struct SceneObject {
-    ecs::EntityId id;
+    T component;
 };
 
-struct TransformableSceneObject : SceneObject {
+struct TransformableSceneObjectData {
     u32 transform_index = u32(-1);
     AABB global_aabb;
 };
 
-using StaticMeshObject = std::tuple<TransformableSceneObject, StaticMeshComponent>;
-using PointLightObject = std::tuple<TransformableSceneObject, PointLightComponent>;
-using SpotLightObject = std::tuple<TransformableSceneObject, SpotLightComponent>;
-using DirectionalLightObject = std::tuple<SceneObject, DirectionalLightComponent>;
-using SkyLightObject = std::tuple<SceneObject, SkyLightComponent>;
+template<typename T>
+struct TransformableSceneObject : TransformableSceneObjectData, SceneObject<T> {
+};
+
+
+
+using StaticMeshObject          = TransformableSceneObject<StaticMeshComponent>;
+using PointLightObject          = TransformableSceneObject<PointLightComponent>;
+using SpotLightObject           = TransformableSceneObject<SpotLightComponent>;
+using DirectionalLightObject    = SceneObject<DirectionalLightComponent>;
+using SkyLightObject            = SceneObject<SkyLightComponent>;
 
 class Scene : NonMovable {
-    static constexpr BufferUsage buffer_usage = BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit;
-    using TransformBuffer = TypedBuffer<shader::TransformableData, buffer_usage>;
-
     public:
         using RenderFunc = std::function<void(RenderPassRecorder& render_pass, const FrameGraphPass* pass)>;
 
@@ -70,7 +74,7 @@ class Scene : NonMovable {
         virtual ~Scene();
 
 
-        const math::Transform<>& transform(const TransformableSceneObject& obj) const;
+        const math::Transform<>& transform(const TransformableSceneObjectData& obj) const;
 
         core::Vector<const StaticMeshObject*> gather_visible_meshes(const Camera& cam) const;
 

@@ -43,7 +43,6 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 #include <bit>
-#include <tuple>
 
 
 namespace yave {
@@ -55,7 +54,7 @@ static constexpr usize max_spot_lights = 1024;
 
 static std::tuple<const IBLProbe*, float, bool> find_probe(const SceneView& scene_view) {
     for(const SkyLightObject& obj : scene_view.scene()->sky_lights()) {
-        const SkyLightComponent& sky = std::get<SkyLightComponent>(obj);
+        const SkyLightComponent& sky = obj.component;
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
             return {probe, sky.intensity(), sky.display_sky()};
@@ -105,10 +104,10 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         u32 count = 0;
         auto mapping = self->resources().map_buffer(directional_buffer);
 
-        for(const auto& [obj, light] : scene->directionals()) {
+        for(const auto& [light] : scene->directionals()) {
             auto shadow_indices = math::Vec4ui(u32(-1));
             if(light.cast_shadow()) {
-                if(const auto it = shadow_pass.shadow_indices->find(obj.id.as_u64()); it != shadow_pass.shadow_indices->end()) {
+                if(const auto it = shadow_pass.shadow_indices->find(&light); it != shadow_pass.shadow_indices->end()) {
                     shadow_indices = it->second;
                 }
             }
@@ -160,9 +159,11 @@ static u32 fill_point_light_buffer(shader::PointLight* points, const SceneView& 
 
     u32 count = 0;
 
-    for(const auto& [obj, light] : scene->point_lights()) {
+    for(const auto& obj : scene->point_lights()) {
 
         const math::Transform<> transform = scene->transform(obj);
+        const auto& light = obj.component;
+
         const float scale = transform.scale().max_component();
         const float scaled_range = light.range() * scale;
 
@@ -206,9 +207,11 @@ static u32 fill_spot_light_buffer(
 
     u32 count = 0;
 
-    for(const auto& [obj, light] : scene->spot_lights()) {
+    for(const auto& obj : scene->spot_lights()) {
 
         const math::Transform<> transform = scene->transform(obj);
+        const auto& light = obj.component;
+
         const math::Vec3 forward = transform.forward().normalized();
         const float scale = transform.scale().max_component();
         const float scaled_range = light.range() * scale;
@@ -226,7 +229,7 @@ static u32 fill_spot_light_buffer(
 
         auto shadow_indices = math::Vec4ui(u32(-1));
         if(light.cast_shadow() && render_shadows) {
-            if(const auto it = shadow_pass.shadow_indices->find(obj.id.as_u64()); it != shadow_pass.shadow_indices->end()) {
+            if(const auto it = shadow_pass.shadow_indices->find(&light); it != shadow_pass.shadow_indices->end()) {
                 shadow_indices = it->second;
             }
         }

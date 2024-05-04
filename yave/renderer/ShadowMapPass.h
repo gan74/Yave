@@ -43,7 +43,7 @@ struct ShadowMapPass {
     FrameGraphImageId shadow_map;
     FrameGraphTypedBufferId<shader::ShadowMapInfo> shadow_infos;
 
-    std::shared_ptr<core::FlatHashMap<u64, math::Vec4ui>> shadow_indices;
+    std::shared_ptr<core::FlatHashMap<const void*, math::Vec4ui>> shadow_indices;
 
     static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings = ShadowMapSettings());
 };

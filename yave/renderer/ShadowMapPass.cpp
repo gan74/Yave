@@ -173,8 +173,8 @@ static Camera directional_camera(const Camera& cam, const DirectionalLightCompon
 
 
 struct ShadowCastingLights {
-    core::Vector<std::tuple<ecs::EntityId, const DirectionalLightComponent*>> directionals;
-    core::Vector<std::tuple<ecs::EntityId, math::Transform<>, const SpotLightComponent*>> spots;
+    core::Vector<const DirectionalLightComponent*> directionals;
+    core::Vector<std::tuple<math::Transform<>, const SpotLightComponent*>> spots;
 };
 
 static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene_view) {
@@ -183,16 +183,16 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene_
     const Scene* scene = scene_view.scene();
 
     shadow_casters.directionals.set_min_capacity(scene->directionals().size());
-    for(const auto& [o, l] : scene->directionals()) {
-        if(!l.cast_shadow()) {
-            shadow_casters.directionals.push_back({o.id, &l});
+    for(const DirectionalLightObject& light : scene->directionals()) {
+        if(!light.component.cast_shadow()) {
+            shadow_casters.directionals.push_back(&light.component);
         }
     }
 
     shadow_casters.spots.set_min_capacity(scene->spot_lights().size());
-    for(const auto& [o, l] : scene->spot_lights()) {
-        if(l.cast_shadow()) {
-            shadow_casters.spots.push_back({o.id, scene->transform(o), &l});
+    for(const SpotLightObject& light : scene->spot_lights()) {
+        if(light.component.cast_shadow()) {
+            shadow_casters.spots.emplace_back(scene->transform(light), &light.component);
         }
     }
 
@@ -205,13 +205,12 @@ static float total_occupancy(const ShadowCastingLights& lights) {
     };
 
     float total = 0.0f;
-    for(const auto& [id, light] : lights.directionals) {
-        unused(id);
+    for(const auto& light : lights.directionals) {
         total += occupancy(light->shadow_lod()) * light->cascades();
     }
 
-    for(const auto& [id, transform, light] : lights.spots) {
-        unused(id, transform);
+    for(const auto& [transform, light] : lights.spots) {
+        unused(transform);
         total += occupancy(light->shadow_lod());
     }
     return total;
@@ -248,14 +247,14 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
     ShadowMapPass pass;
     pass.shadow_map = shadow_map;
-    pass.shadow_indices = std::make_shared<core::FlatHashMap<u64, math::Vec4ui>>();
+    pass.shadow_indices = std::make_shared<core::FlatHashMap<const void*, math::Vec4ui>>();
 
     core::Vector<SubPass> sub_passes;
     {
         SubAtlasAllocator allocator(first_level_size);
 
-        for(const auto& [id, light] : lights.directionals) {
-            auto& indices = (*pass.shadow_indices)[id.as_u64()];
+        for(const auto& light : lights.directionals) {
+            auto& indices = (*pass.shadow_indices)[light];
             indices = math::Vec4ui(u32(-1));
 
             const usize cascades = light->cascades();
@@ -279,8 +278,8 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
             }
         }
 
-        for(const auto& [id, tr, light] : lights.spots) {
-            auto& indices = (*pass.shadow_indices)[id.as_u64()];
+        for(const auto& [tr, light] : lights.spots) {
+            auto& indices = (*pass.shadow_indices)[light];
             indices = math::Vec4ui(u32(-1));
 
             const u32 level = light->shadow_lod() + lod_offset;

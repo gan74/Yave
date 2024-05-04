@@ -39,7 +39,7 @@ Scene::Scene() {
 Scene::~Scene() {
 }
 
-const math::Transform<>& Scene::transform(const TransformableSceneObject& obj) const {
+const math::Transform<>& Scene::transform(const TransformableSceneObjectData& obj) const {
     return _transform_manager.transform(obj.transform_index);
 }
 
@@ -48,9 +48,9 @@ core::Vector<const StaticMeshObject*> Scene::gather_visible_meshes(const Camera&
 
     core::Vector<const StaticMeshObject*> visible_meshes;
     {
-        for(const auto& obj : _meshes) {
-            if(frustum.intersection(std::get<TransformableSceneObject>(obj).global_aabb) != Intersection::Outside) {
-                visible_meshes << &obj;
+        for(const auto& mesh : _meshes) {
+            if(frustum.intersection(mesh.global_aabb) != Intersection::Outside) {
+                visible_meshes << &mesh;
             }
         }
     }

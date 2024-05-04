@@ -37,7 +37,6 @@ class EcsScene : public Scene {
         u32 sky_light = u32(-1);
     };
 
-
     public:
         EcsScene(const ecs::EntityWorld* w);
 
@@ -49,10 +48,10 @@ class EcsScene : public Scene {
         template<typename S>
         typename S::value_type& register_object(u32& index, S& storage);
 
-        template<typename S>
+        template<typename T, typename S>
         void process_transformable_components(u32 ObjectIndices::* index, S& storage);
 
-        template<typename S>
+        template<typename T, typename S>
         void process_components(u32 ObjectIndices::* index, S& storage);
 
         const ecs::EntityWorld* _world = nullptr;

@@ -52,37 +52,34 @@ typename S::value_type& EcsScene::register_object(u32& index, S& storage) {
     return *obj;
 }
 
-template<typename S>
+template<typename T, typename S>
 void EcsScene::process_transformable_components(u32 ObjectIndices::* index, S& storage) {
-    using component_t = std::tuple_element_t<1, typename S::value_type>;
+    y_profile();
 
-    auto query = _world->query<TransformableComponent, component_t>();
+    auto query = _world->query<TransformableComponent, T>();
     for(const auto& [id, tr, comp] : query.id_components()) {
         auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
-        std::get<component_t>(obj) = comp;
 
-        auto& tr_obj = std::get<TransformableSceneObject>(obj);
-        if(tr_obj.transform_index == u32(-1)) {
-            tr_obj.transform_index = _transform_manager.alloc_transform();
+        obj.component = comp;
+
+        if(obj.transform_index == u32(-1)) {
+            obj.transform_index = _transform_manager.alloc_transform();
         }
 
-        _transform_manager.set_transform(tr_obj.transform_index, tr.transform());
-        tr_obj.global_aabb = tr.to_global(comp.aabb());
-        tr_obj.id = id;
+        _transform_manager.set_transform(obj.transform_index, tr.transform());
+        obj.global_aabb = tr.to_global(comp.aabb());
     }
 }
 
 
-template<typename S>
+template<typename T, typename S>
 void EcsScene::process_components(u32 ObjectIndices::* index, S& storage) {
-    using component_t = std::tuple_element_t<1, typename S::value_type>;
+    y_profile();
 
-    auto query = _world->query<component_t>();
+    auto query = _world->query<T>();
     for(const auto& [id, comp] : query.id_components()) {
         auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
-        std::get<component_t>(obj) = comp;
-
-        std::get<SceneObject>(obj).id = id;
+        obj.component = comp;
     }
 }
 
@@ -91,11 +88,12 @@ void EcsScene::update_from_world() {
 
     y_debug_assert(_world);
 
-    process_transformable_components(&ObjectIndices::mesh, _meshes);
-    process_transformable_components(&ObjectIndices::point_light, _point_lights);
-    process_transformable_components(&ObjectIndices::spot_light, _spot_lights);
-    process_components(&ObjectIndices::directional_light, _directionals);
-    process_components(&ObjectIndices::sky_light, _sky_lights);
+    process_transformable_components<StaticMeshComponent>(&ObjectIndices::mesh, _meshes);
+    process_transformable_components<PointLightComponent>(&ObjectIndices::point_light, _point_lights);
+    process_transformable_components<SpotLightComponent>(&ObjectIndices::spot_light, _spot_lights);
+
+    process_components<DirectionalLightComponent>(&ObjectIndices::directional_light, _directionals);
+    process_components<SkyLightComponent>(&ObjectIndices::sky_light, _sky_lights);
 
 
     {

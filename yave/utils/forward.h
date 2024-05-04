@@ -243,7 +243,6 @@ struct TAASettings;
 struct ToneMappingPass;
 struct ToneMappingSettings;
 struct TransformData;
-struct TransformableSceneObject;
 struct Viewport;
 struct VolumeSampler;
 }
