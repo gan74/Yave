@@ -292,6 +292,8 @@ class EntityGroup final : public EntityGroupBase {
                     return a->size() < b->size();
                 });
 
+                query._ids.set_min_capacity(matches[0]->ids().size());
+
                 for(const EntityId id : matches[0]->ids()) {
                     bool match = true;
                     for(usize i = 1; i != matches.size(); ++i) {

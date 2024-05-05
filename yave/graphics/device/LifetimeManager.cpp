@@ -193,7 +193,7 @@ void LifetimeManager::wait_cmd_buffers() {
 void LifetimeManager::clear_resources(u64 up_to) {
     y_profile();
 
-    core::SmallVector<ManagedResource, 64> to_delete;
+    core::SmallVector<ManagedResource, 512> to_delete;
 
     {
         y_profile_zone("collection");

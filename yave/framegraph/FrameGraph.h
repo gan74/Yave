@@ -105,9 +105,12 @@ class FrameGraph : NonMovable {
     };
 
     struct InlineStorage {
-        InlineStorage(usize size) : storage(size) {}
+        InlineStorage(usize size) {
+            storage.set_min_size(size);
+            y_debug_assert(storage.size() == size);
+        }
 
-        core::FixedArray<u32> storage;
+        core::SmallVector<u32, 16> storage;
         usize used = 0;
     };
 

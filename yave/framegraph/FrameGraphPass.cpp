@@ -101,8 +101,8 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
 
 #ifdef Y_DEBUG
         if(const auto* debug = debug_utils()) {
-            debug->set_resource_name(_framebuffer.vk_framebuffer(), (_name + " Framebuffer").data());
-            debug->set_resource_name(_framebuffer.render_pass().vk_render_pass(), (_name + " RenderPass").data());
+            debug->set_resource_name(_framebuffer.vk_framebuffer(), fmt_c_str("{} Framebuffer", _name));
+            debug->set_resource_name(_framebuffer.render_pass().vk_render_pass(), fmt_c_str("{} RenderPass", _name));
         }
 #endif
     }
@@ -119,8 +119,7 @@ void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resour
 
 #ifdef Y_DEBUG
         if(const auto* debug = debug_utils()) {
-            const core::String name = (_name + " DS") + (_descriptor_sets.size() - 1);
-            debug->set_resource_name(_descriptor_sets.last().vk_descriptor_set(), name.data());
+            debug->set_resource_name(_descriptor_sets.last().vk_descriptor_set(), fmt_c_str("{} DS{}", _name, _descriptor_sets.size() - 1));
         }
 #endif
     }
