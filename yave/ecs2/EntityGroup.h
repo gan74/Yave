@@ -136,13 +136,31 @@ class EntityGroup final : public EntityGroupBase {
     }
 
 
+    struct ComponentReturnPolicy {
+        using value_type = ComponentTuple;
+        using reference = value_type;
 
+        static inline reference make(EntityId id, const SetTuple& sets) {
+            return value_type{EntityGroup::get_component<traits::component_type_t<Ts>>(sets, id)...};
+        }
+    };
+
+    struct IdComponentReturnPolicy {
+        using value_type = std::tuple<EntityId, traits::component_type_t<Ts>&...>;
+        using reference = value_type;
+
+        static inline reference make(EntityId id, const SetTuple& sets) {
+            return value_type{id, EntityGroup::get_component<traits::component_type_t<Ts>>(sets, id)...};
+        }
+    };
+
+    template<typename ReturnPolicy>
     class Iterator {
         public:
-            using value_type = ComponentTuple;
-            using size_type = usize;
+            using value_type = typename ReturnPolicy::value_type;
+            using reference = typename ReturnPolicy::reference;
 
-            using reference = value_type;
+            using size_type = usize;
 
             using iterator_category = std::forward_iterator_tag;
             using difference_type = std::ptrdiff_t;
@@ -158,8 +176,8 @@ class EntityGroup final : public EntityGroupBase {
                 return it;
             }
 
-            inline reference operator*() const {
-                return ComponentTuple{EntityGroup::get_component<traits::component_type_t<Ts>>(_sets, *_it)...};
+            inline auto operator*() const {
+                return ReturnPolicy::make(*_it, _sets);
             }
 
             inline std::strong_ordering operator<=>(const Iterator& other) const {
@@ -182,7 +200,7 @@ class EntityGroup final : public EntityGroupBase {
 
     class Query : NonCopyable {
         public:
-            using const_iterator = Iterator;
+            using const_iterator = Iterator<ComponentReturnPolicy>;
 
             Query() = default;
 
@@ -212,6 +230,12 @@ class EntityGroup final : public EntityGroupBase {
                 std::swap(_parent, other._parent);
             }
 
+            inline auto id_components() & {
+                return core::Range(
+                    Iterator<IdComponentReturnPolicy>(ids().begin(), _sets),
+                    Iterator<IdComponentReturnPolicy>(ids().end(), _sets)
+                );
+            }
 
             inline const_iterator begin() const {
                 return const_iterator(ids().begin(), _sets);
@@ -240,6 +264,8 @@ class EntityGroup final : public EntityGroupBase {
     };
 
     public:
+        static constexpr bool is_const = !mutate_count;
+
         EntityGroup(const ContainerTuple& containers, core::Span<std::string_view> tags) : EntityGroupBase(type_storage, tags) {
             fill_sets(containers, std::make_index_sequence<type_count>{});
         }
@@ -247,8 +273,7 @@ class EntityGroup final : public EntityGroupBase {
         Query query() const {
             y_profile();
 
-            Query query;
-            query._parent = this;
+            Query query(this);
             query._sets = _sets;
 
             if constexpr(changed_count) {

@@ -120,6 +120,10 @@ EntityId EntityPool::next_child(EntityId id) const {
     return _entities[id.index()].right_sibling;
 }
 
+bool EntityPool::has_children(EntityId id) const {
+    return first_child(id).is_valid();
+}
+
 EntityId EntityPool::parent(EntityId id) const {
     if(id.index() < _entities.size()) {
         return _entities[id.index()].parent;

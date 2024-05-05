@@ -30,8 +30,8 @@ SOFTWARE.
 namespace editor {
 
 static void remove_children(EditorWorld& world, ecs::EntityId id) {
-    core::SmallVector<ecs::EntityId, 64> children;
-    for(const ecs::EntityId child : world.children(id)) {
+    core::Vector<ecs::EntityId> children;
+    for(const ecs::EntityId child : world.entity_pool().children(id)) {
         children << child;
     }
 

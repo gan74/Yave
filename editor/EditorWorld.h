@@ -24,14 +24,14 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/ComponentRuntimeInfo.h>
 #include <yave/ecs2/EntityWorld.h>
 
 #include <editor/utils/ui.h>
 
 namespace editor {
 
-class EditorWorld : public ecs::EntityWorld {
+class EditorWorld : public ecs2::EntityWorld {
     public:
         EditorWorld(AssetLoader& loader);
 
@@ -64,9 +64,7 @@ class EditorWorld : public ecs::EntityWorld {
         void set_selection(core::Span<ecs::EntityId> selection);
         void clear_selection();
 
-        ecs2::EntityWorld _world2;
-
-        static core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> component_types();
+        static core::Span<std::pair<core::String, ecs2::ComponentRuntimeInfo>> component_types();
 
     private:
 };

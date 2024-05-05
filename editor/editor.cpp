@@ -73,6 +73,8 @@ std::unique_ptr<UiManager> ui;
 std::unique_ptr<EditorWorld> world;
 std::unique_ptr<EcsScene> scene;
 
+std::unique_ptr<concurrent::StaticThreadPool> thread_pool;
+
 core::String world_file;
 
 ImGuiPlatform* imgui_platform = nullptr;
@@ -98,6 +100,7 @@ void post_tick();
 void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::settings = settings;
     application::imgui_platform = platform;
+    application::thread_pool = std::make_unique<concurrent::StaticThreadPool>();
 
     const bool running_tests = platform->is_running_tests();
     const auto& store_dir = running_tests
@@ -139,12 +142,14 @@ void destroy_editor() {
     application::resources = nullptr;
     application::ui = nullptr;
     application::undo_stack = nullptr;
+    application::thread_pool = nullptr;
 }
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        application::world->tick();
-        application::world->update(float(application::update_timer.reset().to_secs()));
+        // application::world->tick();
+        // application::world->update(float(application::update_timer.reset().to_secs()));
+        application::world->system_manager().run_schedule(*application::thread_pool);
         application::scene->update_from_world();
         application::ui->on_gui();
         post_tick();
@@ -236,6 +241,10 @@ UndoStack& undo_stack() {
 
 ThumbmailRenderer& thumbmail_renderer() {
     return *application::thumbmail_renderer;
+}
+
+concurrent::StaticThreadPool& thread_pool() {
+    return *application::thread_pool;
 }
 
 const EditorResources& resources() {

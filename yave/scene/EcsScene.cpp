@@ -29,11 +29,11 @@ SOFTWARE.
 
 namespace yave {
 
-EcsScene::EcsScene(const ecs::EntityWorld* w) : _world(w) {
+EcsScene::EcsScene(const ecs2::EntityWorld* w) : _world(w) {
     update_from_world();
 }
 
-const ecs::EntityWorld* EcsScene::world() const {
+const ecs2::EntityWorld* EcsScene::world() const {
     return _world;
 }
 
@@ -56,7 +56,7 @@ template<typename T, typename S>
 void EcsScene::process_transformable_components(u32 ObjectIndices::* index, S& storage) {
     y_profile();
 
-    auto query = _world->query<TransformableComponent, T>();
+    auto query = _world->create_group<TransformableComponent, T>().query();
     for(const auto& [id, tr, comp] : query.id_components()) {
         auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
 
@@ -76,7 +76,7 @@ template<typename T, typename S>
 void EcsScene::process_components(u32 ObjectIndices::* index, S& storage) {
     y_profile();
 
-    auto query = _world->query<T>();
+    auto query = _world->create_group<T>().query();
     for(const auto& [id, comp] : query.id_components()) {
         auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
         obj.component = comp;

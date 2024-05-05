@@ -140,10 +140,10 @@ class Ecs2Debug : public Widget {
                 for(auto&& [tr, mesh] : query) {
                 }
             }*/
-
+#if 0
             {
                 y_profile_zone("ecs");
-                ecs::EntityWorld& world = current_world();
+                ecs2::EntityWorld& world = current_world();
                 auto query = world.query<TransformableComponent, StaticMeshComponent>({ecs::tags::debug});
 
                 math::Vec3 sum;
@@ -195,7 +195,7 @@ class Ecs2Debug : public Widget {
                 static concurrent::StaticThreadPool pool;
                 world.system_manager().run_schedule(pool);
             }
-
+#endif
         }
 };
 
@@ -230,6 +230,7 @@ class EcsDebug : public Widget {
         void on_gui() override {
             EditorWorld& world = current_world();
 
+#if 0
             const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
 
             if(ImGui::CollapsingHeader("Entities")) {
@@ -291,6 +292,7 @@ class EcsDebug : public Widget {
                     ImGui::EndTable();
                 }
             }
+#endif
         }
 };
 

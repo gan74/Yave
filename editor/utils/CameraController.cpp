@@ -54,9 +54,9 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
         if(current_world().has_selected_entities()) {
             core::Result<AABB> aabb = core::Err();
             for(const ecs::EntityId id : current_world().selected_entities()) {
-                if(const TransformableComponent* tr = current_world().component<TransformableComponent>(id)) {
+                /*if(const TransformableComponent* tr = current_world().component<TransformableComponent>(id)) {
                     // aabb = core::Ok(tr->global_aabb());
-                }
+                }*/
             }
 
             if(aabb) {

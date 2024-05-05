@@ -22,17 +22,16 @@ SOFTWARE.
 #ifndef EDITOR_SYSTEMS_DEBUGANIMATESYSTEM_H
 #define EDITOR_SYSTEMS_DEBUGANIMATESYSTEM_H
 
-#include <yave/ecs/System.h>
+#include <yave/ecs2/System.h>
 
 namespace editor {
 
-class DebugAnimateSystem : public ecs::System {
+class DebugAnimateSystem : public ecs2::System {
 
     public:
         DebugAnimateSystem();
 
-        void update(float dt) override;
-
+        void setup(ecs2::SystemScheduler& sched) override;
 };
 
 }

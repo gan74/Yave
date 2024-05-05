@@ -30,7 +30,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs2/EntityWorld.h>
 
 
 namespace yave {

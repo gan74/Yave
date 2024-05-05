@@ -26,7 +26,7 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/assets/AssetStore.h>
 #include <yave/assets/AssetLoader.h>
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs2/EntityWorld.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>

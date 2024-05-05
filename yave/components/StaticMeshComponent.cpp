@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <yave/assets/AssetLoader.h>
 
+#include <yave/ecs/ComponentInspector.h>
+
 namespace yave {
 
 StaticMeshComponent::StaticMeshComponent(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& material) :

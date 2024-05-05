@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/graphics/images/ImageData.h>
 #include <yave/assets/AssetLoader.h>
 
+#include <yave/ecs/ComponentInspector.h>
+
 namespace yave {
 
 AssetPtr<IBLProbe>& SkyLightComponent::probe() {

@@ -46,7 +46,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/AtmosphereComponent.h>
 #include <yave/ecs/EntityPrefab.h>
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs2/EntityWorld.h>
 #include <yave/scene/EcsScene.h>
 
 #include <yave/utils/color.h>
@@ -97,7 +97,7 @@ static Texture render_scene(const Scene& scene) {
     return out;
 }
 
-static void fill_world(ecs::EntityWorld& world) {
+static void fill_world(ecs2::EntityWorld& world) {
     const float intensity = 0.25f;
 
     {
@@ -147,7 +147,7 @@ static math::Transform<> center_to_camera(const AABB& box) {
 static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) {
     y_profile();
 
-    ecs::EntityWorld world;
+    ecs2::EntityWorld world;
     fill_world(world);
 
     {
@@ -162,7 +162,7 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
 static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
     y_profile();
 
-    ecs::EntityWorld world;
+    ecs2::EntityWorld world;
     fill_world(world);
 
     {

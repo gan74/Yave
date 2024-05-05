@@ -22,76 +22,74 @@ SOFTWARE.
 #ifndef YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
 #define YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs2/EntityWorld.h>
 
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
 
+#include <y/utils/format.h>
+
 namespace yave {
 
-class AssetLoaderSystem : public ecs::System {
+class AssetLoaderSystem : public ecs2::System {
     public:
         AssetLoaderSystem(AssetLoader& loader);
 
-        void setup() override;
-        void tick() override;
-
-        core::Span<ecs::EntityId> recently_loaded() const;
-
+        void setup(ecs2::SystemScheduler& sched) override;
 
         template<typename T>
         void register_component_type() {
             _infos << LoadableComponentTypeInfo {
-                &start_loading_components<T>,
-                &update_loading_status<T>,
-                ecs::type_index<T>()
+                fmt_to_owned("loading_tag<{}>", ct_type_name<T>()),
+                &load_components<T, false>,
+                &load_components<T, true>,
+                &update_loading_status<T>
             };
         }
 
     private:
         void run_tick(bool only_recent);
-        void post_load();
-
-        core::FlatHashMap<ecs::ComponentTypeIndex, core::Vector<ecs::EntityId>> _loading;
-        core::Vector<ecs::EntityId> _recently_loaded;
-
-        AssetLoader* _loader = nullptr;
 
     private:
         struct LoadableComponentTypeInfo {
-            void (*start_loading)(ecs::EntityWorld&, AssetLoadingContext&, bool, core::Vector<ecs::EntityId>&) = nullptr;
-            void (*update_status)(ecs::EntityWorld&, core::Vector<ecs::EntityId>&, core::Vector<ecs::EntityId>&) = nullptr;
+            core::String loading_tag;
+            void (*load_all)(ecs2::EntityWorld&, AssetLoadingContext&, std::string_view tag) = nullptr;
+            void (*load_recent)(ecs2::EntityWorld&, AssetLoadingContext&, std::string_view tag) = nullptr;
+            void (*update_status)(ecs2::EntityWorld&, std::string_view tag) = nullptr;
             ecs::ComponentTypeIndex type;
         };
 
-        template<typename T>
-        static core::Span<ecs::EntityId> ids(ecs::EntityWorld& world, bool recent) {
-            return recent
-                ? world.recently_mutated<T>().ids()
-                : world.component_set<T>().ids();
-        }
+        template<typename T, bool Recent>
+        static void load_components(ecs2::EntityWorld& world, AssetLoadingContext& loading_ctx, std::string_view tag) {
+            auto query = [&] {
+                if constexpr(Recent) {
+                    return world.create_group<ecs2::Mutate<T>>().query();
+                } else {
+                    log_msg("Fixme", Log::Warning);
+                    return world.create_group<ecs2::Mutate<T>>().query();
+                }
+            }();
 
-        template<typename T>
-        static void start_loading_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, bool recent, core::Vector<ecs::EntityId>& out_ids) {
-            for(auto&& [id, comp] : world.query<ecs::Mutate<T>>(ids<T>(world, recent))) {
+            for(auto&& [id, comp] : query.id_components()) {
                 comp.load_assets(loading_ctx);
-                out_ids << id;
+                world.add_tag(id, tag);
             }
         }
 
         template<typename T>
-        static void update_loading_status(ecs::EntityWorld& world, core::Vector<ecs::EntityId>& ids, core::Vector<ecs::EntityId>& done) {
-            for(usize i = 0; i != ids.size(); ++i) {
-                T* component = world.component_mut<T>(ids[i]);
-                if(!component || component->update_asset_loading_status()) {
-                    done.push_back(ids[i]);
-                    ids.erase_unordered(ids.begin() + i);
-                    --i;
+        static void update_loading_status(ecs2::EntityWorld& world, std::string_view tag) {
+            auto query = world.create_group<ecs2::Mutate<T>>(tag).query();
+            for(auto&& [id, comp] : query.id_components()) {
+                y_debug_assert(world.has_tag(id, tag));
+                if(comp.update_asset_loading_status()) {
+                    world.remove_tag(id, tag);
                 }
             }
         }
 
         core::Vector<LoadableComponentTypeInfo> _infos;
+        AssetLoader* _loader = nullptr;
+
 };
 
 }

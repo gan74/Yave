@@ -41,6 +41,10 @@ class System : NonCopyable {
         virtual void setup(SystemScheduler& sched) = 0;
 
 
+        EntityWorld& world() {
+            y_debug_assert(_world);
+            return *_world;
+        }
 
         const core::String& name() const {
             return _name;

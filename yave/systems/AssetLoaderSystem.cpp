@@ -26,15 +26,14 @@ SOFTWARE.
 
 namespace yave {
 
-AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs::System("AssetLoaderSystem"), _loader(&loader) {
+AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs2::System("AssetLoaderSystem"), _loader(&loader) {
 }
 
-void AssetLoaderSystem::setup() {
-    run_tick(false);
-}
-
-void AssetLoaderSystem::tick() {
+void AssetLoaderSystem::setup(ecs2::SystemScheduler& sched) {
     run_tick(true);
+    sched.schedule(ecs2::SystemSchedule::Tick, "Tick", [this] {
+        run_tick(false);
+    });
 }
 
 void AssetLoaderSystem::run_tick(bool only_recent) {
@@ -43,25 +42,14 @@ void AssetLoaderSystem::run_tick(bool only_recent) {
     AssetLoadingContext loading_ctx(_loader);
 
     for(const LoadableComponentTypeInfo& info : _infos) {
-        info.start_loading(world(), loading_ctx, only_recent, _loading[info.type]);
+        (only_recent ? info.load_recent : info.load_all)(world(), loading_ctx, info.loading_tag);
     }
 
-    post_load();
-}
-
-void AssetLoaderSystem::post_load() {
-    y_profile();
-
-    _recently_loaded.make_empty();
     for(const LoadableComponentTypeInfo& info : _infos) {
-        info.update_status(world(), _loading[info.type], _recently_loaded);
+        info.update_status(world(), info.loading_tag);
     }
-}
 
-core::Span<ecs::EntityId> AssetLoaderSystem::recently_loaded() const {
-    return _recently_loaded;
 }
-
 
 }
 

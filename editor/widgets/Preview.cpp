@@ -140,7 +140,7 @@ void Preview::reset_world() {
         _cam_distance = radius * 1.5f;
     }
 
-    _world->tick();
+    // _world->tick();
 }
 
 void Preview::draw_mesh_menu() {

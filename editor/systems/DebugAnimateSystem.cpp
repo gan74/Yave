@@ -26,19 +26,20 @@ SOFTWARE.
 
 #include <yave/components/TransformableComponent.h>
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs2/EntityWorld.h>
 
 namespace editor {
 
-DebugAnimateSystem::DebugAnimateSystem() : ecs::System("DebugAnimateSystem") {
+DebugAnimateSystem::DebugAnimateSystem() : ecs2::System("DebugAnimateSystem") {
 }
 
-void DebugAnimateSystem::update(float dt) {
-    auto query = world().query<ecs::Mutate<TransformableComponent>, DebugAnimateComponent>();
-
-    for(auto&& [tr, dg] : query.components()) {
-        tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt));
-    }
+void DebugAnimateSystem::setup(ecs2::SystemScheduler& sched) {
+    sched.schedule(ecs2::SystemSchedule::Update, "Update", [](core::Duration delta_time, const ecs2::EntityGroup<ecs2::Mutate<TransformableComponent>, DebugAnimateComponent>& group) {
+        const float dt = float(delta_time.to_secs());
+        for(auto&& [tr, dg] : group.query()) {
+            tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt));
+        }
+    });
 }
 
 }

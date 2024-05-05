@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "EditorWorld.h"
 
+#include <yave/ecs/tags.h>
+#include <yave/ecs/ComponentRuntimeInfo.h>
+
 #include <editor/components/EditorComponent.h>
 
 #include <yave/assets/AssetLoader.h>
@@ -55,8 +58,7 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
 }
 
 void EditorWorld::flush_reload() {
-    AssetLoaderSystem* system = find_system<AssetLoaderSystem>();
-    system->reset();
+    y_fatal("FIXME");
 }
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {
@@ -86,27 +88,27 @@ UiIcon EditorWorld::entity_icon(ecs::EntityId id) const {
         return { ICON_FA_PUZZLE_PIECE, base_color };
     }
 
-    if(has<StaticMeshComponent>(id)) {
+    if(has_component<StaticMeshComponent>(id)) {
         return { ICON_FA_CUBE, mesh_color };
     }
 
-    if(has<PointLightComponent>(id)) {
+    if(has_component<PointLightComponent>(id)) {
         return { ICON_FA_LIGHTBULB, light_color };
     }
 
-    if(has<SpotLightComponent>(id)) {
+    if(has_component<SpotLightComponent>(id)) {
         return { ICON_FA_VIDEO, light_color };
     }
 
-    if(has<DirectionalLightComponent>(id)) {
+    if(has_component<DirectionalLightComponent>(id)) {
         return { ICON_FA_SUN, light_color };
     }
 
-    if(has<SkyLightComponent>(id)) {
+    if(has_component<SkyLightComponent>(id)) {
         return { ICON_FA_CLOUD_SUN, base_color };
     }
 
-    if(has<AtmosphereComponent>(id)) {
+    if(has_component<AtmosphereComponent>(id)) {
         return { ICON_FA_CLOUD, base_color };
     }
 
@@ -127,6 +129,9 @@ ecs::EntityId EditorWorld::add_prefab(std::string_view name) {
 ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
     y_profile();
 
+#if 1
+    y_fatal("FIXME");
+#else
     if(const auto prefab = asset_loader().load_res<ecs::EntityPrefab>(asset)) {
         const ecs::EntityId id = create_entity(*prefab.unwrap());
 
@@ -138,6 +143,7 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
         }
         return id;
     }
+#endif
 
     return ecs::EntityId();
 }
@@ -199,14 +205,14 @@ void EditorWorld::clear_selection() {
     clear_tag(ecs::tags::selected);
 }
 
-core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::component_types() {
-    static core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> types;
+core::Span<std::pair<core::String, ecs2::ComponentRuntimeInfo>> EditorWorld::component_types() {
+    static core::Vector<std::pair<core::String, ecs2::ComponentRuntimeInfo>> types;
     static bool init = false;
 
     if(!init) {
-        for(const auto* poly_base = ecs::ComponentContainerBase::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
+        for(const auto* poly_base = ecs2::ComponentContainerBase::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
             if(const auto container = poly_base->create()) {
-                const ecs::ComponentRuntimeInfo info = container->runtime_info();
+                const ecs2::ComponentRuntimeInfo info = container->runtime_info();
                 types.emplace_back(info.clean_component_name(), info);
             }
         }

@@ -39,6 +39,14 @@ using ecs::type_index;
 using ecs::SparseComponentSet;
 using ecs::SparseIdSet;
 
+using ecs::ComponentInspector;
+
+template<typename T>
+concept Inspectable = requires(T comp) {
+    comp.inspect(static_cast<ecs::ComponentInspector*>(nullptr));
+};
+
+
 }
 }
 

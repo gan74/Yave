@@ -31,6 +31,8 @@ SOFTWARE.
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
 
+#include <y/utils/format.h>
+
 #include <external/imgui/imgui.h>
 #include <external/imgui/imgui_internal.h>
 
@@ -340,7 +342,7 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
     if(!world.exists(id)) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     } else if(with_component != ecs::ComponentTypeIndex::invalid_index) {
-        has_component = world.has(id, with_component);
+        has_component = world.has_component(id, with_component);
     }
 
     if(!has_component) {

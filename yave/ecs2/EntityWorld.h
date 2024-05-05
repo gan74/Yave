@@ -22,12 +22,15 @@ SOFTWARE.
 #ifndef YAVE_ECS2_ENTITYWORLD_H
 #define YAVE_ECS2_ENTITYWORLD_H
 
+#include <yave/ecs/tags.h>
+
 #include "SystemManager.h"
 #include "ComponentContainer.h"
 #include "EntityGroup.h"
 #include "traits.h"
 
 #include <yave/ecs/EntityPool.h>
+#include <yave/ecs/EntityPrefab.h>
 
 #include <y/utils/log.h>
 
@@ -35,6 +38,7 @@ namespace yave {
 namespace ecs2 {
 
 using EntityPool = ecs::EntityPool;
+using EntityPrefab = ecs::EntityPrefab;
 
 class EntityWorld : NonMovable {
 
@@ -42,20 +46,89 @@ class EntityWorld : NonMovable {
         EntityWorld();
         ~EntityWorld();
 
+
         const SystemManager& system_manager() const;
         SystemManager& system_manager();
+
+
+        std::string_view component_type_name(ComponentTypeIndex type_id) const;
+
 
         usize entity_count() const;
         bool exists(EntityId id) const;
 
         EntityId create_entity();
+        EntityId create_entity(const EntityPrefab&) { y_fatal("FIXME"); }
 
+
+        void remove_entity(EntityId id);
+        void remove_all_components(EntityId id);
+        void remove_all_tags(EntityId id);
+
+        void remove_all_entities();
+
+        const EntityPool& entity_pool() const;
+
+
+
+        // ---------------------------------------- Tags ----------------------------------------
 
         void add_tag(EntityId id, std::string_view tag);
         void remove_tag(EntityId id, std::string_view tag);
+        void clear_tag(std::string_view tag);
         bool has_tag(EntityId id, std::string_view tag) const;
 
+        core::Span<EntityId> with_tag(std::string_view tag) const;
+
         static bool is_tag_implicit(std::string_view tag);
+
+
+
+
+        // ---------------------------------------- Parent ----------------------------------------
+
+        EntityId parent(EntityId id) const;
+        void set_parent(EntityId id, EntityId parent_id);
+
+        bool has_parent(EntityId id) const;
+        bool has_children(EntityId id) const;
+
+        bool is_parent(EntityId id, EntityId parent) const;
+
+        auto parents(EntityId id) const {
+            return _entities.parents(id);
+        }
+
+        auto children(EntityId id) const {
+            return _entities.children(id);
+        }
+
+
+
+        // ---------------------------------------- Components ----------------------------------------
+
+        bool has_component(EntityId id, ComponentTypeIndex type) const;
+
+        template<typename T>
+        T* component_mut(EntityId) {
+            log_msg("FIXME", Log::Warning);
+            return nullptr;
+        }
+
+        template<typename T>
+        const T* component(EntityId id) const {
+            return find_container<T>()->try_get(id);
+        }
+
+        template<typename T>
+        bool has_component(EntityId id) const {
+            return has_component(id, type_index<T>());
+        }
+
+        template<typename T>
+        const SparseComponentSet<T>& component_set() const {
+            return find_container<T>()->component_set();
+        }
 
 
 
@@ -73,12 +146,23 @@ class EntityWorld : NonMovable {
 
 
 
+        // ---------------------------------------- Systems ----------------------------------------
+
         template<typename S, typename... Args>
         S* add_system(Args&&... args) {
             return _system_manager.add_system<S>(y_fwd(args)...);
         }
 
+        template<typename S>
+        S* find_system() {
+            return _system_manager.find_system<S>();
+        }
 
+
+
+
+
+        // ---------------------------------------- Groups ----------------------------------------
 
         template<typename... Ts>
         const EntityGroup<Ts...>& create_group(core::Span<std::string_view> tags = {}) {
@@ -101,6 +185,27 @@ class EntityWorld : NonMovable {
             }
             return *create_new_group<Ts...>(tags);
         }
+
+
+        template<typename... Ts>
+        const EntityGroup<Ts...>& create_group(core::Span<std::string_view> tags = {}) const {
+            static_assert(EntityGroup<Ts...>::is_const);
+            return const_cast<EntityWorld*>(this)->create_group<Ts...>(tags);
+        }
+
+
+
+
+
+
+
+        // ---------------------------------------- Misc ----------------------------------------
+
+        void inspect_components(EntityId id, ComponentInspector* inspector);
+
+        serde3::Result save_state(serde3::WritableArchive& arc) const;
+        serde3::Result load_state(serde3::ReadableArchive& arc);
+
 
 
     private:
@@ -153,6 +258,7 @@ class EntityWorld : NonMovable {
 }
 
 #include "EntityWorld.inl"
+#include <yave/ecs/EntityWorld.inl>
 
 #endif // YAVE_ECS2_ENTITYWORLD_H
 

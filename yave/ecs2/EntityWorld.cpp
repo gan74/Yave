@@ -73,6 +73,10 @@ SystemManager& EntityWorld::system_manager() {
     return _system_manager;
 }
 
+std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
+    return find_container(type_id)->runtime_info().clean_component_name();
+}
+
 usize EntityWorld::entity_count() const {
     return _entities.size();
 }
@@ -87,6 +91,42 @@ EntityId EntityWorld::create_entity() {
     return id;
 }
 
+void EntityWorld::remove_entity(EntityId id) {
+    remove_all_components(id);
+    remove_all_tags(id);
+
+    _matrix.remove_entity(id);
+    _entities.remove(id);
+}
+
+void EntityWorld::remove_all_components(EntityId id) {
+    y_profile();
+
+    for(auto& container : _containers) {
+        if(container) {
+            container->remove(id);
+        }
+    }
+}
+
+void EntityWorld::remove_all_tags(EntityId id) {
+    y_profile();
+
+    for(const core::String& tag : _matrix.tags()) {
+        _matrix.remove_tag(id, tag);
+    }
+}
+
+void EntityWorld::remove_all_entities() {
+    auto cached_entities = core::Vector<EntityId>::from_range(_entities.ids());
+    for(const EntityId id : cached_entities) {
+        remove_entity(id);
+    }
+}
+
+const EntityPool& EntityWorld::entity_pool() const {
+    return _entities;
+}
 
 void EntityWorld::add_tag(EntityId id, std::string_view tag) {
     y_debug_assert(exists(id));
@@ -100,14 +140,51 @@ void EntityWorld::remove_tag(EntityId id, std::string_view tag) {
     _matrix.remove_tag(id, tag);
 }
 
+void EntityWorld::clear_tag(std::string_view tag) {
+    y_debug_assert(!is_tag_implicit(tag));
+    _matrix.clear_tag(tag);
+}
+
 bool EntityWorld::has_tag(EntityId id, std::string_view tag) const {
     y_debug_assert(exists(id));
     y_debug_assert(!is_tag_implicit(tag));
     return _matrix.has_tag(id, tag);
 }
 
+core::Span<EntityId> EntityWorld::with_tag(std::string_view tag) const {
+    y_debug_assert(!is_tag_implicit(tag));
+    return _matrix.with_tag(tag);
+}
+
 bool EntityWorld::is_tag_implicit(std::string_view tag) {
     return !tag.empty() && (tag[0] == '@' || tag[0] == '!');
+}
+
+EntityId EntityWorld::parent(EntityId id) const {
+    return _entities.parent(id);
+}
+
+void EntityWorld::set_parent(EntityId id, EntityId parent_id) {
+    y_profile();
+
+    _entities.set_parent(id, parent_id);
+}
+
+bool EntityWorld::has_parent(EntityId id) const {
+    return parent(id).is_valid();
+}
+
+bool EntityWorld::has_children(EntityId id) const {
+    return _entities.first_child(id).is_valid();
+}
+
+bool EntityWorld::is_parent(EntityId id, EntityId parent) const {
+    return _entities.is_parent(id, parent);
+}
+
+bool EntityWorld::has_component(EntityId id, ComponentTypeIndex type) const {
+    y_debug_assert(exists(id));
+    return _matrix.has_component(id, type);
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
@@ -123,6 +200,23 @@ ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) 
 void EntityWorld::check_exists(EntityId id) const {
     y_always_assert(exists(id), "Entity doesn't exists");
 }
+
+void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector) {
+    for(auto& container : _containers) {
+        if(container) {
+            container->inspect_component(id, inspector);
+        }
+    }
+}
+
+serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
+    return serde3::Result(serde3::Error(serde3::ErrorType::UnknownError, "Unimplemented"));
+}
+
+serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
+    return serde3::Result(serde3::Error(serde3::ErrorType::UnknownError, "Unimplemented"));
+}
+
 
 }
 }

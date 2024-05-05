@@ -73,6 +73,10 @@ class SetterInspectorBase : public ecs::ComponentInspector {
             return _is_type = (info.type_id == _type);
         }
 
+        bool inspect_component_type(ecs2::ComponentRuntimeInfo info, bool) override {
+            return _is_type = (info.type_id == _type);
+        }
+
         void inspect(const core::String&, math::Transform<>&)                           override {}
         void inspect(const core::String&, math::Vec3&, Vec3Role)                        override {}
         void inspect(const core::String&, float&, FloatRole)                            override {}
@@ -209,6 +213,14 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                 ImGui::Indent();
             }
             return _in_table;
+        }
+
+        bool inspect_component_type(ecs2::ComponentRuntimeInfo info, bool has_inspect) override {
+            ecs::ComponentRuntimeInfo info2;
+            info2.type_id = info.type_id;
+            info2.type_name = info.type_name;
+            return inspect_component_type(info2, has_inspect);
+
         }
 
         bool inspect_component_type(ecs::ComponentRuntimeInfo info, bool has_inspect) override {
@@ -593,10 +605,14 @@ void Inspector::on_gui() {
 
     if(ImGui::BeginPopup("##addcomponentmenu")) {
         for(const auto& [name, info] : EditorWorld::component_types()) {
-            const bool enabled = !name.is_empty() && !world.has(id, info.type_id) && info.add_or_replace_component;
+#if 1
+            y_fatal("FIXME");
+#else
+            const bool enabled = !name.is_empty() && !world.has_component(id, info.type_id) && info.add_or_replace_component;
             if(ImGui::MenuItem(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", name), nullptr, nullptr, enabled) && enabled) {
                 info.add_or_replace_component(world, id);
             }
+#endif
         }
         ImGui::EndPopup();
     }

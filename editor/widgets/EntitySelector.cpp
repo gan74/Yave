@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter) :
@@ -41,6 +43,10 @@ EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter) :
 void EntitySelector::on_gui() {
     const EditorWorld& world = current_world();
 
+
+#if 1
+    y_fatal("FIXME");
+#else
     const bool has_filter = (_filter != ecs::ComponentTypeIndex::invalid_index);
 
     if(has_filter) {
@@ -68,6 +74,8 @@ void EntitySelector::on_gui() {
         }
     }
     ImGui::EndChild();
+#endif
+
 }
 
 }

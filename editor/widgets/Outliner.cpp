@@ -100,28 +100,6 @@ static void add_debug_lights() {
 }
 
 
-static void add_debug_cubes2() {
-    y_profile();
-
-    ecs2::EntityWorld& world = current_world()._world2;
-
-    const float spacing =  app_settings().debug.entity_spacing;
-    const usize entity_count = app_settings().debug.entity_count;
-    const usize side = usize(std::max(1.0, std::cbrt(entity_count)));
-
-    const math::Vec3 center; //new_entity_pos(side * 1.5f);
-
-    for(usize i = 0; i != entity_count; ++i) {
-        const ecs::EntityId entity = world.create_entity();
-        world.add_tag(entity, ecs::tags::debug);
-
-        const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
-        world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
-        world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
-        world.get_or_add_component<DebugAnimateComponent>(entity);
-    }
-}
-
 static void add_debug_cubes() {
     y_profile();
 
@@ -146,8 +124,6 @@ static void add_debug_cubes() {
         world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
         world.get_or_add_component<DebugAnimateComponent>(entity);
     }
-
-    add_debug_cubes2();
 }
 
 

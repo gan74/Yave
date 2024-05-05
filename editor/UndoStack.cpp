@@ -26,6 +26,7 @@ SOFTWARE.
 #include "Widget.h"
 
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <editor/utils/ui.h>
 

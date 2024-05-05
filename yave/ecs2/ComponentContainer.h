@@ -25,6 +25,8 @@ SOFTWARE.
 #include "ComponentRuntimeInfo.h"
 #include "ComponentMatrix.h"
 
+#include <yave/ecs/ComponentInspector.h>
+
 #include <y/serde3/poly.h>
 
 namespace yave {
@@ -35,6 +37,14 @@ class ComponentContainerBase : NonMovable {
         virtual ~ComponentContainerBase();
 
         ComponentTypeIndex type_id() const;
+
+
+        virtual ComponentRuntimeInfo runtime_info() const = 0;
+
+        virtual void remove(EntityId id) = 0;
+
+        virtual void inspect_component(EntityId id, ComponentInspector* inspector) = 0;
+
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
 
@@ -63,6 +73,15 @@ class ComponentContainer final : public ComponentContainerBase {
         ComponentContainer() : ComponentContainerBase(type_index<T>()) {
         }
 
+        const SparseComponentSet<T>& component_set() const {
+            return _components;
+        }
+
+
+        const T* try_get(EntityId id) const {
+            return _components.contains(id) ? &_components[id] : nullptr;
+        }
+
         T* get_or_add(EntityId id) {
             if(_components.contains(id)) {
                 return &_components[id];
@@ -77,6 +96,38 @@ class ComponentContainer final : public ComponentContainerBase {
             }
             return add(id, y_fwd(args)...);
         }
+
+
+
+        ComponentRuntimeInfo runtime_info() const override {
+            return ComponentRuntimeInfo::create<T>();
+        }
+
+        void remove(EntityId id) override {
+            if(_components.contains(id)) {
+                _matrix->remove_component<T>(id);
+                _components.erase(id);
+                _mutated.erase(id);
+            }
+        }
+
+        void inspect_component(EntityId id, ComponentInspector* inspector) override {
+            if(!_components.contains(id)) {
+                return;
+            }
+
+            if constexpr(Inspectable<T>) {
+                if(inspector->inspect_component_type(runtime_info(), true)) {
+                    _components.try_get(id)->inspect(inspector);
+                    _mutated.insert(id);
+                }
+            } else {
+                if(inspector->inspect_component_type(runtime_info(), false)) {
+                    _mutated.insert(id);
+                }
+            }
+        }
+
 
         y_serde3_poly(ComponentContainer)
         y_reflect(ComponentContainer, _components)

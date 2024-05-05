@@ -69,6 +69,8 @@ class EntityPool : NonCopyable {
         EntityId first_child(EntityId id) const;
         EntityId next_child(EntityId id) const;
 
+        bool has_children(EntityId id) const;
+
         EntityId parent(EntityId id) const;
         void set_parent(EntityId id, EntityId parent_id);
 

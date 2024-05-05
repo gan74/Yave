@@ -128,11 +128,28 @@ void ComponentMatrix::remove_tag(EntityId id, std::string_view tag) {
     }
 }
 
+void ComponentMatrix::clear_tag(std::string_view tag) {
+    TagSet& set = _tags[tag];
+    for(EntityGroupBase* group : set.groups) {
+        for(EntityId id : set.ids.ids()) {
+            group->remove_entity_component(id);
+        }
+    }
+    set.ids.clear();
+}
+
 bool ComponentMatrix::has_tag(EntityId id, std::string_view tag) const {
     if(const auto it = _tags.find(tag); it != _tags.end()) {
         return it->second.ids.contains(id);
     }
     return false;
+}
+
+core::Span<EntityId> ComponentMatrix::with_tag(std::string_view tag) const {
+    if(const auto it = _tags.find(tag); it != _tags.end()) {
+        return it->second.ids.ids();
+    }
+    return {};
 }
 
 ComponentMatrix::ComponentIndex ComponentMatrix::component_index(EntityId id, ComponentTypeIndex type) const {

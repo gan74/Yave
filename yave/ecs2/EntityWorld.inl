@@ -40,7 +40,7 @@ std::unique_ptr<ComponentContainerBase> create_container() {
 
 template<typename... Ts>
 SystemScheduler::ArgumentResolver::operator const EntityGroup<Ts...>&() const {
-    return _world->create_group<Ts...>();
+    return _parent->_world->create_group<Ts...>();
 }
 
 }

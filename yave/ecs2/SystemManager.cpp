@@ -91,6 +91,10 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
 
     y_profile_zone("waiting for completion");
     thread_pool.wait_for(DepGroups(*next));
+
+    for(const auto& scheduler : _schedulers) {
+        scheduler->_timer.reset();
+    }
 }
 
 }

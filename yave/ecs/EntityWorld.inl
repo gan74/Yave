@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_ECS_ENTITYWORLD_INL
 
 #ifndef YAVE_ECS_ENTITYWORLD_H
-#error this file should not be included directly
+// #error this file should not be included directly
 
 // Just to help the IDE
 #include "EntityWorld.h"

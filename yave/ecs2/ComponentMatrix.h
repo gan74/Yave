@@ -54,7 +54,10 @@ class ComponentMatrix {
 
         void add_tag(EntityId id, std::string_view tag);
         void remove_tag(EntityId id, std::string_view tag);
+        void clear_tag(std::string_view tag);
         bool has_tag(EntityId id, std::string_view tag) const;
+
+        core::Span<EntityId> with_tag(std::string_view tag) const;
 
 
         template<typename T>
@@ -70,6 +73,11 @@ class ComponentMatrix {
         template<typename T>
         void remove_component(EntityId id) {
             remove_component(id, type_index<T>());
+        }
+
+
+        auto tags() const {
+            return _tags.keys();
         }
 
 

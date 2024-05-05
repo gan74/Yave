@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_OUTLINER_H
 #define EDITOR_WIDGETS_OUTLINER_H
 
-#include <yave/ecs/EntityWorld.h>
+#include <yave/ecs2/EntityWorld.h>
 
 #include <editor/Widget.h>
 

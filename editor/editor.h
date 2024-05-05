@@ -30,6 +30,7 @@ SOFTWARE.
 #include "Settings.h"
 
 #include <y/core/Span.h>
+#include <y/concurrent/StaticThreadPool.h>
 
 #include <memory>
 #include <string_view>
@@ -54,6 +55,7 @@ AssetStore& asset_store();
 AssetLoader& asset_loader();
 UndoStack& undo_stack();
 ThumbmailRenderer& thumbmail_renderer();
+concurrent::StaticThreadPool& thread_pool();
 
 const EditorResources& resources();
 
