@@ -211,26 +211,11 @@ class EntityWorld : NonMovable {
 
 
     private:
-        const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
-        ComponentContainerBase* find_container(ComponentTypeIndex type_id);
-
-        void register_component_types(System* system) const;
-
-        void check_exists(EntityId id) const;
-
-
-        core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
-        core::Vector<std::unique_ptr<EntityGroupBase>> _groups;
-
-        ComponentMatrix _matrix;
-        EntityPool _entities;
-
-        SystemManager _system_manager;
-
-
-    private:
         template<typename T>
         friend class ComponentContainer;
+
+        friend class System;
+
 
         template<typename T>
         const ComponentContainer<T>* find_container() const {
@@ -256,6 +241,25 @@ class EntityWorld : NonMovable {
             _matrix.register_group(group_ptr);
             return group_ptr;
         }
+
+
+        const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
+        ComponentContainerBase* find_container(ComponentTypeIndex type_id);
+
+        void register_component_types(System* system) const;
+
+        void check_exists(EntityId id) const;
+
+
+
+
+        core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
+        core::Vector<std::unique_ptr<EntityGroupBase>> _groups;
+
+        ComponentMatrix _matrix;
+        EntityPool _entities;
+
+        SystemManager _system_manager;
 };
 
 }

@@ -30,9 +30,9 @@ AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs2::System("AssetL
 }
 
 void AssetLoaderSystem::setup(ecs2::SystemScheduler& sched) {
-    run_tick(true);
+    run_tick(false);
     sched.schedule(ecs2::SystemSchedule::Tick, "Tick", [this] {
-        run_tick(false);
+        run_tick(true);
     });
 }
 

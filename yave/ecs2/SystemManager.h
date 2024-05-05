@@ -131,7 +131,7 @@ class SystemManager : NonCopyable {
 
             {
                 y_profile_zone("setup");
-                system->_world = _world;
+                system->register_world(_world);
                 system->setup(sched);
             }
             return system;

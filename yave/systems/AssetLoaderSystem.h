@@ -56,15 +56,13 @@ class AssetLoaderSystem : public ecs2::System {
             void (*load_all)(ecs2::EntityWorld&, AssetLoadingContext&, std::string_view tag) = nullptr;
             void (*load_recent)(ecs2::EntityWorld&, AssetLoadingContext&, std::string_view tag) = nullptr;
             void (*update_status)(ecs2::EntityWorld&, std::string_view tag) = nullptr;
-            ecs::ComponentTypeIndex type;
         };
 
         template<typename T, bool Recent>
         static void load_components(ecs2::EntityWorld& world, AssetLoadingContext& loading_ctx, std::string_view tag) {
             auto query = [&] {
                 if constexpr(Recent) {
-                    log_msg("Fixme", Log::Warning);
-                    return world.create_group<ecs2::Mutate<T>>().query();
+                    return world.create_group<ecs2::Mutate<ecs2::Changed<T>>>().query();
                 } else {
                     return world.create_group<ecs2::Mutate<T>>().query();
                 }

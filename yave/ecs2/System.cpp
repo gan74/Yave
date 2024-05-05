@@ -19,38 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ECS2_SYSTEM_H
-#define YAVE_ECS2_SYSTEM_H
 
-#include <yave/yave.h>
-
-#include <y/core/String.h>
+#include "System.h"
+#include "EntityWorld.h"
 
 namespace yave {
 namespace ecs2 {
 
-class System : NonCopyable {
-    public:
-        System(core::String name);
-        virtual ~System() = default;
+System::System(core::String name) : _name(std::move(name)) {
+}
 
-        virtual void setup(SystemScheduler& sched) = 0;
+EntityWorld& System::world() {
+    y_debug_assert(_world);
+    return *_world;
+}
 
-        EntityWorld& world();
-        const core::String& name() const;
+const core::String& System::name() const {
+    return _name;
+}
 
-    private:
-        friend class SystemManager;
-
-        void register_world(EntityWorld* world);
-
-        core::String _name;
-        EntityWorld* _world = nullptr;
-};
+void System::register_world(EntityWorld* world) {
+    y_debug_assert(!_world);
+    _world = world;
+    _world->register_component_types(this);
+}
 
 }
 }
-
-
-#endif // YAVE_ECS2_SYSTEM_H
 
