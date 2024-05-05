@@ -156,10 +156,9 @@ bool EntityWorld::has_tag(EntityId id, std::string_view tag) const {
     y_debug_assert(!is_tag_implicit(tag));
     return _matrix.has_tag(id, tag);
 }
-
-core::Span<EntityId> EntityWorld::with_tag(std::string_view tag) const {
+const SparseIdSet& EntityWorld::tag_set(std::string_view tag) const {
     y_debug_assert(!is_tag_implicit(tag));
-    return _matrix.with_tag(tag);
+    return _matrix.tag_set(tag);
 }
 
 bool EntityWorld::is_tag_implicit(std::string_view tag) {

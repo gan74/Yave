@@ -60,6 +60,14 @@ class SparseIdSetBase : NonMovable {
             return _ids;
         }
 
+        EntityId id_from_index(u32 index) const {
+            if(index >= _sparse.size()) {
+                return {};
+            }
+
+            return EntityId(index, _sparse[index].version);
+        }
+
     protected:
         struct SparseElement {
             u32 version = 0;

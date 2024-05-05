@@ -19,24 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_SCENE_SCENEVISIBILITY_H
+#define YAVE_SCENE_SCENEVISIBILITY_H
 
-#include "SceneVisibilitySubPass.h"
+#include "Scene.h"
 
 namespace yave {
 
-SceneVisibilitySubPass SceneVisibilitySubPass::create(const SceneView& scene_view) {
-    const Scene* scene = scene_view.scene();
+struct SceneVisibility {
+    core::Vector<const StaticMeshObject*> meshes;
+    core::Vector<const PointLightObject*> point_lights;
+    core::Vector<const SpotLightObject*> spot_lights;
+};
 
-    SceneVisibilitySubPass pass;
-    pass.scene_view = scene_view;
-    pass.visible = std::make_shared<SceneVisibility>();
-
-    pass.visible->meshes = scene->gather_visible(scene->meshes(), scene_view.camera());
-    pass.visible->point_lights = scene->gather_visible(scene->point_lights(), scene_view.camera());
-    pass.visible->spot_lights = scene->gather_visible(scene->spot_lights(), scene_view.camera());
-
-    return pass;
-}
 
 }
+
+#endif // YAVE_SCENE_SCENEVISIBILITY_H
 

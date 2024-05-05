@@ -224,6 +224,7 @@ struct ResourceUsageInfo;
 struct SSAOPass;
 struct SSAOSettings;
 struct SceneRenderSubPass;
+struct SceneVisibility;
 struct SceneVisibilitySubPass;
 struct ShadowMapPass;
 struct ShadowMapSettings;
@@ -239,6 +240,7 @@ struct ToneMappingSettings;
 struct TransformData;
 struct TransformableSceneObjectData;
 struct Viewport;
+struct VisibilityData;
 struct VolumeSampler;
 }
 

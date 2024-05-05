@@ -23,11 +23,13 @@ SOFTWARE.
 #define YAVE_RENDERER_SCENEVISIBILITYSUBPASS_H
 
 #include <yave/scene/SceneView.h>
+#include <yave/scene/SceneVisibility.h>
 
 namespace yave {
 
 struct SceneVisibilitySubPass {
     SceneView scene_view;
+    std::shared_ptr<SceneVisibility> visible;
 
     static SceneVisibilitySubPass create(const SceneView& scene_view);
 };

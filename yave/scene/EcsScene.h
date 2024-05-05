@@ -44,6 +44,8 @@ class EcsScene : public Scene {
 
         void update_from_world();
 
+        ecs2::EntityId id_from_index(u32 index) const;
+
     private:
         template<typename S>
         typename S::value_type& register_object(u32& index, S& storage);

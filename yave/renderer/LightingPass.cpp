@@ -104,7 +104,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         u32 count = 0;
         auto mapping = self->resources().map_buffer(directional_buffer);
 
-        for(const auto& [light] : scene->directionals()) {
+        for(const auto& [light, id] : scene->directionals()) {
             auto shadow_indices = math::Vec4ui(u32(-1));
             if(light.cast_shadow()) {
                 if(const auto it = shadow_pass.shadow_indices->find(&light); it != shadow_pass.shadow_indices->end()) {

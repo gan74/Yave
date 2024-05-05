@@ -80,7 +80,7 @@ class EntityWorld : NonMovable {
         void clear_tag(std::string_view tag);
         bool has_tag(EntityId id, std::string_view tag) const;
 
-        core::Span<EntityId> with_tag(std::string_view tag) const;
+        const SparseIdSet& tag_set(std::string_view tag) const;
 
         static bool is_tag_implicit(std::string_view tag);
 
@@ -257,7 +257,7 @@ class EntityWorld : NonMovable {
 
 
         core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
-        concurrent::Mutexed<core::Vector<std::unique_ptr<EntityGroupBase>>, concurrent::AssertLock> _groups;
+        concurrent::Mutexed<core::Vector<std::unique_ptr<EntityGroupBase>>> _groups;
 
         ComponentMatrix _matrix;
         EntityPool _entities;

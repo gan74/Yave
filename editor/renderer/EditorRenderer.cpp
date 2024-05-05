@@ -32,30 +32,34 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/scene/EcsScene.h>
 
 #include <yave/utils/DirectDraw.h>
 
 namespace editor {
 
-static core::Vector<ecs::EntityId> highlighted_entities(const SceneView& scene_view, bool highlight_children) {
+[[nodiscard]]
+static SceneVisibilitySubPass filter_selected(const SceneVisibilitySubPass& visibility) {
     y_profile();
 
-    unused(scene_view);
+    const EcsScene* scene = dynamic_cast<const EcsScene*>(visibility.scene_view.scene());
+    const ecs::SparseIdSet& selected = scene->world()->tag_set(ecs::tags::selected);
 
-    const EditorWorld& world = current_world();
+    auto filter = [&](const auto& objects) {
+        std::remove_cvref_t<decltype(objects)> filtered;
+        filtered.set_min_capacity(objects.size());
+        std::copy_if(objects.begin(), objects.end(), std::back_inserter(filtered), [&](const auto* obj) { return selected.contains(scene->id_from_index(obj->entity_index)); });
+        return filtered;
+    };
 
-    auto ids = core::Vector<ecs::EntityId>::from_range(world.selected_entities());
-    if(highlight_children) {
-        y_profile_zone("expanding to selected children");
-        for(usize i = 0; i != ids.size(); ++i) {
-            for(const ecs::EntityId child : world.children(ids[i])) {
-                if(!world.is_selected(child)) {
-                    ids << child;
-                }
-            }
-        }
-    }
-    return ids;
+
+    SceneVisibilitySubPass filtered = visibility;
+    filtered.visible = std::make_shared<SceneVisibility>();
+    filtered.visible->meshes = filter(visibility.visible->meshes);
+    filtered.visible->point_lights = filter(visibility.visible->point_lights);
+    filtered.visible->spot_lights = filter(visibility.visible->spot_lights);
+
+    return filtered;
 }
 
 
@@ -124,11 +128,11 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
         renderer.final = ed.color;
     }
 
-    /*if(settings.show_selection) {
+    if(settings.show_selection) {
         const IdBufferPass id_pass = IdBufferPass::create(
             framegraph,
             CameraBufferPass::create_no_jitter(framegraph, scene_view),
-            SceneVisibilitySubPass::from_entities(highlighted_entities(scene_view, true)),
+            filter_selected(renderer.renderer.visibility),
             size
         );
 
@@ -138,7 +142,7 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
             : id_and_depth(id_pass);
 
         renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth, id);
-    }*/
+    }
 
     if(settings.show_debug_drawer) {
         renderer.final = render_debug_drawer(framegraph, scene_view, renderer.final, renderer.depth);

@@ -36,7 +36,7 @@ SOFTWARE.
 namespace yave {
 
 static void fill_scene_render_pass(SceneRenderSubPass& pass, FrameGraphPassBuilder& builder, PassType pass_type) {
-    pass.render_func = pass.scene_view.scene()->prepare_render(builder, pass.scene_view.camera(), pass_type);
+    pass.render_func = pass.scene_view.scene()->prepare_render(builder, *pass.visibility.visible, pass_type);
 
     pass.main_descriptor_set_index = builder.next_descriptor_set_index();
     builder.add_uniform_input(pass.camera, PipelineStage::None, pass.main_descriptor_set_index);

@@ -21,12 +21,10 @@ SOFTWARE.
 **********************************/
 
 #include "Scene.h"
+#include "SceneVisibility.h"
 
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/Material.h>
-
-#include <yave/components/TransformableComponent.h>
-#include <yave/components/StaticMeshComponent.h>
 
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/device/MeshAllocator.h>
@@ -101,14 +99,14 @@ static void collect_batches_for_id(core::Span<const StaticMeshObject*> meshes, c
         batches.emplace_back(
             nullptr,
             static_mesh->draw_command().vk_indirect_data(index),
-            math::Vec2ui(transform_index, index)
+            math::Vec2ui(transform_index, mesh->entity_index)
         );
 
         ++index;
     }
 }
 
-Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Camera& cam, PassType pass_type) const {
+Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const SceneVisibility& visibility, PassType pass_type) const {
     y_profile();
 
 
@@ -120,11 +118,12 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Ca
         switch(pass_type) {
             case PassType::Depth:
             case PassType::GBuffer:
-                collect_batches(gather_visible_meshes(cam), *static_mesh_batches);
+                Y_TODO(use visibility pass instead)
+                collect_batches(visibility.meshes, *static_mesh_batches);
             break;
 
             case PassType::Id:
-                collect_batches_for_id(gather_visible_meshes(cam), *static_mesh_batches);
+                collect_batches_for_id(visibility.meshes, *static_mesh_batches);
             break;
         }
     }
@@ -134,6 +133,8 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Ca
     if(!batch_count) {
         return {};
     }
+
+
 
     static const PipelineStage stage = PipelineStage::VertexBit | PipelineStage::FragmentBit;
     const i32 descriptor_set_index = builder.next_descriptor_set_index();
@@ -148,6 +149,9 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Ca
     builder.add_external_input(Descriptor(material_allocator().material_buffer()), stage, descriptor_set_index);
     builder.add_storage_input(indices_buffer, stage, descriptor_set_index);
     builder.add_indrect_input(indirect_buffer);
+
+
+
 
     return [=](RenderPassRecorder& render_pass, const FrameGraphPass* pass) {
         y_debug_assert(!static_mesh_batches->is_empty());

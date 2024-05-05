@@ -61,6 +61,7 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index, S& s
         auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
 
         obj.component = comp;
+        obj.entity_index = id.index();
 
         if(obj.transform_index == u32(-1)) {
             obj.transform_index = _transform_manager.alloc_transform();
@@ -80,6 +81,7 @@ void EcsScene::process_components(u32 ObjectIndices::* index, S& storage) {
     for(const auto& [id, comp] : query.id_components()) {
         auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
         obj.component = comp;
+        obj.entity_index = id.index();
     }
 }
 
@@ -101,6 +103,10 @@ void EcsScene::update_from_world() {
         _transform_manager.update_buffer(recorder);
         recorder.submit_async();
     }
+}
+
+ecs::EntityId EcsScene::id_from_index(u32 index) const {
+    return _indices.id_from_index(index);
 }
 
 }

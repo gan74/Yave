@@ -66,7 +66,7 @@ class ComponentMatrix {
         void clear_tag(std::string_view tag);
         bool has_tag(EntityId id, std::string_view tag) const;
 
-        core::Span<EntityId> with_tag(std::string_view tag) const;
+        const SparseIdSet& tag_set(std::string_view tag) const;
 
 
         template<typename T>

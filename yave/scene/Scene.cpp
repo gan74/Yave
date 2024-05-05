@@ -32,7 +32,6 @@ SOFTWARE.
 
 namespace yave {
 
-
 Scene::Scene() {
 }
 
@@ -43,20 +42,6 @@ const math::Transform<>& Scene::transform(const TransformableSceneObjectData& ob
     return _transform_manager.transform(obj.transform_index);
 }
 
-core::Vector<const StaticMeshObject*> Scene::gather_visible_meshes(const Camera& cam) const {
-    const Frustum frustum = cam.frustum();
-
-    core::Vector<const StaticMeshObject*> visible_meshes;
-    {
-        for(const auto& mesh : _meshes) {
-            if(frustum.intersection(mesh.global_aabb) != Intersection::Outside) {
-                visible_meshes << &mesh;
-            }
-        }
-    }
-
-    return visible_meshes;
-}
 
 }
 

@@ -67,7 +67,6 @@ struct EditorPassData {
 
 
 
-#if 0
 static void render_editor_entities(RenderPassRecorder& recorder, const FrameGraphPass* pass,
                                    const SceneView& scene_view,
                                    const SceneVisibilitySubPass& visibility,
@@ -75,7 +74,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
                                    FrameGraphMutableTypedBufferId<ImGuiBillboardVertex> vertex_buffer) {
     y_profile();
 
-    const EditorWorld& world = current_world();
+    const Scene* scene = scene_view.scene();
 
     {
         auto mapping = pass->resources().map_buffer(pass_buffer);
@@ -101,25 +100,22 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
         usize index = 0;
         auto vertex_mapping = pass->resources().map_buffer(vertex_buffer);
 
-        auto push_entity = [&](ecs::EntityId id) {
-            if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
-                vertex_mapping[index] = ImGuiBillboardVertex{tr->position(), uv, size, id.index()};
-                ++index;
-            }
+        auto push_entity = [&](const auto* tr) {
+            vertex_mapping[index] = ImGuiBillboardVertex{scene->transform(*tr).position(), uv, size, tr->entity_index};
+            ++index;
         };
+
         {
             std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_LIGHTBULB);
-            auto query = world.query<PointLightComponent>(*visibility.visible);
-            for(ecs::EntityId id : query.ids()) {
-                push_entity(id);
+            for(const PointLightObject* light : visibility.visible->point_lights) {
+                push_entity(light);
             }
         }
 
         {
             std::tie(uv, size) = imgui::compute_glyph_uv_size(ICON_FA_VIDEO);
-            auto query = world.query<SpotLightComponent>(*visibility.visible);
-            for(ecs::EntityId id : query.ids()) {
-                push_entity(id);
+            for(const SpotLightObject* light : visibility.visible->spot_lights) {
+                push_entity(light);
             }
         }
 
@@ -129,89 +125,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
     }
 }
 
-static void render_selection_aabb(DirectDrawPrimitive* primitive, const SceneView& scene_view) {
-    const EditorWorld& world = current_world();
-    const ecs::EntityId selected = world.selected_entity();
 
-    unused(scene_view);
-
-    const TransformableComponent* tr = world.component<TransformableComponent>(selected);
-    if(!tr || world.has_tag(selected, ecs::tags::hidden)) {
-        return;
-    }
-
-    constexpr bool draw_enclosing_sphere = false;
-    const bool draw_bbox = app_settings().debug.display_selected_bbox;
-    const bool draw_octree = app_settings().debug.display_selected_octree;
-
-    {
-        const math::Vec3 z = tr->up().normalized();
-        const math::Vec3 y = tr->right().normalized();
-        const math::Vec3 x = tr->forward().normalized();
-        const float scale = tr->transform().scale().max_component();
-
-        auto add_sphere = [&](const math::Vec3& pos, float radius, const math::Vec3& color = math::Vec3(0.0f, 0.0f, 1.0f)) {
-            primitive->set_color(color);
-            primitive->add_circle(pos, x, y, radius);
-            primitive->add_circle(pos, y, z, radius);
-            primitive->add_circle(pos, z, x, radius);
-        };
-
-        if(const auto* l = world.component<PointLightComponent>(selected)) {
-            add_sphere(tr->position(), l->range() * scale);
-            add_sphere(tr->position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
-        }
-
-        if(const auto* l = world.component<SpotLightComponent>(selected)) {
-            primitive->add_cone(tr->position(), x, y, l->range() * scale, l->half_angle());
-            add_sphere(tr->position(), l->min_radius() * scale, math::Vec3(1.0f, 1.0f, 0.0f));
-
-            if(draw_enclosing_sphere) {
-                const auto enclosing = l->enclosing_sphere();
-                const math::Vec3 center = tr->position() + tr->forward() * enclosing.dist_to_center * scale;
-                add_sphere(center, enclosing.radius * scale);
-            }
-        }
-
-        if(draw_bbox) {
-            const u32 color = primitive->color();
-            y_defer(primitive->set_color(color));
-
-            primitive->set_color(math::Vec3(1, 1, 0));
-            primitive->add_box(tr->global_aabb());
-        }
-
-        if(draw_octree && !tr->local_aabb().is_empty()) {
-            if(const TransformableManagerSystem* tr_manager = world.find_system<TransformableManagerSystem>()) {
-                const u32 color = primitive->color();
-                y_defer(primitive->set_color(color));
-
-                primitive->set_color(math::Vec3(1, 0, 0));
-                primitive->add_box(tr_manager->parent_node_aabb(*tr));
-            }
-        }
-    }
-}
-
-
-static void render_octree(DirectDrawPrimitive* primitive) {
-    y_profile();
-
-    const EditorWorld& world = current_world();
-    const TransformableManagerSystem* tr_system = world.find_system<TransformableManagerSystem>();
-
-    if(!tr_system) {
-        return;
-    }
-
-    primitive->set_color(math::Vec3(0, 0, 1));
-    for(const auto& node : tr_system->octree_nodes()) {
-        primitive->add_box(node.strict_aabb());
-    }
-
-}
-
-#endif
 
 
 static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, FrameGraphImageId in, ImageFormat format, const math::Vec2ui& size) {
@@ -252,21 +166,10 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, con
     builder.add_color_output(color);
     builder.add_color_output(id);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-#if 0
         render_editor_entities(render_pass, self, view, visibility, pass_buffer, vertex_buffer);
 
-        DirectDraw direct;
-        {
-            if(current_world().selected_entity().is_valid()) {
-                render_selection_aabb(direct.add_primitive("selection"), view);
-            }
-
-            if(app_settings().debug.diplay_octree) {
-                render_octree(direct.add_primitive("octree"));
-            }
-        }
-        direct.render(render_pass, view.camera().view_proj_matrix());
-#endif
+        /*DirectDraw direct;
+        direct.render(render_pass, view.camera().view_proj_matrix());*/
     });
 
     EditorPass pass;

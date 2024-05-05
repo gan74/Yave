@@ -30,6 +30,8 @@ SOFTWARE.
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
 
+#include <yave/camera/Camera.h>
+
 #include <functional>
 
 namespace yave {
@@ -45,6 +47,7 @@ enum class PassType {
 template<typename T>
 struct SceneObject {
     T component;
+    u32 entity_index = u32(-1);
 };
 
 struct TransformableSceneObjectData {
@@ -76,10 +79,8 @@ class Scene : NonMovable {
 
         const math::Transform<>& transform(const TransformableSceneObjectData& obj) const;
 
-        core::Vector<const StaticMeshObject*> gather_visible_meshes(const Camera& cam) const;
 
-
-        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const Camera& cam,  PassType pass_type) const;
+        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneVisibility& visibility, PassType pass_type) const;
 
 
 
@@ -88,6 +89,23 @@ class Scene : NonMovable {
         core::Span<SpotLightObject>         spot_lights() const     { return _spot_lights; }
         core::Span<DirectionalLightObject>  directionals() const    { return _directionals; }
         core::Span<SkyLightObject>          sky_lights() const      { return _sky_lights; }
+
+
+        template<typename T>
+        static auto gather_visible(core::Span<TransformableSceneObject<T>> objects, const Camera& cam) {
+            y_profile();
+
+            const Frustum frustum = cam.frustum();
+
+            core::Vector<const TransformableSceneObject<T>*> visible;
+            for(const auto& obj : objects) {
+                if(frustum.intersection(obj.global_aabb) != Intersection::Outside) {
+                    visible << &obj;
+                }
+            }
+
+            return visible;
+        }
 
     protected:
         core::Vector<StaticMeshObject> _meshes;

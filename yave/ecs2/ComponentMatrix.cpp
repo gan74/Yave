@@ -158,11 +158,13 @@ bool ComponentMatrix::has_tag(EntityId id, std::string_view tag) const {
     return false;
 }
 
-core::Span<EntityId> ComponentMatrix::with_tag(std::string_view tag) const {
+const SparseIdSet& ComponentMatrix::tag_set(std::string_view tag) const {
     if(const auto it = _tags.find(tag); it != _tags.end()) {
-        return it->second.ids.ids();
+        return it->second.ids;
     }
-    return {};
+
+    static const SparseIdSet empty;
+    return empty;
 }
 
 ComponentMatrix::ComponentIndex ComponentMatrix::component_index(EntityId id, ComponentTypeIndex type) const {

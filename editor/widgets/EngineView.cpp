@@ -29,6 +29,8 @@ SOFTWARE.
 #include <editor/utils/CameraController.h>
 #include <editor/utils/ui.h>
 
+#include <yave/scene/EcsScene.h>
+
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
@@ -272,12 +274,8 @@ void EngineView::update_picking() {
 
     if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         if(!is_dragging_gizmo()) {
-#if 1
-            log_msg("FIXME", Log::Warning);
-#else
-            const ecs::EntityId picked_id = picking_data.hit() ? current_world().id_from_index(picking_data.entity_index) : ecs::EntityId();
+            const ecs::EntityId picked_id = picking_data.hit() ? dynamic_cast<const EcsScene*>(&current_scene())->id_from_index(picking_data.entity_index) : ecs::EntityId();
             current_world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
-#endif
         }
     }
 }

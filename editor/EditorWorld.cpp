@@ -129,9 +129,6 @@ ecs::EntityId EditorWorld::add_prefab(std::string_view name) {
 ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
     y_profile();
 
-#if 1
-    y_fatal("FIXME");
-#else
     if(const auto prefab = asset_loader().load_res<ecs::EntityPrefab>(asset)) {
         const ecs::EntityId id = create_entity(*prefab.unwrap());
 
@@ -143,7 +140,6 @@ ecs::EntityId EditorWorld::add_prefab(AssetId asset) {
         }
         return id;
     }
-#endif
 
     return ecs::EntityId();
 }
@@ -157,7 +153,7 @@ usize EditorWorld::selected_entity_count() const {
 }
 
 core::Span<ecs::EntityId> EditorWorld::selected_entities() const {
-    return with_tag(ecs::tags::selected);
+    return tag_set(ecs::tags::selected).ids();
 }
 
 bool EditorWorld::is_selected(ecs::EntityId id) const {
