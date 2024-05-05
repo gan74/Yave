@@ -51,16 +51,21 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
     auto* next = &tmp_1;
 
     for(usize i = 0; i != usize(SystemSchedule::Max); ++i) {
-        if(!next->is_empty()) {
-            std::swap(current, next);
-            next->make_empty();
-        }
+        bool next_cleared = false;
+        auto clear_next_if_needed = [&] {
+            if(!next_cleared && !next->is_empty()) {
+                std::swap(current, next);
+                next->make_empty();
+                next_cleared = true;
+            }
+        };
 
         const bool wait_for_all = i == SystemSchedule::PostUpdate;
 
         for(const auto& scheduler : _schedulers) {
             SystemScheduler::Schedule& sched = scheduler->_schedules[i];
             for(usize k = 0; k != sched.tasks.size(); ++k) {
+                clear_next_if_needed();
 
                 DepGroups wait = wait_for_all
                     ? DepGroups(*current)
