@@ -65,7 +65,7 @@ class ComponentContainerBase : NonMovable {
         ComponentMatrix* _matrix = nullptr;
         SparseIdSet _mutated;
 
-        std::mutex _lock;
+        std::shared_mutex _lock;
 };
 
 

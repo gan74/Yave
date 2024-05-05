@@ -113,26 +113,33 @@ class EntityGroup final : public EntityGroupBase {
     }
 
     template<typename T, usize I>
-    void fill_one(const ContainerTuple& containers, usize& mut_index, usize& cha_index) {
+    void fill_one(const ContainerTuple& containers, usize& mut_index, usize& changed_index, usize& const_index) {
         std::get<I>(_sets) = &std::get<I>(containers)->_components;
 
         if constexpr(traits::is_component_mutable_v<T>) {
-            _mut_locks[mut_index] = &std::get<I>(containers)->_lock;
+            _write_locks[mut_index] = &std::get<I>(containers)->_lock;
             _mutate[mut_index] = &std::get<I>(containers)->_mutated;
             ++mut_index;
+        } else {
+            _read_locks[const_index++] = &std::get<I>(containers)->_lock;
         }
+
         if constexpr(traits::is_component_changed_v<T>) {
-            _changed[cha_index++] = &std::get<I>(containers)->_mutated;
+            _changed[changed_index++] = &std::get<I>(containers)->_mutated;
         }
     }
 
     template<usize... Is>
     inline void fill_sets(const ContainerTuple& containers, std::index_sequence<Is...>) {
         usize mut_index = 0;
-        usize cha_index = 0;
-        (fill_one<Ts, Is>(containers, mut_index, cha_index), ...);
+        usize changed_index = 0;
+        usize const_index = 0;
+        (fill_one<Ts, Is>(containers, mut_index, changed_index, const_index), ...);
+
         y_debug_assert(std::all_of(_mutate.begin(), _mutate.end(), [](const auto* s) { return s; }));
         y_debug_assert(std::all_of(_changed.begin(), _changed.end(), [](const auto* s) { return s; }));
+        y_debug_assert(std::all_of(_write_locks.begin(), _write_locks.end(), [](const auto* s) { return s; }));
+        y_debug_assert(std::all_of(_read_locks.begin(), _read_locks.end(), [](const auto* s) { return s; }));
     }
 
 
@@ -205,12 +212,12 @@ class EntityGroup final : public EntityGroupBase {
             Query() = default;
 
             Query(const EntityGroup* parent) : _parent(parent) {
-                _parent->lock_mutated_groups();
+                _parent->lock_groups();
             }
 
             ~Query() {
                 if(_parent) {
-                    _parent->unlock_mutated_groups();
+                    _parent->unlock_groups();
                 }
             }
 
@@ -314,18 +321,28 @@ class EntityGroup final : public EntityGroupBase {
         }
 
     private:
-        void lock_mutated_groups() const {
+        void lock_groups() const {
             y_profile();
 
-            for(auto* lock : _mut_locks) {
+            Y_TODO(This can deadlock if a group locks A exclusively and B shared while another group does the opposite)
+
+            for(auto* lock : _write_locks) {
                 lock->lock();
+            }
+
+            for(auto* lock : _read_locks) {
+                lock->lock_shared();
             }
         }
 
-        void unlock_mutated_groups() const {
+        void unlock_groups() const {
             y_profile();
 
-            for(auto* lock : _mut_locks) {
+            for(auto* lock : _read_locks) {
+                lock->unlock_shared();
+            }
+
+            for(auto* lock : _write_locks) {
                 lock->unlock();
             }
         }
@@ -335,7 +352,8 @@ class EntityGroup final : public EntityGroupBase {
         MutateContainers _mutate = {};
         ChangedContainers _changed = {};
 
-        std::array<std::mutex*, mutate_count> _mut_locks;
+        std::array<std::shared_mutex*, mutate_count> _write_locks;
+        std::array<std::shared_mutex*, type_count - mutate_count> _read_locks;
 
 
 };
