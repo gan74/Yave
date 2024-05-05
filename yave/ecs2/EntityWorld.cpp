@@ -94,7 +94,7 @@ EntityId EntityWorld::create_entity() {
 void EntityWorld::clear() {
     remove_all_entities();
     _matrix.clear();
-    _groups.clear();
+    _groups.locked([](auto&& groups) { groups.clear(); });
 }
 
 void EntityWorld::remove_entity(EntityId id) {

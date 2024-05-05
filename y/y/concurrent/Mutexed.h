@@ -31,6 +31,21 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
+class AssertLock : NonMovable {
+    public:
+        void lock() {
+            y_debug_assert(!_locked.exchange(true));
+        }
+
+        void unlock() {
+            y_debug_assert(_locked.exchange(false));
+        }
+
+    private:
+        std::atomic<bool> _locked = false;
+};
+
+
 template<typename T, typename Lock = std::mutex>
 class Mutexed : NonMovable {
     public:

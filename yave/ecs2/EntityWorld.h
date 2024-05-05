@@ -32,6 +32,7 @@ SOFTWARE.
 #include <yave/ecs/EntityPool.h>
 #include <yave/ecs/EntityPrefab.h>
 
+#include <y/concurrent/Mutexed.h>
 #include <y/utils/log.h>
 
 namespace yave {
@@ -169,23 +170,25 @@ class EntityWorld : NonMovable {
         template<typename... Ts>
         const EntityGroup<Ts...>& create_group(core::Span<std::string_view> tags = {}) {
             y_profile();
-            using group_type = EntityGroup<Ts...>;
-            for(const auto& group : _groups) {
-                if(const auto* typed_group = dynamic_cast<group_type*>(group.get())) {
-                    if(tags.size() != typed_group->tags().size()) {
-                        continue;
-                    }
-                    if(!std::equal(tags.begin(), tags.end(), typed_group->tags().begin())) {
-                        continue;
-                    }
-                    return *typed_group;
-                } else if(group->types().size() == sizeof...(Ts)) {
-                    if((group->contains<Ts>() && ...)) {
-                        log_msg("An entity group with similar component set already exists", Log::Warning);
+            return _groups.locked([&](auto&& groups) -> const EntityGroup<Ts...>& {
+                using group_type = EntityGroup<Ts...>;
+                for(const auto& group : groups) {
+                    if(const auto* typed_group = dynamic_cast<group_type*>(group.get())) {
+                        if(tags.size() != typed_group->tags().size()) {
+                            continue;
+                        }
+                        if(!std::equal(tags.begin(), tags.end(), typed_group->tags().begin())) {
+                            continue;
+                        }
+                        return *typed_group;
+                    } else if(group->types().size() == sizeof...(Ts)) {
+                        if((group->contains<Ts>() && ...)) {
+                            log_msg("An entity group with similar component set already exists", Log::Warning);
+                        }
                     }
                 }
-            }
-            return *create_new_group<Ts...>(tags);
+                return *create_new_group<Ts...>(groups, tags);
+            });
         }
 
 
@@ -234,10 +237,10 @@ class EntityWorld : NonMovable {
         }
 
         template<typename... Ts>
-        EntityGroup<Ts...>* create_new_group(core::Span<std::string_view> tags) {
+        EntityGroup<Ts...>* create_new_group(core::Vector<std::unique_ptr<EntityGroupBase>>& groups, core::Span<std::string_view> tags) {
             auto group = std::make_unique<EntityGroup<Ts...>>(std::tuple{find_container<traits::component_raw_type_t<Ts>>()...}, tags);
             auto* group_ptr = group.get();
-            _groups.emplace_back(std::move(group));
+            groups.emplace_back(std::move(group));
             _matrix.register_group(group_ptr);
             return group_ptr;
         }
@@ -254,7 +257,7 @@ class EntityWorld : NonMovable {
 
 
         core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
-        core::Vector<std::unique_ptr<EntityGroupBase>> _groups;
+        concurrent::Mutexed<core::Vector<std::unique_ptr<EntityGroupBase>>, concurrent::AssertLock> _groups;
 
         ComponentMatrix _matrix;
         EntityPool _entities;

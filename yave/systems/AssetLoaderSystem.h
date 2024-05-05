@@ -80,6 +80,7 @@ class AssetLoaderSystem : public ecs2::System {
             for(auto&& [id, comp] : query.id_components()) {
                 y_debug_assert(world.has_tag(id, tag));
                 if(comp.update_asset_loading_status()) {
+                    Y_TODO(this is not thread safe!!!)
                     world.remove_tag(id, tag);
                 }
             }
