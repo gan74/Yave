@@ -23,10 +23,21 @@ SOFTWARE.
 #include "ComponentMatrix.h"
 #include "EntityGroup.h"
 
+#include <y/serde3/archives.h>
+
 namespace yave {
 namespace ecs2 {
 
 ComponentMatrix::ComponentMatrix(usize type_count) : _type_count(std::max(1u, u32(type_count))), _groups(_type_count) {
+}
+
+void ComponentMatrix::clear() {
+    _bits.clear();
+    _ids.clear();
+    _tags.clear();
+    for(auto& groups : _groups) {
+        groups.clear();
+    }
 }
 
 void ComponentMatrix::register_group(EntityGroupBase* group) {
@@ -70,6 +81,7 @@ void ComponentMatrix::remove_entity(EntityId id) {
 }
 
 void ComponentMatrix::add_component(EntityId id, ComponentTypeIndex type) {
+    y_debug_assert(contains(id));
     y_debug_assert(!has_component(id, type));
 
     const ComponentIndex index = component_index(id, type);
@@ -104,6 +116,7 @@ bool ComponentMatrix::contains(EntityId id) const {
 }
 
 bool ComponentMatrix::has_component(EntityId id, ComponentTypeIndex type) const {
+    y_debug_assert(contains(id));
     const ComponentIndex index = component_index(id, type);
     return index.index < _bits.size() && (_bits[index.index] & index.mask) != 0;
 }
@@ -159,6 +172,15 @@ ComponentMatrix::ComponentIndex ComponentMatrix::component_index(EntityId id, Co
     const u32 bit_index = index % 64;
     const u64 mask = u64(1) << bit_index;
     return {mask, pack_index};
+}
+
+
+serde3::Result ComponentMatrix::save_tags(serde3::WritableArchive& arc) const {
+    return arc.serialize(_tags);
+}
+
+serde3::Result ComponentMatrix::load_tags(serde3::ReadableArchive& arc) {
+    return arc.deserialize(_tags);
 }
 
 }

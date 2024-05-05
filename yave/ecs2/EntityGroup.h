@@ -225,7 +225,6 @@ class EntityGroup final : public EntityGroupBase {
 
             void swap(Query& other) {
                 std::swap(_ids, other._ids);
-                std::swap(_owned, other._owned);
                 std::swap(_sets, other._sets);
                 std::swap(_parent, other._parent);
             }
@@ -238,15 +237,15 @@ class EntityGroup final : public EntityGroupBase {
             }
 
             inline const_iterator begin() const {
-                return const_iterator(ids().begin(), _sets);
+                return const_iterator(_ids.begin(), _sets);
             }
 
             inline const_iterator end() const {
-                return const_iterator(ids().end(), _sets);
+                return const_iterator(_ids.end(), _sets);
             }
 
             inline core::Span<EntityId> ids() const {
-                return _ids.is_empty() ? core::Span<EntityId>(_owned) : _ids;
+                return _ids;
             }
 
             inline usize size() const {
@@ -256,8 +255,7 @@ class EntityGroup final : public EntityGroupBase {
         private:
             friend class EntityGroup;
 
-            core::Span<EntityId> _ids;
-            core::Vector<EntityId> _owned;
+            core::Vector<EntityId> _ids;
             SetTuple _sets = {};
 
             const EntityGroup* _parent = nullptr;
@@ -296,7 +294,7 @@ class EntityGroup final : public EntityGroupBase {
                         }
                     }
                     if(match) {
-                        query._owned << id;
+                        query._ids << id;
                     }
                 }
             } else {

@@ -28,6 +28,11 @@ SOFTWARE.
 #include <y/core/HashMap.h>
 #include <y/core/String.h>
 
+#include <y/serde3/result.h>
+#include <y/serde3/serde.h>
+#include <y/reflect/reflect.h>
+
+
 namespace yave {
 namespace ecs2 {
 
@@ -40,9 +45,13 @@ class ComponentMatrix {
     struct TagSet {
         SparseIdSet ids;
         core::Vector<EntityGroupBase*> groups;
+
+        y_reflect(TagSet, ids)
     };
 
     public:
+        void clear();
+
         void add_entity(EntityId id);
         void remove_entity(EntityId id);
 
@@ -80,6 +89,9 @@ class ComponentMatrix {
             return _tags.keys();
         }
 
+
+        serde3::Result save_tags(serde3::WritableArchive& arc) const;
+        serde3::Result load_tags(serde3::ReadableArchive& arc);
 
     private:
         friend class EntityWorld;

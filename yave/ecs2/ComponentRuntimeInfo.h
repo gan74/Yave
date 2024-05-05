@@ -38,10 +38,12 @@ std::unique_ptr<ComponentContainerBase> create_container();
 template<typename T>
 void create_or_replace_component(EntityWorld& world, EntityId id);
 
+
 struct ComponentRuntimeInfo {
     ComponentTypeIndex type_id;
     std::string_view type_name;
     std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
+    void (*add_or_replace_component)(EntityWorld&, EntityId) = nullptr;
 
     std::string_view clean_component_name() const {
         return clean_component_name(type_name);
@@ -53,6 +55,7 @@ struct ComponentRuntimeInfo {
             type_index<T>(),
             ct_type_name<T>(),
             create_container<T>,
+            create_or_replace_component<T>
         };
     }
 

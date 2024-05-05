@@ -60,6 +60,7 @@ class EntityWorld : NonMovable {
         EntityId create_entity();
         EntityId create_entity(const EntityPrefab&) { y_fatal("FIXME"); }
 
+        void clear();
 
         void remove_entity(EntityId id);
         void remove_all_components(EntityId id);
@@ -110,14 +111,13 @@ class EntityWorld : NonMovable {
         bool has_component(EntityId id, ComponentTypeIndex type) const;
 
         template<typename T>
-        T* component_mut(EntityId) {
-            log_msg("FIXME", Log::Warning);
-            return nullptr;
+        const T* component(EntityId id) const {
+            return find_container<T>()->try_get(id);
         }
 
         template<typename T>
-        const T* component(EntityId id) const {
-            return find_container<T>()->try_get(id);
+        T* component_mut(EntityId id) {
+            return find_container<T>()->try_get_mut(id);
         }
 
         template<typename T>
@@ -150,7 +150,9 @@ class EntityWorld : NonMovable {
 
         template<typename S, typename... Args>
         S* add_system(Args&&... args) {
-            return _system_manager.add_system<S>(y_fwd(args)...);
+            S* system = _system_manager.add_system<S>(y_fwd(args)...);
+            register_component_types(system);
+            return system;
         }
 
         template<typename S>
@@ -179,7 +181,7 @@ class EntityWorld : NonMovable {
                     return *typed_group;
                 } else if(group->types().size() == sizeof...(Ts)) {
                     if((group->contains<Ts>() && ...)) {
-                        log_msg("An entity group with similar component set", Log::Warning);
+                        log_msg("An entity group with similar component set already exists", Log::Warning);
                     }
                 }
             }
@@ -211,6 +213,8 @@ class EntityWorld : NonMovable {
     private:
         const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
         ComponentContainerBase* find_container(ComponentTypeIndex type_id);
+
+        void register_component_types(System* system) const;
 
         void check_exists(EntityId id) const;
 

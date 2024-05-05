@@ -57,6 +57,10 @@ class ComponentContainerBase : NonMovable {
         ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
         }
 
+        virtual void register_component_type(System* system) const = 0;
+        virtual void post_load() = 0;
+
+
         const ComponentTypeIndex _type_id;
         ComponentMatrix* _matrix = nullptr;
         SparseIdSet _mutated;
@@ -79,7 +83,15 @@ class ComponentContainer final : public ComponentContainerBase {
 
 
         const T* try_get(EntityId id) const {
-            return _components.contains(id) ? &_components[id] : nullptr;
+            return _components.try_get(id);
+        }
+
+        T* try_get_mut(EntityId id) {
+            T* comp = _components.try_get(id);
+            if(comp) {
+                _mutated.insert(id);
+            }
+            return comp;
         }
 
         T* get_or_add(EntityId id) {
@@ -138,12 +150,29 @@ class ComponentContainer final : public ComponentContainerBase {
         template<typename... Ts>
         friend class EntityGroup;
 
+
+        void register_component_type(System* system) const override {
+            unused(system);
+            if constexpr(Registerable<T>) {
+                T::register_component_type(system);
+            }
+        }
+
+        void post_load() override {
+            for(auto&& [id, comp] : _components) {
+                _matrix->add_component<T>(id);
+                _mutated.insert(id);
+            }
+        }
+
         template<typename... Args>
         T* add(EntityId id, Args&... args) {
             T* component =  &_components.insert(id, y_fwd(args)...);
             _matrix->add_component<T>(id);
             return component;
         }
+
+
 
         SparseComponentSet<T> _components;
 };

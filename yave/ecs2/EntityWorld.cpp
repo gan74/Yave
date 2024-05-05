@@ -91,6 +91,12 @@ EntityId EntityWorld::create_entity() {
     return id;
 }
 
+void EntityWorld::clear() {
+    remove_all_entities();
+    _matrix.clear();
+    _groups.clear();
+}
+
 void EntityWorld::remove_entity(EntityId id) {
     remove_all_components(id);
     remove_all_tags(id);
@@ -209,12 +215,47 @@ void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector)
     }
 }
 
+void EntityWorld::register_component_types(System* system) const {
+    for(auto& container : _containers) {
+        if(container) {
+            container->register_component_type(system);
+        }
+    }
+}
+
 serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
-    return serde3::Result(serde3::Error(serde3::ErrorType::UnknownError, "Unimplemented"));
+    y_profile();
+
+    y_try(arc.serialize(_entities));
+    y_try(arc.serialize(_containers));
+    y_try(_matrix.save_tags(arc));
+
+    return core::Ok(serde3::Success::Full);
 }
 
 serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
-    return serde3::Result(serde3::Error(serde3::ErrorType::UnknownError, "Unimplemented"));
+    clear();
+
+    decltype(_containers) containers;
+
+    y_try(arc.deserialize(_entities));
+    y_try(arc.deserialize(containers));
+    y_try(_matrix.load_tags(arc));
+
+    for(EntityId id : _entities.ids()) {
+        _matrix.add_entity(id);
+    }
+
+    for(auto&& container : containers) {
+        if(container) {
+            container->_matrix = &_matrix;
+            container->post_load();
+
+            _containers[usize(container->type_id())] = std::move(container);
+        }
+    }
+
+    return core::Ok(serde3::Success::Full);
 }
 
 

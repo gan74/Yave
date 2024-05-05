@@ -46,6 +46,11 @@ concept Inspectable = requires(T comp) {
     comp.inspect(static_cast<ecs::ComponentInspector*>(nullptr));
 };
 
+template<typename T>
+concept Registerable = requires(T comp) {
+    comp.register_component_type(static_cast<System*>(nullptr));
+};
+
 
 }
 }

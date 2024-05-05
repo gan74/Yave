@@ -103,6 +103,7 @@ template<typename Component, typename... SystemTypes>
 struct RegisterComponent {
     // EntityWorld.inl
     static inline void register_component_type(System*);
+    static inline void register_component_type(ecs2::System*);
 };
 
 

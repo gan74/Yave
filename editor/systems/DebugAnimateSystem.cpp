@@ -34,8 +34,8 @@ DebugAnimateSystem::DebugAnimateSystem() : ecs2::System("DebugAnimateSystem") {
 }
 
 void DebugAnimateSystem::setup(ecs2::SystemScheduler& sched) {
-    sched.schedule(ecs2::SystemSchedule::Update, "Update", [](core::Duration delta_time, const ecs2::EntityGroup<ecs2::Mutate<TransformableComponent>, DebugAnimateComponent>& group) {
-        const float dt = float(delta_time.to_secs());
+    sched.schedule(ecs2::SystemSchedule::Update, "Update", [this](const ecs2::EntityGroup<ecs2::Mutate<TransformableComponent>, DebugAnimateComponent>& group) {
+        const float dt = float(_timer.reset().to_secs());
         for(auto&& [tr, dg] : group.query()) {
             tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt));
         }

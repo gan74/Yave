@@ -63,9 +63,9 @@ class AssetLoaderSystem : public ecs2::System {
         static void load_components(ecs2::EntityWorld& world, AssetLoadingContext& loading_ctx, std::string_view tag) {
             auto query = [&] {
                 if constexpr(Recent) {
+                    log_msg("Fixme", Log::Warning);
                     return world.create_group<ecs2::Mutate<T>>().query();
                 } else {
-                    log_msg("Fixme", Log::Warning);
                     return world.create_group<ecs2::Mutate<T>>().query();
                 }
             }();

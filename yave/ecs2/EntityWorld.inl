@@ -38,12 +38,33 @@ std::unique_ptr<ComponentContainerBase> create_container() {
     return std::make_unique<ComponentContainer<traits::component_raw_type_t<T>>>();
 }
 
+template<typename T>
+void create_or_replace_component(EntityWorld& world, EntityId id) {
+    world.add_or_replace_component<T>(id);
+}
+
 template<typename... Ts>
 SystemScheduler::ArgumentResolver::operator const EntityGroup<Ts...>&() const {
     return _parent->_world->create_group<Ts...>();
 }
 
+template<typename Component, typename SystemType, typename... Tail>
+static inline void register_component_type_rec(System* system) {
+    if(SystemType* s = dynamic_cast<SystemType*>(system)) {
+        s->template register_component_type<Component>();
+    }
+    if constexpr(sizeof...(Tail)) {
+        register_component_type_rec<Component, Tail...>(system);
+    }
 }
+}
+
+
+template<typename Component, typename... SystemTypes>
+void ecs::RegisterComponent<Component, SystemTypes...>::register_component_type(ecs2::System* system) {
+    ecs2::register_component_type_rec<Component, SystemTypes...>(system);
+}
+
 }
 
 #endif // YAVE_ECS2_ENTITYWORLD_INL

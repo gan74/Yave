@@ -27,8 +27,6 @@ SOFTWARE.
 
 #include <y/concurrent/StaticThreadPool.h>
 
-#include <y/core/Chrono.h>
-
 
 namespace yave {
 namespace ecs2 {
@@ -63,10 +61,6 @@ class SystemScheduler : NonMovable {
                 operator const EntityWorld&() const {
                     y_debug_assert(_parent);
                     return *_parent->_world;
-                }
-
-                operator core::Duration() const {
-                    return _parent->_timer.elapsed();
                 }
 
                 template<typename... Ts>
@@ -111,9 +105,6 @@ class SystemScheduler : NonMovable {
 
         System* _system = nullptr;
         EntityWorld* _world = nullptr;
-
-        Y_TODO(this will recompute the time for every call)
-        core::Chrono _timer;
 };
 
 

@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/ecs2/System.h>
 
+#include <y/core/Chrono.h>
+
 namespace editor {
 
 class DebugAnimateSystem : public ecs2::System {
@@ -32,6 +34,9 @@ class DebugAnimateSystem : public ecs2::System {
         DebugAnimateSystem();
 
         void setup(ecs2::SystemScheduler& sched) override;
+
+    private:
+        core::Chrono _timer;
 };
 
 }
