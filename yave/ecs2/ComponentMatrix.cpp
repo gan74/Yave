@@ -121,7 +121,7 @@ bool ComponentMatrix::has_component(EntityId id, ComponentTypeIndex type) const 
     return index.index < _bits.size() && (_bits[index.index] & index.mask) != 0;
 }
 
-void ComponentMatrix::add_tag(EntityId id, std::string_view tag) {
+void ComponentMatrix::add_tag(EntityId id, const core::String& tag) {
     y_debug_assert(contains(id));
     TagSet& set = _tags[tag];
     if(set.ids.insert(id)) {
@@ -131,7 +131,7 @@ void ComponentMatrix::add_tag(EntityId id, std::string_view tag) {
     }
 }
 
-void ComponentMatrix::remove_tag(EntityId id, std::string_view tag) {
+void ComponentMatrix::remove_tag(EntityId id, const core::String& tag) {
     y_debug_assert(contains(id));
     TagSet& set = _tags[tag];
     if(set.ids.erase(id)) {
@@ -141,7 +141,7 @@ void ComponentMatrix::remove_tag(EntityId id, std::string_view tag) {
     }
 }
 
-void ComponentMatrix::clear_tag(std::string_view tag) {
+void ComponentMatrix::clear_tag(const core::String& tag) {
     TagSet& set = _tags[tag];
     for(EntityGroupBase* group : set.groups) {
         for(EntityId id : set.ids.ids()) {
@@ -151,14 +151,14 @@ void ComponentMatrix::clear_tag(std::string_view tag) {
     set.ids.clear();
 }
 
-bool ComponentMatrix::has_tag(EntityId id, std::string_view tag) const {
+bool ComponentMatrix::has_tag(EntityId id, const core::String& tag) const {
     if(const auto it = _tags.find(tag); it != _tags.end()) {
         return it->second.ids.contains(id);
     }
     return false;
 }
 
-const SparseIdSet& ComponentMatrix::tag_set(std::string_view tag) const {
+const SparseIdSet& ComponentMatrix::tag_set(const core::String& tag) const {
     if(const auto it = _tags.find(tag); it != _tags.end()) {
         return it->second.ids;
     }

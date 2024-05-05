@@ -478,8 +478,8 @@ FrameGraphMutableBufferId FrameGraph::declare_buffer(u64 byte_size) {
 FrameGraphPass* FrameGraph::create_pass(std::string_view name) {
     auto pass = std::make_unique<FrameGraphPass>(name, this, ++_pass_index);
     FrameGraphPass* ptr = pass.get();
-     _passes << std::move(pass);
-     return ptr;
+    _passes << std::move(pass);
+    return ptr;
 }
 
 FrameGraphPassBuilder FrameGraph::add_pass(std::string_view name) {

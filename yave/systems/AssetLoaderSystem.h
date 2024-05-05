@@ -53,13 +53,13 @@ class AssetLoaderSystem : public ecs2::System {
     private:
         struct LoadableComponentTypeInfo {
             core::String loading_tag;
-            void (*load_all)(ecs2::EntityWorld&, AssetLoadingContext&, std::string_view tag) = nullptr;
-            void (*load_recent)(ecs2::EntityWorld&, AssetLoadingContext&, std::string_view tag) = nullptr;
-            void (*update_status)(ecs2::EntityWorld&, std::string_view tag) = nullptr;
+            void (*load_all)(ecs2::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
+            void (*load_recent)(ecs2::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
+            void (*update_status)(ecs2::EntityWorld&, const core::String& tag) = nullptr;
         };
 
         template<typename T, bool Recent>
-        static void load_components(ecs2::EntityWorld& world, AssetLoadingContext& loading_ctx, std::string_view tag) {
+        static void load_components(ecs2::EntityWorld& world, AssetLoadingContext& loading_ctx, const core::String& tag) {
             auto query = [&] {
                 if constexpr(Recent) {
                     return world.create_group<ecs2::Mutate<ecs2::Changed<T>>>().query();
@@ -75,8 +75,8 @@ class AssetLoaderSystem : public ecs2::System {
         }
 
         template<typename T>
-        static void update_loading_status(ecs2::EntityWorld& world, std::string_view tag) {
-            auto query = world.create_group<ecs2::Mutate<T>>(tag).query();
+        static void update_loading_status(ecs2::EntityWorld& world, const core::String& tag) {
+            auto query = world.create_group<ecs2::Mutate<T>>(tag.view()).query();
             for(auto&& [id, comp] : query.id_components()) {
                 y_debug_assert(world.has_tag(id, tag));
                 if(comp.update_asset_loading_status()) {

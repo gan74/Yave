@@ -75,12 +75,12 @@ class EntityWorld : NonMovable {
 
         // ---------------------------------------- Tags ----------------------------------------
 
-        void add_tag(EntityId id, std::string_view tag);
-        void remove_tag(EntityId id, std::string_view tag);
-        void clear_tag(std::string_view tag);
-        bool has_tag(EntityId id, std::string_view tag) const;
+        void add_tag(EntityId id, const core::String& tag);
+        void remove_tag(EntityId id, const core::String& tag);
+        void clear_tag(const core::String& tag);
+        bool has_tag(EntityId id, const core::String& tag) const;
 
-        const SparseIdSet& tag_set(std::string_view tag) const;
+        const SparseIdSet& tag_set(const core::String& tag) const;
 
         static bool is_tag_implicit(std::string_view tag);
 

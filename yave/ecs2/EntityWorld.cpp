@@ -134,29 +134,29 @@ const EntityPool& EntityWorld::entity_pool() const {
     return _entities;
 }
 
-void EntityWorld::add_tag(EntityId id, std::string_view tag) {
+void EntityWorld::add_tag(EntityId id, const core::String& tag) {
     y_debug_assert(exists(id));
     y_debug_assert(!is_tag_implicit(tag));
     _matrix.add_tag(id, tag);
 }
 
-void EntityWorld::remove_tag(EntityId id, std::string_view tag) {
+void EntityWorld::remove_tag(EntityId id, const core::String& tag) {
     y_debug_assert(exists(id));
     y_debug_assert(!is_tag_implicit(tag));
     _matrix.remove_tag(id, tag);
 }
 
-void EntityWorld::clear_tag(std::string_view tag) {
+void EntityWorld::clear_tag(const core::String& tag) {
     y_debug_assert(!is_tag_implicit(tag));
     _matrix.clear_tag(tag);
 }
 
-bool EntityWorld::has_tag(EntityId id, std::string_view tag) const {
+bool EntityWorld::has_tag(EntityId id, const core::String& tag) const {
     y_debug_assert(exists(id));
     y_debug_assert(!is_tag_implicit(tag));
     return _matrix.has_tag(id, tag);
 }
-const SparseIdSet& EntityWorld::tag_set(std::string_view tag) const {
+const SparseIdSet& EntityWorld::tag_set(const core::String& tag) const {
     y_debug_assert(!is_tag_implicit(tag));
     return _matrix.tag_set(tag);
 }
