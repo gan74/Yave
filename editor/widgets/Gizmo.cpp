@@ -147,9 +147,6 @@ static bool is_inside(core::Span<math::Vec2> pts, const math::Vec2& p) {
 }
 
 static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform<> old_parent_transform, math::Transform<> new_parent_transform) {
-#if 1
-    y_fatal("FIXME");
-#else
     if(TransformableComponent* component = world.component_mut<TransformableComponent>(id)) {
         const math::Transform<> tr = component->transform();
         component->set_transform(new_parent_transform * old_parent_transform.inverse() * tr);
@@ -160,7 +157,6 @@ static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform
     for(const ecs::EntityId child : world.children(id)) {
         move_recursive(world, child, old_parent_transform, new_parent_transform);
     }
-#endif
 }
 
 

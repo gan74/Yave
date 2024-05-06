@@ -40,7 +40,7 @@ class ComponentContainerBase : NonMovable {
 
         virtual ComponentRuntimeInfo runtime_info() const = 0;
 
-        virtual void remove(EntityId id) = 0;
+        virtual void remove_later(EntityId id) = 0;
 
         virtual void inspect_component(EntityId id, ComponentInspector* inspector) = 0;
 
@@ -58,11 +58,13 @@ class ComponentContainerBase : NonMovable {
 
         virtual void register_component_type(System* system) const = 0;
         virtual void post_load() = 0;
+        virtual void process_deletions() = 0;
 
 
         const ComponentTypeIndex _type_id;
         ComponentMatrix* _matrix = nullptr;
         SparseIdSet _mutated;
+        SparseIdSet _to_delete;
 
         std::shared_mutex _lock;
 };
@@ -114,11 +116,9 @@ class ComponentContainer final : public ComponentContainerBase {
             return ComponentRuntimeInfo::create<T>();
         }
 
-        void remove(EntityId id) override {
+        void remove_later(EntityId id) override {
             if(_components.contains(id)) {
-                _matrix->remove_component<T>(id);
-                _components.erase(id);
-                _mutated.erase(id);
+                _to_delete.insert(id);
             }
         }
 
@@ -163,6 +163,17 @@ class ComponentContainer final : public ComponentContainerBase {
                 _mutated.insert(id);
             }
         }
+
+        void process_deletions() override {
+            for(const EntityId id : _to_delete) {
+                _matrix->remove_component<T>(id);
+                _components.erase(id);
+                _mutated.erase(id);
+            }
+            _to_delete.make_empty();
+        }
+
+
 
         template<typename... Args>
         T* add(EntityId id, Args&... args) {

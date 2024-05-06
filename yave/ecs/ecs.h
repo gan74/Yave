@@ -128,11 +128,6 @@ struct std::hash<yave::ecs::EntityId> : std::hash<y::u64> {
 };
 
 
-namespace yave {
-namespace ecs2 {
-using namespace ecs;
-}
-}
 
 
 #endif // YAVE_ECS_ECS_H

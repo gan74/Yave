@@ -36,6 +36,9 @@ struct Mutate {};
 template<typename T>
 struct Changed {};
 
+template<typename T>
+struct Deleted {};
+
 
 
 namespace traits {
@@ -43,31 +46,45 @@ template<typename T>
 struct component_type {
     using raw_type = std::remove_cvref_t<T>;
     using type = const raw_type;
-    using discard_query_quals = T;
 
     static constexpr bool changed = false;
+    static constexpr bool deleted = false;
 };
 
 template<typename T>
 struct component_type<Mutate<T>> {
+    static_assert(!component_type<T>::deleted);
+
     using raw_type = typename component_type<T>::raw_type;
     using type = std::remove_const_t<typename component_type<T>::type>;
-    using discard_query_quals = Mutate<T>;
 
     static constexpr bool changed = component_type<T>::changed;
+    static constexpr bool deleted = component_type<T>::deleted;
 };
 
 template<typename T>
 struct component_type<Changed<T>> {
+    static_assert(!component_type<T>::deleted);
+
     using raw_type = typename component_type<T>::raw_type;
     using type = typename component_type<T>::type;
-    using discard_query_quals = T;
 
     static constexpr bool changed = true;
+    static constexpr bool deleted = component_type<T>::deleted;
 };
 
 
+template<typename T>
+struct component_type<Deleted<T>> {
+    static_assert(!component_type<T>::changed);
+    static_assert(std::is_const_v<typename component_type<T>::type>);
 
+    using raw_type = typename component_type<T>::raw_type;
+    using type = typename component_type<T>::type;
+
+    static constexpr bool changed = false;
+    static constexpr bool deleted = true;
+};
 
 
 
@@ -88,6 +105,9 @@ static constexpr bool is_component_const_v = std::is_const_v<typename component_
 
 template<typename T>
 static constexpr bool is_component_mutable_v = !is_component_const_v<T>;
+
+template<typename T>
+static constexpr bool is_component_deleted_v = component_type<T>::deleted;
 
 }
 

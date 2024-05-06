@@ -65,12 +65,9 @@ EntityWorld::~EntityWorld() {
     _containers.clear();
 }
 
-const SystemManager& EntityWorld::system_manager() const {
-    return _system_manager;
-}
-
-SystemManager& EntityWorld::system_manager() {
-    return _system_manager;
+void EntityWorld::tick(concurrent::StaticThreadPool& thread_pool) {
+    _system_manager.run_schedule(thread_pool);
+    process_deletions();
 }
 
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
@@ -93,16 +90,17 @@ EntityId EntityWorld::create_entity() {
 
 void EntityWorld::clear() {
     remove_all_entities();
+    process_deletions();
+
     _matrix.clear();
     _groups.locked([](auto&& groups) { groups.clear(); });
 }
 
 void EntityWorld::remove_entity(EntityId id) {
-    remove_all_components(id);
-    remove_all_tags(id);
-
-    _matrix.remove_entity(id);
-    _entities.remove(id);
+    if(_to_delete.insert(id)) {
+        remove_all_components(id);
+        remove_all_tags(id);
+    }
 }
 
 void EntityWorld::remove_all_components(EntityId id) {
@@ -110,7 +108,7 @@ void EntityWorld::remove_all_components(EntityId id) {
 
     for(auto& container : _containers) {
         if(container) {
-            container->remove(id);
+            container->remove_later(id);
         }
     }
 }
@@ -220,6 +218,20 @@ void EntityWorld::register_component_types(System* system) const {
             container->register_component_type(system);
         }
     }
+}
+
+void EntityWorld::process_deletions() {
+    for(auto& container : _containers) {
+        if(container) {
+            container->process_deletions();
+        }
+    }
+
+    for(const EntityId id : _to_delete) {
+        _matrix.remove_entity(id);
+        _entities.remove(id);
+    }
+    _to_delete.make_empty();
 }
 
 serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {

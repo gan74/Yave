@@ -38,8 +38,10 @@ const ecs::EntityWorld* EcsScene::world() const {
 }
 
 template<typename S>
-typename S::value_type& EcsScene::register_object(u32& index, S& storage) {
+typename S::value_type& EcsScene::register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
     using object_t = typename S::value_type;
+
+    u32& index = _indices.get_or_insert(id).*index_ptr;
 
     object_t* obj = nullptr;
     if(index == u32(-1)) {
@@ -52,37 +54,84 @@ typename S::value_type& EcsScene::register_object(u32& index, S& storage) {
     return *obj;
 }
 
+template<typename S>
+typename S::value_type EcsScene::unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
+    auto& object = _indices[id];
+    const u32 index = std::exchange(object.*index_ptr, u32(-1));
+    const u32 last_index = u32(storage.size() - 1);
+    object.*index_ptr = u32(-1);
+
+    y_debug_assert(id.is_valid());
+    y_debug_assert(storage[index].entity_index == id.index());
+
+    if(index != last_index) {
+        const ecs::EntityId last_id = id_from_index(storage[last_index].entity_index);
+        _indices[last_id].*index_ptr = index;
+        std::swap(storage[index], storage[last_index]);
+    }
+
+    _indices.erase(id);
+
+    return storage.pop();
+}
+
 template<typename T, typename S>
-void EcsScene::process_transformable_components(u32 ObjectIndices::* index, S& storage) {
+void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage) {
     y_profile();
 
-    auto query = _world->create_group<TransformableComponent, T>().query();
-    for(const auto& [id, tr, comp] : query.id_components()) {
-        auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
+    {
+        auto query = _world->create_group<TransformableComponent, T>().query();
+        for(const auto& [id, tr, comp] : query.id_components()) {
+            auto& obj = register_object(id, index_ptr, storage);
 
-        obj.component = comp;
-        obj.entity_index = id.index();
+            obj.component = comp;
+            obj.entity_index = id.index();
 
-        if(obj.transform_index == u32(-1)) {
-            obj.transform_index = _transform_manager.alloc_transform();
+            if(obj.transform_index == u32(-1)) {
+                obj.transform_index = _transform_manager.alloc_transform();
+            }
+
+            _transform_manager.set_transform(obj.transform_index, tr.transform());
+            obj.global_aabb = tr.to_global(comp.aabb());
         }
+    }
 
-        _transform_manager.set_transform(obj.transform_index, tr.transform());
-        obj.global_aabb = tr.to_global(comp.aabb());
+    {
+        auto query = _world->create_group<ecs::Deleted<T>>().query();
+        if(query.size())
+        log_msg(fmt("{} deleted {}", query.size(), ct_type_name<T>()));
+        for(const ecs::EntityId id : query.ids()) {
+            if(const u32 transform_index = unregister_object(id, index_ptr, storage).transform_index; transform_index == u32(-1)) {
+                _transform_manager.free_transform(transform_index);
+            }
+        }
     }
 }
 
 
 template<typename T, typename S>
-void EcsScene::process_components(u32 ObjectIndices::* index, S& storage) {
+void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
     y_profile();
 
-    auto query = _world->create_group<T>().query();
-    for(const auto& [id, comp] : query.id_components()) {
-        auto& obj = register_object(_indices.get_or_insert(id).*index, storage);
-        obj.component = comp;
-        obj.entity_index = id.index();
+    {
+        auto query = _world->create_group<T>().query();
+        for(const auto& [id, comp] : query.id_components()) {
+            auto& obj = register_object(id, index_ptr, storage);
+            obj.component = comp;
+            obj.entity_index = id.index();
+        }
     }
+
+    {
+        auto query = _world->create_group<ecs::Deleted<T>>().query();
+        for(const ecs::EntityId id : query.ids()) {
+             unregister_object(id, index_ptr, storage);
+        }
+    }
+}
+
+ecs::EntityId EcsScene::id_from_index(u32 index) const {
+    return _indices.id_from_index(index);
 }
 
 void EcsScene::update_from_world() {
@@ -103,10 +152,25 @@ void EcsScene::update_from_world() {
         _transform_manager.update_buffer(recorder);
         recorder.submit_async();
     }
+
+
+    audit();
 }
 
-ecs::EntityId EcsScene::id_from_index(u32 index) const {
-    return _indices.id_from_index(index);
+void EcsScene::audit() const {
+#ifdef Y_DEBUG
+    for(const auto& [id, object] : _indices) {
+        if(object.mesh != u32(-1)) {
+            y_debug_assert(_meshes[object.mesh].entity_index == id.index());
+        }
+    }
+
+    for(usize i = 0; i != _meshes.size(); ++i) {
+        const ecs::EntityId id = id_from_index(_meshes[i].entity_index);
+        y_debug_assert(id.is_valid());
+        y_debug_assert(_indices[id].mesh == u32(i));
+    }
+#endif
 }
 
 }

@@ -147,8 +147,8 @@ void destroy_editor() {
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        application::world->system_manager().run_schedule(*application::thread_pool);
         application::scene->update_from_world();
+        application::world->tick(*application::thread_pool);
         application::ui->on_gui();
         post_tick();
     });

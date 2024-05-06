@@ -48,13 +48,18 @@ class EcsScene : public Scene {
 
     private:
         template<typename S>
-        typename S::value_type& register_object(u32& index, S& storage);
+        typename S::value_type& register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
+
+        template<typename S>
+        typename S::value_type unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename T, typename S>
-        void process_transformable_components(u32 ObjectIndices::* index, S& storage);
+        void process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename T, typename S>
-        void process_components(u32 ObjectIndices::* index, S& storage);
+        void process_components(u32 ObjectIndices::* index_ptr, S& storage);
+
+        void audit() const;
 
         const ecs::EntityWorld* _world = nullptr;
 

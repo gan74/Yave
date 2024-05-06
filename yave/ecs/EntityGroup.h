@@ -93,7 +93,10 @@ template<typename... Ts>
 class EntityGroup final : public EntityGroupBase {
     static constexpr usize type_count = sizeof...(Ts);
     static constexpr usize mutate_count = ((traits::is_component_mutable_v<Ts> ? 1 : 0) + ...);
+
     static constexpr usize changed_count = ((traits::is_component_changed_v<Ts> ? 1 : 0) + ...);
+    static constexpr usize deleted_count = ((traits::is_component_deleted_v<Ts> ? 1 : 0) + ...);
+    static constexpr usize filter_count = changed_count + deleted_count;
 
 
     static inline const std::array<ComponentTypeIndex, type_count> type_storage = { type_index<traits::component_raw_type_t<Ts>>()... };
@@ -104,7 +107,7 @@ class EntityGroup final : public EntityGroupBase {
     using ComponentTuple = std::tuple<traits::component_type_t<Ts>&...>;
 
     using MutateContainers = std::array<SparseIdSet*, mutate_count>;
-    using ChangedContainers = std::array<const SparseIdSet*, changed_count>;
+    using FilterContainers = std::array<const SparseIdSet*, filter_count>;
 
 
     template<typename T>
@@ -113,7 +116,7 @@ class EntityGroup final : public EntityGroupBase {
     }
 
     template<typename T, usize I>
-    void fill_one(const ContainerTuple& containers, usize& mut_index, usize& changed_index, usize& const_index) {
+    void fill_one(const ContainerTuple& containers, usize& mut_index, usize& filter_index, usize& const_index) {
         std::get<I>(_sets) = &std::get<I>(containers)->_components;
 
         if constexpr(traits::is_component_mutable_v<T>) {
@@ -125,19 +128,22 @@ class EntityGroup final : public EntityGroupBase {
         }
 
         if constexpr(traits::is_component_changed_v<T>) {
-            _changed[changed_index++] = &std::get<I>(containers)->_mutated;
+            _filter[filter_index++] = &std::get<I>(containers)->_mutated;
+        }
+        if constexpr(traits::is_component_deleted_v<T>) {
+            _filter[filter_index++] = &std::get<I>(containers)->_to_delete;
         }
     }
 
     template<usize... Is>
     inline void fill_sets(const ContainerTuple& containers, std::index_sequence<Is...>) {
         usize mut_index = 0;
-        usize changed_index = 0;
+        usize filter_index = 0;
         usize const_index = 0;
-        (fill_one<Ts, Is>(containers, mut_index, changed_index, const_index), ...);
+        (fill_one<Ts, Is>(containers, mut_index, filter_index, const_index), ...);
 
         y_debug_assert(std::all_of(_mutate.begin(), _mutate.end(), [](const auto* s) { return s; }));
-        y_debug_assert(std::all_of(_changed.begin(), _changed.end(), [](const auto* s) { return s; }));
+        y_debug_assert(std::all_of(_filter.begin(), _filter.end(), [](const auto* s) { return s; }));
         y_debug_assert(std::all_of(_write_locks.begin(), _write_locks.end(), [](const auto* s) { return s; }));
         y_debug_assert(std::all_of(_read_locks.begin(), _read_locks.end(), [](const auto* s) { return s; }));
     }
@@ -281,12 +287,12 @@ class EntityGroup final : public EntityGroupBase {
             Query query(this);
             query._sets = _sets;
 
-            if constexpr(changed_count) {
+            if constexpr(filter_count) {
                 y_profile_zone("finding changed entities");
 
-                std::array<const SparseIdSet*, changed_count + 1> matches = {};
-                std::copy_n(_changed.begin(), changed_count, matches.begin());
-                matches[changed_count] = &_ids;
+                std::array<const SparseIdSet*, filter_count + 1> matches = {};
+                std::copy_n(_filter.begin(), filter_count, matches.begin());
+                matches[filter_count] = &_ids;
 
                 std::sort(matches.begin(), matches.end(), [](const SparseIdSet* a, const SparseIdSet* b) {
                     return a->size() < b->size();
@@ -352,7 +358,7 @@ class EntityGroup final : public EntityGroupBase {
         SetTuple _sets = {};
 
         MutateContainers _mutate = {};
-        ChangedContainers _changed = {};
+        FilterContainers _filter = {};
 
         std::array<std::shared_mutex*, mutate_count> _write_locks;
         std::array<std::shared_mutex*, type_count - mutate_count> _read_locks;

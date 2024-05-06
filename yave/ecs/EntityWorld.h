@@ -43,9 +43,7 @@ class EntityWorld : NonMovable {
         EntityWorld();
         ~EntityWorld();
 
-
-        const SystemManager& system_manager() const;
-        SystemManager& system_manager();
+        void tick(concurrent::StaticThreadPool& thread_pool);
 
 
         std::string_view component_type_name(ComponentTypeIndex type_id) const;
@@ -249,6 +247,8 @@ class EntityWorld : NonMovable {
 
         void check_exists(EntityId id) const;
 
+        void process_deletions();
+
 
 
 
@@ -257,6 +257,8 @@ class EntityWorld : NonMovable {
 
         ComponentMatrix _matrix;
         EntityPool _entities;
+
+        SparseIdSet _to_delete;
 
         SystemManager _system_manager;
 };
